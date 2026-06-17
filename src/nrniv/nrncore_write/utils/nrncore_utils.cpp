@@ -111,14 +111,10 @@ void nrnbbcore_register_mapping() {
 
     // Argument 6: either a scalar num_electrodes (legacy) or a Vector of
     // electrode offsets (CSR-style partial sums, e.g. [0, N]).
-    // Legacy callers pass a double; new callers pass a Vector directly.
-    // If a scalar is provided, we assume a single report and synthesize
-    // offsets as [0, num_electrodes].
-    // Future expansion: additional arguments can be appended after arg 6.
     std::vector<int> electrode_offsets;
     if (ifarg(6)) {
         if (hoc_is_double_arg(6)) {
-            // Legacy API: scalar num_electrodes (assumes single report)
+            // Legacy API: scalar num_electrodes
             int num_electrodes = static_cast<int>(*hoc_getarg(6));
             if (num_electrodes > 0) {
                 electrode_offsets = {0, num_electrodes};

@@ -561,7 +561,7 @@ extern "C" int run_solve_core(int argc, char** argv) {
 
         // register all reports with libsonata
         double min_report_dt = INT_MAX;
-        int lfp_report_counter = 0;
+        size_t lfp_report_counter = 0;
         for (size_t i = 0; i < configs.size(); i++) {
             if (configs[i].type == ReportType::LFP) {
                 configs[i].lfp_report_index = lfp_report_counter++;

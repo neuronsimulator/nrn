@@ -599,7 +599,7 @@ static VarsToReport get_lfp_vars_to_report(const NrnThread& nt,
                                            const std::vector<int>& intersection_ids,
                                            ReportConfiguration& report,
                                            double* report_variable,
-                                           int lfp_report_index) {
+                                           size_t lfp_report_index) {
     const auto* mapinfo = static_cast<NrnThreadMappingInfo*>(nt.mapping);
     if (!mapinfo) {
         std::cerr << "[ERROR] : LFP report mapping information is missing for a Cell group "
@@ -619,12 +619,9 @@ static VarsToReport get_lfp_vars_to_report(const NrnThread& nt,
         }
         std::vector<VarWithMapping> to_report;
         const auto& offsets = cell_mapping->electrode_offsets;
-        int start = 0;
-        int end = cell_mapping->num_electrodes();
-        if (static_cast<int>(offsets.size()) > lfp_report_index + 1) {
-            start = offsets[lfp_report_index];
-            end = offsets[lfp_report_index + 1];
-        }
+        nrn_assert(offsets.size() > lfp_report_index + 1);
+        int start = offsets[lfp_report_index];
+        int end = offsets[lfp_report_index + 1];
         for (int electrode_id = start; electrode_id < end; electrode_id++) {
             to_report.emplace_back(VarWithMapping(electrode_id, report_variable + offset_lfp));
             offset_lfp++;

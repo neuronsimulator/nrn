@@ -168,7 +168,6 @@ class FileHandler {
                 mapinfo->add_segment(sec[i], seg[i]);
                 ntmapping->add_segment_id(seg[i]);
                 if (total_lfp_factors > 0) {
-                    int factor_offset = i * num_electrodes;
                     nrn_assert(count_if(lfp_factors.begin(), lfp_factors.end(), [](double d) {
                                    return std::isnan(d);
                                }) == 0);
