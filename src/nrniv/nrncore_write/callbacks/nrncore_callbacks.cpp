@@ -259,7 +259,9 @@ void nrnthread_dat3_secmapping(int i_c,
     nsec = s->nsec;
     nseg = s->size();
     total_lfp_factors = s->seglfp_factors.size();
-    electrode_offsets = s->electrode_offsets;
+    if (!s->electrode_offsets.empty()) {
+        electrode_offsets = s->electrode_offsets;
+    }
     data_sec = s->sections;
     data_seg = s->segments;
     data_lfp = s->seglfp_factors;
