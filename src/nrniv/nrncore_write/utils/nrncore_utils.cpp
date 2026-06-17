@@ -76,12 +76,10 @@ int count_distinct(double* data, int len) {
 static void validate_electrode_offsets(const std::vector<int>& offsets) {
     for (int i = 0; i < static_cast<int>(offsets.size()); i++) {
         if (offsets[i] < 0) {
-            Printf("Error: electrode_offsets values must be non-negative!\n");
-            abort();
+            hoc_execerror("electrode_offsets values must be non-negative", nullptr);
         }
         if (i > 0 && offsets[i] < offsets[i - 1]) {
-            Printf("Error: electrode_offsets must be monotonically non-decreasing!\n");
-            abort();
+            hoc_execerror("electrode_offsets must be monotonically non-decreasing", nullptr);
         }
     }
 }
