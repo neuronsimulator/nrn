@@ -34,11 +34,6 @@ struct SecMapping {
         : nsec(n)
         , name(s) {}
 
-    /** @brief Total electrode count (derived from offsets) */
-    int num_electrodes() const {
-        return electrode_offsets.empty() ? 0 : electrode_offsets.back();
-    }
-
     size_t size() {
         return segments.size();
     }
