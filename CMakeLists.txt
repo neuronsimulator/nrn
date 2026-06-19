@@ -109,6 +109,11 @@ option(NRN_ENABLE_MUSIC "Enable MUSIC support" ${NRN_ENABLE_MUSIC_DEFAULT})
 option(NRN_ENABLE_RX3D "Enable rx3d support" ${NRN_ENABLE_RX3D_DEFAULT})
 option(NRN_ENABLE_NMODL "Enable NMODL code-generator support" ${NRN_ENABLE_NMODL_DEFAULT})
 option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ${NRN_ENABLE_CORENEURON_DEFAULT})
+option(NRN_ENABLE_GPU "Enable NEURON native GPU support" ${NRN_ENABLE_GPU_DEFAULT})
+set(NRN_GPU_BACKEND
+    "${NRN_GPU_BACKEND_DEFAULT}"
+    CACHE STRING "GPU backend for NEURON native GPU (OpenACC only in Phase A-B)")
+set_property(CACHE NRN_GPU_BACKEND PROPERTY STRINGS OpenACC)
 option(NRN_ENABLE_BACKTRACE "Enable pretty-printed backtraces" ${NRN_ENABLE_BACKTRACE_DEFAULT})
 option(NRN_ENABLE_TESTS "Enable unit tests" ${NRN_ENABLE_TESTS_DEFAULT})
 option(NRN_ENABLE_MATH_OPT "Enable extra math optimisations (to enable SIMD)"
@@ -671,6 +676,23 @@ else()
   set(NRN_NMODL_--neuron "")
   set(NRN_CODEGENERATOR_NAME "nocmodl")
   set(NRN_CODEGENERATOR_TARGET nocmodl)
+endif()
+
+# =============================================================================
+# NEURON native GPU (Phase A: option scaffolding; execution still via CoreNEURON)
+# =============================================================================
+if(NRN_ENABLE_GPU)
+  if(NOT NRN_GPU_BACKEND STREQUAL "OpenACC")
+    message(
+      FATAL_ERROR
+        "NRN_GPU_BACKEND=${NRN_GPU_BACKEND} is not supported. Only OpenACC is supported in Phase A-B.")
+  endif()
+  if(NOT NRN_ENABLE_CORENEURON)
+    message(
+      FATAL_ERROR
+        "NRN_ENABLE_GPU=ON requires NRN_ENABLE_CORENEURON=ON during the Phase A transition. "
+        "Native GPU execution without CoreNEURON is not yet implemented.")
+  endif()
 endif()
 
 # =============================================================================
@@ -1312,6 +1334,10 @@ message(STATUS "CoreNEURON    | ${NRN_ENABLE_CORENEURON}")
 if(NRN_ENABLE_CORENEURON)
   message(STATUS "  PATH        | ${CORENEURON_DIR}")
   message(STATUS "  LINK FLAGS  | ${CORENRN_LIB_LINK_FLAGS}")
+endif()
+message(STATUS "NEURON GPU    | ${NRN_ENABLE_GPU}")
+if(NRN_ENABLE_GPU)
+  message(STATUS "  Backend     | ${NRN_GPU_BACKEND}")
 endif()
 message(STATUS "NMODL codegen   | ${NRN_ENABLE_NMODL}")
 if(NRN_UNIVERSAL2_BUILD)

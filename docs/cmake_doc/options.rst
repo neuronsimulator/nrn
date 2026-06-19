@@ -391,6 +391,39 @@ NRN_RX3D_OPT_LEVEL:STRING=0
 
     -DNRN_RX3D_OPT_LEVEL=2
 
+NEURON GPU options
+==================
+
+.. _cmake-nrn-enable-gpu-option:
+
+NRN_ENABLE_GPU:BOOL=OFF
+-----------------------
+  Enable NEURON native GPU support (work in progress).
+
+  This is the user-facing CMake option for GPU acceleration in NEURON proper.
+  During the Phase A transition period, ``NRN_ENABLE_GPU=ON`` still requires
+  ``NRN_ENABLE_CORENEURON=ON`` and ``CORENRN_ENABLE_GPU=ON`` for actual GPU
+  execution. The long-term goal is native GPU on the NEURON 9.0 model-data
+  layer without building CoreNEURON.
+
+  A typical GPU development build (NVHPC required) uses:
+
+  .. code-block:: shell
+
+    cmake .. -G Ninja \
+      -DNRN_ENABLE_CORENEURON=ON \
+      -DNRN_ENABLE_GPU=ON \
+      -DCORENRN_ENABLE_GPU=ON \
+      -DCMAKE_C_COMPILER=nvc \
+      -DCMAKE_CXX_COMPILER=nvc++
+
+NRN_GPU_BACKEND:STRING=OpenACC
+------------------------------
+  Select the GPU backend for NEURON native GPU.
+
+  Only ``OpenACC`` is supported in Phase A-B. Other values cause configure to
+  fail when ``NRN_ENABLE_GPU=ON``.
+
 CoreNEURON options
 ==================
 
@@ -399,7 +432,9 @@ NRN_ENABLE_CORENEURON:BOOL=OFF
   Enable CoreNEURON support
 
   If ON CoreNEURON will be built and any needed NMODL submodule dependencies
-  cloned as external submodules.
+  cloned as external submodules. For new GPU work, prefer enabling
+  ``NRN_ENABLE_GPU`` in addition to (or eventually instead of) relying on
+  CoreNEURON as the only GPU entry point.
 
 NRN_ENABLE_MOD_COMPATIBILITY:BOOL=OFF
 -------------------------------------
@@ -412,10 +447,14 @@ NRN_ENABLE_MOD_COMPATIBILITY:BOOL=OFF
 
 Other CoreNEURON options:
 -------------------------
-  There are 20 or so cmake arguments specific to a CoreNEURON
+
+.. _cmake-coreneuron-enable-gpu-option:
+
+  ``CORENRN_ENABLE_GPU:BOOL=OFF`` — enable OpenACC GPU execution in CoreNEURON.
+  Required for GPU tests during Phase A even when ``NRN_ENABLE_GPU=ON``.
+
+  There are 20 or so other cmake arguments specific to a CoreNEURON
   build that are listed in https://github.com/neuronsimulator/nrn/blob/master/src/coreneuron/CMakeLists.txt.
-  The one of particular interest that can be used on the NEURON
-  CMake configure line is `CORENRN_ENABLE_GPU`.
 
 NMODL options
 =============

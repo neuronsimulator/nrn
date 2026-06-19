@@ -62,14 +62,27 @@ You can filter which tests are run by name using the ``-R`` option to CTest, for
 
 .. code-block:: console
 
+  $ ctest -N -R gpu    # list GPU tests (count varies with build options)
   $ ctest --output-on-failure -R gpu
   Test project /path/to/your/build
   Start  42: coreneuron_modtests::direct_py_gpu
-   1/53 Test  #42: coreneuron_modtests::direct_py_gpu .............................   Passed    1.98 sec
+   1/68 Test  #42: coreneuron_modtests::direct_py_gpu .............................   Passed    1.98 sec
         Start  43: coreneuron_modtests::direct_hoc_gpu
-   2/53 Test  #43: coreneuron_modtests::direct_hoc_gpu ............................   Passed    1.03 sec
+   2/68 Test  #43: coreneuron_modtests::direct_hoc_gpu ............................   Passed    1.03 sec
         Start  44: coreneuron_modtests::spikes_py_gpu
    ...
+
+A full MPI + GPU + tests build typically registers **68** tests matching ``-R gpu``
+(including 22 ``coreneuron_modtests::*gpu*`` variants). Use ``ctest -N -R gpu`` in
+your build tree for the authoritative count.
+
+GPU-related CMake options:
+
+- ``-DNRN_ENABLE_GPU=ON`` — user-facing NEURON native GPU option (Phase A: still requires CoreNEURON)
+- ``-DCORENRN_ENABLE_GPU=ON`` — enables OpenACC GPU execution in CoreNEURON (required for GPU tests today)
+- ``-DNRN_GPU_BACKEND=OpenACC`` — only supported backend in Phase A-B
+
+See :ref:`cmake-nrn-enable-gpu-option` and :ref:`cmake-coreneuron-enable-gpu-option` in the CMake options documentation.
 
 Running tests manually
 **********************
