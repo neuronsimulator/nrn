@@ -533,11 +533,11 @@ static void write_seclist_header(FILE* f,
                                  int nsec,
                                  int nseg,
                                  size_t total_lfp_factors,
-                                 const std::vector<int>& electrode_offsets) {
+                                 const std::vector<size_t>& electrode_offsets) {
     const int offset_count = static_cast<int>(electrode_offsets.size());
     fprintf(f, "%s %d %d %zd %d", name.c_str(), nsec, nseg, total_lfp_factors, offset_count);
-    for (int off: electrode_offsets) {
-        fprintf(f, " %d", off);
+    for (const auto off: electrode_offsets) {
+        fprintf(f, " %zu", off);
     }
     fprintf(f, "\n");
 }
@@ -580,7 +580,7 @@ void nrn_write_mapping_info(const char* path, int gid, NrnMappingInfo& minfo) {
             std::string sclname;
             int nsec;
             int nseg;
-            std::vector<int> electrode_offsets;
+            std::vector<size_t> electrode_offsets;
             size_t total_lfp_factors;
             std::vector<int> data_sec;
             std::vector<int> data_seg;

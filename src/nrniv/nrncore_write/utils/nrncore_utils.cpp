@@ -72,13 +72,10 @@ int count_distinct(double* data, int len) {
 }
 
 
-/** @brief Validate electrode offsets: non-negative and monotonically non-decreasing. */
-static void validate_electrode_offsets(const std::vector<int>& offsets) {
-    int prev = 0;
-    for (int off: offsets) {
-        if (off < 0) {
-            hoc_execerror("electrode_offsets values must be non-negative", nullptr);
-        }
+/** @brief Validate electrode offsets: monotonically non-decreasing. */
+static void validate_electrode_offsets(const std::vector<size_t>& offsets) {
+    size_t prev = 0;
+    for (const auto off: offsets) {
         if (off < prev) {
             hoc_execerror("electrode_offsets must be monotonically non-decreasing", nullptr);
         }
@@ -110,7 +107,7 @@ void nrnbbcore_register_mapping() {
     Vect* lfp = ifarg(5) ? vector_arg(5) : new Vect();
 
     // Argument 6: Vector of electrode offsets (CSR-style partial sums, e.g. [0, N]).
-    std::vector<int> electrode_offsets;
+    std::vector<size_t> electrode_offsets;
     if (ifarg(6)) {
         if (hoc_is_double_arg(6)) {
             hoc_execerror(
@@ -122,7 +119,7 @@ void nrnbbcore_register_mapping() {
         const double* vals = vector_vec(offsets_vec);
         electrode_offsets.resize(n);
         std::transform(vals, vals + n, electrode_offsets.begin(), [](double v) {
-            return static_cast<int>(v);
+            return static_cast<size_t>(v);
         });
         validate_electrode_offsets(electrode_offsets);
     }

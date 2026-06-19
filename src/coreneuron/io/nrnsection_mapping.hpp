@@ -82,7 +82,7 @@ struct CellMapping {
 
     /** Electrode offsets per LFP report (CSR-style, size = num_reports + 1).
      *  offsets[i]..offsets[i+1] gives the electrode range for report i. */
-    std::vector<int> electrode_offsets;
+    std::vector<size_t> electrode_offsets;
 
     CellMapping(int g)
         : gid(g) {}
@@ -109,7 +109,7 @@ struct CellMapping {
 
     /** @brief return the total number of electrodes **/
     size_t num_electrodes() const {
-        return electrode_offsets.empty() ? 0 : static_cast<size_t>(electrode_offsets.back());
+        return electrode_offsets.empty() ? 0 : electrode_offsets.back();
     }
 
     /** @brief number of section lists */

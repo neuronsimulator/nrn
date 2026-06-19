@@ -20,7 +20,7 @@ void (*nrn2core_get_dat3_secmapping_)(int i_c,
                                       int& nsec,
                                       int& nseg,
                                       size_t& total_lfp_factors,
-                                      std::vector<int>& electrode_offsets,
+                                      std::vector<size_t>& electrode_offsets,
                                       std::vector<int>& data_sec,
                                       std::vector<int>& data_seg,
                                       std::vector<double>& data_lfp);
@@ -74,7 +74,7 @@ void Phase3::read_direct(NrnThreadMappingInfo* ntmapping, const NrnThread& nt) {
                                           data_sec,
                                           data_seg,
                                           data_lfp);
-            const int n_electrodes = cmap->num_electrodes();
+            const auto n_electrodes = cmap->num_electrodes();
             if (nt._permute) {
                 node_permute(data_seg.data(), data_seg.size(), nt._permute);
             }

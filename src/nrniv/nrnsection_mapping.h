@@ -28,7 +28,7 @@ struct SecMapping {
     /** Electrode offsets as partial sums (CSR-style).
      *  For a single report with N electrodes: [0, N].
      *  Empty when no electrodes are associated. */
-    std::vector<int> electrode_offsets;
+    std::vector<size_t> electrode_offsets;
 
     SecMapping(int n, std::string s)
         : nsec(n)

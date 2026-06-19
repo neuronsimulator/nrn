@@ -584,7 +584,7 @@ static VarsToReport get_synapse_vars_to_report(const NrnThread& nt,
                         for (auto i = 0; i < var_ptrs.size(); ++i) {
                             if (selected_vars.empty() || static_cast<bool>(selected_vars[i])) {
                                 vars_to_report[gid].push_back(
-                                    {static_cast<int>(*synapseIDs[i]), var_ptrs[i]});
+                                    {static_cast<size_t>(*synapseIDs[i]), var_ptrs[i]});
                             }
                         }
                     }
@@ -619,14 +619,14 @@ static VarsToReport get_lfp_vars_to_report(const NrnThread& nt,
         }
         std::vector<VarWithMapping> to_report;
         const auto& offsets = cell_mapping->electrode_offsets;
-        int start = 0;
-        int end = 0;
+        size_t start = 0;
+        size_t end = 0;
         if (!offsets.empty()) {
             nrn_assert(offsets.size() > lfp_report_index + 1);
             start = offsets[lfp_report_index];
             end = offsets[lfp_report_index + 1];
         }
-        for (int electrode_id = start; electrode_id < end; electrode_id++) {
+        for (auto electrode_id = start; electrode_id < end; electrode_id++) {
             to_report.emplace_back(VarWithMapping(electrode_id, report_variable + offset_lfp));
             offset_lfp++;
         }
