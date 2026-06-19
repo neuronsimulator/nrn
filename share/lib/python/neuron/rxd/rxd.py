@@ -1,3 +1,4 @@
+from typing import Optional, Any
 from neuron import h, nrn, nrn_dll_sym
 from . import species, node, section1d, region, generalizedReaction, constants
 from .node import _point_indices
@@ -200,35 +201,35 @@ double vtrap(const double, const double);
 """
 
 
-def _list_to_cint_array(data):
+def _list_to_cint_array(data: list) -> Optional[ctypes.Array[ctypes.c_int]]:
     if data is None or len(data) == 0:
         return None
     else:
         return (ctypes.c_int * len(data))(*tuple(data))
 
 
-def _list_to_cdouble_array(data):
+def _list_to_cdouble_array(data: list) -> Optional[ctypes.Array[ctypes.c_double]]:
     if data is None or len(data) == 0:
         return None
     else:
         return (ctypes.c_double * len(data))(*tuple(data))
 
 
-def _list_to_clong_array(data):
+def _list_to_clong_array(data: list) -> Optional[ctypes.Array[ctypes.c_long]]:
     if data is None or len(data) == 0:
         return None
     else:
         return (ctypes.c_long * len(data))(*tuple(data))
 
 
-def _list_to_pyobject_array(data):
+def _list_to_pyobject_array(data: list) -> Optional[ctypes.Array[ctypes.py_object]]:
     if data is None or len(data) == 0:
         return None
     else:
         return (ctypes.py_object * len(data))(*tuple(data))
 
 
-def byeworld():
+def byeworld() -> None:
     # do not call __del__ that rearrange memory for states
     species.Species.__del__ = lambda x: None
     species._ExtracellularSpecies.__del__ = lambda x: None
@@ -273,7 +274,7 @@ _diffusion_p = None
 _diffusion_a_ptr, _diffusion_b_ptr, _diffusion_p_ptr = None, None, None
 
 
-def _domain_lookup(sec, dim=None):
+def _domain_lookup(sec: nrn.Section, dim: Optional[int] = None) -> int:
     for d, sl in _dimensions.items():
         if sec in sl:
             if dim is not None and d != dim:
@@ -285,7 +286,13 @@ def _domain_lookup(sec, dim=None):
     return dimension
 
 
-def set_solve_type(domain=None, dimension=None, dx=None, nsubseg=None, method=None):
+def set_solve_type(
+    domain: Optional[Any] = None,
+    dimension: Optional[int] = None,
+    dx: Optional[float] = None,
+    nsubseg: Optional[int] = None,
+    method: Optional[str] = None,
+) -> None:
     """Specify the numerical discretization and solver options.
 
     domain -- a section or Python iterable of sections"""
@@ -746,7 +753,7 @@ def _do_section_groups_border(groups):
     return False
 
 
-def _check_multigridding_supported_3d():
+def _check_multigridding_supported_3d() -> bool:
     # if there are no 3D sections, then all is well
     if not species._has_3d:
         return True

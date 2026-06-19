@@ -19,6 +19,7 @@ if _ast_config["nmodl_support"]:
     except ModuleNotFoundError as e:
         _ast_config["nmodl_support"] = False
         _ast_config["exception"] = e
+from typing import Union, Optional, Any
 
 # aliases to avoid repeatedly doing multiple hash-table lookups
 _itertools_chain = itertools.chain
@@ -40,7 +41,13 @@ class Rate(GeneralizedReaction):
     the same species, then their effects are summed.
     """
 
-    def __init__(self, species, rate, regions=None, membrane_flux=False):
+    def __init__(
+        self,
+        species: Any,
+        rate: Any,
+        regions: Optional[Union[list, Any]] = None,
+        membrane_flux: bool = False,
+    ) -> None:
         """create a rate of change for a species on a given region or set of regions
 
         if regions is None, then does it on all regions"""
@@ -90,7 +97,7 @@ class Rate(GeneralizedReaction):
         if initializer.is_initialized():
             self._do_init()
 
-    def _do_init(self):
+    def _do_init(self) -> None:
         from . import region, species
 
         rate = self._original_rate
@@ -150,7 +157,7 @@ class Rate(GeneralizedReaction):
                         f"Error Rate {self._original_rate}: an extracellular rate can not depend on a SpeciesOnRegion"
                     )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         short_rate = (
             self._original_rate._short_repr()
             if hasattr(self._original_rate, "_short_repr")
@@ -173,10 +180,10 @@ class Rate(GeneralizedReaction):
                 self._membrane_flux,
             )
 
-    def _rate_from_rangevar(self, *args):
+    def _rate_from_rangevar(self, *args: Any) -> Any:
         return self._original_rate._rangevar_vec()
 
-    def _update_indices(self):
+    def _update_indices(self) -> None:
         # this is called anytime the geometry changes as well as at init
         # TODO: is the above statement true?
 
@@ -344,12 +351,12 @@ class Rate(GeneralizedReaction):
         else:
             self._update_jac_cache()
 
-    def _do_memb_scales(self):
+    def _do_memb_scales(self) -> None:
         # TODO: does anyone still call this?
         # TODO: update self._memb_scales (this is just a dummy value to make things run)
         self._memb_scales = 1
 
-    def _get_memb_flux(self, states):
+    def _get_memb_flux(self, states) -> list:
         if self._membrane_flux:
             # raise RxDException('membrane flux due to rxd.Rate objects not yet supported')
             # TODO: refactor the inside of _evaluate so can construct args in a separate function and just get self._rate() result

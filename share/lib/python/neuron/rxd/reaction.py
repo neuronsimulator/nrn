@@ -23,10 +23,11 @@ if _ast_config["nmodl_support"]:
     except ModuleNotFoundError as e:
         _ast_config["nmodl_support"] = False
         _ast_config["exception"] = e
+from typing import Any
 
 
 class Reaction(GeneralizedReaction):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Specify a reaction to be added to the system.
 
         Examples:
@@ -113,11 +114,11 @@ class Reaction(GeneralizedReaction):
         if initializer.is_initialized():
             self._do_init()
 
-    def _do_init(self):
+    def _do_init(self) -> None:
         self._update_rates()
         self._update_indices()
 
-    def _update_rates(self):
+    def _update_rates(self) -> None:
         lhs = self._scheme._lhs._items
         rhs = self._scheme._rhs._items
 
@@ -253,7 +254,7 @@ class Reaction(GeneralizedReaction):
         self._original_rate_b = value
         self._update_rates()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         short_f = (
             self._original_rate_f._short_repr()
             if hasattr(self._original_rate_f, "_short_repr")
@@ -273,7 +274,7 @@ class Reaction(GeneralizedReaction):
         else:
             return f"Reaction({self._scheme}, {short_f}, rate_b={short_b}, custom_dynamics={self._custom_dynamics!r})"
 
-    def _do_memb_scales(self):
+    def _do_memb_scales(self) -> None:
         # nothing to do since NEVER a membrane flux
         pass
 

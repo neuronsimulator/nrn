@@ -1,5 +1,6 @@
 from .rxdException import RxDException
 from neuron import h
+from typing import Optional, Any, Union
 
 try:
     from . import geometry3d
@@ -57,7 +58,7 @@ _c_region_lookup = (
 )
 
 
-def _sort_secs(secs):
+def _sort_secs(secs) -> list:
     # sort the sections
     root_secs = h.SectionList()
     root_secs.allroots()
@@ -114,7 +115,7 @@ class _c_region:
         "_optimized_rates",
     )
 
-    def __init__(self, regions):
+    def __init__(self, regions: Any) -> None:
         global _c_region_lookup
         self._regions = [weakref.ref(r) for r in regions]
         self._overlap = self._regions[0]()._secs1d
@@ -197,7 +198,7 @@ class _c_region:
         self.num_ecs_species = len(self._ecs_react_species)
         self._initialized = False
 
-    def get_ecs_index(self):
+    def get_ecs_index(self) -> Any:
         if not self._initialized:
             self._initalize()
         if self.ecs_location_index is None:
@@ -205,12 +206,12 @@ class _c_region:
         else:
             return self.ecs_location_index.flatten()
 
-    def get_state_index(self):
+    def get_state_index(self) -> Any:
         if not self._initialized:
             self._initalize()
         return self.location_index.flatten()
 
-    def get_ecs_species_ids(self):
+    def get_ecs_species_ids(self) -> Any:
         ret = numpy.ndarray(self.num_ecs_species + self.num_ecs_params, ctypes.c_int)
         if self.num_ecs_species + self.num_ecs_params > 0:
             for i in self._ecs_species_ids:
@@ -219,7 +220,7 @@ class _c_region:
                 ret[self._ecs_params_ids[i] + self.num_ecs_species] = i
         return ret
 
-    def _ecs_initalize(self):
+    def _ecs_initalize(self) -> None:
         from . import species
 
         self.ecs_location_index = -numpy.ones(

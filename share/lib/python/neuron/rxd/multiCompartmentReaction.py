@@ -23,9 +23,10 @@ if _ast_config["nmodl_support"]:
     except ModuleNotFoundError as e:
         _ast_config["nmodl_support"] = False
         _ast_config["exception"] = e
+from typing import Any, Optional
 
 
-def _ref_list_with_mult(obj):
+def _ref_list_with_mult(obj: dict) -> list:
     result = []
     for i, p in zip(list(obj.keys()), list(obj.values())):
         w = weakref.ref(i)
@@ -34,7 +35,7 @@ def _ref_list_with_mult(obj):
 
 
 class MultiCompartmentReaction(GeneralizedReaction):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Specify a reaction spanning multiple regions to be added to the system.
 
         Use this for, for example, pumps and channels, or interactions between

@@ -20,7 +20,7 @@ void (*nrn2core_get_dat3_secmapping_)(int i_c,
                                       int& nsec,
                                       int& nseg,
                                       size_t& total_lfp_factors,
-                                      int& n_electrodes,
+                                      std::vector<size_t>& electrode_offsets,
                                       std::vector<int>& data_sec,
                                       std::vector<int>& data_seg,
                                       std::vector<double>& data_lfp);
@@ -60,7 +60,6 @@ void Phase3::read_direct(NrnThreadMappingInfo* ntmapping, const NrnThread& nt) {
             std::string sclname;
             int n_sec;
             int n_seg;
-            int n_electrodes;
             size_t total_lfp_factors;
             std::vector<int> data_sec;
             std::vector<int> data_seg;
@@ -71,10 +70,11 @@ void Phase3::read_direct(NrnThreadMappingInfo* ntmapping, const NrnThread& nt) {
                                           n_sec,
                                           n_seg,
                                           total_lfp_factors,
-                                          n_electrodes,
+                                          cmap->electrode_offsets,
                                           data_sec,
                                           data_seg,
                                           data_lfp);
+            const auto n_electrodes = cmap->num_electrodes();
             if (nt._permute) {
                 node_permute(data_seg.data(), data_seg.size(), nt._permute);
             }
@@ -83,16 +83,13 @@ void Phase3::read_direct(NrnThreadMappingInfo* ntmapping, const NrnThread& nt) {
             for (int i_seg = 0; i_seg < n_seg; i_seg++) {
                 smap->add_segment(data_sec[i_seg], data_seg[i_seg]);
                 ntmapping->add_segment_id(data_seg[i_seg]);
-                int factor_offset = i_seg * n_electrodes;
                 if (total_lfp_factors > 0) {
                     // Abort if the factors contains a NaN
                     nrn_assert(count_if(data_lfp.begin(), data_lfp.end(), [](double d) {
                                    return std::isnan(d);
                                }) == 0);
-                    std::vector<double> segment_factors(data_lfp.begin() + factor_offset,
-                                                        data_lfp.begin() + factor_offset +
-                                                            n_electrodes);
-                    cmap->add_segment_lfp_factor(data_seg[i_seg], segment_factors);
+                    auto begin = data_lfp.begin() + i_seg * n_electrodes;
+                    cmap->add_segment_lfp_factor(data_seg[i_seg], begin, begin + n_electrodes);
                 }
             }
             cmap->add_sec_map(smap);
