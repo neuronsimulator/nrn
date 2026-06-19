@@ -411,11 +411,22 @@ NRN_ENABLE_GPU:BOOL=OFF
   .. code-block:: shell
 
     cmake .. -G Ninja \
+      -DCMAKE_INSTALL_PREFIX=install \
+      -DCMAKE_BUILD_TYPE=RelWithDebInfo \
       -DNRN_ENABLE_CORENEURON=ON \
       -DNRN_ENABLE_GPU=ON \
       -DCORENRN_ENABLE_GPU=ON \
       -DCMAKE_C_COMPILER=nvc \
-      -DCMAKE_CXX_COMPILER=nvc++
+      -DCMAKE_CXX_COMPILER=nvc++ \
+      -DCMAKE_CUDA_COMPILER=nvcc \
+      -DCMAKE_CUDA_ARCHITECTURES=75
+
+  ``CMAKE_CUDA_ARCHITECTURES`` is **optional** but recommended: set it to your
+  GPU's compute capability (e.g. ``75`` for NVIDIA Turing / T1000). If omitted,
+  CoreNEURON defaults to ``70`` and ``80`` (Volta + Ampere), which usually
+  still runs on 7.x GPUs but compiles more code than a single-arch dev build
+  needs. See ``~/neuron/notes/gpu_workstation.md`` for a workstation-specific
+  recipe.
 
 NRN_GPU_BACKEND:STRING=OpenACC
 ------------------------------
