@@ -685,7 +685,8 @@ if(NRN_ENABLE_GPU)
   if(NOT NRN_GPU_BACKEND STREQUAL "OpenACC")
     message(
       FATAL_ERROR
-        "NRN_GPU_BACKEND=${NRN_GPU_BACKEND} is not supported. Only OpenACC is supported in Phase A-B.")
+        "NRN_GPU_BACKEND=${NRN_GPU_BACKEND} is not supported. Only OpenACC is supported in Phase A-B."
+    )
   endif()
   if(NOT NRN_ENABLE_CORENEURON)
     message(

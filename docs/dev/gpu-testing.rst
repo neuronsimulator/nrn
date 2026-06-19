@@ -84,6 +84,15 @@ GPU-related CMake options:
 
 See :ref:`cmake-nrn-enable-gpu-option` and :ref:`cmake-coreneuron-enable-gpu-option` in the CMake options documentation.
 
+Ringtest GPU ctest note
+***********************
+The ``external_ringtest::coreneuron_gpu_mpi`` test historically failed on some NVHPC builds with
+``pgcudafat*.o: cannot open shared object file`` when launching NEURON ``special`` with ``-gpu``
+under MPI. The ctest harness now runs the GPU MPI ringtest via ``special-core`` (dump model with
+``special``, simulate with ``special-core --gpu``), matching the offline ringtest pattern.
+GPU tests also use a per-test ``TMPDIR`` under the build tree to avoid transient NVHPC loader
+issues.
+
 Running tests manually
 **********************
 It is sometimes convenient to run basic tests outside the CTest

@@ -441,6 +441,30 @@ function(create_nrnmech)
                                                                    "${EXECUTABLE_OUTPUT_DIR}")
     endif()
 
+    # Mirror CoreNEURON GPU link treatment on NEURON libnrnmech/special so dynamically loaded
+    # OpenACC mechanisms work when special is launched with -coreneuron -gpu (see NVIDIA forum
+    # thread on loading OpenACC shared libraries from NVHPC-linked executables).
+    if(CMAKE_CUDA_COMPILER AND CORENRN_ENABLE_GPU)
+      if(NOT CUDAToolkit_FOUND)
+        find_package(CUDAToolkit 9.0 REQUIRED)
+      endif()
+      if(NOT OpenACC_FOUND)
+        find_package(OpenACC REQUIRED)
+      endif()
+      if("${LIBRARY_TYPE}" STREQUAL "STATIC")
+        target_link_libraries(${TARGET_LIBRARY_NAME} PUBLIC CUDA::cudart_static
+                                                            OpenACC::OpenACC_CXX)
+      elseif("${LIBRARY_TYPE}" STREQUAL "SHARED")
+        target_link_libraries(${TARGET_LIBRARY_NAME} PUBLIC CUDA::cudart OpenACC::OpenACC_CXX)
+      else()
+        message(FATAL_ERROR "Unsupported library type for CUDA: ${LIBRARY_TYPE}")
+      endif()
+      target_link_options(${TARGET_LIBRARY_NAME} PUBLIC "-cuda")
+      if(NRN_MECH_SPECIAL)
+        target_link_options(${TARGET_EXECUTABLE_NAME} PUBLIC "-cuda")
+      endif()
+    endif()
+
   endif()
 
   # Convert mod files for use with coreNEURON

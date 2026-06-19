@@ -343,6 +343,13 @@ function(nrn_add_test)
   if(DEFINED NRN_ADD_TEST_SIM_DIRECTORY)
     set(sim_directory "${NRN_ADD_TEST_SIM_DIRECTORY}")
   endif()
+  # NVHPC may leave transient fat-object files in $TMPDIR when special runs with -gpu under MPI. Use
+  # a per-test TMPDIR under the build tree (see external_ringtest GPU ctest notes).
+  if("gpu" IN_LIST NRN_ADD_TEST_REQUIRES AND CORENRN_ENABLE_GPU)
+    set(gpu_tmpdir "${PROJECT_BINARY_DIR}/test/tmp/${NRN_ADD_TEST_GROUP}/${NRN_ADD_TEST_NAME}")
+    file(MAKE_DIRECTORY "${gpu_tmpdir}")
+    list(APPEND extra_environment "TMPDIR=${gpu_tmpdir}")
+  endif()
   # Finally a working directory for this specific test within the group
   set(working_directory "${PROJECT_BINARY_DIR}/test/${NRN_ADD_TEST_GROUP}/${NRN_ADD_TEST_NAME}")
   file(MAKE_DIRECTORY "${working_directory}")
