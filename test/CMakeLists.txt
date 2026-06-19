@@ -81,6 +81,25 @@ if(TARGET nrn-benchmarks AND NRN_ENABLE_PERFORMANCE_TESTS)
     COMMAND $<TARGET_FILE:nrn-benchmarks> --processors=16)
 endif()
 
+# Compile-only guard: cellorder.cpp with OpenACC before PR 7 enables GPU solve dispatch.
+if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
+  add_library(cellorder_openacc_smoke OBJECT
+              ${PROJECT_SOURCE_DIR}/src/coreneuron/permute/cellorder.cpp)
+  separate_arguments(_cellorder_openacc_flags UNIX_COMMAND "${CORENRN_ACC_COMP_FLAGS}")
+  target_compile_options(cellorder_openacc_smoke PRIVATE ${_cellorder_openacc_flags})
+  target_compile_definitions(cellorder_openacc_smoke PRIVATE CORENEURON_ENABLE_GPU
+                                                                   NRN_ENABLE_GPU)
+  target_include_directories(cellorder_openacc_smoke PRIVATE ${NRN_INCLUDE_DIRS}
+                           ${CMAKE_BINARY_DIR}/generated)
+  target_include_directories(cellorder_openacc_smoke SYSTEM PRIVATE
+                           ${PROJECT_SOURCE_DIR}/external/fmt/include)
+  nrn_add_test(
+    GROUP unit_tests
+    NAME cellorder_openacc_smoke
+    REQUIRES gpu
+    COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target cellorder_openacc_smoke)
+endif()
+
 # =============================================================================
 # Add ringtest
 # =============================================================================

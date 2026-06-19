@@ -709,7 +709,7 @@ void solve_interleaved2(int ith) {
 
     int ncore = nwarp * warpsize;
 
-#ifdef _OPENACC
+#if defined(_OPENACC) && CORENRN_BUILD
     if (corenrn_param.gpu && corenrn_param.cuda_interface) {
         auto* d_nt = static_cast<NrnThread*>(acc_deviceptr(nt));
         auto* d_info = static_cast<InterleaveInfo*>(acc_deviceptr(interleave_info + ith));
@@ -729,8 +729,9 @@ void solve_interleaved2(int ith) {
         if (nt->compute_gpu) {
 #else
     // bad clang-format
-    if (0) {  // nt->compute_gpu) {
+    if (0) {  // nt->compute_gpu) — enabled in PR 7 after NrnThread GPU fields (PR 5)
 #endif
+#if CORENRN_BUILD
             /* If we compare this loop with the one from cellorder.cu (CUDA version), we will
              * understand that the parallelism here is exposed in steps, while in the CUDA version
              * all the parallelism is exposed from the very beginning of the loop. In more details,
@@ -761,13 +762,19 @@ void solve_interleaved2(int ith) {
                     nt, icore, ncycles, strides, stridedispl, rootbegin, nodebegin);
             }
             nrn_pragma_acc(wait(nt->stream_id))
+#else
+            for (int icore = 0; icore < ncore; icore += warpsize) {
+                solve_interleaved2_loop_body(
+                    nt, icore, ncycles, strides, stridedispl, rootbegin, nodebegin);
+            }
+#endif
         } else {
             for (int icore = 0; icore < ncore; icore += warpsize) {
                 solve_interleaved2_loop_body(
                     nt, icore, ncycles, strides, stridedispl, rootbegin, nodebegin);
             }
         }
-#ifdef _OPENACC
+#if defined(_OPENACC) && CORENRN_BUILD
     }
 #endif
 }
@@ -792,6 +799,7 @@ void solve_interleaved1(int ith) {
     int* lastnode = ii.lastnode;
     int* cellsize = ii.cellsize;
 
+#if CORENRN_BUILD
     // OL211123: can we preserve the error checking behaviour of OpenACC's
     // present clause with OpenMP? It is a bug if these data are not present,
     // so diagnostics are helpful...
@@ -808,6 +816,13 @@ void solve_interleaved1(int ith) {
         bksub_interleaved(nt, icell, icellsize, nstride, stride, firstnode);
     }
     nrn_pragma_acc(wait(nt->stream_id))
+#else
+    for (int icell = 0; icell < ncell; ++icell) {
+        int icellsize = cellsize[icell];
+        triang_interleaved(nt, icell, icellsize, nstride, stride, lastnode);
+        bksub_interleaved(nt, icell, icellsize, nstride, stride, firstnode);
+    }
+#endif
 }
 
 void solve_interleaved(int ith) {

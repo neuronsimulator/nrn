@@ -444,7 +444,7 @@ function(create_nrnmech)
     # Mirror CoreNEURON GPU link treatment on NEURON libnrnmech/special so dynamically loaded
     # OpenACC mechanisms work when special is launched with -coreneuron -gpu (see NVIDIA forum
     # thread on loading OpenACC shared libraries from NVHPC-linked executables).
-    if(CMAKE_CUDA_COMPILER AND CORENRN_ENABLE_GPU)
+    if(CMAKE_CUDA_COMPILER AND (CORENRN_ENABLE_GPU OR NRN_ENABLE_GPU))
       if(NOT CUDAToolkit_FOUND)
         find_package(CUDAToolkit 9.0 REQUIRED)
       endif()
@@ -459,9 +459,20 @@ function(create_nrnmech)
       else()
         message(FATAL_ERROR "Unsupported library type for CUDA: ${LIBRARY_TYPE}")
       endif()
-      target_link_options(${TARGET_LIBRARY_NAME} PUBLIC "-cuda")
+      # Full OpenACC link line (not only -cuda) so special can load libnrniv OpenACC fat objects
+      # after GPU adoption step 3 propagates -acc compile to cellorder in libnrniv.
+      set(_nrn_mech_gpu_link_flags "-cuda")
+      if(CORENRN_NEURON_LINK_FLAGS)
+        set(_nrn_mech_gpu_link_flags ${CORENRN_NEURON_LINK_FLAGS})
+      else()
+        get_property(_nrn_acc_comp_flags GLOBAL PROPERTY CORENRN_ACC_COMP_FLAGS)
+        if(_nrn_acc_comp_flags)
+          separate_arguments(_nrn_mech_gpu_link_flags UNIX_COMMAND "${_nrn_acc_comp_flags}")
+        endif()
+      endif()
+      target_link_options(${TARGET_LIBRARY_NAME} PUBLIC ${_nrn_mech_gpu_link_flags})
       if(NRN_MECH_SPECIAL)
-        target_link_options(${TARGET_EXECUTABLE_NAME} PUBLIC "-cuda")
+        target_link_options(${TARGET_EXECUTABLE_NAME} PUBLIC ${_nrn_mech_gpu_link_flags})
       endif()
     endif()
 
