@@ -1,6 +1,7 @@
 #include "neuron/gpu/config.hpp"
 #include "neuron/gpu/device_state.hpp"
 #include "neuron/gpu/fadvance_gpu.hpp"
+#include "neuron/gpu/net_events.hpp"
 
 #include "multicore.h"
 #include "neuron/cache/model_data.hpp"
@@ -56,6 +57,7 @@ TEST_CASE("fixed_step_thread records native dispatch", "[gpu][fadvance]") {
     DeferDeleteScope defer_delete{};
     detail::reset_config_for_testing();
     detail::reset_fixed_step_dispatch_for_testing();
+    neuron::gpu::detail::reset_net_events_for_testing();
     detail::set_enable_for_testing(true);
     detail::set_backend_for_testing(Backend::Native);
 
@@ -73,6 +75,7 @@ TEST_CASE("fixed_step_thread records native dispatch", "[gpu][fadvance]") {
     device_token dev{sorted};
     fixed_step_thread(sorted, dev, nt);
     REQUIRE(detail::fixed_step_dispatch_count_for_testing() == 1);
+    REQUIRE(neuron::gpu::detail::deliver_net_events_count_for_testing() == 1);
     REQUIRE(nt.compute_gpu == 0);
 #endif
 }

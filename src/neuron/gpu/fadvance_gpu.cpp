@@ -2,6 +2,7 @@
 
 #include "neuron/gpu/config.hpp"
 #include "neuron/gpu/device_state.hpp"
+#include "neuron/gpu/net_events.hpp"
 #include "neuron/model_data.hpp"
 
 #include "coreneuron/permute/cellorder.hpp"
@@ -41,7 +42,7 @@ void fixed_step_thread(model_sorted_token const& cache_token,
 
     {
         nrn::Instrumentor::phase p("deliver-events");
-        deliver_net_events(nth);
+        deliver_net_events_host(nth);
     }
 
     nrn_random_play();

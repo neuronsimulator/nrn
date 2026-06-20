@@ -9,6 +9,7 @@ void (*nrnthread_v_transfer_)(NrnThread*) = +[](NrnThread*) {};
 extern "C" void nrn_random_play() {}
 
 void deliver_net_events(NrnThread*) {}
+void nrn_deliver_events(NrnThread*) {}
 void fixed_play_continuous(NrnThread*) {}
 void setup_tree_matrix(neuron::model_sorted_token const&, NrnThread&) {}
 void nrn_solve(NrnThread*) {}

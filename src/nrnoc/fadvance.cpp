@@ -21,6 +21,7 @@
 #include "neuron/gpu/config.hpp"
 #include "neuron/gpu/device_state.hpp"
 #include "neuron/gpu/fadvance_gpu.hpp"
+#include "neuron/gpu/net_events.hpp"
 #endif
 
 /*
@@ -427,6 +428,9 @@ void nrn_fixed_step_group(neuron::model_sorted_token const& cache_token, int n) 
         while (step_group_end < step_group_n) {
             /*printf("step_group_end=%d step_group_n=%d\n", step_group_end, step_group_n);*/
             nrn_multithread_job(cache_token, nrn_fixed_step_group_thread);
+#if defined(NRN_ENABLE_GPU)
+            neuron::gpu::spike_exchange_after_group(nrn_threads);
+#endif
             if (nrn_allthread_handle) {
                 (*nrn_allthread_handle)();
             }
