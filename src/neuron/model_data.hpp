@@ -5,8 +5,13 @@
 #include "neuron/container/node_data.hpp"
 #include "neuron/model_data_fwd.hpp"
 
+#if defined(NRN_ENABLE_GPU)
+#include "neuron/gpu/device_state.hpp"
+#endif
+
 #include <optional>
 #include <sstream>
+#include <utility>
 
 namespace neuron {
 /** @brief Top-level structure.
@@ -161,7 +166,30 @@ struct model_sorted_token {
     model_sorted_token(cache::Model& cache,
                        container::Node::storage::frozen_token_type node_data_token_)
         : node_data_token{std::move(node_data_token_)}
-        , m_cache{cache} {}
+        , m_cache{cache} {
+#if defined(NRN_ENABLE_GPU)
+        gpu::detail::on_sorted_token_created();
+#endif
+    }
+    model_sorted_token(model_sorted_token const& other)
+        : node_data_token{other.node_data_token}
+        , mech_data_tokens{other.mech_data_tokens}
+        , m_cache{other.m_cache} {
+#if defined(NRN_ENABLE_GPU)
+        gpu::detail::on_sorted_token_created();
+#endif
+    }
+    model_sorted_token(model_sorted_token&& other) noexcept
+        : node_data_token{std::move(other.node_data_token)}
+        , mech_data_tokens{std::move(other.mech_data_tokens)}
+        , m_cache{other.m_cache} {}
+    model_sorted_token& operator=(model_sorted_token const&) = delete;
+    model_sorted_token& operator=(model_sorted_token&&) = delete;
+    ~model_sorted_token() {
+#if defined(NRN_ENABLE_GPU)
+        gpu::detail::on_sorted_token_destroyed();
+#endif
+    }
     [[nodiscard]] cache::Model& cache() {
         return m_cache;
     }

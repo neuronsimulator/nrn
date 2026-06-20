@@ -479,9 +479,8 @@ if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
       ${PROJECT_SOURCE_DIR}/src/coreneuron/permute/cellorder2.cpp
       ${PROJECT_SOURCE_DIR}/src/coreneuron/utils/lpt.cpp)
   set_source_files_properties(
-    ${_nrn_openacc_sources}
-    PROPERTIES COMPILE_OPTIONS "${NRN_ACC_FLAGS}"
-               COMPILE_DEFINITIONS "CORENEURON_ENABLE_GPU;NRN_ENABLE_GPU")
+    ${_nrn_openacc_sources} PROPERTIES COMPILE_OPTIONS "${NRN_ACC_FLAGS}"
+                                       COMPILE_DEFINITIONS "CORENEURON_ENABLE_GPU;NRN_ENABLE_GPU")
 
   # OpenACC and explicit CUDA cannot share one .so (NVIDIA forum #210972); reuse coreneuron-cuda
   # (cellorder.cu launcher) rather than duplicating the CUDA target in libnrniv.
@@ -491,8 +490,14 @@ if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
     find_package(CUDAToolkit 9.0 QUIET)
   endif()
   if(CUDAToolkit_FOUND)
-    set_property(TARGET nrniv_lib APPEND PROPERTY BUILD_RPATH "${CUDAToolkit_LIBRARY_DIR}")
-    set_property(TARGET nrniv_lib APPEND PROPERTY INSTALL_RPATH "${CUDAToolkit_LIBRARY_DIR}")
+    set_property(
+      TARGET nrniv_lib
+      APPEND
+      PROPERTY BUILD_RPATH "${CUDAToolkit_LIBRARY_DIR}")
+    set_property(
+      TARGET nrniv_lib
+      APPEND
+      PROPERTY INSTALL_RPATH "${CUDAToolkit_LIBRARY_DIR}")
   endif()
 endif()
 
@@ -622,7 +627,6 @@ install(
   TARGETS nrniv_lib
   DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR}
   EXPORT NeuronTargets)
-
 
 if(LIBIVX11DYNAM_NAME)
   install(FILES ${PROJECT_BINARY_DIR}/lib/${LIBIVX11DYNAM_NAME}

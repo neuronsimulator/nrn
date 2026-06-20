@@ -4,12 +4,19 @@
 #include "neuron/model_data.hpp"
 #include "section.h"
 
+#if defined(NRN_ENABLE_GPU)
+#include "neuron/gpu/device_state.hpp"
+#endif
+
 #include <cstddef>
 #include <optional>
 
 namespace {
 void invalidate_cache() {
     neuron::cache::model.reset();
+#if defined(NRN_ENABLE_GPU)
+    neuron::gpu::invalidate_device_state();
+#endif
 }
 }  // namespace
 namespace neuron {

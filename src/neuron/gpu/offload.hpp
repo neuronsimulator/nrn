@@ -51,10 +51,10 @@ void target_deviceptr_debug(std::string_view file,
                             void const* h_ptr,
                             void* d_ptr);
 void target_is_present_debug(std::string_view file,
-                               int line,
-                               std::type_info const& typeid_T,
-                               void const* h_ptr,
-                               void* d_ptr);
+                             int line,
+                             std::type_info const& typeid_T,
+                             void const* h_ptr,
+                             void* d_ptr);
 void target_memcpy_to_device_debug(std::string_view file,
                                    int line,
                                    std::size_t sizeof_T,
@@ -88,8 +88,9 @@ T* target_deviceptr_or_present(std::string_view file,
     d_ptr = static_cast<T*>(acc_deviceptr(const_cast<T*>(h_ptr)));
 #elif defined(NRN_ENABLE_GPU) && defined(NRN_PREFER_OPENMP_OFFLOAD) && defined(_OPENMP)
     if (must_be_present_or_null || omp_target_is_present(h_ptr, omp_get_default_device())) {
-        nrn_gpu_pragma_omp(target data use_device_ptr(h_ptr))
-        { d_ptr = const_cast<T*>(h_ptr); }
+        nrn_gpu_pragma_omp(target data use_device_ptr(h_ptr)) {
+            d_ptr = const_cast<T*>(h_ptr);
+        }
     }
 #else
     if (must_be_present_or_null && h_ptr) {
@@ -116,9 +117,11 @@ T* target_copyin(std::string_view file, int line, const T* h_ptr, std::size_t le
 #if defined(NRN_ENABLE_GPU) && !defined(NRN_PREFER_OPENMP_OFFLOAD) && defined(_OPENACC)
     d_ptr = static_cast<T*>(acc_copyin(const_cast<T*>(h_ptr), len * sizeof(T)));
 #elif defined(NRN_ENABLE_GPU) && defined(NRN_PREFER_OPENMP_OFFLOAD) && defined(_OPENMP)
-    nrn_gpu_pragma_omp(target enter data map(to : h_ptr[:len]))
-    nrn_gpu_pragma_omp(target data use_device_ptr(h_ptr))
-    { d_ptr = const_cast<T*>(h_ptr); }
+    nrn_gpu_pragma_omp(target enter data map(to
+                                             : h_ptr[:len]))
+        nrn_gpu_pragma_omp(target data use_device_ptr(h_ptr)) {
+        d_ptr = const_cast<T*>(h_ptr);
+    }
 #else
     throw std::runtime_error(
         "neuron::gpu::target_copyin() not implemented without OpenACC/OpenMP and NRN_ENABLE_GPU");

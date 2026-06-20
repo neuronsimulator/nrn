@@ -83,22 +83,46 @@ endif()
 
 if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
   separate_arguments(_test_gpu_offload_flags UNIX_COMMAND "${CORENRN_ACC_COMP_FLAGS}")
-  add_executable(
-    testneuron_gpu_offload unit_tests/gpu/offload_main.cpp unit_tests/gpu/offload.cpp)
+  add_executable(testneuron_gpu_offload unit_tests/gpu/offload_main.cpp unit_tests/gpu/offload.cpp)
   cpp_cc_configure_sanitizers(TARGET testneuron_gpu_offload)
   target_link_libraries(testneuron_gpu_offload PRIVATE Catch2::Catch2 neuron_gpu)
   target_compile_definitions(testneuron_gpu_offload PRIVATE NRN_ENABLE_GPU)
   target_compile_options(testneuron_gpu_offload PRIVATE ${_test_gpu_offload_flags})
   target_link_options(testneuron_gpu_offload PUBLIC ${_test_gpu_offload_flags})
   if(CUDAToolkit_FOUND)
-    set_property(TARGET testneuron_gpu_offload APPEND PROPERTY BUILD_RPATH
-                                                         "${CUDAToolkit_LIBRARY_DIR}")
+    set_property(
+      TARGET testneuron_gpu_offload
+      APPEND
+      PROPERTY BUILD_RPATH "${CUDAToolkit_LIBRARY_DIR}")
   endif()
   nrn_add_test(
     GROUP unit_tests
     NAME gpu_offload
     REQUIRES gpu
     COMMAND $<TARGET_FILE:testneuron_gpu_offload> "[gpu][offload]")
+
+  add_executable(testneuron_gpu_device_state unit_tests/gpu/offload_main.cpp
+                                             unit_tests/gpu/device_state.cpp)
+  cpp_cc_configure_sanitizers(TARGET testneuron_gpu_device_state)
+  target_include_directories(
+    testneuron_gpu_device_state
+    PRIVATE ${PROJECT_SOURCE_DIR}/external/fmt/include ${PROJECT_SOURCE_DIR}/external/backward
+            ${CMAKE_BINARY_DIR}/src/nrnoc)
+  target_link_libraries(testneuron_gpu_device_state PRIVATE Catch2::Catch2 neuron_gpu)
+  target_compile_definitions(testneuron_gpu_device_state PRIVATE NRN_ENABLE_GPU)
+  target_compile_options(testneuron_gpu_device_state PRIVATE ${_test_gpu_offload_flags})
+  target_link_options(testneuron_gpu_device_state PUBLIC ${_test_gpu_offload_flags})
+  if(CUDAToolkit_FOUND)
+    set_property(
+      TARGET testneuron_gpu_device_state
+      APPEND
+      PROPERTY BUILD_RPATH "${CUDAToolkit_LIBRARY_DIR}")
+  endif()
+  nrn_add_test(
+    GROUP unit_tests
+    NAME gpu_device_state
+    REQUIRES gpu
+    COMMAND $<TARGET_FILE:testneuron_gpu_device_state> "[gpu][device_state]")
 endif()
 
 # Compile-only guard: cellorder.cpp with OpenACC before PR 7 enables GPU solve dispatch.
@@ -107,12 +131,11 @@ if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
               ${PROJECT_SOURCE_DIR}/src/coreneuron/permute/cellorder.cpp)
   separate_arguments(_cellorder_openacc_flags UNIX_COMMAND "${CORENRN_ACC_COMP_FLAGS}")
   target_compile_options(cellorder_openacc_smoke PRIVATE ${_cellorder_openacc_flags})
-  target_compile_definitions(cellorder_openacc_smoke PRIVATE CORENEURON_ENABLE_GPU
-                                                                   NRN_ENABLE_GPU)
+  target_compile_definitions(cellorder_openacc_smoke PRIVATE CORENEURON_ENABLE_GPU NRN_ENABLE_GPU)
   target_include_directories(cellorder_openacc_smoke PRIVATE ${NRN_INCLUDE_DIRS}
-                           ${CMAKE_BINARY_DIR}/generated)
-  target_include_directories(cellorder_openacc_smoke SYSTEM PRIVATE
-                           ${PROJECT_SOURCE_DIR}/external/fmt/include)
+                                                             ${CMAKE_BINARY_DIR}/generated)
+  target_include_directories(cellorder_openacc_smoke SYSTEM
+                             PRIVATE ${PROJECT_SOURCE_DIR}/external/fmt/include)
   nrn_add_test(
     GROUP unit_tests
     NAME cellorder_openacc_smoke

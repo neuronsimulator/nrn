@@ -763,10 +763,10 @@ void solve_interleaved2(int ith) {
             }
             nrn_pragma_acc(wait(nt->stream_id))
 #else
-            for (int icore = 0; icore < ncore; icore += warpsize) {
-                solve_interleaved2_loop_body(
-                    nt, icore, ncycles, strides, stridedispl, rootbegin, nodebegin);
-            }
+        for (int icore = 0; icore < ncore; icore += warpsize) {
+            solve_interleaved2_loop_body(
+                nt, icore, ncycles, strides, stridedispl, rootbegin, nodebegin);
+        }
 #endif
         } else {
             for (int icore = 0; icore < ncore; icore += warpsize) {
