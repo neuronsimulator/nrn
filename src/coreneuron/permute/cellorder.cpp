@@ -119,6 +119,12 @@ void destroy_interleave_info() {
     }
 }
 
+#if !CORENRN_BUILD && defined(NRN_ENABLE_GPU)
+int interleave_ncell_for_thread(int ith) {
+    return nrn_threads[ith].ncell;
+}
+#endif
+
 // more precise visualization of the warp quality
 // can be called after admin2
 static void print_quality2(int iwarp, InterleaveInfo& ii, int* p) {

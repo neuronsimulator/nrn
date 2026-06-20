@@ -10,6 +10,10 @@
 
 #include <vector>
 
+#if defined(NRN_ENABLE_GPU) && defined(_OPENACC)
+#include <openacc.h>
+#endif
+
 using namespace neuron::gpu;
 
 // Standalone GPU tests do not link container.cpp.
@@ -52,10 +56,16 @@ TEST_CASE("model_sorted_token registers GPU layout refcount", "[gpu][device_stat
 #endif
 }
 
-TEST_CASE("device_token upload stub and teardown", "[gpu][device_state]") {
-#if !defined(NRN_ENABLE_GPU)
-    SKIP("NRN_ENABLE_GPU required");
+TEST_CASE("device_token upload and teardown", "[gpu][device_state]") {
+#if !defined(NRN_ENABLE_GPU) || !defined(_OPENACC)
+    SKIP("NRN_ENABLE_GPU with OpenACC required");
 #else
+    if (acc_get_num_devices(acc_device_nvidia) < 1) {
+        SKIP("No NVIDIA GPU available");
+    }
+    acc_init(acc_device_nvidia);
+    acc_set_device_num(0, acc_device_nvidia);
+
     DeferDeleteScope defer_delete{};
     neuron::cache::Model cache{};
     neuron::container::Node::storage nodes{};
@@ -76,9 +86,15 @@ TEST_CASE("device_token upload stub and teardown", "[gpu][device_state]") {
 }
 
 TEST_CASE("ensure_on_device shares upload across calls", "[gpu][device_state]") {
-#if !defined(NRN_ENABLE_GPU)
-    SKIP("NRN_ENABLE_GPU required");
+#if !defined(NRN_ENABLE_GPU) || !defined(_OPENACC)
+    SKIP("NRN_ENABLE_GPU with OpenACC required");
 #else
+    if (acc_get_num_devices(acc_device_nvidia) < 1) {
+        SKIP("No NVIDIA GPU available");
+    }
+    acc_init(acc_device_nvidia);
+    acc_set_device_num(0, acc_device_nvidia);
+
     DeferDeleteScope defer_delete{};
     neuron::cache::Model cache{};
     neuron::container::Node::storage nodes{};
@@ -92,9 +108,15 @@ TEST_CASE("ensure_on_device shares upload across calls", "[gpu][device_state]") 
 }
 
 TEST_CASE("invalidate_device_state clears GPU mirrors", "[gpu][device_state]") {
-#if !defined(NRN_ENABLE_GPU)
-    SKIP("NRN_ENABLE_GPU required");
+#if !defined(NRN_ENABLE_GPU) || !defined(_OPENACC)
+    SKIP("NRN_ENABLE_GPU with OpenACC required");
 #else
+    if (acc_get_num_devices(acc_device_nvidia) < 1) {
+        SKIP("No NVIDIA GPU available");
+    }
+    acc_init(acc_device_nvidia);
+    acc_set_device_num(0, acc_device_nvidia);
+
     DeferDeleteScope defer_delete{};
     neuron::cache::Model cache{};
     neuron::container::Node::storage nodes{};

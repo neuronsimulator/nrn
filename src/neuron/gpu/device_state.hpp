@@ -27,10 +27,10 @@ class device_token {
 
     [[nodiscard]] bool is_on_device() const;
 
-    /** @brief Post-psolve selective download (stub in PR 5). */
+    /** @brief Post-psolve selective download (stub until PR 10). */
     void update_host();
 
-    /** @brief Pre-step host→device sync for VecPlay/HOC writes (stub in PR 5). */
+    /** @brief Pre-step host→device sync for VecPlay/HOC writes (stub until PR 10). */
     void update_device();
 
   private:
@@ -39,7 +39,7 @@ class device_token {
 };
 
 /**
- * @brief Upload sorted SOA vectors to the device on first GPU step (stub in PR 5).
+ * @brief Upload sorted SOA vectors to the device on first GPU step.
  *
  * Returns a device_token referencing the shared upload state for the current
  * sorted layout. Safe to call repeatedly; upload happens at most once per layout.
@@ -58,6 +58,12 @@ void on_sorted_token_destroyed();
 
 /** @brief Test hook: whether the active layout has been uploaded. */
 [[nodiscard]] bool is_on_device_for_testing();
+
+/** @brief Test hook: number of device mirrors recorded for the active layout. */
+[[nodiscard]] std::size_t mirror_count_for_testing();
+
+/** @brief Test hook: whether a host pointer was copyin'd for the active layout. */
+[[nodiscard]] bool is_present_for_testing(void const* host_ptr);
 }  // namespace detail
 
 }  // namespace neuron::gpu

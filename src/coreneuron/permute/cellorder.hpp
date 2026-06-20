@@ -38,6 +38,11 @@ std::vector<int> interleave_order(int ith, int ncell, int nnode, int* parent);
 void create_interleave_info();
 void destroy_interleave_info();
 
+#if !CORENRN_BUILD && defined(NRN_ENABLE_GPU)
+/** Number of cells on NrnThread @p ith (for InterleaveInfo permute-1 upload). */
+int interleave_ncell_for_thread(int ith);
+#endif
+
 #if CORENRN_BUILD
 /**
  *

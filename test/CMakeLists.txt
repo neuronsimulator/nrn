@@ -101,14 +101,16 @@ if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
     REQUIRES gpu
     COMMAND $<TARGET_FILE:testneuron_gpu_offload> "[gpu][offload]")
 
-  add_executable(testneuron_gpu_device_state unit_tests/gpu/offload_main.cpp
-                                             unit_tests/gpu/device_state.cpp)
+  add_executable(
+    testneuron_gpu_device_state unit_tests/gpu/offload_main.cpp unit_tests/gpu/device_state.cpp
+                                unit_tests/gpu/upload_link_stubs.cpp)
   cpp_cc_configure_sanitizers(TARGET testneuron_gpu_device_state)
   target_include_directories(
     testneuron_gpu_device_state
     PRIVATE ${PROJECT_SOURCE_DIR}/external/fmt/include ${PROJECT_SOURCE_DIR}/external/backward
             ${CMAKE_BINARY_DIR}/src/nrnoc)
-  target_link_libraries(testneuron_gpu_device_state PRIVATE Catch2::Catch2 neuron_gpu)
+  target_link_libraries(testneuron_gpu_device_state PRIVATE Catch2::Catch2 neuron_gpu
+                                                            neuron_gpu_upload)
   target_compile_definitions(testneuron_gpu_device_state PRIVATE NRN_ENABLE_GPU)
   target_compile_options(testneuron_gpu_device_state PRIVATE ${_test_gpu_offload_flags})
   target_link_options(testneuron_gpu_device_state PUBLIC ${_test_gpu_offload_flags})
@@ -133,6 +135,25 @@ if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
     NAME gpu_config
     REQUIRES gpu
     COMMAND $<TARGET_FILE:testneuron_gpu_config> "[gpu][config]")
+
+  add_executable(
+    testneuron_gpu_upload
+    unit_tests/gpu/offload_main.cpp unit_tests/gpu/upload.cpp unit_tests/gpu/upload_link_stubs.cpp
+    unit_tests/gpu/interleave_info_stub.cpp)
+  cpp_cc_configure_sanitizers(TARGET testneuron_gpu_upload)
+  target_include_directories(
+    testneuron_gpu_upload PRIVATE ${PROJECT_SOURCE_DIR}/external/fmt/include
+                                  ${CMAKE_BINARY_DIR}/src/nrnoc)
+  target_link_libraries(testneuron_gpu_upload PRIVATE Catch2::Catch2 neuron_gpu neuron_gpu_upload
+                                                      fmt::fmt)
+  target_compile_definitions(testneuron_gpu_upload PRIVATE NRN_ENABLE_GPU)
+  target_compile_options(testneuron_gpu_upload PRIVATE ${_test_gpu_offload_flags})
+  target_link_options(testneuron_gpu_upload PUBLIC ${_test_gpu_offload_flags})
+  nrn_add_test(
+    GROUP unit_tests
+    NAME gpu_upload
+    REQUIRES gpu
+    COMMAND $<TARGET_FILE:testneuron_gpu_upload> "[gpu][upload]")
 endif()
 
 # Compile-only guard: cellorder.cpp OpenACC + NRN_ENABLE_GPU (solve_interleaved GPU dispatch).

@@ -1,5 +1,7 @@
 #include "neuron/gpu/device_state.hpp"
 
+#include "neuron/gpu/upload.hpp"
+
 #include <atomic>
 #include <mutex>
 #include <stdexcept>
@@ -12,8 +14,10 @@ struct ModelDeviceState {
     std::atomic<std::size_t> sorted_token_refs{0};
     std::atomic<std::size_t> device_token_refs{0};
     bool on_device{false};
+    UploadState upload{};
 
-    void upload_stub(model_sorted_token const&) {
+    void upload_model(model_sorted_token const& sorted) {
+        upload_sorted_model(sorted, upload);
         on_device = true;
     }
 
@@ -22,6 +26,7 @@ struct ModelDeviceState {
     void host_to_device_stub() {}
 
     void teardown() {
+        upload.teardown();
         on_device = false;
     }
 };
@@ -118,6 +123,16 @@ class DeviceStateRegistry {
         return active_ && active_->on_device;
     }
 
+    std::size_t upload_mirror_count() const {
+        std::lock_guard lock{mut_};
+        return active_ ? active_->upload.mirror_count() : 0;
+    }
+
+    bool upload_is_present(void const* host_ptr) const {
+        std::lock_guard lock{mut_};
+        return active_ && active_->upload.is_present(host_ptr);
+    }
+
   private:
     void reset_active_locked() {
         active_.reset();
@@ -151,7 +166,7 @@ device_token::device_token(model_sorted_token const& sorted)
     m_state->model_state = std::move(model_state);
     registry().on_device_token_created(m_state->model_state);
     if (!m_state->model_state->on_device) {
-        m_state->model_state->upload_stub(sorted);
+        m_state->model_state->upload_model(sorted);
     }
 }
 
@@ -211,6 +226,14 @@ std::size_t sorted_token_count_for_testing() {
 
 bool is_on_device_for_testing() {
     return registry().is_on_device();
+}
+
+std::size_t mirror_count_for_testing() {
+    return registry().upload_mirror_count();
+}
+
+bool is_present_for_testing(void const* host_ptr) {
+    return registry().upload_is_present(host_ptr);
 }
 
 }  // namespace detail

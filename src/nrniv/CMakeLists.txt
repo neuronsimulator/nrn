@@ -484,6 +484,7 @@ if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
 
   # OpenACC and explicit CUDA cannot share one .so (NVIDIA forum #210972); reuse coreneuron-cuda
   # (cellorder.cu launcher) rather than duplicating the CUDA target in libnrniv.
+  target_link_libraries(nrniv_lib PRIVATE neuron_gpu_upload)
   target_link_libraries(nrniv_lib PUBLIC coreneuron-cuda)
   target_link_options(nrniv_lib PUBLIC ${NRN_ACC_FLAGS})
   if(NOT CUDAToolkit_FOUND)
