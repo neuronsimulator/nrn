@@ -98,7 +98,7 @@ API reference
         list of mod files to convert.
 
     ``NMODL_NEURON_EXTRA_ARGS``
-        (*optional*, default: None) list of additional arguments to pass to NMODL for NEURON codegen.
+        (*optional*, default: ``passes --inline host --c`` if CUDA disabled, ``passes --inline host --c acc --oacc`` if ``NRN_ENABLE_GPU=ON`` and CUDA enabled) list of additional arguments to pass to NMODL for NEURON codegen.
 
     ``NMODL_CORENEURON_EXTRA_ARGS``
         (*optional*, default: ``passes --inline host --c`` if CUDA disabled, ``passes --inline host --c acc --oacc`` if CUDA enabled) list of additional arguments to pass to NMODL for coreNEURON codegen.
@@ -294,6 +294,14 @@ function(create_nrnmech)
         "Hint: if you want to use NMODL for codegen for NEURON, add the NMODL_NEURON_CODEGEN option when calling this function."
     )
     set(NRN_MECH_NMODL_NEURON_EXTRA_ARGS)
+  endif()
+
+  # set default flags for NMODL for NEURON mechanism codegen.
+  if(NOT NRN_MECH_NMODL_NEURON_EXTRA_ARGS)
+    set(NRN_MECH_NMODL_NEURON_EXTRA_ARGS passes --inline host --c)
+    if(NRN_ENABLE_GPU AND CMAKE_CUDA_COMPILER)
+      list(APPEND NRN_MECH_NMODL_NEURON_EXTRA_ARGS acc --oacc)
+    endif()
   endif()
 
   list(JOIN NRN_MECH_NMODL_NEURON_EXTRA_ARGS "" NMODL_NEURON_EXTRA_ARGS_SPACES)

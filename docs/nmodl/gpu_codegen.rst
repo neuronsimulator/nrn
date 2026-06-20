@@ -55,9 +55,10 @@ that affect porting legacy MOD files:
 | SOLVE methods    | Full legacy set            | Subset; check solver compatibility|
 +------------------+----------------------------+----------------------------------+
 
-OpenACC emission for NEURON mechanisms (``acc --oacc`` in
-``NMODL_NEURON_EXTRA_ARGS``) is added in a follow-on PR; until then
-``create_nrnmech`` defaults to NMODL so GPU CI can exercise the NMODL path
-incrementally (ringtest mod set compiles with NMODL).
+When ``NRN_ENABLE_GPU=ON`` and a CUDA compiler is available,
+``create_nrnmech`` appends ``acc --oacc`` to ``NMODL_NEURON_EXTRA_ARGS`` so
+NMODL emits OpenACC via ``CodegenNeuronAccVisitor`` (``nrn_pragma_acc`` on
+mechanism entrypoints). Review ``hh.mod`` ACC output before enabling native GPU
+psolve (PR 12).
 
 See also :doc:`transpiler/readme` and :doc:`language/nmodl_neuron_extension`.

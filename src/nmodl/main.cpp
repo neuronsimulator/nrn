@@ -15,6 +15,7 @@
 #include "codegen/codegen_acc_visitor.hpp"
 #include "codegen/codegen_compatibility_visitor.hpp"
 #include "codegen/codegen_coreneuron_cpp_visitor.hpp"
+#include "codegen/codegen_neuron_acc_visitor.hpp"
 #include "codegen/codegen_neuron_cpp_visitor.hpp"
 #include "codegen/codegen_transform_visitor.hpp"
 #include "config/config.h"
@@ -662,6 +663,17 @@ int run_nmodl(int argc, const char* argv[]) {
                 visitor.visit_program(*ast);
             }
 
+            else if (neuron_code && oacc_backend) {
+                logger->info("Running OpenACC backend code generator for NEURON");
+                CodegenNeuronAccVisitor visitor(modfile,
+                                                output_stream,
+                                                data_type,
+                                                optimize_ionvar_copies_codegen,
+                                                codegen_cvode,
+                                                utils::make_blame(blame_line, blame_level));
+                visitor.visit_program(*ast);
+            }
+
             else if (coreneuron_code && !neuron_code && cpp_backend) {
                 logger->info("Running C++ backend code generator for CoreNEURON");
                 CodegenCoreneuronCppVisitor visitor(modfile,
@@ -672,7 +684,7 @@ int run_nmodl(int argc, const char* argv[]) {
                 visitor.visit_program(*ast);
             }
 
-            else if (neuron_code && cpp_backend) {
+            else if (neuron_code && cpp_backend && !oacc_backend) {
                 logger->info("Running C++ backend code generator for NEURON");
                 CodegenNeuronCppVisitor visitor(modfile,
                                                 output_stream,
@@ -686,7 +698,7 @@ int run_nmodl(int argc, const char* argv[]) {
             else {
                 throw std::runtime_error(
                     "Non valid code generation configuration. Code generation with NMODL is "
-                    "supported for NEURON with C++ backend or CoreNEURON with C++/OpenACC "
+                    "supported for NEURON with C++/OpenACC backends or CoreNEURON with C++/OpenACC "
                     "backends");
             }
         }

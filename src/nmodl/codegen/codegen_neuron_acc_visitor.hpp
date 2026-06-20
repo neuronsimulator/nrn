@@ -1,0 +1,51 @@
+/*
+ * Copyright 2023 Blue Brain Project, EPFL.
+ * See the top-level LICENSE file for details.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#pragma once
+
+/**
+ * \file
+ * \brief \copybrief nmodl::codegen::CodegenNeuronAccVisitor
+ */
+
+#include "codegen/codegen_neuron_cpp_visitor.hpp"
+
+namespace nmodl {
+namespace codegen {
+
+/**
+ * \addtogroup codegen_backends
+ * \{
+ */
+
+/**
+ * \class CodegenNeuronAccVisitor
+ * \brief OpenACC backend for NEURON mechanism codegen (native GPU adoption).
+ *
+ * Field mapping follows design §B.4: NEURON sorted SOA pointers and NrnThread::compute_gpu.
+ */
+class CodegenNeuronAccVisitor: public CodegenNeuronCppVisitor {
+  public:
+    using CodegenNeuronCppVisitor::CodegenNeuronCppVisitor;
+
+  protected:
+    std::string backend_name() const override;
+
+    void print_standard_includes() override;
+
+    void print_parallel_iteration_hint(BlockType type, const ast::Block* block) override;
+
+    void print_kernel_data_present_annotation_block_begin() override;
+    void print_kernel_data_present_annotation_block_end() override;
+
+    void print_device_stream_wait() const;
+};
+
+/** \} */  // end of codegen_backends
+
+}  // namespace codegen
+}  // namespace nmodl
