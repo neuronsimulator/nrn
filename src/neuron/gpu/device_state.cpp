@@ -1,5 +1,7 @@
 #include "neuron/gpu/device_state.hpp"
 
+#include "neuron/gpu/config.hpp"
+#include "neuron/gpu/device_assign.hpp"
 #include "neuron/gpu/upload.hpp"
 
 #include <atomic>
@@ -166,6 +168,11 @@ device_token::device_token(model_sorted_token const& sorted)
     m_state->model_state = std::move(model_state);
     registry().on_device_token_created(m_state->model_state);
     if (!m_state->model_state->on_device) {
+#if defined(NRN_ENABLE_GPU)
+        if (enabled()) {
+            assign_device();
+        }
+#endif
         m_state->model_state->upload_model(sorted);
     }
 }

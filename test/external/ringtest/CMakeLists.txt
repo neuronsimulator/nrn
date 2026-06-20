@@ -49,6 +49,21 @@ nrn_add_test(
   COMMAND ${ringtest_python} -tstop 100)
 
 if(NRN_ENABLE_GPU)
+  set(ringtest_gpu_native_patch
+      ${PROJECT_SOURCE_DIR}/test/external/ringtest/ringtest-gpu-native.patch)
+  set(ringtest_native_gpu_dir ${PROJECT_BINARY_DIR}/test/external_ringtest/neuron_gpu_native_mpi)
+  if(EXISTS ${ringtest_gpu_native_patch} AND EXISTS ${ringtest_native_gpu_dir}/ringtest.py)
+    execute_process(
+      COMMAND patch -N -p1 -i ${ringtest_gpu_native_patch}
+      WORKING_DIRECTORY ${ringtest_native_gpu_dir}
+      RESULT_VARIABLE _ringtest_gpu_native_patch_result
+      ERROR_VARIABLE _ringtest_gpu_native_patch_error)
+    if(NOT _ringtest_gpu_native_patch_result EQUAL 0
+       AND NOT _ringtest_gpu_native_patch_error MATCHES "Reversed.*patch.*already applied"
+       AND NOT _ringtest_gpu_native_patch_error MATCHES "Skipping patch")
+      message(WARNING "ringtest-gpu-native.patch: ${_ringtest_gpu_native_patch_error}")
+    endif()
+  endif()
   set(ringtest_native_gpu_mpi_script
       ${PROJECT_BINARY_DIR}/test/external_ringtest/neuron_gpu_native_mpi.sh)
   file(

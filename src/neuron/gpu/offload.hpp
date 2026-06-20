@@ -32,6 +32,10 @@
 
 namespace neuron::gpu {
 
+int target_get_num_devices();
+void target_set_default_device(int device_num);
+int target_get_default_device();
+
 void target_copyin_debug(std::string_view file,
                          int line,
                          std::size_t sizeof_T,

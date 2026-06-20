@@ -137,6 +137,19 @@ if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
     COMMAND $<TARGET_FILE:testneuron_gpu_config> "[gpu][config]")
 
   add_executable(
+    testneuron_gpu_device_assign unit_tests/gpu/offload_main.cpp unit_tests/gpu/device_assign.cpp)
+  cpp_cc_configure_sanitizers(TARGET testneuron_gpu_device_assign)
+  target_link_libraries(testneuron_gpu_device_assign PRIVATE Catch2::Catch2 neuron_gpu)
+  target_compile_definitions(testneuron_gpu_device_assign PRIVATE NRN_ENABLE_GPU)
+  target_compile_options(testneuron_gpu_device_assign PRIVATE ${_test_gpu_offload_flags})
+  target_link_options(testneuron_gpu_device_assign PUBLIC ${_test_gpu_offload_flags})
+  nrn_add_test(
+    GROUP unit_tests
+    NAME gpu_device_assign
+    REQUIRES gpu
+    COMMAND $<TARGET_FILE:testneuron_gpu_device_assign> "[gpu][device_assign]")
+
+  add_executable(
     testneuron_gpu_upload
     unit_tests/gpu/offload_main.cpp unit_tests/gpu/upload.cpp unit_tests/gpu/upload_link_stubs.cpp
     unit_tests/gpu/interleave_info_stub.cpp)
@@ -898,6 +911,16 @@ if(NRN_ENABLE_PYTHON)
     set(g4_native_helper_script test/coreneuron/backend_helper.py)
     # Native GPU exercises OpenACC in libnrniv; launch via special (not bare python/pytest).
     set(native_modtests_launch_py special -notatty -python)
+    nrn_add_test(
+      GROUP unit_tests
+      NAME gpu_device_assign_mpi
+      REQUIRES gpu mpi python
+      PROCESSORS 2
+      ENVIRONMENT ${native_gpu_test_env} NEURON_INIT_MPI=1
+      SCRIPT_PATTERNS test/pyscripts/test_gpu_device_assign_mpi.py
+      COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE}
+              ${MPIEXEC_PREFLAGS} nrniv ${MPIEXEC_POSTFLAGS} -mpi -notatty -python
+              test/pyscripts/test_gpu_device_assign_mpi.py)
     foreach(
       g4_test
       test_pointer:test/coreneuron/test_pointer.py

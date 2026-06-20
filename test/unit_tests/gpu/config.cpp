@@ -11,5 +11,6 @@ TEST_CASE("gpu config defaults", "[gpu][config]") {
     CHECK_FALSE(neuron::gpu::backend_native());
     CHECK(neuron::gpu::backend() == neuron::gpu::Backend::Coreneuron);
     CHECK_FALSE(neuron::gpu::use_cuda_launcher());
+    CHECK(neuron::gpu::device_count() == 0);
 #endif
 }

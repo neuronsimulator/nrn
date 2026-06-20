@@ -51,8 +51,8 @@ TEST_CASE("native gpu config gate", "[gpu][fadvance]") {
 }
 
 TEST_CASE("fixed_step_thread records native dispatch", "[gpu][fadvance]") {
-#if !defined(NRN_ENABLE_GPU)
-    SKIP("NRN_ENABLE_GPU required");
+#if !defined(NRN_ENABLE_GPU) || !defined(_OPENACC)
+    SKIP("NRN_ENABLE_GPU and OpenACC required");
 #else
     DeferDeleteScope defer_delete{};
     detail::reset_config_for_testing();

@@ -14,6 +14,11 @@
 #include <stdexcept>
 #include <string>
 
+#if defined(NRN_ENABLE_GPU) && defined(NRN_PREFER_OPENMP_OFFLOAD) && defined(_OPENMP) && \
+    __has_include(<cuda_runtime_api.h>)
+#include <cuda_runtime_api.h>
+#endif
+
 #if __has_include(<cxxabi.h>)
 #define NRN_GPU_USE_CXXABI
 #include <cxxabi.h>
@@ -196,5 +201,42 @@ void target_delete_update_present_table(void const* h_ptr, std::size_t len) {
     }
 }
 #endif
+
+int target_get_num_devices() {
+#if defined(NRN_ENABLE_GPU) && !defined(NRN_PREFER_OPENMP_OFFLOAD) && defined(_OPENACC)
+    acc_device_t const device_type = acc_device_nvidia;
+    return acc_get_num_devices(device_type);
+#elif defined(NRN_ENABLE_GPU) && defined(NRN_PREFER_OPENMP_OFFLOAD) && defined(_OPENMP)
+    return omp_get_num_devices();
+#else
+    return 0;
+#endif
+}
+
+void target_set_default_device(int device_num) {
+#if defined(NRN_ENABLE_GPU) && !defined(NRN_PREFER_OPENMP_OFFLOAD) && defined(_OPENACC)
+    acc_set_device_num(device_num, acc_device_nvidia);
+#elif defined(NRN_ENABLE_GPU) && defined(NRN_PREFER_OPENMP_OFFLOAD) && defined(_OPENMP)
+    omp_set_default_device(device_num);
+#if __has_include(<cuda_runtime_api.h>)
+    auto const cuda_code = cudaSetDevice(device_num);
+    if (cuda_code != cudaSuccess) {
+        throw std::runtime_error("neuron::gpu::target_set_default_device: cudaSetDevice failed");
+    }
+#endif
+#else
+    (void) device_num;
+#endif
+}
+
+int target_get_default_device() {
+#if defined(NRN_ENABLE_GPU) && !defined(NRN_PREFER_OPENMP_OFFLOAD) && defined(_OPENACC)
+    return acc_get_device_num(acc_device_nvidia);
+#elif defined(NRN_ENABLE_GPU) && defined(NRN_PREFER_OPENMP_OFFLOAD) && defined(_OPENMP)
+    return omp_get_default_device();
+#else
+    return -1;
+#endif
+}
 
 }  // namespace neuron::gpu
