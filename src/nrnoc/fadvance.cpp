@@ -17,6 +17,12 @@
 
 #include <vector>
 
+#if defined(NRN_ENABLE_GPU)
+#include "neuron/gpu/config.hpp"
+#include "neuron/gpu/device_state.hpp"
+#include "neuron/gpu/fadvance_gpu.hpp"
+#endif
+
 /*
  after an fadvance from t-dt to t, v is defined at t
  states that depend on v are defined at t+dt/2
@@ -455,6 +461,13 @@ static void nrn_fixed_step_group_thread(neuron::model_sorted_token const& cache_
 }
 
 static void nrn_fixed_step_thread(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
+#if defined(NRN_ENABLE_GPU)
+    if (neuron::gpu::enabled() && neuron::gpu::backend_native()) {
+        neuron::gpu::device_token const& dev = neuron::gpu::ensure_on_device(cache_token);
+        neuron::gpu::fixed_step_thread(cache_token, dev, nt);
+        return;
+    }
+#endif
     auto* const nth = &nt;
     {
         nrn::Instrumentor::phase p("deliver-events");
