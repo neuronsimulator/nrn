@@ -9,3 +9,4 @@ This section describes the Neuron Model Description Language and how to use it t
 
    language/nmodl
    language/nmodl_neuron_extension
+   gpu_codegen

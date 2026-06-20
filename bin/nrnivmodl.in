@@ -49,6 +49,7 @@ UserLDFLAGS=""
 UserCOREFLAGS=()
 UserNMODLBIN=""
 UserNMODLFLAGS=""
+ForceNOCMODL=false
 
 # - options come first but can be in any order.
 while [ "$1" ] ; do
@@ -72,10 +73,13 @@ while [ "$1" ] ; do
         shift
         shift;;
     -nmodl)
-        echo "[NMODL][warning] Code generation with NMODL is pre-alpha, lacks features and is intended only for development use"
+        @NRN_ENABLE_GPU_FALSE@echo "[NMODL][warning] Code generation with NMODL is pre-alpha, lacks features and is intended only for development use"
         UserNMODLBIN="$2"
         UserNMODLFLAGS="--neuron $UserNMODLFLAGS"
         shift
+        shift;;
+    -nocmodl)
+        ForceNOCMODL=true
         shift;;
     -nmodlflags)
         echo "[NMODL][warning] If sympy is enabled, NMODL needs to be found in PYTHONPATH"
@@ -88,8 +92,9 @@ while [ "$1" ] ; do
         echo "  -coreneuron                      Compile MOD files for CoreNEURON using nrnivmodl-core."
         echo "  -incflags    \"include flags\"     Extra include flags and paths when MOD (C++) files are compiled."
         echo "  -loadflags   \"link flags\"        Extra link flags, paths, and libraries when MOD (C++) files are linked."
-        echo "  -nmodl /path/to/nmodl            Path to the new NMODL transpiler for MOD files (pre-alpha, development use only)."
-        echo "  -nmodlflags  \"CLI flags\"         Additional CLI flags for new NMODL transpiler"
+        echo "  -nmodl /path/to/nmodl            Path to the NMODL transpiler for MOD files."
+        echo "  -nmodlflags  \"CLI flags\"         Additional CLI flags for NMODL transpiler"
+        echo "  -nocmodl                         Force NOCMODL codegen (not supported with NRN_ENABLE_GPU builds)"
         echo "  -h, --help                       Show this help message and exit."
         echo "If no MOD files or directories provided then MOD files from current directory are used."
         exit 0;;
@@ -100,6 +105,15 @@ while [ "$1" ] ; do
         break;;
     esac
 done
+
+@NRN_ENABLE_GPU_TRUE@if [ "$ForceNOCMODL" = true ]; then
+    echo "ERROR: -nocmodl is not supported with NRN_ENABLE_GPU builds. Use NMODL (default) instead."
+    exit 1
+fi
+@NRN_ENABLE_GPU_TRUE@if [ -n "$UserNMODLBIN" ] && echo "$UserNMODLBIN" | grep -q nocmodl; then
+    echo "ERROR: NOCMODL cannot be used with NRN_ENABLE_GPU builds. Use NMODL (default) instead."
+    exit 1
+fi
 
 echo "$PWD"
 

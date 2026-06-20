@@ -260,6 +260,16 @@ function(create_nrnmech)
 
   message("${MESSAGE_PRIORITY}" "LIBRARY_TYPE | ${LIBRARY_TYPE}")
 
+  # GPU builds require NMODL NEURON codegen (NOCMODL cannot emit OpenACC for libnrnmech).
+  if(NRN_MECH_NEURON AND NRN_ENABLE_GPU)
+    if(NOT NRN_MECH_NMODL_NEURON_CODEGEN)
+      set(NRN_MECH_NMODL_NEURON_CODEGEN ON)
+      message(
+        "${MESSAGE_PRIORITY}"
+        "NRN_ENABLE_GPU=ON: defaulting NEURON mechanism codegen to NMODL (NMODL_NEURON_CODEGEN)")
+    endif()
+  endif()
+
   # nmodl by default generates code for coreNEURON, so we toggle this via an option
   if(NRN_MECH_NMODL_NEURON_CODEGEN)
     set(NEURON_TRANSPILER_LAUNCHER ${NMODL_EXECUTABLE} --neuron)
@@ -271,6 +281,12 @@ function(create_nrnmech)
   if(NRN_MECH_NEURON
      AND NOT NRN_MECH_NMODL_NEURON_CODEGEN
      AND NRN_MECH_NMODL_NEURON_EXTRA_ARGS)
+    if(NRN_ENABLE_GPU)
+      message(
+        FATAL_ERROR
+          "${CMAKE_CURRENT_FUNCTION}: NOCMODL NEURON codegen is not supported when NRN_ENABLE_GPU=ON."
+      )
+    endif()
     message(
       WARNING
         "${CMAKE_CURRENT_FUNCTION}: requested NEURON library with NOCMODL codegen, but NMODL_NEURON_EXTRA_ARGS is not empty; "

@@ -42,6 +42,14 @@ else()
   set(CORENEURON_ENABLED_FALSE "")
 endif()
 
+if(NRN_ENABLE_GPU)
+  set(NRN_ENABLE_GPU_TRUE "")
+  set(NRN_ENABLE_GPU_FALSE "#")
+else()
+  set(NRN_ENABLE_GPU_TRUE "#")
+  set(NRN_ENABLE_GPU_FALSE "")
+endif()
+
 # ~~~
 # A variable that doesn't start out as #undef but as #define needs an
 # explicit @...@ replacement in the .h.in files.
