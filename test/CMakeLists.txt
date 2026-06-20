@@ -123,9 +123,19 @@ if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
     NAME gpu_device_state
     REQUIRES gpu
     COMMAND $<TARGET_FILE:testneuron_gpu_device_state> "[gpu][device_state]")
+
+  add_executable(testneuron_gpu_config unit_tests/gpu/offload_main.cpp unit_tests/gpu/config.cpp)
+  cpp_cc_configure_sanitizers(TARGET testneuron_gpu_config)
+  target_link_libraries(testneuron_gpu_config PRIVATE Catch2::Catch2 neuron_gpu)
+  target_compile_definitions(testneuron_gpu_config PRIVATE NRN_ENABLE_GPU)
+  nrn_add_test(
+    GROUP unit_tests
+    NAME gpu_config
+    REQUIRES gpu
+    COMMAND $<TARGET_FILE:testneuron_gpu_config> "[gpu][config]")
 endif()
 
-# Compile-only guard: cellorder.cpp with OpenACC before PR 7 enables GPU solve dispatch.
+# Compile-only guard: cellorder.cpp OpenACC + NRN_ENABLE_GPU (solve_interleaved GPU dispatch).
 if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
   add_library(cellorder_openacc_smoke OBJECT
               ${PROJECT_SOURCE_DIR}/src/coreneuron/permute/cellorder.cpp)

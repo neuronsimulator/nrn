@@ -528,37 +528,44 @@ void mk_cell_indices() {
 }
 #endif  // INTERLEAVE_DEBUG
 
-#if CORENRN_BUILD
-#define GPU_V(i)   nt->_actual_v[i]
-#define GPU_A(i)   nt->_actual_a[i]
-#define GPU_B(i)   nt->_actual_b[i]
-#define GPU_D(i)   nt->_actual_d[i]
-#define GPU_RHS(i) nt->_actual_rhs[i]
-#else
-#define GPU_V(i)   vec_v[i]
-#define GPU_A(i)   vec_a[i]
-#define GPU_B(i)   vec_b[i]
-#define GPU_D(i)   vec_d[i]
-#define GPU_RHS(i) vec_rhs[i]
-#endif
+#define GPU_A(i)      vec_a[i]
+#define GPU_B(i)      vec_b[i]
+#define GPU_D(i)      vec_d[i]
+#define GPU_RHS(i)    vec_rhs[i]
 #define GPU_PARENT(i) nt->_v_parent_index[i]
+
+static void node_matrix_pointers(NrnThread* nt,
+                                 double*& vec_a,
+                                 double*& vec_b,
+                                 double*& vec_d,
+                                 double*& vec_rhs) {
+#if CORENRN_BUILD
+    vec_a = nt->_actual_a;
+    vec_b = nt->_actual_b;
+    vec_d = nt->_actual_d;
+    vec_rhs = nt->_actual_rhs;
+#else
+    vec_a = nt->node_a_storage();
+    vec_b = nt->node_b_storage();
+    vec_d = nt->node_d_storage();
+    vec_rhs = nt->node_rhs_storage();
+#endif
+}
 
 // How does the interleaved permutation with stride get used in
 // triagularization?
 
 // each cell in parallel regardless of inhomogeneous topology
 static void triang_interleaved(NrnThread* nt,
+                               double* vec_a,
+                               double* vec_b,
+                               double* vec_d,
+                               double* vec_rhs,
                                int icell,
                                int icellsize,
                                int nstride,
                                int* stride,
                                int* lastnode) {
-#if !CORENRN_BUILD
-    auto* const vec_a = nt->node_a_storage();
-    auto* const vec_b = nt->node_b_storage();
-    auto* const vec_d = nt->node_d_storage();
-    auto* const vec_rhs = nt->node_rhs_storage();
-#endif
     int i = lastnode[icell];
     for (int istride = nstride - 1; istride >= 0; --istride) {
         if (istride < icellsize) {  // only first icellsize strides matter
@@ -577,17 +584,15 @@ static void triang_interleaved(NrnThread* nt,
 
 // back substitution?
 static void bksub_interleaved(NrnThread* nt,
+                              double* vec_a,
+                              double* vec_b,
+                              double* vec_d,
+                              double* vec_rhs,
                               int icell,
                               int icellsize,
                               int /* nstride */,
                               int* stride,
                               int* firstnode) {
-#if !CORENRN_BUILD
-    auto* const vec_a = nt->node_a_storage();
-    auto* const vec_b = nt->node_b_storage();
-    auto* const vec_d = nt->node_d_storage();
-    auto* const vec_rhs = nt->node_rhs_storage();
-#endif
     int i = firstnode[icell];
     GPU_RHS(icell) /= GPU_D(icell);  // the root
     for (int istride = 0; istride < icellsize; ++istride) {
@@ -603,18 +608,16 @@ static void bksub_interleaved(NrnThread* nt,
 
 nrn_pragma_acc(routine vector)
 static void solve_interleaved2_loop_body(NrnThread* nt,
+                                         double* vec_a,
+                                         double* vec_b,
+                                         double* vec_d,
+                                         double* vec_rhs,
                                          int icore,
                                          int* ncycles,
                                          int* strides,
                                          int* stridedispl,
                                          int* rootbegin,
                                          int* nodebegin) {
-#if !CORENRN_BUILD
-    auto* const vec_a = nt->node_a_storage();
-    auto* const vec_b = nt->node_b_storage();
-    auto* const vec_d = nt->node_d_storage();
-    auto* const vec_rhs = nt->node_rhs_storage();
-#endif
     int iwarp = icore / warpsize;     // figure out the >> value
     int ic = icore & (warpsize - 1);  // figure out the & mask
     int ncycle = ncycles[iwarp];
@@ -714,69 +717,96 @@ void solve_interleaved2(int ith) {
         auto* d_nt = static_cast<NrnThread*>(acc_deviceptr(nt));
         auto* d_info = static_cast<InterleaveInfo*>(acc_deviceptr(interleave_info + ith));
         solve_interleaved2_launcher(d_nt, d_info, ncore, acc_get_cuda_stream(nt->stream_id));
-    } else {
-#endif
-        int* ncycles = ii.cellsize;         // nwarp of these
-        int* stridedispl = ii.stridedispl;  // nwarp+1 of these
-        int* strides = ii.stride;           // sum ncycles of these (bad since ncompart/warpsize)
-        int* rootbegin = ii.firstnode;      // nwarp+1 of these
-        int* nodebegin = ii.lastnode;       // nwarp+1 of these
-#if defined(CORENEURON_ENABLE_GPU)
-        int nstride = stridedispl[nwarp];
-#endif
-        // nvc++/22.3 does not respect an if clause inside nrn_pragma_omp...
-#if CORENRN_BUILD
-        if (nt->compute_gpu) {
-#else
-    // bad clang-format
-    if (0) {  // nt->compute_gpu) — enabled in PR 7 after NrnThread GPU fields (PR 5)
-#endif
-#if CORENRN_BUILD
-            /* If we compare this loop with the one from cellorder.cu (CUDA version), we will
-             * understand that the parallelism here is exposed in steps, while in the CUDA version
-             * all the parallelism is exposed from the very beginning of the loop. In more details,
-             * here we initially distribute the outermost loop, e.g. in the CUDA blocks, and for the
-             * innermost loops we explicitly use multiple threads for the parallelization (see for
-             * example the loop directives in triang/bksub_interleaved2). On the other hand, in the
-             * CUDA version the outermost loop is distributed to all the available threads, and
-             * therefore there is no need to have the innermost loops. Here, the loop/icore jumps
-             * every warpsize, while in the CUDA version the icore increases by one. Other than
-             * this, the two loop versions are equivalent (same results).
-             */
-            nrn_pragma_acc(parallel loop gang present(nt [0:1],
-                                                      strides [0:nstride],
-                                                      ncycles [0:nwarp],
-                                                      stridedispl [0:nwarp + 1],
-                                                      rootbegin [0:nwarp + 1],
-                                                      nodebegin [0:nwarp + 1]) async(nt->stream_id))
-            // clang-format off
-            nrn_pragma_omp(target teams loop map(present, alloc: nt[:1],
-                                                                 strides[:nstride],
-                                                                 ncycles[:nwarp],
-                                                                 stridedispl[:nwarp + 1],
-                                                                 rootbegin[:nwarp + 1],
-                                                                 nodebegin[:nwarp + 1]))
-            // clang-format on
-            for (int icore = 0; icore < ncore; icore += warpsize) {
-                solve_interleaved2_loop_body(
-                    nt, icore, ncycles, strides, stridedispl, rootbegin, nodebegin);
-            }
-            nrn_pragma_acc(wait(nt->stream_id))
-#else
-        for (int icore = 0; icore < ncore; icore += warpsize) {
-            solve_interleaved2_loop_body(
-                nt, icore, ncycles, strides, stridedispl, rootbegin, nodebegin);
-        }
-#endif
-        } else {
-            for (int icore = 0; icore < ncore; icore += warpsize) {
-                solve_interleaved2_loop_body(
-                    nt, icore, ncycles, strides, stridedispl, rootbegin, nodebegin);
-            }
-        }
-#if defined(_OPENACC) && CORENRN_BUILD
+        return;
     }
 #endif
+    // NEURON native CUDA launcher (coreneuron::solve_interleaved2_launcher) is wired when
+    // neuron::gpu::use_cuda_launcher() is enabled in PR 9 after device upload provides
+    // CoreNEURON-compatible NrnThread arena pointers.
+
+    int* ncycles = ii.cellsize;         // nwarp of these
+    int* stridedispl = ii.stridedispl;  // nwarp+1 of these
+    int* strides = ii.stride;           // sum ncycles of these (bad since ncompart/warpsize)
+    int* rootbegin = ii.firstnode;      // nwarp+1 of these
+    int* nodebegin = ii.lastnode;       // nwarp+1 of these
+#if defined(CORENEURON_ENABLE_GPU) || defined(NRN_ENABLE_GPU)
+    int nstride = stridedispl[nwarp];
+#endif
+
+    double* vec_a{};
+    double* vec_b{};
+    double* vec_d{};
+    double* vec_rhs{};
+    node_matrix_pointers(nt, vec_a, vec_b, vec_d, vec_rhs);
+
+#if CORENRN_BUILD && defined(_OPENACC)
+    if (nt->compute_gpu) {
+        /* If we compare this loop with the one from cellorder.cu (CUDA version), we will
+         * understand that the parallelism here is exposed in steps, while in the CUDA version
+         * all the parallelism is exposed from the very beginning of the loop. In more details,
+         * here we initially distribute the outermost loop, e.g. in the CUDA blocks, and for the
+         * innermost loops we explicitly use multiple threads for the parallelization (see for
+         * example the loop directives in triang/bksub_interleaved2). On the other hand, in the
+         * CUDA version the outermost loop is distributed to all the available threads, and
+         * therefore there is no need to have the innermost loops. Here, the loop/icore jumps
+         * every warpsize, while in the CUDA version the icore increases by one. Other than
+         * this, the two loop versions are equivalent (same results).
+         */
+        nrn_pragma_acc(parallel loop gang present(nt [0:1],
+                                                  vec_a [0:nt->end],
+                                                  vec_b [0:nt->end],
+                                                  vec_d [0:nt->end],
+                                                  vec_rhs [0:nt->end],
+                                                  strides [0:nstride],
+                                                  ncycles [0:nwarp],
+                                                  stridedispl [0:nwarp + 1],
+                                                  rootbegin [0:nwarp + 1],
+                                                  nodebegin [0:nwarp + 1]) async(nt->stream_id))
+        // clang-format off
+        nrn_pragma_omp(target teams loop map(present, alloc: nt[:1],
+                                                             vec_a[:nt->end],
+                                                             vec_b[:nt->end],
+                                                             vec_d[:nt->end],
+                                                             vec_rhs[:nt->end],
+                                                             strides[:nstride],
+                                                             ncycles[:nwarp],
+                                                             stridedispl[:nwarp + 1],
+                                                             rootbegin[:nwarp + 1],
+                                                             nodebegin[:nwarp + 1]))
+        // clang-format on
+        for (int icore = 0; icore < ncore; icore += warpsize) {
+            solve_interleaved2_loop_body(nt,
+                                         vec_a,
+                                         vec_b,
+                                         vec_d,
+                                         vec_rhs,
+                                         icore,
+                                         ncycles,
+                                         strides,
+                                         stridedispl,
+                                         rootbegin,
+                                         nodebegin);
+        }
+        nrn_pragma_acc(wait(nt->stream_id))
+    } else
+#endif
+    {
+        // NEURON native: host solver until PR 9 uploads node matrix SOA to device (OpenACC
+        // offload on libnrniv deferred to avoid NVHPC pgcudafat loader issues with special).
+        for (int icore = 0; icore < ncore; icore += warpsize) {
+            solve_interleaved2_loop_body(nt,
+                                         vec_a,
+                                         vec_b,
+                                         vec_d,
+                                         vec_rhs,
+                                         icore,
+                                         ncycles,
+                                         strides,
+                                         stridedispl,
+                                         rootbegin,
+                                         nodebegin);
+        }
+    }
 }
 
 /**
@@ -799,11 +829,21 @@ void solve_interleaved1(int ith) {
     int* lastnode = ii.lastnode;
     int* cellsize = ii.cellsize;
 
-#if CORENRN_BUILD
+    double* vec_a{};
+    double* vec_b{};
+    double* vec_d{};
+    double* vec_rhs{};
+    node_matrix_pointers(nt, vec_a, vec_b, vec_d, vec_rhs);
+
+#if defined(_OPENACC) && CORENRN_BUILD
     // OL211123: can we preserve the error checking behaviour of OpenACC's
     // present clause with OpenMP? It is a bug if these data are not present,
     // so diagnostics are helpful...
     nrn_pragma_acc(parallel loop present(nt [0:1],
+                                         vec_a [0:nt->end],
+                                         vec_b [0:nt->end],
+                                         vec_d [0:nt->end],
+                                         vec_rhs [0:nt->end],
                                          stride [0:nstride],
                                          firstnode [0:ncell],
                                          lastnode [0:ncell],
@@ -812,15 +852,19 @@ void solve_interleaved1(int ith) {
     nrn_pragma_omp(target teams distribute parallel for simd if(nt->compute_gpu))
     for (int icell = 0; icell < ncell; ++icell) {
         int icellsize = cellsize[icell];
-        triang_interleaved(nt, icell, icellsize, nstride, stride, lastnode);
-        bksub_interleaved(nt, icell, icellsize, nstride, stride, firstnode);
+        triang_interleaved(
+            nt, vec_a, vec_b, vec_d, vec_rhs, icell, icellsize, nstride, stride, lastnode);
+        bksub_interleaved(
+            nt, vec_a, vec_b, vec_d, vec_rhs, icell, icellsize, nstride, stride, firstnode);
     }
     nrn_pragma_acc(wait(nt->stream_id))
 #else
     for (int icell = 0; icell < ncell; ++icell) {
         int icellsize = cellsize[icell];
-        triang_interleaved(nt, icell, icellsize, nstride, stride, lastnode);
-        bksub_interleaved(nt, icell, icellsize, nstride, stride, firstnode);
+        triang_interleaved(
+            nt, vec_a, vec_b, vec_d, vec_rhs, icell, icellsize, nstride, stride, lastnode);
+        bksub_interleaved(
+            nt, vec_a, vec_b, vec_d, vec_rhs, icell, icellsize, nstride, stride, firstnode);
     }
 #endif
 }
