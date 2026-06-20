@@ -386,7 +386,8 @@ class GeneralizedReaction(object):
                         * s().alpha_by_location(xyz_by_index(di))
                     )
                     / molecules_per_mM_um3
-                    for s, di in zip(sources_ecs, dests_indices)
+                    for s in sources_ecs
+                    for di in dests_indices
                 ] + [areas / volumes[di] / molecules_per_mM_um3 for di in dests_indices]
             elif not sources_ecs and dests_ecs:
                 self._mult = [
@@ -399,7 +400,8 @@ class GeneralizedReaction(object):
                         * s().alpha_by_location(xyz_by_index(si))
                     )
                     / molecules_per_mM_um3
-                    for s, si in zip(dests_ecs, sources_indices)
+                    for s in dests_ecs
+                    for si in sources_indices
                 ]
             elif self._trans_membrane:
                 # An ecs <-> ecs reaction that use the membrane area and intracellular concentration in the rates
