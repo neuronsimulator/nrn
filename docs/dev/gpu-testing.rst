@@ -84,6 +84,51 @@ GPU-related CMake options:
 
 See :ref:`cmake-nrn-enable-gpu-option` and :ref:`cmake-coreneuron-enable-gpu-option` in the CMake options documentation.
 
+NEURON native GPU backend (Phase B)
+***********************************
+When ``-DNRN_ENABLE_GPU=ON`` is set at configure time, NEURON can run fixed-step
+``pc.psolve`` on the native GPU path (``gpu.backend=native``) without embedding
+CoreNEURON. Runtime control:
+
+.. code-block:: python
+
+  from neuron import gpu
+  gpu.enable = True
+  gpu.backend = "native"
+
+The **G4 native subset** ctests set ``NRN_GPU_BACKEND_TEST=native`` and compare
+NEURON CPU reference output against the native backend:
+
+.. code-block:: console
+
+  $ ctest -N -R 'gpu_native'
+  $ ctest --output-on-failure -R 'gpu_native'
+
+Ringtest native GPU benchmark
+*****************************
+The external ringtest script supports ``-gpu-native`` for NEURON native GPU runs
+(orthogonal to CoreNEURON ``-gpu``):
+
+.. code-block:: console
+
+  $ cd build/test/external_ringtest/neuron_gpu_native_mpi
+  $ special -mpi -python ringtest.py -gpu-native -tstop 100
+
+The script prints ``runtime=``, ``load_balance=``, and ``spk_time`` statistics.
+Compare spike output with ``sortspike`` against ``reference_data/spk1.100ms.std.ref``:
+
+.. code-block:: console
+
+  $ sortspike spk1.std > spk1.srt
+  $ diff spk1.srt ../../external/tests/ringtest/reference_data/spk1.100ms.std.ref
+
+CTest: ``external_ringtest::neuron_gpu_native_mpi`` (MPI, 100 ms, spike comparison group).
+
+The ``external/tests/ringtest`` tree is gitignored in the NEURON repo; apply
+``test/external/ringtest/ringtest-gpu-native.patch`` inside your local ringtest
+clone (under ``external/tests/ringtest``) before running manual ringtest or
+reconfiguring CMake.
+
 Ringtest GPU ctest note
 ***********************
 The ``external_ringtest::coreneuron_gpu_mpi`` test historically failed on some NVHPC builds with

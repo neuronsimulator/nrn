@@ -48,6 +48,28 @@ nrn_add_test(
   ENVIRONMENT NEURON_INIT_MPI=1
   COMMAND ${ringtest_python} -tstop 100)
 
+if(NRN_ENABLE_GPU)
+  set(ringtest_native_gpu_mpi_script
+      ${PROJECT_BINARY_DIR}/test/external_ringtest/neuron_gpu_native_mpi.sh)
+  file(
+    WRITE ${ringtest_native_gpu_mpi_script}
+    "#!/bin/bash\n"
+    "set -e\n"
+    "export OMP_NUM_THREADS=1\n"
+    "export NRN_GPU_BACKEND_TEST=native\n"
+    "export NRN_GPU_PERMUTE=2\n"
+    "export TMPDIR=\"${PROJECT_BINARY_DIR}/test/tmp/external_ringtest/neuron_gpu_native_mpi\"\n"
+    "mkdir -p \"$TMPDIR\"\n"
+    "OMP_NUM_THREADS=1 ${ringtest_special_str} -gpu-native -tstop 100\n")
+  nrn_add_test(
+    GROUP external_ringtest
+    NAME neuron_gpu_native_mpi
+    REQUIRES gpu mpi python mod_compatibility
+    PROCESSORS ${ringtest_mpi_ranks}
+    COMMAND bash ${ringtest_native_gpu_mpi_script}
+    OUTPUT asciispikes::spk1.std)
+endif()
+
 # creep into this file to add a nrn only test for ParallelContext.optimize_node_order(i)
 nrn_add_test_group(
   NAME external_ringtest_nrn
