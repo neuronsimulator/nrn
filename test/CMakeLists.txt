@@ -892,6 +892,32 @@ if(NRN_ENABLE_PYTHON)
       COMMAND ${modtests_launch_py} test/nmodl/test_kinetic.py)
   endforeach()
 
+  # G4 native GPU subset (NRN_GPU_BACKEND_TEST=native); full 68-test parity deferred to PR 19.
+  if(NRN_ENABLE_GPU)
+    set(native_gpu_test_env NRN_GPU_BACKEND_TEST=native NRN_GPU_PERMUTE=2 OMP_NUM_THREADS=1)
+    set(g4_native_helper_script test/coreneuron/backend_helper.py)
+    # Native GPU exercises OpenACC in libnrniv; launch via special (not bare python/pytest).
+    set(native_modtests_launch_py special -notatty -python)
+    foreach(
+      g4_test
+      test_pointer:test/coreneuron/test_pointer.py
+      test_psolve:test/coreneuron/test_psolve.py
+      test_spikes:test/coreneuron/test_spikes.py
+      test_watchrange:test/coreneuron/test_watchrange.py
+      test_nmodlrandom:test/coreneuron/test_nmodlrandom.py)
+      string(REPLACE ":" ";" g4_parts "${g4_test}")
+      list(GET g4_parts 0 g4_name)
+      list(GET g4_parts 1 g4_script)
+      nrn_add_test(
+        GROUP coreneuron_modtests
+        NAME ${g4_name}_py_gpu_native
+        REQUIRES gpu
+        SCRIPT_PATTERNS ${g4_native_helper_script} ${g4_script}
+        ENVIRONMENT ${native_gpu_test_env} ${sonata_zero_gid_env} ${nrnpython_mpi_env}
+        COMMAND ${native_modtests_launch_py} ${g4_script})
+    endforeach()
+  endif()
+
   if(NRN_ENABLE_MUSIC)
     set(music_launch_command
         "${MPIEXEC_NAME}  ${MPIEXEC_NUMPROC_FLAG}  2 ${MPIEXEC_OVERSUBSCRIBE}   ${MPIEXEC_PREFLAGS} music"

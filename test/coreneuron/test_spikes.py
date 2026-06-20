@@ -115,19 +115,24 @@ def _test_spikes(
         assert nrn_spike_t == corenrn_all_spike_t_py
         assert nrn_spike_gids == corenrn_all_spike_gids_py
 
-    # CORENEURON run
-    from neuron import coreneuron
+    from backend_helper import disable_test_backend, enable_test_backend, is_native_backend_test
 
-    with coreneuron(enable=True, gpu=enable_gpu, file_mode=file_mode, verbose=0):
-        run_modes = [0] if file_mode else [0, 1, 2]
-        for mode in run_modes:
+    if is_native_backend_test():
+        enable_test_backend()
+        for mode in [0, 1, 2]:
             run(mode)
-        # Make sure that file mode also works with custom coreneuron.model_path
-        if file_mode:
-            coreneuron.model_path = "coreneuron_input"
-            run(0)
-            # revert setting for the following coreneuron runs
-            coreneuron.model_path = None
+        disable_test_backend()
+    else:
+        from neuron import coreneuron
+
+        with coreneuron(enable=True, gpu=enable_gpu, file_mode=file_mode, verbose=0):
+            run_modes = [0] if file_mode else [0, 1, 2]
+            for mode in run_modes:
+                run(mode)
+            if file_mode:
+                coreneuron.model_path = "coreneuron_input"
+                run(0)
+                coreneuron.model_path = None
 
     return h
 

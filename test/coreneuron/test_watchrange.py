@@ -90,10 +90,10 @@ def watchrange():
 
     stdlist = [cell.result() for cell in cells]
 
-    print("CoreNEURON run")
-    coreneuron.enable = True
-    coreneuron.verbose = 0
-    coreneuron.gpu = bool(strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false")))
+    from backend_helper import enable_test_backend
+
+    print("GPU backend run")
+    enable_test_backend()
 
     def runassert(mode):
         run(tstop, mode)
@@ -154,7 +154,9 @@ def watchrange():
     for mode in [0, 1, 2]:
         runassert(mode)
 
-    coreneuron.enable = False
+    from backend_helper import disable_test_backend
+
+    disable_test_backend()
     # teardown
     pc.gid_clear()
     return stdlist, tvec
@@ -200,6 +202,7 @@ def test_watchrange2():
 
 
 if __name__ == "__main__":
+    from backend_helper import is_native_backend_test
     from neuron import gui
 
     stdlist, tvec = watchrange()
@@ -210,6 +213,7 @@ if __name__ == "__main__":
         result[4].line(g, tvec, i, 2)
     g.exec_menu("View = plot")
 
-    watchrange2()
+    if not is_native_backend_test():
+        watchrange2()
 
     h.quit()

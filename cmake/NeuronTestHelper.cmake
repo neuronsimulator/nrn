@@ -345,7 +345,7 @@ function(nrn_add_test)
   endif()
   # NVHPC may leave transient fat-object files in $TMPDIR when special runs with -gpu under MPI. Use
   # a per-test TMPDIR under the build tree (see external_ringtest GPU ctest notes).
-  if("gpu" IN_LIST NRN_ADD_TEST_REQUIRES AND CORENRN_ENABLE_GPU)
+  if("gpu" IN_LIST NRN_ADD_TEST_REQUIRES AND (CORENRN_ENABLE_GPU OR NRN_ENABLE_GPU))
     set(gpu_tmpdir "${PROJECT_BINARY_DIR}/test/tmp/${NRN_ADD_TEST_GROUP}/${NRN_ADD_TEST_NAME}")
     file(MAKE_DIRECTORY "${gpu_tmpdir}")
     list(APPEND extra_environment "TMPDIR=${gpu_tmpdir}")

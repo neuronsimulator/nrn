@@ -533,7 +533,14 @@ void nrn_fixed_step_lastpart(neuron::model_sorted_token const& cache_token, NrnT
     CTADD;
     {
         nrn::Instrumentor::phase p("deliver-events");
-        nrn_deliver_events(nth); /* up to but not past texit */
+#if defined(NRN_ENABLE_GPU)
+        if (neuron::gpu::enabled() && neuron::gpu::backend_native()) {
+            neuron::gpu::deliver_post_step_events_host(nth);
+        } else
+#endif
+        {
+            nrn_deliver_events(nth); /* up to but not past texit */
+        }
     }
 }
 

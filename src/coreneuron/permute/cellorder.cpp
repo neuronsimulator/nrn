@@ -797,8 +797,7 @@ void solve_interleaved2(int ith) {
     } else
 #endif
     {
-        // NEURON native: host solver until PR 9 uploads node matrix SOA to device (OpenACC
-        // offload on libnrniv deferred to avoid NVHPC pgcudafat loader issues with special).
+        // NEURON native host fallback when compute_gpu is off or OpenACC is unavailable.
         for (int icore = 0; icore < ncore; icore += warpsize) {
             solve_interleaved2_loop_body(nt,
                                          vec_a,
