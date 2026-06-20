@@ -8,21 +8,23 @@ def is_native_backend_test():
     return os.environ.get("NRN_GPU_BACKEND_TEST", "").lower() == "native"
 
 
-def _set_native_gpu(enable):
-    from neuron import h
-
-    h("_nrn_gpu_set_enable(%d)" % int(enable))
-    if enable:
-        h('_nrn_gpu_set_backend("native")')
+def _native_gpu_module():
+    try:
+        from neuron import gpu
+    except ImportError:
+        import neuron.gpu as gpu
+    return gpu
 
 
 def enable_test_backend():
     if is_native_backend_test():
         from neuron import h
 
-        _set_native_gpu(True)
+        gpu = _native_gpu_module()
+        gpu.enable = True
+        gpu.backend = "native"
         perm = int(os.environ.get("NRN_GPU_PERMUTE", "2"))
-        h.ParallelContext().optimize_node_order(perm)
+        gpu.permute = perm
         return "native"
     from neuron import coreneuron
 
@@ -33,7 +35,7 @@ def enable_test_backend():
 
 def disable_test_backend():
     if is_native_backend_test():
-        _set_native_gpu(False)
+        _native_gpu_module().enable = False
         return
     from neuron import coreneuron
 
@@ -52,9 +54,7 @@ def iter_permute_values():
 
 def set_permute(perm):
     if is_native_backend_test():
-        from neuron import h
-
-        h.ParallelContext().optimize_node_order(perm)
+        _native_gpu_module().permute = perm
     else:
         from neuron import coreneuron
 

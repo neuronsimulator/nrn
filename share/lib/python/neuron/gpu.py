@@ -24,16 +24,23 @@ class GPUContextHelper(object):
 
 
 class gpu(object):
-    """Runtime configuration for NEURON native GPU execution."""
+    """Runtime configuration for NEURON GPU execution."""
 
     _VALID_BACKENDS = frozenset({"native", "coreneuron"})
 
     def __init__(self):
         self._enable = False
         self._backend = "coreneuron"
+        self._device_count = 0
+        self._permute = None
 
     def __call__(self, **kwargs):
         return GPUContextHelper(self, kwargs)
+
+    def _pc(self):
+        from neuron import h
+
+        return h.ParallelContext()
 
     @property
     def enable(self):
@@ -41,8 +48,12 @@ class gpu(object):
 
     @enable.setter
     def enable(self, value):
-        self._enable = bool(int(value))
+        new_enable = bool(int(value))
+        was_enabled = self._enable
+        self._enable = new_enable
         self._sync_to_hoc()
+        if new_enable and not was_enabled:
+            self._apply_default_permute()
 
     @property
     def backend(self):
@@ -58,13 +69,46 @@ class gpu(object):
         self._backend = backend
         self._sync_to_hoc()
 
+    @property
+    def device_count(self):
+        """Number of GPUs per node (0 = all available)."""
+        return self._device_count
+
+    @device_count.setter
+    def device_count(self, value):
+        self._device_count = int(value)
+        self._sync_to_hoc()
+
+    @property
+    def permute(self):
+        """Cell permutation order (0, 1, or 2). Default 2 when enable is True."""
+        if self._permute is None:
+            return 2 if self._enable else 0
+        return self._permute
+
+    @permute.setter
+    def permute(self, value):
+        value = int(value)
+        if value not in {0, 1, 2}:
+            raise ValueError("gpu.permute must be 0, 1, or 2, got {!r}".format(value))
+        self._permute = value
+        if self._enable:
+            self._pc().optimize_node_order(value)
+
+    def _apply_default_permute(self):
+        if self._permute is None:
+            self._pc().optimize_node_order(2)
+        else:
+            self._pc().optimize_node_order(self._permute)
+
     def _sync_to_hoc(self):
         try:
-            from neuron import h
+            pc = self._pc()
         except Exception:
             return
-        h("_nrn_gpu_set_enable(%d)" % int(self._enable))
-        h('_nrn_gpu_set_backend("%s")' % self._backend)
+        pc.gpu_enable(int(self._enable))
+        pc.gpu_backend(self._backend)
+        pc.gpu_device_count(int(self._device_count))
 
 
 sys.modules[__name__] = gpu()

@@ -96,6 +96,49 @@ CoreNEURON. Runtime control:
   gpu.enable = True
   gpu.backend = "native"
 
+GPU configuration (``neuron.gpu``)
+**********************************
+Runtime GPU options are controlled via :mod:`neuron.gpu` (or
+``ParallelContext`` methods ``gpu_enable``, ``gpu_backend``, ``gpu_device_count``).
+Legacy ``coreneuron.gpu`` / ``coreneuron.num_gpus`` / ``coreneuron.cell_permute`` forward
+to ``neuron.gpu`` with ``DeprecationWarning``.
+
+.. code-block:: python
+
+  from neuron import gpu
+
+  gpu.enable = True
+  gpu.backend = "native"      # or "coreneuron" during Phase A
+  gpu.device_count = 0        # 0 = all GPUs on the node
+  gpu.permute = 2             # default 2 when enable=True (applied silently)
+
+Context manager (mirrors ``coreneuron()``):
+
+.. code-block:: python
+
+  with gpu(enable=True, backend="native"):
+      pc.psolve(100)
+
+Configuration truth table (effective simulation path):
+
++--------------------------+---------------+--------------+---------------------+---------------------------+
+| ``NRN_ENABLE_GPU`` build | gpu.backend   | gpu.enable   | coreneuron.enable   | Effective path            |
++==========================+===============+==============+=====================+===========================+
+| OFF                      | *             | *            | *                   | CPU NEURON only           |
++--------------------------+---------------+--------------+---------------------+---------------------------+
+| ON                       | coreneuron    | True         | *                   | CoreNEURON embedded       |
++--------------------------+---------------+--------------+---------------------+---------------------------+
+| ON                       | native        | True         | *                   | Native GPU fixed-step     |
++--------------------------+---------------+--------------+---------------------+---------------------------+
+| ON                       | coreneuron    | False        | True (no gpu)       | CPU NEURON                |
++--------------------------+---------------+--------------+---------------------+---------------------------+
+| ON                       | native        | True         | True                | **Native** (backend wins) |
++--------------------------+---------------+--------------+---------------------+---------------------------+
+
+MPI multi-GPU device assignment uses ``device_id = mpi_local_rank % num_gpus_per_node``
+(same policy as CoreNEURON ``init_gpu()``). Set ``gpu.device_count`` to limit GPUs per node
+(0 = all available). CTest: ``unit_tests::gpu_device_assign_mpi`` (2 MPI ranks).
+
 The **G4 native subset** ctests set ``NRN_GPU_BACKEND_TEST=native`` and compare
 NEURON CPU reference output against the native backend:
 

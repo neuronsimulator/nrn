@@ -16,6 +16,11 @@
 #include <nrnmpi.h>
 #include <cerrno>
 
+#if defined(NRN_ENABLE_GPU)
+#include "neuron/gpu/config.hpp"
+#include "neuron/gpu/device_assign.hpp"
+#endif
+
 #undef MD
 #define MD 2147483647.
 
@@ -933,6 +938,47 @@ static double optimize_node_order(void*) {
     return double(neuron::interleave_permute_type);
 }
 
+#if defined(NRN_ENABLE_GPU)
+
+static double gpu_enable(void*) {
+    hoc_return_type_code = HocReturnType::boolean;
+    if (ifarg(1)) {
+        neuron::gpu::set_enable(chkarg(1, 0, 1) != 0.0);
+    }
+    return double(neuron::gpu::enabled());
+}
+
+static const char** gpu_backend(void*) {
+    if (ifarg(1)) {
+        neuron::gpu::set_backend(hoc_gargstr(1));
+    }
+    static char native_storage[] = "native";
+    static char coreneuron_storage[] = "coreneuron";
+    static char* backend_ptr = coreneuron_storage;
+    backend_ptr = neuron::gpu::backend_native() ? native_storage : coreneuron_storage;
+    return (const char**) &backend_ptr;
+}
+
+static double gpu_device_count(void*) {
+    hoc_return_type_code = HocReturnType::integer;
+    if (ifarg(1)) {
+        neuron::gpu::set_device_count(static_cast<unsigned>(chkarg(1, 0, 1024)));
+    }
+    return double(neuron::gpu::device_count());
+}
+
+static double gpu_assign_device(void*) {
+    neuron::gpu::assign_device();
+    return 1.0;
+}
+
+static double gpu_device_id(void*) {
+    hoc_return_type_code = HocReturnType::integer;
+    return double(neuron::gpu::assigned_device_id());
+}
+
+#endif
+
 static double sec_in_thread(void*) {
     hoc_return_type_code = HocReturnType::boolean;
     Section* sec = chk_access();
@@ -1090,6 +1136,12 @@ static Member_func members[] = {{"submit", submit},
                                 {"thread_busywait", thread_busywait},
                                 {"thread_how_many_proc", thread_how_many_proc},
                                 {"optimize_node_order", optimize_node_order},
+#if defined(NRN_ENABLE_GPU)
+                                {"gpu_enable", gpu_enable},
+                                {"gpu_device_count", gpu_device_count},
+                                {"gpu_assign_device", gpu_assign_device},
+                                {"gpu_device_id", gpu_device_id},
+#endif
                                 {"sec_in_thread", sec_in_thread},
                                 {"thread_ctime", thread_ctime},
                                 {"dt", thread_dt},
@@ -1103,7 +1155,12 @@ static Member_func members[] = {{"submit", submit},
 
                                 {0, 0}};
 
-static Member_ret_str_func retstr_members[] = {{"upkstr", upkstr}, {0, 0}};
+static Member_ret_str_func retstr_members[] = {
+    {"upkstr", upkstr},
+#if defined(NRN_ENABLE_GPU)
+    {"gpu_backend", gpu_backend},
+#endif
+    {0, 0}};
 
 static Member_ret_obj_func retobj_members[] = {{"upkvec", upkvec},
                                                {"gid2obj", gid2obj},

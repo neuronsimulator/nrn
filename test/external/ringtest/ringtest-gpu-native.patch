@@ -47,9 +47,10 @@ index b0e9067..127f4ae 100644
  
 -    if use_coreneuron:
 +    if use_native_gpu:
-+        h("_nrn_gpu_set_enable(1)")
-+        h('_nrn_gpu_set_backend("native")')
-+        pc.optimize_node_order(coreneuron_permute)
++        from neuron import gpu
++        gpu.enable = True
++        gpu.backend = "native"
++        gpu.permute = coreneuron_permute
 +    elif use_coreneuron:
          from neuron import coreneuron
          coreneuron.enable = True

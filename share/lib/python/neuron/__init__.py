@@ -236,12 +236,14 @@ def _check_for_intel_openmp() -> None:
     import ctypes
     from neuron.config import arguments
 
-    # These checks are only relevant for shared library builds with CoreNEURON GPU support enabled.
-    if (
-        not arguments["NRN_ENABLE_CORENEURON"]
-        or not arguments["CORENRN_ENABLE_GPU"]
-        or not arguments["CORENRN_ENABLE_SHARED"]
-    ):
+    # NVHPC OpenACC and Intel OpenMP conflict when both are loaded in-process.
+    # Trigger for native NEURON GPU builds (NRN_ENABLE_GPU) or shared CoreNEURON GPU libs.
+    needs_check = arguments.get("NRN_ENABLE_GPU") or (
+        arguments["NRN_ENABLE_CORENEURON"]
+        and arguments["CORENRN_ENABLE_GPU"]
+        and arguments["CORENRN_ENABLE_SHARED"]
+    )
+    if not needs_check:
         return
 
     current_exe = ctypes.CDLL(None)
@@ -274,6 +276,11 @@ def _check_for_intel_openmp() -> None:
 
 
 _check_for_intel_openmp()
+
+try:
+    from . import gpu
+except ImportError:
+    pass
 
 _original_hoc_file = None
 if not hasattr(hoc, "__file__"):

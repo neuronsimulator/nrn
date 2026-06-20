@@ -6,13 +6,11 @@
 #include "neuron/model_data.hpp"
 
 #include "coreneuron/permute/cellorder.hpp"
-#include "hocdec.h"
 #include "multicore.h"
 #include "neuron.h"
 #include "node_order_optim/node_order_optim.h"
 #include "nrn_ansi.h"
 #include "nrncvode.h"
-#include "oc_ansi.h"
 #include "utils/profile/profiler_interface.h"
 
 #include <atomic>
@@ -84,54 +82,5 @@ void reset_fixed_step_dispatch_for_testing() {
 }
 
 }  // namespace detail
-
-#if defined(NRN_ENABLE_GPU)
-
-static void hoc_nrn_gpu_set_enable() {
-    set_enable(*hoc_getarg(1) != 0.0);
-    hoc_retpushx(1.0);
-}
-
-static void hoc_nrn_gpu_set_backend() {
-    set_backend(hoc_gargstr(1));
-    hoc_retpushx(1.0);
-}
-
-static void hoc_nrn_gpu_get_enable() {
-    hoc_retpushx(enabled() ? 1.0 : 0.0);
-}
-
-static void hoc_nrn_gpu_get_backend() {
-    static char native_storage[] = "native";
-    static char coreneuron_storage[] = "coreneuron";
-    static char* native_backend = native_storage;
-    static char* coreneuron_backend = coreneuron_storage;
-    hoc_ret();
-    if (backend_native()) {
-        hoc_pushstr(&native_backend);
-    } else {
-        hoc_pushstr(&coreneuron_backend);
-    }
-}
-
-void register_hoc_functions() {
-    static bool registered = false;
-    if (registered) {
-        return;
-    }
-    registered = true;
-    VoidFunc functions[] = {{"_nrn_gpu_set_enable", hoc_nrn_gpu_set_enable},
-                            {"_nrn_gpu_set_backend", hoc_nrn_gpu_set_backend},
-                            {"_nrn_gpu_get_enable", hoc_nrn_gpu_get_enable},
-                            {"_nrn_gpu_get_backend", hoc_nrn_gpu_get_backend},
-                            {nullptr, nullptr}};
-    hoc_register_var(nullptr, nullptr, functions);
-}
-
-#else
-
-void register_hoc_functions() {}
-
-#endif
 
 }  // namespace neuron::gpu

@@ -436,9 +436,6 @@ void hoc_last_init(void) {
 
     /* verify that all ions have a defined CHARGE */
     nrn_verify_ion_charge_defined();
-#if defined(NRN_ENABLE_GPU)
-    neuron::gpu::register_hoc_functions();
-#endif
 }
 
 void initnrn(void) {
