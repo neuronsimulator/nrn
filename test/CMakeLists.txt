@@ -81,6 +81,26 @@ if(TARGET nrn-benchmarks AND NRN_ENABLE_PERFORMANCE_TESTS)
     COMMAND $<TARGET_FILE:nrn-benchmarks> --processors=16)
 endif()
 
+if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
+  separate_arguments(_test_gpu_offload_flags UNIX_COMMAND "${CORENRN_ACC_COMP_FLAGS}")
+  add_executable(
+    testneuron_gpu_offload unit_tests/gpu/offload_main.cpp unit_tests/gpu/offload.cpp)
+  cpp_cc_configure_sanitizers(TARGET testneuron_gpu_offload)
+  target_link_libraries(testneuron_gpu_offload PRIVATE Catch2::Catch2 neuron_gpu)
+  target_compile_definitions(testneuron_gpu_offload PRIVATE NRN_ENABLE_GPU)
+  target_compile_options(testneuron_gpu_offload PRIVATE ${_test_gpu_offload_flags})
+  target_link_options(testneuron_gpu_offload PUBLIC ${_test_gpu_offload_flags})
+  if(CUDAToolkit_FOUND)
+    set_property(TARGET testneuron_gpu_offload APPEND PROPERTY BUILD_RPATH
+                                                         "${CUDAToolkit_LIBRARY_DIR}")
+  endif()
+  nrn_add_test(
+    GROUP unit_tests
+    NAME gpu_offload
+    REQUIRES gpu
+    COMMAND $<TARGET_FILE:testneuron_gpu_offload> "[gpu][offload]")
+endif()
+
 # Compile-only guard: cellorder.cpp with OpenACC before PR 7 enables GPU solve dispatch.
 if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
   add_library(cellorder_openacc_smoke OBJECT

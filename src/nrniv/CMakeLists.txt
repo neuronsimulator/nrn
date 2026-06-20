@@ -397,6 +397,7 @@ include_directories(${NRN_INCLUDE_DIRS})
 # All source directories to include
 # =============================================================================
 add_library(nrniv_lib ${NRN_LIBRARY_TYPE} ${NRN_NRNIV_LIB_SRC_FILES})
+target_link_libraries(nrniv_lib PRIVATE neuron_gpu)
 add_dependencies(nrniv_lib generated_source_files)
 add_cpp_git_information(nrniv_lib PRIVATE)
 target_link_libraries(nrniv_lib PRIVATE nrngnu)

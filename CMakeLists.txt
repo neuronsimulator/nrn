@@ -776,6 +776,7 @@ endif()
 # =============================================================================
 add_subdirectory(src/sparse13)
 add_subdirectory(src/gnu)
+add_subdirectory(src/neuron)
 add_subdirectory(src/nrniv)
 
 if(NRN_ENABLE_PYTHON)
