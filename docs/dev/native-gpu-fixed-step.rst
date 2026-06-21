@@ -125,11 +125,11 @@ At a high level, thread 0 (and peers) execute:
 .. mermaid::
 
    flowchart TD
-     A[deliver_net_events: CPU queues → targets] --> B[setup_tree_matrix + mechanism currents]
+     A[deliver_net_events: CPU queues → targets] --> B[GPU setup_tree_matrix + NMODL mechanism currents]
      B --> C[GPU matrix solve]
      C --> D{post_solve host fallback?}
-     D -->|no| E[post_solve_on_device: V, fast_imem]
-     D -->|yes| F[host nrn_update_voltage path]
+     D -->|no| E[GPU post_solve: V, fast_imem, capacity]
+     D -->|yes| F[CPU post_solve: nrn_update_voltage path]
      E --> G{gap junctions?}
      F --> G
      G -->|yes| H[sync voltages + MPI transfer]
@@ -140,6 +140,23 @@ At a high level, thread 0 (and peers) execute:
      J -->|no| L[defer to next flush / psolve end]
      K --> M[advance step counter]
      L --> M
+
+On the native path ``nt.compute_gpu`` is set for the integration phase. NMODL
+``BREAKPOINT`` currents (``nrn_cur_*`` OpenACC kernels) and OpenACC axial matrix
+assembly in ``setup_tree_matrix`` run on the GPU — consistent with the
+**Mechanisms (NMODL)** supported row above. A brief host sync may adjust matrix
+entries for legacy host-only hooks before the solver sees device-resident state.
+
+**Post-solve host fallback** (``post_solve_needs_host_fallback()``) selects the
+CPU ``nrn_update_voltage`` branch instead of ``post_solve_on_device`` when the
+model uses features whose post-solve logic is not yet on device:
+
+- ``use_sparse13`` — sparse13 capacitance path expects host RHS layout
+- Extracellular mechanisms (when built with ``EXTRACELLULAR``)
+- Gap/transfer setups that register ``nrnthread_vi_compute_`` (v+vext and
+  non-voltage source interpolation for partrans/LFP-style hooks)
+
+Most Phase B modtests take the **no** branch (full GPU post-solve).
 
 Spike exchange with MPI occurs at the **minimum NetCon delay** cadence (often
 many fixed steps), not every ``dt``.
