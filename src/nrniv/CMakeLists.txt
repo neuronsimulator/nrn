@@ -477,7 +477,8 @@ if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
       ${PROJECT_SOURCE_DIR}/src/coreneuron/permute/cellorder.cpp
       ${PROJECT_SOURCE_DIR}/src/coreneuron/permute/cellorder1.cpp
       ${PROJECT_SOURCE_DIR}/src/coreneuron/permute/cellorder2.cpp
-      ${PROJECT_SOURCE_DIR}/src/coreneuron/utils/lpt.cpp)
+      ${PROJECT_SOURCE_DIR}/src/coreneuron/utils/lpt.cpp
+      ${PROJECT_SOURCE_DIR}/src/nrnoc/treeset.cpp)
   set_source_files_properties(
     ${_nrn_openacc_sources} PROPERTIES COMPILE_OPTIONS "${NRN_ACC_FLAGS}"
                                        COMPILE_DEFINITIONS "CORENEURON_ENABLE_GPU;NRN_ENABLE_GPU")

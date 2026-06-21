@@ -22,6 +22,10 @@
 #include "utils/profile/profiler_interface.h"
 #include "multicore.h"
 
+#if defined(NRN_ENABLE_GPU)
+#include "coreneuron/utils/offload.hpp"
+#endif
+
 #include <cstdio>
 #include <cstdlib>
 #include <cerrno>
@@ -402,12 +406,18 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
             NODERHS(_nt->_v_node[i]) = 0.;
         }
     } else {
+        nrn_pragma_acc(parallel loop present(vec_rhs [0:i3]) if (_nt->compute_gpu && i3 > i1)
+                           async(_nt->stream_id))
+        nrn_pragma_omp(target teams distribute parallel for if(_nt->compute_gpu))
         for (i = i1; i < i3; ++i) {
             vec_rhs[i] = 0.;
         }
     }
     auto const vec_sav_rhs = _nt->node_sav_rhs_storage();
     if (vec_sav_rhs) {
+        nrn_pragma_acc(parallel loop present(vec_sav_rhs [i1:i3]) if (_nt->compute_gpu && i3 > i1)
+                           async(_nt->stream_id))
+        nrn_pragma_omp(target teams distribute parallel for if(_nt->compute_gpu))
         for (i = i1; i < i3; ++i) {
             vec_sav_rhs[i] = 0.;
         }
@@ -440,6 +450,9 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
         /* vec_sav_rhs has only the contribution of electrode current
            here we transform so it only has membrane current contribution
         */
+        nrn_pragma_acc(parallel loop present(vec_sav_rhs [i1:i3], vec_rhs [i1:i3])
+                           if (_nt->compute_gpu && i3 > i1) async(_nt->stream_id))
+        nrn_pragma_omp(target teams distribute parallel for if(_nt->compute_gpu))
         for (i = i1; i < i3; ++i) {
             vec_sav_rhs[i] -= vec_rhs[i];
         }
@@ -468,11 +481,22 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
     auto* const vec_b = nt.node_b_storage();
     auto* const vec_v = nt.node_voltage_storage();
     auto* const parent_i = nt._v_parent_index;
+    nrn_pragma_acc(parallel loop present(vec_rhs [0:i3],
+                                         vec_a [0:i3],
+                                         vec_b [0:i3],
+                                         vec_v [0:i3],
+                                         parent_i [0:i3]) if (_nt->compute_gpu && i3 > i2)
+                       async(_nt->stream_id))
+    nrn_pragma_omp(target teams distribute parallel for if(_nt->compute_gpu))
     for (i = i2; i < i3; ++i) {
         auto const pi = parent_i[i];
         auto const dv = vec_v[pi] - vec_v[i];
         // our connection coefficients are negative so
+        nrn_pragma_acc(atomic update)
+        nrn_pragma_omp(atomic update)
         vec_rhs[i] -= vec_b[i] * dv;
+        nrn_pragma_acc(atomic update)
+        nrn_pragma_omp(atomic update)
         vec_rhs[pi] += vec_a[i] * dv;
     }
 }
@@ -505,12 +529,18 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
 
     // Make sure the SoA node diagonals are also zeroed (is this needed?)
     auto* const vec_d = _nt->node_d_storage();
+    nrn_pragma_acc(parallel loop present(vec_d [0:i3]) if (_nt->compute_gpu && i3 > i1)
+                       async(_nt->stream_id))
+    nrn_pragma_omp(target teams distribute parallel for if(_nt->compute_gpu))
     for (int i = i1; i < i3; ++i) {
         vec_d[i] = 0.;
     }
 
     auto const vec_sav_d = _nt->node_sav_d_storage();
     if (vec_sav_d) {
+        nrn_pragma_acc(parallel loop present(vec_sav_d [i1:i3]) if (_nt->compute_gpu && i3 > i1)
+                           async(_nt->stream_id))
+        nrn_pragma_omp(target teams distribute parallel for if(_nt->compute_gpu))
         for (i = i1; i < i3; ++i) {
             vec_sav_d[i] = 0.;
         }
@@ -545,6 +575,9 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
         /* vec_sav_d has only the contribution of electrode current
            here we transform so it only has membrane current contribution
         */
+        nrn_pragma_acc(parallel loop present(vec_sav_d [i1:i3], vec_d [i1:i3])
+                           if (_nt->compute_gpu && i3 > i1) async(_nt->stream_id))
+        nrn_pragma_omp(target teams distribute parallel for if(_nt->compute_gpu))
         for (i = i1; i < i3; ++i) {
             vec_sav_d[i] = vec_d[i] - vec_sav_d[i];
         }
@@ -588,9 +621,20 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
     } else {
         auto* const vec_a = _nt->node_a_storage();
         auto* const vec_b = _nt->node_b_storage();
+        auto* const parent_i = _nt->_v_parent_index;
+        nrn_pragma_acc(parallel loop present(vec_d [0:i3],
+                                             vec_a [0:i3],
+                                             vec_b [0:i3],
+                                             parent_i [0:i3]) if (_nt->compute_gpu && i3 > i2)
+                           async(_nt->stream_id))
+        nrn_pragma_omp(target teams distribute parallel for if(_nt->compute_gpu))
         for (i = i2; i < i3; ++i) {
+            nrn_pragma_acc(atomic update)
+            nrn_pragma_omp(atomic update)
             vec_d[i] -= vec_b[i];
-            vec_d[_nt->_v_parent_index[i]] -= vec_a[i];
+            nrn_pragma_acc(atomic update)
+            nrn_pragma_omp(atomic update)
+            vec_d[parent_i[i]] -= vec_a[i];
         }
     }
 }
