@@ -298,6 +298,7 @@ notes.
 Related documentation
 *********************
 
+- :doc:`/dev/native-gpu-adoption/00-overview` — Phase B development journal (design, commits)
 - :ref:`cmake-nrn-enable-gpu-option` — CMake configure
 - :doc:`/nmodl/gpu_codegen` — mechanism OpenACC codegen
 - :doc:`gpu-testing` — CTest and benchmark workflows
