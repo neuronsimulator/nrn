@@ -141,6 +141,27 @@ MPI multi-GPU device assignment uses ``device_id = mpi_local_rank % num_gpus_per
 (same policy as CoreNEURON ``init_gpu()``). Set ``gpu.device_count`` to limit GPUs per node
 (0 = all available). CTest: ``unit_tests::gpu_device_assign_mpi`` (2 MPI ranks).
 
+Threading policy (Phase B)
+**************************
+Native GPU modtests are run with ``OMP_NUM_THREADS=1``. Enabling native GPU with
+``pc.nthread(n)`` for ``n > 1`` emits a one-time warning: OpenACC per-thread CUDA
+context handling is not fully validated on all platforms. Prefer ``pc.nthread(1)``
+for native GPU until a later threading hardening pass.
+
+Spike delivery and NET_RECEIVE (Phase B)
+***************************************
+The CPU spike priority queue remains authoritative for cross-rank NetCon delivery.
+At each minimum NetCon delay interval:
+
+- Presynaptic spikes are exchanged with MPI on CPU and inserted into priority queues.
+- ``deliver_net_events`` moves due spikes from CPU queues to target mechanisms.
+- ``NET_RECEIVE`` and mechanism state updates run on GPU during the step.
+- ``net_send``/threshold events generated on GPU are buffered (``NetSendBuffer``);
+  cross-cell outputs go to CPU/MPI; self-events may be flushed on device.
+
+This matches the CoreNEURON model: GPU integration and NET_RECEIVE computation,
+CPU spike scheduling and MPI.
+
 The **G4 native modtest parity** ctests set ``NRN_GPU_BACKEND_TEST=native`` and compare
 NEURON CPU reference output against the native backend (19 tests, mirroring single-process
 ``*_py_gpu`` CoreNEURON modtests):

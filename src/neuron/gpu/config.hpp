@@ -42,6 +42,9 @@ bool use_cuda_launcher() noexcept;
  */
 [[nodiscard]] const char* native_gpu_configuration_error() noexcept;
 
+/** One-time stderr notice when native GPU runs with pc.nthread() > 1. */
+void warn_native_gpu_multithread_policy() noexcept;
+
 namespace detail {
 void reset_config_for_testing();
 void set_enable_for_testing(bool value);

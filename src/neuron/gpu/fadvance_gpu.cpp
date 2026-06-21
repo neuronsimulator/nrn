@@ -38,6 +38,9 @@ void fixed_step_thread(model_sorted_token const& cache_token,
                        device_token const& /*dev*/,
                        NrnThread& nt) {
     ++g_fixed_step_dispatch_count;
+    if (nt.id == 0) {
+        warn_native_gpu_multithread_policy();
+    }
     auto* const nth = &nt;
 
     int const saved_compute_gpu = nt.compute_gpu;

@@ -2,10 +2,12 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cstdio>
 #include <stdexcept>
 #include <string>
 
 extern int cvode_active_;
+extern int nrn_nthread;
 
 namespace neuron::gpu {
 namespace {
@@ -94,6 +96,20 @@ bool use_cuda_launcher() noexcept {
     return enabled() && backend_native();
 #else
     return false;
+#endif
+}
+
+void warn_native_gpu_multithread_policy() noexcept {
+#if defined(NRN_ENABLE_GPU)
+    static bool warned{false};
+    if (warned || !enabled() || !backend_native() || nrn_nthread <= 1) {
+        return;
+    }
+    warned = true;
+    fprintf(stderr,
+            "neuron::gpu: native GPU is validated primarily with pc.nthread(1); "
+            "pc.nthread(%d) may fail with per-thread OpenACC CUDA contexts\n",
+            nrn_nthread);
 #endif
 }
 

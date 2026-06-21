@@ -8,6 +8,11 @@ struct NrnThread;
 
 namespace neuron::gpu {
 
+/**
+ * Buffers net_send/net_event/net_move calls from GPU mechanism kernels until
+ * host flush. Cross-cell NetCon events go to the CPU spike system; self-events
+ * may remain on-device via the buffer (CoreNEURON-style).
+ */
 struct NetSendBuffer_t {
     int* _sendtype = nullptr;
     int* _vdata_index = nullptr;

@@ -6,10 +6,14 @@ struct NrnThread;
 
 namespace neuron::gpu {
 
-/** Host-side threshold delivery before mechanism GPU work (Phase B1). */
+/**
+ * Deliver presynaptic spikes from the CPU priority queue to NET_RECEIVE blocks.
+ * Cross-rank spikes arrive via MPI into per-rank queues on CPU; mechanism
+ * NET_RECEIVE computation itself runs on GPU during the integration step.
+ */
 void deliver_net_events_host(NrnThread* nt);
 
-/** Host-side event delivery after the integration half-step (Phase B1). */
+/** Host-side POINT_PROCESS / NetCon event delivery after the integration half-step. */
 void deliver_post_step_events_host(NrnThread* nt);
 
 /** Host MPI spike exchange after a fixed-step group when native GPU is active. */
