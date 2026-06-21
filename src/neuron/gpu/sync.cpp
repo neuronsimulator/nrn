@@ -116,6 +116,10 @@ void sync_matrix_to_host_before_solve(NrnThread& nt) {
     sync_matrix_arrays_to_host(nt);
 }
 
+void sync_matrix_to_host_after_solve(NrnThread& nt) {
+    sync_matrix_arrays_to_host(nt);
+}
+
 void sync_voltage_to_device_after_solve(NrnThread& nt) {
     sync_voltage_and_rhs_to_device(nt);
 }

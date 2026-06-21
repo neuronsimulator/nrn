@@ -16,6 +16,9 @@ void sync_matrix_to_device_after_mechanisms(NrnThread& nt);
 /** Pull matrix state to host before the host Hines solver runs. */
 void sync_matrix_to_host_before_solve(NrnThread& nt);
 
+/** Pull post-solve matrix state (especially vec_rhs solution) to host. */
+void sync_matrix_to_host_after_solve(NrnThread& nt);
+
 /** Push post-solve voltages (and rhs) back to device for the next GPU step. */
 void sync_voltage_to_device_after_solve(NrnThread& nt);
 
