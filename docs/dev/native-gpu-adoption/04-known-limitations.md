@@ -19,15 +19,23 @@ priority queue equivalent to the host NetCon queues.
 Validated default: `pc.nthread(1)`, `OMP_NUM_THREADS=1`. `pc.nthread(n>1)`
 emits a one-time warning; per-thread CUDA contexts may fail on some platforms.
 
-## Host fallbacks (per-step)
+## sparse13 / DAE models (extracellular, LinearMechanism)
 
-These force host post-solve or RHS paths when active:
+Native GPU matrix solve is **Hines tridiagonal only** (`solve_interleaved` on
+device). Extracellular and `LinearMechanism` are DAE extensions that force
+`use_sparse13 = 1` and the CPU `spFactor`/`spSolve` path in `nrn_solve` — there
+is **no GPU sparse13** in Phase B.
 
-- `use_sparse13`
-- Extracellular mechanisms
-- LFP-related post-solve hooks
+`post_solve_needs_host_fallback()` also returns true for `use_sparse13` and
+extracellular builds, but that only affects post-solve; it does not substitute a
+GPU sparse solver. **Do not use native GPU for these model types** (same deferral
+class as CVode-on-GPU).
 
-See `post_solve_needs_host_fallback()` in `post_solve.cpp`.
+## LFP / partrans post-solve fallback
+
+When `nrnthread_vi_compute_` is registered (gap/partrans v+vext interpolation),
+post-solve runs on the host via `nrn_update_voltage` instead of
+`post_solve_on_device`. The matrix solve may still be on GPU for type-1 ODE models.
 
 ## MPI-native modtest gap
 

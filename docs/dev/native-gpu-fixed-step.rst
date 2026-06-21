@@ -83,9 +83,13 @@ Supported and unsupported matrix
 +-------------------------------+------------------+---------------------------+
 | ``pc.nthread(n>1)``           | Experimental     | One-time warning emitted  |
 +-------------------------------+------------------+---------------------------+
-| ``use_sparse13``              | Host fallback    | Per-step RHS host pull    |
+| Extracellular                 | **Unsupported**  | DAE → CPU ``sparse13``    |
 +-------------------------------+------------------+---------------------------+
-| Extracellular / LFP hooks     | Host fallback    | Post-solve on host        |
+| ``LinearMechanism``           | **Unsupported**  | DAE → CPU ``sparse13``    |
++-------------------------------+------------------+---------------------------+
+| ``sparse13`` / DAE solve      | **Unsupported**  | No GPU sparse solver      |
++-------------------------------+------------------+---------------------------+
+| LFP / ``nrnthread_vi_compute_`` | Host fallback  | Post-solve on host only   |
 +-------------------------------+------------------+---------------------------+
 | CoreNEURON embedded backend   | Separate path    | ``gpu.backend=coreneuron``|
 +-------------------------------+------------------+---------------------------+
@@ -126,7 +130,7 @@ At a high level, thread 0 (and peers) execute:
 
    flowchart TD
      A[deliver_net_events: CPU queues → targets] --> B[GPU setup_tree_matrix + NMODL mechanism currents]
-     B --> C[GPU matrix solve]
+     B --> C[GPU Hines solve: solve_interleaved]
      C --> D{post_solve host fallback?}
      D -->|no| E[GPU post_solve: V, fast_imem, capacity]
      D -->|yes| F[CPU post_solve: nrn_update_voltage path]
@@ -147,16 +151,29 @@ assembly in ``setup_tree_matrix`` run on the GPU — consistent with the
 **Mechanisms (NMODL)** supported row above. A brief host sync may adjust matrix
 entries for legacy host-only hooks before the solver sees device-resident state.
 
-**Post-solve host fallback** (``post_solve_needs_host_fallback()``) selects the
-CPU ``nrn_update_voltage`` branch instead of ``post_solve_on_device`` when the
-model uses features whose post-solve logic is not yet on device:
+**GPU matrix solve is not a general sparse solver.** Phase B implements the
+**Hines tridiagonal** path only: ``solve_interleaved`` / ``solve_interleaved1|2``
+(OpenACC in ``cellorder*.cpp``). That is the same structural assumption as the
+classic ``triang``/``bksub`` tree solver.
 
-- ``use_sparse13`` — sparse13 capacitance path expects host RHS layout
-- Extracellular mechanisms (when built with ``EXTRACELLULAR``)
-- Gap/transfer setups that register ``nrnthread_vi_compute_`` (v+vext and
-  non-voltage source interpolation for partrans/LFP-style hooks)
+The **sparse13** library (``spFactor`` / ``spSolve`` in ``solve.cpp``) handles
+DAE models that extend the equation system beyond the tree — extracellular
+layers (``extcelln.cpp``: *"solving is done with sparse13"*), ``LinearMechanism``
+(``NrnDAE`` / ``nrndae``), and related fixed-step DAE cases
+(``nrn_modeltype()`` returns 2 → ``use_sparse13 = 1``). **Sparse13 runs on the
+CPU only**; there is no GPU sparse13 or GPU DAE solver in Phase B (deferred like
+CVode-on-GPU).
 
-Most Phase B modtests take the **no** branch (full GPU post-solve).
+Native GPU is intended for **model type 1** (ODE tree) modtests. Do not enable
+``gpu.backend="native"`` for extracellular or ``LinearMechanism`` models.
+
+**Post-solve host fallback** (``post_solve_needs_host_fallback()``) is a separate,
+narrower hook: it forces CPU ``nrn_update_voltage`` instead of
+``post_solve_on_device`` when LFP/partrans registers ``nrnthread_vi_compute_``,
+or when ``use_sparse13`` / extracellular is active at compile time. That fallback
+does **not** retrofit a GPU sparse solve — models that require sparse13 must stay
+on CPU NEURON (or CoreNEURON where applicable). Most Phase B modtests are
+type-1 ODE models and take the full GPU solve + GPU post-solve path.
 
 Spike exchange with MPI occurs at the **minimum NetCon delay** cadence (often
 many fixed steps), not every ``dt``.

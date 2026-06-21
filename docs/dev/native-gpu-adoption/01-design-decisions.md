@@ -89,6 +89,15 @@ pass.
 **Artifacts:** `warn_native_gpu_multithread_policy()` in `config.cpp`,
 `fadvance_gpu.cpp`.
 
+## Hines GPU solve only; sparse13 stays on CPU
+
+**Decision:** GPU integration uses `solve_interleaved` (tridiagonal Hines structure).
+DAE models (extracellular, `LinearMechanism` / `NrnDAE`) use `sparse13` on the CPU
+via `spFactor`/`spSolve` — not ported to device in Phase B.
+
+**Why:** Sparse13 solves a different matrix structure than the permuted tree.
+A GPU sparse/DAE solver is a separate project (like CVode-on-GPU).
+
 ## Build still requires CoreNEURON at configure (Phase B)
 
 **Decision:** `-DNRN_ENABLE_GPU=ON` currently requires `-DNRN_ENABLE_CORENEURON=ON`
