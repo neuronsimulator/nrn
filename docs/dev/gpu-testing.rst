@@ -1,5 +1,9 @@
 Testing GPU functionality
 #########################
+
+For the **Phase B scope contract** (supported features, timestep architecture,
+``neuron.gpu`` API), see :doc:`native-gpu-fixed-step`.
+
 This section provides information and links that help with testing :ref:`CoreNEURON`'s GPU support.
 Other sections of the documentation that may be relevant are:
 
@@ -87,80 +91,12 @@ See :ref:`cmake-nrn-enable-gpu-option` and :ref:`cmake-coreneuron-enable-gpu-opt
 
 NEURON native GPU backend (Phase B)
 ***********************************
-When ``-DNRN_ENABLE_GPU=ON`` is set at configure time, NEURON can run fixed-step
-``pc.psolve`` on the native GPU path (``gpu.backend=native``) without embedding
-CoreNEURON. **CVode must be inactive** on this path; enabling native GPU with
-CVode active raises an error. Runtime control:
-
-.. code-block:: python
-
-  from neuron import gpu
-  gpu.enable = True
-  gpu.backend = "native"
-
-GPU configuration (``neuron.gpu``)
-**********************************
-Runtime GPU options are controlled via :mod:`neuron.gpu` (or
-``ParallelContext`` methods ``gpu_enable``, ``gpu_backend``, ``gpu_device_count``).
-Legacy ``coreneuron.gpu`` / ``coreneuron.num_gpus`` / ``coreneuron.cell_permute`` forward
-to ``neuron.gpu`` with ``DeprecationWarning``.
-
-.. code-block:: python
-
-  from neuron import gpu
-
-  gpu.enable = True
-  gpu.backend = "native"      # or "coreneuron" during Phase A
-  gpu.device_count = 0        # 0 = all GPUs on the node
-  gpu.permute = 2             # default 2 when enable=True (applied silently)
-
-Context manager (mirrors ``coreneuron()``):
-
-.. code-block:: python
-
-  with gpu(enable=True, backend="native"):
-      pc.psolve(100)
-
-Configuration truth table (effective simulation path):
-
-+--------------------------+---------------+--------------+---------------------+---------------------------+
-| ``NRN_ENABLE_GPU`` build | gpu.backend   | gpu.enable   | coreneuron.enable   | Effective path            |
-+==========================+===============+==============+=====================+===========================+
-| OFF                      | *             | *            | *                   | CPU NEURON only           |
-+--------------------------+---------------+--------------+---------------------+---------------------------+
-| ON                       | coreneuron    | True         | *                   | CoreNEURON embedded       |
-+--------------------------+---------------+--------------+---------------------+---------------------------+
-| ON                       | native        | True         | *                   | Native GPU fixed-step     |
-+--------------------------+---------------+--------------+---------------------+---------------------------+
-| ON                       | coreneuron    | False        | True (no gpu)       | CPU NEURON                |
-+--------------------------+---------------+--------------+---------------------+---------------------------+
-| ON                       | native        | True         | True                | **Native** (backend wins) |
-+--------------------------+---------------+--------------+---------------------+---------------------------+
+See :doc:`native-gpu-fixed-step` for runtime API, supported/unsupported matrix,
+and timestep architecture. This section covers CTest and MPI device assignment.
 
 MPI multi-GPU device assignment uses ``device_id = mpi_local_rank % num_gpus_per_node``
 (same policy as CoreNEURON ``init_gpu()``). Set ``gpu.device_count`` to limit GPUs per node
 (0 = all available). CTest: ``unit_tests::gpu_device_assign_mpi`` (2 MPI ranks).
-
-Threading policy (Phase B)
-**************************
-Native GPU modtests are run with ``OMP_NUM_THREADS=1``. Enabling native GPU with
-``pc.nthread(n)`` for ``n > 1`` emits a one-time warning: OpenACC per-thread CUDA
-context handling is not fully validated on all platforms. Prefer ``pc.nthread(1)``
-for native GPU until a later threading hardening pass.
-
-Spike delivery and NET_RECEIVE (Phase B)
-***************************************
-The CPU spike priority queue remains authoritative for cross-rank NetCon delivery.
-At each minimum NetCon delay interval:
-
-- Presynaptic spikes are exchanged with MPI on CPU and inserted into priority queues.
-- ``deliver_net_events`` moves due spikes from CPU queues to target mechanisms.
-- ``NET_RECEIVE`` and mechanism state updates run on GPU during the step.
-- ``net_send``/threshold events generated on GPU are buffered (``NetSendBuffer``);
-  cross-cell outputs go to CPU/MPI; self-events may be flushed on device.
-
-This matches the CoreNEURON model: GPU integration and NET_RECEIVE computation,
-CPU spike scheduling and MPI.
 
 The **G4 native modtest parity** ctests set ``NRN_GPU_BACKEND_TEST=native`` and compare
 NEURON CPU reference output against the native backend (19 tests, mirroring single-process

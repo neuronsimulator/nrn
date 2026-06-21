@@ -7,6 +7,7 @@ NEURON Development topics
    ./HOCInterpreter/HOCInterpreter.md
    ./how-do-i/how-do-i.rst
    data-structures.rst
+   native-gpu-fixed-step.rst
    gpu-testing.rst
    nmodl-development.rst
    workflow-code-paths.rst
