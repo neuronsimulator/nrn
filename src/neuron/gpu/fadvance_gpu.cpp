@@ -3,6 +3,8 @@
 #include "neuron/gpu/config.hpp"
 #include "neuron/gpu/device_state.hpp"
 #include "neuron/gpu/net_events.hpp"
+#include "neuron/gpu/net_send_buffer.hpp"
+#include "neuron/gpu/sync.hpp"
 #include "neuron/model_data.hpp"
 
 #include "coreneuron/permute/cellorder.hpp"
@@ -17,6 +19,7 @@
 #include <cstddef>
 
 extern void (*nrnthread_v_transfer_)(NrnThread* nt);
+extern void (*nrnmpi_v_transfer_)();
 
 namespace neuron::gpu {
 namespace {
@@ -43,28 +46,41 @@ void fixed_step_thread(model_sorted_token const& cache_token,
         deliver_net_events_host(nth);
     }
 
+    ensure_thread_net_send_buffers(nth);
     nrn_random_play();
     advance_first_half_time(nt);
+    sync_before_vecplay(nt);
     fixed_play_continuous(nth);
-    setup_tree_matrix(cache_token, nt);
-    {
-        nrn::Instrumentor::phase p("matrix-solver");
-        if (neuron::interleave_permute_type) {
-            neuron::solve_interleaved(nt.id);
-        } else {
-            nrn_solve(nth);
+    sync_after_vecplay(nt);
+    if (nt.end > 0) {
+        setup_tree_matrix(cache_token, nt);
+        flush_mechanism_net_send_buffers(nth);
+        {
+            nrn::Instrumentor::phase p("matrix-solver");
+            if (neuron::interleave_permute_type) {
+                neuron::solve_interleaved(nt.id);
+            } else {
+                nrn_solve(nth);
+            }
+        }
+        {
+            nrn::Instrumentor::phase p("second-order-cur");
+            second_order_cur(nth);
+        }
+        {
+            nrn::Instrumentor::phase p("update");
+            nrn_update_voltage(cache_token, nt);
         }
     }
-    {
-        nrn::Instrumentor::phase p("second-order-cur");
-        second_order_cur(nth);
-    }
-    {
-        nrn::Instrumentor::phase p("update");
-        nrn_update_voltage(cache_token, nt);
-    }
-
-    if (!nrnthread_v_transfer_) {
+    if (nrnthread_v_transfer_) {
+        if (nt.end > 0) {
+            sync_gap_after_voltage_update(nt);
+            if (nrnmpi_v_transfer_) {
+                (*nrnmpi_v_transfer_)();
+            }
+        }
+        nrn_fixed_step_lastpart(cache_token, nt);
+    } else {
         nrn_fixed_step_lastpart(cache_token, nt);
     }
 

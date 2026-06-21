@@ -35,7 +35,23 @@ class CodegenNeuronAccVisitor: public CodegenNeuronCppVisitor {
     void print_kernel_data_present_annotation_block_begin() override;
     void print_kernel_data_present_annotation_block_end() override;
 
+    void print_after_nrn_cur_gpu_net_send_flush() override;
+
+    void print_net_send_call(const ast::FunctionCall& node) override;
+    void print_net_move_call(const ast::FunctionCall& node) override;
+    void print_net_event_call(const ast::FunctionCall& node) override;
+
+    void print_compute_functions() override;
+
+  private:
     void print_device_stream_wait() const;
+    void print_net_send_buffering();
+    void print_send_event_move();
+    void print_net_send_buffering_cnt_update() const;
+    void print_net_send_buffering_grow();
+    void print_net_send_buf_count_update_to_host() const;
+    void print_net_send_buf_update_to_host() const;
+    void print_net_send_buf_count_update_to_device() const;
 };
 
 /** \} */  // end of codegen_backends

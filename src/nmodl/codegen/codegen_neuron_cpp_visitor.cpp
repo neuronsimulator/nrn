@@ -1676,6 +1676,10 @@ void CodegenNeuronCppVisitor::print_mechanism_register_regular() {
         printer->add_line("add_nrn_has_net_event(mech_type);");
     }
 
+    if (info.net_event_used || info.net_send_used) {
+        printer->add_line("hoc_register_net_send_buffering(mech_type);");
+    }
+
     if (info.for_netcon_used) {
         auto dparam_it =
             std::find_if(info.semantics.begin(), info.semantics.end(), [](const IndexSemantics& a) {
@@ -2544,9 +2548,12 @@ void CodegenNeuronCppVisitor::print_nrn_cur() {
     //     print_fast_imem_calculation();
     // }
 
+    print_after_nrn_cur_gpu_net_send_flush();
     print_kernel_data_present_annotation_block_end();
     printer->pop_block();
 }
+
+void CodegenNeuronCppVisitor::print_after_nrn_cur_gpu_net_send_flush() {}
 
 
 /****************************************************************************************/

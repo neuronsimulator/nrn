@@ -169,6 +169,9 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
      */
     virtual void print_kernel_data_present_annotation_block_end();
 
+    /** Hook after nrn_cur for GPU net_send buffer flush (ACC backend overrides). */
+    virtual void print_after_nrn_cur_gpu_net_send_flush();
+
     /****************************************************************************************/
     /*                         Printing routines for code generation                        */
     /****************************************************************************************/

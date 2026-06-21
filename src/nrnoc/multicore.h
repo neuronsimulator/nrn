@@ -77,6 +77,10 @@ struct NrnThread {
     /** @brief OpenACC/CUDA stream index for async kernels on this thread. */
     int stream_id = 0;
 
+    int _net_send_buffer_size = 0;
+    int _net_send_buffer_cnt = 0;
+    int* _net_send_buffer = nullptr;
+
     [[nodiscard]] double* node_a_storage();
     [[nodiscard]] double* node_area_storage();
     [[nodiscard]] double* node_b_storage();
