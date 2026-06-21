@@ -34,6 +34,10 @@
 #include <openacc.h>
 #endif
 
+#if !CORENRN_BUILD
+void verify_structure();
+#endif
+
 #if CORENRN_BUILD
 namespace coreneuron {
 #else
@@ -342,6 +346,9 @@ static void prnode(const char* mes, NrnThread& nt) {
 int nrn_optimize_node_order(int type) {
     if (type != interleave_permute_type) {
         tree_changed = 1;  // calls setup_topology. v_stucture_change = 1 may be better.
+        interleave_permute_type = type;
+        ::verify_structure();
+        return type;
     }
     interleave_permute_type = type;
     return type;

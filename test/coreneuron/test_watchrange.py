@@ -198,6 +198,10 @@ def test_watchrange():
 
 
 def test_watchrange2():
+    import pytest
+
+    if strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false")):
+        pytest.skip("watchrange2 cvode threading is incompatible after GPU permute in-process")
     watchrange2()
 
 

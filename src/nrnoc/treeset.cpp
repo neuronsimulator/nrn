@@ -24,6 +24,7 @@
 
 #if defined(NRN_ENABLE_GPU)
 #include "coreneuron/utils/offload.hpp"
+#include "neuron/gpu/sync.hpp"
 #endif
 
 #include <cstdio>
@@ -405,21 +406,25 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
         for (i = i1; i < i3; ++i) {
             NODERHS(_nt->_v_node[i]) = 0.;
         }
+    } else if (_nt->compute_gpu && i3 > i1) {
+        for (i = i1; i < i3; ++i) {
+            vec_rhs[i] = 0.;
+        }
     } else {
-        nrn_pragma_acc(parallel loop present(vec_rhs [0:i3]) if (_nt->compute_gpu && i3 > i1)
-                           async(_nt->stream_id))
-        nrn_pragma_omp(target teams distribute parallel for if(_nt->compute_gpu))
         for (i = i1; i < i3; ++i) {
             vec_rhs[i] = 0.;
         }
     }
     auto const vec_sav_rhs = _nt->node_sav_rhs_storage();
     if (vec_sav_rhs) {
-        nrn_pragma_acc(parallel loop present(vec_sav_rhs [i1:i3]) if (_nt->compute_gpu && i3 > i1)
-                           async(_nt->stream_id))
-        nrn_pragma_omp(target teams distribute parallel for if(_nt->compute_gpu))
-        for (i = i1; i < i3; ++i) {
-            vec_sav_rhs[i] = 0.;
+        if (_nt->compute_gpu && i3 > i1) {
+            for (i = i1; i < i3; ++i) {
+                vec_sav_rhs[i] = 0.;
+            }
+        } else {
+            for (i = i1; i < i3; ++i) {
+                vec_sav_rhs[i] = 0.;
+            }
         }
     }
 
@@ -446,15 +451,22 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
         }
     activsynapse_rhs();
 
+#if defined(NRN_ENABLE_GPU)
+    neuron::gpu::sync_matrix_to_device_after_mechanisms(nt);
+#endif
+
     if (vec_sav_rhs) {
         /* vec_sav_rhs has only the contribution of electrode current
            here we transform so it only has membrane current contribution
         */
-        nrn_pragma_acc(parallel loop present(vec_sav_rhs [i1:i3], vec_rhs [i1:i3])
-                           if (_nt->compute_gpu && i3 > i1) async(_nt->stream_id))
-        nrn_pragma_omp(target teams distribute parallel for if(_nt->compute_gpu))
-        for (i = i1; i < i3; ++i) {
-            vec_sav_rhs[i] -= vec_rhs[i];
+        if (_nt->compute_gpu && i3 > i1) {
+            for (i = i1; i < i3; ++i) {
+                vec_sav_rhs[i] -= vec_rhs[i];
+            }
+        } else {
+            for (i = i1; i < i3; ++i) {
+                vec_sav_rhs[i] -= vec_rhs[i];
+            }
         }
     }
 #if EXTRACELLULAR
@@ -473,6 +485,9 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
 
     activstim_rhs();
     activclamp_rhs();
+#if defined(NRN_ENABLE_GPU)
+    neuron::gpu::sync_matrix_to_device_after_mechanisms(nt);
+#endif
     /* now the internal axial currents.
     The extracellular mechanism contribution is already done.
         rhs += ai_j*(vi_j - vi)
@@ -529,20 +544,26 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
 
     // Make sure the SoA node diagonals are also zeroed (is this needed?)
     auto* const vec_d = _nt->node_d_storage();
-    nrn_pragma_acc(parallel loop present(vec_d [0:i3]) if (_nt->compute_gpu && i3 > i1)
-                       async(_nt->stream_id))
-    nrn_pragma_omp(target teams distribute parallel for if(_nt->compute_gpu))
-    for (int i = i1; i < i3; ++i) {
-        vec_d[i] = 0.;
+    if (_nt->compute_gpu && i3 > i1) {
+        for (int i = i1; i < i3; ++i) {
+            vec_d[i] = 0.;
+        }
+    } else {
+        for (int i = i1; i < i3; ++i) {
+            vec_d[i] = 0.;
+        }
     }
 
     auto const vec_sav_d = _nt->node_sav_d_storage();
     if (vec_sav_d) {
-        nrn_pragma_acc(parallel loop present(vec_sav_d [i1:i3]) if (_nt->compute_gpu && i3 > i1)
-                           async(_nt->stream_id))
-        nrn_pragma_omp(target teams distribute parallel for if(_nt->compute_gpu))
-        for (i = i1; i < i3; ++i) {
-            vec_sav_d[i] = 0.;
+        if (_nt->compute_gpu && i3 > i1) {
+            for (i = i1; i < i3; ++i) {
+                vec_sav_d[i] = 0.;
+            }
+        } else {
+            for (i = i1; i < i3; ++i) {
+                vec_sav_d[i] = 0.;
+            }
         }
     }
 
@@ -569,17 +590,24 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
         nrn_cap_jacob(sorted_token, _nt, _nt->tml->ml);
     }
 
+#if defined(NRN_ENABLE_GPU)
+    neuron::gpu::sync_matrix_to_device_after_mechanisms(nt);
+#endif
+
     activsynapse_lhs();
 
     if (vec_sav_d) {
         /* vec_sav_d has only the contribution of electrode current
            here we transform so it only has membrane current contribution
         */
-        nrn_pragma_acc(parallel loop present(vec_sav_d [i1:i3], vec_d [i1:i3])
-                           if (_nt->compute_gpu && i3 > i1) async(_nt->stream_id))
-        nrn_pragma_omp(target teams distribute parallel for if(_nt->compute_gpu))
-        for (i = i1; i < i3; ++i) {
-            vec_sav_d[i] = vec_d[i] - vec_sav_d[i];
+        if (_nt->compute_gpu && i3 > i1) {
+            for (i = i1; i < i3; ++i) {
+                vec_sav_d[i] = vec_d[i] - vec_sav_d[i];
+            }
+        } else {
+            for (i = i1; i < i3; ++i) {
+                vec_sav_d[i] = vec_d[i] - vec_sav_d[i];
+            }
         }
     }
 #if EXTRACELLULAR
@@ -598,6 +626,9 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
 
     /* at this point d contains all the membrane conductances */
 
+#if defined(NRN_ENABLE_GPU)
+    neuron::gpu::sync_matrix_to_device_after_mechanisms(nt);
+#endif
 
     /* now add the axial currents */
     if (use_sparse13) {
@@ -644,6 +675,9 @@ void setup_tree_matrix(neuron::model_sorted_token const& cache_token, NrnThread&
     nrn::Instrumentor::phase _{"setup-tree-matrix"};
     nrn_rhs(cache_token, nt);
     nrn_lhs(cache_token, nt);
+#if defined(NRN_ENABLE_GPU)
+    neuron::gpu::sync_matrix_to_host_before_solve(nt);
+#endif
     nrn_nonvint_block_current(nt.end, nt.node_rhs_storage(), nt.id);
     nrn_nonvint_block_conductance(nt.end, nt.node_d_storage(), nt.id);
 }

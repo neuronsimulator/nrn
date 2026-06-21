@@ -54,6 +54,7 @@ void fixed_step_thread(model_sorted_token const& cache_token,
     sync_after_vecplay(nt);
     if (nt.end > 0) {
         setup_tree_matrix(cache_token, nt);
+        sync_matrix_to_host_before_solve(nt);
         flush_mechanism_net_send_buffers(nth);
         {
             nrn::Instrumentor::phase p("matrix-solver");
@@ -71,6 +72,7 @@ void fixed_step_thread(model_sorted_token const& cache_token,
             nrn::Instrumentor::phase p("update");
             nrn_update_voltage(cache_token, nt);
         }
+        sync_voltage_to_device_after_solve(nt);
     }
     if (nrnthread_v_transfer_) {
         if (nt.end > 0) {

@@ -1,6 +1,7 @@
 #include "neuron/gpu/upload.hpp"
 
 #include "coreneuron/permute/cellorder.hpp"
+#include "multicore.h"
 #include "neuron/container/mechanism_data.hpp"
 #include "neuron/container/node_data.hpp"
 #include "neuron/gpu/offload.hpp"
@@ -119,6 +120,16 @@ void upload_interleave_infos(UploadState& state) {
     }
 }
 
+void upload_thread_parent_indices(UploadState& state) {
+    for (int ith = 0; ith < nrn_nthread; ++ith) {
+        auto& nt = nrn_threads[ith];
+        if (!nt._v_parent_index || nt.end <= 0) {
+            continue;
+        }
+        copyin_pod_array(nt._v_parent_index, static_cast<std::size_t>(nt.end), state);
+    }
+}
+
 }  // namespace
 
 void UploadState::record(void const* host, std::size_t count, std::size_t sizeof_elem) {
@@ -164,6 +175,7 @@ void upload_sorted_model(model_sorted_token const& sorted, UploadState& state) {
     neuron::model().apply_to_mechanisms(
         [&](auto& mech_data) { upload_soa_storage(mech_data, state); });
 
+    upload_thread_parent_indices(state);
     upload_interleave_infos(state);
 }
 
