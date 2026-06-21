@@ -4,6 +4,7 @@
 #include "neuron/gpu/device_state.hpp"
 #include "neuron/gpu/net_events.hpp"
 #include "neuron/gpu/net_send_buffer.hpp"
+#include "neuron/gpu/download.hpp"
 #include "neuron/gpu/post_solve.hpp"
 #include "neuron/gpu/sync.hpp"
 #include "neuron/model_data.hpp"
@@ -79,9 +80,11 @@ void fixed_step_thread(model_sorted_token const& cache_token,
                 nrn::Instrumentor::phase p("update");
                 post_solve_on_device(cache_token, nt);
             }
-            sync_voltages_to_host_after_post_solve(nt);
-            sync_fast_imem_to_host_after_post_solve(nt);
+            if (should_flush_download()) {
+                batch_download_post_solve(nt);
+            }
         }
+        advance_download_step_counter();
     }
     if (nrnthread_v_transfer_) {
         if (nt.end > 0) {

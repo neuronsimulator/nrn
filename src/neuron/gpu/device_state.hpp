@@ -27,10 +27,10 @@ class device_token {
 
     [[nodiscard]] bool is_on_device() const;
 
-    /** @brief Post-psolve selective download (stub until PR 10). */
+    /** @brief Pull recorded GPU state (voltages, fast_imem) to the host. */
     void update_host();
 
-    /** @brief Pre-step host→device sync for VecPlay/HOC writes (stub until PR 10). */
+    /** @brief Push host voltages to the device after HOC/VecPlay writes. */
     void update_device();
 
   private:

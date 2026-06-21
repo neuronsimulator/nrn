@@ -33,6 +33,7 @@ class gpu(object):
         self._backend = "coreneuron"
         self._device_count = 0
         self._permute = None
+        self._download_flush_interval = 1
 
     def __call__(self, **kwargs):
         return GPUContextHelper(self, kwargs)
@@ -80,6 +81,16 @@ class gpu(object):
         self._sync_to_hoc()
 
     @property
+    def download_flush_interval(self):
+        """Steps between host downloads during psolve (0 = end of psolve only)."""
+        return self._download_flush_interval
+
+    @download_flush_interval.setter
+    def download_flush_interval(self, value):
+        self._download_flush_interval = int(value)
+        self._sync_to_hoc()
+
+    @property
     def permute(self):
         """Cell permutation order (0, 1, or 2). Default 2 when enable is True."""
         if self._permute is None:
@@ -109,6 +120,7 @@ class gpu(object):
         pc.gpu_enable(int(self._enable))
         pc.gpu_backend(self._backend)
         pc.gpu_device_count(int(self._device_count))
+        pc.gpu_download_flush_interval(int(self._download_flush_interval))
 
 
 sys.modules[__name__] = gpu()

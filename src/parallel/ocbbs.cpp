@@ -19,6 +19,7 @@
 #if defined(NRN_ENABLE_GPU)
 #include "neuron/gpu/config.hpp"
 #include "neuron/gpu/device_assign.hpp"
+#include "neuron/gpu/download.hpp"
 #endif
 
 #undef MD
@@ -977,6 +978,15 @@ static double gpu_device_id(void*) {
     return double(neuron::gpu::assigned_device_id());
 }
 
+static double gpu_download_flush_interval(void*) {
+    hoc_return_type_code = HocReturnType::integer;
+    if (ifarg(1)) {
+        neuron::gpu::set_download_flush_interval(
+            static_cast<std::size_t>(chkarg(1, 0, 1e9)));
+    }
+    return double(neuron::gpu::download_flush_interval());
+}
+
 #endif
 
 static double sec_in_thread(void*) {
@@ -1141,6 +1151,7 @@ static Member_func members[] = {{"submit", submit},
                                 {"gpu_device_count", gpu_device_count},
                                 {"gpu_assign_device", gpu_assign_device},
                                 {"gpu_device_id", gpu_device_id},
+                                {"gpu_download_flush_interval", gpu_download_flush_interval},
 #endif
                                 {"sec_in_thread", sec_in_thread},
                                 {"thread_ctime", thread_ctime},

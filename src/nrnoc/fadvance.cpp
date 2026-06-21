@@ -20,6 +20,7 @@
 #if defined(NRN_ENABLE_GPU)
 #include "neuron/gpu/config.hpp"
 #include "neuron/gpu/device_state.hpp"
+#include "neuron/gpu/download.hpp"
 #include "neuron/gpu/fadvance_gpu.hpp"
 #include "neuron/gpu/net_events.hpp"
 #endif
@@ -330,6 +331,9 @@ void nrn_daspk_init_step(double tt, double dteps, int upd) {
 
 void nrn_fixed_step(neuron::model_sorted_token const& cache_token) {
     nrn::Instrumentor::phase p_timestep("timestep");
+#if defined(NRN_ENABLE_GPU)
+    neuron::gpu::reset_download_step_counter();
+#endif
 #if ELIMINATE_T_ROUNDOFF
     nrn_chk_ndt();
 #endif
@@ -374,6 +378,9 @@ void nrn_fixed_step(neuron::model_sorted_token const& cache_token) {
     if (nrn_allthread_handle) {
         (*nrn_allthread_handle)();
     }
+#if defined(NRN_ENABLE_GPU)
+    neuron::gpu::finalize_psolve_download();
+#endif
 }
 
 /* better cache efficiency since a thread can do an entire minimum delay
@@ -385,6 +392,9 @@ static int step_group_end;
 
 void nrn_fixed_step_group(neuron::model_sorted_token const& cache_token, int n) {
     int i;
+#if defined(NRN_ENABLE_GPU)
+    neuron::gpu::reset_download_step_counter();
+#endif
 #if ELIMINATE_T_ROUNDOFF
     nrn_chk_ndt();
 #endif
@@ -441,6 +451,9 @@ void nrn_fixed_step_group(neuron::model_sorted_token const& cache_token, int n) 
         }
     }
     t = nrn_threads[0]._t;
+#if defined(NRN_ENABLE_GPU)
+    neuron::gpu::finalize_psolve_download();
+#endif
 }
 
 static void nrn_fixed_step_group_thread(neuron::model_sorted_token const& cache_token,

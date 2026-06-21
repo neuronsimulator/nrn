@@ -2,6 +2,7 @@
 
 #include "neuron/gpu/config.hpp"
 #include "neuron/gpu/device_assign.hpp"
+#include "neuron/gpu/download.hpp"
 #include "neuron/gpu/upload.hpp"
 
 #include <atomic>
@@ -23,9 +24,13 @@ struct ModelDeviceState {
         on_device = true;
     }
 
-    void download_stub() {}
+    void download_to_host() {
+        batch_download_to_host();
+    }
 
-    void host_to_device_stub() {}
+    void upload_to_device() {
+        batch_upload_to_device();
+    }
 
     void teardown() {
         upload.teardown();
@@ -199,13 +204,13 @@ bool device_token::is_on_device() const {
 
 void device_token::update_host() {
     if (m_state && m_state->model_state) {
-        m_state->model_state->download_stub();
+        m_state->model_state->download_to_host();
     }
 }
 
 void device_token::update_device() {
     if (m_state && m_state->model_state) {
-        m_state->model_state->host_to_device_stub();
+        m_state->model_state->upload_to_device();
     }
 }
 
