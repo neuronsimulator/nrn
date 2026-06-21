@@ -72,14 +72,15 @@ You can filter which tests are run by name using the ``-R`` option to CTest, for
         Start  44: coreneuron_modtests::spikes_py_gpu
    ...
 
-A full MPI + GPU + tests build typically registers **68** tests matching ``-R gpu``
-(including 22 ``coreneuron_modtests::*gpu*`` variants). Use ``ctest -N -R gpu`` in
-your build tree for the authoritative count.
+A full MPI + GPU + tests build typically registers **about 96** tests matching ``-R gpu``
+(including 40 ``coreneuron_modtests::*_py_gpu*`` variants and **19** ``*_py_gpu_native``
+native-backend modtests). Use ``ctest -N -R gpu`` in your build tree for the
+authoritative count.
 
 GPU-related CMake options:
 
-- ``-DNRN_ENABLE_GPU=ON`` — user-facing NEURON native GPU option (Phase A: still requires CoreNEURON)
-- ``-DCORENRN_ENABLE_GPU=ON`` — enables OpenACC GPU execution in CoreNEURON (required for GPU tests today)
+- ``-DNRN_ENABLE_GPU=ON`` — user-facing NEURON native GPU option (Phase B fixed-step path)
+- ``-DCORENRN_ENABLE_GPU=ON`` — enables OpenACC GPU execution in CoreNEURON (required for CoreNEURON GPU tests)
 - ``-DNRN_GPU_BACKEND=OpenACC`` — only supported backend in Phase A-B
 
 See :ref:`cmake-nrn-enable-gpu-option` and :ref:`cmake-coreneuron-enable-gpu-option` in the CMake options documentation.
@@ -88,7 +89,8 @@ NEURON native GPU backend (Phase B)
 ***********************************
 When ``-DNRN_ENABLE_GPU=ON`` is set at configure time, NEURON can run fixed-step
 ``pc.psolve`` on the native GPU path (``gpu.backend=native``) without embedding
-CoreNEURON. Runtime control:
+CoreNEURON. **CVode must be inactive** on this path; enabling native GPU with
+CVode active raises an error. Runtime control:
 
 .. code-block:: python
 
@@ -139,13 +141,14 @@ MPI multi-GPU device assignment uses ``device_id = mpi_local_rank % num_gpus_per
 (same policy as CoreNEURON ``init_gpu()``). Set ``gpu.device_count`` to limit GPUs per node
 (0 = all available). CTest: ``unit_tests::gpu_device_assign_mpi`` (2 MPI ranks).
 
-The **G4 native subset** ctests set ``NRN_GPU_BACKEND_TEST=native`` and compare
-NEURON CPU reference output against the native backend:
+The **G4 native modtest parity** ctests set ``NRN_GPU_BACKEND_TEST=native`` and compare
+NEURON CPU reference output against the native backend (19 tests, mirroring single-process
+``*_py_gpu`` CoreNEURON modtests):
 
 .. code-block:: console
 
-  $ ctest -N -R 'gpu_native'
-  $ ctest --output-on-failure -R 'gpu_native'
+  $ ctest -N -R '_py_gpu_native'
+  $ ctest --output-on-failure -R '_py_gpu_native'
 
 Ringtest native GPU benchmark
 *****************************
