@@ -46,7 +46,8 @@ void sync_matrix_arrays_to_device(NrnThread& nt) {
                        async(nt.stream_id))
     nrn_pragma_omp(target update to(vec_rhs [0:nt.end], vec_d [0:nt.end]) if (nt.compute_gpu))
     if (auto* const vec_sav_rhs = nt.node_sav_rhs_storage()) {
-        nrn_pragma_acc(update device(vec_sav_rhs [0:nt.end]) if (nt.compute_gpu) async(nt.stream_id))
+        nrn_pragma_acc(update device(vec_sav_rhs [0:nt.end]) if (nt.compute_gpu)
+                           async(nt.stream_id))
         nrn_pragma_omp(target update to(vec_sav_rhs [0:nt.end]) if (nt.compute_gpu))
     }
     if (auto* const vec_sav_d = nt.node_sav_d_storage()) {

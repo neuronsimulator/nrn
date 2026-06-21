@@ -177,13 +177,15 @@ void CodegenNeuronAccVisitor::print_net_send_call(const ast::FunctionCall& node)
     } else {
         const auto& t = get_variable_name("t");
         printer->add_text("net_send_buffering(");
-        std::string weight_ptr = weight_index == "0" ? "0" : fmt::format("(intptr_t){}", weight_index);
-        printer->fmt_text("nt, ml, ml->_net_send_buffer, 0, (intptr_t)&{}, {}, "
-                         "(intptr_t){}, {}+",
-                         tqitem,
-                         weight_ptr,
-                         point_process,
-                         t);
+        std::string weight_ptr = weight_index == "0" ? "0"
+                                                     : fmt::format("(intptr_t){}", weight_index);
+        printer->fmt_text(
+            "nt, ml, ml->_net_send_buffer, 0, (intptr_t)&{}, {}, "
+            "(intptr_t){}, {}+",
+            tqitem,
+            weight_ptr,
+            point_process,
+            t);
     }
     print_vector_elements(arguments, ", ");
     printer->add_text(')');
@@ -203,10 +205,11 @@ void CodegenNeuronAccVisitor::print_net_move_call(const ast::FunctionCall& node)
         return;
     }
     printer->add_text("net_send_buffering(");
-    printer->fmt_text("nt, ml, ml->_net_send_buffer, 2, (intptr_t)&{}, (intptr_t)-1, "
-                      "(intptr_t){}, ",
-                      tqitem,
-                      point_process);
+    printer->fmt_text(
+        "nt, ml, ml->_net_send_buffer, 2, (intptr_t)&{}, (intptr_t)-1, "
+        "(intptr_t){}, ",
+        tqitem,
+        point_process);
     print_vector_elements(node.get_arguments(), ", ");
     printer->add_text(", 0.0, 0.0");
     printer->add_text(")");
@@ -222,9 +225,10 @@ void CodegenNeuronAccVisitor::print_net_event_call(const ast::FunctionCall& node
     }
     const auto& point_process = get_variable_name(naming::POINT_PROCESS_VARIABLE, false);
     printer->add_text("net_send_buffering(");
-    printer->fmt_text("nt, ml, ml->_net_send_buffer, 1, (intptr_t)-1, (intptr_t)-1, "
-                      "(intptr_t){}, ",
-                      point_process);
+    printer->fmt_text(
+        "nt, ml, ml->_net_send_buffer, 1, (intptr_t)-1, (intptr_t)-1, "
+        "(intptr_t){}, ",
+        point_process);
     print_vector_elements(arguments, ", ");
     printer->add_text(", 0.0, 0.0");
     printer->add_text(")");

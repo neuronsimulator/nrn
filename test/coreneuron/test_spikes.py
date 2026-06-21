@@ -115,7 +115,11 @@ def _test_spikes(
         assert nrn_spike_t == corenrn_all_spike_t_py
         assert nrn_spike_gids == corenrn_all_spike_gids_py
 
-    from backend_helper import disable_test_backend, enable_test_backend, is_native_backend_test
+    from backend_helper import (
+        disable_test_backend,
+        enable_test_backend,
+        is_native_backend_test,
+    )
 
     if is_native_backend_test():
         enable_test_backend()

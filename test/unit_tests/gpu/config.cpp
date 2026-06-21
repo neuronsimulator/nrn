@@ -14,5 +14,3 @@ TEST_CASE("gpu config defaults", "[gpu][config]") {
     CHECK(neuron::gpu::device_count() == 0);
 #endif
 }
-
-

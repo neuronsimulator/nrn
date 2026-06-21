@@ -38,11 +38,13 @@ void second_order_cur_on_device(model_sorted_token const& sorted_token, NrnThrea
         double* const cur = ml_cache.data_array_ptr<ion_cur_index, 1>();
         double* const dcurdv = ml_cache.data_array_ptr<ion_dcurdv_index, 1>();
         int* const ni = ml->nodeindices;
+        // clang-format off
         nrn_pragma_acc(parallel loop present(cur [0:count],
                                              dcurdv [0:count],
                                              ni [0:count],
                                              vec_rhs [0:nt.end]) if (nt.compute_gpu)
                                async(nt.stream_id))
+        // clang-format on
         nrn_pragma_omp(target teams distribute parallel for simd if(nt.compute_gpu))
         for (int i = 0; i < count; ++i) {
             cur[i] += dcurdv[i] * vec_rhs[ni[i]];
@@ -57,15 +59,19 @@ void update_voltage_on_device(NrnThread& nt) {
     auto* const vec_rhs = nt.node_rhs_storage();
     auto* const vec_v = nt.node_voltage_storage();
     if (secondorder) {
+        // clang-format off
         nrn_pragma_acc(parallel loop present(vec_v [0:nt.end], vec_rhs [0:nt.end]) if (nt.compute_gpu)
                            async(nt.stream_id))
+        // clang-format on
         nrn_pragma_omp(target teams distribute parallel for simd if(nt.compute_gpu))
         for (int i = 0; i < nt.end; ++i) {
             vec_v[i] += 2. * vec_rhs[i];
         }
     } else {
+        // clang-format off
         nrn_pragma_acc(parallel loop present(vec_v [0:nt.end], vec_rhs [0:nt.end]) if (nt.compute_gpu)
                            async(nt.stream_id))
+        // clang-format on
         nrn_pragma_omp(target teams distribute parallel for simd if(nt.compute_gpu))
         for (int i = 0; i < nt.end; ++i) {
             vec_v[i] += vec_rhs[i];
@@ -89,11 +95,13 @@ void capacity_current_on_device(model_sorted_token const& sorted_token, NrnThrea
     double* const i_cap = ml_cache.data_array_ptr<cap_i_cap_index, 1>();
     int* const ni = ml->nodeindices;
     double const cfac = .001 * nt.cj;
+    // clang-format off
     nrn_pragma_acc(parallel loop present(vec_rhs [0:nt.end],
                                          cm [0:count],
                                          i_cap [0:count],
                                          ni [0:count]) if (nt.compute_gpu)
                        async(nt.stream_id))
+    // clang-format on
     nrn_pragma_omp(target teams distribute parallel for simd if(nt.compute_gpu))
     for (int i = 0; i < count; ++i) {
         i_cap[i] = cfac * cm[i] * vec_rhs[ni[i]];
@@ -115,11 +123,13 @@ void fast_imem_on_device(NrnThread& nt) {
     if (!vec_sav_d || !vec_sav_rhs) {
         return;
     }
+    // clang-format off
     nrn_pragma_acc(parallel loop present(vec_rhs [0:nt.end],
                                          vec_area [0:nt.end],
                                          vec_sav_d [0:nt.end],
                                          vec_sav_rhs [0:nt.end]) if (nt.compute_gpu)
                        async(nt.stream_id))
+    // clang-format on
     nrn_pragma_omp(target teams distribute parallel for simd if(nt.compute_gpu))
     for (int i = 0; i < nt.end; ++i) {
         vec_sav_rhs[i] = (vec_sav_d[i] * vec_rhs[i] + vec_sav_rhs[i]) * vec_area[i] * 0.01;

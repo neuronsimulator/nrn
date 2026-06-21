@@ -136,8 +136,8 @@ if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
     REQUIRES gpu
     COMMAND $<TARGET_FILE:testneuron_gpu_config> "[gpu][config]")
 
-  add_executable(
-    testneuron_gpu_device_assign unit_tests/gpu/offload_main.cpp unit_tests/gpu/device_assign.cpp)
+  add_executable(testneuron_gpu_device_assign unit_tests/gpu/offload_main.cpp
+                                              unit_tests/gpu/device_assign.cpp)
   cpp_cc_configure_sanitizers(TARGET testneuron_gpu_device_assign)
   target_link_libraries(testneuron_gpu_device_assign PRIVATE Catch2::Catch2 neuron_gpu)
   target_compile_definitions(testneuron_gpu_device_assign PRIVATE NRN_ENABLE_GPU)
@@ -187,11 +187,12 @@ if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
     REQUIRES gpu
     COMMAND $<TARGET_FILE:testneuron_gpu_fadvance> "[gpu][fadvance]")
 
-  add_executable(testneuron_gpu_net_events unit_tests/gpu/offload_main.cpp unit_tests/gpu/net_events.cpp)
+  add_executable(testneuron_gpu_net_events unit_tests/gpu/offload_main.cpp
+                                           unit_tests/gpu/net_events.cpp)
   cpp_cc_configure_sanitizers(TARGET testneuron_gpu_net_events)
   target_include_directories(
     testneuron_gpu_net_events PRIVATE ${PROJECT_SOURCE_DIR}/external/fmt/include
-                                  ${CMAKE_BINARY_DIR}/src/nrnoc)
+                                      ${CMAKE_BINARY_DIR}/src/nrnoc)
   target_link_libraries(testneuron_gpu_net_events PRIVATE Catch2::Catch2 neuron_gpu
                                                           neuron_gpu_upload fmt::fmt)
   target_compile_definitions(testneuron_gpu_net_events PRIVATE NRN_ENABLE_GPU)
@@ -820,7 +821,7 @@ if(NRN_ENABLE_PYTHON)
         NAME array_variable_transfer_run_mode_${run_mode}_py_${processor}
         REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
         SCRIPT_PATTERNS ${coreneuron_backend_helper_script}
-                      test/coreneuron/test_array_variables_transfer.py
+                        test/coreneuron/test_array_variables_transfer.py
         ENVIRONMENT ${processor_env} NRN_TEST_RUN_MODE=${run_mode} NRN_TEST_FILE_MODE=false
         COMMAND ${modtests_launch_py} test/coreneuron/test_array_variables_transfer.py)
     endforeach()
@@ -830,7 +831,7 @@ if(NRN_ENABLE_PYTHON)
       NAME array_variable_transfer_file_mode_py_${processor}
       REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
       SCRIPT_PATTERNS ${coreneuron_backend_helper_script}
-                    test/coreneuron/test_array_variables_transfer.py
+                      test/coreneuron/test_array_variables_transfer.py
       ENVIRONMENT ${processor_env} NRN_TEST_RUN_MODE=0 NRN_TEST_FILE_MODE=true
       COMMAND ${modtests_launch_py} test/coreneuron/test_array_variables_transfer.py)
 
@@ -922,9 +923,10 @@ if(NRN_ENABLE_PYTHON)
       PROCESSORS 2
       ENVIRONMENT ${native_gpu_test_env} NEURON_INIT_MPI=1
       SCRIPT_PATTERNS test/pyscripts/test_gpu_device_assign_mpi.py
-      COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE}
-              ${MPIEXEC_PREFLAGS} nrniv ${MPIEXEC_POSTFLAGS} -mpi -notatty -python
-              test/pyscripts/test_gpu_device_assign_mpi.py)
+      COMMAND
+        ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
+        nrniv ${MPIEXEC_POSTFLAGS} -mpi -notatty -python
+        test/pyscripts/test_gpu_device_assign_mpi.py)
     foreach(
       native_gpu_test
       fornetcon:test/coreneuron/test_fornetcon.py

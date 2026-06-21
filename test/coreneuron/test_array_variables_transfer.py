@@ -77,7 +77,11 @@ def test_array_variable_transfer(
         myobj = h.NetCon(h.soma(0.5)._ref_v, None, sec=h.soma)
         pc.cell(pc.id() + 1, myobj)
 
-        from backend_helper import disable_test_backend, enable_test_backend, is_native_backend_test
+        from backend_helper import (
+            disable_test_backend,
+            enable_test_backend,
+            is_native_backend_test,
+        )
 
         def run_psolve():
             pc.set_maxstep(10)

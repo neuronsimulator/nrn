@@ -209,9 +209,9 @@ void UploadState::teardown() {
             nrn_target_delete(const_cast<Memb_list**>(static_cast<Memb_list* const*>(mirror.host)),
                               mirror.count);
         } else if (mirror.sizeof_elem == sizeof(NetSendBuffer_t)) {
-            nrn_target_delete(
-                const_cast<NetSendBuffer_t*>(static_cast<NetSendBuffer_t const*>(mirror.host)),
-                mirror.count);
+            nrn_target_delete(const_cast<NetSendBuffer_t*>(
+                                  static_cast<NetSendBuffer_t const*>(mirror.host)),
+                              mirror.count);
         }
     }
 #endif

@@ -24,7 +24,10 @@ int mechanism_padded_count(int count) {
     return ((count + k_soa_pad - 1) / k_soa_pad) * k_soa_pad;
 }
 
-void record_upload(UploadState& state, void const* host, std::size_t count, std::size_t sizeof_elem) {
+void record_upload(UploadState& state,
+                   void const* host,
+                   std::size_t count,
+                   std::size_t sizeof_elem) {
     state.record(host, count, sizeof_elem);
 }
 
@@ -82,8 +85,7 @@ void upload_mechanism_pdata(Memb_list* ml, int type, Memb_list* d_ml, UploadStat
         device_row_ptrs[static_cast<std::size_t>(i)] = d_row;
     }
 
-    Datum** const d_pdata_rows =
-        nrn_target_copyin(device_row_ptrs.data(), device_row_ptrs.size());
+    Datum** const d_pdata_rows = nrn_target_copyin(device_row_ptrs.data(), device_row_ptrs.size());
     record_upload(state, device_row_ptrs.data(), device_row_ptrs.size(), sizeof(Datum*));
     nrn_target_memcpy_to_device(&(d_ml->pdata), &d_pdata_rows, 1);
 }
@@ -104,7 +106,8 @@ void upload_mechanism_shell(Memb_list* ml, int type, UploadState& state) {
 
     int const thread_size = memb_func[type].thread_size_;
     if (thread_size > 0 && ml->_thread) {
-        Datum* const d_thread = nrn_target_copyin(ml->_thread, static_cast<std::size_t>(thread_size));
+        Datum* const d_thread = nrn_target_copyin(ml->_thread,
+                                                  static_cast<std::size_t>(thread_size));
         record_upload(state, ml->_thread, static_cast<std::size_t>(thread_size), sizeof(Datum));
         nrn_target_memcpy_to_device(&(d_ml->_thread), &d_thread, 1);
     }
@@ -124,8 +127,7 @@ void upload_thread_ml_list(NrnThread& nt, UploadState& state) {
     std::vector<Memb_list*> device_ptrs(static_cast<std::size_t>(n_type), nullptr);
     for (int type = 0; type < n_type; ++type) {
         if (nt._ml_list[type]) {
-            device_ptrs[static_cast<std::size_t>(type)] =
-                nrn_target_deviceptr(nt._ml_list[type]);
+            device_ptrs[static_cast<std::size_t>(type)] = nrn_target_deviceptr(nt._ml_list[type]);
         }
     }
     nrn_target_memcpy_to_device(d_ml_list, device_ptrs.data(), static_cast<std::size_t>(n_type));

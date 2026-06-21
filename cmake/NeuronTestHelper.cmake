@@ -210,7 +210,8 @@ function(nrn_add_test_group)
       # Construct the names of the important output files
       set(special "${nrnivmodl_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}/special")
       set(nrnmech_lib
-          "${nrnivmodl_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}/${CMAKE_SHARED_LIBRARY_PREFIX}nrnmech${CMAKE_SHARED_LIBRARY_SUFFIX}")
+          "${nrnivmodl_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}/${CMAKE_SHARED_LIBRARY_PREFIX}nrnmech${CMAKE_SHARED_LIBRARY_SUFFIX}"
+      )
       # Add the custom command to generate the binaries. Get nrnivmodl from the build directory. At
       # the moment it seems that `nrnivmodl` is generated at configure time, so there is no target
       # to depend on and it should always be available, but it will try and link against libnrniv.so
@@ -219,10 +220,11 @@ function(nrn_add_test_group)
       # be a wrapper that invokes CMake?
       set(output_binaries "${special}")
       list(APPEND nrnivmodl_dependencies nrniv_lib)
-      # Re-run nrnivmodl when libnrniv.so changes so test special does not retain stale
-      # NVHPC pgcudafat object paths from a prior libnrniv link line.
-      list(APPEND nrnivmodl_dependencies
-           "${CMAKE_BINARY_DIR}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}nrniv${CMAKE_SHARED_LIBRARY_SUFFIX}")
+      # Re-run nrnivmodl when libnrniv.so changes so test special does not retain stale NVHPC
+      # pgcudafat object paths from a prior libnrniv link line.
+      list(
+        APPEND nrnivmodl_dependencies
+        "${CMAKE_BINARY_DIR}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}nrniv${CMAKE_SHARED_LIBRARY_SUFFIX}")
       if(NRN_ENABLE_CORENEURON AND NRN_ADD_TEST_GROUP_CORENEURON)
         list(APPEND output_binaries "${special}-core")
         if((NOT coreneuron_FOUND) AND (NOT DEFINED CORENEURON_BUILTIN_MODFILES))
@@ -429,8 +431,7 @@ function(nrn_add_test)
     list(TRANSFORM test_env REPLACE "^PATH=" "PATH=${_nrn_test_mech_dir}:")
     # pytest/python3 launches do not search PATH for dlopen(libnrnmech.so).
     if("LD_LIBRARY_PATH" IN_LIST test_env_var_names)
-      list(TRANSFORM test_env REPLACE "^LD_LIBRARY_PATH="
-                                      "LD_LIBRARY_PATH=${_nrn_test_mech_dir}:")
+      list(TRANSFORM test_env REPLACE "^LD_LIBRARY_PATH=" "LD_LIBRARY_PATH=${_nrn_test_mech_dir}:")
     else()
       list(APPEND test_env "LD_LIBRARY_PATH=${_nrn_test_mech_dir}")
     endif()

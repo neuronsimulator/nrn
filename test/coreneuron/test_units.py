@@ -23,7 +23,11 @@ def test_units():
     erev_std = pp.erev
     ghk_std = pp.ghk
 
-    from backend_helper import disable_test_backend, enable_test_backend, is_native_backend_test
+    from backend_helper import (
+        disable_test_backend,
+        enable_test_backend,
+        is_native_backend_test,
+    )
 
     enable_test_backend()
     pc.set_maxstep(10)

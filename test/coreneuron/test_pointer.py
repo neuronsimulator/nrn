@@ -196,7 +196,12 @@ def test_axial():
 
     chk(std, run(tstop))
 
-    from backend_helper import disable_test_backend, enable_test_backend, iter_permute_values, set_permute
+    from backend_helper import (
+        disable_test_backend,
+        enable_test_backend,
+        iter_permute_values,
+        set_permute,
+    )
 
     enable_test_backend()
 

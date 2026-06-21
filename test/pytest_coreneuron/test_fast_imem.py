@@ -307,9 +307,7 @@ def test_fastimem_corenrn():
 
             init_v()
             while h.t < tstop - h.dt / 2:
-                dt_above = (
-                    1.1 * h.dt
-                )  # comfortably above dt to avoid 0 step advance
+                dt_above = 1.1 * h.dt  # comfortably above dt to avoid 0 step advance
                 enable_test_backend()
                 told = h.t
                 pc.psolve(h.t + dt_above)
@@ -318,11 +316,11 @@ def test_fastimem_corenrn():
                 pc.psolve(h.t + dt_above)
             cmp("Checking i_membrane_ trajectories", rel_tol=tolerance)
             disable_test_backend()
-                # olupton 2023-06-19: removed some logic to dump a file of fast imem values from
-                # NEURON that could in principle be compared offline to a similar file produced by
-                # a patched version of CoreNEURON.
-                # See https://github.com/BlueBrain/CoreNeuron/pull/630. It seems that this test was
-                # never automated, and it is not straightforward to do so.
+            # olupton 2023-06-19: removed some logic to dump a file of fast imem values from
+            # NEURON that could in principle be compared offline to a similar file produced by
+            # a patched version of CoreNEURON.
+            # See https://github.com/BlueBrain/CoreNeuron/pull/630. It seems that this test was
+            # never automated, and it is not straightforward to do so.
 
         del imem
 

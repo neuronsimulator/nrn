@@ -98,14 +98,13 @@ void update_net_send_buffer_on_host(NrnThread* nt, NetSendBuffer_t* nsb) {
         return;
     }
     if (nsb->_cnt > nsb->_size) {
-        fprintf(stderr,
-                "ERROR: NetSendBuffer exceeded during GPU execution (thread %d)\n",
-                nt->id);
+        fprintf(stderr, "ERROR: NetSendBuffer exceeded during GPU execution (thread %d)\n", nt->id);
         std::abort();
     }
     if (!nsb->_cnt) {
         return;
     }
+    // clang-format off
     nrn_pragma_acc(update self(nsb->_sendtype[:nsb->_cnt],
                                nsb->_vdata_index[:nsb->_cnt],
                                nsb->_pnt_index[:nsb->_cnt],
@@ -120,6 +119,7 @@ void update_net_send_buffer_on_host(NrnThread* nt, NetSendBuffer_t* nsb) {
                                       nsb->_nsb_t[:nsb->_cnt],
                                       nsb->_nsb_flag[:nsb->_cnt])
                                  if (nsb->_cnt))
+    // clang-format on
 #else
     (void) nt;
     (void) nsb;
@@ -131,12 +131,15 @@ void deliver_net_send_buffer_events(NrnThread* nt, NetSendBuffer_t* nsb) {
         return;
     }
     for (int i = 0; i < nsb->_cnt; ++i) {
-        auto* const pnt = reinterpret_cast<Point_process*>(static_cast<intptr_t>(nsb->_pnt_index[i]));
+        auto* const pnt = reinterpret_cast<Point_process*>(
+            static_cast<intptr_t>(nsb->_pnt_index[i]));
         auto* const weight = nsb->_weight_index[i] >= 0
-                                 ? reinterpret_cast<double*>(static_cast<intptr_t>(nsb->_weight_index[i]))
+                                 ? reinterpret_cast<double*>(
+                                       static_cast<intptr_t>(nsb->_weight_index[i]))
                                  : nullptr;
         auto* const vdata = nsb->_vdata_index[i] >= 0
-                                ? reinterpret_cast<void*>(static_cast<intptr_t>(nsb->_vdata_index[i]))
+                                ? reinterpret_cast<void*>(
+                                      static_cast<intptr_t>(nsb->_vdata_index[i]))
                                 : nullptr;
         switch (nsb->_sendtype[i]) {
         case 0:

@@ -32,7 +32,11 @@ def test_direct_memory_transfer():
     # Save current (after run) value to compare with transfer back from coreneuron
     tran_std = [h.t, h.soma(0.5).v, h.soma(0.5).hh.m]
 
-    from backend_helper import disable_test_backend, enable_test_backend, is_native_backend_test
+    from backend_helper import (
+        disable_test_backend,
+        enable_test_backend,
+        is_native_backend_test,
+    )
 
     enable_test_backend()
 

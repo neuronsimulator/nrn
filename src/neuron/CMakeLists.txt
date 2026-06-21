@@ -2,7 +2,8 @@
 # NEURON 9.0 model-data layer (src/neuron/) — GPU offload scaffold and future native GPU engine
 # sources.
 # =============================================================================
-add_library(neuron_gpu STATIC gpu/offload.cpp gpu/device_state.cpp gpu/config.cpp gpu/device_assign.cpp)
+add_library(neuron_gpu STATIC gpu/offload.cpp gpu/device_state.cpp gpu/config.cpp
+                              gpu/device_assign.cpp)
 set_property(TARGET neuron_gpu PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_include_directories(neuron_gpu PUBLIC ${PROJECT_SOURCE_DIR}/src)
 target_link_libraries(neuron_gpu PRIVATE fmt::fmt)
@@ -20,9 +21,16 @@ if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
                                                           "CORENEURON_ENABLE_GPU;NRN_ENABLE_GPU")
 
   # upload.cpp pulls NEURON/oc headers; compile as OpenACC object lib for libnrniv + GPU tests.
-  add_library(neuron_gpu_upload OBJECT gpu/upload.cpp gpu/upload_mechanisms.cpp
-                                         gpu/download.cpp gpu/fadvance_gpu.cpp gpu/net_events.cpp
-                                         gpu/net_send_buffer.cpp gpu/post_solve.cpp gpu/sync.cpp)
+  add_library(
+    neuron_gpu_upload OBJECT
+    gpu/upload.cpp
+    gpu/upload_mechanisms.cpp
+    gpu/download.cpp
+    gpu/fadvance_gpu.cpp
+    gpu/net_events.cpp
+    gpu/net_send_buffer.cpp
+    gpu/post_solve.cpp
+    gpu/sync.cpp)
   set_property(TARGET neuron_gpu_upload PROPERTY POSITION_INDEPENDENT_CODE ON)
   target_include_directories(
     neuron_gpu_upload
@@ -36,8 +44,14 @@ if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
             ${PROJECT_SOURCE_DIR}/external/fmt/include)
   target_link_libraries(neuron_gpu_upload PRIVATE fmt::fmt)
   set_source_files_properties(
-    gpu/upload.cpp gpu/upload_mechanisms.cpp gpu/download.cpp gpu/fadvance_gpu.cpp
-    gpu/net_events.cpp gpu/net_send_buffer.cpp gpu/post_solve.cpp gpu/sync.cpp
+    gpu/upload.cpp
+    gpu/upload_mechanisms.cpp
+    gpu/download.cpp
+    gpu/fadvance_gpu.cpp
+    gpu/net_events.cpp
+    gpu/net_send_buffer.cpp
+    gpu/post_solve.cpp
+    gpu/sync.cpp
     PROPERTIES COMPILE_OPTIONS "${_neuron_gpu_acc_flags}" COMPILE_DEFINITIONS
                                                           "CORENEURON_ENABLE_GPU;NRN_ENABLE_GPU")
 endif()

@@ -29,8 +29,11 @@ int mpi_local_rank() {
 #if NRNMPI
     if (&nrnmpi_use != nullptr && nrnmpi_use != 0) {
         MPI_Comm local_comm{};
-        MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, mpi_simulation_rank(),
-                            MPI_INFO_NULL, &local_comm);
+        MPI_Comm_split_type(MPI_COMM_WORLD,
+                            MPI_COMM_TYPE_SHARED,
+                            mpi_simulation_rank(),
+                            MPI_INFO_NULL,
+                            &local_comm);
         int local_rank = 0;
         MPI_Comm_rank(local_comm, &local_rank);
         MPI_Comm_free(&local_comm);
@@ -44,8 +47,11 @@ int mpi_local_size() {
 #if NRNMPI
     if (&nrnmpi_use != nullptr && nrnmpi_use != 0) {
         MPI_Comm local_comm{};
-        MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, mpi_simulation_rank(),
-                            MPI_INFO_NULL, &local_comm);
+        MPI_Comm_split_type(MPI_COMM_WORLD,
+                            MPI_COMM_TYPE_SHARED,
+                            mpi_simulation_rank(),
+                            MPI_INFO_NULL,
+                            &local_comm);
         int local_size = 1;
         MPI_Comm_size(local_comm, &local_size);
         MPI_Comm_free(&local_comm);
@@ -87,8 +93,8 @@ void assign_device() {
     g_assigned_device_id.store(device_id);
 
     if (mpi_simulation_rank() == 0) {
-        std::cout << " Info : " << num_devices_per_node << " GPUs shared by "
-                  << mpi_local_size() << " ranks per node\n";
+        std::cout << " Info : " << num_devices_per_node << " GPUs shared by " << mpi_local_size()
+                  << " ranks per node\n";
     }
 #else
     (void) 0;
