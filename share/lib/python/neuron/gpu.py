@@ -51,6 +51,8 @@ class gpu(object):
     def enable(self, value):
         new_enable = bool(int(value))
         was_enabled = self._enable
+        if new_enable and self._backend == "native":
+            self._validate_native_fixed_step()
         self._enable = new_enable
         self._sync_to_hoc()
         if new_enable and not was_enabled:
@@ -67,6 +69,8 @@ class gpu(object):
             raise ValueError(
                 "gpu.backend must be 'native' or 'coreneuron', got {!r}".format(value)
             )
+        if backend == "native" and self._enable:
+            self._validate_native_fixed_step()
         self._backend = backend
         self._sync_to_hoc()
 
@@ -111,6 +115,15 @@ class gpu(object):
             self._pc().optimize_node_order(2)
         else:
             self._pc().optimize_node_order(self._permute)
+
+    def _validate_native_fixed_step(self):
+        from neuron import h
+
+        if h.CVode().active():
+            raise RuntimeError(
+                "native GPU backend (gpu.backend='native') requires fixed-step integration; "
+                "deactivate CVode before enabling native GPU"
+            )
 
     def _sync_to_hoc(self):
         try:

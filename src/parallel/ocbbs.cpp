@@ -945,6 +945,9 @@ static double gpu_enable(void*) {
     hoc_return_type_code = HocReturnType::boolean;
     if (ifarg(1)) {
         neuron::gpu::set_enable(chkarg(1, 0, 1) != 0.0);
+        if (auto const* err = neuron::gpu::native_gpu_configuration_error()) {
+            hoc_execerror(err, nullptr);
+        }
     }
     return double(neuron::gpu::enabled());
 }
@@ -952,6 +955,9 @@ static double gpu_enable(void*) {
 static const char** gpu_backend(void*) {
     if (ifarg(1)) {
         neuron::gpu::set_backend(hoc_gargstr(1));
+        if (auto const* err = neuron::gpu::native_gpu_configuration_error()) {
+            hoc_execerror(err, nullptr);
+        }
     }
     static char native_storage[] = "native";
     static char coreneuron_storage[] = "coreneuron";

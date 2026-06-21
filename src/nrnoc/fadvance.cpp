@@ -332,6 +332,9 @@ void nrn_daspk_init_step(double tt, double dteps, int upd) {
 void nrn_fixed_step(neuron::model_sorted_token const& cache_token) {
     nrn::Instrumentor::phase p_timestep("timestep");
 #if defined(NRN_ENABLE_GPU)
+    if (auto const* err = neuron::gpu::native_gpu_configuration_error()) {
+        hoc_execerror(err, nullptr);
+    }
     neuron::gpu::reset_download_step_counter();
 #endif
 #if ELIMINATE_T_ROUNDOFF

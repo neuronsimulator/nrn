@@ -36,6 +36,12 @@ void set_device_count(unsigned value) noexcept;
  */
 bool use_cuda_launcher() noexcept;
 
+/**
+ * Phase B contract check for native GPU. Returns nullptr when configuration is
+ * valid, otherwise a stable error message (fixed-step only; CVode must be off).
+ */
+[[nodiscard]] const char* native_gpu_configuration_error() noexcept;
+
 namespace detail {
 void reset_config_for_testing();
 void set_enable_for_testing(bool value);

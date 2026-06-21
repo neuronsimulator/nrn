@@ -5,6 +5,8 @@
 #include <stdexcept>
 #include <string>
 
+extern int cvode_active_;
+
 namespace neuron::gpu {
 namespace {
 
@@ -93,6 +95,19 @@ bool use_cuda_launcher() noexcept {
 #else
     return false;
 #endif
+}
+
+const char* native_gpu_configuration_error() noexcept {
+#if defined(NRN_ENABLE_GPU)
+    if (!enabled() || !backend_native()) {
+        return nullptr;
+    }
+    if (cvode_active_) {
+        return "native GPU backend (gpu.backend='native') requires fixed-step integration; "
+               "deactivate CVode before enabling native GPU";
+    }
+#endif
+    return nullptr;
 }
 
 namespace detail {
