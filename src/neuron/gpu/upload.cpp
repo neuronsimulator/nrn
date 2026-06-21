@@ -130,6 +130,21 @@ void upload_thread_parent_indices(UploadState& state) {
     }
 }
 
+void upload_nrnthread_shells(UploadState& state) {
+    for (int ith = 0; ith < nrn_nthread; ++ith) {
+        auto& nt = nrn_threads[ith];
+        if (nt.end <= 0) {
+            continue;
+        }
+        auto* d_nt = nrn_target_copyin(&nt, 1);
+        state.record(&nt, 1, sizeof(NrnThread));
+        if (nt._v_parent_index) {
+            int* d_parent = nrn_target_deviceptr(nt._v_parent_index);
+            nrn_target_memcpy_to_device(&(d_nt->_v_parent_index), &d_parent, 1);
+        }
+    }
+}
+
 }  // namespace
 
 void UploadState::record(void const* host, std::size_t count, std::size_t sizeof_elem) {
@@ -163,6 +178,9 @@ void UploadState::teardown() {
             nrn_target_delete(const_cast<InterleaveInfo*>(
                                   static_cast<InterleaveInfo const*>(mirror.host)),
                               mirror.count);
+        } else if (mirror.sizeof_elem == sizeof(NrnThread)) {
+            nrn_target_delete(const_cast<NrnThread*>(static_cast<NrnThread const*>(mirror.host)),
+                              mirror.count);
         }
     }
 #endif
@@ -176,6 +194,7 @@ void upload_sorted_model(model_sorted_token const& sorted, UploadState& state) {
         [&](auto& mech_data) { upload_soa_storage(mech_data, state); });
 
     upload_thread_parent_indices(state);
+    upload_nrnthread_shells(state);
     upload_interleave_infos(state);
 }
 

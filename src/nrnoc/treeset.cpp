@@ -487,6 +487,9 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
     activclamp_rhs();
 #if defined(NRN_ENABLE_GPU)
     neuron::gpu::sync_matrix_to_device_after_mechanisms(nt);
+    if (_nt->compute_gpu && i3 > i2) {
+        neuron::gpu::sync_voltages_to_device_before_axial(nt);
+    }
 #endif
     /* now the internal axial currents.
     The extracellular mechanism contribution is already done.
@@ -514,6 +517,11 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
         nrn_pragma_omp(atomic update)
         vec_rhs[pi] += vec_a[i] * dv;
     }
+#if defined(NRN_ENABLE_GPU)
+    if (_nt->compute_gpu && i3 > i2) {
+        nrn_pragma_acc(wait(_nt->stream_id))
+    }
+#endif
 }
 
 /* calculate left hand side of
@@ -591,7 +599,7 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
     }
 
 #if defined(NRN_ENABLE_GPU)
-    neuron::gpu::sync_matrix_to_device_after_mechanisms(nt);
+    neuron::gpu::sync_diagonal_to_device_after_mechanisms(nt);
 #endif
 
     activsynapse_lhs();
@@ -627,7 +635,7 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
     /* at this point d contains all the membrane conductances */
 
 #if defined(NRN_ENABLE_GPU)
-    neuron::gpu::sync_matrix_to_device_after_mechanisms(nt);
+    neuron::gpu::sync_diagonal_to_device_after_mechanisms(nt);
 #endif
 
     /* now add the axial currents */
@@ -667,6 +675,11 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
             nrn_pragma_omp(atomic update)
             vec_d[parent_i[i]] -= vec_a[i];
         }
+#if defined(NRN_ENABLE_GPU)
+        if (_nt->compute_gpu && i3 > i2) {
+            nrn_pragma_acc(wait(_nt->stream_id))
+        }
+#endif
     }
 }
 

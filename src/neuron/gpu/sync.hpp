@@ -10,14 +10,23 @@ void sync_before_vecplay(NrnThread& nt);
 /** Push node voltages back to device after VecPlay updates. */
 void sync_after_vecplay(NrnThread& nt);
 
+/** Push node voltages to device immediately before OpenACC axial matrix assembly. */
+void sync_voltages_to_device_before_axial(NrnThread& nt);
+
 /** Push mechanism-updated matrix state to device before OpenACC axial loops. */
 void sync_matrix_to_device_after_mechanisms(NrnThread& nt);
 
-/** Pull matrix state to host before the host Hines solver runs. */
+/** Push vec_d / sav_d only (preserve device vec_rhs after rhs axial). */
+void sync_diagonal_to_device_after_mechanisms(NrnThread& nt);
+
+/** Pull GPU axial matrix state to host before host nonvint adjustments. */
 void sync_matrix_to_host_before_solve(NrnThread& nt);
 
-/** Pull post-solve matrix state (especially vec_rhs solution) to host. */
-void sync_matrix_to_host_after_solve(NrnThread& nt);
+/** Push post-nonvint matrix state to device before the GPU Hines solver. */
+void sync_matrix_to_device_before_solve(NrnThread& nt);
+
+/** Pull vec_rhs solution to host after the GPU solver (minimal post-solve sync). */
+void sync_rhs_to_host_after_solve(NrnThread& nt);
 
 /** Push post-solve voltages (and rhs) back to device for the next GPU step. */
 void sync_voltage_to_device_after_solve(NrnThread& nt);

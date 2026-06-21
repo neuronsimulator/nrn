@@ -752,7 +752,7 @@ void solve_interleaved2(int ith) {
     double* vec_rhs{};
     node_matrix_pointers(nt, vec_a, vec_b, vec_d, vec_rhs);
 
-#if CORENRN_BUILD && defined(_OPENACC)
+#if defined(_OPENACC) && (CORENRN_BUILD || defined(NRN_ENABLE_GPU))
     if (nt->compute_gpu) {
         /* If we compare this loop with the one from cellorder.cu (CUDA version), we will
          * understand that the parallelism here is exposed in steps, while in the CUDA version
@@ -847,7 +847,7 @@ void solve_interleaved1(int ith) {
     double* vec_rhs{};
     node_matrix_pointers(nt, vec_a, vec_b, vec_d, vec_rhs);
 
-#if defined(_OPENACC) && CORENRN_BUILD
+#if defined(_OPENACC) && (CORENRN_BUILD || defined(NRN_ENABLE_GPU))
     // OL211123: can we preserve the error checking behaviour of OpenACC's
     // present clause with OpenMP? It is a bug if these data are not present,
     // so diagnostics are helpful...

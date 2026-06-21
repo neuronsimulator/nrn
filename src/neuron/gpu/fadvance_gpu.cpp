@@ -39,6 +39,7 @@ void fixed_step_thread(model_sorted_token const& cache_token,
     auto* const nth = &nt;
 
     int const saved_compute_gpu = nt.compute_gpu;
+    nt.compute_gpu = 1;
 
     {
         nrn::Instrumentor::phase p("deliver-events");
@@ -51,8 +52,8 @@ void fixed_step_thread(model_sorted_token const& cache_token,
     fixed_play_continuous(nth);
     sync_after_vecplay(nt);
     if (nt.end > 0) {
-        // Hybrid path: host matrix assembly/solve/fast_imem; device mirrors for upload.
         setup_tree_matrix(cache_token, nt);
+        sync_matrix_to_device_before_solve(nt);
         flush_mechanism_net_send_buffers(nth);
         {
             nrn::Instrumentor::phase p("matrix-solver");
@@ -62,6 +63,7 @@ void fixed_step_thread(model_sorted_token const& cache_token,
                 nrn_solve(nth);
             }
         }
+        sync_rhs_to_host_after_solve(nt);
         {
             nrn::Instrumentor::phase p("second-order-cur");
             second_order_cur(nth);
