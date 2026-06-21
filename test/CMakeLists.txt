@@ -598,6 +598,8 @@ if(NRN_ENABLE_PYTHON)
         ${MPIEXEC_POSTFLAGS})
   endif()
 
+  set(coreneuron_backend_helper_script test/coreneuron/backend_helper.py)
+
   # This test uses the standard NEURON installation (without nrnivmodl having been run)
   if(CORENRN_ENABLE_SHARED)
     nrn_add_test_group(
@@ -609,7 +611,7 @@ if(NRN_ENABLE_PYTHON)
       GROUP coreneuron_standalone
       NAME test_nrn_corenrn_standalone
       REQUIRES coreneuron ${modtests_preload_sanitizer}
-      SCRIPT_PATTERNS test/coreneuron/test_psolve.py
+      SCRIPT_PATTERNS ${coreneuron_backend_helper_script} test/coreneuron/test_psolve.py
       ENVIRONMENT COVERAGE_FILE=.coverage.coreneuron_standalone_test_psolve_py
                   ${sonata_zero_gid_env} ${nrnpython_mpi_env}
       COMMAND ${modtests_launch_py} test/coreneuron/test_psolve.py)
@@ -658,7 +660,7 @@ if(NRN_ENABLE_PYTHON)
     CORENEURON
     NAME coreneuron_modtests
     # This get used in 4 tests so make it the default and override in other tests.
-    SCRIPT_PATTERNS test/coreneuron/test_spikes.py
+    SCRIPT_PATTERNS ${coreneuron_backend_helper_script} test/coreneuron/test_spikes.py
     MODFILE_PATTERNS
       "test/coreneuron/mod files/*.mod" "test/coreneuron/mod files/axial.inc"
       test/pytest_coreneuron/unitstest.mod test/pytest_coreneuron/version_macros.mod
@@ -757,7 +759,7 @@ if(NRN_ENABLE_PYTHON)
       GROUP coreneuron_modtests
       NAME test_pointer_py_${processor}
       REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
-      SCRIPT_PATTERNS test/coreneuron/test_pointer.py
+      SCRIPT_PATTERNS ${coreneuron_backend_helper_script} test/coreneuron/test_pointer.py
       ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
                   COVERAGE_FILE=.coverage.coreneuron_test_pointer_py
       COMMAND ${modtests_launch_py} test/coreneuron/test_pointer.py)
@@ -765,7 +767,7 @@ if(NRN_ENABLE_PYTHON)
       GROUP coreneuron_modtests
       NAME test_watchrange_py_${processor}
       REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
-      SCRIPT_PATTERNS test/coreneuron/test_watchrange.py
+      SCRIPT_PATTERNS ${coreneuron_backend_helper_script} test/coreneuron/test_watchrange.py
       ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
                   COVERAGE_FILE=.coverage.coreneuron_test_watchrange_py
       COMMAND ${modtests_launch_py} test/coreneuron/test_watchrange.py)
@@ -773,7 +775,7 @@ if(NRN_ENABLE_PYTHON)
       GROUP coreneuron_modtests
       NAME test_psolve_py_${processor}
       REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
-      SCRIPT_PATTERNS test/coreneuron/test_psolve.py
+      SCRIPT_PATTERNS ${coreneuron_backend_helper_script} test/coreneuron/test_psolve.py
       ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
                   COVERAGE_FILE=.coverage.coreneuron_test_psolve_py
       COMMAND ${modtests_launch_py} test/coreneuron/test_psolve.py)
@@ -789,7 +791,7 @@ if(NRN_ENABLE_PYTHON)
       GROUP coreneuron_modtests
       NAME test_nmodlrandom_py_${processor}
       REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
-      SCRIPT_PATTERNS test/coreneuron/test_nmodlrandom.py
+      SCRIPT_PATTERNS ${coreneuron_backend_helper_script} test/coreneuron/test_nmodlrandom.py
       ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
                   COVERAGE_FILE=.coverage.coreneuron_test_nmodlrandom_py
       COMMAND ${modtests_launch_py} test/coreneuron/test_nmodlrandom.py)

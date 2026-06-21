@@ -82,7 +82,7 @@ if(NRN_ENABLE_GPU)
     REQUIRES gpu mpi python mod_compatibility
     PROCESSORS ${ringtest_mpi_ranks}
     COMMAND bash ${ringtest_native_gpu_mpi_script}
-    OUTPUT asciispikes::spk1.std)
+    OUTPUT asciispikes::spk2.std)
 endif()
 
 # creep into this file to add a nrn only test for ParallelContext.optimize_node_order(i)
