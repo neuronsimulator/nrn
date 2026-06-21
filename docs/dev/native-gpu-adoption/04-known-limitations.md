@@ -21,15 +21,15 @@ emits a one-time warning; per-thread CUDA contexts may fail on some platforms.
 
 ## sparse13 / DAE models (extracellular, LinearMechanism)
 
-Native GPU matrix solve is **Hines tridiagonal only** (`solve_interleaved` on
-device). Extracellular and `LinearMechanism` are DAE extensions that force
-`use_sparse13 = 1` and the CPU `spFactor`/`spSolve` path in `nrn_solve` — there
-is **no GPU sparse13** in Phase B.
+Native fixed-step is implemented as **separated GPU subphases**. For ODE tree
+models, **GPU tree solve** (`solve_interleaved`) is on device. Extracellular and
+`LinearMechanism` force `use_sparse13 = 1` and require **CPU sparse13 Gaussian
+elimination** — the one subphase with no GPU implementation in Phase B.
 
-`post_solve_needs_host_fallback()` also returns true for `use_sparse13` and
-extracellular builds, but that only affects post-solve; it does not substitute a
-GPU sparse solver. **Do not use native GPU for these model types** (same deferral
-class as CVode-on-GPU).
+Other subphases (mechanism currents, `NET_RECEIVE`, post-solve in principle) are
+not ruled out by the architecture, but Phase B does not certify DAE models on
+`gpu.backend="native"`. `post_solve_needs_host_fallback()` often forces CPU
+post-solve for DAE/LFP cases as well.
 
 ## LFP / partrans post-solve fallback
 

@@ -52,7 +52,8 @@ Phase B contract
 - CVode / IDA on native GPU (enabling native GPU with CVode active raises an error)
 - GPU spike priority queue
 - Full multi-thread OpenACC maturity (``pc.nthread(1)`` is the validated default)
-- ``sparse13``, extracellular, and LFP post-solve hooks on device (host fallback)
+- GPU sparse13 / DAE Gaussian elimination (extracellular, ``LinearMechanism``)
+- LFP post-solve hooks on device (host fallback where registered)
 - MPI-native modtest expansion beyond current parity set
 
 Supported and unsupported matrix
@@ -83,11 +84,13 @@ Supported and unsupported matrix
 +-------------------------------+------------------+---------------------------+
 | ``pc.nthread(n>1)``           | Experimental     | One-time warning emitted  |
 +-------------------------------+------------------+---------------------------+
-| Extracellular                 | **Unsupported**  | DAE → CPU ``sparse13``    |
+| Extracellular                 | **Unsupported**  | Needs CPU ``sparse13`` solve|
 +-------------------------------+------------------+---------------------------+
-| ``LinearMechanism``           | **Unsupported**  | DAE → CPU ``sparse13``    |
+| ``LinearMechanism``           | **Unsupported**  | Needs CPU ``sparse13`` solve|
 +-------------------------------+------------------+---------------------------+
-| ``sparse13`` / DAE solve      | **Unsupported**  | No GPU sparse solver      |
+| Tree matrix solve (ODE)       | Supported        | GPU ``solve_interleaved`` |
++-------------------------------+------------------+---------------------------+
+| ``sparse13`` Gaussian elim.   | **Unsupported**  | CPU only; future phase    |
 +-------------------------------+------------------+---------------------------+
 | LFP / ``nrnthread_vi_compute_`` | Host fallback  | Post-solve on host only   |
 +-------------------------------+------------------+---------------------------+
@@ -121,23 +124,64 @@ Use these levels when reading code, tests, or the development journal (PR7):
 | L8    | Verification       | ``*_py_gpu_native`` modtests, unit tests      |
 +-------+--------------------+-----------------------------------------------+
 
-One fixed step on the native path
+Fixed-step subphases (native GPU)
 *********************************
 
-At a high level, thread 0 (and peers) execute:
+Native fixed-step integration is split into **subphases** (``fadvance_gpu.cpp``,
+``post_solve.cpp``, ``net_events.cpp``, …). Most subphases can run on the GPU;
+the notable exception for DAE models is the **linear solve** — tree ODE models use
+GPU ``solve_interleaved``, while extracellular / ``LinearMechanism`` require CPU
+``sparse13`` Gaussian elimination (``spFactor`` / ``spSolve``). That separation
+is architectural: a future GPU sparse solver is its own phase (like CVode-on-GPU),
+not a rewrite of the whole native path.
+
++---------------------------+--------------------+-------------------------------+
+| Subphase                  | ODE tree (Phase B) | DAE (extracellular / linmod)  |
++===========================+====================+===============================+
+| Spike queues + MPI        | CPU                | CPU                           |
++---------------------------+--------------------+-------------------------------+
+| ``deliver_net_events``    | CPU                | CPU                           |
++---------------------------+--------------------+-------------------------------+
+| ``setup_tree_matrix`` +   | GPU                | GPU-capable in principle;     |
+| NMODL mechanism currents  |                    | sparse13 assembly differs     |
++---------------------------+--------------------+-------------------------------+
+| Matrix solve              | **GPU tree solve** | **CPU sparse13 only**         |
++---------------------------+--------------------+-------------------------------+
+| Post-solve (V, fast_imem) | GPU                | Host fallback typical         |
++---------------------------+--------------------+-------------------------------+
+| ``NET_RECEIVE`` / nonvint | GPU                | GPU-capable in principle      |
+| (lastpart)                |                    |                               |
++---------------------------+--------------------+-------------------------------+
+| ``net_send`` buffer       | GPU                | GPU-capable in principle      |
++---------------------------+--------------------+-------------------------------+
+| Gap junction MPI          | CPU sync + MPI     | CPU sync + MPI                |
++---------------------------+--------------------+-------------------------------+
+| Recording flush           | GPU → host batch   | Same API                      |
++---------------------------+--------------------+-------------------------------+
+
+Phase B **validates the ODE column** (19 ``*_py_gpu_native`` modtests). DAE rows
+are not production-supported on ``gpu.backend="native"`` today; performance of
+mixed CPU-solve / GPU-subphase paths is untested.
+
+One fixed step — ODE tree (diagram)
+***********************************
+
+Diagram below: **fixed-step, model type 1 (ODE tree)**, no extracellular or
+``LinearMechanism``. Variable-step (CVode) and multi-thread OpenACC are separate
+limitations (see matrix above).
 
 .. mermaid::
 
    flowchart TD
-     A[deliver_net_events: CPU queues → targets] --> B[GPU setup_tree_matrix + NMODL mechanism currents]
-     B --> C[GPU Hines solve: solve_interleaved]
+     A[CPU: deliver_net_events] --> B[GPU: setup_tree_matrix + NMODL currents]
+     B --> C[GPU: tree solve solve_interleaved]
      C --> D{post_solve host fallback?}
-     D -->|no| E[GPU post_solve: V, fast_imem, capacity]
-     D -->|yes| F[CPU post_solve: nrn_update_voltage path]
+     D -->|no| E[GPU: post_solve V, fast_imem, capacity]
+     D -->|yes| F[CPU: post_solve nrn_update_voltage]
      E --> G{gap junctions?}
      F --> G
-     G -->|yes| H[sync voltages + MPI transfer]
-     G -->|no| I[lastpart: events, vecplay]
+     G -->|yes| H[CPU: sync voltages + MPI gap transfer]
+     G -->|no| I[GPU: lastpart NET_RECEIVE + nonvint + vecplay]
      H --> I
      I --> J{download flush interval?}
      J -->|yes| K[batch_download_to_host]
@@ -145,35 +189,24 @@ At a high level, thread 0 (and peers) execute:
      K --> M[advance step counter]
      L --> M
 
-On the native path ``nt.compute_gpu`` is set for the integration phase. NMODL
-``BREAKPOINT`` currents (``nrn_cur_*`` OpenACC kernels) and OpenACC axial matrix
-assembly in ``setup_tree_matrix`` run on the GPU — consistent with the
-**Mechanisms (NMODL)** supported row above. A brief host sync may adjust matrix
-entries for legacy host-only hooks before the solver sees device-resident state.
+On this path ``nt.compute_gpu`` is set for integration. NMODL ``BREAKPOINT``
+currents (``nrn_cur_*`` OpenACC) and OpenACC axial assembly in ``setup_tree_matrix``
+run on the GPU. **GPU tree solve** is ``solve_interleaved`` / ``solve_interleaved1|2``
+(OpenACC in ``cellorder*.cpp``) — the same tridiagonal structure as classic
+``triang``/``bksub``, not a general sparse solver.
 
-**GPU matrix solve is not a general sparse solver.** Phase B implements the
-**Hines tridiagonal** path only: ``solve_interleaved`` / ``solve_interleaved1|2``
-(OpenACC in ``cellorder*.cpp``). That is the same structural assumption as the
-classic ``triang``/``bksub`` tree solver.
+``NET_RECEIVE`` mechanism computation and related nonvint work run on the GPU
+during **lastpart** (after the solve/post-solve block). Cross-rank spike
+**scheduling** remains on CPU (see spike policy in :doc:`gpu-testing`).
 
-The **sparse13** library (``spFactor`` / ``spSolve`` in ``solve.cpp``) handles
-DAE models that extend the equation system beyond the tree — extracellular
-layers (``extcelln.cpp``: *"solving is done with sparse13"*), ``LinearMechanism``
-(``NrnDAE`` / ``nrndae``), and related fixed-step DAE cases
-(``nrn_modeltype()`` returns 2 → ``use_sparse13 = 1``). **Sparse13 runs on the
-CPU only**; there is no GPU sparse13 or GPU DAE solver in Phase B (deferred like
-CVode-on-GPU).
+For DAE models, only the **matrix solve** subphase must swap to CPU ``sparse13``;
+other subphases are not inherently excluded by the subphase design, but Phase B
+does not certify extracellular or ``LinearMechanism`` on the native path.
 
-Native GPU is intended for **model type 1** (ODE tree) modtests. Do not enable
-``gpu.backend="native"`` for extracellular or ``LinearMechanism`` models.
-
-**Post-solve host fallback** (``post_solve_needs_host_fallback()``) is a separate,
-narrower hook: it forces CPU ``nrn_update_voltage`` instead of
-``post_solve_on_device`` when LFP/partrans registers ``nrnthread_vi_compute_``,
-or when ``use_sparse13`` / extracellular is active at compile time. That fallback
-does **not** retrofit a GPU sparse solve — models that require sparse13 must stay
-on CPU NEURON (or CoreNEURON where applicable). Most Phase B modtests are
-type-1 ODE models and take the full GPU solve + GPU post-solve path.
+**Post-solve host fallback** (``post_solve_needs_host_fallback()``) forces CPU
+``nrn_update_voltage`` when LFP/partrans registers ``nrnthread_vi_compute_``,
+or when ``use_sparse13`` / extracellular is active — independent of the tree-solve
+vs sparse13 distinction for ODE models.
 
 Spike exchange with MPI occurs at the **minimum NetCon delay** cadence (often
 many fixed steps), not every ``dt``.

@@ -89,14 +89,16 @@ pass.
 **Artifacts:** `warn_native_gpu_multithread_policy()` in `config.cpp`,
 `fadvance_gpu.cpp`.
 
-## Hines GPU solve only; sparse13 stays on CPU
+## Subphase GPU path; tree solve vs sparse13
 
-**Decision:** GPU integration uses `solve_interleaved` (tridiagonal Hines structure).
-DAE models (extracellular, `LinearMechanism` / `NrnDAE`) use `sparse13` on the CPU
-via `spFactor`/`spSolve` — not ported to device in Phase B.
+**Decision:** Native fixed-step is split into GPU subphases (matrix setup, tree
+solve, post-solve, `NET_RECEIVE`, `net_send` buffer, …). ODE tree models use
+**GPU tree solve** (`solve_interleaved`). DAE models (extracellular,
+`LinearMechanism`) swap only the **matrix solve** to CPU `sparse13`
+(`spFactor`/`spSolve`); other subphases are not architecturally excluded.
 
-**Why:** Sparse13 solves a different matrix structure than the permuted tree.
-A GPU sparse/DAE solver is a separate project (like CVode-on-GPU).
+**Why:** Sparse Gaussian elimination is the missing GPU piece — a future phase,
+like CVode-on-GPU. Phase B validates the ODE column only.
 
 ## Build still requires CoreNEURON at configure (Phase B)
 
