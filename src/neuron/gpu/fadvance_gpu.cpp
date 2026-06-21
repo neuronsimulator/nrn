@@ -4,6 +4,7 @@
 #include "neuron/gpu/device_state.hpp"
 #include "neuron/gpu/net_events.hpp"
 #include "neuron/gpu/net_send_buffer.hpp"
+#include "neuron/gpu/post_solve.hpp"
 #include "neuron/gpu/sync.hpp"
 #include "neuron/model_data.hpp"
 
@@ -63,16 +64,24 @@ void fixed_step_thread(model_sorted_token const& cache_token,
                 nrn_solve(nth);
             }
         }
-        sync_rhs_to_host_after_solve(nt);
-        {
-            nrn::Instrumentor::phase p("second-order-cur");
-            second_order_cur(nth);
+        if (post_solve_needs_host_fallback(nt)) {
+            sync_rhs_to_host_after_solve(nt);
+            {
+                nrn::Instrumentor::phase p("second-order-cur");
+                second_order_cur(nth);
+            }
+            {
+                nrn::Instrumentor::phase p("update");
+                nrn_update_voltage(cache_token, nt);
+            }
+        } else {
+            {
+                nrn::Instrumentor::phase p("update");
+                post_solve_on_device(cache_token, nt);
+            }
+            sync_voltages_to_host_after_post_solve(nt);
+            sync_fast_imem_to_host_after_post_solve(nt);
         }
-        {
-            nrn::Instrumentor::phase p("update");
-            nrn_update_voltage(cache_token, nt);
-        }
-        sync_voltage_to_device_after_solve(nt);
     }
     if (nrnthread_v_transfer_) {
         if (nt.end > 0) {

@@ -25,11 +25,14 @@ void sync_matrix_to_host_before_solve(NrnThread& nt);
 /** Push post-nonvint matrix state to device before the GPU Hines solver. */
 void sync_matrix_to_device_before_solve(NrnThread& nt);
 
-/** Pull vec_rhs solution to host after the GPU solver (minimal post-solve sync). */
+/** Pull vec_rhs solution to host after the GPU solver (host post-solve fallback only). */
 void sync_rhs_to_host_after_solve(NrnThread& nt);
 
-/** Push post-solve voltages (and rhs) back to device for the next GPU step. */
-void sync_voltage_to_device_after_solve(NrnThread& nt);
+/** Pull post-solve node voltages to host for HOC reads and VecPlay. */
+void sync_voltages_to_host_after_post_solve(NrnThread& nt);
+
+/** Pull fast_imem sav_rhs to host after GPU fast_imem (smaller than vec_rhs sync). */
+void sync_fast_imem_to_host_after_post_solve(NrnThread& nt);
 
 /** Ensure gap-junction source voltages are visible on host before MPI transfer. */
 void sync_gap_after_voltage_update(NrnThread& nt);

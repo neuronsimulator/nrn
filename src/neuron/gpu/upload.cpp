@@ -130,6 +130,19 @@ void upload_thread_parent_indices(UploadState& state) {
     }
 }
 
+void upload_mechanism_nodeindices(UploadState& state) {
+    for (int ith = 0; ith < nrn_nthread; ++ith) {
+        auto& nt = nrn_threads[ith];
+        for (auto* tml = nt.tml; tml; tml = tml->next) {
+            auto* const ml = tml->ml;
+            if (!ml || !ml->nodeindices || ml->nodecount <= 0) {
+                continue;
+            }
+            copyin_pod_array(ml->nodeindices, static_cast<std::size_t>(ml->nodecount), state);
+        }
+    }
+}
+
 void upload_nrnthread_shells(UploadState& state) {
     for (int ith = 0; ith < nrn_nthread; ++ith) {
         auto& nt = nrn_threads[ith];
@@ -194,6 +207,7 @@ void upload_sorted_model(model_sorted_token const& sorted, UploadState& state) {
         [&](auto& mech_data) { upload_soa_storage(mech_data, state); });
 
     upload_thread_parent_indices(state);
+    upload_mechanism_nodeindices(state);
     upload_nrnthread_shells(state);
     upload_interleave_infos(state);
 }
