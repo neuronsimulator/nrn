@@ -154,7 +154,8 @@ not a rewrite of the whole native path.
 +---------------------------+--------------------+-------------------------------+
 | ``net_send`` buffer       | GPU                | GPU-capable in principle      |
 +---------------------------+--------------------+-------------------------------+
-| Gap junction MPI          | CPU sync + MPI     | CPU sync + MPI                |
+| Gap junction transfer     | See gap phases     | Same (if gaps present)        |
+| (``setup_transfer``)      | below              |                               |
 +---------------------------+--------------------+-------------------------------+
 | Recording flush           | GPU → host batch   | Same API                      |
 +---------------------------+--------------------+-------------------------------+
@@ -166,7 +167,9 @@ mixed CPU-solve / GPU-subphase paths is untested.
 One fixed step — ODE tree (diagram)
 ***********************************
 
-Diagram below: **fixed-step, model type 1 (ODE tree)**, no extracellular or
+Diagram below assumes **``gpu.enable=True``**, **``gpu.backend="native"``**, and
+``coreneuron.enable=False`` (classic ``pc.psolve`` on the native path). Scope:
+**fixed-step, model type 1 (ODE tree)**, no extracellular or
 ``LinearMechanism``. Variable-step (CVode) and multi-thread OpenACC are separate
 limitations (see matrix above).
 
@@ -178,9 +181,9 @@ limitations (see matrix above).
      C --> D{post_solve host fallback?}
      D -->|no| E[GPU: post_solve V, fast_imem, capacity]
      D -->|yes| F[CPU: post_solve nrn_update_voltage]
-     E --> G{gap junctions?}
+     E --> G{gap transfer configured?}
      F --> G
-     G -->|yes| H[CPU: sync voltages + MPI gap transfer]
+     G -->|yes| H[CPU: gap gather, MPI if nhost>1, scatter in lastpart]
      G -->|no| I[GPU: lastpart NET_RECEIVE + nonvint + vecplay]
      H --> I
      I --> J{download flush interval?}
@@ -198,6 +201,27 @@ run on the GPU. **GPU tree solve** is ``solve_interleaved`` / ``solve_interleave
 ``NET_RECEIVE`` mechanism computation and related nonvint work run on the GPU
 during **lastpart** (after the solve/post-solve block). Cross-rank spike
 **scheduling** remains on CPU (see spike policy in :doc:`gpu-testing`).
+
+**Gap junction transfer** (``ParallelContext.setup_transfer``) is **not** gated on
+MPI or ``pc.nthread(n)>1`` alone. The diamond is true whenever
+``nrnthread_v_transfer_`` is registered (gap junctions or other partrans targets) —
+including single-process, single-thread models with gaps.
+
+On CPU fixed-step, partrans uses three conceptual phases (``partrans.cpp``):
+
+1. **Gather** source values into transfer buffers (``mpi_transfer``: ``outsrc_buf_[i]
+   = *poutsrc_[i]``).
+2. **MPI exchange** if ``nrnmpi_numprocs > 1`` (``MPI_Alltoallv`` or sparse variant
+   into ``insrc_buf_``). Skipped on one rank.
+3. **Scatter** to targets (``thread_transfer`` in ``nonvint``, per thread:
+   ``*(ttd.tv[i]) = *(ttd.sv[i])``).
+
+Phase B native GPU: after post-solve, ``sync_gap_after_voltage_update`` pulls source
+voltages **GPU → host** so phase 1 can read them; thread 0 runs ``nrnmpi_v_transfer_``
+(MPI phase 2 when multi-rank); phase 3 still runs on the **CPU** inside lastpart
+``nonvint``. Gather and scatter are not on device yet — a future optimization could
+keep phases 1 and 3 on GPU and avoid host staging when **no MPI** (and possibly for
+intra-node thread transfers), but that is outside Phase B.
 
 For DAE models, only the **matrix solve** subphase must swap to CPU ``sparse13``;
 other subphases are not inherently excluded by the subphase design, but Phase B

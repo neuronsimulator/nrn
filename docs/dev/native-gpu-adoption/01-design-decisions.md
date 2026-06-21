@@ -46,15 +46,23 @@ after topology changes must invalidate cleanly.
 
 **Artifacts:** `device_state.cpp`, `upload.cpp`.
 
-## Gap junctions: device voltage pull before sparse MPI
+## Gap junctions: three-phase partrans, host staging in Phase B
 
-**Decision:** Before gap MPI transfer, voltages (and ions where needed) are
-synced from device. Transfer logic remains host/MPI sparse paths.
+**Decision:** Gap transfer follows CPU partrans phases when
+`pc.setup_transfer()` is active (not only when MPI or `nthread>1`):
 
-**Why:** Gap infrastructure predates native GPU; Phase B prioritizes correctness
-over device-resident gap state.
+1. Gather sources into buffers (`mpi_transfer` / `outsrc_buf_`)
+2. `MPI_Alltoallv` when `nrnmpi_numprocs > 1` (skipped on one rank)
+3. Scatter to targets (`thread_transfer` in `nonvint`)
 
-**Artifacts:** `sync.cpp`, `fadvance_gpu.cpp` gap hooks.
+Native GPU pulls source voltages device → host (`sync_gap_after_voltage_update`)
+before gather so `mpi_transfer` reads host memory. Scatter remains CPU in lastpart.
+
+**Why:** Partrans predates device-resident gap buffers. GPU gather/scatter without
+host staging — especially when MPI is absent — is a future optimization, not
+Phase B.
+
+**Artifacts:** `partrans.cpp`, `sync.cpp`, `fadvance_gpu.cpp`.
 
 ## Batch download for recording
 
