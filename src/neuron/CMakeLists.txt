@@ -20,7 +20,8 @@ if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
                                                           "CORENEURON_ENABLE_GPU;NRN_ENABLE_GPU")
 
   # upload.cpp pulls NEURON/oc headers; compile as OpenACC object lib for libnrniv + GPU tests.
-  add_library(neuron_gpu_upload OBJECT gpu/upload.cpp gpu/fadvance_gpu.cpp gpu/net_events.cpp
+  add_library(neuron_gpu_upload OBJECT gpu/upload.cpp gpu/upload_mechanisms.cpp
+                                         gpu/fadvance_gpu.cpp gpu/net_events.cpp
                                          gpu/net_send_buffer.cpp gpu/post_solve.cpp gpu/sync.cpp)
   set_property(TARGET neuron_gpu_upload PROPERTY POSITION_INDEPENDENT_CODE ON)
   target_include_directories(
@@ -35,8 +36,8 @@ if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
             ${PROJECT_SOURCE_DIR}/external/fmt/include)
   target_link_libraries(neuron_gpu_upload PRIVATE fmt::fmt)
   set_source_files_properties(
-    gpu/upload.cpp gpu/fadvance_gpu.cpp gpu/net_events.cpp gpu/net_send_buffer.cpp
-    gpu/post_solve.cpp gpu/sync.cpp
+    gpu/upload.cpp gpu/upload_mechanisms.cpp gpu/fadvance_gpu.cpp gpu/net_events.cpp
+    gpu/net_send_buffer.cpp gpu/post_solve.cpp gpu/sync.cpp
     PROPERTIES COMPILE_OPTIONS "${_neuron_gpu_acc_flags}" COMPILE_DEFINITIONS
                                                           "CORENEURON_ENABLE_GPU;NRN_ENABLE_GPU")
 endif()

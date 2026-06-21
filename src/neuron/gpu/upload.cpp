@@ -4,9 +4,11 @@
 #include "multicore.h"
 #include "neuron/container/mechanism_data.hpp"
 #include "neuron/container/node_data.hpp"
+#include "neuron/gpu/net_send_buffer.hpp"
 #include "neuron/gpu/offload.hpp"
 #include "neuron/model_data.hpp"
 #include "node_order_optim/node_order_optim.h"
+#include "nrnoc_ml.h"
 
 #include <stdexcept>
 
@@ -194,6 +196,22 @@ void UploadState::teardown() {
         } else if (mirror.sizeof_elem == sizeof(NrnThread)) {
             nrn_target_delete(const_cast<NrnThread*>(static_cast<NrnThread const*>(mirror.host)),
                               mirror.count);
+        } else if (mirror.sizeof_elem == sizeof(Memb_list)) {
+            nrn_target_delete(const_cast<Memb_list*>(static_cast<Memb_list const*>(mirror.host)),
+                              mirror.count);
+        } else if (mirror.sizeof_elem == sizeof(Datum)) {
+            nrn_target_delete(const_cast<Datum*>(static_cast<Datum const*>(mirror.host)),
+                              mirror.count);
+        } else if (mirror.sizeof_elem == sizeof(Datum*)) {
+            nrn_target_delete(const_cast<Datum**>(static_cast<Datum* const*>(mirror.host)),
+                              mirror.count);
+        } else if (mirror.sizeof_elem == sizeof(Memb_list*)) {
+            nrn_target_delete(const_cast<Memb_list**>(static_cast<Memb_list* const*>(mirror.host)),
+                              mirror.count);
+        } else if (mirror.sizeof_elem == sizeof(NetSendBuffer_t)) {
+            nrn_target_delete(
+                const_cast<NetSendBuffer_t*>(static_cast<NetSendBuffer_t const*>(mirror.host)),
+                mirror.count);
         }
     }
 #endif
@@ -209,6 +227,7 @@ void upload_sorted_model(model_sorted_token const& sorted, UploadState& state) {
     upload_thread_parent_indices(state);
     upload_mechanism_nodeindices(state);
     upload_nrnthread_shells(state);
+    upload_mechanism_lists(state);
     upload_interleave_infos(state);
 }
 

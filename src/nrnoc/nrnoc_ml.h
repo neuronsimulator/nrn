@@ -80,6 +80,8 @@ struct Memb_list {
     Datum* _thread{}; /* thread specific data (when static is no good) */
     neuron::gpu::NetSendBuffer_t* _net_send_buffer = nullptr;
     int nodecount{};
+    /** Padded instance count for GPU SoA kernels (set during device upload). */
+    int _nodecount_padded{};
     /**
      * @brief Get a vector of double* representing the model data.
      *
