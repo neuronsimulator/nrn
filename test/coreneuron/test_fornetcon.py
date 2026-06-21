@@ -82,9 +82,10 @@ def test_fornetcon():
 
     weight_std = get_weights()
 
-    print("CoreNEURON run")
-    coreneuron.enable = True
-    coreneuron.gpu = bool(strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false")))
+    from backend_helper import disable_test_backend, enable_test_backend
+
+    print("GPU/backend run")
+    enable_test_backend()
 
     def runassert(mode):
         spiketime.resize(0)
@@ -100,7 +101,7 @@ def test_fornetcon():
     for mode in [0, 1, 2]:
         runassert(mode)
 
-    coreneuron.enable = False
+    disable_test_backend()
 
     # help cover/test_netcvode.cpp cover the NetCon.setpost method
     # with respect to a change in weight vector size

@@ -171,18 +171,26 @@ def test_datareturn():
         run(tstop, 0)  # NEURON run
     std = model.data()
 
-    print("CoreNEURON run")
-    coreneuron.enable = True
-    coreneuron.verbose = 0
-    coreneuron.gpu = bool(strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false")))
+    from backend_helper import (
+        disable_test_backend,
+        enable_test_backend,
+        iter_permute_values,
+        set_permute,
+    )
+
+    print("GPU/backend run")
+    enable_test_backend()
 
     results = []
-    cell_permute_values = coreneuron.valid_cell_permute()
+    cell_permute_values = list(iter_permute_values())
+    from backend_helper import is_native_backend_test
+
+    nthread_values = [1] if is_native_backend_test() else [1, 2]
     for mode, nthread, cell_permute in itertools.product(
-        [0, 1, 2], [1, 2], cell_permute_values
+        [0, 1, 2], nthread_values, cell_permute_values
     ):
         pc.nthread(nthread)
-        coreneuron.cell_permute = cell_permute
+        set_permute(cell_permute)
         run(tstop, mode)
         tst = model.data()
         max_diff = (
@@ -207,7 +215,7 @@ def test_datareturn():
 
     if __name__ != "__main__":
         # tear down
-        coreneuron.enable = False
+        disable_test_backend()
         pc.nthread(1)
         pc.gid_clear()
 

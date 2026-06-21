@@ -289,27 +289,35 @@ def test_fastimem_corenrn():
             run(tstop)
             cmp("cache efficient NEURON with 2 threads")
 
-        if coreneuron_available():
-            from neuron import coreneuron
+        import sys
+        from pathlib import Path
 
-            enable_gpu = strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false"))
-            with coreneuron(verbose=0, gpu=enable_gpu):
-                tolerance = 5e-11
-                with coreneuron(enable=True):
-                    run(tstop)
-                    cmp("CoreNEURON online mode", rel_tol=tolerance)
+        sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "coreneuron"))
+        from backend_helper import (
+            disable_test_backend,
+            enable_test_backend,
+            is_native_backend_test,
+        )
 
-                init_v()
-                while h.t < tstop - h.dt / 2:
-                    dt_above = (
-                        1.1 * h.dt
-                    )  # comfortably above dt to avoid 0 step advance
-                    with coreneuron(enable=True):
-                        told = h.t
-                        pc.psolve(h.t + dt_above)
-                        assert h.t > told
-                    pc.psolve(h.t + dt_above)
-                cmp("Checking i_membrane_ trajectories", rel_tol=tolerance)
+        if is_native_backend_test() or coreneuron_available():
+            tolerance = 5e-11
+            enable_test_backend()
+            run(tstop)
+            cmp("GPU/backend online mode", rel_tol=tolerance)
+
+            init_v()
+            while h.t < tstop - h.dt / 2:
+                dt_above = (
+                    1.1 * h.dt
+                )  # comfortably above dt to avoid 0 step advance
+                enable_test_backend()
+                told = h.t
+                pc.psolve(h.t + dt_above)
+                assert h.t > told
+                disable_test_backend()
+                pc.psolve(h.t + dt_above)
+            cmp("Checking i_membrane_ trajectories", rel_tol=tolerance)
+            disable_test_backend()
                 # olupton 2023-06-19: removed some logic to dump a file of fast imem values from
                 # NEURON that could in principle be compared offline to a similar file produced by
                 # a patched version of CoreNEURON.

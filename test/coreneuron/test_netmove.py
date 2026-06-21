@@ -75,10 +75,10 @@ def _test_netmove():
 
     stdlist = [cell.result() for cell in cells]
 
-    print("CoreNEURON run")
-    coreneuron.enable = True
-    coreneuron.verbose = 0
-    coreneuron.gpu = bool(strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false")))
+    from backend_helper import disable_test_backend, enable_test_backend
+
+    print("GPU/backend run")
+    enable_test_backend()
 
     def runassert(mode):
         run(tstop, mode)
@@ -105,7 +105,7 @@ def _test_netmove():
     for mode in [0, 1, 2]:
         runassert(mode)
 
-    coreneuron.enable = False
+    disable_test_backend()
     # teardown
     pc.gid_clear()
     return stdlist

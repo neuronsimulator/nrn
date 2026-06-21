@@ -104,13 +104,16 @@ def _test_natrans():
 
     run()  # NEURON: Fails if tar.napre not what is expected
 
-    from neuron import coreneuron
+    import sys
+    from pathlib import Path
 
-    coreneuron.available = True
-    if coreneuron.available:
-        coreneuron.enable = True
-        coreneuron.cell_permute = 0
-        run()  # Fails if CoreNEURON does not copy expected tar.napre to NEURON
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "coreneuron"))
+    from backend_helper import disable_test_backend, enable_test_backend, set_permute
+
+    enable_test_backend()
+    set_permute(0)
+    run()  # Fails if GPU/backend does not copy expected tar.napre to NEURON
+    disable_test_backend()
 
     return cells, gids, sgids, targets
 

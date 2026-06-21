@@ -105,16 +105,11 @@ class DeviceStateRegistry {
     }
 
     device_token const& ensure_cached(model_sorted_token const& sorted) {
-        {
-            std::lock_guard lock{mut_};
-            if (cached_ensure_token_) {
-                return *cached_ensure_token_;
-            }
-        }
-        auto fresh = std::make_unique<device_token>(sorted);
+        // Hold the lock for the full upload: concurrent device_token construction
+        // would otherwise race on the shared UploadState mirror list.
         std::lock_guard lock{mut_};
         if (!cached_ensure_token_) {
-            cached_ensure_storage_ = std::move(fresh);
+            cached_ensure_storage_ = std::make_unique<device_token>(sorted);
             cached_ensure_token_ = cached_ensure_storage_.get();
         }
         return *cached_ensure_token_;
