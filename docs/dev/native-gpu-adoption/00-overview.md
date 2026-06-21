@@ -33,7 +33,7 @@ Phase B is **complete** when the runtime contract is coherent for fixed-step
 and the checklist in [PHASE-B-COMPLETE.md](PHASE-B-COMPLETE.md) is satisfied.
 
 Branch: `hines-grok/feature/neuron-core-gpu-adoption`  
-Commits through PR7: `ab4efc1fe` (appendix: [appendix-commits.md](appendix-commits.md)).
+Commits through PR7: `2087fb131` (appendix: [appendix-commits.md](appendix-commits.md)).
 
 ## Document map
 

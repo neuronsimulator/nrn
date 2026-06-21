@@ -1,7 +1,7 @@
 # Appendix: commits
 
 Chronological log for `hines-grok/feature/neuron-core-gpu-adoption` (oldest first).
-One paragraph per commit through PR7 (`ab4efc1fe`).
+One paragraph per commit through PR7 (`2087fb131`).
 
 ---
 
@@ -228,7 +228,7 @@ Adds `docs/dev/native-gpu-fixed-step.rst` as canonical Phase B reference with
 L0–L8 layers, build/runtime tables, mermaid timestep flow, and API docs.
 Dedupes scope text from `gpu-testing.rst`; cross-links CMake options.
 
-### `ab4efc1fe`
+### `2087fb131`
 
 **Subject:** Add native GPU adoption dev journal and Phase B closure (PR7)
 
