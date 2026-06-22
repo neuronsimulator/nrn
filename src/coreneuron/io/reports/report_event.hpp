@@ -22,8 +22,8 @@ namespace coreneuron {
 struct VarWithMapping {
     uint32_t id;
     double* var_value;
-    VarWithMapping(int id_, double* v_)
-        : id(id_)
+    VarWithMapping(size_t id_, double* v_)
+        : id(static_cast<uint32_t>(id_))
         , var_value(v_) {}
 };
 
