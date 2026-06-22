@@ -22,8 +22,8 @@
 #include "utils/profile/profiler_interface.h"
 #include "multicore.h"
 
+#include "neuron/gpu/offload.hpp"
 #if defined(NRN_ENABLE_GPU)
-#include "coreneuron/utils/offload.hpp"
 #include "neuron/gpu/sync.hpp"
 #endif
 

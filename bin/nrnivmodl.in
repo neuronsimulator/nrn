@@ -107,13 +107,13 @@ while [ "$1" ] ; do
 done
 
 @NRN_ENABLE_GPU_TRUE@if [ "$ForceNOCMODL" = true ]; then
-    echo "ERROR: -nocmodl is not supported with NRN_ENABLE_GPU builds. Use NMODL (default) instead."
-    exit 1
-fi
+@NRN_ENABLE_GPU_TRUE@    echo "ERROR: -nocmodl is not supported with NRN_ENABLE_GPU builds. Use NMODL (default) instead."
+@NRN_ENABLE_GPU_TRUE@    exit 1
+@NRN_ENABLE_GPU_TRUE@fi
 @NRN_ENABLE_GPU_TRUE@if [ -n "$UserNMODLBIN" ] && echo "$UserNMODLBIN" | grep -q nocmodl; then
-    echo "ERROR: NOCMODL cannot be used with NRN_ENABLE_GPU builds. Use NMODL (default) instead."
-    exit 1
-fi
+@NRN_ENABLE_GPU_TRUE@    echo "ERROR: NOCMODL cannot be used with NRN_ENABLE_GPU builds. Use NMODL (default) instead."
+@NRN_ENABLE_GPU_TRUE@    exit 1
+@NRN_ENABLE_GPU_TRUE@fi
 
 echo "$PWD"
 

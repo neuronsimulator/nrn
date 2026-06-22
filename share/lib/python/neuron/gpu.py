@@ -130,6 +130,9 @@ class gpu(object):
             pc = self._pc()
         except Exception:
             return
+        # HOC gpu_* methods are registered only when NRN_ENABLE_GPU is set at build time.
+        if not hasattr(pc, "gpu_enable"):
+            return
         pc.gpu_enable(int(self._enable))
         pc.gpu_backend(self._backend)
         pc.gpu_device_count(int(self._device_count))

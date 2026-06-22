@@ -292,14 +292,18 @@ def test_fastimem_corenrn():
         import sys
         from pathlib import Path
 
-        sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "coreneuron"))
-        from backend_helper import (
-            disable_test_backend,
-            enable_test_backend,
-            is_native_backend_test,
-        )
+        run_backend_tests = coreneuron_available()
+        backend_dir = Path(__file__).resolve().parent.parent / "coreneuron"
+        if (backend_dir / "backend_helper.py").is_file():
+            sys.path.insert(0, str(backend_dir))
+            from backend_helper import (
+                disable_test_backend,
+                enable_test_backend,
+                is_native_backend_test,
+            )
 
-        if is_native_backend_test() or coreneuron_available():
+            run_backend_tests = run_backend_tests or is_native_backend_test()
+        if run_backend_tests:
             tolerance = 5e-11
             enable_test_backend()
             run(tstop)

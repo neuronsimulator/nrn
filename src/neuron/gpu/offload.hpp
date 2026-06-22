@@ -24,6 +24,10 @@
 #define nrn_gpu_pragma_omp(x)
 #endif
 
+// nrnoc GPU paths (e.g. treeset.cpp) use the same names as CoreNEURON offload.hpp.
+#define nrn_pragma_acc(x) nrn_gpu_pragma_acc(x)
+#define nrn_pragma_omp(x) nrn_gpu_pragma_omp(x)
+
 #include <cstddef>
 #include <stdexcept>
 #include <string_view>

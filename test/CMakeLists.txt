@@ -385,7 +385,8 @@ if(NRN_ENABLE_PYTHON)
         PRELOAD_SANITIZER
         ENVIRONMENT "CC=${CMAKE_C_COMPILER}"
         COMMAND "${exe}" ${pytest} "./test/${group}"
-        SCRIPT_PATTERNS "test/${group}/*.json" "test/${group}/*.py")
+        SCRIPT_PATTERNS "test/${group}/*.json" "test/${group}/*.py"
+                        "test/coreneuron/backend_helper.py")
     endforeach()
   endforeach()
 
