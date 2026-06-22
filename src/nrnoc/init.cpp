@@ -201,6 +201,12 @@ void add_nrn_has_net_event(int mechtype) {
     nrn_has_net_event_[nrn_has_net_event_cnt_ - 1] = mechtype;
 }
 
+#if !defined(NRN_ENABLE_GPU)
+void hoc_register_net_send_buffering(int type) {
+    (void) type;
+}
+#endif
+
 /* values are type numbers of mechanisms which have FOR_NETCONS statement */
 int nrn_fornetcon_cnt_;    /* how many models have a FOR_NETCONS statement */
 int* nrn_fornetcon_type_;  /* what are the type numbers */
