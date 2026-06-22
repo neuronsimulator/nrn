@@ -84,22 +84,6 @@ void sync_matrix_arrays_to_host(NrnThread& nt) {
 #endif
 }
 
-void sync_voltage_and_rhs_to_device(NrnThread& nt) {
-#if defined(NRN_ENABLE_GPU)
-    if (!nt.compute_gpu || nt.end <= 0) {
-        return;
-    }
-    auto* const vec_v = nt.node_voltage_storage();
-    auto* const vec_rhs = nt.node_rhs_storage();
-    nrn_pragma_acc(update device(vec_v [0:nt.end], vec_rhs [0:nt.end]) if (nt.compute_gpu)
-                       async(nt.stream_id))
-    nrn_pragma_omp(target update to(vec_v [0:nt.end], vec_rhs [0:nt.end]) if (nt.compute_gpu))
-    nrn_pragma_acc(wait(nt.stream_id))
-#else
-    (void) nt;
-#endif
-}
-
 }  // namespace
 
 void sync_before_vecplay(NrnThread& nt) {

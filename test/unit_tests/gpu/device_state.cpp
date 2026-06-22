@@ -122,7 +122,8 @@ TEST_CASE("invalidate_device_state clears GPU mirrors", "[gpu][device_state]") {
     neuron::container::Node::storage nodes{};
     auto node_token = nodes.issue_frozen_token();
     neuron::model_sorted_token sorted{cache, std::move(node_token)};
-    ensure_on_device(sorted);
+    device_token const& token = ensure_on_device(sorted);
+    REQUIRE(token.is_on_device());
     REQUIRE(detail::is_on_device_for_testing());
     invalidate_device_state();
     REQUIRE_FALSE(detail::is_on_device_for_testing());
