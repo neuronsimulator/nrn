@@ -601,12 +601,19 @@ NRN_COVERAGE_FILES:STRING=
 
   ``-DNRN_COVERAGE_FILES="src/nrniv/partrans.cpp;src/nmodl/parsact.cpp;src/nrnpython/nrnpy_hoc.cpp"``
 
-  For a list of source files changed on a branch, use
+  For a list of compiled sources changed on a branch, use
 
   .. code-block:: shell
 
      ci/coverage_files_from_diff.sh master
 
+  The script lists ``.cpp`` and ``.c`` files only. It exits with an error
+  when none changed (omit this option in that case).
+
+NRN_COVERAGE_DIFF_BRANCH:STRING=master
+--------------------------------------
+  Git branch passed to ``diff-cover --compare-branch`` for the
+  ``cover_diff`` target. Defaults to ``master``.
 
 NRN_SANITIZERS:STRING=
 ----------------------

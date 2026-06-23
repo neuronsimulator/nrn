@@ -119,9 +119,13 @@ The comparison branch defaults to ``master``. Override at configure time:
 cmake .. -DNRN_COVERAGE_DIFF_BRANCH=master ...
 ```
 
-Optional: limit instrumentation to files changed on your branch:
+Optional: limit instrumentation to compiled sources changed on your branch:
 
 ```
 files=$(../ci/coverage_files_from_diff.sh master)
 cmake .. -DNRN_ENABLE_COVERAGE=ON -DNRN_COVERAGE_FILES="${files}" ...
 ```
+
+The script lists only ``.cpp`` and ``.c`` files (headers are not compiled).
+It exits with an error when no such files changed; in that case omit
+``-DNRN_COVERAGE_FILES`` and use full or ``cover_diff`` reporting only.
