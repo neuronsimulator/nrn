@@ -75,6 +75,7 @@ struct NrnThread {
     [[nodiscard]] double* node_area_storage();
     [[nodiscard]] double* node_b_storage();
     [[nodiscard]] double* node_d_storage();
+    [[nodiscard]] double* node_parent_contrib_storage();
     [[nodiscard]] double* node_rhs_storage();
     [[nodiscard]] double* node_sav_d_storage();
     [[nodiscard]] double* node_sav_rhs_storage();
