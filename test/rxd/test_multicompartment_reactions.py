@@ -109,7 +109,7 @@ def test_mcr_multiple_dests(neuron_instance):
         initial=10.0,
         ecs_boundary_conditions=140.0,
     )
-    # Extra species for the zero-rate MCR with multiple ECS destinations
+    # Extra species for the MCR with multiple ECS destinations
     x = rxd.Species([cyt, mem, ecs], name="x", charge=1, d=0, initial=1.0)
     y = rxd.Species([cyt, mem, ecs], name="y", charge=1, d=0, initial=2.0)
     z = rxd.Species([cyt, mem, ecs], name="z", charge=1, d=0, initial=3.0)
@@ -133,7 +133,7 @@ def test_mcr_multiple_dests(neuron_instance):
         membrane_flux=True,
     )
 
-    h.finitialize(-65)
+    h.finitialize(-70)
     h.continuerun(100)
     if not save_path:
         max_err = compare_data(data)
@@ -158,7 +158,7 @@ def test_mcr_multiple_sources(neuron_instance):
         initial=10.0,
         ecs_boundary_conditions=140.0,
     )
-    # Extra species for the zero-rate MCR with multiple ECS destinations
+    # Extra species for the MCR with multiple ECS sources
     x = rxd.Species([cyt, mem, ecs], name="x", charge=1, d=0, initial=1.0)
     y = rxd.Species([cyt, mem, ecs], name="y", charge=1, d=0, initial=2.0)
     z = rxd.Species([cyt, mem, ecs], name="z", charge=1, d=0, initial=3.0)
@@ -182,7 +182,7 @@ def test_mcr_multiple_sources(neuron_instance):
         membrane_flux=True,
     )
 
-    h.finitialize(-65)
+    h.finitialize(-70)
     h.continuerun(100)
     if not save_path:
         max_err = compare_data(data)
