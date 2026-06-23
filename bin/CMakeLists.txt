@@ -98,6 +98,6 @@ if(NRN_ENABLE_CORENEURON)
 endif()
 
 install(FILES ${PROJECT_BINARY_DIR}/bin/nrnmech_makefile DESTINATION ${NRN_INSTALL_DATA_PREFIX}bin)
-install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/sortspike ${CMAKE_CURRENT_SOURCE_DIR}/mkthreadsafe
-                 ${PROJECT_BINARY_DIR}/bin/nrnpyenv.sh ${CMAKE_CURRENT_SOURCE_DIR}/set_nrnpyenv.sh
+install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/sortspike ${PROJECT_BINARY_DIR}/bin/nrnpyenv.sh
+                 ${CMAKE_CURRENT_SOURCE_DIR}/set_nrnpyenv.sh
         DESTINATION ${NRN_INSTALL_DATA_PREFIX}bin)
