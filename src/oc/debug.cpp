@@ -30,7 +30,6 @@ void hoc_debug(void) /* print the machine */
 
 /* running copy of calls to execute */
 void debugzz(Inst* p) {
-#if !OCSMALL
     {
         if (p->in == STOP)
             Printf("STOP\n");
@@ -151,7 +150,6 @@ void debugzz(Inst* p) {
         }
         p++;
     }
-#endif /*OCSMALL*/
 }
 
 #if NRN_DIGEST
