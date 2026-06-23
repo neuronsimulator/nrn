@@ -619,7 +619,7 @@ static void bksub_interleaved(NrnThread* nt,
     }
 }
 
-nrn_pragma_acc(routine gang)
+nrn_pragma_acc(routine seq)
 static void solve_interleaved2_loop_body(NrnThread* nt,
                                          double* vec_a,
                                          double* vec_b,
