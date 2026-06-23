@@ -12,7 +12,7 @@
 #   NRN_COVERAGE_FILES speeds the workflow tremendously, when iteratively
 #   working on a single or a few files.
 #
-#   Two targets are created: cover_begin and cover_html.
+#   Targets: cover_begin, cover_html, and cover_diff (requires diff-cover).
 #
 #   cover_begin erases all the *.gcda coverage files and
 #   creates a baseline report (coverage-base.info)
@@ -124,6 +124,23 @@ if(NRN_ENABLE_COVERAGE)
   set(cover_combine_command "${LCOV}" "--add-tracefile" "coverage-base.info" "--add-tracefile"
                             "coverage-run.info" "--output-file" "coverage-combined.info")
   set(cover_html_command genhtml "coverage-combined.info" "--output-directory" html)
+
+  set(NRN_COVERAGE_DIFF_BRANCH
+      "master"
+      CACHE STRING "Git branch for cover_diff (diff-cover --compare-branch)")
+
+  find_program(DIFF_COVER diff-cover)
+  if(DIFF_COVER)
+    set(cover_diff_command
+        "${DIFF_COVER}"
+        "coverage-combined.info"
+        "--compare-branch"
+        "${NRN_COVERAGE_DIFF_BRANCH}"
+        "--show-uncovered"
+        "--html-report"
+        "html-diff/index.html")
+  endif()
+
   add_custom_target(
     cover_clean
     COMMAND ${cover_clean_command}
@@ -152,4 +169,18 @@ if(NRN_ENABLE_COVERAGE)
     COMMAND ${cover_html_command}
     COMMAND echo "View in browser at file://${PROJECT_BINARY_DIR}/html/index.html"
     WORKING_DIRECTORY "${PROJECT_BINARY_DIR}")
+
+  if(DIFF_COVER)
+    add_custom_target(
+      cover_diff
+      COMMAND ${cover_collect_command}
+      COMMAND ${cover_combine_command}
+      COMMAND ${cover_diff_command}
+      COMMAND echo "View changed-line coverage at file://${PROJECT_BINARY_DIR}/html-diff/index.html"
+      WORKING_DIRECTORY "${PROJECT_BINARY_DIR}")
+  else()
+    message(
+      STATUS
+        "diff-cover not found; cover_diff target unavailable (pip install diff-cover)")
+  endif()
 endif()

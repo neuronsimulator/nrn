@@ -573,7 +573,7 @@ NRN_ENABLE_COVERAGE:BOOL=OFF
 
   Requires ``lcov`` (e.g. ``sudo apt install lcov``).
 
-  Provides two make targets to simplify the repeated "run tests, examine coverage"
+  Provides make targets to simplify the repeated "run tests, examine coverage"
   workflow.
     -- ``make cover_begin`` erases all previous coverage data
     (``*.gcda`` files), and creates a baseline report. (Note all files and
@@ -582,6 +582,10 @@ NRN_ENABLE_COVERAGE:BOOL=OFF
     -- ``make cover_html`` creates a coverage report for the sum of all the
     software runs since the last ``cover_begin`` and prints a file url
     that you can paste into your browser to review the coverage.
+
+    -- ``make cover_diff`` (requires ``pip install diff-cover``) reports
+    coverage on changed lines vs. ``NRN_COVERAGE_DIFF_BRANCH`` (default
+    ``master``). See `Developer Builds: Code Coverage <../install/code_coverage.html>`_.
 
   When using an iterative workflow to examine test coverage of a single
   or a few files, the above targets run much faster when this option is
@@ -597,13 +601,11 @@ NRN_COVERAGE_FILES:STRING=
 
   ``-DNRN_COVERAGE_FILES="src/nrniv/partrans.cpp;src/nmodl/parsact.cpp;src/nrnpython/nrnpy_hoc.cpp"``
 
-  For a list of all the cpp files changed in a pull request, consider
-  copy/pasting the ``;`` separated list obtained with
+  For a list of source files changed on a branch, use
 
   .. code-block:: shell
 
-     a=`git diff --name-only master | grep '\.cpp'`
-     echo $a | sed 's/ /;/g'
+     ci/coverage_files_from_diff.sh master
 
 
 NRN_SANITIZERS:STRING=

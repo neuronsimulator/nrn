@@ -4,6 +4,7 @@
 ## Dependencies (Linux)
 ```
 sudo apt install lcov
+pip install diff-cover
 ```
 
 ## Instructions
@@ -93,4 +94,34 @@ make cover_begin
 make test
 
 make cover_html
+```
+
+## Changed-line coverage (pull requests)
+
+Whole-file ``cover_html`` reports do not distinguish lines you changed from
+legacy uncovered code. For pull-request iteration, use ``cover_diff`` after
+running tests. It wraps `diff-cover <https://github.com/Bachmann1234/diff_cover>`_
+and reports coverage on the diff against a base branch (Codecov "patch coverage"
+uses the same idea).
+
+```
+ninja cover_begin
+ctest -j8 -R 'some_test_pattern'
+ninja cover_diff
+```
+
+``cover_diff`` collects coverage, then prints uncovered **changed** lines on the
+console and writes ``html-diff/index.html``.
+
+The comparison branch defaults to ``master``. Override at configure time:
+
+```
+cmake .. -DNRN_COVERAGE_DIFF_BRANCH=master ...
+```
+
+Optional: limit instrumentation to files changed on your branch:
+
+```
+files=$(../ci/coverage_files_from_diff.sh master)
+cmake .. -DNRN_ENABLE_COVERAGE=ON -DNRN_COVERAGE_FILES="${files}" ...
 ```
