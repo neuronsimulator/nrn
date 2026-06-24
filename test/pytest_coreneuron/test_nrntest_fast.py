@@ -2,6 +2,7 @@
 Tests that used to live in the fast/ subdirectory of the
 https://github.com/neuronsimulator/nrntest repository
 """
+
 import os
 import math
 
@@ -9,6 +10,8 @@ import numpy as np
 import pytest
 
 from neuron import h
+
+h.use_exp_pow_precision(1)  # help with mac identity to linux. see issue 3123
 from neuron.tests.utils import (
     cvode_enabled,
     cvode_use_global_timestep,
@@ -22,12 +25,41 @@ from neuron.tests.utils.checkresult import Chk
 
 h.load_file("stdrun.hoc")
 
+# Sundials specific tolerances
+cv2tol = {
+    "t13:cvode:t": 5e-8,
+    "t13:cvode:v": 6e-7,
+    "t14:cvode:t:1": 8e-10,
+    "t14:cvode:t:2:ld": 2e-10,
+    "t14:cvode:t:2": 8e-10,
+    "t14:cvode:v:1": 2e-9,
+    "t14:cvode:v:2:ld": 4e-10,
+    "t14:cvode:v:2": 2e-9,
+}
+cv3tol = {
+    "t13:cvode:t": 2e-6,
+    "t13:cvode:v": 6e-7,
+    "t14:cvode:t:1": 1e-9,
+    "t14:cvode:t:2:ld": 1e-9,
+    "t14:cvode:t:2": 1e-9,
+    "t14:cvode:v:1": 6e-9,
+    "t14:cvode:v:2:ld": 1e-9,
+    "t14:cvode:v:2": 4e-9,
+}
+cvtol = cv2tol
+
 
 @pytest.fixture(scope="module")
 def chk():
     """Manage access to JSON reference data."""
     dir_path = os.path.dirname(os.path.realpath(__file__))
-    checker = Chk(os.path.join(dir_path, "test_nrntest_fast.json"))
+    fname = "test_nrntest_fast.json"
+    if True:
+        if h.CVode().version().split(".")[0] == "3":
+            global cvtol
+            cvtol = cv3tol
+
+    checker = Chk(os.path.join(dir_path, fname))
     yield checker
     # Save results to disk if they've changed; this is called after all tests
     # using chk have executed
@@ -92,12 +124,13 @@ def t13_model_data(request):
         # cvode_use_global_timestep takes care of enabling global
         # synchronisation of the variable timestep method across ranks
         # even though the cells have no connectivity
-        with hh_table_disabled(), parallel_context() as pc, num_threads(
-            pc, threads=threads
-        ), cvode_enabled(method.startswith("cvode")) as cv, cvode_use_global_timestep(
-            cv, True
-        ), cvode_use_long_double(
-            cv, method == "cvode_long_double"
+        with (
+            hh_table_disabled(),
+            parallel_context() as pc,
+            num_threads(pc, threads=threads),
+            cvode_enabled(method.startswith("cvode")) as cv,
+            cvode_use_global_timestep(cv, True),
+            cvode_use_long_double(cv, method == "cvode_long_double"),
         ):
             h.run()
             data[threads] = {str(cell): cell.data() for cell in cells}
@@ -218,7 +251,7 @@ def test_t13(chk, t13_model_data, field, threads):
         tolerance = 1e-10
     elif method.startswith("cvode"):
         if field == "t":
-            tolerance = 5e-8
+            tolerance = cvtol["t13:cvode:t"]
             # NVHPC has a different tolerance threshold
             if get_c_compiler().endswith("nvc"):
                 tolerance = 6.1e-8
@@ -261,10 +294,12 @@ def t14_model_data(request):
         i: CellWithGapJunction(i) for i in range(n_cells) if i % num_ranks == this_rank
     }
     for threads in thread_values:
-        with hh_table_disabled(), parallel_context() as pc, num_threads(
-            pc, threads=threads
-        ), cvode_enabled(method.startswith("cvode")) as cv, cvode_use_long_double(
-            cv, method == "cvode_long_double"
+        with (
+            hh_table_disabled(),
+            parallel_context() as pc,
+            num_threads(pc, threads=threads),
+            cvode_enabled(method.startswith("cvode")) as cv,
+            cvode_use_long_double(cv, method == "cvode_long_double"),
         ):
             for i in range(n_cells):
                 next_i = (i + 1) % n_cells
@@ -296,26 +331,26 @@ def test_t14(chk, t14_model_data, field, threads):
     elif method.startswith("cvode"):
         if field == "t":
             if threads == 1:
-                tolerance = 8e-10
+                tolerance = cvtol["t14:cvode:t:1"]
                 # NVHPC has a different tolerance threshold
                 if get_c_compiler().endswith("nvc"):
                     tolerance = 1e-9
             else:
                 if "long_double" in method:
-                    tolerance = 2e-10
+                    tolerance = cvtol["t14:cvode:t:2:ld"]
                 else:
-                    tolerance = 8e-10
+                    tolerance = cvtol["t14:cvode:t:2"]
         elif field == "v":
             if threads == 1:
-                tolerance = 2e-9
+                tolerance = cvtol["t14:cvode:v:1"]
             else:
                 if "long_double" in method:
-                    tolerance = 4e-10
+                    tolerance = cvtol["t14:cvode:v:2:ld"]
                     # NVHPC has a different tolerance threshold
                     if get_c_compiler().endswith("nvc"):
                         tolerance = 6e-10
                 else:
-                    tolerance = 2e-9
+                    tolerance = cvtol["t14:cvode:v:2"]
 
     compare_time_and_voltage_trajectories(
         chk, t14_model_data, field, threads, "t14", tolerance

@@ -13,7 +13,11 @@
 #include "netcvode.h"
 #include "nrn_ansi.h"
 #include "ida/ida.h"
+
+#undef MSG_TIME
+#undef MSG_TIME_H
 #include "ida/ida_impl.h"
+
 #include "mymath.h"
 
 // the state of the g - d2/dx2 matrix for voltages
@@ -32,13 +36,6 @@ extern void nrndae_dkres(double*, double*, double*);
 extern void nrndae_dkpsol(double);
 extern void nrn_solve(NrnThread*);
 void nrn_daspk_init_step(double, double, int);
-// this is private in ida.cpp but we want to check if our initialization
-// is good. Unfortunately ewt is set on the first call to solve which
-// is too late for us.
-extern "C" {
-extern booleantype IDAEwtSet(IDAMem IDA_mem, N_Vector ycur);
-}  // extern "C"
-
 // extern double t, dt;
 #define nt_dt nrn_threads->_dt
 #define nt_t  nrn_threads->_t
@@ -49,7 +46,6 @@ static void daspk_nrn_solve(NrnThread* nt) {
 
 static int res_gvardt(realtype t, N_Vector y, N_Vector yp, N_Vector delta, void* rdata);
 
-static int minit(IDAMem);
 
 static int msetup(IDAMem mem,
                   N_Vector y,
@@ -60,8 +56,6 @@ static int msetup(IDAMem mem,
                   N_Vector tempv3);
 
 static int msolve(IDAMem mem, N_Vector b, N_Vector ycur, N_Vector ypcur, N_Vector deltacur);
-
-static int mfree(IDAMem);
 
 
 // at least in DARWIN the following is already declared so avoid conflict
@@ -99,15 +93,10 @@ static int res_gvardt(realtype t, N_Vector y, N_Vector yp, N_Vector delta, void*
     return thread_ier;
 }
 
-// linear solver specific allocation and initialization
-static int minit(IDAMem) {
-    return IDA_SUCCESS;
-}
-
 // linear solver preparation for subsequent calls to msolve
 // approximation to jacobian. Everything necessary for solving P*x = b
 static int msetup(IDAMem mem, N_Vector y, N_Vector yp, N_Vector, N_Vector, N_Vector, N_Vector) {
-    Cvode* cv = (Cvode*) mem->ida_rdata;
+    Cvode* cv = (Cvode*) mem->ida_user_data;
     ++cv->jac_calls_;
     return 0;
 }
@@ -124,17 +113,13 @@ static void* msolve_thread(NrnThread* nt) {
     return 0;
 }
 static int msolve(IDAMem mem, N_Vector b, N_Vector w, N_Vector ycur, N_Vector, N_Vector) {
-    thread_cv = (Cvode*) mem->ida_rdata;
+    thread_cv = (Cvode*) mem->ida_user_data;
     thread_t = mem->ida_tn;
     nvec_y = ycur;
     nvec_yp = b;
     thread_cj = mem->ida_cj;
     nrn_multithread_job(msolve_thread);
     return thread_ier;
-}
-
-static int mfree(IDAMem) {
-    return IDA_SUCCESS;
 }
 
 Daspk::Daspk(Cvode* cv, int neq) {
@@ -153,16 +138,15 @@ Daspk::~Daspk() {
     N_VDestroy(delta_);
     N_VDestroy(yp_);
     if (mem_) {
-        IDAFree((IDAMem) mem_);
+        IDAFree((void**) &mem_);
     }
 }
 
 void Daspk::ida_init() {
     int ier;
     if (mem_) {
-        ier = IDAReInit(
-            mem_, res_gvardt, cv_->t_, cv_->y_, yp_, IDA_SV, &cv_->ncv_->rtol_, cv_->atolnvec_);
-        if (ier < 0) {
+        ier = IDAReInit(mem_, cv_->t_, cv_->y_, yp_);
+        if (ier != IDA_SUCCESS) {
             hoc_execerror("IDAReInit error", 0);
         }
     } else {
@@ -170,14 +154,19 @@ void Daspk::ida_init() {
         if (!mem) {
             hoc_execerror("IDAMalloc error", 0);
         }
-        IDASetRdata(mem, cv_);
-        ier = IDAMalloc(
-            mem, res_gvardt, cv_->t_, cv_->y_, yp_, IDA_SV, &cv_->ncv_->rtol_, cv_->atolnvec_);
-        mem->ida_linit = minit;
+        ier = IDAInit(mem, res_gvardt, cv_->t_, cv_->y_, yp_);
+        assert(ier == IDA_SUCCESS);
+
+        ier = IDASetUserData(mem, cv_);
+        assert(ier == IDA_SUCCESS);
+
+        ier = IDASVtolerances(mem, cv_->ncv_->rtol_, cv_->atolnvec_);
+        assert(ier == IDA_SUCCESS);
+
+        mem->ida_linit = NULL;
         mem->ida_lsetup = msetup;
         mem->ida_lsolve = msolve;
-        mem->ida_lfree = mfree;
-        mem->ida_setupNonNull = false;
+        mem->ida_lfree = NULL;
         mem_ = mem;
     }
 }
@@ -277,7 +266,7 @@ cv_->t_, t-cv_->t_, cv_->t0_-cv_->t_);
 #if 1
     // test
     // printf("test\n");
-    if (!IDAEwtSet((IDAMem) mem_, cv_->y_)) {
+    if (IDAEwtSet(cv_->y_, ((IDAMem) mem_)->ida_ewt, mem_) != IDA_SUCCESS) {
         hoc_execerror("Bad Ida error weight vector", 0);
     }
     use_parasite_ = false;
@@ -324,8 +313,9 @@ int Daspk::advance_tn(double tstop) {
     // printf("Daspk::advance_tn(%g)\n", tstop);
     double tn = cv_->tn_;
     IDASetStopTime(mem_, tstop);
-    int ier = IDASolve(mem_, tstop, &cv_->t_, cv_->y_, yp_, IDA_ONE_STEP_TSTOP);
-    if (ier < 0) {
+    int ier = IDASolve(mem_, tstop, &cv_->t_, cv_->y_, yp_, IDA_ONE_STEP);
+    if (ier != IDA_SUCCESS && ier != IDA_TSTOP_RETURN) {
+        // printf("DASPK advance_tn error %d\n", ier);
         // printf("DASPK advance_tn error\n");
         return ier;
     }
@@ -349,12 +339,13 @@ int Daspk::advance_tn(double tstop) {
 int Daspk::interpolate(double tt) {
     // printf("Daspk::interpolate %.15g\n", tt);
     assert(tt >= cv_->t0_ && tt <= cv_->tn_);
-    int ier = IDAGetSolution(mem_, tt, cv_->y_, yp_);
-    if (ier < 0) {
+    // do not setIDASetStopTime since tt earlier than tn_
+    int ier = IDASolve(mem_, tt, &cv_->t_, cv_->y_, yp_, IDA_NORMAL);
+    if (ier != IDA_SUCCESS) {
         Printf("DASPK interpolate error\n");
         return ier;
     }
-    cv_->t_ = tt;
+    assert(MyMath::eq(tt, cv_->t_, NetCvode::eps(cv_->t_)));
     // interpolation does not call res. So we have to.
     res_gvardt(cv_->t_, cv_->y_, yp_, delta_, cv_);
     // if(MyMath::eq(t, cv_->t_, NetCvode::eps(cv_->t_))) {

@@ -4,7 +4,6 @@ Collection of all unittests for the neuron module
 $Id$
 """
 
-
 # import your specific test here
 # and add it to the "suite" function below
 from neuron.tests import test_vector, test_neuron

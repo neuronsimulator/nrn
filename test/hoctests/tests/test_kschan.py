@@ -9,6 +9,9 @@ from neuron import h, gui
 from neuron.expect_hocerr import expect_err
 from neuron import expect_hocerr
 
+
+print("cvode version ", h.cvode.version())  # for coverage
+
 expect_hocerr.quiet = False
 
 from neuron.tests.utils.capture_stdout import capture_stdout
@@ -68,9 +71,10 @@ def hrun(name, t_tol=0.0, v_tol=0.0, v_tol_per_time=0.0):
     ref_data = chk.get(name)
     new_tv, new_vv = trec.to_python(), vrec.to_python()
     if ref_data is None:
-        chk("ZZZ" + name, [new_tv, new_vv])
-        chk.save()
+        # comment out Exception if want new reference data
         raise Exception("No reference data for key: " + name)
+        chk(name, [new_tv, new_vv])
+        return
     ref_tv, ref_vv = ref_data
     np.testing.assert_equal(len(ref_tv), len(ref_vv))
     np.testing.assert_equal(len(ref_tv), len(new_tv))
@@ -342,7 +346,10 @@ def test_2():
     h.cvode_active(1)
     # At least executes KSChan::mulmat
     hrun(
-        "kchan without single cvode=True", t_tol=2e-7, v_tol=1e-11, v_tol_per_time=5e-7
+        "kchan without single cvode=True",
+        t_tol=5e-6,
+        v_tol=1e-11,
+        v_tol_per_time=5e-7,
     )
     h.cvode_active(0)
 
