@@ -34,7 +34,10 @@ void sync_voltages_to_host_after_post_solve(NrnThread& nt);
 /** Pull fast_imem sav_rhs to host after GPU fast_imem (smaller than vec_rhs sync). */
 void sync_fast_imem_to_host_after_post_solve(NrnThread& nt);
 
-/** Ensure gap-junction source voltages are visible on host before MPI transfer. */
+/** Pull device post-solve voltages to host before gap gather (device post-solve path). */
 void sync_gap_after_voltage_update(NrnThread& nt);
+
+/** Push host post-solve voltages to device before gap gather (host fallback path). */
+void sync_gap_after_host_voltage_update(NrnThread& nt);
 
 }  // namespace neuron::gpu

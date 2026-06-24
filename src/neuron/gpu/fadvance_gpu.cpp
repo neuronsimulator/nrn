@@ -56,6 +56,7 @@ void fixed_step_thread(model_sorted_token const& cache_token,
     advance_first_half_time(nt);
     fixed_play_continuous(nth);
     sync_after_vecplay(nt);
+    bool const host_post_solve = nt.end > 0 && post_solve_needs_host_fallback(nt);
     if (nt.end > 0) {
         setup_tree_matrix(cache_token, nt);
         sync_matrix_to_device_before_solve(nt);
@@ -68,7 +69,7 @@ void fixed_step_thread(model_sorted_token const& cache_token,
                 nrn_solve(nth);
             }
         }
-        if (post_solve_needs_host_fallback(nt)) {
+        if (host_post_solve) {
             sync_rhs_to_host_after_solve(nt);
             {
                 nrn::Instrumentor::phase p("second-order-cur");
@@ -91,7 +92,14 @@ void fixed_step_thread(model_sorted_token const& cache_token,
     }
     if (nrnthread_v_transfer_) {
         if (nt.end > 0) {
-            sync_gap_after_voltage_update(nt);
+            if (host_post_solve) {
+                // Host nrn_update_voltage already updated vec_v; push to device and
+                // leave host voltages intact for partrans gather (device→host would
+                // overwrite with stale GPU state).
+                sync_gap_after_host_voltage_update(nt);
+            } else {
+                sync_gap_after_voltage_update(nt);
+            }
             if (nrnmpi_v_transfer_) {
                 (*nrnmpi_v_transfer_)();
             }

@@ -482,7 +482,10 @@ static void nrn_fixed_step_group_thread(neuron::model_sorted_token const& cache_
 
 static void nrn_fixed_step_thread(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
 #if defined(NRN_ENABLE_GPU)
-    if (neuron::gpu::enabled() && neuron::gpu::backend_native()) {
+    // Gap/partrans models use host post-solve (nrnthread_vi_compute_) and partrans
+    // gather/scatter on host; the full native GPU step is not yet consistent for that
+    // hybrid. Run the CPU fixed-step body until device gap staging is complete.
+    if (neuron::gpu::enabled() && neuron::gpu::backend_native() && !nrnthread_v_transfer_) {
         neuron::gpu::device_token const& dev = neuron::gpu::ensure_on_device(cache_token);
         neuron::gpu::fixed_step_thread(cache_token, dev, nt);
         return;

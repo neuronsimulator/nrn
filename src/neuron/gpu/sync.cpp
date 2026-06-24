@@ -168,4 +168,8 @@ void sync_gap_after_voltage_update(NrnThread& nt) {
     sync_node_voltages_to_host(nt);
 }
 
+void sync_gap_after_host_voltage_update(NrnThread& nt) {
+    sync_node_voltages_to_device(nt);
+}
+
 }  // namespace neuron::gpu
