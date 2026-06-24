@@ -309,7 +309,8 @@ if(NRN_ENABLE_PYTHON)
         NAME ${name}_${ext} ${${ext}_preload} # PRELOAD_SANITIZER for Python
         ENVIRONMENT CC=${CMAKE_C_COMPILER}
         COMMAND ${${ext}_exe} "${hoc_script}"
-        SCRIPT_PATTERNS "${hoc_script}" "tests/${name}.json" ${${ext}test_utils})
+        SCRIPT_PATTERNS "${hoc_script}" "tests/${name}.json" "tests/${name}.asc"
+                        ${${ext}test_utils})
     endforeach()
   endforeach()
 
