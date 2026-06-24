@@ -27,7 +27,7 @@ Any official update of these files shall imply a PR reviewed and merged before `
 
 All wheels built on Azure are:
 
-* Published to `Pypi.org` as
+* Published to `pypi.org` as
   * `neuron-nightly` -> when the pipeline is launched in CRON mode
   * `neuron-x.y.z` -> when the pipeline is manually triggered for release `x.y.z`
 * Stored as `Azure artifacts` in the Azure pipeline for every run.

@@ -24,7 +24,7 @@ requires = [
 # when making a release since PEP 621 disallows dynamic names.
 # Note that this only affects the name of the _wheel_, not the importable package name,
 # nor the CMake project name.
-name = "neuron-nightly"
+name = "neuron"
 description = "Empirically-based simulator for modeling neurons and networks of neurons"
 readme = { file = "README.md", content-type = "text/markdown" }
 license = { file = "Copyright" }
