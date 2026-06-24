@@ -45,6 +45,13 @@ bool use_cuda_launcher() noexcept;
 /** One-time stderr notice when native GPU runs with pc.nthread() > 1. */
 void warn_native_gpu_multithread_policy() noexcept;
 
+/**
+ * Native GPU fixed-step requires interleaved Hines solve (permute type 2).
+ * Called when gpu.enable and gpu.backend="native" are both active; sets
+ * interleave_permute_type to 2 if it is not already.
+ */
+void ensure_native_gpu_cell_permute() noexcept;
+
 namespace detail {
 void reset_config_for_testing();
 void set_enable_for_testing(bool value);

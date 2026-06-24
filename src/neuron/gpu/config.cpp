@@ -1,5 +1,7 @@
 #include "neuron/gpu/config.hpp"
 
+#include "node_order_optim/node_order_optim.h"
+
 #include <algorithm>
 #include <cctype>
 #include <cstdio>
@@ -59,9 +61,32 @@ Backend backend() noexcept {
     return config().backend;
 }
 
+void ensure_native_gpu_cell_permute() noexcept {
+#if defined(NRN_ENABLE_GPU)
+    if (!enabled() || !backend_native()) {
+        return;
+    }
+    if (neuron::interleave_permute_type == 2) {
+        return;
+    }
+    int const previous = neuron::interleave_permute_type;
+    neuron::nrn_optimize_node_order(2);
+    if (previous != 2) {
+        fprintf(stderr,
+                "neuron::gpu: native GPU requires cell permute type 2 "
+                "(interleave_permute_type was %d); using permute 2\n",
+                previous);
+    }
+#else
+#endif
+}
+
 void set_enable(bool value) noexcept {
 #if defined(NRN_ENABLE_GPU)
     config().enable = value;
+    if (value) {
+        ensure_native_gpu_cell_permute();
+    }
 #else
     (void) value;
 #endif
@@ -70,6 +95,7 @@ void set_enable(bool value) noexcept {
 void set_backend(std::string_view name) {
 #if defined(NRN_ENABLE_GPU)
     config().backend = parse_backend(name);
+    ensure_native_gpu_cell_permute();
 #else
     (void) name;
 #endif
