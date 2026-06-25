@@ -46,7 +46,7 @@ Phase B tip (`hines-grok/feature/neuron-core-gpu-adoption`) is the parent branch
 - [x] Align GPU gap step with CPU parent dispatch (mpi + lastpart in `nrn_fixed_step`)
 - [x] Device gather for MPI `outsrc_buf_` voltage sources (`neuron/gpu/partrans.cpp`)
 - [x] Host scatter + `update device` for partrans targets (`thread_transfer`)
-- [ ] C2 MPI modtest expansion (not started)
+- [x] C2 MPI modtest expansion (`spikes_mpi*_py_gpu_native`, `test_subworlds_py_gpu_native`, ringtest `-gap` MPI)
 
 ## Key reference code
 

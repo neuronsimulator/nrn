@@ -979,6 +979,56 @@ if(NRN_ENABLE_PYTHON)
       SCRIPT_PATTERNS ${g4_native_helper_script} test/coreneuron/test_array_variables_transfer.py
       ENVIRONMENT ${native_gpu_test_env} NRN_TEST_RUN_MODE=0 NRN_TEST_FILE_MODE=true
       COMMAND ${native_modtests_launch_py} test/coreneuron/test_array_variables_transfer.py)
+    if(NRN_ENABLE_MPI)
+      set(native_modtests_launch_py_mpi
+          ${MPIEXEC_NAME}
+          ${MPIEXEC_NUMPROC_FLAG}
+          2
+          ${MPIEXEC_OVERSUBSCRIBE}
+          ${MPIEXEC_PREFLAGS}
+          special
+          ${MPIEXEC_POSTFLAGS}
+          -notatty
+          -python)
+      set(native_modtests_launch_py_mpi_subworlds
+          ${MPIEXEC_NAME}
+          ${MPIEXEC_NUMPROC_FLAG}
+          6
+          ${MPIEXEC_OVERSUBSCRIBE}
+          ${MPIEXEC_PREFLAGS}
+          special
+          ${MPIEXEC_POSTFLAGS}
+          -notatty
+          -python)
+      nrn_find_python_module(MODULE mpi4py)
+      if(mpi4py_FOUND)
+        nrn_add_test(
+          GROUP coreneuron_modtests
+          NAME spikes_mpi_py_gpu_native
+          REQUIRES gpu mpi
+          PROCESSORS 2
+          SCRIPT_PATTERNS ${g4_native_helper_script} test/coreneuron/test_spikes.py
+          ENVIRONMENT ${native_gpu_test_env} NRN_TEST_SPIKES_MPI4PY=1
+          COMMAND ${native_modtests_launch_py_mpi} test/coreneuron/test_spikes.py)
+      endif()
+      nrn_add_test(
+        GROUP coreneuron_modtests
+        NAME spikes_mpi_file_mode_py_gpu_native
+        REQUIRES gpu mpi
+        PROCESSORS 2
+        SCRIPT_PATTERNS ${g4_native_helper_script} test/coreneuron/test_spikes.py
+        ENVIRONMENT ${native_gpu_test_env} NRN_TEST_SPIKES_NRNMPI_INIT=1 NRN_TEST_SPIKES_FILE_MODE=1
+        COMMAND ${native_modtests_launch_py_mpi} test/coreneuron/test_spikes.py)
+      nrn_add_test(
+        GROUP coreneuron_modtests
+        NAME test_subworlds_py_gpu_native
+        REQUIRES gpu mpi
+        SCRIPT_PATTERNS test/coreneuron/test_subworlds.py
+        PROCESSORS 6
+        ENVIRONMENT ${native_gpu_test_env} ${nrnpython_mpi_env}
+                    COVERAGE_FILE=.coverage.native_gpu_test_subworlds_py
+        COMMAND ${native_modtests_launch_py_mpi_subworlds} test/coreneuron/test_subworlds.py)
+    endif()
   endif()
 
   if(NRN_ENABLE_MUSIC)

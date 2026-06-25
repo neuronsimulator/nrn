@@ -83,6 +83,40 @@ if(NRN_ENABLE_GPU)
     PROCESSORS ${ringtest_mpi_ranks}
     COMMAND bash ${ringtest_native_gpu_mpi_script}
     OUTPUT asciispikes::spk2.std)
+  set(ringtest_native_gpu_mpi_gap_script
+      ${PROJECT_BINARY_DIR}/test/external_ringtest/neuron_gpu_native_mpi_gap.sh)
+  file(
+    WRITE ${ringtest_native_gpu_mpi_gap_script}
+    "#!/bin/bash\n"
+    "set -e\n"
+    "export OMP_NUM_THREADS=1\n"
+    "export NRN_GPU_BACKEND_TEST=native\n"
+    "export NRN_GPU_PERMUTE=2\n"
+    "export TMPDIR=\"${PROJECT_BINARY_DIR}/test/tmp/external_ringtest/neuron_gpu_native_mpi_gap\"\n"
+    "mkdir -p \"$TMPDIR\"\n"
+    "OMP_NUM_THREADS=1 ${ringtest_special_str} -gpu-native -gap -tstop 100\n")
+  nrn_add_test(
+    GROUP external_ringtest
+    NAME neuron_gpu_native_mpi_gap
+    REQUIRES gpu mpi python mod_compatibility
+    PROCESSORS ${ringtest_mpi_ranks}
+    COMMAND bash ${ringtest_native_gpu_mpi_gap_script}
+    OUTPUT asciispikes::spk2.std)
+  set(ringtest_gap_ref_source
+      ${PROJECT_SOURCE_DIR}/test/external/ringtest/reference_data/spk2.gap.100ms.std.ref)
+  set(ringtest_gap_ref_build
+      ${PROJECT_BINARY_DIR}/test/external/ringtest/reference_data/spk2.gap.100ms.std.ref)
+  cpp_cc_build_time_copy(INPUT "${ringtest_gap_ref_source}" OUTPUT "${ringtest_gap_ref_build}")
+  add_test(
+    NAME external_ringtest::compare_neuron_gpu_native_mpi_gap
+    COMMAND
+      ${CMAKE_COMMAND} -E compare_files
+      ${PROJECT_BINARY_DIR}/test/external_ringtest/neuron_gpu_native_mpi_gap/spk2.std
+      ${ringtest_gap_ref_build}
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+  set_tests_properties(
+    external_ringtest::compare_neuron_gpu_native_mpi_gap
+    PROPERTIES DEPENDS external_ringtest::neuron_gpu_native_mpi_gap)
 endif()
 
 # creep into this file to add a nrn only test for ParallelContext.optimize_node_order(i)
