@@ -750,7 +750,10 @@ class _Arithmeticed:
                 try:
                     items_append(item._semi_compile(region, instruction))
                 except AttributeError:
-                    items_append(f"{item!r}")
+                    try:
+                        items_append(repr(float(item)))
+                    except (TypeError, ValueError):
+                        items_append(f"{item!r}")
                 counts_append(count)
         result = ""
         for i, c in zip(items, counts):
