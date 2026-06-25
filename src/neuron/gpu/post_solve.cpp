@@ -10,8 +10,6 @@
 
 extern int secondorder;
 
-extern void (*nrnthread_vi_compute_)(NrnThread*);
-
 namespace neuron::gpu {
 namespace {
 
@@ -147,7 +145,8 @@ bool post_solve_needs_host_fallback(NrnThread const& nt) {
     (void) nt;
     return true;
 #else
-    return nrnthread_vi_compute_ != nullptr;
+    (void) nt;
+    return false;
 #endif
 }
 

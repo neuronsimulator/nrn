@@ -21,6 +21,7 @@
 #include <cstddef>
 
 extern void (*nrnthread_v_transfer_)(NrnThread* nt);
+extern void (*nrnthread_vi_compute_)(NrnThread* nt);
 
 namespace neuron::gpu {
 namespace {
@@ -82,6 +83,10 @@ void fixed_step_thread(model_sorted_token const& cache_token,
             {
                 nrn::Instrumentor::phase p("update");
                 post_solve_on_device(cache_token, nt);
+            }
+            if (nrnthread_vi_compute_) {
+                sync_voltages_to_host_after_post_solve(nt);
+                nrnthread_vi_compute_(&nt);
             }
             if (should_flush_download()) {
                 batch_download_post_solve(nt);
