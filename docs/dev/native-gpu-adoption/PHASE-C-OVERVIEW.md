@@ -48,6 +48,18 @@ Phase B tip (`hines-grok/feature/neuron-core-gpu-adoption`) is the parent branch
 - [x] Host scatter + `update device` for partrans targets (`thread_transfer`)
 - [x] C2 MPI modtest expansion (`spikes_mpi*_py_gpu_native`, `test_subworlds_py_gpu_native`, ringtest `-gap` MPI)
 
+## C3 status
+
+- [x] Per-thread device gather for MPI `outsrc_buf_` when `pc.nthread(n>1)`
+- [x] Per-thread CUDA streams in multithread gather and `insrc_buf_` upload
+- [x] Remove Phase B multithread warning once `test_natrans_py_gpu_native` is in the modtest set
+
+## C4 status
+
+- [x] GPU `fast_imem` in `post_solve_on_device` (no full-step host fallback for plain gaps)
+- [x] Extracellular `v+vext` gap sources: host `nrnthread_vi_compute_` after device post-solve
+- [x] `fast_imem_py_gpu_native` remains the primary `i_membrane_` parity check
+
 ## Key reference code
 
 | Topic | CoreNEURON (reference) | NEURON native (today) |

@@ -185,6 +185,9 @@ static std::vector<neuron::container::data_handle<double>> poutsrc_;  // prior t
                                                                       // to proper place in
                                                                       // outsrc_buf_
 static std::vector<int> poutsrc_v_node_index_;  // v_node_index for voltage sources, else -1
+static std::vector<int> poutsrc_thread_id_;     // owning thread for voltage sources, else -1
+static std::vector<std::vector<int>> poutsrc_gather_outsrc_index_by_thread_;
+static std::vector<std::vector<int>> poutsrc_gather_v_node_index_by_thread_;
 static int* poutsrc_indices_;                                         // for recalc pointers
 static int insrc_buf_size_;
 static std::vector<int> insrccnt_;
@@ -352,12 +355,35 @@ static void thread_vi_compute(NrnThread* _nt);
 static void set_poutsrc_voltage_index(int i, Node* nd) {
     if (i >= 0 && static_cast<size_t>(i) < poutsrc_v_node_index_.size()) {
         poutsrc_v_node_index_[i] = nd->v_node_index;
+        if (static_cast<size_t>(i) < poutsrc_thread_id_.size()) {
+            poutsrc_thread_id_[i] = nd->_nt->id;
+        }
     }
 }
 
 static void set_poutsrc_non_voltage_index(int i) {
     if (i >= 0 && static_cast<size_t>(i) < poutsrc_v_node_index_.size()) {
         poutsrc_v_node_index_[i] = -1;
+        if (static_cast<size_t>(i) < poutsrc_thread_id_.size()) {
+            poutsrc_thread_id_[i] = -1;
+        }
+    }
+}
+
+static void rebuild_poutsrc_gpu_gather_tables() {
+    poutsrc_gather_outsrc_index_by_thread_.assign(nrn_nthread, {});
+    poutsrc_gather_v_node_index_by_thread_.assign(nrn_nthread, {});
+    for (int i = 0; i < outsrc_buf_size_; ++i) {
+        int const v_ix = poutsrc_v_node_index_[i];
+        if (v_ix < 0) {
+            continue;
+        }
+        int const tid = (static_cast<size_t>(i) < poutsrc_thread_id_.size()) ? poutsrc_thread_id_[i] : 0;
+        if (tid < 0 || tid >= nrn_nthread) {
+            continue;
+        }
+        poutsrc_gather_outsrc_index_by_thread_[tid].push_back(i);
+        poutsrc_gather_v_node_index_by_thread_[tid].push_back(v_ix);
     }
 }
 static std::unordered_map<Node*, double*> mk_svibuf() {
@@ -459,6 +485,7 @@ static void mk_ttd() {
         if (nrnmpi_numprocs > 1 && max_targets_) {
             nrnthread_v_transfer_ = thread_transfer;
         }
+        rebuild_poutsrc_gpu_gather_tables();
         return;
     }
     n = targets_.size();
@@ -546,6 +573,7 @@ static void mk_ttd() {
         }
     }
     nrnthread_v_transfer_ = thread_transfer;
+    rebuild_poutsrc_gpu_gather_tables();
 }
 
 static void thread_vi_compute(NrnThread* _nt) {
@@ -568,10 +596,16 @@ static void mpi_transfer() {
     int i, n = outsrc_buf_size_;
 #if defined(NRN_ENABLE_GPU)
     bool const gpu_gather = neuron::gpu::enabled() && neuron::gpu::backend_native() &&
-                            nrn_nthread == 1 &&
                             static_cast<int>(poutsrc_v_node_index_.size()) == n;
     if (gpu_gather) {
-        neuron::gpu::gather_gap_voltage_sources_to_outsrc(poutsrc_v_node_index_.data(), n, outsrc_buf_);
+        if (nrn_nthread == 1) {
+            neuron::gpu::gather_gap_voltage_sources_to_outsrc(poutsrc_v_node_index_.data(), n, outsrc_buf_);
+        } else {
+            neuron::gpu::gather_gap_voltage_sources_multithread(poutsrc_gather_outsrc_index_by_thread_,
+                                                                poutsrc_gather_v_node_index_by_thread_,
+                                                                n,
+                                                                outsrc_buf_);
+        }
         for (i = 0; i < n; ++i) {
             if (poutsrc_v_node_index_[i] < 0) {
                 outsrc_buf_[i] = *poutsrc_[i];
@@ -679,6 +713,9 @@ void nrnmpi_setup_transfer() {
     sid2insrc_.clear();
     poutsrc_.clear();
     poutsrc_v_node_index_.clear();
+    poutsrc_thread_id_.clear();
+    poutsrc_gather_outsrc_index_by_thread_.clear();
+    poutsrc_gather_v_node_index_by_thread_.clear();
     delete[] std::exchange(poutsrc_indices_, nullptr);
 #if NRNMPI
     // if there are no targets anywhere, we do not need to do anything
@@ -775,6 +812,7 @@ void nrnmpi_setup_transfer() {
         outsrc_buf_ = new double[szalloc];
         poutsrc_.resize(szalloc);
         poutsrc_v_node_index_.resize(szalloc, -1);
+        poutsrc_thread_id_.resize(szalloc, -1);
         poutsrc_indices_ = new int[szalloc];
         for (int i = 0; i < outsrc_buf_size_; ++i) {
             sgid_t sid = send_to_want.data[i];
@@ -833,6 +871,9 @@ void nrn_partrans_clear() {
     sid2insrc_.clear();
     poutsrc_.clear();
     poutsrc_v_node_index_.clear();
+    poutsrc_thread_id_.clear();
+    poutsrc_gather_outsrc_index_by_thread_.clear();
+    poutsrc_gather_v_node_index_by_thread_.clear();
     delete[] std::exchange(poutsrc_indices_, nullptr);
     non_vsrc_update_info_.clear();
     nrn_mk_transfer_thread_data_ = nullptr;
