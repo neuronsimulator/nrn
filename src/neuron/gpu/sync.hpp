@@ -19,6 +19,10 @@ void sync_matrix_to_device_after_mechanisms(NrnThread& nt);
 /** Push vec_d / sav_d only (preserve device vec_rhs after rhs axial). */
 void sync_diagonal_to_device_after_mechanisms(NrnThread& nt);
 
+/** True when rhs/d can remain on device through nonvint and into the GPU solver.
+ *  False when sparse13, Python nonvint blocks, or extracellular (_ecell_memb_list) are active. */
+[[nodiscard]] bool matrix_rhs_d_stays_on_device_for_solve(NrnThread const& nt) noexcept;
+
 /** Pull GPU axial matrix state to host before host nonvint adjustments. */
 void sync_matrix_to_host_before_solve(NrnThread& nt);
 

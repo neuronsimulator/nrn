@@ -1,8 +1,13 @@
 #include "neuron/gpu/sync.hpp"
 
+#include "neuron/gpu/config.hpp"
+
 #include "coreneuron/utils/offload.hpp"
 #include "multicore.h"
+#include "nonvintblock.h"
 #include "nrn_ansi.h"
+
+extern int use_sparse13;
 
 namespace neuron::gpu {
 namespace {
@@ -85,6 +90,22 @@ void sync_matrix_arrays_to_host(NrnThread& nt) {
 }
 
 }  // namespace
+
+bool matrix_rhs_d_stays_on_device_for_solve(NrnThread const& nt) noexcept {
+#if defined(NRN_ENABLE_GPU)
+    if (!enabled() || !backend_native() || !nt.compute_gpu || nrn_nonvint_block || use_sparse13) {
+        return false;
+    }
+    // Extracellular rhs/lhs hooks (nrn_rhs_ext, nrn_setup_ext) run only when this is set.
+    if (nt._ecell_memb_list) {
+        return false;
+    }
+    return true;
+#else
+    (void) nt;
+    return false;
+#endif
+}
 
 void sync_before_vecplay(NrnThread& nt) {
     sync_node_voltages_to_host(nt);

@@ -14,7 +14,7 @@ Phase B checklist.
 | `sparse13` / extracellular / LFP on device | Eliminate per-step host fallbacks |
 | Device partrans gather/scatter | Remove gap CPU fixed-step fallback; host/MPI only when `nrnmpi_numprocs > 1` |
 | MPI-native modtest expansion | Beyond 19-test single-process parity |
-| Per-step matrix host sync elimination | Performance optimization in `treeset.cpp` |
+| Per-step matrix host sync elimination | Done for ODE tree (C5 `matrix_rhs_d_stays_on_device_for_solve`); sparse13/extracellular/nonvint blocks still roundtrip |
 
 ## Build / install
 

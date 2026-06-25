@@ -59,7 +59,9 @@ void fixed_step_thread(model_sorted_token const& cache_token,
     bool const host_post_solve = nt.end > 0 && post_solve_needs_host_fallback(nt);
     if (nt.end > 0) {
         setup_tree_matrix(cache_token, nt);
-        sync_matrix_to_device_before_solve(nt);
+        if (!matrix_rhs_d_stays_on_device_for_solve(nt)) {
+            sync_matrix_to_device_before_solve(nt);
+        }
         flush_mechanism_net_send_buffers(nth);
         {
             nrn::Instrumentor::phase p("matrix-solver");
