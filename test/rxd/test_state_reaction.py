@@ -51,4 +51,4 @@ def test_numpy_rate(neuron_instance):
     n.dt = 0.025
     n.finitialize(-65)
     n.fadvance()
-    assert(c.nodes[0].concentration == 0.025)
+    assert c.nodes[0].concentration == 0.025
