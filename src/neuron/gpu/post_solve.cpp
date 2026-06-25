@@ -9,6 +9,7 @@
 #include "nrnoc_ml.h"
 
 extern int secondorder;
+extern int use_sparse13;
 
 namespace neuron::gpu {
 namespace {
@@ -137,12 +138,20 @@ void fast_imem_on_device(NrnThread& nt) {
 }  // namespace
 
 bool post_solve_needs_host_fallback(NrnThread const& nt) {
-    extern int use_sparse13;
-    if (use_sparse13) {
+    if (::use_sparse13) {
         return true;
     }
-    // nrn_update_2d is a no-op when extracellular is not inserted on this thread.
-    return nt._ecell_memb_list != nullptr;
+    if (nt._ecell_memb_list) {
+        return true;
+    }
+#if EXTRACELLULAR
+    // nrn_update_2d is a no-op without inserted extracellular, but EXTRACELLULAR
+    // builds still need the host post-solve path: device second_order_cur / fast_imem
+    // diverge from nrn_update_voltage on Traub (ModelDB 82894, secondorder=2).
+    return true;
+#else
+    return false;
+#endif
 }
 
 void post_solve_on_device(model_sorted_token const& sorted_token, NrnThread& nt) {

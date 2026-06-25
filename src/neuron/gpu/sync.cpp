@@ -93,7 +93,7 @@ void sync_matrix_arrays_to_host(NrnThread& nt) {
 
 bool matrix_rhs_d_stays_on_device_for_solve(NrnThread const& nt) noexcept {
 #if defined(NRN_ENABLE_GPU)
-    if (!enabled() || !backend_native() || !nt.compute_gpu || nrn_nonvint_block || use_sparse13) {
+    if (!enabled() || !backend_native() || !nt.compute_gpu || nrn_nonvint_block || ::use_sparse13) {
         return false;
     }
     // Extracellular rhs/lhs hooks (nrn_rhs_ext, nrn_setup_ext) run only when this is set.
