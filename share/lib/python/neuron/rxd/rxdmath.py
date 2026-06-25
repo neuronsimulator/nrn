@@ -750,15 +750,9 @@ class _Arithmeticed:
                 try:
                     items_append(item._semi_compile(region, instruction))
                 except AttributeError:
-                    try:
-                        if isinstance(item, numpy.generic):
-                            item = item.item()
-                        if isinstance(item, int):
-                            items_append(repr(int(item)))
-                        else:
-                            items_append(repr(float(item)))
-                    except (TypeError, ValueError, OverflowError):
-                        items_append(f"{item!r}")
+                    if isinstance(item, numpy.generic):
+                        item = item.item()
+                    items_append(f"{item!r}")
                 counts_append(count)
         result = ""
         for i, c in zip(items, counts):
