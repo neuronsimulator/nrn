@@ -36,6 +36,14 @@ and the checklist in [PHASE-B-COMPLETE.md](PHASE-B-COMPLETE.md) is satisfied.
 Branch: `hines-grok/feature/neuron-core-gpu-adoption`  
 Commits through PR7: `2087fb131` (appendix: [appendix-commits.md](appendix-commits.md)).
 
+## Phase C (in progress)
+
+Runtime parity with **CoreNEURON GPU** on `gpu.backend="native"` (MPI, threads,
+device partrans for gaps, LFP/fast_imem). Branch:
+`hines-grok/feature/neuron-native-gpu-phase-c`. Scope:
+[`native-gpu-phase-c.rst`](../native-gpu-phase-c.rst),
+journal: [PHASE-C-OVERVIEW.md](PHASE-C-OVERVIEW.md).
+
 ## Document map
 
 | File | Purpose |

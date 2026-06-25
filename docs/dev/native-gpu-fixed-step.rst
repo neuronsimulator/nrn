@@ -402,6 +402,7 @@ Related documentation
 *********************
 
 - :doc:`/dev/native-gpu-adoption/00-overview` — Phase B development journal (design, commits)
+- :doc:`/dev/native-gpu-phase-c` — Phase C scope (CoreNEURON runtime parity)
 - :ref:`cmake-nrn-enable-gpu-option` — CMake configure
 - :doc:`/nmodl/gpu_codegen` — mechanism OpenACC codegen
 - :doc:`gpu-testing` — CTest and benchmark workflows

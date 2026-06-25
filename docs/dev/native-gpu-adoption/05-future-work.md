@@ -31,4 +31,6 @@ Phase B checklist.
 | Compiler warnings cleanup | `src/neuron/gpu/` NVHPC pragma noise |
 | Expanded C++ unit tests | Cover download flush, fallback matrix |
 
-Track as GitHub issues when opening Phase C or maintenance sprints.
+Phase C scope for the first four runtime rows above is defined in
+[`native-gpu-phase-c.rst`](../native-gpu-phase-c.rst). Track remaining rows as
+GitHub issues when opening post–Phase C work.
