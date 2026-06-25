@@ -8,7 +8,7 @@ Checklist for closing native GPU **fixed-step** Phase B on branch
 - [x] Fixed-step `pc.psolve` on `gpu.backend=native` without `coreneuron.enable`
 - [x] OpenACC matrix solve + mechanism state + post-solve on device
 - [x] CPU spike queues + MPI; GPU `NET_RECEIVE` and `net_send` buffer
-- [x] Gap junctions with device voltage sync before MPI
+- [x] Gap junctions: CPU fixed-step fallback when `setup_transfer` active (correctness; `test_par_gj_native_gpu`)
 - [x] Batch download API (`download_flush_interval`)
 - [x] CVode rejected when native GPU enabled
 - [x] Threading warning for `pc.nthread(n>1)`

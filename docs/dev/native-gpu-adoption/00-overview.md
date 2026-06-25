@@ -24,6 +24,7 @@ See [04-known-limitations.md](04-known-limitations.md) and
 - GPU spike priority queue
 - Standalone `-DNRN_ENABLE_GPU=ON` configure without `-DNRN_ENABLE_CORENEURON=ON`
 - Full multi-thread OpenACC maturity
+- Device partrans gather/scatter (gap models use CPU fixed-step fallback today)
 - MPI-native modtest expansion beyond the current parity set
 
 ## Stopping point

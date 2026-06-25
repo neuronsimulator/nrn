@@ -31,11 +31,25 @@ not ruled out by the architecture, but Phase B does not certify DAE models on
 `gpu.backend="native"`. `post_solve_needs_host_fallback()` often forces CPU
 post-solve for DAE/LFP cases as well.
 
-## LFP / partrans post-solve fallback
+## Gap junctions: CPU fixed-step fallback
 
-When `nrnthread_vi_compute_` is registered (gap/partrans v+vext interpolation),
-post-solve runs on the host via `nrn_update_voltage` instead of
-`post_solve_on_device`. The matrix solve may still be on GPU for type-1 ODE models.
+When `pc.setup_transfer()` is active (`nrnthread_v_transfer_` registered), native
+GPU does **not** run `fadvance_gpu.cpp` for fixed-step integration. The CPU
+`nrn_fixed_step_thread` body handles matrix setup, solve, post-solve, partrans
+gather/MPI/scatter, and lastpart. Correctness is validated (e.g.
+`test/gjtests/test_par_gj_native_gpu.py`); performance matches NEURON CPU (~1×),
+not the GPU-accelerated non-gap path.
+
+Device-resident partrans gather/scatter — restoring GPU integration subphases while
+keeping host/MPI only for cross-rank `MPI_Alltoallv` — is deferred (see
+[05-future-work.md](05-future-work.md)).
+
+## LFP / extracellular post-solve fallback
+
+When `nrnthread_vi_compute_` is registered (extracellular `v+vext` sources for
+partrans), `post_solve_needs_host_fallback()` forces host `nrn_update_voltage`
+instead of `post_solve_on_device` on the **GPU integration path**. This applies
+only when the native GPU step runs (no `nrnthread_v_transfer_` CPU fallback).
 
 ## MPI-native modtest gap
 

@@ -12,6 +12,7 @@ Phase B checklist.
 | GPU spike priority queue | Requires MPI + device ordering design |
 | Full multi-thread OpenACC | Harden per-thread CUDA contexts; remove warning |
 | `sparse13` / extracellular / LFP on device | Eliminate per-step host fallbacks |
+| Device partrans gather/scatter | Remove gap CPU fixed-step fallback; host/MPI only when `nrnmpi_numprocs > 1` |
 | MPI-native modtest expansion | Beyond 19-test single-process parity |
 | Per-step matrix host sync elimination | Performance optimization in `treeset.cpp` |
 

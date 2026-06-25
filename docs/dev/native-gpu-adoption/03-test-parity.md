@@ -63,6 +63,19 @@ tests without running the full CoreNEURON GPU matrix.
 
 Filter: `ctest -R testneuron_gpu`
 
+## Gap junction supplementary test
+
+Not part of the 19-ctest parity set; run manually after building with GPU:
+
+```console
+cd test/gjtests && nrnivmodl
+python3 test_par_gj_native_gpu.py
+```
+
+Compares `test_par_gj` dendrite voltages CPU vs `gpu.backend=native`. Ringtest
+`-gap -gpu-native` (single rank) is an additional raster check; CTest
+`neuron_gpu_native_mpi` does not pass `-gap` today.
+
 ## Ringtest native benchmark
 
 External ringtest supports `-gpu-native` (orthogonal to CoreNEURON `-gpu`).

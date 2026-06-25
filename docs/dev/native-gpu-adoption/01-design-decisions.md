@@ -46,23 +46,26 @@ after topology changes must invalidate cleanly.
 
 **Artifacts:** `device_state.cpp`, `upload.cpp`.
 
-## Gap junctions: three-phase partrans, host staging in Phase B
+## Gap junctions: CPU fixed-step fallback in Phase B
 
-**Decision:** Gap transfer follows CPU partrans phases when
-`pc.setup_transfer()` is active (not only when MPI or `nthread>1`):
+**Decision:** When `pc.setup_transfer()` registers `nrnthread_v_transfer_`,
+native GPU fixed-step dispatches the **full CPU body** in `nrn_fixed_step_thread`
+(`fadvance.cpp`) instead of `fadvance_gpu.cpp`. Partrans then runs unchanged on
+the CPU path:
 
 1. Gather sources into buffers (`mpi_transfer` / `outsrc_buf_`)
 2. `MPI_Alltoallv` when `nrnmpi_numprocs > 1` (skipped on one rank)
 3. Scatter to targets (`thread_transfer` in `nonvint`)
 
-Native GPU pulls source voltages device → host (`sync_gap_after_voltage_update`)
-before gather so `mpi_transfer` reads host memory. Scatter remains CPU in lastpart.
+`gpu.enable=True` still uploads model state; integration per step is CPU until
+device-resident gather/scatter is implemented.
 
-**Why:** Partrans predates device-resident gap buffers. GPU gather/scatter without
-host staging — especially when MPI is absent — is a future optimization, not
-Phase B.
+**Why:** A hybrid GPU solve plus host partrans gather/scatter diverged on Traub
+(`use_gap=1`) and could overwrite host voltages with stale device state. Full CPU
+fallback restores raster parity (`test_par_gj_native_gpu.py`, ringtest `-gap`) at
+~1× NEURON CPU cost. Device partrans buffers are follow-up work, not Phase B.
 
-**Artifacts:** `partrans.cpp`, `sync.cpp`, `fadvance_gpu.cpp`.
+**Artifacts:** `fadvance.cpp`, `partrans.cpp`, `sync.cpp`, `fadvance_gpu.cpp`.
 
 ## Batch download for recording
 

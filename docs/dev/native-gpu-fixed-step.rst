@@ -44,7 +44,9 @@ Phase B contract
 - ``NET_RECEIVE`` mechanism computation on GPU during the step
 - CPU spike priority queues + MPI exchange at the minimum NetCon delay interval
 - GPU ``net_send`` buffering; cross-cell events to CPU/MPI; self-events may flush on device
-- Gap junctions: device voltage pull, sparse MPI transfer, host fallback where required
+- Gap junctions: **correctness** on native GPU when ``pc.setup_transfer()`` is
+  active; fixed-step integration runs the **CPU body** (full fallback) until
+  device partrans gather/scatter is implemented
 - Batch host download API for ``Vector.record`` and graphs (``download_flush_interval``)
 
 **Out of scope (deferred)**
@@ -76,7 +78,7 @@ Supported and unsupported matrix
 +-------------------------------+------------------+---------------------------+
 | ``net_send`` self-events      | GPU buffer       | May flush on device       |
 +-------------------------------+------------------+---------------------------+
-| Gap junctions                 | Supported        | Sparse MPI voltage/ion    |
+| Gap junctions                 | Supported        | CPU fixed-step fallback   |
 +-------------------------------+------------------+---------------------------+
 | ``Vector.record``             | Supported        | Batch download API        |
 +-------------------------------+------------------+---------------------------+
@@ -154,8 +156,8 @@ not a rewrite of the whole native path.
 +---------------------------+--------------------+-------------------------------+
 | ``net_send`` buffer       | GPU                | GPU-capable in principle      |
 +---------------------------+--------------------+-------------------------------+
-| Gap junction transfer     | See gap phases     | Same (if gaps present)        |
-| (``setup_transfer``)      | below              |                               |
+| Gap junction transfer     | **CPU fixed-step   | Same (if gaps present)        |
+| (``setup_transfer``)      | fallback** (below) |                               |
 +---------------------------+--------------------+-------------------------------+
 | Recording flush           | GPU → host batch   | Same API                      |
 +---------------------------+--------------------+-------------------------------+
@@ -176,21 +178,22 @@ limitations (see matrix above).
 .. mermaid::
 
    flowchart TD
-     A[CPU: deliver_net_events] --> B[GPU: setup_tree_matrix + NMODL currents]
+     S{nrnthread_v_transfer_ registered?}
+     S -->|yes| CPUALL[CPU fixed-step: deliver, matrix, solve, update, gap transfer, lastpart]
+     S -->|no| A[CPU: deliver_net_events]
+     A --> B[GPU: setup_tree_matrix + NMODL currents]
      B --> C[GPU: tree solve solve_interleaved]
      C --> D{post_solve host fallback?}
      D -->|no| E[GPU: post_solve V, fast_imem, capacity]
      D -->|yes| F[CPU: post_solve nrn_update_voltage]
-     E --> G{gap transfer configured?}
-     F --> G
-     G -->|yes| H[CPU: gap gather, MPI if nhost>1, scatter in lastpart]
-     G -->|no| I[GPU: lastpart NET_RECEIVE + nonvint + vecplay]
-     H --> I
+     E --> I[GPU: lastpart NET_RECEIVE + nonvint + vecplay]
+     F --> I
      I --> J{download flush interval?}
      J -->|yes| K[batch_download_to_host]
      J -->|no| L[defer to next flush / psolve end]
      K --> M[advance step counter]
      L --> M
+     CPUALL --> M
 
 On this path ``nt.compute_gpu`` is set for integration. NMODL ``BREAKPOINT``
 currents (``nrn_cur_*`` OpenACC) and OpenACC axial assembly in ``setup_tree_matrix``
@@ -202,12 +205,22 @@ run on the GPU. **GPU tree solve** is ``solve_interleaved`` / ``solve_interleave
 during **lastpart** (after the solve/post-solve block). Cross-rank spike
 **scheduling** remains on CPU (see spike policy in :doc:`gpu-testing`).
 
-**Gap junction transfer** (``ParallelContext.setup_transfer``) is **not** gated on
-MPI or ``pc.nthread(n)>1`` alone. The diamond is true whenever
-``nrnthread_v_transfer_`` is registered (gap junctions or other partrans targets) —
-including single-process, single-thread models with gaps.
+**Gap junction transfer** (``ParallelContext.setup_transfer``) registers
+``nrnthread_v_transfer_`` whenever partrans targets exist — including
+single-process, single-thread models with gaps (not only when MPI or
+``pc.nthread(n)>1``).
 
-On CPU fixed-step, partrans uses three conceptual phases (``partrans.cpp``):
+Phase B native GPU **does not** run the hybrid GPU integration path above when
+``nrnthread_v_transfer_`` is set. ``nrn_fixed_step_thread`` in ``fadvance.cpp``
+dispatches the **full CPU fixed-step body** instead of ``fadvance_gpu.cpp`` until
+device-resident partrans gather/scatter is complete. ``gpu.enable=True`` still
+uploads mechanisms and state to device, but matrix setup, solve, post-solve, gap
+transfer, and lastpart execute on the CPU for correctness (validated by
+``test/gjtests/test_par_gj_native_gpu.py`` and ringtest ``-gap``). Runtime is
+therefore ~1× NEURON CPU for gap models, not the slower hybrid path seen on
+non-gap workloads.
+
+On that CPU path, partrans uses three phases (``partrans.cpp``):
 
 1. **Gather** source values into transfer buffers (``mpi_transfer``: ``outsrc_buf_[i]
    = *poutsrc_[i]``).
@@ -216,12 +229,11 @@ On CPU fixed-step, partrans uses three conceptual phases (``partrans.cpp``):
 3. **Scatter** to targets (``thread_transfer`` in ``nonvint``, per thread:
    ``*(ttd.tv[i]) = *(ttd.sv[i])``).
 
-Phase B native GPU: after post-solve, ``sync_gap_after_voltage_update`` pulls source
-voltages **GPU → host** so phase 1 can read them; thread 0 runs ``nrnmpi_v_transfer_``
-(MPI phase 2 when multi-rank); phase 3 still runs on the **CPU** inside lastpart
-``nonvint``. Gather and scatter are not on device yet — a future optimization could
-keep phases 1 and 3 on GPU and avoid host staging when **no MPI** (and possibly for
-intra-node thread transfers), but that is outside Phase B.
+A future optimization would restore the GPU integration subphases and move phases
+1 and 3 to device buffers, touching host/MPI only when ``nrnmpi_numprocs > 1``.
+The hybrid sync helpers in ``sync.cpp`` (``sync_gap_after_voltage_update``,
+``sync_gap_after_host_voltage_update``) remain for that path; they are not used on
+the Phase B CPU fallback dispatch.
 
 For DAE models, only the **matrix solve** subphase must swap to CPU ``sparse13``;
 other subphases are not inherently excluded by the subphase design, but Phase B

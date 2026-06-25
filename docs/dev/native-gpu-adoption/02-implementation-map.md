@@ -54,7 +54,7 @@ repo root.
 | Artifact | Role |
 |----------|------|
 | `src/neuron/gpu/post_solve.cpp` | `post_solve_needs_host_fallback()` |
-| `src/nrnoc/fadvance.cpp` | CPU `nrn_update_voltage` when fallback required |
+| `src/nrnoc/fadvance.cpp` | CPU `nrn_update_voltage` when fallback required; **gap CPU fixed-step fallback** when `nrnthread_v_transfer_` is set |
 
 ## L6 — Communication
 
@@ -64,8 +64,8 @@ repo root.
 | `src/neuron/gpu/net_events.hpp` | Spike / `NET_RECEIVE` policy comments |
 | `src/neuron/gpu/net_send_buffer.cpp` | GPU `net_send` buffering |
 | `src/neuron/gpu/net_send_buffer.hpp` | Buffer semantics |
-| `src/neuron/gpu/sync.cpp` | Gap / voltage device↔host sync |
-| `src/nrniv/partrans.cpp` | MPI gap transfer (host) |
+| `src/neuron/gpu/sync.cpp` | Gap voltage device↔host sync (hybrid path; unused on Phase B CPU fallback) |
+| `src/nrniv/partrans.cpp` | Partrans gather / MPI / scatter (CPU) |
 
 ## L7 — Recording
 
