@@ -751,8 +751,13 @@ class _Arithmeticed:
                     items_append(item._semi_compile(region, instruction))
                 except AttributeError:
                     try:
-                        items_append(repr(float(item)))
-                    except (TypeError, ValueError):
+                        if isinstance(item, numpy.generic):
+                            item = item.item()
+                        if isinstance(item, int):
+                            items_append(repr(int(item)))
+                        else:
+                            items_append(repr(float(item)))
+                    except (TypeError, ValueError, OverflowError):
                         items_append(f"{item!r}")
                 counts_append(count)
         result = ""
