@@ -24,6 +24,11 @@
 
 #include "utils/formatting.hpp"
 
+#if defined(NRN_ENABLE_GPU)
+#include "neuron/gpu/config.hpp"
+#include "neuron/gpu/partrans.hpp"
+#endif
+
 
 #if NRNLONGSGID
 #if NRNMPI
@@ -179,6 +184,7 @@ static double* outsrc_buf_;
 static std::vector<neuron::container::data_handle<double>> poutsrc_;  // prior to mpi copy src value
                                                                       // to proper place in
                                                                       // outsrc_buf_
+static std::vector<int> poutsrc_v_node_index_;  // v_node_index for voltage sources, else -1
 static int* poutsrc_indices_;                                         // for recalc pointers
 static int insrc_buf_size_;
 static std::vector<int> insrccnt_;
@@ -342,6 +348,18 @@ static void rm_svibuf() {
 }
 
 static void thread_vi_compute(NrnThread* _nt);
+
+static void set_poutsrc_voltage_index(int i, Node* nd) {
+    if (i >= 0 && static_cast<size_t>(i) < poutsrc_v_node_index_.size()) {
+        poutsrc_v_node_index_[i] = nd->v_node_index;
+    }
+}
+
+static void set_poutsrc_non_voltage_index(int i) {
+    if (i >= 0 && static_cast<size_t>(i) < poutsrc_v_node_index_.size()) {
+        poutsrc_v_node_index_[i] = -1;
+    }
+}
 static std::unordered_map<Node*, double*> mk_svibuf() {
     rm_svibuf();
     if (visources_.empty()) {
@@ -419,6 +437,7 @@ static std::unordered_map<Node*, double*> mk_svibuf() {
             // in source_vi_buf_, so do_not_search makes sense.
             poutsrc_[i] = neuron::container::data_handle<double>{neuron::container::do_not_search,
                                                                  search->second};
+            set_poutsrc_non_voltage_index(i);
         }
     }
     nrnthread_vi_compute_ = thread_vi_compute;
@@ -547,8 +566,23 @@ static void thread_vi_compute(NrnThread* _nt) {
 
 static void mpi_transfer() {
     int i, n = outsrc_buf_size_;
-    for (i = 0; i < n; ++i) {
-        outsrc_buf_[i] = *poutsrc_[i];
+#if defined(NRN_ENABLE_GPU)
+    bool const gpu_gather = neuron::gpu::enabled() && neuron::gpu::backend_native() &&
+                            nrn_nthread == 1 &&
+                            static_cast<int>(poutsrc_v_node_index_.size()) == n;
+    if (gpu_gather) {
+        neuron::gpu::gather_gap_voltage_sources_to_outsrc(poutsrc_v_node_index_.data(), n, outsrc_buf_);
+        for (i = 0; i < n; ++i) {
+            if (poutsrc_v_node_index_[i] < 0) {
+                outsrc_buf_[i] = *poutsrc_[i];
+            }
+        }
+    } else
+#endif
+    {
+        for (i = 0; i < n; ++i) {
+            outsrc_buf_[i] = *poutsrc_[i];
+        }
     }
 #if NRNMPI
     if (nrnmpi_numprocs > 1) {
@@ -570,6 +604,11 @@ static void mpi_transfer() {
         }
         nrnmpi_transfer_wait_ += nrnmpi_wtime() - wt;
         errno = 0;
+    }
+#endif
+#if defined(NRN_ENABLE_GPU)
+    if (neuron::gpu::enabled() && neuron::gpu::backend_native() && insrc_buf_size_ > 0) {
+        neuron::gpu::sync_insrc_buf_to_device(insrc_buf_, insrc_buf_size_);
     }
 #endif
     // insrc_buf_ will get transferred to targets by thread_transfer
@@ -603,6 +642,11 @@ static void thread_transfer(NrnThread* _nt) {
     for (int i = 0; i < ttd.cnt; ++i) {
         *(ttd.tv[i]) = *(ttd.sv[i]);
     }
+#if defined(NRN_ENABLE_GPU)
+    if (ttd.cnt > 0 && neuron::gpu::enabled() && neuron::gpu::backend_native()) {
+        neuron::gpu::sync_mechanism_storage_to_device_after_partrans();
+    }
+#endif
 }
 
 // The simplest conceivable transfer is to use MPI_Allgatherv and send
@@ -634,6 +678,7 @@ void nrnmpi_setup_transfer() {
     outsrc_buf_size_ = 0;
     sid2insrc_.clear();
     poutsrc_.clear();
+    poutsrc_v_node_index_.clear();
     delete[] std::exchange(poutsrc_indices_, nullptr);
 #if NRNMPI
     // if there are no targets anywhere, we do not need to do anything
@@ -729,6 +774,7 @@ void nrnmpi_setup_transfer() {
         szalloc = std::max(1, outsrc_buf_size_);
         outsrc_buf_ = new double[szalloc];
         poutsrc_.resize(szalloc);
+        poutsrc_v_node_index_.resize(szalloc, -1);
         poutsrc_indices_ = new int[szalloc];
         for (int i = 0; i < outsrc_buf_size_; ++i) {
             sgid_t sid = send_to_want.data[i];
@@ -738,10 +784,13 @@ void nrnmpi_setup_transfer() {
             auto const it = non_vsrc_update_info_.find(sid);
             if (it != non_vsrc_update_info_.end()) {
                 poutsrc_[i] = non_vsrc_update(nd, it->second.first, it->second.second);
+                set_poutsrc_non_voltage_index(i);
             } else if (!nd->extnode) {
                 poutsrc_[i] = nd->v_handle();
+                set_poutsrc_voltage_index(i, nd);
             } else {
                 // the v+vext case can only be done after mk_svib()
+                set_poutsrc_non_voltage_index(i);
             }
             poutsrc_indices_[i] = search->second;
             outsrc_buf_[i] = double(sid);  // see step 5
@@ -783,6 +832,7 @@ void nrn_partrans_clear() {
     outsrc_buf_size_ = 0;
     sid2insrc_.clear();
     poutsrc_.clear();
+    poutsrc_v_node_index_.clear();
     delete[] std::exchange(poutsrc_indices_, nullptr);
     non_vsrc_update_info_.clear();
     nrn_mk_transfer_thread_data_ = nullptr;

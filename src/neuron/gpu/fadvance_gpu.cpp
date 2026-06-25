@@ -21,7 +21,6 @@
 #include <cstddef>
 
 extern void (*nrnthread_v_transfer_)(NrnThread* nt);
-extern void (*nrnmpi_v_transfer_)();
 
 namespace neuron::gpu {
 namespace {
@@ -90,22 +89,17 @@ void fixed_step_thread(model_sorted_token const& cache_token,
         }
         advance_download_step_counter();
     }
-    if (nrnthread_v_transfer_) {
-        if (nt.end > 0) {
-            if (host_post_solve) {
-                // Host nrn_update_voltage already updated vec_v; push to device and
-                // leave host voltages intact for partrans gather (device→host would
-                // overwrite with stale GPU state).
-                sync_gap_after_host_voltage_update(nt);
-            } else {
-                sync_gap_after_voltage_update(nt);
-            }
-            if (nrnmpi_v_transfer_) {
-                (*nrnmpi_v_transfer_)();
-            }
+    if (nrnthread_v_transfer_ && nt.end > 0) {
+        if (host_post_solve) {
+            sync_gap_after_host_voltage_update(nt);
+        } else {
+            // Host thread_transfer reads source handles; stage voltages for gather.
+            sync_gap_after_voltage_update(nt);
         }
-        nrn_fixed_step_lastpart(cache_token, nt);
-    } else {
+    }
+    // Partrans: nrnmpi_v_transfer + lastpart are dispatched from nrn_fixed_step
+    // (same as CPU). Only run lastpart here when no gap transfer is configured.
+    if (!nrnthread_v_transfer_) {
         nrn_fixed_step_lastpart(cache_token, nt);
     }
     if (nt.end > 0) {

@@ -39,7 +39,14 @@ Phase B tip (`hines-grok/feature/neuron-core-gpu-adoption`) is the parent branch
 - [x] Branch `hines-grok/feature/neuron-native-gpu-phase-c`
 - [x] Sphinx scope contract `docs/dev/native-gpu-phase-c.rst`
 - [x] This journal entry
-- [ ] C1 implementation (not started)
+
+## C1 status
+
+- [x] Remove gap CPU fixed-step fallback (`fadvance.cpp`)
+- [x] Align GPU gap step with CPU parent dispatch (mpi + lastpart in `nrn_fixed_step`)
+- [x] Device gather for MPI `outsrc_buf_` voltage sources (`neuron/gpu/partrans.cpp`)
+- [x] Host scatter + `update device` for partrans targets (`thread_transfer`)
+- [ ] C2 MPI modtest expansion (not started)
 
 ## Key reference code
 
