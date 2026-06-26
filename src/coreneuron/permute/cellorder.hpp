@@ -151,3 +151,14 @@ void copy_align_array(T*& dest, T* src, size_t n) {
 void mk_cell_indices();
 #endif
 }  // namespace coreneuron/neuron
+
+#if !CORENRN_BUILD && defined(NRN_ENABLE_GPU)
+extern "C" void coreneuron_solve_interleaved2_launcher_ptrs(double* d_a,
+                                                            double* d_b,
+                                                            double* d_d,
+                                                            double* d_rhs,
+                                                            int* d_parent,
+                                                            void* interleave_info,
+                                                            int ncore,
+                                                            void* stream);
+#endif

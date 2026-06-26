@@ -101,11 +101,13 @@ void fixed_step_thread(model_sorted_token const& cache_token,
                     sync_voltages_to_host_after_post_solve(nt);
                     nrnthread_vi_compute_(&nt);
                 }
+                // Host post-solve already updated voltages on CPU; pulling device
+                // voltages here would overwrite them with stale GPU state.
+                if (should_flush_download()) {
+                    phase_timer::Scope const timer{phase_timer::Id::download_flush};
+                    batch_download_post_solve(nt);
+                }
             }
-        }
-        if (should_flush_download()) {
-            phase_timer::Scope const timer{phase_timer::Id::download_flush};
-            batch_download_post_solve(nt);
         }
         advance_download_step_counter();
     }

@@ -13,7 +13,15 @@
 
 namespace coreneuron {
 
-__device__ void triang_interleaved2_device(NrnThread* nt,
+struct SolveInterleaved2MatrixPtrs {
+    double* actual_a{};
+    double* actual_b{};
+    double* actual_d{};
+    double* actual_rhs{};
+    int* v_parent_index{};
+};
+
+__device__ void triang_interleaved2_device(SolveInterleaved2MatrixPtrs mat,
                                            int icore,
                                            int ncycle,
                                            int* stride,
@@ -25,12 +33,11 @@ __device__ void triang_interleaved2_device(NrnThread* nt,
     int ip;
     double p;
     while (icycle >= 0) {
-        // most efficient if istride equal warpsize, else branch divergence!
         if (icore < istride) {
-            ip = nt->_v_parent_index[i];
-            p = nt->_actual_a[i] / nt->_actual_d[i];
-            atomicAdd(&nt->_actual_d[ip], -p * nt->_actual_b[i]);
-            atomicAdd(&nt->_actual_rhs[ip], -p * nt->_actual_rhs[i]);
+            ip = mat.v_parent_index[i];
+            p = mat.actual_a[i] / mat.actual_d[i];
+            atomicAdd(&mat.actual_d[ip], -p * mat.actual_b[i]);
+            atomicAdd(&mat.actual_rhs[ip], -p * mat.actual_rhs[i]);
         }
         --icycle;
         istride = stride[icycle];
@@ -38,7 +45,7 @@ __device__ void triang_interleaved2_device(NrnThread* nt,
     }
 }
 
-__device__ void bksub_interleaved2_device(NrnThread* nt,
+__device__ void bksub_interleaved2_device(SolveInterleaved2MatrixPtrs mat,
                                           int root,
                                           int lastroot,
                                           int icore,
@@ -46,7 +53,7 @@ __device__ void bksub_interleaved2_device(NrnThread* nt,
                                           int* stride,
                                           int firstnode) {
     for (int i = root; i < lastroot; i += warpsize) {
-        nt->_actual_rhs[i] /= nt->_actual_d[i];  // the root
+        mat.actual_rhs[i] /= mat.actual_d[i];
     }
 
     int i = firstnode + icore;
@@ -55,26 +62,28 @@ __device__ void bksub_interleaved2_device(NrnThread* nt,
     for (int icycle = 0; icycle < ncycle; ++icycle) {
         int istride = stride[icycle];
         if (icore < istride) {
-            ip = nt->_v_parent_index[i];
-            nt->_actual_rhs[i] -= nt->_actual_b[i] * nt->_actual_rhs[ip];
-            nt->_actual_rhs[i] /= nt->_actual_d[i];
+            ip = mat.v_parent_index[i];
+            mat.actual_rhs[i] -= mat.actual_b[i] * mat.actual_rhs[ip];
+            mat.actual_rhs[i] /= mat.actual_d[i];
         }
         i += istride;
     }
 }
 
-__global__ void solve_interleaved2_kernel(NrnThread* nt, InterleaveInfo* ii, int ncore) {
+__global__ void solve_interleaved2_kernel_ptrs(SolveInterleaved2MatrixPtrs mat,
+                                             InterleaveInfo* ii,
+                                             int ncore) {
     int icore = blockDim.x * blockIdx.x + threadIdx.x;
 
-    int* ncycles = ii->cellsize;         // nwarp of these
-    int* stridedispl = ii->stridedispl;  // nwarp+1 of these
-    int* strides = ii->stride;           // sum ncycles of these (bad since ncompart/warpsize)
-    int* rootbegin = ii->firstnode;      // nwarp+1 of these
-    int* nodebegin = ii->lastnode;       // nwarp+1 of these
+    int* ncycles = ii->cellsize;
+    int* stridedispl = ii->stridedispl;
+    int* strides = ii->stride;
+    int* rootbegin = ii->firstnode;
+    int* nodebegin = ii->lastnode;
 
     while (icore < ncore) {
-        int iwarp = icore / warpsize;     // figure out the >> value
-        int ic = icore & (warpsize - 1);  // figure out the & mask
+        int iwarp = icore / warpsize;
+        int ic = icore & (warpsize - 1);
         int ncycle = ncycles[iwarp];
         int* stride = strides + stridedispl[iwarp];
         int root = rootbegin[iwarp];
@@ -82,33 +91,43 @@ __global__ void solve_interleaved2_kernel(NrnThread* nt, InterleaveInfo* ii, int
         int firstnode = nodebegin[iwarp];
         int lastnode = nodebegin[iwarp + 1];
 
-        triang_interleaved2_device(nt, ic, ncycle, stride, lastnode);
-        bksub_interleaved2_device(nt, root + ic, lastroot, ic, ncycle, stride, firstnode);
+        triang_interleaved2_device(mat, ic, ncycle, stride, lastnode);
+        bksub_interleaved2_device(mat, root + ic, lastroot, ic, ncycle, stride, firstnode);
 
         icore += blockDim.x * gridDim.x;
     }
 }
 
-void solve_interleaved2_launcher(NrnThread* nt, InterleaveInfo* info, int ncore, void* stream) {
+extern "C" void coreneuron_solve_interleaved2_launcher_ptrs(double* d_a,
+                                                            double* d_b,
+                                                            double* d_d,
+                                                            double* d_rhs,
+                                                            int* d_parent,
+                                                            void* interleave_info,
+                                                            int ncore,
+                                                            void* stream) {
+    auto* info = static_cast<InterleaveInfo*>(interleave_info);
     auto cuda_stream = static_cast<cudaStream_t>(stream);
 
-    /// the selection of these parameters has been done after running the channel-benchmark for
-    /// typical production runs, i.e. 1 MPI task with 1440 cells & 6 MPI tasks with 8800 cells.
-    /// In the OpenACC/OpenMP implementations threadsPerBlock is set to 32. From profiling the
-    /// channel-benchmark circuits mentioned above we figured out that the best performance was
-    /// achieved with this configuration
     int threadsPerBlock = warpsize;
-    /// Max number of blocksPerGrid for NVIDIA GPUs is 65535, so we need to make sure that the
-    /// blocksPerGrid we launch the CUDA kernel with doesn't exceed this number
     const auto maxBlocksPerGrid = 65535;
     int provisionalBlocksPerGrid = (ncore + threadsPerBlock - 1) / threadsPerBlock;
     int blocksPerGrid = provisionalBlocksPerGrid <= maxBlocksPerGrid ? provisionalBlocksPerGrid
                                                                      : maxBlocksPerGrid;
 
-    solve_interleaved2_kernel<<<blocksPerGrid, threadsPerBlock, 0, cuda_stream>>>(nt, info, ncore);
+    SolveInterleaved2MatrixPtrs mat{d_a, d_b, d_d, d_rhs, d_parent};
+    solve_interleaved2_kernel_ptrs<<<blocksPerGrid, threadsPerBlock, 0, cuda_stream>>>(
+        mat, info, ncore);
 
     cudaStreamSynchronize(cuda_stream);
 
+    CHECKLAST("coreneuron_solve_interleaved2_launcher_ptrs");
+}
+
+void solve_interleaved2_launcher(NrnThread* nt, InterleaveInfo* info, int ncore, void* stream) {
+    coreneuron_solve_interleaved2_launcher_ptrs(
+        nt->_actual_a, nt->_actual_b, nt->_actual_d, nt->_actual_rhs, nt->_v_parent_index, info,
+        ncore, stream);
     CHECKLAST("solve_interleaved2_launcher");
 }
 
