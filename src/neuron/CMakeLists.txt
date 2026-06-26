@@ -12,6 +12,13 @@ cpp_cc_configure_sanitizers(TARGET neuron_gpu)
 if(NRN_ENABLE_GPU)
   target_compile_definitions(neuron_gpu PUBLIC NRN_ENABLE_GPU)
 endif()
+if(NRN_ENABLE_GPU)
+  install(
+    DIRECTORY ${PROJECT_SOURCE_DIR}/src/neuron/gpu/
+    DESTINATION ${NRN_INSTALL_DATA_PREFIX}include/neuron/gpu
+    FILES_MATCHING
+    PATTERN "*.hpp")
+endif()
 if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
   separate_arguments(_neuron_gpu_acc_flags UNIX_COMMAND "${CORENRN_ACC_COMP_FLAGS}")
   set(_neuron_gpu_openacc_sources gpu/offload.cpp)
@@ -31,6 +38,7 @@ if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
     gpu/net_send_buffer.cpp
     gpu/post_solve.cpp
     gpu/sync.cpp
+    gpu/lastpart.cpp
     gpu/partrans.cpp
     gpu/phase_timer.cpp)
   set_property(TARGET neuron_gpu_upload PROPERTY POSITION_INDEPENDENT_CODE ON)
@@ -54,6 +62,7 @@ if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
     gpu/net_send_buffer.cpp
     gpu/post_solve.cpp
     gpu/sync.cpp
+    gpu/lastpart.cpp
     gpu/partrans.cpp
     gpu/phase_timer.cpp
     PROPERTIES COMPILE_OPTIONS "${_neuron_gpu_acc_flags}" COMPILE_DEFINITIONS

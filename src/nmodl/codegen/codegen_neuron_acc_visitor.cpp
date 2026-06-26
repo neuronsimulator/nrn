@@ -36,12 +36,20 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
         return;
     }
 
+    if (type != BlockType::NetReceive && !info.artificial_cell) {
+        printer->add_line("auto const* nodeindices = node_data.nodeindices;");
+        if (type == BlockType::Equation) {
+            printer->add_line("double* vec_rhs = node_data.node_rhs;");
+            printer->add_line("double* vec_d = node_data.node_diagonal;");
+        }
+    }
+
     std::ostringstream present_clause;
-    present_clause << "present(ml, nt";
+    present_clause << "present(_ml_arg, nt";
     if (type == BlockType::NetReceive) {
         present_clause << ", nrb";
-    } else {
-        present_clause << ", nodeindices, thread";
+    } else if (!info.artificial_cell) {
+        present_clause << ", nodeindices, _thread";
         if (type == BlockType::Equation) {
             present_clause << ", vec_rhs, vec_d";
         }
@@ -55,7 +63,7 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
 
 void CodegenNeuronAccVisitor::print_kernel_data_present_annotation_block_begin() {
     if (!info.artificial_cell) {
-        printer->add_line("nrn_pragma_acc(data present(nt, ml) if(nt->compute_gpu))");
+        printer->add_line("nrn_pragma_acc(data present(nt, _ml_arg) if(nt->compute_gpu))");
         printer->add_line("{");
         printer->increase_indent();
     }

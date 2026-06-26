@@ -22,6 +22,7 @@
 #include "neuron/gpu/device_state.hpp"
 #include "neuron/gpu/download.hpp"
 #include "neuron/gpu/fadvance_gpu.hpp"
+#include "neuron/gpu/lastpart.hpp"
 #include "neuron/gpu/net_events.hpp"
 #endif
 
@@ -543,7 +544,17 @@ void nrn_fixed_step_lastpart(neuron::model_sorted_token const& cache_token, NrnT
 #endif
     fixed_play_continuous(nth);
     nrn_extra_scatter_gather(0, nth->id);
+#if defined(NRN_ENABLE_GPU)
+    if (neuron::gpu::enabled() && neuron::gpu::backend_native()) {
+        neuron::gpu::prepare_nonvint_on_device(nt);
+    }
+#endif
     nonvint(cache_token, nt);
+#if defined(NRN_ENABLE_GPU)
+    if (neuron::gpu::enabled() && neuron::gpu::backend_native()) {
+        neuron::gpu::finalize_nonvint_on_device(nt);
+    }
+#endif
     nrn_ba(cache_token, nt, AFTER_SOLVE);
     fixed_record_continuous(cache_token, nt);
     CTADD;
