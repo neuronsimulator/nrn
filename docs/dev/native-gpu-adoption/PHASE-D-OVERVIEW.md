@@ -163,10 +163,11 @@ of the event path.
 
 **Target:** audit event queue device residency; reduce pre-step host walks.
 
-### P6 — Hines solver launch path (lower — likely not 12×)
+### P6 — Hines solver launch path (**raised to P0 after D1**)
 
-Both backends use permute-2 / `solve_interleaved2` on GPU. Nsight should confirm solver
-is a small fraction vs P1–P3. Optimize only if Layer 2 shows solver dominance.
+D1 Nsight shows native `solve_interleaved2` at **~16.8 ms/step** (55.8% wall) vs
+CoreNEURON `solve_interleaved1` at **~0.52 ms/step**. This is the largest single gap;
+audit launcher, stream sync, and cellorder before further sync tuning.
 
 ### P7 — Mechanism kernel efficiency (tune after transfers)
 
@@ -183,7 +184,7 @@ and launch granularity.
 | ID | Summary | Exit criterion |
 |----|---------|----------------|
 | D0 | Branch + phase timer + this doc | Timer summary on Traub; branch pushed when approved |
-| D1 | Baseline profile matrix | Layer 1+2 tables for native vs CoreNEURON; % time per phase |
+| D1 | Baseline profile matrix | **Done** — see [PHASE-D-D1-PROFILE.md](PHASE-D-D1-PROFILE.md) |
 | D2 | Post-solve on device for Traub | `use_gap=0` spikes match; runtime ↓ vs D0 |
 | D3 | Download / recording sync policy | Correct spikes with `gpu_download_flush=0/1`; runtime ↓ |
 | D4 | Device nonvint / lastpart | `state-*` on device; ringtest + Traub pass |
