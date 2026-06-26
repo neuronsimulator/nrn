@@ -187,12 +187,12 @@ and launch granularity.
 |----|---------|----------------|
 | D0 | Branch + phase timer + this doc | Timer summary on Traub; branch pushed when approved |
 | D1 | Baseline profile matrix | **Done** — see [PHASE-D-D1-PROFILE.md](PHASE-D-D1-PROFILE.md) |
-| D2-P0 | CUDA `solve_interleaved2` launcher | **Done** — 4474 spikes; 58 s vs 123 s (D1) on Traub 100 ms |
-| D2 | Post-solve on device for Traub | `use_gap=0` spikes match; runtime ↓ vs D0 |
+| D2-P0 | CUDA `solve_interleaved2` launcher | **Done** — see [PHASE-D-D2-P0-PROFILE.md](PHASE-D-D2-P0-PROFILE.md) |
+| D2 | Post-solve on device for Traub | `use_gap=0` spikes match; runtime ↓ (~9 s bucket) |
 | D3 | Download / recording sync policy | Correct spikes with `gpu_download_flush=0/1`; runtime ↓ |
-| D4 | Device nonvint / lastpart | `state-*` on device; ringtest + Traub pass |
+| D4 | Device nonvint / lastpart (**next**) | `state-*` on device; ~24 s bucket; ringtest + Traub pass |
 | D5 | Matrix setup sync reduction | Fewer `matrix-sync` calls; spikes pass |
-| D6 | Traub sign-off vs CoreNEURON | Native ≤ 2× CoreNEURON GPU (stretch: ≤ 1.5×) on T1000 |
+| D6 | Traub sign-off vs CoreNEURON | Native ≤ 2× CoreNEURON GPU (58 s → target ≤22 s on T1000) |
 | D7 | Gap + 6-spike investigation | Optional after D6 |
 
 ---
