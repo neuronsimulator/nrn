@@ -118,6 +118,7 @@ def test_vector_api():
     assert h.Vector().min() == 0.0
     assert v.min_ind() == 3
     assert v.min_ind(0, 2) == 2
+    assert v.min_ind(1, 4) == 3
     assert h.Vector().min_ind() == -1.0
     assert v.max() == 5.0
     assert v.max(0, 2) == 3.0
