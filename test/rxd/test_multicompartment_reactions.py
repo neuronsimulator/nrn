@@ -96,9 +96,9 @@ def test_mcr_multiple_dests(neuron_instance):
     the multiplier array for other reactions."""
     h, rxd, data, save_path = neuron_instance
 
-    dend = h.Section(name="dend")
-    cyt = rxd.Region(h.allsec(), name="cyt", nrn_region="i")
-    mem = rxd.Region(h.allsec(), name="cell_mem", geometry=rxd.membrane())
+    dend = h.Section("dend")
+    cyt = rxd.Region([dend], name="cyt", nrn_region="i")
+    mem = rxd.Region([dend], name="cell_mem", geometry=rxd.membrane())
     ecs = rxd.Extracellular(-100, -100, -100, 100, 100, 100, dx=100)
 
     a = rxd.Species(
@@ -110,13 +110,13 @@ def test_mcr_multiple_dests(neuron_instance):
         ecs_boundary_conditions=140.0,
     )
     # Extra species for the MCR with multiple ECS destinations
-    x = rxd.Species([cyt, mem, ecs], name="x", charge=1, d=0, initial=1.0)
-    y = rxd.Species([cyt, mem, ecs], name="y", charge=1, d=0, initial=2.0)
-    z = rxd.Species([cyt, mem, ecs], name="z", charge=1, d=0, initial=3.0)
+    x = rxd.Species([cyt, ecs], name="x", charge=1, d=0, initial=1.0)
+    y = rxd.Species([cyt, ecs], name="y", charge=1, d=0, initial=2.0)
+    z = rxd.Species([cyt, ecs], name="z", charge=1, d=0, initial=3.0)
 
     mcr = rxd.MultiCompartmentReaction(
-        x[cyt],
-        y[ecs] + z[ecs],
+        x[cyt] + y[cyt],
+        y[ecs] + y[ecs] + z[ecs],
         10,
         mass_action=False,
         membrane=mem,
@@ -145,9 +145,9 @@ def test_mcr_multiple_sources(neuron_instance):
     multiplier array for other reactions."""
 
     h, rxd, data, save_path = neuron_instance
-    dend = h.Section(name="dend")
-    cyt = rxd.Region(h.allsec(), name="cyt", nrn_region="i")
-    mem = rxd.Region(h.allsec(), name="cell_mem", geometry=rxd.membrane())
+    dend = h.Section("dend")
+    cyt = rxd.Region([dend], name="cyt", nrn_region="i")
+    mem = rxd.Region([dend], name="cell_mem", geometry=rxd.membrane())
     ecs = rxd.Extracellular(-100, -100, -100, 100, 100, 100, dx=100)
 
     a = rxd.Species(
@@ -159,13 +159,13 @@ def test_mcr_multiple_sources(neuron_instance):
         ecs_boundary_conditions=140.0,
     )
     # Extra species for the MCR with multiple ECS sources
-    x = rxd.Species([cyt, mem, ecs], name="x", charge=1, d=0, initial=1.0)
-    y = rxd.Species([cyt, mem, ecs], name="y", charge=1, d=0, initial=2.0)
-    z = rxd.Species([cyt, mem, ecs], name="z", charge=1, d=0, initial=3.0)
+    x = rxd.Species([cyt, ecs], name="x", charge=1, d=0, initial=1.0)
+    y = rxd.Species([cyt, ecs], name="y", charge=1, d=0, initial=2.0)
+    z = rxd.Species([cyt, ecs], name="z", charge=1, d=0, initial=3.0)
 
     mcr = rxd.MultiCompartmentReaction(
-        x[cyt] + y[cyt],
-        z[ecs],
+        x[cyt] + y[cyt] + z[cyt],
+        x[ecs] + y[ecs],
         10,
         mass_action=False,
         membrane=mem,

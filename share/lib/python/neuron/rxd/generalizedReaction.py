@@ -379,17 +379,20 @@ class GeneralizedReaction(object):
                 ] + [areas / volumes[di] / molecules_per_mM_um3 for di in dests_indices]
             # TODO: check for multicompartment reaction within the ECS
             elif sources_ecs and not dests_ecs:
+                # only using the first dests_indices for scaling ECS sources
+                # each dest must be in same location so give the same alpha
                 self._mult = [
                     -areas
                     / (
                         numpy.prod(s()._extracellular()._dx)
-                        * s().alpha_by_location(xyz_by_index(di))
+                        * s().alpha_by_location(xyz_by_index(dests_indices[0]))
                     )
                     / molecules_per_mM_um3
                     for s in sources_ecs
-                    for di in dests_indices
                 ] + [areas / volumes[di] / molecules_per_mM_um3 for di in dests_indices]
             elif not sources_ecs and dests_ecs:
+                # only using the first sources_indices for scaling ECS dests
+                # each source must be in same location so give the same alpha
                 self._mult = [
                     -areas / volumes[si] / molecules_per_mM_um3
                     for si in sources_indices
@@ -397,11 +400,10 @@ class GeneralizedReaction(object):
                     areas
                     / (
                         numpy.prod(s()._extracellular()._dx)
-                        * s().alpha_by_location(xyz_by_index(si))
+                        * s().alpha_by_location(xyz_by_index(sources_indices[0]))
                     )
                     / molecules_per_mM_um3
                     for s in dests_ecs
-                    for si in sources_indices
                 ]
             elif self._trans_membrane:
                 # An ecs <-> ecs reaction that use the membrane area and intracellular concentration in the rates
