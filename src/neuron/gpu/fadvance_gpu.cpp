@@ -5,6 +5,7 @@
 #include "neuron/gpu/net_events.hpp"
 #include "neuron/gpu/net_send_buffer.hpp"
 #include "neuron/gpu/download.hpp"
+#include "neuron/gpu/phase_timer.hpp"
 #include "neuron/gpu/post_solve.hpp"
 #include "neuron/gpu/sync.hpp"
 #include "neuron/model_data.hpp"
@@ -47,6 +48,7 @@ void fixed_step_thread(model_sorted_token const& cache_token,
     nt.compute_gpu = 1;
 
     {
+        phase_timer::Scope const timer{phase_timer::Id::deliver_events};
         nrn::Instrumentor::phase p("deliver-events");
         deliver_net_events_host(nth);
     }
@@ -55,15 +57,22 @@ void fixed_step_thread(model_sorted_token const& cache_token,
     nrn_random_play();
     advance_first_half_time(nt);
     fixed_play_continuous(nth);
-    sync_after_vecplay(nt);
+    {
+        phase_timer::Scope const timer{phase_timer::Id::vecplay_sync};
+        sync_after_vecplay(nt);
+    }
     bool const host_post_solve = nt.end > 0 && post_solve_needs_host_fallback(nt);
     if (nt.end > 0) {
-        setup_tree_matrix(cache_token, nt);
+        {
+            phase_timer::Scope const timer{phase_timer::Id::setup_tree_matrix};
+            setup_tree_matrix(cache_token, nt);
+        }
         if (!matrix_rhs_d_stays_on_device_for_solve(nt)) {
             sync_matrix_to_device_before_solve(nt);
         }
         flush_mechanism_net_send_buffers(nth);
         {
+            phase_timer::Scope const timer{phase_timer::Id::matrix_solver};
             nrn::Instrumentor::phase p("matrix-solver");
             if (neuron::interleave_permute_type) {
                 neuron::solve_interleaved(nt.id);
@@ -71,32 +80,37 @@ void fixed_step_thread(model_sorted_token const& cache_token,
                 nrn_solve(nth);
             }
         }
-        if (host_post_solve) {
-            sync_rhs_to_host_after_solve(nt);
-            {
-                nrn::Instrumentor::phase p("second-order-cur");
-                second_order_cur(nth);
+        {
+            phase_timer::Scope const timer{phase_timer::Id::post_solve};
+            if (host_post_solve) {
+                sync_rhs_to_host_after_solve(nt);
+                {
+                    nrn::Instrumentor::phase p("second-order-cur");
+                    second_order_cur(nth);
+                }
+                {
+                    nrn::Instrumentor::phase p("update");
+                    nrn_update_voltage(cache_token, nt);
+                }
+            } else {
+                {
+                    nrn::Instrumentor::phase p("update");
+                    post_solve_on_device(cache_token, nt);
+                }
+                if (nrnthread_vi_compute_) {
+                    sync_voltages_to_host_after_post_solve(nt);
+                    nrnthread_vi_compute_(&nt);
+                }
             }
-            {
-                nrn::Instrumentor::phase p("update");
-                nrn_update_voltage(cache_token, nt);
-            }
-        } else {
-            {
-                nrn::Instrumentor::phase p("update");
-                post_solve_on_device(cache_token, nt);
-            }
-            if (nrnthread_vi_compute_) {
-                sync_voltages_to_host_after_post_solve(nt);
-                nrnthread_vi_compute_(&nt);
-            }
-            if (should_flush_download()) {
-                batch_download_post_solve(nt);
-            }
+        }
+        if (should_flush_download()) {
+            phase_timer::Scope const timer{phase_timer::Id::download_flush};
+            batch_download_post_solve(nt);
         }
         advance_download_step_counter();
     }
     if (nrnthread_v_transfer_ && nt.end > 0) {
+        phase_timer::Scope const timer{phase_timer::Id::gap_sync};
         if (host_post_solve) {
             sync_gap_after_host_voltage_update(nt);
         } else {
@@ -107,9 +121,11 @@ void fixed_step_thread(model_sorted_token const& cache_token,
     // Partrans: nrnmpi_v_transfer + lastpart are dispatched from nrn_fixed_step
     // (same as CPU). Only run lastpart here when no gap transfer is configured.
     if (!nrnthread_v_transfer_) {
+        phase_timer::Scope const timer{phase_timer::Id::lastpart};
         nrn_fixed_step_lastpart(cache_token, nt);
     }
     if (nt.end > 0) {
+        phase_timer::Scope const timer{phase_timer::Id::vecplay_sync};
         sync_after_vecplay(nt);
     }
 

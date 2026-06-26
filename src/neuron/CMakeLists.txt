@@ -31,7 +31,8 @@ if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
     gpu/net_send_buffer.cpp
     gpu/post_solve.cpp
     gpu/sync.cpp
-    gpu/partrans.cpp)
+    gpu/partrans.cpp
+    gpu/phase_timer.cpp)
   set_property(TARGET neuron_gpu_upload PROPERTY POSITION_INDEPENDENT_CODE ON)
   target_include_directories(
     neuron_gpu_upload
@@ -54,6 +55,7 @@ if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
     gpu/post_solve.cpp
     gpu/sync.cpp
     gpu/partrans.cpp
+    gpu/phase_timer.cpp
     PROPERTIES COMPILE_OPTIONS "${_neuron_gpu_acc_flags}" COMPILE_DEFINITIONS
                                                           "CORENEURON_ENABLE_GPU;NRN_ENABLE_GPU")
 endif()

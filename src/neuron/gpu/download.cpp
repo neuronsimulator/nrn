@@ -2,6 +2,7 @@
 
 #include "multicore.h"
 #include "neuron/gpu/config.hpp"
+#include "neuron/gpu/phase_timer.hpp"
 #include "neuron/gpu/sync.hpp"
 
 namespace neuron::gpu {
@@ -68,6 +69,7 @@ void finalize_psolve_download() {
         return;
     }
     batch_download_to_host();
+    phase_timer::print_summary();
     reset_download_step_counter();
 #endif
 }

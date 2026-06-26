@@ -1,6 +1,7 @@
 #include "neuron/gpu/sync.hpp"
 
 #include "neuron/gpu/config.hpp"
+#include "neuron/gpu/phase_timer.hpp"
 
 #include "coreneuron/utils/offload.hpp"
 #include "multicore.h"
@@ -13,6 +14,7 @@ namespace neuron::gpu {
 namespace {
 
 void sync_node_voltages_to_host(NrnThread& nt) {
+    phase_timer::bump(phase_timer::Id::vecplay_sync);
 #if defined(NRN_ENABLE_GPU)
     if (!nt.compute_gpu || nt.end <= 0) {
         return;
@@ -27,6 +29,7 @@ void sync_node_voltages_to_host(NrnThread& nt) {
 }
 
 void sync_node_voltages_to_device(NrnThread& nt) {
+    phase_timer::bump(phase_timer::Id::vecplay_sync);
 #if defined(NRN_ENABLE_GPU)
     if (!nt.compute_gpu || nt.end <= 0) {
         return;
@@ -41,6 +44,8 @@ void sync_node_voltages_to_device(NrnThread& nt) {
 }
 
 void sync_matrix_arrays_to_device(NrnThread& nt) {
+    phase_timer::Scope const timer{phase_timer::Id::matrix_sync};
+    phase_timer::bump(phase_timer::Id::matrix_sync);
 #if defined(NRN_ENABLE_GPU)
     if (!nt.compute_gpu || nt.end <= 0) {
         return;
@@ -66,6 +71,8 @@ void sync_matrix_arrays_to_device(NrnThread& nt) {
 }
 
 void sync_matrix_arrays_to_host(NrnThread& nt) {
+    phase_timer::Scope const timer{phase_timer::Id::matrix_sync};
+    phase_timer::bump(phase_timer::Id::matrix_sync);
 #if defined(NRN_ENABLE_GPU)
     if (!nt.compute_gpu || nt.end <= 0) {
         return;
