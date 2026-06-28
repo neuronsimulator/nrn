@@ -68,6 +68,9 @@ int nrn_nseg_get(const Section* sec);
 void nrn_nseg_set(Section* sec, int nseg);
 void nrn_segment_diam_set(Section* sec, double x, double diam);
 double nrn_segment_diam_get(Section* sec, double x);
+// Index of the node for (sec, x) in NEURON's internal node array (the value
+// returned by Python's seg.node_index()), or -1 if sec is null or deleted.
+int nrn_segment_node_index(Section* sec, double x);
 void nrn_rangevar_push(Symbol* sym, Section* sec, double x);
 double nrn_rangevar_get(Symbol* sym, Section* sec, double x);
 void nrn_rangevar_set(Symbol* sym, Section* sec, double x, double value);
