@@ -35,20 +35,13 @@ int main(void) {
 
     bool ok = true;
 
-    int i_soma = nrn_segment_node_index(soma, 0.5);
-    int i_dend = nrn_segment_node_index(dend, 0.5);
-    ok &= check(i_soma >= 0, "soma(0.5) index is non-negative");
-    ok &= check(i_dend >= 0, "dend(0.5) index is non-negative");
-    ok &= check(i_soma != i_dend, "soma and dend nodes are distinct");
-
-    // the call is stable across repeated queries.
-    ok &= check(i_soma == nrn_segment_node_index(soma, 0.5), "soma index is stable");
-
-    // dend's three interior segments occupy three distinct nodes.
-    int a = nrn_segment_node_index(dend, 1.0 / 6.0);
-    int b = nrn_segment_node_index(dend, 3.0 / 6.0);
-    int c = nrn_segment_node_index(dend, 5.0 / 6.0);
-    ok &= check(a != b && b != c && a != c, "dend interior segments are distinct nodes");
+    // Exact node indices for this topology, matching Python's seg.node_index().
+    // soma's nodes are 0 (0-end), 1 (center), 2 (1-end, shared with dend's
+    // 0-end at the connection); dend's three interior segments are nodes 3-5.
+    ok &= check(nrn_segment_node_index(soma, 0.5) == 1, "soma(0.5) is node 1");
+    ok &= check(nrn_segment_node_index(dend, 1.0 / 6.0) == 3, "dend(1/6) is node 3");
+    ok &= check(nrn_segment_node_index(dend, 3.0 / 6.0) == 4, "dend(3/6) is node 4");
+    ok &= check(nrn_segment_node_index(dend, 5.0 / 6.0) == 5, "dend(5/6) is node 5");
 
     // contract: a null section yields -1 rather than crashing.
     ok &= check(nrn_segment_node_index(nullptr, 0.5) == -1, "null section returns -1");
