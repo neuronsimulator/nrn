@@ -542,7 +542,7 @@ Segments
 
     Get the index of the node for the segment at normalized position x along
     the Section, in NEURON's internal node array. Node indices become canonical
-    once the tree has been set up (for example after ``finitialize``).
+    once the tree has been set up (for example after :func:`finitialize`).
 
     :param sec: Pointer to the Section.
     :param x: Normalized position along Section (0.0 to 1.0).
