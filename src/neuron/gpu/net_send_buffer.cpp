@@ -1,6 +1,6 @@
 #include "neuron/gpu/net_send_buffer.hpp"
 
-#include "coreneuron/utils/offload.hpp"
+#include "neuron/gpu/offload.hpp"
 #include "multicore.h"
 #include "nrnoc_ml.h"
 #include "section_fwd.hpp"
@@ -19,6 +19,14 @@ namespace neuron::gpu {
 
 std::vector<int> net_buf_send_types;
 
+int net_send_buffer_capacity(Memb_list const* ml) {
+    if (!ml) {
+        return 1024;
+    }
+    // CoreNEURON uses nodecount * 2; use a higher floor for dense models.
+    return std::max(1024, ml->nodecount * 2);
+}
+
 namespace {
 
 template <typename T>
@@ -35,6 +43,72 @@ void grow_buffer(T** buf, int old_size, int new_size) {
     }
     *buf = new_buf;
 }
+
+#if defined(NRN_ENABLE_GPU)
+void delete_net_send_buffer_from_device(NetSendBuffer_t* nsb) {
+    if (!nsb || !nrn_target_is_present(nsb)) {
+        return;
+    }
+    if (nsb->_sendtype) {
+        nrn_target_delete(nsb->_sendtype, static_cast<std::size_t>(nsb->_size));
+    }
+    if (nsb->_vdata_index) {
+        nrn_target_delete(nsb->_vdata_index, static_cast<std::size_t>(nsb->_size));
+    }
+    if (nsb->_pnt_index) {
+        nrn_target_delete(nsb->_pnt_index, static_cast<std::size_t>(nsb->_size));
+    }
+    if (nsb->_weight_index) {
+        nrn_target_delete(nsb->_weight_index, static_cast<std::size_t>(nsb->_size));
+    }
+    if (nsb->_nsb_t) {
+        nrn_target_delete(nsb->_nsb_t, static_cast<std::size_t>(nsb->_size));
+    }
+    if (nsb->_nsb_flag) {
+        nrn_target_delete(nsb->_nsb_flag, static_cast<std::size_t>(nsb->_size));
+    }
+    nrn_target_delete(nsb, 1);
+}
+
+void upload_net_send_buffer_fields(NetSendBuffer_t* nsb, NetSendBuffer_t* d_nsb) {
+    int* d_iptr = nrn_target_copyin(nsb->_sendtype, static_cast<std::size_t>(nsb->_size));
+    nrn_target_memcpy_to_device(&(d_nsb->_sendtype), &d_iptr, 1);
+
+    d_iptr = nrn_target_copyin(nsb->_vdata_index, static_cast<std::size_t>(nsb->_size));
+    nrn_target_memcpy_to_device(&(d_nsb->_vdata_index), &d_iptr, 1);
+
+    d_iptr = nrn_target_copyin(nsb->_pnt_index, static_cast<std::size_t>(nsb->_size));
+    nrn_target_memcpy_to_device(&(d_nsb->_pnt_index), &d_iptr, 1);
+
+    d_iptr = nrn_target_copyin(nsb->_weight_index, static_cast<std::size_t>(nsb->_size));
+    nrn_target_memcpy_to_device(&(d_nsb->_weight_index), &d_iptr, 1);
+
+    double* d_dptr = nrn_target_copyin(nsb->_nsb_t, static_cast<std::size_t>(nsb->_size));
+    nrn_target_memcpy_to_device(&(d_nsb->_nsb_t), &d_dptr, 1);
+
+    d_dptr = nrn_target_copyin(nsb->_nsb_flag, static_cast<std::size_t>(nsb->_size));
+    nrn_target_memcpy_to_device(&(d_nsb->_nsb_flag), &d_dptr, 1);
+}
+
+void upload_net_send_buffer_to_device(Memb_list* ml) {
+    auto* const nsb = ml->_net_send_buffer;
+    if (!nsb) {
+        return;
+    }
+    if (nrn_target_is_present(nsb)) {
+        if (!nsb->reallocated) {
+            return;
+        }
+        delete_net_send_buffer_from_device(nsb);
+    }
+    auto* const d_nsb = nrn_target_copyin(nsb, 1);
+    upload_net_send_buffer_fields(nsb, d_nsb);
+
+    auto* const d_ml = nrn_target_deviceptr(ml);
+    nrn_target_memcpy_to_device(&(d_ml->_net_send_buffer), &d_nsb, 1);
+    nsb->reallocated = 0;
+}
+#endif
 
 }  // namespace
 
@@ -59,22 +133,32 @@ NetSendBuffer_t::~NetSendBuffer_t() {
 }
 
 void NetSendBuffer_t::grow() {
-#if defined(NRN_ENABLE_GPU)
-    // GPU execution cannot reallocate on device; host grow is used before upload.
-    if (_cnt >= _size) {
-        int const new_size = std::max(_size * 2, _cnt + 1);
-        grow_buffer(&_sendtype, _size, new_size);
-        grow_buffer(&_vdata_index, _size, new_size);
-        grow_buffer(&_pnt_index, _size, new_size);
-        grow_buffer(&_weight_index, _size, new_size);
-        grow_buffer(&_nsb_t, _size, new_size);
-        grow_buffer(&_nsb_flag, _size, new_size);
-        _size = new_size;
-        reallocated = 1;
+    if (_cnt < _size) {
+        return;
     }
-#else
-    (void) 0;
-#endif
+    int const new_size = std::max(_size * 2, _cnt + 1);
+    grow_buffer(&_sendtype, _size, new_size);
+    grow_buffer(&_vdata_index, _size, new_size);
+    grow_buffer(&_pnt_index, _size, new_size);
+    grow_buffer(&_weight_index, _size, new_size);
+    grow_buffer(&_nsb_t, _size, new_size);
+    grow_buffer(&_nsb_flag, _size, new_size);
+    _size = new_size;
+    reallocated = 1;
+}
+
+void NetSendBuffer_t::reserve(int capacity) {
+    if (capacity <= _size) {
+        return;
+    }
+    grow_buffer(&_sendtype, _size, capacity);
+    grow_buffer(&_vdata_index, _size, capacity);
+    grow_buffer(&_pnt_index, _size, capacity);
+    grow_buffer(&_weight_index, _size, capacity);
+    grow_buffer(&_nsb_t, _size, capacity);
+    grow_buffer(&_nsb_flag, _size, capacity);
+    _size = capacity;
+    reallocated = 1;
 }
 
 std::size_t NetSendBuffer_t::size_of_object() const {
@@ -85,11 +169,15 @@ std::size_t NetSendBuffer_t::size_of_object() const {
 }
 
 void net_send_buffer_ensure(Memb_list* ml) {
-    if (!ml || ml->_net_send_buffer) {
+    if (!ml) {
         return;
     }
-    int const capacity = std::max(8, ml->nodecount * 2);
-    ml->_net_send_buffer = new NetSendBuffer_t(capacity);
+    int const capacity = net_send_buffer_capacity(ml);
+    if (!ml->_net_send_buffer) {
+        ml->_net_send_buffer = new NetSendBuffer_t(capacity);
+        return;
+    }
+    ml->_net_send_buffer->reserve(capacity);
 }
 
 void update_net_send_buffer_on_host(NrnThread* nt, NetSendBuffer_t* nsb) {
@@ -97,6 +185,11 @@ void update_net_send_buffer_on_host(NrnThread* nt, NetSendBuffer_t* nsb) {
     if (!nt || !nsb || !nt->compute_gpu) {
         return;
     }
+    if (!nrn_target_is_present(nsb)) {
+        return;
+    }
+    nrn_pragma_acc(update self(nsb->_cnt) if (nt->compute_gpu))
+    nrn_pragma_omp(target update from(nsb->_cnt) if (nt->compute_gpu))
     if (nsb->_cnt > nsb->_size) {
         fprintf(stderr, "ERROR: NetSendBuffer exceeded during GPU execution (thread %d)\n", nt->id);
         std::abort();
@@ -164,14 +257,35 @@ void deliver_net_send_buffer_events(NrnThread* nt, NetSendBuffer_t* nsb) {
 #endif
 }
 
-void ensure_thread_net_send_buffers(NrnThread* nt) {
-    if (!nt || !nt->_ml_list) {
+void ensure_thread_net_send_buffers_host(NrnThread* nt) {
+    if (!nt) {
         return;
     }
-    for (int type: net_buf_send_types) {
-        if (auto* ml = nt->_ml_list[type]) {
+    for (auto* tml = nt->tml; tml; tml = tml->next) {
+        if (std::find(net_buf_send_types.begin(), net_buf_send_types.end(), tml->index) ==
+            net_buf_send_types.end()) {
+            continue;
+        }
+        if (auto* const ml = tml->ml) {
             net_send_buffer_ensure(ml);
         }
+    }
+}
+
+void ensure_thread_net_send_buffers(NrnThread* nt) {
+    ensure_thread_net_send_buffers_host(nt);
+    for (auto* tml = nt->tml; tml; tml = tml->next) {
+        if (std::find(net_buf_send_types.begin(), net_buf_send_types.end(), tml->index) ==
+            net_buf_send_types.end()) {
+            continue;
+        }
+        auto* const ml = tml->ml;
+        if (!ml) {
+            continue;
+        }
+#if defined(NRN_ENABLE_GPU)
+        upload_net_send_buffer_to_device(ml);
+#endif
     }
     if (!nt->_net_send_buffer && nt->ncell > 0) {
         nt->_net_send_buffer_size = std::max(8, nt->ncell);

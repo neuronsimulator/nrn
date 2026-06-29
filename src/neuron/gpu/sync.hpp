@@ -10,6 +10,9 @@ void sync_before_vecplay(NrnThread& nt);
 /** Push node voltages back to device after VecPlay updates. */
 void sync_after_vecplay(NrnThread& nt);
 
+/** Push node voltages to device after host lastpart (nonvint) for the next GPU step. */
+void sync_voltages_to_device_after_lastpart(NrnThread& nt);
+
 /** Push node voltages to device immediately before OpenACC axial matrix assembly. */
 void sync_voltages_to_device_before_axial(NrnThread& nt);
 
@@ -43,5 +46,8 @@ void sync_gap_after_voltage_update(NrnThread& nt);
 
 /** Push host post-solve voltages to device before gap gather (host fallback path). */
 void sync_gap_after_host_voltage_update(NrnThread& nt);
+
+/** Block until all NrnThread OpenACC streams have completed. */
+void sync_all_device_streams();
 
 }  // namespace neuron::gpu

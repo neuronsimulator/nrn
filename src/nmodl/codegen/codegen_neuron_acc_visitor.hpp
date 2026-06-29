@@ -43,7 +43,19 @@ class CodegenNeuronAccVisitor: public CodegenNeuronCppVisitor {
 
     void print_compute_functions() override;
 
+    std::string global_variable_name(const SymbolType& symbol,
+                                     bool use_instance) const override;
+
+    void print_kernel_global_device_setup() override;
+
+    void print_kernel_instance_data_copyin() override;
+
+    void print_global_var_struct_decl() override;
+
   private:
+    bool host_only_parallel_block(BlockType type) const;
+    void print_global_variable_enter_data_once() const;
+    void print_global_variable_device_update_annotation() const;
     void print_device_stream_wait() const;
     void print_net_send_buffering();
     void print_send_event_move();

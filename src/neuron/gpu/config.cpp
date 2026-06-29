@@ -1,5 +1,6 @@
 #include "neuron/gpu/config.hpp"
 
+#include "neuron/gpu/device_state.hpp"
 #include "node_order_optim/node_order_optim.h"
 
 #include <algorithm>
@@ -76,6 +77,9 @@ void ensure_native_gpu_cell_permute() noexcept {
                 "neuron::gpu: native GPU requires cell permute type 2 "
                 "(interleave_permute_type was %d); using permute 2\n",
                 previous);
+        if (detail::is_on_device_for_testing()) {
+            invalidate_device_state();
+        }
     }
 #else
 #endif

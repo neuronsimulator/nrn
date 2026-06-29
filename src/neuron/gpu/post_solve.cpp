@@ -144,10 +144,13 @@ bool post_solve_needs_host_fallback(NrnThread const& nt) {
     if (nt._ecell_memb_list) {
         return true;
     }
+    // Device post_solve diverges from nrn_update_voltage when secondorder != 0
+    // (Traub ModelDB 82894 uses secondorder=2). EXTRACELLULAR builds used to be
+    // the only guard; match that behavior without requiring EXTRACELLULAR=ON.
+    if (::secondorder) {
+        return true;
+    }
 #if EXTRACELLULAR
-    // nrn_update_2d is a no-op without inserted extracellular, but EXTRACELLULAR
-    // builds still need the host post-solve path: device second_order_cur / fast_imem
-    // diverge from nrn_update_voltage on Traub (ModelDB 82894, secondorder=2).
     return true;
 #else
     return false;

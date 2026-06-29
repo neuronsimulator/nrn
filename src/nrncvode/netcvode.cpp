@@ -39,6 +39,7 @@
 #include "utils/profile/profiler_interface.h"
 #include "utils/formatting.hpp"
 
+
 #include <array>
 #include <cerrno>
 #include <cstdlib>
@@ -5913,16 +5914,18 @@ void nrnthread_trajectory_return(int tid, int n_pr, int bsize, int vecsz, void**
 // stay in the cache
 void NetCvode::check_thresh(NrnThread* nt) {  // for default method
     nrn::Instrumentor::phase p_check_threshold("check-threshold");
-    hoc_Item* pth = p[nt->id].psl_thr_;
+    {
+        hoc_Item* pth = p[nt->id].psl_thr_;
 
-    if (pth) { /* only look at ones with a threshold */
-        hoc_Item* q1;
-        ITERATE(q1, pth) {
-            PreSyn* ps = (PreSyn*) VOIDITM(q1);
-            // only the ones for this thread
-            if (ps->nt_ == nt) {
-                if (ps->thvar_) {
-                    ps->check(nt, nt->_t, 1e-10);
+        if (pth) { /* only look at ones with a threshold */
+            hoc_Item* q1;
+            ITERATE(q1, pth) {
+                PreSyn* ps = (PreSyn*) VOIDITM(q1);
+                // only the ones for this thread
+                if (ps->nt_ == nt) {
+                    if (ps->thvar_) {
+                        ps->check(nt, nt->_t, 1e-10);
+                    }
                 }
             }
         }

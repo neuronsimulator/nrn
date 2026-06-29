@@ -7,6 +7,7 @@
 #include "multicore.h"
 #include "nonvintblock.h"
 #include "nrn_ansi.h"
+#include "nrncvode.h"
 
 extern int use_sparse13;
 
@@ -115,10 +116,20 @@ bool matrix_rhs_d_stays_on_device_for_solve(NrnThread const& nt) noexcept {
 }
 
 void sync_before_vecplay(NrnThread& nt) {
+    if (!nrn_thread_has_fixed_play(&nt)) {
+        return;
+    }
     sync_node_voltages_to_host(nt);
 }
 
 void sync_after_vecplay(NrnThread& nt) {
+    if (!nrn_thread_has_fixed_play(&nt)) {
+        return;
+    }
+    sync_node_voltages_to_device(nt);
+}
+
+void sync_voltages_to_device_after_lastpart(NrnThread& nt) {
     sync_node_voltages_to_device(nt);
 }
 
@@ -198,6 +209,16 @@ void sync_gap_after_voltage_update(NrnThread& nt) {
 
 void sync_gap_after_host_voltage_update(NrnThread& nt) {
     sync_node_voltages_to_device(nt);
+}
+
+void sync_all_device_streams() {
+#if defined(NRN_ENABLE_GPU)
+    for (int ith = 0; ith < nrn_nthread; ++ith) {
+        nrn_pragma_acc(wait(nrn_threads[ith].stream_id))
+        nrn_pragma_omp(taskwait)
+    }
+#else
+#endif
 }
 
 }  // namespace neuron::gpu

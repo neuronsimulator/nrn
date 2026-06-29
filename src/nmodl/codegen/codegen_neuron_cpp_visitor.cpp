@@ -1728,7 +1728,6 @@ void CodegenNeuronCppVisitor::print_mechanism_register_regular() {
     }
 }
 
-
 void CodegenNeuronCppVisitor::print_mechanism_register_nothing() {
     printer->add_line("hoc_register_var(hoc_scalar_double, hoc_vector_double, hoc_intfunc);");
 }
@@ -2039,11 +2038,16 @@ void CodegenNeuronCppVisitor::print_global_function_common_code(BlockType type,
                         {"", "Memb_list*", "", "_ml_arg"},
                         {"", "int", "", "_type"}};
     printer->fmt_push_block("static void {}({})", method, get_parameter_str(args));
+    print_kernel_global_device_setup();
     print_kernel_data_present_annotation_block_begin();
     print_entrypoint_setup_code_from_memb_list();
     printer->add_line("auto nodecount = _ml_arg->nodecount;");
+    print_kernel_instance_data_copyin();
 }
 
+void CodegenNeuronCppVisitor::print_kernel_global_device_setup() {}
+
+void CodegenNeuronCppVisitor::print_kernel_instance_data_copyin() {}
 
 void CodegenNeuronCppVisitor::print_nrn_init(bool skip_init_check) {
     printer->add_newline(2);
@@ -2754,7 +2758,7 @@ void CodegenNeuronCppVisitor::print_net_send_call(const ast::FunctionCall& node)
         throw std::runtime_error("Not implemented. [jfiwoei]");
     }
 
-    std::string weight_pointer = "nullptr";
+    std::string weight_pointer = printing_net_receive ? "_args" : "nullptr";
     auto point_process = get_variable_name(naming::POINT_PROCESS_VARIABLE,
                                            /* use_instance */ false);
     if (!printing_net_receive) {

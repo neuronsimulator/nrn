@@ -40,7 +40,8 @@ if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
     gpu/sync.cpp
     gpu/lastpart.cpp
     gpu/partrans.cpp
-    gpu/phase_timer.cpp)
+    gpu/phase_timer.cpp
+    gpu/check_thresh.cpp)
   set_property(TARGET neuron_gpu_upload PROPERTY POSITION_INDEPENDENT_CODE ON)
   target_include_directories(
     neuron_gpu_upload
@@ -65,6 +66,7 @@ if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
     gpu/lastpart.cpp
     gpu/partrans.cpp
     gpu/phase_timer.cpp
+    gpu/check_thresh.cpp
     PROPERTIES COMPILE_OPTIONS "${_neuron_gpu_acc_flags}" COMPILE_DEFINITIONS
                                                           "CORENEURON_ENABLE_GPU;NRN_ENABLE_GPU")
 endif()

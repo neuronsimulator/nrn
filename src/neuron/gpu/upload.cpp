@@ -6,6 +6,7 @@
 #include "neuron/container/node_data.hpp"
 #include "neuron/gpu/net_send_buffer.hpp"
 #include "neuron/gpu/offload.hpp"
+#include "neuron/gpu/sync.hpp"
 #include "neuron/model_data.hpp"
 #include "node_order_optim/node_order_optim.h"
 #include "nrnoc_ml.h"
@@ -28,6 +29,9 @@ void copyin_pod_array(T const* host, std::size_t count, UploadState& state) {
         return;
     }
 #if defined(NRN_ENABLE_GPU) && defined(_OPENACC)
+    if (state.is_present(host)) {
+        return;
+    }
     nrn_target_copyin(host, count);
     state.record(host, count, sizeof(T));
 #else
@@ -163,7 +167,11 @@ void upload_nrnthread_shells(UploadState& state) {
 }  // namespace
 
 void UploadState::record(void const* host, std::size_t count, std::size_t sizeof_elem) {
-    mirrors_.push_back({host, count, sizeof_elem});
+    mirrors_.push_back({host, count, sizeof_elem, false});
+}
+
+void UploadState::record_cpu_owned(void* host, std::size_t count, std::size_t sizeof_elem) {
+    mirrors_.push_back({host, count, sizeof_elem, true});
 }
 
 bool UploadState::is_present(void const* host_ptr) const {
@@ -180,7 +188,9 @@ bool UploadState::is_present(void const* host_ptr) const {
 
 void UploadState::teardown() {
 #if defined(NRN_ENABLE_GPU) && defined(_OPENACC)
-    for (auto const& mirror: mirrors_) {
+    sync_all_device_streams();
+    for (auto it = mirrors_.rbegin(); it != mirrors_.rend(); ++it) {
+        auto const& mirror = *it;
         if (!mirror.host || mirror.count == 0) {
             continue;
         }
@@ -212,6 +222,9 @@ void UploadState::teardown() {
             nrn_target_delete(const_cast<NetSendBuffer_t*>(
                                   static_cast<NetSendBuffer_t const*>(mirror.host)),
                               mirror.count);
+        }
+        if (mirror.cpu_owned) {
+            delete[] reinterpret_cast<Datum**>(const_cast<void*>(mirror.host));
         }
     }
 #endif

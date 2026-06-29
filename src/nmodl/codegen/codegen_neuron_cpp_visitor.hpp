@@ -586,6 +586,12 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
     void print_global_function_common_code(BlockType type,
                                            const std::string& function_name = "") override;
 
+    /** GPU backends may upload *_global before mechanism kernels run. */
+    virtual void print_kernel_global_device_setup();
+
+    /** GPU backends may copyin mechanism instance SOA slices before parallel loops. */
+    virtual void print_kernel_instance_data_copyin();
+
     /**
      * Prints setup code for entrypoints from NEURON.
      *

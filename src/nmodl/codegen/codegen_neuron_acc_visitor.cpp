@@ -17,9 +17,59 @@ void CodegenNeuronAccVisitor::print_standard_includes() {
     printer->add_line("#include <neuron/gpu/net_send_buffer.hpp>");
 }
 
+bool CodegenNeuronAccVisitor::host_only_parallel_block(BlockType type) const {
+    return type == BlockType::Initial && info.require_wrote_conc;
+}
+
+void CodegenNeuronAccVisitor::print_global_var_struct_decl() {
+    CodegenNeuronCppVisitor::print_global_var_struct_decl();
+    if (!info.artificial_cell && !codegen_global_variables.empty()) {
+        printer->fmt_line("static bool {}_gpu_resident = false;", global_struct_instance());
+    }
+}
+
+void CodegenNeuronAccVisitor::print_global_variable_enter_data_once() const {
+    if (info.artificial_cell || codegen_global_variables.empty()) {
+        return;
+    }
+    auto const& global = global_struct_instance();
+    printer->fmt_push_block("if (nt->compute_gpu && !{}_gpu_resident)", global);
+    printer->fmt_line("(void) nrn_target_copyin(&{}, 1);", global);
+    printer->add_line(global + "_gpu_resident = true;");
+    printer->pop_block();
+}
+
+void CodegenNeuronAccVisitor::print_global_variable_device_update_annotation() const {
+    if (info.artificial_cell || codegen_global_variables.empty()) {
+        return;
+    }
+    printer->push_block("if (nt->compute_gpu)");
+    printer->fmt_line("nrn_pragma_acc(update device ({}))", global_struct_instance());
+    printer->fmt_line("nrn_pragma_omp(target update to({}))", global_struct_instance());
+    printer->pop_block();
+}
+
+void CodegenNeuronAccVisitor::print_kernel_global_device_setup() {
+    print_global_variable_enter_data_once();
+}
+
+void CodegenNeuronAccVisitor::print_kernel_instance_data_copyin() {
+    // Mechanism SOA is uploaded once; kernels use present(_ml_arg, ...) only.
+}
+
+std::string CodegenNeuronAccVisitor::global_variable_name(const SymbolType& symbol,
+                                                          bool /*use_instance*/) const {
+    return CodegenNeuronCppVisitor::global_variable_name(symbol, false);
+}
+
 void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
                                                             const ast::Block* block) {
     if (info.artificial_cell) {
+        return;
+    }
+
+    if (host_only_parallel_block(type)) {
+        CodegenNeuronCppVisitor::print_parallel_iteration_hint(type, block);
         return;
     }
 
@@ -36,6 +86,8 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
         return;
     }
 
+    print_global_variable_device_update_annotation();
+
     if (type != BlockType::NetReceive && !info.artificial_cell) {
         printer->add_line("auto const* nodeindices = node_data.nodeindices;");
         if (type == BlockType::Equation) {
@@ -49,9 +101,9 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
     if (type == BlockType::NetReceive) {
         present_clause << ", nrb";
     } else if (!info.artificial_cell) {
-        present_clause << ", nodeindices, _thread";
+        present_clause << ", nodeindices, _thread, node_data.node_voltages[:nt->end]";
         if (type == BlockType::Equation) {
-            present_clause << ", vec_rhs, vec_d";
+            present_clause << ", vec_rhs[:nt->end], vec_d[:nt->end]";
         }
     }
     present_clause << ')';
@@ -63,7 +115,12 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
 
 void CodegenNeuronAccVisitor::print_kernel_data_present_annotation_block_begin() {
     if (!info.artificial_cell) {
-        printer->add_line("nrn_pragma_acc(data present(nt, _ml_arg) if(nt->compute_gpu))");
+        if (codegen_global_variables.empty()) {
+            printer->add_line("nrn_pragma_acc(data present(nt, _ml_arg) if(nt->compute_gpu))");
+        } else {
+            printer->fmt_line("nrn_pragma_acc(data present(nt, _ml_arg, {}) if(nt->compute_gpu))",
+                              global_struct_instance());
+        }
         printer->add_line("{");
         printer->increase_indent();
     }
@@ -71,6 +128,7 @@ void CodegenNeuronAccVisitor::print_kernel_data_present_annotation_block_begin()
 
 void CodegenNeuronAccVisitor::print_kernel_data_present_annotation_block_end() {
     if (!info.artificial_cell) {
+        print_device_stream_wait();
         printer->pop_block();
     }
 }
@@ -93,6 +151,11 @@ void CodegenNeuronAccVisitor::print_net_send_buffering_cnt_update() const {
 
 void CodegenNeuronAccVisitor::print_net_send_buffering_grow() {
     printer->add_line("neuron::gpu::net_send_buffer_ensure(ml);");
+    printer->push_block("if (!nt->compute_gpu)");
+    printer->push_block("if (i >= nsb->_size)");
+    printer->add_line("nsb->grow();");
+    printer->pop_block();
+    printer->pop_block();
 }
 
 void CodegenNeuronAccVisitor::print_net_send_buf_count_update_to_host() const {
@@ -143,7 +206,7 @@ void CodegenNeuronAccVisitor::print_net_send_buffering() {
 
 void CodegenNeuronAccVisitor::print_send_event_move() {
     printer->add_newline();
-    printer->add_line("neuron::gpu::NetSendBuffer_t* nsb = ml->_net_send_buffer;");
+    printer->add_line("neuron::gpu::NetSendBuffer_t* nsb = _ml_arg->_net_send_buffer;");
     print_net_send_buf_update_to_host();
     printer->add_line("neuron::gpu::deliver_net_send_buffer_events(nt, nsb);");
     print_net_send_buf_count_update_to_device();
@@ -161,6 +224,11 @@ void CodegenNeuronAccVisitor::print_compute_functions() {
 }
 
 void CodegenNeuronAccVisitor::print_net_send_call(const ast::FunctionCall& node) {
+    if (printing_net_receive || printing_net_init) {
+        CodegenNeuronCppVisitor::print_net_send_call(node);
+        return;
+    }
+
     auto const& arguments = node.get_arguments();
     const auto& tqitem = get_variable_name("tqitem", /* use_instance */ false);
     std::string weight_index = "weight_index";
@@ -188,7 +256,7 @@ void CodegenNeuronAccVisitor::print_net_send_call(const ast::FunctionCall& node)
         std::string weight_ptr = weight_index == "0" ? "0"
                                                      : fmt::format("(intptr_t){}", weight_index);
         printer->fmt_text(
-            "nt, ml, ml->_net_send_buffer, 0, (intptr_t)&{}, {}, "
+            "nt, _ml_arg, _ml_arg->_net_send_buffer, 0, (intptr_t)&{}, {}, "
             "(intptr_t){}, {}+",
             tqitem,
             weight_ptr,
@@ -203,6 +271,10 @@ void CodegenNeuronAccVisitor::print_net_move_call(const ast::FunctionCall& node)
     if (!printing_net_receive && !printing_net_init) {
         throw std::runtime_error("Error : net_move only allowed in NET_RECEIVE block");
     }
+    if (printing_net_receive || printing_net_init) {
+        CodegenNeuronCppVisitor::print_net_move_call(node);
+        return;
+    }
 
     const auto& tqitem = get_variable_name("tqitem", false);
     const auto& point_process = get_variable_name(naming::POINT_PROCESS_VARIABLE, false);
@@ -214,7 +286,7 @@ void CodegenNeuronAccVisitor::print_net_move_call(const ast::FunctionCall& node)
     }
     printer->add_text("net_send_buffering(");
     printer->fmt_text(
-        "nt, ml, ml->_net_send_buffer, 2, (intptr_t)&{}, (intptr_t)-1, "
+        "nt, _ml_arg, _ml_arg->_net_send_buffer, 2, (intptr_t)&{}, (intptr_t)-1, "
         "(intptr_t){}, ",
         tqitem,
         point_process);
@@ -234,7 +306,7 @@ void CodegenNeuronAccVisitor::print_net_event_call(const ast::FunctionCall& node
     const auto& point_process = get_variable_name(naming::POINT_PROCESS_VARIABLE, false);
     printer->add_text("net_send_buffering(");
     printer->fmt_text(
-        "nt, ml, ml->_net_send_buffer, 1, (intptr_t)-1, (intptr_t)-1, "
+        "nt, _ml_arg, _ml_arg->_net_send_buffer, 1, (intptr_t)-1, (intptr_t)-1, "
         "(intptr_t){}, ",
         point_process);
     print_vector_elements(arguments, ", ");

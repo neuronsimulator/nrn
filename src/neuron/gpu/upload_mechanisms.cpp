@@ -75,18 +75,19 @@ void upload_mechanism_pdata(Memb_list* ml, int type, Memb_list* d_ml, UploadStat
     ml->_nodecount_padded = padded_n;
 
     std::vector<Datum> padding_row(static_cast<std::size_t>(szdp));
-    std::vector<Datum*> device_row_ptrs(static_cast<std::size_t>(padded_n), nullptr);
+    auto* const host_row_ptr_table = new Datum*[static_cast<std::size_t>(padded_n)]();
     for (int i = 0; i < padded_n; ++i) {
         Datum const* host_row = (i < n) ? ml->pdata[i] : padding_row.data();
         Datum* const d_row = nrn_target_copyin(host_row, static_cast<std::size_t>(szdp));
         if (i < n) {
             record_upload(state, host_row, static_cast<std::size_t>(szdp), sizeof(Datum));
         }
-        device_row_ptrs[static_cast<std::size_t>(i)] = d_row;
+        host_row_ptr_table[static_cast<std::size_t>(i)] = d_row;
     }
 
-    Datum** const d_pdata_rows = nrn_target_copyin(device_row_ptrs.data(), device_row_ptrs.size());
-    record_upload(state, device_row_ptrs.data(), device_row_ptrs.size(), sizeof(Datum*));
+    Datum** const d_pdata_rows =
+        nrn_target_copyin(host_row_ptr_table, static_cast<std::size_t>(padded_n));
+    state.record_cpu_owned(host_row_ptr_table, static_cast<std::size_t>(padded_n), sizeof(Datum*));
     nrn_target_memcpy_to_device(&(d_ml->pdata), &d_pdata_rows, 1);
 }
 

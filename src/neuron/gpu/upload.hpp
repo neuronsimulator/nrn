@@ -22,12 +22,14 @@ class UploadState {
     [[nodiscard]] bool is_present(void const* host_ptr) const;
 
     void record(void const* host, std::size_t count, std::size_t sizeof_elem);
+    void record_cpu_owned(void* host, std::size_t count, std::size_t sizeof_elem);
 
   private:
     struct Mirror {
         void const* host{};
         std::size_t count{};
         std::size_t sizeof_elem{};
+        bool cpu_owned{};
     };
 
     std::vector<Mirror> mirrors_{};
