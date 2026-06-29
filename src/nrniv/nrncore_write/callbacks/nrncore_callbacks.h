@@ -104,7 +104,7 @@ void nrnthread_dat3_secmapping(int i_c,
                                int& nsec,
                                int& nseg,
                                size_t& total_lfp_factors,
-                               int& n_electrodes,
+                               std::vector<size_t>& electrode_offsets,
                                std::vector<int>& data_sec,
                                std::vector<int>& data_seg,
                                std::vector<double>& data_lfp);

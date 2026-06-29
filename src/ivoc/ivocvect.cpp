@@ -2123,9 +2123,10 @@ static double v_min_ind(void* v) {
     if (ifarg(1)) {
         int start = int(chkarg(1, 0, x_max));
         int end = int(chkarg(2, start, x_max));
-        return std::min_element(x->begin() + start, x->begin() + end + 1) - x->begin() + start;
+        return std::distance(x->begin(),
+                             std::min_element(x->begin() + start, x->begin() + end + 1));
     } else {
-        return std::min_element(x->begin(), x->end()) - x->begin();
+        return std::distance(x->begin(), std::min_element(x->begin(), x->end()));
     }
 }
 
