@@ -204,6 +204,13 @@ double nrn_segment_diam_get(Section* const sec, const double x) {
     return 0.0;
 }
 
+int nrn_segment_node_index(Section* const sec, const double x) {
+    if (!sec || !sec->prop) {
+        return -1;
+    }
+    return node_exact(sec, x)->v_node_index;
+}
+
 double nrn_rangevar_get(Symbol* sym, Section* sec, double x) {
     return *nrn_rangepointer(sec, sym, x);
 }
