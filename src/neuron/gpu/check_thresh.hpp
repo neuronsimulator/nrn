@@ -1,29 +1,29 @@
 #pragma once
 
-#include <vector>
-
 struct NrnThread;
-class PreSyn;
 
 namespace neuron::gpu {
 
-struct ThresholdPresynEntry {
+struct ThresholdPresynSlot {
     int thvar_row = 0;
     double threshold = 0.0;
-    PreSyn* presyn = nullptr;
     int flag = 0;
+    void* presyn = nullptr;
 };
 
-/** Fill presyn threshold metadata for one thread (host walk of psl_thr_). */
-void collect_threshold_presyns(NrnThread* nt, std::vector<ThresholdPresynEntry>& out);
-
-/** Rebuild presyn threshold tables after topology / presyn list changes. */
+/** Rebuild presyn threshold tables after topology / psl_thr_ changes. */
 void invalidate_threshold_tables() noexcept;
 
-/** Device-resident threshold crossing detection; returns presyn table indices that fired. */
-void check_thresh_detect_on_device(NrnThread* nt, std::vector<int>& fired_indices);
+/** Fill slots for one thread; returns count (host-only, implemented in netcvode.cpp). */
+int collect_threshold_presyn_slots(NrnThread* nt, ThresholdPresynSlot* slots, int capacity);
 
-/** Cached presyn metadata for thread tid (valid until invalidate_threshold_tables). */
-std::vector<ThresholdPresynEntry> const& threshold_entries_for_thread(int tid);
+/** Deliver one presyn spike after device threshold detection (host-only). */
+void deliver_threshold_spike(NrnThread* nt, void* presyn, double teps);
+
+/**
+ * Device-resident presyn threshold crossing detection.
+ * Returns true when the GPU path ran (including empty threshold lists).
+ */
+[[nodiscard]] bool check_thresh_presyn_on_device(NrnThread* nt, double teps) noexcept;
 
 }  // namespace neuron::gpu

@@ -47,13 +47,17 @@ void fixed_step_thread(model_sorted_token const& cache_token,
     int const saved_compute_gpu = nt.compute_gpu;
     nt.compute_gpu = 1;
 
+    ensure_thread_net_send_buffers(nth);
+    if (nt.end > 0 && post_solve_needs_host_fallback(nt)) {
+        // Threshold detection reads device vec_v; host post-solve leaves V on CPU.
+        phase_timer::Scope const timer{phase_timer::Id::vecplay_sync};
+        sync_voltages_to_device_before_axial(nt);
+    }
     {
         phase_timer::Scope const timer{phase_timer::Id::deliver_events};
         nrn::Instrumentor::phase p("deliver-events");
         deliver_net_events_host(nth);
     }
-
-    ensure_thread_net_send_buffers(nth);
     nrn_random_play();
     advance_first_half_time(nt);
     fixed_play_continuous(nth);
