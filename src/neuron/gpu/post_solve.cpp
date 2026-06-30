@@ -144,15 +144,10 @@ bool post_solve_needs_host_fallback(NrnThread const& nt) {
     if (nt._ecell_memb_list) {
         return true;
     }
-    // Device post_solve diverges from nrn_update_voltage when secondorder != 0
-    // (Traub ModelDB 82894 uses secondorder=2). EXTRACELLULAR builds used to be
-    // the only guard; match that behavior without requiring EXTRACELLULAR=ON.
-    if (::secondorder) {
-        return true;
-    }
 #if EXTRACELLULAR
     return true;
 #else
+    (void) nt;
     return false;
 #endif
 }
