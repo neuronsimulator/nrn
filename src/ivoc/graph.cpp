@@ -33,6 +33,9 @@ extern Image* gif_image(const char*);
 #include "graph.h"
 #include "axis.h"
 #include "hocmark.h"
+#if defined(NRN_ENABLE_GPU)
+#include "neuron/gpu/download.hpp"
+#endif
 #include "mymath.h"
 #include "idraw.h"
 #include "symchoos.h"
@@ -1988,6 +1991,9 @@ void Graph::line(Coord x, Coord y) {
     current_polyline_->plot(x, y);
 }
 void Graph::flush() {
+#if defined(NRN_ENABLE_GPU)
+    neuron::gpu::batch_download_to_host();
+#endif
     extension_start();
     long i, cnt = count();
     for (i = 0; i < cnt; ++i) {

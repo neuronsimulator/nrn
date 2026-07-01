@@ -1,0 +1,57 @@
+diff --git a/args.py b/args.py
+index cec9c97..ab2aacf 100644
+--- a/args.py
++++ b/args.py
+@@ -85,6 +85,12 @@ parser.add_argument("-gpu",
+                     help="Run CoreNEURON on GPU",
+                     default=False)
+ 
++parser.add_argument("-gpu-native",
++                    dest='gpu_native',
++                    action='store_true',
++                    help="Run NEURON native GPU (gpu.backend=native)",
++                    default=False)
++
+ parser.add_argument('-permute',
+                     metavar='N',
+                     help="permute option for cell topology (default 0)",
+diff --git a/ringtest.py b/ringtest.py
+index b0e9067..127f4ae 100644
+--- a/ringtest.py
++++ b/ringtest.py
+@@ -49,13 +49,20 @@ use_coreneuron = args.coreneuron
+ # whether to run coreneuron on GPU
+ coreneuron_gpu = args.gpu
+ 
++# whether to run NEURON native GPU
++use_native_gpu = args.gpu_native
++
+ # cell permutation type
+ coreneuron_permute = args.permute
+ 
+ # permute type is default 0 for GPU then choose type 2
+-if coreneuron_gpu and coreneuron_permute == 0:
++if (coreneuron_gpu or use_native_gpu) and coreneuron_permute == 0:
+     coreneuron_permute = 2
+ 
++if use_native_gpu and use_coreneuron:
++    print("Error: -gpu-native and -coreneuron are mutually exclusive\n")
++    quit()
++
+ from ring import *
+ from neuron import h
+ from commonutils import *
+@@ -158,7 +165,11 @@ def create_rings():
+ 
+     h.cvode.cache_efficient(1)
+ 
+-    if use_coreneuron:
++    if use_native_gpu:
++        from neuron import gpu
++        gpu.enable = True
++        gpu.backend = "native"
++        gpu.permute = coreneuron_permute
++    elif use_coreneuron:
+         from neuron import coreneuron
+         coreneuron.enable = True
+         coreneuron.file_mode = coreneuron_file_mode

@@ -43,18 +43,16 @@ def test_psolve():
     run(h.tstop)
     vvec_std = vvec.c()  # standard result
 
-    from neuron import coreneuron
+    from backend_helper import disable_test_backend, enable_test_backend
 
-    coreneuron.enable = True
-    coreneuron.verbose = 0
-    coreneuron.gpu = bool(strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false")))
+    enable_test_backend()
     run(h.tstop)
     if vvec_std.eq(vvec) == 0:
         for i, x in enumerate(vvec_std):
             print(f"{i * h.dt:.3f} {x:g} {vvec[i]:g} {x - vvec[i]:g}")
     assert vvec_std.eq(vvec)
     assert vvec_std.size() == vvec.size()
-    coreneuron.enable = False
+    disable_test_backend()
 
 
 def test_NetStim_noise():
@@ -111,8 +109,11 @@ def test_NetStim_noise():
 
 
 if __name__ == "__main__":
+    from backend_helper import is_native_backend_test
+
     test_psolve()
-    test_NetStim_noise()
+    if not is_native_backend_test():
+        test_NetStim_noise()
     for i in range(0):
         test_NetStim_noise()  # for checking memory leak
     h.quit()

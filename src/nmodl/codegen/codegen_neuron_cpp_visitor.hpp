@@ -158,6 +158,20 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
      */
     bool optimize_ion_variable_copies() const override;
 
+    /**
+     * Print accelerator annotations indicating data presence on device.
+     * Empty for the CPU NEURON backend; overridden by CodegenNeuronAccVisitor.
+     */
+    virtual void print_kernel_data_present_annotation_block_begin();
+
+    /**
+     * Print matching block end of accelerator annotations for data presence on device.
+     */
+    virtual void print_kernel_data_present_annotation_block_end();
+
+    /** Hook after nrn_cur for GPU net_send buffer flush (ACC backend overrides). */
+    virtual void print_after_nrn_cur_gpu_net_send_flush();
+
     /****************************************************************************************/
     /*                         Printing routines for code generation                        */
     /****************************************************************************************/

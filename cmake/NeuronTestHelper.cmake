@@ -209,6 +209,9 @@ function(nrn_add_test_group)
       endforeach()
       # Construct the names of the important output files
       set(special "${nrnivmodl_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}/special")
+      set(nrnmech_lib
+          "${nrnivmodl_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}/${CMAKE_SHARED_LIBRARY_PREFIX}nrnmech${CMAKE_SHARED_LIBRARY_SUFFIX}"
+      )
       # Add the custom command to generate the binaries. Get nrnivmodl from the build directory. At
       # the moment it seems that `nrnivmodl` is generated at configure time, so there is no target
       # to depend on and it should always be available, but it will try and link against libnrniv.so
@@ -217,6 +220,11 @@ function(nrn_add_test_group)
       # be a wrapper that invokes CMake?
       set(output_binaries "${special}")
       list(APPEND nrnivmodl_dependencies nrniv_lib)
+      # Re-run nrnivmodl when libnrniv.so changes so test special does not retain stale NVHPC
+      # pgcudafat object paths from a prior libnrniv link line.
+      list(
+        APPEND nrnivmodl_dependencies
+        "${CMAKE_BINARY_DIR}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}nrniv${CMAKE_SHARED_LIBRARY_SUFFIX}")
       if(NRN_ENABLE_CORENEURON AND NRN_ADD_TEST_GROUP_CORENEURON)
         list(APPEND output_binaries "${special}-core")
         if((NOT coreneuron_FOUND) AND (NOT DEFINED CORENEURON_BUILTIN_MODFILES))
@@ -229,6 +237,8 @@ function(nrn_add_test_group)
       add_custom_command(
         OUTPUT ${output_binaries}
         DEPENDS ${nrnivmodl_dependencies} ${modfile_build_paths}
+        # Force libnrnmech relink when libnrniv.so changes (NVHPC embeds transient pgcudafat paths).
+        COMMAND ${CMAKE_COMMAND} -E rm -f ${nrnmech_lib} ${special}
         COMMAND ${nrnivmodl_command}
         COMMENT "Building special[-core] for test group ${NRN_ADD_TEST_GROUP_NAME}"
         WORKING_DIRECTORY "${nrnivmodl_directory}")
@@ -281,7 +291,11 @@ function(nrn_add_test)
   else()
     set(feature_mod_compatibility_enabled OFF)
   endif()
-  set(feature_gpu_enabled ${CORENRN_ENABLE_GPU})
+  if(NRN_ENABLE_GPU OR (NRN_ENABLE_CORENEURON AND CORENRN_ENABLE_GPU))
+    set(feature_gpu_enabled ON)
+  else()
+    set(feature_gpu_enabled OFF)
+  endif()
   # Check REQUIRES
   set(requires_coreneuron OFF)
   foreach(required_feature ${NRN_ADD_TEST_REQUIRES})
@@ -338,6 +352,13 @@ function(nrn_add_test)
   endif()
   if(DEFINED NRN_ADD_TEST_SIM_DIRECTORY)
     set(sim_directory "${NRN_ADD_TEST_SIM_DIRECTORY}")
+  endif()
+  # NVHPC may leave transient fat-object files in $TMPDIR when special runs with -gpu under MPI. Use
+  # a per-test TMPDIR under the build tree (see external_ringtest GPU ctest notes).
+  if("gpu" IN_LIST NRN_ADD_TEST_REQUIRES AND (CORENRN_ENABLE_GPU OR NRN_ENABLE_GPU))
+    set(gpu_tmpdir "${PROJECT_BINARY_DIR}/test/tmp/${NRN_ADD_TEST_GROUP}/${NRN_ADD_TEST_NAME}")
+    file(MAKE_DIRECTORY "${gpu_tmpdir}")
+    list(APPEND extra_environment "TMPDIR=${gpu_tmpdir}")
   endif()
   # Finally a working directory for this specific test within the group
   set(working_directory "${PROJECT_BINARY_DIR}/test/${NRN_ADD_TEST_GROUP}/${NRN_ADD_TEST_NAME}")
@@ -405,9 +426,15 @@ function(nrn_add_test)
     if(NOT "PATH" IN_LIST test_env_var_names)
       message(FATAL_ERROR "Expected to find PATH in ${test_env_var_names} but didn't")
     endif()
+    set(_nrn_test_mech_dir "${nrnivmodl_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}")
     # PATH will already be set in test_env
-    list(TRANSFORM test_env REPLACE "^PATH="
-                                    "PATH=${nrnivmodl_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}:")
+    list(TRANSFORM test_env REPLACE "^PATH=" "PATH=${_nrn_test_mech_dir}:")
+    # pytest/python3 launches do not search PATH for dlopen(libnrnmech.so).
+    if("LD_LIBRARY_PATH" IN_LIST test_env_var_names)
+      list(TRANSFORM test_env REPLACE "^LD_LIBRARY_PATH=" "LD_LIBRARY_PATH=${_nrn_test_mech_dir}:")
+    else()
+      list(APPEND test_env "LD_LIBRARY_PATH=${_nrn_test_mech_dir}")
+    endif()
   endif()
   list(TRANSFORM test_env REPLACE "^PYTHONPATH="
                                   "PYTHONPATH=${CMAKE_SOURCE_DIR}/docs/nmodl/python_scripts:")

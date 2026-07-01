@@ -188,4 +188,5 @@ def main():
     h.quit()
 
 
-main()
+if __name__ == "__main__":
+    main()

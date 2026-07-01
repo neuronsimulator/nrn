@@ -26,6 +26,10 @@
 #include <filesystem>
 namespace fs = std::filesystem;
 
+#if defined(NRN_ENABLE_GPU)
+#include "neuron/gpu/fadvance_gpu.hpp"
+#endif
+
 /* change this to correspond to the ../nmodl/nocpout nmodl_version_ string*/
 static char nmodl_version_[] = "7.7.0";
 
@@ -196,6 +200,12 @@ void add_nrn_has_net_event(int mechtype) {
     nrn_has_net_event_ = (int*) erealloc(nrn_has_net_event_, nrn_has_net_event_cnt_ * sizeof(int));
     nrn_has_net_event_[nrn_has_net_event_cnt_ - 1] = mechtype;
 }
+
+#if !defined(NRN_ENABLE_GPU)
+void hoc_register_net_send_buffering(int type) {
+    (void) type;
+}
+#endif
 
 /* values are type numbers of mechanisms which have FOR_NETCONS statement */
 int nrn_fornetcon_cnt_;    /* how many models have a FOR_NETCONS statement */

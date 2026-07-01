@@ -96,6 +96,7 @@ if(CORENRN_ENABLE_GPU)
   # something like `-acc -lcorenrnmech ...`. CORENRN_NEURON_LINK_FLAGS only contains flags that need
   # to be used when linking the NEURON Python module to make sure it is able to dynamically load
   # libcorenrnmech.so.
+  set_property(GLOBAL PROPERTY CORENRN_ACC_COMP_FLAGS "${NVHPC_ACC_COMP_FLAGS}")
   set_property(GLOBAL PROPERTY CORENRN_LIB_LINK_FLAGS "${NVHPC_ACC_COMP_FLAGS}")
   if(CORENRN_ENABLE_SHARED)
     # Because of

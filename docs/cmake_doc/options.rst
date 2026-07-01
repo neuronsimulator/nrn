@@ -390,6 +390,53 @@ NRN_RX3D_OPT_LEVEL:STRING=0
 
     -DNRN_RX3D_OPT_LEVEL=2
 
+NEURON GPU options
+==================
+
+.. _cmake-nrn-enable-gpu-option:
+
+NRN_ENABLE_GPU:BOOL=OFF
+-----------------------
+  Enable NEURON native GPU support (Phase B: fixed-step ``pc.psolve``).
+
+  This is the user-facing CMake option for GPU acceleration in NEURON proper.
+  With ``NRN_ENABLE_GPU=ON``, models can run on ``gpu.backend="native"`` without
+  embedding CoreNEURON for fixed-step integration. Scope, limitations, and
+  runtime API are documented in :doc:`/dev/native-gpu-fixed-step`.
+
+  GPU development builds still typically enable CoreNEURON and
+  ``CORENRN_ENABLE_GPU`` for the broader CTest GPU suite and mechanism parity
+  tests.
+
+  A typical GPU development build (NVHPC required) uses:
+
+  .. code-block:: shell
+
+    cmake .. -G Ninja \
+      -DCMAKE_INSTALL_PREFIX=install \
+      -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+      -DNRN_ENABLE_CORENEURON=ON \
+      -DNRN_ENABLE_GPU=ON \
+      -DCORENRN_ENABLE_GPU=ON \
+      -DCMAKE_C_COMPILER=nvc \
+      -DCMAKE_CXX_COMPILER=nvc++ \
+      -DCMAKE_CUDA_COMPILER=nvcc \
+      -DCMAKE_CUDA_ARCHITECTURES=75
+
+  ``CMAKE_CUDA_ARCHITECTURES`` is **optional** but recommended: set it to your
+  GPU's compute capability (e.g. ``75`` for NVIDIA Turing / T1000). If omitted,
+  CoreNEURON defaults to ``70`` and ``80`` (Volta + Ampere), which usually
+  still runs on 7.x GPUs but compiles more code than a single-arch dev build
+  needs. See ``~/neuron/notes/gpu_workstation.md`` for a workstation-specific
+  recipe.
+
+NRN_GPU_BACKEND:STRING=OpenACC
+------------------------------
+  Select the GPU backend for NEURON native GPU.
+
+  Only ``OpenACC`` is supported in Phase A-B. Other values cause configure to
+  fail when ``NRN_ENABLE_GPU=ON``.
+
 CoreNEURON options
 ==================
 
@@ -398,7 +445,9 @@ NRN_ENABLE_CORENEURON:BOOL=OFF
   Enable CoreNEURON support
 
   If ON CoreNEURON will be built and any needed NMODL submodule dependencies
-  cloned as external submodules.
+  cloned as external submodules. For new GPU work, prefer enabling
+  ``NRN_ENABLE_GPU`` in addition to (or eventually instead of) relying on
+  CoreNEURON as the only GPU entry point.
 
 NRN_ENABLE_MOD_COMPATIBILITY:BOOL=OFF
 -------------------------------------
@@ -411,10 +460,15 @@ NRN_ENABLE_MOD_COMPATIBILITY:BOOL=OFF
 
 Other CoreNEURON options:
 -------------------------
-  There are 20 or so cmake arguments specific to a CoreNEURON
+
+.. _cmake-coreneuron-enable-gpu-option:
+
+  ``CORENRN_ENABLE_GPU:BOOL=OFF`` — enable OpenACC GPU execution in CoreNEURON.
+  Required for CoreNEURON GPU tests; native GPU modtests use ``gpu.backend=native``
+  (see :doc:`/dev/native-gpu-fixed-step`).
+
+  There are 20 or so other cmake arguments specific to a CoreNEURON
   build that are listed in https://github.com/neuronsimulator/nrn/blob/master/src/coreneuron/CMakeLists.txt.
-  The one of particular interest that can be used on the NEURON
-  CMake configure line is `CORENRN_ENABLE_GPU`.
 
 NMODL options
 =============
