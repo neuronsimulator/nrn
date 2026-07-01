@@ -533,10 +533,32 @@ Segments
         double diameter = nrn_segment_diam_get(soma, 0.5);  // Get diameter at middle
 
     **Python Equivalent:**
-    
+
     .. code-block:: python
-    
+
         diameter = soma(0.5).diam  # Get diameter at middle of Section
+
+.. c:function:: int nrn_segment_node_index(Section* sec, double x)
+
+    Get the index of the node for the segment at normalized position x along
+    the Section, in NEURON's internal node array. Node indices become canonical
+    once the tree has been set up (for example after :func:`finitialize`).
+
+    :param sec: Pointer to the Section.
+    :param x: Normalized position along Section (0.0 to 1.0).
+    :returns: The node index, or -1 if sec is NULL or has been deleted.
+
+    **C Usage:**
+
+    .. code-block:: c
+
+        int idx = nrn_segment_node_index(soma, 0.5);  // node index at middle
+
+    **Python Equivalent:**
+
+    .. code-block:: python
+
+        idx = soma(0.5).node_index()  # node index at middle of Section
 
 .. c:function:: void nrn_rangevar_push(Symbol* sym, Section* sec, double x)
 
