@@ -24,6 +24,7 @@
 #include "neuron/gpu/fadvance_gpu.hpp"
 #include "neuron/gpu/lastpart.hpp"
 #include "neuron/gpu/net_events.hpp"
+#include "neuron/gpu/post_solve.hpp"
 #include "neuron/gpu/sync.hpp"
 #endif
 #include "prcellstate_checkpoint.hpp"
@@ -61,6 +62,7 @@ extern double nrnmpi_wtime();
 #endif
 extern double* nrn_mech_wtime_;
 extern double t, dt;
+extern int secondorder;
 extern double chkarg(int, double low, double high);
 static void nrn_fixed_step_thread(neuron::model_sorted_token const&, NrnThread&);
 static void nrn_fixed_step_group_thread(neuron::model_sorted_token const&, NrnThread&);
@@ -557,6 +559,10 @@ void nrn_fixed_step_lastpart(neuron::model_sorted_token const& cache_token, NrnT
     if (neuron::gpu::enabled() && neuron::gpu::backend_native()) {
         neuron::gpu::sync_all_device_streams();
         neuron::gpu::sync_voltages_to_host_before_nonvint(nt);
+        if (!neuron::gpu::post_solve_needs_host_fallback(nt) && secondorder == 2) {
+            neuron::gpu::sync_rhs_to_host_before_nonvint(nt);
+            second_order_cur(nth);
+        }
         neuron::gpu::prepare_nonvint_on_device(nt);
     }
 #endif
