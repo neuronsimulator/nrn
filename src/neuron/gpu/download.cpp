@@ -40,9 +40,15 @@ void download_soa_storage(Storage const& storage) {
 #endif
 }
 
-void download_sorted_model_soa() {
+void download_sorted_node_soa() {
 #if defined(NRN_ENABLE_GPU)
     download_soa_storage(neuron::model().node_data());
+#endif
+}
+
+void download_sorted_model_soa() {
+#if defined(NRN_ENABLE_GPU)
+    download_sorted_node_soa();
     neuron::model().apply_to_mechanisms(
         [&](auto& mech_data) { download_soa_storage(mech_data); });
 #endif
@@ -109,6 +115,26 @@ void batch_download_post_solve(NrnThread& nt) {
     sync_fast_imem_to_host_after_post_solve(nt);
 }
 
+void download_thread_state_for_host_read(NrnThread& nt) {
+#if defined(NRN_ENABLE_GPU)
+    if (nt.end <= 0) {
+        return;
+    }
+    auto* const vec_v = nt.node_voltage_storage();
+    nrn_pragma_acc(update host(vec_v [0:nt.end]) async(nt.stream_id))
+    nrn_pragma_omp(target update from(vec_v [0:nt.end]))
+    if (::nrn_use_fast_imem) {
+        if (auto* const vec_sav_rhs = nt.node_sav_rhs_storage()) {
+            nrn_pragma_acc(update host(vec_sav_rhs [0:nt.end]) async(nt.stream_id))
+            nrn_pragma_omp(target update from(vec_sav_rhs [0:nt.end]))
+        }
+    }
+    nrn_pragma_acc(wait(nt.stream_id))
+#else
+    (void) nt;
+#endif
+}
+
 void batch_download_to_host() {
 #if defined(NRN_ENABLE_GPU)
     if (!enabled() || !backend_native()) {
@@ -120,6 +146,20 @@ void batch_download_to_host() {
 #endif
 }
 
+void sync_node_soa_to_host_for_host_reads() noexcept {
+#if defined(NRN_ENABLE_GPU)
+    if (!enabled() || !backend_native() || !model_is_on_device()) {
+        return;
+    }
+    phase_timer::Scope const timer{phase_timer::Id::download_flush};
+    download_sorted_node_soa();
+    for (int ith = 0; ith < nrn_nthread; ++ith) {
+        download_thread_state_for_host_read(nrn_threads[ith]);
+    }
+    sync_all_device_streams();
+#endif
+}
+
 void sync_state_to_host_for_host_reads() noexcept {
 #if defined(NRN_ENABLE_GPU)
     if (!enabled() || !backend_native() || !model_is_on_device()) {
@@ -127,7 +167,9 @@ void sync_state_to_host_for_host_reads() noexcept {
     }
     phase_timer::Scope const timer{phase_timer::Id::download_flush};
     download_sorted_model_soa();
-    batch_download_to_host();
+    for (int ith = 0; ith < nrn_nthread; ++ith) {
+        download_thread_state_for_host_read(nrn_threads[ith]);
+    }
     sync_all_device_streams();
 #endif
 }
@@ -170,7 +212,7 @@ void finalize_psolve_download() {
     if (!enabled() || !backend_native()) {
         return;
     }
-    sync_state_to_host_for_host_reads();
+    sync_node_soa_to_host_for_host_reads();
     phase_timer::print_summary();
     reset_download_step_counter();
 #endif

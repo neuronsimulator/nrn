@@ -24,6 +24,7 @@
 #include "neuron/gpu/fadvance_gpu.hpp"
 #include "neuron/gpu/lastpart.hpp"
 #include "neuron/gpu/net_events.hpp"
+#include "neuron/gpu/sync.hpp"
 #endif
 #include "prcellstate_checkpoint.hpp"
 
@@ -554,6 +555,8 @@ void nrn_fixed_step_lastpart(neuron::model_sorted_token const& cache_token, NrnT
     nrn_prcellstate_checkpoint_maybe(PrcellCheckpointPhase::pre_nonvint, nt);
 #if defined(NRN_ENABLE_GPU)
     if (neuron::gpu::enabled() && neuron::gpu::backend_native()) {
+        neuron::gpu::sync_all_device_streams();
+        neuron::gpu::sync_voltages_to_host_before_nonvint(nt);
         neuron::gpu::prepare_nonvint_on_device(nt);
     }
 #endif

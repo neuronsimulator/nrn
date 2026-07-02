@@ -197,6 +197,21 @@ void sync_voltages_to_host_after_post_solve(NrnThread& nt) {
     sync_node_voltages_to_host(nt);
 }
 
+void sync_voltages_to_host_before_nonvint(NrnThread& nt) {
+#if defined(NRN_ENABLE_GPU)
+    if (!enabled() || !backend_native() || nt.end <= 0) {
+        return;
+    }
+    phase_timer::bump(phase_timer::Id::vecplay_sync);
+    auto* const vec_v = nt.node_voltage_storage();
+    nrn_pragma_acc(update host(vec_v [0:nt.end]) async(nt.stream_id))
+    nrn_pragma_omp(target update from(vec_v [0:nt.end]))
+    nrn_pragma_acc(wait(nt.stream_id))
+#else
+    (void) nt;
+#endif
+}
+
 void sync_fast_imem_to_host_after_post_solve(NrnThread& nt) {
 #if defined(NRN_ENABLE_GPU)
     if (!nt.compute_gpu || nt.end <= 0) {

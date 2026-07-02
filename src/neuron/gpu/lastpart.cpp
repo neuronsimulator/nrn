@@ -105,9 +105,11 @@ void begin_lastpart_host_phases(NrnThread& nt) {
     g_lastpart_host_phases_active = true;
     nt.compute_gpu = 0;
     if (nt.id == 0) {
-        phase_timer::Scope const timer{phase_timer::Id::download_flush};
+        // Nonvint STATE/CURRENT for NMODL vectorized mechanisms still run on the
+        // host even when compute_gpu=1. Pull only node/matrix SOA from device;
+        // mechanism STATE on the host was just updated by nonvint.
         sync_all_device_streams();
-        sync_state_to_host_for_host_reads();
+        sync_node_soa_to_host_for_host_reads();
     }
 #else
     (void) nt;

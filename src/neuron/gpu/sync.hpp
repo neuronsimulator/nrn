@@ -41,6 +41,9 @@ void sync_rhs_to_host_after_solve(NrnThread& nt);
 /** Pull post-solve node voltages to host for HOC reads and VecPlay. */
 void sync_voltages_to_host_after_post_solve(NrnThread& nt);
 
+/** Pull device node voltages to host before host-side nonvint STATE integration. */
+void sync_voltages_to_host_before_nonvint(NrnThread& nt);
+
 /** Pull fast_imem sav_rhs to host after GPU fast_imem (smaller than vec_rhs sync). */
 void sync_fast_imem_to_host_after_post_solve(NrnThread& nt);
 

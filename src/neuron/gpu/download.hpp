@@ -23,12 +23,21 @@ void advance_download_step_counter() noexcept;
 /** Pull post-solve node voltages and fast_imem to the host for one thread. */
 void batch_download_post_solve(NrnThread& nt);
 
+/** Pull node voltages (and fast_imem when active) for host reads, ignoring compute_gpu. */
+void download_thread_state_for_host_read(NrnThread& nt);
+
 /** Pull voltages and fast_imem for all threads (recording / per-step flush). */
 void batch_download_to_host();
 
 /**
+ * Pull sorted node SOA (matrix, voltage, ...) from device without touching
+ * mechanism SOA. Use when host nonvint/AFTER_SOLVE already own mechanism state.
+ */
+void sync_node_soa_to_host_for_host_reads() noexcept;
+
+/**
  * Pull sorted node and mechanism SOA vectors from device to host.
- * Required for prcellstate, HOC mechanism reads, and psolve-end host state.
+ * Required for mid-step checkpoints and HOC reads when device owns all state.
  */
 void sync_state_to_host_for_host_reads() noexcept;
 

@@ -7,6 +7,12 @@
 #include "neuron.h"
 #include "utils/enumerate.h"
 
+#if defined(NRN_ENABLE_GPU)
+#include "neuron/gpu/config.hpp"
+#include "neuron/gpu/download.hpp"
+#include "neuron/gpu/sync.hpp"
+#endif
+
 #define precision 15
 
 void nrn_prcellstate(int gid, const char* filesuffix);
@@ -160,6 +166,12 @@ void nrn_prcellstate(int gid, const char* suffix) {
     if (!ps) {
         return;
     }
+#if defined(NRN_ENABLE_GPU)
+    if (neuron::gpu::enabled() && neuron::gpu::backend_native()) {
+        neuron::gpu::sync_all_device_streams();
+        neuron::gpu::sync_node_soa_to_host_for_host_reads();
+    }
+#endif
     // found it so create a <gid>_<suffix>.nrn file
     char buf[200];
     Sprintf(buf, "%d_%s.nrndat", gid, suffix);
