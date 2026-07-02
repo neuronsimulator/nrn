@@ -152,7 +152,7 @@ macro(nocmodl_mod_to_cpp modfile_basename modfile_compat)
 endmacro()
 
 # =============================================================================
-# Run NMODL with OpenACC for built-in hh.mod (native GPU device nonvint)
+# Run NMODL with OpenACC for selected built-in mods (native GPU CURRENT/STATE)
 # =============================================================================
 macro(nmodl_openacc_mod_to_cpp modfile_basename modfile_compat)
   set(NOCMODL_SED_EXPR "s/_reg()/_reg_()/")
@@ -180,7 +180,7 @@ macro(nmodl_openacc_mod_to_cpp modfile_basename modfile_compat)
       ${CMAKE_COMMAND} -E env "MODLUNIT=${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib"
       "NMODL_PYLIB=${PYTHON_LIBRARY}" "NMODLHOME=${PROJECT_BINARY_DIR}"
       ${NRN_NOCMODL_SANITIZER_ENVIRONMENT} $<TARGET_FILE:nmodl> ${MODFILE_OUTPUT_PATH} --neuron
-      -o ${modfile_output_dir} ${NRN_HH_MOD_NMODL_OPENACC_ARGS}
+      -o ${modfile_output_dir} ${NRN_BUILTIN_MOD_NMODL_OPENACC_ARGS}
     COMMAND sed ${NOCMODL_SED_EXPR} ${CPPFILE_OUTPUT_PATH} > ${CPPFILE_OUTPUT_PATH}.tmp
     COMMAND ${CMAKE_COMMAND} -E copy ${CPPFILE_OUTPUT_PATH}.tmp ${CPPFILE_OUTPUT_PATH}
     COMMAND ${CMAKE_COMMAND} -E remove ${CPPFILE_OUTPUT_PATH}.tmp

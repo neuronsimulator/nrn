@@ -117,4 +117,17 @@ SCENARIO("NEURON OpenACC codegen emits offload pragmas", "[codegen][neuron][acc]
             REQUIRE_THAT(generated, ContainsSubstring("nrn_pragma_acc(data present(nt, ml)"));
         }
     }
+
+    GIVEN("the canonical passive.mod shipped with NEURON") {
+        const auto mod_path = std::filesystem::path(NRN_SOURCE_DIR) / "src/nrnoc/passive.mod";
+        REQUIRE(std::filesystem::exists(mod_path));
+
+        THEN("built-in pas CURRENT codegen includes OpenACC offload pragmas") {
+            const auto generated = get_neuron_acc_code_from_file(mod_path);
+            REQUIRE_THAT(generated, ContainsSubstring("#include <neuron/gpu/offload.hpp>"));
+            REQUIRE_THAT(generated, ContainsSubstring("nrn_cur_pas"));
+            REQUIRE_THAT(generated, ContainsSubstring("nrn_pragma_acc(parallel loop"));
+            REQUIRE_THAT(generated, ContainsSubstring("if(nt->compute_gpu)"));
+        }
+    }
 }

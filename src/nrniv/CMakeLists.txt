@@ -127,7 +127,7 @@ foreach(modfile ${NRN_MODFILE_BASE_NAMES})
      AND modfile MATCHES "hh$")
     set(modfile_compat ON)
   endif()
-  if(NRN_ENABLE_GPU AND modfile MATCHES "hh$")
+  if(NRN_ENABLE_GPU AND (modfile MATCHES "hh$" OR modfile MATCHES "passive$"))
     nmodl_openacc_mod_to_cpp(${modfile} ${modfile_compat})
   else()
     nocmodl_mod_to_cpp(${modfile} ${modfile_compat})
@@ -507,9 +507,13 @@ if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
       PROPERTY INSTALL_RPATH "${CUDAToolkit_LIBRARY_DIR}")
   endif()
 
-  # Built-in hh uses NMODL OpenACC codegen for native GPU device nonvint.
+  # Built-in pas + hh use NMODL OpenACC codegen for native GPU CURRENT/STATE.
+  set(_nrn_openacc_builtin_mod_cpp)
+  foreach(_modfile src/nrnoc/hh src/nrnoc/passive)
+    list(APPEND _nrn_openacc_builtin_mod_cpp ${PROJECT_BINARY_DIR}/${_modfile}.cpp)
+  endforeach()
   set_source_files_properties(
-    ${PROJECT_BINARY_DIR}/hh.cpp
+    ${_nrn_openacc_builtin_mod_cpp}
     APPEND
     PROPERTIES COMPILE_OPTIONS "${NRN_ACC_FLAGS}" COMPILE_DEFINITIONS "NRN_ENABLE_GPU")
 endif()
