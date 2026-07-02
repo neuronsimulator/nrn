@@ -123,10 +123,15 @@ endif()
 # =============================================================================
 foreach(modfile ${NRN_MODFILE_BASE_NAMES})
   set(modfile_compat OFF)
-  if((NRN_ENABLE_CORENEURON OR NRN_ENABLE_MOD_COMPATIBILITY) AND modfile MATCHES "hh$")
+  if((NRN_ENABLE_CORENEURON OR NRN_ENABLE_MOD_COMPATIBILITY OR NRN_ENABLE_GPU)
+     AND modfile MATCHES "hh$")
     set(modfile_compat ON)
   endif()
-  nocmodl_mod_to_cpp(${modfile} ${modfile_compat})
+  if(NRN_ENABLE_GPU AND modfile MATCHES "hh$")
+    nmodl_openacc_mod_to_cpp(${modfile} ${modfile_compat})
+  else()
+    nocmodl_mod_to_cpp(${modfile} ${modfile_compat})
+  endif()
   list(APPEND NRN_MODFILE_CPP ${PROJECT_BINARY_DIR}/${modfile}.cpp)
 endforeach()
 set_property(
@@ -501,6 +506,12 @@ if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
       APPEND
       PROPERTY INSTALL_RPATH "${CUDAToolkit_LIBRARY_DIR}")
   endif()
+
+  # Built-in hh uses NMODL OpenACC codegen for native GPU device nonvint.
+  set_source_files_properties(
+    ${PROJECT_BINARY_DIR}/hh.cpp
+    APPEND
+    PROPERTIES COMPILE_OPTIONS "${NRN_ACC_FLAGS}" COMPILE_DEFINITIONS "NRN_ENABLE_GPU")
 endif()
 
 # =============================================================================

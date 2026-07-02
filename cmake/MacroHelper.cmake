@@ -151,6 +151,44 @@ macro(nocmodl_mod_to_cpp modfile_basename modfile_compat)
 
 endmacro()
 
+# =============================================================================
+# Run NMODL with OpenACC for built-in hh.mod (native GPU device nonvint)
+# =============================================================================
+macro(nmodl_openacc_mod_to_cpp modfile_basename modfile_compat)
+  set(NOCMODL_SED_EXPR "s/_reg()/_reg_()/")
+  if(NOT MSVC)
+    set(NOCMODL_SED_EXPR "'${NOCMODL_SED_EXPR}'")
+  endif()
+  set(MODFILE_INPUT_PATH "${PROJECT_SOURCE_DIR}/${modfile_basename}.mod")
+  set(MODFILE_OUTPUT_PATH "${PROJECT_BINARY_DIR}/${modfile_basename}.mod")
+
+  if(modfile_compat)
+    file(READ "${MODFILE_INPUT_PATH}" FILE_CONTENT)
+    string(REGEX REPLACE " GLOBAL minf" " RANGE minf" FILE_CONTENT "${FILE_CONTENT}")
+    file(WRITE "${MODFILE_OUTPUT_PATH}" "${FILE_CONTENT}")
+  else()
+    configure_file("${MODFILE_INPUT_PATH}" "${MODFILE_OUTPUT_PATH}" COPYONLY)
+  endif()
+
+  get_filename_component(modfile_output_dir "${MODFILE_OUTPUT_PATH}" DIRECTORY)
+  get_filename_component(modfile_name "${MODFILE_OUTPUT_PATH}" NAME_WE)
+  set(CPPFILE_OUTPUT_PATH "${modfile_output_dir}/${modfile_name}.cpp")
+
+  add_custom_command(
+    OUTPUT ${CPPFILE_OUTPUT_PATH}
+    COMMAND
+      ${CMAKE_COMMAND} -E env "MODLUNIT=${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib"
+      "NMODL_PYLIB=${PYTHON_LIBRARY}" "NMODLHOME=${PROJECT_BINARY_DIR}"
+      ${NRN_NOCMODL_SANITIZER_ENVIRONMENT} $<TARGET_FILE:nmodl> ${MODFILE_OUTPUT_PATH} --neuron
+      -o ${modfile_output_dir} ${NRN_HH_MOD_NMODL_OPENACC_ARGS}
+    COMMAND sed ${NOCMODL_SED_EXPR} ${CPPFILE_OUTPUT_PATH} > ${CPPFILE_OUTPUT_PATH}.tmp
+    COMMAND ${CMAKE_COMMAND} -E copy ${CPPFILE_OUTPUT_PATH}.tmp ${CPPFILE_OUTPUT_PATH}
+    COMMAND ${CMAKE_COMMAND} -E remove ${CPPFILE_OUTPUT_PATH}.tmp
+    DEPENDS nmodl ${MODFILE_INPUT_PATH} ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/src/nrniv)
+
+endmacro()
+
 # ~~~
 # =============================================================================
 # Create symbolic links during the install phase
