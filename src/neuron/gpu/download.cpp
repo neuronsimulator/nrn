@@ -2,14 +2,51 @@
 
 #include "multicore.h"
 #include "neuron/gpu/config.hpp"
+#include "neuron/gpu/device_state.hpp"
+#include "neuron/gpu/offload.hpp"
 #include "neuron/gpu/phase_timer.hpp"
 #include "neuron/gpu/sync.hpp"
+#include "neuron/model_data.hpp"
+#include "nrn_ansi.h"
+
+#include <type_traits>
 
 namespace neuron::gpu {
 namespace {
 
 std::size_t g_flush_interval{1};
 std::size_t g_step_counter{0};
+
+template <typename Storage>
+void download_soa_storage(Storage const& storage) {
+#if defined(NRN_ENABLE_GPU) && defined(_OPENACC)
+    storage.for_each_vector_for_gpu_upload(
+        [](auto const& /*tag*/, auto const& vec, int /*field_index*/, int /*array_dim*/) {
+            if (vec.empty()) {
+                return;
+            }
+            using Value = typename std::decay_t<decltype(vec)>::value_type;
+            if constexpr (std::is_same_v<Value, double> || std::is_same_v<Value, int>) {
+                Value const* const host = vec.data();
+                if (!nrn_target_is_present(host)) {
+                    return;
+                }
+                nrn_pragma_acc(update host(host [0:vec.size()]))
+                nrn_pragma_omp(target update from(host [0:vec.size()]))
+            }
+        });
+#else
+    (void) storage;
+#endif
+}
+
+void download_sorted_model_soa() {
+#if defined(NRN_ENABLE_GPU)
+    download_soa_storage(neuron::model().node_data());
+    neuron::model().apply_to_mechanisms(
+        [&](auto& mech_data) { download_soa_storage(mech_data); });
+#endif
+}
 
 }  // namespace
 
@@ -52,6 +89,18 @@ void batch_download_to_host() {
 #endif
 }
 
+void sync_state_to_host_for_host_reads() noexcept {
+#if defined(NRN_ENABLE_GPU)
+    if (!enabled() || !backend_native() || !model_is_on_device()) {
+        return;
+    }
+    phase_timer::Scope const timer{phase_timer::Id::download_flush};
+    download_sorted_model_soa();
+    batch_download_to_host();
+    sync_all_device_streams();
+#endif
+}
+
 void batch_upload_to_device() {
 #if defined(NRN_ENABLE_GPU)
     if (!enabled() || !backend_native()) {
@@ -68,7 +117,7 @@ void finalize_psolve_download() {
     if (!enabled() || !backend_native()) {
         return;
     }
-    batch_download_to_host();
+    sync_state_to_host_for_host_reads();
     phase_timer::print_summary();
     reset_download_step_counter();
 #endif

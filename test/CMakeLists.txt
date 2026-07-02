@@ -169,6 +169,25 @@ if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
     COMMAND $<TARGET_FILE:testneuron_gpu_upload> "[gpu][upload]")
 
   add_executable(
+    testneuron_gpu_download
+    unit_tests/gpu/offload_main.cpp unit_tests/gpu/download.cpp unit_tests/gpu/upload_link_stubs.cpp
+    unit_tests/gpu/interleave_info_stub.cpp)
+  cpp_cc_configure_sanitizers(TARGET testneuron_gpu_download)
+  target_include_directories(
+    testneuron_gpu_download PRIVATE ${PROJECT_SOURCE_DIR}/external/fmt/include
+                                    ${CMAKE_BINARY_DIR}/src/nrnoc)
+  target_link_libraries(testneuron_gpu_download PRIVATE Catch2::Catch2 neuron_gpu neuron_gpu_upload
+                                                        fmt::fmt)
+  target_compile_definitions(testneuron_gpu_download PRIVATE NRN_ENABLE_GPU)
+  target_compile_options(testneuron_gpu_download PRIVATE ${_test_gpu_offload_flags})
+  target_link_options(testneuron_gpu_download PUBLIC ${_test_gpu_offload_flags})
+  nrn_add_test(
+    GROUP unit_tests
+    NAME gpu_download
+    REQUIRES gpu
+    COMMAND $<TARGET_FILE:testneuron_gpu_download> "[gpu][download]")
+
+  add_executable(
     testneuron_gpu_fadvance
     unit_tests/gpu/offload_main.cpp unit_tests/gpu/fadvance.cpp
     unit_tests/gpu/upload_link_stubs.cpp unit_tests/gpu/fadvance_link_stubs.cpp)

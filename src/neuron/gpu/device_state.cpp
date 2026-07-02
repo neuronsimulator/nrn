@@ -25,7 +25,7 @@ struct ModelDeviceState {
     }
 
     void download_to_host() {
-        batch_download_to_host();
+        sync_state_to_host_for_host_reads();
     }
 
     void upload_to_device() {
@@ -215,6 +215,10 @@ device_token const& ensure_on_device(model_sorted_token const& sorted) {
 
 void invalidate_device_state() {
     registry().invalidate();
+}
+
+bool model_is_on_device() noexcept {
+    return detail::is_on_device_for_testing();
 }
 
 namespace detail {

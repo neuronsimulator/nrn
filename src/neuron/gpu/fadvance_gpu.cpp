@@ -8,6 +8,7 @@
 #include "neuron/gpu/phase_timer.hpp"
 #include "neuron/gpu/post_solve.hpp"
 #include "neuron/gpu/sync.hpp"
+#include "prcellstate_checkpoint.hpp"
 #include "neuron/model_data.hpp"
 
 #include "coreneuron/permute/cellorder.hpp"
@@ -71,6 +72,7 @@ void fixed_step_thread(model_sorted_token const& cache_token,
             phase_timer::Scope const timer{phase_timer::Id::setup_tree_matrix};
             setup_tree_matrix(cache_token, nt);
         }
+        nrn_prcellstate_checkpoint_maybe(PrcellCheckpointPhase::post_setup, nt);
         if (!matrix_rhs_d_stays_on_device_for_solve(nt)) {
             sync_matrix_to_device_before_solve(nt);
         }
@@ -113,6 +115,7 @@ void fixed_step_thread(model_sorted_token const& cache_token,
                 }
             }
         }
+        nrn_prcellstate_checkpoint_maybe(PrcellCheckpointPhase::post_solve, nt);
         advance_download_step_counter();
     }
     if (nrnthread_v_transfer_ && nt.end > 0) {

@@ -23,8 +23,14 @@ void advance_download_step_counter() noexcept;
 /** Pull post-solve node voltages and fast_imem to the host for one thread. */
 void batch_download_post_solve(NrnThread& nt);
 
-/** Pull all thread state needed for HOC reads and Vector.record. */
+/** Pull voltages and fast_imem for all threads (recording / per-step flush). */
 void batch_download_to_host();
+
+/**
+ * Pull sorted node and mechanism SOA vectors from device to host.
+ * Required for prcellstate, HOC mechanism reads, and psolve-end host state.
+ */
+void sync_state_to_host_for_host_reads() noexcept;
 
 /** Push host voltages to the device after HOC/VecPlay writes. */
 void batch_upload_to_device();

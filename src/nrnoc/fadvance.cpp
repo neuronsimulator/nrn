@@ -25,6 +25,7 @@
 #include "neuron/gpu/lastpart.hpp"
 #include "neuron/gpu/net_events.hpp"
 #endif
+#include "prcellstate_checkpoint.hpp"
 
 /*
  after an fadvance from t-dt to t, v is defined at t
@@ -382,6 +383,7 @@ void nrn_fixed_step(neuron::model_sorted_token const& cache_token) {
     if (nrn_allthread_handle) {
         (*nrn_allthread_handle)();
     }
+    nrn_prcellstate_checkpoint_fixed_step_end();
 #if defined(NRN_ENABLE_GPU)
     neuron::gpu::finalize_psolve_download();
 #endif
@@ -468,6 +470,9 @@ static void nrn_fixed_step_group_thread(neuron::model_sorted_token const& cache_
     for (i = step_group_begin; i < step_group_n; ++i) {
         nrn::Instrumentor::phase p_timestep("timestep");
         nrn_fixed_step_thread(cache_token, nt);
+        if (nth->id == 0) {
+            nrn_prcellstate_checkpoint_fixed_step_end();
+        }
         if (nth->_stop_stepping) {
             if (nth->id == 0) {
                 step_group_end = i + 1;
@@ -505,6 +510,7 @@ static void nrn_fixed_step_thread(neuron::model_sorted_token const& cache_token,
 #endif
     fixed_play_continuous(nth);
     setup_tree_matrix(cache_token, nt);
+    nrn_prcellstate_checkpoint_maybe(PrcellCheckpointPhase::post_setup, nt);
     {
         nrn::Instrumentor::phase p("matrix-solver");
         if (neuron::interleave_permute_type) {
@@ -521,6 +527,7 @@ static void nrn_fixed_step_thread(neuron::model_sorted_token const& cache_token,
         nrn::Instrumentor::phase p("update");
         nrn_update_voltage(cache_token, *nth);
     }
+    nrn_prcellstate_checkpoint_maybe(PrcellCheckpointPhase::post_solve, nt);
     CTADD;
     /*
       To simplify the logic,
@@ -544,6 +551,7 @@ void nrn_fixed_step_lastpart(neuron::model_sorted_token const& cache_token, NrnT
 #endif
     fixed_play_continuous(nth);
     nrn_extra_scatter_gather(0, nth->id);
+    nrn_prcellstate_checkpoint_maybe(PrcellCheckpointPhase::pre_nonvint, nt);
 #if defined(NRN_ENABLE_GPU)
     if (neuron::gpu::enabled() && neuron::gpu::backend_native()) {
         neuron::gpu::prepare_nonvint_on_device(nt);
@@ -555,6 +563,7 @@ void nrn_fixed_step_lastpart(neuron::model_sorted_token const& cache_token, NrnT
         neuron::gpu::finalize_nonvint_on_device(nt);
     }
 #endif
+    nrn_prcellstate_checkpoint_maybe(PrcellCheckpointPhase::post_nonvint, nt);
     nrn_ba(cache_token, nt, AFTER_SOLVE);
     fixed_record_continuous(cache_token, nt);
     CTADD;

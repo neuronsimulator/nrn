@@ -236,6 +236,7 @@ set(NRNIV_FILE_LIST
     partrans.cpp
     ppshape.cpp
     prcellstate.cpp
+    prcellstate_checkpoint.cpp
     pysecname2sec.cpp
     rotate3d.cpp
     savstate.cpp

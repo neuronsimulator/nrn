@@ -10,6 +10,7 @@
 #include "section.h"
 #include "membfunc.h"
 #include "multicore.h"
+#include "prcellstate_checkpoint.hpp"
 #include "nrnpy.h"
 #include "utils/profile/profiler_interface.h"
 #include "node_order_optim/node_order_optim.h"
@@ -488,6 +489,24 @@ static double mech_time(void* v) {
 static double prcellstate(void* v) {
     nrn_prcellstate(int(*hoc_getarg(1)), hoc_gargstr(2));
     return 0;
+}
+
+static double prcellstate_checkpoint(void* v) {
+    int const gid = int(chkarg(1, -1., 1e9));
+    if (ifarg(3)) {
+        double const t = *getarg(3);
+        nrn_prcellstate_checkpoint_arm(gid, -1, t);
+    } else {
+        long const step = long(chkarg(2, -1., 1e12));
+        nrn_prcellstate_checkpoint_arm(gid, step, 0.0);
+    }
+    return 0.;
+}
+
+static double prcellstate_checkpoint_clear(void* v) {
+    (void) v;
+    nrn_prcellstate_checkpoint_clear();
+    return 0.;
 }
 
 static double wait_time(void* v) {
@@ -1132,6 +1151,8 @@ static Member_func members[] =
   {"spike_compress", spcompress},
   {"gid_clear", gid_clear},
   {"prcellstate", prcellstate},
+  {"prcellstate_checkpoint", prcellstate_checkpoint},
+  {"prcellstate_checkpoint_clear", prcellstate_checkpoint_clear},
 
   {"source_var", source_var},
   {"target_var", target_var},

@@ -41,6 +41,7 @@
 #if defined(NRN_ENABLE_GPU)
 #include "neuron/gpu/check_thresh.hpp"
 #include "neuron/gpu/config.hpp"
+#include "prcellstate_checkpoint.hpp"
 #endif
 
 extern NetCvode* net_cvode_instance;
@@ -3752,6 +3753,7 @@ bool NetCvode::use_partrans() {
 void ncs2nrn_integrate(double tstop) {
     double ts;
     nrn_use_busywait(1);  // just a possibility
+    nrn_prcellstate_checkpoint_psolve_begin();
     auto const cache_token = nrn_ensure_model_data_are_sorted();
     if (cvode_active_) {
 #if NRNMPI

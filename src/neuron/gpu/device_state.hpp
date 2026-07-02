@@ -27,7 +27,7 @@ class device_token {
 
     [[nodiscard]] bool is_on_device() const;
 
-    /** @brief Pull recorded GPU state (voltages, fast_imem) to the host. */
+    /** @brief Pull full sorted SOA state from device to host for host reads. */
     void update_host();
 
     /** @brief Push host voltages to the device after HOC/VecPlay writes. */
@@ -48,6 +48,9 @@ class device_token {
 
 /** @brief Discard GPU mirrors when the sorted layout is invalidated. */
 void invalidate_device_state();
+
+/** @brief True when the active sorted layout has been uploaded to the device. */
+[[nodiscard]] bool model_is_on_device() noexcept;
 
 namespace detail {
 void on_sorted_token_created();
