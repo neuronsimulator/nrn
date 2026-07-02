@@ -116,12 +116,12 @@ static void pr_realcell(PreSyn& ps, NrnThread& nt, FILE* f) {
     }
     fprintf(f, "%d nodes  %d is the threshold node\n", cnt, cellnodes[inode] - 1);
     fprintf(f, " threshold %.*g\n", precision, ps.threshold_);
-    fprintf(f, "inode parent area a b\n");
+    fprintf(f, "inode parent area a b d rhs\n");
     for (int i = 0; i < nt.end; ++i)
         if (cellnodes[i] >= 0) {
             Node* nd = nt._v_node[i];
             fprintf(f,
-                    "%d %d %.*g %.*g %.*g\n",
+                    "%d %d %.*g %.*g %.*g %.*g %.*g\n",
                     cellnodes[i],
                     i < nt.ncell ? -1 : cellnodes[nt._v_parent_index[i]],
                     precision,
@@ -129,7 +129,11 @@ static void pr_realcell(PreSyn& ps, NrnThread& nt, FILE* f) {
                     precision,
                     nd->a(),
                     precision,
-                    nd->b());
+                    nd->b(),
+                    precision,
+                    nd->d(),
+                    precision,
+                    nd->rhs());
         }
     fprintf(f, "inode v\n");
     for (int i = 0; i < nt.end; ++i)
