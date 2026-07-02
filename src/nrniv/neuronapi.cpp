@@ -41,6 +41,7 @@ struct SymbolTableIterator {
  ****************************************/
 extern int nrn_nobanner_;
 extern int diam_changed;
+extern double hoc_epsilon;
 extern int nrn_try_catch_nest_depth;
 extern "C" void nrnpy_set_pr_etal(int (*cbpr_stdoe)(int, char*), int (*cbpass)());
 int ivocmain_session(int, const char**, const char**, int start_session);
@@ -252,6 +253,59 @@ int nrn_symbol_subtype(const Symbol* sym) {
 
 double* nrn_symbol_dataptr(const Symbol* sym) {
     return sym->u.pval;
+}
+
+int nrn_global_double_get(const Symbol* sym, double* out) {
+    if (!sym || !out || sym->type != VAR || sym->arayinfo != nullptr) {
+        return 1;
+    }
+    // Mirror the interpreter's per-subtype scalar read (oc/code.cpp eval()):
+    // USERDOUBLE lives at sym->u.pval, USERINT/USERFLOAT at their typed
+    // pointers, and a NOTUSER runtime scalar (created by e.g. HOC `x = 42`) in
+    // the top-level object-data array, NOT at sym->u.pval — which is why
+    // nrn_symbol_dataptr hands back an offset-as-pointer for that case.
+    switch (sym->subtype) {
+    case USERDOUBLE:
+        *out = *(sym->u.pval);
+        break;
+    case USERINT:
+        *out = static_cast<double>(*(sym->u.pvalint));
+        break;
+    case USERFLOAT:
+        *out = static_cast<double>(*(sym->u.pvalfloat));
+        break;
+    case USERPROPERTY:
+        return 1;  // section-level (nseg/L/Ra/rallbranch), not a global scalar
+    default:       // NOTUSER
+        *out = *(hoc_top_level_data[sym->u.oboff].pval);
+        break;
+    }
+    return 0;
+}
+
+int nrn_global_double_set(Symbol* sym, double value) {
+    if (!sym || sym->type != VAR || sym->arayinfo != nullptr) {
+        return 1;
+    }
+    // Subtype-aware sibling of the getter; matches oc/code.cpp's assign path,
+    // including its `(int)(value + hoc_epsilon)` rounding for USERINT.
+    switch (sym->subtype) {
+    case USERDOUBLE:
+        *(sym->u.pval) = value;
+        break;
+    case USERINT:
+        *(sym->u.pvalint) = static_cast<int>(value + hoc_epsilon);
+        break;
+    case USERFLOAT:
+        *(sym->u.pvalfloat) = static_cast<float>(value);
+        break;
+    case USERPROPERTY:
+        return 1;
+    default:  // NOTUSER
+        *(hoc_top_level_data[sym->u.oboff].pval) = value;
+        break;
+    }
+    return 0;
 }
 
 bool nrn_symbol_is_array(const Symbol* sym) {

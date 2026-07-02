@@ -81,6 +81,13 @@ void nrn_symbol_push(Symbol* sym);
 int nrn_symbol_type(const Symbol* sym);
 int nrn_symbol_subtype(const Symbol* sym);
 double* nrn_symbol_dataptr(const Symbol* sym);
+// Read/write a top-level HOC scalar (VAR) by symbol, handling every VAR subtype
+// -- including NOTUSER runtime scalars whose storage is not at sym->u.pval, so
+// nrn_symbol_dataptr cannot read them. Return 0 on success, nonzero when sym is
+// not a readable/writable global scalar (null, non-VAR, an array, or a
+// section-level property).
+int nrn_global_double_get(const Symbol* sym, double* out);
+int nrn_global_double_set(Symbol* sym, double value);
 bool nrn_symbol_is_array(const Symbol* sym);
 void nrn_double_push(double val);
 double nrn_double_pop(void);

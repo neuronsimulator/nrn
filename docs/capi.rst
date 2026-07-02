@@ -741,6 +741,57 @@ Functions, objects, and the stack
     Provides direct access to variable data for efficient reading/writing.
     e.g., use this for getting/setting the value of ``t`` (time).
 
+    .. note::
+
+        This returns ``sym->u.pval``, which is only valid for ``USERDOUBLE``
+        scalars. For a runtime scalar created in HOC (e.g. ``x = 42``) the data
+        is stored elsewhere, so dereferencing the result is incorrect. Use
+        :func:`nrn_global_double_get` / :func:`nrn_global_double_set` to read or
+        write a top-level scalar by value across every subtype.
+
+.. c:function:: int nrn_global_double_get(const Symbol* sym, double* out)
+
+    Read a top-level HOC scalar by value into ``*out``, handling every ``VAR``
+    subtype: ``USERDOUBLE``, integer and float scalars, and ``NOTUSER`` runtime
+    scalars (created by HOC assignments such as ``x = 42``) whose storage is not
+    at ``sym->u.pval``. This is the subtype-aware companion to
+    :func:`nrn_symbol_dataptr`.
+
+    :param sym: Pointer to the symbol.
+    :param out: Receives the scalar's value on success.
+    :returns: 0 on success; nonzero if ``sym`` is not a readable global scalar
+              (null, not a ``VAR``, an array, or a section-level property).
+
+    **C Usage:**
+
+    .. code-block:: c
+
+        double value;
+        if (nrn_global_double_get(nrn_symbol("t"), &value) == 0) {
+            // use value
+        }
+
+    **Python Equivalent:**
+
+    .. code-block:: python
+
+        value = n.t
+
+.. c:function:: int nrn_global_double_set(Symbol* sym, double value)
+
+    Write ``value`` into a top-level HOC scalar. The subtype-aware sibling of
+    :func:`nrn_global_double_get`; same return contract.
+
+    :param sym: Pointer to the symbol.
+    :param value: Value to store.
+    :returns: 0 on success; nonzero if ``sym`` is not a writable global scalar.
+
+    **Python Equivalent:**
+
+    .. code-block:: python
+
+        n.t = value
+
 .. c:function:: bool nrn_symbol_is_array(const Symbol* sym)
 
     Check if a symbol represents an array.
