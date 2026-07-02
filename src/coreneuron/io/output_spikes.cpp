@@ -220,7 +220,7 @@ static void output_spikes_parallel(const char* outpath, const SpikesInfo& spikes
 
     // Allocate at least 1 byte to avoid undefined behavior from malloc(0)
     // followed by strcpy (triggers FORTIFY_SOURCE buffer overflow on Linux).
-    char* spike_data = (char*) malloc(num_bytes > 0 ? num_bytes : 1);
+    char* spike_data = (char*) malloc(std::max(num_bytes, (size_t) 1));
 
     if (spike_data == nullptr) {
         printf("Error while writing spikes due to memory allocation\n");
