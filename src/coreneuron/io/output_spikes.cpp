@@ -217,7 +217,10 @@ static void output_spikes_parallel(const char* outpath, const SpikesInfo& spikes
     const int SPIKE_RECORD_LEN = 64;
     size_t num_spikes = spikevec_gid.size();
     size_t num_bytes = (sizeof(char) * num_spikes * SPIKE_RECORD_LEN);
-    char* spike_data = (char*) malloc(num_bytes);
+
+    // Allocate at least 1 byte to avoid undefined behavior from malloc(0)
+    // followed by strcpy (triggers FORTIFY_SOURCE buffer overflow on Linux).
+    char* spike_data = (char*) malloc(num_bytes > 0 ? num_bytes : 1);
 
     if (spike_data == nullptr) {
         printf("Error while writing spikes due to memory allocation\n");
@@ -225,7 +228,7 @@ static void output_spikes_parallel(const char* outpath, const SpikesInfo& spikes
     }
 
     // empty if no spikes
-    strcpy(spike_data, "");
+    spike_data[0] = '\0';
 
     // populate buffer with all spike entries
     char spike_entry[SPIKE_RECORD_LEN];
