@@ -138,18 +138,16 @@ void fast_imem_on_device(NrnThread& nt) {
 }  // namespace
 
 bool post_solve_needs_host_fallback(NrnThread const& nt) {
+    // Runtime only: sparse13 and active extracellular nodes need host post-solve.
+    // Do not key off the EXTRACELLULAR build flag; Traub and other models built
+    // with extracellular support still use post_solve_on_device when unused.
     if (::use_sparse13) {
         return true;
     }
     if (nt._ecell_memb_list) {
         return true;
     }
-#if EXTRACELLULAR
-    return true;
-#else
-    (void) nt;
     return false;
-#endif
 }
 
 void post_solve_on_device(model_sorted_token const& sorted_token, NrnThread& nt) {
@@ -161,10 +159,10 @@ void post_solve_on_device(model_sorted_token const& sorted_token, NrnThread& nt)
     update_voltage_on_device(nt);
     capacity_current_on_device(sorted_token, nt);
     fast_imem_on_device(nt);
-
 #if defined(NRN_ENABLE_GPU)
     nrn_pragma_acc(wait(nt.stream_id))
 #endif
 }
 
 }  // namespace neuron::gpu
+
