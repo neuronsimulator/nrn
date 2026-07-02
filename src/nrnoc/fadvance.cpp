@@ -564,6 +564,11 @@ void nrn_fixed_step_lastpart(neuron::model_sorted_token const& cache_token, NrnT
     }
 #endif
     nrn_prcellstate_checkpoint_maybe(PrcellCheckpointPhase::post_nonvint, nt);
+#if defined(NRN_ENABLE_GPU)
+    if (neuron::gpu::enabled() && neuron::gpu::backend_native()) {
+        neuron::gpu::begin_lastpart_host_phases(nt);
+    }
+#endif
     nrn_ba(cache_token, nt, AFTER_SOLVE);
     fixed_record_continuous(cache_token, nt);
     CTADD;
@@ -578,6 +583,11 @@ void nrn_fixed_step_lastpart(neuron::model_sorted_token const& cache_token, NrnT
             nrn_deliver_events(nth); /* up to but not past texit */
         }
     }
+#if defined(NRN_ENABLE_GPU)
+    if (neuron::gpu::enabled() && neuron::gpu::backend_native()) {
+        neuron::gpu::end_lastpart_host_phases(nt);
+    }
+#endif
 }
 
 /* nrn_fixed_step_thread is split into three pieces */

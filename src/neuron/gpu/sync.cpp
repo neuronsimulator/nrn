@@ -2,12 +2,13 @@
 
 #include "neuron/gpu/config.hpp"
 #include "neuron/gpu/phase_timer.hpp"
+#include "neuron/gpu/post_solve.hpp"
 
 #include "coreneuron/utils/offload.hpp"
 #include "multicore.h"
 #include "nonvintblock.h"
 #include "nrn_ansi.h"
-#include "nrncvode.h"
+#include "nrncvode.h"  // nrn_thread_has_fixed_play
 
 extern int use_sparse13;
 
@@ -99,6 +100,11 @@ void sync_matrix_arrays_to_host(NrnThread& nt) {
 
 }  // namespace
 
+bool host_voltage_is_authoritative(NrnThread const& nt) noexcept {
+    return post_solve_needs_host_fallback(nt) ||
+           nrn_thread_has_fixed_play(const_cast<NrnThread*>(&nt));
+}
+
 bool matrix_rhs_d_stays_on_device_for_solve(NrnThread const& nt) noexcept {
 #if defined(NRN_ENABLE_GPU)
     if (!enabled() || !backend_native() || !nt.compute_gpu || nrn_nonvint_block || ::use_sparse13) {
@@ -134,10 +140,16 @@ void sync_voltages_to_device_after_lastpart(NrnThread& nt) {
 }
 
 void sync_voltages_to_device_before_axial(NrnThread& nt) {
+    if (!host_voltage_is_authoritative(nt)) {
+        return;
+    }
     sync_node_voltages_to_device(nt);
 }
 
 void sync_matrix_to_device_after_mechanisms(NrnThread& nt) {
+    if (matrix_rhs_d_stays_on_device_for_solve(nt)) {
+        return;
+    }
     sync_matrix_arrays_to_device(nt);
 }
 

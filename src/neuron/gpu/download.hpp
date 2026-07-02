@@ -32,6 +32,12 @@ void batch_download_to_host();
  */
 void sync_state_to_host_for_host_reads() noexcept;
 
+/**
+ * Push sorted node and mechanism SOA from host to device after host lastpart tail
+ * (AFTER_SOLVE, fixed_record, deliver_events).
+ */
+void sync_state_to_device_after_host_lastpart() noexcept;
+
 /** Push host voltages to the device after HOC/VecPlay writes. */
 void batch_upload_to_device();
 

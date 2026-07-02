@@ -48,6 +48,37 @@ void download_sorted_model_soa() {
 #endif
 }
 
+template <typename Storage>
+void upload_soa_storage_to_device(Storage const& storage) {
+#if defined(NRN_ENABLE_GPU) && defined(_OPENACC)
+    storage.for_each_vector_for_gpu_upload(
+        [](auto const& /*tag*/, auto const& vec, int /*field_index*/, int /*array_dim*/) {
+            if (vec.empty()) {
+                return;
+            }
+            using Value = typename std::decay_t<decltype(vec)>::value_type;
+            if constexpr (std::is_same_v<Value, double> || std::is_same_v<Value, int>) {
+                Value const* const host = vec.data();
+                if (!nrn_target_is_present(host)) {
+                    return;
+                }
+                nrn_pragma_acc(update device(host [0:vec.size()]))
+                nrn_pragma_omp(target update to(host [0:vec.size()]))
+            }
+        });
+#else
+    (void) storage;
+#endif
+}
+
+void upload_sorted_model_soa_to_device() {
+#if defined(NRN_ENABLE_GPU)
+    upload_soa_storage_to_device(neuron::model().node_data());
+    neuron::model().apply_to_mechanisms(
+        [&](auto& mech_data) { upload_soa_storage_to_device(mech_data); });
+#endif
+}
+
 }  // namespace
 
 std::size_t download_flush_interval() noexcept {
@@ -97,6 +128,28 @@ void sync_state_to_host_for_host_reads() noexcept {
     phase_timer::Scope const timer{phase_timer::Id::download_flush};
     download_sorted_model_soa();
     batch_download_to_host();
+    sync_all_device_streams();
+#endif
+}
+
+void sync_state_to_device_after_host_lastpart() noexcept {
+#if defined(NRN_ENABLE_GPU)
+    if (!enabled() || !backend_native() || !model_is_on_device()) {
+        return;
+    }
+    phase_timer::Scope const timer{phase_timer::Id::matrix_sync};
+    upload_sorted_model_soa_to_device();
+    for (int ith = 0; ith < nrn_nthread; ++ith) {
+        auto& nt = nrn_threads[ith];
+        if (nt.end <= 0) {
+            continue;
+        }
+        auto* const vec_v = nt.node_voltage_storage();
+        nrn_pragma_acc(update device(vec_v [0:nt.end]) async(nt.stream_id))
+        nrn_pragma_omp(target update to(vec_v [0:nt.end]))
+        nrn_pragma_acc(update device(nt._t) async(nt.stream_id))
+        nrn_pragma_omp(target update to(nt._t))
+    }
     sync_all_device_streams();
 #endif
 }

@@ -4,6 +4,9 @@ struct NrnThread;
 
 namespace neuron::gpu {
 
+/** True when host vec_v may be newer than device (host post-solve or fixed VecPlay). */
+[[nodiscard]] bool host_voltage_is_authoritative(NrnThread const& nt) noexcept;
+
 /** Pull node voltages to host before host-side VecPlay / stimulus updates. */
 void sync_before_vecplay(NrnThread& nt);
 
