@@ -11,6 +11,8 @@
 #include "nonvintblock.h"
 #include "nrn_ansi.h"
 
+#include <cstdlib>
+
 extern int use_sparse13;
 
 namespace neuron::gpu {
@@ -19,6 +21,15 @@ namespace {
 thread_local int g_saved_compute_gpu_for_nonvint{};
 thread_local int g_saved_compute_gpu_for_lastpart_host{};
 thread_local bool g_lastpart_host_phases_active{};
+thread_local bool g_nonvint_state_on_device{};
+
+[[nodiscard]] bool device_nonvint_enabled() noexcept {
+    static int const enabled = [] {
+        char const* const env = std::getenv("NRN_NATIVE_GPU_DEVICE_NONVINT");
+        return env && env[0] == '1' && env[1] == '\0';
+    }();
+    return enabled != 0;
+}
 
 [[nodiscard]] bool nonvint_device_preconditions(NrnThread const& nt) noexcept {
 #if defined(NRN_ENABLE_GPU)
@@ -49,11 +60,23 @@ bool nonvint_can_run_on_device(NrnThread const& nt) noexcept {
 #endif
 }
 
+bool nonvint_state_on_device(NrnThread const& nt) noexcept {
+#if defined(NRN_ENABLE_GPU)
+    return device_nonvint_enabled() && nonvint_can_run_on_device(nt);
+#else
+    (void) nt;
+    return false;
+#endif
+}
+
 void prepare_nonvint_on_device(NrnThread& nt) {
 #if defined(NRN_ENABLE_GPU)
-    if (!nonvint_device_preconditions(nt)) {
+    g_nonvint_state_on_device = false;
+    if (!nonvint_device_preconditions(nt) || !nonvint_state_on_device(nt)) {
+        // OpenACC mods still integrate STATE on the host unless device nonvint is enabled.
         return;
     }
+    g_nonvint_state_on_device = true;
     g_saved_compute_gpu_for_nonvint = nt.compute_gpu;
     nt.compute_gpu = 1;
 
@@ -73,11 +96,15 @@ void prepare_nonvint_on_device(NrnThread& nt) {
 
 void finalize_nonvint_on_device(NrnThread& nt) {
 #if defined(NRN_ENABLE_GPU)
-    if (!nonvint_device_preconditions(nt)) {
+    if (!g_nonvint_state_on_device) {
         return;
     }
     nrn_pragma_acc(wait(nt.stream_id))
+    if (nt.id == 0) {
+        sync_mechanism_soa_to_host_for_host_reads();
+    }
     nt.compute_gpu = g_saved_compute_gpu_for_nonvint;
+    g_nonvint_state_on_device = false;
 #else
     (void) nt;
 #endif
@@ -105,9 +132,9 @@ void begin_lastpart_host_phases(NrnThread& nt) {
     g_lastpart_host_phases_active = true;
     nt.compute_gpu = 0;
     if (nt.id == 0) {
-        // Nonvint STATE/CURRENT for NMODL vectorized mechanisms still run on the
-        // host even when compute_gpu=1. Pull only node/matrix SOA from device;
-        // mechanism STATE on the host was just updated by nonvint.
+        // Pull node/matrix SOA from device. Mechanism STATE is on the host after
+        // host nonvint, or was downloaded in finalize_nonvint_on_device after
+        // device OpenACC state kernels.
         sync_all_device_streams();
         sync_node_soa_to_host_for_host_reads();
     }

@@ -7,6 +7,12 @@ namespace neuron::gpu {
 /** True when mechanism state/nonvint can run on device (OpenACC mods, no host-only hooks). */
 [[nodiscard]] bool nonvint_can_run_on_device(NrnThread const& nt) noexcept;
 
+/**
+ * True when STATE should run on device during nonvint (OpenACC nrnivmodl mods and
+ * NRN_NATIVE_GPU_DEVICE_NONVINT=1). Requires mechanism SOA download before host AFTER_SOLVE.
+ */
+[[nodiscard]] bool nonvint_state_on_device(NrnThread const& nt) noexcept;
+
 /** Push host-authoritative voltages and thread time before GPU nonvint/state. */
 void prepare_nonvint_on_device(NrnThread& nt);
 

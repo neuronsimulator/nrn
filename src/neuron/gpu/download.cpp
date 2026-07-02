@@ -6,9 +6,11 @@
 #include "neuron/gpu/offload.hpp"
 #include "neuron/gpu/phase_timer.hpp"
 #include "neuron/gpu/sync.hpp"
+#include "membfunc.h"
 #include "neuron/model_data.hpp"
 #include "nrn_ansi.h"
 
+#include <cstring>
 #include <type_traits>
 
 namespace neuron::gpu {
@@ -46,11 +48,42 @@ void download_sorted_node_soa() {
 #endif
 }
 
+void download_sorted_mechanism_soa() {
+#if defined(NRN_ENABLE_GPU)
+    neuron::model().apply_to_mechanisms(
+        [&](auto& mech_data) { download_soa_storage(mech_data); });
+#endif
+}
+
+[[nodiscard]] bool mechanism_ran_state_on_device(int type) noexcept {
+    if (type < 0 || type >= n_memb_func || memb_func[type].state == nullptr) {
+        return false;
+    }
+    // Built-in pas registers an empty STATE hook; CURRENT still runs on the host.
+    Symbol const* const sym = memb_func[type].sym;
+    if (sym != nullptr && sym->name != nullptr && std::strcmp(sym->name, "pas") == 0) {
+        return false;
+    }
+    return true;
+}
+
+void download_device_state_mechanism_soa() {
+#if defined(NRN_ENABLE_GPU)
+    // Only pull mechanisms that integrated STATE on the device. Host-only CURRENT
+    // mechanisms (e.g. pas) keep host-authoritative SOA updated during setup.
+    neuron::model().apply_to_mechanisms([&](auto& mech_data) {
+        if (!mechanism_ran_state_on_device(mech_data.type())) {
+            return;
+        }
+        download_soa_storage(mech_data);
+    });
+#endif
+}
+
 void download_sorted_model_soa() {
 #if defined(NRN_ENABLE_GPU)
     download_sorted_node_soa();
-    neuron::model().apply_to_mechanisms(
-        [&](auto& mech_data) { download_soa_storage(mech_data); });
+    download_sorted_mechanism_soa();
 #endif
 }
 
@@ -156,6 +189,17 @@ void sync_node_soa_to_host_for_host_reads() noexcept {
     for (int ith = 0; ith < nrn_nthread; ++ith) {
         download_thread_state_for_host_read(nrn_threads[ith]);
     }
+    sync_all_device_streams();
+#endif
+}
+
+void sync_mechanism_soa_to_host_for_host_reads() noexcept {
+#if defined(NRN_ENABLE_GPU)
+    if (!enabled() || !backend_native() || !model_is_on_device()) {
+        return;
+    }
+    phase_timer::Scope const timer{phase_timer::Id::download_flush};
+    download_device_state_mechanism_soa();
     sync_all_device_streams();
 #endif
 }

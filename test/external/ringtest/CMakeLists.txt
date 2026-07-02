@@ -83,6 +83,29 @@ if(NRN_ENABLE_GPU)
     PROCESSORS ${ringtest_mpi_ranks}
     COMMAND bash ${ringtest_native_gpu_mpi_script}
     OUTPUT asciispikes::spk2.std)
+  # Phase D4: device nonvint scaffolding (NRN_NATIVE_GPU_DEVICE_NONVINT=1).
+  # Ringtest uses built-in pas + hh (cnexp); Traub sparse-solver mods are out of scope.
+  # OpenACC hh STATE requires built-in hh codegen or a non-conflicting mod suffix (follow-up).
+  set(ringtest_native_gpu_device_nonvint_mpi_script
+      ${PROJECT_BINARY_DIR}/test/external_ringtest/neuron_gpu_native_device_nonvint_mpi.sh)
+  file(
+    WRITE ${ringtest_native_gpu_device_nonvint_mpi_script}
+    "#!/bin/bash\n"
+    "set -e\n"
+    "export OMP_NUM_THREADS=1\n"
+    "export NRN_GPU_BACKEND_TEST=native\n"
+    "export NRN_GPU_PERMUTE=2\n"
+    "export NRN_NATIVE_GPU_DEVICE_NONVINT=1\n"
+    "export TMPDIR=\"${PROJECT_BINARY_DIR}/test/tmp/external_ringtest/neuron_gpu_native_device_nonvint_mpi\"\n"
+    "mkdir -p \"$TMPDIR\"\n"
+    "OMP_NUM_THREADS=1 ${ringtest_special_str} -gpu-native -tstop 100\n")
+  nrn_add_test(
+    GROUP external_ringtest
+    NAME neuron_gpu_native_device_nonvint_mpi
+    REQUIRES gpu mpi python mod_compatibility
+    PROCESSORS ${ringtest_mpi_ranks}
+    COMMAND bash ${ringtest_native_gpu_device_nonvint_mpi_script}
+    OUTPUT asciispikes::spk2.std)
   set(ringtest_native_gpu_mpi_gap_script
       ${PROJECT_BINARY_DIR}/test/external_ringtest/neuron_gpu_native_mpi_gap.sh)
   file(

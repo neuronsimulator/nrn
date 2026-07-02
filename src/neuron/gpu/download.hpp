@@ -36,6 +36,12 @@ void batch_download_to_host();
 void sync_node_soa_to_host_for_host_reads() noexcept;
 
 /**
+ * Pull STATEful mechanism SOA from device after device nonvint STATE integration.
+ * Skips host-only CURRENT mechanisms (e.g. pas) whose host mirrors stay authoritative.
+ */
+void sync_mechanism_soa_to_host_for_host_reads() noexcept;
+
+/**
  * Pull sorted node and mechanism SOA vectors from device to host.
  * Required for mid-step checkpoints and HOC reads when device owns all state.
  */
