@@ -218,8 +218,7 @@ static void output_spikes_parallel(const char* outpath, const SpikesInfo& spikes
     size_t num_spikes = spikevec_gid.size();
     size_t num_bytes = (sizeof(char) * num_spikes * SPIKE_RECORD_LEN);
 
-    // Allocate at least 1 byte to avoid undefined behavior from malloc(0)
-    // followed by strcpy (triggers FORTIFY_SOURCE buffer overflow on Linux).
+    // ensure space for at least the null terminator when there are no spikes
     char* spike_data = (char*) malloc(std::max(num_bytes, (size_t) 1));
 
     if (spike_data == nullptr) {
