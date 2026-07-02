@@ -9,6 +9,7 @@
 #include "ocfunc.h"
 #include "ocjump.h"
 #include "parse.hpp"
+#include "nrn_ansi.h"
 #include "section.h"
 #include "shapeplt.h"
 #include <cstring>
@@ -195,6 +196,12 @@ void nrn_segment_diam_set(Section* const sec, const double x, const double diam)
 }
 
 double nrn_segment_diam_get(Section* const sec, const double x) {
+    // Geometry from 3d points writes diam lazily, gated per-section on
+    // recalc_area_. Mirror the range-variable read path (nrnpy_nrn.cpp) so a
+    // diam read after pt3dadd returns the 3d-derived value, not a stale default.
+    if (sec && sec->recalc_area_) {
+        nrn_area_ri(sec);
+    }
     Node* const node = node_exact(sec, x);
     for (auto prop = node->prop; prop; prop = prop->next) {
         if (prop->_type == MORPHOLOGY) {
