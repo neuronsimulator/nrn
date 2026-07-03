@@ -22,6 +22,7 @@ thread_local int g_saved_compute_gpu_for_nonvint{};
 thread_local int g_saved_compute_gpu_for_lastpart_host{};
 thread_local bool g_lastpart_host_phases_active{};
 thread_local bool g_nonvint_state_on_device{};
+thread_local bool g_nonvint_host_state_forced{};
 
 [[nodiscard]] bool device_nonvint_enabled() noexcept {
     static int const enabled = [] {
@@ -72,23 +73,33 @@ bool nonvint_state_on_device(NrnThread const& nt) noexcept {
 void prepare_nonvint_on_device(NrnThread& nt) {
 #if defined(NRN_ENABLE_GPU)
     g_nonvint_state_on_device = false;
-    if (!nonvint_device_preconditions(nt) || !nonvint_state_on_device(nt)) {
-        // OpenACC mods still integrate STATE on the host unless device nonvint is enabled.
+    g_nonvint_host_state_forced = false;
+    if (!nonvint_device_preconditions(nt)) {
         return;
     }
-    g_nonvint_state_on_device = true;
-    g_saved_compute_gpu_for_nonvint = nt.compute_gpu;
-    nt.compute_gpu = 1;
+    if (nonvint_state_on_device(nt)) {
+        g_nonvint_state_on_device = true;
+        g_saved_compute_gpu_for_nonvint = nt.compute_gpu;
+        nt.compute_gpu = 1;
 
-    if (host_voltage_is_authoritative(nt)) {
-        phase_timer::bump(phase_timer::Id::vecplay_sync);
-        auto* const vec_v = nt.node_voltage_storage();
-        nrn_pragma_acc(update device(vec_v [0:nt.end]) if (nt.compute_gpu) async(nt.stream_id))
-        nrn_pragma_omp(target update to(vec_v [0:nt.end]) if (nt.compute_gpu))
+        if (host_voltage_is_authoritative(nt)) {
+            phase_timer::bump(phase_timer::Id::vecplay_sync);
+            auto* const vec_v = nt.node_voltage_storage();
+            nrn_pragma_acc(update device(vec_v [0:nt.end]) if (nt.compute_gpu) async(nt.stream_id))
+            nrn_pragma_omp(target update to(vec_v [0:nt.end]) if (nt.compute_gpu))
+        }
+        nrn_pragma_acc(update device(nt._t) if (nt.compute_gpu) async(nt.stream_id))
+        nrn_pragma_omp(target update to(nt._t) if (nt.compute_gpu))
+        nrn_pragma_acc(wait(nt.stream_id))
+        return;
     }
-    nrn_pragma_acc(update device(nt._t) if (nt.compute_gpu) async(nt.stream_id))
-    nrn_pragma_omp(target update to(nt._t) if (nt.compute_gpu))
-    nrn_pragma_acc(wait(nt.stream_id))
+    // Host CURRENT still reads mechanism STATE from host SOA. With compute_gpu=1,
+    // OpenACC STATE kernels update device copies only; force host integration.
+    if (nt.compute_gpu) {
+        g_saved_compute_gpu_for_nonvint = nt.compute_gpu;
+        g_nonvint_host_state_forced = true;
+        nt.compute_gpu = 0;
+    }
 #else
     (void) nt;
 #endif
@@ -96,15 +107,19 @@ void prepare_nonvint_on_device(NrnThread& nt) {
 
 void finalize_nonvint_on_device(NrnThread& nt) {
 #if defined(NRN_ENABLE_GPU)
-    if (!g_nonvint_state_on_device) {
+    if (g_nonvint_state_on_device) {
+        nrn_pragma_acc(wait(nt.stream_id))
+        if (nt.id == 0) {
+            sync_mechanism_soa_to_host_for_host_reads();
+        }
+        nt.compute_gpu = g_saved_compute_gpu_for_nonvint;
+        g_nonvint_state_on_device = false;
         return;
     }
-    nrn_pragma_acc(wait(nt.stream_id))
-    if (nt.id == 0) {
-        sync_mechanism_soa_to_host_for_host_reads();
+    if (g_nonvint_host_state_forced) {
+        nt.compute_gpu = g_saved_compute_gpu_for_nonvint;
+        g_nonvint_host_state_forced = false;
     }
-    nt.compute_gpu = g_saved_compute_gpu_for_nonvint;
-    g_nonvint_state_on_device = false;
 #else
     (void) nt;
 #endif

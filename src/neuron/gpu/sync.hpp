@@ -56,6 +56,9 @@ void sync_rhs_to_host_after_solve(NrnThread& nt);
 /** Pull post-solve node voltages to host for HOC reads and VecPlay. */
 void sync_voltages_to_host_after_post_solve(NrnThread& nt);
 
+/** Pull device voltages before threshold detection (host check_thresh reads host SoA). */
+void sync_voltages_to_host_before_check_thresh(NrnThread& nt);
+
 /** Pull device node voltages to host before host-side nonvint STATE integration. */
 void sync_voltages_to_host_before_nonvint(NrnThread& nt);
 

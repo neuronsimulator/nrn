@@ -559,11 +559,8 @@ void nrn_fixed_step_lastpart(neuron::model_sorted_token const& cache_token, NrnT
     if (neuron::gpu::enabled() && neuron::gpu::backend_native()) {
         neuron::gpu::sync_all_device_streams();
         neuron::gpu::sync_voltages_to_host_before_nonvint(nt);
-        if (!neuron::gpu::nonvint_state_on_device(nt) &&
-            !neuron::gpu::post_solve_needs_host_fallback(nt) && secondorder == 2) {
-            neuron::gpu::sync_rhs_to_host_before_nonvint(nt);
-            second_order_cur(nth);
-        }
+        // second_order_cur_on_device already ran in post_solve_on_device; do not
+        // apply again on the host or ion partial currents diverge from the CPU path.
         neuron::gpu::prepare_nonvint_on_device(nt);
     }
 #endif

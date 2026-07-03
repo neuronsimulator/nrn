@@ -49,10 +49,15 @@ void fixed_step_thread(model_sorted_token const& cache_token,
     nt.compute_gpu = 1;
 
     ensure_thread_net_send_buffers(nth);
-    if (nt.end > 0 && post_solve_needs_host_fallback(nt)) {
-        // Threshold detection reads device vec_v; host post-solve leaves V on CPU.
+    if (nt.end > 0) {
         phase_timer::Scope const timer{phase_timer::Id::vecplay_sync};
-        sync_voltages_to_device_before_axial(nt);
+        if (post_solve_needs_host_fallback(nt)) {
+            // Threshold detection reads device vec_v; host post-solve leaves V on CPU.
+            sync_voltages_to_device_before_axial(nt);
+        } else {
+            // check_thresh host fallback reads host SoA; keep it aligned with device post_solve.
+            sync_voltages_to_host_before_check_thresh(nt);
+        }
     }
     {
         phase_timer::Scope const timer{phase_timer::Id::deliver_events};

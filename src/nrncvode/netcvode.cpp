@@ -89,6 +89,18 @@ void deliver_threshold_spike(NrnThread* nt, void* presyn, double teps) {
     ps->send(nt->_t + teps, net_cvode_instance, nt);
 }
 
+void sync_threshold_presyn_flags(ThresholdPresynSlot const* slots, int const* flags, int count) {
+    if (!slots || !flags || count <= 0) {
+        return;
+    }
+    for (int i = 0; i < count; ++i) {
+        auto* const ps = static_cast<PreSyn*>(slots[i].presyn);
+        if (ps) {
+            ps->flag_ = flags[i] != 0;
+        }
+    }
+}
+
 }  // namespace neuron::gpu
 
 
@@ -5976,11 +5988,13 @@ void NetCvode::check_thresh(NrnThread* nt) {  // for default method
 #if defined(NRN_ENABLE_GPU)
     bool const gpu_thresh = neuron::gpu::enabled() && neuron::gpu::backend_native() &&
                             nt->compute_gpu && nt->end > 0;
+    bool gpu_thresh_handled = false;
     if (gpu_thresh) {
-        (void) neuron::gpu::check_thresh_presyn_on_device(nt, teps);
+        gpu_thresh_handled = neuron::gpu::check_thresh_presyn_on_device(nt, teps);
     }
 #else
     constexpr bool gpu_thresh = false;
+    constexpr bool gpu_thresh_handled = false;
 #endif
     {
         hoc_Item* pth = p[nt->id].psl_thr_;
@@ -5993,7 +6007,8 @@ void NetCvode::check_thresh(NrnThread* nt) {  // for default method
                 if (ps->nt_ == nt) {
                     if (ps->thvar_) {
 #if defined(NRN_ENABLE_GPU)
-                        if (gpu_thresh && ps->thvar_.refers_to_a_modern_data_structure()) {
+                        if (gpu_thresh && gpu_thresh_handled &&
+                            ps->thvar_.refers_to_a_modern_data_structure()) {
                             continue;
                         }
 #endif

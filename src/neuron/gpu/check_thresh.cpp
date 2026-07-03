@@ -3,6 +3,7 @@
 #include "neuron/gpu/config.hpp"
 #include "neuron/gpu/offload.hpp"
 #include "neuron/gpu/phase_timer.hpp"
+#include "neuron/gpu/sync.hpp"
 
 #include "multicore.h"
 #include "nrn_ansi.h"
@@ -155,13 +156,24 @@ bool check_thresh_presyn_on_device(NrnThread* nt, double teps) noexcept {
     auto& table = g_tables[nt->id];
     int const count = static_cast<int>(table.slots.size());
     if (count == 0) {
-        return true;
+        // No device slots: host must run threshold detection for modern presyns.
+        return false;
     }
 
     ensure_thread_net_send_buffer(*nt, count);
 
     if (table.device_capacity != static_cast<std::size_t>(count)) {
-        return false;
+        rebuild_thread_table(nt->id);
+        if (table.device_capacity != static_cast<std::size_t>(count)) {
+            return false;
+        }
+    }
+
+#if defined(NRN_ENABLE_GPU) && defined(_OPENACC)
+    nrn_pragma_acc(wait(nt->stream_id))
+#endif
+    if (host_voltage_is_authoritative(*nt)) {
+        sync_voltages_to_device_before_axial(*nt);
     }
 
     int* const thvar_row = table.h_thvar_row.data();
@@ -196,6 +208,11 @@ bool check_thresh_presyn_on_device(NrnThread* nt, double teps) noexcept {
     }
     nrn_pragma_acc(wait(nt->stream_id))
     nt->_net_send_buffer_cnt = net_send_buf_count;
+
+    nrn_pragma_acc(update host(flag [0:count]) async(nt->stream_id))
+    nrn_pragma_omp(target update from(flag [0:count]) if (nt->compute_gpu))
+    nrn_pragma_acc(wait(nt->stream_id))
+    sync_threshold_presyn_flags(table.slots.data(), flag, count);
 
     if (net_send_buf_count > 0) {
         nrn_pragma_acc(update host(nsbuffer [0:net_send_buf_count]) async(nt->stream_id))

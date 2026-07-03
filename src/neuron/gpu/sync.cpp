@@ -331,6 +331,16 @@ void sync_voltages_to_host_after_post_solve(NrnThread& nt) {
     sync_node_voltages_to_host(nt);
 }
 
+void sync_voltages_to_host_before_check_thresh(NrnThread& nt) {
+#if defined(NRN_ENABLE_GPU)
+    if (!enabled() || !backend_native() || !nt.compute_gpu || nt.end <= 0) {
+        return;
+    }
+    nrn_pragma_acc(wait(nt.stream_id))
+#endif
+    sync_node_voltages_to_host(nt);
+}
+
 void sync_voltages_to_host_before_nonvint(NrnThread& nt) {
 #if defined(NRN_ENABLE_GPU)
     if (!enabled() || !backend_native() || nt.end <= 0) {
