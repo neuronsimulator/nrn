@@ -13,6 +13,9 @@ namespace neuron::gpu {
  */
 [[nodiscard]] bool nonvint_state_on_device(NrnThread const& nt) noexcept;
 
+/** Gate C structural predicate (ignores transient nt.compute_gpu). */
+[[nodiscard]] bool nonvint_qualifies_for_gpu_native(NrnThread const& nt) noexcept;
+
 /** Push host-authoritative voltages and thread time before GPU nonvint/state. */
 void prepare_nonvint_on_device(NrnThread& nt);
 

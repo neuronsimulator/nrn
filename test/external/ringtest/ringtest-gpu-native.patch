@@ -16,7 +16,7 @@ index cec9c97..ab2aacf 100644
                      metavar='N',
                      help="permute option for cell topology (default 0)",
 diff --git a/ringtest.py b/ringtest.py
-index b0e9067..127f4ae 100644
+index b0e9067..c4a8e21 100644
 --- a/ringtest.py
 +++ b/ringtest.py
 @@ -49,13 +49,20 @@ use_coreneuron = args.coreneuron

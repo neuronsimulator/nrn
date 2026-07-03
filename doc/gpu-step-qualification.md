@@ -221,8 +221,9 @@ Transitional mitigations are **safety nets**, not architecture.
 | Spikes | ringtest ctest / `out*.dat` vs CPU |
 | Performance | Wall time vs NEURON CPU (expect win when qualified) |
 
-Mods: pas, hh (or ring mod), stim/IClamp, capacitance — already partially
-registered in `src/nrniv/CMakeLists.txt` OpenACC list.
+Mods: pas, hh, expsyn, stim/IClamp, capacitance — built-in OpenACC codegen in
+`src/nrniv/CMakeLists.txt`. Ion mechanisms (`*_ion`) are bookkeeping only and
+are excluded from Gate B. Gate C requires `NRN_NATIVE_GPU_DEVICE_NONVINT=1`.
 
 ### Tier 1 — Traub (82894)
 

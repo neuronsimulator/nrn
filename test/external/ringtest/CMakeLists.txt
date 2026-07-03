@@ -73,6 +73,7 @@ if(NRN_ENABLE_GPU)
     "export OMP_NUM_THREADS=1\n"
     "export NRN_GPU_BACKEND_TEST=native\n"
     "export NRN_GPU_PERMUTE=2\n"
+    "export NRN_NATIVE_GPU_DEVICE_NONVINT=1\n"
     "export TMPDIR=\"${PROJECT_BINARY_DIR}/test/tmp/external_ringtest/neuron_gpu_native_mpi\"\n"
     "mkdir -p \"$TMPDIR\"\n"
     "OMP_NUM_THREADS=1 ${ringtest_special_str} -gpu-native -tstop 100\n")

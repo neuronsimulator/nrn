@@ -9,6 +9,7 @@
 #include "membfunc.h"
 #include "multicore.h"
 #include "nonvintblock.h"
+#include "nrn_ansi.h"
 #include "nrncvode.h"
 #include "hocdec.h"
 
@@ -57,7 +58,7 @@ void append_blocking_mechs(std::string& out,
             continue;
         }
         for (auto* tml = nt.tml; tml; tml = tml->next) {
-            if (!hook_present(tml->index) || predicate(tml->index)) {
+            if (nrn_is_ion(tml->index) || !hook_present(tml->index) || predicate(tml->index)) {
                 continue;
             }
             names.emplace_back(mech_name(tml->index));
@@ -91,12 +92,15 @@ void append_blocking_mechs(std::string& out,
     return type >= 0 && type < n_memb_func && memb_func[type].state != nullptr;
 }
 
-[[nodiscard]] bool solve_phase_on_device(NrnThread const& nt) noexcept {
+[[nodiscard]] bool solve_phase_qualifies_for_gpu_native(NrnThread const& nt) noexcept {
 #if defined(NRN_ENABLE_GPU)
-    if (!nonvint_state_on_device(nt)) {
+    if (!nonvint_qualifies_for_gpu_native(nt)) {
         return false;
     }
     for (auto* tml = nt.tml; tml; tml = tml->next) {
+        if (nrn_is_ion(tml->index)) {
+            continue;
+        }
         if (has_state_hook(tml->index) && !mechanism_solve_on_device(tml->index)) {
             return false;
         }
@@ -121,7 +125,7 @@ struct GateStatus {
 #if defined(NRN_ENABLE_GPU)
     gates.matrix_on_device = matrix_rhs_d_qualifies_for_gpu_native(nt);
     gates.currents_on_device = matrix_currents_qualify_for_gpu_native(nt);
-    gates.solve_on_device = solve_phase_on_device(nt);
+    gates.solve_on_device = solve_phase_qualifies_for_gpu_native(nt);
     gates.post_solve_on_device = !post_solve_needs_host_fallback(nt);
     gates.threshold_on_device = threshold_detection_on_device(nt);
 #else
@@ -321,7 +325,7 @@ std::string native_gpu_qualification_report() {
 
     out += fmt::format("Gate C SOLVE/nonvint on device: {}\n",
                        gates.solve_on_device ? "yes" : "no");
-    if (!nonvint_state_on_device(*nt_detail)) {
+    if (!nonvint_qualifies_for_gpu_native(*nt_detail)) {
         out += "  (set NRN_NATIVE_GPU_DEVICE_NONVINT=1 and ensure all STATE mods register Solve)\n";
     }
     append_blocking_mechs(out, "  SOLVE", mechanism_solve_on_device, has_state_hook);

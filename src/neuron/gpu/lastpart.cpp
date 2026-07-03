@@ -69,6 +69,15 @@ bool nonvint_state_on_device(NrnThread const& nt) noexcept {
 #endif
 }
 
+bool nonvint_qualifies_for_gpu_native(NrnThread const& nt) noexcept {
+#if defined(NRN_ENABLE_GPU)
+    return device_nonvint_enabled() && nonvint_device_preconditions(nt);
+#else
+    (void) nt;
+    return false;
+#endif
+}
+
 void prepare_nonvint_on_device(NrnThread& nt) {
 #if defined(NRN_ENABLE_GPU)
     g_nonvint_state_on_device = false;

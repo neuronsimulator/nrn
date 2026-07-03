@@ -143,6 +143,9 @@ bool matrix_currents_qualify_for_gpu_native(NrnThread const& nt) noexcept {
         return false;
     }
     for (auto* tml = nt.tml; tml; tml = tml->next) {
+        if (nrn_is_ion(tml->index)) {
+            continue;
+        }
         if (memb_func[tml->index].current && !mechanism_current_on_device(tml->index)) {
             return false;
         }
@@ -166,6 +169,9 @@ bool matrix_currents_on_device(NrnThread const& nt) noexcept {
         return false;
     }
     for (auto* tml = nt.tml; tml; tml = tml->next) {
+        if (nrn_is_ion(tml->index)) {
+            continue;
+        }
         if (memb_func[tml->index].current && !mechanism_current_on_device(tml->index)) {
             return false;
         }
