@@ -38,6 +38,7 @@ if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
     gpu/net_send_buffer.cpp
     gpu/post_solve.cpp
     gpu/sync.cpp
+    gpu/mechanism_phases.cpp
     gpu/lastpart.cpp
     gpu/partrans.cpp
     gpu/phase_timer.cpp
@@ -63,6 +64,7 @@ if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
     gpu/net_send_buffer.cpp
     gpu/post_solve.cpp
     gpu/sync.cpp
+    gpu/mechanism_phases.cpp
     gpu/lastpart.cpp
     gpu/partrans.cpp
     gpu/phase_timer.cpp

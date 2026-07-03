@@ -15,6 +15,8 @@ void CodegenNeuronAccVisitor::print_standard_includes() {
     CodegenNeuronCppVisitor::print_standard_includes();
     printer->add_line("#include <neuron/gpu/offload.hpp>");
     printer->add_line("#include <neuron/gpu/net_send_buffer.hpp>");
+    printer->add_line("#include <neuron/gpu/mechanism_phases.hpp>");
+    printer->add_line("#include <neuron/gpu/sync.hpp>");
 }
 
 bool CodegenNeuronAccVisitor::host_only_parallel_block(BlockType type) const {
@@ -221,6 +223,74 @@ void CodegenNeuronAccVisitor::print_after_nrn_cur_gpu_net_send_flush() {
 void CodegenNeuronAccVisitor::print_compute_functions() {
     print_net_send_buffering();
     CodegenNeuronCppVisitor::print_compute_functions();
+}
+
+void CodegenNeuronAccVisitor::print_nrn_jacob() {
+    if (!breakpoint_exist() || info.artificial_cell) {
+        CodegenNeuronCppVisitor::print_nrn_jacob();
+        return;
+    }
+
+    printer->add_newline(2);
+
+    ParamVector args = {{"", "const _nrn_model_sorted_token&", "", "_sorted_token"},
+                        {"", "NrnThread*", "", "nt"},
+                        {"", "Memb_list*", "", "_ml_arg"},
+                        {"", "int", "", "_type"}};
+
+    printer->fmt_push_block("static void {}({})",
+                            method_name(naming::NRN_JACOB_METHOD),
+                            get_parameter_str(args));
+    printer->push_block("if (nt->compute_gpu && neuron::gpu::matrix_currents_on_device(*nt))");
+    print_kernel_global_device_setup();
+    print_kernel_data_present_annotation_block_begin();
+    print_entrypoint_setup_code_from_memb_list();
+    printer->fmt_line("auto nodecount = _ml_arg->nodecount;");
+    print_parallel_iteration_hint(BlockType::Equation, nullptr);
+    printer->push_block("for (int id = 0; id < nodecount; id++)");
+    printer->add_line("int node_id = node_data.nodeindices[id];");
+    printer->fmt_line("node_data.node_diagonal[node_id] {} inst.{}[id];",
+                      operator_for_d(),
+                      info.vectorize ? naming::CONDUCTANCE_UNUSED_VARIABLE
+                                     : naming::CONDUCTANCE_VARIABLE);
+    printer->pop_block();
+    print_kernel_data_present_annotation_block_end();
+    printer->chain_block("else");
+    print_entrypoint_setup_code_from_memb_list();
+    printer->fmt_line("auto nodecount = _ml_arg->nodecount;");
+    printer->push_block("for (int id = 0; id < nodecount; id++)");
+    printer->add_line("int node_id = node_data.nodeindices[id];");
+    printer->fmt_line("node_data.node_diagonal[node_id] {} inst.{}[id];",
+                      operator_for_d(),
+                      info.vectorize ? naming::CONDUCTANCE_UNUSED_VARIABLE
+                                     : naming::CONDUCTANCE_VARIABLE);
+    printer->pop_block();
+    printer->pop_block();
+    printer->pop_block();
+}
+
+void CodegenNeuronAccVisitor::print_gpu_phase_registration() {
+    std::vector<std::string> flags;
+    if (nrn_cur_required()) {
+        flags.emplace_back("neuron::gpu::MechanismGpuPhase::Current");
+    }
+    if (breakpoint_exist()) {
+        flags.emplace_back("neuron::gpu::MechanismGpuPhase::Jacobian");
+    }
+    if (nrn_state_required()) {
+        flags.emplace_back("neuron::gpu::MechanismGpuPhase::Solve");
+    }
+    if (flags.empty()) {
+        return;
+    }
+    std::string phase_flags;
+    for (std::size_t i = 0; i < flags.size(); ++i) {
+        if (i > 0) {
+            phase_flags += " | ";
+        }
+        phase_flags += flags[i];
+    }
+    printer->fmt_line("neuron::gpu::register_mechanism_gpu_phases(mech_type, {});", phase_flags);
 }
 
 void CodegenNeuronAccVisitor::print_net_send_call(const ast::FunctionCall& node) {

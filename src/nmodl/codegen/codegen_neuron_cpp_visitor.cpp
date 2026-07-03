@@ -1726,7 +1726,11 @@ void CodegenNeuronCppVisitor::print_mechanism_register_regular() {
                           method_name(naming::CVODE_SETUP_STIFF_NAME));
         printer->fmt_line("hoc_register_tolerance(mech_type, _hoc_state_tol, &_atollist);");
     }
+
+    print_gpu_phase_registration();
 }
+
+void CodegenNeuronCppVisitor::print_gpu_phase_registration() {}
 
 void CodegenNeuronCppVisitor::print_mechanism_register_nothing() {
     printer->add_line("hoc_register_var(hoc_scalar_double, hoc_vector_double, hoc_intfunc);");

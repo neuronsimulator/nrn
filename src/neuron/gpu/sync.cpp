@@ -1,6 +1,7 @@
 #include "neuron/gpu/sync.hpp"
 
 #include "neuron/gpu/config.hpp"
+#include "neuron/gpu/mechanism_phases.hpp"
 #include "neuron/gpu/phase_timer.hpp"
 #include "neuron/gpu/post_solve.hpp"
 
@@ -124,22 +125,6 @@ bool matrix_rhs_d_stays_on_device_for_solve(NrnThread const& nt) noexcept {
 #endif
 }
 
-namespace {
-
-[[nodiscard]] bool mechanism_current_on_device(int type) noexcept {
-    if (type < 0 || type >= n_memb_func) {
-        return false;
-    }
-    Symbol const* const sym = memb_func[type].sym;
-    if (sym == nullptr || sym->name == nullptr) {
-        return false;
-    }
-    // Built-in mods translated with NMODL OpenACC CURRENT (ringtest scope).
-    return std::strcmp(sym->name, "pas") == 0 || std::strcmp(sym->name, "hh") == 0;
-}
-
-}  // namespace
-
 bool matrix_currents_on_device(NrnThread const& nt) noexcept {
 #if defined(NRN_ENABLE_GPU)
     if (!matrix_rhs_d_stays_on_device_for_solve(nt) || nt.end <= 0) {
@@ -149,6 +134,12 @@ bool matrix_currents_on_device(NrnThread const& nt) noexcept {
         if (memb_func[tml->index].current && !mechanism_current_on_device(tml->index)) {
             return false;
         }
+        if (memb_func[tml->index].jacob && !mechanism_jacobian_on_device(tml->index)) {
+            return false;
+        }
+    }
+    if (nt.tml && nt.tml->index == CAP && !mechanism_jacobian_on_device(CAP)) {
+        return false;
     }
     return true;
 #else
@@ -283,7 +274,7 @@ void sync_voltages_to_device_before_axial(NrnThread& nt) {
 }
 
 void sync_matrix_to_device_after_mechanisms(NrnThread& nt) {
-    // OpenACC CURRENT (pas/hh) updates rhs on device; skip host push.
+    // OpenACC CURRENT updates rhs on device; skip host push.
     if (matrix_currents_on_device(nt)) {
         return;
     }

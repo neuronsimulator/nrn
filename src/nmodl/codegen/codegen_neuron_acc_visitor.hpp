@@ -43,6 +43,10 @@ class CodegenNeuronAccVisitor: public CodegenNeuronCppVisitor {
 
     void print_compute_functions() override;
 
+    void print_nrn_jacob() override;
+
+    void print_gpu_phase_registration() override;
+
     std::string global_variable_name(const SymbolType& symbol,
                                      bool use_instance) const override;
 

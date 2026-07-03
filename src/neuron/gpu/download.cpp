@@ -2,6 +2,7 @@
 
 #include "multicore.h"
 #include "neuron/gpu/config.hpp"
+#include "neuron/gpu/mechanism_phases.hpp"
 #include "neuron/gpu/device_state.hpp"
 #include "neuron/gpu/offload.hpp"
 #include "neuron/gpu/phase_timer.hpp"
@@ -56,15 +57,7 @@ void download_sorted_mechanism_soa() {
 }
 
 [[nodiscard]] bool mechanism_ran_state_on_device(int type) noexcept {
-    if (type < 0 || type >= n_memb_func || memb_func[type].state == nullptr) {
-        return false;
-    }
-    // Built-in pas registers an empty STATE hook; CURRENT still runs on the host.
-    Symbol const* const sym = memb_func[type].sym;
-    if (sym != nullptr && sym->name != nullptr && std::strcmp(sym->name, "pas") == 0) {
-        return false;
-    }
-    return true;
+    return mechanism_solve_on_device(type);
 }
 
 void download_device_state_mechanism_soa() {

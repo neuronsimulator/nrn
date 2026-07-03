@@ -16,11 +16,13 @@
 #include "node_order_optim/node_order_optim.h"
 #include <nrnmpi.h>
 #include <cerrno>
+#include <cstring>
 
 #if defined(NRN_ENABLE_GPU)
 #include "neuron/gpu/config.hpp"
 #include "neuron/gpu/device_assign.hpp"
 #include "neuron/gpu/download.hpp"
+#include "neuron/gpu/mechanism_phases.hpp"
 #endif
 
 #undef MD
@@ -1011,6 +1013,15 @@ static double gpu_download_flush_interval(void*) {
     return double(neuron::gpu::download_flush_interval());
 }
 
+static const char** gpu_fixed_step_phases(void*) {
+    static char report_storage[4096];
+    auto const report = neuron::gpu::native_gpu_fixed_step_phase_report();
+    std::strncpy(report_storage, report.c_str(), sizeof(report_storage) - 1);
+    report_storage[sizeof(report_storage) - 1] = '\0';
+    static char* ptr = report_storage;
+    return (const char**) &ptr;
+}
+
 #endif
 
 static double sec_in_thread(void*) {
@@ -1197,6 +1208,7 @@ static Member_ret_str_func retstr_members[] =
 { {"upkstr", upkstr},
 #if defined(NRN_ENABLE_GPU)
   {"gpu_backend", gpu_backend},
+  {"gpu_fixed_step_phases", gpu_fixed_step_phases},
 #endif
   {0, 0} };
 

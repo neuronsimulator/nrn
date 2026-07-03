@@ -592,6 +592,9 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
     /** GPU backends may copyin mechanism instance SOA slices before parallel loops. */
     virtual void print_kernel_instance_data_copyin();
 
+    /** GPU backends register fixed-step phases after mech_type is assigned. */
+    virtual void print_gpu_phase_registration();
+
     /**
      * Prints setup code for entrypoints from NEURON.
      *
@@ -648,7 +651,7 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
      * Print nrn_jacob function definition
      *
      */
-    void print_nrn_jacob();
+    virtual void print_nrn_jacob();
 
 
     /****************************************************************************************/

@@ -6,6 +6,12 @@
 #include "neuron/cache/mechanism_range.hpp"
 #include "nrniv_mf.h"
 
+#if defined(NRN_ENABLE_GPU)
+#include "coreneuron/utils/offload.hpp"
+#include "neuron/gpu/mechanism_phases.hpp"
+#include "neuron/gpu/sync.hpp"
+#endif
+
 
 static const char* mechanism[] = {"0", "capacitance", "cm", 0, "i_cap", 0, 0};
 static void cap_alloc(Prop*);
@@ -24,6 +30,9 @@ extern "C" void capac_reg_(void) {
     using neuron::mechanism::field;
     neuron::mechanism::register_data_fields(mechtype, field<double>{"cm"}, field<double>{"i_cap"});
     hoc_register_prop_size(mechtype, nparm, 0);
+#if defined(NRN_ENABLE_GPU)
+    neuron::gpu::register_mechanism_gpu_phases(mechtype, neuron::gpu::MechanismGpuPhase::Jacobian);
+#endif
 }
 
 static constexpr auto cm_index = 0;
@@ -39,11 +48,26 @@ It used to be static but is now a thread data variable
 void nrn_cap_jacob(neuron::model_sorted_token const& sorted_token, NrnThread* _nt, Memb_list* ml) {
     neuron::cache::MechanismRange<nparm, ndparm> ml_cache{sorted_token, *_nt, *ml, ml->type()};
     auto* const vec_d = _nt->node_d_storage();
-    int count = ml->nodecount;
-    double cfac = .001 * _nt->cj;
-    int* ni = ml->nodeindices;
+    int const count = ml->nodecount;
+    double const cfac = .001 * _nt->cj;
+    int* const ni = ml->nodeindices;
+    double* const cm_data = ml_cache.data_array_ptr<cm_index, 1>();
+#if defined(NRN_ENABLE_GPU)
+    if (_nt->compute_gpu && neuron::gpu::matrix_currents_on_device(*_nt)) {
+        nrn_pragma_acc(parallel loop present(cm_data [0:count],
+                                             ni [0:count],
+                                             vec_d [0:_nt->end]) if (_nt->compute_gpu)
+                           async(_nt->stream_id))
+        nrn_pragma_omp(target teams distribute parallel for if(_nt->compute_gpu))
+        for (int i = 0; i < count; i++) {
+            vec_d[ni[i]] += cfac * cm_data[i];
+        }
+        nrn_pragma_acc(wait(_nt->stream_id))
+        return;
+    }
+#endif
     for (int i = 0; i < count; i++) {
-        vec_d[ni[i]] += cfac * ml_cache.fpfield<cm_index>(i);
+        vec_d[ni[i]] += cfac * cm_data[i];
     }
 }
 

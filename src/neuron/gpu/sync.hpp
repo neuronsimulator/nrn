@@ -19,7 +19,7 @@ void sync_voltages_to_device_after_lastpart(NrnThread& nt);
 /** Push node voltages to device immediately before OpenACC axial matrix assembly. */
 void sync_voltages_to_device_before_axial(NrnThread& nt);
 
-/** True when every thread mechanism CURRENT is OpenACC on device (ringtest: pas + hh). */
+/** True when every mechanism CURRENT/JACOBIAN (incl. capacitance) is OpenACC on device. */
 [[nodiscard]] bool matrix_currents_on_device(NrnThread const& nt) noexcept;
 
 /** Zero vec_rhs / sav_rhs on device at the start of nrn_rhs (device-current path). */

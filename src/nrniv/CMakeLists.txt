@@ -127,7 +127,8 @@ foreach(modfile ${NRN_MODFILE_BASE_NAMES})
      AND modfile MATCHES "hh$")
     set(modfile_compat ON)
   endif()
-  if(NRN_ENABLE_GPU AND (modfile MATCHES "hh$" OR modfile MATCHES "passive$"))
+  if(NRN_ENABLE_GPU
+     AND (modfile MATCHES "hh$" OR modfile MATCHES "passive$" OR modfile STREQUAL "stim"))
     nmodl_openacc_mod_to_cpp(${modfile} ${modfile_compat})
   else()
     nocmodl_mod_to_cpp(${modfile} ${modfile_compat})
@@ -483,7 +484,8 @@ if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
       ${PROJECT_SOURCE_DIR}/src/coreneuron/permute/cellorder1.cpp
       ${PROJECT_SOURCE_DIR}/src/coreneuron/permute/cellorder2.cpp
       ${PROJECT_SOURCE_DIR}/src/coreneuron/utils/lpt.cpp
-      ${PROJECT_SOURCE_DIR}/src/nrnoc/treeset.cpp)
+      ${PROJECT_SOURCE_DIR}/src/nrnoc/treeset.cpp
+      ${PROJECT_SOURCE_DIR}/src/nrnoc/capac.cpp)
   set_source_files_properties(
     ${_nrn_openacc_sources} PROPERTIES COMPILE_OPTIONS "${NRN_ACC_FLAGS}"
                                        COMPILE_DEFINITIONS "CORENEURON_ENABLE_GPU;NRN_ENABLE_GPU")
@@ -509,7 +511,7 @@ if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
 
   # Built-in pas + hh use NMODL OpenACC codegen for native GPU CURRENT/STATE.
   set(_nrn_openacc_builtin_mod_cpp)
-  foreach(_modfile src/nrnoc/hh src/nrnoc/passive)
+  foreach(_modfile src/nrnoc/hh src/nrnoc/passive src/nrnoc/stim)
     list(APPEND _nrn_openacc_builtin_mod_cpp ${PROJECT_BINARY_DIR}/${_modfile}.cpp)
   endforeach()
   set_source_files_properties(
