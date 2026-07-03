@@ -44,6 +44,12 @@ void sync_diagonal_to_device_before_axial_lhs(NrnThread& nt) noexcept;
  *  False when sparse13, Python nonvint blocks, or extracellular (_ecell_memb_list) are active. */
 [[nodiscard]] bool matrix_rhs_d_stays_on_device_for_solve(NrnThread const& nt) noexcept;
 
+/** Gate A for qualification (structural blockers only; ignores transient nt.compute_gpu). */
+[[nodiscard]] bool matrix_rhs_d_qualifies_for_gpu_native(NrnThread const& nt) noexcept;
+
+/** Gate B for qualification (mechanism registration; ignores transient nt.compute_gpu). */
+[[nodiscard]] bool matrix_currents_qualify_for_gpu_native(NrnThread const& nt) noexcept;
+
 /** Pull GPU axial matrix state to host before host nonvint adjustments. */
 void sync_matrix_to_host_before_solve(NrnThread& nt);
 
@@ -55,6 +61,9 @@ void sync_rhs_to_host_after_solve(NrnThread& nt);
 
 /** Pull post-solve node voltages to host for HOC reads and VecPlay. */
 void sync_voltages_to_host_after_post_solve(NrnThread& nt);
+
+/** Pull device voltages before threshold detection (host check_thresh reads host SoA). */
+void sync_voltages_to_host_before_check_thresh(NrnThread& nt);
 
 /** Pull device node voltages to host before host-side nonvint STATE integration. */
 void sync_voltages_to_host_before_nonvint(NrnThread& nt);

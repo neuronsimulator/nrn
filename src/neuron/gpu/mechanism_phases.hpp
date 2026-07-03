@@ -33,9 +33,21 @@ void register_mechanism_gpu_phases(int type, MechanismGpuPhase phases) noexcept;
 [[nodiscard]] bool mechanism_solve_on_device(int type) noexcept;
 
 /**
- * After model init, summarize which fixed-step phases run fully on the GPU for the loaded model.
- * Intended for pc.gpu_fixed_step_phases() inquiry.
+ * After model init, report whether the loaded model qualifies for GPU-native fixed-step
+ * integration and which gates block qualification. Intended for pc.gpu_qualification().
  */
+[[nodiscard]] std::string native_gpu_qualification_report();
+
+/** True when Gates A–E pass for every active thread (Gate F is informational only). */
+[[nodiscard]] bool model_qualifies_for_full_gpu_native() noexcept;
+
+/**
+ * Print qualification report to stderr and abort via hoc_execerror when native GPU is
+ * enabled and the model is not qualified. No-op when GPU is off or backend is not native.
+ */
+void require_gpu_native_qualification_or_stop();
+
+/** @deprecated Use native_gpu_qualification_report(); kept for pc.gpu_fixed_step_phases(). */
 [[nodiscard]] std::string native_gpu_fixed_step_phase_report();
 
 namespace detail {

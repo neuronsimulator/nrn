@@ -1013,9 +1013,9 @@ static double gpu_download_flush_interval(void*) {
     return double(neuron::gpu::download_flush_interval());
 }
 
-static const char** gpu_fixed_step_phases(void*) {
-    static char report_storage[4096];
-    auto const report = neuron::gpu::native_gpu_fixed_step_phase_report();
+static const char** gpu_qualification_report(void*) {
+    static char report_storage[8192];
+    auto const report = neuron::gpu::native_gpu_qualification_report();
     std::strncpy(report_storage, report.c_str(), sizeof(report_storage) - 1);
     report_storage[sizeof(report_storage) - 1] = '\0';
     static char* ptr = report_storage;
@@ -1208,7 +1208,8 @@ static Member_ret_str_func retstr_members[] =
 { {"upkstr", upkstr},
 #if defined(NRN_ENABLE_GPU)
   {"gpu_backend", gpu_backend},
-  {"gpu_fixed_step_phases", gpu_fixed_step_phases},
+  {"gpu_qualification", gpu_qualification_report},
+  {"gpu_fixed_step_phases", gpu_qualification_report},
 #endif
   {0, 0} };
 

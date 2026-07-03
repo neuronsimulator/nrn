@@ -111,11 +111,46 @@ bool host_voltage_is_authoritative(NrnThread const& nt) noexcept {
 
 bool matrix_rhs_d_stays_on_device_for_solve(NrnThread const& nt) noexcept {
 #if defined(NRN_ENABLE_GPU)
-    if (!enabled() || !backend_native() || !nt.compute_gpu || nrn_nonvint_block || ::use_sparse13) {
+    if (!matrix_rhs_d_qualifies_for_gpu_native(nt) || !nt.compute_gpu) {
+        return false;
+    }
+    return true;
+#else
+    (void) nt;
+    return false;
+#endif
+}
+
+bool matrix_rhs_d_qualifies_for_gpu_native(NrnThread const& nt) noexcept {
+#if defined(NRN_ENABLE_GPU)
+    if (!enabled() || !backend_native() || nt.end <= 0 || nrn_nonvint_block || ::use_sparse13) {
         return false;
     }
     // Extracellular rhs/lhs hooks (nrn_rhs_ext, nrn_setup_ext) run only when this is set.
     if (nt._ecell_memb_list) {
+        return false;
+    }
+    return true;
+#else
+    (void) nt;
+    return false;
+#endif
+}
+
+bool matrix_currents_qualify_for_gpu_native(NrnThread const& nt) noexcept {
+#if defined(NRN_ENABLE_GPU)
+    if (!matrix_rhs_d_qualifies_for_gpu_native(nt)) {
+        return false;
+    }
+    for (auto* tml = nt.tml; tml; tml = tml->next) {
+        if (memb_func[tml->index].current && !mechanism_current_on_device(tml->index)) {
+            return false;
+        }
+        if (memb_func[tml->index].jacob && !mechanism_jacobian_on_device(tml->index)) {
+            return false;
+        }
+    }
+    if (nt.tml && nt.tml->index == CAP && !mechanism_jacobian_on_device(CAP)) {
         return false;
     }
     return true;
@@ -328,6 +363,16 @@ void sync_rhs_to_host_after_solve(NrnThread& nt) {
 }
 
 void sync_voltages_to_host_after_post_solve(NrnThread& nt) {
+    sync_node_voltages_to_host(nt);
+}
+
+void sync_voltages_to_host_before_check_thresh(NrnThread& nt) {
+#if defined(NRN_ENABLE_GPU)
+    if (!enabled() || !backend_native() || !nt.compute_gpu || nt.end <= 0) {
+        return;
+    }
+    nrn_pragma_acc(wait(nt.stream_id))
+#endif
     sync_node_voltages_to_host(nt);
 }
 
