@@ -406,7 +406,12 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
         for (i = i1; i < i3; ++i) {
             NODERHS(_nt->_v_node[i]) = 0.;
         }
-    } else if (_nt->compute_gpu && i3 > i1) {
+#if defined(NRN_ENABLE_GPU)
+    } else if (neuron::gpu::matrix_currents_on_device(nt)) {
+        neuron::gpu::zero_matrix_rhs_on_device(nt, i1, i3);
+    } else
+#endif
+        if (_nt->compute_gpu && i3 > i1) {
         for (i = i1; i < i3; ++i) {
             vec_rhs[i] = 0.;
         }
@@ -417,7 +422,12 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
     }
     auto const vec_sav_rhs = _nt->node_sav_rhs_storage();
     if (vec_sav_rhs) {
-        if (_nt->compute_gpu && i3 > i1) {
+#if defined(NRN_ENABLE_GPU)
+        if (neuron::gpu::matrix_currents_on_device(nt)) {
+            /* zeroed with vec_rhs in zero_matrix_rhs_on_device */
+        } else
+#endif
+            if (_nt->compute_gpu && i3 > i1) {
             for (i = i1; i < i3; ++i) {
                 vec_sav_rhs[i] = 0.;
             }
@@ -459,7 +469,12 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
         /* vec_sav_rhs has only the contribution of electrode current
            here we transform so it only has membrane current contribution
         */
-        if (_nt->compute_gpu && i3 > i1) {
+#if defined(NRN_ENABLE_GPU)
+        if (neuron::gpu::matrix_currents_on_device(nt)) {
+            neuron::gpu::transform_sav_rhs_membrane_only_on_device(nt, i1, i3);
+        } else
+#endif
+            if (_nt->compute_gpu && i3 > i1) {
             for (i = i1; i < i3; ++i) {
                 vec_sav_rhs[i] -= vec_rhs[i];
             }
@@ -552,7 +567,12 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
 
     // Make sure the SoA node diagonals are also zeroed (is this needed?)
     auto* const vec_d = _nt->node_d_storage();
-    if (_nt->compute_gpu && i3 > i1) {
+#if defined(NRN_ENABLE_GPU)
+    if (neuron::gpu::matrix_currents_on_device(nt)) {
+        neuron::gpu::zero_matrix_diagonal_on_device(nt, i1, i3);
+    } else
+#endif
+        if (_nt->compute_gpu && i3 > i1) {
         for (int i = i1; i < i3; ++i) {
             vec_d[i] = 0.;
         }
@@ -564,7 +584,12 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
 
     auto const vec_sav_d = _nt->node_sav_d_storage();
     if (vec_sav_d) {
-        if (_nt->compute_gpu && i3 > i1) {
+#if defined(NRN_ENABLE_GPU)
+        if (neuron::gpu::matrix_currents_on_device(nt)) {
+            /* zeroed with vec_d in zero_matrix_diagonal_on_device */
+        } else
+#endif
+            if (_nt->compute_gpu && i3 > i1) {
             for (i = i1; i < i3; ++i) {
                 vec_sav_d[i] = 0.;
             }
@@ -635,7 +660,11 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
     /* at this point d contains all the membrane conductances */
 
 #if defined(NRN_ENABLE_GPU)
-    neuron::gpu::sync_diagonal_to_device_after_mechanisms(nt);
+    if (neuron::gpu::matrix_currents_on_device(nt)) {
+        neuron::gpu::sync_diagonal_to_device_before_axial_lhs(nt);
+    } else {
+        neuron::gpu::sync_diagonal_to_device_after_mechanisms(nt);
+    }
 #endif
 
     /* now add the axial currents */

@@ -19,11 +19,26 @@ void sync_voltages_to_device_after_lastpart(NrnThread& nt);
 /** Push node voltages to device immediately before OpenACC axial matrix assembly. */
 void sync_voltages_to_device_before_axial(NrnThread& nt);
 
+/** True when every thread mechanism CURRENT is OpenACC on device (ringtest: pas + hh). */
+[[nodiscard]] bool matrix_currents_on_device(NrnThread const& nt) noexcept;
+
+/** Zero vec_rhs / sav_rhs on device at the start of nrn_rhs (device-current path). */
+void zero_matrix_rhs_on_device(NrnThread& nt, int begin, int end) noexcept;
+
+/** Zero vec_d / sav_d on device at the start of nrn_lhs (device-current path). */
+void zero_matrix_diagonal_on_device(NrnThread& nt, int begin, int end) noexcept;
+
+/** sav_rhs -= vec_rhs on device after GPU mechanism CURRENT. */
+void transform_sav_rhs_membrane_only_on_device(NrnThread& nt, int begin, int end) noexcept;
+
 /** Push mechanism-updated matrix state to device before OpenACC axial loops. */
 void sync_matrix_to_device_after_mechanisms(NrnThread& nt);
 
 /** Push vec_d / sav_d only (preserve device vec_rhs after rhs axial). */
 void sync_diagonal_to_device_after_mechanisms(NrnThread& nt);
+
+/** Single vec_d push after host jacob/cap when currents stayed on device. */
+void sync_diagonal_to_device_before_axial_lhs(NrnThread& nt) noexcept;
 
 /** True when rhs/d can remain on device through nonvint and into the GPU solver.
  *  False when sparse13, Python nonvint blocks, or extracellular (_ecell_memb_list) are active. */

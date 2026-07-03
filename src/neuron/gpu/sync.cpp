@@ -5,10 +5,13 @@
 #include "neuron/gpu/post_solve.hpp"
 
 #include "coreneuron/utils/offload.hpp"
+#include "membfunc.h"
 #include "multicore.h"
 #include "nonvintblock.h"
 #include "nrn_ansi.h"
 #include "nrncvode.h"  // nrn_thread_has_fixed_play
+
+#include <cstring>
 
 extern int use_sparse13;
 
@@ -121,6 +124,139 @@ bool matrix_rhs_d_stays_on_device_for_solve(NrnThread const& nt) noexcept {
 #endif
 }
 
+namespace {
+
+[[nodiscard]] bool mechanism_current_on_device(int type) noexcept {
+    if (type < 0 || type >= n_memb_func) {
+        return false;
+    }
+    Symbol const* const sym = memb_func[type].sym;
+    if (sym == nullptr || sym->name == nullptr) {
+        return false;
+    }
+    // Built-in mods translated with NMODL OpenACC CURRENT (ringtest scope).
+    return std::strcmp(sym->name, "pas") == 0 || std::strcmp(sym->name, "hh") == 0;
+}
+
+}  // namespace
+
+bool matrix_currents_on_device(NrnThread const& nt) noexcept {
+#if defined(NRN_ENABLE_GPU)
+    if (!matrix_rhs_d_stays_on_device_for_solve(nt) || nt.end <= 0) {
+        return false;
+    }
+    for (auto* tml = nt.tml; tml; tml = tml->next) {
+        if (memb_func[tml->index].current && !mechanism_current_on_device(tml->index)) {
+            return false;
+        }
+    }
+    return true;
+#else
+    (void) nt;
+    return false;
+#endif
+}
+
+void zero_matrix_rhs_on_device(NrnThread& nt, int begin, int end) noexcept {
+#if defined(NRN_ENABLE_GPU)
+    if (!matrix_currents_on_device(nt) || begin >= end) {
+        return;
+    }
+    phase_timer::Scope const timer{phase_timer::Id::matrix_sync};
+    auto* const vec_rhs = nt.node_rhs_storage();
+    nrn_pragma_acc(parallel loop present(vec_rhs [begin:end]) if (nt.compute_gpu) async(nt.stream_id))
+    nrn_pragma_omp(target teams distribute parallel for if(nt.compute_gpu))
+    for (int i = begin; i < end; ++i) {
+        vec_rhs[i] = 0.;
+    }
+    if (auto* const vec_sav_rhs = nt.node_sav_rhs_storage()) {
+        nrn_pragma_acc(parallel loop present(vec_sav_rhs [begin:end]) if (nt.compute_gpu)
+                           async(nt.stream_id))
+        nrn_pragma_omp(target teams distribute parallel for if(nt.compute_gpu))
+        for (int i = begin; i < end; ++i) {
+            vec_sav_rhs[i] = 0.;
+        }
+    }
+    nrn_pragma_acc(wait(nt.stream_id))
+#else
+    (void) nt;
+    (void) begin;
+    (void) end;
+#endif
+}
+
+void zero_matrix_diagonal_on_device(NrnThread& nt, int begin, int end) noexcept {
+#if defined(NRN_ENABLE_GPU)
+    if (!matrix_currents_on_device(nt) || begin >= end) {
+        return;
+    }
+    phase_timer::Scope const timer{phase_timer::Id::matrix_sync};
+    auto* const vec_d = nt.node_d_storage();
+    nrn_pragma_acc(parallel loop present(vec_d [begin:end]) if (nt.compute_gpu) async(nt.stream_id))
+    nrn_pragma_omp(target teams distribute parallel for if(nt.compute_gpu))
+    for (int i = begin; i < end; ++i) {
+        vec_d[i] = 0.;
+    }
+    if (auto* const vec_sav_d = nt.node_sav_d_storage()) {
+        nrn_pragma_acc(parallel loop present(vec_sav_d [begin:end]) if (nt.compute_gpu)
+                           async(nt.stream_id))
+        nrn_pragma_omp(target teams distribute parallel for if(nt.compute_gpu))
+        for (int i = begin; i < end; ++i) {
+            vec_sav_d[i] = 0.;
+        }
+    }
+    nrn_pragma_acc(wait(nt.stream_id))
+#else
+    (void) nt;
+    (void) begin;
+    (void) end;
+#endif
+}
+
+void transform_sav_rhs_membrane_only_on_device(NrnThread& nt, int begin, int end) noexcept {
+#if defined(NRN_ENABLE_GPU)
+    if (!matrix_currents_on_device(nt) || begin >= end) {
+        return;
+    }
+    auto* const vec_rhs = nt.node_rhs_storage();
+    auto* const vec_sav_rhs = nt.node_sav_rhs_storage();
+    if (!vec_sav_rhs) {
+        return;
+    }
+    nrn_pragma_acc(parallel loop present(vec_rhs [begin:end], vec_sav_rhs [begin:end]) if (
+                       nt.compute_gpu) async(nt.stream_id))
+    nrn_pragma_omp(target teams distribute parallel for if(nt.compute_gpu))
+    for (int i = begin; i < end; ++i) {
+        vec_sav_rhs[i] -= vec_rhs[i];
+    }
+    nrn_pragma_acc(wait(nt.stream_id))
+#else
+    (void) nt;
+    (void) begin;
+    (void) end;
+#endif
+}
+
+void sync_diagonal_to_device_before_axial_lhs(NrnThread& nt) noexcept {
+#if defined(NRN_ENABLE_GPU)
+    if (!matrix_currents_on_device(nt) || !nt.compute_gpu || nt.end <= 0) {
+        return;
+    }
+    phase_timer::Scope const timer{phase_timer::Id::matrix_sync};
+    phase_timer::bump(phase_timer::Id::matrix_sync);
+    auto* const vec_d = nt.node_d_storage();
+    nrn_pragma_acc(update device(vec_d [0:nt.end]) if (nt.compute_gpu) async(nt.stream_id))
+    nrn_pragma_omp(target update to(vec_d [0:nt.end]) if (nt.compute_gpu))
+    if (auto* const vec_sav_d = nt.node_sav_d_storage()) {
+        nrn_pragma_acc(update device(vec_sav_d [0:nt.end]) if (nt.compute_gpu) async(nt.stream_id))
+        nrn_pragma_omp(target update to(vec_sav_d [0:nt.end]) if (nt.compute_gpu))
+    }
+    nrn_pragma_acc(wait(nt.stream_id))
+#else
+    (void) nt;
+#endif
+}
+
 void sync_before_vecplay(NrnThread& nt) {
     if (!nrn_thread_has_fixed_play(&nt)) {
         return;
@@ -147,6 +283,10 @@ void sync_voltages_to_device_before_axial(NrnThread& nt) {
 }
 
 void sync_matrix_to_device_after_mechanisms(NrnThread& nt) {
+    // OpenACC CURRENT (pas/hh) updates rhs on device; skip host push.
+    if (matrix_currents_on_device(nt)) {
+        return;
+    }
     // Vectorized mechanisms still evaluate CURRENT on the host even when rhs/d
     // stay on device for the solver. Push host rhs after zero+CURRENT so the
     // subsequent device axial loop does not accumulate on stale post_solve rhs.
@@ -155,6 +295,9 @@ void sync_matrix_to_device_after_mechanisms(NrnThread& nt) {
 
 void sync_diagonal_to_device_after_mechanisms(NrnThread& nt) {
 #if defined(NRN_ENABLE_GPU)
+    if (matrix_currents_on_device(nt)) {
+        return;
+    }
     if (!nt.compute_gpu || nt.end <= 0) {
         return;
     }
