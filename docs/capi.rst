@@ -736,10 +736,14 @@ Functions, objects, and the stack
 
 .. c:function:: double* nrn_symbol_dataptr(const Symbol* sym)
 
-    Get a pointer to the data for a symbol (for variables).
+    Get a pointer to the storage for a scalar variable, for direct reading and
+    writing. This covers built-in ``USERDOUBLE`` scalars such as ``t`` (time) as
+    well as runtime scalars created in HOC (e.g. ``x = 42``), whose value lives
+    in the top-level object-data array rather than at ``sym->u.pval``.
 
     :param sym: Pointer to the symbol.
-    :returns: Pointer to the symbol's data, or NULL if not applicable.
+    :returns: Pointer to the symbol's data, or the raw ``sym->u.pval`` for
+              symbols that are not top-level runtime scalars.
 
     **Usage Pattern:**
 
