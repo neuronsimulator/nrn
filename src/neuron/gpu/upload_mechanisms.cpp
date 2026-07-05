@@ -5,8 +5,10 @@
 #include "multicore.h"
 #include "neuron/gpu/net_send_buffer.hpp"
 #include "neuron/gpu/offload.hpp"
+#include "neuron/model_data.hpp"
 #include "nrnoc_ml.h"
 
+#include <stdexcept>
 #include <vector>
 
 extern int nrn_nthread;
@@ -138,6 +140,75 @@ void upload_thread_ml_list(NrnThread& nt, UploadState& state) {
 }
 
 }  // namespace
+
+void upload_mechanism_pointer_tables(model_sorted_token& sorted, UploadState& state) {
+#if defined(NRN_ENABLE_GPU) && defined(_OPENACC)
+    auto& cache = sorted.cache();
+    for (std::size_t type = 0; type < cache.mechanism.size(); ++type) {
+        if (type == static_cast<std::size_t>(MORPHOLOGY)) {
+            continue;
+        }
+        if (!neuron::model().is_valid_mechanism(static_cast<int>(type))) {
+            continue;
+        }
+        auto& mech = cache.mechanism[type];
+
+        double* const* const host_data_ptrs =
+            mechanism::get_data_ptrs<double>(static_cast<int>(type));
+        int const n_fp_fields = mechanism::get_field_count<double>(static_cast<int>(type));
+        if (host_data_ptrs && n_fp_fields > 0) {
+            auto const n_fields = static_cast<std::size_t>(n_fp_fields);
+            auto* const staging = new double*[n_fields];
+            for (std::size_t i = 0; i < n_fields; ++i) {
+                staging[i] = host_data_ptrs[i] ? nrn_target_deviceptr(host_data_ptrs[i]) : nullptr;
+            }
+            state.record_cpu_owned(staging, n_fields, sizeof(double*));
+            // Host-readable table of device SoA bases; make_instance runs on host before kernels.
+            mech.gpu_data_ptrs = staging;
+        }
+
+        if (mech.pdata_ptr_cache.empty()) {
+            continue;
+        }
+
+        auto const n_pdata_fields = mech.pdata_ptr_cache.size();
+        auto* const device_bases_staging = new double* const*[n_pdata_fields]();
+        bool any_pdata_field = false;
+
+        for (std::size_t field = 0; field < n_pdata_fields; ++field) {
+            if (!mech.pdata_ptr_cache[field]) {
+                continue;
+            }
+            auto const& host_row = mech.pdata[field];
+            if (host_row.empty()) {
+                continue;
+            }
+            auto* const row_staging = new double*[host_row.size()];
+            for (std::size_t i = 0; i < host_row.size(); ++i) {
+                row_staging[i] = host_row[i] ? nrn_target_deviceptr(host_row[i]) : nullptr;
+            }
+            double** const d_row =
+                nrn_target_copyin(row_staging, static_cast<std::size_t>(host_row.size()));
+            device_bases_staging[field] = d_row;
+            state.record_cpu_owned(row_staging, host_row.size(), sizeof(double*));
+            any_pdata_field = true;
+        }
+
+        if (!any_pdata_field) {
+            delete[] device_bases_staging;
+            continue;
+        }
+
+        state.record_cpu_owned(device_bases_staging, n_pdata_fields, sizeof(double* const*));
+        // Host-readable table of device-resident pdata rows (device pointer values).
+        mech.gpu_pdata_ptr_cache = device_bases_staging;
+    }
+#else
+    (void) sorted;
+    (void) state;
+    throw std::runtime_error("neuron::gpu::upload_mechanism_pointer_tables requires OpenACC");
+#endif
+}
 
 void upload_mechanism_lists(UploadState& state) {
     for (int ith = 0; ith < nrn_nthread; ++ith) {

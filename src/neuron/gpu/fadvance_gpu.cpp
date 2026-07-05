@@ -49,11 +49,6 @@ void fixed_step_thread(model_sorted_token const& cache_token,
     nt.compute_gpu = 1;
 
     ensure_thread_net_send_buffers(nth);
-    if (nt.end > 0 && post_solve_needs_host_fallback(nt)) {
-        // Threshold detection reads device vec_v; host post-solve leaves V on CPU.
-        phase_timer::Scope const timer{phase_timer::Id::vecplay_sync};
-        sync_voltages_to_device_before_axial(nt);
-    }
     {
         phase_timer::Scope const timer{phase_timer::Id::deliver_events};
         nrn::Instrumentor::phase p("deliver-events");
@@ -73,9 +68,6 @@ void fixed_step_thread(model_sorted_token const& cache_token,
             setup_tree_matrix(cache_token, nt);
         }
         nrn_prcellstate_checkpoint_maybe(PrcellCheckpointPhase::post_setup, nt);
-        if (!matrix_rhs_d_stays_on_device_for_solve(nt)) {
-            sync_matrix_to_device_before_solve(nt);
-        }
         flush_mechanism_net_send_buffers(nth);
         {
             phase_timer::Scope const timer{phase_timer::Id::matrix_solver};
@@ -107,25 +99,14 @@ void fixed_step_thread(model_sorted_token const& cache_token,
                     sync_voltages_to_host_after_post_solve(nt);
                     nrnthread_vi_compute_(&nt);
                 }
-                // Host post-solve already updated voltages on CPU; pulling device
-                // voltages here would overwrite them with stale GPU state.
-                if (should_flush_download()) {
-                    phase_timer::Scope const timer{phase_timer::Id::download_flush};
-                    batch_download_post_solve(nt);
-                }
             }
         }
         nrn_prcellstate_checkpoint_maybe(PrcellCheckpointPhase::post_solve, nt);
         advance_download_step_counter();
     }
-    if (nrnthread_v_transfer_ && nt.end > 0) {
+    if (nrnthread_v_transfer_ && nt.end > 0 && host_post_solve) {
         phase_timer::Scope const timer{phase_timer::Id::gap_sync};
-        if (host_post_solve) {
-            sync_gap_after_host_voltage_update(nt);
-        } else {
-            // Host thread_transfer reads source handles; stage voltages for gather.
-            sync_gap_after_voltage_update(nt);
-        }
+        sync_gap_after_host_voltage_update(nt);
     }
     // Partrans: nrnmpi_v_transfer + lastpart are dispatched from nrn_fixed_step
     // (same as CPU). Only run lastpart here when no gap transfer is configured.

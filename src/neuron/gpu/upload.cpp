@@ -14,6 +14,7 @@
 #include <stdexcept>
 
 extern int nrn_nthread;
+extern double celsius;
 
 namespace neuron {
 extern int interleave_permute_type;
@@ -194,6 +195,12 @@ void UploadState::teardown() {
         if (!mirror.host || mirror.count == 0) {
             continue;
         }
+        if (!nrn_target_is_present(mirror.host)) {
+            if (mirror.cpu_owned) {
+                delete[] static_cast<char*>(const_cast<void*>(mirror.host));
+            }
+            continue;
+        }
         if (mirror.sizeof_elem == sizeof(int)) {
             nrn_target_delete(const_cast<int*>(static_cast<int const*>(mirror.host)), mirror.count);
         } else if (mirror.sizeof_elem == sizeof(double)) {
@@ -215,6 +222,12 @@ void UploadState::teardown() {
         } else if (mirror.sizeof_elem == sizeof(Datum*)) {
             nrn_target_delete(const_cast<Datum**>(static_cast<Datum* const*>(mirror.host)),
                               mirror.count);
+        } else if (mirror.sizeof_elem == sizeof(double*)) {
+            nrn_target_delete(const_cast<double**>(static_cast<double* const*>(mirror.host)),
+                              mirror.count);
+        } else if (mirror.sizeof_elem == sizeof(double**)) {
+            nrn_target_delete(const_cast<double***>(static_cast<double** const*>(mirror.host)),
+                              mirror.count);
         } else if (mirror.sizeof_elem == sizeof(Memb_list*)) {
             nrn_target_delete(const_cast<Memb_list**>(static_cast<Memb_list* const*>(mirror.host)),
                               mirror.count);
@@ -224,18 +237,21 @@ void UploadState::teardown() {
                               mirror.count);
         }
         if (mirror.cpu_owned) {
-            delete[] reinterpret_cast<Datum**>(const_cast<void*>(mirror.host));
+            delete[] static_cast<char*>(const_cast<void*>(mirror.host));
         }
     }
 #endif
     mirrors_.clear();
 }
 
-void upload_sorted_model(model_sorted_token const& sorted, UploadState& state) {
+void upload_sorted_model(model_sorted_token& sorted, UploadState& state) {
     upload_soa_storage(sorted.node_data_token.container(), state);
 
     neuron::model().apply_to_mechanisms(
         [&](auto& mech_data) { upload_soa_storage(mech_data, state); });
+
+    copyin_pod_array(&celsius, 1, state);
+    upload_mechanism_pointer_tables(sorted, state);
 
     upload_thread_parent_indices(state);
     upload_mechanism_nodeindices(state);

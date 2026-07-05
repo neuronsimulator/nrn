@@ -1,6 +1,7 @@
 #include "neuron/gpu/check_thresh.hpp"
 
 #include "neuron/gpu/config.hpp"
+#include "neuron/gpu/net_send_buffer.hpp"
 #include "neuron/gpu/offload.hpp"
 #include "neuron/gpu/phase_timer.hpp"
 
@@ -95,13 +96,19 @@ void ensure_thread_table(int tid) {
 }
 
 void ensure_thread_net_send_buffer(NrnThread& nt, int min_count) {
+    ensure_thread_net_send_buffers(&nt);
     int const needed = std::max(min_count, 8);
-    if (!nt._net_send_buffer || nt._net_send_buffer_size < needed) {
-        if (nt._net_send_buffer) {
-            std::free(nt._net_send_buffer);
-        }
+    if (nt._net_send_buffer_size < needed) {
+        int* const old = nt._net_send_buffer;
+        int const old_size = nt._net_send_buffer_size;
         nt._net_send_buffer_size = needed;
         nt._net_send_buffer = static_cast<int*>(std::calloc(nt._net_send_buffer_size, sizeof(int)));
+        if (old) {
+            if (nrn_target_is_present(old)) {
+                nrn_target_delete(old, static_cast<std::size_t>(old_size));
+            }
+            std::free(old);
+        }
     }
 #if defined(NRN_ENABLE_GPU) && defined(_OPENACC)
     if (!nt._net_send_buffer) {
@@ -110,10 +117,6 @@ void ensure_thread_net_send_buffer(NrnThread& nt, int min_count) {
     if (!nrn_target_is_present(nt._net_send_buffer)) {
         (void) nrn_target_copyin(nt._net_send_buffer,
                                  static_cast<std::size_t>(nt._net_send_buffer_size));
-    }
-    if (auto* const d_nt = static_cast<NrnThread*>(nrn_target_deviceptr(&nt))) {
-        int* const d_buf = static_cast<int*>(nrn_target_deviceptr(nt._net_send_buffer));
-        nrn_target_memcpy_to_device(&(d_nt->_net_send_buffer), &d_buf, 1);
     }
 #else
     (void) nt;
@@ -145,6 +148,20 @@ void invalidate_threshold_tables() noexcept {
     }
 }
 
+void invalidate_auxiliary_device_uploads() noexcept {
+    invalidate_threshold_tables();
+#if defined(NRN_ENABLE_GPU) && defined(_OPENACC)
+    for (int ith = 0; ith < nrn_nthread; ++ith) {
+        auto& nt = nrn_threads[ith];
+        if (nt._net_send_buffer && nt._net_send_buffer_size > 0 &&
+            nrn_target_is_present(nt._net_send_buffer)) {
+            nrn_target_delete(nt._net_send_buffer,
+                              static_cast<std::size_t>(nt._net_send_buffer_size));
+        }
+    }
+#endif
+}
+
 bool check_thresh_presyn_on_device(NrnThread* nt, double teps) noexcept {
 #if defined(NRN_ENABLE_GPU)
     if (!enabled() || !backend_native() || !nt || !nt->compute_gpu || nt->end <= 0) {
@@ -155,14 +172,21 @@ bool check_thresh_presyn_on_device(NrnThread* nt, double teps) noexcept {
     auto& table = g_tables[nt->id];
     int const count = static_cast<int>(table.slots.size());
     if (count == 0) {
-        return true;
+        return false;
     }
 
     ensure_thread_net_send_buffer(*nt, count);
 
     if (table.device_capacity != static_cast<std::size_t>(count)) {
-        return false;
+        rebuild_thread_table(nt->id);
+        if (table.device_capacity != static_cast<std::size_t>(count)) {
+            return false;
+        }
     }
+
+#if defined(NRN_ENABLE_GPU) && defined(_OPENACC)
+    nrn_pragma_acc(wait(nt->stream_id))
+#endif
 
     int* const thvar_row = table.h_thvar_row.data();
     double* const threshold = table.h_threshold.data();
@@ -173,34 +197,22 @@ bool check_thresh_presyn_on_device(NrnThread* nt, double teps) noexcept {
     auto* const vec_v = nt->node_voltage_storage();
     int* const nsbuffer = nt->_net_send_buffer;
     int const nsbuffer_size = nt->_net_send_buffer_size;
-
-    nrn_pragma_acc(parallel loop present(nt [0:1], thvar_row [0:count], threshold [0:count],
-                                         flag [0:count], nsbuffer [0:nsbuffer_size],
-                                         vec_v [0:nt->end])
-                       copy(net_send_buf_count) if (nt->compute_gpu) async(nt->stream_id))
-    nrn_pragma_omp(target teams distribute parallel for map(tofrom: net_send_buf_count)
-                       if(nt->compute_gpu))
+    // Host vec_v is synced before this call (see NetCvode::check_thresh).
     for (int i = 0; i < count; ++i) {
         int const thidx = thvar_row[i];
         double const v = vec_v[thidx];
         double const thresh = threshold[i];
-        int idx = 0;
         if (pscheck(v, thresh, &flag[i])) {
-            nrn_pragma_acc(atomic capture)
-            nrn_pragma_omp(atomic capture)
-            idx = net_send_buf_count++;
+            int const idx = net_send_buf_count++;
             if (idx < nsbuffer_size) {
                 nsbuffer[idx] = i;
             }
         }
     }
-    nrn_pragma_acc(wait(nt->stream_id))
     nt->_net_send_buffer_cnt = net_send_buf_count;
+    sync_threshold_presyn_flags(table.slots.data(), flag, count);
 
     if (net_send_buf_count > 0) {
-        nrn_pragma_acc(update host(nsbuffer [0:net_send_buf_count]) async(nt->stream_id))
-        nrn_pragma_omp(target update from(nsbuffer [0:net_send_buf_count]) if (nt->compute_gpu))
-        nrn_pragma_acc(wait(nt->stream_id))
         for (int i = 0; i < nt->_net_send_buffer_cnt; ++i) {
             int const slot_index = nsbuffer[i];
             if (slot_index < 0 || slot_index >= count) {

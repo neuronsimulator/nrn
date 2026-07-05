@@ -291,6 +291,11 @@ namespace _get {
 [[nodiscard]] std::vector<double* const*> const& _pdata_ptr_cache_data(
     neuron::model_sorted_token const& cache_token,
     int mech_type);
+[[nodiscard]] double* const* gpu_data_ptrs(neuron::model_sorted_token const& cache_token,
+                                           int mech_type) noexcept;
+[[nodiscard]] double* const** gpu_pdata_ptr_cache(
+    neuron::model_sorted_token const& cache_token,
+    int mech_type) noexcept;
 }  // namespace _get
 }  // namespace neuron::mechanism
 

@@ -96,6 +96,10 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
             printer->add_line("double* vec_rhs = node_data.node_rhs;");
             printer->add_line("double* vec_d = node_data.node_diagonal;");
         }
+        const auto codegen_float_variables_size = codegen_float_variables.size();
+        for (int i = 0; i < codegen_float_variables_size; ++i) {
+            printer->fmt_line("double* _present_fp_{0} = _lmc.template fpfield_ptr<{0}>();", i);
+        }
     }
 
     std::ostringstream present_clause;
@@ -106,6 +110,13 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
         present_clause << ", nodeindices, _thread, node_data.node_voltages[:nt->end]";
         if (type == BlockType::Equation) {
             present_clause << ", vec_rhs[:nt->end], vec_d[:nt->end]";
+        }
+        const auto codegen_float_variables_size = codegen_float_variables.size();
+        for (int i = 0; i < codegen_float_variables_size; ++i) {
+            const auto& float_var = codegen_float_variables[i];
+            auto const array_len = float_var->is_array() ? float_var->get_length() : 1;
+            present_clause << fmt::format(
+                ", _present_fp_{}[:static_cast<std::size_t>(_ml_arg->nodecount) * {}]", i, array_len);
         }
     }
     present_clause << ')';
@@ -382,6 +393,146 @@ void CodegenNeuronAccVisitor::print_net_event_call(const ast::FunctionCall& node
     print_vector_elements(arguments, ", ");
     printer->add_text(", 0.0, 0.0");
     printer->add_text(")");
+}
+
+void CodegenNeuronAccVisitor::print_data_structures(bool print_initializers) {
+    print_mechanism_global_var_structure(print_initializers);
+    print_mechanism_range_var_structure(false);
+    print_node_data_structure(print_initializers);
+    print_thread_variables_structure(print_initializers);
+    print_make_instance();
+    print_make_node_data();
+}
+
+void CodegenNeuronAccVisitor::print_make_instance() const {
+    printer->add_newline(2);
+    printer->fmt_push_block("static {} make_instance_{}(_nrn_mechanism_cache_range* _lmc, "
+                            "bool use_device_ptrs = false)",
+                            instance_struct(),
+                            info.mod_suffix);
+
+    printer->push_block("if(_lmc == nullptr)");
+    printer->fmt_line("return {}();", instance_struct());
+    printer->pop_block_nl(2);
+
+    printer->fmt_push_block("return {}", instance_struct());
+
+    std::vector<std::string> make_instance_args;
+
+    for (auto const& [var, type]: info.neuron_global_variables) {
+        auto const name = var->get_name();
+        make_instance_args.push_back(fmt::format(
+            "use_device_ptrs ? static_cast<{0}*>(nrn_target_deviceptr(&::{1})) : &::{1}",
+            type,
+            name));
+    }
+
+    const auto codegen_float_variables_size = codegen_float_variables.size();
+    for (int i = 0; i < codegen_float_variables_size; ++i) {
+        const auto& float_var = codegen_float_variables[i];
+        if (float_var->is_array()) {
+            make_instance_args.push_back(
+                fmt::format("_lmc->template data_array_ptr<{}, {}>()", i, float_var->get_length()));
+        } else {
+            make_instance_args.push_back(fmt::format("_lmc->template fpfield_ptr<{}>()", i));
+        }
+    }
+
+    const auto codegen_int_variables_size = codegen_int_variables.size();
+    for (size_t i = 0; i < codegen_int_variables_size; ++i) {
+        const auto& var = codegen_int_variables[i];
+        auto name = var.symbol->get_name();
+        auto sem = info.semantics[i].name;
+        auto const variable = [&var, &sem, i]() -> std::string {
+            if (var.is_index || var.is_integer) {
+                return "";
+            } else if (var.is_vdata) {
+                return "";
+            } else if (sem == naming::POINTER_SEMANTIC) {
+                return "";
+            } else {
+                return fmt::format("_lmc->template dptr_field_ptr<{}>()", i);
+            }
+        }();
+        if (variable != "") {
+            make_instance_args.push_back(variable);
+        }
+    }
+
+    if (!codegen_global_variables.empty()) {
+        make_instance_args.push_back(fmt::format(
+            "use_device_ptrs ? static_cast<{0}*>(nrn_target_deviceptr(&{1})) : &{1}",
+            global_struct(),
+            global_struct_instance()));
+    }
+
+    printer->add_multi_line(fmt::format("{}", fmt::join(make_instance_args, ",\n")));
+
+    printer->pop_block(";");
+    printer->pop_block();
+}
+
+void CodegenNeuronAccVisitor::print_make_node_data() const {
+    printer->add_newline(2);
+    printer->fmt_push_block("static {} make_node_data_{}(NrnThread& nt, Memb_list& _ml_arg, "
+                            "bool use_device_ptrs = false)",
+                            node_data_struct(),
+                            info.mod_suffix);
+
+    // Host pointers: OpenACC present() maps these to device copies inside kernels.
+    std::vector<std::string> make_node_data_args = {"_ml_arg.nodeindices",
+                                                    "nt.node_voltage_storage()",
+                                                    "nt.node_d_storage()",
+                                                    "nt.node_rhs_storage()",
+                                                    "_ml_arg.nodecount"};
+
+    printer->fmt_push_block("return {}", node_data_struct());
+    printer->add_multi_line(fmt::format("{}", fmt::join(make_node_data_args, ",\n")));
+    printer->pop_block(";");
+    printer->pop_block();
+
+    printer->fmt_push_block("static {} make_node_data_{}(Prop* _prop)",
+                            node_data_struct(),
+                            info.mod_suffix);
+
+    printer->push_block("if(!_prop)");
+    printer->fmt_line("return {}();", node_data_struct());
+    printer->pop_block_nl(2);
+
+    printer->add_line("static std::vector<int> node_index{0};");
+    printer->add_line("Node* _node = _nrn_mechanism_access_node(_prop);");
+
+    make_node_data_args = {"node_index.data()",
+                           "&_nrn_mechanism_access_voltage(_node)",
+                           "&_nrn_mechanism_access_d(_node)",
+                           "&_nrn_mechanism_access_rhs(_node)",
+                           "1"};
+
+    printer->fmt_push_block("return {}", node_data_struct());
+    printer->add_multi_line(fmt::format("{}", fmt::join(make_node_data_args, ",\n")));
+    printer->pop_block(";");
+    printer->pop_block();
+    printer->add_newline();
+}
+
+void CodegenNeuronAccVisitor::print_entrypoint_setup_code_from_memb_list() {
+    if (info.mod_suffix == "nothing") {
+        return;
+    }
+
+    printer->add_line(
+        "_nrn_mechanism_cache_range _lmc{_sorted_token, *nt, *_ml_arg, _ml_arg->type()};");
+    printer->fmt_line("auto inst = make_instance_{}(&_lmc, nt->compute_gpu);", info.mod_suffix);
+    if (!info.artificial_cell) {
+        printer->fmt_line("auto node_data = make_node_data_{}(*nt, *_ml_arg, nt->compute_gpu);",
+                          info.mod_suffix);
+    }
+    printer->add_line("auto* _thread = _ml_arg->_thread;");
+    if (!codegen_thread_variables.empty()) {
+        printer->fmt_line("auto _thread_vars = {}(_thread[{}].get<double*>());",
+                          thread_variables_struct(),
+                          info.thread_var_thread_id);
+    }
 }
 
 }  // namespace codegen

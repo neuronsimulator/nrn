@@ -56,13 +56,18 @@ struct MechanismRange {
         assert(ptr_cache.size() <= NumDatumFields);
     }
 
-    /** Deprecated. */
+    /**
+     * @brief Construct with optional device pointer tables when @c nt.compute_gpu is set.
+     */
     MechanismRange(neuron::model_sorted_token const& cache_token,
-                   NrnThread&,
+                   NrnThread& nt,
                    Memb_list& ml,
                    int type)
-        : MechanismRange(cache_token, ml) {
+        : MechanismRange{cache_token, ml} {
         assert(type == ml.type());
+        (void) nt;
+        // fpfield SoA bases use host pointers; OpenACC present() maps them on kernel entry.
+        // pdata ion rows: host cache for now (device row table still WIP).
     }
 
   protected:

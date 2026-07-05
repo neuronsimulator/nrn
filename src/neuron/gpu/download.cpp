@@ -17,7 +17,7 @@
 namespace neuron::gpu {
 namespace {
 
-std::size_t g_flush_interval{1};
+std::size_t g_flush_interval{0};
 std::size_t g_step_counter{0};
 
 template <typename Storage>
@@ -249,7 +249,7 @@ void finalize_psolve_download() {
     if (!enabled() || !backend_native()) {
         return;
     }
-    sync_node_soa_to_host_for_host_reads();
+    sync_state_to_host_for_host_reads();
     phase_timer::print_summary();
     reset_download_step_counter();
 #endif

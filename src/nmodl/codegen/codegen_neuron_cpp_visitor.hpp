@@ -604,7 +604,7 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
      *
      * This variation prints the fast entrypoint, where NEURON is fully initialized and setup.
      */
-    void print_entrypoint_setup_code_from_memb_list();
+    virtual void print_entrypoint_setup_code_from_memb_list();
 
 
     /**
@@ -769,11 +769,11 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
 
     /** Print `make_*_instance`.
      */
-    void print_make_instance() const;
+    virtual void print_make_instance() const;
 
     /** Print `make_*_node_data`.
      */
-    void print_make_node_data() const;
+    virtual void print_make_node_data() const;
 
     /**
      * Set v_unused (voltage) for NRN_PRCELLSTATE feature

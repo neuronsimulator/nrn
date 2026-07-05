@@ -15,13 +15,22 @@ struct Mechanism {
      * @brief Raw pointers into pointer data for use during simulation.
      *
      * pdata_ptr_cache contains pointers to the start of the storage for each pdata variable that is
-     * flattened into the pdata member of this struct, and nullptr elsewhere. Compared to using
+     * flattened into the pdata member of this struct, and nullptr otherwise. Compared to using
      * pdata directly this avoids exposing details such as the container used.
      */
     std::vector<double* const*> pdata_ptr_cache{};
     std::vector<std::vector<double*>> pdata{};      // raw pointers for use during simulation
     std::vector<std::vector<Datum*>> pdata_hack{};  // temporary storage used when populating pdata;
                                                     // should go away when pdata are SoA
+
+    /**
+     * @brief Device-resident pointer tables for OpenACC mechanism kernels.
+     *
+     * Populated by neuron::gpu::upload_sorted_model. Values are device addresses stored in host
+     * pointer variables for use when NrnThread::compute_gpu is set.
+     */
+    double* const* gpu_data_ptrs{};
+    double* const** gpu_pdata_ptr_cache{};
 };
 struct Thread {
     /**

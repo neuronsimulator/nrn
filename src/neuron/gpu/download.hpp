@@ -6,7 +6,7 @@ struct NrnThread;
 
 namespace neuron::gpu {
 
-/** Steps between host downloads during psolve (0 = only at psolve end). */
+/** Steps between optional per-step host downloads during psolve (0 = tstop mirror only). */
 [[nodiscard]] std::size_t download_flush_interval() noexcept;
 
 void set_download_flush_interval(std::size_t interval) noexcept;

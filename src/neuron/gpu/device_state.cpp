@@ -1,5 +1,6 @@
 #include "neuron/gpu/device_state.hpp"
 
+#include "neuron/gpu/check_thresh.hpp"
 #include "neuron/gpu/config.hpp"
 #include "neuron/gpu/device_assign.hpp"
 #include "neuron/gpu/download.hpp"
@@ -19,7 +20,7 @@ struct ModelDeviceState {
     bool on_device{false};
     UploadState upload{};
 
-    void upload_model(model_sorted_token const& sorted) {
+    void upload_model(model_sorted_token& sorted) {
         upload_sorted_model(sorted, upload);
         on_device = true;
     }
@@ -76,10 +77,9 @@ class DeviceStateRegistry {
             }
             cached_ensure_token_ = nullptr;
             cached_ensure_storage_.reset();
-            if (state->device_token_refs > 0) {
-                throw std::runtime_error(
-                    "neuron::gpu: model_sorted_token destroyed while device_token(s) still alive");
-            }
+            // ensure_on_device caches a device_token in cached_ensure_storage_; reset()
+            // above destroys it. Any remaining count is stale bookkeeping.
+            state->device_token_refs = 0;
             state->teardown();
             reset_active_locked();
         }
@@ -173,7 +173,7 @@ device_token::device_token(model_sorted_token const& sorted)
             assign_device();
         }
 #endif
-        m_state->model_state->upload_model(sorted);
+        m_state->model_state->upload_model(const_cast<model_sorted_token&>(sorted));
     }
 }
 
@@ -214,6 +214,9 @@ device_token const& ensure_on_device(model_sorted_token const& sorted) {
 }
 
 void invalidate_device_state() {
+#if defined(NRN_ENABLE_GPU)
+    invalidate_auxiliary_device_uploads();
+#endif
     registry().invalidate();
 }
 

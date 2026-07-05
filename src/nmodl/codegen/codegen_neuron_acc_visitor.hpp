@@ -56,6 +56,14 @@ class CodegenNeuronAccVisitor: public CodegenNeuronCppVisitor {
 
     void print_global_var_struct_decl() override;
 
+    void print_data_structures(bool print_initializers) override;
+
+    void print_make_instance() const override;
+
+    void print_make_node_data() const override;
+
+    void print_entrypoint_setup_code_from_memb_list() override;
+
   private:
     bool host_only_parallel_block(BlockType type) const;
     void print_global_variable_enter_data_once() const;

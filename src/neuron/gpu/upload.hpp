@@ -36,10 +36,13 @@ class UploadState {
 };
 
 /** Upload sorted node/mech SOA vectors and InterleaveInfo (permute 1/2) to the device. */
-void upload_sorted_model(model_sorted_token const& sorted, UploadState& state);
+void upload_sorted_model(model_sorted_token& sorted, UploadState& state);
 
 /** Upload Memb_list shells, padded pdata, and per-thread _ml_list pointer arrays. */
 void upload_mechanism_lists(UploadState& state);
+
+/** Build device-resident mechanism data_ptr / pdata_ptr_cache tables (after SOA copyin). */
+void upload_mechanism_pointer_tables(model_sorted_token& sorted, UploadState& state);
 
 namespace detail {
 /** Test hook: upload one InterleaveInfo with CoreNEURON struct-then-patch pattern. */

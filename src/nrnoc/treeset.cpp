@@ -461,10 +461,6 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
         }
     activsynapse_rhs();
 
-#if defined(NRN_ENABLE_GPU)
-    neuron::gpu::sync_matrix_to_device_after_mechanisms(nt);
-#endif
-
     if (vec_sav_rhs) {
         /* vec_sav_rhs has only the contribution of electrode current
            here we transform so it only has membrane current contribution
@@ -500,12 +496,6 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
 
     activstim_rhs();
     activclamp_rhs();
-#if defined(NRN_ENABLE_GPU)
-    neuron::gpu::sync_matrix_to_device_after_mechanisms(nt);
-    if (_nt->compute_gpu && i3 > i2) {
-        neuron::gpu::sync_voltages_to_device_before_axial(nt);
-    }
-#endif
     /* now the internal axial currents.
     The extracellular mechanism contribution is already done.
         rhs += ai_j*(vi_j - vi)
@@ -623,10 +613,6 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
         nrn_cap_jacob(sorted_token, _nt, _nt->tml->ml);
     }
 
-#if defined(NRN_ENABLE_GPU)
-    neuron::gpu::sync_diagonal_to_device_after_mechanisms(nt);
-#endif
-
     activsynapse_lhs();
 
     if (vec_sav_d) {
@@ -658,14 +644,6 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
     activclamp_lhs();
 
     /* at this point d contains all the membrane conductances */
-
-#if defined(NRN_ENABLE_GPU)
-    if (neuron::gpu::matrix_currents_on_device(nt)) {
-        neuron::gpu::sync_diagonal_to_device_before_axial_lhs(nt);
-    } else {
-        neuron::gpu::sync_diagonal_to_device_after_mechanisms(nt);
-    }
-#endif
 
     /* now add the axial currents */
     if (use_sparse13) {

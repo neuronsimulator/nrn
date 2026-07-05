@@ -14,6 +14,9 @@ struct ThresholdPresynSlot {
 /** Rebuild presyn threshold tables after topology / psl_thr_ changes. */
 void invalidate_threshold_tables() noexcept;
 
+/** Drop OpenACC mirrors owned outside UploadState (threshold + net_send buffers). */
+void invalidate_auxiliary_device_uploads() noexcept;
+
 /** Fill slots for one thread; returns count (host-only, implemented in netcvode.cpp). */
 int collect_threshold_presyn_slots(NrnThread* nt, ThresholdPresynSlot* slots, int capacity);
 

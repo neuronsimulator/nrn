@@ -42,6 +42,7 @@
 #include "neuron/gpu/check_thresh.hpp"
 #include "neuron/gpu/config.hpp"
 #include "neuron/gpu/mechanism_phases.hpp"
+#include "neuron/gpu/sync.hpp"
 #include "prcellstate_checkpoint.hpp"
 #endif
 
@@ -6023,6 +6024,7 @@ void NetCvode::check_thresh(NrnThread* nt) {  // for default method
                             nt->compute_gpu && nt->end > 0;
     bool gpu_thresh_handled = false;
     if (gpu_thresh) {
+        neuron::gpu::sync_voltages_to_host_before_check_thresh(*nt);
         gpu_thresh_handled = neuron::gpu::check_thresh_presyn_on_device(nt, teps);
     }
 #else

@@ -15,12 +15,18 @@ CoreNEURON GPU — not spike parity across every intermediate host/device partit
 
 - **Performance:** GPU path should not synchronise host and device each step for
   mechanisms that already live in SoA on device.
-- **Correctness:** A qualified run must not split a single mechanism across host
-  CURRENT and device STATE (or host Jacobian and device diagonal) in the same step.
+- **Correctness (step contract):** A qualified run must not split a single
+  mechanism across host CURRENT and device STATE (or host Jacobian and device
+  diagonal) in the same step.
+- **Correctness (integration):** **Spike parity** vs CPU is the primary ship
+  criterion for network models. Compare spike times/gids (`out*.dat` or ringtest
+  ctest) on a qualified single-host native-GPU run.
 - **Incremental delivery:** Add OpenACC/NMODL registration per mechanism class;
   qualify models as their mechanism sets become complete.
-- **Diagnostics:** `prcellstate` checkpoints at named step phases are the
-  primary parity tool; spike counts are a downstream check once phase state matches.
+- **Diagnostics:** `prcellstate` checkpoints narrow the **first** fixed-step
+  phase where CPU and GPU diverge for a chosen cell. Spike mismatch selects
+  which gid and spike time to inspect; re-check spikes only after prcellstate
+  reaches parity at that gid and step.
 
 ### Non-goals
 
@@ -36,7 +42,7 @@ CoreNEURON GPU — not spike parity across every intermediate host/device partit
 | Mode | When used | Spike parity expected? |
 |------|-----------|------------------------|
 | **CPU** | Default; model not qualified | Reference |
-| **GPU-qualified** | All gates pass (§4) | Yes (prcellstate first, then spikes) |
+| **GPU-qualified** | All gates pass (§4) | **Yes** — spikes first; prcellstate when debugging |
 | **GPU-transitional** | `enable_gpu=1` but gates fail | **No** — dev only; may warn or refuse |
 
 Transitional mode exists while infrastructure is built. It must not be used as
@@ -217,9 +223,13 @@ Transitional mitigations are **safety nets**, not architecture.
 | Check | Command / tool |
 |-------|----------------|
 | Phase report | `pc.gpu_fixed_step_phases()` — all Gates A–E yes |
-| prcellstate | Short run, one gid, steps 0–2: `post_setup`, `post_solve`, `post_nonvint` |
-| Spikes | ringtest ctest / `out*.dat` vs CPU |
+| **Spikes (primary)** | Single-host `mpiexec -n 1`, `-gpu-native`, default `tstop=100` ms; ringtest ctest / `out*.dat` vs CPU |
+| prcellstate (diagnostic) | Only when spikes disagree: gid from first mismatch; **search** last matching `tstop` before phase checkpoints |
 | Performance | Wall time vs NEURON CPU (expect win when qualified) |
+
+**Gate before MPI work:** defer multi-rank (`mpiexec -n 2`) psolve fixes until
+single-host native GPU ringtest exhibits **spike parity at default 100 ms**.
+Until then, qualify and debug on one rank per node.
 
 Mods: pas, hh, expsyn, stim/IClamp, capacitance — built-in OpenACC codegen in
 `src/nrniv/CMakeLists.txt`. Ion mechanisms (`*_ion`) are bookkeeping only and
@@ -230,11 +240,13 @@ are excluded from Gate B. Gate C requires `NRN_NATIVE_GPU_DEVICE_NONVINT=1`.
 **Purpose:** Force honest gaps at scale.
 
 1. Run `pc.gpu_fixed_step_phases()` after `init.hoc` — capture blocking mech lists.
-2. prcellstate on **gid 171** (or chosen cell), short `mytstop`, step triggers
-   around first CPU spike (~step 56–57 at dt=0.025).
-3. Register ion/channel mods on device (naf, kdr, …) — CURRENT + Jacobian + Solve.
-4. Re-run phase report until Gate B and Gate C pass.
-5. Spike comparison only after prcellstate parity at `post_nonvint`.
+2. Register ion/channel mods on device (naf, kdr, …) — CURRENT + Jacobian + Solve.
+3. Re-run phase report until Gate B and Gate C pass.
+4. **Spike parity** vs CPU on a qualified run (same workflow as ringtest).
+5. If spikes disagree: use the first mismatched spike to choose **gid**, then
+   **search** (e.g. bisect `tstop`) until prcellstate at that gid is no longer
+   identical to CPU at the same `tstop`. Only then checkpoint named phases at
+   that step. Re-check spikes after prcellstate parity at the narrowed gid/step.
 
 Do **not** block Traub work on mixed-mode spike CI.
 
@@ -245,35 +257,56 @@ blocker with a clear report line.
 
 ---
 
-## 8. Diagnostics (prcellstate)
+## 8. Parity workflow: spikes first, prcellstate to localize
 
-### Checkpoint phases
+### 8.1 Spike parity (primary)
+
+1. CPU reference run (`enable_gpu=0`) — record `out*.dat` or use ringtest ctest.
+2. GPU-qualified run (`enable_gpu=1`, gates pass) — same `tstop`, dt, seeds.
+3. Compare spike times and gids. **Match → ship criterion met** for that model/tier.
+
+Ringtest default: **100 ms**, single host (`mpiexec -n 1`), `-gpu-native`.
+
+Re-run spike comparison only after a prcellstate-guided fix: when state at the
+chosen gid/step matches CPU, check spikes again.
+
+### 8.2 prcellstate (diagnostic)
+
+Use when spikes disagree. **Spike mismatch picks the gid** (and a bracket on
+simulation time). Do **not** jump straight to named phase checkpoints.
+
+**Step 1 — search over `tstop`:** run paired CPU/GPU short simulations with
+decreasing `tstop` (or bisect) and compare prcellstate for that gid **after each
+`tstop`**. Find the latest time at which CPU and GPU prcellstate are still
+identical and the earliest `tstop` where they differ. That brackets the failing
+step.
+
+**Step 2 — phase checkpoints (only after Step 1):** at the bracketed step, arm
+named phases to see **which fixed-step phase diverges first**:
 
 | Phase | When | Typical use |
 |-------|------|-------------|
 | `post_setup` | After `setup_tree_matrix` | rhs/d, mechanism CURRENT |
 | `post_solve` | After voltage update | Node `v`, consistency with threshold |
 | `pre_nonvint` | Before `nonvint` | V synced for STATE |
-| `post_nonvint` | After STATE | Channel `m`/`h`/ions; **primary STATE parity** |
-
-### Usage (HOC)
+| `post_nonvint` | After STATE | Channel `m`/`h`/ions; common STATE divergence |
 
 ```hoc
-// Arm before prun/psolve — step index 0-based from psolve start
+// After tstop search — gid from spike mismatch; step from bracketed time
 prcellstate_gid = 171
 prcellstate_checkpoint = 56   // or pc.prcellstate_checkpoint(gid, -1, 1.425) for time
 ```
 
 Output: `<gid>_<backend>_s<step>_<phase>.nrndat` (see `prcellstate_checkpoint.cpp`).
 
-### Comparison workflow
+1. CPU reference → `171_cpu_s56_post_nonvint.nrndat`
+2. GPU run → `171_gpu_s56_post_nonvint.nrndat`
+3. Compare node `inode v` and mechanism blocks; **first phase that diverges**
+   is where device work is needed.
+4. After fix, confirm prcellstate at that gid/step, **then** re-check spikes.
 
-1. CPU reference run (`enable_gpu=0`) → `171_cpu_s56_post_nonvint.nrndat`
-2. GPU run (`enable_gpu=1`) → `171_gpu_s56_post_nonvint.nrndat`
-3. Compare node `inode v` and mechanism blocks (e.g. `naf` fields at soma inode).
-4. First phase where CPU/GPU diverge → that fixed-step phase needs device work.
-
-Spike files (`out1.dat`) are step 5, not step 1.
+`prcellstate` is a **focus tool** for the first thing that goes wrong — not a
+substitute for spike parity, and not the first knob to turn when spikes disagree.
 
 ---
 
@@ -281,9 +314,10 @@ Spike files (`out1.dat`) are step 5, not step 1.
 
 | Target | Requirement |
 |--------|-------------|
-| Ringtest GPU-qualified | Gates pass; prcellstate + spikes vs CPU |
+| Ringtest GPU-qualified | Gates pass; **spike parity** vs CPU at `tstop=100` ms, single host |
+| Ringtest GPU-qualified MPI | After single-host spikes match; multi-rank psolve (separate milestone) |
 | Traub GPU-transitional | Build + run allowed; **no spike count match** |
-| Traub GPU-qualified | Gates pass; prcellstate on gid 171; then spike tolerance TBD |
+| Traub GPU-qualified | Gates pass; spike parity; prcellstate only on spike mismatch |
 
 `run_benchmark.py` should label runs: `qualified` vs `transitional` vs `cpu`.
 
@@ -308,9 +342,11 @@ qualifies the same mechanism set.
 1. **`model_qualifies_for_full_gpu_native()`** — single predicate from §4.
 2. **Policy at `psolve` start:** warn, or refuse GPU, if `enable_gpu=1` and not qualified.
 3. **Extend phase report** with explicit `QUALIFIED: yes/no` line.
-4. **Ringtest:** satisfy Gates A–E; document in ctest README.
-5. **Traub:** OpenACC + registration for blocking mechs from phase report.
-6. **Remove transitional sync** as gates clear (not before).
+4. **Ringtest:** satisfy Gates A–E; **spike parity at 100 ms**, `mpiexec -n 1`,
+   `-gpu-native`; use prcellstate only if spikes fail.
+5. **Ringtest MPI (`n≥2`):** after single-host spike parity — fix multi-rank psolve.
+6. **Traub:** OpenACC + registration for blocking mechs from phase report.
+7. **Remove transitional sync** as gates clear (not before).
 
 ---
 
@@ -329,5 +365,6 @@ qualifies the same mechanism set.
 
 ---
 
-*Status: strategy document — mixed-mode parity explicitly deprecated as a goal.
-Last updated: 2026-07-03.*
+*Status: strategy document — mixed-mode parity explicitly deprecated as a goal;
+integration correctness is spike parity first, prcellstate for localization.
+Last updated: 2026-07-04.
