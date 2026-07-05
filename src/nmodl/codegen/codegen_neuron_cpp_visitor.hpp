@@ -246,7 +246,7 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
     /**
      * Print all `check_*` function declarations
      */
-    void print_check_table_entrypoint();
+    virtual void print_check_table_entrypoint();
 
 
     void print_function_or_procedure(const ast::Block& node,
@@ -613,14 +613,14 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
      * See `print_entrypoint_setup_code_from_memb_list`. This variation should be used when one only
      * has access to a `Prop`, but not the full `Memb_list`.
      */
-    void print_entrypoint_setup_code_from_prop();
+    virtual void print_entrypoint_setup_code_from_prop();
 
 
     /**
      * Print the \c nrn\_init function definition
      * \param skip_init_check \c true to generate code executing the initialization conditionally
      */
-    void print_nrn_init(bool skip_init_check = true);
+    virtual void print_nrn_init(bool skip_init_check = true);
 
     /** Print the initial block. */
     void print_initial_block(const ast::InitialBlock* node);
@@ -670,7 +670,7 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
     /****************************************************************************************/
 
     std::string nrn_current_arguments();
-    ParamVector nrn_current_parameters();
+    virtual ParamVector nrn_current_parameters();
 
     /**
      * Print the \c nrn_current kernel

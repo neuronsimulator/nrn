@@ -43,7 +43,7 @@ class CodegenNeuronAccVisitor: public CodegenNeuronCppVisitor {
 
     void print_compute_functions() override;
 
-    void print_nrn_jacob() override;
+    void print_check_table_entrypoint() override;
 
     void print_gpu_phase_registration() override;
 
@@ -58,6 +58,23 @@ class CodegenNeuronAccVisitor: public CodegenNeuronCppVisitor {
 
     void print_data_structures(bool print_initializers) override;
 
+    void print_mechanism_range_var_structure(bool print_initializers) override;
+
+    std::string float_variable_name(const SymbolType& symbol, bool use_instance) const override;
+
+    void print_v_unused() const override;
+    void print_g_unused() const override;
+
+    void print_nrn_init(bool skip_init_check = true) override;
+    void print_nrn_current(const ast::BreakpointBlock& node) override;
+    void print_nrn_state() override;
+    void print_nrn_cur() override;
+    void print_nrn_jacob() override;
+
+    void print_entrypoint_setup_code_from_prop() override;
+
+    ParamVector nrn_current_parameters() override;
+
     void print_make_instance() const override;
 
     void print_make_node_data() const override;
@@ -65,6 +82,13 @@ class CodegenNeuronAccVisitor: public CodegenNeuronCppVisitor {
     void print_entrypoint_setup_code_from_memb_list() override;
 
   private:
+    /** When true, RANGE reads use _present_fp_* (OpenACC kernel); else _lmc.fpfield (HOC/net_receive). */
+    mutable bool use_present_fp_indexing_{false};
+
+    [[nodiscard]] std::string indexed_fp_var(std::string_view name,
+                                             std::string_view index_expr = "id") const;
+    [[nodiscard]] int conductance_fp_index() const;
+
     bool host_only_parallel_block(BlockType type) const;
     void print_global_variable_enter_data_once() const;
     void print_global_variable_device_update_annotation() const;

@@ -1,5 +1,6 @@
 #include "codegen/codegen_neuron_acc_visitor.hpp"
 
+#include "ast/all.hpp"
 #include "ast/block.hpp"
 #include "ast/function_call.hpp"
 #include "visitors/visitor_utils.hpp"
@@ -260,10 +261,9 @@ void CodegenNeuronAccVisitor::print_nrn_jacob() {
     print_parallel_iteration_hint(BlockType::Equation, nullptr);
     printer->push_block("for (int id = 0; id < nodecount; id++)");
     printer->add_line("int node_id = node_data.nodeindices[id];");
-    printer->fmt_line("node_data.node_diagonal[node_id] {} inst.{}[id];",
+    printer->fmt_line("node_data.node_diagonal[node_id] {} _present_fp_{}[inst._data_offset + id];",
                       operator_for_d(),
-                      info.vectorize ? naming::CONDUCTANCE_UNUSED_VARIABLE
-                                     : naming::CONDUCTANCE_VARIABLE);
+                      conductance_fp_index());
     printer->pop_block();
     print_kernel_data_present_annotation_block_end();
     printer->chain_block("else");
@@ -271,12 +271,55 @@ void CodegenNeuronAccVisitor::print_nrn_jacob() {
     printer->fmt_line("auto nodecount = _ml_arg->nodecount;");
     printer->push_block("for (int id = 0; id < nodecount; id++)");
     printer->add_line("int node_id = node_data.nodeindices[id];");
-    printer->fmt_line("node_data.node_diagonal[node_id] {} inst.{}[id];",
+    printer->fmt_line("node_data.node_diagonal[node_id] {} _lmc.template fpfield<{}>(id);",
                       operator_for_d(),
-                      info.vectorize ? naming::CONDUCTANCE_UNUSED_VARIABLE
-                                     : naming::CONDUCTANCE_VARIABLE);
+                      conductance_fp_index());
     printer->pop_block();
     printer->pop_block();
+    printer->pop_block();
+}
+
+void CodegenNeuronAccVisitor::print_check_table_entrypoint() {
+    if (info.table_count == 0) {
+        return;
+    }
+
+    for (const auto& function: info.functions_with_table) {
+        auto name = function->get_node_name();
+        auto internal_params = internal_method_parameters();
+        printer->fmt_line("void {}({});",
+                          table_update_function_name(name),
+                          get_parameter_str(internal_params));
+    }
+
+    ParamVector args = {{"", "Memb_list*", "", "_ml"},
+                        {"", "size_t", "", "id"},
+                        {"", "Datum*", "", "_ppvar"},
+                        {"", "Datum*", "", "_thread"},
+                        {"", "double*", "", "_globals"},
+                        {"", "NrnThread*", "", "nt"},
+                        {"", "int", "", "_type"},
+                        {"", "const _nrn_model_sorted_token&", "", "_sorted_token"}};
+
+    printer->fmt_line("static void {}({})", table_thread_function_name(), get_parameter_str(args));
+    printer->push_block();
+    printer->add_line("_nrn_mechanism_cache_range _lmc{_sorted_token, *nt, *_ml, _type};");
+    printer->fmt_line("auto inst = make_instance_{}(_ml->get_storage_offset() + id, &_lmc, false);",
+                      info.mod_suffix);
+    if (!info.artificial_cell) {
+        printer->fmt_line("auto node_data = make_node_data_{}(*nt, *_ml);", info.mod_suffix);
+    }
+    if (!codegen_thread_variables.empty()) {
+        printer->fmt_line("auto _thread_vars = {}(_thread[{}].get<double*>());",
+                          thread_variables_struct(),
+                          info.thread_var_thread_id);
+    }
+
+    for (const auto& function: info.functions_with_table) {
+        auto method_name = function->get_node_name();
+        auto method_args = get_arg_str(internal_method_parameters());
+        printer->fmt_line("{}({});", table_update_function_name(method_name), method_args);
+    }
     printer->pop_block();
 }
 
@@ -395,6 +438,276 @@ void CodegenNeuronAccVisitor::print_net_event_call(const ast::FunctionCall& node
     printer->add_text(")");
 }
 
+void CodegenNeuronAccVisitor::print_mechanism_range_var_structure(bool print_initializers) {
+    auto const value_initialize = print_initializers ? "{}" : "";
+    printer->add_newline(2);
+    printer->add_line("/** mechanism instance: SoA index base + ion pdata handles (GPU index path) */");
+    printer->fmt_push_block("struct {} ", instance_struct());
+
+    for (auto const& [var, type]: info.neuron_global_variables) {
+        auto const name = var->get_name();
+        printer->fmt_line("{}* {}{};",
+                          type,
+                          name,
+                          print_initializers ? fmt::format("{{&::{}}}", name) : std::string{});
+    }
+
+    printer->fmt_line("std::size_t _data_offset{};", value_initialize);
+
+    for (auto& var: codegen_int_variables) {
+        const auto& name = var.symbol->get_name();
+        auto position = position_of_int_var(name);
+
+        if (name == naming::POINT_PROCESS_VARIABLE) {
+            continue;
+        } else if (var.is_index || var.is_integer) {
+        } else if (info.semantics[position].name == naming::POINTER_SEMANTIC) {
+        } else {
+            auto qualifier = var.is_constant ? "const " : "";
+            auto type = var.is_vdata ? "void*" : default_float_data_type();
+            printer->fmt_line("{}{}* const* {}{};", qualifier, type, name, value_initialize);
+        }
+    }
+
+    if (!codegen_global_variables.empty()) {
+        printer->fmt_line("{}* {}{};",
+                          global_struct(),
+                          naming::INST_GLOBAL_MEMBER,
+                          print_initializers ? fmt::format("{{&{}}}", global_struct_instance())
+                                             : std::string{});
+    }
+    printer->pop_block(";");
+}
+
+std::string CodegenNeuronAccVisitor::indexed_fp_var(std::string_view name,
+                                                    std::string_view index_expr) const {
+    auto const position = position_of_float_var(std::string{name});
+    return fmt::format("_present_fp_{}[inst._data_offset + {}]", position, index_expr);
+}
+
+int CodegenNeuronAccVisitor::conductance_fp_index() const {
+    auto const& name = info.vectorize ? naming::CONDUCTANCE_UNUSED_VARIABLE
+                                      : naming::CONDUCTANCE_VARIABLE;
+    return position_of_float_var(name);
+}
+
+void CodegenNeuronAccVisitor::print_v_unused() const {
+    if (!info.vectorize) {
+        return;
+    }
+    printer->fmt_line("{} = v;", indexed_fp_var(naming::VOLTAGE_UNUSED_VARIABLE));
+}
+
+void CodegenNeuronAccVisitor::print_g_unused() const {
+    printer->add_multi_line(R"CODE(
+        #if NRN_PRCELLSTATE
+    )CODE");
+    printer->fmt_line("{} = g;", indexed_fp_var(naming::CONDUCTANCE_UNUSED_VARIABLE));
+    printer->add_line("#endif");
+}
+
+void CodegenNeuronAccVisitor::print_nrn_init(bool skip_init_check) {
+    (void) skip_init_check;
+    printer->add_newline(2);
+
+    print_global_function_common_code(BlockType::Initial);
+
+    use_present_fp_indexing_ = true;
+    print_parallel_iteration_hint(BlockType::Initial, info.initial_node);
+    printer->push_block("for (int id = 0; id < nodecount; id++)");
+
+    printer->add_line("auto* _ppvar = _ml_arg->pdata[id];");
+    if (!info.artificial_cell) {
+        printer->add_line("int node_id = node_data.nodeindices[id];");
+        printer->fmt_line("{} = node_data.node_voltages[node_id];",
+                          indexed_fp_var(naming::VOLTAGE_UNUSED_VARIABLE));
+    }
+
+    print_rename_state_vars();
+
+    if (!info.changed_dt.empty()) {
+        printer->fmt_line("double _save_prev_dt = {};",
+                          get_variable_name(naming::NTHREAD_DT_VARIABLE));
+        printer->fmt_line("{} = {};",
+                          get_variable_name(naming::NTHREAD_DT_VARIABLE),
+                          info.changed_dt);
+    }
+
+    print_initial_block(info.initial_node);
+
+    if (!info.changed_dt.empty()) {
+        printer->fmt_line("{} = _save_prev_dt;", get_variable_name(naming::NTHREAD_DT_VARIABLE));
+    }
+
+    printer->pop_block();
+    print_kernel_data_present_annotation_block_end();
+    printer->pop_block();
+    use_present_fp_indexing_ = false;
+}
+
+void CodegenNeuronAccVisitor::print_nrn_current(const ast::BreakpointBlock& node) {
+    use_present_fp_indexing_ = true;
+    const auto& args = nrn_current_parameters();
+    const auto& block = node.get_statement_block();
+    printer->add_newline(2);
+    printer->fmt_push_block("static inline double nrn_current_{}({})",
+                            info.mod_suffix,
+                            get_parameter_str(args));
+    printer->fmt_line("{} = v;", indexed_fp_var(naming::VOLTAGE_UNUSED_VARIABLE));
+    printer->add_line("double current = 0.0;");
+    print_statement_block(*block, false, false);
+    for (auto& current: info.currents) {
+        const auto& name = get_variable_name(current);
+        printer->fmt_line("current += {};", name);
+    }
+    printer->add_line("return current;");
+    printer->pop_block();
+    use_present_fp_indexing_ = false;
+}
+
+void CodegenNeuronAccVisitor::print_nrn_state() {
+    if (!nrn_state_required()) {
+        return;
+    }
+
+    printer->add_newline(2);
+    print_global_function_common_code(BlockType::State);
+
+    use_present_fp_indexing_ = true;
+    print_parallel_iteration_hint(BlockType::State, info.nrn_state_block);
+    printer->push_block("for (int id = 0; id < nodecount; id++)");
+    printer->add_line("int node_id = node_data.nodeindices[id];");
+    printer->add_line("auto* _ppvar = _ml_arg->pdata[id];");
+    if (!info.artificial_cell) {
+        printer->fmt_line("{} = node_data.node_voltages[node_id];",
+                          indexed_fp_var(naming::VOLTAGE_UNUSED_VARIABLE));
+    }
+
+    if (ion_variable_struct_required()) {
+        throw std::runtime_error("Not implemented.");
+    }
+
+    auto read_statements = ion_read_statements(BlockType::State);
+    for (auto& statement: read_statements) {
+        printer->add_line(statement);
+    }
+
+    if (info.nrn_state_block) {
+        info.nrn_state_block->visit_children(*this);
+    }
+
+    for (auto& block: info.matexp_blocks) {
+        if (!block->get_steadystate().get()->eval()) {
+            block->accept(*this);
+        }
+    }
+
+    if (info.currents.empty() && info.breakpoint_node != nullptr) {
+        auto block = info.breakpoint_node->get_statement_block();
+        print_statement_block(*block, false, false);
+    }
+
+    const auto& write_statements = ion_write_statements(BlockType::State);
+    for (auto& statement: write_statements) {
+        const auto& text = process_shadow_update_statement(statement, BlockType::State);
+        printer->add_line(text);
+    }
+
+    printer->pop_block();
+    print_kernel_data_present_annotation_block_end();
+    printer->pop_block();
+    use_present_fp_indexing_ = false;
+}
+
+CodegenNeuronAccVisitor::ParamVector CodegenNeuronAccVisitor::nrn_current_parameters() {
+    auto params = CodegenNeuronCppVisitor::nrn_current_parameters();
+    auto const v_param = params.back();
+    params.pop_back();
+    for (int i = 0; i < static_cast<int>(codegen_float_variables.size()); ++i) {
+        params.emplace_back("", "double*", "", fmt::format("_present_fp_{}", i));
+    }
+    params.push_back(v_param);
+    return params;
+}
+
+void CodegenNeuronAccVisitor::print_nrn_cur() {
+    if (!nrn_cur_required()) {
+        return;
+    }
+
+    if (info.conductances.empty()) {
+        print_nrn_current(*info.breakpoint_node);
+    }
+
+    printer->add_newline(2);
+    printer->add_line("/** update current */");
+    print_global_function_common_code(BlockType::Equation);
+    use_present_fp_indexing_ = true;
+    print_parallel_iteration_hint(BlockType::Equation, info.breakpoint_node);
+    printer->push_block("for (int id = 0; id < nodecount; id++)");
+    print_nrn_cur_kernel(*info.breakpoint_node);
+
+    printer->fmt_line("node_data.node_rhs[node_id] {} rhs;", operator_for_rhs());
+
+    if (breakpoint_exist()) {
+        printer->fmt_line("{} = g;", indexed_fp_var(info.vectorize ? naming::CONDUCTANCE_UNUSED_VARIABLE
+                                                                    : naming::CONDUCTANCE_VARIABLE));
+    }
+    printer->pop_block();
+
+    print_after_nrn_cur_gpu_net_send_flush();
+    print_kernel_data_present_annotation_block_end();
+    printer->pop_block();
+    use_present_fp_indexing_ = false;
+}
+
+void CodegenNeuronAccVisitor::print_entrypoint_setup_code_from_prop() {
+    if (info.mod_suffix == "nothing") {
+        return;
+    }
+
+    printer->add_line("Datum* _ppvar = _nrn_mechanism_access_dparam(prop);");
+    printer->add_line("_nrn_mechanism_cache_instance _lmc{prop};");
+    printer->add_line("const size_t id = 0;");
+
+    printer->fmt_line("auto inst = make_instance_{}(&_lmc);", info.mod_suffix);
+    if (!info.artificial_cell) {
+        printer->fmt_line("auto node_data = make_node_data_{}(prop);", info.mod_suffix);
+    }
+
+    if (!codegen_thread_variables.empty()) {
+        printer->fmt_line("auto _thread_vars = {}({}_global.thread_data);",
+                          thread_variables_struct(),
+                          info.mod_suffix);
+    }
+
+    printer->add_newline();
+}
+
+std::string CodegenNeuronAccVisitor::float_variable_name(const SymbolType& symbol,
+                                                         bool use_instance) const {
+    if (!use_instance) {
+        return CodegenNeuronCppVisitor::float_variable_name(symbol, use_instance);
+    }
+
+    auto const position = position_of_float_var(symbol->get_name());
+    if (!use_present_fp_indexing_) {
+        if (symbol->is_array()) {
+            auto const dimension = symbol->get_length();
+            return fmt::format("(_lmc.template data_array_ptr<{}, {}>() + id * {})",
+                               position,
+                               dimension,
+                               dimension);
+        }
+        return fmt::format("_lmc.template fpfield<{}>(id)", position);
+    }
+    if (symbol->is_array()) {
+        auto const dimension = symbol->get_length();
+        return fmt::format("(_present_fp_{} + inst._data_offset + id * {})", position, dimension);
+    }
+    return fmt::format("_present_fp_{}[inst._data_offset + id]", position);
+}
+
 void CodegenNeuronAccVisitor::print_data_structures(bool print_initializers) {
     print_mechanism_global_var_structure(print_initializers);
     print_mechanism_range_var_structure(false);
@@ -406,7 +719,8 @@ void CodegenNeuronAccVisitor::print_data_structures(bool print_initializers) {
 
 void CodegenNeuronAccVisitor::print_make_instance() const {
     printer->add_newline(2);
-    printer->fmt_push_block("static {} make_instance_{}(_nrn_mechanism_cache_range* _lmc, "
+    printer->fmt_push_block("static {} make_instance_{}(std::size_t data_offset, "
+                            "_nrn_mechanism_cache_range* _lmc, "
                             "bool use_device_ptrs = false)",
                             instance_struct(),
                             info.mod_suffix);
@@ -427,16 +741,7 @@ void CodegenNeuronAccVisitor::print_make_instance() const {
             name));
     }
 
-    const auto codegen_float_variables_size = codegen_float_variables.size();
-    for (int i = 0; i < codegen_float_variables_size; ++i) {
-        const auto& float_var = codegen_float_variables[i];
-        if (float_var->is_array()) {
-            make_instance_args.push_back(
-                fmt::format("_lmc->template data_array_ptr<{}, {}>()", i, float_var->get_length()));
-        } else {
-            make_instance_args.push_back(fmt::format("_lmc->template fpfield_ptr<{}>()", i));
-        }
-    }
+    make_instance_args.emplace_back("data_offset");
 
     const auto codegen_int_variables_size = codegen_int_variables.size();
     for (size_t i = 0; i < codegen_int_variables_size; ++i) {
@@ -468,6 +773,18 @@ void CodegenNeuronAccVisitor::print_make_instance() const {
 
     printer->add_multi_line(fmt::format("{}", fmt::join(make_instance_args, ",\n")));
 
+    printer->pop_block(";");
+    printer->pop_block();
+
+    printer->add_newline(2);
+    printer->fmt_push_block("static {} make_instance_{}(_nrn_mechanism_cache_instance* _lmc)",
+                            instance_struct(),
+                            info.mod_suffix);
+    printer->push_block("if(_lmc == nullptr)");
+    printer->fmt_line("return {}();", instance_struct());
+    printer->pop_block_nl(2);
+    printer->fmt_push_block("return {}", instance_struct());
+    printer->add_line("0");
     printer->pop_block(";");
     printer->pop_block();
 }
@@ -522,7 +839,9 @@ void CodegenNeuronAccVisitor::print_entrypoint_setup_code_from_memb_list() {
 
     printer->add_line(
         "_nrn_mechanism_cache_range _lmc{_sorted_token, *nt, *_ml_arg, _ml_arg->type()};");
-    printer->fmt_line("auto inst = make_instance_{}(&_lmc, nt->compute_gpu);", info.mod_suffix);
+    printer->fmt_line("auto inst = make_instance_{}(_ml_arg->get_storage_offset(), &_lmc, "
+                      "nt->compute_gpu);",
+                      info.mod_suffix);
     if (!info.artificial_cell) {
         printer->fmt_line("auto node_data = make_node_data_{}(*nt, *_ml_arg, nt->compute_gpu);",
                           info.mod_suffix);
