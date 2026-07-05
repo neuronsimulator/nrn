@@ -240,7 +240,7 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
      *
      * This includes the HOC/Python wrappers.
      */
-    void print_function_definitions();
+    virtual void print_function_definitions();
 
 
     /**
@@ -273,8 +273,11 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
 
     /** Print the setup code for HOC/Py wrapper.
      */
-    void print_hoc_py_wrapper_setup(const ast::Block* function_or_procedure_block,
-                                    InterpreterWrapper wrapper_type);
+    virtual void print_hoc_py_wrapper_setup(const ast::Block* function_or_procedure_block,
+                                            InterpreterWrapper wrapper_type);
+
+    /** Hook for backends to declare kernel-local state before table updates in HOC wrappers. */
+    virtual void print_hoc_py_wrapper_before_table_update();
 
 
     /** Print the code that calls the impl from the HOC/Py wrapper.

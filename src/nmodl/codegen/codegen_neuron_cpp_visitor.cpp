@@ -325,6 +325,8 @@ void CodegenNeuronCppVisitor::print_hoc_py_wrapper_call_impl(
     }
 }
 
+void CodegenNeuronCppVisitor::print_hoc_py_wrapper_before_table_update() {}
+
 void CodegenNeuronCppVisitor::print_hoc_py_wrapper_setup(
     const ast::Block* function_or_procedure_block,
     InterpreterWrapper wrapper_type) {
@@ -399,6 +401,7 @@ void CodegenNeuronCppVisitor::print_hoc_py_wrapper_setup(
                           thread_variables_struct(),
                           info.thread_var_thread_id);
     }
+    print_hoc_py_wrapper_before_table_update();
     if (info.function_uses_table(block_name)) {
         printer->fmt_line("{}({});",
                           table_update_function_name(block_name),

@@ -43,7 +43,13 @@ class CodegenNeuronAccVisitor: public CodegenNeuronCppVisitor {
 
     void print_compute_functions() override;
 
+    void print_function_definitions() override;
+
+    void print_hoc_py_wrapper_before_table_update() override;
+
     void print_check_table_entrypoint() override;
+
+    ParamVector internal_method_parameters() override;
 
     void print_gpu_phase_registration() override;
 
@@ -61,6 +67,10 @@ class CodegenNeuronAccVisitor: public CodegenNeuronCppVisitor {
     void print_mechanism_range_var_structure(bool print_initializers) override;
 
     std::string float_variable_name(const SymbolType& symbol, bool use_instance) const override;
+
+    std::string int_variable_name(const IndexVariableInfo& symbol,
+                                  const std::string& name,
+                                  bool use_instance) const override;
 
     void print_v_unused() const override;
     void print_g_unused() const override;
@@ -88,6 +98,10 @@ class CodegenNeuronAccVisitor: public CodegenNeuronCppVisitor {
     [[nodiscard]] std::string indexed_fp_var(std::string_view name,
                                              std::string_view index_expr = "id") const;
     [[nodiscard]] int conductance_fp_index() const;
+
+    void print_present_fp_pointer_declarations() const;
+    void print_present_dptr_pointer_declarations() const;
+    [[nodiscard]] std::string present_dptr_deviceptr_clause() const;
 
     bool host_only_parallel_block(BlockType type) const;
     void print_global_variable_enter_data_once() const;

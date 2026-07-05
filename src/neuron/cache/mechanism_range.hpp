@@ -65,9 +65,12 @@ struct MechanismRange {
                    int type)
         : MechanismRange{cache_token, ml} {
         assert(type == ml.type());
-        (void) nt;
-        // fpfield SoA bases use host pointers; OpenACC present() maps them on kernel entry.
-        // pdata ion rows: host cache for now (device row table still WIP).
+        if (nt.compute_gpu) {
+            if (auto* const gpu_pdata =
+                    mechanism::_get::gpu_pdata_ptr_cache(cache_token, ml.type())) {
+                m_pdata_ptrs = gpu_pdata;
+            }
+        }
     }
 
   protected:

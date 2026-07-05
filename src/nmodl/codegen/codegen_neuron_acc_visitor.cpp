@@ -61,8 +61,96 @@ void CodegenNeuronAccVisitor::print_kernel_instance_data_copyin() {
 }
 
 std::string CodegenNeuronAccVisitor::global_variable_name(const SymbolType& symbol,
-                                                          bool /*use_instance*/) const {
+                                                          bool use_instance) const {
+    if (use_present_fp_indexing_ || use_instance) {
+        return fmt::format("inst.{}->{}", naming::INST_GLOBAL_MEMBER, symbol->get_name());
+    }
     return CodegenNeuronCppVisitor::global_variable_name(symbol, false);
+}
+
+void CodegenNeuronAccVisitor::print_present_fp_pointer_declarations() const {
+    const auto codegen_float_variables_size = codegen_float_variables.size();
+    for (int i = 0; i < codegen_float_variables_size; ++i) {
+        printer->fmt_line("double* _present_fp_{0} = _lmc.template fpfield_ptr<{0}>();", i);
+    }
+}
+
+void CodegenNeuronAccVisitor::print_present_dptr_pointer_declarations() const {
+    const auto codegen_int_variables_size = codegen_int_variables.size();
+    for (size_t i = 0; i < codegen_int_variables_size; ++i) {
+        const auto& var = codegen_int_variables[i];
+        auto const sem = info.semantics[i].name;
+        if (var.is_index || var.is_integer || var.is_vdata || sem == naming::POINTER_SEMANTIC) {
+            continue;
+        }
+        printer->fmt_line(
+            "double* const* _present_dptr_{0} = (nt->compute_gpu && "
+            "neuron::mechanism::_get::gpu_pdata_ptr_cache(_sorted_token, _ml_arg->type())) "
+            "? neuron::mechanism::_get::gpu_pdata_ptr_cache(_sorted_token, _ml_arg->type())[{0}] "
+            ": _lmc.template dptr_field_ptr<{0}>();",
+            i);
+    }
+}
+
+std::string CodegenNeuronAccVisitor::present_dptr_deviceptr_clause() const {
+    std::vector<std::string> dptr_names;
+    const auto codegen_int_variables_size = codegen_int_variables.size();
+    for (size_t i = 0; i < codegen_int_variables_size; ++i) {
+        const auto& var = codegen_int_variables[i];
+        auto const sem = info.semantics[i].name;
+        if (var.is_index || var.is_integer || var.is_vdata || sem == naming::POINTER_SEMANTIC) {
+            continue;
+        }
+        dptr_names.push_back(fmt::format("_present_dptr_{}", i));
+    }
+    if (dptr_names.empty()) {
+        return {};
+    }
+    return fmt::format(" deviceptr({})", fmt::join(dptr_names, ", "));
+}
+
+CodegenNeuronAccVisitor::ParamVector CodegenNeuronAccVisitor::internal_method_parameters() {
+    if (info.mod_suffix == "nothing") {
+        return {};
+    }
+
+    ParamVector params;
+    params.emplace_back("", fmt::format("{}&", instance_struct()), "", "inst");
+    if (!info.artificial_cell) {
+        params.emplace_back("", fmt::format("{}&", node_data_struct()), "", "node_data");
+    }
+    params.emplace_back("", "size_t", "", "id");
+    params.emplace_back("", "Datum*", "", "_ppvar");
+    params.emplace_back("", "Datum*", "", "_thread");
+    if (!codegen_thread_variables.empty()) {
+        params.emplace_back("", fmt::format("{}&", thread_variables_struct()), "", "_thread_vars");
+    }
+    params.emplace_back("", "NrnThread*", "", "nt");
+    for (int i = 0; i < static_cast<int>(codegen_float_variables.size()); ++i) {
+        params.emplace_back("", "double*", "", fmt::format("_present_fp_{}", i));
+    }
+    return params;
+}
+
+void CodegenNeuronAccVisitor::print_function_definitions() {
+    print_hoc_py_wrapper_function_definitions();
+    use_present_fp_indexing_ = true;
+    for (const auto& procedure: info.procedures) {
+        print_procedure(*procedure);
+    }
+    for (const auto& function: info.functions) {
+        print_function(*function);
+    }
+    for (const auto& function_table: info.function_tables) {
+        print_function_tables(*function_table);
+    }
+    use_present_fp_indexing_ = false;
+}
+
+void CodegenNeuronAccVisitor::print_hoc_py_wrapper_before_table_update() {
+    if (info.mod_suffix != "nothing" && !info.artificial_cell) {
+        print_present_fp_pointer_declarations();
+    }
 }
 
 void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
@@ -101,6 +189,7 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
         for (int i = 0; i < codegen_float_variables_size; ++i) {
             printer->fmt_line("double* _present_fp_{0} = _lmc.template fpfield_ptr<{0}>();", i);
         }
+        print_present_dptr_pointer_declarations();
     }
 
     std::ostringstream present_clause;
@@ -119,11 +208,14 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
             present_clause << fmt::format(
                 ", _present_fp_{}[:static_cast<std::size_t>(_ml_arg->nodecount) * {}]", i, array_len);
         }
+        // pdata ion rows live in device memory via upload_mechanism_pointer_tables;
+        // do not add them to present() (OpenACC cannot track deviceptr slices here).
     }
     present_clause << ')';
 
-    printer->fmt_line("nrn_pragma_acc(parallel loop {} async(nt->stream_id) if(nt->compute_gpu))",
-                      present_clause.str());
+    printer->fmt_line("nrn_pragma_acc(parallel loop {}{} async(nt->stream_id) if(nt->compute_gpu))",
+                      present_clause.str(),
+                      present_dptr_deviceptr_clause());
     printer->add_line("nrn_pragma_omp(target teams distribute parallel for if(nt->compute_gpu))");
 }
 
@@ -304,6 +396,7 @@ void CodegenNeuronAccVisitor::print_check_table_entrypoint() {
     printer->fmt_line("static void {}({})", table_thread_function_name(), get_parameter_str(args));
     printer->push_block();
     printer->add_line("_nrn_mechanism_cache_range _lmc{_sorted_token, *nt, *_ml, _type};");
+    print_present_fp_pointer_declarations();
     printer->fmt_line("auto inst = make_instance_{}(_ml->get_storage_offset() + id, &_lmc, false);",
                       info.mod_suffix);
     if (!info.artificial_cell) {
@@ -682,6 +775,24 @@ void CodegenNeuronAccVisitor::print_entrypoint_setup_code_from_prop() {
     }
 
     printer->add_newline();
+}
+
+std::string CodegenNeuronAccVisitor::int_variable_name(const IndexVariableInfo& symbol,
+                                                       const std::string& name,
+                                                       bool use_instance) const {
+    if (use_present_fp_indexing_ && use_instance) {
+        auto const position = position_of_int_var(name);
+        if (info.semantics[position].name == naming::RANDOM_SEMANTIC ||
+            info.semantics[position].name == naming::FOR_NETCON_SEMANTIC ||
+            info.semantics[position].name == naming::POINTER_SEMANTIC) {
+            return CodegenNeuronCppVisitor::int_variable_name(symbol, name, use_instance);
+        }
+        if (symbol.is_index || symbol.is_integer) {
+            return CodegenNeuronCppVisitor::int_variable_name(symbol, name, use_instance);
+        }
+        return fmt::format("(*_present_dptr_{}[inst._data_offset + id])", position);
+    }
+    return CodegenNeuronCppVisitor::int_variable_name(symbol, name, use_instance);
 }
 
 std::string CodegenNeuronAccVisitor::float_variable_name(const SymbolType& symbol,
