@@ -6,7 +6,7 @@ neuron
 For empirically-based simulations of neurons and networks of neurons in Python.
 
 This is the top-level module of the official python interface to
-the NEURON simulation environment (https://nrn.readthedocs.io).
+the NEURON simulation environment (https://www.neuronsimulator.org).
 
 Documentation is available in the docstrings.
 
@@ -203,7 +203,7 @@ class _NEURON_INTERFACE(hoc.HocObject):
     >>> help(n.finitialize)
 
     The full NEURON documentation is available online at
-    https://nrn.readthedocs.io
+    https://www.neuronsimulator.org
     """
 
     def __repr__(self):
