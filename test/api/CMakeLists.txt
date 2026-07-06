@@ -1,11 +1,5 @@
-foreach(
-  api_test_file
-  global_scalar.cpp
-  hh_sim.cpp
-  netcon.cpp
-  segment_diam.cpp
-  sections.cpp
-  vclamp.cpp)
+foreach(api_test_file global_scalar.cpp hh_sim.cpp netcon.cpp segment_diam.cpp sections.cpp
+                      vclamp.cpp)
   string(REPLACE "." "_" api_test_name "${api_test_file}")
   add_executable(${api_test_name} ${api_test_file})
   cpp_cc_configure_sanitizers(TARGET ${api_test_name})
