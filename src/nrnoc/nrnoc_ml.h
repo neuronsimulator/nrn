@@ -11,6 +11,7 @@ struct generic_data_handle;
 }
 namespace neuron::gpu {
 struct NetSendBuffer_t;
+struct NetReceiveBuffer_t;
 }
 using Datum = neuron::container::generic_data_handle;
 
@@ -79,6 +80,7 @@ struct Memb_list {
     Prop** prop{};
     Datum* _thread{}; /* thread specific data (when static is no good) */
     neuron::gpu::NetSendBuffer_t* _net_send_buffer = nullptr;
+    neuron::gpu::NetReceiveBuffer_t* _net_receive_buffer = nullptr;
     int nodecount{};
     /** Padded instance count for GPU SoA kernels (set during device upload). */
     int _nodecount_padded{};

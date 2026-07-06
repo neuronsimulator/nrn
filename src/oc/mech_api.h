@@ -22,3 +22,4 @@
 #include <iostream>  // nocmodl uses std::cerr
 
 void hoc_register_net_send_buffering(int);
+void hoc_register_net_receive_buffering(void (*)(struct NrnThread*), int);

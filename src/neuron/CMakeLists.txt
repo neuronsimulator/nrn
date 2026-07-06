@@ -36,6 +36,7 @@ if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
     gpu/fadvance_gpu.cpp
     gpu/net_events.cpp
     gpu/net_send_buffer.cpp
+    gpu/net_receive_buffer.cpp
     gpu/post_solve.cpp
     gpu/sync.cpp
     gpu/mechanism_phases.cpp
@@ -63,6 +64,7 @@ if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
     gpu/fadvance_gpu.cpp
     gpu/net_events.cpp
     gpu/net_send_buffer.cpp
+    gpu/net_receive_buffer.cpp
     gpu/post_solve.cpp
     gpu/sync.cpp
     gpu/mechanism_phases.cpp

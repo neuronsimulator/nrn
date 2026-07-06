@@ -3,6 +3,7 @@
 #include "coreneuron/permute/data_layout.hpp"
 #include "membfunc.h"
 #include "multicore.h"
+#include "neuron/gpu/net_receive_buffer.hpp"
 #include "neuron/gpu/net_send_buffer.hpp"
 #include "neuron/gpu/offload.hpp"
 #include "neuron/model_data.hpp"
@@ -31,6 +32,20 @@ void record_upload(UploadState& state,
                    std::size_t count,
                    std::size_t sizeof_elem) {
     state.record(host, count, sizeof_elem);
+}
+
+void upload_net_receive_buffer(Memb_list* ml, Memb_list* d_ml, UploadState& state) {
+    auto* const nrb = ml->_net_receive_buffer;
+    if (!nrb) {
+        return;
+    }
+    upload_net_receive_buffer_to_device(ml);
+    if (!nrb->device_uploaded) {
+        return;
+    }
+    auto* const d_nrb = static_cast<NetReceiveBuffer_t*>(nrn_target_deviceptr(nrb));
+    record_upload(state, nrb, 1, sizeof(NetReceiveBuffer_t));
+    nrn_target_memcpy_to_device(&(d_ml->_net_receive_buffer), &d_nrb, 1);
 }
 
 void upload_net_send_buffer(Memb_list* ml, Memb_list* d_ml, UploadState& state) {
@@ -116,6 +131,7 @@ void upload_mechanism_shell(Memb_list* ml, int type, UploadState& state) {
     }
 
     upload_mechanism_pdata(ml, type, d_ml, state);
+    upload_net_receive_buffer(ml, d_ml, state);
     upload_net_send_buffer(ml, d_ml, state);
 }
 
@@ -213,6 +229,7 @@ void upload_mechanism_pointer_tables(model_sorted_token& sorted, UploadState& st
 void upload_mechanism_lists(UploadState& state) {
     for (int ith = 0; ith < nrn_nthread; ++ith) {
         auto& nt = nrn_threads[ith];
+        ensure_thread_net_receive_buffers(&nt);
         for (auto* tml = nt.tml; tml; tml = tml->next) {
             upload_mechanism_shell(tml->ml, tml->index, state);
         }

@@ -222,6 +222,23 @@ if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
     NAME gpu_net_events
     REQUIRES gpu
     COMMAND $<TARGET_FILE:testneuron_gpu_net_events> "[gpu][net_events]")
+
+  add_executable(testneuron_gpu_net_receive_buffer
+                 unit_tests/gpu/offload_main.cpp unit_tests/gpu/net_receive_buffer.cpp)
+  cpp_cc_configure_sanitizers(TARGET testneuron_gpu_net_receive_buffer)
+  target_include_directories(
+    testneuron_gpu_net_receive_buffer PRIVATE ${PROJECT_SOURCE_DIR}/external/fmt/include
+                                              ${CMAKE_BINARY_DIR}/src/nrnoc)
+  target_link_libraries(testneuron_gpu_net_receive_buffer PRIVATE Catch2::Catch2 neuron_gpu
+                                                                  neuron_gpu_upload fmt::fmt)
+  target_compile_definitions(testneuron_gpu_net_receive_buffer PRIVATE NRN_ENABLE_GPU)
+  target_compile_options(testneuron_gpu_net_receive_buffer PRIVATE ${_test_gpu_offload_flags})
+  target_link_options(testneuron_gpu_net_receive_buffer PUBLIC ${_test_gpu_offload_flags})
+  nrn_add_test(
+    GROUP unit_tests
+    NAME gpu_net_receive
+    REQUIRES gpu
+    COMMAND $<TARGET_FILE:testneuron_gpu_net_receive_buffer> "[gpu][net_receive]")
 endif()
 
 # Compile-only guard: cellorder.cpp OpenACC + NRN_ENABLE_GPU (solve_interleaved GPU dispatch).

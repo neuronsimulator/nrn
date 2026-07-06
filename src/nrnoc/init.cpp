@@ -205,6 +205,10 @@ void add_nrn_has_net_event(int mechtype) {
 void hoc_register_net_send_buffering(int type) {
     (void) type;
 }
+
+void hoc_register_net_receive_buffering(void (*)(NrnThread*), int type) {
+    (void) type;
+}
 #endif
 
 /* values are type numbers of mechanisms which have FOR_NETCONS statement */
