@@ -17,7 +17,7 @@ if(DEFINED ENV{CRAYPE_VERSION})
 endif()
 project(
   NEURON
-  VERSION 9.0.1
+  VERSION 9.0.2
   LANGUAGES C CXX
   HOMEPAGE_URL "https://nrn.readthedocs.io/")
 
