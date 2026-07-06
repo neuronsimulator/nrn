@@ -18,6 +18,10 @@
 #include <map>
 #include <set>
 
+#if defined(NRN_ENABLE_GPU)
+#include "neuron/gpu/ion_cur_device.hpp"
+#endif
+
 #undef hoc_retpushx
 
 
@@ -568,9 +572,14 @@ static void ion_cur(neuron::model_sorted_token const& sorted_token,
                     NrnThread* nt,
                     Memb_list* ml,
                     int type) {
-    neuron::cache::MechanismRange<nparm, ndparam> ml_cache{sorted_token, *nt, *ml, type};
     auto const count = ml->nodecount;
     /*printf("ion_cur %s\n", memb_func[type].sym->name);*/
+#if defined(NRN_ENABLE_GPU)
+    if (neuron::gpu::ion_cur_on_device(sorted_token, *nt, *ml, type, global_charge(type))) {
+        return;
+    }
+#endif
+    neuron::cache::MechanismRange<nparm, ndparam> ml_cache{sorted_token, *ml};
     for (int i = 0; i < count; ++i) {
         ml_cache.fpfield<dcurdv_index>(i) = 0.0;
         ml_cache.fpfield<cur_index>(i) = 0.0;
@@ -591,7 +600,7 @@ static void ion_init(neuron::model_sorted_token const& sorted_token,
                      Memb_list* ml,
                      int type) {
     int i;
-    neuron::cache::MechanismRange<nparm, ndparam> ml_cache{sorted_token, *nt, *ml, type};
+    neuron::cache::MechanismRange<nparm, ndparam> ml_cache{sorted_token, *ml};
     int count = ml->nodecount;
     /*printf("ion_init %s\n", memb_func[type].sym->name);*/
     for (i = 0; i < count; ++i) {
