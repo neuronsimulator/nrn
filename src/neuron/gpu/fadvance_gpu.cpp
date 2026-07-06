@@ -2,6 +2,7 @@
 
 #include "neuron/gpu/config.hpp"
 #include "neuron/gpu/device_state.hpp"
+#include "neuron/gpu/lastpart.hpp"
 #include "neuron/gpu/net_events.hpp"
 #include "neuron/gpu/net_send_buffer.hpp"
 #include "neuron/gpu/download.hpp"
@@ -52,7 +53,13 @@ void fixed_step_thread(model_sorted_token const& cache_token,
     {
         phase_timer::Scope const timer{phase_timer::Id::deliver_events};
         nrn::Instrumentor::phase p("deliver-events");
+        if (nonvint_state_on_device(nt)) {
+            sync_mechanism_soa_to_host_for_host_reads();
+        }
         deliver_net_events_host(nth);
+        if (model_is_on_device()) {
+            sync_mechanism_soa_to_device_after_net_events();
+        }
     }
     nrn_random_play();
     advance_first_half_time(nt);
@@ -63,6 +70,9 @@ void fixed_step_thread(model_sorted_token const& cache_token,
     }
     bool const host_post_solve = nt.end > 0 && post_solve_needs_host_fallback(nt);
     if (nt.end > 0) {
+        if (model_is_on_device()) {
+            sync_mechanism_soa_to_device_after_net_events();
+        }
         {
             phase_timer::Scope const timer{phase_timer::Id::setup_tree_matrix};
             setup_tree_matrix(cache_token, nt);

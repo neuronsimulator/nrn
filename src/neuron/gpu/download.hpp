@@ -53,6 +53,9 @@ void sync_state_to_host_for_host_reads() noexcept;
  */
 void sync_state_to_device_after_host_lastpart() noexcept;
 
+/** Push mechanism SOA to device after host net_receive / net_send delivery. */
+void sync_mechanism_soa_to_device_after_net_events() noexcept;
+
 /** Push host voltages to the device after HOC/VecPlay writes. */
 void batch_upload_to_device();
 
