@@ -92,9 +92,10 @@ void upload_soa_storage_to_device(Storage const& storage) {
             if constexpr (std::is_same_v<Value, double> || std::is_same_v<Value, int>) {
                 Value const* const host = vec.data();
                 if (!nrn_target_is_present(host)) {
-                    (void) nrn_target_copyin(host, vec.size());
+                    return;
                 }
-                nrn_target_update_on_device(host, vec.size());
+                nrn_pragma_acc(update device(host [0:vec.size()]))
+                nrn_pragma_omp(target update to(host [0:vec.size()]))
             }
         });
 #else
@@ -206,18 +207,6 @@ void sync_state_to_host_for_host_reads() noexcept {
     for (int ith = 0; ith < nrn_nthread; ++ith) {
         download_thread_state_for_host_read(nrn_threads[ith]);
     }
-    sync_all_device_streams();
-#endif
-}
-
-void sync_mechanism_soa_to_device_after_net_events() noexcept {
-#if defined(NRN_ENABLE_GPU)
-    if (!enabled() || !backend_native() || !model_is_on_device()) {
-        return;
-    }
-    phase_timer::Scope const timer{phase_timer::Id::matrix_sync};
-    neuron::model().apply_to_mechanisms(
-        [&](auto& mech_data) { upload_soa_storage_to_device(mech_data); });
     sync_all_device_streams();
 #endif
 }

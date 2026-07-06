@@ -574,13 +574,7 @@ void nrn_fixed_step_lastpart(neuron::model_sorted_token const& cache_token, NrnT
         nrn::Instrumentor::phase p("deliver-events");
 #if defined(NRN_ENABLE_GPU)
         if (neuron::gpu::enabled() && neuron::gpu::backend_native()) {
-            if (neuron::gpu::nonvint_state_on_device(nt)) {
-                neuron::gpu::sync_mechanism_soa_to_host_for_host_reads();
-            }
             neuron::gpu::deliver_post_step_events_host(nth);
-            if (neuron::gpu::model_is_on_device()) {
-                neuron::gpu::sync_mechanism_soa_to_device_after_net_events();
-            }
         } else
 #endif
         {
