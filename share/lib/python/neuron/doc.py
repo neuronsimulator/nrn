@@ -151,7 +151,7 @@ default_class_doc_template = """
 No docstring available for class '%s'
 
 Try checking the online documentation at:
-https://nrn.readthedocs.org/
+https://www.neuronsimulator.org/
 """
 
 
@@ -159,7 +159,7 @@ default_object_doc_template = """
 No docstring available for object type '%s'
 
 Try checking the online documentation at:
-https://nrn.readthedocs.org/
+https://www.neuronsimulator.org/
 """
 
 
@@ -167,7 +167,7 @@ default_member_doc_template = """
 No docstring available for the class member '{}.{}'
 
 Try checking the online documentation at:
-https://nrn.readthedocs.org/
+https://www.neuronsimulator.org/
 
 ==================================================
 
