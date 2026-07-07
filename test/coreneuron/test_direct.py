@@ -32,13 +32,13 @@ def test_direct_memory_transfer():
     # Save current (after run) value to compare with transfer back from coreneuron
     tran_std = [h.t, h.soma(0.5).v, h.soma(0.5).hh.m]
 
-    from neuron import coreneuron
+    from backend_helper import (
+        disable_test_backend,
+        enable_test_backend,
+        is_native_backend_test,
+    )
 
-    coreneuron.enable = True
-    coreneuron.verbose = 0
-    coreneuron.model_stats = True
-    coreneuron.gpu = bool(strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false")))
-    coreneuron.num_gpus = 1
+    enable_test_backend()
 
     pc = h.ParallelContext()
 
@@ -66,11 +66,14 @@ def test_direct_memory_transfer():
     for mode in [0, 1, 2]:
         run(mode)
 
-    cnargs = coreneuron.nrncore_arg(h.tstop)
-    h.stdinit()
-    assert tv.size() == 1 and tvstd.size() != 1
-    pc.nrncore_run(cnargs, 1)
-    assert tv.eq(tvstd)
+    if not is_native_backend_test():
+        from neuron import coreneuron
+
+        cnargs = coreneuron.nrncore_arg(h.tstop)
+        h.stdinit()
+        assert tv.size() == 1 and tvstd.size() != 1
+        pc.nrncore_run(cnargs, 1)
+        assert tv.eq(tvstd)
 
     # print warning if HocEvent on event queue when CoreNEURON starts
     def test_hoc_event():
@@ -79,10 +82,11 @@ def test_direct_memory_transfer():
             h.CVode().event(h.t + 1.0, test_hoc_event)
 
     fi = h.FInitializeHandler(2, test_hoc_event)
-    coreneuron.enable = False
+    disable_test_backend()
     run(0)
-    coreneuron.enable = True
+    enable_test_backend()
     run(0)
+    disable_test_backend()
 
 
 if __name__ == "__main__":

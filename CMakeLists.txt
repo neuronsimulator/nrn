@@ -109,6 +109,11 @@ option(NRN_ENABLE_MUSIC "Enable MUSIC support" ${NRN_ENABLE_MUSIC_DEFAULT})
 option(NRN_ENABLE_RX3D "Enable rx3d support" ${NRN_ENABLE_RX3D_DEFAULT})
 option(NRN_ENABLE_NMODL "Enable NMODL code-generator support" ${NRN_ENABLE_NMODL_DEFAULT})
 option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ${NRN_ENABLE_CORENEURON_DEFAULT})
+option(NRN_ENABLE_GPU "Enable NEURON native GPU support" ${NRN_ENABLE_GPU_DEFAULT})
+set(NRN_GPU_BACKEND
+    "${NRN_GPU_BACKEND_DEFAULT}"
+    CACHE STRING "GPU backend for NEURON native GPU (OpenACC only in Phase A-B)")
+set_property(CACHE NRN_GPU_BACKEND PROPERTY STRINGS OpenACC)
 option(NRN_ENABLE_BACKTRACE "Enable pretty-printed backtraces" ${NRN_ENABLE_BACKTRACE_DEFAULT})
 option(NRN_ENABLE_TESTS "Enable unit tests" ${NRN_ENABLE_TESTS_DEFAULT})
 option(NRN_ENABLE_MATH_OPT "Enable extra math optimisations (to enable SIMD)"
@@ -674,6 +679,24 @@ else()
 endif()
 
 # =============================================================================
+# NEURON native GPU (Phase A: option scaffolding; execution still via CoreNEURON)
+# =============================================================================
+if(NRN_ENABLE_GPU)
+  if(NOT NRN_GPU_BACKEND STREQUAL "OpenACC")
+    message(
+      FATAL_ERROR
+        "NRN_GPU_BACKEND=${NRN_GPU_BACKEND} is not supported. Only OpenACC is supported in Phase A-B."
+    )
+  endif()
+  if(NOT NRN_ENABLE_CORENEURON)
+    message(
+      FATAL_ERROR
+        "NRN_ENABLE_GPU=ON requires NRN_ENABLE_CORENEURON=ON during the Phase A transition. "
+        "Native GPU execution without CoreNEURON is not yet implemented.")
+  endif()
+endif()
+
+# =============================================================================
 # Enable CoreNEURON support
 # =============================================================================
 if(NRN_ENABLE_CORENEURON)
@@ -703,6 +726,7 @@ if(NRN_ENABLE_CORENEURON)
   # CoreNEURON exports this list of flags as a property; turn it into a variable in this scope. If
   # CoreNEURON is installed externally then this is exported into coreneuron-config.cmake.
   get_property(CORENRN_LIB_LINK_FLAGS GLOBAL PROPERTY CORENRN_LIB_LINK_FLAGS)
+  get_property(CORENRN_ACC_COMP_FLAGS GLOBAL PROPERTY CORENRN_ACC_COMP_FLAGS)
   get_property(CORENRN_NEURON_LINK_FLAGS GLOBAL PROPERTY CORENRN_NEURON_LINK_FLAGS)
   get_property(CORENRN_ENABLE_SHARED GLOBAL PROPERTY CORENRN_ENABLE_SHARED)
 
@@ -752,6 +776,7 @@ endif()
 # =============================================================================
 add_subdirectory(src/sparse13)
 add_subdirectory(src/gnu)
+add_subdirectory(src/neuron)
 add_subdirectory(src/nrniv)
 
 if(NRN_ENABLE_PYTHON)
@@ -801,6 +826,14 @@ else()
 endif()
 if(NRN_ENABLE_CORENEURON)
   list(APPEND NRN_RUN_FROM_BUILD_DIR_ENV "CORENRNHOME=${PROJECT_BINARY_DIR}")
+endif()
+if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
+  if(NOT CUDAToolkit_FOUND)
+    find_package(CUDAToolkit 9.0 QUIET)
+  endif()
+  if(CUDAToolkit_FOUND)
+    prepend_to_var(LD_LIBRARY_PATH "${CUDAToolkit_LIBRARY_DIR}")
+  endif()
 endif()
 if(NRN_ENABLE_PYTHON)
   prepend_to_var(PYTHONPATH "${PROJECT_BINARY_DIR}/lib/python:${PROJECT_SOURCE_DIR}/test/rxd")
@@ -949,21 +982,42 @@ add_custom_target(
   COMMAND ${PROJECT_SOURCE_DIR}/external/coding-conventions/bin/format
   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
-# Prepare a shell script to format only files modified with respect to master branch
+# Prepare a shell script to format only files modified with respect to master/main branch that still
+# exist on disk (filters out deleted files).
 file(
   WRITE ${CMAKE_CURRENT_BINARY_DIR}/format-pr.sh
-  "\
-#!bash\n\
-set -e\n\
-cmd='cd ${PROJECT_SOURCE_DIR} && external/coding-conventions/bin/format `git diff --name-only master`'\n\
-echo $cmd\n\
-cd ${PROJECT_SOURCE_DIR} && external/coding-conventions/bin/format `git diff --name-only master`\n\
+  "#!/bin/bash
+set -euo pipefail
+
+# Try 'main' first, then fall back to 'master'
+for base in main master; do
+    if git rev-parse --verify \"\$base\" >/dev/null 2>&1; then
+        BASE_BRANCH=\"\$base\"
+        break
+    fi
+done
+
+if [ -z \"\${BASE_BRANCH:-}\" ]; then
+    echo \"Error: Neither 'main' nor 'master' branch found.\" >&2
+    exit 1
+fi
+
+echo \"Formatting changes vs '\$BASE_BRANCH' (existing files only)...\" >&2
+
+# Get changed files, but only pass files that still exist
+git diff --name-only \"\$BASE_BRANCH\" | \\
+while read -r file; do
+    if [ -e \"\$file\" ]; then
+        printf '%s\\n' \"\$file\"
+    fi
+done | \\
+xargs --no-run-if-empty external/coding-conventions/bin/format \"\$@\"
 ")
 
 add_custom_target(
   format-pr
   COMMAND bash ${CMAKE_CURRENT_BINARY_DIR}/format-pr.sh
-  COMMENT "Format only files modified with respect to master branch."
+  COMMENT "Format only files modified with respect to main/master (existing files only)"
   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
 # =============================================================================
@@ -1312,6 +1366,10 @@ message(STATUS "CoreNEURON    | ${NRN_ENABLE_CORENEURON}")
 if(NRN_ENABLE_CORENEURON)
   message(STATUS "  PATH        | ${CORENEURON_DIR}")
   message(STATUS "  LINK FLAGS  | ${CORENRN_LIB_LINK_FLAGS}")
+endif()
+message(STATUS "NEURON GPU    | ${NRN_ENABLE_GPU}")
+if(NRN_ENABLE_GPU)
+  message(STATUS "  Backend     | ${NRN_GPU_BACKEND}")
 endif()
 message(STATUS "NMODL codegen   | ${NRN_ENABLE_NMODL}")
 if(NRN_UNIVERSAL2_BUILD)

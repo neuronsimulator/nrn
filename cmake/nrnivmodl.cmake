@@ -30,6 +30,9 @@ endif()
 if(NRNIVMODL_SPECIAL)
   list(APPEND NRNIVMODL_ARGS "SPECIAL")
 endif()
+if(@NRN_ENABLE_GPU@)
+  list(APPEND NRNIVMODL_ARGS "NMODL_NEURON_CODEGEN")
+endif()
 
 message(STATUS "Received mod files: ${NRNIVMODL_MOD_FILES}")
 

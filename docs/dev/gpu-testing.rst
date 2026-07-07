@@ -1,5 +1,9 @@
 Testing GPU functionality
 #########################
+
+For the **Phase B scope contract** (supported features, timestep architecture,
+``neuron.gpu`` API), see :doc:`native-gpu-fixed-step`.
+
 This section provides information and links that help with testing :ref:`CoreNEURON`'s GPU support.
 Other sections of the documentation that may be relevant are:
 
@@ -62,14 +66,80 @@ You can filter which tests are run by name using the ``-R`` option to CTest, for
 
 .. code-block:: console
 
+  $ ctest -N -R gpu    # list GPU tests (count varies with build options)
   $ ctest --output-on-failure -R gpu
   Test project /path/to/your/build
   Start  42: coreneuron_modtests::direct_py_gpu
-   1/53 Test  #42: coreneuron_modtests::direct_py_gpu .............................   Passed    1.98 sec
+   1/68 Test  #42: coreneuron_modtests::direct_py_gpu .............................   Passed    1.98 sec
         Start  43: coreneuron_modtests::direct_hoc_gpu
-   2/53 Test  #43: coreneuron_modtests::direct_hoc_gpu ............................   Passed    1.03 sec
+   2/68 Test  #43: coreneuron_modtests::direct_hoc_gpu ............................   Passed    1.03 sec
         Start  44: coreneuron_modtests::spikes_py_gpu
    ...
+
+A full MPI + GPU + tests build typically registers **about 96** tests matching ``-R gpu``
+(including 40 ``coreneuron_modtests::*_py_gpu*`` variants and **19** ``*_py_gpu_native``
+native-backend modtests). Use ``ctest -N -R gpu`` in your build tree for the
+authoritative count.
+
+GPU-related CMake options:
+
+- ``-DNRN_ENABLE_GPU=ON`` — user-facing NEURON native GPU option (Phase B fixed-step path)
+- ``-DCORENRN_ENABLE_GPU=ON`` — enables OpenACC GPU execution in CoreNEURON (required for CoreNEURON GPU tests)
+- ``-DNRN_GPU_BACKEND=OpenACC`` — only supported backend in Phase A-B
+
+See :ref:`cmake-nrn-enable-gpu-option` and :ref:`cmake-coreneuron-enable-gpu-option` in the CMake options documentation.
+
+NEURON native GPU backend (Phase B)
+***********************************
+See :doc:`native-gpu-fixed-step` for runtime API, supported/unsupported matrix,
+and timestep architecture. This section covers CTest and MPI device assignment.
+
+MPI multi-GPU device assignment uses ``device_id = mpi_local_rank % num_gpus_per_node``
+(same policy as CoreNEURON ``init_gpu()``). Set ``gpu.device_count`` to limit GPUs per node
+(0 = all available). CTest: ``unit_tests::gpu_device_assign_mpi`` (2 MPI ranks).
+
+The **G4 native modtest parity** ctests set ``NRN_GPU_BACKEND_TEST=native`` and compare
+NEURON CPU reference output against the native backend (19 tests, mirroring single-process
+``*_py_gpu`` CoreNEURON modtests):
+
+.. code-block:: console
+
+  $ ctest -N -R '_py_gpu_native'
+  $ ctest --output-on-failure -R '_py_gpu_native'
+
+Ringtest native GPU benchmark
+*****************************
+The external ringtest script supports ``-gpu-native`` for NEURON native GPU runs
+(orthogonal to CoreNEURON ``-gpu``):
+
+.. code-block:: console
+
+  $ cd build/test/external_ringtest/neuron_gpu_native_mpi
+  $ special -mpi -python ringtest.py -gpu-native -tstop 100
+
+The script prints ``runtime=``, ``load_balance=``, and ``spk_time`` statistics.
+Compare spike output with ``sortspike`` against ``reference_data/spk1.100ms.std.ref``:
+
+.. code-block:: console
+
+  $ sortspike spk1.std > spk1.srt
+  $ diff spk1.srt ../../external/tests/ringtest/reference_data/spk1.100ms.std.ref
+
+CTest: ``external_ringtest::neuron_gpu_native_mpi`` (MPI, 100 ms, spike comparison group).
+
+The ``external/tests/ringtest`` tree is gitignored in the NEURON repo; apply
+``test/external/ringtest/ringtest-gpu-native.patch`` inside your local ringtest
+clone (under ``external/tests/ringtest``) before running manual ringtest or
+reconfiguring CMake.
+
+Ringtest GPU ctest note
+***********************
+The ``external_ringtest::coreneuron_gpu_mpi`` test historically failed on some NVHPC builds with
+``pgcudafat*.o: cannot open shared object file`` when launching NEURON ``special`` with ``-gpu``
+under MPI. The ctest harness now runs the GPU MPI ringtest via ``special-core`` (dump model with
+``special``, simulate with ``special-core --gpu``), matching the offline ringtest pattern.
+GPU tests also use a per-test ``TMPDIR`` under the build tree to avoid transient NVHPC loader
+issues.
 
 Running tests manually
 **********************

@@ -80,6 +80,10 @@ int CodegenNeuronCppVisitor::position_of_int_var(const std::string& name) const 
 /*                                Backend specific routines                             */
 /****************************************************************************************/
 
+void CodegenNeuronCppVisitor::print_kernel_data_present_annotation_block_begin() {}
+
+void CodegenNeuronCppVisitor::print_kernel_data_present_annotation_block_end() {}
+
 bool CodegenNeuronCppVisitor::optimize_ion_variable_copies() const {
     if (optimize_ionvar_copies) {
         throw std::runtime_error("Not implemented.");
@@ -1672,6 +1676,10 @@ void CodegenNeuronCppVisitor::print_mechanism_register_regular() {
         printer->add_line("add_nrn_has_net_event(mech_type);");
     }
 
+    if (info.net_event_used || info.net_send_used) {
+        printer->add_line("hoc_register_net_send_buffering(mech_type);");
+    }
+
     if (info.for_netcon_used) {
         auto dparam_it =
             std::find_if(info.semantics.begin(), info.semantics.end(), [](const IndexSemantics& a) {
@@ -2031,6 +2039,7 @@ void CodegenNeuronCppVisitor::print_global_function_common_code(BlockType type,
                         {"", "Memb_list*", "", "_ml_arg"},
                         {"", "int", "", "_type"}};
     printer->fmt_push_block("static void {}({})", method, get_parameter_str(args));
+    print_kernel_data_present_annotation_block_begin();
     print_entrypoint_setup_code_from_memb_list();
     printer->add_line("auto nodecount = _ml_arg->nodecount;");
 }
@@ -2041,6 +2050,7 @@ void CodegenNeuronCppVisitor::print_nrn_init(bool skip_init_check) {
 
     print_global_function_common_code(BlockType::Initial);
 
+    print_parallel_iteration_hint(BlockType::Initial, info.initial_node);
     printer->push_block("for (int id = 0; id < nodecount; id++)");
 
     printer->add_line("auto* _ppvar = _ml_arg->pdata[id];");
@@ -2066,6 +2076,7 @@ void CodegenNeuronCppVisitor::print_nrn_init(bool skip_init_check) {
     }
 
     printer->pop_block();
+    print_kernel_data_present_annotation_block_end();
     printer->pop_block();
 }
 
@@ -2291,6 +2302,7 @@ void CodegenNeuronCppVisitor::print_nrn_state() {
     printer->add_newline(2);
     print_global_function_common_code(BlockType::State);
 
+    print_parallel_iteration_hint(BlockType::State, info.nrn_state_block);
     printer->push_block("for (int id = 0; id < nodecount; id++)");
     printer->add_line("int node_id = node_data.nodeindices[id];");
     printer->add_line("auto* _ppvar = _ml_arg->pdata[id];");
@@ -2333,6 +2345,7 @@ void CodegenNeuronCppVisitor::print_nrn_state() {
     }
 
     printer->pop_block();
+    print_kernel_data_present_annotation_block_end();
     printer->pop_block();
 }
 
@@ -2510,7 +2523,7 @@ void CodegenNeuronCppVisitor::print_nrn_cur() {
     printer->add_newline(2);
     printer->add_line("/** update current */");
     print_global_function_common_code(BlockType::Equation);
-    // print_channel_iteration_block_parallel_hint(BlockType::Equation, info.breakpoint_node);
+    print_parallel_iteration_hint(BlockType::Equation, info.breakpoint_node);
     printer->push_block("for (int id = 0; id < nodecount; id++)");
     print_nrn_cur_kernel(*info.breakpoint_node);
     // print_nrn_cur_matrix_shadow_update();
@@ -2535,9 +2548,12 @@ void CodegenNeuronCppVisitor::print_nrn_cur() {
     //     print_fast_imem_calculation();
     // }
 
-    // print_kernel_data_present_annotation_block_end();
+    print_after_nrn_cur_gpu_net_send_flush();
+    print_kernel_data_present_annotation_block_end();
     printer->pop_block();
 }
+
+void CodegenNeuronCppVisitor::print_after_nrn_cur_gpu_net_send_flush() {}
 
 
 /****************************************************************************************/

@@ -17,6 +17,14 @@
 
 #include <vector>
 
+#if defined(NRN_ENABLE_GPU)
+#include "neuron/gpu/config.hpp"
+#include "neuron/gpu/device_state.hpp"
+#include "neuron/gpu/download.hpp"
+#include "neuron/gpu/fadvance_gpu.hpp"
+#include "neuron/gpu/net_events.hpp"
+#endif
+
 /*
  after an fadvance from t-dt to t, v is defined at t
  states that depend on v are defined at t+dt/2
@@ -323,6 +331,12 @@ void nrn_daspk_init_step(double tt, double dteps, int upd) {
 
 void nrn_fixed_step(neuron::model_sorted_token const& cache_token) {
     nrn::Instrumentor::phase p_timestep("timestep");
+#if defined(NRN_ENABLE_GPU)
+    if (auto const* err = neuron::gpu::native_gpu_configuration_error()) {
+        hoc_execerror(err, nullptr);
+    }
+    neuron::gpu::reset_download_step_counter();
+#endif
 #if ELIMINATE_T_ROUNDOFF
     nrn_chk_ndt();
 #endif
@@ -367,6 +381,9 @@ void nrn_fixed_step(neuron::model_sorted_token const& cache_token) {
     if (nrn_allthread_handle) {
         (*nrn_allthread_handle)();
     }
+#if defined(NRN_ENABLE_GPU)
+    neuron::gpu::finalize_psolve_download();
+#endif
 }
 
 /* better cache efficiency since a thread can do an entire minimum delay
@@ -378,6 +395,9 @@ static int step_group_end;
 
 void nrn_fixed_step_group(neuron::model_sorted_token const& cache_token, int n) {
     int i;
+#if defined(NRN_ENABLE_GPU)
+    neuron::gpu::reset_download_step_counter();
+#endif
 #if ELIMINATE_T_ROUNDOFF
     nrn_chk_ndt();
 #endif
@@ -421,6 +441,9 @@ void nrn_fixed_step_group(neuron::model_sorted_token const& cache_token, int n) 
         while (step_group_end < step_group_n) {
             /*printf("step_group_end=%d step_group_n=%d\n", step_group_end, step_group_n);*/
             nrn_multithread_job(cache_token, nrn_fixed_step_group_thread);
+#if defined(NRN_ENABLE_GPU)
+            neuron::gpu::spike_exchange_after_group(nrn_threads);
+#endif
             if (nrn_allthread_handle) {
                 (*nrn_allthread_handle)();
             }
@@ -431,6 +454,9 @@ void nrn_fixed_step_group(neuron::model_sorted_token const& cache_token, int n) 
         }
     }
     t = nrn_threads[0]._t;
+#if defined(NRN_ENABLE_GPU)
+    neuron::gpu::finalize_psolve_download();
+#endif
 }
 
 static void nrn_fixed_step_group_thread(neuron::model_sorted_token const& cache_token,
@@ -455,6 +481,16 @@ static void nrn_fixed_step_group_thread(neuron::model_sorted_token const& cache_
 }
 
 static void nrn_fixed_step_thread(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
+#if defined(NRN_ENABLE_GPU)
+    // Gap/partrans models use host post-solve (nrnthread_vi_compute_) and partrans
+    // gather/scatter on host; the full native GPU step is not yet consistent for that
+    // hybrid. Run the CPU fixed-step body until device gap staging is complete.
+    if (neuron::gpu::enabled() && neuron::gpu::backend_native() && !nrnthread_v_transfer_) {
+        neuron::gpu::device_token const& dev = neuron::gpu::ensure_on_device(cache_token);
+        neuron::gpu::fixed_step_thread(cache_token, dev, nt);
+        return;
+    }
+#endif
     auto* const nth = &nt;
     {
         nrn::Instrumentor::phase p("deliver-events");
@@ -516,7 +552,14 @@ void nrn_fixed_step_lastpart(neuron::model_sorted_token const& cache_token, NrnT
     CTADD;
     {
         nrn::Instrumentor::phase p("deliver-events");
-        nrn_deliver_events(nth); /* up to but not past texit */
+#if defined(NRN_ENABLE_GPU)
+        if (neuron::gpu::enabled() && neuron::gpu::backend_native()) {
+            neuron::gpu::deliver_post_step_events_host(nth);
+        } else
+#endif
+        {
+            nrn_deliver_events(nth); /* up to but not past texit */
+        }
     }
 }
 

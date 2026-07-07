@@ -32,6 +32,7 @@ set(NRN_PYTHON_FILES_LIST
     tests/test_vector.py
     __init__.py
     coreneuron.py
+    gpu.py
     doc.py
     gui2/setup_threejs.py
     gui2/config.py

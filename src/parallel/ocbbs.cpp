@@ -16,6 +16,12 @@
 #include <nrnmpi.h>
 #include <cerrno>
 
+#if defined(NRN_ENABLE_GPU)
+#include "neuron/gpu/config.hpp"
+#include "neuron/gpu/device_assign.hpp"
+#include "neuron/gpu/download.hpp"
+#endif
+
 #undef MD
 #define MD 2147483647.
 
@@ -933,6 +939,61 @@ static double optimize_node_order(void*) {
     return double(neuron::interleave_permute_type);
 }
 
+#if defined(NRN_ENABLE_GPU)
+
+static double gpu_enable(void*) {
+    hoc_return_type_code = HocReturnType::boolean;
+    if (ifarg(1)) {
+        neuron::gpu::set_enable(chkarg(1, 0, 1) != 0.0);
+        if (auto const* err = neuron::gpu::native_gpu_configuration_error()) {
+            hoc_execerror(err, nullptr);
+        }
+    }
+    return double(neuron::gpu::enabled());
+}
+
+static const char** gpu_backend(void*) {
+    if (ifarg(1)) {
+        neuron::gpu::set_backend(hoc_gargstr(1));
+        if (auto const* err = neuron::gpu::native_gpu_configuration_error()) {
+            hoc_execerror(err, nullptr);
+        }
+    }
+    static char native_storage[] = "native";
+    static char coreneuron_storage[] = "coreneuron";
+    static char* backend_ptr = coreneuron_storage;
+    backend_ptr = neuron::gpu::backend_native() ? native_storage : coreneuron_storage;
+    return (const char**) &backend_ptr;
+}
+
+static double gpu_device_count(void*) {
+    hoc_return_type_code = HocReturnType::integer;
+    if (ifarg(1)) {
+        neuron::gpu::set_device_count(static_cast<unsigned>(chkarg(1, 0, 1024)));
+    }
+    return double(neuron::gpu::device_count());
+}
+
+static double gpu_assign_device(void*) {
+    neuron::gpu::assign_device();
+    return 1.0;
+}
+
+static double gpu_device_id(void*) {
+    hoc_return_type_code = HocReturnType::integer;
+    return double(neuron::gpu::assigned_device_id());
+}
+
+static double gpu_download_flush_interval(void*) {
+    hoc_return_type_code = HocReturnType::integer;
+    if (ifarg(1)) {
+        neuron::gpu::set_download_flush_interval(static_cast<std::size_t>(chkarg(1, 0, 1e9)));
+    }
+    return double(neuron::gpu::download_flush_interval());
+}
+
+#endif
+
 static double sec_in_thread(void*) {
     hoc_return_type_code = HocReturnType::boolean;
     Section* sec = chk_access();
@@ -1022,88 +1083,101 @@ static Object** gid_connect(void* v) {
     return bbs->gid_connect(int(chkarg(1, 0, MD)));
 }
 
-static Member_func members[] = {{"submit", submit},
-                                {"working", working},
-                                {"retval", retval},
-                                {"userid", userid},
-                                {"pack", pack},
-                                {"post", post},
-                                {"unpack", unpack},
-                                {"upkscalar", upkscalar},
-                                {"take", take},
-                                {"look", look},
-                                {"look_take", look_take},
-                                {"runworker", worker},
-                                {"master_works_on_jobs", master_works},
-                                {"done", done},
-                                {"id", nrn_rank},
-                                {"nhost", nhost},
-                                {"id_world", rank_world},
-                                {"nhost_world", nhost_world},
-                                {"id_bbs", rank_bbs},
-                                {"nhost_bbs", nhost_bbs},
-                                {"subworlds", subworlds},
-                                {"context", context},
+static Member_func members[] =
+{ {"submit", submit},
+  {"working", working},
+  {"retval", retval},
+  {"userid", userid},
+  {"pack", pack},
+  {"post", post},
+  {"unpack", unpack},
+  {"upkscalar", upkscalar},
+  {"take", take},
+  {"look", look},
+  {"look_take", look_take},
+  {"runworker", worker},
+  {"master_works_on_jobs", master_works},
+  {"done", done},
+  {"id", nrn_rank},
+  {"nhost", nhost},
+  {"id_world", rank_world},
+  {"nhost_world", nhost_world},
+  {"id_bbs", rank_bbs},
+  {"nhost_bbs", nhost_bbs},
+  {"subworlds", subworlds},
+  {"context", context},
 
-                                {"time", pctime},
-                                {"wait_time", wait_time},
-                                {"step_time", step_time},
-                                {"step_wait", step_wait},
-                                {"send_time", send_time},
-                                {"event_time", event_time},
-                                {"integ_time", integ_time},
-                                {"vtransfer_time", vtransfer_time},
-                                {"mech_time", mech_time},
-                                {"timeout", set_timeout},
-                                {"mpiabort_on_error", set_mpiabort_on_error},
+  {"time", pctime},
+  {"wait_time", wait_time},
+  {"step_time", step_time},
+  {"step_wait", step_wait},
+  {"send_time", send_time},
+  {"event_time", event_time},
+  {"integ_time", integ_time},
+  {"vtransfer_time", vtransfer_time},
+  {"mech_time", mech_time},
+  {"timeout", set_timeout},
+  {"mpiabort_on_error", set_mpiabort_on_error},
 
-                                {"set_gid2node", set_gid2node},
-                                {"gid_exists", gid_exists},
-                                {"outputcell", outputcell},
-                                {"cell", cell},
-                                {"threshold", threshold},
-                                {"spike_record", spike_record},
-                                {"psolve", psolve},
-                                {"set_maxstep", set_maxstep},
-                                {"spike_statistics", spike_stat},
-                                {"max_histogram", maxhist},
-                                {"spike_compress", spcompress},
-                                {"gid_clear", gid_clear},
-                                {"prcellstate", prcellstate},
+  {"set_gid2node", set_gid2node},
+  {"gid_exists", gid_exists},
+  {"outputcell", outputcell},
+  {"cell", cell},
+  {"threshold", threshold},
+  {"spike_record", spike_record},
+  {"psolve", psolve},
+  {"set_maxstep", set_maxstep},
+  {"spike_statistics", spike_stat},
+  {"max_histogram", maxhist},
+  {"spike_compress", spcompress},
+  {"gid_clear", gid_clear},
+  {"prcellstate", prcellstate},
 
-                                {"source_var", source_var},
-                                {"target_var", target_var},
-                                {"setup_transfer", setup_transfer},
-                                {"splitcell_connect", splitcell_connect},
-                                {"multisplit", multisplit},
+  {"source_var", source_var},
+  {"target_var", target_var},
+  {"setup_transfer", setup_transfer},
+  {"splitcell_connect", splitcell_connect},
+  {"multisplit", multisplit},
 
-                                {"barrier", barrier},
-                                {"allreduce", allreduce},
-                                {"allgather", allgather},
-                                {"alltoall", alltoall},
-                                {"broadcast", broadcast},
+  {"barrier", barrier},
+  {"allreduce", allreduce},
+  {"allgather", allgather},
+  {"alltoall", alltoall},
+  {"broadcast", broadcast},
 
-                                {"nthread", nthrd},
-                                {"nworker", number_of_worker_threads},
-                                {"partition", partition},
-                                {"thread_stat", thread_stat},
-                                {"thread_busywait", thread_busywait},
-                                {"thread_how_many_proc", thread_how_many_proc},
-                                {"optimize_node_order", optimize_node_order},
-                                {"sec_in_thread", sec_in_thread},
-                                {"thread_ctime", thread_ctime},
-                                {"dt", thread_dt},
-                                {"t", nrn_thread_t},
+  {"nthread", nthrd},
+  {"nworker", number_of_worker_threads},
+  {"partition", partition},
+  {"thread_stat", thread_stat},
+  {"thread_busywait", thread_busywait},
+  {"thread_how_many_proc", thread_how_many_proc},
+  {"optimize_node_order", optimize_node_order},
+#if defined(NRN_ENABLE_GPU)
+  {"gpu_enable", gpu_enable},
+  {"gpu_device_count", gpu_device_count},
+  {"gpu_assign_device", gpu_assign_device},
+  {"gpu_device_id", gpu_device_id},
+  {"gpu_download_flush_interval", gpu_download_flush_interval},
+#endif
+  {"sec_in_thread", sec_in_thread},
+  {"thread_ctime", thread_ctime},
+  {"dt", thread_dt},
+  {"t", nrn_thread_t},
 
-                                {"nrnbbcore_write", nrncorewrite_argvec},
-                                {"nrncore_write", nrncorewrite_argappend},
-                                {"nrnbbcore_register_mapping", nrnbbcore_register_mapping},
-                                {"nrncore_run", nrncorerun},
-                                {"print_memory_stats", print_memory_stats},
+  {"nrnbbcore_write", nrncorewrite_argvec},
+  {"nrncore_write", nrncorewrite_argappend},
+  {"nrnbbcore_register_mapping", nrnbbcore_register_mapping},
+  {"nrncore_run", nrncorerun},
+  {"print_memory_stats", print_memory_stats},
 
-                                {0, 0}};
+  {0, 0} };
 
-static Member_ret_str_func retstr_members[] = {{"upkstr", upkstr}, {0, 0}};
+static Member_ret_str_func retstr_members[] =
+{ {"upkstr", upkstr},
+#if defined(NRN_ENABLE_GPU)
+  {"gpu_backend", gpu_backend},
+#endif
+  {0, 0} };
 
 static Member_ret_obj_func retobj_members[] = {{"upkvec", upkvec},
                                                {"gid2obj", gid2obj},

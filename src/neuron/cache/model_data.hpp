@@ -26,6 +26,9 @@ struct Mechanism {
 struct Thread {
     /**
      * @brief Offset into global Node storage for this thread.
+     *
+     * Used by native GPU upload (neuron::gpu::upload_sorted_model) to present
+     * per-thread views of contiguous SOA node vectors.
      */
     std::size_t node_data_offset{};
     /**

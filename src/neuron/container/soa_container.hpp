@@ -651,6 +651,11 @@ struct state_token {
         m_container->decrease_frozen_count();
     }
 
+    [[nodiscard]] Container& container() const {
+        assert(m_container);
+        return *m_container;
+    }
+
   private:
     template <typename, typename...>
     friend struct soa;
@@ -1545,6 +1550,14 @@ struct soa {
 
         return accumulated.usage();
     }
+
+#if defined(NRN_ENABLE_GPU)
+    /** @brief Const iteration over SOA vectors for native GPU upload (PR 9). */
+    template <typename Callable>
+    Callable for_each_vector_for_gpu_upload(Callable callable) const {
+        return for_each_vector(callable);
+    }
+#endif
 
   private:
     /**

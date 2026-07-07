@@ -17,6 +17,8 @@ set(ringtest_special ${ringtest_prefix} special ${MPIEXEC_POSTFLAGS} -mpi -pytho
 set(ringtest_special_core ${ringtest_prefix} special-core ${MPIEXEC_POSTFLAGS})
 set(ringtest_python ${ringtest_prefix} ${preload_sanitizer_mpiexec}
                     ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${MPIEXEC_POSTFLAGS} ringtest.py)
+string(REPLACE ";" " " ringtest_special_str "${ringtest_special}")
+string(REPLACE ";" " " ringtest_special_core_str "${ringtest_special_core}")
 
 # Step 2 -- add configurations to the group (e.g. here NEURON without MPI) When CoreNEURON is
 # enabled then TABLE statements are disabled in hh.mod, which causes slight numerical differences in
@@ -46,6 +48,43 @@ nrn_add_test(
   ENVIRONMENT NEURON_INIT_MPI=1
   COMMAND ${ringtest_python} -tstop 100)
 
+if(NRN_ENABLE_GPU)
+  set(ringtest_gpu_native_patch
+      ${PROJECT_SOURCE_DIR}/test/external/ringtest/ringtest-gpu-native.patch)
+  set(ringtest_native_gpu_dir ${PROJECT_BINARY_DIR}/test/external_ringtest/neuron_gpu_native_mpi)
+  if(EXISTS ${ringtest_gpu_native_patch} AND EXISTS ${ringtest_native_gpu_dir}/ringtest.py)
+    execute_process(
+      COMMAND patch -N -p1 -i ${ringtest_gpu_native_patch}
+      WORKING_DIRECTORY ${ringtest_native_gpu_dir}
+      RESULT_VARIABLE _ringtest_gpu_native_patch_result
+      ERROR_VARIABLE _ringtest_gpu_native_patch_error)
+    if(NOT _ringtest_gpu_native_patch_result EQUAL 0
+       AND NOT _ringtest_gpu_native_patch_error MATCHES "Reversed.*patch.*already applied"
+       AND NOT _ringtest_gpu_native_patch_error MATCHES "Skipping patch")
+      message(WARNING "ringtest-gpu-native.patch: ${_ringtest_gpu_native_patch_error}")
+    endif()
+  endif()
+  set(ringtest_native_gpu_mpi_script
+      ${PROJECT_BINARY_DIR}/test/external_ringtest/neuron_gpu_native_mpi.sh)
+  file(
+    WRITE ${ringtest_native_gpu_mpi_script}
+    "#!/bin/bash\n"
+    "set -e\n"
+    "export OMP_NUM_THREADS=1\n"
+    "export NRN_GPU_BACKEND_TEST=native\n"
+    "export NRN_GPU_PERMUTE=2\n"
+    "export TMPDIR=\"${PROJECT_BINARY_DIR}/test/tmp/external_ringtest/neuron_gpu_native_mpi\"\n"
+    "mkdir -p \"$TMPDIR\"\n"
+    "OMP_NUM_THREADS=1 ${ringtest_special_str} -gpu-native -tstop 100\n")
+  nrn_add_test(
+    GROUP external_ringtest
+    NAME neuron_gpu_native_mpi
+    REQUIRES gpu mpi python mod_compatibility
+    PROCESSORS ${ringtest_mpi_ranks}
+    COMMAND bash ${ringtest_native_gpu_mpi_script}
+    OUTPUT asciispikes::spk2.std)
+endif()
+
 # creep into this file to add a nrn only test for ParallelContext.optimize_node_order(i)
 nrn_add_test_group(
   NAME external_ringtest_nrn
@@ -64,6 +103,18 @@ foreach(processor cpu gpu)
   if("${processor}" STREQUAL "gpu")
     set(gpu_arg -gpu)
     set(special_gpu_arg --gpu)
+    # Online embedded GPU via NEURON special + MPI can fail to load NVHPC temp fat objects
+    # (pgcudafat*.o: cannot open shared object file). Run GPU via special-core instead, matching the
+    # offline ringtest pattern that already uses special-core for --gpu.
+    set(ringtest_gpu_mpi_script
+        ${PROJECT_BINARY_DIR}/test/external_ringtest/coreneuron_gpu_mpi_special_core.sh)
+    file(
+      WRITE ${ringtest_gpu_mpi_script}
+      "#!/bin/bash\n"
+      "set -e\n"
+      "OMP_NUM_THREADS=1 ${ringtest_special_str} -tstop 0 -coreneuron -dumpmodel\n"
+      "OMP_NUM_THREADS=1 LIBSONATA_ZERO_BASED_GIDS=1 ${ringtest_special_core_str} --mpi -d coredat/ -e 100 --gpu\n"
+      "cp out.dat spk2.std\n")
   else()
     set(gpu_arg)
     set(special_gpu_arg)
@@ -71,8 +122,6 @@ foreach(processor cpu gpu)
   set(ringtest_corenrn_script
       ${PROJECT_BINARY_DIR}/test/external_ringtest/coreneuron_${processor}_mpi_offline_saverestore/coreneuron_${processor}_mpi_offline_saverestore.sh
   )
-  string(REPLACE ";" " " ringtest_special_str "${ringtest_special}")
-  string(REPLACE ";" " " ringtest_special_core_str "${ringtest_special_core}")
   file(
     WRITE ${ringtest_corenrn_script}
     "#!/bin/bash\n"
@@ -95,12 +144,21 @@ foreach(processor cpu gpu)
     PROCESSORS ${ringtest_mpi_ranks}
     COMMAND bash coreneuron_${processor}_mpi_offline_saverestore.sh
     OUTPUT asciispikes::out.dat)
-  nrn_add_test(
-    GROUP external_ringtest
-    NAME coreneuron_${processor}_mpi
-    REQUIRES coreneuron mpi python ${processor}
-    PROCESSORS ${ringtest_mpi_ranks}
-    COMMAND ${ringtest_special} -tstop 100 -coreneuron ${gpu_arg})
+  if("${processor}" STREQUAL "gpu")
+    nrn_add_test(
+      GROUP external_ringtest
+      NAME coreneuron_${processor}_mpi
+      REQUIRES coreneuron mpi python ${processor}
+      PROCESSORS ${ringtest_mpi_ranks}
+      COMMAND bash ${ringtest_gpu_mpi_script})
+  else()
+    nrn_add_test(
+      GROUP external_ringtest
+      NAME coreneuron_${processor}_mpi
+      REQUIRES coreneuron mpi python ${processor}
+      PROCESSORS ${ringtest_mpi_ranks}
+      COMMAND ${ringtest_special} -tstop 100 -coreneuron ${gpu_arg})
+  endif()
   nrn_add_test(
     GROUP external_ringtest
     NAME coreneuron_${processor}_mpi_python

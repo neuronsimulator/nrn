@@ -61,13 +61,13 @@ def test_embeded_run():
     pc.psolve(7)
     std2 = [m[1].c(), m[2].c()]
 
-    coreneuron.enable = True
-    coreneuron.verbose = 0
-    coreneuron.gpu = bool(strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false")))
+    from backend_helper import disable_test_backend, enable_test_backend
+
+    enable_test_backend()
     run(5, m)
     chk(std, m)
 
-    coreneuron.enable = False
+    disable_test_backend()
     pc.psolve(7)
     chk(std2, m)
 
@@ -165,5 +165,8 @@ def cmp_spks(spikes, dir):  # modified from test_pointer.py
 
 
 if __name__ == "__main__":
+    from backend_helper import is_native_backend_test
+
     test_embeded_run()
-    test_chkpnt()
+    if not is_native_backend_test():
+        test_chkpnt()

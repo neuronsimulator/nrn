@@ -397,6 +397,7 @@ include_directories(${NRN_INCLUDE_DIRS})
 # All source directories to include
 # =============================================================================
 add_library(nrniv_lib ${NRN_LIBRARY_TYPE} ${NRN_NRNIV_LIB_SRC_FILES})
+target_link_libraries(nrniv_lib PRIVATE neuron_gpu)
 add_dependencies(nrniv_lib generated_source_files)
 add_cpp_git_information(nrniv_lib PRIVATE)
 target_link_libraries(nrniv_lib PRIVATE nrngnu)
@@ -463,6 +464,44 @@ endif()
 
 set_target_properties(nrniv_lib PROPERTIES EXPORT_NAME nrniv OUTPUT_NAME nrniv)
 target_compile_features(nrniv_lib PUBLIC cxx_std_17)
+
+# =============================================================================
+# NEURON native GPU: OpenACC compile on libnrniv + CUDA launcher library
+# =============================================================================
+if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
+  # OpenACC compile flags apply only to cellorder sources: -cuda on all of libnrniv breaks
+  # InterViews (min/max clash with CUDA headers in external/iv).
+  separate_arguments(NRN_ACC_FLAGS UNIX_COMMAND "${CORENRN_ACC_COMP_FLAGS}")
+  set(_nrn_openacc_sources
+      ${PROJECT_SOURCE_DIR}/src/coreneuron/permute/balance.cpp
+      ${PROJECT_SOURCE_DIR}/src/coreneuron/permute/cellorder.cpp
+      ${PROJECT_SOURCE_DIR}/src/coreneuron/permute/cellorder1.cpp
+      ${PROJECT_SOURCE_DIR}/src/coreneuron/permute/cellorder2.cpp
+      ${PROJECT_SOURCE_DIR}/src/coreneuron/utils/lpt.cpp
+      ${PROJECT_SOURCE_DIR}/src/nrnoc/treeset.cpp)
+  set_source_files_properties(
+    ${_nrn_openacc_sources} PROPERTIES COMPILE_OPTIONS "${NRN_ACC_FLAGS}"
+                                       COMPILE_DEFINITIONS "CORENEURON_ENABLE_GPU;NRN_ENABLE_GPU")
+
+  # OpenACC and explicit CUDA cannot share one .so (NVIDIA forum #210972); reuse coreneuron-cuda
+  # (cellorder.cu launcher) rather than duplicating the CUDA target in libnrniv.
+  target_link_libraries(nrniv_lib PRIVATE neuron_gpu_upload)
+  target_link_libraries(nrniv_lib PUBLIC coreneuron-cuda)
+  target_link_options(nrniv_lib PUBLIC ${NRN_ACC_FLAGS})
+  if(NOT CUDAToolkit_FOUND)
+    find_package(CUDAToolkit 9.0 QUIET)
+  endif()
+  if(CUDAToolkit_FOUND)
+    set_property(
+      TARGET nrniv_lib
+      APPEND
+      PROPERTY BUILD_RPATH "${CUDAToolkit_LIBRARY_DIR}")
+    set_property(
+      TARGET nrniv_lib
+      APPEND
+      PROPERTY INSTALL_RPATH "${CUDAToolkit_LIBRARY_DIR}")
+  endif()
+endif()
 
 # =============================================================================
 # Link with backward-cpp if enabled

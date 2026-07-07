@@ -77,9 +77,15 @@ def test_array_variable_transfer(
         myobj = h.NetCon(h.soma(0.5)._ref_v, None, sec=h.soma)
         pc.cell(pc.id() + 1, myobj)
 
-        with coreneuron(enable=enable_coreneuron, file_mode=file_mode):
-            h.stdinit()
+        from backend_helper import (
+            disable_test_backend,
+            enable_test_backend,
+            is_native_backend_test,
+        )
 
+        def run_psolve():
+            pc.set_maxstep(10)
+            h.stdinit()
             if run_mode == 0:
                 pc.psolve(h.tstop)
             elif run_mode == 1:
@@ -89,6 +95,14 @@ def test_array_variable_transfer(
                 while h.t < h.tstop:
                     h.continuerun(h.t + 0.5)
                     pc.psolve(h.t + 0.5)
+
+        if is_native_backend_test():
+            enable_test_backend()
+            run_psolve()
+            disable_test_backend()
+        else:
+            with coreneuron(enable=enable_coreneuron, file_mode=file_mode):
+                run_psolve()
 
     else:
         h.stdinit()

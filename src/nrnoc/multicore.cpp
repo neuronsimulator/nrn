@@ -350,6 +350,8 @@ void nrn_threads_create(int n, bool parallel) {
                 nt->_ctime = 0.0;
                 nt->_vcv = 0;
                 nt->_node_data_offset = 0;
+                nt->compute_gpu = 0;
+                nt->stream_id = i;
             }
         }
         v_structure_change = 1;
