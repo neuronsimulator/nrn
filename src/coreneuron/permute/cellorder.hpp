@@ -161,4 +161,11 @@ extern "C" void coreneuron_solve_interleaved2_launcher_ptrs(double* d_a,
                                                             void* interleave_info,
                                                             int ncore,
                                                             void* stream);
+
+/** vec_v += (secondorder ? 2 : 1) * vec_rhs on device after CUDA solve_interleaved2. */
+extern "C" void coreneuron_update_voltage_launcher(double* d_v,
+                                                   double* d_rhs,
+                                                   int n,
+                                                   int secondorder,
+                                                   void* stream);
 #endif

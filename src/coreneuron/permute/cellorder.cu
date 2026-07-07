@@ -131,4 +131,32 @@ void solve_interleaved2_launcher(NrnThread* nt, InterleaveInfo* info, int ncore,
     CHECKLAST("solve_interleaved2_launcher");
 }
 
+__global__ void update_voltage_kernel(double* vec_v, double* vec_rhs, int n, int secondorder) {
+    int const i = blockDim.x * blockIdx.x + threadIdx.x;
+    if (i < n) {
+        if (secondorder) {
+            vec_v[i] += 2.0 * vec_rhs[i];
+        } else {
+            vec_v[i] += vec_rhs[i];
+        }
+    }
+}
+
+extern "C" void coreneuron_update_voltage_launcher(double* d_v,
+                                                   double* d_rhs,
+                                                   int n,
+                                                   int secondorder,
+                                                   void* stream) {
+    if (n <= 0) {
+        return;
+    }
+    auto cuda_stream = static_cast<cudaStream_t>(stream);
+    int const threads_per_block = 256;
+    int const blocks_per_grid = (n + threads_per_block - 1) / threads_per_block;
+    update_voltage_kernel<<<blocks_per_grid, threads_per_block, 0, cuda_stream>>>(
+        d_v, d_rhs, n, secondorder);
+    cudaStreamSynchronize(cuda_stream);
+    CHECKLAST("coreneuron_update_voltage_launcher");
+}
+
 }  // namespace coreneuron

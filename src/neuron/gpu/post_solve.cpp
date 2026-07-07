@@ -1,9 +1,11 @@
 #include "neuron/gpu/post_solve.hpp"
 
+#include "coreneuron/permute/cellorder.hpp"
 #include "coreneuron/utils/offload.hpp"
 #include "membfunc.h"
 #include "multicore.h"
 #include "neuron/cache/mechanism_range.hpp"
+#include "neuron/gpu/config.hpp"
 #include "neuron/model_data.hpp"
 #include "nrn_ansi.h"
 #include "nrnoc_ml.h"
@@ -57,6 +59,16 @@ void update_voltage_on_device(NrnThread& nt) {
     }
     auto* const vec_rhs = nt.node_rhs_storage();
     auto* const vec_v = nt.node_voltage_storage();
+#if defined(NRN_ENABLE_GPU)
+    if (use_cuda_launcher() && nt.compute_gpu) {
+        coreneuron_update_voltage_launcher(static_cast<double*>(acc_deviceptr(vec_v)),
+                                           static_cast<double*>(acc_deviceptr(vec_rhs)),
+                                           nt.end,
+                                           secondorder ? 1 : 0,
+                                           acc_get_cuda_stream(nt.stream_id));
+        return;
+    }
+#endif
     if (secondorder) {
         // clang-format off
         nrn_pragma_acc(parallel loop present(vec_v [0:nt.end], vec_rhs [0:nt.end]) if (nt.compute_gpu)

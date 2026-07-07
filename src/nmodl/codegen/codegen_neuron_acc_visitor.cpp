@@ -740,7 +740,7 @@ void CodegenNeuronAccVisitor::print_nrn_cur() {
     printer->push_block("for (int id = 0; id < nodecount; id++)");
     print_nrn_cur_kernel(*info.breakpoint_node);
 
-    printer->fmt_line("node_data.node_rhs[node_id] {} rhs;", operator_for_rhs());
+    printer->fmt_line("vec_rhs[node_id] {} rhs;", operator_for_rhs());
 
     if (breakpoint_exist()) {
         printer->fmt_line("{} = g;", indexed_fp_var(info.vectorize ? naming::CONDUCTANCE_UNUSED_VARIABLE

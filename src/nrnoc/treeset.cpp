@@ -407,7 +407,7 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
             NODERHS(_nt->_v_node[i]) = 0.;
         }
 #if defined(NRN_ENABLE_GPU)
-    } else if (neuron::gpu::matrix_currents_on_device(nt)) {
+    } else if (neuron::gpu::matrix_rhs_d_stays_on_device_for_solve(nt) && _nt->compute_gpu) {
         neuron::gpu::zero_matrix_rhs_on_device(nt, i1, i3);
     } else
 #endif
@@ -423,7 +423,7 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
     auto const vec_sav_rhs = _nt->node_sav_rhs_storage();
     if (vec_sav_rhs) {
 #if defined(NRN_ENABLE_GPU)
-        if (neuron::gpu::matrix_currents_on_device(nt)) {
+        if (neuron::gpu::matrix_rhs_d_stays_on_device_for_solve(nt) && _nt->compute_gpu) {
             /* zeroed with vec_rhs in zero_matrix_rhs_on_device */
         } else
 #endif
@@ -466,7 +466,7 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
            here we transform so it only has membrane current contribution
         */
 #if defined(NRN_ENABLE_GPU)
-        if (neuron::gpu::matrix_currents_on_device(nt)) {
+        if (neuron::gpu::matrix_rhs_d_stays_on_device_for_solve(nt) && _nt->compute_gpu) {
             neuron::gpu::transform_sav_rhs_membrane_only_on_device(nt, i1, i3);
         } else
 #endif
@@ -558,7 +558,7 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
     // Make sure the SoA node diagonals are also zeroed (is this needed?)
     auto* const vec_d = _nt->node_d_storage();
 #if defined(NRN_ENABLE_GPU)
-    if (neuron::gpu::matrix_currents_on_device(nt)) {
+    if (neuron::gpu::matrix_rhs_d_stays_on_device_for_solve(nt) && _nt->compute_gpu) {
         neuron::gpu::zero_matrix_diagonal_on_device(nt, i1, i3);
     } else
 #endif
@@ -575,7 +575,7 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
     auto const vec_sav_d = _nt->node_sav_d_storage();
     if (vec_sav_d) {
 #if defined(NRN_ENABLE_GPU)
-        if (neuron::gpu::matrix_currents_on_device(nt)) {
+        if (neuron::gpu::matrix_rhs_d_stays_on_device_for_solve(nt) && _nt->compute_gpu) {
             /* zeroed with vec_d in zero_matrix_diagonal_on_device */
         } else
 #endif

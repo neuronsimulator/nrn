@@ -163,9 +163,32 @@ bool matrix_currents_qualify_for_gpu_native(NrnThread const& nt) noexcept {
 #endif
 }
 
-bool matrix_currents_on_device(NrnThread const& nt) noexcept {
+bool matrix_has_host_jacobians(NrnThread const& nt) noexcept {
 #if defined(NRN_ENABLE_GPU)
-    if (!matrix_rhs_d_stays_on_device_for_solve(nt) || nt.end <= 0) {
+    if (nt.end <= 0) {
+        return false;
+    }
+    for (auto* tml = nt.tml; tml; tml = tml->next) {
+        if (nrn_is_ion(tml->index)) {
+            continue;
+        }
+        if (memb_func[tml->index].jacob && !mechanism_jacobian_on_device(tml->index)) {
+            return true;
+        }
+    }
+    if (nt.tml && nt.tml->index == CAP && !mechanism_jacobian_on_device(CAP)) {
+        return true;
+    }
+    return false;
+#else
+    (void) nt;
+    return false;
+#endif
+}
+
+bool matrix_has_host_currents(NrnThread const& nt) noexcept {
+#if defined(NRN_ENABLE_GPU)
+    if (nt.end <= 0) {
         return false;
     }
     for (auto* tml = nt.tml; tml; tml = tml->next) {
@@ -173,7 +196,27 @@ bool matrix_currents_on_device(NrnThread const& nt) noexcept {
             continue;
         }
         if (memb_func[tml->index].current && !mechanism_current_on_device(tml->index)) {
-            return false;
+            return true;
+        }
+    }
+    return false;
+#else
+    (void) nt;
+    return false;
+#endif
+}
+
+bool matrix_currents_on_device(NrnThread const& nt) noexcept {
+#if defined(NRN_ENABLE_GPU)
+    if (!matrix_rhs_d_stays_on_device_for_solve(nt) || nt.end <= 0) {
+        return false;
+    }
+    if (matrix_has_host_currents(nt)) {
+        return false;
+    }
+    for (auto* tml = nt.tml; tml; tml = tml->next) {
+        if (nrn_is_ion(tml->index)) {
+            continue;
         }
         if (memb_func[tml->index].jacob && !mechanism_jacobian_on_device(tml->index)) {
             return false;
@@ -191,7 +234,7 @@ bool matrix_currents_on_device(NrnThread const& nt) noexcept {
 
 void zero_matrix_rhs_on_device(NrnThread& nt, int begin, int end) noexcept {
 #if defined(NRN_ENABLE_GPU)
-    if (!matrix_currents_on_device(nt) || begin >= end) {
+    if (!matrix_rhs_d_stays_on_device_for_solve(nt) || !nt.compute_gpu || begin >= end) {
         return;
     }
     phase_timer::Scope const timer{phase_timer::Id::matrix_sync};
@@ -219,7 +262,7 @@ void zero_matrix_rhs_on_device(NrnThread& nt, int begin, int end) noexcept {
 
 void zero_matrix_diagonal_on_device(NrnThread& nt, int begin, int end) noexcept {
 #if defined(NRN_ENABLE_GPU)
-    if (!matrix_currents_on_device(nt) || begin >= end) {
+    if (!matrix_rhs_d_stays_on_device_for_solve(nt) || !nt.compute_gpu || begin >= end) {
         return;
     }
     phase_timer::Scope const timer{phase_timer::Id::matrix_sync};
@@ -247,7 +290,7 @@ void zero_matrix_diagonal_on_device(NrnThread& nt, int begin, int end) noexcept 
 
 void transform_sav_rhs_membrane_only_on_device(NrnThread& nt, int begin, int end) noexcept {
 #if defined(NRN_ENABLE_GPU)
-    if (!matrix_currents_on_device(nt) || begin >= end) {
+    if (!matrix_rhs_d_stays_on_device_for_solve(nt) || !nt.compute_gpu || begin >= end) {
         return;
     }
     auto* const vec_rhs = nt.node_rhs_storage();

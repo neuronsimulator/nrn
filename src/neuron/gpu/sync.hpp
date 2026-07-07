@@ -22,6 +22,12 @@ void sync_voltages_to_device_before_axial(NrnThread& nt);
 /** True when every mechanism CURRENT/JACOBIAN (incl. capacitance) is OpenACC on device. */
 [[nodiscard]] bool matrix_currents_on_device(NrnThread const& nt) noexcept;
 
+/** True when any density mechanism CURRENT still runs on the host. */
+[[nodiscard]] bool matrix_has_host_currents(NrnThread const& nt) noexcept;
+
+/** True when any density mechanism JACOBIAN (incl. capacitance) still runs on the host. */
+[[nodiscard]] bool matrix_has_host_jacobians(NrnThread const& nt) noexcept;
+
 /** Zero vec_rhs / sav_rhs on device at the start of nrn_rhs (device-current path). */
 void zero_matrix_rhs_on_device(NrnThread& nt, int begin, int end) noexcept;
 
