@@ -846,10 +846,9 @@ void CodegenNeuronAccVisitor::print_make_instance() const {
 
     for (auto const& [var, type]: info.neuron_global_variables) {
         auto const name = var->get_name();
-        make_instance_args.push_back(fmt::format(
-            "use_device_ptrs ? static_cast<{0}*>(nrn_target_deviceptr(&::{1})) : &::{1}",
-            type,
-            name));
+        // Host address only: OpenACC present(hh_global, ...) maps globals; device
+        // pointers in inst confuse the compiler's implicit inst.global upload.
+        make_instance_args.push_back(fmt::format("&::{0}", name));
     }
 
     make_instance_args.emplace_back("data_offset");
@@ -876,10 +875,8 @@ void CodegenNeuronAccVisitor::print_make_instance() const {
     }
 
     if (!codegen_global_variables.empty()) {
-        make_instance_args.push_back(fmt::format(
-            "use_device_ptrs ? static_cast<{0}*>(nrn_target_deviceptr(&{1})) : &{1}",
-            global_struct(),
-            global_struct_instance()));
+        make_instance_args.push_back(
+            fmt::format("&{0}", global_struct_instance()));
     }
 
     printer->add_multi_line(fmt::format("{}", fmt::join(make_instance_args, ",\n")));
