@@ -355,14 +355,12 @@ void CodegenNeuronAccVisitor::print_nrn_jacob() {
     use_present_fp_indexing_ = true;
     print_parallel_iteration_hint(BlockType::Equation, nullptr);
     printer->push_block("for (int id = 0; id < nodecount; id++)");
-    // Recompute g on device (same kernel as nrn_cur). Use vec_d[] directly like nrn_cap_jacob
-    // and axial lhs; nested data present(nt,_ml_arg) around this loop dropped vec_d updates.
-    print_nrn_cur_kernel(*info.breakpoint_node);
-    printer->fmt_line("vec_d[node_id] {} g;", operator_for_d());
-    printer->fmt_line(
-        "{} = g;",
-        indexed_fp_var(info.vectorize ? naming::CONDUCTANCE_UNUSED_VARIABLE
-                                      : naming::CONDUCTANCE_VARIABLE));
+    printer->add_line("int node_id = node_data.nodeindices[id];");
+    // g_unused was written on device in nrn_cur; read it here (do not call nrn_current again:
+    // that would double-update ion dinadv/dikdv shadow fields). Flat present(vec_d) like cap/axial.
+    printer->fmt_line("vec_d[node_id] {} _present_fp_{}[inst._data_offset + id];",
+                      operator_for_d(),
+                      conductance_fp_index());
     printer->pop_block();
     use_present_fp_indexing_ = false;
     print_device_stream_wait();
