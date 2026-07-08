@@ -87,6 +87,12 @@ if(NRN_ENABLE_GPU)
     PROCESSORS ${ringtest_mpi_ranks}
     COMMAND bash ${ringtest_native_gpu_mpi_script}
     OUTPUT asciispikes::spk2.std)
+  set(ringtest_native_gpu_workdir ${PROJECT_BINARY_DIR}/test/external_ringtest/neuron_gpu_native_mpi)
+  configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/prcellstate_native_gpu.sh
+    ${ringtest_native_gpu_workdir}/prcellstate_native_gpu.sh COPYONLY
+    FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ
+                     WORLD_EXECUTE)
   # Phase D4: device nonvint scaffolding (NRN_NATIVE_GPU_DEVICE_NONVINT=1).
   # Ringtest uses built-in pas + hh (cnexp); Traub sparse-solver mods are out of scope.
   # OpenACC hh STATE requires built-in hh codegen or a non-conflicting mod suffix (follow-up).
