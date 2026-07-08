@@ -19,8 +19,17 @@ namespace neuron::gpu {
 /** Push host-authoritative voltages and thread time before GPU nonvint/state. */
 void prepare_nonvint_on_device(NrnThread& nt);
 
+/** Mirror device SOA to host before GPU nonvint when OpenACC STATE runs on device. */
+void sync_before_device_nonvint(NrnThread& nt) noexcept;
+
 /** Wait for GPU nonvint/state kernels before host AFTER_SOLVE / recording. */
 void finalize_nonvint_on_device(NrnThread& nt);
+
+/**
+ * Pull sorted node and mechanism SOA from device before host lastpart tail
+ * (AFTER_SOLVE, fixed_record, deliver_events). Required when device nonvint ran.
+ */
+void sync_before_host_lastpart_tail(NrnThread& nt) noexcept;
 
 /** True when AFTER_SOLVE / deliver tail of lastpart must run on host (CPU parity). */
 [[nodiscard]] bool lastpart_host_phases_required(NrnThread const& nt) noexcept;

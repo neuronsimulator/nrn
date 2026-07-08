@@ -1,6 +1,7 @@
 #include "neuron/gpu/lastpart.hpp"
 
 #include "neuron/gpu/config.hpp"
+#include "neuron/gpu/device_state.hpp"
 #include "neuron/gpu/download.hpp"
 #include "neuron/gpu/phase_timer.hpp"
 #include "neuron/gpu/post_solve.hpp"
@@ -97,14 +98,38 @@ void prepare_nonvint_on_device(NrnThread& nt) {
 #endif
 }
 
+void sync_before_host_lastpart_tail(NrnThread& nt) noexcept {
+#if defined(NRN_ENABLE_GPU)
+    if (!enabled() || !backend_native() || !model_is_on_device() || nt.id != 0) {
+        return;
+    }
+    sync_all_device_streams();
+    sync_state_to_host_for_host_reads();
+#else
+    (void) nt;
+#endif
+}
+
 void finalize_nonvint_on_device(NrnThread& nt) {
 #if defined(NRN_ENABLE_GPU)
     if (!g_nonvint_state_on_device) {
         return;
     }
     nrn_pragma_acc(wait(nt.stream_id))
+    sync_before_host_lastpart_tail(nt);
     nt.compute_gpu = g_saved_compute_gpu_for_nonvint;
     g_nonvint_state_on_device = false;
+#else
+    (void) nt;
+#endif
+}
+
+void sync_before_device_nonvint(NrnThread& nt) noexcept {
+#if defined(NRN_ENABLE_GPU)
+    if (!enabled() || !backend_native() || !nonvint_state_on_device(nt)) {
+        return;
+    }
+    sync_before_host_lastpart_tail(nt);
 #else
     (void) nt;
 #endif
@@ -131,13 +156,7 @@ void begin_lastpart_host_phases(NrnThread& nt) {
     g_saved_compute_gpu_for_lastpart_host = nt.compute_gpu;
     g_lastpart_host_phases_active = true;
     nt.compute_gpu = 0;
-    if (nt.id == 0) {
-        // Pull node/matrix SOA from device. Mechanism STATE is on the host after
-        // host nonvint, or was downloaded in finalize_nonvint_on_device after
-        // device OpenACC state kernels.
-        sync_all_device_streams();
-        sync_node_soa_to_host_for_host_reads();
-    }
+    sync_before_host_lastpart_tail(nt);
 #else
     (void) nt;
 #endif

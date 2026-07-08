@@ -557,6 +557,7 @@ void nrn_fixed_step_lastpart(neuron::model_sorted_token const& cache_token, NrnT
     nrn_prcellstate_checkpoint_maybe(PrcellCheckpointPhase::pre_nonvint, nt);
 #if defined(NRN_ENABLE_GPU)
     if (neuron::gpu::enabled() && neuron::gpu::backend_native()) {
+        neuron::gpu::sync_before_device_nonvint(nt);
         neuron::gpu::prepare_nonvint_on_device(nt);
     }
 #endif

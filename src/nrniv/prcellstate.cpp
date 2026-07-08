@@ -169,7 +169,7 @@ void nrn_prcellstate(int gid, const char* suffix) {
 #if defined(NRN_ENABLE_GPU)
     if (neuron::gpu::enabled() && neuron::gpu::backend_native()) {
         neuron::gpu::sync_all_device_streams();
-        neuron::gpu::sync_node_soa_to_host_for_host_reads();
+        neuron::gpu::sync_state_to_host_for_host_reads();
     }
 #endif
     // found it so create a <gid>_<suffix>.nrn file
