@@ -206,6 +206,17 @@ bool matrix_has_host_currents(NrnThread const& nt) noexcept {
 #endif
 }
 
+bool mechanism_matrix_jacobian_on_device(NrnThread const& nt, int type) noexcept {
+#if defined(NRN_ENABLE_GPU)
+    return nt.compute_gpu && matrix_rhs_d_stays_on_device_for_solve(nt) &&
+           mechanism_jacobian_on_device(type);
+#else
+    (void) nt;
+    (void) type;
+    return false;
+#endif
+}
+
 bool matrix_currents_on_device(NrnThread const& nt) noexcept {
 #if defined(NRN_ENABLE_GPU)
     if (!matrix_rhs_d_stays_on_device_for_solve(nt) || nt.end <= 0) {
@@ -314,7 +325,7 @@ void transform_sav_rhs_membrane_only_on_device(NrnThread& nt, int begin, int end
 
 void sync_diagonal_to_device_before_axial_lhs(NrnThread& nt) noexcept {
 #if defined(NRN_ENABLE_GPU)
-    if (!matrix_currents_on_device(nt) || !nt.compute_gpu || nt.end <= 0) {
+    if (matrix_currents_on_device(nt) || !nt.compute_gpu || nt.end <= 0) {
         return;
     }
     phase_timer::Scope const timer{phase_timer::Id::matrix_sync};

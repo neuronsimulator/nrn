@@ -560,6 +560,9 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
 #if defined(NRN_ENABLE_GPU)
     if (neuron::gpu::matrix_rhs_d_stays_on_device_for_solve(nt) && _nt->compute_gpu) {
         neuron::gpu::zero_matrix_diagonal_on_device(nt, i1, i3);
+        for (int i = i1; i < i3; ++i) {
+            vec_d[i] = 0.;
+        }
     } else
 #endif
         if (_nt->compute_gpu && i3 > i1) {
@@ -612,6 +615,12 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
         assert(_nt->tml->index == CAP);
         nrn_cap_jacob(sorted_token, _nt, _nt->tml->ml);
     }
+#if defined(NRN_ENABLE_GPU)
+    if (_nt->compute_gpu && neuron::gpu::matrix_rhs_d_stays_on_device_for_solve(nt) &&
+        !neuron::gpu::matrix_currents_on_device(nt)) {
+        neuron::gpu::sync_diagonal_to_device_before_axial_lhs(nt);
+    }
+#endif
 
     activsynapse_lhs();
 

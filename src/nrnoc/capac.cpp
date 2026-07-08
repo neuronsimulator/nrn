@@ -53,7 +53,7 @@ void nrn_cap_jacob(neuron::model_sorted_token const& sorted_token, NrnThread* _n
     int* const ni = ml->nodeindices;
     double* const cm_data = ml_cache.data_array_ptr<cm_index, 1>();
 #if defined(NRN_ENABLE_GPU)
-    if (_nt->compute_gpu && neuron::gpu::matrix_currents_on_device(*_nt)) {
+    if (_nt->compute_gpu && neuron::gpu::mechanism_matrix_jacobian_on_device(*_nt, CAP)) {
         nrn_pragma_acc(parallel loop present(cm_data [0:count],
                                              ni [0:count],
                                              vec_d [0:_nt->end]) if (_nt->compute_gpu)

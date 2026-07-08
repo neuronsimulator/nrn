@@ -22,6 +22,9 @@ void sync_voltages_to_device_before_axial(NrnThread& nt);
 /** True when every mechanism CURRENT/JACOBIAN (incl. capacitance) is OpenACC on device. */
 [[nodiscard]] bool matrix_currents_on_device(NrnThread const& nt) noexcept;
 
+/** True when this mechanism's JACOBIAN should run on device for the current step. */
+[[nodiscard]] bool mechanism_matrix_jacobian_on_device(NrnThread const& nt, int type) noexcept;
+
 /** True when any density mechanism CURRENT still runs on the host. */
 [[nodiscard]] bool matrix_has_host_currents(NrnThread const& nt) noexcept;
 

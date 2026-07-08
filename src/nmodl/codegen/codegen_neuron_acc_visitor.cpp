@@ -345,19 +345,27 @@ void CodegenNeuronAccVisitor::print_nrn_jacob() {
     printer->fmt_push_block("static void {}({})",
                             method_name(naming::NRN_JACOB_METHOD),
                             get_parameter_str(args));
-    printer->push_block("if (nt->compute_gpu && neuron::gpu::matrix_currents_on_device(*nt))");
+    // Gate on matrix residency (Gate A), not the global Gate-B aggregate: nrn_cur already
+    // wrote g_unused on device; host jacob would read stale host SOA and skip vec_d updates.
+    printer->push_block(
+        "if (nt->compute_gpu && neuron::gpu::matrix_rhs_d_stays_on_device_for_solve(*nt))");
     print_kernel_global_device_setup();
-    print_kernel_data_present_annotation_block_begin();
     print_entrypoint_setup_code_from_memb_list();
     printer->fmt_line("auto nodecount = _ml_arg->nodecount;");
+    use_present_fp_indexing_ = true;
     print_parallel_iteration_hint(BlockType::Equation, nullptr);
     printer->push_block("for (int id = 0; id < nodecount; id++)");
-    printer->add_line("int node_id = node_data.nodeindices[id];");
-    printer->fmt_line("node_data.node_diagonal[node_id] {} _present_fp_{}[inst._data_offset + id];",
-                      operator_for_d(),
-                      conductance_fp_index());
+    // Recompute g on device (same kernel as nrn_cur). Use vec_d[] directly like nrn_cap_jacob
+    // and axial lhs; nested data present(nt,_ml_arg) around this loop dropped vec_d updates.
+    print_nrn_cur_kernel(*info.breakpoint_node);
+    printer->fmt_line("vec_d[node_id] {} g;", operator_for_d());
+    printer->fmt_line(
+        "{} = g;",
+        indexed_fp_var(info.vectorize ? naming::CONDUCTANCE_UNUSED_VARIABLE
+                                      : naming::CONDUCTANCE_VARIABLE));
     printer->pop_block();
-    print_kernel_data_present_annotation_block_end();
+    use_present_fp_indexing_ = false;
+    print_device_stream_wait();
     printer->chain_block("else");
     print_entrypoint_setup_code_from_memb_list();
     printer->fmt_line("auto nodecount = _ml_arg->nodecount;");
