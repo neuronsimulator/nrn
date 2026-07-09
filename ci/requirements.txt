@@ -917,9 +917,9 @@ jupyter-server-terminals==0.5.3 \
     --hash=sha256:41ee0d7dc0ebf2809c668e0fc726dfaf258fcd3e769568996ca731b6194ae9aa \
     --hash=sha256:5ae0295167220e9ace0edcfdb212afd2b01ee8d179fe6f23c899590e9b8a5269
     # via jupyter-server
-jupyterlab==4.4.8 \
-    --hash=sha256:81b56f33f35be15150e7ccd43440963a93d2b115ffa614a06d38b91e4d650f92 \
-    --hash=sha256:a89e5a2e9f9295ae039356fc5247e5bfac64936126ab805e3ff8e47f385b0c7e
+jupyterlab==4.5.9 \
+    --hash=sha256:5ff0f908e8ac0afbed32b106fdef360f101c0a6654d1bf4a81e98a293ae1b336 \
+    --hash=sha256:dd79a073fecae7a39066ea99e4627ed6c76269ac926e95a810e1e1df6358d865
     # via
     #   jupyter
     #   notebook
