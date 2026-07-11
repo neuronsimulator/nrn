@@ -89,11 +89,11 @@ cmake .. -DCMAKE_INSTALL_PREFIX=install \
 
 make -j 6 install
 
-make cover_begin
+make cover-begin
 
 make test
 
-make cover_html
+make cover-html
 ```
 
 ## Changed-line coverage (pull requests)
@@ -105,9 +105,9 @@ and reports coverage on the diff against a base branch (Codecov "patch coverage"
 uses the same idea).
 
 ```
-ninja cover_begin
+ninja cover-begin
 ctest -j8 -R 'some_test_pattern'
-ninja cover_diff
+ninja cover-diff
 ```
 
 ``cover_diff`` collects coverage, then prints uncovered **changed** lines on the

@@ -12,7 +12,8 @@
 #   NRN_COVERAGE_FILES speeds the workflow tremendously, when iteratively
 #   working on a single or a few files.
 #
-#   Targets: cover_begin, cover_html, and cover_diff (requires diff-cover).
+#   Targets: cover_begin (alias cover-begin), cover_html (cover-html),
+#   and cover_diff (cover-diff, requires diff-cover).
 #
 #   cover_begin erases all the *.gcda coverage files and
 #   creates a baseline report (coverage-base.info)
@@ -150,6 +151,7 @@ if(NRN_ENABLE_COVERAGE)
     COMMAND ${cover_clean_command}
     COMMAND ${cover_baseline_command}
     WORKING_DIRECTORY "${PROJECT_BINARY_DIR}")
+  add_custom_target(cover-begin DEPENDS cover_begin)
   add_custom_target(
     cover_collect
     COMMAND ${cover_collect_command}
@@ -165,6 +167,7 @@ if(NRN_ENABLE_COVERAGE)
     COMMAND ${cover_html_command}
     COMMAND echo "View in browser at file://${PROJECT_BINARY_DIR}/html/index.html"
     WORKING_DIRECTORY "${PROJECT_BINARY_DIR}")
+  add_custom_target(cover-html DEPENDS cover_html)
 
   if(DIFF_COVER)
     add_custom_target(
@@ -178,6 +181,7 @@ if(NRN_ENABLE_COVERAGE)
               "html:${cover_diff_report}"
       COMMAND echo "View changed-line coverage at file://${cover_diff_report}"
       WORKING_DIRECTORY "${PROJECT_BINARY_DIR}")
+    add_custom_target(cover-diff DEPENDS cover_diff)
   else()
     message(
       STATUS

@@ -574,15 +574,15 @@ NRN_ENABLE_COVERAGE:BOOL=OFF
 
   Provides make targets to simplify the repeated "run tests, examine coverage"
   workflow.
-    -- ``make cover_begin`` erases all previous coverage data
+    -- ``make cover-begin`` (``cover_begin``) erases all previous coverage data
     (``*.gcda`` files), and creates a baseline report. (Note all files and
     folders are created in the ``CMAKE_BINARY_DIR`` where you ran cmake.)
 
-    -- ``make cover_html`` creates a coverage report for the sum of all the
-    software runs since the last ``cover_begin`` and prints a file url
+    -- ``make cover-html`` (``cover_html``) creates a coverage report for the sum of all the
+    software runs since the last ``cover-begin`` and prints a file url
     that you can paste into your browser to review the coverage.
 
-    -- ``make cover_diff`` (requires ``pip install diff-cover``) reports
+    -- ``make cover-diff`` (``cover_diff``; requires ``pip install diff-cover``) reports
     coverage on changed lines vs. ``NRN_COVERAGE_DIFF_BRANCH`` (default
     ``master``). See `Developer Builds: Code Coverage <../install/code_coverage.html>`_.
 
