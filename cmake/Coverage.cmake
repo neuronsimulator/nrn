@@ -132,9 +132,9 @@ if(NRN_ENABLE_COVERAGE)
 
   find_program(DIFF_COVER diff-cover)
   if(DIFF_COVER)
-    # diff-cover matches git diff paths to lcov SF: paths via GitPathTool,
-    # which is relative to cwd. Run from PROJECT_SOURCE_DIR (not the build
-    # dir) so repo-root paths like src/foo.cpp align with the lcov report.
+    # diff-cover matches git diff paths to lcov SF: paths via GitPathTool, which is relative to cwd.
+    # Run from PROJECT_SOURCE_DIR (not the build dir) so repo-root paths like src/foo.cpp align with
+    # the lcov report.
     set(cover_diff_report "${PROJECT_BINARY_DIR}/html-diff/index.html")
   endif()
 
@@ -175,16 +175,14 @@ if(NRN_ENABLE_COVERAGE)
       COMMAND ${cover_collect_command}
       COMMAND ${cover_combine_command}
       COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_BINARY_DIR}/html-diff"
-      COMMAND ${CMAKE_COMMAND} -E chdir "${PROJECT_SOURCE_DIR}" "${DIFF_COVER}"
-              "${PROJECT_BINARY_DIR}/coverage-combined.info" "--compare-branch"
-              "${NRN_COVERAGE_DIFF_BRANCH}" "--show-uncovered" "--format"
-              "html:${cover_diff_report}"
+      COMMAND
+        ${CMAKE_COMMAND} -E chdir "${PROJECT_SOURCE_DIR}" "${DIFF_COVER}"
+        "${PROJECT_BINARY_DIR}/coverage-combined.info" "--compare-branch"
+        "${NRN_COVERAGE_DIFF_BRANCH}" "--show-uncovered" "--format" "html:${cover_diff_report}"
       COMMAND echo "View changed-line coverage at file://${cover_diff_report}"
       WORKING_DIRECTORY "${PROJECT_BINARY_DIR}")
     add_custom_target(cover-diff DEPENDS cover_diff)
   else()
-    message(
-      STATUS
-        "diff-cover not found; cover_diff target unavailable (pip install diff-cover)")
+    message(STATUS "diff-cover not found; cover_diff target unavailable (pip install diff-cover)")
   endif()
 endif()
