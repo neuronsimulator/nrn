@@ -28,15 +28,15 @@ else
 	export MACOSX_DEPLOYMENT_TARGET=10.9  # for x86_64
 fi
 
-(curl -L -o ncurses-6.4.tar.gz http://ftpmirror.gnu.org/ncurses/ncurses-6.4.tar.gz \
+(curl --retry 3 -L -o ncurses-6.4.tar.gz http://ftpmirror.gnu.org/ncurses/ncurses-6.4.tar.gz \
     && tar -xvzf ncurses-6.4.tar.gz \
     && cd ncurses-6.4  \
     && ./configure --prefix="${NRNWHEEL_DIR}/ncurses" --without-shared CFLAGS="-fPIC" \
     && make -j install)
 
-(curl -L -o readline-7.0.tar.gz https://ftpmirror.gnu.org/gnu/readline/readline-7.0.tar.gz \
-    && tar -xvzf readline-7.0.tar.gz \
-    && cd readline-7.0  \
+(curl --retry 3 -L -o readline-8.3.tar.gz https://ftpmirror.gnu.org/gnu/readline/readline-8.3.tar.gz \
+    && tar -xvzf readline-8.3.tar.gz \
+    && cd readline-8.3  \
     && ./configure --prefix="${NRNWHEEL_DIR}/readline" --disable-shared CFLAGS="-fPIC" \
     && make -j install)
 

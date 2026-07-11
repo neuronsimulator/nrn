@@ -750,6 +750,8 @@ class _Arithmeticed:
                 try:
                     items_append(item._semi_compile(region, instruction))
                 except AttributeError:
+                    if isinstance(item, numpy.generic):
+                        item = item.item()
                     items_append(f"{item!r}")
                 counts_append(count)
         result = ""
