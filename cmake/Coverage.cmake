@@ -131,14 +131,10 @@ if(NRN_ENABLE_COVERAGE)
 
   find_program(DIFF_COVER diff-cover)
   if(DIFF_COVER)
-    set(cover_diff_command
-        "${DIFF_COVER}"
-        "coverage-combined.info"
-        "--compare-branch"
-        "${NRN_COVERAGE_DIFF_BRANCH}"
-        "--show-uncovered"
-        "--format"
-        "html:html-diff/index.html")
+    # diff-cover matches git diff paths to lcov SF: paths via GitPathTool,
+    # which is relative to cwd. Run from PROJECT_SOURCE_DIR (not the build
+    # dir) so repo-root paths like src/foo.cpp align with the lcov report.
+    set(cover_diff_report "${PROJECT_BINARY_DIR}/html-diff/index.html")
   endif()
 
   add_custom_target(
@@ -175,9 +171,12 @@ if(NRN_ENABLE_COVERAGE)
       cover_diff
       COMMAND ${cover_collect_command}
       COMMAND ${cover_combine_command}
-      COMMAND ${CMAKE_COMMAND} -E make_directory html-diff
-      COMMAND ${cover_diff_command}
-      COMMAND echo "View changed-line coverage at file://${PROJECT_BINARY_DIR}/html-diff/index.html"
+      COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_BINARY_DIR}/html-diff"
+      COMMAND ${CMAKE_COMMAND} -E chdir "${PROJECT_SOURCE_DIR}" "${DIFF_COVER}"
+              "${PROJECT_BINARY_DIR}/coverage-combined.info" "--compare-branch"
+              "${NRN_COVERAGE_DIFF_BRANCH}" "--show-uncovered" "--format"
+              "html:${cover_diff_report}"
+      COMMAND echo "View changed-line coverage at file://${cover_diff_report}"
       WORKING_DIRECTORY "${PROJECT_BINARY_DIR}")
   else()
     message(
