@@ -137,8 +137,8 @@ if(NRN_ENABLE_COVERAGE)
         "--compare-branch"
         "${NRN_COVERAGE_DIFF_BRANCH}"
         "--show-uncovered"
-        "--html-report"
-        "html-diff/index.html")
+        "--format"
+        "html:html-diff/index.html")
   endif()
 
   add_custom_target(
@@ -175,6 +175,7 @@ if(NRN_ENABLE_COVERAGE)
       cover_diff
       COMMAND ${cover_collect_command}
       COMMAND ${cover_combine_command}
+      COMMAND ${CMAKE_COMMAND} -E make_directory html-diff
       COMMAND ${cover_diff_command}
       COMMAND echo "View changed-line coverage at file://${PROJECT_BINARY_DIR}/html-diff/index.html"
       WORKING_DIRECTORY "${PROJECT_BINARY_DIR}")
