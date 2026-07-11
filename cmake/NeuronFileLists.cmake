@@ -266,45 +266,6 @@ set(NRNCVODE_FILE_LIST
     occvode.cpp
     tqueue.cpp)
 
-# =============================================================================
-# Files in sundials directory
-# =============================================================================
-nrn_create_file_list(
-  SUNDIALS_CVODES
-  "${PROJECT_SOURCE_DIR}/src/sundials/cvodes"
-  cvband.c
-  cvbandpre.c
-  cvbbdpre.c
-  cvdense.c
-  cvdiag.c
-  cvodea.c
-  cvodes.c
-  cvodesio.c
-  cvspgmr.c)
-
-nrn_create_file_list(
-  SUNDIALS_IDA
-  "${PROJECT_SOURCE_DIR}/src/sundials/ida"
-  idaband.c
-  idabbdpre.c
-  ida.c
-  idadense.c
-  idaic.c
-  idaio.c
-  idaspgmr.c)
-nrn_create_file_list(
-  SUNDIALS_SHARED
-  "${PROJECT_SOURCE_DIR}/src/sundials/shared"
-  band.c
-  dense.c
-  iterative.c
-  nvector.c
-  nvector_serial.c
-  smalldense.c
-  spgmr.c
-  sundialsmath.c)
-set(NRN_SUNDIALS_SRC_FILES ${SUNDIALS_CVODES} ${SUNDIALS_IDA} ${SUNDIALS_SHARED})
-
 set(SPARSE_FILES_LIST bksub.cpp getelm.cpp lineq.cpp prmat.cpp subrows.cpp)
 
 # scopmath sources
@@ -446,9 +407,7 @@ nrn_create_file_list(NRN_NRNIV_SRC_FILES ${NRN_NRNIV_SRC_DIR} ${NRNIV_FILE_LIST}
 nrn_create_file_list(NRN_PARALLEL_SRC_FILES ${NRN_PARALLEL_SRC_DIR} ${NRN_PARALLEL_FILES_LIST})
 if(NRN_ENABLE_MPI)
   nrn_create_file_list(NRN_PARALLEL_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrniv
-                       nvector_nrnparallel_ld.cpp)
-  nrn_create_file_list(NRN_PARALLEL_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sundials/shared
-                       nvector_parallel.c)
+                       nvector_nrnparallel_ld.cpp nvector_parallel.cpp)
 endif()
 nrn_create_file_list(NRN_SPARSE_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sparse ${SPARSE_FILES_LIST})
 nrn_create_file_list(NRN_SCOPMATH_SRC_FILES ${PROJECT_SOURCE_DIR}/src/scopmath

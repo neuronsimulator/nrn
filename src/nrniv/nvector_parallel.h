@@ -1,15 +1,17 @@
-/*
- * -----------------------------------------------------------------
- * $Revision: 855 $
- * $Date: 2005-02-10 00:15:46 +0100 (Thu, 10 Feb 2005) $
- * ----------------------------------------------------------------- 
+// clang-format off
+/* ----------------------------------------------------------------- 
  * Programmer(s): Scott D. Cohen, Alan C. Hindmarsh, Radu Serban,
  *                and Aaron Collier @ LLNL
  * -----------------------------------------------------------------
- * Copyright (c) 2002, The Regents of the University of California.
+ * LLNS Copyright Start
+ * Copyright (c) 2014, Lawrence Livermore National Security
+ * This work was performed under the auspices of the U.S. Department 
+ * of Energy by Lawrence Livermore National Laboratory in part under 
+ * Contract W-7405-Eng-48 and in part under Contract DE-AC52-07NA27344.
  * Produced at the Lawrence Livermore National Laboratory.
  * All rights reserved.
- * For details, see sundials/shared/LICENSE.
+ * For details, see the LICENSE file.
+ * LLNS Copyright End
  * -----------------------------------------------------------------
  * This is the main header file for the MPI-enabled implementation
  * of the NVECTOR module.
@@ -28,12 +30,12 @@
  * Notes:
  *
  *   - The definition of the generic N_Vector structure can be
- *     found in the header file shared/include/nvector.h.
+ *     found in the header file sundials_nvector.h.
  *
  *   - The definition of the type realtype can be found in the
- *     header file shared/include/sundialstypes.h, and it may be
- *     changed (at the configuration stage) according to the user's
- *     needs. The sundialstypes.h file also contains the definition
+ *     header file sundials_types.h, and it may be changed (at the 
+ *     configuration stage) according to the user's needs. 
+ *     The sundials_types.h file also contains the definition
  *     for the type booleantype.
  *
  *   - N_Vector arguments to arithmetic vector operations need not
@@ -43,20 +45,29 @@
  *
  *     (which stores the result of the operation a*x+b*y in y)
  *     is legal.
- * -----------------------------------------------------------------
- */
+ * -----------------------------------------------------------------*/
 
 #ifndef _NVECTOR_PARALLEL_H
 #define _NVECTOR_PARALLEL_H
 
-#define MPI_Comm int
+#include <stdio.h>
 
-#if defined(__cplusplus)
+#if 0 // avoid mpi.h. So no MPI_Comm. We want to support NRNMPI_DYNAMICLOAD
+#include <mpi.h> 
+#else
+// locally to this .h file, MPI_Comm is an int
+// Maybe later we will just remove all of them.
+#undef MPI_Comm
+#define MPI_Comm int
+#endif
+
+#include <sundials/sundials_nvector.h>
+#include <sundials/sundials_mpi_types.h>
+
+#ifdef __cplusplus  /* wrapper to enable C++ usage */
 extern "C" {
 #endif
 
-#include "nvector.h"
-#include "sundialstypes.h"
 
 /*
  * -----------------------------------------------------------------
@@ -64,32 +75,14 @@ extern "C" {
  * -----------------------------------------------------------------
  */
 
-/* define MPI data types */
-
-#if defined(SUNDIALS_SINGLE_PRECISION)
-
-#define PVEC_REAL_MPI_TYPE MPI_FLOAT
-
-#elif defined(SUNDIALS_DOUBLE_PRECISION)
-
-#define PVEC_REAL_MPI_TYPE MPI_DOUBLE
-
-#elif defined(SUNDIALS_EXTENDED_PRECISION)
-
-#define PVEC_REAL_MPI_TYPE MPI_LONG_DOUBLE
-
-#endif
-
-#define PVEC_INTEGER_MPI_TYPE MPI_LONG
-
 /* parallel implementation of the N_Vector 'content' structure
    contains the global and local lengths of the vector, a pointer
-   to an array of realtype components, the MPI communicator,
+   to an array of 'realtype components', the MPI communicator,
    and a flag indicating ownership of the data */
 
 struct _N_VectorContent_Parallel {
-  long int local_length;   /* local vector length         */
-  long int global_length;  /* global vector length        */
+  sunindextype local_length;   /* local vector length         */
+  sunindextype global_length;  /* global vector length        */
   booleantype own_data;    /* ownership of data           */
   realtype *data;          /* local data array            */
   MPI_Comm comm;           /* pointer to MPI communicator */
@@ -106,7 +99,7 @@ typedef struct _N_VectorContent_Parallel *N_VectorContent_Parallel;
  * are assumed:
  *
  * N_Vector v;
- * long int v_len, s_len, i;
+ * sunindextype v_len, s_len, i;
  *
  * (1) NV_CONTENT_P
  *
@@ -182,14 +175,17 @@ typedef struct _N_VectorContent_Parallel *N_VectorContent_Parallel;
  * CONSTRUCTORS:
  *    N_VNew_Parallel
  *    N_VNewEmpty_Parallel
- *    N_VClone_Parallel
- *    N_VCloneEmpty_Parallel
  *    N_VMake_Parallel
- *    N_VNewVectorArray_Parallel
- *    N_VNewVectorArrayEmpty_Parallel
+ *    N_VCloneVectorArray_Parallel
+ *    N_VCloneVectorArrayEmpty_Parallel
  * DESTRUCTORS:
  *    N_VDestroy_Parallel
  *    N_VDestroyVectorArray_Parallel
+ * OTHER:
+ *    N_VGetLength_Parallel
+ *    N_VGetLocalLength_Parallel
+ *    N_VPrint_Parallel
+ *    N_VPrintFile_Parallel
  * -----------------------------------------------------------------
  */
 
@@ -201,9 +197,9 @@ typedef struct _N_VectorContent_Parallel *N_VectorContent_Parallel;
  * -----------------------------------------------------------------
  */
 
-N_Vector N_VNew_Parallel(MPI_Comm comm, 
-                         long int local_length,
-                         long int global_length);
+SUNDIALS_EXPORT N_Vector N_VNew_Parallel(MPI_Comm comm, 
+                                         sunindextype local_length,
+                                         sunindextype global_length);
 
 /*
  * -----------------------------------------------------------------
@@ -214,21 +210,9 @@ N_Vector N_VNew_Parallel(MPI_Comm comm,
  * -----------------------------------------------------------------
  */
 
-N_Vector N_VNewEmpty_Parallel(MPI_Comm comm, 
-                              long int local_length,
-                              long int global_length);
-
-/*
- * -----------------------------------------------------------------
- * Function : N_VCloneEmpty_Parallel
- * -----------------------------------------------------------------
- * This function creates a new parallel N_Vector with an empty (NULL)
- * data array using the vector w as a template
- * (sets own_data = FALSE).
- * -----------------------------------------------------------------
- */
-
-N_Vector N_VCloneEmpty_Parallel(N_Vector w);
+SUNDIALS_EXPORT N_Vector N_VNewEmpty_Parallel(MPI_Comm comm, 
+                                              sunindextype local_length,
+                                              sunindextype global_length);
 
 /*
  * -----------------------------------------------------------------
@@ -239,60 +223,87 @@ N_Vector N_VCloneEmpty_Parallel(N_Vector w);
  * -----------------------------------------------------------------
  */
 
-N_Vector N_VMake_Parallel(MPI_Comm comm, 
-                          long int local_length,
-                          long int global_length,
-                          realtype *v_data);
+SUNDIALS_EXPORT N_Vector N_VMake_Parallel(MPI_Comm comm, 
+                                          sunindextype local_length,
+                                          sunindextype global_length,
+                                          realtype *v_data);
 
 /*
  * -----------------------------------------------------------------
- * Function : N_VNewVectorArray_Parallel
+ * Function : N_VCloneVectorArray_Parallel
  * -----------------------------------------------------------------
- * This function creates an array of 'count' parallel vectors. This
- * array of N_Vectors can be freed using N_VDestroyVectorArray
- * (defined by the generic NVECTOR module).
+ * This function creates an array of 'count' PARALLEL vectors by
+ * cloning a given vector w.
  * -----------------------------------------------------------------
  */
 
-N_Vector *N_VNewVectorArray_Parallel(int count, 
-                                     MPI_Comm comm, 
-                                     long int local_length,
-                                     long int global_length);
+SUNDIALS_EXPORT N_Vector *N_VCloneVectorArray_Parallel(int count, N_Vector w);
 
 /*
  * -----------------------------------------------------------------
- * Function : N_VNewVectorArrayEmpty_Parallel
+ * Function : N_VCloneVectorArrayEmpty_Parallel
  * -----------------------------------------------------------------
- * This function creates an array of 'count' parallel vectors each 
- * with an empty (NULL) data array.
+ * This function creates an array of 'count' PARALLEL vectors each 
+ * with an empty (NULL) data array by cloning w.
  * -----------------------------------------------------------------
  */
 
-N_Vector *N_VNewVectorArrayEmpty_Parallel(int count, 
-                                          MPI_Comm comm, 
-                                          long int local_length,
-                                          long int global_length);
+SUNDIALS_EXPORT N_Vector *N_VCloneVectorArrayEmpty_Parallel(int count, N_Vector w);
 
 /*
  * -----------------------------------------------------------------
  * Function : N_VDestroyVectorArray_Parallel
  * -----------------------------------------------------------------
  * This function frees an array of N_Vector created with 
- * N_VNewVectorArray_Parallel.
+ * N_VCloneVectorArray_Parallel or N_VCloneVectorArrayEmpty_Parallel.
  * -----------------------------------------------------------------
  */
 
-void N_VDestroyVectorArray_Parallel(N_Vector *vs, int count);
+SUNDIALS_EXPORT void N_VDestroyVectorArray_Parallel(N_Vector *vs, int count);
+
+/*
+ * -----------------------------------------------------------------
+ * Function : N_VGetLength_Parallel
+ * -----------------------------------------------------------------
+ * This function returns number of vector elements (global vector 
+ * length). It returns locally stored integer, and is therefore 
+ * a local call.
+ * -----------------------------------------------------------------
+ */
+
+SUNDIALS_EXPORT sunindextype N_VGetLength_Parallel(N_Vector v);
+
+/*
+ * -----------------------------------------------------------------
+ * Function : N_VGetLocalLength_Parallel
+ * -----------------------------------------------------------------
+ * This function returns local vector length.
+ * -----------------------------------------------------------------
+ */
+
+SUNDIALS_EXPORT sunindextype N_VGetLocalLength_Parallel(N_Vector v);
 
 /*
  * -----------------------------------------------------------------
  * Function : N_VPrint_Parallel
  * -----------------------------------------------------------------
- * This function prints the content of a parallel vector to stdout.
+ * This function prints the local content of a parallel vector to
+ * stdout.
  * -----------------------------------------------------------------
  */
 
-void N_VPrint_Parallel(N_Vector v);
+SUNDIALS_EXPORT void N_VPrint_Parallel(N_Vector v);
+
+/*
+ * -----------------------------------------------------------------
+ * Function : N_VPrintFile_Parallel
+ * -----------------------------------------------------------------
+ * This function prints the local content of a parallel vector to
+ * outfile.
+ * -----------------------------------------------------------------
+ */
+
+SUNDIALS_EXPORT void N_VPrintFile_Parallel(N_Vector v, FILE *outfile);
 
 /*
  * -----------------------------------------------------------------
@@ -300,33 +311,39 @@ void N_VPrint_Parallel(N_Vector v);
  * -----------------------------------------------------------------
  */
 
-N_Vector N_VClone_Parallel(N_Vector w);
-void N_VDestroy_Parallel(N_Vector v);
-void N_VSpace_Parallel(N_Vector v, long int *lrw, long int *liw);
-realtype *N_VGetArrayPointer_Parallel(N_Vector v);
-void N_VSetArrayPointer_Parallel(realtype *v_data, N_Vector v);
-void N_VLinearSum_Parallel(realtype a, N_Vector x, realtype b, N_Vector y, N_Vector z);
-void N_VConst_Parallel(realtype c, N_Vector z);
-void N_VProd_Parallel(N_Vector x, N_Vector y, N_Vector z);
-void N_VDiv_Parallel(N_Vector x, N_Vector y, N_Vector z);
-void N_VScale_Parallel(realtype c, N_Vector x, N_Vector z);
-void N_VAbs_Parallel(N_Vector x, N_Vector z);
-void N_VInv_Parallel(N_Vector x, N_Vector z);
-void N_VAddConst_Parallel(N_Vector x, realtype b, N_Vector z);
-realtype N_VDotProd_Parallel(N_Vector x, N_Vector y);
-realtype N_VMaxNorm_Parallel(N_Vector x);
-realtype N_VWrmsNorm_Parallel(N_Vector x, N_Vector w);
-realtype N_VWrmsNormMask_Parallel(N_Vector x, N_Vector w, N_Vector id);
-realtype N_VMin_Parallel(N_Vector x);
-realtype N_VWL2Norm_Parallel(N_Vector x, N_Vector w);
-realtype N_VL1Norm_Parallel(N_Vector x);
-void N_VCompare_Parallel(realtype c, N_Vector x, N_Vector z);
-booleantype N_VInvTest_Parallel(N_Vector x, N_Vector z);
-booleantype N_VConstrMask_Parallel(N_Vector c, N_Vector x, N_Vector m);
-realtype N_VMinQuotient_Parallel(N_Vector num, N_Vector denom);
+SUNDIALS_EXPORT N_Vector_ID N_VGetVectorID_Parallel(N_Vector v);
+SUNDIALS_EXPORT N_Vector N_VCloneEmpty_Parallel(N_Vector w);
+SUNDIALS_EXPORT N_Vector N_VClone_Parallel(N_Vector w);
+SUNDIALS_EXPORT void N_VDestroy_Parallel(N_Vector v);
+SUNDIALS_EXPORT void N_VSpace_Parallel(N_Vector v, sunindextype *lrw, sunindextype *liw);
+SUNDIALS_EXPORT realtype *N_VGetArrayPointer_Parallel(N_Vector v);
+SUNDIALS_EXPORT void N_VSetArrayPointer_Parallel(realtype *v_data, N_Vector v);
+SUNDIALS_EXPORT void N_VLinearSum_Parallel(realtype a, N_Vector x, realtype b, N_Vector y, N_Vector z);
+SUNDIALS_EXPORT void N_VConst_Parallel(realtype c, N_Vector z);
+SUNDIALS_EXPORT void N_VProd_Parallel(N_Vector x, N_Vector y, N_Vector z);
+SUNDIALS_EXPORT void N_VDiv_Parallel(N_Vector x, N_Vector y, N_Vector z);
+SUNDIALS_EXPORT void N_VScale_Parallel(realtype c, N_Vector x, N_Vector z);
+SUNDIALS_EXPORT void N_VAbs_Parallel(N_Vector x, N_Vector z);
+SUNDIALS_EXPORT void N_VInv_Parallel(N_Vector x, N_Vector z);
+SUNDIALS_EXPORT void N_VAddConst_Parallel(N_Vector x, realtype b, N_Vector z);
+SUNDIALS_EXPORT realtype N_VDotProd_Parallel(N_Vector x, N_Vector y);
+SUNDIALS_EXPORT realtype N_VMaxNorm_Parallel(N_Vector x);
+SUNDIALS_EXPORT realtype N_VWrmsNorm_Parallel(N_Vector x, N_Vector w);
+SUNDIALS_EXPORT realtype N_VWrmsNormMask_Parallel(N_Vector x, N_Vector w, N_Vector id);
+SUNDIALS_EXPORT realtype N_VMin_Parallel(N_Vector x);
+SUNDIALS_EXPORT realtype N_VWL2Norm_Parallel(N_Vector x, N_Vector w);
+SUNDIALS_EXPORT realtype N_VL1Norm_Parallel(N_Vector x);
+SUNDIALS_EXPORT void N_VCompare_Parallel(realtype c, N_Vector x, N_Vector z);
+SUNDIALS_EXPORT booleantype N_VInvTest_Parallel(N_Vector x, N_Vector z);
+SUNDIALS_EXPORT booleantype N_VConstrMask_Parallel(N_Vector c, N_Vector x, N_Vector m);
+SUNDIALS_EXPORT realtype N_VMinQuotient_Parallel(N_Vector num, N_Vector denom);
 
-#if defined(__cplusplus)
-} // extern "C"
+#ifdef __cplusplus
+}
 #endif
+
+// we would like an error raised if anyone includes this file and
+// substantively uses MPI_Comm
+#undef MPI_Comm
 
 #endif

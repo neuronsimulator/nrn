@@ -2,6 +2,7 @@
 Tests that used to live in the thread/ subdirectory of the
 https://github.com/neuronsimulator/nrntest repository
 """
+
 import os
 import pytest
 from neuron import h

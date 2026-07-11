@@ -4,7 +4,6 @@ import os
 
 import numpy
 
-
 tol = float(os.environ.get("NRN_RXD_TEST_TOLERANCE", "1e-10"))
 dt_eps = 1e-20
 

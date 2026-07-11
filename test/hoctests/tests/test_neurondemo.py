@@ -2,7 +2,7 @@ import os
 import sys
 import warnings
 
-from neuron import config
+from neuron import config, n
 
 from neuron.tests.utils.checkresult import Chk
 from neuron.tests.utils import get_c_compiler
@@ -196,7 +196,12 @@ def special_run(key, demo_index, pre_run_stmts):
 
 
 # For full coverage of #3454, do another run of Dynamic Clamp with cvode active.
-special_run("cover3454", 6, "cvode_active(1)")
+cover3454 = "cover3454"  # for old cvode version 2
+cv = n.CVode()
+if hasattr(cv, "version"):
+    cover3454 += f"-cv{cv.version()[0]}"
+print(f"special_run for key {cover3454}")
+special_run(cover3454, 6, "cvode_active(1)")
 
 chk.save()
 

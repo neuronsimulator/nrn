@@ -1,6 +1,6 @@
 #pragma once
 
-#include "shared/nvector_serial.h"
+#include <nvector/nvector_serial.h> /* serial N_Vector types, fcts, macros*/
 #include "nvector_nrnthread.h"
 #include "nvector_nrnthread_ld.h"
 #include "nvector_nrnserial_ld.h"
