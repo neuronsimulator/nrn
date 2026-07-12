@@ -742,8 +742,10 @@ Functions, objects, and the stack
     in the top-level object-data array rather than at ``sym->u.pval``.
 
     :param sym: Pointer to the symbol.
-    :returns: Pointer to the symbol's data, or the raw ``sym->u.pval`` for
-              symbols that are not top-level runtime scalars.
+    :returns: A pointer to the variable's storage, or ``NULL`` if ``sym`` is not
+              a scalar variable with a data pointer (a null symbol, a function,
+              an object, a string, or a section-level property such as ``L`` or
+              ``nseg``).
 
     **Usage Pattern:**
 

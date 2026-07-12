@@ -258,19 +258,32 @@ int nrn_symbol_subtype(const Symbol* sym) {
 }
 
 double* nrn_symbol_dataptr(const Symbol* sym) {
-    // A NOTUSER runtime scalar (created in HOC by e.g. `x = 42`) does not store
-    // its value at sym->u.pval -- for that subtype the union member holds an
-    // object-data offset, not a pointer, so returning it hands back garbage that
-    // segfaults on dereference. The real storage is in the top-level
-    // object-data array (see the NOTUSER branch of eval() in oc/code.cpp, which
-    // reads *OPVAL(sym) == *hoc_top_level_data[sym->u.oboff].pval). Return that
-    // address so the result is a dereferenceable double*, as the name promises.
-    // Every other case (USERDOUBLE built-ins such as `t`, and the typed USER*
-    // subtypes that already alias sym->u.pval) is unchanged.
-    if (sym && sym->type == VAR && sym->subtype == NOTUSER) {
-        return hoc_top_level_data[sym->u.oboff].pval;
+    // Only a scalar/array VAR has a real double* to hand back. Anything else --
+    // a function (e.g. finitialize), an object, a string, a template (all with
+    // type != VAR), or a section-level property (USERPROPERTY: nseg/L/Ra/
+    // rallbranch, whose u member is a {membrane type, index} pair, not a
+    // pointer) -- has no dataptr, so return nullptr instead of a reinterpreted
+    // union member that the caller would dereference as garbage.
+    if (!sym || sym->type != VAR) {
+        return nullptr;
     }
-    return sym->u.pval;
+    switch (sym->subtype) {
+    case NOTUSER:
+        // A NOTUSER runtime scalar (created in HOC by e.g. `x = 42`) does not
+        // store its value at sym->u.pval -- for that subtype the union member
+        // holds an object-data offset, not a pointer. The real storage is in
+        // the top-level object-data array (see the NOTUSER branch of eval() in
+        // oc/code.cpp, which reads *OPVAL(sym) ==
+        // *hoc_top_level_data[sym->u.oboff].pval). Return that address so the
+        // result is a dereferenceable double*, as the name promises.
+        return hoc_top_level_data[sym->u.oboff].pval;
+    case USERPROPERTY:
+        return nullptr;
+    default:
+        // USERDOUBLE built-ins such as `t`, plus the typed USERINT/USERFLOAT
+        // scalars whose storage aliases sym->u.pval (callers cast as needed).
+        return sym->u.pval;
+    }
 }
 
 bool nrn_symbol_is_array(const Symbol* sym) {
