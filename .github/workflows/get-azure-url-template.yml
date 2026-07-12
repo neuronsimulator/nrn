@@ -1,0 +1,63 @@
+on:
+  workflow_call:
+    inputs:
+      label:
+        description: 'The label to add or remove'
+        required: true
+        type: string
+      ci_name:
+        description: 'The name of the CI to display in the comment'
+        required: true
+        type: string
+      pr_url:
+        description: 'The full URL to the pull request'
+        required: true
+        type: string
+
+jobs:
+  get-last-azure-url:
+    name: 'Get last Azure drop URL'
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      PR_URL: ${{ inputs.pr_url }}
+
+    runs-on: ubuntu-latest
+
+    outputs:
+      azure_drop_url: ${{ steps.drop.outputs.azure_drop_url }}
+      pr_azure_sha:  ${{ steps.drop.outputs.pr_azure_sha }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Get last Azure drop URL
+        id: drop
+        run: |
+          # use jq to get the last Azure drop URL from the PR and the SHA1 from the same body
+          export pr_json=$(gh pr view $PR_URL --json comments -q 'last(.comments[] .body | capture(".*(?<pr_azure_sha>[0-9a-f]{40}).*?(?<azure_drop_url>https://dev.azure.com/neuronsimulator/.*=zip)"))')
+          if [ -z "$pr_json" ]; then
+            echo "Unable to retrieve AZURE drop url and SHA from comments!"
+            exit 1
+          fi
+          # use jq to get pr_azure_sha and azure_drop_url from the json
+          export azure_drop_url=$(echo $pr_json | jq -r .azure_drop_url)
+          export pr_azure_sha=$(echo $pr_json | jq -r .pr_azure_sha)
+          echo azure_drop_url=$azure_drop_url >> $GITHUB_OUTPUT
+          echo pr_azure_sha=$pr_azure_sha >> $GITHUB_OUTPUT
+
+      - name: Remove label ${{ inputs.label }}
+        id: remove-label
+        if: always()
+        run: |
+          # remove the label
+          gh pr edit $PR_URL --remove-label ${{ inputs.label }}
+          # if we encounter an error in last github action step, add a comment
+          if [ ${{ steps.drop.outcome }} == 'failure' ]; then
+            gh pr comment $PR_URL --body "Unable to retrieve AZURE drop url from comments!"
+          else
+            gh pr comment $PR_URL --body "${{ inputs.ci_name }}: launching for ${pr_azure_sha} via its [drop url]($azure_drop_url)"
+          fi
+        env:
+          pr_azure_sha: ${{ steps.drop.outputs.pr_azure_sha }}
+          azure_drop_url: ${{ steps.drop.outputs.azure_drop_url }}
