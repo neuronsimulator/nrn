@@ -1,34 +1,48 @@
-# Network SoA — Phase 0 design spec (draft scaffold)
+# Network SoA — Phase 0 design spec
 
-**Status:** Draft for first implementation session. Expand into reviewable spec before Phase 1 coding.
-
-**Branch:** `local/cpu-network-soa`  
-**Base:** `origin/master`  
-**Blocked downstream:** GPU network buffers on `local/gpu-native-qualification` (Stages 2–3)
+**Status:** Authoritative for `local/cpu-network-soa` (Phase 0 complete → Phase 1 scaffold).  
+**Branch:** `local/cpu-network-soa` (from `origin/master`)  
+**Sibling (paused):** `~/neuron/nrngpu` @ `local/gpu-native-qualification` — GPU network buffers Stages 2–3  
+**Handoff:** `GROK-NETWORK-SOA.md`
 
 ---
 
 ## 1. Problem
 
-NEURON network objects (`Point_process`, `NetCon`, `PreSyn`, `SelfEvent`) use pointer-heavy layouts suited to HOC interactivity. CoreNEURON GPU integration assumes flat per-thread arrays (`pntprocs`, `weights`, `netcons`, `presyns`) with integer indices.
+NEURON network objects (`Point_process`, `NetCon`, `PreSyn`, `SelfEvent`) use pointer-heavy layouts suited to HOC interactivity:
 
-Bridging with per-event shims on the legacy layout does not scale. **One SoA backing store** with HOC wrappers as handles matches the existing node/mechanism container model.
+| Entity | Hot-path problem |
+|--------|------------------|
+| `Point_process` | `sec`, `node`, `prop`, `ob`, `presyn_`, `_vnt` pointers |
+| `NetCon` | per-NetCon `double* weight_` heap allocation |
+| `PreSyn` | `NetConPList dil_` + fat HOC fields (`Object*`, recording, …) |
+| `SelfEvent` | `double* weight_` into NetCon heap |
+
+CoreNEURON GPU / multicore integration assumes **flat per-thread arrays** with integer indices (`pntprocs`, `weights`, `netcons`, `presyns`). See `src/coreneuron/sim/multicore.hpp`, `src/coreneuron/network/netcon.hpp`.
+
+Bridging with per-event shims on the legacy layout does not scale. **One SoA backing store** with HOC wrappers as permutation-stable handles matches the existing node/mechanism container model (`src/neuron/container/soa_container.hpp`, `data_handle.hpp`).
+
+**Existing network prototype:** `PreSyn::thvar_` is already `neuron::container::data_handle<double>` (`src/nrncvode/netcon.h`). Threshold evaluation and GPU threshold use stable handles / row offsets relative to `NrnThread::_node_data_offset`.
 
 ---
 
 ## 2. Goals
 
-- Single CPU copy in `std::vector` columns; permutation-stable `data_handle` / `owning_handle`.
-- `NrnThread` holds offsets into contiguous thread slices (no per-thread heap graphs).
-- HOC API unchanged at the interpreter boundary (`weight()`, `loc()`, … read/write SoA).
-- CPU `psolve` hot path uses indices (CoreNEURON-shaped), not `double* weight_` / `dil_` walks.
-- GPU track can upload the same columns after SoA merges (out of scope for Phase 0–4).
+1. Single CPU copy of integration-hot network data in `std::vector` columns.
+2. Permutation-stable `data_handle` / `owning_handle` (same lifetime model as `Node`).
+3. `NrnThread` (and `neuron::cache::Thread`) hold **offsets + counts** into contiguous global slices — no per-thread duplicate heap graphs.
+4. HOC / Python API unchanged at the interpreter boundary (`weight()`, `loc()`, `NetCon.active`, …).
+5. CPU `psolve` hot path becomes index-based (CoreNEURON-shaped), not `double* weight_` / `dil_` walks.
+6. After SoA merges to master, the GPU track can upload the same columns (out of scope here).
 
-## 3. Non-goals (Phase 0–4)
+## 3. Non-goals (Phases 0–4 on this branch)
 
-- GPU `net_buf_receive` codegen or Stage 3 runtime wire-up.
-- Full `InputPreSyn` / MPI multisend redesign (defer to post–Phase 3 milestone).
-- Removing HOC `Object*` identity — sidecars remain.
+| Out of scope | Resume when |
+|--------------|-------------|
+| GPU `net_buf_receive` codegen / Stage 3 wire-up | SoA on master; rebase `gpu-native-qualification` |
+| Full `InputPreSyn` / MPI multisend redesign | Post–Phase 3 MPI milestone |
+| Removing HOC `Object*` identity | Never — sidecars remain |
+| Changing public HOC/Python method signatures | Not required |
 
 ---
 
@@ -36,200 +50,475 @@ Bridging with per-event shims on the legacy layout does not scale. **One SoA bac
 
 ### 4.1 CoreNEURON (integration hot)
 
+From `coreneuron::NrnThread` and network headers:
+
 | Entity | Key fields |
 |--------|------------|
 | `Point_process` | `_i_instance`, `_type`, `_tid` |
-| `weights` | flat `double[n_weight]` |
+| `weights` | flat `double[n_weight]`; `NetCon.u.weight_index_` base |
 | `NetCon` | `target_`, `u.weight_index_`, `delay_`, `active_` |
 | `PreSyn` | `nc_index_`, `nc_cnt_`, `thvar_index_`, `threshold_`, `gid_` |
 | `SelfEvent` | `target_`, `weight_index_`, `flag_` |
 
-See `src/coreneuron/sim/multicore.hpp`, `src/coreneuron/network/netcon.hpp`.
+Weights for one NetCon are **contiguous** at `[weight_index, weight_index + pnt_receive_size)`.
 
-### 4.2 NEURON today (to replace on hot path)
+### 4.2 NEURON node/mechanism precedent
 
-| Entity | Hot-path problem |
-|--------|------------------|
-| `Point_process` | `sec`, `node`, `prop`, `ob`, … pointers |
-| `NetCon` | `double* weight_` heap per netcon |
-| `PreSyn` | `NetConPList dil_`, fat HOC fields |
-| `SelfEvent` | `double* weight_` |
+```text
+owning_handle  → owns a row; destructor frees row
+handle         → non-owning; stable across permute; dies when owner dies
+data_handle<T> → erases field identity; used for pointers into columns
+```
 
-See `src/nrnoc/section_fwd.hpp`, `src/nrncvode/netcon.h`.
+Storage lives under `neuron::model()` (`Model::node_data()`, `Model::mechanism_data(type)`).  
+Thread slice: `NrnThread::_node_data_offset` + `neuron::cache::Thread::{node,mechanism}_offset`.  
+Sort gate: `nrn_ensure_model_data_are_sorted()` freezes tokens, permutes, rebuilds `neuron::cache::model`.
 
-### 4.3 NEURON precedent (already SoA-friendly)
+### 4.3 PreSyn `thvar_` prototype
 
-- Nodes / mechanisms: `src/neuron/container/soa_container.hpp`, `data_handle.hpp`
-- `PreSyn::thvar_` as `data_handle<double>`; GPU threshold uses `thvar_row` vs `nt->_node_data_offset` (`src/nrncvode/netcvode.cpp`)
+- Construction takes `data_handle<double>` for the watched voltage (or related variable).
+- `notify_when_handle_dies` disconnects when the underlying node dies.
+- Do **not** re-introduce raw `double*` for threshold sources in new code.
 
 ---
 
-## 5. Proposed containers (to decide in Phase 0)
+## 5. Containers and field tags
 
-### 5.1 Storage location
+### 5.1 Ownership and file layout
 
-**Proposal:** extend `neuron::model()` with network storages (or `neuron::container::network::` namespace), analogous to `node_data()` and mechanism storage.
+**Decision:** Network storages are members of `neuron::Model`, analogous to `m_node_data`.
 
-```cpp
-// Illustrative — names TBD in spec
-struct Model {
-    container::Node::storage& node_data();
-    container::network::PointProcessStorage& point_processes();
-    container::network::WeightStorage& weights();
-    container::network::NetConStorage& netcons();
-    container::network::PreSynStorage& presyns();
-};
+```
+src/neuron/container/network/
+  point_process.hpp     # Phase 1 — tags, storage, handle API
+  weights.hpp           # Phase 1
+  netcon.hpp            # Phase 2
+  presyn.hpp            # Phase 3
+  self_event.hpp        # Phase 4 (if queued structurally)
 ```
 
-### 5.2 Field tags (integration columns)
+```cpp
+// neuron::Model (illustrative)
+container::network::PointProcess::storage& point_processes();
+container::network::Weight::storage&       weights();
+container::network::NetCon::storage&       netcons();      // Phase 2
+container::network::PreSyn::storage&       presyns();      // Phase 3
+```
 
-**Point_process row**
+Namespace root: `neuron::container::network`.  
+Each entity is a nested namespace with `field::*` tags, `storage`, `handle`, `owning_handle` — same shape as `neuron::container::Node`.
 
-| Tag | Type | Notes |
-|-----|------|-------|
-| `Instance` | `int` | mechanism SoA row (`_i_instance`) |
-| `MechType` | `int` | `_type` |
-| `ThreadId` | `int` | `_tid` |
+### 5.2 Point_process (Phase 1)
 
-**Weight storage**
+**Integration columns** (CoreNEURON-compatible):
 
-| Tag | Type | Notes |
-|-----|------|-------|
-| `Value` | `double` | flat array; NetCon owns `weight_index` base |
+| Tag | C++ type | Default | Meaning |
+|-----|----------|---------|---------|
+| `field::Instance` | `int` | `-1` | Mechanism SoA row (`_i_instance`) |
+| `field::MechType` | `int` | `-1` | Mechanism type (`_type`) |
+| `field::ThreadId` | `int` | `-1` | Owning `NrnThread` id (`_tid`) |
 
-**NetCon row**
+**Handle typedefs:**
 
-| Tag | Type | Notes |
-|-----|------|-------|
-| `TargetPnt` | `int` | index into point_process SoA |
-| `WeightIndex` | `int` | into weights |
-| `WeightCount` | `int` | `pnt_receive_size` |
-| `Delay` | `double` | |
-| `Active` | `bool`/`int` | |
-| `PreSynIndex` | `int` | source presyn row, or -1 |
+| Name | Type |
+|------|------|
+| `PointProcess::handle` | `handle_interface<non_owning_identifier<storage>>` |
+| `PointProcess::owning_handle` | `handle_interface<owning_identifier<storage>>` |
 
-**PreSyn row**
+**Accessors on `handle_interface`:** `instance()`, `mech_type()`, `thread_id()`, plus `*_handle()` returning `data_handle` where useful for debugging / HOC bridges.
 
-| Tag | Type | Notes |
-|-----|------|-------|
-| `ThVar` | `data_handle<double>` or `int` row | prefer handle if already modern |
-| `Threshold` | `double` | |
-| `Gid` | `int` | |
-| `NcIndex` | `int` | start index in netcon array |
-| `NcCount` | `int` | fanout count |
+**Not in SoA (sidecars / dual-write legacy fields):** see §7.
 
-**SelfEvent row** (if queued structurally; else event pool)
+### 5.3 Weights (Phase 1)
 
-| Tag | Type | Notes |
-|-----|------|-------|
-| `TargetPnt` | `int` | |
-| `WeightIndex` | `int` | |
-| `Flag` | `double` | |
+**Integration columns:**
 
-### 5.3 HOC sidecars (not in integration columns)
+| Tag | C++ type | Default | Meaning |
+|-----|----------|---------|---------|
+| `field::Value` | `double` | `0.0` | One weight scalar |
 
-Keyed by `owning_handle` or stable id:
+One **row** = one scalar weight entry. A NetCon with `cnt = pnt_receive_size[type]` owns a **contiguous block** of `cnt` rows.
 
-- `Object* ob`
-- `IvocVect* tvec_`, recording state
-- `HocCommand* stmt_`
-- Cached `Section*` (invalidate on `tree_changed`)
+| Name | Type |
+|------|------|
+| `Weight::handle` / `Weight::owning_handle` | same pattern as Node |
+
+**Contiguity invariant (CoreNEURON-compatible):**
+
+```text
+weights[weight_index + k]  for k in [0, weight_count)
+```
+
+- Allocation API (Phase 1→2) must allocate **blocks** of size `weight_count` as consecutive rows.
+- Permutation of the weight container must either:
+  1. **Block-permute** (move whole NetCon groups and rewrite `NetCon::WeightIndex`), or
+  2. **Repack** at sort time into contiguous groups (preferred at `nrn_ensure_model_data_are_sorted`).
+- Freeing a NetCon frees its entire block (swap-with-last **block** or hole + repack).
+
+**Why not one SoA row per NetCon with runtime array dim?** Weight counts differ by target mechanism type (`pnt_receive_size`). A flat pool matches CoreNEURON export (`nrncore_write`) and GPU upload.
+
+**Hot-path access:** integer `weight_index` base (current row of first weight in the group), **not** a stable identifier, so delivery stays CoreNEURON-shaped. After any weight permute/repack, all `NetCon` weight indices are remapped. HOC `weight(i)` may use `data_handle<double>` obtained from the base row + array shift once the group is a single logical array, or `weights.get<Value>(weight_index + i)`.
+
+### 5.4 NetCon (Phase 2 — tags fixed now)
+
+| Tag | C++ type | Default | Meaning |
+|-----|----------|---------|---------|
+| `field::Target` | `int` | `-1` | Row in `PointProcess` storage (or sentinel) |
+| `field::WeightIndex` | `int` | `-1` | Base row in `Weight` storage |
+| `field::WeightCount` | `int` | `0` | `pnt_receive_size` for target type |
+| `field::Delay` | `double` | `1.0` | Delivery delay (ms) |
+| `field::Active` | `int` | `1` | `bool` as `int` (GPU-friendly, CoreNEURON style) |
+| `field::SrcPreSyn` | `int` | `-1` | Source PreSyn row, or `-1` if none |
+
+**Optional later:** `field::ObjectId` only if HOC identity must be recovered from a row without a sidecar map.
+
+**Event-queue identity:** `NetCon` remains a `DiscreteEvent` subclass for queue compatibility through Phase 2–3. The SoA row is the data plane; the C++ object is the control/HOC plane during dual-write. Long term the queued payload may shrink to `(type, row)` — not required for Phase 2 gate.
+
+### 5.5 PreSyn (Phase 3 — tags fixed now)
+
+| Tag | C++ type | Default | Meaning |
+|-----|----------|---------|---------|
+| `field::Threshold` | `double` | `10.0` | Spike threshold |
+| `field::Gid` | `int` | `-1` | Output gid or −1 |
+| `field::NcIndex` | `int` | `-1` | Start of fanout range in NetCon order array |
+| `field::NcCount` | `int` | `0` | Fanout count |
+| `field::OutputIndex` | `int` | `0` | CoreNEURON `output_index_` |
+| `field::ThVarRow` | `int` | `-1` | Optional denormalized node-voltage row for threshold scan; **canonical source remains `data_handle` in sidecar / dual-write `thvar_`** |
+| `field::ThreadId` | `int` | `-1` | Owning thread |
+
+**Fanout model (replaces `dil_`):**
+
+```text
+Global NetCon order array (or NetCon SoA already sorted by source):
+  netcons[NcIndex .. NcIndex+NcCount)
+
+On spike: for i in [0, NcCount): deliver netcons[NcIndex+i]
+```
+
+Matches CoreNEURON `nc_index_` / `nc_cnt_` into `netcon_in_presyn_order_`. At sort time, NetCons are (re)ordered by source PreSyn so ranges are contiguous.
+
+**Threshold source:** keep `data_handle<double>` (today’s `thvar_`) in the dual-write / sidecar plane. Optionally cache `ThVarRow` when the handle refers to node voltage for vectorized threshold checks.
+
+### 5.6 SelfEvent (Phase 4)
+
+SelfEvents are short-lived queue items. Prefer **not** a long-lived SoA of all SelfEvents; instead:
+
+| Field on event / pool object | Type | Meaning |
+|------------------------------|------|---------|
+| `target_pnt` | `int` | PointProcess row |
+| `weight_index` | `int` | Into weights (same base as NetCon or NULL weights) |
+| `flag` | `double` | NET_RECEIVE flag |
+
+If a structural pool is useful later, tags match the above. Gate is `pnt_receive(weight_index)` migration (§9).
+
+### 5.7 Tag summary by phase
+
+| Phase | Container | Gate |
+|-------|-----------|------|
+| **0** | Spec (this doc) | Spec reviewed |
+| **1** | `PointProcess` + `Weight` | Handles survive permute; unit test |
+| **2** | `NetCon` SoA; HOC `weight()` → flat weights | CPU ringtest delivery |
+| **3** | `PreSyn` fanout `NcIndex`/`NcCount` | CPU spike parity @ 100 ms |
+| **4** | SelfEvent indices; `pnt_receive` by weight index | ExpSyn @ 1.025 ms CPU |
+| **5** | (gpu-native track) net buffers | GPU parity — **not this branch** |
 
 ---
 
 ## 6. Thread slicing
 
-Mirror node model:
+### 6.1 Layout
+
+Mirror nodes:
 
 ```text
-Global SoA:  [ row 0 | row 1 | ... | row N-1 ]
-             |← thread 0 →|← thread 1 →|
+Global PointProcess SoA:  [  thread0 rows  |  thread1 rows  | ... ]
+Global Weight SoA:        [  thread0 block |  thread1 block | ... ]
+Global NetCon SoA:        [  thread0 rows  |  thread1 rows  | ... ]
+Global PreSyn SoA:        [  thread0 rows  |  thread1 rows  | ... ]
 ```
 
-Per `NrnThread` (new fields, names TBD):
+### 6.2 Fields
 
-- `_pntproc_offset`, `_pntproc_count`
-- `_netcon_offset`, `_netcon_count`
-- `_presyn_offset`, `_presyn_count`
-- `_weight_offset`, `_weight_count` (if weights partitioned per thread)
+**On `NrnThread` (or `neuron::cache::Thread` — prefer cache for offsets that only matter when sorted):**
 
-Permutation chosen so each thread region stays contiguous after `nrn_threads_create` / cell partitioning.
+| Field | Meaning |
+|-------|---------|
+| `_pntproc_offset` / `pntproc_count` | Slice of PointProcess storage |
+| `_weight_offset` / `weight_count` | Slice of Weight storage |
+| `_netcon_offset` / `netcon_count` | Slice of NetCon storage |
+| `_presyn_offset` / `presyn_count` | Slice of PreSyn storage |
+
+**Decision (open Q1 resolved):** Weights are **partitioned per thread** (CoreNEURON `nt.weights` / `nt.n_weight`). Cross-thread NetCon is already restricted; weight blocks live on the **target** thread of the Point_process.
+
+**Hot-path address:**
+
+```cpp
+double* w = weight_storage.get_field_data<field::Value>() + nt.weight_offset;
+// delivery uses absolute weight_index into global storage, or local index
+//   local = absolute - nt.weight_offset
+```
+
+Absolute global indices simplify dual-write; local indices match CoreNEURON. Prefer **absolute** during dual-write, document conversion at nrncore export.
+
+### 6.3 When slices are computed
+
+During `nrn_ensure_model_data_are_sorted()` / network sort pass:
+
+1. Assign each PointProcess to a thread (from cell partition / existing `_vnt`).
+2. Permute PointProcess so thread regions are contiguous; set offsets.
+3. Order NetCons by `(src_presyn, …)`; place on target thread of `Target`.
+4. Pack weight blocks per NetCon into the target thread’s weight region; rewrite `WeightIndex`.
+5. Order PreSyn by thread; build `NcIndex`/`NcCount` into the NetCon order.
 
 ---
 
-## 7. Handle API (wrappers)
+## 7. HOC sidecar policy
 
-| HOC-facing type | Wrapper holds | Example accessor |
-|-----------------|---------------|------------------|
-| `Point_process` | `PointProcess::owning_handle` | `prop()` → resolve via `_type` + `_i_instance` |
-| `NetCon` | `NetCon::owning_handle` | `weight(i)` → `weights[weight_index+i]` |
-| `PreSyn` | `PreSyn::owning_handle` | `threshold` → SoA column |
+### 7.1 Principle
 
-**CPU delivery signature (target):**
+Integration columns are the **only** data the hot path and (future) GPU need.  
+Interpreter / recording / identity live in **sidecars** keyed by stable id, **not** a second pointer graph that owns network topology.
 
-```cpp
-pnt_receive[type](pnt_handle, weight_index, flag);
-```
+### 7.2 Keying
 
-Align with CoreNEURON; migrate from `(Point_process*, double* _args, double flag)`.
+| Key | Use |
+|-----|-----|
+| `owning_handle` / `non_owning_identifier_without_container` | Primary: survives permute; dies with row |
+| HOC `Object*` | External identity; points at wrapper that holds `owning_handle` |
+
+Do **not** key sidecars by current SoA row integer alone without a stable id.
+
+### 7.3 Sidecar contents by entity
+
+**Point_process**
+
+| Field | Notes |
+|-------|-------|
+| `Object* ob` | HOC object |
+| `Section* sec`, `Node* node` | Location; invalidate on topology change |
+| `Prop* prop` | Mechanism instance bridge during dual-write |
+| `void* presyn_`, `nvi_`, `_vnt` | Until indices replace them |
+
+During Phase 1 dual-write, the existing `struct Point_process` **is** the sidecar + legacy shell; SoA holds Instance/MechType/ThreadId. Migration moves fields out of the struct into maps/`owning_handle` wrappers over time.
+
+**NetCon**
+
+| Field | Notes |
+|-------|-------|
+| `Object* obj_` | HOC |
+| `PreSyn* src_` | Dual-write until `SrcPreSyn` index |
+| `Point_process* target_` | Dual-write until `Target` index |
+| `double* weight_` | Dual-write alias into Weight SoA (then removed) |
+
+**PreSyn**
+
+| Field | Notes |
+|-------|-------|
+| `data_handle<double> thvar_` | **Keep** as canonical threshold source |
+| `Object* osrc_`, `Section* ssrc_` | Source identity |
+| `IvocVect* tvec_`, `idvec_`, `HocCommand* stmt_` | Recording |
+| `NrnThread* nt_`, `hoc_Item* hi_th_` | Thread / threshold list |
+| `NetConPList dil_` | Dual-write until `NcIndex`/`NcCount` |
+| MPI / MUSIC / multisend unions | Sidecar or later phase |
+
+### 7.4 What must never be duplicated as “second graph”
+
+- Do not keep a parallel `std::vector<NetCon*>` fanout **and** `NcIndex`/`NcCount` as equally authoritative after Phase 3. One source of truth: SoA ranges.
+- Do not allocate per-NetCon `new double[cnt]` after weight migration completes.
 
 ---
 
 ## 8. Invalidation and sorting
 
-- Topology / `define_shape` → `mark_as_unsorted()` on network containers (like `node_data()`).
-- `tree_changed` → refresh sidecar caches; optional full network reorder pass.
-- `psolve` / integration entry: `nrn_ensure_model_data_are_sorted()` includes network containers when fanout order matters.
-- **Freeze policy:** same frozen-token pattern as mechanisms during sorted integration phases (TBD).
+### 8.1 Unsorted triggers
+
+| Event | Action |
+|-------|--------|
+| Create/destroy PointProcess, NetCon, PreSyn | `mark_as_unsorted()` on affected network container(s) |
+| NetCon retarget / weight count change | weights + netcons unsorted |
+| Topology / `define_shape` / `tree_changed` | Invalidate sidecar caches (`Section*`, node location); mark network unsorted if thread membership may change |
+| `nrn_threads_create` / repartition | Full network reorder |
+| Mechanism permute that changes Instance rows | Update PointProcess `Instance` column (or mark unsorted and fix at sort) |
+
+Each network `storage` registers `set_unsorted_callback` → `neuron::cache::model.reset()` (same as nodes).
+
+### 8.2 Sort / freeze policy
+
+Extend `nrn_ensure_model_data_are_sorted()`:
+
+1. Issue frozen tokens for node, mechanisms, **and** network containers.
+2. If any network container is unsorted, run network permute/repack (§6.3).
+3. Hold frozen tokens through integration like mechanisms.
+
+**Freeze:** same `frozen_token_type` pattern — no row insert/delete while sorted token is held for that container.
+
+### 8.3 Handle death
+
+| Situation | Behavior |
+|-----------|----------|
+| `owning_handle` destroyed | Row freed; non-owning handles / `data_handle`s to that row become invalid (`operator bool` false) |
+| PointProcess destroyed while NetCons target it | Existing NetCon disconnect rules; `Target = -1` |
+| Weight block freed | NetCon weight fields cleared; HOC weight access errors |
+| Node voltage dies under `thvar_` | Existing `notify_when_handle_dies` path |
+
+### 8.4 Permutation vs mechanism sort (open Q2 resolved)
+
+**Order inside global sort:**
+
+1. Nodes (existing).
+2. Mechanisms (existing) — Instance rows stable for this step’s PointProcess fixup.
+3. **Network:** PointProcess (by thread), Weights (repack by NetCon), NetCon (by src PreSyn / thread), PreSyn (by thread) + fanout ranges.
+
+PointProcess `Instance` is rewritten if mechanism permute moved rows (stable mech handles preferred when available).
 
 ---
 
-## 9. Migration strategy
+## 9. `pnt_receive` signature migration
+
+### 9.1 Today
+
+```cpp
+typedef void (*pnt_receive_t)(Point_process*, double* weight, double flag);
+// POINT_RECEIVE(type, tar, w, f) (*pnt_receive[type])(tar, w, f)
+```
+
+### 9.2 Target (align CoreNEURON)
+
+```cpp
+// Conceptual end state
+void pnt_receive(int type, int pnt_instance /* or pnt row */, int weight_index, double flag);
+// body loads weights via global/thread weight base + weight_index
+```
+
+### 9.3 Migration steps
 
 | Step | Action |
 |------|--------|
-| M1 | Dual-write: create SoA row when creating legacy object |
-| M2 | Dual-read: hot path reads SoA; HOC still works via wrapper |
-| M3 | Remove hot-path pointer fields (`weight_`, `dil_` iteration) |
-| M4 | Sidecars only for interpreter |
+| M1 | Dual-write weights into SoA; `NetCon::weight_` points into SoA (`data()` + index) so existing `pnt_receive` still gets `double*` |
+| M2 | Delivery uses weight_index internally; still materializes `double*` for generated code |
+| M3 | Codegen / MOD translation accepts weight_index (Phase 4); legacy pointer form kept until mods regenerated |
+| M4 | Drop per-NetCon heap weights |
 
-Order: **weights + Point_process → NetCon → PreSyn → SelfEvent**.
-
----
-
-## 10. Phase 0 deliverables (checklist)
-
-- [ ] Final field tag list per container (section 5.2)
-- [ ] `Model` ownership and file layout (`src/neuron/container/network/`)
-- [ ] Handle typedef names (`PointProcess::handle`, …)
-- [ ] Thread offset fields on `NrnThread` / multicore
-- [ ] Sidecar map design + invalidation rules
-- [ ] `pnt_receive` signature migration plan
-- [ ] SaveState / BBSaveState impact (minimal note for Phase 2+)
-- [ ] Test plan: unit (permute), integration (ringtest CPU spikes)
+Phase 1 only needs M1 scaffolding (container + optional pointer into SoA). **No MOD codegen changes in Phase 1.**
 
 ---
 
-## 11. Phase 1 first code (after spec sign-off)
+## 10. SaveState / BBSaveState (note for Phase 2+)
+
+| Concern | Impact |
+|---------|--------|
+| `NetConSave` weight pointer tables | Today maps `double* → NetCon*`. After SoA, key by `weight_index` or stable NetCon id. Call `NetConSave::invalid()` on weight repack. |
+| `PreSynSave` / `hi_index_` | Keep index tables; rebuild on unsorted. |
+| BBSaveState fanout | Uses `PreSyn::fanout`; switch to `NcIndex`/`NcCount` in Phase 3. |
+| Binary layout | Do not freeze on-disk format on intermediate dual-write; document stable index fields when dual-write ends. |
+
+Minimal Phase 1 impact: none if PointProcess/Weight SoA is not yet referenced by SaveState.
+
+---
+
+## 11. Handle API and HOC wrappers
+
+| HOC-facing type | Wrapper holds | Example |
+|-----------------|---------------|---------|
+| Point process object | `PointProcess::owning_handle` (+ legacy `Point_process*` during dual-write) | `instance()` → mech row |
+| `NetCon` | `NetCon::owning_handle` | `weight(i)` → `weights[WeightIndex+i]` |
+| `PreSyn` | `PreSyn::owning_handle` | `threshold` ↔ SoA column; `thvar_` stays `data_handle` |
+
+**CPU delivery target:**
+
+```cpp
+// After Phase 4
+pnt_receive[type](/* target identity */, weight_index, flag);
+```
+
+---
+
+## 12. Migration strategy (execution order)
+
+| Step | Action |
+|------|--------|
+| M1 dual-write | Allocate SoA row when creating legacy object |
+| M2 dual-read | Hot path prefers SoA; HOC via wrapper/legacy |
+| M3 remove hot-path pointers | Drop `weight_` heap, `dil_` iteration |
+| M4 sidecars only | Interpreter extras only in sidecars |
+
+**Order:** weights + Point_process → NetCon → PreSyn → SelfEvent.
+
+---
+
+## 13. Test plan
+
+### 13.1 Unit (Phase 1)
+
+| Test | Expectation |
+|------|-------------|
+| Create N PointProcess rows; set Instance/MechType/ThreadId | Round-trip via handles |
+| `apply_reverse_permutation` on PointProcess storage | Handle logical values unchanged; storage order may change |
+| Create weight block of size K; permute | Values via handles stable |
+| Destroy `owning_handle` | Non-owning handle / data_handle invalid |
+| `find_container_info` / `data_handle` promote | Weight `Value` and PointProcess fields discoverable |
+
+### 13.2 Integration (Phase 2+)
+
+| Gate | Command / check |
+|------|-----------------|
+| Phase 2 | CPU ringtest delivery (NetCon → ExpSyn) |
+| Phase 3 | CPU spike parity @ 100 ms vs baseline |
+| Phase 4 | ExpSyn receive @ 1.025 ms CPU |
+| Regression | `ctest` network-related; SaveState smoke if touched |
+
+### 13.3 Non-tests on this branch
+
+- GPU `net_buf_receive`, ringtest GPU network buffers.
+
+---
+
+## 14. Phase 0 deliverables checklist
+
+- [x] Final field tag list per container (§5.2–5.6)
+- [x] `Model` ownership and file layout (`src/neuron/container/network/`)
+- [x] Handle typedef names (`PointProcess::handle`, `Weight::owning_handle`, …)
+- [x] Thread offset fields on `NrnThread` / cache (§6)
+- [x] Sidecar map design + invalidation rules (§7–§8)
+- [x] `pnt_receive` signature migration plan (§9)
+- [x] SaveState / BBSaveState impact note (§10)
+- [x] Test plan (§13)
+
+---
+
+## 15. Phase 1 code scaffold
 
 ```
 src/neuron/container/network/
-  point_process.hpp       # field tags, storage typedef, handle API
-  point_process_data.cpp  # storage impl hooks
-  weights.hpp
+  point_process.hpp       # field tags, storage, handle API
+  weights.hpp             # field tags, storage, handle API
 ```
 
-Hook point: point process allocation in existing `nrn_point_process` / mechanism insert path — allocate SoA row alongside today's `Prop`.
+Hook points (implementation after scaffold):
+
+1. `Model` members + accessors + `find_container_info` + unsorted callbacks.
+2. Unit test: permute survival.
+3. Later: `nrn_point_process` / NetCon ctor dual-write (not required for empty scaffold compile).
 
 ---
 
-## 12. Open questions
+## 16. Resolved design questions
 
-1. Global vs per-thread weight pool — CoreNEURON uses per-thread `weights`; confirm for NEURON MPI.
-2. When to permute network SoA relative to mechanism permute (`nrn_sort_mech_data`).
-3. `NetCon` as `DiscreteEvent` subclass — keep for queue compatibility or separate event index?
-4. `InputPreSyn` split — Phase 3 or later MPI milestone?
+| # | Question | Decision |
+|---|----------|----------|
+| 1 | Global vs per-thread weight pool | **Per-thread slices** of one global SoA (CoreNEURON-compatible); absolute indices during dual-write OK |
+| 2 | Network permute vs mechanism permute | **After** nodes + mechanisms inside `nrn_ensure_model_data_are_sorted` |
+| 3 | NetCon as `DiscreteEvent` | **Keep subclass** through Phase 2–3 for queue compatibility |
+| 4 | `InputPreSyn` | **Defer** to post–Phase 3 MPI milestone |
+| 5 | Weight contiguity under permute | **Repack at sort** into contiguous per-NetCon blocks; rewrite `WeightIndex` |
+| 6 | PreSyn threshold | **Keep `data_handle`**; optional `ThVarRow` cache for scans |
 
 ---
 
-*Expand this document into the authoritative Phase 0 spec in the first `cpu_net_soa` session.*
+## 17. Out-of-scope reminder
+
+Do **not** implement GPU `net_buf_receive` on `local/cpu-network-soa`. Stage 1 `NetReceiveBuffer` on the gpu-native branch remains a valid pattern; indexing will align after SoA merges.
+
+---
+
+*This document is the Phase 0 gate. Phase 1 implements PointProcess + Weight containers and proves handles survive permutation.*

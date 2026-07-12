@@ -13,7 +13,10 @@ ModelMemoryUsage memory_usage(const Model& model) {
     auto mechanisms = StorageMemoryUsage();
     model.apply_to_mechanisms([&mechanisms](const auto& md) { mechanisms += memory_usage(md); });
 
-    return {nodes, mechanisms};
+    auto point_processes = memory_usage(model.point_processes());
+    auto weights = memory_usage(model.weights());
+
+    return {nodes, mechanisms, point_processes, weights};
 }
 
 cache::ModelMemoryUsage memory_usage(const std::optional<neuron::cache::Model>& model) {
@@ -116,6 +119,15 @@ std::string format_memory_usage(const MemoryUsage& usage) {
     os << "  mechanisms \n";
     os << "    data                " << format_memory_usage(model.mechanisms.heavy_data) << "\n";
     os << "    stable_identifiers  " << format_memory_usage(model.mechanisms.stable_identifiers)
+       << "\n";
+    os << "  network::PointProcess \n";
+    os << "    data                " << format_memory_usage(model.point_processes.heavy_data)
+       << "\n";
+    os << "    stable_identifiers  "
+       << format_memory_usage(model.point_processes.stable_identifiers) << "\n";
+    os << "  network::Weight \n";
+    os << "    data                " << format_memory_usage(model.weights.heavy_data) << "\n";
+    os << "    stable_identifiers  " << format_memory_usage(model.weights.stable_identifiers)
        << "\n";
     os << "cache::Model \n";
     os << "  threads               " << format_memory_usage(cache_model.threads) << "\n";

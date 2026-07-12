@@ -2,6 +2,8 @@
 #include "neuron/cache/model_data.hpp"
 #include "neuron/container/mechanism_data.hpp"
 #include "neuron/container/memory_usage.hpp"
+#include "neuron/container/network/point_process.hpp"
+#include "neuron/container/network/weights.hpp"
 #include "neuron/container/node_data.hpp"
 #include "neuron/model_data_fwd.hpp"
 
@@ -29,6 +31,26 @@ struct Model {
      */
     container::Node::storage const& node_data() const {
         return m_node_data;
+    }
+
+    /** @brief Access SoA storage for Point_process integration fields.
+     *  @see doc/network-soa-phase0.md
+     */
+    container::network::PointProcess::storage& point_processes() {
+        return m_point_processes;
+    }
+    container::network::PointProcess::storage const& point_processes() const {
+        return m_point_processes;
+    }
+
+    /** @brief Access SoA storage for the flat NetCon weight pool.
+     *  @see doc/network-soa-phase0.md
+     */
+    container::network::Weight::storage& weights() {
+        return m_weights;
+    }
+    container::network::Weight::storage const& weights() const {
+        return m_weights;
     }
 
     /** @brief Apply a function to each non-null Mechanism.
@@ -120,6 +142,8 @@ struct Model {
     void shrink_to_fit() {
         m_node_data.shrink_to_fit();
         apply_to_mechanisms([](auto& mech_data) { mech_data.shrink_to_fit(); });
+        m_point_processes.shrink_to_fit();
+        m_weights.shrink_to_fit();
     }
 
   private:
@@ -150,6 +174,12 @@ struct Model {
      *  does not invalidate pointers to container::Mechanism::storage.
      */
     std::vector<std::unique_ptr<container::Mechanism::storage>> m_mech_data{};
+
+    /** @brief Network SoA: Point_process integration rows (Phase 1). */
+    container::network::PointProcess::storage m_point_processes{};
+
+    /** @brief Network SoA: flat weight pool (Phase 1). */
+    container::network::Weight::storage m_weights{};
 
     /**
      * @brief Backing storage for defer_delete helper.
