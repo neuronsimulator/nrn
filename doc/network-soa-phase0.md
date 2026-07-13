@@ -302,7 +302,7 @@ If a structural pool is useful later, tags match the above. Gate is `pnt_receive
 |-------|-----------|------|
 | **0** | Spec (this doc) | Spec reviewed |
 | **1** | `PointProcess` + `Weight` | Handles survive permute; dual-write on create/destroy |
-| **2** | `NetCon` SoA; HOC `weight()` → flat weights | CPU ringtest delivery |
+| **2** | `NetCon` SoA; HOC `weight()` → flat Weight SoA | dual-write; handles survive permute |
 | **3** | `PreSyn` fanout `NcIndex`/`NcCount` | CPU spike parity @ 100 ms |
 | **4** | SelfEvent indices; `pnt_receive` by weight index | ExpSyn @ 1.025 ms CPU |
 | **5** | (gpu-native track) net buffers | GPU parity — **not this branch** |

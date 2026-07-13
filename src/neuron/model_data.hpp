@@ -2,6 +2,7 @@
 #include "neuron/cache/model_data.hpp"
 #include "neuron/container/mechanism_data.hpp"
 #include "neuron/container/memory_usage.hpp"
+#include "neuron/container/network/netcon.hpp"
 #include "neuron/container/network/point_process.hpp"
 #include "neuron/container/network/weights.hpp"
 #include "neuron/container/node_data.hpp"
@@ -51,6 +52,16 @@ struct Model {
     }
     container::network::Weight::storage const& weights() const {
         return m_weights;
+    }
+
+    /** @brief Access SoA storage for NetCon integration fields (Phase 2).
+     *  @see doc/network-soa-phase0.md §5.4
+     */
+    container::network::NetCon::storage& netcons() {
+        return m_netcons;
+    }
+    container::network::NetCon::storage const& netcons() const {
+        return m_netcons;
     }
 
     /** @brief Apply a function to each non-null Mechanism.
@@ -144,6 +155,7 @@ struct Model {
         apply_to_mechanisms([](auto& mech_data) { mech_data.shrink_to_fit(); });
         m_point_processes.shrink_to_fit();
         m_weights.shrink_to_fit();
+        m_netcons.shrink_to_fit();
     }
 
   private:
@@ -180,6 +192,9 @@ struct Model {
 
     /** @brief Network SoA: flat weight pool (Phase 1). */
     container::network::Weight::storage m_weights{};
+
+    /** @brief Network SoA: NetCon integration rows (Phase 2). */
+    container::network::NetCon::storage m_netcons{};
 
     /**
      * @brief Backing storage for defer_delete helper.

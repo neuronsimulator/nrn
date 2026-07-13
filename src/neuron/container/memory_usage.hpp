@@ -82,11 +82,15 @@ struct ModelMemoryUsage {
     /// @brief Network SoA: flat weight pool.
     StorageMemoryUsage weights{};
 
+    /// @brief Network SoA: NetCon integration rows.
+    StorageMemoryUsage netcons{};
+
     const ModelMemoryUsage& operator+=(const ModelMemoryUsage& other) {
         nodes += other.nodes;
         mechanisms += other.mechanisms;
         point_processes += other.point_processes;
         weights += other.weights;
+        netcons += other.netcons;
 
         return *this;
     }
@@ -96,6 +100,7 @@ struct ModelMemoryUsage {
         total += mechanisms.compute_total();
         total += point_processes.compute_total();
         total += weights.compute_total();
+        total += netcons.compute_total();
 
         return total;
     }
@@ -199,6 +204,7 @@ struct MemoryUsageSummary {
         add(model.mechanisms);
         add(model.point_processes);
         add(model.weights);
+        add(model.netcons);
     }
 
     void add(const cache::ModelMemoryUsage& model) {

@@ -1,3 +1,4 @@
+#include "neuron/container/network/netcon.hpp"
 #include "neuron/container/network/point_process.hpp"
 #include "neuron/container/network/weight_block.hpp"
 #include "neuron/container/network/weights.hpp"
@@ -192,6 +193,62 @@ TEST_CASE("SOA-backed Weight structure", "[Neuron][data_structures][network][wei
             heap[1] = 9.0;
             Weight::mirror_weights_to_soa(rows, heap, 3);
             REQUIRE(rows[1].value() == 9.0);
+        }
+    }
+}
+
+TEST_CASE("SOA-backed NetCon structure", "[Neuron][data_structures][network][netcon]") {
+    auto& storage = neuron::model().netcons();
+    auto& wstore = neuron::model().weights();
+    REQUIRE(storage.size() == 0);
+
+    GIVEN("Default-constructed NetCon SoA rows") {
+        NetCon::owning_handle a{storage};
+        NetCon::owning_handle b{storage};
+        THEN("Defaults match field tags") {
+            REQUIRE(a.target() == -1);
+            REQUIRE(a.weight_index() == -1);
+            REQUIRE(a.weight_count() == 0);
+            REQUIRE(a.delay() == 1.0);
+            REQUIRE(a.active() == 1);
+            REQUIRE(a.src_presyn() == -1);
+            REQUIRE(storage.size() == 2);
+        }
+        THEN("Fields round-trip and survive reverse permutation") {
+            a.target() = 3;
+            a.weight_index() = 10;
+            a.weight_count() = 2;
+            a.delay() = 0.5;
+            a.active() = 0;
+            b.target() = 7;
+            b.delay() = 2.0;
+            {
+                auto token = storage.issue_frozen_token();
+                storage.mark_as_sorted(token);
+            }
+            std::vector<std::size_t> perm{0, 1};
+            std::rotate(perm.begin(), std::next(perm.begin()), perm.end());
+            storage.apply_reverse_permutation(std::move(perm));
+            REQUIRE(a.target() == 3);
+            REQUIRE(a.weight_index() == 10);
+            REQUIRE(a.weight_count() == 2);
+            REQUIRE(a.delay() == 0.5);
+            REQUIRE(a.active() == 0);
+            REQUIRE(b.target() == 7);
+            REQUIRE(b.delay() == 2.0);
+        }
+    }
+
+    GIVEN("Weight block linked like Phase 2 dual-write") {
+        auto wrows = Weight::allocate_weight_rows(2, nullptr);
+        wrows[0].value() = 0.1;
+        wrows[1].value() = 0.2;
+        NetCon::owning_handle nc{storage};
+        nc.weight_index() = static_cast<int>(wrows[0].current_row());
+        nc.weight_count() = 2;
+        THEN("WeightIndex points at first SoA weight row") {
+            REQUIRE(wstore.get<Weight::field::Value>(nc.weight_index()) == 0.1);
+            REQUIRE(wstore.get<Weight::field::Value>(nc.weight_index() + 1) == 0.2);
         }
     }
 }

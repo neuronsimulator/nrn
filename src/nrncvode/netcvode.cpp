@@ -118,8 +118,12 @@ double nrn_netcon_get_delay(NetCon* nc) {
 }
 void nrn_netcon_set_delay(NetCon* nc, double d) {
     nc->delay_ = d;
+    nc->soa_sync();
 }
 int nrn_netcon_weight(NetCon* nc, double** pw) {
+    // SoA is HOC source of truth when weight_soa_ is populated; keep heap current
+    // for MOD code that writes through the returned pointer.
+    nc->weights_soa_to_heap();
     *pw = nc->weight_;
     return nc->cnt_;
 }
@@ -158,6 +162,7 @@ int nrn_netcon_info(NetCon* nc, double** pw, Point_process** target, double** th
     *target = (nc->target_) ? nc->target_ : (Point_process*) 0;
     *th = (nc->src_) ? &(nc->src_->threshold_) : (double*) 0;
     *del = &nc->delay_;
+    nc->weights_soa_to_heap();
     *pw = nc->weight_;
     return nc->cnt_;
 }
@@ -644,13 +649,15 @@ static double nc_setpost(void* v) {
     }
     if (d->cnt_ != cnt) {
         d->cnt_ = cnt;
-        delete[] std::exchange(d->weight_, new double[d->cnt_]);
+        delete[] d->weight_;
+        d->weight_ = d->cnt_ ? new double[d->cnt_] : nullptr;
         for (int i = 0; i < d->cnt_; ++i) {
             d->weight_[i] = 0.0;
         }
         d->weight_soa_ =
             neuron::container::network::Weight::allocate_weight_rows(d->cnt_, d->weight_);
     }
+    d->soa_sync();
     return 0.;
 }
 
@@ -668,6 +675,7 @@ static double nc_active(void* v) {
     bool a = d->active_;
     if (d->target_ && ifarg(1)) {
         d->active_ = bool(chkarg(1, 0, 1));
+        d->soa_sync();
     }
     hoc_return_type_code = HocReturnType::boolean;
     return double(a);
@@ -780,6 +788,7 @@ static void steer_val(void* v) {
     Symbol* s = hoc_spop();
     if (strcmp(s->name, "delay") == 0) {
         d->chksrc();
+        // HOC writes delay_; soa_sync mirrors into NetCon SoA.
         hoc_pushpx(&d->delay_);
         d->src_->use_min_delay_ = 0;
     } else if (strcmp(s->name, "weight") == 0) {
@@ -788,7 +797,12 @@ static void steer_val(void* v) {
             s->arayinfo->sub[0] = d->cnt_;
             index = hoc_araypt(s, SYMBOL);
         }
-        hoc_pushpx(d->weight_ + index);
+        // Phase 2: HOC weight() steers into flat Weight SoA when dual-write rows exist.
+        if (index >= 0 && index < static_cast<int>(d->weight_soa_.size())) {
+            hoc_push(d->weight_soa_[index].value_handle());
+        } else {
+            hoc_pushpx(d->weight_ + index);
+        }
     } else if (strcmp(s->name, "x") == 0) {
         static double dummy = 0.;
         d->chksrc();
@@ -2984,7 +2998,11 @@ void NetCon::deliver(double tt, NetCvode* ns, NrnThread* nt) {
 
     // printf("NetCon::deliver t=%g tt=%g %s\n", t, tt, hoc_object_name(target_->ob));
     STATISTICS(netcon_deliver_);
+    // Weight SoA is HOC source of truth; heap is the pnt_receive buffer.
+    weights_soa_to_heap();
     POINT_RECEIVE(type, target_, weight_, 0);
+    // Capture any weight mutations by NET_RECEIVE / MOD code.
+    weights_heap_to_soa();
     if (errno) {
         if (nrn_errno_check(type)) {
             hoc_warning("errno set during NetCon deliver to NET_RECEIVE", (char*) 0);
@@ -3000,7 +3018,9 @@ void NetCon::pgvts_deliver(double tt, NetCvode* ns) {
     assert(target_);
     int type = target_->prop->_type;
     STATISTICS(netcon_deliver_);
+    weights_soa_to_heap();
     POINT_RECEIVE(type, target_, weight_, 0);
+    weights_heap_to_soa();
     if (errno) {
         if (nrn_errno_check(type)) {
             hoc_warning("errno set during NetCon deliver to NET_RECEIVE", (char*) 0);
@@ -4704,6 +4724,43 @@ void DiscreteEvent::savestate_write(FILE* f) {
     fprintf(f, "%d\n", DiscreteEventType);
 }
 
+void NetCon::weights_soa_to_heap() {
+    if (!weight_ || weight_soa_.empty()) {
+        return;
+    }
+    auto const n = std::min(cnt_, static_cast<int>(weight_soa_.size()));
+    for (int i = 0; i < n; ++i) {
+        weight_[i] = weight_soa_[i].value();
+    }
+}
+
+void NetCon::weights_heap_to_soa() {
+    if (!weight_ || weight_soa_.empty()) {
+        return;
+    }
+    neuron::container::network::Weight::mirror_weights_to_soa(weight_soa_, weight_, cnt_);
+}
+
+void NetCon::soa_sync() {
+    _soa.delay() = delay_;
+    _soa.active() = active_ ? 1 : 0;
+    _soa.weight_count() = cnt_;
+    if (target_) {
+        // Point_process dual-write row (Phase 1).
+        _soa.target() = static_cast<int>(target_->_soa.current_row());
+    } else {
+        _soa.target() = -1;
+    }
+    // PreSyn SoA is Phase 3; reverse edge stays -1 until then.
+    _soa.src_presyn() = -1;
+    if (!weight_soa_.empty()) {
+        _soa.weight_index() = static_cast<int>(weight_soa_.front().current_row());
+        weights_heap_to_soa();
+    } else {
+        _soa.weight_index() = -1;
+    }
+}
+
 NetCon::NetCon(PreSyn* src, Object* target) {
     NetConSave::invalid();
     obj_ = nullptr;
@@ -4720,6 +4777,7 @@ NetCon::NetCon(PreSyn* src, Object* target) {
         weight_ = new double[cnt_];
         weight_[0] = 0.0;
         weight_soa_ = neuron::container::network::Weight::allocate_weight_rows(cnt_, weight_);
+        soa_sync();
         return;
     }
     target_ = ob2pntproc(target);
@@ -4739,6 +4797,7 @@ NetCon::NetCon(PreSyn* src, Object* target) {
         }
         weight_soa_ = neuron::container::network::Weight::allocate_weight_rows(cnt_, weight_);
     }
+    soa_sync();
 }
 
 NetCon::~NetCon() {
@@ -4749,6 +4808,7 @@ NetCon::~NetCon() {
         delete[] weight_;
     }
     weight_soa_.clear();
+    // _soa owning_handle frees the NetCon SoA row.
 #if DISCRETE_EVENT_OBSERVER
     if (target_) {
         ObjObservable::Detach(target_->ob, this);
@@ -4771,6 +4831,7 @@ void NetCon::rmsrc() {
         }
     }
     src_ = nullptr;
+    soa_sync();
 }
 
 void NetCon::replace_src(PreSyn* p) {
@@ -4780,6 +4841,7 @@ void NetCon::replace_src(PreSyn* p) {
         src_->dil_.push_back(this);
         src_->use_min_delay_ = 0;
     }
+    soa_sync();
 }
 
 DiscreteEvent* NetCon::savestate_save() {

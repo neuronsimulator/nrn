@@ -3,7 +3,9 @@
 #undef check
 
 #include "neuron/container/data_handle.hpp"
+#include "neuron/container/network/netcon.hpp"
 #include "neuron/container/network/weight_block.hpp"
+#include "neuron/model_data.hpp"
 #include "nrnmpi.h"
 #include "nrnneosm.h"
 #include "pool.hpp"
@@ -111,6 +113,13 @@ class NetCon: public DiscreteEvent {
     void replace_src(PreSyn*);
     virtual void disconnect(Observable*);
 
+    /** @brief Sync legacy NetCon fields into NetCon + Weight SoA (Phase 2). */
+    void soa_sync();
+    /** @brief Copy Weight SoA values → heap weight_ (before pnt_receive). */
+    void weights_soa_to_heap();
+    /** @brief Copy heap weight_ → Weight SoA (after pnt_receive / MOD writes). */
+    void weights_heap_to_soa();
+
     double delay_;
     PreSyn* src_;
     Point_process* target_;
@@ -120,6 +129,8 @@ class NetCon: public DiscreteEvent {
     bool active_;
     /** @brief Phase 1 dual-write owners for Weight SoA rows (see weight_block.hpp). */
     std::vector<neuron::container::network::Weight::owning_handle> weight_soa_{};
+    /** @brief Phase 2 dual-write: NetCon integration row. */
+    neuron::container::network::NetCon::owning_handle _soa{neuron::model().netcons()};
 
     static unsigned long netcon_send_active_;
     static unsigned long netcon_send_inactive_;
