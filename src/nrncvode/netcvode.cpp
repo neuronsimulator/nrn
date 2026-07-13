@@ -2275,7 +2275,7 @@ void NetCvode::remove_event(TQItem* q, int tid) {
 namespace {
 /** Phase 4: fill SelfEvent dual-write index fields from weight* / Point_process. */
 void selfevent_set_indices(SelfEvent* se, Point_process* pnt, double* weight) {
-    se->target_row_ = pnt ? static_cast<int>(pnt->_soa.current_row()) : -1;
+    se->target_row_ = nrn_point_process_soa_row(pnt);
     se->weight_index_ = -1;
     if (!weight) {
         return;
@@ -3372,7 +3372,7 @@ DiscreteEvent* SelfEvent::savestate_read(FILE* f) {
     se->target_ = SelfEvent::index2pp(pptype, ppindex);
     se->weight_ = nullptr;
     se->weight_index_ = -1;
-    se->target_row_ = se->target_ ? static_cast<int>(se->target_->_soa.current_row()) : -1;
+    se->target_row_ = nrn_point_process_soa_row(se->target_);
     if (ncindex >= 0) {
         NetCon* nc = NetConSave::index2netcon(ncindex);
         se->weight_ = nc->weight_;
@@ -4922,7 +4922,7 @@ void NetCon::soa_sync() {
     _soa.weight_count() = cnt_;
     if (target_) {
         // Point_process dual-write row (Phase 1).
-        _soa.target() = static_cast<int>(target_->_soa.current_row());
+        _soa.target() = nrn_point_process_soa_row(target_);
     } else {
         _soa.target() = -1;
     }

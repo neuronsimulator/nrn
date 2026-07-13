@@ -1,5 +1,6 @@
 #include "neuron/container/network/netcon.hpp"
 #include "neuron/container/network/point_process.hpp"
+#include "neuron/container/network/point_process_access.hpp"
 #include "neuron/container/network/presyn.hpp"
 #include "neuron/container/network/self_event.hpp"
 #include "neuron/container/network/weight_block.hpp"
@@ -114,13 +115,16 @@ TEST_CASE("Point_process dual-write into network SoA",
     auto& storage = neuron::model().point_processes();
     auto const before = storage.size();
     GIVEN("A default-constructed Point_process shell") {
-        // Allocates an SoA row via Point_process::_soa (Phase 1 dual-write).
+        // Allocates an SoA row via Point_process ctor dual-write map.
         auto* pp = new Point_process{};
         THEN("SoA size grows by one and fields are defaults until prop is set") {
             REQUIRE(storage.size() == before + 1);
-            REQUIRE(pp->_soa.mech_type() == -1);
-            REQUIRE(pp->_soa.instance() == -1);
-            REQUIRE(pp->_soa.thread_id() == -1);
+            REQUIRE(pp->_soa_id);
+            REQUIRE(nrn_point_process_soa_row(pp) >= 0);
+            auto h = neuron::container::network::point_process_soa(pp);
+            REQUIRE(h.mech_type() == -1);
+            REQUIRE(h.instance() == -1);
+            REQUIRE(h.thread_id() == -1);
         }
         WHEN("The Point_process is destroyed") {
             delete pp;

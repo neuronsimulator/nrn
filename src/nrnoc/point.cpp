@@ -7,11 +7,13 @@ saves the pointtype as later argument to create and loc */
 #include <stdlib.h>
 
 #include "membfunc.h"
+#include "neuron/container/network/point_process_access.hpp"
 #include "nrniv_mf.h"
 #include "ocnotify.h"
 #include "parse_with_deps.hpp"
 #include "section.h"
 
+#include <unordered_map>
 
 extern char* pnt_map;
 extern Symbol** pointsym; /*list of variable symbols in s->u.ppsym[k]
@@ -30,11 +32,36 @@ Prop* nrn_point_prop_;
 void (*nrnpy_o2loc_p_)(Object*, Section**, double*);
 void (*nrnpy_o2loc2_p_)(Object*, Section**, double*);
 
+namespace {
+// Owning SoA rows keyed by Point_process* so section_fwd.hpp stays MOD-light.
+std::unordered_map<Point_process*, neuron::container::network::PointProcess::owning_handle>
+    g_point_process_soa_owners;
+}  // namespace
+
+Point_process::Point_process() {
+    auto& owner = g_point_process_soa_owners
+                      .emplace(this, neuron::model().point_processes())
+                      .first->second;
+    _soa_id = owner.id();
+}
+
+Point_process::~Point_process() {
+    g_point_process_soa_owners.erase(this);
+    _soa_id = {};
+}
+
+int nrn_point_process_soa_row(Point_process const* pnt) {
+    if (!pnt || !pnt->_soa_id) {
+        return -1;
+    }
+    return static_cast<int>(pnt->_soa_id.current_row());
+}
+
 void nrn_point_process_soa_sync(Point_process* pnt) {
-    if (!pnt) {
+    if (!pnt || !pnt->_soa_id) {
         return;
     }
-    auto& h = pnt->_soa;
+    auto h = neuron::container::network::point_process_soa(pnt);
     if (pnt->prop) {
         h.mech_type() = pnt->prop->_type;
         // Prop for a point process always owns a mechanism SoA row.
