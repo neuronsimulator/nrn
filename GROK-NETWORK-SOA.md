@@ -69,7 +69,7 @@ psolve hot path (deliver, threshold, fanout) — index-based
 | Phase | Content | Gate |
 |-------|---------|------|
 | **0** | Field tags, handle typedefs, thread slicing — `doc/network-soa-phase0.md` | Spec done (authoritative) |
-| **1** | `Point_process` + `weights` SoA scaffold under `src/neuron/container/network/` | handles survive permute (unit test) |
+| **1** | `Point_process` + `weights` SoA + dual-write create/destroy | handles survive permute; PP/NetCon dual-write |
 | **2** | `NetCon` SoA, HOC `weight()` → flat weights | CPU ringtest delivery |
 | **3** | `PreSyn` `nc_index`/`nc_cnt` fanout | CPU spike parity @ 100 ms |
 | **4** | `SelfEvent` indices, `pnt_receive(weight_index)` | ExpSyn @ 1.025 ms CPU |

@@ -1,4 +1,5 @@
 #include "neuron/container/network/point_process.hpp"
+#include "neuron/container/network/weight_block.hpp"
 #include "neuron/container/network/weights.hpp"
 #include "neuron/model_data.hpp"
 #include "section.h"
@@ -105,6 +106,28 @@ TEST_CASE("SOA-backed PointProcess structure", "[Neuron][data_structures][networ
     }
 }
 
+TEST_CASE("Point_process dual-write into network SoA",
+        "[Neuron][data_structures][network][point_process][dualwrite]") {
+    auto& storage = neuron::model().point_processes();
+    auto const before = storage.size();
+    GIVEN("A default-constructed Point_process shell") {
+        // Allocates an SoA row via Point_process::_soa (Phase 1 dual-write).
+        auto* pp = new Point_process{};
+        THEN("SoA size grows by one and fields are defaults until prop is set") {
+            REQUIRE(storage.size() == before + 1);
+            REQUIRE(pp->_soa.mech_type() == -1);
+            REQUIRE(pp->_soa.instance() == -1);
+            REQUIRE(pp->_soa.thread_id() == -1);
+        }
+        WHEN("The Point_process is destroyed") {
+            delete pp;
+            THEN("The SoA row is released") {
+                REQUIRE(storage.size() == before);
+            }
+        }
+    }
+}
+
 TEST_CASE("SOA-backed Weight structure", "[Neuron][data_structures][network][weights]") {
     auto& storage = neuron::model().weights();
     REQUIRE(storage.size() == 0);
@@ -152,6 +175,23 @@ TEST_CASE("SOA-backed Weight structure", "[Neuron][data_structures][network][wei
                 REQUIRE_FALSE(dh);
                 REQUIRE(storage.size() == 0);
             }
+        }
+    }
+
+    GIVEN("allocate_weight_rows dual-write helper") {
+        double heap[3] = {1.5, 2.5, 3.5};
+        auto rows = Weight::allocate_weight_rows(3, heap);
+        THEN("SoA mirrors the heap values") {
+            REQUIRE(rows.size() == 3);
+            REQUIRE(storage.size() == 3);
+            REQUIRE(rows[0].value() == 1.5);
+            REQUIRE(rows[1].value() == 2.5);
+            REQUIRE(rows[2].value() == 3.5);
+        }
+        WHEN("heap is updated and remirrored") {
+            heap[1] = 9.0;
+            Weight::mirror_weights_to_soa(rows, heap, 3);
+            REQUIRE(rows[1].value() == 9.0);
         }
     }
 }

@@ -645,6 +645,11 @@ static double nc_setpost(void* v) {
     if (d->cnt_ != cnt) {
         d->cnt_ = cnt;
         delete[] std::exchange(d->weight_, new double[d->cnt_]);
+        for (int i = 0; i < d->cnt_; ++i) {
+            d->weight_[i] = 0.0;
+        }
+        d->weight_soa_ =
+            neuron::container::network::Weight::allocate_weight_rows(d->cnt_, d->weight_);
     }
     return 0.;
 }
@@ -4714,6 +4719,7 @@ NetCon::NetCon(PreSyn* src, Object* target) {
         cnt_ = 1;
         weight_ = new double[cnt_];
         weight_[0] = 0.0;
+        weight_soa_ = neuron::container::network::Weight::allocate_weight_rows(cnt_, weight_);
         return;
     }
     target_ = ob2pntproc(target);
@@ -4731,6 +4737,7 @@ NetCon::NetCon(PreSyn* src, Object* target) {
         for (int i = 0; i < cnt_; ++i) {
             weight_[i] = 0.0;
         }
+        weight_soa_ = neuron::container::network::Weight::allocate_weight_rows(cnt_, weight_);
     }
 }
 
@@ -4741,6 +4748,7 @@ NetCon::~NetCon() {
     if (cnt_) {
         delete[] weight_;
     }
+    weight_soa_.clear();
 #if DISCRETE_EVENT_OBSERVER
     if (target_) {
         ObjObservable::Detach(target_->ob, this);

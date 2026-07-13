@@ -30,6 +30,26 @@ Prop* nrn_point_prop_;
 void (*nrnpy_o2loc_p_)(Object*, Section**, double*);
 void (*nrnpy_o2loc2_p_)(Object*, Section**, double*);
 
+void nrn_point_process_soa_sync(Point_process* pnt) {
+    if (!pnt) {
+        return;
+    }
+    auto& h = pnt->_soa;
+    if (pnt->prop) {
+        h.mech_type() = pnt->prop->_type;
+        // Prop for a point process always owns a mechanism SoA row.
+        h.instance() = static_cast<int>(pnt->prop->current_row());
+    } else {
+        h.mech_type() = -1;
+        h.instance() = -1;
+    }
+    if (pnt->_vnt) {
+        h.thread_id() = static_cast<NrnThread*>(pnt->_vnt)->id;
+    } else {
+        h.thread_id() = -1;
+    }
+}
+
 void* create_point_process(int pointtype, Object* ho) {
     auto* const pp = new Point_process{};
     pp->ob = ho;
@@ -40,6 +60,7 @@ void* create_point_process(int pointtype, Object* ho) {
     if (ho && ho->ctemplate->steer && ifarg(1)) {
         loc_point_process(pointtype, (void*) pp);
     }
+    nrn_point_process_soa_sync(pp);
     return pp;
 }
 
@@ -132,6 +153,7 @@ void nrn_loc_point_process(int pointtype, Point_process* pnt, Section* sec, Node
             hoc_template_notify(pnt->ob, 2);
         }
     }
+    nrn_point_process_soa_sync(pnt);
 }
 
 static void create_artcell_prop(Point_process* pnt, short type) {
@@ -148,6 +170,7 @@ static void create_artcell_prop(Point_process* pnt, short type) {
             hoc_template_notify(pnt->ob, 2);
         }
     }
+    nrn_point_process_soa_sync(pnt);
 }
 
 void nrn_relocate_old_points(Section* oldsec, Node* oldnode, Section* sec, Node* node) {
@@ -310,6 +333,7 @@ void connect_point_process_pointer(void) {
 static void free_one_point(Point_process* pnt) {
     auto* p = pnt->prop;
     if (!p) {
+        nrn_point_process_soa_sync(pnt);
         return;
     }
     if (!nrn_is_artificial_[p->_type]) {
@@ -341,6 +365,7 @@ static void free_one_point(Point_process* pnt) {
         section_unref(pnt->sec);
     }
     pnt->sec = (Section*) 0;
+    nrn_point_process_soa_sync(pnt);
 }
 
 // called from prop_free

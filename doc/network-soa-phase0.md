@@ -301,7 +301,7 @@ If a structural pool is useful later, tags match the above. Gate is `pnt_receive
 | Phase | Container | Gate |
 |-------|-----------|------|
 | **0** | Spec (this doc) | Spec reviewed |
-| **1** | `PointProcess` + `Weight` | Handles survive permute; unit test |
+| **1** | `PointProcess` + `Weight` | Handles survive permute; dual-write on create/destroy |
 | **2** | `NetCon` SoA; HOC `weight()` → flat weights | CPU ringtest delivery |
 | **3** | `PreSyn` fanout `NcIndex`/`NcCount` | CPU spike parity @ 100 ms |
 | **4** | SelfEvent indices; `pnt_receive` by weight index | ExpSyn @ 1.025 ms CPU |

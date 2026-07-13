@@ -3,6 +3,7 @@
 #undef check
 
 #include "neuron/container/data_handle.hpp"
+#include "neuron/container/network/weight_block.hpp"
 #include "nrnmpi.h"
 #include "nrnneosm.h"
 #include "pool.hpp"
@@ -117,6 +118,8 @@ class NetCon: public DiscreteEvent {
     Object* obj_;
     int cnt_;
     bool active_;
+    /** @brief Phase 1 dual-write owners for Weight SoA rows (see weight_block.hpp). */
+    std::vector<neuron::container::network::Weight::owning_handle> weight_soa_{};
 
     static unsigned long netcon_send_active_;
     static unsigned long netcon_send_inactive_;

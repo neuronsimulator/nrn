@@ -1,6 +1,8 @@
 #pragma once
 #include "multicore.h"
 #include "neuron/container/generic_data_handle.hpp"
+#include "neuron/container/network/point_process.hpp"
+#include "neuron/model_data.hpp"
 #include "nrnredef.h"
 /**
  * @file section_fwd.hpp
@@ -83,4 +85,12 @@ struct Point_process {
     void* presyn_{}; /* non-threshold presynapse for NetCon */
     void* nvi_{};    /* NrnVarIntegrator (for local step method) */
     void* _vnt{};    /* NrnThread* (for NET_RECEIVE and multicore) */
+    /** @brief Phase 1 dual-write: SoA row (Instance, MechType, ThreadId).
+     *  @see doc/network-soa-phase0.md §5.2
+     */
+    neuron::container::network::PointProcess::owning_handle _soa{
+        neuron::model().point_processes()};
 };
+
+/** @brief Sync legacy Point_process fields into the network SoA row. */
+void nrn_point_process_soa_sync(Point_process* pnt);

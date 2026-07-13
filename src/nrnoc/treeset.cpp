@@ -1694,6 +1694,7 @@ void v_setup_vectors(void) {
                     pnt->_vnt = nrn_threads + nti;
                     nti = (nti + 1) % nrn_nthread;
                 }
+                nrn_point_process_soa_sync(pnt);
                 auto const tid = static_cast<NrnThread*>(pnt->_vnt)->id;
                 ++thread_counts[tid];
                 // pnt->_i_instance = j;
