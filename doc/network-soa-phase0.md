@@ -40,7 +40,7 @@ Bridging with per-event shims on the legacy layout does not scale. **One SoA bac
 | Out of scope | Resume when |
 |--------------|-------------|
 | GPU `net_buf_receive` codegen / Stage 3 wire-up | SoA on master; rebase `gpu-native-qualification` |
-| Full `InputPreSyn` / MPI multisend redesign | Post–Phase 3 MPI milestone |
+| Remote input / `InputPreSyn` split; MPI multisend redesign | After cpu-net-soa (see §5.5.1) |
 | Removing HOC `Object*` identity | Never — sidecars remain |
 | Changing public HOC/Python method signatures | Not required |
 
@@ -168,11 +168,60 @@ weights[weight_index + k]  for k in [0, weight_count)
 | `field::WeightCount` | `int` | `0` | `pnt_receive_size` for target type |
 | `field::Delay` | `double` | `1.0` | Delivery delay (ms) |
 | `field::Active` | `int` | `1` | `bool` as `int` (GPU-friendly, CoreNEURON style) |
-| `field::SrcPreSyn` | `int` | `-1` | Source PreSyn row, or `-1` if none |
+| `field::SrcPreSyn` | `int` | `-1` | Source PreSyn row, or `-1` if none (management / reverse edge; see §5.4.1) |
 
 **Optional later:** `field::ObjectId` only if HOC identity must be recovered from a row without a sidecar map.
 
 **Event-queue identity:** `NetCon` remains a `DiscreteEvent` subclass for queue compatibility through Phase 2–3. The SoA row is the data plane; the C++ object is the control/HOC plane during dual-write. Long term the queued payload may shrink to `(type, row)` — not required for Phase 2 gate.
+
+#### 5.4.1 NetCon linkage: `target_` and `src_` (pointers vs handles vs indices)
+
+Today NEURON keeps a **mutual pointer graph**:
+
+```text
+PreSyn ──dil_──► NetCon* ──src_──► PreSyn
+                    │
+                    └──target_──► Point_process*
+```
+
+CoreNEURON’s integration layout does **not** retain that graph: `NetCon` has `target_` (struct pointer into `pntprocs`) and `weight_index_`; source is implicit because the NetCon sits in a PreSyn’s fanout range (`nc_index_` / `nc_cnt_`). There is no `src_` on the hot path.
+
+**Decision for NEURON SoA — three layers, not one type for all uses:**
+
+| Concern | Representation | Why |
+|---------|----------------|-----|
+| **Spike / delivery hot path** | Integer **SoA row indices** (`Target`, `WeightIndex`; fanout via PreSyn `NcIndex`/`NcCount`) | CoreNEURON-shaped, GPU-uploadable, no pointer chasing, contiguous scans |
+| **Stable identity across permute / dual-write / HOC** | `PointProcess::handle` / `PreSyn::handle` (or `non_owning_identifier`) on the wrapper object | Same model as `Node::handle` — tracks row through permute without remapping by hand on every HOC touch |
+| **Legacy shell (transitional)** | Keep `Point_process* target_` and `PreSyn* src_` on the C++ `NetCon` during dual-write | Existing disconnect / HOC / queue code keeps working until dual-read is complete |
+
+**Do not use `data_handle` for `target_` / `src_`.**  
+`data_handle<T>` is a stable reference to a **scalar field in a column** (e.g. `PreSyn::thvar_` → a `double` voltage). A NetCon’s target is a **row of another entity**, not a double. The correct SoA tools are:
+
+- **row index `int`** after sort (integration),
+- **`handle` / `owning_handle` / `non_owning_identifier`** when a stable cross-reference is needed outside the frozen sorted window.
+
+**Directionality of the assembly (important):**
+
+```text
+Hot path (spike → targets):
+  PreSyn  ──NcIndex/NcCount──►  NetCon rows  ──Target index──►  PointProcess row
+                                    │
+                                    └── WeightIndex ──► weight block
+
+Reverse edge (management / HOC only):
+  NetCon  ──SrcPreSyn index or PreSyn::handle──►  PreSyn
+```
+
+- **Forward fanout is authoritative** for delivery (replaces walking `dil_` as a pointer list).
+- **`src_` / `SrcPreSyn` is a reverse edge**: disconnect, `replace_src`, mindelay queries, interpreter inspection. It is **not** required for CoreNEURON-shaped deliver. It may remain on the HOC wrapper / dual-write shell longer than `target_`, or stay as a SoA `int` column for convenience when destroying a PreSyn and sweeping its NetCons (until ranges alone suffice).
+
+**Why not keep pointer mutuality as the long-term design?**
+
+- Pointer graphs fight permutation, thread packing, and GPU mirrors.
+- Two-way raw pointers duplicate topology already expressed by fanout ranges + `Target`.
+- Mutuality is valuable for **interactive** NEURON; express it with **handles + indices**, not with a second heap of cross-pointers that own the topology.
+
+**Phase timing:** Phase 2 dual-writes `Target` / weights while leaving `target_`/`src_` pointers valid; Phase 3 builds fanout ranges; hot path drops `dil_` walks and pointer fanout; pointer fields become optional wrappers over handles/indices and can shrink later without another layout break.
 
 ### 5.5 PreSyn (Phase 3 — tags fixed now)
 
@@ -198,6 +247,42 @@ On spike: for i in [0, NcCount): deliver netcons[NcIndex+i]
 Matches CoreNEURON `nc_index_` / `nc_cnt_` into `netcon_in_presyn_order_`. At sort time, NetCons are (re)ordered by source PreSyn so ranges are contiguous.
 
 **Threshold source:** keep `data_handle<double>` (today’s `thvar_`) in the dual-write / sidecar plane. Optionally cache `ThVarRow` when the handle refers to node voltage for vectorized threshold checks.
+
+#### 5.5.1 PreSyn vs remote input (`InputPreSyn`)
+
+Two **roles** appear on a rank; CoreNEURON splits them into types, NEURON historically does not.
+
+| Role | Job on this rank | Threshold / `thvar` / HOC recording? | Fanout (`NcIndex`/`NcCount`)? |
+|------|------------------|--------------------------------------|-------------------------------|
+| **Local / output PreSyn** | Detect spike, optional gid send, fan out local NetCons | Yes | Yes |
+| **Remote / input source** | Map received `(gid, t)` to local NetCons | No | Yes |
+
+CoreNEURON’s `InputPreSyn` is the second role reduced to `nc_index_` / `nc_cnt_` (plus optional multisend bookkeeping). NEURON today stores **full `PreSyn*`** in both `gid2out_` and `gid2in_` (`netpar.cpp`), so remote sources pay for `ConditionEvent`, threshold fields, and sidecars they never use. That cost matters when connectivity is dense and `gid2in` is large — the common case where **MPI_Allgather** (or compressed collectives) remains near-optimal because almost every rank needs almost every spike. Point-to-point / multisend sophistication (BlueGene-era) is orthogonal: it changes the **wire** path, not whether a remote source needs threshold state.
+
+**Is the role still useful?** Yes. Remote delivery only needs:
+
+```text
+gid  →  (NcIndex, NcCount)  →  NetCon rows  →  targets / weights
+```
+
+**Must NEURON clone CoreNEURON’s dual class tree?** No. Prefer a **data-plane** split when the time comes:
+
+1. **Local PreSyn SoA** — threshold columns + gid/output + fanout range + HOC sidecars.  
+2. **Remote inputs** — thin **`gid → fanout range`** (dedicated small SoA or map), not a fat PreSyn and not a HOC-facing type.  
+3. Spike exchange resolves gid → range → enqueue NetCons (or one lightweight input event holding the range + time).
+
+That preserves CoreNEURON’s memory and export shape without a second interactive pointer graph. Optional fields on one “spike source” SoA are a weaker fit (mixed sort keys, threshold code special-cases).
+
+**Timing (explicitly out of scope for this branch’s Phase 0–4):**
+
+| When | What |
+|------|------|
+| Phases 1–2 | Ignore remote split |
+| Phase 3 | Local fanout on existing PreSyn; `gid2in_` may stay fat PreSyn |
+| **After** cpu-net-soa finishes (post–Phase 3/4 MPI milestone) | Thin remote representation; align `nrncore` / CoreNEURON `gid2in` |
+| GPU net buffers | Upload the same fanout ranges; role split reduces payload |
+
+**Design constraint for Phase 3:** build fanout so a later remote-input table can own the same style of `(NcIndex, NcCount)` ranges **without** restating NetCon layout. Do not implement `InputPreSyn` work on `local/cpu-network-soa`.
 
 ### 5.6 SelfEvent (Phase 4)
 
@@ -306,8 +391,8 @@ During Phase 1 dual-write, the existing `struct Point_process` **is** the sideca
 | Field | Notes |
 |-------|-------|
 | `Object* obj_` | HOC |
-| `PreSyn* src_` | Dual-write until `SrcPreSyn` index |
-| `Point_process* target_` | Dual-write until `Target` index |
+| `PreSyn* src_` | Dual-write reverse edge; long-term `SrcPreSyn` index and/or `PreSyn::handle` (§5.4.1) — not hot-path delivery |
+| `Point_process* target_` | Dual-write; long-term `Target` index (+ optional `PointProcess::handle` on wrapper) |
 | `double* weight_` | Dual-write alias into Weight SoA (then removed) |
 
 **PreSyn**
@@ -509,9 +594,10 @@ Hook points (implementation after scaffold):
 | 1 | Global vs per-thread weight pool | **Per-thread slices** of one global SoA (CoreNEURON-compatible); absolute indices during dual-write OK |
 | 2 | Network permute vs mechanism permute | **After** nodes + mechanisms inside `nrn_ensure_model_data_are_sorted` |
 | 3 | NetCon as `DiscreteEvent` | **Keep subclass** through Phase 2–3 for queue compatibility |
-| 4 | `InputPreSyn` | **Defer** to post–Phase 3 MPI milestone |
+| 4 | `InputPreSyn` | **Role yes, dual class optional**; thin gid→fanout after cpu-net-soa — §5.5.1 |
 | 5 | Weight contiguity under permute | **Repack at sort** into contiguous per-NetCon blocks; rewrite `WeightIndex` |
 | 6 | PreSyn threshold | **Keep `data_handle`**; optional `ThVarRow` cache for scans |
+| 7 | NetCon `target_` / `src_` | **Indices on hot path**; **handles** for stable/HOC refs; **not** `data_handle`; pointers dual-write only — §5.4.1 |
 
 ---
 
