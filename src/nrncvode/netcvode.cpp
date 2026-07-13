@@ -145,6 +145,7 @@ double nrn_netcon_get_thresh(NetCon* nc) {
 void nrn_netcon_set_thresh(NetCon* nc, double th) {
     if (nc->src_) {
         nc->src_->threshold_ = th;
+        nc->src_->soa_sync();
     }
 }
 
@@ -3038,6 +3039,72 @@ void NetCon::pr(const char* s, double tt, NetCvode* ns) {
     Printf(" target=%s %.15g\n", (target_ ? hoc_object_name(target_->ob) : "nullptr"), tt);
 }
 
+namespace {
+// Global CoreNEURON-shaped fanout: NetCon* ranges described by PreSyn NcIndex/NcCount.
+std::vector<NetCon*> g_network_fanout_order;
+bool g_network_fanout_sorted = true;
+
+template <typename F>
+void for_each_fanout_netcon(PreSyn* ps, F&& fn) {
+    PreSyn::ensure_fanout_order();
+    int const base = ps->_soa.nc_index();
+    int const cnt = ps->_soa.nc_count();
+    if (base >= 0 && cnt == static_cast<int>(ps->dil_.size()) &&
+        base + cnt <= static_cast<int>(g_network_fanout_order.size())) {
+        for (int i = 0; i < cnt; ++i) {
+            fn(g_network_fanout_order[static_cast<std::size_t>(base + i)]);
+        }
+    } else {
+        // Fallback while topology is mid-update or PreSyn not in psl_.
+        for (NetCon* d: ps->dil_) {
+            fn(d);
+        }
+    }
+}
+}  // namespace
+
+void PreSyn::mark_fanout_unsorted() {
+    g_network_fanout_sorted = false;
+}
+
+void PreSyn::ensure_fanout_order() {
+    if (g_network_fanout_sorted) {
+        return;
+    }
+    g_network_fanout_order.clear();
+    if (net_cvode_instance && net_cvode_instance->psl_) {
+        for (PreSyn* ps: *net_cvode_instance->psl_) {
+            ps->_soa.nc_index() = static_cast<int>(g_network_fanout_order.size());
+            for (NetCon* nc: ps->dil_) {
+                g_network_fanout_order.push_back(nc);
+            }
+            ps->_soa.nc_count() = static_cast<int>(ps->dil_.size());
+        }
+    }
+    g_network_fanout_sorted = true;
+}
+
+void PreSyn::soa_sync() {
+    _soa.threshold() = threshold_;
+    _soa.gid() = gid_;
+    _soa.output_index() = output_index_;
+    _soa.thread_id() = nt_ ? nt_->id : -1;
+    _soa.nc_count() = static_cast<int>(dil_.size());
+    // NcIndex is owned by ensure_fanout_order when sorted.
+    if (!g_network_fanout_sorted) {
+        _soa.nc_index() = -1;
+    }
+    if (thvar_ && thvar_.refers_to_a_modern_data_structure()) {
+        try {
+            _soa.thvar_row() = static_cast<int>(thvar_.current_row());
+        } catch (...) {
+            _soa.thvar_row() = -1;
+        }
+    } else {
+        _soa.thvar_row() = -1;
+    }
+}
+
 void PreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
     int i;
     record(tt);
@@ -3053,7 +3120,8 @@ void PreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
         }
     } else {
         STATISTICS(presyn_send_direct_);
-        for (const auto& d: dil_) {
+        // Phase 3: fanout via NcIndex/NcCount into global order (dual-write with dil_).
+        for_each_fanout_netcon(this, [&](NetCon* d) {
             if (d->active_ && d->target_) {
                 NrnThread* n = PP2NT(d->target_);
                 if (nt == n) {
@@ -3062,7 +3130,7 @@ void PreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
                     ns->p[n->id].interthread_send(tt + d->delay_, d, n);
                 }
             }
-        }
+        });
     }
 #endif  // ndef USENCS
 #if USENCS || NRNMPI
@@ -3116,7 +3184,7 @@ void PreSyn::deliver(double tt, NetCvode* ns, NrnThread* nt) {
     }
     // the thread is the one that owns the targets
     STATISTICS(presyn_deliver_netcon_);
-    for (const auto& d: dil_) {
+    for_each_fanout_netcon(this, [&](NetCon* d) {
         if (d->active_ && d->target_ && PP2NT(d->target_) == nt) {
             double dtt = d->delay_ - delay_;
             if (dtt == 0.) {
@@ -3130,19 +3198,19 @@ void PreSyn::deliver(double tt, NetCvode* ns, NrnThread* nt) {
                 ns->event(tt + dtt, d, nt);
             }
         }
-    }
+    });
 }
 
 // used by bbsavestate since during restore, some NetCon spikes may
 // have already been delivered while others need to be delivered in
 // the future. Not implemented fof qthresh_ case. No statistics.
 void PreSyn::fanout(double td, NetCvode* ns, NrnThread* nt) {
-    for (const auto& d: dil_) {
+    for_each_fanout_netcon(this, [&](NetCon* d) {
         if (d->active_ && d->target_ && PP2NT(d->target_) == nt) {
             double dtt = d->delay_ - delay_;
             ns->bin_event(td + dtt, d, nt);
         }
-    }
+    });
 }
 
 NrnThread* PreSyn::thread() {
@@ -3160,7 +3228,7 @@ void PreSyn::pgvts_deliver(double tt, NetCvode* ns) {
         return;
     }
     STATISTICS(presyn_deliver_netcon_);
-    for (const auto& d: dil_) {
+    for_each_fanout_netcon(this, [&](NetCon* d) {
         if (d->active_ && d->target_) {
             double dtt = d->delay_ - delay_;
             if (dtt < 0.) {
@@ -3170,7 +3238,7 @@ void PreSyn::pgvts_deliver(double tt, NetCvode* ns) {
                 ns->event(tt + dtt, d, nt);
             }
         }
-    }
+    });
 }
 
 void PreSyn::pr(const char* s, double tt, NetCvode* ns) {
@@ -4751,8 +4819,12 @@ void NetCon::soa_sync() {
     } else {
         _soa.target() = -1;
     }
-    // PreSyn SoA is Phase 3; reverse edge stays -1 until then.
-    _soa.src_presyn() = -1;
+    // Phase 3: reverse edge into PreSyn SoA.
+    if (src_) {
+        _soa.src_presyn() = static_cast<int>(src_->_soa.current_row());
+    } else {
+        _soa.src_presyn() = -1;
+    }
     if (!weight_soa_.empty()) {
         _soa.weight_index() = static_cast<int>(weight_soa_.front().current_row());
         weights_heap_to_soa();
@@ -4769,6 +4841,7 @@ NetCon::NetCon(PreSyn* src, Object* target) {
     if (src_) {
         src_->dil_.push_back(this);
         src_->use_min_delay_ = 0;
+        PreSyn::mark_fanout_unsorted();
     }
     if (target == nullptr) {
         target_ = nullptr;
@@ -4821,6 +4894,7 @@ void NetCon::rmsrc() {
         for (size_t i = 0; i < src_->dil_.size(); ++i) {
             if (src_->dil_[i] == this) {
                 src_->dil_.erase(src_->dil_.begin() + i);
+                PreSyn::mark_fanout_unsorted();
                 if (src_->dil_.size() == 0 && src_->tvec_ == NULL && src_->idvec_ == NULL) {
                     if (src_->output_index_ == -1) {
                         delete std::exchange(src_, nullptr);
@@ -4840,6 +4914,7 @@ void NetCon::replace_src(PreSyn* p) {
     if (src_) {
         src_->dil_.push_back(this);
         src_->use_min_delay_ = 0;
+        PreSyn::mark_fanout_unsorted();
     }
     soa_sync();
 }
@@ -4955,6 +5030,7 @@ void NetCvode::ps_thread_link(PreSyn* ps) {
         }
     }
     if (!ps->nt_) {  // premature, reorder_secorder() not called yet
+        ps->soa_sync();
         return;
     }
     if (ps->thvar_) {
@@ -4964,6 +5040,7 @@ void NetCvode::ps_thread_link(PreSyn* ps) {
         }
         ps->hi_th_ = hoc_l_insertvoid(p[i].psl_thr_, ps);
     }
+    ps->soa_sync();
 }
 
 void NetCvode::update_ps2nt() {
@@ -5040,10 +5117,13 @@ PreSyn::PreSyn(neuron::container::data_handle<double> src, Object* osrc, Section
         nrn_notify_when_void_freed(osrc_, this);
     }
 #endif
+    soa_sync();
+    mark_fanout_unsorted();
 }
 
 PreSyn::~PreSyn() {
     PreSynSave::invalid();
+    mark_fanout_unsorted();
     //	printf("~PreSyn %p\n", this);
     nrn_cleanup_presyn(this);
     delete std::exchange(stmt_, nullptr);

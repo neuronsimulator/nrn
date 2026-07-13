@@ -4,6 +4,7 @@
 #include "neuron/container/memory_usage.hpp"
 #include "neuron/container/network/netcon.hpp"
 #include "neuron/container/network/point_process.hpp"
+#include "neuron/container/network/presyn.hpp"
 #include "neuron/container/network/weights.hpp"
 #include "neuron/container/node_data.hpp"
 #include "neuron/model_data_fwd.hpp"
@@ -62,6 +63,16 @@ struct Model {
     }
     container::network::NetCon::storage const& netcons() const {
         return m_netcons;
+    }
+
+    /** @brief Access SoA storage for PreSyn integration fields (Phase 3).
+     *  @see doc/network-soa-phase0.md §5.5
+     */
+    container::network::PreSyn::storage& presyns() {
+        return m_presyns;
+    }
+    container::network::PreSyn::storage const& presyns() const {
+        return m_presyns;
     }
 
     /** @brief Apply a function to each non-null Mechanism.
@@ -156,6 +167,7 @@ struct Model {
         m_point_processes.shrink_to_fit();
         m_weights.shrink_to_fit();
         m_netcons.shrink_to_fit();
+        m_presyns.shrink_to_fit();
     }
 
   private:
@@ -195,6 +207,9 @@ struct Model {
 
     /** @brief Network SoA: NetCon integration rows (Phase 2). */
     container::network::NetCon::storage m_netcons{};
+
+    /** @brief Network SoA: PreSyn integration rows (Phase 3). */
+    container::network::PreSyn::storage m_presyns{};
 
     /**
      * @brief Backing storage for defer_delete helper.

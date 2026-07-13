@@ -85,12 +85,16 @@ struct ModelMemoryUsage {
     /// @brief Network SoA: NetCon integration rows.
     StorageMemoryUsage netcons{};
 
+    /// @brief Network SoA: PreSyn integration rows.
+    StorageMemoryUsage presyns{};
+
     const ModelMemoryUsage& operator+=(const ModelMemoryUsage& other) {
         nodes += other.nodes;
         mechanisms += other.mechanisms;
         point_processes += other.point_processes;
         weights += other.weights;
         netcons += other.netcons;
+        presyns += other.presyns;
 
         return *this;
     }
@@ -101,6 +105,7 @@ struct ModelMemoryUsage {
         total += point_processes.compute_total();
         total += weights.compute_total();
         total += netcons.compute_total();
+        total += presyns.compute_total();
 
         return total;
     }
@@ -205,6 +210,7 @@ struct MemoryUsageSummary {
         add(model.point_processes);
         add(model.weights);
         add(model.netcons);
+        add(model.presyns);
     }
 
     void add(const cache::ModelMemoryUsage& model) {

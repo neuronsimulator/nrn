@@ -1,5 +1,6 @@
 #include "neuron/container/network/netcon.hpp"
 #include "neuron/container/network/point_process.hpp"
+#include "neuron/container/network/presyn.hpp"
 #include "neuron/container/network/weight_block.hpp"
 #include "neuron/container/network/weights.hpp"
 #include "neuron/model_data.hpp"
@@ -249,6 +250,51 @@ TEST_CASE("SOA-backed NetCon structure", "[Neuron][data_structures][network][net
         THEN("WeightIndex points at first SoA weight row") {
             REQUIRE(wstore.get<Weight::field::Value>(nc.weight_index()) == 0.1);
             REQUIRE(wstore.get<Weight::field::Value>(nc.weight_index() + 1) == 0.2);
+        }
+    }
+}
+
+TEST_CASE("SOA-backed PreSyn structure and fanout ranges",
+          "[Neuron][data_structures][network][presyn]") {
+    auto& storage = neuron::model().presyns();
+    REQUIRE(storage.size() == 0);
+
+    GIVEN("Default PreSyn SoA rows") {
+        PreSyn::owning_handle a{storage};
+        PreSyn::owning_handle b{storage};
+        THEN("Defaults match field tags") {
+            REQUIRE(a.threshold() == 10.0);
+            REQUIRE(a.gid() == -1);
+            REQUIRE(a.nc_index() == -1);
+            REQUIRE(a.nc_count() == 0);
+            REQUIRE(a.output_index() == -1);
+            REQUIRE(a.thvar_row() == -1);
+            REQUIRE(a.thread_id() == -1);
+            REQUIRE(storage.size() == 2);
+        }
+        THEN("Fanout range fields survive reverse permutation") {
+            // Simulate CoreNEURON-style contiguous fanout ranges in a global order.
+            a.nc_index() = 0;
+            a.nc_count() = 3;
+            a.threshold() = -20.;
+            a.gid() = 7;
+            b.nc_index() = 3;
+            b.nc_count() = 2;
+            b.gid() = 11;
+            {
+                auto token = storage.issue_frozen_token();
+                storage.mark_as_sorted(token);
+            }
+            std::vector<std::size_t> perm{0, 1};
+            std::rotate(perm.begin(), std::next(perm.begin()), perm.end());
+            storage.apply_reverse_permutation(std::move(perm));
+            REQUIRE(a.nc_index() == 0);
+            REQUIRE(a.nc_count() == 3);
+            REQUIRE(a.threshold() == -20.);
+            REQUIRE(a.gid() == 7);
+            REQUIRE(b.nc_index() == 3);
+            REQUIRE(b.nc_count() == 2);
+            REQUIRE(b.gid() == 11);
         }
     }
 }

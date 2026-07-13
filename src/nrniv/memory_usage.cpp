@@ -16,8 +16,9 @@ ModelMemoryUsage memory_usage(const Model& model) {
     auto point_processes = memory_usage(model.point_processes());
     auto weights = memory_usage(model.weights());
     auto netcons = memory_usage(model.netcons());
+    auto presyns = memory_usage(model.presyns());
 
-    return {nodes, mechanisms, point_processes, weights, netcons};
+    return {nodes, mechanisms, point_processes, weights, netcons, presyns};
 }
 
 cache::ModelMemoryUsage memory_usage(const std::optional<neuron::cache::Model>& model) {
@@ -133,6 +134,10 @@ std::string format_memory_usage(const MemoryUsage& usage) {
     os << "  network::NetCon \n";
     os << "    data                " << format_memory_usage(model.netcons.heavy_data) << "\n";
     os << "    stable_identifiers  " << format_memory_usage(model.netcons.stable_identifiers)
+       << "\n";
+    os << "  network::PreSyn \n";
+    os << "    data                " << format_memory_usage(model.presyns.heavy_data) << "\n";
+    os << "    stable_identifiers  " << format_memory_usage(model.presyns.stable_identifiers)
        << "\n";
     os << "cache::Model \n";
     os << "  threads               " << format_memory_usage(cache_model.threads) << "\n";

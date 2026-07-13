@@ -71,7 +71,7 @@ psolve hot path (deliver, threshold, fanout) — index-based
 | **0** | Field tags, handle typedefs, thread slicing — `doc/network-soa-phase0.md` | Spec done (authoritative) |
 | **1** | `Point_process` + `weights` SoA + dual-write create/destroy | handles survive permute; PP dual-write |
 | **2** | `NetCon` SoA, HOC `weight()` → flat Weight SoA | dual-write; unit tests; CPU ringtest when available |
-| **3** | `PreSyn` `nc_index`/`nc_cnt` fanout | CPU spike parity @ 100 ms |
+| **3** | `PreSyn` SoA + `NcIndex`/`NcCount` fanout order | dual-write; send/deliver use fanout |
 | **4** | `SelfEvent` indices, `pnt_receive(weight_index)` | ExpSyn @ 1.025 ms CPU |
 | **5** | (gpu-native track) net buffers Stages 2–3 | GPU parity |
 

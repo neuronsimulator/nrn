@@ -4,6 +4,7 @@
 
 #include "neuron/container/data_handle.hpp"
 #include "neuron/container/network/netcon.hpp"
+#include "neuron/container/network/presyn.hpp"
 #include "neuron/container/network/weight_block.hpp"
 #include "neuron/model_data.hpp"
 #include "nrnmpi.h"
@@ -305,6 +306,13 @@ class PreSyn: public ConditionEvent {
     double mindelay();
     void fanout(double, NetCvode*, NrnThread*);  // used by bbsavestate
 
+    /** @brief Sync legacy PreSyn fields into PreSyn SoA (Phase 3). */
+    void soa_sync();
+    /** @brief Mark global NetCon fanout order dirty (dil_ changed). */
+    static void mark_fanout_unsorted();
+    /** @brief Rebuild global fanout order from all PreSyn dil_ lists. */
+    static void ensure_fanout_order();
+
     NetConPList dil_;
     double threshold_;
     double delay_;
@@ -321,6 +329,8 @@ class PreSyn: public ConditionEvent {
     int rec_id_;
     int output_index_;
     int gid_;
+    /** @brief Phase 3 dual-write: PreSyn integration row. */
+    neuron::container::network::PreSyn::owning_handle _soa{neuron::model().presyns()};
 #if NRNMPI
     unsigned char localgid_;  // compressed gid for spike transfer
 #endif
