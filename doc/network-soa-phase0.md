@@ -1,6 +1,6 @@
 # Network SoA — Phase 0 design spec
 
-**Status:** Authoritative for `local/cpu-network-soa` (Phase 0 complete → Phase 1 scaffold).  
+**Status:** Authoritative for `local/cpu-network-soa`. Phases 0–4 dual-write implemented; see `GROK-NETWORK-SOA.md` for status and gaps.  
 **Branch:** `local/cpu-network-soa` (from `origin/master`)  
 **Sibling (paused):** `~/neuron/nrngpu` @ `local/gpu-native-qualification` — GPU network buffers Stages 2–3  
 **Handoff:** `GROK-NETWORK-SOA.md`

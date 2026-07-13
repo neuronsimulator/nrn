@@ -2858,6 +2858,9 @@ void NetCvode::init_events() {
                 }
             }
         }
+        // Rebuild CoreNEURON-shaped fanout ranges before the run (not only on first spike).
+        PreSyn::mark_fanout_unsorted();
+        PreSyn::ensure_fanout_order();
     }
     // iterate over all NetCon in creation order to call
     // NETRECEIVE INITIAL blocks.
@@ -3147,9 +3150,25 @@ void PreSyn::ensure_fanout_order() {
     g_network_fanout_order.clear();
     if (net_cvode_instance && net_cvode_instance->psl_) {
         for (PreSyn* ps: *net_cvode_instance->psl_) {
+            // Refresh dual-write scalars (threshold may have been HOC-steered via double*).
+            ps->_soa.threshold() = ps->threshold_;
+            ps->_soa.gid() = ps->gid_;
+            ps->_soa.output_index() = ps->output_index_;
+            ps->_soa.thread_id() = ps->nt_ ? ps->nt_->id : -1;
+            if (ps->thvar_ && ps->thvar_.refers_to_a_modern_data_structure()) {
+                try {
+                    ps->_soa.thvar_row() = static_cast<int>(ps->thvar_.current_row());
+                } catch (...) {
+                    ps->_soa.thvar_row() = -1;
+                }
+            } else {
+                ps->_soa.thvar_row() = -1;
+            }
             ps->_soa.nc_index() = static_cast<int>(g_network_fanout_order.size());
             for (NetCon* nc: ps->dil_) {
                 g_network_fanout_order.push_back(nc);
+                // Keep NetCon reverse edge / delay dual-write current before sim.
+                nc->soa_sync();
             }
             ps->_soa.nc_count() = static_cast<int>(ps->dil_.size());
         }
@@ -4915,7 +4934,8 @@ void NetCon::soa_sync() {
     }
     if (!weight_soa_.empty()) {
         _soa.weight_index() = static_cast<int>(weight_soa_.front().current_row());
-        weights_heap_to_soa();
+        // Do not mirror heap → SoA here: HOC weight() writes SoA first; heap is only
+        // a pnt_receive buffer. heap→SoA after MOD runs (weights_heap_to_soa).
     } else {
         _soa.weight_index() = -1;
     }
