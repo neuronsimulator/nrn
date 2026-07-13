@@ -304,7 +304,7 @@ If a structural pool is useful later, tags match the above. Gate is `pnt_receive
 | **1** | `PointProcess` + `Weight` | Handles survive permute; dual-write on create/destroy |
 | **2** | `NetCon` SoA; HOC `weight()` → flat Weight SoA | dual-write; handles survive permute |
 | **3** | `PreSyn` SoA + fanout `NcIndex`/`NcCount` | dual-write; hot path uses fanout order |
-| **4** | SelfEvent indices; `pnt_receive` by weight index | ExpSyn @ 1.025 ms CPU |
+| **4** | SelfEvent weight_index; `nrn_pnt_receive_by_weight_index` | dual-write M2 (double* still for MOD) |
 | **5** | (gpu-native track) net buffers | GPU parity — **not this branch** |
 
 ---

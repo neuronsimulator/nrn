@@ -2272,6 +2272,62 @@ void NetCvode::remove_event(TQItem* q, int tid) {
     p[tid].tqe_->remove(q);
 }
 
+namespace {
+/** Phase 4: fill SelfEvent dual-write index fields from weight* / Point_process. */
+void selfevent_set_indices(SelfEvent* se, Point_process* pnt, double* weight) {
+    se->target_row_ = pnt ? static_cast<int>(pnt->_soa.current_row()) : -1;
+    se->weight_index_ = -1;
+    if (!weight) {
+        return;
+    }
+    // weight* is almost always a NetCon heap base; resolve Weight SoA index.
+    if (NetCon* nc = NetConSave::weight2netcon(weight)) {
+        if (!nc->weight_soa_.empty()) {
+            se->weight_index_ = static_cast<int>(nc->weight_soa_.front().current_row());
+        } else {
+            se->weight_index_ = nc->_soa.weight_index();
+        }
+    }
+}
+}  // namespace
+
+void nrn_pnt_receive_by_weight_index(Point_process* pnt,
+                                    int weight_index,
+                                    double flag,
+                                    double* weight_heap) {
+    if (!pnt || !pnt->prop) {
+        return;
+    }
+    int const type = pnt->prop->_type;
+    if (!pnt_receive[type]) {
+        return;
+    }
+    int const n = pnt_receive_size[type];
+    // Prefer NetCon dual-write owners when heap base is a known NetCon weight_.
+    if (weight_heap) {
+        if (NetCon* nc = NetConSave::weight2netcon(weight_heap)) {
+            nc->weights_soa_to_heap();
+            POINT_RECEIVE(type, pnt, weight_heap, flag);
+            nc->weights_heap_to_soa();
+            return;
+        }
+    }
+    // Index-only path: materialize a temporary (or fill provided heap) from Weight SoA.
+    double* buf = weight_heap;
+    std::vector<double> tmp;
+    if (!buf && n > 0) {
+        tmp.resize(static_cast<std::size_t>(n), 0.);
+        buf = tmp.data();
+    }
+    if (weight_index >= 0 && n > 0 && buf) {
+        neuron::container::network::SelfEventFields::materialize_weight_block(weight_index, n, buf);
+    }
+    POINT_RECEIVE(type, pnt, buf, flag);
+    if (weight_index >= 0 && n > 0 && buf) {
+        neuron::container::network::SelfEventFields::store_weight_block(weight_index, n, buf);
+    }
+}
+
 // for threads, revised net_send to use absolute time (in the
 // mod file we add the thread time when we call it).
 void nrn_net_send(Datum* v, double* weight, Point_process* pnt, double td, double flag) {
@@ -2282,6 +2338,7 @@ void nrn_net_send(Datum* v, double* weight, Point_process* pnt, double td, doubl
     se->flag_ = flag;
     se->target_ = pnt;
     se->weight_ = weight;
+    selfevent_set_indices(se, pnt, weight);
     se->movable_ = v;  // needed for SaveState
     assert(net_cvode_instance);
     ++p.unreffed_event_cnt_;
@@ -2309,6 +2366,7 @@ void artcell_net_send(Datum* v, double* weight, Point_process* pnt, double td, d
         se->flag_ = flag;
         se->target_ = pnt;
         se->weight_ = weight;
+        selfevent_set_indices(se, pnt, weight);
         se->movable_ = v;  // needed for SaveState
         assert(net_cvode_instance);
         ++p.unreffed_event_cnt_;
@@ -2999,11 +3057,18 @@ void NetCon::deliver(double tt, NetCvode* ns, NrnThread* nt) {
 
     // printf("NetCon::deliver t=%g tt=%g %s\n", t, tt, hoc_object_name(target_->ob));
     STATISTICS(netcon_deliver_);
-    // Weight SoA is HOC source of truth; heap is the pnt_receive buffer.
-    weights_soa_to_heap();
-    POINT_RECEIVE(type, target_, weight_, 0);
-    // Capture any weight mutations by NET_RECEIVE / MOD code.
-    weights_heap_to_soa();
+    // Phase 4: deliver via weight_index (SoA), materializing double* for MOD.
+    int widx = _soa.weight_index();
+    if (widx < 0 && !weight_soa_.empty()) {
+        widx = static_cast<int>(weight_soa_.front().current_row());
+    }
+    if (widx >= 0) {
+        nrn_pnt_receive_by_weight_index(target_, widx, 0., weight_);
+    } else {
+        weights_soa_to_heap();
+        POINT_RECEIVE(type, target_, weight_, 0);
+        weights_heap_to_soa();
+    }
     if (errno) {
         if (nrn_errno_check(type)) {
             hoc_warning("errno set during NetCon deliver to NET_RECEIVE", (char*) 0);
@@ -3019,9 +3084,17 @@ void NetCon::pgvts_deliver(double tt, NetCvode* ns) {
     assert(target_);
     int type = target_->prop->_type;
     STATISTICS(netcon_deliver_);
-    weights_soa_to_heap();
-    POINT_RECEIVE(type, target_, weight_, 0);
-    weights_heap_to_soa();
+    int widx = _soa.weight_index();
+    if (widx < 0 && !weight_soa_.empty()) {
+        widx = static_cast<int>(weight_soa_.front().current_row());
+    }
+    if (widx >= 0) {
+        nrn_pnt_receive_by_weight_index(target_, widx, 0., weight_);
+    } else {
+        weights_soa_to_heap();
+        POINT_RECEIVE(type, target_, weight_, 0);
+        weights_heap_to_soa();
+    }
     if (errno) {
         if (nrn_errno_check(type)) {
             hoc_warning("errno set during NetCon deliver to NET_RECEIVE", (char*) 0);
@@ -3256,6 +3329,8 @@ DiscreteEvent* SelfEvent::savestate_save() {
     se->flag_ = flag_;
     se->target_ = target_;
     se->weight_ = weight_;
+    se->weight_index_ = weight_index_;
+    se->target_row_ = target_row_;
     se->movable_ = movable_;
     return se;
 }
@@ -3277,9 +3352,16 @@ DiscreteEvent* SelfEvent::savestate_read(FILE* f) {
         6);
     se->target_ = SelfEvent::index2pp(pptype, ppindex);
     se->weight_ = nullptr;
+    se->weight_index_ = -1;
+    se->target_row_ = se->target_ ? static_cast<int>(se->target_->_soa.current_row()) : -1;
     if (ncindex >= 0) {
         NetCon* nc = NetConSave::index2netcon(ncindex);
         se->weight_ = nc->weight_;
+        if (!nc->weight_soa_.empty()) {
+            se->weight_index_ = static_cast<int>(nc->weight_soa_.front().current_row());
+        } else {
+            se->weight_index_ = nc->_soa.weight_index();
+        }
     }
     se->flag_ = flag;
     se->movable_ = (moff >= 0) ? (se->target_->prop->dparam + moff) : nullptr;
@@ -3373,7 +3455,13 @@ void SelfEvent::pgvts_deliver(double tt, NetCvode* ns) {
 }
 void SelfEvent::call_net_receive(NetCvode* ns) {
     STATISTICS(selfevent_deliver_);
-    POINT_RECEIVE(target_->prop->_type, target_, weight_, flag_);
+    // Phase 4 M2: prefer weight_index path; still pass double* to generated MOD.
+    if (weight_index_ >= 0) {
+        nrn_pnt_receive_by_weight_index(target_, weight_index_, flag_, weight_);
+    } else {
+        // Null weights (flag-only self events) or unresolved index: legacy path.
+        POINT_RECEIVE(target_->prop->_type, target_, weight_, flag_);
+    }
     if (errno) {
         if (nrn_errno_check(target_->prop->_type)) {
             hoc_warning("errno set during SelfEvent deliver to NET_RECEIVE", (char*) 0);

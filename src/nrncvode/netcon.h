@@ -5,6 +5,7 @@
 #include "neuron/container/data_handle.hpp"
 #include "neuron/container/network/netcon.hpp"
 #include "neuron/container/network/presyn.hpp"
+#include "neuron/container/network/self_event.hpp"
 #include "neuron/container/network/weight_block.hpp"
 #include "neuron/model_data.hpp"
 #include "nrnmpi.h"
@@ -184,6 +185,10 @@ class SelfEvent: public DiscreteEvent {
     Point_process* target_;
     double* weight_;
     Datum* movable_;  // pointed-to Datum holds TQItem*
+    /** @brief Phase 4: base row in Weight SoA (-1 if unknown / null weights). */
+    int weight_index_{-1};
+    /** @brief Phase 4: PointProcess SoA row of target_ (-1 if unknown). */
+    int target_row_{-1};
 
     static unsigned long selfevent_send_;
     static unsigned long selfevent_move_;

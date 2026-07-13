@@ -1,6 +1,7 @@
 #include "neuron/container/network/netcon.hpp"
 #include "neuron/container/network/point_process.hpp"
 #include "neuron/container/network/presyn.hpp"
+#include "neuron/container/network/self_event.hpp"
 #include "neuron/container/network/weight_block.hpp"
 #include "neuron/container/network/weights.hpp"
 #include "neuron/model_data.hpp"
@@ -252,6 +253,25 @@ TEST_CASE("SOA-backed NetCon structure", "[Neuron][data_structures][network][net
             REQUIRE(wstore.get<Weight::field::Value>(nc.weight_index() + 1) == 0.2);
         }
     }
+}
+
+TEST_CASE("Weight index materialize/store (Phase 4 SelfEvent path)",
+          "[Neuron][data_structures][network][selfevent]") {
+    auto& store = neuron::model().weights();
+    REQUIRE(store.size() == 0);
+    auto rows = Weight::allocate_weight_rows(3, nullptr);
+    rows[0].value() = 1.0;
+    rows[1].value() = 2.0;
+    rows[2].value() = 3.0;
+    int const base = static_cast<int>(rows[0].current_row());
+    double buf[3]{};
+    neuron::container::network::SelfEventFields::materialize_weight_block(base, 3, buf);
+    REQUIRE(buf[0] == 1.0);
+    REQUIRE(buf[1] == 2.0);
+    REQUIRE(buf[2] == 3.0);
+    buf[1] = 9.0;
+    neuron::container::network::SelfEventFields::store_weight_block(base, 3, buf);
+    REQUIRE(rows[1].value() == 9.0);
 }
 
 TEST_CASE("SOA-backed PreSyn structure and fanout ranges",
