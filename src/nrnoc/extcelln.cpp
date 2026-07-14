@@ -7,6 +7,7 @@
 #include "nrniv_mf.h"
 #include "hocassrt.h"
 #include "parse.hpp"
+#include "ocmatrix.h"
 
 
 extern int nrn_use_daspk_;
@@ -211,16 +212,11 @@ static void extcell_init(neuron::model_sorted_token const&,
 void extnode_free_elements(Extnode* nde) {
     if (nde->v) {
         free(nde->v);  /* along with _a and _b */
-        free(nde->_d); /* along with _rhs, _a_matelm, _b_matelm, _x12, and _x21 */
-        nde->v = NULL;
-        nde->_a = NULL;
-        nde->_b = NULL;
-        nde->_d = NULL;
-        nde->_rhs = NULL;
-        nde->_a_matelm = NULL;
-        nde->_b_matelm = NULL;
-        nde->_x12 = NULL;
-        nde->_x21 = NULL;
+        free(nde->_rhs);
+        nde->v = nullptr;
+        nde->_a = nullptr;
+        nde->_b = nullptr;
+        nde->_rhs = nullptr;
     }
 }
 
@@ -290,12 +286,7 @@ static void extnode_alloc_elements(Extnode* nde) {
         nde->_a = nde->v + nlayer;
         nde->_b = nde->_a + nlayer;
 
-        nde->_d = (double**) ecalloc(nlayer * 6, sizeof(double*));
-        nde->_rhs = nde->_d + nlayer;
-        nde->_a_matelm = nde->_rhs + nlayer;
-        nde->_b_matelm = nde->_a_matelm + nlayer;
-        nde->_x12 = nde->_b_matelm + nlayer;
-        nde->_x21 = nde->_x12 + nlayer;
+        nde->_rhs = (double**) ecalloc(nlayer * 1, sizeof(double*));
     }
 }
 
@@ -431,47 +422,56 @@ void nrn_setup_ext(NrnThread* _nt) {
     /* d contains all the membrane conductances (and capacitance) */
     /* i.e. (cm/dt + di/dvm - dis/dvi)*[dvi] and
         (dis/dvi)*[dvx] */
+    // This loop handle conductances between the node and the first layer
     for (i = 0; i < cnt; ++i) {
+        OcMatrix& m = *_nt->_sp13mat;
         nd = ndlist[i];
+        int index = nd->eqn_index_;
         nde = nd->extnode;
+        int ext_index = nde->eqn_index_;
         d = NODED(nd);
         /* nde->_d only has -ELECTRODE_CURRENT contribution */
-        d = (*nde->_d[0] += NODED(nd));
+        m(ext_index + 0, ext_index + 0) += NODED(nd);
+        d = m.getval(ext_index + 0, ext_index + 0);
         /* now d is only the membrane current contribution */
         /* i.e. d =  cm/dt + di/dvm */
-        *nde->_x12[0] -= d;
-        *nde->_x21[0] -= d;
+        m(index - 1, ext_index + 0) -= d;
+        m(ext_index + 0, index - 1) -= d;
 #if I_MEMBRANE
         ml->data(i, sav_g_index) = d;
 #endif
     }
     /* series resistance, capacitance, and axial terms. */
+    // This look takes care of the conductances between layers
     for (i = 0; i < cnt; ++i) {
+        OcMatrix& m = *_nt->_sp13mat;
         nd = ndlist[i];
         nde = nd->extnode;
+        int ext_index = nde->eqn_index_;
         pnd = _nt->_v_parent[nd->v_node_index];
         if (pnd) {
             /* series resistance and capacitance to ground */
             j = 0;
             for (;;) { /* between j and j+1 layer */
                 mfac = (*nde->param[xg_index_ext(j)] + *nde->param[xc_index_ext(j)] * cfac);
-                *nde->_d[j] += mfac;
+                m(ext_index + j, ext_index + j) += mfac;
                 ++j;
                 if (j == nrn_nlayer_extracellular) {
                     break;
                 }
-                *nde->_d[j] += mfac;
-                *nde->_x12[j] -= mfac;
-                *nde->_x21[j] -= mfac;
+                m(ext_index + j, ext_index + j) += mfac;
+                m(ext_index + j - 1, ext_index + j) -= mfac;
+                m(ext_index + j, ext_index + j - 1) -= mfac;
             }
             pnde = pnd->extnode;
             /* axial connections */
             if (pnde) { /* parent sec may not be extracellular */
+                int parent_ext_index = pnde->eqn_index_;
                 for (j = 0; j < nrn_nlayer_extracellular; ++j) {
-                    *nde->_d[j] -= nde->_b[j];
-                    *pnde->_d[j] -= nde->_a[j];
-                    *nde->_a_matelm[j] += nde->_a[j];
-                    *nde->_b_matelm[j] += nde->_b[j];
+                    m(ext_index + j, ext_index + j) -= nde->_b[j];
+                    m(parent_ext_index + j, parent_ext_index + j) -= nde->_a[j];
+                    m(parent_ext_index + j, ext_index + j) += nde->_a[j];
+                    m(ext_index + j, parent_ext_index + j) += nde->_b[j];
                 }
             }
         }
