@@ -2291,6 +2291,39 @@ void selfevent_set_indices(SelfEvent* se, Point_process* pnt, double* weight) {
 }
 }  // namespace
 
+namespace {
+bool type_has_fornetcon(int type) {
+    for (int i = 0; i < nrn_fornetcon_cnt_; ++i) {
+        if (nrn_fornetcon_type_[i] == type) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/** Sync all NetCon weight heaps ↔ SoA that share a target (FOR_NETCONS mutates them). */
+void sync_netcon_weights_for_target(Point_process* pnt, bool soa_to_heap) {
+    if (!pnt) {
+        return;
+    }
+    Symbol* sym = hoc_lookup("NetCon");
+    if (!sym || !sym->u.ctemplate || !sym->u.ctemplate->olist) {
+        return;
+    }
+    hoc_Item* q = nullptr;
+    ITERATE(q, sym->u.ctemplate->olist) {
+        auto* nc = static_cast<NetCon*>(OBJ(q)->u.this_pointer);
+        if (nc && nc->target_ == pnt) {
+            if (soa_to_heap) {
+                nc->weights_soa_to_heap();
+            } else {
+                nc->weights_heap_to_soa();
+            }
+        }
+    }
+}
+}  // namespace
+
 void nrn_pnt_receive_by_weight_index(Point_process* pnt,
                                     int weight_index,
                                     double flag,
@@ -2303,16 +2336,30 @@ void nrn_pnt_receive_by_weight_index(Point_process* pnt,
         return;
     }
     int const n = pnt_receive_size[type];
+    bool const fornet = type_has_fornetcon(type);
+
     // Prefer NetCon dual-write owners when heap base is a known NetCon weight_.
     if (weight_heap) {
         if (NetCon* nc = NetConSave::weight2netcon(weight_heap)) {
-            nc->weights_soa_to_heap();
+            if (fornet) {
+                // FOR_NETCONS walks weight_ of all NetCons with this target.
+                sync_netcon_weights_for_target(pnt, /*soa_to_heap*/ true);
+            } else {
+                nc->weights_soa_to_heap();
+            }
             POINT_RECEIVE(type, pnt, weight_heap, flag);
-            nc->weights_heap_to_soa();
+            if (fornet) {
+                sync_netcon_weights_for_target(pnt, /*soa_to_heap*/ false);
+            } else {
+                nc->weights_heap_to_soa();
+            }
             return;
         }
     }
     // Index-only path: materialize a temporary (or fill provided heap) from Weight SoA.
+    if (fornet) {
+        sync_netcon_weights_for_target(pnt, /*soa_to_heap*/ true);
+    }
     double* buf = weight_heap;
     std::vector<double> tmp;
     if (!buf && n > 0) {
@@ -2325,6 +2372,9 @@ void nrn_pnt_receive_by_weight_index(Point_process* pnt,
     POINT_RECEIVE(type, pnt, buf, flag);
     if (weight_index >= 0 && n > 0 && buf) {
         neuron::container::network::SelfEventFields::store_weight_block(weight_index, n, buf);
+    }
+    if (fornet) {
+        sync_netcon_weights_for_target(pnt, /*soa_to_heap*/ false);
     }
 }
 
@@ -2875,6 +2925,9 @@ void NetCvode::init_events() {
         auto* d = static_cast<NetCon*>(obj->u.this_pointer);
         if (d->target_) {
             int type = d->target_->prop->_type;  // somehow prop is non-deterministically-null here
+            // Dual-write: INITIAL and HOC weight[] must share one value stream.
+            // SoA is HOC-primary; heap is the buffer for generated pnt_receive_init.
+            d->weights_soa_to_heap();
             if (pnt_receive_init[type]) {
                 (*pnt_receive_init[type])(d->target_, d->weight_, 0);
             } else {
@@ -2883,6 +2936,7 @@ void NetCvode::init_events() {
                     d->weight_[j] = 0.;
                 }
             }
+            d->weights_heap_to_soa();
         }
     }
     if (gcv_) {
@@ -5600,7 +5654,15 @@ void WatchCondition::deliver(double tt, NetCvode* ns, NrnThread* nt) {
         PP2t(pnt_) = tt;
     }
     STATISTICS(watch_deliver_);
+    // WATCH-driven NET_RECEIVE (e.g. flag=2) may run FOR_NETCONS, which mutates
+    // every NetCon weight_ heap sharing this target — keep SoA dual-write coherent.
+    if (type_has_fornetcon(type)) {
+        sync_netcon_weights_for_target(pnt_, /*soa_to_heap*/ true);
+    }
     POINT_RECEIVE(type, pnt_, nullptr, nrflag_);
+    if (type_has_fornetcon(type)) {
+        sync_netcon_weights_for_target(pnt_, /*soa_to_heap*/ false);
+    }
     if (errno) {
         if (nrn_errno_check(type)) {
             hoc_warning("errno set during WatchCondition deliver to NET_RECEIVE", (char*) 0);
@@ -5691,7 +5753,13 @@ void WatchCondition::pgvts_deliver(double tt, NetCvode* ns) {
     }
     int type = pnt_->prop->_type;
     STATISTICS(watch_deliver_);
+    if (type_has_fornetcon(type)) {
+        sync_netcon_weights_for_target(pnt_, /*soa_to_heap*/ true);
+    }
     POINT_RECEIVE(type, pnt_, nullptr, nrflag_);
+    if (type_has_fornetcon(type)) {
+        sync_netcon_weights_for_target(pnt_, /*soa_to_heap*/ false);
+    }
     if (errno) {
         if (nrn_errno_check(type)) {
             hoc_warning("errno set during WatchCondition deliver to NET_RECEIVE", (char*) 0);
