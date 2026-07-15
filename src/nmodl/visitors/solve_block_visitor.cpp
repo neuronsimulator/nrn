@@ -88,6 +88,13 @@ void SolveBlockVisitor::visit_expression_statement(ast::ExpressionStatement& nod
     node.visit_children(*this);
     if (node.get_expression()->is_solve_block()) {
         auto solve_block = dynamic_cast<ast::SolveBlock*>(node.get_expression().get());
+
+        // ignore the matexp solver
+        const auto& method = solve_block->get_method();
+        if (method && method->get_node_name() == codegen::naming::MATEXP_METHOD) {
+            return;
+        }
+
         auto sol_expr = create_solution_expression(*solve_block);
         if (in_breakpoint_block) {
             nrn_state_solve_statements.emplace_back(new ast::ExpressionStatement(sol_expr));

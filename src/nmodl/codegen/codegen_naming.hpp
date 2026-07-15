@@ -41,6 +41,9 @@ static constexpr char CVODE_T_V_METHOD[] = "cvode_t_v";
 /// sparse method in nmodl
 static constexpr char SPARSE_METHOD[] = "sparse";
 
+/// matexp method in nmodl
+static constexpr char MATEXP_METHOD[] = "matexp";
+
 /// net_event function call in nmodl
 static constexpr char NET_EVENT_METHOD[] = "net_event";
 

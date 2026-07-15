@@ -2,10 +2,11 @@ from .rxdException import RxDException
 from .node import Node
 import types
 from collections import abc
+from typing import Union, Callable, Any, Iterable, Iterator
 
 
 class NodeList(list):
-    def __init__(self, items):
+    def __init__(self, items: Union[Iterable[Node], Iterator[Node]]) -> None:
         """Constructs a NodeList from items, a python iterable containing Node objects."""
         if isinstance(items, abc.Generator) or isinstance(items, abc.Iterator):
             items = list(items)
@@ -15,27 +16,27 @@ class NodeList(list):
         else:
             raise TypeError("Items must be nodes.")
 
-    def __call__(self, restriction):
+    def __call__(self, restriction: Callable) -> "NodeList":
         """returns a sub-NodeList consisting of nodes satisfying restriction"""
         return NodeList([i for i in self if i._safe_satisfies(restriction)])
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: Union[int, slice]) -> Union[Node, "NodeList"]:
         if isinstance(key, slice):
             return NodeList(list.__getitem__(self, key))
         else:
             return list.__getitem__(self, key)
 
-    def __setitem__(self, index, value):
+    def __setitem__(self, index: Union[int, slice], value: Node) -> None:
         if not isinstance(value, Node):
             raise TypeError("Only assign a node to the list")
         super().__setitem__(index, value)
 
-    def append(self, items):
+    def append(self, items: Node) -> None:
         if not isinstance(items, Node):
             raise TypeError("The append item must be a Node.")
         super().append(items)
 
-    def extend(self, items):
+    def extend(self, items: Union[Iterable[Node], Iterator[Node]]) -> None:
         if isinstance(items, abc.Generator) or isinstance(items, abc.Iterator):
             items = list(items)
 
@@ -44,32 +45,32 @@ class NodeList(list):
                 raise TypeError("The extended items must all be Nodes.")
         super().extend(items)
 
-    def insert(self, position, items):
+    def insert(self, position: int, items: Node) -> None:
         if not isinstance(items, Node):
             raise TypeError("The item inserted must be a Node.")
         super().insert(position, items)
 
     @property
-    def value(self):
+    def value(self) -> Union[list[float], float]:
         # TODO: change this when not everything is a concentration
         return self.concentration
 
     @value.setter
-    def value(self, v):
+    def value(self, v: Union[float, Iterable[float]]) -> None:
         # TODO: change this when not everything is a concentration
         self.concentration = v
 
     @property
-    def segment(self):
+    def segment(self) -> list:
         return [node.segment for node in self]
 
     @property
-    def concentration(self):
+    def concentration(self) -> list[float]:
         """Returns the concentration of the Node objects in the NodeList as an iterable."""
         return [node.concentration for node in self]
 
     @concentration.setter
-    def concentration(self, value):
+    def concentration(self, value: Union[float, Iterable[float]]) -> None:
         """Sets the concentration of the Node objects to either a constant or values based on an iterable."""
         if hasattr(value, "__len__"):
             if len(value) == len(self):
@@ -100,12 +101,12 @@ class NodeList(list):
         return self[0]._ref_concentration
 
     @property
-    def diff(self):
+    def diff(self) -> list[float]:
         """Returns the diffusion constant of the Node objects in the NodeList as an iterable."""
         return [node.diff for node in self]
 
     @diff.setter
-    def diff(self, value):
+    def diff(self, value: Union[float, Iterable[float]]) -> None:
         """Sets the diffusion constant of the Node objects to either a constant or values based on an iterable."""
         if hasattr(value, "__len__"):
             if len(value) == len(self):
@@ -119,7 +120,7 @@ class NodeList(list):
         for node in self:
             node.diff = value
 
-    def include_flux(self, *args, **kwargs):
+    def include_flux(self, *args: Any, **kwargs: Any) -> None:
         for node in self:
             # Unpack arguments for each individual call
             node.include_flux(*args, **kwargs)

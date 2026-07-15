@@ -37,7 +37,7 @@ neuron._userrxd = True
 #       rembember to call rxd._do_nbs_register()
 
 
-def _model_view(tree):
+def _model_view(tree: list) -> None:
     from . import species
     from neuron import h
 
@@ -61,7 +61,7 @@ def _model_view(tree):
         tree.append(rxd_head)
 
 
-def save_state():
+def save_state() -> bytes:
     """return a bytestring representation of the current rxd state
 
     Note: this is dependent on the order items were created."""
@@ -90,7 +90,7 @@ def save_state():
     return metadata + data
 
 
-def restore_state(oldstate):
+def restore_state(oldstate: bytes) -> None:
     """restore rxd state from a bytestring
 
     Note: this is dependent on the order items were created."""

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.19 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 # Note that this needs to happen **before** the call to project(...). This is because CMake reads
 # the CRAYPE_LINK_TYPE environment variable inside the call to project(...) and sets various flags
 # and properties based on its value. Because we are so early in the CMake processing, we have to
@@ -19,7 +19,7 @@ project(
   NEURON
   VERSION 9.0.1
   LANGUAGES C CXX
-  HOMEPAGE_URL "https://nrn.readthedocs.io/")
+  HOMEPAGE_URL "https://www.neuronsimulator.org/")
 
 # =============================================================================
 # CMake common project settings
@@ -39,7 +39,7 @@ if(POLICY CMP0177)
   cmake_policy(SET CMP0177 NEW)
 endif()
 
-# customizable install path to Python components. Mostly useful for Spack builds
+# customizable install path to Python components. Mostly useful for Spack & venv builds
 set(NRN_INSTALL_PYTHON_PREFIX
     "lib/python/neuron/"
     CACHE STRING
@@ -63,6 +63,11 @@ if(SKBUILD)
   set(IV_BIN_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}/bin")
 else()
   set(NRN_INSTALL_DATA_PREFIX)
+endif()
+
+# Make python install path relative to CMAKE_INSTALL_PREFIX
+if(IS_ABSOLUTE "${NRN_INSTALL_PYTHON_PREFIX}")
+  cmake_path(RELATIVE_PATH NRN_INSTALL_PYTHON_PREFIX BASE_DIRECTORY "${CMAKE_INSTALL_PREFIX}")
 endif()
 
 # =============================================================================
@@ -287,7 +292,7 @@ if(NOT PYTHON_EXECUTABLE)
   message(STATUS "\tSetting PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}")
 endif()
 
-find_package(Python 3.9 REQUIRED)
+find_package(Python 3.10 REQUIRED)
 
 # Try and emit an intelligent warning if the version number currently set in the CMake project(...)
 # call is inconsistent with the output of git describe.
@@ -328,6 +333,8 @@ file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/external/Random123/include/Random123"
      DESTINATION "${CMAKE_BINARY_DIR}/include/")
 file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/external/eigen/Eigen"
      DESTINATION "${CMAKE_BINARY_DIR}/include/")
+file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/external/eigen/unsupported"
+     DESTINATION "${CMAKE_BINARY_DIR}/include/")
 
 # =================================================================================================
 # Enable sanitizer support if the NRN_SANITIZERS variable is set. Comes befores PythonHelper.cmake.
@@ -343,12 +350,12 @@ string(REPLACE "," ";" NRN_SANITIZERS_LIST "${NRN_SANITIZERS}")
 #   NRN_DEFAULT_PYTHON_LIBRARIES are its include direcory and library
 # * NRN_PYTHON_EXECUTABLES is a list of absolute paths to all Python executables to be built against
 #   (length >=1 if NRN_ENABLE_PYTHON_DYNAMIC else == 1)
-# * NRN_PYTHON_VERSIONS (3.9, 3.11, ...), NRN_PYTHON_INCLUDES and NRN_PYTHON_LIBRARIES are populated
-#   with values patching NRN_PYTHON_EXECUTABLES
+# * NRN_PYTHON_VERSIONS (3.10, 3.12, ...), NRN_PYTHON_INCLUDES and NRN_PYTHON_LIBRARIES are
+#   populated with values patching NRN_PYTHON_EXECUTABLES
 # * NRN_PYTHON_COUNT is set to the number of entries in those lists (i.e. number of Pythons), and
 #   NRN_PYTHON_ITERATION_LIMIT is set to ${NRN_PYTHON_COUNT} - 1
 # =================================================================================================
-set(NRN_MINIMUM_PYTHON_VERSION 3.8)
+set(NRN_MINIMUM_PYTHON_VERSION 3.10)
 include(cmake/PythonHelper.cmake)
 
 # This needs NRN_DEFAULT_PYTHON_EXECUTABLE, which comes from PythonHelper.cmake
@@ -1328,6 +1335,6 @@ if(NRN_ENABLE_DIGEST OR NRN_ENABLE_ARCH_INDEP_EXP_POW)
   message(STATUS "NRN_ENABLE_ARCH_INDEP_EXP_POW | ${NRN_ENABLE_ARCH_INDEP_EXP_POW}")
 endif()
 message(STATUS "--------------+--------------------------------------------------------------")
-message(STATUS " See documentation : https://www.neuron.yale.edu/neuron/")
+message(STATUS " See documentation : https://www.neuronsimulator.org")
 message(STATUS "--------------+--------------------------------------------------------------")
 message(STATUS "")

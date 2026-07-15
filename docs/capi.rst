@@ -526,17 +526,44 @@ Segments
     :param x: Normalized position along Section (0.0 to 1.0).
     :returns: Diameter in microns at the specified position.
 
+    When the section geometry is defined by 3d points (:func:`pt3dadd`), the
+    segment diameter is derived from those points. This getter triggers that
+    recompute if it is pending, so the value is correct even before an explicit
+    geometry pass such as :func:`define_shape` or :func:`finitialize`.
+
     **C Usage:**
-    
+
     .. code-block:: c
-    
+
         double diameter = nrn_segment_diam_get(soma, 0.5);  // Get diameter at middle
 
     **Python Equivalent:**
-    
+
     .. code-block:: python
-    
+
         diameter = soma(0.5).diam  # Get diameter at middle of Section
+
+.. c:function:: int nrn_segment_node_index(Section* sec, double x)
+
+    Get the index of the node for the segment at normalized position x along
+    the Section, in NEURON's internal node array. Node indices become canonical
+    once the tree has been set up (for example after :func:`finitialize`).
+
+    :param sec: Pointer to the Section.
+    :param x: Normalized position along Section (0.0 to 1.0).
+    :returns: The node index, or -1 if sec is NULL or has been deleted.
+
+    **C Usage:**
+
+    .. code-block:: c
+
+        int idx = nrn_segment_node_index(soma, 0.5);  // node index at middle
+
+    **Python Equivalent:**
+
+    .. code-block:: python
+
+        idx = soma(0.5).node_index()  # node index at middle of Section
 
 .. c:function:: void nrn_rangevar_push(Symbol* sym, Section* sec, double x)
 
@@ -709,10 +736,14 @@ Functions, objects, and the stack
 
 .. c:function:: double* nrn_symbol_dataptr(const Symbol* sym)
 
-    Get a pointer to the data for a symbol (for variables).
+    Get a pointer to the storage for a scalar variable, for direct reading and
+    writing. This covers built-in ``USERDOUBLE`` scalars such as ``t`` (time) as
+    well as runtime scalars created in HOC (e.g. ``x = 42``), whose value lives
+    in the top-level object-data array rather than at ``sym->u.pval``.
 
     :param sym: Pointer to the symbol.
-    :returns: Pointer to the symbol's data, or NULL if not applicable.
+    :returns: Pointer to the symbol's data, or the raw ``sym->u.pval`` for
+              symbols that are not top-level runtime scalars.
 
     **Usage Pattern:**
 
@@ -905,9 +936,10 @@ Functions, objects, and the stack
         
         // Create current clamp at soma
         Symbol* iclamp_sym = nrn_symbol("IClamp");
-        nrn_object_push((Object*)soma);  // Push soma as object
+        nrn_section_push(soma);          // specify the section separately
         nrn_double_push(0.0);            // Push location (0.0)
         Object* iclamp = nrn_object_new(iclamp_sym, 2);
+        nrn_section_pop();
 
     **Python Equivalent:**
     
@@ -1966,8 +1998,10 @@ Here we stimulate the cell with a :class:`IClamp` at time 1 ms.
         nrn_mechanism_insert(soma, nrn_symbol("hh"));
 
         // current clamp at soma(0.5)
+        nrn_section_push(soma);          // specify the section separately
         nrn_double_push(0.5);
         Object* iclamp = nrn_object_new(nrn_symbol("IClamp"), 1);
+        nrn_section_pop();
         for (const auto& [property, value] : {pair{"amp", 0.3}, pair{"del", 1.0}, pair{"dur", 0.1}}) {
             nrn_property_set(iclamp, property, value);
         }

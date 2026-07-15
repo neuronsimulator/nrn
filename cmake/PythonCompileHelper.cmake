@@ -73,7 +73,7 @@ endfunction()
 #                     `hoc.cpython39-darwin.so` or similar). Note that no prefix is added.
 # TARGET            - (optional, defaults to <name>) the name of the CMake
 #                     target. Can be anything, but may not conflict with existing targets.
-# PYTHON_VERSION    - the version of Python to create the library for (for example, 3.9).
+# PYTHON_VERSION    - the version of Python to create the library for (for example, 3.10).
 # LANGUAGE          - the language used for linking the library. See also the LINKER_LANGUAGE CMake variable.
 # OUTPUT_DIR        - the path to the directory where the library will be placed afer building.
 # SOURCES           - the list of source files used for compiling the library.

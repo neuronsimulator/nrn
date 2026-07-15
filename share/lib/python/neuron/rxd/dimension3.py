@@ -1,9 +1,11 @@
 import bisect
 import numpy
 from .geometry3d.graphicsPrimitives import Cylinder, Cone
+from neuron import nrn
+from typing import Union
 
 
-def centroids_by_segment(sec):
+def centroids_by_segment(sec: nrn.Section) -> dict:
     """
     given a section, returns a dictionary whose entries are lists of cylinders
     of radius 0 that should be used for distance calculations, keyed by section
@@ -60,7 +62,7 @@ def centroids_by_segment(sec):
     return objs
 
 
-def objects_by_segment(sec):
+def objects_by_segment(sec: nrn.Section) -> dict:
     """
     given a section, returns a dictionary whose entries are lists of objects
     that should be used for distance calculations, keyed by section
@@ -119,13 +121,13 @@ def objects_by_segment(sec):
     return objs
 
 
-def _values_between(lo, hi, data):
+def _values_between(lo: float, hi: float, data: list) -> list:
     i_lo = bisect.bisect_left(data, lo)
     i_hi = bisect.bisect_right(data, hi)
     return data[i_lo:i_hi]
 
 
-def _values_strictly_between(lo, hi, data):
+def _values_strictly_between(lo: float, hi: float, data: list) -> list:
     temp = _values_between(lo, hi, data)
     if temp and temp[0] == lo:
         temp = temp[1:]
