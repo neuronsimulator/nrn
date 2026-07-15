@@ -1270,7 +1270,7 @@ ECS_Grid_node::~ECS_Grid_node() {
     }
 #endif
     free(all_reaction_indices);
-    reaction_indices = NULL;
+    reaction_indices = nullptr;
     free(react_offsets);
     free(all_currents);
     free(ecs_adi_dir_x);
