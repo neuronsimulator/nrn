@@ -976,7 +976,7 @@ extern "C" NRN_EXPORT void register_rate(int nspecies,
         for (i = 0; i < react->icsN; i++)
             react->flux[i] = (double*) malloc(react->num_regions * sizeof(double));
     } else {
-        react->flux = NULL;
+        react->flux = nullptr;
     }
     react->states_for_reaction = (double**) malloc(react->num_species * sizeof(double*));
     react->states_for_reaction_dx = (double**) malloc(react->num_species * sizeof(double*));
