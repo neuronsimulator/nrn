@@ -1489,8 +1489,7 @@ void get_reaction_rates(ICSReactions* react, double* states, double* rates, doub
                 react->ecs_params_for_reaction[k] = NAN;
             }
         }
-        if (react->num_ecs_species > 0)
-            memset(react->ecs_result, 0, react->num_ecs_species * sizeof(double));
+        memset(react->ecs_result, 0, react->num_ecs_species * sizeof(double));
 
         for (i = 0; i < react->num_mult; i++) {
             react->mc_mult[i] = react->mc_multiplier[i][segment];
