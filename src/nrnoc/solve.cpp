@@ -330,6 +330,13 @@ static void dashes(Section* sec, int offset, int first) {
 }
 
 /* solve the matrix equation */
+int nrn_sparse13_soft_fail = 0;
+static int nrn_sparse13_factor_error_ = 0;
+
+int nrn_sparse13_factor_error() {
+    return nrn_sparse13_factor_error_;
+}
+
 void nrn_solve(NrnThread* _nt) {
 #if 0
 	printf("\nnrn_solve enter %lx\n", (long)_nt);
@@ -359,6 +366,10 @@ void nrn_solve(NrnThread* _nt) {
         update_sp13_mat_based_on_actual_d(_nt);
         e = spFactor(_nt->_sp13mat);
         if (e != spOKAY) {
+            if (nrn_sparse13_soft_fail) {
+                nrn_sparse13_factor_error_ = e;
+                return;
+            }
             switch (e) {
             case spZERO_DIAG:
                 hoc_execerror("spFactor error:", "Zero Diagonal");
@@ -368,6 +379,7 @@ void nrn_solve(NrnThread* _nt) {
                 hoc_execerror("spFactor error:", "Singular");
             }
         }
+        nrn_sparse13_factor_error_ = 0;
         update_sp13_rhs_based_on_actual_rhs(_nt);
         spSolve(_nt->_sp13mat, _nt->_sp13_rhs, _nt->_sp13_rhs);
         update_actual_d_based_on_sp13_mat(_nt);

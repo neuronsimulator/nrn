@@ -31,6 +31,8 @@ double Daspk::dteps_;
 extern void nrndae_dkres(double*, double*, double*);
 extern void nrndae_dkpsol(double);
 extern void nrn_solve(NrnThread*);
+extern int nrn_sparse13_soft_fail;
+extern int nrn_sparse13_factor_error();
 void nrn_daspk_init_step(double, double, int);
 // this is private in ida.cpp but we want to check if our initialization
 // is good. Unfortunately ewt is set on the first call to solve which
@@ -129,7 +131,12 @@ static int msolve(IDAMem mem, N_Vector b, N_Vector w, N_Vector ycur, N_Vector, N
     nvec_y = ycur;
     nvec_yp = b;
     thread_cj = mem->ida_cj;
+    thread_ier = 0;
     nrn_multithread_job(msolve_thread);
+    if (nrn_sparse13_factor_error()) {
+        // Recoverable linear solve failure (e.g. singular J during IDA_Y_INIT).
+        return 1;
+    }
     return thread_ier;
 }
 
@@ -190,6 +197,8 @@ void Daspk::info() {}
 int Daspk::init_failure_style_;
 int Daspk::init_try_again_;
 int Daspk::first_try_init_failures_;
+int Daspk::init_mode_;
+int Daspk::calcic_fallback_count_;
 
 static void do_ode_thread(neuron::model_sorted_token const& sorted_token, NrnThread& ntr) {
     auto* const nt = &ntr;
@@ -221,76 +230,20 @@ N_VGetArrayPointer(ida->delta_)[i]);
 }
 #endif
 
-int Daspk::init() {
+int Daspk::check_init_residual() {
     extern double t;
-#if 0
-printf("Daspk_init t_=%20.12g t-t_=%g t0_-t_=%g\n",
-cv_->t_, t-cv_->t_, cv_->t0_-cv_->t_);
-#endif
-    N_VConst(0., yp_);
-
-    // the new initial condition is based on a dteps_ step backward euler
-    // linear solution with respect to the old state in order to
-    // start the following initial condition calculation with a "valid"
-    // (in a linear system sense) initial state.
-
-    double tt = cv_->t_;
-    double dtinv = 1. / dteps_;
-    if (init_failure_style_ & 010) {
-        cv_->play_continuous(tt);
-        nrn_daspk_init_step(tt, dteps_, 1);
-        nrn_daspk_init_step(tt, dteps_, 1);
-        cv_->daspk_gather_y(yp_);
-        cv_->play_continuous(tt);
-        nrn_daspk_init_step(tt, dteps_, 1);
-        cv_->daspk_gather_y(cv_->y_);
-        N_VLinearSum(dtinv, cv_->y_, -dtinv, yp_, yp_);
-    } else {
-#if 0
-	cv_->play_continuous(tt);
-	nrn_daspk_init_step(tt, dteps_, 1);
-	cv_->daspk_gather_y(cv_->y_);
-	tt = cv_->t_ + dteps_;
-	cv_->play_continuous(tt);
-	nrn_daspk_init_step(tt, dteps_, 1);
-	cv_->daspk_gather_y(yp_);
-	N_VLinearSum(dtinv, yp_, -dtinv, cv_->y_, yp_);
-	cv_->daspk_scatter_y(cv_->y_);
-#else
-        cv_->play_continuous(tt);
-        nrn_daspk_init_step(tt, dteps_, 1);  // first approx to y (and maybe good enough)
-        nrn_daspk_init_step(tt, dteps_, 1);  // 2nd approx to y (trouble with 2sramp.hoc)
-
-        cv_->daspk_gather_y(cv_->y_);
-        tt = cv_->t_ + dteps_;
-        cv_->play_continuous(tt);
-        nrn_daspk_init_step(tt, dteps_, 0);  // rhs contains delta y (for v, vext, linmod
-        cv_->gather_ydot(yp_);
-        N_VScale(dtinv, yp_, yp_);
-#endif
-    }
-    thread_cv = cv_;
-    nvec_yp = yp_;
-    nrn_multithread_job(nrn_ensure_model_data_are_sorted(), do_ode_thread);
-    ida_init();
     t = cv_->t_;
-#if 1
-    // test
-    // printf("test\n");
     if (!IDAEwtSet((IDAMem) mem_, cv_->y_)) {
         hoc_execerror("Bad Ida error weight vector", 0);
     }
     use_parasite_ = false;
-    //	check(cv_->t_, this);
     res_gvardt(cv_->t_, cv_->y_, yp_, parasite_, cv_);
     double norm = N_VWrmsNorm(parasite_, ((IDAMem) mem_)->ida_ewt);
-    // printf("norm=%g at t=%g\n", norm, t);
     if (norm > 1.) {
         switch (init_failure_style_ & 03) {
         case 0:
             Printf("IDA initialization failure, weighted norm of residual=%g\n", norm);
             return IDA_ERR_FAIL;
-            break;
         case 1:
             Printf("IDA initialization warning, weighted norm of residual=%g\n", norm);
             break;
@@ -301,11 +254,6 @@ cv_->t_, t-cv_->t_, cv_->t0_-cv_->t_);
             Printf("  subtracting (for next 1e-6 ms): f(y', y, %g)*exp(-1e7*(t-%g))\n", nt_t, nt_t);
             break;
         }
-#if 0
-for (int i=0; i < cv_->neq_; ++i) {
-	printf("   %d %g %g %g %g\n", i, nt_t, N_VGetArrayPointer(cv_->y_)[i], N_VGetArrayPointer(yp_)[i], N_VGetArrayPointer(delta_)[i]);
-}
-#endif
         if (init_try_again_ < 0) {
             ++first_try_init_failures_;
             init_try_again_ += 1;
@@ -313,11 +261,108 @@ for (int i=0; i < cv_->neq_; ++i) {
             init_try_again_ = 0;
             return err;
         }
+        // style 1 or 2: accept with warning
         return 0;
     }
-#endif
-
     return 0;
+}
+
+// Fill y_ and yp_ using the legacy nano-step heuristic (no residual check).
+static void seed_y_yp_heuristic(Daspk* d) {
+    Cvode* cv = d->cv_;
+    N_Vector yp = d->yp_;
+    N_VConst(0., yp);
+
+    double tt = cv->t_;
+    double dtinv = 1. / Daspk::dteps_;
+    if (Daspk::init_failure_style_ & 010) {
+        cv->play_continuous(tt);
+        nrn_daspk_init_step(tt, Daspk::dteps_, 1);
+        nrn_daspk_init_step(tt, Daspk::dteps_, 1);
+        cv->daspk_gather_y(yp);
+        cv->play_continuous(tt);
+        nrn_daspk_init_step(tt, Daspk::dteps_, 1);
+        cv->daspk_gather_y(cv->y_);
+        N_VLinearSum(dtinv, cv->y_, -dtinv, yp, yp);
+    } else {
+        cv->play_continuous(tt);
+        nrn_daspk_init_step(tt, Daspk::dteps_, 1);
+        nrn_daspk_init_step(tt, Daspk::dteps_, 1);
+
+        cv->daspk_gather_y(cv->y_);
+        tt = cv->t_ + Daspk::dteps_;
+        cv->play_continuous(tt);
+        nrn_daspk_init_step(tt, Daspk::dteps_, 0);
+        cv->gather_ydot(yp);
+        N_VScale(dtinv, yp, yp);
+    }
+    thread_cv = cv;
+    nvec_yp = yp;
+    nrn_multithread_job(nrn_ensure_model_data_are_sorted(), do_ode_thread);
+}
+
+int Daspk::init_heuristic() {
+    extern double t;
+    seed_y_yp_heuristic(this);
+    ida_init();
+    t = cv_->t_;
+    return check_init_residual();
+}
+
+int Daspk::init_ida_y_init() {
+    extern double t;
+    // Seed: voltage/DAE yp = 0; mechanism ODE yp = f(y) via do_ode.
+    // Suitable when residual uniquely determines y at that yp (e.g. pure
+    // algebraic LinearMechanism with invertible g). For folded capacitors
+    // C*(v1'-v2'), dF/dy is singular when cj=0 (IDA_Y_INIT), so CalcIC may
+    // soft-fail and mode 1 falls back to the heuristic.
+    N_VConst(0., yp_);
+    double tt = cv_->t_;
+    cv_->play_continuous(tt);
+    cv_->daspk_gather_y(cv_->y_);
+    thread_cv = cv_;
+    nvec_yp = yp_;
+    nrn_multithread_job(nrn_ensure_model_data_are_sorted(), do_ode_thread);
+    ida_init();
+    t = cv_->t_;
+
+    // tout1 only sets integration direction / rough t scale for IDACalcIC.
+    realtype tout1 = tt + 1.0;
+    if (tout1 == tt) {
+        tout1 = tt + 1e-3;
+    }
+    nrn_sparse13_soft_fail = 1;
+    int ier = IDACalcIC(mem_, IDA_Y_INIT, tout1);
+    nrn_sparse13_soft_fail = 0;
+    if (ier != IDA_SUCCESS) {
+        Printf("IDACalcIC(IDA_Y_INIT) failed, err=%d\n", ier);
+        return ier;
+    }
+    // Corrected y is already in cv_->y_ (IDA y0); scatter into NEURON structures.
+    cv_->daspk_scatter_y(cv_->y_);
+    t = cv_->t_;
+    nt_t = cv_->t_;
+    return check_init_residual();
+}
+
+int Daspk::init() {
+#if 0
+printf("Daspk_init t_=%20.12g t-t_=%g t0_-t_=%g mode=%d\n",
+cv_->t_, t-cv_->t_, cv_->t0_-cv_->t_, init_mode_);
+#endif
+    if (init_mode_ == 0) {
+        return init_heuristic();
+    }
+    int err = init_ida_y_init();
+    if (err == 0) {
+        return 0;
+    }
+    if (init_mode_ == 1) {
+        ++calcic_fallback_count_;
+        return init_heuristic();
+    }
+    // mode 2: IDA_Y_INIT only
+    return err;
 }
 
 int Daspk::advance_tn(double tstop) {
@@ -381,6 +426,9 @@ void Daspk::statistics() {
 #endif
     if (first_try_init_failures_) {
         Printf("   %d First try Initialization failures\n", first_try_init_failures_);
+    }
+    if (calcic_fallback_count_) {
+        Printf("   %d IDACalcIC fallback(s) to heuristic IC\n", calcic_fallback_count_);
     }
 }
 
@@ -615,8 +663,15 @@ printf(" %g", b[i]);
 printf("\n");
 #endif
 
-    _nt->cj = cj;
-    _nt->_dt = 1. / cj;
+    // IDACalcIC(IDA_Y_INIT) sets cj = 0 (solve all y given yp; J = dG/dy only).
+    // Avoid 1/cj and skip the mechanism-ODE 1/cj scaling in that case.
+    if (cj == 0.0) {
+        _nt->cj = 0.0;
+        _nt->_dt = 1.0;
+    } else {
+        _nt->cj = cj;
+        _nt->_dt = 1. / cj;
+    }
 
     _nt->_vcv = this;
     daspk_scatter_y(y, _nt->id);  // I'm not sure this is necessary.
@@ -639,6 +694,11 @@ for (i=0; i < z.neq_v_; ++i) {
 }
 #endif
     daspk_nrn_solve(_nt);  // not the cvode one
+    if (nrn_sparse13_factor_error()) {
+        // Force next psol to rebuild via nrn_lhs (spClear resets sparse Error).
+        solve_state_ = INVALID;
+        return 1;  // recoverable; IDACalcIC may fail soft when J singular
+    }
 #if 0
 //printf("after nrn_solve matrix\n");
 //spPrint(sp13mat_, 1,1,1);
@@ -653,8 +713,12 @@ for (i=0; i < neq_v_; ++i) {
     // the ode's of the form m' = (minf - m)/mtau in model descriptions compute
     // b = b/(1 + dt*mtau) since cvode required J = 1 - gam*df/dy
     // so we need to scale those results by 1/cj.
-    for (i = z.neq_v_; i < z.nvsize_; ++i) {
-        b[i] *= _nt->_dt;
+    // When cj==0 (IDA_Y_INIT), leave solvemem results unscaled; mechanism-ODE
+    // quality in that limit may still need refinement (see ida_y_init notes).
+    if (cj != 0.0) {
+        for (i = z.neq_v_; i < z.nvsize_; ++i) {
+            b[i] *= _nt->_dt;
+        }
     }
 #if 0
 for (i=0; i < z.nvsize_; ++i) {

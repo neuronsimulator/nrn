@@ -2111,6 +2111,48 @@ CVode
 
 
 
+.. method:: CVode.dae_init_mode
+
+    .. tab:: Python
+
+        Syntax:
+            ``mode = cvode.dae_init_mode()``
+
+            ``mode = cvode.dae_init_mode(mode)``
+
+        Description:
+            Selects how the DAE (IDA) integrator obtains a consistent initial
+            condition after ``finitialize`` or a discontinuity, see
+            :meth:`CVode.use_daspk`.
+
+            * ``0`` (default) — legacy short fully-implicit step heuristic
+              controlled by :meth:`CVode.dae_init_dteps`.
+            * ``1`` — try Sundials ``IDACalcIC`` with ``IDA_Y_INIT`` (solve all
+              of ``y`` given ``y'``); on failure fall back to the heuristic.
+            * ``2`` — pure ``IDA_Y_INIT`` only (no heuristic fallback).
+
+            ``IDA_Y_INIT`` does not require a differential/algebraic ``id`` vector.
+            It works well for invertible algebraic LinearMechanism systems.
+            For folded capacitor equations (``C*(v1'-v2')``) the Newton matrix
+            can be singular under ``IDA_Y_INIT``; mode ``1`` then falls back to
+            the heuristic. Default remains ``0`` until the capacitor/extracellular
+            path is fully validated.
+
+    .. tab:: HOC
+
+        Syntax:
+            ``mode = cvode.dae_init_mode()``
+
+            ``mode = cvode.dae_init_mode(mode)``
+
+        Description:
+            Same as the Python tab: ``0`` heuristic (default), ``1``
+            ``IDA_Y_INIT`` with heuristic fallback, ``2`` pure ``IDA_Y_INIT``.
+
+----
+
+
+
 .. method:: CVode.dae_init_dteps
 
     .. tab:: Python
@@ -2128,7 +2170,8 @@ CVode
             The size of the "infinitesimal" fixed fully implicit step used for 
             initialization of the DAE solver, see :func:`use_daspk` , in order to 
             meet the the initial condition requirement of f(y',y,t)=0. The default 
-            is 1e-9 ms. 
+            is 1e-9 ms. Used when :meth:`CVode.dae_init_mode` is ``0``, or as the
+            fallback when mode is ``1``.
          
             The default heuristic for meeting the initial condition requirement based 
             on the pre-initialization value of all the states and an initialization time 
@@ -2194,8 +2237,9 @@ CVode
             The size of the "infinitesimal" fixed fully implicit step used for 
             initialization of the DAE solver, see :func:`use_daspk` , in order to
             meet the the initial condition requirement of f(y',y,t)=0. The default 
-            is 1e-9 ms. 
+            is 1e-9 ms. Also used as fallback when :meth:`CVode.dae_init_mode` is 1.
         
+
         
             The default heuristic for meeting the initial condition requirement based 
             on the pre-initialization value of all the states and an initialization time 

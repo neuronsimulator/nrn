@@ -99,6 +99,9 @@ extern void clear_point_process_struct(Prop* p);
 extern void ext_con_coef(void);
 extern void nrn_multisplit_ptr_update(void);
 extern void nrn_use_daspk(int);
+// When non-zero, sparse13 factor failures do not hoc_execerror; see nrn_sparse13_factor_error().
+extern int nrn_sparse13_soft_fail;
+extern int nrn_sparse13_factor_error();
 extern void nrn_update_ps2nt(void);
 neuron::model_sorted_token nrn_ensure_model_data_are_sorted();
 extern void activstim_rhs(void);

@@ -21,6 +21,12 @@ class Daspk {
   private:
     void ida_init();
     void info();
+    // Heuristic nano-step IC (legacy). Returns 0 on success / accepted warn path.
+    int init_heuristic();
+    // IDACalcIC(IDA_Y_INIT) with yp=0 + ODE f(y). Returns 0 on residual success.
+    int init_ida_y_init();
+    // Shared residual WRMS check and parasite / style handling after y,yp ready.
+    int check_init_residual();
 
   public:
     void* mem_;
@@ -35,4 +41,9 @@ class Daspk {
     static double dteps_;
     static int init_try_again_;
     static int first_try_init_failures_;
+    // 0 = heuristic only (default); 1 = IDA_Y_INIT then heuristic fallback;
+    // 2 = IDA_Y_INIT only.
+    static int init_mode_;
+    // Count of times mode 1 fell back from IDA_Y_INIT to the heuristic.
+    static int calcic_fallback_count_;
 };

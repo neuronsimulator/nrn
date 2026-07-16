@@ -323,6 +323,16 @@ static double dae_init_dteps(void* v) {
     return Daspk::dteps_;
 }
 
+// 0 = heuristic only (default); 1 = IDA_Y_INIT then heuristic fallback;
+// 2 = IDA_Y_INIT only.
+static double dae_init_mode(void* v) {
+    hoc_return_type_code = HocReturnType::integer;
+    if (ifarg(1)) {
+        Daspk::init_mode_ = (int) chkarg(1, 0, 2);
+    }
+    return (double) Daspk::init_mode_;
+}
+
 static double use_mxb(void* v) {
     hoc_return_type_code = HocReturnType::boolean;
     if (ifarg(1)) {
@@ -604,6 +614,7 @@ static Member_func members[] = {{"solve", solve},
                                 {"store_events", store_events},
                                 {"condition_order", condition_order},
                                 {"dae_init_dteps", dae_init_dteps},
+                                {"dae_init_mode", dae_init_mode},
                                 {"simgraph_remove", simgraph_remove},
                                 {"state_magnitudes", state_magnitudes},
                                 {"ncs_netcons", ncs_netcons},
@@ -654,6 +665,8 @@ void Cvode_reg() {
     class2oc("CVode", cons, destruct, members, omembers, nullptr);
     net_cvode_instance = new NetCvode(1);
     Daspk::dteps_ = 1e-9;  // change with cvode.dae_init_dteps(newval)
+    Daspk::init_mode_ = 0;  // heuristic IC; use dae_init_mode(1|2) for IDA_Y_INIT
+    Daspk::calcic_fallback_count_ = 0;
 }
 
 /* Functions Called by the CVODE Solver */
