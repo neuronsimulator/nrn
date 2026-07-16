@@ -526,10 +526,15 @@ Segments
     :param x: Normalized position along Section (0.0 to 1.0).
     :returns: Diameter in microns at the specified position.
 
+    When the section geometry is defined by 3d points (:func:`pt3dadd`), the
+    segment diameter is derived from those points. This getter triggers that
+    recompute if it is pending, so the value is correct even before an explicit
+    geometry pass such as :func:`define_shape` or :func:`finitialize`.
+
     **C Usage:**
-    
+
     .. code-block:: c
-    
+
         double diameter = nrn_segment_diam_get(soma, 0.5);  // Get diameter at middle
 
     **Python Equivalent:**
@@ -731,10 +736,14 @@ Functions, objects, and the stack
 
 .. c:function:: double* nrn_symbol_dataptr(const Symbol* sym)
 
-    Get a pointer to the data for a symbol (for variables).
+    Get a pointer to the storage for a scalar variable, for direct reading and
+    writing. This covers built-in ``USERDOUBLE`` scalars such as ``t`` (time) as
+    well as runtime scalars created in HOC (e.g. ``x = 42``), whose value lives
+    in the top-level object-data array rather than at ``sym->u.pval``.
 
     :param sym: Pointer to the symbol.
-    :returns: Pointer to the symbol's data, or NULL if not applicable.
+    :returns: Pointer to the symbol's data, or the raw ``sym->u.pval`` for
+              symbols that are not top-level runtime scalars.
 
     **Usage Pattern:**
 
