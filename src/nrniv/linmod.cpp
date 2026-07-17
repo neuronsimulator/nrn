@@ -87,14 +87,17 @@ MatrixMap* LinearModelAddition::jacobian_(Vect& y) {
 }
 
 int LinearModelAddition::battery_ic_project() {
-    // Replace each capacitive coupling (off-diagonal C) with a voltage-source
-    // constraint y_i - y_j = hold, current free. Solve
-    //   [ G   B ] [ y  ]   [ b    ]
-    //   [ B^T 0 ] [ is ] = [ hold ]
-    // where B columns are (+1 at i, -1 at j) for each capacitor pair.
-    // Spike scope: pure LinearMechanism algebra (works with nnode_==0 tests).
+    // Consistent IC: hold continuous content, solve algebraics.
+    //
+    // 1) Floating capacitors (both Cij and Cji nonzero): replace with voltage
+    //    sources yi - yj = hold, free battery current (classic C→battery).
+    // 2) Diagonal C_ii only (inductor current state): hold yi, drop eqn i
+    //    (L→current source of value yi).
+    // 3) One-sided C_row,col (op-amp lag tau*vk' in row o): hold y_col (vk),
+    //    drop dynamic equation row (not a floating two-terminal cap).
+    //
+    // Solves augmented [G stamps + constraints] for y.
     if (assumed_identity_) {
-        // C is identity: all states differential ODE-like; no floating cap graph.
         return 0;
     }
     const int n = size_;
@@ -102,47 +105,86 @@ int LinearModelAddition::battery_ic_project() {
         return -1;
     }
 
-    struct Cap {
+    constexpr double ctol = 1e-18;
+
+    struct FloatingCap {
         int i;
         int j;
         double hold;
     };
-    std::vector<Cap> caps;
-    constexpr double ctol = 1e-18;
+    struct StateHold {
+        int var;       // y index held continuous
+        int drop_eqn;  // dynamic residual row replaced by hold
+        double hold;
+    };
+
+    std::vector<FloatingCap> caps;
+    std::vector<char> row_used(n, 0);
+    std::vector<char> col_in_floating(n, 0);
+
+    // --- floating capacitors: mutual off-diagonal pair ---
     for (int i = 0; i < n; ++i) {
         for (int j = i + 1; j < n; ++j) {
             const double cij = (*c_)(i, j);
             const double cji = (*c_)(j, i);
-            if (std::fabs(cij) + std::fabs(cji) > ctol) {
-                Cap cap;
+            if (std::fabs(cij) > ctol && std::fabs(cji) > ctol) {
+                FloatingCap cap;
                 cap.i = i;
                 cap.j = j;
                 cap.hold = y_[i] - y_[j];
                 caps.push_back(cap);
+                row_used[i] = 1;
+                row_used[j] = 1;
+                col_in_floating[i] = 1;
+                col_in_floating[j] = 1;
             }
         }
     }
-    if (caps.empty()) {
-        // No capacitors: pure algebraic G y = b if G invertible.
-        Matrix* A = Matrix::instance(n, n);
-        Vect rhs(n);
-        Vect sol(n);
-        for (int i = 0; i < n; ++i) {
-            for (int j = 0; j < n; ++j) {
-                (*A)(i, j) = (*g_)(i, j);
+
+    // --- remaining C rows: inductor (diag) or op-amp lag (one-sided) ---
+    std::vector<StateHold> holds;
+    for (int r = 0; r < n; ++r) {
+        if (row_used[r]) {
+            continue;
+        }
+        int nz_cols[8];
+        int nnz = 0;
+        for (int j = 0; j < n && nnz < 8; ++j) {
+            if (std::fabs((*c_)(r, j)) > ctol) {
+                nz_cols[nnz++] = j;
             }
-            rhs[i] = b_[i];
         }
-        A->solv(&rhs, &sol, true);
-        for (int i = 0; i < n; ++i) {
-            y_[i] = sol[i];
+        if (nnz == 0) {
+            continue;
         }
-        delete A;
-        return 0;
+        StateHold h;
+        h.drop_eqn = r;
+        if (nnz == 1 && nz_cols[0] == r) {
+            // Diagonal mass: inductor current (or similar) — hold y_r
+            h.var = r;
+            h.hold = y_[r];
+        } else {
+            // Prefer off-diagonal column (variable being differentiated), e.g.
+            // OpAmp: C[o][k]=tau ⇒ hold output voltage y_k, drop eqn o.
+            int jhold = nz_cols[0];
+            for (int k = 0; k < nnz; ++k) {
+                if (nz_cols[k] != r) {
+                    jhold = nz_cols[k];
+                    break;
+                }
+            }
+            h.var = jhold;
+            h.hold = y_[jhold];
+        }
+        holds.push_back(h);
+        row_used[r] = 1;
     }
 
     const int nc = static_cast<int>(caps.size());
-    const int m = n + nc;
+    const int nh = static_cast<int>(holds.size());
+    const int m = n + nc;  // unknowns: y[0..n) and is[0..nc)
+
+    // Equations: (n - nh) KCL/alg rows + nc floating constraints + nh holds = n+nc
     Matrix* A = Matrix::instance(m, m);
     Vect rhs(m);
     Vect sol(m);
@@ -152,25 +194,51 @@ int LinearModelAddition::battery_ic_project() {
             (*A)(i, j) = 0.;
         }
     }
-    // G block and b
-    for (int i = 0; i < n; ++i) {
-        for (int j = 0; j < n; ++j) {
-            (*A)(i, j) = (*g_)(i, j);
-        }
-        rhs[i] = b_[i];
+
+    std::vector<char> drop(n, 0);
+    for (const auto& h: holds) {
+        drop[h.drop_eqn] = 1;
     }
-    // Voltage-source stamps
+
+    int eq = 0;
+    // Keep algebraic/KCL rows (not dropped dynamic equations)
+    for (int r = 0; r < n; ++r) {
+        if (drop[r]) {
+            continue;
+        }
+        for (int j = 0; j < n; ++j) {
+            (*A)(eq, j) = (*g_)(r, j);
+        }
+        // battery currents on floating caps
+        for (int k = 0; k < nc; ++k) {
+            const int i = caps[k].i;
+            const int j = caps[k].j;
+            if (r == i) {
+                (*A)(eq, n + k) = 1.;
+            } else if (r == j) {
+                (*A)(eq, n + k) = -1.;
+            }
+        }
+        rhs[eq] = b_[r];
+        ++eq;
+    }
+    // Floating capacitor constraints
     for (int k = 0; k < nc; ++k) {
-        const int i = caps[k].i;
-        const int j = caps[k].j;
-        const int col = n + k;
-        // Current is from i to j: +is on KCL i, -is on KCL j
-        (*A)(i, col) = 1.;
-        (*A)(j, col) = -1.;
-        // Constraint y_i - y_j = hold
-        (*A)(col, i) = 1.;
-        (*A)(col, j) = -1.;
-        rhs[col] = caps[k].hold;
+        (*A)(eq, caps[k].i) = 1.;
+        (*A)(eq, caps[k].j) = -1.;
+        rhs[eq] = caps[k].hold;
+        ++eq;
+    }
+    // State holds (inductor current, op-amp output voltage, …)
+    for (int k = 0; k < nh; ++k) {
+        (*A)(eq, holds[k].var) = 1.;
+        rhs[eq] = holds[k].hold;
+        ++eq;
+    }
+    if (eq != m) {
+        // Structure mismatch — refuse rather than solve a bad system
+        delete A;
+        return -1;
     }
 
     A->solv(&rhs, &sol, true);

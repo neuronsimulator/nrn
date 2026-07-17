@@ -2130,10 +2130,11 @@ CVode
             * ``1`` — try Sundials ``IDACalcIC`` with ``IDA_Y_INIT`` (solve all
               of ``y`` given ``y'``); on failure fall back to the heuristic.
             * ``2`` — pure ``IDA_Y_INIT`` only (no heuristic fallback).
-            * ``3`` — experimental **battery IC**: treat LinearMechanism capacitors
-              as voltage sources that hold branch :math:`\Delta v`, solve the
-              algebraic network (C→V, optional L→I later). Falls back to the
-              heuristic on failure. Spike for robust capacitive reinit.
+            * ``3`` — experimental **battery IC** for LinearMechanism: floating
+              capacitors → voltage sources holding branch :math:`\Delta v`;
+              inductor currents (diagonal mass) held; op-amp lag
+              (:math:`\tau v_k'` stamp) holds output voltage. Solves the
+              algebraic network. Falls back to the heuristic on failure.
 
             ``IDA_Y_INIT`` does not require a differential/algebraic ``id`` vector.
             It works well for invertible algebraic LinearMechanism systems.
