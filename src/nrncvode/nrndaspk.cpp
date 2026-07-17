@@ -35,6 +35,9 @@ extern void nrn_solve(NrnThread*);
 extern int nrn_sparse13_soft_fail;
 extern int nrn_sparse13_factor_error();
 void nrn_daspk_init_step(double, double, int);
+#if EXTRACELLULAR
+void nrn_extracellular_battery_ic();
+#endif
 // this is private in ida.cpp but we want to check if our initialization
 // is good. Unfortunately ewt is set on the first call to solve which
 // is too late for us.
@@ -348,7 +351,8 @@ int Daspk::init_ida_y_init() {
 
 int Daspk::init_battery() {
     extern double t;
-    // Hold capacitor Δv via battery stamps; pure algebraic solve for y.
+    // Hold continuous capacitive content (LM floating C / L / opamp lag, and
+    // membrane+extracellular ladder), then estimate yp for residual check.
     double tt = cv_->t_;
     cv_->play_continuous(tt);
     int berr = nrndae_battery_ic_project();
@@ -356,10 +360,14 @@ int Daspk::init_battery() {
         Printf("nrndae_battery_ic_project failed, err=%d\n", berr);
         return berr;
     }
-    // Projected y is in LinearMechanism y_; gather into IDA N_Vector.
+#if EXTRACELLULAR
+    // Hold Vm and xc layer continuous content; allow algebraic common mode.
+    nrn_extracellular_battery_ic();
+#endif
+    // Projected states → IDA N_Vector (vi,vext transform in gather).
     cv_->daspk_gather_y(cv_->y_);
     cv_->daspk_scatter_y(cv_->y_);
-    // Companion-style yp estimate so residual C yp ≈ b - G y after projection.
+    // Companion-style yp estimate after projection.
     N_VConst(0., yp_);
     cv_->play_continuous(tt);
     nrn_daspk_init_step(tt, dteps_, 0);
@@ -372,7 +380,6 @@ int Daspk::init_battery() {
     ida_init();
     t = cv_->t_;
     nt_t = cv_->t_;
-    // Re-assert battery y after the probe step (upd=0 should not change y).
     cv_->daspk_gather_y(cv_->y_);
     cv_->daspk_scatter_y(cv_->y_);
     return check_init_residual();

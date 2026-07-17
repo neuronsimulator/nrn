@@ -92,6 +92,10 @@ extern void hoc_level_pushsec(Section*);
 void nrn_ba(neuron::model_sorted_token const&, NrnThread&, int);
 extern void nrn_rhs_ext(NrnThread*);
 extern void nrn_setup_ext(NrnThread*);
+#if EXTRACELLULAR
+/** Battery-style IC: hold Vm and xc continuous content when extracellular present. */
+void nrn_extracellular_battery_ic();
+#endif
 void nrn_cap_jacob(neuron::model_sorted_token const&, NrnThread*, Memb_list*);
 void nrn_div_capacity(neuron::model_sorted_token const&, NrnThread*, Memb_list*);
 void nrn_mul_capacity(neuron::model_sorted_token const&, NrnThread*, Memb_list*);

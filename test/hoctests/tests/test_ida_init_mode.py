@@ -168,6 +168,40 @@ print('ok')
     assert "ok" in _run_isolated(code)
 
 
+def test_extracellular_battery_mode3_holds_vm():
+    """Cable + extracellular: mode 3 holds Vm continuous after finitialize."""
+    code = r"""
+from neuron import h
+import math
+h.load_file('stdrun.hoc')
+cvode = h.CVode()
+s = h.Section(name='s')
+s.L = s.diam = 10
+s.insert('pas')
+s.insert('extracellular')
+# modest xg so outer layer is not pure capacitive float
+for seg in s:
+    seg.xg[0] = 1e-3
+    seg.xc[0] = 1.0
+ic = h.IClamp(s(0.5))
+ic.delay = 0
+ic.dur = 1e9
+ic.amp = 0.01
+h.cvode_active(True)
+cvode.use_daspk(1)
+cvode.dae_init_dteps(1e-9, 1)
+cvode.dae_init_mode(3)
+h.finitialize(-65)
+# At t=0 from finitialize, Vm should remain near v_init
+assert abs(s(0.5).v - (-65)) < 1e-3, s(0.5).v
+h.continuerun(0.5)
+# Should integrate without falling back hard-fail
+assert math.isfinite(s(0.5).v)
+print('ok')
+"""
+    assert "ok" in _run_isolated(code)
+
+
 def test_inductor_battery_holds_current():
     """Inductor: diagonal C[k][k]=L. Hold current; voltage may jump."""
     code = r"""
@@ -209,4 +243,5 @@ if __name__ == "__main__":
     test_series_cr_battery_mode3_isolated()
     test_opamp_tau_battery_holds_output_voltage()
     test_inductor_battery_holds_current()
+    test_extracellular_battery_mode3_holds_vm()
     print("ok")

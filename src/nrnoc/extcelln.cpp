@@ -3,10 +3,13 @@
 
 #include <stdio.h>
 #include <math.h>
+#include <vector>
 #include "section.h"
 #include "nrniv_mf.h"
 #include "hocassrt.h"
 #include "parse.hpp"
+#include "nrn_ansi.h"
+#include "multicore.h"
 
 
 extern int nrn_use_daspk_;
@@ -740,5 +743,112 @@ ndesave[i].rhs[j] -= ndesave[i].v[k]*ndesave[i].m[j][(nlayer)+k-j];
 #endif
 #endif
 
+/*
+ * Battery-style consistent IC for extracellular + membrane capacitance.
+ * Hold continuous content (Vm and xc layer drops / grounded xc voltages) via
+ * large conductances on the cj=0 (resistive) matrix, solve, update, then
+ * exactly restore holds while preserving algebraic common-mode shift when
+ * the outermost layer has no capacitance to ground.
+ *
+ * Called from Daspk battery IC (dae_init_mode 3) after LinearMechanism project.
+ */
+void nrn_extracellular_battery_ic() {
+    if (!use_sparse13) {
+        return;
+    }
+    auto const sorted_token = nrn_ensure_model_data_are_sorted();
+    for (int it = 0; it < nrn_nthread; ++it) {
+        NrnThread* nt = nrn_threads + it;
+        Memb_list* ml = nt->_ecell_memb_list;
+        if (!ml || ml->nodecount == 0) {
+            continue;
+        }
+        const int cnt = ml->nodecount;
+        const int nl = nrn_nlayer_extracellular;
+
+        // Save continuous holds from current state
+        std::vector<double> vm_hold(cnt);
+        std::vector<double> vext_hold(cnt * nl);
+        for (int i = 0; i < cnt; ++i) {
+            Node* nd = ml->nodelist[i];
+            Extnode* nde = nd->extnode;
+            vm_hold[i] = nd->v();
+            for (int j = 0; j < nl; ++j) {
+                vext_hold[i * nl + j] = nde->v[j];
+            }
+        }
+
+        double const cj_sav = nt->cj;
+        double const dt_sav = nt->_dt;
+        nt->cj = 0.0;
+        nt->_dt = 1e9;
+
+        setup_tree_matrix(sorted_token, *nt);
+
+        // Stiff springs: constrain continuous voltage differences' *deltas* to 0
+        constexpr double ghold = 1e9;
+        for (int i = 0; i < cnt; ++i) {
+            Node* nd = ml->nodelist[i];
+            Extnode* nde = nd->extnode;
+            // Membrane: continuous Vm ⇒ dvi - dvx0 = 0
+            *nd->_d_matelm += ghold;
+            *nde->_d[0] += ghold;
+            *nde->_x12[0] -= ghold;
+            *nde->_x21[0] -= ghold;
+
+            for (int j = 0; j < nl; ++j) {
+                double const xc = *nde->param[xc_index_ext(j)];
+                if (xc <= 0.0) {
+                    continue;
+                }
+                if (j == nl - 1) {
+                    // Grounded layer capacitance: continuous vext[last]
+                    *nde->_d[j] += ghold;
+                } else {
+                    // Inter-layer drop continuous
+                    *nde->_d[j] += ghold;
+                    *nde->_d[j + 1] += ghold;
+                    *nde->_x12[j + 1] -= ghold;
+                    *nde->_x21[j + 1] -= ghold;
+                }
+            }
+        }
+
+        nrn_solve(nt);
+        nrn_update_voltage(sorted_token, *nt);
+
+        // Exact hold restore; allow common-mode shift only if outer xc == 0
+        for (int i = 0; i < cnt; ++i) {
+            Node* nd = ml->nodelist[i];
+            Extnode* nde = nd->extnode;
+            double const xc_last = *nde->param[xc_index_ext(nl - 1)];
+            double alpha = 0.0;
+            if (xc_last <= 0.0) {
+                // Algebraic outer layer: keep solved absolute level of vext[0]
+                alpha = nde->v[0] - vext_hold[i * nl + 0];
+            }
+            // Rebuild vext from held drops (or held absolutes) + alpha
+            // Start from outermost continuous or algebraic anchor
+            if (xc_last > 0.0) {
+                nde->v[nl - 1] = vext_hold[i * nl + (nl - 1)];
+            } else {
+                nde->v[nl - 1] = vext_hold[i * nl + (nl - 1)] + alpha;
+            }
+            for (int j = nl - 2; j >= 0; --j) {
+                double const xc = *nde->param[xc_index_ext(j)];
+                if (xc > 0.0) {
+                    double const drop = vext_hold[i * nl + j] - vext_hold[i * nl + j + 1];
+                    nde->v[j] = nde->v[j + 1] + drop;
+                } else {
+                    nde->v[j] = vext_hold[i * nl + j] + alpha;
+                }
+            }
+            nd->v() = vm_hold[i];
+        }
+
+        nt->cj = cj_sav;
+        nt->_dt = dt_sav;
+    }
+}
 
 #endif /*EXTRACELLULAR*/
