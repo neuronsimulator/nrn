@@ -2159,6 +2159,92 @@ CVode
 
 
 
+.. method:: CVode.dae_init_audit
+
+    .. tab:: Python
+
+        Syntax:
+            ``level = cvode.dae_init_audit()``
+
+            ``level = cvode.dae_init_audit(level)``
+
+            ``level = cvode.dae_init_audit(level, t)``
+
+        Description:
+            Diagnostic **three-panel audit** of DAE (IDA) consistent initialization
+            after ``finitialize`` or a discontinuity reinit. Intended for
+            development: after a run where something looks wrong near a known
+            time, re-run with the audit armed at that time.
+
+            * ``level = 0`` — off (default).
+            * ``level = 1`` — summary only (WRMS / max residual A·B·C, jump sizes).
+            * ``level = 2`` — summary plus top residual rows per panel
+              (``y``, ``y'``, residual ≈ ``c*y' - f(y)``).
+
+            With the optional second argument ``t``, the next reinit with
+            simulation time ``>= t`` produces one dump, then the audit disarms
+            (one-shot). Typical workflow: notice an issue near time ``T``, then
+            ``cvode.dae_init_audit(2, T)`` and re-run. Output goes to stdout, or
+            to a file set by :meth:`CVode.dae_init_audit_file`.
+
+            Panels:
+
+            * **A pre** — continuous ``(y, y')`` and residual at the integrator
+              **retreat** to the discontinuity time (``interpolate`` after a
+              step that may overshoot). Continuous play is synchronized to that
+              time when the residual is captured. Prefer this over the raw step
+              endpoint. Unavailable at the first ``finitialize``.
+            * **B post-event pre-IC** — state after the discontinuity and before
+              the IC projector; residual is usually large on affected equations.
+            * **C post-IC** — after heuristic / ``IDA_Y_INIT`` / battery IC.
+
+            Here “event” means any discontinuity reinit (``NET_RECEIVE``,
+            ``Vector.play``, ``at_time``, clamps, etc.), not only network events.
+
+    .. tab:: HOC
+
+        Syntax:
+            ``level = cvode.dae_init_audit()``
+
+            ``level = cvode.dae_init_audit(level)``
+
+            ``level = cvode.dae_init_audit(level, t)``
+
+        Description:
+            Same as the Python tab.
+
+----
+
+
+
+.. method:: CVode.dae_init_audit_file
+
+    .. tab:: Python
+
+        Syntax:
+            ``cvode.dae_init_audit_file()``
+
+            ``cvode.dae_init_audit_file(path)``
+
+        Description:
+            Destination for :meth:`CVode.dae_init_audit` text. With no argument
+            or an empty string, write to stdout. With a path, append each audit
+            dump to that file. Returns ``1`` if a file path is set, else ``0``.
+
+    .. tab:: HOC
+
+        Syntax:
+            ``cvode.dae_init_audit_file()``
+
+            ``cvode.dae_init_audit_file("path")``
+
+        Description:
+            Same as the Python tab.
+
+----
+
+
+
 .. method:: CVode.dae_init_dteps
 
     .. tab:: Python

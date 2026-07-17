@@ -6,6 +6,9 @@
 
 #include <stdio.h>
 #include <math.h>
+#include <algorithm>
+#include <cmath>
+#include <vector>
 #include "spmatrix.h"
 #include "nrnoc2iv.h"
 #include "cvodeobj.h"
@@ -157,6 +160,12 @@ Daspk::Daspk(Cvode* cv, int neq) {
     use_parasite_ = false;
     spmat_ = nullptr;
     mem_ = nullptr;
+    audit_pre_t_ = 0.;
+    audit_pre_max_abs_ = 0.;
+    audit_pre_wrms_ = -1.;
+    audit_pre_neq_ = 0;
+    audit_pre_valid_ = false;
+    audit_pre_res_valid_ = false;
 }
 
 Daspk::~Daspk() {
@@ -203,6 +212,11 @@ int Daspk::init_try_again_;
 int Daspk::first_try_init_failures_;
 int Daspk::init_mode_;
 int Daspk::calcic_fallback_count_;
+int Daspk::audit_level_ = 0;
+double Daspk::audit_t_select_ = 0.;
+int Daspk::audit_armed_ = 0;
+int Daspk::audit_serial_ = 0;
+std::string Daspk::audit_path_;
 
 static void do_ode_thread(neuron::model_sorted_token const& sorted_token, NrnThread& ntr) {
     auto* const nt = &ntr;
@@ -385,31 +399,386 @@ int Daspk::init_battery() {
     return check_init_residual();
 }
 
+void Daspk::audit_set_level(int level) {
+    audit_level_ = level;
+    if (level <= 0) {
+        audit_armed_ = 0;
+    }
+}
+
+int Daspk::audit_level() {
+    return audit_level_;
+}
+
+void Daspk::audit_arm_at(double t) {
+    audit_t_select_ = t;
+    audit_armed_ = 1;
+}
+
+double Daspk::audit_t_select() {
+    return audit_t_select_;
+}
+
+void Daspk::audit_set_file(const char* path) {
+    if (!path || !path[0]) {
+        audit_path_.clear();
+    } else {
+        audit_path_ = path;
+    }
+}
+
+const char* Daspk::audit_file() {
+    return audit_path_.c_str();
+}
+
+FILE* Daspk::audit_open_out() {
+    if (audit_path_.empty()) {
+        return stdout;
+    }
+    FILE* f = fopen(audit_path_.c_str(), "a");
+    if (!f) {
+        Printf("dae_init_audit: cannot open '%s' for append; using stdout\n",
+               audit_path_.c_str());
+        return stdout;
+    }
+    return f;
+}
+
+static void audit_copy_nv_out(Cvode* cv, N_Vector nv, std::vector<double>& out) {
+    out.resize(cv->neq_);
+    int k = 0;
+    for (int tid = 0; tid < cv->nctd_; ++tid) {
+        double* p = cv->n_vector_data(nv, tid);
+        int n = cv->ctd_[tid].nvsize_;
+        for (int i = 0; i < n; ++i) {
+            out[k++] = p[i];
+        }
+    }
+}
+
+static void audit_copy_nv_in(Cvode* cv, const std::vector<double>& in, N_Vector nv) {
+    int k = 0;
+    for (int tid = 0; tid < cv->nctd_; ++tid) {
+        double* p = cv->n_vector_data(nv, tid);
+        int n = cv->ctd_[tid].nvsize_;
+        for (int i = 0; i < n; ++i) {
+            p[i] = in[k++];
+        }
+    }
+}
+
+bool Daspk::audit_should_fire() const {
+    if (audit_level_ <= 0 || !audit_armed_) {
+        return false;
+    }
+    // First reinit with t >= select (user knows the time of interest).
+    return cv_->t_ >= audit_t_select_ - NetCvode::eps(audit_t_select_);
+}
+
+// Summarize residual already in delta_ (no res call).
+static void audit_residual_stats(Cvode* cv,
+                                 N_Vector delta,
+                                 N_Vector y_for_ewt,
+                                 void* mem,
+                                 double* max_abs,
+                                 double* wrms) {
+    *max_abs = 0.;
+    for (int tid = 0; tid < cv->nctd_; ++tid) {
+        double* d = cv->n_vector_data(delta, tid);
+        int n = cv->ctd_[tid].nvsize_;
+        for (int i = 0; i < n; ++i) {
+            double a = std::fabs(d[i]);
+            if (a > *max_abs) {
+                *max_abs = a;
+            }
+        }
+    }
+    *wrms = -1.;
+    if (mem) {
+        if (IDAEwtSet((IDAMem) mem, y_for_ewt)) {
+            *wrms = N_VWrmsNorm(delta, ((IDAMem) mem)->ida_ewt);
+        }
+    }
+}
+
+void Daspk::audit_save_pre_from_delta() {
+    if (audit_level_ <= 0) {
+        return;
+    }
+    // Caller has just evaluated res into delta_ at cv_->t_ with continuous play
+    // synchronized to that t (advance end, or interpolate/retreat to event).
+    audit_copy_nv_out(cv_, cv_->y_, audit_y_pre_);
+    audit_copy_nv_out(cv_, yp_, audit_yp_pre_);
+    audit_copy_nv_out(cv_, delta_, audit_r_pre_);
+    audit_pre_t_ = cv_->t_;
+    audit_pre_neq_ = cv_->neq_;
+    audit_residual_stats(cv_, delta_, cv_->y_, mem_, &audit_pre_max_abs_, &audit_pre_wrms_);
+    audit_pre_valid_ = (audit_pre_neq_ > 0 && (int) audit_y_pre_.size() == audit_pre_neq_);
+    audit_pre_res_valid_ = audit_pre_valid_ && ((int) audit_r_pre_.size() == audit_pre_neq_);
+}
+
+void Daspk::audit_eval_residual(N_Vector y, N_Vector yp, double* max_abs, double* wrms) {
+    res_gvardt(cv_->t_, y, yp, delta_, cv_);
+    audit_residual_stats(cv_, delta_, y, mem_, max_abs, wrms);
+}
+
+void Daspk::audit_dump_panel(FILE* f,
+                             const char* title,
+                             N_Vector y,
+                             N_Vector yp,
+                             N_Vector delta,
+                             double max_abs,
+                             double wrms,
+                             int max_rows) {
+    fprintf(f, "--- %s ---\n", title);
+    if (wrms >= 0.) {
+        fprintf(f, "  WRMS(residual)=%.6g  max|residual|=%.6g  neq=%d\n",
+                wrms,
+                max_abs,
+                cv_->neq_);
+    } else {
+        fprintf(f, "  WRMS(residual)=n/a  max|residual|=%.6g  neq=%d\n", max_abs, cv_->neq_);
+    }
+    if (audit_level_ < 2 || cv_->neq_ <= 0) {
+        return;
+    }
+    // Rank equations by |residual|; print top max_rows (or all if neq small).
+    struct Row {
+        int i;
+        double y, yp, r, ar;
+    };
+    std::vector<Row> rows;
+    rows.reserve(cv_->neq_);
+    int k = 0;
+    for (int tid = 0; tid < cv_->nctd_; ++tid) {
+        double* py = cv_->n_vector_data(y, tid);
+        double* pyp = cv_->n_vector_data(yp, tid);
+        double* pr = cv_->n_vector_data(delta, tid);
+        int n = cv_->ctd_[tid].nvsize_;
+        for (int i = 0; i < n; ++i, ++k) {
+            Row row;
+            row.i = k;
+            row.y = py[i];
+            row.yp = pyp[i];
+            row.r = pr[i];
+            row.ar = std::fabs(pr[i]);
+            rows.push_back(row);
+        }
+    }
+    int nprint = cv_->neq_;
+    if (max_rows > 0 && nprint > max_rows) {
+        std::partial_sort(rows.begin(),
+                          rows.begin() + max_rows,
+                          rows.end(),
+                          [](const Row& a, const Row& b) { return a.ar > b.ar; });
+        nprint = max_rows;
+        fprintf(f, "  (top %d of %d eqs by |residual|; form: residual ~ c*y' - f(y))\n",
+                nprint,
+                cv_->neq_);
+    } else {
+        fprintf(f, "  (all eqs; residual ~ c*y' - f(y))\n");
+    }
+    fprintf(f, "  %6s %16s %16s %16s\n", "eq", "y", "y'", "residual");
+    for (int i = 0; i < nprint; ++i) {
+        const Row& r = rows[i];
+        fprintf(f,
+                "  %6d %16.8g %16.8g %16.8g\n",
+                r.i,
+                r.y,
+                r.yp,
+                r.r);
+    }
+}
+
 int Daspk::init() {
 #if 0
 printf("Daspk_init t_=%20.12g t-t_=%g t0_-t_=%g mode=%d\n",
 cv_->t_, t-cv_->t_, cv_->t0_-cv_->t_, init_mode_);
 #endif
-    if (init_mode_ == 0) {
-        return init_heuristic();
-    }
-    if (init_mode_ == 3) {
-        int err = init_battery();
-        if (err == 0) {
-            return 0;
+    const bool do_audit = audit_should_fire();
+
+    // Capture panel B *before* the projector changes y (and possibly yp).
+    std::vector<double> yB, ypB, rB;
+    double maxB = 0., wrmsB = -1.;
+    bool have_B = false;
+    // Panel A: continuous pre-reinit snapshot (prefer post-interpolate residual).
+    std::vector<double> yA, ypA, rA;
+    double tA = 0., maxA_saved = 0., wrmsA_saved = -1.;
+    bool have_A = false;
+    bool have_A_res = false;
+    if (do_audit) {
+        if (audit_pre_valid_ && audit_pre_neq_ == cv_->neq_) {
+            yA = audit_y_pre_;
+            ypA = audit_yp_pre_;
+            tA = audit_pre_t_;
+            have_A = true;
+            if (audit_pre_res_valid_ && (int) audit_r_pre_.size() == audit_pre_neq_) {
+                rA = audit_r_pre_;
+                maxA_saved = audit_pre_max_abs_;
+                wrmsA_saved = audit_pre_wrms_;
+                have_A_res = true;
+            }
         }
-        ++calcic_fallback_count_;
-        return init_heuristic();
+        cv_->play_continuous(cv_->t_);
+        cv_->daspk_gather_y(cv_->y_);
+        if (have_A) {
+            audit_copy_nv_in(cv_, ypA, yp_);
+        } else {
+            N_VConst(0., yp_);
+        }
+        audit_eval_residual(cv_->y_, yp_, &maxB, &wrmsB);
+        audit_copy_nv_out(cv_, cv_->y_, yB);
+        audit_copy_nv_out(cv_, yp_, ypB);
+        audit_copy_nv_out(cv_, delta_, rB);
+        have_B = true;
+        // Scatter post-event y back so projector sees the same model state.
+        cv_->daspk_scatter_y(cv_->y_);
     }
-    int err = init_ida_y_init();
-    if (err == 0) {
-        return 0;
+
+    int path_mode = init_mode_;
+    bool fell_back = false;
+    int err = 0;
+    if (init_mode_ == 0) {
+        err = init_heuristic();
+        path_mode = 0;
+    } else if (init_mode_ == 3) {
+        err = init_battery();
+        path_mode = 3;
+        if (err != 0) {
+            ++calcic_fallback_count_;
+            fell_back = true;
+            err = init_heuristic();
+            path_mode = 0;
+        }
+    } else {
+        err = init_ida_y_init();
+        path_mode = init_mode_;
+        if (err != 0 && init_mode_ == 1) {
+            ++calcic_fallback_count_;
+            fell_back = true;
+            err = init_heuristic();
+            path_mode = 0;
+        }
     }
-    if (init_mode_ == 1) {
-        ++calcic_fallback_count_;
-        return init_heuristic();
+
+    if (do_audit && have_B) {
+        // Preserve post-IC (y, yp) before temporarily loading A/B for printing.
+        std::vector<double> yC, ypC;
+        audit_copy_nv_out(cv_, cv_->y_, yC);
+        audit_copy_nv_out(cv_, yp_, ypC);
+
+        FILE* f = audit_open_out();
+        const bool close_f = (f != stdout);
+        ++audit_serial_;
+        fprintf(f,
+                "\n=== IDA IC three-panel audit  serial=%d  t=%.15g  requested_mode=%d  "
+                "path_mode=%d  fallback=%d  err=%d ===\n",
+                audit_serial_,
+                cv_->t_,
+                init_mode_,
+                path_mode,
+                fell_back ? 1 : 0,
+                err);
+        fprintf(f,
+                "  note: reinit after discontinuity (NET_RECEIVE / Vector.play / at_time / ...)\n");
+
+        double maxA = 0., wrmsA = -1.;
+        if (have_A) {
+            // Use residual captured with continuous play at tA (typically the
+            // interpolate/retreat residual). Do not re-call res after the jump.
+            audit_copy_nv_in(cv_, yA, cv_->y_);
+            audit_copy_nv_in(cv_, ypA, yp_);
+            if (have_A_res) {
+                audit_copy_nv_in(cv_, rA, delta_);
+                maxA = maxA_saved;
+                wrmsA = wrmsA_saved;
+            } else {
+                // Fallback only if residual was not stored (should be rare).
+                double t_save = cv_->t_;
+                cv_->t_ = tA;
+                audit_eval_residual(cv_->y_, yp_, &maxA, &wrmsA);
+                cv_->t_ = t_save;
+            }
+            char title[192];
+            snprintf(title,
+                     sizeof title,
+                     "A pre (continuous at t=%.15g; residual from retreat/step, not re-eval after "
+                     "jump)",
+                     tA);
+            audit_dump_panel(f, title, cv_->y_, yp_, delta_, maxA, wrmsA, 40);
+        } else {
+            fprintf(f,
+                    "--- A pre ---  (unavailable: no prior continuous snapshot; e.g. "
+                    "finitialize)\n");
+        }
+
+        // Panel B: vectors captured before the projector (no re-eval).
+        audit_copy_nv_in(cv_, yB, cv_->y_);
+        audit_copy_nv_in(cv_, ypB, yp_);
+        audit_copy_nv_in(cv_, rB, delta_);
+        audit_dump_panel(f,
+                         "B post-event pre-IC (y after discontinuity; y' from pre or 0)",
+                         cv_->y_,
+                         yp_,
+                         delta_,
+                         maxB,
+                         wrmsB,
+                         40);
+
+        // Panel C: post-IC state (saved above)
+        audit_copy_nv_in(cv_, yC, cv_->y_);
+        audit_copy_nv_in(cv_, ypC, yp_);
+        double maxC = 0., wrmsC = -1.;
+        audit_eval_residual(cv_->y_, yp_, &maxC, &wrmsC);
+        audit_dump_panel(f, "C post-IC", cv_->y_, yp_, delta_, maxC, wrmsC, 40);
+
+        double max_dy = 0.;
+        int i_max = -1;
+        for (size_t i = 0; i < yB.size() && i < yC.size(); ++i) {
+            double d = std::fabs(yC[i] - yB[i]);
+            if (d > max_dy) {
+                max_dy = d;
+                i_max = (int) i;
+            }
+        }
+        fprintf(f, "--- summary ---\n");
+        fprintf(f, "  max|res| A/B/C = %.6g / %.6g / %.6g\n", maxA, maxB, maxC);
+        if (wrmsA >= 0. || wrmsB >= 0. || wrmsC >= 0.) {
+            fprintf(f, "  WRMS     A/B/C = %.6g / %.6g / %.6g\n", wrmsA, wrmsB, wrmsC);
+        }
+        fprintf(f, "  max|y_C - y_B| = %.6g  (eq %d)\n", max_dy, i_max);
+        if (have_A && (int) yC.size() == (int) yA.size()) {
+            double max_from_pre = 0.;
+            int j_max = -1;
+            for (size_t i = 0; i < yA.size(); ++i) {
+                double d = std::fabs(yC[i] - yA[i]);
+                if (d > max_from_pre) {
+                    max_from_pre = d;
+                    j_max = (int) i;
+                }
+            }
+            fprintf(f, "  max|y_C - y_A| = %.6g  (eq %d)\n", max_from_pre, j_max);
+        }
+        fprintf(f, "=== end IDA IC audit ===\n\n");
+        if (close_f) {
+            fclose(f);
+        }
+        audit_armed_ = 0;
+        // Restore post-IC into model and IDA vectors.
+        audit_copy_nv_in(cv_, yC, cv_->y_);
+        audit_copy_nv_in(cv_, ypC, yp_);
+        cv_->daspk_scatter_y(cv_->y_);
     }
-    // mode 2: IDA_Y_INIT only
+
+    // After a successful IC: continuous residual at this IC time for a later A
+    // if the next reinit has no intervening interpolate (unusual).
+    if (err == 0 && audit_level_ > 0) {
+        // check_init_residual left residual in parasite_ / via res; re-eval once
+        // so delta_ matches current y,yp at cv_->t_.
+        double max_abs = 0., wrms = -1.;
+        audit_eval_residual(cv_->y_, yp_, &max_abs, &wrms);
+        audit_save_pre_from_delta();
+    }
     return err;
 }
 
@@ -435,6 +804,11 @@ int Daspk::advance_tn(double tstop) {
 #endif
     cv_->t0_ = tn;
     cv_->tn_ = cv_->t_;
+    // Continuous residual at step end. If an event retreats via interpolate(),
+    // that call overwrites this snapshot with the true pre-event point.
+    if (ier >= 0) {
+        audit_save_pre_from_delta();
+    }
     // printf("Daspk::advance_tn complete.\n");
     return ier;
 }
@@ -449,7 +823,12 @@ int Daspk::interpolate(double tt) {
     }
     cv_->t_ = tt;
     // interpolation does not call res. So we have to.
+    // Continuous play is synchronized to tt inside res — this is the natural
+    // pre-event residual for panel A (play / NetCon / at_time retreat).
     res_gvardt(cv_->t_, cv_->y_, yp_, delta_, cv_);
+    if (ier >= 0) {
+        audit_save_pre_from_delta();
+    }
     // if(MyMath::eq(t, cv_->t_, NetCvode::eps(cv_->t_))) {
     // printf("t=%.15g t_=%.15g\n", t, cv_->t_);
     //}

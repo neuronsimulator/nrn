@@ -333,6 +333,30 @@ static double dae_init_mode(void* v) {
     return (double) Daspk::init_mode_;
 }
 
+// Three-panel IDA IC audit: 0 off, 1 summary, 2 residual rows.
+// Optional second arg t arms first reinit with time >= t (one-shot).
+static double dae_init_audit(void* v) {
+    hoc_return_type_code = HocReturnType::integer;
+    if (ifarg(1)) {
+        int level = (int) chkarg(1, 0, 2);
+        Daspk::audit_set_level(level);
+        if (ifarg(2)) {
+            Daspk::audit_arm_at(*getarg(2));
+        }
+    }
+    return (double) Daspk::audit_level();
+}
+
+// Append audit text to path; no arg or empty string → stdout.
+static double dae_init_audit_file(void* v) {
+    if (ifarg(1)) {
+        Daspk::audit_set_file(gargstr(1));
+    } else {
+        Daspk::audit_set_file(nullptr);
+    }
+    return Daspk::audit_path_.empty() ? 0. : 1.;
+}
+
 static double use_mxb(void* v) {
     hoc_return_type_code = HocReturnType::boolean;
     if (ifarg(1)) {
@@ -615,6 +639,8 @@ static Member_func members[] = {{"solve", solve},
                                 {"condition_order", condition_order},
                                 {"dae_init_dteps", dae_init_dteps},
                                 {"dae_init_mode", dae_init_mode},
+                                {"dae_init_audit", dae_init_audit},
+                                {"dae_init_audit_file", dae_init_audit_file},
                                 {"simgraph_remove", simgraph_remove},
                                 {"state_magnitudes", state_magnitudes},
                                 {"ncs_netcons", ncs_netcons},
@@ -667,6 +693,10 @@ void Cvode_reg() {
     Daspk::dteps_ = 1e-9;  // change with cvode.dae_init_dteps(newval)
     Daspk::init_mode_ = 0;  // heuristic IC; use dae_init_mode(1|2) for IDA_Y_INIT
     Daspk::calcic_fallback_count_ = 0;
+    Daspk::audit_level_ = 0;
+    Daspk::audit_armed_ = 0;
+    Daspk::audit_serial_ = 0;
+    Daspk::audit_path_.clear();
 }
 
 /* Functions Called by the CVODE Solver */

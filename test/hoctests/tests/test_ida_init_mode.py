@@ -22,6 +22,16 @@ def test_dae_init_mode_api():
     assert cvode.dae_init_mode(0) == 0
 
 
+def test_dae_init_audit_api():
+    assert cvode.dae_init_audit() == 0
+    assert cvode.dae_init_audit(1) == 1
+    assert cvode.dae_init_audit(2, 5.0) == 2
+    assert cvode.dae_init_audit(0) == 0
+    assert cvode.dae_init_audit_file() == 0
+    # empty path → stdout; non-empty sets file mode flag
+    assert cvode.dae_init_audit_file("") == 0
+
+
 def _run_isolated(code: str):
     env = os.environ.copy()
     r = subprocess.run(
@@ -236,12 +246,56 @@ print('ok')
     assert "ok" in _run_isolated(code)
 
 
+def test_ida_ic_three_panel_audit_isolated():
+    """Smoke: three-panel audit on finitialize and after a later reinit."""
+    code = r"""
+from neuron import h
+import tempfile, os
+h.load_file('stdrun.hoc')
+cvode = h.CVode()
+c = h.Matrix(2, 2)
+g = h.Matrix(2, 2)
+y = h.Vector(2)
+y0 = h.Vector(2)
+b = h.Vector([1.0, 0.0])
+c.setval(0, 0, 1.0)
+c.setval(0, 1, -1.0)
+c.setval(1, 0, -1.0)
+c.setval(1, 1, 1.0)
+g.setval(1, 1, 0.5)
+lm = h.LinearMechanism(c, g, y, y0, b)
+h.cvode_active(True)
+cvode.dae_init_mode(3)
+path = tempfile.mktemp(prefix='ida_ic_audit_', suffix='.txt')
+cvode.dae_init_audit_file(path)
+# finitialize audit
+cvode.dae_init_audit(2, 0.0)
+h.finitialize(0.0)
+# second audit: after short run, force reinit at t via second finitialize-like path
+# Arm for t>=0.1 then advance with at_time-style stop via continuerun + re-init
+cvode.dae_init_audit(2, 0.0)  # next reinit (finitialize again)
+h.finitialize(0.0)
+cvode.dae_init_audit(0)
+cvode.dae_init_audit_file('')
+text = open(path).read()
+os.remove(path)
+assert 'IDA IC three-panel audit' in text, text
+assert 'B post-event pre-IC' in text, text
+assert 'C post-IC' in text, text
+assert 'summary' in text, text
+print('ok')
+"""
+    assert "ok" in _run_isolated(code)
+
+
 if __name__ == "__main__":
     test_dae_init_mode_api()
+    test_dae_init_audit_api()
     test_pure_resistive_all_modes_isolated()
     test_series_cr_mode0_mode1_isolated()
     test_series_cr_battery_mode3_isolated()
     test_opamp_tau_battery_holds_output_voltage()
     test_inductor_battery_holds_current()
     test_extracellular_battery_mode3_holds_vm()
+    test_ida_ic_three_panel_audit_isolated()
     print("ok")

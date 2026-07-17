@@ -4,6 +4,9 @@
 #include "nvector_nrnthread.h"
 #include "nvector_nrnthread_ld.h"
 #include "nvector_nrnserial_ld.h"
+#include <cstdio>
+#include <string>
+#include <vector>
 
 class Cvode;
 
@@ -18,6 +21,14 @@ class Daspk {
     N_Vector ewtvec();
     N_Vector acorvec();
 
+    // Three-panel IC audit (stdout or file). See dae_init_audit docs.
+    static void audit_set_level(int level);
+    static int audit_level();
+    static void audit_arm_at(double t);
+    static double audit_t_select();
+    static void audit_set_file(const char* path);  // empty/null → stdout
+    static const char* audit_file();
+
   private:
     void ida_init();
     void info();
@@ -29,6 +40,22 @@ class Daspk {
     int init_battery();
     // Shared residual WRMS check and parasite / style handling after y,yp ready.
     int check_init_residual();
+
+    // IC audit helpers
+    bool audit_should_fire() const;
+    // Save continuous (y, yp) and residual already in delta_ (caller just evaluated res).
+    // Prefer calling after interpolate/retreat so panel A is at t_event, not step end tn.
+    void audit_save_pre_from_delta();
+    void audit_eval_residual(N_Vector y, N_Vector yp, double* max_abs, double* wrms);
+    void audit_dump_panel(FILE* f,
+                          const char* title,
+                          N_Vector y,
+                          N_Vector yp,
+                          N_Vector delta,
+                          double max_abs,
+                          double wrms,
+                          int max_rows);
+    FILE* audit_open_out();
 
   public:
     void* mem_;
@@ -48,4 +75,25 @@ class Daspk {
     static int init_mode_;
     // Count of times mode 1 fell back from IDA_Y_INIT to the heuristic.
     static int calcic_fallback_count_;
+
+    // Audit control (process-wide; one IDA path typically).
+    static int audit_level_;          // 0 off, 1 summary, 2 three-panel (top residual rows)
+    static double audit_t_select_;    // first reinit with t >= this (when armed)
+    static int audit_armed_;          // 1 = waiting for t match
+    static int audit_serial_;         // reinit count (all reinits)
+    static std::string audit_path_;   // empty → stdout
+
+  private:
+    // Continuous pre-reinit snapshot for panel A (play/NetCon/at_time retreat).
+    // Residual is captured when res was evaluated with continuous play at that t
+    // (do not re-eval after the discontinuity has been applied).
+    std::vector<double> audit_y_pre_;
+    std::vector<double> audit_yp_pre_;
+    std::vector<double> audit_r_pre_;
+    double audit_pre_t_;
+    double audit_pre_max_abs_;
+    double audit_pre_wrms_;
+    int audit_pre_neq_;
+    bool audit_pre_valid_;
+    bool audit_pre_res_valid_;  // residual vector matches y/yp/t above
 };
