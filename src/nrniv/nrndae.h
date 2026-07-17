@@ -158,6 +158,7 @@ class NrnDAE {
      */
     virtual void alloc_(int size, int start, int nnode, Node** nodes, int* elayer);
 
+  protected:
     /// the matrix \f[$C$ in $C y' = f(y)$\f]
     MatrixMap* c_;
 
@@ -217,6 +218,12 @@ void nrndae_register(NrnDAE* n);
  * @param n The NrnDAE object (ie the dynamics) to remove.
  */
 void nrndae_deregister(NrnDAE* n);
+
+/**
+ * Spike: for each LinearModelAddition, project states with battery-style IC
+ * (capacitors → held Δv voltage sources). Returns 0 if all projections OK.
+ */
+int nrndae_battery_ic_project();
 
 typedef std::list<NrnDAE*> NrnDAEPtrList;
 typedef NrnDAEPtrList::const_iterator NrnDAEPtrListIterator;

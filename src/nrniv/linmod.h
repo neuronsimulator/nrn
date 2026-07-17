@@ -20,6 +20,14 @@ class LinearModelAddition: public NrnDAE {
                         Object* f_callable = NULL);
     virtual ~LinearModelAddition();
 
+    /**
+     * Spike: consistent IC by replacing capacitors with voltage sources that
+     * hold branch Δv = y_i - y_j (battery replacement). Solves the augmented
+     * algebraic system [G, B; B^T, 0] [y; i_s] = [b; hold] and writes y back.
+     * @return 0 on success, nonzero on failure / nothing to do.
+     */
+    int battery_ic_project();
+
   private:
     void f_(Vect& y, Vect& yprime, int size);
     MatrixMap* jacobian_(Vect& y);

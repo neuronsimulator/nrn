@@ -18,6 +18,7 @@ def test_dae_init_mode_api():
     assert cvode.dae_init_mode() == 0
     assert cvode.dae_init_mode(1) == 1
     assert cvode.dae_init_mode(2) == 2
+    assert cvode.dae_init_mode(3) == 3
     assert cvode.dae_init_mode(0) == 0
 
 
@@ -95,8 +96,43 @@ print('ok')
     assert "ok" in _run_isolated(code)
 
 
+def test_series_cr_battery_mode3_isolated():
+    """Battery IC: C→V hold; absolute V jumps to I*R, Δv held at 0."""
+    code = r"""
+from neuron import h
+import math
+h.load_file('stdrun.hoc')
+cvode = h.CVode()
+I, R, Cval = 1.0, 2.0, 1.0
+c = h.Matrix(2, 2)
+g = h.Matrix(2, 2)
+y = h.Vector(2)
+y0 = h.Vector(2)
+b = h.Vector([I, 0.0])
+c.setval(0, 0, Cval)
+c.setval(0, 1, -Cval)
+c.setval(1, 0, -Cval)
+c.setval(1, 1, Cval)
+g.setval(1, 1, 1.0 / R)
+lm = h.LinearMechanism(c, g, y, y0, b)
+h.cvode_active(True)
+cvode.dae_init_mode(3)
+h.finitialize(0.0)
+IR = I * R
+assert math.isclose(y[0] - y[1], 0.0, abs_tol=1e-9), (y[0], y[1])
+assert math.isclose(y[0], IR, rel_tol=1e-6, abs_tol=1e-6), y[0]
+assert math.isclose(y[1], IR, rel_tol=1e-6, abs_tol=1e-6), y[1]
+h.continuerun(0.5)
+assert math.isclose(y[1], IR, rel_tol=1e-3, abs_tol=1e-3)
+assert y[0] > y[1] - 1e-9
+print('ok')
+"""
+    assert "ok" in _run_isolated(code)
+
+
 if __name__ == "__main__":
     test_dae_init_mode_api()
     test_pure_resistive_all_modes_isolated()
     test_series_cr_mode0_mode1_isolated()
+    test_series_cr_battery_mode3_isolated()
     print("ok")

@@ -5,6 +5,7 @@
 #include "nrnoc2iv.h"
 #include "treeset.h"
 #include "utils/enumerate.h"
+#include "linmod.h"
 
 extern int secondorder;
 
@@ -101,6 +102,21 @@ void nrndae_dkres(double* y, double* yprime, double* delta) {
     for (NrnDAE* item: nrndae_list) {
         item->dkres(y, yprime, delta);
     }
+}
+
+int nrndae_battery_ic_project() {
+    int err = 0;
+    for (NrnDAE* item: nrndae_list) {
+        auto* lm = dynamic_cast<LinearModelAddition*>(item);
+        if (!lm) {
+            continue;
+        }
+        const int e = lm->battery_ic_project();
+        if (e != 0) {
+            err = e;
+        }
+    }
+    return err;
 }
 
 inline void NrnDAE::alloc_(int size, int start, int nnode, Node** nodes, int* elayer) {}

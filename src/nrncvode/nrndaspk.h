@@ -25,6 +25,8 @@ class Daspk {
     int init_heuristic();
     // IDACalcIC(IDA_Y_INIT) with yp=0 + ODE f(y). Returns 0 on residual success.
     int init_ida_y_init();
+    // Spike: capacitors → voltage sources holding Δv; pure algebraic solve.
+    int init_battery();
     // Shared residual WRMS check and parasite / style handling after y,yp ready.
     int check_init_residual();
 
@@ -42,7 +44,7 @@ class Daspk {
     static int init_try_again_;
     static int first_try_init_failures_;
     // 0 = heuristic only (default); 1 = IDA_Y_INIT then heuristic fallback;
-    // 2 = IDA_Y_INIT only.
+    // 2 = IDA_Y_INIT only; 3 = battery IC (C→V hold) for LinearMechanism spike.
     static int init_mode_;
     // Count of times mode 1 fell back from IDA_Y_INIT to the heuristic.
     static int calcic_fallback_count_;

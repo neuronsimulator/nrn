@@ -30,6 +30,7 @@ double Daspk::dteps_;
 
 extern void nrndae_dkres(double*, double*, double*);
 extern void nrndae_dkpsol(double);
+extern int nrndae_battery_ic_project();
 extern void nrn_solve(NrnThread*);
 extern int nrn_sparse13_soft_fail;
 extern int nrn_sparse13_factor_error();
@@ -345,12 +346,52 @@ int Daspk::init_ida_y_init() {
     return check_init_residual();
 }
 
+int Daspk::init_battery() {
+    extern double t;
+    // Hold capacitor Δv via battery stamps; pure algebraic solve for y.
+    double tt = cv_->t_;
+    cv_->play_continuous(tt);
+    int berr = nrndae_battery_ic_project();
+    if (berr != 0) {
+        Printf("nrndae_battery_ic_project failed, err=%d\n", berr);
+        return berr;
+    }
+    // Projected y is in LinearMechanism y_; gather into IDA N_Vector.
+    cv_->daspk_gather_y(cv_->y_);
+    cv_->daspk_scatter_y(cv_->y_);
+    // Companion-style yp estimate so residual C yp ≈ b - G y after projection.
+    N_VConst(0., yp_);
+    cv_->play_continuous(tt);
+    nrn_daspk_init_step(tt, dteps_, 0);
+    cv_->gather_ydot(yp_);
+    N_VScale(1. / dteps_, yp_, yp_);
+    thread_cv = cv_;
+    nvec_yp = yp_;
+    nrn_multithread_job(nrn_ensure_model_data_are_sorted(), do_ode_thread);
+
+    ida_init();
+    t = cv_->t_;
+    nt_t = cv_->t_;
+    // Re-assert battery y after the probe step (upd=0 should not change y).
+    cv_->daspk_gather_y(cv_->y_);
+    cv_->daspk_scatter_y(cv_->y_);
+    return check_init_residual();
+}
+
 int Daspk::init() {
 #if 0
 printf("Daspk_init t_=%20.12g t-t_=%g t0_-t_=%g mode=%d\n",
 cv_->t_, t-cv_->t_, cv_->t0_-cv_->t_, init_mode_);
 #endif
     if (init_mode_ == 0) {
+        return init_heuristic();
+    }
+    if (init_mode_ == 3) {
+        int err = init_battery();
+        if (err == 0) {
+            return 0;
+        }
+        ++calcic_fallback_count_;
         return init_heuristic();
     }
     int err = init_ida_y_init();

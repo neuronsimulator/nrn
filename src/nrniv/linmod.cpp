@@ -23,8 +23,11 @@
 // daspk equation indices.
 
 #include <cstdio>
+#include <cmath>
+#include <vector>
 #include "linmod.h"
 #include "nrnpy.h"
+#include "ocmatrix.h"
 
 LinearModelAddition::LinearModelAddition(Matrix* cmat,
                                          Matrix* gmat,
@@ -81,4 +84,99 @@ double LinearModelAddition::jacobian_multiplier_() {
 
 MatrixMap* LinearModelAddition::jacobian_(Vect& y) {
     return g_;
+}
+
+int LinearModelAddition::battery_ic_project() {
+    // Replace each capacitive coupling (off-diagonal C) with a voltage-source
+    // constraint y_i - y_j = hold, current free. Solve
+    //   [ G   B ] [ y  ]   [ b    ]
+    //   [ B^T 0 ] [ is ] = [ hold ]
+    // where B columns are (+1 at i, -1 at j) for each capacitor pair.
+    // Spike scope: pure LinearMechanism algebra (works with nnode_==0 tests).
+    if (assumed_identity_) {
+        // C is identity: all states differential ODE-like; no floating cap graph.
+        return 0;
+    }
+    const int n = size_;
+    if (n <= 0) {
+        return -1;
+    }
+
+    struct Cap {
+        int i;
+        int j;
+        double hold;
+    };
+    std::vector<Cap> caps;
+    constexpr double ctol = 1e-18;
+    for (int i = 0; i < n; ++i) {
+        for (int j = i + 1; j < n; ++j) {
+            const double cij = (*c_)(i, j);
+            const double cji = (*c_)(j, i);
+            if (std::fabs(cij) + std::fabs(cji) > ctol) {
+                Cap cap;
+                cap.i = i;
+                cap.j = j;
+                cap.hold = y_[i] - y_[j];
+                caps.push_back(cap);
+            }
+        }
+    }
+    if (caps.empty()) {
+        // No capacitors: pure algebraic G y = b if G invertible.
+        Matrix* A = Matrix::instance(n, n);
+        Vect rhs(n);
+        Vect sol(n);
+        for (int i = 0; i < n; ++i) {
+            for (int j = 0; j < n; ++j) {
+                (*A)(i, j) = (*g_)(i, j);
+            }
+            rhs[i] = b_[i];
+        }
+        A->solv(&rhs, &sol, true);
+        for (int i = 0; i < n; ++i) {
+            y_[i] = sol[i];
+        }
+        delete A;
+        return 0;
+    }
+
+    const int nc = static_cast<int>(caps.size());
+    const int m = n + nc;
+    Matrix* A = Matrix::instance(m, m);
+    Vect rhs(m);
+    Vect sol(m);
+    for (int i = 0; i < m; ++i) {
+        rhs[i] = 0.;
+        for (int j = 0; j < m; ++j) {
+            (*A)(i, j) = 0.;
+        }
+    }
+    // G block and b
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < n; ++j) {
+            (*A)(i, j) = (*g_)(i, j);
+        }
+        rhs[i] = b_[i];
+    }
+    // Voltage-source stamps
+    for (int k = 0; k < nc; ++k) {
+        const int i = caps[k].i;
+        const int j = caps[k].j;
+        const int col = n + k;
+        // Current is from i to j: +is on KCL i, -is on KCL j
+        (*A)(i, col) = 1.;
+        (*A)(j, col) = -1.;
+        // Constraint y_i - y_j = hold
+        (*A)(col, i) = 1.;
+        (*A)(col, j) = -1.;
+        rhs[col] = caps[k].hold;
+    }
+
+    A->solv(&rhs, &sol, true);
+    for (int i = 0; i < n; ++i) {
+        y_[i] = sol[i];
+    }
+    delete A;
+    return 0;
 }
