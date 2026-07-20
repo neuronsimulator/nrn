@@ -1,4 +1,5 @@
 #include <../../nrnconf.h>
+#include <cmath>
 #include <cstdio>
 #include "nrndae.h"
 #include "nrndae_c.h"
@@ -314,6 +315,61 @@ void NrnDAE::dkres(double* y, double* yprime, double* delta) {
     }
     for (int i = 0; i < size_; ++i) {
         delta[bmap_[i] - 1] -= (*cyp)[i];
+    }
+}
+
+void NrnDAE::seed_yp_from_f(double* f, double* yp) {
+    // Set yp on mapped equations so C*yp ≈ f for simple mass structure.
+    // Residual uses delta -= C*yp with the same map (see dkres).
+    constexpr double ctol = 1e-18;
+    if (assumed_identity_) {
+        for (int i = 0; i < size_; ++i) {
+            yp[bmap_[i] - 1] = f[bmap_[i] - 1];
+        }
+        return;
+    }
+    if (!c_ || size_ <= 0) {
+        return;
+    }
+    for (int r = 0; r < size_; ++r) {
+        int jnz[8];
+        double cval[8];
+        int nnz = 0;
+        for (int j = 0; j < size_ && nnz < 8; ++j) {
+            const double cij = (*c_)(r, j);
+            if (std::fabs(cij) > ctol) {
+                jnz[nnz] = j;
+                cval[nnz] = cij;
+                ++nnz;
+            }
+        }
+        if (nnz == 0) {
+            continue;  // algebraic row: yp free / leave existing
+        }
+        if (nnz == 1) {
+            // Diagonal mass or one-sided lag: c_rj * yp_j = f_r
+            yp[bmap_[jnz[0]] - 1] = f[bmap_[r] - 1] / cval[0];
+            continue;
+        }
+        if (nnz == 2 && std::fabs(cval[0] + cval[1]) < ctol * (1. + std::fabs(cval[0]))) {
+            // Pure difference stamp C*(yp_a - yp_b) = f_r (floating capacitor row).
+            // Gauge: leave the more negative column's yp unchanged (often 0), set the other.
+            const int ja = jnz[0];
+            const int jb = jnz[1];
+            // c_ra * yp_a + c_rb * yp_b = f_r with c_rb ≈ -c_ra
+            // => yp_a - yp_b = f_r / c_ra
+            const double scale = cval[0];
+            const double dyp = f[bmap_[r] - 1] / scale;
+            // Keep yp[jb] as is (0 unless set by another row), set yp[ja]
+            yp[bmap_[ja] - 1] = yp[bmap_[jb] - 1] + dyp;
+        }
+        // denser rows: leave yp; residual check / heuristic fallback may apply
+    }
+}
+
+void nrndae_seed_yp_from_f(double* f, double* yp) {
+    for (NrnDAE* item: nrndae_list) {
+        item->seed_yp_from_f(f, yp);
     }
 }
 

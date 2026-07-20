@@ -60,7 +60,7 @@ g.setval(0, 0, 1.0)
 g.setval(1, 1, 0.5)
 lm = h.LinearMechanism(c, g, y, y0, b)
 h.cvode_active(True)
-for mode in (0, 1, 2):
+for mode in (0, 1, 2, 3):
     cvode.dae_init_mode(mode)
     h.finitialize(0.0)
     assert math.isclose(y[0], 1.0, rel_tol=1e-6, abs_tol=1e-6), mode
@@ -283,6 +283,63 @@ assert 'IDA IC three-panel audit' in text, text
 assert 'B post-event pre-IC' in text, text
 assert 'C post-IC' in text, text
 assert 'summary' in text, text
+assert 'C*y' in text or "C*y'=f" in text or 'diagonal' in text or 'content' in text or 'mode 3' in text, text
+print('ok')
+"""
+    assert "ok" in _run_isolated(code)
+
+
+def test_seclamp_tiny_cm_mode3_no_init_failure():
+    """SEClamp + tiny cm: mode 3 C*y'=f clears residual (scm2eem-style).
+
+    Legacy nano-step leaves O(dteps*|y'|) residual and fails WRMS under
+    default style 0. Mode 3 should report err=0 and WRMS C ~ 0.
+    """
+    code = r"""
+from neuron import h
+import math
+import tempfile, os
+h.load_file('stdrun.hoc')
+cvode = h.CVode()
+s = h.Section(name='eem')
+s.L = 10
+s.diam = 100 / s.L / h.PI
+s.insert('hh')
+s.cm = 0.001
+vc = h.SEClamp(s(0.5))
+vc.rs = 0.1
+vc.dur1 = 1e9
+vc.amp1 = -65.0
+h.cvode_active(True)
+cvode.use_daspk(1)
+cvode.atol(1e-6)
+cvode.dae_init_mode(3)
+path = tempfile.mktemp(prefix='ida_seclamp_', suffix='.txt')
+cvode.dae_init_audit_file(path)
+cvode.dae_init_audit(2, 0.0)
+h.finitialize(-65)
+cvode.dae_init_audit(0)
+cvode.dae_init_audit_file('')
+text = open(path).read()
+os.remove(path)
+assert 'requested_mode=3' in text, text
+assert 'path_mode=3' in text, text
+assert 'fallback=0' in text, text
+assert 'err=0' in text, text
+# summary WRMS C is the third number — expect exact 0 after C*y'=f
+assert 'WRMS     A/B/C' in text, text
+# last token on that line should be 0 (or ~0)
+for line in text.splitlines():
+    if 'WRMS     A/B/C' in line:
+        parts = line.split('=')[-1].split('/')
+        wrms_c = float(parts[-1].strip())
+        assert wrms_c == 0.0, (wrms_c, line)
+        break
+assert math.isclose(s(0.5).v, -65.0, abs_tol=1e-6)
+vc.amp1 = -60.0
+cvode.re_init()
+h.continuerun(0.1)
+assert math.isfinite(s(0.5).v)
 print('ok')
 """
     assert "ok" in _run_isolated(code)
@@ -298,4 +355,5 @@ if __name__ == "__main__":
     test_inductor_battery_holds_current()
     test_extracellular_battery_mode3_holds_vm()
     test_ida_ic_three_panel_audit_isolated()
+    test_seclamp_tiny_cm_mode3_no_init_failure()
     print("ok")

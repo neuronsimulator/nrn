@@ -2130,18 +2130,36 @@ CVode
             * ``1`` — try Sundials ``IDACalcIC`` with ``IDA_Y_INIT`` (solve all
               of ``y`` given ``y'``); on failure fall back to the heuristic.
             * ``2`` — pure ``IDA_Y_INIT`` only (no heuristic fallback).
-            * ``3`` — experimental **battery IC** for LinearMechanism: floating
-              capacitors → voltage sources holding branch :math:`\Delta v`;
-              inductor currents (diagonal mass) held; op-amp lag
-              (:math:`\tau v_k'` stamp) holds output voltage. Solves the
-              algebraic network. Falls back to the heuristic on failure.
+            * ``3`` — **content hold + continuous** :math:`y'` recovery for
+              :math:`C(t)\,y' = f(y,t)`:
+
+              1. **Hold continuous content** and free absolute algebraics:
+                 LinearMechanism floating capacitors → voltage sources holding
+                 branch :math:`\Delta v`; diagonal mass (inductor current) held;
+                 op-amp lag (:math:`\tau v_k'`) holds the differentiated voltage;
+                 extracellular holds :math:`V_m` and capacitive layer drops.
+              2. **Recover** :math:`y'` from :math:`C\,y' = f(y,t)` at that
+                 fixed :math:`y` (diagonal membrane/mechanism mass, simple LM
+                 mass stamps). This is the continuous :math:`dt\to 0` limit and
+                 does **not** use :meth:`CVode.dae_init_dteps`.
+
+              On residual failure, prints a short equation classification
+              (algebraic vs near-singular :math:`c`) and falls back to the
+              mode-``0`` heuristic (unless an IC audit is armed, which keeps
+              pure mode-``3`` state for diagnosis).
 
             ``IDA_Y_INIT`` does not require a differential/algebraic ``id`` vector.
             It works well for invertible algebraic LinearMechanism systems.
             For folded capacitor equations (``C*(v1'-v2')``) the Newton matrix
             can be singular under ``IDA_Y_INIT``; mode ``1`` then falls back to
-            the heuristic. Default remains ``0`` until the capacitor/extracellular
-            path is fully validated.
+            the heuristic. Default remains ``0`` until mode ``3`` is fully
+            validated across models.
+
+            Mode ``3`` assumes the post-event (or ``finitialize``) :math:`y` is
+            already on the algebraic manifold for rows with :math:`C=0`. It
+            does not invent a consistent :math:`y` when user/``INITIAL`` state
+            is algebraically inconsistent (e.g. clamp amp ≠ :math:`v`, or
+            ``xc=0`` with an inconsistent ``vext`` gauge).
 
     .. tab:: HOC
 
@@ -2153,7 +2171,7 @@ CVode
         Description:
             Same as the Python tab: ``0`` heuristic (default), ``1``
             ``IDA_Y_INIT`` with heuristic fallback, ``2`` pure ``IDA_Y_INIT``,
-            ``3`` battery IC spike.
+            ``3`` battery content hold plus :math:`C y' = f(y)` for :math:`y'`.
 
 ----
 
@@ -2196,7 +2214,10 @@ CVode
               endpoint. Unavailable at the first ``finitialize``.
             * **B post-event pre-IC** — state after the discontinuity and before
               the IC projector; residual is usually large on affected equations.
-            * **C post-IC** — after heuristic / ``IDA_Y_INIT`` / battery IC.
+            * **C post-IC** — after heuristic / ``IDA_Y_INIT`` / mode-3
+              (content hold + :math:`C y'=f`). When mode ``3`` fails residual
+              and an audit is armed, fallback is suppressed so panel C shows
+              pure mode ``3``.
 
             Here “event” means any discontinuity reinit (``NET_RECEIVE``,
             ``Vector.play``, ``at_time``, clamps, etc.), not only network events.

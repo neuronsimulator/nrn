@@ -34,6 +34,7 @@ double Daspk::dteps_;
 extern void nrndae_dkres(double*, double*, double*);
 extern void nrndae_dkpsol(double);
 extern int nrndae_battery_ic_project();
+extern void nrndae_seed_yp_from_f(double* f, double* yp);
 extern void nrn_solve(NrnThread*);
 extern int nrn_sparse13_soft_fail;
 extern int nrn_sparse13_factor_error();
@@ -363,10 +364,175 @@ int Daspk::init_ida_y_init() {
     return check_init_residual();
 }
 
+// Mode 3 step after y-project: set yp from C*yp = f(y) at fixed y (continuous
+// limit). Residual G = C*yp - f (same assembly as Cvode::res). Unlike the
+// dteps companion nano-step, there is no O(dteps) bias in y'.
+//
+// Handles: diagonal membrane cm, identity mechanism ODEs, simple LM mass
+// (via nrndae_seed_yp_from_f), and single-layer xc when present. Algebraic
+// rows (c=0) leave yp=0 — residual can only clear if f already vanishes.
+static void seed_yp_from_Cy_eq_f(Daspk* d) {
+    Cvode* cv = d->cv_;
+    NrnThread* nt = nrn_threads;
+    CvodeThreadData& z = cv->ctd_[0];
+    double tt = cv->t_;
+    nt->_t = tt;
+    cv->play_continuous(tt);
+    auto const sorted = nrn_ensure_model_data_are_sorted();
+    // f(y) for G = C*yp - f  (same first half as Cvode::res)
+    nrn_rhs(sorted, *nt);
+    cv->do_ode(sorted, *nt);
+    cv->gather_ydot(d->delta_);
+    double* F = cv->n_vector_data(d->delta_, 0);
+    double* yp = cv->n_vector_data(d->yp_, 0);
+
+    N_VConst(0., d->yp_);
+
+#if EXTRACELLULAR
+    // Extracellular xc first so membrane can use c*(vm' - vext[0]').
+    if (z.cmlext_) {
+        assert(z.cmlext_->ml.size() == 1);
+        Memb_list* ml = &z.cmlext_->ml[0];
+        int n = ml->nodecount;
+        for (int i = 0; i < n; ++i) {
+            Node* nd = ml->nodelist[i];
+            int j = nd->eqn_index_;  // vext[0] index in y (see Cvode::res)
+            if (nrn_nlayer_extracellular == 1) {
+                double cx = 1e-3 * ml->data(i, neuron::extracellular::xc_index, 0);
+                if (cx > 0.) {
+                    yp[j] = F[j] / cx;
+                }
+            } else {
+                int k = nrn_nlayer_extracellular - 1;
+                int jj = j + k;
+                double cx = 1e-3 * ml->data(i, neuron::extracellular::xc_index, k);
+                if (cx > 0.) {
+                    yp[jj] = F[jj] / cx;
+                }
+                for (k = nrn_nlayer_extracellular - 2; k >= 0; --k) {
+                    jj = j + k;
+                    cx = 1e-3 * ml->data(i, neuron::extracellular::xc_index, k);
+                    if (cx > 0.) {
+                        yp[jj] = yp[jj + 1] + F[jj] / cx;
+                    }
+                }
+            }
+        }
+    }
+#endif
+
+    // Capacitive membrane: c = 1e-3 * cm (matches res).
+    // No ext: c*vm' = f. With ext: c*(vm' - vext[0]') = f_vi ⇒ vm' = vext' + f/c.
+    if (z.cmlcap_) {
+        assert(z.cmlcap_->ml.size() == 1);
+        Memb_list* ml = &z.cmlcap_->ml[0];
+        int n = ml->nodecount;
+        for (int i = 0; i < n; ++i) {
+            Node* nd = ml->nodelist[i];
+            int j = nd->eqn_index_ - 1;
+            double c = 1e-3 * ml->data(i, 0);
+            if (c == 0.) {
+                continue;  // algebraic membrane node
+            }
+            if (nd->extnode) {
+                yp[j] = yp[j + 1] + F[j] / c;
+            } else {
+                yp[j] = F[j] / c;
+            }
+        }
+    }
+
+    // Mechanism ODEs: identity mass y' = f_ode
+    for (int i = z.neq_v_; i < z.nvsize_; ++i) {
+        yp[i] = F[i];
+    }
+
+    // LinearMechanism mass (diagonal / lag / simple floating difference)
+    nrndae_seed_yp_from_f(F, yp);
+}
+
+// After residual failure: classify largest residual equations (algebraic vs
+// tiny-cm differential) to aid singular / inconsistent IC diagnosis.
+static void diagnose_battery_ic_residual(Daspk* d) {
+    Cvode* cv = d->cv_;
+    if (cv->neq_ <= 0) {
+        return;
+    }
+    // Residual left in parasite_ by check_init_residual
+    double* r = cv->n_vector_data(d->parasite_, 0);
+    double* yp = cv->n_vector_data(d->yp_, 0);
+    CvodeThreadData& z = cv->ctd_[0];
+
+    // Per-eq diagonal c estimate for voltage equations (0 = algebraic)
+    std::vector<double> cdiag(cv->neq_, 0.);
+    for (int i = z.neq_v_; i < z.nvsize_ && i < cv->neq_; ++i) {
+        cdiag[i] = 1.;  // mechanism ODE identity
+    }
+    if (z.cmlcap_) {
+        Memb_list* ml = &z.cmlcap_->ml[0];
+        for (int i = 0; i < ml->nodecount; ++i) {
+            Node* nd = ml->nodelist[i];
+            int j = nd->eqn_index_ - 1;
+            if (j >= 0 && j < cv->neq_) {
+                cdiag[j] = 1e-3 * ml->data(i, 0);
+            }
+        }
+    }
+
+    // Top few residual equations by |r|
+    constexpr int ntop = 5;
+    int idx[ntop];
+    double ar[ntop];
+    for (int k = 0; k < ntop; ++k) {
+        idx[k] = -1;
+        ar[k] = -1.;
+    }
+    for (int i = 0; i < cv->neq_; ++i) {
+        double a = std::fabs(r[i]);
+        for (int k = 0; k < ntop; ++k) {
+            if (a > ar[k]) {
+                for (int m = ntop - 1; m > k; --m) {
+                    ar[m] = ar[m - 1];
+                    idx[m] = idx[m - 1];
+                }
+                ar[k] = a;
+                idx[k] = i;
+                break;
+            }
+        }
+    }
+
+    constexpr double tiny_c = 1e-12;  // 1e-3 * cm with cm ~ 1e-9 uF/cm2 scale
+    Printf("  battery IC residual diagnosis (top residual eqs):\n");
+    for (int k = 0; k < ntop && idx[k] >= 0; ++k) {
+        if (ar[k] <= 0.) {
+            break;
+        }
+        int i = idx[k];
+        double c = (i < (int) cdiag.size()) ? cdiag[i] : 0.;
+        const char* kind = "unknown";
+        if (i >= z.neq_v_) {
+            kind = "mechanism-ODE";
+        } else if (c == 0.) {
+            kind = "algebraic (c=0): y may need to change; y' cannot clear residual";
+        } else if (c < tiny_c) {
+            kind = "near-singular c: huge |y'| or treat as algebraic / ideal clamp";
+        } else {
+            kind = "capacitive";
+        }
+        Printf("    eq %d  |res|=%.6g  c~%.3g  y'=%.6g  — %s\n",
+               i,
+               ar[k],
+               c,
+               yp[i],
+               kind);
+    }
+}
+
 int Daspk::init_battery() {
     extern double t;
-    // Hold continuous capacitive content (LM floating C / L / opamp lag, and
-    // membrane+extracellular ladder), then estimate yp for residual check.
+    // Mode 3: (1) hold continuous content (LM + extracellular), (2) y' from
+    // C*y' = f(y) at fixed y. Nano-step heuristic is only a fallback (caller).
     double tt = cv_->t_;
     cv_->play_continuous(tt);
     int berr = nrndae_battery_ic_project();
@@ -381,22 +547,18 @@ int Daspk::init_battery() {
     // Projected states → IDA N_Vector (vi,vext transform in gather).
     cv_->daspk_gather_y(cv_->y_);
     cv_->daspk_scatter_y(cv_->y_);
-    // Companion-style yp estimate after projection.
-    N_VConst(0., yp_);
-    cv_->play_continuous(tt);
-    nrn_daspk_init_step(tt, dteps_, 0);
-    cv_->gather_ydot(yp_);
-    N_VScale(1. / dteps_, yp_, yp_);
-    thread_cv = cv_;
-    nvec_yp = yp_;
-    nrn_multithread_job(nrn_ensure_model_data_are_sorted(), do_ode_thread);
+    seed_yp_from_Cy_eq_f(this);
 
     ida_init();
     t = cv_->t_;
     nt_t = cv_->t_;
     cv_->daspk_gather_y(cv_->y_);
     cv_->daspk_scatter_y(cv_->y_);
-    return check_init_residual();
+    int err = check_init_residual();
+    if (err != 0) {
+        diagnose_battery_ic_residual(this);
+    }
+    return err;
 }
 
 void Daspk::audit_set_level(int level) {
@@ -642,13 +804,23 @@ cv_->t_, t-cv_->t_, cv_->t0_-cv_->t_, init_mode_);
         err = init_heuristic();
         path_mode = 0;
     } else if (init_mode_ == 3) {
+        // Hold continuous content (LM / extracellular), then y' from C*y'=f(y).
+        // On residual failure, fall back to nano-step heuristic (unless audit
+        // is armed — keep pure mode-3 state for panel C).
         err = init_battery();
         path_mode = 3;
         if (err != 0) {
-            ++calcic_fallback_count_;
-            fell_back = true;
-            err = init_heuristic();
-            path_mode = 0;
+            if (do_audit) {
+                Printf("battery IC residual failed (err=%d); audit armed — not falling back to "
+                       "heuristic\n",
+                       err);
+            } else {
+                Printf("battery IC residual failed (err=%d); falling back to heuristic IC\n", err);
+                ++calcic_fallback_count_;
+                fell_back = true;
+                err = init_heuristic();
+                path_mode = 0;
+            }
         }
     } else {
         err = init_ida_y_init();
@@ -679,8 +851,19 @@ cv_->t_, t-cv_->t_, cv_->t0_-cv_->t_, init_mode_);
                 path_mode,
                 fell_back ? 1 : 0,
                 err);
-        fprintf(f,
-                "  note: reinit after discontinuity (NET_RECEIVE / Vector.play / at_time / ...)\n");
+        if (have_A) {
+            fprintf(f,
+                    "  note: reinit after discontinuity (NET_RECEIVE / Vector.play / at_time / "
+                    "...)\n");
+        } else {
+            fprintf(f, "  note: no continuous pre-snapshot (typical of finitialize)\n");
+        }
+        if (init_mode_ == 3 && path_mode == 3 && do_audit) {
+            fprintf(f,
+                    "  note: mode 3 panel C uses y' from diagonal C*y'=f(y) (no dteps companion)"
+                    "%s\n",
+                    err != 0 ? "; residual failed; fallback suppressed (audit armed)" : "");
+        }
 
         double maxA = 0., wrmsA = -1.;
         if (have_A) {

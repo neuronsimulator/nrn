@@ -324,7 +324,7 @@ static double dae_init_dteps(void* v) {
 }
 
 // 0 = heuristic only (default); 1 = IDA_Y_INIT then heuristic fallback;
-// 2 = IDA_Y_INIT only; 3 = battery IC spike (C→V hold for LinearMechanism).
+// 2 = IDA_Y_INIT only; 3 = battery content hold + y' from C*y'=f(y).
 static double dae_init_mode(void* v) {
     hoc_return_type_code = HocReturnType::integer;
     if (ifarg(1)) {

@@ -60,6 +60,16 @@ class NrnDAE {
     void dkres(double* y, double* yprime, double* delta);
 
     /**
+     * Seed local contributions to yp from C*yp = f for simple C structure
+     * (identity, pure diagonal, or single-column lag). Floating mutual C
+     * uses a zero common-mode gauge when the row is a pure difference stamp.
+     *
+     * @param f   full-system rhs f(y) (same layout as IDA residual f-part)
+     * @param yp  full-system y' to fill (may already hold membrane rates)
+     */
+    void seed_yp_from_f(double* f, double* yp);
+
+    /**
      * Initialize the dynamics.
      *
      * @remark Does this by calling f_init_. If f_init_ is NULL, initializes to
@@ -220,10 +230,17 @@ void nrndae_register(NrnDAE* n);
 void nrndae_deregister(NrnDAE* n);
 
 /**
- * Spike: for each LinearModelAddition, project states with battery-style IC
- * (capacitors → held Δv voltage sources). Returns 0 if all projections OK.
+ * Battery-style IC: for each LinearModelAddition, project states
+ * (capacitors → held Δv voltage sources, etc.). Returns 0 if all projections OK.
  */
 int nrndae_battery_ic_project();
+
+/**
+ * After y is fixed, seed yp from diagonal / single-column C rows so that
+ * C*yp ≈ f on LinearMechanism equations (used by dae_init_mode 3).
+ * f and yp are full IDA state vectors (neq).
+ */
+void nrndae_seed_yp_from_f(double* f, double* yp);
 
 typedef std::list<NrnDAE*> NrnDAEPtrList;
 typedef NrnDAEPtrList::const_iterator NrnDAEPtrListIterator;

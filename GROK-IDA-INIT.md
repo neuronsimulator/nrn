@@ -10,15 +10,15 @@ Use this file when starting a **new** Grok session rooted in `~/neuron/nrnida`.
 |-------|--------|--------|
 | **0** Mode API + `IDA_Y_INIT` plumbing | **Done** | `CVode.dae_init_mode` 0–2; default still heuristic (0) |
 | **R** Industry / circuit reinit survey | **Done** | `~/neuron/notes/ida_phase_R_industry_map.md` |
-| **Battery IC** (mode **3**) LM caps | **Done** | C→V hold \(\Delta v\); algebraic solve |
-| Mode 3 inductors + op-amp \(\tau>0\) | **Done** | Diagonal L hold; hold \(v_k\), drop lag row |
-| Mode 3 extracellular membrane/layers | **Done** | Hold \(V_m\), \(xc>0\) drops; outer algebraic free |
+| **Battery IC** (mode **3**) LM + extracellular hold | **Done** | C→V hold \(\Delta v\); L hold; op-amp \(\tau\); ext \(V_m\)/layers |
+| Mode 3 **\(C y'=f\)** for \(y'\) | **Done** | Continuous limit; no `dteps` bias; nano-step only on residual fallback |
 | Soft sparse13 factor fail | **Done** | Mode 1/3 can fall back without abort |
-| **Three-panel IC audit** | **Done** | `dae_init_audit` / `dae_init_audit_file`; panel A = retreat residual |
-| Automated tests | **Partial** | `test/hoctests/tests/test_ida_init_mode.py` (isolated subprocesses) |
-| Manual GUI circuits | **Local** | `external/tests/nrntest/nrniv/ida/*.ses` (tree is **gitignored**) |
+| **Three-panel IC audit** | **Done** | `dae_init_audit` / `dae_init_audit_file`; audit suppresses mode-3 fallback |
+| Singular / algebraic residual diagnosis | **Done** | Top residual eqs classified (algebraic / near-singular \(c\)) on mode-3 fail |
+| Automated tests | **Partial** | `test/hoctests/tests/test_ida_init_mode.py` (incl. SEClamp tiny `cm`) |
+| Manual GUI circuits | **Local** | `external/tests/nrntest/nrniv/ida/*.ses` (tree is **gitignored**); `~/models/nrndc1sim` |
 
-**Default remains mode 0.** Mode 3 is experimental; falls back to heuristic on project failure.
+**Default remains mode 0.** Mode 3 is ready for broader validation; falls back to heuristic on residual failure (except when an audit is armed).
 
 Tip commit (update when advancing): see `git log -1 --oneline` on `hines-grok/ida-init`.
 
@@ -44,7 +44,7 @@ After `finitialize` and after each discontinuity (`NET_RECEIVE`, `Vector.play`, 
    - **Hold:** ODE states; capacitor \(\Delta v\) / charge; inductor current; membrane \(V_m\) with extracellular; \(xc>0\) layer drops.
    - **Free to jump:** absolute node voltages (e.g. series \(C\)–\(R\) + \(I\) step).
 
-Nano-\(dt\) fully implicit Euler is a **practical projector and fallback**, not the definition of (2).
+Nano-\(dt\) fully implicit Euler is a **fallback**, not the definition of (2). Mode 3 recovers \(y'\) from \(C y' = f(y,t)\) at fixed projected \(y\).
 
 ### Non-goals
 
@@ -64,31 +64,31 @@ Daspk::init()  [src/nrncvode/nrndaspk.cpp]
     │  mode 0 → heuristic nano-step (dae_init_dteps)
     │  mode 1 → IDACalcIC(IDA_Y_INIT) then heuristic fallback
     │  mode 2 → IDA_Y_INIT only
-    │  mode 3 → battery project then residual check; fallback heuristic
+    │  mode 3 → battery y-project → y' from C*y'=f(y); residual fail → heuristic
+    │            (audit armed: no fallback; diagnose top residual eqs)
     ▼
 Cvode::res  →  G ≈ C y' − f(y)  (membrane cm, xc layers, nrndae_dkres)
 ```
 
 | Piece | Location |
 |-------|----------|
-| IC modes / audit | `src/nrncvode/nrndaspk.{h,cpp}` |
+| IC modes / audit / \(C y'=f\) | `src/nrncvode/nrndaspk.{h,cpp}` |
 | HOC API | `src/nrncvode/cvodeobj.cpp` (`dae_init_mode`, `dae_init_dteps`, `dae_init_audit`, `dae_init_audit_file`) |
 | Battery project (LM) | `src/nrniv/linmod.cpp` `battery_ic_project()` |
-| NrnDAE entry | `src/nrniv/nrndae.cpp` `nrndae_battery_ic_project()` |
+| NrnDAE entry + LM \(y'\) seed | `src/nrniv/nrndae.cpp` |
 | Extracellular battery | `src/nrnoc/extcelln.cpp` `nrn_extracellular_battery_ic()` |
 | Soft factor fail | `src/nrnoc/solve.cpp` + `nrn_sparse13_soft_fail` |
 | Docs | `docs/progref/simctrl/cvode.rst` |
 | Tests | `test/hoctests/tests/test_ida_init_mode.py` |
 | Design notes | `~/neuron/notes/ida_y_init_adoption.md`, `ida_phase_R_industry_map.md` |
 
-### Battery IC (mode 3) idea
+### Mode 3 idea (productized)
 
-Hold continuous content by temporary stamp replacement:
+1. **Project \(y\):** hold continuous content (LM floating \(C\), diagonal \(L\), op-amp lag; extracellular \(V_m\) / \(xc>0\) drops); free absolute algebraics as the network requires.
+2. **Recover \(y'\):** diagonal / simple-mass solve \(C y' = f(y,t)\) (membrane \(10^{-3} c_m\), mechanism identity, LM single-column/difference stamps). **No `dteps`.**
+3. **Residual check:** on failure, classify top residual eqs (algebraic \(c=0\) vs near-singular \(c\)); fall back to nano-step heuristic unless audit is armed.
 
-- Floating caps → voltage sources holding \(\Delta v\)
-- Diagonal mass (inductor) → hold current state
-- OpAmp lag \(C[o][k]=\tau\) → hold \(v_k\), drop dynamic row
-- Extracellular: hold \(V_m\) and capacitive layer drops
+`finitialize` still chooses \(y\) via `v_init` + `INITIAL` + defaults (`vext=0`). Mode 3 does **not** invent a consistent algebraic \(y\) when that recipe is wrong.
 
 ### Three-panel audit
 
@@ -101,38 +101,33 @@ CVode().dae_init_audit_file("ic_audit.txt")  # append; empty → stdout
 |-------|---------|
 | **A pre** | Continuous \((y,y')\) + residual at **integrator retreat** (`interpolate` after possible overshoot). Continuous play is at event \(t\). Do **not** re-eval after the jump. |
 | **B post-event pre-IC** | After discontinuity, before projector |
-| **C post-IC** | After mode 0/1/2/3 path |
-
-Retreat applies to `Vector.play`, `NetCon`/`NET_RECEIVE`, and `at_time` (same stop → interpolate → deliver → reinit path).
-
-Capture: `audit_save_pre_from_delta()` after `res` in `advance_tn` and **overwrite** in `interpolate`.
+| **C post-IC** | After mode 0/1/2/3 path (mode 3 + audit: pure mode 3 even if residual fails) |
 
 ---
 
 ## Recommended next work
 
-1. **Validate audit** interactively on `iramp1.ses` / `iramp5.ses` (audit at ramp start/end): A at event \(t\), residual ~0; B broken; C clean.
-2. **Stringent multi-cap case:** `wheatstone1.ses` under `external/tests/nrntest/nrniv/ida/` (local/gitignored) or automate a wheatstone LM in pytest.
-3. **Event-reinit automated tests** (not only `finitialize`) for mode 3 continuous content.
-4. **Mode 3 hardening / policy:** when to recommend over 0 for LinearCircuit / extracellular; open layer-0 + LM; multi-layer edge cases; diagnostics/fallback visibility.
-5. Update notes last-updated / tip commit when status drifts.
+1. Broader validation: `~/models/nrndc1sim`, `iramp*`, wheatstone / multi-cap LM.
+2. Event-reinit automated tests (not only `finitialize`) for mode 3 continuous content.
+3. Policy: when to recommend mode 3 over 0; `cm→0` / ideal clamp as algebraic; denser LM \(C\) solve.
+4. Optional HOC API: IDA-side `f` / residual probe (like `CVode.f` for CVODE).
+5. Update tip commit when status drifts.
 6. Later: SUNDIALS 3 revalidation; do **not** resurrect permanent VMX.
 
 ---
 
 ## Build
 
-Typical local build dir used in prior sessions: `~/neuron/nrnida/build-ida-init/` (not committed).
+Typical local build dir used in prior sessions: `~/neuron/nrnida/build/` or `build-ida-init/`.
 
 ```bash
 cd ~/neuron/nrnida
-mkdir -p build-ida-init && cd build-ida-init
+mkdir -p build && cd build
 cmake .. -G Ninja \
   -DCMAKE_BUILD_TYPE=RelWithDebInfo \
   -DNRN_ENABLE_TESTS=ON \
-  -DNRN_ENABLE_MPI=OFF   # match your usual prefs
-ninja -j$(sysctl -n hw.ncpu 2>/dev/null || nproc)
-# GUI circuits need nrngui / share path from this build
+  -DNRN_ENABLE_MPI=OFF
+ninja -j$(nproc)
 ```
 
 ---
@@ -140,22 +135,14 @@ ninja -j$(sysctl -n hw.ncpu 2>/dev/null || nproc)
 ## Tests
 
 ```bash
-cd build-ida-init   # or your build tree
+cd build
 export PYTHONPATH="$PWD/lib/python${PYTHONPATH:+:$PYTHONPATH}"
-export DYLD_LIBRARY_PATH="$PWD/lib${DYLD_LIBRARY_PATH:+:$DYLD_LIBRARY_PATH}"  # macOS
-# Linux: LD_LIBRARY_PATH similarly
+export LD_LIBRARY_PATH="$PWD/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
 python ../test/hoctests/tests/test_ida_init_mode.py
-# or pytest path used by ctest for hoctests if configured
 ```
 
-Manual (requires `external/tests` checkout and GUI build):
-
-```bash
-cd external/tests/nrntest/nrniv/ida   # if present
-nrngui iramp1.ses
-# then: cvode.dae_init_mode(3)  cvode.dae_init_audit(2, 2)  Init&Run
-```
+Manual: `~/models/nrndc1sim` with `h.cvode.dae_init_mode(3)` before `GUI()` / run.
 
 ---
 
@@ -166,21 +153,19 @@ Read ~/neuron/nrnida/GROK-IDA-INIT.md and, if present,
 ~/neuron/notes/ida_y_init_adoption.md and ida_phase_R_industry_map.md.
 
 Repo: ~/neuron/nrnida, branch hines-grok/ida-init (from master).
-Build: prefer existing build-ida-init/ or reconfigure as in the handoff.
+Build: prefer existing build/ or reconfigure as in the handoff.
 
 Goal: consistent IDA IC after finitialize and discontinuities —
 residual ~0 AND physical dt→0 (hold continuous content).
 
-Done: dae_init_mode 0–3 (0 default heuristic; 3 experimental battery IC
-for LM C/L/opamp + extracellular), soft singular J, three-panel audit
-with panel A = continuous residual at integrator retreat (interpolate).
+Done: dae_init_mode 0–3 (0 default heuristic; 3 = battery y-hold + y' from
+C*y'=f, heuristic fallback + residual diagnosis; audit suppresses fallback).
 
 Do not revive permanent VMX/v12. Default stays mode 0 until mode 3 is
-validated.
+broadly validated.
 
-Next: (1) smoke-test audit on iramp* at event times; (2) event-reinit
-automated tests / wheatstone multi-cap; (3) mode 3 policy and edge
-cases — or ask what to prioritize.
+Next: broader model validation; event-reinit tests; cm→0 / algebraic clamp
+policy — or ask what to prioritize.
 ```
 
 ---
@@ -191,6 +176,7 @@ cases — or ask what to prioritize.
 |---------------|--------|
 | `origin/idainit` | `IDA_YA_YDP_INIT` + permanent v12/VMX; LinearCircuit better; extracellular never fully worked; doubled state |
 | Pure `IDA_Y_INIT` (mode 1/2) | Algebraic LM OK; folded caps → singular \(\partial g/\partial y\) at \(c_j=0\) |
-| Nano-step heuristic | Makes \(\|g\|\) small by finite \(C/\mathrm{d}t\); smears jump over \(\varepsilon\) |
+| Nano-step heuristic | Makes \(\|g\|\) small by finite \(C/\mathrm{d}t\); \(O(\mathrm{dteps}\cdot\|y'\|)\) residual bias (fails tiny \(c_m\)) |
+| Mode 3 \(C y'=f\) | Clears residual when \(y\) already on manifold (SEClamp + tiny \(c_m\) scm2eem) |
 
-Industry map (Phase R): hold differentials / content; solve algebraics — aligns with battery IC approach (SPICE-like IC holds, switched-DAE reinits).
+Industry map (Phase R): hold differentials / content; solve algebraics; recover \(y'\) from mass equation.
