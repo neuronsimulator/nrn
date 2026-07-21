@@ -1,5 +1,81 @@
 # NEURON 9.0
 
+## 9.0.2
+_Release Date_ : TBD
+
+
+### What's New
+* Documentation enhancements (typo fixes (#3754, #3776), contributing documentation (#3721), C API corrections (#3785))
+
+### Bug Fixes
+* Import3D on mac can now detect swc files (#3788)
+* rxd fixed-step extracellular Neumann boundary conditions corrected (#3690)
+* Vector.min_ind(i1, i2) fix (#3787)
+* iterating over segments with no mechanisms no longer segfaults (#3794)
+* buffer overflow in output_spikes_parallel prevention (#3813)
+
+
+### Improvements /  Other Changes
+* C API always returns current diameter (#3814), supports top-level runtime scalars (#3815)
+* rxd reaction compilation now supports np.float64 and other np.generic types (#3808)
+* NMODL compiler enhancements (#3592, #3631, #3600, #3597, #3598, #3740)
+* CI is more robust (#3730, #3809)
+
+For the complete list of commits check  [GitHub Issue #3816](https://github.com/neuronsimulator/nrn/issues/3816)
+
+ReadTheDocs sneak peek
+======================
+* https://nrn.readthedocs.io/en/902-cherrypick
+
+Commits going into 9.0.2
+========================
+
+[given `a.b.c` is the last release:]
+
+Since [a.b.c], with:
+```bash
+git log --pretty=format:"%h : %s" a.b.c..release/x.y
+```
+we get:
+
+- neuronapi: fix nrn_symbol_dataptr for top-level runtime scalars (#3815)
+- neuronapi: recompute 3d-derived diam in nrn_segment_diam_get (#3814)
+- Fix buffer overflow in output_spikes_parallel with zero spikes (#3813)
+- Retry 3 times when downloading from gnu mirrors (#3809)
+- Fix install docs: minimum Python version is 3.10 (#3806)
+- rxd handles np.float64 and other numpy.generic types (#3808)
+- fix for file type detection on linux and mac (#3788)
+- Fix Vector.min_ind(i1, i2) bug (#3787)
+- handle segment iteration when no mechs (#3794)
+- fix section pushing examples in C API docs (#3785)
+- Python typo fix (#3776)
+- updated cmake documentation link (#3775)
+- CTNG cleanup (#3564)
+- removed link to page that doesn't exist in current docs (#3731)
+- 1.9 -> 1e9 for large dt (#3754)
+- Bump minimal python to 3.10 (#3745)
+- more neutral language (#3739)
+- NMODL: make v, celsius, and dt available in VERBATIM (#3740)
+- FAQ comment about GUI. (#3738)
+- fix: make Sprintf interpret %% -> % correctly when no args are passed (#3727)
+- ci: for macosx wheels, try to use system clang. (#3730)
+- link back to forum (#3726)
+- Bump tornado from 6.5.1 to 6.5.5 in /ci (#3723)
+- Update forum link to NEURON discussion board (#3724)
+- How to contribute to Documentation (#3721)
+- link updates to readthedocs (#3718)
+- NMODL: Generalize MergeInitialBlocksVisitor (#3598)
+- Add unrolling of FROM iteration variables (#3597)
+- Add explicit METHOD to SOLVE if target is a DERIVATIVE block (#3600)
+- NMODL: Add codegen for implicit `diam` and `area` (#3631)
+- Bump bokeh from 3.7.2 to 3.8.2 in /ci (#3691)
+- Fix the Neumann BC in the x-direction of fixed step extracellular diffusion. (#3690)
+- NMODL: Handle `state_discontinuity` call in NET_RECEIVE block (#3592)
+- Bump urllib3 from 2.6.0 to 2.6.3 in /ci (#3693)
+- Add NMODL development guide (#3683)
+- Bump urllib3 from 2.5.0 to 2.6.0 in /ci (#3681)
+- Fix Python extension library name (#3679)
+
 
 ## 9.0.1
 _Release Date_ : 17-11-2025
