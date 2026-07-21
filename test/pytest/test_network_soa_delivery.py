@@ -107,3 +107,46 @@ def test_savestate_weight_dualwrite_roundtrip():
         g_max = max(g_max, float(syn.g))
     assert g_max > 0.04, f"restored weight 0.05 should produce ExpSyn g peak, g_max={g_max}"
     assert g_max < 0.5, f"mutated weight 0.99 must not leak into delivery, g_max={g_max}"
+
+
+def test_bbsavestate_weight_dualwrite_roundtrip(tmp_path):
+    """BBSaveState restore must update Weight SoA (NetCon on a gid cell)."""
+    # BBSaveState requires a real cell with a gid (section parented to a cell object).
+    class Cell:
+        def __init__(self):
+            self.s = h.Section("soma", self)
+            self.s.insert("pas")
+            self.s.L = self.s.diam = 10
+            self.syn = h.ExpSyn(self.s(0.5))
+            self.syn.tau = 1
+            self.syn.e = 0
+
+    pc = h.ParallelContext()
+    cell = Cell()
+    ns = h.NetStim()
+    ns.start = 1.0
+    ns.number = 1
+    ns.noise = 0
+    nc = h.NetCon(ns, cell.syn)
+    nc.weight[0] = 0.05
+    nc.delay = 0.025
+
+    gid = 7
+    pc.set_gid2node(gid, pc.id())
+    pc.cell(gid, h.NetCon(cell.s(0.5)._ref_v, None, sec=cell.s))
+
+    h.dt = 0.025
+    h.finitialize(-65)
+    path = str(tmp_path / "bbss_weights.bbss")
+    bbss = h.BBSaveState()
+    bbss.save(path)
+
+    nc.weight[0] = 0.99
+    assert abs(nc.weight[0] - 0.99) < 1e-12
+
+    bbss.restore(path)
+    assert abs(nc.weight[0] - 0.05) < 1e-12, (
+        f"BBSaveState restore should restore HOC/SoA weight, got {nc.weight[0]}"
+    )
+
+    pc.gid_clear()

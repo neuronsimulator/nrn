@@ -16,6 +16,7 @@ Use this file when starting a **new** Grok session rooted in `~/neuron/cpu_net_s
 | **Sort wiring** | **Done** | Network in `nrn_ensure_model_data_are_sorted` (thread slices, weight repack) |
 | **Heap-drop policy** | **In progress** | Short-lived materialize on deliver; heap kept for FOR_NETCONS / INITIAL |
 | **SaveState dual-write** | **Done** | Weight save/restore via SoA; SelfEvent identity NetCon index + weight_index |
+| **BBSaveState dual-write** | **Done** | Weight SoA sync; SelfEvent DEList ncindex + weight_index match |
 | **5** GPU net buffers | **Out of scope** | `local/gpu-native-qualification` after merge |
 
 **Dual-write complete for the CoreNEURON-shaped data plane.** Network SoA participates in the global sort gate. Legacy pointers/`dil_`/`weight_` heap remain for interpreter, queue, and nocmodl ABI where required.
@@ -25,7 +26,7 @@ Use this file when starting a **new** Grok session rooted in `~/neuron/cpu_net_s
 - Long-lived `NetCon::weight_` heap still allocated; hot-path deliver uses **short-lived materialize** unless the target type has `FOR_NETCONS` (needs stable heap bases). Full drop needs SaveState index keys + INITIAL/FOR_NETCONS migration.
 - Default codegen is **nocmodl** (`NRN_ENABLE_NMODL=OFF`); native `weight_index` MOD ABI is a separate project.
 - `InputPreSyn` / thin remote gid→fanout deferred (see phase0 §5.5.1).
-- BBSaveState still uses weight pointer equality for SelfEvent binding (Commit B).
+- FOR_NETCONS / INITIAL still need long-lived `weight_` heap before full free.
 - Full `ctest -j N` needs a complete build/install; judge network work with filters below first.
 
 ### Default codegen
@@ -106,7 +107,7 @@ Implementation: `src/nrncvode/network_soa_sort.cpp`, `neuron/container/network/s
 | NetCon deliver (FOR_NETCONS) | SoA → long-lived `weight_` heaps | MOD walks other NetCon `weight_` pointers |
 | `pnt_receive_init` / HOC INITIAL | heap buffer + SoA sync | Keep until INITIAL uses index |
 | SaveState | NetCon obj index + SoA weights | Dual-write restore sync done; `weight2netcon` remains live-queue helper |
-| BBSaveState | heap pointer match for SelfEvent | Next: same NetCon-index policy as SaveState |
+| BBSaveState | DEList ncindex + SoA weights | SelfEvent match heap or weight_index; bind both on restore |
 | HOC `weight[i]` | SoA `data_handle` | Already SoA-primary |
 
 **Do not free `weight_` until** FOR_NETCONS, SaveState, and INITIAL no longer need stable heap bases. Prefer short-lived materialize everywhere else (current default for simple deliver).
@@ -118,7 +119,7 @@ Native nocmodl `weight_index` ABI is **out of scope** for this branch; keep mate
 1. ~~Wire network into `nrn_ensure_model_data_are_sorted`~~ (done).
 2. ~~Heap-drop policy + short-lived materialize on simple deliver~~ (done; full free deferred).
 3. ~~SaveState dual-write restore + SelfEvent NetCon-index identity~~ (done).
-4. BBSaveState: SoA weight sync + SelfEvent NetCon-index binding (same policy as SaveState).
+4. ~~BBSaveState SoA weight sync + SelfEvent NetCon-index binding~~ (done).
 5. FOR_NETCONS / INITIAL without long-lived heap; then drop `weight_` allocation.
 6. Merge toward master; GPU track rebases for Phase 5-style buffers.
 
@@ -167,10 +168,10 @@ Read ~/neuron/cpu_net_soa/GROK-NETWORK-SOA.md, AGENTS.md, and doc/network-soa-ph
 Repo: ~/neuron/cpu_net_soa, branch local/cpu-network-soa.
 Sibling: ~/neuron/nrngpu @ local/gpu-native-qualification (GPU network buffers paused).
 
-Phases 0–4 dual-write + network sort wiring + SaveState dual-write are done.
-Heap-drop policy: short-lived materialize on simple deliver; keep weight_
-for FOR_NETCONS / INITIAL / BBSaveState. Next: BBSaveState NetCon-index
-SelfEvent binding, or full heap free preconditions — not GPU on this branch.
+Phases 0–4 dual-write, network sort wiring, SaveState + BBSaveState dual-write
+are done. Heap-drop policy: short-lived materialize on simple deliver; keep
+weight_ for FOR_NETCONS / INITIAL. Next: FOR_NETCONS/INITIAL without long-lived
+heap, then drop weight_ — not GPU net_buf_receive on this branch.
 ```
 
 ---
