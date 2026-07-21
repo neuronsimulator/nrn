@@ -103,8 +103,8 @@ Implementation: `src/nrncvode/network_soa_sort.cpp`, `neuron/container/network/s
 
 | Path | Weight source | Notes |
 |------|---------------|--------|
-| NetCon deliver (no FOR_NETCONS) | SoA → **temp buffer** → `pnt_receive` | Hot path; heap not required for content |
-| NetCon deliver (FOR_NETCONS) | SoA → long-lived `weight_` heaps | MOD walks other NetCon `weight_` pointers |
+| NetCon deliver | SoA → long-lived `weight_` → `pnt_receive` → SoA | Heap is MOD scratch; **required** so `net_send(..., _w)` keeps SelfEvent identity |
+| NetCon deliver (FOR_NETCONS) | Same + sync all NetCons on target | MOD walks other NetCon `weight_` pointers |
 | `pnt_receive_init` / HOC INITIAL | heap buffer + SoA sync | Keep until INITIAL uses index |
 | SaveState | NetCon obj index + SoA weights | Dual-write restore sync done; `weight2netcon` remains live-queue helper |
 | BBSaveState | DEList ncindex + SoA weights | SelfEvent match heap or weight_index; bind both on restore |

@@ -6,6 +6,7 @@
 #include "neuron/container/network/sort.hpp"
 #include "netcon.h"
 #include "netcvode.h"
+#include "nrniv_mf.h"
 #include "section.h"
 
 #include <algorithm>
@@ -34,8 +35,12 @@ void sync_all_point_processes() {
         }
         hoc_Item* q = nullptr;
         ITERATE(q, tmp->olist) {
-            auto* pnt = static_cast<Point_process*>(OBJ(q)->u.this_pointer);
-            nrn_point_process_soa_sync(pnt);
+            // HOC point-process templates store Point_process* in dataspace
+            // (not this_pointer); use ob2pntproc_0 for both C and HOC shells.
+            Point_process* pnt = ob2pntproc_0(OBJ(q));
+            if (pnt) {
+                nrn_point_process_soa_sync(pnt);
+            }
         }
     }
 }

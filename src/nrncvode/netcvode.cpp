@@ -2338,25 +2338,36 @@ void nrn_pnt_receive_by_weight_index(Point_process* pnt,
     int const n = pnt_receive_size[type];
     bool const fornet = type_has_fornetcon(type);
 
-    // Prefer NetCon dual-write owners when heap base is a known NetCon weight_.
+    // Prefer a long-lived NetCon weight_ heap buffer for pnt_receive. Temporary
+    // materialize buffers are unsafe: nocmodl NET_RECEIVE often does
+    // net_send(..., _w, ...) and SelfEvent must keep a stable weight_ identity
+    // for SaveState/BBSaveState (weight2netcon).
+    NetCon* owner = nullptr;
     if (weight_heap) {
-        if (NetCon* nc = NetConSave::weight2netcon(weight_heap)) {
-            if (fornet) {
-                // FOR_NETCONS walks weight_ of all NetCons with this target.
-                sync_netcon_weights_for_target(pnt, /*soa_to_heap*/ true);
-            } else {
-                nc->weights_soa_to_heap();
-            }
-            POINT_RECEIVE(type, pnt, weight_heap, flag);
-            if (fornet) {
-                sync_netcon_weights_for_target(pnt, /*soa_to_heap*/ false);
-            } else {
-                nc->weights_heap_to_soa();
-            }
-            return;
+        owner = NetConSave::weight2netcon(weight_heap);
+    }
+    if (!owner && weight_index >= 0) {
+        owner = NetConSave::weight_index2netcon(weight_index);
+        if (owner && owner->weight_) {
+            weight_heap = owner->weight_;
         }
     }
-    // Index-only path: materialize a temporary (or fill provided heap) from Weight SoA.
+    if (owner) {
+        if (fornet) {
+            // FOR_NETCONS walks weight_ of all NetCons with this target.
+            sync_netcon_weights_for_target(pnt, /*soa_to_heap*/ true);
+        } else {
+            owner->weights_soa_to_heap();
+        }
+        POINT_RECEIVE(type, pnt, weight_heap ? weight_heap : owner->weight_, flag);
+        if (fornet) {
+            sync_netcon_weights_for_target(pnt, /*soa_to_heap*/ false);
+        } else {
+            owner->weights_heap_to_soa();
+        }
+        return;
+    }
+    // No NetCon owner (null-weight / flag-only path): short-lived buffer OK.
     if (fornet) {
         sync_netcon_weights_for_target(pnt, /*soa_to_heap*/ true);
     }
@@ -3114,16 +3125,15 @@ void NetCon::deliver(double tt, NetCvode* ns, NrnThread* nt) {
 
     // printf("NetCon::deliver t=%g tt=%g %s\n", t, tt, hoc_object_name(target_->ob));
     STATISTICS(netcon_deliver_);
-    // Phase 4 + heap-drop policy: prefer weight_index → short-lived materialize.
-    // Pass long-lived weight_ heap only when FOR_NETCONS needs stable bases for all
-    // NetCons on this target; otherwise a temporary buffer is enough for nocmodl ABI.
+    // Phase 4: deliver via weight_index; use long-lived weight_ heap as MOD
+    // buffer so net_send(..., _w, ...) keeps a stable SelfEvent identity.
+    // SoA remains HOC-primary via materialize around pnt_receive.
     int widx = _soa.weight_index();
     if (widx < 0 && !weight_soa_.empty()) {
         widx = static_cast<int>(weight_soa_.front().current_row());
     }
     if (widx >= 0) {
-        double* heap_for_abi = type_has_fornetcon(type) ? weight_ : nullptr;
-        nrn_pnt_receive_by_weight_index(target_, widx, 0., heap_for_abi);
+        nrn_pnt_receive_by_weight_index(target_, widx, 0., weight_);
     } else {
         weights_soa_to_heap();
         POINT_RECEIVE(type, target_, weight_, 0);
@@ -3149,8 +3159,7 @@ void NetCon::pgvts_deliver(double tt, NetCvode* ns) {
         widx = static_cast<int>(weight_soa_.front().current_row());
     }
     if (widx >= 0) {
-        double* heap_for_abi = type_has_fornetcon(type) ? weight_ : nullptr;
-        nrn_pnt_receive_by_weight_index(target_, widx, 0., heap_for_abi);
+        nrn_pnt_receive_by_weight_index(target_, widx, 0., weight_);
     } else {
         weights_soa_to_heap();
         POINT_RECEIVE(type, target_, weight_, 0);
@@ -3489,16 +3498,21 @@ void SelfEvent::savestate_write(FILE* f) {
     int const moff = movable_ ? (movable_ - target_->prop->dparam) : -1;
     int ncindex = -1;
     // SelfEvent identity for SaveState: NetCon object index (stable), not weight_*.
-    // Prefer heap map when present; fall back to Weight SoA weight_index.
+    // Prefer heap map; fall back to weight_index. Do not assert if unresolved —
+    // flag-only / ignored events use ncindex = -1 (BBSaveState uses -2 for ignore).
     NetCon* owner = nullptr;
     if (weight_) {
         owner = NetConSave::weight2netcon(weight_);
-        assert(owner);
-    } else if (weight_index_ >= 0) {
+    }
+    if (!owner && weight_index_ >= 0) {
         owner = NetConSave::weight_index2netcon(weight_index_);
     }
     if (owner && owner->obj_) {
         ncindex = owner->obj_->index;
+        // Rebind to long-lived heap if we resolved via index only.
+        if (!weight_ && owner->weight_) {
+            weight_ = owner->weight_;
+        }
     }
 
     fprintf(f,
