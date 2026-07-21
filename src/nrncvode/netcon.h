@@ -151,8 +151,17 @@ class NetConSave: public DiscreteEvent {
     NetCon* netcon_;
 
     static void invalid();
+    /** @brief Map long-lived NetCon weight_ heap base → NetCon*. */
     static NetCon* weight2netcon(double*);
+    /** @brief Map HOC NetCon object index → NetCon*. */
     static NetCon* index2netcon(long);
+    /**
+     * @brief Map Weight SoA base row (weight_index) → NetCon*.
+     *
+     * Used when SelfEvent identity is carried as weight_index_ without a
+     * reliable weight_ heap pointer (dual-write / heap-drop path).
+     */
+    static NetCon* weight_index2netcon(int weight_index);
 
   private:
     static NetConSaveWeightTable* wtable_;

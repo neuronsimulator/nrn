@@ -492,10 +492,11 @@ Phase 1 only needs M1 scaffolding (container + optional pointer into SoA). **No 
 
 | Concern | Impact |
 |---------|--------|
-| `NetConSave` weight pointer tables | Today maps `double* → NetCon*`. After SoA, key by `weight_index` or stable NetCon id. Call `NetConSave::invalid()` on weight repack. |
+| `NetConSave` weight pointer tables | Live helper `weight2netcon(double*)` remains; SaveState SelfEvent **file** identity is NetCon obj index + `weight_index2netcon`. Call `NetConSave::invalid()` when heap bases reallocate. |
+| SaveState weight values | Save prefers Weight SoA; restore writes heap + SoA (`restorenet`). |
 | `PreSynSave` / `hi_index_` | Keep index tables; rebuild on unsorted. |
-| BBSaveState fanout | Uses `PreSyn::fanout`; switch to `NcIndex`/`NcCount` in Phase 3. |
-| Binary layout | Do not freeze on-disk format on intermediate dual-write; document stable index fields when dual-write ends. |
+| BBSaveState | Still pointer-equality SelfEvent binding + heap weight IO — migrate like SaveState (Commit B). |
+| Binary layout | SelfEvent line already stores `ncindex`; keep compatible. |
 
 Minimal Phase 1 impact: none if PointProcess/Weight SoA is not yet referenced by SaveState.
 

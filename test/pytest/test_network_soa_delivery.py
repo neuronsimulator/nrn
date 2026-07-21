@@ -68,3 +68,42 @@ def test_netcon_weight_hoc_roundtrip():
         g_max = max(g_max, float(syn.g))
     # Larger weight → larger g peak than default-zero would give
     assert g_max > 0.1, f"weight 0.12 should produce larger g, g_max={g_max}"
+
+
+def test_savestate_weight_dualwrite_roundtrip():
+    """SaveState restore must update Weight SoA, not only the weight_ heap."""
+    s = h.Section(name="soma_ss")
+    s.insert("pas")
+    s.L = s.diam = 10
+    syn = h.ExpSyn(s(0.5))
+    syn.tau = 1
+    syn.e = 0
+    ns = h.NetStim()
+    ns.start = 1.0
+    ns.number = 1
+    ns.noise = 0
+    nc = h.NetCon(ns, syn)
+    nc.weight[0] = 0.05
+    nc.delay = 0.025
+
+    h.dt = 0.025
+    h.finitialize(-65)
+    ss = h.SaveState()
+    ss.save()
+
+    # Mutate after save (SoA-primary HOC path).
+    nc.weight[0] = 0.99
+    assert abs(nc.weight[0] - 0.99) < 1e-12
+
+    ss.restore()
+    assert abs(nc.weight[0] - 0.05) < 1e-12, (
+        f"SaveState restore should restore HOC/SoA weight, got {nc.weight[0]}"
+    )
+
+    # Delivery after restore must use restored weight (SoA materialize path).
+    g_max = 0.0
+    while h.t < 3.0 - h.dt / 2:
+        h.fadvance()
+        g_max = max(g_max, float(syn.g))
+    assert g_max > 0.04, f"restored weight 0.05 should produce ExpSyn g peak, g_max={g_max}"
+    assert g_max < 0.5, f"mutated weight 0.99 must not leak into delivery, g_max={g_max}"

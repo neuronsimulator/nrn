@@ -3414,7 +3414,16 @@ DiscreteEvent* SelfEvent::savestate_save() {
 
 void SelfEvent::savestate_restore(double tt, NetCvode* nc) {
     //	pr("savestate_restore", tt, nc);
-    nrn_net_send(movable_, weight_, target_, tt, flag_);
+    // Prefer long-lived NetCon heap base when known; if only weight_index_ survived
+    // (heap-drop / index identity), rebind via NetConSave::weight_index2netcon.
+    double* w = weight_;
+    if (!w && weight_index_ >= 0) {
+        if (NetCon* owner = NetConSave::weight_index2netcon(weight_index_)) {
+            w = owner->weight_;
+            weight_ = w;
+        }
+    }
+    nrn_net_send(movable_, w, target_, tt, flag_);
 }
 
 DiscreteEvent* SelfEvent::savestate_read(FILE* f) {
@@ -3432,7 +3441,9 @@ DiscreteEvent* SelfEvent::savestate_read(FILE* f) {
     se->weight_index_ = -1;
     se->target_row_ = nrn_point_process_soa_row(se->target_);
     if (ncindex >= 0) {
+        // File identity is NetCon object index (not weight_ pointer).
         NetCon* nc = NetConSave::index2netcon(ncindex);
+        assert(nc);
         se->weight_ = nc->weight_;
         if (!nc->weight_soa_.empty()) {
             se->weight_index_ = static_cast<int>(nc->weight_soa_.front().current_row());
@@ -3477,11 +3488,17 @@ void SelfEvent::savestate_write(FILE* f) {
     fprintf(f, "%d\n", SelfEventType);
     int const moff = movable_ ? (movable_ - target_->prop->dparam) : -1;
     int ncindex = -1;
-    // find the NetCon index for weight_
+    // SelfEvent identity for SaveState: NetCon object index (stable), not weight_*.
+    // Prefer heap map when present; fall back to Weight SoA weight_index.
+    NetCon* owner = nullptr;
     if (weight_) {
-        NetCon* nc = NetConSave::weight2netcon(weight_);
-        assert(nc);
-        ncindex = nc->obj_->index;
+        owner = NetConSave::weight2netcon(weight_);
+        assert(owner);
+    } else if (weight_index_ >= 0) {
+        owner = NetConSave::weight_index2netcon(weight_index_);
+    }
+    if (owner && owner->obj_) {
+        ncindex = owner->obj_->index;
     }
 
     fprintf(f,
@@ -5164,7 +5181,9 @@ NetCon* NetConSave::index2netcon(long id) {
         ITERATE(q, sym->u.ctemplate->olist) {
             Object* obj = OBJ(q);
             nc = (NetCon*) obj->u.this_pointer;
-            if (nc->weight_) {
+            // Index all NetCons by HOC object index (identity for SaveState),
+            // not only those with a weight_ heap (heap-drop readiness).
+            if (nc) {
                 (*idxtable_)[obj->index] = nc;
             }
         }
@@ -5177,6 +5196,33 @@ NetCon* NetConSave::index2netcon(long id) {
     } else {
         return nullptr;
     }
+}
+
+NetCon* NetConSave::weight_index2netcon(int weight_index) {
+    if (weight_index < 0) {
+        return nullptr;
+    }
+    Symbol* sym = hoc_lookup("NetCon");
+    if (!sym || !sym->u.ctemplate || !sym->u.ctemplate->olist) {
+        return nullptr;
+    }
+    hoc_Item* q = nullptr;
+    ITERATE(q, sym->u.ctemplate->olist) {
+        auto* nc = static_cast<NetCon*>(OBJ(q)->u.this_pointer);
+        if (!nc) {
+            continue;
+        }
+        int base = -1;
+        if (!nc->weight_soa_.empty()) {
+            base = static_cast<int>(nc->weight_soa_.front().current_row());
+        } else {
+            base = nc->_soa.weight_index();
+        }
+        if (base == weight_index) {
+            return nc;
+        }
+    }
+    return nullptr;
 }
 
 void nrn_update_ps2nt() {
