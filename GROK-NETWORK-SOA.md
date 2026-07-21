@@ -13,16 +13,18 @@ Use this file when starting a **new** Grok session rooted in `~/neuron/cpu_net_s
 | **2** NetCon SoA; HOC weight → Weight SoA | **Done** | Delivery materializes `double*` for MOD |
 | **3** PreSyn SoA + fanout `NcIndex`/`NcCount` | **Done** | Rebuild at `init_events` + lazy on spike |
 | **4** SelfEvent `weight_index` + receive-by-index | **Done** | M2: still `pnt_receive(..., double*, flag)` |
+| **Sort wiring** | **Done** | Network in `nrn_ensure_model_data_are_sorted` (thread slices, weight repack) |
+| **Heap-drop policy** | **In progress** | Short-lived materialize on deliver; heap kept for FOR_NETCONS / SaveState / INITIAL |
 | **5** GPU net buffers | **Out of scope** | `local/gpu-native-qualification` after merge |
 
-**Dual-write complete for the CoreNEURON-shaped data plane.** Legacy pointers/`dil_`/`weight_` heap remain for interpreter, queue, and nocmodl ABI.
+**Dual-write complete for the CoreNEURON-shaped data plane.** Network SoA participates in the global sort gate. Legacy pointers/`dil_`/`weight_` heap remain for interpreter, queue, and nocmodl ABI where required.
 
 ### Known gaps (do not “just drop heap” yet)
 
-- Long-lived `NetCon::weight_` heap still required for generated `pnt_receive` ABI (default **nocmodl**, `NRN_ENABLE_NMODL=OFF`).
-- Network containers not yet in `nrn_ensure_model_data_are_sorted()` (no full network permute/repack pass).
+- Long-lived `NetCon::weight_` heap still allocated; hot-path deliver uses **short-lived materialize** unless the target type has `FOR_NETCONS` (needs stable heap bases). Full drop needs SaveState index keys + INITIAL/FOR_NETCONS migration.
+- Default codegen is **nocmodl** (`NRN_ENABLE_NMODL=OFF`); native `weight_index` MOD ABI is a separate project.
 - `InputPreSyn` / thin remote gid→fanout deferred (see phase0 §5.5.1).
-- SaveState still largely keyed by weight pointers; SoA repack would need map invalidation.
+- SaveState still largely keyed by weight pointers; weight SoA permute keeps handles stable but pointer map is independent.
 - Full `ctest -j N` needs a complete build/install; judge network work with filters below first.
 
 ### Default codegen
@@ -79,16 +81,42 @@ Key paths:
 | PP dual-write | `Point_process::_soa`, `nrn_point_process_soa_sync` |
 | NetCon / weights | `NetCon::_soa`, `weight_soa_`, `soa_sync` |
 | Fanout | `PreSyn::ensure_fanout_order`, global NetCon* order |
+| Sort / repack | `network_soa_sort.cpp`, `sort_network_data` in ensure_sorted |
 | Receive by index | `nrn_pnt_receive_by_weight_index` |
 
 ---
 
-## Recommended next work (after dual-write)
+## Sort wiring (implemented)
 
-1. ~~Handoff status + automated delivery gate~~ (this session if present).
-2. Wire network storages into `nrn_ensure_model_data_are_sorted` (thread slices, weight repack).
-3. Policy: short-lived materialize vs nocmodl `weight_index` ABI; then drop long-lived heap `weight_`.
-4. SaveState / `weight2netcon` → id or weight_index keys.
+`nrn_ensure_model_data_are_sorted()` now freezes and sorts network containers after nodes + mechanisms:
+
+1. **PointProcess** — partition by `ThreadId`; set `cache.thread[i].point_process_offset`
+2. **Weight** — repack contiguous per-NetCon blocks ordered by target thread; set `weight_offset`
+3. **NetCon** — same order as weight packing; set `netcon_offset`; refresh dual-write indices
+4. **PreSyn** — partition by thread; rebuild `NcIndex`/`NcCount` fanout; set `presyn_offset`
+
+Implementation: `src/nrncvode/network_soa_sort.cpp`, `neuron/container/network/sort.hpp`.
+
+## Heap-drop policy (decision)
+
+| Path | Weight source | Notes |
+|------|---------------|--------|
+| NetCon deliver (no FOR_NETCONS) | SoA → **temp buffer** → `pnt_receive` | Hot path; heap not required for content |
+| NetCon deliver (FOR_NETCONS) | SoA → long-lived `weight_` heaps | MOD walks other NetCon `weight_` pointers |
+| `pnt_receive_init` / HOC INITIAL | heap buffer + SoA sync | Keep until INITIAL uses index |
+| SaveState / `weight2netcon` | heap pointer map | Migrate to `weight_index` / NetCon id before free |
+| HOC `weight[i]` | SoA `data_handle` | Already SoA-primary |
+
+**Do not free `weight_` until** FOR_NETCONS, SaveState, and INITIAL no longer need stable heap bases. Prefer short-lived materialize everywhere else (current default for simple deliver).
+
+Native nocmodl `weight_index` ABI is **out of scope** for this branch; keep materialize around generated `pnt_receive(double*)`.
+
+## Recommended next work
+
+1. ~~Wire network into `nrn_ensure_model_data_are_sorted`~~ (done).
+2. ~~Heap-drop policy + short-lived materialize on simple deliver~~ (done; full free deferred).
+3. SaveState / `weight2netcon` → id or weight_index keys (unblocks full heap free).
+4. FOR_NETCONS / INITIAL without long-lived heap; then drop `weight_` allocation.
 5. Merge toward master; GPU track rebases for Phase 5-style buffers.
 
 ---
@@ -136,9 +164,10 @@ Read ~/neuron/cpu_net_soa/GROK-NETWORK-SOA.md, AGENTS.md, and doc/network-soa-ph
 Repo: ~/neuron/cpu_net_soa, branch local/cpu-network-soa.
 Sibling: ~/neuron/nrngpu @ local/gpu-native-qualification (GPU network buffers paused).
 
-Phases 0–4 dual-write are done. Next: wire network SoA into
-nrn_ensure_model_data_are_sorted (thread slices, weight repack), or
-SaveState index keys — not GPU net_buf_receive on this branch.
+Phases 0–4 dual-write + network sort wiring are done. Heap-drop policy:
+short-lived materialize on simple deliver; keep weight_ for FOR_NETCONS /
+SaveState / INITIAL. Next: SaveState weight_index keys, or full heap free
+preconditions — not GPU net_buf_receive on this branch.
 ```
 
 ---

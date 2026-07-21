@@ -3114,13 +3114,16 @@ void NetCon::deliver(double tt, NetCvode* ns, NrnThread* nt) {
 
     // printf("NetCon::deliver t=%g tt=%g %s\n", t, tt, hoc_object_name(target_->ob));
     STATISTICS(netcon_deliver_);
-    // Phase 4: deliver via weight_index (SoA), materializing double* for MOD.
+    // Phase 4 + heap-drop policy: prefer weight_index → short-lived materialize.
+    // Pass long-lived weight_ heap only when FOR_NETCONS needs stable bases for all
+    // NetCons on this target; otherwise a temporary buffer is enough for nocmodl ABI.
     int widx = _soa.weight_index();
     if (widx < 0 && !weight_soa_.empty()) {
         widx = static_cast<int>(weight_soa_.front().current_row());
     }
     if (widx >= 0) {
-        nrn_pnt_receive_by_weight_index(target_, widx, 0., weight_);
+        double* heap_for_abi = type_has_fornetcon(type) ? weight_ : nullptr;
+        nrn_pnt_receive_by_weight_index(target_, widx, 0., heap_for_abi);
     } else {
         weights_soa_to_heap();
         POINT_RECEIVE(type, target_, weight_, 0);
@@ -3146,7 +3149,8 @@ void NetCon::pgvts_deliver(double tt, NetCvode* ns) {
         widx = static_cast<int>(weight_soa_.front().current_row());
     }
     if (widx >= 0) {
-        nrn_pnt_receive_by_weight_index(target_, widx, 0., weight_);
+        double* heap_for_abi = type_has_fornetcon(type) ? weight_ : nullptr;
+        nrn_pnt_receive_by_weight_index(target_, widx, 0., heap_for_abi);
     } else {
         weights_soa_to_heap();
         POINT_RECEIVE(type, target_, weight_, 0);

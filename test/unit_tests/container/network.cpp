@@ -1,15 +1,19 @@
+#include "neuron/cache/model_data.hpp"
 #include "neuron/container/network/netcon.hpp"
 #include "neuron/container/network/point_process.hpp"
 #include "neuron/container/network/point_process_access.hpp"
 #include "neuron/container/network/presyn.hpp"
 #include "neuron/container/network/self_event.hpp"
+#include "neuron/container/network/sort.hpp"
 #include "neuron/container/network/weight_block.hpp"
 #include "neuron/container/network/weights.hpp"
 #include "neuron/model_data.hpp"
+#include "nrn_ansi.h"
 #include "section.h"
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <algorithm>
 #include <numeric>
 #include <optional>
 #include <random>
@@ -321,4 +325,91 @@ TEST_CASE("SOA-backed PreSyn structure and fanout ranges",
             REQUIRE(b.gid() == 11);
         }
     }
+}
+
+TEST_CASE("Network SoA sort partitions PointProcess by thread",
+          "[Neuron][data_structures][network][sort]") {
+    auto& pp = neuron::model().point_processes();
+    auto& w = neuron::model().weights();
+    auto& nc = neuron::model().netcons();
+    auto& ps = neuron::model().presyns();
+
+    // Intentionally create in non-thread order: tid 1, 0, 1, 0
+    std::vector<PointProcess::owning_handle> rows;
+    rows.emplace_back(pp);
+    rows.back().thread_id() = 1;
+    rows.back().instance() = 10;
+    rows.emplace_back(pp);
+    rows.back().thread_id() = 0;
+    rows.back().instance() = 20;
+    rows.emplace_back(pp);
+    rows.back().thread_id() = 1;
+    rows.back().instance() = 11;
+    rows.emplace_back(pp);
+    rows.back().thread_id() = 0;
+    rows.back().instance() = 21;
+
+    auto w0 = Weight::allocate_weight_rows(1, nullptr);
+    w0[0].value() = 1.0;
+    Weight::owning_handle orphan{w};
+    orphan.value() = 99.0;
+    auto w1 = Weight::allocate_weight_rows(1, nullptr);
+    w1[0].value() = 2.0;
+
+    extern int nrn_nthread;
+    {
+        auto pp_tok = pp.issue_frozen_token();
+        auto w_tok = w.issue_frozen_token();
+        auto nc_tok = nc.issue_frozen_token();
+        auto ps_tok = ps.issue_frozen_token();
+
+        neuron::cache::Model cache{};
+        cache.thread.resize(static_cast<std::size_t>(std::max(nrn_nthread, 1)));
+
+        neuron::container::network::sort_network_data(cache, pp_tok, w_tok, nc_tok, ps_tok);
+
+        REQUIRE(pp.is_sorted());
+        REQUIRE(w.is_sorted());
+        REQUIRE(nc.is_sorted());
+        REQUIRE(ps.is_sorted());
+
+        // Handles keep logical values after partition.
+        REQUIRE(rows[0].thread_id() == 1);
+        REQUIRE(rows[0].instance() == 10);
+        REQUIRE(rows[1].thread_id() == 0);
+        REQUIRE(rows[1].instance() == 20);
+
+        if (nrn_nthread >= 2) {
+            // Storage order: thread 0 rows then thread 1 rows.
+            REQUIRE(pp.get<PointProcess::field::ThreadId>(0) == 0);
+            REQUIRE(pp.get<PointProcess::field::ThreadId>(1) == 0);
+            REQUIRE(pp.get<PointProcess::field::ThreadId>(2) == 1);
+            REQUIRE(pp.get<PointProcess::field::ThreadId>(3) == 1);
+            REQUIRE(cache.thread[0].point_process_offset == 0);
+            REQUIRE(cache.thread[1].point_process_offset == 2);
+        }
+    }  // freeze tokens released before destroying owning handles
+}
+
+TEST_CASE("nrn_ensure_model_data_are_sorted freezes network containers",
+          "[Neuron][data_structures][network][sort]") {
+    // Needs a minimal model (same precondition as other ensure_sorted unit tests).
+    REQUIRE(hoc_oc("create s\nfinitialize(-65)\n") == 0);
+    neuron::model().point_processes().mark_as_unsorted();
+    neuron::model().weights().mark_as_unsorted();
+    neuron::model().netcons().mark_as_unsorted();
+    neuron::model().presyns().mark_as_unsorted();
+    {
+        auto token = nrn_ensure_model_data_are_sorted();
+        REQUIRE(neuron::model().point_processes().is_sorted());
+        REQUIRE(neuron::model().weights().is_sorted());
+        REQUIRE(neuron::model().netcons().is_sorted());
+        REQUIRE(neuron::model().presyns().is_sorted());
+        REQUIRE(neuron::cache::model);
+        REQUIRE_FALSE(token.point_process_tokens.empty());
+        REQUIRE_FALSE(token.weight_tokens.empty());
+        REQUIRE_FALSE(token.netcon_tokens.empty());
+        REQUIRE_FALSE(token.presyn_tokens.empty());
+    }  // release freeze before structural cleanup
+    REQUIRE(hoc_oc("delete_section()\n") == 0);
 }
