@@ -971,14 +971,15 @@ fi
 
 echo \"Formatting changes vs '\$BASE_BRANCH' (existing files only)...\" >&2
 
-# Get changed files, but only pass files that still exist
-git diff --name-only \"\$BASE_BRANCH\" | \\
-while read -r file; do
+# Get changed files (null-delimited so names with spaces work), only pass
+# files that still exist.
+git diff -z --name-only \"\$BASE_BRANCH\" | \\
+while IFS= read -r -d '' file; do
     if [ -e \"\$file\" ]; then
-        printf '%s\\n' \"\$file\"
+        printf '%s\\0' \"\$file\"
     fi
 done | \\
-xargs --no-run-if-empty external/coding-conventions/bin/format \"\$@\"
+xargs -0 --no-run-if-empty external/coding-conventions/bin/format \"\$@\"
 ")
 
 add_custom_target(
