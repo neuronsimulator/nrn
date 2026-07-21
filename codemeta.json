@@ -34,8 +34,8 @@
         "C++",
         "Python 3"
     ],
-    "relatedLink": "https://nrn.readthedocs.io/",
-    "schema:releaseNotes": "This release allows use of Python 3.13, pins numpy to >=2 and includes backports for several fixes.\n\n### Bug Fixes\n- On h.quit(), leave terminal settings in same state as when neuron.hoc was imported.",
+    "relatedLink": "https://www.neuronsimulator.org/",
+    "schema:releaseNotes": "This release fixes several bugs and adds support for Python 3.14.\n\n### What's New\n- Add Python 3.14 support (#3635)\n- Remove doxygen from search results on readthedocs (#3664)\n- Add example with compilation for C API (#3658)\n\n### Bug Fixes\n- Use `[:blank:]` character class for SWC parser (#3651)\n- Fix HOC File.dir() on Windows (#3653)\n- NET_RECEIVE INITIAL not vectorized translation needs set_globals_from_prop (#3640)\n\n### Improvements /  Other Changes\n- Make `NRN_INSTALL_PYTHON_PREFIX` configurable (#3654)\n- Improve error message when Python lib is not found (#3650)\n- Use `command -v` instead of `which` in nrnpyenv.sh (#3516)\n- Better errors for `report.conf` (#3641)\n- Bump min required CMake version to 3.19\n",
     "softwareRequirements": [
         "Bison",
         "Flex",

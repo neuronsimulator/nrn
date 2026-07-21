@@ -10,6 +10,7 @@ set(NMODL_USECASE_DIRS
     function_table
     global
     hodgkin_huxley
+    include
     kinetic
     linear
     longitudinal_diffusion

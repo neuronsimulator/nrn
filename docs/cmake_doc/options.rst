@@ -330,7 +330,7 @@ NRN_PYTHON_DYNAMIC:STRING=
 
   .. code-block:: shell
 
-    -DNRN_PYTHON_DYNAMIC="python3.8;python3.9;python3.10;python3.11"
+    -DNRN_PYTHON_DYNAMIC="python3.10;python3.11"
 
   The first entry in the list is considered to be the default version, followed
   by alternatives in decreasing order of preference.

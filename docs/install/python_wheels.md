@@ -227,7 +227,6 @@ $ git diff
      resource_class: arm.medium
 
 @@ -54,6 +59,7 @@ jobs:
-               39) pyenv_py_ver="3.9.1" ;;
                310) pyenv_py_ver="3.10.1" ;;
                311) pyenv_py_ver="3.11.0" ;;
 +              312) pyenv_py_ver="3.12.2" ;;
@@ -239,7 +238,7 @@ $ git diff
            matrix:
              parameters:
 -              NRN_PYTHON_VERSION: ["311"]
-+              NRN_PYTHON_VERSION: ["39", "310", "311", "312"]
++              NRN_PYTHON_VERSION: ["310", "311", "312"]
                NRN_NIGHTLY_UPLOAD: ["false"]
 
    nightly:

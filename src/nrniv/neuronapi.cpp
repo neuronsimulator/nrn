@@ -9,6 +9,7 @@
 #include "ocfunc.h"
 #include "ocjump.h"
 #include "parse.hpp"
+#include "nrn_ansi.h"
 #include "section.h"
 #include "shapeplt.h"
 #include <cstring>
@@ -195,6 +196,12 @@ void nrn_segment_diam_set(Section* const sec, const double x, const double diam)
 }
 
 double nrn_segment_diam_get(Section* const sec, const double x) {
+    // Geometry from 3d points writes diam lazily, gated per-section on
+    // recalc_area_. Mirror the range-variable read path (nrnpy_nrn.cpp) so a
+    // diam read after pt3dadd returns the 3d-derived value, not a stale default.
+    if (sec && sec->recalc_area_) {
+        nrn_area_ri(sec);
+    }
     Node* const node = node_exact(sec, x);
     for (auto prop = node->prop; prop; prop = prop->next) {
         if (prop->_type == MORPHOLOGY) {
@@ -244,6 +251,18 @@ int nrn_symbol_subtype(const Symbol* sym) {
 }
 
 double* nrn_symbol_dataptr(const Symbol* sym) {
+    // A NOTUSER runtime scalar (created in HOC by e.g. `x = 42`) does not store
+    // its value at sym->u.pval -- for that subtype the union member holds an
+    // object-data offset, not a pointer, so returning it hands back garbage that
+    // segfaults on dereference. The real storage is in the top-level
+    // object-data array (see the NOTUSER branch of eval() in oc/code.cpp, which
+    // reads *OPVAL(sym) == *hoc_top_level_data[sym->u.oboff].pval). Return that
+    // address so the result is a dereferenceable double*, as the name promises.
+    // Every other case (USERDOUBLE built-ins such as `t`, and the typed USER*
+    // subtypes that already alias sym->u.pval) is unchanged.
+    if (sym && sym->type == VAR && sym->subtype == NOTUSER) {
+        return hoc_top_level_data[sym->u.oboff].pval;
+    }
     return sym->u.pval;
 }
 
