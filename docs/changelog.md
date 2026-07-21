@@ -75,7 +75,7 @@ we get:
 - Add NMODL development guide (#3683)
 - Bump urllib3 from 2.5.0 to 2.6.0 in /ci (#3681)
 - Fix Python extension library name (#3679)
-
+- Fixed a MPI bug with MultiCompartmentReaction which produce membrane currents. (#3736)
 
 ## 9.0.1
 _Release Date_ : 17-11-2025
