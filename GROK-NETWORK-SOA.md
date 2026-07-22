@@ -8,26 +8,24 @@ Use this file when starting a **new** Grok session rooted in `~/neuron/cpu_net_s
 
 | Phase | Status | Notes |
 |-------|--------|--------|
-| **0** Spec | **Done** | `doc/network-soa-phase0.md` authoritative |
+| **0** Spec | **Done** | `doc/network-soa-phase0.md` + layered `doc/network-soa/` |
 | **1** PointProcess + Weight SoA dual-write | **Done** | Handles + create/destroy |
-| **2** NetCon SoA; HOC weight → Weight SoA | **Done** | Delivery materializes `double*` for MOD |
-| **3** PreSyn SoA + fanout `NcIndex`/`NcCount` | **Done** | Rebuild at `init_events` + lazy on spike |
-| **4** SelfEvent `weight_index` + receive-by-index | **Done** | M2: still `pnt_receive(..., double*, flag)` |
-| **Sort wiring** | **Done** | Network in `nrn_ensure_model_data_are_sorted` (thread slices, weight repack) |
-| **Heap-drop policy** | **In progress** | Short-lived materialize on deliver; heap kept for FOR_NETCONS / INITIAL |
-| **SaveState dual-write** | **Done** | Weight save/restore via SoA; SelfEvent identity NetCon index + weight_index |
-| **BBSaveState dual-write** | **Done** | Weight SoA sync; SelfEvent DEList ncindex + weight_index match |
-| **5** GPU net buffers | **Out of scope** | `local/gpu-native-qualification` after merge |
+| **2** NetCon SoA; HOC weight → Weight SoA | **Done** | SoA HOC-primary; heap MOD scratch |
+| **3** PreSyn SoA + fanout `NcIndex`/`NcCount` | **Done** | Rebuild at sort / `init_events` + lazy on spike |
+| **4** SelfEvent `weight_index` + receive-by-index | **Done** | Still `pnt_receive(..., double*, flag)` (nocmodl) |
+| **Sort wiring** | **Done** | Network in `nrn_ensure_model_data_are_sorted` |
+| **Heap policy** | **Settled (no full free yet)** | Long-lived `weight_` required for `net_send(_w)` / FOR_NETCONS / INITIAL |
+| **SaveState / BBSaveState dual-write** | **Done** | SoA values + NetCon-index SelfEvent identity |
+| **5** GPU net buffers | **Out of scope** | After SoA is reviewable / on master |
 
-**Dual-write complete for the CoreNEURON-shaped data plane.** Network SoA participates in the global sort gate. Legacy pointers/`dil_`/`weight_` heap remain for interpreter, queue, and nocmodl ABI where required.
+**Developer docs (preferred reading order):** `doc/network-soa/README.md` → topology → dual-write → sort → phase0.
 
-### Known gaps (do not “just drop heap” yet)
+### Known gaps
 
-- Long-lived `NetCon::weight_` heap still allocated; hot-path deliver uses **short-lived materialize** unless the target type has `FOR_NETCONS` (needs stable heap bases). Full drop needs SaveState index keys + INITIAL/FOR_NETCONS migration.
-- Default codegen is **nocmodl** (`NRN_ENABLE_NMODL=OFF`); native `weight_index` MOD ABI is a separate project.
-- `InputPreSyn` / thin remote gid→fanout deferred (see phase0 §5.5.1).
-- FOR_NETCONS / INITIAL still need long-lived `weight_` heap before full free.
-- Full `ctest -j N` needs a complete build/install; judge network work with filters below first.
+- Full free of `NetCon::weight_`: needs FOR_NETCONS + INITIAL + SelfEvent never keying on temp `double*` (see `doc/network-soa/dual-write-and-heap.md`).
+- Default codegen **nocmodl**; CoreNEURON-style `weight_index` receive is a separate ABI project.
+- Fanout: SoA ranges preferred when sorted; `dil_` still filled and used as rebuild source / fallback (**fanout authority** not fully flipped — see topology doc).
+- `InputPreSyn` thin gid→fanout deferred (phase0 §5.5.1).
 
 ### Default codegen
 
@@ -116,12 +114,11 @@ Native nocmodl `weight_index` ABI is **out of scope** for this branch; keep mate
 
 ## Recommended next work
 
-1. ~~Wire network into `nrn_ensure_model_data_are_sorted`~~ (done).
-2. ~~Heap-drop policy + short-lived materialize on simple deliver~~ (done; full free deferred).
-3. ~~SaveState dual-write restore + SelfEvent NetCon-index identity~~ (done).
-4. ~~BBSaveState SoA weight sync + SelfEvent NetCon-index binding~~ (done).
-5. FOR_NETCONS / INITIAL without long-lived heap; then drop `weight_` allocation.
-6. Merge toward master; GPU track rebases for Phase 5-style buffers.
+1. ~~Sort + SaveState + BBSaveState dual-write~~ (done).
+2. **Decide PR posture:** draft/review PR of dual-write+sort (no claim “land for perf yet”) vs private until heap-free / GPU (see `doc/network-soa/dual-write-and-heap.md` §5).
+3. If pursuing heap-free: FOR_NETCONS index view + INITIAL by index + SelfEvent identity without heap pointer (doc L2 roadmap).
+4. If pursuing authority cleanup: make fanout SoA sole hot-path truth; stop using `dil_` on spike (topology L1).
+5. GPU Phase 5 only after SoA shape is stable enough to upload the same columns.
 
 ---
 
@@ -168,10 +165,10 @@ Read ~/neuron/cpu_net_soa/GROK-NETWORK-SOA.md, AGENTS.md, and doc/network-soa-ph
 Repo: ~/neuron/cpu_net_soa, branch local/cpu-network-soa.
 Sibling: ~/neuron/nrngpu @ local/gpu-native-qualification (GPU network buffers paused).
 
-Phases 0–4 dual-write, network sort wiring, SaveState + BBSaveState dual-write
-are done. Heap-drop policy: short-lived materialize on simple deliver; keep
-weight_ for FOR_NETCONS / INITIAL. Next: FOR_NETCONS/INITIAL without long-lived
-heap, then drop weight_ — not GPU net_buf_receive on this branch.
+Phases 0–4 dual-write, sort wiring, SaveState/BBSaveState dual-write done.
+Read doc/network-soa/README.md (topology, heap policy, sort). weight_ remains
+MOD scratch under nocmodl. Next: PR posture, or FOR_NETCONS/fanout-authority
+work toward heap-free — not GPU on this branch unless rebasing after SoA.
 ```
 
 ---
