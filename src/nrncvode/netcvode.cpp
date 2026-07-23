@@ -4903,6 +4903,13 @@ NetCon* NetCvode::install_deliver(neuron::container::data_handle<double> dsrc,
     NetCon* d = new NetCon(ps, target);
     d->delay_ = delay;
     d->weight_[0] = magnitude;
+    // Dual-write: constructor arg is written to heap; HOC weight[] reads SoA.
+    // INITIAL (init_events) does soa_to_heap then heap_to_soa — SoA must already
+    // hold magnitude or weight[0] is wiped to 0.
+    if (!d->weight_soa_.empty()) {
+        d->weight_soa_[0].value() = magnitude;
+    }
+    d->soa_sync();
     structure_change_cnt_ = 0;
     return d;
 }
