@@ -371,6 +371,16 @@ Object* nrn_object_new(Symbol* sym, int narg) {
     return hoc_newobj1(sym, narg);
 }
 
+Object* nrn_object_new_wrap(Symbol* sym, void* cpp_object) {
+    // Wrap an existing C++ payload as a HOC Object of the class `sym` (which
+    // must be a C++/CPLUSOBJECT template). Unlike nrn_object_new, which runs the
+    // HOC constructor and pulls arguments off the stack, this backs the new
+    // object directly with `cpp_object`, stored as its this_pointer. Pass
+    // nullptr to construct an unbacked instance to fill in later. The returned
+    // object has refcount 0; ref it (nrn_object_ref) to keep it alive.
+    return hoc_new_object(sym, cpp_object);
+}
+
 Symbol* nrn_method_symbol(const Object* obj, char const* const name) {
     return hoc_table_lookup(name, obj->ctemplate->symtable);
 }
