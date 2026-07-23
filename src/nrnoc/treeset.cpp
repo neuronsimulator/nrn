@@ -2272,11 +2272,8 @@ neuron::model_sorted_token nrn_ensure_model_data_are_sorted() {
             [&cache](auto& mech_data) { nrn_fill_mech_data_caches(cache, mech_data); });
         // Network: PointProcess / Weight repack / NetCon / PreSyn + fanout.
         // doc/network-soa-phase0.md §6.3, §8.4
-        neuron::container::network::sort_network_data(cache,
-                                                      pp_tokens[0],
-                                                      weight_tokens[0],
-                                                      netcon_tokens[0],
-                                                      presyn_tokens[0]);
+        neuron::container::network::sort_network_data(
+            cache, pp_tokens[0], weight_tokens[0], netcon_tokens[0], presyn_tokens[0]);
         assert(model.point_processes().is_sorted());
         assert(model.weights().is_sorted());
         assert(model.netcons().is_sorted());

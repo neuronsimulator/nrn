@@ -139,8 +139,8 @@ struct handle_interface: handle_base<Identifier> {
     friend std::ostream& operator<<(std::ostream& os, handle_interface const& handle) {
         if (handle.id()) {
             return os << "PreSyn{" << handle.id() << '/' << handle.underlying_storage().size()
-                      << " thr=" << handle.threshold() << " gid=" << handle.gid()
-                      << " nc=[" << handle.nc_index() << "," << handle.nc_count() << ")"
+                      << " thr=" << handle.threshold() << " gid=" << handle.gid() << " nc=["
+                      << handle.nc_index() << "," << handle.nc_count() << ")"
                       << " out=" << handle.output_index() << " tid=" << handle.thread_id() << '}';
         }
         return os << "PreSyn{null}";

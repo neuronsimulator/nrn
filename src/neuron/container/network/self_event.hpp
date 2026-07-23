@@ -56,8 +56,9 @@ inline void materialize_weight_block(int weight_index, int count, double* out) {
     auto const n = static_cast<int>(store.size());
     for (int i = 0; i < count; ++i) {
         int const row = weight_index + i;
-        out[i] = (row >= 0 && row < n) ? store.get<Weight::field::Value>(static_cast<std::size_t>(row))
-                                       : 0.;
+        out[i] = (row >= 0 && row < n)
+                     ? store.get<Weight::field::Value>(static_cast<std::size_t>(row))
+                     : 0.;
     }
 }
 

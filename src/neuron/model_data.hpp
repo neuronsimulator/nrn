@@ -251,7 +251,8 @@ struct model_sorted_token {
      * Held as vectors (0 or 1 element) because frozen_token_type is not default-
      * constructible; same pattern as mech_data_tokens.
      */
-    std::vector<container::network::PointProcess::storage::frozen_token_type> point_process_tokens{};
+    std::vector<container::network::PointProcess::storage::frozen_token_type>
+        point_process_tokens{};
     std::vector<container::network::Weight::storage::frozen_token_type> weight_tokens{};
     std::vector<container::network::NetCon::storage::frozen_token_type> netcon_tokens{};
     std::vector<container::network::PreSyn::storage::frozen_token_type> presyn_tokens{};

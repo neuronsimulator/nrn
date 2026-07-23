@@ -179,14 +179,13 @@ void sort_network_data(neuron::cache::Model& cache,
         auto perm = partition_by_key(
             pp_store.size(),
             nrn_nthread,
-            [&](std::size_t row) {
-                return pp_store.get<PointProcess::field::ThreadId>(row);
-            },
+            [&](std::size_t row) { return pp_store.get<PointProcess::field::ThreadId>(row); },
             pp_offsets);
         for (int tid = 0; tid < nrn_nthread; ++tid) {
             cache.thread[static_cast<std::size_t>(tid)].point_process_offset =
-                tid < static_cast<int>(pp_offsets.size()) ? pp_offsets[static_cast<std::size_t>(tid)]
-                                                          : 0;
+                tid < static_cast<int>(pp_offsets.size())
+                    ? pp_offsets[static_cast<std::size_t>(tid)]
+                    : 0;
         }
         apply_if_needed(pp_store, pp_token, std::move(perm));
     }
@@ -336,8 +335,9 @@ void sort_network_data(neuron::cache::Model& cache,
             ps_offsets);
         for (int tid = 0; tid < nrn_nthread; ++tid) {
             cache.thread[static_cast<std::size_t>(tid)].presyn_offset =
-                tid < static_cast<int>(ps_offsets.size()) ? ps_offsets[static_cast<std::size_t>(tid)]
-                                                          : 0;
+                tid < static_cast<int>(ps_offsets.size())
+                    ? ps_offsets[static_cast<std::size_t>(tid)]
+                    : 0;
         }
         apply_if_needed(ps_store, ps_token, std::move(perm));
     }

@@ -655,8 +655,8 @@ static double nc_setpost(void* v) {
         for (int i = 0; i < d->cnt_; ++i) {
             d->weight_[i] = 0.0;
         }
-        d->weight_soa_ =
-            neuron::container::network::Weight::allocate_weight_rows(d->cnt_, d->weight_);
+        d->weight_soa_ = neuron::container::network::Weight::allocate_weight_rows(d->cnt_,
+                                                                                  d->weight_);
     }
     d->soa_sync();
     return 0.;
@@ -2325,9 +2325,9 @@ void sync_netcon_weights_for_target(Point_process* pnt, bool soa_to_heap) {
 }  // namespace
 
 void nrn_pnt_receive_by_weight_index(Point_process* pnt,
-                                    int weight_index,
-                                    double flag,
-                                    double* weight_heap) {
+                                     int weight_index,
+                                     double flag,
+                                     double* weight_heap) {
     if (!pnt || !pnt->prop) {
         return;
     }
@@ -3563,13 +3563,10 @@ void SelfEvent::pgvts_deliver(double tt, NetCvode* ns) {
 }
 void SelfEvent::call_net_receive(NetCvode* ns) {
     STATISTICS(selfevent_deliver_);
-    // Phase 4 M2: prefer weight_index path; still pass double* to generated MOD.
-    if (weight_index_ >= 0) {
-        nrn_pnt_receive_by_weight_index(target_, weight_index_, flag_, weight_);
-    } else {
-        // Null weights (flag-only self events) or unresolved index: legacy path.
-        POINT_RECEIVE(target_->prop->_type, target_, weight_, flag_);
-    }
+    // Always use dual-write receive path: even when weight_ is nullptr (e.g.
+    // mech INITIAL net_send without a NetCon weight), FOR_NETCONS types still
+    // mutate peer NetCon heaps and must sync back to Weight SoA.
+    nrn_pnt_receive_by_weight_index(target_, weight_index_, flag_, weight_);
     if (errno) {
         if (nrn_errno_check(target_->prop->_type)) {
             hoc_warning("errno set during SelfEvent deliver to NET_RECEIVE", (char*) 0);

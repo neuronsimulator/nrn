@@ -39,9 +39,8 @@ std::unordered_map<Point_process*, neuron::container::network::PointProcess::own
 }  // namespace
 
 Point_process::Point_process() {
-    auto& owner = g_point_process_soa_owners
-                      .emplace(this, neuron::model().point_processes())
-                      .first->second;
+    auto& owner =
+        g_point_process_soa_owners.emplace(this, neuron::model().point_processes()).first->second;
     _soa_id = owner.id();
 }
 
