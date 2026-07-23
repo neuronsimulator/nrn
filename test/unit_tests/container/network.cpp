@@ -21,7 +21,8 @@
 
 using namespace neuron::container::network;
 
-TEST_CASE("SOA-backed PointProcess structure", "[Neuron][data_structures][network][point_process]") {
+TEST_CASE("SOA-backed PointProcess structure",
+          "[Neuron][data_structures][network][point_process]") {
     auto& storage = neuron::model().point_processes();
     REQUIRE(storage.size() == 0);
 
@@ -115,7 +116,7 @@ TEST_CASE("SOA-backed PointProcess structure", "[Neuron][data_structures][networ
 }
 
 TEST_CASE("Point_process dual-write into network SoA",
-        "[Neuron][data_structures][network][point_process][dualwrite]") {
+          "[Neuron][data_structures][network][point_process][dualwrite]") {
     auto& storage = neuron::model().point_processes();
     auto const before = storage.size();
     GIVEN("A default-constructed Point_process shell") {

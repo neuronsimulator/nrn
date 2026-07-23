@@ -6,6 +6,7 @@ NetStim -> NetCon -> ExpSyn exercises:
   - nrn_pnt_receive_by_weight_index around pnt_receive
   - PreSyn fanout order rebuild at init_events
 """
+
 from neuron import h
 
 
@@ -42,7 +43,9 @@ def test_netstim_expsyn_delivery_near_1_025_ms():
             t_gmax = float(h.t)
 
     assert g_max > 0.04, f"expected ExpSyn conductance peak, got g_max={g_max}"
-    assert 1.0 <= t_gmax <= 1.2, f"expected peak near 1.025 ms window, got t_gmax={t_gmax}"
+    assert (
+        1.0 <= t_gmax <= 1.2
+    ), f"expected peak near 1.025 ms window, got t_gmax={t_gmax}"
 
 
 def test_netcon_weight_hoc_roundtrip():
@@ -96,21 +99,26 @@ def test_savestate_weight_dualwrite_roundtrip():
     assert abs(nc.weight[0] - 0.99) < 1e-12
 
     ss.restore()
-    assert abs(nc.weight[0] - 0.05) < 1e-12, (
-        f"SaveState restore should restore HOC/SoA weight, got {nc.weight[0]}"
-    )
+    assert (
+        abs(nc.weight[0] - 0.05) < 1e-12
+    ), f"SaveState restore should restore HOC/SoA weight, got {nc.weight[0]}"
 
     # Delivery after restore must use restored weight (SoA materialize path).
     g_max = 0.0
     while h.t < 3.0 - h.dt / 2:
         h.fadvance()
         g_max = max(g_max, float(syn.g))
-    assert g_max > 0.04, f"restored weight 0.05 should produce ExpSyn g peak, g_max={g_max}"
-    assert g_max < 0.5, f"mutated weight 0.99 must not leak into delivery, g_max={g_max}"
+    assert (
+        g_max > 0.04
+    ), f"restored weight 0.05 should produce ExpSyn g peak, g_max={g_max}"
+    assert (
+        g_max < 0.5
+    ), f"mutated weight 0.99 must not leak into delivery, g_max={g_max}"
 
 
 def test_bbsavestate_weight_dualwrite_roundtrip(tmp_path):
     """BBSaveState restore must update Weight SoA (NetCon on a gid cell)."""
+
     # BBSaveState requires a real cell with a gid (section parented to a cell object).
     class Cell:
         def __init__(self):
@@ -145,8 +153,8 @@ def test_bbsavestate_weight_dualwrite_roundtrip(tmp_path):
     assert abs(nc.weight[0] - 0.99) < 1e-12
 
     bbss.restore(path)
-    assert abs(nc.weight[0] - 0.05) < 1e-12, (
-        f"BBSaveState restore should restore HOC/SoA weight, got {nc.weight[0]}"
-    )
+    assert (
+        abs(nc.weight[0] - 0.05) < 1e-12
+    ), f"BBSaveState restore should restore HOC/SoA weight, got {nc.weight[0]}"
 
     pc.gid_clear()
