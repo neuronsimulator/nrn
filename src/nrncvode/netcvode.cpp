@@ -2367,17 +2367,18 @@ void nrn_pnt_receive_by_weight_index(Point_process* pnt,
         }
         return;
     }
-    // No NetCon owner (null-weight / flag-only path): short-lived buffer OK.
+    // No NetCon owner: flag-only SelfEvent (weight_ often nullptr from mech INITIAL
+    // net_send) or unresolved index. Preserve historical nullptr for zero-weight
+    // cases — do **not** invent a temp buffer when weight_index < 0, or MOD may
+    // net_send that stack pointer and corrupt later queue handling (TQueue UAF).
     if (fornet) {
         sync_netcon_weights_for_target(pnt, /*soa_to_heap*/ true);
     }
     double* buf = weight_heap;
     std::vector<double> tmp;
-    if (!buf && n > 0) {
+    if (!buf && weight_index >= 0 && n > 0) {
         tmp.resize(static_cast<std::size_t>(n), 0.);
         buf = tmp.data();
-    }
-    if (weight_index >= 0 && n > 0 && buf) {
         neuron::container::network::SelfEventFields::materialize_weight_block(weight_index, n, buf);
     }
     POINT_RECEIVE(type, pnt, buf, flag);
@@ -2934,8 +2935,9 @@ void NetCvode::init_events() {
     ITERATE(q, nclist) {
         Object* obj = OBJ(q);
         auto* d = static_cast<NetCon*>(obj->u.this_pointer);
-        if (d->target_) {
-            int type = d->target_->prop->_type;  // somehow prop is non-deterministically-null here
+        // target_ may outlive Prop (unlocated / free_one_point); skip dead targets.
+        if (d->target_ && d->target_->prop) {
+            int type = d->target_->prop->_type;
             // Dual-write: INITIAL and HOC weight[] must share one value stream.
             // SoA is HOC-primary; heap is the buffer for generated pnt_receive_init.
             d->weights_soa_to_heap();
