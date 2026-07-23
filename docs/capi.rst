@@ -873,6 +873,35 @@ Functions, objects, and the stack
 
     Used when passing objects as arguments to functions or methods.
 
+.. c:function:: void nrn_object_ref_push(Object** obj_ref)
+
+    Push a writable object-reference cell onto the stack.
+
+    :param obj_ref: Address of the caller's ``Object*`` cell.
+
+    Unlike :c:func:`nrn_object_push`, which pushes an object by value, this
+    pushes the *cell* holding the object. When the callee assigns to the
+    matching ``$oN`` argument, the assignment writes back through the cell and
+    updates ``*obj_ref`` in place. This is the out-parameter form used by the
+    ``h.ref(obj)`` idiom, where a function returns a value by storing it in a
+    caller-supplied object reference.
+
+    **Usage Pattern:**
+
+    .. code-block:: c
+
+        // proc setit() { $o1 = new Vector(3) }
+        Object* slot = nullptr;
+        nrn_object_ref_push(&slot);
+        nrn_function_call(nrn_symbol("setit"), 1);
+        // slot now points to the newly created Vector; unref when done.
+        nrn_object_unref(slot);
+
+    .. seealso::
+
+        :c:func:`nrn_object_push`,
+        :c:func:`nrn_object_unref`
+
 .. c:function:: Object* nrn_object_pop(void)
 
     Pop an object from the stack.
