@@ -198,13 +198,11 @@ extern bool nrn_use_bin_queue_;
 extern void (*nrn_binq_enqueue_error_handler)(double, TQItem*);
 static void bbss_early(double td, TQItem* tq);
 
-typedef void (*ReceiveFunc)(Point_process*, double*, double);
-
 #include "membfunc.h"
 extern int section_count;
 extern "C" void nrn_shape_update();
 extern Section** secorder;
-extern ReceiveFunc* pnt_receive;
+// pnt_receive declared in nrniv_mf.h (heap-free 7a: weight_index ABI)
 extern NetCvode* net_cvode_instance;
 extern TQueue* net_cvode_instance_event_queue(NrnThread*);
 extern cTemplate** nrn_pnt_template_;
@@ -2339,7 +2337,7 @@ void BBSaveState::netrecv_pp(Point_process* pp) {
             // new SelfEvent item mostly filled in.
             // But starting out with NULL weight vector and
             // flag=1 so that tqi->data is the new SelfEvent
-            nrn_net_send(&tqi_datum, nullptr, pp, tt, 1.0);
+            nrn_net_send(&tqi_datum, -1, pp, tt, 1.0);
             auto* tqi = tqi_datum.get<TQItem*>();
             assert(tqi && tqi->data_ &&
                    static_cast<DiscreteEvent*>(tqi->data_)->type() == SelfEventType);

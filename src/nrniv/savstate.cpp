@@ -16,13 +16,12 @@
 
 #include <algorithm>
 
-typedef void (*ReceiveFunc)(Point_process*, double*, double);
+// pnt_receive declared in nrniv_mf.h (heap-free 7a: weight_index ABI)
 
 #include "membfunc.h"
 extern int section_count;
 extern "C" void nrn_shape_update();
 extern Section** secorder;
-extern ReceiveFunc* pnt_receive;
 extern NetCvode* net_cvode_instance;
 extern TQueue* net_cvode_instance_event_queue(NrnThread*);
 extern std::vector<PreSyn*>* net_cvode_instance_psl();

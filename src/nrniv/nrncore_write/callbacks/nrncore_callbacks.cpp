@@ -1161,7 +1161,7 @@ static void core2nrn_SelfEvent_helper(int tid,
                                       int tar_type,
                                       int tar_index,
                                       double flag,
-                                      double* weight,
+                                      int weight_index,
                                       int is_movable) {
     if (type2movable.empty()) {
         setup_type2semantics();
@@ -1186,7 +1186,8 @@ static void core2nrn_SelfEvent_helper(int tid,
     int const movable_index = type2movable[tar_type];
     auto* const movable_arg = pnt->prop->dparam + movable_index;
     auto* const old_movable_arg = (*movable_arg).get<TQItem*>();
-    nrn_net_send(movable_arg, weight, pnt, td, flag);
+    // Heap-free 7a: SelfEvent identity is Weight SoA base index.
+    nrn_net_send(movable_arg, weight_index, pnt, td, flag);
     if (!is_movable) {
         *movable_arg = old_movable_arg;
     }
@@ -1209,8 +1210,8 @@ void core2nrn_SelfEvent_event(int tid,
     assert(nc->target_ == pnt);
 #endif
 
-    double* weight = nc->weight_soa_data();
-    core2nrn_SelfEvent_helper(tid, td, tar_type, tar_index, flag, weight, is_movable);
+    int const weight_index = static_cast<int>(nc->weight_base());
+    core2nrn_SelfEvent_helper(tid, td, tar_type, tar_index, flag, weight_index, is_movable);
 }
 
 void core2nrn_SelfEvent_event_noweight(int tid,
@@ -1220,8 +1221,7 @@ void core2nrn_SelfEvent_event_noweight(int tid,
                                        double flag,
                                        int is_movable) {
     assert(tid < nrn_nthread);
-    double* weight = NULL;
-    core2nrn_SelfEvent_helper(tid, td, tar_type, tar_index, flag, weight, is_movable);
+    core2nrn_SelfEvent_helper(tid, td, tar_type, tar_index, flag, -1, is_movable);
 }
 
 // Set of the voltage indices in which PreSyn.flag_ == true

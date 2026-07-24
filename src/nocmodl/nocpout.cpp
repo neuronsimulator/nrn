@@ -1174,16 +1174,17 @@ static const char *_mechanism[] = {\n\
         }
     }
     if (net_receive_) {
-        Lappendstr(defs_list, "static void _net_receive(Point_process*, double*, double);\n");
+        // Heap-free 7a: weight identity is SoA base index, not double*.
+        Lappendstr(defs_list, "static void _net_receive(Point_process*, int, double);\n");
+        Lappendstr(defs_list, "extern double* _nrn_netrec_wsoa(int, int);\n");
+        Lappendstr(defs_list, "extern void _nrn_netrec_wsoa_done(int, int, double*);\n");
         if (for_netcons_) {
-            // Heap-free step 4: walk by Weight SoA bases; resolve double* for MOD.
             Lappendstr(defs_list, "extern int _nrn_netcon_weight_bases(void*, int**);\n");
             Lappendstr(defs_list, "extern double* _nrn_fornetcon_weight(int);\n");
-            // Legacy dual-write ABI (still available for hand-written code).
             Lappendstr(defs_list, "extern int _nrn_netcon_args(void*, double***);\n");
         }
         if (net_init_q1_) {
-            Lappendstr(defs_list, "static void _net_init(Point_process*, double*, double);\n");
+            Lappendstr(defs_list, "static void _net_init(Point_process*, int, double);\n");
         }
     }
     if (vectorize && thread_mem_init_list->next != thread_mem_init_list) {
@@ -3054,7 +3055,8 @@ void net_receive(Item* qarg, Item* qp1, Item* qp2, Item* qstmt, Item* qend) {
     }
     net_receive_ = 1;
     deltokens(qp1, qp2);
-    insertstr(qstmt, "(Point_process* _pnt, double* _args, double _lflag)");
+    /* Heap-free 7a: index ABI; body keeps _args[i] via SoA/TLS helper (like #define w soa[ix]). */
+    insertstr(qstmt, "(Point_process* _pnt, int _weight_index, double _lflag)");
     i = 0;
     ITERATE(q1, qarg) if (q1->next != qarg) { /* skip last "flag" arg */
         s = SYM(q1);
@@ -3071,6 +3073,14 @@ void net_receive(Item* qarg, Item* qp1, Item* qp2, Item* qstmt, Item* qend) {
     vectorize_substitute(q, "\n{  Prop* _p; Datum* _ppvar; Datum* _thread; NrnThread* _nt;\n");
     if (watch_seen_) {
         insertstr(qstmt, "  int _watch_rm = 0;\n");
+    }
+    /* Resolve Weight SoA (zero-copy if contiguous) or TLS into _args for body. */
+    {
+        char wbuf[256];
+        Sprintf(wbuf,
+                "  double* _args = _nrn_netrec_wsoa(_weight_index, %d);\n",
+                i > 0 ? i : 0);
+        insertstr(qstmt, wbuf);
     }
     vectorize_substitute(
         insertstr(qstmt,
@@ -3092,7 +3102,11 @@ void net_receive(Item* qarg, Item* qp1, Item* qp2, Item* qstmt, Item* qend) {
                       "NetCon.delay\");}\n _tsav = t;");
         }
     }
-    insertstr(qend, "}");
+    {
+        char wbuf[256];
+        Sprintf(wbuf, "\n  _nrn_netrec_wsoa_done(_weight_index, %d, _args);\n}", i > 0 ? i : 0);
+        insertstr(qend, wbuf);
+    }
     if (!artificial_cell) {
         Symbol* ions[10];
         int j, nion = 0;
@@ -3165,10 +3179,12 @@ void net_receive(Item* qarg, Item* qp1, Item* qp2, Item* qstmt, Item* qend) {
 
 void net_init(Item* qinit, Item* qp2) {
     /* qinit=INITIAL { stmtlist qp2=} */
-    replacstr(qinit, "\nstatic void _net_init(Point_process* _pnt, double* _args, double _lflag)");
+    replacstr(qinit, "\nstatic void _net_init(Point_process* _pnt, int _weight_index, double _lflag)");
+    /* Arity from this mech's pnt_receive_size[_mechtype] (avoid incomplete Prop::_type). */
     Sprintf(buf,
             "    neuron::legacy::set_globals_from_prop(_pnt->_prop, _ml_real, _ml, _iml);\n"
-            "    _ppvar = _nrn_mechanism_access_dparam(_pnt->_prop);\n");
+            "    _ppvar = _nrn_mechanism_access_dparam(_pnt->_prop);\n"
+            "    double* _args = _nrn_netrec_wsoa(_weight_index, pnt_receive_size[_mechtype]);\n");
     vectorize_substitute(insertstr(qinit->next->next, buf),
                          "  _nrn_mechanism_cache_instance _ml_real{_pnt->_prop};\n"
                          "  auto* const _ml = &_ml_real;\n"
@@ -3176,7 +3192,12 @@ void net_init(Item* qinit, Item* qp2) {
                          "  Datum* _ppvar = _nrn_mechanism_access_dparam(_pnt->_prop);\n"
                          "  Datum* _thread = nullptr;\n"
                          "  double* _globals = nullptr;\n"
-                         "  NrnThread* _nt = (NrnThread*)_pnt->_vnt;\n");
+                         "  NrnThread* _nt = (NrnThread*)_pnt->_vnt;\n"
+                         "  double* _args = _nrn_netrec_wsoa(_weight_index, "
+                         "pnt_receive_size[_mechtype]);\n");
+    /* commit after INITIAL body: insert before closing brace qp2 */
+    insertstr(qp2,
+              "  _nrn_netrec_wsoa_done(_weight_index, pnt_receive_size[_mechtype], _args);\n");
     if (net_init_q1_) {
         diag("NET_RECEIVE block can contain only one INITIAL block", (char*) 0);
     }

@@ -68,7 +68,6 @@ and queue polymorphism stay NEURON-specific (policies below).
 
 - Arbitrary model edits between `pc.psolve()` with a live queue  
 - Queue scrub or refcount-pin on every NetCon destroy  
-- Full nocmodl ABI change to `pnt_receive(…, weight_index, flag)` (next phase)  
 - Permanent FOR_NETCONS perm table **if** sort key already groups by target instance (**A**)
 
 ---
@@ -99,7 +98,7 @@ and queue polymorphism stay NEURON-specific (policies below).
 | Substep | Scope | Goal |
 |---------|--------|------|
 | **6b — Zero-copy host receive** | **Done:** contiguous block → `pnt_receive` via `data_if_contiguous()` / `weight_soa_data()`; TLS materialize only if scattered | Drop copy when packed; identity stays `weight_index` |
-| **7a — nocmodl index ABI** | Generate `NET_RECEIVE` with base index; body names as `soaweight[ix+k]` / `double&` refs | Eliminate primary-edge scratch; CN-shaped interface |
+| **7a — nocmodl index ABI** | **Done:** `pnt_receive_t(Point_process*, int weight_index, double flag)`; generated body keeps `_args[i]` via `_nrn_netrec_wsoa` / `_done`; `net_send` / `artcell_net_send` take index (−1 if none) | CN-shaped interface; identity is index only |
 | **7b — FOR_NETCONS without owned double pool** | Loop bases only; write SoA directly (or one shared view) | Drop `ForNetConsInfo::weight_storage` |
 | **7c — Cleanup** | Remove TLS scratch + base→buf maps when unused | Host path fully SoA/index |
 
