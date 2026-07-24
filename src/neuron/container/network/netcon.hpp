@@ -11,6 +11,7 @@
  * weight_soa_ is populated (see netcvode.cpp).
  */
 #include "neuron/container/data_handle.hpp"
+#include "neuron/container/network/indices.hpp"
 #include "neuron/container/soa_container.hpp"
 #include "neuron/container/view_utils.hpp"
 
@@ -30,15 +31,15 @@ struct Target {
 
 /** @brief Base row in Weight storage for this NetCon's weight block. */
 struct WeightIndex {
-    using type = int;
+    using type = weight_index_t;
     constexpr type default_value() const {
-        return -1;
+        return invalid_weight_index;
     }
 };
 
 /** @brief Number of weights (pnt_receive_size). */
 struct WeightCount {
-    using type = int;
+    using type = netcon_count_t;
     constexpr type default_value() const {
         return 0;
     }

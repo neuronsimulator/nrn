@@ -1,6 +1,6 @@
 # Network SoA — developer docs (map)
 
-**Audience:** people working on `local/cpu-network-soa`  
+**Audience:** `local/cpu-network-soa` (PR dual-write) and `local/cpu-net-soa-heap-free` (branch-only)  
 **Status tracker / session handoff:** `GROK-NETWORK-SOA.md` (repo root)  
 **Phase-0 field tags & checklist:** `doc/network-soa-phase0.md` (detailed, longer)
 
@@ -11,6 +11,7 @@ Docs here are **segregated by height**. Prefer the shortest document that answer
 | **L0 — North star** | this file §North star | One screen: goals, non-goals, current posture |
 | **L1 — Topology** | [topology.md](topology.md) | PreSyn → NetCon → Point_process; CoreNEURON mapping; fanout authority; rank/thread placement |
 | **L2 — Dual-write & heap** | [dual-write-and-heap.md](dual-write-and-heap.md) | What is primary where; why `weight_` still exists; FOR_NETCONS / INITIAL / SaveState |
+| **L2b — Heap-free charter** | [heap-free.md](heap-free.md) | Settled decisions; CoreNEURON-as-feasible; queue/structure policy; implementation order |
 | **L3 — Sort & packing** | [sort-and-packing.md](sort-and-packing.md) | What `nrn_ensure_model_data_are_sorted` does to network containers |
 | **L4 — Spec detail** | `../network-soa-phase0.md` | Field tags, sidecars, SaveState notes, open questions resolved |
 | **Ops** | `../../GROK-NETWORK-SOA.md` | Build/test gates, commit status, “what next” |
@@ -29,9 +30,9 @@ Docs here are **segregated by height**. Prefer the shortest document that answer
 - GPU net buffers (sibling track after SoA is usable)  
 - Thin remote `InputPreSyn` / gid→fanout table  
 
-**Current posture (2026-07):** Dual-write complete for CoreNEURON-shaped columns; network participates in global sort; SaveState/BBSaveState dual-write; **`weight_` remains long-lived MOD scratch** because generated `pnt_receive` / `net_send(..., _w)` still use `double*`.
+**Current posture (2026-07):** Dual-write complete on `local/cpu-network-soa` (PR #3822); network sort + SaveState/BBSaveState dual-write green. **`weight_` remains long-lived MOD scratch** on the PR branch. Heap-free work lives on **`local/cpu-net-soa-heap-free`** (no PR): follow CoreNEURON as much as feasible — see [heap-free.md](heap-free.md).
 
-**PR vs master:** A PR can document progress and gather review without claiming “land now.” Landing criteria (performance/space *and* preferably a path to GPU) are product decisions separate from “is the dual-write design sound?”
+**PR vs master:** Dual-write PR can gather review without claiming “land for perf.” Heap-free stays private until a green, reviewable slice exists.
 
 ---
 

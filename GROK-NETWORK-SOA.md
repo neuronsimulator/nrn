@@ -14,7 +14,7 @@ Use this file when starting a **new** Grok session rooted in `~/neuron/cpu_net_s
 | **3** PreSyn SoA + fanout `NcIndex`/`NcCount` | **Done** | Rebuild at sort / `init_events` + lazy on spike |
 | **4** SelfEvent `weight_index` + receive-by-index | **Done** | Still `pnt_receive(..., double*, flag)` (nocmodl) |
 | **Sort wiring** | **Done** | Network in `nrn_ensure_model_data_are_sorted` |
-| **Heap policy** | **Settled (no full free yet)** | Long-lived `weight_` required for `net_send(_w)` / FOR_NETCONS / INITIAL |
+| **Heap policy** | **PR: keep `weight_`; heap-free branch: charter settled** | See `doc/network-soa/heap-free.md` |
 | **SaveState / BBSaveState dual-write** | **Done** | SoA values + NetCon-index SelfEvent identity |
 | **5** GPU net buffers | **Out of scope** | After SoA is reviewable / on master |
 
@@ -39,7 +39,8 @@ Network SoA is a focused CPU/infrastructure PR. It should **not** carry the GPU-
 
 | Worktree | Branch | Purpose |
 |----------|--------|---------|
-| `~/neuron/cpu_net_soa` | `local/cpu-network-soa` | Network SoA → PR to **master** |
+| `~/neuron/cpu_net_soa` | `local/cpu-network-soa` | Network SoA dual-write → PR #3822 (keep green w/ master) |
+| `~/neuron/cpu_net_soa` | `local/cpu-net-soa-heap-free` | Heap-free / CoreNEURON-shaped path (**branch only**, no PR); rebase onto PR tip |
 | `~/neuron/nrngpu` | `local/gpu-native-qualification` | Mechanism GPU, Stage 1 buffer plumbing; Stages 2–3 **paused** until SoA lands |
 
 ---
@@ -115,9 +116,9 @@ Native nocmodl `weight_index` ABI is **out of scope** for this branch; keep mate
 ## Recommended next work
 
 1. ~~Sort + SaveState + BBSaveState dual-write~~ (done).
-2. **Decide PR posture:** draft/review PR of dual-write+sort (no claim “land for perf yet”) vs private until heap-free / GPU (see `doc/network-soa/dual-write-and-heap.md` §5).
-3. If pursuing heap-free: FOR_NETCONS index view + INITIAL by index + SelfEvent identity without heap pointer (doc L2 roadmap).
-4. If pursuing authority cleanup: make fanout SoA sole hot-path truth; stop using `dil_` on spike (topology L1).
+2. ~~PR dual-write green; heap-free charter~~ (`doc/network-soa/heap-free.md`, branch `local/cpu-net-soa-heap-free`).
+3. **On heap-free branch:** O(1) NetCon weight-block ownership (SoA base+count); index fanout tables; FOR_NETCONS codegen; drop `weight_` when green.
+4. Keep PR tip rebased on master and green; rebase heap-free onto PR tip after refreshes.
 5. GPU Phase 5 only after SoA shape is stable enough to upload the same columns.
 
 ---
