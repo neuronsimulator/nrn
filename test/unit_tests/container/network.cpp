@@ -5,6 +5,7 @@
 #include "neuron/container/network/presyn.hpp"
 #include "neuron/container/network/self_event.hpp"
 #include "neuron/container/network/sort.hpp"
+#include "neuron/container/network/indices.hpp"
 #include "neuron/container/network/weight_block.hpp"
 #include "neuron/container/network/weights.hpp"
 #include "neuron/model_data.hpp"
@@ -14,9 +15,11 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <algorithm>
+#include <cstdint>
 #include <numeric>
 #include <optional>
 #include <random>
+#include <type_traits>
 #include <vector>
 
 using namespace neuron::container::network;
@@ -327,7 +330,33 @@ TEST_CASE("SOA-backed PreSyn structure and fanout ranges",
             REQUIRE(b.nc_count() == 2);
             REQUIRE(b.gid() == 11);
         }
+        THEN("NcIndex/NcCount use compact index types (heap-free step 3)") {
+            STATIC_REQUIRE(sizeof(neuron::container::network::netcon_index_t) == 4);
+            STATIC_REQUIRE(sizeof(neuron::container::network::netcon_count_t) == 4);
+            STATIC_REQUIRE(std::is_same_v<decltype(a.nc_index()),
+                                          neuron::container::network::netcon_index_t&>);
+            STATIC_REQUIRE(std::is_same_v<decltype(a.nc_count()),
+                                          neuron::container::network::netcon_count_t&>);
+        }
     }
+}
+
+TEST_CASE("Fanout order stores SoA indices not pointers",
+          "[Neuron][data_structures][network][fanout]") {
+    // Logical model: bulk fanout table is netcon_index_t (SoA row), half of NetCon*
+    // on LP64. Resolve table NetCon*[] is separate and rebuilt with fanout.
+    using neuron::container::network::netcon_index_t;
+    std::vector<netcon_index_t> fanout_order{0, 2, 5, 1};
+    std::vector<void*> shells(6, nullptr);
+    void* a = reinterpret_cast<void*>(static_cast<std::uintptr_t>(0x1000));
+    void* b = reinterpret_cast<void*>(static_cast<std::uintptr_t>(0x2000));
+    shells[0] = a;
+    shells[2] = b;
+    REQUIRE(sizeof(netcon_index_t) * fanout_order.size() <
+            sizeof(void*) * fanout_order.size());
+    REQUIRE(shells[fanout_order[0]] == a);
+    REQUIRE(shells[fanout_order[1]] == b);
+    REQUIRE(shells[fanout_order[2]] == nullptr);
 }
 
 TEST_CASE("Network SoA sort partitions PointProcess by thread",

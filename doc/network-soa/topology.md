@@ -104,7 +104,7 @@ NEURON’s global SoA + **thread partition by permutation** (like nodes/mechs) i
 | `nt.netcons[]` | `Model::netcons()` + `NetCon` DiscreteEvent shell |
 | `nt.weights[]` | `Model::weights()` + long-lived `NetCon::weight_` MOD scratch |
 | `nt.presyns[]` | `Model::presyns()` + `PreSyn` shell + `dil_` |
-| `nc_index_/nc_cnt_` | SoA fields + `g_network_fanout_order` (NetCon* table) |
+| `nc_index_/nc_cnt_` | SoA fields + `g_network_fanout_order` (`netcon_index_t` SoA rows) + row→shell resolve |
 | `weight_index_` | SoA `WeightIndex` (+ `weight_soa_.front().current_row()`) |
 | `pnt_receive(..., weight_index, flag)` | `nrn_pnt_receive_by_weight_index` → still calls nocmodl `double*` form |
 

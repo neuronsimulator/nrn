@@ -345,7 +345,7 @@ void sort_network_data(neuron::cache::Model& cache,
         apply_if_needed(ps_store, ps_token, std::move(perm));
     }
 
-    // Fanout order uses NetCon* ranges; rebuild after topology/sort.
+    // Fanout order is NetCon SoA row indices; rebuild after topology/sort.
     ::PreSyn::mark_fanout_unsorted();
     ::PreSyn::ensure_fanout_order();
 

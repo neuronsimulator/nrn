@@ -6,11 +6,13 @@
  * CoreNEURON reference: nc_index_, nc_cnt_, thvar_index_, threshold_, gid_.
  * Design: doc/network-soa-phase0.md §5.5.
  *
- * Phase 3 dual-write: legacy PreSyn keeps dil_ and thvar_; this SoA holds
- * CoreNEURON-shaped columns. Fanout order is rebuilt into a global NetCon*
- * table (see netcvode.cpp); NcIndex/NcCount describe ranges in that table.
+ * Phase 3 dual-write / heap-free step 3: legacy PreSyn keeps dil_ (rebuild
+ * source) and thvar_; this SoA holds CoreNEURON-shaped columns. Fanout order is
+ * a global table of NetCon SoA row indices (see netcvode.cpp); NcIndex/NcCount
+ * describe ranges in that table.
  */
 #include "neuron/container/data_handle.hpp"
+#include "neuron/container/network/indices.hpp"
 #include "neuron/container/soa_container.hpp"
 #include "neuron/container/view_utils.hpp"
 
@@ -36,17 +38,17 @@ struct Gid {
     }
 };
 
-/** @brief Start index into global fanout order (NetCon*). */
+/** @brief Start index into global fanout order (NetCon SoA rows). */
 struct NcIndex {
-    using type = int;
+    using type = netcon_index_t;
     constexpr type default_value() const {
-        return -1;
+        return invalid_netcon_index;
     }
 };
 
 /** @brief Fanout count (replaces dil_.size() on hot path when sorted). */
 struct NcCount {
-    using type = int;
+    using type = netcon_count_t;
     constexpr type default_value() const {
         return 0;
     }

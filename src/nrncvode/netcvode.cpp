@@ -3180,9 +3180,44 @@ void NetCon::pr(const char* s, double tt, NetCvode* ns) {
 }
 
 namespace {
-// Global CoreNEURON-shaped fanout: NetCon* ranges described by PreSyn NcIndex/NcCount.
-std::vector<NetCon*> g_network_fanout_order;
+// Global CoreNEURON-shaped fanout (heap-free step 3):
+//   g_network_fanout_order — NetCon SoA row indices (not NetCon*).
+//   g_netcon_by_soa_row   — O(1) resolve row → shell for TQueue DiscreteEvent*.
+// PreSyn NcIndex/NcCount describe ranges in g_network_fanout_order.
+// dil_ remains the rebuild source (and mid-update fallback).
+using neuron::container::network::netcon_index_t;
+
+std::vector<netcon_index_t> g_network_fanout_order;
+std::vector<NetCon*> g_netcon_by_soa_row;
 bool g_network_fanout_sorted = true;
+
+/** @brief Rebuild SoA-row → NetCon* table (valid only until next NetCon SoA permute). */
+void rebuild_netcon_by_soa_row() {
+    auto const n = neuron::model().netcons().size();
+    g_netcon_by_soa_row.assign(n, nullptr);
+    Symbol* sym = hoc_lookup("NetCon");
+    if (!sym || !sym->u.ctemplate || !sym->u.ctemplate->olist) {
+        return;
+    }
+    hoc_Item* q = nullptr;
+    ITERATE(q, sym->u.ctemplate->olist) {
+        auto* nc = static_cast<NetCon*>(OBJ(q)->u.this_pointer);
+        if (!nc) {
+            continue;
+        }
+        auto const row = nc->_soa.current_row();
+        if (row < n) {
+            g_netcon_by_soa_row[row] = nc;
+        }
+    }
+}
+
+[[nodiscard]] NetCon* netcon_from_soa_row(netcon_index_t row) {
+    if (row < 0 || static_cast<std::size_t>(row) >= g_netcon_by_soa_row.size()) {
+        return nullptr;
+    }
+    return g_netcon_by_soa_row[static_cast<std::size_t>(row)];
+}
 
 template <typename F>
 void for_each_fanout_netcon(PreSyn* ps, F&& fn) {
@@ -3192,7 +3227,10 @@ void for_each_fanout_netcon(PreSyn* ps, F&& fn) {
     if (base >= 0 && cnt == static_cast<int>(ps->dil_.size()) &&
         base + cnt <= static_cast<int>(g_network_fanout_order.size())) {
         for (int i = 0; i < cnt; ++i) {
-            fn(g_network_fanout_order[static_cast<std::size_t>(base + i)]);
+            NetCon* d = netcon_from_soa_row(g_network_fanout_order[static_cast<std::size_t>(base + i)]);
+            if (d) {
+                fn(d);
+            }
         }
     } else {
         // Fallback while topology is mid-update or PreSyn not in psl_.
@@ -3212,6 +3250,7 @@ void PreSyn::ensure_fanout_order() {
         return;
     }
     g_network_fanout_order.clear();
+    rebuild_netcon_by_soa_row();
     if (net_cvode_instance && net_cvode_instance->psl_) {
         for (PreSyn* ps: *net_cvode_instance->psl_) {
             // Refresh dual-write scalars (threshold may have been HOC-steered via double*).
@@ -3230,9 +3269,15 @@ void PreSyn::ensure_fanout_order() {
             }
             ps->_soa.nc_index() = static_cast<int>(g_network_fanout_order.size());
             for (NetCon* nc: ps->dil_) {
-                g_network_fanout_order.push_back(nc);
-                // Keep NetCon reverse edge / delay dual-write current before sim.
+                // Store SoA row (index), not NetCon* — half the fanout table width on LP64.
+                auto const row = static_cast<netcon_index_t>(nc->_soa.current_row());
+                g_network_fanout_order.push_back(row);
+                // Keep reverse edge / delay dual-write current before sim.
                 nc->soa_sync();
+                // Ensure resolve table has this shell (soa_sync may not change row).
+                if (row >= 0 && static_cast<std::size_t>(row) < g_netcon_by_soa_row.size()) {
+                    g_netcon_by_soa_row[static_cast<std::size_t>(row)] = nc;
+                }
             }
             ps->_soa.nc_count() = static_cast<int>(ps->dil_.size());
         }
@@ -3276,7 +3321,7 @@ void PreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
         }
     } else {
         STATISTICS(presyn_send_direct_);
-        // Phase 3: fanout via NcIndex/NcCount into global order (dual-write with dil_).
+        // Fanout via NcIndex/NcCount into global SoA-row order (dil_ is rebuild source).
         for_each_fanout_netcon(this, [&](NetCon* d) {
             if (d->active_ && d->target_) {
                 NrnThread* n = PP2NT(d->target_);
