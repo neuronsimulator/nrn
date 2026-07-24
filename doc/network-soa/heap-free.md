@@ -94,16 +94,16 @@ and queue polymorphism stay NEURON-specific (policies below).
 
 7. Rebase onto green PR tip after each PR↔master refresh.
 
-### Next phase (after 1–6) — sim path closer to index-native CoreNEURON, still NEURON edit epoch
+### Next phase — sim path closer to index-native CoreNEURON, still NEURON edit epoch
 
 | Substep | Scope | Goal |
 |---------|--------|------|
-| **6b — Zero-copy host receive** | Where block is contiguous, pass `&WeightSoA[base]` into `pnt_receive(double*)` instead of TLS copy | Drop copy cost without nocmodl rewrite; identity stays `weight_index` |
+| **6b — Zero-copy host receive** | **Done:** contiguous block → `pnt_receive` via `data_if_contiguous()` / `weight_soa_data()`; TLS materialize only if scattered | Drop copy when packed; identity stays `weight_index` |
 | **7a — nocmodl index ABI** | Generate `NET_RECEIVE` with base index; body names as `soaweight[ix+k]` / `double&` refs | Eliminate primary-edge scratch; CN-shaped interface |
-| **7b — FOR_NETCONS without owned double pool** | Loop bases only; write SoA directly (or single shared view) | Drop `ForNetConsInfo::weight_storage` |
+| **7b — FOR_NETCONS without owned double pool** | Loop bases only; write SoA directly (or one shared view) | Drop `ForNetConsInfo::weight_storage` |
 | **7c — Cleanup** | Remove TLS scratch + base→buf maps when unused | Host path fully SoA/index |
 
-Optional later: GPU upload of the same packed columns (sibling track), not a prerequisite for 6b–7.
+Optional later: GPU upload of the same packed columns (sibling track), not a prerequisite for 7.
 
 ---
 

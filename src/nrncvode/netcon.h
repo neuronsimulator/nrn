@@ -148,9 +148,10 @@ class NetCon: public DiscreteEvent {
     /**
      * @brief Pointer to first Weight SoA value of this edge (cnt_ consecutive rows).
      *
-     * Valid while the model is not mid-permute and the block remains contiguous
-     * (true after allocate and after network sort). Used for CoreNEURON export
-     * and legacy double* APIs — not for SelfEvent identity.
+     * Valid while the block remains contiguous (after allocate / network sort).
+     * May be null if rows are scattered (post-erase, pre-sort). Used for
+     * zero-copy pnt_receive (6b), CoreNEURON export, legacy double* APIs —
+     * not for SelfEvent identity.
      */
     [[nodiscard]] double* weight_soa_data();
     [[nodiscard]] double const* weight_soa_data() const;

@@ -120,7 +120,7 @@ Native nocmodl `weight_index` ABI is **out of scope** for this branch; keep mate
 
 1. ~~Sort + SaveState + BBSaveState dual-write~~ (done on PR branch).
 2. ~~Heap-free steps 1–6~~ (done on `local/cpu-net-soa-heap-free`: no `NetCon::weight_`; charter in `doc/network-soa/heap-free.md`).
-3. **Next phase on heap-free:** **6b** zero-copy `pnt_receive` via contiguous `weight_soa_data()`; then **7** nocmodl index ABI (`soaweight[ix+k]`) and drop remaining scratch pools.
+3. **Next phase on heap-free:** ~~**6b** zero-copy contiguous SoA `double*`~~ (done); **7** nocmodl index ABI (`soaweight[ix+k]`) and drop remaining scratch pools.
 4. Keep PR tip rebased on master and green; rebase heap-free onto PR tip after refreshes.
 5. GPU Phase 5 only after SoA shape is stable enough to upload the same columns.
 

@@ -205,6 +205,15 @@ TEST_CASE("SOA-backed Weight structure", "[Neuron][data_structures][network][wei
             REQUIRE(block->value(2) == 3.5);
             REQUIRE(block->base_row() >= 0);
         }
+        THEN("data_if_contiguous supports zero-copy pnt_receive (6b)") {
+            double* p = block->data_if_contiguous();
+            REQUIRE(p != nullptr);
+            REQUIRE(p[0] == 1.5);
+            REQUIRE(p[1] == 2.5);
+            REQUIRE(p[2] == 3.5);
+            p[1] = 7.0;
+            REQUIRE(block->value(1) == 7.0);
+        }
         WHEN("heap is updated and remirrored") {
             heap[1] = 9.0;
             Weight::mirror_heap_to_block(*block, heap, 3);
