@@ -932,10 +932,10 @@ void SaveState::savenet() {
         int n = ncs_[i].nstate;
         double* w = ncs_[i].state;
         // HOC weight[] is SoA-primary under dual-write; prefer SoA over heap.
-        if (!d->weight_soa_.empty()) {
-            int const m = std::min(n, static_cast<int>(d->weight_soa_.size()));
+        if (d->has_weight_soa()) {
+            int const m = std::min(n, d->weight_block_->size());
             for (int j = 0; j < m; ++j) {
-                w[j] = d->weight_soa_[j].value();
+                w[j] = d->weight_soa_value(j);
             }
             for (int j = m; j < n; ++j) {
                 w[j] = d->weight_ ? d->weight_[j] : 0.;
@@ -994,10 +994,10 @@ void SaveState::restorenet() {
                 d->weight_[j] = w[j];
             }
         }
-        if (!d->weight_soa_.empty()) {
-            int const m = std::min(n, static_cast<int>(d->weight_soa_.size()));
+        if (d->has_weight_soa()) {
+            int const m = std::min(n, d->weight_block_->size());
             for (int j = 0; j < m; ++j) {
-                d->weight_soa_[j].value() = w[j];
+                d->weight_soa_value(j) = w[j];
             }
             d->soa_sync();  // WeightIndex / reverse edges
         }

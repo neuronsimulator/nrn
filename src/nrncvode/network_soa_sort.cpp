@@ -240,14 +240,17 @@ void sort_network_data(neuron::cache::Model& cache,
                     fp = desired.size();
                 }
             }
-            for (auto& wh: k.nc->weight_soa_) {
-                if (!wh.id()) {
-                    continue;
-                }
-                auto const row = wh.current_row();
-                if (row < wsize && !used[row]) {
-                    used[row] = 1;
-                    desired.push_back(row);
+            // Contiguous logical block owned off-shell; sort packs by NetCon order.
+            if (k.nc->has_weight_soa()) {
+                for (auto& wh: k.nc->weight_block_->rows) {
+                    if (!wh.id()) {
+                        continue;
+                    }
+                    auto const row = wh.current_row();
+                    if (row < wsize && !used[row]) {
+                        used[row] = 1;
+                        desired.push_back(row);
+                    }
                 }
             }
         }

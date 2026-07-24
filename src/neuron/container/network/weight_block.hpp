@@ -1,40 +1,121 @@
 #pragma once
 /**
  * @file network/weight_block.hpp
- * @brief Helpers to dual-write NetCon weight blocks into Weight SoA.
+ * @brief One logical weight block (arity scalars) owned off the NetCon shell.
  *
- * Kept separate from weights.hpp so model_data.hpp can include Weight storage
- * without a circular include.
+ * Heap-free step 1: NetCon is O(1); authority for the base is NetCon SoA
+ * WeightIndex/WeightCount. This type holds the container owning_identifiers
+ * (required by soa<> lifetime/permute) without embedding a vector in NetCon.
  *
- * Phase 1: heap `double* weight_` remains the delivery primary; SoA rows are
- * owned in parallel for layout readiness (Phase 2 WeightIndex).
+ * HOC weight[i] uses value_handle(i) (stable across permute). Contiguous
+ * base+i access is valid after sort packs the block.
+ *
+ * See doc/network-soa/heap-free.md.
  */
+#include "neuron/container/network/indices.hpp"
 #include "neuron/container/network/weights.hpp"
 #include "neuron/model_data.hpp"
 
 #include <algorithm>
+#include <cassert>
+#include <memory>
 #include <vector>
 
 namespace neuron::container::network::Weight {
 
 /**
- * @brief Allocate @p n weight SoA rows, optionally mirroring heap values.
+ * @brief Owning storage for one NetCon's contiguous-logical weight block.
+ *
+ * Rows remain individually tracked for permute; sort repacks them contiguous.
  */
-inline std::vector<owning_handle> allocate_weight_rows(int n, double const* mirror = nullptr) {
+struct WeightBlock {
     std::vector<owning_handle> rows;
+
+    [[nodiscard]] int size() const {
+        return static_cast<int>(rows.size());
+    }
+
+    [[nodiscard]] bool empty() const {
+        return rows.empty();
+    }
+
+    /** @brief Current base row (-1 if empty). Updates after permute/erase. */
+    [[nodiscard]] weight_index_t base_row() const {
+        if (rows.empty() || !rows.front().id()) {
+            return invalid_weight_index;
+        }
+        return static_cast<weight_index_t>(rows.front().current_row());
+    }
+
+    [[nodiscard]] field::Value::type& value(int i) {
+        assert(i >= 0 && i < size());
+        return rows[static_cast<std::size_t>(i)].value();
+    }
+
+    [[nodiscard]] field::Value::type value(int i) const {
+        assert(i >= 0 && i < size());
+        return rows[static_cast<std::size_t>(i)].value();
+    }
+
+    /** @brief Permutation-stable handle for HOC weight[i] / _ref_weight[i]. */
+    [[nodiscard]] data_handle<field::Value::type> value_handle(int i) {
+        assert(i >= 0 && i < size());
+        return rows[static_cast<std::size_t>(i)].value_handle();
+    }
+};
+
+/**
+ * @brief Allocate @p n weight SoA rows, optionally mirroring heap values.
+ * @return Owning block (nullptr if n <= 0).
+ */
+inline std::unique_ptr<WeightBlock> allocate_weight_block(int n, double const* mirror = nullptr) {
     if (n <= 0) {
-        return rows;
+        return nullptr;
     }
+    auto block = std::make_unique<WeightBlock>();
     auto& store = neuron::model().weights();
-    rows.reserve(static_cast<std::size_t>(n));
+    block->rows.reserve(static_cast<std::size_t>(n));
     for (int i = 0; i < n; ++i) {
-        rows.emplace_back(store);
-        rows.back().value() = mirror ? mirror[i] : 0.;
+        block->rows.emplace_back(store);
+        block->rows.back().value() = mirror ? mirror[i] : 0.;
     }
-    return rows;
+    return block;
 }
 
-/** @brief Copy heap weight values into already-allocated SoA rows. */
+/** @brief Copy heap weight values into an existing block. */
+inline void mirror_heap_to_block(WeightBlock& block, double const* heap, int n) {
+    if (!heap) {
+        return;
+    }
+    auto const m = std::min(block.size(), n);
+    for (int i = 0; i < m; ++i) {
+        block.value(i) = heap[i];
+    }
+}
+
+/** @brief Copy block values into heap. */
+inline void mirror_block_to_heap(WeightBlock const& block, double* heap, int n) {
+    if (!heap) {
+        return;
+    }
+    auto const m = std::min(block.size(), n);
+    for (int i = 0; i < m; ++i) {
+        heap[i] = block.value(i);
+    }
+}
+
+// --- Backward-compatible aliases used by unit tests / gradual migration ---
+
+/** @deprecated Prefer allocate_weight_block. */
+inline std::vector<owning_handle> allocate_weight_rows(int n, double const* mirror = nullptr) {
+    auto block = allocate_weight_block(n, mirror);
+    if (!block) {
+        return {};
+    }
+    return std::move(block->rows);
+}
+
+/** @deprecated Prefer mirror_heap_to_block. */
 inline void mirror_weights_to_soa(std::vector<owning_handle>& rows, double const* heap, int n) {
     if (!heap) {
         return;

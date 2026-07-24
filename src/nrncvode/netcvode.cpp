@@ -655,8 +655,7 @@ static double nc_setpost(void* v) {
         for (int i = 0; i < d->cnt_; ++i) {
             d->weight_[i] = 0.0;
         }
-        d->weight_soa_ = neuron::container::network::Weight::allocate_weight_rows(d->cnt_,
-                                                                                  d->weight_);
+        d->allocate_weight_soa(d->weight_);
     }
     d->soa_sync();
     return 0.;
@@ -798,9 +797,9 @@ static void steer_val(void* v) {
             s->arayinfo->sub[0] = d->cnt_;
             index = hoc_araypt(s, SYMBOL);
         }
-        // Phase 2: HOC weight() steers into flat Weight SoA when dual-write rows exist.
-        if (index >= 0 && index < static_cast<int>(d->weight_soa_.size())) {
-            hoc_push(d->weight_soa_[index].value_handle());
+        // SoA-primary: stable data_handle into the weight block (base+i logical).
+        if (d->has_weight_soa() && index >= 0 && index < d->weight_block_->size()) {
+            hoc_push(d->weight_soa_handle(index));
         } else {
             hoc_pushpx(d->weight_ + index);
         }
@@ -2282,11 +2281,7 @@ void selfevent_set_indices(SelfEvent* se, Point_process* pnt, double* weight) {
     }
     // weight* is almost always a NetCon heap base; resolve Weight SoA index.
     if (NetCon* nc = NetConSave::weight2netcon(weight)) {
-        if (!nc->weight_soa_.empty()) {
-            se->weight_index_ = static_cast<int>(nc->weight_soa_.front().current_row());
-        } else {
-            se->weight_index_ = nc->_soa.weight_index();
-        }
+        se->weight_index_ = static_cast<int>(nc->weight_base());
     }
 }
 }  // namespace
@@ -3131,8 +3126,8 @@ void NetCon::deliver(double tt, NetCvode* ns, NrnThread* nt) {
     // buffer so net_send(..., _w, ...) keeps a stable SelfEvent identity.
     // SoA remains HOC-primary via materialize around pnt_receive.
     int widx = _soa.weight_index();
-    if (widx < 0 && !weight_soa_.empty()) {
-        widx = static_cast<int>(weight_soa_.front().current_row());
+    if (widx < 0) {
+        widx = static_cast<int>(weight_base());
     }
     if (widx >= 0) {
         nrn_pnt_receive_by_weight_index(target_, widx, 0., weight_);
@@ -3157,8 +3152,8 @@ void NetCon::pgvts_deliver(double tt, NetCvode* ns) {
     int type = target_->prop->_type;
     STATISTICS(netcon_deliver_);
     int widx = _soa.weight_index();
-    if (widx < 0 && !weight_soa_.empty()) {
-        widx = static_cast<int>(weight_soa_.front().current_row());
+    if (widx < 0) {
+        widx = static_cast<int>(weight_base());
     }
     if (widx >= 0) {
         nrn_pnt_receive_by_weight_index(target_, widx, 0., weight_);
@@ -3456,11 +3451,7 @@ DiscreteEvent* SelfEvent::savestate_read(FILE* f) {
         NetCon* nc = NetConSave::index2netcon(ncindex);
         assert(nc);
         se->weight_ = nc->weight_;
-        if (!nc->weight_soa_.empty()) {
-            se->weight_index_ = static_cast<int>(nc->weight_soa_.front().current_row());
-        } else {
-            se->weight_index_ = nc->_soa.weight_index();
-        }
+        se->weight_index_ = static_cast<int>(nc->weight_base());
     }
     se->flag_ = flag;
     se->movable_ = (moff >= 0) ? (se->target_->prop->dparam + moff) : nullptr;
@@ -4908,8 +4899,8 @@ NetCon* NetCvode::install_deliver(neuron::container::data_handle<double> dsrc,
     // Dual-write: constructor arg is written to heap; HOC weight[] reads SoA.
     // INITIAL (init_events) does soa_to_heap then heap_to_soa — SoA must already
     // hold magnitude or weight[0] is wiped to 0.
-    if (!d->weight_soa_.empty()) {
-        d->weight_soa_[0].value() = magnitude;
+    if (d->has_weight_soa()) {
+        d->weight_soa_value(0) = magnitude;
     }
     d->soa_sync();
     structure_change_cnt_ = 0;
@@ -4994,21 +4985,30 @@ void DiscreteEvent::savestate_write(FILE* f) {
     fprintf(f, "%d\n", DiscreteEventType);
 }
 
-void NetCon::weights_soa_to_heap() {
-    if (!weight_ || weight_soa_.empty()) {
-        return;
-    }
-    auto const n = std::min(cnt_, static_cast<int>(weight_soa_.size()));
-    for (int i = 0; i < n; ++i) {
-        weight_[i] = weight_soa_[i].value();
+void NetCon::allocate_weight_soa(double const* mirror) {
+    weight_block_ = neuron::container::network::Weight::allocate_weight_block(cnt_, mirror);
+    // Authority: SoA base + count (CoreNEURON-shaped).
+    if (weight_block_) {
+        _soa.weight_index() = weight_block_->base_row();
+        _soa.weight_count() = weight_block_->size();
+    } else {
+        _soa.weight_index() = neuron::container::network::invalid_weight_index;
+        _soa.weight_count() = 0;
     }
 }
 
-void NetCon::weights_heap_to_soa() {
-    if (!weight_ || weight_soa_.empty()) {
+void NetCon::weights_soa_to_heap() {
+    if (!weight_ || !has_weight_soa()) {
         return;
     }
-    neuron::container::network::Weight::mirror_weights_to_soa(weight_soa_, weight_, cnt_);
+    neuron::container::network::Weight::mirror_block_to_heap(*weight_block_, weight_, cnt_);
+}
+
+void NetCon::weights_heap_to_soa() {
+    if (!weight_ || !has_weight_soa()) {
+        return;
+    }
+    neuron::container::network::Weight::mirror_heap_to_block(*weight_block_, weight_, cnt_);
 }
 
 void NetCon::soa_sync() {
@@ -5027,12 +5027,14 @@ void NetCon::soa_sync() {
     } else {
         _soa.src_presyn() = -1;
     }
-    if (!weight_soa_.empty()) {
-        _soa.weight_index() = static_cast<int>(weight_soa_.front().current_row());
+    // Weight block base is SoA authority (refresh after permute/erase).
+    if (has_weight_soa()) {
+        _soa.weight_index() = weight_block_->base_row();
+        _soa.weight_count() = weight_block_->size();
         // Do not mirror heap → SoA here: HOC weight() writes SoA first; heap is only
         // a pnt_receive buffer. heap→SoA after MOD runs (weights_heap_to_soa).
     } else {
-        _soa.weight_index() = -1;
+        _soa.weight_index() = neuron::container::network::invalid_weight_index;
     }
 }
 
@@ -5052,7 +5054,7 @@ NetCon::NetCon(PreSyn* src, Object* target) {
         cnt_ = 1;
         weight_ = new double[cnt_];
         weight_[0] = 0.0;
-        weight_soa_ = neuron::container::network::Weight::allocate_weight_rows(cnt_, weight_);
+        allocate_weight_soa(weight_);
         soa_sync();
         return;
     }
@@ -5071,7 +5073,7 @@ NetCon::NetCon(PreSyn* src, Object* target) {
         for (int i = 0; i < cnt_; ++i) {
             weight_[i] = 0.0;
         }
-        weight_soa_ = neuron::container::network::Weight::allocate_weight_rows(cnt_, weight_);
+        allocate_weight_soa(weight_);
     }
     soa_sync();
 }
@@ -5083,7 +5085,7 @@ NetCon::~NetCon() {
     if (cnt_) {
         delete[] weight_;
     }
-    weight_soa_.clear();
+    weight_block_.reset();  // frees Weight SoA block rows
     // _soa owning_handle frees the NetCon SoA row.
 #if DISCRETE_EVENT_OBSERVER
     if (target_) {
@@ -5232,12 +5234,7 @@ NetCon* NetConSave::weight_index2netcon(int weight_index) {
         if (!nc) {
             continue;
         }
-        int base = -1;
-        if (!nc->weight_soa_.empty()) {
-            base = static_cast<int>(nc->weight_soa_.front().current_row());
-        } else {
-            base = nc->_soa.weight_index();
-        }
+        int const base = static_cast<int>(nc->weight_base());
         if (base == weight_index) {
             return nc;
         }

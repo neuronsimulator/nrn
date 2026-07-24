@@ -1122,12 +1122,7 @@ static bool selfevent_matches_netcon(SelfEvent const* se, NetCon const* nc) {
     if (se_widx < 0) {
         return false;
     }
-    int nc_widx = -1;
-    if (!nc->weight_soa_.empty()) {
-        nc_widx = static_cast<int>(nc->weight_soa_.front().current_row());
-    } else {
-        nc_widx = nc->_soa.weight_index();
-    }
+    int const nc_widx = static_cast<int>(nc->weight_base());
     return nc_widx == se_widx;
 }
 
@@ -1142,11 +1137,7 @@ static void selfevent_bind_netcon(SelfEvent* se, NetCon* nc) {
         return;
     }
     se->weight_ = nc->weight_;
-    if (!nc->weight_soa_.empty()) {
-        se->weight_index_ = static_cast<int>(nc->weight_soa_.front().current_row());
-    } else {
-        se->weight_index_ = nc->_soa.weight_index();
-    }
+    se->weight_index_ = static_cast<int>(nc->weight_base());
 }
 
 SEWrap::SEWrap(const TQItem* tq, DEList* dl) {
@@ -2253,7 +2244,7 @@ void BBSaveState::netrecv_pp(Point_process* pp) {
         f->d(nc->cnt_, nc->weight_);
         if (f->type() == BBSS_IO::IN) {
             nc->weights_heap_to_soa();
-            if (!nc->weight_soa_.empty()) {
+            if (nc->has_weight_soa()) {
                 nc->soa_sync();
             }
         }

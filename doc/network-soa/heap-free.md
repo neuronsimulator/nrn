@@ -55,8 +55,8 @@ Interpreter, structure change, and queue polymorphism stay NEURON-specific (poli
 
 ## Implementation order (gateable)
 
-1. **Docs + index typedefs** — this file; `weight_index_t` / `netcon_index_t` (this commit).  
-2. **O(1) ownership path** — stop growing shell with *n* owning handles; NetCon SoA base+count authority; HOC steer base+i.  
+1. **Docs + index typedefs** — this file; `weight_index_t` / `netcon_index_t`.  
+2. **O(1) ownership path** — `WeightBlock` off-shell (`unique_ptr`); NetCon SoA base+count authority; HOC `weight_soa_handle(i)`.  
 3. **Fanout tables as indices** where we store many refs (rebuild at sort; CoreNEURON ranges).  
 4. **nocmodl FOR_NETCONS** by base list / contiguous walk.  
 5. **Ephemeral MOD scratch only** (thread-local max arity) where `double*` ABI remains; never identity.  

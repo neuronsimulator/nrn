@@ -6,9 +6,9 @@
  * CoreNEURON reference: target_, u.weight_index_, delay_, active_.
  * Design: doc/network-soa-phase0.md §5.4, §5.4.1.
  *
- * Phase 2 dual-write: C++ NetCon keeps DiscreteEvent + pointers; this SoA holds
- * the CoreNEURON-shaped columns. HOC weight() steers into Weight SoA when
- * weight_soa_ is populated (see netcvode.cpp).
+ * Phase 2 / heap-free step 1: C++ NetCon keeps DiscreteEvent + pointers; this
+ * SoA holds CoreNEURON-shaped columns. WeightIndex/WeightCount are authority for
+ * the weight block base; HOC weight() steers via the off-shell WeightBlock.
  */
 #include "neuron/container/data_handle.hpp"
 #include "neuron/container/network/indices.hpp"

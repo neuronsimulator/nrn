@@ -20,6 +20,9 @@
 #include <unordered_map>
 #include <vector>
 
+// Weight::WeightBlock (O(1) NetCon shell ownership of weight SoA rows)
+#include "neuron/container/network/weight_block.hpp"
+
 #if 0
 #define STATISTICS(arg) ++arg
 #else
@@ -122,6 +125,31 @@ class NetCon: public DiscreteEvent {
     /** @brief Copy heap weight_ → Weight SoA (after pnt_receive / MOD writes). */
     void weights_heap_to_soa();
 
+    /** @brief Allocate/replace the Weight SoA block (arity = cnt_); updates SoA base. */
+    void allocate_weight_soa(double const* mirror = nullptr);
+    /** @brief True if a Weight SoA block is owned. */
+    [[nodiscard]] bool has_weight_soa() const {
+        return weight_block_ && !weight_block_->empty();
+    }
+    /** @brief Current Weight SoA base row (-1 if none). Authority: refreshed in soa_sync. */
+    [[nodiscard]] neuron::container::network::weight_index_t weight_base() const {
+        if (has_weight_soa()) {
+            return weight_block_->base_row();
+        }
+        return _soa.weight_index();
+    }
+    /** @brief SoA value for weight[i] (requires has_weight_soa()). */
+    [[nodiscard]] double& weight_soa_value(int i) {
+        return weight_block_->value(i);
+    }
+    [[nodiscard]] double weight_soa_value(int i) const {
+        return weight_block_->value(i);
+    }
+    /** @brief HOC-stable data_handle for weight[i]. */
+    [[nodiscard]] neuron::container::data_handle<double> weight_soa_handle(int i) {
+        return weight_block_->value_handle(i);
+    }
+
     double delay_;
     PreSyn* src_;
     Point_process* target_;
@@ -129,8 +157,13 @@ class NetCon: public DiscreteEvent {
     Object* obj_;
     int cnt_;
     bool active_;
-    /** @brief Phase 1 dual-write owners for Weight SoA rows (see weight_block.hpp). */
-    std::vector<neuron::container::network::Weight::owning_handle> weight_soa_{};
+    /**
+     * @brief Owns Weight SoA rows for this edge (heap; shell stays O(1)).
+     *
+     * Authority for base/count is NetCon SoA WeightIndex/WeightCount (soa_sync).
+     * See doc/network-soa/heap-free.md.
+     */
+    std::unique_ptr<neuron::container::network::Weight::WeightBlock> weight_block_{};
     /** @brief Phase 2 dual-write: NetCon integration row. */
     neuron::container::network::NetCon::owning_handle _soa{neuron::model().netcons()};
 

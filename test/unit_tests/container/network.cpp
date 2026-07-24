@@ -190,20 +190,22 @@ TEST_CASE("SOA-backed Weight structure", "[Neuron][data_structures][network][wei
         }
     }
 
-    GIVEN("allocate_weight_rows dual-write helper") {
+    GIVEN("allocate_weight_block (O(1) NetCon ownership helper)") {
         double heap[3] = {1.5, 2.5, 3.5};
-        auto rows = Weight::allocate_weight_rows(3, heap);
-        THEN("SoA mirrors the heap values") {
-            REQUIRE(rows.size() == 3);
+        auto block = Weight::allocate_weight_block(3, heap);
+        THEN("SoA mirrors the heap values and exposes a base row") {
+            REQUIRE(block);
+            REQUIRE(block->size() == 3);
             REQUIRE(storage.size() == 3);
-            REQUIRE(rows[0].value() == 1.5);
-            REQUIRE(rows[1].value() == 2.5);
-            REQUIRE(rows[2].value() == 3.5);
+            REQUIRE(block->value(0) == 1.5);
+            REQUIRE(block->value(1) == 2.5);
+            REQUIRE(block->value(2) == 3.5);
+            REQUIRE(block->base_row() >= 0);
         }
         WHEN("heap is updated and remirrored") {
             heap[1] = 9.0;
-            Weight::mirror_weights_to_soa(rows, heap, 3);
-            REQUIRE(rows[1].value() == 9.0);
+            Weight::mirror_heap_to_block(*block, heap, 3);
+            REQUIRE(block->value(1) == 9.0);
         }
     }
 }
@@ -250,13 +252,13 @@ TEST_CASE("SOA-backed NetCon structure", "[Neuron][data_structures][network][net
         }
     }
 
-    GIVEN("Weight block linked like Phase 2 dual-write") {
-        auto wrows = Weight::allocate_weight_rows(2, nullptr);
-        wrows[0].value() = 0.1;
-        wrows[1].value() = 0.2;
+    GIVEN("Weight block linked via SoA base+count (heap-free step 1)") {
+        auto wblock = Weight::allocate_weight_block(2, nullptr);
+        wblock->value(0) = 0.1;
+        wblock->value(1) = 0.2;
         NetCon::owning_handle nc{storage};
-        nc.weight_index() = static_cast<int>(wrows[0].current_row());
-        nc.weight_count() = 2;
+        nc.weight_index() = wblock->base_row();
+        nc.weight_count() = wblock->size();
         THEN("WeightIndex points at first SoA weight row") {
             REQUIRE(wstore.get<Weight::field::Value>(nc.weight_index()) == 0.1);
             REQUIRE(wstore.get<Weight::field::Value>(nc.weight_index() + 1) == 0.2);
