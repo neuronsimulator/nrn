@@ -99,8 +99,8 @@ and queue polymorphism stay NEURON-specific (policies below).
 |---------|--------|------|
 | **6b — Zero-copy host receive** | **Done:** contiguous block → `pnt_receive` via `data_if_contiguous()` / `weight_soa_data()`; TLS materialize only if scattered | Drop copy when packed; identity stays `weight_index` |
 | **7a — nocmodl index ABI** | **Done:** `pnt_receive_t(Point_process*, int weight_index, double flag)`; generated body keeps `_args[i]` via `_nrn_netrec_wsoa` / `_done`; `net_send` / `artcell_net_send` take index (−1 if none) | CN-shaped interface; identity is index only |
-| **7b — FOR_NETCONS without owned double pool** | Loop bases only; write SoA directly (or one shared view) | Drop `ForNetConsInfo::weight_storage` |
-| **7c — Cleanup** | Remove TLS scratch + base→buf maps when unused | Host path fully SoA/index |
+| **7b — FOR_NETCONS without owned double pool** | **Done:** `ForNetConsInfo` = bases only; `_nrn_fornetcon_weight` zero-copy SoA or shared TLS view; no `weight_storage` / `argslist` / base→buf map | Drop per-target peer double pool |
+| **7c — Cleanup** | Remove remaining TLS scratch when unused; drop dead `_nrn_netcon_args` | Host path fully SoA/index |
 
 Optional later: GPU upload of the same packed columns (sibling track), not a prerequisite for 7.
 

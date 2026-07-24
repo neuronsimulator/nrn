@@ -2617,7 +2617,8 @@ void CodegenNeuronCppVisitor::print_mechanism_variables_macros() {
     // for CVODE
     printer->add_line("extern void _cvode_abstol(Symbol**, double*, int);");
     if (info.for_netcon_used) {
-        printer->add_line("int _nrn_netcon_args(void*, double***);");
+        printer->add_line("int _nrn_netcon_weight_bases(void*, int**);");
+        printer->add_line("double* _nrn_fornetcon_weight(int);");
     }
 }
 
@@ -3070,16 +3071,17 @@ void CodegenNeuronCppVisitor::visit_for_netcon(const ast::ForNetcon& node) {
     int dparam_index = dparam_it->index;
     auto netcon_var = get_name(codegen_int_variables[dparam_index]);
 
+    // Heap-free 7b: walk Weight SoA bases; resolve double* per edge (SoA/TLS).
     // This is called from `print_statement_block` which pre-indents the
     // current line. Hence `add_text` only.
-    printer->add_text("double ** _fornetcon_data;");
+    printer->add_text("int* _fornetcon_bases;");
     printer->add_newline();
 
-    printer->fmt_line("int _n_netcons = _nrn_netcon_args({}, &_fornetcon_data);",
+    printer->fmt_line("int _n_netcons = _nrn_netcon_weight_bases({}, &_fornetcon_bases);",
                       get_variable_name(netcon_var, false));
 
-    printer->push_block("for (size_t _i = 0; _i < _n_netcons; ++_i)");
-    printer->add_line("double * _netcon_data = _fornetcon_data[_i];");
+    printer->push_block("for (size_t _i = 0; _i < static_cast<size_t>(_n_netcons); ++_i)");
+    printer->add_line("double* _netcon_data = _nrn_fornetcon_weight(_fornetcon_bases[_i]);");
     print_statement_block(*statement_block, false, false);
     printer->pop_block();
 }

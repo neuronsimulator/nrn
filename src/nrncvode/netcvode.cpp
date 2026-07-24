@@ -235,27 +235,18 @@ extern void nrn_outputevent(unsigned char, double);
 #endif
 
 /**
- * @brief Per-target FOR_NETCONS peer list (heap-free steps 4–6).
+ * @brief Per-target FOR_NETCONS peer list (heap-free 7b).
  *
- * Identity is Weight SoA bases. argslist[i] points into owned scratch of length
- * arity (not NetCon::weight_ — that field is gone). Generated code uses
- * weight_bases + _nrn_fornetcon_weight.
+ * Identity is Weight SoA bases only — no owned double pool.
+ * Generated code: `_nrn_netcon_weight_bases` + `_nrn_fornetcon_weight(base)`
+ * (zero-copy into contiguous SoA, else shared TLS view + commit).
  */
 struct ForNetConsInfo {
     int size{};
     int arity{};
     /** @brief Weight SoA base row for each NetCon targeting this PP. */
     int* weight_bases{};
-    /** @brief MOD-facing double* list (owned scratch, same order as bases). */
-    double** argslist{};
-    /** @brief Flat storage for argslist[i][0..arity). */
-    double* weight_storage{};
 };
-
-/** @brief base → FOR_NETCONS scratch (rebuilt in fornetcon_prepare). */
-std::unordered_map<int, double*> g_fornet_base_to_buf;
-/** @brief base → NetCon* for weight2netcon when pointer is SoA data or fornet buf. */
-std::unordered_map<double*, NetCon*> g_weight_ptr_to_netcon;
 
 static unsigned long deliver_cnt_, net_event_cnt_;
 unsigned long DiscreteEvent::discretevent_send_;
@@ -2287,14 +2278,22 @@ void NetCvode::remove_event(TQItem* q, int tid) {
 
 namespace {
 /**
- * Heap-free step 5: ephemeral MOD scratch for pnt_receive double* ABI.
+ * Heap-free step 5 / 7b: ephemeral MOD scratch for double* ABI.
  * Never use this buffer as SelfEvent / net_send identity — only weight_index.
+ * Primary NET_RECEIVE and FOR_NETCONS use separate TLS so they do not clobber.
  */
 thread_local std::vector<double> g_mod_weight_scratch;
+thread_local std::vector<double> g_fornet_weight_scratch;
 /** @brief Weight SoA base of the NET_RECEIVE currently on the stack (−1 if none). */
 thread_local int g_tls_receive_weight_index = -1;
 /** @brief 1 if _nrn_netrec_wsoa returned TLS (needs commit). */
 thread_local int g_netrec_wsoa_is_tmp = 0;
+
+/** Active FOR_NETCONS edge view (commit on next peer or flush). */
+thread_local int g_fornet_active_base = -1;
+thread_local int g_fornet_active_arity = 0;
+thread_local double* g_fornet_active_buf = nullptr;
+thread_local int g_fornet_active_is_tmp = 0;
 
 double* mod_weight_scratch(int n) {
     if (n <= 0) {
@@ -2304,6 +2303,29 @@ double* mod_weight_scratch(int n) {
         g_mod_weight_scratch.resize(static_cast<std::size_t>(n));
     }
     return g_mod_weight_scratch.data();
+}
+
+double* fornet_weight_scratch(int n) {
+    if (n <= 0) {
+        return nullptr;
+    }
+    if (static_cast<int>(g_fornet_weight_scratch.size()) < n) {
+        g_fornet_weight_scratch.resize(static_cast<std::size_t>(n));
+    }
+    return g_fornet_weight_scratch.data();
+}
+
+void fornet_weight_commit() {
+    if (g_fornet_active_is_tmp && g_fornet_active_buf && g_fornet_active_base >= 0 &&
+        g_fornet_active_arity > 0) {
+        neuron::container::network::SelfEventFields::store_weight_block(g_fornet_active_base,
+                                                                        g_fornet_active_arity,
+                                                                        g_fornet_active_buf);
+    }
+    g_fornet_active_is_tmp = 0;
+    g_fornet_active_base = -1;
+    g_fornet_active_arity = 0;
+    g_fornet_active_buf = nullptr;
 }
 
 struct ReceiveWeightIndexGuard {
@@ -2323,11 +2345,6 @@ double* _nrn_netrec_wsoa(int weight_index, int count) {
     if (weight_index < 0 || count <= 0) {
         return nullptr;
     }
-    // FOR_NETCONS peer/primary scratch (already SoA-synced around receive).
-    auto it = g_fornet_base_to_buf.find(weight_index);
-    if (it != g_fornet_base_to_buf.end()) {
-        return it->second;
-    }
     // Zero-copy into contiguous Weight SoA block.
     if (NetCon* nc = NetConSave::weight_index2netcon(weight_index)) {
         if (nc->has_weight_soa()) {
@@ -2346,15 +2363,13 @@ double* _nrn_netrec_wsoa(int weight_index, int count) {
 }
 
 void _nrn_netrec_wsoa_done(int weight_index, int count, double* buf) {
-    // Always commit when we have a buffer: TLS materialize, FOR_NETCONS owned
-    // scratch (fornetcon_prepare runs before init_events, so INITIAL often writes
-    // scratch not SoA), or no-op-ish self-copy when buf already aliases SoA.
-    // Without this, INITIAL values in fornet scratch were wiped on first deliver
-    // (soa_to_buf from still-zero SoA).
+    // Commit primary-edge TLS (no-op-ish self-copy when buf already aliases SoA).
+    // Also flush any pending FOR_NETCONS peer TLS from a nested loop.
     if (buf && weight_index >= 0 && count > 0) {
         neuron::container::network::SelfEventFields::store_weight_block(weight_index, count, buf);
     }
     g_netrec_wsoa_is_tmp = 0;
+    fornet_weight_commit();
 }
 
 namespace {
@@ -2366,57 +2381,7 @@ void selfevent_set_indices(SelfEvent* se, Point_process* pnt, int weight_index) 
         se->weight_index_ = g_tls_receive_weight_index;
     }
 }
-}  // namespace
 
-namespace {
-bool type_has_fornetcon(int type) {
-    for (int i = 0; i < nrn_fornetcon_cnt_; ++i) {
-        if (nrn_fornetcon_type_[i] == type) {
-            return true;
-        }
-    }
-    return false;
-}
-
-/** Sync FOR_NETCONS owned scratch buffers ↔ Weight SoA for one target PP. */
-void sync_fornetcon_buffers_for_target(Point_process* pnt, bool soa_to_buf) {
-    if (!pnt || !pnt->prop) {
-        return;
-    }
-    int const type = pnt->prop->_type;
-    int fn_slot = -1;
-    for (int i = 0; i < nrn_fornetcon_cnt_; ++i) {
-        if (nrn_fornetcon_type_[i] == type) {
-            fn_slot = nrn_fornetcon_index_[i];
-            break;
-        }
-    }
-    if (fn_slot < 0) {
-        return;
-    }
-    auto* fnc = static_cast<ForNetConsInfo*>(pnt->prop->dparam[fn_slot].get<void*>());
-    if (!fnc || fnc->size <= 0 || !fnc->weight_bases || !fnc->argslist) {
-        return;
-    }
-    int const arity = fnc->arity > 0 ? fnc->arity : pnt_receive_size[type];
-    for (int i = 0; i < fnc->size; ++i) {
-        int const base = fnc->weight_bases[i];
-        double* buf = fnc->argslist[i];
-        if (base < 0 || !buf || arity <= 0) {
-            continue;
-        }
-        if (soa_to_buf) {
-            neuron::container::network::SelfEventFields::materialize_weight_block(base, arity, buf);
-        } else {
-            neuron::container::network::SelfEventFields::store_weight_block(base, arity, buf);
-        }
-    }
-}
-
-// WatchCondition / legacy name: SoA ↔ FOR_NETCONS owned scratch.
-void sync_netcon_weights_for_target(Point_process* pnt, bool soa_to_heap) {
-    sync_fornetcon_buffers_for_target(pnt, soa_to_heap);
-}
 }  // namespace
 
 void nrn_pnt_receive_by_weight_index(Point_process* pnt, int weight_index, double flag) {
@@ -2430,15 +2395,9 @@ void nrn_pnt_receive_by_weight_index(Point_process* pnt, int weight_index, doubl
     // Active base for net_send identity (generated code passes _weight_index).
     ReceiveWeightIndexGuard const tls_guard(weight_index);
 
-    bool const fornet = type_has_fornetcon(type);
-    if (fornet) {
-        sync_fornetcon_buffers_for_target(pnt, /*soa_to_buf*/ true);
-    }
-    // Generated NET_RECEIVE obtains _args via _nrn_netrec_wsoa(_weight_index, n).
+    // Heap-free 7b: no FOR_NETCONS owned pool to sync — SoA / per-edge TLS only.
     POINT_RECEIVE(type, pnt, weight_index, flag);
-    if (fornet) {
-        sync_fornetcon_buffers_for_target(pnt, /*soa_to_buf*/ false);
-    }
+    fornet_weight_commit();
 }
 
 // for threads, revised net_send to use absolute time (in the
@@ -4352,7 +4311,6 @@ void NetCvode::fornetcon_prepare() {
         return;
     }
     fornetcon_change_cnt_ = structure_change_cnt;
-    g_fornet_base_to_buf.clear();
     if (nrn_fornetcon_cnt_ == 0) {
         return;
     }
@@ -4396,6 +4354,7 @@ void NetCvode::fornetcon_prepare() {
             }
         }
 
+    // Heap-free 7b: allocate bases only (no owned double pool).
     auto allocate_slots = [](ForNetConsInfo* fnc, int type) {
         if (!fnc || fnc->size <= 0) {
             return;
@@ -4404,10 +4363,7 @@ void NetCvode::fornetcon_prepare() {
         int const arity = pnt_receive_size[type] > 0 ? pnt_receive_size[type] : 1;
         fnc->arity = arity;
         fnc->weight_bases = new int[n];
-        fnc->argslist = new double*[n];
-        fnc->weight_storage = new double[static_cast<std::size_t>(n) * static_cast<std::size_t>(arity)]{};
         for (int s = 0; s < n; ++s) {
-            fnc->argslist[s] = fnc->weight_storage + static_cast<std::size_t>(s) * arity;
             fnc->weight_bases[s] = -1;
         }
         fnc->size = 0;  // fill pass
@@ -4434,7 +4390,7 @@ void NetCvode::fornetcon_prepare() {
                     }
         }
     }
-    // fill bases + map base → scratch; materialize from SoA
+    // fill Weight SoA bases only
     if (psl_) {
         for (const PreSyn* ps: *psl_) {
             for (const auto& d1: ps->dil_) {
@@ -4443,14 +4399,7 @@ void NetCvode::fornetcon_prepare() {
                     auto* fnc = static_cast<ForNetConsInfo*>(
                         pnt->prop->dparam[t2i[pnt->prop->_type]].get<void*>());
                     int const slot = fnc->size;
-                    int const base = static_cast<int>(d1->weight_base());
-                    fnc->weight_bases[slot] = base;
-                    double* buf = fnc->argslist[slot];
-                    if (base >= 0 && fnc->arity > 0) {
-                        neuron::container::network::SelfEventFields::materialize_weight_block(
-                            base, fnc->arity, buf);
-                        g_fornet_base_to_buf[base] = buf;
-                    }
+                    fnc->weight_bases[slot] = static_cast<int>(d1->weight_base());
                     fnc->size = slot + 1;
                 }
             }
@@ -4458,11 +4407,13 @@ void NetCvode::fornetcon_prepare() {
     }
 }
 
-int _nrn_netcon_args(void* v, double*** argslist) {
-    auto* fnc = static_cast<ForNetConsInfo*>(v);
-    assert(fnc);
-    *argslist = fnc->argslist;
-    return fnc->size;
+int _nrn_netcon_args(void* /*v*/, double*** argslist) {
+    // Heap-free 7b: owned peer double pool removed. Use bases + _nrn_fornetcon_weight.
+    // Legacy API kept so old object files fail closed rather than crash on null.
+    if (argslist) {
+        *argslist = nullptr;
+    }
+    return 0;
 }
 
 int _nrn_netcon_weight_bases(void* v, int** bases) {
@@ -4473,26 +4424,37 @@ int _nrn_netcon_weight_bases(void* v, int** bases) {
 }
 
 double* _nrn_fornetcon_weight(int weight_base) {
+    // Commit previous peer edge (shared TLS view) before opening a new one.
+    fornet_weight_commit();
     if (weight_base < 0) {
         return nullptr;
     }
-    auto it = g_fornet_base_to_buf.find(weight_base);
-    if (it != g_fornet_base_to_buf.end()) {
-        return it->second;
+    NetCon* nc = NetConSave::weight_index2netcon(weight_base);
+    if (!nc || !nc->has_weight_soa()) {
+        return nullptr;
     }
-    return nullptr;
+    int const arity = nc->cnt_ > 0 ? nc->cnt_ : 1;
+    // Zero-copy when the weight block is contiguous in SoA (packing A / allocate).
+    if (double* p = nc->weight_block_->data_if_contiguous()) {
+        g_fornet_active_base = weight_base;
+        g_fornet_active_arity = arity;
+        g_fornet_active_buf = p;
+        g_fornet_active_is_tmp = 0;
+        return p;
+    }
+    // Shared TLS view for one edge (not O(peers) owned pool).
+    double* buf = fornet_weight_scratch(arity);
+    neuron::container::network::SelfEventFields::materialize_weight_block(weight_base, arity, buf);
+    g_fornet_active_base = weight_base;
+    g_fornet_active_arity = arity;
+    g_fornet_active_buf = buf;
+    g_fornet_active_is_tmp = 1;
+    return buf;
 }
 
 void _nrn_free_fornetcon(void** v) {
     if (auto* fnc = static_cast<ForNetConsInfo*>(*v); fnc) {
-        if (fnc->weight_bases && fnc->size > 0) {
-            for (int i = 0; i < fnc->size; ++i) {
-                g_fornet_base_to_buf.erase(fnc->weight_bases[i]);
-            }
-        }
-        delete[] std::exchange(fnc->argslist, nullptr);
         delete[] std::exchange(fnc->weight_bases, nullptr);
-        delete[] std::exchange(fnc->weight_storage, nullptr);
         delete fnc;
         *v = nullptr;
     }
@@ -5255,12 +5217,6 @@ NetCon* NetConSave::weight2netcon(double* pd) {
     if (!pd) {
         return nullptr;
     }
-    // FOR_NETCONS scratch buffers registered during fornetcon_prepare.
-    for (auto const& kv: g_fornet_base_to_buf) {
-        if (kv.second == pd) {
-            return weight_index2netcon(kv.first);
-        }
-    }
     NetCon* nc;
     if (!wtable_) {
         hoc_Item* q;
@@ -5811,14 +5767,9 @@ void WatchCondition::deliver(double tt, NetCvode* ns, NrnThread* nt) {
     }
     STATISTICS(watch_deliver_);
     // WATCH-driven NET_RECEIVE (e.g. flag=2): no NetCon weight edge (−1).
-    // FOR_NETCONS still needs per-target scratch ↔ SoA sync.
-    if (type_has_fornetcon(type)) {
-        sync_netcon_weights_for_target(pnt_, /*soa_to_heap*/ true);
-    }
+    // Heap-free 7b: FOR_NETCONS mutates SoA / peer TLS; flush after body.
     POINT_RECEIVE(type, pnt_, -1, nrflag_);
-    if (type_has_fornetcon(type)) {
-        sync_netcon_weights_for_target(pnt_, /*soa_to_heap*/ false);
-    }
+    fornet_weight_commit();
     if (errno) {
         if (nrn_errno_check(type)) {
             hoc_warning("errno set during WatchCondition deliver to NET_RECEIVE", (char*) 0);
@@ -5909,13 +5860,8 @@ void WatchCondition::pgvts_deliver(double tt, NetCvode* ns) {
     }
     int type = pnt_->prop->_type;
     STATISTICS(watch_deliver_);
-    if (type_has_fornetcon(type)) {
-        sync_netcon_weights_for_target(pnt_, /*soa_to_heap*/ true);
-    }
     POINT_RECEIVE(type, pnt_, -1, nrflag_);
-    if (type_has_fornetcon(type)) {
-        sync_netcon_weights_for_target(pnt_, /*soa_to_heap*/ false);
-    }
+    fornet_weight_commit();
     if (errno) {
         if (nrn_errno_check(type)) {
             hoc_warning("errno set during WatchCondition deliver to NET_RECEIVE", (char*) 0);

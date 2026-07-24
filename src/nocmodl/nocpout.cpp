@@ -1179,9 +1179,9 @@ static const char *_mechanism[] = {\n\
         Lappendstr(defs_list, "extern double* _nrn_netrec_wsoa(int, int);\n");
         Lappendstr(defs_list, "extern void _nrn_netrec_wsoa_done(int, int, double*);\n");
         if (for_netcons_) {
+            // Heap-free 7b: bases + per-edge SoA/TLS view (no owned double pool).
             Lappendstr(defs_list, "extern int _nrn_netcon_weight_bases(void*, int**);\n");
             Lappendstr(defs_list, "extern double* _nrn_fornetcon_weight(int);\n");
-            Lappendstr(defs_list, "extern int _nrn_netcon_args(void*, double***);\n");
         }
         if (net_init_q1_) {
             Lappendstr(defs_list, "static void _net_init(Point_process*, int, double);\n");
