@@ -62,7 +62,9 @@ Interpreter, structure change, and queue polymorphism stay NEURON-specific (poli
 4. **nocmodl FOR_NETCONS** — walk Weight SoA bases (`_nrn_netcon_weight_bases` /
    `_nrn_fornetcon_weight`); sort packs by target instance (packing A).  
 
-5. **Ephemeral MOD scratch only** (thread-local max arity) where `double*` ABI remains; never identity.  
+5. **Ephemeral MOD scratch only** — thread-local buffer for non-FOR_NETCONS
+   `pnt_receive`; TLS active `weight_index` so `net_send(..., _w)` never queues
+   scratch as identity. FOR_NETCONS still uses long-lived `weight_` until step 6.  
 6. **Delete `NetCon::weight_`** when tests (stdp/FOR_NETCONS, SaveState, netrec init, ctest + asan) stay green.  
 7. Rebase onto green PR tip after each PR↔master refresh.
 
