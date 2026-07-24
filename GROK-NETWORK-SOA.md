@@ -54,11 +54,14 @@ One CPU backing store for integration-hot network data:
 - `NrnThread` = lightweight slice (`offset` + count) — **no duplicate CPU copies**
 - HOC extras in sidecars keyed by handle
 
-CoreNEURON layout is the **integration reference**.
+**Two epochs:** **Sim** = CoreNEURON-shaped hot path (indices, packed weights, frozen connectivity)
+**plus** host improvements CN may lack (physical weight packing **A**, rebuild after `nthread` change).
+**Edit** = full NEURON construction between runs. CoreNEURON is the reference shape, not a ceiling.
+Detail: `doc/network-soa/heap-free.md`.
 
 ---
 
-## Architecture (current dual-write)
+## Architecture
 
 ```text
 HOC / Python
@@ -70,7 +73,7 @@ Legacy shells (Point_process*, NetCon, PreSyn) + owning_handle _soa
 neuron::container::network::{PointProcess,Weight,NetCon,PreSyn}
     │
     ▼
-Hot path: fanout order + weight_index → materialize → pnt_receive(double*)
+Hot path: fanout indices + weight_index → (TLS/FOR_NETCONS scratch or SoA double*) → pnt_receive
 ```
 
 Key paths:
@@ -80,8 +83,8 @@ Key paths:
 | Containers | `src/neuron/container/network/*.hpp` |
 | Model ownership | `src/neuron/model_data.hpp` |
 | PP dual-write | `Point_process::_soa`, `nrn_point_process_soa_sync` |
-| NetCon / weights | `NetCon::_soa`, `weight_soa_`, `soa_sync` |
-| Fanout | `PreSyn::ensure_fanout_order`, global NetCon* order |
+| NetCon / weights | `NetCon::_soa`, `weight_block_`, `weight_soa_data()` (no `weight_` heap on heap-free) |
+| Fanout | `PreSyn::ensure_fanout_order`, `g_network_fanout_order` (`netcon_index_t`) |
 | Sort / repack | `network_soa_sort.cpp`, `sort_network_data` in ensure_sorted |
 | Receive by index | `nrn_pnt_receive_by_weight_index` |
 
@@ -115,9 +118,9 @@ Native nocmodl `weight_index` ABI is **out of scope** for this branch; keep mate
 
 ## Recommended next work
 
-1. ~~Sort + SaveState + BBSaveState dual-write~~ (done).
-2. ~~PR dual-write green; heap-free charter~~ (`doc/network-soa/heap-free.md`, branch `local/cpu-net-soa-heap-free`).
-3. **On heap-free branch:** O(1) NetCon weight-block ownership (SoA base+count); index fanout tables; FOR_NETCONS codegen; drop `weight_` when green.
+1. ~~Sort + SaveState + BBSaveState dual-write~~ (done on PR branch).
+2. ~~Heap-free steps 1–6~~ (done on `local/cpu-net-soa-heap-free`: no `NetCon::weight_`; charter in `doc/network-soa/heap-free.md`).
+3. **Next phase on heap-free:** **6b** zero-copy `pnt_receive` via contiguous `weight_soa_data()`; then **7** nocmodl index ABI (`soaweight[ix+k]`) and drop remaining scratch pools.
 4. Keep PR tip rebased on master and green; rebase heap-free onto PR tip after refreshes.
 5. GPU Phase 5 only after SoA shape is stable enough to upload the same columns.
 

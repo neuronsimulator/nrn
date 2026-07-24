@@ -34,18 +34,9 @@ Passing a **temporary** buffer into `pnt_receive` broke SelfEvent identity: nocm
 
 ## 4. Roadmap to full heap free
 
-**Active branch:** `local/cpu-net-soa-heap-free` (no PR). Settled charter: [heap-free.md](heap-free.md).
+**Active branch:** `local/cpu-net-soa-heap-free` (no PR). Charter + two-epoch north star: [heap-free.md](heap-free.md).
 
-Rough commit series (each gateable):
-
-1. **SelfEvent never stores identity-only-as-temp-pointer** — always set `weight_index_` (done in dual-write spirit); never pass non-owner buffers into `pnt_receive` if MOD can net_send.  
-2. **O(1) NetCon** — one weight block (base+arity on SoA); no per-arg owning handle vector on the shell.  
-3. **FOR_NETCONS** — packing **A** (target-instance adjacency) + nocmodl index walk; stop requiring foreign NetCon `weight_` bases.  
-4. **INITIAL** — `pnt_receive_init` by index or materialize into ephemeral/owner scratch only.  
-5. **Stop allocating `new double[cnt_]`** — optional thread-local scratch of `max(pnt_receive_size)` for MOD only if ABI still needs `double*`.  
-6. **Delete `weight_` field** — after tests (stdp/FOR_NETCONS, SaveState ring, netrec init, ctest + asan).
-
-Structure change / NetCon free with a live network queue: **clear queue** (freeze after `finitialize`). See heap-free charter.
+**Steps 1–6 done** on that branch (`NetCon::weight_` removed). Remaining: zero-copy SoA `double*` (6b), then nocmodl **weight_index** receive (7) to drop TLS/FOR_NETCONS scratch. Structure change still clears the queue; edit between runs stays fully NEURON-flexible.
 
 ---
 

@@ -3,14 +3,40 @@
 **Branch only — no PR** until a reviewable slice is green.  
 **Base:** keep rebasing onto green `local/cpu-network-soa` (PR #3822) after master merges.
 
-**Charter:** Follow CoreNEURON as much as feasible for the data plane and hot path.
-Interpreter, structure change, and queue polymorphism stay NEURON-specific (policies below).
+---
+
+## North star (two epochs)
+
+**Sim epoch (CoreNEURON-shaped *plus* host improvements):**  
+Flat/packed weights, integer bases, source fanout ranges, frozen connectivity for the run.
+CoreNEURON is the **integration reference and hot-path shape**, not a performance ceiling
+and not a product constraint on NEURON’s lifecycle.
+
+Improvements CoreNEURON does not (or only partially) provide, that we intentionally pursue:
+
+| Improvement | Notes |
+|-------------|--------|
+| **Weight physical packing (A)** | Sort by target thread → target PP instance → …; stronger locality than CN’s construction-order pool + FOR_NETCONS perm |
+| **Dynamic `nthread` between runs** | Rebuild sort, thread offsets, fanout, FOR_NETCONS tables — CN setup is fixed |
+| **HOC/Python edit between runs** | Handles survive permute; append/invalidate then re-sort |
+
+**Edit epoch (full NEURON flexibility):**  
+Create/destroy NetCons, reconnect, change `pc.nthread`, rebuild model. Not mid-`psolve`
+with a live queue (structure change clears the queue).
+
+One line:
+
+> **Build and edit like NEURON; once the run starts, look like CoreNEURON’s network data plane
+> (with better host packing and reconfigurable threads)—then tear down and edit again.**
+
+**Charter (implementation):** sim path stays index- and SoA-first; interpreter, structure change,
+and queue polymorphism stay NEURON-specific (policies below).
 
 ---
 
 ## Settled decisions
 
-### Data plane (CoreNEURON-shaped)
+### Data plane (CoreNEURON-shaped + packing A)
 
 | Item | Choice |
 |------|--------|
@@ -38,36 +64,46 @@ Interpreter, structure change, and queue polymorphism stay NEURON-specific (poli
 | TQueue | Keep `(tdeliver, DiscreteEvent*)` for now; compress later if needed |
 | GPU | Out of scope on this branch |
 
-### Explicitly not required for v1
+### Explicitly not required for heap-free v1 (steps 1–6)
 
 - Arbitrary model edits between `pc.psolve()` with a live queue  
 - Queue scrub or refcount-pin on every NetCon destroy  
-- Full nocmodl ABI change to `pnt_receive(…, weight_index, flag)` before materialize shim is removable  
+- Full nocmodl ABI change to `pnt_receive(…, weight_index, flag)` (next phase)  
 - Permanent FOR_NETCONS perm table **if** sort key already groups by target instance (**A**)
 
 ---
 
 ## Contract (identity)
 
-> A NetCon weight block is identified by a base row in the Weight SoA (arity fixed by target mechanism type). Queued SelfEvents and generated `net_send` carry that base as `int` (or −1). FOR_NETCONS never walks foreign `double*`; it walks a target-local list of bases, contiguous after sort under packing **A**. Per-NetCon `weight_` heap is MOD scratch only until codegen/tests allow deletion.
+> A NetCon weight block is identified by a base row in the Weight SoA (arity fixed by target mechanism type). Queued SelfEvents and generated `net_send` carry that base as `int` (or −1). FOR_NETCONS walks a target-local list of bases (owned scratch for MOD `double*`, writeback to SoA). There is **no** per-NetCon `weight_` heap.
 
 ---
 
 ## Implementation order (gateable)
 
-1. **Docs + index typedefs** — this file; `weight_index_t` / `netcon_index_t`.  
-2. **O(1) ownership path** — `WeightBlock` off-shell (`unique_ptr`); NetCon SoA base+count authority; HOC `weight_soa_handle(i)`.  
-3. **Fanout tables as indices** — `g_network_fanout_order` holds `netcon_index_t` (SoA rows); resolve via `g_netcon_by_soa_row`.  
+### Done on this branch (steps 1–6)
 
-4. **nocmodl FOR_NETCONS** — walk Weight SoA bases (`_nrn_netcon_weight_bases` /
-   `_nrn_fornetcon_weight`); sort packs by target instance (packing A).  
+1. **Docs + index typedefs** — `weight_index_t` / `netcon_index_t`.  
+2. **O(1) ownership path** — `WeightBlock` off-shell; SoA base+count authority; HOC handles.  
+3. **Fanout tables as indices** — `g_network_fanout_order` = SoA rows; `g_netcon_by_soa_row` resolve.  
+4. **nocmodl FOR_NETCONS by bases** — `_nrn_netcon_weight_bases` / `_nrn_fornetcon_weight`; packing A sort key.  
+5. **Ephemeral MOD scratch** — TLS for non-FOR_NETCONS; active `weight_index` so scratch is never queue identity.  
+6. **Delete `NetCon::weight_`** — SoA only; FOR_NETCONS per-target scratch; `weight_soa_data()` for legacy double* APIs.
 
-5. **Ephemeral MOD scratch only** — thread-local buffer for non-FOR_NETCONS
-   `pnt_receive`; TLS active `weight_index` so `net_send(..., _w)` never queues
-   scratch as identity.  
-6. **Delete `NetCon::weight_`** — SoA only; FOR_NETCONS owns per-target scratch
-   buffers keyed by weight bases; `weight_soa_data()` for contiguous double* APIs.  
+### Process
+
 7. Rebase onto green PR tip after each PR↔master refresh.
+
+### Next phase (after 1–6) — sim path closer to index-native CoreNEURON, still NEURON edit epoch
+
+| Substep | Scope | Goal |
+|---------|--------|------|
+| **6b — Zero-copy host receive** | Where block is contiguous, pass `&WeightSoA[base]` into `pnt_receive(double*)` instead of TLS copy | Drop copy cost without nocmodl rewrite; identity stays `weight_index` |
+| **7a — nocmodl index ABI** | Generate `NET_RECEIVE` with base index; body names as `soaweight[ix+k]` / `double&` refs | Eliminate primary-edge scratch; CN-shaped interface |
+| **7b — FOR_NETCONS without owned double pool** | Loop bases only; write SoA directly (or single shared view) | Drop `ForNetConsInfo::weight_storage` |
+| **7c — Cleanup** | Remove TLS scratch + base→buf maps when unused | Host path fully SoA/index |
+
+Optional later: GPU upload of the same packed columns (sibling track), not a prerequisite for 6b–7.
 
 ---
 

@@ -23,7 +23,7 @@ Prefer CPU-only or default GPU-off builds until integration explicitly needs GPU
 
 - Network SoA: `Point_process`, `NetCon`, `PreSyn`, `weights`, `SelfEvent` in `neuron::container` style.
 - HOC wrappers as permutation-stable handles over backing store — **not** a second pointer graph.
-- **Heap-free branch:** follow CoreNEURON as much as feasible; charter in `doc/network-soa/heap-free.md`.
+- **Heap-free branch:** CoreNEURON-shaped sim path **plus** host packing / dynamic `nthread` between runs; full NEURON edit epoch. Charter: `doc/network-soa/heap-free.md`.
 - **Out of scope:** Stage 2/3 GPU `net_buf_receive`, ringtest GPU network buffers (resume after SoA merges to master).
 
 ## Execute, don’t delegate
