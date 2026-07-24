@@ -64,8 +64,9 @@ Interpreter, structure change, and queue polymorphism stay NEURON-specific (poli
 
 5. **Ephemeral MOD scratch only** — thread-local buffer for non-FOR_NETCONS
    `pnt_receive`; TLS active `weight_index` so `net_send(..., _w)` never queues
-   scratch as identity. FOR_NETCONS still uses long-lived `weight_` until step 6.  
-6. **Delete `NetCon::weight_`** when tests (stdp/FOR_NETCONS, SaveState, netrec init, ctest + asan) stay green.  
+   scratch as identity.  
+6. **Delete `NetCon::weight_`** — SoA only; FOR_NETCONS owns per-target scratch
+   buffers keyed by weight bases; `weight_soa_data()` for contiguous double* APIs.  
 7. Rebase onto green PR tip after each PR↔master refresh.
 
 ---

@@ -118,12 +118,8 @@ class NetCon: public DiscreteEvent {
     void replace_src(PreSyn*);
     virtual void disconnect(Observable*);
 
-    /** @brief Sync legacy NetCon fields into NetCon + Weight SoA (Phase 2). */
+    /** @brief Sync legacy NetCon fields into NetCon + Weight SoA. */
     void soa_sync();
-    /** @brief Copy Weight SoA values → heap weight_ (before pnt_receive). */
-    void weights_soa_to_heap();
-    /** @brief Copy heap weight_ → Weight SoA (after pnt_receive / MOD writes). */
-    void weights_heap_to_soa();
 
     /** @brief Allocate/replace the Weight SoA block (arity = cnt_); updates SoA base. */
     void allocate_weight_soa(double const* mirror = nullptr);
@@ -131,7 +127,7 @@ class NetCon: public DiscreteEvent {
     [[nodiscard]] bool has_weight_soa() const {
         return weight_block_ && !weight_block_->empty();
     }
-    /** @brief Current Weight SoA base row (-1 if none). Authority: refreshed in soa_sync. */
+    /** @brief Current Weight SoA base row (-1 if none). */
     [[nodiscard]] neuron::container::network::weight_index_t weight_base() const {
         if (has_weight_soa()) {
             return weight_block_->base_row();
@@ -149,22 +145,28 @@ class NetCon: public DiscreteEvent {
     [[nodiscard]] neuron::container::data_handle<double> weight_soa_handle(int i) {
         return weight_block_->value_handle(i);
     }
+    /**
+     * @brief Pointer to first Weight SoA value of this edge (cnt_ consecutive rows).
+     *
+     * Valid while the model is not mid-permute and the block remains contiguous
+     * (true after allocate and after network sort). Used for CoreNEURON export
+     * and legacy double* APIs — not for SelfEvent identity.
+     */
+    [[nodiscard]] double* weight_soa_data();
+    [[nodiscard]] double const* weight_soa_data() const;
 
     double delay_;
     PreSyn* src_;
     Point_process* target_;
-    double* weight_;
     Object* obj_;
     int cnt_;
     bool active_;
     /**
-     * @brief Owns Weight SoA rows for this edge (heap; shell stays O(1)).
-     *
-     * Authority for base/count is NetCon SoA WeightIndex/WeightCount (soa_sync).
-     * See doc/network-soa/heap-free.md.
+     * @brief Owns Weight SoA rows for this edge (shell O(1); no per-NetCon weight_ heap).
+     * See doc/network-soa/heap-free.md step 6.
      */
     std::unique_ptr<neuron::container::network::Weight::WeightBlock> weight_block_{};
-    /** @brief Phase 2 dual-write: NetCon integration row. */
+    /** @brief NetCon integration SoA row. */
     neuron::container::network::NetCon::owning_handle _soa{neuron::model().netcons()};
 
     static unsigned long netcon_send_active_;
@@ -184,7 +186,10 @@ class NetConSave: public DiscreteEvent {
     NetCon* netcon_;
 
     static void invalid();
-    /** @brief Map long-lived NetCon weight_ heap base → NetCon*. */
+    /**
+     * @brief Map double* → NetCon* if it is a FOR_NETCONS scratch buffer or
+     * Weight SoA data pointer known for a live edge. Prefer weight_index2netcon.
+     */
     static NetCon* weight2netcon(double*);
     /** @brief Map HOC NetCon object index → NetCon*. */
     static NetCon* index2netcon(long);

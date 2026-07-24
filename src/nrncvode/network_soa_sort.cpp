@@ -359,6 +359,8 @@ void sort_network_data(neuron::cache::Model& cache,
     // Fanout order is NetCon SoA row indices; rebuild after topology/sort.
     ::PreSyn::mark_fanout_unsorted();
     ::PreSyn::ensure_fanout_order();
+    // Weight SoA data pointers may have moved; drop weight2netcon cache.
+    ::NetConSave::invalid();
 
     // Final NetCon reverse-edge refresh (src PreSyn rows may have moved).
     for (::NetCon* nc: netcons) {

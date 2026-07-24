@@ -931,18 +931,14 @@ void SaveState::savenet() {
         const NetCon* d = (NetCon*) ob->u.this_pointer;
         int n = ncs_[i].nstate;
         double* w = ncs_[i].state;
-        // HOC weight[] is SoA-primary under dual-write; prefer SoA over heap.
+        // Weight SoA only (heap-free step 6).
         if (d->has_weight_soa()) {
             int const m = std::min(n, d->weight_block_->size());
             for (int j = 0; j < m; ++j) {
                 w[j] = d->weight_soa_value(j);
             }
             for (int j = m; j < n; ++j) {
-                w[j] = d->weight_ ? d->weight_[j] : 0.;
-            }
-        } else if (d->weight_) {
-            for (int j = 0; j < n; ++j) {
-                w[j] = d->weight_[j];
+                w[j] = 0.;
             }
         }
         ++i;
@@ -987,19 +983,13 @@ void SaveState::restorenet() {
         NetCon* d = (NetCon*) ob->u.this_pointer;
         int n = ncs_[i].nstate;
         const double* w = ncs_[i].state;
-        // Restore into heap buffer (nocmodl / FOR_NETCONS) and Weight SoA so HOC
-        // dual-write and materialize-on-deliver stay consistent.
-        if (d->weight_) {
-            for (int j = 0; j < n; ++j) {
-                d->weight_[j] = w[j];
-            }
-        }
+        // Restore into Weight SoA only (heap-free step 6).
         if (d->has_weight_soa()) {
             int const m = std::min(n, d->weight_block_->size());
             for (int j = 0; j < m; ++j) {
                 d->weight_soa_value(j) = w[j];
             }
-            d->soa_sync();  // WeightIndex / reverse edges
+            d->soa_sync();
         }
         ++i;
     }

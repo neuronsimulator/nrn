@@ -182,6 +182,7 @@ callback to bbss_early when needed.
 #include <sys/stat.h>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 #include "netcon.h"
 #include "nrniv_mf.h"
@@ -1113,11 +1114,7 @@ static bool selfevent_matches_netcon(SelfEvent const* se, NetCon const* nc) {
     if (!se || !nc) {
         return false;
     }
-    // Legacy: long-lived heap base pointer identity.
-    if (se->weight_ && nc->weight_ && se->weight_ == nc->weight_) {
-        return true;
-    }
-    // Dual-write / heap-drop: Weight SoA base row (weight_index).
+    // Weight SoA base row (heap-free identity).
     int se_widx = se->weight_index_;
     if (se_widx < 0) {
         return false;
@@ -1126,7 +1123,7 @@ static bool selfevent_matches_netcon(SelfEvent const* se, NetCon const* nc) {
     return nc_widx == se_widx;
 }
 
-/** Bind SelfEvent weight_ / weight_index_ from a NetCon (after BBSaveState restore). */
+/** Bind SelfEvent weight_index_ from a NetCon (after BBSaveState restore). */
 static void selfevent_bind_netcon(SelfEvent* se, NetCon* nc) {
     if (!se) {
         return;
@@ -1136,7 +1133,7 @@ static void selfevent_bind_netcon(SelfEvent* se, NetCon* nc) {
         se->weight_index_ = -1;
         return;
     }
-    se->weight_ = nc->weight_;
+    se->weight_ = nullptr;
     se->weight_index_ = static_cast<int>(nc->weight_base());
 }
 
@@ -2236,17 +2233,26 @@ void BBSaveState::netrecv_pp(Point_process* pp) {
     f->s(buf, 1);
     for (; dl && dl->de->type() == NetConType; dl = dl->next) {
         NetCon* nc = (NetCon*) dl->de;
-        // Dual-write: HOC weight[] is SoA-primary. Materialize SoA → heap before
-        // OUT/CNT so f->d sees current values; after IN, mirror heap → SoA.
-        if (f->type() != BBSS_IO::IN) {
-            nc->weights_soa_to_heap();
-        }
-        f->d(nc->cnt_, nc->weight_);
-        if (f->type() == BBSS_IO::IN) {
-            nc->weights_heap_to_soa();
+        // Weight SoA only: use contiguous SoA data pointer when available.
+        double* wptr = nc->weight_soa_data();
+        std::vector<double> wtmp;
+        if (!wptr && nc->cnt_ > 0) {
+            wtmp.assign(static_cast<std::size_t>(nc->cnt_), 0.);
             if (nc->has_weight_soa()) {
-                nc->soa_sync();
+                int const m = std::min(nc->cnt_, nc->weight_block_->size());
+                for (int i = 0; i < m; ++i) {
+                    wtmp[static_cast<std::size_t>(i)] = nc->weight_soa_value(i);
+                }
             }
+            wptr = wtmp.data();
+        }
+        f->d(nc->cnt_, wptr);
+        if (f->type() == BBSS_IO::IN && nc->has_weight_soa() && wptr) {
+            int const m = std::min(nc->cnt_, nc->weight_block_->size());
+            for (int i = 0; i < m; ++i) {
+                nc->weight_soa_value(i) = wptr[i];
+            }
+            nc->soa_sync();
         }
         if (f->type() != BBSS_IO::IN) {  // writing, counting
             DblList* db = 0;
