@@ -2355,9 +2355,7 @@ double* _nrn_netrec_wsoa(int weight_index, int count) {
     }
     // Scattered: TLS materialize (commit in _nrn_netrec_wsoa_done).
     double* buf = mod_weight_scratch(count);
-    neuron::container::network::SelfEventFields::materialize_weight_block(weight_index,
-                                                                          count,
-                                                                          buf);
+    neuron::container::network::SelfEventFields::materialize_weight_block(weight_index, count, buf);
     g_netrec_wsoa_is_tmp = 1;
     return buf;
 }
@@ -3231,7 +3229,8 @@ void for_each_fanout_netcon(PreSyn* ps, F&& fn) {
     if (base >= 0 && cnt == static_cast<int>(ps->dil_.size()) &&
         base + cnt <= static_cast<int>(g_network_fanout_order.size())) {
         for (int i = 0; i < cnt; ++i) {
-            NetCon* d = netcon_from_soa_row(g_network_fanout_order[static_cast<std::size_t>(base + i)]);
+            NetCon* d = netcon_from_soa_row(
+                g_network_fanout_order[static_cast<std::size_t>(base + i)]);
             if (d) {
                 fn(d);
             }
@@ -4376,9 +4375,9 @@ void NetCvode::fornetcon_prepare() {
                     if (tml->index == type) {
                         Memb_list* m = tml->ml;
                         for (j = 0; j < m->nodecount; ++j) {
-                            allocate_slots(
-                                static_cast<ForNetConsInfo*>(m->pdata[j][index].get<void*>()),
-                                type);
+                            allocate_slots(static_cast<ForNetConsInfo*>(
+                                               m->pdata[j][index].get<void*>()),
+                                           type);
                         }
                     }
         }

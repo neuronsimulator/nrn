@@ -3077,9 +3077,7 @@ void net_receive(Item* qarg, Item* qp1, Item* qp2, Item* qstmt, Item* qend) {
     /* Resolve Weight SoA (zero-copy if contiguous) or TLS into _args for body. */
     {
         char wbuf[256];
-        Sprintf(wbuf,
-                "  double* _args = _nrn_netrec_wsoa(_weight_index, %d);\n",
-                i > 0 ? i : 0);
+        Sprintf(wbuf, "  double* _args = _nrn_netrec_wsoa(_weight_index, %d);\n", i > 0 ? i : 0);
         insertstr(qstmt, wbuf);
     }
     vectorize_substitute(
@@ -3179,7 +3177,8 @@ void net_receive(Item* qarg, Item* qp1, Item* qp2, Item* qstmt, Item* qend) {
 
 void net_init(Item* qinit, Item* qp2) {
     /* qinit=INITIAL { stmtlist qp2=} */
-    replacstr(qinit, "\nstatic void _net_init(Point_process* _pnt, int _weight_index, double _lflag)");
+    replacstr(qinit,
+              "\nstatic void _net_init(Point_process* _pnt, int _weight_index, double _lflag)");
     /* Arity from this mech's pnt_receive_size[_mechtype] (avoid incomplete Prop::_type). */
     Sprintf(buf,
             "    neuron::legacy::set_globals_from_prop(_pnt->_prop, _ml_real, _ml, _iml);\n"
@@ -3196,8 +3195,7 @@ void net_init(Item* qinit, Item* qp2) {
                          "  double* _args = _nrn_netrec_wsoa(_weight_index, "
                          "pnt_receive_size[_mechtype]);\n");
     /* commit after INITIAL body: insert before closing brace qp2 */
-    insertstr(qp2,
-              "  _nrn_netrec_wsoa_done(_weight_index, pnt_receive_size[_mechtype], _args);\n");
+    insertstr(qp2, "  _nrn_netrec_wsoa_done(_weight_index, pnt_receive_size[_mechtype], _args);\n");
     if (net_init_q1_) {
         diag("NET_RECEIVE block can contain only one INITIAL block", (char*) 0);
     }

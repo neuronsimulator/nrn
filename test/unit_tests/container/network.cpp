@@ -361,8 +361,7 @@ TEST_CASE("Fanout order stores SoA indices not pointers",
     void* b = reinterpret_cast<void*>(static_cast<std::uintptr_t>(0x2000));
     shells[0] = a;
     shells[2] = b;
-    REQUIRE(sizeof(netcon_index_t) * fanout_order.size() <
-            sizeof(void*) * fanout_order.size());
+    REQUIRE(sizeof(netcon_index_t) * fanout_order.size() < sizeof(void*) * fanout_order.size());
     REQUIRE(shells[fanout_order[0]] == a);
     REQUIRE(shells[fanout_order[1]] == b);
     REQUIRE(shells[fanout_order[2]] == nullptr);
