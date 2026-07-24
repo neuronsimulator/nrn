@@ -939,9 +939,9 @@ static void set_info(TQItem* tqi,
         Point_process* pnt = se->target_;
         int type = pnt->prop->_type;
         int movable_index = type2movable[type];
-        // Heap-free: prefer weight_index → SoA data pointer for NetCon match.
-        double* wt = se->weight_;
-        if (!wt && se->weight_index_ >= 0) {
+        // Heap-free 7c: SelfEvent identity is weight_index only.
+        double* wt = nullptr;
+        if (se->weight_index_ >= 0) {
             if (NetCon* nc = NetConSave::weight_index2netcon(se->weight_index_)) {
                 wt = nc->weight_soa_data();
             }

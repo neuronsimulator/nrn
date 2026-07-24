@@ -187,19 +187,11 @@ class NetConSave: public DiscreteEvent {
     NetCon* netcon_;
 
     static void invalid();
-    /**
-     * @brief Map double* → NetCon* if it is a FOR_NETCONS scratch buffer or
-     * Weight SoA data pointer known for a live edge. Prefer weight_index2netcon.
-     */
+    /** @brief Map Weight SoA data pointer → NetCon* (legacy; prefer weight_index2netcon). */
     static NetCon* weight2netcon(double*);
     /** @brief Map HOC NetCon object index → NetCon*. */
     static NetCon* index2netcon(long);
-    /**
-     * @brief Map Weight SoA base row (weight_index) → NetCon*.
-     *
-     * Used when SelfEvent identity is carried as weight_index_ without a
-     * reliable weight_ heap pointer (dual-write / heap-drop path).
-     */
+    /** @brief Map Weight SoA base row (weight_index) → NetCon*. */
     static NetCon* weight_index2netcon(int weight_index);
 
   private:
@@ -231,11 +223,10 @@ class SelfEvent: public DiscreteEvent {
 
     double flag_;
     Point_process* target_;
-    double* weight_;
     Datum* movable_;  // pointed-to Datum holds TQItem*
-    /** @brief Phase 4: base row in Weight SoA (-1 if unknown / null weights). */
+    /** @brief Weight SoA base row (−1 if no NetCon / null weights). Queue identity. */
     int weight_index_{-1};
-    /** @brief Phase 4: PointProcess SoA row of target_ (-1 if unknown). */
+    /** @brief PointProcess SoA row of target_ (−1 if unknown). */
     int target_row_{-1};
 
     static unsigned long selfevent_send_;

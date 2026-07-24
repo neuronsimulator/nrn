@@ -1127,11 +1127,9 @@ static void selfevent_bind_netcon(SelfEvent* se, NetCon* nc) {
         return;
     }
     if (!nc) {
-        se->weight_ = nullptr;
         se->weight_index_ = -1;
         return;
     }
-    se->weight_ = nullptr;
     se->weight_index_ = static_cast<int>(nc->weight_base());
 }
 
@@ -1139,8 +1137,8 @@ SEWrap::SEWrap(const TQItem* tq, DEList* dl) {
     tt = tq->t_;
     se = (SelfEvent*) tq->data_;
     // SelfEvent identity for BBSaveState: index into target's NetCon DEList
-    // (same policy as SaveState NetCon object index), not weight_* alone.
-    if (se->weight_ || se->weight_index_ >= 0) {
+    // via weight_index_ (heap-free 7c: no SelfEvent::weight_).
+    if (se->weight_index_ >= 0) {
         ncindex = 0;
         for (; dl && dl->de && dl->de->type() == NetConType; dl = dl->next, ++ncindex) {
             if (selfevent_matches_netcon(se, static_cast<NetCon*>(dl->de))) {

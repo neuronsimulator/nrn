@@ -2363,9 +2363,9 @@ double* _nrn_netrec_wsoa(int weight_index, int count) {
 }
 
 void _nrn_netrec_wsoa_done(int weight_index, int count, double* buf) {
-    // Commit primary-edge TLS (no-op-ish self-copy when buf already aliases SoA).
-    // Also flush any pending FOR_NETCONS peer TLS from a nested loop.
-    if (buf && weight_index >= 0 && count > 0) {
+    // Commit only if _nrn_netrec_wsoa returned TLS (scattered block).
+    // Zero-copy SoA pointers need no writeback. Flush pending FOR_NETCONS peer TLS.
+    if (g_netrec_wsoa_is_tmp && buf && weight_index >= 0 && count > 0) {
         neuron::container::network::SelfEventFields::store_weight_block(weight_index, count, buf);
     }
     g_netrec_wsoa_is_tmp = 0;
@@ -2373,7 +2373,7 @@ void _nrn_netrec_wsoa_done(int weight_index, int count, double* buf) {
 }
 
 namespace {
-/** SelfEvent identity from weight_index (preferred) or legacy pointer. */
+/** SelfEvent identity: weight_index (−1 if none); TLS receive base as fallback. */
 void selfevent_set_indices(SelfEvent* se, Point_process* pnt, int weight_index) {
     se->target_row_ = nrn_point_process_soa_row(pnt);
     se->weight_index_ = weight_index;
@@ -2410,9 +2410,8 @@ void nrn_net_send(Datum* v, int weight_index, Point_process* pnt, double td, dou
     SelfEvent* se = p.sepool_->alloc();
     se->flag_ = flag;
     se->target_ = pnt;
-    // Identity is weight_index only (no NetCon::weight_ heap; no double* identity).
+    // Identity is weight_index only (heap-free 7c: no SelfEvent::weight_).
     selfevent_set_indices(se, pnt, weight_index);
-    se->weight_ = nullptr;
     se->movable_ = v;  // needed for SaveState
     assert(net_cvode_instance);
     ++p.unreffed_event_cnt_;
@@ -2440,7 +2439,6 @@ void artcell_net_send(Datum* v, int weight_index, Point_process* pnt, double td,
         se->flag_ = flag;
         se->target_ = pnt;
         selfevent_set_indices(se, pnt, weight_index);
-        se->weight_ = nullptr;
         se->movable_ = v;  // needed for SaveState
         assert(net_cvode_instance);
         ++p.unreffed_event_cnt_;
@@ -3462,7 +3460,6 @@ DiscreteEvent* SelfEvent::savestate_save() {
     SelfEvent* se = new SelfEvent();
     se->flag_ = flag_;
     se->target_ = target_;
-    se->weight_ = weight_;
     se->weight_index_ = weight_index_;
     se->target_row_ = target_row_;
     se->movable_ = movable_;
@@ -3486,14 +3483,12 @@ DiscreteEvent* SelfEvent::savestate_read(FILE* f) {
         sscanf(buf, "%s %d %d %d %d %lf\n", ppname, &ppindex, &pptype, &ncindex, &moff, &flag) ==
         6);
     se->target_ = SelfEvent::index2pp(pptype, ppindex);
-    se->weight_ = nullptr;
     se->weight_index_ = -1;
     se->target_row_ = nrn_point_process_soa_row(se->target_);
     if (ncindex >= 0) {
-        // File identity is NetCon object index (not weight_ pointer).
+        // File identity is NetCon object index → Weight SoA base.
         NetCon* nc = NetConSave::index2netcon(ncindex);
         assert(nc);
-        se->weight_ = nullptr;
         se->weight_index_ = static_cast<int>(nc->weight_base());
     }
     se->flag_ = flag;
@@ -3537,8 +3532,6 @@ void SelfEvent::savestate_write(FILE* f) {
     NetCon* owner = nullptr;
     if (weight_index_ >= 0) {
         owner = NetConSave::weight_index2netcon(weight_index_);
-    } else if (weight_) {
-        owner = NetConSave::weight2netcon(weight_);
     }
     if (owner && owner->obj_) {
         ncindex = owner->obj_->index;
@@ -4405,15 +4398,6 @@ void NetCvode::fornetcon_prepare() {
             }
         }
     }
-}
-
-int _nrn_netcon_args(void* /*v*/, double*** argslist) {
-    // Heap-free 7b: owned peer double pool removed. Use bases + _nrn_fornetcon_weight.
-    // Legacy API kept so old object files fail closed rather than crash on null.
-    if (argslist) {
-        *argslist = nullptr;
-    }
-    return 0;
 }
 
 int _nrn_netcon_weight_bases(void* v, int** bases) {

@@ -30,11 +30,6 @@ extern "C" void modl_reg(void);
 
 // nrnmech stuff
 extern void _nrn_free_fornetcon(void**);
-/**
- * @brief Legacy FOR_NETCONS double** API (heap-free 7b: always empty).
- * Prefer _nrn_netcon_weight_bases + _nrn_fornetcon_weight.
- */
-extern int _nrn_netcon_args(void*, double***);
 /** @brief FOR_NETCONS by Weight SoA base list. */
 extern int _nrn_netcon_weight_bases(void*, int**);
 /**

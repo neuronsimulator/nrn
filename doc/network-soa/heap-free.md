@@ -74,7 +74,7 @@ and queue polymorphism stay NEURON-specific (policies below).
 
 ## Contract (identity)
 
-> A NetCon weight block is identified by a base row in the Weight SoA (arity fixed by target mechanism type). Queued SelfEvents and generated `net_send` carry that base as `int` (or −1). FOR_NETCONS walks a target-local list of bases (owned scratch for MOD `double*`, writeback to SoA). There is **no** per-NetCon `weight_` heap.
+> A NetCon weight block is identified by a base row in the Weight SoA (arity fixed by target mechanism type). Queued SelfEvents and generated `net_send` carry that base as `int` (or −1). `NET_RECEIVE` / FOR_NETCONS resolve MOD `double*` via contiguous SoA zero-copy, or TLS materialize when scattered. There is **no** per-NetCon weight heap and **no** `SelfEvent::weight_` pointer.
 
 ---
 
@@ -100,9 +100,20 @@ and queue polymorphism stay NEURON-specific (policies below).
 | **6b — Zero-copy host receive** | **Done:** contiguous block → `pnt_receive` via `data_if_contiguous()` / `weight_soa_data()`; TLS materialize only if scattered | Drop copy when packed; identity stays `weight_index` |
 | **7a — nocmodl index ABI** | **Done:** `pnt_receive_t(Point_process*, int weight_index, double flag)`; generated body keeps `_args[i]` via `_nrn_netrec_wsoa` / `_done`; `net_send` / `artcell_net_send` take index (−1 if none) | CN-shaped interface; identity is index only |
 | **7b — FOR_NETCONS without owned double pool** | **Done:** `ForNetConsInfo` = bases only; `_nrn_fornetcon_weight` zero-copy SoA or shared TLS view; no `weight_storage` / `argslist` / base→buf map | Drop per-target peer double pool |
-| **7c — Cleanup** | Remove remaining TLS scratch when unused; drop dead `_nrn_netcon_args` | Host path fully SoA/index |
+| **7c — Cleanup** | **Done:** drop `SelfEvent::weight_`, drop `_nrn_netcon_args`; TLS only for scattered blocks (zero-copy when packed); commit only when materialize was used | Host path SoA/index; no dead double* identity |
 
 Optional later: GPU upload of the same packed columns (sibling track), not a prerequisite for 7.
+
+### Host path shape after 7a–7c
+
+| Item | State |
+|------|--------|
+| NetCon weight storage | Weight SoA only (`WeightBlock`) |
+| SelfEvent / net_send identity | `int weight_index` (−1 if none) |
+| `pnt_receive` / INITIAL | `(Point_process*, int, double)` |
+| Primary edge `_args[i]` | Contiguous SoA zero-copy, else TLS + commit |
+| FOR_NETCONS | Bases list; per-edge SoA/TLS (no owned peer pool) |
+| TLS | Kept as **scattered-block fallback** only (packing A + sort → usually zero-copy) |
 
 ---
 
