@@ -190,10 +190,12 @@ void sort_network_data(neuron::cache::Model& cache,
         apply_if_needed(pp_store, pp_token, std::move(perm));
     }
 
-    // Order NetCons by (target thread, src PreSyn SoA row, NetCon SoA row).
+    // Order NetCons by (target thread, target PP SoA row, src PreSyn, NetCon row).
+    // Target-instance adjacency (packing A) makes FOR_NETCONS weight bases local.
     struct NcSortKey {
         ::NetCon* nc{};
         int tid{-1};
+        int tgt_row{-1};
         int src_row{-1};
         std::size_t soa_row{0};
     };
@@ -203,6 +205,7 @@ void sort_network_data(neuron::cache::Model& cache,
         NcSortKey k;
         k.nc = nc;
         k.tid = target_thread_id(nc);
+        k.tgt_row = nc && nc->target_ ? nrn_point_process_soa_row(nc->target_) : -1;
         k.src_row = src_presyn_row(nc);
         k.soa_row = nc->_soa.current_row();
         ordered.push_back(k);
@@ -216,6 +219,14 @@ void sort_network_data(neuron::cache::Model& cache,
                 return at < bt;
             }
         }
+        if (a.tgt_row != b.tgt_row) {
+            // Unassigned targets after assigned.
+            int const at = a.tgt_row < 0 ? std::numeric_limits<int>::max() : a.tgt_row;
+            int const bt = b.tgt_row < 0 ? std::numeric_limits<int>::max() : b.tgt_row;
+            if (at != bt) {
+                return at < bt;
+            }
+        }
         if (a.src_row != b.src_row) {
             return a.src_row < b.src_row;
         }
@@ -223,7 +234,7 @@ void sort_network_data(neuron::cache::Model& cache,
     });
 
     // ------------------------------------------------------------------
-    // 2. Weight repack: contiguous blocks per NetCon, packed by target thread.
+    // 2. Weight repack: contiguous blocks per NetCon (same order as above).
     // ------------------------------------------------------------------
     {
         std::size_t const wsize = w_store.size();

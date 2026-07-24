@@ -1176,6 +1176,10 @@ static const char *_mechanism[] = {\n\
     if (net_receive_) {
         Lappendstr(defs_list, "static void _net_receive(Point_process*, double*, double);\n");
         if (for_netcons_) {
+            // Heap-free step 4: walk by Weight SoA bases; resolve double* for MOD.
+            Lappendstr(defs_list, "extern int _nrn_netcon_weight_bases(void*, int**);\n");
+            Lappendstr(defs_list, "extern double* _nrn_fornetcon_weight(int);\n");
+            // Legacy dual-write ABI (still available for hand-written code).
             Lappendstr(defs_list, "extern int _nrn_netcon_args(void*, double***);\n");
         }
         if (net_init_q1_) {
@@ -3189,9 +3193,12 @@ void fornetcon(Item* keyword, Item* par1, Item* args, Item* par2, Item* stmt, It
     ++for_netcons_;
     deltokens(par1, par2);
     i = for_netcons_;
+    /* Heap-free step 4: iterate Weight SoA bases, resolve double* per edge.
+     * (Packing A groups same-target blocks for locality; list remains correct
+     * even when not contiguous.) */
     Sprintf(buf,
-            "{int _ifn%d, _nfn%d; double* _fnargs%d, **_fnargslist%d;\n\
-\t_nfn%d = _nrn_netcon_args(_ppvar[_fnc_index].get<void*>(), &_fnargslist%d);\n\
+            "{int _ifn%d, _nfn%d; int* _fnbases%d; double* _fnargs%d;\n\
+\t_nfn%d = _nrn_netcon_weight_bases(_ppvar[_fnc_index].get<void*>(), &_fnbases%d);\n\
 \tfor (_ifn%d = 0; _ifn%d < _nfn%d; ++_ifn%d) {\n",
             i,
             i,
@@ -3204,7 +3211,7 @@ void fornetcon(Item* keyword, Item* par1, Item* args, Item* par2, Item* stmt, It
             i,
             i);
     replacstr(keyword, buf);
-    Sprintf(buf, "\t _fnargs%d = _fnargslist%d[_ifn%d];\n", i, i, i);
+    Sprintf(buf, "\t _fnargs%d = _nrn_fornetcon_weight(_fnbases%d[_ifn%d]);\n", i, i, i);
     insertstr(keyword->next, buf);
     insertstr(qend->next, "\t}}\n");
     i = 0;

@@ -25,8 +25,9 @@ Brevity: short–medium. Spec detail: phase0 §6, §8.
 ## What sort does *not* claim
 
 - Fanout physical layout ≡ NetCon SoA order (may use separate order array).  
-- FOR_NETCONS adjacency (separate perm, CoreNEURON-style, still TODO for index path).  
-- Freeing `weight_` heap.
+- FOR_NETCONS: NetCon/weight sort key includes **target PP SoA row** so peers are adjacent
+  (packing A); runtime walks a per-target list of weight bases (not a second perm table).  
+- Freeing `weight_` heap (later heap-free step).
 
 ## Implementation
 

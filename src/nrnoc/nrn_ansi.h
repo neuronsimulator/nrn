@@ -30,6 +30,12 @@ extern "C" void modl_reg(void);
 
 // nrnmech stuff
 extern void _nrn_free_fornetcon(void**);
+/** @brief Legacy FOR_NETCONS: return double** list of NetCon weight_ heaps. */
+extern int _nrn_netcon_args(void*, double***);
+/** @brief FOR_NETCONS by Weight SoA base list (heap-free step 4). */
+extern int _nrn_netcon_weight_bases(void*, int**);
+/** @brief Resolve weight SoA base → long-lived weight_ for MOD body. */
+extern double* _nrn_fornetcon_weight(int weight_base);
 extern double nrn_call_mech_func(Symbol*, int narg, Prop*, int type);
 
 // mod stuff

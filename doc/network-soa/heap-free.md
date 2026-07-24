@@ -59,7 +59,9 @@ Interpreter, structure change, and queue polymorphism stay NEURON-specific (poli
 2. **O(1) ownership path** — `WeightBlock` off-shell (`unique_ptr`); NetCon SoA base+count authority; HOC `weight_soa_handle(i)`.  
 3. **Fanout tables as indices** — `g_network_fanout_order` holds `netcon_index_t` (SoA rows); resolve via `g_netcon_by_soa_row`.  
 
-4. **nocmodl FOR_NETCONS** by base list / contiguous walk.  
+4. **nocmodl FOR_NETCONS** — walk Weight SoA bases (`_nrn_netcon_weight_bases` /
+   `_nrn_fornetcon_weight`); sort packs by target instance (packing A).  
+
 5. **Ephemeral MOD scratch only** (thread-local max arity) where `double*` ABI remains; never identity.  
 6. **Delete `NetCon::weight_`** when tests (stdp/FOR_NETCONS, SaveState, netrec init, ctest + asan) stay green.  
 7. Rebase onto green PR tip after each PR↔master refresh.

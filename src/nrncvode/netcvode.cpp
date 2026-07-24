@@ -236,9 +236,19 @@ extern bool nrn_use_localgid_;
 extern void nrn_outputevent(unsigned char, double);
 #endif
 
+/**
+ * @brief Per-target FOR_NETCONS peer list (heap-free step 4).
+ *
+ * Primary identity is Weight SoA bases (CoreNEURON-shaped). argslist remains
+ * the long-lived NetCon::weight_ pointers for the dual-write MOD ABI until
+ * weight_ is dropped. Generated code uses weight_bases + _nrn_fornetcon_weight.
+ */
 struct ForNetConsInfo {
-    double** argslist;
-    int size;
+    int size{};
+    /** @brief Weight SoA base row for each NetCon targeting this PP. */
+    int* weight_bases{};
+    /** @brief Legacy double* list (same order as weight_bases); dual-write heap. */
+    double** argslist{};
 };
 
 static unsigned long deliver_cnt_, net_event_cnt_;
@@ -4343,8 +4353,6 @@ void NetCvode::fornetcon_prepare() {
                 _nrn_free_fornetcon(v);
                 ForNetConsInfo* fnc = new ForNetConsInfo;
                 *v = fnc;
-                fnc->argslist = 0;
-                fnc->size = 0;
             }
         } else {
             for (NrnThread* nt: for_threads(nrn_threads, nrn_nthread))
@@ -4356,13 +4364,11 @@ void NetCvode::fornetcon_prepare() {
                             _nrn_free_fornetcon(v);
                             ForNetConsInfo* fnc = new ForNetConsInfo;
                             *v = fnc;
-                            fnc->argslist = 0;
-                            fnc->size = 0;
                         }
                     }
         }
     }
-    // two loops over all netcons. one to count, one to fill in argslist
+    // two loops over all netcons. one to count, one to fill bases + argslist
     // count
     if (psl_)
         for (const PreSyn* ps: *psl_) {
@@ -4378,7 +4384,7 @@ void NetCvode::fornetcon_prepare() {
             }
         }
 
-    // allocate argslist space and initialize for another count
+    // allocate weight_bases + argslist; reset size for fill pass
     for (i = 0; i < nrn_fornetcon_cnt_; ++i) {
         int index = nrn_fornetcon_index_[i];
         int type = nrn_fornetcon_type_[i];
@@ -4387,6 +4393,7 @@ void NetCvode::fornetcon_prepare() {
             for (j = 0; j < m->nodecount; ++j) {
                 auto* fnc = static_cast<ForNetConsInfo*>(m->pdata[j][index].get<void*>());
                 if (fnc->size > 0) {
+                    fnc->weight_bases = new int[fnc->size];
                     fnc->argslist = new double*[fnc->size];
                     fnc->size = 0;
                 }
@@ -4400,6 +4407,7 @@ void NetCvode::fornetcon_prepare() {
                             auto* fnc = static_cast<ForNetConsInfo*>(
                                 m->pdata[j][index].get<void*>());
                             if (fnc->size > 0) {
+                                fnc->weight_bases = new int[fnc->size];
                                 fnc->argslist = new double*[fnc->size];
                                 fnc->size = 0;
                             }
@@ -4407,7 +4415,7 @@ void NetCvode::fornetcon_prepare() {
                     }
         }
     }
-    // fill in argslist and count again
+    // fill weight bases (SoA identity) and dual-write heap pointers
     if (psl_) {
         for (const PreSyn* ps: *psl_) {
             const NetConPList& dil = ps->dil_;
@@ -4416,8 +4424,10 @@ void NetCvode::fornetcon_prepare() {
                 if (pnt && t2i[pnt->prop->_type] > -1) {
                     auto* fnc = static_cast<ForNetConsInfo*>(
                         pnt->prop->dparam[t2i[pnt->prop->_type]].get<void*>());
-                    fnc->argslist[fnc->size] = d1->weight_;
-                    fnc->size += 1;
+                    int const slot = fnc->size;
+                    fnc->weight_bases[slot] = static_cast<int>(d1->weight_base());
+                    fnc->argslist[slot] = d1->weight_;
+                    fnc->size = slot + 1;
                 }
             }
         }
@@ -4425,15 +4435,35 @@ void NetCvode::fornetcon_prepare() {
 }
 
 int _nrn_netcon_args(void* v, double*** argslist) {
+    // Legacy ABI: still used if old generated code is linked; prefer bases API.
     auto* fnc = static_cast<ForNetConsInfo*>(v);
     assert(fnc);
     *argslist = fnc->argslist;
     return fnc->size;
 }
 
+int _nrn_netcon_weight_bases(void* v, int** bases) {
+    auto* fnc = static_cast<ForNetConsInfo*>(v);
+    assert(fnc);
+    *bases = fnc->weight_bases;
+    return fnc->size;
+}
+
+double* _nrn_fornetcon_weight(int weight_base) {
+    // Resolve SoA base → long-lived NetCon weight_ heap (MOD scratch / dual-write).
+    if (weight_base < 0) {
+        return nullptr;
+    }
+    if (NetCon* nc = NetConSave::weight_index2netcon(weight_base)) {
+        return nc->weight_;
+    }
+    return nullptr;
+}
+
 void _nrn_free_fornetcon(void** v) {
     if (auto* fnc = static_cast<ForNetConsInfo*>(*v); fnc) {
         delete[] std::exchange(fnc->argslist, nullptr);
+        delete[] std::exchange(fnc->weight_bases, nullptr);
         delete fnc;
         *v = nullptr;
     }
