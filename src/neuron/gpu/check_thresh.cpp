@@ -15,6 +15,11 @@
 namespace neuron::gpu {
 namespace {
 
+/**
+ * Per-thread Th0 detect set (doc/gpu/threshold-detection.md).
+ * slots[i] is the sole identity of detect source i; _net_send_buffer stores i.
+ * Column arrays are SoA mirrors for (future) device detect kernels.
+ */
 struct ThreadThresholdTable {
     std::vector<ThresholdPresynSlot> slots;
     std::vector<int> h_thvar_row;
@@ -171,8 +176,10 @@ bool check_thresh_presyn_on_device(NrnThread* nt, double teps) noexcept {
     ensure_thread_table(nt->id);
     auto& table = g_tables[nt->id];
     int const count = static_cast<int>(table.slots.size());
+    // Empty table: still "handled" so caller does not fall back to a full psl_thr_
+    // walk for SoA sources that do not exist.
     if (count == 0) {
-        return false;
+        return true;
     }
 
     ensure_thread_net_send_buffer(*nt, count);
@@ -192,12 +199,14 @@ bool check_thresh_presyn_on_device(NrnThread* nt, double teps) noexcept {
     double* const threshold = table.h_threshold.data();
     int* const flag = table.h_flag.data();
 
+    // Th0: hit list = slot indices into table.slots (not PreSyn*).
+    // Th1: replace this host loop with OpenACC over the same columns + device vec_v.
     nt->_net_send_buffer_cnt = 0;
     int net_send_buf_count = 0;
     auto* const vec_v = nt->node_voltage_storage();
     int* const nsbuffer = nt->_net_send_buffer;
     int const nsbuffer_size = nt->_net_send_buffer_size;
-    // Host vec_v is synced before this call (see NetCvode::check_thresh).
+    // Host vec_v is synced before this call until Th2 (see NetCvode::check_thresh).
     for (int i = 0; i < count; ++i) {
         int const thidx = thvar_row[i];
         double const v = vec_v[thidx];
@@ -205,13 +214,14 @@ bool check_thresh_presyn_on_device(NrnThread* nt, double teps) noexcept {
         if (pscheck(v, thresh, &flag[i])) {
             int const idx = net_send_buf_count++;
             if (idx < nsbuffer_size) {
-                nsbuffer[idx] = i;
+                nsbuffer[idx] = i;  // slot index
             }
         }
     }
     nt->_net_send_buffer_cnt = net_send_buf_count;
     sync_threshold_presyn_flags(table.slots.data(), flag, count);
 
+    // Host deliver only (CoreNEURON-shaped: detect fills buffer, host does send).
     if (net_send_buf_count > 0) {
         for (int i = 0; i < nt->_net_send_buffer_cnt; ++i) {
             int const slot_index = nsbuffer[i];

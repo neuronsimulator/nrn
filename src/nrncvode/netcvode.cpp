@@ -50,6 +50,11 @@ extern NetCvode* net_cvode_instance;
 
 namespace neuron::gpu {
 
+/**
+ * Th0 detect-set builder (doc/gpu/threshold-detection.md).
+ * Only PreSyns with modern SoA voltage handles on this thread's psl_thr_ —
+ * NEURON's stand-in for CoreNEURON's output PreSyn slice (no InputPreSyn type).
+ */
 int collect_threshold_presyn_slots(NrnThread* nt,
                                    ThresholdPresynSlot* slots,
                                    int capacity) {
@@ -75,7 +80,7 @@ int collect_threshold_presyn_slots(NrnThread* nt,
                 static_cast<int>(ps->thvar_.current_row() - nt->_node_data_offset);
             slots[written].threshold = ps->threshold_;
             slots[written].flag = ps->flag_ ? 1 : 0;
-            slots[written].presyn = ps;
+            slots[written].presyn = ps;  // host deliver only
         }
         ++written;
     }

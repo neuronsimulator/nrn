@@ -40,7 +40,7 @@ cd ~/neuron/nrngpu/build-gpu/test/external_ringtest/neuron_gpu_native_mpi
 ./prcellstate_native_gpu.sh 32 0.025 0
 ./prcellstate_native_gpu.sh 32 1 0
 ./prcellstate_native_gpu.sh 32 1.025 0   # first NetCon — GREEN
-./prcellstate_native_gpu.sh 32 100       # long gate (688 spikes) — NEXT
+./prcellstate_native_gpu.sh 32 100       # long gate — GREEN (688 spikes)
 ```
 
 ---
@@ -52,7 +52,7 @@ cd ~/neuron/nrngpu/build-gpu/test/external_ringtest/neuron_gpu_native_mpi
 | **0.025** | `dV=0`, noise ~1e-15 |
 | **1.0** | `dV=0` |
 | **1.025** | **GREEN** — `dV=0`; post_setup rhs/d exact match (no host matrix augment) |
-| **100** | **Next** long gate |
+| **100** | **GREEN** (2026-07-25) — **688 spikes** both sides; threshold `dV=0`; max \|d\| ~1e-13 (noise) |
 
 ### Stages 2–3c (done)
 
@@ -93,6 +93,17 @@ points must flush NetReceiveBuffer.
 3. Enqueue on host; prefer device apply. Current: host NET_RECEIVE apply into SoA +
    device cur/jacob with atomics for PP matrix.
 
+### Threshold detection (Th0+)
+
+| Stage | Content | Status |
+|-------|---------|--------|
+| **Th0** | Contract: slot table = sole detect set; hit buffer = slot indices; host deliver; no InputPreSyn | **Done** — `doc/gpu/threshold-detection.md` |
+| **Th1** | OpenACC detect over slots (device `vec_v`) | Pending |
+| **Th2** | Skip voltage pull when Th1 succeeds | Pending |
+
+Today: voltages pulled to host, detect uses the Th0 table on the host, then
+`deliver_threshold_spike`. CoreNEURON-style device `pscheck` is Th1.
+
 ---
 
 ## Key paths
@@ -103,6 +114,7 @@ points must flush NetReceiveBuffer.
 | NetReceiveBuffer | `src/neuron/gpu/net_receive_buffer.{hpp,cpp}` |
 | Weight SoA upload | `src/neuron/gpu/upload.cpp` |
 | ACC codegen (atomic PP) | `src/nmodl/codegen/codegen_neuron_acc_visitor.cpp` |
+| Threshold detect (Th0) | `doc/gpu/threshold-detection.md`, `src/neuron/gpu/check_thresh.*` |
 | Harness | `test/external/ringtest/prcellstate_native_gpu.sh` |
 
 ---
@@ -125,11 +137,11 @@ After ACC codegen changes to built-ins: `rm -f build-gpu/src/nrnoc/expsyn.cpp &&
 ```
 Read GROK-GPU-NATIVE.md and AGENTS.md.
 
-Stages 2–3c done: NetReceiveBuffer + weight_index, flush both delivers, OpenACC
-atomic matrix updates for point processes. Gates 0.025 / 1.0 / 1.025 green.
+Stages 2–3c done; long gate green: 688 spikes @ tstop=100, threshold dV=0,
+noise-level cellstate diffs only.
 
-Next: prcellstate_native_gpu.sh 32 100 (688 spikes CPU/GPU parity).
-Optional later: pure device NET_RECEIVE kernel (drop host apply of g).
+Next options: Th1 device PreSyn threshold detect; Traub incremental;
+optional pure device NET_RECEIVE apply.
 
 Do not reintroduce NetCon::weight_ heap or host vec_rhs voltage hot path.
 source ~/neuron/bin/nrnenv nrngpu build-gpu before GPU runs.
