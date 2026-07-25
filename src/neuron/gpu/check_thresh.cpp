@@ -128,6 +128,7 @@ void ensure_thread_net_send_buffer(NrnThread& nt, int min_count) {
 #endif
 }
 
+// CoreNEURON-shaped hysteresis (must stay simple for OpenACC inlining).
 [[nodiscard]] bool pscheck(double v, double thresh, int* flag) {
     if (v > thresh) {
         if (*flag == 0) {
@@ -138,6 +139,26 @@ void ensure_thread_net_send_buffer(NrnThread& nt, int min_count) {
         *flag = 0;
     }
     return false;
+}
+
+/** Host serial detect over Th0 columns (fallback when device data plane is missing). */
+void detect_threshold_hits_host(int count,
+                                int const* thvar_row,
+                                double const* threshold,
+                                int* flag,
+                                double const* vec_v,
+                                int* nsbuffer,
+                                int nsbuffer_size,
+                                int& net_send_buf_count) {
+    net_send_buf_count = 0;
+    for (int i = 0; i < count; ++i) {
+        if (pscheck(vec_v[thvar_row[i]], threshold[i], &flag[i])) {
+            int const idx = net_send_buf_count++;
+            if (idx < nsbuffer_size) {
+                nsbuffer[idx] = i;  // slot index
+            }
+        }
+    }
 }
 
 }  // namespace
@@ -198,32 +219,76 @@ bool check_thresh_presyn_on_device(NrnThread* nt, double teps) noexcept {
     int* const thvar_row = table.h_thvar_row.data();
     double* const threshold = table.h_threshold.data();
     int* const flag = table.h_flag.data();
-
-    // Th0: hit list = slot indices into table.slots (not PreSyn*).
-    // Th1: replace this host loop with OpenACC over the same columns + device vec_v.
-    nt->_net_send_buffer_cnt = 0;
-    int net_send_buf_count = 0;
     auto* const vec_v = nt->node_voltage_storage();
     int* const nsbuffer = nt->_net_send_buffer;
     int const nsbuffer_size = nt->_net_send_buffer_size;
-    // Host vec_v is synced before this call until Th2 (see NetCvode::check_thresh).
+    int const end = nt->end;
+
+    // Th1: OpenACC detect over slot columns + device vec_v (CoreNEURON pscheck shape).
+    // Hit list = slot indices. Host still delivers. Voltage host pull remains until Th2.
+    nt->_net_send_buffer_cnt = 0;
+    int net_send_buf_count = 0;
+
+#if defined(NRN_ENABLE_GPU) && (defined(_OPENACC) || defined(_OPENMP))
+    // clang-format off
+    nrn_pragma_acc(parallel loop present(thvar_row [0:count],
+                                         threshold [0:count],
+                                         flag [0:count],
+                                         vec_v [0:end],
+                                         nsbuffer [0:nsbuffer_size])
+                       copy(net_send_buf_count) if (nt->compute_gpu) async(nt->stream_id))
+    nrn_pragma_omp(target teams distribute parallel for map(tofrom: net_send_buf_count) if(nt->compute_gpu))
+    // clang-format on
     for (int i = 0; i < count; ++i) {
+        int idx = 0;
         int const thidx = thvar_row[i];
         double const v = vec_v[thidx];
         double const thresh = threshold[i];
         if (pscheck(v, thresh, &flag[i])) {
-            int const idx = net_send_buf_count++;
+            nrn_pragma_acc(atomic capture)
+            nrn_pragma_omp(atomic capture)
+            idx = net_send_buf_count++;
             if (idx < nsbuffer_size) {
                 nsbuffer[idx] = i;  // slot index
             }
         }
     }
+    nrn_pragma_acc(wait(nt->stream_id))
     nt->_net_send_buffer_cnt = net_send_buf_count;
+
+    if (nt->compute_gpu) {
+        // Flags + hit list live on device during the kernel; pull for host deliver/sync.
+        // clang-format off
+        nrn_pragma_acc(update host(flag [0:count]) async(nt->stream_id))
+        nrn_pragma_omp(target update from(flag [0:count]))
+        // clang-format on
+        if (net_send_buf_count > 0) {
+            int const ncopy = std::min(net_send_buf_count, nsbuffer_size);
+            // clang-format off
+            nrn_pragma_acc(update host(nsbuffer [0:ncopy]) async(nt->stream_id))
+            nrn_pragma_omp(target update from(nsbuffer [0:ncopy]))
+            // clang-format on
+        }
+        nrn_pragma_acc(wait(nt->stream_id))
+    }
+#else
+    detect_threshold_hits_host(count,
+                               thvar_row,
+                               threshold,
+                               flag,
+                               vec_v,
+                               nsbuffer,
+                               nsbuffer_size,
+                               net_send_buf_count);
+    nt->_net_send_buffer_cnt = net_send_buf_count;
+#endif
+
     sync_threshold_presyn_flags(table.slots.data(), flag, count);
 
     // Host deliver only (CoreNEURON-shaped: detect fills buffer, host does send).
     if (net_send_buf_count > 0) {
-        for (int i = 0; i < nt->_net_send_buffer_cnt; ++i) {
+        int const n_hits = std::min(nt->_net_send_buffer_cnt, nsbuffer_size);
+        for (int i = 0; i < n_hits; ++i) {
             int const slot_index = nsbuffer[i];
             if (slot_index < 0 || slot_index >= count) {
                 continue;

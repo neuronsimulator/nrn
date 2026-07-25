@@ -7,8 +7,8 @@
  *   - Detect set = compact ThresholdPresynSlot table only (no InputPreSyn type).
  *   - NrnThread::_net_send_buffer holds slot indices, not PreSyn*.
  *   - Spike deliver is host-only (PreSyn::send).
- * Th1 (pending): OpenACC detect over the slot table; today detect is host-side
- * after voltages are synced for reading.
+ * Th1: OpenACC detect over the slot table (device vec_v + atomic hit buffer).
+ * Th2 (pending): skip voltage host pull when Th1 succeeds.
  */
 
 struct NrnThread;
@@ -51,8 +51,9 @@ void sync_threshold_presyn_flags(ThresholdPresynSlot const* slots, int const* fl
 
 /**
  * Threshold detection entry for gpu-native.
- * Th0: uses slot table as sole detect set; hit buffer = slot indices; host deliver.
- * Th1 will run the compare on device; today voltages are read on host.
+ * Th0 shape: slot table sole detect set; hit buffer = slot indices; host deliver.
+ * Th1: OpenACC pscheck over slot columns + device vec_v; host pull of flags/hits
+ * then deliver. Voltage host sync before this call remains until Th2.
  * Returns true when the table path handled SoA-threshold PreSyns (caller skips
  * re-walking those on psl_thr_).
  */
@@ -60,7 +61,7 @@ void sync_threshold_presyn_flags(ThresholdPresynSlot const* slots, int const* fl
 
 /**
  * Gate E: every threshold PreSyn on the thread uses modern SoA voltage handles
- * (slot table can be built). Does not imply Th1 device detect kernel is active.
+ * (slot table can be built for device detect).
  */
 [[nodiscard]] bool threshold_detection_on_device(NrnThread const& nt) noexcept;
 

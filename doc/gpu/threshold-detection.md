@@ -1,8 +1,8 @@
 # GPU-native PreSyn threshold detection
 
-**Status:** Th0 (contract) — implemented as documentation + existing slot-table
-shape. **Th1** (OpenACC detect kernel) is not done; detect still runs on host
-after a voltage pull.
+**Status:** Th0 (contract) + **Th1** (OpenACC detect over slot columns + device
+`vec_v`). Spike deliver remains host-only. **Th2** (skip voltage host pull when
+Th1 succeeds) is not done.
 
 **Related:** `src/neuron/gpu/check_thresh.{hpp,cpp}`,
 `NetCvode::check_thresh` in `src/nrncvode/netcvode.cpp`,
@@ -139,13 +139,13 @@ used by detect (`thvar_row`, `threshold`, `flag`).
 
 | Stage | Content | Status |
 |-------|---------|--------|
-| **Th0** | This contract; slot table = sole detect set; buffer = slot indices; host deliver | **This doc** (+ existing table/collect/deliver APIs) |
-| **Th1** | OpenACC parallel detect over slots (device `vec_v`, atomic capture into hit buffer); host fallback if Gate E fails | Pending |
+| **Th0** | This contract; slot table = sole detect set; buffer = slot indices; host deliver | **Done** |
+| **Th1** | OpenACC parallel detect over slots (device `vec_v`, atomic capture into hit buffer) | **Done** (`check_thresh.cpp`) |
 | **Th2** | Skip voltage host sync when Th1 succeeds (threshold no longer forces full `vec_v` pull) | Pending |
 | **Th3** | Ringtest 100 still green; optional traffic/microbench | Pending |
 | **Th4** | Traub-scale threshold load | Pending |
 
-### Th1 sketch (not implemented here)
+### Th1 kernel (implemented)
 
 ```text
 // device, after post_solve voltages are resident
@@ -167,27 +167,26 @@ pragmatic split).
 
 `threshold_detection_on_device(nt)` is true when every threshold PreSyn on the
 thread has a modern SoA voltage handle (so a slot table can be built with
-integer rows). It does **not** mean the detect *kernel* already runs on device
-(that is Th1). Until Th1, Gate E means “eligible for device threshold data plane.”
+integer rows). When `check_thresh_presyn_on_device` returns true under
+gpu-native, Th1 runs the OpenACC detect kernel over that table.
 
 ---
 
 ## 7. Current code map
 
-| API | Role under Th0 |
+| API | Role under Th0/Th1 |
 |-----|----------------|
 | `collect_threshold_presyn_slots` | Build detect set from `psl_thr_` |
 | `ThreadThresholdTable` in `check_thresh.cpp` | Per-thread slot + column storage |
 | `NrnThread::_net_send_buffer` | Hit list of **slot** indices |
 | `deliver_threshold_spike` | Host deliver one PreSyn |
 | `sync_threshold_presyn_flags` | Hysteresis back to `PreSyn::flag_` |
-| `check_thresh_presyn_on_device` | Today: host detect using table (Th0 shape); Th1: OpenACC |
+| `check_thresh_presyn_on_device` | Th1: OpenACC detect; host flag/hit update + deliver |
 
 ---
 
-## 8. Non-goals for Th0
+## 8. Non-goals (Th0/Th1)
 
-- OpenACC detect kernel (Th1)
 - Removing voltage pull (Th2)
 - InputPreSyn type or dual PreSyn hierarchy
 - Device-side NetCon fanout / MPI

@@ -98,11 +98,12 @@ points must flush NetReceiveBuffer.
 | Stage | Content | Status |
 |-------|---------|--------|
 | **Th0** | Contract: slot table = sole detect set; hit buffer = slot indices; host deliver; no InputPreSyn | **Done** — `doc/gpu/threshold-detection.md` |
-| **Th1** | OpenACC detect over slots (device `vec_v`) | Pending |
+| **Th1** | OpenACC detect over slots (device `vec_v`, atomic hit buffer) | **Done** |
 | **Th2** | Skip voltage pull when Th1 succeeds | Pending |
 
-Today: voltages pulled to host, detect uses the Th0 table on the host, then
-`deliver_threshold_spike`. CoreNEURON-style device `pscheck` is Th1.
+Today: Th1 runs CoreNEURON-style device `pscheck` over the slot table; host
+pulls flags + hit indices then `deliver_threshold_spike`. A full `vec_v` host
+pull still precedes detect (removed in Th2).
 
 ---
 
@@ -114,7 +115,7 @@ Today: voltages pulled to host, detect uses the Th0 table on the host, then
 | NetReceiveBuffer | `src/neuron/gpu/net_receive_buffer.{hpp,cpp}` |
 | Weight SoA upload | `src/neuron/gpu/upload.cpp` |
 | ACC codegen (atomic PP) | `src/nmodl/codegen/codegen_neuron_acc_visitor.cpp` |
-| Threshold detect (Th0) | `doc/gpu/threshold-detection.md`, `src/neuron/gpu/check_thresh.*` |
+| Threshold detect (Th0/Th1) | `doc/gpu/threshold-detection.md`, `src/neuron/gpu/check_thresh.*` |
 | Harness | `test/external/ringtest/prcellstate_native_gpu.sh` |
 
 ---
@@ -140,7 +141,7 @@ Read GROK-GPU-NATIVE.md and AGENTS.md.
 Stages 2–3c done; long gate green: 688 spikes @ tstop=100, threshold dV=0,
 noise-level cellstate diffs only.
 
-Next options: Th1 device PreSyn threshold detect; Traub incremental;
+Next options: Th2 skip voltage pull for threshold; Traub incremental;
 optional pure device NET_RECEIVE apply.
 
 Do not reintroduce NetCon::weight_ heap or host vec_rhs voltage hot path.
