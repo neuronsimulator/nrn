@@ -2395,6 +2395,8 @@ thread_local int g_fornet_active_base = -1;
 thread_local int g_fornet_active_arity = 0;
 thread_local double* g_fornet_active_buf = nullptr;
 thread_local int g_fornet_active_is_tmp = 0;
+/** @brief Arity from last _nrn_netcon_weight_bases (FOR_NETCONS walk). */
+thread_local int g_fornet_list_arity = 1;
 
 double* mod_weight_scratch(int n) {
     if (n <= 0) {
@@ -2442,19 +2444,16 @@ struct ReceiveWeightIndexGuard {
 }  // namespace
 
 double* _nrn_netrec_wsoa(int weight_index, int count) {
+    // CoreNEURON shape: weight_index addresses Weight SoA directly (no NetCon*).
     g_netrec_wsoa_is_tmp = 0;
     if (weight_index < 0 || count <= 0) {
         return nullptr;
     }
-    // Zero-copy into contiguous Weight SoA block.
-    if (NetCon* nc = NetConSave::weight_index2netcon(weight_index)) {
-        if (nc->has_weight_soa()) {
-            if (double* p = nc->weight_block_->data_if_contiguous()) {
-                return p;
-            }
-        }
+    if (double* p = neuron::container::network::SelfEventFields::weight_soa_ptr(weight_index,
+                                                                                count)) {
+        return p;
     }
-    // Scattered: TLS materialize (commit in _nrn_netrec_wsoa_done).
+    // Scattered / incomplete pack: TLS materialize (commit in _nrn_netrec_wsoa_done).
     double* buf = mod_weight_scratch(count);
     neuron::container::network::SelfEventFields::materialize_weight_block(weight_index, count, buf);
     g_netrec_wsoa_is_tmp = 1;
@@ -3627,14 +3626,21 @@ void SelfEvent::savestate_free() {
 void SelfEvent::savestate_write(FILE* f) {
     fprintf(f, "%d\n", SelfEventType);
     int const moff = movable_ ? (movable_ - target_->prop->dparam) : -1;
+    // File format stores HOC NetCon object index (stable across weight repack).
+    // Cold path only: O(N) scan — not on the sim delivery path.
     int ncindex = -1;
-    // SelfEvent identity for SaveState: NetCon object index via weight_index.
-    NetCon* owner = nullptr;
     if (weight_index_ >= 0) {
-        owner = NetConSave::weight_index2netcon(weight_index_);
-    }
-    if (owner && owner->obj_) {
-        ncindex = owner->obj_->index;
+        Symbol* sym = hoc_lookup("NetCon");
+        if (sym && sym->u.ctemplate && sym->u.ctemplate->olist) {
+            hoc_Item* q = nullptr;
+            ITERATE(q, sym->u.ctemplate->olist) {
+                auto* nc = static_cast<NetCon*>(OBJ(q)->u.this_pointer);
+                if (nc && static_cast<int>(nc->weight_base()) == weight_index_ && nc->obj_) {
+                    ncindex = nc->obj_->index;
+                    break;
+                }
+            }
+        }
     }
 
     fprintf(f,
@@ -4508,6 +4514,8 @@ int _nrn_netcon_weight_bases(void* v, int** bases) {
     auto* fnc = static_cast<ForNetConsInfo*>(v);
     assert(fnc);
     *bases = fnc->weight_bases;
+    // Arity is per-mechanism (same for all peers); stash for _nrn_fornetcon_weight.
+    g_fornet_list_arity = fnc->arity > 0 ? fnc->arity : 1;
     return fnc->size;
 }
 
@@ -4517,13 +4525,10 @@ double* _nrn_fornetcon_weight(int weight_base) {
     if (weight_base < 0) {
         return nullptr;
     }
-    NetCon* nc = NetConSave::weight_index2netcon(weight_base);
-    if (!nc || !nc->has_weight_soa()) {
-        return nullptr;
-    }
-    int const arity = nc->cnt_ > 0 ? nc->cnt_ : 1;
-    // Zero-copy when the weight block is contiguous in SoA (packing A / allocate).
-    if (double* p = nc->weight_block_->data_if_contiguous()) {
+    int const arity = g_fornet_list_arity > 0 ? g_fornet_list_arity : 1;
+    // Direct SoA address (CoreNEURON shape); no NetCon reverse lookup.
+    if (double* p = neuron::container::network::SelfEventFields::weight_soa_ptr(weight_base,
+                                                                                arity)) {
         g_fornet_active_base = weight_base;
         g_fornet_active_arity = arity;
         g_fornet_active_buf = p;
@@ -5351,28 +5356,6 @@ NetCon* NetConSave::index2netcon(long id) {
     } else {
         return nullptr;
     }
-}
-
-NetCon* NetConSave::weight_index2netcon(int weight_index) {
-    if (weight_index < 0) {
-        return nullptr;
-    }
-    Symbol* sym = hoc_lookup("NetCon");
-    if (!sym || !sym->u.ctemplate || !sym->u.ctemplate->olist) {
-        return nullptr;
-    }
-    hoc_Item* q = nullptr;
-    ITERATE(q, sym->u.ctemplate->olist) {
-        auto* nc = static_cast<NetCon*>(OBJ(q)->u.this_pointer);
-        if (!nc) {
-            continue;
-        }
-        int const base = static_cast<int>(nc->weight_base());
-        if (base == weight_index) {
-            return nc;
-        }
-    }
-    return nullptr;
 }
 
 void nrn_update_ps2nt() {

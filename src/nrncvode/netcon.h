@@ -187,12 +187,10 @@ class NetConSave: public DiscreteEvent {
     NetCon* netcon_;
 
     static void invalid();
-    /** @brief Map Weight SoA data pointer → NetCon* (legacy; prefer weight_index2netcon). */
+    /** @brief Map Weight SoA data pointer → NetCon* (legacy cold helpers / queue tools). */
     static NetCon* weight2netcon(double*);
-    /** @brief Map HOC NetCon object index → NetCon*. */
+    /** @brief Map HOC NetCon object index → NetCon* (SaveState). */
     static NetCon* index2netcon(long);
-    /** @brief Map Weight SoA base row (weight_index) → NetCon*. */
-    static NetCon* weight_index2netcon(int weight_index);
 
   private:
     static NetConSaveWeightTable* wtable_;
