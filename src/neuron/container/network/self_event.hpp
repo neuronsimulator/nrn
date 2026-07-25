@@ -43,10 +43,33 @@ struct Flag {
 }  // namespace field
 
 /**
+ * @brief CoreNEURON-style zero-copy pointer into Weight SoA at base @p weight_index.
+ *
+ * Under packing A (post-sort / sim freeze), a NetCon block of @p count is
+ * base..base+count-1 consecutive rows. No NetCon* reverse lookup: the index is
+ * the address (cf. NrnThread::weights + weight_index).
+ *
+ * @return nullptr if out of range (caller may TLS-materialize).
+ */
+inline double* weight_soa_ptr(int weight_index, int count) {
+    if (weight_index < 0 || count <= 0) {
+        return nullptr;
+    }
+    auto& store = neuron::model().weights();
+    auto const n = store.size();
+    auto const base = static_cast<std::size_t>(weight_index);
+    auto const need = static_cast<std::size_t>(count);
+    if (base >= n || base + need > n) {
+        return nullptr;
+    }
+    return &store.get<Weight::field::Value>(base);
+}
+
+/**
  * @brief Copy @p count consecutive Weight SoA rows starting at @p weight_index into @p out.
  *
- * Contiguity is the dual-write invariant from weight block allocation (Phase 1–2).
- * After a full weight repack/sort this remains valid for a NetCon's block.
+ * Used when zero-copy is unavailable (scattered rows before pack). After weight
+ * repack/sort, prefer weight_soa_ptr.
  */
 inline void materialize_weight_block(int weight_index, int count, double* out) {
     if (!out || count <= 0 || weight_index < 0) {

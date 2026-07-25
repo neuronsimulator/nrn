@@ -5,6 +5,7 @@
 #include "nrnmpi.h"
 #include "section.h"
 #include "netcon.h"
+#include "neuron/container/network/self_event.hpp"
 #include "nrncvode.h"
 #include "nrniv_mf.h"
 #include "hocdec.h"
@@ -939,12 +940,11 @@ static void set_info(TQItem* tqi,
         Point_process* pnt = se->target_;
         int type = pnt->prop->_type;
         int movable_index = type2movable[type];
-        // Heap-free 7c: SelfEvent identity is weight_index only.
+        // Heap-free 7c: SelfEvent identity is weight_index only — address SoA by index
+        // (CoreNEURON shape; no NetCon reverse lookup).
         double* wt = nullptr;
         if (se->weight_index_ >= 0) {
-            if (NetCon* nc = NetConSave::weight_index2netcon(se->weight_index_)) {
-                wt = nc->weight_soa_data();
-            }
+            wt = neuron::container::network::SelfEventFields::weight_soa_ptr(se->weight_index_, 1);
         }
 
         core_te->intdata.push_back(type);
