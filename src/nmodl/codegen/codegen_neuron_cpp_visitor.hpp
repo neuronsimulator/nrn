@@ -205,15 +205,21 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
 
     /**
      * Print `net_receive` call-back.
+     * ACC overrides to enqueue when compute_gpu (Stage 2).
      */
-    void print_net_receive();
+    virtual void print_net_receive();
     void print_net_receive_common_code();
     ParamVector net_receive_args();
 
+    /** Rename NET_RECEIVE parameters to `_args[i]` in @p node (mutates AST). */
+    static void rename_net_receive_arguments(const ast::NetReceiveBlock& net_receive_node,
+                                            const ast::Node& node);
+
     /**
      * Print code to register the call-back for the NET_RECEIVE block.
+     * ACC overrides to also register net_buf_receive.
      */
-    void print_net_receive_registration();
+    virtual void print_net_receive_registration();
 
     /**
      * Print POINT_PROCESS related functions

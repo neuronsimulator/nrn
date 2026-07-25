@@ -114,7 +114,7 @@ SCENARIO("NEURON OpenACC codegen emits offload pragmas", "[codegen][neuron][acc]
             const auto generated = get_neuron_acc_code_from_file(mod_path);
             REQUIRE_THAT(generated, ContainsSubstring("#include <neuron/gpu/offload.hpp>"));
             REQUIRE_THAT(generated, ContainsSubstring("nrn_pragma_acc(parallel loop"));
-            REQUIRE_THAT(generated, ContainsSubstring("nrn_pragma_acc(data present(nt, ml)"));
+            REQUIRE_THAT(generated, ContainsSubstring("nrn_pragma_acc(data present(nt, _ml_arg"));
         }
     }
 
@@ -128,6 +128,56 @@ SCENARIO("NEURON OpenACC codegen emits offload pragmas", "[codegen][neuron][acc]
             REQUIRE_THAT(generated, ContainsSubstring("nrn_cur_pas"));
             REQUIRE_THAT(generated, ContainsSubstring("nrn_pragma_acc(parallel loop"));
             REQUIRE_THAT(generated, ContainsSubstring("if(nt->compute_gpu)"));
+        }
+    }
+
+    GIVEN("ExpSyn-like POINT_PROCESS with NET_RECEIVE") {
+        const std::string nmodl_text = R"(
+            NEURON {
+                POINT_PROCESS ExpSynAcc
+                RANGE tau, e, i
+                NONSPECIFIC_CURRENT i
+            }
+            PARAMETER {
+                tau = 0.1 (ms)
+                e = 0 (mV)
+            }
+            ASSIGNED {
+                v (mV)
+                i (nA)
+            }
+            STATE {
+                g (uS)
+            }
+            INITIAL {
+                g = 0
+            }
+            BREAKPOINT {
+                SOLVE state METHOD cnexp
+                i = g*(v - e)
+            }
+            DERIVATIVE state {
+                g' = -g/tau
+            }
+            NET_RECEIVE(weight (uS)) {
+                g = g + weight
+            }
+        )";
+
+        THEN("Stage 2 emits enqueue pnt_receive, net_buf_receive, and registration") {
+            const auto generated = get_neuron_acc_code(nmodl_text);
+            REQUIRE_THAT(generated,
+                         ContainsSubstring("#include <neuron/gpu/net_receive_buffer.hpp>"));
+            REQUIRE_THAT(generated, ContainsSubstring("nt->compute_gpu"));
+            REQUIRE_THAT(generated,
+                         ContainsSubstring("neuron::gpu::net_receive_buffer_enqueue"));
+            REQUIRE_THAT(generated, ContainsSubstring("net_buf_receive_ExpSynAcc"));
+            REQUIRE_THAT(generated,
+                         ContainsSubstring("neuron::gpu::weight_soa_values()"));
+            REQUIRE_THAT(generated,
+                         ContainsSubstring(
+                             "hoc_register_net_receive_buffering(net_buf_receive_ExpSynAcc"));
+            REQUIRE_THAT(generated, ContainsSubstring("weights + weight_index"));
         }
     }
 }

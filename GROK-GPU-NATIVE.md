@@ -41,9 +41,6 @@ Session portability (Linux ↔ Mac): `~/neuron/notes/session-portability.md`.
 | Build / install | `~/neuron/nrngpu/build-gpu` via `nrnenv` / `ninja` / `ninja install` |
 | Do **not** wait for #3826 → master | Stack GPU work on this branch until a full native-GPU PR |
 
-Upstream PR #3826 may stay open until native-GPU work gives it review weight. Treat
-heap-free tip as the long-lived base; rebase onto master after #3826 lands if needed.
-
 ---
 
 ## Qualification goal
@@ -62,82 +59,80 @@ cd ~/neuron/nrngpu/build-gpu/test/external_ringtest/neuron_gpu_native_mpi
 # Rebuild special after install if needed:
 #   rm -rf x86_64 && nrnivmodl .
 
-./prcellstate_native_gpu.sh 32 0.025 0   # single step
-./prcellstate_native_gpu.sh 32 1 0       # pre-spike baseline
-./prcellstate_native_gpu.sh 32 1.025 0   # first NetCon event (Stage 2–3 gate)
-./prcellstate_native_gpu.sh 32 1.025 1   # same + phase dumps
+./prcellstate_native_gpu.sh 32 0.025 0
+./prcellstate_native_gpu.sh 32 1 0
+./prcellstate_native_gpu.sh 32 1.025 0   # first NetCon event — GREEN
 ./prcellstate_native_gpu.sh 32 100       # long gate (688 spikes)
-```
-
-Source: `test/external/ringtest/prcellstate_native_gpu.sh` (copied into build tree at configure).
-
-Compare:
-
-```bash
-python ~/models/82894/rdcellstate.py --ignore-unused \
-  32_-t1.nrndat 32_-gpu-t1.nrndat
 ```
 
 ---
 
-## Baseline after integration (2026-07-25)
-
-On `local/gpu-native-net-soa` @ `e0dd78c18`, rebuild + install + `nrnivmodl` in harness dir:
+## Baseline after Stage 3b (2026-07-25)
 
 | tstop | Result |
 |-------|--------|
-| **0.025** | CPU/GPU parity (threshold `dV=0`; matrix noise ~1e-15; mech ~1e-19) |
-| **1.0** | CPU/GPU parity (threshold `v` match; matrix noise only; **no mech diffs**) |
-| **1.025** | **Not expected to pass yet** — ExpSyn needs Stage 2–3 (device NET_RECEIVE) |
+| **0.025** | CPU/GPU parity (`dV=0`; noise ~1e-15) |
+| **1.0** | CPU/GPU parity (`dV=0`; matrix noise only) |
+| **1.025** | **GREEN** — `dV=0`; max \|d\| ~2e-15 |
+| **5** | Smoke OK — `dV~1e-13`; 32 spikes both sides |
+| **100** | Not re-run this session — next long gate |
 
-Post-solve / hh segfault / end-of-step mech issues from earlier gpu-native work are
-**resolved** on this baseline. Do not re-open “GPU v stuck at −65” as the open bug.
+### Stage 2–3–3b summary
+
+1. **Stage 2:** ACC codegen enqueue-only `pnt_receive` when `compute_gpu`;
+   `net_buf_receive` applies NET_RECEIVE via `weight_index` + Weight SoA
+   (host apply + `update device` of mech floats). Register with
+   `hoc_register_net_receive_buffering`.
+2. **Stage 3:** Flush NetReceiveBuffer after **both**
+   `deliver_net_events_host` (start, `til=t+0.5*dt` — first events at t=1.0)
+   and `deliver_post_step_events_host` (end, `til=t`).
+3. **Stage 3b:** Device OpenACC CURRENT/JACOBIAN for ExpSyn updated mech SoA
+   (`g`/`i`/`g_unused`) but **did not write** synaptic terms into device
+   `vec_rhs`/`vec_d` (post_setup dump: exact missing Δrhs≈0.103, Δd≈g_unused).
+   Fix: `augment_device_matrix_for_net_receive_mechs` after `nrn_lhs` —
+   pull device matrix, re-run host cur/jacob for `net_buf_receive` types only,
+   push matrix back for the device solver.
+
+### Design constraints (do not regress)
+
+1. **Full GPU fixed steps.** No per-step host `vec_rhs` pull → host voltage update
+   → push `vec_v` as the primary fix.
+2. **Heap-free network identity:** `weight_index` only. No `NetCon::weight_` heap.
+   No Stage-2 `_receive_weight` shims.
+3. **Enqueue on host, apply on device** long-term. Current interim: host apply of
+   NET_RECEIVE into Weight/mech SoA + Stage 3b host matrix augment for net-receive
+   mechs. Prefer pure device matrix writes once the OpenACC PP cur/jacob issue is
+   understood.
 
 ---
 
 ## Architecture plan
 
-### Design principles (do not regress)
-
-1. **Full GPU fixed steps** (CoreNEURON-style). No per-step host `vec_rhs` pull →
-   `nrn_update_voltage` → push `vec_v` on the hot path.
-2. **Heap-free network identity:** `weight_index` only (PR #3826). No
-   `NetCon::weight_` heap. No Stage-2 `_receive_weight` buffer shims.
-3. **Enqueue on host, apply on device** for NET_RECEIVE (CoreNEURON-shaped).
-
-### Stages
-
 | Stage | Content | Status |
 |-------|---------|--------|
-| 0 | Revert host SoA mirror after `net_receive` | Done |
-| 1 | NetReceiveBuffer registry, enqueue, upload | Done (`1f05cbc19`, still present) |
-| **I0** | Merge heap-free + gpu-native → `local/gpu-native-net-soa` | Done (`e0dd78c18`) |
-| **I1** | Rebuild + baseline @ 0.025 / 1.0 | Done (2026-07-25) |
-| **2** | Codegen: enqueue-only GPU `pnt_receive` + `net_buf_receive` (ExpSyn) using **weight_index** + Weight SoA | **Next** |
-| **3** | Wire `deliver_post_step_events` → `update_net_receive_buffer` → registered kernels | Pending |
-| **4** | NetStim / net_send buffer path as needed | Pending |
-| **5** | Gates: gid 32 @ 1.025 → 688 spikes @ 100 | Pending |
+| 0–1 | NetReceiveBuffer infrastructure | Done |
+| I0–I1 | Merge + baseline 0.025 / 1.0 | Done |
+| **2** | Codegen enqueue + net_buf_receive (weight_index) | **Done** (host apply interim) |
+| **3** | Wire deliver_net_events + post_step flush | **Done** |
+| **3b** | Device matrix gets ExpSyn after NET_RECEIVE | **Done** (host augment interim) |
+| **3c** | Root-cause OpenACC PP vec_rhs/vec_d writes; drop host augment | Pending |
+| **4** | NetStim / net_send as needed | Pending |
+| **5** | 688 spikes @ 100 | **Next** |
 
-### Stage 2 notes (SoA-aware)
+### Key insight (event timing)
 
-- Host `pnt_receive` when `nt->compute_gpu`: enqueue `(pnt_index, weight_index, flag)` into
-  `neuron::gpu::NetReceiveBuffer` — use heap-free index ABI, not `double* - nt->weights`.
-- Device kernel: load weight from Weight SoA / device weights via `weight_index`; update
-  mechanism SoA (`g += weight` for ExpSyn).
-- Register: `hoc_register_net_receive_buffering(net_buf_receive_*, type)`.
-- Reference: CoreNEURON `print_net_receive` / `print_net_receive_buffering`;
-  NEURON acc already has **net_send** buffering patterns.
-- **Do not** revive discarded 2026-07 Stage 2 WIP (`_receive_weight`, prop-row shims).
+NetStim `start=0`, NetCon `delay=1` → first events at **t=1.0**, delivered at
+**start** of the step ending at 1.025 via `deliver_net_events` (`til=t+0.5*dt`),
+not only at end-of-step. Both delivery points must flush NetReceiveBuffer.
 
-### Stage 3 notes
+### Open follow-ups
 
-After enqueue path works:
-
-1. `update_net_receive_buffer(nt)` (order + device update).
-2. Call registered `net_buf_receive` kernels.
-3. Clear buffer counts.
-
-Likely hook: after `deliver_post_step_events_host` / `nrn_deliver_events` in lastpart.
+- **OpenACC bug:** Why ExpSyn device cur writes `i`/`g_unused` correctly but not
+  `vec_rhs[node]` / `vec_d[node]` (density mechs write matrix fine). Investigate
+  present/atomic for point-process cur; then remove
+  `augment_device_matrix_for_net_receive_mechs`.
+- Prop is edit-epoch only for GPU; sim path uses indices. No Prop-removal blocker.
+- Long gate: `./prcellstate_native_gpu.sh 32 100` → 688 spikes + rdcellstate.
 
 ---
 
@@ -145,14 +140,11 @@ Likely hook: after `deliver_post_step_events_host` / `nrn_deliver_events` in las
 
 | Area | Path |
 |------|------|
-| Fixed step | `src/neuron/gpu/fadvance_gpu.cpp`, `lastpart.cpp` |
-| Post-solve | `src/neuron/gpu/post_solve.cpp` |
-| Net receive buffer | `src/neuron/gpu/net_receive_buffer.{hpp,cpp}` |
-| Net send buffer | `src/neuron/gpu/net_send_buffer.{hpp,cpp}` |
-| Event delivery (host) | `src/neuron/gpu/net_events.cpp`, `src/nrncvode/netcvode.cpp` |
-| Weight SoA | `src/neuron/container/network/weights.hpp` |
-| NMODL NEURON codegen | `src/nmodl/codegen/codegen_neuron_cpp_visitor.cpp` |
-| NMODL OpenACC | `src/nmodl/codegen/codegen_neuron_acc_visitor.cpp` |
+| Event flush + Stage 3 | `src/neuron/gpu/net_events.cpp` |
+| NetReceiveBuffer + Stage 3b augment | `src/neuron/gpu/net_receive_buffer.{hpp,cpp}` |
+| setup_tree_matrix hook | `src/nrnoc/treeset.cpp` |
+| Weight SoA upload | `src/neuron/gpu/upload.cpp` |
+| ACC codegen | `src/nmodl/codegen/codegen_neuron_acc_visitor.cpp` |
 | Harness | `test/external/ringtest/prcellstate_native_gpu.sh` |
 
 ---
@@ -166,40 +158,37 @@ export NRN_GPU_BACKEND_TEST=native
 export NRN_GPU_PERMUTE=2
 ```
 
-1. Always use `nrnenv nrngpu build-gpu` (wrong install → missing GPU / `neuron.gpu`).
+1. Always use `nrnenv nrngpu build-gpu`.
 2. Full shell permissions for harness (GPU/OpenACC/MPI).
-3. Verify: `nvidia-smi -L` and `Info : 1 GPUs shared by 1 ranks per node` in `special` output.
-4. After major rebuild: `ninja install` then in harness dir `rm -rf x86_64 && nrnivmodl .`
+3. Verify: `nvidia-smi -L` and `Info : 1 GPUs shared by 1 ranks per node`.
+4. After rebuild: `ninja install`; if ACC codegen changed built-ins:
+   `rm -f build-gpu/src/nrnoc/expsyn.cpp && ninja install`.
+5. Harness: `rm -rf x86_64 && nrnivmodl .` after major install when needed.
 
 ---
 
-## Starting prompt (paste into a new `nrngpu` session)
+## Starting prompt
 
 ```
 Read ~/neuron/nrngpu/GROK-GPU-NATIVE.md and AGENTS.md.
-Also skim doc/network-soa/heap-free.md for weight_index ABI.
 
-Repo: ~/neuron/nrngpu, branch local/gpu-native-net-soa @ e0dd78c18
-(+ handoff update if present). Base = heap-free PR #3826 + gpu-native merge.
+Repo: ~/neuron/nrngpu, branch local/gpu-native-net-soa.
+Stages 2–3b done: enqueue NET_RECEIVE, flush both delivery points, host matrix
+augment for net_buf mechs. Gates 0.025 / 1.0 / 1.025 green (noise only).
 
-Goal: pure native GPU fixed step for ringtest with NetReceiveBuffer / NetSendBuffer
-on device. Do NOT reintroduce NetCon::weight_ heap or per-step host vec_rhs voltage
-update. Do NOT reintroduce Stage-2 _receive_weight shims — use weight_index + Weight SoA.
+Next: prcellstate_native_gpu.sh 32 100 (688 spikes), then optional Stage 3c
+(root-cause OpenACC PP matrix writes; drop host augment).
 
-Baseline verified: prcellstate_native_gpu.sh 32 0.025 and 32 1.0 are clean (noise only).
-Next: Stage 2 codegen (enqueue-only pnt_receive + net_buf_receive ExpSyn), then Stage 3
-wire-up. Gate: 32 @ 1.025 then 688 spikes @ 100.
-
-Before GPU runs: source ~/neuron/bin/nrnenv nrngpu build-gpu; full shell permissions.
+Do NOT reintroduce NetCon::weight_ heap or per-step host vec_rhs voltage update.
+Before GPU: source ~/neuron/bin/nrnenv nrngpu build-gpu.
 ```
 
 ---
 
-## Related branches (do not confuse)
+## Related branches
 
 | Branch | Role |
 |--------|------|
 | `local/gpu-native-net-soa` | **Active** — GPU + heap-free |
-| `local/cpu-net-soa-heap-free` | PR #3826 source line (base) |
-| `local/cpu-network-soa` | Earlier dual-write SoA line |
-| `local/gpu-native-qualification` | Pre-merge GPU-only history (merged in) |
+| `local/cpu-net-soa-heap-free` | PR #3826 source line |
+| `local/gpu-native-qualification` | Pre-merge GPU history (merged in) |

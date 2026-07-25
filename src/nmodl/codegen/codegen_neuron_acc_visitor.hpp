@@ -53,6 +53,10 @@ class CodegenNeuronAccVisitor: public CodegenNeuronCppVisitor {
 
     void print_gpu_phase_registration() override;
 
+    /** Stage 2: enqueue-only GPU pnt_receive + device net_buf_receive. */
+    void print_net_receive() override;
+    void print_net_receive_registration() override;
+
     std::string global_variable_name(const SymbolType& symbol,
                                      bool use_instance) const override;
 
@@ -114,6 +118,8 @@ class CodegenNeuronAccVisitor: public CodegenNeuronCppVisitor {
     void print_net_send_buf_count_update_to_host() const;
     void print_net_send_buf_update_to_host() const;
     void print_net_send_buf_count_update_to_device() const;
+
+    void print_net_receive_buffering();
 };
 
 /** \} */  // end of codegen_backends

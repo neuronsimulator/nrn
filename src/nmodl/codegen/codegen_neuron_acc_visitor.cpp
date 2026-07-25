@@ -16,8 +16,12 @@ void CodegenNeuronAccVisitor::print_standard_includes() {
     CodegenNeuronCppVisitor::print_standard_includes();
     printer->add_line("#include <neuron/gpu/offload.hpp>");
     printer->add_line("#include <neuron/gpu/net_send_buffer.hpp>");
+    printer->add_line("#include <neuron/gpu/net_receive_buffer.hpp>");
     printer->add_line("#include <neuron/gpu/mechanism_phases.hpp>");
     printer->add_line("#include <neuron/gpu/sync.hpp>");
+    // net_buf_receive needs complete model_sorted_token + nrn_ensure_model_data_are_sorted.
+    printer->add_line("#include \"nrn_ansi.h\"");
+    printer->add_line("#include \"neuron/model_data.hpp\"");
 }
 
 bool CodegenNeuronAccVisitor::host_only_parallel_block(BlockType type) const {
@@ -179,7 +183,9 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
 
     print_global_variable_device_update_annotation();
 
-    if (type != BlockType::NetReceive && !info.artificial_cell) {
+    if (type == BlockType::NetReceive) {
+        // Present pointers declared by print_net_receive_buffering before the loop.
+    } else if (!info.artificial_cell) {
         printer->add_line("auto const* nodeindices = node_data.nodeindices;");
         if (type == BlockType::Equation) {
             printer->add_line("double* vec_rhs = node_data.node_rhs;");
@@ -195,7 +201,22 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
     std::ostringstream present_clause;
     present_clause << "present(_ml_arg, nt";
     if (type == BlockType::NetReceive) {
-        present_clause << ", nrb";
+        // nrb metadata + Weight SoA + mechanism RANGE columns for NET_RECEIVE body.
+        present_clause << ", nrb"
+                          ", nrb->_displ[:nrb->_displ_cnt + 1]"
+                          ", nrb->_nrb_index[:nrb->_cnt]"
+                          ", nrb->_pnt_index[:nrb->_cnt]"
+                          ", nrb->_weight_index[:nrb->_cnt]"
+                          ", nrb->_nrb_t[:nrb->_cnt]"
+                          ", nrb->_nrb_flag[:nrb->_cnt]"
+                          ", weights[:weight_count]";
+        const auto codegen_float_variables_size = codegen_float_variables.size();
+        for (int i = 0; i < codegen_float_variables_size; ++i) {
+            const auto& float_var = codegen_float_variables[i];
+            auto const array_len = float_var->is_array() ? float_var->get_length() : 1;
+            present_clause << fmt::format(
+                ", _present_fp_{}[:static_cast<std::size_t>(_ml_arg->nodecount) * {}]", i, array_len);
+        }
     } else if (!info.artificial_cell) {
         present_clause << ", nodeindices, _thread, node_data.node_voltages[:nt->end]";
         if (type == BlockType::Equation) {
@@ -215,7 +236,7 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
 
     printer->fmt_line("nrn_pragma_acc(parallel loop {}{} async(nt->stream_id) if(nt->compute_gpu))",
                       present_clause.str(),
-                      present_dptr_deviceptr_clause());
+                      type == BlockType::NetReceive ? std::string{} : present_dptr_deviceptr_clause());
     printer->add_line("nrn_pragma_omp(target teams distribute parallel for if(nt->compute_gpu))");
 }
 
@@ -326,7 +347,14 @@ void CodegenNeuronAccVisitor::print_after_nrn_cur_gpu_net_send_flush() {
 
 void CodegenNeuronAccVisitor::print_compute_functions() {
     print_net_send_buffering();
-    CodegenNeuronCppVisitor::print_compute_functions();
+    print_nrn_init();
+    print_nrn_cur();
+    print_nrn_state();
+    print_nrn_jacob();
+    // Stage 2: device NET_RECEIVE kernel + buffering before host pnt_receive (rename once).
+    print_net_receive_buffering();
+    print_net_receive();
+    print_net_init();
 }
 
 void CodegenNeuronAccVisitor::print_nrn_jacob() {
@@ -444,6 +472,184 @@ void CodegenNeuronAccVisitor::print_gpu_phase_registration() {
         phase_flags += flags[i];
     }
     printer->fmt_line("neuron::gpu::register_mechanism_gpu_phases(mech_type, {});", phase_flags);
+}
+
+void CodegenNeuronAccVisitor::print_net_receive_registration() {
+    CodegenNeuronCppVisitor::print_net_receive_registration();
+    if (net_receive_buffering_required()) {
+        printer->fmt_line("hoc_register_net_receive_buffering(net_buf_receive_{}, mech_type);",
+                          info.mod_suffix);
+    }
+}
+
+void CodegenNeuronAccVisitor::print_net_receive() {
+    auto node = info.net_receive_node;
+    if (!node) {
+        return;
+    }
+
+    printing_net_receive = true;
+    // Rename NET_RECEIVE args → _args[i] once for host + device bodies.
+    rename_net_receive_arguments(*node, *node);
+
+    printer->fmt_push_block("static void nrn_net_receive_{}({})",
+                            info.mod_suffix,
+                            get_parameter_str(net_receive_args()));
+
+    // Always resolve thread once (shared by GPU enqueue and host path).
+    printer->add_line("auto* nt = static_cast<NrnThread*>(_pnt->_vnt);");
+
+    // Stage 2: when native GPU fixed step is active, enqueue for device net_buf_receive.
+    if (net_receive_buffering_required()) {
+        printer->push_block("if (nt && nt->compute_gpu)");
+        printer->add_line(
+            "Memb_list* ml = nt->_ml_list[_nrn_mechanism_get_type(_pnt->prop)];");
+        printer->push_block("if (ml)");
+        printer->add_line(
+            "int pnt_index = static_cast<int>(neuron::mechanism::_get::_current_row(_pnt->prop) - "
+            "ml->get_storage_offset());");
+        printer->add_line("neuron::gpu::net_receive_buffer_ensure(ml);");
+        printer->add_line(
+            "neuron::gpu::net_receive_buffer_enqueue(nt, ml, pnt_index, _weight_index, flag);");
+        printer->pop_block();
+        printer->add_line("return;");
+        printer->pop_block();
+    }
+
+    // Host path (CPU backend / non-GPU threads): apply immediately via Weight SoA.
+    // (nt already declared above — do not redeclare.)
+    printer->add_line("_nrn_mechanism_cache_instance _lmc{_pnt->prop};");
+    printer->add_line("auto * _ppvar = _nrn_mechanism_access_dparam(_pnt->prop);");
+    printer->fmt_line("double* _args = _nrn_netrec_wsoa(_weight_index, {});",
+                      info.num_net_receive_parameters);
+    printer->fmt_line("auto inst = make_instance_{}(&_lmc);", info.mod_suffix);
+    if (!info.artificial_cell) {
+        printer->fmt_line("auto node_data = make_node_data_{}(_pnt->prop);", info.mod_suffix);
+    }
+    printer->add_line("Datum * _thread = nullptr;");
+    printer->add_line("size_t id = 0;");
+    printer->add_line("double t = nt->_t;");
+    print_statement_block(*node->get_statement_block(), false, false);
+    printer->fmt_line("_nrn_netrec_wsoa_done(_weight_index, {}, _args);",
+                      info.num_net_receive_parameters);
+    printer->add_newline();
+    printer->pop_block();
+    printing_net_receive = false;
+}
+
+void CodegenNeuronAccVisitor::print_net_receive_buffering() {
+    if (!net_receive_buffering_required()) {
+        return;
+    }
+
+    auto* node = info.net_receive_node;
+    if (!node) {
+        return;
+    }
+
+    // Ensure args are renamed before generating the device body (host path reuses AST).
+    rename_net_receive_arguments(*node, *node);
+
+    printer->add_newline(2);
+    printer->add_line("/** CoreNEURON-style: apply queued NET_RECEIVE events on device. */");
+    printer->fmt_push_block("static void net_buf_receive_{}(NrnThread* nt)", info.mod_suffix);
+
+    printer->push_block("if (!nt || !nt->compute_gpu)");
+    printer->add_line("return;");
+    printer->pop_block();
+
+    printer->add_line("Memb_list* _ml_arg = nt->_ml_list[mech_type];");
+    printer->push_block("if (!_ml_arg)");
+    printer->add_line("return;");
+    printer->pop_block();
+
+    printer->add_line("neuron::gpu::NetReceiveBuffer_t* nrb = _ml_arg->_net_receive_buffer;");
+    printer->push_block("if (!nrb || !nrb->_cnt)");
+    printer->add_line("return;");
+    printer->pop_block();
+
+    printer->add_line("auto const& _sorted_token = nrn_ensure_model_data_are_sorted();");
+    printer->add_line(
+        "_nrn_mechanism_cache_range _lmc{_sorted_token, *nt, *_ml_arg, _ml_arg->type()};");
+    printer->fmt_line(
+        "auto inst = make_instance_{}(_ml_arg->get_storage_offset(), &_lmc, /*use_device_ptrs*/ true);",
+        info.mod_suffix);
+    printer->add_line("auto* _thread = _ml_arg->_thread;");
+    if (!codegen_thread_variables.empty()) {
+        printer->fmt_line("auto _thread_vars = {}(_thread[{}].get<double*>());",
+                          thread_variables_struct(),
+                          info.thread_var_thread_id);
+    }
+
+    const auto codegen_float_variables_size = codegen_float_variables.size();
+    for (int i = 0; i < codegen_float_variables_size; ++i) {
+        printer->fmt_line("double* _present_fp_{0} = _lmc.template fpfield_ptr<{0}>();", i);
+    }
+
+    printer->add_line("double* weights = neuron::gpu::weight_soa_values();");
+    printer->add_line("std::size_t weight_count = neuron::gpu::weight_soa_count();");
+    printer->push_block("if (!weights || weight_count == 0)");
+    printer->add_line("return;");
+    printer->pop_block();
+
+    // Apply NET_RECEIVE on host into mechanism SoA (weight_index → Weight SoA), then
+    // push updated RANGE columns to the device. Full device-resident kernel is the
+    // long-term path; host apply is correct with heap-free ABI and avoids OpenACC
+    // present pitfalls on the first Stage 2/3 gate (ExpSyn ringtest @ 1.025).
+    printer->add_line("int count = nrb->_displ_cnt;");
+    printer->push_block("for (int i = 0; i < count; i++)");
+    printer->add_line("int start = nrb->_displ[i];");
+    printer->add_line("int end = nrb->_displ[i + 1];");
+    printer->push_block("for (int j = start; j < end; j++)");
+    printer->add_multi_line(R"CODE(
+        int index = nrb->_nrb_index[j];
+        int id = nrb->_pnt_index[index];
+        double t = nrb->_nrb_t[index];
+        int weight_index = nrb->_weight_index[index];
+        double flag = nrb->_nrb_flag[index];
+        (void) t;
+        (void) flag;
+        double* _args = weights + weight_index;
+    )CODE");
+    // Host SoA writes via _lmc.fpfield (not present_fp).
+    use_present_fp_indexing_ = false;
+    printing_net_receive = true;
+    print_statement_block(*node->get_statement_block(), false, false);
+    printing_net_receive = false;
+    printer->pop_block();  // inner j
+    printer->pop_block();  // outer i
+
+    // Push mechanism float columns to device so nrn_cur/jacob see NET_RECEIVE updates.
+    printer->push_block("if (nt->compute_gpu)");
+    printer->add_line(
+        "std::size_t const _nrb_n = static_cast<std::size_t>(_ml_arg->nodecount);");
+    for (int i = 0; i < codegen_float_variables_size; ++i) {
+        const auto& float_var = codegen_float_variables[i];
+        auto const array_len = float_var->is_array() ? float_var->get_length() : 1;
+        // Use a local pointer + [0:len] form; some OpenACC compilers mishandle
+        // nested expressions inside update array sections.
+        printer->fmt_line("double* _nrb_fp_{0} = _present_fp_{0} + inst._data_offset;", i);
+        printer->fmt_line("nrn_pragma_acc(update device(_nrb_fp_{0}[0:_nrb_n * {1}]))",
+                          i,
+                          array_len);
+        printer->fmt_line("nrn_pragma_omp(target update to(_nrb_fp_{0}[0:_nrb_n * {1}]))",
+                          i,
+                          array_len);
+    }
+    printer->pop_block();
+
+    printer->add_line("nrb->_displ_cnt = 0;");
+    printer->add_line("nrb->_cnt = 0;");
+    printer->push_block("if (nt->compute_gpu && nrb->device_uploaded)");
+    printer->add_line("nrn_pragma_acc(update device(nrb->_cnt, nrb->_displ_cnt))");
+    printer->add_line("nrn_pragma_omp(target update to(nrb->_cnt, nrb->_displ_cnt))");
+    printer->pop_block();
+
+    if (info.net_send_used || info.net_event_used) {
+        print_send_event_move();
+    }
+
+    printer->pop_block();  // net_buf_receive
 }
 
 void CodegenNeuronAccVisitor::print_net_send_call(const ast::FunctionCall& node) {

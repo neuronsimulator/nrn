@@ -250,6 +250,9 @@ void upload_sorted_model(model_sorted_token& sorted, UploadState& state) {
     neuron::model().apply_to_mechanisms(
         [&](auto& mech_data) { upload_soa_storage(mech_data, state); });
 
+    // Heap-free Weight SoA: device NET_RECEIVE kernels index by weight_index.
+    upload_soa_storage(neuron::model().weights(), state);
+
     copyin_pod_array(&celsius, 1, state);
     upload_mechanism_pointer_tables(sorted, state);
 

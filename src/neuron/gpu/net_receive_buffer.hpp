@@ -7,6 +7,10 @@
 struct Memb_list;
 struct NrnThread;
 
+namespace neuron {
+struct model_sorted_token;
+}
+
 namespace neuron::gpu {
 
 /**
@@ -48,6 +52,27 @@ void ensure_thread_net_receive_buffers(NrnThread* nt);
 void ensure_thread_net_receive_buffers_host(NrnThread* nt);
 void upload_net_receive_buffer_to_device(Memb_list* ml);
 void free_net_receive_buffer(Memb_list* ml);
+
+/**
+ * Host pointer to the contiguous Weight SoA Value column.
+ * Present on device after upload_sorted_model (heap-free packing A).
+ * Device kernels index as weights[weight_index + arg].
+ * Returns nullptr if the pool is empty.
+ */
+[[nodiscard]] double* weight_soa_values();
+[[nodiscard]] std::size_t weight_soa_count();
+
+/**
+ * Stage 3b: after device CURRENT/JACOBIAN assembly, ensure net-receive mechanisms
+ * (e.g. ExpSyn) contribute to the device Hines matrix.
+ *
+ * Observed: OpenACC cur/jacob update mechanism SoA (g, i, g_unused) correctly but
+ * vec_rhs/vec_d writes from those mechs are not visible on the device matrix used
+ * by the solver. Pull the device matrix, re-run host cur/jacob for registered
+ * net_buf_receive types only, push the matrix back.
+ */
+void augment_device_matrix_for_net_receive_mechs(neuron::model_sorted_token const& token,
+                                                 NrnThread* nt);
 
 extern std::vector<std::pair<NetBufReceive_t, int>> net_buf_receive;
 

@@ -1700,10 +1700,7 @@ void CodegenNeuronCppVisitor::print_mechanism_register_regular() {
     if (!info.point_process) {
         printer->add_line("hoc_register_npy_direct(mech_type, npy_direct_func_proc);");
     }
-    if (info.net_receive_node) {
-        printer->fmt_line("pnt_receive[mech_type] = nrn_net_receive_{};", info.mod_suffix);
-        printer->fmt_line("pnt_receive_size[mech_type] = {};", info.num_net_receive_parameters);
-    }
+    print_net_receive_registration();
 
     if (info.net_receive_initial_node) {
         printer->fmt_line("pnt_receive_init[mech_type] = net_init;");
@@ -1734,6 +1731,14 @@ void CodegenNeuronCppVisitor::print_mechanism_register_regular() {
 }
 
 void CodegenNeuronCppVisitor::print_gpu_phase_registration() {}
+
+void CodegenNeuronCppVisitor::print_net_receive_registration() {
+    if (!info.net_receive_node) {
+        return;
+    }
+    printer->fmt_line("pnt_receive[mech_type] = nrn_net_receive_{};", info.mod_suffix);
+    printer->fmt_line("pnt_receive_size[mech_type] = {};", info.num_net_receive_parameters);
+}
 
 void CodegenNeuronCppVisitor::print_mechanism_register_nothing() {
     printer->add_line("hoc_register_var(hoc_scalar_double, hoc_vector_double, hoc_intfunc);");
@@ -2829,8 +2834,9 @@ void CodegenNeuronCppVisitor::print_function_table_call(const FunctionCall& node
  *
  * So, the `R` in AST needs to be renamed with `_args[1]`.
  */
-static void rename_net_receive_arguments(const ast::NetReceiveBlock& net_receive_node,
-                                         const ast::Node& node) {
+void CodegenNeuronCppVisitor::rename_net_receive_arguments(
+    const ast::NetReceiveBlock& net_receive_node,
+    const ast::Node& node) {
     const auto& parameters = net_receive_node.get_parameters();
 
     auto n_parameters = parameters.size();
@@ -3005,7 +3011,7 @@ void CodegenNeuronCppVisitor::print_net_receive() {
                             info.mod_suffix,
                             get_parameter_str(net_receive_args()));
 
-    rename_net_receive_arguments(*node, *node);
+    rename_net_receive_arguments(*node, *node);  // static method
     print_net_receive_common_code();
 
 
