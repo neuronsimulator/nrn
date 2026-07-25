@@ -100,9 +100,12 @@ points must flush NetReceiveBuffer.
 | **Th0** | Contract: slot table = sole detect set; hit buffer = slot indices; host deliver; no InputPreSyn | **Done** — `doc/gpu/threshold-detection.md` |
 | **Th1** | OpenACC detect over slots (device `vec_v`, atomic hit buffer) | **Done** |
 | **Th2** | Skip full `vec_v` host pull when device detect handles SoA PreSyns (lazy pull for host/WATCH) | **Done** |
+| **Th3** | Re-qualify ringtest 0.025/1/1.025/100 after Th0–Th2; traffic notes | **Done** (2026-07-25) |
+| **Th4** | Traub-scale threshold load | Pending |
 
-Today: Th1 device `pscheck` + Th2 (no forced host voltage sync before detect).
-Host still pulls flags/hit indices then `deliver_threshold_spike`.
+Today: Th1 device `pscheck` + Th2 (no forced host voltage sync before detect) +
+Th3 green long gate. Host still pulls flags/hit indices then
+`deliver_threshold_spike`.
 
 ---
 
@@ -114,7 +117,7 @@ Host still pulls flags/hit indices then `deliver_threshold_spike`.
 | NetReceiveBuffer | `src/neuron/gpu/net_receive_buffer.{hpp,cpp}` |
 | Weight SoA upload | `src/neuron/gpu/upload.cpp` |
 | ACC codegen (atomic PP) | `src/nmodl/codegen/codegen_neuron_acc_visitor.cpp` |
-| Threshold detect (Th0/Th1) | `doc/gpu/threshold-detection.md`, `src/neuron/gpu/check_thresh.*` |
+| Threshold detect (Th0–Th3) | `doc/gpu/threshold-detection.md`, `src/neuron/gpu/check_thresh.*` |
 | Harness | `test/external/ringtest/prcellstate_native_gpu.sh` |
 
 ---
@@ -137,11 +140,11 @@ After ACC codegen changes to built-ins: `rm -f build-gpu/src/nrnoc/expsyn.cpp &&
 ```
 Read GROK-GPU-NATIVE.md and AGENTS.md.
 
-Stages 2–3c done; long gate green: 688 spikes @ tstop=100, threshold dV=0,
-noise-level cellstate diffs only.
+Stages 2–3c + threshold Th0–Th3 done; long gate green: 688 spikes @ tstop=100,
+threshold dV=0, noise-level cellstate diffs only.
 
-Next options: Traub incremental; optional pure device NET_RECEIVE apply;
-Th3 traffic/microbench if useful.
+Next options: Traub incremental (Th4 threshold load when ready); optional pure
+device NET_RECEIVE apply.
 
 Do not reintroduce NetCon::weight_ heap or host vec_rhs voltage hot path.
 source ~/neuron/bin/nrnenv nrngpu build-gpu before GPU runs.

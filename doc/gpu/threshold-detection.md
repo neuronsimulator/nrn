@@ -1,8 +1,8 @@
 # GPU-native PreSyn threshold detection
 
-**Status:** Th0–**Th2** done. Device detect over slot columns + device `vec_v`;
+**Status:** Th0–**Th3** done. Device detect over slot columns + device `vec_v`;
 host pull of full `vec_v` only when host PreSyn::check or WATCH still need it.
-Spike deliver remains host-only.
+Spike deliver remains host-only. Ringtest 100 re-qualified after Th2.
 
 **Related:** `src/neuron/gpu/check_thresh.{hpp,cpp}`,
 `NetCvode::check_thresh` in `src/nrncvode/netcvode.cpp`,
@@ -142,7 +142,7 @@ used by detect (`thvar_row`, `threshold`, `flag`).
 | **Th0** | This contract; slot table = sole detect set; buffer = slot indices; host deliver | **Done** |
 | **Th1** | OpenACC parallel detect over slots (device `vec_v`, atomic capture into hit buffer) | **Done** (`check_thresh.cpp`) |
 | **Th2** | Skip voltage host sync when Th1 succeeds (lazy pull only for host PreSyn/WATCH) | **Done** |
-| **Th3** | Ringtest 100 still green; optional traffic/microbench | Pending |
+| **Th3** | Ringtest 100 still green after Th0–Th2; record traffic notes | **Done** (2026-07-25) |
 | **Th4** | Traub-scale threshold load | Pending |
 
 ### Th1 kernel (implemented)
@@ -200,8 +200,41 @@ Ringtest (all modern SoA PreSyn, no WATCH) skips the full `vec_v` pull.
 
 ---
 
-## 9. Non-goals (Th0–Th2)
+## 9. Th3 qualification (ringtest after Th0–Th2)
+
+Harness (gpu-native, permute=2):
+
+```bash
+source ~/neuron/bin/nrnenv nrngpu build-gpu
+export NRN_NATIVE_GPU_DEVICE_NONVINT=1 NRN_GPU_BACKEND_TEST=native NRN_GPU_PERMUTE=2
+cd build-gpu/test/external_ringtest/neuron_gpu_native_mpi
+./prcellstate_native_gpu.sh 32 <tstop> [0]
+```
+
+| tstop | Result (2026-07-25, Th2 stack) |
+|-------|--------------------------------|
+| **0.025** | GREEN — `dV=0`, matrix noise ~1e-15 |
+| **1.0** | GREEN — `dV=0` |
+| **1.025** | GREEN — `dV=0` (first NetCon) |
+| **100** | GREEN — **688 spikes** both sides; threshold `dV=0`; max \|d\| ~1e-13 |
+
+**Traffic notes (ringtest, not a microbench):**
+
+- Detect set size ≪ CoreNEURON Traub: one threshold voltage per ring cell on the
+  thread’s `psl_thr_` slice; hit rate is sparse relative to step count.
+- Per step on the green path: OpenACC `pscheck` over slots + host update of
+  flags/hits + host deliver only on crossings — **no** full `vec_v` host pull
+  (Th2).
+- GPU wall ~9–10 s for `tstop=100` on this machine is dominated by the fixed
+  step (cur/jacob/solve), not threshold traffic. A dedicated threshold microbench
+  is deferred to **Th4** (Traub-scale load) where slot count and crossing rate
+  matter.
+
+---
+
+## 10. Non-goals (Th0–Th3)
 
 - InputPreSyn type or dual PreSyn hierarchy
 - Device-side NetCon fanout / MPI
 - WATCH on device
+- Traub-scale threshold microbench (Th4)
