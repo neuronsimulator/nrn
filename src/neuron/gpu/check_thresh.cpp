@@ -225,7 +225,7 @@ bool check_thresh_presyn_on_device(NrnThread* nt, double teps) noexcept {
     int const end = nt->end;
 
     // Th1: OpenACC detect over slot columns + device vec_v (CoreNEURON pscheck shape).
-    // Hit list = slot indices. Host still delivers. Voltage host pull remains until Th2.
+    // Hit list = slot indices. Host still delivers. Host vec_v not required (Th2).
     nt->_net_send_buffer_cnt = 0;
     int net_send_buf_count = 0;
 

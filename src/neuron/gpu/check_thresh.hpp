@@ -8,7 +8,7 @@
  *   - NrnThread::_net_send_buffer holds slot indices, not PreSyn*.
  *   - Spike deliver is host-only (PreSyn::send).
  * Th1: OpenACC detect over the slot table (device vec_v + atomic hit buffer).
- * Th2 (pending): skip voltage host pull when Th1 succeeds.
+ * Th2: host voltage pull only if host PreSyn::check / WATCH still need it.
  */
 
 struct NrnThread;
@@ -53,7 +53,7 @@ void sync_threshold_presyn_flags(ThresholdPresynSlot const* slots, int const* fl
  * Threshold detection entry for gpu-native.
  * Th0 shape: slot table sole detect set; hit buffer = slot indices; host deliver.
  * Th1: OpenACC pscheck over slot columns + device vec_v; host pull of flags/hits
- * then deliver. Voltage host sync before this call remains until Th2.
+ * then deliver. Does not require host vec_v (Th2).
  * Returns true when the table path handled SoA-threshold PreSyns (caller skips
  * re-walking those on psl_thr_).
  */

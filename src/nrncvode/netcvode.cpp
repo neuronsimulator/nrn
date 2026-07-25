@@ -6439,13 +6439,22 @@ void NetCvode::check_thresh(NrnThread* nt) {  // for default method
     bool const gpu_thresh = neuron::gpu::enabled() && neuron::gpu::backend_native() &&
                             nt->compute_gpu && nt->end > 0;
     bool gpu_thresh_handled = false;
+    // Th2: device detect reads device vec_v. Pull host voltages only if host
+    // PreSyn::check or WATCH still needs them (see ensure_host_voltages).
+    bool host_voltages_ready = !gpu_thresh;
     if (gpu_thresh) {
-        neuron::gpu::sync_voltages_to_host_before_check_thresh(*nt);
         gpu_thresh_handled = neuron::gpu::check_thresh_presyn_on_device(nt, teps);
     }
+    auto ensure_host_voltages = [&]() {
+        if (!host_voltages_ready) {
+            neuron::gpu::sync_voltages_to_host_before_check_thresh(*nt);
+            host_voltages_ready = true;
+        }
+    };
 #else
     constexpr bool gpu_thresh = false;
     constexpr bool gpu_thresh_handled = false;
+    auto ensure_host_voltages = []() {};
 #endif
     {
         hoc_Item* pth = p[nt->id].psl_thr_;
@@ -6463,6 +6472,7 @@ void NetCvode::check_thresh(NrnThread* nt) {  // for default method
                             continue;
                         }
 #endif
+                        ensure_host_voltages();
                         ps->check(nt, nt->_t, teps);
                     }
                 }
@@ -6472,6 +6482,7 @@ void NetCvode::check_thresh(NrnThread* nt) {  // for default method
 
     for (auto* wl: wl_list_[nt->id]) {
         for (HTList* item = wl->First(); item != wl->End(); item = item->Next()) {
+            ensure_host_voltages();
             WatchCondition* wc = static_cast<WatchCondition*>(item);
             wc->check(nt, nt->_t);
         }

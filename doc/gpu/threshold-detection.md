@@ -1,8 +1,8 @@
 # GPU-native PreSyn threshold detection
 
-**Status:** Th0 (contract) + **Th1** (OpenACC detect over slot columns + device
-`vec_v`). Spike deliver remains host-only. **Th2** (skip voltage host pull when
-Th1 succeeds) is not done.
+**Status:** Th0–**Th2** done. Device detect over slot columns + device `vec_v`;
+host pull of full `vec_v` only when host PreSyn::check or WATCH still need it.
+Spike deliver remains host-only.
 
 **Related:** `src/neuron/gpu/check_thresh.{hpp,cpp}`,
 `NetCvode::check_thresh` in `src/nrncvode/netcvode.cpp`,
@@ -141,7 +141,7 @@ used by detect (`thvar_row`, `threshold`, `flag`).
 |-------|---------|--------|
 | **Th0** | This contract; slot table = sole detect set; buffer = slot indices; host deliver | **Done** |
 | **Th1** | OpenACC parallel detect over slots (device `vec_v`, atomic capture into hit buffer) | **Done** (`check_thresh.cpp`) |
-| **Th2** | Skip voltage host sync when Th1 succeeds (threshold no longer forces full `vec_v` pull) | Pending |
+| **Th2** | Skip voltage host sync when Th1 succeeds (lazy pull only for host PreSyn/WATCH) | **Done** |
 | **Th3** | Ringtest 100 still green; optional traffic/microbench | Pending |
 | **Th4** | Traub-scale threshold load | Pending |
 
@@ -182,12 +182,26 @@ gpu-native, Th1 runs the OpenACC detect kernel over that table.
 | `deliver_threshold_spike` | Host deliver one PreSyn |
 | `sync_threshold_presyn_flags` | Hysteresis back to `PreSyn::flag_` |
 | `check_thresh_presyn_on_device` | Th1: OpenACC detect; host flag/hit update + deliver |
+| `NetCvode::check_thresh` | Th2: device detect first; lazy host `vec_v` pull |
 
 ---
 
-## 8. Non-goals (Th0/Th1)
+## 8. Th2 host voltage pull policy
 
-- Removing voltage pull (Th2)
+`NetCvode::check_thresh` runs device detect first. It calls
+`sync_voltages_to_host_before_check_thresh` **only** if:
+
+1. Device table path did not handle (`check_thresh_presyn_on_device` false) and
+   host `PreSyn::check` will run, or
+2. A non-skipped host PreSyn remains (non-modern `thvar_`), or
+3. A WATCH condition will be evaluated on the host.
+
+Ringtest (all modern SoA PreSyn, no WATCH) skips the full `vec_v` pull.
+
+---
+
+## 9. Non-goals (Th0–Th2)
+
 - InputPreSyn type or dual PreSyn hierarchy
 - Device-side NetCon fanout / MPI
 - WATCH on device
