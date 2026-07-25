@@ -23,6 +23,11 @@
 #include "utils/profile/profiler_interface.h"
 #include "multicore.h"
 
+#include "neuron/gpu/offload.hpp"
+#if defined(NRN_ENABLE_GPU)
+#include "neuron/gpu/sync.hpp"
+#endif
+
 #include <cstdio>
 #include <cstdlib>
 #include <cerrno>
@@ -402,6 +407,15 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
         for (i = i1; i < i3; ++i) {
             NODERHS(_nt->_v_node[i]) = 0.;
         }
+#if defined(NRN_ENABLE_GPU)
+    } else if (neuron::gpu::matrix_rhs_d_stays_on_device_for_solve(nt) && _nt->compute_gpu) {
+        neuron::gpu::zero_matrix_rhs_on_device(nt, i1, i3);
+    } else
+#endif
+        if (_nt->compute_gpu && i3 > i1) {
+        for (i = i1; i < i3; ++i) {
+            vec_rhs[i] = 0.;
+        }
     } else {
         for (i = i1; i < i3; ++i) {
             vec_rhs[i] = 0.;
@@ -409,8 +423,19 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
     }
     auto const vec_sav_rhs = _nt->node_sav_rhs_storage();
     if (vec_sav_rhs) {
-        for (i = i1; i < i3; ++i) {
-            vec_sav_rhs[i] = 0.;
+#if defined(NRN_ENABLE_GPU)
+        if (neuron::gpu::matrix_rhs_d_stays_on_device_for_solve(nt) && _nt->compute_gpu) {
+            /* zeroed with vec_rhs in zero_matrix_rhs_on_device */
+        } else
+#endif
+            if (_nt->compute_gpu && i3 > i1) {
+            for (i = i1; i < i3; ++i) {
+                vec_sav_rhs[i] = 0.;
+            }
+        } else {
+            for (i = i1; i < i3; ++i) {
+                vec_sav_rhs[i] = 0.;
+            }
         }
     }
 
@@ -441,8 +466,19 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
         /* vec_sav_rhs has only the contribution of electrode current
            here we transform so it only has membrane current contribution
         */
-        for (i = i1; i < i3; ++i) {
-            vec_sav_rhs[i] -= vec_rhs[i];
+#if defined(NRN_ENABLE_GPU)
+        if (neuron::gpu::matrix_rhs_d_stays_on_device_for_solve(nt) && _nt->compute_gpu) {
+            neuron::gpu::transform_sav_rhs_membrane_only_on_device(nt, i1, i3);
+        } else
+#endif
+            if (_nt->compute_gpu && i3 > i1) {
+            for (i = i1; i < i3; ++i) {
+                vec_sav_rhs[i] -= vec_rhs[i];
+            }
+        } else {
+            for (i = i1; i < i3; ++i) {
+                vec_sav_rhs[i] -= vec_rhs[i];
+            }
         }
     }
 #if EXTRACELLULAR
@@ -469,13 +505,29 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
     auto* const vec_b = nt.node_b_storage();
     auto* const vec_v = nt.node_voltage_storage();
     auto* const parent_i = nt._v_parent_index;
+    nrn_pragma_acc(parallel loop present(vec_rhs [0:i3],
+                                         vec_a [0:i3],
+                                         vec_b [0:i3],
+                                         vec_v [0:i3],
+                                         parent_i [0:i3]) if (_nt->compute_gpu && i3 > i2)
+                       async(_nt->stream_id))
+    nrn_pragma_omp(target teams distribute parallel for if(_nt->compute_gpu))
     for (i = i2; i < i3; ++i) {
         auto const pi = parent_i[i];
         auto const dv = vec_v[pi] - vec_v[i];
         // our connection coefficients are negative so
+        nrn_pragma_acc(atomic update)
+        nrn_pragma_omp(atomic update)
         vec_rhs[i] -= vec_b[i] * dv;
+        nrn_pragma_acc(atomic update)
+        nrn_pragma_omp(atomic update)
         vec_rhs[pi] += vec_a[i] * dv;
     }
+#if defined(NRN_ENABLE_GPU)
+    if (_nt->compute_gpu && i3 > i2) {
+        nrn_pragma_acc(wait(_nt->stream_id))
+    }
+#endif
 }
 
 /* calculate left hand side of
@@ -506,14 +558,39 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
 
     // Make sure the SoA node diagonals are also zeroed (is this needed?)
     auto* const vec_d = _nt->node_d_storage();
-    for (int i = i1; i < i3; ++i) {
-        vec_d[i] = 0.;
+#if defined(NRN_ENABLE_GPU)
+    if (neuron::gpu::matrix_rhs_d_stays_on_device_for_solve(nt) && _nt->compute_gpu) {
+        neuron::gpu::zero_matrix_diagonal_on_device(nt, i1, i3);
+        for (int i = i1; i < i3; ++i) {
+            vec_d[i] = 0.;
+        }
+    } else
+#endif
+        if (_nt->compute_gpu && i3 > i1) {
+        for (int i = i1; i < i3; ++i) {
+            vec_d[i] = 0.;
+        }
+    } else {
+        for (int i = i1; i < i3; ++i) {
+            vec_d[i] = 0.;
+        }
     }
 
     auto const vec_sav_d = _nt->node_sav_d_storage();
     if (vec_sav_d) {
-        for (i = i1; i < i3; ++i) {
-            vec_sav_d[i] = 0.;
+#if defined(NRN_ENABLE_GPU)
+        if (neuron::gpu::matrix_rhs_d_stays_on_device_for_solve(nt) && _nt->compute_gpu) {
+            /* zeroed with vec_d in zero_matrix_diagonal_on_device */
+        } else
+#endif
+            if (_nt->compute_gpu && i3 > i1) {
+            for (i = i1; i < i3; ++i) {
+                vec_sav_d[i] = 0.;
+            }
+        } else {
+            for (i = i1; i < i3; ++i) {
+                vec_sav_d[i] = 0.;
+            }
         }
     }
 
@@ -539,6 +616,12 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
         assert(_nt->tml->index == CAP);
         nrn_cap_jacob(sorted_token, _nt, _nt->tml->ml);
     }
+#if defined(NRN_ENABLE_GPU)
+    if (_nt->compute_gpu && neuron::gpu::matrix_rhs_d_stays_on_device_for_solve(nt) &&
+        !neuron::gpu::matrix_currents_on_device(nt)) {
+        neuron::gpu::sync_diagonal_to_device_before_axial_lhs(nt);
+    }
+#endif
 
     activsynapse_lhs();
 
@@ -546,8 +629,14 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
         /* vec_sav_d has only the contribution of electrode current
            here we transform so it only has membrane current contribution
         */
-        for (i = i1; i < i3; ++i) {
-            vec_sav_d[i] = vec_d[i] - vec_sav_d[i];
+        if (_nt->compute_gpu && i3 > i1) {
+            for (i = i1; i < i3; ++i) {
+                vec_sav_d[i] = vec_d[i] - vec_sav_d[i];
+            }
+        } else {
+            for (i = i1; i < i3; ++i) {
+                vec_sav_d[i] = vec_d[i] - vec_sav_d[i];
+            }
         }
     }
 #if EXTRACELLULAR
@@ -565,7 +654,6 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
     activclamp_lhs();
 
     /* at this point d contains all the membrane conductances */
-
 
     /* now add the axial currents */
     if (use_sparse13) {
@@ -589,10 +677,26 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
     } else {
         auto* const vec_a = _nt->node_a_storage();
         auto* const vec_b = _nt->node_b_storage();
+        auto* const parent_i = _nt->_v_parent_index;
+        nrn_pragma_acc(parallel loop present(vec_d [0:i3],
+                                             vec_a [0:i3],
+                                             vec_b [0:i3],
+                                             parent_i [0:i3]) if (_nt->compute_gpu && i3 > i2)
+                           async(_nt->stream_id))
+        nrn_pragma_omp(target teams distribute parallel for if(_nt->compute_gpu))
         for (i = i2; i < i3; ++i) {
+            nrn_pragma_acc(atomic update)
+            nrn_pragma_omp(atomic update)
             vec_d[i] -= vec_b[i];
-            vec_d[_nt->_v_parent_index[i]] -= vec_a[i];
+            nrn_pragma_acc(atomic update)
+            nrn_pragma_omp(atomic update)
+            vec_d[parent_i[i]] -= vec_a[i];
         }
+#if defined(NRN_ENABLE_GPU)
+        if (_nt->compute_gpu && i3 > i2) {
+            nrn_pragma_acc(wait(_nt->stream_id))
+        }
+#endif
     }
 }
 
@@ -601,6 +705,11 @@ void setup_tree_matrix(neuron::model_sorted_token const& cache_token, NrnThread&
     nrn::Instrumentor::phase _{"setup-tree-matrix"};
     nrn_rhs(cache_token, nt);
     nrn_lhs(cache_token, nt);
+#if defined(NRN_ENABLE_GPU)
+    if (!neuron::gpu::matrix_rhs_d_stays_on_device_for_solve(nt)) {
+        neuron::gpu::sync_matrix_to_host_before_solve(nt);
+    }
+#endif
     nrn_nonvint_block_current(nt.end, nt.node_rhs_storage(), nt.id);
     nrn_nonvint_block_conductance(nt.end, nt.node_d_storage(), nt.id);
 }

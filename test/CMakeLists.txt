@@ -82,6 +82,184 @@ if(TARGET nrn-benchmarks AND NRN_ENABLE_PERFORMANCE_TESTS)
     COMMAND $<TARGET_FILE:nrn-benchmarks> --processors=16)
 endif()
 
+if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
+  separate_arguments(_test_gpu_offload_flags UNIX_COMMAND "${CORENRN_ACC_COMP_FLAGS}")
+  add_executable(testneuron_gpu_offload unit_tests/gpu/offload_main.cpp unit_tests/gpu/offload.cpp)
+  cpp_cc_configure_sanitizers(TARGET testneuron_gpu_offload)
+  target_link_libraries(testneuron_gpu_offload PRIVATE Catch2::Catch2 neuron_gpu)
+  target_compile_definitions(testneuron_gpu_offload PRIVATE NRN_ENABLE_GPU)
+  target_compile_options(testneuron_gpu_offload PRIVATE ${_test_gpu_offload_flags})
+  target_link_options(testneuron_gpu_offload PUBLIC ${_test_gpu_offload_flags})
+  if(CUDAToolkit_FOUND)
+    set_property(
+      TARGET testneuron_gpu_offload
+      APPEND
+      PROPERTY BUILD_RPATH "${CUDAToolkit_LIBRARY_DIR}")
+  endif()
+  nrn_add_test(
+    GROUP unit_tests
+    NAME gpu_offload
+    REQUIRES gpu
+    COMMAND $<TARGET_FILE:testneuron_gpu_offload> "[gpu][offload]")
+
+  add_executable(
+    testneuron_gpu_device_state unit_tests/gpu/offload_main.cpp unit_tests/gpu/device_state.cpp
+                                unit_tests/gpu/upload_link_stubs.cpp)
+  cpp_cc_configure_sanitizers(TARGET testneuron_gpu_device_state)
+  target_include_directories(
+    testneuron_gpu_device_state
+    PRIVATE ${PROJECT_SOURCE_DIR}/external/fmt/include ${PROJECT_SOURCE_DIR}/external/backward
+            ${CMAKE_BINARY_DIR}/src/nrnoc)
+  target_link_libraries(testneuron_gpu_device_state PRIVATE Catch2::Catch2 neuron_gpu
+                                                            neuron_gpu_upload)
+  target_compile_definitions(testneuron_gpu_device_state PRIVATE NRN_ENABLE_GPU)
+  target_compile_options(testneuron_gpu_device_state PRIVATE ${_test_gpu_offload_flags})
+  target_link_options(testneuron_gpu_device_state PUBLIC ${_test_gpu_offload_flags})
+  if(CUDAToolkit_FOUND)
+    set_property(
+      TARGET testneuron_gpu_device_state
+      APPEND
+      PROPERTY BUILD_RPATH "${CUDAToolkit_LIBRARY_DIR}")
+  endif()
+  nrn_add_test(
+    GROUP unit_tests
+    NAME gpu_device_state
+    REQUIRES gpu
+    COMMAND $<TARGET_FILE:testneuron_gpu_device_state> "[gpu][device_state]")
+
+  add_executable(testneuron_gpu_config unit_tests/gpu/offload_main.cpp unit_tests/gpu/config.cpp)
+  cpp_cc_configure_sanitizers(TARGET testneuron_gpu_config)
+  target_link_libraries(testneuron_gpu_config PRIVATE Catch2::Catch2 neuron_gpu)
+  target_compile_definitions(testneuron_gpu_config PRIVATE NRN_ENABLE_GPU)
+  nrn_add_test(
+    GROUP unit_tests
+    NAME gpu_config
+    REQUIRES gpu
+    COMMAND $<TARGET_FILE:testneuron_gpu_config> "[gpu][config]")
+
+  add_executable(testneuron_gpu_device_assign unit_tests/gpu/offload_main.cpp
+                                              unit_tests/gpu/device_assign.cpp)
+  cpp_cc_configure_sanitizers(TARGET testneuron_gpu_device_assign)
+  target_link_libraries(testneuron_gpu_device_assign PRIVATE Catch2::Catch2 neuron_gpu)
+  target_compile_definitions(testneuron_gpu_device_assign PRIVATE NRN_ENABLE_GPU)
+  target_compile_options(testneuron_gpu_device_assign PRIVATE ${_test_gpu_offload_flags})
+  target_link_options(testneuron_gpu_device_assign PUBLIC ${_test_gpu_offload_flags})
+  nrn_add_test(
+    GROUP unit_tests
+    NAME gpu_device_assign
+    REQUIRES gpu
+    COMMAND $<TARGET_FILE:testneuron_gpu_device_assign> "[gpu][device_assign]")
+
+  add_executable(
+    testneuron_gpu_upload
+    unit_tests/gpu/offload_main.cpp unit_tests/gpu/upload.cpp unit_tests/gpu/upload_link_stubs.cpp
+    unit_tests/gpu/interleave_info_stub.cpp)
+  cpp_cc_configure_sanitizers(TARGET testneuron_gpu_upload)
+  target_include_directories(
+    testneuron_gpu_upload PRIVATE ${PROJECT_SOURCE_DIR}/external/fmt/include
+                                  ${CMAKE_BINARY_DIR}/src/nrnoc)
+  target_link_libraries(testneuron_gpu_upload PRIVATE Catch2::Catch2 neuron_gpu neuron_gpu_upload
+                                                      fmt::fmt)
+  target_compile_definitions(testneuron_gpu_upload PRIVATE NRN_ENABLE_GPU)
+  target_compile_options(testneuron_gpu_upload PRIVATE ${_test_gpu_offload_flags})
+  target_link_options(testneuron_gpu_upload PUBLIC ${_test_gpu_offload_flags})
+  nrn_add_test(
+    GROUP unit_tests
+    NAME gpu_upload
+    REQUIRES gpu
+    COMMAND $<TARGET_FILE:testneuron_gpu_upload> "[gpu][upload]")
+
+  add_executable(
+    testneuron_gpu_download
+    unit_tests/gpu/offload_main.cpp unit_tests/gpu/download.cpp unit_tests/gpu/upload_link_stubs.cpp
+    unit_tests/gpu/interleave_info_stub.cpp)
+  cpp_cc_configure_sanitizers(TARGET testneuron_gpu_download)
+  target_include_directories(
+    testneuron_gpu_download PRIVATE ${PROJECT_SOURCE_DIR}/external/fmt/include
+                                    ${CMAKE_BINARY_DIR}/src/nrnoc)
+  target_link_libraries(testneuron_gpu_download PRIVATE Catch2::Catch2 neuron_gpu neuron_gpu_upload
+                                                        fmt::fmt)
+  target_compile_definitions(testneuron_gpu_download PRIVATE NRN_ENABLE_GPU)
+  target_compile_options(testneuron_gpu_download PRIVATE ${_test_gpu_offload_flags})
+  target_link_options(testneuron_gpu_download PUBLIC ${_test_gpu_offload_flags})
+  nrn_add_test(
+    GROUP unit_tests
+    NAME gpu_download
+    REQUIRES gpu
+    COMMAND $<TARGET_FILE:testneuron_gpu_download> "[gpu][download]")
+
+  add_executable(
+    testneuron_gpu_fadvance
+    unit_tests/gpu/offload_main.cpp unit_tests/gpu/fadvance.cpp
+    unit_tests/gpu/upload_link_stubs.cpp unit_tests/gpu/fadvance_link_stubs.cpp)
+  cpp_cc_configure_sanitizers(TARGET testneuron_gpu_fadvance)
+  target_include_directories(
+    testneuron_gpu_fadvance PRIVATE ${PROJECT_SOURCE_DIR}/external/fmt/include
+                                    ${CMAKE_BINARY_DIR}/src/nrnoc)
+  target_link_libraries(testneuron_gpu_fadvance PRIVATE Catch2::Catch2 neuron_gpu neuron_gpu_upload
+                                                        fmt::fmt)
+  target_compile_definitions(testneuron_gpu_fadvance PRIVATE NRN_ENABLE_GPU)
+  target_compile_options(testneuron_gpu_fadvance PRIVATE ${_test_gpu_offload_flags})
+  target_link_options(testneuron_gpu_fadvance PUBLIC ${_test_gpu_offload_flags})
+  nrn_add_test(
+    GROUP unit_tests
+    NAME gpu_fadvance
+    REQUIRES gpu
+    COMMAND $<TARGET_FILE:testneuron_gpu_fadvance> "[gpu][fadvance]")
+
+  add_executable(testneuron_gpu_net_events unit_tests/gpu/offload_main.cpp
+                                           unit_tests/gpu/net_events.cpp)
+  cpp_cc_configure_sanitizers(TARGET testneuron_gpu_net_events)
+  target_include_directories(
+    testneuron_gpu_net_events PRIVATE ${PROJECT_SOURCE_DIR}/external/fmt/include
+                                      ${CMAKE_BINARY_DIR}/src/nrnoc)
+  target_link_libraries(testneuron_gpu_net_events PRIVATE Catch2::Catch2 neuron_gpu
+                                                          neuron_gpu_upload fmt::fmt)
+  target_compile_definitions(testneuron_gpu_net_events PRIVATE NRN_ENABLE_GPU)
+  target_compile_options(testneuron_gpu_net_events PRIVATE ${_test_gpu_offload_flags})
+  target_link_options(testneuron_gpu_net_events PUBLIC ${_test_gpu_offload_flags})
+  nrn_add_test(
+    GROUP unit_tests
+    NAME gpu_net_events
+    REQUIRES gpu
+    COMMAND $<TARGET_FILE:testneuron_gpu_net_events> "[gpu][net_events]")
+
+  add_executable(testneuron_gpu_net_receive_buffer
+                 unit_tests/gpu/offload_main.cpp unit_tests/gpu/net_receive_buffer.cpp)
+  cpp_cc_configure_sanitizers(TARGET testneuron_gpu_net_receive_buffer)
+  target_include_directories(
+    testneuron_gpu_net_receive_buffer PRIVATE ${PROJECT_SOURCE_DIR}/external/fmt/include
+                                              ${CMAKE_BINARY_DIR}/src/nrnoc)
+  target_link_libraries(testneuron_gpu_net_receive_buffer PRIVATE Catch2::Catch2 neuron_gpu
+                                                                  neuron_gpu_upload fmt::fmt)
+  target_compile_definitions(testneuron_gpu_net_receive_buffer PRIVATE NRN_ENABLE_GPU)
+  target_compile_options(testneuron_gpu_net_receive_buffer PRIVATE ${_test_gpu_offload_flags})
+  target_link_options(testneuron_gpu_net_receive_buffer PUBLIC ${_test_gpu_offload_flags})
+  nrn_add_test(
+    GROUP unit_tests
+    NAME gpu_net_receive
+    REQUIRES gpu
+    COMMAND $<TARGET_FILE:testneuron_gpu_net_receive_buffer> "[gpu][net_receive]")
+endif()
+
+# Compile-only guard: cellorder.cpp OpenACC + NRN_ENABLE_GPU (solve_interleaved GPU dispatch).
+if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
+  add_library(cellorder_openacc_smoke OBJECT
+              ${PROJECT_SOURCE_DIR}/src/coreneuron/permute/cellorder.cpp)
+  separate_arguments(_cellorder_openacc_flags UNIX_COMMAND "${CORENRN_ACC_COMP_FLAGS}")
+  target_compile_options(cellorder_openacc_smoke PRIVATE ${_cellorder_openacc_flags})
+  target_compile_definitions(cellorder_openacc_smoke PRIVATE CORENEURON_ENABLE_GPU NRN_ENABLE_GPU)
+  target_include_directories(cellorder_openacc_smoke PRIVATE ${NRN_INCLUDE_DIRS}
+                                                             ${CMAKE_BINARY_DIR}/generated)
+  target_include_directories(cellorder_openacc_smoke SYSTEM
+                             PRIVATE ${PROJECT_SOURCE_DIR}/external/fmt/include)
+  nrn_add_test(
+    GROUP unit_tests
+    NAME cellorder_openacc_smoke
+    REQUIRES gpu
+    COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target cellorder_openacc_smoke)
+endif()
+
 # =============================================================================
 # Add ringtest
 # =============================================================================
@@ -244,7 +422,8 @@ if(NRN_ENABLE_PYTHON)
         PRELOAD_SANITIZER
         ENVIRONMENT "CC=${CMAKE_C_COMPILER}"
         COMMAND "${exe}" ${pytest} "./test/${group}"
-        SCRIPT_PATTERNS "test/${group}/*.json" "test/${group}/*.py")
+        SCRIPT_PATTERNS "test/${group}/*.json" "test/${group}/*.py"
+                        "test/coreneuron/backend_helper.py")
     endforeach()
     # Focused CPU gate for network SoA dual-write (NetStim→ExpSyn).
     nrn_add_test(
@@ -466,6 +645,8 @@ if(NRN_ENABLE_PYTHON)
         ${MPIEXEC_POSTFLAGS})
   endif()
 
+  set(coreneuron_backend_helper_script test/coreneuron/backend_helper.py)
+
   # This test uses the standard NEURON installation (without nrnivmodl having been run)
   if(CORENRN_ENABLE_SHARED)
     nrn_add_test_group(
@@ -477,7 +658,7 @@ if(NRN_ENABLE_PYTHON)
       GROUP coreneuron_standalone
       NAME test_nrn_corenrn_standalone
       REQUIRES coreneuron ${modtests_preload_sanitizer}
-      SCRIPT_PATTERNS test/coreneuron/test_psolve.py
+      SCRIPT_PATTERNS ${coreneuron_backend_helper_script} test/coreneuron/test_psolve.py
       ENVIRONMENT COVERAGE_FILE=.coverage.coreneuron_standalone_test_psolve_py
                   ${sonata_zero_gid_env} ${nrnpython_mpi_env}
       COMMAND ${modtests_launch_py} test/coreneuron/test_psolve.py)
@@ -526,7 +707,7 @@ if(NRN_ENABLE_PYTHON)
     CORENEURON
     NAME coreneuron_modtests
     # This get used in 4 tests so make it the default and override in other tests.
-    SCRIPT_PATTERNS test/coreneuron/test_spikes.py
+    SCRIPT_PATTERNS ${coreneuron_backend_helper_script} test/coreneuron/test_spikes.py
     MODFILE_PATTERNS
       "test/coreneuron/mod files/*.mod" "test/coreneuron/mod files/axial.inc"
       test/pytest_coreneuron/unitstest.mod test/pytest_coreneuron/version_macros.mod
@@ -555,7 +736,7 @@ if(NRN_ENABLE_PYTHON)
       GROUP coreneuron_modtests
       NAME fornetcon_py_${processor}
       REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
-      SCRIPT_PATTERNS test/coreneuron/test_fornetcon.py
+      SCRIPT_PATTERNS ${coreneuron_backend_helper_script} test/coreneuron/test_fornetcon.py
       ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
                   COVERAGE_FILE=.coverage.coreneuron_fornetcon_py
       COMMAND ${modtests_launch_py} test/coreneuron/test_fornetcon.py)
@@ -563,7 +744,7 @@ if(NRN_ENABLE_PYTHON)
       GROUP coreneuron_modtests
       NAME direct_py_${processor}
       REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
-      SCRIPT_PATTERNS test/coreneuron/test_direct.py
+      SCRIPT_PATTERNS ${coreneuron_backend_helper_script} test/coreneuron/test_direct.py
       ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
                   COVERAGE_FILE=.coverage.coreneuron_direct_py
       COMMAND ${modtests_launch_py} test/coreneuron/test_direct.py)
@@ -593,7 +774,7 @@ if(NRN_ENABLE_PYTHON)
       GROUP coreneuron_modtests
       NAME fast_imem_py_${processor}
       REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
-      SCRIPT_PATTERNS test/pytest_coreneuron/test_fast_imem.py
+      SCRIPT_PATTERNS ${coreneuron_backend_helper_script} test/pytest_coreneuron/test_fast_imem.py
       ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
                   COVERAGE_FILE=.coverage.coreneuron_fast_imem_py
       COMMAND ${modtests_launch_py} test/pytest_coreneuron/test_fast_imem.py)
@@ -601,7 +782,7 @@ if(NRN_ENABLE_PYTHON)
       GROUP coreneuron_modtests
       NAME datareturn_py_${processor}
       REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
-      SCRIPT_PATTERNS test/coreneuron/test_datareturn.py
+      SCRIPT_PATTERNS ${coreneuron_backend_helper_script} test/coreneuron/test_datareturn.py
       ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
                   COVERAGE_FILE=.coverage.coreneuron_datareturn_py
       COMMAND ${modtests_launch_py} test/coreneuron/test_datareturn.py)
@@ -609,7 +790,7 @@ if(NRN_ENABLE_PYTHON)
       GROUP coreneuron_modtests
       NAME test_units_py_${processor}
       REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
-      SCRIPT_PATTERNS test/coreneuron/test_units.py
+      SCRIPT_PATTERNS ${coreneuron_backend_helper_script} test/coreneuron/test_units.py
       ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
                   COVERAGE_FILE=.coverage.coreneuron_test_units_py
       COMMAND ${modtests_launch_py} test/coreneuron/test_units.py)
@@ -617,7 +798,7 @@ if(NRN_ENABLE_PYTHON)
       GROUP coreneuron_modtests
       NAME test_netmove_py_${processor}
       REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
-      SCRIPT_PATTERNS test/coreneuron/test_netmove.py
+      SCRIPT_PATTERNS ${coreneuron_backend_helper_script} test/coreneuron/test_netmove.py
       ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
                   COVERAGE_FILE=.coverage.coreneuron_test_netmove_py
       COMMAND ${modtests_launch_py} test/coreneuron/test_netmove.py)
@@ -625,7 +806,7 @@ if(NRN_ENABLE_PYTHON)
       GROUP coreneuron_modtests
       NAME test_pointer_py_${processor}
       REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
-      SCRIPT_PATTERNS test/coreneuron/test_pointer.py
+      SCRIPT_PATTERNS ${coreneuron_backend_helper_script} test/coreneuron/test_pointer.py
       ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
                   COVERAGE_FILE=.coverage.coreneuron_test_pointer_py
       COMMAND ${modtests_launch_py} test/coreneuron/test_pointer.py)
@@ -633,7 +814,7 @@ if(NRN_ENABLE_PYTHON)
       GROUP coreneuron_modtests
       NAME test_watchrange_py_${processor}
       REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
-      SCRIPT_PATTERNS test/coreneuron/test_watchrange.py
+      SCRIPT_PATTERNS ${coreneuron_backend_helper_script} test/coreneuron/test_watchrange.py
       ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
                   COVERAGE_FILE=.coverage.coreneuron_test_watchrange_py
       COMMAND ${modtests_launch_py} test/coreneuron/test_watchrange.py)
@@ -641,7 +822,7 @@ if(NRN_ENABLE_PYTHON)
       GROUP coreneuron_modtests
       NAME test_psolve_py_${processor}
       REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
-      SCRIPT_PATTERNS test/coreneuron/test_psolve.py
+      SCRIPT_PATTERNS ${coreneuron_backend_helper_script} test/coreneuron/test_psolve.py
       ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
                   COVERAGE_FILE=.coverage.coreneuron_test_psolve_py
       COMMAND ${modtests_launch_py} test/coreneuron/test_psolve.py)
@@ -649,7 +830,7 @@ if(NRN_ENABLE_PYTHON)
       GROUP coreneuron_modtests
       NAME test_ba_py_${processor}
       REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
-      SCRIPT_PATTERNS test/coreneuron/test_ba.py
+      SCRIPT_PATTERNS ${coreneuron_backend_helper_script} test/coreneuron/test_ba.py
       ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
                   COVERAGE_FILE=.coverage.coreneuron_test_ba_py
       COMMAND ${modtests_launch_py} test/coreneuron/test_ba.py)
@@ -657,7 +838,7 @@ if(NRN_ENABLE_PYTHON)
       GROUP coreneuron_modtests
       NAME test_nmodlrandom_py_${processor}
       REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
-      SCRIPT_PATTERNS test/coreneuron/test_nmodlrandom.py
+      SCRIPT_PATTERNS ${coreneuron_backend_helper_script} test/coreneuron/test_nmodlrandom.py
       ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
                   COVERAGE_FILE=.coverage.coreneuron_test_nmodlrandom_py
       COMMAND ${modtests_launch_py} test/coreneuron/test_nmodlrandom.py)
@@ -675,7 +856,7 @@ if(NRN_ENABLE_PYTHON)
       GROUP coreneuron_modtests
       NAME test_natrans_py_${processor}
       REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
-      SCRIPT_PATTERNS test/gjtests/test_natrans.py
+      SCRIPT_PATTERNS ${coreneuron_backend_helper_script} test/gjtests/test_natrans.py
       ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
                   COVERAGE_FILE=.coverage.coreneuron_test_natrans_py
       COMMAND ${modtests_launch_py} test/gjtests/test_natrans.py)
@@ -685,7 +866,8 @@ if(NRN_ENABLE_PYTHON)
         GROUP coreneuron_modtests
         NAME array_variable_transfer_run_mode_${run_mode}_py_${processor}
         REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
-        SCRIPT_PATTERNS test/coreneuron/test_array_variables_transfer.py
+        SCRIPT_PATTERNS ${coreneuron_backend_helper_script}
+                        test/coreneuron/test_array_variables_transfer.py
         ENVIRONMENT ${processor_env} NRN_TEST_RUN_MODE=${run_mode} NRN_TEST_FILE_MODE=false
         COMMAND ${modtests_launch_py} test/coreneuron/test_array_variables_transfer.py)
     endforeach()
@@ -694,7 +876,8 @@ if(NRN_ENABLE_PYTHON)
       GROUP coreneuron_modtests
       NAME array_variable_transfer_file_mode_py_${processor}
       REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
-      SCRIPT_PATTERNS test/coreneuron/test_array_variables_transfer.py
+      SCRIPT_PATTERNS ${coreneuron_backend_helper_script}
+                      test/coreneuron/test_array_variables_transfer.py
       ENVIRONMENT ${processor_env} NRN_TEST_RUN_MODE=0 NRN_TEST_FILE_MODE=true
       COMMAND ${modtests_launch_py} test/coreneuron/test_array_variables_transfer.py)
 
@@ -772,6 +955,126 @@ if(NRN_ENABLE_PYTHON)
       ENVIRONMENT ${sonata_zero_gid_env} ${nrnpython_mpi_env} ${processor_env}
       COMMAND ${modtests_launch_py} test/nmodl/test_kinetic.py)
   endforeach()
+
+  # G4 native GPU modtests (NRN_GPU_BACKEND_TEST=native): parity with coreneuron_modtests *_py_gpu.
+  if(NRN_ENABLE_GPU)
+    set(native_gpu_test_env NRN_GPU_BACKEND_TEST=native NRN_GPU_PERMUTE=2 OMP_NUM_THREADS=1)
+    set(g4_native_helper_script ${coreneuron_backend_helper_script})
+    # Native GPU exercises OpenACC in libnrniv; launch via special (not bare python/pytest).
+    set(native_modtests_launch_py special -notatty -python)
+    nrn_add_test(
+      GROUP unit_tests
+      NAME gpu_device_assign_mpi
+      REQUIRES gpu mpi python
+      PROCESSORS 2
+      ENVIRONMENT ${native_gpu_test_env} NEURON_INIT_MPI=1
+      SCRIPT_PATTERNS test/pyscripts/test_gpu_device_assign_mpi.py
+      COMMAND
+        ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
+        nrniv ${MPIEXEC_POSTFLAGS} -mpi -notatty -python
+        test/pyscripts/test_gpu_device_assign_mpi.py)
+    foreach(
+      native_gpu_test
+      fornetcon:test/coreneuron/test_fornetcon.py
+      direct:test/coreneuron/test_direct.py
+      spikes:test/coreneuron/test_spikes.py
+      fast_imem:test/pytest_coreneuron/test_fast_imem.py
+      datareturn:test/coreneuron/test_datareturn.py
+      test_units:test/coreneuron/test_units.py
+      test_netmove:test/coreneuron/test_netmove.py
+      test_pointer:test/coreneuron/test_pointer.py
+      test_watchrange:test/coreneuron/test_watchrange.py
+      test_psolve:test/coreneuron/test_psolve.py
+      test_ba:test/coreneuron/test_ba.py
+      test_nmodlrandom:test/coreneuron/test_nmodlrandom.py
+      test_nmodlrandom_syntax:test/coreneuron/test_nmodlrandom_syntax.py
+      test_natrans:test/gjtests/test_natrans.py)
+      string(REPLACE ":" ";" native_parts "${native_gpu_test}")
+      list(GET native_parts 0 native_name)
+      list(GET native_parts 1 native_script)
+      nrn_add_test(
+        GROUP coreneuron_modtests
+        NAME ${native_name}_py_gpu_native
+        REQUIRES gpu
+        SCRIPT_PATTERNS ${g4_native_helper_script} ${native_script}
+        ENVIRONMENT ${native_gpu_test_env} ${sonata_zero_gid_env} ${nrnpython_mpi_env}
+        COMMAND ${native_modtests_launch_py} ${native_script})
+    endforeach()
+    nrn_add_test(
+      GROUP coreneuron_modtests
+      NAME spikes_file_mode_py_gpu_native
+      REQUIRES gpu
+      SCRIPT_PATTERNS ${g4_native_helper_script} test/coreneuron/test_spikes.py
+      ENVIRONMENT ${native_gpu_test_env} ${sonata_zero_gid_env} ${nrnpython_mpi_env}
+                  NRN_TEST_SPIKES_FILE_MODE=1
+      COMMAND ${native_modtests_launch_py} test/coreneuron/test_spikes.py)
+    foreach(run_mode RANGE 2)
+      nrn_add_test(
+        GROUP coreneuron_modtests
+        NAME array_variable_transfer_run_mode_${run_mode}_py_gpu_native
+        REQUIRES gpu
+        SCRIPT_PATTERNS ${g4_native_helper_script} test/coreneuron/test_array_variables_transfer.py
+        ENVIRONMENT ${native_gpu_test_env} NRN_TEST_RUN_MODE=${run_mode} NRN_TEST_FILE_MODE=false
+        COMMAND ${native_modtests_launch_py} test/coreneuron/test_array_variables_transfer.py)
+    endforeach()
+    nrn_add_test(
+      GROUP coreneuron_modtests
+      NAME array_variable_transfer_file_mode_py_gpu_native
+      REQUIRES gpu
+      SCRIPT_PATTERNS ${g4_native_helper_script} test/coreneuron/test_array_variables_transfer.py
+      ENVIRONMENT ${native_gpu_test_env} NRN_TEST_RUN_MODE=0 NRN_TEST_FILE_MODE=true
+      COMMAND ${native_modtests_launch_py} test/coreneuron/test_array_variables_transfer.py)
+    if(NRN_ENABLE_MPI)
+      set(native_modtests_launch_py_mpi
+          ${MPIEXEC_NAME}
+          ${MPIEXEC_NUMPROC_FLAG}
+          2
+          ${MPIEXEC_OVERSUBSCRIBE}
+          ${MPIEXEC_PREFLAGS}
+          special
+          ${MPIEXEC_POSTFLAGS}
+          -notatty
+          -python)
+      set(native_modtests_launch_py_mpi_subworlds
+          ${MPIEXEC_NAME}
+          ${MPIEXEC_NUMPROC_FLAG}
+          6
+          ${MPIEXEC_OVERSUBSCRIBE}
+          ${MPIEXEC_PREFLAGS}
+          special
+          ${MPIEXEC_POSTFLAGS}
+          -notatty
+          -python)
+      nrn_find_python_module(MODULE mpi4py)
+      if(mpi4py_FOUND)
+        nrn_add_test(
+          GROUP coreneuron_modtests
+          NAME spikes_mpi_py_gpu_native
+          REQUIRES gpu mpi
+          PROCESSORS 2
+          SCRIPT_PATTERNS ${g4_native_helper_script} test/coreneuron/test_spikes.py
+          ENVIRONMENT ${native_gpu_test_env} NRN_TEST_SPIKES_MPI4PY=1
+          COMMAND ${native_modtests_launch_py_mpi} test/coreneuron/test_spikes.py)
+      endif()
+      nrn_add_test(
+        GROUP coreneuron_modtests
+        NAME spikes_mpi_file_mode_py_gpu_native
+        REQUIRES gpu mpi
+        PROCESSORS 2
+        SCRIPT_PATTERNS ${g4_native_helper_script} test/coreneuron/test_spikes.py
+        ENVIRONMENT ${native_gpu_test_env} NRN_TEST_SPIKES_NRNMPI_INIT=1 NRN_TEST_SPIKES_FILE_MODE=1
+        COMMAND ${native_modtests_launch_py_mpi} test/coreneuron/test_spikes.py)
+      nrn_add_test(
+        GROUP coreneuron_modtests
+        NAME test_subworlds_py_gpu_native
+        REQUIRES gpu mpi
+        SCRIPT_PATTERNS test/coreneuron/test_subworlds.py
+        PROCESSORS 6
+        ENVIRONMENT ${native_gpu_test_env} ${nrnpython_mpi_env}
+                    COVERAGE_FILE=.coverage.native_gpu_test_subworlds_py
+        COMMAND ${native_modtests_launch_py_mpi_subworlds} test/coreneuron/test_subworlds.py)
+    endif()
+  endif()
 
   if(NRN_ENABLE_MUSIC)
     set(music_launch_command

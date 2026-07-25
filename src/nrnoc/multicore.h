@@ -71,6 +71,16 @@ struct NrnThread {
      */
     std::size_t _node_data_offset{};
 
+    /** @brief Non-zero when this thread participates in GPU execution (PR 5+). */
+    int compute_gpu = 0;
+
+    /** @brief OpenACC/CUDA stream index for async kernels on this thread. */
+    int stream_id = 0;
+
+    int _net_send_buffer_size = 0;
+    int _net_send_buffer_cnt = 0;
+    int* _net_send_buffer = nullptr;
+
     [[nodiscard]] double* node_a_storage();
     [[nodiscard]] double* node_area_storage();
     [[nodiscard]] double* node_b_storage();

@@ -11,6 +11,7 @@
 #if USECVODE
 #include "cvodeobj.h"
 #include "netcvode.h"
+#include "vrecitem.h"
 #else
 class Cvode;
 #endif
@@ -83,6 +84,18 @@ void fixed_play_continuous(NrnThread* nt) {
     if (net_cvode_instance) {
         net_cvode_instance->fixed_play_continuous(nt);
     }
+}
+
+bool nrn_thread_has_fixed_play(NrnThread* nt) {
+    if (!net_cvode_instance || !net_cvode_instance->fixed_play_ || !nt) {
+        return false;
+    }
+    for (auto* pr: *net_cvode_instance->fixed_play_) {
+        if (pr->ith_ == nt->id) {
+            return true;
+        }
+    }
+    return false;
 }
 
 void fixed_record_continuous(neuron::model_sorted_token const& cache_token, NrnThread& nt) {

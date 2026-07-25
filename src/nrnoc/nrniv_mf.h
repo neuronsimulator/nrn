@@ -69,6 +69,8 @@ int point_register_mech(const char**,
 extern int nrn_get_mechtype(const char*);
 extern void nrn_writes_conc(int, int);
 extern void add_nrn_has_net_event(int);
+extern void hoc_register_net_send_buffering(int);
+extern void hoc_register_net_receive_buffering(void (*)(NrnThread*), int);
 void hoc_register_cvode(int, nrn_ode_count_t, nrn_ode_map_t, nrn_ode_spec_t, nrn_ode_matsol_t);
 void hoc_register_synonym(int, nrn_ode_synonym_t);
 extern void register_destructor(Pvmp);

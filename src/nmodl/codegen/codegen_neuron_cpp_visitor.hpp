@@ -158,6 +158,20 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
      */
     bool optimize_ion_variable_copies() const override;
 
+    /**
+     * Print accelerator annotations indicating data presence on device.
+     * Empty for the CPU NEURON backend; overridden by CodegenNeuronAccVisitor.
+     */
+    virtual void print_kernel_data_present_annotation_block_begin();
+
+    /**
+     * Print matching block end of accelerator annotations for data presence on device.
+     */
+    virtual void print_kernel_data_present_annotation_block_end();
+
+    /** Hook after nrn_cur for GPU net_send buffer flush (ACC backend overrides). */
+    virtual void print_after_nrn_cur_gpu_net_send_flush();
+
     /****************************************************************************************/
     /*                         Printing routines for code generation                        */
     /****************************************************************************************/
@@ -226,13 +240,13 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
      *
      * This includes the HOC/Python wrappers.
      */
-    void print_function_definitions();
+    virtual void print_function_definitions();
 
 
     /**
      * Print all `check_*` function declarations
      */
-    void print_check_table_entrypoint();
+    virtual void print_check_table_entrypoint();
 
 
     void print_function_or_procedure(const ast::Block& node,
@@ -259,8 +273,11 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
 
     /** Print the setup code for HOC/Py wrapper.
      */
-    void print_hoc_py_wrapper_setup(const ast::Block* function_or_procedure_block,
-                                    InterpreterWrapper wrapper_type);
+    virtual void print_hoc_py_wrapper_setup(const ast::Block* function_or_procedure_block,
+                                            InterpreterWrapper wrapper_type);
+
+    /** Hook for backends to declare kernel-local state before table updates in HOC wrappers. */
+    virtual void print_hoc_py_wrapper_before_table_update();
 
 
     /** Print the code that calls the impl from the HOC/Py wrapper.
@@ -572,6 +589,15 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
     void print_global_function_common_code(BlockType type,
                                            const std::string& function_name = "") override;
 
+    /** GPU backends may upload *_global before mechanism kernels run. */
+    virtual void print_kernel_global_device_setup();
+
+    /** GPU backends may copyin mechanism instance SOA slices before parallel loops. */
+    virtual void print_kernel_instance_data_copyin();
+
+    /** GPU backends register fixed-step phases after mech_type is assigned. */
+    virtual void print_gpu_phase_registration();
+
     /**
      * Prints setup code for entrypoints from NEURON.
      *
@@ -581,7 +607,7 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
      *
      * This variation prints the fast entrypoint, where NEURON is fully initialized and setup.
      */
-    void print_entrypoint_setup_code_from_memb_list();
+    virtual void print_entrypoint_setup_code_from_memb_list();
 
 
     /**
@@ -590,14 +616,14 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
      * See `print_entrypoint_setup_code_from_memb_list`. This variation should be used when one only
      * has access to a `Prop`, but not the full `Memb_list`.
      */
-    void print_entrypoint_setup_code_from_prop();
+    virtual void print_entrypoint_setup_code_from_prop();
 
 
     /**
      * Print the \c nrn\_init function definition
      * \param skip_init_check \c true to generate code executing the initialization conditionally
      */
-    void print_nrn_init(bool skip_init_check = true);
+    virtual void print_nrn_init(bool skip_init_check = true);
 
     /** Print the initial block. */
     void print_initial_block(const ast::InitialBlock* node);
@@ -628,7 +654,7 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
      * Print nrn_jacob function definition
      *
      */
-    void print_nrn_jacob();
+    virtual void print_nrn_jacob();
 
 
     /****************************************************************************************/
@@ -647,7 +673,7 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
     /****************************************************************************************/
 
     std::string nrn_current_arguments();
-    ParamVector nrn_current_parameters();
+    virtual ParamVector nrn_current_parameters();
 
     /**
      * Print the \c nrn_current kernel
@@ -746,11 +772,11 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
 
     /** Print `make_*_instance`.
      */
-    void print_make_instance() const;
+    virtual void print_make_instance() const;
 
     /** Print `make_*_node_data`.
      */
-    void print_make_node_data() const;
+    virtual void print_make_node_data() const;
 
     /**
      * Set v_unused (voltage) for NRN_PRCELLSTATE feature

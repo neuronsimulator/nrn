@@ -90,6 +90,7 @@ add_executable(
   codegen/codegen_utils.cpp
   codegen/codegen_coreneuron_cpp_visitor.cpp
   codegen/codegen_neuron_cpp_visitor.cpp
+  codegen/codegen_neuron_acc_visitor.cpp
   codegen/transform.cpp
   codegen/codegen_compatibility_visitor.cpp)
 
@@ -128,6 +129,7 @@ target_link_libraries(
           printer
           ${NMODL_WRAPPER_LIBS}
           nmodl_test_flags)
+target_compile_definitions(testcodegen PRIVATE NRN_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
 target_link_libraries(testprinter PRIVATE printer util nmodl_test_flags)
 target_link_libraries(testsymtab PRIVATE symtab lexer util nmodl_test_flags)
 target_link_libraries(testunitlexer PRIVATE lexer util nmodl_test_flags)

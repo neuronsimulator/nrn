@@ -38,6 +38,11 @@ std::vector<int> interleave_order(int ith, int ncell, int nnode, int* parent);
 void create_interleave_info();
 void destroy_interleave_info();
 
+#if !CORENRN_BUILD && defined(NRN_ENABLE_GPU)
+/** Number of cells on NrnThread @p ith (for InterleaveInfo permute-1 upload). */
+int interleave_ncell_for_thread(int ith);
+#endif
+
 #if CORENRN_BUILD
 /**
  *
@@ -56,7 +61,7 @@ class InterleaveInfo;  // forward declaration
  *
  * \brief CUDA branch of the solve_interleaved with interleave_permute_type == 2.
  *
- * This branch is activated in runtime with the --cuda-interface CLI flag
+ * Activated in runtime with the --cuda-interface CLI flag.
  */
 void solve_interleaved2_launcher(NrnThread* nt, InterleaveInfo* info, int ncore, void* stream);
 #endif
@@ -145,4 +150,22 @@ void copy_align_array(T*& dest, T* src, size_t n) {
 #if INTERLEAVE_DEBUG
 void mk_cell_indices();
 #endif
-}  // namespace coreneuron
+}  // namespace coreneuron/neuron
+
+#if !CORENRN_BUILD && defined(NRN_ENABLE_GPU)
+extern "C" void coreneuron_solve_interleaved2_launcher_ptrs(double* d_a,
+                                                            double* d_b,
+                                                            double* d_d,
+                                                            double* d_rhs,
+                                                            int* d_parent,
+                                                            void* interleave_info,
+                                                            int ncore,
+                                                            void* stream);
+
+/** vec_v += (secondorder ? 2 : 1) * vec_rhs on device after CUDA solve_interleaved2. */
+extern "C" void coreneuron_update_voltage_launcher(double* d_v,
+                                                   double* d_rhs,
+                                                   int n,
+                                                   int secondorder,
+                                                   void* stream);
+#endif

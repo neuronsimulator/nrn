@@ -196,17 +196,19 @@ def test_axial():
 
     chk(std, run(tstop))
 
-    from neuron import coreneuron
+    from backend_helper import (
+        disable_test_backend,
+        enable_test_backend,
+        iter_permute_values,
+        set_permute,
+    )
 
-    coreneuron.verbose = 0
-    coreneuron.enable = True
-    coreneuron.gpu = bool(strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false")))
+    enable_test_backend()
 
-    # test (0,1) for CPU and (1,2) for GPU
-    for perm in coreneuron.valid_cell_permute():
-        coreneuron.cell_permute = perm
+    for perm in iter_permute_values():
+        set_permute(perm)
         chk(std, run(tstop))
-    coreneuron.enable = False
+    disable_test_backend()
     del m
 
 
@@ -352,5 +354,8 @@ def cmp_spks(spikes, dir, chkpntdirs):
 
 
 if __name__ == "__main__":
+    from backend_helper import is_native_backend_test
+
     test_axial()
-    test_checkpoint()
+    if not is_native_backend_test():
+        test_checkpoint()

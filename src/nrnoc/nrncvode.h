@@ -14,6 +14,7 @@ extern void nrn_record_init();
 extern void nrn_play_init();
 void fixed_record_continuous(neuron::model_sorted_token const&, NrnThread& nt);
 extern void fixed_play_continuous(NrnThread* nt);
+extern bool nrn_thread_has_fixed_play(NrnThread* nt);
 extern void nrn_solver_prepare();
 extern "C" void nrn_random_play();
 extern void nrn_daspk_init_step(double, double, int);

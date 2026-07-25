@@ -1,4 +1,5 @@
 import sys
+import warnings
 
 
 class CoreNEURONContextHelper(object):
@@ -67,6 +68,25 @@ class coreneuron(object):
     False
     """
 
+    def _warn_deprecated(self, old_name, new_name):
+        warnings.warn(
+            "coreneuron.{} is deprecated; use {} instead".format(old_name, new_name),
+            DeprecationWarning,
+            stacklevel=3,
+        )
+
+    def _sync_to_gpu_module(self):
+        try:
+            from neuron import gpu as ngpu
+        except ImportError:
+            return
+        ngpu.enable = self._gpu
+        if self._gpu:
+            ngpu.backend = "coreneuron"
+        ngpu.device_count = self._num_gpus
+        if self._cell_permute is not None:
+            ngpu.permute = self._cell_permute
+
     def __init__(self):
         self._enable = False
         self._gpu = False
@@ -119,7 +139,9 @@ class coreneuron(object):
 
     @gpu.setter
     def gpu(self, value):
+        self._warn_deprecated("gpu", "gpu.enable (and gpu.backend for native)")
         self._gpu = bool(int(value))
+        self._sync_to_gpu_module()
         # If cell_permute has been set to a value incompatible with the new GPU
         # setting, change it and print a warning.
         if (
@@ -142,7 +164,9 @@ class coreneuron(object):
 
     @num_gpus.setter
     def num_gpus(self, value):
+        self._warn_deprecated("num_gpus", "gpu.device_count")
         self._num_gpus = int(value)
+        self._sync_to_gpu_module()
 
     @property
     def file_mode(self):
@@ -166,9 +190,11 @@ class coreneuron(object):
 
     @cell_permute.setter
     def cell_permute(self, value):
+        self._warn_deprecated("cell_permute", "gpu.permute")
         value = int(value)
         assert value in self.valid_cell_permute()
         self._cell_permute = value
+        self._sync_to_gpu_module()
 
     @property
     def warp_balance(self):

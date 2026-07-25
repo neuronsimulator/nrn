@@ -1,43 +1,54 @@
-# Agent rules — NEURON CPU network SoA adoption
+# Agent rules — native GPU on heap-free network SoA
 
-Full handoff and starting prompt: **`GROK-NETWORK-SOA.md`** (read on new sessions).
+Integration branch: **`local/gpu-native-net-soa`** = `local/cpu-net-soa-heap-free`
+(PR #3826) + `local/gpu-native-qualification`.
+
+| Doc | Role |
+|-----|------|
+| **`GROK-GPU-NATIVE.md`** | GPU qualification handoff (read on new sessions) |
+| **`GROK-NETWORK-SOA.md`** | CPU network SoA / heap-free charter |
+| **`doc/network-soa/heap-free.md`** | Weight-index ABI, packing A |
 
 ## Workspace
 
-- Repo worktree: `~/neuron/cpu_net_soa`.
-  - `local/cpu-network-soa` — dual-write PR #3822 (keep green with master).
-  - `local/cpu-net-soa-heap-free` — heap-free follow-on (**branch only**, no PR); rebase onto PR tip.
-- Primary git object store: `~/neuron/nrngpu` — commit from **this** worktree cwd.
-- Sibling GPU track (paused network buffers): `~/neuron/nrngpu` @ `local/gpu-native-qualification`.
+- Primary tree: `~/neuron/nrngpu` (this tree). Commit here.
+- Branch: `local/gpu-native-net-soa`.
+- Do not treat `~/neuron/core-neuron-gpu` as the git workspace (salvage only).
+- CPU-only SoA worktree (optional): `~/neuron/cpu_net_soa`.
 
-## Build
+## Build and env (GPU)
 
 ```bash
-source ~/neuron/bin/nrnenv nrngpu build-cpu-net-soa   # create on first session if missing
-# or: mkdir -p ~/neuron/cpu_net_soa/build && cd build && cmake .. -DNRN_ENABLE_GPU=OFF ...
+source ~/neuron/bin/nrnenv nrngpu build-gpu
+export NRN_NATIVE_GPU_DEVICE_NONVINT=1
+export NRN_GPU_BACKEND_TEST=native
+export NRN_GPU_PERMUTE=2
 ```
 
-Prefer CPU-only or default GPU-off builds until integration explicitly needs GPU mirrors.
+Build: `~/neuron/nrngpu/build-gpu` (`./grok-bld` or `ninja` / `ninja install`).
 
-## Scope
+## GPU test harness
 
-- Network SoA: `Point_process`, `NetCon`, `PreSyn`, `weights`, `SelfEvent` in `neuron::container` style.
-- HOC wrappers as permutation-stable handles over backing store — **not** a second pointer graph.
-- **Heap-free branch:** CoreNEURON-shaped sim path **plus** host packing / dynamic `nthread` between runs; full NEURON edit epoch. Charter: `doc/network-soa/heap-free.md`.
-- **Out of scope:** Stage 2/3 GPU `net_buf_receive`, ringtest GPU network buffers (resume after SoA merges to master).
+```bash
+cd ~/neuron/nrngpu/build-gpu/test/external_ringtest/neuron_gpu_native_mpi
+./prcellstate_native_gpu.sh 32 1
+```
+
+Use **full shell permissions** for GPU/OpenACC/MPI. Confirm GPU with `nvidia-smi -L`
+and `Info : 1 GPUs shared by 1 ranks per node` in `special` output.
+
+## Design constraints
+
+- **Full GPU fixed steps** for ringtest (CoreNEURON-style). No per-step host
+  post-solve voltage path on the hot path (no `vec_rhs` pull → host `nrn_update_voltage`
+  → push `vec_v` as the primary fix).
+- **Heap-free network:** sim-path identity is `weight_index` only (PR #3826). Do not
+  reintroduce `NetCon::weight_` heap or Stage-2 `_receive_weight` shims.
+- Stage 1 NetReceiveBuffer is present; runtime inactive until Stage 2+ registrations
+  use Weight SoA indices.
+- Long-term gate: 688 spikes @ `tstop=100`, gid 32 CPU parity via `rdcellstate`.
 
 ## Execute, don’t delegate
 
-Run builds and tests yourself (`ctest`, ringtest CPU spike parity). Do not tell the user what to run unless blocked.
-
-## Key references
-
-| Topic | Path |
-|-------|------|
-| Handoff | `GROK-NETWORK-SOA.md` |
-| Heap-free charter | `doc/network-soa/heap-free.md` |
-| Phase 0 scaffold | `doc/network-soa-phase0.md` |
-| Node/mechanism SoA pattern | `src/neuron/container/soa_container.hpp`, `data_handle.hpp` |
-| PreSyn `thvar_` handle (prototype) | `src/nrncvode/netcon.h` |
-| CoreNEURON layout reference | `src/coreneuron/sim/multicore.hpp`, `network/netcon.hpp` |
-| nrncore export (prior art) | `src/nrniv/nrncore_write/` |
+Run commands yourself (`prcellstate_native_gpu.sh`, `ninja`, `rdcellstate`). Do not tell
+the user what to run unless blocked (e.g. no GPU after `nvidia-smi` fails).

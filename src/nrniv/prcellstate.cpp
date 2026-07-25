@@ -7,6 +7,12 @@
 #include "neuron.h"
 #include "utils/enumerate.h"
 
+#if defined(NRN_ENABLE_GPU)
+#include "neuron/gpu/config.hpp"
+#include "neuron/gpu/download.hpp"
+#include "neuron/gpu/sync.hpp"
+#endif
+
 #define precision 15
 
 void nrn_prcellstate(int gid, const char* filesuffix);
@@ -121,12 +127,12 @@ static void pr_realcell(PreSyn& ps, NrnThread& nt, FILE* f) {
     }
     fprintf(f, "%d nodes  %d is the threshold node\n", cnt, cellnodes[inode] - 1);
     fprintf(f, " threshold %.*g\n", precision, ps.threshold_);
-    fprintf(f, "inode parent area a b\n");
+    fprintf(f, "inode parent area a b d rhs\n");
     for (int i = 0; i < nt.end; ++i)
         if (cellnodes[i] >= 0) {
             Node* nd = nt._v_node[i];
             fprintf(f,
-                    "%d %d %.*g %.*g %.*g\n",
+                    "%d %d %.*g %.*g %.*g %.*g %.*g\n",
                     cellnodes[i],
                     i < nt.ncell ? -1 : cellnodes[nt._v_parent_index[i]],
                     precision,
@@ -134,7 +140,11 @@ static void pr_realcell(PreSyn& ps, NrnThread& nt, FILE* f) {
                     precision,
                     nd->a(),
                     precision,
-                    nd->b());
+                    nd->b(),
+                    precision,
+                    nd->d(),
+                    precision,
+                    nd->rhs());
         }
     fprintf(f, "inode v\n");
     for (int i = 0; i < nt.end; ++i)
@@ -161,6 +171,12 @@ void nrn_prcellstate(int gid, const char* suffix) {
     if (!ps) {
         return;
     }
+#if defined(NRN_ENABLE_GPU)
+    if (neuron::gpu::enabled() && neuron::gpu::backend_native()) {
+        neuron::gpu::sync_all_device_streams();
+        neuron::gpu::sync_state_to_host_for_host_reads();
+    }
+#endif
     // found it so create a <gid>_<suffix>.nrn file
     char buf[200];
     Sprintf(buf, "%d_%s.nrndat", gid, suffix);

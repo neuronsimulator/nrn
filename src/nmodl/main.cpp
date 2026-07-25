@@ -15,6 +15,7 @@
 #include "codegen/codegen_acc_visitor.hpp"
 #include "codegen/codegen_compatibility_visitor.hpp"
 #include "codegen/codegen_coreneuron_cpp_visitor.hpp"
+#include "codegen/codegen_neuron_acc_visitor.hpp"
 #include "codegen/codegen_neuron_cpp_visitor.hpp"
 #include "codegen/codegen_transform_visitor.hpp"
 #include "config/config.h"
@@ -302,6 +303,11 @@ int run_nmodl(int argc, const char* argv[]) {
     // clang-format on
 
     CLI11_PARSE(app, argc, argv);
+
+    // --neuron and --coreneuron are independent flags; prefer NEURON when both are set.
+    if (neuron_code) {
+        coreneuron_code = false;
+    }
 
     std::string simulator_name = neuron_code ? "neuron" : "coreneuron";
     verbatim_rename = neuron_code ? false : verbatim_rename;
@@ -652,7 +658,18 @@ int run_nmodl(int argc, const char* argv[]) {
                                                (modfile + ".cpp"));
             auto blame_level = detailed_blame ? utils::BlameLevel::Detailed
                                               : utils::BlameLevel::Short;
-            if (coreneuron_code && oacc_backend) {
+            if (neuron_code && oacc_backend) {
+                logger->info("Running OpenACC backend code generator for NEURON");
+                CodegenNeuronAccVisitor visitor(modfile,
+                                                output_stream,
+                                                data_type,
+                                                optimize_ionvar_copies_codegen,
+                                                codegen_cvode,
+                                                utils::make_blame(blame_line, blame_level));
+                visitor.visit_program(*ast);
+            }
+
+            else if (coreneuron_code && oacc_backend) {
                 logger->info("Running OpenACC backend code generator for CoreNEURON");
                 CodegenAccVisitor visitor(modfile,
                                           output_stream,
@@ -672,7 +689,7 @@ int run_nmodl(int argc, const char* argv[]) {
                 visitor.visit_program(*ast);
             }
 
-            else if (neuron_code && cpp_backend) {
+            else if (neuron_code && cpp_backend && !oacc_backend) {
                 logger->info("Running C++ backend code generator for NEURON");
                 CodegenNeuronCppVisitor visitor(modfile,
                                                 output_stream,
@@ -686,7 +703,7 @@ int run_nmodl(int argc, const char* argv[]) {
             else {
                 throw std::runtime_error(
                     "Non valid code generation configuration. Code generation with NMODL is "
-                    "supported for NEURON with C++ backend or CoreNEURON with C++/OpenACC "
+                    "supported for NEURON with C++/OpenACC backends or CoreNEURON with C++/OpenACC "
                     "backends");
             }
         }

@@ -98,7 +98,7 @@ API reference
         list of mod files to convert.
 
     ``NMODL_NEURON_EXTRA_ARGS``
-        (*optional*, default: None) list of additional arguments to pass to NMODL for NEURON codegen.
+        (*optional*, default: ``passes --inline host --c`` if CUDA disabled, ``passes --inline host --c acc --oacc`` if ``NRN_ENABLE_GPU=ON`` and CUDA enabled) list of additional arguments to pass to NMODL for NEURON codegen.
 
     ``NMODL_CORENEURON_EXTRA_ARGS``
         (*optional*, default: ``passes --inline host --c`` if CUDA disabled, ``passes --inline host --c acc --oacc`` if CUDA enabled) list of additional arguments to pass to NMODL for coreNEURON codegen.
@@ -260,6 +260,16 @@ function(create_nrnmech)
 
   message("${MESSAGE_PRIORITY}" "LIBRARY_TYPE | ${LIBRARY_TYPE}")
 
+  # GPU builds require NMODL NEURON codegen (NOCMODL cannot emit OpenACC for libnrnmech).
+  if(NRN_MECH_NEURON AND NRN_ENABLE_GPU)
+    if(NOT NRN_MECH_NMODL_NEURON_CODEGEN)
+      set(NRN_MECH_NMODL_NEURON_CODEGEN ON)
+      message(
+        "${MESSAGE_PRIORITY}"
+        "NRN_ENABLE_GPU=ON: defaulting NEURON mechanism codegen to NMODL (NMODL_NEURON_CODEGEN)")
+    endif()
+  endif()
+
   # nmodl by default generates code for coreNEURON, so we toggle this via an option
   if(NRN_MECH_NMODL_NEURON_CODEGEN)
     set(NEURON_TRANSPILER_LAUNCHER ${NMODL_EXECUTABLE} --neuron)
@@ -271,6 +281,12 @@ function(create_nrnmech)
   if(NRN_MECH_NEURON
      AND NOT NRN_MECH_NMODL_NEURON_CODEGEN
      AND NRN_MECH_NMODL_NEURON_EXTRA_ARGS)
+    if(NRN_ENABLE_GPU)
+      message(
+        FATAL_ERROR
+          "${CMAKE_CURRENT_FUNCTION}: NOCMODL NEURON codegen is not supported when NRN_ENABLE_GPU=ON."
+      )
+    endif()
     message(
       WARNING
         "${CMAKE_CURRENT_FUNCTION}: requested NEURON library with NOCMODL codegen, but NMODL_NEURON_EXTRA_ARGS is not empty; "
@@ -278,6 +294,14 @@ function(create_nrnmech)
         "Hint: if you want to use NMODL for codegen for NEURON, add the NMODL_NEURON_CODEGEN option when calling this function."
     )
     set(NRN_MECH_NMODL_NEURON_EXTRA_ARGS)
+  endif()
+
+  # set default flags for NMODL for NEURON mechanism codegen.
+  if(NOT NRN_MECH_NMODL_NEURON_EXTRA_ARGS)
+    set(NRN_MECH_NMODL_NEURON_EXTRA_ARGS passes --inline host --c)
+    if(NRN_ENABLE_GPU AND CMAKE_CUDA_COMPILER)
+      list(APPEND NRN_MECH_NMODL_NEURON_EXTRA_ARGS acc --oacc)
+    endif()
   endif()
 
   list(JOIN NRN_MECH_NMODL_NEURON_EXTRA_ARGS "" NMODL_NEURON_EXTRA_ARGS_SPACES)
@@ -439,6 +463,41 @@ function(create_nrnmech)
       set_target_properties(
         ${TARGET_EXECUTABLE_NAME} PROPERTIES OUTPUT_NAME "special" RUNTIME_OUTPUT_DIRECTORY
                                                                    "${EXECUTABLE_OUTPUT_DIR}")
+    endif()
+
+    # Mirror CoreNEURON GPU link treatment on NEURON libnrnmech/special so dynamically loaded
+    # OpenACC mechanisms work when special is launched with -coreneuron -gpu (see NVIDIA forum
+    # thread on loading OpenACC shared libraries from NVHPC-linked executables).
+    if(CMAKE_CUDA_COMPILER AND (CORENRN_ENABLE_GPU OR NRN_ENABLE_GPU))
+      if(NOT CUDAToolkit_FOUND)
+        find_package(CUDAToolkit 9.0 REQUIRED)
+      endif()
+      if(NOT OpenACC_FOUND)
+        find_package(OpenACC REQUIRED)
+      endif()
+      if("${LIBRARY_TYPE}" STREQUAL "STATIC")
+        target_link_libraries(${TARGET_LIBRARY_NAME} PUBLIC CUDA::cudart_static
+                                                            OpenACC::OpenACC_CXX)
+      elseif("${LIBRARY_TYPE}" STREQUAL "SHARED")
+        target_link_libraries(${TARGET_LIBRARY_NAME} PUBLIC CUDA::cudart OpenACC::OpenACC_CXX)
+      else()
+        message(FATAL_ERROR "Unsupported library type for CUDA: ${LIBRARY_TYPE}")
+      endif()
+      # Full OpenACC link line (not only -cuda) so special can load libnrniv OpenACC fat objects
+      # after GPU adoption step 3 propagates -acc compile to cellorder in libnrniv.
+      set(_nrn_mech_gpu_link_flags "-cuda")
+      if(CORENRN_NEURON_LINK_FLAGS)
+        set(_nrn_mech_gpu_link_flags ${CORENRN_NEURON_LINK_FLAGS})
+      else()
+        get_property(_nrn_acc_comp_flags GLOBAL PROPERTY CORENRN_ACC_COMP_FLAGS)
+        if(_nrn_acc_comp_flags)
+          separate_arguments(_nrn_mech_gpu_link_flags UNIX_COMMAND "${_nrn_acc_comp_flags}")
+        endif()
+      endif()
+      target_link_options(${TARGET_LIBRARY_NAME} PUBLIC ${_nrn_mech_gpu_link_flags})
+      if(NRN_MECH_SPECIAL)
+        target_link_options(${TARGET_EXECUTABLE_NAME} PUBLIC ${_nrn_mech_gpu_link_flags})
+      endif()
     endif()
 
   endif()

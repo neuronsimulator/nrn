@@ -98,4 +98,12 @@ std::vector<double* const*> const& _pdata_ptr_cache_data(
     int mech_type) {
     return cache_token.mech_cache(mech_type).pdata_ptr_cache;
 }
+double* const* gpu_data_ptrs(neuron::model_sorted_token const& cache_token,
+                             int mech_type) noexcept {
+    return cache_token.mech_cache(mech_type).gpu_data_ptrs;
+}
+double* const** gpu_pdata_ptr_cache(neuron::model_sorted_token const& cache_token,
+                                            int mech_type) noexcept {
+    return cache_token.mech_cache(mech_type).gpu_pdata_ptr_cache;
+}
 }  // namespace neuron::mechanism::_get

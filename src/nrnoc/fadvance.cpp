@@ -17,6 +17,18 @@
 
 #include <vector>
 
+#if defined(NRN_ENABLE_GPU)
+#include "neuron/gpu/config.hpp"
+#include "neuron/gpu/device_state.hpp"
+#include "neuron/gpu/download.hpp"
+#include "neuron/gpu/fadvance_gpu.hpp"
+#include "neuron/gpu/lastpart.hpp"
+#include "neuron/gpu/net_events.hpp"
+#include "neuron/gpu/post_solve.hpp"
+#include "neuron/gpu/sync.hpp"
+#endif
+#include "prcellstate_checkpoint.hpp"
+
 /*
  after an fadvance from t-dt to t, v is defined at t
  states that depend on v are defined at t+dt/2
@@ -50,6 +62,7 @@ extern double nrnmpi_wtime();
 #endif
 extern double* nrn_mech_wtime_;
 extern double t, dt;
+extern int secondorder;
 extern double chkarg(int, double low, double high);
 static void nrn_fixed_step_thread(neuron::model_sorted_token const&, NrnThread&);
 static void nrn_fixed_step_group_thread(neuron::model_sorted_token const&, NrnThread&);
@@ -323,6 +336,12 @@ void nrn_daspk_init_step(double tt, double dteps, int upd) {
 
 void nrn_fixed_step(neuron::model_sorted_token const& cache_token) {
     nrn::Instrumentor::phase p_timestep("timestep");
+#if defined(NRN_ENABLE_GPU)
+    if (auto const* err = neuron::gpu::native_gpu_configuration_error()) {
+        hoc_execerror(err, nullptr);
+    }
+    neuron::gpu::reset_download_step_counter();
+#endif
 #if ELIMINATE_T_ROUNDOFF
     nrn_chk_ndt();
 #endif
@@ -367,6 +386,10 @@ void nrn_fixed_step(neuron::model_sorted_token const& cache_token) {
     if (nrn_allthread_handle) {
         (*nrn_allthread_handle)();
     }
+    nrn_prcellstate_checkpoint_fixed_step_end();
+#if defined(NRN_ENABLE_GPU)
+    neuron::gpu::finalize_psolve_download();
+#endif
 }
 
 /* better cache efficiency since a thread can do an entire minimum delay
@@ -378,6 +401,9 @@ static int step_group_end;
 
 void nrn_fixed_step_group(neuron::model_sorted_token const& cache_token, int n) {
     int i;
+#if defined(NRN_ENABLE_GPU)
+    neuron::gpu::reset_download_step_counter();
+#endif
 #if ELIMINATE_T_ROUNDOFF
     nrn_chk_ndt();
 #endif
@@ -421,6 +447,9 @@ void nrn_fixed_step_group(neuron::model_sorted_token const& cache_token, int n) 
         while (step_group_end < step_group_n) {
             /*printf("step_group_end=%d step_group_n=%d\n", step_group_end, step_group_n);*/
             nrn_multithread_job(cache_token, nrn_fixed_step_group_thread);
+#if defined(NRN_ENABLE_GPU)
+            neuron::gpu::spike_exchange_after_group(nrn_threads);
+#endif
             if (nrn_allthread_handle) {
                 (*nrn_allthread_handle)();
             }
@@ -431,6 +460,9 @@ void nrn_fixed_step_group(neuron::model_sorted_token const& cache_token, int n) 
         }
     }
     t = nrn_threads[0]._t;
+#if defined(NRN_ENABLE_GPU)
+    neuron::gpu::finalize_psolve_download();
+#endif
 }
 
 static void nrn_fixed_step_group_thread(neuron::model_sorted_token const& cache_token,
@@ -441,6 +473,9 @@ static void nrn_fixed_step_group_thread(neuron::model_sorted_token const& cache_
     for (i = step_group_begin; i < step_group_n; ++i) {
         nrn::Instrumentor::phase p_timestep("timestep");
         nrn_fixed_step_thread(cache_token, nt);
+        if (nth->id == 0) {
+            nrn_prcellstate_checkpoint_fixed_step_end();
+        }
         if (nth->_stop_stepping) {
             if (nth->id == 0) {
                 step_group_end = i + 1;
@@ -455,6 +490,13 @@ static void nrn_fixed_step_group_thread(neuron::model_sorted_token const& cache_
 }
 
 static void nrn_fixed_step_thread(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
+#if defined(NRN_ENABLE_GPU)
+    if (neuron::gpu::enabled() && neuron::gpu::backend_native()) {
+        neuron::gpu::device_token const& dev = neuron::gpu::ensure_on_device(cache_token);
+        neuron::gpu::fixed_step_thread(cache_token, dev, nt);
+        return;
+    }
+#endif
     auto* const nth = &nt;
     {
         nrn::Instrumentor::phase p("deliver-events");
@@ -471,6 +513,7 @@ static void nrn_fixed_step_thread(neuron::model_sorted_token const& cache_token,
 #endif
     fixed_play_continuous(nth);
     setup_tree_matrix(cache_token, nt);
+    nrn_prcellstate_checkpoint_maybe(PrcellCheckpointPhase::post_setup, nt);
     {
         nrn::Instrumentor::phase p("matrix-solver");
         if (neuron::interleave_permute_type) {
@@ -487,6 +530,7 @@ static void nrn_fixed_step_thread(neuron::model_sorted_token const& cache_token,
         nrn::Instrumentor::phase p("update");
         nrn_update_voltage(cache_token, *nth);
     }
+    nrn_prcellstate_checkpoint_maybe(PrcellCheckpointPhase::post_solve, nt);
     CTADD;
     /*
       To simplify the logic,
@@ -510,13 +554,33 @@ void nrn_fixed_step_lastpart(neuron::model_sorted_token const& cache_token, NrnT
 #endif
     fixed_play_continuous(nth);
     nrn_extra_scatter_gather(0, nth->id);
+    nrn_prcellstate_checkpoint_maybe(PrcellCheckpointPhase::pre_nonvint, nt);
+#if defined(NRN_ENABLE_GPU)
+    if (neuron::gpu::enabled() && neuron::gpu::backend_native()) {
+        neuron::gpu::sync_before_device_nonvint(nt);
+        neuron::gpu::prepare_nonvint_on_device(nt);
+    }
+#endif
     nonvint(cache_token, nt);
+#if defined(NRN_ENABLE_GPU)
+    if (neuron::gpu::enabled() && neuron::gpu::backend_native()) {
+        neuron::gpu::finalize_nonvint_on_device(nt);
+    }
+#endif
+    nrn_prcellstate_checkpoint_maybe(PrcellCheckpointPhase::post_nonvint, nt);
     nrn_ba(cache_token, nt, AFTER_SOLVE);
     fixed_record_continuous(cache_token, nt);
     CTADD;
     {
         nrn::Instrumentor::phase p("deliver-events");
-        nrn_deliver_events(nth); /* up to but not past texit */
+#if defined(NRN_ENABLE_GPU)
+        if (neuron::gpu::enabled() && neuron::gpu::backend_native()) {
+            neuron::gpu::deliver_post_step_events_host(nth);
+        } else
+#endif
+        {
+            nrn_deliver_events(nth); /* up to but not past texit */
+        }
     }
 }
 

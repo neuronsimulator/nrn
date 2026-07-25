@@ -124,9 +124,12 @@ def test_ba():
     r = run(m)
     cmp(r, std)
 
-    coreneuron.enable = True
+    from backend_helper import disable_test_backend, enable_test_backend
+
+    enable_test_backend()
     r = run(m)
     cmp(r, std)
+    disable_test_backend()
 
 
 if __name__ == "__main__":

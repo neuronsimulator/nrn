@@ -23,19 +23,23 @@ def test_units():
     erev_std = pp.erev
     ghk_std = pp.ghk
 
-    from neuron import coreneuron
+    from backend_helper import (
+        disable_test_backend,
+        enable_test_backend,
+        is_native_backend_test,
+    )
 
-    coreneuron.enable = True
-    coreneuron.gpu = bool(strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false")))
+    enable_test_backend()
     pc.set_maxstep(10)
     h.finitialize(-65)
     pc.psolve(h.dt)
 
     assert R_std == pp.gasconst  # mod2c needs nrnunits.lib.in
     assert abs(erev_std - pp.erev) <= (
-        1e-13 if coreneuron.gpu else 0
+        1e-13 if is_native_backend_test() else 0
     )  # GPU has tiny numerical differences
     assert ghk_std == pp.ghk
+    disable_test_backend()
 
 
 if __name__ == "__main__":

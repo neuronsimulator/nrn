@@ -56,13 +56,21 @@ struct MechanismRange {
         assert(ptr_cache.size() <= NumDatumFields);
     }
 
-    /** Deprecated. */
+    /**
+     * @brief Construct with optional device pointer tables when @c nt.compute_gpu is set.
+     */
     MechanismRange(neuron::model_sorted_token const& cache_token,
-                   NrnThread&,
+                   NrnThread& nt,
                    Memb_list& ml,
                    int type)
-        : MechanismRange(cache_token, ml) {
+        : MechanismRange{cache_token, ml} {
         assert(type == ml.type());
+        if (nt.compute_gpu) {
+            if (auto* const gpu_pdata =
+                    mechanism::_get::gpu_pdata_ptr_cache(cache_token, ml.type())) {
+                m_pdata_ptrs = gpu_pdata;
+            }
+        }
     }
 
   protected:

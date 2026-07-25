@@ -38,6 +38,102 @@
 #include "profile.h"
 #include "utils/profile/profiler_interface.h"
 #include "utils/formatting.hpp"
+#if defined(NRN_ENABLE_GPU)
+#include "neuron/gpu/check_thresh.hpp"
+#include "neuron/gpu/config.hpp"
+#include "neuron/gpu/mechanism_phases.hpp"
+#include "neuron/gpu/sync.hpp"
+#include "prcellstate_checkpoint.hpp"
+#endif
+
+extern NetCvode* net_cvode_instance;
+
+namespace neuron::gpu {
+
+int collect_threshold_presyn_slots(NrnThread* nt,
+                                   ThresholdPresynSlot* slots,
+                                   int capacity) {
+    if (!net_cvode_instance || !nt) {
+        return 0;
+    }
+    hoc_Item* const pth = net_cvode_instance->p[nt->id].psl_thr_;
+    if (!pth) {
+        return 0;
+    }
+    int written = 0;
+    hoc_Item* q = nullptr;
+    ITERATE(q, pth) {
+        auto* const ps = static_cast<PreSyn*>(VOIDITM(q));
+        if (!ps || ps->nt_ != nt || !ps->thvar_) {
+            continue;
+        }
+        if (!ps->thvar_.refers_to_a_modern_data_structure()) {
+            continue;
+        }
+        if (slots && written < capacity) {
+            slots[written].thvar_row =
+                static_cast<int>(ps->thvar_.current_row() - nt->_node_data_offset);
+            slots[written].threshold = ps->threshold_;
+            slots[written].flag = ps->flag_ ? 1 : 0;
+            slots[written].presyn = ps;
+        }
+        ++written;
+    }
+    return written;
+}
+
+bool threshold_detection_on_device(NrnThread const& nt) noexcept {
+#if defined(NRN_ENABLE_GPU)
+    if (!neuron::gpu::enabled() || !neuron::gpu::backend_native() || nt.end <= 0) {
+        return false;
+    }
+    if (!net_cvode_instance) {
+        return true;
+    }
+    hoc_Item* const pth = net_cvode_instance->p[nt.id].psl_thr_;
+    if (!pth) {
+        return true;
+    }
+    hoc_Item* q = nullptr;
+    ITERATE(q, pth) {
+        auto* const ps = static_cast<PreSyn*>(VOIDITM(q));
+        if (!ps || ps->nt_ != const_cast<NrnThread*>(&nt) || !ps->thvar_) {
+            continue;
+        }
+        if (!ps->thvar_.refers_to_a_modern_data_structure()) {
+            return false;
+        }
+    }
+    return true;
+#else
+    (void) nt;
+    return false;
+#endif
+}
+
+void deliver_threshold_spike(NrnThread* nt, void* presyn, double teps) {
+    if (!net_cvode_instance || !nt || !presyn) {
+        return;
+    }
+    auto* const ps = static_cast<PreSyn*>(presyn);
+    ps->flag_ = true;
+    ps->send(nt->_t + teps, net_cvode_instance, nt);
+}
+
+void sync_threshold_presyn_flags(ThresholdPresynSlot const* slots, int const* flags, int count) {
+    if (!slots || !flags || count <= 0) {
+        return;
+    }
+    for (int i = 0; i < count; ++i) {
+        auto* const ps = static_cast<PreSyn*>(slots[i].presyn);
+        if (ps) {
+            ps->flag_ = flags[i] != 0;
+        }
+    }
+}
+
+}  // namespace neuron::gpu
+
 
 #include <array>
 #include <cerrno>
@@ -4005,6 +4101,10 @@ bool NetCvode::use_partrans() {
 void ncs2nrn_integrate(double tstop) {
     double ts;
     nrn_use_busywait(1);  // just a possibility
+#if defined(NRN_ENABLE_GPU)
+    neuron::gpu::require_gpu_native_qualification_or_stop();
+#endif
+    nrn_prcellstate_checkpoint_psolve_begin();
     auto const cache_token = nrn_ensure_model_data_are_sorted();
     if (cvode_active_) {
 #if NRNMPI
@@ -5315,6 +5415,11 @@ void NetCvode::update_ps2nt() {
             ps_thread_link(ps);
         }
     }
+#if defined(NRN_ENABLE_GPU)
+    if (neuron::gpu::enabled() && neuron::gpu::backend_native()) {
+        neuron::gpu::invalidate_threshold_tables();
+    }
+#endif
 }
 
 void NetCvode::p_construct(int n) {
@@ -6324,16 +6429,37 @@ void nrnthread_trajectory_return(int tid, int n_pr, int bsize, int vecsz, void**
 // stay in the cache
 void NetCvode::check_thresh(NrnThread* nt) {  // for default method
     nrn::Instrumentor::phase p_check_threshold("check-threshold");
-    hoc_Item* pth = p[nt->id].psl_thr_;
+    double const teps = 1e-10;
+#if defined(NRN_ENABLE_GPU)
+    bool const gpu_thresh = neuron::gpu::enabled() && neuron::gpu::backend_native() &&
+                            nt->compute_gpu && nt->end > 0;
+    bool gpu_thresh_handled = false;
+    if (gpu_thresh) {
+        neuron::gpu::sync_voltages_to_host_before_check_thresh(*nt);
+        gpu_thresh_handled = neuron::gpu::check_thresh_presyn_on_device(nt, teps);
+    }
+#else
+    constexpr bool gpu_thresh = false;
+    constexpr bool gpu_thresh_handled = false;
+#endif
+    {
+        hoc_Item* pth = p[nt->id].psl_thr_;
 
-    if (pth) { /* only look at ones with a threshold */
-        hoc_Item* q1;
-        ITERATE(q1, pth) {
-            PreSyn* ps = (PreSyn*) VOIDITM(q1);
-            // only the ones for this thread
-            if (ps->nt_ == nt) {
-                if (ps->thvar_) {
-                    ps->check(nt, nt->_t, 1e-10);
+        if (pth) { /* only look at ones with a threshold */
+            hoc_Item* q1;
+            ITERATE(q1, pth) {
+                PreSyn* ps = (PreSyn*) VOIDITM(q1);
+                // only the ones for this thread
+                if (ps->nt_ == nt) {
+                    if (ps->thvar_) {
+#if defined(NRN_ENABLE_GPU)
+                        if (gpu_thresh && gpu_thresh_handled &&
+                            ps->thvar_.refers_to_a_modern_data_structure()) {
+                            continue;
+                        }
+#endif
+                        ps->check(nt, nt->_t, teps);
+                    }
                 }
             }
         }
