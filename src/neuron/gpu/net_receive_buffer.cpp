@@ -2,9 +2,7 @@
 
 #include "neuron/container/network/weights.hpp"
 #include "neuron/gpu/offload.hpp"
-#include "neuron/gpu/sync.hpp"
 #include "neuron/model_data.hpp"
-#include "membfunc.h"
 #include "multicore.h"
 #include "nrnoc_ml.h"
 
@@ -16,7 +14,6 @@
 #include <vector>
 
 extern short* nrn_is_artificial_;
-extern int n_memb_func;
 
 namespace neuron::gpu {
 
@@ -410,49 +407,6 @@ void free_net_receive_buffer(Memb_list* ml) {
     std::free(nrb->_nrb_flag);
     std::free(nrb);
     ml->_net_receive_buffer = nullptr;
-}
-
-void augment_device_matrix_for_net_receive_mechs(neuron::model_sorted_token const& token,
-                                                 NrnThread* nt) {
-#if defined(NRN_ENABLE_GPU)
-    if (!nt || !nt->compute_gpu || net_buf_receive.empty()) {
-        return;
-    }
-    if (!matrix_rhs_d_stays_on_device_for_solve(*nt)) {
-        return;
-    }
-    // Device matrix is missing CURRENT/JACOBIAN contributions from net-receive
-    // mechanisms (ExpSyn): mech SoA (g/i/g_unused) is correct, but vec_rhs/vec_d
-    // do not show the synaptic terms (see post_setup prcellstate at t=1.025).
-    // Merge: pull device matrix (other mechs), re-run host cur/jacob for registered
-    // net_buf types only, push matrix back for the device solver.
-    sync_matrix_to_host_before_solve(*nt);
-
-    int const saved_compute_gpu = nt->compute_gpu;
-    nt->compute_gpu = 0;
-    for (auto const& entry: net_buf_receive) {
-        int const type = entry.second;
-        if (type < 0 || type >= n_memb_func) {
-            continue;
-        }
-        Memb_list* ml = (nt->_ml_list) ? nt->_ml_list[type] : nullptr;
-        if (!ml || ml->nodecount <= 0) {
-            continue;
-        }
-        if (memb_func[type].current) {
-            memb_func[type].current(token, nt, ml, type);
-        }
-        if (memb_func[type].jacob) {
-            memb_func[type].jacob(token, nt, ml, type);
-        }
-    }
-    nt->compute_gpu = saved_compute_gpu;
-
-    sync_matrix_to_device_before_solve(*nt);
-#else
-    (void) token;
-    (void) nt;
-#endif
 }
 
 }  // namespace neuron::gpu

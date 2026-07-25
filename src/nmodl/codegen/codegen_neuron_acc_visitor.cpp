@@ -386,6 +386,11 @@ void CodegenNeuronAccVisitor::print_nrn_jacob() {
     printer->add_line("int node_id = node_data.nodeindices[id];");
     // g_unused was written on device in nrn_cur; read it here (do not call nrn_current again:
     // that would double-update ion dinadv/dikdv shadow fields). Flat present(vec_d) like cap/axial.
+    // Point processes: atomic when multiple instances share a node (see print_nrn_cur).
+    if (info.point_process) {
+        printer->add_line("nrn_pragma_acc(atomic update)");
+        printer->add_line("nrn_pragma_omp(atomic update)");
+    }
     printer->fmt_line("vec_d[node_id] {} _present_fp_{}[inst._data_offset + id];",
                       operator_for_d(),
                       conductance_fp_index());
@@ -952,6 +957,13 @@ void CodegenNeuronAccVisitor::print_nrn_cur() {
     printer->push_block("for (int id = 0; id < nodecount; id++)");
     print_nrn_cur_kernel(*info.breakpoint_node);
 
+    // Point processes may share a node (multiple ExpSyn on one segment). Without
+    // atomics, parallel OpenACC updates race and can drop non-zero synaptic rhs
+    // (Stage 3c: two ExpSyn on inode 3 left Δrhs ≈ 0.103 missing on device).
+    if (info.point_process) {
+        printer->add_line("nrn_pragma_acc(atomic update)");
+        printer->add_line("nrn_pragma_omp(atomic update)");
+    }
     printer->fmt_line("vec_rhs[node_id] {} rhs;", operator_for_rhs());
 
     if (breakpoint_exist()) {

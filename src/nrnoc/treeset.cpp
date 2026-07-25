@@ -25,7 +25,6 @@
 
 #include "neuron/gpu/offload.hpp"
 #if defined(NRN_ENABLE_GPU)
-#include "neuron/gpu/net_receive_buffer.hpp"
 #include "neuron/gpu/sync.hpp"
 #endif
 
@@ -707,12 +706,7 @@ void setup_tree_matrix(neuron::model_sorted_token const& cache_token, NrnThread&
     nrn_rhs(cache_token, nt);
     nrn_lhs(cache_token, nt);
 #if defined(NRN_ENABLE_GPU)
-    // Stage 3b: ExpSyn (and other net_buf_receive mechs) update mech SoA on device
-    // but their vec_rhs/vec_d contributions are missing from the device Hines matrix.
-    // Merge host recompute of those mechs onto the device matrix before solve.
-    if (neuron::gpu::matrix_rhs_d_stays_on_device_for_solve(nt) && nt.compute_gpu) {
-        neuron::gpu::augment_device_matrix_for_net_receive_mechs(cache_token, &nt);
-    } else if (!neuron::gpu::matrix_rhs_d_stays_on_device_for_solve(nt)) {
+    if (!neuron::gpu::matrix_rhs_d_stays_on_device_for_solve(nt)) {
         neuron::gpu::sync_matrix_to_host_before_solve(nt);
     }
 #endif

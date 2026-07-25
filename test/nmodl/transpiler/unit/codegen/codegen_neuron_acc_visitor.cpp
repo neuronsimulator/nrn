@@ -178,6 +178,9 @@ SCENARIO("NEURON OpenACC codegen emits offload pragmas", "[codegen][neuron][acc]
                          ContainsSubstring(
                              "hoc_register_net_receive_buffering(net_buf_receive_ExpSynAcc"));
             REQUIRE_THAT(generated, ContainsSubstring("weights + weight_index"));
+            // Stage 3c: multi-instance PP on one node needs atomic matrix updates.
+            REQUIRE_THAT(generated, ContainsSubstring("nrn_pragma_acc(atomic update)"));
+            REQUIRE_THAT(generated, ContainsSubstring("vec_rhs[node_id]"));
         }
     }
 }
