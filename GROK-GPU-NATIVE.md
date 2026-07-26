@@ -196,6 +196,57 @@ Do **not** reintroduce full `vec_v` host pull as part of that cleanup.
 
 ---
 
+## Next session: device NET_RECEIVE apply (hot-path #1)
+
+**Th0–Th4 closed** on tip of `local/gpu-native-net-soa` (ringtest + Traub A–E).
+A1–A3 residual cleanup done. User completed hygiene push (item 0).
+
+### Where / branch
+
+| Item | Recommendation |
+|------|----------------|
+| Worktree | **Same** `~/neuron/nrngpu` (not a new clone) |
+| Base tip | `local/gpu-native-net-soa` (green Th4) |
+| Working branch | **Branch off** for this feature, e.g. `local/gpu-device-net-receive` from that tip — keeps integration branch green if the work sprawls. Stay on `local/gpu-native-net-soa` only if you want every commit on the integration line. |
+| Portfolio | `~/neuron/notes/PORTFOLIO.md` row **GPU-native**; kind **feature** |
+
+### Goal (this line only)
+
+Move NET_RECEIVE **body apply** toward the device for qualified mechs.
+
+**Today (Stage 2-ish):** enqueue on host → often **host** NET_RECEIVE into Weight/mech SoA → update device floats; `cur`/`jacob` on device with PP atomics.
+
+**Target slice for one session:** device (or more device-resident) apply for **ExpSyn** first; gate with ringtest:
+
+```bash
+# after rebuild/install
+cd build-gpu/test/external_ringtest/neuron_gpu_native_mpi
+./prcellstate_native_gpu.sh 32 1.025 1   # first NetCon step + phases if useful
+./prcellstate_native_gpu.sh 32 100       # long gate 688 spikes
+```
+
+Then Traub only if ringtest stays green (optional stretch).
+
+**Out of scope for this line:** Gate F lastpart, use_gap=1, multi-rank, CoreNEURON perf race, single device-resource owner (#4), platform `rdcellstate` packaging, meta-org.
+
+### Key code to read first
+
+| Area | Path |
+|------|------|
+| NetReceiveBuffer / apply | `src/neuron/gpu/net_receive_buffer.{hpp,cpp}` |
+| Event flush after deliver | `src/neuron/gpu/net_events.cpp` |
+| ACC `net_buf_receive_*` codegen | `src/nmodl/codegen/codegen_neuron_acc_visitor.cpp` (`print_net_receive*`) |
+| Built-in ExpSyn ACC | regenerate: `rm -f build-gpu/src/nrnoc/expsyn.cpp && ninja install` |
+| Weight SoA / `weight_index` | heap-free ABI; no `NetCon::weight_` heap |
+
+### Constraints (do not regress)
+
+1. Full GPU fixed steps — no host `vec_rhs` → voltage → push `vec_v` as primary fix.  
+2. Heap-free: `weight_index` only.  
+3. Ringtest long gate and Traub QUALIFIED bar stay green if you touch shared paths.
+
+---
+
 ## Key paths
 
 | Area | Path |
@@ -225,15 +276,17 @@ After ACC codegen changes to built-ins: `rm -f build-gpu/src/nrnoc/expsyn.cpp &&
 ## Starting prompt
 
 ```
-Read GROK-GPU-NATIVE.md and AGENTS.md.
+Read ~/neuron/notes/PORTFOLIO.md (GPU-native) then GROK-GPU-NATIVE.md and AGENTS.md.
 
-Stages 2–3c + threshold Th0–Th3 done; long gate green: 688 spikes @ tstop=100.
-NMODL CPU Traub M0–M2 green in ~/neuron/nrnnmodl — do not re-do there.
+Tree: ~/neuron/nrngpu. Kind: feature.
+Base: local/gpu-native-net-soa (Th0–Th4 green: ringtest 688@100, Traub QUALIFIED
+A–E, 4474@100). Prefer branch local/gpu-device-net-receive off that tip.
 
-#3826 tip absorbed; ringtest 688@100 green. Traub NMODL OpenACC QUALIFIED yes
-(Gates A–E); Th4 green: 4474 spikes @ 100, prcellstate noise-level @ 0.025/1.
+Goal: device (or more device-resident) NET_RECEIVE apply — ExpSyn/ringtest
+first (1.025 + 100 long gate). Do not start Gate F, use_gap, multi-rank, perf
+vs CoreNEURON, or device-resource unification.
 
-Do not reintroduce NetCon::weight_ heap or host vec_rhs voltage hot path.
+Heap-free weight_index only; no host vec_rhs voltage hot path.
 source ~/neuron/bin/nrnenv nrngpu build-gpu before GPU runs.
 ```
 
@@ -243,5 +296,6 @@ source ~/neuron/bin/nrnenv nrngpu build-gpu before GPU runs.
 
 | Branch | Role |
 |--------|------|
-| `local/gpu-native-net-soa` | **Active** |
+| `local/gpu-native-net-soa` | Integration tip — Th0–Th4 green |
+| `local/gpu-device-net-receive` | **Next feature branch** (create from tip above) |
 | `local/cpu-net-soa-heap-free` | PR #3826 base |
