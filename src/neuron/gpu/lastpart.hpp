@@ -20,9 +20,8 @@ namespace neuron::gpu {
 void prepare_nonvint_on_device(NrnThread& nt);
 
 /**
- * Before device nonvint: drain streams and pull node voltages to host only.
- * No full mechanism/node SoA mirror (performance). Checkpoints pull full state
- * themselves when armed.
+ * Wait for post_solve before device nonvint. Host voltages are mirrored once
+ * per step immediately after post_solve_on_device (not here).
  */
 void sync_before_device_nonvint(NrnThread& nt) noexcept;
 

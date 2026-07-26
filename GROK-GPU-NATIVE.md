@@ -291,23 +291,32 @@ nrnivmodl -nmodl "$(which nmodl)" -nmodlflags "passes --inline host --c acc --oa
 # Do not reuse a special linked against an older libnrniv (symbol lookup errors).
 ```
 
-### Gate F + pre-nonvint SoA cleanup (2026-07-26)
+### Gate F + lastpart SoA / V host traffic (2026-07-26)
 
 | Item | Status |
 |------|--------|
 | Post-nonvint full SoA pull | **Gated** — only if AFTER_SOLVE / BEFORE_STEP / `Vector.record` |
-| Pre-nonvint full SoA pull | **Removed** — stream wait + **voltages only** (`sync_voltages_to_host_before_nonvint`) |
-| Ringtest Gate F | **yes** (`!lastpart_host_phases_required`) |
-| Ringtest 0.025/1/1.025/100 | **GREEN** (688 spikes; noise-level cellstate) after V-only pre-nonvint |
-| Residual | Pre-nonvint still needs device→host **voltages** (bare wait → 0 spikes). Not a host→device V path (that API never fires on ringtest). Always post full SoA can substitute but is more traffic. Trajectory for record still open. |
-| Long-term for record | Sparse/buffered trajectory-style gather (CoreNEURON is a guide; improve if faster) |
+| Pre-nonvint full SoA pull | **Removed** |
+| Pre-nonvint V pull | **Removed** — wait only before device nonvint |
+| Host V mirror | **Once per step after `post_solve_on_device`** (`sync_voltages_to_host_after_post_solve`) |
+| Ringtest Gate F | **yes** |
+| Ringtest 0.025/1/1.025/100 | **GREEN** (688 spikes; noise-level cellstate) |
+
+**Why host V each step (not eliminated yet):** without any device→host V,
+step 1 is exact (all phases @ 0.025) but **step 2 `post_setup` already
+diverges** (mech max \|d\| ~7e-5). Drift grows; 0 spikes by t=5. Not a
+`sync_node_voltages_to_device` clobber (never called on ringtest). Root cause
+of multi-step CURRENT needing host V coherent remains open. Ladder:
+spikes → tstop → phase dumps (used here).
+
+**Trajectory for record** still open (Gate F stays red when `Vector.record` forces full SoA).
 
 ### Next GPU feature (new session)
 
 | Option | Content |
 |--------|---------|
 | NetSendBuffer capacity | Ensure no silent drop under heavy self-event load |
-| Pre-nonvint V residual | Eliminate voltage host mirror if a stale host→device V path is found |
+| Zero host-V residual | Why step-2 CURRENT drifts without host V mirror |
 | Trajectory native path | Low-traffic record so Gate F stays green with `Vector.record` |
 | Later | use_gap=1, multi-rank, perf, single device-resource owner |
 
@@ -360,9 +369,9 @@ Commit steps locally without push unless asked.
 
 Tree: ~/neuron/nrngpu. Kind: feature.
 Branch: local/gpu-lastpart-no-soa-pull — Gate F post-nonvint full SoA gated;
-pre-nonvint voltages-only (no full SoA). Traub QUALIFIED A–E, 4474@100.
+pre-nonvint wait-only; host V after post_solve. Traub QUALIFIED A–E, 4474@100.
 
-Next (pick one): NetSendBuffer capacity, pre-nonvint V residual, or trajectory
+Next (pick one): NetSendBuffer capacity, zero host-V residual, or trajectory
 native path. Do not start use_gap, multi-rank, or device-resource owner unless asked.
 
 Heap-free weight_index only; no host vec_rhs voltage hot path.

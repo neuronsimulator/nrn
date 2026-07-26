@@ -142,19 +142,12 @@ void finalize_nonvint_on_device(NrnThread& nt) {
 
 void sync_before_device_nonvint(NrnThread& nt) noexcept {
 #if defined(NRN_ENABLE_GPU)
-    // Stream wait + device→host voltages only (not full SoA). Bare wait without
-    // the V pull regresses ringtest (0 spikes); host→device V is never called on
-    // this path, so the need is not a simple stale host push. Residual until the
-    // OpenACC/device-V coherency root cause is found.
+    // Wait for post_solve only. Host V is mirrored right after post_solve_on_device
+    // (fadvance_gpu) so multi-step CURRENT stays coherent without a second V pull here.
     if (!enabled() || !backend_native() || !nonvint_state_on_device(nt)) {
         return;
     }
-    if (nt.id == 0) {
-        sync_all_device_streams();
-    } else {
-        nrn_pragma_acc(wait(nt.stream_id))
-    }
-    sync_voltages_to_host_before_nonvint(nt);
+    nrn_pragma_acc(wait(nt.stream_id))
 #else
     (void) nt;
 #endif

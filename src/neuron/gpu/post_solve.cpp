@@ -10,6 +10,8 @@
 #include "nrn_ansi.h"
 #include "nrnoc_ml.h"
 
+#include <cstdlib>
+
 extern int secondorder;
 extern int use_sparse13;
 
@@ -60,7 +62,13 @@ void update_voltage_on_device(NrnThread& nt) {
     auto* const vec_rhs = nt.node_rhs_storage();
     auto* const vec_v = nt.node_voltage_storage();
 #if defined(NRN_ENABLE_GPU)
-    if (use_cuda_launcher() && nt.compute_gpu) {
+    // Env NRN_GPU_VOLTAGE_OPENACC=1 forces pure OpenACC (skip CUDA launcher) for
+    // interop experiments. Default keeps CUDA launcher when available.
+    static int const force_openacc = [] {
+        char const* e = std::getenv("NRN_GPU_VOLTAGE_OPENACC");
+        return e && e[0] == '1' && e[1] == '\0';
+    }();
+    if (!force_openacc && use_cuda_launcher() && nt.compute_gpu) {
         coreneuron_update_voltage_launcher(static_cast<double*>(acc_deviceptr(vec_v)),
                                            static_cast<double*>(acc_deviceptr(vec_rhs)),
                                            nt.end,
