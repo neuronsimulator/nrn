@@ -197,37 +197,39 @@ Do **not** reintroduce full `vec_v` host pull as part of that cleanup.
 
 ---
 
-## Device NET_RECEIVE apply (2026-07-26) — complete on this branch
+## Device NET_RECEIVE apply (2026-07-26) — **landed on integration tip**
 
 | Item | Value |
 |------|--------|
-| Branch | `local/gpu-device-net-receive` |
-| Code | `print_net_receive_buffering`, `print_net_send_*`, `net_send_buffer.cpp` |
-| Device NET_RECEIVE | All buffered point processes: OpenACC parallel over `_displ_cnt`, serial events, Weight SoA + `_present_fp_*` |
-| net_send / net_move / net_event | Device `net_send_buffering` stores **indices** (tqitem field, weight_index, instance id); host `deliver_net_send_buffer_events(nt, ml, nsb)` resolves via `ml->pdata` |
-| Heap-free deliver | `nrn_net_send(..., int weight_index, ...)` — fixed pre-heap-free `double*` packing |
-| Ringtest 1.025 | **GREEN** — `dV=0`; noise ~1e-15 |
-| Ringtest 100 | **GREEN** — **688 spikes**; noise ~1e-13 |
-| PulseSyn ACC | **Links** (`nrnivmodl` with `--c acc --oacc`); full Traub re-smoke optional next |
+| Integration branch | `local/gpu-native-net-soa` @ `9080f3832` (FF from `local/gpu-device-net-receive`, pushed) |
+| Commits | `c9f85c84a` device apply + index NetSendBuffer; `9080f3832` Traub spike-timing fix |
+| Device NET_RECEIVE | Buffered PP: OpenACC apply of body (Weight SoA + `_present_fp_*`); no host body apply |
+| net_send path | Device buffers **indices**; host deliver via `ml->pdata` + heap-free `weight_index` |
+| Ringtest 1.025 / 100 | **GREEN** (688 @ 100; noise-level cellstate) — re-checked 2026-07-26 |
+| Traub 1/10 no-gap | **GREEN** re-smoke 2026-07-26: QUALIFIED A–E; **4474** @ 100; clean exit (rebuild mechs after ABI change) |
 
 ```bash
-rm -f build-gpu/src/nrnoc/expsyn.cpp && ninja install
-cd build-gpu/test/external_ringtest/neuron_gpu_native_mpi
-./prcellstate_native_gpu.sh 32 1.025 1
-./prcellstate_native_gpu.sh 32 100
+# After libnrniv changes that touch NetSendBuffer symbols: rebuild Traub special
+rm -rf /tmp/traub-acc && mkdir -p /tmp/traub-acc && cd /tmp/traub-acc
+ln -sfn ~/models/82894/mod/*.mod .
+nrnivmodl -nmodl "$(which nmodl)" -nmodlflags "passes --inline host --c acc --oacc" .
+# Do not reuse a special linked against an older libnrniv (symbol lookup errors).
 ```
 
-### Next (optional stretch / later)
+### Next GPU feature (new session)
 
-- Full Traub ACC re-`nrnivmodl` + QUALIFIED / 4474@100 re-smoke after this branch.  
-- Still out of scope: Gate F, use_gap=1, multi-rank, CoreNEURON perf, device-resource owner.
+| Option | Content |
+|--------|---------|
+| **Gate F** (stretch) | lastpart without full host SoA pull — see `doc/gpu-step-qualification.md` |
+| NetSendBuffer capacity | Ensure no silent drop under heavy self-event load (if not fully covered by 9080) |
+| Later | use_gap=1, multi-rank, CoreNEURON perf, single device-resource owner |
 
 ### Constraints (do not regress)
 
 1. Full GPU fixed steps — no host `vec_rhs` → voltage → push `vec_v` as primary fix.  
 2. Heap-free: `weight_index` only.  
 3. Ringtest long gate and Traub QUALIFIED bar stay green if you touch shared paths.  
-4. **No host fallbacks** on the native-GPU receive path.
+4. **No host body apply** of NET_RECEIVE on the native-GPU path (host **deliver** of buffered net_send is OK).
 
 ---
 
@@ -263,12 +265,12 @@ After ACC codegen changes to built-ins: `rm -f build-gpu/src/nrnoc/expsyn.cpp &&
 Read ~/neuron/notes/PORTFOLIO.md (GPU-native) then GROK-GPU-NATIVE.md and AGENTS.md.
 
 Tree: ~/neuron/nrngpu. Kind: feature.
-Branch: local/gpu-device-net-receive — device NET_RECEIVE (all mechs) green on
-ringtest 1.025 + 688@100; NetSendBuffer index+weight_index ABI; PulseSyn ACC links.
+Tip: local/gpu-native-net-soa @ 9080f3832 — Th0–Th4 + device NET_RECEIVE landed
+(ringtest 688@100; Traub QUALIFIED A–E, 4474@100 re-smoked 2026-07-26). No host
+NET_RECEIVE body on native path.
 
-Optional next: full Traub ACC re-nrnivmodl + QUALIFIED re-smoke. Or merge to
-local/gpu-native-net-soa. No Gate F, use_gap, multi-rank, perf, device-resource
-unification unless asked.
+Next (pick one): Gate F lastpart stretch, or NetSendBuffer capacity hardening.
+Do not start use_gap, multi-rank, CoreNEURON perf race, or device-resource owner.
 
 Heap-free weight_index only; no host vec_rhs voltage hot path.
 source ~/neuron/bin/nrnenv nrngpu build-gpu before GPU runs.
@@ -280,6 +282,6 @@ source ~/neuron/bin/nrnenv nrngpu build-gpu before GPU runs.
 
 | Branch | Role |
 |--------|------|
-| `local/gpu-native-net-soa` | Integration tip — Th0–Th4 green |
-| `local/gpu-device-net-receive` | **Next feature branch** (create from tip above) |
+| `local/gpu-native-net-soa` | **Integration tip** — Th0–Th4 + device NET_RECEIVE |
+| `local/gpu-device-net-receive` | Feature history (FF into tip) |
 | `local/cpu-net-soa-heap-free` | PR #3826 base |
