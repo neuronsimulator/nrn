@@ -37,6 +37,9 @@
 #include <utility>
 
 #include "utils/logger.hpp"
+#if defined(NRN_ENABLE_GPU)
+#include "neuron/gpu/device_state.hpp"
+#endif
 
 /* for eliminating "ignoreing return value" warnings. */
 int nrnignore;
@@ -964,6 +967,12 @@ void hoc_final_exit(void) {
     ivoc_cleanup();
 #if defined(WIN32) && HAVE_IV
     ivoc_win32_cleanup();
+#endif
+#if defined(NRN_ENABLE_GPU)
+    // Free OpenACC mirrors while CUDA is still valid. Must run before main
+    // returns (atexit / static destructors may shut down the device runtime
+    // before Model unsorted callbacks run). See device_state.hpp.
+    neuron::gpu::finalize_device_resources();
 #endif
     auto tmp_dir = std::getenv("TEMP");
     auto path = std::filesystem::path(tmp_dir ? std::string(tmp_dir) : "/tmp") /

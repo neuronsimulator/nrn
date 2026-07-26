@@ -4,6 +4,7 @@
 #include "multicore.h"
 #include "neuron/container/mechanism_data.hpp"
 #include "neuron/container/node_data.hpp"
+#include "neuron/gpu/device_state.hpp"
 #include "neuron/gpu/net_send_buffer.hpp"
 #include "neuron/gpu/offload.hpp"
 #include "neuron/gpu/sync.hpp"
@@ -189,6 +190,17 @@ bool UploadState::is_present(void const* host_ptr) const {
 
 void UploadState::teardown() {
 #if defined(NRN_ENABLE_GPU) && defined(_OPENACC)
+    // After finalize_device_resources, OpenACC/CUDA may already be gone (static
+    // Model teardown). Drop host bookkeeping without acc_delete.
+    if (device_resources_finalized()) {
+        for (auto const& mirror: mirrors_) {
+            if (mirror.cpu_owned && mirror.host) {
+                delete[] static_cast<char*>(const_cast<void*>(mirror.host));
+            }
+        }
+        mirrors_.clear();
+        return;
+    }
     sync_all_device_streams();
     for (auto it = mirrors_.rbegin(); it != mirrors_.rend(); ++it) {
         auto const& mirror = *it;

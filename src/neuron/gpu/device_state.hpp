@@ -49,6 +49,19 @@ class device_token {
 /** @brief Discard GPU mirrors when the sorted layout is invalidated. */
 void invalidate_device_state();
 
+/**
+ * @brief Orderly teardown of native-GPU device mirrors while CUDA/OpenACC is live.
+ *
+ * Call from hoc_final_exit (before main returns / atexit / static destructors).
+ * Clears threshold-table and UploadState mirrors so process exit does not call
+ * acc_delete after the OpenACC runtime has already deinitialized CUDA.
+ * Subsequent invalidate/free paths become no-ops.
+ */
+void finalize_device_resources() noexcept;
+
+/** @brief True after finalize_device_resources(); device free/copyin must not run. */
+[[nodiscard]] bool device_resources_finalized() noexcept;
+
 /** @brief True when the active sorted layout has been uploaded to the device. */
 [[nodiscard]] bool model_is_on_device() noexcept;
 

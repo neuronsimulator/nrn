@@ -1,6 +1,7 @@
 #include "neuron/gpu/check_thresh.hpp"
 
 #include "neuron/gpu/config.hpp"
+#include "neuron/gpu/device_state.hpp"
 #include "neuron/gpu/net_send_buffer.hpp"
 #include "neuron/gpu/offload.hpp"
 #include "neuron/gpu/phase_timer.hpp"
@@ -43,9 +44,21 @@ void free_device_arrays(ThreadThresholdTable& table) {
     if (count == 0) {
         return;
     }
-    nrn_target_delete(table.h_thvar_row.data(), count);
-    nrn_target_delete(table.h_threshold.data(), count);
-    nrn_target_delete(table.h_flag.data(), count);
+    // Process-exit path: CUDA/OpenACC may already be deinitialized. Skip acc_delete.
+    if (device_resources_finalized()) {
+        table.device_capacity = 0;
+        return;
+    }
+    // Only delete if the host buffer is still present on the device.
+    if (table.h_thvar_row.data() && nrn_target_is_present(table.h_thvar_row.data())) {
+        nrn_target_delete(table.h_thvar_row.data(), count);
+    }
+    if (table.h_threshold.data() && nrn_target_is_present(table.h_threshold.data())) {
+        nrn_target_delete(table.h_threshold.data(), count);
+    }
+    if (table.h_flag.data() && nrn_target_is_present(table.h_flag.data())) {
+        nrn_target_delete(table.h_flag.data(), count);
+    }
     table.device_capacity = 0;
 #else
     (void) table;

@@ -213,11 +213,45 @@ device_token const& ensure_on_device(model_sorted_token const& sorted) {
     return registry().ensure_cached(sorted);
 }
 
+namespace {
+// After orderly finalize, OpenACC/CUDA may already be shut down at process exit;
+// further acc_delete/copyin must not run (static Model teardown, unsorted callbacks).
+std::atomic<bool> g_device_resources_finalized{false};
+}  // namespace
+
 void invalidate_device_state() {
+    if (g_device_resources_finalized.load(std::memory_order_acquire)) {
+        return;
+    }
 #if defined(NRN_ENABLE_GPU)
     invalidate_auxiliary_device_uploads();
 #endif
     registry().invalidate();
+}
+
+void finalize_device_resources() noexcept {
+#if defined(NRN_ENABLE_GPU)
+    if (g_device_resources_finalized.load(std::memory_order_acquire)) {
+        return;
+    }
+    // Free threshold + net_send auxiliaries and UploadState mirrors while the
+    // device runtime is still valid (called from hoc_final_exit). Flag stays
+    // false until after frees so free_device_arrays / UploadState::teardown
+    // still call acc_delete.
+    try {
+        invalidate_auxiliary_device_uploads();
+        registry().invalidate();
+    } catch (...) {
+        // Never throw from process exit.
+    }
+    g_device_resources_finalized.store(true, std::memory_order_release);
+#else
+    g_device_resources_finalized.store(true, std::memory_order_release);
+#endif
+}
+
+bool device_resources_finalized() noexcept {
+    return g_device_resources_finalized.load(std::memory_order_acquire);
 }
 
 bool model_is_on_device() noexcept {
