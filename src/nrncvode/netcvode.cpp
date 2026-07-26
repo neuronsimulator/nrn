@@ -38,16 +38,20 @@
 #include "profile.h"
 #include "utils/profile/profiler_interface.h"
 #include "utils/formatting.hpp"
+// Always available (used by psolve/fadvance on CPU and GPU builds).
+#include "prcellstate_checkpoint.hpp"
 #if defined(NRN_ENABLE_GPU)
 #include "neuron/gpu/check_thresh.hpp"
 #include "neuron/gpu/config.hpp"
 #include "neuron/gpu/mechanism_phases.hpp"
 #include "neuron/gpu/sync.hpp"
-#include "prcellstate_checkpoint.hpp"
 #endif
 
 extern NetCvode* net_cvode_instance;
 
+#if defined(NRN_ENABLE_GPU)
+// Th0–Th2 threshold helpers (types in check_thresh.hpp). Only compiled when
+// native GPU is enabled; check_thresh.cpp is not in CPU/docs builds.
 namespace neuron::gpu {
 
 /**
@@ -88,7 +92,6 @@ int collect_threshold_presyn_slots(NrnThread* nt,
 }
 
 bool threshold_detection_on_device(NrnThread const& nt) noexcept {
-#if defined(NRN_ENABLE_GPU)
     if (!neuron::gpu::enabled() || !neuron::gpu::backend_native() || nt.end <= 0) {
         return false;
     }
@@ -110,10 +113,6 @@ bool threshold_detection_on_device(NrnThread const& nt) noexcept {
         }
     }
     return true;
-#else
-    (void) nt;
-    return false;
-#endif
 }
 
 void deliver_threshold_spike(NrnThread* nt, void* presyn, double teps) {
@@ -138,6 +137,7 @@ void sync_threshold_presyn_flags(ThresholdPresynSlot const* slots, int const* fl
 }
 
 }  // namespace neuron::gpu
+#endif  // NRN_ENABLE_GPU
 
 
 #include <array>

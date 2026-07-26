@@ -407,12 +407,13 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
         for (i = i1; i < i3; ++i) {
             NODERHS(_nt->_v_node[i]) = 0.;
         }
+    }
 #if defined(NRN_ENABLE_GPU)
-    } else if (neuron::gpu::matrix_rhs_d_stays_on_device_for_solve(nt) && _nt->compute_gpu) {
+    else if (neuron::gpu::matrix_rhs_d_stays_on_device_for_solve(nt) && _nt->compute_gpu) {
         neuron::gpu::zero_matrix_rhs_on_device(nt, i1, i3);
-    } else
+    }
 #endif
-        if (_nt->compute_gpu && i3 > i1) {
+    else if (_nt->compute_gpu && i3 > i1) {
         for (i = i1; i < i3; ++i) {
             vec_rhs[i] = 0.;
         }
