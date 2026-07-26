@@ -298,8 +298,9 @@ void CodegenNeuronAccVisitor::print_net_send_buffering_cnt_update() const {
 void CodegenNeuronAccVisitor::print_net_send_buffering_grow() {
     // No-op for ACC: OpenACC device-compiles this whole function when it is called
     // from a parallel loop, so host-only ensure/grow symbols must not appear here
-    // (nvlink undefined reference). Pre-size with net_send_buffer_ensure on the host
-    // before the OpenACC region; overflow silently drops if i >= nsb->_size.
+    // (nvlink undefined reference). Host must pre-size before the OpenACC region
+    // (net_send_buffer_ensure_for_events). If i >= nsb->_size the slot is not
+    // written; update_net_send_buffer_on_host aborts when _cnt > _size.
     (void) 0;
 }
 
@@ -619,13 +620,21 @@ void CodegenNeuronAccVisitor::print_net_receive_buffering() {
     printer->pop_block();
 
     if (info.net_send_used || info.net_event_used) {
-        printer->add_line("neuron::gpu::net_send_buffer_ensure(_ml_arg);");
+        // One net_send/move per queued receive is typical; size to this flush's peak.
+        printer->add_line(
+            "neuron::gpu::net_send_buffer_ensure_for_events(_ml_arg, nrb->_cnt);");
     }
 
     // Parallel over unique instances; serial over events per instance (CoreNEURON).
     // Body uses _present_fp_* + weights[weight_index+arg]; net_send → NetSendBuffer.
     printer->add_line("int count = nrb->_displ_cnt;");
     print_kernel_global_device_setup();
+    // Host just finished deliver_net_events with current nt->_t; device copy can lag
+    // (last async lastpart update). net_send/net_move use nt->_t — must be host-fresh.
+    printer->push_block("if (nt->compute_gpu)");
+    printer->add_line("nrn_pragma_acc(update device(nt->_t))");
+    printer->add_line("nrn_pragma_omp(target update to(nt->_t))");
+    printer->pop_block();
     // Scope nsb for present() so print_send_event_move can redeclare after.
     printer->add_line("{");
     printer->increase_indent();
@@ -1069,6 +1078,15 @@ std::string CodegenNeuronAccVisitor::float_variable_name(const SymbolType& symbo
         return fmt::format("(_present_fp_{} + inst._data_offset + id * {})", position, dimension);
     }
     return fmt::format("_present_fp_{}[inst._data_offset + id]", position);
+}
+
+std::string CodegenNeuronAccVisitor::get_variable_name(const std::string& name,
+                                                       bool use_instance) const {
+    // net_buf_receive: NMODL t is still nt->_t (same as host apply / CPU pnt_receive
+    // after deliver_net_events). The device struct must be host-fresh — see
+    // update device(nt->_t) before the OpenACC region in print_net_receive_buffering.
+    // Per-event nrb->_nrb_t is available as local `t` for diagnostics only.
+    return CodegenNeuronCppVisitor::get_variable_name(name, use_instance);
 }
 
 void CodegenNeuronAccVisitor::print_data_structures(bool print_initializers) {

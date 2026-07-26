@@ -39,11 +39,11 @@ struct NetSendBuffer_t {
 
 int net_send_buffer_capacity(Memb_list const* ml);
 void net_send_buffer_ensure(Memb_list* ml);
+/** Ensure capacity ≥ max(default, min_events); re-upload device arrays if grown. */
+void net_send_buffer_ensure_for_events(Memb_list* ml, int min_events);
 void update_net_send_buffer_on_host(NrnThread* nt, NetSendBuffer_t* nsb);
 /** Resolve NetSendBuffer rows via host Memb_list pdata (instance id + field indices). */
 void deliver_net_send_buffer_events(NrnThread* nt, Memb_list* ml, NetSendBuffer_t* nsb);
-/** @deprecated Prefer the Memb_list overload; ml is inferred null (legacy pointer packing). */
-void deliver_net_send_buffer_events(NrnThread* nt, NetSendBuffer_t* nsb);
 void ensure_thread_net_send_buffers(NrnThread* nt);
 void ensure_thread_net_send_buffers_host(NrnThread* nt);
 void flush_mechanism_net_send_buffers(NrnThread* nt);

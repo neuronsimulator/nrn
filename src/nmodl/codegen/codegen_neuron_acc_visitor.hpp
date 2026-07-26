@@ -75,6 +75,9 @@ class CodegenNeuronAccVisitor: public CodegenNeuronCppVisitor {
 
     std::string float_variable_name(const SymbolType& symbol, bool use_instance) const override;
 
+    /** In device net_buf_receive, NMODL t is the event time (nrb->_nrb_t), not nt->_t. */
+    std::string get_variable_name(const std::string& name, bool use_instance = true) const override;
+
     std::string int_variable_name(const IndexVariableInfo& symbol,
                                   const std::string& name,
                                   bool use_instance) const override;

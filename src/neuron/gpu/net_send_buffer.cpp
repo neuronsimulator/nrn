@@ -9,6 +9,7 @@
 #include <cstdio>
 #include <cstdint>
 #include <cstdlib>
+#include <numeric>
 #include <vector>
 
 // Heap-free: weight identity is SoA base index (−1 if none).
@@ -181,6 +182,26 @@ void net_send_buffer_ensure(Memb_list* ml) {
     ml->_net_send_buffer->reserve(capacity);
 }
 
+void net_send_buffer_ensure_for_events(Memb_list* ml, int min_events) {
+    if (!ml) {
+        return;
+    }
+    net_send_buffer_ensure(ml);
+    auto* const nsb = ml->_net_send_buffer;
+    if (!nsb) {
+        return;
+    }
+    // Headroom: each receive may net_send and/or net_move; never undersize vs this flush.
+    int const need = std::max({net_send_buffer_capacity(ml),
+                               std::max(min_events, 0) * 2,
+                               8});
+    nsb->reserve(need);
+#if defined(NRN_ENABLE_GPU)
+    // reserve() sets reallocated; re-copyin device arrays before device net_send_buffering.
+    upload_net_send_buffer_to_device(ml);
+#endif
+}
+
 void update_net_send_buffer_on_host(NrnThread* nt, NetSendBuffer_t* nsb) {
 #if defined(NRN_ENABLE_GPU)
     if (!nt || !nsb || !nt->compute_gpu) {
@@ -220,39 +241,54 @@ void update_net_send_buffer_on_host(NrnThread* nt, NetSendBuffer_t* nsb) {
 #endif
 }
 
-void deliver_net_send_buffer_events(NrnThread* nt, NetSendBuffer_t* nsb) {
-    // Prefer the Memb_list-aware overload when the buffer is attached to a mechanism.
-    deliver_net_send_buffer_events(nt, nullptr, nsb);
-}
-
 void deliver_net_send_buffer_events(NrnThread* nt, Memb_list* ml, NetSendBuffer_t* nsb) {
-    if (!nt || !nsb || !nsb->_cnt) {
+    if (!nt || !ml || !nsb || !nsb->_cnt) {
         return;
     }
-    for (int i = 0; i < nsb->_cnt; ++i) {
-        // Index ABI (CoreNEURON-style): instance id + ppvar field indices, not host pointers.
-        // POINT_PROCESS lives at dparam index 1 for point processes (see multicore/prcellstate).
+    if (!ml->pdata) {
+        fprintf(stderr,
+                "ERROR: deliver_net_send_buffer_events requires Memb_list pdata (thread %d)\n",
+                nt->id);
+        std::abort();
+    }
+
+    // Deterministic order: parallel device enqueue uses atomic capture (racey order).
+    // Sort by instance id then delivery time then sendtype to match serial displ apply.
+    int const n = nsb->_cnt;
+    std::vector<int> order(static_cast<std::size_t>(n));
+    std::iota(order.begin(), order.end(), 0);
+    std::stable_sort(order.begin(), order.end(), [&](int a, int b) {
+        if (nsb->_pnt_index[a] != nsb->_pnt_index[b]) {
+            return nsb->_pnt_index[a] < nsb->_pnt_index[b];
+        }
+        if (nsb->_nsb_t[a] != nsb->_nsb_t[b]) {
+            return nsb->_nsb_t[a] < nsb->_nsb_t[b];
+        }
+        return nsb->_sendtype[a] < nsb->_sendtype[b];
+    });
+
+    for (int k = 0; k < n; ++k) {
+        int const i = order[static_cast<std::size_t>(k)];
+        // Index ABI only: instance id + tqitem ppvar field + weight_index.
+        // POINT_PROCESS is dparam[1] for point processes (multicore/prcellstate).
         int const id = nsb->_pnt_index[i];
         int const tq_field = nsb->_vdata_index[i];
         int const weight_index = nsb->_weight_index[i];
-
-        Point_process* pnt = nullptr;
-        Datum* tqitem = nullptr;
-        if (ml && id >= 0 && id < ml->nodecount && ml->pdata) {
-            Datum* const ppvar = ml->pdata[id];
-            if (ppvar) {
-                pnt = ppvar[1].get<Point_process*>();
-                if (tq_field >= 0) {
-                    tqitem = &ppvar[tq_field];
-                }
-            }
-        } else {
-            // Legacy path: treat stored ints as truncated host pointer bits (pre-index ABI).
-            pnt = reinterpret_cast<Point_process*>(static_cast<intptr_t>(nsb->_pnt_index[i]));
-            if (tq_field >= 0) {
-                tqitem = reinterpret_cast<Datum*>(static_cast<intptr_t>(tq_field));
-            }
+        if (id < 0 || id >= ml->nodecount) {
+            fprintf(stderr,
+                    "ERROR: NetSendBuffer bad instance id %d (nodecount %d, thread %d)\n",
+                    id,
+                    ml->nodecount,
+                    nt->id);
+            std::abort();
         }
+        Datum* const ppvar = ml->pdata[id];
+        if (!ppvar) {
+            fprintf(stderr, "ERROR: NetSendBuffer null pdata for id %d\n", id);
+            std::abort();
+        }
+        Point_process* const pnt = ppvar[1].get<Point_process*>();
+        Datum* const tqitem = (tq_field >= 0) ? &ppvar[tq_field] : nullptr;
 
         switch (nsb->_sendtype[i]) {
         case 0:
