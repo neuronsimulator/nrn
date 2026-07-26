@@ -5,9 +5,28 @@
 # * STRUCTURED_HEADER_FILES_TO_INSTALL: {src}/src/a/b.h -> {bld}/include/a/b.h
 # =======================================================================================
 set(STRUCTURED_HEADER_FILES_TO_INSTALL
-    neuron/cache/mechanism_range.hpp neuron/container/data_handle.hpp
-    neuron/container/generic_data_handle.hpp neuron/container/non_owning_soa_identifier.hpp
-    neuron/model_data_fwd.hpp)
+    neuron/cache/mechanism_range.hpp
+    neuron/cache/model_data.hpp
+    neuron/container/data_handle.hpp
+    neuron/container/generic_data_handle.hpp
+    neuron/container/mechanism.hpp
+    neuron/container/mechanism_data.hpp
+    neuron/container/memory_usage.hpp
+    neuron/container/network/indices.hpp
+    neuron/container/network/netcon.hpp
+    neuron/container/network/point_process.hpp
+    neuron/container/network/presyn.hpp
+    neuron/container/network/weights.hpp
+    neuron/container/node.hpp
+    neuron/container/node_data.hpp
+    neuron/container/non_owning_soa_identifier.hpp
+    neuron/container/soa_container.hpp
+    neuron/container/soa_identifier.hpp
+    neuron/container/view_utils.hpp
+    neuron/model_data.hpp
+    neuron/model_data_fwd.hpp
+    # NMODL OpenACC mechs include model_data.hpp → soa_identifier → utils/logger.hpp
+    utils/logger.hpp)
 set(HEADER_FILES_TO_INSTALL
     gnu/mcran4.h
     gnu/nrnran123.h

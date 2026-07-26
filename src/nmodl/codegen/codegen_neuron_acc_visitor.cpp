@@ -606,15 +606,20 @@ void CodegenNeuronAccVisitor::print_net_receive_buffering() {
     printer->add_line("int start = nrb->_displ[i];");
     printer->add_line("int end = nrb->_displ[i + 1];");
     printer->push_block("for (int j = start; j < end; j++)");
+    // Host NET_RECEIVE body may call net_send/net_move, which expect the same
+    // symbols as nrn_net_receive (see CodegenNeuronCppVisitor::print_net_send_call).
     printer->add_multi_line(R"CODE(
         int index = nrb->_nrb_index[j];
         int id = nrb->_pnt_index[index];
         double t = nrb->_nrb_t[index];
         int weight_index = nrb->_weight_index[index];
+        int _weight_index = weight_index;
         double flag = nrb->_nrb_flag[index];
         (void) t;
         (void) flag;
         double* _args = weights + weight_index;
+        Datum* _ppvar = _ml_arg->pdata[id];
+        Point_process* _pnt = _ppvar[1].get<Point_process*>();
     )CODE");
     // Host SoA writes via _lmc.fpfield (not present_fp).
     use_present_fp_indexing_ = false;
@@ -792,6 +797,10 @@ void CodegenNeuronAccVisitor::print_mechanism_range_var_structure(bool print_ini
 std::string CodegenNeuronAccVisitor::indexed_fp_var(std::string_view name,
                                                     std::string_view index_expr) const {
     auto const position = position_of_float_var(std::string{name});
+    if (!use_present_fp_indexing_) {
+        // Host-only paths (e.g. INITIAL with wrote_conc) never declare _present_fp_*.
+        return fmt::format("_lmc.template fpfield<{}>({})", position, index_expr);
+    }
     return fmt::format("_present_fp_{}[inst._data_offset + {}]", position, index_expr);
 }
 
@@ -822,7 +831,11 @@ void CodegenNeuronAccVisitor::print_nrn_init(bool skip_init_check) {
 
     print_global_function_common_code(BlockType::Initial);
 
-    use_present_fp_indexing_ = true;
+    // Host-only Initial (e.g. ion wrote_conc) falls back to CPU ivdep path and
+    // never declares _present_fp_* / _present_dptr_*. Must not use present_fp
+    // indexing in that body or cad/ion WRITE INITIAL fails to compile.
+    const bool host_only_init = host_only_parallel_block(BlockType::Initial);
+    use_present_fp_indexing_ = !host_only_init;
     print_parallel_iteration_hint(BlockType::Initial, info.initial_node);
     printer->push_block("for (int id = 0; id < nodecount; id++)");
 
