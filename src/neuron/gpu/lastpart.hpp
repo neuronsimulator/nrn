@@ -20,8 +20,9 @@ namespace neuron::gpu {
 void prepare_nonvint_on_device(NrnThread& nt);
 
 /**
- * Pre-nonvint stream drain + full host SoA mirror (residual; still required
- * for OpenACC coherency on the current path). Not part of Gate F.
+ * Before device nonvint: drain streams and pull node voltages to host only.
+ * No full mechanism/node SoA mirror (performance). Checkpoints pull full state
+ * themselves when armed.
  */
 void sync_before_device_nonvint(NrnThread& nt) noexcept;
 

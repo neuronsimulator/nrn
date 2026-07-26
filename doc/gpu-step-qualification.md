@@ -198,8 +198,8 @@ gather (sparse or buffered), not full SoA.
 
 **Residuals (performance debt):**
 
-1. Pre-nonvint full SoA host mirror still every step (skipping alone regresses
-   spikes under current OpenACC path).  
+1. Pre-nonvint still pulls **voltages** to host every step (full SoA removed;
+   bare stream wait without V pull regresses spikes — root cause TBD).  
 2. `Vector.record` → full SoA instead of sparse/buffered trajectory-style gather.  
 3. AFTER_SOLVE arts that need host SoA without a device path.
 

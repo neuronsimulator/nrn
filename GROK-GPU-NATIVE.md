@@ -68,7 +68,7 @@ every step (full SoA) unless you have a measured reason.
 - Use CoreNEURON for **ideas and low-traffic shape**, not as a correctness oracle
   for every algorithm choice.
 - Spike path already uses device-side buffers (NetReceiveBuffer, NetSendBuffer indices).
-- Residual full SoA pulls (e.g. pre-nonvint mirror) are **performance debt**, not goals.
+- Residual host traffic (e.g. pre-nonvint voltage mirror) is **performance debt**, not a goal.
 - When stuck on lastpart / record / sync: check CoreNEURON paths above, then ask
   whether a **faster** design is possible.
 
@@ -291,14 +291,15 @@ nrnivmodl -nmodl "$(which nmodl)" -nmodlflags "passes --inline host --c acc --oa
 # Do not reuse a special linked against an older libnrniv (symbol lookup errors).
 ```
 
-### Gate F (2026-07-26) — ringtest lastpart post-nonvint SoA pull
+### Gate F + pre-nonvint SoA cleanup (2026-07-26)
 
 | Item | Status |
 |------|--------|
 | Post-nonvint full SoA pull | **Gated** — only if AFTER_SOLVE / BEFORE_STEP / `Vector.record` |
+| Pre-nonvint full SoA pull | **Removed** — stream wait + **voltages only** (`sync_voltages_to_host_before_nonvint`) |
 | Ringtest Gate F | **yes** (`!lastpart_host_phases_required`) |
-| Ringtest 0.025/1/1.025/100 | **GREEN** (688 spikes; noise-level cellstate) |
-| Residual | Pre-nonvint full SoA mirror still every step (performance debt) |
+| Ringtest 0.025/1/1.025/100 | **GREEN** (688 spikes; noise-level cellstate) after V-only pre-nonvint |
+| Residual | Why host V must match before nonvint (bare wait fails); trajectory for record |
 | Long-term for record | Sparse/buffered trajectory-style gather (CoreNEURON is a guide; improve if faster) |
 
 ### Next GPU feature (new session)
@@ -306,7 +307,7 @@ nrnivmodl -nmodl "$(which nmodl)" -nmodlflags "passes --inline host --c acc --oa
 | Option | Content |
 |--------|---------|
 | NetSendBuffer capacity | Ensure no silent drop under heavy self-event load |
-| Pre-nonvint pull cleanup | Remove residual full SoA mirror if safe (hot-path win) |
+| Pre-nonvint V residual | Eliminate voltage host mirror if a stale host→device V path is found |
 | Trajectory native path | Low-traffic record so Gate F stays green with `Vector.record` |
 | Later | use_gap=1, multi-rank, perf, single device-resource owner |
 
@@ -358,10 +359,10 @@ High performance is sacred; CoreNEURON is a guide (low host traffic), not law.
 Commit steps locally without push unless asked.
 
 Tree: ~/neuron/nrngpu. Kind: feature.
-Branch: local/gpu-native-net-soa — Th0–Th4 + device NET_RECEIVE + Gate F ringtest
-(post-nonvint SoA gated; pre-nonvint residual). Traub QUALIFIED A–E, 4474@100.
+Branch: local/gpu-lastpart-no-soa-pull — Gate F post-nonvint full SoA gated;
+pre-nonvint voltages-only (no full SoA). Traub QUALIFIED A–E, 4474@100.
 
-Next (pick one): NetSendBuffer capacity, pre-nonvint pull cleanup, or trajectory
+Next (pick one): NetSendBuffer capacity, pre-nonvint V residual, or trajectory
 native path. Do not start use_gap, multi-rank, or device-resource owner unless asked.
 
 Heap-free weight_index only; no host vec_rhs voltage hot path.
