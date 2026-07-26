@@ -7,6 +7,32 @@ execution, and how we extend capability model-by-model (ringtest → Traub → �
 **North star:** one coherent step on device — same conceptual contract as
 CoreNEURON GPU — not spike parity across every intermediate host/device partition.
 
+### Performance guide: CoreNEURON (not sacred)
+
+**Sacred:** high performance (wall time, device work, minimal hot-path host
+traffic). **Not sacred:** CoreNEURON’s algorithms as frozen design. CoreNEURON is
+a **good guide** because it runs full fixed steps on GPU with little CPU traffic
+during a step; better-performing designs are welcome.
+
+Typical low-traffic host coupling (guide, not cage):
+
+1. Spike / discrete events  
+2. Optional **trajectories** (requested recorded values only)  
+3. End-of-run handback / diagnostics  
+
+Avoid defaulting to per-step full node/mechanism SoA host mirrors for integration
+or recording without measurement.
+
+| Topic | Location |
+|-------|----------|
+| GPU fixed step | `src/coreneuron/sim/fadvance_core.cpp` |
+| Per-step trajectory gather | `nrncore2nrn_send_values` in that file |
+| NEURON trajectory request ABI | `src/nrncvode/netcvode.cpp` — search `trajectory` |
+| Handoff for agents | `GROK-GPU-NATIVE.md` § *Permanent: high performance is sacred* |
+
+Trajectory modes (performant patterns): `bsize > 0` fills device buffers for the
+interval; `bsize == 0` sparse per-step gather. Improve if you can do better.
+
 ---
 
 ## 1. Goals and non-goals
@@ -155,11 +181,27 @@ Host `PreSyn::check` is skipped only when the device path reports success.
 
 `!lastpart_host_phases_required(nt)`
 
-Qualified lastpart should not require `begin_lastpart_host_phases()` to pull
-full node/mechanism SoA for AFTER_SOLVE / `fixed_record` / HOC callbacks.
+After device nonvint, skip the full node/mechanism SoA host pull unless host
+lastpart consumers need it:
 
-**Current state:** lastpart host phases still run for many native-GPU builds.
-Treat Gate F as a **ringtest-first** target; Traub may follow after Gates B–C.
+- `nt.tbl[AFTER_SOLVE]` or `nt.tbl[BEFORE_STEP]` non-empty, or
+- continuous `Vector.record` / `fixed_record_` present
+
+Otherwise device SoA stays authoritative through AFTER_SOLVE / fixed_record /
+deliver; `prcellstate` and `finalize_psolve_download` still pull on demand.
+
+**Current state (ringtest-first, 2026-07-26):** ringtest (no AFTER_SOLVE art, no
+continuous record) reports Gate F **yes** and keeps 688@100 / cellstate parity.
+Models with `Vector.record` still force a post-nonvint full SoA mirror today
+(Gate F **no**) — **transitional only**. Target is CoreNEURON **trajectory**
+gather (sparse or buffered), not full SoA.
+
+**Residuals (performance debt):**
+
+1. Pre-nonvint full SoA host mirror still every step (skipping alone regresses
+   spikes under current OpenACC path).  
+2. `Vector.record` → full SoA instead of sparse/buffered trajectory-style gather.  
+3. AFTER_SOLVE arts that need host SoA without a device path.
 
 ### Summary predicate (proposed API)
 

@@ -104,6 +104,11 @@ void fixed_record_continuous(neuron::model_sorted_token const& cache_token, NrnT
     }
 }
 
+bool nrn_has_fixed_record_continuous() {
+    return net_cvode_instance && net_cvode_instance->fixed_record_ &&
+           !net_cvode_instance->fixed_record_->empty();
+}
+
 void nrn_solver_prepare() {
     if (net_cvode_instance) {
         net_cvode_instance->solver_prepare();

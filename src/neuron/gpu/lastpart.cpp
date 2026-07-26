@@ -8,9 +8,11 @@
 #include "neuron/gpu/sync.hpp"
 
 #include "coreneuron/utils/offload.hpp"
+#include "membfunc.h"
 #include "multicore.h"
 #include "nonvintblock.h"
 #include "nrn_ansi.h"
+#include "nrncvode.h"
 
 #include <cstdlib>
 
@@ -48,6 +50,14 @@ thread_local bool g_nonvint_state_on_device{};
     (void) nt;
     return false;
 #endif
+}
+
+/** True when lastpart host tail (AFTER_SOLVE / BEFORE_STEP / Vector.record) reads SoA. */
+[[nodiscard]] bool lastpart_host_soa_consumers_present(NrnThread const& nt) noexcept {
+    if (nt.tbl[AFTER_SOLVE] || nt.tbl[BEFORE_STEP]) {
+        return true;
+    }
+    return nrn_has_fixed_record_continuous();
 }
 
 }  // namespace
@@ -116,7 +126,13 @@ void finalize_nonvint_on_device(NrnThread& nt) {
         return;
     }
     nrn_pragma_acc(wait(nt.stream_id))
-    sync_before_host_lastpart_tail(nt);
+    // Gate F: after device nonvint, pull full SoA only if host lastpart consumers
+    // (AFTER_SOLVE / BEFORE_STEP / Vector.record) need it. Always drain streams.
+    if (lastpart_host_phases_required(nt)) {
+        sync_before_host_lastpart_tail(nt);
+    } else if (nt.id == 0) {
+        sync_all_device_streams();
+    }
     nt.compute_gpu = g_saved_compute_gpu_for_nonvint;
     g_nonvint_state_on_device = false;
 #else
@@ -129,6 +145,9 @@ void sync_before_device_nonvint(NrnThread& nt) noexcept {
     if (!enabled() || !backend_native() || !nonvint_state_on_device(nt)) {
         return;
     }
+    // Keep pre-nonvint full host mirror: required for next-step coherency with
+    // the current OpenACC path (skipping it alone regresses ringtest spikes).
+    // Gate F targets the *post*-nonvint lastpart host pull only.
     sync_before_host_lastpart_tail(nt);
 #else
     (void) nt;
@@ -137,8 +156,18 @@ void sync_before_device_nonvint(NrnThread& nt) noexcept {
 
 bool lastpart_host_phases_required(NrnThread const& nt) noexcept {
 #if defined(NRN_ENABLE_GPU)
-    return enabled() && backend_native() && nonvint_device_preconditions(nt) &&
-           !post_solve_needs_host_fallback(nt) && nt.compute_gpu;
+    // Device nonvint leaves SoA authoritative on the GPU. Host lastpart needs a
+    // full SoA pull only when AFTER_SOLVE / BEFORE_STEP / fixed_record read it.
+    // Gate F is green when this returns false (ringtest default).
+    if (!enabled() || !backend_native() || !nonvint_device_preconditions(nt) ||
+        post_solve_needs_host_fallback(nt)) {
+        return false;
+    }
+    if (!device_nonvint_enabled()) {
+        // Host owns STATE; no special lastpart SoA pull from device.
+        return false;
+    }
+    return lastpart_host_soa_consumers_present(nt);
 #else
     (void) nt;
     return false;

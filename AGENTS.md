@@ -41,9 +41,15 @@ and `Info : 1 GPUs shared by 1 ranks per node` in `special` output.
 
 ## Design constraints
 
-- **Full GPU fixed steps** for ringtest (CoreNEURON-style). No per-step host
-  post-solve voltage path on the hot path (no `vec_rhs` pull → host `nrn_update_voltage`
-  → push `vec_v` as the primary fix).
+- **High performance is sacred.** CoreNEURON is a **guide** (full step on GPU, little
+  CPU traffic during a step — spikes + optional trajectories), **not law**. Better-
+  performing algorithms than CoreNEURON are valid candidates. See
+  **`GROK-GPU-NATIVE.md` → Permanent: high performance is sacred**.
+  Trajectory reference: `trajectory` in `src/nrncvode/netcvode.cpp`; device gather
+  in `src/coreneuron/sim/fadvance_core.cpp` (`nrncore2nrn_send_values`). Avoid full
+  SoA pull as the default for `Vector.record` / lastpart unless measured.
+- No per-step host post-solve voltage path as the primary fix (`vec_rhs` pull →
+  host `nrn_update_voltage` → push `vec_v`).
 - **Heap-free network:** sim-path identity is `weight_index` only (PR #3826). Do not
   reintroduce `NetCon::weight_` heap or Stage-2 `_receive_weight` shims.
 - NetReceiveBuffer + device `net_buf_receive` for all buffered NET_RECEIVE (incl.
@@ -55,3 +61,10 @@ and `Info : 1 GPUs shared by 1 ranks per node` in `special` output.
 
 Run commands yourself (`prcellstate_native_gpu.sh`, `ninja`, `rdcellstate`). Do not tell
 the user what to run unless blocked (e.g. no GPU after `nvidia-smi` fails).
+
+## Session end: commit, do not push
+
+After a coherent step: **commit locally** with a clear message. **Do not `git push`**
+unless the user asks. User reviews with `git show HEAD` and either pushes or requests
+amend / follow-up. Same workflow preference for all sessions on this machine
+(`PORTFOLIO.md` / `META-ORG.md`).

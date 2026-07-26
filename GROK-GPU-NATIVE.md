@@ -10,6 +10,77 @@ Related CPU docs (same tree after merge):
 | `GROK-NETWORK-SOA.md` | Network SoA / dual-write history |
 | `doc/network-soa/heap-free.md` | Weight-index ABI, packing A charter |
 | `AGENTS.md` | Short agent rules for this branch |
+| **`doc/gpu-step-qualification.md`** | Gates A–F; performance / host-traffic guide |
+
+---
+
+## Permanent: high performance is sacred (CoreNEURON is a guide)
+
+**Read this every GPU session.**
+
+**What is sacred:** **high performance** — wall time, device occupancy, and
+**minimal host↔device communication on the fixed-step hot path.**
+
+**What is not sacred:** CoreNEURON as a frozen design. It is a **good guide today**
+because it already runs full fixed steps on GPU with very little CPU traffic
+during a step (mainly spikes + optional trajectories). Its **algorithms are
+hopefully improvable**. If you can envision a **better-performing** approach than
+CoreNEURON for native GPU, that is a **valid candidate** — measure it, do not
+reject it for “not matching CoreNEURON.”
+
+**Practical guide (not a cage):** avoid inventing per-step full node/mech SoA
+host mirrors as the primary integration or recording strategy. A high-performance
+hot path typically looks like:
+
+1. **Spike / discrete events** (threshold hit indices → host deliver; MPI exchange)
+2. **Optional trajectories** (only requested scalars for `Vector.record` / graphs)
+3. **End-of-run or diagnostic pull** (`prcellstate`, `finalize_psolve_download`) — not integration
+
+Integration state (V, mechanism SoA, matrix) should stay **device-resident** unless
+a measured design needs otherwise.
+
+### Where to look (in-tree CoreNEURON — reference, not law)
+
+| Concern | Path |
+|---------|------|
+| Fixed-step GPU loop | `src/coreneuron/sim/fadvance_core.cpp` (`nrn_fixed_step_thread`, lastpart) |
+| Trajectory send each step | `nrncore2nrn_send_values` in same file — gather requested doubles only |
+| Trajectory request ABI (NEURON side) | `src/nrncvode/netcvode.cpp` — search **`trajectory`**: `nrnthread_get_trajectory_requests`, `nrnthread_trajectory_values`, `nrnthread_trajectory_return` |
+| Device trajec buffers | `src/coreneuron/gpu/nrn_acc_manager.cpp` (`trajec_requests` copyin) |
+| Trajectory struct | `src/coreneuron/sim/multicore.hpp` — `TrajectoryRequests` |
+
+### Trajectory modes (low-traffic recording reference)
+
+From comments on `nrnthread_get_trajectory_requests` / CoreNEURON — a **performant
+pattern** for recording without full SoA download:
+
+| Mode | Meaning |
+|------|---------|
+| **`bsize > 0`** | Device fills trajectory arrays for the interval; hand back at end of stretch |
+| **`bsize == 0`** | Per-step sparse gather of `types`/`indices` → host `pvars` / callback |
+
+Better recording schemes are welcome if they move less data or cost less wall time.
+**Weak default to avoid:** `if (fixed_record_) sync_state_to_host_for_host_reads()`
+every step (full SoA) unless you have a measured reason.
+
+### Implications for native GPU work
+
+- Use CoreNEURON for **ideas and low-traffic shape**, not as a correctness oracle
+  for every algorithm choice.
+- Spike path already uses device-side buffers (NetReceiveBuffer, NetSendBuffer indices).
+- Residual full SoA pulls (e.g. pre-nonvint mirror) are **performance debt**, not goals.
+- When stuck on lastpart / record / sync: check CoreNEURON paths above, then ask
+  whether a **faster** design is possible.
+
+### Session end: commit, do not push
+
+User workflow (all GPU sessions — and preferred for this tree generally):
+
+1. Finish a coherent step (code + green smokes as appropriate).
+2. **Commit locally** with a clear message (complete sentences).
+3. **Do not `git push`** unless the user explicitly asks.
+4. User reviews with `git show HEAD` (and related), then pushes themselves — or
+   discusses and requests **amend** / follow-up commit.
 
 ---
 
@@ -89,11 +160,15 @@ points must flush NetReceiveBuffer.
 
 ### Design constraints (do not regress)
 
-1. Full GPU fixed steps — no per-step host `vec_rhs` → host voltage → push `vec_v`.
+1. Full GPU fixed steps with **minimal hot-path host traffic** (see permanent
+   performance section). No per-step host `vec_rhs` → host voltage → push `vec_v`
+   as the primary fix. Avoid full SoA host mirror as the default recording/lastpart
+   strategy unless measured.
 2. Heap-free: `weight_index` only; no `NetCon::weight_` heap; no `_receive_weight` shims.
-3. Enqueue on host; **device** NET_RECEIVE apply (CoreNEURON-style) for all buffered
-   point processes. `net_send`/`net_move`/`net_event` → device NetSendBuffer (index
-   ABI + heap-free `weight_index`); host flush/deliver. Device cur/jacob with PP atomics.
+3. Enqueue on host; **device** NET_RECEIVE apply for all buffered point processes.
+   `net_send`/`net_move`/`net_event` → device NetSendBuffer (index ABI + heap-free
+   `weight_index`); host flush/deliver. Device cur/jacob with PP atomics.
+4. Recording: prefer sparse/buffered trajectory-style gather over full SoA pull.
 
 ### Threshold detection (Th0+)
 
@@ -216,20 +291,33 @@ nrnivmodl -nmodl "$(which nmodl)" -nmodlflags "passes --inline host --c acc --oa
 # Do not reuse a special linked against an older libnrniv (symbol lookup errors).
 ```
 
+### Gate F (2026-07-26) — ringtest lastpart post-nonvint SoA pull
+
+| Item | Status |
+|------|--------|
+| Post-nonvint full SoA pull | **Gated** — only if AFTER_SOLVE / BEFORE_STEP / `Vector.record` |
+| Ringtest Gate F | **yes** (`!lastpart_host_phases_required`) |
+| Ringtest 0.025/1/1.025/100 | **GREEN** (688 spikes; noise-level cellstate) |
+| Residual | Pre-nonvint full SoA mirror still every step (performance debt) |
+| Long-term for record | Sparse/buffered trajectory-style gather (CoreNEURON is a guide; improve if faster) |
+
 ### Next GPU feature (new session)
 
 | Option | Content |
 |--------|---------|
-| **Gate F** (stretch) | lastpart without full host SoA pull — see `doc/gpu-step-qualification.md` |
-| NetSendBuffer capacity | Ensure no silent drop under heavy self-event load (if not fully covered by 9080) |
-| Later | use_gap=1, multi-rank, CoreNEURON perf, single device-resource owner |
+| NetSendBuffer capacity | Ensure no silent drop under heavy self-event load |
+| Pre-nonvint pull cleanup | Remove residual full SoA mirror if safe (hot-path win) |
+| Trajectory native path | Low-traffic record so Gate F stays green with `Vector.record` |
+| Later | use_gap=1, multi-rank, perf, single device-resource owner |
 
 ### Constraints (do not regress)
 
-1. Full GPU fixed steps — no host `vec_rhs` → voltage → push `vec_v` as primary fix.  
+1. Full GPU fixed steps; minimize host traffic on the hot path (performance first).  
 2. Heap-free: `weight_index` only.  
 3. Ringtest long gate and Traub QUALIFIED bar stay green if you touch shared paths.  
-4. **No host body apply** of NET_RECEIVE on the native-GPU path (host **deliver** of buffered net_send is OK).
+4. **No host body apply** of NET_RECEIVE on the native-GPU path (host **deliver** of buffered net_send is OK).  
+5. Do not “fix” recording or lastpart with unmeasured full SoA pull as the long-term design.  
+6. **Commit without push** at end of a step; user reviews `git show HEAD`.
 
 ---
 
@@ -237,11 +325,14 @@ nrnivmodl -nmodl "$(which nmodl)" -nmodlflags "passes --inline host --c acc --oa
 
 | Area | Path |
 |------|------|
+| **CoreNEURON guide (step)** | `src/coreneuron/sim/fadvance_core.cpp` |
+| **Trajectory ABI (NEURON)** | `src/nrncvode/netcvode.cpp` (`trajectory` search) |
 | Event flush | `src/neuron/gpu/net_events.cpp` |
 | NetReceiveBuffer | `src/neuron/gpu/net_receive_buffer.{hpp,cpp}` |
 | Weight SoA upload | `src/neuron/gpu/upload.cpp` |
 | ACC codegen (atomic PP) | `src/nmodl/codegen/codegen_neuron_acc_visitor.cpp` |
 | Threshold detect (Th0–Th3) | `doc/gpu/threshold-detection.md`, `src/neuron/gpu/check_thresh.*` |
+| Gate F lastpart | `src/neuron/gpu/lastpart.cpp` |
 | Harness | `test/external/ringtest/prcellstate_native_gpu.sh` |
 
 ---
@@ -263,14 +354,15 @@ After ACC codegen changes to built-ins: `rm -f build-gpu/src/nrnoc/expsyn.cpp &&
 
 ```
 Read ~/neuron/notes/PORTFOLIO.md (GPU-native) then GROK-GPU-NATIVE.md and AGENTS.md.
+High performance is sacred; CoreNEURON is a guide (low host traffic), not law.
+Commit steps locally without push unless asked.
 
 Tree: ~/neuron/nrngpu. Kind: feature.
-Tip: local/gpu-native-net-soa @ 9080f3832 — Th0–Th4 + device NET_RECEIVE landed
-(ringtest 688@100; Traub QUALIFIED A–E, 4474@100 re-smoked 2026-07-26). No host
-NET_RECEIVE body on native path.
+Branch: local/gpu-native-net-soa — Th0–Th4 + device NET_RECEIVE + Gate F ringtest
+(post-nonvint SoA gated; pre-nonvint residual). Traub QUALIFIED A–E, 4474@100.
 
-Next (pick one): Gate F lastpart stretch, or NetSendBuffer capacity hardening.
-Do not start use_gap, multi-rank, CoreNEURON perf race, or device-resource owner.
+Next (pick one): NetSendBuffer capacity, pre-nonvint pull cleanup, or trajectory
+native path. Do not start use_gap, multi-rank, or device-resource owner unless asked.
 
 Heap-free weight_index only; no host vec_rhs voltage hot path.
 source ~/neuron/bin/nrnenv nrngpu build-gpu before GPU runs.

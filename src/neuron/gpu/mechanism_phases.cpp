@@ -334,8 +334,12 @@ std::string native_gpu_qualification_report() {
                        gates.post_solve_on_device ? "yes" : "no");
     out += fmt::format("Gate E threshold on device: {}\n",
                        gates.threshold_on_device ? "yes" : "no");
-    out += fmt::format("Gate F lastpart host fallback (informational): {}\n",
-                       lastpart_host_phases_required(*nt_detail) ? "yes" : "no");
+    // Gate F: no per-step full SoA pull after device nonvint (stretch; not required for QUALIFIED).
+    out += fmt::format("Gate F lastpart without host SoA pull: {}\n",
+                       lastpart_host_phases_required(*nt_detail) ? "no" : "yes");
+    if (lastpart_host_phases_required(*nt_detail)) {
+        out += "  (AFTER_SOLVE / BEFORE_STEP art or Vector.record present; host mirror kept)\n";
+    }
     out += fmt::format("host_voltage_authoritative: {}\n",
                        host_voltage_is_authoritative(*nt_detail) ? "yes" : "no");
     if (!qualified && allow_unqualified_gpu_native()) {

@@ -9,29 +9,39 @@ namespace neuron::gpu {
 
 /**
  * True when STATE should run on device during nonvint (OpenACC nrnivmodl mods and
- * NRN_NATIVE_GPU_DEVICE_NONVINT=1). Requires mechanism SOA download before host AFTER_SOLVE.
+ * NRN_NATIVE_GPU_DEVICE_NONVINT=1).
  */
 [[nodiscard]] bool nonvint_state_on_device(NrnThread const& nt) noexcept;
 
 /** Gate C structural predicate (ignores transient nt.compute_gpu). */
 [[nodiscard]] bool nonvint_qualifies_for_gpu_native(NrnThread const& nt) noexcept;
 
-/** Push host-authoritative voltages and thread time before GPU nonvint/state. */
+/** Push thread time before GPU nonvint/state. */
 void prepare_nonvint_on_device(NrnThread& nt);
 
-/** Mirror device SOA to host before GPU nonvint when OpenACC STATE runs on device. */
+/**
+ * Pre-nonvint stream drain + full host SoA mirror (residual; still required
+ * for OpenACC coherency on the current path). Not part of Gate F.
+ */
 void sync_before_device_nonvint(NrnThread& nt) noexcept;
 
-/** Wait for GPU nonvint/state kernels before host AFTER_SOLVE / recording. */
+/**
+ * Wait for GPU nonvint; Gate F pulls host SoA only when
+ * lastpart_host_phases_required (AFTER_SOLVE / BEFORE_STEP / Vector.record).
+ */
 void finalize_nonvint_on_device(NrnThread& nt);
 
 /**
- * Pull sorted node and mechanism SOA from device before host lastpart tail
- * (AFTER_SOLVE, fixed_record, deliver_events). Required when device nonvint ran.
+ * Pull sorted node and mechanism SOA from device (host lastpart tail or
+ * pre-nonvint residual mirror).
  */
 void sync_before_host_lastpart_tail(NrnThread& nt) noexcept;
 
-/** True when AFTER_SOLVE / deliver tail of lastpart must run on host (CPU parity). */
+/**
+ * True when host lastpart tail needs a post-nonvint full SoA pull
+ * (AFTER_SOLVE / BEFORE_STEP art or continuous Vector.record).
+ * Gate F is green when this is false under device nonvint (ringtest default).
+ */
 [[nodiscard]] bool lastpart_host_phases_required(NrnThread const& nt) noexcept;
 
 /** Download device state and clear compute_gpu before host lastpart tail (AFTER_SOLVE, deliver). */
