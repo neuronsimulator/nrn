@@ -102,6 +102,9 @@ class CodegenNeuronAccVisitor: public CodegenNeuronCppVisitor {
     /** When true, RANGE reads use _present_fp_* (OpenACC kernel); else _lmc.fpfield (HOC/net_receive). */
     mutable bool use_present_fp_indexing_{false};
 
+    /** True while emitting device net_buf_receive body (net_send → buffering, not host net_send). */
+    mutable bool printing_net_buf_receive_kernel_{false};
+
     [[nodiscard]] std::string indexed_fp_var(std::string_view name,
                                              std::string_view index_expr = "id") const;
     [[nodiscard]] int conductance_fp_index() const;

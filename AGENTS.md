@@ -14,7 +14,7 @@ Integration branch: **`local/gpu-native-net-soa`** = `local/cpu-net-soa-heap-fre
 ## Workspace
 
 - Primary tree: `~/neuron/nrngpu` (this tree). Commit here.
-- Branch: `local/gpu-native-net-soa`.
+- Branch: feature `local/gpu-device-net-receive` (integration: `local/gpu-native-net-soa`).
 - Do not treat `~/neuron/core-neuron-gpu` as the git workspace (salvage only).
 - CPU-only SoA worktree (optional): `~/neuron/cpu_net_soa`.
 
@@ -46,8 +46,9 @@ and `Info : 1 GPUs shared by 1 ranks per node` in `special` output.
   → push `vec_v` as the primary fix).
 - **Heap-free network:** sim-path identity is `weight_index` only (PR #3826). Do not
   reintroduce `NetCon::weight_` heap or Stage-2 `_receive_weight` shims.
-- Stage 1 NetReceiveBuffer is present; runtime inactive until Stage 2+ registrations
-  use Weight SoA indices.
+- NetReceiveBuffer + device `net_buf_receive` for all buffered NET_RECEIVE (incl.
+  net_send → NetSendBuffer indices + host deliver with heap-free weight_index).
+  No host apply of NET_RECEIVE body on the native-GPU path.
 - Long-term gate: 688 spikes @ `tstop=100`, gid 32 CPU parity via `rdcellstate`.
 
 ## Execute, don’t delegate

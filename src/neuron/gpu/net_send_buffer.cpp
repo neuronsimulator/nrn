@@ -11,7 +11,8 @@
 #include <cstdlib>
 #include <vector>
 
-extern void nrn_net_send(void* v, double* weight, Point_process* pnt, double td, double flag);
+// Heap-free: weight identity is SoA base index (−1 if none).
+extern void nrn_net_send(void* v, int weight_index, Point_process* pnt, double td, double flag);
 extern void net_event(Point_process* pnt, double time);
 extern void nrn_net_move(Datum* v, Point_process* pnt, double tt);
 
@@ -220,29 +221,48 @@ void update_net_send_buffer_on_host(NrnThread* nt, NetSendBuffer_t* nsb) {
 }
 
 void deliver_net_send_buffer_events(NrnThread* nt, NetSendBuffer_t* nsb) {
+    // Prefer the Memb_list-aware overload when the buffer is attached to a mechanism.
+    deliver_net_send_buffer_events(nt, nullptr, nsb);
+}
+
+void deliver_net_send_buffer_events(NrnThread* nt, Memb_list* ml, NetSendBuffer_t* nsb) {
     if (!nt || !nsb || !nsb->_cnt) {
         return;
     }
     for (int i = 0; i < nsb->_cnt; ++i) {
-        auto* const pnt = reinterpret_cast<Point_process*>(
-            static_cast<intptr_t>(nsb->_pnt_index[i]));
-        auto* const weight = nsb->_weight_index[i] >= 0
-                                 ? reinterpret_cast<double*>(
-                                       static_cast<intptr_t>(nsb->_weight_index[i]))
-                                 : nullptr;
-        auto* const vdata = nsb->_vdata_index[i] >= 0
-                                ? reinterpret_cast<void*>(
-                                      static_cast<intptr_t>(nsb->_vdata_index[i]))
-                                : nullptr;
+        // Index ABI (CoreNEURON-style): instance id + ppvar field indices, not host pointers.
+        // POINT_PROCESS lives at dparam index 1 for point processes (see multicore/prcellstate).
+        int const id = nsb->_pnt_index[i];
+        int const tq_field = nsb->_vdata_index[i];
+        int const weight_index = nsb->_weight_index[i];
+
+        Point_process* pnt = nullptr;
+        Datum* tqitem = nullptr;
+        if (ml && id >= 0 && id < ml->nodecount && ml->pdata) {
+            Datum* const ppvar = ml->pdata[id];
+            if (ppvar) {
+                pnt = ppvar[1].get<Point_process*>();
+                if (tq_field >= 0) {
+                    tqitem = &ppvar[tq_field];
+                }
+            }
+        } else {
+            // Legacy path: treat stored ints as truncated host pointer bits (pre-index ABI).
+            pnt = reinterpret_cast<Point_process*>(static_cast<intptr_t>(nsb->_pnt_index[i]));
+            if (tq_field >= 0) {
+                tqitem = reinterpret_cast<Datum*>(static_cast<intptr_t>(tq_field));
+            }
+        }
+
         switch (nsb->_sendtype[i]) {
         case 0:
-            nrn_net_send(vdata, weight, pnt, nsb->_nsb_t[i], nsb->_nsb_flag[i]);
+            nrn_net_send(tqitem, weight_index, pnt, nsb->_nsb_t[i], nsb->_nsb_flag[i]);
             break;
         case 1:
             net_event(pnt, nsb->_nsb_t[i]);
             break;
         case 2:
-            nrn_net_move(static_cast<Datum*>(vdata), pnt, nsb->_nsb_t[i]);
+            nrn_net_move(tqitem, pnt, nsb->_nsb_t[i]);
             break;
         default:
             break;
@@ -300,7 +320,7 @@ void flush_mechanism_net_send_buffers(NrnThread* nt) {
     for (auto* tml = nt->tml; tml; tml = tml->next) {
         if (auto* nsb = tml->ml->_net_send_buffer) {
             update_net_send_buffer_on_host(nt, nsb);
-            deliver_net_send_buffer_events(nt, nsb);
+            deliver_net_send_buffer_events(nt, tml->ml, nsb);
         }
     }
 }

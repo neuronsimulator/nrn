@@ -219,6 +219,16 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
                           ", nrb->_nrb_t[:nrb->_cnt]"
                           ", nrb->_nrb_flag[:nrb->_cnt]"
                           ", weights[:weight_count]";
+        if (info.net_send_used || info.net_event_used) {
+            // Device net_send_buffering writes; host flush resolves indices after wait.
+            present_clause << ", nsb"
+                              ", nsb->_sendtype[:nsb->_size]"
+                              ", nsb->_vdata_index[:nsb->_size]"
+                              ", nsb->_weight_index[:nsb->_size]"
+                              ", nsb->_pnt_index[:nsb->_size]"
+                              ", nsb->_nsb_t[:nsb->_size]"
+                              ", nsb->_nsb_flag[:nsb->_size]";
+        }
         const auto codegen_float_variables_size = codegen_float_variables.size();
         for (int i = 0; i < codegen_float_variables_size; ++i) {
             const auto& float_var = codegen_float_variables[i];
@@ -286,12 +296,11 @@ void CodegenNeuronAccVisitor::print_net_send_buffering_cnt_update() const {
 }
 
 void CodegenNeuronAccVisitor::print_net_send_buffering_grow() {
-    printer->add_line("neuron::gpu::net_send_buffer_ensure(ml);");
-    printer->push_block("if (!nt->compute_gpu)");
-    printer->push_block("if (i >= nsb->_size)");
-    printer->add_line("nsb->grow();");
-    printer->pop_block();
-    printer->pop_block();
+    // No-op for ACC: OpenACC device-compiles this whole function when it is called
+    // from a parallel loop, so host-only ensure/grow symbols must not appear here
+    // (nvlink undefined reference). Pre-size with net_send_buffer_ensure on the host
+    // before the OpenACC region; overflow silently drops if i >= nsb->_size.
+    (void) 0;
 }
 
 void CodegenNeuronAccVisitor::print_net_send_buf_count_update_to_host() const {
@@ -320,19 +329,21 @@ void CodegenNeuronAccVisitor::print_net_send_buffering() {
     }
 
     printer->add_newline(2);
+    // Index ABI: tqitem ppvar field, weight SoA index, mechanism instance id (not host pointers).
+    // Device-callable: no host-only ensure/grow (pre-size on host before OpenACC regions).
     auto args =
         "NrnThread* nt, Memb_list* ml, neuron::gpu::NetSendBuffer_t* nsb, int type, "
-        "intptr_t vdata_ptr, intptr_t weight_ptr, intptr_t point_ptr, double t, double flag";
+        "int vdata_index, int weight_index, int pnt_instance_id, double t, double flag";
     printer->fmt_push_block("static inline void net_send_buffering({})", args);
+    printer->add_line("(void) ml;");
     printer->add_line("int i = 0;");
-    print_net_send_buffering_grow();
     print_net_send_buffering_cnt_update();
     printer->push_block("if (i < nsb->_size)");
     printer->add_multi_line(R"CODE(
          nsb->_sendtype[i] = type;
-         nsb->_vdata_index[i] = static_cast<int>(vdata_ptr);
-         nsb->_weight_index[i] = static_cast<int>(weight_ptr);
-         nsb->_pnt_index[i] = static_cast<int>(point_ptr);
+         nsb->_vdata_index[i] = vdata_index;
+         nsb->_weight_index[i] = weight_index;
+         nsb->_pnt_index[i] = pnt_instance_id;
          nsb->_nsb_t[i] = t;
          nsb->_nsb_flag[i] = flag;
     )CODE");
@@ -344,7 +355,7 @@ void CodegenNeuronAccVisitor::print_send_event_move() {
     printer->add_newline();
     printer->add_line("neuron::gpu::NetSendBuffer_t* nsb = _ml_arg->_net_send_buffer;");
     print_net_send_buf_update_to_host();
-    printer->add_line("neuron::gpu::deliver_net_send_buffer_events(nt, nsb);");
+    printer->add_line("neuron::gpu::deliver_net_send_buffer_events(nt, _ml_arg, nsb);");
     print_net_send_buf_count_update_to_device();
 }
 
@@ -561,11 +572,12 @@ void CodegenNeuronAccVisitor::print_net_receive_buffering() {
         return;
     }
 
-    // Ensure args are renamed before generating the device body (host path reuses AST).
+    // Ensure args are renamed before generating host + device bodies (mutates AST).
     rename_net_receive_arguments(*node, *node);
 
     printer->add_newline(2);
-    printer->add_line("/** CoreNEURON-style: apply queued NET_RECEIVE events on device. */");
+    printer->add_line(
+        "/** CoreNEURON-style: apply queued NET_RECEIVE on device (Weight SoA + net_send buffer). */");
     printer->fmt_push_block("static void net_buf_receive_{}(NrnThread* nt)", info.mod_suffix);
 
     printer->push_block("if (!nt || !nt->compute_gpu)");
@@ -606,56 +618,51 @@ void CodegenNeuronAccVisitor::print_net_receive_buffering() {
     printer->add_line("return;");
     printer->pop_block();
 
-    // Apply NET_RECEIVE on host into mechanism SoA (weight_index → Weight SoA), then
-    // push updated RANGE columns to the device. Full device-resident kernel is the
-    // long-term path; host apply is correct with heap-free ABI and avoids OpenACC
-    // present pitfalls on the first Stage 2/3 gate (ExpSyn ringtest @ 1.025).
+    if (info.net_send_used || info.net_event_used) {
+        printer->add_line("neuron::gpu::net_send_buffer_ensure(_ml_arg);");
+    }
+
+    // Parallel over unique instances; serial over events per instance (CoreNEURON).
+    // Body uses _present_fp_* + weights[weight_index+arg]; net_send → NetSendBuffer.
     printer->add_line("int count = nrb->_displ_cnt;");
+    print_kernel_global_device_setup();
+    // Scope nsb for present() so print_send_event_move can redeclare after.
+    printer->add_line("{");
+    printer->increase_indent();
+    if (info.net_send_used || info.net_event_used) {
+        printer->add_line("neuron::gpu::NetSendBuffer_t* nsb = _ml_arg->_net_send_buffer;");
+        printer->push_block("if (!nsb)");
+        printer->add_line("return;");
+        printer->pop_block();
+    }
+    print_kernel_data_present_annotation_block_begin();
+    use_present_fp_indexing_ = true;
+    printing_net_buf_receive_kernel_ = true;
+    print_parallel_iteration_hint(BlockType::NetReceive, node);
     printer->push_block("for (int i = 0; i < count; i++)");
     printer->add_line("int start = nrb->_displ[i];");
     printer->add_line("int end = nrb->_displ[i + 1];");
     printer->push_block("for (int j = start; j < end; j++)");
-    // Host NET_RECEIVE body may call net_send/net_move, which expect the same
-    // symbols as nrn_net_receive (see CodegenNeuronCppVisitor::print_net_send_call).
     printer->add_multi_line(R"CODE(
         int index = nrb->_nrb_index[j];
         int id = nrb->_pnt_index[index];
         double t = nrb->_nrb_t[index];
         int weight_index = nrb->_weight_index[index];
-        int _weight_index = weight_index;
         double flag = nrb->_nrb_flag[index];
         (void) t;
         (void) flag;
         double* _args = weights + weight_index;
-        Datum* _ppvar = _ml_arg->pdata[id];
-        Point_process* _pnt = _ppvar[1].get<Point_process*>();
     )CODE");
-    // Host SoA writes via _lmc.fpfield (not present_fp).
-    use_present_fp_indexing_ = false;
     printing_net_receive = true;
     print_statement_block(*node->get_statement_block(), false, false);
     printing_net_receive = false;
     printer->pop_block();  // inner j
     printer->pop_block();  // outer i
-
-    // Push mechanism float columns to device so nrn_cur/jacob see NET_RECEIVE updates.
-    printer->push_block("if (nt->compute_gpu)");
-    printer->add_line(
-        "std::size_t const _nrb_n = static_cast<std::size_t>(_ml_arg->nodecount);");
-    for (int i = 0; i < codegen_float_variables_size; ++i) {
-        const auto& float_var = codegen_float_variables[i];
-        auto const array_len = float_var->is_array() ? float_var->get_length() : 1;
-        // Use a local pointer + [0:len] form; some OpenACC compilers mishandle
-        // nested expressions inside update array sections.
-        printer->fmt_line("double* _nrb_fp_{0} = _present_fp_{0} + inst._data_offset;", i);
-        printer->fmt_line("nrn_pragma_acc(update device(_nrb_fp_{0}[0:_nrb_n * {1}]))",
-                          i,
-                          array_len);
-        printer->fmt_line("nrn_pragma_omp(target update to(_nrb_fp_{0}[0:_nrb_n * {1}]))",
-                          i,
-                          array_len);
-    }
-    printer->pop_block();
+    printing_net_buf_receive_kernel_ = false;
+    use_present_fp_indexing_ = false;
+    print_kernel_data_present_annotation_block_end();  // wait(stream)
+    printer->decrease_indent();
+    printer->add_line("}");
 
     printer->add_line("nrb->_displ_cnt = 0;");
     printer->add_line("nrb->_cnt = 0;");
@@ -672,45 +679,41 @@ void CodegenNeuronAccVisitor::print_net_receive_buffering() {
 }
 
 void CodegenNeuronAccVisitor::print_net_send_call(const ast::FunctionCall& node) {
-    if (printing_net_receive || printing_net_init) {
+    // Host pnt_receive path (CPU backend): direct net_send.
+    if ((printing_net_receive || printing_net_init) && !printing_net_buf_receive_kernel_) {
         CodegenNeuronCppVisitor::print_net_send_call(node);
         return;
     }
 
     auto const& arguments = node.get_arguments();
-    const auto& tqitem = get_variable_name("tqitem", /* use_instance */ false);
-    std::string weight_index = "weight_index";
-    std::string point_process = get_variable_name(naming::POINT_PROCESS_VARIABLE, false);
-
-    if (!printing_net_receive && !printing_net_init) {
-        weight_index = "0";
-        if (info.artificial_cell) {
-            point_process = fmt::format("(Point_process*){}", point_process);
-        } else {
-            point_process += ".get<Point_process*>()";
-        }
-    }
-
     if (info.artificial_cell) {
+        const auto& tqitem = get_variable_name("tqitem", /* use_instance */ false);
+        std::string point_process = get_variable_name(naming::POINT_PROCESS_VARIABLE, false);
+        if (!printing_net_receive) {
+            point_process = fmt::format("(Point_process*){}", point_process);
+        }
+        std::string weight_index = printing_net_receive ? "weight_index" : "-1";
         printer->fmt_text("{}(/* tqitem */ &{}, {}, {}, {} + ",
                           "artcell_net_send",
                           tqitem,
-                          "nullptr",
+                          weight_index,
                           point_process,
                           get_variable_name("t"));
-    } else {
-        const auto& t = get_variable_name("t");
-        printer->add_text("net_send_buffering(");
-        std::string weight_ptr = weight_index == "0" ? "0"
-                                                     : fmt::format("(intptr_t){}", weight_index);
-        printer->fmt_text(
-            "nt, _ml_arg, _ml_arg->_net_send_buffer, 0, (intptr_t)&{}, {}, "
-            "(intptr_t){}, {}+",
-            tqitem,
-            weight_ptr,
-            point_process,
-            t);
+        print_vector_elements(arguments, ", ");
+        printer->add_text(')');
+        return;
     }
+
+    // Device path: buffer indices; host deliver resolves via Memb_list pdata.
+    int const tq_field = info.tqitem_index >= 0 ? info.tqitem_index : -1;
+    std::string const weight_index = printing_net_receive ? "weight_index" : "-1";
+    const auto& t = get_variable_name("t");
+    printer->add_text("net_send_buffering(");
+    printer->fmt_text(
+        "nt, _ml_arg, _ml_arg->_net_send_buffer, 0, {}, {}, id, {}+",
+        tq_field,
+        weight_index,
+        t);
     print_vector_elements(arguments, ", ");
     printer->add_text(')');
 }
@@ -719,27 +722,27 @@ void CodegenNeuronAccVisitor::print_net_move_call(const ast::FunctionCall& node)
     if (!printing_net_receive && !printing_net_init) {
         throw std::runtime_error("Error : net_move only allowed in NET_RECEIVE block");
     }
-    if (printing_net_receive || printing_net_init) {
+    if ((printing_net_receive || printing_net_init) && !printing_net_buf_receive_kernel_) {
         CodegenNeuronCppVisitor::print_net_move_call(node);
         return;
     }
 
-    const auto& tqitem = get_variable_name("tqitem", false);
-    const auto& point_process = get_variable_name(naming::POINT_PROCESS_VARIABLE, false);
     if (info.artificial_cell) {
+        const auto& tqitem = get_variable_name("tqitem", false);
+        const auto& point_process = get_variable_name(naming::POINT_PROCESS_VARIABLE, false);
         printer->fmt_text("artcell_net_move(&{}, {}, ", tqitem, point_process);
         print_vector_elements(node.get_arguments(), ", ");
         printer->add_text(")");
         return;
     }
+
+    int const tq_field = info.tqitem_index >= 0 ? info.tqitem_index : -1;
     printer->add_text("net_send_buffering(");
     printer->fmt_text(
-        "nt, _ml_arg, _ml_arg->_net_send_buffer, 2, (intptr_t)&{}, (intptr_t)-1, "
-        "(intptr_t){}, ",
-        tqitem,
-        point_process);
+        "nt, _ml_arg, _ml_arg->_net_send_buffer, 2, {}, -1, id, ",
+        tq_field);
     print_vector_elements(node.get_arguments(), ", ");
-    printer->add_text(", 0.0, 0.0");
+    printer->add_text(", 0.0");
     printer->add_text(")");
 }
 
@@ -751,15 +754,18 @@ void CodegenNeuronAccVisitor::print_net_event_call(const ast::FunctionCall& node
         printer->add_text(")");
         return;
     }
+    if (printing_net_buf_receive_kernel_ || (!printing_net_receive && !printing_net_init)) {
+        printer->add_text("net_send_buffering(");
+        printer->add_text(
+            "nt, _ml_arg, _ml_arg->_net_send_buffer, 1, -1, -1, id, ");
+        print_vector_elements(arguments, ", ");
+        printer->add_text(", 0.0");
+        printer->add_text(")");
+        return;
+    }
+    // Host pnt_receive
     const auto& point_process = get_variable_name(naming::POINT_PROCESS_VARIABLE, false);
-    printer->add_text("net_send_buffering(");
-    printer->fmt_text(
-        "nt, _ml_arg, _ml_arg->_net_send_buffer, 1, (intptr_t)-1, (intptr_t)-1, "
-        "(intptr_t){}, ",
-        point_process);
-    print_vector_elements(arguments, ", ");
-    printer->add_text(", 0.0, 0.0");
-    printer->add_text(")");
+    printer->fmt_text("net_event({}, t)", point_process);
 }
 
 void CodegenNeuronAccVisitor::print_mechanism_range_var_structure(bool print_initializers) {
