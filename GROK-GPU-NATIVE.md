@@ -101,11 +101,53 @@ points must flush NetReceiveBuffer.
 | **Th1** | OpenACC detect over slots (device `vec_v`, atomic hit buffer) | **Done** |
 | **Th2** | Skip full `vec_v` host pull when device detect handles SoA PreSyns (lazy pull for host/WATCH) | **Done** |
 | **Th3** | Re-qualify ringtest 0.025/1/1.025/100 after Th0–Th2; traffic notes | **Done** (2026-07-25) |
-| **Th4** | Traub-scale threshold load | Pending |
+| **Th4** | Traub-scale threshold load | **In progress** — NMODL Traub build/load on GPU install green; Gate B/C next |
 
 Today: Th1 device `pscheck` + Th2 (no forced host voltage sync before detect) +
 Th3 green long gate. Host still pulls flags/hit indices then
 `deliver_threshold_spike`.
+
+### Resume: Traub / Th4 (2026-07-25+)
+
+NMODL **CPU** Traub M0–M2 is green in `~/neuron/nrnnmodl`
+(`local/nmodl-cpu-traub`; see `GROK-NMODL-CPU.md`). Do not re-do M0–M2 there.
+
+**#3826 tip absorbed** via cherry-pick (full rebase of merge-heavy GPU history
+conflicted on unrelated commits):
+
+| Cherry-pick | Content |
+|-------------|---------|
+| `3b273d4e3` (from `dcdbf97fe`) | Weight SoA by index (drop reverse NetCon map) — Traub hang fix |
+| `c267a0788` (from `a49fbad57`) | `nrnivmodl` defaults for `NMODL_PYLIB` / `NMODLHOME` |
+
+**Progress after absorb:**
+
+| Step | Status |
+|------|--------|
+| Rebuild + ringtest 688 @ 100 | **Green** (noise-level cellstate) |
+| NMODL Traub mechs on this install | **Green** — see recipe below |
+| CPU Traub smoke (`enable_gpu=0`) | **Green** — load ok; t=0.025 run; t=100 → **4474** spikes exact |
+| Gate B/C / Th4 GPU | **Next** |
+
+#### Traub NMODL build on GPU install
+
+```bash
+source ~/neuron/bin/nrnenv nrngpu build-gpu
+mkdir -p /tmp/traub-nrngpu-nmodl && cd /tmp/traub-nrngpu-nmodl
+ln -sfn ~/models/82894/mod/*.mod .
+# Default GPU nrnivmodl still uses nocmodl unless -nmodl is passed.
+nrnivmodl -nmodl "$(which nmodl)" .
+# special: /tmp/traub-nrngpu-nmodl/x86_64/special
+```
+
+**Linkage fix (required for NMODL mechs on GPU installs):** public headers
+declared C++ `hoc_register_net_send_buffering` / `…_receive_…`, but GPU defs
+in `neuron/gpu/net_*_buffer.cpp` are `extern "C"` → runtime
+`undefined symbol: _Z31hoc_register_net_send_bufferingi`. Fixed by matching
+`extern "C"` in `mech_api.h`, `nrniv_mf.h`, and CPU stubs in `init.cpp`.
+
+OpenACC/device mech codegen (`-nmodlflags` ACC path) and Gate B/C still open.
+`model_data.hpp` install may still matter for ACC only. M3 stays deferred.
 
 ---
 
@@ -140,11 +182,11 @@ After ACC codegen changes to built-ins: `rm -f build-gpu/src/nrnoc/expsyn.cpp &&
 ```
 Read GROK-GPU-NATIVE.md and AGENTS.md.
 
-Stages 2–3c + threshold Th0–Th3 done; long gate green: 688 spikes @ tstop=100,
-threshold dV=0, noise-level cellstate diffs only.
+Stages 2–3c + threshold Th0–Th3 done; long gate green: 688 spikes @ tstop=100.
+NMODL CPU Traub M0–M2 green in ~/neuron/nrnnmodl — do not re-do there.
 
-Next options: Traub incremental (Th4 threshold load when ready); optional pure
-device NET_RECEIVE apply.
+#3826 tip absorbed; ringtest 688@100 green. NMODL Traub on GPU install builds
+and runs CPU (4474 spikes @ 100). Next: Gate B/C / Th4 GPU.
 
 Do not reintroduce NetCon::weight_ heap or host vec_rhs voltage hot path.
 source ~/neuron/bin/nrnenv nrngpu build-gpu before GPU runs.

@@ -202,11 +202,11 @@ void add_nrn_has_net_event(int mechtype) {
 }
 
 #if !defined(NRN_ENABLE_GPU)
-void hoc_register_net_send_buffering(int type) {
+extern "C" void hoc_register_net_send_buffering(int type) {
     (void) type;
 }
 
-void hoc_register_net_receive_buffering(void (*)(NrnThread*), int type) {
+extern "C" void hoc_register_net_receive_buffering(void (*)(NrnThread*), int type) {
     (void) type;
 }
 #endif
