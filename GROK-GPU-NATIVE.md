@@ -158,10 +158,40 @@ nrnivmodl -nmodl "$(which nmodl)" \
    in the host apply loop so PulseSyn/NMDA self-events compile.
 4. **Linkage (prior):** `extern "C"` for net send/receive buffering registration.
 
-**Known residual:** process-exit OpenACC `acc_delete` / `cuDeviceGetAttribute`
-deinitialized (post-run cleanup noise; does not affect results). AlphaSynKin
-ACC eigen functor still broken (unused in 1/10 Traub). M3 NMODL feature gaps
-stay deferred.
+**Known residual:** AlphaSynKin ACC eigen functor still broken (unused in 1/10
+Traub). M3 NMODL feature gaps stay deferred. Process-exit `acc_delete` noise
+mitigated by `finalize_device_resources()` in `hoc_final_exit` (2026-07-26);
+see architecture debt below for the longer-term fix.
+
+### Architecture debt: single device-resource owner (not near-term)
+
+**Not** about per-step voltage traffic. “Threshold mirrors” are **metadata**
+columns for Gate E detect (`h_thvar_row`, `h_threshold`, `h_flag` — one row per
+threshold PreSyn), OpenACC-`copyin`’d for the detect kernel. Detect reads
+**device `vec_v` in place** (Th1/Th2). Per-step host traffic is only **hysteresis
+flags + hit slot indices** when there are crossings — **not** a full voltage
+pull (Th2).
+
+**Problem:** device lifetime is split:
+
+| Resource | Owner today |
+|----------|-------------|
+| Node/mech/Weight SoA | `UploadState` via `device_token` / last `model_sorted_token` |
+| Threshold columns + some `net_send` buffers | File-static `g_tables` in `check_thresh.cpp` (auxiliaries) |
+
+Auxiliaries were freed on Model “unsorted” / exit **after** OpenACC atexit could
+already deinitialize CUDA → `acc_delete` Deinitialized. Near-term fix:
+`finalize_device_resources()` while the device is still live + late no-ops.
+
+**Right architectural fix (return later):** one **device-resource domain** for
+all OpenACC mirrors (SoA upload + threshold columns + net_send buffers + any
+future aux), with:
+
+1. Explicit upload/invalidate tied to layout tokens (not file-statics).
+2. Single `finalize` at session end (hoc exit), not static-destructor order.
+3. No `acc_delete` from Model unsorted callbacks after finalize.
+
+Do **not** reintroduce full `vec_v` host pull as part of that cleanup.
 
 ---
 

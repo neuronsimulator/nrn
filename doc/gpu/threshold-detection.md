@@ -23,6 +23,13 @@ Long-term: leave voltages on device for the detect step (no full `vec_v` pull
 just for threshold). Th1 implements the device loop; Th0 freezes *who* is
 detected and *what* the buffer means.
 
+**“Threshold mirrors” (implementation term):** device copies of the **slot
+metadata** columns (`thvar_row`, `threshold`, hysteresis `flag`) used by the
+OpenACC detect kernel. They are **not** a per-step voltage mirror. Detect
+indexes **device `vec_v`** already resident for the fixed-step path (Th2: no
+full voltage host pull when device detect succeeds). Host traffic each step is
+flags + hit **slot indices** for deliver, only as needed.
+
 ---
 
 ## 2. Why no InputPreSyn in NEURON
