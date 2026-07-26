@@ -45,6 +45,9 @@ class CodegenNeuronAccVisitor: public CodegenNeuronCppVisitor {
 
     void print_function_definitions() override;
 
+    /** Eigen Newton functors must use _present_fp_* (same as kernel body), not _lmc. */
+    void print_functors_definitions() override;
+
     void print_hoc_py_wrapper_before_table_update() override;
 
     void print_check_table_entrypoint() override;

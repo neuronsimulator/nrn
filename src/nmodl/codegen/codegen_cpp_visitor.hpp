@@ -950,7 +950,7 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     void print_functor_definition(const ast::EigenNewtonSolverBlock& node);
 
     /** \brief Print all Newton functor structs. */
-    void print_functors_definitions();
+    virtual void print_functors_definitions();
 
     /** Print linear solver using Eigen.
      */

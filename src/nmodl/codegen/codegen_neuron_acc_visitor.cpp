@@ -151,6 +151,15 @@ void CodegenNeuronAccVisitor::print_function_definitions() {
     use_present_fp_indexing_ = false;
 }
 
+void CodegenNeuronAccVisitor::print_functors_definitions() {
+    // Functor params include _present_fp_* (internal_method_parameters) and the
+    // state loop constructs them with those pointers. initialize()/operator()
+    // must index via present_fp, not _lmc.template fpfield (no _lmc member).
+    use_present_fp_indexing_ = true;
+    CodegenCppVisitor::print_functors_definitions();
+    use_present_fp_indexing_ = false;
+}
+
 void CodegenNeuronAccVisitor::print_hoc_py_wrapper_before_table_update() {
     if (info.mod_suffix != "nothing" && !info.artificial_cell) {
         print_present_fp_pointer_declarations();

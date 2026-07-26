@@ -138,10 +138,7 @@ source ~/neuron/bin/nrnenv nrngpu build-gpu
 export NRN_NATIVE_GPU_DEVICE_NONVINT=1 NRN_GPU_BACKEND_TEST=native NRN_GPU_PERMUTE=2
 # Install must ship neuron/model_data.hpp + container headers (cmake/NeuronFileLists.cmake).
 mkdir -p /tmp/traub-nrngpu-acc && cd /tmp/traub-nrngpu-acc
-# Skip unused AlphaSynKin* (ACC eigen-functor codegen bug: missing _lmc member).
-for m in ~/models/82894/mod/*.mod; do
-  case $(basename "$m") in alphasynkin.mod|alphasynkint.mod) ;; *) ln -sfn "$m" .;; esac
-done
+ln -sfn ~/models/82894/mod/*.mod .
 nrnivmodl -nmodl "$(which nmodl)" \
   -nmodlflags "passes --inline host --c acc --oacc" .
 # special: /tmp/traub-nrngpu-acc/x86_64/special
@@ -161,10 +158,11 @@ nrnivmodl -nmodl "$(which nmodl)" \
    in the host apply loop so PulseSyn/NMDA self-events compile.
 4. **Linkage (prior):** `extern "C"` for net send/receive buffering registration.
 
-**Known residual:** AlphaSynKin ACC eigen functor still broken (unused in 1/10
-Traub). M3 NMODL feature gaps stay deferred. Process-exit `acc_delete` noise
-mitigated by `finalize_device_resources()` in `hoc_final_exit` (2026-07-26);
-see architecture debt below for the longer-term fix.
+**Known residual:** M3 NMODL feature gaps stay deferred. Process-exit
+`acc_delete` noise mitigated by `finalize_device_resources()` in
+`hoc_final_exit` (2026-07-26); see architecture debt below for the longer-term
+fix. AlphaSynKin ACC eigen functor fixed (A3, 2026-07-26): functors use
+`_present_fp_*` indexing.
 
 ### Architecture debt: single device-resource owner (not near-term)
 
