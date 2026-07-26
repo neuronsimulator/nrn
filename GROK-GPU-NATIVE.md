@@ -152,6 +152,9 @@ nrnivmodl -nmodl "$(which nmodl)" \
 
 1. **Header install:** ship `neuron/model_data.hpp` + transitive container/network
    headers and `utils/logger.hpp` (`cmake/NeuronFileLists.cmake`).
+   **Verified 2026-07-26 (A2):** delete from install → `ninja install` restores from
+   staging; clean Traub ACC `nrnivmodl` succeeds with only install `-I` (no
+   source-tree hand-copy).
 2. **ACC INITIAL + wrote_conc:** host-only init must not use `_present_fp_*`
    (`print_nrn_init` + `indexed_fp_var` honor `use_present_fp_indexing_`).
 3. **ACC net_buf_receive + net_send:** define `_ppvar` / `_pnt` / `_weight_index`
