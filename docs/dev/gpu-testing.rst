@@ -2,7 +2,9 @@ Testing GPU functionality
 #########################
 
 For the **Phase B scope contract** (supported features, timestep architecture,
-``neuron.gpu`` API), see :doc:`native-gpu-fixed-step`.
+``neuron.gpu`` API), see :doc:`native-gpu-fixed-step`. For **building** a
+native-GPU development install (CMake flags, NVHPC, activation, NMODL OpenACC
+``nrnivmodl``), see :doc:`native-gpu-build`.
 
 This section provides information and links that help with testing :ref:`CoreNEURON`'s GPU support.
 Other sections of the documentation that may be relevant are:

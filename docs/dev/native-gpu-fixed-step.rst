@@ -8,8 +8,9 @@ This page is the **scope contract** for NEURON's native GPU backend
 explicitly excluded, how a fixed-step timestep is organized, and how to
 configure runtime options.
 
-For CTest commands, ringtest benchmarks, and CI troubleshooting, see
-:doc:`gpu-testing`.
+For a practical **configure / install / activate** recipe (NVHPC, MPI, ringtest
+env vars, NMODL OpenACC mechanisms), see :doc:`native-gpu-build`. For CTest
+commands, ringtest benchmarks, and CI troubleshooting, see :doc:`gpu-testing`.
 
 Overview
 ********

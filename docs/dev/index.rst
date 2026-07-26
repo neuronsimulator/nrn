@@ -7,6 +7,7 @@ NEURON Development topics
    ./HOCInterpreter/HOCInterpreter.md
    ./how-do-i/how-do-i.rst
    data-structures.rst
+   native-gpu-build.rst
    native-gpu-fixed-step.rst
    native-gpu-phase-c.rst
    ./native-gpu-adoption/00-overview.md

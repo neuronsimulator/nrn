@@ -29,7 +29,20 @@ mechanism work.
 
    nrnivmodl mod                 # NOCMODL (Phase A transition; see above)
    nrnivmodl -coreneuron mod     # CoreNEURON mechanisms via NMODL + OpenACC
-   nrnivmodl -nmodl $(which nmodl) mod   # explicit NMODL NEURON codegen
+   nrnivmodl -nmodl $(which nmodl) mod   # explicit NMODL NEURON codegen (host)
+
+For **native GPU** device CURRENT / JACOBIAN / SOLVE (qualification Gates B/C),
+emit OpenACC kernels with NMODL ACC flags:
+
+.. code-block:: bash
+
+   nrnivmodl -nmodl "$(which nmodl)" \
+     -nmodlflags "passes --inline host --c acc --oacc" \
+     mod
+
+The install tree must expose ``neuron/model_data.hpp`` (and related headers)
+for ACC-generated code; a GPU-enabled ``ninja install`` ships them. See
+:doc:`/dev/native-gpu-build` for the full development build recipe.
 
 Passing ``-nocmodl`` or pointing ``-nmodl`` at a ``nocmodl`` binary fails on
 GPU-enabled builds.

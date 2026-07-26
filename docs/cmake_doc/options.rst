@@ -427,8 +427,11 @@ NRN_ENABLE_GPU:BOOL=OFF
   GPU's compute capability (e.g. ``75`` for NVIDIA Turing / T1000). If omitted,
   CoreNEURON defaults to ``70`` and ``80`` (Volta + Ampere), which usually
   still runs on 7.x GPUs but compiles more code than a single-arch dev build
-  needs. See ``~/neuron/notes/gpu_workstation.md`` for a workstation-specific
-  recipe.
+  needs.
+
+  For the full MPI + tests workstation recipe (activation, ringtest env,
+  NMODL OpenACC mechanisms, qualification smokes), see
+  :doc:`/dev/native-gpu-build`.
 
 NRN_GPU_BACKEND:STRING=OpenACC
 ------------------------------

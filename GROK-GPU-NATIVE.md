@@ -21,6 +21,7 @@ Related CPU docs (same tree after merge):
 | Branch | **`local/gpu-native-net-soa`** |
 | Base | `local/cpu-net-soa-heap-free` (PR [#3826](https://github.com/neuronsimulator/nrn/pull/3826)) + GPU overlay |
 | Build / install | `~/neuron/nrngpu/build-gpu` via `nrnenv` / `ninja` / `ninja install` |
+| Dev doc (recipe) | `docs/dev/native-gpu-build.rst` (CMake, activate, NMODL ACC, smokes) |
 
 ---
 
