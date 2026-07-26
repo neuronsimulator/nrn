@@ -8,6 +8,8 @@ Integration branch: **`local/gpu-native-net-soa`** = `local/cpu-net-soa-heap-fre
 | **`GROK-GPU-NATIVE.md`** | GPU qualification handoff (read on new sessions) |
 | **`GROK-NETWORK-SOA.md`** | CPU network SoA / heap-free charter |
 | **`doc/network-soa/heap-free.md`** | Weight-index ABI, packing A |
+| **`~/neuron/notes/PORTFOLIO.md`** | Cross-project map (feature vs platform); do not expand scope into other rows without user intent |
+| **`~/neuron/notes/META-ORG.md`** | Session/succession process (parked; not for mid-GPU digressions) |
 
 ## Workspace
 
