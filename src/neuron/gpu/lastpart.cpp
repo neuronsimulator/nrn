@@ -142,11 +142,10 @@ void finalize_nonvint_on_device(NrnThread& nt) {
 
 void sync_before_device_nonvint(NrnThread& nt) noexcept {
 #if defined(NRN_ENABLE_GPU)
-    // Performance: no full node/mech SoA host mirror before device nonvint.
-    // Stream wait for post_solve/CURRENT, then device→host voltages only.
-    // Full SoA here previously; voltages-only keeps ringtest 688@100. Root cause
-    // why host V must match before nonvint is still open (suspect latent host→
-    // device V path with stale host); do not reintroduce full SoA without measure.
+    // Stream wait + device→host voltages only (not full SoA). Bare wait without
+    // the V pull regresses ringtest (0 spikes); host→device V is never called on
+    // this path, so the need is not a simple stale host push. Residual until the
+    // OpenACC/device-V coherency root cause is found.
     if (!enabled() || !backend_native() || !nonvint_state_on_device(nt)) {
         return;
     }

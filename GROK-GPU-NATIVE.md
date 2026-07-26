@@ -299,7 +299,7 @@ nrnivmodl -nmodl "$(which nmodl)" -nmodlflags "passes --inline host --c acc --oa
 | Pre-nonvint full SoA pull | **Removed** — stream wait + **voltages only** (`sync_voltages_to_host_before_nonvint`) |
 | Ringtest Gate F | **yes** (`!lastpart_host_phases_required`) |
 | Ringtest 0.025/1/1.025/100 | **GREEN** (688 spikes; noise-level cellstate) after V-only pre-nonvint |
-| Residual | Why host V must match before nonvint (bare wait fails); trajectory for record |
+| Residual | Pre-nonvint still needs device→host **voltages** (bare wait → 0 spikes). Not a host→device V path (that API never fires on ringtest). Always post full SoA can substitute but is more traffic. Trajectory for record still open. |
 | Long-term for record | Sparse/buffered trajectory-style gather (CoreNEURON is a guide; improve if faster) |
 
 ### Next GPU feature (new session)
