@@ -324,10 +324,30 @@ Device kernels **cannot** grow mid-region. Host pre-sizes via
 - Env override: `NRN_GPU_NET_SEND_BUFFER_HEADROOM` (1–64)
 - Threshold hit list: sized to slot count; overflow also aborts (no partial deliver)
 
+### Traub 1/10 no-gap raster parity (2026-07-27)
+
+Goal: **exact** CPU vs GPU spike multiset `(t, gid)` — not only count 4474.
+
+| Rev / special | Result (vs same CPU oracle, 4474 spikes) |
+|---------------|------------------------------------------|
+| **`9080f3832`** (device NET_RECEIVE land; host V still mirrored) | **Not exact** in re-smoke: 4 × **+1 dt** late spikes (gid **313** only). Portfolio “exact raster” claim is **not reliable**. |
+| **Tip** `local/gpu-lastpart-no-soa-pull` | Count still **4474**, but **not exact**; typically ~8–45 exclusive spikes, almost all **±1 dt** on a few gids. |
+| Gate F first (`8fae4e29f`) | Much worse when measured (~37 exclusives) — early Gate F before deviceptr. |
+| Force full post-nonvint SoA pull (experiment) | **Worse**, not better — do not reintroduce full SoA pull as the Traub fix. |
+
+**Nondeterminism (critical):** same tip binary, 5 GPU runs → exclusive-spike counts **8, 20, 33, 37, 45** (run-to-run). Exact match was observed once on a re-run then not again. CPU oracle is stable (`9080` CPU == tip CPU).
+
+**prcellstate at first tip miss (gid 130, t=25.2):** threshold **V** noise-level (`dV ~ 3e-11`); matrix noise; **NMDA `A` (field 7)** large relative diffs (~0.8). Path looks like **NMDA ramp / net_send / device NET_RECEIVE** accumulation, not host `vec_rhs` voltage hot path or host NET_RECEIVE body.
+
+**Codegen fix landed:** host-only INITIAL (`wrote_conc`, e.g. `cad`) must not use undeclared `_d_voltages` (broke fresh Traub ACC rebuild after deviceptr commit).
+
+**Next (this line):** make Traub GPU **deterministic** and exact-raster vs CPU (net_send buffer order / PP atomics / device NET_RECEIVE timing). Do **not** use host NET_RECEIVE body or host `vec_rhs`→V hot path.
+
 ### Next GPU feature (new session)
 
 | Option | Content |
 |--------|---------|
+| **Traub exact raster** | Deterministic device net_send / NMDA parity; 4474 exact multiset |
 | Trajectory native path | Low-traffic record so Gate F stays green with `Vector.record` |
 | Later | use_gap=1, multi-rank, perf, single device-resource owner |
 
@@ -380,13 +400,13 @@ Commit steps locally without push unless asked.
 
 Tree: ~/neuron/nrngpu. Kind: feature.
 Branch: local/gpu-lastpart-no-soa-pull — Gate F + no host↔device V during psolve
-+ NetSendBuffer capacity (headroom/high-water; no silent drop). Ringtest 688@100.
-Traub QUALIFIED A–E, 4474@100.
++ NetSendBuffer capacity. Ringtest 688@100. Traub count 4474 but raster not exact
+and GPU runs are nondeterministic (±1 dt on a few gids; NMDA A drifts).
 
-Next: trajectory native path (or FF into integration).
+Next: Traub 1/10 no-gap **exact** CPU/GPU raster (determinism first).
 Do not start use_gap, multi-rank, or device-resource owner unless asked.
 
-Heap-free weight_index only; no host vec_rhs voltage hot path.
+Heap-free weight_index only; no host NET_RECEIVE body; no host vec_rhs voltage hot path.
 source ~/neuron/bin/nrnenv nrngpu build-gpu before GPU runs.
 ```
 
