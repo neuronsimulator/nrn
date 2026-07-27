@@ -330,9 +330,9 @@ Device kernels **cannot** grow mid-region. Host pre-sizes via
 |------|--------|
 | Branch | `local/gpu-trajectory-native` |
 | Design | `doc/gpu/trajectory-native.md` (T0) |
-| T1 plan | `src/neuron/gpu/trajectory.{hpp,cpp}` — rebuild from `fixed_record_` |
-| Mode | Full-stretch default; chunked for IV/GraphLine; device staging always |
-| Gate F | Pure `Vector.record` must not force full SoA once plan covers records (T2) |
+| T1–T2 | `src/neuron/gpu/trajectory.{hpp,cpp}` — plan + sparse sample + Gate F cover |
+| Mode | Per-step sparse D2H of recorded slots → `IvocVect::push_back` (T3: chunked buffer) |
+| Gate F | Pure `Vector.record` (V/t/imem) does not force full SoA when plan complete |
 
 ### Next GPU feature (after trajectory)
 

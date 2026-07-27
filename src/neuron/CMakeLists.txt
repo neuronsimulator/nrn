@@ -64,8 +64,7 @@ if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
             ${PROJECT_BINARY_DIR}/src/nrncvode
             ${PROJECT_SOURCE_DIR}/external/fmt/include)
   target_link_libraries(neuron_gpu_upload PRIVATE fmt::fmt)
-  # Host-only trajectory plan (netcvode / vrecitem); not OpenACC-instrumented.
-  set_source_files_properties(gpu/trajectory.cpp PROPERTIES COMPILE_DEFINITIONS "NRN_ENABLE_GPU")
+  # Trajectory needs OpenACC for sparse update host of voltage samples (T2).
   set_source_files_properties(
     gpu/upload.cpp
     gpu/upload_mechanisms.cpp
@@ -82,6 +81,7 @@ if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
     gpu/phase_timer.cpp
     gpu/check_thresh.cpp
     gpu/ion_cur_device.cpp
+    gpu/trajectory.cpp
     PROPERTIES COMPILE_OPTIONS "${_neuron_gpu_acc_flags}" COMPILE_DEFINITIONS
                                                           "CORENEURON_ENABLE_GPU;NRN_ENABLE_GPU")
 endif()

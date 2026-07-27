@@ -23,6 +23,7 @@
 #include "neuron/gpu/download.hpp"
 #include "neuron/gpu/fadvance_gpu.hpp"
 #include "neuron/gpu/lastpart.hpp"
+#include "neuron/gpu/trajectory.hpp"
 #include "neuron/gpu/net_events.hpp"
 #include "neuron/gpu/post_solve.hpp"
 #include "neuron/gpu/sync.hpp"
@@ -569,7 +570,23 @@ void nrn_fixed_step_lastpart(neuron::model_sorted_token const& cache_token, NrnT
 #endif
     nrn_prcellstate_checkpoint_maybe(PrcellCheckpointPhase::post_nonvint, nt);
     nrn_ba(cache_token, nt, AFTER_SOLVE);
-    fixed_record_continuous(cache_token, nt);
+#if defined(NRN_ENABLE_GPU)
+    // Bind plan after model is on device (ensure_on_device ran in fixed_step_thread).
+    // Sparse device→host trajectory when plan covers all Vector.record (Gate F).
+    // Same phase as host fixed_record_continuous: BEFORE_STEP then sample.
+    if (neuron::gpu::enabled() && neuron::gpu::backend_native()) {
+        neuron::gpu::trajectory_prepare_for_psolve();
+        if (neuron::gpu::trajectory_covers_fixed_record()) {
+            nrn_ba(cache_token, nt, BEFORE_STEP);
+            neuron::gpu::trajectory_sample_step(nt);
+        } else {
+            fixed_record_continuous(cache_token, nt);
+        }
+    } else
+#endif
+    {
+        fixed_record_continuous(cache_token, nt);
+    }
     CTADD;
     {
         nrn::Instrumentor::phase p("deliver-events");

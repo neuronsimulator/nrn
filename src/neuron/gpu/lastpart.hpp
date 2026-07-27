@@ -39,8 +39,9 @@ void sync_before_host_lastpart_tail(NrnThread& nt) noexcept;
 
 /**
  * True when host lastpart tail needs a post-nonvint full SoA pull
- * (AFTER_SOLVE / BEFORE_STEP art or continuous Vector.record).
- * Gate F is green when this is false under device nonvint (ringtest default).
+ * (AFTER_SOLVE / BEFORE_STEP art, or Vector.record not covered by native trajectory).
+ * Gate F is green when this is false under device nonvint (ringtest default;
+ * also green with pure Vector.record when trajectory_covers_fixed_record()).
  */
 [[nodiscard]] bool lastpart_host_phases_required(NrnThread const& nt) noexcept;
 

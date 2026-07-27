@@ -7,6 +7,7 @@
 #include "neuron/gpu/offload.hpp"
 #include "neuron/gpu/phase_timer.hpp"
 #include "neuron/gpu/sync.hpp"
+#include "neuron/gpu/trajectory.hpp"
 #include "membfunc.h"
 #include "neuron/model_data.hpp"
 #include "nrn_ansi.h"
@@ -249,6 +250,7 @@ void finalize_psolve_download() {
     if (!enabled() || !backend_native()) {
         return;
     }
+    trajectory_finalize_psolve();
     sync_state_to_host_for_host_reads();
     phase_timer::print_summary();
     reset_download_step_counter();

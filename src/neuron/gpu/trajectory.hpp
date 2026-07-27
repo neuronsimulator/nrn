@@ -1,10 +1,10 @@
 #pragma once
 
 /**
- * Native GPU trajectory plan (T1): host-side inventory of Vector.record sources.
+ * Native GPU trajectory (Vector.record without full SoA).
  *
  * Design: doc/gpu/trajectory-native.md
- * T1: build/resolve only. T2: device staging + gather + flush + Gate F.
+ * T1: host plan. T2: sparse gather + append sinks + Gate F cover.
  */
 
 #include <cstddef>
@@ -14,15 +14,19 @@ struct IvocVect;
 struct NrnThread;
 class PlayRecord;
 
+namespace neuron {
+struct model_sorted_token;
+}
+
 namespace neuron::gpu {
 
-/** Where a recorded scalar lives (host resolve; device ptr filled in T2). */
+/** Where a recorded scalar lives. */
 enum class TrajectorySourceKind {
-    Time,         // NrnThread::_t
-    Voltage,      // node voltage SoA slot
-    FastImem,     // node sav_rhs (i_membrane_)
-    Mechanism,    // non-art cell mech RANGE via legacy index
-    Unsupported,  // not resolvable → full-SoA fallback for that psolve
+    Time,         // NrnThread::_t (host)
+    Voltage,      // node voltage SoA slot (device during psolve)
+    FastImem,     // node sav_rhs
+    Mechanism,    // non-art mech RANGE (T2: not gatherable → unsupported)
+    Unsupported,  // full-SoA fallback for that psolve
 };
 
 struct TrajectoryChannel {
@@ -32,9 +36,9 @@ struct TrajectoryChannel {
     int type = 0;
     /** Node slot or mechanism legacy_index (flat). */
     int index = 0;
-    /** Host address when resolvable (Time → &nt._t; else SoA element). Null if unsupported. */
+    /** Host address when resolvable (Time → &nt._t). */
     double* host_src = nullptr;
-    /** Device pointer — set in T2 after model is on device. */
+    /** Device pointer for Voltage/FastImem after bind (T2). */
     double* device_src = nullptr;
     /** Sink Vector (y_ or t_). */
     IvocVect* sink = nullptr;
@@ -46,34 +50,45 @@ struct TrajectoryPlan {
     std::vector<TrajectoryChannel> channels;
     int n_supported = 0;
     int n_unsupported = 0;
-    /** True when every fixed_record_ entry for all threads is supported. */
+    /** True when every fixed_record_ entry is supported and gatherable. */
     bool complete = false;
-    /** GraphLine / GVector present → prefer chunked mode (T3). */
     bool has_graph_record = false;
-    /** 0 = auto (full-stretch if !has_graph_record); else forced chunk length. */
+    /** 0 = auto; else forced chunk length (T3). */
     int chunk_size = 0;
     bool valid = false;
+    /** Device sources bound for current model layout. */
+    bool device_bound = false;
 };
 
-/**
- * Rebuild plan from net_cvode fixed_record_ (all threads).
- * Safe when there is no net_cvode / empty record list (empty complete plan).
- */
 void trajectory_plan_rebuild();
-
-/** Drop plan (topology change, record list change, or test reset). */
 void trajectory_plan_invalidate() noexcept;
 
 [[nodiscard]] bool trajectory_plan_valid() noexcept;
-/** At least one supported channel. */
 [[nodiscard]] bool trajectory_plan_active() noexcept;
-/** All fixed_record entries supported — Gate F may skip full SoA for record alone (T2). */
 [[nodiscard]] bool trajectory_plan_complete() noexcept;
+/**
+ * True when native trajectory fully covers continuous Vector.record so Gate F
+ * need not pull full SoA for recording alone.
+ */
+[[nodiscard]] bool trajectory_covers_fixed_record() noexcept;
 
 [[nodiscard]] TrajectoryPlan const& trajectory_plan() noexcept;
-
-/** Default chunk when GraphLine present (T3); readable in T1 for mode selection. */
 [[nodiscard]] int trajectory_default_chunk_size() noexcept;
+
+/**
+ * Ensure plan is rebuilt and device sources bound (call when model is on device).
+ * No-op if plan already bound and valid.
+ */
+void trajectory_prepare_for_psolve();
+
+/**
+ * Sample one fixed step for this thread into Vector sinks (sparse device→host).
+ * Call at the same phase as host fixed_record_continuous (after BEFORE_STEP).
+ */
+void trajectory_sample_step(NrnThread& nt);
+
+/** Optional end-of-psolve hook (samples already appended per step in T2). */
+void trajectory_finalize_psolve() noexcept;
 
 namespace detail {
 void reset_trajectory_plan_for_testing();

@@ -6,6 +6,7 @@
 #include "neuron/gpu/phase_timer.hpp"
 #include "neuron/gpu/post_solve.hpp"
 #include "neuron/gpu/sync.hpp"
+#include "neuron/gpu/trajectory.hpp"
 
 #include "coreneuron/utils/offload.hpp"
 #include "membfunc.h"
@@ -57,7 +58,11 @@ thread_local bool g_nonvint_state_on_device{};
     if (nt.tbl[AFTER_SOLVE] || nt.tbl[BEFORE_STEP]) {
         return true;
     }
-    return nrn_has_fixed_record_continuous();
+    // Gate F: Vector.record alone does not force full SoA when native trajectory covers it.
+    if (nrn_has_fixed_record_continuous()) {
+        return !trajectory_covers_fixed_record();
+    }
+    return false;
 }
 
 }  // namespace
