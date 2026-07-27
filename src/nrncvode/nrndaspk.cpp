@@ -15,6 +15,7 @@
 #include "nrndaspk.h"
 #include "netcvode.h"
 #include "nrn_ansi.h"
+#include "vecplay_tplus.h"
 #include "ida/ida.h"
 #include "ida/ida_impl.h"
 #include "mymath.h"
@@ -218,6 +219,16 @@ double Daspk::audit_t_select_ = 0.;
 int Daspk::audit_armed_ = 0;
 int Daspk::audit_serial_ = 0;
 std::string Daspk::audit_path_;
+std::vector<NrnForcingTPlus> Daspk::last_forcing_tplus_;
+double Daspk::last_forcing_t_ = 0.;
+
+const std::vector<NrnForcingTPlus>& Daspk::last_forcing_tplus() {
+    return last_forcing_tplus_;
+}
+
+double Daspk::last_forcing_t() {
+    return last_forcing_t_;
+}
 
 static void do_ode_thread(neuron::model_sorted_token const& sorted_token, NrnThread& ntr) {
     auto* const nt = &ntr;
@@ -759,6 +770,16 @@ cv_->t_, t-cv_->t_, cv_->t0_-cv_->t_, init_mode_);
 #endif
     const bool do_audit = audit_should_fire();
 
+    // A1: continuous Vector.play forcing t+ (u, u') after event / at finitialize.
+    // Play state (ubound_index_) is already post-event when reinit runs.
+    last_forcing_t_ = cv_->t_;
+    nrn_collect_forcing_tplus(cv_->t_, last_forcing_tplus_);
+    // Stdout when audit level >= 1 and this reinit is not already writing a
+    // three-panel dump (that dump includes the same block).
+    if (audit_level_ >= 1 && !do_audit && !last_forcing_tplus_.empty()) {
+        nrn_dump_forcing_tplus(stdout, last_forcing_t_, last_forcing_tplus_);
+    }
+
     // Capture panel B *before* the projector changes y (and possibly yp).
     std::vector<double> yB, ypB, rB;
     double maxB = 0., wrmsB = -1.;
@@ -864,6 +885,8 @@ cv_->t_, t-cv_->t_, cv_->t0_-cv_->t_, init_mode_);
                     "%s\n",
                     err != 0 ? "; residual failed; fallback suppressed (audit armed)" : "");
         }
+        // A1: always show forcing t+ in the three-panel dump when present
+        nrn_dump_forcing_tplus(f, last_forcing_t_, last_forcing_tplus_);
 
         double maxA = 0., wrmsA = -1.;
         if (have_A) {

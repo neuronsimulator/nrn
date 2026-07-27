@@ -2168,11 +2168,12 @@ CVode
             :math:`u` at :math:`t^+`. Continuous :meth:`Vector.play` supplies
             this from piecewise-linear samples (outgoing segment slope at a
             knot; linear extrapolation of the last two points past the end of
-            the ``t`` vector — see :meth:`Vector.play`). Mode ``3`` will use
-            forcing :math:`t^+` info to complete free components of
-            :math:`y'` (Plan A); until that lands, a nano-step may still be
-            needed when forcing has nonzero slope (e.g. ramps into a series
-            :math:`C`–:math:`R`).
+            the ``t`` vector — see :meth:`Vector.play`). At each IDA reinit,
+            those plays are sampled and listed in :meth:`CVode.dae_init_audit`
+            under ``forcing t+ info``. Mode ``3`` will use the sample to
+            complete free components of :math:`y'` (Plan A2); until then a
+            nano-step may still be needed when forcing has nonzero slope
+            (e.g. ramps into a series :math:`C`–:math:`R`).
 
     .. tab:: HOC
 

@@ -370,6 +370,63 @@ void VecPlayContinuous::forcing_tplus(double tt, double* value, double* deriv) c
     }
 }
 
+int nrn_collect_forcing_tplus(double tt, std::vector<NrnForcingTPlus>& out) {
+    out.clear();
+    if (!net_cvode_instance) {
+        return 0;
+    }
+    std::vector<PlayRecord*>* prl = net_cvode_instance->playrec_list();
+    if (!prl) {
+        return 0;
+    }
+    for (std::size_t i = 0; i < prl->size(); ++i) {
+        PlayRecord* pr = (*prl)[i];
+        if (!pr || pr->type() != VecPlayContinuousType) {
+            continue;
+        }
+        auto* vpc = static_cast<VecPlayContinuous*>(pr);
+        NrnForcingTPlus e;
+        e.playrec_index = static_cast<int>(i);
+        e.ubound_index = vpc->ubound_index_;
+        vpc->forcing_tplus(tt, &e.value, &e.deriv);
+        e.label[0] = '\0';
+        if (vpc->y_ && vpc->y_->obj_) {
+            const char* nm = hoc_object_name(vpc->y_->obj_);
+            if (nm) {
+                std::snprintf(e.label, sizeof e.label, "%s", nm);
+            }
+        }
+        if (e.label[0] == '\0') {
+            std::snprintf(e.label, sizeof e.label, "VecPlayContinuous[%d]", e.playrec_index);
+        }
+        out.push_back(e);
+    }
+    return static_cast<int>(out.size());
+}
+
+void nrn_dump_forcing_tplus(FILE* f, double tt, const std::vector<NrnForcingTPlus>& entries) {
+    if (!f) {
+        return;
+    }
+    fprintf(f, "--- forcing t+ info (t=%.15g)  n_play_continuous=%d ---\n", tt, (int) entries.size());
+    fprintf(f,
+            "  (right-limit u and classical u'; 1-jet of exogenous continuous Vector.play)\n");
+    if (entries.empty()) {
+        fprintf(f, "  (none)\n");
+        return;
+    }
+    fprintf(f, "  %4s %10s %16s %16s  %s\n", "idx", "ubound", "u(t+)", "u'(t+)", "label");
+    for (const auto& e: entries) {
+        fprintf(f,
+                "  %4d %10d %16.8g %16.8g  %s\n",
+                e.playrec_index,
+                e.ubound_index,
+                e.value,
+                e.deriv,
+                e.label);
+    }
+}
+
 double VecPlayContinuous::interpolate(double tt) {
     // Keep last_index_ cache in sync with historical search side effects, then
     // evaluate with the shared t⁺ geometry (value only).

@@ -4,6 +4,7 @@
 #include "nvector_nrnthread.h"
 #include "nvector_nrnthread_ld.h"
 #include "nvector_nrnserial_ld.h"
+#include "vecplay_tplus.h"
 #include <cstdio>
 #include <string>
 #include <vector>
@@ -28,6 +29,10 @@ class Daspk {
     static double audit_t_select();
     static void audit_set_file(const char* path);  // empty/null → stdout
     static const char* audit_file();
+
+    // Last IC-time continuous Vector.play forcing t+ collection (A1; for A2 y').
+    static const std::vector<NrnForcingTPlus>& last_forcing_tplus();
+    static double last_forcing_t();
 
   private:
     void ida_init();
@@ -83,6 +88,10 @@ class Daspk {
     static int audit_armed_;          // 1 = waiting for t match
     static int audit_serial_;         // reinit count (all reinits)
     static std::string audit_path_;   // empty → stdout
+
+    // Forcing t+ from continuous Vector.play at last Daspk::init (A1).
+    static std::vector<NrnForcingTPlus> last_forcing_tplus_;
+    static double last_forcing_t_;
 
   private:
     // Continuous pre-reinit snapshot for panel A (play/NetCon/at_time retreat).

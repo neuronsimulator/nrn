@@ -289,6 +289,68 @@ print('ok')
     assert "ok" in _run_isolated(code)
 
 
+def test_forcing_tplus_play_ramp_at_reinit():
+    """A1: continuous Vector.play forcing t+ (u, u') appears in IC audit.
+
+    Ramp play: after jump at t=1 onto slope 0.5, audit reports u≈0.5, u'≈0.5.
+    """
+    code = r"""
+from neuron import h
+import re
+import tempfile, os
+h.load_file('stdrun.hoc')
+cvode = h.CVode()
+# Minimal LM so IDA is active; force via continuous play into b[0]
+c = h.Matrix(2, 2)
+g = h.Matrix(2, 2)
+y = h.Vector(2)
+y0 = h.Vector(2)
+b = h.Vector([0.0, 0.0])
+c.setval(0, 0, 1.0)
+c.setval(0, 1, -1.0)
+c.setval(1, 0, -1.0)
+c.setval(1, 1, 1.0)
+g.setval(1, 1, 1.0)
+lm = h.LinearMechanism(c, g, y, y0, b)
+# 0 until t=1, jump to 0.5, ramp to 1.0 at t=2 (slope 0.5), then 0
+tvec = h.Vector([0, 1, 1, 2, 2, 5])
+ivec = h.Vector([0, 0, 0.5, 1.0, 0, 0])
+ivec.play(b._ref_x[0], tvec, True)
+h.cvode_active(True)
+cvode.use_daspk(1)
+cvode.dae_init_mode(3)
+h.finitialize(0.0)
+# Advance through play knots at t=1 so ubound sits on the ramp segment
+h.continuerun(1.0)
+path = tempfile.mktemp(prefix='ida_forcing_tplus_', suffix='.txt')
+cvode.dae_init_audit_file(path)
+cvode.dae_init_audit(2, 0.0)  # next reinit (any t)
+cvode.re_init()
+text = open(path).read()
+os.remove(path)
+cvode.dae_init_audit(0)
+cvode.dae_init_audit_file('')
+assert 'forcing t+ info' in text, text
+assert '1-jet' in text or "u'(t+)" in text, text
+found = False
+for line in text.splitlines():
+    parts = line.split()
+    if len(parts) < 4:
+        continue
+    try:
+        u = float(parts[2])
+        up = float(parts[3])
+    except ValueError:
+        continue
+    if abs(u - 0.5) < 1e-6 and abs(up - 0.5) < 1e-6:
+        found = True
+        break
+assert found, 'expected u≈0.5 and u′≈0.5 in forcing t+ dump:\n' + text
+print('ok')
+"""
+    assert "ok" in _run_isolated(code)
+
+
 def test_seclamp_tiny_cm_mode3_no_init_failure():
     """SEClamp + tiny cm: mode 3 C*y'=f clears residual (scm2eem-style).
 
@@ -355,5 +417,6 @@ if __name__ == "__main__":
     test_inductor_battery_holds_current()
     test_extracellular_battery_mode3_holds_vm()
     test_ida_ic_three_panel_audit_isolated()
+    test_forcing_tplus_play_ramp_at_reinit()
     test_seclamp_tiny_cm_mode3_no_init_failure()
     print("ok")

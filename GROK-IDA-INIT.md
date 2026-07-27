@@ -27,8 +27,8 @@ Use this file when starting a **new** Grok session rooted in `~/neuron/nrnida`.
 
 | Slice | Status | Notes |
 |-------|--------|--------|
-| **A0** Spec + continuous-play \(t^+\) oracle | **Done** | `src/nrniv/vecplay_tplus.h`; `VecPlayContinuous::forcing_tplus`; unit tests `test/unit_tests/vecplay_tplus.cpp` |
-| **A1** Wire play instances at IC | pending | Query all continuous plays at reinit |
+| **A0** Spec + continuous-play \(t^+\) oracle | **Done** | `src/nrniv/vecplay_tplus.h`; `VecPlayContinuous::forcing_tplus`; unit tests |
+| **A1** Wire play instances at IC | **Done** | `nrn_collect_forcing_tplus` at `Daspk::init`; audit dump; `Daspk::last_forcing_tplus` |
 | **A2** Mode 3 free \(y'\) from \(u'\) (LM / series CR) | pending | Flagship: iramp-style ramp |
 | **A3** Multi-event + finitialize suite | pending | Distill `external/.../ida` iramp/istep into in-repo tests |
 | **A4** MOD `dforce` thin API | pending | |

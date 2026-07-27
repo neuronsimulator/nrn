@@ -21,6 +21,28 @@
 
 #include <cmath>
 #include <cstddef>
+#include <cstdio>
+#include <string>
+#include <vector>
+
+/** One continuous Vector.play forcing \(t^+\) sample (value + classical deriv). */
+struct NrnForcingTPlus {
+    double value{};
+    double deriv{};
+    int playrec_index{-1};
+    int ubound_index{-1};
+    char label[128]{};  // Vector object name if available
+};
+
+/**
+ * Collect forcing \(t^+\) info from every VecPlayContinuous in the playrec list.
+ * Call at IDA IC time with post-event continuous play state (ubound_index_ current).
+ * Clears and fills `out`. Returns (int)out.size().
+ */
+int nrn_collect_forcing_tplus(double tt, std::vector<NrnForcingTPlus>& out);
+
+/** Print collected forcing \(t^+\) lines to f (audit / debug). */
+void nrn_dump_forcing_tplus(FILE* f, double tt, const std::vector<NrnForcingTPlus>& entries);
 
 /**
  * Continuous play value and classical derivative at time `tt`.
