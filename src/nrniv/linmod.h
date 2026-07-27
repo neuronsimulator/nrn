@@ -44,6 +44,27 @@ class LinearModelAddition: public NrnDAE {
         return size_;
     }
 
+    /**
+     * A4: optional db/dt for IC free y'.
+     * @param dforce_callable  if non-null, executed at IC (e.g. Python) before reading bdot
+     * @param bdot  vector same length as b; holds db/dt (not owned)
+     * Either or both may be set. Clear with set_dforce(nullptr, nullptr).
+     */
+    void set_dforce(Object* dforce_callable, Vect* bdot);
+
+    /** Call dforce (if any) and fill out[0..size) with bdot; FD fallback if needed. */
+    bool fill_bdot_for_ic(double tt, double* out, double fd_h = 1e-8);
+
+    Object* f_callable() const {
+        return f_callable_;
+    }
+    Object* dforce_callable() const {
+        return dforce_callable_;
+    }
+    Vect* bdot_vec() const {
+        return bdot_;
+    }
+
   private:
     void f_(Vect& y, Vect& yprime, int size);
     MatrixMap* jacobian_(Vect& y);
@@ -53,4 +74,6 @@ class LinearModelAddition: public NrnDAE {
     MatrixMap* g_;
     Vect& b_;
     Object* f_callable_;
+    Object* dforce_callable_;  // A4: optional analytic db/dt provider
+    Vect* bdot_;               // A4: user vector for db/dt (not owned)
 };

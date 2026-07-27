@@ -1,6 +1,7 @@
 #include <../../nrnconf.h>
 #include <cmath>
 #include <cstdio>
+#include <cstring>
 #include <vector>
 #include "nrndae.h"
 #include "nrndae_c.h"
@@ -380,13 +381,13 @@ void nrndae_seed_yp_from_f(double* f, double* yp) {
 }
 
 void nrndae_complete_yp_from_forcing(double* yp, const std::vector<NrnForcingTPlus>& forcing) {
-    if (!yp || forcing.empty() || !net_cvode_instance) {
+    if (!yp) {
         return;
     }
-    std::vector<PlayRecord*>* prl = net_cvode_instance->playrec_list();
-    if (!prl) {
-        return;
-    }
+    std::vector<PlayRecord*>* prl =
+        net_cvode_instance ? net_cvode_instance->playrec_list() : nullptr;
+    extern double t;
+
     for (NrnDAE* item: nrndae_list) {
         auto* lm = dynamic_cast<LinearModelAddition*>(item);
         if (!lm) {
@@ -397,34 +398,92 @@ void nrndae_complete_yp_from_forcing(double* yp, const std::vector<NrnForcingTPl
             continue;
         }
         std::vector<double> bdot(n, 0.);
-        bool any = false;
-        for (const auto& e: forcing) {
-            if (e.playrec_index < 0 || e.playrec_index >= (int) prl->size()) {
-                continue;
-            }
-            PlayRecord* pr = (*prl)[e.playrec_index];
-            if (!pr || pr->type() != VecPlayContinuousType) {
-                continue;
-            }
-            auto* vpc = static_cast<VecPlayContinuous*>(pr);
-            // Target of play: data_handle into Vect b (or other double)
-            double* target = nullptr;
-            if (vpc->pd_) {
-                target = static_cast<double*>(vpc->pd_);  // explicit operator T*
-            }
-            if (!target) {
-                continue;
-            }
-            for (int i = 0; i < n; ++i) {
-                if (lm->b_element_is(i, target)) {
-                    bdot[i] = e.deriv;
-                    any = true;
+        bool from_play = false;
+
+        // A1/A2: continuous Vector.play → components of b
+        if (prl && !forcing.empty()) {
+            for (const auto& e: forcing) {
+                if (e.playrec_index < 0 || e.playrec_index >= (int) prl->size()) {
+                    continue;
+                }
+                PlayRecord* pr = (*prl)[e.playrec_index];
+                if (!pr || pr->type() != VecPlayContinuousType) {
+                    continue;
+                }
+                auto* vpc = static_cast<VecPlayContinuous*>(pr);
+                double* target = nullptr;
+                if (vpc->pd_) {
+                    target = static_cast<double*>(vpc->pd_);
+                }
+                if (!target) {
+                    continue;
+                }
+                for (int i = 0; i < n; ++i) {
+                    if (lm->b_element_is(i, target)) {
+                        bdot[i] = e.deriv;
+                        from_play = true;
+                    }
                 }
             }
         }
-        if (any) {
+
+        // A4: dforce / bdot vector (overrides play); else FD if f_callable and no play
+        const bool have_dforce = lm->bdot_vec() || lm->dforce_callable();
+        if (have_dforce || (lm->f_callable() && !from_play)) {
+            std::vector<double> bdot_df(n, 0.);
+            if (lm->fill_bdot_for_ic(t, bdot_df.data())) {
+                if (have_dforce) {
+                    for (int i = 0; i < n; ++i) {
+                        bdot[i] = bdot_df[i];
+                    }
+                } else {
+                    // FD only fills where play did not
+                    for (int i = 0; i < n; ++i) {
+                        bdot[i] = bdot_df[i];
+                    }
+                }
+                from_play = true;  // "have bdot"
+            }
+        }
+
+        if (from_play) {
             lm->complete_yp_from_bdot(bdot.data(), yp);
         }
+    }
+}
+
+void nrndae_append_dforce_to_forcing_list(double tt, std::vector<NrnForcingTPlus>& out) {
+    int lm_i = 0;
+    for (NrnDAE* item: nrndae_list) {
+        auto* lm = dynamic_cast<LinearModelAddition*>(item);
+        if (!lm || lm->size() <= 0) {
+            ++lm_i;
+            continue;
+        }
+        if (!lm->bdot_vec() && !lm->dforce_callable() && !lm->f_callable()) {
+            ++lm_i;
+            continue;
+        }
+        std::vector<double> bdot(lm->size(), 0.);
+        if (!lm->fill_bdot_for_ic(tt, bdot.data())) {
+            ++lm_i;
+            continue;
+        }
+        for (int i = 0; i < lm->size(); ++i) {
+            NrnForcingTPlus e{};
+            e.deriv = bdot[i];
+            e.playrec_index = -1 - lm_i;
+            e.ubound_index = i;
+            if (lm->dforce_callable()) {
+                std::snprintf(e.label, sizeof e.label, "LM[%d].dforce b'[%d]", lm_i, i);
+            } else if (lm->bdot_vec()) {
+                std::snprintf(e.label, sizeof e.label, "LM[%d].bdot[%d]", lm_i, i);
+            } else {
+                std::snprintf(e.label, sizeof e.label, "LM[%d].bdot_fd[%d]", lm_i, i);
+            }
+            out.push_back(e);
+        }
+        ++lm_i;
     }
 }
 

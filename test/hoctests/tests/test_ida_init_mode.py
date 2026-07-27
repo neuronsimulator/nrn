@@ -573,6 +573,147 @@ print('ok')
     assert "ok" in _run_isolated(code)
 
 
+def test_mode3_dforce_sinusoid_a4():
+    """A4: LinearMechanism.dforce supplies analytic b' for free y' (sinusoid I)."""
+    code = r"""
+from neuron import h
+import math
+import tempfile, os
+h.load_file('stdrun.hoc')
+cvode = h.CVode()
+A, w = 1.0, 2.0 * math.pi  # I = A sin(w t), I' = A w cos(w t)
+c = h.Matrix(2, 2)
+g = h.Matrix(2, 2)
+y = h.Vector(2)
+y0 = h.Vector(2)
+b = h.Vector([0.0, 0.0])
+bdot = h.Vector([0.0, 0.0])
+c.setval(0, 0, 1.0)
+c.setval(0, 1, -1.0)
+c.setval(1, 0, -1.0)
+c.setval(1, 1, 1.0)
+g.setval(1, 1, 1.0)
+
+def force():
+    b.x[0] = A * math.sin(w * h.t)
+
+def dforce():
+    bdot.x[0] = A * w * math.cos(w * h.t)
+
+lm = h.LinearMechanism(force, c, g, y, y0, b)
+lm.dforce(dforce, bdot)
+h.cvode_active(True)
+cvode.use_daspk(1)
+cvode.dae_init_mode(3)
+# IC at t=0: I=0, I'=A*w → V2'=A*w, V1'=A*w + I = A*w
+path = tempfile.mktemp(prefix='ida_dforce_', suffix='.txt')
+cvode.dae_init_audit_file(path)
+cvode.dae_init_audit(2, 0.0)
+h.finitialize(0.0)
+text = open(path).read()
+os.remove(path)
+assert 'dforce' in text or 'bdot' in text, text
+assert 'err=0' in text, text
+in_c = False
+yp = {}
+for line in text.splitlines():
+    if 'C post-IC' in line:
+        in_c = True
+        continue
+    if in_c and line.startswith('---'):
+        break
+    if in_c:
+        parts = line.split()
+        if len(parts) >= 4 and parts[0].isdigit():
+            yp[int(parts[0])] = float(parts[2])
+expect = A * w
+assert abs(yp.get(1, 1e9) - expect) < 1e-4, (yp, expect, text)
+assert abs(yp.get(0, 1e9) - expect) < 1e-4, (yp, expect, text)  # I=0 so V1'=V2'
+# mid-ramp time: re_init at t=0.25 without play
+h.t = 0.25
+force()
+dforce()
+cvode.dae_init_audit_file(path)
+cvode.dae_init_audit(2, 0.0)
+cvode.re_init()
+text = open(path).read()
+os.remove(path)
+I = A * math.sin(w * 0.25)
+Ip = A * w * math.cos(w * 0.25)
+yp = {}
+in_c = False
+for line in text.splitlines():
+    if 'C post-IC' in line:
+        in_c = True
+        continue
+    if in_c and line.startswith('---'):
+        break
+    if in_c:
+        parts = line.split()
+        if len(parts) >= 4 and parts[0].isdigit():
+            yp[int(parts[0])] = float(parts[2])
+assert abs(yp.get(1, 1e9) - Ip) < 1e-3, (yp, Ip, text)
+assert abs(yp.get(0, 1e9) - (Ip + I)) < 1e-3, (yp, Ip, I, text)
+print('ok')
+"""
+    assert "ok" in _run_isolated(code)
+
+
+def test_mode3_dforce_fd_fallback_a4():
+    """A4: without dforce, FD of f_callable estimates b' for free y'."""
+    code = r"""
+from neuron import h
+import math
+import tempfile, os
+h.load_file('stdrun.hoc')
+cvode = h.CVode()
+A, w = 1.0, 2.0  # slower so FD with h=1e-8 is accurate
+c = h.Matrix(2, 2)
+g = h.Matrix(2, 2)
+y = h.Vector(2)
+y0 = h.Vector(2)
+b = h.Vector([0.0, 0.0])
+c.setval(0, 0, 1.0)
+c.setval(0, 1, -1.0)
+c.setval(1, 0, -1.0)
+c.setval(1, 1, 1.0)
+g.setval(1, 1, 1.0)
+
+def force():
+    b.x[0] = A * math.sin(w * h.t)
+
+lm = h.LinearMechanism(force, c, g, y, y0, b)
+# no lm.dforce — FD fallback
+h.cvode_active(True)
+cvode.use_daspk(1)
+cvode.dae_init_mode(3)
+path = tempfile.mktemp(prefix='ida_fd_', suffix='.txt')
+cvode.dae_init_audit_file(path)
+cvode.dae_init_audit(2, 0.0)
+h.finitialize(0.0)
+text = open(path).read()
+os.remove(path)
+assert 'bdot_fd' in text or 'err=0' in text, text
+yp = {}
+in_c = False
+for line in text.splitlines():
+    if 'C post-IC' in line:
+        in_c = True
+        continue
+    if in_c and line.startswith('---'):
+        break
+    if in_c:
+        parts = line.split()
+        if len(parts) >= 4 and parts[0].isdigit():
+            yp[int(parts[0])] = float(parts[2])
+expect = A * w  # cos(0)=1
+assert abs(yp.get(1, 1e9) - expect) < 1e-2, (yp, expect, text)
+assert abs(yp.get(0, 1e9) - expect) < 1e-2, (yp, expect, text)
+print('ok')
+"""
+    assert "ok" in _run_isolated(code)
+
+
 if __name__ == "__main__":
     test_dae_init_mode_api()
     test_dae_init_audit_api()
@@ -586,5 +727,8 @@ if __name__ == "__main__":
     test_forcing_tplus_play_ramp_at_reinit()
     test_seclamp_tiny_cm_mode3_no_init_failure()
     test_mode3_forcing_tplus_suite_a3()
+    test_mode3_dforce_sinusoid_a4()
+    test_mode3_dforce_fd_fallback_a4()
     print("ok")
+
 

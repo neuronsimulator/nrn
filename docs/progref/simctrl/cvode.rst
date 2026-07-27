@@ -2175,7 +2175,9 @@ CVode
             capacitors, etc.): after seeding :math:`C y' = b - G y`, free
             directions are adjusted so differentiated algebraics hold when
             :math:`b'` is known from continuous play (e.g. series
-            :math:`C`–:math:`R` ramp: :math:`V_R' = R I'`).
+            :math:`C`–:math:`R` ramp: :math:`V_R' = R I'`) or from
+            :meth:`LinearMechanism.dforce` (analytic :math:`b'`, or a finite-
+            difference fallback when only the force callable is provided).
 
     .. tab:: HOC
 

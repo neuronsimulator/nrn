@@ -250,5 +250,8 @@ void nrndae_seed_yp_from_f(double* f, double* yp);
  */
 void nrndae_complete_yp_from_forcing(double* yp, const std::vector<NrnForcingTPlus>& forcing);
 
+/** Append LinearMechanism.dforce / FD b' entries for IC audit (A4). */
+void nrndae_append_dforce_to_forcing_list(double tt, std::vector<NrnForcingTPlus>& out);
+
 typedef std::list<NrnDAE*> NrnDAEPtrList;
 typedef NrnDAEPtrList::const_iterator NrnDAEPtrListIterator;

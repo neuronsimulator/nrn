@@ -28,6 +28,7 @@
 #include "linmod.h"
 #include "nrnpy.h"
 #include "ocmatrix.h"
+#include "nrn_ansi.h"  // for extern t if needed
 
 LinearModelAddition::LinearModelAddition(Matrix* cmat,
                                          Matrix* gmat,
@@ -40,14 +41,107 @@ LinearModelAddition::LinearModelAddition(Matrix* cmat,
                                          Object* f_callable)
     : NrnDAE(cmat, yvec, y0, nnode, nodes, elayer)
     , b_(*bvec)
-    , f_callable_(f_callable) {
+    , f_callable_(f_callable)
+    , dforce_callable_(nullptr)
+    , bdot_(nullptr) {
     // printf("LinearModelAddition %p\n", this);
     g_ = new MatrixMap(gmat);
 }
 
 LinearModelAddition::~LinearModelAddition() {
     // printf("~LinearModelAddition %p\n", this);
+    if (dforce_callable_) {
+        hoc_obj_unref(dforce_callable_);
+        dforce_callable_ = nullptr;
+    }
     delete g_;
+}
+
+void LinearModelAddition::set_dforce(Object* dforce_callable, Vect* bdot) {
+    if (dforce_callable && !bdot) {
+        hoc_execerror("LinearMechanism.dforce: callable requires a bdot Vector", 0);
+    }
+    if (dforce_callable_) {
+        hoc_obj_unref(dforce_callable_);
+        dforce_callable_ = nullptr;
+    }
+    if (dforce_callable) {
+        dforce_callable_ = dforce_callable;
+        hoc_obj_ref(dforce_callable_);
+    }
+    bdot_ = bdot;
+    // size_ may still be 0 before first matrix alloc; compare to b_
+    if (bdot_ && bdot_->size() != b_.size()) {
+        hoc_execerror("LinearMechanism.dforce: bdot size must match b", 0);
+    }
+}
+
+bool LinearModelAddition::fill_bdot_for_ic(double tt, double* out, double fd_h) {
+    if (!out || size_ <= 0) {
+        return false;
+    }
+    for (int i = 0; i < size_; ++i) {
+        out[i] = 0.;
+    }
+    // Analytic / user vector path
+    if (dforce_callable_) {
+        extern double t;
+        const double t_sav = t;
+        t = tt;
+        if (nrn_threads) {
+            nrn_threads->_t = tt;
+        }
+        if (!neuron::python::methods.hoccommand_exec ||
+            !neuron::python::methods.hoccommand_exec(dforce_callable_)) {
+            t = t_sav;
+            if (nrn_threads) {
+                nrn_threads->_t = t_sav;
+            }
+            hoc_execerror("LinearMechanism.dforce callable failed", 0);
+        }
+        t = t_sav;
+        if (nrn_threads) {
+            nrn_threads->_t = t_sav;
+        }
+    }
+    if (bdot_) {
+        for (int i = 0; i < size_; ++i) {
+            out[i] = bdot_->elem(i);
+        }
+        return true;
+    }
+    // FD fallback: only when f_callable updates b and no bdot vector was given
+    if (!f_callable_ || fd_h <= 0.) {
+        return false;
+    }
+    extern double t;
+    const double t_sav = t;
+    std::vector<double> b0(size_);
+    // Ensure b is current at tt
+    t = tt;
+    if (nrn_threads) {
+        nrn_threads->_t = tt;
+    }
+    f_(y_, yptmp_, size_);
+    for (int i = 0; i < size_; ++i) {
+        b0[i] = b_[i];
+    }
+    t = tt + fd_h;
+    if (nrn_threads) {
+        nrn_threads->_t = t;
+    }
+    f_(y_, yptmp_, size_);
+    for (int i = 0; i < size_; ++i) {
+        out[i] = (b_[i] - b0[i]) / fd_h;
+        b_[i] = b0[i];  // restore
+    }
+    t = t_sav;
+    if (nrn_threads) {
+        nrn_threads->_t = t_sav;
+    }
+    // re-sync b via f_ at original t
+    f_(y_, yptmp_, size_);
+    return true;
 }
 
 void LinearModelAddition::alloc_(int size, int start, int nnode, Node** nodes, int* elayer) {
