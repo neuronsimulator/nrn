@@ -330,9 +330,10 @@ Device kernels **cannot** grow mid-region. Host pre-sizes via
 |------|--------|
 | Branch | `local/gpu-trajectory-native` |
 | Design | `doc/gpu/trajectory-native.md` (T0) |
-| T1–T2 | `src/neuron/gpu/trajectory.{hpp,cpp}` — plan + sparse sample + Gate F cover |
-| Mode | Per-step sparse D2H of recorded slots → `IvocVect::push_back` (T3: chunked buffer) |
-| Gate F | Pure `Vector.record` (V/t/imem) does not force full SoA when plan complete |
+| T1–T3 | `src/neuron/gpu/trajectory.{hpp,cpp}` — plan + sparse sample + chunked staging + GraphLine |
+| Mode | Sparse D2H → host staging → flush to sinks every C (or full-stretch at psolve end) |
+| Env | `NRN_GPU_TRAJECTORY_CHUNK=N` (0/unset = auto: full-stretch, or C=50 with GraphLine) |
+| Gate F | Pure `Vector.record` / single-pd GraphLine does not force full SoA when plan complete |
 
 ### Next GPU feature (after trajectory)
 
@@ -388,11 +389,11 @@ High performance is sacred; CoreNEURON is a guide (low host traffic), not law.
 Commit steps locally without push unless asked.
 
 Tree: ~/neuron/nrngpu. Kind: feature.
-Branch: local/gpu-trajectory-native — native trajectory (sparse gather, device
-staging, D2H flush). Base: Gate F + deviceptr V + NetSendBuffer capacity.
-Design: doc/gpu/trajectory-native.md. Ringtest 688@100 on parent tip.
+Branch: local/gpu-trajectory-native — T0–T3 trajectory (plan, sparse sample,
+chunked staging, Gate F cover, GraphLine single-pd). Design:
+doc/gpu/trajectory-native.md. Ringtest 688@100.
 
-Next: implement phases T1→T2→T3 (one commit group per phase).
+Next: FF into integration, or mech-RANGE gather / multi-var GraphLine.
 Do not start use_gap, multi-rank, or device-resource owner unless asked.
 
 Heap-free weight_index only; no host vec_rhs voltage hot path.

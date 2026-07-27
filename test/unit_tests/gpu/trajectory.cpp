@@ -24,7 +24,6 @@ TEST_CASE("trajectory plan empty without fixed_record", "[gpu][trajectory]") {
 
     trajectory_plan_rebuild();
     REQUIRE(trajectory_plan_valid());
-    // No net_cvode / no records → complete empty plan.
     REQUIRE(trajectory_plan_complete());
     REQUIRE_FALSE(trajectory_plan_active());
     REQUIRE(trajectory_plan().channels.empty());
@@ -48,5 +47,20 @@ TEST_CASE("trajectory plan inactive when backend not native", "[gpu][trajectory]
     REQUIRE(trajectory_plan_valid());
     REQUIRE_FALSE(trajectory_plan_complete());
     REQUIRE_FALSE(trajectory_plan_active());
+#endif
+}
+
+TEST_CASE("trajectory effective chunk resolution", "[gpu][trajectory]") {
+#if !defined(NRN_ENABLE_GPU)
+    SKIP("NRN_ENABLE_GPU required");
+#else
+    // Auto: no graph → full-stretch (0); graph → default 50.
+    REQUIRE(detail::resolve_effective_chunk_for_testing(0, false) == 0);
+    REQUIRE(detail::resolve_effective_chunk_for_testing(0, true) ==
+            trajectory_default_chunk_size());
+    // Env / explicit override wins.
+    REQUIRE(detail::resolve_effective_chunk_for_testing(1, false) == 1);
+    REQUIRE(detail::resolve_effective_chunk_for_testing(1, true) == 1);
+    REQUIRE(detail::resolve_effective_chunk_for_testing(100, true) == 100);
 #endif
 }

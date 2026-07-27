@@ -1,7 +1,8 @@
 # Native GPU trajectory (Vector.record without full SoA)
 
 **Branch:** `local/gpu-trajectory-native`  
-**Status:** T0–T2 landed (plan + sparse sample + Gate F cover); T3 chunked/GUI next  
+**Status:** T0–T3 landed (plan + sparse sample + Gate F + chunked staging + GraphLine single-pd)  
+
 
 
 **Depends on:** Gate F lastpart gating, device-owned V (deviceptr), device nonvint  
@@ -67,7 +68,7 @@ abort under a debug env later if desired.
 | **T0** | This doc + handoff | Read — **done** |
 | **T1** | Host plan: walk `fixed_record_`, resolve sources/sinks | Unit `[gpu][trajectory]` — **done** |
 | **T2** | Sparse gather (per-step D2H of recorded slots) + append Vectors; Gate F unhook when plan complete | Ringtest ± record, 688@100 — **done** |
-| **T3** | Chunked staging buffer + GraphLine | Optional IV; ringtest regression |
+| **T3** | Host staging flush every C steps (or full-stretch); GraphLine single-`pd_` | Unit chunk resolve; ringtest regression — **done** |
 
 ## Implementation map (planned)
 

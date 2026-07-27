@@ -4,7 +4,7 @@
  * Native GPU trajectory (Vector.record without full SoA).
  *
  * Design: doc/gpu/trajectory-native.md
- * T1: host plan. T2: sparse gather + append sinks + Gate F cover.
+ * T1 plan · T2 sparse sample + Gate F · T3 chunked staging + GraphLine (single pd)
  */
 
 #include <cstddef>
@@ -25,7 +25,7 @@ enum class TrajectorySourceKind {
     Time,         // NrnThread::_t (host)
     Voltage,      // node voltage SoA slot (device during psolve)
     FastImem,     // node sav_rhs
-    Mechanism,    // non-art mech RANGE (T2: not gatherable → unsupported)
+    Mechanism,    // non-art mech RANGE (not gatherable yet → unsupported)
     Unsupported,  // full-SoA fallback for that psolve
 };
 
@@ -38,12 +38,17 @@ struct TrajectoryChannel {
     int index = 0;
     /** Host address when resolvable (Time → &nt._t). */
     double* host_src = nullptr;
-    /** Device pointer for Voltage/FastImem after bind (T2). */
+    /** Device pointer for Voltage/FastImem after bind. */
     double* device_src = nullptr;
-    /** Sink Vector (y_ or t_). */
+    /** Sink Vector (y_, t_, or GLineRecord::v_). */
     IvocVect* sink = nullptr;
     PlayRecord* play_record = nullptr;
     bool supported = false;
+    /**
+     * Host staging for this channel (T3). Samples accumulate here until
+     * flush (chunk full or psolve end), then append to sink.
+     */
+    std::vector<double> staging;
 };
 
 struct TrajectoryPlan {
@@ -53,8 +58,13 @@ struct TrajectoryPlan {
     /** True when every fixed_record_ entry is supported and gatherable. */
     bool complete = false;
     bool has_graph_record = false;
-    /** 0 = auto; else forced chunk length (T3). */
+    /**
+     * Env override or 0 for auto. Effective size is effective_chunk_size
+     * (0 = full-stretch: flush only at psolve end).
+     */
     int chunk_size = 0;
+    /** Resolved C for this psolve: 0 = full-stretch; >0 = flush every C samples/channel. */
+    int effective_chunk = 0;
     bool valid = false;
     /** Device sources bound for current model layout. */
     bool device_bound = false;
@@ -77,21 +87,22 @@ void trajectory_plan_invalidate() noexcept;
 
 /**
  * Ensure plan is rebuilt and device sources bound (call when model is on device).
- * No-op if plan already bound and valid.
  */
 void trajectory_prepare_for_psolve();
 
 /**
- * Sample one fixed step for this thread into Vector sinks (sparse device→host).
- * Call at the same phase as host fixed_record_continuous (after BEFORE_STEP).
+ * Sample one fixed step for this thread into host staging (sparse device→host).
+ * Flushes staging→sinks when the chunk is full (chunked mode).
  */
 void trajectory_sample_step(NrnThread& nt);
 
-/** Optional end-of-psolve hook (samples already appended per step in T2). */
+/** Flush remaining staging and unbind for next layout. */
 void trajectory_finalize_psolve() noexcept;
 
 namespace detail {
 void reset_trajectory_plan_for_testing();
+/** Test helper: resolve effective chunk from env + has_graph (no model). */
+[[nodiscard]] int resolve_effective_chunk_for_testing(int env_chunk, bool has_graph) noexcept;
 }  // namespace detail
 
 }  // namespace neuron::gpu

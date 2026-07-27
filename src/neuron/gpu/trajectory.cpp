@@ -10,9 +10,14 @@
 #include "nrncore_write/callbacks/nrncore_callbacks.h"
 #include "nrncore_write/utils/nrncore_utils.h"
 #include "vrecitem.h"
+#if HAVE_IV
+#include "glinerec.h"
+#endif
 
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
+#include <limits>
 
 namespace neuron::gpu {
 namespace {
@@ -26,6 +31,22 @@ int env_chunk_size() noexcept {
     }
     int const v = std::atoi(env);
     return v < 0 ? 0 : v;
+}
+
+/**
+ * Resolve C for this psolve.
+ * 0 = full-stretch (flush only at finalize).
+ * >0 = flush every C samples (GraphLine default or env).
+ */
+int resolve_effective_chunk(int env_or_plan_chunk, bool has_graph) noexcept {
+    if (env_or_plan_chunk > 0) {
+        return env_or_plan_chunk;
+    }
+    // Auto: chunk when live GraphLine present; otherwise full-stretch.
+    if (has_graph) {
+        return trajectory_default_chunk_size();
+    }
+    return 0;
 }
 
 double* host_pointer_for(NrnThread& nt, int type, int index) {
@@ -104,10 +125,8 @@ void add_channel(NrnThread& nt,
     } else if (type == i_membrane_) {
         ch.kind = TrajectorySourceKind::FastImem;
         ch.host_src = host_pointer_for(nt, type, index);
-        // Gatherable only when fast_imem storage exists.
         ch.supported = (!require_sink || sink != nullptr) && ch.host_src != nullptr;
     } else {
-        // Mechanism RANGE: defer device field map to a later phase.
         ch.kind = TrajectorySourceKind::Mechanism;
         ch.host_src = nullptr;
         ch.supported = false;
@@ -130,7 +149,6 @@ void warn_unsupported_once() {
             g_plan.n_unsupported);
 }
 
-/** Bind device_src for Voltage/FastImem channels on this thread. */
 void bind_device_sources_for_thread(NrnThread& nt) {
 #if defined(NRN_ENABLE_GPU) && defined(_OPENACC)
     if (!nt.compute_gpu && !model_is_on_device()) {
@@ -152,7 +170,7 @@ void bind_device_sources_for_thread(NrnThread& nt) {
                    ch.index < nt.end) {
             ch.device_src = d_im + ch.index;
         } else if (ch.kind == TrajectorySourceKind::Time) {
-            ch.device_src = nullptr;  // host nt._t
+            ch.device_src = nullptr;
         }
     }
 #else
@@ -160,10 +178,6 @@ void bind_device_sources_for_thread(NrnThread& nt) {
 #endif
 }
 
-/**
- * Sparse device→host of one scalar via host array element update.
- * Host storage is the SoA base; only [index:1] is transferred.
- */
 double pull_device_scalar(double* host_base, int index, int end, int stream_id) {
 #if defined(NRN_ENABLE_GPU) && defined(_OPENACC)
     if (!host_base || index < 0 || index >= end) {
@@ -181,6 +195,34 @@ double pull_device_scalar(double* host_base, int index, int end, int stream_id) 
     }
     return host_base[index];
 #endif
+}
+
+/** Append staging to sink and clear staging for one channel. */
+void flush_channel_staging(TrajectoryChannel& ch) {
+    if (!ch.sink || ch.staging.empty()) {
+        ch.staging.clear();
+        return;
+    }
+    for (double val: ch.staging) {
+        ch.sink->push_back(val);
+    }
+    ch.staging.clear();
+}
+
+/** Flush all channels' staging into sinks. */
+void flush_all_staging() {
+    for (auto& ch: g_plan.channels) {
+        if (ch.supported) {
+            flush_channel_staging(ch);
+        }
+    }
+}
+
+void clear_all_staging() {
+    for (auto& ch: g_plan.channels) {
+        ch.staging.clear();
+        ch.staging.shrink_to_fit();
+    }
 }
 
 }  // namespace
@@ -239,11 +281,20 @@ void trajectory_plan_rebuild() {
             break;
         }
 #if HAVE_IV
-        case GLineRecordType:
+        case GLineRecordType: {
             g_plan.has_graph_record = true;
-            // T2: GraphLine needs sink/plot path (T3). Mark unsupported for Gate F cover.
-            add_unsupported(pr, tid);
+            auto* const glr = static_cast<GLineRecord*>(pr);
+            // T3: single resolved pd_ only (expression multi-var stays unsupported).
+            if (pr->pd_) {
+                if (!glr->v_) {
+                    glr->v_ = new IvocVect();
+                }
+                add_channel(nt, pr, glr->v_, pr->pd_, false, /*require_sink*/ true);
+            } else {
+                add_unsupported(pr, tid);
+            }
             break;
+        }
         case GVectorRecordType:
             g_plan.has_graph_record = true;
             add_unsupported(pr, tid);
@@ -258,6 +309,7 @@ void trajectory_plan_rebuild() {
     g_plan.complete = (g_plan.n_unsupported == 0);
     g_plan.valid = true;
     g_plan.device_bound = false;
+    g_plan.effective_chunk = resolve_effective_chunk(g_plan.chunk_size, g_plan.has_graph_record);
     warn_unsupported_once();
 #endif
 }
@@ -282,7 +334,6 @@ bool trajectory_covers_fixed_record() noexcept {
     if (!g_plan.valid) {
         return false;
     }
-    // Empty record list: nothing to cover (Gate F does not need SoA for record).
     if (!nrn_has_fixed_record_continuous()) {
         return true;
     }
@@ -310,6 +361,17 @@ void trajectory_prepare_for_psolve() {
     for (int ith = 0; ith < nrn_nthread; ++ith) {
         bind_device_sources_for_thread(nrn_threads[ith]);
     }
+    // Fresh staging for this psolve stretch.
+    clear_all_staging();
+    g_plan.effective_chunk = resolve_effective_chunk(g_plan.chunk_size, g_plan.has_graph_record);
+    // Reserve chunk capacity when known (full-stretch grows as needed).
+    if (g_plan.effective_chunk > 0) {
+        for (auto& ch: g_plan.channels) {
+            if (ch.supported) {
+                ch.staging.reserve(static_cast<std::size_t>(g_plan.effective_chunk));
+            }
+        }
+    }
     g_plan.device_bound = true;
 #endif
 }
@@ -323,6 +385,7 @@ void trajectory_sample_step(NrnThread& nt) {
     auto* const vec_v = nt.node_voltage_storage();
     auto* const vec_im = nt.node_sav_rhs_storage();
 
+    bool any = false;
     for (auto& ch: g_plan.channels) {
         if (ch.thread_id != nt.id || !ch.supported || !ch.sink) {
             continue;
@@ -341,21 +404,37 @@ void trajectory_sample_step(NrnThread& nt) {
         default:
             continue;
         }
-        ch.sink->push_back(val);
+        ch.staging.push_back(val);
+        // Per-channel flush: thread-safe for multi-thread (no shared chunk counter).
+        if (g_plan.effective_chunk > 0 &&
+            static_cast<int>(ch.staging.size()) >= g_plan.effective_chunk) {
+            flush_channel_staging(ch);
+        }
+        any = true;
     }
+    (void) any;
 #else
     (void) nt;
 #endif
 }
 
 void trajectory_finalize_psolve() noexcept {
-    // T2 appends per step; nothing buffered. Invalidate device bind for next layout.
+#if defined(NRN_ENABLE_GPU)
+    if (g_plan.device_bound && g_plan.complete && g_plan.n_supported > 0) {
+        flush_all_staging();
+    }
+#endif
     g_plan.device_bound = false;
+    clear_all_staging();
 }
 
 namespace detail {
 void reset_trajectory_plan_for_testing() {
     trajectory_plan_invalidate();
+}
+
+int resolve_effective_chunk_for_testing(int env_chunk, bool has_graph) noexcept {
+    return resolve_effective_chunk(env_chunk, has_graph);
 }
 }  // namespace detail
 
