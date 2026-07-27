@@ -1,12 +1,18 @@
 #include <../../nrnconf.h>
 #include <cmath>
 #include <cstdio>
+#include <vector>
 #include "nrndae.h"
 #include "nrndae_c.h"
 #include "nrnoc2iv.h"
 #include "treeset.h"
 #include "utils/enumerate.h"
 #include "linmod.h"
+#include "netcvode.h"
+#include "vrecitem.h"
+#include "vecplay_tplus.h"
+
+extern NetCvode* net_cvode_instance;
 
 extern int secondorder;
 
@@ -370,6 +376,55 @@ void NrnDAE::seed_yp_from_f(double* f, double* yp) {
 void nrndae_seed_yp_from_f(double* f, double* yp) {
     for (NrnDAE* item: nrndae_list) {
         item->seed_yp_from_f(f, yp);
+    }
+}
+
+void nrndae_complete_yp_from_forcing(double* yp, const std::vector<NrnForcingTPlus>& forcing) {
+    if (!yp || forcing.empty() || !net_cvode_instance) {
+        return;
+    }
+    std::vector<PlayRecord*>* prl = net_cvode_instance->playrec_list();
+    if (!prl) {
+        return;
+    }
+    for (NrnDAE* item: nrndae_list) {
+        auto* lm = dynamic_cast<LinearModelAddition*>(item);
+        if (!lm) {
+            continue;
+        }
+        const int n = lm->size();
+        if (n <= 0) {
+            continue;
+        }
+        std::vector<double> bdot(n, 0.);
+        bool any = false;
+        for (const auto& e: forcing) {
+            if (e.playrec_index < 0 || e.playrec_index >= (int) prl->size()) {
+                continue;
+            }
+            PlayRecord* pr = (*prl)[e.playrec_index];
+            if (!pr || pr->type() != VecPlayContinuousType) {
+                continue;
+            }
+            auto* vpc = static_cast<VecPlayContinuous*>(pr);
+            // Target of play: data_handle into Vect b (or other double)
+            double* target = nullptr;
+            if (vpc->pd_) {
+                target = static_cast<double*>(vpc->pd_);  // explicit operator T*
+            }
+            if (!target) {
+                continue;
+            }
+            for (int i = 0; i < n; ++i) {
+                if (lm->b_element_is(i, target)) {
+                    bdot[i] = e.deriv;
+                    any = true;
+                }
+            }
+        }
+        if (any) {
+            lm->complete_yp_from_bdot(bdot.data(), yp);
+        }
     }
 }
 

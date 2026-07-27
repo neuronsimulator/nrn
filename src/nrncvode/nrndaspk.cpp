@@ -36,6 +36,8 @@ extern void nrndae_dkres(double*, double*, double*);
 extern void nrndae_dkpsol(double);
 extern int nrndae_battery_ic_project();
 extern void nrndae_seed_yp_from_f(double* f, double* yp);
+extern void nrndae_complete_yp_from_forcing(double* yp,
+                                             const std::vector<NrnForcingTPlus>& forcing);
 extern void nrn_solve(NrnThread*);
 extern int nrn_sparse13_soft_fail;
 extern int nrn_sparse13_factor_error();
@@ -460,6 +462,10 @@ static void seed_yp_from_Cy_eq_f(Daspk* d) {
 
     // LinearMechanism mass (diagonal / lag / simple floating difference)
     nrndae_seed_yp_from_f(F, yp);
+
+    // A2: free y' in null(C) from continuous Vector.play forcing t+ (db/dt).
+    // Uses Daspk::last_forcing_tplus_ collected at the start of Daspk::init.
+    nrndae_complete_yp_from_forcing(yp, Daspk::last_forcing_tplus());
 }
 
 // After residual failure: classify largest residual equations (algebraic vs
@@ -881,7 +887,8 @@ cv_->t_, t-cv_->t_, cv_->t0_-cv_->t_, init_mode_);
         }
         if (init_mode_ == 3 && path_mode == 3 && do_audit) {
             fprintf(f,
-                    "  note: mode 3 panel C uses y' from diagonal C*y'=f(y) (no dteps companion)"
+                    "  note: mode 3 panel C: C*y'=f(y) seed + free y' from forcing t+ "
+                    "(null(C) / Z'G y'=Z'b')"
                     "%s\n",
                     err != 0 ? "; residual failed; fallback suppressed (audit armed)" : "");
         }

@@ -28,6 +28,22 @@ class LinearModelAddition: public NrnDAE {
      */
     int battery_ic_project();
 
+    /**
+     * After y is fixed and a particular C*yp ≈ b-Gy is seeded, adjust yp in
+     * null(C) so differentiated algebraic constraints hold: Z^T G yp = Z^T bdot
+     * for left-null vectors Z of C (e.g. common mode of a floating capacitor).
+     * bdot is db/dt from forcing t+ (same layout as b_). yp_global is the full
+     * IDA y' vector (bmap_ applied inside).
+     */
+    void complete_yp_from_bdot(const double* bdot, double* yp_global);
+
+    /** True if play_target points at b_[i]; used to map Vector.play → b'. */
+    bool b_element_is(int i, double* play_target) const;
+
+    int size() const {
+        return size_;
+    }
+
   private:
     void f_(Vect& y, Vect& yprime, int size);
     MatrixMap* jacobian_(Vect& y);

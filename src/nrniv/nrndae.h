@@ -12,6 +12,7 @@
 #pragma once
 #include "ivocvect.h"
 #include "matrixmap.h"
+#include "vecplay_tplus.h"
 
 #include "neuron/container/data_handle.hpp"
 
@@ -241,6 +242,13 @@ int nrndae_battery_ic_project();
  * f and yp are full IDA state vectors (neq).
  */
 void nrndae_seed_yp_from_f(double* f, double* yp);
+
+/**
+ * A2: using continuous Vector.play forcing t+ (u'), map db/dt into each
+ * LinearMechanism and complete free yp components (null space of C).
+ * forcing may be empty (no-op). yp is the full IDA y' vector.
+ */
+void nrndae_complete_yp_from_forcing(double* yp, const std::vector<NrnForcingTPlus>& forcing);
 
 typedef std::list<NrnDAE*> NrnDAEPtrList;
 typedef NrnDAEPtrList::const_iterator NrnDAEPtrListIterator;

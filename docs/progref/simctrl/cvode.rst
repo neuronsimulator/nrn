@@ -2170,10 +2170,12 @@ CVode
             knot; linear extrapolation of the last two points past the end of
             the ``t`` vector — see :meth:`Vector.play`). At each IDA reinit,
             those plays are sampled and listed in :meth:`CVode.dae_init_audit`
-            under ``forcing t+ info``. Mode ``3`` will use the sample to
-            complete free components of :math:`y'` (Plan A2); until then a
-            nano-step may still be needed when forcing has nonzero slope
-            (e.g. ramps into a series :math:`C`–:math:`R`).
+            under ``forcing t+ info``. Mode ``3`` uses the sample for
+            LinearMechanism free :math:`y'` (common mode of floating
+            capacitors, etc.): after seeding :math:`C y' = b - G y`, free
+            directions are adjusted so differentiated algebraics hold when
+            :math:`b'` is known from continuous play (e.g. series
+            :math:`C`–:math:`R` ramp: :math:`V_R' = R I'`).
 
     .. tab:: HOC
 

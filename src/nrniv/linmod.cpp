@@ -248,3 +248,105 @@ int LinearModelAddition::battery_ic_project() {
     delete A;
     return 0;
 }
+
+bool LinearModelAddition::b_element_is(int i, double* play_target) const {
+    if (!play_target || i < 0 || i >= size_) {
+        return false;
+    }
+    // Vect stores contiguous doubles; play into b._ref_x[i] targets &b[i]
+    return play_target == &b_[i];
+}
+
+void LinearModelAddition::complete_yp_from_bdot(const double* bdot, double* yp_global) {
+    // C y' = b - G y is underdetermined when C is singular. Existing seed sets a
+    // particular solution; free components live in null(C). Differentiated
+    // left-null constraints Z^T G y' = Z^T b' fix those when G has a component
+    // on the free mode (e.g. R to ground on a floating C–R series pair).
+    if (!bdot || !yp_global || size_ <= 0) {
+        return;
+    }
+    if (assumed_identity_) {
+        return;  // C = I, no free y'
+    }
+    if (!c_ || !g_) {
+        return;
+    }
+    const int n = size_;
+    constexpr double ctol = 1e-12;
+    constexpr double gtol = 1e-18;
+
+    std::vector<double> yp(n);
+    for (int i = 0; i < n; ++i) {
+        yp[i] = yp_global[bmap_[i] - 1];
+    }
+
+    // Floating capacitor pairs: right null n = e_i + e_j, left null Z = e_i + e_j
+    // when C is a pure mutual difference stamp on (i,j).
+    std::vector<char> used(n, 0);
+    for (int i = 0; i < n; ++i) {
+        for (int j = i + 1; j < n; ++j) {
+            const double cij = (*c_)(i, j);
+            const double cji = (*c_)(j, i);
+            if (std::fabs(cij) <= ctol || std::fabs(cji) <= ctol) {
+                continue;
+            }
+            // Confirm Z = e_i+e_j is ~left null of C
+            bool z_null = true;
+            for (int k = 0; k < n; ++k) {
+                const double ztc = (*c_)(i, k) + (*c_)(j, k);
+                if (std::fabs(ztc) > ctol * (1. + std::fabs((*c_)(i, k)) + std::fabs((*c_)(j, k)))) {
+                    z_null = false;
+                    break;
+                }
+            }
+            if (!z_null) {
+                continue;
+            }
+            // Z^T G yp and Z^T G n with n = e_i + e_j
+            double ztg_yp = 0.;
+            for (int k = 0; k < n; ++k) {
+                ztg_yp += ((*g_)(i, k) + (*g_)(j, k)) * yp[k];
+            }
+            const double ztg_n = (*g_)(i, i) + (*g_)(i, j) + (*g_)(j, i) + (*g_)(j, j);
+            const double ztbdot = bdot[i] + bdot[j];
+            if (std::fabs(ztg_n) < gtol) {
+                continue;  // free mode invisible to G — leave yp
+            }
+            const double alpha = (ztbdot - ztg_yp) / ztg_n;
+            yp[i] += alpha;
+            yp[j] += alpha;
+            used[i] = 1;
+            used[j] = 1;
+        }
+    }
+
+    // Pure algebraic rows (C row ~ 0): enforce (G y')_r = bdot[r] by adjusting
+    // free algebraic variables where possible (simple diagonal G_rr).
+    for (int r = 0; r < n; ++r) {
+        bool crow0 = true;
+        for (int k = 0; k < n; ++k) {
+            if (std::fabs((*c_)(r, k)) > ctol) {
+                crow0 = false;
+                break;
+            }
+        }
+        if (!crow0) {
+            continue;
+        }
+        const double grr = (*g_)(r, r);
+        if (std::fabs(grr) < gtol) {
+            continue;
+        }
+        // residual of differentiated row: bdot[r] - sum_k G_rk yp[k]
+        double gyp = 0.;
+        for (int k = 0; k < n; ++k) {
+            gyp += (*g_)(r, k) * yp[k];
+        }
+        // Adjust yp[r] only (local diagonal completion)
+        yp[r] += (bdot[r] - gyp) / grr;
+    }
+
+    for (int i = 0; i < n; ++i) {
+        yp_global[bmap_[i] - 1] = yp[i];
+    }
+}
