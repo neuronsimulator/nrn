@@ -341,7 +341,15 @@ Goal: **exact** CPU vs GPU spike multiset `(t, gid)` — not only count 4474.
 
 **Codegen fix landed:** host-only INITIAL (`wrote_conc`, e.g. `cad`) must not use undeclared `_d_voltages` (broke fresh Traub ACC rebuild after deviceptr commit).
 
-**Next (this line):** make Traub GPU **deterministic** and exact-raster vs CPU (net_send buffer order / PP atomics / device NET_RECEIVE timing). Do **not** use host NET_RECEIVE body or host `vec_rhs`→V hot path.
+**Deterministic events (testing):** `NRN_DETERMINISTIC_EVENTS=1` enables a shared
+total-order key on GPU→host flushes (threshold hits by `src_gid`, NetSendBuffer by
+`(t, class, instance, flag, weight_index, …)`, NetReceiveBuffer within-instance by
+`(t, flag, weight_index)`). Same helper: `src/neuron/event_order.hpp` (native +
+CoreNEURON). Does **not** fix multi-PP atomic rhs/d FP association. Try for Traub
+raster stability before deeper NMDA/FP work.
+
+**Next (this line):** Traub exact raster with `NRN_DETERMINISTIC_EVENTS=1`; if still
+noisy, multi-PP atomic rhs/d. No host NET_RECEIVE body; no host `vec_rhs`→V hot path.
 
 ### Next GPU feature (new session)
 

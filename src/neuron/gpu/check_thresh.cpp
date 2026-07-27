@@ -1,5 +1,6 @@
 #include "neuron/gpu/check_thresh.hpp"
 
+#include "neuron/event_order.hpp"
 #include "neuron/gpu/config.hpp"
 #include "neuron/gpu/device_state.hpp"
 #include "neuron/gpu/net_send_buffer.hpp"
@@ -12,6 +13,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
+#include <numeric>
 #include <vector>
 
 namespace neuron::gpu {
@@ -318,9 +320,29 @@ bool check_thresh_presyn_on_device(NrnThread* nt, double teps) noexcept {
     sync_threshold_presyn_flags(table.slots.data(), flag, count);
 
     // Host deliver only (CoreNEURON-shaped: detect fills buffer, host does send).
+    // Atomic capture leaves racey hit order; with NRN_DETERMINISTIC_EVENTS=1 sort
+    // by src_gid then slot so PreSyn::send enqueue order is stable across runs.
     if (net_send_buf_count > 0) {
         int const n_hits = nt->_net_send_buffer_cnt;
-        for (int i = 0; i < n_hits; ++i) {
+        std::vector<int> order(static_cast<std::size_t>(n_hits));
+        std::iota(order.begin(), order.end(), 0);
+        if (neuron::event_order::enabled()) {
+            std::stable_sort(order.begin(), order.end(), [&](int ia, int ib) {
+                int const sa = nsbuffer[ia];
+                int const sb = nsbuffer[ib];
+                auto gid_of = [&](int slot) -> int {
+                    if (slot < 0 || slot >= count) {
+                        return -1;
+                    }
+                    return table.slots[static_cast<std::size_t>(slot)].gid;
+                };
+                auto const ka = neuron::event_order::threshold_hit_key(gid_of(sa), sa);
+                auto const kb = neuron::event_order::threshold_hit_key(gid_of(sb), sb);
+                return neuron::event_order::less(ka, kb);
+            });
+        }
+        for (int k = 0; k < n_hits; ++k) {
+            int const i = order[static_cast<std::size_t>(k)];
             int const slot_index = nsbuffer[i];
             if (slot_index < 0 || slot_index >= count) {
                 continue;

@@ -27,6 +27,8 @@ struct ThresholdPresynSlot {
     double threshold = 0.0;
     /** Hysteresis for pscheck: 0 = below, 1 = above. */
     int flag = 0;
+    /** Host-only output gid for deterministic hit ordering (−1 if none). */
+    int gid = -1;
     /** Host-only; used after detect for deliver_threshold_spike. Not for kernels. */
     void* presyn = nullptr;
 };

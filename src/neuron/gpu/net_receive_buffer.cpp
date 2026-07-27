@@ -1,6 +1,7 @@
 #include "neuron/gpu/net_receive_buffer.hpp"
 
 #include "neuron/container/network/weights.hpp"
+#include "neuron/event_order.hpp"
 #include "neuron/gpu/offload.hpp"
 #include "neuron/model_data.hpp"
 #include "multicore.h"
@@ -9,6 +10,7 @@
 #include <algorithm>
 #include <cstdlib>
 #include <cstring>
+#include <numeric>
 #include <queue>
 #include <utility>
 #include <vector>
@@ -246,9 +248,36 @@ void net_receive_buffer_order(NetReceiveBuffer_t* nrb) {
         return;
     }
 
-    std::priority_queue<NRB_P, std::vector<NRB_P>, NrbEntryCompare> nrbq;
-    for (int i = 0; i < nrb->_cnt; ++i) {
-        nrbq.emplace(nrb->_pnt_index[i], i);
+    // Build per-instance groups. With NRN_DETERMINISTIC_EVENTS, within an
+    // instance order by (t, flag, weight_index, seq) instead of raw enqueue.
+    std::vector<int> order(static_cast<std::size_t>(nrb->_cnt));
+    std::iota(order.begin(), order.end(), 0);
+    if (neuron::event_order::enabled()) {
+        std::stable_sort(order.begin(), order.end(), [&](int a, int b) {
+            if (nrb->_pnt_index[a] != nrb->_pnt_index[b]) {
+                return nrb->_pnt_index[a] < nrb->_pnt_index[b];
+            }
+            if (nrb->_nrb_t[a] != nrb->_nrb_t[b]) {
+                return nrb->_nrb_t[a] < nrb->_nrb_t[b];
+            }
+            if (nrb->_nrb_flag[a] != nrb->_nrb_flag[b]) {
+                return nrb->_nrb_flag[a] < nrb->_nrb_flag[b];
+            }
+            if (nrb->_weight_index[a] != nrb->_weight_index[b]) {
+                return nrb->_weight_index[a] < nrb->_weight_index[b];
+            }
+            return a < b;
+        });
+    } else {
+        std::priority_queue<NRB_P, std::vector<NRB_P>, NrbEntryCompare> nrbq;
+        for (int i = 0; i < nrb->_cnt; ++i) {
+            nrbq.emplace(nrb->_pnt_index[i], i);
+        }
+        int o = 0;
+        while (!nrbq.empty()) {
+            order[static_cast<std::size_t>(o++)] = nrbq.top().second;
+            nrbq.pop();
+        }
     }
 
     int displ_cnt = 0;
@@ -256,15 +285,14 @@ void net_receive_buffer_order(NetReceiveBuffer_t* nrb) {
     int last_instance_index = -1;
     nrb->_displ[0] = 0;
 
-    while (!nrbq.empty()) {
-        NRB_P const p = nrbq.top();
-        nrb->_nrb_index[index_cnt++] = p.second;
-        if (p.first != last_instance_index) {
+    for (int const orig: order) {
+        nrb->_nrb_index[index_cnt++] = orig;
+        int const inst = nrb->_pnt_index[orig];
+        if (inst != last_instance_index) {
             ++displ_cnt;
         }
         nrb->_displ[displ_cnt] = index_cnt;
-        last_instance_index = p.first;
-        nrbq.pop();
+        last_instance_index = inst;
     }
     nrb->_displ_cnt = displ_cnt;
 }
