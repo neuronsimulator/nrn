@@ -890,8 +890,14 @@ void CodegenNeuronAccVisitor::print_nrn_init(bool skip_init_check) {
     printer->add_line("auto* _ppvar = _ml_arg->pdata[id];");
     if (!info.artificial_cell) {
         printer->add_line("int node_id = node_data.nodeindices[id];");
-        printer->fmt_line("{} = _d_voltages[node_id];",
-                          indexed_fp_var(naming::VOLTAGE_UNUSED_VARIABLE));
+        // Host-only INITIAL (wrote_conc) has no _d_voltages declaration.
+        if (host_only_init) {
+            printer->fmt_line("{} = node_data.node_voltages[node_id];",
+                              indexed_fp_var(naming::VOLTAGE_UNUSED_VARIABLE));
+        } else {
+            printer->fmt_line("{} = _d_voltages[node_id];",
+                              indexed_fp_var(naming::VOLTAGE_UNUSED_VARIABLE));
+        }
     }
 
     print_rename_state_vars();
