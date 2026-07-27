@@ -321,8 +321,9 @@ void CodegenNeuronAccVisitor::print_net_send_buffering_grow() {
     // No-op for ACC: OpenACC device-compiles this whole function when it is called
     // from a parallel loop, so host-only ensure/grow symbols must not appear here
     // (nvlink undefined reference). Host must pre-size before the OpenACC region
-    // (net_send_buffer_ensure_for_events). If i >= nsb->_size the slot is not
-    // written; update_net_send_buffer_on_host aborts when _cnt > _size.
+    // (net_send_buffer_ensure_for_events: headroom × events + high-water). If
+    // i >= nsb->_size the slot is not written; update_net_send_buffer_on_host
+    // aborts when _cnt > _size (never silent drop).
     (void) 0;
 }
 
@@ -642,7 +643,8 @@ void CodegenNeuronAccVisitor::print_net_receive_buffering() {
     printer->pop_block();
 
     if (info.net_send_used || info.net_event_used) {
-        // One net_send/move per queued receive is typical; size to this flush's peak.
+        // Pre-size for this flush: min_events × headroom (default 4) + high-water.
+        // Device cannot grow mid-kernel; overflow aborts on host flush.
         printer->add_line(
             "neuron::gpu::net_send_buffer_ensure_for_events(_ml_arg, nrb->_cnt);");
     }
@@ -941,6 +943,10 @@ void CodegenNeuronAccVisitor::print_nrn_state() {
 
     printer->add_newline(2);
     print_global_function_common_code(BlockType::State);
+    if ((info.net_send_used || info.net_event_used) && !info.artificial_cell) {
+        printer->add_line(
+            "neuron::gpu::net_send_buffer_ensure_for_events(_ml_arg, nodecount);");
+    }
 
     use_present_fp_indexing_ = true;
     print_parallel_iteration_hint(BlockType::State, info.nrn_state_block);
@@ -1041,6 +1047,11 @@ void CodegenNeuronAccVisitor::print_nrn_cur() {
     printer->add_newline(2);
     printer->add_line("/** update current */");
     print_global_function_common_code(BlockType::Equation);
+    if ((info.net_send_used || info.net_event_used) && !info.artificial_cell) {
+        // BREAKPOINT net_send: pre-size to nodecount × headroom before OpenACC region.
+        printer->add_line(
+            "neuron::gpu::net_send_buffer_ensure_for_events(_ml_arg, nodecount);");
+    }
     use_present_fp_indexing_ = true;
     print_parallel_iteration_hint(BlockType::Equation, info.breakpoint_node);
     printer->push_block("for (int id = 0; id < nodecount; id++)");

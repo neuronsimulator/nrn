@@ -21,12 +21,39 @@ namespace neuron::gpu {
 
 std::vector<int> net_buf_send_types;
 
+namespace {
+
+/**
+ * Buffered ops per instance/receive for pre-size (device cannot grow mid-kernel).
+ * Covers net_send + net_move + net_event + spare. Override with
+ * NRN_GPU_NET_SEND_BUFFER_HEADROOM (positive integer).
+ */
+int sends_per_event_headroom() noexcept {
+    static int const headroom = [] {
+        char const* const env = std::getenv("NRN_GPU_NET_SEND_BUFFER_HEADROOM");
+        if (env && env[0]) {
+            int const v = std::atoi(env);
+            if (v >= 1 && v <= 64) {
+                return v;
+            }
+        }
+        return 4;
+    }();
+    return headroom;
+}
+
+}  // namespace
+
+int net_send_buffer_sends_per_event_headroom() noexcept {
+    return sends_per_event_headroom();
+}
+
 int net_send_buffer_capacity(Memb_list const* ml) {
     if (!ml) {
         return 1024;
     }
-    // CoreNEURON uses nodecount * 2; use a higher floor for dense models.
-    return std::max(1024, ml->nodecount * 2);
+    // CoreNEURON used nodecount*2; headroom ≥ 4 for multi-send NET_RECEIVE / self-events.
+    return std::max(1024, ml->nodecount * sends_per_event_headroom());
 }
 
 namespace {
@@ -163,6 +190,19 @@ void NetSendBuffer_t::reserve(int capacity) {
     reallocated = 1;
 }
 
+void NetSendBuffer_t::record_peak(int peak_cnt) {
+    if (peak_cnt <= 0) {
+        return;
+    }
+    if (peak_cnt > _high_water) {
+        _high_water = peak_cnt;
+    }
+    // Stay ahead of observed load for the next device kernel (no mid-kernel grow).
+    if (peak_cnt * 2 > _size) {
+        reserve(std::max({peak_cnt * 2, _size * 2, 8}));
+    }
+}
+
 std::size_t NetSendBuffer_t::size_of_object() const {
     std::size_t nbytes = 0;
     nbytes += static_cast<std::size_t>(_size) * sizeof(int) * 4;
@@ -191,14 +231,19 @@ void net_send_buffer_ensure_for_events(Memb_list* ml, int min_events) {
     if (!nsb) {
         return;
     }
-    // Headroom: each receive may net_send and/or net_move; never undersize vs this flush.
-    int const need = std::max({net_send_buffer_capacity(ml),
-                               std::max(min_events, 0) * 2,
-                               8});
+    // Device cannot grow mid-kernel. Size to max of default, this flush's peak
+    // (min_events × headroom), and 2× historical high-water.
+    int const headroom = sends_per_event_headroom();
+    int const from_events = std::max(min_events, 0) * headroom;
+    int const from_hw = nsb->_high_water > 0 ? nsb->_high_water * 2 : 0;
+    int const need = std::max({net_send_buffer_capacity(ml), from_events, from_hw, 8});
     nsb->reserve(need);
 #if defined(NRN_ENABLE_GPU)
-    // reserve() sets reallocated; re-copyin device arrays before device net_send_buffering.
-    upload_net_send_buffer_to_device(ml);
+    // reserve() sets reallocated; re-copyin only when Memb_list is already on device
+    // (host-only unit tests / pre-upload setup skip this).
+    if (nrn_target_is_present(ml) || nrn_target_is_present(nsb)) {
+        upload_net_send_buffer_to_device(ml);
+    }
 #endif
 }
 
@@ -213,9 +258,18 @@ void update_net_send_buffer_on_host(NrnThread* nt, NetSendBuffer_t* nsb) {
     nrn_pragma_acc(update self(nsb->_cnt) if (nt->compute_gpu))
     nrn_pragma_omp(target update from(nsb->_cnt) if (nt->compute_gpu))
     if (nsb->_cnt > nsb->_size) {
-        fprintf(stderr, "ERROR: NetSendBuffer exceeded during GPU execution (thread %d)\n", nt->id);
+        // Not silent: device skipped writes for i >= _size; refuse to continue.
+        fprintf(stderr,
+                "ERROR: NetSendBuffer exceeded during GPU execution (thread %d): "
+                "cnt=%d size=%d high_water=%d. Increase NRN_GPU_NET_SEND_BUFFER_HEADROOM "
+                "or reduce concurrent net_send/net_move per step.\n",
+                nt->id,
+                nsb->_cnt,
+                nsb->_size,
+                nsb->_high_water);
         std::abort();
     }
+    nsb->record_peak(nsb->_cnt);
     if (!nsb->_cnt) {
         return;
     }
@@ -307,8 +361,15 @@ void deliver_net_send_buffer_events(NrnThread* nt, Memb_list* ml, NetSendBuffer_
     nsb->_cnt = 0;
 #if defined(NRN_ENABLE_GPU)
     if (nt->compute_gpu) {
-        nrn_pragma_acc(update device(nsb->_cnt) if (nt->compute_gpu))
-        nrn_pragma_omp(target update to(nsb->_cnt) if (nt->compute_gpu))
+        // record_peak (in update_net_send_buffer_on_host) may have grown host
+        // arrays; re-copyin before the next device net_send_buffering.
+        if (nsb->reallocated &&
+            (nrn_target_is_present(ml) || nrn_target_is_present(nsb))) {
+            upload_net_send_buffer_to_device(ml);
+        } else if (nrn_target_is_present(nsb)) {
+            nrn_pragma_acc(update device(nsb->_cnt) if (nt->compute_gpu))
+            nrn_pragma_omp(target update to(nsb->_cnt) if (nt->compute_gpu))
+        }
     }
 #endif
 }

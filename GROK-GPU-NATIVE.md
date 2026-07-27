@@ -312,11 +312,22 @@ fallbacks (not ringtest). Host still pulls V when Th2/WATCH or dump needs it.
 
 **Trajectory for record** still open (Gate F stays red when `Vector.record` forces full SoA).
 
+### NetSendBuffer capacity (no silent drop)
+
+Device kernels **cannot** grow mid-region. Host pre-sizes via
+`net_send_buffer_ensure_for_events(ml, min_events)`:
+
+- Default capacity: `max(1024, nodecount × HEADROOM)` (HEADROOM default **4**)
+- Per flush: `max(default, min_events × HEADROOM, 2 × high_water)`
+- After each GPU pull: `record_peak` adapts for the next kernel; re-copyin if grown
+- Overflow: **abort** with cnt/size (never continue with dropped events)
+- Env override: `NRN_GPU_NET_SEND_BUFFER_HEADROOM` (1–64)
+- Threshold hit list: sized to slot count; overflow also aborts (no partial deliver)
+
 ### Next GPU feature (new session)
 
 | Option | Content |
 |--------|---------|
-| NetSendBuffer capacity | Ensure no silent drop under heavy self-event load |
 | Trajectory native path | Low-traffic record so Gate F stays green with `Vector.record` |
 | Later | use_gap=1, multi-rank, perf, single device-resource owner |
 
@@ -369,9 +380,10 @@ Commit steps locally without push unless asked.
 
 Tree: ~/neuron/nrngpu. Kind: feature.
 Branch: local/gpu-lastpart-no-soa-pull — Gate F + no host↔device V during psolve
-(deviceptr voltages; ringtest 688@100 green). Traub QUALIFIED A–E, 4474@100.
++ NetSendBuffer capacity (headroom/high-water; no silent drop). Ringtest 688@100.
+Traub QUALIFIED A–E, 4474@100.
 
-Next (pick one): NetSendBuffer capacity or trajectory native path.
+Next: trajectory native path (or FF into integration).
 Do not start use_gap, multi-rank, or device-resource owner unless asked.
 
 Heap-free weight_index only; no host vec_rhs voltage hot path.

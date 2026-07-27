@@ -10,6 +10,7 @@
 #include "nrn_ansi.h"
 
 #include <algorithm>
+#include <cstdio>
 #include <cstdlib>
 #include <vector>
 
@@ -270,6 +271,16 @@ bool check_thresh_presyn_on_device(NrnThread* nt, double teps) noexcept {
     nrn_pragma_acc(wait(nt->stream_id))
     nt->_net_send_buffer_cnt = net_send_buf_count;
 
+    // Sized to slot count before the kernel; overflow must not silently drop hits.
+    if (net_send_buf_count > nsbuffer_size) {
+        fprintf(stderr,
+                "ERROR: threshold hit list exceeded (thread %d): hits=%d capacity=%d\n",
+                nt->id,
+                net_send_buf_count,
+                nsbuffer_size);
+        std::abort();
+    }
+
     if (nt->compute_gpu) {
         // Flags + hit list live on device during the kernel; pull for host deliver/sync.
         // clang-format off
@@ -277,10 +288,9 @@ bool check_thresh_presyn_on_device(NrnThread* nt, double teps) noexcept {
         nrn_pragma_omp(target update from(flag [0:count]))
         // clang-format on
         if (net_send_buf_count > 0) {
-            int const ncopy = std::min(net_send_buf_count, nsbuffer_size);
             // clang-format off
-            nrn_pragma_acc(update host(nsbuffer [0:ncopy]) async(nt->stream_id))
-            nrn_pragma_omp(target update from(nsbuffer [0:ncopy]))
+            nrn_pragma_acc(update host(nsbuffer [0:net_send_buf_count]) async(nt->stream_id))
+            nrn_pragma_omp(target update from(nsbuffer [0:net_send_buf_count]))
             // clang-format on
         }
         nrn_pragma_acc(wait(nt->stream_id))
@@ -295,13 +305,21 @@ bool check_thresh_presyn_on_device(NrnThread* nt, double teps) noexcept {
                                nsbuffer_size,
                                net_send_buf_count);
     nt->_net_send_buffer_cnt = net_send_buf_count;
+    if (net_send_buf_count > nsbuffer_size) {
+        fprintf(stderr,
+                "ERROR: threshold hit list exceeded (thread %d): hits=%d capacity=%d\n",
+                nt->id,
+                net_send_buf_count,
+                nsbuffer_size);
+        std::abort();
+    }
 #endif
 
     sync_threshold_presyn_flags(table.slots.data(), flag, count);
 
     // Host deliver only (CoreNEURON-shaped: detect fills buffer, host does send).
     if (net_send_buf_count > 0) {
-        int const n_hits = std::min(nt->_net_send_buffer_cnt, nsbuffer_size);
+        int const n_hits = nt->_net_send_buffer_cnt;
         for (int i = 0; i < n_hits; ++i) {
             int const slot_index = nsbuffer[i];
             if (slot_index < 0 || slot_index >= count) {
