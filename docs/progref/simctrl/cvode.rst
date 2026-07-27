@@ -2161,6 +2161,19 @@ CVode
             is algebraically inconsistent (e.g. clamp amp ≠ :math:`v`, or
             ``xc=0`` with an inconsistent ``vext`` gauge).
 
+            **Forcing** :math:`t^+` **info:** the right-limit value
+            :math:`u(t^+)` and classical derivative :math:`u'(t^+)` of
+            exogenous drives after a discontinuity (or at ``finitialize``).
+            In the geometric / DAE literature this pair is the **1-jet** of
+            :math:`u` at :math:`t^+`. Continuous :meth:`Vector.play` supplies
+            this from piecewise-linear samples (outgoing segment slope at a
+            knot; linear extrapolation of the last two points past the end of
+            the ``t`` vector — see :meth:`Vector.play`). Mode ``3`` will use
+            forcing :math:`t^+` info to complete free components of
+            :math:`y'` (Plan A); until that lands, a nano-step may still be
+            needed when forcing has nonzero slope (e.g. ramps into a series
+            :math:`C`–:math:`R`).
+
     .. tab:: HOC
 
         Syntax:

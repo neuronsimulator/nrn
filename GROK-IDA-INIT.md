@@ -17,8 +17,24 @@ Use this file when starting a **new** Grok session rooted in `~/neuron/nrnida`.
 | Singular / algebraic residual diagnosis | **Done** | Top residual eqs classified (algebraic / near-singular \(c\)) on mode-3 fail |
 | Automated tests | **Partial** | `test/hoctests/tests/test_ida_init_mode.py` (incl. SEClamp tiny `cm`) |
 | Manual GUI circuits | **Local** | `external/tests/nrntest/nrniv/ida/*.ses` (tree is **gitignored**); `~/models/nrndc1sim` |
+| **Plan A** forcing \(t^+\) for free \(y'\) | **A0 done** | Pure continuous-play value+deriv; A1–A5 next |
 
 **Default remains mode 0.** Mode 3 is ready for broader validation; falls back to heuristic on residual failure (except when an audit is armed).
+
+### Plan A (forcing \(t^+\) info) — status
+
+**Forcing \(t^+\) info:** right-limit value \(u(t^+)\) and classical derivative \(u'(t^+)\) of exogenous drives after a discontinuity (or at `finitialize`). In the geometric / DAE literature this pair is the **1-jet** of \(u\) at \(t^+\`.
+
+| Slice | Status | Notes |
+|-------|--------|--------|
+| **A0** Spec + continuous-play \(t^+\) oracle | **Done** | `src/nrniv/vecplay_tplus.h`; `VecPlayContinuous::forcing_tplus`; unit tests `test/unit_tests/vecplay_tplus.cpp` |
+| **A1** Wire play instances at IC | pending | Query all continuous plays at reinit |
+| **A2** Mode 3 free \(y'\) from \(u'\) (LM / series CR) | pending | Flagship: iramp-style ramp |
+| **A3** Multi-event + finitialize suite | pending | Distill `external/.../ida` iramp/istep into in-repo tests |
+| **A4** MOD `dforce` thin API | pending | |
+| **A5** Polish / diagnostics | pending | |
+
+Continuous play \(t^+\) rules (match `Vector.play` / `interpolate`): hold before \(t_0\); outgoing segment slope at a knot; **linear extrapolation of the last two points** past the end (not hold-last with \(u'=0\) unless last segment is flat).
 
 Tip commit (update when advancing): see `git log -1 --oneline` on `hines-grok/ida-init`.
 
@@ -107,10 +123,10 @@ CVode().dae_init_audit_file("ic_audit.txt")  # append; empty → stdout
 
 ## Recommended next work
 
-1. Broader validation: `~/models/nrndc1sim`, `iramp*`, wheatstone / multi-cap LM.
-2. Event-reinit automated tests (not only `finitialize`) for mode 3 continuous content.
-3. Policy: when to recommend mode 3 over 0; `cm→0` / ideal clamp as algebraic; denser LM \(C\) solve.
-4. Optional HOC API: IDA-side `f` / residual probe (like `CVode.f` for CVODE).
+1. **Plan A1–A2:** register continuous play forcing \(t^+\) at IC; complete free \(y'\) for series \(C\)–\(R\) ramp (use `iramp*` as interactive oracle; formalize in `test/hoctests`).
+2. Event-reinit automated tests for mode 3 + forcing slope (not only `finitialize`).
+3. Thread **B** later: abandon fixed `vext=0` INITIAL when needed (e.g. forced `e_extracellular`); LM often floats membrane-adjacent extracellular to ground.
+4. Policy: when to recommend mode 3 over 0; `cm→0` / ideal clamp as algebraic.
 5. Update tip commit when status drifts.
 6. Later: SUNDIALS 3 revalidation; do **not** resurrect permanent VMX.
 

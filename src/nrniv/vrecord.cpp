@@ -11,6 +11,7 @@
 
 #include "ocpointer.h"
 #include "vrecitem.h"
+#include "vecplay_tplus.h"
 #include "netcvode.h"
 #include "cvodeobj.h"
 
@@ -353,36 +354,40 @@ void VecPlayContinuous::continuous(double tt) {
     }
 }
 
+void VecPlayContinuous::forcing_tplus(double tt, double* value, double* deriv) const {
+    // Full sample arrays; active upper knot is ubound_index_ (same as interpolate).
+    const int n = t_ ? static_cast<int>(t_->size()) : 0;
+    // IvocVect stores doubles contiguously via data() / &elem(0)
+    const double* y = (y_ && n > 0) ? &y_->elem(0) : nullptr;
+    const double* tv = (t_ && n > 0) ? &t_->elem(0) : nullptr;
+    if (nrn_vecplay_continuous_tplus(n, y, tv, tt, ubound_index_, value, deriv) != 0) {
+        if (value) {
+            *value = 0.;
+        }
+        if (deriv) {
+            *deriv = 0.;
+        }
+    }
+}
+
 double VecPlayContinuous::interpolate(double tt) {
+    // Keep last_index_ cache in sync with historical search side effects, then
+    // evaluate with the shared t⁺ geometry (value only).
     if (tt >= t_->elem(ubound_index_)) {
         last_index_ = ubound_index_;
         if (last_index_ == 0) {
-            // printf("return last tt=%g ubound=%g y=%g\n", tt, t_->elem(ubound_index_),
-            // y_->elem(last_index_));
             return y_->elem(last_index_);
         }
     } else if (tt <= t_->elem(0)) {
         last_index_ = 0;
-        // printf("return elem(0) tt=%g t0=%g y=%g\n", tt, t_->elem(0), y_->elem(0));
         return y_->elem(0);
     } else {
         search(tt);
     }
-    double x0 = y_->elem(last_index_ - 1);
-    double x1 = y_->elem(last_index_);
-    double t0 = t_->elem(last_index_ - 1);
-    double t1 = t_->elem(last_index_);
-    // printf("IvocVectRecorder::continuous tt=%g t0=%g t1=%g theta=%g x0=%g x1=%g\n", tt, t0, t1,
-    // (tt - t0)/(t1 - t0), x0, x1);
-    if (t0 == t1) {
-        return (x0 + x1) / 2.;
-    }
-    return interp((tt - t0) / (t1 - t0), x0, x1);
-#if 0
-	// dt
-	double theta = tt/dt_ - last_index_;
-	interp(theta, x0, x1);
-#endif
+    double value = 0.;
+    const int n = static_cast<int>(t_->size());
+    nrn_vecplay_continuous_tplus(n, &y_->elem(0), &t_->elem(0), tt, ubound_index_, &value, nullptr);
+    return value;
 }
 
 void VecPlayContinuous::search(double tt) {
