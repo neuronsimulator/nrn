@@ -109,6 +109,13 @@ bool nrn_has_fixed_record_continuous() {
            !net_cvode_instance->fixed_record_->empty();
 }
 
+std::vector<PlayRecord*>* nrn_fixed_record_list() {
+    if (!net_cvode_instance) {
+        return nullptr;
+    }
+    return net_cvode_instance->fixed_record_;
+}
+
 void nrn_solver_prepare() {
     if (net_cvode_instance) {
         net_cvode_instance->solver_prepare();

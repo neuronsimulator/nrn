@@ -1,7 +1,8 @@
 # Native GPU trajectory (Vector.record without full SoA)
 
 **Branch:** `local/gpu-trajectory-native`  
-**Status:** design frozen; implementation by phase commits  
+**Status:** T0 design frozen; T1 plan builder landed; T2 next  
+
 **Depends on:** Gate F lastpart gating, device-owned V (deviceptr), device nonvint  
 
 ## Problem
@@ -62,8 +63,8 @@ abort under a debug env later if desired.
 
 | Phase | Deliverable | Smoke |
 |-------|-------------|--------|
-| **T0** | This doc + handoff | Read |
-| **T1** | Host plan: walk `fixed_record_`, resolve sources/sinks | Unit / small check |
+| **T0** | This doc + handoff | Read — **done** |
+| **T1** | Host plan: walk `fixed_record_`, resolve sources/sinks | Unit `[gpu][trajectory]` — **done** |
 | **T2** | Staging + gather + full-stretch flush; Gate F unhook when plan complete | Ringtest ± record, 688@100 |
 | **T3** | Chunked + env; GraphLine basics | Optional IV; ringtest regression |
 

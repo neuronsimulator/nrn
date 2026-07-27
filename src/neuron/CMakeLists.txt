@@ -44,19 +44,28 @@ if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
     gpu/partrans.cpp
     gpu/phase_timer.cpp
     gpu/check_thresh.cpp
-    gpu/ion_cur_device.cpp)
+    gpu/ion_cur_device.cpp
+    gpu/trajectory.cpp)
   set_property(TARGET neuron_gpu_upload PROPERTY POSITION_INDEPENDENT_CODE ON)
   target_include_directories(
     neuron_gpu_upload
     PRIVATE ${PROJECT_SOURCE_DIR}/src
             ${PROJECT_SOURCE_DIR}/src/nrniv
             ${PROJECT_SOURCE_DIR}/src/nrnoc
+            ${PROJECT_SOURCE_DIR}/src/nrncvode
+            ${PROJECT_SOURCE_DIR}/src/ivoc
             ${PROJECT_SOURCE_DIR}/src/oc
+            ${PROJECT_SOURCE_DIR}/src/gnu
+            ${PROJECT_SOURCE_DIR}/src/nrnmpi
             ${PROJECT_BINARY_DIR}
             ${PROJECT_BINARY_DIR}/src/nrnoc
             ${PROJECT_BINARY_DIR}/src/oc
+            ${PROJECT_BINARY_DIR}/src/nrnmpi
+            ${PROJECT_BINARY_DIR}/src/nrncvode
             ${PROJECT_SOURCE_DIR}/external/fmt/include)
   target_link_libraries(neuron_gpu_upload PRIVATE fmt::fmt)
+  # Host-only trajectory plan (netcvode / vrecitem); not OpenACC-instrumented.
+  set_source_files_properties(gpu/trajectory.cpp PROPERTIES COMPILE_DEFINITIONS "NRN_ENABLE_GPU")
   set_source_files_properties(
     gpu/upload.cpp
     gpu/upload_mechanisms.cpp

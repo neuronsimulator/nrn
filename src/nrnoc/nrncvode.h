@@ -1,7 +1,9 @@
 #pragma once
 #include "oc_ansi.h"  // neuron::model_sorted_token
+#include <vector>
 struct Memb_list;
 struct NrnThread;
+class PlayRecord;
 void cvode_fadvance(double);
 extern void cvode_finitialize(double);
 extern void nrncvode_set_t(double);
@@ -17,6 +19,11 @@ extern void fixed_play_continuous(NrnThread* nt);
 extern bool nrn_thread_has_fixed_play(NrnThread* nt);
 /** True when any continuous Vector.record / fixed_record is registered. */
 extern bool nrn_has_fixed_record_continuous();
+/**
+ * Continuous fixed-step record list (NetCvode::fixed_record_), or nullptr.
+ * Host-only; used by native GPU trajectory plan (T1+).
+ */
+extern std::vector<PlayRecord*>* nrn_fixed_record_list();
 extern void nrn_solver_prepare();
 extern "C" void nrn_random_play();
 extern void nrn_daspk_init_step(double, double, int);
