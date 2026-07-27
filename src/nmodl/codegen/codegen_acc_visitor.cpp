@@ -48,8 +48,15 @@ void CodegenAccVisitor::print_parallel_iteration_hint(BlockType type, const ast:
         }
     }
     present_clause << ')';
-    printer->fmt_line("nrn_pragma_acc(parallel loop {} async(nt->stream_id) if(nt->compute_gpu))",
-                      present_clause.str());
+    if (force_seq_acc_loop_) {
+        printer->fmt_line(
+            "nrn_pragma_acc(parallel loop seq {} async(nt->stream_id) if(nt->compute_gpu))",
+            present_clause.str());
+    } else {
+        printer->fmt_line(
+            "nrn_pragma_acc(parallel loop {} async(nt->stream_id) if(nt->compute_gpu))",
+            present_clause.str());
+    }
     printer->add_line("nrn_pragma_omp(target teams distribute parallel for if(nt->compute_gpu))");
 }
 
@@ -59,10 +66,56 @@ void CodegenAccVisitor::print_atomic_reduction_pragma() {
     printer->add_line("nrn_pragma_omp(atomic update)");
 }
 
+void CodegenAccVisitor::print_nrn_cur() {
+    if (!nrn_cur_required()) {
+        return;
+    }
+    if (info.conductances.empty()) {
+        print_nrn_current(*info.breakpoint_node);
+    }
+    printer->add_newline(2);
+    printer->add_line("/** update current */");
+    print_global_function_common_code(BlockType::Equation);
+
+    auto emit_loop = [&](bool det_matrix) {
+        force_seq_acc_loop_ = det_matrix;  // seq pragma + no PP atomics while true
+        // nullptr: Acc present-clause path does not inspect the AST block body.
+        print_parallel_iteration_hint(BlockType::Equation, nullptr);
+        printer->push_block("for (int id = 0; id < nodecount; id++)");
+        print_nrn_cur_kernel(*info.breakpoint_node);
+        print_nrn_cur_matrix_shadow_update();
+        if (!nrn_cur_reduction_loop_required()) {
+            print_fast_imem_calculation();
+        }
+        printer->pop_block();
+        force_seq_acc_loop_ = false;
+        if (nrn_cur_reduction_loop_required()) {
+            printer->push_block("for (int id = 0; id < nodecount; id++)");
+            print_nrn_cur_matrix_shadow_reduction();
+            printer->pop_block();
+            print_fast_imem_calculation();
+        }
+    };
+
+    if (info.point_process) {
+        printer->push_block("if (neuron::event_order::matrix_enabled())");
+        emit_loop(true);
+        printer->chain_block("else");
+        emit_loop(false);
+        printer->pop_block();
+    } else {
+        emit_loop(false);
+    }
+
+    print_kernel_data_present_annotation_block_end();
+    printer->pop_block();
+}
+
 
 void CodegenAccVisitor::print_backend_includes() {
     printer->add_line("#include <coreneuron/utils/offload.hpp>");
     printer->add_line("#include <cuda_runtime_api.h>");
+    printer->add_line("#include <neuron/event_order.hpp>");
 }
 
 
@@ -173,11 +226,12 @@ void CodegenAccVisitor::print_net_init_acc_serial_annotation_block_end() {
 void CodegenAccVisitor::print_nrn_cur_matrix_shadow_update() {
     auto rhs_op = operator_for_rhs();
     auto d_op = operator_for_d();
-    if (info.point_process) {
+    // force_seq_acc_loop_ set when NRN_DETERMINISTIC_MATRIX path generates seq loops.
+    if (info.point_process && !force_seq_acc_loop_) {
         print_atomic_reduction_pragma();
     }
     printer->fmt_line("vec_rhs[node_id] {} rhs;", rhs_op);
-    if (info.point_process) {
+    if (info.point_process && !force_seq_acc_loop_) {
         print_atomic_reduction_pragma();
     }
     printer->fmt_line("vec_d[node_id] {} g;", d_op);
@@ -191,11 +245,11 @@ void CodegenAccVisitor::print_fast_imem_calculation() {
     auto rhs_op = operator_for_rhs();
     auto d_op = operator_for_d();
     printer->push_block("if (nt->nrn_fast_imem)");
-    if (info.point_process) {
+    if (info.point_process && !force_seq_acc_loop_) {
         print_atomic_reduction_pragma();
     }
     printer->fmt_line("nt->nrn_fast_imem->nrn_sav_rhs[node_id] {} rhs;", rhs_op);
-    if (info.point_process) {
+    if (info.point_process && !force_seq_acc_loop_) {
         print_atomic_reduction_pragma();
     }
     printer->fmt_line("nt->nrn_fast_imem->nrn_sav_d[node_id] {} g;", d_op);

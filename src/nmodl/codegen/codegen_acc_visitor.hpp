@@ -43,6 +43,11 @@ class CodegenAccVisitor: public CodegenCoreneuronCppVisitor {
     /// ivdep like annotation for channel iterations
     void print_parallel_iteration_hint(BlockType type, const ast::Block* block) override;
 
+    /** NRN_DETERMINISTIC_MATRIX: emit `acc parallel loop seq` for PP cur. */
+    bool force_seq_acc_loop_ = false;
+
+    void print_nrn_cur() override;
+
 
     /// atomic update pragma for reduction statements
     void print_atomic_reduction_pragma() override;

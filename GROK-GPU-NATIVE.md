@@ -341,15 +341,16 @@ Goal: **exact** CPU vs GPU spike multiset `(t, gid)` — not only count 4474.
 
 **Codegen fix landed:** host-only INITIAL (`wrote_conc`, e.g. `cad`) must not use undeclared `_d_voltages` (broke fresh Traub ACC rebuild after deviceptr commit).
 
-**Deterministic events (testing):** `NRN_DETERMINISTIC_EVENTS=1` enables a shared
-total-order key on GPU→host flushes (threshold hits by `src_gid`, NetSendBuffer by
-`(t, class, instance, flag, weight_index, …)`, NetReceiveBuffer within-instance by
-`(t, flag, weight_index)`). Same helper: `src/neuron/event_order.hpp` (native +
-CoreNEURON). Does **not** fix multi-PP atomic rhs/d FP association. Try for Traub
-raster stability before deeper NMDA/FP work.
+**Deterministic testing flags** (`src/neuron/event_order.hpp`, all four backends):
 
-**Next (this line):** Traub exact raster with `NRN_DETERMINISTIC_EVENTS=1`; if still
-noisy, multi-PP atomic rhs/d. No host NET_RECEIVE body; no host `vec_rhs`→V hot path.
+| Env | Effect |
+|-----|--------|
+| `NRN_DETERMINISTIC_EVENTS=1` | Total-order GPU→host event flushes (hits, NetSend, NRB) |
+| `NRN_DETERMINISTIC_MATRIX=1` | PP `nrn_cur`/`nrn_jacob`: `acc loop seq` by instance id (no unordered atomics on `vec_rhs`/`vec_d`) |
+
+Matrix flag is slow on GPU; testing only. Dual-build Traub: `nrnivmodl -nmodl … -nmodlflags "… acc …" -coreneuron`.
+
+**Next (this line):** measure Traub 4-way raster under event/matrix flag combos.
 
 ### Next GPU feature (new session)
 

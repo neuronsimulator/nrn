@@ -1,16 +1,18 @@
 #pragma once
 
 /**
- * Opt-in total order for discrete-event batch flushes (testing / raster parity).
+ * Opt-in determinism for testing / raster parity (all of NEURON CPU, native GPU,
+ * CoreNEURON CPU, CoreNEURON GPU should honor the same flags).
  *
- * Enable: NRN_DETERMINISTIC_EVENTS=1
+ * NRN_DETERMINISTIC_EVENTS=1
+ *   Total order for discrete-event batch flushes. Primary: delivery time t.
+ *   Same-t ties: class, src_gid, tgt_gid, mech_type, pnt_instance, flag,
+ *   weight_index, sendtype, seq. SelfEvent is a first-class class rank.
  *
- * Primary: delivery time t (already enforced by the event queue).
- * Same-t ties: class, src_gid, tgt_gid, mech_type, pnt_instance, flag,
- * weight_index, sendtype, seq.
- *
- * SelfEvent is a first-class class rank (not a fake gid). Does not fix FP
- * association order for multi-PP atomic rhs/d accumulation.
+ * NRN_DETERMINISTIC_MATRIX=1
+ *   Ordered (serial instance-id) accumulation of point-process contributions
+ *   into vec_rhs / vec_d instead of unordered GPU atomics. Matches CPU
+ *   left-to-right association; expensive on GPU — testing only.
  */
 
 #include <cstdlib>
@@ -22,6 +24,15 @@ namespace neuron::event_order {
 [[nodiscard]] inline bool enabled() noexcept {
     static int const on = [] {
         char const* e = std::getenv("NRN_DETERMINISTIC_EVENTS");
+        return e && e[0] == '1' && e[1] == '\0';
+    }();
+    return on != 0;
+}
+
+/** True when NRN_DETERMINISTIC_MATRIX=1 (process lifetime). */
+[[nodiscard]] inline bool matrix_enabled() noexcept {
+    static int const on = [] {
+        char const* e = std::getenv("NRN_DETERMINISTIC_MATRIX");
         return e && e[0] == '1' && e[1] == '\0';
     }();
     return on != 0;

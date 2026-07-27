@@ -21,6 +21,7 @@ void CodegenNeuronAccVisitor::print_standard_includes() {
     printer->add_line("#include <neuron/gpu/net_receive_buffer.hpp>");
     printer->add_line("#include <neuron/gpu/mechanism_phases.hpp>");
     printer->add_line("#include <neuron/gpu/sync.hpp>");
+    printer->add_line("#include <neuron/event_order.hpp>");
     // net_buf_receive needs complete model_sorted_token + nrn_ensure_model_data_are_sorted.
     printer->add_line("#include \"nrn_ansi.h\"");
     printer->add_line("#include \"neuron/model_data.hpp\"");
@@ -275,10 +276,23 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
         }
     }
 
-    printer->fmt_line("nrn_pragma_acc(parallel loop {}{} async(nt->stream_id) if(nt->compute_gpu))",
-                      present_clause.str(),
-                      type == BlockType::NetReceive ? std::string{} : deviceptr_extra);
-    printer->add_line("nrn_pragma_omp(target teams distribute parallel for if(nt->compute_gpu))");
+    // force_seq_acc_loop_: NRN_DETERMINISTIC_MATRIX PP path — serial instance order
+    // matches CPU association for vec_rhs/vec_d (no unordered atomics).
+    if (force_seq_acc_loop_) {
+        printer->fmt_line(
+            "nrn_pragma_acc(parallel loop seq {}{} async(nt->stream_id) if(nt->compute_gpu))",
+            present_clause.str(),
+            type == BlockType::NetReceive ? std::string{} : deviceptr_extra);
+        printer->add_line(
+            "nrn_pragma_omp(target teams distribute parallel for if(nt->compute_gpu))");
+    } else {
+        printer->fmt_line(
+            "nrn_pragma_acc(parallel loop {}{} async(nt->stream_id) if(nt->compute_gpu))",
+            present_clause.str(),
+            type == BlockType::NetReceive ? std::string{} : deviceptr_extra);
+        printer->add_line(
+            "nrn_pragma_omp(target teams distribute parallel for if(nt->compute_gpu))");
+    }
 }
 
 void CodegenNeuronAccVisitor::print_kernel_data_present_annotation_block_begin() {
@@ -425,20 +439,31 @@ void CodegenNeuronAccVisitor::print_nrn_jacob() {
     print_entrypoint_setup_code_from_memb_list();
     printer->fmt_line("auto nodecount = _ml_arg->nodecount;");
     use_present_fp_indexing_ = true;
-    print_parallel_iteration_hint(BlockType::Equation, nullptr);
-    printer->push_block("for (int id = 0; id < nodecount; id++)");
-    printer->add_line("int node_id = node_data.nodeindices[id];");
-    // g_unused was written on device in nrn_cur; read it here (do not call nrn_current again:
-    // that would double-update ion dinadv/dikdv shadow fields). Flat present(vec_d) like cap/axial.
-    // Point processes: atomic when multiple instances share a node (see print_nrn_cur).
+    auto print_jacob_device_loop = [&](bool det_matrix) {
+        force_seq_acc_loop_ = det_matrix;
+        print_parallel_iteration_hint(BlockType::Equation, nullptr);
+        printer->push_block("for (int id = 0; id < nodecount; id++)");
+        printer->add_line("int node_id = node_data.nodeindices[id];");
+        // g_unused from nrn_cur. PP: atomic unless NRN_DETERMINISTIC_MATRIX (seq loop).
+        if (info.point_process && !det_matrix) {
+            printer->add_line("nrn_pragma_acc(atomic update)");
+            printer->add_line("nrn_pragma_omp(atomic update)");
+        }
+        printer->fmt_line("vec_d[node_id] {} _present_fp_{}[inst._data_offset + id];",
+                          operator_for_d(),
+                          conductance_fp_index());
+        printer->pop_block();
+        force_seq_acc_loop_ = false;
+    };
     if (info.point_process) {
-        printer->add_line("nrn_pragma_acc(atomic update)");
-        printer->add_line("nrn_pragma_omp(atomic update)");
+        printer->push_block("if (neuron::event_order::matrix_enabled())");
+        print_jacob_device_loop(true);
+        printer->chain_block("else");
+        print_jacob_device_loop(false);
+        printer->pop_block();
+    } else {
+        print_jacob_device_loop(false);
     }
-    printer->fmt_line("vec_d[node_id] {} _present_fp_{}[inst._data_offset + id];",
-                      operator_for_d(),
-                      conductance_fp_index());
-    printer->pop_block();
     use_present_fp_indexing_ = false;
     print_device_stream_wait();
     printer->chain_block("else");
@@ -1060,24 +1085,39 @@ void CodegenNeuronAccVisitor::print_nrn_cur() {
             "neuron::gpu::net_send_buffer_ensure_for_events(_ml_arg, nodecount);");
     }
     use_present_fp_indexing_ = true;
-    print_parallel_iteration_hint(BlockType::Equation, info.breakpoint_node);
-    printer->push_block("for (int id = 0; id < nodecount; id++)");
-    print_nrn_cur_kernel(*info.breakpoint_node);
 
-    // Point processes may share a node (multiple ExpSyn on one segment). Without
-    // atomics, parallel OpenACC updates race and can drop non-zero synaptic rhs
-    // (Stage 3c: two ExpSyn on inode 3 left Δrhs ≈ 0.103 missing on device).
+    // Point processes may share a node. Parallel OpenACC needs atomics (Stage 3c)
+    // but atomics are non-associative. NRN_DETERMINISTIC_MATRIX=1: serial instance
+    // order (matches CPU left-to-right) for testing / raster stability.
+    auto print_cur_loop_body = [&](bool det_matrix) {
+        force_seq_acc_loop_ = det_matrix;
+        print_parallel_iteration_hint(BlockType::Equation, info.breakpoint_node);
+        printer->push_block("for (int id = 0; id < nodecount; id++)");
+        print_nrn_cur_kernel(*info.breakpoint_node);
+        if (info.point_process && !det_matrix) {
+            printer->add_line("nrn_pragma_acc(atomic update)");
+            printer->add_line("nrn_pragma_omp(atomic update)");
+        }
+        printer->fmt_line("vec_rhs[node_id] {} rhs;", operator_for_rhs());
+        if (breakpoint_exist()) {
+            printer->fmt_line(
+                "{} = g;",
+                indexed_fp_var(info.vectorize ? naming::CONDUCTANCE_UNUSED_VARIABLE
+                                              : naming::CONDUCTANCE_VARIABLE));
+        }
+        printer->pop_block();
+        force_seq_acc_loop_ = false;
+    };
+
     if (info.point_process) {
-        printer->add_line("nrn_pragma_acc(atomic update)");
-        printer->add_line("nrn_pragma_omp(atomic update)");
+        printer->push_block("if (neuron::event_order::matrix_enabled())");
+        print_cur_loop_body(true);
+        printer->chain_block("else");
+        print_cur_loop_body(false);
+        printer->pop_block();
+    } else {
+        print_cur_loop_body(false);
     }
-    printer->fmt_line("vec_rhs[node_id] {} rhs;", operator_for_rhs());
-
-    if (breakpoint_exist()) {
-        printer->fmt_line("{} = g;", indexed_fp_var(info.vectorize ? naming::CONDUCTANCE_UNUSED_VARIABLE
-                                                                    : naming::CONDUCTANCE_VARIABLE));
-    }
-    printer->pop_block();
 
     print_after_nrn_cur_gpu_net_send_flush();
     print_kernel_data_present_annotation_block_end();
