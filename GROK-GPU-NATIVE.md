@@ -348,9 +348,22 @@ Goal: **exact** CPU vs GPU spike multiset `(t, gid)` — not only count 4474.
 | `NRN_DETERMINISTIC_EVENTS=1` | Total-order GPU→host event flushes (hits, NetSend, NRB) |
 | `NRN_DETERMINISTIC_MATRIX=1` | PP `nrn_cur`/`nrn_jacob`: `acc loop seq` by instance id (no unordered atomics on `vec_rhs`/`vec_d`) |
 
-Matrix flag is slow on GPU; testing only. Dual-build Traub: `nrnivmodl -nmodl … -nmodlflags "… acc …" -coreneuron`.
+Matrix flag is slow on GPU (~12 min Traub 100 ms vs ~50 s); testing only.
+Dual-build Traub: `nrnivmodl -nmodl … -nmodlflags "… acc …" -coreneuron`.
 
-**Next (this line):** measure Traub 4-way raster under event/matrix flag combos.
+**Traub 1/10 @100 measure (2026-07-27, dual special):** oracle = NEURON CPU 4474.
+
+| Backend | none | events | matrix | both |
+|---------|------|--------|--------|------|
+| NEURON CPU | exact | exact | exact | exact |
+| CoreNEURON CPU | exact | exact | exact | exact |
+| CoreNEURON GPU | exact, stable | exact, stable | exact, stable | exact, stable |
+| NEURON native GPU | miss~21, nondet | miss~12–31, nondet | miss 0–6, nondet* | miss 4–8, nondet |
+
+\*matrix run1 once exact; run0≠run1. Det flags reduce miss count but do not freeze native GPU.
+
+**Next (this line):** isolate remaining native GPU nondeterminism vs CoreNEURON GPU
+(which is already exact). Not host NET_RECEIVE / not host vec_rhs voltage hot path.
 
 ### Next GPU feature (new session)
 
