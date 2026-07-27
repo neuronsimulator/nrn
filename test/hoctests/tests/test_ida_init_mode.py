@@ -613,6 +613,72 @@ print('ok')
     assert "ok" in _run_isolated(code)
 
 
+def test_mod_procedure_dforce_at_ida_ic():
+    """MOD PROCEDURE dforce() is invoked at IDA IC with t = IC time.
+
+    Uses test/hoctests/mod_dforce.mod (SUFFIX moddforce). Compiles with
+    nrnivmodl in a temp dir so the test is self-contained.
+    """
+    code = r"""
+from neuron import h
+import math, os, subprocess, tempfile, sys
+
+# Compile and load mod_dforce.mod
+src = os.path.join(os.path.dirname(__file__) if '__file__' in dir() else '.',
+                   '..', 'mod_dforce.mod')
+# __file__ not set in -c; pass path via env
+mod_path = os.environ.get('MOD_DFORCE_PATH')
+assert mod_path and os.path.isfile(mod_path), mod_path
+td = tempfile.mkdtemp(prefix='mod_dforce_')
+import shutil
+shutil.copy(mod_path, os.path.join(td, 'mod_dforce.mod'))
+r = subprocess.run(['nrnivmodl'], cwd=td, capture_output=True, text=True)
+assert r.returncode == 0, r.stdout + r.stderr
+# load shared library
+mech = None
+for root, dirs, files in os.walk(td):
+    for f in files:
+        if f.startswith('libnrnmech') and (f.endswith('.so') or f.endswith('.dylib') or f.endswith('.dll')):
+            mech = os.path.join(root, f)
+            break
+assert mech, 'libnrnmech not found under ' + td
+h.nrn_load_dll(mech)
+
+s = h.Section('soma')
+s.insert('moddforce')
+s(0.5).moddforce.amp = 2.0
+s(0.5).moddforce.omega = 3.0
+s(0.5).moddforce.t0 = 0.0
+cv = h.CVode()
+cv.active(True)
+cv.use_daspk(1)
+cv.dae_init_mode(3)
+h.finitialize(-65)
+# dforce at t=0: rate = amp*omega*cos(0) = 6
+assert abs(s(0.5).moddforce.rate - 6.0) < 1e-9, s(0.5).moddforce.rate
+# reinit at another t
+h.t = 0.5
+cv.re_init()
+expect = 2.0 * 3.0 * math.cos(3.0 * 0.5)
+assert abs(s(0.5).moddforce.rate - expect) < 1e-9, (s(0.5).moddforce.rate, expect)
+print('ok')
+"""
+    mod_path = os.path.join(os.path.dirname(__file__), "..", "mod_dforce.mod")
+    mod_path = os.path.abspath(mod_path)
+    env = os.environ.copy()
+    env["MOD_DFORCE_PATH"] = mod_path
+    # Pass through PATH/LD_LIBRARY_PATH/PYTHONPATH so nrnivmodl matches this build
+    r = subprocess.run(
+        [sys.executable, "-c", code],
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+    if r.returncode != 0:
+        raise AssertionError(f"stdout:\n{r.stdout}\nstderr:\n{r.stderr}")
+    assert "ok" in r.stdout
+
+
 def test_mode3_dforce_sinusoid_a4():
     """A4: LinearMechanism.dforce supplies analytic b' for free y' (sinusoid I)."""
     code = r"""
@@ -770,6 +836,7 @@ if __name__ == "__main__":
     test_mode3_forcing_tplus_suite_a3()
     test_mode3_dforce_sinusoid_a4()
     test_mode3_dforce_fd_fallback_a4()
+    test_mod_procedure_dforce_at_ida_ic()
     print("ok")
 
 

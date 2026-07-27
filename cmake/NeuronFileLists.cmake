@@ -127,6 +127,7 @@ set(NRNOC_FILE_LIST
     ldifus.cpp
     membfunc.cpp
     memblist.cpp
+    mod_dforce.cpp
     nrntimeout.cpp
     nrnversion.cpp
     passive0.cpp

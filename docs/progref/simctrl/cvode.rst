@@ -2179,6 +2179,14 @@ CVode
             :meth:`LinearMechanism.dforce` (analytic :math:`b'`, or a finite-
             difference fallback when only the force callable is provided).
 
+            Density mechanisms may define ``PROCEDURE dforce()`` (no arguments).
+            It is invoked automatically at each IDA reinit with ``t`` set to the
+            IC time so assigned rates (e.g. :math:`dc/dt` for variable
+            capacitance) take their classical right limit at :math:`t^+`. Point
+            processes should continue to use ``BEFORE BREAKPOINT`` for continuous
+            rates and ``NET_RECEIVE`` for jumps that require charge conservation
+            (see the ``dcmdt`` / ``DcDt`` examples).
+
     .. tab:: HOC
 
         Syntax:

@@ -845,9 +845,18 @@ cv_->t_, t-cv_->t_, cv_->t0_-cv_->t_, init_mode_);
 #endif
     const bool do_audit = audit_should_fire();
 
-    // A1/A4: continuous Vector.play forcing t+ plus optional LM.dforce / FD b'.
+    // A1/A4/MOD: forcing t+ setup at IC time.
+    // 1) density PROCEDURE dforce() (assigned rates at t+)
+    // 2) continuous Vector.play u,u'
+    // 3) LinearMechanism.dforce / FD b'
     // Play state (ubound_index_) is already post-event when reinit runs.
     last_forcing_t_ = cv_->t_;
+    const int n_mod_dforce = nrn_call_mod_dforce(cv_->t_);
+    if (n_mod_dforce > 0 && audit_level_ >= 1 && !do_audit) {
+        Printf("IDA IC: called PROCEDURE dforce on %d mechanism instance(s) at t=%g\n",
+               n_mod_dforce,
+               cv_->t_);
+    }
     nrn_collect_forcing_tplus(cv_->t_, last_forcing_tplus_);
     nrndae_append_dforce_to_forcing_list(cv_->t_, last_forcing_tplus_);
     // Stdout when audit level >= 1 and this reinit is not already writing a
@@ -988,8 +997,9 @@ cv_->t_, t-cv_->t_, cv_->t0_-cv_->t_, init_mode_);
                         "singular C)\n");
             }
         }
-        // A1: always show forcing t+ in the three-panel dump when present
+        // A1/A4: forcing t+ from play and LM.dforce
         nrn_dump_forcing_tplus(f, last_forcing_t_, last_forcing_tplus_);
+        // Note MOD PROCEDURE dforce is invoked before this dump (rates updated in place)
 
         double maxA = 0., wrmsA = -1.;
         if (have_A) {

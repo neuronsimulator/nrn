@@ -121,6 +121,9 @@ void nrn_fixed_step(neuron::model_sorted_token const&);
 void nrn_fixed_step_group(neuron::model_sorted_token const&, int n);
 void nrn_lhs(neuron::model_sorted_token const&, NrnThread&);
 void nrn_rhs(neuron::model_sorted_token const&, NrnThread&);
+
+/** Call density-mechanism PROCEDURE dforce() at IDA IC time t=tt. Returns call count. */
+int nrn_call_mod_dforce(double tt);
 extern void v_setup_vectors(void);
 extern void section_ref(Section*);
 extern void section_unref(Section*);
