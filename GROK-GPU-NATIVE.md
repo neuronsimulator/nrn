@@ -324,12 +324,20 @@ Device kernels **cannot** grow mid-region. Host pre-sizes via
 - Env override: `NRN_GPU_NET_SEND_BUFFER_HEADROOM` (1–64)
 - Threshold hit list: sized to slot count; overflow also aborts (no partial deliver)
 
-### Next GPU feature (new session)
+### Trajectory native (in progress)
+
+| Item | Status |
+|------|--------|
+| Branch | `local/gpu-trajectory-native` |
+| Design | `doc/gpu/trajectory-native.md` (T0) |
+| Mode | Full-stretch default; chunked for IV/GraphLine; device staging always |
+| Gate F | Pure `Vector.record` must not force full SoA once plan covers records |
+
+### Next GPU feature (after trajectory)
 
 | Option | Content |
 |--------|---------|
-| Trajectory native path | Low-traffic record so Gate F stays green with `Vector.record` |
-| Later | use_gap=1, multi-rank, perf, single device-resource owner |
+| Later | use_gap=1, multi-rank, perf, single device-resource owner, FF integration |
 
 ### Constraints (do not regress)
 
@@ -379,11 +387,11 @@ High performance is sacred; CoreNEURON is a guide (low host traffic), not law.
 Commit steps locally without push unless asked.
 
 Tree: ~/neuron/nrngpu. Kind: feature.
-Branch: local/gpu-lastpart-no-soa-pull — Gate F + no host↔device V during psolve
-+ NetSendBuffer capacity (headroom/high-water; no silent drop). Ringtest 688@100.
-Traub QUALIFIED A–E, 4474@100.
+Branch: local/gpu-trajectory-native — native trajectory (sparse gather, device
+staging, D2H flush). Base: Gate F + deviceptr V + NetSendBuffer capacity.
+Design: doc/gpu/trajectory-native.md. Ringtest 688@100 on parent tip.
 
-Next: trajectory native path (or FF into integration).
+Next: implement phases T1→T2→T3 (one commit group per phase).
 Do not start use_gap, multi-rank, or device-resource owner unless asked.
 
 Heap-free weight_index only; no host vec_rhs voltage hot path.
