@@ -34,6 +34,15 @@ class Daspk {
     static const std::vector<NrnForcingTPlus>& last_forcing_tplus();
     static double last_forcing_t();
 
+    // A5: cumulative IC path statistics (reset on CVode construction / clear).
+    static void reset_ic_stats();
+    static void print_ic_stats();  // used by statistics()
+    // last IC: path_mode and forcing source bitmask (NRN_IC_FORCING_*)
+    static int last_ic_path_mode();
+    static int last_ic_forcing_flags();
+    static int ic_mode3_ok_count();
+    static int ic_mode3_fallback_count();
+
   private:
     void ida_init();
     void info();
@@ -81,6 +90,15 @@ class Daspk {
     static int init_mode_;
     // Count of mode 1/3 residual failures that fell back to the heuristic.
     static int calcic_fallback_count_;
+    // A5: mode-3 specific + forcing-source tallies
+    static int ic_init_count_;
+    static int ic_mode3_ok_count_;
+    static int ic_mode3_fallback_count_;
+    static int ic_forcing_play_inits_;    // inits that used play b'
+    static int ic_forcing_dforce_inits_;  // inits that used dforce/bdot
+    static int ic_forcing_fd_inits_;      // inits that used FD of force callable
+    static int last_ic_path_mode_;
+    static int last_ic_forcing_flags_;
 
     // Audit control (process-wide; one IDA path typically).
     static int audit_level_;          // 0 off, 1 summary, 2 three-panel (top residual rows)

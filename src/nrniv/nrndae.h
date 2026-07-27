@@ -248,10 +248,19 @@ void nrndae_seed_yp_from_f(double* f, double* yp);
  * LinearMechanism and complete free yp components (null space of C).
  * forcing may be empty (no-op). yp is the full IDA y' vector.
  */
-void nrndae_complete_yp_from_forcing(double* yp, const std::vector<NrnForcingTPlus>& forcing);
+// Returns bitmask of sources used for free y': 1=play, 2=dforce/bdot, 4=FD, 8=applied.
+int nrndae_complete_yp_from_forcing(double* yp, const std::vector<NrnForcingTPlus>& forcing);
 
 /** Append LinearMechanism.dforce / FD b' entries for IC audit (A4). */
 void nrndae_append_dforce_to_forcing_list(double tt, std::vector<NrnForcingTPlus>& out);
+
+// Source bits for nrndae_complete_yp_from_forcing
+enum {
+    NRN_IC_FORCING_PLAY = 1,
+    NRN_IC_FORCING_DFORCE = 2,
+    NRN_IC_FORCING_FD = 4,
+    NRN_IC_FORCING_APPLIED = 8
+};
 
 typedef std::list<NrnDAE*> NrnDAEPtrList;
 typedef NrnDAEPtrList::const_iterator NrnDAEPtrListIterator;

@@ -380,9 +380,10 @@ void nrndae_seed_yp_from_f(double* f, double* yp) {
     }
 }
 
-void nrndae_complete_yp_from_forcing(double* yp, const std::vector<NrnForcingTPlus>& forcing) {
+int nrndae_complete_yp_from_forcing(double* yp, const std::vector<NrnForcingTPlus>& forcing) {
+    int flags = 0;
     if (!yp) {
-        return;
+        return 0;
     }
     std::vector<PlayRecord*>* prl =
         net_cvode_instance ? net_cvode_instance->playrec_list() : nullptr;
@@ -398,7 +399,8 @@ void nrndae_complete_yp_from_forcing(double* yp, const std::vector<NrnForcingTPl
             continue;
         }
         std::vector<double> bdot(n, 0.);
-        bool from_play = false;
+        bool have_bdot = false;
+        int src = 0;
 
         // A1/A2: continuous Vector.play → components of b
         if (prl && !forcing.empty()) {
@@ -421,7 +423,8 @@ void nrndae_complete_yp_from_forcing(double* yp, const std::vector<NrnForcingTPl
                 for (int i = 0; i < n; ++i) {
                     if (lm->b_element_is(i, target)) {
                         bdot[i] = e.deriv;
-                        from_play = true;
+                        have_bdot = true;
+                        src |= NRN_IC_FORCING_PLAY;
                     }
                 }
             }
@@ -429,27 +432,27 @@ void nrndae_complete_yp_from_forcing(double* yp, const std::vector<NrnForcingTPl
 
         // A4: dforce / bdot vector (overrides play); else FD if f_callable and no play
         const bool have_dforce = lm->bdot_vec() || lm->dforce_callable();
-        if (have_dforce || (lm->f_callable() && !from_play)) {
+        if (have_dforce || (lm->f_callable() && !have_bdot)) {
             std::vector<double> bdot_df(n, 0.);
             if (lm->fill_bdot_for_ic(t, bdot_df.data())) {
-                if (have_dforce) {
-                    for (int i = 0; i < n; ++i) {
-                        bdot[i] = bdot_df[i];
-                    }
-                } else {
-                    // FD only fills where play did not
-                    for (int i = 0; i < n; ++i) {
-                        bdot[i] = bdot_df[i];
-                    }
+                for (int i = 0; i < n; ++i) {
+                    bdot[i] = bdot_df[i];
                 }
-                from_play = true;  // "have bdot"
+                have_bdot = true;
+                if (have_dforce) {
+                    src |= NRN_IC_FORCING_DFORCE;
+                } else {
+                    src |= NRN_IC_FORCING_FD;
+                }
             }
         }
 
-        if (from_play) {
+        if (have_bdot) {
             lm->complete_yp_from_bdot(bdot.data(), yp);
+            flags |= src | NRN_IC_FORCING_APPLIED;
         }
     }
+    return flags;
 }
 
 void nrndae_append_dforce_to_forcing_list(double tt, std::vector<NrnForcingTPlus>& out) {

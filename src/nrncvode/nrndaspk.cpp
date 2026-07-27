@@ -16,6 +16,7 @@
 #include "netcvode.h"
 #include "nrn_ansi.h"
 #include "vecplay_tplus.h"
+#include "nrndae.h"
 #include "ida/ida.h"
 #include "ida/ida_impl.h"
 #include "mymath.h"
@@ -36,8 +37,8 @@ extern void nrndae_dkres(double*, double*, double*);
 extern void nrndae_dkpsol(double);
 extern int nrndae_battery_ic_project();
 extern void nrndae_seed_yp_from_f(double* f, double* yp);
-extern void nrndae_complete_yp_from_forcing(double* yp,
-                                             const std::vector<NrnForcingTPlus>& forcing);
+extern int nrndae_complete_yp_from_forcing(double* yp,
+                                            const std::vector<NrnForcingTPlus>& forcing);
 extern void nrndae_append_dforce_to_forcing_list(double tt, std::vector<NrnForcingTPlus>& out);
 extern void nrn_solve(NrnThread*);
 extern int nrn_sparse13_soft_fail;
@@ -217,6 +218,14 @@ int Daspk::init_try_again_;
 int Daspk::first_try_init_failures_;
 int Daspk::init_mode_;
 int Daspk::calcic_fallback_count_;
+int Daspk::ic_init_count_ = 0;
+int Daspk::ic_mode3_ok_count_ = 0;
+int Daspk::ic_mode3_fallback_count_ = 0;
+int Daspk::ic_forcing_play_inits_ = 0;
+int Daspk::ic_forcing_dforce_inits_ = 0;
+int Daspk::ic_forcing_fd_inits_ = 0;
+int Daspk::last_ic_path_mode_ = -1;
+int Daspk::last_ic_forcing_flags_ = 0;
 int Daspk::audit_level_ = 0;
 double Daspk::audit_t_select_ = 0.;
 int Daspk::audit_armed_ = 0;
@@ -231,6 +240,55 @@ const std::vector<NrnForcingTPlus>& Daspk::last_forcing_tplus() {
 
 double Daspk::last_forcing_t() {
     return last_forcing_t_;
+}
+
+void Daspk::reset_ic_stats() {
+    ic_init_count_ = 0;
+    ic_mode3_ok_count_ = 0;
+    ic_mode3_fallback_count_ = 0;
+    ic_forcing_play_inits_ = 0;
+    ic_forcing_dforce_inits_ = 0;
+    ic_forcing_fd_inits_ = 0;
+    calcic_fallback_count_ = 0;
+    last_ic_path_mode_ = -1;
+    last_ic_forcing_flags_ = 0;
+}
+
+int Daspk::last_ic_path_mode() {
+    return last_ic_path_mode_;
+}
+int Daspk::last_ic_forcing_flags() {
+    return last_ic_forcing_flags_;
+}
+int Daspk::ic_mode3_ok_count() {
+    return ic_mode3_ok_count_;
+}
+int Daspk::ic_mode3_fallback_count() {
+    return ic_mode3_fallback_count_;
+}
+
+void Daspk::print_ic_stats() {
+    if (!ic_init_count_ && !calcic_fallback_count_ && !first_try_init_failures_) {
+        return;
+    }
+    Printf("   IDA IC: %d reinit(s)", ic_init_count_);
+    if (ic_mode3_ok_count_ || ic_mode3_fallback_count_) {
+        Printf("; mode3 ok=%d fallback=%d", ic_mode3_ok_count_, ic_mode3_fallback_count_);
+    }
+    if (ic_forcing_play_inits_ || ic_forcing_dforce_inits_ || ic_forcing_fd_inits_) {
+        Printf("; free y' from play=%d dforce=%d fd=%d",
+               ic_forcing_play_inits_,
+               ic_forcing_dforce_inits_,
+               ic_forcing_fd_inits_);
+    }
+    Printf("\n");
+    if (calcic_fallback_count_) {
+        Printf("   %d IDA IC mode 1/3 residual failure(s) fell back to heuristic\n",
+               calcic_fallback_count_);
+    }
+    if (first_try_init_failures_) {
+        Printf("   %d First try Initialization failures\n", first_try_init_failures_);
+    }
 }
 
 static void do_ode_thread(neuron::model_sorted_token const& sorted_token, NrnThread& ntr) {
@@ -464,9 +522,19 @@ static void seed_yp_from_Cy_eq_f(Daspk* d) {
     // LinearMechanism mass (diagonal / lag / simple floating difference)
     nrndae_seed_yp_from_f(F, yp);
 
-    // A2: free y' in null(C) from continuous Vector.play forcing t+ (db/dt).
+    // A2/A4: free y' in null(C) from play / dforce / FD (db/dt).
     // Uses Daspk::last_forcing_tplus_ collected at the start of Daspk::init.
-    nrndae_complete_yp_from_forcing(yp, Daspk::last_forcing_tplus());
+    const int fflags = nrndae_complete_yp_from_forcing(yp, Daspk::last_forcing_tplus());
+    Daspk::last_ic_forcing_flags_ = fflags;
+    if (fflags & NRN_IC_FORCING_PLAY) {
+        ++Daspk::ic_forcing_play_inits_;
+    }
+    if (fflags & NRN_IC_FORCING_DFORCE) {
+        ++Daspk::ic_forcing_dforce_inits_;
+    }
+    if (fflags & NRN_IC_FORCING_FD) {
+        ++Daspk::ic_forcing_fd_inits_;
+    }
 }
 
 // After residual failure: classify largest residual equations (algebraic vs
@@ -829,38 +897,52 @@ cv_->t_, t-cv_->t_, cv_->t0_-cv_->t_, init_mode_);
     int path_mode = init_mode_;
     bool fell_back = false;
     int err = 0;
+    last_ic_forcing_flags_ = 0;
+    ++ic_init_count_;
     if (init_mode_ == 0) {
         err = init_heuristic();
         path_mode = 0;
     } else if (init_mode_ == 3) {
-        // Hold continuous content (LM / extracellular), then y' from C*y'=f(y).
+        // Hold continuous content (LM / extracellular), then y' from C*y'=f(y)
+        // plus free y' from forcing t+ (play / dforce / FD).
         // On residual failure, fall back to nano-step heuristic (unless audit
         // is armed — keep pure mode-3 state for panel C).
         err = init_battery();
         path_mode = 3;
         if (err != 0) {
             if (do_audit) {
-                Printf("battery IC residual failed (err=%d); audit armed — not falling back to "
-                       "heuristic\n",
-                       err);
+                Printf("mode 3 IC residual failed (err=%d, forcing_flags=0x%x); audit armed — not "
+                       "falling back to heuristic\n",
+                       err,
+                       last_ic_forcing_flags_);
             } else {
-                Printf("battery IC residual failed (err=%d); falling back to heuristic IC\n", err);
+                Printf("mode 3 IC residual failed (err=%d, forcing_flags=0x%x); falling back to "
+                       "nano-step heuristic IC\n",
+                       err,
+                       last_ic_forcing_flags_);
                 ++calcic_fallback_count_;
+                ++ic_mode3_fallback_count_;
                 fell_back = true;
                 err = init_heuristic();
                 path_mode = 0;
             }
+        } else {
+            ++ic_mode3_ok_count_;
         }
     } else {
         err = init_ida_y_init();
         path_mode = init_mode_;
         if (err != 0 && init_mode_ == 1) {
+            Printf("IDACalcIC residual/project failed (err=%d); falling back to nano-step "
+                   "heuristic IC\n",
+                   err);
             ++calcic_fallback_count_;
             fell_back = true;
             err = init_heuristic();
             path_mode = 0;
         }
     }
+    last_ic_path_mode_ = path_mode;
 
     if (do_audit && have_B) {
         // Preserve post-IC (y, yp) before temporarily loading A/B for printing.
@@ -890,9 +972,21 @@ cv_->t_, t-cv_->t_, cv_->t0_-cv_->t_, init_mode_);
         if (init_mode_ == 3 && path_mode == 3 && do_audit) {
             fprintf(f,
                     "  note: mode 3 panel C: C*y'=f(y) seed + free y' from forcing t+ "
-                    "(null(C) / Z'G y'=Z'b')"
+                    "(null(C) / Z'G y'=Z'b') flags=0x%x"
                     "%s\n",
+                    last_ic_forcing_flags_,
                     err != 0 ? "; residual failed; fallback suppressed (audit armed)" : "");
+            if (last_ic_forcing_flags_ & NRN_IC_FORCING_APPLIED) {
+                fprintf(f,
+                        "  note: free y' sources:%s%s%s\n",
+                        (last_ic_forcing_flags_ & NRN_IC_FORCING_PLAY) ? " play" : "",
+                        (last_ic_forcing_flags_ & NRN_IC_FORCING_DFORCE) ? " dforce" : "",
+                        (last_ic_forcing_flags_ & NRN_IC_FORCING_FD) ? " fd" : "");
+            } else if (err == 0) {
+                fprintf(f,
+                        "  note: no free-y' forcing applied (C*y'=f seed only; ok if u'=0 or no "
+                        "singular C)\n");
+            }
         }
         // A1: always show forcing t+ in the three-panel dump when present
         nrn_dump_forcing_tplus(f, last_forcing_t_, last_forcing_tplus_);
@@ -1066,12 +1160,7 @@ void Daspk::statistics() {
 	printf("nonlinear conv. failures = %d\n", iwork_[15-1]);
 	printf("linear conv. failures = %d\n", iwork_[16-1]);
 #endif
-    if (first_try_init_failures_) {
-        Printf("   %d First try Initialization failures\n", first_try_init_failures_);
-    }
-    if (calcic_fallback_count_) {
-        Printf("   %d IDACalcIC fallback(s) to heuristic IC\n", calcic_fallback_count_);
-    }
+    print_ic_stats();
 }
 
 static void* daspk_scatter_thread(NrnThread* nt) {

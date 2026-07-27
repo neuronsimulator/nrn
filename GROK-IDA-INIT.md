@@ -17,7 +17,7 @@ Use this file when starting a **new** Grok session rooted in `~/neuron/nrnida`.
 | Singular / algebraic residual diagnosis | **Done** | Top residual eqs classified (algebraic / near-singular \(c\)) on mode-3 fail |
 | Automated tests | **Partial** | `test_ida_init_mode.py` (mode 3, SEClamp, forcing suite A3) |
 | Manual GUI circuits | **Local** | `external/tests/nrntest/nrniv/ida/*.ses` (gitignored); `~/models/nrndc1sim` |
-| **Plan A** forcing \(t^+\) for free \(y'\) | **A0–A4 done** | A5 polish next |
+| **Plan A** forcing \(t^+\) for free \(y'\) | **A0–A5 done** | complete |
 
 **Default remains mode 0.** Mode 3 is ready for broader validation; falls back to heuristic on residual failure (except when an audit is armed).
 
@@ -32,7 +32,7 @@ Use this file when starting a **new** Grok session rooted in `~/neuron/nrnida`.
 | **A2** Mode 3 free \(y'\) from \(u'\) (LM / series CR) | **Done** | null(C) adjust via \(Z^\top G y' = Z^\top b'\); ramp test \(V_1'=1,V_2'=0.5\) |
 | **A3** Multi-event + finitialize suite | **Done** | istep, kink, end extrap, flat end, finitialize slope, multi-event |
 | **A4** MOD/LM `dforce` thin API | **Done** | `LinearMechanism.dforce(callable, bdot)`; FD fallback |
-| **A5** Polish / diagnostics | pending | |
+| **A5** Polish / diagnostics | **Done** | `dae_init_stats`; clearer fallback msgs; counters |
 
 Continuous play \(t^+\) rules: hold for \(t < t_0\); **outgoing** slope at a knot (including \(t=t_0\)); **linear extrapolation of the last two points** past the end (flat last segment ⇒ \(u'=0\)).
 
@@ -123,7 +123,7 @@ CVode().dae_init_audit_file("ic_audit.txt")  # append; empty → stdout
 
 ## Recommended next work
 
-1. **Plan A5:** polish diagnostics / fallback counters; optional MOD-level dforce later.
+1. Optional: MOD-level PROCEDURE dforce; broader model validation; thread B (vext INITIAL).
 2. Thread **B** later: abandon fixed `vext=0` INITIAL when needed (e.g. forced `e_extracellular`); LM often floats membrane-adjacent extracellular to ground.
 3. Policy: when to recommend mode 3 over 0; `cm→0` / ideal clamp as algebraic.
 4. Update tip commit when status drifts.

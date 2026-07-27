@@ -2195,6 +2195,43 @@ CVode
 
 
 
+.. method:: CVode.dae_init_stats
+
+    .. tab:: Python
+
+        Syntax:
+            ``n = cvode.dae_init_stats()``
+
+            ``cvode.dae_init_stats(1)``
+
+            ``n = cvode.dae_init_stats(vec)``
+
+        Description:
+            IDA consistent-initialization path counters (Plan A5).
+
+            * No argument — print a short summary (also included in
+              :meth:`CVode.statistics`) and return the number of IDA reinits.
+            * ``1`` — reset all IC counters.
+            * ``vec`` — fill a :class:`Vector` of length 8:
+
+              0. total IDA reinits
+              1. mode 3 successes
+              2. mode 3 residual failures that fell back to nano-step
+              3. reinits that applied free :math:`y'` from continuous play
+              4. reinits that applied free :math:`y'` from :meth:`LinearMechanism.dforce`
+              5. reinits that applied free :math:`y'` from FD of the force callable
+              6. last IC path mode (0 heuristic, 1/2 CalcIC, 3 battery+forcing)
+              7. last IC forcing source flags (bit 1=play, 2=dforce, 4=fd, 8=applied)
+
+    .. tab:: HOC
+
+        Same as Python: ``cvode.dae_init_stats()``, ``cvode.dae_init_stats(1)``,
+        or ``cvode.dae_init_stats(vec)``.
+
+----
+
+
+
 .. method:: CVode.dae_init_audit
 
     .. tab:: Python

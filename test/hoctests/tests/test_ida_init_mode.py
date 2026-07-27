@@ -32,6 +32,46 @@ def test_dae_init_audit_api():
     assert cvode.dae_init_audit_file("") == 0
 
 
+def test_dae_init_stats_api():
+    """A5: dae_init_stats reset / vector fill."""
+    code = r"""
+from neuron import h
+h.load_file('stdrun.hoc')
+cv = h.CVode()
+cv.dae_init_stats(1)  # reset
+v = h.Vector()
+n = cv.dae_init_stats(v)
+assert n == 8 and v.size() == 8, (n, v.size())
+assert v[0] == 0  # no reinits yet
+# series CR + play ramp once
+c = h.Matrix(2, 2)
+g = h.Matrix(2, 2)
+y = h.Vector(2)
+b = h.Vector(2)
+c.setval(0, 0, 1); c.setval(0, 1, -1)
+c.setval(1, 0, -1); c.setval(1, 1, 1)
+g.setval(1, 1, 1)
+lm = h.LinearMechanism(c, g, y, b)
+tvec = h.Vector([0, 1, 1, 2])
+ivec = h.Vector([0, 0, 0.5, 1.0])
+ivec.play(b._ref_x[0], tvec, True)
+h.cvode_active(True)
+cv.use_daspk(1)
+cv.dae_init_mode(3)
+h.finitialize(0)
+h.continuerun(1.0)
+cv.re_init()
+cv.dae_init_stats(v)
+assert v[0] >= 2, list(v)  # finitialize + re_init at least
+assert v[1] >= 1, list(v)  # mode3 ok
+assert v[3] >= 1, list(v)  # play free y'
+assert int(v[6]) == 3, list(v)  # last path mode 3
+assert int(v[7]) & 8, list(v)  # APPLIED bit
+print('ok')
+"""
+    assert "ok" in _run_isolated(code)
+
+
 def _run_isolated(code: str):
     env = os.environ.copy()
     r = subprocess.run(
@@ -717,6 +757,7 @@ print('ok')
 if __name__ == "__main__":
     test_dae_init_mode_api()
     test_dae_init_audit_api()
+    test_dae_init_stats_api()
     test_pure_resistive_all_modes_isolated()
     test_series_cr_mode0_mode1_isolated()
     test_series_cr_battery_mode3_isolated()
