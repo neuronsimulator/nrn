@@ -40,6 +40,9 @@ void zero_matrix_diagonal_on_device(NrnThread& nt, int begin, int end) noexcept;
 /** sav_rhs -= vec_rhs on device after GPU mechanism CURRENT. */
 void transform_sav_rhs_membrane_only_on_device(NrnThread& nt, int begin, int end) noexcept;
 
+/** sav_d = vec_d - sav_d on device after GPU mechanism JACOBIAN. */
+void transform_sav_d_membrane_only_on_device(NrnThread& nt, int begin, int end) noexcept;
+
 /** Push mechanism-updated matrix state to device before OpenACC axial loops. */
 void sync_matrix_to_device_after_mechanisms(NrnThread& nt);
 

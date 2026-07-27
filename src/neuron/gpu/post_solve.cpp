@@ -1,16 +1,13 @@
 #include "neuron/gpu/post_solve.hpp"
 
-#include "coreneuron/permute/cellorder.hpp"
 #include "coreneuron/utils/offload.hpp"
 #include "membfunc.h"
 #include "multicore.h"
 #include "neuron/cache/mechanism_range.hpp"
-#include "neuron/gpu/config.hpp"
+#include "neuron/gpu/offload.hpp"
 #include "neuron/model_data.hpp"
 #include "nrn_ansi.h"
 #include "nrnoc_ml.h"
-
-#include <cstdlib>
 
 extern int secondorder;
 extern int use_sparse13;
@@ -62,40 +59,21 @@ void update_voltage_on_device(NrnThread& nt) {
     auto* const vec_rhs = nt.node_rhs_storage();
     auto* const vec_v = nt.node_voltage_storage();
 #if defined(NRN_ENABLE_GPU)
-    // Env NRN_GPU_VOLTAGE_OPENACC=1 forces pure OpenACC (skip CUDA launcher) for
-    // interop experiments. Default keeps CUDA launcher when available.
-    static int const force_openacc = [] {
-        char const* e = std::getenv("NRN_GPU_VOLTAGE_OPENACC");
-        return e && e[0] == '1' && e[1] == '\0';
-    }();
-    if (!force_openacc && use_cuda_launcher() && nt.compute_gpu) {
-        coreneuron_update_voltage_launcher(static_cast<double*>(acc_deviceptr(vec_v)),
-                                           static_cast<double*>(acc_deviceptr(vec_rhs)),
-                                           nt.end,
-                                           secondorder ? 1 : 0,
-                                           acc_get_cuda_stream(nt.stream_id));
-        return;
+    // deviceptr: no present(host V) so host V cannot re-enter the device during psolve.
+    double* d_v = nt.compute_gpu ? static_cast<double*>(acc_deviceptr(vec_v)) : vec_v;
+    double* d_rhs = nt.compute_gpu ? static_cast<double*>(acc_deviceptr(vec_rhs)) : vec_rhs;
+    // clang-format off
+    nrn_pragma_acc(parallel loop deviceptr(d_v, d_rhs) if (nt.compute_gpu) async(nt.stream_id))
+    // clang-format on
+    nrn_pragma_omp(target teams distribute parallel for simd if(nt.compute_gpu))
+    for (int i = 0; i < nt.end; ++i) {
+        d_v[i] += secondorder ? (2. * d_rhs[i]) : d_rhs[i];
+    }
+#else
+    for (int i = 0; i < nt.end; ++i) {
+        vec_v[i] += secondorder ? (2. * vec_rhs[i]) : vec_rhs[i];
     }
 #endif
-    if (secondorder) {
-        // clang-format off
-        nrn_pragma_acc(parallel loop present(vec_v [0:nt.end], vec_rhs [0:nt.end]) if (nt.compute_gpu)
-                           async(nt.stream_id))
-        // clang-format on
-        nrn_pragma_omp(target teams distribute parallel for simd if(nt.compute_gpu))
-        for (int i = 0; i < nt.end; ++i) {
-            vec_v[i] += 2. * vec_rhs[i];
-        }
-    } else {
-        // clang-format off
-        nrn_pragma_acc(parallel loop present(vec_v [0:nt.end], vec_rhs [0:nt.end]) if (nt.compute_gpu)
-                           async(nt.stream_id))
-        // clang-format on
-        nrn_pragma_omp(target teams distribute parallel for simd if(nt.compute_gpu))
-        for (int i = 0; i < nt.end; ++i) {
-            vec_v[i] += vec_rhs[i];
-        }
-    }
 }
 
 void capacity_current_on_device(model_sorted_token const& sorted_token, NrnThread& nt) {
@@ -180,6 +158,8 @@ void post_solve_on_device(model_sorted_token const& sorted_token, NrnThread& nt)
     capacity_current_on_device(sorted_token, nt);
     fast_imem_on_device(nt);
 #if defined(NRN_ENABLE_GPU)
+    // Fence entire post_solve (and prior stream work) before lastpart / next step.
+    // No host V transfer: device owns vec_v for the whole psolve.
     nrn_pragma_acc(wait(nt.stream_id))
 #endif
 }

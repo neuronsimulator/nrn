@@ -89,6 +89,7 @@ class CodegenNeuronAccVisitor: public CodegenNeuronCppVisitor {
     void print_nrn_current(const ast::BreakpointBlock& node) override;
     void print_nrn_state() override;
     void print_nrn_cur() override;
+    void print_nrn_cur_kernel(const ast::BreakpointBlock& node) override;
     void print_nrn_jacob() override;
 
     void print_entrypoint_setup_code_from_prop() override;

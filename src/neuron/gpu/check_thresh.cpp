@@ -235,27 +235,28 @@ bool check_thresh_presyn_on_device(NrnThread* nt, double teps) noexcept {
     auto* const vec_v = nt->node_voltage_storage();
     int* const nsbuffer = nt->_net_send_buffer;
     int const nsbuffer_size = nt->_net_send_buffer_size;
-    int const end = nt->end;
 
     // Th1: OpenACC detect over slot columns + device vec_v (CoreNEURON pscheck shape).
     // Hit list = slot indices. Host still delivers. Host vec_v not required (Th2).
+    // deviceptr for V: no present(host V) during psolve (host must not re-enter device).
     nt->_net_send_buffer_cnt = 0;
     int net_send_buf_count = 0;
 
 #if defined(NRN_ENABLE_GPU) && (defined(_OPENACC) || defined(_OPENMP))
+    double* d_v = nt->compute_gpu ? static_cast<double*>(acc_deviceptr(vec_v)) : vec_v;
     // clang-format off
     nrn_pragma_acc(parallel loop present(thvar_row [0:count],
                                          threshold [0:count],
                                          flag [0:count],
-                                         vec_v [0:end],
                                          nsbuffer [0:nsbuffer_size])
+                       deviceptr(d_v)
                        copy(net_send_buf_count) if (nt->compute_gpu) async(nt->stream_id))
     nrn_pragma_omp(target teams distribute parallel for map(tofrom: net_send_buf_count) if(nt->compute_gpu))
     // clang-format on
     for (int i = 0; i < count; ++i) {
         int idx = 0;
         int const thidx = thvar_row[i];
-        double const v = vec_v[thidx];
+        double const v = d_v[thidx];
         double const thresh = threshold[i];
         if (pscheck(v, thresh, &flag[i])) {
             nrn_pragma_acc(atomic capture)

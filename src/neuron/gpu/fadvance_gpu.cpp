@@ -95,12 +95,10 @@ void fixed_step_thread(model_sorted_token const& cache_token,
                     nrn::Instrumentor::phase p("update");
                     post_solve_on_device(cache_token, nt);
                 }
-                // Device→host V immediately after post_solve (when V is written).
-                // Replaces the pre-nonvint V residual: without a host V mirror each
-                // step, multi-step CURRENT drifts (first diverge at step-2 post_setup).
-                // Pulling here is the natural ownership boundary; pre-nonvint only waits.
-                sync_voltages_to_host_after_post_solve(nt);
+                // Full device fence after post_solve — no V host transfer.
+                sync_all_device_streams();
                 if (nrnthread_vi_compute_) {
+                    sync_voltages_to_host_after_post_solve(nt);
                     nrnthread_vi_compute_(&nt);
                 }
             }

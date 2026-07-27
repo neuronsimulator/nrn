@@ -68,7 +68,8 @@ every step (full SoA) unless you have a measured reason.
 - Use CoreNEURON for **ideas and low-traffic shape**, not as a correctness oracle
   for every algorithm choice.
 - Spike path already uses device-side buffers (NetReceiveBuffer, NetSendBuffer indices).
-- Residual host traffic (e.g. pre-nonvint voltage mirror) is **performance debt**, not a goal.
+- Residual host traffic on the hot path is **performance debt**, not a goal.
+  Ringtest psolve no longer transfers V host↔device (deviceptr + no post_solve V pull).
 - When stuck on lastpart / record / sync: check CoreNEURON paths above, then ask
   whether a **faster** design is possible.
 
@@ -298,16 +299,16 @@ nrnivmodl -nmodl "$(which nmodl)" -nmodlflags "passes --inline host --c acc --oa
 | Post-nonvint full SoA pull | **Gated** — only if AFTER_SOLVE / BEFORE_STEP / `Vector.record` |
 | Pre-nonvint full SoA pull | **Removed** |
 | Pre-nonvint V pull | **Removed** — wait only before device nonvint |
-| Host V mirror | **Once per step after `post_solve_on_device`** (`sync_voltages_to_host_after_post_solve`) |
+| Host V during psolve | **None on ringtest** — device owns `vec_v`; ACC/treeset/post_solve/thresh use `deviceptr`, not `present(host V)` |
 | Ringtest Gate F | **yes** |
-| Ringtest 0.025/1/1.025/100 | **GREEN** (688 spikes; noise-level cellstate) |
+| Ringtest 0.025/1/1.025/100 | **GREEN** (688 spikes; noise-level cellstate) with **no host↔device V** on the hot path |
 
-**Why host V each step (not eliminated yet):** without any device→host V,
-step 1 is exact (all phases @ 0.025) but **step 2 `post_setup` already
-diverges** (mech max \|d\| ~7e-5). Drift grows; 0 spikes by t=5. Not a
-`sync_node_voltages_to_device` clobber (never called on ringtest). Root cause
-of multi-step CURRENT needing host V coherent remains open. Ladder:
-spikes → tstop → phase dumps (used here).
+**Host V residual (closed for ringtest psolve):** OpenACC `present(node_voltages)`
+was re-binding / re-entering host V onto the device; poison host V → device dumps
+showed 1e300. Fix: codegen `_d_voltages = acc_deviceptr(...)` + `deviceptr(_d_voltages)`
+in CURRENT/STATE/init; same for axial rhs, voltage update, and Th1 detect.
+Explicit `sync_node_voltages_to_device` remains only for VecPlay / host-post-solve
+fallbacks (not ringtest). Host still pulls V when Th2/WATCH or dump needs it.
 
 **Trajectory for record** still open (Gate F stays red when `Vector.record` forces full SoA).
 
@@ -316,7 +317,6 @@ spikes → tstop → phase dumps (used here).
 | Option | Content |
 |--------|---------|
 | NetSendBuffer capacity | Ensure no silent drop under heavy self-event load |
-| Zero host-V residual | Why step-2 CURRENT drifts without host V mirror |
 | Trajectory native path | Low-traffic record so Gate F stays green with `Vector.record` |
 | Later | use_gap=1, multi-rank, perf, single device-resource owner |
 
@@ -368,11 +368,11 @@ High performance is sacred; CoreNEURON is a guide (low host traffic), not law.
 Commit steps locally without push unless asked.
 
 Tree: ~/neuron/nrngpu. Kind: feature.
-Branch: local/gpu-lastpart-no-soa-pull — Gate F post-nonvint full SoA gated;
-pre-nonvint wait-only; host V after post_solve. Traub QUALIFIED A–E, 4474@100.
+Branch: local/gpu-lastpart-no-soa-pull — Gate F + no host↔device V during psolve
+(deviceptr voltages; ringtest 688@100 green). Traub QUALIFIED A–E, 4474@100.
 
-Next (pick one): NetSendBuffer capacity, zero host-V residual, or trajectory
-native path. Do not start use_gap, multi-rank, or device-resource owner unless asked.
+Next (pick one): NetSendBuffer capacity or trajectory native path.
+Do not start use_gap, multi-rank, or device-resource owner unless asked.
 
 Heap-free weight_index only; no host vec_rhs voltage hot path.
 source ~/neuron/bin/nrnenv nrngpu build-gpu before GPU runs.

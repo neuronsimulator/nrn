@@ -142,8 +142,8 @@ void finalize_nonvint_on_device(NrnThread& nt) {
 
 void sync_before_device_nonvint(NrnThread& nt) noexcept {
 #if defined(NRN_ENABLE_GPU)
-    // Wait for post_solve only. Host V is mirrored right after post_solve_on_device
-    // (fadvance_gpu) so multi-step CURRENT stays coherent without a second V pull here.
+    // Wait for post_solve only. Device owns vec_v for the whole psolve — no
+    // host↔device V transfer here (or after post_solve on the ringtest path).
     if (!enabled() || !backend_native() || !nonvint_state_on_device(nt)) {
         return;
     }

@@ -5,6 +5,8 @@
 #include "ast/function_call.hpp"
 #include "visitors/visitor_utils.hpp"
 
+#include <cstring>
+
 namespace nmodl {
 namespace codegen {
 
@@ -196,6 +198,13 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
         // Present pointers declared by print_net_receive_buffering before the loop.
     } else if (!info.artificial_cell) {
         printer->add_line("auto const* nodeindices = node_data.nodeindices;");
+        // Device-resident voltages: use deviceptr, never present(host V).
+        // present(node_voltages) re-uploads stale host V on nvc++ when host is
+        // dirty/out of date — host must not participate in psolve V traffic.
+        printer->add_line(
+            "double* _d_voltages = nt->compute_gpu "
+            "? static_cast<double*>(acc_deviceptr(const_cast<double*>(node_data.node_voltages))) "
+            ": const_cast<double*>(node_data.node_voltages);");
         if (type == BlockType::Equation) {
             printer->add_line("double* vec_rhs = node_data.node_rhs;");
             printer->add_line("double* vec_d = node_data.node_diagonal;");
@@ -237,7 +246,7 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
                 ", _present_fp_{}[:static_cast<std::size_t>(_ml_arg->nodecount) * {}]", i, array_len);
         }
     } else if (!info.artificial_cell) {
-        present_clause << ", nodeindices, _thread, node_data.node_voltages[:nt->end]";
+        present_clause << ", nodeindices, _thread";
         if (type == BlockType::Equation) {
             present_clause << ", vec_rhs[:nt->end], vec_d[:nt->end]";
         }
@@ -253,9 +262,22 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
     }
     present_clause << ')';
 
+    std::string deviceptr_extra = present_dptr_deviceptr_clause();
+    if (!info.artificial_cell && type != BlockType::NetReceive) {
+        if (deviceptr_extra.empty()) {
+            deviceptr_extra = " deviceptr(_d_voltages)";
+        } else {
+            // present_dptr returns " deviceptr(a, b, ...)"; insert _d_voltages first.
+            auto pos = deviceptr_extra.find("deviceptr(");
+            if (pos != std::string::npos) {
+                deviceptr_extra.insert(pos + std::strlen("deviceptr("), "_d_voltages, ");
+            }
+        }
+    }
+
     printer->fmt_line("nrn_pragma_acc(parallel loop {}{} async(nt->stream_id) if(nt->compute_gpu))",
                       present_clause.str(),
-                      type == BlockType::NetReceive ? std::string{} : present_dptr_deviceptr_clause());
+                      type == BlockType::NetReceive ? std::string{} : deviceptr_extra);
     printer->add_line("nrn_pragma_omp(target teams distribute parallel for if(nt->compute_gpu))");
 }
 
@@ -866,7 +888,7 @@ void CodegenNeuronAccVisitor::print_nrn_init(bool skip_init_check) {
     printer->add_line("auto* _ppvar = _ml_arg->pdata[id];");
     if (!info.artificial_cell) {
         printer->add_line("int node_id = node_data.nodeindices[id];");
-        printer->fmt_line("{} = node_data.node_voltages[node_id];",
+        printer->fmt_line("{} = _d_voltages[node_id];",
                           indexed_fp_var(naming::VOLTAGE_UNUSED_VARIABLE));
     }
 
@@ -926,7 +948,7 @@ void CodegenNeuronAccVisitor::print_nrn_state() {
     printer->add_line("int node_id = node_data.nodeindices[id];");
     printer->add_line("auto* _ppvar = _ml_arg->pdata[id];");
     if (!info.artificial_cell) {
-        printer->fmt_line("{} = node_data.node_voltages[node_id];",
+        printer->fmt_line("{} = _d_voltages[node_id];",
                           indexed_fp_var(naming::VOLTAGE_UNUSED_VARIABLE));
     }
 
@@ -975,6 +997,36 @@ CodegenNeuronAccVisitor::ParamVector CodegenNeuronAccVisitor::nrn_current_parame
     }
     params.push_back(v_param);
     return params;
+}
+
+void CodegenNeuronAccVisitor::print_nrn_cur_kernel(const ast::BreakpointBlock& node) {
+    // Use _d_voltages (deviceptr), not present(host node_voltages).
+    printer->add_line("int node_id = node_data.nodeindices[id];");
+    printer->add_line("double v = _d_voltages[node_id];");
+    printer->add_line("auto* _ppvar = _ml_arg->pdata[id];");
+    const auto& read_statements = ion_read_statements(BlockType::Equation);
+    for (auto& statement: read_statements) {
+        printer->add_line(statement);
+    }
+
+    if (info.conductances.empty()) {
+        print_nrn_cur_non_conductance_kernel();
+    } else {
+        print_nrn_cur_conductance_kernel(node);
+    }
+
+    const auto& write_statements = ion_write_statements(BlockType::Equation);
+    for (auto& statement: write_statements) {
+        auto text = process_shadow_update_statement(statement, BlockType::Equation);
+        printer->add_line(text);
+    }
+
+    if (info.point_process) {
+        const auto& area = get_variable_name(naming::NODE_AREA_VARIABLE);
+        printer->fmt_line("double mfactor = 1.e2/{};", area);
+        printer->add_line("g = g*mfactor;");
+        printer->add_line("rhs = rhs*mfactor;");
+    }
 }
 
 void CodegenNeuronAccVisitor::print_nrn_cur() {

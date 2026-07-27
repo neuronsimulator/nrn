@@ -323,6 +323,30 @@ void transform_sav_rhs_membrane_only_on_device(NrnThread& nt, int begin, int end
 #endif
 }
 
+void transform_sav_d_membrane_only_on_device(NrnThread& nt, int begin, int end) noexcept {
+#if defined(NRN_ENABLE_GPU)
+    if (!matrix_rhs_d_stays_on_device_for_solve(nt) || !nt.compute_gpu || begin >= end) {
+        return;
+    }
+    auto* const vec_d = nt.node_d_storage();
+    auto* const vec_sav_d = nt.node_sav_d_storage();
+    if (!vec_sav_d) {
+        return;
+    }
+    nrn_pragma_acc(parallel loop present(vec_d [begin:end], vec_sav_d [begin:end]) if (
+                       nt.compute_gpu) async(nt.stream_id))
+    nrn_pragma_omp(target teams distribute parallel for if(nt.compute_gpu))
+    for (int i = begin; i < end; ++i) {
+        vec_sav_d[i] = vec_d[i] - vec_sav_d[i];
+    }
+    nrn_pragma_acc(wait(nt.stream_id))
+#else
+    (void) nt;
+    (void) begin;
+    (void) end;
+#endif
+}
+
 void sync_diagonal_to_device_before_axial_lhs(NrnThread& nt) noexcept {
 #if defined(NRN_ENABLE_GPU)
     if (matrix_currents_on_device(nt) || !nt.compute_gpu || nt.end <= 0) {

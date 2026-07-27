@@ -506,16 +506,20 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
     auto* const vec_b = nt.node_b_storage();
     auto* const vec_v = nt.node_voltage_storage();
     auto* const parent_i = nt._v_parent_index;
+#if defined(NRN_ENABLE_GPU)
+    // deviceptr for V: never present(host V) during psolve (avoids host→device V).
+    double* d_v = (_nt->compute_gpu && i3 > i2)
+                      ? static_cast<double*>(acc_deviceptr(vec_v))
+                      : vec_v;
     nrn_pragma_acc(parallel loop present(vec_rhs [0:i3],
                                          vec_a [0:i3],
                                          vec_b [0:i3],
-                                         vec_v [0:i3],
-                                         parent_i [0:i3]) if (_nt->compute_gpu && i3 > i2)
-                       async(_nt->stream_id))
+                                         parent_i [0:i3]) deviceptr(d_v)
+                       if (_nt->compute_gpu && i3 > i2) async(_nt->stream_id))
     nrn_pragma_omp(target teams distribute parallel for if(_nt->compute_gpu))
     for (i = i2; i < i3; ++i) {
         auto const pi = parent_i[i];
-        auto const dv = vec_v[pi] - vec_v[i];
+        auto const dv = d_v[pi] - d_v[i];
         // our connection coefficients are negative so
         nrn_pragma_acc(atomic update)
         nrn_pragma_omp(atomic update)
@@ -524,6 +528,14 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
         nrn_pragma_omp(atomic update)
         vec_rhs[pi] += vec_a[i] * dv;
     }
+#else
+    for (i = i2; i < i3; ++i) {
+        auto const pi = parent_i[i];
+        auto const dv = vec_v[pi] - vec_v[i];
+        vec_rhs[i] -= vec_b[i] * dv;
+        vec_rhs[pi] += vec_a[i] * dv;
+    }
+#endif
 #if defined(NRN_ENABLE_GPU)
     if (_nt->compute_gpu && i3 > i2) {
         nrn_pragma_acc(wait(_nt->stream_id))
@@ -630,7 +642,14 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
         /* vec_sav_d has only the contribution of electrode current
            here we transform so it only has membrane current contribution
         */
-        if (_nt->compute_gpu && i3 > i1) {
+#if defined(NRN_ENABLE_GPU)
+        // Device owns vec_d/sav_d on the GPU matrix path — do not clobber with
+        // stale host diagonal (host V/d must not participate in psolve).
+        if (neuron::gpu::matrix_rhs_d_stays_on_device_for_solve(nt) && _nt->compute_gpu) {
+            neuron::gpu::transform_sav_d_membrane_only_on_device(nt, i1, i3);
+        } else
+#endif
+            if (_nt->compute_gpu && i3 > i1) {
             for (i = i1; i < i3; ++i) {
                 vec_sav_d[i] = vec_d[i] - vec_sav_d[i];
             }

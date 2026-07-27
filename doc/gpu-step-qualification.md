@@ -198,9 +198,8 @@ gather (sparse or buffered), not full SoA.
 
 **Residuals (performance debt):**
 
-1. Host **voltages** still mirrored once per step after device post_solve
-   (moved off pre-nonvint). Without it, step-1 is exact but step-2 post_setup
-   drifts. Root cause TBD.  
+1. ~~Host voltages each step~~ — **closed for ringtest psolve**: device owns
+   `vec_v`; ACC/treeset/post_solve/thresh use `deviceptr` (no host→device V).  
 2. `Vector.record` → full SoA instead of sparse/buffered trajectory-style gather.  
 3. AFTER_SOLVE arts that need host SoA without a device path.
 
