@@ -429,15 +429,23 @@ void nrn_dump_forcing_tplus(FILE* f, double tt, const std::vector<NrnForcingTPlu
 
 double VecPlayContinuous::interpolate(double tt) {
     // Keep last_index_ cache in sync with historical search side effects, then
-    // evaluate with the shared t⁺ geometry (value only).
+    // evaluate with the shared t⁺ geometry (value only). Value at/after t0
+    // matches prior play (linear segments); only the t⁺ *derivative* treatment
+    // of t==t0 differs for forcing (outgoing slope).
     if (tt >= t_->elem(ubound_index_)) {
         last_index_ = ubound_index_;
         if (last_index_ == 0) {
             return y_->elem(last_index_);
         }
-    } else if (tt <= t_->elem(0)) {
+    } else if (tt < t_->elem(0)) {
         last_index_ = 0;
         return y_->elem(0);
+    } else if (tt == t_->elem(0)) {
+        last_index_ = (ubound_index_ > 0) ? 1 : 0;
+        if (last_index_ == 0) {
+            return y_->elem(0);
+        }
+        // fall through to shared evaluator via tplus (value = y0 on first segment)
     } else {
         search(tt);
     }

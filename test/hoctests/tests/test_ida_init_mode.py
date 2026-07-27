@@ -423,6 +423,156 @@ print('ok')
     assert "ok" in _run_isolated(code)
 
 
+def test_mode3_forcing_tplus_suite_a3():
+    """A3: istep / kink / end extrapolate / finitialize / multi-event (series C–R).
+
+    Algebraic oracles (R=C=1): V2' = I', V1' = I' + I  (from V2'=R*I', V1'=V2'+I/C).
+    Distills external nrntest/nrniv/ida iramp/istep-style cases into CI tests.
+    """
+    code = r"""
+from neuron import h
+import tempfile, os
+
+def parse_forcing_and_yp(text):
+    u = up = None
+    yp = {}
+    in_c = False
+    wrms_c = None
+    in_forcing = False
+    for line in text.splitlines():
+        if 'forcing t+ info' in line:
+            in_forcing = True
+            continue
+        if in_forcing and line.startswith('---'):
+            in_forcing = False
+        if in_forcing:
+            parts = line.split()
+            if len(parts) >= 4 and parts[0].isdigit():
+                try:
+                    int(parts[1])
+                    u, up = float(parts[2]), float(parts[3])
+                except ValueError:
+                    pass
+        if 'WRMS' in line and 'A/B/C' in line:
+            wrms_c = float(line.split('=')[-1].split('/')[-1].strip())
+        if 'C post-IC' in line:
+            in_c = True
+            continue
+        if in_c and line.startswith('---'):
+            in_c = False
+            continue
+        if in_c:
+            parts = line.split()
+            if len(parts) >= 4 and parts[0].isdigit():
+                yp[int(parts[0])] = float(parts[2])
+    return u, up, yp, wrms_c
+
+def check_case(name, u, up, yp, wrms_c, eu, eup, eyp0, eyp1, tol=1e-4):
+    assert wrms_c is not None and abs(wrms_c) < 1e-9, (name, 'wrms', wrms_c)
+    assert u is not None and abs(u - eu) < tol, (name, 'u', u, eu)
+    assert up is not None and abs(up - eup) < tol, (name, 'up', up, eup)
+    assert abs(yp.get(0, 1e9) - eyp0) < tol, (name, 'yp0', yp, eyp0)
+    assert abs(yp.get(1, 1e9) - eyp1) < tol, (name, 'yp1', yp, eyp1)
+
+h.load_file('stdrun.hoc')
+cvode = h.CVode()
+# Single series C–R LM for the whole suite (avoid stacking mechanisms)
+c = h.Matrix(2, 2)
+g = h.Matrix(2, 2)
+y = h.Vector(2)
+y0 = h.Vector(2)
+b = h.Vector([0.0, 0.0])
+c.setval(0, 0, 1.0)
+c.setval(0, 1, -1.0)
+c.setval(1, 0, -1.0)
+c.setval(1, 1, 1.0)
+g.setval(1, 1, 1.0)
+lm = h.LinearMechanism(c, g, y, y0, b)
+h.cvode_active(True)
+cvode.use_daspk(1)
+cvode.dae_init_mode(3)
+
+play_iv = None
+play_tv = None
+
+def set_play(tvec, ivec):
+    global play_iv, play_tv
+    if play_iv is not None:
+        play_iv.play_remove()
+    play_tv = h.Vector(tvec)
+    play_iv = h.Vector(ivec)
+    play_iv.play(b._ref_x[0], play_tv, True)
+
+def audit_reinit():
+    path = tempfile.mktemp(prefix='ida_a3_', suffix='.txt')
+    cvode.dae_init_audit_file(path)
+    cvode.dae_init_audit(2, 0.0)
+    cvode.re_init()
+    text = open(path).read()
+    os.remove(path)
+    cvode.dae_init_audit(0)
+    cvode.dae_init_audit_file('')
+    return text
+
+# --- T_istep: jump to I=0.5 then flat (I'=0) ---
+set_play([0, 1, 1, 5], [0, 0, 0.5, 0.5])
+h.finitialize(0.0)
+h.continuerun(1.0)
+u, up, yp, wrms = parse_forcing_and_yp(audit_reinit())
+check_case('istep', u, up, yp, wrms, 0.5, 0.0, 0.5, 0.0)
+
+# --- T_kink: continuous I, slope becomes 1 at t=1 (I=0) ---
+set_play([0, 1, 2], [0, 0, 1])
+h.finitialize(0.0)
+h.continuerun(1.0)
+u, up, yp, wrms = parse_forcing_and_yp(audit_reinit())
+check_case('kink', u, up, yp, wrms, 0.0, 1.0, 1.0, 1.0)
+
+# --- T_end_extrap: past last knot, last segment slope 2 ---
+set_play([0, 1, 2], [0, 1, 3])
+h.finitialize(0.0)
+h.continuerun(2.5)
+u, up, yp, wrms = parse_forcing_and_yp(audit_reinit())
+# I(2.5)=4, I'=2 → V2'=2, V1'=6
+check_case('end_extrap', u, up, yp, wrms, 4.0, 2.0, 6.0, 2.0, tol=1e-3)
+
+# --- T_flat_end: last two y equal → I'=0 after end ---
+set_play([0, 1, 2], [0, 1, 1])
+h.finitialize(0.0)
+h.continuerun(3.0)
+u, up, yp, wrms = parse_forcing_and_yp(audit_reinit())
+check_case('flat_end', u, up, yp, wrms, 1.0, 0.0, 1.0, 0.0)
+
+# --- T_finitialize: first segment slope 0.5 ---
+set_play([0, 2], [0, 1])
+path = tempfile.mktemp(prefix='ida_a3_fini_', suffix='.txt')
+cvode.dae_init_audit_file(path)
+cvode.dae_init_audit(2, 0.0)
+h.finitialize(0.0)
+text = open(path).read()
+os.remove(path)
+cvode.dae_init_audit(0)
+cvode.dae_init_audit_file('')
+u, up, yp, wrms = parse_forcing_and_yp(text)
+check_case('finitialize_slope', u, up, yp, wrms, 0.0, 0.5, 0.5, 0.5)
+
+# --- T_multi_event: iramp-like jump+ramp then off ---
+set_play([0, 1, 1, 2, 2, 5], [0, 0, 0.5, 1.0, 0, 0])
+h.finitialize(0.0)
+h.continuerun(1.0)
+u, up, yp, wrms = parse_forcing_and_yp(audit_reinit())
+check_case('multi_t1_ramp', u, up, yp, wrms, 0.5, 0.5, 1.0, 0.5)
+h.continuerun(2.0)
+u, up, yp, wrms = parse_forcing_and_yp(audit_reinit())
+check_case('multi_t2_off', u, up, yp, wrms, 0.0, 0.0, 0.0, 0.0)
+
+if play_iv is not None:
+    play_iv.play_remove()
+print('ok')
+"""
+    assert "ok" in _run_isolated(code)
+
+
 if __name__ == "__main__":
     test_dae_init_mode_api()
     test_dae_init_audit_api()
@@ -435,4 +585,6 @@ if __name__ == "__main__":
     test_ida_ic_three_panel_audit_isolated()
     test_forcing_tplus_play_ramp_at_reinit()
     test_seclamp_tiny_cm_mode3_no_init_failure()
+    test_mode3_forcing_tplus_suite_a3()
     print("ok")
+

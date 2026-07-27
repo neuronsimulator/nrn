@@ -15,9 +15,9 @@ Use this file when starting a **new** Grok session rooted in `~/neuron/nrnida`.
 | Soft sparse13 factor fail | **Done** | Mode 1/3 can fall back without abort |
 | **Three-panel IC audit** | **Done** | `dae_init_audit` / `dae_init_audit_file`; audit suppresses mode-3 fallback |
 | Singular / algebraic residual diagnosis | **Done** | Top residual eqs classified (algebraic / near-singular \(c\)) on mode-3 fail |
-| Automated tests | **Partial** | `test/hoctests/tests/test_ida_init_mode.py` (incl. SEClamp tiny `cm`) |
-| Manual GUI circuits | **Local** | `external/tests/nrntest/nrniv/ida/*.ses` (tree is **gitignored**); `~/models/nrndc1sim` |
-| **Plan A** forcing \(t^+\) for free \(y'\) | **A0 done** | Pure continuous-play value+deriv; A1–A5 next |
+| Automated tests | **Partial** | `test_ida_init_mode.py` (mode 3, SEClamp, forcing suite A3) |
+| Manual GUI circuits | **Local** | `external/tests/nrntest/nrniv/ida/*.ses` (gitignored); `~/models/nrndc1sim` |
+| **Plan A** forcing \(t^+\) for free \(y'\) | **A0–A3 done** | A4 `dforce`, A5 polish next |
 
 **Default remains mode 0.** Mode 3 is ready for broader validation; falls back to heuristic on residual failure (except when an audit is armed).
 
@@ -30,11 +30,11 @@ Use this file when starting a **new** Grok session rooted in `~/neuron/nrnida`.
 | **A0** Spec + continuous-play \(t^+\) oracle | **Done** | `src/nrniv/vecplay_tplus.h`; `VecPlayContinuous::forcing_tplus`; unit tests |
 | **A1** Wire play instances at IC | **Done** | `nrn_collect_forcing_tplus` at `Daspk::init`; audit dump; `Daspk::last_forcing_tplus` |
 | **A2** Mode 3 free \(y'\) from \(u'\) (LM / series CR) | **Done** | null(C) adjust via \(Z^\top G y' = Z^\top b'\); ramp test \(V_1'=1,V_2'=0.5\) |
-| **A3** Multi-event + finitialize suite | pending | Distill `external/.../ida` iramp/istep into in-repo tests |
+| **A3** Multi-event + finitialize suite | **Done** | istep, kink, end extrap, flat end, finitialize slope, multi-event |
 | **A4** MOD `dforce` thin API | pending | |
 | **A5** Polish / diagnostics | pending | |
 
-Continuous play \(t^+\) rules (match `Vector.play` / `interpolate`): hold before \(t_0\); outgoing segment slope at a knot; **linear extrapolation of the last two points** past the end (not hold-last with \(u'=0\) unless last segment is flat).
+Continuous play \(t^+\) rules: hold for \(t < t_0\); **outgoing** slope at a knot (including \(t=t_0\)); **linear extrapolation of the last two points** past the end (flat last segment ⇒ \(u'=0\)).
 
 Tip commit (update when advancing): see `git log -1 --oneline` on `hines-grok/ida-init`.
 
@@ -123,12 +123,11 @@ CVode().dae_init_audit_file("ic_audit.txt")  # append; empty → stdout
 
 ## Recommended next work
 
-1. **Plan A1–A2:** register continuous play forcing \(t^+\) at IC; complete free \(y'\) for series \(C\)–\(R\) ramp (use `iramp*` as interactive oracle; formalize in `test/hoctests`).
-2. Event-reinit automated tests for mode 3 + forcing slope (not only `finitialize`).
-3. Thread **B** later: abandon fixed `vext=0` INITIAL when needed (e.g. forced `e_extracellular`); LM often floats membrane-adjacent extracellular to ground.
-4. Policy: when to recommend mode 3 over 0; `cm→0` / ideal clamp as algebraic.
-5. Update tip commit when status drifts.
-6. Later: SUNDIALS 3 revalidation; do **not** resurrect permanent VMX.
+1. **Plan A4–A5:** thin MOD `dforce` (analytic \(u'\)); polish diagnostics / fallback counters.
+2. Thread **B** later: abandon fixed `vext=0` INITIAL when needed (e.g. forced `e_extracellular`); LM often floats membrane-adjacent extracellular to ground.
+3. Policy: when to recommend mode 3 over 0; `cm→0` / ideal clamp as algebraic.
+4. Update tip commit when status drifts.
+5. Later: SUNDIALS 3 revalidation; do **not** resurrect permanent VMX.
 
 ---
 

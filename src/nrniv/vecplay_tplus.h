@@ -11,8 +11,8 @@
  *
  * Geometry matches `VecPlayContinuous::interpolate` for a given active upper
  * knot index `ubound_index` (use `n - 1` when the full `t` vector is active):
- * - \(t \le t_0\): hold \(y_0\), derivative 0
- * - interior / at a knot: linear segment; at a knot the **outgoing** segment
+ * - \(t < t_0\): hold \(y_0\), derivative 0
+ * - interior / at a knot (including \(t = t_0\)): linear segment; **outgoing** slope
  * - \(t \ge t_{\mathrm{ubound}}\): linear extrapolation of the last two points
  *   on that bound (constant last value only if that segment is flat, or if
  *   `ubound_index == 0`)
@@ -102,13 +102,14 @@ inline int nrn_vecplay_continuous_tplus(int n,
         return 0;
     }
 
-    if (tt <= t[0]) {
+    // Strictly before the first knot: hold (right-limit at t0 uses outgoing segment).
+    if (tt < t[0]) {
         set(y[0], 0.);
         return 0;
     }
 
     // Find last like VecPlayContinuous::search: first index with t[last] > tt
-    // (unique times ⇒ outgoing segment at a knot).
+    // (unique times ⇒ outgoing segment at a knot, including tt == t[0]).
     int last = 1;
     while (last < ubound_index && tt >= t[last]) {
         ++last;

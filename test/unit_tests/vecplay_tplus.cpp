@@ -30,9 +30,10 @@ TEST_CASE("vecplay continuous t+ before first knot", "[vecplay][tplus]") {
     REQUIRE(nrn_vecplay_continuous_tplus(3, y.data(), t.data(), -1.0, ub, &v, &d) == 0);
     REQUIRE_THAT(v, WithinAbs(1.0, 1e-15));
     REQUIRE_THAT(d, WithinAbs(0.0, 1e-15));
+    // At t0: value y0, classical right derivative = outgoing slope (1 here)
     REQUIRE(nrn_vecplay_continuous_tplus(3, y.data(), t.data(), 0.0, ub, &v, &d) == 0);
     REQUIRE_THAT(v, WithinAbs(1.0, 1e-15));
-    REQUIRE_THAT(d, WithinAbs(0.0, 1e-15));
+    REQUIRE_THAT(d, WithinAbs(1.0, 1e-15));
 }
 
 TEST_CASE("vecplay continuous t+ interior and kink uses outgoing slope", "[vecplay][tplus]") {
