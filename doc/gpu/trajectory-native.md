@@ -1,7 +1,9 @@
 # Native GPU trajectory (Vector.record without full SoA)
 
 **Branch:** `local/gpu-trajectory-native`  
-**Status:** T0–T3 landed (plan + sparse sample + Gate F + chunked staging + GraphLine single-pd)  
+**Status:** T0–T3 landed; **feature gate closed 2026-07-28** (Traub 4474 exact +
+ringtest 688@100 on living tip `16ec6af94`)  
+
 
 
 
