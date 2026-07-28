@@ -362,14 +362,23 @@ Dual-build Traub: `nrnivmodl -nmodl … -nmodlflags "… acc …" -coreneuron`.
 
 \*matrix run1 once exact; run0≠run1. Det flags reduce miss count but do not freeze native GPU.
 
-**Next (this line):** isolate remaining native GPU nondeterminism vs CoreNEURON GPU
-(which is already exact). Not host NET_RECEIVE / not host vec_rhs voltage hot path.
+**Landed (2026-07-27):** Traub 1/10 no-gap **exact** CPU/GPU raster multiset (4474)
+and run-to-run GPU equality after NMDA self-event path fix:
+- device `net_send_buffering` **always** atomic capture on `_cnt` (stale device
+  `nt->compute_gpu==0` used the non-atomic branch → races dropped ~all net_sends;
+  ~300 of ~1e5 NMDA stimuli scheduled self-events before fix);
+- `update device(nt.compute_gpu)` when entering fixed-step GPU;
+- net_buf `net_send` uses event `t` (`nrb->_nrb_t`), not restored `nt->_t`.
+prcellstate t=10 gid321: NMDA A/B/k exact CPU↔GPU.
+
+**Next (this line):** trajectory native path / residual noise (ca/cad ~1e-10); optional
+det-event keep for testing. Not host NET_RECEIVE / not host vec_rhs voltage hot path.
 
 ### Next GPU feature (new session)
 
 | Option | Content |
 |--------|---------|
-| **Traub exact raster** | Deterministic device net_send / NMDA parity; 4474 exact multiset |
+| **Traub exact raster** | **Done** — 4474 exact multiset CPU/GPU + GPU/GPU |
 | Trajectory native path | Low-traffic record so Gate F stays green with `Vector.record` |
 | Later | use_gap=1, multi-rank, perf, single device-resource owner |
 
