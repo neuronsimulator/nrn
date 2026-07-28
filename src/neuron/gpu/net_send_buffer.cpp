@@ -1,5 +1,6 @@
 #include "neuron/gpu/net_send_buffer.hpp"
 
+#include "neuron/event_order.hpp"
 #include "neuron/gpu/offload.hpp"
 #include "multicore.h"
 #include "nrnoc_ml.h"
@@ -306,20 +307,45 @@ void deliver_net_send_buffer_events(NrnThread* nt, Memb_list* ml, NetSendBuffer_
         std::abort();
     }
 
-    // Deterministic order: parallel device enqueue uses atomic capture (racey order).
-    // Sort by instance id then delivery time then sendtype to match serial displ apply.
+    // Parallel device enqueue uses atomic capture (racey slot order). Always
+    // re-order before host enqueue. Default: instance, t, sendtype. With
+    // NRN_DETERMINISTIC_EVENTS=1: full key (t, class, mech, instance, flag, …).
     int const n = nsb->_cnt;
+    int const mech_type = ml->type();
     std::vector<int> order(static_cast<std::size_t>(n));
     std::iota(order.begin(), order.end(), 0);
-    std::stable_sort(order.begin(), order.end(), [&](int a, int b) {
-        if (nsb->_pnt_index[a] != nsb->_pnt_index[b]) {
-            return nsb->_pnt_index[a] < nsb->_pnt_index[b];
-        }
-        if (nsb->_nsb_t[a] != nsb->_nsb_t[b]) {
-            return nsb->_nsb_t[a] < nsb->_nsb_t[b];
-        }
-        return nsb->_sendtype[a] < nsb->_sendtype[b];
-    });
+    if (neuron::event_order::enabled()) {
+        std::stable_sort(order.begin(), order.end(), [&](int a, int b) {
+            // tgt_gid often unavailable for density PP; instance + weight_index distinguish.
+            auto const ka = neuron::event_order::net_send_key(nsb->_nsb_t[a],
+                                                             nsb->_sendtype[a],
+                                                             /*tgt_gid*/ -1,
+                                                             mech_type,
+                                                             nsb->_pnt_index[a],
+                                                             nsb->_nsb_flag[a],
+                                                             nsb->_weight_index[a],
+                                                             a);
+            auto const kb = neuron::event_order::net_send_key(nsb->_nsb_t[b],
+                                                             nsb->_sendtype[b],
+                                                             /*tgt_gid*/ -1,
+                                                             mech_type,
+                                                             nsb->_pnt_index[b],
+                                                             nsb->_nsb_flag[b],
+                                                             nsb->_weight_index[b],
+                                                             b);
+            return neuron::event_order::less(ka, kb);
+        });
+    } else {
+        std::stable_sort(order.begin(), order.end(), [&](int a, int b) {
+            if (nsb->_pnt_index[a] != nsb->_pnt_index[b]) {
+                return nsb->_pnt_index[a] < nsb->_pnt_index[b];
+            }
+            if (nsb->_nsb_t[a] != nsb->_nsb_t[b]) {
+                return nsb->_nsb_t[a] < nsb->_nsb_t[b];
+            }
+            return nsb->_sendtype[a] < nsb->_sendtype[b];
+        });
+    }
 
     for (int k = 0; k < n; ++k) {
         int const i = order[static_cast<std::size_t>(k)];

@@ -25,6 +25,7 @@ set(STRUCTURED_HEADER_FILES_TO_INSTALL
     neuron/container/view_utils.hpp
     neuron/model_data.hpp
     neuron/model_data_fwd.hpp
+    neuron/event_order.hpp
     # NMODL OpenACC mechs include model_data.hpp → soa_identifier → utils/logger.hpp
     utils/logger.hpp)
 set(HEADER_FILES_TO_INSTALL

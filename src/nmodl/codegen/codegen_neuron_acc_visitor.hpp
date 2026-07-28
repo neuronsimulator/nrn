@@ -32,6 +32,9 @@ class CodegenNeuronAccVisitor: public CodegenNeuronCppVisitor {
 
     void print_parallel_iteration_hint(BlockType type, const ast::Block* block) override;
 
+    /** When true, ACC cur/jacob PP loops use `loop seq` (NRN_DETERMINISTIC_MATRIX). */
+    bool force_seq_acc_loop_ = false;
+
     void print_kernel_data_present_annotation_block_begin() override;
     void print_kernel_data_present_annotation_block_end() override;
 

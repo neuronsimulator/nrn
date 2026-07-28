@@ -5,6 +5,7 @@
 #include "neuron/gpu/net_events.hpp"
 #include "neuron/gpu/net_send_buffer.hpp"
 #include "neuron/gpu/download.hpp"
+#include "neuron/gpu/offload.hpp"
 #include "neuron/gpu/phase_timer.hpp"
 #include "neuron/gpu/post_solve.hpp"
 #include "neuron/gpu/sync.hpp"
@@ -47,6 +48,10 @@ void fixed_step_thread(model_sorted_token const& cache_token,
 
     int const saved_compute_gpu = nt.compute_gpu;
     nt.compute_gpu = 1;
+    // Keep device nt.compute_gpu in sync: device net_send_buffering and present
+    // if() clauses read the device copy (stale 0 → non-atomic cnt races).
+    nrn_pragma_acc(update device(nt.compute_gpu) if (nrn_target_is_present(&nt)))
+    nrn_pragma_omp(target update to(nt.compute_gpu) if (nrn_target_is_present(&nt)))
 
     ensure_thread_net_send_buffers(nth);
     {

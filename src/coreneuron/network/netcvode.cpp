@@ -7,8 +7,11 @@
 */
 
 #include <float.h>
+#include <algorithm>
 #include <map>
 #include <mutex>
+#include <numeric>
+#include <vector>
 
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/sim/multicore.hpp"
@@ -25,6 +28,7 @@
 #include "coreneuron/mechanism/membfunc.hpp"
 #include "coreneuron/coreneuron.hpp"
 #include "coreneuron/utils/nrnoc_aux.hpp"
+#include "neuron/event_order.hpp"
 
 namespace coreneuron {
 #define PP2NT(pp) (nrn_threads + (pp)->_tid)
@@ -577,8 +581,23 @@ void NetCvode::check_thresh(NrnThread* nt) {  // for default method
         nrn_pragma_omp(target update from(nsbuffer [0:nt->_net_send_buffer_cnt]))
     }
 
-    // on CPU...
-    for (int i = 0; i < nt->_net_send_buffer_cnt; ++i) {
+    // on CPU... Atomic capture leaves racey hit order; optional total order by gid.
+    int const n_hits = nt->_net_send_buffer_cnt;
+    std::vector<int> hit_order(static_cast<std::size_t>(std::max(n_hits, 0)));
+    std::iota(hit_order.begin(), hit_order.end(), 0);
+    if (neuron::event_order::enabled() && n_hits > 1) {
+        std::stable_sort(hit_order.begin(), hit_order.end(), [&](int ia, int ib) {
+            int const sa = nt->_net_send_buffer[ia];
+            int const sb = nt->_net_send_buffer[ib];
+            int const ga = (sa >= 0 && sa < nt->n_presyn) ? nt->presyns[sa].gid_ : -1;
+            int const gb = (sb >= 0 && sb < nt->n_presyn) ? nt->presyns[sb].gid_ : -1;
+            auto const ka = neuron::event_order::threshold_hit_key(ga, sa);
+            auto const kb = neuron::event_order::threshold_hit_key(gb, sb);
+            return neuron::event_order::less(ka, kb);
+        });
+    }
+    for (int k = 0; k < n_hits; ++k) {
+        int const i = hit_order[static_cast<std::size_t>(k)];
         PreSyn* ps = nt->presyns + nt->_net_send_buffer[i];
         ps->send(nt->_t + teps, net_cvode_instance, nt);
     }

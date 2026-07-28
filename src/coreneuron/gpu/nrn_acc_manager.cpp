@@ -6,8 +6,12 @@
 # =============================================================================
 */
 
+#include <algorithm>
+#include <numeric>
 #include <queue>
+#include <type_traits>
 #include <utility>
+#include <vector>
 
 #include "coreneuron/apps/corenrn_parameters.hpp"
 #include "coreneuron/gpu/nrn_acc_manager.hpp"
@@ -23,6 +27,7 @@
 #include "coreneuron/utils/nrnoc_aux.hpp"
 #include "coreneuron/mpi/nrnmpidec.h"
 #include "coreneuron/utils/utils.hpp"
+#include "neuron/event_order.hpp"
 
 #ifdef CRAYPAT
 #include <pat_api.h>
@@ -892,10 +897,34 @@ static void net_receive_buffer_order(NetReceiveBuffer_t* nrb) {
         return;
     }
 
-    std::priority_queue<NRB_P, std::vector<NRB_P>, comp> nrbq;
-
-    for (int i = 0; i < nrb->_cnt; ++i) {
-        nrbq.push(NRB_P(nrb->_pnt_index[i], i));
+    std::vector<int> order(static_cast<std::size_t>(nrb->_cnt));
+    std::iota(order.begin(), order.end(), 0);
+    if (neuron::event_order::enabled()) {
+        std::stable_sort(order.begin(), order.end(), [&](int a, int b) {
+            if (nrb->_pnt_index[a] != nrb->_pnt_index[b]) {
+                return nrb->_pnt_index[a] < nrb->_pnt_index[b];
+            }
+            if (nrb->_nrb_t[a] != nrb->_nrb_t[b]) {
+                return nrb->_nrb_t[a] < nrb->_nrb_t[b];
+            }
+            if (nrb->_nrb_flag[a] != nrb->_nrb_flag[b]) {
+                return nrb->_nrb_flag[a] < nrb->_nrb_flag[b];
+            }
+            if (nrb->_weight_index[a] != nrb->_weight_index[b]) {
+                return nrb->_weight_index[a] < nrb->_weight_index[b];
+            }
+            return a < b;
+        });
+    } else {
+        std::priority_queue<NRB_P, std::vector<NRB_P>, comp> nrbq;
+        for (int i = 0; i < nrb->_cnt; ++i) {
+            nrbq.push(NRB_P(nrb->_pnt_index[i], i));
+        }
+        int o = 0;
+        while (!nrbq.empty()) {
+            order[static_cast<std::size_t>(o++)] = nrbq.top().second;
+            nrbq.pop();
+        }
     }
 
     int displ_cnt = 0;
@@ -903,15 +932,14 @@ static void net_receive_buffer_order(NetReceiveBuffer_t* nrb) {
     int last_instance_index = -1;
     nrb->_displ[0] = 0;
 
-    while (!nrbq.empty()) {
-        const NRB_P& p = nrbq.top();
-        nrb->_nrb_index[index_cnt++] = p.second;
-        if (p.first != last_instance_index) {
+    for (int const orig: order) {
+        nrb->_nrb_index[index_cnt++] = orig;
+        int const inst = nrb->_pnt_index[orig];
+        if (inst != last_instance_index) {
             ++displ_cnt;
         }
         nrb->_displ[displ_cnt] = index_cnt;
-        last_instance_index = p.first;
-        nrbq.pop();
+        last_instance_index = inst;
     }
     nrb->_displ_cnt = displ_cnt;
 }
@@ -1003,6 +1031,50 @@ void update_net_send_buffer_on_host(NrnThread* nt, NetSendBuffer_t* nsb) {
                                       nsb->_nsb_flag[:nsb->_cnt])
                                  if (nsb->_cnt))
     // clang-format on
+
+    // Atomic fill order is racey; with NRN_DETERMINISTIC_EVENTS permute so the
+    // generated for-loop host-enqueues in total order (t, class, instance, …).
+    if (neuron::event_order::enabled() && nsb->_cnt > 1) {
+        int const n = nsb->_cnt;
+        std::vector<int> order(static_cast<std::size_t>(n));
+        std::iota(order.begin(), order.end(), 0);
+        std::stable_sort(order.begin(), order.end(), [&](int a, int b) {
+            auto const ka = neuron::event_order::net_send_key(nsb->_nsb_t[a],
+                                                             nsb->_sendtype[a],
+                                                             /*tgt_gid*/ -1,
+                                                             /*mech_type*/ -1,
+                                                             nsb->_pnt_index[a],
+                                                             nsb->_nsb_flag[a],
+                                                             nsb->_weight_index[a],
+                                                             a);
+            auto const kb = neuron::event_order::net_send_key(nsb->_nsb_t[b],
+                                                             nsb->_sendtype[b],
+                                                             /*tgt_gid*/ -1,
+                                                             /*mech_type*/ -1,
+                                                             nsb->_pnt_index[b],
+                                                             nsb->_nsb_flag[b],
+                                                             nsb->_weight_index[b],
+                                                             b);
+            return neuron::event_order::less(ka, kb);
+        });
+        // Apply permutation in place to all parallel arrays.
+        auto apply_perm = [&](auto* arr) {
+            using T = std::decay_t<decltype(arr[0])>;
+            std::vector<T> tmp(static_cast<std::size_t>(n));
+            for (int i = 0; i < n; ++i) {
+                tmp[static_cast<std::size_t>(i)] = arr[order[static_cast<std::size_t>(i)]];
+            }
+            for (int i = 0; i < n; ++i) {
+                arr[i] = tmp[static_cast<std::size_t>(i)];
+            }
+        };
+        apply_perm(nsb->_sendtype);
+        apply_perm(nsb->_vdata_index);
+        apply_perm(nsb->_pnt_index);
+        apply_perm(nsb->_weight_index);
+        apply_perm(nsb->_nsb_t);
+        apply_perm(nsb->_nsb_flag);
+    }
 #else
     (void) nt;
     (void) nsb;

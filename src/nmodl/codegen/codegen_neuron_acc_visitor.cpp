@@ -21,6 +21,7 @@ void CodegenNeuronAccVisitor::print_standard_includes() {
     printer->add_line("#include <neuron/gpu/net_receive_buffer.hpp>");
     printer->add_line("#include <neuron/gpu/mechanism_phases.hpp>");
     printer->add_line("#include <neuron/gpu/sync.hpp>");
+    printer->add_line("#include <neuron/event_order.hpp>");
     // net_buf_receive needs complete model_sorted_token + nrn_ensure_model_data_are_sorted.
     printer->add_line("#include \"nrn_ansi.h\"");
     printer->add_line("#include \"neuron/model_data.hpp\"");
@@ -275,10 +276,23 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
         }
     }
 
-    printer->fmt_line("nrn_pragma_acc(parallel loop {}{} async(nt->stream_id) if(nt->compute_gpu))",
-                      present_clause.str(),
-                      type == BlockType::NetReceive ? std::string{} : deviceptr_extra);
-    printer->add_line("nrn_pragma_omp(target teams distribute parallel for if(nt->compute_gpu))");
+    // force_seq_acc_loop_: NRN_DETERMINISTIC_MATRIX PP path — serial instance order
+    // matches CPU association for vec_rhs/vec_d (no unordered atomics).
+    if (force_seq_acc_loop_) {
+        printer->fmt_line(
+            "nrn_pragma_acc(parallel loop seq {}{} async(nt->stream_id) if(nt->compute_gpu))",
+            present_clause.str(),
+            type == BlockType::NetReceive ? std::string{} : deviceptr_extra);
+        printer->add_line(
+            "nrn_pragma_omp(target teams distribute parallel for if(nt->compute_gpu))");
+    } else {
+        printer->fmt_line(
+            "nrn_pragma_acc(parallel loop {}{} async(nt->stream_id) if(nt->compute_gpu))",
+            present_clause.str(),
+            type == BlockType::NetReceive ? std::string{} : deviceptr_extra);
+        printer->add_line(
+            "nrn_pragma_omp(target teams distribute parallel for if(nt->compute_gpu))");
+    }
 }
 
 void CodegenNeuronAccVisitor::print_kernel_data_present_annotation_block_begin() {
@@ -308,13 +322,13 @@ void CodegenNeuronAccVisitor::print_device_stream_wait() const {
 }
 
 void CodegenNeuronAccVisitor::print_net_send_buffering_cnt_update() const {
-    printer->push_block("if (nt->compute_gpu)");
+    // Always atomic capture. Do not branch on nt->compute_gpu: the device copy of
+    // NrnThread can have a stale compute_gpu==0 while the parallel region still
+    // runs on the GPU (OpenACC evaluates the loop's if() on the host). A non-atomic
+    // cnt++ then races and drops almost all net_send slots (Traub: ~300 of ~1e5).
     printer->add_line("nrn_pragma_acc(atomic capture)");
     printer->add_line("nrn_pragma_omp(atomic capture)");
     printer->add_line("i = nsb->_cnt++;");
-    printer->chain_block("else");
-    printer->add_line("i = nsb->_cnt++;");
-    printer->pop_block();
 }
 
 void CodegenNeuronAccVisitor::print_net_send_buffering_grow() {
@@ -425,20 +439,31 @@ void CodegenNeuronAccVisitor::print_nrn_jacob() {
     print_entrypoint_setup_code_from_memb_list();
     printer->fmt_line("auto nodecount = _ml_arg->nodecount;");
     use_present_fp_indexing_ = true;
-    print_parallel_iteration_hint(BlockType::Equation, nullptr);
-    printer->push_block("for (int id = 0; id < nodecount; id++)");
-    printer->add_line("int node_id = node_data.nodeindices[id];");
-    // g_unused was written on device in nrn_cur; read it here (do not call nrn_current again:
-    // that would double-update ion dinadv/dikdv shadow fields). Flat present(vec_d) like cap/axial.
-    // Point processes: atomic when multiple instances share a node (see print_nrn_cur).
+    auto print_jacob_device_loop = [&](bool det_matrix) {
+        force_seq_acc_loop_ = det_matrix;
+        print_parallel_iteration_hint(BlockType::Equation, nullptr);
+        printer->push_block("for (int id = 0; id < nodecount; id++)");
+        printer->add_line("int node_id = node_data.nodeindices[id];");
+        // g_unused from nrn_cur. PP: atomic unless NRN_DETERMINISTIC_MATRIX (seq loop).
+        if (info.point_process && !det_matrix) {
+            printer->add_line("nrn_pragma_acc(atomic update)");
+            printer->add_line("nrn_pragma_omp(atomic update)");
+        }
+        printer->fmt_line("vec_d[node_id] {} _present_fp_{}[inst._data_offset + id];",
+                          operator_for_d(),
+                          conductance_fp_index());
+        printer->pop_block();
+        force_seq_acc_loop_ = false;
+    };
     if (info.point_process) {
-        printer->add_line("nrn_pragma_acc(atomic update)");
-        printer->add_line("nrn_pragma_omp(atomic update)");
+        printer->push_block("if (neuron::event_order::matrix_enabled())");
+        print_jacob_device_loop(true);
+        printer->chain_block("else");
+        print_jacob_device_loop(false);
+        printer->pop_block();
+    } else {
+        print_jacob_device_loop(false);
     }
-    printer->fmt_line("vec_d[node_id] {} _present_fp_{}[inst._data_offset + id];",
-                      operator_for_d(),
-                      conductance_fp_index());
-    printer->pop_block();
     use_present_fp_indexing_ = false;
     print_device_stream_wait();
     printer->chain_block("else");
@@ -653,8 +678,8 @@ void CodegenNeuronAccVisitor::print_net_receive_buffering() {
     // Body uses _present_fp_* + weights[weight_index+arg]; net_send → NetSendBuffer.
     printer->add_line("int count = nrb->_displ_cnt;");
     print_kernel_global_device_setup();
-    // Host just finished deliver_net_events with current nt->_t; device copy can lag
-    // (last async lastpart update). net_send/net_move use nt->_t — must be host-fresh.
+    // Keep device nt->_t fresh for any residual uses; net_send absolute times use
+    // per-event local `t` (nrb->_nrb_t) — see get_variable_name("t").
     printer->push_block("if (nt->compute_gpu)");
     printer->add_line("nrn_pragma_acc(update device(nt->_t))");
     printer->add_line("nrn_pragma_omp(target update to(nt->_t))");
@@ -679,11 +704,9 @@ void CodegenNeuronAccVisitor::print_net_receive_buffering() {
     printer->add_multi_line(R"CODE(
         int index = nrb->_nrb_index[j];
         int id = nrb->_pnt_index[index];
-        double t = nrb->_nrb_t[index];
+        double t = nrb->_nrb_t[index];  // event delivery time (not nt->_t after restore)
         int weight_index = nrb->_weight_index[index];
         double flag = nrb->_nrb_flag[index];
-        (void) t;
-        (void) flag;
         double* _args = weights + weight_index;
     )CODE");
     printing_net_receive = true;
@@ -738,12 +761,13 @@ void CodegenNeuronAccVisitor::print_net_send_call(const ast::FunctionCall& node)
     }
 
     // Device path: buffer indices; host deliver resolves via Memb_list pdata.
+    // Use present-mapped local `nsb` (same object as update self(nsb->_cnt)).
     int const tq_field = info.tqitem_index >= 0 ? info.tqitem_index : -1;
     std::string const weight_index = printing_net_receive ? "weight_index" : "-1";
     const auto& t = get_variable_name("t");
     printer->add_text("net_send_buffering(");
     printer->fmt_text(
-        "nt, _ml_arg, _ml_arg->_net_send_buffer, 0, {}, {}, id, {}+",
+        "nt, _ml_arg, nsb, 0, {}, {}, id, {}+",
         tq_field,
         weight_index,
         t);
@@ -772,7 +796,7 @@ void CodegenNeuronAccVisitor::print_net_move_call(const ast::FunctionCall& node)
     int const tq_field = info.tqitem_index >= 0 ? info.tqitem_index : -1;
     printer->add_text("net_send_buffering(");
     printer->fmt_text(
-        "nt, _ml_arg, _ml_arg->_net_send_buffer, 2, {}, -1, id, ",
+        "nt, _ml_arg, nsb, 2, {}, -1, id, ",
         tq_field);
     print_vector_elements(node.get_arguments(), ", ");
     printer->add_text(", 0.0");
@@ -789,8 +813,9 @@ void CodegenNeuronAccVisitor::print_net_event_call(const ast::FunctionCall& node
     }
     if (printing_net_buf_receive_kernel_ || (!printing_net_receive && !printing_net_init)) {
         printer->add_text("net_send_buffering(");
+        // present-mapped local nsb — see print_net_send_call.
         printer->add_text(
-            "nt, _ml_arg, _ml_arg->_net_send_buffer, 1, -1, -1, id, ");
+            "nt, _ml_arg, nsb, 1, -1, -1, id, ");
         print_vector_elements(arguments, ", ");
         printer->add_text(", 0.0");
         printer->add_text(")");
@@ -890,7 +915,8 @@ void CodegenNeuronAccVisitor::print_nrn_init(bool skip_init_check) {
     printer->add_line("auto* _ppvar = _ml_arg->pdata[id];");
     if (!info.artificial_cell) {
         printer->add_line("int node_id = node_data.nodeindices[id];");
-        // Host-only INITIAL (wrote_conc) has no _d_voltages declaration.
+        // Host-only INITIAL (wrote_conc) uses the CPU ivdep path and never
+        // declares _d_voltages / present_fp_* — read host node_voltages there.
         if (host_only_init) {
             printer->fmt_line("{} = node_data.node_voltages[node_id];",
                               indexed_fp_var(naming::VOLTAGE_UNUSED_VARIABLE));
@@ -1059,24 +1085,39 @@ void CodegenNeuronAccVisitor::print_nrn_cur() {
             "neuron::gpu::net_send_buffer_ensure_for_events(_ml_arg, nodecount);");
     }
     use_present_fp_indexing_ = true;
-    print_parallel_iteration_hint(BlockType::Equation, info.breakpoint_node);
-    printer->push_block("for (int id = 0; id < nodecount; id++)");
-    print_nrn_cur_kernel(*info.breakpoint_node);
 
-    // Point processes may share a node (multiple ExpSyn on one segment). Without
-    // atomics, parallel OpenACC updates race and can drop non-zero synaptic rhs
-    // (Stage 3c: two ExpSyn on inode 3 left Δrhs ≈ 0.103 missing on device).
+    // Point processes may share a node. Parallel OpenACC needs atomics (Stage 3c)
+    // but atomics are non-associative. NRN_DETERMINISTIC_MATRIX=1: serial instance
+    // order (matches CPU left-to-right) for testing / raster stability.
+    auto print_cur_loop_body = [&](bool det_matrix) {
+        force_seq_acc_loop_ = det_matrix;
+        print_parallel_iteration_hint(BlockType::Equation, info.breakpoint_node);
+        printer->push_block("for (int id = 0; id < nodecount; id++)");
+        print_nrn_cur_kernel(*info.breakpoint_node);
+        if (info.point_process && !det_matrix) {
+            printer->add_line("nrn_pragma_acc(atomic update)");
+            printer->add_line("nrn_pragma_omp(atomic update)");
+        }
+        printer->fmt_line("vec_rhs[node_id] {} rhs;", operator_for_rhs());
+        if (breakpoint_exist()) {
+            printer->fmt_line(
+                "{} = g;",
+                indexed_fp_var(info.vectorize ? naming::CONDUCTANCE_UNUSED_VARIABLE
+                                              : naming::CONDUCTANCE_VARIABLE));
+        }
+        printer->pop_block();
+        force_seq_acc_loop_ = false;
+    };
+
     if (info.point_process) {
-        printer->add_line("nrn_pragma_acc(atomic update)");
-        printer->add_line("nrn_pragma_omp(atomic update)");
+        printer->push_block("if (neuron::event_order::matrix_enabled())");
+        print_cur_loop_body(true);
+        printer->chain_block("else");
+        print_cur_loop_body(false);
+        printer->pop_block();
+    } else {
+        print_cur_loop_body(false);
     }
-    printer->fmt_line("vec_rhs[node_id] {} rhs;", operator_for_rhs());
-
-    if (breakpoint_exist()) {
-        printer->fmt_line("{} = g;", indexed_fp_var(info.vectorize ? naming::CONDUCTANCE_UNUSED_VARIABLE
-                                                                    : naming::CONDUCTANCE_VARIABLE));
-    }
-    printer->pop_block();
 
     print_after_nrn_cur_gpu_net_send_flush();
     print_kernel_data_present_annotation_block_end();
@@ -1151,10 +1192,13 @@ std::string CodegenNeuronAccVisitor::float_variable_name(const SymbolType& symbo
 
 std::string CodegenNeuronAccVisitor::get_variable_name(const std::string& name,
                                                        bool use_instance) const {
-    // net_buf_receive: NMODL t is still nt->_t (same as host apply / CPU pnt_receive
-    // after deliver_net_events). The device struct must be host-fresh — see
-    // update device(nt->_t) before the OpenACC region in print_net_receive_buffering.
-    // Per-event nrb->_nrb_t is available as local `t` for diagnostics only.
+    // Device net_buf_receive: local `t` is nrb->_nrb_t[index] (event delivery time
+    // captured at enqueue). After deliver_net_events(), nt->_t is restored to the
+    // step start (tsav), so net_send/net_move must use event t — same as CoreNEURON
+    // (`t + time_interval`), not nt->_t + delay (that mis-times self-events).
+    if (printing_net_buf_receive_kernel_ && name == "t") {
+        return "t";
+    }
     return CodegenNeuronCppVisitor::get_variable_name(name, use_instance);
 }
 

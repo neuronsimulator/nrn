@@ -324,22 +324,38 @@ Device kernels **cannot** grow mid-region. Host pre-sizes via
 - Env override: `NRN_GPU_NET_SEND_BUFFER_HEADROOM` (1–64)
 - Threshold hit list: sized to slot count; overflow also aborts (no partial deliver)
 
-### Trajectory native (in progress)
+### Trajectory native (living tip)
 
 | Item | Status |
 |------|--------|
-| Branch | `local/gpu-trajectory-native` |
+| Branch | `local/gpu-trajectory-native` (**living tip**) |
 | Design | `doc/gpu/trajectory-native.md` (T0) |
 | T1–T3 | `src/neuron/gpu/trajectory.{hpp,cpp}` — plan + sparse sample + chunked staging + GraphLine |
 | Mode | Sparse D2H → host staging → flush to sinks every C (or full-stretch at psolve end) |
 | Env | `NRN_GPU_TRAJECTORY_CHUNK=N` (0/unset = auto: full-stretch, or C=50 with GraphLine) |
 | Gate F | Pure `Vector.record` / single-pd GraphLine does not force full SoA when plan complete |
+| Base | Merged `local/gpu-lastpart-no-soa-pull` (NMDA always-atomic net_send + Gate F V path) |
 
-### Next GPU feature (after trajectory)
+### Traub 1/10 no-gap raster (merged from lastpart)
+
+**Landed on lastpart (2026-07-27), merged into trajectory tip:** exact CPU/GPU
+raster multiset (4474) + GPU run-to-run after NMDA self-event path fix:
+- device `net_send_buffering` **always** atomic capture on `_cnt` (stale device
+  `nt->compute_gpu==0` used non-atomic branch → races dropped ~all net_sends);
+- `update device(nt.compute_gpu)` when entering fixed-step GPU;
+- net_buf `net_send` uses event `t` (`nrb->_nrb_t`), not restored `nt->_t`.
+
+**Next (this line):** re-smoke Traub 1/10 exact on **this** tip (trajectory + merge);
+then declare trajectory feature done / residual traj tests. Optional det-event keep
+for testing. Not host NET_RECEIVE / not host vec_rhs voltage hot path.
+
+### Next GPU feature (after trajectory gate)
 
 | Option | Content |
 |--------|---------|
-| Later | use_gap=1, multi-rank, perf, single device-resource owner, FF integration |
+| **Traub on trajectory tip** | Re-smoke 4474 exact after merge (blocking) |
+| Trajectory polish | mech-RANGE gather / multi-var GraphLine if needed |
+| Later | use_gap=1, multi-rank, perf, single device-resource owner |
 
 ### Constraints (do not regress)
 
@@ -389,14 +405,14 @@ High performance is sacred; CoreNEURON is a guide (low host traffic), not law.
 Commit steps locally without push unless asked.
 
 Tree: ~/neuron/nrngpu. Kind: feature.
-Branch: local/gpu-trajectory-native — T0–T3 trajectory (plan, sparse sample,
-chunked staging, Gate F cover, GraphLine single-pd). Design:
-doc/gpu/trajectory-native.md. Ringtest 688@100.
+Branch: local/gpu-trajectory-native — living tip (T0–T3 + merged lastpart:
+Gate F, NMDA always-atomic net_send). Design: doc/gpu/trajectory-native.md.
+Ringtest 688@100. Traub exact proven on lastpart; **re-smoke on this tip next**.
 
-Next: FF into integration, or mech-RANGE gather / multi-var GraphLine.
+Next: Traub 1/10 no-gap exact on trajectory tip, then finish/park trajectory.
 Do not start use_gap, multi-rank, or device-resource owner unless asked.
 
-Heap-free weight_index only; no host vec_rhs voltage hot path.
+Heap-free weight_index only; no host NET_RECEIVE body; no host vec_rhs voltage hot path.
 source ~/neuron/bin/nrnenv nrngpu build-gpu before GPU runs.
 ```
 
