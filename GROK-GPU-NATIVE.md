@@ -431,11 +431,10 @@ Commit steps locally without push unless asked.
 
 Tree: ~/neuron/nrngpu. Kind: feature.
 Branch: local/gpu-lastpart-no-soa-pull — Gate F + no host↔device V during psolve
-+ NetSendBuffer capacity. Ringtest 688@100. Traub count 4474 but raster not exact
-and GPU runs are nondeterministic (±1 dt on a few gids; NMDA A drifts).
++ NetSendBuffer capacity + NMDA net_send atomic/self-event fix.
+Ringtest 688@100. Traub 1/10 no-gap: **4474 exact** CPU/GPU multiset (run-to-run).
 
-Next: Traub 1/10 no-gap **exact** CPU/GPU raster (determinism first).
-Do not start use_gap, multi-rank, or device-resource owner unless asked.
+Next: trajectory native path, or use_gap/multi-rank only if asked.
 
 Heap-free weight_index only; no host NET_RECEIVE body; no host vec_rhs voltage hot path.
 source ~/neuron/bin/nrnenv nrngpu build-gpu before GPU runs.
