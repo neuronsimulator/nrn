@@ -50,10 +50,23 @@ void download_sorted_node_soa() {
 #endif
 }
 
+/** True when device kernels own this mechanism's SoA for some phase. */
+[[nodiscard]] bool mechanism_soa_device_authoritative(int type) noexcept {
+    return mechanism_solve_on_device(type) || mechanism_current_on_device(type) ||
+           mechanism_jacobian_on_device(type);
+}
+
 void download_sorted_mechanism_soa() {
 #if defined(NRN_ENABLE_GPU)
-    neuron::model().apply_to_mechanisms(
-        [&](auto& mech_data) { download_soa_storage(mech_data); });
+    // Never clobber host-authoritative mechanism SoA (host-only CURRENT, WATCH /
+    // NET_RECEIVE mechs like Bounce with no device phases). Device→host of a
+    // stale init copy was wiping host WATCH/SelfEvent updates (watchrange).
+    neuron::model().apply_to_mechanisms([&](auto& mech_data) {
+        if (!mechanism_soa_device_authoritative(mech_data.type())) {
+            return;
+        }
+        download_soa_storage(mech_data);
+    });
 #endif
 }
 

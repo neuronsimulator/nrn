@@ -71,6 +71,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-07-29 | GPU-P1-events | — | Spikes cluster closed (file_mode = same residual); events triage: netmove/nmodlrandom QUALIFIED no (host DAsyn/noisychan); watchrange GPU assert |
 | 2026-07-29 | GPU-P1-events | — | netmove native green: ACC DAsyn dedicated special + GPU header stage for nrnivmodl |
 | 2026-07-29 | GPU-P1-events | — | nmodlrandom native green: ACC noisychan; RANDOM Instance fix; host INITIAL for RANDOM |
+| 2026-07-29 | GPU-P1-events | — | watchrange native green: host WATCH/NET_RECEIVE OK; fix device→host SoA download clobber of host-authoritative mechs (Bounce) |
 
 ---
 
@@ -175,7 +176,7 @@ Do **not** require full 610-test green before P1. P0 only needs: classified fail
 | coreneuron_modtests::test_units_py_gpu_native | **A** | QUALIFIED no: host **UnitsTest**. |
 | coreneuron_modtests::test_netmove_py_gpu_native | **A** | QUALIFIED no: host **DAsyn**. |
 | coreneuron_modtests::test_pointer_py_gpu_native | **A** | QUALIFIED no: host **IClamp**. |
-| coreneuron_modtests::test_watchrange_py_gpu_native | **A** | AssertionError after run (past QUALIFIED path). |
+| coreneuron_modtests::test_watchrange_py_gpu_native | **green** | Host WATCH deliver; skip device→host of host-only mech SoA. |
 | coreneuron_modtests::test_psolve_py_gpu_native | **A** | SEGV on native psolve path. |
 | coreneuron_modtests::test_ba_py_gpu_native | **A** | QUALIFIED no: host **ba0, ba1**. |
 | coreneuron_modtests::test_nmodlrandom_py_gpu_native | **A** | QUALIFIED no: host **noisychan**. |
@@ -232,7 +233,7 @@ For each test:
 | test_units | green | red | QUALIFIED no: host UnitsTest |
 | test_netmove | green | **green** | ACC `DAsyn` via dedicated special group `coreneuron_modtests_native_netmove` (nmodl `--c acc --oacc`); modes 0–2 pass. |
 | test_pointer | green | red | QUALIFIED no: host IClamp (if not ACC) / POINTER |
-| test_watchrange | green | red | Controls green. Native runs GPU (mode 0) but `assert success` — WATCH/device path, not QUALIFIED block. After netmove. |
+| test_watchrange | green | **green** | Host WATCH + SelfEvent NET_RECEIVE on Bounce; full SoA download no longer clobbers host-authoritative mechs (no CURRENT/STATE device phase). |
 | test_psolve | green | red | SEGV |
 | test_ba | green | red | QUALIFIED no: host ba0,ba1 |
 | test_nmodlrandom | green | **green** | ACC `noisychan` via `coreneuron_modtests_native_nmodlrandom` (RANDOM host INITIAL; CURRENT/STATE ACC). |
@@ -343,4 +344,4 @@ Update Status before exit; commit without push.
 
 ## Next (one line — update every session end)
 
-**Next:** P1 events — `test_watchrange_py_gpu_native` (WATCH does not advance High/Mid/Low on native; host WATCH path / Bounce ACC later).
+**Next:** P1 events cluster closed (netmove / watchrange / nmodlrandom green). Next cluster **state** (datareturn/fast_imem/units/array_transfer — several QUALIFIED no / control B) or **control** (test_psolve SEGV, test_ba QUALIFIED no).
