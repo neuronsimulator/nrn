@@ -77,7 +77,10 @@
 #    prepare input data for simulations. The PROCESSORS argument specifies the
 #    number of processors used by the test. This is passed to CTest and allows
 #    invocations such as `ctest -j 16` to avoid overcommitting resources by
-#    running too many tests with internal parallelism. The PRELOAD_SANITIZER
+#    running too many tests with internal parallelism. Tests that REQUIRES gpu
+#    also get RESOURCE_LOCK gpu so that `ctest -j N` can still parallelize CPU
+#    work while only one GPU-using test runs at a time (important on single-GPU
+#    workstation nodes that share the device with the display). The PRELOAD_SANITIZER
 #    flag controls whether or not the PRELOAD flag is passed to
 #    cpp_cc_configure_sanitizers; this needs to be set when the test executable
 #    is *not* built by NEURON, typically because it is `python`.
@@ -486,6 +489,11 @@ function(nrn_add_test)
   set_tests_properties(${test_names} PROPERTIES TIMEOUT 1000)
   if(DEFINED NRN_ADD_TEST_PROCESSORS)
     set_tests_properties(${test_names} PROPERTIES PROCESSORS ${NRN_ADD_TEST_PROCESSORS})
+  endif()
+  # Serialize GPU device use across the suite. CPU tests remain free to run under
+  # ctest -j; any two tests that REQUIRES gpu wait on the same lock name.
+  if("gpu" IN_LIST NRN_ADD_TEST_REQUIRES)
+    set_tests_properties(${test_names} PROPERTIES RESOURCE_LOCK gpu)
   endif()
   # Construct an expression containing the names of the test output files that will be passed to the
   # comparison script.

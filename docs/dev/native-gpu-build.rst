@@ -147,6 +147,10 @@ CTest (from the build directory):
 .. code-block:: bash
 
    ctest -R 'external_ringtest::' --output-on-failure
+   # Full suite: prefer -j for CPU throughput. Tests that REQUIRES gpu take a
+   # CTest RESOURCE_LOCK named "gpu", so only one GPU job runs at a time even
+   # under ctest -j N (helps single-GPU workstations that also drive the display).
+   ctest -j $(nproc) --output-on-failure
    ctest -R gpu --output-on-failure
    ctest -R '_py_gpu_native' --output-on-failure
 

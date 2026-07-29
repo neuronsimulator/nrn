@@ -139,6 +139,8 @@ Do **not** require full 610-test green before P1. P0 only needs: classified fail
 
 **Process note (do not regress triage signal):** never export `NRN_GPU_BACKEND_TEST=native` for a **full** `ctest` run. It pollutes CoreNEURON `*_py_cpu` / `*_py_gpu` into native qualification and creates mass false reds. Native wrappers already set env per-test.
 
+**ctest parallelism:** tests registered with `REQUIRES gpu` get CTest `RESOURCE_LOCK gpu` (see `cmake/NeuronTestHelper.cmake`). Safe to run `ctest -j N` for CPU throughput; GPU jobs do not overlap.
+
 ### Failure triage table (P0 2026-07-29, clean suite)
 
 | Test name | Bucket | One-line reason |
