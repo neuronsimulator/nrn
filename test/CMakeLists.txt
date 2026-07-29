@@ -1081,8 +1081,8 @@ if(NRN_ENABLE_PYTHON)
       SCRIPT_PATTERNS ${g4_native_helper_script} test/coreneuron/test_units.py
       ENVIRONMENT ${native_gpu_test_env} ${sonata_zero_gid_env} ${nrnpython_mpi_env}
       COMMAND ${native_modtests_launch_py} test/coreneuron/test_units.py)
-    # test_ba residual: nmodl ACC does not emit hoc_reg_ba for BEFORE/AFTER
-    # blocks (bacur/banocur QUALIFIED would need that + host BA phase traffic).
+    # test_ba: host BEFORE/AFTER mechs (bacur/banocur) are Gate B/C-exempt so
+    # native qualifies without ACC hoc_reg_ba; BA RANGE stays host-side.
     # ACC green/red for array RANGE transfer product row.
     nrn_add_test_group(
       NAME coreneuron_modtests_native_array_transfer

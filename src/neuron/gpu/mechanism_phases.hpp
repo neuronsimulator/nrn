@@ -33,6 +33,13 @@ void register_mechanism_gpu_phases(int type, MechanismGpuPhase phases) noexcept;
 [[nodiscard]] bool mechanism_solve_on_device(int type) noexcept;
 
 /**
+ * True when the mechanism registered BEFORE/AFTER blocks via hoc_reg_ba.
+ * Those callbacks and their shared RANGE state (e.g. counters) stay host-side;
+ * Gate B/C may ignore host CURRENT/JACOB/SOLVE for them so native still qualifies.
+ */
+[[nodiscard]] bool mechanism_has_before_after(int type) noexcept;
+
+/**
  * After model init, report whether the loaded model qualifies for GPU-native fixed-step
  * integration and which gates block qualification. Intended for pc.gpu_qualification().
  */

@@ -58,7 +58,8 @@ void append_blocking_mechs(std::string& out,
             continue;
         }
         for (auto* tml = nt.tml; tml; tml = tml->next) {
-            if (nrn_is_ion(tml->index) || !hook_present(tml->index) || predicate(tml->index)) {
+            if (nrn_is_ion(tml->index) || mechanism_has_before_after(tml->index) ||
+                !hook_present(tml->index) || predicate(tml->index)) {
                 continue;
             }
             names.emplace_back(mech_name(tml->index));
@@ -99,6 +100,10 @@ void append_blocking_mechs(std::string& out,
     }
     for (auto* tml = nt.tml; tml; tml = tml->next) {
         if (nrn_is_ion(tml->index)) {
+            continue;
+        }
+        // Host BEFORE/AFTER mechs keep host STATE (shared RANGE counters with BA).
+        if (mechanism_has_before_after(tml->index)) {
             continue;
         }
         if (has_state_hook(tml->index) && !mechanism_solve_on_device(tml->index)) {
@@ -245,6 +250,20 @@ bool mechanism_solve_on_device(int type) noexcept {
     (void) type;
     return false;
 #endif
+}
+
+bool mechanism_has_before_after(int type) noexcept {
+    if (type < 0 || !bamech_) {
+        return false;
+    }
+    for (int bat = 0; bat < BEFORE_AFTER_SIZE; ++bat) {
+        for (BAMech* bam = bamech_[bat]; bam; bam = bam->next) {
+            if (bam->type == type) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 bool model_qualifies_for_full_gpu_native() noexcept {

@@ -78,6 +78,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-07-29 | GPU-P1-control-B | — | datareturn control green (cpu+gpu): same ACC multi-thread / electrode fix; native still Exp2Syn QUALIFIED |
 | 2026-07-29 | GPU-P1-state | — | fast_imem native green: ELECTRODE sav via host RMW of device i/sav (memcpy) + `_nrn_thread_t` in nrn_current (IClamp window). modes 0–1 direct imem green; mode 2 continuerun still deferred |
 | 2026-07-29 | GPU-P1-state | — | datareturn native green (modes 0–1): ACC built-in Exp2Syn; download ion SoA after device CURRENT; skip mode 2 under native |
+| 2026-07-29 | GPU-P1-control | — | test_ba native green: host BEFORE/AFTER mechs exempt from Gate B/C (shared RANGE with host CURRENT/STATE) |
 
 ---
 
@@ -184,7 +185,7 @@ Do **not** require full 610-test green before P1. P0 only needs: classified fail
 | coreneuron_modtests::test_pointer_py_gpu_native | **green** | PASS. |
 | coreneuron_modtests::test_watchrange_py_gpu_native | **green** | Host WATCH deliver; skip device→host of host-only mech SoA. |
 | coreneuron_modtests::test_psolve_py_gpu_native | **partial** | Multi-psolve green; continuerun+native deferred (mode 2). |
-| coreneuron_modtests::test_ba_py_gpu_native | **A** | QUALIFIED no host ba0/ba1; ACC missing `hoc_reg_ba`. |
+| coreneuron_modtests::test_ba_py_gpu_native | **green** | Host BA mechs (hoc_reg_ba) exempt from Gate B/C; BA RANGE stays host-authoritative. |
 | coreneuron_modtests::test_nmodlrandom_py_gpu_native | **A** | QUALIFIED no: host **noisychan**. |
 | coreneuron_modtests::fast_imem_py_gpu_native | **green** | IClamp `_nrn_thread_t` in nrn_current; device electrode sav via post-cur host RMW (pull i/sav, scale, push sav). |
 | coreneuron_modtests::array_variable_transfer_*_py_gpu_native | **A** | QUALIFIED no: host **green, red**. |
@@ -241,7 +242,7 @@ For each test:
 | test_pointer | green | **green** | Built-in ACC path + POINTER; was Status lag after IClamp ACC. |
 | test_watchrange | green | **green** | Host WATCH + SelfEvent NET_RECEIVE on Bounce; full SoA download no longer clobbers host-authoritative mechs (no CURRENT/STATE device phase). |
 | test_psolve | green | **partial** | Multi-psolve from t=0 green under native. `continuerun` with gpu.enable still present-table fatal (mode-2 residual; test skips continuerun when native). |
-| test_ba | green | red | QUALIFIED no host ba0/ba1; nmodl ACC omits `hoc_reg_ba` for BEFORE/AFTER (codegen residual). |
+| test_ba | green | **green** | Host BEFORE/AFTER mechs skip Gate B/C (shared `inc` with host CURRENT/STATE); residual ACC `hoc_reg_ba` still open if BA+device CURRENT needed later. |
 | test_nmodlrandom | green | **green** | ACC `noisychan` via `coreneuron_modtests_native_nmodlrandom` (RANDOM host INITIAL; CURRENT/STATE ACC). |
 | test_nmodlrandom_syntax | green | **green** | after NONVINT |
 | test_natrans | red (B/D) | red | → may slip to P2 |
@@ -350,4 +351,4 @@ Update Status before exit; commit without push.
 
 ## Next (one line — update every session end)
 
-**Next:** P1 residual — test_ba (`hoc_reg_ba`); mode-2 continuerun+psolve; test_natrans control B/D.
+**Next:** P1 residual — mode-2 continuerun+psolve; test_natrans control B/D; optional ACC `hoc_reg_ba` for BA+device CURRENT.
