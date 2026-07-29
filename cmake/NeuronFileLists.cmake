@@ -27,7 +27,28 @@ set(STRUCTURED_HEADER_FILES_TO_INSTALL
     neuron/model_data_fwd.hpp
     neuron/event_order.hpp
     # NMODL OpenACC mechs include model_data.hpp → soa_identifier → utils/logger.hpp
-    utils/logger.hpp)
+    utils/logger.hpp
+    # OpenACC mechanism codegen (nrnivmodl --c acc --oacc) and model_data.hpp
+    # pull these; build-tree -I${ROOT}/include when NRNHOME is the build dir.
+    neuron/gpu/check_thresh.hpp
+    neuron/gpu/config.hpp
+    neuron/gpu/device_assign.hpp
+    neuron/gpu/device_state.hpp
+    neuron/gpu/download.hpp
+    neuron/gpu/fadvance_gpu.hpp
+    neuron/gpu/ion_cur_device.hpp
+    neuron/gpu/lastpart.hpp
+    neuron/gpu/mechanism_phases.hpp
+    neuron/gpu/net_events.hpp
+    neuron/gpu/net_receive_buffer.hpp
+    neuron/gpu/net_send_buffer.hpp
+    neuron/gpu/offload.hpp
+    neuron/gpu/partrans.hpp
+    neuron/gpu/phase_timer.hpp
+    neuron/gpu/post_solve.hpp
+    neuron/gpu/sync.hpp
+    neuron/gpu/trajectory.hpp
+    neuron/gpu/upload.hpp)
 set(HEADER_FILES_TO_INSTALL
     gnu/mcran4.h
     gnu/nrnran123.h

@@ -35,6 +35,9 @@ class CodegenNeuronAccVisitor: public CodegenNeuronCppVisitor {
     /** When true, ACC cur/jacob PP loops use `loop seq` (NRN_DETERMINISTIC_MATRIX). */
     bool force_seq_acc_loop_ = false;
 
+    /** When true, ACC kernel body may use firstprivate `_nrn_thread_t` (must be declared). */
+    bool use_host_captured_t_ = false;
+
     void print_kernel_data_present_annotation_block_begin() override;
     void print_kernel_data_present_annotation_block_end() override;
 

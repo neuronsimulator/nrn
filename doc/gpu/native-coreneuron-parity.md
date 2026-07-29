@@ -69,6 +69,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-07-29 | GPU-P1-spikes | — | ACC IClamp: CMake `stim$` match (not netstim); at_time device bind; trajectory staging once/psolve; QUALIFIED yes for direct/spikes; native V residual (device t + electrode sav) |
 | 2026-07-29 | GPU-P1-spikes | — | Host-captured `_nrn_thread_t` for ACC CURRENT/STATE (IClamp window); modes 0–1 direct/spikes green; mode 2 continuerun+psolve deferred |
 | 2026-07-29 | GPU-P1-events | — | Spikes cluster closed (file_mode = same residual); events triage: netmove/nmodlrandom QUALIFIED no (host DAsyn/noisychan); watchrange GPU assert |
+| 2026-07-29 | GPU-P1-events | — | netmove native green: ACC DAsyn dedicated special + GPU header stage for nrnivmodl |
 
 ---
 
@@ -228,7 +229,7 @@ For each test:
 | fast_imem | **red (B)** | red | control SEGV; fix B before native |
 | datareturn | **red (B)** | red | control SEGV; QUALIFIED no Exp2Syn on native |
 | test_units | green | red | QUALIFIED no: host UnitsTest |
-| test_netmove | green | red | **Events first.** Controls green. Native QUALIFIED no: Gate B+C — host `DAsyn` (test `netmove.mod`; needs ACC CURRENT+STATE like Traub/`stim` path). |
+| test_netmove | green | **green** | ACC `DAsyn` via dedicated special group `coreneuron_modtests_native_netmove` (nmodl `--c acc --oacc`); modes 0–2 pass. |
 | test_pointer | green | red | QUALIFIED no: host IClamp (if not ACC) / POINTER |
 | test_watchrange | green | red | Controls green. Native runs GPU (mode 0) but `assert success` — WATCH/device path, not QUALIFIED block. After netmove. |
 | test_psolve | green | red | SEGV |
@@ -341,4 +342,4 @@ Update Status before exit; commit without push.
 
 ## Next (one line — update every session end)
 
-**Next:** P1 **events** — first red `test_netmove_py_gpu_native`: ACC/OpenACC build for test `DAsyn` (`netmove.mod`) so Gate B+C qualify (same nmodl `--c acc --oacc` / Traub pattern as GROK-GPU-NATIVE); then green modes 0–1. watchrange assert and noisychan after.
+**Next:** P1 events — `test_watchrange_py_gpu_native` (assert on GPU) or ACC `noisychan` for `test_nmodlrandom` (same dedicated-special pattern as netmove).

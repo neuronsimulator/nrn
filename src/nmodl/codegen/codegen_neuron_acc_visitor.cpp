@@ -28,7 +28,9 @@ void CodegenNeuronAccVisitor::print_standard_includes() {
 }
 
 bool CodegenNeuronAccVisitor::host_only_parallel_block(BlockType type) const {
-    return type == BlockType::Initial && info.require_wrote_conc;
+    // INITIAL with net_send/net_move must stay on host (queue API is host-only).
+    return type == BlockType::Initial &&
+           (info.require_wrote_conc || info.net_send_used || info.net_event_used);
 }
 
 void CodegenNeuronAccVisitor::print_global_var_struct_decl() {
@@ -742,8 +744,10 @@ void CodegenNeuronAccVisitor::print_net_receive_buffering() {
 }
 
 void CodegenNeuronAccVisitor::print_net_send_call(const ast::FunctionCall& node) {
-    // Host pnt_receive path (CPU backend): direct net_send.
-    if ((printing_net_receive || printing_net_init) && !printing_net_buf_receive_kernel_) {
+    // Host pnt_receive path, or host-only INITIAL (no present_fp / no nsb):
+    // direct net_send (CPU queue API).
+    if (((printing_net_receive || printing_net_init) && !printing_net_buf_receive_kernel_) ||
+        !use_present_fp_indexing_) {
         CodegenNeuronCppVisitor::print_net_send_call(node);
         return;
     }
@@ -989,6 +993,7 @@ void CodegenNeuronAccVisitor::print_nrn_state() {
     // Host-captured t for any STATE body that reads t (same as nrn_cur).
     printer->add_line("double const _nrn_thread_t = nt->_t;");
     printer->add_line("(void) _nrn_thread_t;");  // unused when STATE does not reference t
+    use_host_captured_t_ = true;
 
     use_present_fp_indexing_ = true;
     print_parallel_iteration_hint(BlockType::State, info.nrn_state_block);
@@ -1034,6 +1039,7 @@ void CodegenNeuronAccVisitor::print_nrn_state() {
     print_kernel_data_present_annotation_block_end();
     printer->pop_block();
     use_present_fp_indexing_ = false;
+    use_host_captured_t_ = false;
 }
 
 CodegenNeuronAccVisitor::ParamVector CodegenNeuronAccVisitor::nrn_current_parameters() {
@@ -1104,6 +1110,7 @@ void CodegenNeuronAccVisitor::print_nrn_cur() {
     print_kernel_global_device_setup();
     printer->add_line("auto nodecount = _ml_arg->nodecount;");
     printer->add_line("double const _nrn_thread_t = nt->_t;");
+    use_host_captured_t_ = true;
     if ((info.net_send_used || info.net_event_used) && !info.artificial_cell) {
         printer->add_line(
             "neuron::gpu::net_send_buffer_ensure_for_events(_ml_arg, nodecount);");
@@ -1151,6 +1158,7 @@ void CodegenNeuronAccVisitor::print_nrn_cur() {
     print_after_nrn_cur_gpu_net_send_flush();
     print_kernel_data_present_annotation_block_end();
     use_present_fp_indexing_ = false;
+    use_host_captured_t_ = false;
     printer->pop_block();
 }
 
@@ -1228,9 +1236,10 @@ std::string CodegenNeuronAccVisitor::get_variable_name(const std::string& name,
     if (printing_net_buf_receive_kernel_ && name == "t") {
         return "t";
     }
-    // ACC CURRENT/STATE kernels: use host-captured _nrn_thread_t (firstprivate),
-    // not device nt->_t — early-step update device(nt._t) is present-table unsafe.
-    if (use_present_fp_indexing_ && name == naming::NTHREAD_T_VARIABLE) {
+    // ACC CURRENT/STATE only: host-captured _nrn_thread_t (firstprivate). Do not
+    // substitute in INITIAL/net_buf paths that never declare that local.
+    if (use_host_captured_t_ && use_present_fp_indexing_ &&
+        name == naming::NTHREAD_T_VARIABLE) {
         return "_nrn_thread_t";
     }
     return CodegenNeuronCppVisitor::get_variable_name(name, use_instance);

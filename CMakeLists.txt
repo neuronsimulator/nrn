@@ -340,6 +340,10 @@ file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/external/eigen/Eigen"
      DESTINATION "${CMAKE_BINARY_DIR}/include/")
 file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/external/eigen/unsupported"
      DESTINATION "${CMAKE_BINARY_DIR}/include/")
+# nrnivmodl OpenACC mechs include utils/logger.hpp → <fmt/printf.h> with
+# NRNHOME=${CMAKE_BINARY_DIR}; stage fmt headers into the build include tree.
+file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/external/fmt/include/fmt"
+     DESTINATION "${CMAKE_BINARY_DIR}/include/")
 
 # =================================================================================================
 # Enable sanitizer support if the NRN_SANITIZERS variable is set. Comes befores PythonHelper.cmake.
