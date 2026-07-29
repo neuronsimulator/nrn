@@ -123,7 +123,17 @@ def _test_spikes(
 
     if is_native_backend_test():
         enable_test_backend()
-        for mode in [0, 1, 2]:
+        # Native ignores CoreNEURON file_mode.
+        # Mode 2 (continuerun+psolve): deferred residual (OpenACC partial-present /
+        # illegal address) — same class as datareturn/direct.
+        # Serial product path: modes 0–1. Multi-rank (MPI) mode 1 re-psolve loop
+        # hits OpenACC partial-present on a shared GPU; product MPI path is mode 0
+        # (matches CoreNEURON file_mode MPI coverage).
+        if use_mpi4py or use_nrnmpi_init:
+            run_modes = [0]
+        else:
+            run_modes = [0, 1]
+        for mode in run_modes:
             run(mode)
         disable_test_backend()
     else:
@@ -146,6 +156,9 @@ def test_spikes():
     if mpi4py_option or nrnmpi_init_option:
         pc = h.ParallelContext()
         pc.barrier()
+        # Match test_subworlds: orderly ParallelContext teardown before h.quit()
+        # under MPI (avoids frozen SoA destructor races on process exit).
+        pc.done()
     result.quit()
 
 

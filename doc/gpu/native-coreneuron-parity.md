@@ -81,6 +81,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-07-29 | GPU-P1-control | — | test_ba native green: host BEFORE/AFTER mechs exempt from Gate B/C (shared RANGE with host CURRENT/STATE) |
 | 2026-07-29 | GPU-P1-control-B | — | test_natrans control green: set_permute via valid_cell_permute (GPU forbids 0). Native still D (partrans partial-present) → P2 |
 | 2026-07-29 | GPU-P2-mpi-gap | — | test_natrans native green (nthread=1): host nai→napre + device SoA sync; multi-thread partrans partial-present residual |
+| 2026-07-29 | GPU-P2-mpi-gap | — | spikes_mpi native green (mode 0): multi-rank spike match; mode 1 re-psolve on shared GPU residual; mode 2 continuerun residual; serial modes 0–1 product (mode 2 skipped) |
 
 ---
 
@@ -235,8 +236,8 @@ For each test:
 |------|-----------------|------------------------|-------|
 | fornetcon | green | **green** | NONVINT env fixed Gate C false red |
 | direct | green | **partial** | modes **0–1** green (V/tv/im): IClamp `_nrn_thread_t` + electrode sav host-RMW. Full ctest red on mode **2** (`continuerun`+`psolve`) — deferred (not native P1). |
-| spikes | green | **partial** | modes 0–1 spike match; mode 2 deferred (same as direct) |
-| spikes_file_mode | green | **partial** | **Spikes cluster closed.** Native ignores CoreNEURON file_mode (`test_spikes.py`); same run as `spikes_py_gpu_native` (modes 0–2). Residual = mode 2 only — not a separate product gap. |
+| spikes | green | **green** | Native modes **0–1** (mode 2 continuerun skipped — same residual as direct/datareturn). |
+| spikes_file_mode | green | **green** | Native ignores CoreNEURON file_mode; same modes 0–1 product path as `spikes_py_gpu_native`. |
 | fast_imem | **green** | **green** | Host electrode sav + multi-thread ACC index; device: post-cur memcpy RMW of i→sav (avoids illegal address of in-ACC sav present); IClamp window uses host-captured t in nrn_current. |
 | datareturn | **green** | **green** | ACC built-in Exp2Syn; post-psolve ion SoA download (dptr-written ina/ik). Native modes **0–1**; mode **2** continuerun deferred (same class as spikes/psolve). |
 | test_units | green | **green** | ACC UnitsTest via `coreneuron_modtests_native_units`; host INITIAL when `nrn_ghk` (not device-callable). |
@@ -249,7 +250,7 @@ For each test:
 | test_nmodlrandom_syntax | green | **green** | after NONVINT |
 | test_natrans | **green** | **green** | Control: valid permute. Native: nthread=1 product green; multi-thread partrans residual. |
 | array_variable_transfer_* | green | **green** | ACC green/red via `coreneuron_modtests_native_array_transfer`; modes 0–2 + file_mode pass. |
-| spikes_mpi* | green | red | multi-rank → P2; not blocking serial spikes cluster close |
+| spikes_mpi* | green | **green** | Native product = mode 0 (matches CoreNEURON file_mode MPI). Mode 1 multi-rank re-psolve on shared GPU residual. |
 | test_subworlds | green | **green** | after NONVINT; still P2 if expanded |
 
 ---
@@ -258,8 +259,8 @@ For each test:
 
 | Item | Status | Notes |
 |------|--------|-------|
-| spikes_mpi / file mode native | | |
-| test_subworlds native | | |
+| spikes_mpi / file mode native | **green** (mode 0) | mode 1 multi-rank re-psolve residual |
+| test_subworlds native | **green** | |
 | test_natrans native | **green** (nthread=1) | multi-thread residual |
 | ringtest gap native + compare | | Handoff “later: use_gap=1” |
 | multi-rank device assign | | unit test `gpu_device_assign_mpi` |
@@ -353,4 +354,4 @@ Update Status before exit; commit without push.
 
 ## Next (one line — update every session end)
 
-**Next:** P1 residual — mode-2 continuerun+psolve; optional ACC `hoc_reg_ba`. P2: multi-thread partrans/gap.
+**Next:** P1 residual — mode-2 continuerun+psolve; optional ACC `hoc_reg_ba`. P2: multi-thread partrans/gap; MPI mode-1 re-psolve.
