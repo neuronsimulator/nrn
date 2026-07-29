@@ -32,18 +32,13 @@ def test_psolve():
     vvec.record(m["s"](0.5)._ref_v, sec=m["s"])
 
     def run(tstop):
-        from backend_helper import is_native_backend_test
-
         pc.set_maxstep(10)
         h.finitialize(-65)
         m["nc"].event(3.5)
         m["nc"].event(2.6)
-        # CoreNEURON path: host continuerun then psolve from t>0.
-        # Native GPU: continuerun with gpu.enable partially presents SoA and
-        # aborts (mode-2 residual, same class as spikes mode 2). Multi-psolve
-        # from t=0 still exercises psolve re-entry under native.
-        if not is_native_backend_test():
-            h.continuerun(1)
+        # Host continuerun then psolve from t>0 (mode-2 product path).
+        # Native GPU fixed-step is psolve-scoped only; host continuerun is CPU.
+        h.continuerun(1)
         while h.t < tstop:
             pc.psolve(h.t + 1)
 

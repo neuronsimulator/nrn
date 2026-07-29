@@ -26,6 +26,9 @@ RuntimeConfig& config() {
     return instance;
 }
 
+// Nesting depth of PsolveGpuScope on this thread (psolve / ncs2nrn_integrate).
+thread_local int g_psolve_gpu_scope_depth{0};
+
 Backend parse_backend(std::string_view name) {
     std::string lowered{name};
     std::transform(lowered.begin(), lowered.end(), lowered.begin(), [](unsigned char c) {
@@ -41,6 +44,24 @@ Backend parse_backend(std::string_view name) {
 }
 
 }  // namespace
+
+PsolveGpuScope::PsolveGpuScope() noexcept {
+    ++g_psolve_gpu_scope_depth;
+}
+
+PsolveGpuScope::~PsolveGpuScope() noexcept {
+    if (g_psolve_gpu_scope_depth > 0) {
+        --g_psolve_gpu_scope_depth;
+    }
+}
+
+bool use_native_gpu_fixed_step() noexcept {
+#if defined(NRN_ENABLE_GPU)
+    return enabled() && backend_native() && g_psolve_gpu_scope_depth > 0;
+#else
+    return false;
+#endif
+}
 
 bool enabled() noexcept {
 #if defined(NRN_ENABLE_GPU)
@@ -87,9 +108,14 @@ void ensure_native_gpu_cell_permute() noexcept {
 
 void set_enable(bool value) noexcept {
 #if defined(NRN_ENABLE_GPU)
+    bool const was = config().enable;
     config().enable = value;
     if (value) {
         ensure_native_gpu_cell_permute();
+    } else if (was && backend_native()) {
+        // Drop device mirrors when native GPU is disabled so host teardown /
+        // h.quit() does not hit frozen SoA + partial-present OpenACC errors.
+        invalidate_device_state();
     }
 #else
     (void) value;

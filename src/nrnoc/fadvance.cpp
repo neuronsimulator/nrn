@@ -338,10 +338,12 @@ void nrn_daspk_init_step(double tt, double dteps, int upd) {
 void nrn_fixed_step(neuron::model_sorted_token const& cache_token) {
     nrn::Instrumentor::phase p_timestep("timestep");
 #if defined(NRN_ENABLE_GPU)
-    if (auto const* err = neuron::gpu::native_gpu_configuration_error()) {
-        hoc_execerror(err, nullptr);
+    if (neuron::gpu::use_native_gpu_fixed_step()) {
+        if (auto const* err = neuron::gpu::native_gpu_configuration_error()) {
+            hoc_execerror(err, nullptr);
+        }
+        neuron::gpu::reset_download_step_counter();
     }
-    neuron::gpu::reset_download_step_counter();
 #endif
 #if ELIMINATE_T_ROUNDOFF
     nrn_chk_ndt();
@@ -389,7 +391,9 @@ void nrn_fixed_step(neuron::model_sorted_token const& cache_token) {
     }
     nrn_prcellstate_checkpoint_fixed_step_end();
 #if defined(NRN_ENABLE_GPU)
-    neuron::gpu::finalize_psolve_download();
+    if (neuron::gpu::use_native_gpu_fixed_step()) {
+        neuron::gpu::finalize_psolve_download();
+    }
 #endif
 }
 
@@ -403,7 +407,9 @@ static int step_group_end;
 void nrn_fixed_step_group(neuron::model_sorted_token const& cache_token, int n) {
     int i;
 #if defined(NRN_ENABLE_GPU)
-    neuron::gpu::reset_download_step_counter();
+    if (neuron::gpu::use_native_gpu_fixed_step()) {
+        neuron::gpu::reset_download_step_counter();
+    }
 #endif
 #if ELIMINATE_T_ROUNDOFF
     nrn_chk_ndt();
@@ -449,7 +455,9 @@ void nrn_fixed_step_group(neuron::model_sorted_token const& cache_token, int n) 
             /*printf("step_group_end=%d step_group_n=%d\n", step_group_end, step_group_n);*/
             nrn_multithread_job(cache_token, nrn_fixed_step_group_thread);
 #if defined(NRN_ENABLE_GPU)
-            neuron::gpu::spike_exchange_after_group(nrn_threads);
+            if (neuron::gpu::use_native_gpu_fixed_step()) {
+                neuron::gpu::spike_exchange_after_group(nrn_threads);
+            }
 #endif
             if (nrn_allthread_handle) {
                 (*nrn_allthread_handle)();
@@ -462,7 +470,9 @@ void nrn_fixed_step_group(neuron::model_sorted_token const& cache_token, int n) 
     }
     t = nrn_threads[0]._t;
 #if defined(NRN_ENABLE_GPU)
-    neuron::gpu::finalize_psolve_download();
+    if (neuron::gpu::use_native_gpu_fixed_step()) {
+        neuron::gpu::finalize_psolve_download();
+    }
 #endif
 }
 
@@ -492,7 +502,9 @@ static void nrn_fixed_step_group_thread(neuron::model_sorted_token const& cache_
 
 static void nrn_fixed_step_thread(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
 #if defined(NRN_ENABLE_GPU)
-    if (neuron::gpu::enabled() && neuron::gpu::backend_native()) {
+    // Native GPU only inside psolve (ncs2nrn_integrate), matching CoreNEURON:
+    // host continuerun/fadvance stay on CPU; mode 2 = host half + GPU psolve.
+    if (neuron::gpu::use_native_gpu_fixed_step()) {
         neuron::gpu::device_token const& dev = neuron::gpu::ensure_on_device(cache_token);
         neuron::gpu::fixed_step_thread(cache_token, dev, nt);
         return;
@@ -557,14 +569,14 @@ void nrn_fixed_step_lastpart(neuron::model_sorted_token const& cache_token, NrnT
     nrn_extra_scatter_gather(0, nth->id);
     nrn_prcellstate_checkpoint_maybe(PrcellCheckpointPhase::pre_nonvint, nt);
 #if defined(NRN_ENABLE_GPU)
-    if (neuron::gpu::enabled() && neuron::gpu::backend_native()) {
+    if (neuron::gpu::use_native_gpu_fixed_step()) {
         neuron::gpu::sync_before_device_nonvint(nt);
         neuron::gpu::prepare_nonvint_on_device(nt);
     }
 #endif
     nonvint(cache_token, nt);
 #if defined(NRN_ENABLE_GPU)
-    if (neuron::gpu::enabled() && neuron::gpu::backend_native()) {
+    if (neuron::gpu::use_native_gpu_fixed_step()) {
         neuron::gpu::finalize_nonvint_on_device(nt);
     }
 #endif
@@ -574,7 +586,7 @@ void nrn_fixed_step_lastpart(neuron::model_sorted_token const& cache_token, NrnT
     // Bind plan after model is on device (ensure_on_device ran in fixed_step_thread).
     // Sparse device→host trajectory when plan covers all Vector.record (Gate F).
     // Same phase as host fixed_record_continuous: BEFORE_STEP then sample.
-    if (neuron::gpu::enabled() && neuron::gpu::backend_native()) {
+    if (neuron::gpu::use_native_gpu_fixed_step()) {
         neuron::gpu::trajectory_prepare_for_psolve();
         if (neuron::gpu::trajectory_covers_fixed_record()) {
             nrn_ba(cache_token, nt, BEFORE_STEP);
@@ -591,7 +603,7 @@ void nrn_fixed_step_lastpart(neuron::model_sorted_token const& cache_token, NrnT
     {
         nrn::Instrumentor::phase p("deliver-events");
 #if defined(NRN_ENABLE_GPU)
-        if (neuron::gpu::enabled() && neuron::gpu::backend_native()) {
+        if (neuron::gpu::use_native_gpu_fixed_step()) {
             neuron::gpu::deliver_post_step_events_host(nth);
         } else
 #endif

@@ -8,6 +8,7 @@
 #include "neuron/gpu/phase_timer.hpp"
 
 #include "multicore.h"
+#include "netcon.h"
 #include "nrn_ansi.h"
 
 #include <algorithm>
@@ -188,6 +189,42 @@ void invalidate_threshold_tables() noexcept {
         table.h_threshold.clear();
         table.h_flag.clear();
     }
+}
+
+void reseed_threshold_flags_from_host_voltage() noexcept {
+#if defined(NRN_ENABLE_GPU)
+    // PreSyn::flag_ can lag device↔host handoffs. At psolve entry after a host
+    // half-step, set hysteresis from the live host voltage: already-above must
+    // not re-fire on the first device step.
+    for (int tid = 0; tid < nrn_nthread; ++tid) {
+        NrnThread* const nt = nrn_threads + tid;
+        int const n = collect_threshold_presyn_slots(nt, nullptr, 0);
+        if (n <= 0) {
+            continue;
+        }
+        std::vector<ThresholdPresynSlot> slots(static_cast<std::size_t>(n));
+        collect_threshold_presyn_slots(nt, slots.data(), n);
+        double const* const vec_v = nt->node_voltage_storage();
+        if (!vec_v) {
+            continue;
+        }
+        for (int i = 0; i < n; ++i) {
+            auto* const ps = static_cast<PreSyn*>(slots[static_cast<std::size_t>(i)].presyn);
+            if (!ps) {
+                continue;
+            }
+            int const row = slots[static_cast<std::size_t>(i)].thvar_row;
+            if (row < 0 || row >= nt->end) {
+                continue;
+            }
+            // ConditionEvent: flag_ true = above threshold (already crossed).
+            ps->flag_ = (vec_v[row] > slots[static_cast<std::size_t>(i)].threshold);
+        }
+    }
+    invalidate_threshold_tables();
+#else
+    (void) 0;
+#endif
 }
 
 void invalidate_auxiliary_device_uploads() noexcept {

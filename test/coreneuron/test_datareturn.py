@@ -186,8 +186,9 @@ def test_datareturn():
     from backend_helper import is_native_backend_test
 
     nthread_values = [1] if is_native_backend_test() else [1, 2]
-    # Native: mode 2 (continuerun+psolve) hits OpenACC partial-present abort —
-    # same residual as spikes/direct/psolve; deferred. Modes 0–1 cover data return.
+    # Mode 2 alone is green under native (psolve-scoped GPU + host continuerun);
+    # sequential multi-mode in one enable session still residual — cover 0–1 here.
+    # Full mode-2 product: test_psolve_py_gpu_native.
     mode_values = [0, 1] if is_native_backend_test() else [0, 1, 2]
     for mode, nthread, cell_permute in itertools.product(
         mode_values, nthread_values, cell_permute_values

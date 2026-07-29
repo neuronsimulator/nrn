@@ -59,4 +59,10 @@ void batch_upload_to_device();
 /** Final download at psolve end (always runs when native GPU is active). */
 void finalize_psolve_download();
 
+/**
+ * If the model is already on device, push full host SOA/state to the device.
+ * Call at psolve entry after host may have advanced (mode-2 continuerun).
+ */
+void refresh_device_from_host_if_on_device() noexcept;
+
 }  // namespace neuron::gpu

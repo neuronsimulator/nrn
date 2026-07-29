@@ -36,6 +36,13 @@ struct ThresholdPresynSlot {
 /** Rebuild presyn threshold tables after topology / psl_thr_ / node sort changes. */
 void invalidate_threshold_tables() noexcept;
 
+/**
+ * After host may have advanced (mode-2 continuerun), re-seed PreSyn hysteresis
+ * from current host voltages so the next psolve does not re-fire a crossing the
+ * host already handled (V already above threshold).
+ */
+void reseed_threshold_flags_from_host_voltage() noexcept;
+
 /** Drop OpenACC mirrors owned outside UploadState (threshold + net_send buffers). */
 void invalidate_auxiliary_device_uploads() noexcept;
 

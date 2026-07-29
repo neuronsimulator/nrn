@@ -43,6 +43,7 @@
 #if defined(NRN_ENABLE_GPU)
 #include "neuron/gpu/check_thresh.hpp"
 #include "neuron/gpu/config.hpp"
+#include "neuron/gpu/download.hpp"
 #include "neuron/gpu/mechanism_phases.hpp"
 #include "neuron/gpu/sync.hpp"
 #endif
@@ -4114,7 +4115,13 @@ void ncs2nrn_integrate(double tstop) {
     double ts;
     nrn_use_busywait(1);  // just a possibility
 #if defined(NRN_ENABLE_GPU)
+    // CoreNEURON-style: native GPU fixed-step only for this psolve interval.
+    // Host continuerun/fadvance stay on CPU (mode 2 product path).
+    neuron::gpu::PsolveGpuScope const psolve_gpu_scope;
     neuron::gpu::require_gpu_native_qualification_or_stop();
+    // If a prior psolve left the model on device and host advanced since then
+    // (mode 2), push host SOA back before device steps.
+    neuron::gpu::refresh_device_from_host_if_on_device();
 #endif
     nrn_prcellstate_checkpoint_psolve_begin();
     auto const cache_token = nrn_ensure_model_data_are_sorted();

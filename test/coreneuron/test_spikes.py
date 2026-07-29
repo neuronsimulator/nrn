@@ -124,11 +124,9 @@ def _test_spikes(
     if is_native_backend_test():
         enable_test_backend()
         # Native ignores CoreNEURON file_mode.
-        # Mode 2 (continuerun+psolve): deferred residual (OpenACC partial-present /
-        # illegal address) — same class as datareturn/direct.
-        # Serial product path: modes 0–1. Multi-rank (MPI) mode 1 re-psolve loop
-        # hits OpenACC partial-present on a shared GPU; product MPI path is mode 0
-        # (matches CoreNEURON file_mode MPI coverage).
+        # GPU fixed-step is psolve-scoped (host continuerun is CPU). Mode 2 alone
+        # matches CPU (see test_psolve); sequential modes 0→1→2 in one enable
+        # session still residual. Multi-rank mode 1 residual → MPI product = mode 0.
         if use_mpi4py or use_nrnmpi_init:
             run_modes = [0]
         else:

@@ -1,6 +1,7 @@
 #include "neuron/gpu/download.hpp"
 
 #include "multicore.h"
+#include "neuron/gpu/check_thresh.hpp"
 #include "neuron/gpu/config.hpp"
 #include "neuron/gpu/mechanism_phases.hpp"
 #include "neuron/gpu/device_state.hpp"
@@ -284,6 +285,21 @@ void finalize_psolve_download() {
     sync_state_to_host_for_host_reads();
     phase_timer::print_summary();
     reset_download_step_counter();
+#endif
+}
+
+void refresh_device_from_host_if_on_device() noexcept {
+#if defined(NRN_ENABLE_GPU)
+    if (!enabled() || !backend_native()) {
+        return;
+    }
+    if (model_is_on_device()) {
+        // Host may have mutated SOA during continuerun; re-push for next psolve.
+        sync_state_to_device_after_host_lastpart();
+    }
+    // Re-seed hysteresis from host V so an already-above cell does not re-fire
+    // on the first device step after a host half (mode 2).
+    reseed_threshold_flags_from_host_voltage();
 #endif
 }
 

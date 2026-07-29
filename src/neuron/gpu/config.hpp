@@ -15,6 +15,28 @@ bool enabled() noexcept;
 /** True when gpu.backend is native. */
 bool backend_native() noexcept;
 
+/**
+ * True when fixed-step should use the native GPU path.
+ *
+ * Matches CoreNEURON product semantics: backend integration runs inside
+ * ParallelContext.psolve (ncs2nrn_integrate), not bare fadvance/continuerun.
+ * Mode 2 (host continuerun + psolve) relies on this so host steps stay on CPU
+ * while only psolve uses the device.
+ */
+[[nodiscard]] bool use_native_gpu_fixed_step() noexcept;
+
+/**
+ * RAII: mark the current thread as inside ncs2nrn_integrate / psolve so
+ * use_native_gpu_fixed_step() is true while native GPU is enabled.
+ */
+class PsolveGpuScope {
+  public:
+    PsolveGpuScope() noexcept;
+    ~PsolveGpuScope() noexcept;
+    PsolveGpuScope(PsolveGpuScope const&) = delete;
+    PsolveGpuScope& operator=(PsolveGpuScope const&) = delete;
+};
+
 /** Current runtime backend selection. */
 Backend backend() noexcept;
 
