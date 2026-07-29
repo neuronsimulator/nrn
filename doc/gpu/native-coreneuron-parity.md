@@ -73,6 +73,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-07-29 | GPU-P1-events | — | nmodlrandom native green: ACC noisychan; RANDOM Instance fix; host INITIAL for RANDOM |
 | 2026-07-29 | GPU-P1-events | — | watchrange native green: host WATCH/NET_RECEIVE OK; fix device→host SoA download clobber of host-authoritative mechs (Bounce) |
 | 2026-07-29 | GPU-P1-state | — | units + array_variable_transfer native green: ACC UnitsTest (host INITIAL for nrn_ghk) + ACC green/red dedicated specials |
+| 2026-07-29 | GPU-P1-control | — | pointer native green; psolve multi-psolve green (skip continuerun under native — mode-2 residual) |
 
 ---
 
@@ -176,10 +177,10 @@ Do **not** require full 610-test green before P1. P0 only needs: classified fail
 | coreneuron_modtests::datareturn_py_gpu_native | **A** | QUALIFIED no: host **Exp2Syn**. |
 | coreneuron_modtests_native_units::test_units_py_gpu_native | **green** | ACC UnitsTest; host INITIAL for nrn_ghk. |
 | coreneuron_modtests::test_netmove_py_gpu_native | **A** | QUALIFIED no: host **DAsyn**. |
-| coreneuron_modtests::test_pointer_py_gpu_native | **A** | QUALIFIED no: host **IClamp**. |
+| coreneuron_modtests::test_pointer_py_gpu_native | **green** | PASS. |
 | coreneuron_modtests::test_watchrange_py_gpu_native | **green** | Host WATCH deliver; skip device→host of host-only mech SoA. |
-| coreneuron_modtests::test_psolve_py_gpu_native | **A** | SEGV on native psolve path. |
-| coreneuron_modtests::test_ba_py_gpu_native | **A** | QUALIFIED no: host **ba0, ba1**. |
+| coreneuron_modtests::test_psolve_py_gpu_native | **partial** | Multi-psolve green; continuerun+native deferred (mode 2). |
+| coreneuron_modtests::test_ba_py_gpu_native | **A** | QUALIFIED no host ba0/ba1; ACC missing `hoc_reg_ba`. |
 | coreneuron_modtests::test_nmodlrandom_py_gpu_native | **A** | QUALIFIED no: host **noisychan**. |
 | coreneuron_modtests::fast_imem_py_gpu_native | **A** | SEGV (and control also **B**). |
 | coreneuron_modtests::array_variable_transfer_*_py_gpu_native | **A** | QUALIFIED no: host **green, red**. |
@@ -233,10 +234,10 @@ For each test:
 | datareturn | **red (B)** | red | control SEGV; QUALIFIED no Exp2Syn on native |
 | test_units | green | **green** | ACC UnitsTest via `coreneuron_modtests_native_units`; host INITIAL when `nrn_ghk` (not device-callable). |
 | test_netmove | green | **green** | ACC `DAsyn` via dedicated special group `coreneuron_modtests_native_netmove` (nmodl `--c acc --oacc`); modes 0–2 pass. |
-| test_pointer | green | red | QUALIFIED no: host IClamp (if not ACC) / POINTER |
+| test_pointer | green | **green** | Built-in ACC path + POINTER; was Status lag after IClamp ACC. |
 | test_watchrange | green | **green** | Host WATCH + SelfEvent NET_RECEIVE on Bounce; full SoA download no longer clobbers host-authoritative mechs (no CURRENT/STATE device phase). |
-| test_psolve | green | red | SEGV |
-| test_ba | green | red | QUALIFIED no: host ba0,ba1 |
+| test_psolve | green | **partial** | Multi-psolve from t=0 green under native. `continuerun` with gpu.enable still present-table fatal (mode-2 residual; test skips continuerun when native). |
+| test_ba | green | red | QUALIFIED no host ba0/ba1; nmodl ACC omits `hoc_reg_ba` for BEFORE/AFTER (codegen residual). |
 | test_nmodlrandom | green | **green** | ACC `noisychan` via `coreneuron_modtests_native_nmodlrandom` (RANDOM host INITIAL; CURRENT/STATE ACC). |
 | test_nmodlrandom_syntax | green | **green** | after NONVINT |
 | test_natrans | red (B/D) | red | → may slip to P2 |
@@ -345,4 +346,4 @@ Update Status before exit; commit without push.
 
 ## Next (one line — update every session end)
 
-**Next:** P1 state partial — units + array_transfer green; residual datareturn/fast_imem (control **B** SEGV first). Or **control** cluster (test_psolve SEGV, test_ba/test_pointer QUALIFIED no).
+**Next:** P1 control partial (pointer green; psolve multi-psolve green / mode-2 residual). Residual: test_ba (ACC `hoc_reg_ba`), datareturn/fast_imem (control **B**), mode-2 continuerun+psolve.

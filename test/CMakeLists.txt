@@ -1023,7 +1023,7 @@ if(NRN_ENABLE_PYTHON)
       test_ba:test/coreneuron/test_ba.py
       test_nmodlrandom_syntax:test/coreneuron/test_nmodlrandom_syntax.py
       test_natrans:test/gjtests/test_natrans.py)
-    # test_units / array_variable_transfer: dedicated ACC specials below (Gate B+C).
+    # test_units / array_transfer: dedicated ACC specials below (Gate B+C).
       string(REPLACE ":" ";" native_parts "${native_gpu_test}")
       list(GET native_parts 0 native_name)
       list(GET native_parts 1 native_script)
@@ -1081,6 +1081,8 @@ if(NRN_ENABLE_PYTHON)
       SCRIPT_PATTERNS ${g4_native_helper_script} test/coreneuron/test_units.py
       ENVIRONMENT ${native_gpu_test_env} ${sonata_zero_gid_env} ${nrnpython_mpi_env}
       COMMAND ${native_modtests_launch_py} test/coreneuron/test_units.py)
+    # test_ba residual: nmodl ACC does not emit hoc_reg_ba for BEFORE/AFTER
+    # blocks (bacur/banocur QUALIFIED would need that + host BA phase traffic).
     # ACC green/red for array RANGE transfer product row.
     nrn_add_test_group(
       NAME coreneuron_modtests_native_array_transfer
