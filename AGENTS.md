@@ -6,6 +6,7 @@ Integration branch: **`local/gpu-native-net-soa`** = `local/cpu-net-soa-heap-fre
 | Doc | Role |
 |-----|------|
 | **`GROK-GPU-NATIVE.md`** | GPU qualification handoff (read on new sessions) |
+| **`doc/gpu/native-coreneuron-parity.md`** | Ordered next work: P0 triage → P1+ CoreNEURON feature matrix; session rename rules |
 | **`GROK-NETWORK-SOA.md`** | CPU network SoA / heap-free charter |
 | **`doc/network-soa/heap-free.md`** | Weight-index ABI, packing A |
 | **`~/neuron/notes/PORTFOLIO.md`** | Cross-project map (feature vs platform); do not expand scope into other rows without user intent |

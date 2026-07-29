@@ -351,11 +351,16 @@ Protocol: same special for `enable_gpu=0` and `=1`; count **and** sorted times.
 
 ### Next GPU feature (after trajectory)
 
+**Primary:** CoreNEURON fixed-step **feature matrix** on native GPU  
+→ ordered steps + prompts: **`doc/gpu/native-coreneuron-parity.md`**  
+(P0 triage → P1 modtests → P2 MPI/gap → P3 heavy → P4 perf).
+
 | Option | Content |
 |--------|---------|
+| **P0–P1 (default)** | Classify ctest; green G4 `*_py_gpu_native` clusters |
 | Trajectory polish | mech-RANGE gather / multi-var GraphLine if a model needs it |
-| Integration | FF into `local/gpu-native-net-soa` when ready |
-| Later | use_gap=1, multi-rank, perf, single device-resource owner |
+| Integration | Keep living tip = integration branch with trajectory/lastpart |
+| Later (P2+) | use_gap=1, multi-rank, heavy models, perf, device-resource owner |
 
 ### Constraints (do not regress)
 
@@ -399,22 +404,30 @@ After ACC codegen changes to built-ins: `rm -f build-gpu/src/nrnoc/expsyn.cpp &&
 
 ## Starting prompt
 
+Default next work is the **parity plan** (not open-ended Traub re-qualify):
+
 ```
-Read ~/neuron/notes/PORTFOLIO.md (GPU-native) then GROK-GPU-NATIVE.md and AGENTS.md.
-High performance is sacred; CoreNEURON is a guide (low host traffic), not law.
+Read ~/neuron/notes/PORTFOLIO.md (GPU-native), then
+~/neuron/nrngpu/doc/gpu/native-coreneuron-parity.md (current phase Status),
+GROK-GPU-NATIVE.md, and AGENTS.md.
+
+Kind: feature. Portfolio: GPU-native.
+Tree: ~/neuron/nrngpu on living tip (local/gpu-native-net-soa).
+High performance sacred; CoreNEURON is a guide (low host traffic), not law.
 Commit steps locally without push unless asked.
+After open: /rename GPU-P<phase>-<cluster>  (see parity doc).
 
-Tree: ~/neuron/nrngpu. Kind: feature.
-Branch: local/gpu-trajectory-native — trajectory feature gate **closed**
-(T0–T3 + merged lastpart: Gate F, NMDA atomic net_send). Design:
-doc/gpu/trajectory-native.md. Ringtest 688@100. Traub 4474 **exact** on tip.
+Trajectory/lastpart closed; ringtest 688@100; Traub 4474 exact on tip — do not
+re-open unless a matrix test regresses them.
 
-Next: FF to integration, or trajectory polish (mech RANGE / multi-var GraphLine)
-only if a model needs it. Do not start use_gap/multi-rank unless asked.
-
-Heap-free weight_index only; no host NET_RECEIVE body; no host vec_rhs voltage hot path.
+Start at first incomplete phase in native-coreneuron-parity.md (usually P0 triage,
+then P1 modtest clusters). Heap-free weight_index only; no host NET_RECEIVE body;
+no host vec_rhs voltage hot path.
 source ~/neuron/bin/nrnenv nrngpu build-gpu before GPU runs.
 ```
+
+Phase-specific prompts (P0 / P1 / hygiene) are copy-paste blocks in
+`doc/gpu/native-coreneuron-parity.md`.
 
 ---
 
