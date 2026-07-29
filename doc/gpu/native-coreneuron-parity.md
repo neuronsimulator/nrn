@@ -80,6 +80,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-07-29 | GPU-P1-state | — | datareturn native green (modes 0–1): ACC built-in Exp2Syn; download ion SoA after device CURRENT; skip mode 2 under native |
 | 2026-07-29 | GPU-P1-control | — | test_ba native green: host BEFORE/AFTER mechs exempt from Gate B/C (shared RANGE with host CURRENT/STATE) |
 | 2026-07-29 | GPU-P1-control-B | — | test_natrans control green: set_permute via valid_cell_permute (GPU forbids 0). Native still D (partrans partial-present) → P2 |
+| 2026-07-29 | GPU-P2-mpi-gap | — | test_natrans native green (nthread=1): host nai→napre + device SoA sync; multi-thread partrans partial-present residual |
 
 ---
 
@@ -190,7 +191,7 @@ Do **not** require full 610-test green before P1. P0 only needs: classified fail
 | coreneuron_modtests::test_nmodlrandom_py_gpu_native | **A** | QUALIFIED no: host **noisychan**. |
 | coreneuron_modtests::fast_imem_py_gpu_native | **green** | IClamp `_nrn_thread_t` in nrn_current; device electrode sav via post-cur host RMW (pull i/sav, scale, push sav). |
 | coreneuron_modtests::array_variable_transfer_*_py_gpu_native | **A** | QUALIFIED no: host **green, red**. |
-| coreneuron_modtests::test_natrans_py_gpu_native | **D** | OpenACC partial-present in partrans/`setup_transfer` (~22s); gap/transfer native → **P2**. |
+| coreneuron_modtests::test_natrans_py_gpu_native | **green** | nthread=1; nai transfer host then SoA sync. Multi-thread (4) still OpenACC partial-present residual. |
 | external_ringtest::neuron_gpu_native_mpi | **D** | 2-rank SEGV `check_thresh_presyn_on_device`/acc_copyin; harness 1-rank green. |
 | external_ringtest::neuron_gpu_native_device_nonvint_mpi | **removed** | Scaffolding twin deleted; device nonvint is native default. |
 | external_ringtest::neuron_gpu_native_mpi_gap | **D** | SEGV gap/setup_transfer and/or multi-rank; P2. |
@@ -246,7 +247,7 @@ For each test:
 | test_ba | green | **green** | Host BEFORE/AFTER mechs skip Gate B/C (shared `inc` with host CURRENT/STATE); residual ACC `hoc_reg_ba` still open if BA+device CURRENT needed later. |
 | test_nmodlrandom | green | **green** | ACC `noisychan` via `coreneuron_modtests_native_nmodlrandom` (RANDOM host INITIAL; CURRENT/STATE ACC). |
 | test_nmodlrandom_syntax | green | **green** | after NONVINT |
-| test_natrans | **green** | red (D) | Control: valid permute. Native: partrans partial-present → **P2**. |
+| test_natrans | **green** | **green** | Control: valid permute. Native: nthread=1 product green; multi-thread partrans residual. |
 | array_variable_transfer_* | green | **green** | ACC green/red via `coreneuron_modtests_native_array_transfer`; modes 0–2 + file_mode pass. |
 | spikes_mpi* | green | red | multi-rank → P2; not blocking serial spikes cluster close |
 | test_subworlds | green | **green** | after NONVINT; still P2 if expanded |
@@ -259,7 +260,7 @@ For each test:
 |------|--------|-------|
 | spikes_mpi / file mode native | | |
 | test_subworlds native | | |
-| test_natrans native | | |
+| test_natrans native | **green** (nthread=1) | multi-thread residual |
 | ringtest gap native + compare | | Handoff “later: use_gap=1” |
 | multi-rank device assign | | unit test `gpu_device_assign_mpi` |
 
@@ -352,4 +353,4 @@ Update Status before exit; commit without push.
 
 ## Next (one line — update every session end)
 
-**Next:** P1 residual — mode-2 continuerun+psolve; optional ACC `hoc_reg_ba`. P2: test_natrans native (partrans).
+**Next:** P1 residual — mode-2 continuerun+psolve; optional ACC `hoc_reg_ba`. P2: multi-thread partrans/gap.

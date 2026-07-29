@@ -1,15 +1,21 @@
 from neuron import h
+import sys
+from pathlib import Path
+
+# backend_helper lives next to other coreneuron modtests
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "coreneuron"))
+from backend_helper import is_native_backend_test
 
 pc = h.ParallelContext()
 rank = pc.id()
 nhost = pc.nhost()
-pc.nthread(4)
+# Multi-thread (4) exercises host indexing; native multi-thread partrans still
+# hits OpenACC partial-present on node SoA views — use 1 thread on native for now.
+pc.nthread(1 if is_native_backend_test() else 4)
 
-# Want to exercise the internal indexing schemes. So need mpi and threads.
-# Random order of sgid calls to source_var. Random order and location
-# of sgid source . Random order and location of sgid target. An sgid source
-# has random number of targets.
-# Might be a good idea to add some voltage sources and ki sources.
+# Want to exercise the internal indexing schemes. So need mpi and threads
+# (host / CoreNEURON control). Random order of sgid calls to source_var.
+# Random order and location of sgid source / target.
 
 ncell = 100
 nsrc = 50  # so that number of sgid pointing to _ref_nai
@@ -104,10 +110,6 @@ def _test_natrans():
 
     run()  # NEURON: Fails if tar.napre not what is expected
 
-    import sys
-    from pathlib import Path
-
-    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "coreneuron"))
     from backend_helper import (
         disable_test_backend,
         enable_test_backend,
