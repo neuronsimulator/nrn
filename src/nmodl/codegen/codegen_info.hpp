@@ -379,6 +379,9 @@ struct CodegenInfo {
     /// if net_send function is used
     bool net_send_used = false;
 
+    /// true if nrn_ghk / ghk is called (not device-callable; host INITIAL)
+    bool nrn_ghk_used = false;
+
     /// if net_event function is used
     bool net_event_used = false;
 

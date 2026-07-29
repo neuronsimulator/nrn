@@ -28,12 +28,13 @@ void CodegenNeuronAccVisitor::print_standard_includes() {
 }
 
 bool CodegenNeuronAccVisitor::host_only_parallel_block(BlockType type) const {
-    // INITIAL: host for ion wrote_conc, net_send/net_move (queue API), or RANDOM
-    // (nrnran123 is not device-callable in ACC regions yet).
+    // INITIAL: host for ion wrote_conc, net_send/net_move (queue API), RANDOM
+    // (nrnran123 not device-callable yet), or nrn_ghk (host codata/celsius).
     if (type != BlockType::Initial) {
         return false;
     }
-    if (info.require_wrote_conc || info.net_send_used || info.net_event_used) {
+    if (info.require_wrote_conc || info.net_send_used || info.net_event_used ||
+        info.nrn_ghk_used) {
         return true;
     }
     for (const auto& sem: info.semantics) {

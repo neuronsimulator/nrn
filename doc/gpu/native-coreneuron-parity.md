@@ -72,6 +72,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-07-29 | GPU-P1-events | — | netmove native green: ACC DAsyn dedicated special + GPU header stage for nrnivmodl |
 | 2026-07-29 | GPU-P1-events | — | nmodlrandom native green: ACC noisychan; RANDOM Instance fix; host INITIAL for RANDOM |
 | 2026-07-29 | GPU-P1-events | — | watchrange native green: host WATCH/NET_RECEIVE OK; fix device→host SoA download clobber of host-authoritative mechs (Bounce) |
+| 2026-07-29 | GPU-P1-state | — | units + array_variable_transfer native green: ACC UnitsTest (host INITIAL for nrn_ghk) + ACC green/red dedicated specials |
 
 ---
 
@@ -173,7 +174,7 @@ Do **not** require full 610-test green before P1. P0 only needs: classified fail
 | coreneuron_modtests::test_subworlds_py_gpu_native | **green** | PASS after NONVINT env (P2-ish but already green). |
 | coreneuron_modtests::direct/spikes(+file/mpi)_py_gpu_native | **A** | QUALIFIED no: Gate B+C host **IClamp** (needs ACC/device CURRENT). |
 | coreneuron_modtests::datareturn_py_gpu_native | **A** | QUALIFIED no: host **Exp2Syn**. |
-| coreneuron_modtests::test_units_py_gpu_native | **A** | QUALIFIED no: host **UnitsTest**. |
+| coreneuron_modtests_native_units::test_units_py_gpu_native | **green** | ACC UnitsTest; host INITIAL for nrn_ghk. |
 | coreneuron_modtests::test_netmove_py_gpu_native | **A** | QUALIFIED no: host **DAsyn**. |
 | coreneuron_modtests::test_pointer_py_gpu_native | **A** | QUALIFIED no: host **IClamp**. |
 | coreneuron_modtests::test_watchrange_py_gpu_native | **green** | Host WATCH deliver; skip device→host of host-only mech SoA. |
@@ -230,7 +231,7 @@ For each test:
 | spikes_file_mode | green | **partial** | **Spikes cluster closed.** Native ignores CoreNEURON file_mode (`test_spikes.py`); same run as `spikes_py_gpu_native` (modes 0–2). Residual = mode 2 only — not a separate product gap. |
 | fast_imem | **red (B)** | red | control SEGV; fix B before native |
 | datareturn | **red (B)** | red | control SEGV; QUALIFIED no Exp2Syn on native |
-| test_units | green | red | QUALIFIED no: host UnitsTest |
+| test_units | green | **green** | ACC UnitsTest via `coreneuron_modtests_native_units`; host INITIAL when `nrn_ghk` (not device-callable). |
 | test_netmove | green | **green** | ACC `DAsyn` via dedicated special group `coreneuron_modtests_native_netmove` (nmodl `--c acc --oacc`); modes 0–2 pass. |
 | test_pointer | green | red | QUALIFIED no: host IClamp (if not ACC) / POINTER |
 | test_watchrange | green | **green** | Host WATCH + SelfEvent NET_RECEIVE on Bounce; full SoA download no longer clobbers host-authoritative mechs (no CURRENT/STATE device phase). |
@@ -239,7 +240,7 @@ For each test:
 | test_nmodlrandom | green | **green** | ACC `noisychan` via `coreneuron_modtests_native_nmodlrandom` (RANDOM host INITIAL; CURRENT/STATE ACC). |
 | test_nmodlrandom_syntax | green | **green** | after NONVINT |
 | test_natrans | red (B/D) | red | → may slip to P2 |
-| array_variable_transfer_* | green | red | QUALIFIED no: host green,red |
+| array_variable_transfer_* | green | **green** | ACC green/red via `coreneuron_modtests_native_array_transfer`; modes 0–2 + file_mode pass. |
 | spikes_mpi* | green | red | multi-rank → P2; not blocking serial spikes cluster close |
 | test_subworlds | green | **green** | after NONVINT; still P2 if expanded |
 
@@ -344,4 +345,4 @@ Update Status before exit; commit without push.
 
 ## Next (one line — update every session end)
 
-**Next:** P1 events cluster closed (netmove / watchrange / nmodlrandom green). Next cluster **state** (datareturn/fast_imem/units/array_transfer — several QUALIFIED no / control B) or **control** (test_psolve SEGV, test_ba QUALIFIED no).
+**Next:** P1 state partial — units + array_transfer green; residual datareturn/fast_imem (control **B** SEGV first). Or **control** cluster (test_psolve SEGV, test_ba/test_pointer QUALIFIED no).

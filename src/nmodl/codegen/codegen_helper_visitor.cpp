@@ -736,6 +736,10 @@ void CodegenHelperVisitor::visit_function_call(const FunctionCall& node) {
     if (name == naming::NET_EVENT_METHOD) {
         info.net_event_used = true;
     }
+    // nrn_ghk is host-only today (uses host celsius/codata); keep ACC INITIAL off device.
+    if (name == "nrn_ghk" || name == "ghk") {
+        info.nrn_ghk_used = true;
+    }
 }
 
 
