@@ -108,10 +108,16 @@ def _test_natrans():
     from pathlib import Path
 
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "coreneuron"))
-    from backend_helper import disable_test_backend, enable_test_backend, set_permute
+    from backend_helper import (
+        disable_test_backend,
+        enable_test_backend,
+        iter_permute_values,
+        set_permute,
+    )
 
     enable_test_backend()
-    set_permute(0)
+    # CoreNEURON GPU forbids cell_permute=0 (valid {1,2}); native uses NRN_GPU_PERMUTE.
+    set_permute(next(iter_permute_values()))
     run()  # Fails if GPU/backend does not copy expected tar.napre to NEURON
     disable_test_backend()
 
