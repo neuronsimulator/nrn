@@ -104,6 +104,8 @@ void CodegenNeuronAccVisitor::print_present_dptr_pointer_declarations() const {
         if (var.is_index || var.is_integer || var.is_vdata || sem == naming::POINTER_SEMANTIC) {
             continue;
         }
+        // GPU: full-table device base (index with local id; ml offset is applied
+        // when MechanismRange is host-only via dptr_field_ptr). Host: offset-adjusted.
         printer->fmt_line(
             "double* const* _present_dptr_{0} = (nt->compute_gpu && "
             "neuron::mechanism::_get::gpu_pdata_ptr_cache(_sorted_token, _ml_arg->type())) "
@@ -981,6 +983,9 @@ void CodegenNeuronAccVisitor::print_nrn_init(bool skip_init_check) {
 
 void CodegenNeuronAccVisitor::print_nrn_current(const ast::BreakpointBlock& node) {
     use_present_fp_indexing_ = true;
+    // Body reads t via get_variable_name → _nrn_thread_t parameter (firstprivate
+    // from host). Device nt->_t is not reliable during CURRENT (IClamp window).
+    use_host_captured_t_ = true;
     const auto& args = nrn_current_parameters();
     const auto& block = node.get_statement_block();
     printer->add_newline(2);
@@ -997,6 +1002,7 @@ void CodegenNeuronAccVisitor::print_nrn_current(const ast::BreakpointBlock& node
     printer->add_line("return current;");
     printer->pop_block();
     use_present_fp_indexing_ = false;
+    use_host_captured_t_ = false;
 }
 
 void CodegenNeuronAccVisitor::print_nrn_state() {
@@ -1152,8 +1158,8 @@ void CodegenNeuronAccVisitor::print_nrn_cur() {
             printer->add_line("nrn_pragma_omp(atomic update)");
         }
         printer->fmt_line("vec_rhs[node_id] {} rhs;", operator_for_rhs());
-        // ELECTRODE sav_rhs is applied after this ACC region (host-only post
-        // pass) — nvc++ rejects sav_rhs inside ACC parallel loops.
+        // ELECTRODE sav_rhs is a post-pass (below) — writing sav inside this ACC
+        // region with mechanism present caused CUDA illegal address on hh models.
         if (breakpoint_exist()) {
             printer->fmt_line(
                 "{} = g;",
@@ -1176,23 +1182,53 @@ void CodegenNeuronAccVisitor::print_nrn_cur() {
 
     print_after_nrn_cur_gpu_net_send_flush();
 
-    // Host ELECTRODE_CURRENT → fast_imem sav_rhs (outside ACC parallel region,
-    // still inside data present / setup so _lmc and node_data are in scope).
-    // After nrn_cur the electrode RANGE is current; re-scale with mfac as above.
+    // ELECTRODE_CURRENT → fast_imem sav_rhs after ACC cur (device i is live).
+    // Host: serial apply. Device: pull i + sav, scale on host, push sav
+    // (in-ACC sav next to mechanism present hit CUDA illegal address on hh).
     if (info.electrode_current && !info.currents.empty()) {
         auto const i_pos = position_of_float_var(info.currents.front());
-        printer->push_block("if (!nt->compute_gpu)");
         printer->push_block("if (auto* vec_sav_rhs = nt->node_sav_rhs_storage())");
+        printer->fmt_line("double* _i_col = _lmc.template fpfield_ptr<{}>();", i_pos);
+        printer->add_line("auto const* _ni = node_data.nodeindices;");
+        printer->add_line("double* _area = nt->node_area_storage();");
+        printer->push_block("if (!nt->compute_gpu)");
         printer->push_block("for (int id = 0; id < nodecount; id++)");
-        printer->add_line("int node_id = node_data.nodeindices[id];");
+        printer->add_line("int node_id = _ni[id];");
+        printer->add_line("double mfac = 1.e2 / _area[node_id];");
+        printer->fmt_line("vec_sav_rhs[node_id] {} _i_col[id] * mfac;", operator_for_rhs());
+        printer->pop_block();
+        printer->chain_block("else");
+        // Device: wait for cur, pull i, scale on host, RMW sav on device via memcpy.
+        // (In-ACC write of sav next to mechanism present hit CUDA illegal address.)
+        printer->add_line("nrn_pragma_acc(wait(nt->stream_id))");
         printer->add_line(
-            "double mfac = 1.e2 / (*_lmc.template dptr_field_ptr<0>()[id]);");
-        printer->fmt_line("vec_sav_rhs[node_id] {} _lmc.template fpfield<{}>(id) * mfac;",
-                          operator_for_rhs(),
-                          i_pos);
+            "double* _d_i = static_cast<double*>(acc_deviceptr(_i_col));");
+        printer->add_line(
+            "double* _d_sav = static_cast<double*>(acc_deviceptr(vec_sav_rhs));");
+        printer->push_block("if (_d_i && _d_sav)");
+        printer->add_line(
+            "std::vector<double> _host_i(static_cast<std::size_t>(nodecount));");
+        printer->add_line(
+            "acc_memcpy_from_device(_host_i.data(), _d_i, "
+            "static_cast<std::size_t>(nodecount) * sizeof(double));");
+        printer->add_line(
+            "std::vector<double> _host_sav(static_cast<std::size_t>(nt->end));");
+        printer->add_line(
+            "acc_memcpy_from_device(_host_sav.data(), _d_sav, "
+            "static_cast<std::size_t>(nt->end) * sizeof(double));");
+        printer->push_block("for (int id = 0; id < nodecount; id++)");
+        printer->add_line("int node_id = _ni[id];");
+        printer->add_line("double mfac = 1.e2 / _area[node_id];");
+        printer->fmt_line("_host_sav[static_cast<std::size_t>(node_id)] {} _host_i["
+                          "static_cast<std::size_t>(id)] * mfac;",
+                          operator_for_rhs());
         printer->pop_block();
-        printer->pop_block();
-        printer->pop_block();
+        printer->add_line(
+            "acc_memcpy_to_device(_d_sav, _host_sav.data(), "
+            "static_cast<std::size_t>(nt->end) * sizeof(double));");
+        printer->pop_block();  // _d_i && _d_sav
+        printer->pop_block();  // !compute_gpu / else
+        printer->pop_block();  // vec_sav_rhs
     }
 
     print_kernel_data_present_annotation_block_end();
@@ -1237,7 +1273,7 @@ std::string CodegenNeuronAccVisitor::int_variable_name(const IndexVariableInfo& 
         if (symbol.is_index || symbol.is_integer) {
             return CodegenNeuronCppVisitor::int_variable_name(symbol, name, use_instance);
         }
-        // dptr_field_ptr() already includes ml storage offset (local id only).
+        // Base from dptr_field_ptr already includes ml storage offset.
         return fmt::format("(*_present_dptr_{}[id])", position);
     }
     return CodegenNeuronCppVisitor::int_variable_name(symbol, name, use_instance);

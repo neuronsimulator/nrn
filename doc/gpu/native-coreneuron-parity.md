@@ -76,6 +76,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-07-29 | GPU-P1-control | — | pointer native green; psolve multi-psolve green (skip continuerun under native — mode-2 residual) |
 | 2026-07-29 | GPU-P1-control-B | — | fast_imem control green: ACC present_fp local-id index (multi-thread SEGV); host ELECTRODE sav_rhs post-pass |
 | 2026-07-29 | GPU-P1-control-B | — | datareturn control green (cpu+gpu): same ACC multi-thread / electrode fix; native still Exp2Syn QUALIFIED |
+| 2026-07-29 | GPU-P1-state | — | fast_imem native green: ELECTRODE sav via host RMW of device i/sav (memcpy) + `_nrn_thread_t` in nrn_current (IClamp window). modes 0–1 direct imem green; mode 2 continuerun still deferred |
 
 ---
 
@@ -184,7 +185,7 @@ Do **not** require full 610-test green before P1. P0 only needs: classified fail
 | coreneuron_modtests::test_psolve_py_gpu_native | **partial** | Multi-psolve green; continuerun+native deferred (mode 2). |
 | coreneuron_modtests::test_ba_py_gpu_native | **A** | QUALIFIED no host ba0/ba1; ACC missing `hoc_reg_ba`. |
 | coreneuron_modtests::test_nmodlrandom_py_gpu_native | **A** | QUALIFIED no: host **noisychan**. |
-| coreneuron_modtests::fast_imem_py_gpu_native | **A** | Control now green; native residual (device electrode sav / QUALIFIED). |
+| coreneuron_modtests::fast_imem_py_gpu_native | **green** | IClamp `_nrn_thread_t` in nrn_current; device electrode sav via post-cur host RMW (pull i/sav, scale, push sav). |
 | coreneuron_modtests::array_variable_transfer_*_py_gpu_native | **A** | QUALIFIED no: host **green, red**. |
 | coreneuron_modtests::test_natrans_py_gpu_native | **A/D** | Fail (~22s); gap/transfer native → P2. |
 | external_ringtest::neuron_gpu_native_mpi | **D** | 2-rank SEGV `check_thresh_presyn_on_device`/acc_copyin; harness 1-rank green. |
@@ -229,10 +230,10 @@ For each test:
 | Test | Control `*_gpu` | Native `*_gpu_native` | Notes |
 |------|-----------------|------------------------|-------|
 | fornetcon | green | **green** | NONVINT env fixed Gate C false red |
-| direct | green | **partial** | ACC IClamp + host-captured `_nrn_thread_t`: modes **0–1** green (V/tv/im). Full ctest red on mode **2** (`continuerun`+`psolve`) — deferred (not native P1). |
+| direct | green | **partial** | modes **0–1** green (V/tv/im): IClamp `_nrn_thread_t` + electrode sav host-RMW. Full ctest red on mode **2** (`continuerun`+`psolve`) — deferred (not native P1). |
 | spikes | green | **partial** | modes 0–1 spike match; mode 2 deferred (same as direct) |
 | spikes_file_mode | green | **partial** | **Spikes cluster closed.** Native ignores CoreNEURON file_mode (`test_spikes.py`); same run as `spikes_py_gpu_native` (modes 0–2). Residual = mode 2 only — not a separate product gap. |
-| fast_imem | **green** | red | Control fixed (multi-thread ACC index + host electrode sav_rhs). Native still QUALIFIED / device electrode sav residual. |
+| fast_imem | **green** | **green** | Host electrode sav + multi-thread ACC index; device: post-cur memcpy RMW of i→sav (avoids illegal address of in-ACC sav present); IClamp window uses host-captured t in nrn_current. |
 | datareturn | **green** | red | Control green (modes 0–2, nthread 1–2, permute 1–2). Native still QUALIFIED no host **Exp2Syn**. |
 | test_units | green | **green** | ACC UnitsTest via `coreneuron_modtests_native_units`; host INITIAL when `nrn_ghk` (not device-callable). |
 | test_netmove | green | **green** | ACC `DAsyn` via dedicated special group `coreneuron_modtests_native_netmove` (nmodl `--c acc --oacc`); modes 0–2 pass. |
@@ -348,4 +349,4 @@ Update Status before exit; commit without push.
 
 ## Next (one line — update every session end)
 
-**Next:** P1 residual — fast_imem native; datareturn native (Exp2Syn ACC/QUALIFIED); test_ba (`hoc_reg_ba`); mode-2 continuerun+psolve; device electrode sav_rhs; test_natrans control B/D.
+**Next:** P1 residual — datareturn native (Exp2Syn ACC); test_ba (`hoc_reg_ba`); mode-2 continuerun+psolve; test_natrans control B/D.
