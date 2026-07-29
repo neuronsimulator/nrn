@@ -43,6 +43,7 @@
 #if defined(NRN_ENABLE_GPU)
 #include "neuron/gpu/check_thresh.hpp"
 #include "neuron/gpu/config.hpp"
+#include "neuron/gpu/device_state.hpp"
 #include "neuron/gpu/download.hpp"
 #include "neuron/gpu/mechanism_phases.hpp"
 #include "neuron/gpu/sync.hpp"
@@ -4119,54 +4120,55 @@ void ncs2nrn_integrate(double tstop) {
     // Host continuerun/fadvance stay on CPU (mode 2 product path).
     neuron::gpu::PsolveGpuScope const psolve_gpu_scope;
     neuron::gpu::require_gpu_native_qualification_or_stop();
-    // If a prior psolve left the model on device and host advanced since then
-    // (mode 2), push host SOA back before device steps.
+    // Host half may have advanced voltages/flags (mode 2); re-seed hysteresis.
     neuron::gpu::refresh_device_from_host_if_on_device();
 #endif
     nrn_prcellstate_checkpoint_psolve_begin();
-    auto const cache_token = nrn_ensure_model_data_are_sorted();
-    if (cvode_active_) {
+    {
+        auto const cache_token = nrn_ensure_model_data_are_sorted();
+        if (cvode_active_) {
 #if NRNMPI
-        if (net_cvode_instance->use_partrans()) {
-            net_cvode_instance->pgvts(tstop);
-            t = nt_t;
-            dt = nt_dt;
-        } else
+            if (net_cvode_instance->use_partrans()) {
+                net_cvode_instance->pgvts(tstop);
+                t = nt_t;
+                dt = nt_dt;
+            } else
 #endif
-        {
-            net_cvode_instance->solve(tstop);
-            t = nt_t;
-            dt = nt_dt;
-        }
-    } else {
+            {
+                net_cvode_instance->solve(tstop);
+                t = nt_t;
+                dt = nt_dt;
+            }
+        } else {
 #if 1
-        int n = (int) ((tstop - nt_t) / dt + 1e-9);
-        if (n > 3 && !nrnthread_v_transfer_) {
-            nrn_fixed_step_group(cache_token, n);
-        } else
+            int n = (int) ((tstop - nt_t) / dt + 1e-9);
+            if (n > 3 && !nrnthread_v_transfer_) {
+                nrn_fixed_step_group(cache_token, n);
+            } else
 #endif
-        {
+            {
 #if NRNMPI && !defined(USENCS)
-            ts = tstop - dt;
-            assert(nt_t <= tstop);
-            // It may very well be the case that we do not advance at all
-            while (nt_t <= ts) {
+                ts = tstop - dt;
+                assert(nt_t <= tstop);
+                // It may very well be the case that we do not advance at all
+                while (nt_t <= ts) {
 #else
-            ts = tstop - .5 * dt;
-            while (nt_t < ts) {
+                ts = tstop - .5 * dt;
+                while (nt_t < ts) {
 #endif
-                nrn_fixed_step(cache_token);
-                if (stoprun) {
-                    break;
+                    nrn_fixed_step(cache_token);
+                    if (stoprun) {
+                        break;
+                    }
                 }
             }
         }
-    }
-    // handle all the pending flag=1 self events
-    for (int i = 0; i < nrn_nthread; ++i) {
-        assert(nrn_threads[i]._t == nt_t);
-    }
-    all_pending_selfqueue(nt_t);
+        // handle all the pending flag=1 self events
+        for (int i = 0; i < nrn_nthread; ++i) {
+            assert(nrn_threads[i]._t == nt_t);
+        }
+        all_pending_selfqueue(nt_t);
+    }  // cache_token destroyed
     nrn_use_busywait(0);  // certainly not
 }
 

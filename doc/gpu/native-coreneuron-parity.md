@@ -82,7 +82,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-07-29 | GPU-P1-control-B | — | test_natrans control green: set_permute via valid_cell_permute (GPU forbids 0). Native still D (partrans partial-present) → P2 |
 | 2026-07-29 | GPU-P2-mpi-gap | — | test_natrans native green (nthread=1): host nai→napre + device SoA sync; multi-thread partrans partial-present residual |
 | 2026-07-29 | GPU-P2-mpi-gap | — | spikes_mpi native green (mode 0): multi-rank spike match; mode 1 re-psolve on shared GPU residual; mode 2 continuerun residual; serial modes 0–1 product (mode 2 skipped) |
-| 2026-07-29 | GPU-P1-mode2 | — | Mode-2 product: GPU fixed-step psolve-scoped only (host continuerun=CPU, CoreNEURON-like). Reseed PreSyn hysteresis from host V at psolve entry. test_psolve native green; mode-2 alone spike match. Residual: sequential modes 0→1→2 one enable session. |
+| 2026-07-29 | GPU-P1-mode2 | — | Mode-2 product: GPU fixed-step psolve-scoped only (host continuerun=CPU, CoreNEURON-like). Reseed PreSyn hysteresis from host V at psolve entry. test_psolve native green; mode-2 alone spike match (±fast_imem). Sequential 0→1→2 without imem green; with fast_imem residual (OpenACC partial-present). |
 
 ---
 
@@ -236,8 +236,8 @@ For each test:
 | Test | Control `*_gpu` | Native `*_gpu_native` | Notes |
 |------|-----------------|------------------------|-------|
 | fornetcon | green | **green** | NONVINT env fixed Gate C false red |
-| direct | green | **green** | modes **0–1** product. Mode 2 alone green via psolve-scope GPU; sequential 0→1→2 residual. |
-| spikes | green | **green** | modes **0–1** product. Mode 2 alone green (psolve-scope + flag reseed); sequential residual. |
+| direct | green | **green** | modes **0–1** product (+fast_imem). Mode 2 alone green; sequential 0→1→2+fast_imem residual. |
+| spikes | green | **green** | modes **0–1** product (+fast_imem). Mode 2 alone green (±imem); sequential 0→1→2 without imem green; with imem residual. |
 | spikes_file_mode | green | **green** | Native ignores CoreNEURON file_mode; same modes 0–1 product path as `spikes_py_gpu_native`. |
 | fast_imem | **green** | **green** | Host electrode sav + multi-thread ACC index; device: post-cur memcpy RMW of i→sav (avoids illegal address of in-ACC sav present); IClamp window uses host-captured t in nrn_current. |
 | datareturn | **green** | **green** | ACC Exp2Syn; ion SoA download. Native modes **0–1**; mode-2 product via test_psolve (sequential multi-mode residual). |
@@ -245,7 +245,7 @@ For each test:
 | test_netmove | green | **green** | ACC `DAsyn` via dedicated special group `coreneuron_modtests_native_netmove` (nmodl `--c acc --oacc`); modes 0–2 pass. |
 | test_pointer | green | **green** | Built-in ACC path + POINTER; was Status lag after IClamp ACC. |
 | test_watchrange | green | **green** | Host WATCH + SelfEvent NET_RECEIVE on Bounce; full SoA download no longer clobbers host-authoritative mechs (no CURRENT/STATE device phase). |
-| test_psolve | green | **green** | Host continuerun + multi-psolve: GPU is psolve-scoped only; hysteresis reseed at psolve entry. |
+| test_psolve | green | **green** | Host continuerun + multi-psolve: GPU psolve-scoped; hysteresis reseed. CoreNEURON-equivalent mode-2 control path. |
 | test_ba | green | **green** | Host BEFORE/AFTER mechs skip Gate B/C (shared `inc` with host CURRENT/STATE); residual ACC `hoc_reg_ba` still open if BA+device CURRENT needed later. |
 | test_nmodlrandom | green | **green** | ACC `noisychan` via `coreneuron_modtests_native_nmodlrandom` (RANDOM host INITIAL; CURRENT/STATE ACC). |
 | test_nmodlrandom_syntax | green | **green** | after NONVINT |
@@ -355,4 +355,4 @@ Update Status before exit; commit without push.
 
 ## Next (one line — update every session end)
 
-**Next:** P1 residual — sequential modes 0→1→2 same enable session; optional ACC `hoc_reg_ba`. P2: multi-thread partrans/gap; MPI mode-1 re-psolve.
+**Next:** P2 first incomplete: ringtest gap native + multi-rank device assign. (P1 polish residual: sequential 0→1→2 with fast_imem; optional ACC `hoc_reg_ba`.)

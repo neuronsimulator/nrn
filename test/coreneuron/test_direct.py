@@ -38,8 +38,6 @@ def test_direct_memory_transfer():
         is_native_backend_test,
     )
 
-    enable_test_backend()
-
     pc = h.ParallelContext()
 
     def run(mode):
@@ -63,8 +61,12 @@ def test_direct_memory_transfer():
         assert i_mem.cl().sub(i_memstd).abs().max() < 1e-10
         assert h.Vector(tran_std).sub(h.Vector(tran)).abs().max() < 1e-10
 
-    # Mode 2 alone is green under native (test_psolve); sequential 0→1→2 residual.
-    for mode in ([0, 1] if is_native_backend_test() else [0, 1, 2]):
+    enable_test_backend()
+
+    # Native: modes 0–1 product (mode 2 alone green via test_psolve / no-imem).
+    # CoreNEURON: modes 0–2.
+    modes = [0, 1] if is_native_backend_test() else [0, 1, 2]
+    for mode in modes:
         run(mode)
 
     if not is_native_backend_test():
@@ -75,6 +77,8 @@ def test_direct_memory_transfer():
         assert tv.size() == 1 and tvstd.size() != 1
         pc.nrncore_run(cnargs, 1)
         assert tv.eq(tvstd)
+
+    disable_test_backend()
 
     # print warning if HocEvent on event queue when CoreNEURON starts
     def test_hoc_event():

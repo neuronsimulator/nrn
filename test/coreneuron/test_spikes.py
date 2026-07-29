@@ -123,10 +123,10 @@ def _test_spikes(
 
     if is_native_backend_test():
         enable_test_backend()
-        # Native ignores CoreNEURON file_mode.
-        # GPU fixed-step is psolve-scoped (host continuerun is CPU). Mode 2 alone
-        # matches CPU (see test_psolve); sequential modes 0→1→2 in one enable
-        # session still residual. Multi-rank mode 1 residual → MPI product = mode 0.
+        # Native ignores CoreNEURON file_mode. GPU fixed-step is psolve-scoped
+        # (host continuerun is CPU — CoreNEURON-like). Modes 0–1 product here;
+        # mode 2 alone green (test_psolve / standalone). Sequential 0→1→2 with
+        # fast_imem residual. MPI product = mode 0.
         if use_mpi4py or use_nrnmpi_init:
             run_modes = [0]
         else:

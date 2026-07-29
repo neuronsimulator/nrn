@@ -108,14 +108,9 @@ void ensure_native_gpu_cell_permute() noexcept {
 
 void set_enable(bool value) noexcept {
 #if defined(NRN_ENABLE_GPU)
-    bool const was = config().enable;
     config().enable = value;
     if (value) {
         ensure_native_gpu_cell_permute();
-    } else if (was && backend_native()) {
-        // Drop device mirrors when native GPU is disabled so host teardown /
-        // h.quit() does not hit frozen SoA + partial-present OpenACC errors.
-        invalidate_device_state();
     }
 #else
     (void) value;

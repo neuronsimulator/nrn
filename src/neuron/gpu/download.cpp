@@ -294,11 +294,11 @@ void refresh_device_from_host_if_on_device() noexcept {
         return;
     }
     if (model_is_on_device()) {
-        // Host may have mutated SOA during continuerun; re-push for next psolve.
+        // Mode-2 host continuerun advanced host SoA while mirrors stayed live.
         sync_state_to_device_after_host_lastpart();
     }
-    // Re-seed hysteresis from host V so an already-above cell does not re-fire
-    // on the first device step after a host half (mode 2).
+    // Always re-seed hysteresis from host V at psolve entry (mode-2 host half
+    // may have crossed threshold while device mirrors were absent after teardown).
     reseed_threshold_flags_from_host_voltage();
 #endif
 }
