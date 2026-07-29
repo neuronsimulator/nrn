@@ -352,16 +352,23 @@ void trajectory_prepare_for_psolve() {
     if (!enabled() || !backend_native() || !model_is_on_device()) {
         return;
     }
-    if (!g_plan.valid || !g_plan.device_bound) {
+    // Called from lastpart every step; bind+clear only once per psolve stretch.
+    // Clearing every step wiped full-stretch staging so Vector.record only kept
+    // the final sample (direct/spikes native: tv size 2 instead of 201).
+    bool const start_of_stretch = !g_plan.device_bound;
+    if (!g_plan.valid || start_of_stretch) {
         trajectory_plan_rebuild();
     }
     if (!g_plan.complete || g_plan.n_supported == 0) {
         return;
     }
+    if (!start_of_stretch) {
+        return;
+    }
     for (int ith = 0; ith < nrn_nthread; ++ith) {
         bind_device_sources_for_thread(nrn_threads[ith]);
     }
-    // Fresh staging for this psolve stretch.
+    // Fresh staging for this psolve stretch only.
     clear_all_staging();
     g_plan.effective_chunk = resolve_effective_chunk(g_plan.chunk_size, g_plan.has_graph_record);
     // Reserve chunk capacity when known (full-stretch grows as needed).

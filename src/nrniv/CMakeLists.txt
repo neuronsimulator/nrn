@@ -127,9 +127,12 @@ foreach(modfile ${NRN_MODFILE_BASE_NAMES})
      AND modfile MATCHES "hh$")
     set(modfile_compat ON)
   endif()
+  # NRN_MODFILE_BASE_NAMES are paths like src/nrnoc/stim — match basename suffix.
+  # Use "(^|/)stim$" so netstim is not pulled into OpenACC (not ready; host-only).
+  # Bare STREQUAL "stim" never matched and left IClamp host-only (P1 spikes).
   if(NRN_ENABLE_GPU
      AND (modfile MATCHES "hh$" OR modfile MATCHES "passive$" OR modfile MATCHES "expsyn$"
-          OR modfile STREQUAL "stim"))
+          OR modfile MATCHES "(^|/)stim$"))
     nmodl_openacc_mod_to_cpp(${modfile} ${modfile_compat})
   else()
     nocmodl_mod_to_cpp(${modfile} ${modfile_compat})

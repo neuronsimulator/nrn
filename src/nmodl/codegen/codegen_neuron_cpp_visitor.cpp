@@ -2119,6 +2119,14 @@ void CodegenNeuronCppVisitor::print_nrn_jacob() {
                           operator_for_d(),
                           info.vectorize ? naming::CONDUCTANCE_UNUSED_VARIABLE
                                          : naming::CONDUCTANCE_VARIABLE);
+        if (info.electrode_current) {
+            printer->push_block("if (auto* vec_sav_d = nt->node_sav_d_storage())");
+            printer->fmt_line("vec_sav_d[node_id] {} inst.{}[id];",
+                              operator_for_d(),
+                              info.vectorize ? naming::CONDUCTANCE_UNUSED_VARIABLE
+                                             : naming::CONDUCTANCE_VARIABLE);
+            printer->pop_block();
+        }
     }
 
     printer->pop_block();  // end for
@@ -2549,6 +2557,12 @@ void CodegenNeuronCppVisitor::print_nrn_cur() {
 
 
     printer->fmt_line("node_data.node_rhs[node_id] {} rhs;", operator_for_rhs());
+    // ELECTRODE_CURRENT: accumulate into fast_imem sav_rhs (nocmodl parity).
+    if (info.electrode_current) {
+        printer->push_block("if (auto* vec_sav_rhs = nt->node_sav_rhs_storage())");
+        printer->fmt_line("vec_sav_rhs[node_id] {} rhs;", operator_for_rhs());
+        printer->pop_block();
+    }
 
     if (breakpoint_exist()) {
         printer->fmt_line("inst.{}[id] = g;",
@@ -2556,13 +2570,6 @@ void CodegenNeuronCppVisitor::print_nrn_cur() {
                                          : naming::CONDUCTANCE_VARIABLE);
     }
     printer->pop_block();
-
-    // if (nrn_cur_reduction_loop_required()) {
-    //     printer->push_block("for (int id = 0; id < nodecount; id++)");
-    //     print_nrn_cur_matrix_shadow_reduction();
-    //     printer->pop_block();
-    //     print_fast_imem_calculation();
-    // }
 
     print_after_nrn_cur_gpu_net_send_flush();
     print_kernel_data_present_annotation_block_end();

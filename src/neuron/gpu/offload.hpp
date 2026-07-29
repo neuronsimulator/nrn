@@ -199,3 +199,12 @@ void target_update_on_device(std::string_view file, int line, const T* h_ptr, st
     neuron::gpu::target_memcpy_to_device(__FILE__, __LINE__, __VA_ARGS__)
 #define nrn_target_update_on_device(...) \
     neuron::gpu::target_update_on_device(__FILE__, __LINE__, __VA_ARGS__)
+
+// IClamp (and similar) BREAKPOINT call at_time from OpenACC kernels.
+// Host implementation: cvodestb.cpp (CVode-aware). Device: at_time_device.cpp
+// provides fixed-step bind target (at_time_device_fixed).
+struct NrnThread;
+bool at_time(NrnThread*, double);
+bool at_time_device_fixed(NrnThread*, double);
+nrn_pragma_acc(routine(at_time) seq bind(at_time_device_fixed))
+nrn_pragma_acc(routine(at_time_device_fixed) seq)

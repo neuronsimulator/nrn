@@ -66,6 +66,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-07-29 | (plan) | — | Plan created; no code |
 | 2026-07-29 | GPU-P0-triage | — | P0: classify A–D; harness green; CMake NONVINT for G4 native; fornetcon native green |
 | 2026-07-29 | GPU-P0-triage | — | Device nonvint mandatory under native; full NONVINT env removal; fail closed (no host STATE) |
+| 2026-07-29 | GPU-P1-spikes | — | ACC IClamp: CMake `stim$` match (not netstim); at_time device bind; trajectory staging once/psolve; QUALIFIED yes for direct/spikes; native V residual (device t + electrode sav) |
 
 ---
 
@@ -219,9 +220,9 @@ For each test:
 | Test | Control `*_gpu` | Native `*_gpu_native` | Notes |
 |------|-----------------|------------------------|-------|
 | fornetcon | green | **green** | NONVINT env fixed Gate C false red |
-| direct | green | red | QUALIFIED no: host IClamp |
-| spikes | green | red | QUALIFIED no: host IClamp |
-| spikes_file_mode | green | red | QUALIFIED no: host IClamp |
+| direct | green | red | **QUALIFIED yes** (ACC IClamp); residual: V/imem vs host — device `nt->_t` not synced before CURRENT (IClamp window); device electrode `sav_rhs` still open. Trajectory full-stretch sample count fixed. |
+| spikes | green | red | same as direct (IClamp + spike times) |
+| spikes_file_mode | green | red | same as direct |
 | fast_imem | **red (B)** | red | control SEGV; fix B before native |
 | datareturn | **red (B)** | red | control SEGV; QUALIFIED no Exp2Syn on native |
 | test_units | green | red | QUALIFIED no: host UnitsTest |
@@ -338,4 +339,4 @@ Update Status before exit; commit without push.
 
 ## Next (one line — update every session end)
 
-**Next:** P1 product matrix starting at **spikes** cluster (`/rename GPU-P1-spikes`): green IClamp (or ACC built-in) for direct/spikes native; keep fornetcon native green; do not re-open P0.
+**Next:** P1 spikes residual — device `nt->_t` before CURRENT (IClamp timing; OpenACC `update device(nt._t)` early in step was unsafe) + device electrode `sav_rhs` for fast_imem; then green `direct_py_gpu_native` / `spikes_py_gpu_native`.

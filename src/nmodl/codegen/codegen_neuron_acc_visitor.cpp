@@ -474,6 +474,13 @@ void CodegenNeuronAccVisitor::print_nrn_jacob() {
     printer->fmt_line("node_data.node_diagonal[node_id] {} _lmc.template fpfield<{}>(id);",
                       operator_for_d(),
                       conductance_fp_index());
+    if (info.electrode_current) {
+        printer->push_block("if (auto* vec_sav_d = nt->node_sav_d_storage())");
+        printer->fmt_line("vec_sav_d[node_id] {} _lmc.template fpfield<{}>(id);",
+                          operator_for_d(),
+                          conductance_fp_index());
+        printer->pop_block();
+    }
     printer->pop_block();
     printer->pop_block();
     printer->pop_block();
@@ -1121,6 +1128,25 @@ void CodegenNeuronAccVisitor::print_nrn_cur() {
 
     print_after_nrn_cur_gpu_net_send_flush();
     print_kernel_data_present_annotation_block_end();
+    // Host electrode sav_rhs after ACC region (nvlink cannot see host-only
+    // node_sav_rhs_storage from device-compiled loop bodies). When compute_gpu,
+    // device electrode sav is still open work.
+    if (info.electrode_current) {
+        printer->push_block("if (!nt->compute_gpu)");
+        printer->push_block("if (auto* vec_sav_rhs = nt->node_sav_rhs_storage())");
+        printer->add_line(
+            "_nrn_mechanism_cache_range _lmc_e{_sorted_token, *nt, *_ml_arg, _ml_arg->type()};");
+        printer->push_block("for (int id = 0; id < _ml_arg->nodecount; ++id)");
+        printer->add_line("int node_id = _ml_arg->nodeindices[id];");
+        // i is float field index 3 for IClamp (del,dur,amp,i,...); use stored i * mfactor.
+        printer->add_line("double i_val = _lmc_e.template fpfield<3>(id);");
+        printer->add_line(
+            "double mfactor = 1.e2 / (*_lmc_e.template dptr_field_ptr<0>()[id]);");
+        printer->fmt_line("vec_sav_rhs[node_id] {} i_val * mfactor;", operator_for_rhs());
+        printer->pop_block();
+        printer->pop_block();
+        printer->pop_block();
+    }
     printer->pop_block();
     use_present_fp_indexing_ = false;
 }
