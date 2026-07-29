@@ -463,7 +463,8 @@ void CodegenNeuronAccVisitor::print_nrn_jacob() {
             printer->add_line("nrn_pragma_acc(atomic update)");
             printer->add_line("nrn_pragma_omp(atomic update)");
         }
-        printer->fmt_line("vec_d[node_id] {} _present_fp_{}[inst._data_offset + id];",
+        // _present_fp_* from fpfield_ptr() already include ml storage offset.
+        printer->fmt_line("vec_d[node_id] {} _present_fp_{}[id];",
                           operator_for_d(),
                           conductance_fp_index());
         printer->pop_block();
@@ -901,7 +902,10 @@ std::string CodegenNeuronAccVisitor::indexed_fp_var(std::string_view name,
         // Host-only paths (e.g. INITIAL with wrote_conc) never declare _present_fp_*.
         return fmt::format("_lmc.template fpfield<{}>({})", position, index_expr);
     }
-    return fmt::format("_present_fp_{}[inst._data_offset + {}]", position, index_expr);
+    // present_fp pointers are already advanced by ml storage offset (see
+    // MechanismRange::fpfield_ptr). Index with local id only — adding
+    // inst._data_offset again double-counts and SEGVs on multi-thread.
+    return fmt::format("_present_fp_{}[{}]", position, index_expr);
 }
 
 int CodegenNeuronAccVisitor::conductance_fp_index() const {
@@ -1148,9 +1152,8 @@ void CodegenNeuronAccVisitor::print_nrn_cur() {
             printer->add_line("nrn_pragma_omp(atomic update)");
         }
         printer->fmt_line("vec_rhs[node_id] {} rhs;", operator_for_rhs());
-        // ELECTRODE sav_rhs on ACC: not written here yet (present/deviceptr nested
-        // under data present(nt) was unsafe). Direct mode-0 imem matched with
-        // _nrn_thread_t alone; revisit only if a case needs device electrode sav.
+        // ELECTRODE sav_rhs is applied after this ACC region (host-only post
+        // pass) — nvc++ rejects sav_rhs inside ACC parallel loops.
         if (breakpoint_exist()) {
             printer->fmt_line(
                 "{} = g;",
@@ -1172,6 +1175,26 @@ void CodegenNeuronAccVisitor::print_nrn_cur() {
     }
 
     print_after_nrn_cur_gpu_net_send_flush();
+
+    // Host ELECTRODE_CURRENT → fast_imem sav_rhs (outside ACC parallel region,
+    // still inside data present / setup so _lmc and node_data are in scope).
+    // After nrn_cur the electrode RANGE is current; re-scale with mfac as above.
+    if (info.electrode_current && !info.currents.empty()) {
+        auto const i_pos = position_of_float_var(info.currents.front());
+        printer->push_block("if (!nt->compute_gpu)");
+        printer->push_block("if (auto* vec_sav_rhs = nt->node_sav_rhs_storage())");
+        printer->push_block("for (int id = 0; id < nodecount; id++)");
+        printer->add_line("int node_id = node_data.nodeindices[id];");
+        printer->add_line(
+            "double mfac = 1.e2 / (*_lmc.template dptr_field_ptr<0>()[id]);");
+        printer->fmt_line("vec_sav_rhs[node_id] {} _lmc.template fpfield<{}>(id) * mfac;",
+                          operator_for_rhs(),
+                          i_pos);
+        printer->pop_block();
+        printer->pop_block();
+        printer->pop_block();
+    }
+
     print_kernel_data_present_annotation_block_end();
     use_present_fp_indexing_ = false;
     use_host_captured_t_ = false;
@@ -1214,7 +1237,8 @@ std::string CodegenNeuronAccVisitor::int_variable_name(const IndexVariableInfo& 
         if (symbol.is_index || symbol.is_integer) {
             return CodegenNeuronCppVisitor::int_variable_name(symbol, name, use_instance);
         }
-        return fmt::format("(*_present_dptr_{}[inst._data_offset + id])", position);
+        // dptr_field_ptr() already includes ml storage offset (local id only).
+        return fmt::format("(*_present_dptr_{}[id])", position);
     }
     return CodegenNeuronCppVisitor::int_variable_name(symbol, name, use_instance);
 }
@@ -1238,9 +1262,9 @@ std::string CodegenNeuronAccVisitor::float_variable_name(const SymbolType& symbo
     }
     if (symbol->is_array()) {
         auto const dimension = symbol->get_length();
-        return fmt::format("(_present_fp_{} + inst._data_offset + id * {})", position, dimension);
+        return fmt::format("(_present_fp_{} + id * {})", position, dimension);
     }
-    return fmt::format("_present_fp_{}[inst._data_offset + id]", position);
+    return fmt::format("_present_fp_{}[id]", position);
 }
 
 std::string CodegenNeuronAccVisitor::get_variable_name(const std::string& name,
