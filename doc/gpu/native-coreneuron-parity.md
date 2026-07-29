@@ -67,6 +67,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-07-29 | GPU-P0-triage | — | P0: classify A–D; harness green; CMake NONVINT for G4 native; fornetcon native green |
 | 2026-07-29 | GPU-P0-triage | — | Device nonvint mandatory under native; full NONVINT env removal; fail closed (no host STATE) |
 | 2026-07-29 | GPU-P1-spikes | — | ACC IClamp: CMake `stim$` match (not netstim); at_time device bind; trajectory staging once/psolve; QUALIFIED yes for direct/spikes; native V residual (device t + electrode sav) |
+| 2026-07-29 | GPU-P1-spikes | — | Host-captured `_nrn_thread_t` for ACC CURRENT/STATE (IClamp window); modes 0–1 direct/spikes green; mode 2 continuerun+psolve deferred |
 
 ---
 
@@ -220,9 +221,9 @@ For each test:
 | Test | Control `*_gpu` | Native `*_gpu_native` | Notes |
 |------|-----------------|------------------------|-------|
 | fornetcon | green | **green** | NONVINT env fixed Gate C false red |
-| direct | green | red | **QUALIFIED yes** (ACC IClamp); residual: V/imem vs host — device `nt->_t` not synced before CURRENT (IClamp window); device electrode `sav_rhs` still open. Trajectory full-stretch sample count fixed. |
-| spikes | green | red | same as direct (IClamp + spike times) |
-| spikes_file_mode | green | red | same as direct |
+| direct | green | **partial** | ACC IClamp + host-captured `_nrn_thread_t`: modes **0–1** green (V/tv/im/spikes). Full ctest still red: mode **2** (`continuerun`+`psolve`) deferred — CoreNEURON-style host/GPU shell, not native P1. |
+| spikes | green | **partial** | same as direct (modes 0–1 OK; mode 2 deferred) |
+| spikes_file_mode | green | red | same residual class as spikes when exercised |
 | fast_imem | **red (B)** | red | control SEGV; fix B before native |
 | datareturn | **red (B)** | red | control SEGV; QUALIFIED no Exp2Syn on native |
 | test_units | green | red | QUALIFIED no: host UnitsTest |
@@ -339,4 +340,4 @@ Update Status before exit; commit without push.
 
 ## Next (one line — update every session end)
 
-**Next:** P1 spikes residual — device `nt->_t` before CURRENT (IClamp timing; OpenACC `update device(nt._t)` early in step was unsafe) + device electrode `sav_rhs` for fast_imem; then green `direct_py_gpu_native` / `spikes_py_gpu_native`.
+**Next:** P1 spikes — mode 2 / free host↔GPU ping-pong deferred; continue product matrix at next red row (events cluster or next spikes_file if easy). Optional later: device electrode sav_rhs only if a case needs it.

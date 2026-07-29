@@ -986,6 +986,9 @@ void CodegenNeuronAccVisitor::print_nrn_state() {
         printer->add_line(
             "neuron::gpu::net_send_buffer_ensure_for_events(_ml_arg, nodecount);");
     }
+    // Host-captured t for any STATE body that reads t (same as nrn_cur).
+    printer->add_line("double const _nrn_thread_t = nt->_t;");
+    printer->add_line("(void) _nrn_thread_t;");  // unused when STATE does not reference t
 
     use_present_fp_indexing_ = true;
     print_parallel_iteration_hint(BlockType::State, info.nrn_state_block);
@@ -1040,6 +1043,8 @@ CodegenNeuronAccVisitor::ParamVector CodegenNeuronAccVisitor::nrn_current_parame
     for (int i = 0; i < static_cast<int>(codegen_float_variables.size()); ++i) {
         params.emplace_back("", "double*", "", fmt::format("_present_fp_{}", i));
     }
+    // Host-captured sim time (see get_variable_name for t under present_fp indexing).
+    params.emplace_back("", "double", "", "_nrn_thread_t");
     params.push_back(v_param);
     return params;
 }
@@ -1085,12 +1090,26 @@ void CodegenNeuronAccVisitor::print_nrn_cur() {
 
     printer->add_newline(2);
     printer->add_line("/** update current */");
-    print_global_function_common_code(BlockType::Equation);
+    // Manual function open: capture host t for ACC CURRENT (IClamp window) as
+    // firstprivate; device nt->_t is not used (update device(nt._t) is unsafe).
+    {
+        ParamVector args = {{"", "const _nrn_model_sorted_token&", "", "_sorted_token"},
+                            {"", "NrnThread*", "", "nt"},
+                            {"", "Memb_list*", "", "_ml_arg"},
+                            {"", "int", "", "_type"}};
+        printer->fmt_push_block("static void {}({})",
+                                compute_method_name(BlockType::Equation),
+                                get_parameter_str(args));
+    }
+    print_kernel_global_device_setup();
+    printer->add_line("auto nodecount = _ml_arg->nodecount;");
+    printer->add_line("double const _nrn_thread_t = nt->_t;");
     if ((info.net_send_used || info.net_event_used) && !info.artificial_cell) {
-        // BREAKPOINT net_send: pre-size to nodecount × headroom before OpenACC region.
         printer->add_line(
             "neuron::gpu::net_send_buffer_ensure_for_events(_ml_arg, nodecount);");
     }
+    print_kernel_data_present_annotation_block_begin();
+    print_entrypoint_setup_code_from_memb_list();
     use_present_fp_indexing_ = true;
 
     // Point processes may share a node. Parallel OpenACC needs atomics (Stage 3c)
@@ -1106,6 +1125,9 @@ void CodegenNeuronAccVisitor::print_nrn_cur() {
             printer->add_line("nrn_pragma_omp(atomic update)");
         }
         printer->fmt_line("vec_rhs[node_id] {} rhs;", operator_for_rhs());
+        // ELECTRODE sav_rhs on ACC: not written here yet (present/deviceptr nested
+        // under data present(nt) was unsafe). Direct mode-0 imem matched with
+        // _nrn_thread_t alone; revisit only if a case needs device electrode sav.
         if (breakpoint_exist()) {
             printer->fmt_line(
                 "{} = g;",
@@ -1128,27 +1150,8 @@ void CodegenNeuronAccVisitor::print_nrn_cur() {
 
     print_after_nrn_cur_gpu_net_send_flush();
     print_kernel_data_present_annotation_block_end();
-    // Host electrode sav_rhs after ACC region (nvlink cannot see host-only
-    // node_sav_rhs_storage from device-compiled loop bodies). When compute_gpu,
-    // device electrode sav is still open work.
-    if (info.electrode_current) {
-        printer->push_block("if (!nt->compute_gpu)");
-        printer->push_block("if (auto* vec_sav_rhs = nt->node_sav_rhs_storage())");
-        printer->add_line(
-            "_nrn_mechanism_cache_range _lmc_e{_sorted_token, *nt, *_ml_arg, _ml_arg->type()};");
-        printer->push_block("for (int id = 0; id < _ml_arg->nodecount; ++id)");
-        printer->add_line("int node_id = _ml_arg->nodeindices[id];");
-        // i is float field index 3 for IClamp (del,dur,amp,i,...); use stored i * mfactor.
-        printer->add_line("double i_val = _lmc_e.template fpfield<3>(id);");
-        printer->add_line(
-            "double mfactor = 1.e2 / (*_lmc_e.template dptr_field_ptr<0>()[id]);");
-        printer->fmt_line("vec_sav_rhs[node_id] {} i_val * mfactor;", operator_for_rhs());
-        printer->pop_block();
-        printer->pop_block();
-        printer->pop_block();
-    }
-    printer->pop_block();
     use_present_fp_indexing_ = false;
+    printer->pop_block();
 }
 
 void CodegenNeuronAccVisitor::print_entrypoint_setup_code_from_prop() {
@@ -1224,6 +1227,11 @@ std::string CodegenNeuronAccVisitor::get_variable_name(const std::string& name,
     // (`t + time_interval`), not nt->_t + delay (that mis-times self-events).
     if (printing_net_buf_receive_kernel_ && name == "t") {
         return "t";
+    }
+    // ACC CURRENT/STATE kernels: use host-captured _nrn_thread_t (firstprivate),
+    // not device nt->_t — early-step update device(nt._t) is present-table unsafe.
+    if (use_present_fp_indexing_ && name == naming::NTHREAD_T_VARIABLE) {
+        return "_nrn_thread_t";
     }
     return CodegenNeuronCppVisitor::get_variable_name(name, use_instance);
 }
