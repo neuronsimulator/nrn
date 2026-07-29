@@ -153,13 +153,13 @@ device before solve — **transitional mixed path**.
 
 Requires:
 
-- `NRN_NATIVE_GPU_DEVICE_NONVINT=1` (or successor build-time default when
-  ready), and
-- Every mechanism with a `state` hook has `mechanism_solve_on_device(type)`.
+- Native backend active, and
+- Every mechanism with a `state` hook has `mechanism_solve_on_device(type)`, and
+- No structural blockers (sparse13, extracellular, Python nonvint block).
 
-When Gate C fails, STATE must run on **host** with `compute_gpu=0` for nonvint
-(see §6.2). OpenACC STATE kernels must not update device-only copies while host
-CURRENT reads host SoA.
+Device nonvint is **mandatory** on the native path (no env switch, no host STATE
+fallback). When Gate C fails, `psolve` aborts with the qualification report
+(`require_gpu_native_qualification_or_stop`) rather than integrating STATE on the CPU.
 
 ### Gate D — post_solve on device
 
@@ -275,7 +275,8 @@ Until then, qualify and debug on one rank per node.
 
 Mods: pas, hh, expsyn, stim/IClamp, capacitance — built-in OpenACC codegen in
 `src/nrniv/CMakeLists.txt`. Ion mechanisms (`*_ion`) are bookkeeping only and
-are excluded from Gate B. Gate C requires `NRN_NATIVE_GPU_DEVICE_NONVINT=1`.
+are excluded from Gate B. Gate C requires device Solve registration for every
+STATE mech; native has no host STATE fallback.
 
 ### Tier 1 — Traub (82894)
 

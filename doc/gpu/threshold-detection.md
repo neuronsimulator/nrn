@@ -213,7 +213,7 @@ Harness (gpu-native, permute=2):
 
 ```bash
 source ~/neuron/bin/nrnenv nrngpu build-gpu
-export NRN_NATIVE_GPU_DEVICE_NONVINT=1 NRN_GPU_BACKEND_TEST=native NRN_GPU_PERMUTE=2
+export NRN_GPU_BACKEND_TEST=native NRN_GPU_PERMUTE=2
 cd build-gpu/test/external_ringtest/neuron_gpu_native_mpi
 ./prcellstate_native_gpu.sh 32 <tstop> [0]
 ```

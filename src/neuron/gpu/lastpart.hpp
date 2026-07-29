@@ -8,8 +8,9 @@ namespace neuron::gpu {
 [[nodiscard]] bool nonvint_can_run_on_device(NrnThread const& nt) noexcept;
 
 /**
- * True when STATE should run on device during nonvint (OpenACC nrnivmodl mods and
- * NRN_NATIVE_GPU_DEVICE_NONVINT=1).
+ * True when STATE runs on device during nonvint (native path + structural
+ * preconditions + compute_gpu). Device nonvint is mandatory under native —
+ * there is no host STATE fallback and no env switch.
  */
 [[nodiscard]] bool nonvint_state_on_device(NrnThread const& nt) noexcept;
 

@@ -87,9 +87,9 @@ environment exports ``N`` / ``PYTHONPATH`` into GNU make (it can break
 .. code-block:: bash
 
    source ~/neuron/bin/nrnenv nrngpu build-gpu   # example helper; or set PATH/PYTHONPATH/LD_LIBRARY_PATH by hand
-   export NRN_NATIVE_GPU_DEVICE_NONVINT=1
    export NRN_GPU_BACKEND_TEST=native
    export NRN_GPU_PERMUTE=2
+   # Device nonvint is mandatory under native (no env switch).
 
 Confirm a device is visible: ``nvidia-smi -L``. Successful native runs often log
 ``Info : 1 GPUs shared by 1 ranks per node``.
@@ -136,7 +136,7 @@ Ringtest (long gate: 688 spikes @ ``tstop=100``, CPU vs native GPU
 .. code-block:: bash
 
    source ~/neuron/bin/nrnenv nrngpu build-gpu
-   export NRN_NATIVE_GPU_DEVICE_NONVINT=1 NRN_GPU_BACKEND_TEST=native NRN_GPU_PERMUTE=2
+   export NRN_GPU_BACKEND_TEST=native NRN_GPU_PERMUTE=2
    cd build-gpu/test/external_ringtest/neuron_gpu_native_mpi
    # After reinstall if needed:
    #   rm -rf x86_64 && nrnivmodl .

@@ -3,6 +3,7 @@
 #include "neuron/gpu/config.hpp"
 #include "neuron/gpu/device_state.hpp"
 #include "neuron/gpu/download.hpp"
+#include "neuron/gpu/mechanism_phases.hpp"
 #include "neuron/gpu/phase_timer.hpp"
 #include "neuron/gpu/post_solve.hpp"
 #include "neuron/gpu/sync.hpp"
@@ -15,9 +16,10 @@
 #include "nrn_ansi.h"
 #include "nrncvode.h"
 
-#include <cstdlib>
+#include <cstdio>
 
 extern int use_sparse13;
+extern void hoc_execerror(const char*, const char*);
 
 namespace neuron::gpu {
 namespace {
@@ -26,14 +28,6 @@ thread_local int g_saved_compute_gpu_for_nonvint{};
 thread_local int g_saved_compute_gpu_for_lastpart_host{};
 thread_local bool g_lastpart_host_phases_active{};
 thread_local bool g_nonvint_state_on_device{};
-
-[[nodiscard]] bool device_nonvint_enabled() noexcept {
-    static int const enabled = [] {
-        char const* const env = std::getenv("NRN_NATIVE_GPU_DEVICE_NONVINT");
-        return env && env[0] == '1' && env[1] == '\0';
-    }();
-    return enabled != 0;
-}
 
 [[nodiscard]] bool nonvint_device_preconditions(NrnThread const& nt) noexcept {
 #if defined(NRN_ENABLE_GPU)
@@ -78,7 +72,7 @@ bool nonvint_can_run_on_device(NrnThread const& nt) noexcept {
 
 bool nonvint_state_on_device(NrnThread const& nt) noexcept {
 #if defined(NRN_ENABLE_GPU)
-    return device_nonvint_enabled() && nonvint_can_run_on_device(nt);
+    return nonvint_can_run_on_device(nt);
 #else
     (void) nt;
     return false;
@@ -87,7 +81,7 @@ bool nonvint_state_on_device(NrnThread const& nt) noexcept {
 
 bool nonvint_qualifies_for_gpu_native(NrnThread const& nt) noexcept {
 #if defined(NRN_ENABLE_GPU)
-    return device_nonvint_enabled() && nonvint_device_preconditions(nt);
+    return nonvint_device_preconditions(nt);
 #else
     (void) nt;
     return false;
@@ -97,9 +91,26 @@ bool nonvint_qualifies_for_gpu_native(NrnThread const& nt) noexcept {
 void prepare_nonvint_on_device(NrnThread& nt) {
 #if defined(NRN_ENABLE_GPU)
     g_nonvint_state_on_device = false;
-    if (!nonvint_device_preconditions(nt) || !nonvint_state_on_device(nt)) {
-        // OpenACC mods still integrate STATE on the host unless device nonvint is enabled.
+    if (!enabled() || !backend_native()) {
         return;
+    }
+    if (nt.end <= 0) {
+        return;
+    }
+    // Device nonvint is mandatory on the native path — no host STATE fallback.
+    // Full Gate C (per-mech Solve registration) is enforced at psolve start via
+    // require_gpu_native_qualification_or_stop(); structural blockers land here
+    // as a hard error if anything slipped through (e.g. ALLOW_UNQUALIFIED).
+    if (!nonvint_device_preconditions(nt)) {
+        auto const report = native_gpu_qualification_report();
+        std::fprintf(stderr, "%s", report.c_str());
+        hoc_execerror(
+            "Native GPU requires device nonvint (STATE on GPU); host fallback is not allowed. "
+            "Model fails Gate C structural preconditions (sparse13, extracellular, Python "
+            "nonvint block, or native backend inactive). See qualification report above. "
+            "Use pc.gpu_qualification() / prcellstate phases to debug; do not expect silent "
+            "CPU STATE under native.",
+            nullptr);
     }
     g_nonvint_state_on_device = true;
     g_saved_compute_gpu_for_nonvint = nt.compute_gpu;
@@ -149,7 +160,7 @@ void sync_before_device_nonvint(NrnThread& nt) noexcept {
 #if defined(NRN_ENABLE_GPU)
     // Wait for post_solve only. Device owns vec_v for the whole psolve — no
     // host↔device V transfer here (or after post_solve on the ringtest path).
-    if (!enabled() || !backend_native() || !nonvint_state_on_device(nt)) {
+    if (!enabled() || !backend_native() || !nonvint_device_preconditions(nt) || nt.end <= 0) {
         return;
     }
     nrn_pragma_acc(wait(nt.stream_id))
@@ -165,10 +176,6 @@ bool lastpart_host_phases_required(NrnThread const& nt) noexcept {
     // Gate F is green when this returns false (ringtest default).
     if (!enabled() || !backend_native() || !nonvint_device_preconditions(nt) ||
         post_solve_needs_host_fallback(nt)) {
-        return false;
-    }
-    if (!device_nonvint_enabled()) {
-        // Host owns STATE; no special lastpart SoA pull from device.
         return false;
     }
     return lastpart_host_soa_consumers_present(nt);

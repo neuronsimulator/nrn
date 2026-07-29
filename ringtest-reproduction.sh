@@ -71,11 +71,6 @@ compare_spikes /tmp/ringtest_cpu_rparm.std "${WORK_DIR}/spk${nhost}.std" "GPU-CN
 run_ringtest "${WORK_DIR}" "GPU native" ${nhost} -gpu-native ${common}
 compare_spikes /tmp/ringtest_cpu_rparm.std "${WORK_DIR}/spk${nhost}.std" "GPU-native"
 
-echo ""
-echo "==> GPU native device nonvint (optional D4 slice; requires install + env)"
-export NRN_NATIVE_GPU_DEVICE_NONVINT=1
-run_ringtest "${WORK_DIR}" "GPU native device nonvint" ${nhost} -gpu-native ${common}
-compare_spikes /tmp/ringtest_cpu_rparm.std "${WORK_DIR}/spk${nhost}.std" "GPU-native-device-nonvint"
-unset NRN_NATIVE_GPU_DEVICE_NONVINT
+# Device nonvint is mandatory under native (no separate NONVINT env run).
 
 echo "==> All ringtest comparisons passed."

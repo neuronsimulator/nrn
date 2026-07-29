@@ -23,9 +23,9 @@ Integration branch: **`local/gpu-native-net-soa`** = `local/cpu-net-soa-heap-fre
 
 ```bash
 source ~/neuron/bin/nrnenv nrngpu build-gpu
-export NRN_NATIVE_GPU_DEVICE_NONVINT=1
 export NRN_GPU_BACKEND_TEST=native
 export NRN_GPU_PERMUTE=2
+# Device nonvint is mandatory under native (no NONVINT env; Gate C fail → error).
 ```
 
 Build: `~/neuron/nrngpu/build-gpu` (`./grok-bld` or `ninja` / `ninja install`).

@@ -991,11 +991,9 @@ if(NRN_ENABLE_PYTHON)
   endforeach()
 
   # G4 native GPU modtests (NRN_GPU_BACKEND_TEST=native): parity with coreneuron_modtests *_py_gpu.
+  # Device nonvint is mandatory under native (no NONVINT env).
   if(NRN_ENABLE_GPU)
-    # NRN_NATIVE_GPU_DEVICE_NONVINT=1 is required for Gate C (device nonvint/SOLVE).
-    # Without it, even fully ACC-capable models fail QUALIFIED (false red for the matrix).
-    set(native_gpu_test_env NRN_GPU_BACKEND_TEST=native NRN_GPU_PERMUTE=2
-                            NRN_NATIVE_GPU_DEVICE_NONVINT=1 OMP_NUM_THREADS=1)
+    set(native_gpu_test_env NRN_GPU_BACKEND_TEST=native NRN_GPU_PERMUTE=2 OMP_NUM_THREADS=1)
     set(g4_native_helper_script ${coreneuron_backend_helper_script})
     # Native GPU exercises OpenACC in libnrniv; launch via special (not bare python/pytest).
     set(native_modtests_launch_py special -notatty -python)

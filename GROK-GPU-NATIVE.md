@@ -103,9 +103,9 @@ User workflow (all GPU sessions — and preferred for this tree generally):
 
 ```bash
 source ~/neuron/bin/nrnenv nrngpu build-gpu
-export NRN_NATIVE_GPU_DEVICE_NONVINT=1
 export NRN_GPU_BACKEND_TEST=native
 export NRN_GPU_PERMUTE=2
+# Device nonvint is mandatory under native (no NONVINT env).
 
 cd ~/neuron/nrngpu/build-gpu/test/external_ringtest/neuron_gpu_native_mpi
 # After install if needed: rm -rf x86_64 && nrnivmodl .
@@ -212,7 +212,7 @@ conflicted on unrelated commits):
 
 ```bash
 source ~/neuron/bin/nrnenv nrngpu build-gpu
-export NRN_NATIVE_GPU_DEVICE_NONVINT=1 NRN_GPU_BACKEND_TEST=native NRN_GPU_PERMUTE=2
+export NRN_GPU_BACKEND_TEST=native NRN_GPU_PERMUTE=2
 # Install must ship neuron/model_data.hpp + container headers (cmake/NeuronFileLists.cmake).
 mkdir -p /tmp/traub-nrngpu-acc && cd /tmp/traub-nrngpu-acc
 ln -sfn ~/models/82894/mod/*.mod .
@@ -393,7 +393,6 @@ Protocol: same special for `enable_gpu=0` and `=1`; count **and** sorted times.
 
 ```bash
 source ~/neuron/bin/nrnenv nrngpu build-gpu
-export NRN_NATIVE_GPU_DEVICE_NONVINT=1
 export NRN_GPU_BACKEND_TEST=native
 export NRN_GPU_PERMUTE=2
 ```

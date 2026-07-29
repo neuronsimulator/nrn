@@ -325,8 +325,9 @@ std::string native_gpu_qualification_report() {
 
     out += fmt::format("Gate C SOLVE/nonvint on device: {}\n",
                        gates.solve_on_device ? "yes" : "no");
-    if (!nonvint_qualifies_for_gpu_native(*nt_detail)) {
-        out += "  (set NRN_NATIVE_GPU_DEVICE_NONVINT=1 and ensure all STATE mods register Solve)\n";
+    if (!gates.solve_on_device) {
+        out += "  (native requires device nonvint: no sparse13/ecell/Python nonvint block; "
+               "every STATE mech must register Solve on device — no host STATE fallback)\n";
     }
     append_blocking_mechs(out, "  SOLVE", mechanism_solve_on_device, has_state_hook);
 
@@ -363,8 +364,10 @@ void require_gpu_native_qualification_or_stop() {
     fprintf(stderr, "%s", report.c_str());
     hoc_execerror(
         "Model not qualified for GPU-native fixed-step integration. "
-        "See qualification report above. "
-        "Set NRN_GPU_ALLOW_UNQUALIFIED=1 to run transitional mode for development.",
+        "See qualification report above (Gates A–E; Gate C = device nonvint/STATE). "
+        "Host STATE fallback under native is not supported. "
+        "Set NRN_GPU_ALLOW_UNQUALIFIED=1 only for transitional development of other "
+        "gates — still expect device nonvint when structural preconditions hold.",
         nullptr);
 #else
 #endif
