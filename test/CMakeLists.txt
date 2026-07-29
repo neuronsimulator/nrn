@@ -224,8 +224,7 @@ if(NRN_ENABLE_PYTHON)
   nrn_add_test(
     GROUP unit_tests
     NAME python_unit_tests_debug_rdcellstate
-    COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${pytest}
-            ${PROJECT_SOURCE_DIR}/test/unit_tests/debug
+    COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${pytest} ${PROJECT_SOURCE_DIR}/test/unit_tests/debug
     PRELOAD_SANITIZER
     SCRIPT_PATTERNS "test/unit_tests/debug/*.py" "test/unit_tests/debug/fixtures/*")
 

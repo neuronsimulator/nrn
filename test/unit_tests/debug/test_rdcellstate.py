@@ -81,7 +81,9 @@ def test_missing_mech_key():
     )
     missing = [d for d in diffs if not math.isfinite(d.abs_diff)]
     assert any(d.key[0] == "mech" for d in missing)
-    assert rd.main([str(_FIX / "ref_ab.nrndat"), str(_FIX / "mech_missing.nrndat")]) == 1
+    assert (
+        rd.main([str(_FIX / "ref_ab.nrndat"), str(_FIX / "mech_missing.nrndat")]) == 1
+    )
 
 
 def test_ignore_matrix_hides_format_asymmetry():
@@ -97,7 +99,9 @@ def test_ignore_matrix_hides_format_asymmetry():
     matrix_missing = [
         d
         for d in full
-        if d.key[0] == "matrix" and d.key[2] in ("d", "rhs") and not math.isfinite(d.abs_diff)
+        if d.key[0] == "matrix"
+        and d.key[2] in ("d", "rhs")
+        and not math.isfinite(d.abs_diff)
     ]
     assert matrix_missing
     ignored = rd.compare_numeric_maps(

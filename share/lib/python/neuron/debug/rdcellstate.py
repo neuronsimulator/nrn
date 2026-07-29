@@ -370,7 +370,9 @@ def compare_numeric_maps(
     diffs: List[Diff] = []
     all_keys = set(a_map) | set(b_map)
     for key in sorted(all_keys):
-        if should_ignore_key(key, ignore_ion, ignore_matrix, ignore_names, unused_fields):
+        if should_ignore_key(
+            key, ignore_ion, ignore_matrix, ignore_names, unused_fields
+        ):
             continue
         in_a = key in a_map
         in_b = key in b_map
