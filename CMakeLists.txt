@@ -682,7 +682,7 @@ else()
   set(NRN_CODEGENERATOR_TARGET nocmodl)
 endif()
 
-# Built-in mod OpenACC NMODL args for native GPU (ringtest: pas, hh, expsyn, stim).
+# Built-in mod OpenACC NMODL args for native GPU (pas, hh, expsyn, exp2syn, stim).
 set(NRN_BUILTIN_MOD_NMODL_OPENACC_ARGS "")
 if(NRN_ENABLE_GPU AND CMAKE_CUDA_COMPILER)
   list(APPEND NRN_BUILTIN_MOD_NMODL_OPENACC_ARGS passes --inline host --c acc --oacc)

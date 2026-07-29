@@ -50,8 +50,25 @@ void download_sorted_node_soa() {
 #endif
 }
 
+/** True when any registered CURRENT runs on the device. */
+[[nodiscard]] bool any_mechanism_current_on_device() noexcept {
+    for (int t = 0; t < n_memb_func; ++t) {
+        if (mechanism_current_on_device(t)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 /** True when device kernels own this mechanism's SoA for some phase. */
 [[nodiscard]] bool mechanism_soa_device_authoritative(int type) noexcept {
+    // Ions have no CURRENT/STATE device registration, but device CURRENT mechs
+    // write ion RANGE (ina, ik, …) via dptr. After GPU psolve those fields are
+    // device-authoritative when some CURRENT is on device (else host CURRENT
+    // owns host ion SoA — do not clobber).
+    if (nrn_is_ion(type)) {
+        return any_mechanism_current_on_device();
+    }
     return mechanism_solve_on_device(type) || mechanism_current_on_device(type) ||
            mechanism_jacobian_on_device(type);
 }

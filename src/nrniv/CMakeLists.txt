@@ -130,9 +130,10 @@ foreach(modfile ${NRN_MODFILE_BASE_NAMES})
   # NRN_MODFILE_BASE_NAMES are paths like src/nrnoc/stim — match basename suffix.
   # Use "(^|/)stim$" so netstim is not pulled into OpenACC (not ready; host-only).
   # Bare STREQUAL "stim" never matched and left IClamp host-only (P1 spikes).
+  # exp2syn: datareturn native Gate B/C (POINT_PROCESS STATE + CURRENT).
   if(NRN_ENABLE_GPU
      AND (modfile MATCHES "hh$" OR modfile MATCHES "passive$" OR modfile MATCHES "expsyn$"
-          OR modfile MATCHES "(^|/)stim$"))
+          OR modfile MATCHES "exp2syn$" OR modfile MATCHES "(^|/)stim$"))
     nmodl_openacc_mod_to_cpp(${modfile} ${modfile_compat})
   else()
     nocmodl_mod_to_cpp(${modfile} ${modfile_compat})
@@ -513,9 +514,10 @@ if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
       PROPERTY INSTALL_RPATH "${CUDAToolkit_LIBRARY_DIR}")
   endif()
 
-  # Built-in pas, hh, expsyn, stim use NMODL OpenACC codegen for native GPU phases.
+  # Built-in pas, hh, expsyn, exp2syn, stim use NMODL OpenACC for native GPU.
   set(_nrn_openacc_builtin_mod_cpp)
-  foreach(_modfile src/nrnoc/hh src/nrnoc/passive src/nrnoc/expsyn src/nrnoc/stim)
+  foreach(_modfile src/nrnoc/hh src/nrnoc/passive src/nrnoc/expsyn src/nrnoc/exp2syn
+                   src/nrnoc/stim)
     list(APPEND _nrn_openacc_builtin_mod_cpp ${PROJECT_BINARY_DIR}/${_modfile}.cpp)
   endforeach()
   set_source_files_properties(
