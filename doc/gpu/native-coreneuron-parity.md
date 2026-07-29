@@ -63,8 +63,8 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 
 | When | Title (`/rename`) | Session id (short) | Commit / note |
 |------|-------------------|--------------------|---------------|
-| 2026-07-29 | (this discussion) | — | Plan created; no code |
-| | | | |
+| 2026-07-29 | (plan) | — | Plan created; no code |
+| 2026-07-29 | GPU-P0-triage | — | P0: classify A–D; harness green; CMake NONVINT for G4 native; fornetcon native green |
 
 ---
 
@@ -127,33 +127,60 @@ Do **not** require full 610-test green before P1. P0 only needs: classified fail
 
 | Item | Status | Notes |
 |------|--------|-------|
-| Harness ringtest short | | |
-| Harness ringtest 688@100 | | |
-| ctest native ringtest vs harness | | |
-| Failure table filled | | |
-| CoreNEURON control smokes | | |
+| Harness ringtest short | **GREEN** | tstop=1: dV=0; matrix noise max \|d\| ~1e-15. `rdcellstate` exits 1 on noise-only diffs (not product-red). |
+| Harness ringtest 688@100 | **GREEN** | 688 spikes both sides; dV=0; max \|d\| ~1e-13 (noise). |
+| ctest native ringtest vs harness | **reconciled** | Harness = **1-rank** `special -python` product gate (green). ctest = **`mpiexec -n 2`** → SEGV in `check_thresh_presyn_on_device`/`acc_copyin` (multi-rank GPU). Not install/lib skew (build + install `libnrniv` same mtime). Gap ctest also SEGV (`nrnmpi_setup_transfer`). → **D/P2**, not cheap env. |
+| Failure table filled | **done** | Clean full suite (no ambient `NRN_GPU_BACKEND_TEST`): **51/610 failed (92% pass)**. See table. |
+| CoreNEURON control smokes | **mostly green** | Green: fornetcon/direct/spikes/units/ba/psolve/netmove `*_py_gpu` (serial confirm). Red **B**: `fast_imem_py_{cpu,gpu}`, `datareturn_py_{cpu,gpu}` (SEGV); `test_natrans_py_gpu` (AssertionError, gap-ish). |
+| Cheap env fix landed | **done** | `test/CMakeLists.txt`: G4 `native_gpu_test_env` now includes `NRN_NATIVE_GPU_DEVICE_NONVINT=1`. Unlocks Gate C for fully ACC models. After fix: **fornetcon**, **nmodlrandom_syntax**, **subworlds** native **PASS**; remaining native reds are product (IClamp/Exp2Syn/… host CURRENT/SOLVE) → **P1**. |
 
-### Failure triage table (fill in P0)
+**Process note (do not regress triage signal):** never export `NRN_GPU_BACKEND_TEST=native` for a **full** `ctest` run. It pollutes CoreNEURON `*_py_cpu` / `*_py_gpu` into native qualification and creates mass false reds. Native wrappers already set env per-test.
+
+### Failure triage table (P0 2026-07-29, clean suite)
 
 | Test name | Bucket | One-line reason |
 |-----------|--------|-----------------|
-| test-solver | | |
-| unit_tests::benchmarks | | |
-| unit_tests::gpu_config | | |
-| unit_tests::gpu_fadvance | | |
-| unit_tests::gpu_net_receive | | |
-| ringtest | | |
-| pytest_coreneuron::basic_tests_py3.14 | | |
-| coverage_tests::cover_tests | | |
-| hoctests::* | | |
-| parallel::* | | |
-| coreneuron_modtests::*_cpu / *_gpu (non-native fails) | | |
-| coreneuron_modtests::*_gpu_native | | |
-| external_ringtest::neuron_gpu_native* | | |
-| external_ringtest::coreneuron_* (fails) | | |
-| reduced_dentate::* | | |
-| external_nrntest | | |
-| compare_results | | |
+| test-solver | **C** | Catch2 SEGV in `SingleCellAndThread` (`test_solver.cpp:319`); “NrnThread 0 not permuted” warning. |
+| unit_tests::benchmarks | **C** | Multicore `prun()` abort / SEGV (`test_multicore.cpp`). |
+| unit_tests::gpu_config | **A/C** | Bare SEGV (no assertion text); unit GPU scaffolding — check in hygiene if blocks P1. |
+| unit_tests::gpu_fadvance | **A** | SEGV in `fixed_step_thread records native dispatch` (`fadvance.cpp:53`); 1/2 cases pass. |
+| unit_tests::gpu_net_receive | **A** | SEGV in NRB upload-on-device case (`net_receive_buffer.cpp:58`); 1/2 pass. |
+| ringtest (internal HOC) | **C** | SEGV in `nrn_rhs` / `finitialize` on `test/ringtest/ring.hoc` (not external GPU harness). |
+| pytest_coreneuron::basic_tests_py3.14 | **C** | SEGV under Python 3.14 + CoreNEURON pytest path. |
+| coverage_tests::cover_tests | **C** | `test_netcvode_cover` AssertionError on `CVode.netconlist` cover case. |
+| hoctests::test_kschan_py | **C** | Trajectory length ACTUAL 68 vs DESIRED 393 (branch/numeric). |
+| hoctests::test_optim_node_order_py | **C** | SEGV after import. |
+| hoctests::test_thread_partition_py | **C** | SEGV after import. |
+| parallel::partrans | **D** | SEGV in `nrnmpi_setup_transfer` (gap/transfer path). |
+| parallel::nrntest_fast | **C** | SEGV in CVode/rhs_memb under MPI python. |
+| coreneuron_modtests::fast_imem_py_cpu / _py_gpu | **B** | SEGV (cpu + CoreNEURON GPU); control not trustworthy until fixed. |
+| coreneuron_modtests::datareturn_py_cpu / _py_gpu | **B** | SEGV (cpu + CoreNEURON GPU); same. |
+| coreneuron_modtests::test_natrans_py_gpu | **B/D** | AssertionError in gap/transfer test on CoreNEURON GPU; may slip P2. |
+| Other `*_py_cpu` / `*_py_gpu` G4 | **green** | fornetcon, direct, spikes(+file), units, netmove, ba, psolve, pointer, watchrange, nmodlrandom*, array_transfer*, spikes_mpi* controls pass on clean suite. |
+| coreneuron_modtests::fornetcon_py_gpu_native | **A→green** | Was false-red Gate C missing `NRN_NATIVE_GPU_DEVICE_NONVINT`; **PASS** after CMake env fix. |
+| coreneuron_modtests::test_nmodlrandom_syntax_py_gpu_native | **green** | PASS after NONVINT env. |
+| coreneuron_modtests::test_subworlds_py_gpu_native | **green** | PASS after NONVINT env (P2-ish but already green). |
+| coreneuron_modtests::direct/spikes(+file/mpi)_py_gpu_native | **A** | QUALIFIED no: Gate B+C host **IClamp** (needs ACC/device CURRENT). |
+| coreneuron_modtests::datareturn_py_gpu_native | **A** | QUALIFIED no: host **Exp2Syn**. |
+| coreneuron_modtests::test_units_py_gpu_native | **A** | QUALIFIED no: host **UnitsTest**. |
+| coreneuron_modtests::test_netmove_py_gpu_native | **A** | QUALIFIED no: host **DAsyn**. |
+| coreneuron_modtests::test_pointer_py_gpu_native | **A** | QUALIFIED no: host **IClamp**. |
+| coreneuron_modtests::test_watchrange_py_gpu_native | **A** | AssertionError after run (past QUALIFIED path). |
+| coreneuron_modtests::test_psolve_py_gpu_native | **A** | SEGV on native psolve path. |
+| coreneuron_modtests::test_ba_py_gpu_native | **A** | QUALIFIED no: host **ba0, ba1**. |
+| coreneuron_modtests::test_nmodlrandom_py_gpu_native | **A** | QUALIFIED no: host **noisychan**. |
+| coreneuron_modtests::fast_imem_py_gpu_native | **A** | SEGV (and control also **B**). |
+| coreneuron_modtests::array_variable_transfer_*_py_gpu_native | **A** | QUALIFIED no: host **green, red**. |
+| coreneuron_modtests::test_natrans_py_gpu_native | **A/D** | Fail (~22s); gap/transfer native → P2. |
+| external_ringtest::neuron_gpu_native_mpi | **D** | 2-rank SEGV `check_thresh_presyn_on_device`/acc_copyin; harness 1-rank green. |
+| external_ringtest::neuron_gpu_native_device_nonvint_mpi | **D** | Same multi-rank SEGV (script already sets NONVINT). |
+| external_ringtest::neuron_gpu_native_mpi_gap | **D** | SEGV gap/setup_transfer and/or multi-rank; P2. |
+| external_ringtest::compare_neuron_gpu_native_mpi_gap | **D** | Depends on gap test; empty/missing spk compare. |
+| external_ringtest::coreneuron_*_mpi_threads* | **B/C** | SEGV in `nrn_finitialize` (cpu+gpu threads variants). |
+| external_ringtest::compare_results | **C** | Spike ref empty vs 688 lines — dep of failed thread run, not native product. |
+| reduced_dentate::* | **D** | Abort in `pc.setup_transfer()` / model path; P3. |
+| external_nrntest | **C/D** | Timeout 1500s. |
+| tqperf::coreneuron_python | **C** | Timeout 1000s. |
 
 ---
 
@@ -182,26 +209,28 @@ For each test:
 
 ### Status — P1
 
+*(P0 seed: control column from clean suite / serial; native after NONVINT env fix. Do not treat as P1 work complete.)*
+
 | Test | Control `*_gpu` | Native `*_gpu_native` | Notes |
 |------|-----------------|------------------------|-------|
-| fornetcon | | | |
-| direct | | | |
-| spikes | | | |
-| spikes_file_mode | | | |
-| fast_imem | | | |
-| datareturn | | | |
-| test_units | | | |
-| test_netmove | | | |
-| test_pointer | | | |
-| test_watchrange | | | |
-| test_psolve | | | |
-| test_ba | | | |
-| test_nmodlrandom | | | |
-| test_nmodlrandom_syntax | | | |
-| test_natrans | | | → may slip to P2 |
-| array_variable_transfer_* | | | |
-| spikes_mpi* | | | → P2 |
-| test_subworlds | | | → P2 |
+| fornetcon | green | **green** | NONVINT env fixed Gate C false red |
+| direct | green | red | QUALIFIED no: host IClamp |
+| spikes | green | red | QUALIFIED no: host IClamp |
+| spikes_file_mode | green | red | QUALIFIED no: host IClamp |
+| fast_imem | **red (B)** | red | control SEGV; fix B before native |
+| datareturn | **red (B)** | red | control SEGV; QUALIFIED no Exp2Syn on native |
+| test_units | green | red | QUALIFIED no: host UnitsTest |
+| test_netmove | green | red | QUALIFIED no: host DAsyn |
+| test_pointer | green | red | QUALIFIED no: host IClamp |
+| test_watchrange | green | red | AssertionError |
+| test_psolve | green | red | SEGV |
+| test_ba | green | red | QUALIFIED no: host ba0,ba1 |
+| test_nmodlrandom | green | red | QUALIFIED no: host noisychan |
+| test_nmodlrandom_syntax | green | **green** | after NONVINT |
+| test_natrans | red (B/D) | red | → may slip to P2 |
+| array_variable_transfer_* | green | red | QUALIFIED no: host green,red |
+| spikes_mpi* | green | red | QUALIFIED no IClamp; multi-rank → P2 |
+| test_subworlds | green | **green** | after NONVINT; still P2 if expanded |
 
 ---
 
@@ -304,4 +333,4 @@ Update Status before exit; commit without push.
 
 ## Next (one line — update every session end)
 
-**Next:** Run Phase 0 triage session (`/rename GPU-P0-triage`); fill failure table and ringtest harness vs ctest.
+**Next:** P1 product matrix starting at **spikes** cluster (`/rename GPU-P1-spikes`): green IClamp (or ACC built-in) for direct/spikes native; keep fornetcon native green; do not re-open P0.
