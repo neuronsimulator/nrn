@@ -68,6 +68,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-07-29 | GPU-P0-triage | — | Device nonvint mandatory under native; full NONVINT env removal; fail closed (no host STATE) |
 | 2026-07-29 | GPU-P1-spikes | — | ACC IClamp: CMake `stim$` match (not netstim); at_time device bind; trajectory staging once/psolve; QUALIFIED yes for direct/spikes; native V residual (device t + electrode sav) |
 | 2026-07-29 | GPU-P1-spikes | — | Host-captured `_nrn_thread_t` for ACC CURRENT/STATE (IClamp window); modes 0–1 direct/spikes green; mode 2 continuerun+psolve deferred |
+| 2026-07-29 | GPU-P1-events | — | Spikes cluster closed (file_mode = same residual); events triage: netmove/nmodlrandom QUALIFIED no (host DAsyn/noisychan); watchrange GPU assert |
 
 ---
 
@@ -221,22 +222,22 @@ For each test:
 | Test | Control `*_gpu` | Native `*_gpu_native` | Notes |
 |------|-----------------|------------------------|-------|
 | fornetcon | green | **green** | NONVINT env fixed Gate C false red |
-| direct | green | **partial** | ACC IClamp + host-captured `_nrn_thread_t`: modes **0–1** green (V/tv/im/spikes). Full ctest still red: mode **2** (`continuerun`+`psolve`) deferred — CoreNEURON-style host/GPU shell, not native P1. |
-| spikes | green | **partial** | same as direct (modes 0–1 OK; mode 2 deferred) |
-| spikes_file_mode | green | red | same residual class as spikes when exercised |
+| direct | green | **partial** | ACC IClamp + host-captured `_nrn_thread_t`: modes **0–1** green (V/tv/im). Full ctest red on mode **2** (`continuerun`+`psolve`) — deferred (not native P1). |
+| spikes | green | **partial** | modes 0–1 spike match; mode 2 deferred (same as direct) |
+| spikes_file_mode | green | **partial** | **Spikes cluster closed.** Native ignores CoreNEURON file_mode (`test_spikes.py`); same run as `spikes_py_gpu_native` (modes 0–2). Residual = mode 2 only — not a separate product gap. |
 | fast_imem | **red (B)** | red | control SEGV; fix B before native |
 | datareturn | **red (B)** | red | control SEGV; QUALIFIED no Exp2Syn on native |
 | test_units | green | red | QUALIFIED no: host UnitsTest |
-| test_netmove | green | red | QUALIFIED no: host DAsyn |
-| test_pointer | green | red | QUALIFIED no: host IClamp |
-| test_watchrange | green | red | AssertionError |
+| test_netmove | green | red | **Events first.** Controls green. Native QUALIFIED no: Gate B+C — host `DAsyn` (test `netmove.mod`; needs ACC CURRENT+STATE like Traub/`stim` path). |
+| test_pointer | green | red | QUALIFIED no: host IClamp (if not ACC) / POINTER |
+| test_watchrange | green | red | Controls green. Native runs GPU (mode 0) but `assert success` — WATCH/device path, not QUALIFIED block. After netmove. |
 | test_psolve | green | red | SEGV |
 | test_ba | green | red | QUALIFIED no: host ba0,ba1 |
-| test_nmodlrandom | green | red | QUALIFIED no: host noisychan |
+| test_nmodlrandom | green | red | Controls green. Native QUALIFIED no: Gate B+C — host `noisychan`. |
 | test_nmodlrandom_syntax | green | **green** | after NONVINT |
 | test_natrans | red (B/D) | red | → may slip to P2 |
 | array_variable_transfer_* | green | red | QUALIFIED no: host green,red |
-| spikes_mpi* | green | red | QUALIFIED no IClamp; multi-rank → P2 |
+| spikes_mpi* | green | red | multi-rank → P2; not blocking serial spikes cluster close |
 | test_subworlds | green | **green** | after NONVINT; still P2 if expanded |
 
 ---
@@ -340,4 +341,4 @@ Update Status before exit; commit without push.
 
 ## Next (one line — update every session end)
 
-**Next:** P1 spikes — mode 2 / free host↔GPU ping-pong deferred; continue product matrix at next red row (events cluster or next spikes_file if easy). Optional later: device electrode sav_rhs only if a case needs it.
+**Next:** P1 **events** — first red `test_netmove_py_gpu_native`: ACC/OpenACC build for test `DAsyn` (`netmove.mod`) so Gate B+C qualify (same nmodl `--c acc --oacc` / Traub pattern as GROK-GPU-NATIVE); then green modes 0–1. watchrange assert and noisychan after.
