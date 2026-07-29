@@ -28,9 +28,20 @@ void CodegenNeuronAccVisitor::print_standard_includes() {
 }
 
 bool CodegenNeuronAccVisitor::host_only_parallel_block(BlockType type) const {
-    // INITIAL with net_send/net_move must stay on host (queue API is host-only).
-    return type == BlockType::Initial &&
-           (info.require_wrote_conc || info.net_send_used || info.net_event_used);
+    // INITIAL: host for ion wrote_conc, net_send/net_move (queue API), or RANDOM
+    // (nrnran123 is not device-callable in ACC regions yet).
+    if (type != BlockType::Initial) {
+        return false;
+    }
+    if (info.require_wrote_conc || info.net_send_used || info.net_event_used) {
+        return true;
+    }
+    for (const auto& sem: info.semantics) {
+        if (sem.name == naming::RANDOM_SEMANTIC) {
+            return true;
+        }
+    }
+    return false;
 }
 
 void CodegenNeuronAccVisitor::print_global_var_struct_decl() {
@@ -861,6 +872,10 @@ void CodegenNeuronAccVisitor::print_mechanism_range_var_structure(bool print_ini
             continue;
         } else if (var.is_index || var.is_integer) {
         } else if (info.semantics[position].name == naming::POINTER_SEMANTIC) {
+            // Host POINTER; not device-present via Instance.
+        } else if (info.semantics[position].name == naming::RANDOM_SEMANTIC || var.is_vdata) {
+            // RANDOM / vdata use _ppvar on host (and device NET_RECEIVE); not in
+            // Instance SoA — including them mis-orders make_instance args.
         } else {
             auto qualifier = var.is_constant ? "const " : "";
             auto type = var.is_vdata ? "void*" : default_float_data_type();
@@ -1288,8 +1303,8 @@ void CodegenNeuronAccVisitor::print_make_instance() const {
             if (var.is_index || var.is_integer) {
                 return "";
             } else if (var.is_vdata) {
-                return "";
-            } else if (sem == naming::POINTER_SEMANTIC) {
+                return "";  // RANDOM etc. — not in Instance
+            } else if (sem == naming::POINTER_SEMANTIC || sem == naming::RANDOM_SEMANTIC) {
                 return "";
             } else {
                 return fmt::format("_lmc->template dptr_field_ptr<{}>()", i);

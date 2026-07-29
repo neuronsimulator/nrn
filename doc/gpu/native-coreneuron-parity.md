@@ -70,6 +70,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-07-29 | GPU-P1-spikes | — | Host-captured `_nrn_thread_t` for ACC CURRENT/STATE (IClamp window); modes 0–1 direct/spikes green; mode 2 continuerun+psolve deferred |
 | 2026-07-29 | GPU-P1-events | — | Spikes cluster closed (file_mode = same residual); events triage: netmove/nmodlrandom QUALIFIED no (host DAsyn/noisychan); watchrange GPU assert |
 | 2026-07-29 | GPU-P1-events | — | netmove native green: ACC DAsyn dedicated special + GPU header stage for nrnivmodl |
+| 2026-07-29 | GPU-P1-events | — | nmodlrandom native green: ACC noisychan; RANDOM Instance fix; host INITIAL for RANDOM |
 
 ---
 
@@ -234,7 +235,7 @@ For each test:
 | test_watchrange | green | red | Controls green. Native runs GPU (mode 0) but `assert success` — WATCH/device path, not QUALIFIED block. After netmove. |
 | test_psolve | green | red | SEGV |
 | test_ba | green | red | QUALIFIED no: host ba0,ba1 |
-| test_nmodlrandom | green | red | Controls green. Native QUALIFIED no: Gate B+C — host `noisychan`. |
+| test_nmodlrandom | green | **green** | ACC `noisychan` via `coreneuron_modtests_native_nmodlrandom` (RANDOM host INITIAL; CURRENT/STATE ACC). |
 | test_nmodlrandom_syntax | green | **green** | after NONVINT |
 | test_natrans | red (B/D) | red | → may slip to P2 |
 | array_variable_transfer_* | green | red | QUALIFIED no: host green,red |
@@ -342,4 +343,4 @@ Update Status before exit; commit without push.
 
 ## Next (one line — update every session end)
 
-**Next:** P1 events — `test_watchrange_py_gpu_native` (assert on GPU) or ACC `noisychan` for `test_nmodlrandom` (same dedicated-special pattern as netmove).
+**Next:** P1 events — `test_watchrange_py_gpu_native` (WATCH does not advance High/Mid/Low on native; host WATCH path / Bounce ACC later).

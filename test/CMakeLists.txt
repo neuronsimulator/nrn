@@ -1022,7 +1022,6 @@ if(NRN_ENABLE_PYTHON)
       test_watchrange:test/coreneuron/test_watchrange.py
       test_psolve:test/coreneuron/test_psolve.py
       test_ba:test/coreneuron/test_ba.py
-      test_nmodlrandom:test/coreneuron/test_nmodlrandom.py
       test_nmodlrandom_syntax:test/coreneuron/test_nmodlrandom_syntax.py
       test_natrans:test/gjtests/test_natrans.py)
       string(REPLACE ":" ";" native_parts "${native_gpu_test}")
@@ -1052,6 +1051,21 @@ if(NRN_ENABLE_PYTHON)
       SCRIPT_PATTERNS ${g4_native_helper_script} test/coreneuron/test_netmove.py
       ENVIRONMENT ${native_gpu_test_env} ${sonata_zero_gid_env} ${nrnpython_mpi_env}
       COMMAND ${native_modtests_launch_py} test/coreneuron/test_netmove.py)
+    # ACC noisychan (RANDOM + CURRENT/STATE) for nmodlrandom product row.
+    nrn_add_test_group(
+      NAME coreneuron_modtests_native_nmodlrandom
+      SCRIPT_PATTERNS ${g4_native_helper_script} test/coreneuron/test_nmodlrandom.py
+      MODFILE_PATTERNS "test/coreneuron/mod files/noisychan.mod"
+      NRNIVMODL_ARGS
+        -nmodl "${CMAKE_BINARY_DIR}/bin/nmodl"
+        -nmodlflags "passes --inline host --c acc --oacc")
+    nrn_add_test(
+      GROUP coreneuron_modtests_native_nmodlrandom
+      NAME test_nmodlrandom_py_gpu_native
+      REQUIRES gpu
+      SCRIPT_PATTERNS ${g4_native_helper_script} test/coreneuron/test_nmodlrandom.py
+      ENVIRONMENT ${native_gpu_test_env} ${sonata_zero_gid_env} ${nrnpython_mpi_env}
+      COMMAND ${native_modtests_launch_py} test/coreneuron/test_nmodlrandom.py)
     nrn_add_test(
       GROUP coreneuron_modtests
       NAME spikes_file_mode_py_gpu_native
