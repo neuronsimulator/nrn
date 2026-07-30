@@ -360,4 +360,4 @@ Update Status before exit; commit without push.
 
 ## Next (one line — update every session end)
 
-**Next:** P2 S3 residual (policy path landed: vgap-only push, no bulk mech SoA) — product still 64 vs 128 at `-gap -nt 2` even with g=0; then S4 MechRange.
+**Next:** S3 gap nt2 residual (64 vs 128; g=0 still half). Note: `test_iclamp_nthread` (2 hh+IClamp, forced 1 cell/thread) is **green** on NEURON native GPU — electrode multi-thread alone is not the full S3 story; then S4 MechRange.

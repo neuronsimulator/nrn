@@ -894,6 +894,17 @@ if(NRN_ENABLE_PYTHON)
       ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
                   COVERAGE_FILE=.coverage.coreneuron_test_natrans_py
       COMMAND ${modtests_launch_py} test/gjtests/test_natrans.py)
+    # Two hh+IClamp cells, pc.nthread(2): ELECTRODE_CURRENT multi-thread gate
+    # (localizes S3 / HalfGap multi-thread residual without gap junctions).
+    nrn_add_test(
+      GROUP coreneuron_modtests
+      NAME test_iclamp_nthread_py_${processor}
+      REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
+      SCRIPT_PATTERNS ${coreneuron_backend_helper_script}
+                      test/coreneuron/test_iclamp_nthread.py
+      ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
+                  COVERAGE_FILE=.coverage.coreneuron_test_iclamp_nthread_py
+      COMMAND ${modtests_launch_py} test/coreneuron/test_iclamp_nthread.py)
 
     foreach(run_mode RANGE 2)
       nrn_add_test(
@@ -1022,7 +1033,8 @@ if(NRN_ENABLE_PYTHON)
       test_psolve:test/coreneuron/test_psolve.py
       test_ba:test/coreneuron/test_ba.py
       test_nmodlrandom_syntax:test/coreneuron/test_nmodlrandom_syntax.py
-      test_natrans:test/gjtests/test_natrans.py)
+      test_natrans:test/gjtests/test_natrans.py
+      test_iclamp_nthread:test/coreneuron/test_iclamp_nthread.py)
     # test_units / array_transfer: dedicated ACC specials below (Gate B+C).
       string(REPLACE ":" ";" native_parts "${native_gpu_test}")
       list(GET native_parts 0 native_name)
