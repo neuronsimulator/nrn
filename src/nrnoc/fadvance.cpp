@@ -29,6 +29,7 @@
 #include "neuron/gpu/sync.hpp"
 #endif
 #include "prcellstate_checkpoint.hpp"
+#include "partrans.h"  // nrn_native_gap_targets_to_device
 
 /*
  after an fadvance from t-dt to t, v is defined at t
@@ -369,6 +370,8 @@ void nrn_fixed_step(neuron::model_sorted_token const& cache_token) {
                 (*nrnmpi_v_transfer_)();
             }
             nrn_multithread_job(cache_token, nrn_fixed_step_lastpart);
+            // Main-thread OpenACC push of gap targets (workers must not HtoD).
+            nrn_native_gap_targets_to_device();
         }
         //}
     } else {
@@ -383,6 +386,7 @@ void nrn_fixed_step(neuron::model_sorted_token const& cache_token) {
                 (*nrnmpi_v_transfer_)();
             }
             nrn_multithread_job(cache_token, nrn_fixed_step_lastpart);
+            nrn_native_gap_targets_to_device();
         }
     }
     t = nrn_threads[0]._t;
@@ -941,10 +945,12 @@ void nrn_finitialize(int setv, double v) {
         if (nrnmpi_v_transfer_) {
             (nrnmpi_v_transfer_)();
         }
-        if (nrnthread_v_transfer_)
+        if (nrnthread_v_transfer_) {
             for (NrnThread* _nt: for_threads(nrn_threads, nrn_nthread)) {
                 (*nrnthread_v_transfer_)(_nt);
             }
+            nrn_native_gap_targets_to_device();
+        }
     }
 #endif
     nrn_fihexec(0); /* after v is set but before INITIAL blocks are called*/

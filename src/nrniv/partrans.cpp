@@ -1008,13 +1008,14 @@ static void thread_transfer(NrnThread* _nt) {
     TransferThreadData& ttd = transfer_thread_data_[_nt->id];
 
 #if defined(NRN_ENABLE_GPU)
-    bool const native_buf = neuron::gpu::enabled() && neuron::gpu::backend_native() &&
-                            native_gap_tables_valid_ &&
-                            static_cast<int>(ttd.src_kind.size()) == ttd.cnt;
+    bool const native_gap = neuron::gpu::enabled() && neuron::gpu::backend_native() &&
+                            native_gap_tables_valid_;
+    bool const native_buf = native_gap && static_cast<int>(ttd.src_kind.size()) == ttd.cnt;
     if (native_buf) {
-        // Resolve values from mailbox / insrc / host handles (buffer path, all edges).
-        std::vector<double*> tar_ptrs;
-        tar_ptrs.reserve(static_cast<size_t>(ttd.cnt));
+        // Resolve values from mailbox / insrc / host handles (buffer path).
+        // Host-only here: OpenACC device push must not run on NEURON worker
+        // threads (CUDA_ERROR_INVALID_CONTEXT). Main thread flushes after
+        // multithread lastpart via nrn_native_gap_targets_to_device().
         for (int i = 0; i < ttd.cnt; ++i) {
             double val = 0.0;
             switch (ttd.src_kind[i]) {
@@ -1024,7 +1025,6 @@ static void thread_transfer(NrnThread* _nt) {
                     static_cast<size_t>(slot) < native_vsrc_val_.size()) {
                     val = native_vsrc_val_[slot];
                 } else {
-                    // Pre-upload / failed gather: use host source (valid at finitialize).
                     val = *(ttd.sv[i]);
                 }
                 break;
@@ -1044,7 +1044,6 @@ static void thread_transfer(NrnThread* _nt) {
                 break;
             }
             *(ttd.tv[i]) = val;
-            tar_ptrs.push_back(static_cast<double*>(ttd.tv[i]));
         }
         if (std::getenv("NRN_GAP_DEBUG") && ttd.cnt > 0) {
             static int once_per_tid[32] = {};
@@ -1052,71 +1051,21 @@ static void thread_transfer(NrnThread* _nt) {
             int& once = once_per_tid[tid < 32 ? tid : 31];
             if (once < 2) {
                 double mn = *(ttd.tv[0]), mx = *(ttd.tv[0]);
-                int n_lv = 0, n_ri = 0, n_lh = 0;
                 for (int i = 0; i < ttd.cnt; ++i) {
                     double v = *(ttd.tv[i]);
                     mn = std::min(mn, v);
                     mx = std::max(mx, v);
-                    switch (ttd.src_kind[i]) {
-                    case NativeEdgeSrcKind::LocalVoltage:
-                        ++n_lv;
-                        break;
-                    case NativeEdgeSrcKind::RemoteInsrc:
-                        ++n_ri;
-                        break;
-                    default:
-                        ++n_lh;
-                        break;
-                    }
                 }
                 std::fprintf(stderr,
-                             "gap_scatter tid=%d n=%d lv=%d ri=%d lh=%d host_tar min=%g max=%g "
+                             "gap_host_write tid=%d n=%d host_tar min=%g max=%g "
                              "mailbox_fresh=%d n_vsrc=%zu\n",
                              tid,
                              ttd.cnt,
-                             n_lv,
-                             n_ri,
-                             n_lh,
                              mn,
                              mx,
                              native_mailbox_fresh_ ? 1 : 0,
                              native_vsrc_val_.size());
                 ++once;
-            }
-        }
-        // Push host target values to device (sparse + bulk target-mech SoA).
-        // Every thread that owns targets must participate: with nthread>1 and
-        // serial or parallel lastpart, tid==0-only bulk sync left other
-        // threads' vgap on host while device HalfGap CURRENT saw stale values
-        // (S3: multi-thread gap 64 vs 128 spikes).
-        if (!tar_ptrs.empty()) {
-            neuron::gpu::scatter_gap_targets_to_device(tar_ptrs.data(),
-                                                      static_cast<int>(tar_ptrs.size()));
-        }
-        // Bulk SoA push for mechs that appear as targets on *this* thread.
-        // Global mechanism storage is shared; calling per thread after host
-        // writes is correct for sequential multi-thread (OMP_NUM_THREADS=1)
-        // and last-writer-wins for concurrent workers after non-overlapping
-        // host writes.
-        if (ttd.cnt > 0) {
-            std::unordered_set<int> tar_types;
-            for (size_t i = 0; i < targets_.size(); ++i) {
-                Point_process* pp = target_pntlist_[i];
-                if (!pp || !pp->prop) {
-                    continue;
-                }
-                if (nrn_nthread > 1) {
-                    auto* vnt = static_cast<NrnThread*>(pp->_vnt);
-                    if (!vnt || vnt->id != _nt->id) {
-                        continue;
-                    }
-                }
-                tar_types.insert(pp->prop->_type);
-            }
-            if (!tar_types.empty()) {
-                std::vector<int> types(tar_types.begin(), tar_types.end());
-                neuron::gpu::sync_gap_target_mechs_to_device(types.data(),
-                                                            static_cast<int>(types.size()));
             }
         }
         return;
@@ -1126,6 +1075,52 @@ static void thread_transfer(NrnThread* _nt) {
         *(ttd.tv[i]) = *(ttd.sv[i]);
     }
 }
+
+#if defined(NRN_ENABLE_GPU)
+/** Main-thread only: push host gap targets to device after all worker
+ *  thread_transfer host writes complete (see multithread lastpart). */
+void nrn_native_gap_targets_to_device() {
+    if (!(neuron::gpu::enabled() && neuron::gpu::backend_native() && native_gap_tables_valid_)) {
+        return;
+    }
+    if (!transfer_thread_data_ || n_transfer_thread_data_ != nrn_nthread) {
+        return;
+    }
+    static int skip_dev = -1;
+    if (skip_dev < 0) {
+        char const* e = std::getenv("NRN_GAP_SKIP_DEVICE_PUSH");
+        skip_dev = (e && e[0] && e[0] != '0') ? 1 : 0;
+    }
+    if (skip_dev) {
+        return;
+    }
+    std::vector<double*> all_ptrs;
+    for (int tid = 0; tid < nrn_nthread; ++tid) {
+        TransferThreadData& ttd = transfer_thread_data_[tid];
+        for (int i = 0; i < ttd.cnt; ++i) {
+            all_ptrs.push_back(static_cast<double*>(ttd.tv[i]));
+        }
+    }
+    if (!all_ptrs.empty()) {
+        neuron::gpu::scatter_gap_targets_to_device(all_ptrs.data(),
+                                                  static_cast<int>(all_ptrs.size()));
+    }
+    std::unordered_set<int> tar_types;
+    for (size_t i = 0; i < targets_.size(); ++i) {
+        Point_process* pp = target_pntlist_[i];
+        if (pp && pp->prop) {
+            tar_types.insert(pp->prop->_type);
+        }
+    }
+    if (!tar_types.empty()) {
+        std::vector<int> types(tar_types.begin(), tar_types.end());
+        neuron::gpu::sync_gap_target_mechs_to_device(types.data(),
+                                                    static_cast<int>(types.size()));
+    }
+}
+#else
+void nrn_native_gap_targets_to_device() {}
+#endif
 
 // The simplest conceivable transfer is to use MPI_Allgatherv and send
 // all sources to all machines. More complicated and possibly more efficient

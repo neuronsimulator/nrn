@@ -14,6 +14,7 @@ extern void hoc_execerror(const char*, const char*);
 #include <cstdio>
 #include <cstdlib>
 #include <cstdint>
+#include <mutex>
 #include <type_traits>
 
 namespace neuron::gpu {
@@ -41,6 +42,11 @@ std::uint64_t g_gap_gather_ok = 0;
 std::uint64_t g_gap_gather_fallback = 0;
 std::uint64_t g_gap_scatter_miss = 0;
 bool g_gap_fallback_warned = false;
+// Multi-thread lastpart runs real worker std::threads (pc.nthread(n,1)). Concurrent
+// OpenACC HtoD of the same HalfGap SoA (and interleaved hh STATE) can yield
+// CUDA_ERROR_INVALID_CONTEXT on reduced multi-thread gap models. Serialize device
+// gap push; host target writes stay per-thread outside this lock.
+std::mutex g_gap_device_push_mutex;
 
 void note_gap_host_fallback(char const* where, char const* reason) noexcept {
     ++g_gap_gather_fallback;
@@ -353,6 +359,7 @@ void scatter_gap_targets_to_device(double* const* host_ptrs, int n) {
     if (!native_gap_gpu_active() || n <= 0 || !host_ptrs) {
         return;
     }
+    std::lock_guard<std::mutex> const lock{g_gap_device_push_mutex};
     // Prefer NEURON present-table lookup (handles mid-SoA offsets from nrn_target_copyin).
     // Fall back to OpenACC acc_deviceptr for the same reason.
     int ok = 0, miss = 0;
@@ -409,6 +416,7 @@ void sync_gap_target_mechs_to_device(int const* mech_types, int n_types) {
     if (!native_gap_gpu_active() || !mech_types || n_types <= 0) {
         return;
     }
+    std::lock_guard<std::mutex> const lock{g_gap_device_push_mutex};
     for (int i = 0; i < n_types; ++i) {
         int const type = mech_types[i];
         if (!neuron::model().is_valid_mechanism(type)) {

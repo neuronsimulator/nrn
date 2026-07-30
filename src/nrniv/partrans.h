@@ -30,3 +30,6 @@ struct SetupTransferInfo {
 extern "C" {
 extern SetupTransferInfo* nrn_get_partrans_setup_info(int, int, size_t);
 }
+
+/** After multithread lastpart host gap writes: main-thread OpenACC push of targets. */
+void nrn_native_gap_targets_to_device();
