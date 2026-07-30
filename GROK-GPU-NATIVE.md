@@ -110,6 +110,12 @@ time, not half-on/half-off during a step.
 device path now,” not a permanent topology bit. During a native fixed step it
 should be 1 for every thread that owns cells for the whole integration body.
 
+**`use_native_gpu_fixed_step()` / `PsolveGpuScope`:** the psolve scope flag must be
+**process-wide**, not `thread_local`. Workers from `pc.nthread(n,1)` must see the
+same “inside psolve” state as the main thread or they silently take the host
+fixed-step path. Debug: `NRN_GPU_MATRIX_PROBE=1` — look for `compute_gpu=0` on
+tid>0 during steps (after finitialize).
+
 ### Session end: commit, do not push
 
 User workflow (all GPU sessions — and preferred for this tree generally):

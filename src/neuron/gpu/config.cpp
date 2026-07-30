@@ -4,6 +4,7 @@
 #include "node_order_optim/node_order_optim.h"
 
 #include <algorithm>
+#include <atomic>
 #include <cctype>
 #include <cstdio>
 #include <stdexcept>
@@ -26,8 +27,13 @@ RuntimeConfig& config() {
     return instance;
 }
 
-// Nesting depth of PsolveGpuScope on this thread (psolve / ncs2nrn_integrate).
-thread_local int g_psolve_gpu_scope_depth{0};
+// Nesting depth of PsolveGpuScope for the process (psolve / ncs2nrn_integrate).
+// Must be process-wide, not thread_local: pc.nthread(n,1) workers call
+// nrn_fixed_step_thread and must see use_native_gpu_fixed_step()==true.
+// With thread_local, only the main thread (scope enter) used the GPU path;
+// workers silently ran the host fixed-step (compute_gpu=0) — S3 multi-thread
+// residual (half the cells never on device).
+std::atomic<int> g_psolve_gpu_scope_depth{0};
 
 Backend parse_backend(std::string_view name) {
     std::string lowered{name};
@@ -46,18 +52,21 @@ Backend parse_backend(std::string_view name) {
 }  // namespace
 
 PsolveGpuScope::PsolveGpuScope() noexcept {
-    ++g_psolve_gpu_scope_depth;
+    g_psolve_gpu_scope_depth.fetch_add(1, std::memory_order_acq_rel);
 }
 
 PsolveGpuScope::~PsolveGpuScope() noexcept {
-    if (g_psolve_gpu_scope_depth > 0) {
-        --g_psolve_gpu_scope_depth;
+    int const prev = g_psolve_gpu_scope_depth.fetch_sub(1, std::memory_order_acq_rel);
+    if (prev <= 0) {
+        // Underflow guard (should not happen).
+        g_psolve_gpu_scope_depth.store(0, std::memory_order_release);
     }
 }
 
 bool use_native_gpu_fixed_step() noexcept {
 #if defined(NRN_ENABLE_GPU)
-    return enabled() && backend_native() && g_psolve_gpu_scope_depth > 0;
+    return enabled() && backend_native() &&
+           g_psolve_gpu_scope_depth.load(std::memory_order_acquire) > 0;
 #else
     return false;
 #endif

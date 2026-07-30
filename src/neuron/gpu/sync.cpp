@@ -12,6 +12,8 @@
 #include "nrn_ansi.h"
 #include "nrncvode.h"  // nrn_thread_has_fixed_play
 
+#include <cstdio>
+#include <cstdlib>
 #include <cstring>
 
 extern int use_sparse13;
@@ -436,6 +438,70 @@ void sync_diagonal_to_device_after_mechanisms(NrnThread& nt) {
 
 void sync_matrix_to_host_before_solve(NrnThread& nt) {
     sync_matrix_arrays_to_host(nt);
+}
+
+void matrix_probe_maybe(NrnThread& nt, char const* tag) noexcept {
+#if defined(NRN_ENABLE_GPU)
+    static int enabled_cache = -1;
+    static double tmax = 0.1;
+    if (enabled_cache < 0) {
+        char const* e = std::getenv("NRN_GPU_MATRIX_PROBE");
+        enabled_cache = (e && e[0] && e[0] != '0') ? 1 : 0;
+        if (char const* tm = std::getenv("NRN_GPU_MATRIX_PROBE_TMAX")) {
+            tmax = std::atof(tm);
+        }
+    }
+    if (!enabled_cache || !enabled() || !backend_native()) {
+        return;
+    }
+    if (nt._t > tmax + 1e-15) {
+        return;
+    }
+    if (nt.end <= 0) {
+        std::fprintf(stderr,
+                     "MATRIX_PROBE %s tid=%d t=%.9g compute_gpu=%d end=0 stays_dev=%d\n",
+                     tag ? tag : "?",
+                     nt.id,
+                     nt._t,
+                     nt.compute_gpu,
+                     matrix_rhs_d_stays_on_device_for_solve(nt) ? 1 : 0);
+        return;
+    }
+    // Authoritative snapshot: wait this thread's stream then pull d/rhs/v.
+    if (nt.compute_gpu) {
+        nrn_pragma_acc(wait(nt.stream_id))
+        auto* const vec_rhs = nt.node_rhs_storage();
+        auto* const vec_d = nt.node_d_storage();
+        auto* const vec_v = nt.node_voltage_storage();
+        nrn_pragma_acc(update host(vec_rhs [0:nt.end], vec_d [0:nt.end], vec_v [0:nt.end]))
+        nrn_pragma_omp(target update from(vec_rhs [0:nt.end], vec_d [0:nt.end], vec_v [0:nt.end]))
+    }
+    auto* const vec_rhs = nt.node_rhs_storage();
+    auto* const vec_d = nt.node_d_storage();
+    auto* const vec_v = nt.node_voltage_storage();
+    int const nshow = nt.end < 3 ? nt.end : 3;
+    std::fprintf(stderr,
+                 "MATRIX_PROBE %s tid=%d t=%.9g compute_gpu=%d stays_dev=%d ncell=%d end=%d",
+                 tag ? tag : "?",
+                 nt.id,
+                 nt._t,
+                 nt.compute_gpu,
+                 matrix_rhs_d_stays_on_device_for_solve(nt) ? 1 : 0,
+                 nt.ncell,
+                 nt.end);
+    for (int i = 0; i < nshow; ++i) {
+        std::fprintf(stderr,
+                     " |i=%d d=%.17g rhs=%.17g v=%.17g",
+                     i,
+                     vec_d[i],
+                     vec_rhs[i],
+                     vec_v[i]);
+    }
+    std::fprintf(stderr, "\n");
+#else
+    (void) nt;
+    (void) tag;
+#endif
 }
 
 void sync_matrix_to_device_before_solve(NrnThread& nt) {

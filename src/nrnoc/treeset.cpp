@@ -729,6 +729,8 @@ void setup_tree_matrix(neuron::model_sorted_token const& cache_token, NrnThread&
     if (!neuron::gpu::matrix_rhs_d_stays_on_device_for_solve(nt)) {
         neuron::gpu::sync_matrix_to_host_before_solve(nt);
     }
+    // Opt-in: NRN_GPU_MATRIX_PROBE=1 — device-authoritative d/rhs/v after setup.
+    neuron::gpu::matrix_probe_maybe(nt, "post_setup");
 #endif
     nrn_nonvint_block_current(nt.end, nt.node_rhs_storage(), nt.id);
     nrn_nonvint_block_conductance(nt.end, nt.node_d_storage(), nt.id);

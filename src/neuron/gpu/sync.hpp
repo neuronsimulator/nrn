@@ -65,6 +65,18 @@ void sync_diagonal_to_device_before_axial_lhs(NrnThread& nt) noexcept;
 /** Pull GPU axial matrix state to host before host nonvint adjustments. */
 void sync_matrix_to_host_before_solve(NrnThread& nt);
 
+/**
+ * Optional native-GPU matrix debug (stderr).
+ *
+ * Env:
+ *   NRN_GPU_MATRIX_PROBE=1          — enable
+ *   NRN_GPU_MATRIX_PROBE_TMAX=0.1   — only print while nt._t <= tmax (default 0.1)
+ *
+ * Pulls device d/rhs/v when compute_gpu (waits stream first). Useful to compare
+ * multi-thread / gap vs no-gap setup without one-off scripts.
+ */
+void matrix_probe_maybe(NrnThread& nt, char const* tag) noexcept;
+
 /** Push post-nonvint matrix state to device before the GPU Hines solver. */
 void sync_matrix_to_device_before_solve(NrnThread& nt);
 

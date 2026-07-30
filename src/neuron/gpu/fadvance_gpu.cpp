@@ -82,6 +82,7 @@ void fixed_step_thread(model_sorted_token const& cache_token,
             } else {
                 nrn_solve(nth);
             }
+            matrix_probe_maybe(nt, "post_solve");
         }
         {
             phase_timer::Scope const timer{phase_timer::Id::post_solve};

@@ -2,9 +2,10 @@
 
 **Portfolio:** GPU-native (feature)  
 **Tree:** `~/neuron/nrngpu`  
-**Status:** S0–S2 green; **S3 partial (2026-07-30 tip)** — multi-thread buffer
-path + all-threads-on-device residency + **vgap-only** device push (no full-mech
-SoA H→D). Product residual remains: ringtest `-gap -nt>1` **64 vs 128** spikes.
+**Status:** S0–**S3 green (2026-07-30 tip)** — multi-thread gap product
+`ringtest -gpu-native -gap -nt 2` matches CPU (128 spikes). Root fix: process-wide
+`PsolveGpuScope` so worker threads take the native GPU fixed-step path (was
+`thread_local`, so tid>0 silently ran host fixed-step).
 
 **Product policy (2026-07-30):** device gather/scatter under native is mandatory.
 Silent no-op / host V pull when residency fails is **not** default. Opt-in debug:
@@ -224,7 +225,7 @@ Constraints if added:
 | **S0** | Setup: `SourceLoc`/`TargetLoc` tables; sid fan-out; rebuild on structure change | Dump / asserts; no runtime change required |
 | **S1** | Phase G+H+I for **NodeVoltage → target**, 1-rank (still full buffer path) | ACC HalfGap + ringtest `-gap` 1-rank spike match vs CPU / `spk2.gap.100ms.std.ref` |
 | **S2** | Multi-rank MPI via existing host Alltoallv | **green** — `neuron_gpu_native_mpi_gap` 2-rank + sorted `spk2.gap.100ms.std.sorted.ref` (launch via `h.nrnmpi_init`, not `special -mpi`) |
-| **S3** | Multi-thread via same buffers | **partial** — gather/scatter multi-thread + vgap-only device push + stream barrier before gather; lastpart still a second job with `compute_gpu=1` per thread. Product residual: `-gap -nt 2` **64 vs 128** (gids 0–63 only). Even `g=0` is 8 vs 16 — not transfer-only. |
+| **S3** | Multi-thread via same buffers | **green** — `use_native_gpu_fixed_step()` must be true on **all** std::thread workers (`g_psolve_gpu_scope_depth` process-wide, not `thread_local`). Plus vgap-only device push / stream barrier before gather. |
 | **S4** | `MechRange` sources (natrans ions) | `test_natrans` native beyond nthread=1 |
 | **S5** | Traffic audit; no full-V default; optional same-thread GPU shortcut | Measured; tests still cover buffer path |
 
@@ -252,31 +253,26 @@ Constraints if added:
 
 ---
 
-## S3 residual (multi-thread product)
+## S3 multi-thread (closed)
 
-What landed for multi-thread **buffers** (policy-aligned):
+**Root cause:** `PsolveGpuScope` / `g_psolve_gpu_scope_depth` was `thread_local`.
+Only the main thread (where `ncs2nrn_integrate` entered the scope) saw
+`use_native_gpu_fixed_step()==true`. Workers under `pc.nthread(n,1)` took the
+**host** fixed-step branch (`compute_gpu=0`) while tid 0 ran on device — half the
+network never used the native GPU path. Gap coupling made that visible (64 vs
+128); even `g=0` HalfGap + transfer path still split host vs device ownership.
 
-- Live re-bucket of voltage sources by `Node::_nt` each gather step.
-- **All streams waited** before mailbox gather (multi-thread V complete).
-- **vgap-only** device push: per-scalar scatter + mid-SoA base+offset resolve +
-  push only double SoA columns that contain targets. No full-mech SoA H→D
-  unless `NRN_GAP_BULK_MECH_PUSH=1`.
-- Do **not** write mailbox voltages back into host node SoA.
-- NMODL ACC: GPU `pdata` dptr uses `id + storage_offset`.
-- lastpart remains a second multi-thread job after gather (required so transfer
-  sees all threads’ post_solve V); `prepare_nonvint` sets `compute_gpu=1` for
-  every thread (still all-on-device for STATE).
+**Fix:** process-wide atomic scope depth in `src/neuron/gpu/config.cpp`.
 
-What still fails product:
+**Debug technique (reusable):** `NRN_GPU_MATRIX_PROBE=1` (optional
+`NRN_GPU_MATRIX_PROBE_TMAX=0.1`) prints after setup/solve: `tid`, `t`,
+`compute_gpu`, `stays_dev`, and first nodes’ `d`/`rhs`/`v` (device pull when
+`compute_gpu`). Compare threads: missing `post_solve` or permanent
+`compute_gpu=0` on tid>0 means the wrong fixed-step path.
 
-- `ringtest -gpu-native -gap -nt 2`: **64 vs CPU 128** spikes; firing gids 0–63 only.
-- Even with `g=0` (no coupling current): GPU **8** vs CPU **16** leaders — so
-  residual is **not** explained by stale `vgap` alone. Having continuous transfer
-  / HalfGap present on multi-thread still silences half the cells.
-- No-gap multi-thread native remains green (688). Gap nt=1 remains green (128).
-- Serial `pc.nthread(2)` (no real workers) still 64 — not CUDA worker-context only.
+**Also landed with S3 work:** vgap-only device push (no bulk mech SoA unless
+`NRN_GAP_BULK_MECH_PUSH=1`); stream wait before gather; live source re-bucket.
 
 ## One-line Next
 
-**S3 residual:** why multi-thread + `setup_transfer`/HalfGap silences half the cells
-even at `g=0` (not vgap bulk). Then S4 MechRange (natrans nthread>1).
+**S4:** MechRange sources (natrans nthread>1).

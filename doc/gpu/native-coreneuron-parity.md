@@ -360,4 +360,4 @@ Update Status before exit; commit without push.
 
 ## Next (one line — update every session end)
 
-**Next:** S3 gap nt2 residual (64 vs 128; g=0 still half). Note: `test_iclamp_nthread` (2 hh+IClamp, forced 1 cell/thread) is **green** on NEURON native GPU — electrode multi-thread alone is not the full S3 story; then S4 MechRange.
+**Next:** P2 S4 MechRange (natrans nthread>1). S3 green: process-wide `PsolveGpuScope` so all worker threads use native GPU fixed-step.
