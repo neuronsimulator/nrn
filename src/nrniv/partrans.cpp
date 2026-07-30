@@ -14,7 +14,9 @@
 #include <stdint.h>
 
 #include <complex>
+#include <map>
 #include <unordered_map>  // Replaces NrnHash for MapSgid2Int
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -26,7 +28,10 @@
 
 #if defined(NRN_ENABLE_GPU)
 #include "neuron/gpu/config.hpp"
+#include "neuron/gpu/offload.hpp"
 #include "neuron/gpu/partrans.hpp"
+#include "neuron/gpu/device_state.hpp"
+#include "neuron/gpu/sync.hpp"
 #endif
 
 
@@ -154,6 +159,9 @@ extern void (*nrn_mk_transfer_thread_data_)();
 extern double nrnmpi_transfer_wait_;
 #endif
 
+// Edge source kind for CoreNEURON-style native buffer path (doc/gpu/native-partrans.md).
+enum class NativeEdgeSrcKind : int { LocalVoltage = 0, LocalHost = 1, RemoteInsrc = 2 };
+
 struct TransferThreadData {
     int cnt;
     std::vector<neuron::container::data_handle<double>> tv;  // pointers to the
@@ -161,9 +169,25 @@ struct TransferThreadData {
     std::vector<neuron::container::data_handle<double>> sv;  // pointers to the
                                                              // ParallelContext.source_var (or into
                                                              // MPI target buffer)
+    // Parallel to cnt: how to resolve the source value for native GPU transfer.
+    std::vector<NativeEdgeSrcKind> src_kind;
+    std::vector<int> src_slot;  // mailbox slot or insrc index
 };
 static TransferThreadData* transfer_thread_data_;
 static int n_transfer_thread_data_;
+
+// Unique local node-voltage sources (mailbox). Built in rebuild_native_gap_tables.
+// Store Node* and resolve v_node_index at gather time (post-permute).
+static std::vector<Node*> native_vsrc_nd_;
+static std::vector<int> native_vsrc_tid_;
+static std::vector<double> native_vsrc_val_;
+static std::vector<std::vector<int>> native_gather_slot_by_tid_;
+static std::vector<std::vector<Node*>> native_gather_nd_by_tid_;
+static bool native_gap_tables_valid_ = false;
+// True only when gather_gap_voltage_mailbox actually read device voltages this step.
+// Finitialize may call transfer before ensure_on_device; mailbox would stay 0 and must
+// not overwrite host vgap before the first GPU upload.
+static bool native_mailbox_fresh_ = false;
 
 // for the case where we need vi = v + vext as the source voltage
 struct SourceViBuf {
@@ -351,12 +375,166 @@ static void rm_svibuf() {
 }
 
 static void thread_vi_compute(NrnThread* _nt);
+static void mpi_transfer();
+static void gap_v_transfer_controller();
+static void set_poutsrc_non_voltage_index(int i);
 
 static void set_poutsrc_voltage_index(int i, Node* nd) {
-    if (i >= 0 && static_cast<size_t>(i) < poutsrc_v_node_index_.size()) {
-        poutsrc_v_node_index_[i] = nd->v_node_index;
+    if (i < 0 || static_cast<size_t>(i) >= poutsrc_v_node_index_.size() || !nd) {
+        return;
+    }
+    // setup_transfer may run before thread partition assigns Node::_nt.
+    if (!nd->_nt) {
+        poutsrc_v_node_index_[i] = -1;
         if (static_cast<size_t>(i) < poutsrc_thread_id_.size()) {
-            poutsrc_thread_id_[i] = nd->_nt->id;
+            poutsrc_thread_id_[i] = -1;
+        }
+        return;
+    }
+    poutsrc_v_node_index_[i] = nd->v_node_index;
+    if (static_cast<size_t>(i) < poutsrc_thread_id_.size()) {
+        poutsrc_thread_id_[i] = nd->_nt->id;
+    }
+}
+
+static void clear_native_gap_tables() {
+    native_vsrc_nd_.clear();
+    native_vsrc_tid_.clear();
+    native_vsrc_val_.clear();
+    native_gather_slot_by_tid_.clear();
+    native_gather_nd_by_tid_.clear();
+    native_gap_tables_valid_ = false;
+    native_mailbox_fresh_ = false;
+}
+
+// S0: unique local voltage sources (by Node*) + per-edge kind/slot.
+// v_node_index is resolved live at gather time (post-permute).
+static void rebuild_native_gap_tables() {
+    clear_native_gap_tables();
+    if (!transfer_thread_data_ || n_transfer_thread_data_ <= 0) {
+        return;
+    }
+    std::unordered_map<Node*, int> nd_slot;
+    auto ensure_vsrc = [&](Node* nd) -> int {
+        auto it = nd_slot.find(nd);
+        if (it != nd_slot.end()) {
+            return it->second;
+        }
+        int const slot = static_cast<int>(native_vsrc_nd_.size());
+        native_vsrc_nd_.push_back(nd);
+        int tid = (nd && nd->_nt) ? nd->_nt->id : 0;
+        native_vsrc_tid_.push_back(tid);
+        nd_slot.emplace(nd, slot);
+        return slot;
+    };
+
+    for (int tid = 0; tid < n_transfer_thread_data_; ++tid) {
+        TransferThreadData& ttd = transfer_thread_data_[tid];
+        ttd.src_kind.assign(static_cast<size_t>(ttd.cnt), NativeEdgeSrcKind::LocalHost);
+        ttd.src_slot.assign(static_cast<size_t>(ttd.cnt), -1);
+    }
+
+    for (size_t i = 0; i < targets_.size(); ++i) {
+        int tid = 0;
+        if (nrn_nthread > 1) {
+            assert(target_pntlist_[i]);
+            tid = ((NrnThread*) target_pntlist_[i]->_vnt)->id;
+        }
+        TransferThreadData& ttd = transfer_thread_data_[tid];
+        int edge = -1;
+        {
+            int ecount = 0;
+            for (size_t k = 0; k <= i; ++k) {
+                int ktid = 0;
+                if (nrn_nthread > 1) {
+                    ktid = ((NrnThread*) target_pntlist_[k]->_vnt)->id;
+                }
+                if (ktid == tid) {
+                    if (k == i) {
+                        edge = ecount;
+                    }
+                    ++ecount;
+                }
+            }
+        }
+        if (edge < 0 || edge >= ttd.cnt) {
+            continue;
+        }
+
+        sgid_t sid = sgid2targets_[i];
+        auto search = sgid2srcindex_.find(sid);
+        if (search != sgid2srcindex_.end()) {
+            Node* nd = visources_[search->second];
+            auto it = non_vsrc_update_info_.find(sid);
+            if (it != non_vsrc_update_info_.end() || (nd && nd->extnode) || !nd) {
+                ttd.src_kind[edge] = NativeEdgeSrcKind::LocalHost;
+                ttd.src_slot[edge] = -1;
+            } else {
+                int const slot = ensure_vsrc(nd);
+                ttd.src_kind[edge] = NativeEdgeSrcKind::LocalVoltage;
+                ttd.src_slot[edge] = slot;
+            }
+        } else {
+            auto isearch = sid2insrc_.find(sid);
+            if (isearch != sid2insrc_.end()) {
+                ttd.src_kind[edge] = NativeEdgeSrcKind::RemoteInsrc;
+                ttd.src_slot[edge] = isearch->second;
+            } else {
+                ttd.src_kind[edge] = NativeEdgeSrcKind::LocalHost;
+                ttd.src_slot[edge] = -1;
+            }
+        }
+    }
+
+    native_vsrc_val_.assign(native_vsrc_nd_.size(), 0.0);
+    native_gather_slot_by_tid_.assign(nrn_nthread, {});
+    native_gather_nd_by_tid_.assign(nrn_nthread, {});
+    for (size_t s = 0; s < native_vsrc_nd_.size(); ++s) {
+        Node* nd = native_vsrc_nd_[s];
+        int tid = (nd && nd->_nt) ? nd->_nt->id : native_vsrc_tid_[s];
+        if (tid < 0 || tid >= nrn_nthread) {
+            continue;
+        }
+        native_vsrc_tid_[s] = tid;
+        native_gather_slot_by_tid_[tid].push_back(static_cast<int>(s));
+        native_gather_nd_by_tid_[tid].push_back(nd);
+    }
+    native_gap_tables_valid_ = !native_vsrc_nd_.empty() || max_targets_ > 0;
+}
+
+// Resolve live v_node_index into parallel arrays for the GPU gather helper.
+static void fill_live_vnode_lists(std::vector<std::vector<int>>& vnode_by_tid) {
+    vnode_by_tid.assign(nrn_nthread, {});
+    for (int tid = 0; tid < nrn_nthread; ++tid) {
+        auto const& nds = native_gather_nd_by_tid_[tid];
+        vnode_by_tid[tid].resize(nds.size());
+        for (size_t i = 0; i < nds.size(); ++i) {
+            Node* nd = nds[i];
+            vnode_by_tid[tid][i] = (nd) ? nd->v_node_index : -1;
+        }
+    }
+}
+
+static void refresh_poutsrc_voltage_indices() {
+    if (!poutsrc_indices_ || outsrc_buf_size_ <= 0) {
+        return;
+    }
+    if (poutsrc_v_node_index_.size() < static_cast<size_t>(outsrc_buf_size_)) {
+        return;
+    }
+    for (int i = 0; i < outsrc_buf_size_; ++i) {
+        int const isrc = poutsrc_indices_[i];
+        if (isrc < 0 || static_cast<size_t>(isrc) >= visources_.size()) {
+            set_poutsrc_non_voltage_index(i);
+            continue;
+        }
+        Node* nd = visources_[isrc];
+        sgid_t const sid = sgids_[isrc];
+        auto const it = non_vsrc_update_info_.find(sid);
+        if (it != non_vsrc_update_info_.end() || (nd && nd->extnode)) {
+            set_poutsrc_non_voltage_index(i);
+        } else {
+            set_poutsrc_voltage_index(i, nd);
         }
     }
 }
@@ -485,7 +663,9 @@ static void mk_ttd() {
         if (nrnmpi_numprocs > 1 && max_targets_) {
             nrnthread_v_transfer_ = thread_transfer;
         }
+        refresh_poutsrc_voltage_indices();
         rebuild_poutsrc_gpu_gather_tables();
+        clear_native_gap_tables();
         return;
     }
     n = targets_.size();
@@ -573,7 +753,17 @@ static void mk_ttd() {
         }
     }
     nrnthread_v_transfer_ = thread_transfer;
+    refresh_poutsrc_voltage_indices();
     rebuild_poutsrc_gpu_gather_tables();
+    rebuild_native_gap_tables();
+#if defined(NRN_ENABLE_GPU)
+    // Always install controller when gaps exist: native path gathers local V into
+    // a mailbox even for 1-rank / same-thread (CoreNEURON-style buffer path).
+    // Runtime no-ops when native GPU is off.
+    if (!targets_.empty()) {
+        nrnmpi_v_transfer_ = gap_v_transfer_controller;
+    }
+#endif
 }
 
 static void thread_vi_compute(NrnThread* _nt) {
@@ -599,12 +789,14 @@ static void mpi_transfer() {
                             static_cast<int>(poutsrc_v_node_index_.size()) == n;
     if (gpu_gather) {
         if (nrn_nthread == 1) {
-            neuron::gpu::gather_gap_voltage_sources_to_outsrc(poutsrc_v_node_index_.data(), n, outsrc_buf_);
+            neuron::gpu::gather_gap_voltage_sources_to_outsrc(poutsrc_v_node_index_.data(), n,
+                                                              outsrc_buf_);
         } else {
-            neuron::gpu::gather_gap_voltage_sources_multithread(poutsrc_gather_outsrc_index_by_thread_,
-                                                                poutsrc_gather_v_node_index_by_thread_,
-                                                                n,
-                                                                outsrc_buf_);
+            neuron::gpu::gather_gap_voltage_sources_multithread(
+                poutsrc_gather_outsrc_index_by_thread_,
+                poutsrc_gather_v_node_index_by_thread_,
+                n,
+                outsrc_buf_);
         }
         for (i = 0; i < n; ++i) {
             if (poutsrc_v_node_index_[i] < 0) {
@@ -648,6 +840,57 @@ static void mpi_transfer() {
     // insrc_buf_ will get transferred to targets by thread_transfer
 }
 
+// Phase G (+ H when MPI): device gather of local voltage sources into mailbox;
+// then optional MPI. Installed as nrnmpi_v_transfer_ for 1-rank and multi-rank
+// so same-thread edges still exercise the buffer path (native-partrans.md).
+static void gap_v_transfer_controller() {
+    native_mailbox_fresh_ = false;
+#if defined(NRN_ENABLE_GPU)
+    if (neuron::gpu::enabled() && neuron::gpu::backend_native() && native_gap_tables_valid_ &&
+        neuron::gpu::model_is_on_device()) {
+        // Phase G: sparse mailbox gather (CoreNEURON-style). Always also
+        // publish into host node V for *sv / diagnostics.
+        if (!native_vsrc_val_.empty()) {
+            std::vector<std::vector<int>> live_vnode;
+            fill_live_vnode_lists(live_vnode);
+            native_mailbox_fresh_ = neuron::gpu::gather_gap_voltage_mailbox(
+                native_gather_slot_by_tid_,
+                live_vnode,
+                native_vsrc_val_.data(),
+                static_cast<int>(native_vsrc_val_.size()));
+            if (native_mailbox_fresh_) {
+                for (size_t s = 0; s < native_vsrc_nd_.size(); ++s) {
+                    Node* nd = native_vsrc_nd_[s];
+                    if (!nd || !nd->_nt) {
+                        continue;
+                    }
+                    int const tid = nd->_nt->id;
+                    int const ix = nd->v_node_index;
+                    if (tid < 0 || tid >= nrn_nthread || ix < 0) {
+                        continue;
+                    }
+                    NrnThread& nt = nrn_threads[tid];
+                    if (ix < nt.end) {
+                        nt.node_voltage_storage()[ix] = native_vsrc_val_[s];
+                    }
+                }
+            }
+        }
+        // Fallback when sparse gather cannot map device V yet.
+        if (!native_mailbox_fresh_) {
+            for (int tid = 0; tid < nrn_nthread; ++tid) {
+                if (nrn_threads[tid].end > 0) {
+                    neuron::gpu::sync_voltages_to_host_after_post_solve(nrn_threads[tid]);
+                }
+            }
+        }
+    }
+#endif
+    if (nrnmpi_numprocs > 1) {
+        mpi_transfer();
+    }
+}
+
 static void thread_transfer(NrnThread* _nt) {
     if (!is_setup_) {
         hoc_execerror("ParallelContext.setup_transfer()", "needs to be called.");
@@ -673,14 +916,88 @@ static void thread_transfer(NrnThread* _nt) {
     // do the transfer.
     assert(n_transfer_thread_data_ == nrn_nthread);
     TransferThreadData& ttd = transfer_thread_data_[_nt->id];
+
+#if defined(NRN_ENABLE_GPU)
+    bool const native_buf = neuron::gpu::enabled() && neuron::gpu::backend_native() &&
+                            native_gap_tables_valid_ &&
+                            static_cast<int>(ttd.src_kind.size()) == ttd.cnt;
+    if (native_buf) {
+        // Resolve values from mailbox / insrc / host handles (buffer path, all edges).
+        std::vector<double*> tar_ptrs;
+        tar_ptrs.reserve(static_cast<size_t>(ttd.cnt));
+        for (int i = 0; i < ttd.cnt; ++i) {
+            double val = 0.0;
+            switch (ttd.src_kind[i]) {
+            case NativeEdgeSrcKind::LocalVoltage: {
+                int const slot = ttd.src_slot[i];
+                if (native_mailbox_fresh_ && slot >= 0 &&
+                    static_cast<size_t>(slot) < native_vsrc_val_.size()) {
+                    val = native_vsrc_val_[slot];
+                } else {
+                    // Pre-upload / failed gather: use host source (valid at finitialize).
+                    val = *(ttd.sv[i]);
+                }
+                break;
+            }
+            case NativeEdgeSrcKind::RemoteInsrc: {
+                int const slot = ttd.src_slot[i];
+                if (insrc_buf_ && slot >= 0 && slot < insrc_buf_size_) {
+                    val = insrc_buf_[slot];
+                } else {
+                    val = *(ttd.sv[i]);
+                }
+                break;
+            }
+            case NativeEdgeSrcKind::LocalHost:
+            default:
+                val = *(ttd.sv[i]);
+                break;
+            }
+            *(ttd.tv[i]) = val;
+            tar_ptrs.push_back(static_cast<double*>(ttd.tv[i]));
+        }
+        if (std::getenv("NRN_GAP_DEBUG") && _nt->id == 0) {
+            static int once = 0;
+            if (once < 3 && ttd.cnt > 0) {
+                double mn = *(ttd.tv[0]), mx = *(ttd.tv[0]);
+                for (int i = 0; i < ttd.cnt; ++i) {
+                    double v = *(ttd.tv[i]);
+                    mn = std::min(mn, v);
+                    mx = std::max(mx, v);
+                }
+                std::fprintf(stderr,
+                             "gap_scatter tid=%d n=%d host_tar min=%g max=%g\n",
+                             _nt->id,
+                             ttd.cnt,
+                             mn,
+                             mx);
+                ++once;
+            }
+        }
+        // Push host target values to device (sparse + span update in GPU module).
+        if (!tar_ptrs.empty()) {
+            neuron::gpu::scatter_gap_targets_to_device(tar_ptrs.data(),
+                                                      static_cast<int>(tar_ptrs.size()));
+        }
+        if (_nt->id == 0) {
+            std::unordered_set<int> tar_types;
+            for (auto* pp: target_pntlist_) {
+                if (pp && pp->prop) {
+                    tar_types.insert(pp->prop->_type);
+                }
+            }
+            if (!tar_types.empty()) {
+                std::vector<int> types(tar_types.begin(), tar_types.end());
+                neuron::gpu::sync_gap_target_mechs_to_device(types.data(),
+                                                            static_cast<int>(types.size()));
+            }
+        }
+        return;
+    }
+#endif
     for (int i = 0; i < ttd.cnt; ++i) {
         *(ttd.tv[i]) = *(ttd.sv[i]);
     }
-#if defined(NRN_ENABLE_GPU)
-    if (ttd.cnt > 0 && neuron::gpu::enabled() && neuron::gpu::backend_native()) {
-        neuron::gpu::sync_mechanism_storage_to_device_after_partrans();
-    }
-#endif
 }
 
 // The simplest conceivable transfer is to use MPI_Allgatherv and send
@@ -716,6 +1033,7 @@ void nrnmpi_setup_transfer() {
     poutsrc_thread_id_.clear();
     poutsrc_gather_outsrc_index_by_thread_.clear();
     poutsrc_gather_v_node_index_by_thread_.clear();
+    clear_native_gap_tables();
     delete[] std::exchange(poutsrc_indices_, nullptr);
 #if NRNMPI
     // if there are no targets anywhere, we do not need to do anything
@@ -843,7 +1161,8 @@ void nrnmpi_setup_transfer() {
         insrc_buf_ = new double[szalloc];
         // from sid2insrc_, mk_ttd can construct the right pointer to the source.
 
-        nrnmpi_v_transfer_ = mpi_transfer;
+        // mpi_transfer body runs from gap_v_transfer_controller after mk_ttd.
+        nrnmpi_v_transfer_ = gap_v_transfer_controller;
     }
 #endif  // NRNMPI
     nrn_mk_transfer_thread_data_ = mk_ttd;
@@ -865,6 +1184,7 @@ void nrn_partrans_clear() {
     max_targets_ = 0;
     rm_svibuf();
     rm_ttd();
+    clear_native_gap_tables();
     delete[] std::exchange(insrc_buf_, nullptr);
     delete[] std::exchange(outsrc_buf_, nullptr);
     outsrc_buf_size_ = 0;

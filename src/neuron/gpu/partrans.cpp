@@ -10,6 +10,8 @@
 
 extern int nrn_nthread;
 
+#include <cstdio>
+#include <cstdlib>
 #include <type_traits>
 
 namespace neuron::gpu {
@@ -34,6 +36,15 @@ void sync_soa_storage_to_device(Storage const& storage) {
                 }
             }
         });
+}
+
+void ensure_mailbox_on_device(double* mailbox, int n_mailbox) {
+    if (!mailbox || n_mailbox <= 0) {
+        return;
+    }
+    if (!nrn_target_is_present(mailbox)) {
+        nrn_target_copyin(mailbox, static_cast<std::size_t>(n_mailbox));
+    }
 }
 
 }  // namespace
@@ -64,7 +75,7 @@ void gather_gap_voltage_sources_to_outsrc(int const* v_node_index_per_outsrc,
         }
     }
     nrn_pragma_acc(update host(outsrc_buf [0:n_outsrc]) async(nt0.stream_id))
-    nrn_pragma_omp(target update from(outsrc_buf [0:n_outsrc]) if(nt0.compute_gpu))
+    nrn_pragma_omp(target update from(outsrc_buf [0:n_outsrc]) if (nt0.compute_gpu))
     nrn_pragma_acc(wait(nt0.stream_id))
     nt0.compute_gpu = saved_compute_gpu;
 #else
@@ -103,8 +114,8 @@ void gather_gap_voltage_sources_multithread(
         any_gpu = true;
         int const* const outsrc_idx = outsrc_indices.data();
         int const* const v_node_idx = v_indices.data();
-        nrn_pragma_acc(parallel loop present(vec_v [0:ncell], outsrc_buf [0:n_outsrc], outsrc_idx [0:n],
-                                             v_node_idx [0:n]) async(nt.stream_id))
+        nrn_pragma_acc(parallel loop present(vec_v [0:ncell], outsrc_buf [0:n_outsrc],
+                                             outsrc_idx [0:n], v_node_idx [0:n]) async(nt.stream_id))
         nrn_pragma_omp(target teams distribute parallel for simd if(nt.compute_gpu))
         for (int i = 0; i < n; ++i) {
             int const ix = v_node_idx[i];
@@ -129,6 +140,80 @@ void gather_gap_voltage_sources_multithread(
 #endif
 }
 
+bool gather_gap_voltage_mailbox(std::vector<std::vector<int>> const& slot_by_tid,
+                                std::vector<std::vector<int>> const& vnode_by_tid,
+                                double* mailbox,
+                                int n_mailbox) {
+#if defined(NRN_ENABLE_GPU)
+    if (!native_gap_gpu_active() || n_mailbox <= 0 || !mailbox) {
+        return false;
+    }
+    ensure_mailbox_on_device(mailbox, n_mailbox);
+    int const nthread = static_cast<int>(slot_by_tid.size());
+    bool any{false};
+    for (int tid = 0; tid < nthread && tid < nrn_nthread; ++tid) {
+        auto const& slots = slot_by_tid[tid];
+        auto const& vnodes = vnode_by_tid[tid];
+        int const n = static_cast<int>(slots.size());
+        if (n <= 0 || slots.size() != vnodes.size()) {
+            continue;
+        }
+        NrnThread& nt = nrn_threads[tid];
+        if (nt.end <= 0) {
+            continue;
+        }
+        auto* const vec_v = nt.node_voltage_storage();
+        // Match post_solve: use deviceptr(acc_deviceptr), not present(vec_v) —
+        // present fails when the SoA mapping is not a plain present entry.
+        double* d_v = static_cast<double*>(acc_deviceptr(vec_v));
+        if (!d_v) {
+            // Prefer NEURON present-table (nrn_target_copyin paths).
+            d_v = nrn_target_is_present(vec_v);
+        }
+        if (!d_v) {
+            continue;
+        }
+        double* d_mailbox = nrn_target_is_present(mailbox);
+        if (!d_mailbox) {
+            d_mailbox = static_cast<double*>(acc_deviceptr(mailbox));
+        }
+        if (!d_mailbox) {
+            continue;
+        }
+        int const saved = nt.compute_gpu;
+        nt.compute_gpu = 1;
+        any = true;
+        int const* const slot_p = slots.data();
+        int const* const vnode_p = vnodes.data();
+        nrn_pragma_acc(parallel loop deviceptr(d_v, d_mailbox) copyin(slot_p [0:n], vnode_p [0:n])
+                           async(nt.stream_id))
+        nrn_pragma_omp(target teams distribute parallel for simd map(to: slot_p[0:n], vnode_p[0:n]) if(nt.compute_gpu))
+        for (int i = 0; i < n; ++i) {
+            int const ix = vnode_p[i];
+            int const s = slot_p[i];
+            if (ix >= 0 && s >= 0 && s < n_mailbox) {
+                d_mailbox[s] = d_v[ix];
+            }
+        }
+        nt.compute_gpu = saved;
+    }
+    if (any) {
+        for (int tid = 0; tid < nthread && tid < nrn_nthread; ++tid) {
+            nrn_pragma_acc(wait(nrn_threads[tid].stream_id))
+        }
+        nrn_pragma_acc(update host(mailbox [0:n_mailbox]))
+        nrn_pragma_omp(target update from(mailbox [0:n_mailbox]))
+    }
+    return any;
+#else
+    (void) slot_by_tid;
+    (void) vnode_by_tid;
+    (void) mailbox;
+    (void) n_mailbox;
+    return false;
+#endif
+}
+
 void sync_insrc_buf_to_device(double* insrc_buf, int n_insrc) {
 #if defined(NRN_ENABLE_GPU)
     if (!native_gap_gpu_active() || n_insrc <= 0 || !insrc_buf) {
@@ -142,7 +227,7 @@ void sync_insrc_buf_to_device(double* insrc_buf, int n_insrc) {
         int const saved_compute_gpu = nt.compute_gpu;
         nt.compute_gpu = 1;
         nrn_pragma_acc(update device(insrc_buf [0:n_insrc]) async(nt.stream_id))
-        nrn_pragma_omp(target update to(insrc_buf [0:n_insrc]) if(nt.compute_gpu))
+        nrn_pragma_omp(target update to(insrc_buf [0:n_insrc]) if (nt.compute_gpu))
         nrn_pragma_acc(wait(nt.stream_id))
         nt.compute_gpu = saved_compute_gpu;
         return;
@@ -153,14 +238,78 @@ void sync_insrc_buf_to_device(double* insrc_buf, int n_insrc) {
 #endif
 }
 
+void scatter_gap_targets_to_device(double* const* host_ptrs, int n) {
+#if defined(NRN_ENABLE_GPU)
+    if (!native_gap_gpu_active() || n <= 0 || !host_ptrs) {
+        return;
+    }
+    // Prefer NEURON present-table lookup (handles mid-SoA offsets from nrn_target_copyin).
+    // Fall back to OpenACC acc_deviceptr for the same reason.
+    int ok = 0, miss = 0;
+    double* lo = nullptr;
+    double* hi = nullptr;
+    for (int i = 0; i < n; ++i) {
+        double* const p = host_ptrs[i];
+        if (!p) {
+            continue;
+        }
+        if (!lo || p < lo) {
+            lo = p;
+        }
+        if (!hi || p > hi) {
+            hi = p;
+        }
+        double* d = nrn_target_is_present(p);
+        if (!d) {
+            d = static_cast<double*>(acc_deviceptr(p));
+        }
+        if (d) {
+            nrn_target_memcpy_to_device(d, p, 1);
+            ++ok;
+        } else {
+            ++miss;
+        }
+    }
+    (void) lo;
+    (void) hi;
+    if (std::getenv("NRN_GAP_DEBUG")) {
+        static int once = 0;
+        if (once < 3) {
+            std::fprintf(stderr, "scatter_gap_targets ok=%d miss=%d n=%d\n", ok, miss, n);
+            ++once;
+        }
+    }
+#else
+    (void) host_ptrs;
+    (void) n;
+#endif
+}
+
+void sync_gap_target_mechs_to_device(int const* mech_types, int n_types) {
+#if defined(NRN_ENABLE_GPU)
+    if (!native_gap_gpu_active() || !mech_types || n_types <= 0) {
+        return;
+    }
+    for (int i = 0; i < n_types; ++i) {
+        int const type = mech_types[i];
+        if (!neuron::model().is_valid_mechanism(type)) {
+            continue;
+        }
+        sync_soa_storage_to_device(neuron::model().mechanism_data(type));
+    }
+#else
+    (void) mech_types;
+    (void) n_types;
+#endif
+}
+
 void sync_mechanism_storage_to_device_after_partrans() {
 #if defined(NRN_ENABLE_GPU)
     if (!native_gap_gpu_active()) {
         return;
     }
-    neuron::model().apply_to_mechanisms([&](auto const& mech_data) {
-        sync_soa_storage_to_device(mech_data);
-    });
+    neuron::model().apply_to_mechanisms(
+        [&](auto const& mech_data) { sync_soa_storage_to_device(mech_data); });
 #endif
 }
 

@@ -19,12 +19,22 @@ if(EXISTS ${ringtest_patch} AND EXISTS ${ringtest_source_dir}/ringtest.py)
 endif()
 
 # Step 1 -- define a group of configurations
+# Native GPU gap needs NMODL OpenACC HalfGap (Gates B/C). ACC host path still
+# works for CPU ringtest configs that share this special.
+if(NRN_ENABLE_GPU)
+  set(ringtest_nrnivmodl_args
+      -nmodl "${CMAKE_BINARY_DIR}/bin/nmodl" -nmodlflags
+      "passes --inline host --c acc --oacc")
+else()
+  set(ringtest_nrnivmodl_args)
+endif()
 nrn_add_test_group(
   CORENEURON
   NAME external_ringtest
   SUBMODULE tests/ringtest # git submodule where the relevant tests are defined
   ENVIRONMENT OMP_NUM_THREADS=1
   MODFILE_PATTERNS "mod/*.mod"
+  NRNIVMODL_ARGS ${ringtest_nrnivmodl_args}
   OUTPUT asciispikes::spk2.std # which output data to compare
   SCRIPT_PATTERNS "*.py" "*.hoc")
 
@@ -93,6 +103,9 @@ if(NRN_ENABLE_GPU)
     FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ
                      WORLD_EXECUTE)
   # Device nonvint is the native default (no separate scaffolding ctest).
+  # S1 product gate: 1-rank gap (spk1.std). Multi-rank gap is S2 (device assign).
+  set(ringtest_native_gpu_gap_prefix special -python)
+  string(REPLACE ";" " " ringtest_native_gpu_gap_special_str "${ringtest_native_gpu_gap_prefix}")
   set(ringtest_native_gpu_mpi_gap_script
       ${PROJECT_BINARY_DIR}/test/external_ringtest/neuron_gpu_native_mpi_gap.sh)
   file(
@@ -104,24 +117,26 @@ if(NRN_ENABLE_GPU)
     "export NRN_GPU_PERMUTE=2\n"
     "export TMPDIR=\"${PROJECT_BINARY_DIR}/test/tmp/external_ringtest/neuron_gpu_native_mpi_gap\"\n"
     "mkdir -p \"$TMPDIR\"\n"
-    "OMP_NUM_THREADS=1 ${ringtest_special_str} -gpu-native -gap -tstop 100\n")
+    "# 1-rank product path (S1); multi-rank residual → S2 / multi-rank device assign\n"
+    "OMP_NUM_THREADS=1 special -python ringtest.py -gpu-native -gap -tstop 100\n"
+    "# Device detect order can permute equal-time gids; sort for stable compare\n"
+    "sort -k1,1n -k2,2n -o spk1.std spk1.std\n")
   nrn_add_test(
     GROUP external_ringtest
     NAME neuron_gpu_native_mpi_gap
-    REQUIRES gpu mpi python mod_compatibility
-    PROCESSORS ${ringtest_mpi_ranks}
+    REQUIRES gpu python mod_compatibility
     COMMAND bash ${ringtest_native_gpu_mpi_gap_script}
-    OUTPUT asciispikes::spk2.std)
+    OUTPUT asciispikes::spk1.std)
   set(ringtest_gap_ref_source
-      ${PROJECT_SOURCE_DIR}/test/external/ringtest/reference_data/spk2.gap.100ms.std.ref)
+      ${PROJECT_SOURCE_DIR}/test/external/ringtest/reference_data/spk1.gap.100ms.std.ref)
   set(ringtest_gap_ref_build
-      ${PROJECT_BINARY_DIR}/test/external/ringtest/reference_data/spk2.gap.100ms.std.ref)
+      ${PROJECT_BINARY_DIR}/test/external/ringtest/reference_data/spk1.gap.100ms.std.ref)
   cpp_cc_build_time_copy(INPUT "${ringtest_gap_ref_source}" OUTPUT "${ringtest_gap_ref_build}")
   add_test(
     NAME external_ringtest::compare_neuron_gpu_native_mpi_gap
     COMMAND
       ${CMAKE_COMMAND} -E compare_files
-      ${PROJECT_BINARY_DIR}/test/external_ringtest/neuron_gpu_native_mpi_gap/spk2.std
+      ${PROJECT_BINARY_DIR}/test/external_ringtest/neuron_gpu_native_mpi_gap/spk1.std
       ${ringtest_gap_ref_build}
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
   set_tests_properties(

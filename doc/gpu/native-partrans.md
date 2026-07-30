@@ -2,7 +2,8 @@
 
 **Portfolio:** GPU-native (feature)  
 **Tree:** `~/neuron/nrngpu`  
-**Status:** design (2026-07-29) — implement before treating ringtest gap native as product-green  
+**Status:** S0+S1 landed (2026-07-29) — 1-rank ringtest gap raster green (ACC HalfGap)  
+
 **Related:** `doc/gpu/native-coreneuron-parity.md` (P2), CoreNEURON `src/coreneuron/network/partrans.cpp`
 
 ---
@@ -242,4 +243,4 @@ Constraints if added:
 
 ## One-line Next
 
-Implement **S0→S1**: CoreNEURON-style sparse buffer path for native gaps (including same-thread); ACC HalfGap; green 1-rank ringtest gap raster. Defer pure on-thread GPU shortcut.
+**S2:** multi-rank gap + device assign. (S0+S1 done: 1-rank buffer path + ACC HalfGap.)
