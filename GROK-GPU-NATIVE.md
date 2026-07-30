@@ -11,6 +11,7 @@ Related CPU docs (same tree after merge):
 | `doc/network-soa/heap-free.md` | Weight-index ABI, packing A charter |
 | `AGENTS.md` | Short agent rules for this branch |
 | **`doc/gpu-step-qualification.md`** | Gates A–F; performance / host-traffic guide |
+| **`doc/gpu/native-partrans.md`** | Native gap / source→target: CoreNEURON-style buffers first |
 
 ---
 

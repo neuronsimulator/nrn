@@ -83,6 +83,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-07-29 | GPU-P2-mpi-gap | — | test_natrans native green (nthread=1): host nai→napre + device SoA sync; multi-thread partrans partial-present residual |
 | 2026-07-29 | GPU-P2-mpi-gap | — | spikes_mpi native green (mode 0): multi-rank spike match; mode 1 re-psolve on shared GPU residual; mode 2 continuerun residual; serial modes 0–1 product (mode 2 skipped) |
 | 2026-07-29 | GPU-P1-mode2 | — | Mode-2 product: GPU fixed-step psolve-scoped only (host continuerun=CPU, CoreNEURON-like). Reseed PreSyn hysteresis from host V at psolve entry. test_psolve native green; mode-2 alone spike match (±fast_imem). Sequential 0→1→2 without imem green; with fast_imem residual (OpenACC partial-present). |
+| 2026-07-29 | GPU-P2-mpi-gap | — | Design: `doc/gpu/native-partrans.md` — buffer-first gap path (CoreNEURON-like); pure same-thread GPU deferred. |
 
 ---
 
@@ -263,8 +264,8 @@ For each test:
 | spikes_mpi / file mode native | **green** (mode 0) | mode 1 multi-rank re-psolve residual |
 | test_subworlds native | **green** | |
 | test_natrans native | **green** (nthread=1) | multi-thread residual |
-| ringtest gap native + compare | | Handoff “later: use_gap=1” |
-| multi-rank device assign | | unit test `gpu_device_assign_mpi` |
+| ringtest gap native + compare | **design** | `doc/gpu/native-partrans.md` — CoreNEURON-style buffer path first (incl. same-thread); S0→S1 next |
+| multi-rank device assign | | unit test `gpu_device_assign_mpi` (may unblock 2-rank gap) |
 
 ---
 
@@ -355,4 +356,4 @@ Update Status before exit; commit without push.
 
 ## Next (one line — update every session end)
 
-**Next:** P2 first incomplete: ringtest gap native + multi-rank device assign. (P1 polish residual: sequential 0→1→2 with fast_imem; optional ACC `hoc_reg_ba`.)
+**Next:** P2 gap: implement `doc/gpu/native-partrans.md` S0→S1 (sparse gather/insrc/scatter like CoreNEURON, even same-thread; ACC HalfGap; 1-rank ringtest gap raster). Multi-rank device assign as needed for S2.
