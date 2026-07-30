@@ -2,7 +2,11 @@
 
 **Portfolio:** GPU-native (feature)  
 **Tree:** `~/neuron/nrngpu`  
-**Status:** S0–S2 landed (2026-07-29) — 1-rank + multi-rank MPI gap ringtest green (ACC HalfGap; live vnode MPI gather)  
+**Status:** S0–S2 landed (2026-07-29) — 1-rank + multi-rank MPI gap ringtest green (ACC HalfGap; live vnode MPI gather)
+
+**Product policy (2026-07-30):** device gather/scatter under native is mandatory.
+Silent no-op / host V pull when residency fails is **not** default. Opt-in debug:
+`NRN_GPU_GAP_HOST_FALLBACK=1`. Same spirit as threshold detect fail-loud.  
 
 **Related:** `doc/gpu/native-coreneuron-parity.md` (P2), CoreNEURON `src/coreneuron/network/partrans.cpp`
 

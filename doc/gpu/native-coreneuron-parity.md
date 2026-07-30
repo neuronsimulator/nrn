@@ -86,6 +86,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-07-29 | GPU-P2-mpi-gap | — | Design: `doc/gpu/native-partrans.md` — buffer-first gap path (CoreNEURON-like); pure same-thread GPU deferred. |
 | 2026-07-29 | GPU-P2-mpi-gap | — | S0+S1: native gap buffer path + ACC HalfGap; 1-rank ringtest gap 128 spikes match CPU (sorted). |
 | 2026-07-29 | GPU-P2-mpi-gap | — | S2: multi-rank MPI gap green — live `v_node_index` MPI outsrc gather (`deviceptr`); 2-rank 128 spikes match sorted `spk2.gap…ref`; ctest via `h.nrnmpi_init` (not `special -mpi` OpenACC SEGV). |
+| 2026-07-30 | GPU-P2-mpi-gap | — | Fail-loud native policy: threshold detect + gap gather/scatter no longer silent host fallback; opt-in `NRN_GPU_THRESH_HOST_FALLBACK` / `NRN_GPU_GAP_HOST_FALLBACK`; counters + `NRN_GPU_THRESH_STATS`. |
 
 ---
 

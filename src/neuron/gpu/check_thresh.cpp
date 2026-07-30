@@ -13,13 +13,142 @@
 #include "nrn_ansi.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <mutex>
 #include <numeric>
 #include <vector>
 
+extern void hoc_execerror(const char*, const char*);
+
 namespace neuron::gpu {
 namespace {
+
+// Detect-path accounting (native product: device kernel only under compute_gpu).
+// Host detect when !compute_gpu is the normal CPU path, not a "fallback".
+std::uint64_t g_thresh_device_calls = 0;
+std::uint64_t g_thresh_host_cpu_calls = 0;
+std::uint64_t g_thresh_host_fallback_calls = 0;
+char const* g_thresh_first_fallback_reason = nullptr;
+bool g_thresh_fallback_warned = false;
+std::once_flag g_thresh_stats_atexit_once;
+
+bool env_truthy(char const* name) noexcept {
+    char const* const e = std::getenv(name);
+    return e && e[0] && e[0] != '0';
+}
+
+/** Opt-in only: allow host detect + V pull when device residency is incomplete. */
+bool allow_thresh_host_fallback() noexcept {
+    static int cached = -1;
+    if (cached < 0) {
+        cached = env_truthy("NRN_GPU_THRESH_HOST_FALLBACK") ? 1 : 0;
+    }
+    return cached != 0;
+}
+
+bool thresh_stats_enabled() noexcept {
+    static int cached = -1;
+    if (cached < 0) {
+        cached = env_truthy("NRN_GPU_THRESH_STATS") ? 1 : 0;
+    }
+    return cached != 0;
+}
+
+void print_thresh_detect_stats(char const* where) noexcept {
+    std::fprintf(stderr,
+                 "NRN GPU threshold detect stats (%s): device_kernel=%llu "
+                 "host_cpu=%llu host_fallback=%llu first_fallback_reason=%s\n",
+                 where ? where : "?",
+                 static_cast<unsigned long long>(g_thresh_device_calls),
+                 static_cast<unsigned long long>(g_thresh_host_cpu_calls),
+                 static_cast<unsigned long long>(g_thresh_host_fallback_calls),
+                 g_thresh_first_fallback_reason ? g_thresh_first_fallback_reason : "(none)");
+}
+
+void ensure_thresh_stats_atexit() noexcept {
+    if (!thresh_stats_enabled()) {
+        return;
+    }
+    std::call_once(g_thresh_stats_atexit_once, [] {
+        std::atexit([] { print_thresh_detect_stats("atexit"); });
+    });
+}
+
+char const* thresh_device_block_reason(double* d_v,
+                                      int* thvar_row,
+                                      double* threshold,
+                                      int* flag,
+                                      int* nsbuffer) noexcept {
+#if defined(NRN_ENABLE_GPU) && (defined(_OPENACC) || defined(_OPENMP))
+    if (!d_v) {
+        return "device vec_v not mapped (acc_deviceptr/present)";
+    }
+    if (!nrn_target_is_present(thvar_row)) {
+        return "thvar_row not present on device";
+    }
+    if (!nrn_target_is_present(threshold)) {
+        return "threshold column not present on device";
+    }
+    if (!nrn_target_is_present(flag)) {
+        return "flag column not present on device";
+    }
+    if (!nsbuffer) {
+        return "net_send hit buffer is null";
+    }
+    if (!nrn_target_is_present(nsbuffer)) {
+        return "net_send hit buffer not present on device";
+    }
+    return nullptr;
+#else
+    (void) d_v;
+    (void) thvar_row;
+    (void) threshold;
+    (void) flag;
+    (void) nsbuffer;
+    return "OpenACC/OpenMP GPU offload not compiled in";
+#endif
+}
+
+void note_thresh_host_fallback(char const* reason) noexcept {
+    ++g_thresh_host_fallback_calls;
+    if (!g_thresh_first_fallback_reason) {
+        g_thresh_first_fallback_reason = reason;
+    }
+    if (!g_thresh_fallback_warned) {
+        g_thresh_fallback_warned = true;
+        std::fprintf(stderr,
+                     "WARNING: native GPU threshold detect using host fallback (%s). "
+                     "This is opt-in only (NRN_GPU_THRESH_HOST_FALLBACK=1) and has a "
+                     "performance cost (voltage pull + host scan). "
+                     "device_kernel=%llu host_fallback=%llu. "
+                     "Unset the env to make missing device residency a hard error.\n",
+                     reason ? reason : "unknown",
+                     static_cast<unsigned long long>(g_thresh_device_calls),
+                     static_cast<unsigned long long>(g_thresh_host_fallback_calls));
+    }
+}
+
+[[noreturn]] void fail_thresh_device_unavailable(char const* reason, int thread_id) {
+    std::fprintf(stderr,
+                 "ERROR: native GPU threshold detect cannot run device kernel "
+                 "(thread %d): %s\n"
+                 "  device_kernel_calls=%llu host_fallback_calls=%llu host_cpu_calls=%llu\n"
+                 "  Product path requires device detect. For debugging multi-process "
+                 "OpenACC only, set NRN_GPU_THRESH_HOST_FALLBACK=1 (logs + counts).\n"
+                 "  NRN_GPU_THRESH_STATS=1 prints totals at exit.\n",
+                 thread_id,
+                 reason ? reason : "unknown",
+                 static_cast<unsigned long long>(g_thresh_device_calls),
+                 static_cast<unsigned long long>(g_thresh_host_fallback_calls),
+                 static_cast<unsigned long long>(g_thresh_host_cpu_calls));
+    hoc_execerror(
+        "Native GPU threshold detect: device residency incomplete; host fallback "
+        "is not allowed by default. See stderr for reason and counters. "
+        "Set NRN_GPU_THRESH_HOST_FALLBACK=1 only for transitional debugging.",
+        nullptr);
+}
 
 /**
  * Per-thread Th0 detect set (doc/gpu/threshold-detection.md).
@@ -159,7 +288,7 @@ void ensure_thread_net_send_buffer(NrnThread& nt, int min_count) {
     return false;
 }
 
-/** Host serial detect over Th0 columns (fallback when device data plane is missing). */
+/** Host serial detect over Th0 columns (CPU path, or opt-in fallback). */
 void detect_threshold_hits_host(int count,
                                 int const* thvar_row,
                                 double const* threshold,
@@ -280,73 +409,88 @@ bool check_thresh_presyn_on_device(NrnThread* nt, double teps) noexcept {
     // Th1: OpenACC detect over slot columns + device vec_v (CoreNEURON pscheck shape).
     // Hit list = slot indices. Host still delivers. Host vec_v not required (Th2).
     // deviceptr for V: no present(host V) during psolve (host must not re-enter device).
+    //
+    // Product policy (native compute_gpu): device kernel only. Missing residency is a
+    // hard error — not a silent host path (wrong product claim + D2H traffic).
+    // Opt-in debug: NRN_GPU_THRESH_HOST_FALLBACK=1 (counts + one-time warning).
+    // Stats: NRN_GPU_THRESH_STATS=1 prints totals at process exit.
+    ensure_thresh_stats_atexit();
     nt->_net_send_buffer_cnt = 0;
     int net_send_buf_count = 0;
 
+    bool ran_device = false;
 #if defined(NRN_ENABLE_GPU) && (defined(_OPENACC) || defined(_OPENMP))
-    double* d_v = nt->compute_gpu ? static_cast<double*>(acc_deviceptr(vec_v)) : vec_v;
-    if (!d_v && nt->compute_gpu) {
-        d_v = nrn_target_is_present(vec_v);
-    }
-    // Multi-process OpenACC on a shared GPU (e.g. special -mpi ringtest) can
-    // fail present/copyin; fall back to host detect with a sparse V pull.
-    bool const use_device_kernel = nt->compute_gpu && d_v && nrn_target_is_present(thvar_row) &&
-                                  nrn_target_is_present(threshold) && nrn_target_is_present(flag) &&
-                                  nsbuffer && nrn_target_is_present(nsbuffer);
-    if (use_device_kernel) {
-        // clang-format off
-        nrn_pragma_acc(parallel loop present(thvar_row [0:count],
-                                             threshold [0:count],
-                                             flag [0:count],
-                                             nsbuffer [0:nsbuffer_size])
-                           deviceptr(d_v)
-                           copy(net_send_buf_count) if (nt->compute_gpu) async(nt->stream_id))
-        nrn_pragma_omp(target teams distribute parallel for map(tofrom: net_send_buf_count) if(nt->compute_gpu))
-        // clang-format on
-        for (int i = 0; i < count; ++i) {
-            int idx = 0;
-            int const thidx = thvar_row[i];
-            double const v = d_v[thidx];
-            double const thresh = threshold[i];
-            if (pscheck(v, thresh, &flag[i])) {
-                nrn_pragma_acc(atomic capture)
-                nrn_pragma_omp(atomic capture)
-                idx = net_send_buf_count++;
-                if (idx < nsbuffer_size) {
-                    nsbuffer[idx] = i;  // slot index
+    if (nt->compute_gpu) {
+        double* d_v = static_cast<double*>(acc_deviceptr(vec_v));
+        if (!d_v) {
+            d_v = nrn_target_is_present(vec_v);
+        }
+        char const* const block = thresh_device_block_reason(
+            d_v, thvar_row, threshold, flag, nsbuffer);
+        if (!block) {
+            ran_device = true;
+            ++g_thresh_device_calls;
+            // clang-format off
+            nrn_pragma_acc(parallel loop present(thvar_row [0:count],
+                                                 threshold [0:count],
+                                                 flag [0:count],
+                                                 nsbuffer [0:nsbuffer_size])
+                               deviceptr(d_v)
+                               copy(net_send_buf_count) if (nt->compute_gpu) async(nt->stream_id))
+            nrn_pragma_omp(target teams distribute parallel for map(tofrom: net_send_buf_count) if(nt->compute_gpu))
+            // clang-format on
+            for (int i = 0; i < count; ++i) {
+                int idx = 0;
+                int const thidx = thvar_row[i];
+                double const v = d_v[thidx];
+                double const thresh = threshold[i];
+                if (pscheck(v, thresh, &flag[i])) {
+                    nrn_pragma_acc(atomic capture)
+                    nrn_pragma_omp(atomic capture)
+                    idx = net_send_buf_count++;
+                    if (idx < nsbuffer_size) {
+                        nsbuffer[idx] = i;  // slot index
+                    }
                 }
             }
-        }
-        nrn_pragma_acc(wait(nt->stream_id))
-        nt->_net_send_buffer_cnt = net_send_buf_count;
+            nrn_pragma_acc(wait(nt->stream_id))
+            nt->_net_send_buffer_cnt = net_send_buf_count;
 
-        if (net_send_buf_count > nsbuffer_size) {
-            fprintf(stderr,
-                    "ERROR: threshold hit list exceeded (thread %d): hits=%d capacity=%d\n",
-                    nt->id,
-                    net_send_buf_count,
-                    nsbuffer_size);
-            std::abort();
-        }
+            if (net_send_buf_count > nsbuffer_size) {
+                fprintf(stderr,
+                        "ERROR: threshold hit list exceeded (thread %d): hits=%d capacity=%d\n",
+                        nt->id,
+                        net_send_buf_count,
+                        nsbuffer_size);
+                std::abort();
+            }
 
-        // Flags + hit list live on device during the kernel; pull for host deliver/sync.
-        // clang-format off
-        nrn_pragma_acc(update host(flag [0:count]) async(nt->stream_id))
-        nrn_pragma_omp(target update from(flag [0:count]))
-        // clang-format on
-        if (net_send_buf_count > 0) {
+            // Flags + hit list live on device during the kernel; pull for host deliver/sync.
             // clang-format off
-            nrn_pragma_acc(update host(nsbuffer [0:net_send_buf_count]) async(nt->stream_id))
-            nrn_pragma_omp(target update from(nsbuffer [0:net_send_buf_count]))
+            nrn_pragma_acc(update host(flag [0:count]) async(nt->stream_id))
+            nrn_pragma_omp(target update from(flag [0:count]))
             // clang-format on
+            if (net_send_buf_count > 0) {
+                // clang-format off
+                nrn_pragma_acc(update host(nsbuffer [0:net_send_buf_count]) async(nt->stream_id))
+                nrn_pragma_omp(target update from(nsbuffer [0:net_send_buf_count]))
+                // clang-format on
+            }
+            nrn_pragma_acc(wait(nt->stream_id))
+        } else if (allow_thresh_host_fallback()) {
+            note_thresh_host_fallback(block);
+        } else {
+            fail_thresh_device_unavailable(block, nt->id);
         }
-        nrn_pragma_acc(wait(nt->stream_id))
-    } else
+    }
 #endif
-    {
-        // Host detect: need live voltages on host.
+    if (!ran_device) {
+        // Host detect: normal when !compute_gpu; opt-in only when compute_gpu.
         if (nt->compute_gpu) {
+            // Allowed only via NRN_GPU_THRESH_HOST_FALLBACK (counted above).
             sync_voltages_to_host_before_check_thresh(*nt);
+        } else {
+            ++g_thresh_host_cpu_calls;
         }
         detect_threshold_hits_host(count,
                                    thvar_row,

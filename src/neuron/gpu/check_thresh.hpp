@@ -63,6 +63,12 @@ void sync_threshold_presyn_flags(ThresholdPresynSlot const* slots, int const* fl
  * Th0 shape: slot table sole detect set; hit buffer = slot indices; host deliver.
  * Th1: OpenACC pscheck over slot columns + device vec_v; host pull of flags/hits
  * then deliver. Does not require host vec_v (Th2).
+ *
+ * Product policy under compute_gpu: device kernel only. Missing device residency
+ * is a hard error (not a silent host path). Opt-in debug host fallback:
+ * NRN_GPU_THRESH_HOST_FALLBACK=1 (counts + one-time warning; V pull cost).
+ * Totals at exit: NRN_GPU_THRESH_STATS=1.
+ *
  * Returns true when the table path handled SoA-threshold PreSyns (caller skips
  * re-walking those on psl_thr_).
  */

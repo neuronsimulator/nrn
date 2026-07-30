@@ -4,6 +4,11 @@
 host pull of full `vec_v` only when host PreSyn::check or WATCH still need it.
 Spike deliver remains host-only. Ringtest 100 re-qualified after Th2.
 
+**Product policy (2026-07-30):** under `compute_gpu`, device detect is mandatory.
+Missing OpenACC residency is a **hard error** (not silent host detect). Opt-in
+debug only: `NRN_GPU_THRESH_HOST_FALLBACK=1` (counts + warning; V pull cost).
+`NRN_GPU_THRESH_STATS=1` prints device/host/fallback call totals at exit.
+
 **Related:** `src/neuron/gpu/check_thresh.{hpp,cpp}`,
 `NetCvode::check_thresh` in `src/nrncvode/netcvode.cpp`,
 CoreNEURON `NetCvode::check_thresh` in `src/coreneuron/network/netcvode.cpp`.

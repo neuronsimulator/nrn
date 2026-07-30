@@ -9,9 +9,11 @@
 #include "nrn_ansi.h"
 
 extern int nrn_nthread;
+extern void hoc_execerror(const char*, const char*);
 
 #include <cstdio>
 #include <cstdlib>
+#include <cstdint>
 #include <type_traits>
 
 namespace neuron::gpu {
@@ -19,6 +21,59 @@ namespace {
 
 bool native_gap_gpu_active() {
     return enabled() && backend_native();
+}
+
+bool env_truthy(char const* name) noexcept {
+    char const* const e = std::getenv(name);
+    return e && e[0] && e[0] != '0';
+}
+
+/** Opt-in only: allow host V pull / silent skip when device gap gather cannot map. */
+bool allow_gap_host_fallback() noexcept {
+    static int cached = -1;
+    if (cached < 0) {
+        cached = env_truthy("NRN_GPU_GAP_HOST_FALLBACK") ? 1 : 0;
+    }
+    return cached != 0;
+}
+
+std::uint64_t g_gap_gather_ok = 0;
+std::uint64_t g_gap_gather_fallback = 0;
+std::uint64_t g_gap_scatter_miss = 0;
+bool g_gap_fallback_warned = false;
+
+void note_gap_host_fallback(char const* where, char const* reason) noexcept {
+    ++g_gap_gather_fallback;
+    if (!g_gap_fallback_warned) {
+        g_gap_fallback_warned = true;
+        std::fprintf(stderr,
+                     "WARNING: native GPU gap transfer host fallback at %s (%s). "
+                     "Opt-in only (NRN_GPU_GAP_HOST_FALLBACK=1). "
+                     "gather_ok=%llu gather_fallback=%llu scatter_miss=%llu\n",
+                     where ? where : "?",
+                     reason ? reason : "unknown",
+                     static_cast<unsigned long long>(g_gap_gather_ok),
+                     static_cast<unsigned long long>(g_gap_gather_fallback),
+                     static_cast<unsigned long long>(g_gap_scatter_miss));
+    }
+}
+
+[[noreturn]] void fail_gap_device(char const* where, char const* reason) {
+    std::fprintf(stderr,
+                 "ERROR: native GPU gap transfer cannot use device path at %s: %s\n"
+                 "  gather_ok=%llu gather_fallback=%llu scatter_miss=%llu\n"
+                 "  Product path requires device gather/scatter. For debugging only, "
+                 "set NRN_GPU_GAP_HOST_FALLBACK=1.\n",
+                 where ? where : "?",
+                 reason ? reason : "unknown",
+                 static_cast<unsigned long long>(g_gap_gather_ok),
+                 static_cast<unsigned long long>(g_gap_gather_fallback),
+                 static_cast<unsigned long long>(g_gap_scatter_miss));
+    hoc_execerror(
+        "Native GPU gap transfer: device residency incomplete; silent host "
+        "fallback is not allowed by default. See stderr. "
+        "Set NRN_GPU_GAP_HOST_FALLBACK=1 only for transitional debugging.",
+        nullptr);
 }
 
 template <typename Storage>
@@ -66,7 +121,11 @@ void gather_gap_voltage_sources_to_outsrc(int const* v_node_index_per_outsrc,
         d_v = nrn_target_is_present(vec_v);
     }
     if (!d_v) {
-        return;
+        if (allow_gap_host_fallback()) {
+            note_gap_host_fallback("gather_outsrc", "device vec_v not mapped");
+            return;
+        }
+        fail_gap_device("gather_outsrc", "device vec_v not mapped");
     }
     ensure_mailbox_on_device(outsrc_buf, n_outsrc);
     double* d_out = nrn_target_is_present(outsrc_buf);
@@ -74,8 +133,13 @@ void gather_gap_voltage_sources_to_outsrc(int const* v_node_index_per_outsrc,
         d_out = static_cast<double*>(acc_deviceptr(outsrc_buf));
     }
     if (!d_out) {
-        return;
+        if (allow_gap_host_fallback()) {
+            note_gap_host_fallback("gather_outsrc", "outsrc_buf not present on device");
+            return;
+        }
+        fail_gap_device("gather_outsrc", "outsrc_buf not present on device");
     }
+    ++g_gap_gather_ok;
     int const saved_compute_gpu = nt0.compute_gpu;
     nt0.compute_gpu = 1;
     int const* const vnode_p = v_node_index_per_outsrc;
@@ -114,7 +178,11 @@ void gather_gap_voltage_sources_multithread(
         d_out = static_cast<double*>(acc_deviceptr(outsrc_buf));
     }
     if (!d_out) {
-        return;
+        if (allow_gap_host_fallback()) {
+            note_gap_host_fallback("gather_outsrc_mt", "outsrc_buf not present on device");
+            return;
+        }
+        fail_gap_device("gather_outsrc_mt", "outsrc_buf not present on device");
     }
     int const nthread = static_cast<int>(outsrc_index_by_thread.size());
     bool any_gpu{false};
@@ -135,7 +203,11 @@ void gather_gap_voltage_sources_multithread(
             d_v = nrn_target_is_present(vec_v);
         }
         if (!d_v) {
-            continue;
+            if (allow_gap_host_fallback()) {
+                note_gap_host_fallback("gather_outsrc_mt", "device vec_v not mapped");
+                continue;
+            }
+            fail_gap_device("gather_outsrc_mt", "device vec_v not mapped");
         }
         int const saved_compute_gpu = nt.compute_gpu;
         nt.compute_gpu = 1;
@@ -159,6 +231,7 @@ void gather_gap_voltage_sources_multithread(
         }
         nrn_pragma_acc(update host(outsrc_buf [0:n_outsrc]))
         nrn_pragma_omp(target update from(outsrc_buf [0:n_outsrc]))
+        ++g_gap_gather_ok;
     }
 #else
     (void) outsrc_index_by_thread;
@@ -199,14 +272,22 @@ bool gather_gap_voltage_mailbox(std::vector<std::vector<int>> const& slot_by_tid
             d_v = nrn_target_is_present(vec_v);
         }
         if (!d_v) {
-            continue;
+            if (allow_gap_host_fallback()) {
+                note_gap_host_fallback("gather_mailbox", "device vec_v not mapped");
+                continue;
+            }
+            fail_gap_device("gather_mailbox", "device vec_v not mapped");
         }
         double* d_mailbox = nrn_target_is_present(mailbox);
         if (!d_mailbox) {
             d_mailbox = static_cast<double*>(acc_deviceptr(mailbox));
         }
         if (!d_mailbox) {
-            continue;
+            if (allow_gap_host_fallback()) {
+                note_gap_host_fallback("gather_mailbox", "mailbox not present on device");
+                continue;
+            }
+            fail_gap_device("gather_mailbox", "mailbox not present on device");
         }
         int const saved = nt.compute_gpu;
         nt.compute_gpu = 1;
@@ -231,6 +312,7 @@ bool gather_gap_voltage_mailbox(std::vector<std::vector<int>> const& slot_by_tid
         }
         nrn_pragma_acc(update host(mailbox [0:n_mailbox]))
         nrn_pragma_omp(target update from(mailbox [0:n_mailbox]))
+        ++g_gap_gather_ok;
     }
     return any;
 #else
@@ -296,14 +378,23 @@ void scatter_gap_targets_to_device(double* const* host_ptrs, int n) {
             ++ok;
         } else {
             ++miss;
+            ++g_gap_scatter_miss;
         }
     }
     (void) lo;
     (void) hi;
+    // Per-scalar present often misses mid-SoA target handles; the product path
+    // then relies on sync_gap_target_mechs_to_device (bulk HalfGap SoA push).
+    // Count misses for diagnosis; do not treat miss alone as hard failure.
     if (std::getenv("NRN_GAP_DEBUG")) {
         static int once = 0;
         if (once < 3) {
-            std::fprintf(stderr, "scatter_gap_targets ok=%d miss=%d n=%d\n", ok, miss, n);
+            std::fprintf(stderr,
+                         "scatter_gap_targets ok=%d miss=%d n=%d "
+                         "(miss alone OK if target-mech SoA sync follows)\n",
+                         ok,
+                         miss,
+                         n);
             ++once;
         }
     }

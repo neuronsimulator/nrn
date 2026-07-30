@@ -904,8 +904,26 @@ static void gap_v_transfer_controller() {
                 }
             }
         }
-        // Fallback when sparse gather cannot map device V yet.
-        if (!native_mailbox_fresh_) {
+        // When sparse gather cannot map device V: product path fails inside
+        // gather_gap_* (hard error). Opt-in host V pull only with
+        // NRN_GPU_GAP_HOST_FALLBACK=1 (gather returns false without abort).
+        if (!native_mailbox_fresh_ && !native_vsrc_val_.empty()) {
+            char const* const env = std::getenv("NRN_GPU_GAP_HOST_FALLBACK");
+            bool const allow = env && env[0] && env[0] != '0';
+            if (!allow) {
+                hoc_execerror(
+                    "Native GPU gap transfer: mailbox gather did not read device voltages. "
+                    "Silent host V pull is not allowed by default. "
+                    "Set NRN_GPU_GAP_HOST_FALLBACK=1 only for transitional debugging.",
+                    nullptr);
+            }
+            static bool warned = false;
+            if (!warned) {
+                warned = true;
+                std::fprintf(stderr,
+                             "WARNING: native GPU gap using host voltage pull "
+                             "(NRN_GPU_GAP_HOST_FALLBACK=1; mailbox gather returned false)\n");
+            }
             for (int tid = 0; tid < nrn_nthread; ++tid) {
                 if (nrn_threads[tid].end > 0) {
                     neuron::gpu::sync_voltages_to_host_after_post_solve(nrn_threads[tid]);
