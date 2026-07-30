@@ -41,9 +41,17 @@ void sync_insrc_buf_to_device(double* insrc_buf, int n_insrc);
 void scatter_gap_targets_to_device(double* const* host_ptrs, int n);
 
 /**
- * Push only the named mechanism types' floating SoA to device (after host target writes).
- * Use for gap target mechs like HalfGap that have no STATE — never call with density mechs
- * that own device-authoritative STATE (hh, etc.).
+ * Prefer this: mid-SoA resolve via target mech field bases + vgap-column fallback
+ * when per-scalar present misses. Never full-mech SoA.
+ */
+void scatter_gap_targets_to_device(double* const* host_ptrs,
+                                   int n,
+                                   int const* mech_types,
+                                   int n_types);
+
+/**
+ * Legacy full-mech SoA H→D. **No-op** unless NRN_GAP_BULK_MECH_PUSH=1 (debug only).
+ * Product path must not clobber device CURRENT/STATE fields.
  */
 void sync_gap_target_mechs_to_device(int const* mech_types, int n_types);
 

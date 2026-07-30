@@ -101,6 +101,7 @@ void fixed_step_thread(model_sorted_token const& cache_token,
                     post_solve_on_device(cache_token, nt);
                 }
                 // Full device fence after post_solve — no V host transfer.
+                // Gap gather (main thread) waits all streams before mailbox read.
                 sync_all_device_streams();
                 if (nrnthread_vi_compute_) {
                     sync_voltages_to_host_after_post_solve(nt);
@@ -116,7 +117,9 @@ void fixed_step_thread(model_sorted_token const& cache_token,
         sync_gap_after_host_voltage_update(nt);
     }
     // Partrans: nrnmpi_v_transfer + lastpart are dispatched from nrn_fixed_step
-    // (same as CPU). Only run lastpart here when no gap transfer is configured.
+    // after all threads finish post_solve (gather needs every thread's V).
+    // lastpart (thread_transfer + STATE) runs as a second multi-thread job with
+    // prepare_nonvint setting compute_gpu=1 again — still all-threads-on-device.
     if (!nrnthread_v_transfer_) {
         phase_timer::Scope const timer{phase_timer::Id::lastpart};
         nrn_fixed_step_lastpart(cache_token, nt);

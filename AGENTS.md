@@ -52,6 +52,10 @@ and `Info : 1 GPUs shared by 1 ranks per node` in `special` output.
   SoA pull as the default for `Vector.record` / lastpart unless measured.
 - No per-step host post-solve voltage path as the primary fix (`vec_rhs` pull →
   host `nrn_update_voltage` → push `vec_v`).
+- **All threads on device** under native: if a thread is on GPU, it is entirely on
+  GPU for the step (except spikes + sparse source→target buffers). Kernel host
+  fallbacks → hard error once qualified. No bulk mech SoA H→D mid-psolve as product.
+  Mixed CPU/GPU threads only if free. See **`GROK-GPU-NATIVE.md` → thread residency**.
 - **Heap-free network:** sim-path identity is `weight_index` only (PR #3826). Do not
   reintroduce `NetCon::weight_` heap or Stage-2 `_receive_weight` shims.
 - NetReceiveBuffer + device `net_buf_receive` for all buffered NET_RECEIVE (incl.

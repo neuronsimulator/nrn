@@ -360,4 +360,4 @@ Update Status before exit; commit without push.
 
 ## Next (one line — update every session end)
 
-**Next:** P2 S3 residual — ELECTRODE HalfGap ACC multi-thread (ringtest `-gap -nt>1` 64 vs 128); then S4 MechRange (natrans nthread>1).
+**Next:** P2 S3 residual (policy path landed: vgap-only push, no bulk mech SoA) — product still 64 vs 128 at `-gap -nt 2` even with g=0; then S4 MechRange.

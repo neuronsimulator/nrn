@@ -1,6 +1,7 @@
 #include "neuron/gpu/partrans.hpp"
 
 #include "neuron/gpu/config.hpp"
+#include "neuron/gpu/device_state.hpp"
 #include "neuron/gpu/offload.hpp"
 #include "neuron/model_data.hpp"
 
@@ -354,28 +355,120 @@ void sync_insrc_buf_to_device(double* insrc_buf, int n_insrc) {
 #endif
 }
 
+namespace {
+
+/** Resolve device address for a host scalar that may be mid-SoA.
+ *  Direct present/deviceptr often fails for interior pointers; fall back to
+ *  base-of-field + offset when p lies inside a present double vector of a
+ *  gap-target mechanism type. */
+double* device_ptr_for_host_scalar(double* p, int const* mech_types, int n_types) {
+    if (!p) {
+        return nullptr;
+    }
+    if (double* d = nrn_target_is_present(p)) {
+        return d;
+    }
+    if (double* d = static_cast<double*>(acc_deviceptr(p))) {
+        return d;
+    }
+    if (!mech_types || n_types <= 0) {
+        return nullptr;
+    }
+    for (int ti = 0; ti < n_types; ++ti) {
+        int const type = mech_types[ti];
+        if (!neuron::model().is_valid_mechanism(type)) {
+            continue;
+        }
+        double* found = nullptr;
+        neuron::model().mechanism_data(type).for_each_vector_for_gpu_upload(
+            [&](auto const& /*tag*/, auto const& vec, int /*field_index*/, int /*array_dim*/) {
+                if (found || vec.empty()) {
+                    return;
+                }
+                using Value = typename std::decay_t<decltype(vec)>::value_type;
+                if constexpr (std::is_same_v<Value, double>) {
+                    double* const base = const_cast<double*>(vec.data());
+                    std::size_t const n = vec.size();
+                    if (p < base || p >= base + n) {
+                        return;
+                    }
+                    double* d_base = nrn_target_is_present(base);
+                    if (!d_base) {
+                        d_base = static_cast<double*>(acc_deviceptr(base));
+                    }
+                    if (d_base) {
+                        found = d_base + (p - base);
+                    }
+                }
+            });
+        if (found) {
+            return found;
+        }
+    }
+    return nullptr;
+}
+
+/** Push only SoA double columns that contain at least one of host_ptrs (typically vgap).
+ *  Never rewrites device-authoritative fields that are not transfer targets. */
+void push_target_fields_containing(double* const* host_ptrs,
+                                   int n,
+                                   int const* mech_types,
+                                   int n_types) {
+    if (!host_ptrs || n <= 0 || !mech_types || n_types <= 0) {
+        return;
+    }
+    for (int ti = 0; ti < n_types; ++ti) {
+        int const type = mech_types[ti];
+        if (!neuron::model().is_valid_mechanism(type)) {
+            continue;
+        }
+        neuron::model().mechanism_data(type).for_each_vector_for_gpu_upload(
+            [&](auto const& /*tag*/, auto const& vec, int /*field_index*/, int /*array_dim*/) {
+                if (vec.empty()) {
+                    return;
+                }
+                using Value = typename std::decay_t<decltype(vec)>::value_type;
+                if constexpr (std::is_same_v<Value, double>) {
+                    double* const base = const_cast<double*>(vec.data());
+                    std::size_t const nvec = vec.size();
+                    bool hit = false;
+                    for (int i = 0; i < n; ++i) {
+                        double* const p = host_ptrs[i];
+                        if (p && p >= base && p < base + nvec) {
+                            hit = true;
+                            break;
+                        }
+                    }
+                    if (!hit) {
+                        return;
+                    }
+                    if (nrn_target_is_present(base)) {
+                        nrn_target_update_on_device(base, nvec);
+                    }
+                }
+            });
+    }
+}
+
+}  // namespace
+
 void scatter_gap_targets_to_device(double* const* host_ptrs, int n) {
 #if defined(NRN_ENABLE_GPU)
     if (!native_gap_gpu_active() || n <= 0 || !host_ptrs) {
         return;
     }
     std::lock_guard<std::mutex> const lock{g_gap_device_push_mutex};
-    // Prefer NEURON present-table lookup (handles mid-SoA offsets from nrn_target_copyin).
-    // Fall back to OpenACC acc_deviceptr for the same reason.
+    // Wait for all threads' device work before host→device target push (main thread only).
+    for (int ith = 0; ith < nrn_nthread; ++ith) {
+        nrn_pragma_acc(wait(nrn_threads[ith].stream_id))
+    }
     int ok = 0, miss = 0;
-    double* lo = nullptr;
-    double* hi = nullptr;
     for (int i = 0; i < n; ++i) {
         double* const p = host_ptrs[i];
         if (!p) {
             continue;
         }
-        if (!lo || p < lo) {
-            lo = p;
-        }
-        if (!hi || p > hi) {
-            hi = p;
-        }
+        // Direct present / deviceptr (works once the field base is on device).
         double* d = nrn_target_is_present(p);
         if (!d) {
             d = static_cast<double*>(acc_deviceptr(p));
@@ -388,17 +481,11 @@ void scatter_gap_targets_to_device(double* const* host_ptrs, int n) {
             ++g_gap_scatter_miss;
         }
     }
-    (void) lo;
-    (void) hi;
-    // Per-scalar present often misses mid-SoA target handles; the product path
-    // then relies on sync_gap_target_mechs_to_device (bulk HalfGap SoA push).
-    // Count misses for diagnosis; do not treat miss alone as hard failure.
     if (std::getenv("NRN_GAP_DEBUG")) {
         static int once = 0;
-        if (once < 3) {
+        if (once < 5) {
             std::fprintf(stderr,
-                         "scatter_gap_targets ok=%d miss=%d n=%d "
-                         "(miss alone OK if target-mech SoA sync follows)\n",
+                         "scatter_gap_targets ok=%d miss=%d n=%d (vgap-field fallback if miss)\n",
                          ok,
                          miss,
                          n);
@@ -411,12 +498,89 @@ void scatter_gap_targets_to_device(double* const* host_ptrs, int n) {
 #endif
 }
 
+void scatter_gap_targets_to_device(double* const* host_ptrs,
+                                   int n,
+                                   int const* mech_types,
+                                   int n_types) {
+#if defined(NRN_ENABLE_GPU)
+    if (!native_gap_gpu_active() || n <= 0 || !host_ptrs) {
+        return;
+    }
+    std::lock_guard<std::mutex> const lock{g_gap_device_push_mutex};
+    for (int ith = 0; ith < nrn_nthread; ++ith) {
+        nrn_pragma_acc(wait(nrn_threads[ith].stream_id))
+    }
+    int ok = 0, miss = 0;
+    for (int i = 0; i < n; ++i) {
+        double* const p = host_ptrs[i];
+        if (!p) {
+            continue;
+        }
+        double* d = device_ptr_for_host_scalar(p, mech_types, n_types);
+        if (d) {
+            nrn_target_memcpy_to_device(d, p, 1);
+            ++ok;
+        } else {
+            ++miss;
+            ++g_gap_scatter_miss;
+        }
+    }
+    // Product path: if any mid-SoA scalar still misses, push only the double
+    // SoA columns that contain targets (e.g. HalfGap vgap) — never full mech.
+    if (miss > 0) {
+        push_target_fields_containing(host_ptrs, n, mech_types, n_types);
+    }
+    if (std::getenv("NRN_GAP_DEBUG")) {
+        static int once = 0;
+        if (once < 5) {
+            std::fprintf(stderr,
+                         "scatter_gap_targets(typed) ok=%d miss=%d n=%d field_fallback=%d\n",
+                         ok,
+                         miss,
+                         n,
+                         miss > 0 ? 1 : 0);
+            ++once;
+        }
+    }
+    // After field fallback, residual misses are only expected if the model is
+    // not on device yet (finitialize before ensure_on_device). During psolve
+    // that is a hard error unless opt-in host fallback.
+    if (miss > 0 && model_is_on_device() && !allow_gap_host_fallback()) {
+        // Re-check: field fallback may have fixed residency for next step.
+        // Count miss but do not abort every step — first-step miss is common.
+        // Fail only if *all* scalars miss after field push (nothing mapped).
+        if (ok == 0) {
+            fail_gap_device("scatter_targets",
+                           "no gap target scalars mapped on device after vgap-field push");
+        }
+    }
+#else
+    (void) host_ptrs;
+    (void) n;
+    (void) mech_types;
+    (void) n_types;
+#endif
+}
+
 void sync_gap_target_mechs_to_device(int const* mech_types, int n_types) {
 #if defined(NRN_ENABLE_GPU)
+    // Legacy full-mech SoA push — clobbers device CURRENT/STATE fields (v_unused, i, …).
+    // Product path uses scatter_gap_targets_to_device + vgap-field-only fallback.
+    // Opt-in only for transitional debugging.
+    if (!env_truthy("NRN_GAP_BULK_MECH_PUSH")) {
+        return;
+    }
     if (!native_gap_gpu_active() || !mech_types || n_types <= 0) {
         return;
     }
     std::lock_guard<std::mutex> const lock{g_gap_device_push_mutex};
+    static bool warned = false;
+    if (!warned) {
+        warned = true;
+        std::fprintf(stderr,
+                     "WARNING: NRN_GAP_BULK_MECH_PUSH=1 — full gap-target mech SoA H→D "
+                     "(clobbers device fields; not product path)\n");
+    }
     for (int i = 0; i < n_types; ++i) {
         int const type = mech_types[i];
         if (!neuron::model().is_valid_mechanism(type)) {
@@ -432,6 +596,10 @@ void sync_gap_target_mechs_to_device(int const* mech_types, int n_types) {
 
 void sync_mechanism_storage_to_device_after_partrans() {
 #if defined(NRN_ENABLE_GPU)
+    // Deprecated: full SoA clobber. No-op unless explicit debug env.
+    if (!env_truthy("NRN_GAP_BULK_MECH_PUSH")) {
+        return;
+    }
     if (!native_gap_gpu_active()) {
         return;
     }

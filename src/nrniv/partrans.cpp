@@ -876,9 +876,10 @@ static void gap_v_transfer_controller() {
 #if defined(NRN_ENABLE_GPU)
     if (neuron::gpu::enabled() && neuron::gpu::backend_native() && native_gap_tables_valid_ &&
         neuron::gpu::model_is_on_device()) {
-        // Phase G: sparse mailbox gather (CoreNEURON-style). Always also
-        // publish into host node V for *sv / diagnostics.
+        // Phase G: sparse mailbox gather (CoreNEURON-style). Device owns V.
         if (!native_vsrc_val_.empty()) {
+            // Multi-thread: wait every stream so post_solve V is complete before gather.
+            neuron::gpu::sync_all_device_streams();
             std::vector<std::vector<int>> live_vnode;
             fill_live_vnode_lists(live_vnode);
             // Re-bucket sources by live Node::_nt each step (rebuild can lag
@@ -930,23 +931,9 @@ static void gap_v_transfer_controller() {
                     ++gonce;
                 }
             }
-            if (native_mailbox_fresh_) {
-                for (size_t s = 0; s < native_vsrc_nd_.size(); ++s) {
-                    Node* nd = native_vsrc_nd_[s];
-                    if (!nd || !nd->_nt) {
-                        continue;
-                    }
-                    int const tid = nd->_nt->id;
-                    int const ix = nd->v_node_index;
-                    if (tid < 0 || tid >= nrn_nthread || ix < 0) {
-                        continue;
-                    }
-                    NrnThread& nt = nrn_threads[tid];
-                    if (ix < nt.end) {
-                        nt.node_voltage_storage()[ix] = native_vsrc_val_[s];
-                    }
-                }
-            }
+            // Do not write mailbox values back into host node voltages.
+            // Device owns V during native psolve; host mirrors of selected sources
+            // are not a full SoA and must not be pushed back to the device.
         }
         // When sparse gather cannot map device V: product path fails inside
         // gather_gap_* (hard error). Opt-in host V pull only with
@@ -1101,10 +1088,6 @@ void nrn_native_gap_targets_to_device() {
             all_ptrs.push_back(static_cast<double*>(ttd.tv[i]));
         }
     }
-    if (!all_ptrs.empty()) {
-        neuron::gpu::scatter_gap_targets_to_device(all_ptrs.data(),
-                                                  static_cast<int>(all_ptrs.size()));
-    }
     std::unordered_set<int> tar_types;
     for (size_t i = 0; i < targets_.size(); ++i) {
         Point_process* pp = target_pntlist_[i];
@@ -1112,8 +1095,21 @@ void nrn_native_gap_targets_to_device() {
             tar_types.insert(pp->prop->_type);
         }
     }
-    if (!tar_types.empty()) {
-        std::vector<int> types(tar_types.begin(), tar_types.end());
+    std::vector<int> types(tar_types.begin(), tar_types.end());
+    // Product: sparse target push + mid-SoA / vgap-field fallback only.
+    // Full HalfGap SoA H→D is opt-in NRN_GAP_BULK_MECH_PUSH (clobbers device fields).
+    if (!all_ptrs.empty()) {
+        if (!types.empty()) {
+            neuron::gpu::scatter_gap_targets_to_device(all_ptrs.data(),
+                                                      static_cast<int>(all_ptrs.size()),
+                                                      types.data(),
+                                                      static_cast<int>(types.size()));
+        } else {
+            neuron::gpu::scatter_gap_targets_to_device(all_ptrs.data(),
+                                                      static_cast<int>(all_ptrs.size()));
+        }
+    }
+    if (!types.empty()) {
         neuron::gpu::sync_gap_target_mechs_to_device(types.data(),
                                                     static_cast<int>(types.size()));
     }

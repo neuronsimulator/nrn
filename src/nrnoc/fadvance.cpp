@@ -377,8 +377,11 @@ void nrn_fixed_step(neuron::model_sorted_token const& cache_token) {
     } else {
         nrn_multithread_job(cache_token, nrn_fixed_step_thread);
         /* if there is no nrnthread_v_transfer then there cannot be
-           a nrnmpi_v_transfer and lastpart
-           will be done in above call.
+           a nrnmpi_v_transfer and lastpart will be done in above call.
+           With transfer: gather (nrnmpi_v_transfer_) then lastpart (which
+           calls thread_transfer + STATE). Native GPU: main-thread device
+           push of targets after lastpart; lastpart still sets compute_gpu=1
+           for every thread via prepare_nonvint (all-threads-on-device).
         */
         if (nrnthread_v_transfer_) {
             if (nrnmpi_v_transfer_) {

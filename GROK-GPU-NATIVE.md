@@ -74,6 +74,42 @@ every step (full SoA) unless you have a measured reason.
 - When stuck on lastpart / record / sync: check CoreNEURON paths above, then ask
   whether a **faster** design is possible.
 
+---
+
+## Permanent: thread residency (all on device; no mid-step host kernels)
+
+**Product default:** under native GPU, **every `NrnThread` that has cells runs the
+fixed-step sim path entirely on device** (`pc.nthread(n)` for all `n`). There is
+no intentional “only thread 0 on GPU” mode for product.
+
+**Atomic residency rule:** if a thread is on device for the step, it is **entirely**
+on device for that step’s integration work (CURRENT, matrix, STATE, gap endpoints
+for that thread’s cells). Allowed host crossings during psolve:
+
+1. **Spikes / discrete events** (threshold indices, NetSendBuffer drain, deliver)
+2. **Sparse source→target coupling** (gap / partrans): relatively small gather →
+   host staging (+ MPI if needed) → scatter into target slots (e.g. `vgap` only)
+3. **Optional trajectories** (requested scalars only)
+4. **Diagnostics** (`prcellstate`, end-of-psolve download) — not integration
+
+**Not allowed as product path** (fail loud once the model is Gate-qualified):
+
+- Silent host fallback for a kernel that should run on device
+- Mid-psolve **full mechanism SoA** host↔device mirrors “to make something work”
+  (including bulk HalfGap SoA push that rewrites fields device CURRENT/STATE own)
+- Per-step full node/mech SoA pull for `Vector.record` / lastpart as the default
+
+**Mixed CPU/GPU threads** (some threads fully host, some fully device) is
+**acceptable only if** it costs almost no extra code and no noticeable slowdown
+on the all-device path. Do **not** build a dual-resident transfer matrix or
+per-kernel host/device branching to support mixed mode. Prefer one all-device
+implementation; mixed can be “those threads never entered native GPU” at setup
+time, not half-on/half-off during a step.
+
+**`NrnThread::compute_gpu`:** phase flag for “this thread’s ACC regions take the
+device path now,” not a permanent topology bit. During a native fixed step it
+should be 1 for every thread that owns cells for the whole integration body.
+
 ### Session end: commit, do not push
 
 User workflow (all GPU sessions — and preferred for this tree generally):
