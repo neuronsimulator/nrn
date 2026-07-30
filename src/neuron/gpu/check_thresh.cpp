@@ -6,6 +6,7 @@
 #include "neuron/gpu/net_send_buffer.hpp"
 #include "neuron/gpu/offload.hpp"
 #include "neuron/gpu/phase_timer.hpp"
+#include "neuron/gpu/sync.hpp"
 
 #include "multicore.h"
 #include "netcon.h"
@@ -284,43 +285,50 @@ bool check_thresh_presyn_on_device(NrnThread* nt, double teps) noexcept {
 
 #if defined(NRN_ENABLE_GPU) && (defined(_OPENACC) || defined(_OPENMP))
     double* d_v = nt->compute_gpu ? static_cast<double*>(acc_deviceptr(vec_v)) : vec_v;
-    // clang-format off
-    nrn_pragma_acc(parallel loop present(thvar_row [0:count],
-                                         threshold [0:count],
-                                         flag [0:count],
-                                         nsbuffer [0:nsbuffer_size])
-                       deviceptr(d_v)
-                       copy(net_send_buf_count) if (nt->compute_gpu) async(nt->stream_id))
-    nrn_pragma_omp(target teams distribute parallel for map(tofrom: net_send_buf_count) if(nt->compute_gpu))
-    // clang-format on
-    for (int i = 0; i < count; ++i) {
-        int idx = 0;
-        int const thidx = thvar_row[i];
-        double const v = d_v[thidx];
-        double const thresh = threshold[i];
-        if (pscheck(v, thresh, &flag[i])) {
-            nrn_pragma_acc(atomic capture)
-            nrn_pragma_omp(atomic capture)
-            idx = net_send_buf_count++;
-            if (idx < nsbuffer_size) {
-                nsbuffer[idx] = i;  // slot index
+    if (!d_v && nt->compute_gpu) {
+        d_v = nrn_target_is_present(vec_v);
+    }
+    // Multi-process OpenACC on a shared GPU (e.g. special -mpi ringtest) can
+    // fail present/copyin; fall back to host detect with a sparse V pull.
+    bool const use_device_kernel = nt->compute_gpu && d_v && nrn_target_is_present(thvar_row) &&
+                                  nrn_target_is_present(threshold) && nrn_target_is_present(flag) &&
+                                  nsbuffer && nrn_target_is_present(nsbuffer);
+    if (use_device_kernel) {
+        // clang-format off
+        nrn_pragma_acc(parallel loop present(thvar_row [0:count],
+                                             threshold [0:count],
+                                             flag [0:count],
+                                             nsbuffer [0:nsbuffer_size])
+                           deviceptr(d_v)
+                           copy(net_send_buf_count) if (nt->compute_gpu) async(nt->stream_id))
+        nrn_pragma_omp(target teams distribute parallel for map(tofrom: net_send_buf_count) if(nt->compute_gpu))
+        // clang-format on
+        for (int i = 0; i < count; ++i) {
+            int idx = 0;
+            int const thidx = thvar_row[i];
+            double const v = d_v[thidx];
+            double const thresh = threshold[i];
+            if (pscheck(v, thresh, &flag[i])) {
+                nrn_pragma_acc(atomic capture)
+                nrn_pragma_omp(atomic capture)
+                idx = net_send_buf_count++;
+                if (idx < nsbuffer_size) {
+                    nsbuffer[idx] = i;  // slot index
+                }
             }
         }
-    }
-    nrn_pragma_acc(wait(nt->stream_id))
-    nt->_net_send_buffer_cnt = net_send_buf_count;
+        nrn_pragma_acc(wait(nt->stream_id))
+        nt->_net_send_buffer_cnt = net_send_buf_count;
 
-    // Sized to slot count before the kernel; overflow must not silently drop hits.
-    if (net_send_buf_count > nsbuffer_size) {
-        fprintf(stderr,
-                "ERROR: threshold hit list exceeded (thread %d): hits=%d capacity=%d\n",
-                nt->id,
-                net_send_buf_count,
-                nsbuffer_size);
-        std::abort();
-    }
+        if (net_send_buf_count > nsbuffer_size) {
+            fprintf(stderr,
+                    "ERROR: threshold hit list exceeded (thread %d): hits=%d capacity=%d\n",
+                    nt->id,
+                    net_send_buf_count,
+                    nsbuffer_size);
+            std::abort();
+        }
 
-    if (nt->compute_gpu) {
         // Flags + hit list live on device during the kernel; pull for host deliver/sync.
         // clang-format off
         nrn_pragma_acc(update host(flag [0:count]) async(nt->stream_id))
@@ -333,26 +341,31 @@ bool check_thresh_presyn_on_device(NrnThread* nt, double teps) noexcept {
             // clang-format on
         }
         nrn_pragma_acc(wait(nt->stream_id))
-    }
-#else
-    detect_threshold_hits_host(count,
-                               thvar_row,
-                               threshold,
-                               flag,
-                               vec_v,
-                               nsbuffer,
-                               nsbuffer_size,
-                               net_send_buf_count);
-    nt->_net_send_buffer_cnt = net_send_buf_count;
-    if (net_send_buf_count > nsbuffer_size) {
-        fprintf(stderr,
-                "ERROR: threshold hit list exceeded (thread %d): hits=%d capacity=%d\n",
-                nt->id,
-                net_send_buf_count,
-                nsbuffer_size);
-        std::abort();
-    }
+    } else
 #endif
+    {
+        // Host detect: need live voltages on host.
+        if (nt->compute_gpu) {
+            sync_voltages_to_host_before_check_thresh(*nt);
+        }
+        detect_threshold_hits_host(count,
+                                   thvar_row,
+                                   threshold,
+                                   flag,
+                                   vec_v,
+                                   nsbuffer,
+                                   nsbuffer_size,
+                                   net_send_buf_count);
+        nt->_net_send_buffer_cnt = net_send_buf_count;
+        if (net_send_buf_count > nsbuffer_size) {
+            fprintf(stderr,
+                    "ERROR: threshold hit list exceeded (thread %d): hits=%d capacity=%d\n",
+                    nt->id,
+                    net_send_buf_count,
+                    nsbuffer_size);
+            std::abort();
+        }
+    }
 
     sync_threshold_presyn_flags(table.slots.data(), flag, count);
 

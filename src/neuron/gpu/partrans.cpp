@@ -61,22 +61,36 @@ void gather_gap_voltage_sources_to_outsrc(int const* v_node_index_per_outsrc,
         return;
     }
     auto* const vec_v = nt0.node_voltage_storage();
-    int const ncell = nt0.end;
+    double* d_v = static_cast<double*>(acc_deviceptr(vec_v));
+    if (!d_v) {
+        d_v = nrn_target_is_present(vec_v);
+    }
+    if (!d_v) {
+        return;
+    }
+    ensure_mailbox_on_device(outsrc_buf, n_outsrc);
+    double* d_out = nrn_target_is_present(outsrc_buf);
+    if (!d_out) {
+        d_out = static_cast<double*>(acc_deviceptr(outsrc_buf));
+    }
+    if (!d_out) {
+        return;
+    }
     int const saved_compute_gpu = nt0.compute_gpu;
     nt0.compute_gpu = 1;
-    nrn_pragma_acc(parallel loop present(vec_v [0:ncell], outsrc_buf [0:n_outsrc],
-                                         v_node_index_per_outsrc [0:n_outsrc])
+    int const* const vnode_p = v_node_index_per_outsrc;
+    nrn_pragma_acc(parallel loop deviceptr(d_v, d_out) copyin(vnode_p [0:n_outsrc])
                        async(nt0.stream_id))
-    nrn_pragma_omp(target teams distribute parallel for simd if(nt0.compute_gpu))
+    nrn_pragma_omp(target teams distribute parallel for simd map(to: vnode_p[0:n_outsrc]) if(nt0.compute_gpu))
     for (int i = 0; i < n_outsrc; ++i) {
-        int const ix = v_node_index_per_outsrc[i];
+        int const ix = vnode_p[i];
         if (ix >= 0) {
-            outsrc_buf[i] = vec_v[ix];
+            d_out[i] = d_v[ix];
         }
     }
-    nrn_pragma_acc(update host(outsrc_buf [0:n_outsrc]) async(nt0.stream_id))
-    nrn_pragma_omp(target update from(outsrc_buf [0:n_outsrc]) if (nt0.compute_gpu))
     nrn_pragma_acc(wait(nt0.stream_id))
+    nrn_pragma_acc(update host(outsrc_buf [0:n_outsrc]))
+    nrn_pragma_omp(target update from(outsrc_buf [0:n_outsrc]) if (nt0.compute_gpu))
     nt0.compute_gpu = saved_compute_gpu;
 #else
     (void) v_node_index_per_outsrc;
@@ -94,6 +108,14 @@ void gather_gap_voltage_sources_multithread(
     if (!native_gap_gpu_active() || n_outsrc <= 0 || !outsrc_buf) {
         return;
     }
+    ensure_mailbox_on_device(outsrc_buf, n_outsrc);
+    double* d_out = nrn_target_is_present(outsrc_buf);
+    if (!d_out) {
+        d_out = static_cast<double*>(acc_deviceptr(outsrc_buf));
+    }
+    if (!d_out) {
+        return;
+    }
     int const nthread = static_cast<int>(outsrc_index_by_thread.size());
     bool any_gpu{false};
     for (int tid = 0; tid < nthread; ++tid) {
@@ -108,19 +130,25 @@ void gather_gap_voltage_sources_multithread(
             continue;
         }
         auto* const vec_v = nt.node_voltage_storage();
-        int const ncell = nt.end;
+        double* d_v = static_cast<double*>(acc_deviceptr(vec_v));
+        if (!d_v) {
+            d_v = nrn_target_is_present(vec_v);
+        }
+        if (!d_v) {
+            continue;
+        }
         int const saved_compute_gpu = nt.compute_gpu;
         nt.compute_gpu = 1;
         any_gpu = true;
         int const* const outsrc_idx = outsrc_indices.data();
         int const* const v_node_idx = v_indices.data();
-        nrn_pragma_acc(parallel loop present(vec_v [0:ncell], outsrc_buf [0:n_outsrc],
-                                             outsrc_idx [0:n], v_node_idx [0:n]) async(nt.stream_id))
-        nrn_pragma_omp(target teams distribute parallel for simd if(nt.compute_gpu))
+        nrn_pragma_acc(parallel loop deviceptr(d_v, d_out) copyin(outsrc_idx [0:n], v_node_idx [0:n])
+                           async(nt.stream_id))
+        nrn_pragma_omp(target teams distribute parallel for simd map(to: outsrc_idx[0:n], v_node_idx[0:n]) if(nt.compute_gpu))
         for (int i = 0; i < n; ++i) {
             int const ix = v_node_idx[i];
             if (ix >= 0) {
-                outsrc_buf[outsrc_idx[i]] = vec_v[ix];
+                d_out[outsrc_idx[i]] = d_v[ix];
             }
         }
         nt.compute_gpu = saved_compute_gpu;

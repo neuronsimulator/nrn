@@ -85,6 +85,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-07-29 | GPU-P1-mode2 | — | Mode-2 product: GPU fixed-step psolve-scoped only (host continuerun=CPU, CoreNEURON-like). Reseed PreSyn hysteresis from host V at psolve entry. test_psolve native green; mode-2 alone spike match (±fast_imem). Sequential 0→1→2 without imem green; with fast_imem residual (OpenACC partial-present). |
 | 2026-07-29 | GPU-P2-mpi-gap | — | Design: `doc/gpu/native-partrans.md` — buffer-first gap path (CoreNEURON-like); pure same-thread GPU deferred. |
 | 2026-07-29 | GPU-P2-mpi-gap | — | S0+S1: native gap buffer path + ACC HalfGap; 1-rank ringtest gap 128 spikes match CPU (sorted). |
+| 2026-07-29 | GPU-P2-mpi-gap | — | S2: multi-rank MPI gap green — live `v_node_index` MPI outsrc gather (`deviceptr`); 2-rank 128 spikes match sorted `spk2.gap…ref`; ctest via `h.nrnmpi_init` (not `special -mpi` OpenACC SEGV). |
 
 ---
 
@@ -265,8 +266,8 @@ For each test:
 | spikes_mpi / file mode native | **green** (mode 0) | mode 1 multi-rank re-psolve residual |
 | test_subworlds native | **green** | |
 | test_natrans native | **green** (nthread=1) | multi-thread residual |
-| ringtest gap native + compare | **green** (1-rank) | S0+S1: sparse mailbox gather + target scatter; ACC HalfGap; live `v_node_index` after permute. Multi-rank → S2 |
-| multi-rank device assign | | unit test `gpu_device_assign_mpi` (unblocks 2-rank gap S2) |
+| ringtest gap native + compare | **green** (1+2 rank) | S0–S2: sparse mailbox gather + target scatter; ACC HalfGap; live `v_node_index` local+MPI gather (`deviceptr`); 2-rank sorted raster vs `spk2.gap.100ms.std.sorted.ref`. Launch: `h.nrnmpi_init` product path. |
+| multi-rank device assign | **shared OK** | 2-rank gap works on shared T1000 (`1 GPUs shared by 1 ranks` message per process). `special -mpi` OpenACC multi-process SEGV residual; prefer `nrnmpi_init`. |
 
 ---
 
@@ -357,4 +358,4 @@ Update Status before exit; commit without push.
 
 ## Next (one line — update every session end)
 
-**Next:** P2 S2 multi-rank gap (`neuron_gpu_native_mpi_gap` @ nhost>1) + multi-rank device assign. S3 multi-thread; S4 MechRange sources (natrans).
+**Next:** P2 S3 multi-thread gap/partrans (`nthread>1`); S4 MechRange sources (natrans beyond nthread=1).

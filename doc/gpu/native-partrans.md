@@ -2,7 +2,7 @@
 
 **Portfolio:** GPU-native (feature)  
 **Tree:** `~/neuron/nrngpu`  
-**Status:** S0+S1 landed (2026-07-29) — 1-rank ringtest gap raster green (ACC HalfGap)  
+**Status:** S0–S2 landed (2026-07-29) — 1-rank + multi-rank MPI gap ringtest green (ACC HalfGap; live vnode MPI gather)  
 
 **Related:** `doc/gpu/native-coreneuron-parity.md` (P2), CoreNEURON `src/coreneuron/network/partrans.cpp`
 
@@ -212,7 +212,7 @@ Constraints if added:
 |----|------|------------|
 | **S0** | Setup: `SourceLoc`/`TargetLoc` tables; sid fan-out; rebuild on structure change | Dump / asserts; no runtime change required |
 | **S1** | Phase G+H+I for **NodeVoltage → target**, 1-rank (still full buffer path) | ACC HalfGap + ringtest `-gap` 1-rank spike match vs CPU / `spk2.gap.100ms.std.ref` |
-| **S2** | Multi-rank MPI via existing host Alltoallv | `neuron_gpu_native_mpi_gap` + compare (device assign as needed) |
+| **S2** | Multi-rank MPI via existing host Alltoallv | **green** — `neuron_gpu_native_mpi_gap` 2-rank + sorted `spk2.gap.100ms.std.sorted.ref` (launch via `h.nrnmpi_init`, not `special -mpi`) |
 | **S3** | Multi-thread via same buffers | natrans / gap `nthread>1` product or residual note |
 | **S4** | `MechRange` sources (natrans ions) | `test_natrans` native beyond nthread=1 |
 | **S5** | Traffic audit; no full-V default; optional same-thread GPU shortcut | Measured; tests still cover buffer path |
@@ -243,4 +243,4 @@ Constraints if added:
 
 ## One-line Next
 
-**S2:** multi-rank gap + device assign. (S0+S1 done: 1-rank buffer path + ACC HalfGap.)
+**S3:** multi-thread gap / partrans (`nthread>1`). (S0–S2 done: buffer path + ACC HalfGap + multi-rank MPI gather with live vnode.)

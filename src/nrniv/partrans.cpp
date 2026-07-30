@@ -786,20 +786,48 @@ static void mpi_transfer() {
     int i, n = outsrc_buf_size_;
 #if defined(NRN_ENABLE_GPU)
     bool const gpu_gather = neuron::gpu::enabled() && neuron::gpu::backend_native() &&
-                            static_cast<int>(poutsrc_v_node_index_.size()) == n;
+                            neuron::gpu::model_is_on_device() && n > 0 && poutsrc_indices_ &&
+                            static_cast<int>(poutsrc_.size()) >= n;
     if (gpu_gather) {
+        // Live v_node_index / thread after permute (same fix as local mailbox).
+        std::vector<int> live_vnode(static_cast<size_t>(n), -1);
+        std::vector<int> live_tid(static_cast<size_t>(n), -1);
+        for (i = 0; i < n; ++i) {
+            int const isrc = poutsrc_indices_[i];
+            if (isrc < 0 || static_cast<size_t>(isrc) >= visources_.size()) {
+                continue;
+            }
+            Node* nd = visources_[isrc];
+            sgid_t const sid = sgids_[isrc];
+            auto const it = non_vsrc_update_info_.find(sid);
+            if (it != non_vsrc_update_info_.end() || !nd || nd->extnode || !nd->_nt) {
+                live_vnode[i] = -1;
+                continue;
+            }
+            live_vnode[i] = nd->v_node_index;
+            live_tid[i] = nd->_nt->id;
+        }
         if (nrn_nthread == 1) {
-            neuron::gpu::gather_gap_voltage_sources_to_outsrc(poutsrc_v_node_index_.data(), n,
-                                                              outsrc_buf_);
+            neuron::gpu::gather_gap_voltage_sources_to_outsrc(live_vnode.data(), n, outsrc_buf_);
         } else {
+            std::vector<std::vector<int>> out_ix_by_tid(nrn_nthread);
+            std::vector<std::vector<int>> vnode_by_tid(nrn_nthread);
+            for (i = 0; i < n; ++i) {
+                if (live_vnode[i] < 0) {
+                    continue;
+                }
+                int const tid = live_tid[i];
+                if (tid < 0 || tid >= nrn_nthread) {
+                    continue;
+                }
+                out_ix_by_tid[tid].push_back(i);
+                vnode_by_tid[tid].push_back(live_vnode[i]);
+            }
             neuron::gpu::gather_gap_voltage_sources_multithread(
-                poutsrc_gather_outsrc_index_by_thread_,
-                poutsrc_gather_v_node_index_by_thread_,
-                n,
-                outsrc_buf_);
+                out_ix_by_tid, vnode_by_tid, n, outsrc_buf_);
         }
         for (i = 0; i < n; ++i) {
-            if (poutsrc_v_node_index_[i] < 0) {
+            if (live_vnode[i] < 0) {
                 outsrc_buf_[i] = *poutsrc_[i];
             }
         }
