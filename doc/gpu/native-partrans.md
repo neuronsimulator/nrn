@@ -2,7 +2,9 @@
 
 **Portfolio:** GPU-native (feature)  
 **Tree:** `~/neuron/nrngpu`  
-**Status:** S0–S2 landed (2026-07-29) — 1-rank + multi-rank MPI gap ringtest green (ACC HalfGap; live vnode MPI gather)
+**Status:** S0–S2 green; **S3 partial (2026-07-30)** — multi-thread buffer path
+(live re-bucket gather + per-thread target-mech sync) + NMODL ACC dptr
+`storage_offset` fix; ringtest gap `nthread>1` product still residual (see below).
 
 **Product policy (2026-07-30):** device gather/scatter under native is mandatory.
 Silent no-op / host V pull when residency fails is **not** default. Opt-in debug:
@@ -217,7 +219,7 @@ Constraints if added:
 | **S0** | Setup: `SourceLoc`/`TargetLoc` tables; sid fan-out; rebuild on structure change | Dump / asserts; no runtime change required |
 | **S1** | Phase G+H+I for **NodeVoltage → target**, 1-rank (still full buffer path) | ACC HalfGap + ringtest `-gap` 1-rank spike match vs CPU / `spk2.gap.100ms.std.ref` |
 | **S2** | Multi-rank MPI via existing host Alltoallv | **green** — `neuron_gpu_native_mpi_gap` 2-rank + sorted `spk2.gap.100ms.std.sorted.ref` (launch via `h.nrnmpi_init`, not `special -mpi`) |
-| **S3** | Multi-thread via same buffers | natrans / gap `nthread>1` product or residual note |
+| **S3** | Multi-thread via same buffers | **partial** — buffer path multi-thread gather/scatter fixed; ringtest `-gap -nt 2` still **64 vs 128** spikes (thread-1 cells silent). Residual: ELECTRODE HalfGap ACC multi-thread (not mailbox alone; g=0 still half). |
 | **S4** | `MechRange` sources (natrans ions) | `test_natrans` native beyond nthread=1 |
 | **S5** | Traffic audit; no full-V default; optional same-thread GPU shortcut | Measured; tests still cover buffer path |
 
@@ -245,6 +247,19 @@ Constraints if added:
 
 ---
 
+## S3 residual (multi-thread product)
+
+What landed for multi-thread **buffers**:
+
+- Live re-bucket of voltage sources by `Node::_nt` each gather step (not rebuild-time only).
+- Per-thread bulk `sync_gap_target_mechs_to_device` (was tid==0 only → other threads’ `vgap` never pushed under serial multi-thread).
+- NMODL ACC: GPU `pdata` dptr full-table index uses `id + storage_offset` (was local `id` only → wrong area for electrode mechs on tid>0).
+
+What still fails product:
+
+- `ringtest -gpu-native -gap -nt 2`: **64 spikes vs CPU 128**; firing gids are only the first half (thread 0). Even with `g=0` (no coupling), GPU multi-thread fires 8 vs CPU 16 ring-leader spikes — so this is **not** only stale `vgap` transfer. Suspect remaining ACC multi-thread ELECTRODE/`present` issues for HalfGap CURRENT/JACOB on tid>1.
+- No-gap multi-thread native remains green (688 spikes) — gap/HalfGap path is the differentiator.
+
 ## One-line Next
 
-**S3:** multi-thread gap / partrans (`nthread>1`). (S0–S2 done: buffer path + ACC HalfGap + multi-rank MPI gather with live vnode.)
+**S3 residual / S4:** fix ELECTRODE HalfGap ACC multi-thread (product `-gap -nt>1`); then S4 MechRange (natrans nthread>1).

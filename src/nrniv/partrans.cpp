@@ -881,11 +881,55 @@ static void gap_v_transfer_controller() {
         if (!native_vsrc_val_.empty()) {
             std::vector<std::vector<int>> live_vnode;
             fill_live_vnode_lists(live_vnode);
+            // Re-bucket sources by live Node::_nt each step (rebuild can lag
+            // partition/permute; wrong tid reads the wrong thread's vec_v).
+            std::vector<std::vector<int>> live_slot(nrn_nthread);
+            std::vector<std::vector<int>> live_ix(nrn_nthread);
+            for (size_t s = 0; s < native_vsrc_nd_.size(); ++s) {
+                Node* nd = native_vsrc_nd_[s];
+                if (!nd || !nd->_nt) {
+                    continue;
+                }
+                int const tid = nd->_nt->id;
+                if (tid < 0 || tid >= nrn_nthread) {
+                    continue;
+                }
+                live_slot[tid].push_back(static_cast<int>(s));
+                live_ix[tid].push_back(nd->v_node_index);
+            }
             native_mailbox_fresh_ = neuron::gpu::gather_gap_voltage_mailbox(
-                native_gather_slot_by_tid_,
-                live_vnode,
+                live_slot,
+                live_ix,
                 native_vsrc_val_.data(),
                 static_cast<int>(native_vsrc_val_.size()));
+            if (std::getenv("NRN_GAP_DEBUG")) {
+                static int gonce = 0;
+                if (gonce < 3) {
+                    for (int tid = 0; tid < nrn_nthread; ++tid) {
+                        std::fprintf(stderr,
+                                     "gap_gather tid=%d nsrc=%zu rebuild_nsrc=%zu\n",
+                                     tid,
+                                     live_slot[tid].size(),
+                                     tid < static_cast<int>(native_gather_slot_by_tid_.size())
+                                         ? native_gather_slot_by_tid_[tid].size()
+                                         : 0);
+                    }
+                    if (!native_vsrc_val_.empty()) {
+                        double mn = native_vsrc_val_[0], mx = native_vsrc_val_[0];
+                        for (double v: native_vsrc_val_) {
+                            mn = std::min(mn, v);
+                            mx = std::max(mx, v);
+                        }
+                        std::fprintf(stderr,
+                                     "gap_gather mailbox n=%zu fresh=%d min=%g max=%g\n",
+                                     native_vsrc_val_.size(),
+                                     native_mailbox_fresh_ ? 1 : 0,
+                                     mn,
+                                     mx);
+                    }
+                    ++gonce;
+                }
+            }
             if (native_mailbox_fresh_) {
                 for (size_t s = 0; s < native_vsrc_nd_.size(); ++s) {
                     Node* nd = native_vsrc_nd_[s];
@@ -1002,35 +1046,72 @@ static void thread_transfer(NrnThread* _nt) {
             *(ttd.tv[i]) = val;
             tar_ptrs.push_back(static_cast<double*>(ttd.tv[i]));
         }
-        if (std::getenv("NRN_GAP_DEBUG") && _nt->id == 0) {
-            static int once = 0;
-            if (once < 3 && ttd.cnt > 0) {
+        if (std::getenv("NRN_GAP_DEBUG") && ttd.cnt > 0) {
+            static int once_per_tid[32] = {};
+            int const tid = _nt->id;
+            int& once = once_per_tid[tid < 32 ? tid : 31];
+            if (once < 2) {
                 double mn = *(ttd.tv[0]), mx = *(ttd.tv[0]);
+                int n_lv = 0, n_ri = 0, n_lh = 0;
                 for (int i = 0; i < ttd.cnt; ++i) {
                     double v = *(ttd.tv[i]);
                     mn = std::min(mn, v);
                     mx = std::max(mx, v);
+                    switch (ttd.src_kind[i]) {
+                    case NativeEdgeSrcKind::LocalVoltage:
+                        ++n_lv;
+                        break;
+                    case NativeEdgeSrcKind::RemoteInsrc:
+                        ++n_ri;
+                        break;
+                    default:
+                        ++n_lh;
+                        break;
+                    }
                 }
                 std::fprintf(stderr,
-                             "gap_scatter tid=%d n=%d host_tar min=%g max=%g\n",
-                             _nt->id,
+                             "gap_scatter tid=%d n=%d lv=%d ri=%d lh=%d host_tar min=%g max=%g "
+                             "mailbox_fresh=%d n_vsrc=%zu\n",
+                             tid,
                              ttd.cnt,
+                             n_lv,
+                             n_ri,
+                             n_lh,
                              mn,
-                             mx);
+                             mx,
+                             native_mailbox_fresh_ ? 1 : 0,
+                             native_vsrc_val_.size());
                 ++once;
             }
         }
-        // Push host target values to device (sparse + span update in GPU module).
+        // Push host target values to device (sparse + bulk target-mech SoA).
+        // Every thread that owns targets must participate: with nthread>1 and
+        // serial or parallel lastpart, tid==0-only bulk sync left other
+        // threads' vgap on host while device HalfGap CURRENT saw stale values
+        // (S3: multi-thread gap 64 vs 128 spikes).
         if (!tar_ptrs.empty()) {
             neuron::gpu::scatter_gap_targets_to_device(tar_ptrs.data(),
                                                       static_cast<int>(tar_ptrs.size()));
         }
-        if (_nt->id == 0) {
+        // Bulk SoA push for mechs that appear as targets on *this* thread.
+        // Global mechanism storage is shared; calling per thread after host
+        // writes is correct for sequential multi-thread (OMP_NUM_THREADS=1)
+        // and last-writer-wins for concurrent workers after non-overlapping
+        // host writes.
+        if (ttd.cnt > 0) {
             std::unordered_set<int> tar_types;
-            for (auto* pp: target_pntlist_) {
-                if (pp && pp->prop) {
-                    tar_types.insert(pp->prop->_type);
+            for (size_t i = 0; i < targets_.size(); ++i) {
+                Point_process* pp = target_pntlist_[i];
+                if (!pp || !pp->prop) {
+                    continue;
                 }
+                if (nrn_nthread > 1) {
+                    auto* vnt = static_cast<NrnThread*>(pp->_vnt);
+                    if (!vnt || vnt->id != _nt->id) {
+                        continue;
+                    }
+                }
+                tar_types.insert(pp->prop->_type);
             }
             if (!tar_types.empty()) {
                 std::vector<int> types(tar_types.begin(), tar_types.end());

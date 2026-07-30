@@ -87,6 +87,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-07-29 | GPU-P2-mpi-gap | — | S0+S1: native gap buffer path + ACC HalfGap; 1-rank ringtest gap 128 spikes match CPU (sorted). |
 | 2026-07-29 | GPU-P2-mpi-gap | — | S2: multi-rank MPI gap green — live `v_node_index` MPI outsrc gather (`deviceptr`); 2-rank 128 spikes match sorted `spk2.gap…ref`; ctest via `h.nrnmpi_init` (not `special -mpi` OpenACC SEGV). |
 | 2026-07-30 | GPU-P2-mpi-gap | — | Fail-loud native policy: threshold detect + gap gather/scatter no longer silent host fallback; opt-in `NRN_GPU_THRESH_HOST_FALLBACK` / `NRN_GPU_GAP_HOST_FALLBACK`; counters + `NRN_GPU_THRESH_STATS`. |
+| 2026-07-30 | GPU-P2-mpi-gap | — | S3 partial: multi-thread gap buffers (live tid re-bucket + per-thread target SoA sync) + NMODL ACC dptr `storage_offset`; ringtest `-gap -nt 2` still 64 vs 128 (thread-1 silent; ELECTRODE HalfGap ACC residual). |
 
 ---
 
@@ -267,7 +268,7 @@ For each test:
 | spikes_mpi / file mode native | **green** (mode 0) | mode 1 multi-rank re-psolve residual |
 | test_subworlds native | **green** | |
 | test_natrans native | **green** (nthread=1) | multi-thread residual |
-| ringtest gap native + compare | **green** (1+2 rank) | S0–S2: sparse mailbox gather + target scatter; ACC HalfGap; live `v_node_index` local+MPI gather (`deviceptr`); 2-rank sorted raster vs `spk2.gap.100ms.std.sorted.ref`. Launch: `h.nrnmpi_init` product path. |
+| ringtest gap native + compare | **green** (1+2 rank); **nt>1 residual** | S0–S2 green. S3: multi-thread buffer path improved; product `-gap -nt 2` still 64 vs 128 (thread-1 silent / ELECTRODE HalfGap ACC). |
 | multi-rank device assign | **shared OK** | 2-rank gap works on shared T1000 (`1 GPUs shared by 1 ranks` message per process). `special -mpi` OpenACC multi-process SEGV residual; prefer `nrnmpi_init`. |
 
 ---
@@ -359,4 +360,4 @@ Update Status before exit; commit without push.
 
 ## Next (one line — update every session end)
 
-**Next:** P2 S3 multi-thread gap/partrans (`nthread>1`); S4 MechRange sources (natrans beyond nthread=1).
+**Next:** P2 S3 residual — ELECTRODE HalfGap ACC multi-thread (ringtest `-gap -nt>1` 64 vs 128); then S4 MechRange (natrans nthread>1).

@@ -104,14 +104,26 @@ void CodegenNeuronAccVisitor::print_present_dptr_pointer_declarations() const {
         if (var.is_index || var.is_integer || var.is_vdata || sem == naming::POINTER_SEMANTIC) {
             continue;
         }
-        // GPU: full-table device base (index with local id; ml offset is applied
-        // when MechanismRange is host-only via dptr_field_ptr). Host: offset-adjusted.
+        // GPU cache is the full-instance pdata table; host dptr_field_ptr is already
+        // advanced by ml storage offset. When using the GPU table, also record
+        // storage_offset so (*_present_dptr_i[id + base]) hits the right instance
+        // (multi-thread: offset>0). Host path uses base=0.
         printer->fmt_line(
-            "double* const* _present_dptr_{0} = (nt->compute_gpu && "
-            "neuron::mechanism::_get::gpu_pdata_ptr_cache(_sorted_token, _ml_arg->type())) "
-            "? neuron::mechanism::_get::gpu_pdata_ptr_cache(_sorted_token, _ml_arg->type())[{0}] "
-            ": _lmc.template dptr_field_ptr<{0}>();",
+            "double* const* _present_dptr_{0} = nullptr;", i);
+        printer->fmt_line("int _present_dptr_base_{0} = 0;", i);
+        printer->push_block(
+            "if (nt->compute_gpu && "
+            "neuron::mechanism::_get::gpu_pdata_ptr_cache(_sorted_token, _ml_arg->type()))");
+        printer->fmt_line(
+            "_present_dptr_{0} = "
+            "neuron::mechanism::_get::gpu_pdata_ptr_cache(_sorted_token, _ml_arg->type())[{0}];",
             i);
+        printer->fmt_line(
+            "_present_dptr_base_{0} = static_cast<int>(_ml_arg->get_storage_offset());", i);
+        printer->pop_block();
+        printer->push_block("else");
+        printer->fmt_line("_present_dptr_{0} = _lmc.template dptr_field_ptr<{0}>();", i);
+        printer->pop_block();
     }
 }
 
@@ -1273,8 +1285,9 @@ std::string CodegenNeuronAccVisitor::int_variable_name(const IndexVariableInfo& 
         if (symbol.is_index || symbol.is_integer) {
             return CodegenNeuronCppVisitor::int_variable_name(symbol, name, use_instance);
         }
-        // Base from dptr_field_ptr already includes ml storage offset.
-        return fmt::format("(*_present_dptr_{}[id])", position);
+        // GPU full table: index id + storage_offset (see present_dptr declarations).
+        // Host dptr_field_ptr path sets _present_dptr_base_*=0 (already offset).
+        return fmt::format("(*_present_dptr_{}[id + _present_dptr_base_{}])", position, position);
     }
     return CodegenNeuronCppVisitor::int_variable_name(symbol, name, use_instance);
 }
