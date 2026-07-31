@@ -99,6 +99,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-07-31 | GPU-P3-models | — | Gfluct3 native green (182 spikes): device-safe mynormrand (no static `_ran_compat` in ACC); host NET_RECEIVE for BBCOREPOINTER + SoA push; BEFORE BREAKPOINT folded into CURRENT; `testcorenrn_gf_native`. |
 | 2026-07-31 | GPU-P3-models | — | vecevent native green (60 spikes sorted): ACC VecStim host NET_RECEIVE + net_event; 4-rank via `NRN_TEST_MPI`/`nrnmpi_init`; `testcorenrn_vecevent_native`. reduced_dentate residual: ACC mechs link + runs; GC EPSP missing (~10 MPP vs ~400). |
 | 2026-07-31 | GPU-P3-models | — | reduced_dentate native green (400 spikes): gap deferred-lastpart left `compute_gpu=0` so post-step NET_RECEIVE never flushed to device; force device deliver/flush in `deliver_post_step_events_host`. `reduced_dentate_native` 4-rank product. |
+| 2026-07-31 | GPU-P3-models | — | P3 product close: patstim **N/A** for device (host art-cell PatternStim; NMODL host path only). Online native matrix closed for CoreNEURON-GPU-like scope. Full NMODL `ctest` greening out of scope (separate session). |
 
 ---
 
