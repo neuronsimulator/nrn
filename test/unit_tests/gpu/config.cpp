@@ -11,6 +11,10 @@ int nrn_optimize_node_order(int type) {
 }
 }  // namespace neuron
 
+// Linked only into the gpu_config unit test (not full libnrniv).
+int cvode_active_ = 0;
+int nrn_nthread = 1;
+
 TEST_CASE("gpu config defaults", "[gpu][config]") {
 #if !defined(NRN_ENABLE_GPU)
     SKIP("NRN_ENABLE_GPU required");

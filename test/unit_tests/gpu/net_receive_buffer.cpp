@@ -13,6 +13,10 @@
 
 using namespace neuron::gpu;
 
+// Standalone unit test: product update_net_receive_buffer reads this global.
+// Without a definition the link leaves a null/broken reloc and SIGSEGVs.
+short* nrn_is_artificial_ = nullptr;
+
 namespace {
 int g_stub_receive_calls = 0;
 

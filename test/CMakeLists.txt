@@ -131,6 +131,10 @@ if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
   cpp_cc_configure_sanitizers(TARGET testneuron_gpu_config)
   target_link_libraries(testneuron_gpu_config PRIVATE Catch2::Catch2 neuron_gpu)
   target_compile_definitions(testneuron_gpu_config PRIVATE NRN_ENABLE_GPU)
+  # neuron_gpu includes OpenACC offload.cpp; must link with ACC flags (else
+  # static OpenACC init can call through a null and SIGSEGV before main).
+  target_compile_options(testneuron_gpu_config PRIVATE ${_test_gpu_offload_flags})
+  target_link_options(testneuron_gpu_config PUBLIC ${_test_gpu_offload_flags})
   nrn_add_test(
     GROUP unit_tests
     NAME gpu_config

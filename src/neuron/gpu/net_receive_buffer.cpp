@@ -325,7 +325,8 @@ void update_net_receive_buffer(NrnThread* nt) {
     }
     for (auto* tml = nt->tml; tml; tml = tml->next) {
         int const type = tml->index;
-        if (nrn_is_artificial_ && nrn_is_artificial_[type]) {
+        // Unit tests / partial links may leave nrn_is_artificial_ null.
+        if (nrn_is_artificial_ && type >= 0 && nrn_is_artificial_[type]) {
             continue;
         }
         auto* const ml = tml->ml;

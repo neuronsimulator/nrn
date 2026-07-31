@@ -77,8 +77,22 @@ nrn_add_test(
   COMMAND ${ringtest_python} -tstop 100)
 
 if(NRN_ENABLE_GPU)
+  # Launch via h.nrnmpi_init() (like spikes_mpi native / gap), not special -mpi —
+  # OpenACC multi-process SEGV was observed with -mpi on this stack.
+  set(ringtest_native_gpu_workdir
+      ${PROJECT_BINARY_DIR}/test/external_ringtest/neuron_gpu_native_mpi)
   set(ringtest_native_gpu_mpi_script
       ${PROJECT_BINARY_DIR}/test/external_ringtest/neuron_gpu_native_mpi.sh)
+  set(ringtest_native_gpu_mpi_py
+      ${ringtest_native_gpu_workdir}/mpi_ringtest_native.py)
+  file(
+    WRITE ${ringtest_native_gpu_mpi_py}
+    "import sys\n"
+    "from neuron import h\n"
+    "h.nrnmpi_init()\n"
+    "sys.argv = ['ringtest.py'] + sys.argv[1:]\n"
+    "import runpy\n"
+    "runpy.run_path('ringtest.py', run_name='__main__')\n")
   file(
     WRITE ${ringtest_native_gpu_mpi_script}
     "#!/bin/bash\n"
@@ -88,7 +102,12 @@ if(NRN_ENABLE_GPU)
     "export NRN_GPU_PERMUTE=2\n"
     "export TMPDIR=\"${PROJECT_BINARY_DIR}/test/tmp/external_ringtest/neuron_gpu_native_mpi\"\n"
     "mkdir -p \"$TMPDIR\"\n"
-    "OMP_NUM_THREADS=1 ${ringtest_special_str} -gpu-native -tstop 100\n")
+    "cd \"${ringtest_native_gpu_workdir}\"\n"
+    "OMP_NUM_THREADS=1 ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${ringtest_mpi_ranks} "
+    "${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special ${MPIEXEC_POSTFLAGS} "
+    "-notatty -python mpi_ringtest_native.py -gpu-native -tstop 100\n"
+    "# Device detect order can permute equal-time gids; sort for stable compare\n"
+    "sort -k1,1n -k2,2n -o spk2.std spk2.std\n")
   nrn_add_test(
     GROUP external_ringtest
     NAME neuron_gpu_native_mpi
@@ -96,15 +115,13 @@ if(NRN_ENABLE_GPU)
     PROCESSORS ${ringtest_mpi_ranks}
     COMMAND bash ${ringtest_native_gpu_mpi_script}
     OUTPUT asciispikes::spk2.std)
-  set(ringtest_native_gpu_workdir ${PROJECT_BINARY_DIR}/test/external_ringtest/neuron_gpu_native_mpi)
   configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/prcellstate_native_gpu.sh
     ${ringtest_native_gpu_workdir}/prcellstate_native_gpu.sh COPYONLY
     FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ
                      WORLD_EXECUTE)
   # Device nonvint is the native default (no separate scaffolding ctest).
-  # S2 product gate: 2-rank gap. Launch via h.nrnmpi_init() (like spikes_mpi native),
-  # not special -mpi — OpenACC multi-process SEGV was observed with -mpi on this stack.
+  # S2 product gate: 2-rank gap (same MPI launch shape as non-gap above).
   set(ringtest_native_gpu_mpi_gap_workdir
       ${PROJECT_BINARY_DIR}/test/external_ringtest/neuron_gpu_native_mpi_gap)
   set(ringtest_native_gpu_mpi_gap_script

@@ -214,7 +214,8 @@ void upload_device_arrays(ThreadThresholdTable& table) {
     // Caller already free'd when rebuilding; still free if capacity set (re-upload).
     free_device_arrays(table);
     auto const count = table.h_thvar_row.size();
-    if (count == 0) {
+    if (count == 0 || !table.h_thvar_row.data() || !table.h_threshold.data() ||
+        !table.h_flag.data()) {
         return;
     }
     (void) nrn_target_copyin(table.h_thvar_row.data(), count);
@@ -255,17 +256,17 @@ void rebuild_thread_table(int tid) {
 void ensure_thread_table(int tid) {
     (void) tid;
     // Double-checked locking: workers hit this every detect step; rebuild is rare.
-    if (!g_tables_dirty) {
-        return;
+    // Use positive condition (if dirty) so optimizers cannot invert the sense of
+    // the flag relative to the rebuild body (observed inverted codegen risk).
+    if (g_tables_dirty) {
+        std::lock_guard<std::mutex> const lock{g_thresh_table_mutex};
+        if (g_tables_dirty) {
+            for (int i = 0; i < nrn_nthread; ++i) {
+                rebuild_thread_table(i);
+            }
+            g_tables_dirty = false;
+        }
     }
-    std::lock_guard<std::mutex> const lock{g_thresh_table_mutex};
-    if (!g_tables_dirty) {
-        return;
-    }
-    for (int i = 0; i < nrn_nthread; ++i) {
-        rebuild_thread_table(i);
-    }
-    g_tables_dirty = false;
 }
 
 void ensure_thread_net_send_buffer(NrnThread& nt, int min_count) {
@@ -292,7 +293,7 @@ void ensure_thread_net_send_buffer(NrnThread& nt, int min_count) {
         }
     }
 #if defined(NRN_ENABLE_GPU) && defined(_OPENACC)
-    if (!nt._net_send_buffer) {
+    if (!nt._net_send_buffer || nt._net_send_buffer_size <= 0) {
         return;
     }
     if (!nrn_target_is_present(nt._net_send_buffer)) {
@@ -451,6 +452,17 @@ bool check_thresh_presyn_on_device(NrnThread* nt, double teps) noexcept {
     auto* const vec_v = nt->node_voltage_storage();
     int* const nsbuffer = nt->_net_send_buffer;
     int const nsbuffer_size = nt->_net_send_buffer_size;
+    // Never call OpenACC present/copyin/deviceptr on null host pointers (SEGV).
+    bool const host_ptrs_ok =
+        thvar_row && threshold && flag && vec_v && nsbuffer && nsbuffer_size > 0;
+    if (!host_ptrs_ok) {
+        if (allow_thresh_host_fallback()) {
+            note_thresh_host_fallback("null host pointer for thresh tables or net_send buffer");
+        } else {
+            fail_thresh_device_unavailable(
+                "null host pointer for thresh tables or net_send buffer", nt->id);
+        }
+    }
 
     // Th1: OpenACC detect over slot columns + device vec_v (CoreNEURON pscheck shape).
     // Hit list = slot indices. Host still delivers. Host vec_v not required (Th2).
@@ -466,7 +478,7 @@ bool check_thresh_presyn_on_device(NrnThread* nt, double teps) noexcept {
 
     bool ran_device = false;
 #if defined(NRN_ENABLE_GPU) && (defined(_OPENACC) || defined(_OPENMP))
-    if (nt->compute_gpu) {
+    if (nt->compute_gpu && host_ptrs_ok) {
         double* d_v = static_cast<double*>(acc_deviceptr(vec_v));
         if (!d_v) {
             d_v = nrn_target_is_present(vec_v);
@@ -532,28 +544,34 @@ bool check_thresh_presyn_on_device(NrnThread* nt, double teps) noexcept {
 #endif
     if (!ran_device) {
         // Host detect: normal when !compute_gpu; opt-in only when compute_gpu.
-        if (nt->compute_gpu) {
-            // Allowed only via NRN_GPU_THRESH_HOST_FALLBACK (counted above).
-            sync_voltages_to_host_before_check_thresh(*nt);
+        // Requires valid host pointers (same guard as device path).
+        if (!host_ptrs_ok) {
+            net_send_buf_count = 0;
+            nt->_net_send_buffer_cnt = 0;
         } else {
-            ++g_thresh_host_cpu_calls;
-        }
-        detect_threshold_hits_host(count,
-                                   thvar_row,
-                                   threshold,
-                                   flag,
-                                   vec_v,
-                                   nsbuffer,
-                                   nsbuffer_size,
-                                   net_send_buf_count);
-        nt->_net_send_buffer_cnt = net_send_buf_count;
-        if (net_send_buf_count > nsbuffer_size) {
-            fprintf(stderr,
-                    "ERROR: threshold hit list exceeded (thread %d): hits=%d capacity=%d\n",
-                    nt->id,
-                    net_send_buf_count,
-                    nsbuffer_size);
-            std::abort();
+            if (nt->compute_gpu) {
+                // Allowed only via NRN_GPU_THRESH_HOST_FALLBACK (counted above).
+                sync_voltages_to_host_before_check_thresh(*nt);
+            } else {
+                ++g_thresh_host_cpu_calls;
+            }
+            detect_threshold_hits_host(count,
+                                       thvar_row,
+                                       threshold,
+                                       flag,
+                                       vec_v,
+                                       nsbuffer,
+                                       nsbuffer_size,
+                                       net_send_buf_count);
+            nt->_net_send_buffer_cnt = net_send_buf_count;
+            if (net_send_buf_count > nsbuffer_size) {
+                fprintf(stderr,
+                        "ERROR: threshold hit list exceeded (thread %d): hits=%d capacity=%d\n",
+                        nt->id,
+                        net_send_buf_count,
+                        nsbuffer_size);
+                std::abort();
+            }
         }
     }
 
