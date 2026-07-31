@@ -69,35 +69,50 @@ void grow_buffer(T** buf, int old_size, int new_size) {
     T* new_buf = alloc_buffer<T>(new_size);
     if (*buf) {
         std::copy_n(*buf, old_size, new_buf);
+        // Caller must have dropped OpenACC present for *buf at old_size first.
         std::free(*buf);
     }
     *buf = new_buf;
 }
 
 #if defined(NRN_ENABLE_GPU)
-void delete_net_send_buffer_from_device(NetSendBuffer_t* nsb) {
-    if (!nsb || !nrn_target_is_present(nsb)) {
+/** Drop device mirrors of field arrays (and the NSB header if present).
+ *  Always pass the host array lengths currently on device (usually _size). */
+void delete_net_send_buffer_fields_from_device(NetSendBuffer_t* nsb, int field_size) {
+    if (!nsb || field_size <= 0) {
         return;
     }
+    auto const n = static_cast<std::size_t>(field_size);
     if (nsb->_sendtype) {
-        nrn_target_delete(nsb->_sendtype, static_cast<std::size_t>(nsb->_size));
+        nrn_target_delete(nsb->_sendtype, n);
     }
     if (nsb->_vdata_index) {
-        nrn_target_delete(nsb->_vdata_index, static_cast<std::size_t>(nsb->_size));
+        nrn_target_delete(nsb->_vdata_index, n);
     }
     if (nsb->_pnt_index) {
-        nrn_target_delete(nsb->_pnt_index, static_cast<std::size_t>(nsb->_size));
+        nrn_target_delete(nsb->_pnt_index, n);
     }
     if (nsb->_weight_index) {
-        nrn_target_delete(nsb->_weight_index, static_cast<std::size_t>(nsb->_size));
+        nrn_target_delete(nsb->_weight_index, n);
     }
     if (nsb->_nsb_t) {
-        nrn_target_delete(nsb->_nsb_t, static_cast<std::size_t>(nsb->_size));
+        nrn_target_delete(nsb->_nsb_t, n);
     }
     if (nsb->_nsb_flag) {
-        nrn_target_delete(nsb->_nsb_flag, static_cast<std::size_t>(nsb->_size));
+        nrn_target_delete(nsb->_nsb_flag, n);
     }
-    nrn_target_delete(nsb, 1);
+    if (nrn_target_is_present(nsb)) {
+        nrn_target_delete(nsb, 1);
+    }
+}
+
+void delete_net_send_buffer_from_device(NetSendBuffer_t* nsb) {
+    if (!nsb) {
+        return;
+    }
+    // Fields may still be present even if the NSB header is not (partial upload
+    // or free-before-resize). Always try field delete at current _size.
+    delete_net_send_buffer_fields_from_device(nsb, nsb->_size);
 }
 
 void upload_net_send_buffer_fields(NetSendBuffer_t* nsb, NetSendBuffer_t* d_nsb) {
@@ -125,12 +140,11 @@ void upload_net_send_buffer_to_device(Memb_list* ml) {
     if (!nsb) {
         return;
     }
-    if (nrn_target_is_present(nsb)) {
-        if (!nsb->reallocated) {
-            return;
-        }
-        delete_net_send_buffer_from_device(nsb);
+    if (!nsb->reallocated && nrn_target_is_present(nsb)) {
+        return;
     }
+    // reallocated (or never uploaded): drop any field maps at old addresses first.
+    delete_net_send_buffer_from_device(nsb);
     auto* const d_nsb = nrn_target_copyin(nsb, 1);
     upload_net_send_buffer_fields(nsb, d_nsb);
 
@@ -154,6 +168,10 @@ NetSendBuffer_t::NetSendBuffer_t(int size)
 }
 
 NetSendBuffer_t::~NetSendBuffer_t() {
+#if defined(NRN_ENABLE_GPU)
+    // Free-before-host-free: never leave orphan present maps for recycled addresses.
+    delete_net_send_buffer_from_device(this);
+#endif
     std::free(_sendtype);
     std::free(_vdata_index);
     std::free(_pnt_index);
@@ -167,20 +185,19 @@ void NetSendBuffer_t::grow() {
         return;
     }
     int const new_size = std::max(_size * 2, _cnt + 1);
-    grow_buffer(&_sendtype, _size, new_size);
-    grow_buffer(&_vdata_index, _size, new_size);
-    grow_buffer(&_pnt_index, _size, new_size);
-    grow_buffer(&_weight_index, _size, new_size);
-    grow_buffer(&_nsb_t, _size, new_size);
-    grow_buffer(&_nsb_flag, _size, new_size);
-    _size = new_size;
-    reallocated = 1;
+    reserve(new_size);
 }
 
 void NetSendBuffer_t::reserve(int capacity) {
     if (capacity <= _size) {
         return;
     }
+#if defined(NRN_ENABLE_GPU)
+    // Critical ownership: drop device maps at old _size before realloc/free of
+    // host field arrays. Otherwise host allocator reuses the address at a new
+    // size → OpenACC partial-present (e.g. 80 vs 100).
+    delete_net_send_buffer_from_device(this);
+#endif
     grow_buffer(&_sendtype, _size, capacity);
     grow_buffer(&_vdata_index, _size, capacity);
     grow_buffer(&_pnt_index, _size, capacity);

@@ -119,11 +119,56 @@ T* target_deviceptr_or_present(std::string_view file,
     return d_ptr;
 }
 
+/**
+ * Drop any OpenACC present mapping at host pointer h when the mapped byte
+ * length is unknown (lost ownership after host free/realloc without matching
+ * acc_delete). Binary-searches the present span, then acc_delete.
+ *
+ * Prefer free-before-resize with a known size; this is a last-resort safety net
+ * so the next copyin does not fatal with "partially present" (size 80 vs 100).
+ */
+inline void target_drop_present_unknown_size(void* h) {
+#if defined(NRN_ENABLE_GPU) && !defined(NRN_PREFER_OPENMP_OFFLOAD) && defined(_OPENACC)
+    if (!h || !acc_is_present(h, 1)) {
+        return;
+    }
+    // Largest power-of-two length that is still fully present.
+    std::size_t lo = 1;
+    std::size_t hi = 1;
+    while (hi < (std::size_t{1} << 28) && acc_is_present(h, hi * 2)) {
+        hi *= 2;
+    }
+    // Binary search [hi, hi*2) for the exact present byte length.
+    std::size_t left = hi;
+    std::size_t right = (hi < (std::size_t{1} << 28)) ? hi * 2 : hi + 1;
+    while (left + 1 < right) {
+        std::size_t const mid = left + (right - left) / 2;
+        if (acc_is_present(h, mid)) {
+            left = mid;
+        } else {
+            right = mid;
+        }
+    }
+    acc_delete(h, left);
+#else
+    (void) h;
+#endif
+}
+
 template <typename T>
 T* target_copyin(std::string_view file, int line, const T* h_ptr, std::size_t len = 1) {
     T* d_ptr{};
+    std::size_t const nbytes = len * sizeof(T);
 #if defined(NRN_ENABLE_GPU) && !defined(NRN_PREFER_OPENMP_OFFLOAD) && defined(_OPENACC)
-    d_ptr = static_cast<T*>(acc_copyin(const_cast<T*>(h_ptr), len * sizeof(T)));
+    // Host allocator reuse after free-without-acc_delete leaves a smaller present
+    // span at the same address → acc_copyin(new size) aborts partial-present.
+    if (h_ptr) {
+        void* const h = const_cast<T*>(h_ptr);
+        if (!acc_is_present(h, nbytes) && acc_is_present(h, 1)) {
+            target_drop_present_unknown_size(h);
+        }
+    }
+    d_ptr = static_cast<T*>(acc_copyin(const_cast<T*>(h_ptr), nbytes));
 #elif defined(NRN_ENABLE_GPU) && defined(NRN_PREFER_OPENMP_OFFLOAD) && defined(_OPENMP)
     nrn_gpu_pragma_omp(target enter data map(to
                                              : h_ptr[:len]))
@@ -135,7 +180,7 @@ T* target_copyin(std::string_view file, int line, const T* h_ptr, std::size_t le
         "neuron::gpu::target_copyin() not implemented without OpenACC/OpenMP and NRN_ENABLE_GPU");
 #endif
 #ifdef NRN_ENABLE_PRESENT_TABLE
-    target_copyin_update_present_table(h_ptr, d_ptr, len * sizeof(T));
+    target_copyin_update_present_table(h_ptr, d_ptr, nbytes);
 #endif
     target_copyin_debug(file, line, sizeof(T), typeid(T), h_ptr, len, d_ptr);
     return d_ptr;
@@ -148,7 +193,13 @@ void target_delete(std::string_view file, int line, T* h_ptr, std::size_t len = 
     target_delete_update_present_table(h_ptr, len * sizeof(T));
 #endif
 #if defined(NRN_ENABLE_GPU) && !defined(NRN_PREFER_OPENMP_OFFLOAD) && defined(_OPENACC)
-    acc_delete(h_ptr, len * sizeof(T));
+    // Only acc_delete when fully present at this size. Stale smaller maps are
+    // handled by target_drop_present_unknown_size / free-before-resize callers.
+    if (h_ptr && acc_is_present(h_ptr, len * sizeof(T))) {
+        acc_delete(h_ptr, len * sizeof(T));
+    } else if (h_ptr && acc_is_present(h_ptr, 1)) {
+        target_drop_present_unknown_size(h_ptr);
+    }
 #elif defined(NRN_ENABLE_GPU) && defined(NRN_PREFER_OPENMP_OFFLOAD) && defined(_OPENMP)
     nrn_gpu_pragma_omp(target exit data map(delete : h_ptr[:len]))
 #else

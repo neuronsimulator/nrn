@@ -174,6 +174,10 @@ void net_receive_buffer_ensure(Memb_list* ml) {
     if (capacity <= nrb->_size) {
         return;
     }
+    // Free-before-resize: host grow_buffer frees without OpenACC delete → partial-present.
+#if defined(NRN_ENABLE_GPU)
+    delete_net_receive_buffer_from_device(nrb);
+#endif
     int const old_size = nrb->_size;
     grow_buffer(&nrb->_pnt_index, old_size, capacity);
     grow_buffer(&nrb->_displ, old_size + 1, capacity + 1);
