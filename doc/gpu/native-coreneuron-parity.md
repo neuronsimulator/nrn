@@ -210,7 +210,7 @@ Do **not** require full 610-test green before P1. P0 only needs: classified fail
 | external_ringtest::neuron_gpu_native_nt2_gap | **green** | 1-rank `-gap -nt 2` CPU vs native exact 128 (locks old 64-vs-128 residual). |
 | external_ringtest::coreneuron_*_mpi_threads* | **B/C** | SEGV in `nrn_finitialize` (cpu+gpu threads variants). |
 | external_ringtest::compare_results | **C** | Spike ref empty vs 688 lines — dep of failed thread run, not native product. |
-| reduced_dentate::* | **D** | Abort in `pc.setup_transfer()` / model path; P3. |
+| reduced_dentate::* | **green** (controls) | neuron + crn cpu/gpu + compare green (2026-07-31). Native residual: ACC mechs. |
 | external_nrntest | **C/D** | Timeout 1500s. |
 | tqperf::coreneuron_python | **C** | Timeout 1000s. |
 
@@ -367,4 +367,4 @@ Update Status before exit; commit without push.
 
 ## Next (one line — update every session end)
 
-**Next:** P2 product leftovers **closed** (NetCon-heavy thresh; spikes_mpi mode-1; sequential mode-2+fast_imem). Prefer **P3** heavy models (reduced_dentate / testcorenrn online) or P4 perf audit. **Not** Traub `use_gap=1` unless reopened (`notes/gpu_native_traub_use_gap.md`).
+**Next:** P3 continue — testcorenrn online native for bbcore/watch/vecplay (ACC per-mod); reduced_dentate native when ACC mechs ready; nmodl table residual. **Not** Traub `use_gap=1` unless reopened.
