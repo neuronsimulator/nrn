@@ -222,7 +222,8 @@ if(NRN_ENABLE_GPU)
   # ACC special shared hash for simple 1-rank models (+ bbcore NetStim-only; extra mechs OK).
   set(testcorenrn_native_simple_mods mod/hhderiv.mod mod/nacum.mod mod/hhkin.mod)
   # Launch: special -python ABS_PATH_RUNNER (hoc via NRN_TEST_HOC; never trailing .hoc).
-  foreach(test conc deriv kin bbcore)
+  # vecplay: Vector.play into IClamp.amp (column H→D after fixed_play; no V clobber).
+  foreach(test conc deriv kin bbcore vecplay)
     nrn_add_test_group(
       NAME testcorenrn_${test}_native
       SUBMODULE tests/testcorenrn
@@ -245,5 +246,5 @@ if(NRN_ENABLE_GPU)
       REFERENCE_OUTPUT asciispikes::external/tests/testcorenrn/reference/out_${test}.spk)
   endforeach()
 
-  # vecplay / watch: residual (Vector.play amp / WATCH+device CURRENT) — register once green.
+  # watch residual: WATCH g/e → device CURRENT — register once green.
 endif()

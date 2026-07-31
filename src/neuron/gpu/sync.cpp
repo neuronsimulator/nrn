@@ -1,7 +1,6 @@
 #include "neuron/gpu/sync.hpp"
 
 #include "neuron/gpu/config.hpp"
-#include "neuron/gpu/download.hpp"
 #include "neuron/gpu/mechanism_phases.hpp"
 #include "neuron/gpu/phase_timer.hpp"
 #include "neuron/gpu/post_solve.hpp"
@@ -9,18 +8,18 @@
 #include "coreneuron/utils/offload.hpp"
 #include "membfunc.h"
 #include "multicore.h"
+#include "neuron/model_data.hpp"
 #include "nonvintblock.h"
 #include "nrn_ansi.h"
 #include "nrncvode.h"  // nrn_thread_has_fixed_play, nrn_fixed_play_foreach_pd
+#include "neuron/gpu/device_state.hpp"
 #include "neuron/gpu/offload.hpp"
 
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-
-#if defined(NRN_ENABLE_GPU) && defined(_OPENACC)
-#include <openacc.h>
-#endif
+#include <type_traits>
+#include <vector>
 
 extern int use_sparse13;
 
@@ -113,8 +112,12 @@ void sync_matrix_arrays_to_host(NrnThread& nt) {
 }  // namespace
 
 bool host_voltage_is_authoritative(NrnThread const& nt) noexcept {
-    return post_solve_needs_host_fallback(nt) ||
-           nrn_thread_has_fixed_play(const_cast<NrnThread*>(&nt));
+    // fixed_play alone does NOT make host V authoritative: play commonly targets
+    // mechanism RANGE (IClamp.amp). Under native, device owns V; treating any
+    // fixed_play as host-authoritative H→D'd stale host V every step and froze
+    // cells at -65 (testvecplay residual). Play-into-V is handled by selective
+    // push in sync_after_vecplay.
+    return post_solve_needs_host_fallback(nt);
 }
 
 bool matrix_rhs_d_stays_on_device_for_solve(NrnThread const& nt) noexcept {
@@ -396,25 +399,73 @@ void sync_after_vecplay(NrnThread& nt) {
     if (!nrn_thread_has_fixed_play(&nt)) {
         return;
     }
-    // Host fixed_play may write V or mechanism RANGE (IClamp.amp, …).
-    sync_node_voltages_to_device(nt);
 #if defined(NRN_ENABLE_GPU)
-    if (nt.compute_gpu) {
-#if defined(_OPENACC)
-        // Sparse H→D of played doubles (interior SoA addresses).
-        nrn_fixed_play_foreach_pd(
-            &nt,
-            [](double* p, void* /*ctx*/) {
-                if (p && acc_is_present(p, 1)) {
-                    acc_update_device(p, sizeof(double));
-                }
-            },
-            nullptr);
-#endif
-        // Also refresh present SoA columns (present-column update, not re-copyin)
-        // so device CURRENT reliably sees host Vector.play RANGE writes.
-        upload_present_model_soa_to_device();
+    if (!nt.compute_gpu || !model_is_on_device()) {
+        // Host-only path: nothing to push (play already wrote host storage).
+        return;
     }
+    // Collect played host addresses for this thread.
+    std::vector<double*> play_ptrs;
+    play_ptrs.reserve(16);
+    nrn_fixed_play_foreach_pd(
+        &nt,
+        [](double* p, void* ctx) {
+            if (p) {
+                static_cast<std::vector<double*>*>(ctx)->push_back(p);
+            }
+        },
+        &play_ptrs);
+    if (play_ptrs.empty()) {
+        return;
+    }
+
+    // Push node voltages ONLY if a play target lies in this thread's V storage.
+    // Unconditional H→D of host V resets device V to stale -65 every step
+    // (host V is not authoritative under native unless a host post_solve path
+    // ran). That was the testvecplay residual: amp reached device, but V was
+    // clobbered each step.
+    if (nt.end > 0) {
+        double* const vec_v = nt.node_voltage_storage();
+        bool play_v = false;
+        for (double* p: play_ptrs) {
+            if (p >= vec_v && p < vec_v + nt.end) {
+                play_v = true;
+                break;
+            }
+        }
+        if (play_v) {
+            sync_node_voltages_to_device(nt);
+        }
+    }
+
+    // Push only mechanism SoA double columns that contain a played address
+    // (IClamp.amp, …). Column-scoped update — not full model SoA (would
+    // clobber device STATE) and not interior-pointer update alone (unreliable
+    // on this stack; same lesson as gap scatter).
+    neuron::model().apply_to_mechanisms([&](auto& mech_data) {
+        mech_data.for_each_vector_for_gpu_upload(
+            [&](auto const& /*tag*/, auto const& vec, int /*field_index*/, int /*array_dim*/) {
+                if (vec.empty()) {
+                    return;
+                }
+                using Value = typename std::decay_t<decltype(vec)>::value_type;
+                if constexpr (std::is_same_v<Value, double>) {
+                    double* const base = const_cast<double*>(vec.data());
+                    std::size_t const nvec = vec.size();
+                    bool hit = false;
+                    for (double* p: play_ptrs) {
+                        if (p >= base && p < base + nvec) {
+                            hit = true;
+                            break;
+                        }
+                    }
+                    if (!hit || !nrn_target_is_present(base)) {
+                        return;
+                    }
+                    nrn_target_update_on_device(base, nvec);
+                }
+            });
+    });
 #else
     (void) nt;
 #endif
