@@ -268,7 +268,7 @@ For each test:
 | spikes_mpi / file mode native | **green** (mode 0) | mode 1 multi-rank re-psolve residual |
 | test_subworlds native | **green** | |
 | test_natrans native | **green** (nthread=4, S4) | threshold multi-thread residual only with NetCon-heavy topology |
-| ringtest gap native + compare | **green** (1+2 rank); **nt>1 residual** | S0–S2 green. S3: multi-thread buffer path improved; product `-gap -nt 2` still 64 vs 128 (thread-1 silent / ELECTRODE HalfGap ACC). |
+| ringtest gap native + compare | **green** (1+2 rank; **nt=1,2,4** exact 128) | S0–S5. Old 64-vs-128 was S3 `PsolveGpuScope` thread_local (fixed). nt=4 needs OpenACC host-API serialize + thresh net_send pointer repair (see 2026-07-31). |
 | multi-rank device assign | **shared OK** | 2-rank gap works on shared T1000 (`1 GPUs shared by 1 ranks` message per process). `special -mpi` OpenACC multi-process SEGV residual; prefer `nrnmpi_init`. |
 
 ---
@@ -360,4 +360,4 @@ Update Status before exit; commit without push.
 
 ## Next (one line — update every session end)
 
-**Next:** P2 residual — multi-thread NetCon threshold present table (NetCon-heavy models); S5 green (gap traffic audit + optional same-thread device, default buffer path).
+**Next:** P2 residual — multi-thread NetCon threshold present residual (NetCon-heavy models). Thresh hit list no longer on `NrnThread` (OpenACC shell clobber under gap+nt≥4 closed).

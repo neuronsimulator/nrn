@@ -34,11 +34,34 @@
 #include <typeinfo>
 #include <utility>
 
+#include <mutex>
+
 namespace neuron::gpu {
 
 int target_get_num_devices();
 void target_set_default_device(int device_num);
 int target_get_default_device();
+
+/**
+ * Process-wide mutex for OpenACC *host* APIs (copyin/delete/update/launch
+ * registration). NVHPC OpenACC is not host-thread-safe; workers under
+ * pc.nthread(n>1) must serialize host-side OpenACC even when device kernels
+ * use different streams. Recursive so fixed_step_thread can hold the lock
+ * while nested check_thresh / net_send upload also take it.
+ */
+[[nodiscard]] std::recursive_mutex& openacc_host_api_mutex() noexcept;
+
+/** RAII lock for openacc_host_api_mutex(). */
+class OpenACCHostApiLock {
+  public:
+    OpenACCHostApiLock()
+        : lock_(openacc_host_api_mutex()) {}
+    OpenACCHostApiLock(OpenACCHostApiLock const&) = delete;
+    OpenACCHostApiLock& operator=(OpenACCHostApiLock const&) = delete;
+
+  private:
+    std::lock_guard<std::recursive_mutex> lock_;
+};
 
 void target_copyin_debug(std::string_view file,
                          int line,

@@ -46,6 +46,11 @@ void fixed_step_thread(model_sorted_token const& cache_token,
     }
     auto* const nth = &nt;
 
+    // NVHPC OpenACC is not host-thread-safe across pc.nthread workers. Serialize
+    // the whole fixed-step body (recursive mutex: nested thresh/net_send OK).
+    // Product still runs every thread on device — just not concurrent OpenACC.
+    OpenACCHostApiLock const openacc_lock;
+
     int const saved_compute_gpu = nt.compute_gpu;
     nt.compute_gpu = 1;
     // Keep device nt.compute_gpu in sync: device net_send_buffering and present

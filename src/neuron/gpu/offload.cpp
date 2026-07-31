@@ -202,6 +202,11 @@ void target_delete_update_present_table(void const* h_ptr, std::size_t len) {
 }
 #endif
 
+std::recursive_mutex& openacc_host_api_mutex() noexcept {
+    static std::recursive_mutex m;
+    return m;
+}
+
 int target_get_num_devices() {
 #if defined(NRN_ENABLE_GPU) && !defined(NRN_PREFER_OPENMP_OFFLOAD) && defined(_OPENACC)
     acc_device_t const device_type = acc_device_nvidia;

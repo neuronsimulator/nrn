@@ -173,6 +173,39 @@ if(NRN_ENABLE_GPU)
   set_tests_properties(
     external_ringtest::compare_neuron_gpu_native_mpi_gap
     PROPERTIES DEPENDS external_ringtest::neuron_gpu_native_mpi_gap)
+
+  # S3 multi-thread gap product gate (1 rank, pc.nthread=2): exact 128 spikes vs
+  # CPU. Locks the old 64-vs-128 "thread-1 silent" residual closed by process-wide
+  # PsolveGpuScope + OpenACC host-API serialization.
+  set(ringtest_native_gpu_nt2_gap_workdir
+      ${PROJECT_BINARY_DIR}/test/external_ringtest/neuron_gpu_native_nt2_gap)
+  set(ringtest_native_gpu_nt2_gap_script
+      ${PROJECT_BINARY_DIR}/test/external_ringtest/neuron_gpu_native_nt2_gap.sh)
+  # Reuse ACC HalfGap special from the mpi_gap workdir (same nmodl flags).
+  file(
+    WRITE ${ringtest_native_gpu_nt2_gap_script}
+    "#!/bin/bash\n"
+    "set -e\n"
+    "export OMP_NUM_THREADS=1\n"
+    "export NRN_GPU_BACKEND_TEST=native\n"
+    "export NRN_GPU_PERMUTE=2\n"
+    "export TMPDIR=\"${PROJECT_BINARY_DIR}/test/tmp/external_ringtest/neuron_gpu_native_nt2_gap\"\n"
+    "mkdir -p \"$TMPDIR\" \"${ringtest_native_gpu_nt2_gap_workdir}\"\n"
+    "GAP_SPECIAL_DIR=\"${ringtest_native_gpu_mpi_gap_workdir}/x86_64\"\n"
+    "export PATH=\"$GAP_SPECIAL_DIR:$PATH\"\n"
+    "export LD_LIBRARY_PATH=\"$GAP_SPECIAL_DIR:${CMAKE_BINARY_DIR}/lib:${CMAKE_BINARY_DIR}/lib64:$LD_LIBRARY_PATH\"\n"
+    "cd \"${ringtest_native_gpu_mpi_gap_workdir}\"\n"
+    "OMP_NUM_THREADS=1 special -notatty -python ringtest.py -gap -nt 2 -tstop 100\n"
+    "sort -k1,1n -k2,2n -o \"${ringtest_native_gpu_nt2_gap_workdir}/spk_cpu.std\" spk1.std\n"
+    "OMP_NUM_THREADS=1 special -notatty -python ringtest.py -gap -nt 2 -gpu-native -tstop 100\n"
+    "sort -k1,1n -k2,2n -o \"${ringtest_native_gpu_nt2_gap_workdir}/spk_gpu.std\" spk1.std\n"
+    "cmp -s \"${ringtest_native_gpu_nt2_gap_workdir}/spk_cpu.std\" "
+    "\"${ringtest_native_gpu_nt2_gap_workdir}/spk_gpu.std\"\n")
+  nrn_add_test(
+    GROUP external_ringtest
+    NAME neuron_gpu_native_nt2_gap
+    REQUIRES gpu python mod_compatibility
+    COMMAND bash ${ringtest_native_gpu_nt2_gap_script})
 endif()
 
 # creep into this file to add a nrn only test for ParallelContext.optimize_node_order(i)

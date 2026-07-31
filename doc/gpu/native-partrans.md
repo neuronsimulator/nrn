@@ -321,4 +321,6 @@ complete. **Default off** so ctests still exercise the CoreNEURON-style buffer p
 ## One-line Next
 
 **P2 residual / S5+:** multi-thread NetCon threshold present residual (natrans-style
-NetCon topology); multi-rank traffic audit if needed.
+NetCon topology). Ringtest gap multi-thread (`-nt 2` / `-nt 4`) **green** (exact 128 vs
+CPU, 2026-07-31) after process-wide OpenACC host-API mutex + thresh hit-buffer
+pointer repair; multi-rank traffic audit if needed.

@@ -152,15 +152,21 @@ void note_thresh_host_fallback(char const* reason) noexcept {
 
 /**
  * Per-thread Th0 detect set (doc/gpu/threshold-detection.md).
- * slots[i] is the sole identity of detect source i; _net_send_buffer stores i.
- * Column arrays are SoA mirrors for (future) device detect kernels.
+ * slots[i] is the sole identity of detect source i; h_hit_slots stores hit
+ * indices (not NrnThread::_net_send_buffer — that field lives inside the
+ * OpenACC-present NrnThread shell and was observed clobbered under multi-thread
+ * + gap: non-canonical pointers / garbage sizes).
+ * Column arrays are SoA mirrors for device detect kernels.
  */
 struct ThreadThresholdTable {
     std::vector<ThresholdPresynSlot> slots;
     std::vector<int> h_thvar_row;
     std::vector<double> h_threshold;
     std::vector<int> h_flag;
+    /** Device-present hit list (slot indices); capacity tracked by hit_device_cap. */
+    std::vector<int> h_hit_slots;
     std::size_t device_capacity = 0;
+    std::size_t hit_device_cap = 0;
 };
 
 std::vector<ThreadThresholdTable> g_tables;
@@ -169,10 +175,9 @@ bool g_tables_dirty = true;
 // host APIs (copyin/delete/update/parallel launch) are not host-thread-safe:
 // concurrent detect produced present-table corruption (partial-present with
 // garbage sizes, size 100 vs 80) and aborted multi-thread native runs with
-// thresholds (natrans, 100-cell NetCon). Serialize rebuild/upload *and* the
-// device detect kernel path.
+// thresholds (natrans, 100-cell NetCon). Serialize rebuild with table_mutex;
+// all OpenACC host APIs use process-wide openacc_host_api_mutex().
 std::mutex g_thresh_table_mutex;
-std::mutex g_thresh_device_mutex;
 
 void ensure_tables_sized() {
     if (g_tables.size() < static_cast<std::size_t>(nrn_nthread)) {
@@ -180,8 +185,27 @@ void ensure_tables_sized() {
     }
 }
 
+void free_hit_device(ThreadThresholdTable& table) {
+#if defined(NRN_ENABLE_GPU) && defined(_OPENACC)
+    if (table.hit_device_cap == 0) {
+        return;
+    }
+    if (device_resources_finalized()) {
+        table.hit_device_cap = 0;
+        return;
+    }
+    if (table.h_hit_slots.data() && nrn_target_is_present(table.h_hit_slots.data())) {
+        nrn_target_delete(table.h_hit_slots.data(), table.hit_device_cap);
+    }
+    table.hit_device_cap = 0;
+#else
+    (void) table;
+#endif
+}
+
 void free_device_arrays(ThreadThresholdTable& table) {
 #if defined(NRN_ENABLE_GPU) && defined(_OPENACC)
+    free_hit_device(table);
     auto const count = table.device_capacity;
     if (count == 0) {
         return;
@@ -222,8 +246,40 @@ void upload_device_arrays(ThreadThresholdTable& table) {
     (void) nrn_target_copyin(table.h_threshold.data(), count);
     (void) nrn_target_copyin(table.h_flag.data(), count);
     table.device_capacity = count;
+    // Hit list sized to slot count (one possible hit per source).
+    free_hit_device(table);
+    table.h_hit_slots.assign(count, 0);
+    if (count > 0 && table.h_hit_slots.data()) {
+        (void) nrn_target_copyin(table.h_hit_slots.data(), count);
+        table.hit_device_cap = count;
+    }
 #else
     (void) table;
+#endif
+}
+
+/** Ensure hit-slot column is present at least `needed` ints (free-before-grow). */
+void ensure_hit_slots_device(ThreadThresholdTable& table, int needed) {
+#if defined(NRN_ENABLE_GPU) && defined(_OPENACC)
+    if (needed <= 0) {
+        return;
+    }
+    auto const need = static_cast<std::size_t>(needed);
+    if (table.hit_device_cap >= need && table.h_hit_slots.data() &&
+        nrn_target_is_present(table.h_hit_slots.data())) {
+        return;
+    }
+    free_hit_device(table);
+    if (table.h_hit_slots.size() < need) {
+        table.h_hit_slots.assign(need, 0);
+    }
+    if (table.h_hit_slots.data()) {
+        (void) nrn_target_copyin(table.h_hit_slots.data(), table.h_hit_slots.size());
+        table.hit_device_cap = table.h_hit_slots.size();
+    }
+#else
+    (void) table;
+    (void) needed;
 #endif
 }
 
@@ -269,47 +325,8 @@ void ensure_thread_table(int tid) {
     }
 }
 
-void ensure_thread_net_send_buffer(NrnThread& nt, int min_count) {
-    ensure_thread_net_send_buffers(&nt);
-    int const needed = std::max(min_count, 8);
-    if (nt._net_send_buffer_size < needed) {
-        int* const old = nt._net_send_buffer;
-        int const old_size = nt._net_send_buffer_size;
-        nt._net_send_buffer_size = needed;
-        nt._net_send_buffer = static_cast<int*>(std::calloc(nt._net_send_buffer_size, sizeof(int)));
-        if (old) {
-            // Must drop OpenACC present even if NEURON present-table missed it
-            // (pragma copyin paths). Otherwise host allocator may reuse the
-            // address for a larger buffer → partial-present (size 80 vs 100).
-            if (nrn_target_is_present(old)) {
-                nrn_target_delete(old, static_cast<std::size_t>(old_size));
-            }
-#if defined(NRN_ENABLE_GPU) && defined(_OPENACC)
-            else if (acc_is_present(old, static_cast<std::size_t>(old_size) * sizeof(int))) {
-                acc_delete(old, static_cast<std::size_t>(old_size) * sizeof(int));
-            }
-#endif
-            std::free(old);
-        }
-    }
-#if defined(NRN_ENABLE_GPU) && defined(_OPENACC)
-    if (!nt._net_send_buffer || nt._net_send_buffer_size <= 0) {
-        return;
-    }
-    if (!nrn_target_is_present(nt._net_send_buffer)) {
-        // If OpenACC still has a stale present at this address (orphan), drop it.
-        std::size_t const nbytes =
-            static_cast<std::size_t>(nt._net_send_buffer_size) * sizeof(int);
-        if (acc_is_present(nt._net_send_buffer, nbytes)) {
-            acc_delete(nt._net_send_buffer, nbytes);
-        }
-        (void) nrn_target_copyin(nt._net_send_buffer,
-                                 static_cast<std::size_t>(nt._net_send_buffer_size));
-    }
-#else
-    (void) nt;
-#endif
-}
+// Thresh hit list no longer uses NrnThread::_net_send_buffer (clobbered when
+// the whole NrnThread shell is OpenACC-present under multi-thread/gap).
 
 // CoreNEURON-shaped hysteresis (must stay simple for OpenACC inlining).
 [[nodiscard]] bool pscheck(double v, double thresh, int* flag) {
@@ -396,16 +413,6 @@ void reseed_threshold_flags_from_host_voltage() noexcept {
 
 void invalidate_auxiliary_device_uploads() noexcept {
     invalidate_threshold_tables();
-#if defined(NRN_ENABLE_GPU) && defined(_OPENACC)
-    for (int ith = 0; ith < nrn_nthread; ++ith) {
-        auto& nt = nrn_threads[ith];
-        if (nt._net_send_buffer && nt._net_send_buffer_size > 0 &&
-            nrn_target_is_present(nt._net_send_buffer)) {
-            nrn_target_delete(nt._net_send_buffer,
-                              static_cast<std::size_t>(nt._net_send_buffer_size));
-        }
-    }
-#endif
 }
 
 bool check_thresh_presyn_on_device(NrnThread* nt, double teps) noexcept {
@@ -423,15 +430,13 @@ bool check_thresh_presyn_on_device(NrnThread* nt, double teps) noexcept {
         return true;
     }
 
-    // Serialize all OpenACC host APIs for threshold (copyin of nsbuffer + detect
+    // Serialize all OpenACC host APIs for threshold (copyin of hit list + detect
     // kernel + host updates). Worker std::threads under pc.nthread(n,1) must not
-    // call into the OpenACC runtime concurrently.
-    std::lock_guard<std::mutex> const device_lock{g_thresh_device_mutex};
-
-    ensure_thread_net_send_buffer(*nt, count);
+    // call into the OpenACC runtime concurrently (same mutex as net_send upload).
+    OpenACCHostApiLock const openacc_lock;
 
     if (table.device_capacity != static_cast<std::size_t>(count)) {
-        // Nested lock: g_thresh_table_mutex is only taken here under device_lock,
+        // Nested lock: table_mutex only taken here under OpenACCHostApiLock,
         // and ensure_thread_table takes table_mutex alone — no reverse order.
         std::lock_guard<std::mutex> const lock{g_thresh_table_mutex};
         if (table.device_capacity != static_cast<std::size_t>(count)) {
@@ -441,6 +446,7 @@ bool check_thresh_presyn_on_device(NrnThread* nt, double teps) noexcept {
             return false;
         }
     }
+    ensure_hit_slots_device(table, count);
 
 #if defined(NRN_ENABLE_GPU) && defined(_OPENACC)
     nrn_pragma_acc(wait(nt->stream_id))
@@ -450,17 +456,18 @@ bool check_thresh_presyn_on_device(NrnThread* nt, double teps) noexcept {
     double* const threshold = table.h_threshold.data();
     int* const flag = table.h_flag.data();
     auto* const vec_v = nt->node_voltage_storage();
-    int* const nsbuffer = nt->_net_send_buffer;
-    int const nsbuffer_size = nt->_net_send_buffer_size;
+    // Hit list is side storage on the threshold table — not NrnThread::_net_send_buffer.
+    int* const nsbuffer = table.h_hit_slots.data();
+    int const nsbuffer_size = static_cast<int>(table.h_hit_slots.size());
     // Never call OpenACC present/copyin/deviceptr on null host pointers (SEGV).
     bool const host_ptrs_ok =
-        thvar_row && threshold && flag && vec_v && nsbuffer && nsbuffer_size > 0;
+        thvar_row && threshold && flag && vec_v && nsbuffer && nsbuffer_size >= count;
     if (!host_ptrs_ok) {
         if (allow_thresh_host_fallback()) {
-            note_thresh_host_fallback("null host pointer for thresh tables or net_send buffer");
+            note_thresh_host_fallback("null host pointer for thresh tables or hit buffer");
         } else {
             fail_thresh_device_unavailable(
-                "null host pointer for thresh tables or net_send buffer", nt->id);
+                "null host pointer for thresh tables or hit buffer", nt->id);
         }
     }
 
@@ -473,7 +480,6 @@ bool check_thresh_presyn_on_device(NrnThread* nt, double teps) noexcept {
     // Opt-in debug: NRN_GPU_THRESH_HOST_FALLBACK=1 (counts + one-time warning).
     // Stats: NRN_GPU_THRESH_STATS=1 prints totals at process exit.
     ensure_thresh_stats_atexit();
-    nt->_net_send_buffer_cnt = 0;
     int net_send_buf_count = 0;
 
     bool ran_device = false;
@@ -512,7 +518,6 @@ bool check_thresh_presyn_on_device(NrnThread* nt, double teps) noexcept {
                 }
             }
             nrn_pragma_acc(wait(nt->stream_id))
-            nt->_net_send_buffer_cnt = net_send_buf_count;
 
             if (net_send_buf_count > nsbuffer_size) {
                 fprintf(stderr,
@@ -547,7 +552,6 @@ bool check_thresh_presyn_on_device(NrnThread* nt, double teps) noexcept {
         // Requires valid host pointers (same guard as device path).
         if (!host_ptrs_ok) {
             net_send_buf_count = 0;
-            nt->_net_send_buffer_cnt = 0;
         } else {
             if (nt->compute_gpu) {
                 // Allowed only via NRN_GPU_THRESH_HOST_FALLBACK (counted above).
@@ -563,7 +567,6 @@ bool check_thresh_presyn_on_device(NrnThread* nt, double teps) noexcept {
                                        nsbuffer,
                                        nsbuffer_size,
                                        net_send_buf_count);
-            nt->_net_send_buffer_cnt = net_send_buf_count;
             if (net_send_buf_count > nsbuffer_size) {
                 fprintf(stderr,
                         "ERROR: threshold hit list exceeded (thread %d): hits=%d capacity=%d\n",
@@ -581,7 +584,7 @@ bool check_thresh_presyn_on_device(NrnThread* nt, double teps) noexcept {
     // Atomic capture leaves racey hit order; with NRN_DETERMINISTIC_EVENTS=1 sort
     // by src_gid then slot so PreSyn::send enqueue order is stable across runs.
     if (net_send_buf_count > 0) {
-        int const n_hits = nt->_net_send_buffer_cnt;
+        int const n_hits = net_send_buf_count;
         std::vector<int> order(static_cast<std::size_t>(n_hits));
         std::iota(order.begin(), order.end(), 0);
         if (neuron::event_order::enabled()) {

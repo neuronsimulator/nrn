@@ -434,6 +434,11 @@ void ensure_thread_net_send_buffers_host(NrnThread* nt) {
 
 void ensure_thread_net_send_buffers(NrnThread* nt) {
     ensure_thread_net_send_buffers_host(nt);
+    // Threshold hit lists live on ThreadThresholdTable (check_thresh), not
+    // NrnThread::_net_send_buffer (avoids OpenACC-present shell clobber).
+#if defined(NRN_ENABLE_GPU)
+    // Device upload requires OpenACC host API — caller holds OpenACCHostApiLock
+    // when nthread>1 (fadvance_gpu).
     for (auto* tml = nt->tml; tml; tml = tml->next) {
         if (std::find(net_buf_send_types.begin(), net_buf_send_types.end(), tml->index) ==
             net_buf_send_types.end()) {
@@ -443,17 +448,9 @@ void ensure_thread_net_send_buffers(NrnThread* nt) {
         if (!ml) {
             continue;
         }
-#if defined(NRN_ENABLE_GPU)
         upload_net_send_buffer_to_device(ml);
+    }
 #endif
-    }
-    // Pre-size host hit list for threshold detect. Prefer nodecount-scale so
-    // check_thresh rarely grows (grow without matching OpenACC delete →
-    // partial-present when the host allocator reuses the address).
-    if (!nt->_net_send_buffer && nt->ncell > 0) {
-        nt->_net_send_buffer_size = std::max(8, nt->ncell * 2);
-        nt->_net_send_buffer = alloc_buffer<int>(nt->_net_send_buffer_size);
-    }
 }
 
 void flush_mechanism_net_send_buffers(NrnThread* nt) {
