@@ -293,9 +293,9 @@ For each test:
 |------|--------|-------|
 | reduced_dentate neuron / crn cpu / crn gpu / **native** | **green** | Controls + `reduced_dentate_native` 4-rank (ACC mechs, `nrnmpi_init`) **400** spikes match sorted. Root cause was **gap deferred lastpart**: `finalize_nonvint` restored `compute_gpu=0` before post-step deliver → host NET_RECEIVE / no device flush (GC EPSP missing). Fix: force `compute_gpu=1` for device deliver+flush in `net_events.cpp`. |
 | testcorenrn online native: conc, deriv, kin, bbcore, vecplay, watch, **gf**, **vecevent** | **green** | ACC special; `run_native_gpu.py` via **NRN_TEST_HOC**. gf 182; vecevent 60 (4-rank `NRN_TEST_MPI`/`nrnmpi_init`). BBCOREPOINTER: host NET_RECEIVE + SoA push; Gfluct3 BEFORE folded into CURRENT. |
-| testcorenrn online native: patstim | **open** | |
-| nmodl table/kinetic GPU native if missing | **partial** | kin/deriv product via testcorenrn above; table-specific still open |
-| Offline / saverestore | | Only if product needs; may stay CoreNEURON-only |
+| testcorenrn online native: patstim | **N/A** (device) | PatternStim is host ARTIFICIAL_CELL + BBCOREPOINTER; supplies spikes on CPU. Not a Gate B/C device mech. Optional thin native smoke only; NMODL host/ACC *codegen* quality is separate (not full-ctest gate for GPU-native). |
+| nmodl table/kinetic GPU native if missing | **partial** | kin/deriv product via testcorenrn above; table-specific only if a CoreNEURON-GPU product test needs it. Full NMODL CPU ctest matrix → separate session. |
+| Offline / saverestore | **CoreNEURON-only** (default) | Only if product needs; not native P3 gate. |
 
 ---
 
@@ -375,4 +375,4 @@ Update Status before exit; commit without push.
 
 ## Next (one line — update every session end)
 
-**Next:** P3 — patstim native (held for discussion). reduced_dentate/gf/vecevent native product green. **Not** Traub `use_gap=1` unless reopened.
+**Next:** P3 product closed for CoreNEURON-GPU-like online scope (dentate/gf/vecevent/vecplay/watch/…). **P4** when reopened: wall-time vs CoreNEURON (guide) / residual host-traffic audit. Full NMODL `ctest` greening is a separate session. **Not** Traub `use_gap=1` unless reopened.
