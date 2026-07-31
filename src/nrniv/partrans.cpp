@@ -178,6 +178,10 @@ struct TransferThreadData {
     // Parallel to cnt: how to resolve the source value for native GPU transfer.
     std::vector<NativeEdgeSrcKind> src_kind;
     std::vector<int> src_slot;  // mailbox slot or insrc index
+    // S5: same-thread device shortcut eligible (src tid == tar tid, local V/Mech).
+    std::vector<char> same_thread;
+    // Source Node* for same-thread voltage resolve (null if N/A).
+    std::vector<Node*> src_nd;
 };
 static TransferThreadData* transfer_thread_data_;
 static int n_transfer_thread_data_;
@@ -484,6 +488,8 @@ static void rebuild_native_gap_tables() {
         TransferThreadData& ttd = transfer_thread_data_[tid];
         ttd.src_kind.assign(static_cast<size_t>(ttd.cnt), NativeEdgeSrcKind::LocalHost);
         ttd.src_slot.assign(static_cast<size_t>(ttd.cnt), -1);
+        ttd.same_thread.assign(static_cast<size_t>(ttd.cnt), 0);
+        ttd.src_nd.assign(static_cast<size_t>(ttd.cnt), nullptr);
     }
 
     for (size_t i = 0; i < targets_.size(); ++i) {
@@ -523,6 +529,9 @@ static void rebuild_native_gap_tables() {
                 int const slot = ensure_msrc(nd, it->second.first, it->second.second);
                 ttd.src_kind[edge] = NativeEdgeSrcKind::LocalMechRange;
                 ttd.src_slot[edge] = slot;
+                ttd.src_nd[edge] = nd;
+                int const src_tid = (nd && nd->_nt) ? nd->_nt->id : -1;
+                ttd.same_thread[edge] = (src_tid == tid) ? 1 : 0;
             } else if ((nd && nd->extnode) || !nd || it != non_vsrc_update_info_.end()) {
                 // ecell v+vext or unresolved non-v: host path (narrow residual).
                 ttd.src_kind[edge] = NativeEdgeSrcKind::LocalHost;
@@ -531,6 +540,9 @@ static void rebuild_native_gap_tables() {
                 int const slot = ensure_vsrc(nd);
                 ttd.src_kind[edge] = NativeEdgeSrcKind::LocalVoltage;
                 ttd.src_slot[edge] = slot;
+                ttd.src_nd[edge] = nd;
+                int const src_tid = (nd && nd->_nt) ? nd->_nt->id : -1;
+                ttd.same_thread[edge] = (src_tid == tid) ? 1 : 0;
             }
         } else {
             auto isearch = sid2insrc_.find(sid);
@@ -931,12 +943,17 @@ static void mpi_transfer() {
 // Phase G (+ H when MPI): device gather of local voltage sources into mailbox;
 // then optional MPI. Installed as nrnmpi_v_transfer_ for 1-rank and multi-rank
 // so same-thread edges still exercise the buffer path (native-partrans.md).
+// S5: edges completed by same-thread device shortcut this step (skip host buffer write).
+static std::vector<std::vector<char>> native_same_thread_done_;
+
 static void gap_v_transfer_controller() {
     native_mailbox_fresh_ = false;
     native_msrc_fresh_ = false;
+    native_same_thread_done_.assign(nrn_nthread, {});
 #if defined(NRN_ENABLE_GPU)
     if (neuron::gpu::enabled() && neuron::gpu::backend_native() && native_gap_tables_valid_ &&
         neuron::gpu::model_is_on_device()) {
+        neuron::gpu::gap_traffic_note_step();
         // Phase G: sparse mailbox gather (CoreNEURON-style). Device owns V / RANGE.
         bool const need_stream_wait = !native_vsrc_val_.empty() || !native_msrc_val_.empty();
         if (need_stream_wait) {
@@ -1073,6 +1090,92 @@ static void gap_v_transfer_controller() {
                     neuron::gpu::sync_voltages_to_host_after_post_solve(nrn_threads[tid]);
                 }
             }
+            neuron::gpu::gap_traffic_note_full_v_pull();
+        }
+
+        // S5 opt-in: same-thread on-device edges (NRN_GAP_SAME_THREAD_DEVICE=1).
+        // Default off — buffer path remains product + ctest coverage.
+        if (neuron::gpu::gap_same_thread_device_enabled() && transfer_thread_data_ &&
+            n_transfer_thread_data_ == nrn_nthread) {
+            std::unordered_set<int> tar_types;
+            for (size_t i = 0; i < targets_.size(); ++i) {
+                Point_process* pp = target_pntlist_[i];
+                if (pp && pp->prop) {
+                    tar_types.insert(pp->prop->_type);
+                }
+            }
+            // Mech types for mid-SoA resolve (targets + non-v sources).
+            for (auto const& ms: native_msrc_) {
+                tar_types.insert(ms.type);
+            }
+            std::vector<int> types(tar_types.begin(), tar_types.end());
+
+            // Voltage same-thread: group by tid. Track edge indices for done marks.
+            std::vector<std::vector<int>> vnode_by_tid(nrn_nthread);
+            std::vector<std::vector<double*>> tar_by_tid(nrn_nthread);
+            std::vector<std::vector<int>> v_edge_ix(nrn_nthread);
+            std::vector<double*> mech_src;
+            std::vector<double*> mech_tar;
+            std::vector<int> mech_tid;
+            std::vector<int> mech_edge_ix;
+            int n_cand_v = 0, n_cand_m = 0;
+            for (int tid = 0; tid < nrn_nthread; ++tid) {
+                TransferThreadData& ttd = transfer_thread_data_[tid];
+                native_same_thread_done_[tid].assign(static_cast<size_t>(ttd.cnt), 0);
+                if (static_cast<int>(ttd.same_thread.size()) != ttd.cnt) {
+                    continue;
+                }
+                for (int i = 0; i < ttd.cnt; ++i) {
+                    if (!ttd.same_thread[i]) {
+                        continue;
+                    }
+                    if (ttd.src_kind[i] == NativeEdgeSrcKind::LocalVoltage && ttd.src_nd[i] &&
+                        ttd.src_nd[i]->_nt) {
+                        vnode_by_tid[tid].push_back(ttd.src_nd[i]->v_node_index);
+                        tar_by_tid[tid].push_back(static_cast<double*>(ttd.tv[i]));
+                        v_edge_ix[tid].push_back(i);
+                        ++n_cand_v;
+                    } else if (ttd.src_kind[i] == NativeEdgeSrcKind::LocalMechRange &&
+                               ttd.src_nd[i]) {
+                        int const slot = ttd.src_slot[i];
+                        if (slot < 0 || static_cast<size_t>(slot) >= native_msrc_.size()) {
+                            continue;
+                        }
+                        NativeMechSrc const& ms = native_msrc_[static_cast<size_t>(slot)];
+                        auto dh = non_vsrc_update(ms.nd, ms.type, ms.ix);
+                        mech_src.push_back(static_cast<double*>(dh));
+                        mech_tar.push_back(static_cast<double*>(ttd.tv[i]));
+                        mech_tid.push_back(tid);
+                        mech_edge_ix.push_back(i);
+                        ++n_cand_m;
+                    }
+                }
+            }
+            int const n_v = neuron::gpu::same_thread_voltage_device_copy(
+                vnode_by_tid,
+                tar_by_tid,
+                types.empty() ? nullptr : types.data(),
+                static_cast<int>(types.size()));
+            int const n_m = neuron::gpu::same_thread_mech_device_copy(
+                mech_src.empty() ? nullptr : mech_src.data(),
+                mech_tar.empty() ? nullptr : mech_tar.data(),
+                static_cast<int>(mech_src.size()),
+                types.empty() ? nullptr : types.data(),
+                static_cast<int>(types.size()));
+            // Only skip buffer path when every candidate edge was device-copied.
+            if (n_v == n_cand_v && n_cand_v > 0) {
+                for (int tid = 0; tid < nrn_nthread; ++tid) {
+                    for (int ei: v_edge_ix[tid]) {
+                        native_same_thread_done_[tid][static_cast<size_t>(ei)] = 1;
+                    }
+                }
+            }
+            if (n_m == n_cand_m && n_cand_m > 0) {
+                for (size_t k = 0; k < mech_edge_ix.size(); ++k) {
+                    native_same_thread_done_[mech_tid[k]][static_cast<size_t>(mech_edge_ix[k])] =
+                        1;
+                }
+            }
         }
     }
 #endif
@@ -1116,7 +1219,16 @@ static void thread_transfer(NrnThread* _nt) {
         // Host-only here: OpenACC device push must not run on NEURON worker
         // threads (CUDA_ERROR_INVALID_CONTEXT). Main thread flushes after
         // multithread lastpart via nrn_native_gap_targets_to_device().
+        // S5: skip edges already filled by same-thread device shortcut.
+        auto const& done =
+            (_nt->id >= 0 && _nt->id < static_cast<int>(native_same_thread_done_.size()))
+                ? native_same_thread_done_[_nt->id]
+                : std::vector<char>{};
+        int n_buf = 0;
         for (int i = 0; i < ttd.cnt; ++i) {
+            if (static_cast<size_t>(i) < done.size() && done[i]) {
+                continue;  // device already wrote target + host mirror
+            }
             double val = 0.0;
             switch (ttd.src_kind[i]) {
             case NativeEdgeSrcKind::LocalVoltage: {
@@ -1154,7 +1266,9 @@ static void thread_transfer(NrnThread* _nt) {
                 break;
             }
             *(ttd.tv[i]) = val;
+            ++n_buf;
         }
+        neuron::gpu::gap_traffic_note_buffer_edges(n_buf);
         if (std::getenv("NRN_GAP_DEBUG") && ttd.cnt > 0) {
             static int once_per_tid[32] = {};
             int const tid = _nt->id;
@@ -1204,10 +1318,18 @@ void nrn_native_gap_targets_to_device() {
     if (skip_dev) {
         return;
     }
+    // Sparse H→D only for edges that used the host buffer path (skip same-thread
+    // device edges — already on device).
     std::vector<double*> all_ptrs;
     for (int tid = 0; tid < nrn_nthread; ++tid) {
         TransferThreadData& ttd = transfer_thread_data_[tid];
+        auto const& done =
+            (tid < static_cast<int>(native_same_thread_done_.size())) ? native_same_thread_done_[tid]
+                                                                      : std::vector<char>{};
         for (int i = 0; i < ttd.cnt; ++i) {
+            if (static_cast<size_t>(i) < done.size() && done[i]) {
+                continue;
+            }
             all_ptrs.push_back(static_cast<double*>(ttd.tv[i]));
         }
     }

@@ -2,9 +2,9 @@
 
 **Portfolio:** GPU-native (feature)  
 **Tree:** `~/neuron/nrngpu`  
-**Status:** S0–**S4 green (2026-07-30 tip)** — MechRange sources (natrans ions) via
-sparse device mailbox; `test_natrans` native multi-thread (nthread=4) green.
-S3 multi-thread gap product still green (`ringtest -gpu-native -gap -nt 2` = 128).
+**Status:** S0–**S5 green (2026-07-30 tip)** — traffic audit + optional same-thread
+device shortcut (default **off**). Buffer path remains product/ctest default.
+S4 MechRange + S3 multi-thread gap still green.
 
 **Product policy (2026-07-30):** device gather/scatter under native is mandatory.
 Silent no-op / host V pull when residency fails is **not** default. Opt-in debug:
@@ -226,7 +226,7 @@ Constraints if added:
 | **S2** | Multi-rank MPI via existing host Alltoallv | **green** — `neuron_gpu_native_mpi_gap` 2-rank + sorted `spk2.gap.100ms.std.sorted.ref` (launch via `h.nrnmpi_init`, not `special -mpi`) |
 | **S3** | Multi-thread via same buffers | **green** — `use_native_gpu_fixed_step()` must be true on **all** std::thread workers (`g_psolve_gpu_scope_depth` process-wide, not `thread_local`). Plus vgap-only device push / stream barrier before gather. |
 | **S4** | `MechRange` sources (natrans ions) | **green** — `LocalMechRange` sparse D→H mailbox; `test_natrans` native nthread=4 (partition without NetCon for native to avoid multi-thread threshold residual on that model) |
-| **S5** | Traffic audit; no full-V default; optional same-thread GPU shortcut | Measured; tests still cover buffer path |
+| **S5** | Traffic audit; no full-V default; optional same-thread GPU shortcut | **green** — `NRN_GAP_TRAFFIC_STATS=1` atexit report; product path `full_v_pulls=0` `bulk_mech_pushes=0`; same-thread opt-in `NRN_GAP_SAME_THREAD_DEVICE=1` (default off) |
 
 ---
 
@@ -289,6 +289,36 @@ gid topology.
 threshold rebuild + device detect OpenACC host APIs; safer net_send hit-list
 grow when OpenACC present table lags.
 
+## S5 traffic audit + optional same-thread (closed)
+
+**Env:**
+
+| Env | Default | Role |
+|-----|---------|------|
+| `NRN_GAP_TRAFFIC_STATS=1` | off | Atexit report: steps, buffer edges, sparse bytes D2H/H2D, full_v / bulk counts |
+| `NRN_GAP_SAME_THREAD_DEVICE=1` | **off** | Same-thread edges: sparse device src→tar (host hop skipped when fully mapped) |
+| `NRN_GAP_BULK_MECH_PUSH=1` | off | Debug full mech SoA (counted as anti-pattern) |
+| `NRN_GPU_GAP_HOST_FALLBACK=1` | off | Debug full vec_v host pull (counted as anti-pattern) |
+
+**Measured (ringtest `-gpu-native -gap -nt 1 -tstop 20`, buffer path default):**
+
+```text
+steps=800 buffer_edges≈205056 same_thread_device=0
+vsrc=204800 tar_scatter=204800
+bytes_d2h≈1.6MB  bytes_h2d≈1.6MB   # sparse only (256 doubles/step each way)
+full_v_pulls=0 bulk_mech_pushes=0
+gather_ok=800 gather_fallback=0
+```
+
+Interpretation: product path stays **sparse mailbox gather + sparse target scatter**.
+No full voltage SoA pull and no bulk HalfGap SoA push. Field-column fallback may
+fire once at first step (mid-SoA present) and is still not full-mech.
+
+**Same-thread shortcut** (`NRN_GAP_SAME_THREAD_DEVICE=1`): on 1-thread gap models
+all edges are same-thread; buffer_edges drop toward 0 when device residency is
+complete. **Default off** so ctests still exercise the CoreNEURON-style buffer path.
+
 ## One-line Next
 
-**S5:** traffic audit; optional same-thread GPU shortcut (default remains buffer path).
+**P2 residual / S5+:** multi-thread NetCon threshold present residual (natrans-style
+NetCon topology); multi-rank traffic audit if needed.

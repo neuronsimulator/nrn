@@ -360,4 +360,4 @@ Update Status before exit; commit without push.
 
 ## Next (one line — update every session end)
 
-**Next:** P2 S5 traffic audit / optional same-thread GPU shortcut. S4 green: MechRange mailbox + `test_natrans` native nthread=4.
+**Next:** P2 residual — multi-thread NetCon threshold present table (NetCon-heavy models); S5 green (gap traffic audit + optional same-thread device, default buffer path).
