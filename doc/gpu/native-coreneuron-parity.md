@@ -260,7 +260,7 @@ For each test:
 | test_nmodlrandom_syntax | green | **green** | after NONVINT |
 | test_natrans | **green** | **green** | Control: valid permute. Native: S4 MechRange nthread=4 + **NetCon-heavy** topology (threshold multi-thread residual closed 2026-07-31). |
 | array_variable_transfer_* | green | **green** | ACC green/red via `coreneuron_modtests_native_array_transfer`; modes 0–2 + file_mode pass. |
-| spikes_mpi* | green | **green** | Native product = mode 0 (matches CoreNEURON file_mode MPI). Mode 1 multi-rank re-psolve on shared GPU residual. |
+| spikes_mpi* | green | **green** | Native product modes **0–2** (multi-rank re-psolve + mode-2+fast_imem closed). Launch via `nrnmpi_init` / mpiexec special. |
 | test_subworlds | green | **green** | after NONVINT; still P2 if expanded |
 
 ---
@@ -269,7 +269,7 @@ For each test:
 
 | Item | Status | Notes |
 |------|--------|-------|
-| spikes_mpi / file mode native | **green** (mode 0) | mode 1 multi-rank re-psolve residual |
+| spikes_mpi / file mode native | **green** (modes 0–2) | mode-1 re-psolve + sequential mode-2+fast_imem closed (2026-07-31) |
 | test_subworlds native | **green** | |
 | test_natrans native | **green** (nthread=4, S4, NetCon) | NetCon-heavy multi-thread threshold present residual **closed** (free-before-copyin + lastpart OpenACC serialize) |
 | ringtest gap native + compare | **green** (1+2 rank; **nt=1,2,4** exact 128) | S0–S5. Multi-thread: process-wide PsolveGpuScope + OpenACC host-API mutex + thresh hit list off `NrnThread` (2026-07-31). ctest: `neuron_gpu_native_mpi_gap`, `compare_…`, `neuron_gpu_native_nt2_gap`. |
@@ -365,4 +365,4 @@ Update Status before exit; commit without push.
 
 ## Next (one line — update every session end)
 
-**Next:** P2 leftovers — spikes_mpi mode-1 re-psolve; sequential mode-2+fast_imem. NetCon-heavy multi-thread thresh **closed**. **Not** ringtest MPI/gap SEGV (green with `nrnmpi_init`). **Not** Traub `use_gap=1` unless reopened (`notes/gpu_native_traub_use_gap.md`).
+**Next:** P2 product leftovers **closed** (NetCon-heavy thresh; spikes_mpi mode-1; sequential mode-2+fast_imem). Prefer **P3** heavy models (reduced_dentate / testcorenrn online) or P4 perf audit. **Not** Traub `use_gap=1` unless reopened (`notes/gpu_native_traub_use_gap.md`).
