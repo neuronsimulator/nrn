@@ -4169,6 +4169,15 @@ void ncs2nrn_integrate(double tstop) {
         }
         all_pending_selfqueue(nt_t);
     }  // cache_token destroyed
+#if defined(NRN_ENABLE_GPU)
+    // Once per psolve interval: trajectory hand-back + full SoA host mirror.
+    // Must not run per fixed step: gap models take the single-step loop
+    // (ncs2nrn_integrate when nrnthread_v_transfer_) so a finalize here was
+    // full SoA every dt (~50% of tracked phase time on ringtest gap).
+    if (neuron::gpu::enabled() && neuron::gpu::backend_native()) {
+        neuron::gpu::finalize_psolve_download();
+    }
+#endif
     nrn_use_busywait(0);  // certainly not
 }
 

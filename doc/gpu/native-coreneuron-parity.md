@@ -100,6 +100,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-07-31 | GPU-P3-models | — | vecevent native green (60 spikes sorted): ACC VecStim host NET_RECEIVE + net_event; 4-rank via `NRN_TEST_MPI`/`nrnmpi_init`; `testcorenrn_vecevent_native`. reduced_dentate residual: ACC mechs link + runs; GC EPSP missing (~10 MPP vs ~400). |
 | 2026-07-31 | GPU-P3-models | — | reduced_dentate native green (400 spikes): gap deferred-lastpart left `compute_gpu=0` so post-step NET_RECEIVE never flushed to device; force device deliver/flush in `deliver_post_step_events_host`. `reduced_dentate_native` 4-rank product. |
 | 2026-07-31 | GPU-P3-models | — | P3 product close: patstim **N/A** for device (host art-cell PatternStim; NMODL host path only). Online native matrix closed for CoreNEURON-GPU-like scope. Full NMODL `ctest` greening out of scope (separate session). |
+| 2026-07-31 | GPU-P4-perf | — | Baselines on T1000; host-traffic audit; fix mid-psolve full SoA finalize on gap single-step path. |
 
 ---
 
@@ -301,11 +302,38 @@ For each test:
 
 ## Phase 4 — Perf / architecture debt
 
+**Machine (2026-07-31):** NVIDIA T1000 8GB, driver 595.71.05. Env: `NRN_GPU_BACKEND_TEST=native`, `NRN_GPU_PERMUTE=2`. Times are wall / ringtest `runtime=` (psolve) where noted. CoreNEURON is a **guide**, not a target to match.
+
+### Baselines (pre-fix → post-fix where changed)
+
+| Case | Native | CoreNEURON GPU | Ratio (native/CN) | Notes |
+|------|--------|----------------|-------------------|-------|
+| Ringtest **no-gap** 1-rank tstop=100, 688 spikes | runtime ~2.4–3.3 s (warm ~2.5–3.1); wall ~2.9–4.0 s | runtime ~1.50–1.56 s; wall ~2.0–2.2 s | ~1.6–2.0× | Product green. Phase timer: setup-tree-matrix ~35%, lastpart ~45%, download-flush ~0. |
+| Ringtest **gap** 1-rank tstop=100, 128 spikes | **pre** runtime ~11–12 s; **post** ~8.3 s | runtime ~1.59 s; wall ~2.1 s | pre ~7.5× → post ~5.2× | Gap path uses single-step `nrn_fixed_step` loop (`ncs2nrn_integrate` when `nrnthread_v_transfer_`). |
+| reduced_dentate max_cells=100 tstop=10 **4-rank** 400 spikes | ctest wall ~48 s; `psolve time` ~45 s (pre≈post) | ctest wall ~6.4 s; Solver Time ~3.3 s | ~7.5× wall / ~14× psolve vs solver | Native: `Info : 1 GPUs shared by 1 ranks per node`×4; CN: 1 GPU shared by 4 ranks. vrecordFraction=0.01. |
+
+Phase timer (`NRN_NATIVE_GPU_PHASE_TIMER=1`):
+
+- **Non-gap ringtest (post):** setup-tree-matrix ~33–35%, lastpart ~45–48%, deliver/matrix-solver ~10% each, download-flush negligible (1 summary / psolve).
+- **Gap ringtest (pre):** 4000 summaries (= every dt); download-flush accumulated ~1.7 s (~50% of tracked); tracked total only ~3.5 of 12 s runtime (deferred lastpart / gap transfer **uninstrumented**).
+- **Gap ringtest (post):** 1 summary; download-flush gone from hot path; runtime ~8.3 s; tracked ~1.6 s (setup-tree-matrix ~68%); residual ~6.7 s still outside phase scopes (gap gather/scatter + deferred lastpart).
+- **Dentate (post):** 4 summaries (1/rank); download-flush not in hot path; setup-tree-matrix ~16 s (~88% of tracked ~18 s); psolve ~45 s → large untracked multi-rank/gap/OpenACC contention on one GPU.
+
+### Status — P4
+
 | Item | Status | Notes |
 |------|--------|-------|
-| Wall-time vs CoreNEURON (guide) | | Measure, don’t match for its own sake |
-| Residual hot-path host traffic audit | | |
-| Single device-resource owner | | Only if exit/leak forces |
+| Wall-time vs CoreNEURON (guide) | **baselined** | Table above. Non-gap ~2×; gap ~5× after fix; dentate ~7–14× (multi-rank + heavy mechs + gap). Measure-first; do not green-chase. |
+| Residual hot-path host traffic audit | **done** (this session) | **Bug:** `finalize_psolve_download()` (full SoA host mirror + trajectory finalize) was called at the end of **every** `nrn_fixed_step` / also end of `nrn_fixed_step_group`. Gap models take the single-step loop → full SoA pull every dt. Non-gap uses step_group → one finalize at group end (masked the bug). **Fix:** finalize once at end of `ncs2nrn_integrate` only. Gap ringtest 12 s → 8.3 s. |
+| Single device-resource owner | open | Only if exit/leak forces. Not measured as P4 win this session. |
+
+### Residual perf debt (next P4 when reopened)
+
+1. **Gap / deferred lastpart uninstrumented** — phase timer misses most of gap wall; instrument `nrnmpi_v_transfer_` + deferred `nrn_fixed_step_lastpart` under `gap_sync` / `lastpart`.
+2. **Gap algorithm** — still ~5× CN after removing mid-psolve full SoA; buffer gather/scatter + OpenACC host-API serialization candidates (not Traub `use_gap=1`).
+3. **Dentate multi-rank on one GPU** — setup-tree-matrix dominates tracked; multi-process contention likely; compare 1-rank dentate when useful.
+4. **Non-gap ~2× CN** — kernel/launch density (setup-tree-matrix + lastpart); not host SoA traffic.
+5. Optional: sparse trajectory for `vrecordFraction` product paths if a model forces per-step full SoA via `lastpart_host_phases_required` (not observed as dentate download-flush this run).
 
 ---
 
@@ -375,4 +403,4 @@ Update Status before exit; commit without push.
 
 ## Next (one line — update every session end)
 
-**Next:** P3 product closed for CoreNEURON-GPU-like online scope (dentate/gf/vecevent/vecplay/watch/…). **P4** when reopened: wall-time vs CoreNEURON (guide) / residual host-traffic audit. Full NMODL `ctest` greening is a separate session. **Not** Traub `use_gap=1` unless reopened.
+**Next:** P4 baselined + mid-psolve full-SoA-on-gap-path fixed. Residual: instrument gap/deferred lastpart; gap algorithm vs CN (~5×); dentate multi-rank/setup-tree-matrix. Full NMODL `ctest` greening separate. **Not** Traub `use_gap=1` unless reopened.

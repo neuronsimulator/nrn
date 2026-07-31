@@ -399,11 +399,9 @@ void nrn_fixed_step(neuron::model_sorted_token const& cache_token) {
         (*nrn_allthread_handle)();
     }
     nrn_prcellstate_checkpoint_fixed_step_end();
-#if defined(NRN_ENABLE_GPU)
-    if (neuron::gpu::use_native_gpu_fixed_step()) {
-        neuron::gpu::finalize_psolve_download();
-    }
-#endif
+    // Native end-of-psolve SoA download is NOT here: nrn_fixed_step is also the
+    // per-step body of the gap (nrnthread_v_transfer_) path in ncs2nrn_integrate
+    // (thousands of steps). Finalize once at end of ncs2nrn_integrate.
 }
 
 /* better cache efficiency since a thread can do an entire minimum delay
@@ -478,11 +476,7 @@ void nrn_fixed_step_group(neuron::model_sorted_token const& cache_token, int n) 
         }
     }
     t = nrn_threads[0]._t;
-#if defined(NRN_ENABLE_GPU)
-    if (neuron::gpu::use_native_gpu_fixed_step()) {
-        neuron::gpu::finalize_psolve_download();
-    }
-#endif
+    // finalize_psolve_download: once at end of ncs2nrn_integrate (not here).
 }
 
 static void nrn_fixed_step_group_thread(neuron::model_sorted_token const& cache_token,
