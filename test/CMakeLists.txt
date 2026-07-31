@@ -891,7 +891,11 @@ if(NRN_ENABLE_PYTHON)
       NAME test_natrans_py_${processor}
       REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
       SCRIPT_PATTERNS ${coreneuron_backend_helper_script} test/gjtests/test_natrans.py
+      # Clear NRN_GPU_BACKEND_TEST so a parent shell export (nrnenv / AGENTS.md)
+      # cannot flip CPU/CoreNEURON variants onto the native topology (no NetCon)
+      # or native GPU path. Native has its own ctest with NRN_GPU_BACKEND_TEST=native.
       ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
+                  NRN_GPU_BACKEND_TEST= NRN_GPU_PERMUTE=
                   COVERAGE_FILE=.coverage.coreneuron_test_natrans_py
       COMMAND ${modtests_launch_py} test/gjtests/test_natrans.py)
     # Two hh+IClamp cells, pc.nthread(2): ELECTRODE_CURRENT multi-thread gate

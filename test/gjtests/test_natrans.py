@@ -10,11 +10,13 @@ pc = h.ParallelContext()
 rank = pc.id()
 nhost = pc.nhost()
 # Multi-thread (4) exercises host indexing + S4 MechRange buffer path.
-# Native: avoid pc.cell/NetCon (multi-thread threshold present residual on some
-# models); ownership is the local cells map + SectionList partition.
-# CoreNEURON/host: keep gid NetCon topology as historically.
+# Native (NRN_GPU_BACKEND_TEST=native only): avoid pc.cell/NetCon — multi-thread
+# threshold still has a present-table residual on some NetCon-heavy models;
+# ownership is the local cells map + SectionList partition.
+# Host / CoreNEURON: historic gid NetCon topology.
 _native = is_native_backend_test()
-pc.nthread(4, 1 if _native else 1)
+# Real worker std::threads when nthread>1 (second arg 1).
+pc.nthread(4, 1)
 
 # Want to exercise the internal indexing schemes. So need mpi and threads
 # (host / CoreNEURON control). Random order of sgid calls to source_var.
