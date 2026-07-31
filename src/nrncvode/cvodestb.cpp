@@ -16,6 +16,7 @@
 class Cvode;
 #endif
 
+
 void cvode_finitialize(double t0);
 void nrncvode_set_t(double);
 
@@ -96,6 +97,21 @@ bool nrn_thread_has_fixed_play(NrnThread* nt) {
         }
     }
     return false;
+}
+
+void nrn_fixed_play_foreach_pd(NrnThread* nt, void (*fn)(double* pd, void* ctx), void* ctx) {
+    if (!net_cvode_instance || !net_cvode_instance->fixed_play_ || !nt || !fn) {
+        return;
+    }
+    for (auto* pr: *net_cvode_instance->fixed_play_) {
+        if (!pr || pr->ith_ != nt->id || !pr->pd_) {
+            continue;
+        }
+        double* const p = &(*pr->pd_);
+        if (p) {
+            fn(p, ctx);
+        }
+    }
 }
 
 void fixed_record_continuous(neuron::model_sorted_token const& cache_token, NrnThread& nt) {

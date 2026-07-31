@@ -53,6 +53,12 @@ void sync_state_to_host_for_host_reads() noexcept;
  */
 void sync_state_to_device_after_host_lastpart() noexcept;
 
+/**
+ * Push host mechanism (+ node) SOA columns that are already present on device.
+ * Used after host Vector.play updates RANGE (e.g. IClamp.amp) on the native path.
+ */
+void upload_present_model_soa_to_device() noexcept;
+
 /** Push host voltages to the device after HOC/VecPlay writes. */
 void batch_upload_to_device();
 

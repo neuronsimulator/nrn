@@ -17,6 +17,11 @@ extern void nrn_play_init();
 void fixed_record_continuous(neuron::model_sorted_token const&, NrnThread& nt);
 extern void fixed_play_continuous(NrnThread* nt);
 extern bool nrn_thread_has_fixed_play(NrnThread* nt);
+/**
+ * Visit host doubles written by fixed_play for this thread (Vector.play targets).
+ * Used by native GPU to push host play results into device SoA maps.
+ */
+extern void nrn_fixed_play_foreach_pd(NrnThread* nt, void (*fn)(double* pd, void* ctx), void* ctx);
 /** True when any continuous Vector.record / fixed_record is registered. */
 extern bool nrn_has_fixed_record_continuous();
 /**

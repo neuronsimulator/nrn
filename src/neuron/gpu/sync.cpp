@@ -1,6 +1,7 @@
 #include "neuron/gpu/sync.hpp"
 
 #include "neuron/gpu/config.hpp"
+#include "neuron/gpu/download.hpp"
 #include "neuron/gpu/mechanism_phases.hpp"
 #include "neuron/gpu/phase_timer.hpp"
 #include "neuron/gpu/post_solve.hpp"
@@ -10,11 +11,16 @@
 #include "multicore.h"
 #include "nonvintblock.h"
 #include "nrn_ansi.h"
-#include "nrncvode.h"  // nrn_thread_has_fixed_play
+#include "nrncvode.h"  // nrn_thread_has_fixed_play, nrn_fixed_play_foreach_pd
+#include "neuron/gpu/offload.hpp"
 
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+
+#if defined(NRN_ENABLE_GPU) && defined(_OPENACC)
+#include <openacc.h>
+#endif
 
 extern int use_sparse13;
 
@@ -390,7 +396,28 @@ void sync_after_vecplay(NrnThread& nt) {
     if (!nrn_thread_has_fixed_play(&nt)) {
         return;
     }
+    // Host fixed_play may write V or mechanism RANGE (IClamp.amp, …).
     sync_node_voltages_to_device(nt);
+#if defined(NRN_ENABLE_GPU)
+    if (nt.compute_gpu) {
+#if defined(_OPENACC)
+        // Sparse H→D of played doubles (interior SoA addresses).
+        nrn_fixed_play_foreach_pd(
+            &nt,
+            [](double* p, void* /*ctx*/) {
+                if (p && acc_is_present(p, 1)) {
+                    acc_update_device(p, sizeof(double));
+                }
+            },
+            nullptr);
+#endif
+        // Also refresh present SoA columns (present-column update, not re-copyin)
+        // so device CURRENT reliably sees host Vector.play RANGE writes.
+        upload_present_model_soa_to_device();
+    }
+#else
+    (void) nt;
+#endif
 }
 
 void sync_voltages_to_device_after_lastpart(NrnThread& nt) {

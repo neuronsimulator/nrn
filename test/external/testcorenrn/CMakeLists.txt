@@ -214,11 +214,15 @@ endforeach()
 # Gfluct3 / vecevent ACC codegen is incomplete — those models stay later.
 # -----------------------------------------------------------------------------
 if(NRN_ENABLE_GPU)
-  set(native_gpu_test_env NRN_GPU_BACKEND_TEST=native NRN_GPU_PERMUTE=2 OMP_NUM_THREADS=1)
-  # ACC special for simple 1-rank DERIVATIVE/KINETIC/concentration models (shared hash).
+  set(native_gpu_test_env NRN_GPU_BACKEND_TEST=native NRN_GPU_PERMUTE=2 OMP_NUM_THREADS=1
+                          NRN_TEST_TSTOP=100)
+  # Absolute path: SCRIPT_PATTERNS is relative to the testcorenrn submodule only.
+  set(testcorenrn_run_native_gpu
+      "${PROJECT_SOURCE_DIR}/test/external/testcorenrn/run_native_gpu.py")
+  # ACC special shared hash for simple 1-rank models (+ bbcore NetStim-only; extra mechs OK).
   set(testcorenrn_native_simple_mods mod/hhderiv.mod mod/nacum.mod mod/hhkin.mod)
-  # One comparison group per model (comparison wants a single reference file).
-  foreach(test conc deriv kin)
+  # Launch: special -python ABS_PATH_RUNNER (hoc via NRN_TEST_HOC; never trailing .hoc).
+  foreach(test conc deriv kin bbcore)
     nrn_add_test_group(
       NAME testcorenrn_${test}_native
       SUBMODULE tests/testcorenrn
@@ -228,20 +232,18 @@ if(NRN_ENABLE_GPU)
         "${CMAKE_BINARY_DIR}/bin/nmodl"
         -nmodlflags
         "passes --inline host --c acc --oacc"
-      SCRIPT_PATTERNS
-        common.hoc
-        defvar.hoc
-        test${test}.hoc
-        ${PROJECT_SOURCE_DIR}/test/external/testcorenrn/run_native_gpu.py
+      SCRIPT_PATTERNS common.hoc defvar.hoc test${test}.hoc
       OUTPUT asciispikes::out${test}.dat)
     nrn_add_test(
       GROUP testcorenrn_${test}_native
       NAME neuron_gpu_native
       REQUIRES gpu python
-      ENVIRONMENT ${native_gpu_test_env} HOC_LIBRARY_PATH=.
-      COMMAND special -notatty -c arg_tstop=100 -python run_native_gpu.py test${test}.hoc)
+      ENVIRONMENT ${native_gpu_test_env} HOC_LIBRARY_PATH=. NRN_TEST_HOC=test${test}.hoc
+      COMMAND special -notatty -python ${testcorenrn_run_native_gpu})
     nrn_add_test_group_comparison(
       GROUP testcorenrn_${test}_native
       REFERENCE_OUTPUT asciispikes::external/tests/testcorenrn/reference/out_${test}.spk)
   endforeach()
+
+  # vecplay / watch: residual (Vector.play amp / WATCH+device CURRENT) — register once green.
 endif()

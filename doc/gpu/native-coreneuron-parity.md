@@ -284,8 +284,10 @@ For each test:
 | Item | Status | Notes |
 |------|--------|-------|
 | reduced_dentate neuron / crn cpu / crn gpu | **green** | Controls pass (max_cells=100, tstop=10, 4 ranks). Was P0 **D** (setup_transfer); fixed by gap path. **Native** residual: many mechs + ACC (Gfluct3 ACC codegen fails). |
-| testcorenrn online native: conc, deriv, kin | **green** | ACC special (`hhderiv`/`nacum`/`hhkin`); `run_native_gpu.py`; spike match ref. ctest: `testcorenrn_{conc,deriv,kin}_native::*` |
-| testcorenrn online native: bbcore, watch, vecplay, vecevent, gf, patstim | | vecevent/Gfluct3 ACC incomplete; bbcore/watch/vecplay next |
+| testcorenrn online native: conc, deriv, kin, bbcore | **green** | ACC special; `run_native_gpu.py` via **NRN_TEST_HOC** (not trailing `.hoc` — special would host-run it). Real GPU spike match ref. |
+| testcorenrn online native: vecplay | **residual** | QUALIFIED + play H→D push landed; still 0 spikes (Vector.play/IClamp amp path needs more) |
+| testcorenrn online native: watch | **residual** | ACC hhwatch WATCH+device CURRENT: host NET_RECEIVE g/e not on device CURRENT path |
+| testcorenrn online native: vecevent, gf, patstim | | vecevent/Gfluct3 ACC codegen incomplete |
 | nmodl table/kinetic GPU native if missing | **partial** | kin/deriv product via testcorenrn above; table-specific still open |
 | Offline / saverestore | | Only if product needs; may stay CoreNEURON-only |
 

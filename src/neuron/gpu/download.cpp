@@ -145,6 +145,15 @@ void upload_sorted_model_soa_to_device() {
 
 }  // namespace
 
+void upload_present_model_soa_to_device() noexcept {
+#if defined(NRN_ENABLE_GPU)
+    if (!enabled() || !backend_native() || !model_is_on_device()) {
+        return;
+    }
+    upload_sorted_model_soa_to_device();
+#endif
+}
+
 std::size_t download_flush_interval() noexcept {
     return g_flush_interval;
 }
