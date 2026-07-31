@@ -90,6 +90,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-07-30 | GPU-P2-mpi-gap | — | S3 partial (then closed): multi-thread gap buffers; later full green `-gap -nt 2/4` (PsolveGpuScope process-wide + OpenACC host mutex + hit list off NrnThread). |
 | 2026-07-31 | GPU-P2-mpi-gap | — | MPI native/gap ctests green (`nrnmpi_init`); partial-present ownership; thresh hit list off NrnThread; ctest `neuron_gpu_native_nt2_gap`; Status hygiene (no longer SEGV D). |
 | 2026-07-31 | GPU-P2-netcon-thresh | — | NetCon-heavy multi-thread threshold present residual closed: free-before-copyin in `target_copyin` + OpenACC lastpart serialize; `test_natrans` native uses NetCon topology nthread=4. |
+| 2026-07-31 | GPU-P2-mode-leftovers | — | spikes_mpi mode-1 re-psolve + sequential mode-2+fast_imem green (same free-before-copyin era); product modes 0–2 for serial/MPI spikes + direct. |
 
 ---
 
@@ -244,8 +245,8 @@ For each test:
 | Test | Control `*_gpu` | Native `*_gpu_native` | Notes |
 |------|-----------------|------------------------|-------|
 | fornetcon | green | **green** | NONVINT env fixed Gate C false red |
-| direct | green | **green** | modes **0–1** product (+fast_imem). Mode 2 alone green; sequential 0→1→2+fast_imem residual. |
-| spikes | green | **green** | modes **0–1** product (+fast_imem). Mode 2 alone green (±imem); sequential 0→1→2 without imem green; with imem residual. |
+| direct | green | **green** | modes **0–2** product (+fast_imem); sequential 0→1→2 green. |
+| spikes | green | **green** | modes **0–2** product (+fast_imem); sequential 0→1→2 green (serial + MPI). |
 | spikes_file_mode | green | **green** | Native ignores CoreNEURON file_mode; same modes 0–1 product path as `spikes_py_gpu_native`. |
 | fast_imem | **green** | **green** | Host electrode sav + multi-thread ACC index; device: post-cur memcpy RMW of i→sav (avoids illegal address of in-ACC sav present); IClamp window uses host-captured t in nrn_current. |
 | datareturn | **green** | **green** | ACC Exp2Syn; ion SoA download. Native modes **0–1**; mode-2 product via test_psolve (sequential multi-mode residual). |

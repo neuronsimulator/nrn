@@ -63,9 +63,8 @@ def test_direct_memory_transfer():
 
     enable_test_backend()
 
-    # Native: modes 0–1 product (mode 2 alone green via test_psolve / no-imem).
-    # CoreNEURON: modes 0–2.
-    modes = [0, 1] if is_native_backend_test() else [0, 1, 2]
+    # Native and CoreNEURON: modes 0–2 (sequential mode-2+fast_imem green).
+    modes = [0, 1, 2]
     for mode in modes:
         run(mode)
 

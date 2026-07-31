@@ -320,6 +320,6 @@ complete. **Default off** so ctests still exercise the CoreNEURON-style buffer p
 
 ## One-line Next
 
-**P2 residual / S5+:** NetCon-heavy multi-thread threshold present **closed**
-(2026-07-31). Remaining P2 leftovers: spikes_mpi mode-1; sequential mode-2+fast_imem.
-Ringtest gap multi-thread + MPI ctests **green** (exact 128; `h.nrnmpi_init`).
+**P2 residuals closed (2026-07-31):** NetCon-heavy multi-thread thresh; spikes_mpi
+mode-1; sequential mode-2+fast_imem. Ringtest gap multi-thread + MPI ctests
+**green** (exact 128; `h.nrnmpi_init`). Next: P3 heavy / P4 perf.
