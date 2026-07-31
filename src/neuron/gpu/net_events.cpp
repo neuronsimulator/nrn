@@ -1,7 +1,9 @@
 #include "neuron/gpu/net_events.hpp"
 
 #include "neuron/gpu/config.hpp"
+#include "neuron/gpu/device_state.hpp"
 #include "neuron/gpu/net_receive_buffer.hpp"
+#include "neuron/gpu/offload.hpp"
 
 #include "multicore.h"
 #include "nrncvode.h"
@@ -32,21 +34,56 @@ void flush_net_receive_buffers(NrnThread* nt) {
     }
 }
 
+/**
+ * Gap/partrans defers lastpart after fixed_step restores compute_gpu=0.
+ * finalize_nonvint then restores that 0 before deliver_post_step. Without
+ * compute_gpu=1, NET_RECEIVE applies host SoA only and flush is skipped —
+ * device CURRENT never sees synaptic g (reduced_dentate GC EPSP residual).
+ */
+int force_compute_gpu_for_device_deliver(NrnThread* nt) {
+    if (!nt || !enabled() || !backend_native() || !model_is_on_device()) {
+        return nt ? nt->compute_gpu : 0;
+    }
+    int const saved = nt->compute_gpu;
+    if (!saved) {
+        nt->compute_gpu = 1;
+        nrn_pragma_acc(update device(nt->compute_gpu) if (nrn_target_is_present(nt)))
+        nrn_pragma_omp(target update to(nt->compute_gpu) if (nrn_target_is_present(nt)))
+    }
+    return saved;
+}
+
+void restore_compute_gpu_after_deliver(NrnThread* nt, int saved) {
+    if (!nt || nt->compute_gpu == saved) {
+        return;
+    }
+    nt->compute_gpu = saved;
+    if (nrn_target_is_present(nt)) {
+        nrn_pragma_acc(update device(nt->compute_gpu))
+        nrn_pragma_omp(target update to(nt->compute_gpu))
+    }
+}
+
 }  // namespace
 
 void deliver_net_events_host(NrnThread* nt) {
     ++g_deliver_net_events_count;
     // Start-of-step delivery (til = t + 0.5*dt) enqueues NET_RECEIVE when compute_gpu.
     // Must flush before setup_tree_matrix / nrn_cur so synaptic g is visible this step.
+    int const saved = force_compute_gpu_for_device_deliver(nt);
     deliver_net_events(nt);
     flush_net_receive_buffers(nt);
+    restore_compute_gpu_after_deliver(nt, saved);
 }
 
 void deliver_post_step_events_host(NrnThread* nt) {
     ++g_deliver_post_step_events_count;
     // End-of-step delivery (til = t) enqueues; flush for next step and for end-of-run dumps.
+    // Must keep compute_gpu=1 when the model is on device (see force_compute_gpu...).
+    int const saved = force_compute_gpu_for_device_deliver(nt);
     nrn_deliver_events(nt);
     flush_net_receive_buffers(nt);
+    restore_compute_gpu_after_deliver(nt, saved);
 }
 
 void spike_exchange_after_group(NrnThread* nt) {

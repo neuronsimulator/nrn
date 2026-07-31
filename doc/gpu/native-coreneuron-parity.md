@@ -98,6 +98,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-07-31 | GPU-P3-models | — | ACC codegen: present_fp for host NET_RECEIVE/HOC wrappers; net_buf_receive node_data/ppvar/dptr; vecevent ACC builds; Gfluct3 still ACC-device residual. |
 | 2026-07-31 | GPU-P3-models | — | Gfluct3 native green (182 spikes): device-safe mynormrand (no static `_ran_compat` in ACC); host NET_RECEIVE for BBCOREPOINTER + SoA push; BEFORE BREAKPOINT folded into CURRENT; `testcorenrn_gf_native`. |
 | 2026-07-31 | GPU-P3-models | — | vecevent native green (60 spikes sorted): ACC VecStim host NET_RECEIVE + net_event; 4-rank via `NRN_TEST_MPI`/`nrnmpi_init`; `testcorenrn_vecevent_native`. reduced_dentate residual: ACC mechs link + runs; GC EPSP missing (~10 MPP vs ~400). |
+| 2026-07-31 | GPU-P3-models | — | reduced_dentate native green (400 spikes): gap deferred-lastpart left `compute_gpu=0` so post-step NET_RECEIVE never flushed to device; force device deliver/flush in `deliver_post_step_events_host`. `reduced_dentate_native` 4-rank product. |
 
 ---
 
@@ -289,7 +290,7 @@ For each test:
 
 | Item | Status | Notes |
 |------|--------|-------|
-| reduced_dentate neuron / crn cpu / crn gpu | **green** | Controls pass (max_cells=100, tstop=10, 4 ranks). **Native residual:** ACC special (28 mods) builds/runs; serial short **10** spikes (MPP VecStim only @ t=3) vs CPU **400**. vrecord: GC 500000 no EPSP after MPP (CPU jumps ~t=5.2); minimal VecStimRd→Exp2Syn+gid_connect native **OK** — residual is multi-comp DGC / network scale, not bare VecStim. |
+| reduced_dentate neuron / crn cpu / crn gpu / **native** | **green** | Controls + `reduced_dentate_native` 4-rank (ACC mechs, `nrnmpi_init`) **400** spikes match sorted. Root cause was **gap deferred lastpart**: `finalize_nonvint` restored `compute_gpu=0` before post-step deliver → host NET_RECEIVE / no device flush (GC EPSP missing). Fix: force `compute_gpu=1` for device deliver+flush in `net_events.cpp`. |
 | testcorenrn online native: conc, deriv, kin, bbcore, vecplay, watch, **gf**, **vecevent** | **green** | ACC special; `run_native_gpu.py` via **NRN_TEST_HOC**. gf 182; vecevent 60 (4-rank `NRN_TEST_MPI`/`nrnmpi_init`). BBCOREPOINTER: host NET_RECEIVE + SoA push; Gfluct3 BEFORE folded into CURRENT. |
 | testcorenrn online native: patstim | **open** | |
 | nmodl table/kinetic GPU native if missing | **partial** | kin/deriv product via testcorenrn above; table-specific still open |
@@ -373,4 +374,4 @@ Update Status before exit; commit without push.
 
 ## Next (one line — update every session end)
 
-**Next:** P3 — reduced_dentate native spike parity (GC EPSP missing after MPP; bare VecStim/Exp2Syn OK; diagnose multi-comp DGC / delivery at scale); patstim native. **Not** Traub `use_gap=1` unless reopened.
+**Next:** P3 — patstim native (held for discussion). reduced_dentate/gf/vecevent native product green. **Not** Traub `use_gap=1` unless reopened.
