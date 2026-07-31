@@ -95,6 +95,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-07-31 | GPU-P3-models | — | More online: bbcore native green; launcher NRN_TEST_HOC fix (false host greens); Vector.play H→D push; vecplay/watch residual. |
 | 2026-07-31 | GPU-P3-models | — | vecplay native green (202 spikes): no unconditional host V H→D after fixed_play; column H→D of played RANGE only. |
 | 2026-07-31 | GPU-P3-models | — | watch native green (173 spikes): nmodl WATCH host activate; host NET_RECEIVE for WATCH mechs + SoA H→D. |
+| 2026-07-31 | GPU-P3-models | — | ACC codegen: present_fp for host NET_RECEIVE/HOC wrappers; net_buf_receive node_data/ppvar/dptr; vecevent ACC builds; Gfluct3 still ACC-device residual. |
 
 ---
 
@@ -286,10 +287,10 @@ For each test:
 
 | Item | Status | Notes |
 |------|--------|-------|
-| reduced_dentate neuron / crn cpu / crn gpu | **green** | Controls pass (max_cells=100, tstop=10, 4 ranks). Was P0 **D** (setup_transfer); fixed by gap path. **Native** residual: many mechs + ACC (Gfluct3 ACC codegen fails). |
+| reduced_dentate neuron / crn cpu / crn gpu | **green** | Controls pass (max_cells=100, tstop=10, 4 ranks). Was P0 **D** (setup_transfer); fixed by gap path. **Native** residual: Gfluct3 ACC device (VERBATIM static `_ran_compat` / RANDOM) blocks Gate B/C. |
 | testcorenrn online native: conc, deriv, kin, bbcore, vecplay, watch | **green** | ACC special; `run_native_gpu.py` via **NRN_TEST_HOC**. vecplay: column H→D of played RANGE only. watch: nmodl WATCH host path (was TODO empty); host NET_RECEIVE for WATCH mechs + SoA H→D for device CURRENT. |
 
-| testcorenrn online native: vecevent, gf, patstim | | vecevent/Gfluct3 ACC codegen incomplete |
+| testcorenrn online native: vecevent, gf, patstim | **partial** | vecevent ACC **builds** (present_fp host wrappers + net_event `_pnt`); native spike count still ≠ ref. Gfluct3 ACC **C++ OK**, device OpenACC still fails: VERBATIM static `_ran_compat` / RANDOM in `mynormrand` (ACC routine). |
 | nmodl table/kinetic GPU native if missing | **partial** | kin/deriv product via testcorenrn above; table-specific still open |
 | Offline / saverestore | | Only if product needs; may stay CoreNEURON-only |
 
@@ -371,4 +372,4 @@ Update Status before exit; commit without push.
 
 ## Next (one line — update every session end)
 
-**Next:** P3 — reduced_dentate native ACC; vecevent/Gfluct3 ACC. vecplay+watch native green. **Not** Traub `use_gap=1` unless reopened.
+**Next:** P3 — Gfluct3 ACC device (VERBATIM static `_ran_compat` / device-safe RANDOM) then reduced_dentate native; vecevent native spike parity. vecplay+watch native green. **Not** Traub `use_gap=1` unless reopened.

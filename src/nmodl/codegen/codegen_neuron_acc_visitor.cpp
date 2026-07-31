@@ -193,7 +193,8 @@ void CodegenNeuronAccVisitor::print_functors_definitions() {
 }
 
 void CodegenNeuronAccVisitor::print_hoc_py_wrapper_before_table_update() {
-    if (info.mod_suffix != "nothing" && !info.artificial_cell) {
+    // Include artificial cells (VecStim): ACC MOD FUNCTIONs take _present_fp_*.
+    if (info.mod_suffix != "nothing" && !codegen_float_variables.empty()) {
         print_present_fp_pointer_declarations();
     }
 }
@@ -645,6 +646,9 @@ void CodegenNeuronAccVisitor::print_net_receive() {
     printer->add_line("Datum * _thread = nullptr;");
     printer->add_line("size_t id = 0;");
     printer->add_line("double t = nt->_t;");
+    // MOD FUNCTION/PROCEDURE signatures always take _present_fp_* (ACC). Host
+    // NET_RECEIVE body must declare them or Gfluct3-style calls fail to compile.
+    print_present_fp_pointer_declarations();
     if (watch_host_receive) {
         printer->add_line("int _watch_rm = 0;");
     }
@@ -703,6 +707,12 @@ void CodegenNeuronAccVisitor::print_net_receive_buffering() {
     printer->fmt_line(
         "auto inst = make_instance_{}(_ml_arg->get_storage_offset(), &_lmc, /*use_device_ptrs*/ true);",
         info.mod_suffix);
+    if (!info.artificial_cell) {
+        // Needed when NET_RECEIVE body calls MOD FUNCTIONs (args include node_data).
+        printer->fmt_line(
+            "auto node_data = make_node_data_{}(*nt, *_ml_arg, /*use_device_ptrs*/ true);",
+            info.mod_suffix);
+    }
     printer->add_line("auto* _thread = _ml_arg->_thread;");
     if (!codegen_thread_variables.empty()) {
         printer->fmt_line("auto _thread_vars = {}(_thread[{}].get<double*>());",
@@ -714,6 +724,8 @@ void CodegenNeuronAccVisitor::print_net_receive_buffering() {
     for (int i = 0; i < codegen_float_variables_size; ++i) {
         printer->fmt_line("double* _present_fp_{0} = _lmc.template fpfield_ptr<{0}>();", i);
     }
+    // POINTER/RANDOM dptrs for FUNCTION bodies called from NET_RECEIVE (e.g. Gfluct3).
+    print_present_dptr_pointer_declarations();
 
     printer->add_line("double* weights = neuron::gpu::weight_soa_values();");
     printer->add_line("std::size_t weight_count = neuron::gpu::weight_soa_count();");
@@ -762,6 +774,7 @@ void CodegenNeuronAccVisitor::print_net_receive_buffering() {
         int weight_index = nrb->_weight_index[index];
         double flag = nrb->_nrb_flag[index];
         double* _args = weights + weight_index;
+        Datum* _ppvar = _ml_arg->pdata ? _ml_arg->pdata[id] : nullptr;
     )CODE");
     printing_net_receive = true;
     print_statement_block(*node->get_statement_block(), false, false);
@@ -862,7 +875,8 @@ void CodegenNeuronAccVisitor::print_net_move_call(const ast::FunctionCall& node)
 void CodegenNeuronAccVisitor::print_net_event_call(const ast::FunctionCall& node) {
     const auto& arguments = node.get_arguments();
     if (info.artificial_cell) {
-        printer->add_text("net_event(pnt, ");
+        // Host NET_RECEIVE param is `_pnt` (see net_receive_args).
+        printer->add_text("net_event(_pnt, ");
         print_vector_elements(arguments, ", ");
         printer->add_text(")");
         return;
