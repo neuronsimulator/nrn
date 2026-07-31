@@ -91,7 +91,8 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-07-31 | GPU-P2-mpi-gap | — | MPI native/gap ctests green (`nrnmpi_init`); partial-present ownership; thresh hit list off NrnThread; ctest `neuron_gpu_native_nt2_gap`; Status hygiene (no longer SEGV D). |
 | 2026-07-31 | GPU-P2-netcon-thresh | — | NetCon-heavy multi-thread threshold present residual closed: free-before-copyin in `target_copyin` + OpenACC lastpart serialize; `test_natrans` native uses NetCon topology nthread=4. |
 | 2026-07-31 | GPU-P2-mode-leftovers | — | spikes_mpi mode-1 re-psolve + sequential mode-2+fast_imem green (same free-before-copyin era); product modes 0–2 for serial/MPI spikes + direct. |
-| 2026-07-31 | GPU-P3-models | — | P3 start: reduced_dentate neuron/crn controls green; testcorenrn conc/deriv/kin **online native** green (ACC special + run_native_gpu.py). |
+| 2026-07-31 | GPU-P3-models | — | P3 start: reduced_dentate controls green; testcorenrn conc/deriv/kin **online native** green. |
+| 2026-07-31 | GPU-P3-models | — | More online: bbcore native green; launcher NRN_TEST_HOC fix (false host greens); Vector.play H→D push; vecplay/watch residual. |
 
 ---
 
@@ -369,4 +370,4 @@ Update Status before exit; commit without push.
 
 ## Next (one line — update every session end)
 
-**Next:** P3 continue — testcorenrn online native for bbcore/watch/vecplay (ACC per-mod); reduced_dentate native when ACC mechs ready; nmodl table residual. **Not** Traub `use_gap=1` unless reopened.
+**Next:** P3 — vecplay residual (play→device CURRENT); watch residual (WATCH g/e→device); reduced_dentate native ACC; vecevent/Gfluct3 ACC. **Not** Traub `use_gap=1` unless reopened.
