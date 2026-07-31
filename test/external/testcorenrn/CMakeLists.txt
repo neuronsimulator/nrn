@@ -206,3 +206,42 @@ foreach(test ${direct_tests})
     GROUP testcorenrn_${test}
     REFERENCE_OUTPUT asciispikes::external/tests/testcorenrn/reference/out_${test}.spk)
 endforeach()
+
+# -----------------------------------------------------------------------------
+# P3: NEURON-native GPU online clones (1-rank first).
+# ACC-built specials for Gate B/C; launch enables gpu.backend=native then loads
+# the stock testcorenrn HOC (no CoreNEURON). Offline/bbcore not required here.
+# Gfluct3 / vecevent ACC codegen is incomplete — those models stay later.
+# -----------------------------------------------------------------------------
+if(NRN_ENABLE_GPU)
+  set(native_gpu_test_env NRN_GPU_BACKEND_TEST=native NRN_GPU_PERMUTE=2 OMP_NUM_THREADS=1)
+  # ACC special for simple 1-rank DERIVATIVE/KINETIC/concentration models (shared hash).
+  set(testcorenrn_native_simple_mods mod/hhderiv.mod mod/nacum.mod mod/hhkin.mod)
+  # One comparison group per model (comparison wants a single reference file).
+  foreach(test conc deriv kin)
+    nrn_add_test_group(
+      NAME testcorenrn_${test}_native
+      SUBMODULE tests/testcorenrn
+      MODFILE_PATTERNS ${testcorenrn_native_simple_mods}
+      NRNIVMODL_ARGS
+        -nmodl
+        "${CMAKE_BINARY_DIR}/bin/nmodl"
+        -nmodlflags
+        "passes --inline host --c acc --oacc"
+      SCRIPT_PATTERNS
+        common.hoc
+        defvar.hoc
+        test${test}.hoc
+        ${PROJECT_SOURCE_DIR}/test/external/testcorenrn/run_native_gpu.py
+      OUTPUT asciispikes::out${test}.dat)
+    nrn_add_test(
+      GROUP testcorenrn_${test}_native
+      NAME neuron_gpu_native
+      REQUIRES gpu python
+      ENVIRONMENT ${native_gpu_test_env} HOC_LIBRARY_PATH=.
+      COMMAND special -notatty -c arg_tstop=100 -python run_native_gpu.py test${test}.hoc)
+    nrn_add_test_group_comparison(
+      GROUP testcorenrn_${test}_native
+      REFERENCE_OUTPUT asciispikes::external/tests/testcorenrn/reference/out_${test}.spk)
+  endforeach()
+endif()

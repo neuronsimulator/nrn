@@ -91,6 +91,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-07-31 | GPU-P2-mpi-gap | — | MPI native/gap ctests green (`nrnmpi_init`); partial-present ownership; thresh hit list off NrnThread; ctest `neuron_gpu_native_nt2_gap`; Status hygiene (no longer SEGV D). |
 | 2026-07-31 | GPU-P2-netcon-thresh | — | NetCon-heavy multi-thread threshold present residual closed: free-before-copyin in `target_copyin` + OpenACC lastpart serialize; `test_natrans` native uses NetCon topology nthread=4. |
 | 2026-07-31 | GPU-P2-mode-leftovers | — | spikes_mpi mode-1 re-psolve + sequential mode-2+fast_imem green (same free-before-copyin era); product modes 0–2 for serial/MPI spikes + direct. |
+| 2026-07-31 | GPU-P3-models | — | P3 start: reduced_dentate neuron/crn controls green; testcorenrn conc/deriv/kin **online native** green (ACC special + run_native_gpu.py). |
 
 ---
 
@@ -282,9 +283,10 @@ For each test:
 
 | Item | Status | Notes |
 |------|--------|-------|
-| reduced_dentate (neuron / crn cpu / crn gpu) | | Often path/install |
-| testcorenrn_* **online** native clones | | Adapt, don’t force offline bbcore |
-| nmodl table/kinetic GPU native if missing | | |
+| reduced_dentate neuron / crn cpu / crn gpu | **green** | Controls pass (max_cells=100, tstop=10, 4 ranks). Was P0 **D** (setup_transfer); fixed by gap path. **Native** residual: many mechs + ACC (Gfluct3 ACC codegen fails). |
+| testcorenrn online native: conc, deriv, kin | **green** | ACC special (`hhderiv`/`nacum`/`hhkin`); `run_native_gpu.py`; spike match ref. ctest: `testcorenrn_{conc,deriv,kin}_native::*` |
+| testcorenrn online native: bbcore, watch, vecplay, vecevent, gf, patstim | | vecevent/Gfluct3 ACC incomplete; bbcore/watch/vecplay next |
+| nmodl table/kinetic GPU native if missing | **partial** | kin/deriv product via testcorenrn above; table-specific still open |
 | Offline / saverestore | | Only if product needs; may stay CoreNEURON-only |
 
 ---
