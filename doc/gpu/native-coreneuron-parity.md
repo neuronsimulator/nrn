@@ -97,6 +97,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-07-31 | GPU-P3-models | — | watch native green (173 spikes): nmodl WATCH host activate; host NET_RECEIVE for WATCH mechs + SoA H→D. |
 | 2026-07-31 | GPU-P3-models | — | ACC codegen: present_fp for host NET_RECEIVE/HOC wrappers; net_buf_receive node_data/ppvar/dptr; vecevent ACC builds; Gfluct3 still ACC-device residual. |
 | 2026-07-31 | GPU-P3-models | — | Gfluct3 native green (182 spikes): device-safe mynormrand (no static `_ran_compat` in ACC); host NET_RECEIVE for BBCOREPOINTER + SoA push; BEFORE BREAKPOINT folded into CURRENT; `testcorenrn_gf_native`. |
+| 2026-07-31 | GPU-P3-models | — | vecevent native green (60 spikes sorted): ACC VecStim host NET_RECEIVE + net_event; 4-rank via `NRN_TEST_MPI`/`nrnmpi_init`; `testcorenrn_vecevent_native`. reduced_dentate residual: ACC mechs link + runs; GC EPSP missing (~10 MPP vs ~400). |
 
 ---
 
@@ -288,9 +289,9 @@ For each test:
 
 | Item | Status | Notes |
 |------|--------|-------|
-| reduced_dentate neuron / crn cpu / crn gpu | **green** | Controls pass (max_cells=100, tstop=10, 4 ranks). Was P0 **D** (setup_transfer); fixed by gap path. **Native** residual: ACC mechs link (Gfluct3 device-safe); serial short native **runs** but under-fires (~10 vs ~400 CPU spikes) — parity open. |
-| testcorenrn online native: conc, deriv, kin, bbcore, vecplay, watch, **gf** | **green** | ACC special; `run_native_gpu.py` via **NRN_TEST_HOC**. gf: host NET_RECEIVE BBCOREPOINTER + SoA push; BEFORE folded into CURRENT; device-safe `mynormrand` (Random123 only under `_OPENACC\|\|NRNBBCORE`). |
-| testcorenrn online native: vecevent, patstim | **partial** | vecevent ACC **builds** (present_fp host wrappers + net_event `_pnt`); native spike count still ≠ ref (ref 60). patstim open. |
+| reduced_dentate neuron / crn cpu / crn gpu | **green** | Controls pass (max_cells=100, tstop=10, 4 ranks). **Native residual:** ACC special (28 mods) builds/runs; serial short **10** spikes (MPP VecStim only @ t=3) vs CPU **400**. vrecord: GC 500000 no EPSP after MPP (CPU jumps ~t=5.2); minimal VecStimRd→Exp2Syn+gid_connect native **OK** — residual is multi-comp DGC / network scale, not bare VecStim. |
+| testcorenrn online native: conc, deriv, kin, bbcore, vecplay, watch, **gf**, **vecevent** | **green** | ACC special; `run_native_gpu.py` via **NRN_TEST_HOC**. gf 182; vecevent 60 (4-rank `NRN_TEST_MPI`/`nrnmpi_init`). BBCOREPOINTER: host NET_RECEIVE + SoA push; Gfluct3 BEFORE folded into CURRENT. |
+| testcorenrn online native: patstim | **open** | |
 | nmodl table/kinetic GPU native if missing | **partial** | kin/deriv product via testcorenrn above; table-specific still open |
 | Offline / saverestore | | Only if product needs; may stay CoreNEURON-only |
 
@@ -372,4 +373,4 @@ Update Status before exit; commit without push.
 
 ## Next (one line — update every session end)
 
-**Next:** P3 — reduced_dentate native spike parity (ACC mechs + Gfluct3 green; serial under-fires ~10 vs ~400); then vecevent spike parity (ref 60). **Not** Traub `use_gap=1` unless reopened.
+**Next:** P3 — reduced_dentate native spike parity (GC EPSP missing after MPP; bare VecStim/Exp2Syn OK; diagnose multi-comp DGC / delivery at scale); patstim native. **Not** Traub `use_gap=1` unless reopened.

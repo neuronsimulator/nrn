@@ -211,7 +211,7 @@ endforeach()
 # P3: NEURON-native GPU online clones (1-rank first).
 # ACC-built specials for Gate B/C; launch enables gpu.backend=native then loads
 # the stock testcorenrn HOC (no CoreNEURON). Offline/bbcore not required here.
-# Gfluct3 / vecevent ACC codegen is incomplete — those models stay later.
+# Gfluct3 + vecevent native product ctests below (host BBCOREPOINTER NET_RECEIVE).
 # -----------------------------------------------------------------------------
 if(NRN_ENABLE_GPU)
   set(native_gpu_test_env NRN_GPU_BACKEND_TEST=native NRN_GPU_PERMUTE=2 OMP_NUM_THREADS=1
@@ -289,4 +289,32 @@ if(NRN_ENABLE_GPU)
   nrn_add_test_group_comparison(
     GROUP testcorenrn_gf_native
     REFERENCE_OUTPUT asciispikes::external/tests/testcorenrn/reference/out_gf.spk)
+
+  # vecevent: VecStim (BBCOREPOINTER) host NET_RECEIVE + net_event; 4 ranks → ref 60 spikes.
+  # Launch via h.nrnmpi_init (NRN_TEST_MPI=1), not special -mpi.
+  nrn_add_test_group(
+    NAME testcorenrn_vecevent_native
+    SUBMODULE tests/testcorenrn
+    MODFILE_PATTERNS mod/vecevent.mod
+    NRNIVMODL_ARGS
+      -nmodl
+      "${CMAKE_BINARY_DIR}/bin/nmodl"
+      -nmodlflags
+      "passes --inline host --c acc --oacc"
+    SCRIPT_PATTERNS common.hoc defvar.hoc testvecevent.hoc
+    OUTPUT asciispikes::outvecevent.dat)
+  nrn_add_test(
+    GROUP testcorenrn_vecevent_native
+    NAME neuron_gpu_native
+    REQUIRES gpu mpi python
+    PROCESSORS ${mpi_ranks_vecevent}
+    ENVIRONMENT ${native_gpu_test_env} HOC_LIBRARY_PATH=. NRN_TEST_HOC=testvecevent.hoc
+                NRN_TEST_MPI=1
+    COMMAND
+      ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${mpi_ranks_vecevent} ${MPIEXEC_OVERSUBSCRIBE}
+      ${MPIEXEC_PREFLAGS} special ${MPIEXEC_POSTFLAGS} -notatty -python
+      ${testcorenrn_run_native_gpu})
+  nrn_add_test_group_comparison(
+    GROUP testcorenrn_vecevent_native
+    REFERENCE_OUTPUT asciispikes::external/tests/testcorenrn/reference/out_vecevent.spk)
 endif()

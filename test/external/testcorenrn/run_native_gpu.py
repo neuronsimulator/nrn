@@ -4,6 +4,11 @@ Used by P3 ctests (testcorenrn_*_native). Command shape:
 
   special -notatty -python run_native_gpu.py
 
+Multi-rank (e.g. vecevent 4 ranks):
+
+  mpiexec -n N special -notatty -python run_native_gpu.py
+  with NRN_TEST_MPI=1  (uses h.nrnmpi_init(); never special -mpi under OpenACC)
+
 Do **not** pass the .hoc as a trailing special argument — special treats
 trailing *.hoc as host scripts and runs them before (or instead of) enabling
 native GPU. Select the model via env instead.
@@ -13,6 +18,7 @@ Env:
   NRN_GPU_PERMUTE   (default 2)
   NRN_TEST_TSTOP    (default 100) — pre-declared as arg_tstop so defvar.hoc
                     keeps this value (special -c is unreliable under -python).
+  NRN_TEST_MPI      if set, call h.nrnmpi_init() before enabling native GPU.
 
 Requires ACC-built specials for Gate B/C mechs when the model has CURRENT/STATE
 density/point processes (builtins alone may QUALIFY for NetStim-only models).
@@ -33,6 +39,9 @@ def main(argv: list[str]) -> None:
             "(do not pass the hoc as a special trailing arg)\n"
         )
         sys.exit(2)
+    if os.environ.get("NRN_TEST_MPI"):
+        # Prefer nrnmpi_init over special -mpi (OpenACC multi-process SEGV).
+        h.nrnmpi_init()
     perm = int(os.environ.get("NRN_GPU_PERMUTE", "2"))
     tstop = float(os.environ.get("NRN_TEST_TSTOP", "100"))
     # Pre-declare before any load_file("defvar.hoc") so default_var keeps it.
