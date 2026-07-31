@@ -125,6 +125,9 @@ class CodegenNeuronAccVisitor: public CodegenNeuronCppVisitor {
     void print_present_dptr_pointer_declarations() const;
     [[nodiscard]] std::string present_dptr_deviceptr_clause() const;
 
+    /** Inline BEFORE BREAKPOINT bodies into CURRENT (device path; no separate BA). */
+    void print_before_breakpoint_inline();
+
     bool host_only_parallel_block(BlockType type) const;
     void print_global_variable_enter_data_once() const;
     void print_global_variable_device_update_annotation() const;

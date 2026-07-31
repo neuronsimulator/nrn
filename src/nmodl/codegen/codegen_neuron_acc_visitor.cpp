@@ -613,11 +613,12 @@ void CodegenNeuronAccVisitor::print_net_receive() {
     // Always resolve thread once (shared by GPU enqueue and host path).
     printer->add_line("auto* nt = static_cast<NrnThread*>(_pnt->_vnt);");
 
-    // Stage 2: device net_buf_receive for non-WATCH NET_RECEIVE. WATCH needs
-    // host WatchCondition + host NET_RECEIVE body (nmodl WATCH was a TODO no-op
-    // on device); after host writes RANGE (g,e), push SoA so device CURRENT sees it.
-    const bool watch_host_receive = info.is_watch_used();
-    if (net_receive_buffering_required() && !watch_host_receive) {
+    // Stage 2: device net_buf_receive for ordinary NET_RECEIVE. Host path when:
+    // - WATCH (host WatchCondition + RANGE write for device CURRENT)
+    // - BBCOREPOINTER (Gfluct3 oup/mynormrand: host Random123; push SoA after)
+    const bool host_net_receive =
+        info.is_watch_used() || info.bbcore_pointer_used;
+    if (net_receive_buffering_required() && !host_net_receive) {
         printer->push_block("if (nt && nt->compute_gpu)");
         printer->add_line(
             "Memb_list* ml = nt->_ml_list[_nrn_mechanism_get_type(_pnt->prop)];");
@@ -649,7 +650,7 @@ void CodegenNeuronAccVisitor::print_net_receive() {
     // MOD FUNCTION/PROCEDURE signatures always take _present_fp_* (ACC). Host
     // NET_RECEIVE body must declare them or Gfluct3-style calls fail to compile.
     print_present_fp_pointer_declarations();
-    if (watch_host_receive) {
+    if (info.is_watch_used()) {
         printer->add_line("int _watch_rm = 0;");
     }
     // Reset watch index counter so activates match _watchN_cond numbering.
@@ -657,8 +658,8 @@ void CodegenNeuronAccVisitor::print_net_receive() {
     print_statement_block(*node->get_statement_block(), false, false);
     printer->fmt_line("_nrn_netrec_wsoa_done(_weight_index, {}, _args);",
                       info.num_net_receive_parameters);
-    if (watch_host_receive) {
-        // Device CURRENT reads g/e from SoA; host NET_RECEIVE just wrote them.
+    if (host_net_receive) {
+        // Device CURRENT (and BA fold) need host-written RANGE (g,e / g_e1,g_i1).
         printer->push_block("if (nt && nt->compute_gpu)");
         printer->add_line(
             "neuron::gpu::upload_present_mechanism_soa_to_device(_nrn_mechanism_get_type(_pnt->prop));");
@@ -676,6 +677,18 @@ void CodegenNeuronAccVisitor::print_net_receive_buffering() {
 
     auto* node = info.net_receive_node;
     if (!node) {
+        return;
+    }
+
+    // WATCH / BBCOREPOINTER use host NET_RECEIVE only. Emitting an ACC kernel that
+    // calls VERBATIM RANDOM (Gfluct3 mynormrand) fails device compile even if the
+    // kernel is never entered — stub the device buffer path.
+    if (info.is_watch_used() || info.bbcore_pointer_used) {
+        printer->add_newline(2);
+        printer->fmt_push_block("static void net_buf_receive_{}(NrnThread* /*nt*/)",
+                                info.mod_suffix);
+        printer->add_line("/* host-only NET_RECEIVE (WATCH or BBCOREPOINTER RANDOM) */");
+        printer->pop_block();
         return;
     }
 
@@ -1025,6 +1038,23 @@ void CodegenNeuronAccVisitor::print_nrn_init(bool skip_init_check) {
     use_present_fp_indexing_ = false;
 }
 
+void CodegenNeuronAccVisitor::print_before_breakpoint_inline() {
+    // NEURON ACC does not emit separate hoc_reg_ba for BEFORE BREAKPOINT yet.
+    // Fold into CURRENT so ival/g updates (Gfluct3) run on device after host
+    // NET_RECEIVE has pushed OU state (g_e1/g_i1).
+    for (const auto* block: info.before_after_blocks) {
+        if (!block || !block->is_before_block()) {
+            continue;
+        }
+        auto ba_block =
+            dynamic_cast<const ast::BeforeBlock*>(block)->get_bablock();
+        if (!ba_block || ba_block->get_type()->get_value() != ast::BATYPE_BREAKPOINT) {
+            continue;
+        }
+        print_statement_block(*ba_block->get_statement_block(), false, false);
+    }
+}
+
 void CodegenNeuronAccVisitor::print_nrn_current(const ast::BreakpointBlock& node) {
     use_present_fp_indexing_ = true;
     // Body reads t via get_variable_name → _nrn_thread_t parameter (firstprivate
@@ -1038,6 +1068,7 @@ void CodegenNeuronAccVisitor::print_nrn_current(const ast::BreakpointBlock& node
                             get_parameter_str(args));
     printer->fmt_line("{} = v;", indexed_fp_var(naming::VOLTAGE_UNUSED_VARIABLE));
     printer->add_line("double current = 0.0;");
+    print_before_breakpoint_inline();
     print_statement_block(*block, false, false);
     for (auto& current: info.currents) {
         const auto& name = get_variable_name(current);
@@ -1133,6 +1164,14 @@ void CodegenNeuronAccVisitor::print_nrn_cur_kernel(const ast::BreakpointBlock& n
     const auto& read_statements = ion_read_statements(BlockType::Equation);
     for (auto& statement: read_statements) {
         printer->add_line(statement);
+    }
+
+    // Conductance path does not call nrn_current_*; fold BEFORE BREAKPOINT here.
+    // Caller already set use_present_fp_indexing_ for the ACC CURRENT loop.
+    // Mirror nrn_current_*: store local v into voltage SoA then run BA (uses v).
+    if (!info.conductances.empty()) {
+        printer->fmt_line("{} = v;", indexed_fp_var(naming::VOLTAGE_UNUSED_VARIABLE));
+        print_before_breakpoint_inline();
     }
 
     if (info.conductances.empty()) {

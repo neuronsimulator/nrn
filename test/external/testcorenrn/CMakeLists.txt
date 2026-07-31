@@ -267,4 +267,26 @@ if(NRN_ENABLE_GPU)
   nrn_add_test_group_comparison(
     GROUP testcorenrn_watch_native
     REFERENCE_OUTPUT asciispikes::external/tests/testcorenrn/reference/out_watch.spk)
+
+  # gf: Gfluct3 ACC (host NET_RECEIVE oup/Random123 + SoA push; BEFORE folded into CURRENT).
+  nrn_add_test_group(
+    NAME testcorenrn_gf_native
+    SUBMODULE tests/testcorenrn
+    MODFILE_PATTERNS mod/Gfluct3.mod
+    NRNIVMODL_ARGS
+      -nmodl
+      "${CMAKE_BINARY_DIR}/bin/nmodl"
+      -nmodlflags
+      "passes --inline host --c acc --oacc"
+    SCRIPT_PATTERNS common.hoc defvar.hoc testgf.hoc
+    OUTPUT asciispikes::outgf.dat)
+  nrn_add_test(
+    GROUP testcorenrn_gf_native
+    NAME neuron_gpu_native
+    REQUIRES gpu python
+    ENVIRONMENT ${native_gpu_test_env} HOC_LIBRARY_PATH=. NRN_TEST_HOC=testgf.hoc
+    COMMAND special -notatty -python ${testcorenrn_run_native_gpu})
+  nrn_add_test_group_comparison(
+    GROUP testcorenrn_gf_native
+    REFERENCE_OUTPUT asciispikes::external/tests/testcorenrn/reference/out_gf.spk)
 endif()

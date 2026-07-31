@@ -96,6 +96,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-07-31 | GPU-P3-models | — | vecplay native green (202 spikes): no unconditional host V H→D after fixed_play; column H→D of played RANGE only. |
 | 2026-07-31 | GPU-P3-models | — | watch native green (173 spikes): nmodl WATCH host activate; host NET_RECEIVE for WATCH mechs + SoA H→D. |
 | 2026-07-31 | GPU-P3-models | — | ACC codegen: present_fp for host NET_RECEIVE/HOC wrappers; net_buf_receive node_data/ppvar/dptr; vecevent ACC builds; Gfluct3 still ACC-device residual. |
+| 2026-07-31 | GPU-P3-models | — | Gfluct3 native green (182 spikes): device-safe mynormrand (no static `_ran_compat` in ACC); host NET_RECEIVE for BBCOREPOINTER + SoA push; BEFORE BREAKPOINT folded into CURRENT; `testcorenrn_gf_native`. |
 
 ---
 
@@ -287,10 +288,9 @@ For each test:
 
 | Item | Status | Notes |
 |------|--------|-------|
-| reduced_dentate neuron / crn cpu / crn gpu | **green** | Controls pass (max_cells=100, tstop=10, 4 ranks). Was P0 **D** (setup_transfer); fixed by gap path. **Native** residual: Gfluct3 ACC device (VERBATIM static `_ran_compat` / RANDOM) blocks Gate B/C. |
-| testcorenrn online native: conc, deriv, kin, bbcore, vecplay, watch | **green** | ACC special; `run_native_gpu.py` via **NRN_TEST_HOC**. vecplay: column H→D of played RANGE only. watch: nmodl WATCH host path (was TODO empty); host NET_RECEIVE for WATCH mechs + SoA H→D for device CURRENT. |
-
-| testcorenrn online native: vecevent, gf, patstim | **partial** | vecevent ACC **builds** (present_fp host wrappers + net_event `_pnt`); native spike count still ≠ ref. Gfluct3 ACC **C++ OK**, device OpenACC still fails: VERBATIM static `_ran_compat` / RANDOM in `mynormrand` (ACC routine). |
+| reduced_dentate neuron / crn cpu / crn gpu | **green** | Controls pass (max_cells=100, tstop=10, 4 ranks). Was P0 **D** (setup_transfer); fixed by gap path. **Native** residual: ACC mechs link (Gfluct3 device-safe); serial short native **runs** but under-fires (~10 vs ~400 CPU spikes) — parity open. |
+| testcorenrn online native: conc, deriv, kin, bbcore, vecplay, watch, **gf** | **green** | ACC special; `run_native_gpu.py` via **NRN_TEST_HOC**. gf: host NET_RECEIVE BBCOREPOINTER + SoA push; BEFORE folded into CURRENT; device-safe `mynormrand` (Random123 only under `_OPENACC\|\|NRNBBCORE`). |
+| testcorenrn online native: vecevent, patstim | **partial** | vecevent ACC **builds** (present_fp host wrappers + net_event `_pnt`); native spike count still ≠ ref (ref 60). patstim open. |
 | nmodl table/kinetic GPU native if missing | **partial** | kin/deriv product via testcorenrn above; table-specific still open |
 | Offline / saverestore | | Only if product needs; may stay CoreNEURON-only |
 
@@ -372,4 +372,4 @@ Update Status before exit; commit without push.
 
 ## Next (one line — update every session end)
 
-**Next:** P3 — Gfluct3 ACC device (VERBATIM static `_ran_compat` / device-safe RANDOM) then reduced_dentate native; vecevent native spike parity. vecplay+watch native green. **Not** Traub `use_gap=1` unless reopened.
+**Next:** P3 — reduced_dentate native spike parity (ACC mechs + Gfluct3 green; serial under-fires ~10 vs ~400); then vecevent spike parity (ref 60). **Not** Traub `use_gap=1` unless reopened.
