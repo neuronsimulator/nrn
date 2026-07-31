@@ -452,6 +452,51 @@ void push_target_fields_containing(double* const* host_ptrs,
 
 }  // namespace
 
+bool gather_gap_mech_range_mailbox(double* const* host_ptrs,
+                                   int n,
+                                   int const* mech_types,
+                                   int n_types,
+                                   double* mailbox) {
+#if defined(NRN_ENABLE_GPU)
+    if (!native_gap_gpu_active() || n <= 0 || !host_ptrs || !mailbox) {
+        return false;
+    }
+    // Sparse per-source D→H: mechanism SoA is not a single vec_v. Mid-SoA host
+    // scalars resolve via field base + offset (same helper as target scatter).
+    bool any_device{false};
+    for (int i = 0; i < n; ++i) {
+        double* const p = host_ptrs[i];
+        if (!p) {
+            mailbox[i] = 0.0;
+            continue;
+        }
+        double* d = device_ptr_for_host_scalar(p, mech_types, n_types);
+        if (d) {
+#if defined(_OPENACC)
+            acc_memcpy_from_device(&mailbox[i], d, sizeof(double));
+            any_device = true;
+#else
+            mailbox[i] = *p;
+#endif
+        } else {
+            // Host-only residual (mech not device-resident): use host value.
+            mailbox[i] = *p;
+        }
+    }
+    if (any_device) {
+        ++g_gap_gather_ok;
+    }
+    return any_device;
+#else
+    (void) host_ptrs;
+    (void) n;
+    (void) mech_types;
+    (void) n_types;
+    (void) mailbox;
+    return false;
+#endif
+}
+
 void scatter_gap_targets_to_device(double* const* host_ptrs, int n) {
 #if defined(NRN_ENABLE_GPU)
     if (!native_gap_gpu_active() || n <= 0 || !host_ptrs) {

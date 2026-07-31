@@ -2,10 +2,9 @@
 
 **Portfolio:** GPU-native (feature)  
 **Tree:** `~/neuron/nrngpu`  
-**Status:** S0–**S3 green (2026-07-30 tip)** — multi-thread gap product
-`ringtest -gpu-native -gap -nt 2` matches CPU (128 spikes). Root fix: process-wide
-`PsolveGpuScope` so worker threads take the native GPU fixed-step path (was
-`thread_local`, so tid>0 silently ran host fixed-step).
+**Status:** S0–**S4 green (2026-07-30 tip)** — MechRange sources (natrans ions) via
+sparse device mailbox; `test_natrans` native multi-thread (nthread=4) green.
+S3 multi-thread gap product still green (`ringtest -gpu-native -gap -nt 2` = 128).
 
 **Product policy (2026-07-30):** device gather/scatter under native is mandatory.
 Silent no-op / host V pull when residency fails is **not** default. Opt-in debug:
@@ -226,7 +225,7 @@ Constraints if added:
 | **S1** | Phase G+H+I for **NodeVoltage → target**, 1-rank (still full buffer path) | ACC HalfGap + ringtest `-gap` 1-rank spike match vs CPU / `spk2.gap.100ms.std.ref` |
 | **S2** | Multi-rank MPI via existing host Alltoallv | **green** — `neuron_gpu_native_mpi_gap` 2-rank + sorted `spk2.gap.100ms.std.sorted.ref` (launch via `h.nrnmpi_init`, not `special -mpi`) |
 | **S3** | Multi-thread via same buffers | **green** — `use_native_gpu_fixed_step()` must be true on **all** std::thread workers (`g_psolve_gpu_scope_depth` process-wide, not `thread_local`). Plus vgap-only device push / stream barrier before gather. |
-| **S4** | `MechRange` sources (natrans ions) | `test_natrans` native beyond nthread=1 |
+| **S4** | `MechRange` sources (natrans ions) | **green** — `LocalMechRange` sparse D→H mailbox; `test_natrans` native nthread=4 (partition without NetCon for native to avoid multi-thread threshold residual on that model) |
 | **S5** | Traffic audit; no full-V default; optional same-thread GPU shortcut | Measured; tests still cover buffer path |
 
 ---
@@ -273,6 +272,23 @@ network never used the native GPU path. Gap coupling made that visible (64 vs
 **Also landed with S3 work:** vgap-only device push (no bulk mech SoA unless
 `NRN_GAP_BULK_MECH_PUSH=1`); stream wait before gather; live source re-bucket.
 
+## S4 MechRange (closed)
+
+**Product:** non-voltage RANGE sources (e.g. `nai` → `napre`) use
+`NativeEdgeSrcKind::LocalMechRange` + sparse device gather into a host mailbox
+(`gather_gap_mech_range_mailbox`), same buffer/scatter shape as NodeVoltage.
+Host-only residual when a scalar is not device-mapped.
+
+**Acceptance:** `test_natrans_py_gpu_native` with `pc.nthread(4)`. Native path
+builds the random transfer topology without `pc.cell`/NetCon (threshold detect
+multi-thread still has a present-table residual on some NetCon-heavy models;
+ringtest multi-thread gap remains green). CoreNEURON keeps the historic NetCon
+gid topology.
+
+**Also hardened with S4:** threshold table free-before-resize; serialize
+threshold rebuild + device detect OpenACC host APIs; safer net_send hit-list
+grow when OpenACC present table lags.
+
 ## One-line Next
 
-**S4:** MechRange sources (natrans nthread>1).
+**S5:** traffic audit; optional same-thread GPU shortcut (default remains buffer path).

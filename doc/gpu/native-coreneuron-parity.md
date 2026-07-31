@@ -198,7 +198,7 @@ Do **not** require full 610-test green before P1. P0 only needs: classified fail
 | coreneuron_modtests::test_nmodlrandom_py_gpu_native | **A** | QUALIFIED no: host **noisychan**. |
 | coreneuron_modtests::fast_imem_py_gpu_native | **green** | IClamp `_nrn_thread_t` in nrn_current; device electrode sav via post-cur host RMW (pull i/sav, scale, push sav). |
 | coreneuron_modtests::array_variable_transfer_*_py_gpu_native | **A** | QUALIFIED no: host **green, red**. |
-| coreneuron_modtests::test_natrans_py_gpu_native | **green** | nthread=1; nai transfer host then SoA sync. Multi-thread (4) still OpenACC partial-present residual. |
+| coreneuron_modtests::test_natrans_py_gpu_native | **green** | S4 MechRange nthread=4; sparse LocalMechRange mailbox. Native avoids NetCon (threshold multi-thread residual on some models). |
 | external_ringtest::neuron_gpu_native_mpi | **D** | 2-rank SEGV `check_thresh_presyn_on_device`/acc_copyin; harness 1-rank green. |
 | external_ringtest::neuron_gpu_native_device_nonvint_mpi | **removed** | Scaffolding twin deleted; device nonvint is native default. |
 | external_ringtest::neuron_gpu_native_mpi_gap | **D** | SEGV gap/setup_transfer and/or multi-rank; P2. |
@@ -254,7 +254,7 @@ For each test:
 | test_ba | green | **green** | Host BEFORE/AFTER mechs skip Gate B/C (shared `inc` with host CURRENT/STATE); residual ACC `hoc_reg_ba` still open if BA+device CURRENT needed later. |
 | test_nmodlrandom | green | **green** | ACC `noisychan` via `coreneuron_modtests_native_nmodlrandom` (RANDOM host INITIAL; CURRENT/STATE ACC). |
 | test_nmodlrandom_syntax | green | **green** | after NONVINT |
-| test_natrans | **green** | **green** | Control: valid permute. Native: nthread=1 product green; multi-thread partrans residual. |
+| test_natrans | **green** | **green** | Control: valid permute. Native: S4 MechRange nthread=4 green. |
 | array_variable_transfer_* | green | **green** | ACC green/red via `coreneuron_modtests_native_array_transfer`; modes 0–2 + file_mode pass. |
 | spikes_mpi* | green | **green** | Native product = mode 0 (matches CoreNEURON file_mode MPI). Mode 1 multi-rank re-psolve on shared GPU residual. |
 | test_subworlds | green | **green** | after NONVINT; still P2 if expanded |
@@ -267,7 +267,7 @@ For each test:
 |------|--------|-------|
 | spikes_mpi / file mode native | **green** (mode 0) | mode 1 multi-rank re-psolve residual |
 | test_subworlds native | **green** | |
-| test_natrans native | **green** (nthread=1) | multi-thread residual |
+| test_natrans native | **green** (nthread=4, S4) | threshold multi-thread residual only with NetCon-heavy topology |
 | ringtest gap native + compare | **green** (1+2 rank); **nt>1 residual** | S0–S2 green. S3: multi-thread buffer path improved; product `-gap -nt 2` still 64 vs 128 (thread-1 silent / ELECTRODE HalfGap ACC). |
 | multi-rank device assign | **shared OK** | 2-rank gap works on shared T1000 (`1 GPUs shared by 1 ranks` message per process). `special -mpi` OpenACC multi-process SEGV residual; prefer `nrnmpi_init`. |
 
@@ -360,4 +360,4 @@ Update Status before exit; commit without push.
 
 ## Next (one line — update every session end)
 
-**Next:** P2 S4 MechRange (natrans nthread>1). S3 green: process-wide `PsolveGpuScope` so all worker threads use native GPU fixed-step.
+**Next:** P2 S5 traffic audit / optional same-thread GPU shortcut. S4 green: MechRange mailbox + `test_natrans` native nthread=4.

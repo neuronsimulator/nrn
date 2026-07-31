@@ -9,9 +9,12 @@ from backend_helper import is_native_backend_test
 pc = h.ParallelContext()
 rank = pc.id()
 nhost = pc.nhost()
-# Multi-thread (4) exercises host indexing; native multi-thread partrans still
-# hits OpenACC partial-present on node SoA views — use 1 thread on native for now.
-pc.nthread(1 if is_native_backend_test() else 4)
+# Multi-thread (4) exercises host indexing + S4 MechRange buffer path.
+# Native: avoid pc.cell/NetCon (multi-thread threshold present residual on some
+# models); ownership is the local cells map + SectionList partition.
+# CoreNEURON/host: keep gid NetCon topology as historically.
+_native = is_native_backend_test()
+pc.nthread(4, 1 if _native else 1)
 
 # Want to exercise the internal indexing schemes. So need mpi and threads
 # (host / CoreNEURON control). Random order of sgid calls to source_var.
@@ -45,10 +48,32 @@ endtemplate Cell
 def _test_natrans():
     gids = [gid for gid in range(rank, ncell, nhost)]
     cells = []
+    cells_by_gid = {}
     for gid in range(rank, ncell, nhost):
-        pc.set_gid2node(gid, rank)
-        cells.append(h.Cell())
-        pc.cell(gid, h.NetCon(cells[-1].soma(0.5)._ref_v, None, sec=cells[-1].soma))
+        c = h.Cell()
+        cells.append(c)
+        cells_by_gid[gid] = c
+        if not _native:
+            pc.set_gid2node(gid, rank)
+            pc.cell(gid, h.NetCon(c.soma(0.5)._ref_v, None, sec=c.soma))
+
+    if _native and pc.nthread() > 1:
+        # Explicit round-robin partition so multi-thread owns sources/targets.
+        parts = [h.SectionList() for _ in range(int(pc.nthread()))]
+        for i, gid in enumerate(gids):
+            parts[i % int(pc.nthread())].append(cells_by_gid[gid].soma)
+        for ith in range(int(pc.nthread())):
+            pc.partition(ith, parts[ith])
+
+    def owns(gid):
+        if _native:
+            return gid in cells_by_gid
+        return pc.gid_exists(gid) == 3
+
+    def cell_for(gid):
+        if _native:
+            return cells_by_gid[gid]
+        return pc.gid2cell(gid)
 
     r = h.Random()
     r.Random123(1, 1, 0)
@@ -63,8 +88,8 @@ def _test_natrans():
     del v
 
     for sgid in sgids:
-        if pc.gid_exists(sgid) == 3:
-            sec = pc.gid2cell(sgid).soma
+        if owns(sgid):
+            sec = cell_for(sgid).soma
             pc.source_var(sec(0.5)._ref_nai, sgid, sec=sec)
 
     # ntarget randomly chosen cells are targets for the nsrc sgids
@@ -73,8 +98,8 @@ def _test_natrans():
     for itar in range(ntarget):
         gid = int(r.discunif(0, ncell - 1))
         sgid = sgids[int(r.discunif(0, nsrc - 1))]
-        if pc.gid_exists(gid) == 3:
-            sec = pc.gid2cell(gid).soma
+        if owns(gid):
+            sec = cell_for(gid).soma
             target = h.NaTrans(sec(0.5))
             targets.append(target)
             pc.target_var(target, target._ref_napre, sgid)
@@ -91,8 +116,8 @@ def _test_natrans():
     def run():
         h.finitialize(-65)
         for sgid in sgids:
-            if pc.gid_exists(sgid) == 3:
-                sec = pc.gid2cell(sgid).soma
+            if owns(sgid):
+                sec = cell_for(sgid).soma
                 sec(0.5).nai = float(sgid) / 100.0 + 0.001
         tars = h.List("NaTrans")
         for tar in tars:

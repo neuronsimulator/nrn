@@ -165,6 +165,14 @@ struct ThreadThresholdTable {
 
 std::vector<ThreadThresholdTable> g_tables;
 bool g_tables_dirty = true;
+// Multi-thread lastpart workers call check_thresh concurrently. NVHPC OpenACC
+// host APIs (copyin/delete/update/parallel launch) are not host-thread-safe:
+// concurrent detect produced present-table corruption (partial-present with
+// garbage sizes, size 100 vs 80) and aborted multi-thread native runs with
+// thresholds (natrans, 100-cell NetCon). Serialize rebuild/upload *and* the
+// device detect kernel path.
+std::mutex g_thresh_table_mutex;
+std::mutex g_thresh_device_mutex;
 
 void ensure_tables_sized() {
     if (g_tables.size() < static_cast<std::size_t>(nrn_nthread)) {
@@ -184,6 +192,8 @@ void free_device_arrays(ThreadThresholdTable& table) {
         return;
     }
     // Only delete if the host buffer is still present on the device.
+    // Callers must free *before* host vector resize so data() still matches the
+    // present mapping (device_capacity is the copyin length).
     if (table.h_thvar_row.data() && nrn_target_is_present(table.h_thvar_row.data())) {
         nrn_target_delete(table.h_thvar_row.data(), count);
     }
@@ -201,6 +211,7 @@ void free_device_arrays(ThreadThresholdTable& table) {
 
 void upload_device_arrays(ThreadThresholdTable& table) {
 #if defined(NRN_ENABLE_GPU) && defined(_OPENACC)
+    // Caller already free'd when rebuilding; still free if capacity set (re-upload).
     free_device_arrays(table);
     auto const count = table.h_thvar_row.size();
     if (count == 0) {
@@ -218,6 +229,9 @@ void upload_device_arrays(ThreadThresholdTable& table) {
 void rebuild_thread_table(int tid) {
     ensure_tables_sized();
     auto& table = g_tables[tid];
+    // Free device mapping while host vectors still match device_capacity.
+    free_device_arrays(table);
+
     int const n = collect_threshold_presyn_slots(nrn_threads + tid, nullptr, 0);
     table.slots.resize(static_cast<std::size_t>(n));
     if (n > 0) {
@@ -239,12 +253,19 @@ void rebuild_thread_table(int tid) {
 }
 
 void ensure_thread_table(int tid) {
-    if (g_tables_dirty) {
-        for (int i = 0; i < nrn_nthread; ++i) {
-            rebuild_thread_table(i);
-        }
-        g_tables_dirty = false;
+    (void) tid;
+    // Double-checked locking: workers hit this every detect step; rebuild is rare.
+    if (!g_tables_dirty) {
+        return;
     }
+    std::lock_guard<std::mutex> const lock{g_thresh_table_mutex};
+    if (!g_tables_dirty) {
+        return;
+    }
+    for (int i = 0; i < nrn_nthread; ++i) {
+        rebuild_thread_table(i);
+    }
+    g_tables_dirty = false;
 }
 
 void ensure_thread_net_send_buffer(NrnThread& nt, int min_count) {
@@ -256,9 +277,17 @@ void ensure_thread_net_send_buffer(NrnThread& nt, int min_count) {
         nt._net_send_buffer_size = needed;
         nt._net_send_buffer = static_cast<int*>(std::calloc(nt._net_send_buffer_size, sizeof(int)));
         if (old) {
+            // Must drop OpenACC present even if NEURON present-table missed it
+            // (pragma copyin paths). Otherwise host allocator may reuse the
+            // address for a larger buffer → partial-present (size 80 vs 100).
             if (nrn_target_is_present(old)) {
                 nrn_target_delete(old, static_cast<std::size_t>(old_size));
             }
+#if defined(NRN_ENABLE_GPU) && defined(_OPENACC)
+            else if (acc_is_present(old, static_cast<std::size_t>(old_size) * sizeof(int))) {
+                acc_delete(old, static_cast<std::size_t>(old_size) * sizeof(int));
+            }
+#endif
             std::free(old);
         }
     }
@@ -267,6 +296,12 @@ void ensure_thread_net_send_buffer(NrnThread& nt, int min_count) {
         return;
     }
     if (!nrn_target_is_present(nt._net_send_buffer)) {
+        // If OpenACC still has a stale present at this address (orphan), drop it.
+        std::size_t const nbytes =
+            static_cast<std::size_t>(nt._net_send_buffer_size) * sizeof(int);
+        if (acc_is_present(nt._net_send_buffer, nbytes)) {
+            acc_delete(nt._net_send_buffer, nbytes);
+        }
         (void) nrn_target_copyin(nt._net_send_buffer,
                                  static_cast<std::size_t>(nt._net_send_buffer_size));
     }
@@ -311,6 +346,7 @@ void detect_threshold_hits_host(int count,
 }  // namespace
 
 void invalidate_threshold_tables() noexcept {
+    std::lock_guard<std::mutex> const lock{g_thresh_table_mutex};
     g_tables_dirty = true;
     for (auto& table: g_tables) {
         free_device_arrays(table);
@@ -386,10 +422,20 @@ bool check_thresh_presyn_on_device(NrnThread* nt, double teps) noexcept {
         return true;
     }
 
+    // Serialize all OpenACC host APIs for threshold (copyin of nsbuffer + detect
+    // kernel + host updates). Worker std::threads under pc.nthread(n,1) must not
+    // call into the OpenACC runtime concurrently.
+    std::lock_guard<std::mutex> const device_lock{g_thresh_device_mutex};
+
     ensure_thread_net_send_buffer(*nt, count);
 
     if (table.device_capacity != static_cast<std::size_t>(count)) {
-        rebuild_thread_table(nt->id);
+        // Nested lock: g_thresh_table_mutex is only taken here under device_lock,
+        // and ensure_thread_table takes table_mutex alone — no reverse order.
+        std::lock_guard<std::mutex> const lock{g_thresh_table_mutex};
+        if (table.device_capacity != static_cast<std::size_t>(count)) {
+            rebuild_thread_table(nt->id);
+        }
         if (table.device_capacity != static_cast<std::size_t>(count)) {
             return false;
         }

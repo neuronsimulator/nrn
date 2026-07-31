@@ -31,6 +31,19 @@ bool gather_gap_voltage_mailbox(std::vector<std::vector<int>> const& slot_by_tid
                                 double* mailbox,
                                 int n_mailbox);
 
+/**
+ * S4 MechRange: sparse D→H gather of non-voltage RANGE sources into a host mailbox.
+ * host_ptrs[i] is a host scalar (typically mid-SoA ion/RANGE); mech_types lists
+ * candidate mechanism types whose device field bases may contain those scalars.
+ * mailbox[i] receives the device value when mapped, else the host value.
+ * @return true if at least one scalar was read from device.
+ */
+bool gather_gap_mech_range_mailbox(double* const* host_ptrs,
+                                   int n,
+                                   int const* mech_types,
+                                   int n_types,
+                                   double* mailbox);
+
 /** Push insrc_buf to device after MPI exchange. */
 void sync_insrc_buf_to_device(double* insrc_buf, int n_insrc);
 

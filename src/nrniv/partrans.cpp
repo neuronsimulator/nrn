@@ -160,7 +160,13 @@ extern double nrnmpi_transfer_wait_;
 #endif
 
 // Edge source kind for CoreNEURON-style native buffer path (doc/gpu/native-partrans.md).
-enum class NativeEdgeSrcKind : int { LocalVoltage = 0, LocalHost = 1, RemoteInsrc = 2 };
+// LocalMechRange: non-voltage RANGE (ions, …) via sparse device mailbox (S4).
+enum class NativeEdgeSrcKind : int {
+    LocalVoltage = 0,
+    LocalHost = 1,
+    RemoteInsrc = 2,
+    LocalMechRange = 3
+};
 
 struct TransferThreadData {
     int cnt;
@@ -188,6 +194,17 @@ static bool native_gap_tables_valid_ = false;
 // Finitialize may call transfer before ensure_on_device; mailbox would stay 0 and must
 // not overwrite host vgap before the first GPU upload.
 static bool native_mailbox_fresh_ = false;
+
+// S4 MechRange: unique non-voltage RANGE sources (type + field on Node).
+// Resolve host/device scalar live at gather (post-permute / after SoA upload).
+struct NativeMechSrc {
+    Node* nd{};
+    int type{};
+    neuron::container::field_index ix{};
+};
+static std::vector<NativeMechSrc> native_msrc_;
+static std::vector<double> native_msrc_val_;
+static bool native_msrc_fresh_ = false;
 
 // for the case where we need vi = v + vext as the source voltage
 struct SourceViBuf {
@@ -403,12 +420,15 @@ static void clear_native_gap_tables() {
     native_vsrc_val_.clear();
     native_gather_slot_by_tid_.clear();
     native_gather_nd_by_tid_.clear();
+    native_msrc_.clear();
+    native_msrc_val_.clear();
     native_gap_tables_valid_ = false;
     native_mailbox_fresh_ = false;
+    native_msrc_fresh_ = false;
 }
 
-// S0: unique local voltage sources (by Node*) + per-edge kind/slot.
-// v_node_index is resolved live at gather time (post-permute).
+// S0/S4: unique local voltage + MechRange sources + per-edge kind/slot.
+// v_node_index / mech scalar resolved live at gather time (post-permute).
 static void rebuild_native_gap_tables() {
     clear_native_gap_tables();
     if (!transfer_thread_data_ || n_transfer_thread_data_ <= 0) {
@@ -425,6 +445,38 @@ static void rebuild_native_gap_tables() {
         int tid = (nd && nd->_nt) ? nd->_nt->id : 0;
         native_vsrc_tid_.push_back(tid);
         nd_slot.emplace(nd, slot);
+        return slot;
+    };
+    // Key: (Node*, type, field, array_index) → mailbox slot
+    struct MechKey {
+        Node* nd{};
+        int type{};
+        int field{};
+        int array_index{};
+        bool operator==(MechKey const& o) const {
+            return nd == o.nd && type == o.type && field == o.field &&
+                   array_index == o.array_index;
+        }
+    };
+    struct MechKeyHash {
+        size_t operator()(MechKey const& k) const {
+            size_t h = std::hash<void*>{}(k.nd);
+            h ^= std::hash<int>{}(k.type) + 0x9e3779b9 + (h << 6) + (h >> 2);
+            h ^= std::hash<int>{}(k.field) + 0x9e3779b9 + (h << 6) + (h >> 2);
+            h ^= std::hash<int>{}(k.array_index) + 0x9e3779b9 + (h << 6) + (h >> 2);
+            return h;
+        }
+    };
+    std::unordered_map<MechKey, int, MechKeyHash> mech_slot;
+    auto ensure_msrc = [&](Node* nd, int type, neuron::container::field_index ix) -> int {
+        MechKey key{nd, type, ix.field, ix.array_index};
+        auto it = mech_slot.find(key);
+        if (it != mech_slot.end()) {
+            return it->second;
+        }
+        int const slot = static_cast<int>(native_msrc_.size());
+        native_msrc_.push_back(NativeMechSrc{nd, type, ix});
+        mech_slot.emplace(key, slot);
         return slot;
     };
 
@@ -466,7 +518,13 @@ static void rebuild_native_gap_tables() {
         if (search != sgid2srcindex_.end()) {
             Node* nd = visources_[search->second];
             auto it = non_vsrc_update_info_.find(sid);
-            if (it != non_vsrc_update_info_.end() || (nd && nd->extnode) || !nd) {
+            if (it != non_vsrc_update_info_.end() && nd && !nd->extnode) {
+                // S4: non-voltage RANGE (e.g. nai) → MechRange mailbox.
+                int const slot = ensure_msrc(nd, it->second.first, it->second.second);
+                ttd.src_kind[edge] = NativeEdgeSrcKind::LocalMechRange;
+                ttd.src_slot[edge] = slot;
+            } else if ((nd && nd->extnode) || !nd || it != non_vsrc_update_info_.end()) {
+                // ecell v+vext or unresolved non-v: host path (narrow residual).
                 ttd.src_kind[edge] = NativeEdgeSrcKind::LocalHost;
                 ttd.src_slot[edge] = -1;
             } else {
@@ -487,6 +545,7 @@ static void rebuild_native_gap_tables() {
     }
 
     native_vsrc_val_.assign(native_vsrc_nd_.size(), 0.0);
+    native_msrc_val_.assign(native_msrc_.size(), 0.0);
     native_gather_slot_by_tid_.assign(nrn_nthread, {});
     native_gather_nd_by_tid_.assign(nrn_nthread, {});
     for (size_t s = 0; s < native_vsrc_nd_.size(); ++s) {
@@ -499,7 +558,8 @@ static void rebuild_native_gap_tables() {
         native_gather_slot_by_tid_[tid].push_back(static_cast<int>(s));
         native_gather_nd_by_tid_[tid].push_back(nd);
     }
-    native_gap_tables_valid_ = !native_vsrc_nd_.empty() || max_targets_ > 0;
+    native_gap_tables_valid_ = !native_vsrc_nd_.empty() || !native_msrc_.empty() ||
+                               max_targets_ > 0;
 }
 
 // Resolve live v_node_index into parallel arrays for the GPU gather helper.
@@ -873,13 +933,17 @@ static void mpi_transfer() {
 // so same-thread edges still exercise the buffer path (native-partrans.md).
 static void gap_v_transfer_controller() {
     native_mailbox_fresh_ = false;
+    native_msrc_fresh_ = false;
 #if defined(NRN_ENABLE_GPU)
     if (neuron::gpu::enabled() && neuron::gpu::backend_native() && native_gap_tables_valid_ &&
         neuron::gpu::model_is_on_device()) {
-        // Phase G: sparse mailbox gather (CoreNEURON-style). Device owns V.
-        if (!native_vsrc_val_.empty()) {
-            // Multi-thread: wait every stream so post_solve V is complete before gather.
+        // Phase G: sparse mailbox gather (CoreNEURON-style). Device owns V / RANGE.
+        bool const need_stream_wait = !native_vsrc_val_.empty() || !native_msrc_val_.empty();
+        if (need_stream_wait) {
+            // Multi-thread: wait every stream so post_solve / nonvint is complete.
             neuron::gpu::sync_all_device_streams();
+        }
+        if (!native_vsrc_val_.empty()) {
             std::vector<std::vector<int>> live_vnode;
             fill_live_vnode_lists(live_vnode);
             // Re-bucket sources by live Node::_nt each step (rebuild can lag
@@ -934,6 +998,55 @@ static void gap_v_transfer_controller() {
             // Do not write mailbox values back into host node voltages.
             // Device owns V during native psolve; host mirrors of selected sources
             // are not a full SoA and must not be pushed back to the device.
+        }
+        // S4 MechRange: sparse D→H of non-voltage RANGE (nai, …) into mailbox.
+        if (!native_msrc_val_.empty()) {
+            std::vector<double*> host_ptrs(native_msrc_.size(), nullptr);
+            std::unordered_set<int> src_types;
+            for (size_t s = 0; s < native_msrc_.size(); ++s) {
+                NativeMechSrc const& ms = native_msrc_[s];
+                if (!ms.nd) {
+                    continue;
+                }
+                auto dh = non_vsrc_update(ms.nd, ms.type, ms.ix);
+                host_ptrs[s] = static_cast<double*>(dh);
+                src_types.insert(ms.type);
+            }
+            std::vector<int> types(src_types.begin(), src_types.end());
+            native_msrc_fresh_ = neuron::gpu::gather_gap_mech_range_mailbox(
+                host_ptrs.data(),
+                static_cast<int>(host_ptrs.size()),
+                types.empty() ? nullptr : types.data(),
+                static_cast<int>(types.size()),
+                native_msrc_val_.data());
+            // If no device mapping yet (pre-upload / host-only residual), still
+            // use host values already filled by gather; mark fresh so edges read
+            // mailbox (matches host when device missed).
+            if (!native_msrc_fresh_) {
+                for (size_t s = 0; s < native_msrc_.size(); ++s) {
+                    if (host_ptrs[s]) {
+                        native_msrc_val_[s] = *host_ptrs[s];
+                    }
+                }
+                native_msrc_fresh_ = true;
+            }
+            if (std::getenv("NRN_GAP_DEBUG")) {
+                static int monce = 0;
+                if (monce < 3 && !native_msrc_val_.empty()) {
+                    double mn = native_msrc_val_[0], mx = native_msrc_val_[0];
+                    for (double v: native_msrc_val_) {
+                        mn = std::min(mn, v);
+                        mx = std::max(mx, v);
+                    }
+                    std::fprintf(stderr,
+                                 "gap_gather mechrange n=%zu fresh=%d min=%g max=%g\n",
+                                 native_msrc_val_.size(),
+                                 native_msrc_fresh_ ? 1 : 0,
+                                 mn,
+                                 mx);
+                    ++monce;
+                }
+            }
         }
         // When sparse gather cannot map device V: product path fails inside
         // gather_gap_* (hard error). Opt-in host V pull only with
@@ -1020,6 +1133,16 @@ static void thread_transfer(NrnThread* _nt) {
                 int const slot = ttd.src_slot[i];
                 if (insrc_buf_ && slot >= 0 && slot < insrc_buf_size_) {
                     val = insrc_buf_[slot];
+                } else {
+                    val = *(ttd.sv[i]);
+                }
+                break;
+            }
+            case NativeEdgeSrcKind::LocalMechRange: {
+                int const slot = ttd.src_slot[i];
+                if (native_msrc_fresh_ && slot >= 0 &&
+                    static_cast<size_t>(slot) < native_msrc_val_.size()) {
+                    val = native_msrc_val_[slot];
                 } else {
                     val = *(ttd.sv[i]);
                 }

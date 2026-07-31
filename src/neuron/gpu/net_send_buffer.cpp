@@ -430,8 +430,11 @@ void ensure_thread_net_send_buffers(NrnThread* nt) {
         upload_net_send_buffer_to_device(ml);
 #endif
     }
+    // Pre-size host hit list for threshold detect. Prefer nodecount-scale so
+    // check_thresh rarely grows (grow without matching OpenACC delete →
+    // partial-present when the host allocator reuses the address).
     if (!nt->_net_send_buffer && nt->ncell > 0) {
-        nt->_net_send_buffer_size = std::max(8, nt->ncell);
+        nt->_net_send_buffer_size = std::max(8, nt->ncell * 2);
         nt->_net_send_buffer = alloc_buffer<int>(nt->_net_send_buffer_size);
     }
 }
