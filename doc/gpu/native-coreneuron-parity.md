@@ -87,7 +87,8 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-07-29 | GPU-P2-mpi-gap | — | S0+S1: native gap buffer path + ACC HalfGap; 1-rank ringtest gap 128 spikes match CPU (sorted). |
 | 2026-07-29 | GPU-P2-mpi-gap | — | S2: multi-rank MPI gap green — live `v_node_index` MPI outsrc gather (`deviceptr`); 2-rank 128 spikes match sorted `spk2.gap…ref`; ctest via `h.nrnmpi_init` (not `special -mpi` OpenACC SEGV). |
 | 2026-07-30 | GPU-P2-mpi-gap | — | Fail-loud native policy: threshold detect + gap gather/scatter no longer silent host fallback; opt-in `NRN_GPU_THRESH_HOST_FALLBACK` / `NRN_GPU_GAP_HOST_FALLBACK`; counters + `NRN_GPU_THRESH_STATS`. |
-| 2026-07-30 | GPU-P2-mpi-gap | — | S3 partial: multi-thread gap buffers (live tid re-bucket + per-thread target SoA sync) + NMODL ACC dptr `storage_offset`; ringtest `-gap -nt 2` still 64 vs 128 (thread-1 silent; ELECTRODE HalfGap ACC residual). |
+| 2026-07-30 | GPU-P2-mpi-gap | — | S3 partial (then closed): multi-thread gap buffers; later full green `-gap -nt 2/4` (PsolveGpuScope process-wide + OpenACC host mutex + hit list off NrnThread). |
+| 2026-07-31 | GPU-P2-mpi-gap | — | MPI native/gap ctests green (`nrnmpi_init`); partial-present ownership; thresh hit list off NrnThread; ctest `neuron_gpu_native_nt2_gap`; Status hygiene (no longer SEGV D). |
 
 ---
 
@@ -153,7 +154,7 @@ Do **not** require full 610-test green before P1. P0 only needs: classified fail
 |------|--------|-------|
 | Harness ringtest short | **GREEN** | tstop=1: dV=0; matrix noise max \|d\| ~1e-15. `rdcellstate` exits 1 on noise-only diffs (not product-red). |
 | Harness ringtest 688@100 | **GREEN** | 688 spikes both sides; dV=0; max \|d\| ~1e-13 (noise). |
-| ctest native ringtest vs harness | **reconciled** | Harness = **1-rank** `special -python` product gate (green). ctest = **`mpiexec -n 2`** → SEGV in `check_thresh_presyn_on_device`/`acc_copyin` (multi-rank GPU). Not install/lib skew (build + install `libnrniv` same mtime). Gap ctest also SEGV (`nrnmpi_setup_transfer`). → **D/P2**, not cheap env. |
+| ctest native ringtest vs harness | **reconciled → green** | Harness = 1-rank product gate (green). 2-rank ctests green via **`h.nrnmpi_init()`** launch (not `special -mpi` — OpenACC multi-process SEGV on this stack). See `neuron_gpu_native_mpi` / `_mpi_gap`. |
 | Failure table filled | **done** | Clean full suite (no ambient `NRN_GPU_BACKEND_TEST`): **51/610 failed (92% pass)**. See table. |
 | CoreNEURON control smokes | **green** | Green: fornetcon/direct/spikes/units/ba/psolve/netmove/fast_imem/datareturn/natrans `*_py_gpu`. |
 | Cheap env fix landed | **superseded** | P0 temporary CMake `NONVINT=1` then default-on; **env fully removed**. |
@@ -169,9 +170,9 @@ Do **not** require full 610-test green before P1. P0 only needs: classified fail
 |-----------|--------|-----------------|
 | test-solver | **C** | Catch2 SEGV in `SingleCellAndThread` (`test_solver.cpp:319`); “NrnThread 0 not permuted” warning. |
 | unit_tests::benchmarks | **C** | Multicore `prun()` abort / SEGV (`test_multicore.cpp`). |
-| unit_tests::gpu_config | **A/C** | Bare SEGV (no assertion text); unit GPU scaffolding — check in hygiene if blocks P1. |
-| unit_tests::gpu_fadvance | **A** | SEGV in `fixed_step_thread records native dispatch` (`fadvance.cpp:53`); 1/2 cases pass. |
-| unit_tests::gpu_net_receive | **A** | SEGV in NRB upload-on-device case (`net_receive_buffer.cpp:58`); 1/2 pass. |
+| unit_tests::gpu_config | **green** | Was SEGV: link OpenACC flags + stub `cvode_active_`/`nrn_nthread` (2026-07-31). |
+| unit_tests::gpu_fadvance | **green** | Was SEGV: stub `nrn_thread_has_fixed_play` (2026-07-31). |
+| unit_tests::gpu_net_receive | **green** | Was SEGV: define `nrn_is_artificial_`; product null-safe (2026-07-31). |
 | ringtest (internal HOC) | **C** | SEGV in `nrn_rhs` / `finitialize` on `test/ringtest/ring.hoc` (not external GPU harness). |
 | pytest_coreneuron::basic_tests_py3.14 | **C** | SEGV under Python 3.14 + CoreNEURON pytest path. |
 | coverage_tests::cover_tests | **C** | `test_netcvode_cover` AssertionError on `CVode.netconlist` cover case. |
@@ -199,10 +200,11 @@ Do **not** require full 610-test green before P1. P0 only needs: classified fail
 | coreneuron_modtests::fast_imem_py_gpu_native | **green** | IClamp `_nrn_thread_t` in nrn_current; device electrode sav via post-cur host RMW (pull i/sav, scale, push sav). |
 | coreneuron_modtests::array_variable_transfer_*_py_gpu_native | **A** | QUALIFIED no: host **green, red**. |
 | coreneuron_modtests::test_natrans_py_gpu_native | **green** | S4 MechRange nthread=4; sparse LocalMechRange mailbox. Native avoids NetCon (threshold multi-thread residual on some models). |
-| external_ringtest::neuron_gpu_native_mpi | **D** | 2-rank SEGV `check_thresh_presyn_on_device`/acc_copyin; harness 1-rank green. |
+| external_ringtest::neuron_gpu_native_mpi | **green** | 2-rank via `h.nrnmpi_init()` + sorted spikes (not `special -mpi`). |
 | external_ringtest::neuron_gpu_native_device_nonvint_mpi | **removed** | Scaffolding twin deleted; device nonvint is native default. |
-| external_ringtest::neuron_gpu_native_mpi_gap | **D** | SEGV gap/setup_transfer and/or multi-rank; P2. |
-| external_ringtest::compare_neuron_gpu_native_mpi_gap | **D** | Depends on gap test; empty/missing spk compare. |
+| external_ringtest::neuron_gpu_native_mpi_gap | **green** | 2-rank gap 128 spikes; same `nrnmpi_init` launch; sorted spk vs ref. |
+| external_ringtest::compare_neuron_gpu_native_mpi_gap | **green** | Depends on gap test; sorted spk2 match. |
+| external_ringtest::neuron_gpu_native_nt2_gap | **green** | 1-rank `-gap -nt 2` CPU vs native exact 128 (locks old 64-vs-128 residual). |
 | external_ringtest::coreneuron_*_mpi_threads* | **B/C** | SEGV in `nrn_finitialize` (cpu+gpu threads variants). |
 | external_ringtest::compare_results | **C** | Spike ref empty vs 688 lines — dep of failed thread run, not native product. |
 | reduced_dentate::* | **D** | Abort in `pc.setup_transfer()` / model path; P3. |
@@ -268,8 +270,9 @@ For each test:
 | spikes_mpi / file mode native | **green** (mode 0) | mode 1 multi-rank re-psolve residual |
 | test_subworlds native | **green** | |
 | test_natrans native | **green** (nthread=4, S4) | threshold multi-thread residual only with NetCon-heavy topology |
-| ringtest gap native + compare | **green** (1+2 rank; **nt=1,2,4** exact 128) | S0–S5. Old 64-vs-128 was S3 `PsolveGpuScope` thread_local (fixed). nt=4 needs OpenACC host-API serialize + thresh net_send pointer repair (see 2026-07-31). |
-| multi-rank device assign | **shared OK** | 2-rank gap works on shared T1000 (`1 GPUs shared by 1 ranks` message per process). `special -mpi` OpenACC multi-process SEGV residual; prefer `nrnmpi_init`. |
+| ringtest gap native + compare | **green** (1+2 rank; **nt=1,2,4** exact 128) | S0–S5. Multi-thread: process-wide PsolveGpuScope + OpenACC host-API mutex + thresh hit list off `NrnThread` (2026-07-31). ctest: `neuron_gpu_native_mpi_gap`, `compare_…`, `neuron_gpu_native_nt2_gap`. |
+| ringtest non-gap native MPI | **green** | `neuron_gpu_native_mpi` 2-rank via `nrnmpi_init`. |
+| multi-rank device assign | **shared OK** | 2-rank on shared T1000. **Always launch multi-rank native with `h.nrnmpi_init()`** — `special -mpi` OpenACC multi-process SEGV on this stack (do not re-chase as product red). |
 
 ---
 
@@ -360,4 +363,4 @@ Update Status before exit; commit without push.
 
 ## Next (one line — update every session end)
 
-**Next:** P2 residual — multi-thread NetCon threshold present residual (NetCon-heavy models). Thresh hit list no longer on `NrnThread` (OpenACC shell clobber under gap+nt≥4 closed).
+**Next:** P2 leftover residuals only — multi-thread **NetCon-heavy** threshold present (natrans with NetCon topology); spikes_mpi mode-1 re-psolve; sequential mode-2+fast_imem. **Not** ringtest MPI/gap SEGV (green with `nrnmpi_init`). **Not** Traub `use_gap=1` unless reopened (`notes/gpu_native_traub_use_gap.md`).
