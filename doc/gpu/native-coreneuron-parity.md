@@ -94,6 +94,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-07-31 | GPU-P3-models | — | P3 start: reduced_dentate controls green; testcorenrn conc/deriv/kin **online native** green. |
 | 2026-07-31 | GPU-P3-models | — | More online: bbcore native green; launcher NRN_TEST_HOC fix (false host greens); Vector.play H→D push; vecplay/watch residual. |
 | 2026-07-31 | GPU-P3-models | — | vecplay native green (202 spikes): no unconditional host V H→D after fixed_play; column H→D of played RANGE only. |
+| 2026-07-31 | GPU-P3-models | — | watch native green (173 spikes): nmodl WATCH host activate; host NET_RECEIVE for WATCH mechs + SoA H→D. |
 
 ---
 
@@ -286,8 +287,8 @@ For each test:
 | Item | Status | Notes |
 |------|--------|-------|
 | reduced_dentate neuron / crn cpu / crn gpu | **green** | Controls pass (max_cells=100, tstop=10, 4 ranks). Was P0 **D** (setup_transfer); fixed by gap path. **Native** residual: many mechs + ACC (Gfluct3 ACC codegen fails). |
-| testcorenrn online native: conc, deriv, kin, bbcore, vecplay | **green** | ACC special; `run_native_gpu.py` via **NRN_TEST_HOC** (not trailing `.hoc` — special would host-run it). Real GPU spike match ref. vecplay: column H→D of played RANGE only; no unconditional host V H→D (was freezing V at −65). |
-| testcorenrn online native: watch | **residual** | ACC hhwatch WATCH+device CURRENT: host NET_RECEIVE g/e not on device CURRENT path |
+| testcorenrn online native: conc, deriv, kin, bbcore, vecplay, watch | **green** | ACC special; `run_native_gpu.py` via **NRN_TEST_HOC**. vecplay: column H→D of played RANGE only. watch: nmodl WATCH host path (was TODO empty); host NET_RECEIVE for WATCH mechs + SoA H→D for device CURRENT. |
+
 | testcorenrn online native: vecevent, gf, patstim | | vecevent/Gfluct3 ACC codegen incomplete |
 | nmodl table/kinetic GPU native if missing | **partial** | kin/deriv product via testcorenrn above; table-specific still open |
 | Offline / saverestore | | Only if product needs; may stay CoreNEURON-only |
@@ -370,4 +371,4 @@ Update Status before exit; commit without push.
 
 ## Next (one line — update every session end)
 
-**Next:** P3 — watch residual (WATCH g/e→device CURRENT); reduced_dentate native ACC; vecevent/Gfluct3 ACC. vecplay native green. **Not** Traub `use_gap=1` unless reopened.
+**Next:** P3 — reduced_dentate native ACC; vecevent/Gfluct3 ACC. vecplay+watch native green. **Not** Traub `use_gap=1` unless reopened.

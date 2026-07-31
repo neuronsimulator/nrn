@@ -222,7 +222,7 @@ if(NRN_ENABLE_GPU)
   # ACC special shared hash for simple 1-rank models (+ bbcore NetStim-only; extra mechs OK).
   set(testcorenrn_native_simple_mods mod/hhderiv.mod mod/nacum.mod mod/hhkin.mod)
   # Launch: special -python ABS_PATH_RUNNER (hoc via NRN_TEST_HOC; never trailing .hoc).
-  # vecplay: Vector.play into IClamp.amp (column H→D after fixed_play; no V clobber).
+  # vecplay: Vector.play amp column H→D. watch: host WATCH + g/e H→D for device CURRENT.
   foreach(test conc deriv kin bbcore vecplay)
     nrn_add_test_group(
       NAME testcorenrn_${test}_native
@@ -246,5 +246,25 @@ if(NRN_ENABLE_GPU)
       REFERENCE_OUTPUT asciispikes::external/tests/testcorenrn/reference/out_${test}.spk)
   endforeach()
 
-  # watch residual: WATCH g/e → device CURRENT — register once green.
+  # watch needs hhwatch.mod (WATCH + device CURRENT).
+  nrn_add_test_group(
+    NAME testcorenrn_watch_native
+    SUBMODULE tests/testcorenrn
+    MODFILE_PATTERNS mod/hhwatch.mod
+    NRNIVMODL_ARGS
+      -nmodl
+      "${CMAKE_BINARY_DIR}/bin/nmodl"
+      -nmodlflags
+      "passes --inline host --c acc --oacc"
+    SCRIPT_PATTERNS common.hoc defvar.hoc testwatch.hoc
+    OUTPUT asciispikes::outwatch.dat)
+  nrn_add_test(
+    GROUP testcorenrn_watch_native
+    NAME neuron_gpu_native
+    REQUIRES gpu python
+    ENVIRONMENT ${native_gpu_test_env} HOC_LIBRARY_PATH=. NRN_TEST_HOC=testwatch.hoc
+    COMMAND special -notatty -python ${testcorenrn_run_native_gpu})
+  nrn_add_test_group_comparison(
+    GROUP testcorenrn_watch_native
+    REFERENCE_OUTPUT asciispikes::external/tests/testcorenrn/reference/out_watch.spk)
 endif()

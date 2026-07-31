@@ -111,9 +111,10 @@ void CodegenNeuronCppVisitor::print_point_process_function_definitions() {
             printer->push_block("if (_prop)");
             printer->add_line("Datum* _ppvar = _nrn_mechanism_access_dparam(_prop);");
             if (info.is_watch_used()) {
-                printer->fmt_line("_nrn_free_watch(_ppvar, {}, {});",
-                                  info.watch_count,
-                                  info.is_watch_used());
+                // offset = first watch dparam; n = slots (one list head + one per WATCH stmt)
+                int const wstart = first_watch_dparam_index();
+                int const wslots = static_cast<int>(info.watch_statements.size()) + 1;
+                printer->fmt_line("_nrn_free_watch(_ppvar, {}, {});", wstart, wslots);
             }
             if (info.for_netcon_used) {
                 auto fornetcon_data = get_variable_name("fornetcon_data", false);
@@ -998,6 +999,11 @@ std::string CodegenNeuronCppVisitor::get_pointer_name(const std::string& name) c
 std::string CodegenNeuronCppVisitor::get_variable_name(const std::string& name,
                                                        bool use_instance) const {
     std::string varname = update_if_ion_variable_name(name);
+    // Host WATCH cond functions declare local `v = NODEV(_pnt->node)` — do not
+    // rewrite to v_unused SoA (that needs _lmc/id which conds do not have).
+    if (printing_watch_cond_ && varname == "v") {
+        return "v";
+    }
     if (!info.artificial_cell && varname == "v") {
         varname = naming::VOLTAGE_UNUSED_VARIABLE;
     }
@@ -1738,6 +1744,10 @@ void CodegenNeuronCppVisitor::print_net_receive_registration() {
     }
     printer->fmt_line("pnt_receive[mech_type] = nrn_net_receive_{};", info.mod_suffix);
     printer->fmt_line("pnt_receive_size[mech_type] = {};", info.num_net_receive_parameters);
+    if (info.is_watch_used()) {
+        // Global ::hoc_reg_watch_allocate — generated code lives in namespace neuron.
+        printer->add_line("::hoc_reg_watch_allocate(mech_type, _watch_alloc);");
+    }
 }
 
 void CodegenNeuronCppVisitor::print_mechanism_register_nothing() {
@@ -2710,6 +2720,7 @@ void CodegenNeuronCppVisitor::print_compute_functions() {
     print_nrn_cur();
     print_nrn_state();
     print_nrn_jacob();
+    print_watch_support();
     print_net_receive();
     print_net_init();
 }
@@ -3020,7 +3031,10 @@ void CodegenNeuronCppVisitor::print_net_receive() {
 
     rename_net_receive_arguments(*node, *node);  // static method
     print_net_receive_common_code();
-
+    if (info.is_watch_used()) {
+        printer->add_line("int _watch_rm = 0;");
+    }
+    current_watch_statement = 0;
 
     print_statement_block(*node->get_statement_block(), false, false);
 
@@ -3060,9 +3074,106 @@ void CodegenNeuronCppVisitor::print_net_init() {
 /*                            Overloaded visitor routines                               */
 /****************************************************************************************/
 
-/// TODO: Edit for NEURON
-void CodegenNeuronCppVisitor::visit_watch_statement(const ast::WatchStatement& /* node */) {
-    return;
+int CodegenNeuronCppVisitor::first_watch_dparam_index() const {
+    for (const auto& sem: info.semantics) {
+        if (sem.name == naming::WATCH_SEMANTIC) {
+            return sem.index;
+        }
+    }
+    return -1;
+}
+
+void CodegenNeuronCppVisitor::print_watch_support() {
+    if (info.watch_statements.empty()) {
+        return;
+    }
+    int const watch_start = first_watch_dparam_index();
+    if (watch_start < 0) {
+        throw std::runtime_error("WATCH used but no watch dparam semantics registered");
+    }
+
+    // Flatten WATCH expressions in source order (1-based index for _nrn_watch_*).
+    struct FlatWatch {
+        const ast::Watch* watch{};
+        int index{};  // 1-based
+    };
+    std::vector<FlatWatch> flats;
+    int idx = 0;
+    for (const auto* stmt: info.watch_statements) {
+        for (const auto& w: stmt->get_statements()) {
+            flats.push_back(FlatWatch{w.get(), ++idx});
+        }
+    }
+
+    printer->add_newline(2);
+    // hoc_reg_watch_allocate declared in nrniv_mf.h (global, not neuron::).
+    printer->fmt_line("#define _watch_array (_ppvar + {})", watch_start);
+
+    // Condition functions: return (lhs)-(rhs) for '>', -((lhs)-(rhs)) for '<'.
+    printing_watch_cond_ = true;
+    for (const auto& fw: flats) {
+        const auto* watch = fw.watch;
+        printer->fmt_push_block("static double _watch{}_cond(Point_process* _pnt)", fw.index);
+        printer->add_line("Datum* _ppvar = _nrn_mechanism_access_dparam(_pnt->prop);");
+        printer->add_line("(void)_ppvar;");
+        printer->add_line("double v = NODEV(_pnt->node);");
+        auto expr = watch->get_expression();
+        if (!expr || !expr->is_binary_expression()) {
+            printing_watch_cond_ = false;
+            throw std::runtime_error("WATCH condition must be a binary comparison");
+        }
+        auto* bexpr = dynamic_cast<const ast::BinaryExpression*>(expr.get());
+        auto op = bexpr->get_op().get_value();
+        bool const is_less = (op == BOP_LESS || op == BOP_LESS_EQUAL);
+        printer->add_indent();
+        printer->add_text("return ");
+        if (is_less) {
+            printer->add_text("-(");
+        }
+        printer->add_text("(");
+        bexpr->get_lhs()->accept(*this);
+        printer->add_text(") - (");
+        bexpr->get_rhs()->accept(*this);
+        printer->add_text(")");
+        if (is_less) {
+            printer->add_text(")");
+        }
+        printer->add_text(";");
+        printer->add_newline();
+        printer->pop_block();
+        printer->add_newline();
+    }
+    printing_watch_cond_ = false;
+
+    // Pre-allocate WatchCondition slots (called from core2nrn / first activate).
+    printer->push_block("static void _watch_alloc(Datum* _ppvar)");
+    printer->add_line("auto* _pnt = _ppvar[1].get<Point_process*>();");
+    for (const auto& fw: flats) {
+        printer->add_indent();
+        printer->fmt_text("_nrn_watch_allocate(_watch_array, _watch{}_cond, {}, _pnt, ",
+                          fw.index,
+                          fw.index);
+        fw.watch->get_value()->accept(*this);
+        printer->add_text(");");
+        printer->add_newline();
+    }
+    printer->pop_block();
+    printer->add_newline();
+}
+
+void CodegenNeuronCppVisitor::visit_watch_statement(const ast::WatchStatement& node) {
+    // Host NET_RECEIVE path: arm NEURON WatchCondition. Device net_buf_receive
+    // (ACC) overrides this visitor to no-op; WATCH mechs stay on host receive.
+    for (const auto& w: node.get_statements()) {
+        int const wi = ++current_watch_statement;
+        printer->add_indent();
+        printer->fmt_text("_nrn_watch_activate(_watch_array, _watch{}_cond, {}, _pnt, _watch_rm++, ",
+                          wi,
+                          wi);
+        w->get_value()->accept(*this);
+        printer->add_text(");");
+        printer->add_newline();
+    }
 }
 
 void CodegenNeuronCppVisitor::visit_longitudinal_diffusion_block(

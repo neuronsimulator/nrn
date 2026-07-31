@@ -59,6 +59,13 @@ void sync_state_to_device_after_host_lastpart() noexcept;
  */
 void upload_present_model_soa_to_device() noexcept;
 
+/**
+ * Push one mechanism type's present double SoA columns host→device.
+ * Used after host NET_RECEIVE/WATCH writes RANGE (e.g. hhwatch g,e) that device
+ * CURRENT must see on the native path.
+ */
+void upload_present_mechanism_soa_to_device(int type) noexcept;
+
 /** Push host voltages to the device after HOC/VecPlay writes. */
 void batch_upload_to_device();
 

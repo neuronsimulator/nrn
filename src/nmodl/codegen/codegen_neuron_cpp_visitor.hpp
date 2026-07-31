@@ -860,6 +860,17 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
      */
     void print_cvode_setup(const std::string& setup_name, const std::string& update_name);
 
+    /**
+     * Host WATCH support (NEURON WatchCondition path): condition functions,
+     * _watch_alloc, and hoc_reg_watch_allocate. Empty TODO previously left
+     * WATCH as `;` and broke testcorenrn watch under nmodl/ACC.
+     */
+    void print_watch_support();
+    [[nodiscard]] int first_watch_dparam_index() const;
+
+    /** True while emitting `_watchN_cond` (local `v = NODEV`). */
+    mutable bool printing_watch_cond_{false};
+
 
     /****************************************************************************************/
     /*                            Overloaded visitor routines                               */

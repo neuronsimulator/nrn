@@ -21,6 +21,7 @@ void CodegenNeuronAccVisitor::print_standard_includes() {
     printer->add_line("#include <neuron/gpu/net_receive_buffer.hpp>");
     printer->add_line("#include <neuron/gpu/mechanism_phases.hpp>");
     printer->add_line("#include <neuron/gpu/sync.hpp>");
+    printer->add_line("#include <neuron/gpu/download.hpp>");
     printer->add_line("#include <neuron/event_order.hpp>");
     // net_buf_receive needs complete model_sorted_token + nrn_ensure_model_data_are_sorted.
     printer->add_line("#include \"nrn_ansi.h\"");
@@ -437,6 +438,8 @@ void CodegenNeuronAccVisitor::print_compute_functions() {
     print_nrn_cur();
     print_nrn_state();
     print_nrn_jacob();
+    // Host WATCH cond/alloc before NET_RECEIVE (WATCH mechs use host receive).
+    print_watch_support();
     // Stage 2: device NET_RECEIVE kernel + buffering before host pnt_receive (rename once).
     print_net_receive_buffering();
     print_net_receive();
@@ -609,8 +612,11 @@ void CodegenNeuronAccVisitor::print_net_receive() {
     // Always resolve thread once (shared by GPU enqueue and host path).
     printer->add_line("auto* nt = static_cast<NrnThread*>(_pnt->_vnt);");
 
-    // Stage 2: when native GPU fixed step is active, enqueue for device net_buf_receive.
-    if (net_receive_buffering_required()) {
+    // Stage 2: device net_buf_receive for non-WATCH NET_RECEIVE. WATCH needs
+    // host WatchCondition + host NET_RECEIVE body (nmodl WATCH was a TODO no-op
+    // on device); after host writes RANGE (g,e), push SoA so device CURRENT sees it.
+    const bool watch_host_receive = info.is_watch_used();
+    if (net_receive_buffering_required() && !watch_host_receive) {
         printer->push_block("if (nt && nt->compute_gpu)");
         printer->add_line(
             "Memb_list* ml = nt->_ml_list[_nrn_mechanism_get_type(_pnt->prop)];");
@@ -626,7 +632,7 @@ void CodegenNeuronAccVisitor::print_net_receive() {
         printer->pop_block();
     }
 
-    // Host path (CPU backend / non-GPU threads): apply immediately via Weight SoA.
+    // Host path (CPU backend, non-GPU threads, or WATCH mechs under native GPU).
     // (nt already declared above — do not redeclare.)
     printer->add_line("_nrn_mechanism_cache_instance _lmc{_pnt->prop};");
     printer->add_line("auto * _ppvar = _nrn_mechanism_access_dparam(_pnt->prop);");
@@ -639,9 +645,21 @@ void CodegenNeuronAccVisitor::print_net_receive() {
     printer->add_line("Datum * _thread = nullptr;");
     printer->add_line("size_t id = 0;");
     printer->add_line("double t = nt->_t;");
+    if (watch_host_receive) {
+        printer->add_line("int _watch_rm = 0;");
+    }
+    // Reset watch index counter so activates match _watchN_cond numbering.
+    current_watch_statement = 0;
     print_statement_block(*node->get_statement_block(), false, false);
     printer->fmt_line("_nrn_netrec_wsoa_done(_weight_index, {}, _args);",
                       info.num_net_receive_parameters);
+    if (watch_host_receive) {
+        // Device CURRENT reads g/e from SoA; host NET_RECEIVE just wrote them.
+        printer->push_block("if (nt && nt->compute_gpu)");
+        printer->add_line(
+            "neuron::gpu::upload_present_mechanism_soa_to_device(_nrn_mechanism_get_type(_pnt->prop));");
+        printer->pop_block();
+    }
     printer->add_newline();
     printer->pop_block();
     printing_net_receive = false;
@@ -1399,6 +1417,8 @@ void CodegenNeuronAccVisitor::print_make_instance() const {
     printer->pop_block(";");
     printer->pop_block();
 
+    // Host NET_RECEIVE / HOC path: cache_instance (single Prop). Must still fill
+    // global/area — incomplete `0` left inst.global null and WATCH+GLOBAL mechs SEGV.
     printer->add_newline(2);
     printer->fmt_push_block("static {} make_instance_{}(_nrn_mechanism_cache_instance* _lmc)",
                             instance_struct(),
@@ -1407,7 +1427,27 @@ void CodegenNeuronAccVisitor::print_make_instance() const {
     printer->fmt_line("return {}();", instance_struct());
     printer->pop_block_nl(2);
     printer->fmt_push_block("return {}", instance_struct());
-    printer->add_line("0");
+    std::vector<std::string> host_inst_args;
+    for (auto const& [var, type]: info.neuron_global_variables) {
+        host_inst_args.push_back(fmt::format("&::{0}", var->get_name()));
+    }
+    host_inst_args.emplace_back("0");  // data_offset
+    const auto codegen_int_variables_size_h = codegen_int_variables.size();
+    for (size_t i = 0; i < codegen_int_variables_size_h; ++i) {
+        const auto& var = codegen_int_variables[i];
+        auto sem = info.semantics[i].name;
+        if (var.is_index || var.is_integer || var.is_vdata) {
+            continue;
+        }
+        if (sem == naming::POINTER_SEMANTIC || sem == naming::RANDOM_SEMANTIC) {
+            continue;
+        }
+        host_inst_args.push_back(fmt::format("_lmc->template dptr_field_ptr<{}>()", i));
+    }
+    if (!codegen_global_variables.empty()) {
+        host_inst_args.push_back(fmt::format("&{0}", global_struct_instance()));
+    }
+    printer->add_multi_line(fmt::format("{}", fmt::join(host_inst_args, ",\n")));
     printer->pop_block(";");
     printer->pop_block();
 }
@@ -1475,6 +1515,15 @@ void CodegenNeuronAccVisitor::print_entrypoint_setup_code_from_memb_list() {
                           thread_variables_struct(),
                           info.thread_var_thread_id);
     }
+}
+
+void CodegenNeuronAccVisitor::visit_watch_statement(const ast::WatchStatement& node) {
+    // Device net_buf_receive cannot arm host WatchCondition. WATCH mechs use
+    // host NET_RECEIVE (see print_net_receive); skip WATCH in the device kernel.
+    if (printing_net_buf_receive_kernel_) {
+        return;
+    }
+    CodegenNeuronCppVisitor::visit_watch_statement(node);
 }
 
 }  // namespace codegen

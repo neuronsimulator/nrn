@@ -154,6 +154,20 @@ void upload_present_model_soa_to_device() noexcept {
 #endif
 }
 
+void upload_present_mechanism_soa_to_device(int type) noexcept {
+#if defined(NRN_ENABLE_GPU)
+    if (!enabled() || !backend_native() || !model_is_on_device()) {
+        return;
+    }
+    if (!neuron::model().is_valid_mechanism(type)) {
+        return;
+    }
+    upload_soa_storage_to_device(neuron::model().mechanism_data(type));
+#else
+    (void) type;
+#endif
+}
+
 std::size_t download_flush_interval() noexcept {
     return g_flush_interval;
 }

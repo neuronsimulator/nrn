@@ -114,6 +114,8 @@ void nrn_net_move(Datum*, Point_process*, double);
 
 typedef void (*NrnWatchAllocateFunc_t)(Datum*);
 extern NrnWatchAllocateFunc_t* nrn_watch_allocate_;
+/** Register per-type WatchCondition pre-allocator (from MOD WATCH). */
+void hoc_reg_watch_allocate(int type, NrnWatchAllocateFunc_t waf);
 
 void* nrn_pool_alloc(void* pool);
 void* nrn_pool_create(long count, int itemsize);

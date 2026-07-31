@@ -108,6 +108,8 @@ class CodegenNeuronAccVisitor: public CodegenNeuronCppVisitor {
 
     void print_entrypoint_setup_code_from_memb_list() override;
 
+    void visit_watch_statement(const ast::WatchStatement& node) override;
+
   private:
     /** When true, RANGE reads use _present_fp_* (OpenACC kernel); else _lmc.fpfield (HOC/net_receive). */
     mutable bool use_present_fp_indexing_{false};
