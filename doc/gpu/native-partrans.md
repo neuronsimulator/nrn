@@ -225,7 +225,7 @@ Constraints if added:
 | **S1** | Phase G+H+I for **NodeVoltage → target**, 1-rank (still full buffer path) | ACC HalfGap + ringtest `-gap` 1-rank spike match vs CPU / `spk2.gap.100ms.std.ref` |
 | **S2** | Multi-rank MPI via existing host Alltoallv | **green** — `neuron_gpu_native_mpi_gap` 2-rank + sorted `spk2.gap.100ms.std.sorted.ref` (launch via `h.nrnmpi_init`, not `special -mpi`) |
 | **S3** | Multi-thread via same buffers | **green** — `use_native_gpu_fixed_step()` must be true on **all** std::thread workers (`g_psolve_gpu_scope_depth` process-wide, not `thread_local`). Plus vgap-only device push / stream barrier before gather. |
-| **S4** | `MechRange` sources (natrans ions) | **green** — `LocalMechRange` sparse D→H mailbox; `test_natrans` native nthread=4 (partition without NetCon for native to avoid multi-thread threshold residual on that model) |
+| **S4** | `MechRange` sources (natrans ions) | **green** — `LocalMechRange` sparse D→H mailbox; `test_natrans` native nthread=4 with **NetCon** topology (threshold multi-thread residual closed 2026-07-31) |
 | **S5** | Traffic audit; no full-V default; optional same-thread GPU shortcut | **green** — `NRN_GAP_TRAFFIC_STATS=1` atexit report; product path `full_v_pulls=0` `bulk_mech_pushes=0`; same-thread opt-in `NRN_GAP_SAME_THREAD_DEVICE=1` (default off) |
 
 ---
@@ -320,6 +320,6 @@ complete. **Default off** so ctests still exercise the CoreNEURON-style buffer p
 
 ## One-line Next
 
-**P2 residual / S5+:** multi-thread **NetCon-heavy** threshold present residual
-(natrans-style NetCon topology only). Ringtest gap multi-thread + MPI ctests are
-**green** (exact 128; launch via `h.nrnmpi_init`, not `special -mpi`).
+**P2 residual / S5+:** NetCon-heavy multi-thread threshold present **closed**
+(2026-07-31). Remaining P2 leftovers: spikes_mpi mode-1; sequential mode-2+fast_imem.
+Ringtest gap multi-thread + MPI ctests **green** (exact 128; `h.nrnmpi_init`).

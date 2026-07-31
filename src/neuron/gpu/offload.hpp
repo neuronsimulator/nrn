@@ -29,6 +29,8 @@
 #define nrn_pragma_omp(x) nrn_gpu_pragma_omp(x)
 
 #include <cstddef>
+#include <cstdio>
+#include <cstdlib>
 #include <stdexcept>
 #include <string_view>
 #include <typeinfo>
@@ -185,10 +187,30 @@ T* target_copyin(std::string_view file, int line, const T* h_ptr, std::size_t le
 #if defined(NRN_ENABLE_GPU) && !defined(NRN_PREFER_OPENMP_OFFLOAD) && defined(_OPENACC)
     // Host allocator reuse after free-without-acc_delete leaves a smaller present
     // span at the same address → acc_copyin(new size) aborts partial-present.
+    // Always drop any present span that is not exactly nbytes before copyin.
+    // Also drop exact-size maps so we never accumulate present refcounts across
+    // free-before-resize rebuilds (presentcount:0+N failures under multi-thread).
     if (h_ptr) {
         void* const h = const_cast<T*>(h_ptr);
-        if (!acc_is_present(h, nbytes) && acc_is_present(h, 1)) {
-            target_drop_present_unknown_size(h);
+        if (acc_is_present(h, 1)) {
+            if (acc_is_present(h, nbytes)) {
+                // Exact size already mapped: delete then fresh copyin (refcount 1).
+                acc_delete(h, nbytes);
+            } else {
+                // Smaller/unknown span at same address — binary-search drop.
+                if (std::getenv("NRN_GPU_DEBUG") && std::getenv("NRN_GPU_DEBUG")[0] == '1') {
+                    std::fprintf(stderr,
+                                 "%.*s:%d: target_copyin drop partial-present before "
+                                 "copyin len=%zu nbytes=%zu h=%p\n",
+                                 static_cast<int>(file.size()),
+                                 file.data(),
+                                 line,
+                                 len,
+                                 nbytes,
+                                 h);
+                }
+                target_drop_present_unknown_size(h);
+            }
         }
     }
     d_ptr = static_cast<T*>(acc_copyin(const_cast<T*>(h_ptr), nbytes));

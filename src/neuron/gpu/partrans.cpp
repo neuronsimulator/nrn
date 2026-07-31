@@ -125,13 +125,31 @@ void sync_soa_storage_to_device(Storage const& storage) {
         });
 }
 
+// Track last copyin length so a grown mailbox never hits partial-present
+// (present-at-address alone is not enough when n_mailbox increases).
+int g_mailbox_device_n = 0;
+double* g_mailbox_device_host = nullptr;
+
 void ensure_mailbox_on_device(double* mailbox, int n_mailbox) {
     if (!mailbox || n_mailbox <= 0) {
         return;
     }
-    if (!nrn_target_is_present(mailbox)) {
-        nrn_target_copyin(mailbox, static_cast<std::size_t>(n_mailbox));
+    // Free-before-grow / free-before-rebind: same host pointer with a larger
+    // length (or a new pointer at a recycled address) must not keep a smaller map.
+    if (g_mailbox_device_host == mailbox && g_mailbox_device_n >= n_mailbox &&
+        nrn_target_is_present(mailbox)) {
+        return;
     }
+    if (g_mailbox_device_host && g_mailbox_device_n > 0 &&
+        nrn_target_is_present(g_mailbox_device_host)) {
+        nrn_target_delete(g_mailbox_device_host, static_cast<std::size_t>(g_mailbox_device_n));
+    } else if (nrn_target_is_present(mailbox)) {
+        // Stale size unknown — binary-search drop (not acc_delete of guessed len).
+        target_drop_present_unknown_size(mailbox);
+    }
+    nrn_target_copyin(mailbox, static_cast<std::size_t>(n_mailbox));
+    g_mailbox_device_host = mailbox;
+    g_mailbox_device_n = n_mailbox;
 }
 
 }  // namespace

@@ -15,6 +15,7 @@
 #include "nrncvode.h"
 #include "spmatrix.h"
 
+#include <memory>
 #include <vector>
 
 #if defined(NRN_ENABLE_GPU)
@@ -23,6 +24,7 @@
 #include "neuron/gpu/download.hpp"
 #include "neuron/gpu/fadvance_gpu.hpp"
 #include "neuron/gpu/lastpart.hpp"
+#include "neuron/gpu/offload.hpp"
 #include "neuron/gpu/trajectory.hpp"
 #include "neuron/gpu/net_events.hpp"
 #include "neuron/gpu/post_solve.hpp"
@@ -566,6 +568,20 @@ extern void nrn_extra_scatter_gather(int direction, int tid);
 void nrn_fixed_step_lastpart(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
     auto* const nth = &nt;
     CTBEGIN;
+#if defined(NRN_ENABLE_GPU)
+    // When nrnthread_v_transfer_ is set, lastpart runs as a *second* multi-thread
+    // job (after gap/partrans gather on the main thread) — not nested inside
+    // fixed_step_thread's OpenACCHostApiLock. NVHPC OpenACC host APIs are not
+    // host-thread-safe: concurrent nonvint + NetCon threshold present maps
+    // corrupt the present table (partial-present size 100 vs 80 on natrans
+    // NetCon-heavy multi-thread). Serialize the whole lastpart body. Recursive
+    // mutex: when lastpart is nested under fixed_step_thread (no transfer),
+    // this is a no-cost re-lock.
+    std::unique_ptr<neuron::gpu::OpenACCHostApiLock> openacc_lastpart_lock;
+    if (neuron::gpu::use_native_gpu_fixed_step()) {
+        openacc_lastpart_lock = std::make_unique<neuron::gpu::OpenACCHostApiLock>();
+    }
+#endif
 #if ELIMINATE_T_ROUNDOFF
     nth->nrn_ndt_ += .5;
     nth->_t = nrn_tbase_ + nth->nrn_ndt_ * nrn_dt_;

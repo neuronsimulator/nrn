@@ -207,26 +207,28 @@ void free_device_arrays(ThreadThresholdTable& table) {
 #if defined(NRN_ENABLE_GPU) && defined(_OPENACC)
     free_hit_device(table);
     auto const count = table.device_capacity;
-    if (count == 0) {
-        return;
-    }
     // Process-exit path: CUDA/OpenACC may already be deinitialized. Skip acc_delete.
     if (device_resources_finalized()) {
         table.device_capacity = 0;
         return;
     }
-    // Only delete if the host buffer is still present on the device.
-    // Callers must free *before* host vector resize so data() still matches the
-    // present mapping (device_capacity is the copyin length).
-    if (table.h_thvar_row.data() && nrn_target_is_present(table.h_thvar_row.data())) {
-        nrn_target_delete(table.h_thvar_row.data(), count);
-    }
-    if (table.h_threshold.data() && nrn_target_is_present(table.h_threshold.data())) {
-        nrn_target_delete(table.h_threshold.data(), count);
-    }
-    if (table.h_flag.data() && nrn_target_is_present(table.h_flag.data())) {
-        nrn_target_delete(table.h_flag.data(), count);
-    }
+    // Free-before-resize: callers must free *before* host vector resize so data()
+    // still matches the present mapping (device_capacity is the copyin length).
+    // If capacity was lost but the address is still present, binary-search drop
+    // (do not acc_delete(len=1) — that can leave a partial map of a larger span).
+    auto drop_col = [](auto* p, std::size_t n) {
+        if (!p || !nrn_target_is_present(p)) {
+            return;
+        }
+        if (n > 0) {
+            nrn_target_delete(p, n);
+        } else {
+            target_drop_present_unknown_size(p);
+        }
+    };
+    drop_col(table.h_thvar_row.data(), count);
+    drop_col(table.h_threshold.data(), count);
+    drop_col(table.h_flag.data(), count);
     table.device_capacity = 0;
 #else
     (void) table;
@@ -421,6 +423,9 @@ bool check_thresh_presyn_on_device(NrnThread* nt, double teps) noexcept {
         return false;
     }
     phase_timer::Scope const timer{phase_timer::Id::deliver_events};
+    // Serialize OpenACC *before* ensure_thread_table: rebuild does free/copyin.
+    // Nested under fixed_step / lastpart locks (recursive mutex).
+    OpenACCHostApiLock const openacc_lock;
     ensure_thread_table(nt->id);
     auto& table = g_tables[nt->id];
     int const count = static_cast<int>(table.slots.size());
@@ -429,11 +434,6 @@ bool check_thresh_presyn_on_device(NrnThread* nt, double teps) noexcept {
     if (count == 0) {
         return true;
     }
-
-    // Serialize all OpenACC host APIs for threshold (copyin of hit list + detect
-    // kernel + host updates). Worker std::threads under pc.nthread(n,1) must not
-    // call into the OpenACC runtime concurrently (same mutex as net_send upload).
-    OpenACCHostApiLock const openacc_lock;
 
     if (table.device_capacity != static_cast<std::size_t>(count)) {
         // Nested lock: table_mutex only taken here under OpenACCHostApiLock,

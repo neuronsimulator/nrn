@@ -4,17 +4,13 @@ from pathlib import Path
 
 # backend_helper lives next to other coreneuron modtests
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "coreneuron"))
-from backend_helper import is_native_backend_test
 
 pc = h.ParallelContext()
 rank = pc.id()
 nhost = pc.nhost()
-# Multi-thread (4) exercises host indexing + S4 MechRange buffer path.
-# Native (NRN_GPU_BACKEND_TEST=native only): avoid pc.cell/NetCon — multi-thread
-# threshold still has a present-table residual on some NetCon-heavy models;
-# ownership is the local cells map + SectionList partition.
-# Host / CoreNEURON: historic gid NetCon topology.
-_native = is_native_backend_test()
+# Multi-thread (4) exercises host indexing + S4 MechRange buffer path +
+# NetCon-heavy multi-thread threshold present (P2 residual closed: free-before-
+# copyin in target_copyin + OpenACC host-API serialize on lastpart).
 # Real worker std::threads when nthread>1 (second arg 1).
 pc.nthread(4, 1)
 
@@ -55,11 +51,10 @@ def _test_natrans():
         c = h.Cell()
         cells.append(c)
         cells_by_gid[gid] = c
-        if not _native:
-            pc.set_gid2node(gid, rank)
-            pc.cell(gid, h.NetCon(c.soma(0.5)._ref_v, None, sec=c.soma))
+        pc.set_gid2node(gid, rank)
+        pc.cell(gid, h.NetCon(c.soma(0.5)._ref_v, None, sec=c.soma))
 
-    if _native and pc.nthread() > 1:
+    if pc.nthread() > 1:
         # Explicit round-robin partition so multi-thread owns sources/targets.
         parts = [h.SectionList() for _ in range(int(pc.nthread()))]
         for i, gid in enumerate(gids):
@@ -68,13 +63,9 @@ def _test_natrans():
             pc.partition(ith, parts[ith])
 
     def owns(gid):
-        if _native:
-            return gid in cells_by_gid
         return pc.gid_exists(gid) == 3
 
     def cell_for(gid):
-        if _native:
-            return cells_by_gid[gid]
         return pc.gid2cell(gid)
 
     r = h.Random()
