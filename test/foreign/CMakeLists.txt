@@ -18,17 +18,12 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}")
 
 include(DiscoverNeuron)
 include(VersionGate)
+include(ForeignTestHelpers)
 
 # ---------------------------------------------------------------------------
-# M1: smoke tests only. Integration groups arrive in M2+.
+# Smoke tests (M1)
 # ---------------------------------------------------------------------------
 
-# Placeholder for M2+: custom target that will depend on nrnivmodl jobs.
-add_custom_target(foreign COMMENT "Foreign mechanism builds (none registered yet in M1)")
-
-# Isolate tests from a developer’s ambient PYTHONPATH (build-tree NEURON).
-# Keep the foreign Python’s directory first on PATH so nrniv/nrnivmodl resolve
-# to the same environment used for discovery.
 get_filename_component(_nrn_foreign_py_bindir "${NRN_FOREIGN_PYTHON}" DIRECTORY)
 set(_nrn_foreign_test_env "PYTHONPATH=" "PATH=${_nrn_foreign_py_bindir}:$ENV{PATH}")
 
@@ -50,7 +45,6 @@ set_tests_properties(
   foreign::smoke_import PROPERTIES LABELS "foreign;serial;smoke" TIMEOUT 60 ENVIRONMENT
                                    "${_nrn_foreign_test_env}")
 
-# neuron.test() is the classic wheel smoke; slower than import-only.
 option(NRN_FOREIGN_SMOKE_NEURON_TEST "Run neuron.test() as a foreign smoke test" ON)
 if(NRN_FOREIGN_SMOKE_NEURON_TEST)
   add_test(
@@ -62,5 +56,44 @@ if(NRN_FOREIGN_SMOKE_NEURON_TEST)
                                           ENVIRONMENT "${_nrn_foreign_test_env}")
 endif()
 
+# ---------------------------------------------------------------------------
+# M2: first mod-using integration group (pytest + mcna.mod)
+# ---------------------------------------------------------------------------
+
+execute_process(
+  COMMAND "${NRN_FOREIGN_PYTHON}" -c "import pytest"
+  RESULT_VARIABLE _pytest_rc
+  OUTPUT_QUIET ERROR_QUIET)
+if(NOT _pytest_rc EQUAL 0)
+  message(
+    WARNING
+      "pytest is not installed for ${NRN_FOREIGN_PYTHON}. "
+      "Install with: \"${NRN_FOREIGN_PYTHON}\" -m pip install pytest\n"
+      "Skipping pytest integration group.")
+else()
+  nrn_add_test_group(NAME pytest MODFILE_PATTERNS test/pytest/*.mod)
+  nrn_foreign_note_nrnivmodl_group(pytest)
+  nrn_add_test(
+    GROUP pytest
+    NAME basic_tests
+    COMMAND "${NRN_FOREIGN_PYTHON}" -m pytest --capture=tee-sys "./test/pytest"
+    SCRIPT_PATTERNS "test/pytest/*.json" "test/pytest/*.py")
+  set_tests_properties(pytest::basic_tests PROPERTIES LABELS "foreign;serial;pytest")
+  # copy-scripts-* is ALL in the helper; also hang it off `foreign` so
+  # `cmake --build --target foreign` prepares scripts + special.
+  if(TARGET copy-scripts-pytest-basic_tests)
+    list(APPEND NRN_FOREIGN_NRNIVMODL_TARGETS copy-scripts-pytest-basic_tests)
+  endif()
+endif()
+
+# Target that builds all foreign nrnivmodl (special) jobs and test prep.
+add_custom_target(foreign COMMENT "Build mechanisms for foreign ctest groups")
+if(NRN_FOREIGN_NRNIVMODL_TARGETS)
+  add_dependencies(foreign ${NRN_FOREIGN_NRNIVMODL_TARGETS})
+  message(STATUS "Foreign prep targets    : ${NRN_FOREIGN_NRNIVMODL_TARGETS}")
+else()
+  message(STATUS "Foreign prep targets    : (none)")
+endif()
+
 message(STATUS "Foreign ctest source root : ${NRN_FOREIGN_SOURCE_ROOT}")
-message(STATUS "Configure complete. Build target 'foreign' (no-op in M1), then ctest.")
+message(STATUS "Configure complete. cmake --build <build> --target foreign && ctest")

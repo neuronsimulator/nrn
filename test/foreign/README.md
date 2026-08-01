@@ -23,7 +23,7 @@ See [PLAN.md](PLAN.md) for milestones and design.
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install -U pip neuron-nightly
+pip install -U pip neuron-nightly pytest
 
 # From the NEURON repo root (this tree):
 cmake -S test/foreign -B build-ctest \
@@ -32,6 +32,7 @@ cmake -S test/foreign -B build-ctest \
 
 cmake --build build-ctest --target foreign
 ctest --test-dir build-ctest --output-on-failure -L smoke
+ctest --test-dir build-ctest --output-on-failure -R 'pytest::'
 ```
 
 `NRN_FOREIGN_ALLOW_SKEW=ON` is required when the wheel’s git revision does not
@@ -60,13 +61,14 @@ Useful cache variables (see `cmake -L` / `CMakeCache.txt`):
 - `NRN_FOREIGN_NRNIV`, `NRN_FOREIGN_NRNIVMODL`
 - `NRN_FOREIGN_FEATURE_NRN_ENABLE_MPI`, `NRN_FOREIGN_FEATURE_NRN_ENABLE_CORENEURON`, …
 
-## Current status (M1)
+## Current status (M2)
 
 - Discovery + version gate
 - Smoke tests: `foreign::smoke_import`, `foreign::smoke_nrniv`, `foreign::smoke_neuron_test`
-- Target `foreign` is a no-op placeholder (mechanism builds in M2+)
+- Target `foreign` runs `nrnivmodl` for registered groups (uses wheel `nrnivmodl`)
+- First mod-using group: `pytest::basic_tests` (`test/pytest`, needs `pytest` package)
 
-## Next (M2+)
+## Next (M3+)
 
-- Foreign `nrnivmodl` and portable integration groups
+- Broader serial portable subset
 - MPI / CoreNEURON registration for local `ctest -R …`
