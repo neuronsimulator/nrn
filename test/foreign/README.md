@@ -31,7 +31,7 @@ git submodule update --init -- test/rxd/testdata   # for RxD comparison data
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install -U pip neuron-nightly pytest matplotlib plotly anywidget
+pip install -U pip neuron-nightly pytest matplotlib plotly anywidget mpi4py
 
 # From the NEURON repo root:
 git submodule update --init -- test/rxd/testdata   # optional but needed for rxd
@@ -42,6 +42,10 @@ cmake -S test/foreign -B build-ctest \
 
 cmake --build build-ctest --target foreign -j
 ctest --test-dir build-ctest -L serial --output-on-failure -j4
+
+# When the wheel has MPI / CoreNEURON and mpiexec is on PATH:
+ctest --test-dir build-ctest -L mpi --output-on-failure -j2
+ctest --test-dir build-ctest -L coreneuron --output-on-failure -j2
 ```
 
 `NRN_FOREIGN_ALLOW_SKEW=ON` is required when the wheel’s git revision does not
@@ -51,13 +55,15 @@ match this checkout (typical for `neuron-nightly` vs a feature branch).
 
 | Filter | Meaning |
 |--------|---------|
-| `-L serial` | Full M3 portable suite (default “done” set) |
+| `-L serial` | Full M3 portable suite (metric C “done” set) |
 | `-L smoke` | Import / nrniv / `neuron.test()` only |
+| `-L mpi` | MPI smoke + parallel + CN+MPI (needs `mpiexec` at configure) |
+| `-L coreneuron` | CoreNEURON CPU suite (skipped if wheel has no CN) |
 | `-L pytest` / `-L hoctests` / `-L rxd` / … | Subsets by group label |
 | `-R 'pytest::\|datahandle::'` | Regex on test names |
 
-MPI and CoreNEURON integration groups are deferred to a later milestone (M4);
-feature discovery already records whether the wheel has them.
+If configure cannot find `mpiexec`, MPI feature is treated as off and no `-L mpi`
+tests are registered (clean skip, not failure).
 
 ## Version policy
 
@@ -95,9 +101,19 @@ Useful cache variables (see `cmake -L` / `CMakeCache.txt`):
 | `rxdmod_tests` | if wheel has RX3D and testdata submodule present |
 | `gjtests` serial | pytest `-k "not par"` |
 
-**Excluded:** Catch2 / API / NMODL unit binaries, MPI tests, CoreNEURON comparison matrix (M4).
+### What is included (M4 — MPI / CoreNEURON)
 
-Target `foreign` builds all registered `nrnivmodl` jobs and copies test scripts.
+| Area | Labels | Notes |
+|------|--------|--------|
+| `mpi_init` | `mpi` | nrniv/python MPI smoke + mpiexec |
+| `parallel` | `mpi` | bas, partrans, netpar, subworld, nrntest_fast |
+| `pytest_coreneuron` | `coreneuron` | serial pytest with CN-enabled special |
+| `coreneuron_standalone` / `coreneuron_modtests` | `coreneuron` | CPU direct/spikes/psolve/… + `inputpresyn` MPI |
+| `gjtests::gj_par` | `mpi` | multi-rank gap junction |
+
+**Excluded:** Catch2 / API / NMODL unit binaries, GPU CoreNEURON matrix.
+
+Target `foreign` builds all registered `nrnivmodl` jobs (including `-coreneuron`) and copies test scripts.
 
 ## Layout
 
@@ -108,6 +124,7 @@ test/foreign/
   VersionGate.cmake
   ForeignTestHelpers.cmake    # NeuronTestHelper foreign adapter
   SerialPortableTests.cmake   # M3 serial groups
+  MpiCoreNeuronTests.cmake    # M4 MPI + CoreNEURON
   probe_neuron.py
   PLAN.md
   README.md

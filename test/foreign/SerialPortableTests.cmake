@@ -1,6 +1,6 @@
 # Serial portable integration tests for foreign (wheel) mode.
 # Included from test/foreign/CMakeLists.txt after ForeignTestHelpers.
-# Excludes: linked C++ units, MPI, CoreNEURON-only paths (see M4).
+# MPI / CoreNEURON groups live in MpiCoreNeuronTests.cmake (M4).
 
 set(_nrn_foreign_pytest_args --capture=tee-sys)
 

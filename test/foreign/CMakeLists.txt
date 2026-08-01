@@ -74,6 +74,7 @@ else()
 endif()
 
 include(SerialPortableTests.cmake)
+include(MpiCoreNeuronTests.cmake)
 
 # Target that builds all foreign nrnivmodl (special) jobs and test prep.
 add_custom_target(foreign COMMENT "Build mechanisms for foreign ctest groups")
