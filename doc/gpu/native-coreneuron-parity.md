@@ -105,6 +105,8 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-08-01 | GPU-P4-gap-scatter | — | Bulk gap scatter (pack vals + device field-base write); de-chatty vs O(n) scalar H→D. Side branch `local/gpu-p4-gap-scatter`. |
 | 2026-08-01 | GPU-P4-gap-scatter | — | Cherry-pick A+B + bulk scatter onto **`local/gpu-native`** (`ade7368d1`, `8dff0c0bf`). |
 | 2026-08-01 | GPU-P4-lastpart-ab | — | Finer lastpart sub-buckets + remeasure; H1 prepare-wait elide abandoned (no clear win). |
+| 2026-08-01 | GPU-P4-lastpart-ab | — | Cherry-pick lastpart sub-buckets onto **`local/gpu-native`** (`9ae97e8e5`). Gap-only P4 closed as residual. |
+| 2026-08-01 | GPU-P4-setup-nonvint-density | — | setup-rhs/lhs sub-buckets; H1 defer per-mech ACC wait (CoreNEURON-like); ringtest noise-flat. |
 
 ---
 
@@ -326,32 +328,30 @@ Phase timer (`NRN_NATIVE_GPU_PHASE_TIMER=1`):
   - **lastpart ~29%** (calls=4000) — deferred multi-thread lastpart wall (includes `thread_transfer` + STATE + deliver)
   - **setup-tree-matrix ~14%**, deliver/solver/post-solve remainder
 - **Dentate (post SoA fix, pre gap instr):** 4 summaries; setup-tree-matrix ~16 s of tracked ~18 s; re-profile after gap instr if useful.
-- **Lastpart sub-buckets (2026-08-01, branch `local/gpu-p4-lastpart-ab`):** nested under coarse lastpart (tracked-total double-counts lastpart + lastpart-*; use absolute seconds). Representative warm 1-rank tstop=100, T1000:
-  - **Gap** runtime ~**2.65–2.9 s**, 128 spikes, **0 scalar H→D/step**:
-    - **setup-tree-matrix ~1.08 s** (largest single bucket)
-    - **lastpart ~0.85 s** of which **lastpart-nonvint ~0.78 s** (≈90% of lastpart); play/record ~0; **lastpart-xfer (host thread_transfer) ~0.004 s**; lastpart-deliver ~0.07 s
-    - gap-scatter ~0.16 s; gap-gather ~0.08 s; matrix-solver ~0.22 s; deliver-events ~0.20 s
-  - **No-gap** runtime ~**2.55–2.7 s**, 688 spikes: same shape — setup-tree-matrix + lastpart-nonvint co-dominate; gap deltas small.
-  - **H1 trial (abandoned):** elide prepare_nonvint stream wait after async `_t` update — no clear win vs noise; keep fence.
-  - Product: harness with phase checkpoint (`prcellstate_native_gpu.sh GID T 1`) noise-green; end-of-run phases=0 prcellstate download residual is pre-existing tip (not this branch).
+- **Lastpart sub-buckets (on tip 2026-08-01):** nested under coarse lastpart (prefer absolute seconds). Gap/no-gap same shape: **setup-tree-matrix + lastpart-nonvint** co-dominate; host gap xfer ~0; scatter ~5%. Gap-only P4 residual **closed** as general fixed-step density (~1.7–2× CN, not gap-chat).
+- **Setup sub-buckets + density H1 (`local/gpu-p4-setup-nonvint-density`):**
+  - **setup-rhs / setup-lhs** nest under setup-tree-matrix (rhs ≈ CURRENT+axial larger than lhs/JACOB on ringtest).
+  - **H1:** ACC codegen no longer waits after every CURRENT/STATE/JACOB (CoreNEURON-like); fences remain at axial, net_send flush, electrode sav, INITIAL, net_buf_receive, finalize_nonvint. Product green (checkpoint dV=0, 688/128 spikes). **Ringtest multi-warm: no clear win vs noise** (~2.6–3.5 s gap, ~2.5–2.8 s no-gap) — keep on explor; re-measure on dentate/heavier models before tip.
+  - Prior abandoned: prepare_nonvint `_t` wait elide.
 
 ### Status — P4
 
 | Item | Status | Notes |
 |------|--------|-------|
 | Wall-time vs CoreNEURON (guide) | **baselined** | Non-gap ~2×; gap ~**1.7–2×** after bulk scatter (runtime ~2.6–3.1 s vs CN ~1.6 s). Dentate ~7–14× still open. |
-| Residual hot-path host traffic audit | **done** | Mid-psolve full SoA on gap path fixed (`finalize_psolve_download` once per psolve). Gap 12 s → 8.3 s. |
-| Gap / deferred lastpart phase timer | **done** | A+B on tip: fine buckets (`gap-gather`/`host`/`insrc`/`scatter`) + traffic host-API counts. |
-| Gap scatter de-chatty | **done (on tip)** | Cherry-picked into **`local/gpu-native`** (2026-08-01): A+B `ade7368d1` + bulk scatter `8dff0c0bf`. Bulk pack + device field-base scatter; **0 scalar H→D/step**. |
-| Lastpart sub-buckets (play/xfer/nonvint/record/deliver) | **done (explor branch)** | `local/gpu-p4-lastpart-ab`. lastpart ≈ **nonvint STATE**; host gap xfer negligible. |
+| Residual hot-path host traffic audit | **done** | Mid-psolve full SoA on gap path fixed. |
+| Gap scatter de-chatty + A+B timers | **done (on tip)** | 0 scalar H→D/step; scatter ~5%. |
+| Gap-only P4 residual | **closed as density** | Same bottleneck as no-gap (setup + nonvint); not gap transfer. |
+| Lastpart sub-buckets | **done (on tip)** | play/xfer/nonvint/record/deliver. |
+| Setup-rhs/lhs sub-buckets | **done (explor)** | `local/gpu-p4-setup-nonvint-density`; cherry-pick timers when wanted. |
+| Defer per-mech ACC wait (H1) | **explor; ringtest flat** | Product-green; no clear ringtest win; re-profile dentate before tip. |
 | Single device-resource owner | open | Only if exit/leak forces. |
 
 ### Residual perf debt (next P4 when reopened)
 
-1. **setup-tree-matrix + lastpart-nonvint** — co-dominate gap and no-gap (~2× CN). Not gap scatter/xfer. Next: CURRENT/STATE **kernel/launch density** (one hypothesis at a time); optional setup-tree-matrix sub-buckets.
-2. **Dentate multi-rank on one GPU** — re-profile with gap instr; multi-process contention likely; compare 1-rank dentate when useful.
-3. Optional: sparse trajectory for `vrecordFraction` product paths if a model forces per-step full SoA via `lastpart_host_phases_required`.
-4. Optional: end-of-run prcellstate phases=0 download residual (checkpoint path is product-green).
+1. **setup-tree-matrix + lastpart-nonvint density** — still ~2× CN on ringtest after H1. Next hypotheses: launch count / occupancy on larger models; fewer phase-boundary waits; dentate multi-rank.
+2. **Dentate multi-rank on one GPU** — re-profile with phase timers; good H1 re-check.
+3. Optional: sparse trajectory for `vrecordFraction`; end-of-run phases=0 prcellstate download residual.
 
 ---
 
@@ -421,17 +421,17 @@ Update Status before exit; commit without push.
 
 ## Next (one line — update every session end)
 
-**Next:** P4 — **setup-tree-matrix + lastpart-nonvint** launch/kernel density (lastpart sub-buckets on `local/gpu-p4-lastpart-ab`; cherry-pick if useful); then **dentate multi-rank**. **Not** Traub `use_gap=1`.
+**Next:** P4 density — re-profile **dentate** (and/or larger models) with setup-rhs/lhs + lastpart sub-buckets; re-evaluate defer-per-mech-wait H1 there. Ringtest residual stays ~2× CN. **Not** Traub `use_gap=1`.
 
 ### Branching (2026-08-01)
 
 | Branch | Role |
 |--------|------|
-| **`local/gpu-native`** | Living tip — includes A+B timers + bulk gap scatter (cherry-pick 2026-08-01) |
+| **`local/gpu-native`** | Living tip — A+B gap timers, bulk scatter, **lastpart sub-buckets** |
 | `local/gpu-native-net-soa` | Historical integration name; keep until remotes/docs catch up (may lag tip) |
 | `local/gpu-p4-gap-phase-ab` | Exploratory archive: A+B only (pre-scatter baseline) |
 | `local/gpu-p4-gap-scatter` | Exploratory archive: bulk scatter parent of tip cherry-picks |
-| `local/gpu-p4-lastpart-ab` | Exploratory: lastpart play/xfer/nonvint/record/deliver sub-buckets + diagnosis |
+| `local/gpu-p4-lastpart-ab` | Exploratory archive: lastpart sub-buckets (now on tip) |
+| `local/gpu-p4-setup-nonvint-density` | Exploratory: setup-rhs/lhs timers + defer per-mech ACC wait H1 |
 
-P4 A+B baseline (pre-scatter): gap-scatter **~55%**, ~**256 scalar H→D/step**.  
-P4 bulk scatter (now on tip): gap-scatter **~5%**, **0 scalar H→D/step**, runtime **~2.6–3.1 s**; bottleneck **setup-tree-matrix + lastpart-nonvint** (not scatter/xfer).
+P4 bulk scatter + lastpart tools on tip; gap-only closed. Density residual: setup-tree-matrix + lastpart-nonvint.
