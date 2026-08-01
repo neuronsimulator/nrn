@@ -227,6 +227,7 @@ Constraints if added:
 | **S3** | Multi-thread via same buffers | **green** — `use_native_gpu_fixed_step()` must be true on **all** std::thread workers (`g_psolve_gpu_scope_depth` process-wide, not `thread_local`). Plus vgap-only device push / stream barrier before gather. |
 | **S4** | `MechRange` sources (natrans ions) | **green** — `LocalMechRange` sparse D→H mailbox; `test_natrans` native nthread=4 with **NetCon** topology (threshold multi-thread residual closed 2026-07-31) |
 | **S5** | Traffic audit; no full-V default; optional same-thread GPU shortcut | **green** — `NRN_GAP_TRAFFIC_STATS=1` atexit report; product path `full_v_pulls=0` `bulk_mech_pushes=0`; same-thread opt-in `NRN_GAP_SAME_THREAD_DEVICE=1` (default off) |
+| **P4 scatter** | Bulk target scatter (de-chatty) | **green (explor `local/gpu-p4-gap-scatter`)** — pack host vals + bulk H→D + device write into field base+offset; ringtest gap 0 scalar H→D/step; was O(n) `memcpy_to_device` |
 
 ---
 

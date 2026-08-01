@@ -502,6 +502,211 @@ void push_target_fields_containing(double* const* host_ptrs,
     }
 }
 
+/**
+ * Resolve host scalar to device field base + row offset (for bulk device scatter).
+ * Prefer mid-SoA field mapping; fall back to direct present of the scalar.
+ * @return true if *out_d_base and *out_off are set.
+ */
+bool resolve_scatter_loc(double* p,
+                         int const* mech_types,
+                         int n_types,
+                         double** out_d_base,
+                         int* out_off) {
+    if (!p || !out_d_base || !out_off) {
+        return false;
+    }
+    if (mech_types && n_types > 0) {
+        for (int ti = 0; ti < n_types; ++ti) {
+            int const type = mech_types[ti];
+            if (!neuron::model().is_valid_mechanism(type)) {
+                continue;
+            }
+            bool found = false;
+            neuron::model().mechanism_data(type).for_each_vector_for_gpu_upload(
+                [&](auto const& /*tag*/, auto const& vec, int /*field_index*/, int /*array_dim*/) {
+                    if (found || vec.empty()) {
+                        return;
+                    }
+                    using Value = typename std::decay_t<decltype(vec)>::value_type;
+                    if constexpr (std::is_same_v<Value, double>) {
+                        double* const base = const_cast<double*>(vec.data());
+                        std::size_t const nvec = vec.size();
+                        if (p < base || p >= base + nvec) {
+                            return;
+                        }
+                        double* d_base = nrn_target_is_present(base);
+                        if (!d_base) {
+                            d_base = static_cast<double*>(acc_deviceptr(base));
+                        }
+                        if (d_base) {
+                            *out_d_base = d_base;
+                            *out_off = static_cast<int>(p - base);
+                            found = true;
+                        }
+                    }
+                });
+            if (found) {
+                return true;
+            }
+        }
+    }
+    // Direct present of scalar (rare for mid-SoA; useful for bare node fields).
+    if (double* d = nrn_target_is_present(p)) {
+        *out_d_base = d;
+        *out_off = 0;
+        return true;
+    }
+    if (double* d = static_cast<double*>(acc_deviceptr(p))) {
+        *out_d_base = d;
+        *out_off = 0;
+        return true;
+    }
+    return false;
+}
+
+/**
+ * CoreNEURON-style scatter: pack host target values, bulk H→D, device write into
+ * field bases via offsets. One host-API bulk update of the value buffer per unique
+ * SoA column (+ copyin of offsets), not O(n) scalar memcpy_to_device.
+ * @return number of targets successfully scheduled on device.
+ */
+int scatter_targets_bulk_device(double* const* host_ptrs,
+                               int n,
+                               int const* mech_types,
+                               int n_types,
+                               int stream_id) {
+    if (!host_ptrs || n <= 0) {
+        return 0;
+    }
+    // Group edges by device field base (ringtest HalfGap: one vgap column).
+    struct Edge {
+        int off;
+        double val;
+    };
+    // Pointer identity of d_base is stable for the step.
+    std::vector<double*> bases;
+    std::vector<std::vector<Edge>> groups;
+    bases.reserve(4);
+    groups.reserve(4);
+
+    auto group_for = [&](double* d_base) -> std::vector<Edge>& {
+        for (size_t g = 0; g < bases.size(); ++g) {
+            if (bases[g] == d_base) {
+                return groups[g];
+            }
+        }
+        bases.push_back(d_base);
+        groups.emplace_back();
+        return groups.back();
+    };
+
+    int ok = 0;
+    for (int i = 0; i < n; ++i) {
+        double* const p = host_ptrs[i];
+        if (!p) {
+            continue;
+        }
+        double* d_base = nullptr;
+        int off = 0;
+        if (!resolve_scatter_loc(p, mech_types, n_types, &d_base, &off) || !d_base) {
+            continue;
+        }
+        group_for(d_base).push_back(Edge{off, *p});
+        ++ok;
+    }
+    if (ok == 0) {
+        return 0;
+    }
+
+    // Persistent host staging for vals/offs (main-thread scatter only; resized;
+    // re-copyin when host pointer / capacity mapping is stale).
+    static std::vector<double> vals_staging;
+    static std::vector<int> offs_staging;
+    static int vals_device_n = 0;
+    static double* vals_device_host = nullptr;
+    static int offs_device_n = 0;
+    static int* offs_device_host = nullptr;
+
+    auto ensure_double_buf = [&](double* host, int nbuf) {
+        if (!host || nbuf <= 0) {
+            return;
+        }
+        if (vals_device_host == host && vals_device_n >= nbuf && nrn_target_is_present(host)) {
+            return;
+        }
+        if (vals_device_host && vals_device_n > 0 && nrn_target_is_present(vals_device_host)) {
+            nrn_target_delete(vals_device_host, static_cast<std::size_t>(vals_device_n));
+        } else if (nrn_target_is_present(host)) {
+            target_drop_present_unknown_size(host);
+        }
+        nrn_target_copyin(host, static_cast<std::size_t>(nbuf));
+        vals_device_host = host;
+        vals_device_n = nbuf;
+    };
+    auto ensure_int_buf = [&](int* host, int nbuf) {
+        if (!host || nbuf <= 0) {
+            return;
+        }
+        if (offs_device_host == host && offs_device_n >= nbuf && nrn_target_is_present(host)) {
+            return;
+        }
+        if (offs_device_host && offs_device_n > 0 && nrn_target_is_present(offs_device_host)) {
+            nrn_target_delete(offs_device_host, static_cast<std::size_t>(offs_device_n));
+        } else if (nrn_target_is_present(host)) {
+            target_drop_present_unknown_size(host);
+        }
+        nrn_target_copyin(host, static_cast<std::size_t>(nbuf));
+        offs_device_host = host;
+        offs_device_n = nbuf;
+    };
+
+    for (size_t g = 0; g < bases.size(); ++g) {
+        auto const& edges = groups[g];
+        int const ne = static_cast<int>(edges.size());
+        if (ne <= 0) {
+            continue;
+        }
+        double* const d_base = bases[g];
+        vals_staging.resize(static_cast<size_t>(ne));
+        offs_staging.resize(static_cast<size_t>(ne));
+        for (int i = 0; i < ne; ++i) {
+            vals_staging[static_cast<size_t>(i)] = edges[static_cast<size_t>(i)].val;
+            offs_staging[static_cast<size_t>(i)] = edges[static_cast<size_t>(i)].off;
+        }
+        double* const vals_p = vals_staging.data();
+        int* const offs_p = offs_staging.data();
+        ensure_double_buf(vals_p, ne);
+        ensure_int_buf(offs_p, ne);
+        // Bulk H→D of packed values (and offsets if mapping was reused with dirty host).
+        nrn_pragma_acc(update device(vals_p [0:ne], offs_p [0:ne]) async(stream_id))
+        nrn_pragma_omp(target update to(vals_p[0:ne], offs_p[0:ne]))
+        gap_traffic_note_h2d_bulk(static_cast<std::size_t>(ne) * (sizeof(double) + sizeof(int)));
+
+        double* d_vals = nrn_target_is_present(vals_p);
+        int* d_offs = nrn_target_is_present(offs_p);
+        if (!d_vals) {
+            d_vals = static_cast<double*>(acc_deviceptr(vals_p));
+        }
+        if (!d_offs) {
+            d_offs = static_cast<int*>(acc_deviceptr(offs_p));
+        }
+        if (!d_vals || !d_offs) {
+            // Fall back: field column push for residual (still not per-scalar).
+            continue;
+        }
+        nrn_pragma_acc(parallel loop deviceptr(d_base, d_vals, d_offs) async(stream_id))
+        nrn_pragma_omp(target teams distribute parallel for simd if(1))
+        for (int i = 0; i < ne; ++i) {
+            int const off = d_offs[i];
+            if (off >= 0) {
+                d_base[off] = d_vals[i];
+            }
+        }
+        nrn_pragma_acc(wait(stream_id))
+    }
+    return ok;
+}
+
 }  // namespace
 
 bool gather_gap_mech_range_mailbox(double* const* host_ptrs,
@@ -555,56 +760,8 @@ bool gather_gap_mech_range_mailbox(double* const* host_ptrs,
 }
 
 void scatter_gap_targets_to_device(double* const* host_ptrs, int n) {
-#if defined(NRN_ENABLE_GPU)
-    phase_timer::Scope const timer{phase_timer::Id::gap_scatter};
-    phase_timer::bump(phase_timer::Id::gap_scatter);
-    if (!native_gap_gpu_active() || n <= 0 || !host_ptrs) {
-        return;
-    }
-    std::lock_guard<std::mutex> const lock{g_gap_device_push_mutex};
-    // Wait for all threads' device work before host→device target push (main thread only).
-    for (int ith = 0; ith < nrn_nthread; ++ith) {
-        nrn_pragma_acc(wait(nrn_threads[ith].stream_id))
-    }
-    int ok = 0, miss = 0;
-    for (int i = 0; i < n; ++i) {
-        double* const p = host_ptrs[i];
-        if (!p) {
-            continue;
-        }
-        // Direct present / deviceptr (works once the field base is on device).
-        double* d = nrn_target_is_present(p);
-        if (!d) {
-            d = static_cast<double*>(acc_deviceptr(p));
-        }
-        if (d) {
-            nrn_target_memcpy_to_device(d, p, 1);
-            ++ok;
-        } else {
-            ++miss;
-            ++g_gap_scatter_miss;
-            ++g_traffic.scatter_miss;
-        }
-    }
-    if (ok > 0) {
-        gap_traffic_note_h2d_scalar(ok);
-    }
-    gap_traffic_note_scatter(ok, 0, static_cast<std::size_t>(ok) * sizeof(double));
-    if (std::getenv("NRN_GAP_DEBUG")) {
-        static int once = 0;
-        if (once < 5) {
-            std::fprintf(stderr,
-                         "scatter_gap_targets ok=%d miss=%d n=%d (vgap-field fallback if miss)\n",
-                         ok,
-                         miss,
-                         n);
-            ++once;
-        }
-    }
-#else
-    (void) host_ptrs;
-    (void) n;
-#endif
+    // Untyped: still use bulk path (resolve without mech types → direct present).
+    scatter_gap_targets_to_device(host_ptrs, n, nullptr, 0);
 }
 
 void scatter_gap_targets_to_device(double* const* host_ptrs,
@@ -618,81 +775,100 @@ void scatter_gap_targets_to_device(double* const* host_ptrs,
         return;
     }
     std::lock_guard<std::mutex> const lock{g_gap_device_push_mutex};
+    // Wait for all threads' device work before host→device target push (main thread only).
     for (int ith = 0; ith < nrn_nthread; ++ith) {
         nrn_pragma_acc(wait(nrn_threads[ith].stream_id))
     }
-    int ok = 0, miss = 0;
+    // Product path (P4 de-chatty): CoreNEURON-like bulk val buffer + device scatter
+    // into field bases. Replaces O(n) scalar acc_memcpy_to_device (~256 H→D/step
+    // on ringtest gap — was ~55% wall). Host targets already hold values.
+    int stream_id = 0;
+    for (int tid = 0; tid < nrn_nthread; ++tid) {
+        if (nrn_threads[tid].compute_gpu) {
+            stream_id = nrn_threads[tid].stream_id;
+            break;
+        }
+    }
+    int nonnull = 0;
     for (int i = 0; i < n; ++i) {
-        double* const p = host_ptrs[i];
-        if (!p) {
-            continue;
-        }
-        double* d = device_ptr_for_host_scalar(p, mech_types, n_types);
-        if (d) {
-            nrn_target_memcpy_to_device(d, p, 1);
-            ++ok;
-        } else {
-            ++miss;
-            ++g_gap_scatter_miss;
-            ++g_traffic.scatter_miss;
+        if (host_ptrs[i]) {
+            ++nonnull;
         }
     }
-    if (ok > 0) {
-        gap_traffic_note_h2d_scalar(ok);
+    int ok = scatter_targets_bulk_device(host_ptrs, n, mech_types, n_types, stream_id);
+    int miss = nonnull - ok;
+    if (miss < 0) {
+        miss = 0;
     }
-    // Product path: if any mid-SoA scalar still misses, push only the double
-    // SoA columns that contain targets (e.g. HalfGap vgap) — never full mech.
-    std::size_t field_bytes = 0;
-    int field_fb = 0;
     if (miss > 0) {
-        field_fb = 1;
-        // Approximate field traffic: count hit columns' sizes.
-        for (int ti = 0; ti < n_types; ++ti) {
-            int const type = mech_types[ti];
-            if (!neuron::model().is_valid_mechanism(type)) {
-                continue;
-            }
-            neuron::model().mechanism_data(type).for_each_vector_for_gpu_upload(
-                [&](auto const& /*tag*/, auto const& vec, int /*fi*/, int /*ad*/) {
-                    using Value = typename std::decay_t<decltype(vec)>::value_type;
-                    if constexpr (std::is_same_v<Value, double>) {
-                        double* const base = const_cast<double*>(vec.data());
-                        for (int i = 0; i < n; ++i) {
-                            double* const p = host_ptrs[i];
-                            if (p && p >= base && p < base + vec.size()) {
-                                field_bytes += vec.size() * sizeof(double);
-                                break;
+        g_gap_scatter_miss += static_cast<std::uint64_t>(miss);
+        g_traffic.scatter_miss += static_cast<std::uint64_t>(miss);
+        // Residual: push only SoA columns that contain targets (never full mech).
+        if (mech_types && n_types > 0) {
+            std::size_t field_bytes = 0;
+            for (int ti = 0; ti < n_types; ++ti) {
+                int const type = mech_types[ti];
+                if (!neuron::model().is_valid_mechanism(type)) {
+                    continue;
+                }
+                neuron::model().mechanism_data(type).for_each_vector_for_gpu_upload(
+                    [&](auto const& /*tag*/, auto const& vec, int /*fi*/, int /*ad*/) {
+                        using Value = typename std::decay_t<decltype(vec)>::value_type;
+                        if constexpr (std::is_same_v<Value, double>) {
+                            double* const base = const_cast<double*>(vec.data());
+                            for (int i = 0; i < n; ++i) {
+                                double* const p = host_ptrs[i];
+                                if (p && p >= base && p < base + vec.size()) {
+                                    field_bytes += vec.size() * sizeof(double);
+                                    break;
+                                }
                             }
                         }
-                    }
-                });
+                    });
+            }
+            push_target_fields_containing(host_ptrs, n, mech_types, n_types);
+            if (field_bytes > 0) {
+                gap_traffic_note_h2d_bulk(field_bytes);
+            }
+            gap_traffic_note_scatter(ok + miss, 1, field_bytes);
+        } else {
+            // Last resort: per-scalar (should be rare; no field base).
+            int scalar_ok = 0;
+            for (int i = 0; i < n; ++i) {
+                double* const p = host_ptrs[i];
+                if (!p) {
+                    continue;
+                }
+                double* d = device_ptr_for_host_scalar(p, mech_types, n_types);
+                if (d) {
+                    nrn_target_memcpy_to_device(d, p, 1);
+                    ++scalar_ok;
+                }
+            }
+            if (scalar_ok > 0) {
+                gap_traffic_note_h2d_scalar(scalar_ok);
+                ok += scalar_ok;
+            }
+            gap_traffic_note_scatter(ok, 0, static_cast<std::size_t>(ok) * sizeof(double));
         }
-        push_target_fields_containing(host_ptrs, n, mech_types, n_types);
+    } else {
+        gap_traffic_note_scatter(ok, 0, static_cast<std::size_t>(ok) * sizeof(double));
     }
-    gap_traffic_note_scatter(ok, field_fb, static_cast<std::size_t>(ok) * sizeof(double) + field_bytes);
     if (std::getenv("NRN_GAP_DEBUG")) {
         static int once = 0;
         if (once < 5) {
             std::fprintf(stderr,
-                         "scatter_gap_targets(typed) ok=%d miss=%d n=%d field_fallback=%d\n",
+                         "scatter_gap_targets bulk ok=%d miss=%d n=%d types=%d\n",
                          ok,
                          miss,
                          n,
-                         miss > 0 ? 1 : 0);
+                         n_types);
             ++once;
         }
     }
-    // After field fallback, residual misses are only expected if the model is
-    // not on device yet (finitialize before ensure_on_device). During psolve
-    // that is a hard error unless opt-in host fallback.
-    if (miss > 0 && model_is_on_device() && !allow_gap_host_fallback()) {
-        // Re-check: field fallback may have fixed residency for next step.
-        // Count miss but do not abort every step — first-step miss is common.
-        // Fail only if *all* scalars miss after field push (nothing mapped).
-        if (ok == 0) {
-            fail_gap_device("scatter_targets",
-                           "no gap target scalars mapped on device after vgap-field push");
-        }
+    if (miss > 0 && ok == 0 && model_is_on_device() && !allow_gap_host_fallback()) {
+        fail_gap_device("scatter_targets",
+                       "no gap target scalars mapped on device after bulk scatter");
     }
 #else
     (void) host_ptrs;

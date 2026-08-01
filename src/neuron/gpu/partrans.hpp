@@ -117,14 +117,17 @@ int same_thread_mech_device_copy(double* const* host_src,
 void sync_insrc_buf_to_device(double* insrc_buf, int n_insrc);
 
 /**
- * Sparse push of transferred target scalars to device (not full mech SoA).
+ * Push transferred target values to device (not full mech SoA).
  * host_ptrs[i] must already hold the transferred value on the host.
+ * Product path: pack values + bulk H→D + device scatter into field bases
+ * (CoreNEURON-like; not O(n) scalar memcpy). Untyped overload delegates to typed.
  */
 void scatter_gap_targets_to_device(double* const* host_ptrs, int n);
 
 /**
- * Prefer this: mid-SoA resolve via target mech field bases + vgap-column fallback
- * when per-scalar present misses. Never full-mech SoA.
+ * Typed product scatter: mid-SoA field base + offset resolve, bulk val buffer,
+ * device kernel write. Column-field or scalar fallback only on residual miss.
+ * Never full-mech SoA.
  */
 void scatter_gap_targets_to_device(double* const* host_ptrs,
                                    int n,
