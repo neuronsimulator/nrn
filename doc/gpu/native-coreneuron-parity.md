@@ -43,6 +43,10 @@ Immediately after `/new` or when the topic stabilizes:
 | `GPU-P1-control` | psolve / ba / pointer |
 | `GPU-P2-mpi-gap` | MPI / gap / subworlds |
 | `GPU-P3-models` | dentate / testcorenrn / heavier |
+| `GPU-P4-perf` | Baselines, host traffic, phase timers |
+| `GPU-P4-gap-scatter` | Gap bulk scatter (closed on tip) |
+| `GPU-P4-density` | setup-tree-matrix + lastpart-nonvint launch density |
+| `GPU-P4-multirank` | Multi-rank GPU share / MPS (ops closed on tip) |
 | `GPU-hygiene` | full-ctest noise not native product |
 
 **One living session per phase** (or cluster). Prefer **resume** that named session until the phase Status is done. When context is bloated or the agent is lost: **end checklist below → `/new` → paste the phase starting prompt** — do **not** resume a year-old auto-title.
@@ -56,6 +60,21 @@ Picker help: type `GPU-P` in `/resume` filter; or `grok sessions search GPU-P0`.
 3. One-line **Next** at the bottom of this file (and PORTFOLIO if the portfolio Next changed).  
 4. `/rename` still matches the phase (or rename to next phase before exit).  
 5. Optional: note session id in the ledger below (`/session-info`).
+
+### Permanent: when the topic is done → new session (do not skip)
+
+If there are **no further prompts for the current named topic**, the agent should **offer a clean handoff** (not keep dilating the same auto-title). Pattern:
+
+```text
+Unless you have further prompts for this session:
+1. Rename this session to <accurate closed title>   # e.g. GPU-P4-multirank
+2. Start a new session named <next title>           # e.g. GPU-P4-density
+3. Starting prompt: <paste block from this file or PORTFOLIO>
+```
+
+- Prefer **one living session per phase/cluster** (`GPU-P4-density`, not a year of “GPU-P4-gap-scatter”).  
+- Closed work keeps a **stable archive name** in the picker; next work gets a **new** `/new` + starting prompt.  
+- Same rule lives in **`AGENTS.md`** and **`~/neuron/notes/META-ORG.md`**.
 
 ### Session ledger (optional human map)
 
@@ -108,6 +127,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-08-01 | GPU-P4-lastpart-ab | — | Cherry-pick lastpart sub-buckets onto **`local/gpu-native`** (`9ae97e8e5`). Gap-only P4 closed as residual. |
 | 2026-08-01 | GPU-P4-setup-nonvint-density | — | setup-rhs/lhs sub-buckets; H1 defer per-mech ACC wait (CoreNEURON-like); ringtest noise-flat. |
 | 2026-08-01 | GPU-P4-dentate-profile | — | Dentate tip timers: 4-rank psolve ~37 s; 1-rank ~3.3 s ≈ CN; contention is the multi-rank residual. |
+| 2026-08-01 | GPU-P4-multirank | — | CUDA MPS ≈ CN; device_assign on tip (`db83f4adb`); handoff → density. |
 
 ---
 
@@ -353,21 +373,21 @@ Phase timer (`NRN_NATIVE_GPU_PHASE_TIMER=1`):
 
 | Item | Status | Notes |
 |------|--------|-------|
-| Wall-time vs CoreNEURON (guide) | **baselined** | Ringtest ~1.7–2×. Dentate 4-rank ~11× psolve is **contention**; 1-rank ≈ CN solver. |
+| Wall-time vs CoreNEURON (guide) | **baselined** | Ringtest exclusive ~1.7–2×. Dentate exclusive ~CN; multi-rank needs MPS. |
 | Residual hot-path host traffic audit | **done** | Mid-psolve full SoA on gap path fixed. |
 | Gap scatter de-chatty + A+B timers | **done (on tip)** | 0 scalar H→D/step; scatter ~5%. |
 | Gap-only P4 residual | **closed as density** | Same bottleneck as no-gap (setup + nonvint); not gap transfer. |
 | Lastpart sub-buckets | **done (on tip)** | play/xfer/nonvint/record/deliver. |
 | Setup-rhs/lhs sub-buckets | **done (on tip)** | Nested under setup-tree-matrix; prefer absolute seconds. |
-| Defer per-mech ACC wait (H1) | **explor; ringtest flat** | Product-green; tip dentate profile without H1. |
+| Defer per-mech ACC wait (H1) | **explor; ringtest flat** | Product-green; no clear ringtest win; re-check only on larger exclusive models. |
 | Dentate multi-rank profile | **done** | 4-rank thrash without MPS; **MPS ≈ CN**. |
-| Multi-rank GPU share (MPS) | **diagnosed + ops policy** | Document + warn; start MPS for multi-rank-on-1-GPU. Message fix on explor → tip. |
+| Multi-rank GPU share (MPS) | **done (on tip)** | device_assign + warn (`db83f4adb`); ops: `nvidia-cuda-mps-control -d`. |
 | Single device-resource owner | open | Only if exit/leak forces. |
 
 ### Residual perf debt (next P4 when reopened)
 
-1. **Product multi-rank:** run with **CUDA MPS** when ranks/GPU > 1 (or more GPUs). Optional: auto-start MPS (usually root/admin) — not default. Land device_assign fix on tip.
-2. **setup-tree-matrix + lastpart-nonvint density** — ringtest still ~2× CN exclusive; dentate exclusive already ~CN.
+1. **setup-tree-matrix + lastpart-nonvint density** — ringtest exclusive still ~2× CN; dentate exclusive already ~CN. **Default next session:** `GPU-P4-density`.
+2. **Product multi-rank:** always use **CUDA MPS** when ranks/GPU > 1 (or more GPUs). Ops only unless native share-without-MPS becomes a goal.
 3. Optional: lastpart-deliver spike-heavy; phases=0 prcellstate download residual.
 
 ---
@@ -434,21 +454,45 @@ for the current phase. Same constraints as that phase's starting prompt.
 Update Status before exit; commit without push.
 ```
 
+### P4 — exclusive-GPU density (default next after multi-rank closed)
+
+```text
+Read ~/neuron/notes/PORTFOLIO.md (GPU-native), then
+~/neuron/nrngpu/doc/gpu/native-coreneuron-parity.md (Phase 4 Status / Residual / Next),
+GROK-GPU-NATIVE.md, AGENTS.md.
+
+Kind: feature. Portfolio: GPU-native. Phase: P4 exclusive-GPU density.
+Tree: ~/neuron/nrngpu. Branch: off living tip local/gpu-native as
+local/gpu-p4-density (or similar explor name). Do not merge to tip until measured win.
+
+Context: gap scatter + phase timers + multi-rank MPS policy are on tip. Ringtest
+exclusive still ~2× CN; bottleneck setup-tree-matrix + lastpart-nonvint (not gap).
+Dentate exclusive already ~CN; multi-rank uses CUDA MPS (not this session).
+
+This session: one hypothesis at a time for CURRENT/STATE launch density (or related
+measured residual). High performance sacred; CoreNEURON is a guide; heap-free
+weight_index. Not Traub use_gap=1; not multi-rank unless blocked.
+
+Commit locally without push. Update Status/Next before exit.
+/rename GPU-P4-density
+```
+
 ---
 
 ## Next (one line — update every session end)
 
-**Next:** Land multi-rank device_assign fix + MPS docs on tip; multi-rank product runs use `nvidia-cuda-mps-control -d`. Optional ringtest density. **Not** Traub `use_gap=1`.
+**Next:** P4 exclusive-GPU **density** — ringtest **setup-tree-matrix + lastpart-nonvint** (~2× CN); measure-first, one hypothesis at a time. Multi-rank product: **CUDA MPS**. **Not** Traub `use_gap=1`.
 
 ### Branching (2026-08-01)
 
 | Branch | Role |
 |--------|------|
-| **`local/gpu-native`** | Living tip — A+B gap timers, bulk scatter, **lastpart sub-buckets** |
+| **`local/gpu-native`** | Living tip — scatter, timers, lastpart/setup buckets, multi-rank MPS warn |
 | `local/gpu-native-net-soa` | Historical integration name; keep until remotes/docs catch up (may lag tip) |
 | `local/gpu-p4-gap-phase-ab` | Exploratory archive: A+B only (pre-scatter baseline) |
 | `local/gpu-p4-gap-scatter` | Exploratory archive: bulk scatter parent of tip cherry-picks |
 | `local/gpu-p4-lastpart-ab` | Exploratory archive: lastpart sub-buckets (now on tip) |
-| `local/gpu-p4-setup-nonvint-density` | Exploratory: setup-rhs/lhs timers + defer per-mech ACC wait H1 |
+| `local/gpu-p4-setup-nonvint-density` | Exploratory: defer per-mech ACC wait H1 (ringtest flat) |
+| `local/gpu-p4-multirank-share` | Exploratory archive: MPS diagnosis (landed on tip) |
 
-P4 bulk scatter + lastpart tools on tip; gap-only closed. Density residual: setup-tree-matrix + lastpart-nonvint.
+P4 on tip: scatter, timers, multi-rank MPS. **Default next residual:** exclusive-GPU density (setup-tree-matrix + lastpart-nonvint).

@@ -85,3 +85,22 @@ After a coherent step: **commit locally** with a clear message. **Do not `git pu
 unless the user asks. User reviews with `git show HEAD` and either pushes or requests
 amend / follow-up. Same workflow preference for all sessions on this machine
 (`PORTFOLIO.md` / `META-ORG.md`).
+
+## Session handoff when the topic is done (permanent)
+
+If there are **no further prompts for the current named topic**, do **not** keep
+stretching a stale session title. Offer a clean handoff:
+
+```text
+Unless you have further prompts for this session:
+1. Rename this session to <accurate closed title>
+2. Start a new session named <next title>
+3. Starting prompt: <paste from native-coreneuron-parity.md or PORTFOLIO>
+```
+
+- One living session per phase/cluster (`GPU-P4-density`, not endless
+  `GPU-P4-gap-scatter` after that work closed).
+- Update **Status/Next** in `doc/gpu/native-coreneuron-parity.md` (and PORTFOLIO
+  if Next changed) **before** recommending the new session.
+- Full templates: `doc/gpu/native-coreneuron-parity.md` § session continuity;
+  machine-wide: `~/neuron/notes/META-ORG.md`.
