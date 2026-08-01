@@ -81,6 +81,28 @@ else()
   message(STATUS "Foreign prep targets    : (none)")
 endif()
 
+# Default install check: build mechanisms, run serial ctest, print how to re-run ctest. Full
+# filtering stays with plain ctest --test-dir <this binary dir> ...
+set(NRN_FOREIGN_TEST_INSTALL_LABELS
+    "serial"
+    CACHE STRING "CTest -L expression used by the test-install target")
+set(NRN_FOREIGN_TEST_INSTALL_JOBS
+    "4"
+    CACHE STRING "ctest -j parallelism for the test-install target")
+add_custom_target(
+  test-install
+  COMMAND
+    ${CMAKE_COMMAND} "-DNRN_FOREIGN_CTEST_COMMAND=${CMAKE_CTEST_COMMAND}"
+    "-DNRN_FOREIGN_BINARY_DIR=${CMAKE_BINARY_DIR}"
+    "-DNRN_FOREIGN_TEST_INSTALL_LABELS=${NRN_FOREIGN_TEST_INSTALL_LABELS}"
+    "-DNRN_FOREIGN_TEST_INSTALL_JOBS=${NRN_FOREIGN_TEST_INSTALL_JOBS}" -P
+    "${CMAKE_CURRENT_SOURCE_DIR}/RunTestInstall.cmake"
+  DEPENDS foreign
+  USES_TERMINAL
+  COMMENT
+    "Foreign install check: ctest -L ${NRN_FOREIGN_TEST_INSTALL_LABELS} (see target foreign + ctest)"
+)
+
 # Configure-time summary (how many tests landed in each bucket)
 set(_n_serial 0)
 set(_n_mpi 0)
@@ -110,4 +132,5 @@ message(STATUS "Foreign ctest source root : ${NRN_FOREIGN_SOURCE_ROOT}")
 message(STATUS "Foreign tests registered  : ${_n_all} total"
                " (serial≈${_n_serial}, mpi≈${_n_mpi}, coreneuron≈${_n_cn})")
 message(STATUS "Inventory                 : ${CMAKE_CURRENT_SOURCE_DIR}/INVENTORY.md")
-message(STATUS "Configure complete. cmake --build <build> --target foreign && ctest -L serial")
+message(STATUS "Configure complete. cmake --build <build> --target test-install")
+message(STATUS "  (or: --target foreign && ctest --test-dir <build> -L serial)")

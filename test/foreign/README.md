@@ -42,6 +42,12 @@ cmake -S test/foreign -B build-ctest \
   -DNRN_FOREIGN_PYTHON="$(which python)" \
   -DNRN_FOREIGN_ALLOW_SKEW=ON
 
+# Default serial install check (builds mechanisms, runs ctest -L serial, prints
+# how to re-run ctest with other filters):
+cmake --build build-ctest --target test-install -j
+# same: ninja -C build-ctest test-install
+
+# Or split prep and ctest yourself:
 cmake --build build-ctest --target foreign -j
 ctest --test-dir build-ctest -L serial --output-on-failure -j4
 
@@ -49,6 +55,19 @@ ctest --test-dir build-ctest -L serial --output-on-failure -j4
 ctest --test-dir build-ctest -L mpi --output-on-failure -j2
 ctest --test-dir build-ctest -L coreneuron --output-on-failure -j2
 ```
+
+`test-install` is a convenience default only. Full `ctest` control is always:
+
+```bash
+ctest --test-dir build-ctest [options…]
+```
+
+Cache knobs (reconfigure to change defaults):
+
+| Variable | Default | Meaning |
+|----------|---------|---------|
+| `NRN_FOREIGN_TEST_INSTALL_LABELS` | `serial` | `-L` for `test-install` |
+| `NRN_FOREIGN_TEST_INSTALL_JOBS` | `4` | `-j` for `test-install` |
 
 `NRN_FOREIGN_ALLOW_SKEW=ON` is required when the wheel’s git revision does not
 match this checkout (typical for `neuron-nightly` vs a feature branch).
@@ -143,6 +162,7 @@ test/foreign/
   ForeignTestHelpers.cmake    # NeuronTestHelper foreign adapter
   SerialPortableTests.cmake   # M3 serial groups
   MpiCoreNeuronTests.cmake    # M4 MPI + CoreNEURON
+  RunTestInstall.cmake        # body of test-install target
   probe_neuron.py
   INVENTORY.md                # foreign-ok vs build-only
   PLAN.md
