@@ -11,32 +11,53 @@ See [PLAN.md](PLAN.md) for milestones and design.
 ## Prerequisites
 
 - CMake ≥ 3.20
-- A venv (or environment) with NEURON installed, e.g. `pip install neuron-nightly`
-- That environment’s `python` and scripts (`nrniv`, `nrnivmodl`) on `PATH` when
-  configuring and running tests
+- A C/C++ toolchain on `PATH` (for `nrnivmodl`)
+- A venv with NEURON, e.g. `pip install neuron-nightly`
+- Python packages for the serial suite:
+  - **required for most groups:** `pytest`
+  - **required for full RxD:** `matplotlib`, `plotly`, `anywidget`
 - Prefer a clean shell for the venv: an ambient `PYTHONPATH` pointing at a
-  source build can shadow the wheel. Configure/tests clear `PYTHONPATH` for
-  the probe and smoke tests, but interactive debugging is easier without it.
+  source build can shadow the wheel. Configure/tests replace `PYTHONPATH`
+  with in-tree helpers only (`test/rxd`).
 
-## Quick start (local, metric C)
+Optional:
+
+```bash
+git submodule update --init -- test/rxd/testdata   # for RxD comparison data
+```
+
+## Quick start (local, metric C — serial suite)
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install -U pip neuron-nightly pytest
+pip install -U pip neuron-nightly pytest matplotlib plotly anywidget
 
-# From the NEURON repo root (this tree):
+# From the NEURON repo root:
+git submodule update --init -- test/rxd/testdata   # optional but needed for rxd
+
 cmake -S test/foreign -B build-ctest \
   -DNRN_FOREIGN_PYTHON="$(which python)" \
   -DNRN_FOREIGN_ALLOW_SKEW=ON
 
-cmake --build build-ctest --target foreign
-ctest --test-dir build-ctest --output-on-failure -L smoke
-ctest --test-dir build-ctest --output-on-failure -R 'pytest::'
+cmake --build build-ctest --target foreign -j
+ctest --test-dir build-ctest -L serial --output-on-failure -j4
 ```
 
 `NRN_FOREIGN_ALLOW_SKEW=ON` is required when the wheel’s git revision does not
 match this checkout (typical for `neuron-nightly` vs a feature branch).
+
+### Useful filters
+
+| Filter | Meaning |
+|--------|---------|
+| `-L serial` | Full M3 portable suite (default “done” set) |
+| `-L smoke` | Import / nrniv / `neuron.test()` only |
+| `-L pytest` / `-L hoctests` / `-L rxd` / … | Subsets by group label |
+| `-R 'pytest::\|datahandle::'` | Regex on test names |
+
+MPI and CoreNEURON integration groups are deferred to a later milestone (M4);
+feature discovery already records whether the wheel has them.
 
 ## Version policy
 
@@ -44,7 +65,7 @@ match this checkout (typical for `neuron-nightly` vs a feature branch).
 |------|----------------|----------|
 | Local strict (default) | (none) | Configure **fails** |
 | Local exploration | `-DNRN_FOREIGN_ALLOW_SKEW=ON` | Configure **warns**, continues |
-| CI | `-DNRN_FOREIGN_CI=ON` | Configure **fails** (hard match; skew flag does not apply as a bypass in CI intent—leave `ALLOW_SKEW` off) |
+| CI | `-DNRN_FOREIGN_CI=ON` | Configure **fails** (hard match; leave `ALLOW_SKEW` off) |
 
 Match prefers the wheel’s build git SHA (`h.nrnversion(3)`) against this repo’s
 `HEAD`, then equal version/`git describe` strings.
@@ -61,14 +82,33 @@ Useful cache variables (see `cmake -L` / `CMakeCache.txt`):
 - `NRN_FOREIGN_NRNIV`, `NRN_FOREIGN_NRNIVMODL`
 - `NRN_FOREIGN_FEATURE_NRN_ENABLE_MPI`, `NRN_FOREIGN_FEATURE_NRN_ENABLE_CORENEURON`, …
 
-## Current status (M2)
+## What is included (M3 serial)
 
-- Discovery + version gate
-- Smoke tests: `foreign::smoke_import`, `foreign::smoke_nrniv`, `foreign::smoke_neuron_test`
-- Target `foreign` runs `nrnivmodl` for registered groups (uses wheel `nrnivmodl`)
-- First mod-using group: `pytest::basic_tests` (`test/pytest`, needs `pytest` package)
+| Area | Notes |
+|------|--------|
+| Smoke | `foreign::smoke_*` |
+| `pytest`, `datahandle`, `cover` | pytest + nrnivmodl |
+| `unit_tests` (hoc_python) | no mods |
+| `example_nmodl` | HOC via `special`, Python via pytest |
+| `hoctests` | HOC via `special`, Python via plain interpreter |
+| `ringtest`, `connect_dend` | foreign `nrniv` + `RunHOCTest.cmake` |
+| `rxdmod_tests` | if wheel has RX3D and testdata submodule present |
+| `gjtests` serial | pytest `-k "not par"` |
 
-## Next (M3+)
+**Excluded:** Catch2 / API / NMODL unit binaries, MPI tests, CoreNEURON comparison matrix (M4).
 
-- Broader serial portable subset
-- MPI / CoreNEURON registration for local `ctest -R …`
+Target `foreign` builds all registered `nrnivmodl` jobs and copies test scripts.
+
+## Layout
+
+```text
+test/foreign/
+  CMakeLists.txt              # project entry
+  DiscoverNeuron.cmake
+  VersionGate.cmake
+  ForeignTestHelpers.cmake    # NeuronTestHelper foreign adapter
+  SerialPortableTests.cmake   # M3 serial groups
+  probe_neuron.py
+  PLAN.md
+  README.md
+```

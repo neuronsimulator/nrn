@@ -20,13 +20,12 @@ include(DiscoverNeuron)
 include(VersionGate)
 include(ForeignTestHelpers)
 
-# ---------------------------------------------------------------------------
-# Smoke tests (M1)
-# ---------------------------------------------------------------------------
-
 get_filename_component(_nrn_foreign_py_bindir "${NRN_FOREIGN_PYTHON}" DIRECTORY)
 set(_nrn_foreign_test_env "PYTHONPATH=" "PATH=${_nrn_foreign_py_bindir}:$ENV{PATH}")
 
+# ---------------------------------------------------------------------------
+# Smoke tests (M1)
+# ---------------------------------------------------------------------------
 if(NRN_FOREIGN_NRNIV STREQUAL "")
   message(WARNING "nrniv not found on PATH for foreign Python; nrniv smoke test skipped")
 else()
@@ -57,43 +56,34 @@ if(NRN_FOREIGN_SMOKE_NEURON_TEST)
 endif()
 
 # ---------------------------------------------------------------------------
-# M2: first mod-using integration group (pytest + mcna.mod)
+# Serial portable integration suite (M3)
 # ---------------------------------------------------------------------------
-
+set(_nrn_foreign_have_pytest OFF)
 execute_process(
   COMMAND "${NRN_FOREIGN_PYTHON}" -c "import pytest"
   RESULT_VARIABLE _pytest_rc
   OUTPUT_QUIET ERROR_QUIET)
-if(NOT _pytest_rc EQUAL 0)
+if(_pytest_rc EQUAL 0)
+  set(_nrn_foreign_have_pytest ON)
+else()
   message(
     WARNING
       "pytest is not installed for ${NRN_FOREIGN_PYTHON}. "
       "Install with: \"${NRN_FOREIGN_PYTHON}\" -m pip install pytest\n"
-      "Skipping pytest integration group.")
-else()
-  nrn_add_test_group(NAME pytest MODFILE_PATTERNS test/pytest/*.mod)
-  nrn_foreign_note_nrnivmodl_group(pytest)
-  nrn_add_test(
-    GROUP pytest
-    NAME basic_tests
-    COMMAND "${NRN_FOREIGN_PYTHON}" -m pytest --capture=tee-sys "./test/pytest"
-    SCRIPT_PATTERNS "test/pytest/*.json" "test/pytest/*.py")
-  set_tests_properties(pytest::basic_tests PROPERTIES LABELS "foreign;serial;pytest")
-  # copy-scripts-* is ALL in the helper; also hang it off `foreign` so
-  # `cmake --build --target foreign` prepares scripts + special.
-  if(TARGET copy-scripts-pytest-basic_tests)
-    list(APPEND NRN_FOREIGN_NRNIVMODL_TARGETS copy-scripts-pytest-basic_tests)
-  endif()
+      "Python pytest-based groups will be skipped.")
 endif()
+
+include(SerialPortableTests.cmake)
 
 # Target that builds all foreign nrnivmodl (special) jobs and test prep.
 add_custom_target(foreign COMMENT "Build mechanisms for foreign ctest groups")
 if(NRN_FOREIGN_NRNIVMODL_TARGETS)
   add_dependencies(foreign ${NRN_FOREIGN_NRNIVMODL_TARGETS})
-  message(STATUS "Foreign prep targets    : ${NRN_FOREIGN_NRNIVMODL_TARGETS}")
+  list(LENGTH NRN_FOREIGN_NRNIVMODL_TARGETS _nprep)
+  message(STATUS "Foreign prep targets (${_nprep})")
 else()
   message(STATUS "Foreign prep targets    : (none)")
 endif()
 
 message(STATUS "Foreign ctest source root : ${NRN_FOREIGN_SOURCE_ROOT}")
-message(STATUS "Configure complete. cmake --build <build> --target foreign && ctest")
+message(STATUS "Configure complete. cmake --build <build> --target foreign && ctest -L serial")

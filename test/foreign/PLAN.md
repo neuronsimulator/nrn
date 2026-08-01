@@ -4,7 +4,7 @@
 **Architecture:** separate test-only CMake project (option B)  
 **Dev artifact:** normal venv + `pip install neuron-nightly`  
 **v1 done:** documented local workflow (metric C)  
-**Status:** M2 complete (foreign nrnivmodl + pytest group). Next: M3.
+**Status:** M3 complete (serial portable suite; metric C). Next: M4.
 
 Approved product decisions:
 
@@ -88,7 +88,7 @@ test/CMakeLists.txt              # guards: linked units only if TARGET nrniv_lib
 | **M0** | Plan + branch `hines-grok/ctest-wheels` | Done |
 | **M1** | Skeleton, discovery, version gate, smoke tests | Done (import / nrniv / neuron.test) |
 | **M2** | Foreign nrnivmodl + one mod-using group; target `foreign` | Done (`pytest::basic_tests`) |
-| **M3** | Serial portable subset + README (v1 done) | serial suite green locally |
+| **M3** | Serial portable subset + README (v1 done) | Done (~88 tests, `-L serial`) |
 | **M4** | Register MPI + CoreNEURON for local `-R` | mpi/cn usable or cleanly skipped |
 | **M5** | Hardening, inventory, optional CI/prefix | as needed |
 
