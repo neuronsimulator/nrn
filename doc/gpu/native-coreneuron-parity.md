@@ -107,6 +107,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-08-01 | GPU-P4-lastpart-ab | — | Finer lastpart sub-buckets + remeasure; H1 prepare-wait elide abandoned (no clear win). |
 | 2026-08-01 | GPU-P4-lastpart-ab | — | Cherry-pick lastpart sub-buckets onto **`local/gpu-native`** (`9ae97e8e5`). Gap-only P4 closed as residual. |
 | 2026-08-01 | GPU-P4-setup-nonvint-density | — | setup-rhs/lhs sub-buckets; H1 defer per-mech ACC wait (CoreNEURON-like); ringtest noise-flat. |
+| 2026-08-01 | GPU-P4-dentate-profile | — | Dentate tip timers: 4-rank psolve ~37 s; 1-rank ~3.3 s ≈ CN; contention is the multi-rank residual. |
 
 ---
 
@@ -316,7 +317,8 @@ For each test:
 |------|--------|----------------|-------------------|-------|
 | Ringtest **no-gap** 1-rank tstop=100, 688 spikes | runtime ~2.4–3.3 s (warm ~2.5–3.1); wall ~2.9–4.0 s | runtime ~1.50–1.56 s; wall ~2.0–2.2 s | ~1.6–2.0× | Product green. Phase timer: setup-tree-matrix ~35%, lastpart ~45%, download-flush ~0. |
 | Ringtest **gap** 1-rank tstop=100, 128 spikes | **pre** ~11–12 s; post-SoA ~8.3 s; **post-scatter ~2.6–3.1 s** | runtime ~1.59 s; wall ~2.1 s | ~1.7–2× after bulk scatter | Single-step `nrn_fixed_step` when `nrnthread_v_transfer_`. 0 scalar H→D/step. |
-| reduced_dentate max_cells=100 tstop=10 **4-rank** 400 spikes | ctest wall ~48 s; `psolve time` ~45 s (pre≈post) | ctest wall ~6.4 s; Solver Time ~3.3 s | ~7.5× wall / ~14× psolve vs solver | Native: `Info : 1 GPUs shared by 1 ranks per node`×4; CN: 1 GPU shared by 4 ranks. vrecordFraction=0.01. |
+| reduced_dentate max_cells=100 tstop=10 **4-rank** 400 spikes | wall ~40 s; **psolve ~37 s** (2026-08-01 tip+timers) | wall ~6.3 s; **Solver Time ~3.24 s** | ~6.4× wall / ~**11×** psolve | Native: `1 GPUs shared by 1 ranks per node`×4 (contention); CN: 1 GPU shared by 4 ranks. 400 spikes. |
+| reduced_dentate same model **1-rank** 400 spikes | **psolve ~3.3 s**; wall ~7 s | (CN usually 4-rank) | **~1.0×** vs CN solver | Same GPU exclusive: native psolve ≈ CN 4-rank Solver Time. |
 
 Phase timer (`NRN_NATIVE_GPU_PHASE_TIMER=1`):
 
@@ -327,31 +329,40 @@ Phase timer (`NRN_NATIVE_GPU_PHASE_TIMER=1`):
   - **gap-sync ~50%** (calls=4000) — `nrnmpi_v_transfer_` gather/MPI + `nrn_native_gap_targets_to_device`
   - **lastpart ~29%** (calls=4000) — deferred multi-thread lastpart wall (includes `thread_transfer` + STATE + deliver)
   - **setup-tree-matrix ~14%**, deliver/solver/post-solve remainder
-- **Dentate (post SoA fix, pre gap instr):** 4 summaries; setup-tree-matrix ~16 s of tracked ~18 s; re-profile after gap instr if useful.
+- **Dentate (post SoA fix, pre gap instr):** 4 summaries; setup-tree-matrix ~16 s of tracked ~18 s; superseded by 2026-08-01 re-profile below.
 - **Lastpart sub-buckets (on tip 2026-08-01):** nested under coarse lastpart (prefer absolute seconds). Gap/no-gap same shape: **setup-tree-matrix + lastpart-nonvint** co-dominate; host gap xfer ~0; scatter ~5%. Gap-only P4 residual **closed** as general fixed-step density (~1.7–2× CN, not gap-chat).
 - **Setup sub-buckets + density H1 (`local/gpu-p4-setup-nonvint-density`):**
   - **setup-rhs / setup-lhs** nest under setup-tree-matrix (rhs ≈ CURRENT+axial larger than lhs/JACOB on ringtest).
   - **H1:** ACC codegen no longer waits after every CURRENT/STATE/JACOB (CoreNEURON-like); fences remain at axial, net_send flush, electrode sav, INITIAL, net_buf_receive, finalize_nonvint. Product green (checkpoint dV=0, 688/128 spikes). **Ringtest multi-warm: no clear win vs noise** (~2.6–3.5 s gap, ~2.5–2.8 s no-gap) — keep on explor; re-measure on dentate/heavier models before tip.
   - Prior abandoned: prepare_nonvint `_t` wait elide.
+- **Dentate re-profile (2026-08-01 tip, max_cells=100, tstop=10, 400 spikes, T1000):**
+  - **4-rank native:** psolve ~**37 s**, wall ~40 s; load_balance ~0.998; **0 scalar H→D/step**; gap-scatter ~0.2 s/rank (tiny). Nested tracked ~60 s (double-count). **Non-nested** per rank (≈psolve decomposition):
+    - **setup-tree-matrix ~15.6 s** (rhs ~9.2 + lhs ~6.4)
+    - **lastpart ~12.9 s** (nonvint ~8.4 + **deliver ~4.5** — spike-heavy vs ringtest)
+    - deliver-events ~1.7 s; gap all ~0.7 s; **matrix-solver ~0.12 s** (negligible)
+  - **1-rank native:** psolve ~**3.3 s** (400 spikes) — **~11× faster than 4-rank** on same GPU; shape still setup + lastpart-nonvint (+ deliver).
+  - **CN-GPU 4-rank:** Solver Time ~**3.24 s**, wall ~6.3 s, 400 spikes (`1 GPU shared by 4 ranks`).
+  - **Conclusion:** dentate ~11× vs CN is **multi-process GPU contention**, not gap chat and not a different algorithm residual than ringtest once exclusive. 1-rank native ≈ CN solver time.
 
 ### Status — P4
 
 | Item | Status | Notes |
 |------|--------|-------|
-| Wall-time vs CoreNEURON (guide) | **baselined** | Non-gap ~2×; gap ~**1.7–2×** after bulk scatter (runtime ~2.6–3.1 s vs CN ~1.6 s). Dentate ~7–14× still open. |
+| Wall-time vs CoreNEURON (guide) | **baselined** | Ringtest ~1.7–2×. Dentate 4-rank ~11× psolve is **contention**; 1-rank ≈ CN solver. |
 | Residual hot-path host traffic audit | **done** | Mid-psolve full SoA on gap path fixed. |
 | Gap scatter de-chatty + A+B timers | **done (on tip)** | 0 scalar H→D/step; scatter ~5%. |
 | Gap-only P4 residual | **closed as density** | Same bottleneck as no-gap (setup + nonvint); not gap transfer. |
 | Lastpart sub-buckets | **done (on tip)** | play/xfer/nonvint/record/deliver. |
 | Setup-rhs/lhs sub-buckets | **done (on tip)** | Nested under setup-tree-matrix; prefer absolute seconds. |
-| Defer per-mech ACC wait (H1) | **explor; ringtest flat** | Product-green; no clear ringtest win; re-profile dentate before tip. |
+| Defer per-mech ACC wait (H1) | **explor; ringtest flat** | Product-green; tip dentate profile without H1. |
+| Dentate multi-rank profile | **done (2026-08-01)** | 4-rank psolve ~37 s vs 1-rank ~3.3 s vs CN ~3.2 s → **contention**. |
 | Single device-resource owner | open | Only if exit/leak forces. |
 
 ### Residual perf debt (next P4 when reopened)
 
-1. **setup-tree-matrix + lastpart-nonvint density** — still ~2× CN on ringtest after H1. Next hypotheses: launch count / occupancy on larger models; fewer phase-boundary waits; dentate multi-rank.
-2. **Dentate multi-rank on one GPU** — re-profile with phase timers; good H1 re-check.
-3. Optional: sparse trajectory for `vrecordFraction`; end-of-run phases=0 prcellstate download residual.
+1. **Dentate multi-rank on one GPU** — primary residual is **process contention** (~11× vs exclusive 1-rank), not gap traffic. Candidates: multi-rank GPU share policy (CN “shared by N”), single-process multi-thread, or 1-rank throughput.
+2. **setup-tree-matrix + lastpart-nonvint density** — still ~2× CN on ringtest; dentate 1-rank already ~CN. Prefer exclusive-GPU density work.
+3. Optional: lastpart-deliver on spike-heavy models; sparse trajectory; phases=0 prcellstate download residual.
 
 ---
 
@@ -421,7 +432,7 @@ Update Status before exit; commit without push.
 
 ## Next (one line — update every session end)
 
-**Next:** P4 density — re-profile **dentate** (and/or larger models) with setup-rhs/lhs + lastpart sub-buckets; re-evaluate defer-per-mech-wait H1 there. Ringtest residual stays ~2× CN. **Not** Traub `use_gap=1`.
+**Next:** P4 — dentate **multi-rank GPU contention** (4-rank ~11× slower than 1-rank exclusive; 1-rank ≈ CN solver); optional ringtest density / H1. **Not** Traub `use_gap=1`.
 
 ### Branching (2026-08-01)
 
