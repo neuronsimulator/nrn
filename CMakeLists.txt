@@ -1114,10 +1114,12 @@ if(NRN_ENABLE_TESTS)
         "Configuring foreign ctest in ${NRN_FOREIGN_CTEST_BINARY_DIR} against ${CMAKE_INSTALL_PREFIX}"
       COMMAND
         ${CMAKE_COMMAND} -S "${PROJECT_SOURCE_DIR}/test/foreign" -B
-        "${NRN_FOREIGN_CTEST_BINARY_DIR}" "-DNRN_FOREIGN_PYTHON=${_nrn_test_install_python}"
+        "${NRN_FOREIGN_CTEST_BINARY_DIR}" -G "${CMAKE_GENERATOR}"
+        "-DNRN_FOREIGN_PYTHON=${_nrn_test_install_python}"
         "-DNRN_FOREIGN_ROOT=${CMAKE_INSTALL_PREFIX}"
         "-DNRN_FOREIGN_ALLOW_SKEW=${_nrn_test_install_skew}"
       COMMAND ${CMAKE_COMMAND} --build "${NRN_FOREIGN_CTEST_BINARY_DIR}" --target test-install
+              --parallel
       USES_TERMINAL
       COMMENT
         "Foreign install check (run 'ninja install' first). Dir: ${NRN_FOREIGN_CTEST_BINARY_DIR}")

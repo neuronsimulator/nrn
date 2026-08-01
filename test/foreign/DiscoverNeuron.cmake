@@ -61,13 +61,14 @@ if(NOT NRN_FOREIGN_PYTHONPATH STREQUAL "")
     set(_nrn_foreign_probe_pythonpath "${NRN_FOREIGN_PYTHONPATH}:${_nrn_foreign_probe_pythonpath}")
   endif()
 endif()
-# Expose for ForeignTestHelpers / tests
+# Expose for ForeignTestHelpers / tests (FORCE so reconfigure with ROOT updates).
 set(NRN_FOREIGN_PATH_PREFIX
     "${_nrn_foreign_probe_path}"
-    CACHE INTERNAL "PATH prefix for foreign tools")
+    CACHE INTERNAL "PATH prefix for foreign tools" FORCE)
 set(NRN_FOREIGN_SITE_PYTHONPATH
     "${_nrn_foreign_probe_pythonpath}"
-    CACHE INTERNAL "PYTHONPATH prefix for foreign neuron package (prefix installs)")
+    CACHE INTERNAL "PYTHONPATH prefix for foreign neuron package (prefix installs)" FORCE)
+message(STATUS "Foreign site PYTHONPATH   : ${NRN_FOREIGN_SITE_PYTHONPATH}")
 
 execute_process(
   COMMAND

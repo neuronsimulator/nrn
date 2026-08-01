@@ -68,10 +68,10 @@ if(NRN_ENABLE_MPI AND NOT MPIEXEC_NAME STREQUAL "")
     set(MPIEXEC_OVERSUBSCRIBE "--oversubscribe")
   endif()
   get_filename_component(_nrn_foreign_mpiexec_dir "${MPIEXEC_NAME}" DIRECTORY)
-  # Ensure launcher directory is on PATH for nested tools.
+  # Ensure launcher directory is on PATH for nested tools (keep site PYTHONPATH).
   set(NRN_RUN_FROM_BUILD_DIR_ENV
       "PATH=${NRN_FOREIGN_PATH_PREFIX}:${_nrn_foreign_mpiexec_dir}:$ENV{PATH}"
-      "PYTHONPATH=${NRN_FOREIGN_SOURCE_ROOT}/test/rxd")
+      "PYTHONPATH=${_nrn_foreign_test_pythonpath}")
   message(STATUS "Foreign mpiexec           : ${MPIEXEC_NAME}")
   message(STATUS "Foreign mpiexec oversub   : ${MPIEXEC_OVERSUBSCRIBE}")
 endif()
