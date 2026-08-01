@@ -408,4 +408,14 @@ Update Status before exit; commit without push.
 
 ## Next (one line — update every session end)
 
-**Next:** P4 gap phase timer **done** (gap-sync ~50%, deferred lastpart ~29% of ringtest gap). Residual: gap algorithm vs CN (~5×); dentate multi-rank re-profile; non-gap ~2× kernel density. Full NMODL `ctest` greening separate. **Not** Traub `use_gap=1` unless reopened.
+**Next:** Living tip branch rename: prefer **`local/gpu-native`** (see below). P4 residual: gap **scatter chatty** (side branch `local/gpu-p4-gap-phase-ab`); then dentate multi-rank / non-gap ~2×. Full NMODL ctest separate. **Not** Traub `use_gap=1` unless reopened.
+
+### Branching (2026-08-01)
+
+| Branch | Role |
+|--------|------|
+| **`local/gpu-native`** | New living tip name (same tip as `local/gpu-native-net-soa` @ P4 instrument) — prefer this going forward |
+| `local/gpu-native-net-soa` | Historical integration name; keep until remotes/docs catch up |
+| **`local/gpu-p4-gap-phase-ab`** | Exploratory: gap phase split A + traffic stats B. **Cherry-pick / ff only what proves useful** into `local/gpu-native` |
+
+P4 A+B first readout (1-rank ringtest gap tstop=100, side branch): **gap-scatter ~55%**, lastpart ~22%, setup ~15%, **gap-gather ~1%**. Traffic: **1 bulk D→H/step** (mailbox) but **~256 scalar H→D/step** (target scatter) → host-API thrash vs CoreNEURON bulk insrc + device scatter.

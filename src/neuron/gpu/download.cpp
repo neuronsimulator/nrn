@@ -6,6 +6,7 @@
 #include "neuron/gpu/mechanism_phases.hpp"
 #include "neuron/gpu/device_state.hpp"
 #include "neuron/gpu/offload.hpp"
+#include "neuron/gpu/partrans.hpp"
 #include "neuron/gpu/phase_timer.hpp"
 #include "neuron/gpu/sync.hpp"
 #include "neuron/gpu/trajectory.hpp"
@@ -307,6 +308,8 @@ void finalize_psolve_download() {
     trajectory_finalize_psolve();
     sync_state_to_host_for_host_reads();
     phase_timer::print_summary();
+    // P4 A+B: gap traffic report when NRN_GAP_TRAFFIC_STATS=1 or phase timer on.
+    print_gap_traffic_stats("psolve-end");
     reset_download_step_counter();
 #endif
 }

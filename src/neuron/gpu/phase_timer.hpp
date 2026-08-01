@@ -5,7 +5,13 @@
 
 namespace neuron::gpu::phase_timer {
 
-/** Native GPU fixed-step phase buckets (see PHASE-D-OVERVIEW.md). */
+/**
+ * Native GPU fixed-step phase buckets.
+ * Gap sub-phases (exploratory P4): map to CoreNEURON "gap-v-transfer" pieces —
+ * gather (device + D→H), host pack/MPI, insrc H→D, target scatter H→D.
+ * gap_sync remains for rare host-post_solve residual and as a coarse alias sum
+ * is not automatic (sub-phases accumulate independently).
+ */
 enum class Id : int {
     deliver_events,
     vecplay_sync,
@@ -15,7 +21,11 @@ enum class Id : int {
     post_solve,
     download_flush,
     lastpart,
-    gap_sync,
+    gap_sync,     // coarse / host post-solve residual
+    gap_gather,   // device source gather + bulk mailbox D→H
+    gap_host,     // host pack / 1-rank copy / MPI
+    gap_insrc,    // H→D insrc_buf after MPI
+    gap_scatter,  // sparse target H→D (main-thread)
     count
 };
 

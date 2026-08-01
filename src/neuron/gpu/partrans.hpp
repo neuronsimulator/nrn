@@ -8,7 +8,11 @@ struct NrnThread;
 
 namespace neuron::gpu {
 
-/** S5 traffic audit (product path should stay sparse; see doc/gpu/native-partrans.md). */
+/**
+ * S5 / P4 traffic audit (product path should stay sparse; see doc/gpu/native-partrans.md).
+ * Enable: NRN_GAP_TRAFFIC_STATS=1 (also auto-on when NRN_NATIVE_GPU_PHASE_TIMER=1).
+ * Print: end of psolve (finalize) and optional atexit.
+ */
 struct GapTrafficStats {
     std::uint64_t steps{0};
     std::uint64_t vsrc_gathered{0};       // unique voltage sources read (mailbox slots)
@@ -16,8 +20,12 @@ struct GapTrafficStats {
     std::uint64_t msrc_from_device{0};    // of those, device D→H
     std::uint64_t tar_scattered{0};       // sparse H→D target scalars (memcpy)
     std::uint64_t tar_field_fallback{0};  // times vgap-field column push used
-    std::uint64_t bytes_d2h{0};           // sparse gather D→H
-    std::uint64_t bytes_h2d{0};           // sparse scatter H→D (+ field columns)
+    std::uint64_t bytes_d2h{0};           // gather D→H (bulk + scalar)
+    std::uint64_t bytes_h2d{0};           // scatter H→D (+ field columns + insrc bulk)
+    std::uint64_t d2h_bulk_calls{0};      // OpenACC update host of whole buffer
+    std::uint64_t h2d_bulk_calls{0};      // OpenACC update device of whole buffer
+    std::uint64_t d2h_scalar_calls{0};    // acc_memcpy_from_device per double
+    std::uint64_t h2d_scalar_calls{0};    // memcpy_to_device per double
     std::uint64_t full_v_pulls{0};        // anti-pattern: full vec_v host pull
     std::uint64_t bulk_mech_pushes{0};    // anti-pattern: full mech SoA H→D
     std::uint64_t same_thread_device{0};   // S5 opt-in same-thread device edges
@@ -32,11 +40,17 @@ struct GapTrafficStats {
 /** Opt-in same-thread on-device copy (NRN_GAP_SAME_THREAD_DEVICE=1). Default off. */
 [[nodiscard]] bool gap_same_thread_device_enabled() noexcept;
 void print_gap_traffic_stats(char const* where) noexcept;
+/** Zero counters (start of psolve). */
+void gap_traffic_reset() noexcept;
 
 void gap_traffic_note_step() noexcept;
 void gap_traffic_note_v_gather(int n_src) noexcept;
 void gap_traffic_note_mech_gather(int n_src, int n_from_device) noexcept;
 void gap_traffic_note_scatter(int n_ok, int field_fallback, std::size_t field_bytes) noexcept;
+void gap_traffic_note_d2h_bulk(std::size_t bytes) noexcept;
+void gap_traffic_note_h2d_bulk(std::size_t bytes) noexcept;
+void gap_traffic_note_d2h_scalar(int n) noexcept;
+void gap_traffic_note_h2d_scalar(int n) noexcept;
 void gap_traffic_note_full_v_pull() noexcept;
 void gap_traffic_note_bulk_mech() noexcept;
 void gap_traffic_note_same_thread(int n_edges) noexcept;

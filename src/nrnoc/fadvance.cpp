@@ -348,8 +348,9 @@ void nrn_daspk_init_step(double tt, double dteps, int upd) {
  * this runs after all threads finish post_solve so gather sees every thread's V.
  *
  * Native GPU phase timer (NRN_NATIVE_GPU_PHASE_TIMER=1):
- *   gap_sync  — nrnmpi_v_transfer_ + nrn_native_gap_targets_to_device
- *   lastpart  — wall of the multi-thread lastpart job (not summed per thread)
+ *   gap-gather / gap-host / gap-insrc — inside nrnmpi_v_transfer_ / helpers
+ *   lastpart  — multi-thread lastpart wall (thread_transfer + STATE + deliver)
+ *   gap-scatter — nrn_native_gap_targets_to_device (sparse target H→D)
  */
 static void nrn_fixed_step_deferred_gap_lastpart(neuron::model_sorted_token const& cache_token) {
     if (!nrnthread_v_transfer_) {
@@ -357,24 +358,19 @@ static void nrn_fixed_step_deferred_gap_lastpart(neuron::model_sorted_token cons
     }
 #if defined(NRN_ENABLE_GPU)
     if (neuron::gpu::use_native_gpu_fixed_step()) {
-        {
-            neuron::gpu::phase_timer::Scope const timer{neuron::gpu::phase_timer::Id::gap_sync};
-            neuron::gpu::phase_timer::bump(neuron::gpu::phase_timer::Id::gap_sync);
-            if (nrnmpi_v_transfer_) {
-                nrn::Instrumentor::phase p_gap("gap-v-transfer");
-                (*nrnmpi_v_transfer_)();
-            }
+        // Sub-phase timers live inside gap_v_transfer_controller / gpu partrans.
+        if (nrnmpi_v_transfer_) {
+            nrn::Instrumentor::phase p_gap("gap-v-transfer");
+            (*nrnmpi_v_transfer_)();
         }
         {
             neuron::gpu::phase_timer::Scope const timer{neuron::gpu::phase_timer::Id::lastpart};
             neuron::gpu::phase_timer::bump(neuron::gpu::phase_timer::Id::lastpart);
             nrn_multithread_job(cache_token, nrn_fixed_step_lastpart);
         }
-        {
-            // Main-thread OpenACC push of gap targets (workers must not HtoD).
-            neuron::gpu::phase_timer::Scope const timer{neuron::gpu::phase_timer::Id::gap_sync};
-            nrn_native_gap_targets_to_device();
-        }
+        // Main-thread OpenACC push of gap targets (workers must not HtoD).
+        // Timed as gap-scatter inside scatter_gap_targets_to_device.
+        nrn_native_gap_targets_to_device();
         return;
     }
 #endif

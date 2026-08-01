@@ -31,6 +31,14 @@ char const* phase_name(Id id) noexcept {
         return "lastpart";
     case Id::gap_sync:
         return "gap-sync";
+    case Id::gap_gather:
+        return "gap-gather";
+    case Id::gap_host:
+        return "gap-host";
+    case Id::gap_insrc:
+        return "gap-insrc";
+    case Id::gap_scatter:
+        return "gap-scatter";
     case Id::count:
         break;
     }
