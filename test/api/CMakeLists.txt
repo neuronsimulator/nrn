@@ -25,7 +25,9 @@ endforeach()
 
 # The nrn_setpointer test needs a mechanism with a POINTER, which no built-in provides. Generate one
 # from ptrtest.mod with nocmodl and compile it into the test executable, the same codegen path nrniv
-# uses for its built-in mechanisms.
+# uses for its built-in mechanisms. NRN_NOCMODL_SANITIZER_ENVIRONMENT disables LeakSanitizer for the
+# nocmodl run (nocmodl leaks, which would otherwise fail the generation step under an asan build),
+# matching nocmodl_mod_to_cpp in cmake/MacroHelper.cmake.
 set(setpointer_mod "${CMAKE_CURRENT_SOURCE_DIR}/ptrtest.mod")
 set(setpointer_mod_copy "${CMAKE_CURRENT_BINARY_DIR}/ptrtest.mod")
 set(setpointer_gen "${CMAKE_CURRENT_BINARY_DIR}/ptrtest.cpp")
@@ -34,8 +36,9 @@ add_custom_command(
   OUTPUT ${setpointer_gen}
   COMMAND
     ${CMAKE_COMMAND} -E env "MODLUNIT=${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib"
-    "NMODLHOME=${PROJECT_BINARY_DIR}" $<TARGET_FILE:${NRN_CODEGENERATOR_TARGET}>
-    ${setpointer_mod_copy} ${NRN_NMODL_--neuron} -o ${CMAKE_CURRENT_BINARY_DIR}
+    "NMODLHOME=${PROJECT_BINARY_DIR}" ${NRN_NOCMODL_SANITIZER_ENVIRONMENT}
+    $<TARGET_FILE:${NRN_CODEGENERATOR_TARGET}> ${setpointer_mod_copy} ${NRN_NMODL_--neuron} -o
+    ${CMAKE_CURRENT_BINARY_DIR}
   DEPENDS ${NRN_CODEGENERATOR_TARGET} ${setpointer_mod}
           ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
