@@ -230,6 +230,50 @@ void nrn_rangevar_push(Symbol* sym, Section* sec, double x) {
     hoc_push(nrn_rangepointer(sec, sym, x));
 }
 
+int nrn_setpointer(Symbol* pointer_sym,
+                   Section* sec,
+                   double x,
+                   Symbol* src_sym,
+                   Section* src_sec,
+                   double src_x,
+                   char* error_msg,
+                   size_t error_msg_size) {
+    if (error_msg && error_msg_size > 0) {
+        error_msg[0] = '\0';
+    }
+    auto fail = [&](const char* msg) {
+        if (error_msg && error_msg_size > 0) {
+            strncpy(error_msg, msg, error_msg_size - 1);
+            error_msg[error_msg_size - 1] = '\0';
+        }
+        return 1;
+    };
+    // Only a mechanism POINTER range variable can be a setpointer target; the
+    // slot it wires lives in the mechanism's dparam array (mirrors the guard in
+    // nrn_pointer_assign / nrnpy_nrn.cpp).
+    if (!pointer_sym || pointer_sym->type != RANGEVAR || pointer_sym->subtype != NRNPOINTER) {
+        return fail("target is not a POINTER range variable");
+    }
+    // Locate the mechanism instance that owns this POINTER at (sec, x).
+    Node* const nd = node_exact(sec, x);
+    Prop* prop = nullptr;
+    for (Prop* p = nd->prop; p; p = p->next) {
+        if (p->_type == pointer_sym->u.rng.type) {
+            prop = p;
+            break;
+        }
+    }
+    if (!prop) {
+        return fail("the POINTER's mechanism is not present at the target segment");
+    }
+    // Wire the POINTER to the source variable's storage. nrn_rangepointer yields
+    // a data handle (stable across data permutation), which is exactly what the
+    // dparam slot stores -- the same assignment nrn_pointer_assign performs,
+    // without the PyObject* source.
+    prop->dparam[pointer_sym->u.rng.index] = nrn_rangepointer(src_sec, src_sym, src_x);
+    return 0;
+}
+
 nrn_Item* nrn_allsec(void) {
     return static_cast<nrn_Item*>(section_list);
 }

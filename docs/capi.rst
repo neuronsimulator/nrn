@@ -668,6 +668,48 @@ Segments
             seg.g_pas = 0.001  # S/cm²
 
 
+.. c:function:: int nrn_setpointer(Symbol* pointer_sym, Section* sec, double x, Symbol* src_sym, Section* src_sec, double src_x, char* error_msg, size_t error_msg_size)
+
+    Wire an NMODL ``POINTER`` variable to a source variable's storage.
+
+    :param pointer_sym: Symbol of the ``POINTER`` range variable to wire (the
+        target).
+    :param sec: Section of the mechanism instance owning the POINTER.
+    :param x: Normalized position (0.0 to 1.0) of that instance.
+    :param src_sym: Symbol of the source range variable.
+    :param src_sec: Section of the source variable.
+    :param src_x: Normalized position of the source variable.
+    :param error_msg: Buffer filled with a message on failure (may be ``NULL``).
+    :param error_msg_size: Size of ``error_msg``.
+    :returns: 0 on success; nonzero on error, with ``error_msg`` populated when
+        ``pointer_sym`` is not a ``POINTER`` variable or its mechanism is not
+        present at the target segment.
+
+    This is the C-API equivalent of the HOC ``setpointer`` statement and of
+    assigning a ``_ref_`` to a POINTER in Python. It stores a data handle to the
+    source, so the connection survives internal data reordering.
+
+    **C Usage:**
+
+    .. code-block:: c
+
+        // Wire a half-gap mechanism's vgap POINTER to the peer cell's voltage:
+        // cell2's membrane potential drives the gap current in cell1.
+        Symbol* vgap = nrn_symbol("vgap_halfgap");
+        Symbol* v = nrn_symbol("v");
+        char err[256];
+        if (nrn_setpointer(vgap, cell1, 0.5, v, cell2, 0.5, err, sizeof(err))) {
+            fprintf(stderr, "setpointer failed: %s\n", err);
+        }
+
+    **Python Equivalent:**
+
+    .. code-block:: python
+
+        # halfgap1 is a POINT_PROCESS with a POINTER vgap
+        halfgap1._ref_vgap = cell2(0.5)._ref_v
+
+
 Functions, objects, and the stack
 ---------------------------------
 
