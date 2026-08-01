@@ -1,5 +1,5 @@
-# Configure NeuronTestHelper.cmake for a foreign (wheel) NEURON install.
-# Call after DiscoverNeuron / VersionGate, with NRN_FOREIGN_SOURCE_ROOT set.
+# Configure NeuronTestHelper.cmake for a foreign (wheel) NEURON install. Call after DiscoverNeuron /
+# VersionGate, with NRN_FOREIGN_SOURCE_ROOT set.
 
 set(NRN_FOREIGN_MODE ON)
 set(NRN_TEST_SOURCE_ROOT "${NRN_FOREIGN_SOURCE_ROOT}")
@@ -34,13 +34,12 @@ if(NOT DEFINED NRN_FOREIGN_PATH_PREFIX OR NRN_FOREIGN_PATH_PREFIX STREQUAL "")
   set(NRN_FOREIGN_PATH_PREFIX "${_nrn_foreign_py_bindir}")
 endif()
 
-# Environment for nrnivmodl + tests: venv/prefix tools first.
-# PYTHONPATH is set (not empty) so ambient build-tree paths are replaced, while
-# still exposing in-tree helpers such as test/rxd/testutils.py. Site-packages
-# from the wheel remain on sys.path via the usual site mechanism.
-set(NRN_RUN_FROM_BUILD_DIR_ENV
-    "PATH=${NRN_FOREIGN_PATH_PREFIX}:$ENV{PATH}"
-    "PYTHONPATH=${NRN_FOREIGN_SOURCE_ROOT}/test/rxd")
+# Environment for nrnivmodl + tests: venv/prefix tools first. PYTHONPATH is set (not empty) so
+# ambient build-tree paths are replaced, while still exposing in-tree helpers such as
+# test/rxd/testutils.py. Site-packages from the wheel remain on sys.path via the usual site
+# mechanism.
+set(NRN_RUN_FROM_BUILD_DIR_ENV "PATH=${NRN_FOREIGN_PATH_PREFIX}:$ENV{PATH}"
+                               "PYTHONPATH=${NRN_FOREIGN_SOURCE_ROOT}/test/rxd")
 
 # Prefer the foreign interpreter for any test that runs Python.
 set(NRN_DEFAULT_PYTHON_EXECUTABLE "${NRN_FOREIGN_PYTHON}")
@@ -50,8 +49,12 @@ set(MPIEXEC_NAME "${NRN_FOREIGN_MPIEXEC}")
 set(MPIEXEC_NUMPROC_FLAG
     "-n"
     CACHE STRING "mpiexec flag for process count")
-set(MPIEXEC_PREFLAGS "" CACHE STRING "mpiexec flags before the executable")
-set(MPIEXEC_POSTFLAGS "" CACHE STRING "mpiexec flags after the executable")
+set(MPIEXEC_PREFLAGS
+    ""
+    CACHE STRING "mpiexec flags before the executable")
+set(MPIEXEC_POSTFLAGS
+    ""
+    CACHE STRING "mpiexec flags after the executable")
 set(MPIEXEC_OVERSUBSCRIBE "")
 if(NRN_ENABLE_MPI AND NOT MPIEXEC_NAME STREQUAL "")
   execute_process(
@@ -98,15 +101,15 @@ function(nrn_foreign_note_nrnivmodl_group group_name)
   nrn_foreign_track_prep_target("${${prefix}_NRNIVMODL_TARGET_NAME}")
 endfunction()
 
-# After nrn_add_test(GROUP g NAME n ...), hang copy-scripts and labels off `foreign`.
-# Extra ARGN tokens become additional CTest labels.
-# Default label "serial" is added unless ARGN includes "mpi" or "noserial".
+# After nrn_add_test(GROUP g NAME n ...), hang copy-scripts and labels off `foreign`. Extra ARGN
+# tokens become additional CTest labels. Default label "serial" is added unless ARGN includes "mpi"
+# or "noserial".
 function(nrn_foreign_finalize_test group_name test_name)
   set(copy_tgt "copy-scripts-${group_name}-${test_name}")
   nrn_foreign_track_prep_target("${copy_tgt}")
   set(full_name "${group_name}::${test_name}")
-  # LABELS must be one property value (semicolon-separated). Bare tokens after
-  # LABELS are parsed as additional PROPERTY names.
+  # LABELS must be one property value (semicolon-separated). Bare tokens after LABELS are parsed as
+  # additional PROPERTY names.
   set(_labels "foreign")
   set(_add_serial ON)
   foreach(_l ${ARGN})

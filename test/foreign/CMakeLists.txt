@@ -1,5 +1,5 @@
-# Standalone project: run NEURON integration tests against a foreign (wheel) install.
-# See PLAN.md and README.md.
+# Standalone project: run NEURON integration tests against a foreign (wheel) install. See PLAN.md
+# and README.md.
 cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 project(nrn-foreign-ctest LANGUAGES NONE)
 
@@ -31,30 +31,25 @@ set(_nrn_foreign_test_env "PYTHONPATH=" "PATH=${NRN_FOREIGN_PATH_PREFIX}:$ENV{PA
 if(NRN_FOREIGN_NRNIV STREQUAL "")
   message(WARNING "nrniv not found on PATH for foreign Python; nrniv smoke test skipped")
 else()
-  add_test(
-    NAME foreign::smoke_nrniv
-    COMMAND "${NRN_FOREIGN_NRNIV}" -nogui -nopython -nobanner -c "quit()")
-  set_tests_properties(
-    foreign::smoke_nrniv PROPERTIES LABELS "foreign;serial;smoke" TIMEOUT 60 ENVIRONMENT
-                                    "${_nrn_foreign_test_env}")
+  add_test(NAME foreign::smoke_nrniv COMMAND "${NRN_FOREIGN_NRNIV}" -nogui -nopython -nobanner -c
+                                             "quit()")
+  set_tests_properties(foreign::smoke_nrniv PROPERTIES LABELS "foreign;serial;smoke" TIMEOUT 60
+                                                       ENVIRONMENT "${_nrn_foreign_test_env}")
 endif()
 
-add_test(
-  NAME foreign::smoke_import
-  COMMAND "${NRN_FOREIGN_PYTHON}" -c "import neuron; print(neuron.__version__)")
-set_tests_properties(
-  foreign::smoke_import PROPERTIES LABELS "foreign;serial;smoke" TIMEOUT 60 ENVIRONMENT
-                                   "${_nrn_foreign_test_env}")
+add_test(NAME foreign::smoke_import COMMAND "${NRN_FOREIGN_PYTHON}" -c
+                                            "import neuron; print(neuron.__version__)")
+set_tests_properties(foreign::smoke_import PROPERTIES LABELS "foreign;serial;smoke" TIMEOUT 60
+                                                      ENVIRONMENT "${_nrn_foreign_test_env}")
 
 option(NRN_FOREIGN_SMOKE_NEURON_TEST "Run neuron.test() as a foreign smoke test" ON)
 if(NRN_FOREIGN_SMOKE_NEURON_TEST)
-  add_test(
-    NAME foreign::smoke_neuron_test
-    COMMAND "${NRN_FOREIGN_PYTHON}" -c
-            "import neuron; raise SystemExit(0 if neuron.test() else 1)")
+  add_test(NAME foreign::smoke_neuron_test
+           COMMAND "${NRN_FOREIGN_PYTHON}" -c
+                   "import neuron; raise SystemExit(0 if neuron.test() else 1)")
   set_tests_properties(
-    foreign::smoke_neuron_test PROPERTIES LABELS "foreign;serial;smoke" TIMEOUT 600
-                                          ENVIRONMENT "${_nrn_foreign_test_env}")
+    foreign::smoke_neuron_test PROPERTIES LABELS "foreign;serial;smoke" TIMEOUT 600 ENVIRONMENT
+                                          "${_nrn_foreign_test_env}")
 endif()
 
 # ---------------------------------------------------------------------------
@@ -68,11 +63,9 @@ execute_process(
 if(_pytest_rc EQUAL 0)
   set(_nrn_foreign_have_pytest ON)
 else()
-  message(
-    WARNING
-      "pytest is not installed for ${NRN_FOREIGN_PYTHON}. "
-      "Install with: \"${NRN_FOREIGN_PYTHON}\" -m pip install pytest\n"
-      "Python pytest-based groups will be skipped.")
+  message(WARNING "pytest is not installed for ${NRN_FOREIGN_PYTHON}. "
+                  "Install with: \"${NRN_FOREIGN_PYTHON}\" -m pip install pytest\n"
+                  "Python pytest-based groups will be skipped.")
 endif()
 
 include(SerialPortableTests.cmake)
@@ -93,7 +86,10 @@ set(_n_serial 0)
 set(_n_mpi 0)
 set(_n_cn 0)
 set(_n_all 0)
-get_property(_all_tests DIRECTORY PROPERTY TESTS)
+get_property(
+  _all_tests
+  DIRECTORY
+  PROPERTY TESTS)
 foreach(_t ${_all_tests})
   math(EXPR _n_all "${_n_all}+1")
   get_test_property("${_t}" LABELS _labs)

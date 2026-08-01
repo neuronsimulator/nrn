@@ -1,32 +1,27 @@
 # Discover a foreign (installed) NEURON via NRN_FOREIGN_PYTHON and probe_neuron.py.
 #
-# Sets (CACHE INTERNAL unless noted):
-#   NRN_FOREIGN_PYTHON              - interpreter used for discovery (user-facing CACHE)
-#   NRN_FOREIGN_NEURON_VERSION
-#   NRN_FOREIGN_NEURON_VERSION_FULL
-#   NRN_FOREIGN_NEURON_GIT_SHA
-#   NRN_FOREIGN_NEURON_FILE
-#   NRN_FOREIGN_NRNIV
-#   NRN_FOREIGN_NRNIVMODL
-#   NRN_FOREIGN_MODLUNIT
-#   NRN_FOREIGN_MPIEXEC
-#   NRN_FOREIGN_FEATURE_<NAME>      - ON/OFF for known keys
-#   NRN_FOREIGN_PROBE_JSON          - path to last probe output file
+# Sets (CACHE INTERNAL unless noted): NRN_FOREIGN_PYTHON              - interpreter used for
+# discovery (user-facing CACHE) NRN_FOREIGN_NEURON_VERSION NRN_FOREIGN_NEURON_VERSION_FULL
+# NRN_FOREIGN_NEURON_GIT_SHA NRN_FOREIGN_NEURON_FILE NRN_FOREIGN_NRNIV NRN_FOREIGN_NRNIVMODL
+# NRN_FOREIGN_MODLUNIT NRN_FOREIGN_MPIEXEC NRN_FOREIGN_FEATURE_<NAME>      - ON/OFF for known keys
+# NRN_FOREIGN_PROBE_JSON          - path to last probe output file
 
 set(NRN_FOREIGN_PYTHON
     ""
     CACHE FILEPATH "Python interpreter that can import the foreign NEURON install (venv wheel)")
 set(NRN_FOREIGN_ROOT
     ""
-    CACHE PATH
-          "Optional install prefix (bin/ prepended for discovery and tests; prefix backend)")
+    CACHE PATH "Optional install prefix (bin/ prepended for discovery and tests; prefix backend)")
 
 if(NRN_FOREIGN_PYTHON STREQUAL "")
-  find_package(Python3 COMPONENTS Interpreter REQUIRED)
+  find_package(
+    Python3
+    COMPONENTS Interpreter
+    REQUIRED)
   set(NRN_FOREIGN_PYTHON
       "${Python3_EXECUTABLE}"
       CACHE FILEPATH "Python interpreter that can import the foreign NEURON install (venv wheel)"
-      FORCE)
+            FORCE)
 endif()
 
 if(NOT EXISTS "${NRN_FOREIGN_PYTHON}")
@@ -40,16 +35,15 @@ endif()
 
 set(_NRN_FOREIGN_PROBE_OUT "${CMAKE_BINARY_DIR}/foreign_neuron_probe.json")
 
-# Clear PYTHONPATH so a developer’s build-tree install cannot shadow the venv wheel.
-# Prefer scripts next to NRN_FOREIGN_PYTHON (venv bin/) and optional NRN_FOREIGN_ROOT/bin.
+# Clear PYTHONPATH so a developer’s build-tree install cannot shadow the venv wheel. Prefer scripts
+# next to NRN_FOREIGN_PYTHON (venv bin/) and optional NRN_FOREIGN_ROOT/bin.
 get_filename_component(_nrn_foreign_py_bindir "${NRN_FOREIGN_PYTHON}" DIRECTORY)
 set(_nrn_foreign_probe_path "${_nrn_foreign_py_bindir}")
 if(NOT NRN_FOREIGN_ROOT STREQUAL "")
   if(NOT IS_DIRECTORY "${NRN_FOREIGN_ROOT}")
     message(FATAL_ERROR "NRN_FOREIGN_ROOT is not a directory: ${NRN_FOREIGN_ROOT}")
   endif()
-  set(_nrn_foreign_probe_path
-      "${NRN_FOREIGN_ROOT}/bin:${_nrn_foreign_py_bindir}")
+  set(_nrn_foreign_probe_path "${NRN_FOREIGN_ROOT}/bin:${_nrn_foreign_py_bindir}")
   message(STATUS "Foreign root (prefix)     : ${NRN_FOREIGN_ROOT}")
 endif()
 # Expose for ForeignTestHelpers / tests
@@ -58,21 +52,23 @@ set(NRN_FOREIGN_PATH_PREFIX
     CACHE INTERNAL "PATH prefix for foreign tools")
 
 execute_process(
-  COMMAND
-    "${CMAKE_COMMAND}" -E env "PYTHONPATH=" "PATH=${_nrn_foreign_probe_path}:$ENV{PATH}"
-    "${NRN_FOREIGN_PYTHON}" "${_NRN_FOREIGN_PROBE}"
+  COMMAND "${CMAKE_COMMAND}" -E env "PYTHONPATH=" "PATH=${_nrn_foreign_probe_path}:$ENV{PATH}"
+          "${NRN_FOREIGN_PYTHON}" "${_NRN_FOREIGN_PROBE}"
   RESULT_VARIABLE _probe_rc
   OUTPUT_VARIABLE _probe_stdout
   ERROR_VARIABLE _probe_stderr
   OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_STRIP_TRAILING_WHITESPACE)
 
 if(NOT _probe_rc EQUAL 0)
-  message(FATAL_ERROR "Foreign NEURON probe failed (rc=${_probe_rc}).\n"
-                      "Python: ${NRN_FOREIGN_PYTHON}\n" "stdout:\n${_probe_stdout}\n"
-                      "stderr:\n${_probe_stderr}\n"
-                      "Install a wheel into this environment, e.g.:\n"
-                      "  python -m venv .venv && source .venv/bin/activate\n"
-                      "  pip install neuron-nightly")
+  message(
+    FATAL_ERROR
+      "Foreign NEURON probe failed (rc=${_probe_rc}).\n"
+      "Python: ${NRN_FOREIGN_PYTHON}\n"
+      "stdout:\n${_probe_stdout}\n"
+      "stderr:\n${_probe_stderr}\n"
+      "Install a wheel into this environment, e.g.:\n"
+      "  python -m venv .venv && source .venv/bin/activate\n"
+      "  pip install neuron-nightly")
 endif()
 
 file(WRITE "${_NRN_FOREIGN_PROBE_OUT}" "${_probe_stdout}\n")
@@ -84,9 +80,13 @@ set(NRN_FOREIGN_PROBE_JSON
 function(_nrn_foreign_json_get out_var json_text)
   set(_path ${ARGN})
   string(
-    JSON _query
-    ERROR_VARIABLE _jerr
-    GET "${json_text}" ${_path})
+    JSON
+    _query
+    ERROR_VARIABLE
+    _jerr
+    GET
+    "${json_text}"
+    ${_path})
   if(_jerr)
     set(${out_var}
         ""
@@ -159,9 +159,10 @@ endif()
 
 # Required tools for any useful foreign run
 if(NRN_FOREIGN_NRNIVMODL STREQUAL "")
-  message(FATAL_ERROR "Foreign nrnivmodl not found on PATH for ${NRN_FOREIGN_PYTHON}.\n"
-                      "Ensure the venv/prefix bin directory is used (NRN_FOREIGN_PYTHON / "
-                      "NRN_FOREIGN_ROOT).")
+  message(
+    FATAL_ERROR
+      "Foreign nrnivmodl not found on PATH for ${NRN_FOREIGN_PYTHON}.\n"
+      "Ensure the venv/prefix bin directory is used (NRN_FOREIGN_PYTHON / " "NRN_FOREIGN_ROOT).")
 endif()
 if(NRN_FOREIGN_NRNIV STREQUAL "")
   message(WARNING "Foreign nrniv not found on PATH; HOC smoke and some tests will be skipped")
@@ -177,7 +178,8 @@ if(NRN_FOREIGN_FEATURE_NRN_ENABLE_MPI AND NRN_FOREIGN_MPIEXEC STREQUAL "")
 endif()
 
 # If CoreNEURON is on but SHARED is unknown/missing, assume shared (wheels are shared).
-if(NRN_FOREIGN_FEATURE_NRN_ENABLE_CORENEURON AND NOT NRN_FOREIGN_FEATURE_CORENRN_ENABLE_SHARED_KNOWN)
+if(NRN_FOREIGN_FEATURE_NRN_ENABLE_CORENEURON AND NOT
+                                                 NRN_FOREIGN_FEATURE_CORENRN_ENABLE_SHARED_KNOWN)
   message(STATUS "CORENRN_ENABLE_SHARED not reported by wheel; assuming ON (typical for wheels)")
   set(NRN_FOREIGN_FEATURE_CORENRN_ENABLE_SHARED
       ON

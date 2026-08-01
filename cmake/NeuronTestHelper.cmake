@@ -263,8 +263,9 @@ function(nrn_add_test_group)
       endif()
       if(NRN_ENABLE_CORENEURON AND NRN_ADD_TEST_GROUP_CORENEURON)
         list(APPEND output_binaries "${special}-core")
-        if((NOT coreneuron_FOUND) AND (NOT DEFINED CORENEURON_BUILTIN_MODFILES) AND
-           (NOT NRN_FOREIGN_MODE))
+        if((NOT coreneuron_FOUND)
+           AND (NOT DEFINED CORENEURON_BUILTIN_MODFILES)
+           AND (NOT NRN_FOREIGN_MODE))
           message(WARNING "nrn_add_test_group couldn't find the names of the builtin "
                           "CoreNEURON modfiles that nrnivmodl-core implicitly depends "
                           "on *and* CoreNEURON is being built internally")
@@ -459,9 +460,8 @@ function(nrn_add_test)
   # Prepend docs helper scripts on PYTHONPATH for in-tree builds only. In foreign mode PYTHONPATH=
   # must stay empty so the wheel/venv site-packages remain visible.
   if(NOT NRN_FOREIGN_MODE)
-    list(TRANSFORM test_env REPLACE
-                   "^PYTHONPATH="
-                   "PYTHONPATH=${NRN_TEST_SOURCE_ROOT}/docs/nmodl/python_scripts:")
+    list(TRANSFORM test_env REPLACE "^PYTHONPATH="
+                                    "PYTHONPATH=${NRN_TEST_SOURCE_ROOT}/docs/nmodl/python_scripts:")
   endif()
   # Get the list of variables being set
   set(extra_env_var_names ${extra_environment})

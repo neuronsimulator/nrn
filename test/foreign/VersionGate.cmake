@@ -1,7 +1,6 @@
-# Version policy D for foreign ctest:
-#   - NRN_FOREIGN_CI=ON            -> mismatch is FATAL
-#   - otherwise mismatch is FATAL unless NRN_FOREIGN_ALLOW_SKEW=ON
-# Match prefers git SHA (flexible length / embedded in describe), then version string.
+# Version policy D for foreign ctest: - NRN_FOREIGN_CI=ON            -> mismatch is FATAL -
+# otherwise mismatch is FATAL unless NRN_FOREIGN_ALLOW_SKEW=ON Match prefers git SHA (flexible
+# length / embedded in describe), then version string.
 
 option(NRN_FOREIGN_CI "Treat foreign/source version mismatch as fatal (CI mode)" OFF)
 option(NRN_FOREIGN_ALLOW_SKEW
@@ -129,9 +128,9 @@ if(NOT _match)
   endif()
 endif()
 
-# 3) Nightly-friendly: same leading X.Y.Z and same embedded g-sha even if
-#    "commits since tag" counters differ (e.g. wheel rebuilt vs local describe).
-#    Already covered by (1) when SHAs extract; keep (2) for tagged releases.
+# 3) Nightly-friendly: same leading X.Y.Z and same embedded g-sha even if "commits since tag"
+# counters differ (e.g. wheel rebuilt vs local describe). Already covered by (1) when SHAs extract;
+# keep (2) for tagged releases.
 
 set(NRN_FOREIGN_VERSION_MATCH
     "${_match}"
@@ -154,25 +153,24 @@ message(STATUS "Foreign/source match      : ${NRN_FOREIGN_VERSION_MATCH} (${_mat
 
 if(NOT _match)
   string(
-    CONCAT _msg
-    "Foreign NEURON does not match this source tree.\n"
-    "  wheel version : ${NRN_FOREIGN_NEURON_VERSION_FULL} (sha ${NRN_FOREIGN_NEURON_GIT_SHA}"
-    " / normalized ${_wheel_sha_raw})\n"
-    "  source tree   : ${NRN_FOREIGN_SOURCE_DESCRIBE} (sha ${NRN_FOREIGN_SOURCE_GIT_SHA_SHORT}"
-    " / normalized ${_src_sha_raw})\n"
-    "  match reason  : ${_match_reason}\n")
+    CONCAT
+      _msg
+      "Foreign NEURON does not match this source tree.\n"
+      "  wheel version : ${NRN_FOREIGN_NEURON_VERSION_FULL} (sha ${NRN_FOREIGN_NEURON_GIT_SHA}"
+      " / normalized ${_wheel_sha_raw})\n"
+      "  source tree   : ${NRN_FOREIGN_SOURCE_DESCRIBE} (sha ${NRN_FOREIGN_SOURCE_GIT_SHA_SHORT}"
+      " / normalized ${_src_sha_raw})\n"
+      "  match reason  : ${_match_reason}\n")
   if(NRN_FOREIGN_CI)
     message(FATAL_ERROR "${_msg}NRN_FOREIGN_CI=ON: refusing to configure (hard match).")
   elseif(NRN_FOREIGN_ALLOW_SKEW)
-    message(
-      WARNING
-      "${_msg}NRN_FOREIGN_ALLOW_SKEW=ON: continuing despite skew.\n"
-      "Feature gates still come from the wheel; API mismatches may fail tests.")
+    message(WARNING "${_msg}NRN_FOREIGN_ALLOW_SKEW=ON: continuing despite skew.\n"
+                    "Feature gates still come from the wheel; API mismatches may fail tests.")
   else()
     message(
       FATAL_ERROR
-      "${_msg}Refusing to configure. For local exploration re-run with:\n"
-      "  -DNRN_FOREIGN_ALLOW_SKEW=ON\n"
-      "Or check out the revision that built the wheel, or install a matching wheel.")
+        "${_msg}Refusing to configure. For local exploration re-run with:\n"
+        "  -DNRN_FOREIGN_ALLOW_SKEW=ON\n"
+        "Or check out the revision that built the wheel, or install a matching wheel.")
   endif()
 endif()

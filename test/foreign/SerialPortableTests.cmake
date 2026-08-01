@@ -1,6 +1,6 @@
-# Serial portable integration tests for foreign (wheel) mode.
-# Included from test/foreign/CMakeLists.txt after ForeignTestHelpers.
-# MPI / CoreNEURON groups live in MpiCoreNeuronTests.cmake (M4).
+# Serial portable integration tests for foreign (wheel) mode. Included from
+# test/foreign/CMakeLists.txt after ForeignTestHelpers. MPI / CoreNEURON groups live in
+# MpiCoreNeuronTests.cmake (M4).
 
 set(_nrn_foreign_pytest_args --capture=tee-sys)
 
@@ -70,8 +70,7 @@ foreach(ext hoc py)
       nrn_add_test(
         GROUP example_nmodl
         NAME ${name}_${ext}
-        COMMAND "${NRN_FOREIGN_PYTHON}" -m pytest ${_nrn_foreign_pytest_args}
-                "${example_script}"
+        COMMAND "${NRN_FOREIGN_PYTHON}" -m pytest ${_nrn_foreign_pytest_args} "${example_script}"
         SCRIPT_PATTERNS "${example_script}" "${name}.ses")
     else()
       nrn_add_test(
@@ -85,7 +84,7 @@ foreach(ext hoc py)
 endforeach()
 
 # ---------------------------------------------------------------------------
-# hoctests — each script under test/hoctests/* 
+# hoctests — each script under test/hoctests/*
 # ---------------------------------------------------------------------------
 nrn_add_test_group(
   NAME hoctests
@@ -160,17 +159,16 @@ if(NRN_ENABLE_RX3D AND _nrn_foreign_have_pytest)
     find_package(Git QUIET)
     if(GIT_FOUND AND EXISTS "${NRN_FOREIGN_SOURCE_ROOT}/.gitmodules")
       execute_process(
-        COMMAND "${GIT_EXECUTABLE}" -C "${NRN_FOREIGN_SOURCE_ROOT}" submodule update --init
-                -- test/rxd/testdata
+        COMMAND "${GIT_EXECUTABLE}" -C "${NRN_FOREIGN_SOURCE_ROOT}" submodule update --init --
+                test/rxd/testdata
         RESULT_VARIABLE _rxd_sub_rc
         OUTPUT_QUIET ERROR_QUIET)
     endif()
   endif()
   file(GLOB _rxd_data "${_rxd_testdata}/*")
   if(_rxd_data STREQUAL "")
-    message(
-      STATUS "Skipping rxdmod_tests: test/rxd/testdata not populated "
-             "(git submodule update --init -- test/rxd/testdata)")
+    message(STATUS "Skipping rxdmod_tests: test/rxd/testdata not populated "
+                   "(git submodule update --init -- test/rxd/testdata)")
   else()
     nrn_add_test_group(
       NAME rxdmod_tests

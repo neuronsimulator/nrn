@@ -1,6 +1,6 @@
-# MPI and CoreNEURON integration tests for foreign (wheel) mode (M4).
-# Included after SerialPortableTests.cmake. Tests are registered only when the
-# wheel reports the feature and the host has the needed tools (mpiexec, etc.).
+# MPI and CoreNEURON integration tests for foreign (wheel) mode (M4). Included after
+# SerialPortableTests.cmake. Tests are registered only when the wheel reports the feature and the
+# host has the needed tools (mpiexec, etc.).
 
 set(_nrn_foreign_pytest_args --capture=tee-sys)
 
@@ -28,9 +28,8 @@ if(NRN_ENABLE_MPI AND NOT MPIEXEC_NAME STREQUAL "")
     GROUP mpi_init
     NAME python_nrnmpi_init
     REQUIRES python mpi
-    COMMAND
-      "${NRN_FOREIGN_PYTHON}" -c
-      "from neuron import h$<SEMICOLON> h.nrnmpi_init()$<SEMICOLON> h.quit()")
+    COMMAND "${NRN_FOREIGN_PYTHON}" -c
+            "from neuron import h$<SEMICOLON> h.nrnmpi_init()$<SEMICOLON> h.quit()")
   nrn_foreign_finalize_test(mpi_init python_nrnmpi_init mpi)
 
   nrn_add_test(
@@ -38,8 +37,8 @@ if(NRN_ENABLE_MPI AND NOT MPIEXEC_NAME STREQUAL "")
     NAME mpiexec_nrniv
     REQUIRES mpi
     PROCESSORS 2
-    COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE}
-            ${MPIEXEC_PREFLAGS} nrniv ${MPIEXEC_POSTFLAGS} -mpi -c "quit()")
+    COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
+            nrniv ${MPIEXEC_POSTFLAGS} -mpi -c "quit()")
   nrn_foreign_finalize_test(mpi_init mpiexec_nrniv mpi)
 
   nrn_add_test(
@@ -67,9 +66,8 @@ if(NRN_ENABLE_MPI AND NOT MPIEXEC_NAME STREQUAL "")
     PROCESSORS 2
     REQUIRES mpi
     SCRIPT_PATTERNS test/parallel_tests/test_bas.py
-    COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE}
-            ${MPIEXEC_PREFLAGS} nrniv ${MPIEXEC_POSTFLAGS} -mpi -python
-            test/parallel_tests/test_bas.py)
+    COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
+            nrniv ${MPIEXEC_POSTFLAGS} -mpi -python test/parallel_tests/test_bas.py)
   nrn_foreign_finalize_test(parallel bas mpi parallel)
 
   nrn_add_test(
@@ -78,9 +76,8 @@ if(NRN_ENABLE_MPI AND NOT MPIEXEC_NAME STREQUAL "")
     PROCESSORS 2
     REQUIRES mpi
     SCRIPT_PATTERNS test/pytest_coreneuron/test_partrans.py
-    COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE}
-            ${MPIEXEC_PREFLAGS} nrniv ${MPIEXEC_POSTFLAGS} -mpi -python
-            test/pytest_coreneuron/test_partrans.py)
+    COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
+            nrniv ${MPIEXEC_POSTFLAGS} -mpi -python test/pytest_coreneuron/test_partrans.py)
   nrn_foreign_finalize_test(parallel partrans mpi parallel)
 
   nrn_add_test(
@@ -89,9 +86,8 @@ if(NRN_ENABLE_MPI AND NOT MPIEXEC_NAME STREQUAL "")
     PROCESSORS 2
     REQUIRES mpi
     SCRIPT_PATTERNS test/pytest_coreneuron/test_hoc_po.py test/pytest_coreneuron/test_netpar.py
-    COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE}
-            ${MPIEXEC_PREFLAGS} nrniv ${MPIEXEC_POSTFLAGS} -mpi -python
-            test/pytest_coreneuron/test_netpar.py)
+    COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
+            nrniv ${MPIEXEC_POSTFLAGS} -mpi -python test/pytest_coreneuron/test_netpar.py)
   nrn_foreign_finalize_test(parallel netpar mpi parallel)
 
   nrn_add_test(
@@ -100,9 +96,8 @@ if(NRN_ENABLE_MPI AND NOT MPIEXEC_NAME STREQUAL "")
     PROCESSORS 6
     REQUIRES mpi
     SCRIPT_PATTERNS test/parallel_tests/test_subworld.py
-    COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 6 ${MPIEXEC_OVERSUBSCRIBE}
-            ${MPIEXEC_PREFLAGS} nrniv ${MPIEXEC_POSTFLAGS} -mpi -python
-            test/parallel_tests/test_subworld.py)
+    COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 6 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
+            nrniv ${MPIEXEC_POSTFLAGS} -mpi -python test/parallel_tests/test_subworld.py)
   nrn_foreign_finalize_test(parallel subworld mpi parallel)
 
   if(_nrn_foreign_have_pytest)
@@ -116,9 +111,9 @@ if(NRN_ENABLE_MPI AND NOT MPIEXEC_NAME STREQUAL "")
       SCRIPT_PATTERNS
         test/pytest_coreneuron/run_pytest.py test/pytest_coreneuron/test_nrntest_fast.json
         test/pytest_coreneuron/test_nrntest_fast.py
-      COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE}
-              ${MPIEXEC_PREFLAGS} special ${MPIEXEC_POSTFLAGS} -mpi -python
-              test/pytest_coreneuron/run_pytest.py)
+      COMMAND
+        ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
+        special ${MPIEXEC_POSTFLAGS} -mpi -python test/pytest_coreneuron/run_pytest.py)
     nrn_foreign_finalize_test(parallel nrntest_fast mpi parallel pytest)
   endif()
 endif()
@@ -136,8 +131,7 @@ if(NRN_ENABLE_CORENEURON AND _nrn_foreign_have_pytest)
     GROUP pytest_coreneuron
     NAME basic_tests
     REQUIRES coreneuron
-    COMMAND "${NRN_FOREIGN_PYTHON}" -m pytest ${_nrn_foreign_pytest_args}
-            "./test/pytest_coreneuron"
+    COMMAND "${NRN_FOREIGN_PYTHON}" -m pytest ${_nrn_foreign_pytest_args} "./test/pytest_coreneuron"
     SCRIPT_PATTERNS "test/pytest_coreneuron/*.json" "test/pytest_coreneuron/*.py")
   nrn_foreign_finalize_test(pytest_coreneuron basic_tests coreneuron pytest)
 endif()
@@ -242,7 +236,9 @@ if(NRN_ENABLE_CORENEURON)
   endif()
 
   # MPI + CoreNEURON
-  if(NRN_ENABLE_MPI AND NOT MPIEXEC_NAME STREQUAL "" AND _nrn_foreign_have_pytest)
+  if(NRN_ENABLE_MPI
+     AND NOT MPIEXEC_NAME STREQUAL ""
+     AND _nrn_foreign_have_pytest)
     nrn_add_test(
       GROUP coreneuron_modtests
       NAME inputpresyn_py
@@ -267,8 +263,7 @@ if(NRN_ENABLE_MPI
     REQUIRES mpi
     PROCESSORS 2
     SCRIPT_PATTERNS test/gjtests/test_par_gj.py
-    COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE}
-            ${MPIEXEC_PREFLAGS} "${NRN_FOREIGN_PYTHON}" ${MPIEXEC_POSTFLAGS}
-            test/gjtests/test_par_gj.py)
+    COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
+            "${NRN_FOREIGN_PYTHON}" ${MPIEXEC_POSTFLAGS} test/gjtests/test_par_gj.py)
   nrn_foreign_finalize_test(gjtests gj_par mpi gjtests)
 endif()
