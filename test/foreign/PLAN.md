@@ -4,7 +4,7 @@
 **Architecture:** separate test-only CMake project (option B)  
 **Dev artifact:** normal venv + `pip install neuron-nightly`  
 **v1 done:** documented local workflow (metric C)  
-**Status:** M4 complete (MPI + CoreNEURON local `-L` filters). Next: M5 optional.
+**Status:** M5 complete (hardening + inventory). Branch ready for review/park.
 
 Approved product decisions:
 
@@ -90,7 +90,7 @@ test/CMakeLists.txt              # guards: linked units only if TARGET nrniv_lib
 | **M2** | Foreign nrnivmodl + one mod-using group; target `foreign` | Done (`pytest::basic_tests`) |
 | **M3** | Serial portable subset + README (v1 done) | Done (~88 tests, `-L serial`) |
 | **M4** | Register MPI + CoreNEURON for local `-R` | Done (`-L mpi`, `-L coreneuron`) |
-| **M5** | Hardening, inventory, optional CI/prefix | as needed |
+| **M5** | Hardening, inventory, optional CI/prefix | Done (no Azure; prefix via `NRN_FOREIGN_ROOT`) |
 
 ### PR1 vertical slice
 

@@ -26,6 +26,8 @@ Optional:
 git submodule update --init -- test/rxd/testdata   # for RxD comparison data
 ```
 
+See [INVENTORY.md](INVENTORY.md) for foreign-ok vs build-only tests and skip rules.
+
 ## Quick start (local, metric C — serial suite)
 
 ```bash
@@ -73,8 +75,24 @@ tests are registered (clean skip, not failure).
 | Local exploration | `-DNRN_FOREIGN_ALLOW_SKEW=ON` | Configure **warns**, continues |
 | CI | `-DNRN_FOREIGN_CI=ON` | Configure **fails** (hard match; leave `ALLOW_SKEW` off) |
 
-Match prefers the wheel’s build git SHA (`h.nrnversion(3)`) against this repo’s
-`HEAD`, then equal version/`git describe` strings.
+Match rules (`VersionGate.cmake`):
+
+1. Normalized git SHA (flexible length; also extracted from describe strings like
+   `9.0.1-85-g5ac449d89` used by nightlies)
+2. Exact version / `git describe` string equality
+
+## Prefix install (optional)
+
+Wheels are primary. For a classic `CMAKE_INSTALL_PREFIX` layout:
+
+```bash
+cmake -S test/foreign -B build-ctest \
+  -DNRN_FOREIGN_PYTHON=/path/to/python \
+  -DNRN_FOREIGN_ROOT=/path/to/prefix \
+  -DNRN_FOREIGN_ALLOW_SKEW=ON
+```
+
+`NRN_FOREIGN_ROOT/bin` is prepended for discovery and test PATH.
 
 ## Discovery
 
@@ -126,6 +144,7 @@ test/foreign/
   SerialPortableTests.cmake   # M3 serial groups
   MpiCoreNeuronTests.cmake    # M4 MPI + CoreNEURON
   probe_neuron.py
+  INVENTORY.md                # foreign-ok vs build-only
   PLAN.md
   README.md
 ```

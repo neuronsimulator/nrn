@@ -16,6 +16,10 @@
 set(NRN_FOREIGN_PYTHON
     ""
     CACHE FILEPATH "Python interpreter that can import the foreign NEURON install (venv wheel)")
+set(NRN_FOREIGN_ROOT
+    ""
+    CACHE PATH
+          "Optional install prefix (bin/ prepended for discovery and tests; prefix backend)")
 
 if(NRN_FOREIGN_PYTHON STREQUAL "")
   find_package(Python3 COMPONENTS Interpreter REQUIRED)
@@ -37,11 +41,25 @@ endif()
 set(_NRN_FOREIGN_PROBE_OUT "${CMAKE_BINARY_DIR}/foreign_neuron_probe.json")
 
 # Clear PYTHONPATH so a developer’s build-tree install cannot shadow the venv wheel.
-# Prefer scripts next to NRN_FOREIGN_PYTHON (venv bin/) over ambient PATH entries.
+# Prefer scripts next to NRN_FOREIGN_PYTHON (venv bin/) and optional NRN_FOREIGN_ROOT/bin.
 get_filename_component(_nrn_foreign_py_bindir "${NRN_FOREIGN_PYTHON}" DIRECTORY)
+set(_nrn_foreign_probe_path "${_nrn_foreign_py_bindir}")
+if(NOT NRN_FOREIGN_ROOT STREQUAL "")
+  if(NOT IS_DIRECTORY "${NRN_FOREIGN_ROOT}")
+    message(FATAL_ERROR "NRN_FOREIGN_ROOT is not a directory: ${NRN_FOREIGN_ROOT}")
+  endif()
+  set(_nrn_foreign_probe_path
+      "${NRN_FOREIGN_ROOT}/bin:${_nrn_foreign_py_bindir}")
+  message(STATUS "Foreign root (prefix)     : ${NRN_FOREIGN_ROOT}")
+endif()
+# Expose for ForeignTestHelpers / tests
+set(NRN_FOREIGN_PATH_PREFIX
+    "${_nrn_foreign_probe_path}"
+    CACHE INTERNAL "PATH prefix for foreign tools")
+
 execute_process(
   COMMAND
-    "${CMAKE_COMMAND}" -E env "PYTHONPATH=" "PATH=${_nrn_foreign_py_bindir}:$ENV{PATH}"
+    "${CMAKE_COMMAND}" -E env "PYTHONPATH=" "PATH=${_nrn_foreign_probe_path}:$ENV{PATH}"
     "${NRN_FOREIGN_PYTHON}" "${_NRN_FOREIGN_PROBE}"
   RESULT_VARIABLE _probe_rc
   OUTPUT_VARIABLE _probe_stdout
@@ -104,21 +122,50 @@ set(_feature_keys
     CORENRN_ENABLE_GPU
     CORENRN_ENABLE_SHARED)
 
+_nrn_foreign_json_get(_features_error "${_probe_stdout}" features _error)
+if(NOT _features_error STREQUAL "")
+  message(WARNING "Foreign probe could not read neuron.config.arguments: ${_features_error}\n"
+                  "All NRN_FOREIGN_FEATURE_* flags default to OFF.")
+endif()
+
+set(_missing_feature_keys "")
 foreach(_fk IN LISTS _feature_keys)
   _nrn_foreign_json_get(_fval "${_probe_stdout}" features "${_fk}")
   # string(JSON) maps JSON true/false to ON/OFF (CMake booleans)
   set(_on OFF)
-  if(_fval STREQUAL "ON"
-     OR _fval STREQUAL "1"
-     OR _fval STREQUAL "TRUE"
-     OR _fval STREQUAL "true"
-     OR _fval STREQUAL "True")
+  set(_known ON)
+  if(_fval STREQUAL "")
+    # Missing key (old wheel) → feature off, note it
+    set(_known OFF)
+    list(APPEND _missing_feature_keys "${_fk}")
+  elseif(
+    _fval STREQUAL "ON"
+    OR _fval STREQUAL "1"
+    OR _fval STREQUAL "TRUE"
+    OR _fval STREQUAL "true"
+    OR _fval STREQUAL "True")
     set(_on ON)
   endif()
   set(NRN_FOREIGN_FEATURE_${_fk}
       "${_on}"
       CACHE BOOL "Foreign NEURON feature ${_fk}" FORCE)
+  set(NRN_FOREIGN_FEATURE_${_fk}_KNOWN
+      "${_known}"
+      CACHE BOOL "Whether wheel reported ${_fk}" FORCE)
 endforeach()
+if(NOT _missing_feature_keys STREQUAL "")
+  message(STATUS "Foreign feature keys missing (treated as OFF): ${_missing_feature_keys}")
+endif()
+
+# Required tools for any useful foreign run
+if(NRN_FOREIGN_NRNIVMODL STREQUAL "")
+  message(FATAL_ERROR "Foreign nrnivmodl not found on PATH for ${NRN_FOREIGN_PYTHON}.\n"
+                      "Ensure the venv/prefix bin directory is used (NRN_FOREIGN_PYTHON / "
+                      "NRN_FOREIGN_ROOT).")
+endif()
+if(NRN_FOREIGN_NRNIV STREQUAL "")
+  message(WARNING "Foreign nrniv not found on PATH; HOC smoke and some tests will be skipped")
+endif()
 
 # MPI tests need a launcher on the host even if the wheel was built with MPI
 if(NRN_FOREIGN_FEATURE_NRN_ENABLE_MPI AND NRN_FOREIGN_MPIEXEC STREQUAL "")
@@ -127,6 +174,14 @@ if(NRN_FOREIGN_FEATURE_NRN_ENABLE_MPI AND NRN_FOREIGN_MPIEXEC STREQUAL "")
   set(NRN_FOREIGN_FEATURE_NRN_ENABLE_MPI
       OFF
       CACHE BOOL "Foreign NEURON feature NRN_ENABLE_MPI" FORCE)
+endif()
+
+# If CoreNEURON is on but SHARED is unknown/missing, assume shared (wheels are shared).
+if(NRN_FOREIGN_FEATURE_NRN_ENABLE_CORENEURON AND NOT NRN_FOREIGN_FEATURE_CORENRN_ENABLE_SHARED_KNOWN)
+  message(STATUS "CORENRN_ENABLE_SHARED not reported by wheel; assuming ON (typical for wheels)")
+  set(NRN_FOREIGN_FEATURE_CORENRN_ENABLE_SHARED
+      ON
+      CACHE BOOL "Foreign NEURON feature CORENRN_ENABLE_SHARED" FORCE)
 endif()
 
 message(STATUS "Foreign NEURON python     : ${NRN_FOREIGN_PYTHON}")

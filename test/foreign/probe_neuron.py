@@ -50,6 +50,18 @@ def main() -> int:
     except Exception as exc:  # noqa: BLE001
         nrnversions["error"] = str(exc)
 
+    # Fall back: extract g<sha> from describe-style version strings (nightlies).
+    if not git_sha:
+        import re
+
+        for candidate in (version_full, version):
+            if not candidate:
+                continue
+            m = re.search(r"g([0-9a-fA-F]+)", str(candidate))
+            if m:
+                git_sha = m.group(1)
+                break
+
     features: dict[str, object] = {}
     try:
         from neuron import config

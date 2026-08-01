@@ -30,13 +30,16 @@ if(NRN_FOREIGN_NRNIVMODL STREQUAL "")
 endif()
 
 get_filename_component(_nrn_foreign_py_bindir "${NRN_FOREIGN_PYTHON}" DIRECTORY)
+if(NOT DEFINED NRN_FOREIGN_PATH_PREFIX OR NRN_FOREIGN_PATH_PREFIX STREQUAL "")
+  set(NRN_FOREIGN_PATH_PREFIX "${_nrn_foreign_py_bindir}")
+endif()
 
-# Environment for nrnivmodl + tests: venv tools first.
+# Environment for nrnivmodl + tests: venv/prefix tools first.
 # PYTHONPATH is set (not empty) so ambient build-tree paths are replaced, while
 # still exposing in-tree helpers such as test/rxd/testutils.py. Site-packages
 # from the wheel remain on sys.path via the usual site mechanism.
 set(NRN_RUN_FROM_BUILD_DIR_ENV
-    "PATH=${_nrn_foreign_py_bindir}:$ENV{PATH}"
+    "PATH=${NRN_FOREIGN_PATH_PREFIX}:$ENV{PATH}"
     "PYTHONPATH=${NRN_FOREIGN_SOURCE_ROOT}/test/rxd")
 
 # Prefer the foreign interpreter for any test that runs Python.
@@ -61,7 +64,7 @@ if(NRN_ENABLE_MPI AND NOT MPIEXEC_NAME STREQUAL "")
   get_filename_component(_nrn_foreign_mpiexec_dir "${MPIEXEC_NAME}" DIRECTORY)
   # Ensure launcher directory is on PATH for nested tools.
   set(NRN_RUN_FROM_BUILD_DIR_ENV
-      "PATH=${_nrn_foreign_py_bindir}:${_nrn_foreign_mpiexec_dir}:$ENV{PATH}"
+      "PATH=${NRN_FOREIGN_PATH_PREFIX}:${_nrn_foreign_mpiexec_dir}:$ENV{PATH}"
       "PYTHONPATH=${NRN_FOREIGN_SOURCE_ROOT}/test/rxd")
   message(STATUS "Foreign mpiexec           : ${MPIEXEC_NAME}")
   message(STATUS "Foreign mpiexec oversub   : ${MPIEXEC_OVERSUBSCRIBE}")
