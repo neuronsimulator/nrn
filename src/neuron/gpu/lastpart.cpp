@@ -116,6 +116,9 @@ void prepare_nonvint_on_device(NrnThread& nt) {
     g_saved_compute_gpu_for_nonvint = nt.compute_gpu;
     nt.compute_gpu = 1;
 
+    // Keep device nt._t in step with host. ACC STATE/CURRENT use host-captured
+    // `_nrn_thread_t`, but other device paths may still read nt._t. Fence so the
+    // update is visible before STATE.
     nrn_pragma_acc(update device(nt._t) if (nt.compute_gpu) async(nt.stream_id))
     nrn_pragma_omp(target update to(nt._t) if (nt.compute_gpu))
     nrn_pragma_acc(wait(nt.stream_id))

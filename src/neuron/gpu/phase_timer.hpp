@@ -7,11 +7,22 @@ namespace neuron::gpu::phase_timer {
 
 /**
  * Native GPU fixed-step phase buckets.
- * Gap sub-phases (exploratory P4): map to CoreNEURON "gap-v-transfer" pieces —
+ *
+ * Gap sub-phases (P4 A+B): map to CoreNEURON "gap-v-transfer" pieces —
  * gather (device + D→H), host pack/MPI, insrc H→D, bulk target scatter
  * (packed vals + device write; not O(n) scalar H→D).
- * gap_sync remains for rare host-post_solve residual and as a coarse alias sum
- * is not automatic (sub-phases accumulate independently).
+ * gap_sync remains for rare host-post_solve residual; sub-phases accumulate
+ * independently (not auto-summed into gap_sync).
+ *
+ * Lastpart sub-phases (P4 lastpart-ab, exploratory): nest under coarse lastpart
+ * wall. Absolute seconds are the diagnosis signal; tracked-total double-counts
+ * lastpart + lastpart-* (same as accepting gap sub-phases next to lastpart).
+ *   play    — fixed_play_continuous
+ *   xfer    — nrnthread_v_transfer_ / thread_transfer (host gap apply; nested
+ *             under lastpart-nonvint when present)
+ *   nonvint — prepare + nonvint (incl. xfer) + finalize
+ *   record  — AFTER_SOLVE + trajectory / fixed_record
+ *   deliver — deliver_post_step_events (thresh + net deliver)
  */
 enum class Id : int {
     deliver_events,
@@ -21,12 +32,17 @@ enum class Id : int {
     matrix_solver,
     post_solve,
     download_flush,
-    lastpart,
-    gap_sync,     // coarse / host post-solve residual
-    gap_gather,   // device source gather + bulk mailbox D→H
-    gap_host,     // host pack / 1-rank copy / MPI
-    gap_insrc,    // H→D insrc_buf after MPI
-    gap_scatter,  // bulk target scatter (main-thread; de-chatty)
+    lastpart,          // coarse wall (multithread job or nested no-gap)
+    lastpart_play,     // fixed_play_continuous
+    lastpart_xfer,     // thread_transfer / extra_scatter_gather
+    lastpart_nonvint,  // device STATE path
+    lastpart_record,   // AFTER_SOLVE + trajectory/record
+    lastpart_deliver,  // post-step deliver (thresh + events)
+    gap_sync,          // coarse / host post-solve residual
+    gap_gather,        // device source gather + bulk mailbox D→H
+    gap_host,          // host pack / 1-rank copy / MPI
+    gap_insrc,         // H→D insrc_buf after MPI
+    gap_scatter,       // bulk target scatter (main-thread; de-chatty)
     count
 };
 

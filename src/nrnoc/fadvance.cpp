@@ -349,7 +349,7 @@ void nrn_daspk_init_step(double tt, double dteps, int upd) {
  *
  * Native GPU phase timer (NRN_NATIVE_GPU_PHASE_TIMER=1):
  *   gap-gather / gap-host / gap-insrc — inside nrnmpi_v_transfer_ / helpers
- *   lastpart  — multi-thread lastpart wall (thread_transfer + STATE + deliver)
+ *   lastpart  — multi-thread lastpart wall; sub: play/xfer/nonvint/record/deliver
  *   gap-scatter — nrn_native_gap_targets_to_device (sparse target H→D)
  */
 static void nrn_fixed_step_deferred_gap_lastpart(neuron::model_sorted_token const& cache_token) {
@@ -600,9 +600,12 @@ void nrn_fixed_step_lastpart(neuron::model_sorted_token const& cache_token, NrnT
     // mutex: when lastpart is nested under fixed_step_thread (no transfer),
     // this is a no-cost re-lock.
     std::unique_ptr<neuron::gpu::OpenACCHostApiLock> openacc_lastpart_lock;
-    if (neuron::gpu::use_native_gpu_fixed_step()) {
+    bool const native_lastpart = neuron::gpu::use_native_gpu_fixed_step();
+    if (native_lastpart) {
         openacc_lastpart_lock = std::make_unique<neuron::gpu::OpenACCHostApiLock>();
     }
+#else
+    bool const native_lastpart = false;
 #endif
 #if ELIMINATE_T_ROUNDOFF
     nth->nrn_ndt_ += .5;
@@ -610,45 +613,72 @@ void nrn_fixed_step_lastpart(neuron::model_sorted_token const& cache_token, NrnT
 #else
     nth->_t += .5 * nth->_dt;
 #endif
-    fixed_play_continuous(nth);
+    {
+#if defined(NRN_ENABLE_GPU)
+        neuron::gpu::phase_timer::Scope const timer{neuron::gpu::phase_timer::Id::lastpart_play};
+        if (native_lastpart) {
+            neuron::gpu::phase_timer::bump(neuron::gpu::phase_timer::Id::lastpart_play);
+        }
+#endif
+        fixed_play_continuous(nth);
+    }
+    // Python extra_scatter_gather only (not gap thread_transfer — that is inside nonvint).
     nrn_extra_scatter_gather(0, nth->id);
     nrn_prcellstate_checkpoint_maybe(PrcellCheckpointPhase::pre_nonvint, nt);
+    {
 #if defined(NRN_ENABLE_GPU)
-    if (neuron::gpu::use_native_gpu_fixed_step()) {
-        neuron::gpu::sync_before_device_nonvint(nt);
-        neuron::gpu::prepare_nonvint_on_device(nt);
-    }
+        neuron::gpu::phase_timer::Scope const timer{neuron::gpu::phase_timer::Id::lastpart_nonvint};
+        if (native_lastpart) {
+            neuron::gpu::phase_timer::bump(neuron::gpu::phase_timer::Id::lastpart_nonvint);
+        }
+        if (native_lastpart) {
+            neuron::gpu::sync_before_device_nonvint(nt);
+            neuron::gpu::prepare_nonvint_on_device(nt);
+        }
 #endif
-    nonvint(cache_token, nt);
+        nonvint(cache_token, nt);
 #if defined(NRN_ENABLE_GPU)
-    if (neuron::gpu::use_native_gpu_fixed_step()) {
-        neuron::gpu::finalize_nonvint_on_device(nt);
-    }
+        if (native_lastpart) {
+            neuron::gpu::finalize_nonvint_on_device(nt);
+        }
 #endif
+    }
     nrn_prcellstate_checkpoint_maybe(PrcellCheckpointPhase::post_nonvint, nt);
-    nrn_ba(cache_token, nt, AFTER_SOLVE);
+    {
 #if defined(NRN_ENABLE_GPU)
-    // Bind plan after model is on device (ensure_on_device ran in fixed_step_thread).
-    // Sparse device→host trajectory when plan covers all Vector.record (Gate F).
-    // Same phase as host fixed_record_continuous: BEFORE_STEP then sample.
-    if (neuron::gpu::use_native_gpu_fixed_step()) {
-        neuron::gpu::trajectory_prepare_for_psolve();
-        if (neuron::gpu::trajectory_covers_fixed_record()) {
-            nrn_ba(cache_token, nt, BEFORE_STEP);
-            neuron::gpu::trajectory_sample_step(nt);
-        } else {
+        neuron::gpu::phase_timer::Scope const timer{neuron::gpu::phase_timer::Id::lastpart_record};
+        if (native_lastpart) {
+            neuron::gpu::phase_timer::bump(neuron::gpu::phase_timer::Id::lastpart_record);
+        }
+#endif
+        nrn_ba(cache_token, nt, AFTER_SOLVE);
+#if defined(NRN_ENABLE_GPU)
+        // Bind plan after model is on device (ensure_on_device ran in fixed_step_thread).
+        // Sparse device→host trajectory when plan covers all Vector.record (Gate F).
+        // Same phase as host fixed_record_continuous: BEFORE_STEP then sample.
+        if (native_lastpart) {
+            neuron::gpu::trajectory_prepare_for_psolve();
+            if (neuron::gpu::trajectory_covers_fixed_record()) {
+                nrn_ba(cache_token, nt, BEFORE_STEP);
+                neuron::gpu::trajectory_sample_step(nt);
+            } else {
+                fixed_record_continuous(cache_token, nt);
+            }
+        } else
+#endif
+        {
             fixed_record_continuous(cache_token, nt);
         }
-    } else
-#endif
-    {
-        fixed_record_continuous(cache_token, nt);
     }
     CTADD;
     {
         nrn::Instrumentor::phase p("deliver-events");
 #if defined(NRN_ENABLE_GPU)
-        if (neuron::gpu::use_native_gpu_fixed_step()) {
+        neuron::gpu::phase_timer::Scope const timer{neuron::gpu::phase_timer::Id::lastpart_deliver};
+        if (native_lastpart) {
+            neuron::gpu::phase_timer::bump(neuron::gpu::phase_timer::Id::lastpart_deliver);
+        }
+        if (native_lastpart) {
             neuron::gpu::deliver_post_step_events_host(nth);
         } else
 #endif
@@ -873,9 +903,14 @@ void fmatrix(void) {
 }
 
 static void nonvint(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
-    /* nrnmpi_v_transfer if needed was done earlier */
+    /* nrnmpi_v_transfer (mailbox/MPI) was done earlier on the deferred-gap path;
+     * this is the per-thread host apply of targets (thread_transfer). */
     if (nrnthread_v_transfer_) {
         nrn::Instrumentor::phase p_gap("gap-v-transfer");
+#if defined(NRN_ENABLE_GPU)
+        neuron::gpu::phase_timer::Scope const timer{neuron::gpu::phase_timer::Id::lastpart_xfer};
+        neuron::gpu::phase_timer::bump(neuron::gpu::phase_timer::Id::lastpart_xfer);
+#endif
         nrnthread_v_transfer_(&nt);
     }
     nrn::Instrumentor::phase_begin("state-update");

@@ -29,6 +29,16 @@ char const* phase_name(Id id) noexcept {
         return "download-flush";
     case Id::lastpart:
         return "lastpart";
+    case Id::lastpart_play:
+        return "lastpart-play";
+    case Id::lastpart_xfer:
+        return "lastpart-xfer";
+    case Id::lastpart_nonvint:
+        return "lastpart-nonvint";
+    case Id::lastpart_record:
+        return "lastpart-record";
+    case Id::lastpart_deliver:
+        return "lastpart-deliver";
     case Id::gap_sync:
         return "gap-sync";
     case Id::gap_gather:
