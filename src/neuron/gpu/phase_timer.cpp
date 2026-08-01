@@ -19,6 +19,10 @@ char const* phase_name(Id id) noexcept {
         return "vecplay-sync";
     case Id::setup_tree_matrix:
         return "setup-tree-matrix";
+    case Id::setup_rhs:
+        return "setup-rhs";
+    case Id::setup_lhs:
+        return "setup-lhs";
     case Id::matrix_sync:
         return "matrix-sync";
     case Id::matrix_solver:

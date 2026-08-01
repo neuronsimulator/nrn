@@ -14,20 +14,20 @@ namespace neuron::gpu::phase_timer {
  * gap_sync remains for rare host-post_solve residual; sub-phases accumulate
  * independently (not auto-summed into gap_sync).
  *
- * Lastpart sub-phases (P4 lastpart-ab, exploratory): nest under coarse lastpart
- * wall. Absolute seconds are the diagnosis signal; tracked-total double-counts
- * lastpart + lastpart-* (same as accepting gap sub-phases next to lastpart).
- *   play    — fixed_play_continuous
- *   xfer    — nrnthread_v_transfer_ / thread_transfer (host gap apply; nested
- *             under lastpart-nonvint when present)
- *   nonvint — prepare + nonvint (incl. xfer) + finalize
- *   record  — AFTER_SOLVE + trajectory / fixed_record
- *   deliver — deliver_post_step_events (thresh + net deliver)
+ * Lastpart sub-phases (P4): nest under coarse lastpart wall. Prefer absolute
+ * seconds; tracked-total double-counts lastpart + lastpart-*.
+ *   play / xfer / nonvint / record / deliver
+ *
+ * Setup-tree-matrix sub-phases (P4 density): nest under setup-tree-matrix.
+ *   setup-rhs — nrn_rhs (zero + CURRENT + axial)
+ *   setup-lhs — nrn_lhs (zero d + JACOBIAN + axial)
  */
 enum class Id : int {
     deliver_events,
     vecplay_sync,
-    setup_tree_matrix,
+    setup_tree_matrix,  // coarse wall
+    setup_rhs,          // nrn_rhs
+    setup_lhs,          // nrn_lhs
     matrix_sync,
     matrix_solver,
     post_solve,

@@ -343,7 +343,7 @@ Phase timer (`NRN_NATIVE_GPU_PHASE_TIMER=1`):
 | Gap scatter de-chatty + A+B timers | **done (on tip)** | 0 scalar H→D/step; scatter ~5%. |
 | Gap-only P4 residual | **closed as density** | Same bottleneck as no-gap (setup + nonvint); not gap transfer. |
 | Lastpart sub-buckets | **done (on tip)** | play/xfer/nonvint/record/deliver. |
-| Setup-rhs/lhs sub-buckets | **done (explor)** | `local/gpu-p4-setup-nonvint-density`; cherry-pick timers when wanted. |
+| Setup-rhs/lhs sub-buckets | **done (on tip)** | Nested under setup-tree-matrix; prefer absolute seconds. |
 | Defer per-mech ACC wait (H1) | **explor; ringtest flat** | Product-green; no clear ringtest win; re-profile dentate before tip. |
 | Single device-resource owner | open | Only if exit/leak forces. |
 

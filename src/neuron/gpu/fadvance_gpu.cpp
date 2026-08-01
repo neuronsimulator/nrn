@@ -75,6 +75,7 @@ void fixed_step_thread(model_sorted_token const& cache_token,
     if (nt.end > 0) {
         {
             phase_timer::Scope const timer{phase_timer::Id::setup_tree_matrix};
+            phase_timer::bump(phase_timer::Id::setup_tree_matrix);
             setup_tree_matrix(cache_token, nt);
         }
         nrn_prcellstate_checkpoint_maybe(PrcellCheckpointPhase::post_setup, nt);

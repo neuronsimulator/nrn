@@ -25,6 +25,7 @@
 
 #include "neuron/gpu/offload.hpp"
 #if defined(NRN_ENABLE_GPU)
+#include "neuron/gpu/phase_timer.hpp"
 #include "neuron/gpu/sync.hpp"
 #endif
 
@@ -723,8 +724,20 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
 /* for the fixed step method */
 void setup_tree_matrix(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
     nrn::Instrumentor::phase _{"setup-tree-matrix"};
-    nrn_rhs(cache_token, nt);
-    nrn_lhs(cache_token, nt);
+    {
+#if defined(NRN_ENABLE_GPU)
+        neuron::gpu::phase_timer::Scope const timer{neuron::gpu::phase_timer::Id::setup_rhs};
+        neuron::gpu::phase_timer::bump(neuron::gpu::phase_timer::Id::setup_rhs);
+#endif
+        nrn_rhs(cache_token, nt);
+    }
+    {
+#if defined(NRN_ENABLE_GPU)
+        neuron::gpu::phase_timer::Scope const timer{neuron::gpu::phase_timer::Id::setup_lhs};
+        neuron::gpu::phase_timer::bump(neuron::gpu::phase_timer::Id::setup_lhs);
+#endif
+        nrn_lhs(cache_token, nt);
+    }
 #if defined(NRN_ENABLE_GPU)
     if (!neuron::gpu::matrix_rhs_d_stays_on_device_for_solve(nt)) {
         neuron::gpu::sync_matrix_to_host_before_solve(nt);
