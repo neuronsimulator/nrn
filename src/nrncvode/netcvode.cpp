@@ -46,6 +46,8 @@
 #include "neuron/gpu/device_state.hpp"
 #include "neuron/gpu/download.hpp"
 #include "neuron/gpu/mechanism_phases.hpp"
+#include "neuron/gpu/partrans.hpp"
+#include "neuron/gpu/phase_timer.hpp"
 #include "neuron/gpu/sync.hpp"
 #endif
 
@@ -4122,6 +4124,8 @@ void ncs2nrn_integrate(double tstop) {
     neuron::gpu::require_gpu_native_qualification_or_stop();
     // Host half may have advanced voltages/flags (mode 2); re-seed hysteresis.
     neuron::gpu::refresh_device_from_host_if_on_device();
+    neuron::gpu::phase_timer::reset();
+    neuron::gpu::gap_traffic_reset();
 #endif
     nrn_prcellstate_checkpoint_psolve_begin();
     {

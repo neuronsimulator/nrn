@@ -16,7 +16,9 @@ Integration branch: **`local/gpu-native-net-soa`** = `local/cpu-net-soa-heap-fre
 ## Workspace
 
 - Primary tree: `~/neuron/nrngpu` (this tree). Commit here.
-- Branch: feature `local/gpu-device-net-receive` (integration: `local/gpu-native-net-soa`).
+- Living tip: **`local/gpu-native`** (alias of former `local/gpu-native-net-soa`).
+  Exploratory perf: side branches e.g. `local/gpu-p4-gap-phase-ab` — cherry-pick
+  into tip only what proves useful (do not auto-ff speculative instrumentation).
 - Do not treat `~/neuron/core-neuron-gpu` as the git workspace (salvage only).
 - CPU-only SoA worktree (optional): `~/neuron/cpu_net_soa`.
 

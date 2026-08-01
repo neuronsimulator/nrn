@@ -3,6 +3,7 @@
 #include "neuron/gpu/config.hpp"
 #include "neuron/gpu/device_state.hpp"
 #include "neuron/gpu/offload.hpp"
+#include "neuron/gpu/phase_timer.hpp"
 #include "neuron/model_data.hpp"
 
 #include "coreneuron/utils/offload.hpp"
@@ -58,7 +59,7 @@ void register_traffic_atexit() {
         return;
     }
     g_traffic_atexit_registered = true;
-    if (env_truthy("NRN_GAP_TRAFFIC_STATS")) {
+    if (gap_traffic_stats_enabled()) {
         std::atexit([] { print_gap_traffic_stats("atexit"); });
     }
 }
@@ -296,6 +297,8 @@ bool gather_gap_voltage_mailbox(std::vector<std::vector<int>> const& slot_by_tid
                                 double* mailbox,
                                 int n_mailbox) {
 #if defined(NRN_ENABLE_GPU)
+    phase_timer::Scope const timer{phase_timer::Id::gap_gather};
+    phase_timer::bump(phase_timer::Id::gap_gather);
     if (!native_gap_gpu_active() || n_mailbox <= 0 || !mailbox) {
         return false;
     }
@@ -362,6 +365,7 @@ bool gather_gap_voltage_mailbox(std::vector<std::vector<int>> const& slot_by_tid
         }
         nrn_pragma_acc(update host(mailbox [0:n_mailbox]))
         nrn_pragma_omp(target update from(mailbox [0:n_mailbox]))
+        gap_traffic_note_d2h_bulk(static_cast<std::size_t>(n_mailbox) * sizeof(double));
         ++g_gap_gather_ok;
         ++g_traffic.gather_ok;
         gap_traffic_note_v_gather(n_mailbox);
@@ -378,6 +382,8 @@ bool gather_gap_voltage_mailbox(std::vector<std::vector<int>> const& slot_by_tid
 
 void sync_insrc_buf_to_device(double* insrc_buf, int n_insrc) {
 #if defined(NRN_ENABLE_GPU)
+    phase_timer::Scope const timer{phase_timer::Id::gap_insrc};
+    phase_timer::bump(phase_timer::Id::gap_insrc);
     if (!native_gap_gpu_active() || n_insrc <= 0 || !insrc_buf) {
         return;
     }
@@ -391,6 +397,7 @@ void sync_insrc_buf_to_device(double* insrc_buf, int n_insrc) {
         nrn_pragma_acc(update device(insrc_buf [0:n_insrc]) async(nt.stream_id))
         nrn_pragma_omp(target update to(insrc_buf [0:n_insrc]) if (nt.compute_gpu))
         nrn_pragma_acc(wait(nt.stream_id))
+        gap_traffic_note_h2d_bulk(static_cast<std::size_t>(n_insrc) * sizeof(double));
         nt.compute_gpu = saved_compute_gpu;
         return;
     }
@@ -503,6 +510,8 @@ bool gather_gap_mech_range_mailbox(double* const* host_ptrs,
                                    int n_types,
                                    double* mailbox) {
 #if defined(NRN_ENABLE_GPU)
+    phase_timer::Scope const timer{phase_timer::Id::gap_gather};
+    phase_timer::bump(phase_timer::Id::gap_gather);
     if (!native_gap_gpu_active() || n <= 0 || !host_ptrs || !mailbox) {
         return false;
     }
@@ -531,6 +540,7 @@ bool gather_gap_mech_range_mailbox(double* const* host_ptrs,
     if (n_device > 0) {
         ++g_gap_gather_ok;
         ++g_traffic.gather_ok;
+        gap_traffic_note_d2h_scalar(n_device);
     }
     gap_traffic_note_mech_gather(n, n_device);
     return n_device > 0;
@@ -546,6 +556,8 @@ bool gather_gap_mech_range_mailbox(double* const* host_ptrs,
 
 void scatter_gap_targets_to_device(double* const* host_ptrs, int n) {
 #if defined(NRN_ENABLE_GPU)
+    phase_timer::Scope const timer{phase_timer::Id::gap_scatter};
+    phase_timer::bump(phase_timer::Id::gap_scatter);
     if (!native_gap_gpu_active() || n <= 0 || !host_ptrs) {
         return;
     }
@@ -574,6 +586,9 @@ void scatter_gap_targets_to_device(double* const* host_ptrs, int n) {
             ++g_traffic.scatter_miss;
         }
     }
+    if (ok > 0) {
+        gap_traffic_note_h2d_scalar(ok);
+    }
     gap_traffic_note_scatter(ok, 0, static_cast<std::size_t>(ok) * sizeof(double));
     if (std::getenv("NRN_GAP_DEBUG")) {
         static int once = 0;
@@ -597,6 +612,8 @@ void scatter_gap_targets_to_device(double* const* host_ptrs,
                                    int const* mech_types,
                                    int n_types) {
 #if defined(NRN_ENABLE_GPU)
+    phase_timer::Scope const timer{phase_timer::Id::gap_scatter};
+    phase_timer::bump(phase_timer::Id::gap_scatter);
     if (!native_gap_gpu_active() || n <= 0 || !host_ptrs) {
         return;
     }
@@ -619,6 +636,9 @@ void scatter_gap_targets_to_device(double* const* host_ptrs,
             ++g_gap_scatter_miss;
             ++g_traffic.scatter_miss;
         }
+    }
+    if (ok > 0) {
+        gap_traffic_note_h2d_scalar(ok);
     }
     // Product path: if any mid-SoA scalar still misses, push only the double
     // SoA columns that contain targets (e.g. HalfGap vgap) — never full mech.
@@ -739,7 +759,8 @@ GapTrafficStats const& gap_traffic_stats() noexcept {
 bool gap_traffic_stats_enabled() noexcept {
     static int cached = -1;
     if (cached < 0) {
-        cached = env_truthy("NRN_GAP_TRAFFIC_STATS") ? 1 : 0;
+        // Explicit env, or auto-on with phase timer for A+B exploration.
+        cached = (env_truthy("NRN_GAP_TRAFFIC_STATS") || phase_timer::enabled()) ? 1 : 0;
     }
     return cached != 0;
 }
@@ -753,12 +774,23 @@ bool gap_same_thread_device_enabled() noexcept {
 }
 
 void print_gap_traffic_stats(char const* where) noexcept {
+    if (!gap_traffic_stats_enabled()) {
+        return;
+    }
     auto const& s = g_traffic;
+    double const avg_d2h =
+        s.steps > 0 ? static_cast<double>(s.bytes_d2h) / static_cast<double>(s.steps) : 0.0;
+    double const avg_h2d =
+        s.steps > 0 ? static_cast<double>(s.bytes_h2d) / static_cast<double>(s.steps) : 0.0;
+    double const avg_h2d_scalar =
+        s.steps > 0 ? static_cast<double>(s.h2d_scalar_calls) / static_cast<double>(s.steps) : 0.0;
     std::fprintf(stderr,
                  "NRN gap traffic stats (%s):\n"
                  "  steps=%llu buffer_edges=%llu same_thread_device=%llu\n"
                  "  vsrc=%llu msrc=%llu (device=%llu) tar_scatter=%llu field_fb=%llu\n"
-                 "  bytes_d2h=%llu bytes_h2d=%llu\n"
+                 "  bytes_d2h=%llu bytes_h2d=%llu (avg/step d2h=%.1f h2d=%.1f)\n"
+                 "  host_api: d2h_bulk=%llu h2d_bulk=%llu d2h_scalar=%llu h2d_scalar=%llu "
+                 "(avg h2d_scalar/step=%.1f)\n"
                  "  full_v_pulls=%llu bulk_mech_pushes=%llu\n"
                  "  gather_ok=%llu gather_fallback=%llu scatter_miss=%llu\n",
                  where ? where : "?",
@@ -772,6 +804,13 @@ void print_gap_traffic_stats(char const* where) noexcept {
                  static_cast<unsigned long long>(s.tar_field_fallback),
                  static_cast<unsigned long long>(s.bytes_d2h),
                  static_cast<unsigned long long>(s.bytes_h2d),
+                 avg_d2h,
+                 avg_h2d,
+                 static_cast<unsigned long long>(s.d2h_bulk_calls),
+                 static_cast<unsigned long long>(s.h2d_bulk_calls),
+                 static_cast<unsigned long long>(s.d2h_scalar_calls),
+                 static_cast<unsigned long long>(s.h2d_scalar_calls),
+                 avg_h2d_scalar,
                  static_cast<unsigned long long>(s.full_v_pulls),
                  static_cast<unsigned long long>(s.bulk_mech_pushes),
                  static_cast<unsigned long long>(s.gather_ok),
@@ -783,6 +822,16 @@ void print_gap_traffic_stats(char const* where) noexcept {
                      "  NOTE: full_v_pull or bulk_mech_push > 0 — not product default "
                      "(NRN_GPU_GAP_HOST_FALLBACK / NRN_GAP_BULK_MECH_PUSH).\n");
     }
+    // CoreNEURON guide: few bulk updates, not O(edges) scalar host-API.
+    if (s.steps > 0 && s.h2d_scalar_calls > s.steps * 4) {
+        std::fprintf(stderr,
+                     "  HINT: h2d_scalar_calls >> steps — native scatter is chatty vs "
+                     "CoreNEURON bulk insrc + device scatter kernel.\n");
+    }
+}
+
+void gap_traffic_reset() noexcept {
+    g_traffic = GapTrafficStats{};
 }
 
 void gap_traffic_note_step() noexcept {
@@ -794,8 +843,8 @@ void gap_traffic_note_v_gather(int n_src) noexcept {
     if (n_src <= 0) {
         return;
     }
+    // Source count only; bytes owned by gap_traffic_note_d2h_bulk/scalar.
     g_traffic.vsrc_gathered += static_cast<std::uint64_t>(n_src);
-    g_traffic.bytes_d2h += static_cast<std::uint64_t>(n_src) * sizeof(double);
 }
 
 void gap_traffic_note_mech_gather(int n_src, int n_from_device) noexcept {
@@ -804,7 +853,7 @@ void gap_traffic_note_mech_gather(int n_src, int n_from_device) noexcept {
     }
     if (n_from_device > 0) {
         g_traffic.msrc_from_device += static_cast<std::uint64_t>(n_from_device);
-        g_traffic.bytes_d2h += static_cast<std::uint64_t>(n_from_device) * sizeof(double);
+        // bytes from gap_traffic_note_d2h_scalar at call site
     }
 }
 
@@ -815,7 +864,38 @@ void gap_traffic_note_scatter(int n_ok, int field_fallback, std::size_t field_by
     if (field_fallback > 0) {
         g_traffic.tar_field_fallback += static_cast<std::uint64_t>(field_fallback);
     }
-    g_traffic.bytes_h2d += field_bytes;
+    // field_bytes may include column push beyond per-scalar; scalar bytes via
+    // gap_traffic_note_h2d_scalar. Add residual field_bytes only when larger.
+    std::uint64_t const scalar_bytes = static_cast<std::uint64_t>(n_ok) * sizeof(double);
+    if (field_bytes > scalar_bytes) {
+        g_traffic.bytes_h2d += field_bytes - scalar_bytes;
+    }
+}
+
+void gap_traffic_note_d2h_bulk(std::size_t bytes) noexcept {
+    ++g_traffic.d2h_bulk_calls;
+    g_traffic.bytes_d2h += bytes;
+}
+
+void gap_traffic_note_h2d_bulk(std::size_t bytes) noexcept {
+    ++g_traffic.h2d_bulk_calls;
+    g_traffic.bytes_h2d += bytes;
+}
+
+void gap_traffic_note_d2h_scalar(int n) noexcept {
+    if (n <= 0) {
+        return;
+    }
+    g_traffic.d2h_scalar_calls += static_cast<std::uint64_t>(n);
+    g_traffic.bytes_d2h += static_cast<std::uint64_t>(n) * sizeof(double);
+}
+
+void gap_traffic_note_h2d_scalar(int n) noexcept {
+    if (n <= 0) {
+        return;
+    }
+    g_traffic.h2d_scalar_calls += static_cast<std::uint64_t>(n);
+    g_traffic.bytes_h2d += static_cast<std::uint64_t>(n) * sizeof(double);
 }
 
 void gap_traffic_note_full_v_pull() noexcept {
