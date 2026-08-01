@@ -12,6 +12,18 @@ cpp_cc_configure_sanitizers(TARGET neuron_gpu)
 if(NRN_ENABLE_GPU)
   target_compile_definitions(neuron_gpu PUBLIC NRN_ENABLE_GPU)
 endif()
+# device_assign.cpp uses #if NRNMPI for multi-rank GPU share (MPI_COMM_TYPE_SHARED).
+# Without this, every rank always reports local_size=1 ("shared by 1 ranks").
+if(NRN_ENABLE_MPI)
+  target_compile_definitions(neuron_gpu PRIVATE NRNMPI=1)
+  # neuron_gpu is a small static lib; MPI symbols resolve via nrniv_lib's MPI link.
+  if(MPI_C_INCLUDE_PATH)
+    target_include_directories(neuron_gpu PRIVATE ${MPI_C_INCLUDE_PATH})
+  endif()
+  if(MPI_CXX_INCLUDE_DIRS)
+    target_include_directories(neuron_gpu PRIVATE ${MPI_CXX_INCLUDE_DIRS})
+  endif()
+endif()
 if(NRN_ENABLE_GPU)
   install(
     DIRECTORY ${PROJECT_SOURCE_DIR}/src/neuron/gpu/

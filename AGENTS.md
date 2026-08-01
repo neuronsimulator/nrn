@@ -40,8 +40,17 @@ cd ~/neuron/nrngpu/build-gpu/test/external_ringtest/neuron_gpu_native_mpi
 ./prcellstate_native_gpu.sh 32 1
 ```
 
-Use **full shell permissions** for GPU/OpenACC/MPI. Confirm GPU with `nvidia-smi -L`
-and `Info : 1 GPUs shared by 1 ranks per node` in `special` output.
+Use **full shell permissions** for GPU/OpenACC/MPI. Confirm GPU with `nvidia-smi -L`.
+
+**Multi-rank on one GPU:** native OpenACC multi-process without CUDA MPS is often
+**10×+ slower** (dentate 4-rank ~37 s vs ~3 s with MPS). For multi-rank product:
+
+```bash
+nvidia-cuda-mps-control -d   # once per node; stop: echo quit | nvidia-cuda-mps-control
+```
+
+Expect `Info : 1 GPUs shared by N ranks per node` (N = local ranks). CN shares
+better without MPS; native needs MPS for multi-rank-on-1-GPU today.
 
 ## Design constraints
 

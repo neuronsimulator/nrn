@@ -317,8 +317,8 @@ For each test:
 |------|--------|----------------|-------------------|-------|
 | Ringtest **no-gap** 1-rank tstop=100, 688 spikes | runtime ~2.4–3.3 s (warm ~2.5–3.1); wall ~2.9–4.0 s | runtime ~1.50–1.56 s; wall ~2.0–2.2 s | ~1.6–2.0× | Product green. Phase timer: setup-tree-matrix ~35%, lastpart ~45%, download-flush ~0. |
 | Ringtest **gap** 1-rank tstop=100, 128 spikes | **pre** ~11–12 s; post-SoA ~8.3 s; **post-scatter ~2.6–3.1 s** | runtime ~1.59 s; wall ~2.1 s | ~1.7–2× after bulk scatter | Single-step `nrn_fixed_step` when `nrnthread_v_transfer_`. 0 scalar H→D/step. |
-| reduced_dentate max_cells=100 tstop=10 **4-rank** 400 spikes | wall ~40 s; **psolve ~37 s** (2026-08-01 tip+timers) | wall ~6.3 s; **Solver Time ~3.24 s** | ~6.4× wall / ~**11×** psolve | Native: `1 GPUs shared by 1 ranks per node`×4 (contention); CN: 1 GPU shared by 4 ranks. 400 spikes. |
-| reduced_dentate same model **1-rank** 400 spikes | **psolve ~3.3 s**; wall ~7 s | (CN usually 4-rank) | **~1.0×** vs CN solver | Same GPU exclusive: native psolve ≈ CN 4-rank Solver Time. |
+| reduced_dentate max_cells=100 tstop=10 **4-rank** 400 spikes | **no MPS** psolve ~**37–38 s**; **with MPS** psolve ~**2.4–3.0 s**, wall ~5–6 s | wall ~6.3 s; Solver ~**3.24 s** | no-MPS ~11×; **MPS ~1×** CN | Root cause: multi-process CUDA/OpenACC thrash without MPS. CN shares well without MPS; native needs MPS for multi-rank on 1 GPU. |
+| reduced_dentate same model **1-rank** 400 spikes | **psolve ~3.3 s**; wall ~7 s | (CN usually 4-rank) | **~1.0×** vs CN solver | Exclusive GPU: native ≈ CN solver (no MPS needed). |
 
 Phase timer (`NRN_NATIVE_GPU_PHASE_TIMER=1`):
 
@@ -343,6 +343,11 @@ Phase timer (`NRN_NATIVE_GPU_PHASE_TIMER=1`):
   - **1-rank native:** psolve ~**3.3 s** (400 spikes) — **~11× faster than 4-rank** on same GPU; shape still setup + lastpart-nonvint (+ deliver).
   - **CN-GPU 4-rank:** Solver Time ~**3.24 s**, wall ~6.3 s, 400 spikes (`1 GPU shared by 4 ranks`).
   - **Conclusion:** dentate ~11× vs CN is **multi-process GPU contention**, not gap chat and not a different algorithm residual than ringtest once exclusive. 1-rank native ≈ CN solver time.
+- **Multi-rank share diagnosis (2026-08-01, `local/gpu-p4-multirank-share`):**
+  - **Why CN wins with 4 ranks:** CN multi-process kernels coexist on one GPU without thrashing (few host waits / larger work). Native fixed-step has denser OpenACC launch/wait traffic; **without CUDA MPS**, multi-process context switching is superlinear: 1→2 ranks 3.3→23 s, 4 ranks ~37 s.
+  - **CUDA MPS:** `nvidia-cuda-mps-control -d` then 4-rank native psolve ~**2.4–3.0 s** (400 spikes), ≈ CN Solver Time / wall. **MPS is the product multi-rank policy on one GPU for native today.**
+  - **Message fix:** `device_assign` never had `NRNMPI` defined on `neuron_gpu` lib → always printed “shared by 1 ranks” ×N. Fixed: define `NRNMPI=1` + launcher env local rank (`OMPI_COMM_WORLD_LOCAL_*`); rank 0 prints `shared by N ranks`. No collective `MPI_Comm_split_type` (hangs if ranks hit `gpu.enable` out of sync).
+  - **Warn** when `local_size > n_gpu` and MPS control socket missing.
 
 ### Status — P4
 
@@ -355,14 +360,15 @@ Phase timer (`NRN_NATIVE_GPU_PHASE_TIMER=1`):
 | Lastpart sub-buckets | **done (on tip)** | play/xfer/nonvint/record/deliver. |
 | Setup-rhs/lhs sub-buckets | **done (on tip)** | Nested under setup-tree-matrix; prefer absolute seconds. |
 | Defer per-mech ACC wait (H1) | **explor; ringtest flat** | Product-green; tip dentate profile without H1. |
-| Dentate multi-rank profile | **done (2026-08-01)** | 4-rank psolve ~37 s vs 1-rank ~3.3 s vs CN ~3.2 s → **contention**. |
+| Dentate multi-rank profile | **done** | 4-rank thrash without MPS; **MPS ≈ CN**. |
+| Multi-rank GPU share (MPS) | **diagnosed + ops policy** | Document + warn; start MPS for multi-rank-on-1-GPU. Message fix on explor → tip. |
 | Single device-resource owner | open | Only if exit/leak forces. |
 
 ### Residual perf debt (next P4 when reopened)
 
-1. **Dentate multi-rank on one GPU** — primary residual is **process contention** (~11× vs exclusive 1-rank), not gap traffic. Candidates: multi-rank GPU share policy (CN “shared by N”), single-process multi-thread, or 1-rank throughput.
-2. **setup-tree-matrix + lastpart-nonvint density** — still ~2× CN on ringtest; dentate 1-rank already ~CN. Prefer exclusive-GPU density work.
-3. Optional: lastpart-deliver on spike-heavy models; sparse trajectory; phases=0 prcellstate download residual.
+1. **Product multi-rank:** run with **CUDA MPS** when ranks/GPU > 1 (or more GPUs). Optional: auto-start MPS (usually root/admin) — not default. Land device_assign fix on tip.
+2. **setup-tree-matrix + lastpart-nonvint density** — ringtest still ~2× CN exclusive; dentate exclusive already ~CN.
+3. Optional: lastpart-deliver spike-heavy; phases=0 prcellstate download residual.
 
 ---
 
@@ -432,7 +438,7 @@ Update Status before exit; commit without push.
 
 ## Next (one line — update every session end)
 
-**Next:** P4 — dentate **multi-rank GPU contention** (4-rank ~11× slower than 1-rank exclusive; 1-rank ≈ CN solver); optional ringtest density / H1. **Not** Traub `use_gap=1`.
+**Next:** Land multi-rank device_assign fix + MPS docs on tip; multi-rank product runs use `nvidia-cuda-mps-control -d`. Optional ringtest density. **Not** Traub `use_gap=1`.
 
 ### Branching (2026-08-01)
 
