@@ -871,9 +871,13 @@ Functions, objects, and the stack
 
     **Usage Pattern:**
 
-    Used when passing objects as arguments to functions or methods.
+    Used when passing objects as arguments to functions or methods. The callee
+    receives the object by value; if the callee's argument was not declared as
+    an ``objref`` and it tries to assign to it (``$oN = ...``), HOC raises an
+    error. To pass an object reference a callee can assign back into, use
+    :c:func:`nrn_object_ptr_push`.
 
-.. c:function:: void nrn_object_ref_push(Object** obj_ref)
+.. c:function:: void nrn_object_ptr_push(Object** obj_ref)
 
     Push a writable object-reference cell onto the stack.
 
@@ -884,7 +888,9 @@ Functions, objects, and the stack
     matching ``$oN`` argument, the assignment writes back through the cell and
     updates ``*obj_ref`` in place. This is the out-parameter form used by the
     ``h.ref(obj)`` idiom, where a function returns a value by storing it in a
-    caller-supplied object reference.
+    caller-supplied object reference. ("ptr", as in :c:func:`nrn_double_ptr_push`,
+    is the pushed-pointer naming; the "ref" in :c:func:`nrn_object_ref` is
+    reference counting.)
 
     **Usage Pattern:**
 
@@ -892,7 +898,7 @@ Functions, objects, and the stack
 
         // proc setit() { $o1 = new Vector(3) }
         Object* slot = nullptr;
-        nrn_object_ref_push(&slot);
+        nrn_object_ptr_push(&slot);
         nrn_function_call(nrn_symbol("setit"), 1);
         // slot now points to the newly created Vector; unref when done.
         nrn_object_unref(slot);
