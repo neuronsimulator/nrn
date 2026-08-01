@@ -123,11 +123,12 @@ void fixed_step_thread(model_sorted_token const& cache_token,
         sync_gap_after_host_voltage_update(nt);
     }
     // Partrans: nrnmpi_v_transfer + lastpart are dispatched from nrn_fixed_step
-    // after all threads finish post_solve (gather needs every thread's V).
-    // lastpart (thread_transfer + STATE) runs as a second multi-thread job with
-    // prepare_nonvint setting compute_gpu=1 again — still all-threads-on-device.
+    // (nrn_fixed_step_deferred_gap_lastpart) after all threads finish post_solve.
+    // Nested lastpart only when no gap transfer (timed here). Deferred path
+    // times gap_sync + lastpart wall around the multi-thread job in fadvance.cpp.
     if (!nrnthread_v_transfer_) {
         phase_timer::Scope const timer{phase_timer::Id::lastpart};
+        phase_timer::bump(phase_timer::Id::lastpart);
         nrn_fixed_step_lastpart(cache_token, nt);
     }
     if (nt.end > 0) {

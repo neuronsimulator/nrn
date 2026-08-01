@@ -25,6 +25,7 @@
 #include "neuron/gpu/fadvance_gpu.hpp"
 #include "neuron/gpu/lastpart.hpp"
 #include "neuron/gpu/offload.hpp"
+#include "neuron/gpu/phase_timer.hpp"
 #include "neuron/gpu/trajectory.hpp"
 #include "neuron/gpu/net_events.hpp"
 #include "neuron/gpu/post_solve.hpp"
@@ -338,6 +339,53 @@ void nrn_daspk_init_step(double tt, double dteps, int upd) {
     nrn_thread_table_check(sorted_token);
 }
 
+/**
+ * Gap / partrans tail of a fixed step: mailbox gather (+ MPI), deferred lastpart
+ * (thread_transfer + STATE), main-thread target H→D.
+ *
+ * When nrnthread_v_transfer_ is unset, lastpart already ran inside the per-thread
+ * fixed-step body (nested; timed there). When set, that body skips lastpart and
+ * this runs after all threads finish post_solve so gather sees every thread's V.
+ *
+ * Native GPU phase timer (NRN_NATIVE_GPU_PHASE_TIMER=1):
+ *   gap_sync  — nrnmpi_v_transfer_ + nrn_native_gap_targets_to_device
+ *   lastpart  — wall of the multi-thread lastpart job (not summed per thread)
+ */
+static void nrn_fixed_step_deferred_gap_lastpart(neuron::model_sorted_token const& cache_token) {
+    if (!nrnthread_v_transfer_) {
+        return;
+    }
+#if defined(NRN_ENABLE_GPU)
+    if (neuron::gpu::use_native_gpu_fixed_step()) {
+        {
+            neuron::gpu::phase_timer::Scope const timer{neuron::gpu::phase_timer::Id::gap_sync};
+            neuron::gpu::phase_timer::bump(neuron::gpu::phase_timer::Id::gap_sync);
+            if (nrnmpi_v_transfer_) {
+                nrn::Instrumentor::phase p_gap("gap-v-transfer");
+                (*nrnmpi_v_transfer_)();
+            }
+        }
+        {
+            neuron::gpu::phase_timer::Scope const timer{neuron::gpu::phase_timer::Id::lastpart};
+            neuron::gpu::phase_timer::bump(neuron::gpu::phase_timer::Id::lastpart);
+            nrn_multithread_job(cache_token, nrn_fixed_step_lastpart);
+        }
+        {
+            // Main-thread OpenACC push of gap targets (workers must not HtoD).
+            neuron::gpu::phase_timer::Scope const timer{neuron::gpu::phase_timer::Id::gap_sync};
+            nrn_native_gap_targets_to_device();
+        }
+        return;
+    }
+#endif
+    if (nrnmpi_v_transfer_) {
+        nrn::Instrumentor::phase p_gap("gap-v-transfer");
+        (*nrnmpi_v_transfer_)();
+    }
+    nrn_multithread_job(cache_token, nrn_fixed_step_lastpart);
+    nrn_native_gap_targets_to_device();
+}
+
 void nrn_fixed_step(neuron::model_sorted_token const& cache_token) {
     nrn::Instrumentor::phase p_timestep("timestep");
 #if defined(NRN_ENABLE_GPU)
@@ -365,16 +413,7 @@ void nrn_fixed_step(neuron::model_sorted_token const& cache_token) {
         // if (!nrn_allthread_handle) {
         nrn_multithread_job(nrn_ms_reduce_solve);
         nrn_multithread_job(nrn_ms_bksub);
-        /* see comment below */
-        if (nrnthread_v_transfer_) {
-            if (nrnmpi_v_transfer_) {
-                nrn::Instrumentor::phase p_gap("gap-v-transfer");
-                (*nrnmpi_v_transfer_)();
-            }
-            nrn_multithread_job(cache_token, nrn_fixed_step_lastpart);
-            // Main-thread OpenACC push of gap targets (workers must not HtoD).
-            nrn_native_gap_targets_to_device();
-        }
+        nrn_fixed_step_deferred_gap_lastpart(cache_token);
         //}
     } else {
         nrn_multithread_job(cache_token, nrn_fixed_step_thread);
@@ -385,14 +424,7 @@ void nrn_fixed_step(neuron::model_sorted_token const& cache_token) {
            push of targets after lastpart; lastpart still sets compute_gpu=1
            for every thread via prepare_nonvint (all-threads-on-device).
         */
-        if (nrnthread_v_transfer_) {
-            if (nrnmpi_v_transfer_) {
-                nrn::Instrumentor::phase p_gap("gap-v-transfer");
-                (*nrnmpi_v_transfer_)();
-            }
-            nrn_multithread_job(cache_token, nrn_fixed_step_lastpart);
-            nrn_native_gap_targets_to_device();
-        }
+        nrn_fixed_step_deferred_gap_lastpart(cache_token);
     }
     t = nrn_threads[0]._t;
     if (nrn_allthread_handle) {

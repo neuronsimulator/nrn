@@ -101,6 +101,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-07-31 | GPU-P3-models | — | reduced_dentate native green (400 spikes): gap deferred-lastpart left `compute_gpu=0` so post-step NET_RECEIVE never flushed to device; force device deliver/flush in `deliver_post_step_events_host`. `reduced_dentate_native` 4-rank product. |
 | 2026-07-31 | GPU-P3-models | — | P3 product close: patstim **N/A** for device (host art-cell PatternStim; NMODL host path only). Online native matrix closed for CoreNEURON-GPU-like scope. Full NMODL `ctest` greening out of scope (separate session). |
 | 2026-07-31 | GPU-P4-perf | — | Baselines on T1000; host-traffic audit; fix mid-psolve full SoA finalize on gap single-step path. |
+| 2026-07-31 | GPU-P4-perf | — | Instrument deferred gap lastpart: `gap_sync` + `lastpart` wall around `nrn_fixed_step_deferred_gap_lastpart` (tracked ≈ full gap runtime). |
 
 ---
 
@@ -314,26 +315,30 @@ For each test:
 
 Phase timer (`NRN_NATIVE_GPU_PHASE_TIMER=1`):
 
-- **Non-gap ringtest (post):** setup-tree-matrix ~33–35%, lastpart ~45–48%, deliver/matrix-solver ~10% each, download-flush negligible (1 summary / psolve).
-- **Gap ringtest (pre):** 4000 summaries (= every dt); download-flush accumulated ~1.7 s (~50% of tracked); tracked total only ~3.5 of 12 s runtime (deferred lastpart / gap transfer **uninstrumented**).
-- **Gap ringtest (post):** 1 summary; download-flush gone from hot path; runtime ~8.3 s; tracked ~1.6 s (setup-tree-matrix ~68%); residual ~6.7 s still outside phase scopes (gap gather/scatter + deferred lastpart).
-- **Dentate (post):** 4 summaries (1/rank); download-flush not in hot path; setup-tree-matrix ~16 s (~88% of tracked ~18 s); psolve ~45 s → large untracked multi-rank/gap/OpenACC contention on one GPU.
+- **Non-gap ringtest (post SoA fix + instr):** setup-tree-matrix ~39%, lastpart ~41% (calls=4000 nested), deliver/matrix-solver ~9% each; tracked ≈ runtime (~2.6 s); no gap-sync.
+- **Gap ringtest (pre SoA fix):** 4000 summaries (= every dt finalize); download-flush ~1.7 s; tracked only ~3.5 of 12 s (deferred path **uninstrumented**).
+- **Gap ringtest (post SoA fix, pre instr):** 1 summary; download-flush gone; tracked ~1.6 of ~8.3 s (gap/lastpart still dark).
+- **Gap ringtest (post instr, 2026-07-31):** 1 summary; **tracked ≈ runtime** (~8.45 / 8.46 s). Breakdown:
+  - **gap-sync ~50%** (calls=4000) — `nrnmpi_v_transfer_` gather/MPI + `nrn_native_gap_targets_to_device`
+  - **lastpart ~29%** (calls=4000) — deferred multi-thread lastpart wall (includes `thread_transfer` + STATE + deliver)
+  - **setup-tree-matrix ~14%**, deliver/solver/post-solve remainder
+- **Dentate (post SoA fix, pre gap instr):** 4 summaries; setup-tree-matrix ~16 s of tracked ~18 s; re-profile after gap instr if useful.
 
 ### Status — P4
 
 | Item | Status | Notes |
 |------|--------|-------|
-| Wall-time vs CoreNEURON (guide) | **baselined** | Table above. Non-gap ~2×; gap ~5× after fix; dentate ~7–14× (multi-rank + heavy mechs + gap). Measure-first; do not green-chase. |
-| Residual hot-path host traffic audit | **done** (this session) | **Bug:** `finalize_psolve_download()` (full SoA host mirror + trajectory finalize) was called at the end of **every** `nrn_fixed_step` / also end of `nrn_fixed_step_group`. Gap models take the single-step loop → full SoA pull every dt. Non-gap uses step_group → one finalize at group end (masked the bug). **Fix:** finalize once at end of `ncs2nrn_integrate` only. Gap ringtest 12 s → 8.3 s. |
-| Single device-resource owner | open | Only if exit/leak forces. Not measured as P4 win this session. |
+| Wall-time vs CoreNEURON (guide) | **baselined** | Table above. Non-gap ~2×; gap ~5× after SoA fix; dentate ~7–14×. Measure-first; do not green-chase. |
+| Residual hot-path host traffic audit | **done** | Mid-psolve full SoA on gap path fixed (`finalize_psolve_download` once per psolve). Gap 12 s → 8.3 s. |
+| Gap / deferred lastpart phase timer | **done** | `nrn_fixed_step_deferred_gap_lastpart`: `gap_sync` + `lastpart` wall (not per-worker sum). Nested lastpart still timed in `fadvance_gpu` when no transfer. |
+| Single device-resource owner | open | Only if exit/leak forces. |
 
 ### Residual perf debt (next P4 when reopened)
 
-1. **Gap / deferred lastpart uninstrumented** — phase timer misses most of gap wall; instrument `nrnmpi_v_transfer_` + deferred `nrn_fixed_step_lastpart` under `gap_sync` / `lastpart`.
-2. **Gap algorithm** — still ~5× CN after removing mid-psolve full SoA; buffer gather/scatter + OpenACC host-API serialization candidates (not Traub `use_gap=1`).
-3. **Dentate multi-rank on one GPU** — setup-tree-matrix dominates tracked; multi-process contention likely; compare 1-rank dentate when useful.
-4. **Non-gap ~2× CN** — kernel/launch density (setup-tree-matrix + lastpart); not host SoA traffic.
-5. Optional: sparse trajectory for `vrecordFraction` product paths if a model forces per-step full SoA via `lastpart_host_phases_required` (not observed as dentate download-flush this run).
+1. **Gap algorithm** — now measured: gap-sync ~50% + deferred lastpart ~29% of ringtest gap wall (~5× CN). Candidates: buffer gather/scatter cost, OpenACC host-API serialization, same-thread device path coverage (not Traub `use_gap=1`).
+2. **Dentate multi-rank on one GPU** — re-profile with gap instr; multi-process contention likely; compare 1-rank dentate when useful.
+3. **Non-gap ~2× CN** — kernel/launch density (setup-tree-matrix + lastpart); not host SoA traffic.
+4. Optional: sparse trajectory for `vrecordFraction` product paths if a model forces per-step full SoA via `lastpart_host_phases_required`.
 
 ---
 
@@ -403,4 +408,4 @@ Update Status before exit; commit without push.
 
 ## Next (one line — update every session end)
 
-**Next:** P4 baselined + mid-psolve full-SoA-on-gap-path fixed. Residual: instrument gap/deferred lastpart; gap algorithm vs CN (~5×); dentate multi-rank/setup-tree-matrix. Full NMODL `ctest` greening separate. **Not** Traub `use_gap=1` unless reopened.
+**Next:** P4 gap phase timer **done** (gap-sync ~50%, deferred lastpart ~29% of ringtest gap). Residual: gap algorithm vs CN (~5×); dentate multi-rank re-profile; non-gap ~2× kernel density. Full NMODL `ctest` greening separate. **Not** Traub `use_gap=1` unless reopened.
