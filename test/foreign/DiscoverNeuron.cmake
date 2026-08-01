@@ -35,25 +35,44 @@ endif()
 
 set(_NRN_FOREIGN_PROBE_OUT "${CMAKE_BINARY_DIR}/foreign_neuron_probe.json")
 
-# Clear PYTHONPATH so a developer’s build-tree install cannot shadow the venv wheel. Prefer scripts
-# next to NRN_FOREIGN_PYTHON (venv bin/) and optional NRN_FOREIGN_ROOT/bin.
+# Prefer scripts next to NRN_FOREIGN_PYTHON (venv bin/) and optional NRN_FOREIGN_ROOT/bin. Drop
+# ambient PYTHONPATH so a developer’s *other* build-tree install cannot shadow the foreign install.
+# For a classic prefix, put ${ROOT}/lib/python on PYTHONPATH (NEURON’s default
+# NRN_INSTALL_PYTHON_PREFIX parent). Wheels rely on site-packages instead.
 get_filename_component(_nrn_foreign_py_bindir "${NRN_FOREIGN_PYTHON}" DIRECTORY)
 set(_nrn_foreign_probe_path "${_nrn_foreign_py_bindir}")
+set(_nrn_foreign_probe_pythonpath "")
 if(NOT NRN_FOREIGN_ROOT STREQUAL "")
   if(NOT IS_DIRECTORY "${NRN_FOREIGN_ROOT}")
     message(FATAL_ERROR "NRN_FOREIGN_ROOT is not a directory: ${NRN_FOREIGN_ROOT}")
   endif()
   set(_nrn_foreign_probe_path "${NRN_FOREIGN_ROOT}/bin:${_nrn_foreign_py_bindir}")
+  set(_nrn_foreign_probe_pythonpath "${NRN_FOREIGN_ROOT}/lib/python")
   message(STATUS "Foreign root (prefix)     : ${NRN_FOREIGN_ROOT}")
+endif()
+# Optional override (colon-separated), e.g. custom NRN_INSTALL_PYTHON_PREFIX parent.
+set(NRN_FOREIGN_PYTHONPATH
+    ""
+    CACHE STRING "Optional PYTHONPATH entries for foreign discovery/tests (prepended)")
+if(NOT NRN_FOREIGN_PYTHONPATH STREQUAL "")
+  if(_nrn_foreign_probe_pythonpath STREQUAL "")
+    set(_nrn_foreign_probe_pythonpath "${NRN_FOREIGN_PYTHONPATH}")
+  else()
+    set(_nrn_foreign_probe_pythonpath "${NRN_FOREIGN_PYTHONPATH}:${_nrn_foreign_probe_pythonpath}")
+  endif()
 endif()
 # Expose for ForeignTestHelpers / tests
 set(NRN_FOREIGN_PATH_PREFIX
     "${_nrn_foreign_probe_path}"
     CACHE INTERNAL "PATH prefix for foreign tools")
+set(NRN_FOREIGN_SITE_PYTHONPATH
+    "${_nrn_foreign_probe_pythonpath}"
+    CACHE INTERNAL "PYTHONPATH prefix for foreign neuron package (prefix installs)")
 
 execute_process(
-  COMMAND "${CMAKE_COMMAND}" -E env "PYTHONPATH=" "PATH=${_nrn_foreign_probe_path}:$ENV{PATH}"
-          "${NRN_FOREIGN_PYTHON}" "${_NRN_FOREIGN_PROBE}"
+  COMMAND
+    "${CMAKE_COMMAND}" -E env "PYTHONPATH=${_nrn_foreign_probe_pythonpath}"
+    "PATH=${_nrn_foreign_probe_path}:$ENV{PATH}" "${NRN_FOREIGN_PYTHON}" "${_NRN_FOREIGN_PROBE}"
   RESULT_VARIABLE _probe_rc
   OUTPUT_VARIABLE _probe_stdout
   ERROR_VARIABLE _probe_stderr
@@ -64,11 +83,11 @@ if(NOT _probe_rc EQUAL 0)
     FATAL_ERROR
       "Foreign NEURON probe failed (rc=${_probe_rc}).\n"
       "Python: ${NRN_FOREIGN_PYTHON}\n"
+      "PYTHONPATH=${_nrn_foreign_probe_pythonpath}\n"
       "stdout:\n${_probe_stdout}\n"
       "stderr:\n${_probe_stderr}\n"
-      "Install a wheel into this environment, e.g.:\n"
-      "  python -m venv .venv && source .venv/bin/activate\n"
-      "  pip install neuron-nightly")
+      "For a wheel: pip install neuron-nightly into a venv and pass that python.\n"
+      "For a prefix: ninja install first; set -DNRN_FOREIGN_ROOT=<prefix>.")
 endif()
 
 file(WRITE "${_NRN_FOREIGN_PROBE_OUT}" "${_probe_stdout}\n")

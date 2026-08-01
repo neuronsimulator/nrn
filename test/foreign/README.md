@@ -102,16 +102,46 @@ Match rules (`VersionGate.cmake`):
 
 ## Prefix install (optional)
 
-Wheels are primary. For a classic `CMAKE_INSTALL_PREFIX` layout:
+Wheels are primary. For a classic `CMAKE_INSTALL_PREFIX` layout you can either
+use the **main NEURON build** helper target or configure foreign yourself.
+
+### From a normal NEURON build (`-DNRN_ENABLE_TESTS=ON`)
+
+```bash
+cmake -S . -B build -G Ninja \
+  -DCMAKE_INSTALL_PREFIX=$PWD/build/install \
+  -DNRN_ENABLE_TESTS=ON
+cmake --build build -j
+cmake --build build --target install
+cmake --build build --target test-install
+# or from the build directory:
+#   ninja install
+#   ninja test-install
+```
+
+That creates **`${CMAKE_BINARY_DIR}/build-ctest`** (e.g. `build/build-ctest`),
+configures `test/foreign` against the install prefix, builds mechanisms, and
+runs the default serial foreign suite. It does **not** exist until you run
+`test-install` once (or configure foreign yourself into that path).
+
+Then filter with plain ctest on that dir:
+
+```bash
+ctest --test-dir build/build-ctest -L mpi --output-on-failure
+```
+
+### Manual foreign configure against a prefix
 
 ```bash
 cmake -S test/foreign -B build-ctest \
   -DNRN_FOREIGN_PYTHON=/path/to/python \
   -DNRN_FOREIGN_ROOT=/path/to/prefix \
-  -DNRN_FOREIGN_ALLOW_SKEW=ON
+  -DNRN_FOREIGN_ALLOW_SKEW=ON   # only if tree ≠ install revision
+cmake --build build-ctest --target test-install
 ```
 
-`NRN_FOREIGN_ROOT/bin` is prepended for discovery and test PATH.
+`NRN_FOREIGN_ROOT/bin` is prepended for tools; `NRN_FOREIGN_ROOT/lib/python` is
+put on `PYTHONPATH` so `import neuron` works for the default install layout.
 
 ## Discovery
 

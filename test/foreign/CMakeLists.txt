@@ -23,7 +23,14 @@ include(ForeignTestHelpers)
 if(NOT DEFINED NRN_FOREIGN_PATH_PREFIX OR NRN_FOREIGN_PATH_PREFIX STREQUAL "")
   get_filename_component(NRN_FOREIGN_PATH_PREFIX "${NRN_FOREIGN_PYTHON}" DIRECTORY)
 endif()
-set(_nrn_foreign_test_env "PYTHONPATH=" "PATH=${NRN_FOREIGN_PATH_PREFIX}:$ENV{PATH}")
+# Prefer prefix site path when set; otherwise empty PYTHONPATH (wheel/site-packages).
+if(DEFINED NRN_FOREIGN_SITE_PYTHONPATH AND NOT NRN_FOREIGN_SITE_PYTHONPATH STREQUAL "")
+  set(_nrn_foreign_smoke_pythonpath "${NRN_FOREIGN_SITE_PYTHONPATH}")
+else()
+  set(_nrn_foreign_smoke_pythonpath "")
+endif()
+set(_nrn_foreign_test_env "PYTHONPATH=${_nrn_foreign_smoke_pythonpath}"
+                          "PATH=${NRN_FOREIGN_PATH_PREFIX}:$ENV{PATH}")
 
 # ---------------------------------------------------------------------------
 # Smoke tests (M1)

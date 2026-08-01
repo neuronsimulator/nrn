@@ -34,12 +34,15 @@ if(NOT DEFINED NRN_FOREIGN_PATH_PREFIX OR NRN_FOREIGN_PATH_PREFIX STREQUAL "")
   set(NRN_FOREIGN_PATH_PREFIX "${_nrn_foreign_py_bindir}")
 endif()
 
-# Environment for nrnivmodl + tests: venv/prefix tools first. PYTHONPATH is set (not empty) so
-# ambient build-tree paths are replaced, while still exposing in-tree helpers such as
-# test/rxd/testutils.py. Site-packages from the wheel remain on sys.path via the usual site
-# mechanism.
+# Environment for nrnivmodl + tests: venv/prefix tools first. PYTHONPATH: optional prefix lib/python
+# (classic install) + in-tree test/rxd helpers. Wheels keep using site-packages via the
+# interpreter's site mechanism when the prefix entry is empty.
+set(_nrn_foreign_test_pythonpath "${NRN_FOREIGN_SOURCE_ROOT}/test/rxd")
+if(DEFINED NRN_FOREIGN_SITE_PYTHONPATH AND NOT NRN_FOREIGN_SITE_PYTHONPATH STREQUAL "")
+  set(_nrn_foreign_test_pythonpath "${NRN_FOREIGN_SITE_PYTHONPATH}:${_nrn_foreign_test_pythonpath}")
+endif()
 set(NRN_RUN_FROM_BUILD_DIR_ENV "PATH=${NRN_FOREIGN_PATH_PREFIX}:$ENV{PATH}"
-                               "PYTHONPATH=${NRN_FOREIGN_SOURCE_ROOT}/test/rxd")
+                               "PYTHONPATH=${_nrn_foreign_test_pythonpath}")
 
 # Prefer the foreign interpreter for any test that runs Python.
 set(NRN_DEFAULT_PYTHON_EXECUTABLE "${NRN_FOREIGN_PYTHON}")
