@@ -4,6 +4,7 @@ foreach(
   hh_sim.cpp
   netcon.cpp
   node_index.cpp
+  object_new_wrap.cpp
   segment_diam.cpp
   sections.cpp
   vclamp.cpp)
