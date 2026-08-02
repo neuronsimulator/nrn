@@ -879,13 +879,13 @@ Functions, objects, and the stack
 
 .. c:function:: void nrn_object_ptr_push(Object** obj_ref)
 
-    Push a writable object-reference cell onto the stack.
+    Push a writable object-reference slot onto the stack.
 
-    :param obj_ref: Address of the caller's ``Object*`` cell.
+    :param obj_ref: Address of the caller's ``Object*`` slot.
 
     Unlike :c:func:`nrn_object_push`, which pushes an object by value, this
-    pushes the *cell* holding the object. When the callee assigns to the
-    matching ``$oN`` argument, the assignment writes back through the cell and
+    pushes the *slot* holding the object. When the callee assigns to the
+    matching ``$oN`` argument, the assignment writes back through the slot and
     updates ``*obj_ref`` in place. This is the out-parameter form used by the
     ``h.ref(obj)`` idiom, where a function returns a value by storing it in a
     caller-supplied object reference. ("ptr", as in :c:func:`nrn_double_ptr_push`,
