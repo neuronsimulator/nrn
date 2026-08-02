@@ -355,6 +355,21 @@ Phase timer (`NRN_NATIVE_GPU_PHASE_TIMER=1`):
   - **setup-rhs / setup-lhs** nest under setup-tree-matrix (rhs ≈ CURRENT+axial larger than lhs/JACOB on ringtest).
   - **H1:** ACC codegen no longer waits after every CURRENT/STATE/JACOB (CoreNEURON-like); fences remain at axial, net_send flush, electrode sav, INITIAL, net_buf_receive, finalize_nonvint. Product green (checkpoint dV=0, 688/128 spikes). **Ringtest multi-warm: no clear win vs noise** (~2.6–3.5 s gap, ~2.5–2.8 s no-gap) — keep on explor; re-measure on dentate/heavier models before tip.
   - Prior abandoned: prepare_nonvint `_t` wait elide.
+- **Density H2 (`local/gpu-P4-density-H2`):** slim present via `deviceptr` for SoA floats + matrix — product green; multi-warm **flat** vs tip at nring=16 and **nring=160**. Do not tip-merge.
+- **Density H3 (`local/gpu-P4-density-H3`, docs):** nsys+ACC_TIME — `nrn_state_hh` ~77% GPU / ~6× CN; launch count ≈ CN; present/copyin tax. **H3b:** native TABLE `state_hh` avg ~**796 µs** vs analytic ~**177 µs** (~4.5×); CN TABLE ~19 µs (healthy). `usetable_hh` via `NRN_HH_USETABLE`.
+- **Density H4a (`local/gpu-P4-density-H4`, 2026-08-02) — TABLE global H→D fix:**
+  - **Root cause:** ACC codegen did `update device (hh_global)` on **every** CURRENT/STATE/JACOB launch. `hh_global` holds full TABLE arrays (6×201 doubles) plus scalars → per-step full H→D of tables (and other mechs with globals).
+  - **Fix:** dirty flag `*_device_stale`; H→D only when stale; set stale after host TABLE rebuild (`print_after_host_table_rebuild`); first `copyin` clears stale.
+  - **Product:** phases=1, dV=0, **688** spikes (TABLE and analytic).
+  - **ACC_TIME `nrn_state_hh` avg (tstop=100, nring=16):**
+
+    | mode | H3b (pre) | H4a (post) |
+    |------|-----------|------------|
+    | TABLE (`usetable=1`) | ~**796 µs** (kern sum ~3.19 s) | ~**150 µs** (kern sum ~0.60 s) |
+    | analytic (`usetable=0`) | ~**177 µs** | ~**176 µs** |
+
+  - TABLE is no longer sick vs analytic (now **slightly faster**, CN-like). Still ~**8×** CN TABLE (~150 vs ~19 µs) — residual is shared STATE quality / present tax (**H4b+**).
+  - **Wall multi-warm:** TABLE ~2.04–2.48 s; analytic ~2.06–2.10 s (noise; modest vs H3b TABLE 2.43–2.65). Do **not** tip-merge until wall win is clearer or bundled with H4b; keep on explor.
 - **Dentate re-profile (2026-08-01 tip, max_cells=100, tstop=10, 400 spikes, T1000):**
   - **4-rank native:** psolve ~**37 s**, wall ~40 s; load_balance ~0.998; **0 scalar H→D/step**; gap-scatter ~0.2 s/rank (tiny). Nested tracked ~60 s (double-count). **Non-nested** per rank (≈psolve decomposition):
     - **setup-tree-matrix ~15.6 s** (rhs ~9.2 + lhs ~6.4)
@@ -379,16 +394,20 @@ Phase timer (`NRN_NATIVE_GPU_PHASE_TIMER=1`):
 | Gap-only P4 residual | **closed as density** | Same bottleneck as no-gap (setup + nonvint); not gap transfer. |
 | Lastpart sub-buckets | **done (on tip)** | play/xfer/nonvint/record/deliver. |
 | Setup-rhs/lhs sub-buckets | **done (on tip)** | Nested under setup-tree-matrix; prefer absolute seconds. |
-| Defer per-mech ACC wait (H1) | **explor; ringtest flat** | Product-green; no clear ringtest win; re-check only on larger exclusive models. |
+| Defer per-mech ACC wait (H1) | **explor; ringtest flat** | Product-green; no clear ringtest win. |
+| Slim present / deviceptr (H2) | **explor; flat nring=16/160** | `local/gpu-P4-density-H2`; no tip-merge. |
+| Profile launch vs device (H3) | **done (docs)** | state_hh 77% GPU / ~6× CN; copyin tax. `local/gpu-P4-density-H3`. |
+| HH TABLE vs analytic (H3b) | **done (docs)** | TABLE was ~4.5× analytic; CN TABLE healthy. |
+| HH TABLE stale-global H→D (H4a) | **explor win (kernel)** | Dirty-flag globals; TABLE `state_hh` ~796→~150 µs; product green. `local/gpu-P4-density-H4`. Wall modest — no tip-merge yet. |
 | Dentate multi-rank profile | **done** | 4-rank thrash without MPS; **MPS ≈ CN**. |
 | Multi-rank GPU share (MPS) | **done (on tip)** | device_assign + warn (`db83f4adb`); ops: `nvidia-cuda-mps-control -d`. |
 | Single device-resource owner | open | Only if exit/leak forces. |
 
 ### Residual perf debt (next P4 when reopened)
 
-1. **setup-tree-matrix + lastpart-nonvint density** — ringtest exclusive still ~2× CN; dentate exclusive already ~CN. **Default next session:** `GPU-P4-density`.
+1. **HH STATE residual vs CN (post-H4a)** — TABLE sickness **closed** (~150 µs ≈ analytic). Still ~**8×** CN TABLE (~19 µs) and present/copyin tax. **Default next:** `GPU-P4-density-H4b` — kernel surface / present_fp / ion pointer vs index (not re-open TABLE H→D). Consider tip-merge H4a with or after H4b.
 2. **Product multi-rank:** always use **CUDA MPS** when ranks/GPU > 1 (or more GPUs). Ops only unless native share-without-MPS becomes a goal.
-3. Optional: lastpart-deliver spike-heavy; phases=0 prcellstate download residual.
+3. Optional: lastpart-deliver spike-heavy; phases=0 end-of-run prcellstate download residual (use **phases=1** for product gate).
 
 ---
 
@@ -481,9 +500,9 @@ Commit locally without push. Update Status/Next before exit.
 
 ## Next (one line — update every session end)
 
-**Next:** P4 exclusive-GPU **density** — ringtest **setup-tree-matrix + lastpart-nonvint** (~2× CN); measure-first, one hypothesis at a time. Multi-rank product: **CUDA MPS**. **Not** Traub `use_gap=1`.
+**Next:** P4 density **H4b** — rest of `nrn_state_hh` vs CN (~150 vs ~19 µs) + present/copyin tax; optional tip-merge H4a. Multi-rank: **CUDA MPS**. **Not** Traub `use_gap=1`. Do not merge H1/H2.
 
-### Branching (2026-08-01)
+### Branching (2026-08-02)
 
 | Branch | Role |
 |--------|------|
@@ -493,6 +512,9 @@ Commit locally without push. Update Status/Next before exit.
 | `local/gpu-p4-gap-scatter` | Exploratory archive: bulk scatter parent of tip cherry-picks |
 | `local/gpu-p4-lastpart-ab` | Exploratory archive: lastpart sub-buckets (now on tip) |
 | `local/gpu-p4-setup-nonvint-density` | Exploratory: defer per-mech ACC wait H1 (ringtest flat) |
+| `local/gpu-P4-density-H2` | Exploratory: slim present/deviceptr (flat) |
+| `local/gpu-P4-density-H3` | Exploratory: H3 profile only → state_hh |
+| `local/gpu-P4-density-H4` | Exploratory: H4a dirty-flag globals (TABLE kernel win; no tip-merge yet) |
 | `local/gpu-p4-multirank-share` | Exploratory archive: MPS diagnosis (landed on tip) |
 
-P4 on tip: scatter, timers, multi-rank MPS. **Default next residual:** exclusive-GPU density (setup-tree-matrix + lastpart-nonvint).
+P4 on tip: scatter, timers, multi-rank MPS. **Default next residual:** H4b `state_hh` quality vs CN (+ present tax).

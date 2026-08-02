@@ -1824,6 +1824,8 @@ void CodegenCppVisitor::print_table_check_function(const Block& node) {
                 auto instance_name = get_variable_name(var_name);
                 printer->fmt_line("save_{} = {};", var_name, instance_name);
             }
+            // GPU: host table contents changed; schedule one H→D (not every step).
+            print_after_host_table_rebuild();
         }
         printer->pop_block();
     }

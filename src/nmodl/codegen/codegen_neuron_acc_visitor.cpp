@@ -49,7 +49,11 @@ bool CodegenNeuronAccVisitor::host_only_parallel_block(BlockType type) const {
 void CodegenNeuronAccVisitor::print_global_var_struct_decl() {
     CodegenNeuronCppVisitor::print_global_var_struct_decl();
     if (!info.artificial_cell && !codegen_global_variables.empty()) {
-        printer->fmt_line("static bool {}_gpu_resident = false;", global_struct_instance());
+        auto const& global = global_struct_instance();
+        printer->fmt_line("static bool {}_gpu_resident = false;", global);
+        // Host TABLE rebuild / GLOBAL mutation sets this; kernels H→D only when true.
+        // Avoids per-step update device of full globals (HH: 6×201 table doubles).
+        printer->fmt_line("static bool {}_device_stale = true;", global);
     }
 }
 
@@ -61,6 +65,8 @@ void CodegenNeuronAccVisitor::print_global_variable_enter_data_once() const {
     printer->fmt_push_block("if (nt->compute_gpu && !{}_gpu_resident)", global);
     printer->fmt_line("(void) nrn_target_copyin(&{}, 1);", global);
     printer->add_line(global + "_gpu_resident = true;");
+    // copyin snapshots host; further host edits require stale→update.
+    printer->add_line(global + "_device_stale = false;");
     printer->pop_block();
 }
 
@@ -68,10 +74,27 @@ void CodegenNeuronAccVisitor::print_global_variable_device_update_annotation() c
     if (info.artificial_cell || codegen_global_variables.empty()) {
         return;
     }
-    printer->push_block("if (nt->compute_gpu)");
-    printer->fmt_line("nrn_pragma_acc(update device ({}))", global_struct_instance());
-    printer->fmt_line("nrn_pragma_omp(target update to({}))", global_struct_instance());
+    // H4a: only H→D when host marked globals dirty (TABLE rebuild, etc.).
+    // Prior codegen updated the full struct every CURRENT/STATE/JACOB launch.
+    auto const& global = global_struct_instance();
+    printer->fmt_push_block("if (nt->compute_gpu && {}_gpu_resident && {}_device_stale)",
+                            global,
+                            global);
+    printer->fmt_line("nrn_pragma_acc(update device ({}))", global);
+    printer->fmt_line("nrn_pragma_omp(target update to({}))", global);
+    printer->add_line(global + "_device_stale = false;");
     printer->pop_block();
+}
+
+void CodegenNeuronAccVisitor::print_mark_global_device_stale() const {
+    if (info.artificial_cell || codegen_global_variables.empty()) {
+        return;
+    }
+    printer->fmt_line("{}_device_stale = true;", global_struct_instance());
+}
+
+void CodegenNeuronAccVisitor::print_after_host_table_rebuild() {
+    print_mark_global_device_stale();
 }
 
 void CodegenNeuronAccVisitor::print_kernel_global_device_setup() {

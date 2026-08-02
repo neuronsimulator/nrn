@@ -1522,6 +1522,12 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
      */
     void print_table_check_function(const ast::Block&);
 
+    /**
+     * Called inside update_table_* after host TABLE arrays are rebuilt.
+     * ACC backends mark globals device-stale so the next kernel H→D once.
+     */
+    virtual void print_after_host_table_rebuild() {}
+
 
     const ast::TableStatement* get_table_statement(const ast::Block&);
 

@@ -75,6 +75,8 @@ class CodegenNeuronAccVisitor: public CodegenNeuronCppVisitor {
 
     void print_global_var_struct_decl() override;
 
+    void print_after_host_table_rebuild() override;
+
     void print_data_structures(bool print_initializers) override;
 
     void print_mechanism_range_var_structure(bool print_initializers) override;
@@ -131,6 +133,8 @@ class CodegenNeuronAccVisitor: public CodegenNeuronCppVisitor {
     bool host_only_parallel_block(BlockType type) const;
     void print_global_variable_enter_data_once() const;
     void print_global_variable_device_update_annotation() const;
+    /** After host mutates mech globals (e.g. TABLE rebuild), mark for next H→D. */
+    void print_mark_global_device_stale() const;
     void print_device_stream_wait() const;
     void print_net_send_buffering();
     void print_send_event_move();
