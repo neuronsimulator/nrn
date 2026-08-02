@@ -32,6 +32,14 @@ struct Thread {
      * @brief Offsets into global mechanism storage for this thread (one per mechanism)
      */
     std::vector<std::size_t> mechanism_offset{};
+    /**
+     * @brief Offsets into global network SoA storages for this thread.
+     * @see doc/network-soa-phase0.md §6
+     */
+    std::size_t point_process_offset{};
+    std::size_t weight_offset{};
+    std::size_t netcon_offset{};
+    std::size_t presyn_offset{};
 };
 struct Model {
     std::vector<Thread> thread{};

@@ -1099,6 +1099,7 @@ void BBS::cell() {
     } else {
         ps->output_index_ = gid;
     }
+    ps->soa_sync();
 }
 
 void BBS::outputcell(int gid) {
@@ -1108,6 +1109,7 @@ void BBS::outputcell(int gid) {
     assert(ps);
     ps->output_index_ = gid;
     ps->gid_ = gid;
+    ps->soa_sync();
 }
 
 void BBS::spike_record(int gid, IvocVect* spikevec, IvocVect* gidvec) {

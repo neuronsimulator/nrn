@@ -7,11 +7,13 @@ saves the pointtype as later argument to create and loc */
 #include <stdlib.h>
 
 #include "membfunc.h"
+#include "neuron/container/network/point_process_access.hpp"
 #include "nrniv_mf.h"
 #include "ocnotify.h"
 #include "parse_with_deps.hpp"
 #include "section.h"
 
+#include <unordered_map>
 
 extern char* pnt_map;
 extern Symbol** pointsym; /*list of variable symbols in s->u.ppsym[k]
@@ -30,6 +32,60 @@ Prop* nrn_point_prop_;
 void (*nrnpy_o2loc_p_)(Object*, Section**, double*);
 void (*nrnpy_o2loc2_p_)(Object*, Section**, double*);
 
+namespace {
+// Owning SoA rows keyed by Point_process* so section_fwd.hpp stays MOD-light.
+std::unordered_map<Point_process*, neuron::container::network::PointProcess::owning_handle>
+    g_point_process_soa_owners;
+}  // namespace
+
+Point_process::Point_process() {
+    auto& owner =
+        g_point_process_soa_owners.emplace(this, neuron::model().point_processes()).first->second;
+    _soa_id = owner.id();
+}
+
+Point_process::~Point_process() {
+    g_point_process_soa_owners.erase(this);
+    _soa_id = {};
+}
+
+int nrn_point_process_soa_row(Point_process const* pnt) {
+    if (!pnt || !pnt->_soa_id) {
+        return -1;
+    }
+    return static_cast<int>(pnt->_soa_id.current_row());
+}
+
+void nrn_point_process_soa_sync(Point_process* pnt) {
+    if (!pnt || !pnt->_soa_id) {
+        return;
+    }
+    // Owner must still be alive (owning_handle in g_point_process_soa_owners).
+    if (!g_point_process_soa_owners.count(pnt)) {
+        return;
+    }
+    auto h = neuron::container::network::point_process_soa(pnt);
+    // Only read Prop* when non-null and still linked to this Point_process.
+    // During free/relocate, prop may already be deleted or half-torn-down.
+    Prop* p = pnt->prop;
+    if (p && p->dparam && p->dparam[1].get<Point_process*>() == pnt) {
+        h.mech_type() = p->_type;
+        // Prop for a point process owns a mechanism SoA row while live.
+        h.instance() = static_cast<int>(p->current_row());
+    } else {
+        h.mech_type() = -1;
+        h.instance() = -1;
+    }
+    // _vnt is NrnThread* when set; only use if it looks like a live thread.
+    auto* nt = static_cast<NrnThread*>(pnt->_vnt);
+    if (nt && nrn_threads && nrn_nthread > 0 && nt >= nrn_threads &&
+        nt < nrn_threads + nrn_nthread) {
+        h.thread_id() = nt->id;
+    } else {
+        h.thread_id() = -1;
+    }
+}
+
 void* create_point_process(int pointtype, Object* ho) {
     auto* const pp = new Point_process{};
     pp->ob = ho;
@@ -40,6 +96,7 @@ void* create_point_process(int pointtype, Object* ho) {
     if (ho && ho->ctemplate->steer && ifarg(1)) {
         loc_point_process(pointtype, (void*) pp);
     }
+    nrn_point_process_soa_sync(pp);
     return pp;
 }
 
@@ -132,6 +189,7 @@ void nrn_loc_point_process(int pointtype, Point_process* pnt, Section* sec, Node
             hoc_template_notify(pnt->ob, 2);
         }
     }
+    nrn_point_process_soa_sync(pnt);
 }
 
 static void create_artcell_prop(Point_process* pnt, short type) {
@@ -148,6 +206,7 @@ static void create_artcell_prop(Point_process* pnt, short type) {
             hoc_template_notify(pnt->ob, 2);
         }
     }
+    nrn_point_process_soa_sync(pnt);
 }
 
 void nrn_relocate_old_points(Section* oldsec, Node* oldnode, Section* sec, Node* node) {
@@ -310,9 +369,11 @@ void connect_point_process_pointer(void) {
 static void free_one_point(Point_process* pnt) {
     auto* p = pnt->prop;
     if (!p) {
+        // SoA row is released in ~Point_process; do not touch Prop/_vnt here.
+        pnt->_vnt = nullptr;
         return;
     }
-    if (!nrn_is_artificial_[p->_type]) {
+    if (!nrn_is_artificial_[p->_type] && pnt->node) {
         auto* p1 = pnt->node->prop;
         if (p1 == p) {
             pnt->node->prop = p1->next;
@@ -337,10 +398,12 @@ static void free_one_point(Point_process* pnt) {
     delete p;
     pnt->prop = (Prop*) 0;
     pnt->node = (Node*) 0;
+    pnt->_vnt = nullptr;
     if (pnt->sec) {
         section_unref(pnt->sec);
     }
     pnt->sec = (Section*) 0;
+    // No soa_sync: reading prop/_vnt after teardown is UAF (ASan). Row freed in ~Point_process.
 }
 
 // called from prop_free

@@ -3,6 +3,11 @@
 #undef check
 
 #include "neuron/container/data_handle.hpp"
+#include "neuron/container/network/netcon.hpp"
+#include "neuron/container/network/presyn.hpp"
+#include "neuron/container/network/self_event.hpp"
+#include "neuron/container/network/weight_block.hpp"
+#include "neuron/model_data.hpp"
 #include "nrnmpi.h"
 #include "nrnneosm.h"
 #include "pool.hpp"
@@ -14,6 +19,9 @@
 #include <memory>
 #include <unordered_map>
 #include <vector>
+
+// Weight::WeightBlock (O(1) NetCon shell ownership of weight SoA rows)
+#include "neuron/container/network/weight_block.hpp"
 
 #if 0
 #define STATISTICS(arg) ++arg
@@ -110,13 +118,57 @@ class NetCon: public DiscreteEvent {
     void replace_src(PreSyn*);
     virtual void disconnect(Observable*);
 
+    /** @brief Sync legacy NetCon fields into NetCon + Weight SoA. */
+    void soa_sync();
+
+    /** @brief Allocate/replace the Weight SoA block (arity = cnt_); updates SoA base. */
+    void allocate_weight_soa(double const* mirror = nullptr);
+    /** @brief True if a Weight SoA block is owned. */
+    [[nodiscard]] bool has_weight_soa() const {
+        return weight_block_ && !weight_block_->empty();
+    }
+    /** @brief Current Weight SoA base row (-1 if none). */
+    [[nodiscard]] neuron::container::network::weight_index_t weight_base() const {
+        if (has_weight_soa()) {
+            return weight_block_->base_row();
+        }
+        return _soa.weight_index();
+    }
+    /** @brief SoA value for weight[i] (requires has_weight_soa()). */
+    [[nodiscard]] double& weight_soa_value(int i) {
+        return weight_block_->value(i);
+    }
+    [[nodiscard]] double weight_soa_value(int i) const {
+        return weight_block_->value(i);
+    }
+    /** @brief HOC-stable data_handle for weight[i]. */
+    [[nodiscard]] neuron::container::data_handle<double> weight_soa_handle(int i) {
+        return weight_block_->value_handle(i);
+    }
+    /**
+     * @brief Pointer to first Weight SoA value of this edge (cnt_ consecutive rows).
+     *
+     * Valid while the block remains contiguous (after allocate / network sort).
+     * May be null if rows are scattered (post-erase, pre-sort). Used for
+     * zero-copy pnt_receive (6b), CoreNEURON export, legacy double* APIs —
+     * not for SelfEvent identity.
+     */
+    [[nodiscard]] double* weight_soa_data();
+    [[nodiscard]] double const* weight_soa_data() const;
+
     double delay_;
     PreSyn* src_;
     Point_process* target_;
-    double* weight_;
     Object* obj_;
     int cnt_;
     bool active_;
+    /**
+     * @brief Owns Weight SoA rows for this edge (shell O(1); no per-NetCon weight_ heap).
+     * See doc/network-soa/heap-free.md step 6.
+     */
+    std::unique_ptr<neuron::container::network::Weight::WeightBlock> weight_block_{};
+    /** @brief NetCon integration SoA row. */
+    neuron::container::network::NetCon::owning_handle _soa{neuron::model().netcons()};
 
     static unsigned long netcon_send_active_;
     static unsigned long netcon_send_inactive_;
@@ -135,7 +187,9 @@ class NetConSave: public DiscreteEvent {
     NetCon* netcon_;
 
     static void invalid();
+    /** @brief Map Weight SoA data pointer → NetCon* (legacy cold helpers / queue tools). */
     static NetCon* weight2netcon(double*);
+    /** @brief Map HOC NetCon object index → NetCon* (SaveState). */
     static NetCon* index2netcon(long);
 
   private:
@@ -167,8 +221,11 @@ class SelfEvent: public DiscreteEvent {
 
     double flag_;
     Point_process* target_;
-    double* weight_;
     Datum* movable_;  // pointed-to Datum holds TQItem*
+    /** @brief Weight SoA base row (−1 if no NetCon / null weights). Queue identity. */
+    int weight_index_{-1};
+    /** @brief PointProcess SoA row of target_ (−1 if unknown). */
+    int target_row_{-1};
 
     static unsigned long selfevent_send_;
     static unsigned long selfevent_move_;
@@ -291,6 +348,13 @@ class PreSyn: public ConditionEvent {
     double mindelay();
     void fanout(double, NetCvode*, NrnThread*);  // used by bbsavestate
 
+    /** @brief Sync legacy PreSyn fields into PreSyn SoA (Phase 3). */
+    void soa_sync();
+    /** @brief Mark global NetCon fanout order dirty (dil_ changed). */
+    static void mark_fanout_unsorted();
+    /** @brief Rebuild global fanout order from all PreSyn dil_ lists. */
+    static void ensure_fanout_order();
+
     NetConPList dil_;
     double threshold_;
     double delay_;
@@ -307,6 +371,8 @@ class PreSyn: public ConditionEvent {
     int rec_id_;
     int output_index_;
     int gid_;
+    /** @brief Phase 3 dual-write: PreSyn integration row. */
+    neuron::container::network::PreSyn::owning_handle _soa{neuron::model().presyns()};
 #if NRNMPI
     unsigned char localgid_;  // compressed gid for spike transfer
 #endif

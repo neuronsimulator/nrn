@@ -35,6 +35,21 @@ export prefix
 export bindir
 export libdir
 
+# NMODL (default when NRN_ENABLE_NMODL=ON, or via -nmodl) embeds Python and
+# requires NMODL_PYLIB + NMODLHOME. Prefer existing env values; otherwise use
+# the Python library from configure and the install/build prefix of this
+# script. Harmless when using nocmodl.
+if [ -z "${NMODL_PYLIB:-}" ]; then
+  _nrn_nmodl_pylib="@PYTHON_LIBRARY@"
+  if [ -n "${_nrn_nmodl_pylib}" ]; then
+    export NMODL_PYLIB="${_nrn_nmodl_pylib}"
+  fi
+  unset _nrn_nmodl_pylib
+fi
+if [ -z "${NMODLHOME:-}" ]; then
+  export NMODLHOME="$(cd "$(dirname "${0}")/.." && pwd)"
+fi
+
 if command -v xcrun >/dev/null 2>&1; then
     @NRN_OSX_BUILD_TRUE@export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
     @NRN_OSX_BUILD_TRUE@export MACOSX_DEPLOYMENT_TARGET="@CMAKE_OSX_DEPLOYMENT_TARGET@"
