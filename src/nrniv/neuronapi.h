@@ -96,6 +96,11 @@ nrn_stack_types_t nrn_stack_type(void);
 char const* nrn_stack_type_name(nrn_stack_types_t id);
 Object* nrn_object_new(Symbol* sym, int narg);
 Object* nrn_object_new_wrap(Symbol* sym, void* cpp_object);
+int nrn_object_new_nothrow(Symbol* sym,
+                           int narg,
+                           Object** result,
+                           char* error_msg,
+                           size_t error_msg_size);
 Symbol* nrn_method_symbol(const Object* obj, const char* name);
 // TODO: the next two functions throw exceptions in C++; need a version that
 //       returns a bool success indicator instead (this is actually the

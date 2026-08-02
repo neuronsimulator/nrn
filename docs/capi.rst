@@ -971,6 +971,29 @@ Functions, objects, and the stack
         :c:func:`nrn_object_new`,
         :c:func:`nrn_object_ref`
 
+.. c:function:: int nrn_object_new_nothrow(Symbol* sym, int narg, Object** result, char* error_msg, size_t error_msg_size)
+
+    Create a new object, reporting a constructor error instead of throwing.
+
+    :param sym: Symbol representing the object class/type.
+    :param narg: Number of constructor arguments on the stack.
+    :param result: Set to the new object on success, or ``NULL`` on error.
+    :param error_msg: Buffer filled with a message on error (may be ``NULL``).
+    :param error_msg_size: Size of ``error_msg``.
+    :returns: 0 on success, nonzero if the HOC constructor errored.
+
+    Like :c:func:`nrn_object_new`, but a constructor error (bad arguments, a
+    failing ``INITIAL``, etc.) is caught and reported rather than thrown as a
+    C++ exception, so a non-C++ caller (ctypes, MATLAB, ...) does not have an
+    exception cross the call boundary. This is the constructor counterpart of
+    :c:func:`nrn_function_call_nothrow` and :c:func:`nrn_method_call_nothrow`.
+    The interpreter stack is restored if construction fails.
+
+    .. seealso::
+
+        :c:func:`nrn_object_new`,
+        :c:func:`nrn_function_call_nothrow`
+
 .. c:function:: Symbol* nrn_method_symbol(const Object* obj, const char* name)
 
     Get a method symbol from an object by name.
