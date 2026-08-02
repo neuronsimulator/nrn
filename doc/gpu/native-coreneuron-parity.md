@@ -128,6 +128,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-08-01 | GPU-P4-setup-nonvint-density | — | setup-rhs/lhs sub-buckets; H1 defer per-mech ACC wait (CoreNEURON-like); ringtest noise-flat. |
 | 2026-08-01 | GPU-P4-dentate-profile | — | Dentate tip timers: 4-rank psolve ~37 s; 1-rank ~3.3 s ≈ CN; contention is the multi-rank residual. |
 | 2026-08-01 | GPU-P4-multirank | — | CUDA MPS ≈ CN; device_assign on tip (`db83f4adb`); handoff → density. |
+| 2026-08-02 | GPU-P4-density-H4 | — | H4c NMODL product: TABLE temps stack/`double&`; live present; state_hh ~81 µs; residual thin-rates. |
 
 ---
 
@@ -434,17 +435,38 @@ Phase timer (`NRN_NATIVE_GPU_PHASE_TIMER=1`):
 | HH TABLE stale-global H→D (H4a) | **explor win (kernel)** | Dirty-flag globals; TABLE `state_hh` ~796→~150 µs; product green. `local/gpu-P4-density-H4`. Wall modest — no tip-merge yet. |
 | STATE dead ion reads (H4b-D) | **explor cleanup** | Skip unused ion READ on STATE path; product green; **no ACC_TIME win**. |
 | STATE few-arg pack (H4b-B) | **blocked (OpenACC)** | `double* const*` / `_present_fp[i]` not ACC-trackable; need named bases. |
-| STATE stack rates + slim present (H4c hand) | **explor win (≈CN)** | Hand-edit `hh.cpp`: `state_hh` TABLE ~18 µs (was ~131); wall ~1.7 s. See excerpt. **Productize via NMODL next.** |
+| STATE stack rates + slim present (H4c hand) | **explor win (≈CN)** | Hand-edit `hh.cpp`: `state_hh` TABLE ~18 µs (was ~131); wall ~1.7 s. See excerpt. |
 | CURRENT min-present (H4c hand) | **explor win (smaller)** | 8 SoA cols + ion dptrs; `nrn_cur` ~18→~13 µs; wall ~1.52 s with STATE edit. |
+| H4c NMODL productize (codegen) | **explor win (partial)** | See H4c product notes below. **No tip-merge yet** (residual vs hand-edit). |
 | Dentate multi-rank profile | **done** | 4-rank thrash without MPS; **MPS ≈ CN**. |
 | Multi-rank GPU share (MPS) | **done (on tip)** | device_assign + warn (`db83f4adb`); ops: `nvidia-cuda-mps-control -d`. |
 | Single device-resource owner | open | Only if exit/leak forces. |
 
+### H4c NMODL productize (2026-08-02, `local/gpu-P4-density-H4`)
+
+**Codegen (`codegen_neuron_acc_visitor`):**
+
+1. **TABLE statement vars as `double&` (`_kl_*`)** in ACC procedures; STATE loop declares stack locals (`minf`/`mtau`/…) and passes them into `rates_*` (no hot-path SoA for pure rates temps). HOC/table-rebuild bind `_present_fp_i[id]`.
+2. **Per-kernel live `present`** of named `_present_fp_N` columns (AST usage). STATE HH → **m,h,n only** + `hh_global`; CURRENT → params/states/g/ion surface (skips rates temps); jacob → `g_unused` only.
+3. STATE uses stack `v` (not `v_unused` SoA). OpenACC still needs **named** bases (H4b-B pack still blocked).
+4. Functors keep full `present_fp` member set (deriv body ≠ procedure live set). VERBATIM still needs full non-table `present_fp` in procedure signatures.
+
+**Measure (nring=16, tstop=100, TABLE, product phases=1):**
+
+| metric | H4b baseline | H4c product codegen | H4c hand-edit | CN (H3b) |
+|--------|--------------|---------------------|---------------|----------|
+| `state_hh` avg | ~131 µs | ~**81 µs** | ~18 µs | ~19 µs |
+| `nrn_cur_hh` avg | ~18 µs | ~**17 µs** | ~13 µs | — |
+| wall multi-warm | ~2.1–2.5 s | ~**1.88–1.92 s** | ~1.52 s (both edits) | — |
+| product 688 dV=0 | green | **green** | green | — |
+
+**Residual vs hand-edit:** fat procedure args still pass unused non-table `_present_fp_*` into STATE (VERBATIM safety) → residual ACC copyin under `state_hh`. Hand-edit inlined rates with only 3 SoA columns. Next: thin rates call when body has no VERBATIM / no non-table RANGE (HH path → ≈CN).
+
 ### Residual perf debt (next P4 when reopened)
 
-1. **Productize H4c hand-edit** — NMODL ACC: rates ASSIGNED temps as locals; STATE present live fields only (m,h,n + needed); avoid 25-arg rates. Hand-edit proved **≈CN `state_hh`**. Then tip-merge H4a+H4b+codegen. Optional: split hand-edit factors (locals vs slim present vs inline) if needed.
+1. **Close H4c residual** — thin rates/`present_fp` args when safe (no VERBATIM); aim `state_hh` ≈CN ~19 µs; then tip-merge H4a+H4b+H4c product.
 2. **Product multi-rank:** always use **CUDA MPS** when ranks/GPU > 1 (or more GPUs). Ops only unless native share-without-MPS becomes a goal.
-3. Optional: lastpart-deliver spike-heavy; phases=0 end-of-run prcellstate download residual (use **phases=1** for product gate); CURRENT surface after STATE productized.
+3. Optional: lastpart-deliver spike-heavy; phases=0 end-of-run prcellstate download residual (use **phases=1** for product gate).
 
 ---
 
@@ -537,7 +559,7 @@ Commit locally without push. Update Status/Next before exit.
 
 ## Next (one line — update every session end)
 
-**Next:** P4 density **productize H4c** — NMODL ACC emit hand-edit shape (rates temps local; slim STATE present; thin rates); tip-merge with H4a/H4b when green. Multi-rank: **CUDA MPS**. **Not** Traub `use_gap=1`.
+**Next:** Close H4c residual (thin rates `present_fp` args when no VERBATIM → ≈CN `state_hh`); tip-merge H4a+H4b+H4c when wall win clear. Multi-rank: **CUDA MPS**. **Not** Traub `use_gap=1`.
 
 ### Branching (2026-08-02)
 

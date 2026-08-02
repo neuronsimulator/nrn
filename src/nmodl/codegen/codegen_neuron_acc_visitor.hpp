@@ -5,6 +5,10 @@
  * \brief \copybrief nmodl::codegen::CodegenNeuronAccVisitor
  */
 
+#include <optional>
+#include <string>
+#include <unordered_set>
+
 #include "codegen/codegen_neuron_cpp_visitor.hpp"
 
 namespace nmodl {
@@ -59,6 +63,13 @@ class CodegenNeuronAccVisitor: public CodegenNeuronCppVisitor {
     void print_check_table_entrypoint() override;
 
     ParamVector internal_method_parameters() override;
+
+    std::string internal_method_arguments() override;
+
+    /** Functors need full RANGE present_fp set (deriv body ≠ procedure live set). */
+    ParamVector functor_params() override;
+
+    void print_function_procedure_helper(const ast::Block& node) override;
 
     void print_gpu_phase_registration() override;
 
@@ -119,13 +130,56 @@ class CodegenNeuronAccVisitor: public CodegenNeuronCppVisitor {
     /** True while emitting device net_buf_receive body (net_send → buffering, not host net_send). */
     mutable bool printing_net_buf_receive_kernel_{false};
 
+    /**
+     * H4c: TABLE / rates ASSIGNED temps as double& (_kl_*) in procedure bodies.
+     * False while printing table-update host glue (reads SoA after f_rates).
+     */
+    mutable bool use_kl_ref_in_float_name_{false};
+
+    /**
+     * H4c: STATE loop has stack locals for table_statement_variables; call sites
+     * pass those names instead of _present_fp_i[id].
+     */
+    mutable bool state_kernel_locals_active_{false};
+
+    /**
+     * H4c: HOC/Python wrappers bind TABLE temps as _present_fp_i[id] into double&.
+     * Procedure bodies (incl. table update) pass _kl_* params through.
+     */
+    mutable bool hoc_wrapper_table_temp_as_soa_{false};
+
+    /** H4c: STATE uses stack `v` instead of writing v_unused SoA. */
+    mutable bool state_local_v_active_{false};
+
+    /**
+     * Optional live SoA column set for the next parallel loop (e.g. jacob only
+     * needs g_unused). When nullopt, compute from BlockType AST usage.
+     */
+    mutable std::optional<std::unordered_set<int>> live_float_indices_override_;
+
     [[nodiscard]] std::string indexed_fp_var(std::string_view name,
                                              std::string_view index_expr = "id") const;
     [[nodiscard]] int conductance_fp_index() const;
 
+    /** TABLE statement vars (minf, mtau, …) — pure temps on STATE hot path. */
+    [[nodiscard]] bool is_table_statement_float(const std::string& name) const;
+
+    /** Float SoA indices that the kernel must present (named _present_fp_N). */
+    [[nodiscard]] std::unordered_set<int> live_float_indices_for_kernel(BlockType type) const;
+
+    /** Ion dptr indices used on this kernel path (empty → no deviceptr ions). */
+    [[nodiscard]] std::unordered_set<int> live_dptr_indices_for_kernel(BlockType type);
+
+
+    void collect_ast_names(const ast::Ast& node, std::unordered_set<std::string>& names) const;
+
     void print_present_fp_pointer_declarations() const;
+    void print_present_fp_pointer_declarations_for(const std::unordered_set<int>& indices) const;
     void print_present_dptr_pointer_declarations() const;
+    void print_present_dptr_pointer_declarations_for(const std::unordered_set<int>& indices) const;
     [[nodiscard]] std::string present_dptr_deviceptr_clause() const;
+    [[nodiscard]] std::string present_dptr_deviceptr_clause_for(
+        const std::unordered_set<int>& indices) const;
 
     /** Inline BEFORE BREAKPOINT bodies into CURRENT (device path; no separate BA). */
     void print_before_breakpoint_inline();

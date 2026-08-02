@@ -7,10 +7,208 @@
 
 #include <algorithm>
 #include <cstring>
+#include <optional>
 #include <unordered_set>
+#include <vector>
 
 namespace nmodl {
 namespace codegen {
+
+namespace {
+
+bool name_is_table_statement_float(const CodegenInfo& info, const std::string& name) {
+    for (const auto& v: info.table_statement_variables) {
+        if (v && v->get_name() == name) {
+            return true;
+        }
+    }
+    return false;
+}
+
+}  // namespace
+
+bool CodegenNeuronAccVisitor::is_table_statement_float(const std::string& name) const {
+    return name_is_table_statement_float(info, name);
+}
+
+void CodegenNeuronAccVisitor::collect_ast_names(const ast::Ast& node,
+                                                std::unordered_set<std::string>& names) const {
+    for (const auto& n: collect_nodes(node, {ast::AstNodeType::NAME})) {
+        auto nm = n->get_node_name();
+        if (!nm.empty()) {
+            names.insert(std::move(nm));
+        }
+    }
+}
+
+std::unordered_set<int> CodegenNeuronAccVisitor::live_float_indices_for_kernel(
+    BlockType type) const {
+    if (live_float_indices_override_) {
+        return *live_float_indices_override_;
+    }
+
+    std::unordered_set<std::string> names;
+    auto collect = [&](const ast::Ast* node) {
+        if (node) {
+            collect_ast_names(*node, names);
+        }
+    };
+
+    if (type == BlockType::State) {
+        // STATE calls rates/vtrap (TABLE often not inlined) — include procedure AST.
+        collect(info.nrn_state_block);
+        for (const auto& block: info.matexp_blocks) {
+            collect(block);
+        }
+        for (const auto& procedure: info.procedures) {
+            collect(procedure);
+        }
+        for (const auto& function: info.functions) {
+            collect(function);
+        }
+    } else if (type == BlockType::Equation) {
+        // CURRENT live set = breakpoint body only (not rates temps).
+        if (info.breakpoint_node) {
+            collect(info.breakpoint_node);
+        }
+        for (const auto& block: info.before_after_blocks) {
+            collect(block);
+        }
+        // g_unused / conductance is written by cur kernel after the body.
+        names.insert(info.vectorize ? naming::CONDUCTANCE_UNUSED_VARIABLE
+                                    : naming::CONDUCTANCE_VARIABLE);
+        names.insert(naming::VOLTAGE_UNUSED_VARIABLE);
+    } else if (type == BlockType::NetReceive) {
+        if (info.net_receive_node) {
+            collect(info.net_receive_node);
+        }
+    } else if (type == BlockType::Initial) {
+        if (info.initial_node) {
+            collect(info.initial_node);
+        }
+        for (const auto& procedure: info.procedures) {
+            collect(procedure);
+        }
+        for (const auto& function: info.functions) {
+            collect(function);
+        }
+    }
+
+    std::unordered_set<int> indices;
+    for (std::string name: names) {
+        if (!info.artificial_cell && name == "v") {
+            name = naming::VOLTAGE_UNUSED_VARIABLE;
+        }
+        // H4c: TABLE rates temps are stack/ref locals on STATE — not SoA present.
+        if (type == BlockType::State && is_table_statement_float(name)) {
+            continue;
+        }
+        // STATE uses stack v; do not present v_unused.
+        if (type == BlockType::State && name == naming::VOLTAGE_UNUSED_VARIABLE) {
+            continue;
+        }
+        try {
+            indices.insert(position_of_float_var(name));
+        } catch (...) {
+            // Not a float SoA column.
+        }
+    }
+
+    // If analysis found nothing (empty MOD edge cases), present all as before.
+    if (indices.empty() && !codegen_float_variables.empty() && type != BlockType::State) {
+        for (int i = 0; i < static_cast<int>(codegen_float_variables.size()); ++i) {
+            indices.insert(i);
+        }
+    }
+    return indices;
+}
+
+std::unordered_set<int> CodegenNeuronAccVisitor::live_dptr_indices_for_kernel(BlockType type) {
+    std::unordered_set<std::string> used_names;
+    auto collect = [&](const ast::Ast* node) {
+        if (node) {
+            collect_ast_names(*node, used_names);
+        }
+    };
+    if (type == BlockType::State) {
+        collect(info.nrn_state_block);
+        for (const auto& procedure: info.procedures) {
+            collect(procedure);
+        }
+        for (const auto& function: info.functions) {
+            collect(function);
+        }
+        // Concentration mechs write ions in STATE via shadow updates not always
+        // visible as NAME uses. If STATE ion_write_statements is non-empty, keep
+        // full ion dptrs. HH STATE has none (ion writes only on CURRENT).
+        if (!ion_write_statements(BlockType::State).empty()) {
+            for (size_t i = 0; i < codegen_int_variables.size(); ++i) {
+                const auto& var = codegen_int_variables[i];
+                auto const sem = info.semantics[i].name;
+                if (!(var.is_index || var.is_integer || var.is_vdata ||
+                      sem == naming::POINTER_SEMANTIC)) {
+                    used_names.insert(var.symbol->get_name());
+                }
+            }
+        }
+    } else if (type == BlockType::Equation) {
+        if (info.breakpoint_node) {
+            collect(info.breakpoint_node);
+        }
+        // CURRENT always needs full ion dptr surface: USEION shadows plus
+        // numerical di/dv slots (dinadv/dikdv) not named in the BREAKPOINT AST.
+        if (!info.ions.empty()) {
+            for (size_t i = 0; i < codegen_int_variables.size(); ++i) {
+                const auto& var = codegen_int_variables[i];
+                auto const sem = info.semantics[i].name;
+                if (!(var.is_index || var.is_integer || var.is_vdata ||
+                      sem == naming::POINTER_SEMANTIC)) {
+                    used_names.insert(var.symbol->get_name());
+                }
+            }
+        }
+        // Point process nrn_cur scales by node area (ppvar dptr), even if "area"
+        // never appears as a NAME in the BREAKPOINT AST.
+        if (info.point_process) {
+            used_names.insert(naming::NODE_AREA_VARIABLE);
+        }
+    } else if (type == BlockType::NetReceive) {
+        if (info.net_receive_node) {
+            collect(info.net_receive_node);
+        }
+    } else {
+        // Conservative: all ion dptrs.
+        for (size_t i = 0; i < codegen_int_variables.size(); ++i) {
+            const auto& var = codegen_int_variables[i];
+            auto const sem = info.semantics[i].name;
+            if (!(var.is_index || var.is_integer || var.is_vdata ||
+                  sem == naming::POINTER_SEMANTIC)) {
+                // Will filter below by semantics name if needed; include all non-index.
+                used_names.insert(var.symbol->get_name());
+            }
+        }
+    }
+
+    std::unordered_set<int> indices;
+    for (size_t i = 0; i < codegen_int_variables.size(); ++i) {
+        const auto& var = codegen_int_variables[i];
+        auto const sem = info.semantics[i].name;
+        if (var.is_index || var.is_integer || var.is_vdata || sem == naming::POINTER_SEMANTIC) {
+            continue;
+        }
+        // Exact match only (ion_ena / ena). Do not substring-match — "n" would
+        // hit every ion column.
+        const auto name = var.symbol->get_name();
+        std::string bare = name;
+        if (bare.rfind(naming::ION_VARNAME_PREFIX, 0) == 0) {
+            bare = bare.substr(std::strlen(naming::ION_VARNAME_PREFIX));
+        }
+        if (used_names.count(name) || used_names.count(bare)) {
+            indices.insert(static_cast<int>(i));
+        }
+    }
+    return indices;
+}
 
 std::string CodegenNeuronAccVisitor::backend_name() const {
     return "C++-OpenAcc-NEURON";
@@ -122,11 +320,35 @@ void CodegenNeuronAccVisitor::print_present_fp_pointer_declarations() const {
     }
 }
 
+void CodegenNeuronAccVisitor::print_present_fp_pointer_declarations_for(
+    const std::unordered_set<int>& indices) const {
+    std::vector<int> ordered(indices.begin(), indices.end());
+    std::sort(ordered.begin(), ordered.end());
+    for (int i: ordered) {
+        printer->fmt_line("double* _present_fp_{0} = _lmc.template fpfield_ptr<{0}>();", i);
+    }
+}
+
 void CodegenNeuronAccVisitor::print_present_dptr_pointer_declarations() const {
-    const auto codegen_int_variables_size = codegen_int_variables.size();
-    for (size_t i = 0; i < codegen_int_variables_size; ++i) {
+    std::unordered_set<int> all;
+    for (size_t i = 0; i < codegen_int_variables.size(); ++i) {
         const auto& var = codegen_int_variables[i];
         auto const sem = info.semantics[i].name;
+        if (var.is_index || var.is_integer || var.is_vdata || sem == naming::POINTER_SEMANTIC) {
+            continue;
+        }
+        all.insert(static_cast<int>(i));
+    }
+    print_present_dptr_pointer_declarations_for(all);
+}
+
+void CodegenNeuronAccVisitor::print_present_dptr_pointer_declarations_for(
+    const std::unordered_set<int>& indices) const {
+    std::vector<int> ordered(indices.begin(), indices.end());
+    std::sort(ordered.begin(), ordered.end());
+    for (int i: ordered) {
+        const auto& var = codegen_int_variables[static_cast<size_t>(i)];
+        auto const sem = info.semantics[static_cast<size_t>(i)].name;
         if (var.is_index || var.is_integer || var.is_vdata || sem == naming::POINTER_SEMANTIC) {
             continue;
         }
@@ -134,8 +356,7 @@ void CodegenNeuronAccVisitor::print_present_dptr_pointer_declarations() const {
         // advanced by ml storage offset. When using the GPU table, also record
         // storage_offset so (*_present_dptr_i[id + base]) hits the right instance
         // (multi-thread: offset>0). Host path uses base=0.
-        printer->fmt_line(
-            "double* const* _present_dptr_{0} = nullptr;", i);
+        printer->fmt_line("double* const* _present_dptr_{0} = nullptr;", i);
         printer->fmt_line("int _present_dptr_base_{0} = 0;", i);
         printer->push_block(
             "if (nt->compute_gpu && "
@@ -154,20 +375,55 @@ void CodegenNeuronAccVisitor::print_present_dptr_pointer_declarations() const {
 }
 
 std::string CodegenNeuronAccVisitor::present_dptr_deviceptr_clause() const {
-    std::vector<std::string> dptr_names;
-    const auto codegen_int_variables_size = codegen_int_variables.size();
-    for (size_t i = 0; i < codegen_int_variables_size; ++i) {
+    std::unordered_set<int> all;
+    for (size_t i = 0; i < codegen_int_variables.size(); ++i) {
         const auto& var = codegen_int_variables[i];
         auto const sem = info.semantics[i].name;
         if (var.is_index || var.is_integer || var.is_vdata || sem == naming::POINTER_SEMANTIC) {
             continue;
         }
+        all.insert(static_cast<int>(i));
+    }
+    return present_dptr_deviceptr_clause_for(all);
+}
+
+std::string CodegenNeuronAccVisitor::present_dptr_deviceptr_clause_for(
+    const std::unordered_set<int>& indices) const {
+    std::vector<int> ordered(indices.begin(), indices.end());
+    std::sort(ordered.begin(), ordered.end());
+    std::vector<std::string> dptr_names;
+    for (int i: ordered) {
         dptr_names.push_back(fmt::format("_present_dptr_{}", i));
     }
     if (dptr_names.empty()) {
         return {};
     }
     return fmt::format(" deviceptr({})", fmt::join(dptr_names, ", "));
+}
+
+CodegenNeuronAccVisitor::ParamVector CodegenNeuronAccVisitor::functor_params() {
+    // Eigen Newton functors capture RANGE via present_fp members. Their bodies
+    // come from DERIVATIVE, not PROCEDURE, so procedure_live_* is incomplete.
+    // Keep full double* present_fp set (table temps stay SoA here).
+    if (info.mod_suffix == "nothing") {
+        return {};
+    }
+    ParamVector params;
+    params.emplace_back("", fmt::format("{}&", instance_struct()), "", "inst");
+    if (!info.artificial_cell) {
+        params.emplace_back("", fmt::format("{}&", node_data_struct()), "", "node_data");
+    }
+    params.emplace_back("", "size_t", "", "id");
+    params.emplace_back("", "Datum*", "", "_ppvar");
+    params.emplace_back("", "Datum*", "", "_thread");
+    if (!codegen_thread_variables.empty()) {
+        params.emplace_back("", fmt::format("{}&", thread_variables_struct()), "", "_thread_vars");
+    }
+    params.emplace_back("", "NrnThread*", "", "nt");
+    for (int i = 0; i < static_cast<int>(codegen_float_variables.size()); ++i) {
+        params.emplace_back("", "double*", "", fmt::format("_present_fp_{}", i));
+    }
+    return params;
 }
 
 CodegenNeuronAccVisitor::ParamVector CodegenNeuronAccVisitor::internal_method_parameters() {
@@ -187,14 +443,78 @@ CodegenNeuronAccVisitor::ParamVector CodegenNeuronAccVisitor::internal_method_pa
         params.emplace_back("", fmt::format("{}&", thread_variables_struct()), "", "_thread_vars");
     }
     params.emplace_back("", "NrnThread*", "", "nt");
+    // H4c: TABLE statement vars (rates temps) are double& so STATE can pass stack
+    // locals and HOC/table-update can bind _present_fp_i[id]. Other RANGE stay
+    // double* columns. (Cannot drop unused present_fp: VERBATIM and nested
+    // helpers still index _present_fp_N; thinning needs a full VERBATIM pass.)
     for (int i = 0; i < static_cast<int>(codegen_float_variables.size()); ++i) {
-        params.emplace_back("", "double*", "", fmt::format("_present_fp_{}", i));
+        const auto& name = codegen_float_variables[static_cast<size_t>(i)]->get_name();
+        if (is_table_statement_float(name)) {
+            params.emplace_back("", "double&", "", fmt::format("_kl_{}", name));
+        } else {
+            params.emplace_back("", "double*", "", fmt::format("_present_fp_{}", i));
+        }
     }
     return params;
 }
 
+std::string CodegenNeuronAccVisitor::internal_method_arguments() {
+    if (info.mod_suffix == "nothing") {
+        return {};
+    }
+
+    std::vector<std::string> args;
+    args.emplace_back("inst");
+    if (!info.artificial_cell) {
+        args.emplace_back("node_data");
+    }
+    args.emplace_back("id");
+    args.emplace_back("_ppvar");
+    args.emplace_back("_thread");
+    if (!codegen_thread_variables.empty()) {
+        args.emplace_back("_thread_vars");
+    }
+    args.emplace_back("nt");
+    for (int i = 0; i < static_cast<int>(codegen_float_variables.size()); ++i) {
+        const auto& name = codegen_float_variables[static_cast<size_t>(i)]->get_name();
+        if (is_table_statement_float(name)) {
+            if (state_kernel_locals_active_) {
+                args.push_back(name);
+            } else if (use_kl_ref_in_float_name_) {
+                args.push_back(fmt::format("_kl_{}", name));
+            } else {
+                args.push_back(fmt::format("_present_fp_{}[id]", i));
+            }
+        } else {
+            args.push_back(fmt::format("_present_fp_{}", i));
+        }
+    }
+    return fmt::format("{}", fmt::join(args, ", "));
+}
+
+void CodegenNeuronAccVisitor::print_function_procedure_helper(const ast::Block& node) {
+    auto name = node.get_node_name();
+    if (info.function_uses_table(name)) {
+        auto new_name = "f_" + name;
+        // f_rates / rates / table-update bodies: TABLE temps are _kl_* ref params.
+        use_kl_ref_in_float_name_ = true;
+        print_function_or_procedure(node,
+                                    new_name,
+                                    {CppObjectSpecifier::Static, CppObjectSpecifier::Inline});
+        print_table_check_function(node);
+        print_table_replacement_function(node);
+        use_kl_ref_in_float_name_ = false;
+    } else {
+        use_kl_ref_in_float_name_ = true;
+        print_function_or_procedure(node, name);
+        use_kl_ref_in_float_name_ = false;
+    }
+}
+
 void CodegenNeuronAccVisitor::print_function_definitions() {
     print_hoc_py_wrapper_function_definitions();
+    // HOC wrappers done — procedure bodies pass _kl_* not SoA elements.
+    hoc_wrapper_table_temp_as_soa_ = false;
     use_present_fp_indexing_ = true;
     for (const auto& procedure: info.procedures) {
         print_procedure(*procedure);
@@ -222,7 +542,11 @@ void CodegenNeuronAccVisitor::print_hoc_py_wrapper_before_table_update() {
     if (info.mod_suffix != "nothing" && !codegen_float_variables.empty()) {
         print_present_fp_pointer_declarations();
     }
+    // H4c: HOC/Python bind TABLE temps as SoA elements into double& params.
+    hoc_wrapper_table_temp_as_soa_ = true;
 }
+
+
 
 void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
                                                             const ast::Block* block) {
@@ -250,6 +574,14 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
 
     print_global_variable_device_update_annotation();
 
+    // H4c: per-kernel live SoA columns (named bases). OpenACC cannot track
+    // array-of-pointers; only present columns the kernel actually touches.
+    const auto live_fp = live_float_indices_for_kernel(type);
+    // Jacob override is float-only (g_unused); no ion dptrs.
+    const auto live_dptr = (type == BlockType::NetReceive || live_float_indices_override_)
+                               ? std::unordered_set<int>{}
+                               : live_dptr_indices_for_kernel(type);
+
     if (type == BlockType::NetReceive) {
         // Present pointers declared by print_net_receive_buffering before the loop.
     } else if (!info.artificial_cell) {
@@ -265,11 +597,10 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
             printer->add_line("double* vec_rhs = node_data.node_rhs;");
             printer->add_line("double* vec_d = node_data.node_diagonal;");
         }
-        const auto codegen_float_variables_size = codegen_float_variables.size();
-        for (int i = 0; i < codegen_float_variables_size; ++i) {
-            printer->fmt_line("double* _present_fp_{0} = _lmc.template fpfield_ptr<{0}>();", i);
-        }
-        print_present_dptr_pointer_declarations();
+        // Declare all RANGE bases so procedure call args (_present_fp_*) stay
+        // valid; OpenACC present clause below is live-set only (H4c).
+        print_present_fp_pointer_declarations();
+        print_present_dptr_pointer_declarations_for(live_dptr);
     }
 
     std::ostringstream present_clause;
@@ -294,6 +625,7 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
                               ", nsb->_nsb_t[:nsb->_size]"
                               ", nsb->_nsb_flag[:nsb->_size]";
         }
+        // NetReceive: present all float columns (buffer path may touch many).
         const auto codegen_float_variables_size = codegen_float_variables.size();
         for (int i = 0; i < codegen_float_variables_size; ++i) {
             const auto& float_var = codegen_float_variables[i];
@@ -306,9 +638,10 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
         if (type == BlockType::Equation) {
             present_clause << ", vec_rhs[:nt->end], vec_d[:nt->end]";
         }
-        const auto codegen_float_variables_size = codegen_float_variables.size();
-        for (int i = 0; i < codegen_float_variables_size; ++i) {
-            const auto& float_var = codegen_float_variables[i];
+        std::vector<int> ordered_fp(live_fp.begin(), live_fp.end());
+        std::sort(ordered_fp.begin(), ordered_fp.end());
+        for (int i: ordered_fp) {
+            const auto& float_var = codegen_float_variables[static_cast<size_t>(i)];
             auto const array_len = float_var->is_array() ? float_var->get_length() : 1;
             present_clause << fmt::format(
                 ", _present_fp_{}[:static_cast<std::size_t>(_ml_arg->nodecount) * {}]", i, array_len);
@@ -316,9 +649,13 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
         // pdata ion rows live in device memory via upload_mechanism_pointer_tables;
         // do not add them to present() (OpenACC cannot track deviceptr slices here).
     }
+    // Global struct is on data present; also list for kernels that touch TABLE.
+    if (!info.artificial_cell && !codegen_global_variables.empty() && type != BlockType::NetReceive) {
+        present_clause << ", " << global_struct_instance();
+    }
     present_clause << ')';
 
-    std::string deviceptr_extra = present_dptr_deviceptr_clause();
+    std::string deviceptr_extra = present_dptr_deviceptr_clause_for(live_dptr);
     if (!info.artificial_cell && type != BlockType::NetReceive) {
         if (deviceptr_extra.empty()) {
             deviceptr_extra = " deviceptr(_d_voltages)";
@@ -498,7 +835,10 @@ void CodegenNeuronAccVisitor::print_nrn_jacob() {
     use_present_fp_indexing_ = true;
     auto print_jacob_device_loop = [&](bool det_matrix) {
         force_seq_acc_loop_ = det_matrix;
+        // Jacob only touches g_unused / conductance column + vec_d.
+        live_float_indices_override_ = std::unordered_set<int>{conductance_fp_index()};
         print_parallel_iteration_hint(BlockType::Equation, nullptr);
+        live_float_indices_override_.reset();
         printer->push_block("for (int id = 0; id < nodecount; id++)");
         printer->add_line("int node_id = node_data.nodeindices[id];");
         // g_unused from nrn_cur. PP: atomic unless NRN_DETERMINISTIC_MATRIX (seq loop).
@@ -581,11 +921,15 @@ void CodegenNeuronAccVisitor::print_check_table_entrypoint() {
                           info.thread_var_thread_id);
     }
 
+    // Table thread check is host glue: bind TABLE temps from SoA elements.
+    hoc_wrapper_table_temp_as_soa_ = true;
     for (const auto& function: info.functions_with_table) {
         auto method_name = function->get_node_name();
-        auto method_args = get_arg_str(internal_method_parameters());
-        printer->fmt_line("{}({});", table_update_function_name(method_name), method_args);
+        printer->fmt_line("{}({});",
+                          table_update_function_name(method_name),
+                          internal_method_arguments());
     }
+    hoc_wrapper_table_temp_as_soa_ = false;
     printer->pop_block();
 }
 
@@ -1126,9 +1470,23 @@ void CodegenNeuronAccVisitor::print_nrn_state() {
     printer->push_block("for (int id = 0; id < nodecount; id++)");
     printer->add_line("int node_id = node_data.nodeindices[id];");
     printer->add_line("auto* _ppvar = _ml_arg->pdata[id];");
+
+    // H4c: stack locals for TABLE rates temps (minf/mtau/…) — no hot-path SoA.
+    if (!info.table_statement_variables.empty()) {
+        for (const auto& v: info.table_statement_variables) {
+            if (v && !v->is_array()) {
+                printer->fmt_line("double {};", v->get_name());
+            } else if (v && v->is_array()) {
+                printer->fmt_line("double {}[{}];", v->get_name(), v->get_length());
+            }
+        }
+        state_kernel_locals_active_ = true;
+    }
+
+    // H4c: local v (not v_unused SoA) — rates(v) and no voltage present.
     if (!info.artificial_cell) {
-        printer->fmt_line("{} = _d_voltages[node_id];",
-                          indexed_fp_var(naming::VOLTAGE_UNUSED_VARIABLE));
+        printer->add_line("double v = _d_voltages[node_id];");
+        state_local_v_active_ = true;
     }
 
     if (ion_variable_struct_required()) {
@@ -1207,6 +1565,8 @@ void CodegenNeuronAccVisitor::print_nrn_state() {
     }
 
     printer->pop_block();
+    state_kernel_locals_active_ = false;
+    state_local_v_active_ = false;
     print_kernel_data_present_annotation_block_end();
     printer->pop_block();
     use_present_fp_indexing_ = false;
@@ -1439,7 +1799,22 @@ std::string CodegenNeuronAccVisitor::float_variable_name(const SymbolType& symbo
         return CodegenNeuronCppVisitor::float_variable_name(symbol, use_instance);
     }
 
-    auto const position = position_of_float_var(symbol->get_name());
+    const auto& name = symbol->get_name();
+    auto const position = position_of_float_var(name);
+
+    // H4c: TABLE rates temps as double& params (_kl_*) or STATE stack locals.
+    if (use_present_fp_indexing_ && is_table_statement_float(name)) {
+        if (state_kernel_locals_active_) {
+            return name;  // stack local in STATE loop
+        }
+        if (use_kl_ref_in_float_name_) {
+            // Procedure / table-update body: double& param.
+            return fmt::format("_kl_{}", name);
+        }
+        // INITIAL / HOC: SoA element (bound into double& at call sites).
+        return fmt::format("_present_fp_{}[id]", position);
+    }
+
     if (!use_present_fp_indexing_) {
         if (symbol->is_array()) {
             auto const dimension = symbol->get_length();
@@ -1471,6 +1846,10 @@ std::string CodegenNeuronAccVisitor::get_variable_name(const std::string& name,
     if (use_host_captured_t_ && use_present_fp_indexing_ &&
         name == naming::NTHREAD_T_VARIABLE) {
         return "_nrn_thread_t";
+    }
+    // H4c STATE: stack local `v` instead of v_unused SoA (rates arg + no present).
+    if (state_local_v_active_ && (name == "v" || name == naming::VOLTAGE_UNUSED_VARIABLE)) {
+        return "v";
     }
     return CodegenNeuronCppVisitor::get_variable_name(name, use_instance);
 }
