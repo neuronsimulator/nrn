@@ -230,24 +230,25 @@ void nrn_rangevar_push(Symbol* sym, Section* sec, double x) {
     hoc_push(nrn_rangepointer(sec, sym, x));
 }
 
-int nrn_setpointer(Symbol* pointer_sym,
-                   Section* sec,
-                   double x,
-                   Symbol* src_sym,
-                   Section* src_sec,
-                   double src_x,
-                   char* error_msg,
-                   size_t error_msg_size) {
+int nrn_setpointer_pop(Symbol* pointer_sym,
+                       Section* sec,
+                       double x,
+                       char* error_msg,
+                       size_t error_msg_size) {
     if (error_msg && error_msg_size > 0) {
         error_msg[0] = '\0';
     }
     auto fail = [&](const char* msg) {
         if (error_msg && error_msg_size > 0) {
-            strncpy(error_msg, msg, error_msg_size - 1);
-            error_msg[error_msg_size - 1] = '\0';
+            std::snprintf(error_msg, error_msg_size, "%s", msg);
         }
         return 1;
     };
+    // The source pointer is whatever the caller pushed (e.g. via
+    // nrn_rangevar_push), which reuses every existing way of obtaining one. Pop
+    // it first, before the validations below, so the stack stays balanced even
+    // on the error paths. It is the same data handle a dparam slot holds.
+    neuron::container::data_handle<double> src = hoc_pop_handle<double>();
     // Only a mechanism POINTER range variable can be a setpointer target; the
     // slot it wires lives in the mechanism's dparam array (mirrors the guard in
     // nrn_pointer_assign / nrnpy_nrn.cpp).
@@ -266,11 +267,10 @@ int nrn_setpointer(Symbol* pointer_sym,
     if (!prop) {
         return fail("the POINTER's mechanism is not present at the target segment");
     }
-    // Wire the POINTER to the source variable's storage. nrn_rangepointer yields
-    // a data handle (stable across data permutation), which is exactly what the
-    // dparam slot stores -- the same assignment nrn_pointer_assign performs,
-    // without the PyObject* source.
-    prop->dparam[pointer_sym->u.rng.index] = nrn_rangepointer(src_sec, src_sym, src_x);
+    // Wire the POINTER to the popped source handle (stable across data
+    // permutation), the same assignment nrn_pointer_assign performs without the
+    // PyObject* source.
+    prop->dparam[pointer_sym->u.rng.index] = src;
     return 0;
 }
 

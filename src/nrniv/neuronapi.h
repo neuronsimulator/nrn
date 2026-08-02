@@ -72,14 +72,11 @@ int nrn_segment_node_index(Section* sec, double x);
 void nrn_rangevar_push(Symbol* sym, Section* sec, double x);
 double nrn_rangevar_get(Symbol* sym, Section* sec, double x);
 void nrn_rangevar_set(Symbol* sym, Section* sec, double x, double value);
-int nrn_setpointer(Symbol* pointer_sym,
-                   Section* sec,
-                   double x,
-                   Symbol* src_sym,
-                   Section* src_sec,
-                   double src_x,
-                   char* error_msg,
-                   size_t error_msg_size);
+int nrn_setpointer_pop(Symbol* pointer_sym,
+                       Section* sec,
+                       double x,
+                       char* error_msg,
+                       size_t error_msg_size);
 
 /****************************************
  * Functions, objects, and the stack

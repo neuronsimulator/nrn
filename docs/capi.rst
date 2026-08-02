@@ -668,17 +668,20 @@ Segments
             seg.g_pas = 0.001  # S/cm²
 
 
-.. c:function:: int nrn_setpointer(Symbol* pointer_sym, Section* sec, double x, Symbol* src_sym, Section* src_sec, double src_x, char* error_msg, size_t error_msg_size)
+.. c:function:: int nrn_setpointer_pop(Symbol* pointer_sym, Section* sec, double x, char* error_msg, size_t error_msg_size)
 
-    Wire an NMODL ``POINTER`` variable to a source variable's storage.
+    Wire an NMODL ``POINTER`` variable to the source pointer on top of the stack.
+
+    The source is whatever pointer the caller has pushed, e.g. with
+    :c:func:`nrn_rangevar_push`. Pushing the source rather than naming it lets
+    this single function accept a pointer obtained any way the stack supports,
+    instead of enumerating source kinds. The pushed pointer is consumed (popped)
+    even on the error paths, so the stack is left balanced.
 
     :param pointer_sym: Symbol of the ``POINTER`` range variable to wire (the
         target).
     :param sec: Section of the mechanism instance owning the POINTER.
     :param x: Normalized position (0.0 to 1.0) of that instance.
-    :param src_sym: Symbol of the source range variable.
-    :param src_sec: Section of the source variable.
-    :param src_x: Normalized position of the source variable.
     :param error_msg: Buffer filled with a message on failure (may be ``NULL``).
     :param error_msg_size: Size of ``error_msg``.
     :returns: 0 on success; nonzero on error, with ``error_msg`` populated when
@@ -698,7 +701,8 @@ Segments
         Symbol* vgap = nrn_symbol("vgap_halfgap");
         Symbol* v = nrn_symbol("v");
         char err[256];
-        if (nrn_setpointer(vgap, cell1, 0.5, v, cell2, 0.5, err, sizeof(err))) {
+        nrn_rangevar_push(v, cell2, 0.5);  // push the source pointer
+        if (nrn_setpointer_pop(vgap, cell1, 0.5, err, sizeof(err))) {
             fprintf(stderr, "setpointer failed: %s\n", err);
         }
 
