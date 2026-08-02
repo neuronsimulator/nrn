@@ -273,6 +273,53 @@ double* nrn_symbol_dataptr(const Symbol* sym) {
     return sym->u.pval;
 }
 
+Object* nrn_symbol_object_get(const Symbol* sym) {
+    // A top-level objref (`objref o`) stores its Object* in the top-level
+    // object-data array, not at sym->u.pval. Returns the bound object, or NULL
+    // if the objref is nil or `sym` is not an objref. The object is returned
+    // borrowed (its reference count is not incremented); call nrn_object_ref to
+    // retain it past the next assignment to this objref.
+    if (!sym || sym->type != OBJECTVAR) {
+        return nullptr;
+    }
+    return hoc_top_level_data[sym->u.oboff].pobj[0];
+}
+
+int nrn_symbol_object_set(Symbol* sym, Object* obj) {
+    // Bind `obj` to a top-level objref, following HOC's assignment refcount
+    // rules: release the previously bound object and retain the new one. A NULL
+    // obj clears the objref (makes it nil). Returns nonzero if `sym` is not an
+    // objref.
+    if (!sym || sym->type != OBJECTVAR) {
+        return 1;
+    }
+    Object** cell = hoc_top_level_data[sym->u.oboff].pobj;
+    hoc_dec_refcount(cell);  // unref the old content and NULL the cell
+    *cell = obj;
+    hoc_obj_ref(obj);  // NULL-safe
+    return 0;
+}
+
+const char* nrn_symbol_str_get(const Symbol* sym) {
+    // A top-level strdef (`strdef s`) stores its char* in the top-level
+    // object-data array. Returns the string, or NULL if `sym` is not a strdef.
+    if (!sym || sym->type != STRING) {
+        return nullptr;
+    }
+    return hoc_top_level_data[sym->u.oboff].ppstr[0];
+}
+
+int nrn_symbol_str_set(Symbol* sym, const char* value) {
+    // Copy `value` into a top-level strdef's storage (freeing the previous
+    // string), via the same helper HOC string assignment uses. Returns nonzero
+    // if `sym` is not a strdef.
+    if (!sym || sym->type != STRING) {
+        return 1;
+    }
+    hoc_assign_str(hoc_top_level_data[sym->u.oboff].ppstr, value);
+    return 0;
+}
+
 bool nrn_symbol_is_array(const Symbol* sym) {
     return sym->arayinfo != nullptr;
 }

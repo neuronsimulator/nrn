@@ -7,6 +7,7 @@ foreach(
   object_new_wrap.cpp
   segment_diam.cpp
   sections.cpp
+  symbol_object_string.cpp
   vclamp.cpp)
   string(REPLACE "." "_" api_test_name "${api_test_file}")
   add_executable(${api_test_name} ${api_test_file})
