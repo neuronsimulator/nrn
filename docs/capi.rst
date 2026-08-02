@@ -949,6 +949,28 @@ Functions, objects, and the stack
         vec = n.Vector(100)           # Vector with 100 elements
         iclamp = n.IClamp(soma(0))    # Current clamp at soma
 
+.. c:function:: Object* nrn_object_new_wrap(Symbol* sym, void* cpp_object)
+
+    Wrap an existing C++ payload as an object of a C++ class.
+
+    :param sym: Symbol for a C++ (``CPLUSOBJECT``) class/template.
+    :param cpp_object: The backing C++ pointer to store as the object's
+        ``this_pointer``, or ``NULL`` to construct an unbacked instance to fill
+        in later.
+    :returns: The new object, with reference count 0.
+
+    Unlike :c:func:`nrn_object_new`, which runs the HOC constructor and consumes
+    arguments from the stack, this backs the new object directly with a pointer
+    the caller already holds. It is the primitive behind wrapping a foreign C++
+    object (for example a Python object or an NMODL ``RANDOM`` state) as a HOC
+    object. The returned object has reference count 0; call
+    :c:func:`nrn_object_ref` to keep it alive.
+
+    .. seealso::
+
+        :c:func:`nrn_object_new`,
+        :c:func:`nrn_object_ref`
+
 .. c:function:: Symbol* nrn_method_symbol(const Object* obj, const char* name)
 
     Get a method symbol from an object by name.
