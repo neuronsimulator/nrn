@@ -390,6 +390,19 @@ Phase timer (`NRN_NATIVE_GPU_PHASE_TIMER=1`):
   - **≈ CN order of magnitude** on `state_hh`. Copyin under state_hh **gone** (slim present).
   - **Wall multi-warm TABLE:** ~**1.68–1.75 s** (was ~2.1–2.5); first clear exclusive wall move toward CN.
   - **Interpretation:** residual was **STATE kernel surface** (fat present + SoA rates temps + fat rates call), not TABLE math or ions. Product path: teach NMODL ACC to emit this shape (temps local; present live fields only; thin/inlined rates).
+- **Density H4c hand-edit CURRENT (same `hh.cpp`, 2026-08-02):**
+  - **Live set for CURRENT (not 25−6=19):** params gnabar/gkbar/gl/el, STATE m/h/n, g_unused → **8 SoA columns**; ena/ek/ina/ik via **ion deviceptr** + stack temps; skip minf…ntau and Dm/Dh/Dn.
+  - Inlined numerical di/dv (no 25-arg `nrn_current_hh`). Excerpt: `doc/gpu/h4c-handedit-nrn_cur_hh.excerpt.cpp`.
+  - **ACC_TIME avg (with STATE hand-edit also on):**
+
+    | kernel | state-only hand-edit | + CURRENT hand-edit |
+    |--------|----------------------|---------------------|
+    | `nrn_cur_hh` | ~**18 µs** | ~**13 µs** (~28% better) |
+    | `nrn_state_hh` | ~18–20 µs | ~17 µs (unchanged) |
+    | `nrn_jacob_hh` | ~12 µs | ~9 µs |
+
+  - **Wall multi-warm TABLE:** ~**1.51–1.54 s** (state-only hand-edit was ~1.68–1.75; pre-H4c ~2.1–2.5). Product phases=1 green.
+  - **Takeaway:** CURRENT also benefits from min-present, but **STATE had the large factor**; CURRENT was already near a floor (~18 µs) so absolute win is smaller. Live-set size for CURRENT is **larger than STATE** (params + states + g + ions), as expected.
 - **Dentate re-profile (2026-08-01 tip, max_cells=100, tstop=10, 400 spikes, T1000):**
   - **4-rank native:** psolve ~**37 s**, wall ~40 s; load_balance ~0.998; **0 scalar H→D/step**; gap-scatter ~0.2 s/rank (tiny). Nested tracked ~60 s (double-count). **Non-nested** per rank (≈psolve decomposition):
     - **setup-tree-matrix ~15.6 s** (rhs ~9.2 + lhs ~6.4)
@@ -422,6 +435,7 @@ Phase timer (`NRN_NATIVE_GPU_PHASE_TIMER=1`):
 | STATE dead ion reads (H4b-D) | **explor cleanup** | Skip unused ion READ on STATE path; product green; **no ACC_TIME win**. |
 | STATE few-arg pack (H4b-B) | **blocked (OpenACC)** | `double* const*` / `_present_fp[i]` not ACC-trackable; need named bases. |
 | STATE stack rates + slim present (H4c hand) | **explor win (≈CN)** | Hand-edit `hh.cpp`: `state_hh` TABLE ~18 µs (was ~131); wall ~1.7 s. See excerpt. **Productize via NMODL next.** |
+| CURRENT min-present (H4c hand) | **explor win (smaller)** | 8 SoA cols + ion dptrs; `nrn_cur` ~18→~13 µs; wall ~1.52 s with STATE edit. |
 | Dentate multi-rank profile | **done** | 4-rank thrash without MPS; **MPS ≈ CN**. |
 | Multi-rank GPU share (MPS) | **done (on tip)** | device_assign + warn (`db83f4adb`); ops: `nvidia-cuda-mps-control -d`. |
 | Single device-resource owner | open | Only if exit/leak forces. |
