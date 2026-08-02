@@ -370,6 +370,12 @@ Phase timer (`NRN_NATIVE_GPU_PHASE_TIMER=1`):
 
   - TABLE is no longer sick vs analytic (now **slightly faster**, CN-like). Still ~**8×** CN TABLE (~150 vs ~19 µs) — residual is shared STATE quality / present tax (**H4b+**).
   - **Wall multi-warm:** TABLE ~2.04–2.48 s; analytic ~2.06–2.10 s (noise; modest vs H3b TABLE 2.43–2.65). Do **not** tip-merge until wall win is clearer or bundled with H4b; keep on explor.
+- **Density H4b (`local/gpu-P4-density-H4`, 2026-08-02) — rest of state_hh vs CN:**
+  - **Inventory:** STATE math uses **V + own gates/rates SoA only**. `ena`/`ek` ion loads in STATE are **dead boilerplate** (same as CN); not the native−CN gap.
+  - **H4b.0 baseline (post-H4a):** TABLE `state_hh` avg ~**131 µs**; analytic ~**172 µs**; product phases=1 green. Copyin under state_hh still ~95 ms/run (separate from kernel elapsed).
+  - **H4b-D:** skip ion READ in STATE when shadow var unused on STATE path (block + procedures). HH STATE no longer loads ena/ek. Product green. **ACC_TIME flat** (~139 µs TABLE — noise vs 131). Absolute cleanup only.
+  - **H4b-B blocked:** pack RANGE bases as `double* const*` for fewer helper args — nvc++ cannot track array-of-pointers in ACC present/device (`Could not find allocated-variable index for symbol _present_fp`). Named `_present_fp_N` required for OpenACC.
+  - **Residual:** native TABLE ~**130–150 µs** vs CN ~**19 µs** (~7–8×). Dominant remaining story is **kernel surface** (25× named bases into rates, present slices) vs CN `inst->*` deviceptr — needs H4c (CN-like instance field ptrs / deviceptr SoA + measured), not more ion tweaks.
 - **Dentate re-profile (2026-08-01 tip, max_cells=100, tstop=10, 400 spikes, T1000):**
   - **4-rank native:** psolve ~**37 s**, wall ~40 s; load_balance ~0.998; **0 scalar H→D/step**; gap-scatter ~0.2 s/rank (tiny). Nested tracked ~60 s (double-count). **Non-nested** per rank (≈psolve decomposition):
     - **setup-tree-matrix ~15.6 s** (rhs ~9.2 + lhs ~6.4)
@@ -399,13 +405,15 @@ Phase timer (`NRN_NATIVE_GPU_PHASE_TIMER=1`):
 | Profile launch vs device (H3) | **done (docs)** | state_hh 77% GPU / ~6× CN; copyin tax. `local/gpu-P4-density-H3`. |
 | HH TABLE vs analytic (H3b) | **done (docs)** | TABLE was ~4.5× analytic; CN TABLE healthy. |
 | HH TABLE stale-global H→D (H4a) | **explor win (kernel)** | Dirty-flag globals; TABLE `state_hh` ~796→~150 µs; product green. `local/gpu-P4-density-H4`. Wall modest — no tip-merge yet. |
+| STATE dead ion reads (H4b-D) | **explor cleanup** | Skip unused ion READ on STATE path; product green; **no ACC_TIME win**. |
+| STATE few-arg pack (H4b-B) | **blocked (OpenACC)** | `double* const*` / `_present_fp[i]` not ACC-trackable; need named bases. |
 | Dentate multi-rank profile | **done** | 4-rank thrash without MPS; **MPS ≈ CN**. |
 | Multi-rank GPU share (MPS) | **done (on tip)** | device_assign + warn (`db83f4adb`); ops: `nvidia-cuda-mps-control -d`. |
 | Single device-resource owner | open | Only if exit/leak forces. |
 
 ### Residual perf debt (next P4 when reopened)
 
-1. **HH STATE residual vs CN (post-H4a)** — TABLE sickness **closed** (~150 µs ≈ analytic). Still ~**8×** CN TABLE (~19 µs) and present/copyin tax. **Default next:** `GPU-P4-density-H4b` — kernel surface / present_fp / ion pointer vs index (not re-open TABLE H→D). Consider tip-merge H4a with or after H4b.
+1. **HH STATE residual vs CN (post-H4a/H4b)** — TABLE fixed; dead STATE ion reads removed (no timing win). Still ~**7–8×** CN (`state_hh` ~130–150 vs ~19 µs). **Default next:** `GPU-P4-density-H4c` — CN-like device field surface (named deviceptr bases / Instance-style), not ion pointer-vs-index on STATE. Optional tip-merge H4a (+ H4b cleanup).
 2. **Product multi-rank:** always use **CUDA MPS** when ranks/GPU > 1 (or more GPUs). Ops only unless native share-without-MPS becomes a goal.
 3. Optional: lastpart-deliver spike-heavy; phases=0 end-of-run prcellstate download residual (use **phases=1** for product gate).
 
@@ -500,7 +508,7 @@ Commit locally without push. Update Status/Next before exit.
 
 ## Next (one line — update every session end)
 
-**Next:** P4 density **H4b** — rest of `nrn_state_hh` vs CN (~150 vs ~19 µs) + present/copyin tax; optional tip-merge H4a. Multi-rank: **CUDA MPS**. **Not** Traub `use_gap=1`. Do not merge H1/H2.
+**Next:** P4 density **H4c** — CN-like STATE field surface (deviceptr/Instance) for remaining ~7–8× `state_hh` vs CN; optional tip-merge H4a+H4b. Multi-rank: **CUDA MPS**. **Not** Traub `use_gap=1`. Do not merge H1/H2.
 
 ### Branching (2026-08-02)
 

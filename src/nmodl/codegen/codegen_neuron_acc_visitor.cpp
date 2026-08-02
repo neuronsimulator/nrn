@@ -5,7 +5,9 @@
 #include "ast/function_call.hpp"
 #include "visitors/visitor_utils.hpp"
 
+#include <algorithm>
 #include <cstring>
+#include <unordered_set>
 
 namespace nmodl {
 namespace codegen {
@@ -1133,9 +1135,54 @@ void CodegenNeuronAccVisitor::print_nrn_state() {
         throw std::runtime_error("Not implemented.");
     }
 
-    auto read_statements = ion_read_statements(BlockType::State);
-    for (auto& statement: read_statements) {
-        printer->add_line(statement);
+    // H4b: emit ion READ only if the shadow var is used on the STATE path
+    // (nrn_state block + procedures/functions STATE may call). HH rates(v)
+    // does not use ena/ek — those loads were dead (CURRENT still reads them).
+    {
+        std::unordered_set<std::string> used_names;
+        auto collect_names = [&](const ast::Ast& node) {
+            for (const auto& n: collect_nodes(node, {ast::AstNodeType::NAME})) {
+                auto nm = n->get_node_name();
+                if (!nm.empty()) {
+                    used_names.insert(std::move(nm));
+                }
+            }
+        };
+        if (info.nrn_state_block) {
+            collect_names(*info.nrn_state_block);
+        }
+        for (const auto& procedure: info.procedures) {
+            if (procedure) {
+                collect_names(*procedure);
+            }
+        }
+        for (const auto& function: info.functions) {
+            if (function) {
+                collect_names(*function);
+            }
+        }
+        for (const auto& ion: info.ions) {
+            for (const auto& var: ion.reads) {
+                auto const iter =
+                    std::find(ion.implicit_reads.begin(), ion.implicit_reads.end(), var);
+                if (iter != ion.implicit_reads.end() || used_names.count(var) == 0) {
+                    continue;
+                }
+                auto variable_names = read_ion_variable_name(var);
+                printer->fmt_line("{} = {};",
+                                  get_variable_name(variable_names.first),
+                                  get_variable_name(variable_names.second));
+            }
+            for (const auto& var: ion.writes) {
+                if (!ion.is_ionic_conc(var) || used_names.count(var) == 0) {
+                    continue;
+                }
+                auto variables = read_ion_variable_name(var);
+                printer->fmt_line("{} = {};",
+                                  get_variable_name(variables.first),
+                                  get_variable_name(variables.second));
+            }
+        }
     }
 
     if (info.nrn_state_block) {
