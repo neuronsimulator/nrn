@@ -285,19 +285,19 @@ Object* nrn_symbol_object_get(const Symbol* sym) {
     return hoc_top_level_data[sym->u.oboff].pobj[0];
 }
 
-int nrn_symbol_object_set(Symbol* sym, Object* obj) {
+bool nrn_symbol_object_set(Symbol* sym, Object* obj) {
     // Bind `obj` to a top-level objref, following HOC's assignment refcount
     // rules: release the previously bound object and retain the new one. A NULL
-    // obj clears the objref (makes it nil). Returns nonzero if `sym` is not an
-    // objref.
+    // obj clears the objref (makes it nil). Returns true on success, false if
+    // `sym` is not an objref.
     if (!sym || sym->type != OBJECTVAR) {
-        return 1;
+        return false;
     }
     Object** cell = hoc_top_level_data[sym->u.oboff].pobj;
     hoc_dec_refcount(cell);  // unref the old content and NULL the cell
     *cell = obj;
     hoc_obj_ref(obj);  // NULL-safe
-    return 0;
+    return true;
 }
 
 const char* nrn_symbol_str_get(const Symbol* sym) {
@@ -309,15 +309,15 @@ const char* nrn_symbol_str_get(const Symbol* sym) {
     return hoc_top_level_data[sym->u.oboff].ppstr[0];
 }
 
-int nrn_symbol_str_set(Symbol* sym, const char* value) {
+bool nrn_symbol_str_set(Symbol* sym, const char* value) {
     // Copy `value` into a top-level strdef's storage (freeing the previous
-    // string), via the same helper HOC string assignment uses. Returns nonzero
-    // if `sym` is not a strdef.
+    // string), via the same helper HOC string assignment uses. Returns true on
+    // success, false if `sym` is not a strdef.
     if (!sym || sym->type != STRING) {
-        return 1;
+        return false;
     }
     hoc_assign_str(hoc_top_level_data[sym->u.oboff].ppstr, value);
-    return 0;
+    return true;
 }
 
 bool nrn_symbol_is_array(const Symbol* sym) {

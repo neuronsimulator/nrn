@@ -38,7 +38,7 @@ int main(void) {
     ok &= check(sval != nullptr && std::strcmp(sval, "hello") == 0,
                 "str_get reads the strdef value");
 
-    ok &= check(nrn_symbol_str_set(s, "world") == 0, "str_set succeeds on a strdef");
+    ok &= check(nrn_symbol_str_set(s, "world") == true, "str_set succeeds on a strdef");
     ok &= check(std::strcmp(nrn_symbol_str_get(s), "world") == 0, "str_set updated the value");
     // Confirm HOC sees the written value too (aliases the same storage).
     nrn_hoc_call("hoc_ac_ = strcmp(s, \"world\")");
@@ -56,21 +56,21 @@ int main(void) {
     // Rebind the objref to a different Vector via object_set.
     Object* vec5 = nrn_object_new(nrn_symbol("Vector"), 0);  // empty Vector
     nrn_object_ref(vec5);
-    ok &= check(nrn_symbol_object_set(o, vec5) == 0, "object_set succeeds on an objref");
+    ok &= check(nrn_symbol_object_set(o, vec5) == true, "object_set succeeds on an objref");
     ok &= check(nrn_symbol_object_get(o) == vec5, "object_set rebound the objref");
     // HOC sees the new binding.
     nrn_hoc_call("hoc_ac_ = o.size()");
     ok &= check(*nrn_symbol_dataptr(nrn_symbol("hoc_ac_")) == 0.0, "HOC sees the rebound object");
 
     // Clearing to nil.
-    ok &= check(nrn_symbol_object_set(o, nullptr) == 0, "object_set(NULL) clears the objref");
+    ok &= check(nrn_symbol_object_set(o, nullptr) == true, "object_set(NULL) clears the objref");
     ok &= check(nrn_symbol_object_get(o) == nullptr, "objref is nil after clear");
 
-    // --- type mismatches return NULL / nonzero, not a crash ---
+    // --- type mismatches return NULL / false, not a crash ---
     ok &= check(nrn_symbol_object_get(s) == nullptr, "object_get on a strdef returns NULL");
     ok &= check(nrn_symbol_str_get(o) == nullptr, "str_get on an objref returns NULL");
-    ok &= check(nrn_symbol_object_set(s, vec5) != 0, "object_set on a strdef is rejected");
-    ok &= check(nrn_symbol_str_set(o, "x") != 0, "str_set on an objref is rejected");
+    ok &= check(nrn_symbol_object_set(s, vec5) == false, "object_set on a strdef is rejected");
+    ok &= check(nrn_symbol_str_set(o, "x") == false, "str_set on an objref is rejected");
 
     return ok ? 0 : 1;
 }

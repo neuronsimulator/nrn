@@ -763,13 +763,13 @@ Functions, objects, and the stack
     assignment to the objref. Complements :c:func:`nrn_symbol_dataptr`, which
     returns ``NULL`` for an objref because it is not a ``double*``.
 
-.. c:function:: int nrn_symbol_object_set(Symbol* sym, Object* obj)
+.. c:function:: bool nrn_symbol_object_set(Symbol* sym, Object* obj)
 
     Bind an object to a top-level ``objref``.
 
     :param sym: Symbol for a top-level ``objref``.
     :param obj: The object to bind, or ``NULL`` to make the objref nil.
-    :returns: 0 on success, nonzero if ``sym`` is not an objref.
+    :returns: ``true`` on success, ``false`` if ``sym`` is not an objref.
 
     Follows HOC's assignment reference-counting: the previously bound object is
     released and the new one retained.
@@ -781,13 +781,13 @@ Functions, objects, and the stack
     :param sym: Symbol for a top-level ``strdef``.
     :returns: The string, or ``NULL`` if ``sym`` is not a strdef.
 
-.. c:function:: int nrn_symbol_str_set(Symbol* sym, const char* value)
+.. c:function:: bool nrn_symbol_str_set(Symbol* sym, const char* value)
 
     Set the string held by a top-level ``strdef``.
 
     :param sym: Symbol for a top-level ``strdef``.
     :param value: The string to copy in.
-    :returns: 0 on success, nonzero if ``sym`` is not a strdef.
+    :returns: ``true`` on success, ``false`` if ``sym`` is not a strdef.
 
     The value is copied into the strdef's storage (the previous string is
     freed).
