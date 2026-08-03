@@ -83,7 +83,9 @@ def load_manifest(path: str | Path) -> Dict[str, Any]:
 
         stripped = line.strip()
         if stripped.startswith("- ") and in_consumers:
-            current.setdefault("consumers", []).append(stripped[2:].strip().strip("'\""))
+            current.setdefault("consumers", []).append(
+                stripped[2:].strip().strip("'\"")
+            )
             continue
 
         if ":" not in line:
