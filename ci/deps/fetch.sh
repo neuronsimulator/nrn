@@ -7,11 +7,12 @@
 #   ci/deps/fetch.sh --list
 #
 # Resolution order (override with NRN_CI_DEPS_SOURCE=local|release|upstream):
-#   local   → ci/deps/assets/<file>
+#   local   → ci/deps/assets/<file>  (gitignored scratch; optional)
 #   release → ${NRN_CI_DEPS_BASE_URL}/<file>  (or default_release_base_url in MANIFEST)
 #   upstream→ upstream_url from MANIFEST
 #
-# Always verifies sha256 when the manifest entry provides one.
+# Managed pins are published to a GitHub Release (see publish.sh); they are not
+# committed to the nrn tree. Always verifies sha256 when the manifest provides one.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

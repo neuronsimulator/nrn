@@ -34,8 +34,10 @@ WORKDIR="$(mktemp -d -t nrn-mpich-noble.XXXXXX)"
 cleanup() { rm -rf "${WORKDIR}"; }
 trap cleanup EXIT
 
-# Prefer local managed assets; do not fall through to Launchpad on CI unless forced.
-export NRN_CI_DEPS_SOURCE="${NRN_CI_DEPS_SOURCE:-local}"
+# Prefer GitHub Release (ci-deps-vN). Do not fall through to Launchpad unless the
+# caller sets NRN_CI_DEPS_SOURCE=upstream (or empty for local→release→upstream).
+# Override with NRN_CI_DEPS_SOURCE=local if debugging with a gitignored assets/ copy.
+export NRN_CI_DEPS_SOURCE="${NRN_CI_DEPS_SOURCE:-release}"
 
 "${SCRIPT_DIR}/fetch.sh" mpich-noble-4.2.0-5.1 "${WORKDIR}"
 "${SCRIPT_DIR}/fetch.sh" libmpich12-noble-4.2.0-5.1 "${WORKDIR}"

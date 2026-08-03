@@ -1,24 +1,26 @@
 # NEURON CI dependency archive (catalog)
 #
-# Purpose: pin external CI downloads, prefer self-hosted copies, and make
-# upgrades explicit (update this file + refresh assets; run check-upstream.sh).
+# Purpose: pin external CI downloads on a GitHub Release, prefer those over flaky
+# third-party hosts, and make upgrades explicit (update this file; re-publish;
+# run check-upstream.sh). Binary blobs are NOT committed under ci/deps/assets/
+# (that directory is gitignored scratch for publish.sh).
 #
 # Fetch order used by fetch.sh (unless NRN_CI_DEPS_SOURCE is set):
-#   1. local   — ci/deps/assets/<file>  (committed managed blobs)
-#   2. release — ${NRN_CI_DEPS_BASE_URL}/<file>  (optional GitHub Release assets)
-#   3. upstream — upstream_url (last resort; same host flake we are avoiding)
+#   1. local   — ci/deps/assets/<file>  (optional local scratch; not in git)
+#   2. release — ${NRN_CI_DEPS_BASE_URL}/<file> or default_release_base_url
+#   3. upstream — upstream_url (last resort)
 #
 # managed:
-#   true  — bytes under our control (assets/ and/or our release); CI should use fetch.sh
-#   false — catalog row only; not yet the critical path / not in assets/
+#   true  — pin hosted on our GitHub Release (ci-deps-vN); CI should use fetch.sh
+#   false — catalog row only; not yet switched off upstream
 #
 # See ci/deps/README.md
 
 version: 1
 
-# Optional default base for GitHub Release assets (override with NRN_CI_DEPS_BASE_URL).
-# Example after publishing: https://github.com/neuronsimulator/nrn/releases/download/ci-deps-v1
-default_release_base_url: ""
+# GitHub Release assets for managed pins (override with NRN_CI_DEPS_BASE_URL).
+# Navigate: https://github.com/neuronsimulator/nrn/releases → tag ci-deps-v1
+default_release_base_url: "https://github.com/neuronsimulator/nrn/releases/download/ci-deps-v1"
 
 assets:
   # --- P0: wheel-test MPICH workaround (Ubuntu 24.04 / noble) ---

@@ -87,14 +87,16 @@ Wheel **test** jobs install both MPICH and OpenMPI so
 [packaging/python/test_wheels.sh](../../packaging/python/test_wheels.sh) can
 exercise dynamic MPI. On Ubuntu 24.04, stock MPICH was broken
 ([LP#2072338](https://bugs.launchpad.net/ubuntu/+source/mpich/+bug/2072338));
-CI therefore installs a **pinned** pair of `.deb` files from the in-repo archive
+CI therefore installs a **pinned** pair of `.deb` files from the GitHub Release
+[ci-deps-v1](https://github.com/neuronsimulator/nrn/releases/tag/ci-deps-v1)
 instead of downloading them from Launchpad on every run.
 
 See **[CI dependency archive](ci_deps.md)** and
 [ci/deps/README.md](../../ci/deps/README.md) for:
 
 * the catalog (`MANIFEST.yml`) and `managed: true|false`
-* `fetch.sh` / `install_mpich_noble.sh` / `check-upstream.sh`
+* GitHub Release hosting (not blobs in the git tree)
+* `fetch.sh` / `install_mpich_noble.sh` / `publish.sh` / `check-upstream.sh`
 * how to add the next flaky third-party download
 
 Azure macOS wheels still obtain a prebuilt static **readline** via an Azure

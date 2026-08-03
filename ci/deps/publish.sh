@@ -1,18 +1,22 @@
 #!/usr/bin/env bash
-# Publish managed assets under ci/deps/assets/ to a GitHub Release.
+# Publish files from a local directory (default: ci/deps/assets/, gitignored) to
+# a GitHub Release. Blobs are not committed to the nrn repository.
 #
 # Usage:
+#   mkdir -p ci/deps/assets && cp /path/to/*.deb ci/deps/assets/
 #   ci/deps/publish.sh [--repo owner/name] [--tag ci-deps-v1] [--dry-run]
+#   rm -f ci/deps/assets/*   # optional cleanup; directory is gitignored
 #
-# Requires: gh (authenticated), curl.
-# After publishing, set default_release_base_url in MANIFEST.yml or export:
-#   NRN_CI_DEPS_BASE_URL=https://github.com/<owner>/<name>/releases/download/<tag>
+# Requires: gh (authenticated).
+# After publishing, ensure MANIFEST default_release_base_url (or NRN_CI_DEPS_BASE_URL)
+# points at:
+#   https://github.com/<owner>/<name>/releases/download/<tag>
 #
-# Local managed assets remain the default for fetch.sh (NRN_CI_DEPS_SOURCE=local).
+# CI fetch defaults to release (see install helpers), not in-repo files.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ASSETS_DIR="${SCRIPT_DIR}/assets"
+ASSETS_DIR="${NRN_CI_DEPS_ASSETS:-${SCRIPT_DIR}/assets}"
 REPO="${NRN_CI_DEPS_PUBLISH_REPO:-}"
 TAG="${NRN_CI_DEPS_PUBLISH_TAG:-ci-deps-v1}"
 DRY_RUN=0
