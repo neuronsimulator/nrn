@@ -2,7 +2,7 @@
 
 **Portfolio:** GPU-native (feature)  
 **Tree:** `~/neuron/nrngpu`  
-**Living tip (2026-08-03):** `local/gpu-native` @ H4 density packet (state_hh ~19 µs); Session B CURRENT on explor `local/gpu-P4-hotpath-current` (cur_hh ~14 µs; wall ~1.31–1.37 s; tip-merge ready)  
+**Living tip (2026-08-03):** `local/gpu-native` @ H4 + Session B CURRENT (state_hh ~19 µs; cur_hh ~14–15 µs; wall multi-warm ~1.29–1.37 s)  
 **Handoffs:** `GROK-GPU-NATIVE.md`, `AGENTS.md`, `~/neuron/notes/PORTFOLIO.md`  
 **This file:** ordered steps you can re-open without chat memory. Update **Status** at end of each session.
 
@@ -134,6 +134,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-08-03 | GPU-P4-hotpath-rates-inline | — | Session A residual: force-inline STATE rates TABLE; state_hh ~19 µs ≈ CN; wall ~1.50–1.60 s; 688 green. |
 | 2026-08-03 | GPU-P4-tip-merge-H4 | — | FF-merge H4a–c+A force-inline onto `local/gpu-native`; tip re-smoke: state_hh ~19 µs, multi-warm ~1.50–1.54 s, 688 green. |
 | 2026-08-03 | GPU-P4-hotpath-current | — | Session B: force-inline thin CURRENT; cur_hh ~14 µs ≈ hand; wall multi-warm ~1.31–1.37 s; 688 green. |
+| 2026-08-03 | GPU-P4-tip-merge-current | — | FF-merge Session B onto `local/gpu-native`; tip re-smoke: cur_hh ~15 µs, state_hh ~19 µs, multi-warm ~1.29–1.31 s, 688 green. |
 
 ---
 
@@ -447,7 +448,7 @@ Phase timer (`NRN_NATIVE_GPU_PHASE_TIMER=1`):
 | Hot-path rates_*_state (Session A Ph 1–2) | **done (on tip)** | Thin `rates_*_hh_state` emitted; STATE uses force-inline (below). Intermediate ~73 µs. |
 | Hot-path force-inline STATE rates (A residual) | **done (on tip)** | Force-inline unique/safe STATE rates TABLE body. Tip re-smoke 2026-08-03: `state_hh` ~**19 µs**; wall multi-warm ~**1.50–1.54 s**; 688 phases=1 green; copy tax under state_hh **gone**. |
 | H4 density packet tip-merge | **done (on tip)** | FF `local/gpu-P4-density-H4` → `local/gpu-native` (`34c8b4912`); tip remeasure matches explor. |
-| Hot-path CURRENT force-inline (Session B) | **done (explor)** | `local/gpu-P4-hotpath-current`: force-inline BREAKPOINT di/dv; min present 8 cols; stack ion/intermediates. `cur_hh` ~**14 µs**; wall multi-warm ~**1.31–1.37 s**; 688 green. **Tip-merge justified.** |
+| Hot-path CURRENT force-inline (Session B) | **done (on tip)** | FF `local/gpu-P4-hotpath-current` → `local/gpu-native` (`f06ed70ec`). Tip re-smoke: `cur_hh` ~**14–15 µs**; wall multi-warm ~**1.29–1.37 s**; state_hh ~19 µs; 688 green; cur copy tax **gone**. |
 | Dentate multi-rank profile | **done** | 4-rank thrash without MPS; **MPS ≈ CN**. |
 | Multi-rank GPU share (MPS) | **done (on tip)** | device_assign + warn (`db83f4adb`); ops: `nvidia-cuda-mps-control -d`. |
 | Single device-resource owner | open | Only if exit/leak forces. |
@@ -561,7 +562,23 @@ Packet is product on tip. Session B CURRENT closed on explor (below).
 | product 688 dV=0 | green | **green** | green | — |
 | cur_hh copy tax | residual | **gone** (`time(us): 0`) | gone | — |
 
-**Milestone B met:** `nrn_cur_hh` ≈ hand ~13–14 µs. **Clear wall win** vs tip (~1.50–1.54 → ~1.31–1.37). Tip-merge justified; not performed this session (explor only).
+**Milestone B met:** `nrn_cur_hh` ≈ hand ~13–14 µs. **Clear wall win** vs tip (~1.50–1.54 → ~1.31–1.37). Tip-merge justified; performed 2026-08-03 (below).
+
+### Tip-merge Session B CURRENT (2026-08-03, on `local/gpu-native`)
+
+**Action:** Fast-forward merge `local/gpu-P4-hotpath-current` → living tip `local/gpu-native`. Merge-base was tip; 1 commit (`f06ed70ec`), no tip-only delta.
+
+**Tip re-smoke (nring=16, tstop=100, TABLE, phases=1):**
+
+| metric | explor (pre-merge) | **tip after merge** |
+|--------|--------------------|---------------------|
+| `state_hh` avg | ~19 µs | ~**19 µs** |
+| `nrn_cur_hh` avg | ~14 µs | ~**15 µs** (noise) |
+| cur_hh / state_hh copy tax | gone (`time(us): 0`) | **gone** |
+| wall multi-warm (5×, no ACC_TIME) | ~1.31–1.37 s | ~**1.29–1.31 s** (first ~1.62) |
+| product 688 dV=0 | green | **green** |
+
+Session B CURRENT is product on tip. Next: Phase C NET_RECEIVE PP; multi-rank CUDA MPS.
 
 ---
 
@@ -621,16 +638,15 @@ Milestone B (CURRENT specialization): `nrn_cur_hh` ≈ hand ~13 — **met** (~14
 | **3** | CURRENT helpers / thin `nrn_current` (Session B) | **done** cur ~14 µs; wall ~1.31–1.37; 688 green |
 | **4** | Fallback matrix + regression (VERBATIM must stay general) | suite notes |
 | **5** | Tip-merge H4a+b+c+A (wall win measured) | **done** on tip 2026-08-03 |
-| **6** | Tip-merge Session B CURRENT (wall win measured) | **pending** — explor ready |
+| **6** | Tip-merge Session B CURRENT (wall win measured) | **done** on tip 2026-08-03 |
 
-**Session order:** A = Phase 1+2 (rates STATE) — **closed**. Tip-merge H4 — **closed**. B = CURRENT — **closed on explor**. C = NET_RECEIVE PP (after tip-merge B).
+**Session order:** A = Phase 1+2 (rates STATE) — **closed**. Tip-merge H4 — **closed**. B = CURRENT — **closed on tip**. C = NET_RECEIVE PP (next).
 
 ### Residual perf debt (next P4 when reopened)
 
-1. **Tip-merge Session B** onto `local/gpu-native` (wall win measured; cur ~14 µs).
+1. NET_RECEIVE PP specialization (Phase C).
 2. **Product multi-rank:** CUDA MPS when ranks/GPU > 1.
 3. Optional: lastpart-deliver; phases=0 prcellstate download residual.
-4. NET_RECEIVE PP specialization (Phase C) after tip-merge B.
 
 ---
 
@@ -723,7 +739,7 @@ Commit locally without push. Update Status/Next before exit.
 
 ## Next (one line — update every session end)
 
-**Next:** Tip-merge Session B CURRENT (`local/gpu-P4-hotpath-current` → `local/gpu-native`); then Phase C NET_RECEIVE PP; multi-rank **CUDA MPS**. **Not** Traub `use_gap=1`.
+**Next:** Phase C NET_RECEIVE PP specialization; multi-rank **CUDA MPS**. **Not** Traub `use_gap=1`.
 
 ### Starting prompt — Session A residual (closed; archive)
 
@@ -737,32 +753,39 @@ Session closed 2026-08-03: FF-merge H4 packet onto `local/gpu-native`; tip re-sm
 
 Session closed 2026-08-03 on explor `local/gpu-P4-hotpath-current`: force-inline thin CURRENT; `cur_hh` ~14 µs ≈ hand; wall multi-warm ~1.31–1.37 s (clear win vs tip ~1.50–1.54); 688 green. Tip-merge justified.
 
-### Starting prompt — tip-merge Session B (next)
+### Starting prompt — tip-merge Session B (closed; archive)
+
+Session closed 2026-08-03: FF-merge Session B onto `local/gpu-native`; tip re-smoke cur_hh ~15 µs, state_hh ~19 µs, multi-warm ~1.29–1.31 s, 688 green.
+
+### Starting prompt — Phase C NET_RECEIVE PP (next)
 
 ```text
 Read ~/neuron/notes/PORTFOLIO.md (GPU-native), then
 ~/neuron/nrngpu/doc/gpu/native-coreneuron-parity.md
-  (§ Session B CURRENT; Next),
+  (Phase 4 Residual / hot-path Phase C; Next),
 GROK-GPU-NATIVE.md, AGENTS.md.
 
-Kind: feature. Portfolio: GPU-native. Phase: P4 tip-merge Session B CURRENT.
-Tree: ~/neuron/nrngpu. Living tip: local/gpu-native.
-Merge: local/gpu-P4-hotpath-current → local/gpu-native (wall win already measured).
+Kind: feature. Portfolio: GPU-native. Phase: P4 hot-path Phase C NET_RECEIVE PP.
+Tree: ~/neuron/nrngpu. Branch: off living tip local/gpu-native as
+local/gpu-P4-hotpath-netreceive (or similar explor). Do not merge to tip until measured win.
 
-Context: explor cur_hh ~14 µs; wall multi-warm ~1.31–1.37 s; state_hh ~19 µs; 688 green.
-Re-smoke tip after merge; update Status/Next. High performance sacred;
-heap-free weight_index. Not Traub use_gap=1.
+Context: tip has H4 + Session B CURRENT (state_hh ~19 µs; cur_hh ~14–15 µs;
+wall multi-warm ~1.29–1.37 s; 688 green). Hot-path Phases 1–3 + tip-merges closed.
+Phase C: specialize NET_RECEIVE / net_buf_receive POINT_PROCESS for ACC density.
+
+High performance sacred; CoreNEURON is a guide; heap-free weight_index.
+Not Traub use_gap=1; not multi-rank unless blocked.
 
 Commit locally without push. Update Status/Next before exit.
-/rename GPU-P4-tip-merge-current
+/rename GPU-P4-hotpath-netreceive
 ```
 
 ### Branching (2026-08-03)
 
 | Branch | Role |
 |--------|------|
-| **`local/gpu-native`** | Living tip — H4 density packet (dirty globals, ion skip, min-present, force-inline STATE rates) + scatter/timers/MPS |
-| `local/gpu-P4-hotpath-current` | Exploratory: Session B CURRENT force-inline (**tip-merge ready**; wall win) |
+| **`local/gpu-native`** | Living tip — H4 + Session B CURRENT (force-inline STATE rates + thin CURRENT) + scatter/timers/MPS |
+| `local/gpu-P4-hotpath-current` | Exploratory archive: Session B CURRENT force-inline (**merged to tip**) |
 | `local/gpu-native-net-soa` | Historical integration name; keep until remotes/docs catch up (may lag tip) |
 | `local/gpu-p4-gap-phase-ab` | Exploratory archive: A+B only (pre-scatter baseline) |
 | `local/gpu-p4-gap-scatter` | Exploratory archive: bulk scatter parent of tip cherry-picks |
@@ -773,4 +796,4 @@ Commit locally without push. Update Status/Next before exit.
 | `local/gpu-P4-density-H4` | Exploratory archive: H4a–c + Session A force-inline (**merged to tip**) |
 | `local/gpu-p4-multirank-share` | Exploratory archive: MPS diagnosis (landed on tip) |
 
-P4 on tip: scatter, timers, multi-rank MPS, **H4 density packet** (state_hh ~19 µs). **Default next:** tip-merge Session B CURRENT.
+P4 on tip: scatter, timers, multi-rank MPS, **H4 density packet**, **Session B CURRENT** (cur_hh ~14–15 µs; wall ~1.29–1.37 s). **Default next:** Phase C NET_RECEIVE PP.

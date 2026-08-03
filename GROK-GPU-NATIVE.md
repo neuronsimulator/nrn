@@ -396,14 +396,14 @@ Protocol: same special for `enable_gpu=0` and `=1`; count **and** sorted times.
 
 **Primary:** CoreNEURON fixed-step **feature matrix** on native GPU  
 → ordered steps + prompts: **`doc/gpu/native-coreneuron-parity.md`**  
-(P0–P3 closed; **P4** density H4 packet on tip — `state_hh` ~19 µs).
+(P0–P3 closed; **P4** H4 + Session B CURRENT on tip — `state_hh` ~19 µs, `cur_hh` ~14–15 µs).
 
 | Option | Content |
 |--------|---------|
-| **P4 default** | Session B CURRENT specialization (hand residual cur ~13 µs); see parity **Next** |
+| **P4 default** | Phase C NET_RECEIVE PP specialization; see parity **Next** |
 | Multi-rank | CUDA MPS when ranks/GPU > 1 (ops on tip) |
 | Parked | Traub `use_gap=1` over-fire — not this line |
-| Later | NET_RECEIVE PP specialization; device-resource owner only if forced |
+| Later | device-resource owner only if forced |
 
 ### Constraints (do not regress)
 
