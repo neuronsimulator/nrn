@@ -100,6 +100,15 @@ MPI multi-GPU device assignment uses ``device_id = mpi_local_rank % num_gpus_per
 (same policy as CoreNEURON ``init_gpu()``). Set ``gpu.device_count`` to limit GPUs per node
 (0 = all available). CTest: ``unit_tests::gpu_device_assign_mpi`` (2 MPI ranks).
 
+**CUDA MPS (native multi-rank product):** when several ranks share one GPU, start
+the NVIDIA Multi-Process Service before the run (``nvidia-cuda-mps-control -d``,
+or ``bash test/external/ensure_cuda_mps.sh``). Multi-rank native harnesses
+(``external_ringtest::neuron_gpu_native_mpi*``,
+``reduced_dentate_native::neuron_gpu_native``) call the ensure script
+automatically. Without MPS, multi-rank native is often **10×+** slower; CoreNEURON
+GPU multi-rank usually does not need MPS. Opt out: ``NRN_SKIP_CUDA_MPS=1``.
+See :doc:`native-gpu-build` § Multi-rank on one GPU.
+
 The **G4 native modtest parity** ctests set ``NRN_GPU_BACKEND_TEST=native`` and compare
 NEURON CPU reference output against the native backend (19 tests, mirroring single-process
 ``*_py_gpu`` CoreNEURON modtests):

@@ -400,9 +400,9 @@ Protocol: same special for `enable_gpu=0` and `=1`; count **and** sorted times.
 
 | Option | Content |
 |--------|---------|
-| **P4 default** | Phase C NET_RECEIVE PP specialization; see parity **Next** |
-| Multi-rank | CUDA MPS when ranks/GPU > 1 (ops on tip) |
-| Parked | Traub `use_gap=1` over-fire — not this line |
+| **P4 default** | Dentate spike multiset 390 vs 400 / kin-native residual; see parity **Next** |
+| Multi-rank MPS | **Closed** — `test/external/ensure_cuda_mps.sh` + ctests; Eigen full-present |
+| Parked | Traub `use_gap=1` over-fire; Phase C / slim JACOB wall-flat explor |
 | Later | device-resource owner only if forced |
 
 ### Constraints (do not regress)

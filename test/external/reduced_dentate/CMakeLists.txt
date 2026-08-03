@@ -82,6 +82,24 @@ if(NRN_ENABLE_GPU)
       "parameters/Control.hoc"
       "templates/*.hoc")
   # Do not pass special -c with -python (unreliable); NRN_TEST_* env for launcher.
+  # Product multi-rank path: ensure CUDA MPS then mpiexec (see ensure_cuda_mps.sh).
+  set(reduced_dentate_ensure_mps
+      "${PROJECT_SOURCE_DIR}/test/external/ensure_cuda_mps.sh")
+  set(reduced_dentate_native_mpi_script
+      "${PROJECT_BINARY_DIR}/test/reduced_dentate_native/neuron_gpu_native_mpi.sh")
+  file(
+    WRITE ${reduced_dentate_native_mpi_script}
+    "#!/bin/bash\n"
+    "set -e\n"
+    "export OMP_NUM_THREADS=1\n"
+    "export NRN_GPU_BACKEND_TEST=native\n"
+    "export NRN_GPU_PERMUTE=2\n"
+    "export NRN_TEST_TSTOP=${reduced_dentate_sim_time}\n"
+    "export NRN_TEST_MAX_CELLS=100\n"
+    "bash \"${reduced_dentate_ensure_mps}\" || true\n"
+    "exec ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${reduced_dentate_mpi_ranks} "
+    "${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special ${MPIEXEC_POSTFLAGS} "
+    "-notatty -python ${reduced_dentate_run_native}\n")
   nrn_add_test(
     GROUP reduced_dentate_native
     NAME neuron_gpu_native
@@ -90,10 +108,7 @@ if(NRN_ENABLE_GPU)
     ENVIRONMENT HOC_LIBRARY_PATH=templates OMP_NUM_THREADS=1 NRN_GPU_BACKEND_TEST=native
                 NRN_GPU_PERMUTE=2 NRN_TEST_TSTOP=${reduced_dentate_sim_time}
                 NRN_TEST_MAX_CELLS=100
-    COMMAND
-      ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${reduced_dentate_mpi_ranks} ${MPIEXEC_OVERSUBSCRIBE}
-      ${MPIEXEC_PREFLAGS} special ${MPIEXEC_POSTFLAGS} -notatty -python
-      ${reduced_dentate_run_native})
+    COMMAND bash ${reduced_dentate_native_mpi_script})
   # REFERENCE_OUTPUT path is relative to repo root and is also copied under
   # build-gpu/test/<path>. Prefer external/tests/... (not test/...) so the
   # compare path is not doubled. Tracked source lives under test/external/;

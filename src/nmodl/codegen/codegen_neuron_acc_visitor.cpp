@@ -49,6 +49,31 @@ std::unordered_set<int> CodegenNeuronAccVisitor::live_float_indices_for_kernel(
         return *live_float_indices_override_;
     }
 
+    // Eigen Newton/linear residual bodies are emitted into functors, not the
+    // DERIVATIVE AST walk. procedure_live / collect_ast_names on STATE therefore
+    // under-counts RANGE columns (e.g. CadepK missing _present_fp_21 → CUDA
+    // illegal address). Functors already take the full present_fp set
+    // (functor_params); present clause must match. Same for Equation if a
+    // CURRENT path ever embeds Eigen (defensive).
+    if ((type == BlockType::State || type == BlockType::Equation) &&
+        (info.eigen_newton_solver_exist || info.eigen_linear_solver_exist)) {
+        std::unordered_set<int> all;
+        for (int i = 0; i < static_cast<int>(codegen_float_variables.size()); ++i) {
+            const auto& float_var = codegen_float_variables[static_cast<size_t>(i)];
+            // STATE/CURRENT use local v; never present v_unused SoA.
+            if (!info.artificial_cell &&
+                float_var->get_name() == naming::VOLTAGE_UNUSED_VARIABLE) {
+                continue;
+            }
+            // TABLE rates temps stay stack on STATE (H4c).
+            if (type == BlockType::State && is_table_statement_float(float_var->get_name())) {
+                continue;
+            }
+            all.insert(i);
+        }
+        return all;
+    }
+
     std::unordered_set<std::string> names;
     auto collect = [&](const ast::Ast* node) {
         if (node) {
@@ -1222,8 +1247,9 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
         }
         // Session A: when STATE only calls thin specialized procedures (e.g.
         // rates_*_state), declare live SoA columns only — no fat present_fp
-        // args to unused columns. Eigen Newton functors still need the full
-        // present_fp set (functor_params), so keep full decls there.
+        // args to unused columns. Eigen Newton functors need the full
+        // present_fp set (functor_params + present clause; see
+        // live_float_indices_for_kernel Eigen full-set path).
         // Session B: force-inline CURRENT also uses live present only.
         const bool state_slim =
             type == BlockType::State && state_kernel_uses_only_specialized_procedures() &&
@@ -1233,8 +1259,8 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
         if (state_slim || cur_slim) {
             print_present_fp_pointer_declarations_for(live_fp);
         } else {
-            // General: all RANGE bases so procedure/functor args stay valid;
-            // OpenACC present clause below is still live-set only (H4c).
+            // General / Eigen: all RANGE bases so procedure/functor args stay valid.
+            // present clause matches live_fp (full set when Eigen solvers exist).
             print_present_fp_pointer_declarations();
         }
         print_present_dptr_pointer_declarations_for(live_dptr);

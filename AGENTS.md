@@ -43,10 +43,16 @@ cd ~/neuron/nrngpu/build-gpu/test/external_ringtest/neuron_gpu_native_mpi
 Use **full shell permissions** for GPU/OpenACC/MPI. Confirm GPU with `nvidia-smi -L`.
 
 **Multi-rank on one GPU:** native OpenACC multi-process without CUDA MPS is often
-**10×+ slower** (dentate 4-rank ~37 s vs ~3 s with MPS). For multi-rank product:
+**10×+ slower** (dentate 4-rank ~37 s vs ~3 s with MPS). Product path:
 
 ```bash
+# Preferred (idempotent; used by multi-rank native ctests):
+bash ~/neuron/nrngpu/test/external/ensure_cuda_mps.sh
+# Or manual:
 nvidia-cuda-mps-control -d   # once per node; stop: echo quit | nvidia-cuda-mps-control
+# Dentate product:
+#   ctest -V -R 'reduced_dentate_native::neuron_gpu_native'
+# Opt out: NRN_SKIP_CUDA_MPS=1
 ```
 
 Expect `Info : 1 GPUs shared by N ranks per node` (N = local ranks). CN shares

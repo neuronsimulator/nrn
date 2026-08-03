@@ -93,6 +93,10 @@ if(NRN_ENABLE_GPU)
     "sys.argv = ['ringtest.py'] + sys.argv[1:]\n"
     "import runpy\n"
     "runpy.run_path('ringtest.py', run_name='__main__')\n")
+  # Multi-rank native product path: ensure CUDA MPS before mpiexec (10× thrash
+  # without MPS when ranks/GPU > 1). ensure_cuda_mps.sh is idempotent / non-fatal.
+  set(ringtest_ensure_cuda_mps
+      ${PROJECT_SOURCE_DIR}/test/external/ensure_cuda_mps.sh)
   file(
     WRITE ${ringtest_native_gpu_mpi_script}
     "#!/bin/bash\n"
@@ -102,6 +106,7 @@ if(NRN_ENABLE_GPU)
     "export NRN_GPU_PERMUTE=2\n"
     "export TMPDIR=\"${PROJECT_BINARY_DIR}/test/tmp/external_ringtest/neuron_gpu_native_mpi\"\n"
     "mkdir -p \"$TMPDIR\"\n"
+    "bash \"${ringtest_ensure_cuda_mps}\" || true\n"
     "cd \"${ringtest_native_gpu_workdir}\"\n"
     "OMP_NUM_THREADS=1 ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${ringtest_mpi_ranks} "
     "${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special ${MPIEXEC_POSTFLAGS} "
@@ -145,6 +150,7 @@ if(NRN_ENABLE_GPU)
     "export NRN_GPU_PERMUTE=2\n"
     "export TMPDIR=\"${PROJECT_BINARY_DIR}/test/tmp/external_ringtest/neuron_gpu_native_mpi_gap\"\n"
     "mkdir -p \"$TMPDIR\"\n"
+    "bash \"${ringtest_ensure_cuda_mps}\" || true\n"
     "cd \"${ringtest_native_gpu_mpi_gap_workdir}\"\n"
     "OMP_NUM_THREADS=1 ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${ringtest_mpi_ranks} "
     "${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special ${MPIEXEC_POSTFLAGS} "

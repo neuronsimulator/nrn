@@ -2,12 +2,19 @@
 
 Launch (from the nrn_add_test workdir that has ACC special + datasets):
 
-  mpiexec -n 4 special -notatty -c mytstop=10 -c max_cells_per_type=100 \\
-      -python /path/to/run_dentate_native.py
+  # Preferred product path (ensures CUDA MPS for multi-rank on one GPU):
+  bash /path/to/run_dentate_native_mpi.sh
+  # or CTest: reduced_dentate_native::neuron_gpu_native
+
+  # Manual (start MPS first if ranks/GPU > 1):
+  nvidia-cuda-mps-control -d   # once per node
+  mpiexec -n 4 special -notatty -python /path/to/run_dentate_native.py
 
 Uses h.nrnmpi_init() (not special -mpi) for OpenACC multi-process safety.
-Pre-declare mytstop/max_cells via special -c before -python when possible;
-this script also sets defaults if missing.
+Env: NRN_TEST_TSTOP (default 10), NRN_TEST_MAX_CELLS (default 100).
+
+Without CUDA MPS, 4 ranks on 1 GPU are often ~10× slower (~37 s vs ~3 s psolve).
+See test/external/ensure_cuda_mps.sh and docs/dev/native-gpu-build.rst.
 """
 from __future__ import annotations
 

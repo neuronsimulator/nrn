@@ -94,6 +94,37 @@ environment exports ``N`` / ``PYTHONPATH`` into GNU make (it can break
 Confirm a device is visible: ``nvidia-smi -L``. Successful native runs often log
 ``Info : 1 GPUs shared by 1 ranks per node``.
 
+Multi-rank on one GPU (CUDA MPS)
+********************************
+
+Native GPU multi-process OpenACC has denser launch/wait traffic than CoreNEURON.
+**Without CUDA MPS**, several ranks sharing one GPU thrash (e.g. reduced_dentate
+4-rank psolve ~**37 s** vs ~**3 s** with MPS ≈ CoreNEURON Solver). CoreNEURON
+often shares well without MPS; **native product multi-rank on one device expects
+MPS today**.
+
+Start once per node (idempotent helper for harnesses):
+
+.. code-block:: bash
+
+   # Manual
+   nvidia-cuda-mps-control -d
+   # Stop when finished with multi-rank work:
+   #   echo quit | nvidia-cuda-mps-control
+
+   # Product helper (idempotent; non-fatal if tools missing):
+   bash test/external/ensure_cuda_mps.sh
+
+Multi-rank native ctests (ringtest MPI, reduced_dentate native) call
+``ensure_cuda_mps.sh`` before ``mpiexec``. Opt out with ``NRN_SKIP_CUDA_MPS=1``.
+
+At ``gpu.enable``, rank 0 prints ``Info : N GPUs shared by M ranks per node``.
+If ``M > N`` and the MPS control socket is missing, a **Warning** points at
+``nvidia-cuda-mps-control -d`` (see ``src/neuron/gpu/device_assign.cpp``).
+
+Launch multi-rank native with ``h.nrnmpi_init()`` (not ``special -mpi``) on stacks
+where OpenACC multi-process SEGV was observed with ``-mpi``.
+
 User mechanisms (NMODL + OpenACC)
 ********************************
 
@@ -147,6 +178,8 @@ CTest (from the build directory):
 .. code-block:: bash
 
    ctest -R 'external_ringtest::' --output-on-failure
+   # Multi-rank product (starts MPS via harness if needed):
+   ctest -V -R 'reduced_dentate_native::neuron_gpu_native'
    # Full suite: prefer -j for CPU throughput. Tests that REQUIRES gpu take a
    # CTest RESOURCE_LOCK named "gpu", so only one GPU job runs at a time even
    # under ctest -j N (helps single-GPU workstations that also drive the display).
