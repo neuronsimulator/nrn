@@ -396,14 +396,14 @@ Protocol: same special for `enable_gpu=0` and `=1`; count **and** sorted times.
 
 **Primary:** CoreNEURON fixed-step **feature matrix** on native GPU  
 → ordered steps + prompts: **`doc/gpu/native-coreneuron-parity.md`**  
-(P0 triage → P1 modtests → P2 MPI/gap → P3 heavy → P4 perf).
+(P0–P3 closed; **P4** density H4 packet on tip — `state_hh` ~19 µs).
 
 | Option | Content |
 |--------|---------|
-| **P0–P1 (default)** | Classify ctest; green G4 `*_py_gpu_native` clusters |
-| Trajectory polish | mech-RANGE gather / multi-var GraphLine if a model needs it |
-| Integration | Keep living tip = integration branch with trajectory/lastpart |
-| Later (P2+) | use_gap=1, multi-rank, heavy models, perf, device-resource owner |
+| **P4 default** | Session B CURRENT specialization (hand residual cur ~13 µs); see parity **Next** |
+| Multi-rank | CUDA MPS when ranks/GPU > 1 (ops on tip) |
+| Parked | Traub `use_gap=1` over-fire — not this line |
+| Later | NET_RECEIVE PP specialization; device-resource owner only if forced |
 
 ### Constraints (do not regress)
 
