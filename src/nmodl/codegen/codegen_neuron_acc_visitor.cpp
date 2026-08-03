@@ -51,17 +51,22 @@ std::unordered_set<int> CodegenNeuronAccVisitor::live_float_indices_for_kernel(
 
     // Eigen Newton/linear residual bodies are emitted into functors, not the
     // DERIVATIVE AST walk. procedure_live / collect_ast_names on STATE therefore
-    // under-counts RANGE columns (e.g. CadepK missing _present_fp_21 → CUDA
-    // illegal address). Functors already take the full present_fp set
-    // (functor_params); present clause must match. Same for Equation if a
-    // CURRENT path ever embeds Eigen (defensive).
+    // under-counts RANGE columns (e.g. CadepK missing ion shadows → CUDA illegal
+    // address). Functors already take the full present_fp set (functor_params);
+    // present clause must match. Same for Equation if a CURRENT path ever
+    // embeds Eigen (defensive).
+    //
+    // Functors still index v via v_unused SoA (`_present_fp_N[id]`), not the
+    // H4c stack `v`. Present and refresh v_unused on Eigen STATE (see
+    // print_nrn_state). Non-Eigen STATE keeps H4c: no v_unused present.
     if ((type == BlockType::State || type == BlockType::Equation) &&
         (info.eigen_newton_solver_exist || info.eigen_linear_solver_exist)) {
         std::unordered_set<int> all;
         for (int i = 0; i < static_cast<int>(codegen_float_variables.size()); ++i) {
             const auto& float_var = codegen_float_variables[static_cast<size_t>(i)];
-            // STATE/CURRENT use local v; never present v_unused SoA.
-            if (!info.artificial_cell &&
+            // Equation (CURRENT) still uses stack/formal v — no v_unused present.
+            // STATE Eigen functors need v_unused (kept below).
+            if (type == BlockType::Equation && !info.artificial_cell &&
                 float_var->get_name() == naming::VOLTAGE_UNUSED_VARIABLE) {
                 continue;
             }
@@ -2344,10 +2349,18 @@ void CodegenNeuronAccVisitor::print_nrn_state() {
         state_kernel_locals_active_ = true;
     }
 
-    // H4c: local v (not v_unused SoA) — rates(v) and no voltage present.
+    // H4c: local v for inlined rates / DERIVATIVE AST under state_local_v.
+    // Eigen Newton functors are printed outside this scope and still read
+    // voltage via v_unused SoA — refresh it from device V each instance so
+    // rates(v)/betar(v)/… inside the residual see live membrane potential
+    // (stale v_unused → silent wrong kinetic/derivimplicit; GC Na silent).
     if (!info.artificial_cell) {
         printer->add_line("double v = _d_voltages[node_id];");
         state_local_v_active_ = true;
+        if (info.eigen_newton_solver_exist || info.eigen_linear_solver_exist) {
+            printer->fmt_line("{} = v;",
+                              indexed_fp_var(naming::VOLTAGE_UNUSED_VARIABLE));
+        }
     }
 
     if (ion_variable_struct_required()) {

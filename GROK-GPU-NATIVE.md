@@ -400,8 +400,9 @@ Protocol: same special for `enable_gpu=0` and `=1`; count **and** sorted times.
 
 | Option | Content |
 |--------|---------|
-| **P4 default** | Dentate spike multiset 390 vs 400 / kin-native residual; see parity **Next** |
+| **P4 default** | Dentate GC/na8st residual (390 vs 400); see parity **Next** |
 | Multi-rank MPS | **Closed** — `test/external/ensure_cuda_mps.sh` + ctests; Eigen full-present |
+| Eigen v_unused | **Closed** — STATE refresh for functors; kin-native green |
 | Parked | Traub `use_gap=1` over-fire; Phase C / slim JACOB wall-flat explor |
 | Later | device-resource owner only if forced |
 

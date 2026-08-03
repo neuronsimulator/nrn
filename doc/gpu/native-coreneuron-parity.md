@@ -2,7 +2,7 @@
 
 **Portfolio:** GPU-native (feature)  
 **Tree:** `~/neuron/nrngpu`  
-**Living tip (2026-08-03):** `local/gpu-native` @ H4 + Session B + Session E + **multi-rank MPS product** (ensure_cuda_mps harness; Eigen full-present fix). Exclusive wall multi-warm ~**1.15–1.17 s**; dentate 4-rank MPS psolve ~**1.5–1.6 s**.  
+**Living tip (2026-08-03):** `local/gpu-native` @ H4 + Session B + Session E + multi-rank MPS + **Eigen STATE v_unused refresh** (kin-native green). Exclusive wall multi-warm ~**1.15–1.17 s**; dentate 4-rank MPS psolve ~**1.5–1.6 s** (spike multiset still 390 vs 400).  
 **Parked explor:** `local/gpu-p4-exclusive-residual` (slim JACOB wall-flat); `local/gpu-P4-hotpath-netreceive` (Phase C wall-flat); `local/gpu-p4-setup-rhs-density` (Session E archive, **merged to tip**)  
 **Handoffs:** `GROK-GPU-NATIVE.md`, `AGENTS.md`, `~/neuron/notes/PORTFOLIO.md`  
 **This file:** ordered steps you can re-open without chat memory. Update **Status** at end of each session.
@@ -141,6 +141,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-08-03 | GPU-P4-setup-rhs | — | Session E: phase-boundary fences only (H1 + zero waits); setup-rhs ~0.24; wall ~1.18–1.28 settled. |
 | 2026-08-03 | GPU-P4-tip-merge-setup-rhs | — | FF-merge Session E onto `local/gpu-native`; tip re-smoke: 688 green; setup-rhs ~0.24; wall settled ~1.15–1.17 s. |
 | 2026-08-03 | GPU-P4-multirank-mps | — | Product multi-rank CUDA MPS: ensure_cuda_mps harness (ringtest MPI + dentate); docs. Eigen STATE full-present fix (CadepK crash). Dentate 4-rank MPS psolve ~1.5–1.6 s; ringtest 2-rank 688 green. Spike multiset residual 390 vs 400. |
+| 2026-08-03 | GPU-P4-dentate-spikes | — | Eigen STATE: present+refresh v_unused for functors (H4c stack v left functors on stale SoA V). **kin-native green** (was empty spikes). Dentate still 390 vs 400 = all 10 GCs silent (na8st CONSERVE N=8 residual). Ringtest 688@100 + 2-rank MPI green. |
 
 ---
 
@@ -461,8 +462,9 @@ Phase timer (`NRN_NATIVE_GPU_PHASE_TIMER=1`):
 | Setup-stream density (Session E) | **done (on tip)** | FF `local/gpu-p4-setup-rhs-density` → `local/gpu-native` (`1dba647bb`). Tip re-smoke: product 688 green; setup-rhs ~**0.24**; setup-tree ~**0.46–0.48**; wall multi-warm settled ~**1.15–1.17 s**. |
 | Dentate multi-rank profile | **done** | 4-rank thrash without MPS; **MPS ≲ CN** (tip ~1.5–1.6 s psolve). |
 | Multi-rank GPU share (MPS) | **done (on tip)** | device_assign + warn; **product harness** `test/external/ensure_cuda_mps.sh` wired into ringtest MPI + dentate native ctests; docs (`native-gpu-build.rst`, `gpu-testing.rst`, AGENTS). |
-| Eigen STATE min-present illegal address | **fixed (on tip)** | H4 live-present under-counted Eigen Newton functor RANGE (e.g. CadepK missing `_present_fp_21`). Full present when `eigen_newton`/`eigen_linear`. Unblocked dentate crash. |
-| Dentate spike multiset 400 | **residual** | With MPS + Eigen fix: run green, psolve ~1.5–1.6 s, **390 vs 400** spikes (compare red). Follow-up heavy-mech residual (not thrash). |
+| Eigen STATE min-present illegal address | **fixed (on tip)** | H4 live-present under-counted Eigen Newton functor RANGE (e.g. CadepK missing ion shadows). Full present when `eigen_newton`/`eigen_linear`. Unblocked dentate crash. |
+| Eigen STATE v_unused for functors | **fixed (on tip)** | H4c stack `v` left Eigen functors reading stale `v_unused` SoA (and often un-present). STATE now presents v_unused + writes `_present_fp_N[id] = v` when Eigen solvers exist. **testcorenrn_kin_native** green. |
+| Dentate spike multiset 400 | **residual** | MPS + Eigen present + v_unused refresh: run green, psolve ~1.5–1.6 s, still **390 vs 400**. Diff = **all 10 GC gids 500000–500009** silent (other pops exact). GC uses **na8st** (`SOLVE … METHOD sparse` + CONSERVE, N=8). 1-rank same residual. Not thrash / not kin. |
 | Single device-resource owner | open | Only if exit/leak forces. |
 
 ### H4c NMODL productize (2026-08-02, `local/gpu-P4-density-H4`)
@@ -695,11 +697,10 @@ Milestone B (CURRENT specialization): `nrn_cur_hh` ≈ hand ~13 — **met** (~14
 
 ### Residual perf / product debt (next when reopened)
 
-1. **Dentate spike multiset:** 390 vs 400 after Eigen full-present + MPS (run completes ~1.5 s). Heavy-mech residual — not multi-rank thrash.
-2. **testcorenrn_kin native** spike empty after H4-era rebuild — re-qualify Eigen/kin product.
-3. Phase C follow-up only if denser spike traffic shows wall (parked explor).
-4. Optional: slim JACOB hygiene tip-merge; lastpart-deliver; **phases=0** prcellstate download needs ACC wait after Session E (phases=1 / 688@100 green).
-5. Optional: further exclusive density only if a new measured residual appears under CN.
+1. **Dentate GC spikes (390 vs 400):** all 10 GCs silent; other populations match. Focus **na8st** sparse+CONSERVE N=8 on native (Eigen Newton on device). Kin path greened via v_unused refresh; GC residual remains.
+2. Phase C follow-up only if denser spike traffic shows wall (parked explor).
+3. Optional: slim JACOB hygiene tip-merge; lastpart-deliver; **phases=0** prcellstate download needs ACC wait after Session E (phases=1 / 688@100 green).
+4. Optional: further exclusive density only if a new measured residual appears under CN.
 
 ---
 
@@ -792,7 +793,7 @@ Commit locally without push. Update Status/Next before exit.
 
 ## Next (one line — update every session end)
 
-**Next:** dentate spike multiset **390 vs 400** (heavy-mech residual; MPS product path closed) and/or kin-native re-qualify. Phase C + slim JACOB parked. **Not** Traub `use_gap=1`.
+**Next:** dentate **GC** spikes (390 vs 400 = gids 500000–500009 silent; **na8st** sparse CONSERVE residual). Kin-native **closed**. Phase C + slim JACOB parked. **Not** Traub `use_gap=1`.
 
 ### Starting prompt — Session A residual (closed; archive)
 
@@ -832,27 +833,32 @@ Session closed 2026-08-03: product multi-rank MPS harness (`ensure_cuda_mps.sh` 
 ringtest/dentate ctests); docs; Eigen STATE full-present (dentate crash → psolve
 ~1.5–1.6 s with MPS). Ringtest 2-rank 688 green. Residual: dentate spikes 390 vs 400.
 
-### Starting prompt — next (dentate spike multiset / heavy-mech residual)
+### Starting prompt — Eigen v_unused / kin-native (closed; archive)
+
+Session closed 2026-08-03: Eigen STATE present+refresh v_unused for functors.
+testcorenrn_kin_native green. Ringtest 688@100 + 2-rank MPI green. Dentate still
+390 vs 400 = all GC silent (na8st residual).
+
+### Starting prompt — next (dentate GC / na8st residual)
 
 ```text
 Read ~/neuron/notes/PORTFOLIO.md (GPU-native), then
 ~/neuron/nrngpu/doc/gpu/native-coreneuron-parity.md
-  (Phase 4 Status / Residual / Next; dentate 390 vs 400),
+  (Phase 4 Status / Residual / Next; dentate GC 390 vs 400),
 GROK-GPU-NATIVE.md, AGENTS.md.
 
-Kind: feature. Portfolio: GPU-native. Phase: P4 heavy-mech residual.
+Kind: feature. Portfolio: GPU-native. Phase: P4 dentate GC / na8st.
 Tree: ~/neuron/nrngpu. Branch: local/gpu-native (or explor as needed).
 
-Context: multi-rank MPS product closed (ensure harness; MPS psolve ~1.5–1.6 s).
-Eigen full-present unblocked CadepK crash. Dentate compare still 390 vs 400.
-Kin native empty spikes after rebuild. Exclusive ringtest 688@100 green.
-Phase C + slim JACOB parked. Not Traub use_gap=1.
+Context: kin-native closed (Eigen v_unused refresh). Dentate other pops exact;
+only GC gids 500000–500009 silent (na8st sparse+CONSERVE N=8). MPS psolve
+~1.5–1.6 s. Exclusive ringtest 688@100 green. Not Traub use_gap=1.
 
-This session: close dentate spike multiset (and/or kin-native) without regressing
-MPS multi-rank or exclusive ringtest. High performance sacred; heap-free weight_index.
+This session: make all 10 GCs fire (400 multiset) without regressing kin/ringtest.
+High performance sacred; heap-free weight_index.
 
 Commit locally without push. Update Status/Next before exit.
-/rename GPU-P4-dentate-spikes
+/rename GPU-P4-dentate-gc-na8st
 ```
 
 ### Branching (2026-08-03)
@@ -874,6 +880,7 @@ Commit locally without push. Update Status/Next before exit.
 | `local/gpu-P4-density-H4` | Exploratory archive: H4a–c + Session A force-inline (**merged to tip**) |
 | `local/gpu-p4-multirank-share` | Exploratory archive: MPS diagnosis (landed on tip) |
 
-P4 on tip: scatter, timers, **multi-rank MPS product harness**, Eigen full-present,
-**H4 density packet**, **Session B CURRENT**, **Session E setup-stream**. Exclusive
-ringtest **≲ CN**. Multi-rank MPS **closed**. **Default next:** dentate 390 vs 400 / kin.
+P4 on tip: scatter, timers, **multi-rank MPS product harness**, Eigen full-present +
+**v_unused refresh**, **H4 density packet**, **Session B CURRENT**, **Session E**.
+Exclusive ringtest **≲ CN**. Multi-rank MPS **closed**. Kin-native **closed**.
+**Default next:** dentate GC / na8st (390 vs 400).
