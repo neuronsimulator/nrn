@@ -307,6 +307,11 @@ void CodegenNeuronAccVisitor::print_kernel_instance_data_copyin() {
 
 std::string CodegenNeuronAccVisitor::global_variable_name(const SymbolType& symbol,
                                                           bool use_instance) const {
+    // Force-inlined STATE body: use present(hh_global) names (hand-edit shape).
+    // inst.global is a host pointer and causes residual copyin under device calls.
+    if (inlining_state_specialized_body_) {
+        return CodegenNeuronCppVisitor::global_variable_name(symbol, false);
+    }
     if (use_present_fp_indexing_ || use_instance) {
         return fmt::format("inst.{}->{}", naming::INST_GLOBAL_MEMBER, symbol->get_name());
     }
@@ -937,20 +942,155 @@ void CodegenNeuronAccVisitor::print_function_or_procedure(
     printer->pop_block();
 }
 
-void CodegenNeuronAccVisitor::print_function_call(const ast::FunctionCall& node) {
+void CodegenNeuronAccVisitor::print_inlined_table_procedure_body(
+    const ast::Block& node,
+    const std::string& formal_v_name) {
+    // Same TABLE path as print_state_specialized_table_replacement, but:
+    // - no function wrapper / returns (embedded in STATE loop)
+    // - writes stack TABLE temps via state_kernel_locals_active_
+    // - globals via present(hh_global) when inlining_state_specialized_body_
+    auto name = node.get_node_name();
+    auto statement = get_table_statement(node);
+    auto table_variables = statement->get_table_vars();
+    auto with = statement->get_with()->eval();
+    auto use_table_var = get_variable_name(naming::USE_TABLE_VARIABLE);
+    auto tmin_name = get_variable_name("tmin_" + name);
+    auto mfac_name = get_variable_name("mfac_" + name);
+
+    printer->fmt_push_block("if ({} == 0)", use_table_var);
+    print_statement_block(*node.get_statement_block(), false, false);
+    printer->pop_block();
+
+    printer->push_block("else");
+    printer->fmt_line("double xi = {} * ({} - {});", mfac_name, formal_v_name, tmin_name);
+    printer->push_block("if (isnan(xi))");
+    for (const auto& var: table_variables) {
+        auto var_name = get_variable_name(var->get_node_name());
+        auto [is_array, array_length] = check_if_var_is_array(var->get_node_name());
+        if (is_array) {
+            for (int j = 0; j < array_length; j++) {
+                printer->fmt_line("{}[{}] = xi;", var_name, j);
+            }
+        } else {
+            printer->fmt_line("{} = xi;", var_name);
+        }
+    }
+    printer->pop_block();
+
+    printer->fmt_push_block("else if (xi <= 0. || xi >= {}.)", with);
+    printer->fmt_line("int index = (xi <= 0.) ? 0 : {};", with);
+    for (const auto& variable: table_variables) {
+        auto var_name = variable->get_node_name();
+        auto instance_name = get_variable_name(var_name);
+        auto table_name = get_variable_name("t_" + var_name);
+        auto [is_array, array_length] = check_if_var_is_array(var_name);
+        if (is_array) {
+            for (int j = 0; j < array_length; j++) {
+                printer->fmt_line("{}[{}] = {}[{}][index];", instance_name, j, table_name, j);
+            }
+        } else {
+            printer->fmt_line("{} = {}[index];", instance_name, table_name);
+        }
+    }
+    printer->pop_block();
+
+    printer->push_block("else");
+    printer->add_line("int i = int(xi);");
+    printer->add_line("double theta = xi - double(i);");
+    for (const auto& var: table_variables) {
+        auto var_name = var->get_node_name();
+        auto instance_name = get_variable_name(var_name);
+        auto table_name = get_variable_name("t_" + var_name);
+        auto [is_array, array_length] = check_if_var_is_array(var->get_node_name());
+        if (is_array) {
+            for (size_t j = 0; j < array_length; j++) {
+                printer->fmt_line(
+                    "{0}[{1}] = {2}[{1}][i] + theta*({2}[{1}][i+1]-{2}[{1}][i]);",
+                    instance_name,
+                    j,
+                    table_name);
+            }
+        } else {
+            printer->fmt_line("{0} = {1}[i] + theta*({1}[i+1]-{1}[i]);",
+                              instance_name,
+                              table_name);
+        }
+    }
+    printer->pop_block();  // else interpolate
+    printer->pop_block();  // else usetable
+}
+
+void CodegenNeuronAccVisitor::print_state_specialized_call_force_inlined(
+    const ast::FunctionCall& node) {
+    // Session A residual: force-inline unique/safe STATE rates body (hand-edit).
+    // Eliminates the device call + residual copyin/out under state_hh.
     const auto& name = node.get_node_name();
-    if (state_kernel_locals_active_ && defined_method(name) &&
-        state_specialized_procedures_.count(name) != 0) {
-        const auto& arguments = node.get_arguments();
-        // rates_hh_state (not rates_state_hh)
+    const ast::Block* proc = nullptr;
+    for (const auto* p: info.procedures) {
+        if (p && p->get_node_name() == name) {
+            proc = p;
+            break;
+        }
+    }
+    if (!proc) {
+        // Should not happen for specialized names; fall back to thin call.
         printer->add_text(method_name(name) + "_state", '(');
         auto internal_args = state_specialized_method_arguments(name);
         printer->add_text(internal_args);
+        const auto& arguments = node.get_arguments();
         if (!arguments.empty() && !internal_args.empty()) {
             printer->add_text(", ");
         }
         print_vector_elements(arguments, ", ");
         printer->add_text(')');
+        return;
+    }
+
+    const auto& arguments = node.get_arguments();
+    const auto& params = proc->get_parameters();
+
+    // Statement context: caller wraps with `;` after expression statements.
+    // Emit a compound statement; the trailing `;` after `}` is harmless C++.
+    printer->push_block();
+
+    // Bind MOD formals (e.g. rates(v) → _lv) to call-site args (stack `v`).
+    std::string formal_v_name = "v";
+    for (size_t i = 0; i < params.size(); ++i) {
+        auto pname = params[i].get()->get_node_name();
+        if (i == 0) {
+            formal_v_name = pname;
+        }
+        printer->add_indent();
+        printer->fmt_text("const double {} = ", pname);
+        if (i < arguments.size()) {
+            arguments[i]->accept(*this);
+        } else {
+            printer->add_text("0.0");
+        }
+        printer->add_text(';');
+        printer->add_newline();
+    }
+
+    inlining_state_specialized_body_ = true;
+    // TABLE temps already stack locals (state_kernel_locals_active_).
+    // present_fp indexing still on for any non-table RANGE the body might touch.
+    if (info.function_uses_table(name)) {
+        print_inlined_table_procedure_body(*proc, formal_v_name);
+    } else {
+        print_statement_block(*proc->get_statement_block(), false, false);
+    }
+    inlining_state_specialized_body_ = false;
+
+    printer->pop_block();
+}
+
+void CodegenNeuronAccVisitor::print_function_call(const ast::FunctionCall& node) {
+    const auto& name = node.get_node_name();
+    if (state_kernel_locals_active_ && defined_method(name) &&
+        state_specialized_procedures_.count(name) != 0) {
+        // Force-inline unique/safe STATE rates body (TABLE path preferred).
+        // Thin rates_*_state remains available for analytic/debug; STATE does not call it.
+        print_state_specialized_call_force_inlined(node);
         return;
     }
     CodegenCppVisitor::print_function_call(node);
@@ -1109,7 +1249,15 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
                 ", _present_fp_{}[:static_cast<std::size_t>(_ml_arg->nodecount) * {}]", i, array_len);
         }
     } else if (!info.artificial_cell) {
-        present_clause << ", nodeindices, _thread";
+        present_clause << ", nodeindices";
+        // Specialized STATE (force-inlined rates): no _thread / _ppvar use — drop
+        // unused present(_thread) residual (hand-edit shape).
+        const bool state_slim =
+            type == BlockType::State && state_kernel_uses_only_specialized_procedures() &&
+            !info.eigen_newton_solver_exist && !info.eigen_linear_solver_exist;
+        if (!state_slim) {
+            present_clause << ", _thread";
+        }
         if (type == BlockType::Equation) {
             present_clause << ", vec_rhs[:nt->end], vec_d[:nt->end]";
         }
@@ -1943,8 +2091,17 @@ void CodegenNeuronAccVisitor::print_nrn_state() {
     use_present_fp_indexing_ = true;
     print_parallel_iteration_hint(BlockType::State, info.nrn_state_block);
     printer->push_block("for (int id = 0; id < nodecount; id++)");
-    printer->add_line("int node_id = node_data.nodeindices[id];");
-    printer->add_line("auto* _ppvar = _ml_arg->pdata[id];");
+    // Prefer local nodeindices (present) over node_data.nodeindices (hand-edit).
+    if (!info.artificial_cell) {
+        printer->add_line("int node_id = nodeindices[id];");
+    } else {
+        printer->add_line("int node_id = node_data.nodeindices[id];");
+    }
+    // Skip unused _ppvar when STATE only force-inlines specialized procedures.
+    if (!(state_kernel_uses_only_specialized_procedures() && !info.eigen_newton_solver_exist &&
+          !info.eigen_linear_solver_exist)) {
+        printer->add_line("auto* _ppvar = _ml_arg->pdata[id];");
+    }
 
     // H4c: stack locals for TABLE rates temps (minf/mtau/…) — no hot-path SoA.
     if (!info.table_statement_variables.empty()) {
@@ -2325,6 +2482,16 @@ std::string CodegenNeuronAccVisitor::get_variable_name(const std::string& name,
     // H4c STATE: stack local `v` instead of v_unused SoA (rates arg + no present).
     if (state_local_v_active_ && (name == "v" || name == naming::VOLTAGE_UNUSED_VARIABLE)) {
         return "v";
+    }
+    // Force-inlined STATE rates: bare neuron globals (celsius), not *(inst.celsius).
+    if (inlining_state_specialized_body_) {
+        auto const iter = std::find_if(
+            info.neuron_global_variables.begin(),
+            info.neuron_global_variables.end(),
+            [&name](auto const& entry) { return entry.first->get_name() == name; });
+        if (iter != info.neuron_global_variables.end()) {
+            return name;
+        }
     }
     return CodegenNeuronCppVisitor::get_variable_name(name, use_instance);
 }

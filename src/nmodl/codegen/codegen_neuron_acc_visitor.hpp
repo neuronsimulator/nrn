@@ -169,6 +169,13 @@ class CodegenNeuronAccVisitor: public CodegenNeuronCppVisitor {
     mutable bool emitting_state_specialized_procedure_{false};
 
     /**
+     * Session A residual: force-inlining a unique/safe STATE specialized
+     * procedure body into the STATE loop (hand-edit shape). Prefer present
+     * `hh_global` / bare celsius over `inst.global` / `*(inst.celsius)`.
+     */
+    mutable bool inlining_state_specialized_body_{false};
+
+    /**
      * Live non-table present_fp indices for the procedure currently being
      * specialized (feeds internal_method_parameters while emitting).
      */
@@ -182,7 +189,7 @@ class CodegenNeuronAccVisitor: public CodegenNeuronCppVisitor {
 
     /**
      * MOD procedure names for which a *_state specialized version was emitted.
-     * STATE call sites use the thin ABI when the name is in this set.
+     * STATE call sites force-inline the body when the name is in this set.
      */
     std::unordered_set<std::string> state_specialized_procedures_;
 
@@ -245,6 +252,16 @@ class CodegenNeuronAccVisitor: public CodegenNeuronCppVisitor {
 
     /** TABLE-aware rates_*_hh_state body (thin ABI). */
     void print_state_specialized_table_replacement(const ast::Block& node);
+
+    /**
+     * Force-inline unique/safe specialized procedure body at a STATE call site
+     * (TABLE path when applicable). No device call; writes stack TABLE temps.
+     */
+    void print_state_specialized_call_force_inlined(const ast::FunctionCall& node);
+
+    /** TABLE interpolation body without returns (for force-inline into STATE). */
+    void print_inlined_table_procedure_body(const ast::Block& node,
+                                            const std::string& formal_v_name);
 
     /** True when every defined MOD call from STATE has a thin specialized version. */
     [[nodiscard]] bool state_kernel_uses_only_specialized_procedures() const;

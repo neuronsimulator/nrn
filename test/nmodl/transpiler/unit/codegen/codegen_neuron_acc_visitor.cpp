@@ -117,21 +117,24 @@ SCENARIO("NEURON OpenACC codegen emits offload pragmas", "[codegen][neuron][acc]
             REQUIRE_THAT(generated, ContainsSubstring("nrn_pragma_acc(data present(nt, _ml_arg"));
         }
 
-        THEN("Session A: specialized rates_*_state thin ABI for STATE hot path") {
+        THEN("Session A residual: force-inline unique STATE rates body (TABLE path)") {
             const auto generated = get_neuron_acc_code_from_file(mod_path);
-            // Thin specialized versions exist (general rates_hh kept for HOC/table rebuild).
+            // Thin specialized versions still emitted (available; general rates for HOC/table).
             REQUIRE_THAT(generated, ContainsSubstring("rates_hh_state"));
             REQUIRE_THAT(generated, ContainsSubstring("f_rates_hh_state"));
-            // STATE calls thin version, not fat general rates_hh(... present_fp_0 ...).
-            REQUIRE_THAT(generated, ContainsSubstring("rates_hh_state(inst,"));
-            // Thin ABI: inst + double& TABLE temps + v — no node_data/id/_ppvar in _state sig.
             REQUIRE_THAT(generated,
                          ContainsSubstring(
                              "inline static int rates_hh_state(hh_Instance& inst, double& _kl_minf"));
             REQUIRE(generated.find("rates_hh_state(hh_Instance& inst, hh_NodeData&") ==
                     std::string::npos);
-            // STATE calls thin rates_hh_state(inst, minf, ..., v)
-            REQUIRE_THAT(generated, ContainsSubstring("rates_hh_state(inst,"));
+            // STATE force-inlines rates TABLE body — no device call to rates_hh_state.
+            REQUIRE(generated.find("rates_hh_state(inst,") == std::string::npos);
+            REQUIRE_THAT(generated, ContainsSubstring("nrn_state_hh"));
+            // Hand-edit shape: present(hh_global) names + TABLE path inside STATE.
+            REQUIRE_THAT(generated, ContainsSubstring("hh_global.usetable"));
+            REQUIRE_THAT(generated, ContainsSubstring("hh_global.t_minf"));
+            // Slim present: no unused _thread on specialized STATE.
+            // (present clause lists m,h,n columns + hh_global, not _thread before them)
             REQUIRE_THAT(generated, ContainsSubstring("nrn_state_hh"));
         }
     }
