@@ -1354,7 +1354,11 @@ void CodegenNeuronAccVisitor::print_kernel_data_present_annotation_block_begin()
 
 void CodegenNeuronAccVisitor::print_kernel_data_present_annotation_block_end() {
     if (!info.artificial_cell) {
-        print_device_stream_wait();
+        // Setup/lastpart launch density (P4): do not wait after every mech kernel.
+        // CURRENT/STATE/JACOB launch async on nt->stream_id; same-stream order
+        // preserves dependence. Phase-boundary waits live in treeset axial,
+        // net_send flush, electrode sav post-pass, INITIAL, finalize_nonvint,
+        // and net_buf_receive (below).
         printer->pop_block();
     }
 }
@@ -1515,7 +1519,7 @@ void CodegenNeuronAccVisitor::print_nrn_jacob() {
         print_jacob_device_loop(false);
     }
     use_present_fp_indexing_ = false;
-    print_device_stream_wait();
+    // No per-mech wait: axial lhs and matrix solver fence the stream (P4 density).
     printer->chain_block("else");
     print_entrypoint_setup_code_from_memb_list();
     printer->fmt_line("auto nodecount = _ml_arg->nodecount;");
@@ -1817,7 +1821,9 @@ void CodegenNeuronAccVisitor::print_net_receive_buffering() {
     printer->pop_block();  // outer i
     printing_net_buf_receive_kernel_ = false;
     use_present_fp_indexing_ = false;
-    print_kernel_data_present_annotation_block_end();  // wait(stream)
+    print_kernel_data_present_annotation_block_end();
+    // Host updates cnt after device NET_RECEIVE — must wait (unlike cur/state).
+    print_device_stream_wait();
     printer->decrease_indent();
     printer->add_line("}");
 
@@ -2055,6 +2061,8 @@ void CodegenNeuronAccVisitor::print_nrn_init(bool skip_init_check) {
 
     printer->pop_block();
     print_kernel_data_present_annotation_block_end();
+    // INITIAL often followed by host logic; keep a fence (not on fixed-step hot path).
+    print_device_stream_wait();
     printer->pop_block();
     use_present_fp_indexing_ = false;
 }

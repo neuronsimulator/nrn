@@ -284,7 +284,8 @@ void zero_matrix_rhs_on_device(NrnThread& nt, int begin, int end) noexcept {
             vec_sav_rhs[i] = 0.;
         }
     }
-    nrn_pragma_acc(wait(nt.stream_id))
+    // No host wait: CURRENT follows on the same stream (setup-rhs density).
+    // Axial rhs (or matrix solver) fences the stream.
 #else
     (void) nt;
     (void) begin;
@@ -312,7 +313,7 @@ void zero_matrix_diagonal_on_device(NrnThread& nt, int begin, int end) noexcept 
             vec_sav_d[i] = 0.;
         }
     }
-    nrn_pragma_acc(wait(nt.stream_id))
+    // No host wait: JACOB follows on the same stream (setup-lhs density).
 #else
     (void) nt;
     (void) begin;
@@ -336,7 +337,7 @@ void transform_sav_rhs_membrane_only_on_device(NrnThread& nt, int begin, int end
     for (int i = begin; i < end; ++i) {
         vec_sav_rhs[i] -= vec_rhs[i];
     }
-    nrn_pragma_acc(wait(nt.stream_id))
+    // Same-stream: axial rhs fences (setup-rhs density).
 #else
     (void) nt;
     (void) begin;
@@ -360,7 +361,7 @@ void transform_sav_d_membrane_only_on_device(NrnThread& nt, int begin, int end) 
     for (int i = begin; i < end; ++i) {
         vec_sav_d[i] = vec_d[i] - vec_sav_d[i];
     }
-    nrn_pragma_acc(wait(nt.stream_id))
+    // Same-stream: axial lhs fences (setup-lhs density).
 #else
     (void) nt;
     (void) begin;
