@@ -2,9 +2,8 @@
 
 **Portfolio:** GPU-native (feature)  
 **Tree:** `~/neuron/nrngpu`  
-**Living tip (2026-08-03):** `local/gpu-native` @ H4 + Session B CURRENT (state_hh ~19 µs; cur_hh ~14–15 µs; wall multi-warm ~1.29–1.37 s; exclusive ≈ CN)  
-**Explor (2026-08-03):** `local/gpu-p4-setup-rhs-density` — Session E setup-stream density (product green; setup-rhs win; modest wall)  
-**Parked explor:** `local/gpu-p4-exclusive-residual` (slim JACOB wall-flat); `local/gpu-P4-hotpath-netreceive` (Phase C wall-flat)  
+**Living tip (2026-08-03):** `local/gpu-native` @ H4 + Session B + **Session E** setup-stream density (wall multi-warm settled ~**1.15–1.17 s**; setup-rhs ~0.24; exclusive ≲ CN Solver)  
+**Parked explor:** `local/gpu-p4-exclusive-residual` (slim JACOB wall-flat); `local/gpu-P4-hotpath-netreceive` (Phase C wall-flat); `local/gpu-p4-setup-rhs-density` (Session E archive, **merged to tip**)  
 **Handoffs:** `GROK-GPU-NATIVE.md`, `AGENTS.md`, `~/neuron/notes/PORTFOLIO.md`  
 **This file:** ordered steps you can re-open without chat memory. Update **Status** at end of each session.
 
@@ -140,6 +139,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-08-03 | GPU-P4-hotpath-netreceive | — | Phase C explor (separate branch): min-present net_buf; wall flat; no tip-merge. |
 | 2026-08-03 | GPU-P4-exclusive-residual | — | Re-profile post H4+B: native ≈ CN exclusive; slim JACOB wall flat; no tip-merge. |
 | 2026-08-03 | GPU-P4-setup-rhs | — | Session E: phase-boundary fences only (H1 + zero waits); setup-rhs ~0.24; wall ~1.18–1.28 settled. |
+| 2026-08-03 | GPU-P4-tip-merge-setup-rhs | — | FF-merge Session E onto `local/gpu-native`; tip re-smoke: 688 green; setup-rhs ~0.24; wall settled ~1.15–1.17 s. |
 
 ---
 
@@ -433,7 +433,7 @@ Phase timer (`NRN_NATIVE_GPU_PHASE_TIMER=1`):
 
 | Item | Status | Notes |
 |------|--------|-------|
-| Wall-time vs CoreNEURON (guide) | **baselined (updated 2026-08-03)** | Ringtest exclusive **≈ CN** after H4+B: native multi-warm ~**1.29–1.41 s** tip; Session E explor settled ~**1.18–1.28 s**. CN Solver ~**1.30–1.35 s**. Dentate exclusive ~CN; multi-rank needs MPS. Old ~1.7–2× is pre-H4. |
+| Wall-time vs CoreNEURON (guide) | **baselined (updated 2026-08-03)** | Ringtest exclusive **≲ CN** after H4+B+E: tip multi-warm settled ~**1.15–1.17 s** (Session E). CN Solver ~**1.30–1.35 s**. Pre-E tip ~1.29–1.41. Dentate exclusive ~CN; multi-rank needs MPS. Old ~1.7–2× is pre-H4. |
 | Residual hot-path host traffic audit | **done** | Mid-psolve full SoA on gap path fixed. |
 | Gap scatter de-chatty + A+B timers | **done (on tip)** | 0 scalar H→D/step; scatter ~5%. |
 | Gap-only P4 residual | **closed as density** | Same bottleneck as no-gap (setup + nonvint); not gap transfer. |
@@ -457,7 +457,7 @@ Phase timer (`NRN_NATIVE_GPU_PHASE_TIMER=1`):
 | Hot-path NET_RECEIVE min-present (Phase C) | **explor; wall flat (parked)** | `local/gpu-P4-hotpath-netreceive`. Kernel win; ringtest wall flat. **Do not tip-merge**. |
 | Post-H4+B exclusive re-profile | **done (docs)** | Native ≈ CN; setup-tree-matrix ~0.54 s dominates on tip. |
 | Slim JACOB (Session D) | **explor; wall flat** | `local/gpu-p4-exclusive-residual`. Product 688 green; wall flat. **No tip-merge**. |
-| Setup-stream density (Session E) | **explor; setup win + modest wall** | `local/gpu-p4-setup-rhs-density`. Phase-boundary fences only. Product 688 green. setup-rhs ~**0.24** (tip ~0.29); setup-tree ~**0.46–0.47** (tip ~0.54). Wall multi-warm settled ~**1.18–1.28 s**. **Tip-merge candidate** (not auto-merged this session). |
+| Setup-stream density (Session E) | **done (on tip)** | FF `local/gpu-p4-setup-rhs-density` → `local/gpu-native` (`1dba647bb`). Tip re-smoke: product 688 green; setup-rhs ~**0.24**; setup-tree ~**0.46–0.48**; wall multi-warm settled ~**1.15–1.17 s**. |
 | Dentate multi-rank profile | **done** | 4-rank thrash without MPS; **MPS ≈ CN**. |
 | Multi-rank GPU share (MPS) | **done (on tip)** | device_assign + warn (`db83f4adb`); ops: `nvidia-cuda-mps-control -d`. |
 | Single device-resource owner | open | Only if exit/leak forces. |
@@ -609,7 +609,24 @@ Session B CURRENT is product on tip. Exclusive ringtest ≈ CN post H4+B; residu
 | wall multi-warm settled (drop cold) | ~**1.29–1.37** s | ~**1.18–1.28** s |
 | CN Solver (guide) | ~1.30–1.35 s | same |
 
-**Interpretation:** Clear **setup-bucket win** (~15% setup-tree). Modest **wall** improvement when fully warm (can undercut tip lower band and CN Solver). First runs noisier (1.5–1.8). Product green. **Tip-merge candidate** — leave on explor until a dedicated tip-merge re-smoke confirms wall on clean tip tree (user asked not to auto-merge). Phase C + slim JACOB stay parked.
+**Interpretation:** Clear **setup-bucket win** (~15% setup-tree). Modest **wall** improvement when fully warm (can undercut tip lower band and CN Solver). First runs noisier (1.5–1.8). Product green.
+
+### Tip-merge Session E setup-stream density (2026-08-03, on `local/gpu-native`)
+
+**Action:** Fast-forward merge `local/gpu-p4-setup-rhs-density` → living tip `local/gpu-native`. Merge-base was tip; 1 commit (`1dba647bb`), no tip-only delta.
+
+**Tip re-smoke (nring=16, tstop=100, TABLE, T1000 exclusive 1-rank):**
+
+| metric | explor (pre-merge) | **tip after merge** |
+|--------|--------------------|---------------------|
+| product 688 dV=0 phases=1 | green | **green** (noise-only rdcellstate) |
+| setup-tree-matrix (phase timer warm) | ~0.46–0.47 s | ~**0.46–0.48** s |
+| setup-rhs | ~0.24 s | ~**0.24** s |
+| setup-lhs | ~0.22–0.23 s | ~**0.22–0.23** s |
+| wall multi-warm settled (6× no ACC_TIME; drop cold) | ~1.18–1.28 s | ~**1.15–1.17** s |
+| CN Solver (guide) | ~1.30–1.35 s | same |
+
+Session E is product on tip. Phase C + slim JACOB stay parked.
 
 ---
 
@@ -671,14 +688,14 @@ Milestone B (CURRENT specialization): `nrn_cur_hh` ≈ hand ~13 — **met** (~14
 | **5** | Tip-merge H4a+b+c+A (wall win measured) | **done** on tip 2026-08-03 |
 | **6** | Tip-merge Session B CURRENT (wall win measured) | **done** on tip 2026-08-03 |
 
-**Session order:** A–B closed on tip. C parked explor. D slim JACOB parked. E setup-stream density explor (tip-merge candidate).
+**Session order:** A–B–E closed on tip. C parked explor. D slim JACOB parked.
 
 ### Residual perf debt (next P4 when reopened)
 
-1. **Tip-merge Session E** setup-stream density (setup-rhs ~0.24; wall settled ~1.18–1.28).
+1. **Product multi-rank:** CUDA MPS when ranks/GPU > 1 (dentate 4-rank; harness/docs).
 2. Phase C follow-up only if denser spike traffic shows wall (parked explor).
-3. **Product multi-rank:** CUDA MPS when ranks/GPU > 1.
-4. Optional: slim JACOB hygiene tip-merge; lastpart-deliver; phases=0 prcellstate download.
+3. Optional: slim JACOB hygiene tip-merge; lastpart-deliver; phases=0 prcellstate download.
+4. Optional: further exclusive density only if a new measured residual appears under CN.
 
 ---
 
@@ -771,7 +788,7 @@ Commit locally without push. Update Status/Next before exit.
 
 ## Next (one line — update every session end)
 
-**Next:** tip-merge Session E setup-stream density (after clean tip re-smoke) **or** multi-rank **CUDA MPS**. Phase C + slim JACOB stay explor (wall flat). **Not** Traub `use_gap=1`.
+**Next:** product multi-rank **CUDA MPS** (dentate 4-rank / harness). Phase C + slim JACOB stay explor (wall flat). Exclusive ringtest ≲ CN after Session E. **Not** Traub `use_gap=1`.
 
 ### Starting prompt — Session A residual (closed; archive)
 
@@ -797,38 +814,42 @@ Session closed 2026-08-03 on explor `local/gpu-P4-hotpath-netreceive`: min-prese
 
 Session closed 2026-08-03 on explor `local/gpu-p4-exclusive-residual`: re-profile post H4+B — native ≈ CN; setup-tree ~0.54 s; slim JACOB wall flat; no tip-merge.
 
-### Starting prompt — Session E setup-rhs density (closed explor; tip-merge candidate)
+### Starting prompt — Session E setup-rhs density (closed explor; archive)
 
-Session closed 2026-08-03 on explor `local/gpu-p4-setup-rhs-density`: phase-boundary fences only (H1 + zero/transform wait elide). Product 688 green. setup-rhs ~0.24 (was ~0.29); wall multi-warm settled ~1.18–1.28 s. **Tip-merge candidate.**
+Session closed 2026-08-03 on explor `local/gpu-p4-setup-rhs-density`: phase-boundary fences only (H1 + zero/transform wait elide). Product 688 green. setup-rhs ~0.24; wall multi-warm settled ~1.18–1.28 s.
 
-### Starting prompt — next (tip-merge Session E or multi-rank MPS)
+### Starting prompt — tip-merge Session E (closed; archive)
+
+Session closed 2026-08-03: FF-merge Session E onto `local/gpu-native`; tip re-smoke product 688 green; setup-rhs ~0.24; wall multi-warm settled ~1.15–1.17 s.
+
+### Starting prompt — next (multi-rank CUDA MPS)
 
 ```text
 Read ~/neuron/notes/PORTFOLIO.md (GPU-native), then
 ~/neuron/nrngpu/doc/gpu/native-coreneuron-parity.md
-  (Phase 4 Status / Residual / Next; Session E notes),
+  (Phase 4 Status / Residual / Next; multi-rank MPS notes),
 GROK-GPU-NATIVE.md, AGENTS.md.
 
-Kind: feature. Portfolio: GPU-native. Phase: P4 tip-merge Session E or multi-rank.
-Tree: ~/neuron/nrngpu. Branch: local/gpu-native (tip-merge) or explor as needed.
+Kind: feature. Portfolio: GPU-native. Phase: P4 multi-rank CUDA MPS.
+Tree: ~/neuron/nrngpu. Branch: local/gpu-native (or explor as needed).
 
-Context: tip H4+B exclusive ≈ CN. Session E explor setup-stream density:
-product 688 green; setup-rhs ~0.24; wall settled ~1.18–1.28. Tip-merge candidate.
-Phase C + slim JACOB parked. Not Traub use_gap=1.
+Context: tip H4+B+E exclusive ≲ CN (wall multi-warm ~1.15–1.17 s; setup-rhs ~0.24).
+Dentate 4-rank no-MPS ~37 s; with MPS ~2.4–3.0 s ≈ CN. Policy on tip:
+device_assign + MPS warn. Phase C + slim JACOB parked. Not Traub use_gap=1.
 
-This session: either FF-merge Session E onto tip + re-smoke, or multi-rank MPS work.
-High performance sacred; heap-free weight_index.
+This session: multi-rank product path with CUDA MPS (dentate / harness docs /
+ops). High performance sacred; heap-free weight_index.
 
 Commit locally without push. Update Status/Next before exit.
-/rename GPU-P4-tip-merge-setup-rhs
+/rename GPU-P4-multirank-mps
 ```
 
 ### Branching (2026-08-03)
 
 | Branch | Role |
 |--------|------|
-| **`local/gpu-native`** | Living tip — H4 + Session B CURRENT + scatter/timers/MPS |
-| `local/gpu-p4-setup-rhs-density` | Exploratory: Session E setup-stream density (**tip-merge candidate**) |
+| **`local/gpu-native`** | Living tip — H4 + Session B CURRENT + **Session E** setup-stream + scatter/timers/MPS |
+| `local/gpu-p4-setup-rhs-density` | Exploratory archive: Session E setup-stream density (**merged to tip**) |
 | `local/gpu-p4-exclusive-residual` | Exploratory: re-profile + slim JACOB (wall flat) |
 | `local/gpu-P4-hotpath-netreceive` | Exploratory: Phase C min-present net_buf (wall flat) |
 | `local/gpu-P4-hotpath-current` | Exploratory archive: Session B CURRENT force-inline (**merged to tip**) |
@@ -842,4 +863,4 @@ Commit locally without push. Update Status/Next before exit.
 | `local/gpu-P4-density-H4` | Exploratory archive: H4a–c + Session A force-inline (**merged to tip**) |
 | `local/gpu-p4-multirank-share` | Exploratory archive: MPS diagnosis (landed on tip) |
 
-P4 on tip: scatter, timers, multi-rank MPS, **H4 density packet**, **Session B CURRENT**. Exclusive ringtest **≈ CN**. **Default next:** tip-merge Session E or multi-rank MPS.
+P4 on tip: scatter, timers, multi-rank MPS ops, **H4 density packet**, **Session B CURRENT**, **Session E setup-stream**. Exclusive ringtest **≲ CN**. **Default next:** multi-rank CUDA MPS product.
