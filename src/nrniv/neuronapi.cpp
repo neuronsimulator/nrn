@@ -394,6 +394,43 @@ Object* nrn_object_new_wrap(Symbol* sym, void* cpp_object) {
     return hoc_new_object(sym, cpp_object);
 }
 
+int nrn_object_new_nothrow(Symbol* sym,
+                           int narg,
+                           Object** result,
+                           char* error_msg,
+                           size_t error_msg_size) {
+    // Like nrn_object_new, but a HOC constructor error (bad arguments, a failing
+    // INITIAL, etc.) is caught and reported instead of thrown, so a non-C++
+    // caller (ctypes, MATLAB, ...) does not have a C++ exception propagate
+    // across the FFI boundary. On success returns 0 with *result set; on error
+    // returns nonzero with *result NULL and error_msg populated.
+    if (error_msg && error_msg_size > 0) {
+        error_msg[0] = '\0';
+    }
+    if (result) {
+        *result = nullptr;
+    }
+    try {
+        Object* obj = OcJump::newobj_throw_on_exception(sym, narg);
+        if (result) {
+            *result = obj;
+        }
+        return 0;
+    } catch (const std::exception& e) {
+        if (error_msg && error_msg_size > 0) {
+            strncpy(error_msg, e.what(), error_msg_size - 1);
+            error_msg[error_msg_size - 1] = '\0';
+        }
+        return 1;
+    } catch (...) {
+        if (error_msg && error_msg_size > 0) {
+            strncpy(error_msg, "Unknown exception occurred", error_msg_size - 1);
+            error_msg[error_msg_size - 1] = '\0';
+        }
+        return 1;
+    }
+}
+
 Symbol* nrn_method_symbol(const Object* obj, char const* const name) {
     return hoc_table_lookup(name, obj->ctemplate->symtable);
 }
