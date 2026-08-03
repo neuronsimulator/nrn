@@ -752,6 +752,57 @@ Functions, objects, and the stack
     Provides direct access to variable data for efficient reading/writing.
     e.g., use this for getting/setting the value of ``t`` (time).
 
+.. c:function:: Object* nrn_symbol_object_get(const Symbol* sym)
+
+    Get the object bound to a top-level ``objref``.
+
+    :param sym: Symbol for a top-level ``objref``.
+    :returns: The bound object, or ``NULL`` if the objref is nil or ``sym`` is
+        not an objref.
+
+    The object is returned *borrowed* -- its reference count is not
+    incremented. Call :c:func:`nrn_object_ref` to retain it beyond the next
+    assignment to the objref. Complements :c:func:`nrn_symbol_dataptr`, which
+    returns ``NULL`` for an objref because it is not a ``double*``.
+
+.. c:function:: bool nrn_symbol_object_set(Symbol* sym, Object* obj)
+
+    Bind an object to a top-level ``objref``.
+
+    :param sym: Symbol for a top-level ``objref``.
+    :param obj: The object to bind, or ``NULL`` to make the objref nil.
+    :returns: ``true`` on success, ``false`` if ``sym`` is not an objref.
+
+    Follows HOC's assignment reference-counting: the previously bound object is
+    released and the new one retained.
+
+.. c:function:: const char* nrn_symbol_str_get(const Symbol* sym)
+
+    Get the string held by a top-level ``strdef``.
+
+    :param sym: Symbol for a top-level ``strdef``.
+    :returns: The string, or ``NULL`` if ``sym`` is not a strdef.
+
+.. c:function:: bool nrn_symbol_str_set(Symbol* sym, const char* value)
+
+    Set the string held by a top-level ``strdef``.
+
+    :param sym: Symbol for a top-level ``strdef``.
+    :param value: The string to copy in.
+    :returns: ``true`` on success, ``false`` if ``sym`` is not a strdef.
+
+    The value is copied into the strdef's storage (the previous string is
+    freed).
+
+    **Python Equivalent:**
+
+    .. code-block:: python
+
+        n.s = "cell"     # nrn_symbol_str_set
+        name = n.s       # nrn_symbol_str_get
+        n.obj = vec      # nrn_symbol_object_set
+        bound = n.obj    # nrn_symbol_object_get
+
 .. c:function:: bool nrn_symbol_is_array(const Symbol* sym)
 
     Check if a symbol represents an array.
