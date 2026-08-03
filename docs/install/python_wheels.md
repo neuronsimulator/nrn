@@ -81,6 +81,26 @@ docker.io/neuronsimulator/neuron_wheel:latest-x86_64
 The `neuronsimulator/neuron_wheel` provides out-of-the-box support for `mpich` and `openmpi`.
 For `HPE-MPT MPI`, since it's not open source, they are provided automatically as part of Azure Pipelines and are not locally downloadable.
 
+### CI dependency archive (pinned downloads)
+
+Wheel **test** jobs install both MPICH and OpenMPI so
+[packaging/python/test_wheels.sh](../../packaging/python/test_wheels.sh) can
+exercise dynamic MPI. On Ubuntu 24.04, stock MPICH was broken
+([LP#2072338](https://bugs.launchpad.net/ubuntu/+source/mpich/+bug/2072338));
+CI therefore installs a **pinned** pair of `.deb` files from the in-repo archive
+instead of downloading them from Launchpad on every run.
+
+See **[CI dependency archive](ci_deps.md)** and
+[ci/deps/README.md](../../ci/deps/README.md) for:
+
+* the catalog (`MANIFEST.yml`) and `managed: true|false`
+* `fetch.sh` / `install_mpich_noble.sh` / `check-upstream.sh`
+* how to add the next flaky third-party download
+
+Azure macOS wheels still obtain a prebuilt static **readline** via an Azure
+*secure file* (see macOS section below). Migrating that class of blob into
+`ci/deps` is tracked as `managed: false` in the MANIFEST until promoted.
+
 ## macOS wheels
 
 Note that for macOS there is no docker image needed, but all required dependencies must exist.

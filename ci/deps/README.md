@@ -2,6 +2,9 @@
 
 Pinned external downloads used by NEURON CI. Goal: **stop relying on flaky third-party hosts** (Launchpad, GNU mirrors, SourceForge) for known-good blobs, while keeping an explicit upgrade path.
 
+Sphinx / website entry point (same topic, shorter):
+[docs/install/ci_deps.md](../../docs/install/ci_deps.md).
+
 ## Layout
 
 | Path | Role |
