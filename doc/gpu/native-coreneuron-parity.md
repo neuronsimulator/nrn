@@ -3,6 +3,8 @@
 **Portfolio:** GPU-native (feature)  
 **Tree:** `~/neuron/nrngpu`  
 **Living tip (2026-08-03):** `local/gpu-native` @ H4 + Session B CURRENT (state_hh ~19 µs; cur_hh ~14–15 µs; wall multi-warm ~1.29–1.37 s)  
+**Explor (2026-08-03):** `local/gpu-p4-exclusive-residual` — re-profile + slim JACOB (product green; wall flat; no tip-merge)  
+**Parked explor:** `local/gpu-P4-hotpath-netreceive` — Phase C min-present net_buf (kernel win; wall flat)  
 **Handoffs:** `GROK-GPU-NATIVE.md`, `AGENTS.md`, `~/neuron/notes/PORTFOLIO.md`  
 **This file:** ordered steps you can re-open without chat memory. Update **Status** at end of each session.
 
@@ -135,6 +137,8 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-08-03 | GPU-P4-tip-merge-H4 | — | FF-merge H4a–c+A force-inline onto `local/gpu-native`; tip re-smoke: state_hh ~19 µs, multi-warm ~1.50–1.54 s, 688 green. |
 | 2026-08-03 | GPU-P4-hotpath-current | — | Session B: force-inline thin CURRENT; cur_hh ~14 µs ≈ hand; wall multi-warm ~1.31–1.37 s; 688 green. |
 | 2026-08-03 | GPU-P4-tip-merge-current | — | FF-merge Session B onto `local/gpu-native`; tip re-smoke: cur_hh ~15 µs, state_hh ~19 µs, multi-warm ~1.29–1.31 s, 688 green. |
+| 2026-08-03 | GPU-P4-hotpath-netreceive | — | Phase C explor (separate branch): min-present net_buf; wall flat; no tip-merge. |
+| 2026-08-03 | GPU-P4-exclusive-residual | — | Re-profile post H4+B: native ≈ CN exclusive; slim JACOB hypothesis (wall flat; no tip-merge). |
 
 ---
 
@@ -428,7 +432,7 @@ Phase timer (`NRN_NATIVE_GPU_PHASE_TIMER=1`):
 
 | Item | Status | Notes |
 |------|--------|-------|
-| Wall-time vs CoreNEURON (guide) | **baselined** | Ringtest exclusive ~1.7–2×. Dentate exclusive ~CN; multi-rank needs MPS. |
+| Wall-time vs CoreNEURON (guide) | **baselined (updated 2026-08-03)** | Ringtest exclusive **≈ CN** after H4+B: native multi-warm ~**1.29–1.41 s** vs CN Solver ~**1.30–1.35 s** (runtime ~1.46–1.51). Dentate exclusive ~CN; multi-rank needs MPS. Old ~1.7–2× is pre-H4. |
 | Residual hot-path host traffic audit | **done** | Mid-psolve full SoA on gap path fixed. |
 | Gap scatter de-chatty + A+B timers | **done (on tip)** | 0 scalar H→D/step; scatter ~5%. |
 | Gap-only P4 residual | **closed as density** | Same bottleneck as no-gap (setup + nonvint); not gap transfer. |
@@ -449,6 +453,9 @@ Phase timer (`NRN_NATIVE_GPU_PHASE_TIMER=1`):
 | Hot-path force-inline STATE rates (A residual) | **done (on tip)** | Force-inline unique/safe STATE rates TABLE body. Tip re-smoke 2026-08-03: `state_hh` ~**19 µs**; wall multi-warm ~**1.50–1.54 s**; 688 phases=1 green; copy tax under state_hh **gone**. |
 | H4 density packet tip-merge | **done (on tip)** | FF `local/gpu-P4-density-H4` → `local/gpu-native` (`34c8b4912`); tip remeasure matches explor. |
 | Hot-path CURRENT force-inline (Session B) | **done (on tip)** | FF `local/gpu-P4-hotpath-current` → `local/gpu-native` (`f06ed70ec`). Tip re-smoke: `cur_hh` ~**14–15 µs**; wall multi-warm ~**1.29–1.37 s**; state_hh ~19 µs; 688 green; cur copy tax **gone**. |
+| Hot-path NET_RECEIVE min-present (Phase C) | **explor; wall flat (parked)** | `local/gpu-P4-hotpath-netreceive`. Kernel win; ringtest wall flat. **Do not tip-merge** until wall win. Not reopened this session. |
+| Post-H4+B exclusive re-profile | **done (docs)** | Phase timers + ACC_TIME + CN remeasure on T1000. Native ≈ CN; setup-tree-matrix dominates (~0.54 s). |
+| Slim JACOB (Session D) | **explor; wall flat** | `local/gpu-p4-exclusive-residual`. No GLOBAL present/setup on device jacob; g_unused+vec_d only. Product **688** green; wall multi-warm still ~**1.29–1.41 s** (tip noise band). **No tip-merge**. |
 | Dentate multi-rank profile | **done** | 4-rank thrash without MPS; **MPS ≈ CN**. |
 | Multi-rank GPU share (MPS) | **done (on tip)** | device_assign + warn (`db83f4adb`); ops: `nvidia-cuda-mps-control -d`. |
 | Single device-resource owner | open | Only if exit/leak forces. |
@@ -578,7 +585,7 @@ Packet is product on tip. Session B CURRENT closed on explor (below).
 | wall multi-warm (5×, no ACC_TIME) | ~1.31–1.37 s | ~**1.29–1.31 s** (first ~1.62) |
 | product 688 dV=0 | green | **green** |
 
-Session B CURRENT is product on tip. Next: Phase C NET_RECEIVE PP; multi-rank CUDA MPS.
+Session B CURRENT is product on tip. Exclusive ringtest ≈ CN post H4+B; see Session D.
 
 ---
 
@@ -623,11 +630,15 @@ Excerpts for hand-edit reference: `doc/gpu/h4c-handedit-nrn_state_hh.excerpt.cpp
 | Session A rates_*_state (thin) | ~**73 µs** | ~**20 µs** | ~**2.35–2.52 s** | **green** |
 | **A residual force-inline** | ~**19 µs** | ~**18 µs** | ~**1.50–1.60 s** | **green** |
 | **Session B CURRENT force-inline** | ~**19 µs** | ~**14 µs** | ~**1.31–1.37 s** | **green** |
+| Phase C net_buf min-present (explor) | ~19 µs | ~14–15 µs | ~**1.30 s** (flat) | **green** |
+| Session D slim JACOB (explor) | ~19 µs | ~14–15 µs | ~**1.29–1.41 s** (flat) | **green** |
 | H4c hand-edit | ~18 µs | ~13 µs | ~1.52 s (state+cur) | green |
-| CN (H3b TABLE) | ~19 µs | — | — | — |
+| CN (H3b TABLE / 2026-08-03 remeasure) | ~19 µs | — | Solver ~**1.30–1.35 s** | — |
 
 Milestone A (rates STATE specialization): `state_hh` **≲ 25–30 µs** then ~18 — **met** (~19 µs force-inline). Product always 688 phases=1.  
-Milestone B (CURRENT specialization): `nrn_cur_hh` ≈ hand ~13 — **met** (~14 µs); wall win measured.
+Milestone B (CURRENT specialization): `nrn_cur_hh` ≈ hand ~13 — **met** (~14 µs); wall win measured.  
+Milestone C (NET_RECEIVE): kernel win on explor; **wall flat** — no tip-merge.  
+Milestone D (JACOB slim): product green; **wall flat** on ringtest — no tip-merge.
 
 #### Implementation phases (after Phase 0)
 
@@ -639,14 +650,57 @@ Milestone B (CURRENT specialization): `nrn_cur_hh` ≈ hand ~13 — **met** (~14
 | **4** | Fallback matrix + regression (VERBATIM must stay general) | suite notes |
 | **5** | Tip-merge H4a+b+c+A (wall win measured) | **done** on tip 2026-08-03 |
 | **6** | Tip-merge Session B CURRENT (wall win measured) | **done** on tip 2026-08-03 |
+| **C** | NET_RECEIVE min-present | **explor parked** wall flat |
+| **D** | Slim JACOB (no GLOBAL present) | **explor** wall flat; no tip-merge |
 
-**Session order:** A = Phase 1+2 (rates STATE) — **closed**. Tip-merge H4 — **closed**. B = CURRENT — **closed on tip**. C = NET_RECEIVE PP (next).
+**Session order:** A–B closed on tip. C parked explor. D exclusive residual explor (this session).
+
+### Session D — exclusive residual + slim JACOB (2026-08-03, `local/gpu-p4-exclusive-residual`)
+
+**Re-profile (tip H4+B, nring=16, tstop=100, T1000, exclusive 1-rank):**
+
+| metric | Native | CoreNEURON GPU |
+|--------|--------|----------------|
+| multi-warm runtime (psolve) | ~**1.29–1.41 s** | Solver ~**1.30–1.35 s**; runtime ~1.46–1.51 |
+| product 688 dV=0 | **green** | 688 spikes |
+
+Phase timer (warm runtime ~1.30 s; prefer absolute seconds; nested sub-buckets double-count):
+
+| bucket | wall s | note |
+|--------|--------|------|
+| **setup-tree-matrix** | **~0.54** | dominant (~41% of psolve); rhs ~0.29 + lhs ~0.25 |
+| deliver-events | ~0.22 | ~17% |
+| matrix-solver | ~0.21 | ~17% |
+| lastpart (≈ nonvint) | ~0.15 | ~12%; STATE density largely paid down by H4+A |
+| matrix-sync + post-solve | ~0.08 | small |
+
+ACC_TIME (warm, async): CURRENT/STATE copy tax **gone** (`time(us):0`). JACOB still showed ~95–106 ms `time(us)` under each of `nrn_jacob_{hh,pas,ExpSyn}` with `present(..., hh_global)` despite body only reading `g_unused` → `vec_d`.
+
+**Hypothesis (Session D):** residual setup-lhs tax includes unnecessary GLOBAL present/setup on JACOB (TABLE arrays in `hh_global`).
+
+**Codegen fix:**
+
+1. Device `nrn_jacob`: skip `print_kernel_global_device_setup`; slim setup = `_lmc` + `node_data` only (no `make_instance` / `_thread`).
+2. `print_parallel_iteration_hint` when jacob override: no GLOBAL present, no `_d_voltages`, live `g_unused` only.
+3. Unit test Session D on hh.mod.
+
+**Measure post-D:**
+
+| metric | tip H4+B | Session D explor |
+|--------|----------|------------------|
+| wall multi-warm | ~1.29–1.37 s | ~**1.29–1.41 s** (flat / noise) |
+| product 688 | green | **green** (noise-only rdcellstate) |
+| jacob present(global) | yes | **no** |
+| ACC_TIME jacob `time(us)` | ~95–106 ms each | ~80–82 ms each (still present of g_unused/vec_d) |
+
+**Interpretation:** exclusive ringtest is **already ≈ CN** after H4+B. Slim JACOB is correct absolute cleanup but **not a wall win** on this model (async present tax was not the limiting factor). **No tip-merge** until wall win (or hygiene tip-merge if desired later). Next residual for ringtest headroom: **setup-rhs launch density** (many small cur/axial kernels ~0.29 s) or denser models; Phase C stays parked; multi-rank = MPS.
 
 ### Residual perf debt (next P4 when reopened)
 
-1. NET_RECEIVE PP specialization (Phase C).
-2. **Product multi-rank:** CUDA MPS when ranks/GPU > 1.
-3. Optional: lastpart-deliver; phases=0 prcellstate download residual.
+1. **setup-rhs launch density** (or fuse/wait policy) — largest exclusive bucket after H4+B; optional headroom past CN.
+2. Phase C follow-up only if denser spike traffic shows wall (parked explor).
+3. **Product multi-rank:** CUDA MPS when ranks/GPU > 1.
+4. Optional: slim JACOB hygiene tip-merge without wall claim; lastpart-deliver; phases=0 prcellstate download.
 
 ---
 
@@ -739,7 +793,7 @@ Commit locally without push. Update Status/Next before exit.
 
 ## Next (one line — update every session end)
 
-**Next:** Phase C NET_RECEIVE PP specialization; multi-rank **CUDA MPS**. **Not** Traub `use_gap=1`.
+**Next:** setup-rhs launch density (headroom past CN) **or** multi-rank **CUDA MPS**. Phase C + slim JACOB stay explor (wall flat). **Not** Traub `use_gap=1`. Exclusive ringtest ≈ CN after H4+B.
 
 ### Starting prompt — Session A residual (closed; archive)
 
@@ -757,34 +811,45 @@ Session closed 2026-08-03 on explor `local/gpu-P4-hotpath-current`: force-inline
 
 Session closed 2026-08-03: FF-merge Session B onto `local/gpu-native`; tip re-smoke cur_hh ~15 µs, state_hh ~19 µs, multi-warm ~1.29–1.31 s, 688 green.
 
-### Starting prompt — Phase C NET_RECEIVE PP (next)
+### Starting prompt — Phase C NET_RECEIVE PP (closed explor; archive)
+
+Session closed 2026-08-03 on explor `local/gpu-P4-hotpath-netreceive`: min-present net_buf; kernel win; wall flat. **No tip-merge.**
+
+### Starting prompt — exclusive residual / slim JACOB (closed explor; archive)
+
+Session closed 2026-08-03 on explor `local/gpu-p4-exclusive-residual`: re-profile post H4+B — native multi-warm ~1.29–1.41 s ≈ CN Solver ~1.30–1.35 s; setup-tree-matrix ~0.54 s dominates. Hypothesis slim JACOB (no GLOBAL present): product 688 green; wall flat; no tip-merge.
+
+### Starting prompt — next (setup-rhs density or multi-rank)
 
 ```text
 Read ~/neuron/notes/PORTFOLIO.md (GPU-native), then
 ~/neuron/nrngpu/doc/gpu/native-coreneuron-parity.md
-  (Phase 4 Residual / hot-path Phase C; Next),
+  (Phase 4 Status / Residual / Next; Session D notes),
 GROK-GPU-NATIVE.md, AGENTS.md.
 
-Kind: feature. Portfolio: GPU-native. Phase: P4 hot-path Phase C NET_RECEIVE PP.
+Kind: feature. Portfolio: GPU-native. Phase: P4 exclusive residual post H4+B.
 Tree: ~/neuron/nrngpu. Branch: off living tip local/gpu-native as
-local/gpu-P4-hotpath-netreceive (or similar explor). Do not merge to tip until measured win.
+local/gpu-p4-setup-rhs-density (or similar). Do not merge to tip until measured wall win.
 
-Context: tip has H4 + Session B CURRENT (state_hh ~19 µs; cur_hh ~14–15 µs;
-wall multi-warm ~1.29–1.37 s; 688 green). Hot-path Phases 1–3 + tip-merges closed.
-Phase C: specialize NET_RECEIVE / net_buf_receive POINT_PROCESS for ACC density.
+Context: tip has H4+B (state_hh ~19; cur_hh ~14–15; wall ~1.29–1.37; 688).
+Exclusive ringtest **≈ CN** (native ~1.29–1.41 vs CN solver ~1.30–1.35). Dominant
+bucket: setup-tree-matrix ~0.54 s (rhs ~0.29). Phase C + slim JACOB explor wall-flat
+(no tip-merge). Do not reopen NET_RECEIVE denser-model chase or Traub use_gap=1.
 
-High performance sacred; CoreNEURON is a guide; heap-free weight_index.
-Not Traub use_gap=1; not multi-rank unless blocked.
+This session: one hypothesis for setup-rhs launch density (or multi-rank MPS if chosen).
+High performance sacred; heap-free weight_index. Not multi-rank unless chosen.
 
 Commit locally without push. Update Status/Next before exit.
-/rename GPU-P4-hotpath-netreceive
+/rename GPU-P4-setup-rhs
 ```
 
 ### Branching (2026-08-03)
 
 | Branch | Role |
 |--------|------|
-| **`local/gpu-native`** | Living tip — H4 + Session B CURRENT (force-inline STATE rates + thin CURRENT) + scatter/timers/MPS |
+| **`local/gpu-native`** | Living tip — H4 + Session B CURRENT + scatter/timers/MPS |
+| `local/gpu-p4-exclusive-residual` | Exploratory: re-profile + slim JACOB (product green; **wall flat** — not tip-merged) |
+| `local/gpu-P4-hotpath-netreceive` | Exploratory: Phase C min-present net_buf (**wall flat** — not tip-merged) |
 | `local/gpu-P4-hotpath-current` | Exploratory archive: Session B CURRENT force-inline (**merged to tip**) |
 | `local/gpu-native-net-soa` | Historical integration name; keep until remotes/docs catch up (may lag tip) |
 | `local/gpu-p4-gap-phase-ab` | Exploratory archive: A+B only (pre-scatter baseline) |
@@ -796,4 +861,4 @@ Commit locally without push. Update Status/Next before exit.
 | `local/gpu-P4-density-H4` | Exploratory archive: H4a–c + Session A force-inline (**merged to tip**) |
 | `local/gpu-p4-multirank-share` | Exploratory archive: MPS diagnosis (landed on tip) |
 
-P4 on tip: scatter, timers, multi-rank MPS, **H4 density packet**, **Session B CURRENT** (cur_hh ~14–15 µs; wall ~1.29–1.37 s). **Default next:** Phase C NET_RECEIVE PP.
+P4 on tip: scatter, timers, multi-rank MPS, **H4 density packet**, **Session B CURRENT**. Exclusive ringtest **≈ CN**. **Default next:** setup-rhs density headroom or multi-rank MPS.
