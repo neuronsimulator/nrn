@@ -464,7 +464,7 @@ Phase timer (`NRN_NATIVE_GPU_PHASE_TIMER=1`):
 | Multi-rank GPU share (MPS) | **done (on tip)** | device_assign + warn; **product harness** `test/external/ensure_cuda_mps.sh` wired into ringtest MPI + dentate native ctests; docs (`native-gpu-build.rst`, `gpu-testing.rst`, AGENTS). |
 | Eigen STATE min-present illegal address | **fixed (on tip)** | H4 live-present under-counted Eigen Newton functor RANGE (e.g. CadepK missing ion shadows). Full present when `eigen_newton`/`eigen_linear`. Unblocked dentate crash. |
 | Eigen STATE v_unused for functors | **fixed (on tip)** | H4c stack `v` left Eigen functors reading stale `v_unused` SoA (and often un-present). STATE now presents v_unused + writes `_present_fp_N[id] = v` when Eigen solvers exist. **testcorenrn_kin_native** green. |
-| Dentate spike multiset 400 | **residual** | MPS + Eigen present + v_unused refresh: run green, psolve ~1.5–1.6 s, still **390 vs 400**. Diff = **all 10 GC gids 500000–500009** silent (other pops exact). GC uses **na8st** (`SOLVE … METHOD sparse` + CONSERVE, N=8). 1-rank same residual. Not thrash / not kin. |
+| Dentate spike multiset 400 | **residual (localized)** | **390 vs 400** = all 10 GCs silent. **prcellstate** (gid 500006 @ t=4.5/5): CPU MPP→Exp2Syn **A/B/g active**; GPU same synapse **A/B/g=0** (factor OK). Threshold V CPU depolarized, GPU stuck ~−75. Other pops exact. Harness: `test/external/reduced_dentate/prcellstate_gc_native.sh` + `run_dentate_prcellstate.py`. Next: Exp2Syn net_buf / art-cell MPP deliver→device (see `force_compute_gpu_for_device_deliver` comment). |
 | Single device-resource owner | open | Only if exit/leak forces. |
 
 ### H4c NMODL productize (2026-08-02, `local/gpu-P4-density-H4`)
@@ -793,7 +793,7 @@ Commit locally without push. Update Status/Next before exit.
 
 ## Next (one line — update every session end)
 
-**Next:** dentate **GC** spikes (390 vs 400 = gids 500000–500009 silent; **na8st** sparse CONSERVE residual). Kin-native **closed**. Phase C + slim JACOB parked. **Not** Traub `use_gap=1`.
+**Next:** dentate GC — **Exp2Syn MPP→GC device NET_RECEIVE** (prcellstate: GPU A/B/g=0 after MPP spikes; CPU nonzero). Harness in `test/external/reduced_dentate/prcellstate_gc_native.sh`. Kin closed. Phase C / slim JACOB parked. **Not** Traub gap.
 
 ### Starting prompt — Session A residual (closed; archive)
 
@@ -839,26 +839,29 @@ Session closed 2026-08-03: Eigen STATE present+refresh v_unused for functors.
 testcorenrn_kin_native green. Ringtest 688@100 + 2-rank MPI green. Dentate still
 390 vs 400 = all GC silent (na8st residual).
 
-### Starting prompt — next (dentate GC / na8st residual)
+### Starting prompt — next (dentate Exp2Syn MPP→GC deliver)
 
 ```text
 Read ~/neuron/notes/PORTFOLIO.md (GPU-native), then
 ~/neuron/nrngpu/doc/gpu/native-coreneuron-parity.md
-  (Phase 4 Status / Residual / Next; dentate GC 390 vs 400),
+  (Phase 4 Status residual: Exp2Syn MPP→GC),
 GROK-GPU-NATIVE.md, AGENTS.md.
 
-Kind: feature. Portfolio: GPU-native. Phase: P4 dentate GC / na8st.
-Tree: ~/neuron/nrngpu. Branch: local/gpu-native (or explor as needed).
+Kind: feature. Portfolio: GPU-native. Phase: P4 dentate Exp2Syn deliver.
+Tree: ~/neuron/nrngpu. Branch: local/gpu-native.
 
-Context: kin-native closed (Eigen v_unused refresh). Dentate other pops exact;
-only GC gids 500000–500009 silent (na8st sparse+CONSERVE N=8). MPS psolve
-~1.5–1.6 s. Exclusive ringtest 688@100 green. Not Traub use_gap=1.
+Context: kin-native closed. Dentate 390 vs 400 = GC silent. prcellstate
+(gid 500006 t=4.5/5): CPU MPP Exp2Syn A/B/g active; GPU A/B/g=0 (factor ok).
+Harness: test/external/reduced_dentate/prcellstate_gc_native.sh
+  (workdir: build-gpu/test/reduced_dentate_native/neuron_gpu_native + ACC special).
+force_compute_gpu_for_device_deliver already exists (net_events.cpp). Trace
+art-cell MPP spike → Exp2Syn net_buf_receive. Not Traub gap.
 
-This session: make all 10 GCs fire (400 multiset) without regressing kin/ringtest.
+This session: GPU MPP→GC Exp2Syn conductance matches CPU; 400 spikes.
 High performance sacred; heap-free weight_index.
 
 Commit locally without push. Update Status/Next before exit.
-/rename GPU-P4-dentate-gc-na8st
+/rename GPU-P4-dentate-exp2syn
 ```
 
 ### Branching (2026-08-03)
