@@ -120,6 +120,7 @@ class CodegenNeuronAccVisitor: public CodegenNeuronCppVisitor {
     void print_nrn_state() override;
     void print_nrn_cur() override;
     void print_nrn_cur_kernel(const ast::BreakpointBlock& node) override;
+    void print_nrn_cur_non_conductance_kernel() override;
     void print_nrn_jacob() override;
 
     void print_entrypoint_setup_code_from_prop() override;
@@ -174,6 +175,21 @@ class CodegenNeuronAccVisitor: public CodegenNeuronCppVisitor {
      * `hh_global` / bare celsius over `inst.global` / `*(inst.celsius)`.
      */
     mutable bool inlining_state_specialized_body_{false};
+
+    /**
+     * Session B: force-inlining BREAKPOINT body into CURRENT (numerical di/dv
+     * non-conductance path). Prefer stack temps + local v (hand-edit shape).
+     */
+    mutable bool inlining_current_body_{false};
+
+    /** Session B: CURRENT uses stack `_cur_v` instead of v_unused SoA. */
+    mutable bool current_local_v_active_{false};
+
+    /**
+     * Session B: intermediate ASSIGNED / ion shadows are stack locals on the
+     * force-inlined CURRENT path (not SoA present).
+     */
+    mutable bool current_stack_temps_active_{false};
 
     /**
      * Live non-table present_fp indices for the procedure currently being
@@ -265,6 +281,24 @@ class CodegenNeuronAccVisitor: public CodegenNeuronCppVisitor {
 
     /** True when every defined MOD call from STATE has a thin specialized version. */
     [[nodiscard]] bool state_kernel_uses_only_specialized_procedures() const;
+
+    /**
+     * Session B: safe to force-inline BREAKPOINT into CURRENT (no VERBATIM,
+     * net_send/move/event, POINTER/RANDOM). Ion dptrs are allowed (unlike STATE).
+     */
+    [[nodiscard]] bool current_force_inline_safe() const;
+
+    /**
+     * Session B: float SoA column is a CURRENT stack temp (ASSIGNED intermediate,
+     * ion shadow, nonspecific current) — not PARAMETER/STATE/g_unused.
+     */
+    [[nodiscard]] bool is_current_stack_temp_float(const std::string& name) const;
+
+    /** Stack temp names used by BREAKPOINT (+ BA) on force-inline CURRENT. */
+    [[nodiscard]] std::vector<std::string> current_stack_temp_names() const;
+
+    /** Emit one inlined BREAKPOINT evaluation at voltage expression \p v_expr. */
+    void print_inlined_nrn_current_at_v(const std::string& v_expr);
 
     void collect_ast_names(const ast::Ast& node, std::unordered_set<std::string>& names) const;
 

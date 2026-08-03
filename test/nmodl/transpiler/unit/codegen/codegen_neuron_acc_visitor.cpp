@@ -127,8 +127,18 @@ SCENARIO("NEURON OpenACC codegen emits offload pragmas", "[codegen][neuron][acc]
                              "inline static int rates_hh_state(hh_Instance& inst, double& _kl_minf"));
             REQUIRE(generated.find("rates_hh_state(hh_Instance& inst, hh_NodeData&") ==
                     std::string::npos);
-            // STATE force-inlines rates TABLE body — no device call to rates_hh_state.
-            REQUIRE(generated.find("rates_hh_state(inst,") == std::string::npos);
+            // STATE force-inlines rates TABLE body — no call to rates_hh_state from
+            // nrn_state_hh (f_rates_hh_state(inst, may still appear inside the emitted
+            // thin rates_hh_state helper body).
+            {
+                const auto state_begin = generated.find("static void nrn_state_hh");
+                REQUIRE(state_begin != std::string::npos);
+                const auto state_end = generated.find("static void nrn_", state_begin + 20);
+                const auto state_fn = generated.substr(
+                    state_begin,
+                    (state_end == std::string::npos ? generated.size() : state_end) - state_begin);
+                REQUIRE(state_fn.find("rates_hh_state(") == std::string::npos);
+            }
             REQUIRE_THAT(generated, ContainsSubstring("nrn_state_hh"));
             // Hand-edit shape: present(hh_global) names + TABLE path inside STATE.
             REQUIRE_THAT(generated, ContainsSubstring("hh_global.usetable"));
@@ -136,6 +146,26 @@ SCENARIO("NEURON OpenACC codegen emits offload pragmas", "[codegen][neuron][acc]
             // Slim present: no unused _thread on specialized STATE.
             // (present clause lists m,h,n columns + hh_global, not _thread before them)
             REQUIRE_THAT(generated, ContainsSubstring("nrn_state_hh"));
+        }
+
+        THEN("Session B: force-inline thin CURRENT (min present, no fat nrn_current)") {
+            const auto generated = get_neuron_acc_code_from_file(mod_path);
+            REQUIRE_THAT(generated, ContainsSubstring("nrn_cur_hh"));
+            // Force-inline: no device call / definition of fat or thin nrn_current_hh.
+            REQUIRE(generated.find("nrn_current_hh") == std::string::npos);
+            // Hand-edit shape: numerical di/dv with local voltage.
+            REQUIRE_THAT(generated, ContainsSubstring("double _cur_v = v + 0.001"));
+            REQUIRE_THAT(generated, ContainsSubstring("double _cur_v = v"));
+            REQUIRE_THAT(generated, ContainsSubstring("double I1 = _nrn_cur_sum"));
+            REQUIRE_THAT(generated, ContainsSubstring("double I0 = _nrn_cur_sum"));
+            // Stack ion / intermediate ASSIGNED (not present as SoA for ena).
+            REQUIRE_THAT(generated, ContainsSubstring("double ena = "));
+            REQUIRE_THAT(generated, ContainsSubstring("double ek = "));
+            REQUIRE_THAT(generated, ContainsSubstring("double gna;"));
+            // Min present: params + STATE + g_unused; no fat present_fp_19 style for ena.
+            REQUIRE_THAT(generated, ContainsSubstring("vec_rhs[:nt->end]"));
+            // CURRENT does not present vec_d (jacob owns that).
+            REQUIRE(generated.find("nrn_cur_hh") != std::string::npos);
         }
     }
 

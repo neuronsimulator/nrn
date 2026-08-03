@@ -14,6 +14,8 @@
 namespace nmodl {
 namespace codegen {
 
+using symtab::syminfo::NmodlType;
+
 namespace {
 
 bool name_is_table_statement_float(const CodegenInfo& info, const std::string& name) {
@@ -77,7 +79,8 @@ std::unordered_set<int> CodegenNeuronAccVisitor::live_float_indices_for_kernel(
         // g_unused / conductance is written by cur kernel after the body.
         names.insert(info.vectorize ? naming::CONDUCTANCE_UNUSED_VARIABLE
                                     : naming::CONDUCTANCE_VARIABLE);
-        names.insert(naming::VOLTAGE_UNUSED_VARIABLE);
+        // Session B: CURRENT uses formal/local v (_cur_v or nrn_current `v`);
+        // never present v_unused SoA on the Equation path.
     } else if (type == BlockType::NetReceive) {
         if (info.net_receive_node) {
             collect(info.net_receive_node);
@@ -94,6 +97,9 @@ std::unordered_set<int> CodegenNeuronAccVisitor::live_float_indices_for_kernel(
         }
     }
 
+    const bool cur_stack =
+        type == BlockType::Equation && current_force_inline_safe() && info.conductances.empty();
+
     std::unordered_set<int> indices;
     for (std::string name: names) {
         if (!info.artificial_cell && name == "v") {
@@ -103,8 +109,13 @@ std::unordered_set<int> CodegenNeuronAccVisitor::live_float_indices_for_kernel(
         if (type == BlockType::State && is_table_statement_float(name)) {
             continue;
         }
-        // STATE uses stack v; do not present v_unused.
-        if (type == BlockType::State && name == naming::VOLTAGE_UNUSED_VARIABLE) {
+        // STATE / CURRENT use local v; do not present v_unused.
+        if ((type == BlockType::State || type == BlockType::Equation) &&
+            name == naming::VOLTAGE_UNUSED_VARIABLE) {
+            continue;
+        }
+        // Session B: intermediate ASSIGNED written in BREAKPOINT are stack on CURRENT.
+        if (cur_stack && is_current_stack_temp_float(name)) {
             continue;
         }
         try {
@@ -307,9 +318,11 @@ void CodegenNeuronAccVisitor::print_kernel_instance_data_copyin() {
 
 std::string CodegenNeuronAccVisitor::global_variable_name(const SymbolType& symbol,
                                                           bool use_instance) const {
-    // Force-inlined STATE body: use present(hh_global) names (hand-edit shape).
-    // inst.global is a host pointer and causes residual copyin under device calls.
-    if (inlining_state_specialized_body_) {
+    // Force-inlined STATE/CURRENT or thin nrn_current: use present(*_global)
+    // names (hand-edit shape). inst.global is a host pointer and causes residual
+    // copyin under device calls; thin CURRENT also has no `inst` parameter.
+    if (inlining_state_specialized_body_ || inlining_current_body_ ||
+        current_local_v_active_) {
         return CodegenNeuronCppVisitor::global_variable_name(symbol, false);
     }
     if (use_present_fp_indexing_ || use_instance) {
@@ -1200,15 +1213,24 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
             "? static_cast<double*>(acc_deviceptr(const_cast<double*>(node_data.node_voltages))) "
             ": const_cast<double*>(node_data.node_voltages);");
         if (type == BlockType::Equation) {
-            printer->add_line("double* vec_rhs = node_data.node_rhs;");
-            printer->add_line("double* vec_d = node_data.node_diagonal;");
+            // Jacob (override set) only needs vec_d; CURRENT only needs vec_rhs.
+            if (live_float_indices_override_) {
+                printer->add_line("double* vec_d = node_data.node_diagonal;");
+            } else {
+                printer->add_line("double* vec_rhs = node_data.node_rhs;");
+            }
         }
         // Session A: when STATE only calls thin specialized procedures (e.g.
         // rates_*_state), declare live SoA columns only — no fat present_fp
         // args to unused columns. Eigen Newton functors still need the full
         // present_fp set (functor_params), so keep full decls there.
-        if (type == BlockType::State && state_kernel_uses_only_specialized_procedures() &&
-            !info.eigen_newton_solver_exist && !info.eigen_linear_solver_exist) {
+        // Session B: force-inline CURRENT also uses live present only.
+        const bool state_slim =
+            type == BlockType::State && state_kernel_uses_only_specialized_procedures() &&
+            !info.eigen_newton_solver_exist && !info.eigen_linear_solver_exist;
+        const bool cur_slim =
+            type == BlockType::Equation && current_force_inline_safe() && info.conductances.empty();
+        if (state_slim || cur_slim) {
             print_present_fp_pointer_declarations_for(live_fp);
         } else {
             // General: all RANGE bases so procedure/functor args stay valid;
@@ -1250,16 +1272,23 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
         }
     } else if (!info.artificial_cell) {
         present_clause << ", nodeindices";
-        // Specialized STATE (force-inlined rates): no _thread / _ppvar use — drop
-        // unused present(_thread) residual (hand-edit shape).
+        // Specialized STATE / CURRENT force-inline: no _thread / _ppvar use —
+        // drop unused present(_thread) residual (hand-edit shape).
         const bool state_slim =
             type == BlockType::State && state_kernel_uses_only_specialized_procedures() &&
             !info.eigen_newton_solver_exist && !info.eigen_linear_solver_exist;
-        if (!state_slim) {
+        const bool cur_slim =
+            type == BlockType::Equation && current_force_inline_safe() && info.conductances.empty();
+        if (!state_slim && !cur_slim) {
             present_clause << ", _thread";
         }
         if (type == BlockType::Equation) {
-            present_clause << ", vec_rhs[:nt->end], vec_d[:nt->end]";
+            // CURRENT: vec_rhs only. Jacob (override set): vec_d only.
+            if (live_float_indices_override_) {
+                present_clause << ", vec_d[:nt->end]";
+            } else {
+                present_clause << ", vec_rhs[:nt->end]";
+            }
         }
         std::vector<int> ordered_fp(live_fp.begin(), live_fp.end());
         std::sort(ordered_fp.begin(), ordered_fp.end());
@@ -2047,18 +2076,183 @@ void CodegenNeuronAccVisitor::print_before_breakpoint_inline() {
     }
 }
 
+bool CodegenNeuronAccVisitor::current_force_inline_safe() const {
+    if (!info.breakpoint_node || info.artificial_cell) {
+        return false;
+    }
+    // VERBATIM / net_send need fat surface — keep general nrn_current call.
+    auto unsafe = collect_nodes(*info.breakpoint_node,
+                                {ast::AstNodeType::VERBATIM});
+    if (!unsafe.empty()) {
+        return false;
+    }
+    for (const auto& call: collect_nodes(*info.breakpoint_node,
+                                         {ast::AstNodeType::FUNCTION_CALL})) {
+        const auto cname = call->get_node_name();
+        if (is_net_send(cname) || is_net_move(cname) || is_net_event(cname)) {
+            return false;
+        }
+    }
+    // POINTER / RANDOM int columns in BREAKPOINT → general path.
+    std::unordered_set<std::string> names;
+    collect_ast_names(*info.breakpoint_node, names);
+    for (const auto& block: info.before_after_blocks) {
+        if (block) {
+            collect_ast_names(*block, names);
+        }
+    }
+    for (const auto& nm: names) {
+        try {
+            auto const pos = position_of_int_var(nm);
+            auto const sem = info.semantics[static_cast<size_t>(pos)].name;
+            if (sem == naming::POINTER_SEMANTIC || sem == naming::RANDOM_SEMANTIC ||
+                sem == naming::FOR_NETCON_SEMANTIC) {
+                return false;
+            }
+        } catch (...) {
+            // Not an int column.
+        }
+    }
+    return true;
+}
+
+bool CodegenNeuronAccVisitor::is_current_stack_temp_float(const std::string& name) const {
+    if (name == naming::VOLTAGE_UNUSED_VARIABLE || name == "v") {
+        return false;
+    }
+    if (name == naming::CONDUCTANCE_UNUSED_VARIABLE || name == naming::CONDUCTANCE_VARIABLE) {
+        return false;
+    }
+    // Pure RANGE reads written outside BREAKPOINT (e.g. gap `vgap`) must stay
+    // SoA present — only vars *written* in BREAKPOINT/BA are stack temps.
+    // Ion READ shadows (ena, ek) are special-cased as stack loads from dptr.
+    try {
+        auto const pos = position_of_float_var(name);
+        const auto& sym = codegen_float_variables[static_cast<size_t>(pos)];
+        // PARAMETER / STATE stay device SoA.
+        if (sym->has_any_property(NmodlType::param_assign | NmodlType::state_var)) {
+            return false;
+        }
+    } catch (...) {
+        return false;
+    }
+    // Ion read shadows: stack (initialized from dptr before body).
+    for (const auto& ion: info.ions) {
+        for (const auto& var: ion.reads) {
+            if (var == name) {
+                return true;
+            }
+        }
+        // Ionic current write vars (ina, ik) written in BREAKPOINT → stack.
+        for (const auto& var: ion.writes) {
+            if (ion.is_ionic_current(var) && var == name) {
+                return true;
+            }
+        }
+    }
+    // Collect LHS of assignments in breakpoint + BA.
+    std::unordered_set<std::string> written;
+    auto collect_written = [&](const ast::Ast* node) {
+        if (!node) {
+            return;
+        }
+        for (const auto& n: collect_nodes(*node, {ast::AstNodeType::BINARY_EXPRESSION})) {
+            auto* be = dynamic_cast<const ast::BinaryExpression*>(n.get());
+            if (!be || be->get_op().get_value() != ast::BOP_ASSIGN) {
+                continue;
+            }
+            const auto& lhs = be->get_lhs();
+            if (!lhs) {
+                continue;
+            }
+            for (const auto& nm: collect_nodes(*lhs, {ast::AstNodeType::NAME})) {
+                auto nname = nm->get_node_name();
+                if (!nname.empty()) {
+                    written.insert(std::move(nname));
+                }
+            }
+        }
+    };
+    if (info.breakpoint_node) {
+        collect_written(info.breakpoint_node);
+    }
+    for (const auto& block: info.before_after_blocks) {
+        collect_written(block);
+    }
+    return written.count(name) != 0;
+}
+
+std::vector<std::string> CodegenNeuronAccVisitor::current_stack_temp_names() const {
+    std::unordered_set<std::string> names;
+    if (info.breakpoint_node) {
+        collect_ast_names(*info.breakpoint_node, names);
+    }
+    for (const auto& block: info.before_after_blocks) {
+        if (block) {
+            collect_ast_names(*block, names);
+        }
+    }
+    // Ion READ shadows (ena, ek) may only appear via ion_read, not AST NAME.
+    for (const auto& ion: info.ions) {
+        for (const auto& var: ion.reads) {
+            names.insert(var);
+        }
+        for (const auto& var: ion.writes) {
+            if (ion.is_ionic_current(var)) {
+                names.insert(var);
+            }
+        }
+    }
+    std::vector<std::string> temps;
+    for (const auto& nm: names) {
+        if (is_current_stack_temp_float(nm)) {
+            temps.push_back(nm);
+        }
+    }
+    std::sort(temps.begin(), temps.end());
+    return temps;
+}
+
+void CodegenNeuronAccVisitor::print_inlined_nrn_current_at_v(const std::string& v_expr) {
+    // Own block so I(v+0.001) and I(v) can both declare _cur_v / current.
+    printer->add_line("{");
+    printer->increase_indent();
+    inlining_current_body_ = true;
+    current_local_v_active_ = true;
+    printer->fmt_line("double _cur_v = {};", v_expr);
+    printer->add_line("double current = 0.0;");
+    // No v_unused SoA write (hand-edit).
+    print_before_breakpoint_inline();
+    if (info.breakpoint_node) {
+        print_statement_block(*info.breakpoint_node->get_statement_block(), false, false);
+    }
+    for (auto& cur: info.currents) {
+        printer->fmt_line("current += {};", get_variable_name(cur));
+    }
+    // Export total current to outer scope via assignment to a name the caller
+    // reads after this block — caller wraps with I1/I0 capture differently.
+    // Store into a single outer `current` by assignment through a out-param pattern:
+    // the non-conductance kernel declares `double current;` once then we assign.
+    printer->add_line("_nrn_cur_sum = current;");
+    current_local_v_active_ = false;
+    inlining_current_body_ = false;
+    printer->decrease_indent();
+    printer->add_line("}");
+}
+
 void CodegenNeuronAccVisitor::print_nrn_current(const ast::BreakpointBlock& node) {
     use_present_fp_indexing_ = true;
     // Body reads t via get_variable_name → _nrn_thread_t parameter (firstprivate
     // from host). Device nt->_t is not reliable during CURRENT (IClamp window).
     use_host_captured_t_ = true;
+    // Thin fallback helper: formal `v` is the membrane voltage (no v_unused SoA).
+    current_local_v_active_ = true;
     const auto& args = nrn_current_parameters();
     const auto& block = node.get_statement_block();
     printer->add_newline(2);
     printer->fmt_push_block("static inline double nrn_current_{}({})",
                             info.mod_suffix,
                             get_parameter_str(args));
-    printer->fmt_line("{} = v;", indexed_fp_var(naming::VOLTAGE_UNUSED_VARIABLE));
     printer->add_line("double current = 0.0;");
     print_before_breakpoint_inline();
     print_statement_block(*block, false, false);
@@ -2068,6 +2262,7 @@ void CodegenNeuronAccVisitor::print_nrn_current(const ast::BreakpointBlock& node
     }
     printer->add_line("return current;");
     printer->pop_block();
+    current_local_v_active_ = false;
     use_present_fp_indexing_ = false;
     use_host_captured_t_ = false;
 }
@@ -2206,26 +2401,118 @@ void CodegenNeuronAccVisitor::print_nrn_state() {
 }
 
 CodegenNeuronAccVisitor::ParamVector CodegenNeuronAccVisitor::nrn_current_parameters() {
-    auto params = CodegenNeuronCppVisitor::nrn_current_parameters();
-    auto const v_param = params.back();
-    params.pop_back();
-    for (int i = 0; i < static_cast<int>(codegen_float_variables.size()); ++i) {
+    // Session B thin ABI: id + live present_fp only + host t + v.
+    // Drop unused _lmc / nt / _ppvar / _thread / inst / node_data (hand-edit).
+    ParamVector params;
+    params.emplace_back("", "size_t", "", "id");
+    auto live = live_float_indices_for_kernel(BlockType::Equation);
+    // Fallback thin function is used when force-inline is unsafe; include the
+    // full non-stack live set. When force-inline is safe we usually do not call
+    // this function, but still emit a usable thin signature.
+    std::vector<int> ordered(live.begin(), live.end());
+    std::sort(ordered.begin(), ordered.end());
+    for (int i: ordered) {
         params.emplace_back("", "double*", "", fmt::format("_present_fp_{}", i));
     }
-    // Host-captured sim time (see get_variable_name for t under present_fp indexing).
     params.emplace_back("", "double", "", "_nrn_thread_t");
-    params.push_back(v_param);
+    params.emplace_back("", "double", "", "v");
     return params;
 }
 
+void CodegenNeuronAccVisitor::print_nrn_cur_non_conductance_kernel() {
+    if (!current_force_inline_safe()) {
+        // Thin call (Session B ABI) — two evaluations for numerical di/dv.
+        CodegenNeuronCppVisitor::print_nrn_cur_non_conductance_kernel();
+        return;
+    }
+
+    // Session B: force-inline BREAKPOINT at v+0.001 and v (hand-edit shape).
+    // Outer sum slot filled by each inlined block (avoids redecl of current).
+    printer->add_line("double _nrn_cur_sum = 0.0;");
+    print_inlined_nrn_current_at_v("v + 0.001");
+    printer->add_line("double I1 = _nrn_cur_sum;");
+    for (auto& ion: info.ions) {
+        for (auto& var: ion.writes) {
+            if (ion.is_ionic_current(var)) {
+                const auto& name = get_variable_name(var);
+                printer->fmt_line("double di{} = {};", ion.name, name);
+            }
+        }
+    }
+    print_inlined_nrn_current_at_v("v");
+    printer->add_line("double I0 = _nrn_cur_sum;");
+    printer->add_line("double rhs = I0;");
+    printer->add_line("double g = (I1 - I0) / 0.001;");
+    for (auto& ion: info.ions) {
+        for (auto& var: ion.writes) {
+            if (ion.is_ionic_current(var)) {
+                const auto& lhs = std::string(naming::ION_VARNAME_PREFIX) + "di" + ion.name + "dv";
+                auto rhs_expr = fmt::format("(di{} - {}) / 0.001", ion.name, get_variable_name(var));
+                if (info.point_process) {
+                    auto area = get_variable_name(naming::NODE_AREA_VARIABLE);
+                    rhs_expr += fmt::format(" * 1.e2 / {}", area);
+                }
+                const ShadowUseStatement statement{lhs, "+=", rhs_expr};
+                const auto& text = process_shadow_update_statement(statement, BlockType::Equation);
+                printer->add_line(text);
+            }
+        }
+    }
+}
+
 void CodegenNeuronAccVisitor::print_nrn_cur_kernel(const ast::BreakpointBlock& node) {
-    // Use _d_voltages (deviceptr), not present(host node_voltages).
-    printer->add_line("int node_id = node_data.nodeindices[id];");
+    // Prefer local nodeindices (present) over node_data.nodeindices (hand-edit).
+    if (!info.artificial_cell) {
+        printer->add_line("int node_id = nodeindices[id];");
+    } else {
+        printer->add_line("int node_id = node_data.nodeindices[id];");
+    }
     printer->add_line("double v = _d_voltages[node_id];");
-    printer->add_line("auto* _ppvar = _ml_arg->pdata[id];");
-    const auto& read_statements = ion_read_statements(BlockType::Equation);
-    for (auto& statement: read_statements) {
-        printer->add_line(statement);
+
+    const bool force_inline = current_force_inline_safe() && info.conductances.empty();
+    if (!force_inline) {
+        printer->add_line("auto* _ppvar = _ml_arg->pdata[id];");
+    }
+
+    if (force_inline) {
+        // Ion READ + intermediate ASSIGNED as stack (not SoA present).
+        current_stack_temps_active_ = true;
+        std::unordered_set<std::string> declared;
+        for (const auto& ion: info.ions) {
+            for (const auto& var: ion.reads) {
+                auto const iter =
+                    std::find(ion.implicit_reads.begin(), ion.implicit_reads.end(), var);
+                if (iter != ion.implicit_reads.end()) {
+                    continue;
+                }
+                auto variable_names = read_ion_variable_name(var);
+                // double ena = (*ion_ena dptr);
+                printer->fmt_line("double {} = {};",
+                                  variable_names.first,
+                                  get_variable_name(variable_names.second));
+                declared.insert(variable_names.first);
+            }
+            for (const auto& var: ion.writes) {
+                if (ion.is_ionic_conc(var)) {
+                    auto variables = read_ion_variable_name(var);
+                    printer->fmt_line("double {} = {};",
+                                      variables.first,
+                                      get_variable_name(variables.second));
+                    declared.insert(variables.first);
+                }
+            }
+        }
+        for (const auto& tname: current_stack_temp_names()) {
+            if (declared.count(tname) == 0) {
+                printer->fmt_line("double {};", tname);
+                declared.insert(tname);
+            }
+        }
+    } else {
+        const auto& read_statements = ion_read_statements(BlockType::Equation);
+        for (auto& statement: read_statements) {
+            printer->add_line(statement);
+        }
     }
 
     // Conductance path does not call nrn_current_*; fold BEFORE BREAKPOINT here.
@@ -2254,6 +2541,8 @@ void CodegenNeuronAccVisitor::print_nrn_cur_kernel(const ast::BreakpointBlock& n
         printer->add_line("g = g*mfactor;");
         printer->add_line("rhs = rhs*mfactor;");
     }
+
+    current_stack_temps_active_ = false;
 }
 
 void CodegenNeuronAccVisitor::print_nrn_cur() {
@@ -2261,7 +2550,9 @@ void CodegenNeuronAccVisitor::print_nrn_cur() {
         return;
     }
 
-    if (info.conductances.empty()) {
+    // Session B: force-inline safe non-conductance CURRENT does not call
+    // nrn_current_*; skip emitting the helper (hand-edit). Else emit thin ABI.
+    if (info.conductances.empty() && !current_force_inline_safe()) {
         print_nrn_current(*info.breakpoint_node);
     }
 
@@ -2447,6 +2738,11 @@ std::string CodegenNeuronAccVisitor::float_variable_name(const SymbolType& symbo
         return fmt::format("_present_fp_{}[id]", position);
     }
 
+    // Session B: intermediate ASSIGNED / ion shadows are stack on CURRENT.
+    if (current_stack_temps_active_ && is_current_stack_temp_float(name)) {
+        return name;
+    }
+
     if (!use_present_fp_indexing_) {
         if (symbol->is_array()) {
             auto const dimension = symbol->get_length();
@@ -2482,6 +2778,10 @@ std::string CodegenNeuronAccVisitor::get_variable_name(const std::string& name,
     // H4c STATE: stack local `v` instead of v_unused SoA (rates arg + no present).
     if (state_local_v_active_ && (name == "v" || name == naming::VOLTAGE_UNUSED_VARIABLE)) {
         return "v";
+    }
+    // Session B CURRENT: formal/local voltage (force-inline uses `_cur_v`).
+    if (current_local_v_active_ && (name == "v" || name == naming::VOLTAGE_UNUSED_VARIABLE)) {
+        return inlining_current_body_ ? "_cur_v" : "v";
     }
     // Force-inlined STATE rates: bare neuron globals (celsius), not *(inst.celsius).
     if (inlining_state_specialized_body_) {
