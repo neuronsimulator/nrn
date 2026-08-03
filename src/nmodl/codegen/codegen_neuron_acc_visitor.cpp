@@ -426,9 +426,195 @@ CodegenNeuronAccVisitor::ParamVector CodegenNeuronAccVisitor::functor_params() {
     return params;
 }
 
+bool CodegenNeuronAccVisitor::procedure_safe_for_state_specialization(
+    const ast::Block& node) const {
+    // VERBATIM can index arbitrary present_fp / host symbols — keep general ABI.
+    if (!collect_nodes(node, {ast::AstNodeType::VERBATIM}).empty()) {
+        return false;
+    }
+    // Nested MOD procedure/function calls need their own thin ABI; Session A
+    // only specializes leaf procedures (InlineVisitor already folds pure FUNCTIONs).
+    for (const auto& call: collect_nodes(node, {ast::AstNodeType::FUNCTION_CALL})) {
+        const auto cname = call->get_node_name();
+        if (is_net_send(cname) || is_net_move(cname) || is_net_event(cname)) {
+            return false;
+        }
+        if (defined_method(cname) && cname != node.get_node_name()) {
+            return false;
+        }
+    }
+
+    std::unordered_set<std::string> names;
+    collect_ast_names(node, names);
+    // Ion / POINTER / RANDOM reads need fat dptr/id surface → general only.
+    for (const auto& nm: names) {
+        try {
+            auto const pos = position_of_int_var(nm);
+            auto const sem = info.semantics[static_cast<size_t>(pos)].name;
+            if (sem == naming::POINTER_SEMANTIC || sem == naming::RANDOM_SEMANTIC ||
+                sem == naming::FOR_NETCON_SEMANTIC) {
+                return false;
+            }
+            // Ion dptrs (ena, ik, …) — specialized STATE path must not need them.
+            const auto& var = codegen_int_variables[static_cast<size_t>(pos)];
+            if (!(var.is_index || var.is_integer || var.is_vdata)) {
+                return false;
+            }
+        } catch (...) {
+            // Not an int SoA column.
+        }
+    }
+    return true;
+}
+
+std::unordered_set<int> CodegenNeuronAccVisitor::procedure_live_present_fp_indices(
+    const ast::Block& node) const {
+    std::unordered_set<std::string> names;
+    collect_ast_names(node, names);
+    // Procedure formal parameters are not SoA columns.
+    for (const auto& p: node.get_parameters()) {
+        if (p) {
+            names.erase(p->get_node_name());
+        }
+    }
+    std::unordered_set<int> indices;
+    for (const auto& nm: names) {
+        if (is_table_statement_float(nm)) {
+            continue;  // double& stack / _kl_* refs, not present_fp
+        }
+        try {
+            indices.insert(position_of_float_var(nm));
+        } catch (...) {
+            // Not a float SoA column (global, local, celsius, …).
+        }
+    }
+    return indices;
+}
+
+std::vector<std::string> CodegenNeuronAccVisitor::procedure_table_temp_names(
+    const ast::Block& node) const {
+    std::unordered_set<std::string> names;
+    collect_ast_names(node, names);
+    std::vector<std::string> temps;
+    for (const auto& v: info.table_statement_variables) {
+        if (v && !v->is_array() && names.count(v->get_name()) != 0) {
+            temps.push_back(v->get_name());
+        }
+    }
+    return temps;
+}
+
+CodegenNeuronAccVisitor::ParamVector CodegenNeuronAccVisitor::state_specialized_method_parameters(
+    const ast::Block& node) const {
+    ParamVector params;
+    params.emplace_back("", fmt::format("{}&", instance_struct()), "", "inst");
+    for (const auto& tname: procedure_table_temp_names(node)) {
+        params.emplace_back("", "double&", "", fmt::format("_kl_{}", tname));
+    }
+    // Only non-table RANGE columns the procedure body actually touches.
+    auto live = procedure_live_present_fp_indices(node);
+    std::vector<int> ordered(live.begin(), live.end());
+    std::sort(ordered.begin(), ordered.end());
+    for (int i: ordered) {
+        params.emplace_back("", "double*", "", fmt::format("_present_fp_{}", i));
+    }
+    return params;
+}
+
+std::string CodegenNeuronAccVisitor::state_specialized_method_arguments(
+    const std::string& proc_name) const {
+    // Find procedure AST for live-set (same as emission).
+    const ast::Block* proc = nullptr;
+    for (const auto* p: info.procedures) {
+        if (p && p->get_node_name() == proc_name) {
+            proc = p;
+            break;
+        }
+    }
+    for (const auto* f: info.functions) {
+        if (f && f->get_node_name() == proc_name) {
+            proc = f;
+            break;
+        }
+    }
+    std::vector<std::string> args;
+    args.emplace_back("inst");
+    if (proc) {
+        for (const auto& tname: procedure_table_temp_names(*proc)) {
+            // STATE stack locals use bare names; nested specialized body uses _kl_*.
+            if (state_kernel_locals_active_) {
+                args.push_back(tname);
+            } else {
+                args.push_back(fmt::format("_kl_{}", tname));
+            }
+        }
+        auto live = procedure_live_present_fp_indices(*proc);
+        std::vector<int> ordered(live.begin(), live.end());
+        std::sort(ordered.begin(), ordered.end());
+        for (int i: ordered) {
+            args.push_back(fmt::format("_present_fp_{}", i));
+        }
+    }
+    return fmt::format("{}", fmt::join(args, ", "));
+}
+
+bool CodegenNeuronAccVisitor::state_kernel_uses_only_specialized_procedures() const {
+    // Only slim present_fp decls when we actually emitted specialized
+    // procedures. Vacuous true (no calls) would drop columns needed by
+    // non-procedure STATE bodies (arrays, functors, etc.).
+    if (state_specialized_procedures_.empty()) {
+        return false;
+    }
+    std::unordered_set<std::string> called;
+    auto collect_calls = [&](const ast::Ast* node) {
+        if (!node) {
+            return;
+        }
+        for (const auto& call: collect_nodes(*node, {ast::AstNodeType::FUNCTION_CALL})) {
+            const auto cname = call->get_node_name();
+            if (defined_method(cname)) {
+                called.insert(cname);
+            }
+        }
+    };
+    collect_calls(info.nrn_state_block);
+    for (const auto& block: info.matexp_blocks) {
+        collect_calls(block);
+    }
+    // Must have at least one MOD call covered by specialization.
+    if (called.empty()) {
+        return false;
+    }
+    for (const auto& cname: called) {
+        if (state_specialized_procedures_.count(cname) == 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
 CodegenNeuronAccVisitor::ParamVector CodegenNeuronAccVisitor::internal_method_parameters() {
     if (info.mod_suffix == "nothing") {
         return {};
+    }
+
+    // Session A: thin ABI for rates_*_state / f_rates_*_state.
+    if (emitting_state_specialized_procedure_) {
+        // inst + TABLE double& + live present_fp only; node_data/id/_ppvar dropped.
+        ParamVector params;
+        params.emplace_back("", fmt::format("{}&", instance_struct()), "", "inst");
+        for (const auto& tname: state_specialized_table_temps_) {
+            params.emplace_back("", "double&", "", fmt::format("_kl_{}", tname));
+        }
+        if (state_specialized_live_fp_) {
+            std::vector<int> ordered(state_specialized_live_fp_->begin(),
+                                     state_specialized_live_fp_->end());
+            std::sort(ordered.begin(), ordered.end());
+            for (int i: ordered) {
+                params.emplace_back("", "double*", "", fmt::format("_present_fp_{}", i));
+            }
+        }
+        return params;
     }
 
     ParamVector params;
@@ -445,8 +631,7 @@ CodegenNeuronAccVisitor::ParamVector CodegenNeuronAccVisitor::internal_method_pa
     params.emplace_back("", "NrnThread*", "", "nt");
     // H4c: TABLE statement vars (rates temps) are double& so STATE can pass stack
     // locals and HOC/table-update can bind _present_fp_i[id]. Other RANGE stay
-    // double* columns. (Cannot drop unused present_fp: VERBATIM and nested
-    // helpers still index _present_fp_N; thinning needs a full VERBATIM pass.)
+    // double* columns. General ABI keeps full present_fp for VERBATIM safety.
     for (int i = 0; i < static_cast<int>(codegen_float_variables.size()); ++i) {
         const auto& name = codegen_float_variables[static_cast<size_t>(i)]->get_name();
         if (is_table_statement_float(name)) {
@@ -461,6 +646,23 @@ CodegenNeuronAccVisitor::ParamVector CodegenNeuronAccVisitor::internal_method_pa
 std::string CodegenNeuronAccVisitor::internal_method_arguments() {
     if (info.mod_suffix == "nothing") {
         return {};
+    }
+
+    if (emitting_state_specialized_procedure_) {
+        std::vector<std::string> args;
+        args.emplace_back("inst");
+        for (const auto& tname: state_specialized_table_temps_) {
+            args.push_back(fmt::format("_kl_{}", tname));
+        }
+        if (state_specialized_live_fp_) {
+            std::vector<int> ordered(state_specialized_live_fp_->begin(),
+                                     state_specialized_live_fp_->end());
+            std::sort(ordered.begin(), ordered.end());
+            for (int i: ordered) {
+                args.push_back(fmt::format("_present_fp_{}", i));
+            }
+        }
+        return fmt::format("{}", fmt::join(args, ", "));
     }
 
     std::vector<std::string> args;
@@ -492,6 +694,268 @@ std::string CodegenNeuronAccVisitor::internal_method_arguments() {
     return fmt::format("{}", fmt::join(args, ", "));
 }
 
+void CodegenNeuronAccVisitor::print_state_specialized_function_declaration(
+    const ast::Block& node,
+    const std::string& cpp_method_name,
+    const std::unordered_set<CppObjectSpecifier>& specifiers) {
+    // Like print_function_declaration, but uses a fully-mangled name
+    // (method_name(base) + "_state") instead of method_name(base + "_state").
+    enable_variable_name_lookup = false;
+    auto type = default_float_data_type();
+    auto internal_params = internal_method_parameters();
+    const auto& params = node.get_parameters();
+    for (const auto& param: params) {
+        internal_params.emplace_back("", type, "", param.get()->get_node_name());
+    }
+    const char* return_type = node.is_function_block() ? default_float_data_type() : "int";
+    printer->add_indent();
+    printer->fmt_text("{} {} {}({})",
+                      get_object_specifiers(specifiers),
+                      return_type,
+                      cpp_method_name,
+                      get_parameter_str(internal_params));
+    enable_variable_name_lookup = true;
+}
+
+void CodegenNeuronAccVisitor::print_state_specialized_function_or_procedure(
+    const ast::Block& node,
+    const std::string& cpp_method_name) {
+    printer->add_newline(2);
+    print_state_specialized_function_declaration(
+        node, cpp_method_name, {CppObjectSpecifier::Static, CppObjectSpecifier::Inline});
+    printer->add_text(" ");
+    printer->push_block();
+    // ret_* uses a stable token (not the mangled C++ name).
+    if (node.is_function_block()) {
+        printer->fmt_line("{} ret_state = 0.0;", default_float_data_type());
+    } else {
+        printer->add_line("int ret_state = 0;");
+    }
+    // No dead node_data V load — thin ABI has no node_data; v is a formal.
+    print_statement_block(*node.get_statement_block(), false, false);
+    printer->add_line("return ret_state;");
+    printer->pop_block();
+}
+
+void CodegenNeuronAccVisitor::print_state_specialized_table_replacement(const ast::Block& node) {
+    // Same TABLE interpolation as print_table_replacement_function, but thin ABI
+    // (inst + _kl_* + live present_fp) and calls f_*_hh_state.
+    auto name = node.get_node_name();
+    auto statement = get_table_statement(node);
+    auto table_variables = statement->get_table_vars();
+    auto with = statement->get_with()->eval();
+    auto use_table_var = get_variable_name(naming::USE_TABLE_VARIABLE);
+    auto tmin_name = get_variable_name("tmin_" + name);
+    auto mfac_name = get_variable_name("mfac_" + name);
+    // rates_hh_state / f_rates_hh_state (not rates_state_hh).
+    auto function_name = method_name("f_" + name) + "_state";
+    auto specialized_name = method_name(name) + "_state";
+
+    printer->add_newline(2);
+    print_state_specialized_function_declaration(
+        node, specialized_name, {CppObjectSpecifier::Static, CppObjectSpecifier::Inline});
+    printer->push_block();
+    {
+        const auto& params = node.get_parameters();
+        printer->fmt_push_block("if ({} == 0)", use_table_var);
+        if (node.is_procedure_block()) {
+            printer->fmt_line("{}({}, {});",
+                              function_name,
+                              internal_method_arguments(),
+                              params[0].get()->get_node_name());
+            printer->add_line("return 0;");
+        } else {
+            printer->fmt_line("return {}({}, {});",
+                              function_name,
+                              internal_method_arguments(),
+                              params[0].get()->get_node_name());
+        }
+        printer->pop_block();
+
+        printer->fmt_line("double xi = {} * ({} - {});",
+                          mfac_name,
+                          params[0].get()->get_node_name(),
+                          tmin_name);
+        printer->push_block("if (isnan(xi))");
+        if (node.is_procedure_block()) {
+            for (const auto& var: table_variables) {
+                auto var_name = get_variable_name(var->get_node_name());
+                auto [is_array, array_length] = check_if_var_is_array(var->get_node_name());
+                if (is_array) {
+                    for (int j = 0; j < array_length; j++) {
+                        printer->fmt_line("{}[{}] = xi;", var_name, j);
+                    }
+                } else {
+                    printer->fmt_line("{} = xi;", var_name);
+                }
+            }
+            printer->add_line("return 0;");
+        } else {
+            printer->add_line("return xi;");
+        }
+        printer->pop_block();
+
+        printer->fmt_push_block("if (xi <= 0. || xi >= {}.)", with);
+        printer->fmt_line("int index = (xi <= 0.) ? 0 : {};", with);
+        if (node.is_procedure_block()) {
+            for (const auto& variable: table_variables) {
+                auto var_name = variable->get_node_name();
+                auto instance_name = get_variable_name(var_name);
+                auto table_name = get_variable_name("t_" + var_name);
+                auto [is_array, array_length] = check_if_var_is_array(var_name);
+                if (is_array) {
+                    for (int j = 0; j < array_length; j++) {
+                        printer->fmt_line(
+                            "{}[{}] = {}[{}][index];", instance_name, j, table_name, j);
+                    }
+                } else {
+                    printer->fmt_line("{} = {}[index];", instance_name, table_name);
+                }
+            }
+            printer->add_line("return 0;");
+        } else {
+            auto table_name = get_variable_name("t_" + name);
+            printer->fmt_line("return {}[index];", table_name);
+        }
+        printer->pop_block();
+
+        printer->add_line("int i = int(xi);");
+        printer->add_line("double theta = xi - double(i);");
+        if (node.is_procedure_block()) {
+            for (const auto& var: table_variables) {
+                auto var_name = var->get_node_name();
+                auto instance_name = get_variable_name(var_name);
+                auto table_name = get_variable_name("t_" + var_name);
+                auto [is_array, array_length] = check_if_var_is_array(var->get_node_name());
+                if (is_array) {
+                    for (size_t j = 0; j < array_length; j++) {
+                        printer->fmt_line(
+                            "{0}[{1}] = {2}[{1}][i] + theta*({2}[{1}][i+1]-{2}[{1}][i]);",
+                            instance_name,
+                            j,
+                            table_name);
+                    }
+                } else {
+                    printer->fmt_line("{0} = {1}[i] + theta*({1}[i+1]-{1}[i]);",
+                                      instance_name,
+                                      table_name);
+                }
+            }
+            printer->add_line("return 0;");
+        } else {
+            auto table_name = get_variable_name("t_" + name);
+            printer->fmt_line("return {0}[i] + theta * ({0}[i+1] - {0}[i]);", table_name);
+        }
+    }
+    printer->pop_block();
+}
+
+bool CodegenNeuronAccVisitor::procedure_called_from_state(const std::string& proc_name) const {
+    auto has_call = [&](const ast::Ast* node) {
+        if (!node) {
+            return false;
+        }
+        for (const auto& call: collect_nodes(*node, {ast::AstNodeType::FUNCTION_CALL})) {
+            if (call->get_node_name() == proc_name) {
+                return true;
+            }
+        }
+        return false;
+    };
+    if (has_call(info.nrn_state_block)) {
+        return true;
+    }
+    for (const auto& block: info.matexp_blocks) {
+        if (has_call(block)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void CodegenNeuronAccVisitor::print_state_specialized_procedure_versions(const ast::Block& node) {
+    // Session A: only PROCEDURE blocks invoked from STATE (e.g. rates). Do not
+    // specialize FUNCTIONs (vtrap): print_function mutates the AST return name
+    // to ret_<fn>, and thin FUNCTIONs are not the H4c residual.
+    if (!node.is_procedure_block()) {
+        return;
+    }
+    auto name = node.get_node_name();
+    if (!procedure_called_from_state(name)) {
+        return;
+    }
+    if (!procedure_safe_for_state_specialization(node)) {
+        return;
+    }
+    state_specialized_live_fp_ = procedure_live_present_fp_indices(node);
+    state_specialized_table_temps_ = procedure_table_temp_names(node);
+    emitting_state_specialized_procedure_ = true;
+    use_kl_ref_in_float_name_ = true;
+    use_present_fp_indexing_ = true;
+
+    if (info.function_uses_table(name)) {
+        // Analytic: f_rates_hh_state(inst, double& temps..., v)
+        print_state_specialized_function_or_procedure(node, method_name("f_" + name) + "_state");
+        // TABLE path: rates_hh_state(...)
+        print_state_specialized_table_replacement(node);
+    } else {
+        print_state_specialized_function_or_procedure(node, method_name(name) + "_state");
+    }
+
+    use_kl_ref_in_float_name_ = false;
+    emitting_state_specialized_procedure_ = false;
+    state_specialized_live_fp_.reset();
+    state_specialized_table_temps_.clear();
+    state_specialized_procedures_.insert(name);
+}
+
+void CodegenNeuronAccVisitor::print_function_or_procedure(
+    const ast::Block& node,
+    const std::string& name,
+    const std::unordered_set<CppObjectSpecifier>& specifiers) {
+    printer->add_newline(2);
+    print_function_declaration(node, name, specifiers);
+    printer->add_text(" ");
+    printer->push_block();
+
+    if (node.is_function_block()) {
+        auto type = default_float_data_type();
+        printer->fmt_line("{} ret_{} = 0.0;", type, name);
+    } else {
+        printer->fmt_line("int ret_{} = 0;", name);
+    }
+
+    // General path: dead host V load for VERBATIM/legacy.
+    if (info.mod_suffix != "nothing" && !info.artificial_cell) {
+        printer->add_line(
+            "double v = node_data.node_voltages ? "
+            "node_data.node_voltages[node_data.nodeindices[id]] : 0.0;");
+    }
+
+    print_statement_block(*node.get_statement_block(), false, false);
+    printer->fmt_line("return ret_{};", name);
+    printer->pop_block();
+}
+
+void CodegenNeuronAccVisitor::print_function_call(const ast::FunctionCall& node) {
+    const auto& name = node.get_node_name();
+    if (state_kernel_locals_active_ && defined_method(name) &&
+        state_specialized_procedures_.count(name) != 0) {
+        const auto& arguments = node.get_arguments();
+        // rates_hh_state (not rates_state_hh)
+        printer->add_text(method_name(name) + "_state", '(');
+        auto internal_args = state_specialized_method_arguments(name);
+        printer->add_text(internal_args);
+        if (!arguments.empty() && !internal_args.empty()) {
+            printer->add_text(", ");
+        }
+        print_vector_elements(arguments, ", ");
+        printer->add_text(')');
+        return;
+    }
+    CodegenCppVisitor::print_function_call(node);
+}
+
 void CodegenNeuronAccVisitor::print_function_procedure_helper(const ast::Block& node) {
     auto name = node.get_node_name();
     if (info.function_uses_table(name)) {
@@ -509,6 +973,8 @@ void CodegenNeuronAccVisitor::print_function_procedure_helper(const ast::Block& 
         print_function_or_procedure(node, name);
         use_kl_ref_in_float_name_ = false;
     }
+    // Session A: also emit thin *_state version when safe (STATE hot path).
+    print_state_specialized_procedure_versions(node);
 }
 
 void CodegenNeuronAccVisitor::print_function_definitions() {
@@ -597,9 +1063,18 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
             printer->add_line("double* vec_rhs = node_data.node_rhs;");
             printer->add_line("double* vec_d = node_data.node_diagonal;");
         }
-        // Declare all RANGE bases so procedure call args (_present_fp_*) stay
-        // valid; OpenACC present clause below is live-set only (H4c).
-        print_present_fp_pointer_declarations();
+        // Session A: when STATE only calls thin specialized procedures (e.g.
+        // rates_*_state), declare live SoA columns only — no fat present_fp
+        // args to unused columns. Eigen Newton functors still need the full
+        // present_fp set (functor_params), so keep full decls there.
+        if (type == BlockType::State && state_kernel_uses_only_specialized_procedures() &&
+            !info.eigen_newton_solver_exist && !info.eigen_linear_solver_exist) {
+            print_present_fp_pointer_declarations_for(live_fp);
+        } else {
+            // General: all RANGE bases so procedure/functor args stay valid;
+            // OpenACC present clause below is still live-set only (H4c).
+            print_present_fp_pointer_declarations();
+        }
         print_present_dptr_pointer_declarations_for(live_dptr);
     }
 

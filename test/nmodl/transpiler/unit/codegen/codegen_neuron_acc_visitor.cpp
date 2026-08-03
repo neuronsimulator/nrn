@@ -116,7 +116,28 @@ SCENARIO("NEURON OpenACC codegen emits offload pragmas", "[codegen][neuron][acc]
             REQUIRE_THAT(generated, ContainsSubstring("nrn_pragma_acc(parallel loop"));
             REQUIRE_THAT(generated, ContainsSubstring("nrn_pragma_acc(data present(nt, _ml_arg"));
         }
+
+        THEN("Session A: specialized rates_*_state thin ABI for STATE hot path") {
+            const auto generated = get_neuron_acc_code_from_file(mod_path);
+            // Thin specialized versions exist (general rates_hh kept for HOC/table rebuild).
+            REQUIRE_THAT(generated, ContainsSubstring("rates_hh_state"));
+            REQUIRE_THAT(generated, ContainsSubstring("f_rates_hh_state"));
+            // STATE calls thin version, not fat general rates_hh(... present_fp_0 ...).
+            REQUIRE_THAT(generated, ContainsSubstring("rates_hh_state(inst,"));
+            // Thin ABI: inst + double& TABLE temps + v — no node_data/id/_ppvar in _state sig.
+            REQUIRE_THAT(generated,
+                         ContainsSubstring(
+                             "inline static int rates_hh_state(hh_Instance& inst, double& _kl_minf"));
+            REQUIRE(generated.find("rates_hh_state(hh_Instance& inst, hh_NodeData&") ==
+                    std::string::npos);
+            // STATE calls thin rates_hh_state(inst, minf, ..., v)
+            REQUIRE_THAT(generated, ContainsSubstring("rates_hh_state(inst,"));
+            REQUIRE_THAT(generated, ContainsSubstring("nrn_state_hh"));
+        }
     }
+
+    // VERBATIM keeps general ABI via procedure_safe_for_state_specialization;
+    // full VERBATIM ACC codegen needs host macro scaffolding beyond this harness.
 
     GIVEN("the canonical passive.mod shipped with NEURON") {
         const auto mod_path = std::filesystem::path(NRN_SOURCE_DIR) / "src/nrnoc/passive.mod";

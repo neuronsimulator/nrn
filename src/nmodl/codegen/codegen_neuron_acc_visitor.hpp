@@ -8,6 +8,7 @@
 #include <optional>
 #include <string>
 #include <unordered_set>
+#include <vector>
 
 #include "codegen/codegen_neuron_cpp_visitor.hpp"
 
@@ -70,6 +71,16 @@ class CodegenNeuronAccVisitor: public CodegenNeuronCppVisitor {
     ParamVector functor_params() override;
 
     void print_function_procedure_helper(const ast::Block& node) override;
+
+    /** Thin specialized procedure call from STATE (rates_*_state). */
+    void print_function_call(const ast::FunctionCall& node) override;
+
+    /** Skip dead node_data V load in state-specialized procedure bodies. */
+    void print_function_or_procedure(
+        const ast::Block& node,
+        const std::string& name,
+        const std::unordered_set<CppObjectSpecifier>& specifiers = {
+            CppObjectSpecifier::Inline}) override;
 
     void print_gpu_phase_registration() override;
 
@@ -152,6 +163,30 @@ class CodegenNeuronAccVisitor: public CodegenNeuronCppVisitor {
     mutable bool state_local_v_active_{false};
 
     /**
+     * Session A: emitting rates_*_state (or f_rates_*_state) thin ABI — only
+     * inst + live double& TABLE temps + live present_fp columns + MOD args.
+     */
+    mutable bool emitting_state_specialized_procedure_{false};
+
+    /**
+     * Live non-table present_fp indices for the procedure currently being
+     * specialized (feeds internal_method_parameters while emitting).
+     */
+    mutable std::optional<std::unordered_set<int>> state_specialized_live_fp_;
+
+    /**
+     * TABLE temp names (minf, mtau, …) for the procedure currently being
+     * specialized — double& params in thin ABI order.
+     */
+    mutable std::vector<std::string> state_specialized_table_temps_;
+
+    /**
+     * MOD procedure names for which a *_state specialized version was emitted.
+     * STATE call sites use the thin ABI when the name is in this set.
+     */
+    std::unordered_set<std::string> state_specialized_procedures_;
+
+    /**
      * Optional live SoA column set for the next parallel loop (e.g. jacob only
      * needs g_unused). When nullopt, compute from BlockType AST usage.
      */
@@ -170,6 +205,49 @@ class CodegenNeuronAccVisitor: public CodegenNeuronCppVisitor {
     /** Ion dptr indices used on this kernel path (empty → no deviceptr ions). */
     [[nodiscard]] std::unordered_set<int> live_dptr_indices_for_kernel(BlockType type);
 
+    /**
+     * Safety gate for state-specialized procedure versions: no VERBATIM, no
+     * net_send/move/event, no ion/POINTER/RANDOM RANGE uses, no nested MOD
+     * procedure/function calls (after InlineVisitor those are rare).
+     */
+    [[nodiscard]] bool procedure_safe_for_state_specialization(const ast::Block& node) const;
+
+    /** True if STATE / matexp path has a call to \p proc_name. */
+    [[nodiscard]] bool procedure_called_from_state(const std::string& proc_name) const;
+
+    /** Non-table float SoA indices the procedure body actually touches. */
+    [[nodiscard]] std::unordered_set<int> procedure_live_present_fp_indices(
+        const ast::Block& node) const;
+
+    /** TABLE statement temp names used by the procedure body. */
+    [[nodiscard]] std::vector<std::string> procedure_table_temp_names(
+        const ast::Block& node) const;
+
+    /** Thin internal params for *_state specialized versions of \p node. */
+    [[nodiscard]] ParamVector state_specialized_method_parameters(const ast::Block& node) const;
+
+    /** Thin internal args for STATE call of specialized \p proc_name. */
+    [[nodiscard]] std::string state_specialized_method_arguments(
+        const std::string& proc_name) const;
+
+    /** Emit f_*_hh_state / rates_*_hh_state after the general versions. */
+    void print_state_specialized_procedure_versions(const ast::Block& node);
+
+    /** Fully-mangled declaration: method_name(base) + "_state". */
+    void print_state_specialized_function_declaration(
+        const ast::Block& node,
+        const std::string& cpp_method_name,
+        const std::unordered_set<CppObjectSpecifier>& specifiers);
+
+    /** Analytic / non-TABLE specialized procedure body. */
+    void print_state_specialized_function_or_procedure(const ast::Block& node,
+                                                       const std::string& cpp_method_name);
+
+    /** TABLE-aware rates_*_hh_state body (thin ABI). */
+    void print_state_specialized_table_replacement(const ast::Block& node);
+
+    /** True when every defined MOD call from STATE has a thin specialized version. */
+    [[nodiscard]] bool state_kernel_uses_only_specialized_procedures() const;
 
     void collect_ast_names(const ast::Ast& node, std::unordered_set<std::string>& names) const;
 

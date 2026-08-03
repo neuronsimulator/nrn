@@ -130,6 +130,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-08-01 | GPU-P4-multirank | — | CUDA MPS ≈ CN; device_assign on tip (`db83f4adb`); handoff → density. |
 | 2026-08-02 | GPU-P4-density-H4 | — | H4c NMODL product: TABLE temps stack/`double&`; live present; state_hh ~81 µs; residual thin-rates. |
 | 2026-08-02 | GPU-P4-density-H4 | — | Phase 0 hot-path specialization plan: contracts, harness, baselines; Session A rates_*_state. |
+| 2026-08-03 | GPU-P4-hotpath-rates-state | — | Session A: rates_*_state thin ABI; state_hh ~73 µs (vs 81); 688 green; residual vs hand ~18. |
 
 ---
 
@@ -440,6 +441,7 @@ Phase timer (`NRN_NATIVE_GPU_PHASE_TIMER=1`):
 | CURRENT min-present (H4c hand) | **explor win (smaller)** | 8 SoA cols + ion dptrs; `nrn_cur` ~18→~13 µs; wall ~1.52 s with STATE edit. |
 | H4c NMODL productize (codegen) | **explor win (partial)** | See H4c product notes. **No tip-merge yet**. |
 | Hot-path specialization plan Phase 0 | **done (docs)** | Contracts + harness + baselines below. Session A implements. |
+| Hot-path rates_*_state (Session A Ph 1–2) | **explor win (partial)** | Thin `rates_*_hh_state`; product green; state_hh ~73 µs (was ~81). Residual vs hand ~18 + copy tax. No tip-merge. |
 | Dentate multi-rank profile | **done** | 4-rank thrash without MPS; **MPS ≈ CN**. |
 | Multi-rank GPU share (MPS) | **done (on tip)** | device_assign + warn (`db83f4adb`); ops: `nvidia-cuda-mps-control -d`. |
 | Single device-resource owner | open | Only if exit/leak forces. |
@@ -470,6 +472,29 @@ Phase timer (`NRN_NATIVE_GPU_PHASE_TIMER=1`):
 | product 688 dV=0 | green | **green** | green | — |
 
 **Residual vs hand-edit:** general procedure ABI still passes unused non-table `_present_fp_*` into STATE call of `rates_hh`. Hand-edit inlined rates. Next: specialized hot-path versions (plan below).
+
+### Session A — rates_*_state (2026-08-03, `local/gpu-P4-density-H4`)
+
+**Codegen (`codegen_neuron_acc_visitor`):**
+
+1. **Analysis / safety:** specialize only **PROCEDURE**s called from STATE when safe — no VERBATIM, no net_send/move/event, no ion/POINTER/RANDOM, no nested MOD procedure calls (InlineVisitor folds pure FUNCTIONs like `vtrap`). FUNCTIONs (e.g. `vtrap`) stay general only.
+2. **Emit** `f_<proc>_<suffix>_state` + `<proc>_<suffix>_state` (e.g. `rates_hh_state`) with thin ABI: `inst` + live TABLE `double&` temps + live present_fp columns only + MOD args (`v`). No `node_data` / `id` / `_ppvar` / `_thread` / fat present_fp.
+3. **STATE call site** uses thin version when specialized; general `rates_hh` remains for HOC / table rebuild / INITIAL.
+4. **STATE present_fp decls:** live columns only when all STATE MOD calls are specialized and no Eigen Newton/linear (functors need full set). Else full decls.
+5. **Unit tests:** `testcodegen "[codegen][neuron][acc]"` — hh emits `rates_hh_state` thin sig; STATE calls it.
+
+**Measure (nring=16, tstop=100, TABLE, product phases=1):**
+
+| metric | H4c product (Ph0) | Session A rates_*_state | H4c hand-edit | CN (H3b) |
+|--------|-------------------|-------------------------|---------------|----------|
+| `state_hh` avg | ~**81 µs** | ~**73 µs** (ACC_TIME noisy; one run ~160) | ~18 µs | ~19 µs |
+| `nrn_cur_hh` avg | ~17 µs | ~**20 µs** | ~13 µs | — |
+| wall multi-warm | ~1.88–1.92 s | ~**2.35–2.52 s** (noise; not a clear wall win) | ~1.52 s | — |
+| product 688 dV=0 | green | **green** | green | — |
+
+**STATE shape (product codegen now):** present only m,h,n; `rates_hh_state(inst, minf,…,ntau, v)`. Residual vs hand-edit: still a device **call** (not full inline of TABLE body) + residual copyin/copyout under state_hh (~24k transfers/run in ACC_TIME). Milestone ≲25–30 µs not yet met.
+
+**Next:** force-inline unique STATE rates body (or `always_inline` ACC routine); drop unused `_thread` present; Session B CURRENT; tip-merge only on clear wall win.
 
 ---
 
@@ -511,28 +536,30 @@ Excerpts for hand-edit reference: `doc/gpu/h4c-handedit-nrn_state_hh.excerpt.cpp
 |----|----------------|------------------|-----------------|-------------|
 | H4b | ~131 µs | ~18 µs | ~2.1–2.5 s | green |
 | **H4c product (Phase 0 baseline)** | ~**81 µs** | ~**17 µs** | ~**1.88–1.92 s** | **green** |
+| Session A rates_*_state | ~**73 µs** | ~**20 µs** | ~**2.35–2.52 s** | **green** |
 | H4c hand-edit | ~18 µs | ~13 µs | ~1.52 s (state+cur) | green |
 | CN (H3b TABLE) | ~19 µs | — | — | — |
 
-Milestone A (rates STATE specialization): `state_hh` **≲ 25–30 µs** first; then chase ~18. Product always 688 phases=1.
+Milestone A (rates STATE specialization): `state_hh` **≲ 25–30 µs** first; then chase ~18. Product always 688 phases=1. **Session A partial:** thin ABI landed; ~73 µs, not yet 25–30.
 
 #### Implementation phases (after Phase 0)
 
 | Phase | Work | Exit |
 |-------|------|------|
-| **1** | Live-set / specialization keys + safety gates (analysis infra) | unit tests on synthetic MOD |
-| **2** | Multiple procedure versions; wire **`rates_*_state`** (or inline if unique/small) | HH STATE thin call; state_hh moves; 688 green |
+| **1** | Live-set / specialization keys + safety gates (analysis infra) | **done** unit tests |
+| **2** | Multiple procedure versions; wire **`rates_*_state`** (or inline if unique/small) | **partial** thin call; ~73 µs; 688 green; inline still open |
 | **3** | CURRENT helpers / thin `nrn_current`; then PP NET_RECEIVE | cur + PP ACC_TIME; 688 green |
 | **4** | Fallback matrix + regression (VERBATIM must stay general) | suite notes |
 | **5** | Remeasure; tip-merge H4a+b+c only if wall win clear | tip decision |
 
-**Session order:** A = Phase 1+2 (rates STATE first). B = CURRENT. C = NET_RECEIVE PP. D = tip-merge packet.
+**Session order:** A = Phase 1+2 (rates STATE first) — **partial**. B = CURRENT (or finish A inline). C = NET_RECEIVE PP. D = tip-merge packet.
 
 ### Residual perf debt (next P4 when reopened)
 
-1. **Session A:** hot-path specialization Phase 1–2 — `rates_*_state` thin ABI (or inline); close H4c residual toward CN `state_hh`.
-2. **Product multi-rank:** CUDA MPS when ranks/GPU > 1.
-3. Optional: lastpart-deliver; phases=0 prcellstate download residual.
+1. **Finish A residual:** force-inline unique STATE `rates` TABLE body (hand-edit shape) → chase ≲25–30 µs / ~18; kill residual state_hh copyin/copyout.
+2. **Session B:** CURRENT helpers / thin `nrn_current`.
+3. **Product multi-rank:** CUDA MPS when ranks/GPU > 1.
+4. Optional: lastpart-deliver; phases=0 prcellstate download residual.
 
 ---
 
@@ -625,31 +652,30 @@ Commit locally without push. Update Status/Next before exit.
 
 ## Next (one line — update every session end)
 
-**Next:** Session A — hot-path specialization Phases 1–2 (`rates_*_state` thin ABI or inline); then CURRENT/NET_RECEIVE; tip-merge when wall win clear. Multi-rank: **CUDA MPS**. **Not** Traub `use_gap=1`.
+**Next:** Finish Session A residual — **force-inline** unique STATE `rates` TABLE body (chase state_hh ≲25–30 µs / ~18; kill copy tax); then Session B CURRENT; tip-merge only on wall win. Multi-rank: **CUDA MPS**. **Not** Traub `use_gap=1`.
 
-### Starting prompt — Session A (hot-path rates STATE)
+### Starting prompt — Session A residual (inline rates STATE)
 
 ```text
 Read ~/neuron/notes/PORTFOLIO.md (GPU-native), then
 ~/neuron/nrngpu/doc/gpu/native-coreneuron-parity.md
-  (§ Hot-path ACC specialization Phase 0 + H4c product notes),
+  (§ Session A rates_*_state + Hot-path ACC specialization),
 GROK-GPU-NATIVE.md, AGENTS.md.
 
-Kind: feature. Portfolio: GPU-native. Phase: P4 hot-path specialization Session A
-(Phases 1–2: analysis + rates_*_state).
+Kind: feature. Portfolio: GPU-native. Phase: P4 hot-path rates STATE residual
+(force-inline unique rates into STATE).
 Tree: ~/neuron/nrngpu. Branch: local/gpu-P4-density-H4 (or off tip if rebased).
 Do not tip-merge until measured wall win.
 
-Phase 0 is done (contracts, harness, baselines in parity doc).
-H4c product: live present 3 cols + TABLE temps stack; state_hh ~81 µs residual
-is fat general rates ABI (not fat present). rates is device fn inside STATE loop.
-MOD is rates(v) only. Implement specialized rates for STATE when safe (no VERBATIM);
-fallback general. Prefer thin args; inline if unique/small. Measure ACC_TIME state_hh
-+ multi-warm; product phases=1 dV=0 688. High performance sacred; heap-free weight_index.
+Session A partial: rates_hh_state thin ABI landed; state_hh ~73 µs (was ~81);
+product 688 green. Residual vs hand-edit (~18 µs): still a device call + copyin/out
+under state_hh. Prefer force-inline of unique/safe STATE rates body (TABLE path);
+keep general rates for HOC/table rebuild. Measure ACC_TIME state_hh + multi-warm;
+product phases=1 dV=0 688. High performance sacred; heap-free weight_index.
 Not Traub use_gap=1.
 
 Commit locally without push. Update Status/Next before exit.
-/rename GPU-P4-hotpath-rates-state
+/rename GPU-P4-hotpath-rates-inline
 ```
 
 ### Branching (2026-08-02)
