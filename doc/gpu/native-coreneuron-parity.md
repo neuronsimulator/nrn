@@ -142,6 +142,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-08-03 | GPU-P4-tip-merge-setup-rhs | — | FF-merge Session E onto `local/gpu-native`; tip re-smoke: 688 green; setup-rhs ~0.24; wall settled ~1.15–1.17 s. |
 | 2026-08-03 | GPU-P4-multirank-mps | — | Product multi-rank CUDA MPS: ensure_cuda_mps harness (ringtest MPI + dentate); docs. Eigen STATE full-present fix (CadepK crash). Dentate 4-rank MPS psolve ~1.5–1.6 s; ringtest 2-rank 688 green. Spike multiset residual 390 vs 400. |
 | 2026-08-03 | GPU-P4-dentate-spikes | — | Eigen STATE: present+refresh v_unused for functors (H4c stack v left functors on stale SoA V). **kin-native green** (was empty spikes). Dentate still 390 vs 400 = all 10 GCs silent (na8st CONSERVE N=8 residual). Ringtest 688@100 + 2-rank MPI green. |
+| 2026-08-03 | GPU-P4-dentate-exp2syn | — | **False lead closed:** end-of-run A/B=0 was `finalize_psolve_download` after sorted-token teardown (no-op). Fix: finalize inside token scope. Topology-matched Exp2Syn A/B/g match. **True first break:** t=0.05 **post_solve** all GC V=NaN (post_setup finite). Still 390 vs 400. |
 
 ---
 
@@ -464,7 +465,7 @@ Phase timer (`NRN_NATIVE_GPU_PHASE_TIMER=1`):
 | Multi-rank GPU share (MPS) | **done (on tip)** | device_assign + warn; **product harness** `test/external/ensure_cuda_mps.sh` wired into ringtest MPI + dentate native ctests; docs (`native-gpu-build.rst`, `gpu-testing.rst`, AGENTS). |
 | Eigen STATE min-present illegal address | **fixed (on tip)** | H4 live-present under-counted Eigen Newton functor RANGE (e.g. CadepK missing ion shadows). Full present when `eigen_newton`/`eigen_linear`. Unblocked dentate crash. |
 | Eigen STATE v_unused for functors | **fixed (on tip)** | H4c stack `v` left Eigen functors reading stale `v_unused` SoA (and often un-present). STATE now presents v_unused + writes `_present_fp_N[id] = v` when Eigen solvers exist. **testcorenrn_kin_native** green. |
-| Dentate spike multiset 400 | **residual (localized)** | **390 vs 400** = all 10 GCs silent. **prcellstate** (gid 500006 @ t=4.5/5): CPU MPP→Exp2Syn **A/B/g active**; GPU same synapse **A/B/g=0** (factor OK). Threshold V CPU depolarized, GPU stuck ~−75. Other pops exact. Harness: `test/external/reduced_dentate/prcellstate_gc_native.sh` + `run_dentate_prcellstate.py`. Next: Exp2Syn net_buf / art-cell MPP deliver→device (see `force_compute_gpu_for_device_deliver` comment). |
+| Dentate spike multiset 400 | **residual (re-localized)** | **390 vs 400** = all 10 GCs silent. **False lead closed:** Exp2Syn A/B/g match CPU once `finalize_psolve_download` runs *before* sorted-token teardown (was no-op → host A/B=0). **True first break:** step 2 `t=0.05` **post_solve** — post_setup V finite (~−75), post_solve **all cell V = NaN** (CPU finite). Step 1 `t=0.025` all phases finite. Harness: `prcellstate_gc_native.sh` phases=1. Next: device post_solve / voltage update NaN on GC (not MPP deliver). |
 | Single device-resource owner | open | Only if exit/leak forces. |
 
 ### H4c NMODL productize (2026-08-02, `local/gpu-P4-density-H4`)
@@ -793,7 +794,7 @@ Commit locally without push. Update Status/Next before exit.
 
 ## Next (one line — update every session end)
 
-**Next:** dentate GC — **Exp2Syn MPP→GC device NET_RECEIVE** (prcellstate: GPU A/B/g=0 after MPP spikes; CPU nonzero). Harness in `test/external/reduced_dentate/prcellstate_gc_native.sh`. Kin closed. Phase C / slim JACOB parked. **Not** Traub gap.
+**Next:** dentate GC — **post_solve NaN V from step 2** (prcellstate phases @ t=0.05: post_setup finite, post_solve all NaN). Exp2Syn deliver path OK after finalize-before-teardown. Harness: `prcellstate_gc_native.sh`. Kin closed. Phase C / slim JACOB parked. **Not** Traub gap.
 
 ### Starting prompt — Session A residual (closed; archive)
 
@@ -839,29 +840,30 @@ Session closed 2026-08-03: Eigen STATE present+refresh v_unused for functors.
 testcorenrn_kin_native green. Ringtest 688@100 + 2-rank MPI green. Dentate still
 390 vs 400 = all GC silent (na8st residual).
 
-### Starting prompt — next (dentate Exp2Syn MPP→GC deliver)
+### Starting prompt — next (dentate GC post_solve NaN V)
 
 ```text
 Read ~/neuron/notes/PORTFOLIO.md (GPU-native), then
 ~/neuron/nrngpu/doc/gpu/native-coreneuron-parity.md
-  (Phase 4 Status residual: Exp2Syn MPP→GC),
+  (Phase 4 Status residual: GC post_solve NaN V step 2),
 GROK-GPU-NATIVE.md, AGENTS.md.
 
-Kind: feature. Portfolio: GPU-native. Phase: P4 dentate Exp2Syn deliver.
+Kind: feature. Portfolio: GPU-native. Phase: P4 dentate GC post_solve NaN.
 Tree: ~/neuron/nrngpu. Branch: local/gpu-native.
 
-Context: kin-native closed. Dentate 390 vs 400 = GC silent. prcellstate
-(gid 500006 t=4.5/5): CPU MPP Exp2Syn A/B/g active; GPU A/B/g=0 (factor ok).
-Harness: test/external/reduced_dentate/prcellstate_gc_native.sh
-  (workdir: build-gpu/test/reduced_dentate_native/neuron_gpu_native + ACC special).
-force_compute_gpu_for_device_deliver already exists (net_events.cpp). Trace
-art-cell MPP spike → Exp2Syn net_buf_receive. Not Traub gap.
+Context: Exp2Syn deliver OK after finalize_psolve_download before token
+teardown. 390 vs 400 remains. First phase break: t=0.05 post_solve —
+post_setup V finite, post_solve all 161 GC node V = NaN (CPU finite).
+Step 1 t=0.025 all phases OK. Harness:
+  test/external/reduced_dentate/prcellstate_gc_native.sh 500006 0.05 1
+  workdir: build-gpu/test/reduced_dentate_native/neuron_gpu_native + ACC special.
+Trace device post_solve / voltage update / permute-2 on GC. Not Traub gap.
 
-This session: GPU MPP→GC Exp2Syn conductance matches CPU; 400 spikes.
+This session: GPU GC voltages finite through post_solve; 400 spikes.
 High performance sacred; heap-free weight_index.
 
 Commit locally without push. Update Status/Next before exit.
-/rename GPU-P4-dentate-exp2syn
+/rename GPU-P4-dentate-post-solve-nan
 ```
 
 ### Branching (2026-08-03)

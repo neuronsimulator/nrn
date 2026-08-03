@@ -55,13 +55,21 @@ run_one() {
       mpiexec -n 1 special -notatty -python "$py"
 }
 
+# Avoid comparing stale dumps from earlier tstops (ls *t* is not unique).
+rm -f "${gid}"_cpu-t*.nrndat "${gid}"_gpu-t*.nrndat \
+  "${gid}"_cpu_t*.nrndat "${gid}"_gpu_t*.nrndat \
+  "${gid}"_*_post_setup.nrndat "${gid}"_*_post_solve.nrndat \
+  "${gid}"_*_pre_nonvint.nrndat "${gid}"_*_post_nonvint.nrndat 2>/dev/null || true
+rm -f main_prcs.hoc 2>/dev/null || true
+
 echo "=== dentate prcellstate gid=$gid tstop=$tstop phases=$phases ==="
 run_one 0 cpu
 run_one 1 gpu
 
-# HOC %g may print 5 instead of 5.0 — resolve actual dump names.
-cpu="$(ls -1 ${gid}_cpu-t*.nrndat 2>/dev/null | sort | tail -1 || true)"
-gpu="$(ls -1 ${gid}_gpu-t*.nrndat 2>/dev/null | sort | tail -1 || true)"
+# Resolve dump names written by this run (HOC %g may drop .0).
+# Prefer newest mtime among tag-matching files.
+cpu="$(ls -1t ${gid}_cpu-t*.nrndat 2>/dev/null | head -1 || true)"
+gpu="$(ls -1t ${gid}_gpu-t*.nrndat 2>/dev/null | head -1 || true)"
 if [[ -z ${cpu:-} || -z ${gpu:-} ]]; then
   echo "error: missing dumps for gid=$gid (cpu='$cpu' gpu='$gpu')" >&2
   ls -la ./*"${gid}"* 2>/dev/null || true
@@ -71,3 +79,16 @@ fi
 echo "=== rdcellstate $cpu vs $gpu ==="
 python3 "$rdcellstate" --ignore-unused "$cpu" "$gpu" || true
 echo "exit note: rdcellstate exit 1 on any field noise is normal; inspect Top diffs"
+
+# If phase dumps exist, compare each phase (first-diff focus).
+if ls "${gid}"_*_post_setup.nrndat >/dev/null 2>&1; then
+  echo "=== phase compares (cpu_* vs gpu_*) ==="
+  for phase in post_setup post_solve pre_nonvint post_nonvint; do
+    c="$(ls -1t ${gid}_cpu_t*_${phase}.nrndat 2>/dev/null | head -1 || true)"
+    g="$(ls -1t ${gid}_gpu_t*_${phase}.nrndat 2>/dev/null | head -1 || true)"
+    if [[ -n ${c:-} && -n ${g:-} ]]; then
+      echo "--- phase $phase: $c vs $g ---"
+      python3 "$rdcellstate" --ignore-unused "$c" "$g" 2>&1 | head -25 || true
+    fi
+  done
+fi

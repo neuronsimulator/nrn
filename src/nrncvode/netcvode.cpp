@@ -4172,16 +4172,22 @@ void ncs2nrn_integrate(double tstop) {
             assert(nrn_threads[i]._t == nt_t);
         }
         all_pending_selfqueue(nt_t);
-    }  // cache_token destroyed
 #if defined(NRN_ENABLE_GPU)
-    // Once per psolve interval: trajectory hand-back + full SoA host mirror.
-    // Must not run per fixed step: gap models take the single-step loop
-    // (ncs2nrn_integrate when nrnthread_v_transfer_) so a finalize here was
-    // full SoA every dt (~50% of tracked phase time on ringtest gap).
-    if (neuron::gpu::enabled() && neuron::gpu::backend_native()) {
-        neuron::gpu::finalize_psolve_download();
-    }
+        // Once per psolve interval: trajectory hand-back + full SoA host mirror.
+        // Must run while cache_token (and thus device residency) is still live:
+        // destroying the last sorted token tears down device mirrors, and
+        // finalize_psolve_download is a no-op when model_is_on_device() is false.
+        // That left host SoA without post-step NET_RECEIVE updates (dentate
+        // Exp2Syn A/B stayed 0 in end-of-run prcellstate / datareturn while
+        // mid-step phase dumps — still inside the token — showed correct A/B).
+        // Must not run per fixed step: gap models take the single-step loop
+        // (ncs2nrn_integrate when nrnthread_v_transfer_) so a finalize per step
+        // was full SoA every dt (~50% of tracked phase time on ringtest gap).
+        if (neuron::gpu::enabled() && neuron::gpu::backend_native()) {
+            neuron::gpu::finalize_psolve_download();
+        }
 #endif
+    }  // cache_token destroyed (device teardown after host mirror)
     nrn_use_busywait(0);  // certainly not
 }
 
