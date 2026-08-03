@@ -236,5 +236,32 @@ SCENARIO("NEURON OpenACC codegen emits offload pragmas", "[codegen][neuron][acc]
             REQUIRE_THAT(generated, ContainsSubstring("nrn_pragma_acc(atomic update)"));
             REQUIRE_THAT(generated, ContainsSubstring("vec_rhs[node_id]"));
         }
+
+        THEN("Phase C: min-present net_buf_receive (live g only; no fat setup)") {
+            const auto generated = get_neuron_acc_code(nmodl_text);
+            // Extract net_buf_receive body for focused checks.
+            const auto nbuf_pos = generated.find("net_buf_receive_ExpSynAcc");
+            REQUIRE(nbuf_pos != std::string::npos);
+            // Find the static function definition (not the registration call).
+            const auto def_pos = generated.find("static void net_buf_receive_ExpSynAcc");
+            REQUIRE(def_pos != std::string::npos);
+            const auto end_pos = generated.find("static void nrn_net_receive_ExpSynAcc", def_pos);
+            REQUIRE(end_pos != std::string::npos);
+            const auto nbuf = generated.substr(def_pos, end_pos - def_pos);
+
+            // Live present: g is a STATE column; present must name that column.
+            // Fat present of every _present_fp_i is the anti-pattern (Phase C).
+            REQUIRE_THAT(nbuf, ContainsSubstring("_present_fp_"));
+            // Slim: no make_instance / node_data / full dptr surface.
+            REQUIRE(nbuf.find("make_instance_ExpSynAcc") == std::string::npos);
+            REQUIRE(nbuf.find("make_node_data_ExpSynAcc") == std::string::npos);
+            // No per-flush H→D of nt->_t (body uses event-local t).
+            REQUIRE(nbuf.find("update device(nt->_t)") == std::string::npos);
+            // Body applies weight into g via present_fp (not fat host _lmc write).
+            REQUIRE_THAT(nbuf, ContainsSubstring("_args"));
+            // Present clause lists nrb + weights + live columns (not 8 fat columns).
+            REQUIRE_THAT(nbuf, ContainsSubstring("nrb->_pnt_index"));
+            REQUIRE_THAT(nbuf, ContainsSubstring("weights[:weight_count]"));
+        }
     }
 }

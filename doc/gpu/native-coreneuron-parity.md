@@ -3,6 +3,7 @@
 **Portfolio:** GPU-native (feature)  
 **Tree:** `~/neuron/nrngpu`  
 **Living tip (2026-08-03):** `local/gpu-native` @ H4 + Session B CURRENT (state_hh ~19 µs; cur_hh ~14–15 µs; wall multi-warm ~1.29–1.37 s)  
+**Explor (2026-08-03):** `local/gpu-P4-hotpath-netreceive` — Phase C min-present net_buf_receive (kernel win; wall flat on ringtest)  
 **Handoffs:** `GROK-GPU-NATIVE.md`, `AGENTS.md`, `~/neuron/notes/PORTFOLIO.md`  
 **This file:** ordered steps you can re-open without chat memory. Update **Status** at end of each session.
 
@@ -135,6 +136,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-08-03 | GPU-P4-tip-merge-H4 | — | FF-merge H4a–c+A force-inline onto `local/gpu-native`; tip re-smoke: state_hh ~19 µs, multi-warm ~1.50–1.54 s, 688 green. |
 | 2026-08-03 | GPU-P4-hotpath-current | — | Session B: force-inline thin CURRENT; cur_hh ~14 µs ≈ hand; wall multi-warm ~1.31–1.37 s; 688 green. |
 | 2026-08-03 | GPU-P4-tip-merge-current | — | FF-merge Session B onto `local/gpu-native`; tip re-smoke: cur_hh ~15 µs, state_hh ~19 µs, multi-warm ~1.29–1.31 s, 688 green. |
+| 2026-08-03 | GPU-P4-hotpath-netreceive | — | Phase C: min-present net_buf_receive; ExpSyn g-only; elapsed 62→14 µs; wall flat ~1.30 s; 688 green; no tip-merge. |
 
 ---
 
@@ -449,6 +451,7 @@ Phase timer (`NRN_NATIVE_GPU_PHASE_TIMER=1`):
 | Hot-path force-inline STATE rates (A residual) | **done (on tip)** | Force-inline unique/safe STATE rates TABLE body. Tip re-smoke 2026-08-03: `state_hh` ~**19 µs**; wall multi-warm ~**1.50–1.54 s**; 688 phases=1 green; copy tax under state_hh **gone**. |
 | H4 density packet tip-merge | **done (on tip)** | FF `local/gpu-P4-density-H4` → `local/gpu-native` (`34c8b4912`); tip remeasure matches explor. |
 | Hot-path CURRENT force-inline (Session B) | **done (on tip)** | FF `local/gpu-P4-hotpath-current` → `local/gpu-native` (`f06ed70ec`). Tip re-smoke: `cur_hh` ~**14–15 µs**; wall multi-warm ~**1.29–1.37 s**; state_hh ~19 µs; 688 green; cur copy tax **gone**. |
+| Hot-path NET_RECEIVE min-present (Phase C) | **explor; wall flat** | `local/gpu-P4-hotpath-netreceive`. ExpSyn live `g` only; no fat inst/dptr/`nt->_t`/global. ACC_TIME elapsed `net_buf_receive_ExpSyn` ~**62→14 µs**; wall multi-warm still ~**1.30 s** (tip noise band); product **688** phases=1 green. **Do not tip-merge** until wall win (or denser spike model). Residual: nrb slice present + `update_net_receive_buffer` H→D. |
 | Dentate multi-rank profile | **done** | 4-rank thrash without MPS; **MPS ≈ CN**. |
 | Multi-rank GPU share (MPS) | **done (on tip)** | device_assign + warn (`db83f4adb`); ops: `nvidia-cuda-mps-control -d`. |
 | Single device-resource owner | open | Only if exit/leak forces. |
@@ -623,11 +626,13 @@ Excerpts for hand-edit reference: `doc/gpu/h4c-handedit-nrn_state_hh.excerpt.cpp
 | Session A rates_*_state (thin) | ~**73 µs** | ~**20 µs** | ~**2.35–2.52 s** | **green** |
 | **A residual force-inline** | ~**19 µs** | ~**18 µs** | ~**1.50–1.60 s** | **green** |
 | **Session B CURRENT force-inline** | ~**19 µs** | ~**14 µs** | ~**1.31–1.37 s** | **green** |
+| **Phase C net_buf min-present** | ~19 µs | ~14–15 µs | ~**1.30 s** (flat) | **green** |
 | H4c hand-edit | ~18 µs | ~13 µs | ~1.52 s (state+cur) | green |
 | CN (H3b TABLE) | ~19 µs | — | — | — |
 
 Milestone A (rates STATE specialization): `state_hh` **≲ 25–30 µs** then ~18 — **met** (~19 µs force-inline). Product always 688 phases=1.  
-Milestone B (CURRENT specialization): `nrn_cur_hh` ≈ hand ~13 — **met** (~14 µs); wall win measured.
+Milestone B (CURRENT specialization): `nrn_cur_hh` ≈ hand ~13 — **met** (~14 µs); wall win measured.  
+Milestone C (NET_RECEIVE): kernel elapsed win (~62→14 µs); **wall flat** on ringtest — no tip-merge yet.
 
 #### Implementation phases (after Phase 0)
 
@@ -639,12 +644,32 @@ Milestone B (CURRENT specialization): `nrn_cur_hh` ≈ hand ~13 — **met** (~14
 | **4** | Fallback matrix + regression (VERBATIM must stay general) | suite notes |
 | **5** | Tip-merge H4a+b+c+A (wall win measured) | **done** on tip 2026-08-03 |
 | **6** | Tip-merge Session B CURRENT (wall win measured) | **done** on tip 2026-08-03 |
+| **C** | NET_RECEIVE / net_buf_receive min-present (Phase C) | **explor** kernel win; wall flat; no tip-merge |
 
-**Session order:** A = Phase 1+2 (rates STATE) — **closed**. Tip-merge H4 — **closed**. B = CURRENT — **closed on tip**. C = NET_RECEIVE PP (next).
+**Session order:** A = Phase 1+2 (rates STATE) — **closed**. Tip-merge H4 — **closed**. B = CURRENT — **closed on tip**. C = NET_RECEIVE PP — **explor** (wall flat).
+
+### Session C — NET_RECEIVE min-present (2026-08-03, `local/gpu-P4-hotpath-netreceive`)
+
+**Codegen (`codegen_neuron_acc_visitor`):**
+
+1. **Safety gate** `net_receive_min_present_safe()`: no VERBATIM, no nested MOD PROCEDURE/FUNCTION, no POINTER/RANDOM. `net_send`/`net_event` still OK (nsb present separate).
+2. **Live present** for net_buf_receive: only SoA columns named in NET_RECEIVE AST (ExpSyn: **g** / `_present_fp_3` only). Fat path keeps all columns when unsafe.
+3. **Slim setup** when safe: drop `make_instance` / `node_data` / full dptr / `_ppvar`; no per-flush `update device(nt->_t)`; no global enter/stale when body does not name GLOBAL; `data present(nt, _ml_arg)` only (no `*_global`).
+4. **Unit tests:** Phase C THEN on ExpSynAcc — no `make_instance` / `update device(nt->_t)` in net_buf; has weights + nrb present.
+
+**Measure (nring=16, tstop=100, TABLE, product phases=1):**
+
+| metric | tip (H4+B) | **Phase C explor** |
+|--------|------------|---------------------|
+| `net_buf_receive_ExpSyn` elapsed avg | ~**62 µs** | ~**14 µs** (~4×) |
+| wall multi-warm (5×) | ~1.29–1.37 s | ~**1.30 s** (flat / noise) |
+| product 688 dV=0 | green | **green** (phases=1) |
+
+**Interpretation:** residual host cost on ringtest is not fat SoA present (already gone) but **nrb metadata present + `update_net_receive_buffer` H→D** (~359 flushes). Absolute kernel save ~17 ms/run ≪ wall noise. **No tip-merge** until wall win on denser spike traffic (dentate deliver) or nrb present→deviceptr / thinner buffer upload.
 
 ### Residual perf debt (next P4 when reopened)
 
-1. NET_RECEIVE PP specialization (Phase C).
+1. Phase C follow-up: nrb slice present / `update_net_receive_buffer` (or denser-model wall proof → tip-merge min-present).
 2. **Product multi-rank:** CUDA MPS when ranks/GPU > 1.
 3. Optional: lastpart-deliver; phases=0 prcellstate download residual.
 
@@ -739,7 +764,7 @@ Commit locally without push. Update Status/Next before exit.
 
 ## Next (one line — update every session end)
 
-**Next:** Phase C NET_RECEIVE PP specialization; multi-rank **CUDA MPS**. **Not** Traub `use_gap=1`.
+**Next:** Phase C follow-up (nrb present / buffer H→D or denser-model wall proof) **or** multi-rank **CUDA MPS**. **Not** Traub `use_gap=1`. Phase C min-present stays on explor until wall win.
 
 ### Starting prompt — Session A residual (closed; archive)
 
@@ -757,27 +782,31 @@ Session closed 2026-08-03 on explor `local/gpu-P4-hotpath-current`: force-inline
 
 Session closed 2026-08-03: FF-merge Session B onto `local/gpu-native`; tip re-smoke cur_hh ~15 µs, state_hh ~19 µs, multi-warm ~1.29–1.31 s, 688 green.
 
-### Starting prompt — Phase C NET_RECEIVE PP (next)
+### Starting prompt — Phase C NET_RECEIVE PP (closed explor; archive)
+
+Session closed 2026-08-03 on explor `local/gpu-P4-hotpath-netreceive`: min-present net_buf_receive (ExpSyn g-only; no fat setup/`nt->_t`/global). ACC_TIME elapsed ~62→14 µs; wall multi-warm flat ~1.30 s; 688 green. **No tip-merge** (no wall win). Residual: nrb present + update_net_receive_buffer.
+
+### Starting prompt — Phase C follow-up or multi-rank (next)
 
 ```text
 Read ~/neuron/notes/PORTFOLIO.md (GPU-native), then
 ~/neuron/nrngpu/doc/gpu/native-coreneuron-parity.md
-  (Phase 4 Residual / hot-path Phase C; Next),
+  (Phase 4 Residual / Phase C explor notes; Next),
 GROK-GPU-NATIVE.md, AGENTS.md.
 
-Kind: feature. Portfolio: GPU-native. Phase: P4 hot-path Phase C NET_RECEIVE PP.
-Tree: ~/neuron/nrngpu. Branch: off living tip local/gpu-native as
-local/gpu-P4-hotpath-netreceive (or similar explor). Do not merge to tip until measured win.
+Kind: feature. Portfolio: GPU-native. Phase: P4 residual (Phase C follow-up or multi-rank MPS).
+Tree: ~/neuron/nrngpu. Branch: continue local/gpu-P4-hotpath-netreceive for
+nrb/buffer density, or off tip for multi-rank. Do not tip-merge Phase C until wall win.
 
-Context: tip has H4 + Session B CURRENT (state_hh ~19 µs; cur_hh ~14–15 µs;
-wall multi-warm ~1.29–1.37 s; 688 green). Hot-path Phases 1–3 + tip-merges closed.
-Phase C: specialize NET_RECEIVE / net_buf_receive POINT_PROCESS for ACC density.
+Context: tip has H4+B (state_hh ~19; cur_hh ~14–15; wall ~1.29–1.37; 688).
+Phase C explor: min-present net_buf elapsed ~14 µs; wall flat. Next residual is
+nrb present / update_net_receive_buffer, denser-model wall proof, or multi-rank MPS.
 
 High performance sacred; CoreNEURON is a guide; heap-free weight_index.
-Not Traub use_gap=1; not multi-rank unless blocked.
+Not Traub use_gap=1; multi-rank only if chosen as this session's topic.
 
 Commit locally without push. Update Status/Next before exit.
-/rename GPU-P4-hotpath-netreceive
+/rename GPU-P4-hotpath-netreceive   # or GPU-P4-multirank
 ```
 
 ### Branching (2026-08-03)
@@ -785,6 +814,7 @@ Commit locally without push. Update Status/Next before exit.
 | Branch | Role |
 |--------|------|
 | **`local/gpu-native`** | Living tip — H4 + Session B CURRENT (force-inline STATE rates + thin CURRENT) + scatter/timers/MPS |
+| `local/gpu-P4-hotpath-netreceive` | Exploratory: Phase C min-present net_buf_receive (kernel win; **wall flat** — not tip-merged) |
 | `local/gpu-P4-hotpath-current` | Exploratory archive: Session B CURRENT force-inline (**merged to tip**) |
 | `local/gpu-native-net-soa` | Historical integration name; keep until remotes/docs catch up (may lag tip) |
 | `local/gpu-p4-gap-phase-ab` | Exploratory archive: A+B only (pre-scatter baseline) |
@@ -796,4 +826,4 @@ Commit locally without push. Update Status/Next before exit.
 | `local/gpu-P4-density-H4` | Exploratory archive: H4a–c + Session A force-inline (**merged to tip**) |
 | `local/gpu-p4-multirank-share` | Exploratory archive: MPS diagnosis (landed on tip) |
 
-P4 on tip: scatter, timers, multi-rank MPS, **H4 density packet**, **Session B CURRENT** (cur_hh ~14–15 µs; wall ~1.29–1.37 s). **Default next:** Phase C NET_RECEIVE PP.
+P4 on tip: scatter, timers, multi-rank MPS, **H4 density packet**, **Session B CURRENT** (cur_hh ~14–15 µs; wall ~1.29–1.37 s). Phase C min-present on explor (not tip). **Default next:** Phase C follow-up or multi-rank MPS.
