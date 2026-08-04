@@ -23,11 +23,11 @@ foreach(
                                             "CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}")
 endforeach()
 
-# The nrn_setpointer_pop test needs a mechanism with a POINTER, which no built-in provides. Generate one
-# from ptrtest.mod with nocmodl and compile it into the test executable, the same codegen path nrniv
-# uses for its built-in mechanisms. NRN_NOCMODL_SANITIZER_ENVIRONMENT disables LeakSanitizer for the
-# nocmodl run (nocmodl leaks, which would otherwise fail the generation step under an asan build),
-# matching nocmodl_mod_to_cpp in cmake/MacroHelper.cmake.
+# The nrn_setpointer_pop test needs a mechanism with a POINTER, which no built-in provides. Generate
+# one from ptrtest.mod with nocmodl and compile it into the test executable, the same codegen path
+# nrniv uses for its built-in mechanisms. NRN_NOCMODL_SANITIZER_ENVIRONMENT disables LeakSanitizer
+# for the nocmodl run (nocmodl leaks, which would otherwise fail the generation step under an asan
+# build), matching nocmodl_mod_to_cpp in cmake/MacroHelper.cmake.
 set(setpointer_mod "${CMAKE_CURRENT_SOURCE_DIR}/ptrtest.mod")
 set(setpointer_mod_copy "${CMAKE_CURRENT_BINARY_DIR}/ptrtest.mod")
 set(setpointer_gen "${CMAKE_CURRENT_BINARY_DIR}/ptrtest.cpp")
