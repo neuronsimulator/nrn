@@ -23,7 +23,10 @@ namespace neuron::gpu::phase_timer {
  *   setup-lhs — nrn_lhs (zero d + JACOBIAN + axial)
  */
 enum class Id : int {
-    deliver_events,
+    deliver_events,    // coarse wall (start-of-step)
+    deliver_thresh,    // nested: threshold detect + host flag/hit
+    deliver_tq,        // nested: binq + main TQ NetCon/SelfEvent fanout
+    deliver_nrb,       // nested: NRB order/upload + net_buf_receive
     vecplay_sync,
     setup_tree_matrix,  // coarse wall
     setup_rhs,          // nrn_rhs

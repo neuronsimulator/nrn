@@ -21,6 +21,18 @@ namespace neuron::gpu {
 
 std::vector<std::pair<NetBufReceive_t, int>> net_buf_receive;
 
+namespace {
+neuron::model_sorted_token const* g_flush_sorted_token = nullptr;
+}  // namespace
+
+neuron::model_sorted_token const* flush_sorted_token() noexcept {
+    return g_flush_sorted_token;
+}
+
+void set_flush_sorted_token(neuron::model_sorted_token const* token) noexcept {
+    g_flush_sorted_token = token;
+}
+
 double* weight_soa_values() {
     auto& store = neuron::model().weights();
     if (store.size() == 0) {
@@ -194,10 +206,17 @@ bool net_receive_buffer_enqueue(NrnThread* nt,
                                 int pnt_index,
                                 int weight_index,
                                 double flag) {
-    if (!nt || !ml || !ml->_net_receive_buffer) {
+    if (!nt || !ml) {
         return false;
     }
+    // Lazy ensure once: hot NetCon deliver path must not call ensure every time.
+    if (!ml->_net_receive_buffer) {
+        net_receive_buffer_ensure(ml);
+    }
     auto* const nrb = ml->_net_receive_buffer;
+    if (!nrb) {
+        return false;
+    }
     if (nrb->_cnt >= nrb->_size) {
         realloc_net_receive_buffer(nt, ml);
     }

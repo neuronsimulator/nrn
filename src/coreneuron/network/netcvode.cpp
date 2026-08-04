@@ -391,9 +391,12 @@ void NetCon::deliver(double tt, NetCvode* /* ns */, NrnThread* nt) {
     nt->_t = tt;
 
     // printf("NetCon::deliver t=%g tt=%g %s\n", t, tt, pnt_name(target_));
-    std::string ss("net-receive-");
-    ss += nrn_get_mechname(typ);
-    Instrumentor::phase p_get_pnt_receive(ss.c_str());
+    // Hot path: no heap std::string per deliver (Traub-scale fanout).
+#if defined(NRN_CALIPER) || defined(LIKWID_PERFMON)
+    char phase_name[96];
+    snprintf(phase_name, sizeof(phase_name), "net-receive-%s", nrn_get_mechname(typ));
+    Instrumentor::phase p_get_pnt_receive(phase_name);
+#endif
     (*corenrn.get_pnt_receive()[typ])(target_, u.weight_index_, 0);
 #ifdef DEBUG
     if (errno && nrn_errno_check(typ))

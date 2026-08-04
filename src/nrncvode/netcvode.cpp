@@ -3215,14 +3215,18 @@ void NetCon::send(double tt, NetCvode* ns, NrnThread* nt) {
 void NetCon::deliver(double tt, NetCvode* ns, NrnThread* nt) {
     assert(target_);
     int type = target_->prop->_type;
-    std::string ss("net-receive-");
-    ss += memb_func[type].sym->name;
-    nrn::Instrumentor::phase p_get_pnt_receive(ss.c_str());
+    // Hot path: no heap std::string per deliver (Traub-scale fanout). Named
+    // caliper regions only when a real profiler is compiled in.
+#if defined(NRN_CALIPER) || defined(LIKWID_PERFMON)
+    char phase_name[96];
+    Sprintf(phase_name, "net-receive-%s", memb_func[type].sym->name);
+    nrn::Instrumentor::phase p_get_pnt_receive(phase_name);
+#endif
     if (PP2NT(target_) != nt) {
         Printf("NetCon::deliver nt=%d target=%d\n", nt->id, PP2NT(target_)->id);
     }
     assert(PP2NT(target_) == nt);
-    Cvode* cv = (Cvode*) target_->nvi_;
+    // Fixed-step (typical native GPU): skip selfqueue + CVode retreat.
     if (nrn_use_selfqueue_ && nrn_is_artificial_[type]) {
         auto& datum = target_->prop->dparam[nrn_artcell_qindex_[type]];
         TQItem* q;
@@ -3233,11 +3237,15 @@ void NetCon::deliver(double tt, NetCvode* ns, NrnThread* nt) {
             se->deliver(t1, ns, nt);
         }
     }
-    if (cvode_active_ && cv) {
-        ns->local_retreat(tt, cv);
-        cv->set_init_flag();
+    if (cvode_active_) {
+        if (Cvode* cv = (Cvode*) target_->nvi_) {
+            ns->local_retreat(tt, cv);
+            cv->set_init_flag();
+        } else {
+            nt->_t = tt;
+        }
     } else {
-        // no interpolation necessary for local step method and ARTIFICIAL_CELL
+        // no interpolation necessary for fixed step / ARTIFICIAL_CELL
         nt->_t = tt;
     }
 

@@ -28,6 +28,7 @@
 #include "neuron/gpu/phase_timer.hpp"
 #include "neuron/gpu/trajectory.hpp"
 #include "neuron/gpu/net_events.hpp"
+#include "neuron/gpu/net_receive_buffer.hpp"
 #include "neuron/gpu/post_solve.hpp"
 #include "neuron/gpu/sync.hpp"
 #endif
@@ -679,7 +680,10 @@ void nrn_fixed_step_lastpart(neuron::model_sorted_token const& cache_token, NrnT
             neuron::gpu::phase_timer::bump(neuron::gpu::phase_timer::Id::lastpart_deliver);
         }
         if (native_lastpart) {
+            // Same step-scoped sorted token as start-of-step deliver (avoid ensure).
+            neuron::gpu::set_flush_sorted_token(&cache_token);
             neuron::gpu::deliver_post_step_events_host(nth);
+            neuron::gpu::set_flush_sorted_token(nullptr);
         } else
 #endif
         {

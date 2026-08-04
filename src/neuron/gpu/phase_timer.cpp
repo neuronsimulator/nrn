@@ -15,6 +15,12 @@ char const* phase_name(Id id) noexcept {
     switch (id) {
     case Id::deliver_events:
         return "deliver-events";
+    case Id::deliver_thresh:
+        return "deliver-thresh";
+    case Id::deliver_tq:
+        return "deliver-tq";
+    case Id::deliver_nrb:
+        return "deliver-nrb";
     case Id::vecplay_sync:
         return "vecplay-sync";
     case Id::setup_tree_matrix:

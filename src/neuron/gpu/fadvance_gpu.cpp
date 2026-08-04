@@ -3,6 +3,7 @@
 #include "neuron/gpu/config.hpp"
 #include "neuron/gpu/device_state.hpp"
 #include "neuron/gpu/net_events.hpp"
+#include "neuron/gpu/net_receive_buffer.hpp"
 #include "neuron/gpu/net_send_buffer.hpp"
 #include "neuron/gpu/download.hpp"
 #include "neuron/gpu/offload.hpp"
@@ -62,7 +63,11 @@ void fixed_step_thread(model_sorted_token const& cache_token,
     {
         phase_timer::Scope const timer{phase_timer::Id::deliver_events};
         nrn::Instrumentor::phase p("deliver-events");
+        // Publish step-scoped sorted token so net_buf_receive does not re-ensure
+        // (mutex + all-mech frozen tokens) per synaptic type / half-step.
+        set_flush_sorted_token(&cache_token);
         deliver_net_events_host(nth);
+        set_flush_sorted_token(nullptr);
     }
     nrn_random_play();
     advance_first_half_time(nt);

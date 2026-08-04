@@ -385,6 +385,7 @@ std::string CodegenNeuronAccVisitor::backend_name() const {
 
 void CodegenNeuronAccVisitor::print_standard_includes() {
     CodegenNeuronCppVisitor::print_standard_includes();
+    printer->add_line("#include <optional>");
     printer->add_line("#include <neuron/gpu/offload.hpp>");
     printer->add_line("#include <neuron/gpu/net_send_buffer.hpp>");
     printer->add_line("#include <neuron/gpu/net_receive_buffer.hpp>");
@@ -392,7 +393,7 @@ void CodegenNeuronAccVisitor::print_standard_includes() {
     printer->add_line("#include <neuron/gpu/sync.hpp>");
     printer->add_line("#include <neuron/gpu/download.hpp>");
     printer->add_line("#include <neuron/event_order.hpp>");
-    // net_buf_receive needs complete model_sorted_token + nrn_ensure_model_data_are_sorted.
+    // net_buf_receive: flush_sorted_token or fallback ensure.
     printer->add_line("#include \"nrn_ansi.h\"");
     printer->add_line("#include \"neuron/model_data.hpp\"");
 }
@@ -1894,7 +1895,7 @@ void CodegenNeuronAccVisitor::print_net_receive() {
         printer->add_line(
             "int pnt_index = static_cast<int>(neuron::mechanism::_get::_current_row(_pnt->prop) - "
             "ml->get_storage_offset());");
-        printer->add_line("neuron::gpu::net_receive_buffer_ensure(ml);");
+        // ensure is lazy inside enqueue (once per type); do not call ensure here.
         printer->add_line(
             "neuron::gpu::net_receive_buffer_enqueue(nt, ml, pnt_index, _weight_index, flag);");
         printer->pop_block();
@@ -1982,7 +1983,17 @@ void CodegenNeuronAccVisitor::print_net_receive_buffering() {
     printer->add_line("return;");
     printer->pop_block();
 
-    printer->add_line("auto const& _sorted_token = nrn_ensure_model_data_are_sorted();");
+    // Prefer flush-scoped sorted token (one ensure per half-step for all types).
+    // Fallback ensure keeps unit tests / direct calls correct. No copy of the
+    // flush token (copy would re-issue all frozen-token bookkeeping).
+    printer->add_line("auto const* _flush_tok = neuron::gpu::flush_sorted_token();");
+    printer->add_line(
+        "std::optional<neuron::model_sorted_token> _ensure_holder;");
+    printer->push_block("if (!_flush_tok)");
+    printer->add_line("_ensure_holder.emplace(nrn_ensure_model_data_are_sorted());");
+    printer->add_line("_flush_tok = &*_ensure_holder;");
+    printer->pop_block();
+    printer->add_line("auto const& _sorted_token = *_flush_tok;");
     printer->add_line(
         "_nrn_mechanism_cache_range _lmc{_sorted_token, *nt, *_ml_arg, _ml_arg->type()};");
     printer->fmt_line(
@@ -2025,12 +2036,8 @@ void CodegenNeuronAccVisitor::print_net_receive_buffering() {
     // Body uses _present_fp_* + weights[weight_index+arg]; net_send → NetSendBuffer.
     printer->add_line("int count = nrb->_displ_cnt;");
     print_kernel_global_device_setup();
-    // Keep device nt->_t fresh for any residual uses; net_send absolute times use
-    // per-event local `t` (nrb->_nrb_t) — see get_variable_name("t").
-    printer->push_block("if (nt->compute_gpu)");
-    printer->add_line("nrn_pragma_acc(update device(nt->_t))");
-    printer->add_line("nrn_pragma_omp(target update to(nt->_t))");
-    printer->pop_block();
+    // Device NET_RECEIVE uses per-event local `t` (nrb->_nrb_t), not nt->_t.
+    // Skip per-type update device(nt->_t) — Traub deliver-nrb host tax.
     // Scope nsb for present() so print_send_event_move can redeclare after.
     printer->add_line("{");
     printer->increase_indent();

@@ -8,6 +8,9 @@
 #include "nrniv_mf.h"
 #include "nrnoc2iv.h"
 #include "datapath.h"
+#if defined(NRN_ENABLE_GPU)
+#include "neuron/gpu/phase_timer.hpp"
+#endif
 #if USECVODE
 #include "cvodeobj.h"
 #include "netcvode.h"
@@ -37,8 +40,22 @@ void nrn_solver_prepare();
 // for fixed step thread
 void deliver_net_events(NrnThread* nt) {
     if (net_cvode_instance) {
+#if defined(NRN_ENABLE_GPU)
+        {
+            neuron::gpu::phase_timer::Scope const timer{
+                neuron::gpu::phase_timer::Id::deliver_thresh};
+            neuron::gpu::phase_timer::bump(neuron::gpu::phase_timer::Id::deliver_thresh);
+            net_cvode_instance->check_thresh(nt);
+        }
+        {
+            neuron::gpu::phase_timer::Scope const timer{neuron::gpu::phase_timer::Id::deliver_tq};
+            neuron::gpu::phase_timer::bump(neuron::gpu::phase_timer::Id::deliver_tq);
+            net_cvode_instance->deliver_net_events(nt);
+        }
+#else
         net_cvode_instance->check_thresh(nt);
         net_cvode_instance->deliver_net_events(nt);
+#endif
     }
 }
 

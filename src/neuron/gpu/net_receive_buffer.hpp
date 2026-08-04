@@ -1,5 +1,7 @@
 #pragma once
 
+#include "neuron/model_data.hpp"
+
 #include <cstddef>
 #include <utility>
 #include <vector>
@@ -48,6 +50,15 @@ void ensure_thread_net_receive_buffers(NrnThread* nt);
 void ensure_thread_net_receive_buffers_host(NrnThread* nt);
 void upload_net_receive_buffer_to_device(Memb_list* ml);
 void free_net_receive_buffer(Memb_list* ml);
+
+/**
+ * Sorted-token for net_buf_receive during flush_net_receive_buffers.
+ * Avoids nrn_ensure_model_data_are_sorted() per synaptic type (mutex + all-mech
+ * frozen tokens) — Traub-scale residual was ~2 s in deliver-nrb from that tax.
+ * Returns nullptr outside an active flush; callers fall back to ensure.
+ */
+[[nodiscard]] neuron::model_sorted_token const* flush_sorted_token() noexcept;
+void set_flush_sorted_token(neuron::model_sorted_token const* token) noexcept;
 
 /**
  * Host pointer to the contiguous Weight SoA Value column.
