@@ -229,6 +229,17 @@ class CodegenNeuronAccVisitor: public CodegenNeuronCppVisitor {
     /** TABLE statement vars (minf, mtau, …) — pure temps on STATE hot path. */
     [[nodiscard]] bool is_table_statement_float(const std::string& name) const;
 
+    /**
+     * Traub residual density: ASSIGNED intermediates written on the STATE path
+     * and not live for CURRENT (e.g. NMDA Mg_factor A1_/A2_/B1_/B2_) are stack
+     * locals in the STATE loop — not SoA present (same shape as H4c TABLE temps).
+     * Mg_unblocked stays SoA because CURRENT reads it.
+     */
+    [[nodiscard]] bool is_state_stack_temp_float(const std::string& name) const;
+
+    /** Names of STATE stack temps for loop-local double declarations. */
+    [[nodiscard]] std::vector<std::string> state_stack_temp_names() const;
+
     /** Float SoA indices that the kernel must present (named _present_fp_N). */
     [[nodiscard]] std::unordered_set<int> live_float_indices_for_kernel(BlockType type) const;
 

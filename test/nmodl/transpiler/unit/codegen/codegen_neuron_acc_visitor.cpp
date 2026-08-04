@@ -242,6 +242,68 @@ SCENARIO("NEURON OpenACC codegen emits offload pragmas", "[codegen][neuron][acc]
         }
     }
 
+    GIVEN("STATE-only ASSIGNED intermediates (Traub NMDA Mg_factor shape)") {
+        // A1_/A2_ written in STATE procedure, not live for CURRENT → stack temps.
+        // Mg_unblocked written in STATE but CURRENT reads it → remains SoA present.
+        const std::string nmodl_text = R"(
+            NEURON {
+                POINT_PROCESS NmdaStack
+                RANGE g, i, e
+                NONSPECIFIC_CURRENT i
+            }
+            PARAMETER {
+                e = 0
+                Mg = 1.5
+            }
+            ASSIGNED {
+                v
+                i
+                g
+                A1_
+                A2_
+                Mg_unblocked
+            }
+            STATE { A }
+            BREAKPOINT {
+                SOLVE state METHOD cnexp
+                g = A
+                i = g * Mg_unblocked * (v - e)
+            }
+            DERIVATIVE state {
+                Mg_factor()
+                A' = 0
+            }
+            PROCEDURE Mg_factor() {
+                A1_ = exp(-0.016 * v)
+                A2_ = 1000.0 * Mg * exp(-0.045 * v)
+                Mg_unblocked = 1.0 / (1.0 + A1_ + A2_)
+            }
+        )";
+
+        THEN("STATE stacks A1_/A2_; keeps Mg_unblocked SoA present") {
+            const auto generated = get_neuron_acc_code(nmodl_text);
+            const auto state_begin = generated.find("static void nrn_state_NmdaStack");
+            REQUIRE(state_begin != std::string::npos);
+            const auto state_end = generated.find("static void nrn_", state_begin + 20);
+            const auto state_fn = generated.substr(
+                state_begin,
+                (state_end == std::string::npos ? generated.size() : state_end) - state_begin);
+            // Stack declarations for pure STATE temps.
+            REQUIRE_THAT(state_fn, ContainsSubstring("double A1_;"));
+            REQUIRE_THAT(state_fn, ContainsSubstring("double A2_;"));
+            // Body uses bare stack names (not SoA A1_[id]).
+            REQUIRE_THAT(state_fn, ContainsSubstring("A1_ ="));
+            REQUIRE_THAT(state_fn, ContainsSubstring("A2_ ="));
+            REQUIRE(state_fn.find("A1_[id]") == std::string::npos);
+            REQUIRE(state_fn.find("A2_[id]") == std::string::npos);
+            // Mg_unblocked must remain SoA (_present_fp_N[id]) for CURRENT.
+            REQUIRE_THAT(state_fn, ContainsSubstring("_present_fp_"));
+            // At least one present_fp write (Mg_unblocked) remains.
+            REQUIRE(state_fn.find("_present_fp_") != std::string::npos);
+            REQUIRE(state_fn.find("[id] =") != std::string::npos);
+        }
+    }
+
     GIVEN("the canonical passive.mod shipped with NEURON") {
         const auto mod_path = std::filesystem::path(NRN_SOURCE_DIR) / "src/nrnoc/passive.mod";
         REQUIRE(std::filesystem::exists(mod_path));

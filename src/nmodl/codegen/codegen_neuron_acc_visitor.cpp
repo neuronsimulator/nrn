@@ -33,6 +33,113 @@ bool CodegenNeuronAccVisitor::is_table_statement_float(const std::string& name) 
     return name_is_table_statement_float(info, name);
 }
 
+bool CodegenNeuronAccVisitor::is_state_stack_temp_float(const std::string& name) const {
+    if (name.empty() || name == naming::VOLTAGE_UNUSED_VARIABLE || name == "v") {
+        return false;
+    }
+    if (name == naming::CONDUCTANCE_UNUSED_VARIABLE || name == naming::CONDUCTANCE_VARIABLE) {
+        return false;
+    }
+    // TABLE temps already handled by is_table_statement_float.
+    if (is_table_statement_float(name)) {
+        return false;
+    }
+    // Ion shadows stay dptr/SoA paths (H4b/Session B).
+    for (const auto& ion: info.ions) {
+        for (const auto& var: ion.reads) {
+            if (var == name) {
+                return false;
+            }
+        }
+        for (const auto& var: ion.writes) {
+            if (var == name) {
+                return false;
+            }
+        }
+    }
+    try {
+        auto const pos = position_of_float_var(name);
+        const auto& sym = codegen_float_variables[static_cast<size_t>(pos)];
+        if (!sym || sym->is_array()) {
+            return false;
+        }
+        // PARAMETER / STATE always device SoA.
+        if (sym->has_any_property(NmodlType::param_assign | NmodlType::state_var)) {
+            return false;
+        }
+    } catch (...) {
+        return false;
+    }
+
+    // If CURRENT/BA live-set needs the value after STATE, keep SoA (Mg_unblocked).
+    std::unordered_set<std::string> current_names;
+    if (info.breakpoint_node) {
+        collect_ast_names(*info.breakpoint_node, current_names);
+    }
+    for (const auto& block: info.before_after_blocks) {
+        if (block) {
+            collect_ast_names(*block, current_names);
+        }
+    }
+    for (const auto& cur: info.currents) {
+        current_names.insert(cur);
+    }
+    current_names.insert(info.vectorize ? naming::CONDUCTANCE_UNUSED_VARIABLE
+                                        : naming::CONDUCTANCE_VARIABLE);
+    if (current_names.count(name) != 0) {
+        return false;
+    }
+
+    // Only pure temps *written* on the STATE path (DERIVATIVE + procedures).
+    std::unordered_set<std::string> written;
+    auto collect_written = [&](const ast::Ast* node) {
+        if (!node) {
+            return;
+        }
+        for (const auto& n: collect_nodes(*node, {ast::AstNodeType::BINARY_EXPRESSION})) {
+            auto* be = dynamic_cast<const ast::BinaryExpression*>(n.get());
+            if (!be || be->get_op().get_value() != ast::BOP_ASSIGN) {
+                continue;
+            }
+            const auto& lhs = be->get_lhs();
+            if (!lhs) {
+                continue;
+            }
+            for (const auto& nm: collect_nodes(*lhs, {ast::AstNodeType::NAME})) {
+                auto nname = nm->get_node_name();
+                if (!nname.empty()) {
+                    written.insert(std::move(nname));
+                }
+            }
+        }
+    };
+    collect_written(info.nrn_state_block);
+    for (const auto& block: info.matexp_blocks) {
+        collect_written(block);
+    }
+    for (const auto& procedure: info.procedures) {
+        collect_written(procedure);
+    }
+    for (const auto& function: info.functions) {
+        collect_written(function);
+    }
+    return written.count(name) != 0;
+}
+
+std::vector<std::string> CodegenNeuronAccVisitor::state_stack_temp_names() const {
+    std::vector<std::string> out;
+    for (const auto& sym: codegen_float_variables) {
+        if (!sym) {
+            continue;
+        }
+        const auto& name = sym->get_name();
+        if (is_state_stack_temp_float(name)) {
+            out.push_back(name);
+        }
+    }
+    return out;
+}
+
 void CodegenNeuronAccVisitor::collect_ast_names(const ast::Ast& node,
                                                 std::unordered_set<std::string>& names) const {
     for (const auto& n: collect_nodes(node, {ast::AstNodeType::NAME})) {
@@ -72,6 +179,10 @@ std::unordered_set<int> CodegenNeuronAccVisitor::live_float_indices_for_kernel(
             }
             // TABLE rates temps stay stack on STATE (H4c).
             if (type == BlockType::State && is_table_statement_float(float_var->get_name())) {
+                continue;
+            }
+            // STATE-only ASSIGNED intermediates (NMDA A1_/A2_/…) stay stack.
+            if (type == BlockType::State && is_state_stack_temp_float(float_var->get_name())) {
                 continue;
             }
             all.insert(i);
@@ -146,6 +257,10 @@ std::unordered_set<int> CodegenNeuronAccVisitor::live_float_indices_for_kernel(
         }
         // H4c: TABLE rates temps are stack/ref locals on STATE — not SoA present.
         if (type == BlockType::State && is_table_statement_float(name)) {
+            continue;
+        }
+        // STATE-only ASSIGNED intermediates (e.g. NMDA Mg_factor A1_) — stack.
+        if (type == BlockType::State && is_state_stack_temp_float(name)) {
             continue;
         }
         // STATE / CURRENT use local v; do not present v_unused.
@@ -2453,6 +2568,16 @@ void CodegenNeuronAccVisitor::print_nrn_state() {
         }
         state_kernel_locals_active_ = true;
     }
+    // Traub residual: STATE-only ASSIGNED intermediates (NMDA A1_/A2_/B1_/B2_).
+    {
+        auto const state_temps = state_stack_temp_names();
+        for (const auto& nm: state_temps) {
+            printer->fmt_line("double {};", nm);
+        }
+        if (!state_temps.empty()) {
+            state_kernel_locals_active_ = true;
+        }
+    }
 
     // H4c: local v for inlined rates / DERIVATIVE AST under state_local_v.
     // Eigen Newton functors are printed outside this scope and still read
@@ -2934,6 +3059,12 @@ std::string CodegenNeuronAccVisitor::float_variable_name(const SymbolType& symbo
         }
         // INITIAL / HOC: SoA element (bound into double& at call sites).
         return fmt::format("_present_fp_{}[id]", position);
+    }
+
+    // STATE-only ASSIGNED intermediates (NMDA Mg_factor temps) as stack locals.
+    if (use_present_fp_indexing_ && state_kernel_locals_active_ &&
+        is_state_stack_temp_float(name)) {
+        return name;
     }
 
     // Session B: intermediate ASSIGNED / ion shadows are stack on CURRENT.
