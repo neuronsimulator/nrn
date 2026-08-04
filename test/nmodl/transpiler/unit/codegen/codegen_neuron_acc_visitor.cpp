@@ -164,8 +164,18 @@ SCENARIO("NEURON OpenACC codegen emits offload pragmas", "[codegen][neuron][acc]
             REQUIRE_THAT(generated, ContainsSubstring("double gna;"));
             // Min present: params + STATE + g_unused; no fat present_fp_19 style for ena.
             REQUIRE_THAT(generated, ContainsSubstring("vec_rhs[:nt->end]"));
-            // CURRENT does not present vec_d (jacob owns that).
+            // Device CURRENT folds jacob: present + write vec_d when compute_gpu.
+            REQUIRE_THAT(generated, ContainsSubstring("vec_d[:nt->end]"));
+            REQUIRE_THAT(generated, ContainsSubstring("if (nt->compute_gpu)"));
             REQUIRE(generated.find("nrn_cur_hh") != std::string::npos);
+            // Extract nrn_cur_hh and require vec_d update with g.
+            const auto cur_begin = generated.find("static void nrn_cur_hh");
+            REQUIRE(cur_begin != std::string::npos);
+            const auto cur_end = generated.find("static void nrn_", cur_begin + 20);
+            const auto cur_fn = generated.substr(
+                cur_begin,
+                (cur_end == std::string::npos ? generated.size() : cur_end) - cur_begin);
+            REQUIRE_THAT(cur_fn, ContainsSubstring("vec_d[node_id]"));
         }
 
         THEN("Session D: slim JACOB (no global present; g_unused + vec_d only)") {

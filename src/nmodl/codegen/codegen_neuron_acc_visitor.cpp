@@ -1302,11 +1302,14 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
                 ": const_cast<double*>(node_data.node_voltages);");
         }
         if (type == BlockType::Equation) {
-            // Jacob (override set) only needs vec_d; CURRENT only needs vec_rhs.
+            // Jacob (override set) only needs vec_d.
+            // CURRENT (CoreNEURON-style device path): both vec_rhs and vec_d —
+            // device CURRENT applies g → vec_d; host still uses jacob.
             if (live_float_indices_override_) {
                 printer->add_line("double* vec_d = node_data.node_diagonal;");
             } else {
                 printer->add_line("double* vec_rhs = node_data.node_rhs;");
+                printer->add_line("double* vec_d = node_data.node_diagonal;");
             }
         }
         // Session A: when STATE only calls thin specialized procedures (e.g.
@@ -1373,11 +1376,11 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
             present_clause << ", _thread";
         }
         if (type == BlockType::Equation) {
-            // CURRENT: vec_rhs only. Jacob (override set): vec_d only.
+            // CURRENT: vec_rhs + vec_d (device CURRENT folds jacob). Jacob: vec_d only.
             if (live_float_indices_override_) {
                 present_clause << ", vec_d[:nt->end]";
             } else {
-                present_clause << ", vec_rhs[:nt->end]";
+                present_clause << ", vec_rhs[:nt->end], vec_d[:nt->end]";
             }
         }
         std::vector<int> ordered_fp(live_fp.begin(), live_fp.end());
@@ -2750,6 +2753,16 @@ void CodegenNeuronAccVisitor::print_nrn_cur() {
                 "{} = g;",
                 indexed_fp_var(info.vectorize ? naming::CONDUCTANCE_UNUSED_VARIABLE
                                               : naming::CONDUCTANCE_VARIABLE));
+            // Device path: apply g → vec_d here (CoreNEURON-style). Host keeps
+            // separate jacob (nrn_lhs skips jacob when compute_gpu + Gate A).
+            // nt->compute_gpu is false on the host serial fallback of this loop.
+            printer->push_block("if (nt->compute_gpu)");
+            if (info.point_process && !det_matrix) {
+                printer->add_line("nrn_pragma_acc(atomic update)");
+                printer->add_line("nrn_pragma_omp(atomic update)");
+            }
+            printer->fmt_line("vec_d[node_id] {} g;", operator_for_d());
+            printer->pop_block();
         }
         printer->pop_block();
         force_seq_acc_loop_ = false;
@@ -2767,15 +2780,20 @@ void CodegenNeuronAccVisitor::print_nrn_cur() {
 
     print_after_nrn_cur_gpu_net_send_flush();
 
-    // ELECTRODE_CURRENT → fast_imem sav_rhs after ACC cur (device i is live).
-    // Host: serial apply. Device: pull i + sav, scale on host, push sav
-    // (in-ACC sav next to mechanism present hit CUDA illegal address on hh).
+    // ELECTRODE_CURRENT → fast_imem sav_rhs / sav_d after ACC cur.
+    // Host: serial apply. Device: pull i (and g for sav_d), scale on host, RMW
+    // sav via memcpy (in-ACC sav next to mechanism present hit CUDA illegal
+    // address on hh). Device path skips jacob, so sav_d electrode g must land
+    // here (host still gets sav_d from jacob).
     if (info.electrode_current && !info.currents.empty()) {
         auto const i_pos = position_of_float_var(info.currents.front());
-        printer->push_block("if (auto* vec_sav_rhs = nt->node_sav_rhs_storage())");
-        printer->fmt_line("double* _i_col = _lmc.template fpfield_ptr<{}>();", i_pos);
+        auto const g_pos = conductance_fp_index();
         printer->add_line("auto const* _ni = node_data.nodeindices;");
         printer->add_line("double* _area = nt->node_area_storage();");
+        printer->fmt_line("double* _i_col = _lmc.template fpfield_ptr<{}>();", i_pos);
+        printer->fmt_line("double* _g_col = _lmc.template fpfield_ptr<{}>();", g_pos);
+        printer->push_block(
+            "if (auto* vec_sav_rhs = nt->node_sav_rhs_storage())");
         printer->push_block("if (!nt->compute_gpu)");
         printer->push_block("for (int id = 0; id < nodecount; id++)");
         printer->add_line("int node_id = _ni[id];");
@@ -2784,7 +2802,6 @@ void CodegenNeuronAccVisitor::print_nrn_cur() {
         printer->pop_block();
         printer->chain_block("else");
         // Device: wait for cur, pull i, scale on host, RMW sav on device via memcpy.
-        // (In-ACC write of sav next to mechanism present hit CUDA illegal address.)
         printer->add_line("nrn_pragma_acc(wait(nt->stream_id))");
         printer->add_line(
             "double* _d_i = static_cast<double*>(acc_deviceptr(_i_col));");
@@ -2814,6 +2831,38 @@ void CodegenNeuronAccVisitor::print_nrn_cur() {
         printer->pop_block();  // _d_i && _d_sav
         printer->pop_block();  // !compute_gpu / else
         printer->pop_block();  // vec_sav_rhs
+
+        // Device-only: electrode g → sav_d (jacob skipped on device Gate-A path).
+        printer->push_block(
+            "if (nt->compute_gpu) if (auto* vec_sav_d = nt->node_sav_d_storage())");
+        printer->add_line("nrn_pragma_acc(wait(nt->stream_id))");
+        printer->add_line(
+            "double* _d_g = static_cast<double*>(acc_deviceptr(_g_col));");
+        printer->add_line(
+            "double* _d_sav_d = static_cast<double*>(acc_deviceptr(vec_sav_d));");
+        printer->push_block("if (_d_g && _d_sav_d)");
+        printer->add_line(
+            "std::vector<double> _host_g(static_cast<std::size_t>(nodecount));");
+        printer->add_line(
+            "acc_memcpy_from_device(_host_g.data(), _d_g, "
+            "static_cast<std::size_t>(nodecount) * sizeof(double));");
+        printer->add_line(
+            "std::vector<double> _host_sav_d(static_cast<std::size_t>(nt->end));");
+        printer->add_line(
+            "acc_memcpy_from_device(_host_sav_d.data(), _d_sav_d, "
+            "static_cast<std::size_t>(nt->end) * sizeof(double));");
+        printer->push_block("for (int id = 0; id < nodecount; id++)");
+        printer->add_line("int node_id = _ni[id];");
+        // g already includes point-process area scale from the CURRENT body.
+        printer->fmt_line("_host_sav_d[static_cast<std::size_t>(node_id)] {} _host_g["
+                          "static_cast<std::size_t>(id)];",
+                          operator_for_d());
+        printer->pop_block();
+        printer->add_line(
+            "acc_memcpy_to_device(_d_sav_d, _host_sav_d.data(), "
+            "static_cast<std::size_t>(nt->end) * sizeof(double));");
+        printer->pop_block();  // _d_g && _d_sav_d
+        printer->pop_block();  // compute_gpu && vec_sav_d
     }
 
     print_kernel_data_present_annotation_block_end();

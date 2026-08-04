@@ -1542,12 +1542,16 @@ void CodegenNeuronCppVisitor::print_mechanism_register_regular() {
         printer->add_newline();
     }
 
+    // Jacob only when CURRENT exists (writes g). Density mechs with BREAKPOINT
+    // SOLVE-only (e.g. Traub cad) have no current → no conductance → skip jacob
+    // (matches CoreNEURON registration; avoids empty device jacob launches).
     const auto compute_functions_parameters =
         breakpoint_exist()
-            ? fmt::format("{}, {}, {}",
-                          nrn_cur_required() ? method_name(naming::NRN_CUR_METHOD) : "nullptr",
-                          method_name(naming::NRN_JACOB_METHOD),
-                          nrn_state_required() ? method_name(naming::NRN_STATE_METHOD) : "nullptr")
+            ? fmt::format(
+                  "{}, {}, {}",
+                  nrn_cur_required() ? method_name(naming::NRN_CUR_METHOD) : "nullptr",
+                  nrn_cur_required() ? method_name(naming::NRN_JACOB_METHOD) : "nullptr",
+                  nrn_state_required() ? method_name(naming::NRN_STATE_METHOD) : "nullptr")
             : "nullptr, nullptr, nullptr";
 
 

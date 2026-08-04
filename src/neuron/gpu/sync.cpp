@@ -313,7 +313,7 @@ void zero_matrix_diagonal_on_device(NrnThread& nt, int begin, int end) noexcept 
             vec_sav_d[i] = 0.;
         }
     }
-    // No host wait: JACOB follows on the same stream (setup-lhs density).
+    // No host wait: device CURRENT (or CAP jacob / axial) follows on same stream.
 #else
     (void) nt;
     (void) begin;

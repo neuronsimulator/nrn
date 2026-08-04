@@ -411,7 +411,10 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
     }
 #if defined(NRN_ENABLE_GPU)
     else if (neuron::gpu::matrix_rhs_d_stays_on_device_for_solve(nt) && _nt->compute_gpu) {
+        // CoreNEURON-style: zero rhs and d before CURRENT. Device CURRENT applies
+        // g → vec_d; nrn_lhs then skips per-mech JACOB (setup-lhs density).
         neuron::gpu::zero_matrix_rhs_on_device(nt, i1, i3);
+        neuron::gpu::zero_matrix_diagonal_on_device(nt, i1, i3);
     }
 #endif
     else if (_nt->compute_gpu && i3 > i1) {
@@ -573,11 +576,12 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
     // Make sure the SoA node diagonals are also zeroed (is this needed?)
     auto* const vec_d = _nt->node_d_storage();
 #if defined(NRN_ENABLE_GPU)
-    if (neuron::gpu::matrix_rhs_d_stays_on_device_for_solve(nt) && _nt->compute_gpu) {
-        neuron::gpu::zero_matrix_diagonal_on_device(nt, i1, i3);
-        for (int i = i1; i < i3; ++i) {
-            vec_d[i] = 0.;
-        }
+    // Device Gate-A path: d (+ sav_d) already zeroed at start of nrn_rhs and
+    // filled by device CURRENT (g → vec_d). Do not re-zero or re-apply JACOB.
+    const bool device_matrix =
+        neuron::gpu::matrix_rhs_d_stays_on_device_for_solve(nt) && _nt->compute_gpu;
+    if (device_matrix) {
+        /* d / sav_d already prepared in nrn_rhs + CURRENT */
     } else
 #endif
         if (_nt->compute_gpu && i3 > i1) {
@@ -593,8 +597,8 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
     auto const vec_sav_d = _nt->node_sav_d_storage();
     if (vec_sav_d) {
 #if defined(NRN_ENABLE_GPU)
-        if (neuron::gpu::matrix_rhs_d_stays_on_device_for_solve(nt) && _nt->compute_gpu) {
-            /* zeroed with vec_d in zero_matrix_diagonal_on_device */
+        if (device_matrix) {
+            /* zeroed with d at start of nrn_rhs; electrode CURRENT updates sav_d */
         } else
 #endif
             if (_nt->compute_gpu && i3 > i1) {
@@ -609,6 +613,9 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
     }
 
     /* note that CAP has no jacob */
+#if defined(NRN_ENABLE_GPU)
+    if (!device_matrix)
+#endif
     for (tml = _nt->tml; tml; tml = tml->next)
         if (auto const jacob = memb_func[tml->index].jacob; jacob) {
             std::string mechname("cur-");
