@@ -106,6 +106,15 @@ std::unordered_set<int> CodegenNeuronAccVisitor::live_float_indices_for_kernel(
         for (const auto& block: info.before_after_blocks) {
             collect(block);
         }
+        // `current += cur` is emitted after the BREAKPOINT body for every
+        // NONSPECIFIC/ELECTRODE current (print_inlined_nrn_current_at_v /
+        // nrn_current_*). Those vars need not appear in the BREAKPOINT AST —
+        // e.g. IClamp_const has an empty BREAKPOINT and sets i only in INITIAL.
+        // Without this, Session B min-present keeps only g_unused and the
+        // force-inline path references undeclared _present_fp_N for i.
+        for (const auto& cur: info.currents) {
+            names.insert(cur);
+        }
         // g_unused / conductance is written by cur kernel after the body.
         names.insert(info.vectorize ? naming::CONDUCTANCE_UNUSED_VARIABLE
                                     : naming::CONDUCTANCE_VARIABLE);
@@ -577,6 +586,12 @@ CodegenNeuronAccVisitor::ParamVector CodegenNeuronAccVisitor::state_specialized_
     }
     // Only non-table RANGE columns the procedure body actually touches.
     auto live = procedure_live_present_fp_indices(node);
+    // Body indexes those columns as `_present_fp_N[id]` — need id in the thin
+    // ABI (e.g. Traub naf settables reads fastNa_shift/a/b/c/d RANGE params).
+    // HH rates(v) has empty live set (TABLE temps only) and keeps no-id ABI.
+    if (!live.empty()) {
+        params.emplace_back("", "size_t", "", "id");
+    }
     std::vector<int> ordered(live.begin(), live.end());
     std::sort(ordered.begin(), ordered.end());
     for (int i: ordered) {
@@ -613,6 +628,9 @@ std::string CodegenNeuronAccVisitor::state_specialized_method_arguments(
             }
         }
         auto live = procedure_live_present_fp_indices(*proc);
+        if (!live.empty()) {
+            args.emplace_back("id");
+        }
         std::vector<int> ordered(live.begin(), live.end());
         std::sort(ordered.begin(), ordered.end());
         for (int i: ordered) {
@@ -664,13 +682,16 @@ CodegenNeuronAccVisitor::ParamVector CodegenNeuronAccVisitor::internal_method_pa
 
     // Session A: thin ABI for rates_*_state / f_rates_*_state.
     if (emitting_state_specialized_procedure_) {
-        // inst + TABLE double& + live present_fp only; node_data/id/_ppvar dropped.
+        // inst + TABLE double& + (id if live present) + live present_fp;
+        // node_data/_ppvar/_thread dropped. id required when body uses
+        // `_present_fp_N[id]` for non-table RANGE (Traub naf settables).
         ParamVector params;
         params.emplace_back("", fmt::format("{}&", instance_struct()), "", "inst");
         for (const auto& tname: state_specialized_table_temps_) {
             params.emplace_back("", "double&", "", fmt::format("_kl_{}", tname));
         }
-        if (state_specialized_live_fp_) {
+        if (state_specialized_live_fp_ && !state_specialized_live_fp_->empty()) {
+            params.emplace_back("", "size_t", "", "id");
             std::vector<int> ordered(state_specialized_live_fp_->begin(),
                                      state_specialized_live_fp_->end());
             std::sort(ordered.begin(), ordered.end());
@@ -718,7 +739,8 @@ std::string CodegenNeuronAccVisitor::internal_method_arguments() {
         for (const auto& tname: state_specialized_table_temps_) {
             args.push_back(fmt::format("_kl_{}", tname));
         }
-        if (state_specialized_live_fp_) {
+        if (state_specialized_live_fp_ && !state_specialized_live_fp_->empty()) {
+            args.emplace_back("id");
             std::vector<int> ordered(state_specialized_live_fp_->begin(),
                                      state_specialized_live_fp_->end());
             std::sort(ordered.begin(), ordered.end());
@@ -2220,20 +2242,10 @@ bool CodegenNeuronAccVisitor::is_current_stack_temp_float(const std::string& nam
     if (name == naming::CONDUCTANCE_UNUSED_VARIABLE || name == naming::CONDUCTANCE_VARIABLE) {
         return false;
     }
-    // Pure RANGE reads written outside BREAKPOINT (e.g. gap `vgap`) must stay
-    // SoA present — only vars *written* in BREAKPOINT/BA are stack temps.
-    // Ion READ shadows (ena, ek) are special-cased as stack loads from dptr.
-    try {
-        auto const pos = position_of_float_var(name);
-        const auto& sym = codegen_float_variables[static_cast<size_t>(pos)];
-        // PARAMETER / STATE stay device SoA.
-        if (sym->has_any_property(NmodlType::param_assign | NmodlType::state_var)) {
-            return false;
-        }
-    } catch (...) {
-        return false;
-    }
-    // Ion read shadows: stack (initialized from dptr before body).
+    // Ion READ shadows (ena, ek): always stack loads from dptr before the body.
+    // Must win over PARAMETER — Traub-style MODs often list `ena` in PARAMETER
+    // as well as USEION READ; host codegen still refreshes from ion. Session B
+    // min-present used the stale SoA shadow when param_assign blocked stack.
     for (const auto& ion: info.ions) {
         for (const auto& var: ion.reads) {
             if (var == name) {
@@ -2246,6 +2258,18 @@ bool CodegenNeuronAccVisitor::is_current_stack_temp_float(const std::string& nam
                 return true;
             }
         }
+    }
+    // Pure RANGE reads written outside BREAKPOINT (e.g. gap `vgap`) must stay
+    // SoA present — only vars *written* in BREAKPOINT/BA are stack temps.
+    try {
+        auto const pos = position_of_float_var(name);
+        const auto& sym = codegen_float_variables[static_cast<size_t>(pos)];
+        // PARAMETER / STATE stay device SoA (non-ion).
+        if (sym->has_any_property(NmodlType::param_assign | NmodlType::state_var)) {
+            return false;
+        }
+    } catch (...) {
+        return false;
     }
     // Collect LHS of assignments in breakpoint + BA.
     std::unordered_set<std::string> written;

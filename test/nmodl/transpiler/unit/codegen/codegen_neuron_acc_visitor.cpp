@@ -207,6 +207,92 @@ SCENARIO("NEURON OpenACC codegen emits offload pragmas", "[codegen][neuron][acc]
         }
     }
 
+    GIVEN("USEION READ ena also listed in PARAMETER (Traub naf shape)") {
+        // Traub channel MODs put `ena` in PARAMETER as well as USEION READ.
+        // Session B must still stack-load ion ena (not stale SoA shadow).
+        const std::string nmodl_text = R"(
+            NEURON {
+                SUFFIX TraubEnaParam
+                USEION na READ ena WRITE ina
+                RANGE gbar, ina
+            }
+            PARAMETER {
+                gbar = 0.1 (mho/cm2)
+                v (mV) ena (mV)
+            }
+            ASSIGNED {
+                ina (mA/cm2)
+            }
+            STATE { m }
+            BREAKPOINT {
+                SOLVE states METHOD cnexp
+                ina = gbar * m * (v - ena)
+            }
+            DERIVATIVE states {
+                m' = (1 - m)
+            }
+        )";
+
+        THEN("Session B CURRENT uses stack ena from ion dptr, not present_fp ena") {
+            const auto generated = get_neuron_acc_code(nmodl_text);
+            const auto cur_begin = generated.find("static void nrn_cur_TraubEnaParam");
+            REQUIRE(cur_begin != std::string::npos);
+            const auto cur_end = generated.find("static void nrn_", cur_begin + 20);
+            const auto cur_fn = generated.substr(
+                cur_begin,
+                (cur_end == std::string::npos ? generated.size() : cur_end) - cur_begin);
+            // Stack load from ion dptr.
+            REQUIRE_THAT(cur_fn, ContainsSubstring("double ena = "));
+            REQUIRE_THAT(cur_fn, ContainsSubstring("_present_dptr_"));
+            // Body must use bare stack ena in (v - ena), not SoA shadow.
+            const bool uses_stack_ena =
+                cur_fn.find("_cur_v - ena") != std::string::npos ||
+                cur_fn.find("(_cur_v - ena)") != std::string::npos;
+            REQUIRE(uses_stack_ena);
+            REQUIRE(cur_fn.find("_cur_v - _present_fp_") == std::string::npos);
+        }
+    }
+
+    GIVEN("ELECTRODE_CURRENT with empty BREAKPOINT (IClamp_const shape)") {
+        // Traub ModelDB 82894: i set only in INITIAL; CURRENT still does
+        // current += i. Session B min-present must declare that SoA column.
+        const std::string nmodl_text = R"(
+            NEURON {
+                POINT_PROCESS IClampConstAcc
+                RANGE amp, i
+                ELECTRODE_CURRENT i
+            }
+            PARAMETER {
+                amp (nA)
+            }
+            ASSIGNED { i (nA) }
+            INITIAL {
+                i = amp
+            }
+            BREAKPOINT {
+            }
+        )";
+
+        THEN("Session B force-inline presents electrode current SoA column") {
+            const auto generated = get_neuron_acc_code(nmodl_text);
+            REQUIRE_THAT(generated, ContainsSubstring("nrn_cur_IClampConstAcc"));
+            // Force-inline path (empty BREAKPOINT is safe).
+            REQUIRE(generated.find("nrn_current_IClampConstAcc") == std::string::npos);
+            REQUIRE_THAT(generated, ContainsSubstring("current += _present_fp_"));
+            // Must declare the present_fp that current += uses (i is ASSIGNED,
+            // not written in BREAKPOINT → SoA, not stack). g_unused alone is not enough.
+            const auto cur_begin = generated.find("static void nrn_cur_IClampConstAcc");
+            REQUIRE(cur_begin != std::string::npos);
+            const auto cur_end = generated.find("static void nrn_", cur_begin + 20);
+            const auto cur_fn = generated.substr(
+                cur_begin,
+                (cur_end == std::string::npos ? generated.size() : cur_end) - cur_begin);
+            // present clause or fpfield_ptr for the i column (index 1: amp=0, i=1, …).
+            REQUIRE_THAT(cur_fn, ContainsSubstring("_present_fp_1 = _lmc.template fpfield_ptr<1>()"));
+            REQUIRE_THAT(cur_fn, ContainsSubstring("current += _present_fp_1[id]"));
+        }
+    }
+
     GIVEN("ExpSyn-like POINT_PROCESS with NET_RECEIVE") {
         const std::string nmodl_text = R"(
             NEURON {

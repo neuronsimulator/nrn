@@ -2,7 +2,7 @@
 
 **Portfolio:** GPU-native (feature)  
 **Tree:** `~/neuron/nrngpu`  
-**Living tip (2026-08-04):** `local/gpu-native` @ H4 + Session B + Session E + multi-rank MPS + Eigen + prcell morph + D→H fence + threshold header + **slim JACOB**. Exclusive wall multi-warm ~**1.14–1.17 s**; dentate 4-rank MPS psolve ~**1.5–1.6 s**.  
+**Living tip (2026-08-04):** `local/gpu-native` @ H4 + Session B + Session E + multi-rank MPS + Eigen + prcell morph + D→H fence + threshold header + slim JACOB + **Traub ACC codegen (ion READ / electrode / STATE id)**. Exclusive ringtest multi-warm ~**1.14–1.17 s**; dentate 4-rank MPS psolve ~**1.5–1.6 s**; Traub 1/10 **4474 / 7873** exact.  
 **Parked explor:** `local/gpu-P4-hotpath-netreceive` + `local/gpu-p4-phase-c-remeasure` (Phase C min-present net_buf — kernel win, **wall flat**); `local/gpu-p4-exclusive-residual` (slim JACOB archive, **merged to tip** as hygiene); `local/gpu-p4-setup-rhs-density` (Session E archive, **merged to tip**)  
 **Handoffs:** `GROK-GPU-NATIVE.md`, `AGENTS.md`, `~/neuron/notes/PORTFOLIO.md`  
 **This file:** ordered steps you can re-open without chat memory. Update **Status** at end of each session.
@@ -150,6 +150,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-08-04 | GPU-P4-threshold-header | — | **Threshold header hygiene:** print true cell-local inode (drop historical `local_inode-1`) in NEURON + CoreNEURON prcellstate; rdcellstate no longer +1 (optional `--legacy-threshold-header`). Ringtest header `2 is the threshold node` matches V line; **688@100** dV noise. |
 | 2026-08-04 | GPU-P4-phase-c-remeasure | — | Phase C cherry-pick onto tip (`local/gpu-p4-phase-c-remeasure`): ExpSyn/Exp2Syn slim net_buf product-green (688@100). Kernel avg ~10 µs. Ringtest multi-warm ~1.13–1.15 s (**flat** vs tip). Dentate 4-rank MPS psolve ~1.66–1.78 s vs tip ~1.48–1.59; lastpart-deliver mean ~0.12 s both (**flat**). **No tip-merge** — re-parked. |
 | 2026-08-04 | GPU-P4-slim-jacob | — | **Slim JACOB tip hygiene:** re-apply explor Session D onto tip (no GLOBAL present/enter; g_unused+vec_d only). Unit test Session D green. Product **688@100** dV=0. Multi-warm ~**1.14–1.15 s** (flat vs tip ~1.15–1.17; no wall claim). |
+| 2026-08-04 | GPU-P4-traub | — | **Traub product mix identity closed:** ACC codegen fixes (Session B ion READ stack when also PARAMETER; electrode present for empty-BREAKPOINT IClamp_const; STATE specialized ABI `id` when live present_fp). no-gap **4474 exact** native↔CPU↔CN; gap **7873 exact** native↔CPU (CN 7867 known 6-miss). Native multi-warm ~**18.8–19.4 s** no-gap / ~**21.4–21.9 s** gap vs CN ~9.9 / ~10.9 (~2×; was ~99 s gap). Root of over-fire/13983 was stale `ena` SoA, not gap path. Ringtest **688** green. |
 
 ---
 
@@ -714,10 +715,11 @@ Milestone B (CURRENT specialization): `nrn_cur_hh` ≈ hand ~13 — **met** (~14
 4. **Threshold header hygiene:** **closed** — true local_inode in NEURON+CN; rdcellstate aligned.
 5. **Phase C denser-spike remeasure:** **closed** — ringtest + dentate MPS wall flat; no tip-merge (kernel-only win).
 6. **Slim JACOB hygiene:** **closed** (on tip 2026-08-04).
-7. **Traub product mix (reopened 2026-08-04):** identity + timing vs ringtest/dentate. See **Starting prompt — Traub** below.  
-   - **no-gap:** historically QUALIFIED + **4474 exact** — re-smoke on tip first.  
-   - **`use_gap=1`:** parked over-fire (8796 vs 7873); CN-GPU ~11 s exact — `~/neuron/notes/gpu_native_traub_use_gap.md`.  
-8. Optional: further exclusive density / lastpart-nonvint only if a new measured residual appears under CN.
+7. **Traub product mix (closed 2026-08-04):** identity green; timing baselined ~2× CN. See session ledger GPU-P4-traub.  
+   - **no-gap:** QUALIFIED A–F; **4474 exact** native↔CPU↔CN-GPU. Multi-warm ~**18.8–19.4 s** vs CN ~**9.9 s**.  
+   - **`use_gap=1`:** **7873 exact** native↔CPU (was over-fire 8796); CN **7867** (known 6-miss). Multi-warm ~**21.4–21.9 s** (was ~99) vs CN ~**10.9 s**.  
+   - **Root cause (ACC codegen, not gap path):** Session B ion READ as stack must beat PARAMETER (Traub lists `ena` in PARAMETER); empty-BREAKPOINT electrode present; STATE specialized `id` for RANGE present_fp.  
+8. Optional: Traub exclusive density toward CN (~2× residual: setup-tree + lastpart-nonvint); product harness/ctest like dentate.
 
 ---
 
@@ -810,7 +812,7 @@ Commit locally without push. Update Status/Next before exit.
 
 ## Next (one line — update every session end)
 
-**Next:** **Traub** product mix — identity (+ reasons for diffs) and timing vs CoreNEURON; no-gap re-smoke first, then `use_gap=1`. P4 named polish residuals **closed** (slim JACOB on tip; Phase C parked flat). Ringtest **688** + dentate **400** stay green.
+**Next:** Traub identity **closed** (4474 / 7873). Optional residual: Traub exclusive density toward CN (~2× setup+nonvint) or product harness. Ringtest **688** + dentate **400** + Traub gates stay green.
 
 ### Starting prompt — Session A residual (closed; archive)
 
@@ -901,18 +903,20 @@ P4 named polish residuals closed 2026-08-04 (slim JACOB on tip; Phase C parked
 flat). Default next is Traub product mix (below). Optional: new measured residual
 only if a profile shows a real wall/phase gap under CN.
 
-### Starting prompt — Traub identity + timing (default next)
+### Starting prompt — Traub identity + timing (closed 2026-08-04; archive)
+
+**Closed:** identity + baselined timing. ACC codegen fixes on tip (ion READ stack /
+electrode present / STATE specialized `id`). See ledger GPU-P4-traub.
+
+| Config | Result (2026-08-04 tip) | Notes |
+|--------|-------------------------|-------|
+| `use_gap=0` | QUALIFIED A–F; **4474 exact** native↔CPU↔CN | Multi-warm ~18.8–19.4 s; CN ~9.9 s (~2×) |
+| `use_gap=1` native↔CPU | **7873 exact** (was over-fire 8796) | Multi-warm ~21.4–21.9 s (was ~99); CN ~10.9 s |
+| `use_gap=1` CN | **7867** (6 missing vs NEURON; known interpreter-event) | Not a native residual |
+| Root cause of 8796/13983 | Stale ion `ena` SoA when also PARAMETER (Session B) | Not gap buffer path |
 
 **Model:** ModelDB 82894 (`~/models/82894`), 1/10 network, 356 cells, `nthread=1`.  
-**Living notes:** `GROK-GPU-NATIVE.md` § Traub/Th4; `~/neuron/notes/gpu_native_traub_use_gap.md`  
-(do **not** trust Jul-2 `native_gpu_traub_parity.md` paths to `core-neuron-gpu`).
-
-| Config | Historical result | Action |
-|--------|-------------------|--------|
-| `use_gap=0` | QUALIFIED A–F; **4474 exact** CPU↔native | **Re-smoke on tip first** + times vs CN-GPU |
-| `use_gap=1` native | Over-fire **8796** vs CPU **7873** (exact through t≤43.4; first extra t=43.45 gid 221) | Identity first; timing secondary |
-| `use_gap=1` CN-GPU | **7867** exact vs CN-CPU, ~**11 s** on T1000 | Timing guide for gap case |
-| Ringtest gap | Green (not Traub’s residual) | Do not re-litigate |
+**Living notes:** `GROK-GPU-NATIVE.md` § Traub/Th4; `~/neuron/notes/gpu_native_traub_use_gap.md`.
 
 ```text
 Read ~/neuron/notes/PORTFOLIO.md (GPU-native), then

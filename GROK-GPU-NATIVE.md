@@ -378,7 +378,7 @@ Device kernels **cannot** grow mid-region. Host pre-sizes via
 | Env | `NRN_GPU_TRAJECTORY_CHUNK=N` (0/unset = auto) |
 | Gate F | Pure `Vector.record` / single-pd GraphLine does not force full SoA when plan complete |
 | Ringtest | **688@100**, noise-level cellstate (re-checked 2026-07-28) |
-| Traub 1/10 | **QUALIFIED yes; 4474 exact CPU↔GPU** on this tip (re-smoke 2026-07-28) |
+| Traub 1/10 | **QUALIFIED yes; 4474 exact** (re-smoke 2026-08-04; gap **7873 exact** too) |
 
 **Residuals (not blocking feature close):** mech-RANGE gather; multi-var GraphLine
 expressions; optional det-event / det-matrix keep for testing.
@@ -400,14 +400,15 @@ Protocol: same special for `enable_gpu=0` and `=1`; count **and** sorted times.
 
 | Option | Content |
 |--------|---------|
-| **Default next** | **Traub** identity + timing (parity **Starting prompt — Traub**); product mix with ringtest/dentate |
-| P4 polish | **Closed** — named residuals done; slim JACOB on tip; Phase C parked flat |
+| **Default next** | Optional Traub density ~2×CN or product harness; else new measured residual |
+| P4 polish | **Closed** — slim JACOB on tip; Phase C parked flat |
 | Multi-rank MPS | **Closed** — `test/external/ensure_cuda_mps.sh` + ctests; Eigen full-present |
 | Eigen v_unused | **Closed** — STATE refresh for functors; kin-native green |
 | Dentate 400 | **Closed** — CadepK `_eigen_global` deviceptr |
-| Traub no-gap | Historical **4474 exact** — re-smoke on tip in Traub session |
-| Parked / gap | Traub `use_gap=1` over-fire (`notes/gpu_native_traub_use_gap.md`); Phase C explor flat |
-| Later | device-resource owner only if forced |
+| Traub no-gap | **Closed** — **4474 exact** native↔CPU↔CN; multi-warm ~19 s vs CN ~10 s |
+| Traub gap | **Closed** — **7873 exact** native↔CPU (was 8796); multi-warm ~22 s (was ~99); CN 7867 |
+| ACC Traub codegen | **Closed** — ion READ stack vs PARAMETER; electrode present; STATE specialized `id` |
+| Later | device-resource owner only if forced; Phase C explor flat |
 
 ### Constraints (do not regress)
 
@@ -450,24 +451,23 @@ After ACC codegen changes to built-ins: `rm -f build-gpu/src/nrnoc/expsyn.cpp &&
 
 ## Starting prompt
 
-Default next work is **Traub product mix** (identity + timing). Full prompt:
+Traub identity **closed** (4474 no-gap / 7873 gap). Default next is optional
+density toward CN or a new measured residual:
 
-→ **`doc/gpu/native-coreneuron-parity.md`** § *Starting prompt — Traub identity + timing*
+→ **`doc/gpu/native-coreneuron-parity.md`** § Next + Status
 
 ```
 Read ~/neuron/notes/PORTFOLIO.md (GPU-native), then
-~/neuron/nrngpu/doc/gpu/native-coreneuron-parity.md
-  (Status/Next; Starting prompt — Traub),
-GROK-GPU-NATIVE.md (Traub/Th4), ~/neuron/notes/gpu_native_traub_use_gap.md,
-AGENTS.md.
+~/neuron/nrngpu/doc/gpu/native-coreneuron-parity.md (Status/Next),
+GROK-GPU-NATIVE.md, AGENTS.md.
 
-Kind: feature. Portfolio: GPU-native. Phase: Traub identity + timing.
+Kind: feature. Portfolio: GPU-native.
 Tree: ~/neuron/nrngpu. Branch: local/gpu-native.
-Model: ~/models/82894 (1/10). High performance sacred; heap-free weight_index.
-Commit locally without push. /rename GPU-P4-traub
+Traub 4474/7873 closed. Optional density ~2×CN or new residual.
+High performance sacred; heap-free weight_index. Commit without push.
 ```
 
-P0–P3 closed; P4 polish closed. Phase-specific archive prompts remain in
+P0–P4 + Traub identity closed. Phase-specific archive prompts remain in
 `doc/gpu/native-coreneuron-parity.md`.
 
 ---
