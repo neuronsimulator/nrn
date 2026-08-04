@@ -194,6 +194,44 @@ SCENARIO("NEURON OpenACC codegen emits offload pragmas", "[codegen][neuron][acc]
     // VERBATIM keeps general ABI via procedure_safe_for_state_specialization;
     // full VERBATIM ACC codegen needs host macro scaffolding beyond this harness.
 
+    GIVEN("GLOBAL scalar used in STATE body (Traub cad ceiling shape)") {
+        // cnexp STATE + BREAKPOINT clamp on GLOBAL must use bare present(*_global),
+        // not inst.global-> (host address) — Traub cad ACC_TIME ~425→32 µs.
+        const std::string nmodl_text = R"(
+            NEURON {
+                SUFFIX CadCeil
+                USEION ca READ ica WRITE cai
+                RANGE phi, beta
+                GLOBAL ceiling
+            }
+            PARAMETER {
+                phi = 1
+                beta = 1
+            }
+            STATE { cai }
+            ASSIGNED { ica }
+            BREAKPOINT {
+                SOLVE state METHOD cnexp
+                if (cai > ceiling) { cai = ceiling }
+            }
+            DERIVATIVE state {
+                cai' = -phi * ica - beta * cai
+            }
+        )";
+
+        THEN("STATE uses bare CadCeil_global.ceiling, not inst.global->ceiling") {
+            const auto generated = get_neuron_acc_code(nmodl_text);
+            const auto state_begin = generated.find("static void nrn_state_CadCeil");
+            REQUIRE(state_begin != std::string::npos);
+            const auto state_end = generated.find("static void nrn_", state_begin + 20);
+            const auto state_fn = generated.substr(
+                state_begin,
+                (state_end == std::string::npos ? generated.size() : state_end) - state_begin);
+            REQUIRE_THAT(state_fn, ContainsSubstring("CadCeil_global.ceiling"));
+            REQUIRE(state_fn.find("inst.global->ceiling") == std::string::npos);
+        }
+    }
+
     GIVEN("the canonical passive.mod shipped with NEURON") {
         const auto mod_path = std::filesystem::path(NRN_SOURCE_DIR) / "src/nrnoc/passive.mod";
         REQUIRE(std::filesystem::exists(mod_path));

@@ -373,7 +373,15 @@ std::string CodegenNeuronAccVisitor::global_variable_name(const SymbolType& symb
     if (eigen_functor_global_capture_) {
         return fmt::format("_eigen_global->{}", symbol->get_name());
     }
-    if (use_present_fp_indexing_ || use_instance) {
+    // Device parallel loops already `present(*_global)`. Emit bare
+    // `suffix_global.X`, not `inst.global->X` (host address in make_instance).
+    // Traub cad STATE: inst.global->ceiling made cnexp ~13× slower than cal
+    // (ACC_TIME avg ~425 µs vs ~32 µs at same nodecount ~21k) and multi-warm
+    // wall ~19.5 → ~16 s after bare global (hand-edit proof).
+    if (use_present_fp_indexing_) {
+        return CodegenNeuronCppVisitor::global_variable_name(symbol, false);
+    }
+    if (use_instance) {
         return fmt::format("inst.{}->{}", naming::INST_GLOBAL_MEMBER, symbol->get_name());
     }
     return CodegenNeuronCppVisitor::global_variable_name(symbol, false);
