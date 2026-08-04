@@ -76,14 +76,16 @@ There is no automatic upgrade. `check-upstream.sh` is awareness only.
 
 Hosted on release **`ci-deps-v1`**:
 
-- `mpich_4.2.0-5.1_amd64.deb` + `libmpich12_4.2.0-5.1_amd64.deb`  
-  Ubuntu 24.04 workaround for [LP#2072338](https://bugs.launchpad.net/ubuntu/+source/mpich/+bug/2072338), used by Azure and GitHub wheel tests so both OpenMPI and MPICH can exercise dynamic MPI.
+- `mpich_4.2.0-5.1_amd64.deb` + `libmpich12_4.2.0-5.1_amd64.deb` — Ubuntu 24.04 wheel tests (LP#2072338)
+- `ncurses-6.4.tar.gz`, `readline-8.3.tar.gz` — Mac static readline (`build_static_readline_osx.bash`)
+- `readline-7.0.tar.gz`, `ncurses-6.4.tar.gz` — manylinux wheel image (`packaging/python/Dockerfile`)
+- `automake-1.16.5.tar.xz` — Ubuntu MUSIC path in `neuron-ci.yml`
 
 ## Related but not yet managed (`managed: false`)
 
 - Azure secure files: `readline7.0-ncurses6.4.tar.gz`, `mpt_headears.2.21.tar.gz`
-- GNU sources for Mac/Linux static readline
 - python.org installers (large)
+- Windows NSIS / MS-MPI installers
 - apt / brew / pip (package managers — different strategy)
 
 ## MPI coverage note

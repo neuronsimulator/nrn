@@ -54,11 +54,11 @@ rm -f ci/deps/assets/*   # optional; assets/ is gitignored
 
 ## What is managed today
 
-- Ubuntu 24.04 MPICH packages on release **`ci-deps-v1`**, used by Azure and
-  GitHub **wheel test** jobs (workaround for
-  [LP#2072338](https://bugs.launchpad.net/ubuntu/+source/mpich/+bug/2072338)),
-  so both OpenMPI and MPICH can exercise dynamic MPI in
-  [packaging/python/test_wheels.sh](../../packaging/python/test_wheels.sh).
+On release **`ci-deps-v1`**:
+
+- Ubuntu 24.04 MPICH debs for wheel tests (LP#2072338)
+- GNU **ncurses** / **readline** sources for Mac static readline and the manylinux Dockerfile
+- **automake** 1.16.5 for the Ubuntu MUSIC job in `neuron-ci`
 
 Other MANIFEST rows stay `managed: false` until promoted the same way.
 
