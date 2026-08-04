@@ -23,6 +23,7 @@ Each aspect generally has extra dependencies and special instructions.
 
    mac_pkg.md
    python_wheels.md
+   ci_deps.md
    windows.md
    formatting.md
    code_coverage.md
