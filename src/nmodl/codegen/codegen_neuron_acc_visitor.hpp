@@ -307,6 +307,17 @@ class CodegenNeuronAccVisitor: public CodegenNeuronCppVisitor {
     [[nodiscard]] bool current_force_inline_safe() const;
 
     /**
+     * Phase C / residual #14: min-present net_buf_receive (live SoA columns only,
+     * drop dead setup). Safe when NET_RECEIVE has no VERBATIM, no nested MOD
+     * PROCEDURE/FUNCTION calls, and no POINTER/RANDOM. net_send/event keep nsb
+     * present.
+     */
+    [[nodiscard]] bool net_receive_min_present_safe() const;
+
+    /** True if NET_RECEIVE body names a mech GLOBAL (needs global present/setup). */
+    [[nodiscard]] bool net_receive_uses_global_vars() const;
+
+    /**
      * Session B: float SoA column is a CURRENT stack temp (ASSIGNED intermediate,
      * ion shadow, nonspecific current) — not PARAMETER/STATE/g_unused.
      */

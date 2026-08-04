@@ -475,5 +475,29 @@ SCENARIO("NEURON OpenACC codegen emits offload pragmas", "[codegen][neuron][acc]
                 cur_fn.find("deviceptr(_d_area") != std::string::npos;
             REQUIRE(area_in_deviceptr);
         }
+
+        THEN("Phase C: min-present net_buf_receive (live g only; no fat setup)") {
+            const auto generated = get_neuron_acc_code(nmodl_text);
+            const auto def_pos = generated.find("static void net_buf_receive_ExpSynAcc");
+            REQUIRE(def_pos != std::string::npos);
+            const auto end_pos = generated.find("static void nrn_net_receive_ExpSynAcc", def_pos);
+            REQUIRE(end_pos != std::string::npos);
+            const auto nbuf = generated.substr(def_pos, end_pos - def_pos);
+
+            // Live present: g is a STATE column via present_fp.
+            REQUIRE_THAT(nbuf, ContainsSubstring("_present_fp_"));
+            // Slim: no make_instance / node_data / full dptr surface.
+            REQUIRE(nbuf.find("make_instance_ExpSynAcc") == std::string::npos);
+            REQUIRE(nbuf.find("make_node_data_ExpSynAcc") == std::string::npos);
+            // No per-flush H→D of nt->_t (body uses event-local t).
+            REQUIRE(nbuf.find("update device(nt->_t)") == std::string::npos);
+            REQUIRE_THAT(nbuf, ContainsSubstring("_args"));
+            // Residual #14: weights + RANGE via deviceptr (not present re-copyin).
+            REQUIRE_THAT(nbuf, ContainsSubstring("acc_deviceptr(weights)"));
+            REQUIRE_THAT(nbuf, ContainsSubstring("deviceptr(weights"));
+            // Must not re-present full weight SoA / nrb array slices each launch.
+            REQUIRE(nbuf.find("weights[:weight_count]") == std::string::npos);
+            REQUIRE(nbuf.find("nrb->_pnt_index[:") == std::string::npos);
+        }
     }
 }

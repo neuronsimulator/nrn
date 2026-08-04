@@ -61,6 +61,16 @@ void free_net_receive_buffer(Memb_list* ml);
 void set_flush_sorted_token(neuron::model_sorted_token const* token) noexcept;
 
 /**
+ * True while flush_net_receive_buffers is launching per-type net_buf kernels.
+ * When active, generated net_buf_receive skips per-type stream wait, NRB zero,
+ * and NetSendBuffer host drain — flush does one stream wait then finalizes all
+ * active types (wait coalesce; Traub residual #14).
+ * Direct / unit-test calls leave this false so net_buf still self-finalizes.
+ */
+[[nodiscard]] bool net_buf_flush_active() noexcept;
+void set_net_buf_flush_active(bool active) noexcept;
+
+/**
  * Host pointer to the contiguous Weight SoA Value column.
  * Present on device after upload_sorted_model (heap-free packing A).
  * Device kernels index as weights[weight_index + arg].

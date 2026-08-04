@@ -3,6 +3,7 @@
 #include "neuron/gpu/config.hpp"
 #include "neuron/gpu/device_state.hpp"
 #include "neuron/gpu/net_receive_buffer.hpp"
+#include "neuron/gpu/net_send_buffer.hpp"
 #include "neuron/gpu/offload.hpp"
 #include "neuron/gpu/phase_timer.hpp"
 
@@ -13,6 +14,7 @@
 
 #include <atomic>
 #include <optional>
+#include <vector>
 
 namespace neuron::gpu {
 namespace {
@@ -62,6 +64,13 @@ void flush_net_receive_buffers(NrnThread* nt) {
         sorted = &*ensure_holder;
     }
     update_net_receive_buffer(nt);
+
+    // Wait coalesce: launch all type kernels without per-type stream wait /
+    // NRB zero / NSB drain; one wait then finalize. net_buf_flush_active tells
+    // generated net_buf_receive to skip self-finalize.
+    std::vector<Memb_list*> launched;
+    launched.reserve(net_buf_receive.size());
+    set_net_buf_flush_active(true);
     for (auto const& entry: net_buf_receive) {
         if (!entry.first) {
             continue;
@@ -71,8 +80,43 @@ void flush_net_receive_buffers(NrnThread* nt) {
         if (ml && ml->_net_receive_buffer && ml->_net_receive_buffer->_cnt == 0) {
             continue;  // skip empty types
         }
+        if (ml && ml->_net_receive_buffer && ml->_net_receive_buffer->_cnt > 0) {
+            launched.push_back(ml);
+        }
         (*entry.first)(nt);
     }
+    set_net_buf_flush_active(false);
+
+    if (nt->compute_gpu && !launched.empty()) {
+        nrn_pragma_acc(wait(nt->stream_id))
+    }
+    for (Memb_list* ml: launched) {
+        NetReceiveBuffer_t* nrb = ml->_net_receive_buffer;
+        if (!nrb) {
+            continue;
+        }
+        nrb->_displ_cnt = 0;
+        nrb->_cnt = 0;
+        if (nt->compute_gpu && nrb->device_uploaded) {
+            nrn_pragma_acc(update device(nrb->_cnt, nrb->_displ_cnt))
+            nrn_pragma_omp(target update to(nrb->_cnt, nrb->_displ_cnt))
+        }
+        // NetSendBuffer host drain (was per-type after each net_buf wait).
+        NetSendBuffer_t* nsb = ml->_net_send_buffer;
+        if (nsb) {
+            if (nt->compute_gpu) {
+                nrn_pragma_acc(update self(nsb->_cnt))
+                nrn_pragma_omp(target update from(nsb->_cnt))
+                update_net_send_buffer_on_host(nt, nsb);
+            }
+            deliver_net_send_buffer_events(nt, ml, nsb);
+            if (nt->compute_gpu) {
+                nrn_pragma_acc(update device(nsb->_cnt))
+                nrn_pragma_omp(target update to(nsb->_cnt))
+            }
+        }
+    }
+
     if (ensure_holder) {
         set_flush_sorted_token(nullptr);
     }

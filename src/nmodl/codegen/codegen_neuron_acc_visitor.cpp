@@ -1396,7 +1396,11 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
     const bool jacob_slim = type == BlockType::Equation &&
                             static_cast<bool>(live_float_indices_override_);
 
-    if (!jacob_slim) {
+    // Phase C: slim net_buf_receive without GLOBAL use skips stale H→D of the
+    // full global struct (HH tables) that STATE/CURRENT still need when dirty.
+    const bool net_rx_slim =
+        type == BlockType::NetReceive && net_receive_min_present_safe();
+    if (!(jacob_slim || (net_rx_slim && !net_receive_uses_global_vars()))) {
         print_global_variable_device_update_annotation();
     }
 
@@ -1404,6 +1408,8 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
     // array-of-pointers; only present columns the kernel actually touches.
     const auto live_fp = live_float_indices_for_kernel(type);
     // Jacob override is float-only (g_unused); no ion dptrs.
+    // NetReceive: dptrs only when live (min-present path declares them); fat
+    // path still declares all dptrs host-side but does not present them.
     const auto live_dptr = (type == BlockType::NetReceive || live_float_indices_override_)
                                ? std::unordered_set<int>{}
                                : live_dptr_indices_for_kernel(type);
@@ -1465,33 +1471,32 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
     std::ostringstream present_clause;
     present_clause << "present(_ml_arg, nt";
     if (type == BlockType::NetReceive) {
-        // nrb metadata + Weight SoA + mechanism RANGE columns for NET_RECEIVE body.
-        present_clause << ", nrb"
-                          ", nrb->_displ[:nrb->_displ_cnt + 1]"
-                          ", nrb->_nrb_index[:nrb->_cnt]"
-                          ", nrb->_pnt_index[:nrb->_cnt]"
-                          ", nrb->_weight_index[:nrb->_cnt]"
-                          ", nrb->_nrb_t[:nrb->_cnt]"
-                          ", nrb->_nrb_flag[:nrb->_cnt]"
-                          ", weights[:weight_count]";
+        // nrb/nsb structs only: device copies already hold device array pointers
+        // (upload_net_receive_buffer_fields). Present of nrb->_pnt_index[:cnt]
+        // etc. re-copyin'd host slices every flush (Traub NMDA ~0.55 s alone).
+        // Weight SoA + RANGE SoA: deviceptr (already device-resident).
+        present_clause << ", nrb";
         if (info.net_send_used || info.net_event_used) {
-            // Device net_send_buffering writes; host flush resolves indices after wait.
-            present_clause << ", nsb"
-                              ", nsb->_sendtype[:nsb->_size]"
-                              ", nsb->_vdata_index[:nsb->_size]"
-                              ", nsb->_weight_index[:nsb->_size]"
-                              ", nsb->_pnt_index[:nsb->_size]"
-                              ", nsb->_nsb_t[:nsb->_size]"
-                              ", nsb->_nsb_flag[:nsb->_size]";
+            present_clause << ", nsb";
         }
-        // NetReceive: present all float columns (buffer path may touch many).
-        const auto codegen_float_variables_size = codegen_float_variables.size();
-        for (int i = 0; i < codegen_float_variables_size; ++i) {
-            const auto& float_var = codegen_float_variables[i];
-            auto const array_len = float_var->is_array() ? float_var->get_length() : 1;
-            present_clause << fmt::format(
-                ", _present_fp_{}[:static_cast<std::size_t>(_ml_arg->nodecount) * {}]", i, array_len);
+        // Map host bases → device pointers for the parallel region.
+        printer->push_block("if (nt->compute_gpu)");
+        printer->add_line(
+            "weights = static_cast<double*>(acc_deviceptr(weights));");
+        std::vector<int> net_rx_fp;
+        if (net_rx_slim) {
+            net_rx_fp.assign(live_fp.begin(), live_fp.end());
+        } else {
+            for (int i = 0; i < static_cast<int>(codegen_float_variables.size()); ++i) {
+                net_rx_fp.push_back(i);
+            }
         }
+        std::sort(net_rx_fp.begin(), net_rx_fp.end());
+        for (int i: net_rx_fp) {
+            printer->fmt_line(
+                "_present_fp_{0} = static_cast<double*>(acc_deviceptr(_present_fp_{0}));", i);
+        }
+        printer->pop_block();
     } else if (!info.artificial_cell) {
         present_clause << ", nodeindices";
         // Specialized STATE / CURRENT force-inline / jacob: no _thread.
@@ -1530,7 +1535,24 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
     present_clause << ')';
 
     std::string deviceptr_extra = present_dptr_deviceptr_clause_for(live_dptr);
-    if (!info.artificial_cell && type != BlockType::NetReceive && !jacob_slim) {
+    if (type == BlockType::NetReceive) {
+        // Residual #14: weights + live RANGE via deviceptr (no per-launch present
+        // re-copyin of full Weight SoA / nodecount columns).
+        std::vector<std::string> net_rx_dptrs{"weights"};
+        std::vector<int> net_rx_fp;
+        if (net_rx_slim) {
+            net_rx_fp.assign(live_fp.begin(), live_fp.end());
+        } else {
+            for (int i = 0; i < static_cast<int>(codegen_float_variables.size()); ++i) {
+                net_rx_fp.push_back(i);
+            }
+        }
+        std::sort(net_rx_fp.begin(), net_rx_fp.end());
+        for (int i: net_rx_fp) {
+            net_rx_dptrs.push_back(fmt::format("_present_fp_{}", i));
+        }
+        deviceptr_extra = fmt::format(" deviceptr({})", fmt::join(net_rx_dptrs, ", "));
+    } else if (!info.artificial_cell && !jacob_slim) {
         // Prefix deviceptr list: voltages, then area (PP CURRENT / area_used), then ions.
         std::string deviceptr_prefix = "_d_voltages";
         if (info.point_process || info.area_used) {
@@ -1564,14 +1586,14 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
         printer->fmt_line(
             "nrn_pragma_acc(parallel loop seq {}{} async(nt->stream_id) if(nt->compute_gpu))",
             present_clause.str(),
-            type == BlockType::NetReceive ? std::string{} : deviceptr_extra);
+            deviceptr_extra);
         printer->add_line(
             "nrn_pragma_omp(target teams distribute parallel for if(nt->compute_gpu))");
     } else {
         printer->fmt_line(
             "nrn_pragma_acc(parallel loop {}{} async(nt->stream_id) if(nt->compute_gpu))",
             present_clause.str(),
-            type == BlockType::NetReceive ? std::string{} : deviceptr_extra);
+            deviceptr_extra);
         printer->add_line(
             "nrn_pragma_omp(target teams distribute parallel for if(nt->compute_gpu))");
     }
@@ -1996,28 +2018,47 @@ void CodegenNeuronAccVisitor::print_net_receive_buffering() {
     printer->add_line("auto const& _sorted_token = *_flush_tok;");
     printer->add_line(
         "_nrn_mechanism_cache_range _lmc{_sorted_token, *nt, *_ml_arg, _ml_arg->type()};");
-    printer->fmt_line(
-        "auto inst = make_instance_{}(_ml_arg->get_storage_offset(), &_lmc, /*use_device_ptrs*/ true);",
-        info.mod_suffix);
-    if (!info.artificial_cell) {
-        // Needed when NET_RECEIVE body calls MOD FUNCTIONs (args include node_data).
-        printer->fmt_line(
-            "auto node_data = make_node_data_{}(*nt, *_ml_arg, /*use_device_ptrs*/ true);",
-            info.mod_suffix);
-    }
-    printer->add_line("auto* _thread = _ml_arg->_thread;");
-    if (!codegen_thread_variables.empty()) {
-        printer->fmt_line("auto _thread_vars = {}(_thread[{}].get<double*>());",
-                          thread_variables_struct(),
-                          info.thread_var_thread_id);
-    }
 
-    const auto codegen_float_variables_size = codegen_float_variables.size();
-    for (int i = 0; i < codegen_float_variables_size; ++i) {
-        printer->fmt_line("double* _present_fp_{0} = _lmc.template fpfield_ptr<{0}>();", i);
+    // Phase C: slim path (ExpSyn/AMPA-like pure RANGE update) drops dead inst /
+    // node_data / _thread / full dptr surface; body only uses live present_fp.
+    const bool slim = net_receive_min_present_safe();
+    const bool need_globals = net_receive_uses_global_vars();
+    const auto live_fp = live_float_indices_for_kernel(BlockType::NetReceive);
+
+    if (!slim) {
+        printer->fmt_line(
+            "auto inst = make_instance_{}(_ml_arg->get_storage_offset(), &_lmc, "
+            "/*use_device_ptrs*/ true);",
+            info.mod_suffix);
+        if (!info.artificial_cell) {
+            // Needed when NET_RECEIVE body calls MOD FUNCTIONs (args include node_data).
+            printer->fmt_line(
+                "auto node_data = make_node_data_{}(*nt, *_ml_arg, /*use_device_ptrs*/ true);",
+                info.mod_suffix);
+        }
+        printer->add_line("auto* _thread = _ml_arg->_thread;");
+        if (!codegen_thread_variables.empty()) {
+            printer->fmt_line("auto _thread_vars = {}(_thread[{}].get<double*>());",
+                              thread_variables_struct(),
+                              info.thread_var_thread_id);
+        }
+        const auto codegen_float_variables_size = codegen_float_variables.size();
+        for (int i = 0; i < codegen_float_variables_size; ++i) {
+            printer->fmt_line("double* _present_fp_{0} = _lmc.template fpfield_ptr<{0}>();", i);
+        }
+        // POINTER/RANDOM dptrs for FUNCTION bodies called from NET_RECEIVE.
+        print_present_dptr_pointer_declarations();
+    } else {
+        // Live RANGE bases only (ExpSyn: g; AMPA: A,B,factor). No inst/node_data/dptrs.
+        print_present_fp_pointer_declarations_for(live_fp);
+        if (!codegen_thread_variables.empty()) {
+            // Thread vars rare on NET_RECEIVE; keep when model has them.
+            printer->add_line("auto* _thread = _ml_arg->_thread;");
+            printer->fmt_line("auto _thread_vars = {}(_thread[{}].get<double*>());",
+                              thread_variables_struct(),
+                              info.thread_var_thread_id);
+        }
     }
-    // POINTER/RANDOM dptrs for FUNCTION bodies called from NET_RECEIVE (e.g. Gfluct3).
-    print_present_dptr_pointer_declarations();
 
     printer->add_line("double* weights = neuron::gpu::weight_soa_values();");
     printer->add_line("std::size_t weight_count = neuron::gpu::weight_soa_count();");
@@ -2035,7 +2076,9 @@ void CodegenNeuronAccVisitor::print_net_receive_buffering() {
     // Parallel over unique instances; serial over events per instance (CoreNEURON).
     // Body uses _present_fp_* + weights[weight_index+arg]; net_send → NetSendBuffer.
     printer->add_line("int count = nrb->_displ_cnt;");
-    print_kernel_global_device_setup();
+    if (need_globals || !slim) {
+        print_kernel_global_device_setup();
+    }
     // Device NET_RECEIVE uses per-event local `t` (nrb->_nrb_t), not nt->_t.
     // Skip per-type update device(nt->_t) — Traub deliver-nrb host tax.
     // Scope nsb for present() so print_send_event_move can redeclare after.
@@ -2047,7 +2090,14 @@ void CodegenNeuronAccVisitor::print_net_receive_buffering() {
         printer->add_line("return;");
         printer->pop_block();
     }
-    print_kernel_data_present_annotation_block_begin();
+    // Slim without GLOBAL: do not pull full *_global (HH tables) into data present.
+    if (slim && !need_globals) {
+        printer->add_line("nrn_pragma_acc(data present(nt, _ml_arg) if(nt->compute_gpu))");
+        printer->add_line("{");
+        printer->increase_indent();
+    } else {
+        print_kernel_data_present_annotation_block_begin();
+    }
     use_present_fp_indexing_ = true;
     printing_net_buf_receive_kernel_ = true;
     print_parallel_iteration_hint(BlockType::NetReceive, node);
@@ -2055,7 +2105,17 @@ void CodegenNeuronAccVisitor::print_net_receive_buffering() {
     printer->add_line("int start = nrb->_displ[i];");
     printer->add_line("int end = nrb->_displ[i + 1];");
     printer->push_block("for (int j = start; j < end; j++)");
-    printer->add_multi_line(R"CODE(
+    if (slim) {
+        printer->add_multi_line(R"CODE(
+        int index = nrb->_nrb_index[j];
+        int id = nrb->_pnt_index[index];
+        double t = nrb->_nrb_t[index];  // event delivery time (not nt->_t after restore)
+        int weight_index = nrb->_weight_index[index];
+        double flag = nrb->_nrb_flag[index];
+        double* _args = weights + weight_index;
+    )CODE");
+    } else {
+        printer->add_multi_line(R"CODE(
         int index = nrb->_nrb_index[j];
         int id = nrb->_pnt_index[index];
         double t = nrb->_nrb_t[index];  // event delivery time (not nt->_t after restore)
@@ -2064,6 +2124,7 @@ void CodegenNeuronAccVisitor::print_net_receive_buffering() {
         double* _args = weights + weight_index;
         Datum* _ppvar = _ml_arg->pdata ? _ml_arg->pdata[id] : nullptr;
     )CODE");
+    }
     printing_net_receive = true;
     print_statement_block(*node->get_statement_block(), false, false);
     printing_net_receive = false;
@@ -2072,21 +2133,25 @@ void CodegenNeuronAccVisitor::print_net_receive_buffering() {
     printing_net_buf_receive_kernel_ = false;
     use_present_fp_indexing_ = false;
     print_kernel_data_present_annotation_block_end();
-    // Host updates cnt after device NET_RECEIVE — must wait (unlike cur/state).
-    print_device_stream_wait();
     printer->decrease_indent();
     printer->add_line("}");
 
+    // Wait coalesce: during flush_net_receive_buffers, skip per-type wait /
+    // NRB zero / NSB drain — flush does one stream wait then finalizes all types.
+    // Direct calls (unit tests) still self-finalize.
+    printer->push_block("if (!neuron::gpu::net_buf_flush_active())");
+    // Host updates cnt after device NET_RECEIVE — must wait (unlike cur/state).
+    print_device_stream_wait();
     printer->add_line("nrb->_displ_cnt = 0;");
     printer->add_line("nrb->_cnt = 0;");
     printer->push_block("if (nt->compute_gpu && nrb->device_uploaded)");
     printer->add_line("nrn_pragma_acc(update device(nrb->_cnt, nrb->_displ_cnt))");
     printer->add_line("nrn_pragma_omp(target update to(nrb->_cnt, nrb->_displ_cnt))");
     printer->pop_block();
-
     if (info.net_send_used || info.net_event_used) {
         print_send_event_move();
     }
+    printer->pop_block();  // !net_buf_flush_active
 
     printer->pop_block();  // net_buf_receive
 }
@@ -2383,6 +2448,58 @@ bool CodegenNeuronAccVisitor::current_force_inline_safe() const {
         }
     }
     return true;
+}
+
+bool CodegenNeuronAccVisitor::net_receive_min_present_safe() const {
+    if (!info.net_receive_node || info.artificial_cell) {
+        return false;
+    }
+    // VERBATIM can index arbitrary columns / host symbols — keep fat present.
+    if (!collect_nodes(*info.net_receive_node, {ast::AstNodeType::VERBATIM}).empty()) {
+        return false;
+    }
+    // Nested MOD PROCEDURE/FUNCTION may touch columns not named in the
+    // NET_RECEIVE AST; keep full SoA present so general helper ABI stays valid.
+    // net_send / net_move / net_event are handled via nsb present, not float cols.
+    for (const auto& call:
+         collect_nodes(*info.net_receive_node, {ast::AstNodeType::FUNCTION_CALL})) {
+        const auto cname = call->get_node_name();
+        if (is_net_send(cname) || is_net_move(cname) || is_net_event(cname)) {
+            continue;
+        }
+        if (defined_method(cname)) {
+            return false;
+        }
+    }
+    std::unordered_set<std::string> names;
+    collect_ast_names(*info.net_receive_node, names);
+    for (const auto& nm: names) {
+        try {
+            auto const pos = position_of_int_var(nm);
+            auto const sem = info.semantics[static_cast<size_t>(pos)].name;
+            if (sem == naming::POINTER_SEMANTIC || sem == naming::RANDOM_SEMANTIC ||
+                sem == naming::FOR_NETCON_SEMANTIC) {
+                return false;
+            }
+        } catch (...) {
+            // Not an int column.
+        }
+    }
+    return true;
+}
+
+bool CodegenNeuronAccVisitor::net_receive_uses_global_vars() const {
+    if (!info.net_receive_node || codegen_global_variables.empty()) {
+        return false;
+    }
+    std::unordered_set<std::string> names;
+    collect_ast_names(*info.net_receive_node, names);
+    for (const auto& sym: codegen_global_variables) {
+        if (names.count(sym->get_name())) {
+            return true;
+        }
+    }
+    return false;
 }
 
 bool CodegenNeuronAccVisitor::is_current_stack_temp_float(const std::string& name) const {

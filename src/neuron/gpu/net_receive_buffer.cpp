@@ -23,6 +23,7 @@ std::vector<std::pair<NetBufReceive_t, int>> net_buf_receive;
 
 namespace {
 neuron::model_sorted_token const* g_flush_sorted_token = nullptr;
+bool g_net_buf_flush_active = false;
 }  // namespace
 
 neuron::model_sorted_token const* flush_sorted_token() noexcept {
@@ -31,6 +32,14 @@ neuron::model_sorted_token const* flush_sorted_token() noexcept {
 
 void set_flush_sorted_token(neuron::model_sorted_token const* token) noexcept {
     g_flush_sorted_token = token;
+}
+
+bool net_buf_flush_active() noexcept {
+    return g_net_buf_flush_active;
+}
+
+void set_net_buf_flush_active(bool active) noexcept {
+    g_net_buf_flush_active = active;
 }
 
 double* weight_soa_values() {
@@ -391,11 +400,10 @@ void update_net_receive_buffer(NrnThread* nt) {
 #endif
     }
 #if defined(NRN_ENABLE_GPU)
-    // Empty deliver path: no H→D — do not wait the stream (was per-step tax on
-    // Traub even when no synaptic events this half-step).
-    if (any_upload) {
-        nrn_pragma_acc(wait(nt->stream_id))
-    }
+    // Uploads are async on nt->stream_id; net_buf kernels follow on the same
+    // stream so a host wait here is unnecessary (same-stream order). Flush
+    // still waits once after all type kernels before NRB zero / NSB drain.
+    (void) any_upload;
 #endif
 }
 
