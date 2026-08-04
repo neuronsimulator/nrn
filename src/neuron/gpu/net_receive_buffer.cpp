@@ -327,6 +327,9 @@ void update_net_receive_buffer(NrnThread* nt) {
     if (!nt) {
         return;
     }
+#if defined(NRN_ENABLE_GPU)
+    bool any_upload = false;
+#endif
     for (auto* tml = nt->tml; tml; tml = tml->next) {
         int const type = tml->index;
         // Unit tests / partial links may leave nrn_is_artificial_ null.
@@ -365,10 +368,15 @@ void update_net_receive_buffer(NrnThread* nt) {
                                         nrb->_displ[:nrb->_displ_cnt + 1],
                                         nrb->_nrb_index[:nrb->_cnt]))
         // clang-format on
+        any_upload = true;
 #endif
     }
 #if defined(NRN_ENABLE_GPU)
-    nrn_pragma_acc(wait(nt->stream_id))
+    // Empty deliver path: no H→D — do not wait the stream (was per-step tax on
+    // Traub even when no synaptic events this half-step).
+    if (any_upload) {
+        nrn_pragma_acc(wait(nt->stream_id))
+    }
 #endif
 }
 

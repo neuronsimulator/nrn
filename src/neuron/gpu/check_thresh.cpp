@@ -3,9 +3,9 @@
 #include "neuron/event_order.hpp"
 #include "neuron/gpu/config.hpp"
 #include "neuron/gpu/device_state.hpp"
+#include "neuron/gpu/ion_cur_device.hpp"
 #include "neuron/gpu/net_send_buffer.hpp"
 #include "neuron/gpu/offload.hpp"
-#include "neuron/gpu/phase_timer.hpp"
 #include "neuron/gpu/sync.hpp"
 
 #include "multicore.h"
@@ -415,6 +415,9 @@ void reseed_threshold_flags_from_host_voltage() noexcept {
 
 void invalidate_auxiliary_device_uploads() noexcept {
     invalidate_threshold_tables();
+#if defined(NRN_ENABLE_GPU)
+    invalidate_iontype_device_cache();
+#endif
 }
 
 bool check_thresh_presyn_on_device(NrnThread* nt, double teps) noexcept {
@@ -422,7 +425,8 @@ bool check_thresh_presyn_on_device(NrnThread* nt, double teps) noexcept {
     if (!enabled() || !backend_native() || !nt || !nt->compute_gpu || nt->end <= 0) {
         return false;
     }
-    phase_timer::Scope const timer{phase_timer::Id::deliver_events};
+    // Timed under start-of-step deliver-events (fadvance_gpu); do not nest
+    // another deliver_events Scope here (double-counted thresh wall).
     // Serialize OpenACC *before* ensure_thread_table: rebuild does free/copyin.
     // Nested under fixed_step / lastpart locks (recursive mutex).
     OpenACCHostApiLock const openacc_lock;

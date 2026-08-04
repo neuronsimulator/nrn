@@ -14,4 +14,7 @@ bool ion_cur_on_device(neuron::model_sorted_token const& sorted_token,
                        int type,
                        double charge);
 
+/** Drop cached iontype device mirrors (topology / ion_style / full re-upload). */
+void invalidate_iontype_device_cache() noexcept;
+
 }  // namespace neuron::gpu
