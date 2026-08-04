@@ -818,7 +818,37 @@ Commit locally without push. Update Status/Next before exit.
 
 ## Next (one line — update every session end)
 
-**Next:** Traub ion_cur density **closed** (multi-warm ~13.2 s; ~1.3× CN). Optional: further density (deliver-events / nonvint / CURRENT launch) or product harness; or new measured residual. Ringtest **688** + dentate **400** + Traub 4474/7873 stay green.
+**Next:** Traub residual ~**1.3× CN** (multi-warm ~13.2 s). Prefer **one** measured bucket: deliver-events ~2.8 s, lastpart-nonvint ~2.6 s, or setup-rhs ~2.2 s (CURRENT launch / ion dptr). Else product harness/ctest for Traub. Ringtest **688** + dentate **400** + Traub 4474/7873 stay green.
+
+### Starting prompt — Traub residual ~1.3× CN (default open)
+
+```text
+Read ~/neuron/notes/PORTFOLIO.md (GPU-native), then
+~/neuron/nrngpu/doc/gpu/native-coreneuron-parity.md (Status/Next; residual #11),
+GROK-GPU-NATIVE.md, AGENTS.md,
+~/neuron/notes/gpu_native_traub_use_gap.md.
+
+Kind: feature. Portfolio: GPU-native. Phase: P4 Traub residual density.
+Tree: ~/neuron/nrngpu. Branch: living tip local/gpu-native
+  (explor side-branch ok until measured wall win).
+
+Context (tip post ion_cur cache):
+- Traub no-gap multi-warm ~13.1–13.2 s vs CN ~10 s (~1.3×). Identity 4474 exact.
+- cad GLOBAL + jacob fold + ion_cur cache closed.
+- Phase buckets (no-gap, phase timer): deliver-events ~2.8 s,
+  lastpart-nonvint ~2.6 s, setup-rhs ~2.2 s, matrix-solver ~1.3 s.
+- Note: deliver-events timer no longer double-counts thresh (hygiene on tip).
+
+This session — one hypothesis only:
+1. Re-smoke multi-warm + NRN_NATIVE_GPU_PHASE_TIMER=1 (and ACC_TIME if needed).
+2. Attack the largest real residual you reconfirm (do not re-open closed density).
+   Candidates: host deliver/net_buf, STATE launch density, CURRENT/ion-dptr.
+3. Measure wall before tip-merge; keep 4474 exact + ringtest 688@100 green.
+
+High performance sacred; CoreNEURON is a guide; heap-free weight_index.
+Commit locally without push. Update Status/Next + PORTFOLIO before exit.
+/rename GPU-P4-traub-residual
+```
 
 ### Starting prompt — Session A residual (closed; archive)
 
