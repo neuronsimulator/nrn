@@ -742,13 +742,66 @@ Functions, objects, and the stack
     in the top-level object-data array rather than at ``sym->u.pval``.
 
     :param sym: Pointer to the symbol.
-    :returns: Pointer to the symbol's data, or the raw ``sym->u.pval`` for
-              symbols that are not top-level runtime scalars.
+    :returns: A pointer to the variable's storage, or ``NULL`` if ``sym`` is not
+              a scalar variable with a data pointer (a null symbol, a function,
+              an object, a string, or a section-level property such as ``L`` or
+              ``nseg``).
 
     **Usage Pattern:**
 
     Provides direct access to variable data for efficient reading/writing.
     e.g., use this for getting/setting the value of ``t`` (time).
+
+.. c:function:: Object* nrn_symbol_object_get(const Symbol* sym)
+
+    Get the object bound to a top-level ``objref``.
+
+    :param sym: Symbol for a top-level ``objref``.
+    :returns: The bound object, or ``NULL`` if the objref is nil or ``sym`` is
+        not an objref.
+
+    The object is returned *borrowed* -- its reference count is not
+    incremented. Call :c:func:`nrn_object_ref` to retain it beyond the next
+    assignment to the objref. Complements :c:func:`nrn_symbol_dataptr`, which
+    returns ``NULL`` for an objref because it is not a ``double*``.
+
+.. c:function:: bool nrn_symbol_object_set(Symbol* sym, Object* obj)
+
+    Bind an object to a top-level ``objref``.
+
+    :param sym: Symbol for a top-level ``objref``.
+    :param obj: The object to bind, or ``NULL`` to make the objref nil.
+    :returns: ``true`` on success, ``false`` if ``sym`` is not an objref.
+
+    Follows HOC's assignment reference-counting: the previously bound object is
+    released and the new one retained.
+
+.. c:function:: const char* nrn_symbol_str_get(const Symbol* sym)
+
+    Get the string held by a top-level ``strdef``.
+
+    :param sym: Symbol for a top-level ``strdef``.
+    :returns: The string, or ``NULL`` if ``sym`` is not a strdef.
+
+.. c:function:: bool nrn_symbol_str_set(Symbol* sym, const char* value)
+
+    Set the string held by a top-level ``strdef``.
+
+    :param sym: Symbol for a top-level ``strdef``.
+    :param value: The string to copy in.
+    :returns: ``true`` on success, ``false`` if ``sym`` is not a strdef.
+
+    The value is copied into the strdef's storage (the previous string is
+    freed).
+
+    **Python Equivalent:**
+
+    .. code-block:: python
+
+        n.s = "cell"     # nrn_symbol_str_set
+        name = n.s       # nrn_symbol_str_get
+        n.obj = vec      # nrn_symbol_object_set
+        bound = n.obj    # nrn_symbol_object_get
 
 .. c:function:: bool nrn_symbol_is_array(const Symbol* sym)
 
@@ -871,7 +924,42 @@ Functions, objects, and the stack
 
     **Usage Pattern:**
 
-    Used when passing objects as arguments to functions or methods.
+    Used when passing objects as arguments to functions or methods. The callee
+    receives the object by value; if the callee's argument was not declared as
+    an ``objref`` and it tries to assign to it (``$oN = ...``), HOC raises an
+    error. To pass an object reference a callee can assign back into, use
+    :c:func:`nrn_object_ptr_push`.
+
+.. c:function:: void nrn_object_ptr_push(Object** obj_ref)
+
+    Push a writable object-reference slot onto the stack.
+
+    :param obj_ref: Address of the caller's ``Object*`` slot.
+
+    Unlike :c:func:`nrn_object_push`, which pushes an object by value, this
+    pushes the *slot* holding the object. When the callee assigns to the
+    matching ``$oN`` argument, the assignment writes back through the slot and
+    updates ``*obj_ref`` in place. This is the out-parameter form used by the
+    ``h.ref(obj)`` idiom, where a function returns a value by storing it in a
+    caller-supplied object reference. ("ptr", as in :c:func:`nrn_double_ptr_push`,
+    is the pushed-pointer naming; the "ref" in :c:func:`nrn_object_ref` is
+    reference counting.)
+
+    **Usage Pattern:**
+
+    .. code-block:: c
+
+        // proc setit() { $o1 = new Vector(3) }
+        Object* slot = nullptr;
+        nrn_object_ptr_push(&slot);
+        nrn_function_call(nrn_symbol("setit"), 1);
+        // slot now points to the newly created Vector; unref when done.
+        nrn_object_unref(slot);
+
+    .. seealso::
+
+        :c:func:`nrn_object_push`,
+        :c:func:`nrn_object_unref`
 
 .. c:function:: Object* nrn_object_pop(void)
 
@@ -948,6 +1036,51 @@ Functions, objects, and the stack
         # Create NEURON objects
         vec = n.Vector(100)           # Vector with 100 elements
         iclamp = n.IClamp(soma(0))    # Current clamp at soma
+
+.. c:function:: Object* nrn_object_new_wrap(Symbol* sym, void* cpp_object)
+
+    Wrap an existing C++ payload as an object of a C++ class.
+
+    :param sym: Symbol for a C++ (``CPLUSOBJECT``) class/template.
+    :param cpp_object: The backing C++ pointer to store as the object's
+        ``this_pointer``, or ``NULL`` to construct an unbacked instance to fill
+        in later.
+    :returns: The new object, with reference count 0.
+
+    Unlike :c:func:`nrn_object_new`, which runs the HOC constructor and consumes
+    arguments from the stack, this backs the new object directly with a pointer
+    the caller already holds. It is the primitive behind wrapping a foreign C++
+    object (for example a Python object or an NMODL ``RANDOM`` state) as a HOC
+    object. The returned object has reference count 0; call
+    :c:func:`nrn_object_ref` to keep it alive.
+
+    .. seealso::
+
+        :c:func:`nrn_object_new`,
+        :c:func:`nrn_object_ref`
+
+.. c:function:: int nrn_object_new_nothrow(Symbol* sym, int narg, Object** result, char* error_msg, size_t error_msg_size)
+
+    Create a new object, reporting a constructor error instead of throwing.
+
+    :param sym: Symbol representing the object class/type.
+    :param narg: Number of constructor arguments on the stack.
+    :param result: Set to the new object on success, or ``NULL`` on error.
+    :param error_msg: Buffer filled with a message on error (may be ``NULL``).
+    :param error_msg_size: Size of ``error_msg``.
+    :returns: 0 on success, nonzero if the HOC constructor errored.
+
+    Like :c:func:`nrn_object_new`, but a constructor error (bad arguments, a
+    failing ``INITIAL``, etc.) is caught and reported rather than thrown as a
+    C++ exception, so a non-C++ caller (ctypes, MATLAB, ...) does not have an
+    exception cross the call boundary. This is the constructor counterpart of
+    :c:func:`nrn_function_call_nothrow` and :c:func:`nrn_method_call_nothrow`.
+    The interpreter stack is restored if construction fails.
+
+    .. seealso::
+
+        :c:func:`nrn_object_new`,
+        :c:func:`nrn_function_call_nothrow`
 
 .. c:function:: Symbol* nrn_method_symbol(const Object* obj, const char* name)
 
