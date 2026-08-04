@@ -37,6 +37,13 @@ for that gid at various times
 before spiketime to see why and when the prcellstate files become different.
 Time 0 after initialization is often a good place to start.
 
+Compare dumps with a key-based tool (e.g. `rdcellstate.py`), not raw line
+diff when file layout or mechanism instance order may differ. Cell-local
+`inode` labels are morph-stable (BFS from root; see the `prcellstate` method
+docs) so host fixed-step vs native GPU (interleave permute) can be compared
+directly. The header line `T is the threshold node` is still historically
+`local_inode - 1` for the spike compartment — parsers should add one.
+
 #### GDB
 If you normally run with ```python args``` and get a segfault...
 Build NEURON with ```-DCMAKE_BUILD_TYPE=Debug```. This avoids

@@ -211,6 +211,9 @@ static void pr_realcell(PreSyn& ps, NrnThread& nt, FILE* f) {
         }
     }
 
+    // Historical: header prints local_inode - 1 (same as CoreNEURON). Voltage
+    // and mech lines use true local_inode. Prefer printing local_inode itself
+    // when NEURON + CoreNEURON + rdcellstate can change together.
     fprintf(f, "%d nodes  %d is the threshold node\n", cnt, cellnodes[static_cast<size_t>(inode)] - 1);
     fprintf(f, " threshold %.*g\n", precision, ps.threshold_);
     fprintf(f, "inode parent area a b d rhs\n");

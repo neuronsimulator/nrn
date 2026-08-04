@@ -5883,7 +5883,7 @@ Parallel Transfer
     .. tab:: Python
     
         Syntax:
-            ``pc.precellstate(gid, "suffix")``
+            ``pc.prcellstate(gid, "suffix")``
 
         Description:
             Creates the file <gid>_suffix.nrndat with all the range variable
@@ -5892,72 +5892,65 @@ Parallel Transfer
             library but a more terse in regard to names of variables. The purpose
             is for diagnosing the reason why a spike raster for a simulation is
             not the same for different nhost or gid distribution. One examines
-            the diff between corresponding files from different runs.
+            the diff between corresponding files from different runs
+            (or host fixed-step vs native GPU).
+
+            **Cell-local node indices (``inode``).**  Every topology, voltage, and
+            mechanism line uses a *cell-local* compartment index ``0 .. n_nodes-1``,
+            not a thread array index.  The same morphological compartment must get
+            the same local index across runs even when interleave node permute
+            (e.g. native GPU ``cell_permute=2``) reorders the thread.  NEURON
+            assigns local indices by a breadth-first walk from the cell root with
+            siblings ordered by a stable morphological key (section name,
+            segment index within the section, then area / connection coefficients
+            as tie-breakers).  Mechanism instances are written in local-``inode``
+            order.  The dump does **not** embed HOC/Python paths such as
+            ``cell.soma(0.5).v``; values are keyed by local ``inode`` and
+            mechanism field index.  Section-name help for humans can be added
+            later without changing this numbering rule.
+
+            **Threshold header quirk (historical).**  The line
+            ``N nodes  T is the threshold node`` prints ``T = local_inode - 1``
+            for the spike-generator compartment (so the voltage line for that
+            compartment is at local index ``T + 1``).  CoreNEURON's prcellstate
+            uses the same convention.  There is no semantic reason for the
+            off-by-one; tools that parse the header (e.g. ``rdcellstate``) must
+            add one until a coordinated fix lands.
 
             The format of the file is:
 
             .. code-block::
                 none
 
-                gid
-                t
-                # nodes, spike generator node
-                List of node indices, parent node index, area, connection coefficients
-                  between node and parent
-                List of node voltages
-                For each mechanism in the cell
-                Mechanism type, mechanism name, # variables for the mechanism instance
-                For each instance of that mechanism in the cell
-                  If the mechanism is a POINT_PROCESS with a NET_RECEIVE block,
-                    node index, "nri", netreceive index for that POINT_PROCESS instance
-                  For each variable
-                    node index, variable index, variable value
-                Number of netcons attached to the the cell.
-                For each netcon
-                  netreceive index, srcgid or type name of source object, active, delay, weight vector
+                gid = <gid>
+                t = <time>
+                celsius = <celsius>
+                N nodes  T is the threshold node
+                 threshold <mV>
+                inode parent area a b d rhs
+                ... one line per local inode (parent is -1 for root) ...
+                inode v
+                ... one line per local inode ...
+                type=<id> <mech_name> size=<nfields>
+                [local_inode nri <k>   if POINT_PROCESS with NET_RECEIVE]
+                 local_inode field_index value
+                ...
+                netcons <count>
+                 pntindex srcgid active delay weights
+                ...
 
 
     .. tab:: HOC
 
 
         Syntax:
-            ``pc.precellstate(gid, "suffix")``
+            ``pc.prcellstate(gid, "suffix")``
         
         
         Description:
-            Creates the file <gid>_suffix.nrndat with all the range variable
-            values and synapse/NetCon information associated with the gid.
-            More complete than the HOC version of prcellstate.hoc in the standard
-            library but more terse in regard to names of variables. The purpose
-            is for diagnosing the reason why a spike raster for a simulation is
-            not the same for different nhost or gid distribution. One examines
-            the diff between corresponding files from different runs.
-        
-        
-            The format of the file is:
-        
-        
-            .. code-block::
-                none
-        
-        
-                gid
-                t
-                celsius
-                # nodes, spike generator node
-                List of node indices, parent node index, area, connection coefficients
-                  between node and parent
-                List of node voltages
-                For each mechanism in the cell
-                Mechanism type, mechanism name, # variables for the mechanism instance
-                For each instance of that mechanism in the cell
-                  If the mechanism is a POINT_PROCESS with a NET_RECEIVE block,
-                    node index, "nri", netreceive index for that POINT_PROCESS instance
-                  For each variable
-                    node index, variable index, variable value
-                Number of netcons attached to the the cell.
-                For each netcon
-                  netreceive index, srcgid or type name of source object, active, delay, weight vector
+            Same as the Python method. See that tab for the cell-local ``inode``
+            numbering rule (morph-stable BFS), threshold header quirk, and
+            file layout.
         
 ----
 
