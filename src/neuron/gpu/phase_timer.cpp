@@ -21,6 +21,22 @@ char const* phase_name(Id id) noexcept {
         return "deliver-tq";
     case Id::deliver_nrb:
         return "deliver-nrb";
+    case Id::deliver_nrb_order:
+        return "deliver-nrb-order";
+    case Id::deliver_nrb_upload:
+        return "deliver-nrb-upload";
+    case Id::deliver_nrb_launch:
+        return "deliver-nrb-launch";
+    case Id::deliver_nrb_finalize:
+        return "deliver-nrb-finalize";
+    case Id::deliver_nrb_wait:
+        return "deliver-nrb-wait";
+    case Id::deliver_nrb_nsb:
+        return "deliver-nrb-nsb";
+    case Id::deliver_nrb_nsb_d2h:
+        return "deliver-nrb-nsb-d2h";
+    case Id::deliver_nrb_nsb_host:
+        return "deliver-nrb-nsb-host";
     case Id::vecplay_sync:
         return "vecplay-sync";
     case Id::setup_tree_matrix:

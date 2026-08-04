@@ -70,49 +70,64 @@ void flush_net_receive_buffers(NrnThread* nt) {
     // generated net_buf_receive to skip self-finalize.
     std::vector<Memb_list*> launched;
     launched.reserve(net_buf_receive.size());
-    set_net_buf_flush_active(true);
-    for (auto const& entry: net_buf_receive) {
-        if (!entry.first) {
-            continue;
-        }
-        int const type = entry.second;
-        Memb_list* const ml = (nt->_ml_list && type >= 0) ? nt->_ml_list[type] : nullptr;
-        if (ml && ml->_net_receive_buffer && ml->_net_receive_buffer->_cnt == 0) {
-            continue;  // skip empty types
-        }
-        if (ml && ml->_net_receive_buffer && ml->_net_receive_buffer->_cnt > 0) {
-            launched.push_back(ml);
-        }
-        (*entry.first)(nt);
-    }
-    set_net_buf_flush_active(false);
-
-    if (nt->compute_gpu && !launched.empty()) {
-        nrn_pragma_acc(wait(nt->stream_id))
-    }
-    for (Memb_list* ml: launched) {
-        NetReceiveBuffer_t* nrb = ml->_net_receive_buffer;
-        if (!nrb) {
-            continue;
-        }
-        nrb->_displ_cnt = 0;
-        nrb->_cnt = 0;
-        if (nt->compute_gpu && nrb->device_uploaded) {
-            nrn_pragma_acc(update device(nrb->_cnt, nrb->_displ_cnt))
-            nrn_pragma_omp(target update to(nrb->_cnt, nrb->_displ_cnt))
-        }
-        // NetSendBuffer host drain (was per-type after each net_buf wait).
-        NetSendBuffer_t* nsb = ml->_net_send_buffer;
-        if (nsb) {
-            if (nt->compute_gpu) {
-                nrn_pragma_acc(update self(nsb->_cnt))
-                nrn_pragma_omp(target update from(nsb->_cnt))
-                update_net_send_buffer_on_host(nt, nsb);
+    {
+        phase_timer::Scope const launch_timer{phase_timer::Id::deliver_nrb_launch};
+        phase_timer::bump(phase_timer::Id::deliver_nrb_launch);
+        set_net_buf_flush_active(true);
+        for (auto const& entry: net_buf_receive) {
+            if (!entry.first) {
+                continue;
             }
-            deliver_net_send_buffer_events(nt, ml, nsb);
-            if (nt->compute_gpu) {
-                nrn_pragma_acc(update device(nsb->_cnt))
-                nrn_pragma_omp(target update to(nsb->_cnt))
+            int const type = entry.second;
+            Memb_list* const ml = (nt->_ml_list && type >= 0) ? nt->_ml_list[type] : nullptr;
+            if (ml && ml->_net_receive_buffer && ml->_net_receive_buffer->_cnt == 0) {
+                continue;  // skip empty types
+            }
+            if (ml && ml->_net_receive_buffer && ml->_net_receive_buffer->_cnt > 0) {
+                launched.push_back(ml);
+            }
+            (*entry.first)(nt);
+        }
+        set_net_buf_flush_active(false);
+    }
+
+    {
+        phase_timer::Scope const fin_timer{phase_timer::Id::deliver_nrb_finalize};
+        phase_timer::bump(phase_timer::Id::deliver_nrb_finalize);
+        if (nt->compute_gpu && !launched.empty()) {
+            phase_timer::Scope const wait_timer{phase_timer::Id::deliver_nrb_wait};
+            phase_timer::bump(phase_timer::Id::deliver_nrb_wait);
+            nrn_pragma_acc(wait(nt->stream_id))
+        }
+        for (Memb_list* ml: launched) {
+            NetReceiveBuffer_t* nrb = ml->_net_receive_buffer;
+            if (!nrb) {
+                continue;
+            }
+            nrb->_displ_cnt = 0;
+            nrb->_cnt = 0;
+            if (nt->compute_gpu && nrb->device_uploaded) {
+                nrn_pragma_acc(update device(nrb->_cnt, nrb->_displ_cnt))
+                nrn_pragma_omp(target update to(nrb->_cnt, nrb->_displ_cnt))
+            }
+            // NetSendBuffer host drain (was per-type after each net_buf wait).
+            // update_net_send_buffer_on_host already pulls _cnt (and fields if
+            // non-zero); do not pre-update self(cnt) — that was a free OpenACC
+            // host-API tax on every NMDA-class flush (Traub residual #15).
+            NetSendBuffer_t* nsb = ml->_net_send_buffer;
+            if (nsb) {
+                phase_timer::Scope const nsb_timer{phase_timer::Id::deliver_nrb_nsb};
+                phase_timer::bump(phase_timer::Id::deliver_nrb_nsb);
+                if (nt->compute_gpu) {
+                    phase_timer::Scope const d2h{phase_timer::Id::deliver_nrb_nsb_d2h};
+                    phase_timer::bump(phase_timer::Id::deliver_nrb_nsb_d2h);
+                    update_net_send_buffer_on_host(nt, nsb);
+                }
+                {
+                    phase_timer::Scope const host{phase_timer::Id::deliver_nrb_nsb_host};
+                    phase_timer::bump(phase_timer::Id::deliver_nrb_nsb_host);
+                    deliver_net_send_buffer_events(nt, ml, nsb);
+                }
             }
         }
     }
@@ -161,6 +176,10 @@ void deliver_net_events_host(NrnThread* nt) {
     // Sub-buckets: deliver-thresh / deliver-tq (in NetCvode) + deliver-nrb (flush).
     int const saved = force_compute_gpu_for_device_deliver(nt);
     deliver_net_events(nt);
+    // Device net_send pending (NSB type 0) — same til as deliver_net_events.
+    if (nt) {
+        promote_pending_self_receives(nt, nt->_t + 0.5 * nt->_dt);
+    }
     flush_net_receive_buffers(nt);
     restore_compute_gpu_after_deliver(nt, saved);
 }
@@ -175,6 +194,9 @@ void deliver_post_step_events_host(NrnThread* nt) {
         phase_timer::Scope const timer{phase_timer::Id::deliver_tq};
         phase_timer::bump(phase_timer::Id::deliver_tq);
         nrn_deliver_events(nt);
+    }
+    if (nt) {
+        promote_pending_self_receives(nt, nt->_t);
     }
     flush_net_receive_buffers(nt);
     restore_compute_gpu_after_deliver(nt, saved);

@@ -1,16 +1,21 @@
 #include "neuron/gpu/net_send_buffer.hpp"
 
 #include "neuron/event_order.hpp"
+#include "neuron/gpu/net_receive_buffer.hpp"
 #include "neuron/gpu/offload.hpp"
 #include "multicore.h"
 #include "nrnoc_ml.h"
 #include "section_fwd.hpp"
 
 #include <algorithm>
+#include <atomic>
 #include <cstdio>
 #include <cstdint>
 #include <cstdlib>
+#include <mutex>
 #include <numeric>
+#include <queue>
+#include <utility>
 #include <vector>
 
 // Heap-free: weight identity is SoA base index (−1 if none).
@@ -23,6 +28,61 @@ namespace neuron::gpu {
 std::vector<int> net_buf_send_types;
 
 namespace {
+
+/** Lighter than SelfEvent+TQ for device net_send → same-mech NET_RECEIVE. */
+struct PendingSelfReceive {
+    double t = 0.0;
+    double flag = 0.0;
+    int weight_index = -1;
+    int pnt_index = -1;
+    std::uint64_t seq = 0;  // stable order for equal t
+    Memb_list* ml = nullptr;
+};
+
+struct PendingSelfCompare {
+    // min-heap by (t, seq)
+    bool operator()(PendingSelfReceive const& a, PendingSelfReceive const& b) const {
+        if (a.t != b.t) {
+            return a.t > b.t;
+        }
+        return a.seq > b.seq;
+    }
+};
+
+using PendingSelfHeap =
+    std::priority_queue<PendingSelfReceive, std::vector<PendingSelfReceive>, PendingSelfCompare>;
+
+// One heap per NrnThread id. Grown on demand; cleared at finitialize.
+std::vector<PendingSelfHeap> g_pending_self;
+std::mutex g_pending_self_mutex;
+std::atomic<std::uint64_t> g_pending_seq{0};
+
+PendingSelfHeap& pending_heap_for(NrnThread* nt) {
+    int const tid = nt && nt->id >= 0 ? nt->id : 0;
+    if (static_cast<int>(g_pending_self.size()) <= tid) {
+        std::lock_guard<std::mutex> lock(g_pending_self_mutex);
+        if (static_cast<int>(g_pending_self.size()) <= tid) {
+            g_pending_self.resize(static_cast<std::size_t>(tid) + 1);
+        }
+    }
+    return g_pending_self[static_cast<std::size_t>(tid)];
+}
+
+void enqueue_pending_self_receive(NrnThread* nt,
+                                  Memb_list* ml,
+                                  int pnt_index,
+                                  int weight_index,
+                                  double t,
+                                  double flag) {
+    PendingSelfReceive e;
+    e.t = t;
+    e.flag = flag;
+    e.weight_index = weight_index;
+    e.pnt_index = pnt_index;
+    e.ml = ml;
+    e.seq = g_pending_seq.fetch_add(1, std::memory_order_relaxed);
+    pending_heap_for(nt).push(e);
+}
 
 /**
  * Buffered ops per instance/receive for pre-size (device cannot grow mid-kernel).
@@ -324,48 +384,55 @@ void deliver_net_send_buffer_events(NrnThread* nt, Memb_list* ml, NetSendBuffer_
         std::abort();
     }
 
-    // Parallel device enqueue uses atomic capture (racey slot order). Always
-    // re-order before host enqueue. Default: instance, t, sendtype. With
+    // Parallel device enqueue uses atomic capture (racey slot order). Re-order
+    // before host enqueue when n>1. Default: instance, t, sendtype. With
     // NRN_DETERMINISTIC_EVENTS=1: full key (t, class, mech, instance, flag, …).
     int const n = nsb->_cnt;
     int const mech_type = ml->type();
-    std::vector<int> order(static_cast<std::size_t>(n));
-    std::iota(order.begin(), order.end(), 0);
-    if (neuron::event_order::enabled()) {
-        std::stable_sort(order.begin(), order.end(), [&](int a, int b) {
-            // tgt_gid often unavailable for density PP; instance + weight_index distinguish.
-            auto const ka = neuron::event_order::net_send_key(nsb->_nsb_t[a],
-                                                             nsb->_sendtype[a],
-                                                             /*tgt_gid*/ -1,
-                                                             mech_type,
-                                                             nsb->_pnt_index[a],
-                                                             nsb->_nsb_flag[a],
-                                                             nsb->_weight_index[a],
-                                                             a);
-            auto const kb = neuron::event_order::net_send_key(nsb->_nsb_t[b],
-                                                             nsb->_sendtype[b],
-                                                             /*tgt_gid*/ -1,
-                                                             mech_type,
-                                                             nsb->_pnt_index[b],
-                                                             nsb->_nsb_flag[b],
-                                                             nsb->_weight_index[b],
-                                                             b);
-            return neuron::event_order::less(ka, kb);
-        });
-    } else {
-        std::stable_sort(order.begin(), order.end(), [&](int a, int b) {
-            if (nsb->_pnt_index[a] != nsb->_pnt_index[b]) {
-                return nsb->_pnt_index[a] < nsb->_pnt_index[b];
-            }
-            if (nsb->_nsb_t[a] != nsb->_nsb_t[b]) {
-                return nsb->_nsb_t[a] < nsb->_nsb_t[b];
-            }
-            return nsb->_sendtype[a] < nsb->_sendtype[b];
-        });
+    // Stack path for the common single-event drain (avoids vector + sort).
+    int stack_order = 0;
+    int const* order_ptr = &stack_order;
+    std::vector<int> order;
+    if (n > 1) {
+        order.resize(static_cast<std::size_t>(n));
+        std::iota(order.begin(), order.end(), 0);
+        if (neuron::event_order::enabled()) {
+            std::stable_sort(order.begin(), order.end(), [&](int a, int b) {
+                // tgt_gid often unavailable for density PP; instance + weight_index distinguish.
+                auto const ka = neuron::event_order::net_send_key(nsb->_nsb_t[a],
+                                                                 nsb->_sendtype[a],
+                                                                 /*tgt_gid*/ -1,
+                                                                 mech_type,
+                                                                 nsb->_pnt_index[a],
+                                                                 nsb->_nsb_flag[a],
+                                                                 nsb->_weight_index[a],
+                                                                 a);
+                auto const kb = neuron::event_order::net_send_key(nsb->_nsb_t[b],
+                                                                 nsb->_sendtype[b],
+                                                                 /*tgt_gid*/ -1,
+                                                                 mech_type,
+                                                                 nsb->_pnt_index[b],
+                                                                 nsb->_nsb_flag[b],
+                                                                 nsb->_weight_index[b],
+                                                                 b);
+                return neuron::event_order::less(ka, kb);
+            });
+        } else {
+            std::stable_sort(order.begin(), order.end(), [&](int a, int b) {
+                if (nsb->_pnt_index[a] != nsb->_pnt_index[b]) {
+                    return nsb->_pnt_index[a] < nsb->_pnt_index[b];
+                }
+                if (nsb->_nsb_t[a] != nsb->_nsb_t[b]) {
+                    return nsb->_nsb_t[a] < nsb->_nsb_t[b];
+                }
+                return nsb->_sendtype[a] < nsb->_sendtype[b];
+            });
+        }
+        order_ptr = order.data();
     }
 
     for (int k = 0; k < n; ++k) {
-        int const i = order[static_cast<std::size_t>(k)];
+        int const i = order_ptr[k];
         // Index ABI only: instance id + tqitem ppvar field + weight_index.
         // POINT_PROCESS is dparam[1] for point processes (multicore/prcellstate).
         int const id = nsb->_pnt_index[i];
@@ -389,7 +456,18 @@ void deliver_net_send_buffer_events(NrnThread* nt, Memb_list* ml, NetSendBuffer_
 
         switch (nsb->_sendtype[i]) {
         case 0:
-            nrn_net_send(tqitem, weight_index, pnt, nsb->_nsb_t[i], nsb->_nsb_flag[i]);
+            // Native GPU density: SelfEvent+TQ was ~1.5 s of deliver-nrb on Traub
+            // (NMDA ramp net_send every spike). Pending list + NRB promote is the
+            // same semantics for type-0 without net_move on the tqitem.
+            if (nt->compute_gpu) {
+                enqueue_pending_self_receive(
+                    nt, ml, id, weight_index, nsb->_nsb_t[i], nsb->_nsb_flag[i]);
+                // flag==1 would store TQItem in *tqitem for net_move; pending path
+                // does not support net_move of that self-event (Traub NMDA OK).
+                (void) tqitem;
+            } else {
+                nrn_net_send(tqitem, weight_index, pnt, nsb->_nsb_t[i], nsb->_nsb_flag[i]);
+            }
             break;
         case 1:
             net_event(pnt, nsb->_nsb_t[i]);
@@ -463,6 +541,41 @@ void flush_mechanism_net_send_buffers(NrnThread* nt) {
             deliver_net_send_buffer_events(nt, tml->ml, nsb);
         }
     }
+}
+
+void promote_pending_self_receives(NrnThread* nt, double til) {
+    if (!nt) {
+        return;
+    }
+    auto& heap = pending_heap_for(nt);
+    while (!heap.empty() && heap.top().t <= til) {
+        PendingSelfReceive const e = heap.top();
+        heap.pop();
+        if (!e.ml) {
+            continue;
+        }
+        // Same as SelfEvent → pnt_receive on compute_gpu: enqueue NRB only.
+        net_receive_buffer_enqueue(nt, e.ml, e.pnt_index, e.weight_index, e.flag);
+    }
+}
+
+void clear_pending_self_receives(NrnThread* nt) noexcept {
+    if (!nt || nt->id < 0) {
+        return;
+    }
+    auto const tid = static_cast<std::size_t>(nt->id);
+    if (tid < g_pending_self.size()) {
+        PendingSelfHeap empty;
+        g_pending_self[tid].swap(empty);
+    }
+}
+
+void clear_all_pending_self_receives() noexcept {
+    for (auto& heap: g_pending_self) {
+        PendingSelfHeap empty;
+        heap.swap(empty);
+    }
+    g_pending_seq.store(0, std::memory_order_relaxed);
 }
 
 }  // namespace neuron::gpu

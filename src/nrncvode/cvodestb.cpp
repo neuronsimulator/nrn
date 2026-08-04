@@ -9,6 +9,7 @@
 #include "nrnoc2iv.h"
 #include "datapath.h"
 #if defined(NRN_ENABLE_GPU)
+#include "neuron/gpu/net_send_buffer.hpp"
 #include "neuron/gpu/phase_timer.hpp"
 #endif
 #if USECVODE
@@ -72,6 +73,9 @@ void clear_event_queue() {
     if (net_cvode_instance) {
         net_cvode_instance->clear_events();
     }
+#if defined(NRN_ENABLE_GPU)
+    neuron::gpu::clear_all_pending_self_receives();
+#endif
 }
 
 void free_event_queues() {

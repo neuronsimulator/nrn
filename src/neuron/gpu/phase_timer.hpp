@@ -27,6 +27,14 @@ enum class Id : int {
     deliver_thresh,    // nested: threshold detect + host flag/hit
     deliver_tq,        // nested: binq + main TQ NetCon/SelfEvent fanout
     deliver_nrb,       // nested: NRB order/upload + net_buf_receive
+    deliver_nrb_order,     // nested under deliver-nrb: host instance order
+    deliver_nrb_upload,    // nested: H→D event metadata
+    deliver_nrb_launch,    // nested: net_buf_receive kernel launches
+    deliver_nrb_finalize,  // nested: stream wait + NRB zero + NSB drain
+    deliver_nrb_wait,      // nested under finalize: stream wait only
+    deliver_nrb_nsb,       // nested under finalize: NetSendBuffer host drain
+    deliver_nrb_nsb_d2h,   // nested under nsb: D→H cnt + fields
+    deliver_nrb_nsb_host,  // nested under nsb: order + nrn_net_send / net_event
     vecplay_sync,
     setup_tree_matrix,  // coarse wall
     setup_rhs,          // nrn_rhs

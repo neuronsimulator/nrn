@@ -3,6 +3,7 @@
 #include "neuron/container/network/weights.hpp"
 #include "neuron/event_order.hpp"
 #include "neuron/gpu/offload.hpp"
+#include "neuron/gpu/phase_timer.hpp"
 #include "neuron/model_data.hpp"
 #include "multicore.h"
 #include "nrnoc_ml.h"
@@ -372,31 +373,39 @@ void update_net_receive_buffer(NrnThread* nt) {
         if (!nrb || !nrb->_cnt) {
             continue;
         }
-        detail::net_receive_buffer_order(nrb);
+        {
+            phase_timer::Scope const order_timer{phase_timer::Id::deliver_nrb_order};
+            phase_timer::bump(phase_timer::Id::deliver_nrb_order);
+            detail::net_receive_buffer_order(nrb);
+        }
 #if defined(NRN_ENABLE_GPU)
         if (!nt->compute_gpu || !nrb->device_uploaded) {
             continue;
         }
-        // clang-format off
-        nrn_pragma_acc(update device(nrb->_cnt,
-                                     nrb->_displ_cnt,
-                                     nrb->_pnt_index[:nrb->_cnt],
-                                     nrb->_weight_index[:nrb->_cnt],
-                                     nrb->_nrb_t[:nrb->_cnt],
-                                     nrb->_nrb_flag[:nrb->_cnt],
-                                     nrb->_displ[:nrb->_displ_cnt + 1],
-                                     nrb->_nrb_index[:nrb->_cnt])
-                                     async(nt->stream_id))
-        nrn_pragma_omp(target update to(nrb->_cnt,
-                                        nrb->_displ_cnt,
-                                        nrb->_pnt_index[:nrb->_cnt],
-                                        nrb->_weight_index[:nrb->_cnt],
-                                        nrb->_nrb_t[:nrb->_cnt],
-                                        nrb->_nrb_flag[:nrb->_cnt],
-                                        nrb->_displ[:nrb->_displ_cnt + 1],
-                                        nrb->_nrb_index[:nrb->_cnt]))
-        // clang-format on
-        any_upload = true;
+        {
+            phase_timer::Scope const upload_timer{phase_timer::Id::deliver_nrb_upload};
+            phase_timer::bump(phase_timer::Id::deliver_nrb_upload);
+            // clang-format off
+            nrn_pragma_acc(update device(nrb->_cnt,
+                                         nrb->_displ_cnt,
+                                         nrb->_pnt_index[:nrb->_cnt],
+                                         nrb->_weight_index[:nrb->_cnt],
+                                         nrb->_nrb_t[:nrb->_cnt],
+                                         nrb->_nrb_flag[:nrb->_cnt],
+                                         nrb->_displ[:nrb->_displ_cnt + 1],
+                                         nrb->_nrb_index[:nrb->_cnt])
+                                         async(nt->stream_id))
+            nrn_pragma_omp(target update to(nrb->_cnt,
+                                            nrb->_displ_cnt,
+                                            nrb->_pnt_index[:nrb->_cnt],
+                                            nrb->_weight_index[:nrb->_cnt],
+                                            nrb->_nrb_t[:nrb->_cnt],
+                                            nrb->_nrb_flag[:nrb->_cnt],
+                                            nrb->_displ[:nrb->_displ_cnt + 1],
+                                            nrb->_nrb_index[:nrb->_cnt]))
+            // clang-format on
+            any_upload = true;
+        }
 #endif
     }
 #if defined(NRN_ENABLE_GPU)

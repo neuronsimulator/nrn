@@ -64,6 +64,18 @@ void ensure_thread_net_send_buffers(NrnThread* nt);
 void ensure_thread_net_send_buffers_host(NrnThread* nt);
 void flush_mechanism_net_send_buffers(NrnThread* nt);
 
+/**
+ * Traub residual #15: device net_send (type 0) from net_buf can bypass the
+ * full SelfEvent + TQ path. Pending self-receives are promoted into NRB at the
+ * same til windows as deliver_net_events / nrn_deliver_events.
+ * Only type-0 net_send; net_event / net_move still use the TQ path.
+ * net_move of a pending flag==1 self-event is not supported (Traub NMDA has no
+ * net_move). Call clear_pending_self_receives on finitialize.
+ */
+void promote_pending_self_receives(NrnThread* nt, double til);
+void clear_pending_self_receives(NrnThread* nt) noexcept;
+void clear_all_pending_self_receives() noexcept;
+
 extern std::vector<int> net_buf_send_types;
 
 }  // namespace neuron::gpu
