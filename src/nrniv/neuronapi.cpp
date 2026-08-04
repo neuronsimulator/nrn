@@ -377,6 +377,17 @@ void nrn_object_push(Object* obj) {
     hoc_push_object(obj);
 }
 
+void nrn_object_ptr_push(Object** obj_ref) {
+    // Push a writable object-reference slot (the out-parameter form of
+    // nrn_object_push). When a callee assigns to the corresponding $oN arg,
+    // hoc assigns through this slot, updating *obj_ref in place. Unlike
+    // nrn_object_push, which pushes an object by value, this exposes the
+    // h.ref(obj) idiom (a callee that writes back into the caller's objref).
+    // Named for the pointer it pushes (cf. nrn_double_ptr_push); the "ref" in
+    // nrn_object_ref/unref is reference counting, a different concept.
+    hoc_pushobj(obj_ref);
+}
+
 Object* nrn_object_pop(void) {
     // NOTE: the returned object should be unref'd when no longer needed
     Object** obptr = hoc_objpop();
