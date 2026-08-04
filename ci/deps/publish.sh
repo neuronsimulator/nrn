@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Publish files from a local directory (default: ci/deps/assets/, gitignored) to
-# a GitHub Release. Blobs are not committed to the nrn repository.
+# a GitHub Release on the CI-deps archive repo (not the NEURON product repo).
 #
 # Usage:
 #   mkdir -p ci/deps/assets && cp /path/to/*.deb ci/deps/assets/
@@ -8,6 +8,9 @@
 #   rm -f ci/deps/assets/*   # optional cleanup; directory is gitignored
 #
 # Requires: gh (authenticated).
+# Default --repo is neuronsimulator/nrn-ci-deps so pins do not appear under
+# neuronsimulator/nrn product Releases.
+#
 # After publishing, ensure MANIFEST default_release_base_url (or NRN_CI_DEPS_BASE_URL)
 # points at:
 #   https://github.com/<owner>/<name>/releases/download/<tag>
@@ -17,7 +20,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ASSETS_DIR="${NRN_CI_DEPS_ASSETS:-${SCRIPT_DIR}/assets}"
-REPO="${NRN_CI_DEPS_PUBLISH_REPO:-}"
+REPO="${NRN_CI_DEPS_PUBLISH_REPO:-neuronsimulator/nrn-ci-deps}"
 TAG="${NRN_CI_DEPS_PUBLISH_TAG:-ci-deps-v1}"
 DRY_RUN=0
 TITLE="NEURON CI dependency archive (${TAG})"
@@ -35,14 +38,9 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# REPO defaults to neuronsimulator/nrn-ci-deps (do not infer nrn product repo).
 if [[ -z "${REPO}" ]]; then
-  # Infer from git remote if possible
-  if command -v gh >/dev/null 2>&1; then
-    REPO="$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null || true)"
-  fi
-fi
-if [[ -z "${REPO}" ]]; then
-  echo "error: pass --repo owner/name (or run inside a gh-connected checkout)" >&2
+  echo "error: pass --repo owner/name or set NRN_CI_DEPS_PUBLISH_REPO" >&2
   exit 2
 fi
 

@@ -87,15 +87,17 @@ Wheel **test** jobs install both MPICH and OpenMPI so
 [packaging/python/test_wheels.sh](../../packaging/python/test_wheels.sh) can
 exercise dynamic MPI. On Ubuntu 24.04, stock MPICH was broken
 ([LP#2072338](https://bugs.launchpad.net/ubuntu/+source/mpich/+bug/2072338));
-CI therefore installs a **pinned** pair of `.deb` files from the GitHub Release
-[ci-deps-v1](https://github.com/neuronsimulator/nrn/releases/tag/ci-deps-v1)
-instead of downloading them from Launchpad on every run.
+CI therefore installs a **pinned** pair of `.deb` files from the dedicated
+CI-deps archive
+[nrn-ci-deps / ci-deps-v1](https://github.com/neuronsimulator/nrn-ci-deps/releases/tag/ci-deps-v1)
+instead of downloading them from Launchpad on every run (and instead of mixing
+pins into NEURON product Releases on `nrn`).
 
 See **[CI dependency archive](ci_deps.md)** and
 [ci/deps/README.md](../../ci/deps/README.md) for:
 
 * the catalog (`MANIFEST.yml`) and `managed: true|false`
-* GitHub Release hosting (not blobs in the git tree)
+* hosting on [neuronsimulator/nrn-ci-deps](https://github.com/neuronsimulator/nrn-ci-deps)
 * `fetch.sh` / `install_mpich_noble.sh` / `publish.sh` / `check-upstream.sh`
 * how to add the next flaky third-party download
 

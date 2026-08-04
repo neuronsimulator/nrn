@@ -19,8 +19,9 @@
 version: 1
 
 # GitHub Release assets for managed pins (override with NRN_CI_DEPS_BASE_URL).
-# Navigate: https://github.com/neuronsimulator/nrn/releases → tag ci-deps-v1
-default_release_base_url: "https://github.com/neuronsimulator/nrn/releases/download/ci-deps-v1"
+# Host repo is neuronsimulator/nrn-ci-deps (not product releases on nrn).
+# Navigate: https://github.com/neuronsimulator/nrn-ci-deps/releases → tag ci-deps-v1
+default_release_base_url: "https://github.com/neuronsimulator/nrn-ci-deps/releases/download/ci-deps-v1"
 
 assets:
   # --- P0: wheel-test MPICH workaround (Ubuntu 24.04 / noble) ---

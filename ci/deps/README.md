@@ -2,9 +2,9 @@
 
 Pinned external downloads used by NEURON CI. Goal: **stop relying on flaky third-party hosts** (Launchpad, GNU mirrors, SourceForge) for known-good blobs, while keeping an explicit upgrade path.
 
-**Managed binaries live on a GitHub Release**, not in the git tree. Navigate:
+**Managed binaries live on a dedicated GitHub repo’s Releases**, not in the `nrn` git tree and **not** on NEURON product Releases:
 
-https://github.com/neuronsimulator/nrn/releases → tag **`ci-deps-v1`** (or later `ci-deps-vN`)
+**https://github.com/neuronsimulator/nrn-ci-deps/releases** → tag **`ci-deps-v1`** (or later `ci-deps-vN`)
 
 Sphinx / website entry point: [docs/install/ci_deps.md](../../docs/install/ci_deps.md).
 
@@ -16,14 +16,14 @@ Sphinx / website entry point: [docs/install/ci_deps.md](../../docs/install/ci_de
 | `assets/` | **Not in git** (gitignored). Optional local scratch for `publish.sh` |
 | `fetch.sh` | Resolve one asset (local → release → upstream) + verify sha256 |
 | `check-upstream.sh` | Report when upstream no longer matches the pin |
-| `publish.sh` | Upload local scratch files to a GitHub Release |
+| `publish.sh` | Upload local scratch files to **nrn-ci-deps** Releases |
 | `install_mpich_noble.sh` | Ubuntu 24.04 wheel-test helper (first consumer) |
 
 ## `managed: true|false`
 
 | Value | Meaning |
 |-------|---------|
-| **`true`** | We host the pin on our GitHub Release. CI should use `fetch.sh` / install helpers and not depend on the upstream host. |
+| **`true`** | We host the pin on **nrn-ci-deps** Releases. CI should use `fetch.sh` / install helpers. |
 | **`false`** | Catalog only: known URL/sha and consumers; not yet switched off upstream. |
 
 `managed` answers “do **we** manage this pin’s content?” — not “is this from the original software vendor.”
@@ -32,7 +32,7 @@ Sphinx / website entry point: [docs/install/ci_deps.md](../../docs/install/ci_de
 
 ```text
 1. local:   ci/deps/assets/<file>     # optional gitignored scratch
-2. release: $NRN_CI_DEPS_BASE_URL/…   # or MANIFEST default_release_base_url
+2. release: $NRN_CI_DEPS_BASE_URL/…   # or MANIFEST default_release_base_url (nrn-ci-deps)
 3. upstream: upstream_url             # last resort
 ```
 
@@ -49,13 +49,13 @@ Wheel install helpers default to **`release`** so a missing Release asset fails 
    ```bash
    mkdir -p ci/deps/assets
    # copy or: NRN_CI_DEPS_SOURCE=upstream ci/deps/fetch.sh <id> ci/deps/assets
-   ci/deps/publish.sh --tag ci-deps-v1   # or ci-deps-v2 for a new cut
+   ci/deps/publish.sh --tag ci-deps-v1   # uploads to neuronsimulator/nrn-ci-deps
    rm -f ci/deps/assets/*                # optional
    ```
 
-4. Set `managed: true`. Ensure `default_release_base_url` matches the release tag.
+4. Set `managed: true`. Ensure `default_release_base_url` matches the release tag/repo.
 5. Point the pipeline at `ci/deps/fetch.sh <id>` or an install helper.
-6. Open a PR with **text only** (MANIFEST / scripts / docs) — no large blobs.
+6. Open a PR on **nrn** with **text only** (MANIFEST / scripts / docs).
 
 ## Upgrading a pin
 
@@ -74,7 +74,7 @@ There is no automatic upgrade. `check-upstream.sh` is awareness only.
 
 ## Currently managed assets (`managed: true`)
 
-Hosted on release **`ci-deps-v1`**:
+Hosted on **nrn-ci-deps** release **`ci-deps-v1`**:
 
 - `mpich_4.2.0-5.1_amd64.deb` + `libmpich12_4.2.0-5.1_amd64.deb` — Ubuntu 24.04 wheel tests (LP#2072338)
 - `ncurses-6.4.tar.gz`, `readline-8.3.tar.gz` — Mac static readline (`build_static_readline_osx.bash`)
@@ -96,4 +96,4 @@ Wheel testing (`packaging/python/test_wheels.sh`) runs **serial** tests with MPI
 
 - `bash`, `curl` (or `wget`), `sha256sum` / `shasum`
 - `python3` (stdlib only; `ci/deps/_manifest.py` parses the restricted MANIFEST subset without PyYAML)
-- `gh` only for `publish.sh`
+- `gh` only for `publish.sh` (needs write access to `neuronsimulator/nrn-ci-deps`)

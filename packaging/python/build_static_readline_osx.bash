@@ -6,7 +6,7 @@ set -eux
 #  - curl
 #  - C/C++ compiler
 #  - /opt/nrnwheel/[ARCH] folder created with access rights (this specific path is kept for consistency wrt `build_wheels.bash`)
-#  - repo checkout including ci/deps (fetches ncurses/readline from GitHub Release ci-deps-v1)
+#  - repo checkout including ci/deps (fetches ncurses/readline from nrn-ci-deps Release ci-deps-v1)
 
 if [[ "$(uname -s)" != 'Darwin' ]]; then
     echo "Error: this script is for macOS only. readline is already built statically in the linux Docker images"

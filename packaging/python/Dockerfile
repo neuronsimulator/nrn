@@ -47,7 +47,7 @@ WORKDIR /root
 
 # Pinned sources from NEURON CI dependency Release (ci/deps MANIFEST: ncurses-6.4-src, readline-7.0-src).
 # Build context is packaging/python, so we cannot run ci/deps/fetch.sh here; URLs match default_release_base_url.
-ARG NRN_CI_DEPS_BASE_URL=https://github.com/neuronsimulator/nrn/releases/download/ci-deps-v1
+ARG NRN_CI_DEPS_BASE_URL=https://github.com/neuronsimulator/nrn-ci-deps/releases/download/ci-deps-v1
 
 RUN curl -fL -o ncurses-6.4.tar.gz "${NRN_CI_DEPS_BASE_URL}/ncurses-6.4.tar.gz" \
     && tar -xvzf ncurses-6.4.tar.gz \
