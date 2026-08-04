@@ -400,11 +400,13 @@ Protocol: same special for `enable_gpu=0` and `=1`; count **and** sorted times.
 
 | Option | Content |
 |--------|---------|
-| **P4 default** | Polish residual (see parity **Next**); Phase C denser remeasure closed flat |
+| **Default next** | **Traub** identity + timing (parity **Starting prompt — Traub**); product mix with ringtest/dentate |
+| P4 polish | **Closed** — named residuals done; slim JACOB on tip; Phase C parked flat |
 | Multi-rank MPS | **Closed** — `test/external/ensure_cuda_mps.sh` + ctests; Eigen full-present |
 | Eigen v_unused | **Closed** — STATE refresh for functors; kin-native green |
 | Dentate 400 | **Closed** — CadepK `_eigen_global` deviceptr |
-| Parked | Traub `use_gap=1` over-fire; Phase C / slim JACOB wall-flat explor |
+| Traub no-gap | Historical **4474 exact** — re-smoke on tip in Traub session |
+| Parked / gap | Traub `use_gap=1` over-fire (`notes/gpu_native_traub_use_gap.md`); Phase C explor flat |
 | Later | device-resource owner only if forced |
 
 ### Constraints (do not regress)
@@ -448,29 +450,24 @@ After ACC codegen changes to built-ins: `rm -f build-gpu/src/nrnoc/expsyn.cpp &&
 
 ## Starting prompt
 
-Default next work is the **parity plan** (not open-ended Traub re-qualify):
+Default next work is **Traub product mix** (identity + timing). Full prompt:
+
+→ **`doc/gpu/native-coreneuron-parity.md`** § *Starting prompt — Traub identity + timing*
 
 ```
 Read ~/neuron/notes/PORTFOLIO.md (GPU-native), then
-~/neuron/nrngpu/doc/gpu/native-coreneuron-parity.md (current phase Status),
-GROK-GPU-NATIVE.md, and AGENTS.md.
+~/neuron/nrngpu/doc/gpu/native-coreneuron-parity.md
+  (Status/Next; Starting prompt — Traub),
+GROK-GPU-NATIVE.md (Traub/Th4), ~/neuron/notes/gpu_native_traub_use_gap.md,
+AGENTS.md.
 
-Kind: feature. Portfolio: GPU-native.
-Tree: ~/neuron/nrngpu on living tip (local/gpu-native-net-soa).
-High performance sacred; CoreNEURON is a guide (low host traffic), not law.
-Commit steps locally without push unless asked.
-After open: /rename GPU-P<phase>-<cluster>  (see parity doc).
-
-Trajectory/lastpart closed; ringtest 688@100; Traub 4474 exact on tip — do not
-re-open unless a matrix test regresses them.
-
-Start at first incomplete phase in native-coreneuron-parity.md (usually P0 triage,
-then P1 modtest clusters). Heap-free weight_index only; no host NET_RECEIVE body;
-no host vec_rhs voltage hot path.
-source ~/neuron/bin/nrnenv nrngpu build-gpu before GPU runs.
+Kind: feature. Portfolio: GPU-native. Phase: Traub identity + timing.
+Tree: ~/neuron/nrngpu. Branch: local/gpu-native.
+Model: ~/models/82894 (1/10). High performance sacred; heap-free weight_index.
+Commit locally without push. /rename GPU-P4-traub
 ```
 
-Phase-specific prompts (P0 / P1 / hygiene) are copy-paste blocks in
+P0–P3 closed; P4 polish closed. Phase-specific archive prompts remain in
 `doc/gpu/native-coreneuron-parity.md`.
 
 ---

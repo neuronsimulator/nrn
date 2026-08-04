@@ -48,6 +48,7 @@ Immediately after `/new` or when the topic stabilizes:
 | `GPU-P4-gap-scatter` | Gap bulk scatter (closed on tip) |
 | `GPU-P4-density` | setup-tree-matrix + lastpart-nonvint launch density |
 | `GPU-P4-multirank` | Multi-rank GPU share / MPS (ops closed on tip) |
+| `GPU-P4-traub` | Traub 1/10 identity + timing (product mix with ringtest/dentate) |
 | `GPU-hygiene` | full-ctest noise not native product |
 
 **One living session per phase** (or cluster). Prefer **resume** that named session until the phase Status is done. When context is bloated or the agent is lost: **end checklist below → `/new` → paste the phase starting prompt** — do **not** resume a year-old auto-title.
@@ -703,7 +704,7 @@ Milestone B (CURRENT specialization): `nrn_cur_hh` ≈ hand ~13 — **met** (~14
 | **5** | Tip-merge H4a+b+c+A (wall win measured) | **done** on tip 2026-08-03 |
 | **6** | Tip-merge Session B CURRENT (wall win measured) | **done** on tip 2026-08-03 |
 
-**Session order:** A–B–E closed on tip. C parked explor. D slim JACOB parked.
+**Session order:** A–B–E closed on tip. C parked explor. D slim JACOB **on tip**.
 
 ### Residual perf / product debt (next when reopened)
 
@@ -713,7 +714,10 @@ Milestone B (CURRENT specialization): `nrn_cur_hh` ≈ hand ~13 — **met** (~14
 4. **Threshold header hygiene:** **closed** — true local_inode in NEURON+CN; rdcellstate aligned.
 5. **Phase C denser-spike remeasure:** **closed** — ringtest + dentate MPS wall flat; no tip-merge (kernel-only win).
 6. **Slim JACOB hygiene:** **closed** (on tip 2026-08-04).
-7. Optional: further exclusive density / lastpart-nonvint only if a new measured residual appears under CN.
+7. **Traub product mix (reopened 2026-08-04):** identity + timing vs ringtest/dentate. See **Starting prompt — Traub** below.  
+   - **no-gap:** historically QUALIFIED + **4474 exact** — re-smoke on tip first.  
+   - **`use_gap=1`:** parked over-fire (8796 vs 7873); CN-GPU ~11 s exact — `~/neuron/notes/gpu_native_traub_use_gap.md`.  
+8. Optional: further exclusive density / lastpart-nonvint only if a new measured residual appears under CN.
 
 ---
 
@@ -806,7 +810,7 @@ Commit locally without push. Update Status/Next before exit.
 
 ## Next (one line — update every session end)
 
-**Next:** P4 polish — new measured residual only (exclusive / denser models). Slim JACOB **on tip** (hygiene). Phase C denser-spike remeasure **closed** (wall flat; no tip-merge). Dentate **400** + CadepK + GC dump + phases=0 ACC wait + threshold header **closed**. **Not** Traub gap unless reopened.
+**Next:** **Traub** product mix — identity (+ reasons for diffs) and timing vs CoreNEURON; no-gap re-smoke first, then `use_gap=1`. P4 named polish residuals **closed** (slim JACOB on tip; Phase C parked flat). Ringtest **688** + dentate **400** stay green.
 
 ### Starting prompt — Session A residual (closed; archive)
 
@@ -891,27 +895,90 @@ Session closed 2026-08-04: re-apply Session D slim JACOB onto tip (codegen
 hygiene; explor wall-flat). Device jacob: g_unused + vec_d only; no GLOBAL.
 Unit test Session D; product 688@100 green; multi-warm ~1.14–1.15 s flat.
 
-### Starting prompt — next (P4 polish)
+### Starting prompt — P4 polish (closed; archive)
+
+P4 named polish residuals closed 2026-08-04 (slim JACOB on tip; Phase C parked
+flat). Default next is Traub product mix (below). Optional: new measured residual
+only if a profile shows a real wall/phase gap under CN.
+
+### Starting prompt — Traub identity + timing (default next)
+
+**Model:** ModelDB 82894 (`~/models/82894`), 1/10 network, 356 cells, `nthread=1`.  
+**Living notes:** `GROK-GPU-NATIVE.md` § Traub/Th4; `~/neuron/notes/gpu_native_traub_use_gap.md`  
+(do **not** trust Jul-2 `native_gpu_traub_parity.md` paths to `core-neuron-gpu`).
+
+| Config | Historical result | Action |
+|--------|-------------------|--------|
+| `use_gap=0` | QUALIFIED A–F; **4474 exact** CPU↔native | **Re-smoke on tip first** + times vs CN-GPU |
+| `use_gap=1` native | Over-fire **8796** vs CPU **7873** (exact through t≤43.4; first extra t=43.45 gid 221) | Identity first; timing secondary |
+| `use_gap=1` CN-GPU | **7867** exact vs CN-CPU, ~**11 s** on T1000 | Timing guide for gap case |
+| Ringtest gap | Green (not Traub’s residual) | Do not re-litigate |
 
 ```text
 Read ~/neuron/notes/PORTFOLIO.md (GPU-native), then
 ~/neuron/nrngpu/doc/gpu/native-coreneuron-parity.md
-  (Phase 4 Status / Next; slim JACOB on tip),
-GROK-GPU-NATIVE.md, AGENTS.md.
+  (Status/Next; Starting prompt — Traub),
+GROK-GPU-NATIVE.md (Traub/Th4 + constraints),
+~/neuron/notes/gpu_native_traub_use_gap.md,
+AGENTS.md.
 
-Kind: feature. Portfolio: GPU-native. Phase: P4 polish.
+Kind: feature. Portfolio: GPU-native. Phase: Traub identity + timing.
 Tree: ~/neuron/nrngpu. Branch: local/gpu-native.
+Model: ~/models/82894 (1/10, nthread=1).
 
-Context: Dentate 400 + CadepK + GC morph inodes + phases=0 D→H fence +
-threshold header + Phase C remeasure closed + slim JACOB on tip.
-Not Traub gap.
+Goal: Add Traub to the product mix with ringtest + dentate —
+(1) identity of results vs NEURON CPU (or documented reasons for diffs),
+(2) wall/psolve timing approaches CoreNEURON GPU as a guide.
 
-This session: <user picks polish target or new measured residual>.
-High performance sacred; heap-free weight_index.
+Context (tip after P4 polish):
+- Ringtest 688@100 exclusive ≲ CN; dentate 400 + MPS closed.
+- Traub use_gap=0 historically QUALIFIED + 4474 exact (re-smoke first on tip).
+- Traub use_gap=1 PARKED: native 8796 vs CPU 7873 (over-fire after t=43.45);
+  CN-GPU 7867 exact ~11 s; native was ~99 s. See gpu_native_traub_use_gap.md.
+- Not ringtest-gap (already green). Heap-free weight_index; high performance sacred.
 
-Commit locally without push. Update Status/Next before exit.
-/rename GPU-P4-polish
+Session order (do not skip):
+1. Fresh ACC special + env; re-smoke use_gap=0: QUALIFIED + 4474 exact + times
+   (native vs CN-GPU vs NEURON CPU).
+2. If no-gap still green: baselined phase timers / multi-warm; note vs CN.
+3. Only then open use_gap=1: lock first diverge (t≈43.45), identity path,
+   then timing (native still much slower historically — secondary until correct).
+4. Optional later: productize harness/ctest like dentate (out of scope unless asked).
+
+Do not regress ringtest 688 or dentate 400. Commit locally without push.
+Update Status/Next + PORTFOLIO before exit.
+/rename GPU-P4-traub
 ```
+
+**Build / smoke (Traub):**
+
+```bash
+source ~/neuron/bin/nrnenv nrngpu build-gpu
+export NRN_GPU_BACKEND_TEST=native NRN_GPU_PERMUTE=2
+
+mkdir -p /tmp/traub-nrngpu-acc && cd /tmp/traub-nrngpu-acc
+ln -sfn ~/models/82894/mod/*.mod .
+nrnivmodl -nmodl "$(which nmodl)" \
+  -nmodlflags "passes --inline host --c acc --oacc" .
+
+cd ~/models/82894
+SPECIAL=/tmp/traub-nrngpu-acc/x86_64/special
+
+# no-gap first gate
+$SPECIAL -c one_tenth_ncell=1 -c use_gap=0 -c nthread=1 \
+  -c enable_gpu=0 -c coreneuron=0 -c mytstop=100 -c benchmark_quiet=1 init.hoc
+$SPECIAL -c one_tenth_ncell=1 -c use_gap=0 -c nthread=1 \
+  -c enable_gpu=1 -c coreneuron=0 -c mytstop=100 -c benchmark_quiet=1 init.hoc
+$SPECIAL -c one_tenth_ncell=1 -c use_gap=0 -c nthread=1 \
+  -c enable_gpu=0 -c coreneuron=1 -c coreneuron_gpu=1 -c mytstop=100 \
+  -c benchmark_quiet=1 init.hoc
+# expect 4474; sorted multiset exact CPU↔native; report runtimes vs CN-GPU
+
+# gap only after no-gap re-smoke (same three backends, use_gap=1)
+# historical: CPU ~7873, CN ~7867, native over-fire ~8796
+```
+
+**Acceptance shape:** (1) no-gap 4474 exact + QUALIFIED; (2) gap exact or written first-break root cause; (3) native times approach CN-GPU (guide); (4) Traub documented as third bar next to ringtest 688 + dentate 400.
 
 ### Branching (2026-08-03)
 
@@ -941,4 +1008,5 @@ Exclusive ringtest **≲ CN**. Multi-rank MPS **closed**. Kin-native **closed**.
 Dentate **400** **closed**. GC prcellstate dump residual **closed**.
 phases=0 ACC wait **closed**. Threshold header hygiene **closed**.
 Slim JACOB **closed** (hygiene on tip).
-**Default next:** new measured residual only (Phase C re-parked).
+**Default next:** **Traub** identity + timing (product mix with ringtest/dentate;
+Phase C re-parked).
