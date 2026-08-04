@@ -234,6 +234,11 @@ void sync_node_soa_to_host_for_host_reads() noexcept {
         return;
     }
     phase_timer::Scope const timer{phase_timer::Id::download_flush};
+    // Session E removed per-mech ACC waits: CURRENT/STATE/JACOB stay async on
+    // stream_id until a phase fence. Host update without a prior wait races
+    // those kernels (blocking update host is not ordered with stream_id).
+    // Fence first so end-of-psolve / phases=0 prcellstate see complete SoA.
+    sync_all_device_streams();
     download_sorted_node_soa();
     for (int ith = 0; ith < nrn_nthread; ++ith) {
         download_thread_state_for_host_read(nrn_threads[ith]);
@@ -248,6 +253,7 @@ void sync_mechanism_soa_to_host_for_host_reads() noexcept {
         return;
     }
     phase_timer::Scope const timer{phase_timer::Id::download_flush};
+    sync_all_device_streams();
     download_device_state_mechanism_soa();
     sync_all_device_streams();
 #endif
@@ -259,6 +265,10 @@ void sync_state_to_host_for_host_reads() noexcept {
         return;
     }
     phase_timer::Scope const timer{phase_timer::Id::download_flush};
+    // Fence before D→H: finalize_psolve_download (phases=0 end-of-run dump) is
+    // the product path that must not race Session E async setup/lastpart.
+    // Mid-step checkpoint dumps already waited in dump_phase; double-wait is fine.
+    sync_all_device_streams();
     download_sorted_model_soa();
     for (int ith = 0; ith < nrn_nthread; ++ith) {
         download_thread_state_for_host_read(nrn_threads[ith]);

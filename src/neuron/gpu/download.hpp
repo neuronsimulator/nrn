@@ -32,18 +32,22 @@ void batch_download_to_host();
 /**
  * Pull sorted node SOA (matrix, voltage, ...) from device without touching
  * mechanism SOA. Use when host nonvint/AFTER_SOLVE already own mechanism state.
+ * Waits all device streams before D→H (safe after Session E async kernels).
  */
 void sync_node_soa_to_host_for_host_reads() noexcept;
 
 /**
  * Pull STATEful mechanism SOA from device after device nonvint STATE integration.
  * Skips host-only CURRENT mechanisms (e.g. pas) whose host mirrors stay authoritative.
+ * Waits all device streams before D→H.
  */
 void sync_mechanism_soa_to_host_for_host_reads() noexcept;
 
 /**
  * Pull sorted node and mechanism SOA vectors from device to host.
  * Required for mid-step checkpoints and HOC reads when device owns all state.
+ * Waits all device streams before D→H so finalize_psolve_download / phases=0
+ * prcellstate do not race async CURRENT/STATE/JACOB (Session E density).
  */
 void sync_state_to_host_for_host_reads() noexcept;
 

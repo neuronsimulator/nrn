@@ -2,7 +2,7 @@
 
 **Portfolio:** GPU-native (feature)  
 **Tree:** `~/neuron/nrngpu`  
-**Living tip (2026-08-03):** `local/gpu-native` @ H4 + Session B + Session E + multi-rank MPS + Eigen STATE v_unused + **Eigen `_eigen_global` deviceptr** (CadepK NaN closed; dentate **400** spikes) + **prcellstate morph-stable local inodes** (GC dump false residual closed). Exclusive wall multi-warm ~**1.15–1.17 s**; dentate 4-rank MPS psolve ~**1.5–1.6 s**.  
+**Living tip (2026-08-04):** `local/gpu-native` @ H4 + Session B + Session E + multi-rank MPS + Eigen STATE v_unused + **Eigen `_eigen_global` deviceptr** (CadepK NaN closed; dentate **400** spikes) + **prcellstate morph-stable local inodes** + **host-read D→H stream fence** (phases=0 / finalize_psolve_download). Exclusive wall multi-warm ~**1.15–1.17 s**; dentate 4-rank MPS psolve ~**1.5–1.6 s**.  
 **Parked explor:** `local/gpu-p4-exclusive-residual` (slim JACOB wall-flat); `local/gpu-P4-hotpath-netreceive` (Phase C wall-flat); `local/gpu-p4-setup-rhs-density` (Session E archive, **merged to tip**)  
 **Handoffs:** `GROK-GPU-NATIVE.md`, `AGENTS.md`, `~/neuron/notes/PORTFOLIO.md`  
 **This file:** ordered steps you can re-open without chat memory. Update **Status** at end of each session.
@@ -145,6 +145,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-08-03 | GPU-P4-dentate-exp2syn | — | **False lead closed:** end-of-run A/B=0 was `finalize_psolve_download` after sorted-token teardown (no-op). Fix: finalize inside token scope. Topology-matched Exp2Syn A/B/g match. **True first break:** t=0.05 **post_solve** all GC V=NaN (post_setup finite). Still 390 vs 400. |
 | 2026-08-03 | GPU-P4-dentate-gc-nan | — | **CadepK closed:** Eigen residual used host `inst.global->` on device → NaN STATE → post_solve V NaN. Product: `_eigen_global = acc_deviceptr(&*_global)` + residual `_eigen_global->X` (bare static fails NVVM; multi-double firstprivate SEGV). GC V finite t=0.05 all phases; **`reduced_dentate_native` 400 spikes match**. |
 | 2026-08-03 | GPU-P4-gc-prcellstate | — | **GC numerical residual was dump artifact:** `prcellstate` cell-local inodes followed thread order (CPU no-permute vs GPU permute-2 renumbered compartments). Fix: morph BFS (secname+segi) + mech dump sorted by local inode. Remap check: dV=0, na8st max \|d\| ~1e-12. Product t=0.05 phases: dV=0, max \|d\| ~1e-12. Ringtest dV=0. |
+| 2026-08-04 | GPU-P4-phases0-acc-wait | — | **Host-read D→H stream fence:** `sync_state_to_host_*` waits all streams **before** `update host` (Session E left CURRENT/STATE/JACOB async). Product path is `finalize_psolve_download` (phases=0 end-of-run). Ringtest phases=0/1 tstop=1 + **688@100** dV=0 (noise ≤1e-13). |
 
 ---
 
@@ -469,6 +470,7 @@ Phase timer (`NRN_NATIVE_GPU_PHASE_TIMER=1`):
 | Eigen STATE v_unused for functors | **fixed (on tip)** | H4c stack `v` left Eigen functors reading stale `v_unused` SoA (and often un-present). STATE now presents v_unused + writes `_present_fp_N[id] = v` when Eigen solvers exist. **testcorenrn_kin_native** green. |
 | Dentate spike multiset 400 | **green** | **400 match** after Eigen GLOBAL deviceptr fix. Root: CadepK Newton residual `inst.global->` = host pointer on device → NaN STATE (step 1 nonvint) → step-2 CURRENT/matrix/V NaN. Product: `_eigen_global` via `acc_deviceptr` after copyin; residual `_eigen_global->X`. |
 | GC prcellstate numerical residual | **closed (dump)** | Was false residual: permute-dependent cell-local inode labels in `nrn_prcellstate`. Morph-stable BFS local IDs + sorted mech dump. t=0.05 phases: **dV=0**, max \|d\| ~**1e-12** (noise). Pre-fix naive max \|dV\| ~0.13 / na8st ~3656 was inode 1↔3 renumber. |
+| phases=0 prcellstate ACC wait (post Session E) | **done (on tip)** | `sync_state_to_host_for_host_reads` (+ node/mech variants) fence streams **before** D→H. Covers `finalize_psolve_download` end-of-run dump without relying on mid-step checkpoint waits. phases=0/1 + **688@100** green (noise-only). |
 | Single device-resource owner | open | Only if exit/leak forces. |
 
 ### H4c NMODL productize (2026-08-02, `local/gpu-P4-density-H4`)
@@ -703,9 +705,11 @@ Milestone B (CURRENT specialization): `nrn_cur_hh` ≈ hand ~13 — **met** (~14
 
 1. **Dentate spike multiset 400:** **closed** (Eigen `_eigen_global` deviceptr; CadepK NaN).
 2. **GC prcellstate numerical residual:** **closed** as dump artifact (morph-stable local inodes). Not a sim residual.
-3. Phase C follow-up only if denser spike traffic shows wall (parked explor).
-4. Optional: slim JACOB hygiene tip-merge; lastpart-deliver; **phases=0** prcellstate download needs ACC wait after Session E (phases=1 / 688@100 green).
-5. Optional: further exclusive density only if a new measured residual appears under CN.
+3. **phases=0 prcellstate ACC wait:** **closed** — host-read sync fences streams before D→H.
+4. Phase C follow-up only if denser spike traffic shows wall (parked explor).
+5. Optional: slim JACOB hygiene tip-merge; lastpart-deliver.
+6. Optional: further exclusive density only if a new measured residual appears under CN.
+7. Optional: threshold header `local_inode-1` hygiene (NEURON+CN+rdcellstate).
 
 ---
 
@@ -798,7 +802,7 @@ Commit locally without push. Update Status/Next before exit.
 
 ## Next (one line — update every session end)
 
-**Next:** P4 polish — parked explor (Phase C / slim JACOB) or new measured residual; **phases=0** prcellstate ACC wait optional. Dentate **400** + CadepK + **GC prcellstate dump** **closed**. **Not** Traub gap unless reopened.
+**Next:** P4 polish — parked explor (Phase C / slim JACOB), threshold header `local_inode-1` hygiene, or new measured residual. Dentate **400** + CadepK + GC dump + **phases=0 ACC wait** **closed**. **Not** Traub gap unless reopened.
 
 ### Starting prompt — Session A residual (closed; archive)
 
@@ -855,19 +859,27 @@ Session closed 2026-08-03: GC prcellstate “numerical residual” was
 permute-dependent cell-local inode renumbering. Morph BFS local IDs;
 t=0.05 dV=0, max |d| ~1e-12; ringtest dV=0.
 
+### Starting prompt — phases=0 ACC wait (closed; archive)
+
+Session closed 2026-08-04: host-read D→H stream fence in
+`sync_state_to_host_*` (before `update host`). Session E left CURRENT/STATE/JACOB
+async; `finalize_psolve_download` / phases=0 end-of-run dump is the product path.
+Ringtest phases=0/1 + 688@100 green (noise-only).
+
 ### Starting prompt — next (P4 polish)
 
 ```text
 Read ~/neuron/notes/PORTFOLIO.md (GPU-native), then
 ~/neuron/nrngpu/doc/gpu/native-coreneuron-parity.md
-  (Phase 4 Status / Next; dentate 400 + GC prcellstate dump closed),
+  (Phase 4 Status / Next; phases=0 ACC wait closed),
 GROK-GPU-NATIVE.md, AGENTS.md.
 
 Kind: feature. Portfolio: GPU-native. Phase: P4 polish.
 Tree: ~/neuron/nrngpu. Branch: local/gpu-native.
 
-Context: Dentate 400 + CadepK + GC prcellstate morph-stable inodes closed.
-Phase C / slim JACOB parked. Optional: phases=0 prcellstate ACC wait.
+Context: Dentate 400 + CadepK + GC prcellstate morph-stable inodes +
+phases=0 host-read stream fence closed. Phase C / slim JACOB parked.
+Optional: threshold header local_inode-1 hygiene (NEURON+CN+rdcellstate).
 Not Traub gap.
 
 This session: <user picks polish target or new P4 item>.
@@ -898,7 +910,10 @@ Commit locally without push. Update Status/Next before exit.
 
 P4 on tip: scatter, timers, **multi-rank MPS product harness**, Eigen full-present +
 **v_unused refresh** + **`_eigen_global` deviceptr**, **H4 density packet**,
-**Session B CURRENT**, **Session E**, **prcellstate morph-stable local inodes**.
+**Session B CURRENT**, **Session E**, **prcellstate morph-stable local inodes**,
+**host-read D→H stream fence** (phases=0 / finalize).
 Exclusive ringtest **≲ CN**. Multi-rank MPS **closed**. Kin-native **closed**.
 Dentate **400** **closed**. GC prcellstate dump residual **closed**.
-**Default next:** Phase C / slim JACOB parked explor, or new measured residual.
+phases=0 ACC wait **closed**.
+**Default next:** Phase C / slim JACOB parked explor, threshold header hygiene,
+or new measured residual.
