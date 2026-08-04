@@ -16,16 +16,10 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-MANIFEST="${NRN_CI_DEPS_MANIFEST:-${SCRIPT_DIR}/MANIFEST.yml}"
 ASSETS_DIR="${NRN_CI_DEPS_ASSETS:-${SCRIPT_DIR}/assets}"
 SOURCE_PREF="${NRN_CI_DEPS_SOURCE:-}"  # empty = try local, release, upstream
 BASE_URL="${NRN_CI_DEPS_BASE_URL:-}"
 MANIFEST_PY="${SCRIPT_DIR}/_manifest.py"
-
-if [[ ! -f "${MANIFEST}" ]]; then
-  echo "error: manifest not found: ${MANIFEST}" >&2
-  exit 1
-fi
 
 usage() {
   sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'
@@ -40,7 +34,7 @@ meta_get() {
 }
 
 load_asset_json() {
-  python3 "${MANIFEST_PY}" "${MANIFEST}" get "$1"
+  python3 "${MANIFEST_PY}" get "$1"
 }
 
 sha256_file() {
@@ -172,14 +166,14 @@ fi
 
 case "$1" in
   --list|-l)
-    python3 "${MANIFEST_PY}" "${MANIFEST}" list
+    python3 "${MANIFEST_PY}" list
     exit 0
     ;;
   --all)
     out_dir="${2:-${ASSETS_DIR}}"
     while IFS= read -r id; do
       fetch_one "${id}" "${out_dir}"
-    done < <(python3 "${MANIFEST_PY}" "${MANIFEST}" ids)
+    done < <(python3 "${MANIFEST_PY}" ids)
     exit 0
     ;;
   -h|--help)

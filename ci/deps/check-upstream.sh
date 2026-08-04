@@ -14,7 +14,6 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-MANIFEST="${NRN_CI_DEPS_MANIFEST:-${SCRIPT_DIR}/MANIFEST.yml}"
 MANIFEST_PY="${SCRIPT_DIR}/_manifest.py"
 WORKDIR="${NRN_CI_DEPS_CHECK_DIR:-$(mktemp -d -t nrn-ci-deps-check.XXXXXX)}"
 KEEP_WORKDIR="${NRN_CI_DEPS_KEEP_CHECK_DIR:-0}"
@@ -26,11 +25,6 @@ cleanup() {
 }
 trap cleanup EXIT
 
-if [[ ! -f "${MANIFEST}" ]]; then
-  echo "error: manifest not found: ${MANIFEST}" >&2
-  exit 2
-fi
-
 mkdir -p "${WORKDIR}"
 
 IDS=()
@@ -39,18 +33,7 @@ if [[ $# -gt 0 ]]; then
 else
   while IFS= read -r id; do
     IDS+=("$id")
-  done < <(
-    python3 - "${MANIFEST_PY}" "${MANIFEST}" <<'PY'
-import importlib.util, sys
-spec = importlib.util.spec_from_file_location("nrn_manifest", sys.argv[1])
-mod = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(mod)
-doc = mod.load_manifest(sys.argv[2])
-for a in doc.get("assets") or []:
-    if a.get("id") and a.get("upstream_url") and a.get("sha256"):
-        print(a["id"])
-PY
-  )
+  done < <(python3 "${MANIFEST_PY}" ids)
 fi
 
 if [[ ${#IDS[@]} -eq 0 ]]; then
@@ -70,7 +53,8 @@ meta_get() {
 }
 
 for id in "${IDS[@]}"; do
-  meta="$(python3 "${MANIFEST_PY}" "${MANIFEST}" get "${id}")"
+  meta="$(python3 "${MANIFEST_PY}" get "${id}")"
+
   file="$(meta_get file "${meta}")"
   sha="$(meta_get sha256 "${meta}")"
   upstream="$(meta_get upstream_url "${meta}")"

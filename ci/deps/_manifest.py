@@ -4,6 +4,9 @@
 Supports the restricted subset used by ci/deps/MANIFEST.yml:
   - top-level key: value
   - assets: list of maps with simple scalar values and folded (>) notes
+
+The manifest path is fixed next to this file (not taken from CLI) so there is
+no user/agent-controlled path into the filesystem.
 """
 from __future__ import annotations
 
@@ -11,6 +14,9 @@ import json
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+
+# Only file this module will open. Not derived from argv (path-injection safe).
+MANIFEST_PATH = Path(__file__).resolve().parent / "MANIFEST.yml"
 
 
 def _parse_scalar(raw: str) -> str:
@@ -25,35 +31,10 @@ def _parse_scalar(raw: str) -> str:
     return s
 
 
-def _validate_manifest_path(path: str | Path) -> Path:
-    """Resolve *path* and require it to be a YAML file under this package (ci/deps/).
-
-    Constrains CLI/agent-supplied paths so we never open files outside the
-    intended directory (Sonar: path injection / agentic workflows).
-    """
-    deps_root = Path(__file__).resolve().parent
-    try:
-        candidate = Path(path).expanduser().resolve(strict=False)
-    except (OSError, RuntimeError) as exc:
-        raise SystemExit(f"error: invalid manifest path {path!r}: {exc}") from exc
-
-    try:
-        candidate.relative_to(deps_root)
-    except ValueError:
-        raise SystemExit(
-            f"error: manifest path must be under {deps_root}, got {candidate}"
-        ) from None
-
-    if not candidate.is_file():
-        raise SystemExit(f"error: manifest is not a file: {candidate}")
-    if candidate.suffix.lower() not in {".yml", ".yaml"}:
-        raise SystemExit(f"error: manifest must be a .yml/.yaml file: {candidate}")
-    return candidate
-
-
-def load_manifest(path: str | Path) -> Dict[str, Any]:
-    manifest_path = _validate_manifest_path(path)
-    text = manifest_path.read_text(encoding="utf-8")
+def load_manifest() -> Dict[str, Any]:
+    if not MANIFEST_PATH.is_file():
+        raise SystemExit(f"error: manifest not found: {MANIFEST_PATH}")
+    text = MANIFEST_PATH.read_text(encoding="utf-8")
     doc: Dict[str, Any] = {"assets": []}
     current: Optional[Dict[str, Any]] = None
     in_consumers = False
@@ -153,15 +134,14 @@ def get_asset(doc: Dict[str, Any], asset_id: str) -> Dict[str, Any]:
 
 
 def main(argv: List[str]) -> None:
-    if len(argv) < 2:
+    if len(argv) < 1:
         print(
-            "usage: _manifest.py <manifest> list|ids|get <id>|json",
+            "usage: _manifest.py list|ids|get <id>|json",
             file=sys.stderr,
         )
         raise SystemExit(2)
-    path = argv[0]
-    cmd = argv[1]
-    doc = load_manifest(path)
+    cmd = argv[0]
+    doc = load_manifest()
     if cmd == "list":
         for a in doc.get("assets") or []:
             managed = a.get("managed", "?")
@@ -170,8 +150,8 @@ def main(argv: List[str]) -> None:
         for a in doc.get("assets") or []:
             if a.get("id"):
                 print(a["id"])
-    elif cmd == "get" and len(argv) >= 3:
-        json.dump(get_asset(doc, argv[2]), sys.stdout)
+    elif cmd == "get" and len(argv) >= 2:
+        json.dump(get_asset(doc, argv[1]), sys.stdout)
     elif cmd == "json":
         json.dump(doc, sys.stdout, indent=2)
         print()
