@@ -25,8 +25,35 @@ def _parse_scalar(raw: str) -> str:
     return s
 
 
+def _validate_manifest_path(path: str | Path) -> Path:
+    """Resolve *path* and require it to be a YAML file under this package (ci/deps/).
+
+    Constrains CLI/agent-supplied paths so we never open files outside the
+    intended directory (Sonar: path injection / agentic workflows).
+    """
+    deps_root = Path(__file__).resolve().parent
+    try:
+        candidate = Path(path).expanduser().resolve(strict=False)
+    except (OSError, RuntimeError) as exc:
+        raise SystemExit(f"error: invalid manifest path {path!r}: {exc}") from exc
+
+    try:
+        candidate.relative_to(deps_root)
+    except ValueError:
+        raise SystemExit(
+            f"error: manifest path must be under {deps_root}, got {candidate}"
+        ) from None
+
+    if not candidate.is_file():
+        raise SystemExit(f"error: manifest is not a file: {candidate}")
+    if candidate.suffix.lower() not in {".yml", ".yaml"}:
+        raise SystemExit(f"error: manifest must be a .yml/.yaml file: {candidate}")
+    return candidate
+
+
 def load_manifest(path: str | Path) -> Dict[str, Any]:
-    text = Path(path).read_text(encoding="utf-8")
+    manifest_path = _validate_manifest_path(path)
+    text = manifest_path.read_text(encoding="utf-8")
     doc: Dict[str, Any] = {"assets": []}
     current: Optional[Dict[str, Any]] = None
     in_consumers = False

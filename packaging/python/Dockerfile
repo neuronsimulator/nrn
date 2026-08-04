@@ -47,16 +47,17 @@ WORKDIR /root
 
 # Pinned sources from NEURON CI dependency Release (ci/deps MANIFEST: ncurses-6.4-src, readline-7.0-src).
 # Build context is packaging/python, so we cannot run ci/deps/fetch.sh here; URLs match default_release_base_url.
+# --proto '=https' refuses HTTP (including after redirects); NRN_CI_DEPS_BASE_URL must be https://...
 ARG NRN_CI_DEPS_BASE_URL=https://github.com/neuronsimulator/nrn-ci-deps/releases/download/ci-deps-v1
 
-RUN curl -fL -o ncurses-6.4.tar.gz "${NRN_CI_DEPS_BASE_URL}/ncurses-6.4.tar.gz" \
+RUN curl -fL --proto '=https' --tlsv1.2 -o ncurses-6.4.tar.gz "${NRN_CI_DEPS_BASE_URL}/ncurses-6.4.tar.gz" \
     && tar -xvzf ncurses-6.4.tar.gz \
     && cd ncurses-6.4  \
     && ./configure --prefix=/nrnwheel/ncurses --without-shared --without-debug CFLAGS="-fPIC" \
     && make -j install \
     && cd .. && rm -rf ncurses-6.4 ncurses-6.4.tar.gz
 
-RUN curl -fL -o readline-7.0.tar.gz "${NRN_CI_DEPS_BASE_URL}/readline-7.0.tar.gz" \
+RUN curl -fL --proto '=https' --tlsv1.2 -o readline-7.0.tar.gz "${NRN_CI_DEPS_BASE_URL}/readline-7.0.tar.gz" \
     && tar -xvzf readline-7.0.tar.gz \
     && cd readline-7.0  \
     && ./configure --prefix=/nrnwheel/readline --disable-shared CFLAGS="-fPIC" \
