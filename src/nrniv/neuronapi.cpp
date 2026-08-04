@@ -258,19 +258,79 @@ int nrn_symbol_subtype(const Symbol* sym) {
 }
 
 double* nrn_symbol_dataptr(const Symbol* sym) {
-    // A NOTUSER runtime scalar (created in HOC by e.g. `x = 42`) does not store
-    // its value at sym->u.pval -- for that subtype the union member holds an
-    // object-data offset, not a pointer, so returning it hands back garbage that
-    // segfaults on dereference. The real storage is in the top-level
-    // object-data array (see the NOTUSER branch of eval() in oc/code.cpp, which
-    // reads *OPVAL(sym) == *hoc_top_level_data[sym->u.oboff].pval). Return that
-    // address so the result is a dereferenceable double*, as the name promises.
-    // Every other case (USERDOUBLE built-ins such as `t`, and the typed USER*
-    // subtypes that already alias sym->u.pval) is unchanged.
-    if (sym && sym->type == VAR && sym->subtype == NOTUSER) {
-        return hoc_top_level_data[sym->u.oboff].pval;
+    // Only a scalar/array VAR has a real double* to hand back. Anything else --
+    // a function (e.g. finitialize), an object, a string, a template (all with
+    // type != VAR), or a section-level property (USERPROPERTY: nseg/L/Ra/
+    // rallbranch, whose u member is a {membrane type, index} pair, not a
+    // pointer) -- has no dataptr, so return nullptr instead of a reinterpreted
+    // union member that the caller would dereference as garbage.
+    if (!sym || sym->type != VAR) {
+        return nullptr;
     }
-    return sym->u.pval;
+    switch (sym->subtype) {
+    case NOTUSER:
+        // A NOTUSER runtime scalar (created in HOC by e.g. `x = 42`) does not
+        // store its value at sym->u.pval -- for that subtype the union member
+        // holds an object-data offset, not a pointer. The real storage is in
+        // the top-level object-data array (see the NOTUSER branch of eval() in
+        // oc/code.cpp, which reads *OPVAL(sym) ==
+        // *hoc_top_level_data[sym->u.oboff].pval). Return that address so the
+        // result is a dereferenceable double*, as the name promises.
+        return hoc_top_level_data[sym->u.oboff].pval;
+    case USERPROPERTY:
+        return nullptr;
+    default:
+        // USERDOUBLE built-ins such as `t`, plus the typed USERINT/USERFLOAT
+        // scalars whose storage aliases sym->u.pval (callers cast as needed).
+        return sym->u.pval;
+    }
+}
+
+Object* nrn_symbol_object_get(const Symbol* sym) {
+    // A top-level objref (`objref o`) stores its Object* in the top-level
+    // object-data array, not at sym->u.pval. Returns the bound object, or NULL
+    // if the objref is nil or `sym` is not an objref. The object is returned
+    // borrowed (its reference count is not incremented); call nrn_object_ref to
+    // retain it past the next assignment to this objref.
+    if (!sym || sym->type != OBJECTVAR) {
+        return nullptr;
+    }
+    return hoc_top_level_data[sym->u.oboff].pobj[0];
+}
+
+bool nrn_symbol_object_set(Symbol* sym, Object* obj) {
+    // Bind `obj` to a top-level objref, following HOC's assignment refcount
+    // rules: release the previously bound object and retain the new one. A NULL
+    // obj clears the objref (makes it nil). Returns true on success, false if
+    // `sym` is not an objref.
+    if (!sym || sym->type != OBJECTVAR) {
+        return false;
+    }
+    Object** cell = hoc_top_level_data[sym->u.oboff].pobj;
+    hoc_dec_refcount(cell);  // unref the old content and NULL the cell
+    *cell = obj;
+    hoc_obj_ref(obj);  // NULL-safe
+    return true;
+}
+
+const char* nrn_symbol_str_get(const Symbol* sym) {
+    // A top-level strdef (`strdef s`) stores its char* in the top-level
+    // object-data array. Returns the string, or NULL if `sym` is not a strdef.
+    if (!sym || sym->type != STRING) {
+        return nullptr;
+    }
+    return hoc_top_level_data[sym->u.oboff].ppstr[0];
+}
+
+bool nrn_symbol_str_set(Symbol* sym, const char* value) {
+    // Copy `value` into a top-level strdef's storage (freeing the previous
+    // string), via the same helper HOC string assignment uses. Returns true on
+    // success, false if `sym` is not a strdef.
+    if (!sym || sym->type != STRING) {
+        return false;
+    }
+    hoc_assign_str(hoc_top_level_data[sym->u.oboff].ppstr, value);
+    return true;
 }
 
 bool nrn_symbol_is_array(const Symbol* sym) {
@@ -315,6 +375,17 @@ int nrn_int_pop(void) {
 
 void nrn_object_push(Object* obj) {
     hoc_push_object(obj);
+}
+
+void nrn_object_ptr_push(Object** obj_ref) {
+    // Push a writable object-reference slot (the out-parameter form of
+    // nrn_object_push). When a callee assigns to the corresponding $oN arg,
+    // hoc assigns through this slot, updating *obj_ref in place. Unlike
+    // nrn_object_push, which pushes an object by value, this exposes the
+    // h.ref(obj) idiom (a callee that writes back into the caller's objref).
+    // Named for the pointer it pushes (cf. nrn_double_ptr_push); the "ref" in
+    // nrn_object_ref/unref is reference counting, a different concept.
+    hoc_pushobj(obj_ref);
 }
 
 Object* nrn_object_pop(void) {
@@ -369,6 +440,53 @@ char const* nrn_stack_type_name(nrn_stack_types_t id) {
 
 Object* nrn_object_new(Symbol* sym, int narg) {
     return hoc_newobj1(sym, narg);
+}
+
+Object* nrn_object_new_wrap(Symbol* sym, void* cpp_object) {
+    // Wrap an existing C++ payload as a HOC Object of the class `sym` (which
+    // must be a C++/CPLUSOBJECT template). Unlike nrn_object_new, which runs the
+    // HOC constructor and pulls arguments off the stack, this backs the new
+    // object directly with `cpp_object`, stored as its this_pointer. Pass
+    // nullptr to construct an unbacked instance to fill in later. The returned
+    // object has refcount 0; ref it (nrn_object_ref) to keep it alive.
+    return hoc_new_object(sym, cpp_object);
+}
+
+int nrn_object_new_nothrow(Symbol* sym,
+                           int narg,
+                           Object** result,
+                           char* error_msg,
+                           size_t error_msg_size) {
+    // Like nrn_object_new, but a HOC constructor error (bad arguments, a failing
+    // INITIAL, etc.) is caught and reported instead of thrown, so a non-C++
+    // caller (ctypes, MATLAB, ...) does not have a C++ exception propagate
+    // across the FFI boundary. On success returns 0 with *result set; on error
+    // returns nonzero with *result NULL and error_msg populated.
+    if (error_msg && error_msg_size > 0) {
+        error_msg[0] = '\0';
+    }
+    if (result) {
+        *result = nullptr;
+    }
+    try {
+        Object* obj = OcJump::newobj_throw_on_exception(sym, narg);
+        if (result) {
+            *result = obj;
+        }
+        return 0;
+    } catch (const std::exception& e) {
+        if (error_msg && error_msg_size > 0) {
+            strncpy(error_msg, e.what(), error_msg_size - 1);
+            error_msg[error_msg_size - 1] = '\0';
+        }
+        return 1;
+    } catch (...) {
+        if (error_msg && error_msg_size > 0) {
+            strncpy(error_msg, "Unknown exception occurred", error_msg_size - 1);
+            error_msg[error_msg_size - 1] = '\0';
+        }
+        return 1;
+    }
 }
 
 Symbol* nrn_method_symbol(const Object* obj, char const* const name) {
