@@ -5909,13 +5909,11 @@ Parallel Transfer
             mechanism field index.  Section-name help for humans can be added
             later without changing this numbering rule.
 
-            **Threshold header quirk (historical).**  The line
-            ``N nodes  T is the threshold node`` prints ``T = local_inode - 1``
-            for the spike-generator compartment (so the voltage line for that
-            compartment is at local index ``T + 1``).  CoreNEURON's prcellstate
-            uses the same convention.  There is no semantic reason for the
-            off-by-one; tools that parse the header (e.g. ``rdcellstate``) must
-            add one until a coordinated fix lands.
+            **Threshold header.**  The line ``N nodes  T is the threshold node``
+            prints ``T`` as the same cell-local ``inode`` used on voltage and
+            mechanism lines for the spike-generator compartment (NEURON and
+            CoreNEURON).  Older dumps (pre hygiene fix) printed ``local_inode - 1``;
+            parsers that still add one need updating.
 
             The format of the file is:
 

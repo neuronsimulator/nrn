@@ -41,8 +41,8 @@ Compare dumps with a key-based tool (e.g. `rdcellstate.py`), not raw line
 diff when file layout or mechanism instance order may differ. Cell-local
 `inode` labels are morph-stable (BFS from root; see the `prcellstate` method
 docs) so host fixed-step vs native GPU (interleave permute) can be compared
-directly. The header line `T is the threshold node` is still historically
-`local_inode - 1` for the spike compartment — parsers should add one.
+directly. The header line `T is the threshold node` uses the same cell-local
+`inode` as the voltage lines for the spike compartment.
 
 #### GDB
 If you normally run with ```python args``` and get a segfault...

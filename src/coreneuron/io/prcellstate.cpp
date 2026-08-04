@@ -228,7 +228,9 @@ static void pr_realcell(PreSyn& ps, NrnThread& nt, FILE* f) {
             cellnodes[i] = cnt++;
         }
     }
-    fprintf(f, "%d nodes  %d is the threshold node\n", cnt, cellnodes[inv_permute(inode, nt)] - 1);
+    // Threshold header matches voltage/mech cell-local inode (not local-1).
+    // Coordinated with NEURON prcellstate + rdcellstate.
+    fprintf(f, "%d nodes  %d is the threshold node\n", cnt, cellnodes[inv_permute(inode, nt)]);
     fprintf(f, " threshold %.*g\n", precision, ps.threshold_);
     fprintf(f, "inode parent area a b d rhs\n");
     for (int iorig = 0; iorig < nt.end; ++iorig)
