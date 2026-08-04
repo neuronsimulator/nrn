@@ -167,6 +167,28 @@ SCENARIO("NEURON OpenACC codegen emits offload pragmas", "[codegen][neuron][acc]
             // CURRENT does not present vec_d (jacob owns that).
             REQUIRE(generated.find("nrn_cur_hh") != std::string::npos);
         }
+
+        THEN("Session D: slim JACOB (no global present; g_unused + vec_d only)") {
+            const auto generated = get_neuron_acc_code_from_file(mod_path);
+            const auto jacob_begin = generated.find("static void nrn_jacob_hh");
+            REQUIRE(jacob_begin != std::string::npos);
+            const auto jacob_end = generated.find("static void nrn_", jacob_begin + 20);
+            const auto jacob_fn = generated.substr(
+                jacob_begin,
+                (jacob_end == std::string::npos ? generated.size() : jacob_end) - jacob_begin);
+            // Device path is the first if-block; host else may still use make_instance.
+            const auto device_end = jacob_fn.find("} else {");
+            REQUIRE(device_end != std::string::npos);
+            const auto device_fn = jacob_fn.substr(0, device_end);
+            // Device path: no GLOBAL enter / stale update / present(hh_global).
+            REQUIRE(device_fn.find("hh_global_gpu_resident") == std::string::npos);
+            REQUIRE(device_fn.find("update device (hh_global)") == std::string::npos);
+            REQUIRE(device_fn.find("hh_global") == std::string::npos);
+            REQUIRE(device_fn.find("make_instance_hh") == std::string::npos);
+            REQUIRE_THAT(device_fn, ContainsSubstring("make_node_data_hh"));
+            REQUIRE_THAT(device_fn, ContainsSubstring("vec_d[:nt->end]"));
+            REQUIRE_THAT(device_fn, ContainsSubstring("nrn_pragma_acc(parallel loop"));
+        }
     }
 
     // VERBATIM keeps general ABI via procedure_safe_for_state_specialization;

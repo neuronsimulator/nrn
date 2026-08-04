@@ -1240,7 +1240,15 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
         return;
     }
 
-    print_global_variable_device_update_annotation();
+    // Session D / hygiene: jacob is g_unused → vec_d only. No GLOBAL, voltages,
+    // _thread, or fat Instance — present(hh_global) was residual H→D tax on
+    // TABLE mechs under nrn_jacob_hh (wall flat; tip-merge for cleanliness).
+    const bool jacob_slim = type == BlockType::Equation &&
+                            static_cast<bool>(live_float_indices_override_);
+
+    if (!jacob_slim) {
+        print_global_variable_device_update_annotation();
+    }
 
     // H4c: per-kernel live SoA columns (named bases). OpenACC cannot track
     // array-of-pointers; only present columns the kernel actually touches.
@@ -1254,13 +1262,15 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
         // Present pointers declared by print_net_receive_buffering before the loop.
     } else if (!info.artificial_cell) {
         printer->add_line("auto const* nodeindices = node_data.nodeindices;");
-        // Device-resident voltages: use deviceptr, never present(host V).
-        // present(node_voltages) re-uploads stale host V on nvc++ when host is
-        // dirty/out of date — host must not participate in psolve V traffic.
-        printer->add_line(
-            "double* _d_voltages = nt->compute_gpu "
-            "? static_cast<double*>(acc_deviceptr(const_cast<double*>(node_data.node_voltages))) "
-            ": const_cast<double*>(node_data.node_voltages);");
+        if (!jacob_slim) {
+            // Device-resident voltages: use deviceptr, never present(host V).
+            // present(node_voltages) re-uploads stale host V on nvc++ when host is
+            // dirty/out of date — host must not participate in psolve V traffic.
+            printer->add_line(
+                "double* _d_voltages = nt->compute_gpu "
+                "? static_cast<double*>(acc_deviceptr(const_cast<double*>(node_data.node_voltages))) "
+                ": const_cast<double*>(node_data.node_voltages);");
+        }
         if (type == BlockType::Equation) {
             // Jacob (override set) only needs vec_d; CURRENT only needs vec_rhs.
             if (live_float_indices_override_) {
@@ -1275,12 +1285,13 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
         // present_fp set (functor_params + present clause; see
         // live_float_indices_for_kernel Eigen full-set path).
         // Session B: force-inline CURRENT also uses live present only.
+        // Jacob slim: conductance column only (override live set).
         const bool state_slim =
             type == BlockType::State && state_kernel_uses_only_specialized_procedures() &&
             !info.eigen_newton_solver_exist && !info.eigen_linear_solver_exist;
         const bool cur_slim =
             type == BlockType::Equation && current_force_inline_safe() && info.conductances.empty();
-        if (state_slim || cur_slim) {
+        if (state_slim || cur_slim || jacob_slim) {
             print_present_fp_pointer_declarations_for(live_fp);
         } else {
             // General / Eigen: all RANGE bases so procedure/functor args stay valid.
@@ -1322,14 +1333,13 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
         }
     } else if (!info.artificial_cell) {
         present_clause << ", nodeindices";
-        // Specialized STATE / CURRENT force-inline: no _thread / _ppvar use —
-        // drop unused present(_thread) residual (hand-edit shape).
+        // Specialized STATE / CURRENT force-inline / jacob: no _thread.
         const bool state_slim =
             type == BlockType::State && state_kernel_uses_only_specialized_procedures() &&
             !info.eigen_newton_solver_exist && !info.eigen_linear_solver_exist;
         const bool cur_slim =
             type == BlockType::Equation && current_force_inline_safe() && info.conductances.empty();
-        if (!state_slim && !cur_slim) {
+        if (!state_slim && !cur_slim && !jacob_slim) {
             present_clause << ", _thread";
         }
         if (type == BlockType::Equation) {
@@ -1351,14 +1361,15 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
         // pdata ion rows live in device memory via upload_mechanism_pointer_tables;
         // do not add them to present() (OpenACC cannot track deviceptr slices here).
     }
-    // Global struct is on data present; also list for kernels that touch TABLE.
-    if (!info.artificial_cell && !codegen_global_variables.empty() && type != BlockType::NetReceive) {
+    // Global struct for kernels that touch TABLE/GLOBAL. Jacob does not.
+    if (!info.artificial_cell && !codegen_global_variables.empty() && type != BlockType::NetReceive &&
+        !jacob_slim) {
         present_clause << ", " << global_struct_instance();
     }
     present_clause << ')';
 
     std::string deviceptr_extra = present_dptr_deviceptr_clause_for(live_dptr);
-    if (!info.artificial_cell && type != BlockType::NetReceive) {
+    if (!info.artificial_cell && type != BlockType::NetReceive && !jacob_slim) {
         if (deviceptr_extra.empty()) {
             deviceptr_extra = " deviceptr(_d_voltages)";
         } else {
@@ -1546,8 +1557,14 @@ void CodegenNeuronAccVisitor::print_nrn_jacob() {
     // wrote g_unused on device; host jacob would read stale host SOA and skip vec_d updates.
     printer->push_block(
         "if (nt->compute_gpu && neuron::gpu::matrix_rhs_d_stays_on_device_for_solve(*nt))");
-    print_kernel_global_device_setup();
-    print_entrypoint_setup_code_from_memb_list();
+    // Slim jacob setup: no GLOBAL enter/stale, no make_instance / _thread.
+    // Body is only g_unused → vec_d (conductance written by nrn_cur on device).
+    printer->add_line(
+        "_nrn_mechanism_cache_range _lmc{_sorted_token, *nt, *_ml_arg, _ml_arg->type()};");
+    if (!info.artificial_cell) {
+        printer->fmt_line("auto node_data = make_node_data_{}(*nt, *_ml_arg, nt->compute_gpu);",
+                          info.mod_suffix);
+    }
     printer->fmt_line("auto nodecount = _ml_arg->nodecount;");
     use_present_fp_indexing_ = true;
     auto print_jacob_device_loop = [&](bool det_matrix) {
