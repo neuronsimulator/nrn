@@ -7,10 +7,13 @@
 #     1 = also arm fixed-step phase dumps at TSTOP
 #
 # Progressive ladder:
-#   1) End-of-run at early tstop (e.g. 5.0) — expect near-match before GC spike
+#   1) End-of-run at early tstop (e.g. 0.05 or 5.0) — expect dV=0 / noise ~1e-12
 #   2) Bisect / step toward first GC spike (5.525 for gids 500006/500009)
 #   3) phases=1 at first bad tstop → post_setup / post_solve / pre_nonvint / post_nonvint
 #   4) rdcellstate field diffs (na8st, CadepK, V, matrix, …)
+#
+# Note: prcellstate uses morph-stable cell-local inodes (BFS by secname+segi) so
+# CPU (no permute) vs native GPU (permute 2) compare the same compartments.
 #
 # Compare:
 #   python3 ~/models/82894/rdcellstate.py --ignore-unused \

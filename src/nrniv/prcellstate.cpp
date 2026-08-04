@@ -1,9 +1,15 @@
 #include "../../nrnconf.h"
 #include "section.h"
+#include "cabcode.h"
 #include "membfunc.h"
 #include "nrniv_mf.h"
 #include "netcon.h"
+#include <algorithm>
 #include <map>
+#include <queue>
+#include <string>
+#include <tuple>
+#include <vector>
 #include "neuron.h"
 #include "utils/enumerate.h"
 
@@ -17,30 +23,67 @@
 
 void nrn_prcellstate(int gid, const char* filesuffix);
 
+/** Morphological sort key so cell-local inode labels are independent of
+ *  interleave permute (type 1/2). Without this, CPU (no permute) vs native GPU
+ *  (permute 2) dumps renumber compartments and rdcellstate false-diffs.
+ *  CoreNEURON prcellstate uses inv_permute for the same reason; NEURON applies
+ *  permute in-place and does not keep nt._permute, so use section identity.
+ */
+static auto prcell_node_morph_key(Node* nd) {
+    const char* sn = (nd && nd->sec) ? secname(nd->sec) : "";
+    const int segi = nd ? nd->sec_node_index_ : -1;
+    const double area = nd ? NODEAREA(nd) : 0.0;
+    const double a = nd ? nd->a() : 0.0;
+    const double b = nd ? nd->b() : 0.0;
+    return std::make_tuple(std::string(sn ? sn : ""), segi, area, a, b);
+}
+
 static void pr_memb(int type,
                     Memb_list* ml,
                     int* cellnodes,
                     NrnThread& nt,
                     FILE* f,
                     std::map<void*, int>& pnt2index) {
-    int header_printed = 0;
     int size = nrn_prop_param_size_[type];
     int receives_events = pnt_receive[type] ? 1 : 0;
+    // Visit instances in cell-local inode order (stable across node permute).
+    std::vector<int> inst;
+    inst.reserve(static_cast<size_t>(ml->nodecount));
     for (int i = 0; i < ml->nodecount; ++i) {
         int inode = ml->nodeindices[i];
-        if (cellnodes[inode] >= 0) {
-            if (!header_printed) {
-                header_printed = 1;
-                fprintf(f, "type=%d %s size=%d\n", type, memb_func[type].sym->name, size);
+        if (inode >= 0 && inode < nt.end && cellnodes[inode] >= 0) {
+            inst.push_back(i);
+        }
+    }
+    std::sort(inst.begin(), inst.end(), [&](int ia, int ib) {
+        int ca = cellnodes[ml->nodeindices[ia]];
+        int cb = cellnodes[ml->nodeindices[ib]];
+        if (ca != cb) {
+            return ca < cb;
+        }
+        // Multi-PP on same node: order by SoA field 0 then instance index.
+        if (size > 0) {
+            double va = ml->data(ia, 0);
+            double vb = ml->data(ib, 0);
+            if (va != vb) {
+                return va < vb;
             }
-            if (receives_events) {
-                fprintf(f, "%d nri %lu\n", cellnodes[inode], pnt2index.size());
-                auto* pp = ml->pdata[i][1].get<Point_process*>();
-                pnt2index.emplace(pp, pnt2index.size());
-            }
-            for (int j = 0; j < size; ++j) {
-                fprintf(f, " %d %d %.*g\n", cellnodes[inode], j, precision, ml->data(i, j));
-            }
+        }
+        return ia < ib;
+    });
+    if (inst.empty()) {
+        return;
+    }
+    fprintf(f, "type=%d %s size=%d\n", type, memb_func[type].sym->name, size);
+    for (int i: inst) {
+        int inode = ml->nodeindices[i];
+        if (receives_events) {
+            fprintf(f, "%d nri %lu\n", cellnodes[inode], pnt2index.size());
+            auto* pp = ml->pdata[i][1].get<Point_process*>();
+            pnt2index.emplace(pp, pnt2index.size());
+        }
+        for (int j = 0; j < size; ++j) {
+            fprintf(f, " %d %d %.*g\n", cellnodes[inode], j, precision, ml->data(i, j));
         }
     }
 }
@@ -112,58 +155,100 @@ static void pr_realcell(PreSyn& ps, NrnThread& nt, FILE* f) {
         rnode = nt._v_parent_index[rnode];
     }
 
-    // count the number of nodes in the cell
-    // do not assume all cell nodes except the root are contiguous
-    int* cellnodes = new int[nt.end];
+    // Membership: node belongs to this cell if parent-walk reaches rnode.
+    // (Single-pass thread-order mark is wrong after interleave permute may
+    // reorder siblings; parent-walk is order-independent.)
+    std::vector<int> cellnodes(static_cast<size_t>(nt.end), -1);
     for (int i = 0; i < nt.end; ++i) {
-        cellnodes[i] = -1;
-    }
-    int cnt = 0;
-    cellnodes[rnode] = cnt++;
-    for (int i = nt.ncell; i < nt.end; ++i) {
-        if (cellnodes[nt._v_parent_index[i]] >= 0) {
-            cellnodes[i] = cnt++;
+        int j = i;
+        while (j >= nt.ncell) {
+            j = nt._v_parent_index[j];
+        }
+        if (j == rnode) {
+            cellnodes[static_cast<size_t>(i)] = 0;  // temporary mark
         }
     }
-    fprintf(f, "%d nodes  %d is the threshold node\n", cnt, cellnodes[inode] - 1);
+
+    // Children lists among cell members; sort siblings by morphological key so
+    // BFS local IDs match CPU (no permute) vs GPU (permute 2).
+    std::vector<std::vector<int>> children(static_cast<size_t>(nt.end));
+    for (int i = 0; i < nt.end; ++i) {
+        if (cellnodes[static_cast<size_t>(i)] < 0 || i == rnode) {
+            continue;
+        }
+        int ip = nt._v_parent_index[i];
+        children[static_cast<size_t>(ip)].push_back(i);
+    }
+    for (auto& ch: children) {
+        std::sort(ch.begin(), ch.end(), [&](int ia, int ib) {
+            return prcell_node_morph_key(nt._v_node[ia]) < prcell_node_morph_key(nt._v_node[ib]);
+        });
+    }
+
+    // BFS from root → cell-local inode 0..cnt-1
+    int cnt = 0;
+    for (int i = 0; i < nt.end; ++i) {
+        cellnodes[static_cast<size_t>(i)] = -1;
+    }
+    std::queue<int> q;
+    cellnodes[static_cast<size_t>(rnode)] = cnt++;
+    q.push(rnode);
+    while (!q.empty()) {
+        int p = q.front();
+        q.pop();
+        for (int c: children[static_cast<size_t>(p)]) {
+            cellnodes[static_cast<size_t>(c)] = cnt++;
+            q.push(c);
+        }
+    }
+
+    // Inverse: cell-local id → thread node index (print in local order)
+    std::vector<int> local_to_thread(static_cast<size_t>(cnt), -1);
+    for (int i = 0; i < nt.end; ++i) {
+        int loc = cellnodes[static_cast<size_t>(i)];
+        if (loc >= 0) {
+            local_to_thread[static_cast<size_t>(loc)] = i;
+        }
+    }
+
+    fprintf(f, "%d nodes  %d is the threshold node\n", cnt, cellnodes[static_cast<size_t>(inode)] - 1);
     fprintf(f, " threshold %.*g\n", precision, ps.threshold_);
     fprintf(f, "inode parent area a b d rhs\n");
-    for (int i = 0; i < nt.end; ++i)
-        if (cellnodes[i] >= 0) {
-            Node* nd = nt._v_node[i];
-            fprintf(f,
-                    "%d %d %.*g %.*g %.*g %.*g %.*g\n",
-                    cellnodes[i],
-                    i < nt.ncell ? -1 : cellnodes[nt._v_parent_index[i]],
-                    precision,
-                    NODEAREA(nd),
-                    precision,
-                    nd->a(),
-                    precision,
-                    nd->b(),
-                    precision,
-                    nd->d(),
-                    precision,
-                    nd->rhs());
-        }
+    for (int loc = 0; loc < cnt; ++loc) {
+        int i = local_to_thread[static_cast<size_t>(loc)];
+        Node* nd = nt._v_node[i];
+        fprintf(f,
+                "%d %d %.*g %.*g %.*g %.*g %.*g\n",
+                loc,
+                i < nt.ncell ? -1 : cellnodes[static_cast<size_t>(nt._v_parent_index[i])],
+                precision,
+                NODEAREA(nd),
+                precision,
+                nd->a(),
+                precision,
+                nd->b(),
+                precision,
+                nd->d(),
+                precision,
+                nd->rhs());
+    }
     fprintf(f, "inode v\n");
-    for (int i = 0; i < nt.end; ++i)
-        if (cellnodes[i] >= 0) {
-            Node* nd = nt._v_node[i];  // if not cach_efficient then _actual_v=NULL
-            fprintf(f, "%d %.*g\n", cellnodes[i], precision, NODEV(nd));
-        }
+    for (int loc = 0; loc < cnt; ++loc) {
+        int i = local_to_thread[static_cast<size_t>(loc)];
+        Node* nd = nt._v_node[i];
+        fprintf(f, "%d %.*g\n", loc, precision, NODEV(nd));
+    }
 
     {
         std::map<void*, int> pnt2index;
         // each mechanism
         for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
-            pr_memb(tml->index, tml->ml, cellnodes, nt, f, pnt2index);
+            pr_memb(tml->index, tml->ml, cellnodes.data(), nt, f, pnt2index);
         }
 
         // the NetCon info
         pr_netcon(nt, f, pnt2index);
     }
-    delete[] cellnodes;
 }
 
 void nrn_prcellstate(int gid, const char* suffix) {
