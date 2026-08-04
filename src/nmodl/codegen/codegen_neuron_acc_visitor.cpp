@@ -332,11 +332,9 @@ std::unordered_set<int> CodegenNeuronAccVisitor::live_dptr_indices_for_kernel(Bl
                 }
             }
         }
-        // Point process nrn_cur scales by node area (ppvar dptr), even if "area"
-        // never appears as a NAME in the BREAKPOINT AST.
-        if (info.point_process) {
-            used_names.insert(naming::NODE_AREA_VARIABLE);
-        }
+        // Point-process nrn_cur scales by node area. Under present_fp, area is
+        // read as `_d_area[node_id]` (node SoA / deviceptr) — not ppvar dptr —
+        // so do not force NODE_AREA into the live dptr set.
     } else if (type == BlockType::NetReceive) {
         if (info.net_receive_node) {
             collect(info.net_receive_node);
@@ -364,6 +362,12 @@ std::unordered_set<int> CodegenNeuronAccVisitor::live_dptr_indices_for_kernel(Bl
         // Exact match only (ion_ena / ena). Do not substring-match — "n" would
         // hit every ion column.
         const auto name = var.symbol->get_name();
+        // Node area is always `_d_area[node_id]` under present_fp (see
+        // int_variable_name) — never a pdata dptr column.
+        if (sem == naming::AREA_SEMANTIC || name == naming::NODE_AREA_VARIABLE ||
+            name == naming::AREA_VARIABLE) {
+            continue;
+        }
         std::string bare = name;
         if (bare.rfind(naming::ION_VARNAME_PREFIX, 0) == 0) {
             bare = bare.substr(std::strlen(naming::ION_VARNAME_PREFIX));
@@ -1415,6 +1419,14 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
                 "double* _d_voltages = nt->compute_gpu "
                 "? static_cast<double*>(acc_deviceptr(const_cast<double*>(node_data.node_voltages))) "
                 ": const_cast<double*>(node_data.node_voltages);");
+            // Point-process CURRENT (and MOD area reads): node area SoA via
+            // deviceptr, not per-instance pdata dptr chase (Traub AMPA/GABAA/NMDA).
+            if (info.point_process || info.area_used) {
+                printer->add_line(
+                    "double* _d_area = nt->compute_gpu "
+                    "? static_cast<double*>(acc_deviceptr(nt->node_area_storage())) "
+                    ": nt->node_area_storage();");
+            }
         }
         if (type == BlockType::Equation) {
             // Jacob (override set) only needs vec_d.
@@ -1518,13 +1530,18 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
 
     std::string deviceptr_extra = present_dptr_deviceptr_clause_for(live_dptr);
     if (!info.artificial_cell && type != BlockType::NetReceive && !jacob_slim) {
+        // Prefix deviceptr list: voltages, then area (PP CURRENT / area_used), then ions.
+        std::string deviceptr_prefix = "_d_voltages";
+        if (info.point_process || info.area_used) {
+            deviceptr_prefix += ", _d_area";
+        }
         if (deviceptr_extra.empty()) {
-            deviceptr_extra = " deviceptr(_d_voltages)";
+            deviceptr_extra = fmt::format(" deviceptr({})", deviceptr_prefix);
         } else {
-            // present_dptr returns " deviceptr(a, b, ...)"; insert _d_voltages first.
+            // present_dptr returns " deviceptr(a, b, ...)"; insert prefix first.
             auto pos = deviceptr_extra.find("deviceptr(");
             if (pos != std::string::npos) {
-                deviceptr_extra.insert(pos + std::strlen("deviceptr("), "_d_voltages, ");
+                deviceptr_extra.insert(pos + std::strlen("deviceptr("), deviceptr_prefix + ", ");
             }
         }
         // Eigen residual uses _eigen_global (acc_deviceptr of *_global store).
@@ -3024,6 +3041,13 @@ std::string CodegenNeuronAccVisitor::int_variable_name(const IndexVariableInfo& 
                                                        bool use_instance) const {
     if (use_present_fp_indexing_ && use_instance) {
         auto const position = position_of_int_var(name);
+        // Point-process CURRENT (and any present_fp kernel) scales by compartment
+        // area via node SoA deviceptr — not per-instance pdata pointer chase.
+        // Same shape as `_d_voltages[node_id]`; CoreNEURON-like low-indirection.
+        if (name == naming::NODE_AREA_VARIABLE || name == naming::AREA_VARIABLE ||
+            info.semantics[position].name == naming::AREA_SEMANTIC) {
+            return "_d_area[node_id]";
+        }
         if (info.semantics[position].name == naming::RANDOM_SEMANTIC ||
             info.semantics[position].name == naming::FOR_NETCON_SEMANTIC ||
             info.semantics[position].name == naming::POINTER_SEMANTIC) {

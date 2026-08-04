@@ -454,5 +454,26 @@ SCENARIO("NEURON OpenACC codegen emits offload pragmas", "[codegen][neuron][acc]
             REQUIRE_THAT(generated, ContainsSubstring("nrn_pragma_acc(atomic update)"));
             REQUIRE_THAT(generated, ContainsSubstring("vec_rhs[node_id]"));
         }
+
+        THEN("CURRENT mfactor uses node area SoA deviceptr, not area pdata dptr") {
+            // Traub residual: PP CURRENT was (*_present_dptr_0[id+base]) pointer
+            // chase for area. Prefer _d_area[node_id] (same shape as voltages).
+            const auto generated = get_neuron_acc_code(nmodl_text);
+            const auto cur_begin = generated.find("static void nrn_cur_ExpSynAcc");
+            REQUIRE(cur_begin != std::string::npos);
+            const auto cur_end = generated.find("static void nrn_", cur_begin + 20);
+            const auto cur_fn = generated.substr(
+                cur_begin,
+                (cur_end == std::string::npos ? generated.size() : cur_end) - cur_begin);
+            REQUIRE_THAT(cur_fn, ContainsSubstring("node_area_storage()"));
+            REQUIRE_THAT(cur_fn, ContainsSubstring("_d_area"));
+            REQUIRE_THAT(cur_fn, ContainsSubstring("1.e2/_d_area[node_id]"));
+            // Must not pull area through the ion/pdata dptr table in CURRENT.
+            REQUIRE(cur_fn.find("mfactor = 1.e2/(*_present_dptr_") == std::string::npos);
+            const bool area_in_deviceptr =
+                cur_fn.find("_d_voltages, _d_area") != std::string::npos ||
+                cur_fn.find("deviceptr(_d_area") != std::string::npos;
+            REQUIRE(area_in_deviceptr);
+        }
     }
 }
