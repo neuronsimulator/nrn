@@ -23,27 +23,33 @@ foreach(
                                             "CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}")
 endforeach()
 
-# The nrn_setpointer_pop test needs a mechanism with a POINTER, which no built-in provides. Generate
-# one from ptrtest.mod with nocmodl and compile it into the test executable, the same codegen path
-# nrniv uses for its built-in mechanisms. NRN_NOCMODL_SANITIZER_ENVIRONMENT disables LeakSanitizer
-# for the nocmodl run (nocmodl leaks, which would otherwise fail the generation step under an asan
-# build), matching nocmodl_mod_to_cpp in cmake/MacroHelper.cmake.
-set(setpointer_mod "${CMAKE_CURRENT_SOURCE_DIR}/ptrtest.mod")
-set(setpointer_mod_copy "${CMAKE_CURRENT_BINARY_DIR}/ptrtest.mod")
-set(setpointer_gen "${CMAKE_CURRENT_BINARY_DIR}/ptrtest.cpp")
-configure_file("${setpointer_mod}" "${setpointer_mod_copy}" COPYONLY)
-add_custom_command(
-  OUTPUT ${setpointer_gen}
-  COMMAND
-    ${CMAKE_COMMAND} -E env "MODLUNIT=${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib"
-    "NMODLHOME=${PROJECT_BINARY_DIR}" ${NRN_NOCMODL_SANITIZER_ENVIRONMENT}
-    $<TARGET_FILE:${NRN_CODEGENERATOR_TARGET}> ${setpointer_mod_copy} ${NRN_NMODL_--neuron} -o
-    ${CMAKE_CURRENT_BINARY_DIR}
-  DEPENDS ${NRN_CODEGENERATOR_TARGET} ${setpointer_mod}
-          ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib
-  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+# The setpointer tests need mechanisms with a POINTER, which no built-in provides: a density
+# mechanism (ptrtest.mod) for nrn_setpointer_pop and a point process (ppptrtest.mod) for
+# nrn_pp_setpointer_pop. Generate each from its .mod with nocmodl and compile them into the test
+# executable, the same codegen path nrniv uses for its built-in mechanisms.
+# NRN_NOCMODL_SANITIZER_ENVIRONMENT disables LeakSanitizer for the nocmodl run (nocmodl leaks, which
+# would otherwise fail the generation step under an asan build), matching nocmodl_mod_to_cpp in
+# cmake/MacroHelper.cmake.
+set(setpointer_gens "")
+foreach(setpointer_mod_name ptrtest ppptrtest)
+  set(setpointer_mod "${CMAKE_CURRENT_SOURCE_DIR}/${setpointer_mod_name}.mod")
+  set(setpointer_mod_copy "${CMAKE_CURRENT_BINARY_DIR}/${setpointer_mod_name}.mod")
+  set(setpointer_gen "${CMAKE_CURRENT_BINARY_DIR}/${setpointer_mod_name}.cpp")
+  configure_file("${setpointer_mod}" "${setpointer_mod_copy}" COPYONLY)
+  add_custom_command(
+    OUTPUT ${setpointer_gen}
+    COMMAND
+      ${CMAKE_COMMAND} -E env "MODLUNIT=${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib"
+      "NMODLHOME=${PROJECT_BINARY_DIR}" ${NRN_NOCMODL_SANITIZER_ENVIRONMENT}
+      $<TARGET_FILE:${NRN_CODEGENERATOR_TARGET}> ${setpointer_mod_copy} ${NRN_NMODL_--neuron} -o
+      ${CMAKE_CURRENT_BINARY_DIR}
+    DEPENDS ${NRN_CODEGENERATOR_TARGET} ${setpointer_mod}
+            ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+  list(APPEND setpointer_gens ${setpointer_gen})
+endforeach()
 
-add_executable(setpointer_cpp setpointer.cpp ${setpointer_gen})
+add_executable(setpointer_cpp setpointer.cpp ${setpointer_gens})
 cpp_cc_configure_sanitizers(TARGET setpointer_cpp)
 # The generated mechanism includes NEURON internal headers (mech_api.h, the mechanism-cache headers,
 # ...); inherit them from nrniv_lib, plus the build's generated-header dir (nrnsemanticversion.h

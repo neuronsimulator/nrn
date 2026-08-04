@@ -77,6 +77,7 @@ int nrn_setpointer_pop(Symbol* pointer_sym,
                        double x,
                        char* error_msg,
                        size_t error_msg_size);
+int nrn_pp_setpointer_pop(Object* pp, const char* name, char* error_msg, size_t error_msg_size);
 
 /****************************************
  * Functions, objects, and the stack

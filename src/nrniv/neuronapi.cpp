@@ -274,6 +274,45 @@ int nrn_setpointer_pop(Symbol* pointer_sym,
     return 0;
 }
 
+int nrn_pp_setpointer_pop(Object* pp, const char* name, char* error_msg, size_t error_msg_size) {
+    if (error_msg && error_msg_size > 0) {
+        error_msg[0] = '\0';
+    }
+    auto fail = [&](const char* msg) {
+        if (error_msg && error_msg_size > 0) {
+            std::snprintf(error_msg, error_msg_size, "%s", msg);
+        }
+        return 1;
+    };
+    // Pop the source first (as nrn_setpointer_pop does) so the stack stays
+    // balanced on every error path below. It is the same data handle a dparam
+    // slot holds, obtained any way the stack supports (nrn_rangevar_push,
+    // nrn_property_push, ...).
+    neuron::container::data_handle<double> src = hoc_pop_handle<double>();
+    // A point process is addressed by its instance object, not by (sec, x):
+    // several point processes may share one location, so the segment alone
+    // cannot say which instance owns the POINTER slot. This is the difference
+    // from nrn_setpointer_pop, whose (sec, x) uniquely identifies the single
+    // density-mechanism instance at a segment.
+    if (!pp || !pp->ctemplate || !pp->ctemplate->is_point_) {
+        return fail("object is not a point process");
+    }
+    // Resolve the POINTER by name in the point process's own symbol table, the
+    // same lookup nrn_property_get uses (bare name, e.g. "vgap").
+    Symbol* pointer_sym = hoc_table_lookup(name, pp->ctemplate->symtable);
+    if (!pointer_sym || pointer_sym->type != RANGEVAR || pointer_sym->subtype != NRNPOINTER) {
+        return fail("target is not a POINTER variable of this point process");
+    }
+    auto* const pnt = ob2pntproc_0(pp);
+    if (!pnt || !pnt->prop) {
+        return fail("point process is not located in a section");
+    }
+    // Wire the POINTER to the popped source handle -- the same slot assignment
+    // nrn_setpointer_pop and nrn_pointer_assign perform, minus the PyObject*.
+    pnt->prop->dparam[pointer_sym->u.rng.index] = src;
+    return 0;
+}
+
 nrn_Item* nrn_allsec(void) {
     return static_cast<nrn_Item*>(section_list);
 }

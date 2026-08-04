@@ -16,11 +16,15 @@
 using std::cerr;
 using std::endl;
 
-// The nocmodl-generated ptrtest.cpp defines this; nrniv_lib calls modl_reg at
-// startup, so registering ptrtest here makes the mechanism available.
+// The nocmodl-generated ptrtest.cpp / ppptrtest.cpp define these; nrniv_lib
+// calls modl_reg at startup, so registering them here makes both mechanisms
+// available: ptrtest (a density mechanism) for nrn_setpointer_pop, and PPPtr (a
+// point process) for nrn_pp_setpointer_pop.
 extern "C" void _ptrtest_reg();
+extern "C" void _ppptrtest_reg();
 extern "C" void modl_reg() {
     _ptrtest_reg();
+    _ppptrtest_reg();
 }
 
 static bool check(bool cond, const char* msg) {
@@ -99,6 +103,58 @@ int main(void) {
     // straight back, proving nothing was left on or over-popped from the stack.
     nrn_double_push(17.0);
     ok &= eq(nrn_double_pop(), 17.0, "the stack is balanced after the setpointer_pop calls");
+
+    // -------------------------------------------------------------------------
+    // Point-process path: nrn_pp_setpointer_pop. Unlike a density mechanism, a
+    // point process is addressed by its instance Object, because several can
+    // share one segment. Put TWO PPPtr point processes at the SAME location,
+    // soma(0.5), and cross-wire them (each src -> the other's feed) -- the
+    // HalfGap shape, where both sides point at the other. (sec, x) cannot tell
+    // the two instances apart; the object can.
+    nrn_section_push(soma);
+    nrn_double_push(0.5);
+    Object* pp1 = nrn_object_new(nrn_symbol("PPPtr"), 1);
+    nrn_double_push(0.5);
+    Object* pp2 = nrn_object_new(nrn_symbol("PPPtr"), 1);
+    nrn_section_pop();
+    ok &= check(pp1 != nullptr && pp2 != nullptr, "two PPPtr point processes created at soma(0.5)");
+
+    // Distinct, finitialize-stable source values (feed is a PARAMETER).
+    nrn_property_set(pp1, "feed", 10);
+    nrn_property_set(pp2, "feed", 20);
+
+    // Cross-wire: pp1.src -> pp2.feed, pp2.src -> pp1.feed. Push the source
+    // handle with nrn_property_push, then let nrn_pp_setpointer_pop consume it.
+    nrn_property_push(pp2, "feed");
+    int rc_pp1 = nrn_pp_setpointer_pop(pp1, "src", err, sizeof(err));
+    ok &= check(rc_pp1 == 0, "nrn_pp_setpointer_pop wires pp1.src -> pp2.feed");
+    if (rc_pp1 != 0) {
+        cerr << "  error_msg: " << err << endl;
+    }
+    nrn_property_push(pp1, "feed");
+    int rc_pp2 = nrn_pp_setpointer_pop(pp2, "src", err, sizeof(err));
+    ok &= check(rc_pp2 == 0, "nrn_pp_setpointer_pop wires pp2.src -> pp1.feed");
+
+    // finitialize(-65): INITIAL runs out = src, so pp1.out reads pp2.feed (20)
+    // and pp2.out reads pp1.feed (10). If the wiring were segment-addressed and
+    // had grabbed the wrong instance, these would come back swapped or equal.
+    nrn_double_push(-65);
+    nrn_function_call(nrn_symbol("finitialize"), 1);
+    nrn_double_pop();
+    ok &= eq(nrn_property_get(pp1, "out"), 20.0, "pp1 read its own wired source (pp2.feed)");
+    ok &= eq(nrn_property_get(pp2, "out"), 10.0, "pp2 read its own wired source (pp1.feed)");
+
+    // Error path: a non-POINTER target name (out is a plain RANGE var) is
+    // rejected, with the pushed source still consumed so the stack stays
+    // balanced.
+    nrn_property_push(pp2, "feed");
+    int rc_pp_bad = nrn_pp_setpointer_pop(pp1, "out", err, sizeof(err));
+    ok &= check(rc_pp_bad != 0, "non-POINTER point-process target is rejected");
+    ok &= check(err[0] != '\0', "point-process rejection fills the error message");
+
+    // Stack hygiene across the point-process calls too.
+    nrn_double_push(23.0);
+    ok &= eq(nrn_double_pop(), 23.0, "the stack is balanced after the pp setpointer calls");
 
     return ok ? 0 : 1;
 }

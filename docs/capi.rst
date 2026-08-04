@@ -688,6 +688,12 @@ Segments
         ``pointer_sym`` is not a ``POINTER`` variable or its mechanism is not
         present at the target segment.
 
+    This addresses the target by ``(sec, x)``, which identifies a density
+    mechanism's single instance at a segment. For a **point process**, where
+    several instances may share one location, use
+    :c:func:`nrn_pp_setpointer_pop`, which addresses the target by instance
+    object instead.
+
     This is the C-API equivalent of the HOC ``setpointer`` statement and of
     assigning a ``_ref_`` to a POINTER in Python. It stores a data handle to the
     source, so the connection survives internal data reordering.
@@ -696,13 +702,14 @@ Segments
 
     .. code-block:: c
 
-        // Wire a half-gap mechanism's vgap POINTER to the peer cell's voltage:
-        // cell2's membrane potential drives the gap current in cell1.
-        Symbol* vgap = nrn_symbol("vgap_halfgap");
+        // A density mechanism `cufl` has a POINTER `pv`. Wire dend's instance to
+        // read soma(0.5).v instead of its own segment's voltage. A density
+        // mechanism has one instance per segment, so (dend, 0.5) names it.
+        Symbol* pv = nrn_symbol("pv_cufl");
         Symbol* v = nrn_symbol("v");
         char err[256];
-        nrn_rangevar_push(v, cell2, 0.5);  // push the source pointer
-        if (nrn_setpointer_pop(vgap, cell1, 0.5, err, sizeof(err))) {
+        nrn_rangevar_push(v, soma, 0.5);  // push the source pointer
+        if (nrn_setpointer_pop(pv, dend, 0.5, err, sizeof(err))) {
             fprintf(stderr, "setpointer failed: %s\n", err);
         }
 
@@ -710,7 +717,53 @@ Segments
 
     .. code-block:: python
 
-        # halfgap1 is a POINT_PROCESS with a POINTER vgap
+        # cufl is a density mechanism (SUFFIX) with a POINTER pv
+        dend(0.5).cufl._ref_pv = soma(0.5)._ref_v
+
+
+.. c:function:: int nrn_pp_setpointer_pop(Object* pp, const char* name, char* error_msg, size_t error_msg_size)
+
+    Wire a point process's NMODL ``POINTER`` variable to the source pointer on
+    top of the stack.
+
+    This is the point-process counterpart to :c:func:`nrn_setpointer_pop`. A
+    point process is addressed by its instance object rather than by ``(sec,
+    x)``: several point processes may occupy one location (two half-gaps at one
+    segment, say), so the segment alone cannot identify which instance owns the
+    ``POINTER`` slot. The ``POINTER`` is named within the point process's own
+    symbol table, exactly as in :c:func:`nrn_property_get`.
+
+    As with :c:func:`nrn_setpointer_pop`, the source is whatever pointer the
+    caller has pushed (e.g. with :c:func:`nrn_rangevar_push` or
+    :c:func:`nrn_property_push`), and it is consumed even on the error paths, so
+    the stack is left balanced.
+
+    :param pp: The point process instance whose ``POINTER`` is the target.
+    :param name: Name of the ``POINTER`` variable within the point process.
+    :param error_msg: Buffer filled with a message on failure (may be ``NULL``).
+    :param error_msg_size: Size of ``error_msg``.
+    :returns: 0 on success; nonzero on error, with ``error_msg`` populated when
+        ``pp`` is not a point process, ``name`` is not one of its ``POINTER``
+        variables, or the point process is not located in a section.
+
+    **C Usage:**
+
+    .. code-block:: c
+
+        // Wire a half-gap point process's vgap POINTER to the peer cell's
+        // voltage: cell2's membrane potential drives the gap current the
+        // HalfGap instance on cell1 computes. A true half gap wires both ways.
+        char err[256];
+        nrn_rangevar_push(nrn_symbol("v"), cell2, 0.5);  // push the source pointer
+        if (nrn_pp_setpointer_pop(halfgap1, "vgap", err, sizeof(err))) {
+            fprintf(stderr, "setpointer failed: %s\n", err);
+        }
+
+    **Python Equivalent:**
+
+    .. code-block:: python
+
+        # halfgap1 is a POINT_PROCESS instance with a POINTER vgap
         halfgap1._ref_vgap = cell2(0.5)._ref_v
 
 
