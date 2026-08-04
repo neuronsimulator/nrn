@@ -3,7 +3,7 @@
 **Portfolio:** GPU-native (feature)  
 **Tree:** `~/neuron/nrngpu`  
 **Living tip (2026-08-04):** `local/gpu-native` @ H4 + Session B + Session E + multi-rank MPS + Eigen + prcell morph + D→H fence + **threshold header = local_inode** (NEURON+CN+rdcellstate). Exclusive wall multi-warm ~**1.15–1.17 s**; dentate 4-rank MPS psolve ~**1.5–1.6 s**.  
-**Parked explor:** `local/gpu-p4-exclusive-residual` (slim JACOB wall-flat); `local/gpu-P4-hotpath-netreceive` (Phase C wall-flat); `local/gpu-p4-setup-rhs-density` (Session E archive, **merged to tip**)  
+**Parked explor:** `local/gpu-p4-exclusive-residual` (slim JACOB wall-flat); `local/gpu-P4-hotpath-netreceive` + `local/gpu-p4-phase-c-remeasure` (Phase C min-present net_buf — kernel win, **wall flat** ringtest+dentate); `local/gpu-p4-setup-rhs-density` (Session E archive, **merged to tip**)  
 **Handoffs:** `GROK-GPU-NATIVE.md`, `AGENTS.md`, `~/neuron/notes/PORTFOLIO.md`  
 **This file:** ordered steps you can re-open without chat memory. Update **Status** at end of each session.
 
@@ -147,6 +147,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-08-03 | GPU-P4-gc-prcellstate | — | **GC numerical residual was dump artifact:** `prcellstate` cell-local inodes followed thread order (CPU no-permute vs GPU permute-2 renumbered compartments). Fix: morph BFS (secname+segi) + mech dump sorted by local inode. Remap check: dV=0, na8st max \|d\| ~1e-12. Product t=0.05 phases: dV=0, max \|d\| ~1e-12. Ringtest dV=0. |
 | 2026-08-04 | GPU-P4-phases0-acc-wait | — | **Host-read D→H stream fence:** `sync_state_to_host_*` waits all streams **before** `update host` (Session E left CURRENT/STATE/JACOB async). Product path is `finalize_psolve_download` (phases=0 end-of-run). Ringtest phases=0/1 tstop=1 + **688@100** dV=0 (noise ≤1e-13). |
 | 2026-08-04 | GPU-P4-threshold-header | — | **Threshold header hygiene:** print true cell-local inode (drop historical `local_inode-1`) in NEURON + CoreNEURON prcellstate; rdcellstate no longer +1 (optional `--legacy-threshold-header`). Ringtest header `2 is the threshold node` matches V line; **688@100** dV noise. |
+| 2026-08-04 | GPU-P4-phase-c-remeasure | — | Phase C cherry-pick onto tip (`local/gpu-p4-phase-c-remeasure`): ExpSyn/Exp2Syn slim net_buf product-green (688@100). Kernel avg ~10 µs. Ringtest multi-warm ~1.13–1.15 s (**flat** vs tip). Dentate 4-rank MPS psolve ~1.66–1.78 s vs tip ~1.48–1.59; lastpart-deliver mean ~0.12 s both (**flat**). **No tip-merge** — re-parked. |
 
 ---
 
@@ -461,7 +462,7 @@ Phase timer (`NRN_NATIVE_GPU_PHASE_TIMER=1`):
 | Hot-path force-inline STATE rates (A residual) | **done (on tip)** | Force-inline unique/safe STATE rates TABLE body. Tip re-smoke 2026-08-03: `state_hh` ~**19 µs**; wall multi-warm ~**1.50–1.54 s**; 688 phases=1 green; copy tax under state_hh **gone**. |
 | H4 density packet tip-merge | **done (on tip)** | FF `local/gpu-P4-density-H4` → `local/gpu-native` (`34c8b4912`); tip remeasure matches explor. |
 | Hot-path CURRENT force-inline (Session B) | **done (on tip)** | FF `local/gpu-P4-hotpath-current` → `local/gpu-native` (`f06ed70ec`). Tip re-smoke: `cur_hh` ~**14–15 µs**; wall multi-warm ~**1.29–1.37 s**; state_hh ~19 µs; 688 green; cur copy tax **gone**. |
-| Hot-path NET_RECEIVE min-present (Phase C) | **explor; wall flat (parked)** | `local/gpu-P4-hotpath-netreceive`. Kernel win; ringtest wall flat. **Do not tip-merge**. |
+| Hot-path NET_RECEIVE min-present (Phase C) | **explor; wall flat (parked)** | `local/gpu-P4-hotpath-netreceive` + remeasure `local/gpu-p4-phase-c-remeasure` on post-E tip. Kernel ~10 µs; ringtest + **dentate deliver** wall flat. **Do not tip-merge**. |
 | Post-H4+B exclusive re-profile | **done (docs)** | Native ≈ CN; setup-tree-matrix ~0.54 s dominates on tip. |
 | Slim JACOB (Session D) | **explor; wall flat** | `local/gpu-p4-exclusive-residual`. Product 688 green; wall flat. **No tip-merge**. |
 | Setup-stream density (Session E) | **done (on tip)** | FF `local/gpu-p4-setup-rhs-density` → `local/gpu-native` (`1dba647bb`). Tip re-smoke: product 688 green; setup-rhs ~**0.24**; setup-tree ~**0.46–0.48**; wall multi-warm settled ~**1.15–1.17 s**. |
@@ -709,9 +710,9 @@ Milestone B (CURRENT specialization): `nrn_cur_hh` ≈ hand ~13 — **met** (~14
 2. **GC prcellstate numerical residual:** **closed** as dump artifact (morph-stable local inodes). Not a sim residual.
 3. **phases=0 prcellstate ACC wait:** **closed** — host-read sync fences streams before D→H.
 4. **Threshold header hygiene:** **closed** — true local_inode in NEURON+CN; rdcellstate aligned.
-5. Phase C follow-up only if denser spike traffic shows wall (parked explor).
-6. Optional: slim JACOB hygiene tip-merge; lastpart-deliver.
-7. Optional: further exclusive density only if a new measured residual appears under CN.
+5. **Phase C denser-spike remeasure:** **closed** — ringtest + dentate MPS wall flat; no tip-merge (kernel-only win).
+6. Optional: slim JACOB hygiene tip-merge (explor wall-flat).
+7. Optional: further exclusive density / lastpart-nonvint only if a new measured residual appears under CN.
 
 ---
 
@@ -804,7 +805,7 @@ Commit locally without push. Update Status/Next before exit.
 
 ## Next (one line — update every session end)
 
-**Next:** P4 polish — parked explor (Phase C / slim JACOB) or new measured residual. Dentate **400** + CadepK + GC dump + phases=0 ACC wait + **threshold header hygiene** **closed**. **Not** Traub gap unless reopened.
+**Next:** P4 polish — slim JACOB parked hygiene or new measured residual. Phase C denser-spike remeasure **closed** (wall flat; no tip-merge). Dentate **400** + CadepK + GC dump + phases=0 ACC wait + threshold header **closed**. **Not** Traub gap unless reopened.
 
 ### Starting prompt — Session A residual (closed; archive)
 
@@ -875,20 +876,28 @@ cell-local threshold inode (drop historical local_inode-1). rdcellstate uses
 header as-is; `--legacy-threshold-header` for old dumps. Ringtest header
 matches V; 688@100 green.
 
+### Starting prompt — Phase C denser-spike remeasure (closed; archive)
+
+Session closed 2026-08-04 on explor `local/gpu-p4-phase-c-remeasure`
+(cherry-pick of Phase C onto tip): product 688@100 green; ExpSyn/Exp2Syn
+slim net_buf; kernel avg ~10 µs. Ringtest multi-warm ~1.13–1.15 s flat vs
+tip. Dentate 4-rank MPS psolve ~1.66–1.78 vs tip ~1.48–1.59; lastpart-deliver
+~0.12 s both ranks mean. **No tip-merge** — re-parked with prior explor.
+
 ### Starting prompt — next (P4 polish)
 
 ```text
 Read ~/neuron/notes/PORTFOLIO.md (GPU-native), then
 ~/neuron/nrngpu/doc/gpu/native-coreneuron-parity.md
-  (Phase 4 Status / Next; threshold header hygiene closed),
+  (Phase 4 Status / Next; Phase C denser-spike remeasure closed),
 GROK-GPU-NATIVE.md, AGENTS.md.
 
 Kind: feature. Portfolio: GPU-native. Phase: P4 polish.
 Tree: ~/neuron/nrngpu. Branch: local/gpu-native.
 
 Context: Dentate 400 + CadepK + GC morph inodes + phases=0 D→H fence +
-threshold header = local_inode closed. Phase C / slim JACOB parked.
-Not Traub gap.
+threshold header + Phase C denser remeasure closed (wall flat, no merge).
+Slim JACOB still parked. Not Traub gap.
 
 This session: <user picks polish target or new P4 item>.
 High performance sacred; heap-free weight_index.
@@ -904,7 +913,8 @@ Commit locally without push. Update Status/Next before exit.
 | **`local/gpu-native`** | Living tip — H4 + Session B CURRENT + **Session E** setup-stream + scatter/timers/MPS |
 | `local/gpu-p4-setup-rhs-density` | Exploratory archive: Session E setup-stream density (**merged to tip**) |
 | `local/gpu-p4-exclusive-residual` | Exploratory: re-profile + slim JACOB (wall flat) |
-| `local/gpu-P4-hotpath-netreceive` | Exploratory: Phase C min-present net_buf (wall flat) |
+| `local/gpu-P4-hotpath-netreceive` | Exploratory: Phase C min-present net_buf (wall flat; pre-E tip) |
+| `local/gpu-p4-phase-c-remeasure` | Exploratory: Phase C cherry-pick on post-E tip; denser remeasure wall flat |
 | `local/gpu-P4-hotpath-current` | Exploratory archive: Session B CURRENT force-inline (**merged to tip**) |
 | `local/gpu-native-net-soa` | Historical integration name; keep until remotes/docs catch up (may lag tip) |
 | `local/gpu-p4-gap-phase-ab` | Exploratory archive: A+B only (pre-scatter baseline) |
@@ -923,4 +933,4 @@ P4 on tip: scatter, timers, **multi-rank MPS product harness**, Eigen full-prese
 Exclusive ringtest **≲ CN**. Multi-rank MPS **closed**. Kin-native **closed**.
 Dentate **400** **closed**. GC prcellstate dump residual **closed**.
 phases=0 ACC wait **closed**. Threshold header hygiene **closed**.
-**Default next:** Phase C / slim JACOB parked explor, or new measured residual.
+**Default next:** slim JACOB parked hygiene, or new measured residual (Phase C re-parked).
