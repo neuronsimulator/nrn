@@ -34,12 +34,18 @@ def _load_rd():
 rd = _load_rd()
 
 
-def test_identical_exit_0():
-    assert rd.main([str(_FIX / "ref_ab.nrndat"), str(_FIX / "identical.nrndat")]) == 0
+@pytest.fixture
+def fix_cwd(monkeypatch):
+    """CLI paths must resolve under cwd (Sonar S8707); run main() from fixtures/."""
+    monkeypatch.chdir(_FIX)
 
 
-def test_voltage_diff_exit_1():
-    rc = rd.main([str(_FIX / "ref_ab.nrndat"), str(_FIX / "v_diff.nrndat")])
+def test_identical_exit_0(fix_cwd):
+    assert rd.main(["ref_ab.nrndat", "identical.nrndat"]) == 0
+
+
+def test_voltage_diff_exit_1(fix_cwd):
+    rc = rd.main(["ref_ab.nrndat", "v_diff.nrndat"])
     assert rc == 1
     ref = rd.parse_nrndat(_FIX / "ref_ab.nrndat")
     other = rd.parse_nrndat(_FIX / "v_diff.nrndat")
@@ -55,7 +61,7 @@ def test_voltage_diff_exit_1():
     assert abs(next(d for d in v_diffs if d.key == ("v", 1)).abs_diff - 4.5) < 1e-12
 
 
-def test_topo_parent_area_in_compare_maps():
+def test_topo_parent_area_in_compare_maps(fix_cwd):
     ref = rd.parse_nrndat(_FIX / "ref_ab.nrndat")
     other = rd.parse_nrndat(_FIX / "topo_diff.nrndat")
     diffs = rd.compare_numeric_maps(
@@ -66,10 +72,10 @@ def test_topo_parent_area_in_compare_maps():
         ignore_names=set(),
     )
     assert any(d.key == ("topo", 1, "area") for d in diffs)
-    assert rd.main([str(_FIX / "ref_ab.nrndat"), str(_FIX / "topo_diff.nrndat")]) == 1
+    assert rd.main(["ref_ab.nrndat", "topo_diff.nrndat"]) == 1
 
 
-def test_missing_mech_key():
+def test_missing_mech_key(fix_cwd):
     ref = rd.parse_nrndat(_FIX / "ref_ab.nrndat")
     other = rd.parse_nrndat(_FIX / "mech_missing.nrndat")
     diffs = rd.compare_numeric_maps(
@@ -81,12 +87,10 @@ def test_missing_mech_key():
     )
     missing = [d for d in diffs if not math.isfinite(d.abs_diff)]
     assert any(d.key[0] == "mech" for d in missing)
-    assert (
-        rd.main([str(_FIX / "ref_ab.nrndat"), str(_FIX / "mech_missing.nrndat")]) == 1
-    )
+    assert rd.main(["ref_ab.nrndat", "mech_missing.nrndat"]) == 1
 
 
-def test_ignore_matrix_hides_format_asymmetry():
+def test_ignore_matrix_hides_format_asymmetry(fix_cwd):
     ref = rd.parse_nrndat(_FIX / "ref_ab.nrndat")
     other = rd.parse_nrndat(_FIX / "ref_abdrhs.nrndat")
     full = rd.compare_numeric_maps(
@@ -112,16 +116,7 @@ def test_ignore_matrix_hides_format_asymmetry():
         ignore_names=set(),
     )
     assert not any(d.key[0] == "matrix" for d in ignored)
-    assert (
-        rd.main(
-            [
-                str(_FIX / "ref_ab.nrndat"),
-                str(_FIX / "ref_abdrhs.nrndat"),
-                "--ignore-matrix",
-            ]
-        )
-        == 0
-    )
+    assert rd.main(["ref_ab.nrndat", "ref_abdrhs.nrndat", "--ignore-matrix"]) == 0
 
 
 def test_parse_both_topo_headers():
@@ -132,13 +127,11 @@ def test_parse_both_topo_headers():
     assert (0, "d") in abdrhs.matrix and (0, "rhs") in abdrhs.matrix
 
 
-def test_netcons_count_mismatch_stderr():
+def test_netcons_count_mismatch_stderr(fix_cwd):
     err = io.StringIO()
     out = io.StringIO()
     with redirect_stdout(out), redirect_stderr(err):
-        rc = rd.main(
-            [str(_FIX / "ref_ab.nrndat"), str(_FIX / "netcons_count_diff.nrndat")]
-        )
+        rc = rd.main(["ref_ab.nrndat", "netcons_count_diff.nrndat"])
     # numerical maps match aside from nothing compared for netcons
     assert rc == 0
     assert "netcons count differs" in err.getvalue()
@@ -151,3 +144,11 @@ def test_meta_parse():
     assert st.meta.t == pytest.approx(0.025)
     assert st.meta.netcons_count == 1
     assert st.meta.threshold_header == 0
+
+
+def test_cli_rejects_path_outside_cwd(fix_cwd, tmp_path):
+    outside = tmp_path / "escape.nrndat"
+    outside.write_text((_FIX / "ref_ab.nrndat").read_text())
+    with pytest.raises(SystemExit) as ei:
+        rd.main([str(outside), "identical.nrndat"])
+    assert "outside the current working directory" in str(ei.value)

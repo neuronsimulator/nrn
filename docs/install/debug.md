@@ -66,6 +66,10 @@ dump size or order differs)::
     # or, if installed on PATH:
     rdcellstate ref.nrndat other.nrndat --ignore-ion --top 25
 
+Paths must resolve under the current working directory (``realpath`` check)
+so agent/CLI path injection cannot read arbitrary files; ``cd`` to a parent of
+the dumps or use relative paths.
+
 Useful filters:
 
 - ``--ignore-ion`` — skip ``*_ion`` fields and capacitance ``i_cap`` noise paths

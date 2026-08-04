@@ -19,19 +19,58 @@ Usage:
   python -m neuron.debug.rdcellstate ref.nrndat other.nrndat --ignore-unused
   python -m neuron.debug.rdcellstate ref.nrndat other.nrndat --ignore-matrix
   rdcellstate ref.nrndat other.nrndat   # if bin/rdcellstate is on PATH
+
+CLI file arguments are resolved with realpath and must stay under the process
+current working directory (agent path-injection mitigation). Run from a parent
+of the dumps, or pass paths relative to cwd.
 """
 
 from __future__ import annotations
 
 import argparse
 import math
+import os
 import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Set, Tuple
+from typing import Dict, Iterable, List, Optional, Set, Tuple, Union
 
 Key = Tuple[str, ...]  # category-specific tuple keys
+
+
+def cli_safe_path(path: Union[str, Path]) -> str:
+    """Canonicalize a CLI path and require it stay under process cwd (Sonar S8707).
+
+    LLMs/agents may pass ``../``-style arguments into this CLI. Resolve with
+    ``realpath`` and reject anything outside the directory from which the tool
+    was invoked. Returns the canonical path string for use with ``open()``.
+    """
+    resolved = os.path.realpath(os.fspath(path))
+    base_dir = os.path.realpath(os.getcwd())
+    if resolved != base_dir and not resolved.startswith(base_dir + os.sep):
+        raise SystemExit(
+            f"error: path {os.fspath(path)!r} resolves outside the current "
+            f"working directory ({base_dir}); run from a parent of the files "
+            "or pass a path under cwd"
+        )
+    return resolved
+
+
+def cli_safe_file(path: Union[str, Path]) -> str:
+    """Like :func:`cli_safe_path` but require an existing regular file."""
+    resolved = cli_safe_path(path)
+    if not os.path.isfile(resolved):
+        raise SystemExit(f"error: not a file: {os.fspath(path)!r}")
+    return resolved
+
+
+def cli_safe_dir(path: Union[str, Path]) -> str:
+    """Like :func:`cli_safe_path` but require an existing directory."""
+    resolved = cli_safe_path(path)
+    if not os.path.isdir(resolved):
+        raise SystemExit(f"error: not a directory: {os.fspath(path)!r}")
+    return resolved
 
 
 @dataclass
@@ -93,7 +132,8 @@ def _parse_float(s: str) -> float:
     return float(s)
 
 
-def parse_nrndat(path: Path) -> PrcellState:
+def parse_nrndat_text(path: Path, text: str) -> PrcellState:
+    """Parse an already-loaded ``.nrndat`` body (no filesystem access)."""
     meta = PrcellMeta(path=path)
     state = PrcellState(meta=meta)
 
@@ -101,7 +141,7 @@ def parse_nrndat(path: Path) -> PrcellState:
     mech_type: Optional[int] = None
     mech_name: Optional[str] = None
 
-    for raw in path.read_text().splitlines():
+    for raw in text.splitlines():
         line = raw.rstrip("\n")
 
         m = _RE_HEADER.match(line)
@@ -207,11 +247,29 @@ def parse_nrndat(path: Path) -> PrcellState:
     return state
 
 
-def threshold_voltage_inode(meta: PrcellMeta) -> Optional[int]:
-    """Inode label in 'inode v' for the presyn threshold (header uses cellnodes-1)."""
+def parse_nrndat(path: Path) -> PrcellState:
+    """Parse a ``.nrndat`` file from the filesystem (library / tests API).
+
+    The CLI entry point does not call this with raw argv paths; it validates
+    with :func:`cli_safe_file` and opens the canonical path before parsing so
+    agent-controlled path injection cannot escape the process cwd (S8707).
+    """
+    return parse_nrndat_text(path, path.read_text(encoding="utf-8", errors="replace"))
+
+
+def threshold_voltage_inode(
+    meta: PrcellMeta, *, legacy_header: bool = False
+) -> Optional[int]:
+    """Inode label in 'inode v' for the presyn threshold.
+
+    Header is the same cell-local inode as voltage lines. Legacy dumps printed
+    local_inode-1; pass legacy_header=True for those.
+    """
     if meta.threshold_header is None:
         return None
-    return meta.threshold_header + 1
+    if legacy_header:
+        return meta.threshold_header + 1
+    return meta.threshold_header
 
 
 def rel_diff(a: float, b: float) -> float:
@@ -223,7 +281,8 @@ def rel_diff(a: float, b: float) -> float:
 
 def parse_unused_fields_from_cpp(path: Path) -> Optional[Tuple[str, Set[int]]]:
     """Return (mech_name, unused_field_indices) from NEURON or CoreNEURON mod C++."""
-    text = path.read_text(errors="replace")
+    # Callers pass paths under a CLI-validated mod dir (or library-controlled dirs).
+    text = path.read_text(encoding="utf-8", errors="replace")
 
     mech_name: Optional[str] = None
     m = _RE_INSTANCE_STRUCT.search(text)
@@ -447,17 +506,24 @@ def print_report(
     other: PrcellState,
     diffs: List[Diff],
     top: int,
+    *,
+    legacy_threshold_header: bool = False,
 ) -> None:
     rm, om = ref.meta, other.meta
     print(f"ref:   {rm.path.name}  gid={rm.gid} t={rm.t}")
     print(f"other: {om.path.name}  gid={om.gid} t={om.t}")
 
-    th_inode = threshold_voltage_inode(rm)
+    th_inode = threshold_voltage_inode(rm, legacy_header=legacy_threshold_header)
     if th_inode is not None:
         va = ref.voltages.get(th_inode)
         vb = other.voltages.get(th_inode)
+        hdr_note = (
+            f" (legacy header {rm.threshold_header} → inode {th_inode})"
+            if legacy_threshold_header
+            else ""
+        )
         print(
-            f"threshold inode {th_inode} (header says {rm.threshold_header}): "
+            f"threshold inode {th_inode}{hdr_note}: "
             f"ref={va} other={vb}  dV={None if va is None or vb is None else va - vb}"
         )
 
@@ -545,19 +611,39 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
             "Default: x86_64 and x86_64/corenrn/mod2c next to the .nrndat files"
         ),
     )
+    parser.add_argument(
+        "--legacy-threshold-header",
+        action="store_true",
+        help=(
+            "header printed local_inode-1 (pre NEURON/CN hygiene); "
+            "map threshold voltage via header+1"
+        ),
+    )
     args = parser.parse_args(list(argv) if argv is not None else None)
 
-    ref = parse_nrndat(args.ref)
-    other = parse_nrndat(args.other)
+    # Validate CLI paths under cwd, then open via canonical strings (Sonar S8707).
+    ref_resolved = cli_safe_file(args.ref)
+    other_resolved = cli_safe_file(args.other)
+    with open(ref_resolved, encoding="utf-8", errors="replace") as f:
+        ref_text = f.read()
+    with open(other_resolved, encoding="utf-8", errors="replace") as f:
+        other_text = f.read()
+    ref = parse_nrndat_text(Path(ref_resolved), ref_text)
+    other = parse_nrndat_text(Path(other_resolved), other_text)
     ignore_names = set(args.ignore_mech)
 
     warn_netcons_if_count_differs(ref, other)
 
     unused_fields: Optional[UnusedFieldMap] = None
     if args.ignore_unused:
-        mod_dirs = list(args.mod_dir)
-        if not mod_dirs:
-            mod_dirs = discover_mod_cpp_dirs(args.ref.parent, args.other.parent)
+        if args.mod_dir:
+            mod_dirs = [Path(cli_safe_dir(d)) for d in args.mod_dir]
+        else:
+            mod_dirs = discover_mod_cpp_dirs(
+                Path(ref_resolved).parent, Path(other_resolved).parent
+            )
+            # Default discovery stays under already-validated dump parents.
+            mod_dirs = [Path(cli_safe_dir(d)) for d in mod_dirs]
         unused_fields = load_unused_field_map(mod_dirs)
         if unused_fields:
             parts = [
@@ -585,7 +671,13 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
         ignore_names=ignore_names,
         unused_fields=unused_fields,
     )
-    print_report(ref, other, diffs, args.top)
+    print_report(
+        ref,
+        other,
+        diffs,
+        args.top,
+        legacy_threshold_header=args.legacy_threshold_header,
+    )
     return 0 if not diffs else 1
 
 
