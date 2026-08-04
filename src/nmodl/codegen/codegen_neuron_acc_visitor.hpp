@@ -177,6 +177,13 @@ class CodegenNeuronAccVisitor: public CodegenNeuronCppVisitor {
     mutable bool inlining_state_specialized_body_{false};
 
     /**
+     * Emitting Eigen Newton functor definition: GLOBAL/PARAMETER via
+     * `_eigen_global->X` (acc_deviceptr after copyin), not `inst.global->`
+     * (host pointer → CadepK NaN residual → post_solve V NaN).
+     */
+    mutable bool eigen_functor_global_capture_{false};
+
+    /**
      * Session B: force-inlining BREAKPOINT body into CURRENT (numerical di/dv
      * non-conductance path). Prefer stack temps + local v (hand-edit shape).
      */

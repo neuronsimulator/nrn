@@ -348,12 +348,21 @@ void CodegenNeuronAccVisitor::print_kernel_instance_data_copyin() {
 
 std::string CodegenNeuronAccVisitor::global_variable_name(const SymbolType& symbol,
                                                           bool use_instance) const {
-    // Force-inlined STATE/CURRENT or thin nrn_current: use present(*_global)
-    // names (hand-edit shape). inst.global is a host pointer and causes residual
-    // copyin under device calls; thin CURRENT also has no `inst` parameter.
+    // Force-inlined STATE/CURRENT or thin nrn_current: bare present(*_global)
+    // names (hand-edit shape). thin CURRENT also has no `inst` parameter.
     if (inlining_state_specialized_body_ || inlining_current_body_ ||
         current_local_v_active_) {
         return CodegenNeuronCppVisitor::global_variable_name(symbol, false);
+    }
+    // Eigen Newton functors: inst.global is always a host address
+    // (&*_global from make_instance). On device, inst.global->X reads host
+    // memory → NaN residual (CadepK: first nonvint NaN STATE → post_solve V
+    // NaN). Bare CadepK_global.X inside the functor class fails NVVM
+    // ("static variables not supported in acc routine"). Host firstprivate of
+    // every GLOBAL as a double bloated functors and caused cuda_launch SEGV.
+    // Use one device pointer member _eigen_global (acc_deviceptr after copyin).
+    if (eigen_functor_global_capture_) {
+        return fmt::format("_eigen_global->{}", symbol->get_name());
     }
     if (use_present_fp_indexing_ || use_instance) {
         return fmt::format("inst.{}->{}", naming::INST_GLOBAL_MEMBER, symbol->get_name());
@@ -470,6 +479,13 @@ CodegenNeuronAccVisitor::ParamVector CodegenNeuronAccVisitor::functor_params() {
     params.emplace_back("", "NrnThread*", "", "nt");
     for (int i = 0; i < static_cast<int>(codegen_float_variables.size()); ++i) {
         params.emplace_back("", "double*", "", fmt::format("_present_fp_{}", i));
+    }
+    // Device pointer to GLOBAL store for Eigen residual (not host inst.global).
+    if (!codegen_global_variables.empty()) {
+        params.emplace_back("",
+                            fmt::format("{}*", global_struct()),
+                            "",
+                            "_eigen_global");
     }
     return params;
 }
@@ -1181,8 +1197,11 @@ void CodegenNeuronAccVisitor::print_functors_definitions() {
     // Functor params include _present_fp_* (internal_method_parameters) and the
     // state loop constructs them with those pointers. initialize()/operator()
     // must index via present_fp, not _lmc.template fpfield (no _lmc member).
+    // GLOBAL scalars: _eigen_global->X (device ptr), not inst.global-> (host).
     use_present_fp_indexing_ = true;
+    eigen_functor_global_capture_ = true;
     CodegenCppVisitor::print_functors_definitions();
+    eigen_functor_global_capture_ = false;
     use_present_fp_indexing_ = false;
 }
 
@@ -1347,6 +1366,17 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
             auto pos = deviceptr_extra.find("deviceptr(");
             if (pos != std::string::npos) {
                 deviceptr_extra.insert(pos + std::strlen("deviceptr("), "_d_voltages, ");
+            }
+        }
+        // Eigen residual uses _eigen_global (acc_deviceptr of *_global store).
+        if ((type == BlockType::State || type == BlockType::Initial) &&
+            (info.eigen_newton_solver_exist || info.eigen_linear_solver_exist) &&
+            !codegen_global_variables.empty()) {
+            auto pos = deviceptr_extra.find("deviceptr(");
+            if (pos != std::string::npos) {
+                deviceptr_extra.insert(pos + std::strlen("deviceptr("), "_eigen_global, ");
+            } else {
+                deviceptr_extra = " deviceptr(_eigen_global)";
             }
         }
     }
@@ -2057,6 +2087,17 @@ void CodegenNeuronAccVisitor::print_nrn_init(bool skip_init_check) {
     // indexing in that body or cad/ion WRITE INITIAL fails to compile.
     const bool host_only_init = host_only_parallel_block(BlockType::Initial);
     use_present_fp_indexing_ = !host_only_init;
+    // Device/host pointer to GLOBAL store for Eigen Newton residual.
+    if (!host_only_init &&
+        (info.eigen_newton_solver_exist || info.eigen_linear_solver_exist) &&
+        !codegen_global_variables.empty()) {
+        auto const& ginst = global_struct_instance();
+        printer->fmt_line(
+            "auto* _eigen_global = nt->compute_gpu "
+            "? static_cast<{0}*>(acc_deviceptr(&{1})) : &{1};",
+            global_struct(),
+            ginst);
+    }
     print_parallel_iteration_hint(BlockType::Initial, info.initial_node);
     printer->push_block("for (int id = 0; id < nodecount; id++)");
 
@@ -2321,6 +2362,18 @@ void CodegenNeuronAccVisitor::print_nrn_state() {
     printer->add_line("double const _nrn_thread_t = nt->_t;");
     printer->add_line("(void) _nrn_thread_t;");  // unused when STATE does not reference t
     use_host_captured_t_ = true;
+
+    // Device/host pointer to GLOBAL store for Eigen residual (after copyin).
+    // Pass into functors — host inst.global-> is invalid on device.
+    if ((info.eigen_newton_solver_exist || info.eigen_linear_solver_exist) &&
+        !codegen_global_variables.empty()) {
+        auto const& ginst = global_struct_instance();
+        printer->fmt_line(
+            "auto* _eigen_global = nt->compute_gpu "
+            "? static_cast<{0}*>(acc_deviceptr(&{1})) : &{1};",
+            global_struct(),
+            ginst);
+    }
 
     use_present_fp_indexing_ = true;
     print_parallel_iteration_hint(BlockType::State, info.nrn_state_block);
@@ -2872,6 +2925,7 @@ void CodegenNeuronAccVisitor::print_make_instance() const {
         auto const name = var->get_name();
         // Host address only: OpenACC present(hh_global, ...) maps globals; device
         // pointers in inst confuse the compiler's implicit inst.global upload.
+        // Eigen residual uses _eigen_global (acc_deviceptr), not inst.global->.
         make_instance_args.push_back(fmt::format("&::{0}", name));
     }
 
