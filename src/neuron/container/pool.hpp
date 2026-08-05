@@ -146,15 +146,8 @@ template <typename T, bool Mutex>
 void Pool<T, Mutex>::grow_internal(long count) {
     assert(get_ == put_);
     Pool* p = new Pool(count, subcount_);
-    if (subcount_ > 1) {
-        // ArrayPool-style: append to end of chain
-        chainlast_->chain_ = p;
-        chainlast_ = p;
-    } else {
-        // structpool/MutexPool-style: prepend to chain
-        p->chain_ = chain_;
-        chain_ = p;
-    }
+    chainlast_->chain_ = p;
+    chainlast_ = p;
 
     // Insert new items at the get_ position, shifting the rest right
     std::vector<T*> new_freelist(count);
