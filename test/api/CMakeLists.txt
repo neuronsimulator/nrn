@@ -4,8 +4,13 @@ foreach(
   hh_sim.cpp
   netcon.cpp
   node_index.cpp
+  object_new_nothrow.cpp
+  object_new_wrap.cpp
+  object_ptr_push.cpp
+  section_tree.cpp
   segment_diam.cpp
   sections.cpp
+  symbol_object_string.cpp
   vclamp.cpp)
   string(REPLACE "." "_" api_test_name "${api_test_file}")
   add_executable(${api_test_name} ${api_test_file})

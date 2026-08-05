@@ -27,7 +27,7 @@ Any official update of these files shall imply a PR reviewed and merged before `
 
 All wheels built on Azure are:
 
-* Published to `Pypi.org` as
+* Published to `pypi.org` as
   * `neuron-nightly` -> when the pipeline is launched in CRON mode
   * `neuron-x.y.z` -> when the pipeline is manually triggered for release `x.y.z`
 * Stored as `Azure artifacts` in the Azure pipeline for every run.
@@ -80,6 +80,30 @@ docker.io/neuronsimulator/neuron_wheel:latest-x86_64
 
 The `neuronsimulator/neuron_wheel` provides out-of-the-box support for `mpich` and `openmpi`.
 For `HPE-MPT MPI`, since it's not open source, they are provided automatically as part of Azure Pipelines and are not locally downloadable.
+
+### CI dependency archive (pinned downloads)
+
+Wheel **test** jobs install both MPICH and OpenMPI so
+[packaging/python/test_wheels.sh](../../packaging/python/test_wheels.sh) can
+exercise dynamic MPI. On Ubuntu 24.04, stock MPICH was broken
+([LP#2072338](https://bugs.launchpad.net/ubuntu/+source/mpich/+bug/2072338));
+CI therefore installs a **pinned** pair of `.deb` files from the dedicated
+CI-deps archive
+[nrn-ci-deps / ci-deps-v1](https://github.com/neuronsimulator/nrn-ci-deps/releases/tag/ci-deps-v1)
+instead of downloading them from Launchpad on every run (and instead of mixing
+pins into NEURON product Releases on `nrn`).
+
+See **[CI dependency archive](ci_deps.md)** and
+[ci/deps/README.md](../../ci/deps/README.md) for:
+
+* the catalog (`MANIFEST.yml`) and `managed: true|false`
+* hosting on [neuronsimulator/nrn-ci-deps](https://github.com/neuronsimulator/nrn-ci-deps)
+* `fetch.sh` / `install_mpich_noble.sh` / `publish.sh` / `check-upstream.sh`
+* how to add the next flaky third-party download
+
+Azure macOS wheels still obtain a prebuilt static **readline** via an Azure
+*secure file* (see macOS section below). Migrating that class of blob into
+`ci/deps` is tracked as `managed: false` in the MANIFEST until promoted.
 
 ## macOS wheels
 
