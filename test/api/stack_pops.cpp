@@ -1,9 +1,9 @@
 // NOTE: this assumes neuronapi.h is on your CPLUS_INCLUDE_PATH
-// Exercises nrn_symbol_pop and nrn_object_pop_safe, the stack-pop primitives
-// used to unwind an interpreter frame from a binding (the HOC-to-Python
-// component read/write-back path). nrn_symbol_pop pops a Symbol the interpreter
-// left on the stack; nrn_object_pop_safe pops an object but returns NULL for a
-// nil objref instead of dereferencing it the way nrn_object_pop would.
+// Exercises nrn_symbol_pop and nrn_object_pop's nil handling, the stack-pop
+// primitives used to unwind an interpreter frame from a binding (the
+// HOC-to-Python component read/write-back path). nrn_symbol_pop pops a Symbol
+// the interpreter left on the stack; nrn_object_pop pops an object but returns
+// NULL for a nil objref instead of dereferencing it to take a reference.
 #include <array>
 #include <iostream>
 #include "neuronapi.h"
@@ -41,21 +41,21 @@ int main(void) {
     ok &= check(nrn_symbol_pop() == t, "symbol pop returns the last pushed symbol");
     ok &= check(nrn_symbol_pop() == v, "symbol pop returns the earlier symbol (LIFO)");
 
-    // nrn_object_pop_safe returns a real object (reference-counted).
+    // nrn_object_pop returns a real object (reference-counted).
     Object* vec = nrn_object_new(nrn_symbol("Vector"), 0);
     ok &= check(vec != nullptr, "Vector constructed");
     nrn_object_push(vec);
-    Object* got = nrn_object_pop_safe();
-    ok &= check(got == vec, "safe pop returns the pushed object");
+    Object* got = nrn_object_pop();
+    ok &= check(got == vec, "object pop returns the pushed object");
     if (got) {
         nrn_object_unref(got);
     }
 
-    // nrn_object_pop_safe returns NULL for a nil object reference instead of
-    // crashing -- nrn_object_pop would dereference the NULL to ref it and
+    // nrn_object_pop returns NULL for a nil object reference instead of
+    // crashing -- a naive pop would dereference the NULL to take a reference and
     // segfault here.
     nrn_object_push(nullptr);
-    ok &= check(nrn_object_pop_safe() == nullptr, "safe pop returns NULL for a nil objref");
+    ok &= check(nrn_object_pop() == nullptr, "object pop returns NULL for a nil objref");
 
     // Stack balance: the pops above consumed exactly what was pushed.
     nrn_double_push(5.0);

@@ -397,23 +397,12 @@ void nrn_object_ptr_push(Object** obj_ref) {
 }
 
 Object* nrn_object_pop(void) {
-    // NOTE: the returned object should be unref'd when no longer needed
-    Object** obptr = hoc_objpop();
-    Object* new_ob_ptr = *obptr;
-    new_ob_ptr->refcount++;
-    hoc_tobj_unref(obptr);
-    return new_ob_ptr;
-}
-
-Object* nrn_object_pop_safe(void) {
-    // Like nrn_object_pop, but returns NULL for a nil object reference instead
-    // of crashing. nrn_object_pop unconditionally does (*obptr)->refcount++ to
-    // hand back a reference, which dereferences NULL when the stack entry is a
-    // nil objref. Unwinding a stack that may carry a nil object -- e.g. the
-    // HOC-to-Python write-back path, where an objref RHS can be nil -- needs a
-    // pop that tolerates it. The stack-slot handling is identical to
-    // nrn_object_pop; only the ref is guarded. As there, a non-NULL result is
-    // reffed and should be unref'd (nrn_object_unref) when no longer needed.
+    // Returns NULL for a nil object reference (an unset objref) rather than
+    // crashing: the ref-count bump that hands back a reference would otherwise
+    // dereference NULL. This matters when unwinding a stack that may carry a nil
+    // object -- e.g. the HOC-to-Python write-back path, where an objref RHS can
+    // be nil. A non-NULL result is reference-counted and should be unref'd
+    // (nrn_object_unref) when no longer needed.
     Object** obptr = hoc_objpop();
     Object* ob = *obptr;
     if (ob) {

@@ -977,31 +977,20 @@ Functions, objects, and the stack
 
     Pop an object from the stack.
 
-    :returns: Pointer to object from the top of the stack.
+    Returns ``NULL`` for a nil object reference (an unset ``objref``) rather than
+    crashing, so it is safe to use when unwinding a stack that may carry a nil
+    object -- for example a HOC-to-Python write-back whose right-hand side is an
+    unset ``objref``.
+
+    :returns: Pointer to the object from the top of the stack, or ``NULL`` if it
+        is a nil object reference.
 
     **Usage Pattern:**
 
     Used to retrieve function/method return values. Use :c:func:`nrn_stack_type` to check the type
     before popping, or use the type of the function/method to know the expected return type in
-    advance.
-
-.. c:function:: Object* nrn_object_pop_safe(void)
-
-    Pop an object from the stack, tolerating a nil object reference.
-
-    Same as :c:func:`nrn_object_pop`, except it returns ``NULL`` for a nil
-    object reference instead of crashing. :c:func:`nrn_object_pop`
-    unconditionally takes a reference on the popped object, which dereferences
-    a ``NULL`` when the stack entry is a nil ``objref``. Use this when the stack
-    may carry a nil object -- for example when unwinding a HOC-to-Python
-    write-back whose right-hand side is an unset ``objref``.
-
-    :returns: Pointer to the object from the top of the stack, or ``NULL`` if it
-        is a nil object reference.
-
-    As with :c:func:`nrn_object_pop`, a non-``NULL`` result is reference-counted
-    and should be released with :c:func:`nrn_object_unref` when no longer
-    needed.
+    advance. A non-``NULL`` result is reference-counted and should be released with
+    :c:func:`nrn_object_unref` when no longer needed.
 
 .. c:function:: nrn_stack_types_t nrn_stack_type(void)
 

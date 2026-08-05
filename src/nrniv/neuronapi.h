@@ -98,7 +98,6 @@ int nrn_int_pop(void);
 void nrn_object_push(Object* obj);
 void nrn_object_ptr_push(Object** obj_ref);
 Object* nrn_object_pop(void);
-Object* nrn_object_pop_safe(void);
 nrn_stack_types_t nrn_stack_type(void);
 char const* nrn_stack_type_name(nrn_stack_types_t id);
 Object* nrn_object_new(Symbol* sym, int narg);
