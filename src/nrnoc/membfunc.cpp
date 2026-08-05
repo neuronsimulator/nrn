@@ -106,4 +106,20 @@ double* const** gpu_pdata_ptr_cache(neuron::model_sorted_token const& cache_toke
                                             int mech_type) noexcept {
     return cache_token.mech_cache(mech_type).gpu_pdata_ptr_cache;
 }
+double** gpu_pdata_soa_base(neuron::model_sorted_token const& cache_token,
+                            int mech_type) noexcept {
+    return cache_token.mech_cache(mech_type).gpu_pdata_soa_base;
+}
+int** gpu_pdata_soa_index(neuron::model_sorted_token const& cache_token,
+                          int mech_type) noexcept {
+    return cache_token.mech_cache(mech_type).gpu_pdata_soa_index;
+}
+std::size_t* gpu_pdata_soa_count(neuron::model_sorted_token const& cache_token,
+                                 int mech_type) noexcept {
+    return cache_token.mech_cache(mech_type).gpu_pdata_soa_count;
+}
+std::size_t* gpu_pdata_soa_index_n(neuron::model_sorted_token const& cache_token,
+                                   int mech_type) noexcept {
+    return cache_token.mech_cache(mech_type).gpu_pdata_soa_index_n;
+}
 }  // namespace neuron::mechanism::_get

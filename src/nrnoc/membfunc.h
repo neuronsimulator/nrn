@@ -296,6 +296,18 @@ namespace _get {
 [[nodiscard]] double* const** gpu_pdata_ptr_cache(
     neuron::model_sorted_token const& cache_token,
     int mech_type) noexcept;
+/** Host SoA bases for ion pdata fields (null if not indexable). */
+[[nodiscard]] double** gpu_pdata_soa_base(neuron::model_sorted_token const& cache_token,
+                                         int mech_type) noexcept;
+/** Host int index rows for ion pdata fields. */
+[[nodiscard]] int** gpu_pdata_soa_index(neuron::model_sorted_token const& cache_token,
+                                       int mech_type) noexcept;
+/** Length of each ion SoA column. */
+[[nodiscard]] std::size_t* gpu_pdata_soa_count(neuron::model_sorted_token const& cache_token,
+                                               int mech_type) noexcept;
+/** Length of each ion index row. */
+[[nodiscard]] std::size_t* gpu_pdata_soa_index_n(neuron::model_sorted_token const& cache_token,
+                                                 int mech_type) noexcept;
 }  // namespace _get
 }  // namespace neuron::mechanism
 

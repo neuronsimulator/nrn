@@ -546,14 +546,47 @@ void CodegenNeuronAccVisitor::print_present_dptr_pointer_declarations_for(
         if (var.is_index || var.is_integer || var.is_vdata || sem == naming::POINTER_SEMANTIC) {
             continue;
         }
-        // GPU cache is the full-instance pdata table; host dptr_field_ptr is already
-        // advanced by ml storage offset. When using the GPU table, also record
-        // storage_offset so (*_present_dptr_i[id + base]) hits the right instance
-        // (multi-thread: offset>0). Host path uses base=0.
+        // Prefer CoreNEURON-style host SoA base + int index with present() (RANGE
+        // shape). deviceptr(acc_deviceptr(base)) was illegal-address on nvc++.
+        // Fallback: pdata double** chase (deviceptr of pointer table).
+        // Dummy host scalars keep present(soa[:n], idx[:m]) well-defined when
+        // soa path is off (n=1; never accessed when _present_use_soa_* is false).
+        printer->fmt_line("double _present_soa_dummy_{0} = 0.0;", i);
+        printer->fmt_line("int _present_idx_dummy_{0} = 0;", i);
+        printer->fmt_line("double* _present_soa_{0} = &_present_soa_dummy_{0};", i);
+        printer->fmt_line("int* _present_idx_{0} = &_present_idx_dummy_{0};", i);
+        printer->fmt_line("std::size_t _present_soa_n_{0} = 1;", i);
+        printer->fmt_line("std::size_t _present_idx_n_{0} = 1;", i);
+        printer->fmt_line("bool _present_use_soa_{0} = false;", i);
         printer->fmt_line("double* const* _present_dptr_{0} = nullptr;", i);
         printer->fmt_line("int _present_dptr_base_{0} = 0;", i);
-        printer->push_block(
+        printer->fmt_push_block(
             "if (nt->compute_gpu && "
+            "neuron::mechanism::_get::gpu_pdata_soa_base(_sorted_token, _ml_arg->type()) && "
+            "neuron::mechanism::_get::gpu_pdata_soa_base(_sorted_token, _ml_arg->type())[{0}])",
+            i);
+        printer->fmt_line(
+            "_present_soa_{0} = "
+            "neuron::mechanism::_get::gpu_pdata_soa_base(_sorted_token, _ml_arg->type())[{0}];",
+            i);
+        printer->fmt_line(
+            "_present_idx_{0} = "
+            "neuron::mechanism::_get::gpu_pdata_soa_index(_sorted_token, _ml_arg->type())[{0}];",
+            i);
+        printer->fmt_line(
+            "_present_soa_n_{0} = "
+            "neuron::mechanism::_get::gpu_pdata_soa_count(_sorted_token, _ml_arg->type())[{0}];",
+            i);
+        printer->fmt_line(
+            "_present_idx_n_{0} = "
+            "neuron::mechanism::_get::gpu_pdata_soa_index_n(_sorted_token, _ml_arg->type())[{0}];",
+            i);
+        printer->fmt_line(
+            "_present_dptr_base_{0} = static_cast<int>(_ml_arg->get_storage_offset());", i);
+        printer->fmt_line("_present_use_soa_{0} = true;", i);
+        printer->pop_block();
+        printer->push_block(
+            "else if (nt->compute_gpu && "
             "neuron::mechanism::_get::gpu_pdata_ptr_cache(_sorted_token, _ml_arg->type()))");
         printer->fmt_line(
             "_present_dptr_{0} = "
@@ -585,6 +618,8 @@ std::string CodegenNeuronAccVisitor::present_dptr_deviceptr_clause_for(
     const std::unordered_set<int>& indices) const {
     std::vector<int> ordered(indices.begin(), indices.end());
     std::sort(ordered.begin(), ordered.end());
+    // Only the pointer-table fallback stays deviceptr. Ion SoA base+index use
+    // present() (host pointers) — see present clause in print_parallel_iteration_hint.
     std::vector<std::string> dptr_names;
     for (int i: ordered) {
         dptr_names.push_back(fmt::format("_present_dptr_{}", i));
@@ -1524,8 +1559,15 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
             present_clause << fmt::format(
                 ", _present_fp_{}[:static_cast<std::size_t>(_ml_arg->nodecount) * {}]", i, array_len);
         }
-        // pdata ion rows live in device memory via upload_mechanism_pointer_tables;
-        // do not add them to present() (OpenACC cannot track deviceptr slices here).
+        // Ion SoA base + int index: host present (RANGE shape). Not deviceptr of
+        // device bases (nvc++ illegal address). Dummy n=1 when soa path off.
+        std::vector<int> ordered_dptr(live_dptr.begin(), live_dptr.end());
+        std::sort(ordered_dptr.begin(), ordered_dptr.end());
+        for (int i: ordered_dptr) {
+            present_clause << fmt::format(
+                ", _present_soa_{0}[:_present_soa_n_{0}], _present_idx_{0}[:_present_idx_n_{0}]",
+                i);
+        }
     }
     // Global struct for kernels that touch TABLE/GLOBAL. Jacob does not.
     if (!info.artificial_cell && !codegen_global_variables.empty() && type != BlockType::NetReceive &&
@@ -3180,9 +3222,14 @@ std::string CodegenNeuronAccVisitor::int_variable_name(const IndexVariableInfo& 
         if (symbol.is_index || symbol.is_integer) {
             return CodegenNeuronCppVisitor::int_variable_name(symbol, name, use_instance);
         }
-        // GPU full table: index id + storage_offset (see present_dptr declarations).
+        // Prefer SoA base[index] when upload built host present indices; else
+        // double-indirect pdata chase. Lvalue via address-of ternary for `+=`.
         // Host dptr_field_ptr path sets _present_dptr_base_*=0 (already offset).
-        return fmt::format("(*_present_dptr_{}[id + _present_dptr_base_{}])", position, position);
+        return fmt::format(
+            "(*(_present_use_soa_{0} "
+            "? &_present_soa_{0}[_present_idx_{0}[id + _present_dptr_base_{0}]] "
+            ": _present_dptr_{0}[id + _present_dptr_base_{0}]))",
+            position);
     }
     return CodegenNeuronCppVisitor::int_variable_name(symbol, name, use_instance);
 }

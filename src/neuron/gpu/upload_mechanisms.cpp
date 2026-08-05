@@ -27,6 +27,49 @@ int mechanism_padded_count(int count) {
     return ((count + k_soa_pad - 1) / k_soa_pad) * k_soa_pad;
 }
 
+/**
+ * Locate the mechanism float SoA column that owns @p ptr (USEION shadows).
+ * Used to convert ion pdata double* tables into (host base, int index) form.
+ */
+bool find_float_soa_home(double* ptr, double*& base_out, std::size_t& count_out) {
+    if (!ptr) {
+        return false;
+    }
+    auto& model = neuron::model();
+    auto const ntypes = model.mechanism_storage_size();
+    for (std::size_t type = 0; type < ntypes; ++type) {
+        if (!model.is_valid_mechanism(static_cast<int>(type))) {
+            continue;
+        }
+        auto const n_inst = model.mechanism_data(static_cast<int>(type)).size();
+        if (n_inst == 0) {
+            continue;
+        }
+        int const n_fields = mechanism::get_field_count<double>(static_cast<int>(type));
+        auto* const bases = mechanism::get_data_ptrs<double>(static_cast<int>(type));
+        auto* const dims = mechanism::get_array_dims<double>(static_cast<int>(type));
+        if (!bases || n_fields <= 0) {
+            continue;
+        }
+        for (int f = 0; f < n_fields; ++f) {
+            if (!bases[f]) {
+                continue;
+            }
+            int const dim = dims ? dims[f] : 1;
+            if (dim <= 0) {
+                continue;
+            }
+            auto const count = n_inst * static_cast<std::size_t>(dim);
+            if (ptr >= bases[f] && ptr < bases[f] + count) {
+                base_out = bases[f];
+                count_out = count;
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 void record_upload(UploadState& state,
                    void const* host,
                    std::size_t count,
@@ -189,7 +232,12 @@ void upload_mechanism_pointer_tables(model_sorted_token& sorted, UploadState& st
 
         auto const n_pdata_fields = mech.pdata_ptr_cache.size();
         auto* const device_bases_staging = new double* const*[n_pdata_fields]();
+        auto* const soa_base_staging = new double*[n_pdata_fields]();
+        auto* const soa_index_staging = new int*[n_pdata_fields]();
+        auto* const soa_count_staging = new std::size_t[n_pdata_fields]();
+        auto* const soa_index_n_staging = new std::size_t[n_pdata_fields]();
         bool any_pdata_field = false;
+        bool any_soa_index = false;
 
         for (std::size_t field = 0; field < n_pdata_fields; ++field) {
             if (!mech.pdata_ptr_cache[field]) {
@@ -208,16 +256,77 @@ void upload_mechanism_pointer_tables(model_sorted_token& sorted, UploadState& st
             device_bases_staging[field] = d_row;
             state.record_cpu_owned(row_staging, host_row.size(), sizeof(double*));
             any_pdata_field = true;
+
+            // CoreNEURON-style ion path: host SoA base + int index for present().
+            // (deviceptr of device SoA base was illegal-address on nvc++; RANGE-style
+            // present of host pointers matches ion_cur / _present_fp_N.)
+            double* soa_base = nullptr;
+            std::size_t soa_count = 0;
+            bool indexable = true;
+            auto* const indices = new int[host_row.size()]();
+            for (std::size_t i = 0; i < host_row.size(); ++i) {
+                double* const p = host_row[i];
+                if (!p) {
+                    indexable = false;
+                    break;
+                }
+                if (!soa_base) {
+                    if (!find_float_soa_home(p, soa_base, soa_count)) {
+                        indexable = false;
+                        break;
+                    }
+                } else if (p < soa_base || p >= soa_base + soa_count) {
+                    indexable = false;
+                    break;
+                }
+                indices[i] = static_cast<int>(p - soa_base);
+            }
+            if (indexable && soa_base) {
+                // Keep host index row alive; copyin so present() finds device mapping.
+                (void) nrn_target_copyin(indices, host_row.size());
+                state.record_cpu_owned(indices, host_row.size(), sizeof(int));
+                soa_base_staging[field] = soa_base;  // host pointer (already copyin via SoA)
+                soa_index_staging[field] = indices;  // host pointer (just copyin)
+                soa_count_staging[field] = soa_count;
+                soa_index_n_staging[field] = host_row.size();
+                any_soa_index = true;
+            } else {
+                delete[] indices;
+            }
         }
 
         if (!any_pdata_field) {
             delete[] device_bases_staging;
+            delete[] soa_base_staging;
+            delete[] soa_index_staging;
+            delete[] soa_count_staging;
+            delete[] soa_index_n_staging;
             continue;
         }
 
         state.record_cpu_owned(device_bases_staging, n_pdata_fields, sizeof(double* const*));
         // Host-readable table of device-resident pdata rows (device pointer values).
         mech.gpu_pdata_ptr_cache = device_bases_staging;
+
+        if (any_soa_index) {
+            state.record_cpu_owned(soa_base_staging, n_pdata_fields, sizeof(double*));
+            state.record_cpu_owned(soa_index_staging, n_pdata_fields, sizeof(int*));
+            state.record_cpu_owned(soa_count_staging, n_pdata_fields, sizeof(std::size_t));
+            state.record_cpu_owned(soa_index_n_staging, n_pdata_fields, sizeof(std::size_t));
+            mech.gpu_pdata_soa_base = soa_base_staging;
+            mech.gpu_pdata_soa_index = soa_index_staging;
+            mech.gpu_pdata_soa_count = soa_count_staging;
+            mech.gpu_pdata_soa_index_n = soa_index_n_staging;
+        } else {
+            delete[] soa_base_staging;
+            delete[] soa_index_staging;
+            delete[] soa_count_staging;
+            delete[] soa_index_n_staging;
+            mech.gpu_pdata_soa_base = nullptr;
+            mech.gpu_pdata_soa_index = nullptr;
+            mech.gpu_pdata_soa_count = nullptr;
+            mech.gpu_pdata_soa_index_n = nullptr;
+        }
     }
 #else
     (void) sorted;

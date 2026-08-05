@@ -31,6 +31,17 @@ struct Mechanism {
      */
     double* const* gpu_data_ptrs{};
     double* const** gpu_pdata_ptr_cache{};
+    /**
+     * @brief Optional CoreNEURON-style ion access (host present, not deviceptr).
+     *
+     * Parallel to @c pdata fields. When non-null for field @c f, ACC kernels use
+     * @c base[f][idx[f][id]] with @c present(base[:count], idx[:n]) — same shape as
+     * RANGE @c _present_fp_N. Index rows are CPU-owned (UploadState). Null = dptr chase.
+     */
+    double** gpu_pdata_soa_base{};        // host SoA column bases
+    int** gpu_pdata_soa_index{};          // host int index rows
+    std::size_t* gpu_pdata_soa_count{};   // SoA column lengths
+    std::size_t* gpu_pdata_soa_index_n{}; // index row lengths
 };
 struct Thread {
     /**

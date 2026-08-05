@@ -351,9 +351,14 @@ SCENARIO("NEURON OpenACC codegen emits offload pragmas", "[codegen][neuron][acc]
             const auto cur_fn = generated.substr(
                 cur_begin,
                 (cur_end == std::string::npos ? generated.size() : cur_end) - cur_begin);
-            // Stack load from ion dptr.
+            // Stack load from ion dptr / SoA index path.
             REQUIRE_THAT(cur_fn, ContainsSubstring("double ena = "));
             REQUIRE_THAT(cur_fn, ContainsSubstring("_present_dptr_"));
+            // Residual #16: host present SoA base + index (RANGE shape).
+            REQUIRE_THAT(cur_fn, ContainsSubstring("_present_soa_"));
+            REQUIRE_THAT(cur_fn, ContainsSubstring("_present_use_soa_"));
+            REQUIRE_THAT(cur_fn, ContainsSubstring("gpu_pdata_soa_base"));
+            REQUIRE_THAT(generated, ContainsSubstring("_present_soa_0[:_present_soa_n_0]"));
             // Body must use bare stack ena in (v - ena), not SoA shadow.
             const bool uses_stack_ena =
                 cur_fn.find("_cur_v - ena") != std::string::npos ||
