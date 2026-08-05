@@ -364,6 +364,61 @@ Sections
     The ``nrn_Item*`` returned can be used for loops in the same way as the ``all_sections`` variable in
     the example in :c:func:`nrn_allsec`.
 
+.. c:function:: Section* nrn_section_parent(Section* sec)
+
+    Return the Section that ``sec`` is connected to, or ``NULL`` if ``sec`` is a
+    root.
+
+    This is the direct connectivity, the same Section a HOC ``SectionRef``'s
+    ``parent`` yields. It reads the connectivity directly, without creating a
+    ``SectionRef`` object.
+
+    :param sec: The Section whose parent is wanted.
+    :returns: The parent Section, or ``NULL`` if ``sec`` has no parent (or is
+        ``NULL``).
+
+.. c:function:: Section* nrn_section_trueparent(Section* sec)
+
+    Return the *true* parent of ``sec``, or ``NULL`` if there is none.
+
+    The true parent (``SectionRef``'s ``trueparent``) is normally the parent,
+    but a Section connected to the ``0`` end of its parent shares that parent's
+    true parent, so the relationship climbs until a connection that is not at
+    the parent's beginning.
+
+    :param sec: The Section whose true parent is wanted.
+    :returns: The true parent Section, or ``NULL`` if there is none (or ``sec``
+        is ``NULL``).
+
+.. c:function:: Section* nrn_section_child(Section* sec)
+
+    Return the first child Section connected to ``sec``, or ``NULL`` if it has
+    none.
+
+    Walk the remaining children with :c:func:`nrn_section_sibling`. The order
+    matches ``SectionRef``'s ``child[i]``.
+
+    :param sec: The parent Section.
+    :returns: The first child Section, or ``NULL`` (also if ``sec`` is ``NULL``).
+
+.. c:function:: Section* nrn_section_sibling(Section* sec)
+
+    Return the next Section that shares ``sec``'s parent, or ``NULL`` if ``sec``
+    is the last child.
+
+    Paired with :c:func:`nrn_section_child`, this iterates every child of a
+    Section:
+
+    .. code-block:: c
+
+        for (Section* c = nrn_section_child(parent); c; c = nrn_section_sibling(c)) {
+            printf("%s\n", nrn_secname(c));
+        }
+
+    :param sec: A Section.
+    :returns: The next sibling Section, or ``NULL`` (also if ``sec`` is
+        ``NULL``).
+
 .. c:function:: bool nrn_section_is_active(const Section* sec)
 
     Check if a Section is active (exists and is valid).

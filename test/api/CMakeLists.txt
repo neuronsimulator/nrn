@@ -7,6 +7,7 @@ foreach(
   object_new_nothrow.cpp
   object_new_wrap.cpp
   object_ptr_push.cpp
+  section_tree.cpp
   segment_diam.cpp
   sections.cpp
   symbol_object_string.cpp

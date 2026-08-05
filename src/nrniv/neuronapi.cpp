@@ -239,6 +239,45 @@ nrn_Item* nrn_sectionlist_data(const Object* obj) {
     return (nrn_Item*) obj->u.this_pointer;
 }
 
+Section* nrn_section_parent(Section* sec) {
+    // The section sec is connected to (SectionRef.parent), or NULL if sec is a
+    // root. This is the raw connectivity; nrn_section_trueparent additionally
+    // walks through parents joined at their 0 end.
+    if (!sec) {
+        return nullptr;
+    }
+    return sec->parentsec;
+}
+
+Section* nrn_section_trueparent(Section* sec) {
+    // SectionRef.trueparent: the parent, except that a section connected to the
+    // 0 end of its parent shares that parent's true parent, so the walk climbs
+    // until the connection is not at the beginning. NULL if there is none.
+    if (!sec) {
+        return nullptr;
+    }
+    return nrn_trueparent(sec);
+}
+
+Section* nrn_section_child(Section* sec) {
+    // First child connected to sec, or NULL if it has none. Walk the rest with
+    // nrn_section_sibling; the order matches SectionRef.child[i].
+    if (!sec) {
+        return nullptr;
+    }
+    return sec->child;
+}
+
+Section* nrn_section_sibling(Section* sec) {
+    // Next section sharing sec's parent, or NULL. With nrn_section_child this
+    // iterates every child of a section:
+    //   for (Section* c = nrn_section_child(p); c; c = nrn_section_sibling(c))
+    if (!sec) {
+        return nullptr;
+    }
+    return sec->sibling;
+}
+
 /****************************************
  * Functions, objects, and the stack
  ****************************************/
