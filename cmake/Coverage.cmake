@@ -12,7 +12,8 @@
 #   NRN_COVERAGE_FILES speeds the workflow tremendously, when iteratively
 #   working on a single or a few files.
 #
-#   Two targets are created: cover_begin and cover_html.
+#   Targets: cover_begin (alias cover-begin), cover_html (cover-html),
+#   and cover_diff (cover-diff, requires diff-cover).
 #
 #   cover_begin erases all the *.gcda coverage files and
 #   creates a baseline report (coverage-base.info)
@@ -124,6 +125,19 @@ if(NRN_ENABLE_COVERAGE)
   set(cover_combine_command "${LCOV}" "--add-tracefile" "coverage-base.info" "--add-tracefile"
                             "coverage-run.info" "--output-file" "coverage-combined.info")
   set(cover_html_command genhtml "coverage-combined.info" "--output-directory" html)
+
+  set(NRN_COVERAGE_DIFF_BRANCH
+      "master"
+      CACHE STRING "Git branch for cover_diff (diff-cover --compare-branch)")
+
+  find_program(DIFF_COVER diff-cover)
+  if(DIFF_COVER)
+    # diff-cover matches git diff paths to lcov SF: paths via GitPathTool, which is relative to cwd.
+    # Run from PROJECT_SOURCE_DIR (not the build dir) so repo-root paths like src/foo.cpp align with
+    # the lcov report.
+    set(cover_diff_report "${PROJECT_BINARY_DIR}/html-diff/index.html")
+  endif()
+
   add_custom_target(
     cover_clean
     COMMAND ${cover_clean_command}
@@ -137,6 +151,7 @@ if(NRN_ENABLE_COVERAGE)
     COMMAND ${cover_clean_command}
     COMMAND ${cover_baseline_command}
     WORKING_DIRECTORY "${PROJECT_BINARY_DIR}")
+  add_custom_target(cover-begin DEPENDS cover_begin)
   add_custom_target(
     cover_collect
     COMMAND ${cover_collect_command}
@@ -152,4 +167,22 @@ if(NRN_ENABLE_COVERAGE)
     COMMAND ${cover_html_command}
     COMMAND echo "View in browser at file://${PROJECT_BINARY_DIR}/html/index.html"
     WORKING_DIRECTORY "${PROJECT_BINARY_DIR}")
+  add_custom_target(cover-html DEPENDS cover_html)
+
+  if(DIFF_COVER)
+    add_custom_target(
+      cover_diff
+      COMMAND ${cover_collect_command}
+      COMMAND ${cover_combine_command}
+      COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_BINARY_DIR}/html-diff"
+      COMMAND
+        ${CMAKE_COMMAND} -E chdir "${PROJECT_SOURCE_DIR}" "${DIFF_COVER}"
+        "${PROJECT_BINARY_DIR}/coverage-combined.info" "--compare-branch"
+        "${NRN_COVERAGE_DIFF_BRANCH}" "--show-uncovered" "--format" "html:${cover_diff_report}"
+      COMMAND echo "View changed-line coverage at file://${cover_diff_report}"
+      WORKING_DIRECTORY "${PROJECT_BINARY_DIR}")
+    add_custom_target(cover-diff DEPENDS cover_diff)
+  else()
+    message(STATUS "diff-cover not found; cover_diff target unavailable (pip install diff-cover)")
+  endif()
 endif()
