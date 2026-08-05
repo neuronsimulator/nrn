@@ -180,6 +180,9 @@ CTest (from the build directory):
    ctest -R 'external_ringtest::' --output-on-failure
    # Multi-rank product (starts MPS via harness if needed):
    ctest -V -R 'reduced_dentate_native::neuron_gpu_native'
+   # Traub 1/10 product (ModelDB 82894 at $HOME/models/82894 or NRN_TRAUB_MODEL;
+   # skips with code 77 if the model tree is absent):
+   ctest -V -R 'traub_native::neuron_gpu_native'
    # Full suite: prefer -j for CPU throughput. Tests that REQUIRES gpu take a
    # CTest RESOURCE_LOCK named "gpu", so only one GPU job runs at a time even
    # under ctest -j N (helps single-GPU workstations that also drive the display).
@@ -192,9 +195,21 @@ Models report fixed-step qualification with ``pc.gpu_fixed_step_phases()``
 setting ``NRN_GPU_ALLOW_UNQUALIFIED``. Gate definitions live in
 ``doc/gpu-step-qualification.md``.
 
-Traub-scale (ModelDB 82894) is the heavy threshold / mechanism stress case;
-build mechs with the OpenACC ``nrnivmodl`` line above, then compare spike
-counts and ``prcellstate`` against ``enable_gpu=0`` on the same install.
+Traub-scale (ModelDB 82894) is the heavy threshold / mechanism stress case.
+Product harness (no-gap **4474** exact; optional ``--gap`` **7873** exact
+native↔CPU):
+
+.. code-block:: bash
+
+   source ~/neuron/bin/nrnenv nrngpu build-gpu
+   export NRN_GPU_BACKEND_TEST=native NRN_GPU_PERMUTE=2
+   # Optional: NRN_TRAUB_MODEL=/path/to/82894  NRN_TRAUB_MECH_DIR=/tmp/traub-nrngpu-acc
+   bash test/external/traub/run_traub_native.sh            # no-gap
+   bash test/external/traub/run_traub_native.sh --gap      # gap
+   bash test/external/traub/run_traub_native.sh --rebuild  # force ACC nrnivmodl
+
+Reference sorted rasters live under ``test/external/traub/reference/``.
+The model tree stays outside NEURON (see portfolio ModelDB recipes).
 
 Optional local helper
 *********************

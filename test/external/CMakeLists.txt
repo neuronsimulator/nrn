@@ -40,6 +40,7 @@ add_subdirectory(nrntest)
 add_subdirectory(reduced_dentate)
 add_subdirectory(ringtest)
 add_subdirectory(testcorenrn)
+add_subdirectory(traub)
 
 # tqperf requires libcrypto library
 find_package(OpenSSL)
