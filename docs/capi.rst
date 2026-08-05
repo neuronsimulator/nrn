@@ -720,6 +720,9 @@ Segments
         # cufl is a density mechanism (SUFFIX) with a POINTER pv
         dend(0.5).cufl._ref_pv = soma(0.5)._ref_v
 
+    .. seealso::
+
+        :c:func:`nrn_pp_setpointer_pop`, :c:func:`nrn_rangevar_push`
 
 .. c:function:: int nrn_pp_setpointer_pop(Object* pp, const char* name, char* error_msg, size_t error_msg_size)
 
@@ -765,6 +768,10 @@ Segments
 
         # halfgap1 is a POINT_PROCESS instance with a POINTER vgap
         halfgap1._ref_vgap = cell2(0.5)._ref_v
+
+    .. seealso::
+
+        :c:func:`nrn_setpointer_pop`, :c:func:`nrn_property_push`, :c:func:`nrn_rangevar_push`
 
 
 Functions, objects, and the stack

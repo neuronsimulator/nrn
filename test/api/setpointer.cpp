@@ -64,15 +64,28 @@ int main(void) {
     ok &= check(src_sym != nullptr && out_sym != nullptr && v_sym != nullptr,
                 "ptrtest range-variable symbols resolve");
 
+    // Stack hygiene is checked inline on every call with a sentinel pushed
+    // *below* the source: the HOC stack is LIFO, so a correct call pops exactly
+    // the one source it was given and leaves the sentinel on top. Popping the
+    // sentinel back afterward proves the call neither under-popped (left the
+    // source behind) nor over-popped (ate into the sentinel). A sentinel pushed
+    // *after* the calls could catch neither -- it only ever probes the current
+    // top. SENTINEL is a distinctive value unlikely to arise by chance.
+    const double SENTINEL = 424242.0;
+
     // Wire dend(0.5).ptrtest.src -> soma(0.5).v. Push the source pointer, then
     // let setpointer_pop consume it and assign it to the POINTER's dparam slot.
     char err[256];
-    nrn_rangevar_push(v_sym, soma, 0.5);
+    nrn_double_push(SENTINEL);            // sentinel below
+    nrn_rangevar_push(v_sym, soma, 0.5);  // source on top
     int rc = nrn_setpointer_pop(src_sym, dend, 0.5, err, sizeof(err));
     ok &= check(rc == 0, "nrn_setpointer_pop succeeds for a valid POINTER wiring");
     if (rc != 0) {
         cerr << "  error_msg: " << err << endl;
     }
+    ok &= eq(nrn_double_pop(),
+             SENTINEL,
+             "setpointer_pop consumed exactly its source (sentinel below intact)");
 
     // finitialize(-42): every segment's v becomes -42, and ptrtest's INITIAL
     // copies its POINTER (now soma.v) into out. So dend(0.5).out == -42.
@@ -85,24 +98,26 @@ int main(void) {
 
     // Error path 1: a non-POINTER target (out is a plain RANGE var) is rejected
     // with a nonzero return and a message, not a crash. The pushed source is
-    // still consumed (popped) before the validation fails, so the stack stays
-    // balanced.
+    // still consumed (popped) before the validation fails, so the sentinel
+    // below comes back untouched.
+    nrn_double_push(SENTINEL);
     nrn_rangevar_push(v_sym, soma, 0.5);
     int rc_bad = nrn_setpointer_pop(out_sym, dend, 0.5, err, sizeof(err));
     ok &= check(rc_bad != 0, "non-POINTER target is rejected");
     ok &= check(err[0] != '\0', "rejection fills the error message");
+    ok &= eq(nrn_double_pop(),
+             SENTINEL,
+             "rejected setpointer_pop still consumed exactly its source (sentinel intact)");
 
     // Error path 2: the POINTER's mechanism is absent at the target segment
-    // (soma has no ptrtest). Rejected, not a crash.
+    // (soma has no ptrtest). Rejected, not a crash; the source is still consumed.
+    nrn_double_push(SENTINEL);
     nrn_rangevar_push(v_sym, soma, 0.5);
     int rc_absent = nrn_setpointer_pop(src_sym, soma, 0.5, err, sizeof(err));
     ok &= check(rc_absent != 0, "POINTER target on a segment without the mechanism is rejected");
-
-    // Stack hygiene: every call above (success and error paths) consumed
-    // exactly the one source it was given. Push a sentinel and confirm it comes
-    // straight back, proving nothing was left on or over-popped from the stack.
-    nrn_double_push(17.0);
-    ok &= eq(nrn_double_pop(), 17.0, "the stack is balanced after the setpointer_pop calls");
+    ok &= eq(nrn_double_pop(),
+             SENTINEL,
+             "rejected setpointer_pop (absent mechanism) still consumed exactly its source");
 
     // -------------------------------------------------------------------------
     // Point-process path: nrn_pp_setpointer_pop. Unlike a density mechanism, a
@@ -125,15 +140,24 @@ int main(void) {
 
     // Cross-wire: pp1.src -> pp2.feed, pp2.src -> pp1.feed. Push the source
     // handle with nrn_property_push, then let nrn_pp_setpointer_pop consume it.
+    // Same sentinel-below hygiene check as the density calls above.
+    nrn_double_push(SENTINEL);
     nrn_property_push(pp2, "feed");
     int rc_pp1 = nrn_pp_setpointer_pop(pp1, "src", err, sizeof(err));
     ok &= check(rc_pp1 == 0, "nrn_pp_setpointer_pop wires pp1.src -> pp2.feed");
     if (rc_pp1 != 0) {
         cerr << "  error_msg: " << err << endl;
     }
+    ok &= eq(nrn_double_pop(),
+             SENTINEL,
+             "pp_setpointer_pop consumed exactly its source (sentinel intact)");
+    nrn_double_push(SENTINEL);
     nrn_property_push(pp1, "feed");
     int rc_pp2 = nrn_pp_setpointer_pop(pp2, "src", err, sizeof(err));
     ok &= check(rc_pp2 == 0, "nrn_pp_setpointer_pop wires pp2.src -> pp1.feed");
+    ok &= eq(nrn_double_pop(),
+             SENTINEL,
+             "second pp_setpointer_pop consumed exactly its source (sentinel intact)");
 
     // finitialize(-65): INITIAL runs out = src, so pp1.out reads pp2.feed (20)
     // and pp2.out reads pp1.feed (10). If the wiring were segment-addressed and
@@ -145,16 +169,16 @@ int main(void) {
     ok &= eq(nrn_property_get(pp2, "out"), 10.0, "pp2 read its own wired source (pp1.feed)");
 
     // Error path: a non-POINTER target name (out is a plain RANGE var) is
-    // rejected, with the pushed source still consumed so the stack stays
-    // balanced.
+    // rejected, with the pushed source still consumed so the sentinel below
+    // comes back untouched.
+    nrn_double_push(SENTINEL);
     nrn_property_push(pp2, "feed");
     int rc_pp_bad = nrn_pp_setpointer_pop(pp1, "out", err, sizeof(err));
     ok &= check(rc_pp_bad != 0, "non-POINTER point-process target is rejected");
     ok &= check(err[0] != '\0', "point-process rejection fills the error message");
-
-    // Stack hygiene across the point-process calls too.
-    nrn_double_push(23.0);
-    ok &= eq(nrn_double_pop(), 23.0, "the stack is balanced after the pp setpointer calls");
+    ok &= eq(nrn_double_pop(),
+             SENTINEL,
+             "rejected pp_setpointer_pop still consumed exactly its source (sentinel intact)");
 
     return ok ? 0 : 1;
 }
