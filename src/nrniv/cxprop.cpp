@@ -1,7 +1,6 @@
-#include "arraypool.h"   // ArrayPool
-#include "hocdec.h"      // Datum
-#include "section.h"     // Section
-#include "structpool.h"  // Pool
+#include "neuron/container/pool.hpp"
+#include "hocdec.h"   // Datum
+#include "section.h"  // Section
 #include "../neuron/model_data.hpp"
 
 #include <memory>
@@ -10,8 +9,8 @@
 // allocate and free Datum arrays for nrniv this allows for the possibility of
 // greater cache efficiency
 
-using CharArrayPool = ArrayPool<char>;
-using DatumArrayPool = ArrayPool<Datum>;
+using CharArrayPool = Pool<char>;
+using DatumArrayPool = Pool<Datum>;
 using SectionPool = Pool<Section>;
 
 static SectionPool* secpool_;
@@ -34,8 +33,8 @@ Datum* nrn_prop_datum_alloc(int type, int count, Prop* p) {
     if (!datumpools()[type]) {
         datumpools()[type] = std::make_unique<DatumArrayPool>(1000, count);
     }
-    assert(datumpools()[type]->d2() == count);
-    p->_alloc_seq = datumpools()[type]->ntget();
+    assert(datumpools()[type]->subcount() == count);
+    p->_alloc_seq = datumpools()[type]->total_allocs();
     auto* const ppd = datumpools()[type]->alloc();  // allocates storage for the datums
     for (int i = 0; i < count; ++i) {
         // Call the Datum constructor
@@ -48,7 +47,7 @@ int nrn_mechanism_prop_datum_count(int type) {
     if (type >= datumpools().size() || datumpools()[type] == nullptr) {
         return 0;
     }
-    return datumpools()[type]->d2();
+    return datumpools()[type]->subcount();
 }
 
 void nrn_prop_datum_free(int type, Datum* ppd) {
@@ -58,7 +57,7 @@ void nrn_prop_datum_free(int type, Datum* ppd) {
         auto* const datumpool = datumpools()[type].get();
         assert(datumpool);
         // Destruct the Datums
-        auto const count = datumpool->d2();
+        auto const count = datumpool->subcount();
         for (auto i = 0; i < count; ++i) {
             ppd[i].~Datum();
         }
