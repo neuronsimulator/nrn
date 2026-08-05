@@ -49,6 +49,7 @@ Immediately after `/new` or when the topic stabilizes:
 | `GPU-P4-density` | setup-tree-matrix + lastpart-nonvint launch density |
 | `GPU-P4-multirank` | Multi-rank GPU share / MPS (ops closed on tip) |
 | `GPU-P4-traub` | Traub 1/10 identity + timing (product mix with ringtest/dentate) |
+| `GPU-P4-traub-harness` | Traub product harness/ctest (closed on tip) |
 | `GPU-hygiene` | full-ctest noise not native product |
 
 **One living session per phase** (or cluster). Prefer **resume** that named session until the phase Status is done. When context is bloated or the agent is lost: **end checklist below → `/new` → paste the phase starting prompt** — do **not** resume a year-old auto-title.
