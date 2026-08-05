@@ -60,6 +60,7 @@ Section* nrn_section_parent(Section* sec);
 Section* nrn_section_trueparent(Section* sec);
 Section* nrn_section_child(Section* sec);
 Section* nrn_section_sibling(Section* sec);
+int nrn_sectionlist_to_array(nrn_Item* sl, Section** buf, int maxlen);
 bool nrn_section_is_active(const Section* sec);
 void nrn_section_ref(Section* sec);
 void nrn_section_unref(Section* sec);
