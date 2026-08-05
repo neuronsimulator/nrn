@@ -710,6 +710,18 @@ Functions, objects, and the stack
 
     :param sym: Pointer to the symbol to push.
 
+.. c:function:: Symbol* nrn_symbol_pop(void)
+
+    Pop a Symbol from the top of the stack.
+
+    The interpreter puts a Symbol on the stack when accessing an object
+    component (reading or assigning ``pyobj.attr``); a binding that unwinds
+    such a stack frame uses this to pop the attribute's Symbol. Use
+    :c:func:`nrn_stack_type` to confirm the top is a ``STACK_IS_SYM`` entry
+    before popping.
+
+    :returns: The Symbol from the top of the stack.
+
 .. c:function:: int nrn_symbol_type(const Symbol* sym)
 
     Get the type of a symbol (e.g., function, variable, mechanism).
@@ -972,6 +984,24 @@ Functions, objects, and the stack
     Used to retrieve function/method return values. Use :c:func:`nrn_stack_type` to check the type
     before popping, or use the type of the function/method to know the expected return type in
     advance.
+
+.. c:function:: Object* nrn_object_pop_safe(void)
+
+    Pop an object from the stack, tolerating a nil object reference.
+
+    Same as :c:func:`nrn_object_pop`, except it returns ``NULL`` for a nil
+    object reference instead of crashing. :c:func:`nrn_object_pop`
+    unconditionally takes a reference on the popped object, which dereferences
+    a ``NULL`` when the stack entry is a nil ``objref``. Use this when the stack
+    may carry a nil object -- for example when unwinding a HOC-to-Python
+    write-back whose right-hand side is an unset ``objref``.
+
+    :returns: Pointer to the object from the top of the stack, or ``NULL`` if it
+        is a nil object reference.
+
+    As with :c:func:`nrn_object_pop`, a non-``NULL`` result is reference-counted
+    and should be released with :c:func:`nrn_object_unref` when no longer
+    needed.
 
 .. c:function:: nrn_stack_types_t nrn_stack_type(void)
 

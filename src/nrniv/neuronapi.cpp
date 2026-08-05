@@ -341,6 +341,14 @@ void nrn_symbol_push(Symbol* sym) {
     hoc_pushpx(sym->u.pval);
 }
 
+Symbol* nrn_symbol_pop(void) {
+    // Pop a Symbol (a STACK_IS_SYM entry) off the interpreter stack. Interpreter
+    // frames for object-component access (e.g. reading or assigning pyobj.attr)
+    // carry the attribute's Symbol on the stack; a binding that unwinds such a
+    // frame needs to pop it. Public counterpart to the internal hoc_spop.
+    return hoc_spop();
+}
+
 void nrn_double_push(double val) {
     hoc_pushx(val);
 }
@@ -395,6 +403,24 @@ Object* nrn_object_pop(void) {
     new_ob_ptr->refcount++;
     hoc_tobj_unref(obptr);
     return new_ob_ptr;
+}
+
+Object* nrn_object_pop_safe(void) {
+    // Like nrn_object_pop, but returns NULL for a nil object reference instead
+    // of crashing. nrn_object_pop unconditionally does (*obptr)->refcount++ to
+    // hand back a reference, which dereferences NULL when the stack entry is a
+    // nil objref. Unwinding a stack that may carry a nil object -- e.g. the
+    // HOC-to-Python write-back path, where an objref RHS can be nil -- needs a
+    // pop that tolerates it. The stack-slot handling is identical to
+    // nrn_object_pop; only the ref is guarded. As there, a non-NULL result is
+    // reffed and should be unref'd (nrn_object_unref) when no longer needed.
+    Object** obptr = hoc_objpop();
+    Object* ob = *obptr;
+    if (ob) {
+        ob->refcount++;
+    }
+    hoc_tobj_unref(obptr);
+    return ob;
 }
 
 nrn_stack_types_t nrn_stack_type(void) {

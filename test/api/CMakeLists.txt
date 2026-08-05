@@ -9,6 +9,7 @@ foreach(
   object_ptr_push.cpp
   segment_diam.cpp
   sections.cpp
+  stack_pops.cpp
   symbol_object_string.cpp
   vclamp.cpp)
   string(REPLACE "." "_" api_test_name "${api_test_file}")
