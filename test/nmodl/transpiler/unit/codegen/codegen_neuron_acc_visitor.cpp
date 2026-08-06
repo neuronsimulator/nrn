@@ -242,6 +242,11 @@ SCENARIO("NEURON OpenACC codegen emits offload pragmas", "[codegen][neuron][acc]
         }
     }
 
+    // Dentate SEGV (2026-08-06): product covers (1) host-captured _nrn_celsius in
+    // ACC CURRENT/STATE (not *(inst.celsius)) and (2) stream wait after Eigen
+    // Newton STATE (Session E async). Reduced unit harness lacks full SymPy Eigen
+    // + neuron_global wiring; acceptance is reduced_dentate_native 400 spikes.
+
     GIVEN("STATE-only ASSIGNED intermediates (Traub NMDA Mg_factor shape)") {
         // A1_/A2_ written in STATE procedure, not live for CURRENT → stack temps.
         // Mg_unblocked written in STATE but CURRENT reads it → remains SoA present.

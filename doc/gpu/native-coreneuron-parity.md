@@ -163,6 +163,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-08-04 | GPU-P4-traub-residual | — | **Residual #16 re-smoke + ion SoA explor (no tip-merge):** tip multi-warm no-gap **~11.27–11.66 s** (settled ~**11.3 s**; ~**1.13×** CN ~10). Phase: nonvint **2.63 s**, setup-rhs **2.18 s**, deliver-nrb **0.35 s**. ACC_TIME (instrumented wall ~20 s): STATE sum ~**3.3 s** (NMDA 122 µs, naf 83 µs, 29 mechs); CURRENT sum ~**2.5 s**; prepare_nonvint `_t` update only ~**14 ms**. STATE already force-inline TABLE. Ion SoA index explor (CN-style base+int at upload): indices in-bounds, but GPU **illegal address** with deviceptr of device SoA base; dptr-only fallback green. **Reverted.** Next: ion index via host present (RANGE shape) or accept ~1.13× and product harness. |
 | 2026-08-04 | GPU-P4-traub-residual | — | **Residual #16 ion SoA host-present (on tip; wall flat):** CN-style `base[idx[id]]` with **host** `present(base[:n], idx[:m])` (RANGE shape; not deviceptr of device base). Upload builds indices when USEION pdata lands in one float SoA; fallback dptr chase. Unit ACC ion present. Multi-warm ~**11.35–11.70 s** (**flat** vs ~11.3); setup-rhs ~**2.18 s** flat. **4474** exact; ringtest noise-only. Residual still real STATE/CURRENT math (~1.13× CN). |
 | 2026-08-04 | GPU-P4-traub-harness | — | **Traub product harness/ctest:** `test/external/traub/run_traub_native.sh` + refs (no-gap **4474**, gap **7873** sorted). Model stays at `~/models/82894` (`NRN_TRAUB_MODEL`); CTest `traub_native::neuron_gpu_native` / `_gap` (skip 77 if model missing; RESOURCE_LOCK gpu). ctest no-gap **Passed ~18 s**; gap **Passed ~19 s**. Docs: `docs/dev/native-gpu-build.rst`. No density reopen. |
+| 2026-08-06 | GPU-P3-dentate-segv | — | **Dentate native SEGV closed:** first psolve after stdinit. (1) ACC CURRENT/STATE `*(inst.celsius)` host pointer → Invalid permissions SEGV; product host-captures `_nrn_celsius`. (2) Eigen Newton STATE async without wait raced next mechs; product `wait(stream)` after Eigen STATE only (Session E exception). 1-rank **400** spikes; `reduced_dentate_native::neuron_gpu_native` green ~4.6 s. |
 
 ---
 
@@ -834,7 +835,7 @@ Commit locally without push. Update Status/Next before exit.
 
 ## Next (one line — update every session end)
 
-**Next:** Product bars closed (ringtest **688** + dentate **400** + Traub **4474/7873** ctest). Density ~**1.13× CN** is real STATE/CURRENT math — new residual only with a measured wall hypothesis. Optional: gap multi-warm re-smoke, platform/debug toolkit. Do not re-open ion SoA / net_buf / NSB pending.
+**Next:** Product bars closed (ringtest **688** + dentate **400** + Traub **4474/7873** ctest). Dentate SEGV (2026-08-06) closed: host-captured `_nrn_celsius` + Eigen STATE stream wait. Density ~**1.13× CN** is real STATE/CURRENT math — new residual only with a measured wall hypothesis. Optional: re-fill dentate GPU cells in perf matrix. Do not re-open ion SoA / net_buf / NSB pending.
 
 ### Starting prompt — Traub product harness (closed 2026-08-04; archive)
 

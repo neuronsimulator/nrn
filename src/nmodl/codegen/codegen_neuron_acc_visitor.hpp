@@ -172,7 +172,8 @@ class CodegenNeuronAccVisitor: public CodegenNeuronCppVisitor {
     /**
      * Session A residual: force-inlining a unique/safe STATE specialized
      * procedure body into the STATE loop (hand-edit shape). Prefer present
-     * `hh_global` / bare celsius over `inst.global` / `*(inst.celsius)`.
+     * `hh_global` / host-captured `_nrn_celsius` over `inst.global` /
+     * `*(inst.celsius)` (dentate ccanl SEGV on host pointer).
      */
     mutable bool inlining_state_specialized_body_{false};
 

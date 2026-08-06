@@ -2712,6 +2712,12 @@ void CodegenNeuronAccVisitor::print_nrn_state() {
     printer->add_line("double const _nrn_thread_t = nt->_t;");
     printer->add_line("(void) _nrn_thread_t;");  // unused when STATE does not reference t
     use_host_captured_t_ = true;
+    // Host-captured neuron globals (celsius, …) — see get_variable_name.
+    for (auto const& [var, type]: info.neuron_global_variables) {
+        auto const name = var->get_name();
+        printer->fmt_line("{} const _nrn_{} = {};", type, name, name);
+        printer->fmt_line("(void) _nrn_{};", name);
+    }
 
     // Device/host pointer to GLOBAL store for Eigen residual (after copyin).
     // Pass into functors — host inst.global-> is invalid on device.
@@ -2851,7 +2857,13 @@ void CodegenNeuronAccVisitor::print_nrn_state() {
         printer->add_line(text);
     }
 
-    printer->pop_block();
+    printer->pop_block();  // for id
+    // Eigen Newton STATE is heavy and async(stream). Without a wait, later mechs
+    // can SEGV (dentate: ccanl Eigen then crash after Exp2Syn before CadepK).
+    // Session E defers light per-mech waits; Eigen is the exception.
+    if (info.eigen_newton_solver_exist || info.eigen_linear_solver_exist) {
+        print_device_stream_wait();
+    }
     state_kernel_locals_active_ = false;
     state_local_v_active_ = false;
     print_kernel_data_present_annotation_block_end();
@@ -3033,6 +3045,12 @@ void CodegenNeuronAccVisitor::print_nrn_cur() {
     printer->add_line("auto nodecount = _ml_arg->nodecount;");
     printer->add_line("double const _nrn_thread_t = nt->_t;");
     use_host_captured_t_ = true;
+    // Host-captured neuron globals (celsius, …) — see get_variable_name.
+    for (auto const& [var, type]: info.neuron_global_variables) {
+        auto const name = var->get_name();
+        printer->fmt_line("{} const _nrn_{} = {};", type, name, name);
+        printer->fmt_line("(void) _nrn_{};", name);
+    }
     if ((info.net_send_used || info.net_event_used) && !info.artificial_cell) {
         printer->add_line(
             "neuron::gpu::net_send_buffer_ensure_for_events(_ml_arg, nodecount);");
@@ -3307,14 +3325,22 @@ std::string CodegenNeuronAccVisitor::get_variable_name(const std::string& name,
     if (current_local_v_active_ && (name == "v" || name == naming::VOLTAGE_UNUSED_VARIABLE)) {
         return inlining_current_body_ ? "_cur_v" : "v";
     }
-    // Force-inlined STATE rates: bare neuron globals (celsius), not *(inst.celsius).
-    if (inlining_state_specialized_body_) {
+    // ACC CURRENT/STATE (and force-inlined bodies inside them): host-captured
+    // neuron globals (celsius), not *(inst.celsius).
+    // make_instance stores host &::celsius; device dereference SEGVs (dentate
+    // ccanl Eigen STATE — host PC in CUDA ---p mapping, "Invalid permissions").
+    // Bare `celsius` fails nvlink for external mechs (undefined device symbol).
+    // Capture host value as `_nrn_celsius` next to `_nrn_thread_t` (firstprivate).
+    // Gate on use_host_captured_t_ so standalone rates_*_state definitions keep
+    // host-style names (those paths are force-inlined into STATE when on GPU).
+    if (use_host_captured_t_ &&
+        (use_present_fp_indexing_ || inlining_state_specialized_body_)) {
         auto const iter = std::find_if(
             info.neuron_global_variables.begin(),
             info.neuron_global_variables.end(),
             [&name](auto const& entry) { return entry.first->get_name() == name; });
         if (iter != info.neuron_global_variables.end()) {
-            return name;
+            return fmt::format("_nrn_{}", name);
         }
     }
     return CodegenNeuronCppVisitor::get_variable_name(name, use_instance);
