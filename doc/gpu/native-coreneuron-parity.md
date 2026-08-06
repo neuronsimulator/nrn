@@ -2,7 +2,7 @@
 
 **Portfolio:** GPU-native (feature)  
 **Tree:** `~/neuron/nrngpu`  
-**Living tip (2026-08-04):** `local/gpu-native` @ H4 + Session B + Session E + multi-rank MPS + Eigen + prcell morph + D→H fence + threshold header + slim JACOB + Traub ACC identity + density through #16 + **Traub product harness/ctest**. Exclusive ringtest multi-warm ~**1.14–1.17 s**; dentate 4-rank MPS psolve ~**1.5–1.6 s**; Traub 1/10 **4474 / 7873** exact via `traub_native::neuron_gpu_native{,_gap}`; Traub multi-warm no-gap ~**11.3–11.7 s** (CN ~10 ≈ **~1.13×**).  
+**Living tip (2026-08-06):** `local/gpu-native` @ H4 + Session B + Session E + multi-rank MPS + Eigen + prcell morph + D→H fence + threshold header + slim JACOB + Traub ACC identity + density through #16 + **Traub product harness/ctest** + dentate SEGV fix. Exclusive ringtest multi-warm ~**1.14–1.17 s**; dentate 4-rank MPS psolve ~**1.1–1.6 s** (product **400**); Traub 1/10 **4474 / 7873** exact via `traub_native::neuron_gpu_native{,_gap}`; Traub multi-warm no-gap ~**10.4 s** (CN ~9.4 ≈ **~1.10×**); gap multi-warm ~**11.6–12.1 s** (CN ~10.9 ≈ **~1.07×**; was ~21 s pre-density re-smoke).  
 **Parked explor:** `local/gpu-P4-hotpath-netreceive` + `local/gpu-p4-phase-c-remeasure` (superseded by tip residual #14); `local/gpu-p4-exclusive-residual` (slim JACOB archive, **merged to tip** as hygiene); `local/gpu-p4-setup-rhs-density` (Session E archive, **merged to tip**)  
 **Handoffs:** `GROK-GPU-NATIVE.md`, `AGENTS.md`, `~/neuron/notes/PORTFOLIO.md`  
 **This file:** ordered steps you can re-open without chat memory. Update **Status** at end of each session.
@@ -164,6 +164,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-08-04 | GPU-P4-traub-residual | — | **Residual #16 ion SoA host-present (on tip; wall flat):** CN-style `base[idx[id]]` with **host** `present(base[:n], idx[:m])` (RANGE shape; not deviceptr of device base). Upload builds indices when USEION pdata lands in one float SoA; fallback dptr chase. Unit ACC ion present. Multi-warm ~**11.35–11.70 s** (**flat** vs ~11.3); setup-rhs ~**2.18 s** flat. **4474** exact; ringtest noise-only. Residual still real STATE/CURRENT math (~1.13× CN). |
 | 2026-08-04 | GPU-P4-traub-harness | — | **Traub product harness/ctest:** `test/external/traub/run_traub_native.sh` + refs (no-gap **4474**, gap **7873** sorted). Model stays at `~/models/82894` (`NRN_TRAUB_MODEL`); CTest `traub_native::neuron_gpu_native` / `_gap` (skip 77 if model missing; RESOURCE_LOCK gpu). ctest no-gap **Passed ~18 s**; gap **Passed ~19 s**. Docs: `docs/dev/native-gpu-build.rst`. No density reopen. |
 | 2026-08-06 | GPU-P3-dentate-segv | — | **Dentate native SEGV closed:** first psolve after stdinit. (1) ACC CURRENT/STATE `*(inst.celsius)` host pointer → Invalid permissions SEGV; product host-captures `_nrn_celsius`. (2) Eigen Newton STATE async without wait raced next mechs; product `wait(stream)` after Eigen STATE only (Session E exception). 1-rank **400** spikes; `reduced_dentate_native::neuron_gpu_native` green ~4.6 s. |
+| 2026-08-06 | GPU-P4-density-resmoke | — | **Optional density re-smoke (no new residual):** product dentate 4-rank MPS **Passed** (~4.2 s, psolve ~1.06 s). Traub product **4474** / **7873** exact. Multi-warm no-gap native **10.49 / 10.36 s** vs CN **9.47 / 9.38 s** (~**1.10×**). Gap multi-warm native **12.08 / 11.64 s** vs CN **11.03 / 10.85 s** (~**1.07×**; was ~21 s historical — density #1–#16 never re-smoked on gap). Warm phases (no-gap): nonvint ~**2.62 s**, setup-rhs ~**2.13 s**, matrix-solver ~**1.31 s**, deliver-events ~**0.76 s**. No actionable residual without a measured wall hypothesis beyond real STATE/CURRENT math; do not re-open ion SoA / net_buf / NSB. |
 
 ---
 
@@ -743,6 +744,7 @@ Milestone B (CURRENT specialization): `nrn_cur_hh` ≈ hand ~13 — **met** (~14
 15. **NSB pending self-receive (closed 2026-08-04 on tip; wall win):** Sub-buckets reclassified deliver-nrb residual as **NSB host SelfEvent+TQ** (~1.5 s), not NRB order/upload (~0.16 s combined). Type-0 device `net_send` → pending min-heap → promote into NRB at deliver til (no SelfEvent/TQ). deliver-nrb **~1.78→~0.37 s**; multi-warm **~13→~11.6–11.8 s** (~**1.16×** CN). **4474** + **688@100**. Restriction: pending path does not support `net_move` of flag==1 self-events (Traub NMDA OK).  
 16. **Ion SoA host-present (closed 2026-08-04 on tip; wall flat):** CN-style ion `base[idx]` with host present (not deviceptr). Product green 4474 + 688 noise. Multi-warm still ~**11.3–11.7 s** (~**1.13×** CN). Residual is real STATE/CURRENT math + launch density. Do not re-open ion dptr/SoA / net_buf / NSB pending / area SoA / stack-temp / cad / jacob / ion_cur.
 17. **Traub product harness/ctest (closed 2026-08-04 on tip):** `test/external/traub/` — script + refs + CMake. Product bars: ringtest **688**, dentate **400**, Traub **4474/7873** all ctest-native. Model stays out of tree.
+18. **Density re-smoke post-SEGV (closed 2026-08-06; no tip code):** Traub multi-warm no-gap ~**10.4 s** / CN ~**9.4 s** (~**1.10×**); gap multi-warm ~**11.6–12.1 s** / CN ~**10.9 s** (~**1.07×**; historical gap ~21 s was stale). Dentate product reconfirmed green. Residual still real STATE/CURRENT math + launch density — **no new residual** without a measured wall hypothesis.
 
 ---
 
@@ -835,7 +837,7 @@ Commit locally without push. Update Status/Next before exit.
 
 ## Next (one line — update every session end)
 
-**Next:** Product bars closed (ringtest **688** + dentate **400** + Traub **4474/7873** ctest). Dentate SEGV (2026-08-06) closed: host-captured `_nrn_celsius` + Eigen STATE stream wait. Density ~**1.13× CN** is real STATE/CURRENT math — new residual only with a measured wall hypothesis. Optional: re-fill dentate GPU cells in perf matrix. Do not re-open ion SoA / net_buf / NSB pending.
+**Next:** Product bars closed (ringtest **688** + dentate **400** + Traub **4474/7873** ctest). Density re-smoke 2026-08-06: no-gap ~**1.10×** CN, gap multi-warm ~**1.07×** CN (was ~2× stale). Remaining wall is real STATE/CURRENT math — new residual only with a measured wall hypothesis. Optional: re-fill dentate GPU cells in perf matrix / other portfolio row. Do not re-open ion SoA / net_buf / NSB pending.
 
 ### Starting prompt — Traub product harness (closed 2026-08-04; archive)
 
@@ -1092,4 +1094,4 @@ phases=0 ACC wait **closed**. Threshold header hygiene **closed**.
 Slim JACOB **closed** (hygiene on tip).
 **Default next:** product bars closed (ringtest + dentate + Traub ctest). Optional
 new density residual only with measured wall hypothesis, or other portfolio row.
-Phase C re-parked. Traub identity + density #1–#16 + harness closed.
+Phase C re-parked. Traub identity + density #1–#16 + harness + 2026-08-06 re-smoke closed.
