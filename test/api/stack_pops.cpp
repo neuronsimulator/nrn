@@ -31,6 +31,15 @@ int main(void) {
 
     bool ok = true;
 
+    // Push a sentinel FIRST, below everything else the test does. The stack is
+    // LIFO, so if every push below is matched by exactly one pop the sentinel
+    // resurfaces on top at the end; recovering it then proves the pops neither
+    // over-popped into what lay beneath them nor left anything behind. A
+    // sentinel pushed *after* the pops could prove neither -- it would only ever
+    // probe the current top.
+    const double SENTINEL = 424242.0;
+    nrn_double_push(SENTINEL);
+
     // nrn_symbol_pop returns the Symbol on top of the stack, LIFO.
     Symbol* v = nrn_symbol("v");
     Symbol* t = nrn_symbol("t");
@@ -57,9 +66,10 @@ int main(void) {
     nrn_object_push(nullptr);
     ok &= check(nrn_object_pop() == nullptr, "object pop returns NULL for a nil objref");
 
-    // Stack balance: the pops above consumed exactly what was pushed.
-    nrn_double_push(5.0);
-    ok &= check(nrn_double_pop() == 5.0, "stack is balanced after the pops");
+    // Balance: with every push above consumed by exactly one pop, the sentinel
+    // from the very start is what remains on top.
+    ok &= check(nrn_double_pop() == SENTINEL,
+                "sentinel from before the pops is intact -- the stack is balanced");
 
     return ok ? 0 : 1;
 }
