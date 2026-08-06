@@ -5895,6 +5895,12 @@ Parallel Transfer
             the diff between corresponding files from different runs
             (or host fixed-step vs native GPU).
 
+            For comparing two ``.nrndat`` files, prefer the semantic comparator
+            ``python -m neuron.debug.rdcellstate`` (or ``rdcellstate`` if on
+            ``PATH``); see Diagnosis and Debugging in the install docs. The
+            legacy HOC ``rdcellstate()`` in ``prcellstate.hoc`` is line-oriented
+            and can misalign when dump sizes or order differ.
+
             **Cell-local node indices (``inode``).**  Every topology, voltage, and
             mechanism line uses a *cell-local* compartment index ``0 .. n_nodes-1``,
             not a thread array index.  The same morphological compartment must get
