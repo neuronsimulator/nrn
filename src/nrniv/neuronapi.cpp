@@ -230,6 +230,89 @@ void nrn_rangevar_push(Symbol* sym, Section* sec, double x) {
     hoc_push(nrn_rangepointer(sec, sym, x));
 }
 
+int nrn_setpointer_pop(Symbol* pointer_sym,
+                       Section* sec,
+                       double x,
+                       char* error_msg,
+                       size_t error_msg_size) {
+    if (error_msg && error_msg_size > 0) {
+        error_msg[0] = '\0';
+    }
+    auto fail = [&](const char* msg) {
+        if (error_msg && error_msg_size > 0) {
+            std::snprintf(error_msg, error_msg_size, "%s", msg);
+        }
+        return 1;
+    };
+    // The source pointer is whatever the caller pushed (e.g. via
+    // nrn_rangevar_push), which reuses every existing way of obtaining one. Pop
+    // it first, before the validations below, so the stack stays balanced even
+    // on the error paths. It is the same data handle a dparam slot holds.
+    neuron::container::data_handle<double> src = hoc_pop_handle<double>();
+    // Only a mechanism POINTER range variable can be a setpointer target; the
+    // slot it wires lives in the mechanism's dparam array (mirrors the guard in
+    // nrn_pointer_assign / nrnpy_nrn.cpp).
+    if (!pointer_sym || pointer_sym->type != RANGEVAR || pointer_sym->subtype != NRNPOINTER) {
+        return fail("target is not a POINTER range variable");
+    }
+    // Locate the mechanism instance that owns this POINTER at (sec, x).
+    Node* const nd = node_exact(sec, x);
+    Prop* prop = nullptr;
+    for (Prop* p = nd->prop; p; p = p->next) {
+        if (p->_type == pointer_sym->u.rng.type) {
+            prop = p;
+            break;
+        }
+    }
+    if (!prop) {
+        return fail("the POINTER's mechanism is not present at the target segment");
+    }
+    // Wire the POINTER to the popped source handle (stable across data
+    // permutation), the same assignment nrn_pointer_assign performs without the
+    // PyObject* source.
+    prop->dparam[pointer_sym->u.rng.index] = src;
+    return 0;
+}
+
+int nrn_pp_setpointer_pop(Object* pp, const char* name, char* error_msg, size_t error_msg_size) {
+    if (error_msg && error_msg_size > 0) {
+        error_msg[0] = '\0';
+    }
+    auto fail = [&](const char* msg) {
+        if (error_msg && error_msg_size > 0) {
+            std::snprintf(error_msg, error_msg_size, "%s", msg);
+        }
+        return 1;
+    };
+    // Pop the source first (as nrn_setpointer_pop does) so the stack stays
+    // balanced on every error path below. It is the same data handle a dparam
+    // slot holds, obtained any way the stack supports (nrn_rangevar_push,
+    // nrn_property_push, ...).
+    neuron::container::data_handle<double> src = hoc_pop_handle<double>();
+    // A point process is addressed by its instance object, not by (sec, x):
+    // several point processes may share one location, so the segment alone
+    // cannot say which instance owns the POINTER slot. This is the difference
+    // from nrn_setpointer_pop, whose (sec, x) uniquely identifies the single
+    // density-mechanism instance at a segment.
+    if (!pp || !pp->ctemplate || !pp->ctemplate->is_point_) {
+        return fail("object is not a point process");
+    }
+    // Resolve the POINTER by name in the point process's own symbol table, the
+    // same lookup nrn_property_get uses (bare name, e.g. "vgap").
+    Symbol* pointer_sym = hoc_table_lookup(name, pp->ctemplate->symtable);
+    if (!pointer_sym || pointer_sym->type != RANGEVAR || pointer_sym->subtype != NRNPOINTER) {
+        return fail("target is not a POINTER variable of this point process");
+    }
+    auto* const pnt = ob2pntproc_0(pp);
+    if (!pnt || !pnt->prop) {
+        return fail("point process is not located in a section");
+    }
+    // Wire the POINTER to the popped source handle -- the same slot assignment
+    // nrn_setpointer_pop and nrn_pointer_assign perform, minus the PyObject*.
+    pnt->prop->dparam[pointer_sym->u.rng.index] = src;
+    return 0;
+}
+
 nrn_Item* nrn_allsec(void) {
     return static_cast<nrn_Item*>(section_list);
 }
