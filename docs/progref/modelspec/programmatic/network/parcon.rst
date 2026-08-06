@@ -5886,20 +5886,22 @@ Parallel Transfer
             ``pc.prcellstate(gid, "suffix")``
 
         Description:
-            Creates the file <gid>_suffix.nrndat with all the range variable
+            Creates the file ``<gid>_<suffix>.nrndat`` with all the range variable
             values and synapse/NetCon information associated with the gid.
-            More complete than the HOC version of prcellstate.hoc in the standard
-            library but a more terse in regard to names of variables. The purpose
-            is for diagnosing the reason why a spike raster for a simulation is
-            not the same for different nhost or gid distribution. One examines
-            the diff between corresponding files from different runs
-            (or host fixed-step vs native GPU).
+            More complete than the HOC version of ``prcellstate.hoc`` in the standard
+            library but more terse regarding names of variables. The purpose
+            is for diagnosing why a spike raster differs across nhost, gid
+            distribution, nthread, or backend (host fixed-step vs native GPU,
+            NEURON vs CoreNEURON).
 
             For comparing two ``.nrndat`` files, prefer the semantic comparator
             ``python -m neuron.debug.rdcellstate`` (or ``rdcellstate`` if on
-            ``PATH``); see Diagnosis and Debugging in the install docs. The
+            ``PATH``); see :doc:`/install/debug` (Diagnosis and Debugging). The
             legacy HOC ``rdcellstate()`` in ``prcellstate.hoc`` is line-oriented
-            and can misalign when dump sizes or order differ.
+            and can misalign when dump sizes or order differ. Call
+            ``pc.prcellstate`` at a chosen time (e.g. after ``finitialize`` or at
+            ``tstop``), or arm mid-timestep phase dumps with
+            :meth:`ParallelContext.prcellstate_checkpoint`.
 
             **Cell-local node indices (``inode``).**  Every topology, voltage, and
             mechanism line uses a *cell-local* compartment index ``0 .. n_nodes-1``,
@@ -5919,7 +5921,16 @@ Parallel Transfer
             prints ``T`` as the same cell-local ``inode`` used on voltage and
             mechanism lines for the spike-generator compartment (NEURON and
             CoreNEURON).  Older dumps (pre hygiene fix) printed ``local_inode - 1``;
-            parsers that still add one need updating.
+            ``rdcellstate --legacy-threshold-header`` remaps those for compare.
+
+            **Matrix columns.**  This tree writes topology as
+            ``inode parent area a b d rhs`` (Hines matrix coefficients included).
+            Classic master / CoreNEURON dumps may omit ``d rhs`` (``a b`` only).
+            When comparing mixed formats, use ``rdcellstate --ignore-matrix``.
+
+            On native GPU, ``prcellstate`` fences device streams and downloads
+            state needed for the dump before writing (diagnostic path; not the
+            fixed-step hot path).
 
             The format of the file is:
 
@@ -5949,13 +5960,114 @@ Parallel Transfer
 
         Syntax:
             ``pc.prcellstate(gid, "suffix")``
-        
-        
+
         Description:
             Same as the Python method. See that tab for the cell-local ``inode``
-            numbering rule (morph-stable BFS), threshold header quirk, and
-            file layout.
-        
+            numbering rule (morph-stable BFS), threshold header, matrix columns,
+            and file layout.
+
+----
+
+.. method:: ParallelContext.prcellstate_checkpoint
+
+    .. tab:: Python
+
+        Syntax:
+
+            ``pc.prcellstate_checkpoint(gid, step)``
+
+            ``pc.prcellstate_checkpoint(gid, -1, t)``
+
+        Description:
+            Arm a one-shot series of phase-tagged :meth:`ParallelContext.prcellstate`
+            dumps during the next fixed-step ``psolve`` for the cell with the given
+            output ``gid``. Use this after spike comparison and end-of-run dumps
+            have bracketed the failing step (see :doc:`/install/debug`).
+
+            **Trigger by step index** (0-based from the start of the current
+            ``psolve``)::
+
+                pc.prcellstate_checkpoint(171, 56)   # 57th fixed step of psolve
+                pc.psolve(tstop)
+
+            **Trigger by simulation time** (third argument; second argument is
+            ignored when the time form is used—pass ``-1`` for clarity)::
+
+                pc.prcellstate_checkpoint(171, -1, 1.425)
+                pc.psolve(tstop)
+
+            Time match uses tolerance ``0.51 * dt`` on the thread that owns the
+            gid. Pass ``gid = -1`` to clear (same as
+            :meth:`ParallelContext.prcellstate_checkpoint_clear`).
+
+            When the armed step or time is reached, NEURON writes one ordinary
+            ``.nrndat`` per fixed-step phase (same layout as ``prcellstate``),
+            with a phase-aware suffix:
+
+            ================= ===================================================
+            Phase             When (within the fixed step)
+            ================= ===================================================
+            ``post_setup``    After setup of the tree matrix (rhs / d)
+            ``post_solve``    After triangular solve and voltage update
+            ``pre_nonvint``   After lastpart play / scatter, before SOLVE/nonvint
+            ``post_nonvint``  After SOLVE/nonvint (STATE integration)
+            ================= ===================================================
+
+            Output names:
+
+            - step arm: ``<gid>_<cpu|gpu>_s<step>_<phase>.nrndat``
+            - time arm: ``<gid>_<cpu|gpu>_t<t>_<phase>.nrndat``
+
+            The ``cpu`` / ``gpu`` tag reflects whether native GPU is enabled at
+            dump time. Only the ``NrnThread`` that owns the gid writes; other
+            threads skip. After ``post_nonvint`` the arm is spent (one shot for
+            that ``psolve``). Clear and re-arm for another step or run.
+
+            Compare phase pairs with ``rdcellstate``, e.g.::
+
+                rdcellstate 171_cpu_s56_post_setup.nrndat 171_gpu_s56_post_setup.nrndat
+                rdcellstate 171_cpu_s56_post_solve.nrndat 171_gpu_s56_post_solve.nrndat
+
+            The first phase whose dumps disagree is the earliest divergence
+            inside the step (setup vs solve vs nonvint).
+
+            This method is available on builds that include the checkpoint hooks
+            in the fixed-step path (including native GPU). Stock release trees
+            without those hooks only support end-of-run ``prcellstate``.
+
+    .. tab:: HOC
+
+        Syntax:
+
+            ``pc.prcellstate_checkpoint(gid, step)``
+
+            ``pc.prcellstate_checkpoint(gid, -1, t)``
+
+        Description:
+            Same as the Python method.
+
+----
+
+.. method:: ParallelContext.prcellstate_checkpoint_clear
+
+    .. tab:: Python
+
+        Syntax:
+            ``pc.prcellstate_checkpoint_clear()``
+
+        Description:
+            Disable any armed :meth:`ParallelContext.prcellstate_checkpoint` and
+            reset the per-``psolve`` step counter state used for arming. Safe to
+            call when nothing is armed.
+
+    .. tab:: HOC
+
+        Syntax:
+            ``pc.prcellstate_checkpoint_clear()``
+
+        Description:
+            Same as the Python method.
+
 ----
 
 ..  method:: ParallelContext.nrncore_write

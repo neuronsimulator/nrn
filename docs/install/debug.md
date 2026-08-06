@@ -41,22 +41,34 @@ spike; that gid (and time) is the focus. Tools such as ``sortspike`` plus
 ``diff``/``awk`` are enough; a dedicated spike-first helper may be added later.
 
 **2. End-of-run prcellstate at that gid.** Use
-[ParallelContext.prcellstate](../python/modelspec/programmatic/network/parcon.rst#ParallelContext.prcellstate)
+[ParallelContext.prcellstate](../progref/modelspec/programmatic/network/parcon.rst#ParallelContext.prcellstate)
 to write ``<gid>_<suffix>.nrndat`` after a short run. Time 0 after initialization
-is often a good place to start.
+is often a good place to start. Cell-local ``inode`` labels are morph-stable
+(BFS from the cell root), so host fixed-step vs native GPU (interleave permute)
+dumps can be compared without remapping compartments. The header line
+``T is the threshold node`` uses that same cell-local ``inode`` as the voltage
+lines for the spike compartment.
 
 **3. First time dumps disagree.** Walk or bisect ``tstop`` with paired runs until
 you find the latest time dumps still match and the earliest time they differ.
 That brackets the failing fixed step.
 
-**4. Phase checkpoints (conceptual; not an API on every build).** On some feature
-lines, dumps can be taken at named fixed-step phases
-(``post_setup`` → ``post_solve`` → ``pre_nonvint`` → ``post_nonvint``) so you can
-see which part of the step first diverges. Phase dumps are still ordinary
-``.nrndat`` files. **Do not assume** ``pc.prcellstate_checkpoint`` exists on a
-stock master/release build; if your tree does not provide phase arming, stay
-with steps 2–3 (end-of-run dump + ``tstop`` search). GPU feature-line docs may
-describe the arm API when present.
+**4. Phase checkpoints (mid-timestep).** When the build provides
+[ParallelContext.prcellstate_checkpoint](../progref/modelspec/programmatic/network/parcon.rst#ParallelContext.prcellstate_checkpoint)
+(native-GPU / fixed-step checkpoint hooks; not every historical release), arm a
+one-shot dump of the four named phases on the failing step or time::
+
+    pc.prcellstate_checkpoint(gid, step)           # 0-based step from psolve start
+    # or: pc.prcellstate_checkpoint(gid, -1, t)    # time trigger (±0.51*dt)
+    pc.psolve(tstop)
+    pc.prcellstate_checkpoint_clear()              # optional; arm is one-shot
+
+Phases, in order within a fixed step: ``post_setup`` → ``post_solve`` →
+``pre_nonvint`` → ``post_nonvint``. Files look like
+``<gid>_cpu_s56_post_setup.nrndat`` / ``<gid>_gpu_s56_post_setup.nrndat``
+(or ``_t1.425_…`` for a time arm). Compare each phase pair with ``rdcellstate``;
+the first disagreeing phase is the earliest divergence inside the step.
+If your tree has no ``prcellstate_checkpoint``, stay with steps 2–3.
 
 **5. Field-level compare with ``rdcellstate``.** Prefer the semantic comparator
 (not line-by-line HOC ``rdcellstate`` in ``prcellstate.hoc``, which misaligns when
@@ -76,20 +88,17 @@ Useful filters:
 - ``--ignore-unused`` — skip SOA ``*_unused`` fields (needs translated mod C++)
 - ``--ignore-matrix`` — skip Hines ``a,b,d,rhs``. Use when one dump has topology
   header ``inode parent area a b`` (classic master / CoreNEURON) and the other
-  includes ``d rhs`` (some feature-line dumps); otherwise missing ``d``/``rhs``
-  keys look like hard failures.
+  includes ``d rhs`` (this tree / some feature dumps); otherwise missing
+  ``d``/``rhs`` keys look like hard failures
+- ``--legacy-threshold-header`` — old dumps printed ``local_inode - 1`` in the
+  threshold header; map to the voltage line via ``header + 1``
+- ``--ignore-mech NAME`` — skip a mechanism by name (repeatable)
+- ``--top N`` — print the N largest absolute diffs (default 20)
 
 NetCon **payload** fields are not compared yet. If both files report
 ``netcons N`` and ``N`` differs, the tool prints a stderr warning.
 
 Exit code is 0 when no differences remain after filters, else 1.
-
-Compare dumps with a key-based tool (e.g. `rdcellstate.py`), not raw line
-diff when file layout or mechanism instance order may differ. Cell-local
-`inode` labels are morph-stable (BFS from root; see the `prcellstate` method
-docs) so host fixed-step vs native GPU (interleave permute) can be compared
-directly. The header line `T is the threshold node` uses the same cell-local
-`inode` as the voltage lines for the spike compartment.
 
 #### GDB
 If you normally run with ```python args``` and get a segfault...
