@@ -88,6 +88,7 @@ int nrn_pp_setpointer_pop(Object* pp, const char* name, char* error_msg, size_t 
  ****************************************/
 Symbol* nrn_symbol(const char* name);
 void nrn_symbol_push(Symbol* sym);
+Symbol* nrn_symbol_pop(void);
 int nrn_symbol_type(const Symbol* sym);
 int nrn_symbol_subtype(const Symbol* sym);
 double* nrn_symbol_dataptr(const Symbol* sym);

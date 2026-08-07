@@ -463,6 +463,14 @@ void nrn_symbol_push(Symbol* sym) {
     hoc_pushpx(sym->u.pval);
 }
 
+Symbol* nrn_symbol_pop(void) {
+    // Pop a Symbol (a STACK_IS_SYM entry) off the interpreter stack. Interpreter
+    // frames for object-component access (e.g. reading or assigning pyobj.attr)
+    // carry the attribute's Symbol on the stack; a binding that unwinds such a
+    // frame needs to pop it. Public counterpart to the internal hoc_spop.
+    return hoc_spop();
+}
+
 void nrn_double_push(double val) {
     hoc_pushx(val);
 }
@@ -511,12 +519,19 @@ void nrn_object_ptr_push(Object** obj_ref) {
 }
 
 Object* nrn_object_pop(void) {
-    // NOTE: the returned object should be unref'd when no longer needed
+    // Returns NULL for a nil object reference (an unset objref) rather than
+    // crashing: the ref-count bump that hands back a reference would otherwise
+    // dereference NULL. This matters when unwinding a stack that may carry a nil
+    // object -- e.g. the HOC-to-Python write-back path, where an objref RHS can
+    // be nil. A non-NULL result is reference-counted and should be unref'd
+    // (nrn_object_unref) when no longer needed.
     Object** obptr = hoc_objpop();
-    Object* new_ob_ptr = *obptr;
-    new_ob_ptr->refcount++;
+    Object* ob = *obptr;
+    if (ob) {
+        ob->refcount++;
+    }
     hoc_tobj_unref(obptr);
-    return new_ob_ptr;
+    return ob;
 }
 
 nrn_stack_types_t nrn_stack_type(void) {
