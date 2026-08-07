@@ -8,6 +8,7 @@ foreach(
   object_new_wrap.cpp
   object_ptr_push.cpp
   section_tree.cpp
+  sectionlist_to_array.cpp
   segment_diam.cpp
   sections.cpp
   stack_pops.cpp
