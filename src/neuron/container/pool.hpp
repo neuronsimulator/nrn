@@ -85,7 +85,6 @@ class Pool {
     int is_valid_ptr(void* v) const;
 
   private:
-    void grow_internal(long count);
     T* allocate_pool(long count);
     void deallocate_pool(T* p);
 
@@ -96,8 +95,6 @@ class Pool {
     long pool_size_{};
     long count_{};
     long subcount_{1};
-    long get_{};
-    long put_{};
     long nget_{};
     long total_allocs_{};
     Pool* chain_{};
@@ -126,7 +123,7 @@ Pool<T, Mutex>::Pool(long count, long subcount)
     pool_size_ = count_;
     freelist_.reserve(count_);
     for (long i = 0; i < count_; ++i) {
-        freelist_[i] = pool_ + i * subcount_;
+        freelist_.push_back(pool_ + i * subcount_);
     }
 }
 
@@ -138,35 +135,24 @@ Pool<T, Mutex>::~Pool() {
 
 template <typename T, bool Mutex>
 void Pool<T, Mutex>::grow(long count) {
-    grow_internal(count);
-    put_ = get_;
-}
-
-template <typename T, bool Mutex>
-void Pool<T, Mutex>::grow_internal(long count) {
-    assert(get_ == put_);
     Pool* p = new Pool(count, subcount_);
     chainlast_->chain_ = p;
     chainlast_ = p;
 
-    // Insert new items at the get_ position, shifting the rest right
-    std::vector<T*> new_freelist(count);
     for (long j = 0; j < count; ++j) {
-        new_freelist[j] = p->pool_ + j * subcount_;
+        freelist_.push_back(p->pool_ + j * subcount_);
     }
-    freelist_.insert(freelist_.begin() + get_, new_freelist.begin(), new_freelist.end());
-    put_ += count;
     count_ += count;
 }
 
 template <typename T, bool Mutex>
 T* Pool<T, Mutex>::alloc() {
     std::lock_guard<mutex_type> lock(mut_);
-    if (nget_ >= count_) {
-        grow_internal(count_);
+    if (freelist_.empty()) {
+        grow(freelist_.capacity());
     }
-    T* item = freelist_[get_];
-    get_ = (get_ + 1) % count_;
+    T* item = freelist_.back();
+    freelist_.pop_back();
     ++nget_;
     ++total_allocs_;
     return item;
@@ -176,8 +162,7 @@ template <typename T, bool Mutex>
 void Pool<T, Mutex>::hpfree(T* item) {
     std::lock_guard<mutex_type> lock(mut_);
     assert(nget_ > 0);
-    freelist_[put_] = item;
-    put_ = (put_ + 1) % count_;
+    freelist_.push_back(item);
     --nget_;
 }
 
@@ -186,18 +171,14 @@ void Pool<T, Mutex>::free_all() {
     std::lock_guard<mutex_type> lock(mut_);
     Pool* pp;
     nget_ = 0;
-    get_ = 0;
-    put_ = 0;
     for (pp = this; pp; pp = pp->chain_) {
         for (long i = 0; i < pp->pool_size_; ++i) {
-            freelist_[put_++] = pp->pool_ + i * subcount_;
+            freelist_.push_back(pp->pool_ + i * subcount_);
             if constexpr (pool_has_clear<T>::value) {
                 (pp->pool_ + i * subcount_)->clear();
             }
         }
     }
-    assert(put_ == count_);
-    put_ = 0;
 }
 
 template <typename T, bool Mutex>
