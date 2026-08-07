@@ -105,22 +105,28 @@ class Pool {
 template <typename T, bool Mutex>
 T* Pool<T, Mutex>::allocate_pool(long count) {
     T* p{};
-    p = static_cast<T*>(
-        nrn_cacheline_calloc(reinterpret_cast<void**>(&p), count * subcount_, sizeof(T)));
-    printf("%p allocate_pool: %p\n", this, p);
+    if(subcount_ > 1){
+        p = static_cast<T*>(
+            nrn_cacheline_calloc(reinterpret_cast<void**>(&p), count * subcount_, sizeof(T)));
+    }else{
+        p = new T[count];
+    }
     return p;
 }
 
 template <typename T, bool Mutex>
 void Pool<T, Mutex>::deallocate_pool(T* p) {
-    free(p);
+    if(subcount_ > 1){
+        free(p);
+    }else{
+        delete []p;
+    }
 }
 
 template <typename T, bool Mutex>
 Pool<T, Mutex>::Pool(long count, long subcount)
     : count_(count)
     , subcount_(subcount) {
-    printf("%p: count_: %ld, subcount_: %ld\n", this, count, subcount);
     pool_ = allocate_pool(count_);
     pool_size_ = count_;
     freelist_.reserve(count_);
@@ -158,13 +164,11 @@ T* Pool<T, Mutex>::alloc() {
     freelist_.pop_back();
     ++nget_;
     ++total_allocs_;
-    printf("%p alloc: %p\n", this, item);
     return item;
 }
 
 template <typename T, bool Mutex>
 void Pool<T, Mutex>::hpfree(T* item) {
-    printf("%p hpfree: %p\n", this, item);
     std::lock_guard<mutex_type> lock(mut_);
     assert(nget_ > 0);
     freelist_.push_back(item);
