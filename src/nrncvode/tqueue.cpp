@@ -7,7 +7,6 @@
 #include <section.h>
 
 #include "tqueue.hpp"
-#include "pool.hpp"
 
 #define PROFILE 0
 #include "profile.h"
@@ -107,6 +106,7 @@ void TQueue::forall_callback(void (*f)(const TQItem*, int)) {
     }
     sptree_->apply_all(f, nullptr);
     for (TQItem* q = binq_->first(); q; q = binq_->next(q)) {
+        printf("forall_callback: %p\n", q);
         f(q, 0);
     }
     MUTUNLOCK
