@@ -93,9 +93,47 @@
 #    REFERENCE_OUTPUT argument adds reference data files from the repository to
 #    the comparison job with the magic name "reference_file". Paths are
 #    specified relative to the root of the NEURON repository.
+#
+# Foreign-wheel mode (see test/foreign/): callers may set before including this file:
+#   NRN_TEST_SOURCE_ROOT   - NEURON source tree (default: PROJECT_SOURCE_DIR)
+#   NRN_TEST_BINARY_ROOT   - build tree for test outputs (default: PROJECT_BINARY_DIR)
+#   NRN_NRNIVMODL          - path to nrnivmodl (default: ${CMAKE_BINARY_DIR}/bin/nrnivmodl)
+#   NRN_NRNIVMODL_DEPENDS  - extra DEPENDS for special (default: nrniv_lib if that target exists)
+#   NRN_FOREIGN_MODE       - ON to skip build-tree PYTHONPATH prepend and linked-lib deps
 # ~~~
-# Load the cpp_cc_build_time_copy helper function.
-include("${CODING_CONV_CMAKE}/build-time-copy.cmake")
+# Roots and nrnivmodl defaults (overridable for foreign installs).
+if(NOT DEFINED NRN_TEST_SOURCE_ROOT)
+  set(NRN_TEST_SOURCE_ROOT "${PROJECT_SOURCE_DIR}")
+endif()
+if(NOT DEFINED NRN_TEST_BINARY_ROOT)
+  set(NRN_TEST_BINARY_ROOT "${PROJECT_BINARY_DIR}")
+endif()
+if(NOT DEFINED NRN_NRNIVMODL)
+  set(NRN_NRNIVMODL "${CMAKE_BINARY_DIR}/bin/nrnivmodl")
+endif()
+
+# Load the cpp_cc_build_time_copy helper function (or a minimal fallback).
+if(DEFINED CODING_CONV_CMAKE AND EXISTS "${CODING_CONV_CMAKE}/build-time-copy.cmake")
+  include("${CODING_CONV_CMAKE}/build-time-copy.cmake")
+elseif(NOT COMMAND cpp_cc_build_time_copy)
+  function(cpp_cc_build_time_copy)
+    set(options NO_TARGET)
+    set(oneValueArgs INPUT OUTPUT)
+    cmake_parse_arguments(BTC "${options}" "${oneValueArgs}" "" ${ARGN})
+    get_filename_component(_btc_outdir "${BTC_OUTPUT}" DIRECTORY)
+    add_custom_command(
+      OUTPUT "${BTC_OUTPUT}"
+      COMMAND ${CMAKE_COMMAND} -E make_directory "${_btc_outdir}"
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different "${BTC_INPUT}" "${BTC_OUTPUT}"
+      DEPENDS "${BTC_INPUT}"
+      COMMENT "Copy ${BTC_INPUT} -> ${BTC_OUTPUT}"
+      VERBATIM)
+    if(NOT BTC_NO_TARGET)
+      string(SHA256 _btc_hash "${BTC_OUTPUT}")
+      add_custom_target(build-time-copy-${_btc_hash} DEPENDS "${BTC_OUTPUT}")
+    endif()
+  endfunction()
+endif()
 function(nrn_add_test_group)
   # NAME is used as a key, [CORENEURON, MODFILE_PATTERNS, NRNIVMODL_ARGS and SUBMODULE] are used to
   # set up a custom target that runs nrnivmod, everything else is a default that can be overriden in
@@ -133,18 +171,23 @@ function(nrn_add_test_group)
   # submodule is initialised. If there is no submodule, everything is relative to the root nrn/
   # directory.
   if(NOT ${NRN_ADD_TEST_GROUP_SUBMODULE} STREQUAL "")
+    if(NOT COMMAND cpp_cc_git_submodule)
+      message(
+        FATAL_ERROR
+          "nrn_add_test_group: SUBMODULE requires cpp_cc_git_submodule (coding-conventions)")
+    endif()
     cpp_cc_git_submodule(${NRN_ADD_TEST_GROUP_SUBMODULE} QUIET)
     # Construct the name of the source tree directory where the submodule has been checked out.
-    set(test_source_directory "${PROJECT_SOURCE_DIR}/external/${NRN_ADD_TEST_GROUP_SUBMODULE}")
+    set(test_source_directory "${NRN_TEST_SOURCE_ROOT}/external/${NRN_ADD_TEST_GROUP_SUBMODULE}")
   else()
-    set(test_source_directory "${PROJECT_SOURCE_DIR}")
+    set(test_source_directory "${NRN_TEST_SOURCE_ROOT}")
   endif()
   set(${prefix}_TEST_SOURCE_DIRECTORY
       "${test_source_directory}"
       PARENT_SCOPE)
   if(NOT DEFINED NRN_RUN_FROM_BUILD_DIR_ENV)
     # To avoid duplication we take this value from the {nrn}/test/CMakeLists.txt file by assuming
-    # this variable name.
+    # this variable name. Foreign mode sets this to the venv/wheel environment instead.
     message(WARNING "nrn_add_test: NRN_RUN_FROM_BUILD_DIR_ENV was not defined;"
                     " building test files may not work")
   endif()
@@ -155,15 +198,17 @@ function(nrn_add_test_group)
     # Escape special characters (problematic with Windows paths when calling nrnivmodl)
     string(REGEX REPLACE "([][+.*()^])" "\\\\\\1" NRN_RUN_FROM_BUILD_DIR_ENV
                          "${NRN_RUN_FROM_BUILD_DIR_ENV}")
-    set(nrnivmodl_command cmake -E env ${NRN_RUN_FROM_BUILD_DIR_ENV}
-                          ${CMAKE_BINARY_DIR}/bin/nrnivmodl ${NRN_ADD_TEST_GROUP_NRNIVMODL_ARGS})
+    set(nrnivmodl_command cmake -E env ${NRN_RUN_FROM_BUILD_DIR_ENV} ${NRN_NRNIVMODL}
+                          ${NRN_ADD_TEST_GROUP_NRNIVMODL_ARGS})
     # The user decides whether or not this test group should have its MOD files compiled for
     # CoreNEURON.
     set(nrnivmodl_dependencies)
     if(NRN_ADD_TEST_GROUP_CORENEURON AND NRN_ENABLE_CORENEURON)
       list(APPEND hash_components -coreneuron)
-      list(APPEND nrnivmodl_dependencies ${CORENEURON_TARGET_TO_DEPEND})
-      list(APPEND nrnivmodl_dependencies coreneuron-core)
+      if(NOT NRN_FOREIGN_MODE)
+        list(APPEND nrnivmodl_dependencies ${CORENEURON_TARGET_TO_DEPEND})
+        list(APPEND nrnivmodl_dependencies coreneuron-core)
+      endif()
       list(APPEND nrnivmodl_command -coreneuron)
     endif()
     list(APPEND nrnivmodl_command .)
@@ -180,9 +225,8 @@ function(nrn_add_test_group)
     endif()
     list(SORT modfiles)
     foreach(modfile ${modfiles})
-      # ${modfile} is an absolute path starting with ${PROJECT_SOURCE_DIR}, let's only add the part
-      # below this common prefix to the hash
-      string(LENGTH "${PROJECT_SOURCE_DIR}/" prefix_length)
+      # Prefer a path relative to the NEURON source root for a stable hash key.
+      string(LENGTH "${NRN_TEST_SOURCE_ROOT}/" prefix_length)
       string(SUBSTRING "${modfile}" ${prefix_length} -1 relative_modfile)
       list(APPEND hash_components "${relative_modfile}")
     endforeach()
@@ -190,7 +234,7 @@ function(nrn_add_test_group)
     string(SHA256 nrnivmodl_command_hash "${hash_components}")
     # Construct the name of a target that refers to the compiled special binaries
     set(binary_target_name "NRN_TEST_nrnivmodl_${nrnivmodl_command_hash}")
-    set(nrnivmodl_directory "${PROJECT_BINARY_DIR}/test/nrnivmodl/${nrnivmodl_command_hash}")
+    set(nrnivmodl_directory "${NRN_TEST_BINARY_ROOT}/test/nrnivmodl/${nrnivmodl_command_hash}")
     # Short-circuit if the target has already been created.
     if(NOT TARGET "${binary_target_name}")
       # Copy modfiles from source -> build tree.
@@ -209,22 +253,26 @@ function(nrn_add_test_group)
       endforeach()
       # Construct the names of the important output files
       set(special "${nrnivmodl_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}/special")
-      # Add the custom command to generate the binaries. Get nrnivmodl from the build directory. At
-      # the moment it seems that `nrnivmodl` is generated at configure time, so there is no target
-      # to depend on and it should always be available, but it will try and link against libnrniv.so
-      # and libcorenrnmech.so so we must depend on those. TODO: could the logic of `nrnivmodl` be
-      # translated to CMake, so it can be called natively here and the `nrnivmodl` executable would
-      # be a wrapper that invokes CMake?
+      # Add the custom command to generate the binaries. nrnivmodl comes from the NEURON build tree
+      # or from a foreign install (NRN_NRNIVMODL). Linked builds also depend on nrniv_lib.
       set(output_binaries "${special}")
-      list(APPEND nrnivmodl_dependencies nrniv_lib)
+      if(DEFINED NRN_NRNIVMODL_DEPENDS)
+        list(APPEND nrnivmodl_dependencies ${NRN_NRNIVMODL_DEPENDS})
+      elseif(NOT NRN_FOREIGN_MODE AND TARGET nrniv_lib)
+        list(APPEND nrnivmodl_dependencies nrniv_lib)
+      endif()
       if(NRN_ENABLE_CORENEURON AND NRN_ADD_TEST_GROUP_CORENEURON)
         list(APPEND output_binaries "${special}-core")
-        if((NOT coreneuron_FOUND) AND (NOT DEFINED CORENEURON_BUILTIN_MODFILES))
+        if((NOT coreneuron_FOUND)
+           AND (NOT DEFINED CORENEURON_BUILTIN_MODFILES)
+           AND (NOT NRN_FOREIGN_MODE))
           message(WARNING "nrn_add_test_group couldn't find the names of the builtin "
                           "CoreNEURON modfiles that nrnivmodl-core implicitly depends "
                           "on *and* CoreNEURON is being built internally")
         endif()
-        list(APPEND nrnivmodl_dependencies ${CORENEURON_BUILTIN_MODFILES})
+        if(NOT NRN_FOREIGN_MODE)
+          list(APPEND nrnivmodl_dependencies ${CORENEURON_BUILTIN_MODFILES})
+        endif()
       endif()
       add_custom_command(
         OUTPUT ${output_binaries}
@@ -340,7 +388,7 @@ function(nrn_add_test)
     set(sim_directory "${NRN_ADD_TEST_SIM_DIRECTORY}")
   endif()
   # Finally a working directory for this specific test within the group
-  set(working_directory "${PROJECT_BINARY_DIR}/test/${NRN_ADD_TEST_GROUP}/${NRN_ADD_TEST_NAME}")
+  set(working_directory "${NRN_TEST_BINARY_ROOT}/test/${NRN_ADD_TEST_GROUP}/${NRN_ADD_TEST_NAME}")
   file(MAKE_DIRECTORY "${working_directory}")
   if(DEFINED nrnivmodl_directory)
     execute_process(
@@ -409,8 +457,12 @@ function(nrn_add_test)
     list(TRANSFORM test_env REPLACE "^PATH="
                                     "PATH=${nrnivmodl_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}:")
   endif()
-  list(TRANSFORM test_env REPLACE "^PYTHONPATH="
-                                  "PYTHONPATH=${CMAKE_SOURCE_DIR}/docs/nmodl/python_scripts:")
+  # Prepend docs helper scripts on PYTHONPATH for in-tree builds only. In foreign mode PYTHONPATH=
+  # must stay empty so the wheel/venv site-packages remain visible.
+  if(NOT NRN_FOREIGN_MODE)
+    list(TRANSFORM test_env REPLACE "^PYTHONPATH="
+                                    "PYTHONPATH=${NRN_TEST_SOURCE_ROOT}/docs/nmodl/python_scripts:")
+  endif()
   # Get the list of variables being set
   set(extra_env_var_names ${extra_environment})
   list(TRANSFORM extra_env_var_names REPLACE "^([^=]+)=.*$" "\\1")
@@ -434,7 +486,9 @@ function(nrn_add_test)
     list(APPEND test_env NRN_SANITIZER_PRELOAD_VAL=${NRN_SANITIZER_LIBRARY_PATH})
     list(APPEND test_env NRN_PYTHON_EXECUTABLE=${NRN_DEFAULT_PYTHON_EXECUTABLE})
   endif()
-  list(APPEND test_env ${NRN_SANITIZER_ENABLE_ENVIRONMENT})
+  if(DEFINED NRN_SANITIZER_ENABLE_ENVIRONMENT)
+    list(APPEND test_env ${NRN_SANITIZER_ENABLE_ENVIRONMENT})
+  endif()
   # Add the actual test job, including the `special` and `special-core` binaries in the path. TODOs:
   #
   # * Do we need to manipulate PYTHONPATH more to make `python options.py` invocations work?
