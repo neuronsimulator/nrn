@@ -235,7 +235,7 @@ Is there a list of functions that are built into NMODL?
 Is there a list of functions that are built into hoc?
 ---------------
 
-You'll find them in the `Programmer's Reference <https://nrn.readthedocs.io/en/latest/python/index.html>`_. Also see chapter 11. :ref:`Interpreter - General in the old "Reference Manual." <hoc_chapter_11_old_reference>`
+You'll find them in the `Programmer's Reference <https://www.neuronsimulator.org/en/latest/progref/index.html>`_. Also see chapter 11. :ref:`Interpreter - General in the old "Reference Manual." <hoc_chapter_11_old_reference>`
 
 What units does NEURON use for current, concentration, etc.?
 --------------
@@ -306,7 +306,7 @@ If you only have a "few" spikes (up to a few dozen), you could just dump them in
     Create a Vector and load it with the times at which you want to activate the synaptic mechanism.
 
 2.
-    Then use an :ref:`finitialize_handler` that stuffs the spike times into the NetCon's event queue by calling the `NetCon class's event() method <https://nrn.readthedocs.io/en/latest/hoc/modelspec/programmatic/network/netcon.html>`_ during initialization.
+    Then use an :class:`FInitializeHandler` that stuffs the spike times into the NetCon's event queue by calling the :meth:`NetCon class's event() method <NetCon.event>` during initialization.
 
     For example, if the Vector that holds the event times is syntimes, and the NetCon that drives the synaptic point process is nc, this would work:
 
