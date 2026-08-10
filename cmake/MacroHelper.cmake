@@ -256,9 +256,9 @@ endfunction()
 function(add_cpp_git_information target scope)
   find_program(GIT git)
   if(EXISTS "${PROJECT_SOURCE_DIR}/.git" AND GIT)
-    # Shallow clones: tags may not be ancestors of HEAD, so describe fails and
-    # GIT_DESCRIBE would stay empty (neuron.__version__ / nrnversion(5)). Fall
-    # back to PROJECT_VERSION so release dry-run and ship wheels match.
+    # Shallow clones: tags may not be ancestors of HEAD, so describe fails and GIT_DESCRIBE would
+    # stay empty (neuron.__version__ / nrnversion(5)). Fall back to PROJECT_VERSION so release
+    # dry-run and ship wheels match.
     execute_process(
       COMMAND "${GIT}" -C "${PROJECT_SOURCE_DIR}" describe
       OUTPUT_VARIABLE GIT_DESCRIBE
