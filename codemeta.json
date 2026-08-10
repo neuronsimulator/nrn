@@ -16,9 +16,9 @@
         }
     ],
     "codeRepository": "git+https://github.com/neuronsimulator/nrn.git",
-    "dateModified": "2025-11-17",
+    "dateModified": "2026-08-10",
     "description": "Empirically-based simulator for modeling neurons and networks of neurons",
-    "downloadUrl": "https://github.com/neuronsimulator/nrn/releases/tag/9.0.1",
+    "downloadUrl": "https://github.com/neuronsimulator/nrn/releases/tag/9.0.2",
     "funder": {
         "type": "Organization",
         "name": "Yale University"
@@ -35,14 +35,14 @@
         "Python 3"
     ],
     "relatedLink": "https://www.neuronsimulator.org/",
-    "schema:releaseNotes": "This release fixes several bugs and adds support for Python 3.14.\n\n### What's New\n- Add Python 3.14 support (#3635)\n- Remove doxygen from search results on readthedocs (#3664)\n- Add example with compilation for C API (#3658)\n\n### Bug Fixes\n- Use `[:blank:]` character class for SWC parser (#3651)\n- Fix HOC File.dir() on Windows (#3653)\n- NET_RECEIVE INITIAL not vectorized translation needs set_globals_from_prop (#3640)\n\n### Improvements /  Other Changes\n- Make `NRN_INSTALL_PYTHON_PREFIX` configurable (#3654)\n- Improve error message when Python lib is not found (#3650)\n- Use `command -v` instead of `which` in nrnpyenv.sh (#3516)\n- Better errors for `report.conf` (#3641)\n- Bump min required CMake version to 3.19\n",
+    "schema:releaseNotes": "This release includes documentation improvements, bug fixes, and NMODL enhancements.\nSee https://github.com/neuronsimulator/nrn/issues/3816 for the full commit list.\n\n### What's New\n- Documentation enhancements (typo fixes (#3754, #3776), contributing documentation (#3721), C API corrections (#3785))\n\n### Bug Fixes\n- Import3D on mac can now detect swc files (#3788)\n- rxd fixed-step extracellular Neumann boundary conditions corrected (#3690)\n- Vector.min_ind(i1, i2) fix (#3787)\n- Iterating over segments with no mechanisms no longer segfaults (#3794)\n- Buffer overflow in output_spikes_parallel prevention (#3813)\n\n### Improvements /  Other Changes\n- C API always returns current diameter (#3814), supports top-level runtime scalars (#3815)\n- rxd reaction compilation now supports np.float64 and other np.generic types (#3808)\n- NMODL compiler enhancements (#3592, #3631, #3600, #3597, #3598, #3740)\n- CI is more robust (#3730, #3809)\n",
     "softwareRequirements": [
         "Bison",
         "Flex",
         "C/C++ compiler",
         "CMake >= 3.19.0"
     ],
-    "version": "9.0.1",
+    "version": "9.0.2",
     "developmentStatus": "active",
     "funding": "R01NS11613",
     "issueTracker": "https://github.com/neuronsimulator/nrn/issues"
