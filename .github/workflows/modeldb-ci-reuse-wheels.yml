@@ -83,9 +83,8 @@ jobs:
     name: Run modelDB CI (reuse wheels)
     needs:
       - normalize
-    # Use @master once hines-grok/modeldb-ci-ref-input (ref input) is merged.
-    # Until then, the callable workflow with `ref` lives on that branch.
-    uses: neuronsimulator/nrn-modeldb-ci/.github/workflows/nrn-modeldb-ci.yaml@hines-grok/modeldb-ci-ref-input
+    # ref input: neuronsimulator/nrn-modeldb-ci#154 (on master)
+    uses: neuronsimulator/nrn-modeldb-ci/.github/workflows/nrn-modeldb-ci.yaml@master
     with:
       neuron_v1: ${{ inputs.neuron_v1 }}
       neuron_v2: ${{ needs.normalize.outputs.neuron_v2 }}
