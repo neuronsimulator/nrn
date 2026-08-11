@@ -85,7 +85,9 @@ jobs:
     needs:
       - build-wheels
     outputs:
-      artifacts-url: ${{ steps.merge-artifacts.outputs.artifacts-url }}
+      # upload-artifact/merge@v4 exports artifact-url (singular), not artifacts-url.
+      # Job output key stays artifacts-url for existing consumers (modeldb-ci, build-ci).
+      artifacts-url: ${{ steps.merge-artifacts.outputs.artifact-url }}
     steps:
       - name: Merge Artifacts
         id: merge-artifacts
