@@ -140,6 +140,13 @@ jobs:
           echo CI_OS_NAME=osx >> $GITHUB_ENV
         shell: bash
 
+      - name: Setup MacOS Deployment Target
+        if: startsWith(matrix.os, 'macOS')
+        run: |
+          # Avoid spurious/extra warnings in CIs
+          export MACOSX_DEPLOYMENT_TARGET=$(sw_vers -productVersion | awk -F. '{print $1 "." $2}')
+          echo "Setting MACOSX_DEPLOYMENT_TARGET to $MACOSX_DEPLOYMENT_TARGET"
+
       - name: Install apt packages
         if: startsWith(matrix.os, 'ubuntu')
         run: |
