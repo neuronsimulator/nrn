@@ -16,6 +16,11 @@ public stk_triang_vec, stk_triang_area, is_subsidiary
 public volatile2, contourcenter, ztrans, approximate_contour_by_circle
 public pl_point, insrt, set_pt, stk_center, accurate_triangle_area
 objref raw, xyz, d, g, parentsec, contour_list, this, stk_triang_vec
+// processed_contour_center vector introduced because it may differ
+// from the raw contour center
+public processed_contour_center
+objref processed_contour_center
+
 proc init() {
 	is_subsidiary = 0
 	ztrans = 0
@@ -183,7 +188,6 @@ proc rotate() {
 	}
     }
 }
-
 
 // a utility function
 obfunc contourcenter() {local i localobj mean, pts, perim, d
