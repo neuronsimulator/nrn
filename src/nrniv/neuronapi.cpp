@@ -361,6 +361,37 @@ Section* nrn_section_sibling(Section* sec) {
     return sec->sibling;
 }
 
+int nrn_sectionlist_to_array(nrn_Item* sl, Section** buf, int maxlen) {
+    // Snapshot a section list (from nrn_allsec() or nrn_sectionlist_data(obj))
+    // into buf in a single call -- the batched form of the section-list
+    // iterator, which crosses the API boundary once per section. Building a
+    // section array this way (an allsec gather, rebuilt whenever the topology
+    // changes) becomes one crossing instead of one per section. The list is a
+    // circular doubly-linked list of hoc_Item with sl as the sentinel, so walk
+    // from sl->next back around to sl. Semi-deleted sections (no Section, or a
+    // freed prop) are skipped, matching SectionListIterator; read-only, it does
+    // not prune them.
+    //
+    // Fills up to maxlen entries and returns the TOTAL number of live sections,
+    // which may exceed maxlen when buf is too small. Call with buf=NULL and
+    // maxlen=0 to obtain just the count in one pass. Detecting whether a cached
+    // snapshot has gone stale is a separate matter -- watch structure_change_cnt.
+    if (!sl) {
+        return 0;
+    }
+    int total = 0;
+    for (hoc_Item* q = sl->next; q && q != sl; q = q->next) {
+        Section* sec = q->element.sec;
+        if (sec && sec->prop != nullptr) {
+            if (buf && total < maxlen) {
+                buf[total] = sec;
+            }
+            ++total;
+        }
+    }
+    return total;
+}
+
 /****************************************
  * Functions, objects, and the stack
  ****************************************/
@@ -463,6 +494,14 @@ void nrn_symbol_push(Symbol* sym) {
     hoc_pushpx(sym->u.pval);
 }
 
+Symbol* nrn_symbol_pop(void) {
+    // Pop a Symbol (a STACK_IS_SYM entry) off the interpreter stack. Interpreter
+    // frames for object-component access (e.g. reading or assigning pyobj.attr)
+    // carry the attribute's Symbol on the stack; a binding that unwinds such a
+    // frame needs to pop it. Public counterpart to the internal hoc_spop.
+    return hoc_spop();
+}
+
 void nrn_double_push(double val) {
     hoc_pushx(val);
 }
@@ -511,12 +550,19 @@ void nrn_object_ptr_push(Object** obj_ref) {
 }
 
 Object* nrn_object_pop(void) {
-    // NOTE: the returned object should be unref'd when no longer needed
+    // Returns NULL for a nil object reference (an unset objref) rather than
+    // crashing: the ref-count bump that hands back a reference would otherwise
+    // dereference NULL. This matters when unwinding a stack that may carry a nil
+    // object -- e.g. the HOC-to-Python write-back path, where an objref RHS can
+    // be nil. A non-NULL result is reference-counted and should be unref'd
+    // (nrn_object_unref) when no longer needed.
     Object** obptr = hoc_objpop();
-    Object* new_ob_ptr = *obptr;
-    new_ob_ptr->refcount++;
+    Object* ob = *obptr;
+    if (ob) {
+        ob->refcount++;
+    }
     hoc_tobj_unref(obptr);
-    return new_ob_ptr;
+    return ob;
 }
 
 nrn_stack_types_t nrn_stack_type(void) {

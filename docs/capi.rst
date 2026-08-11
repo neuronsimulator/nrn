@@ -419,6 +419,45 @@ Sections
     :returns: The next sibling Section, or ``NULL`` (also if ``sec`` is
         ``NULL``).
 
+.. c:function:: int nrn_sectionlist_to_array(nrn_Item* sl, Section** buf, int maxlen)
+
+    Snapshot a section list into a caller-provided array in one call.
+
+    This is the batched form of :c:func:`nrn_sectionlist_iterator_new`: it fills
+    ``buf`` with the live Sections of ``sl`` in a single crossing of the API
+    boundary rather than one crossing per Section, which speeds up building a
+    section array (for example an ``allsec`` gather, rebuilt whenever the
+    topology changes). Semi-deleted Sections are skipped; the list is not
+    modified.
+
+    Up to ``maxlen`` Sections are written, but the return value is always the
+    **total** number of live Sections, so a return greater than ``maxlen`` means
+    the buffer was too small and the snapshot is truncated. Call once with
+    ``buf = NULL`` and ``maxlen = 0`` to get that total first, then size the
+    buffer to it. (Detecting whether a *cached* snapshot has since gone stale is
+    a separate concern, handled by watching ``structure_change_cnt``, not by
+    re-counting.)
+
+    :param sl: A section list from :c:func:`nrn_allsec` or
+        :c:func:`nrn_sectionlist_data`.
+    :param buf: Array that receives up to ``maxlen`` ``Section*`` entries. May be
+        ``NULL`` only if ``maxlen`` is 0 (to count without writing).
+    :param maxlen: Capacity of ``buf``.
+    :returns: The total number of live Sections in ``sl``, or 0 if ``sl`` is
+        ``NULL``.
+
+    **C Usage:**
+
+    .. code-block:: c
+
+        int n = nrn_sectionlist_to_array(nrn_allsec(), NULL, 0);  // count pass
+        Section** secs = malloc(n * sizeof(Section*));
+        int total = nrn_sectionlist_to_array(nrn_allsec(), secs, n);
+        for (int i = 0; i < total; i++) {
+            printf("%s\n", nrn_secname(secs[i]));
+        }
+        free(secs);
+
 .. c:function:: bool nrn_section_is_active(const Section* sec)
 
     Check if a Section is active (exists and is valid).
@@ -871,6 +910,18 @@ Functions, objects, and the stack
 
     :param sym: Pointer to the symbol to push.
 
+.. c:function:: Symbol* nrn_symbol_pop(void)
+
+    Pop a Symbol from the top of the stack.
+
+    The interpreter puts a Symbol on the stack when accessing an object
+    component (reading or assigning ``pyobj.attr``); a binding that unwinds
+    such a stack frame uses this to pop the attribute's Symbol. Use
+    :c:func:`nrn_stack_type` to confirm the top is a ``STACK_IS_SYM`` entry
+    before popping.
+
+    :returns: The Symbol from the top of the stack.
+
 .. c:function:: int nrn_symbol_type(const Symbol* sym)
 
     Get the type of a symbol (e.g., function, variable, mechanism).
@@ -1126,13 +1177,20 @@ Functions, objects, and the stack
 
     Pop an object from the stack.
 
-    :returns: Pointer to object from the top of the stack.
+    Returns ``NULL`` for a nil object reference (an unset ``objref``) rather than
+    crashing, so it is safe to use when unwinding a stack that may carry a nil
+    object -- for example a HOC-to-Python write-back whose right-hand side is an
+    unset ``objref``.
+
+    :returns: Pointer to the object from the top of the stack, or ``NULL`` if it
+        is a nil object reference.
 
     **Usage Pattern:**
 
     Used to retrieve function/method return values. Use :c:func:`nrn_stack_type` to check the type
     before popping, or use the type of the function/method to know the expected return type in
-    advance.
+    advance. A non-``NULL`` result is reference-counted and should be released with
+    :c:func:`nrn_object_unref` when no longer needed.
 
 .. c:function:: nrn_stack_types_t nrn_stack_type(void)
 
