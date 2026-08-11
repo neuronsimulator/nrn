@@ -21,6 +21,7 @@ add_executable(
   unit_tests/container/container.cpp
   unit_tests/container/generic_data_handle.cpp
   unit_tests/container/mechanism.cpp
+  unit_tests/container/network.cpp
   unit_tests/container/node.cpp
   unit_tests/node_order_optim/permutations.cpp
   unit_tests/utils/enumerate.cpp
@@ -253,6 +254,14 @@ if(NRN_ENABLE_PYTHON)
         COMMAND "${exe}" ${pytest} "./test/${group}"
         SCRIPT_PATTERNS "test/${group}/*.json" "test/${group}/*.py")
     endforeach()
+    # Focused CPU gate for network SoA dual-write (NetStim→ExpSyn).
+    nrn_add_test(
+      GROUP pytest
+      NAME network_soa_delivery_py${pyver}
+      PRELOAD_SANITIZER
+      ENVIRONMENT "CC=${CMAKE_C_COMPILER}"
+      COMMAND "${exe}" ${pytest} "./test/pytest/test_network_soa_delivery.py"
+      SCRIPT_PATTERNS "test/pytest/test_network_soa_delivery.py")
   endforeach()
 
   # Add some tests that are specifically aimed at NEURON - Python integration, covering different
