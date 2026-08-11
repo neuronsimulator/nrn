@@ -43,6 +43,13 @@ if _ast_config["nmodl_support"]:
             ReactionStatement,
         )
 
+        def _int_or_double(c):
+            return (
+                Integer(c, Name(String(str(c))))
+                if isinstance(c, int)
+                else Double(str(c))
+            )
+
         # used for optimization
         from neuron.nmodl.visitor import AstLookupVisitor
         from neuron.nmodl import dsl
@@ -330,6 +337,7 @@ class _c_region:
         from . import Rate, rxd, MultiCompartmentReaction
         from .species import (
             SpeciesOnRegion,
+            Parameter,
             ParameterOnRegion,
             SpeciesOnExtracellular,
             ParameterOnExtracellular,
@@ -369,6 +377,9 @@ class _c_region:
             s = sptr()
             sid = self._species_ids[s._id]
             for r in s._regions:
+                # skip regions not local here
+                if r._id not in self._region_ids:
+                    continue
                 rid = self._region_ids[r._id]
                 flat_name = s.ast(r).get_node_name()
                 self._name_to_index[flat_name] = ("species", sid, rid)
@@ -376,6 +387,8 @@ class _c_region:
             s = sptr()
             sid = self._params_ids[s._id]
             for r in s._regions:
+                if r._id not in self._region_ids:
+                    continue
                 rid = self._region_ids[r._id]
                 flat_name = s.ast(r).get_node_name()
                 self._name_to_index[flat_name] = ("params", sid, rid)
@@ -414,9 +427,10 @@ class _c_region:
         rates = []
         multicompartmentReactions = []
         states = []
-        mc_flux = []
+        # maps for kinetic-blocks
         mc_kinetic_blocks = []
         local_consts = {}
+        mc_mult_count = 0
         for rptr, rlst in self._react_regions.items():
             r = rptr()
             rast, sp = r.ast(rlst)
@@ -424,22 +438,51 @@ class _c_region:
             rast = rast if hasattr(rast, "__len__") else [rast]
             mc_rates_ast = []
             if isinstance(r, MultiCompartmentReaction):
-                for react in rast:
-                    if isinstance(react, ReactionStatement):
-                        mc_kinetic_blocks.append(react)
-                    else:
-                        mc_rates_ast.append(react)
-                multicompartmentReactions += mc_rates_ast
-                flux = []
+                # keep track for the fluxes and area/volume multipliers
+                mults = []
+                fluxes = []
                 for i, sp in enumerate(r._sources + r._dests):
                     s = sp()
-                    if r._membrane_flux and isinstance(s, SpeciesOnRegion):
-                        sid = self._species_ids[s._id]
-                        rid = self._region_ids[s._region()._id]
-                        flux.append((sid, rid, r._cur_charges[i]))
+                    if r._membrane_flux:
+                        if isinstance(s, SpeciesOnRegion) and not isinstance(
+                            s, ParameterOnRegion
+                        ):
+                            sid = self._species_ids[s._id]
+                            rid = self._region_ids[s._region()._id]
+                            flux = (sid, rid, r._cur_charges[i])
+
+                            # keep track of direction
+                            kin_coeff = (
+                                -r._cur_charges[i]
+                                if i < len(r._sources)
+                                else r._cur_charges[i]
+                            )
+                            flux = (sid, rid, r._cur_charges[i], kin_coeff)
+                        else:
+                            flux = None
                     else:
-                        flux.append(None)
-                mc_flux += flux
+                        flux = None
+                    if not isinstance(
+                        s, (Parameter, ParameterOnRegion, ParameterOnExtracellular)
+                    ):
+                        mults.append(mc_mult_count)
+                        fluxes.append(flux)
+                    mc_mult_count += 1
+                for react, mid, flux in zip(rast, mults, fluxes):
+                    if isinstance(react, ReactionStatement):
+                        # ReactionStatement and mult with both account for direction
+                        flx = [
+                            (f[0], f[1], f[3]) if f is not None else f for f in fluxes
+                        ]
+                        mc_kinetic_blocks.append((react, mults, flx))
+                    else:
+                        if flux is None:
+                            flx = None
+                        else:
+                            sid, rid, charge, _ = flux
+                            flx = (sid, rid, charge)
+                        mc_rates_ast.append((react, mid, flx))
+                multicompartmentReactions += mc_rates_ast
             elif (
                 isinstance(rptr(), Rate)
                 or _ast_config["kinetic_block"] == "off"
@@ -460,67 +503,84 @@ class _c_region:
             )
         if states != []:
             blocks.append(StateBlock(states))
-
         # convert KineticBlock to DerivativeBlock to compile
         if reactions != []:
             rast, lc = parse_kinetic_block(reactions, blocks)
             rates += rast
             local_consts |= lc
-        if mc_kinetic_blocks != []:
-            rast, lc = parse_kinetic_block(mc_kinetic_blocks, blocks)
-            multicompartmentReactions += rast
+        mc_div_block_count = len(multicompartmentReactions)
+        mc_kinetic_blocks_mults = []
+        for react, mult, flux in mc_kinetic_blocks:
+            rast, lc = parse_kinetic_block(
+                [react],
+                blocks,
+            )
+
+            for react, mid, flx in zip(rast, mult, flux):
+                multicompartmentReactions.append((react, mid, flx))
             local_consts |= lc
+            mc_kinetic_blocks_mults += mult
         # Merge rates for common species or states
         if rates != [] or multicompartmentReactions != []:
             lookup = AstLookupVisitor()
             merged = {}
             constants = set()
-            mult_id = 0
-            for rid, stmt in enumerate(rates + multicompartmentReactions):
+            mc_stmt = 0
+
+            def _add_flux(flx, frhs):
+                # accumulate a membrane-flux contribution under key `flx`
+                if flx in merged:
+                    merged[flx] = (
+                        Name(String(flx)),
+                        BinaryExpression(
+                            merged[flx][1],
+                            BinaryOperator(BinaryOp.BOP_ADDITION),
+                            frhs,
+                        ),
+                    )
+                else:
+                    merged[flx] = (Name(String(flx)), frhs)
+                constants.add(flx)
+
+            for rid, statement in enumerate(rates + multicompartmentReactions):
+                if rid < len(rates):
+                    stmt = statement
+                else:
+                    stmt, mult_id, flux = statement
+
                 diffeq = stmt.expression
                 binexpr = diffeq.expression
                 var_name = binexpr.lhs.get_node_name()
                 rhs = ParenExpression(binexpr.rhs)
                 if rid >= len(rates):
                     # MCR have to be multiplied by mult[]
-                    mult = Name(String(f"_mult_{mult_id}"))
-                    if mc_flux[mult_id] is not None:
-                        sid, rid, charge = mc_flux[mult_id]
-                        flx = f"_flux_{sid}_{rid}_"
-                        fast = Name(String(flx))
-                        cast = (
-                            Integer(charge, Name(String(str(charge))))
-                            if isinstance(charge, int)
-                            else Double(str(charge))
-                        )
+                    if mult_id in mc_kinetic_blocks_mults:
+                        # Kinetic-block MC reaction
+                        # sign is already in d/dt so use abs(_mult[id])
+                        mult = Name(String(f"_absmult_{mult_id}"))
+                        constants.add(f"_absmult_{mult_id}")
+                    else:
+                        # Derivative MC reaction
+                        mult = Name(String(f"_mult_{mult_id}"))
+                        constants.add(f"_mult_{mult_id}")
+                    if flux is not None:
+                        sid, frid, charge = flux
                         if charge == 1:
                             frhs = rhs
                         else:
                             frhs = BinaryExpression(
-                                cast,
+                                _int_or_double(charge),
                                 BinaryOperator(BinaryOp.BOP_MULTIPLICATION),
                                 rhs,
                             )
-                        if flx in merged:
-                            merged[flx] = (
-                                fast,
-                                BinaryExpression(
-                                    merged[flx][1],
-                                    BinaryOperator(BinaryOp.BOP_ADDITION),
-                                    frhs,
-                                ),
-                            )
-                        else:
-                            merged[flx] = (fast, frhs)
-                        constants.add(flx)
-                    # multiple by a constant to scale units
+                        _add_flux(f"_flux_{sid}_{frid}_", frhs)
+
+                    # multiply by a constant to scale units
                     rhs = BinaryExpression(
                         mult,
                         BinaryOperator(BinaryOp.BOP_MULTIPLICATION),
                         rhs,
                     )
-                    constants.add(f"_mult_{mult_id}")
-                    mult_id += 1
                 if var_name in merged:
                     merged[var_name] = (
                         binexpr.lhs,
@@ -587,6 +647,7 @@ class _c_region:
                 "var_names": list(merged.keys()),
                 "code": code,
                 "tmp_vars": tmp_vars,
+                "merged": merged,
             }
 
             blocks.append(

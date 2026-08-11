@@ -472,9 +472,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
             ):
                 species.append(sp().ast().get_node_name())
 
-        if kinetic_block == "off" or (
-            kinetic_block == "mass_action" and self._custom_dynamics
-        ):
+        if kinetic_block == "off" or self._custom_dynamics:
             # represent the reaction in a derivative block
             rates = []
 
@@ -505,7 +503,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
             return rates, species
         else:
             # represent the reaction in a kinetic block
-            rast = self._scheme.ast()
+            rast = self._scheme.ast(use_react_var=True)
 
             # fill in the correct rates
             if ">" in self._dir:
