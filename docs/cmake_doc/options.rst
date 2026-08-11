@@ -308,11 +308,10 @@ NRN_ENABLE_PYTHON:BOOL=ON
 
 NRN_INSTALL_PYTHON_PREFIX:STRING="lib/python/neuron/"
 -----------------------------------------------------
-  Path where NEURON Python components will be installed, relative to CMAKE_INSTALL_PREFIX. Must end with a directory named "neuron"
-
-  Environment variable PYTHONPATH must contain the real path to NRN_INSTALL_PYTHON_PREFIX in order for python to find neuron.
-
-  This path must end with a directory named "neuron"
+  Path where NEURON Python components will be installed, relative to
+  ``CMAKE_INSTALL_PREFIX``. Must end with a directory named "neuron".
+  Environment variable ``PYTHONPATH`` must contain the real path to
+  ``NRN_INSTALL_PYTHON_PREFIX`` in order for python to find neuron.
 
   For venv's, configure cmake with:
 
@@ -573,15 +572,19 @@ NRN_ENABLE_COVERAGE:BOOL=OFF
 
   Requires ``lcov`` (e.g. ``sudo apt install lcov``).
 
-  Provides two make targets to simplify the repeated "run tests, examine coverage"
+  Provides make targets to simplify the repeated "run tests, examine coverage"
   workflow.
-    -- ``make cover_begin`` erases all previous coverage data
+    -- ``make cover-begin`` (``cover_begin``) erases all previous coverage data
     (``*.gcda`` files), and creates a baseline report. (Note all files and
     folders are created in the ``CMAKE_BINARY_DIR`` where you ran cmake.)
 
-    -- ``make cover_html`` creates a coverage report for the sum of all the
-    software runs since the last ``cover_begin`` and prints a file url
+    -- ``make cover-html`` (``cover_html``) creates a coverage report for the sum of all the
+    software runs since the last ``cover-begin`` and prints a file url
     that you can paste into your browser to review the coverage.
+
+    -- ``make cover-diff`` (``cover_diff``; requires ``pip install diff-cover``) reports
+    coverage on changed lines vs. ``NRN_COVERAGE_DIFF_BRANCH`` (default
+    ``master``). See `Developer Builds: Code Coverage <../install/code_coverage.html>`_.
 
   When using an iterative workflow to examine test coverage of a single
   or a few files, the above targets run much faster when this option is
@@ -597,14 +600,19 @@ NRN_COVERAGE_FILES:STRING=
 
   ``-DNRN_COVERAGE_FILES="src/nrniv/partrans.cpp;src/nmodl/parsact.cpp;src/nrnpython/nrnpy_hoc.cpp"``
 
-  For a list of all the cpp files changed in a pull request, consider
-  copy/pasting the ``;`` separated list obtained with
+  For a list of compiled sources changed on a branch, use
 
   .. code-block:: shell
 
-     a=`git diff --name-only master | grep '\.cpp'`
-     echo $a | sed 's/ /;/g'
+     ci/coverage_files_from_diff.sh master
 
+  The script lists ``.cpp`` and ``.c`` files only. It exits with an error
+  when none changed (omit this option in that case).
+
+NRN_COVERAGE_DIFF_BRANCH:STRING=master
+--------------------------------------
+  Git branch passed to ``diff-cover --compare-branch`` for the
+  ``cover_diff`` target. Defaults to ``master``.
 
 NRN_SANITIZERS:STRING=
 ----------------------

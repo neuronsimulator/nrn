@@ -1,0 +1,16 @@
+gid = 1
+t = 0.025
+celsius = 6.3
+2 nodes 0 is the threshold node
+threshold -10
+inode parent area a b
+0 -1 100 0 0.1
+1 0 50 0.1 0
+inode v
+0 -65
+1 -64.5
+type=3 pas size=1
+0 0 0.001
+netcons 2
+0 1 0 0.01 1
+1 1 0 0.02 1
