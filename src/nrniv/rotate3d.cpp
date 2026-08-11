@@ -16,121 +16,52 @@
 
 Rotation3d::Rotation3d() {
     identity();
-    int i, j;
-    for (i = 0; i < 2; ++i)
-        for (j = 0; j < 3; ++j)
-            o_[i][j] = 0.;
 }
 
-Rotation3d::~Rotation3d() {}
-
 void Rotation3d::identity() {
-    int i, j;
-    for (i = 0; i < 3; ++i) {
-        for (j = 0; j < 3; ++j) {
-            a_[i][j] = 0.;
-        }
-        a_[i][i] = 1.;
-    }
+    mat.setIdentity();
+    tr.setIdentity();
+    orig.setIdentity();
 }
 
 void Rotation3d::rotate_x(float radian) {
-    Rotation3d m;
-    m.a_[1][1] = m.a_[2][2] = cos(radian);
-    m.a_[2][1] = -(m.a_[1][2] = sin(radian));
-    post_multiply(m);
+    mat *= Eigen::AngleAxisf(radian, Eigen::Vector3f::UnitX()).toRotationMatrix();
 }
 void Rotation3d::rotate_y(float radian) {
-    Rotation3d m;
-    m.a_[2][2] = m.a_[0][0] = cos(radian);
-    m.a_[2][0] = -(m.a_[0][2] = sin(radian));
-    post_multiply(m);
+    mat *= Eigen::AngleAxisf(-radian, Eigen::Vector3f::UnitY()).toRotationMatrix();
 }
 void Rotation3d::rotate_z(float radian) {
-    Rotation3d m;
-    m.a_[0][0] = m.a_[1][1] = cos(radian);
-    m.a_[1][0] = -(m.a_[0][1] = sin(radian));
-    post_multiply(m);
+    mat *= Eigen::AngleAxisf(radian, Eigen::Vector3f::UnitZ()).toRotationMatrix();
 }
 
-void Rotation3d::post_multiply(Rotation3d& m) {  // r = m*r
-    float x[3][3];
-    int i, j, k;
-    for (i = 0; i < 3; ++i) {
-        for (j = 0; j < 3; ++j) {
-            x[i][j] = 0;
-            for (k = 0; k < 3; ++k) {
-                x[i][j] += m.a_[i][k] * a_[k][j];
-            }
-        }
-    }
-    for (i = 0; i < 3; ++i) {
-        for (j = 0; j < 3; ++j) {
-            a_[i][j] = x[i][j];
-        }
-    }
-}
-
-void Rotation3d::rotate(float x, float y, float z, float* tr) const {
-    float r[3];
-    r[0] = x;
-    r[1] = y;
-    r[2] = z;
-    rotate(r, tr);
-}
-
-void Rotation3d::rotate(float* r, float* tr) const {
-    int i;
-    float x[3];
-    for (i = 0; i < 3; ++i) {
-        x[i] = r[i] - o_[0][i];
-    }
-    for (i = 0; i < 3; ++i) {
-        tr[i] = a_[i][0] * x[0] + a_[i][1] * x[1] + a_[i][2] * x[2] + o_[1][i];
-    }
+Eigen::Vector3f Rotation3d::rotate(const Eigen::Vector3f& v) const {
+    auto r = orig * v;
+    auto t = mat.transpose() * r;
+    auto e = tr * t;
+    return e;
 }
 
 void Rotation3d::origin(float x, float y, float z) {
-    o_[0][0] = x;
-    o_[0][1] = y;
-    o_[0][2] = z;
+    orig = Eigen::Translation<float, 3>(-x, -y, -z);
 }
 void Rotation3d::offset(float x, float y) {
-    o_[1][0] = x;
-    o_[1][1] = y;
-    o_[1][2] = 0.;
+    tr = Eigen::Translation<float, 3>(x, y, 0.);
 }
 
-void Rotation3d::x_axis(float& x, float& y) const {
-    x = a_[0][0];
-    y = a_[1][0];
+std::array<float, 2> Rotation3d::x_axis() const {
+    return {mat(0, 0), mat(0, 1)};
 }
-void Rotation3d::y_axis(float& x, float& y) const {
-    x = a_[0][1];
-    y = a_[1][1];
+std::array<float, 2> Rotation3d::y_axis() const {
+    return {mat(0, 1), mat(1, 1)};
 }
-void Rotation3d::z_axis(float& x, float& y) const {
-    x = a_[0][2];
-    y = a_[1][2];
-}
-void Rotation3d::inverse_rotate(float* tr, float* r) const {
-    int i;
-    float x[3];
-    for (i = 0; i < 3; ++i) {
-        x[i] = tr[i];
-    }
-    for (i = 0; i < 3; ++i) {
-        r[i] = a_[0][i] * x[0] + a_[1][i] * x[1] + a_[2][i] * x[2];
-    }
+std::array<float, 2> Rotation3d::z_axis() const {
+    return {mat(0, 2), mat(2, 1)};
 }
 
-Rotate3Band::Rotate3Band(Rotation3d* r3, RubberAction* ra, Canvas* c)
-    : Rubberband(ra, c) {
-    if (r3) {
-        rot_ = r3;
-    } else {
-        rot_ = new Rotation3d();
-    }
+Rotate3Band::Rotate3Band(RubberAction* ra, Canvas* c)
+    : Rubberband(ra, c)
+    , rot_(new Rotation3d{})
+{
     Resource::ref(rot_);
 }
 
@@ -216,8 +147,7 @@ void Rotate3Band::press(Event& e) {
     // this is the point we want to stay fixed.
     int i = ssec->get_coord(ss->arc_selected(), x1, y1);
     // what is it now
-    float r[3];
-    rot_->rotate(s->pt3d[i].x, s->pt3d[i].y, s->pt3d[i].z, r);
+    auto r = rot_->rotate({s->pt3d[i].x, s->pt3d[i].y, s->pt3d[i].z});
     rot_->origin(s->pt3d[i].x, s->pt3d[i].y, s->pt3d[i].z);
     rot_->offset(r[0], r[1]);
 }
@@ -235,7 +165,6 @@ void Rotate3Band::drag(Event&) {
 void Rotate3Band::draw(Coord, Coord) {
     Canvas* c = canvas();
     const Font* f = WidgetKit::instance()->font();
-    float x, y;
     float x0, y0;
 
     c->push_transform();
@@ -245,18 +174,11 @@ void Rotate3Band::draw(Coord, Coord) {
     for (GlyphIndex i = 0; i < cnt; ++i) {
         Section* sec = ((ShapeSection*) sg->component(i))->section();
         if (sec->npt3d) {
-            float r[3];
             int i = 0;
-            r[0] = sec->pt3d[i].x;
-            r[1] = sec->pt3d[i].y;
-            r[2] = sec->pt3d[i].z;
-            rot_->rotate(r, r);
+            auto r = rot_->rotate({sec->pt3d[i].x, sec->pt3d[i].y, sec->pt3d[i].z});
             c->move_to(r[0], r[1]);
             i = sec->npt3d - 1;
-            r[0] = sec->pt3d[i].x;
-            r[1] = sec->pt3d[i].y;
-            r[2] = sec->pt3d[i].z;
-            rot_->rotate(r, r);
+            r = rot_->rotate({sec->pt3d[i].x, sec->pt3d[i].y, sec->pt3d[i].z});
             c->line_to(r[0], r[1]);
             c->stroke(color(), brush());
         }
@@ -270,24 +192,27 @@ void Rotate3Band::draw(Coord, Coord) {
     c->transformer(t);
     c->new_path();
     Coord w = canvas()->width() / 4;
-    rot_->x_axis(x, y);
-    // printf("x_axis %g %g\n", x, y);
-    c->line(x0, y0, x0 + x * w, y0 + y * w, color(), brush());
+    {
+        auto [x, y] = rot_->x_axis();
+        c->line(x0, y0, x0 + x * w, y0 + y * w, color(), brush());
 #ifndef WIN32
-    c->character(f, 'x', f->width('x'), color(), x0 + x * w * 1.1, y0 + y * w * 1.1);
+        c->character(f, 'x', f->width('x'), color(), x0 + x * w * 1.1, y0 + y * w * 1.1);
 #endif
-    rot_->y_axis(x, y);
-    // printf("y_axis %g %g\n", x, y);
-    c->line(x0, y0, x0 + x * w, y0 + y * w, color(), brush());
+    }
+    {
+        auto [x, y] = rot_->y_axis();
+        c->line(x0, y0, x0 + x * w, y0 + y * w, color(), brush());
 #ifndef WIN32
-    c->character(f, 'y', f->width('y'), color(), x0 + x * w * 1.1, y0 + y * w * 1.1);
+        c->character(f, 'y', f->width('y'), color(), x0 + x * w * 1.1, y0 + y * w * 1.1);
 #endif
-    rot_->z_axis(x, y);
-    // printf("z_axis %g %g\n", x, y);
-    c->line(x0, y0, x0 + x * w, y0 + y * w, color(), brush());
+    }
+    {
+        auto [x, y] = rot_->z_axis();
+        c->line(x0, y0, x0 + x * w, y0 + y * w, color(), brush());
 #ifndef WIN32
-    c->character(f, 'z', f->width('z'), color(), x0 + x * w * 1.1, y0 + y * w * 1.1);
+        c->character(f, 'z', f->width('z'), color(), x0 + x * w * 1.1, y0 + y * w * 1.1);
 #endif
+    }
     c->pop_transform();
 }
 #endif
