@@ -152,9 +152,9 @@ def test_reaction_ast(setup_section):
     node = json.loads(to_json(react[0]))
     assert node == ast
 
-    rxd.rxdmath._ast_config["kinetic_block"] = (
-        "off"  # default with correct volume scaling
-    )
+    rxd.rxdmath._ast_config[
+        "kinetic_block"
+    ] = "off"  # default with correct volume scaling
 
     rates, species = reaction.ast()
     node = json.loads(to_json(rates[0]))
