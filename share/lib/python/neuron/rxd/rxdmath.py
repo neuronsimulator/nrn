@@ -74,6 +74,18 @@ if _ast_config["nmodl_support"]:
         _ast_config["exception"] = e
 
 
+def _ast_check():
+    """Raise an exception if AST is not supported, otherwise return the "kinetic_block" configuration."""
+    if not _ast_config["nmodl_support"]:
+        if "exception" in _ast_config:
+            raise _ast_config["exception"]
+        else:
+            raise RxDException(
+                'NMODL AST are disabled set rxd._ast_config["nmodl_support"] to True'
+            )
+    return _ast_config["kinetic_block"]
+
+
 def _vectorized(f: Callable, objs: Any) -> Any:
     if hasattr(objs, "__len__"):
         return numpy.array([f(obj) for obj in objs])

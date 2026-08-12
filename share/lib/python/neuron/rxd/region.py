@@ -516,8 +516,8 @@ class _c_region:
                 blocks,
             )
 
-            for react, mid, flx in zip(rast, mult, flux):
-                multicompartmentReactions.append((react, mid, flx))
+            for r, mid, flx in zip(rast, mult, flux):
+                multicompartmentReactions.append((r, mid, flx))
             local_consts |= lc
             mc_kinetic_blocks_mults += mult
         # Merge rates for common species or states

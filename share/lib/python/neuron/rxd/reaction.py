@@ -5,7 +5,7 @@ from .generalizedReaction import (
     get_scheme_rate1_rate2_regions_custom_dynamics_mass_action,
 )
 from .rxdException import RxDException
-from .rxdmath import _ast_config
+from .rxdmath import _ast_config, _ast_check
 
 if _ast_config["nmodl_support"]:
     try:
@@ -303,15 +303,8 @@ class Reaction(GeneralizedReaction):
         """
         from .species import Parameter, ParameterOnRegion, ParameterOnExtracellular
 
-        if not _ast_config["nmodl_support"]:
-            if "exception" in _ast_config:
-                raise _ast_config["exception"]
-            else:
-                raise RxDException(
-                    'NMODL AST are disabled set rxd._ast_config["nmodl_support"] to True'
-                )
+        kinetic_block = _ast_check()
 
-        kinetic_block = _ast_config["kinetic_block"]
         if not initializer.is_initialized():
             initializer._do_init()
 
@@ -325,10 +318,8 @@ class Reaction(GeneralizedReaction):
                 diff, species = [], []
                 for idx, sref in enumerate(self._sources + self._dests):
                     sp = sref()
-                    if (
-                        isinstance(sp, Parameter)
-                        or isinstance(sp, ParameterOnRegion)
-                        or isinstance(sp, ParameterOnExtracellular)
+                    if isinstance(
+                        sp, (Parameter, ParameterOnRegion, ParameterOnExtracellular)
                     ):
                         continue
                     rast = frate if idx < len(self._sources) else brate
@@ -370,10 +361,8 @@ class Reaction(GeneralizedReaction):
                 species = []
                 for sref in set(self._sources + self._dests):
                     sp = sref()
-                    if (
-                        isinstance(sp, Parameter)
-                        or isinstance(sp, ParameterOnRegion)
-                        or isinstance(sp, ParameterOnExtracellular)
+                    if isinstance(
+                        sp, (Parameter, ParameterOnRegion, ParameterOnExtracellular)
                     ):
                         continue
                     if sp and hasattr(sp, "name"):
@@ -387,20 +376,14 @@ class Reaction(GeneralizedReaction):
 
         reactions = []
         species = []
+
         if regions is None:
-            for region in self._react_regions:
-                r, s = get_ast(region)
-                reactions += r
-                species += s
+            regs = self._react_regions
         else:
-            for rptr in regions:
-                if rptr():
-                    region = rptr()
-                    r, s = get_ast(region)
-                    if self._custom_dynamics:
-                        reactions += r
-                        species += s
-                    else:
-                        reactions += r
-                        species += s
+            regs = [rptr() for rptr in regions if rptr()]
+
+        for region in regs:
+            r, s = get_ast(region)
+            reactions += r
+            species += s
         return reactions, species

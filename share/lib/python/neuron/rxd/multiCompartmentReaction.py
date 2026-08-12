@@ -9,7 +9,7 @@ from .constants import molecules_per_mM_um3
 from neuron import h
 import itertools
 from .rxdException import RxDException
-from .rxdmath import _ast_config
+from .rxdmath import _ast_config, _ast_check
 
 if _ast_config["nmodl_support"]:
     try:
@@ -441,17 +441,10 @@ class MultiCompartmentReaction(GeneralizedReaction):
         """
         from .species import Parameter, ParameterOnRegion, ParameterOnExtracellular
 
-        if not _ast_config["nmodl_support"]:
-            if "exception" in _ast_config:
-                raise _ast_config["exception"]
-            else:
-                raise RxDException(
-                    'NMODL AST are disabled set rxd._ast_config["nmodl_support"] to True'
-                )
+        kinetic_block = _ast_check()
+
         if not initializer.is_initialized():
             initializer._do_init()
-
-        kinetic_block = _ast_config["kinetic_block"]
 
         # assume all source share the same region
         src = self._sources[0]()
@@ -467,10 +460,8 @@ class MultiCompartmentReaction(GeneralizedReaction):
 
         species = []
         for sp in self._sources + self._dests:
-            if (
-                not isinstance(sp, Parameter)
-                and not isinstance(sp, ParameterOnRegion)
-                and not isinstance(sp, ParameterOnExtracellular)
+            if not isinstance(
+                sp, (Parameter, ParameterOnRegion, ParameterOnExtracellular)
             ):
                 species.append(sp().ast().get_node_name())
 
@@ -480,10 +471,8 @@ class MultiCompartmentReaction(GeneralizedReaction):
 
             for idx, sptr in enumerate(self._sources + self._dests):
                 sp = sptr()
-                if (
-                    isinstance(sp, Parameter)
-                    or isinstance(sp, ParameterOnRegion)
-                    or isinstance(sp, ParameterOnExtracellular)
+                if isinstance(
+                    sp, (Parameter, ParameterOnRegion, ParameterOnExtracellular)
                 ):
                     continue
                 dx = sptr().ast(prime=True)

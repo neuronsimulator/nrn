@@ -5,7 +5,7 @@ from .rangevar import RangeVar
 import itertools
 import warnings
 from .generalizedReaction import GeneralizedReaction
-from .rxdmath import _ast_config
+from .rxdmath import _ast_config, _ast_check
 
 if _ast_config["nmodl_support"]:
     try:
@@ -377,25 +377,14 @@ class Rate(GeneralizedReaction):
             List[nmodl.ast]: A list of ASTs for each region in regions.
             List[str]: A list of the species (AST state names).
         """
-
-        if not _ast_config["nmodl_support"]:
-            if "exception" in _ast_config:
-                raise _ast_config["exception"]
-            else:
-                raise RxDException(
-                    'NMODL AST are disabled set rxd._ast_config["nmodl_support"] to True'
-                )
-
         from .species import Parameter, ParameterOnRegion, ParameterOnExtracellular
+
+        _ast_check()
 
         if not initializer.is_initialized():
             initializer._do_init()
         sp = self._species()
-        if (
-            isinstance(sp, Parameter)
-            or isinstance(sp, ParameterOnRegion)
-            or isinstance(sp, ParameterOnExtracellular)
-        ):
+        if isinstance(sp, (Parameter, ParameterOnRegion, ParameterOnExtracellular)):
             return [], []
 
         def get_ast(region):
@@ -424,15 +413,12 @@ class Rate(GeneralizedReaction):
         diff = []
         species = []
         if regions is not None:
-            for rptr in regions:
-                if rptr():
-                    region = rptr()
-                    d, s = get_ast(region)
-                    diff.append(d)
-                    species.append(s)
+            regs = [rptr() for rptr in regions if rptr()]
         else:
-            for region in self._active_regions:
-                d, s = get_ast(region)
-                diff.append(d)
-                species.append(s)
+            regs = self._active_regions
+
+        for region in regs:
+            d, s = get_ast(region)
+            diff.append(d)
+            species.append(s)
         return diff, species
