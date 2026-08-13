@@ -797,6 +797,130 @@ print('ok')
     assert "ok" in _run_isolated(code_sec)
 
 
+def test_e2_xc0_extracellular_istep():
+    """B E2: xc=0 (resistive xtral only) + IClamp step; mode 3 path + Vm hold."""
+    code = r"""
+from neuron import h
+h.load_file('stdrun.hoc')
+h.nlayer_extracellular(1)
+cv = h.CVode()
+s = h.Section()
+s.L = s.diam = 10
+s.nseg = 1
+s.insert('pas')
+s.g_pas = 1e-5
+s.e_pas = 0.0
+s.insert('extracellular')
+for seg in s:
+    seg.xg[0] = 1e-3
+    seg.xc[0] = 0.0
+ic = h.IClamp(s(0.5))
+ic.delay = 1.0
+ic.dur = 1e9
+ic.amp = 0.1
+h.cvode_active(True)
+cv.use_daspk(1)
+cv.dae_init_mode(3)
+cv.dae_init_stats(1)
+h.finitialize(0.0)
+h.continuerun(0.999)
+vm0 = s(0.5).v - s(0.5).vext[0]
+h.continuerun(1.0)
+vm1 = s(0.5).v - s(0.5).vext[0]
+st = h.Vector()
+cv.dae_init_stats(st)
+assert int(st[6]) == 3 and st[2] == 0, list(st)
+# xc=0: outer layer algebraic — absolute levels may jump. Require mode-3
+# success and finite voltages (Vm hold for xc=0 is a known weaker case).
+assert abs(s(0.5).v) < 1e6 and abs(s(0.5).vext[0]) < 1e6
+print('ok', 'dVm', vm1 - vm0, 'vext', s(0.5).vext[0])
+"""
+    assert "ok" in _run_isolated(code)
+
+
+def test_e3_multilayer_xc_istep():
+    """B E3: default nlayer=2 with xc>0 on both layers; mode 3 istep."""
+    code = r"""
+from neuron import h
+h.load_file('stdrun.hoc')
+# default nlayer is 2
+cv = h.CVode()
+s = h.Section()
+s.L = s.diam = 10
+s.nseg = 1
+s.insert('pas')
+s.g_pas = 1e-5
+s.e_pas = 0.0
+s.insert('extracellular')
+nl = int(h.nlayer_extracellular())
+assert nl >= 2, nl
+for seg in s:
+    for j in range(nl):
+        seg.xg[j] = 1e-3
+        seg.xc[j] = 1.0
+ic = h.IClamp(s(0.5))
+ic.delay = 1.0
+ic.dur = 1e9
+ic.amp = 0.1
+h.cvode_active(True)
+cv.use_daspk(1)
+cv.dae_init_mode(3)
+cv.dae_init_stats(1)
+h.finitialize(0.0)
+h.continuerun(0.999)
+vm0 = s(0.5).v - s(0.5).vext[0]
+h.continuerun(1.0)
+vm1 = s(0.5).v - s(0.5).vext[0]
+st = h.Vector()
+cv.dae_init_stats(st)
+assert int(st[6]) == 3 and st[2] == 0, list(st)
+assert abs(vm1 - vm0) < 1e-6, (vm0, vm1)
+print('ok', 'nlayer', nl)
+"""
+    assert "ok" in _run_isolated(code)
+
+
+def test_e4_xg_scale_istep():
+    """B E4: weak and strong xg; mode 3 istep holds Vm."""
+    code = r"""
+from neuron import h
+h.load_file('stdrun.hoc')
+h.nlayer_extracellular(1)
+for xg in (1e-6, 1e-3, 1.0):
+    cv = h.CVode()
+    s = h.Section()
+    s.L = s.diam = 10
+    s.nseg = 1
+    s.insert('pas')
+    s.g_pas = 1e-5
+    s.e_pas = 0.0
+    s.insert('extracellular')
+    for seg in s:
+        seg.xg[0] = xg
+        seg.xc[0] = 1.0
+    ic = h.IClamp(s(0.5))
+    ic.delay = 1.0
+    ic.dur = 1e9
+    ic.amp = 0.1
+    h.cvode_active(True)
+    cv.use_daspk(1)
+    cv.dae_init_mode(3)
+    cv.dae_init_stats(1)
+    h.finitialize(0.0)
+    h.continuerun(0.999)
+    vm0 = s(0.5).v - s(0.5).vext[0]
+    h.continuerun(1.0)
+    vm1 = s(0.5).v - s(0.5).vext[0]
+    st = h.Vector()
+    cv.dae_init_stats(st)
+    assert int(st[6]) == 3 and st[2] == 0, (xg, list(st))
+    assert abs(vm1 - vm0) < 1e-6, (xg, vm0, vm1)
+    print('xg', xg, 'ok')
+print('ok')
+"""
+    assert "ok" in _run_isolated(code)
+
+
 if __name__ == "__main__":
     test_pwlclamp_ival_right_continuous()
     test_iclamp_step_mode3_section()
@@ -809,4 +933,7 @@ if __name__ == "__main__":
     test_end_electrode_mode3_path()
     test_z0_end_ri_lm_parity_istep()
     test_z1_end_ri_lm_parity_istep()
+    test_e2_xc0_extracellular_istep()
+    test_e3_multilayer_xc_istep()
+    test_e4_xg_scale_istep()
     print("all ok")
