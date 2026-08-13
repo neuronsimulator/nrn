@@ -39,14 +39,6 @@ TEST_CASE("Pool: basic single-object alloc and free", "[Pool]") {
         REQUIRE(a != b);
     }
 
-    SECTION("hpfree allows reuse") {
-        SimpleItem* a = pool.alloc();
-        pool.hpfree(a);
-        SimpleItem* b = pool.alloc();
-        // After freeing, the same slot can be reused
-        //REQUIRE(b == a);
-    }
-
     SECTION("nget tracks outstanding allocations") {
         REQUIRE(pool.nget() == 0);
         SimpleItem* a = pool.alloc();

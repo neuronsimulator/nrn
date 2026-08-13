@@ -105,10 +105,10 @@ class Pool {
 template <typename T, bool Mutex>
 T* Pool<T, Mutex>::allocate_pool(long count) {
     T* p{};
-    if(subcount_ > 1){
+    if (subcount_ > 1) {
         p = static_cast<T*>(
             nrn_cacheline_calloc(reinterpret_cast<void**>(&p), count * subcount_, sizeof(T)));
-    }else{
+    } else {
         p = new T[count];
     }
     return p;
@@ -116,10 +116,10 @@ T* Pool<T, Mutex>::allocate_pool(long count) {
 
 template <typename T, bool Mutex>
 void Pool<T, Mutex>::deallocate_pool(T* p) {
-    if(subcount_ > 1){
+    if (subcount_ > 1) {
         free(p);
-    }else{
-        delete []p;
+    } else {
+        delete[] p;
     }
 }
 
