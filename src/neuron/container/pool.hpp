@@ -171,7 +171,8 @@ template <typename T, bool Mutex>
 void Pool<T, Mutex>::hpfree(T* item) {
     std::lock_guard<mutex_type> lock(mut_);
     assert(nget_ > 0);
-    freelist_.push_back(item);
+    //freelist_.push_back(item);
+    freelist_.insert(freelist_.begin(), item);
     --nget_;
 }
 
