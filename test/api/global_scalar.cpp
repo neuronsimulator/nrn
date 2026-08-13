@@ -54,5 +54,31 @@ int main(void) {
     nrn_hoc_call("hoc_ac_ = t");
     ok &= eq(*ac, 12.0, "USERDOUBLE dataptr round-trips through HOC");
 
+    // Symbols with no data pointer must return nullptr, not a reinterpreted
+    // union member the caller would dereference as garbage.
+    ok &= check(nrn_symbol_dataptr(nullptr) == nullptr, "null symbol -> nullptr");
+
+    // A function symbol (finitialize) is non-null but has no dataptr.
+    Symbol* fi = nrn_symbol("finitialize");
+    ok &= check(fi != nullptr, "finitialize symbol exists");
+    ok &= check(nrn_symbol_dataptr(fi) == nullptr, "function symbol -> nullptr");
+
+    // Top-level object and string variables are not double storage.
+    nrn_hoc_call("objref myobj");
+    Symbol* obj = nrn_symbol("myobj");
+    ok &= check(obj != nullptr, "objref symbol exists");
+    ok &= check(nrn_symbol_dataptr(obj) == nullptr, "objref -> nullptr");
+
+    nrn_hoc_call("strdef mystr");
+    Symbol* str = nrn_symbol("mystr");
+    ok &= check(str != nullptr, "strdef symbol exists");
+    ok &= check(nrn_symbol_dataptr(str) == nullptr, "strdef -> nullptr");
+
+    // A section-level property (USERPROPERTY: L, nseg, ...) has no global
+    // storage pointer.
+    Symbol* len = nrn_symbol("L");
+    ok &= check(len != nullptr, "L symbol exists");
+    ok &= check(nrn_symbol_dataptr(len) == nullptr, "section-level property -> nullptr");
+
     return ok ? 0 : 1;
 }
