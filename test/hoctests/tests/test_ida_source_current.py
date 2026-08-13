@@ -1,7 +1,17 @@
 """Plan (b): source-current discontinuities — PWL MOD + Section↔LM parity.
 
-WP0b / WP1 / WP1b: PWLClamp electrode stimulus; mode-3 IClamp/PWL jump;
-capacitive Section vs LM under jump and kink waveforms.
+WP0b–WP3: PWLClamp electrode stimulus; mode-3 IClamp/PWL jump/kink;
+Section↔LM parity (E0/E1); end-ri LM twins (Z0/Z1).
+
+Run via ctest (preferred for CI — loads PWLClamp from hoctests nrnivmodl hash)::
+
+    ctest -R hoctests::test_ida_source_current --output-on-failure
+
+Or standalone (auto nrnivmodl of test/hoctests/pwlclamp.mod if needed)::
+
+    export PATH=build/bin:$PATH LD_LIBRARY_PATH=build/lib:$LD_LIBRARY_PATH
+    export PYTHONPATH=build/lib/python:$PYTHONPATH
+    python test/hoctests/tests/test_ida_source_current.py
 
 Each model case runs in a subprocess (LinearMechanism teardown hygiene).
 """
