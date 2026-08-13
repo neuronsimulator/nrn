@@ -461,41 +461,90 @@ static void seed_yp_from_Cy_eq_f(Daspk* d) {
     N_VConst(0., d->yp_);
 
 #if EXTRACELLULAR
-    // Extracellular xc first so membrane can use c*(vm' - vext[0]').
+    // Extracellular + membrane mass are coupled (see Cvode::res):
+    //   delta[vi] = F[vi] - c*(yp_vi - yp_vx0)
+    //   delta[vx0] = F[vx0] + c*(yp_vi - yp_vx0) - (xc chain)
+    // Electrode current sits only in F[vi].  Solving C yp = F then requires
+    //   c*(yp_vi - yp_vx0) = F[vi]
+    //   and for 1-layer xc:  cx*yp_vx0 = F[vi] + F[vx0]
+    // so yp_vx0 = (F[vi]+F[vx0])/cx, not F[vx0]/cx alone (the old seed left
+    // residual ±I_electrode on the vext row after a source step).
     if (z.cmlext_) {
         assert(z.cmlext_->ml.size() == 1);
-        Memb_list* ml = &z.cmlext_->ml[0];
-        int n = ml->nodecount;
+        Memb_list* mlx = &z.cmlext_->ml[0];
+        Memb_list* mlc = (z.cmlcap_ && z.cmlcap_->ml.size() == 1) ? &z.cmlcap_->ml[0] : nullptr;
+        int n = mlx->nodecount;
         for (int i = 0; i < n; ++i) {
-            Node* nd = ml->nodelist[i];
-            int j = nd->eqn_index_;  // vext[0] index in y (see Cvode::res)
-            if (nrn_nlayer_extracellular == 1) {
-                double cx = 1e-3 * ml->data(i, neuron::extracellular::xc_index, 0);
-                if (cx > 0.) {
-                    yp[j] = F[j] / cx;
-                }
-            } else {
-                int k = nrn_nlayer_extracellular - 1;
-                int jj = j + k;
-                double cx = 1e-3 * ml->data(i, neuron::extracellular::xc_index, k);
-                if (cx > 0.) {
-                    yp[jj] = F[jj] / cx;
-                }
-                for (k = nrn_nlayer_extracellular - 2; k >= 0; --k) {
-                    jj = j + k;
-                    cx = 1e-3 * ml->data(i, neuron::extracellular::xc_index, k);
-                    if (cx > 0.) {
-                        yp[jj] = yp[jj + 1] + F[jj] / cx;
+            Node* nd = mlx->nodelist[i];
+            int jx = nd->eqn_index_;      // vext[0]
+            int jv = nd->eqn_index_ - 1;  // vi
+            double c = 0.;
+            if (mlc) {
+                // same node order as cmlcap list when both present
+                for (int k = 0; k < mlc->nodecount; ++k) {
+                    if (mlc->nodelist[k] == nd) {
+                        c = 1e-3 * mlc->data(k, 0);
+                        break;
                     }
                 }
             }
+            if (nrn_nlayer_extracellular == 1) {
+                double cx = 1e-3 * mlx->data(i, neuron::extracellular::xc_index, 0);
+                if (cx > 0.) {
+                    if (c > 0.) {
+                        // Coupled cm+xc: electrode in F[vi] must charge both
+                        // (yp_vx = (F_vi+F_vx)/cx, yp_vi = yp_vx + F_vi/c)
+                        yp[jx] = (F[jv] + F[jx]) / cx;
+                        yp[jv] = yp[jx] + F[jv] / c;
+                    } else {
+                        // No membrane mass (e.g. zero-area node): no cm coupling
+                        // in res; use diagonal xc only. Algebraic vi needs F[vi]=0.
+                        yp[jx] = F[jx] / cx;
+                    }
+                } else if (c > 0.) {
+                    // xc algebraic, membrane capacitive: only relative rate from F[vi]
+                    yp[jv] = F[jv] / c;
+                }
+            } else {
+                // Multi-layer (default nlayer is often 2).  res couples membrane
+                // only to vext[0], and layer caps in a chain to ground:
+                //   c*(yp_vi-yp0)=F[vi]
+                //   cx_k*(yp[k]-yp[k+1]) carries F[vi]+F[0]+...+F[k] toward ground
+                // so the outermost rate is
+                //   yp[last]=(F[vi]+sum_k F[vext[k]])/cx_last
+                // then walk inward.  (Old seed used F[layer]/cx alone and left
+                // electrode residual on outer rows.)
+                int nlay = nrn_nlayer_extracellular;
+                // cumulative F from membrane + all layers
+                double f_cum = F[jv];
+                for (int k = 0; k < nlay; ++k) {
+                    f_cum += F[jx + k];
+                }
+                // outermost
+                int k = nlay - 1;
+                int jj = jx + k;
+                double cx = 1e-3 * mlx->data(i, neuron::extracellular::xc_index, k);
+                if (cx > 0.) {
+                    yp[jj] = f_cum / cx;
+                }
+                // remove this layer's F and step inward
+                for (k = nlay - 2; k >= 0; --k) {
+                    f_cum -= F[jx + k + 1];
+                    jj = jx + k;
+                    cx = 1e-3 * mlx->data(i, neuron::extracellular::xc_index, k);
+                    if (cx > 0.) {
+                        yp[jj] = yp[jj + 1] + f_cum / cx;
+                    }
+                }
+                if (c > 0.) {
+                    yp[jv] = yp[jx] + F[jv] / c;
+                }
+            }
         }
-    }
+    } else
 #endif
-
-    // Capacitive membrane: c = 1e-3 * cm (matches res).
-    // No ext: c*vm' = f. With ext: c*(vm' - vext[0]') = f_vi ⇒ vm' = vext' + f/c.
-    if (z.cmlcap_) {
+        // Capacitive membrane without extracellular: c*vm' = f
+        if (z.cmlcap_) {
         assert(z.cmlcap_->ml.size() == 1);
         Memb_list* ml = &z.cmlcap_->ml[0];
         int n = ml->nodecount;
@@ -506,11 +555,7 @@ static void seed_yp_from_Cy_eq_f(Daspk* d) {
             if (c == 0.) {
                 continue;  // algebraic membrane node
             }
-            if (nd->extnode) {
-                yp[j] = yp[j + 1] + F[j] / c;
-            } else {
-                yp[j] = F[j] / c;
-            }
+            yp[j] = F[j] / c;
         }
     }
 

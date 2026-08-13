@@ -426,6 +426,298 @@ print('ok')
     assert "ok" in _run_isolated(code)
 
 
+def test_e1_extracellular_pwl_istep_mode3():
+    """WP3 E1: 1-layer extracellular + PWL istep; mode 3 holds Vm, path_mode=3.
+
+    Uses nlayer_extracellular(1).  Sets xg/xc on all segments (including ends).
+    Requires coupled cm+xc seed (electrode current in F[vi] charges both).
+    """
+    code = (
+        _LOADER
+        + _SET_PWL
+        + r"""
+from neuron import h
+import math
+h.load_file('stdrun.hoc')
+h.nlayer_extracellular(1)
+cvode = h.CVode()
+s = h.Section(name='s')
+s.L = s.diam = 10
+s.nseg = 1
+s.insert('pas')
+s.g_pas = 1e-5
+s.e_pas = 0.0
+s.insert('extracellular')
+for seg in s:
+    seg.xg[0] = 1e-3
+    seg.xc[0] = 1.0
+stim = h.PWLClamp(s(0.5))
+set_pwl(stim, [0, 1, 1, 5], [0, 0, 0.1, 0.1])
+h.cvode_active(True)
+cvode.use_daspk(1)
+cvode.dae_init_mode(3)
+cvode.dae_init_stats(1)
+h.finitialize(0.0)
+h.continuerun(0.999)
+vm0 = s(0.5).v - s(0.5).vext[0]
+h.continuerun(1.0)
+vm1 = s(0.5).v - s(0.5).vext[0]
+st = h.Vector()
+cvode.dae_init_stats(st)
+assert int(st[6]) == 3, list(st)
+assert st[2] == 0, ('fallback', list(st))
+assert abs(vm1 - vm0) < 1e-6, (vm0, vm1)
+assert math.isfinite(s(0.5).v)
+print('ok')
+"""
+    )
+    assert "ok" in _run_isolated(code)
+
+
+def test_e1_section_lm_parity_istep_kink():
+    """WP3 E1 parity: Section+xtral+PWL vs LM floating Cm + xg + play force.
+
+    LM twin (2-node): y0=v_int, y1=vext; floating C between them; xg on vext;
+    I into y0 via play.  Compare Vm continuity and mode-3 path on both.
+    """
+    code = (
+        _LOADER
+        + _SET_PWL
+        + r"""
+from neuron import h
+import math
+h.load_file('stdrun.hoc')
+
+def run_section(tvec, ivec, t_event):
+    h.nlayer_extracellular(1)
+    cvode = h.CVode()
+    s = h.Section(name='s')
+    s.L = s.diam = 10
+    s.nseg = 1
+    s.insert('pas')
+    s.g_pas = 1e-5
+    s.e_pas = 0.0
+    s.insert('extracellular')
+    for seg in s:
+        seg.xg[0] = 1e-3
+        seg.xc[0] = 1.0
+    stim = h.PWLClamp(s(0.5))
+    set_pwl(stim, tvec, ivec)
+    h.cvode_active(True)
+    cvode.use_daspk(1)
+    cvode.dae_init_mode(3)
+    cvode.dae_init_stats(1)
+    h.finitialize(0.0)
+    h.continuerun(t_event - 1e-4)
+    vm0 = s(0.5).v - s(0.5).vext[0]
+    h.continuerun(t_event)
+    vm1 = s(0.5).v - s(0.5).vext[0]
+    st = h.Vector()
+    cvode.dae_init_stats(st)
+    return vm0, vm1, list(st), stim.ival(t_event)
+
+def run_lm(tvec, ivec, t_event):
+    cvode = h.CVode()
+    Cm, xg = 1.0, 1e-3
+    c = h.Matrix(2, 2)
+    g = h.Matrix(2, 2)
+    y = h.Vector(2)
+    y0 = h.Vector(2)
+    b = h.Vector([0.0, 0.0])
+    c.setval(0, 0, Cm); c.setval(0, 1, -Cm)
+    c.setval(1, 0, -Cm); c.setval(1, 1, Cm)
+    g.setval(1, 1, xg)
+    lm = h.LinearMechanism(c, g, y, y0, b)
+    tv = h.Vector(tvec)
+    iv = h.Vector(ivec)
+    iv.play(b._ref_x[0], tv, True)
+    h.cvode_active(True)
+    cvode.use_daspk(1)
+    cvode.dae_init_mode(3)
+    cvode.dae_init_stats(1)
+    h.finitialize(0.0)
+    h.continuerun(t_event - 1e-4)
+    vm0 = y[0] - y[1]
+    h.continuerun(t_event)
+    vm1 = y[0] - y[1]
+    st = h.Vector()
+    cvode.dae_init_stats(st)
+    return vm0, vm1, list(st), b[0]
+
+def check(name, tvec, ivec, te):
+    svm0, svm1, sst, si = run_section(tvec, ivec, te)
+    lvm0, lvm1, lst, li = run_lm(tvec, ivec, te)
+    assert int(sst[6]) == 3 and sst[2] == 0, (name, 'sec', sst)
+    assert int(lst[6]) == 3 and lst[2] == 0, (name, 'lm', lst)
+    assert abs(svm1 - svm0) < 1e-6, (name, 'sec dVm', svm0, svm1)
+    assert abs(lvm1 - lvm0) < 1e-6, (name, 'lm dVm', lvm0, lvm1)
+    assert abs(si - li) < 1e-9, (name, 'I', si, li)
+    print(name, 'ok')
+
+check('istep', [0, 1, 1, 5], [0, 0, 0.1, 0.1], 1.0)
+check('kink', [0, 1, 2], [0, 0, 1], 1.0)
+print('ok')
+"""
+    )
+    assert "ok" in _run_isolated(code)
+
+
+def test_z0_end_ri_lm_parity_istep():
+    """WP3 Z0: end loc 0; LM twin uses sec(0.0001).ri() between I and C.
+
+    LM (mode 3, strict): algebraic inject node -- R_end -- C to ground.
+    After step, hold capacitor voltage; inject node jumps toward I*R.
+
+    Section cable at loc 0: zero-area electrode is still algebraic for mode 3
+    (no free-y projector for pure cable ends yet). Assert interior Vm continuous
+    under mode 3 *request* (may nano-step fallback); LM carries path_mode==3.
+    """
+    code = (
+        _LOADER
+        + _SET_PWL
+        + r"""
+from neuron import h
+import math
+h.load_file('stdrun.hoc')
+
+# Geometry for ri()
+s = h.Section(name='s')
+s.L = 100
+s.diam = 10
+s.nseg = 5
+s.Ra = 100
+s.insert('pas')
+s.g_pas = 1e-5
+s.e_pas = 0.0
+h.finitialize(0.0)
+R_end = s(0.0001).ri()
+assert R_end > 0, R_end
+Iamp = 0.05
+
+# --- LM twin: I -> n_I --[R_end]-- n_C (C to ground) ---
+cv2 = h.CVode()
+c = h.Matrix(2, 2)
+g = h.Matrix(2, 2)
+y = h.Vector(2)
+y0 = h.Vector(2)
+b = h.Vector([0.0, 0.0])
+Cval = 1.0
+c.setval(1, 1, Cval)
+g.setval(0, 0, 1.0 / R_end)
+g.setval(0, 1, -1.0 / R_end)
+g.setval(1, 0, -1.0 / R_end)
+g.setval(1, 1, 1.0 / R_end)
+lm = h.LinearMechanism(c, g, y, y0, b)
+tv = h.Vector([0, 1, 1, 5])
+iv = h.Vector([0, 0, Iamp, Iamp])
+iv.play(b._ref_x[0], tv, True)
+h.cvode_active(True)
+cv2.use_daspk(1)
+cv2.dae_init_mode(3)
+cv2.dae_init_stats(1)
+h.finitialize(0.0)
+h.continuerun(1.0)
+# play may not always reinit; force IC at t+ after step value is live
+cv2.re_init()
+st2 = h.Vector()
+cv2.dae_init_stats(st2)
+assert int(st2[6]) == 3, list(st2)
+assert st2[2] == 0, list(st2)
+# C voltage held at 0 from rest; inject node ~ I*R
+assert abs(y[1]) < 1e-6, y[1]
+assert math.isclose(y[0], Iamp * R_end, rel_tol=1e-4, abs_tol=1e-4), (y[0], Iamp * R_end)
+
+# --- Section at loc 0: physical continuity of interior v ---
+cvode = h.CVode()
+stim = h.PWLClamp(s(0.0))
+set_pwl(stim, [0, 1, 1, 5], [0, 0, Iamp, Iamp])
+h.cvode_active(True)
+cvode.use_daspk(1)
+cvode.dae_init_mode(3)
+cvode.dae_init_stats(1)
+h.finitialize(0.0)
+seg = s(0.1)
+h.continuerun(0.999)
+vm0 = seg.v
+h.continuerun(1.0)
+vm1 = seg.v
+assert abs(vm1 - vm0) < 1e-3, (vm0, vm1)
+assert math.isfinite(seg.v)
+print('ok', 'R_end', R_end, 'I*R', Iamp * R_end)
+"""
+    )
+    assert "ok" in _run_isolated(code)
+
+
+def test_z1_end_ri_lm_parity_istep():
+    """WP3 Z1: loc 1; LM series sec(1.0).ri() (same topology as Z0)."""
+    code = (
+        _LOADER
+        + _SET_PWL
+        + r"""
+from neuron import h
+import math
+h.load_file('stdrun.hoc')
+s = h.Section(name='s')
+s.L = 100
+s.diam = 10
+s.nseg = 5
+s.Ra = 100
+s.insert('pas')
+s.g_pas = 1e-5
+s.e_pas = 0.0
+h.finitialize(0.0)
+R_end = s(1.0).ri()
+assert R_end > 0, R_end
+Iamp = 0.05
+
+cv2 = h.CVode()
+c = h.Matrix(2, 2)
+g = h.Matrix(2, 2)
+y = h.Vector(2)
+y0 = h.Vector(2)
+b = h.Vector([0.0, 0.0])
+c.setval(1, 1, 1.0)
+g.setval(0, 0, 1.0 / R_end)
+g.setval(0, 1, -1.0 / R_end)
+g.setval(1, 0, -1.0 / R_end)
+g.setval(1, 1, 1.0 / R_end)
+lm = h.LinearMechanism(c, g, y, y0, b)
+tv = h.Vector([0, 1, 1, 5])
+iv = h.Vector([0, 0, Iamp, Iamp])
+iv.play(b._ref_x[0], tv, True)
+h.cvode_active(True)
+cv2.use_daspk(1)
+cv2.dae_init_mode(3)
+cv2.dae_init_stats(1)
+h.finitialize(0.0)
+h.continuerun(1.0)
+cv2.re_init()
+st2 = h.Vector()
+cv2.dae_init_stats(st2)
+assert int(st2[6]) == 3 and st2[2] == 0, list(st2)
+assert abs(y[1]) < 1e-6, y[1]
+assert math.isclose(y[0], Iamp * R_end, rel_tol=1e-4, abs_tol=1e-4), (y[0], Iamp * R_end)
+
+cvode = h.CVode()
+stim = h.PWLClamp(s(1.0))
+set_pwl(stim, [0, 1, 1, 5], [0, 0, Iamp, Iamp])
+h.cvode_active(True)
+cvode.use_daspk(1)
+cvode.dae_init_mode(3)
+h.finitialize(0.0)
+seg = s(0.9)
+h.continuerun(0.999)
+vm0 = seg.v
+h.continuerun(1.0)
+vm1 = seg.v
+assert abs(vm1 - vm0) < 1e-3, (vm0, vm1)
+print('ok', 'R_end', R_end)
+"""
+    )
+    assert "ok" in _run_isolated(code)
+
+
 if __name__ == "__main__":
     test_pwlclamp_ival_right_continuous()
     test_iclamp_step_mode3_section()
@@ -433,4 +725,8 @@ if __name__ == "__main__":
     test_pwl_kink_mode3_section()
     test_pwl_jump_ramp_section_mode3()
     test_e0_section_lm_parity_istep_kink()
+    test_e1_extracellular_pwl_istep_mode3()
+    test_e1_section_lm_parity_istep_kink()
+    test_z0_end_ri_lm_parity_istep()
+    test_z1_end_ri_lm_parity_istep()
     print("all ok")

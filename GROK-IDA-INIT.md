@@ -19,7 +19,7 @@ Use this file when starting a **new** Grok session rooted in `~/neuron/nrnida`.
 | Manual GUI circuits | **Local** | `external/tests/nrntest/nrniv/ida/*.ses` (gitignored); `~/models/nrndc1sim` |
 | **Plan A** forcing \(t^+\) for free \(y'\) | **A0–A5 done** | continuous `Vector.play` + LM `dforce` / FD |
 | **MOD density `PROCEDURE dforce`** | **Parked** | tip `210c43c56` on `hines-grok/ida-mod-dforce-park` only |
-| **(b) Source-current discontinuities** | **In progress** | Plan: `~/neuron/notes/ida_plan_b_source_currents.md`. WP0–WP1b done; **WP2** A3 LM istep/kink/ramp still green. Next: **WP3** xtral/Z* Section↔LM parity. |
+| **(b) Source-current discontinuities** | **In progress** | Plan: `~/neuron/notes/ida_plan_b_source_currents.md`. WP0–WP2 done; **WP3 E1/Z0/Z1** in tests. Fix: mode-3 `C y'=f` seed couples electrode into xc (1- and multi-layer). Cable **zero-area end** electrode still algebraic fallback; LM end-`ri()` twin is path_mode=3. Next: E2+ / optional cable free-y for ends. |
 
 **Working tip:** `7688c6238` — *A5: IDA IC path stats, clearer mode-3 fallback messages*  
 **Branch:** `hines-grok/ida-init` (tracks `origin/hines-grok/ida-init`)  
