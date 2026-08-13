@@ -469,9 +469,9 @@ cvode.dae_init_mode(3)
 cvode.dae_init_stats(1)
 h.finitialize(0.0)
 h.continuerun(0.999)
-vm0 = s(0.5).v - s(0.5).vext[0]
+vm0 = s(0.5).v  # transmembrane Vm with extracellular
 h.continuerun(1.0)
-vm1 = s(0.5).v - s(0.5).vext[0]
+vm1 = s(0.5).v  # transmembrane Vm with extracellular
 st = h.Vector()
 cvode.dae_init_stats(st)
 assert int(st[6]) == 3, list(st)
@@ -519,9 +519,9 @@ def run_section(tvec, ivec, t_event):
     cvode.dae_init_stats(1)
     h.finitialize(0.0)
     h.continuerun(t_event - 1e-4)
-    vm0 = s(0.5).v - s(0.5).vext[0]
+    vm0 = s(0.5).v  # transmembrane Vm with extracellular
     h.continuerun(t_event)
-    vm1 = s(0.5).v - s(0.5).vext[0]
+    vm1 = s(0.5).v  # transmembrane Vm with extracellular
     st = h.Vector()
     cvode.dae_init_stats(st)
     return vm0, vm1, list(st), stim.ival(t_event)
@@ -798,7 +798,11 @@ print('ok')
 
 
 def test_e2_xc0_extracellular_istep():
-    """B E2: xc=0 (resistive xtral only) + IClamp step; mode 3 path + Vm hold."""
+    """B E2: xc=0 (resistive xtral) + IClamp step; mode 3 holds Vm (=seg.v).
+
+    With extracellular, seg.v is transmembrane Vm; vext may jump when xc=0.
+    Do not use v-vext as Vm.
+    """
     code = r"""
 from neuron import h
 h.load_file('stdrun.hoc')
@@ -824,16 +828,18 @@ cv.dae_init_mode(3)
 cv.dae_init_stats(1)
 h.finitialize(0.0)
 h.continuerun(0.999)
-vm0 = s(0.5).v - s(0.5).vext[0]
+vm0 = s(0.5).v  # transmembrane
+vext0 = s(0.5).vext[0]
 h.continuerun(1.0)
-vm1 = s(0.5).v - s(0.5).vext[0]
+vm1 = s(0.5).v
+vext1 = s(0.5).vext[0]
 st = h.Vector()
 cv.dae_init_stats(st)
 assert int(st[6]) == 3 and st[2] == 0, list(st)
-# xc=0: outer layer algebraic — absolute levels may jump. Require mode-3
-# success and finite voltages (Vm hold for xc=0 is a known weaker case).
-assert abs(s(0.5).v) < 1e6 and abs(s(0.5).vext[0]) < 1e6
-print('ok', 'dVm', vm1 - vm0, 'vext', s(0.5).vext[0])
+assert abs(vm1 - vm0) < 1e-6, (vm0, vm1, vext0, vext1)
+# algebraic outer layer: vext free to jump under electrode step
+assert abs(vext1 - vext0) > 1e-6 or abs(ic.amp) < 1e-12
+print('ok', 'dVm', vm1 - vm0, 'dvext', vext1 - vext0)
 """
     assert "ok" in _run_isolated(code)
 
@@ -868,9 +874,9 @@ cv.dae_init_mode(3)
 cv.dae_init_stats(1)
 h.finitialize(0.0)
 h.continuerun(0.999)
-vm0 = s(0.5).v - s(0.5).vext[0]
+vm0 = s(0.5).v  # transmembrane Vm with extracellular
 h.continuerun(1.0)
-vm1 = s(0.5).v - s(0.5).vext[0]
+vm1 = s(0.5).v  # transmembrane Vm with extracellular
 st = h.Vector()
 cv.dae_init_stats(st)
 assert int(st[6]) == 3 and st[2] == 0, list(st)
@@ -908,9 +914,9 @@ for xg in (1e-6, 1e-3, 1.0):
     cv.dae_init_stats(1)
     h.finitialize(0.0)
     h.continuerun(0.999)
-    vm0 = s(0.5).v - s(0.5).vext[0]
+    vm0 = s(0.5).v  # transmembrane Vm with extracellular
     h.continuerun(1.0)
-    vm1 = s(0.5).v - s(0.5).vext[0]
+    vm1 = s(0.5).v  # transmembrane Vm with extracellular
     st = h.Vector()
     cv.dae_init_stats(st)
     assert int(st[6]) == 3 and st[2] == 0, (xg, list(st))

@@ -19,7 +19,7 @@ Use this file when starting a **new** Grok session rooted in `~/neuron/nrnida`.
 | Manual GUI circuits | **Local** | `external/tests/nrntest/nrniv/ida/*.ses` (gitignored); `~/models/nrndc1sim` |
 | **Plan A** forcing \(t^+\) for free \(y'\) | **A0–A5 done** | continuous `Vector.play` + LM `dforce` / FD |
 | **MOD density `PROCEDURE dforce`** | **Parked** | tip `210c43c56` on `hines-grok/ida-mod-dforce-park` only |
-| **(b) Source-current discontinuities** | **Done (v1)** | Plan: `~/neuron/notes/ida_plan_b_source_currents.md`. PWLClamp; E0–E4; end free-\(y\) (`nrn_cable_battery_ic`); xc seed coupling for electrode. **CI:** `ctest -R hoctests::test_ida_source_current`. Optional later: stricter Vm hold when `xc=0`; density events. Default still mode 0. |
+| **(b) Source-current discontinuities** | **Done (v1+polish)** | Plan: `~/neuron/notes/ida_plan_b_source_currents.md`. PWLClamp; E0–E4; end free-\(y\); electrode–xc seed. **Docs:** `dae_init_mode` electrode/xtral notes in `cvode.rst`. **E2:** true Vm is `seg.v` (held); `vext` may jump when `xc=0`. **CI:** `ctest -R hoctests::test_ida_source_current`. Smoke `nrndc1sim`: mode-3 OK at `finitialize`; per-step `re_init` after transfer often falls back (algebraic clamp/current). Default still mode 0. |
 
 **Working tip:** `7688c6238` — *A5: IDA IC path stats, clearer mode-3 fallback messages*  
 **Branch:** `hines-grok/ida-init` (tracks `origin/hines-grok/ida-init`)  

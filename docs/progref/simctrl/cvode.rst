@@ -2161,6 +2161,31 @@ CVode
             is algebraically inconsistent (e.g. clamp amp ≠ :math:`v`, or
             ``xc=0`` with an inconsistent ``vext`` gauge).
 
+            **Electrode / source currents** (e.g. :class:`IClamp`, continuous
+            :meth:`Vector.play` into a force, piecewise-linear test stimuli):
+
+            * Use :keyword:`ELECTRODE_CURRENT` and :func:`at_time` breakpoints
+              for step sources so IDA reinit lands on the event.
+            * A **jump** in electrode current is primarily an algebraic
+              :math:`y` problem after hold: free absolute levels (and free
+              end-node voltages when a point process sits at location ``0`` or
+              ``1``); continuous content (:math:`V_m`, floating :math:`\Delta v`,
+              capacitive :math:`xc` drops) is held. Classical :math:`i'` is not
+              required for residual success between flat segments.
+            * A **kink** or ramp (nonzero classical :math:`i'`) matters for free
+              algebraic rates when mass leaves a null space (e.g. series
+              :math:`C`–:math:`R` with play into :math:`b`). Prefer continuous
+              :meth:`Vector.play` or :meth:`LinearMechanism.dforce` for the
+              1-jet of the drive; mode ``3`` reuses that Plan-A path.
+            * With **extracellular**, electrode current is not transmembrane:
+              it couples into the ``vext`` network. Mode ``3`` holds membrane
+              :math:`V_m` (``seg.v``) and capacitive layer drops; absolute
+              ``vext`` may jump. For coupled membrane/``xc`` mass, rates
+              include electrode current in the :math:`C y' = f` seed.
+            * **Default remains mode ``0``** until you validate mode ``3`` on
+              your models. Use :meth:`CVode.dae_init_stats` and
+              :meth:`CVode.dae_init_audit` when diagnosing reinits.
+
             **Forcing** :math:`t^+` **info:** the right-limit value
             :math:`u(t^+)` and classical derivative :math:`u'(t^+)` of
             exogenous drives after a discontinuity (or at ``finitialize``).
@@ -2189,7 +2214,8 @@ CVode
         Description:
             Same as the Python tab: ``0`` heuristic (default), ``1``
             ``IDA_Y_INIT`` with heuristic fallback, ``2`` pure ``IDA_Y_INIT``,
-            ``3`` battery content hold plus :math:`C y' = f(y)` for :math:`y'`.
+            ``3`` battery content hold plus :math:`C y' = f(y)` for :math:`y'`,
+            including electrode/source and extracellular notes above.
 
 ----
 
