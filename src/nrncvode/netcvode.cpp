@@ -4114,7 +4114,6 @@ void _nrn_free_fornetcon(void** v) {
 }
 
 void record_init_clear(const TQItem* q, int) {
-    printf("record_init_clear: %p\n", q);
     DiscreteEvent* d = (DiscreteEvent*) q->data_;
     d->frecord_init((TQItem*) q);
 }
