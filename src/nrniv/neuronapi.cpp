@@ -361,6 +361,37 @@ Section* nrn_section_sibling(Section* sec) {
     return sec->sibling;
 }
 
+int nrn_sectionlist_to_array(nrn_Item* sl, Section** buf, int maxlen) {
+    // Snapshot a section list (from nrn_allsec() or nrn_sectionlist_data(obj))
+    // into buf in a single call -- the batched form of the section-list
+    // iterator, which crosses the API boundary once per section. Building a
+    // section array this way (an allsec gather, rebuilt whenever the topology
+    // changes) becomes one crossing instead of one per section. The list is a
+    // circular doubly-linked list of hoc_Item with sl as the sentinel, so walk
+    // from sl->next back around to sl. Semi-deleted sections (no Section, or a
+    // freed prop) are skipped, matching SectionListIterator; read-only, it does
+    // not prune them.
+    //
+    // Fills up to maxlen entries and returns the TOTAL number of live sections,
+    // which may exceed maxlen when buf is too small. Call with buf=NULL and
+    // maxlen=0 to obtain just the count in one pass. Detecting whether a cached
+    // snapshot has gone stale is a separate matter -- watch structure_change_cnt.
+    if (!sl) {
+        return 0;
+    }
+    int total = 0;
+    for (hoc_Item* q = sl->next; q && q != sl; q = q->next) {
+        Section* sec = q->element.sec;
+        if (sec && sec->prop != nullptr) {
+            if (buf && total < maxlen) {
+                buf[total] = sec;
+            }
+            ++total;
+        }
+    }
+    return total;
+}
+
 /****************************************
  * Functions, objects, and the stack
  ****************************************/
