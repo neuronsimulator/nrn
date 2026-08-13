@@ -37,8 +37,7 @@ extern void nrndae_dkres(double*, double*, double*);
 extern void nrndae_dkpsol(double);
 extern int nrndae_battery_ic_project();
 extern void nrndae_seed_yp_from_f(double* f, double* yp);
-extern int nrndae_complete_yp_from_forcing(double* yp,
-                                            const std::vector<NrnForcingTPlus>& forcing);
+extern int nrndae_complete_yp_from_forcing(double* yp, const std::vector<NrnForcingTPlus>& forcing);
 extern void nrndae_append_dforce_to_forcing_list(double tt, std::vector<NrnForcingTPlus>& out);
 extern void nrn_solve(NrnThread*);
 extern int nrn_sparse13_soft_fail;
@@ -652,12 +651,7 @@ static void diagnose_battery_ic_residual(Daspk* d) {
         } else {
             kind = "capacitive";
         }
-        Printf("    eq %d  |res|=%.6g  c~%.3g  y'=%.6g  — %s\n",
-               i,
-               ar[k],
-               c,
-               yp[i],
-               kind);
+        Printf("    eq %d  |res|=%.6g  c~%.3g  y'=%.6g  — %s\n", i, ar[k], c, yp[i], kind);
     }
 }
 
@@ -740,8 +734,7 @@ FILE* Daspk::audit_open_out() {
     }
     FILE* f = fopen(audit_path_.c_str(), "a");
     if (!f) {
-        Printf("dae_init_audit: cannot open '%s' for append; using stdout\n",
-               audit_path_.c_str());
+        Printf("dae_init_audit: cannot open '%s' for append; using stdout\n", audit_path_.c_str());
         return stdout;
     }
     return f;
@@ -835,10 +828,7 @@ void Daspk::audit_dump_panel(FILE* f,
                              int max_rows) {
     fprintf(f, "--- %s ---\n", title);
     if (wrms >= 0.) {
-        fprintf(f, "  WRMS(residual)=%.6g  max|residual|=%.6g  neq=%d\n",
-                wrms,
-                max_abs,
-                cv_->neq_);
+        fprintf(f, "  WRMS(residual)=%.6g  max|residual|=%.6g  neq=%d\n", wrms, max_abs, cv_->neq_);
     } else {
         fprintf(f, "  WRMS(residual)=n/a  max|residual|=%.6g  neq=%d\n", max_abs, cv_->neq_);
     }
@@ -875,7 +865,8 @@ void Daspk::audit_dump_panel(FILE* f,
                           rows.end(),
                           [](const Row& a, const Row& b) { return a.ar > b.ar; });
         nprint = max_rows;
-        fprintf(f, "  (top %d of %d eqs by |residual|; form: residual ~ c*y' - f(y))\n",
+        fprintf(f,
+                "  (top %d of %d eqs by |residual|; form: residual ~ c*y' - f(y))\n",
                 nprint,
                 cv_->neq_);
     } else {
@@ -884,12 +875,7 @@ void Daspk::audit_dump_panel(FILE* f,
     fprintf(f, "  %6s %16s %16s %16s\n", "eq", "y", "y'", "residual");
     for (int i = 0; i < nprint; ++i) {
         const Row& r = rows[i];
-        fprintf(f,
-                "  %6d %16.8g %16.8g %16.8g\n",
-                r.i,
-                r.y,
-                r.yp,
-                r.r);
+        fprintf(f, "  %6d %16.8g %16.8g %16.8g\n", r.i, r.y, r.yp, r.r);
     }
 }
 
@@ -966,15 +952,17 @@ cv_->t_, t-cv_->t_, cv_->t0_-cv_->t_, init_mode_);
         path_mode = 3;
         if (err != 0) {
             if (do_audit) {
-                Printf("mode 3 IC residual failed (err=%d, forcing_flags=0x%x); audit armed — not "
-                       "falling back to heuristic\n",
-                       err,
-                       last_ic_forcing_flags_);
+                Printf(
+                    "mode 3 IC residual failed (err=%d, forcing_flags=0x%x); audit armed — not "
+                    "falling back to heuristic\n",
+                    err,
+                    last_ic_forcing_flags_);
             } else {
-                Printf("mode 3 IC residual failed (err=%d, forcing_flags=0x%x); falling back to "
-                       "nano-step heuristic IC\n",
-                       err,
-                       last_ic_forcing_flags_);
+                Printf(
+                    "mode 3 IC residual failed (err=%d, forcing_flags=0x%x); falling back to "
+                    "nano-step heuristic IC\n",
+                    err,
+                    last_ic_forcing_flags_);
                 ++calcic_fallback_count_;
                 ++ic_mode3_fallback_count_;
                 fell_back = true;
@@ -988,9 +976,10 @@ cv_->t_, t-cv_->t_, cv_->t0_-cv_->t_, init_mode_);
         err = init_ida_y_init();
         path_mode = init_mode_;
         if (err != 0 && init_mode_ == 1) {
-            Printf("IDACalcIC residual/project failed (err=%d); falling back to nano-step "
-                   "heuristic IC\n",
-                   err);
+            Printf(
+                "IDACalcIC residual/project failed (err=%d); falling back to nano-step "
+                "heuristic IC\n",
+                err);
             ++calcic_fallback_count_;
             fell_back = true;
             err = init_heuristic();

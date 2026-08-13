@@ -771,5 +771,3 @@ if __name__ == "__main__":
     test_mode3_dforce_sinusoid_a4()
     test_mode3_dforce_fd_fallback_a4()
     print("ok")
-
-

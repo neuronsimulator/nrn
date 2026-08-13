@@ -385,8 +385,8 @@ int nrndae_complete_yp_from_forcing(double* yp, const std::vector<NrnForcingTPlu
     if (!yp) {
         return 0;
     }
-    std::vector<PlayRecord*>* prl =
-        net_cvode_instance ? net_cvode_instance->playrec_list() : nullptr;
+    std::vector<PlayRecord*>* prl = net_cvode_instance ? net_cvode_instance->playrec_list()
+                                                       : nullptr;
     extern double t;
 
     for (NrnDAE* item: nrndae_list) {

@@ -408,9 +408,11 @@ void nrn_dump_forcing_tplus(FILE* f, double tt, const std::vector<NrnForcingTPlu
     if (!f) {
         return;
     }
-    fprintf(f, "--- forcing t+ info (t=%.15g)  n_play_continuous=%d ---\n", tt, (int) entries.size());
     fprintf(f,
-            "  (right-limit u and classical u'; 1-jet of exogenous continuous Vector.play)\n");
+            "--- forcing t+ info (t=%.15g)  n_play_continuous=%d ---\n",
+            tt,
+            (int) entries.size());
+    fprintf(f, "  (right-limit u and classical u'; 1-jet of exogenous continuous Vector.play)\n");
     if (entries.empty()) {
         fprintf(f, "  (none)\n");
         return;

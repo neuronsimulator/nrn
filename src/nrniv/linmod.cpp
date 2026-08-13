@@ -388,7 +388,8 @@ void LinearModelAddition::complete_yp_from_bdot(const double* bdot, double* yp_g
             bool z_null = true;
             for (int k = 0; k < n; ++k) {
                 const double ztc = (*c_)(i, k) + (*c_)(j, k);
-                if (std::fabs(ztc) > ctol * (1. + std::fabs((*c_)(i, k)) + std::fabs((*c_)(j, k)))) {
+                if (std::fabs(ztc) >
+                    ctol * (1. + std::fabs((*c_)(i, k)) + std::fabs((*c_)(j, k)))) {
                     z_null = false;
                     break;
                 }

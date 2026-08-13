@@ -65,9 +65,7 @@ _PWL_MECH_DIR = None
 def _build_pwlclamp_mech_dir() -> str:
     """Once-per-process compile of pwlclamp.mod; return dir with libnrnmech.so."""
     global _PWL_MECH_DIR
-    if _PWL_MECH_DIR and os.path.isfile(
-        os.path.join(_PWL_MECH_DIR, "libnrnmech.so")
-    ):
+    if _PWL_MECH_DIR and os.path.isfile(os.path.join(_PWL_MECH_DIR, "libnrnmech.so")):
         return _PWL_MECH_DIR
     # Reuse prior local build if present
     cached = "/tmp/pwlclamp_build/x86_64"
@@ -85,9 +83,7 @@ def _build_pwlclamp_mech_dir() -> str:
         env=os.environ.copy(),
     )
     if r.returncode != 0:
-        raise RuntimeError(
-            f"nrnivmodl failed ({nrnivmodl}):\n{r.stdout}\n{r.stderr}"
-        )
+        raise RuntimeError(f"nrnivmodl failed ({nrnivmodl}):\n{r.stdout}\n{r.stderr}")
     arch = None
     for name in os.listdir(build):
         p = os.path.join(build, name)
@@ -95,7 +91,9 @@ def _build_pwlclamp_mech_dir() -> str:
             arch = p
             break
     if not arch:
-        raise RuntimeError(f"libnrnmech.so not found under {build}: {os.listdir(build)}")
+        raise RuntimeError(
+            f"libnrnmech.so not found under {build}: {os.listdir(build)}"
+        )
     _PWL_MECH_DIR = arch
     return arch
 

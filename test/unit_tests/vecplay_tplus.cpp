@@ -10,10 +10,10 @@ using Catch::Matchers::WithinAbs;
 using Catch::Matchers::WithinRel;
 
 static double fd_deriv(const std::vector<double>& y,
-                      const std::vector<double>& t,
-                      double tt,
-                      int ubound,
-                      double h = 1e-9) {
+                       const std::vector<double>& t,
+                       double tt,
+                       int ubound,
+                       double h = 1e-9) {
     double v0 = 0., v1 = 0.;
     REQUIRE(nrn_vecplay_continuous_tplus(
                 (int) y.size(), y.data(), t.data(), tt, ubound, &v0, nullptr) == 0);
@@ -109,8 +109,8 @@ TEST_CASE("vecplay continuous t+ matches finite difference of value", "[vecplay]
     const int ub = 5;
     for (double tt: {0.5, 1.0, 1.5, 2.0, 3.0, 4.0}) {
         double v = 0., d = 0.;
-        REQUIRE(nrn_vecplay_continuous_tplus(
-                    (int) y.size(), y.data(), t.data(), tt, ub, &v, &d) == 0);
+        REQUIRE(nrn_vecplay_continuous_tplus((int) y.size(), y.data(), t.data(), tt, ub, &v, &d) ==
+                0);
         // Right FD of value should match classical deriv where smooth; at kinks
         // FD is one-sided outgoing if h>0
         const double d_fd = fd_deriv(y, t, tt, ub);

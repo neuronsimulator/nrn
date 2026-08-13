@@ -101,11 +101,11 @@ class Daspk {
     static int last_ic_forcing_flags_;
 
     // Audit control (process-wide; one IDA path typically).
-    static int audit_level_;          // 0 off, 1 summary, 2 three-panel (top residual rows)
-    static double audit_t_select_;    // first reinit with t >= this (when armed)
-    static int audit_armed_;          // 1 = waiting for t match
-    static int audit_serial_;         // reinit count (all reinits)
-    static std::string audit_path_;   // empty → stdout
+    static int audit_level_;         // 0 off, 1 summary, 2 three-panel (top residual rows)
+    static double audit_t_select_;   // first reinit with t >= this (when armed)
+    static int audit_armed_;         // 1 = waiting for t match
+    static int audit_serial_;        // reinit count (all reinits)
+    static std::string audit_path_;  // empty → stdout
 
     // Forcing t+ from continuous Vector.play at last Daspk::init (A1).
     static std::vector<NrnForcingTPlus> last_forcing_tplus_;

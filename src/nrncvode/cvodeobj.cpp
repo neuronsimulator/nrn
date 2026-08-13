@@ -721,7 +721,7 @@ static void destruct(void* v) {
 void Cvode_reg() {
     class2oc("CVode", cons, destruct, members, omembers, nullptr);
     net_cvode_instance = new NetCvode(1);
-    Daspk::dteps_ = 1e-9;  // change with cvode.dae_init_dteps(newval)
+    Daspk::dteps_ = 1e-9;   // change with cvode.dae_init_dteps(newval)
     Daspk::init_mode_ = 0;  // heuristic IC; use dae_init_mode(1|2|3) for other paths
     Daspk::audit_level_ = 0;
     Daspk::audit_armed_ = 0;
