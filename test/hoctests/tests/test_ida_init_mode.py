@@ -72,10 +72,23 @@ print('ok')
     assert "ok" in _run_isolated(code)
 
 
+def _sanitizer_child_env(env=None):
+    """Re-apply sanitizer preload for macOS SIP (see NeuronTestHelper.cmake)."""
+    env = os.environ.copy() if env is None else env
+    try:
+        env[os.environ["NRN_SANITIZER_PRELOAD_VAR"]] = os.environ[
+            "NRN_SANITIZER_PRELOAD_VAL"
+        ]
+    except KeyError:
+        pass
+    return env
+
+
 def _run_isolated(code: str):
-    env = os.environ.copy()
+    env = _sanitizer_child_env()
+    exe = os.environ.get("NRN_PYTHON_EXECUTABLE", sys.executable)
     r = subprocess.run(
-        [sys.executable, "-c", code],
+        [exe, "-c", code],
         env=env,
         capture_output=True,
         text=True,

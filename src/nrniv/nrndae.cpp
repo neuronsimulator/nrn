@@ -187,14 +187,13 @@ NrnDAE::NrnDAE(Matrix* cmat,
         cmat = assumed_identity_;
     }
     c_ = new MatrixMap(cmat);
-    Vect& elay = *elayer;
     nnode_ = nnode;
     nodes_ = nodes;
     if (nnode_ > 0) {
         elayer_ = new int[nnode_];
         if (elayer) {
             for (int i = 0; i < nnode_; ++i) {
-                elayer_[i] = int(elay[i]);
+                elayer_[i] = int((*elayer)[i]);
             }
         } else {
             for (int i = 0; i < nnode_; ++i) {
@@ -260,20 +259,17 @@ void NrnDAE::update() {
 void NrnDAE::init() {
     // printf("NrnDAE::init %lx\n", (long)this);
     // printf("init size_=%d %d %d %d\n", size_, y_->size(), y0_->size(), b_->size());
-    Vect& y0 = *y0_;
 
     v2y();
     if (f_init_) {
         f_init_(data_);
+    } else if (y0_) {
+        for (int i = nnode_; i < size_; ++i) {
+            y_[i] = (*y0_)[i];
+        }
     } else {
-        if (y0_) {
-            for (int i = nnode_; i < size_; ++i) {
-                y_[i] = y0[i];
-            }
-        } else {
-            for (int i = nnode_; i < size_; ++i) {
-                y_[i] = 0.;
-            }
+        for (int i = nnode_; i < size_; ++i) {
+            y_[i] = 0.;
         }
     }
     // for (i=0; i < nnode_; ++i) printf(" i=%d y[i]=%g\n", i, y[i]);

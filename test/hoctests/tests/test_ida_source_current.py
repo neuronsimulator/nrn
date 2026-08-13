@@ -98,9 +98,21 @@ def _build_pwlclamp_mech_dir() -> str:
     return arch
 
 
+def _sanitizer_child_env(env=None):
+    """Re-apply sanitizer preload for macOS SIP (see NeuronTestHelper.cmake)."""
+    env = os.environ.copy() if env is None else env
+    try:
+        env[os.environ["NRN_SANITIZER_PRELOAD_VAR"]] = os.environ[
+            "NRN_SANITIZER_PRELOAD_VAL"
+        ]
+    except KeyError:
+        pass
+    return env
+
+
 def _run_isolated(code: str, timeout: float = 120.0) -> str:
     """Run code in a subprocess with the same interpreter/env; return stdout."""
-    env = os.environ.copy()
+    env = _sanitizer_child_env()
     # Point children at a ready PWLClamp mechanism directory
     try:
         env["NRN_PWLCLAMP_MECH"] = _build_pwlclamp_mech_dir()
@@ -108,8 +120,9 @@ def _run_isolated(code: str, timeout: float = 120.0) -> str:
         # IClamp-only tests do not need the mech
         env.pop("NRN_PWLCLAMP_MECH", None)
         env["NRN_PWLCLAMP_BUILD_ERR"] = str(e)
+    exe = os.environ.get("NRN_PYTHON_EXECUTABLE", sys.executable)
     proc = subprocess.run(
-        [sys.executable, "-c", code],
+        [exe, "-c", code],
         capture_output=True,
         text=True,
         timeout=timeout,
