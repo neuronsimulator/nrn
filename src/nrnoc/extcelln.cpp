@@ -785,16 +785,25 @@ void nrn_extracellular_battery_ic() {
 
         setup_tree_matrix(sorted_token, *nt);
 
-        // Stiff springs: constrain continuous voltage differences' *deltas* to 0
+        // Stiff springs on actual_d / sparse entries.  nrn_solve copies
+        // actual_d → sparse13 diagonals, so node holds must update actual_d.
+        // Skip Vm hold on zero-area nodes (algebraic; electrode at loc 0/1).
         constexpr double ghold = 1e9;
         for (int i = 0; i < cnt; ++i) {
             Node* nd = ml->nodelist[i];
             Extnode* nde = nd->extnode;
-            // Membrane: continuous Vm ⇒ dvi - dvx0 = 0
-            *nd->_d_matelm += ghold;
-            *nde->_d[0] += ghold;
-            *nde->_x12[0] -= ghold;
-            *nde->_x21[0] -= ghold;
+            const int vi = nd->v_node_index;
+            const bool hold_vm = (NODEAREA(nd) > 0.);
+            if (hold_vm) {
+                // Membrane: continuous Vm ⇒ dvi - dvx0 = 0
+                nt->actual_d(vi) += ghold;
+                if (nd->_d_matelm) {
+                    *nd->_d_matelm += ghold;
+                }
+                *nde->_d[0] += ghold;
+                *nde->_x12[0] -= ghold;
+                *nde->_x21[0] -= ghold;
+            }
 
             for (int j = 0; j < nl; ++j) {
                 double const xc = *nde->param[xc_index_ext(j)];
@@ -821,6 +830,7 @@ void nrn_extracellular_battery_ic() {
         for (int i = 0; i < cnt; ++i) {
             Node* nd = ml->nodelist[i];
             Extnode* nde = nd->extnode;
+            const bool hold_vm = (NODEAREA(nd) > 0.);
             double const xc_last = *nde->param[xc_index_ext(nl - 1)];
             double alpha = 0.0;
             if (xc_last <= 0.0) {
@@ -843,7 +853,10 @@ void nrn_extracellular_battery_ic() {
                     nde->v[j] = vext_hold[i * nl + j] + alpha;
                 }
             }
-            nd->v() = vm_hold[i];
+            if (hold_vm) {
+                nd->v() = vm_hold[i];
+            }
+            // else: leave solved Vm (algebraic zero-area end free)
         }
 
         nt->cj = cj_sav;

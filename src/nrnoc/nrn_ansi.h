@@ -92,6 +92,8 @@ extern void hoc_level_pushsec(Section*);
 void nrn_ba(neuron::model_sorted_token const&, NrnThread&, int);
 extern void nrn_rhs_ext(NrnThread*);
 extern void nrn_setup_ext(NrnThread*);
+/** Battery-style IC: hold positive-area node V; free zero-area algebraics (end PP). */
+void nrn_cable_battery_ic();
 #if EXTRACELLULAR
 /** Battery-style IC: hold Vm and xc continuous content when extracellular present. */
 void nrn_extracellular_battery_ic();

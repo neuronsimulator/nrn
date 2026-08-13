@@ -44,6 +44,7 @@ extern void nrn_solve(NrnThread*);
 extern int nrn_sparse13_soft_fail;
 extern int nrn_sparse13_factor_error();
 void nrn_daspk_init_step(double, double, int);
+void nrn_cable_battery_ic();
 #if EXTRACELLULAR
 void nrn_extracellular_battery_ic();
 #endif
@@ -666,13 +667,22 @@ int Daspk::init_battery() {
     // C*y' = f(y) at fixed y. Nano-step heuristic is only a fallback (caller).
     double tt = cv_->t_;
     cv_->play_continuous(tt);
+    // Sync Node <-> IDA y (vi/vext transform) before projectors read Node.v.
+    // Also evaluate residual once so POINT_PROCESS BREAKPOINT (IClamp/PWL)
+    // and play side effects match the post-event t+ world before project.
+    cv_->daspk_gather_y(cv_->y_);
+    N_VConst(0., yp_);
+    res_gvardt(tt, cv_->y_, yp_, delta_, cv_);
+    cv_->daspk_scatter_y(cv_->y_);
     int berr = nrndae_battery_ic_project();
     if (berr != 0) {
         Printf("nrndae_battery_ic_project failed, err=%d\n", berr);
         return berr;
     }
+    // Free zero-area cable nodes (electrode at 0/1); hold CAP-list voltages.
+    nrn_cable_battery_ic();
 #if EXTRACELLULAR
-    // Hold Vm and xc layer continuous content; allow algebraic common mode.
+    // Hold Vm on CAP nodes and xc content; free zero-area Vm.
     nrn_extracellular_battery_ic();
 #endif
     // Projected states → IDA N_Vector (vi,vext transform in gather).

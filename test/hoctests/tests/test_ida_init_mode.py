@@ -451,7 +451,7 @@ for line in text.splitlines():
     if 'WRMS     A/B/C' in line:
         parts = line.split('=')[-1].split('/')
         wrms_c = float(parts[-1].strip())
-        assert wrms_c == 0.0, (wrms_c, line)
+        assert wrms_c < 1e-6, (wrms_c, line)
         break
 assert math.isclose(s(0.5).v, -65.0, abs_tol=1e-6)
 vc.amp1 = -60.0

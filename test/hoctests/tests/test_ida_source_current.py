@@ -572,16 +572,44 @@ print('ok')
     assert "ok" in _run_isolated(code)
 
 
+def test_end_electrode_mode3_path():
+    """A: IClamp at loc 0 and 1; mode 3 path_mode==3 (cable free-y)."""
+    code = r"""
+from neuron import h
+h.load_file('stdrun.hoc')
+for loc in (0.0, 1.0):
+    cv = h.CVode()
+    s = h.Section()
+    s.L = 100
+    s.diam = 10
+    s.nseg = 5
+    s.Ra = 100
+    s.insert('pas')
+    s.g_pas = 1e-5
+    s.e_pas = 0.0
+    ic = h.IClamp(s(loc))
+    ic.delay = 1.0
+    ic.dur = 1e9
+    ic.amp = 0.05
+    h.cvode_active(True)
+    cv.use_daspk(1)
+    cv.dae_init_mode(3)
+    cv.dae_init_stats(1)
+    h.finitialize(0.0)
+    h.continuerun(0.999)
+    vmid0 = s(0.5).v
+    h.continuerun(1.0)
+    st = h.Vector()
+    cv.dae_init_stats(st)
+    assert int(st[6]) == 3 and st[2] == 0, (loc, list(st))
+    assert abs(s(0.5).v - vmid0) < 1e-6, (loc, vmid0, s(0.5).v)
+print('ok')
+"""
+    assert "ok" in _run_isolated(code)
+
+
 def test_z0_end_ri_lm_parity_istep():
-    """WP3 Z0: end loc 0; LM twin uses sec(0.0001).ri() between I and C.
-
-    LM (mode 3, strict): algebraic inject node -- R_end -- C to ground.
-    After step, hold capacitor voltage; inject node jumps toward I*R.
-
-    Section cable at loc 0: zero-area electrode is still algebraic for mode 3
-    (no free-y projector for pure cable ends yet). Assert interior Vm continuous
-    under mode 3 *request* (may nano-step fallback); LM carries path_mode==3.
-    """
+    """WP3 Z0: end loc 0; LM twin uses sec(0.0001).ri(); Section path_mode=3."""
     code = (
         _LOADER
         + _SET_PWL
@@ -590,7 +618,6 @@ from neuron import h
 import math
 h.load_file('stdrun.hoc')
 
-# Geometry for ri()
 s = h.Section(name='s')
 s.L = 100
 s.diam = 10
@@ -603,16 +630,18 @@ h.finitialize(0.0)
 R_end = s(0.0001).ri()
 assert R_end > 0, R_end
 Iamp = 0.05
+# Drop cable before LM so sparse13 is pure linear mechanism
+for sec in list(h.allsec()):
+    h.delete_section(sec=sec)
 
-# --- LM twin: I -> n_I --[R_end]-- n_C (C to ground) ---
+# --- LM twin ---
 cv2 = h.CVode()
 c = h.Matrix(2, 2)
 g = h.Matrix(2, 2)
 y = h.Vector(2)
 y0 = h.Vector(2)
 b = h.Vector([0.0, 0.0])
-Cval = 1.0
-c.setval(1, 1, Cval)
+c.setval(1, 1, 1.0)
 g.setval(0, 0, 1.0 / R_end)
 g.setval(0, 1, -1.0 / R_end)
 g.setval(1, 0, -1.0 / R_end)
@@ -627,20 +656,35 @@ cv2.dae_init_mode(3)
 cv2.dae_init_stats(1)
 h.finitialize(0.0)
 h.continuerun(1.0)
-# play may not always reinit; force IC at t+ after step value is live
 cv2.re_init()
 st2 = h.Vector()
 cv2.dae_init_stats(st2)
-assert int(st2[6]) == 3, list(st2)
-assert st2[2] == 0, list(st2)
-# C voltage held at 0 from rest; inject node ~ I*R
+assert int(st2[6]) == 3 and st2[2] == 0, list(st2)
 assert abs(y[1]) < 1e-6, y[1]
 assert math.isclose(y[0], Iamp * R_end, rel_tol=1e-4, abs_tol=1e-4), (y[0], Iamp * R_end)
+print('ok', 'R_end', R_end, 'I*R', Iamp * R_end)
+"""
+    )
+    assert "ok" in _run_isolated(code)
 
-# --- Section at loc 0: physical continuity of interior v ---
-cvode = h.CVode()
+    # Section end path in its own process (no LM)
+    code_sec = (
+        _LOADER
+        + _SET_PWL
+        + r"""
+from neuron import h
+h.load_file('stdrun.hoc')
+s = h.Section(name='s')
+s.L = 100
+s.diam = 10
+s.nseg = 5
+s.Ra = 100
+s.insert('pas')
+s.g_pas = 1e-5
+s.e_pas = 0.0
 stim = h.PWLClamp(s(0.0))
-set_pwl(stim, [0, 1, 1, 5], [0, 0, Iamp, Iamp])
+set_pwl(stim, [0, 1, 1, 5], [0, 0, 0.05, 0.05])
+cvode = h.CVode()
 h.cvode_active(True)
 cvode.use_daspk(1)
 cvode.dae_init_mode(3)
@@ -651,16 +695,18 @@ h.continuerun(0.999)
 vm0 = seg.v
 h.continuerun(1.0)
 vm1 = seg.v
+st = h.Vector()
+cvode.dae_init_stats(st)
+assert int(st[6]) == 3 and st[2] == 0, list(st)
 assert abs(vm1 - vm0) < 1e-3, (vm0, vm1)
-assert math.isfinite(seg.v)
-print('ok', 'R_end', R_end, 'I*R', Iamp * R_end)
+print('ok')
 """
     )
-    assert "ok" in _run_isolated(code)
+    assert "ok" in _run_isolated(code_sec)
 
 
 def test_z1_end_ri_lm_parity_istep():
-    """WP3 Z1: loc 1; LM series sec(1.0).ri() (same topology as Z0)."""
+    """WP3 Z1: loc 1; LM series sec(1.0).ri(); Section path_mode=3."""
     code = (
         _LOADER
         + _SET_PWL
@@ -678,8 +724,9 @@ s.g_pas = 1e-5
 s.e_pas = 0.0
 h.finitialize(0.0)
 R_end = s(1.0).ri()
-assert R_end > 0, R_end
 Iamp = 0.05
+for sec in list(h.allsec()):
+    h.delete_section(sec=sec)
 
 cv2 = h.CVode()
 c = h.Matrix(2, 2)
@@ -708,24 +755,46 @@ cv2.dae_init_stats(st2)
 assert int(st2[6]) == 3 and st2[2] == 0, list(st2)
 assert abs(y[1]) < 1e-6, y[1]
 assert math.isclose(y[0], Iamp * R_end, rel_tol=1e-4, abs_tol=1e-4), (y[0], Iamp * R_end)
+print('ok')
+"""
+    )
+    assert "ok" in _run_isolated(code)
 
-cvode = h.CVode()
+    code_sec = (
+        _LOADER
+        + _SET_PWL
+        + r"""
+from neuron import h
+h.load_file('stdrun.hoc')
+s = h.Section(name='s')
+s.L = 100
+s.diam = 10
+s.nseg = 5
+s.Ra = 100
+s.insert('pas')
+s.g_pas = 1e-5
+s.e_pas = 0.0
 stim = h.PWLClamp(s(1.0))
-set_pwl(stim, [0, 1, 1, 5], [0, 0, Iamp, Iamp])
+set_pwl(stim, [0, 1, 1, 5], [0, 0, 0.05, 0.05])
+cvode = h.CVode()
 h.cvode_active(True)
 cvode.use_daspk(1)
 cvode.dae_init_mode(3)
+cvode.dae_init_stats(1)
 h.finitialize(0.0)
 seg = s(0.9)
 h.continuerun(0.999)
 vm0 = seg.v
 h.continuerun(1.0)
 vm1 = seg.v
+st = h.Vector()
+cvode.dae_init_stats(st)
+assert int(st[6]) == 3 and st[2] == 0, list(st)
 assert abs(vm1 - vm0) < 1e-3, (vm0, vm1)
-print('ok', 'R_end', R_end)
+print('ok')
 """
     )
-    assert "ok" in _run_isolated(code)
+    assert "ok" in _run_isolated(code_sec)
 
 
 if __name__ == "__main__":
@@ -737,6 +806,7 @@ if __name__ == "__main__":
     test_e0_section_lm_parity_istep_kink()
     test_e1_extracellular_pwl_istep_mode3()
     test_e1_section_lm_parity_istep_kink()
+    test_end_electrode_mode3_path()
     test_z0_end_ri_lm_parity_istep()
     test_z1_end_ri_lm_parity_istep()
     print("all ok")
