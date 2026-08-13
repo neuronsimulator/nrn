@@ -172,7 +172,13 @@ Change the pretend version to whatever is relevant for your case.
 
 ## Testing the wheels
 
-To test the generated wheels, you can do:
+There are two complementary approaches: a **smoke script** that ships with
+the packaging tree, and the **foreign CTest harness** that reuses a large
+portable subset of the developer suite against an installed wheel.
+
+### Smoke tests (`test_wheels.sh`)
+
+Quick health check after building a wheel (or against TestPyPI):
 
 ```
 # first arg is a python exe and second arg is the corresponding wheel
@@ -182,11 +188,55 @@ bash packaging/python/test_wheels.sh python3.9 wheelhouse/NEURON-7.8.0.236-cp39-
 bash packaging/python/test_wheels.sh python3.9 "-i https://test.pypi.org/simple/NEURON==7.8.11.2"
 ```
 
+This covers import/`neuron.test()`, basic `nrnivmodl`, and a few MPI /
+CoreNEURON paths when available. It is intentionally smaller than a full
+developer `ctest` run.
+
+### Foreign CTest against a wheel (portable suite)
+
+For broader coverage without rebuilding NEURON, configure the standalone
+project under `test/foreign` against a venv that has the wheel installed:
+
+```bash
+python3 -m venv .venv && source .venv/bin/activate
+pip install -U pip pytest
+# local wheel, or e.g. neuron-nightly from PyPI:
+pip install path/to/NEURON-*.whl
+# pip install neuron-nightly
+
+# From the NEURON source tree (same revision as the wheel when possible):
+cmake -S test/foreign -B build-ctest \
+  -DNRN_FOREIGN_PYTHON="$(which python)" \
+  -DNRN_FOREIGN_ALLOW_SKEW=ON   # only if source tip ≠ wheel revision
+
+cmake --build build-ctest --target test-install -j
+# default: build mechanisms + ctest -L serial
+
+# Full ctest control against the foreign binary dir:
+ctest --test-dir build-ctest -L mpi --output-on-failure -j2
+ctest --test-dir build-ctest -L coreneuron --output-on-failure -j2
+```
+
+Notes:
+
+* Version policy defaults to a hard match between the wheel’s git identity
+  and this source tree; use `-DNRN_FOREIGN_ALLOW_SKEW=ON` for exploratory
+  runs (for example `neuron-nightly` vs a feature branch).
+* MPI tests register only if the wheel was built with MPI **and** `mpiexec`
+  is on `PATH` at foreign configure time.
+* See `test/foreign/README.md` and `test/foreign/INVENTORY.md` for
+  labels, dependencies (e.g. RxD plot packages), and what remains
+  build-only (Catch2 unit tests, NMODL unit binaries, …).
+
+The same foreign harness is used after a **prefix install** via the main
+build target `test-install` when `NRN_ENABLE_TESTS=ON` (see the CMake
+option documentation for `NRN_ENABLE_TESTS`).
+
 ### MacOS considerations
 
 On MacOS, launching `nrniv -python` or `special -python` can fail to load `neuron` module due to security restrictions.
-For this specific purpose, please `export SKIP_EMBEDED_PYTHON_TEST=true` before launching the tests.
-
+For this specific purpose, please `export SKIP_EMBEDED_PYTHON_TEST=true` before launching the tests
+(for `test_wheels.sh`).
 ## Publishing the wheels on Pypi via Azure
 
 ### Variables that drive PyPI upload
