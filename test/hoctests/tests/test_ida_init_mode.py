@@ -15,7 +15,8 @@ cvode = h.CVode()
 
 
 def test_dae_init_mode_api():
-    assert cvode.dae_init_mode() == 0
+    # Setter/getter only. Process default is NRN_DAE_INIT_MODE_DEFAULT at
+    # import (unset → 0); that path is tested in a subprocess below.
     assert cvode.dae_init_mode(1) == 1
     assert cvode.dae_init_mode(2) == 2
     assert cvode.dae_init_mode(3) == 3
@@ -84,8 +85,14 @@ def _sanitizer_child_env(env=None):
     return env
 
 
-def _run_isolated(code: str):
+def _run_isolated(code: str, env_updates=None, *, capture_err=False):
     env = _sanitizer_child_env()
+    if env_updates:
+        for key, val in env_updates.items():
+            if val is None:
+                env.pop(key, None)
+            else:
+                env[key] = str(val)
     exe = os.environ.get("NRN_PYTHON_EXECUTABLE", sys.executable)
     r = subprocess.run(
         [exe, "-c", code],
@@ -95,7 +102,43 @@ def _run_isolated(code: str):
     )
     if r.returncode != 0:
         raise AssertionError(f"stdout:\n{r.stdout}\nstderr:\n{r.stderr}")
+    if capture_err:
+        return r.stdout, r.stderr
     return r.stdout
+
+
+def test_dae_init_mode_env_default():
+    """NRN_DAE_INIT_MODE_DEFAULT is read once at CVode registration."""
+    probe = r"""
+from neuron import h
+print(int(h.CVode().dae_init_mode()))
+"""
+    out = _run_isolated(probe, {"NRN_DAE_INIT_MODE_DEFAULT": None})
+    assert out.strip().splitlines()[-1] == "0", out
+
+    out = _run_isolated(probe, {"NRN_DAE_INIT_MODE_DEFAULT": "3"})
+    assert out.strip().splitlines()[-1] == "3", out
+
+    override = r"""
+from neuron import h
+cv = h.CVode()
+assert cv.dae_init_mode() == 3
+assert cv.dae_init_mode(1) == 1
+print('ok')
+"""
+    assert "ok" in _run_isolated(override, {"NRN_DAE_INIT_MODE_DEFAULT": "3"})
+
+    invalid = r"""
+from neuron import h
+assert h.CVode().dae_init_mode() == 0
+print('ok')
+"""
+    for bad in ("4", "foo", ""):
+        out, err = _run_isolated(
+            invalid, {"NRN_DAE_INIT_MODE_DEFAULT": bad}, capture_err=True
+        )
+        assert "ok" in out, (bad, out, err)
+        assert "NRN_DAE_INIT_MODE_DEFAULT" in err, (bad, err)
 
 
 def test_pure_resistive_all_modes_isolated():
@@ -769,6 +812,7 @@ print('ok')
 
 if __name__ == "__main__":
     test_dae_init_mode_api()
+    test_dae_init_mode_env_default()
     test_dae_init_audit_api()
     test_dae_init_stats_api()
     test_pure_resistive_all_modes_isolated()

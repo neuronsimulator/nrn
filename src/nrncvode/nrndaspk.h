@@ -84,7 +84,8 @@ class Daspk {
     static double dteps_;
     static int init_try_again_;
     static int first_try_init_failures_;
-    // 0 = heuristic only (default); 1 = IDA_Y_INIT then heuristic fallback;
+    // 0 = heuristic only (shipped default if NRN_DAE_INIT_MODE_DEFAULT unset);
+    // 1 = IDA_Y_INIT then heuristic fallback;
     // 2 = IDA_Y_INIT only; 3 = battery content hold + y' from C*y'=f(y),
     //     with heuristic fallback on residual failure.
     static int init_mode_;

@@ -2125,8 +2125,10 @@ CVode
             condition after ``finitialize`` or a discontinuity, see
             :meth:`CVode.use_daspk`.
 
-            * ``0`` (default) — legacy short fully-implicit step heuristic
-              controlled by :meth:`CVode.dae_init_dteps`.
+            * ``0`` — legacy short fully-implicit step heuristic
+              controlled by :meth:`CVode.dae_init_dteps`. This is the default
+              when the environment variable ``NRN_DAE_INIT_MODE_DEFAULT`` is
+              unset (see :doc:`../envvariables`).
             * ``1`` — try Sundials ``IDACalcIC`` with ``IDA_Y_INIT`` (solve all
               of ``y`` given ``y'``); on failure fall back to the heuristic.
             * ``2`` — pure ``IDA_Y_INIT`` only (no heuristic fallback).
@@ -2152,8 +2154,13 @@ CVode
             It works well for invertible algebraic LinearMechanism systems.
             For folded capacitor equations (``C*(v1'-v2')``) the Newton matrix
             can be singular under ``IDA_Y_INIT``; mode ``1`` then falls back to
-            the heuristic. Default remains ``0`` until mode ``3`` is fully
-            validated across models.
+            the heuristic. The shipped default remains ``0`` until mode ``3``
+            is fully validated across models. Set
+            ``NRN_DAE_INIT_MODE_DEFAULT`` to ``0``, ``1``, ``2``, or ``3``
+            before launching ``nrniv`` or importing the neuron module to
+            change the process default without editing scripts. An explicit
+            ``dae_init_mode(mode)`` call overrides that default. The
+            environment variable is read once at CVode class registration.
 
             Mode ``3`` assumes the post-event (or ``finitialize``) :math:`y` is
             already on the algebraic manifold for rows with :math:`C=0`. It
@@ -2182,8 +2189,10 @@ CVode
               :math:`V_m` (``seg.v``) and capacitive layer drops; absolute
               ``vext`` may jump. For coupled membrane/``xc`` mass, rates
               include electrode current in the :math:`C y' = f` seed.
-            * **Default remains mode ``0``** until you validate mode ``3`` on
-              your models. Use :meth:`CVode.dae_init_stats` and
+            * **Shipped default remains mode ``0``** until you validate mode
+              ``3`` on your models. Use ``NRN_DAE_INIT_MODE_DEFAULT`` (see
+              :doc:`../envvariables`) for a process-wide trial without
+              editing scripts. Use :meth:`CVode.dae_init_stats` and
               :meth:`CVode.dae_init_audit` when diagnosing reinits.
 
             **Forcing** :math:`t^+` **info:** the right-limit value
@@ -2212,7 +2221,8 @@ CVode
             ``mode = cvode.dae_init_mode(mode)``
 
         Description:
-            Same as the Python tab: ``0`` heuristic (default), ``1``
+            Same as the Python tab: ``0`` heuristic (shipped default if
+            ``NRN_DAE_INIT_MODE_DEFAULT`` is unset), ``1``
             ``IDA_Y_INIT`` with heuristic fallback, ``2`` pure ``IDA_Y_INIT``,
             ``3`` battery content hold plus :math:`C y' = f(y)` for :math:`y'`,
             including electrode/source and extracellular notes above.

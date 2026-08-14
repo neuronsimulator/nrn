@@ -8,7 +8,7 @@ Use this file when starting a **new** Grok session rooted in `~/neuron/nrnida`.
 
 | Phase | Status | Notes |
 |-------|--------|--------|
-| **0** Mode API + `IDA_Y_INIT` plumbing | **Done** | `CVode.dae_init_mode` 0–2; default still heuristic (0) |
+| **0** Mode API + `IDA_Y_INIT` plumbing | **Done** | `CVode.dae_init_mode` 0–3; shipped default 0; `NRN_DAE_INIT_MODE_DEFAULT` overrides at registration |
 | **R** Industry / circuit reinit survey | **Done** | `~/neuron/notes/ida_phase_R_industry_map.md` |
 | **Battery IC** (mode **3**) LM + extracellular hold | **Done** | C→V hold \(\Delta v\); L hold; op-amp \(\tau\); ext \(V_m\)/layers |
 | Mode 3 **\(C y'=f\)** for \(y'\) | **Done** | Continuous limit; no `dteps` bias; nano-step only on residual fallback |

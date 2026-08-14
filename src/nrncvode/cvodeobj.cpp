@@ -324,8 +324,23 @@ static double dae_init_dteps(void* v) {
     return Daspk::dteps_;
 }
 
-// 0 = heuristic only (default); 1 = IDA_Y_INIT then heuristic fallback;
+// 0 = heuristic only (shipped default if NRN_DAE_INIT_MODE_DEFAULT unset);
+// 1 = IDA_Y_INIT then heuristic fallback;
 // 2 = IDA_Y_INIT only; 3 = battery content hold + y' from C*y'=f(y).
+static int dae_init_mode_default_from_env() {
+    const char* env = std::getenv("NRN_DAE_INIT_MODE_DEFAULT");
+    if (!env) {
+        return 0;
+    }
+    char* end = nullptr;
+    const long val = std::strtol(env, &end, 10);
+    if (end == env || *end != '\0' || val < 0 || val > 3) {
+        hoc_warning("NRN_DAE_INIT_MODE_DEFAULT must be an integer 0..3; using 0", env);
+        return 0;
+    }
+    return static_cast<int>(val);
+}
+
 static double dae_init_mode(void* v) {
     hoc_return_type_code = HocReturnType::integer;
     if (ifarg(1)) {
@@ -721,8 +736,8 @@ static void destruct(void* v) {
 void Cvode_reg() {
     class2oc("CVode", cons, destruct, members, omembers, nullptr);
     net_cvode_instance = new NetCvode(1);
-    Daspk::dteps_ = 1e-9;   // change with cvode.dae_init_dteps(newval)
-    Daspk::init_mode_ = 0;  // heuristic IC; use dae_init_mode(1|2|3) for other paths
+    Daspk::dteps_ = 1e-9;  // change with cvode.dae_init_dteps(newval)
+    Daspk::init_mode_ = dae_init_mode_default_from_env();
     Daspk::audit_level_ = 0;
     Daspk::audit_armed_ = 0;
     Daspk::audit_serial_ = 0;
