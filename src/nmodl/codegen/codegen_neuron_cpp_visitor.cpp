@@ -2617,7 +2617,8 @@ void CodegenNeuronCppVisitor::print_mechanism_variables_macros() {
     // for CVODE
     printer->add_line("extern void _cvode_abstol(Symbol**, double*, int);");
     if (info.for_netcon_used) {
-        printer->add_line("int _nrn_netcon_args(void*, double***);");
+        printer->add_line("int _nrn_netcon_weight_bases(void*, int**);");
+        printer->add_line("double* _nrn_fornetcon_weight(int);");
     }
 }
 
@@ -2738,7 +2739,8 @@ void CodegenNeuronCppVisitor::print_net_send_call(const ast::FunctionCall& node)
         throw std::runtime_error("Not implemented. [jfiwoei]");
     }
 
-    std::string weight_pointer = "nullptr";
+    // Heap-free 7a: Weight SoA base index (−1 outside NET_RECEIVE).
+    std::string weight_index = printing_net_receive ? "_weight_index" : "-1";
     auto point_process = get_variable_name(naming::POINT_PROCESS_VARIABLE,
                                            /* use_instance */ false);
     if (!printing_net_receive) {
@@ -2749,7 +2751,7 @@ void CodegenNeuronCppVisitor::print_net_send_call(const ast::FunctionCall& node)
     printer->fmt_text("{}(/* tqitem */ &{}, {}, {}, {} + ",
                       info.artificial_cell ? "artcell_net_send" : "net_send",
                       tqitem,
-                      weight_pointer,
+                      weight_index,
                       point_process,
                       get_variable_name("t"));
     print_vector_elements(arguments, ", ");
@@ -2817,8 +2819,9 @@ static void rename_net_receive_arguments(const ast::NetReceiveBlock& net_receive
 
 
 CodegenNeuronCppVisitor::ParamVector CodegenNeuronCppVisitor::net_receive_args() {
+    // Heap-free 7a: match pnt_receive_t (Point_process*, int weight_index, double flag).
     return {{"", "Point_process*", "", "_pnt"},
-            {"", "double*", "", "_args"},
+            {"", "int", "", "_weight_index"},
             {"", "double", "", "flag"}};
 }
 
@@ -2827,6 +2830,9 @@ void CodegenNeuronCppVisitor::print_net_receive_common_code() {
     printer->add_line("_nrn_mechanism_cache_instance _lmc{_pnt->prop};");
     printer->add_line("auto * nt = static_cast<NrnThread*>(_pnt->_vnt);");
     printer->add_line("auto * _ppvar = _nrn_mechanism_access_dparam(_pnt->prop);");
+    // Body still uses _args[i]; resolve Weight SoA (zero-copy) or TLS.
+    printer->fmt_line("double* _args = _nrn_netrec_wsoa(_weight_index, {});",
+                      info.num_net_receive_parameters);
 
     printer->fmt_line("auto inst = make_instance_{}(&_lmc);", info.mod_suffix);
     if (!info.artificial_cell) {
@@ -2978,6 +2984,8 @@ void CodegenNeuronCppVisitor::print_net_receive() {
 
     print_statement_block(*node->get_statement_block(), false, false);
 
+    printer->fmt_line("_nrn_netrec_wsoa_done(_weight_index, {}, _args);",
+                      info.num_net_receive_parameters);
     printer->add_newline();
     printer->pop_block();
     printing_net_receive = false;
@@ -3000,6 +3008,8 @@ void CodegenNeuronCppVisitor::print_net_init() {
     if (!block->get_statements().empty()) {
         print_net_receive_common_code();
         print_statement_block(*block, false, false);
+        printer->fmt_line("_nrn_netrec_wsoa_done(_weight_index, {}, _args);",
+                          info.num_net_receive_parameters);
     }
     printer->pop_block();
     printing_net_init = false;
@@ -3061,16 +3071,17 @@ void CodegenNeuronCppVisitor::visit_for_netcon(const ast::ForNetcon& node) {
     int dparam_index = dparam_it->index;
     auto netcon_var = get_name(codegen_int_variables[dparam_index]);
 
+    // Heap-free 7b: walk Weight SoA bases; resolve double* per edge (SoA/TLS).
     // This is called from `print_statement_block` which pre-indents the
     // current line. Hence `add_text` only.
-    printer->add_text("double ** _fornetcon_data;");
+    printer->add_text("int* _fornetcon_bases;");
     printer->add_newline();
 
-    printer->fmt_line("int _n_netcons = _nrn_netcon_args({}, &_fornetcon_data);",
+    printer->fmt_line("int _n_netcons = _nrn_netcon_weight_bases({}, &_fornetcon_bases);",
                       get_variable_name(netcon_var, false));
 
-    printer->push_block("for (size_t _i = 0; _i < _n_netcons; ++_i)");
-    printer->add_line("double * _netcon_data = _fornetcon_data[_i];");
+    printer->push_block("for (size_t _i = 0; _i < static_cast<size_t>(_n_netcons); ++_i)");
+    printer->add_line("double* _netcon_data = _nrn_fornetcon_weight(_fornetcon_bases[_i]);");
     print_statement_block(*statement_block, false, false);
     printer->pop_block();
 }

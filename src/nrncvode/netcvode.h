@@ -188,7 +188,7 @@ class NetCvode {
     const char* sym2name(Symbol*);
     int pgvts(double tstop);
     void update_ps2nt();
-    void point_receive(int, Point_process*, double*, double);
+    void point_receive(int, Point_process*, int /*weight_index*/, double);
     bool deliver_event(double til, NrnThread*);  // uses TQueue atomically
     bool empty_;
     void delete_list();

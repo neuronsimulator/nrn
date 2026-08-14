@@ -5,6 +5,7 @@
 #include "nrnmpi.h"
 #include "section.h"
 #include "netcon.h"
+#include "neuron/container/network/self_event.hpp"
 #include "nrncvode.h"
 #include "nrniv_mf.h"
 #include "hocdec.h"
@@ -141,8 +142,13 @@ void nrnthreads_all_weights_return(std::vector<double*>& weights) {
             ith = std::size_t(((NrnThread*) (nc->target_->_vnt))->id);
         }
         for (int i = 0; i < nc->cnt_; ++i) {
-            nc->weight_[i] = weights[ith][iw[ith]++];
+            if (nc->has_weight_soa() && i < nc->weight_block_->size()) {
+                nc->weight_soa_value(i) = weights[ith][iw[ith]++];
+            } else {
+                ++iw[ith];
+            }
         }
+        nc->soa_sync();
     }
 }
 
@@ -509,7 +515,9 @@ int nrnthread_dat2_3(int tid,
     for (int i = 0; i < n; ++i) {
         NetCon* nc = cg.netcons[i];
         for (int j = 0; j < nc->cnt_; ++j) {
-            weights[iw++] = nc->weight_[j];
+            weights[iw++] = (nc->has_weight_soa() && j < nc->weight_block_->size())
+                                ? nc->weight_soa_value(j)
+                                : 0.;
         }
     }
     // alloc a delay array and write netcon delays
@@ -932,7 +940,12 @@ static void set_info(TQItem* tqi,
         Point_process* pnt = se->target_;
         int type = pnt->prop->_type;
         int movable_index = type2movable[type];
-        double* wt = se->weight_;
+        // Heap-free 7c: SelfEvent identity is weight_index only — address SoA by index
+        // (CoreNEURON shape; no NetCon reverse lookup).
+        double* wt = nullptr;
+        if (se->weight_index_ >= 0) {
+            wt = neuron::container::network::SelfEventFields::weight_soa_ptr(se->weight_index_, 1);
+        }
 
         core_te->intdata.push_back(type);
         core_te->dbldata.push_back(se->flag_);
@@ -1103,12 +1116,13 @@ NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid) {
         assert(iter.second[0] >= NRN_SENTINAL);
     }
 
-    // NEURON SelfEvent weight* into CoreNEURON index into nt.netcons
-    //    On the CoreNEURON side we find the NetCon and then the
-    //    nc.u.weight_index_
+    // NEURON SelfEvent weight* / SoA data into CoreNEURON index into nt.netcons
     for (int i = 0; i < cg.n_netcon; ++i) {
         NetCon* nc = cg.netcons[i];
-        double* wt = nc->weight_;
+        double* wt = nc->weight_soa_data();
+        if (!wt) {
+            continue;
+        }
         auto iter = weight2intdata.find(wt);
         if (iter != weight2intdata.end()) {
             for (auto iloc: iter->second) {
@@ -1147,7 +1161,7 @@ static void core2nrn_SelfEvent_helper(int tid,
                                       int tar_type,
                                       int tar_index,
                                       double flag,
-                                      double* weight,
+                                      int weight_index,
                                       int is_movable) {
     if (type2movable.empty()) {
         setup_type2semantics();
@@ -1172,7 +1186,8 @@ static void core2nrn_SelfEvent_helper(int tid,
     int const movable_index = type2movable[tar_type];
     auto* const movable_arg = pnt->prop->dparam + movable_index;
     auto* const old_movable_arg = (*movable_arg).get<TQItem*>();
-    nrn_net_send(movable_arg, weight, pnt, td, flag);
+    // Heap-free 7a: SelfEvent identity is Weight SoA base index.
+    nrn_net_send(movable_arg, weight_index, pnt, td, flag);
     if (!is_movable) {
         *movable_arg = old_movable_arg;
     }
@@ -1195,8 +1210,8 @@ void core2nrn_SelfEvent_event(int tid,
     assert(nc->target_ == pnt);
 #endif
 
-    double* weight = nc->weight_;
-    core2nrn_SelfEvent_helper(tid, td, tar_type, tar_index, flag, weight, is_movable);
+    int const weight_index = static_cast<int>(nc->weight_base());
+    core2nrn_SelfEvent_helper(tid, td, tar_type, tar_index, flag, weight_index, is_movable);
 }
 
 void core2nrn_SelfEvent_event_noweight(int tid,
@@ -1206,8 +1221,7 @@ void core2nrn_SelfEvent_event_noweight(int tid,
                                        double flag,
                                        int is_movable) {
     assert(tid < nrn_nthread);
-    double* weight = NULL;
-    core2nrn_SelfEvent_helper(tid, td, tar_type, tar_index, flag, weight, is_movable);
+    core2nrn_SelfEvent_helper(tid, td, tar_type, tar_index, flag, -1, is_movable);
 }
 
 // Set of the voltage indices in which PreSyn.flag_ == true
