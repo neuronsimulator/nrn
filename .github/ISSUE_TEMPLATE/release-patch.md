@@ -38,14 +38,15 @@ Sanity checks
 - [ ] nrn-build-ci runs inside NEURON Release; optional extra run: [nrn-build-ci](https://github.com/neuronsimulator/nrn-build-ci/actions/workflows/build-neuron.yml) with the same GHA `wheels` artifact URL ([manual workflow](https://github.com/neuronsimulator/nrn-build-ci#wheels-testing---manual-workflow))
 - [ ] Activate ReadTheDocs build for `release/x.y` and make it hidden. Check docs after the build. If the branch is missing, **+ Add version**.
 - [ ] Run BBP Simulation Stack & other relevant tests
+- [ ] Create and test manual artifacts (before freeze/ship — a needed code change must not follow the tag; PyPI cannot reuse `x.y.z`)
+  - [ ] MacOS package installer (manual task, ask Michael)
 - [ ] Freeze SHAs: dry-run `rel_branch` tip == the commit you will ship
 
 
 Releasing
 ---
 - [ ] Ship with the **same** controller (`master`), `rel_branch`, `rel_tag`, and SHAs as the last green dry-run, **`upload=true`**. This creates the annotated tag, a **pre-release** on GitHub (full-src-package and Windows installer attach when those jobs finish), and publishes wheels to PyPI.
-- [ ] Create, test and upload manual artifacts
-  - [ ] MacOS package installer (manual task, ask Michael)
+- [ ] Upload the already-tested MacOS package installer to the GitHub pre-release
 - [ ] Once wheels are on PyPI, activate the `x.y.z` **tag** on ReadTheDocs: [versions page](https://readthedocs.org/projects/nrn/versions/) → **+ Add version** if the tag is not listed (new/unbuilt tags are hidden under “Recently built”). Leave it **not** Hidden.
 - [ ] Publish release on GitHub (edit https://github.com/neuronsimulator/nrn/releases/tag/x.y.z and un-tick the pre-release checkbox)
 

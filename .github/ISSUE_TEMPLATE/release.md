@@ -26,6 +26,8 @@ Sanity checks
 - [ ] Dry-run [NEURON Release](https://github.com/neuronsimulator/nrn/actions/workflows/release.yml) from **`master`**: `rel_branch=release/x.y`, `rel_tag=x.y.z`, **`upload=false`**. Confirm wheels are green, `neuron.__version__` is non-empty, and ModelDB V2 uses **this run’s** `wheels` artifact
 - [ ] If only ModelDB failed, do **not** rebuild wheels: [ModelDB CI (reuse wheels)](https://github.com/neuronsimulator/nrn/actions/workflows/modeldb-ci-reuse-wheels.yml) with the dry-run `wheels` artifact id or URL, `neuron_v1=neuron==<previous>`, `modeldb_ci_ref=master` (optional `models_to_run` for a subset)
 - [ ] Run any tests not contained in `nrn-build-ci` and `nrn-modeldb-ci`
+- [ ] Create and test manual artifacts (before freeze/ship — a needed code change must not follow the tag; PyPI cannot reuse `x.y.z`)
+  - [ ] MacOS package installer (manual task, ask Michael)
 - [ ] Freeze SHAs: dry-run `rel_branch` tip == the commit you will ship
 
 
@@ -34,9 +36,8 @@ Releasing
 - [ ] Update semantic version in `CMakeLists.txt`
 - [ ] Update changelog below and agree on it with everyone; then commit it to `docs/changelog` (copy structure as-is)
 - [ ] Activate ReadTheDocs for `release/x.y` (Hidden until ship). If the branch is missing from [the versions page](https://readthedocs.org/projects/nrn/versions/), use **+ Add version**. Inspect the Changelog page after the build.
-- [ ] Create, test and upload manual artifacts
-  - [ ] MacOS package installer (manual task, ask Michael)
 - [ ] Ship with the **same** controller (`master`), `rel_branch`, `rel_tag`, and SHAs as the last green dry-run, **`upload=true`**. This creates the annotated tag, a **pre-release** on GitHub (full-src-package and Windows installer attach when those jobs finish), and publishes wheels to PyPI.
+- [ ] Upload the already-tested MacOS package installer to the GitHub pre-release
 - [ ] Once wheels are on PyPI, activate the `x.y.z` **tag** on ReadTheDocs: [versions page](https://readthedocs.org/projects/nrn/versions/) → **+ Add version** if the tag is not listed (new/unbuilt tags are hidden under “Recently built”). Leave it **not** Hidden.
 - [ ] Publish release on GitHub (edit https://github.com/neuronsimulator/nrn/releases/tag/x.y.z and un-tick the pre-release checkbox)
 
