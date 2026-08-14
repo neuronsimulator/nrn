@@ -7,6 +7,7 @@ void cvode_finitialize();
 extern void (*nrn_multisplit_setup_)();
 
 #include <cmath>
+#include <cstdio>
 #include <cstdlib>
 #include "classreg.h"
 #include "code.h"
@@ -335,7 +336,11 @@ static int dae_init_mode_default_from_env() {
     char* end = nullptr;
     const long val = std::strtol(env, &end, 10);
     if (end == env || *end != '\0' || val < 0 || val > 3) {
-        hoc_warning("NRN_DAE_INIT_MODE_DEFAULT must be an integer 0..3; using 0", env);
+        // hoc_warning is unsafe here: Cvode_reg runs during hoc_init,
+        // before hoc_cbuf is a valid interpreter line.
+        std::fprintf(stderr,
+                     "NRN_DAE_INIT_MODE_DEFAULT must be an integer 0..3; using 0 (got '%s')\n",
+                     env);
         return 0;
     }
     return static_cast<int>(val);
