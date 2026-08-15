@@ -222,7 +222,7 @@ void OcFullMatrix::solv(Vect* in, Vect* out, bool use_lu) {
     }
     auto v1 = Vect2VEC(in);
     auto v2 = Vect2VEC(out);
-    v2 = lu_->solve(v1);
+    v2 = lu_->solve(v1).eval();
 }
 
 double OcFullMatrix::det(int* e) const {
