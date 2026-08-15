@@ -40,12 +40,9 @@ struct Extnode {
     double* v; /* v external. */
     double* _a;
     double* _b;
-    double** _d;
-    double** _rhs; /* d, rhs, a, and b are analogous to those in node */
-    double** _a_matelm;
-    double** _b_matelm;
-    double** _x12; /* effect of v[layer] on eqn layer-1 (or internal)*/
-    double** _x21; /* effect of v[layer-1 or internal] on eqn layer*/
+    double** _rhs; /* rhs, a, and b are analogous to those in node */
+
+    int eqn_index_;
 };
 #endif
 

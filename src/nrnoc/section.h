@@ -181,9 +181,6 @@ struct Node {
         return _node_handle.non_owning_handle();
     }
     double _rinv{}; /* conductance uS from node to parent */
-    double* _a_matelm;
-    double* _b_matelm;
-    double* _d_matelm;
     int eqn_index_;                 /* sparse13 matrix row/col index */
                                     /* if no extnodes then = v_node_index +1*/
                                     /* each extnode adds nlayer more equations after this */

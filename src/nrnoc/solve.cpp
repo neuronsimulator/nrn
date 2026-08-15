@@ -57,8 +57,9 @@ node.v + extnode.v[0]
 #include "nrnmpiuse.h"
 #include "ocnotify.h"
 #include "section.h"
-#include "spmatrix.h"
+#include "ocmatrix.h"
 #include "treeset.h"
+#include "ivocvect.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -357,19 +358,17 @@ void nrn_solve(NrnThread* _nt) {
         int e;
         nrn_thread_error("solve use_sparse13");
         update_sp13_mat_based_on_actual_d(_nt);
-        e = spFactor(_nt->_sp13mat);
-        if (e != spOKAY) {
-            switch (e) {
-            case spZERO_DIAG:
-                hoc_execerror("spFactor error:", "Zero Diagonal");
-            case spNO_MEMORY:
-                hoc_execerror("spFactor error:", "No Memory");
-            case spSINGULAR:
-                hoc_execerror("spFactor error:", "Singular");
-            }
-        }
+
         update_sp13_rhs_based_on_actual_rhs(_nt);
-        spSolve(_nt->_sp13mat, _nt->_sp13_rhs, _nt->_sp13_rhs);
+        int size = _nt->_sp13mat->ncol();
+        std::vector<double> vector_in(_nt->_sp13_rhs + 1, _nt->_sp13_rhs + size + 1);
+        IvocVect in; in.vec() = vector_in;
+        IvocVect out(size);
+        _nt->_sp13mat->solv(&in, &out, false);
+        for (int i = 0; i < size; ++i) {
+            _nt->_sp13_rhs[i + 1] = out[i];
+
+        }
         update_actual_d_based_on_sp13_mat(_nt);
         update_actual_rhs_based_on_sp13_rhs(_nt);
     } else {
