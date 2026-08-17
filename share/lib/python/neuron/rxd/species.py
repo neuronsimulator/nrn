@@ -352,9 +352,7 @@ class _SpeciesMathable(object):
         if region is not None:
             regions = region if hasattr(region, "__len__") else [region]
             for r in regions:
-                if r in self._regions:
-                    return self[r].ast(prime=prime)
-                elif r in self._extracellular_instances:
+                if r in self._regions or r in self._extracellular_instances:
                     return self[r].ast(prime=prime)
         if len(self._regions) == 1 and len(self._extracellular_instances) == 0:
             return self[self._regions[0]].ast(prime=prime)

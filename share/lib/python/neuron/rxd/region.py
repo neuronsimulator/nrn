@@ -508,7 +508,6 @@ class _c_region:
             rast, lc = parse_kinetic_block(reactions, blocks)
             rates += rast
             local_consts |= lc
-        mc_div_block_count = len(multicompartmentReactions)
         mc_kinetic_blocks_mults = []
         for react, mult, flux in mc_kinetic_blocks:
             rast, lc = parse_kinetic_block(
@@ -525,7 +524,6 @@ class _c_region:
             lookup = AstLookupVisitor()
             merged = {}
             constants = set()
-            mc_stmt = 0
 
             def _add_flux(flx, frhs):
                 # accumulate a membrane-flux contribution under key `flx`
@@ -597,10 +595,8 @@ class _c_region:
             # and use CSE can eliminate common subexpressions
             all_rhs_strings = []
             function_calls = set()
-            group_stmts_list = []
-
             stmts = []
-            for _, (lhs, rhs) in merged.items():
+            for (lhs, rhs) in merged.values():
                 stmts.append(
                     ExpressionStatement(
                         DiffEqExpression(

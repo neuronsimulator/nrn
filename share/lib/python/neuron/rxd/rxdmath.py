@@ -751,7 +751,6 @@ class _Reaction:
         if _ast_config["nmodl_support"]:
             lhs = self._lhs.ast(region, use_react_var)
             rhs = self._rhs.ast(region, use_react_var)
-            # TODO: Placeholder rates should be replaced by in rxd.Reaction
             if region:
                 rid = region._id
                 rname = region.name if region.name else ""
@@ -759,7 +758,7 @@ class _Reaction:
             else:
                 rint = Integer(0, Name(String("unassigned")))
 
-            # should be replaced by rxd.Reaction with the actual values
+            # rates are replaced in rxd.Reaction with the actual values
             kf = Double("0.0")
             kb = Double("0.0")
             return ReactionStatement(lhs, ReactionOperator(), rhs, kf, kb)
