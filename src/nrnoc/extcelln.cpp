@@ -746,9 +746,11 @@ ndesave[i].rhs[j] -= ndesave[i].v[k]*ndesave[i].m[j][(nlayer)+k-j];
 /*
  * Battery-style consistent IC for extracellular + membrane capacitance.
  * Hold continuous content (Vm and xc layer drops / grounded xc voltages) via
- * large conductances on the cj=0 (resistive) matrix, solve, update, then
- * exactly restore holds while preserving algebraic common-mode shift when
- * the outermost layer has no capacitance to ground.
+ * large conductances on the cj=0 (resistive) matrix, solve, then restore
+ * those holds exactly. Algebraic layers (xc==0) keep the spring-solve
+ * voltages — not a single common-mode copied from vext[0], which would
+ * smash a resistive ladder (e.g. default nlayer=2, all xc=0) onto one
+ * potential and leave xg[1]*vext[1] in the residual.
  *
  * Called from Daspk battery IC (dae_init_mode 3) after LinearMechanism project.
  */
@@ -826,32 +828,23 @@ void nrn_extracellular_battery_ic() {
         nrn_solve(nt);
         nrn_update_voltage(sorted_token, *nt);
 
-        // Exact hold restore; allow common-mode shift only if outer xc == 0
+        // Exact hold restore. Capacitive content is rebuilt from pre-solve
+        // holds. Algebraic xc==0 layers keep the spring-solve values.
         for (int i = 0; i < cnt; ++i) {
             Node* nd = ml->nodelist[i];
             Extnode* nde = nd->extnode;
             const bool hold_vm = (NODEAREA(nd) > 0.);
-            double const xc_last = *nde->param[xc_index_ext(nl - 1)];
-            double alpha = 0.0;
-            if (xc_last <= 0.0) {
-                // Algebraic outer layer: keep solved absolute level of vext[0]
-                alpha = nde->v[0] - vext_hold[i * nl + 0];
-            }
-            // Rebuild vext from held drops (or held absolutes) + alpha
-            // Start from outermost continuous or algebraic anchor
-            if (xc_last > 0.0) {
+            if (*nde->param[xc_index_ext(nl - 1)] > 0.0) {
                 nde->v[nl - 1] = vext_hold[i * nl + (nl - 1)];
-            } else {
-                nde->v[nl - 1] = vext_hold[i * nl + (nl - 1)] + alpha;
             }
+            // else: algebraic outer layer — keep spring-solve vext[last]
             for (int j = nl - 2; j >= 0; --j) {
                 double const xc = *nde->param[xc_index_ext(j)];
                 if (xc > 0.0) {
                     double const drop = vext_hold[i * nl + j] - vext_hold[i * nl + j + 1];
                     nde->v[j] = nde->v[j + 1] + drop;
-                } else {
-                    nde->v[j] = vext_hold[i * nl + j] + alpha;
                 }
+                // else: algebraic layer — keep spring-solve vext[j]
             }
             if (hold_vm) {
                 nd->v() = vm_hold[i];

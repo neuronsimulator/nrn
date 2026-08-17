@@ -2186,9 +2186,11 @@ CVode
               1-jet of the drive; mode ``3`` reuses that Plan-A path.
             * With **extracellular**, electrode current is not transmembrane:
               it couples into the ``vext`` network. Mode ``3`` holds membrane
-              :math:`V_m` (``seg.v``) and capacitive layer drops; absolute
-              ``vext`` may jump. For coupled membrane/``xc`` mass, rates
-              include electrode current in the :math:`C y' = f` seed.
+              :math:`V_m` (``seg.v``) and capacitive layer drops; algebraic
+              (``xc=0``) layer voltages keep the post-hold network solution
+              (per layer — not a single common-mode copied from ``vext[0]``).
+              Absolute ``vext`` may jump. For coupled membrane/``xc`` mass,
+              rates include electrode current in the :math:`C y' = f` seed.
             * **Shipped default remains mode ``0``** until you validate mode
               ``3`` on your models. Use ``NRN_DAE_INIT_MODE_DEFAULT`` (see
               :doc:`../envvariables`) for a process-wide trial without

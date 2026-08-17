@@ -938,6 +938,74 @@ print('ok')
     assert "ok" in _run_isolated(code)
 
 
+def test_e5_seclamp_two_algebraic_layers():
+    """SEClamp step + default nlayer=2, all xc=0: mode 3 keeps the xg ladder.
+
+    Regression: the battery restore used to paint every algebraic layer with
+    a common-mode from vext[0], so vext[1]==vext[0] and xg[1]*vext[1] blew
+    the residual (test1.py / xg[1]=0.002 or default 1e9).
+    SEClamp sees vi=v+vext; Vm=seg.v is held; layer voltages follow the
+    resistive divider.
+    """
+    code = r"""
+from neuron import h
+h.load_file('stdrun.hoc')
+assert int(h.nlayer_extracellular()) >= 2
+for xg1 in (2e-3, 1e9):
+    cv = h.CVode()
+    s = h.Section()
+    s.L = s.diam = 10
+    s.nseg = 1
+    s.insert('extracellular')
+    nl = int(h.nlayer_extracellular())
+    assert nl >= 2, nl
+    for seg in s:
+        for j in range(nl):
+            seg.xc[j] = 0.0
+        seg.xg[0] = 1e-3
+        seg.xg[1] = xg1
+    vc = h.SEClamp(s(0.5))
+    vc.rs = 10
+    vc.dur1 = 1
+    vc.amp1 = -65
+    vc.dur2 = 1
+    vc.amp2 = 10
+    h.cvode_active(True)
+    cv.use_daspk(1)
+    cv.dae_init_mode(3)
+    cv.dae_init_stats(1)
+    h.finitialize(-65)
+    h.continuerun(0.999)
+    vm0 = s(0.5).v
+    h.continuerun(1.0)
+    vm1 = s(0.5).v
+    # Python RangeVar vext[i] always aliases layer 0; read via HOC.
+    s.push()
+    h('hoc_ac_ = vext[0](.5)')
+    vx0 = float(h.hoc_ac_)
+    h('hoc_ac_ = vext[1](.5)')
+    vx1 = float(h.hoc_ac_)
+    h.pop_section()
+    st = h.Vector()
+    cv.dae_init_stats(st)
+    assert int(st[6]) == 3 and st[2] == 0, (xg1, list(st))
+    assert abs(vm1 - vm0) < 1e-6, (xg1, vm0, vm1)
+    # Resistive divider: i = (vc - (Vm+vext0))/rs = xg_eq * vext0 * area*0.01
+    xg0 = 1e-3
+    xg_eq = 1.0 / (1.0 / xg0 + 1.0 / xg1)
+    area_fac = s(0.5).area() * 0.01
+    vx0_exp = (10.0 - vm1) / (1.0 + vc.rs * area_fac * xg_eq)
+    vx1_exp = vx0_exp * (1.0 / xg1) / (1.0 / xg0 + 1.0 / xg1)
+    assert abs(vx0 - vx0_exp) < 1e-3, (xg1, vx0, vx0_exp, vx1)
+    assert abs(vx1 - vx1_exp) < 1e-3, (xg1, vx1, vx1_exp, vx0)
+    # The bug was vext[1] == vext[0] (not the split)
+    assert abs(vx1 - vx0) > 1.0, (xg1, vx0, vx1)
+    print('xg1', xg1, 'ok', 'vext', vx0, vx1)
+print('ok')
+"""
+    assert "ok" in _run_isolated(code)
+
+
 if __name__ == "__main__":
     test_pwlclamp_ival_right_continuous()
     test_iclamp_step_mode3_section()
@@ -953,4 +1021,5 @@ if __name__ == "__main__":
     test_e2_xc0_extracellular_istep()
     test_e3_multilayer_xc_istep()
     test_e4_xg_scale_istep()
+    test_e5_seclamp_two_algebraic_layers()
     print("all ok")
