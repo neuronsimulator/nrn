@@ -369,7 +369,24 @@ endif()
 # Find required packages
 # =============================================================================
 find_package(BISON REQUIRED)
-find_package(FLEX 2.6 REQUIRED)
+# FindFLEX parses `--version` as "<exe-basename> X.Y". Chocolatey win_flex
+# reports "win_flex.exe 2.6.4" while the found path is often `win_flex`
+# (no .exe), so FLEX_VERSION becomes the whole line and "2.6" fails.
+# Require Flex ourselves after taking the first X.Y / X.Y.Z in the string.
+find_package(FLEX)
+if(FLEX_VERSION AND NOT FLEX_VERSION MATCHES "^[0-9]")
+  string(REGEX MATCH "[0-9]+\\.[0-9]+(\\.[0-9]+)?" _nrn_flex_ver "${FLEX_VERSION}")
+  if(_nrn_flex_ver)
+    set(FLEX_VERSION "${_nrn_flex_ver}")
+  endif()
+  unset(_nrn_flex_ver)
+endif()
+if(NOT FLEX_FOUND)
+  message(FATAL_ERROR "FLEX is required")
+endif()
+if(NOT FLEX_VERSION OR FLEX_VERSION VERSION_LESS "2.6")
+  message(FATAL_ERROR "FLEX >= 2.6 is required (found '${FLEX_VERSION}')")
+endif()
 
 # lcov >= 2 and bison < 3.7 do not play nicely
 if(NRN_ENABLE_COVERAGE
