@@ -397,6 +397,15 @@ include_directories(${NRN_INCLUDE_DIRS})
 # All source directories to include
 # =============================================================================
 add_library(nrniv_lib ${NRN_LIBRARY_TYPE} ${NRN_NRNIV_LIB_SRC_FILES})
+if(NRN_LIBRARY_TYPE STREQUAL "SHARED")
+  # Consumers inherit NRN_DLL so NRN_DLLSYM is dllimport; this target also
+  # gets NRN_DLL_EXPORTS so NRN_DLLSYM is dllexport. Static builds leave
+  # NRN_DLL unset and NRN_DLLSYM empty.
+  target_compile_definitions(
+    nrniv_lib
+    PUBLIC NRN_DLL
+    PRIVATE NRN_DLL_EXPORTS)
+endif()
 add_dependencies(nrniv_lib generated_source_files)
 add_cpp_git_information(nrniv_lib PRIVATE)
 target_link_libraries(nrniv_lib PRIVATE nrngnu)
