@@ -1,5 +1,5 @@
 /*
-This file is processed by mkdynam.sh and so it is important that the prototypes
+This file is processed by mkdynam.py and so it is important that the prototypes
 be of the form "type foo(type arg, ...)". Moreover, the * needs to be attached
 to the type, e.g. `T*` is valid, but `T *` isn't.
 */
