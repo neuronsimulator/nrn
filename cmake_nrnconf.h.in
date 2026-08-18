@@ -7,6 +7,8 @@
 /* 53 bit double precision of exp and pow from mpfr */
 #cmakedefine01 NRN_ENABLE_ARCH_INDEP_EXP_POW
 
+#include "nrndlldef.h"
+
 /* Define if building universal (internal helper macro) */
 #cmakedefine AC_APPLE_UNIVERSAL_BUILD @AC_APPLE_UNIVERSAL_BUILD@
 
