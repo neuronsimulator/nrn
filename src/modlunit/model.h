@@ -202,7 +202,7 @@ extern Item* qlint;
 #define Lappendsym  qlint = lappendsym
 #define Lappendstr  qlint = lappendstr
 #define Lappenditem qlint = lappenditem
-#define IGNORE(arg) \
+#define NRN_IGNORE(arg) \
     {               \
         if (arg)    \
             ;       \
@@ -221,7 +221,7 @@ extern Item* qlint;
 #define Lappendsym  lappendsym
 #define Lappendstr  lappendstr
 #define Lappenditem lappenditem
-#define IGNORE(arg) arg
+#define NRN_IGNORE(arg) arg
 #endif
 using neuron::Sprintf;
 using neuron::SprintfAsrt;

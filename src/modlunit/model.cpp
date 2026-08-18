@@ -65,7 +65,7 @@ int main(int argc, char* argv[]) {
     lex_start();
     /* declare all used variables */
     parsepass(1);
-    IGNORE(yyparse());
+    NRN_IGNORE(yyparse());
     declare_implied();
     /* At this point The input file is in the intoken list */
 #if 0
@@ -94,18 +94,18 @@ int main(int argc, char* argv[]) {
 	cout();			/* print .c file */
 #endif
 #if 0
-	IGNORE(fclose(fparout));
-	IGNORE(fclose(fcout));
+	NRN_IGNORE(fclose(fparout));
+	NRN_IGNORE(fclose(fcout));
 	memory_usage();
 #endif
 #if LINT
     { /* for lex */
         extern int yytchar, yylineno;
         extern FILE* yyin;
-        IGNORE(yyin);
-        IGNORE(yytchar);
-        IGNORE(yylineno);
-        IGNORE(yyinput());
+        NRN_IGNORE(yyin);
+        NRN_IGNORE(yytchar);
+        NRN_IGNORE(yylineno);
+        NRN_IGNORE(yyinput());
         yyunput(ilint);
         yyoutput(ilint);
     }
