@@ -20,8 +20,8 @@ requires = [
 ]
 
 [project]
-# We use the `packaging/python/change_name.py` to change the name to `neuron`
-# when making a release since PEP 621 disallows dynamic names.
+# Default wheel name is `neuron`. Nightly CI runs change_name.py to
+# `neuron-nightly`. PEP 621 disallows a dynamic project name.
 # Note that this only affects the name of the _wheel_, not the importable package name,
 # nor the CMake project name.
 name = "neuron"
