@@ -68,12 +68,7 @@ double hoc_xred(const char* prompt, double defalt, double min, double max) {
     double input;
     for (;;) {
         NRN_IGNORE(fprintf(stderr, "%s (%-.5g)", prompt, defalt));
-#ifdef WIN32
-        if (gets(istr) != NULL) {
-            strcat(istr, "\n");
-#else
-        if (fgets(istr, 79, stdin) != NULL) {
-#endif
+        if (fgets(istr, sizeof istr, stdin) != NULL) {
             if (istr[0] == '\n') {
                 input = defalt;
                 goto label;
@@ -135,12 +130,7 @@ int hoc_sred(const char* prompt, char* defalt, char* charlist) {
 
     for (;;) {                                              /* cycle until done */
         NRN_IGNORE(fprintf(stderr, "%s (%s)", prompt, defalt)); /* print prompt */
-#ifdef WIN32
-        if (gets(istr) != NULL) {
-            strcat(istr, "\n");
-#else
-        if (fgets(istr, 79, stdin) != NULL) { /* read input */
-#endif
+        if (fgets(istr, sizeof istr, stdin) != NULL) {         /* read input */
             if (defalt[0] != '\0' && istr[0] == '\n') {
                 strcpy(istr, defalt); /* if CR only, use default */
             } else {
