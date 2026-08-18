@@ -1699,19 +1699,8 @@ int hoc_get_line(void) { /* supports re-entry. fill hoc_cbuf with next line */
             run_til_stdin());
         }
 #endif  // INTERVIEWS
-#if defined(WIN32)
-        if (nrn_fw_eq(hoc_fin, stdin)) {
-            if (gets(hoc_cbuf) == (char*) 0) {
-                /*DebugMessage("gets returned NULL\n");*/
-                return EOF;
-            }
-            strcat(hoc_cbuf, "\n");
-        } else
-#endif  // WIN32
-        {
-            if (hoc_fgets_unlimited(hoc_cbufstr, hoc_fin) == (char*) 0) {
-                return EOF;
-            }
+        if (hoc_fgets_unlimited(hoc_cbufstr, hoc_fin) == (char*) 0) {
+            return EOF;
         }
 #endif  // READLINE
     }
