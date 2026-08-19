@@ -215,11 +215,74 @@ macro(nrn_install_dir_symlink source_dir symlink_dir)
   install(CODE "${configured_code}")
 endmacro()
 
+# CMake FindMPI locates Microsoft MPI only via MSMPI_INC / MSMPI_LIB64
+# (and MSMPI_LIB32). The SDK installer sets those; the CI layout at C:\msmpi
+# and a cmake.exe started before the installer does not. Fill them from
+# known SDK roots so FindMPI's own guess can run.
+function(nrn_windows_prepare_msmpi)
+  if(NOT WIN32)
+    return()
+  endif()
+  if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    set(_nrn_msmpi_lib_subdir x64)
+    if(DEFINED ENV{MSMPI_INC}
+       AND EXISTS "$ENV{MSMPI_INC}/mpi.h"
+       AND DEFINED ENV{MSMPI_LIB64})
+      return()
+    endif()
+  else()
+    set(_nrn_msmpi_lib_subdir x86)
+    if(DEFINED ENV{MSMPI_INC}
+       AND EXISTS "$ENV{MSMPI_INC}/mpi.h"
+       AND DEFINED ENV{MSMPI_LIB32})
+      return()
+    endif()
+  endif()
+
+  set(_nrn_msmpi_roots "C:/msmpi" "C:/ms-mpi" "C:/Program Files (x86)/Microsoft SDKs/MPI")
+  foreach(_root IN LISTS _nrn_msmpi_roots)
+    set(_inc "")
+    if(EXISTS "${_root}/include/mpi.h")
+      set(_inc "${_root}/include")
+    elseif(EXISTS "${_root}/Include/mpi.h")
+      set(_inc "${_root}/Include")
+    endif()
+    if(NOT _inc)
+      continue()
+    endif()
+    set(_lib "")
+    foreach(_libdir "lib/${_nrn_msmpi_lib_subdir}" "Lib/${_nrn_msmpi_lib_subdir}")
+      if(EXISTS "${_root}/${_libdir}/msmpi.lib")
+        set(_lib "${_root}/${_libdir}")
+        break()
+      endif()
+    endforeach()
+    if(NOT _lib)
+      continue()
+    endif()
+    set(ENV{MSMPI_INC} "${_inc}")
+    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+      set(ENV{MSMPI_LIB64} "${_lib}")
+    else()
+      set(ENV{MSMPI_LIB32} "${_lib}")
+    endif()
+    foreach(_bin "C:/Program Files/Microsoft MPI/Bin" "${_root}/bin" "${_root}/Bin")
+      if(EXISTS "${_bin}/mpiexec.exe")
+        set(ENV{MSMPI_BIN} "${_bin}")
+        break()
+      endif()
+    endforeach()
+    message(STATUS "MS-MPI SDK from ${_root}")
+    return()
+  endforeach()
+endfunction()
+
 # ========================================================================
 # There is an edge case to 'find_package(MPI REQUIRED)' in that we can still build a universal2
 # macos package on an arm64 architecture even if the mpi library has no slice for x86_64.
 # ========================================================================
 macro(nrn_mpi_find_package)
+  nrn_windows_prepare_msmpi()
   if("arm64" IN_LIST CMAKE_OSX_ARCHITECTURES
      AND "x86_64" IN_LIST CMAKE_OSX_ARCHITECTURES
      AND NRN_ENABLE_MPI_DYNAMIC)
@@ -230,6 +293,18 @@ macro(nrn_mpi_find_package)
         ${_temp}
         CACHE INTERNAL "" FORCE)
     set(NRN_UNIVERSAL2_BUILD ON)
+  elseif(WIN32)
+    find_package(MPI)
+    if(NOT MPI_FOUND)
+      message(
+        FATAL_ERROR
+          "MPI is required when NRN_ENABLE_MPI=ON, but mpi.h was not found. "
+          "CMake's FindMPI locates Microsoft MPI only via MSMPI_INC / MSMPI_LIB64. "
+          "Install the MS-MPI runtime (msmpisetup.exe) and SDK (msmpisdk.msi) as in "
+          "ci/win_install_deps.cmd, then re-run cmake (a new shell picks up the "
+          "installer env vars). A configure probe without MPI is -DNRN_ENABLE_MPI=OFF; "
+          "that is not the Windows wheel product.")
+    endif()
   else()
     find_package(MPI REQUIRED)
   endif()
