@@ -27,6 +27,9 @@
 #include "../nrniv/backtrace_utils.h"
 
 #include "../utils/profile/profiler_interface.h"
+#ifdef _MSC_VER
+#include <io.h>
+#endif
 
 #include <cfenv>
 #include <condition_variable>
@@ -803,6 +806,8 @@ void hoc_main1_init(const char* pname, const char** envp) {
     if (nrn_istty_ == 0) { /* if not set then */
 #ifdef HAVE_ISATTY
         nrn_istty_ = isatty(0);
+#elif defined(_MSC_VER)
+        nrn_istty_ = _isatty(0);
 #else
         /* if we do not know, then assume so */
         nrn_istty_ = 1;

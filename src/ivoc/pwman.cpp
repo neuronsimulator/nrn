@@ -3330,7 +3330,9 @@ Window* PWMImpl::snap_owned(Printer* pr, Window* wp) {
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include "oc2iv.h"
 
 #endif  // HAVE_IV
