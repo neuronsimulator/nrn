@@ -99,10 +99,7 @@ E	[Ee][-+]?{D}+
 	Symbol *base;
 
 	/* count the primes  and create SCoP name*/
-#if SYSV || defined(MINGW)
-#define index strchr
-#endif
-	cp = index(yytext, '\'');
+	cp = strchr(yytext, '\'');
 	i = strlen(yytext) - (cp - yytext);
 	*cp = '\0';
 	if (i > 1) {
