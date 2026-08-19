@@ -1553,7 +1553,9 @@ static int getc_hook(void) {
 
 #else /* not use_rl_getc_function */
 
+extern "C" {
 extern int (*rl_event_hook)(void);
+}
 static int event_hook(void) {
     int i;
     i = run_til_stdin();
