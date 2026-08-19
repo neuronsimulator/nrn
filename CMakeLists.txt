@@ -436,7 +436,9 @@ if(READLINE_FOUND)
   endif()
   # If we are not using self contained, static readline library created for building wheel then only
   # look for curses and termcap
-  if(NOT NRN_WHEEL_STATIC_READLINE)
+  # Fetched win32 GNU readline does not use curses/termcap. MinGW still
+  # requires Termcap below.
+  if(NOT NRN_WHEEL_STATIC_READLINE AND NOT NRN_READLINE_FETCHED)
     find_package(Curses QUIET)
     find_package(Termcap QUIET)
   endif()

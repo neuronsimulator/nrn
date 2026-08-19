@@ -215,6 +215,16 @@ macro(nrn_install_dir_symlink source_dir symlink_dir)
   install(CODE "${configured_code}")
 endmacro()
 
+# Drop FindMPI cache leftovers from a failed configure / cl.exe wrapper guess.
+function(nrn_mpi_clear_msvc_cache)
+  unset(MPI_C_HEADER_DIR CACHE)
+  unset(MPI_CXX_HEADER_DIR CACHE)
+  unset(MPI_C_WORKS CACHE)
+  unset(MPI_CXX_WORKS CACHE)
+  unset(MPI_C_COMPILER_INCLUDE_DIRS CACHE)
+  unset(MPI_CXX_COMPILER_INCLUDE_DIRS CACHE)
+endfunction()
+
 # Microsoft MPI at C:/msmpi is the Windows prefix (ci/win_install_deps.cmd,
 # ci/win_build_cmake.sh). FindMPI's MSMPI guess uses MSMPI_INC / MSMPI_LIB64
 # only; CMAKE_PREFIX_PATH does not find lib/x64/msmpi.lib. The MinGW build
@@ -224,6 +234,11 @@ function(nrn_windows_prepare_msmpi)
   if(NOT WIN32)
     return()
   endif()
+  # MS-MPI has no compiler wrapper. Skip interrogating cl.exe, which can
+  # cache the source tree as MPI_*_COMPILER_INCLUDE_DIRS.
+  set(MPI_GUESS_LIBRARY_NAME
+      MSMPI
+      CACHE STRING "MPI implementation to guess on Windows")
   if(MPI_msmpi_LIBRARY AND EXISTS "${MPI_msmpi_LIBRARY}")
     if(NOT MPI_C_ADDITIONAL_INCLUDE_DIRS)
       get_filename_component(_nrn_msmpi_libdir "${MPI_msmpi_LIBRARY}" DIRECTORY)
@@ -245,10 +260,7 @@ function(nrn_windows_prepare_msmpi)
             CACHE STRING "MPI CXX additional include directories" FORCE)
       endif()
     endif()
-    unset(MPI_C_HEADER_DIR CACHE)
-    unset(MPI_CXX_HEADER_DIR CACHE)
-    unset(MPI_C_WORKS CACHE)
-    unset(MPI_CXX_WORKS CACHE)
+    nrn_mpi_clear_msvc_cache()
     return()
   endif()
 
@@ -319,10 +331,7 @@ function(nrn_windows_prepare_msmpi)
           "${_exec}"
           CACHE FILEPATH "Executable for running MPI programs.")
     endif()
-    unset(MPI_C_HEADER_DIR CACHE)
-    unset(MPI_CXX_HEADER_DIR CACHE)
-    unset(MPI_C_WORKS CACHE)
-    unset(MPI_CXX_WORKS CACHE)
+    nrn_mpi_clear_msvc_cache()
     message(STATUS "MS-MPI from ${_root} (${_lib})")
     return()
   endforeach()
@@ -334,6 +343,10 @@ endfunction()
 # ========================================================================
 macro(nrn_mpi_find_package)
   nrn_windows_prepare_msmpi()
+  if(WIN32)
+    # MS-MPI has no compiler wrapper. Do not interrogate cl.exe.
+    set(MPI_SKIP_COMPILER_WRAPPER TRUE)
+  endif()
   if("arm64" IN_LIST CMAKE_OSX_ARCHITECTURES
      AND "x86_64" IN_LIST CMAKE_OSX_ARCHITECTURES
      AND NRN_ENABLE_MPI_DYNAMIC)
@@ -361,6 +374,18 @@ macro(nrn_mpi_find_package)
   else()
     find_package(MPI REQUIRED)
   endif()
+  # Keep only directories that actually contain mpi.h. FindMPI can assemble
+  # MPI_C_INCLUDE_DIRS from compiler-wrapper leftovers (the source tree).
+  set(_nrn_mpi_incs)
+  foreach(_d IN LISTS MPI_C_INCLUDE_DIRS MPI_INCLUDE_PATH)
+    if(_d AND EXISTS "${_d}/mpi.h")
+      list(APPEND _nrn_mpi_incs "${_d}")
+    endif()
+  endforeach()
+  list(REMOVE_DUPLICATES _nrn_mpi_incs)
+  set(MPI_C_INCLUDE_DIRS "${_nrn_mpi_incs}")
+  set(MPI_INCLUDE_PATH "${_nrn_mpi_incs}")
+  unset(_nrn_mpi_incs)
 endmacro()
 
 # copy a list of files to the build dir
