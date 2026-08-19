@@ -8,6 +8,17 @@
 #define SPECIES_ABSENT -1
 #define PREFETCH       4
 
+#if defined(__PGI)
+#define NRN_PREFETCH(addr, rw, loc) ((void) 0)
+#elif defined(__GNUC__)
+#define NRN_PREFETCH(addr, rw, loc) __builtin_prefetch((addr), (rw), (loc))
+#elif defined(_MSC_VER)
+#include <xmmintrin.h>
+#define NRN_PREFETCH(addr, rw, loc) _mm_prefetch((const char*) (addr), _MM_HINT_T0)
+#else
+#define NRN_PREFETCH(addr, rw, loc) ((void) 0)
+#endif
+
 using fptr = void(void);
 
 // @olupton 2022-09-16: deleted a declaration of OcPtrVector that did not match
