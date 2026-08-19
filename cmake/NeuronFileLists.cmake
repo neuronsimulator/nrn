@@ -189,7 +189,7 @@ set(IVOC_FILE_LIST
     utility.cpp
     xmenu.cpp
     xyview.cpp)
-if(MINGW)
+if(NRN_WINDOWS_BUILD)
   list(APPEND IVOC_FILE_LIST ivocwin.cpp)
 else()
   list(APPEND IVOC_FILE_LIST field.cpp xdep.cpp)
