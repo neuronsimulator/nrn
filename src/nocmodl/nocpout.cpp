@@ -71,6 +71,9 @@ directly by hoc.
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#if defined(_WIN32)
+#include <direct.h>
+#endif
 #include <filesystem>
 namespace fs = std::filesystem;
 #define GETWD(buf) getcwd(buf, NRN_BUFSIZE)

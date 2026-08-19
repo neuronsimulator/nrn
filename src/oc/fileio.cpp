@@ -13,6 +13,9 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#if defined(_WIN32)
+#include <direct.h>
+#endif
 #include "ocmisc.h"
 #include "hocstr.h"
 #include "parse.hpp"

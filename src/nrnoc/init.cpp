@@ -10,6 +10,9 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#if defined(_WIN32)
+#include <direct.h>
+#endif
 #include "section.h"
 #include "seclist.h"  // SectionList_reg
 #include "parse.hpp"
