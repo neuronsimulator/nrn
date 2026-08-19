@@ -80,7 +80,7 @@ void Oc::cleanup() {
     }
 }
 
-#ifdef MINGW
+#ifdef _WIN32
 static void hidewindow(void* v) {
     HWND w = (HWND) v;
     ShowWindow(w, SW_HIDE);
@@ -99,7 +99,7 @@ void PrintableWindow::hide() {
     if (is_mapped()) {
         HWND hwnd = Window::rep()->msWindow();
 // printf("hide %p\n", this);
-#ifdef MINGW
+#ifdef _WIN32
         if (!nrn_is_gui_thread()) {
             nrn_gui_exec(hidewindow, hwnd);
             return;
@@ -110,7 +110,7 @@ void PrintableWindow::hide() {
 }
 
 void PrintableWindow::xmove(int x, int y) {
-#ifdef MINGW
+#ifdef _WIN32
     if (!nrn_is_gui_thread()) {
         gui_thread_xmove_x = x;
         gui_thread_xmove_y = y;
@@ -190,7 +190,7 @@ double* ivoc_vector_ptr(Object*, int) {return 0;}
 int ivoc_vector_size(Object*) {return 0;}
 #endif
 
-#ifdef MINGW
+#ifdef _WIN32
 IOHandler::IOHandler() {}
 IOHandler::~IOHandler() {}
 int IOHandler::inputReady(int) {
@@ -204,9 +204,9 @@ int IOHandler::exceptionRaised(int) {
 }
 void IOHandler::timerExpired(long, long) {}
 void IOHandler::childStatus(pid_t, int) {}
-#endif  // MINGW
+#endif  // _WIN32
 
-#ifdef MINGW
+#ifdef _WIN32
 
 #include <nrnmutdec.h>
 static int bind_tid_;
@@ -267,7 +267,7 @@ void nrniv_bind_call() {
 }
 
 
-#endif  // MINGW
+#endif  // _WIN32
 
 #endif  // HAVE_IV
 

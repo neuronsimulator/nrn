@@ -34,7 +34,7 @@ extern char* ivoc_get_temp_file();
 void single_event_run();
 extern char** hoc_strpop();
 
-#ifdef MINGW
+#ifdef _WIN32
 #include <IV-Win/mprinter.h>
 void iv_display_scale(float);
 void iv_display_scale(Coord, Coord);  // Make if fit into the screen
@@ -524,7 +524,7 @@ static double pwman_close(void* v) {
 #endif
     return 0.;
 }
-#ifdef MINGW
+#ifdef _WIN32
 static void pwman_iconify1(void* v) {
 #if HAVE_IV
     if (hoc_usegui) {
@@ -539,7 +539,7 @@ static double pwman_iconify(void* v) {
 #if HAVE_IV
     if (hoc_usegui) {
         PrintableWindow* pw = PrintableWindow::leader();
-#ifdef MINGW
+#ifdef _WIN32
         if (!nrn_is_gui_thread()) {
             nrn_gui_exec(pwman_iconify1, pw);
             return 0.;
@@ -654,7 +654,7 @@ static double pwman_snap(void* v) {
     return 0;
 }
 
-#ifdef MINGW
+#ifdef _WIN32
 static double scale_;
 static void pwman_scale1(void*) {
 #if HAVE_IV
@@ -671,7 +671,7 @@ static double pwman_scale(void* v) {
 #if HAVE_IV
     if (hoc_usegui) {
 #if defined(WIN32)
-#ifdef MINGW
+#ifdef _WIN32
         if (!nrn_is_gui_thread()) {
             scale_ = scale;
             nrn_gui_exec(pwman_scale1, (void*) ((intptr_t) 1));
