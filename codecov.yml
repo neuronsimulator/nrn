@@ -6,3 +6,7 @@ coverage:
     patch:
       default:
         informational: true
+
+# this relies on the build of coverage to happen in `build`, which is true for .github/workflows/neuron-ci.yml
+fixes:
+  - "build/lib/python/::share/lib/python/"
