@@ -19,7 +19,7 @@ using PreSynTable = std::unordered_map<neuron::container::data_handle<double>, P
 class NetCon;
 class DiscreteEvent;
 class SelfEvent;
-using SelfEventPool = MutexPool<SelfEvent>;
+using SelfEventPool = Pool<SelfEvent, /* Mutex */ true>;
 struct hoc_Item;
 class PlayRecord;
 class IvocVect;
