@@ -13,14 +13,13 @@
 
 #include <nrnmpi.h>
 #include <mpispike.h>
+#include "ocmisc.h"
 
 
 #if NRNMPI_DYNAMICLOAD
 #else
 #include "nrnmpi_def_cinc"
 #endif
-
-extern double nrn_timeus();
 
 #if NRNMPI
 #include <mpi.h>

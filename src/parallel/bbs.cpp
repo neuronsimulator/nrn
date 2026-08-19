@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <InterViews/resource.h>
 #include "oc2iv.h"
+#include "ocmisc.h"
 #include "bbs.h"
 #include "bbslocal.h"
 #if defined(NRNMPI)
@@ -13,7 +14,6 @@
 
 extern int nrn_global_argc;
 extern char** nrn_global_argv;
-extern double nrn_timeus();
 
 bool BBSImpl::is_master_ = false;
 bool BBSImpl::started_ = false;
