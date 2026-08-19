@@ -200,7 +200,11 @@ double nrn_segment_diam_get(Section* const sec, const double x) {
     // recalc_area_. Mirror the range-variable read path (nrnpy_nrn.cpp) so a
     // diam read after pt3dadd returns the 3d-derived value, not a stale default.
     if (sec && sec->recalc_area_) {
-        nrn_area_ri(sec);
+        // nrn_area_ri normally reports a non-positive diameter with
+        // hoc_execerror after clamping it to 1e-6. A C value accessor cannot
+        // let that C++ exception unwind across its ABI, so complete the same
+        // recompute without raising the HOC-level diagnostic.
+        nrn_area_ri_no_diam_error(sec);
     }
     Node* const node = node_exact(sec, x);
     for (auto prop = node->prop; prop; prop = prop->next) {
