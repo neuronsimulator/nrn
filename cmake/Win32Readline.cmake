@@ -68,8 +68,14 @@ set(_nrn_rl_srcs
 add_library(nrn_readline STATIC ${_nrn_rl_srcs})
 # PRIVATE: their config.h / readline.h live at the source root.
 target_include_directories(nrn_readline PRIVATE "${_nrn_rl_src}")
-# Sources already #define READLINE_LIBRARY; do not pass it on the cl command line.
-target_compile_definitions(nrn_readline PRIVATE HAVE_CONFIG_H _CRT_SECURE_NO_WARNINGS READLINE_STATIC)
+# READLINE_LIBRARY must be on the command line: tilde.c includes tilde.h
+# before any #define, and that header uses <readline/rlstdc.h> otherwise.
+# Some .c files also #define it (C4005).
+target_compile_definitions(nrn_readline PRIVATE READLINE_LIBRARY HAVE_CONFIG_H _CRT_SECURE_NO_WARNINGS
+                                                READLINE_STATIC)
+if(CMAKE_C_COMPILER_ID STREQUAL "MSVC")
+  target_compile_options(nrn_readline PRIVATE /wd4005)
+endif()
 
 set(Readline_LIBRARY nrn_readline)
 set(Readline_INCLUDE_DIR "${_nrn_rl_src}")
