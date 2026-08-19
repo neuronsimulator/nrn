@@ -24,9 +24,6 @@ int in_comment_;
 char* inputline() {
     /* and removes comment, newline, beginning and trailing blanks */
     /* used to get the TITLE line */
-#if SYSV || defined(MINGW)
-#define index strchr
-#endif
     char* cp;
     int i;
 
@@ -35,7 +32,7 @@ char* inputline() {
     i = strlen(buf);
     if (i)
         buf[i - 1] = '\0';
-    if ((cp = index(buf, '!')) != (char*) 0) {
+    if ((cp = strchr(buf, '!')) != (char*) 0) {
         *cp-- = '\0';
     }
     while (cp >= buf && isspace(*cp)) {
