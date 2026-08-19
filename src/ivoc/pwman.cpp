@@ -419,7 +419,7 @@ void PWMDismiss::execute() {
 }
 
 #else  //! HAVE_IV
-#ifdef MINGW
+#ifdef _WIN32
 char* hoc_back2forward(char*);
 #endif
 #endif  // HAVE_IV

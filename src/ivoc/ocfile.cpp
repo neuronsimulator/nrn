@@ -91,9 +91,9 @@ static double f_aopen(void* v) {
         f->set_name(gargstr(1));
     }
     int err = f->open(f->get_name(), "a");
-#ifdef MINGW
-    /* ignore illegal seek */
-    if (err && errno == 29) {
+#ifdef _WIN32
+    /* Windows reports ESPIPE on append; Unix does not. */
+    if (err && errno == ESPIPE) {
         errno = 0;
     }
 #endif
