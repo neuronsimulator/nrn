@@ -47,22 +47,26 @@ set(NRN_INSTALL_PYTHON_PREFIX
 )
 
 # if we're building a wheel, we have a different layout of files
+# NRN_INSTALL_DATA_PREFIX always ends with '/'. Concatenate as
+# ${NRN_INSTALL_DATA_PREFIX}bin (no extra slash). Never leave it empty:
+# Visual Studio treats an empty DESTINATION prefix as invalid, and
+# "${prefix}/${empty}/lib" is a poor relative path.
 if(SKBUILD)
   set(NRN_INSTALL_PYTHON_PREFIX
       "neuron/"
       CACHE STRING "" FORCE)
   set(NRN_INSTALL_DATA_PREFIX "neuron/.data/")
   # need to force fmtlib install prefixes
-  set(FMT_LIB_DIR "${NRN_INSTALL_DATA_PREFIX}/lib")
-  set(FMT_INC_DIR "${NRN_INSTALL_DATA_PREFIX}/include")
-  set(FMT_PKGCONFIG_DIR "${NRN_INSTALL_DATA_PREFIX}/lib/pkgconfig")
-  set(FMT_CMAKE_DIR "${NRN_INSTALL_DATA_PREFIX}/lib/cmake/fmt")
+  set(FMT_LIB_DIR "${NRN_INSTALL_DATA_PREFIX}lib")
+  set(FMT_INC_DIR "${NRN_INSTALL_DATA_PREFIX}include")
+  set(FMT_PKGCONFIG_DIR "${NRN_INSTALL_DATA_PREFIX}lib/pkgconfig")
+  set(FMT_CMAKE_DIR "${NRN_INSTALL_DATA_PREFIX}lib/cmake/fmt")
   # need to force IV install prefixes
-  set(IV_LIB_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}/lib")
-  set(IV_HEADERS_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}/include")
-  set(IV_BIN_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}/bin")
+  set(IV_LIB_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}lib")
+  set(IV_HEADERS_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}include")
+  set(IV_BIN_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}bin")
 else()
-  set(NRN_INSTALL_DATA_PREFIX)
+  set(NRN_INSTALL_DATA_PREFIX "./")
 endif()
 
 # Make python install path relative to CMAKE_INSTALL_PREFIX
