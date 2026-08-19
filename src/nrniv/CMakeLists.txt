@@ -40,7 +40,8 @@ add_custom_command(
   DEPENDS "${NRN_MODLUNIT_SRC_DIR}/parse1.ypp"
   COMMENT "[BISON][modlunitparser] Building parser with bison ${BISON_VERSION}")
 
-add_custom_target(generated_source_files true)
+# Umbrella only. A COMMAND of `true` is not a Windows program.
+add_custom_target(generated_source_files)
 add_custom_target(modlunit_generated_files DEPENDS "${NRN_MODLUNIT_GEN}/lex.cpp"
                                                    "${NRN_MODLUNIT_GEN}/parse1.cpp")
 add_dependencies(generated_source_files modlunit_generated_files)
