@@ -253,14 +253,25 @@ set(NRN_INCLUDE_DIRS
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/src/sundials/shared)
 
 # generate hocusr.h
+# cl.exe treats //UNC/neuron.h as a switch; sed is not a Windows program.
+# cmake/generate_hocusr.cmake copies to the build dir, preprocesses the
+# local name, and runs mk_hocusr_h.py (which skips leftover #line lines).
+set(_nrn_hocusr_out ${PROJECT_BINARY_DIR}/src/oc/hocusr.h)
+set(_nrn_hocusr_nologo 0)
+if(MSVC)
+  set(_nrn_hocusr_nologo 1)
+endif()
 add_custom_command(
-  OUTPUT ${PROJECT_BINARY_DIR}/src/oc/hocusr.h
-  COMMAND ${CMAKE_C_COMPILER} -E -I${NRN_NRNOC_SRC_DIR} -I${NRN_OC_SRC_DIR}
-          ${NRN_NRNOC_SRC_DIR}/neuron.h > neuron.tmp1
-  COMMAND sed "/^#/d" neuron.tmp1 > neuron.tmp2
-  COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${NRN_OC_SRC_DIR}/mk_hocusr_h.py < neuron.tmp2 >
-          ${PROJECT_BINARY_DIR}/src/oc/hocusr.h
-  DEPENDS ${NRN_NRNOC_SRC_DIR}/neuron.h ${NRN_OC_SRC_DIR}/mk_hocusr_h.py)
+  OUTPUT ${_nrn_hocusr_out}
+  COMMAND
+    ${CMAKE_COMMAND} "-DNRN_HOCUSR_CC=${CMAKE_C_COMPILER}" "-DNRN_HOCUSR_NRNOC=${NRN_NRNOC_SRC_DIR}"
+    "-DNRN_HOCUSR_OC=${NRN_OC_SRC_DIR}" "-DNRN_HOCUSR_NEURON_H=${NRN_NRNOC_SRC_DIR}/neuron.h"
+    "-DNRN_HOCUSR_PYTHON=${NRN_DEFAULT_PYTHON_EXECUTABLE}"
+    "-DNRN_HOCUSR_SCRIPT=${NRN_OC_SRC_DIR}/mk_hocusr_h.py" "-DNRN_HOCUSR_OUTPUT=${_nrn_hocusr_out}"
+    "-DNRN_HOCUSR_WORKDIR=${PROJECT_BINARY_DIR}/src/oc" "-DNRN_HOCUSR_NOLOGO=${_nrn_hocusr_nologo}"
+    -P ${PROJECT_SOURCE_DIR}/cmake/generate_hocusr.cmake
+  DEPENDS ${NRN_NRNOC_SRC_DIR}/neuron.h ${NRN_OC_SRC_DIR}/mk_hocusr_h.py
+          ${PROJECT_SOURCE_DIR}/cmake/generate_hocusr.cmake)
 add_custom_target(generate_hocusr_header DEPENDS "${PROJECT_BINARY_DIR}/src/oc/hocusr.h")
 add_dependencies(generated_source_files generate_hocusr_header)
 
