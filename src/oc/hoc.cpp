@@ -29,6 +29,7 @@
 #include "../utils/profile/profiler_interface.h"
 #ifdef _MSC_VER
 #include <io.h>
+#include <process.h>
 #endif
 
 #include <cfenv>
@@ -776,7 +777,11 @@ __attribute__((noreturn)) void sigbuscatch(int /* sig */) {
 #endif
 
 int hoc_pid(void) {
+#ifdef _MSC_VER
+    return (int) _getpid();
+#else
     return (int) getpid();
+#endif
 } /* useful for making unique temporary file names */
 
 /* readline should be avoided if stdin is not a terminal */

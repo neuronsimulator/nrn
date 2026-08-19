@@ -181,7 +181,7 @@ extern double hoc_default_dll_loaded_;
 extern int hoc_print_first_instance;
 int nrnpy_nositeflag;
 
-#if !defined(MINGW)
+#if !defined(_WIN32)
 extern void setneuronhome(const char*) {
     neuron_home = getenv("NEURONHOME");
 }
@@ -470,7 +470,7 @@ nrniv [options] [fileargs]
     const char** our_argv = argv;
     int exit_status = 0;
     Session* session = NULL;
-#if !defined(MINGW)
+#if !defined(_WIN32)
     // Gary Holt's first pass at this was:
     //
     // Set the NEURONHOME environment variable.  This should override any setting

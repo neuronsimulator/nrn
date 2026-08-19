@@ -1,6 +1,6 @@
 #include <../../nrnconf.h>
 
-#ifdef MINGW
+#ifdef _WIN32
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -12,7 +12,9 @@
 #include <string.h>
 #include <errno.h>
 #include "hoc.h"
+#ifdef MINGW
 #include "../mswin/extra/d2upath.h"
+#endif
 
 #include "gui-redirect.h"
 
@@ -28,6 +30,7 @@ extern int bad_install_ok;
 int bad_install_ok;
 #endif  // HAVE_IV
 extern FILE* hoc_redir_stdout;
+char* hoc_back2forward(char* s);
 void setneuronhome(const char* p) {
     // if the program lives in .../bin/neuron.exe
     // and .../lib exists then use ... as the
@@ -49,7 +52,13 @@ void setneuronhome(const char* p) {
     buf[j] = '\0';  // /bin gone
     neuron_home_dos = static_cast<char*>(emalloc(strlen(buf) + 1));
     strcpy(neuron_home_dos, buf);
+#ifdef MINGW
     neuron_home = hoc_dos2unixpath(buf);
+#else
+    neuron_home = static_cast<char*>(emalloc(strlen(buf) + 1));
+    strcpy(neuron_home, buf);
+    hoc_back2forward(neuron_home);
+#endif
     return;
 }
 void HandleOutput(char* s) {
@@ -86,6 +95,7 @@ BOOL hoc_copyfile(const char* src, const char* dest) {
     return CopyFile(src, dest, FALSE);
 }
 
+#ifdef MINGW
 static FILE* dll_stdio_[] = {(FILE*) 0x0, (FILE*) 0x20, (FILE*) 0x40};
 
 void nrn_mswindll_stdio(FILE* i, FILE* o, FILE* e) {
@@ -96,6 +106,7 @@ void nrn_mswindll_stdio(FILE* i, FILE* o, FILE* e) {
     dll_stdio_[1] = o;
     dll_stdio_[2] = e;
 }
+#endif  // MINGW
 
 void hoc_forward2back(char* s) {
     char* cp;
@@ -135,6 +146,7 @@ void hoc_win_exec(void) {
 
 void hoc_winio_show(int b) {}
 
+#ifdef MINGW
 int getpid() {
     return 1;
 }
@@ -155,3 +167,4 @@ void hoc_Lw() {
 }
 
 #endif  // MINGW
+#endif  // _WIN32

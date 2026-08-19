@@ -172,7 +172,7 @@ static int Getc(FILE* inp) {
 static struct unit unit_stack[UNIT_STK_SIZE], *usp{nullptr};
 
 static std::string neuronhome() {
-#if defined(MINGW)
+#if defined(_WIN32)
     std::string buf(256, '\0');
     GetModuleFileName(nullptr, buf.data(), 256);
     // Remove neuron.exe
@@ -603,7 +603,7 @@ void unit_init() {
             diag("Bad MODLUNIT environment variable. Cant open:", buf);
         }
     }
-#if defined(__MINGW32__)
+#if defined(_WIN32)
     if (!inpfile) {
         auto s = neuronhome();
         if (!s.empty()) {
