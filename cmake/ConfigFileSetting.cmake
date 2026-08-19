@@ -151,6 +151,14 @@ int main(void) {
 }
 "
   NRN_HAVE_PID_T)
+check_c_source_compiles(
+  "
+#include <sys/types.h>
+int main(void) {
+  return (int) sizeof(ssize_t);
+}
+"
+  NRN_HAVE_SSIZE_T)
 
 # =============================================================================
 # Generate file from file.in template

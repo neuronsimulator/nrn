@@ -3335,6 +3335,10 @@ Window* PWMImpl::snap_owned(Printer* pr, Window* wp) {
 
 #endif  // HAVE_IV
 
+#if defined(_MSC_VER)
+#include <io.h>
+#endif
+
 char* ivoc_get_temp_file() {
     char* tmpfile;
     const char* tdir = getenv("TEMP");
@@ -3351,7 +3355,11 @@ char* ivoc_get_temp_file() {
     }
     close(fd);
 #else
+#if defined(_MSC_VER)
+    _mktemp(tmpfile);
+#else
     mktemp(tmpfile);
+#endif
 #endif
 #if defined(WIN32)
     tmpfile = hoc_back2forward(tmpfile);

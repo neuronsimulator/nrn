@@ -122,6 +122,15 @@
 typedef int pid_t;
 #endif
 
+/* Provide ssize_t if the libc headers do not. Typedef, not a #define, so a
+   later identical typedef (MSVC Python) is valid. ptrdiff_t is the portable
+   signed counterpart of size_t. */
+#cmakedefine01 NRN_HAVE_SSIZE_T
+#if !NRN_HAVE_SSIZE_T
+#include <stddef.h>
+typedef ptrdiff_t ssize_t;
+#endif
+
 /* __cplusplus guard still needed because this header is included from C code in
  * mesch (and maybe others)
  */
