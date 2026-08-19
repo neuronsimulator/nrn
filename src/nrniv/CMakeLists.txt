@@ -185,7 +185,7 @@ else()
   list(APPEND NRN_NRNIV_LIB_SRC_FILES ${NRN_NRNMPI_SRC_FILES})
 endif()
 
-if(MINGW)
+if(NRN_WINDOWS_BUILD)
   list(APPEND NRN_NRNIV_LIB_SRC_FILES ${PROJECT_SOURCE_DIR}/src/mswin/dlfcn.c)
 endif()
 
@@ -574,7 +574,7 @@ target_link_libraries(nrniv PRIVATE nrniv_lib ${INTERNAL_READLINE} ${CMAKE_DL_LI
 if(NRN_ENABLE_THREADS)
   target_link_libraries(nrniv PRIVATE Threads::Threads)
 endif()
-if(NOT MINGW)
+if(NOT NRN_WINDOWS_BUILD)
   target_link_libraries(nrniv_lib PUBLIC ${CMAKE_DL_LIBS})
 endif()
 
