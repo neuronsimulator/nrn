@@ -68,8 +68,8 @@ set(_nrn_rl_srcs
 add_library(nrn_readline STATIC ${_nrn_rl_srcs})
 # PRIVATE: their config.h / readline.h live at the source root.
 target_include_directories(nrn_readline PRIVATE "${_nrn_rl_src}")
-target_compile_definitions(nrn_readline PRIVATE READLINE_LIBRARY HAVE_CONFIG_H _CRT_SECURE_NO_WARNINGS
-                                                READLINE_STATIC)
+# Sources already #define READLINE_LIBRARY; do not pass it on the cl command line.
+target_compile_definitions(nrn_readline PRIVATE HAVE_CONFIG_H _CRT_SECURE_NO_WARNINGS READLINE_STATIC)
 
 set(Readline_LIBRARY nrn_readline)
 set(Readline_INCLUDE_DIR "${_nrn_rl_src}")
