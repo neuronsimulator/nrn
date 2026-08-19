@@ -215,31 +215,61 @@ macro(nrn_install_dir_symlink source_dir symlink_dir)
   install(CODE "${configured_code}")
 endmacro()
 
-# CMake FindMPI locates Microsoft MPI only via MSMPI_INC / MSMPI_LIB64
-# (and MSMPI_LIB32). The SDK installer sets those; the CI layout at C:\msmpi
-# and a cmake.exe started before the installer does not. Fill them from
-# known SDK roots so FindMPI's own guess can run.
+# Microsoft MPI at C:/msmpi is the Windows prefix (ci/win_install_deps.cmd,
+# ci/win_build_cmake.sh). FindMPI's MSMPI guess uses MSMPI_INC / MSMPI_LIB64
+# only; CMAKE_PREFIX_PATH does not find lib/x64/msmpi.lib. The MinGW build
+# already passes FindMPI cache entries. Set the same ones from MPI_HOME,
+# CMAKE_PREFIX_PATH, or C:/msmpi when mpi.h and msmpi.lib are there.
 function(nrn_windows_prepare_msmpi)
   if(NOT WIN32)
     return()
   endif()
-  if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-    set(_nrn_msmpi_lib_subdir x64)
-    if(DEFINED ENV{MSMPI_INC}
-       AND EXISTS "$ENV{MSMPI_INC}/mpi.h"
-       AND DEFINED ENV{MSMPI_LIB64})
-      return()
+  if(MPI_msmpi_LIBRARY AND EXISTS "${MPI_msmpi_LIBRARY}")
+    if(NOT MPI_C_ADDITIONAL_INCLUDE_DIRS)
+      get_filename_component(_nrn_msmpi_libdir "${MPI_msmpi_LIBRARY}" DIRECTORY)
+      get_filename_component(_nrn_msmpi_root "${_nrn_msmpi_libdir}" DIRECTORY)
+      get_filename_component(_nrn_msmpi_root "${_nrn_msmpi_root}" DIRECTORY)
+      if(EXISTS "${_nrn_msmpi_root}/include/mpi.h")
+        set(MPI_C_ADDITIONAL_INCLUDE_DIRS
+            "${_nrn_msmpi_root}/include"
+            CACHE STRING "MPI C additional include directories" FORCE)
+        set(MPI_CXX_ADDITIONAL_INCLUDE_DIRS
+            "${_nrn_msmpi_root}/include"
+            CACHE STRING "MPI CXX additional include directories" FORCE)
+      elseif(EXISTS "${_nrn_msmpi_root}/Include/mpi.h")
+        set(MPI_C_ADDITIONAL_INCLUDE_DIRS
+            "${_nrn_msmpi_root}/Include"
+            CACHE STRING "MPI C additional include directories" FORCE)
+        set(MPI_CXX_ADDITIONAL_INCLUDE_DIRS
+            "${_nrn_msmpi_root}/Include"
+            CACHE STRING "MPI CXX additional include directories" FORCE)
+      endif()
     endif()
-  else()
-    set(_nrn_msmpi_lib_subdir x86)
-    if(DEFINED ENV{MSMPI_INC}
-       AND EXISTS "$ENV{MSMPI_INC}/mpi.h"
-       AND DEFINED ENV{MSMPI_LIB32})
-      return()
-    endif()
+    unset(MPI_C_HEADER_DIR CACHE)
+    unset(MPI_CXX_HEADER_DIR CACHE)
+    unset(MPI_C_WORKS CACHE)
+    unset(MPI_CXX_WORKS CACHE)
+    return()
   endif()
 
-  set(_nrn_msmpi_roots "C:/msmpi" "C:/ms-mpi" "C:/Program Files (x86)/Microsoft SDKs/MPI")
+  if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    set(_nrn_msmpi_libdirs lib/x64 Lib/x64)
+  else()
+    set(_nrn_msmpi_libdirs lib/x86 Lib/x86)
+  endif()
+
+  set(_nrn_msmpi_roots)
+  if(MPI_HOME)
+    list(APPEND _nrn_msmpi_roots "${MPI_HOME}")
+  endif()
+  if(DEFINED ENV{MPI_HOME} AND NOT "$ENV{MPI_HOME}" STREQUAL "")
+    list(APPEND _nrn_msmpi_roots "$ENV{MPI_HOME}")
+  endif()
+  foreach(_p IN LISTS CMAKE_PREFIX_PATH)
+    list(APPEND _nrn_msmpi_roots "${_p}")
+  endforeach()
+  list(APPEND _nrn_msmpi_roots "C:/msmpi" "C:/ms-mpi")
+
   foreach(_root IN LISTS _nrn_msmpi_roots)
     set(_inc "")
     if(EXISTS "${_root}/include/mpi.h")
@@ -251,28 +281,49 @@ function(nrn_windows_prepare_msmpi)
       continue()
     endif()
     set(_lib "")
-    foreach(_libdir "lib/${_nrn_msmpi_lib_subdir}" "Lib/${_nrn_msmpi_lib_subdir}")
+    foreach(_libdir IN LISTS _nrn_msmpi_libdirs)
       if(EXISTS "${_root}/${_libdir}/msmpi.lib")
-        set(_lib "${_root}/${_libdir}")
+        set(_lib "${_root}/${_libdir}/msmpi.lib")
         break()
       endif()
     endforeach()
     if(NOT _lib)
       continue()
     endif()
-    set(ENV{MSMPI_INC} "${_inc}")
-    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-      set(ENV{MSMPI_LIB64} "${_lib}")
-    else()
-      set(ENV{MSMPI_LIB32} "${_lib}")
-    endif()
-    foreach(_bin "C:/Program Files/Microsoft MPI/Bin" "${_root}/bin" "${_root}/Bin")
+    set(_exec "")
+    foreach(_bin "${_root}/bin" "${_root}/Bin")
       if(EXISTS "${_bin}/mpiexec.exe")
-        set(ENV{MSMPI_BIN} "${_bin}")
+        set(_exec "${_bin}/mpiexec.exe")
         break()
       endif()
     endforeach()
-    message(STATUS "MS-MPI SDK from ${_root}")
+    # Same cache entries as ci/win_build_cmake.sh. Unset NOTFOUND leftovers
+    # from a previous failed configure in this build dir.
+    set(MPI_C_LIB_NAMES
+        msmpi
+        CACHE STRING "MPI C libraries to link against" FORCE)
+    set(MPI_CXX_LIB_NAMES
+        msmpi
+        CACHE STRING "MPI CXX libraries to link against" FORCE)
+    set(MPI_msmpi_LIBRARY
+        "${_lib}"
+        CACHE FILEPATH "Location of the msmpi library for Microsoft MPI" FORCE)
+    set(MPI_C_ADDITIONAL_INCLUDE_DIRS
+        "${_inc}"
+        CACHE STRING "MPI C additional include directories" FORCE)
+    set(MPI_CXX_ADDITIONAL_INCLUDE_DIRS
+        "${_inc}"
+        CACHE STRING "MPI CXX additional include directories" FORCE)
+    if(_exec AND NOT MPIEXEC_EXECUTABLE)
+      set(MPIEXEC_EXECUTABLE
+          "${_exec}"
+          CACHE FILEPATH "Executable for running MPI programs.")
+    endif()
+    unset(MPI_C_HEADER_DIR CACHE)
+    unset(MPI_CXX_HEADER_DIR CACHE)
+    unset(MPI_C_WORKS CACHE)
+    unset(MPI_CXX_WORKS CACHE)
+    message(STATUS "MS-MPI from ${_root} (${_lib})")
     return()
   endforeach()
 endfunction()
@@ -298,11 +349,13 @@ macro(nrn_mpi_find_package)
     if(NOT MPI_FOUND)
       message(
         FATAL_ERROR
-          "MPI is required when NRN_ENABLE_MPI=ON, but mpi.h was not found. "
-          "CMake's FindMPI locates Microsoft MPI only via MSMPI_INC / MSMPI_LIB64. "
-          "Install the MS-MPI runtime (msmpisetup.exe) and SDK (msmpisdk.msi) as in "
-          "ci/win_install_deps.cmd, then re-run cmake (a new shell picks up the "
-          "installer env vars). A configure probe without MPI is -DNRN_ENABLE_MPI=OFF; "
+          "MPI is required when NRN_ENABLE_MPI=ON, but FindMPI did not find mpi.h / msmpi.lib. "
+          "The Windows prefix is C:/msmpi (include/mpi.h and lib/x64/msmpi.lib; SDK, not "
+          "runtime-only). Same FindMPI cache entries as ci/win_build_cmake.sh:\n"
+          "  -DCMAKE_PREFIX_PATH=C:/msmpi\n"
+          "  -DMPI_C_LIB_NAMES=msmpi -DMPI_CXX_LIB_NAMES=msmpi\n"
+          "  -DMPI_msmpi_LIBRARY=C:/msmpi/lib/x64/msmpi.lib\n"
+          "Or -DMPI_HOME=C:/msmpi. A probe without MPI is -DNRN_ENABLE_MPI=OFF; "
           "that is not the Windows wheel product.")
     endif()
   else()
