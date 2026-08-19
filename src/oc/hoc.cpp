@@ -869,7 +869,7 @@ void hocstr_copy(HocStr* hs, const char* buf) {
     strcpy(hs->buf, buf);
 }
 
-#ifdef MINGW
+#ifdef _WIN32
 static int cygonce; /* does not need the '-' after a list of hoc files */
 #endif
 
@@ -907,7 +907,7 @@ int hoc_main1(int argc, const char** argv, const char** envp) {
         {
             static const char* stdinonly[] = {"-"};
 
-#ifdef MINGW
+#ifdef _WIN32
             cygonce = 1;
 #endif
             gargv = stdinonly;
