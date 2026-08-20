@@ -11,7 +11,7 @@
 #if defined(_MSC_VER)
 #define NRN_ALWAYS_INLINE __forceinline
 #elif defined(__GNUC__)
-#define NRN_ALWAYS_INLINE NRN_ALWAYS_INLINE
+#define NRN_ALWAYS_INLINE __attribute__((always_inline))
 #else
 #define NRN_ALWAYS_INLINE
 #endif
