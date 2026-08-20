@@ -1,0 +1,44 @@
+// continuous Vector.play, Vector.record
+{load_file("stdrun.hoc")}
+
+begintemplate Cell
+public soma, vc, vp, vr
+create soma
+objref vc, vp, vpt, vpd, vr
+proc init() {
+    soma {
+	L = 10  diam=100/(PI*L)  insert pas
+	vc = new SEClamp(.5)
+	vc.rs = 1e-6
+	vc.amp1 = 0
+	vc.dur1 = 1e9	
+	vp = new Vector()
+	vpt = new Vector()
+	vr = new Vector()
+	vr.record(&v(.5))
+	vp.append(-65, -65, 10, 10)
+	vpt.append(0, 1, 2, 1e9)
+	vpd = new Vector()
+	vpd.append(1,2)
+	vp.play(&vc.amp1, vpt, vpd)
+    }
+}
+endtemplate Cell
+
+n = 1
+objref cells[n]
+for i=0, n-1 cells[i] = new Cell(i)
+
+objref pc
+pc = new ParallelContext()
+b = execute1("{pc.nthread(3,1)}",0)
+
+{hoc_stdout("vector.out")}
+{printf("fixed step\n")}
+run()
+{cells[0].vr.printf()}
+{cvode_active(1)}
+{printf("cvode\n")}
+run()
+{cells[0].vr.printf()}
+{hoc_stdout()}

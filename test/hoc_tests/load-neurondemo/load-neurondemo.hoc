@@ -1,0 +1,25 @@
+// load the neurondemo mod files and insert capump into a section
+
+objref sf
+strdef s, s1, arch
+sf = new StringFunctions()
+{sscanf(nrnversion(8), "%[^-]", arch)}
+if (unix_mac_pc() == 3) { // mingw
+  sprint(s1, "%s/demo/release/nrnmech.dll", neuronhome())
+} else if (unix_mac_pc() == 4) { // Darwin
+  sprint(s1, "%s/demo/release/%s/libnrnmech.dylib", neuronhome(), arch)
+} else {
+  sprint(s1, "%s/demo/release/%s/libnrnmech.so", neuronhome(), arch)
+}
+//{printf("|%s|\n", s1)}
+b = nrn_load_dll(s1)
+if (b != 1) {quit(1)}
+
+create t2
+t2 insert capump
+t2 b = ismembrane("capump")
+t2 delete_section()
+
+// note that if a test needs to load the neurondemo mod files it is
+// sufficient to "{load_file("t2.hoc")}"
+if (b != 1) { quit(1) }
