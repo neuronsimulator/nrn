@@ -27,3 +27,4 @@ ci/deps/assets/
 .vscode
 .coverage*
 coverage*.xml
+cmake/nrn-git-info.cmake

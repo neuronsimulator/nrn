@@ -407,60 +407,23 @@ endfunction()
 # Replacement for git2nrnversion_h.sh. Add git information to `target` with scope `scope` (PRIVATE,
 # PUBLIC, or INTERFACE)
 function(add_cpp_git_information target scope)
-  find_program(GIT git)
-  if(EXISTS "${PROJECT_SOURCE_DIR}/.git" AND GIT)
-    # Shallow clones: tags may not be ancestors of HEAD, so describe fails and GIT_DESCRIBE would
-    # stay empty (neuron.__version__ / nrnversion(5)). Fall back to PROJECT_VERSION so release
-    # dry-run and ship wheels match.
-    execute_process(
-      COMMAND "${GIT}" -C "${PROJECT_SOURCE_DIR}" describe
-      OUTPUT_VARIABLE GIT_DESCRIBE
-      RESULT_VARIABLE GIT_DESCRIBE_RESULT
-      OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
-
-    if(GIT_DESCRIBE_RESULT OR "${GIT_DESCRIBE}" STREQUAL "")
-      set(GIT_DESCRIBE "${PROJECT_VERSION}")
-      message(
-        STATUS "git describe failed or empty; falling back to PROJECT_VERSION=${PROJECT_VERSION}")
-    endif()
-
-    execute_process(
-      COMMAND "${GIT}" -C "${PROJECT_SOURCE_DIR}" rev-parse --abbrev-ref HEAD
-      OUTPUT_VARIABLE GIT_BRANCH
-      OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
-
-    execute_process(
-      COMMAND "${GIT}" -C "${PROJECT_SOURCE_DIR}" -c log.showSignature=false log --format=%h -n 1
-      OUTPUT_VARIABLE GIT_COMMIT_HASH
-      OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
-
-    execute_process(
-      COMMAND "${GIT}" -C "${PROJECT_SOURCE_DIR}" -c log.showSignature=false log --format=%cd -n 1
-              --date=short
-      OUTPUT_VARIABLE GIT_DATE
-      OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
-
-    execute_process(
-      COMMAND "${GIT}" -C "${PROJECT_SOURCE_DIR}" status -s -uno --porcelain
-      OUTPUT_VARIABLE GIT_STATUS
-      ERROR_QUIET)
-
-    if(GIT_STATUS)
-      set(GIT_MODIFIED "+")
-    else()
-      set(GIT_MODIFIED "")
-    endif()
-
-    set(GIT_CHANGESET "${GIT_COMMIT_HASH}${GIT_MODIFIED}")
-    set(GIT_DESCRIBE_FULL "${GIT_DESCRIBE}${GIT_MODIFIED}")
-
+  include("${PROJECT_SOURCE_DIR}/cmake/NrnGitInfo.cmake")
+  set(_nrn_git_stamp "${PROJECT_SOURCE_DIR}/cmake/nrn-git-info.cmake")
+  nrn_collect_git_info("${PROJECT_SOURCE_DIR}" _nrn_git_ok)
+  if(_nrn_git_ok)
+    nrn_write_git_info_stamp("${_nrn_git_stamp}")
+  elseif(EXISTS "${_nrn_git_stamp}")
+    include("${_nrn_git_stamp}")
+    message(STATUS "git describe failed; using ${_nrn_git_stamp} (${GIT_CHANGESET})")
   else()
+    # Shallow clone, tarball, or a vboxsf worktree with no host stamp.
     string(TIMESTAMP BUILD_TIME "%Y-%m-%d-%H:%M:%S")
     set(GIT_DATE "Build Time: ${BUILD_TIME}")
     set(GIT_BRANCH "unknown branch")
     set(GIT_CHANGESET "unknown commit id")
     set(GIT_DESCRIBE "${PROJECT_VERSION}.dev0")
     set(GIT_DESCRIBE_FULL "${GIT_DESCRIBE}")
+    message(STATUS "git describe failed or empty; GIT_DESCRIBE=${GIT_DESCRIBE}")
   endif()
 
   set(git_def_keys GIT_DATE GIT_BRANCH GIT_CHANGESET GIT_DESCRIBE GIT_DESCRIBE_FULL)
