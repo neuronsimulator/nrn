@@ -1,6 +1,9 @@
 #pragma once
 #include "nrnmpiuse.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 /* by default nrnmpi_numprocs_world = nrnmpi_numprocs = nrnmpi_numsubworlds and
    nrnmpi_myid_world = nrnmpi_myid and the bulletin board and network communication do
    not easily coexist. ParallelContext.subworlds(nsmall) divides the world into
@@ -12,6 +15,9 @@ extern int nrnmpi_numprocs;       /* size of subworld */
 extern int nrnmpi_myid;           /* rank in subworld */
 extern int nrnmpi_numprocs_bbs;   /* number of subworlds */
 extern int nrnmpi_myid_bbs;       /* rank in nrn_bbs_comm of rank 0 of a subworld */
+#ifdef __cplusplus
+}
+#endif
 
 struct NRNMPI_Spike {
     int gid;
@@ -20,10 +26,14 @@ struct NRNMPI_Spike {
 
 #if NRNMPI
 
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern int nrnmpi_use;                     /* NEURON does MPI init and terminate?*/
 extern int nrn_cannot_use_threads_and_mpi; /* 0 if required <= provided from MPI_Init_thread */
-
+#ifdef __cplusplus
+}
+#endif
 
 #include "nrnmpidec.h"
 

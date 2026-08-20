@@ -174,7 +174,7 @@ extern HWND hCurrWnd;
 
 
 extern void setneuronhome(const char*);
-extern const char* neuron_home;
+extern char* neuron_home;
 int hoc_xopen1(const char* filename, const char* rcs);
 extern int units_on_flag_;
 extern double hoc_default_dll_loaded_;
@@ -227,7 +227,7 @@ const char* path_prefix_to_libnrniv() {
 int ivocmain(int, const char**, const char**);
 int ivocmain_session(int, const char**, const char**, int start_session);
 extern int nrn_global_argc;
-extern const char** nrn_global_argv;
+extern char** nrn_global_argv;
 int always_false;
 extern int nrn_is_python_extension;
 extern void hoc_nrnmpi_init();
@@ -303,7 +303,7 @@ void hoc_nrnmpi_init() {
         }
 #endif
 
-        char** foo = (char**) nrn_global_argv;
+        char** foo = nrn_global_argv;
         nrnmpi_init(2, &nrn_global_argc, &foo);
         // if (nrnmpi_myid == 0) {printf("hoc_nrnmpi_init called nrnmpi_init\n");}
         // turn off gui for all ranks > 0
@@ -396,9 +396,9 @@ nrniv [options] [fileargs]
     nrn_global_argc = argc;
     // https://en.cppreference.com/w/cpp/language/main_function, note that argv is
     // of length argc + 1 and argv[argc] is null.
-    nrn_global_argv = new const char*[argc + 1];
+    nrn_global_argv = new char*[argc + 1];
     for (int i = 0; i < argc + 1; ++i) {
-        nrn_global_argv[i] = argv[i];
+        nrn_global_argv[i] = const_cast<char*>(argv[i]);
     }
     nrn_assert(nrn_global_argv[nrn_global_argc] == nullptr);
     if (nrn_optarg_on("-help", &argc, argv) || nrn_optarg_on("-h", &argc, argv)) {
@@ -482,7 +482,7 @@ nrniv [options] [fileargs]
     if (!neuron_home) {
 #if defined(HAVE_SETENV)
         setenv("NEURONHOME", NEURON_DATA_DIR, 1);
-        neuron_home = NEURON_DATA_DIR;
+        neuron_home = const_cast<char*>(NEURON_DATA_DIR);
 #else
 #error "I don't know how to set environment variables."
 // Maybe in this case the user will have to set it by hand.
@@ -503,7 +503,7 @@ nrniv [options] [fileargs]
                    "NEURON Incomplete Installation",
                    MB_OK);
 #else
-        neuron_home = ".";
+        neuron_home = const_cast<char*>(".");
         fprintf(stderr,
                 "Warning: no NEURONHOME environment variable-- setting\
  to %s\n",

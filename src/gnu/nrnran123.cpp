@@ -6,6 +6,8 @@
 
 using RNG = r123::Philox4x32;
 
+extern "C" int nrnmpi_myid;
+
 static RNG::key_type k = {{0}};
 
 struct nrnran123_State {
@@ -29,7 +31,6 @@ nrnran123_State* nrnran123_newstream3(std::uint32_t id1, std::uint32_t id2, std:
 }
 
 nrnran123_State* nrnran123_newstream() {
-    extern int nrnmpi_myid;
     static std::uint32_t id3{};
     return nrnran123_newstream(1, nrnmpi_myid, ++id3);
 }

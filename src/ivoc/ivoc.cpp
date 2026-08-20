@@ -231,8 +231,9 @@ void ivoc_style();
 
 // because NEURON can no longer maintain its own copy of dialogs.cpp
 // we communicate with the InterViews version through a callback.
-extern bool (*IVDialog_setAcceptInput)(bool);
-bool setAcceptInputCallback(bool b) {
+// IV defines this pointer with C linkage (MSVC mangles C++ data).
+extern "C" bool (*IVDialog_setAcceptInput)(bool);
+extern "C" bool setAcceptInputCallback(bool b) {
     Oc oc;
     return oc.setAcceptInput(b);
 }

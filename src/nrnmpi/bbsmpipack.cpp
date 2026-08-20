@@ -25,8 +25,6 @@
 #define nrnmpidebugleak 0
 #define debug           0
 
-extern MPI_Comm nrn_bbs_comm;
-
 #if nrnmpidebugleak
 static int nrnmpi_bufcnt_;
 #endif

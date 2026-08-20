@@ -18,7 +18,9 @@
 
 #if NRNMPI_DYNAMICLOAD
 #else
+extern "C" {
 #include "nrnmpi_def_cinc"
+}
 #endif
 
 #if NRNMPI
@@ -31,9 +33,11 @@ MPI_Comm nrnmusic_comm;
 extern int nrnmusic;
 #endif
 
+extern "C" {
 MPI_Comm nrnmpi_world_comm;
 MPI_Comm nrnmpi_comm;
 MPI_Comm nrn_bbs_comm;
+}
 static MPI_Group grp_bbs;
 static MPI_Group grp_net;
 

@@ -211,7 +211,7 @@ void IOHandler::childStatus(pid_t, int) {}
 #include <nrnmutdec.h>
 static int bind_tid_;
 void nrniv_bind_thread(void);
-extern int (*iv_bind_enqueue_)(void (*)(void*), void* w);
+extern "C" int (*iv_bind_enqueue_)(void (*)(void*), void* w);
 extern void iv_bind_call(void* w, int type);
 extern void nrnpy_setwindowtext(void*);
 
@@ -230,7 +230,7 @@ bool nrn_is_gui_thread() {
     return true;
 }
 
-int iv_bind_enqueue(void (*cb)(void*), void* w) {
+extern "C" int iv_bind_enqueue(void (*cb)(void*), void* w) {
     // printf("iv_bind_enqueue %p thread %d\n", w, GetCurrentThreadId());
     if (GetCurrentThreadId() == bind_tid_) {
         return 0;

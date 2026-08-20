@@ -25,7 +25,7 @@ extern void hoc_quit();
 static HCURSOR wait_cursor;
 static HCURSOR old_cursor;
 #if HAVE_IV
-extern int bad_install_ok;
+extern "C" int bad_install_ok;
 #else
 int bad_install_ok;
 #endif  // HAVE_IV
