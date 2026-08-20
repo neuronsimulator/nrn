@@ -550,28 +550,37 @@ nt_dlls = []
 
 def nrn_dll_sym_nt(name, type):
     """return the specified object from the NEURON dlls.
-    helper for nrn_dll_sym(name, type). Try to find the name in either
-    nrniv.dll or libnrnpython1013.dll
+    helper for nrn_dll_sym(name, type).
+
+    Windows GetProcAddress does not search a module's dependents (Unix dlsym
+    does). hoc.pyd already loaded nrniv.dll; look there by basename. MSVC
+    CMake OUTPUT_NAME is nrniv.dll; MinGW/setup.exe is libnrniv.dll.
     """
     global nt_dlls
     import ctypes
 
     if len(nt_dlls) == 0:
-        b = "bin"
-        path = os.path.join(n.neuronhome().replace("/", "\\"), b)
-        for dllname in [
+        names = [
+            "nrniv.dll",
             "libnrniv.dll",
             "libnrnpython{}.{}.dll".format(*sys.version_info[:2]),
-        ]:
+        ]
+        for dllname in names:
+            try:
+                nt_dlls.append(ctypes.cdll[dllname])
+            except OSError:
+                pass
+        path = os.path.join(n.neuronhome().replace("/", "\\"), "bin")
+        for dllname in names:
             p = os.path.join(path, dllname)
             try:
                 nt_dlls.append(ctypes.cdll[p])
-            except:
+            except OSError:
                 pass
     for dll in nt_dlls:
         try:
             a = dll.__getattr__(name)
-        except:
+        except AttributeError:
             a = None
         if a:
             if type is None:
