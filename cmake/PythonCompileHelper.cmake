@@ -178,12 +178,16 @@ function(add_nrn_python_library name)
     set(output_name "${name}.${python_interp}${pyver_nodot}-${os_string}")
   endif()
 
+  # MODULE on Windows is a RUNTIME (.pyd/.dll). Multi-config generators append
+  # a per-config subdirectory unless a generator expression is used; `$<0:>`
+  # keeps the file next to neuron/__init__.py. Unix still uses LIBRARY.
   set_target_properties(
     ${ARG_TARGET}
     PROPERTIES OUTPUT_NAME "${output_name}"
                LINKER_LANGUAGE ${ARG_LANGUAGE}
                PREFIX ""
                SUFFIX ${lib_suffix}
-               LIBRARY_OUTPUT_DIRECTORY ${ARG_OUTPUT_DIR})
+               LIBRARY_OUTPUT_DIRECTORY "${ARG_OUTPUT_DIR}$<0:>"
+               RUNTIME_OUTPUT_DIRECTORY "${ARG_OUTPUT_DIR}$<0:>")
 
 endfunction()
