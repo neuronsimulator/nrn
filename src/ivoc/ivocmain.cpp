@@ -170,6 +170,7 @@ static char* ocsmall_argv[] = {0, "difus.hoc"};
 #endif
 #if defined(WIN32) && HAVE_IV
 extern HWND hCurrWnd;
+extern "C" int bad_install_ok;
 #endif
 
 
@@ -493,7 +494,14 @@ nrniv [options] [fileargs]
 
 #else  // Not unix:
     neuron_home = getenv("NEURONHOME");
-    if (!neuron_home) {
+    if (neuron_home) {
+        // setneuronhome sets this when it derives NEURONHOME from the
+        // executable. If the user already set it (cmake/wheel tree), skip
+        // the InterViews win.ini abort; there is no [InterViews] location.
+#if defined(WIN32) && HAVE_IV
+        bad_install_ok = 1;
+#endif
+    } else {
         setneuronhome((argc > 0) ? argv[0] : 0);
     }
     if (!neuron_home) {
