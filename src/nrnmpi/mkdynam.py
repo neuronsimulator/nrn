@@ -15,7 +15,7 @@ import re
 import sys
 from pathlib import Path
 
-DECL = re.compile(r"^extern\s+(\S+)\s+(nrnmpi_\w+)\((.*)\);\s*$")
+DECL = re.compile(r"^extern\s+(?:NRN_DLLSYM\s+)?(\S+)\s+(nrnmpi_\w+)\((.*)\);\s*$")
 
 
 def declarations(path: Path) -> list[tuple[str, str, str]]:

@@ -6,6 +6,7 @@ to the type, e.g. `T*` is valid, but `T *` isn't.
 
 #pragma once
 #include <nrnmpiuse.h>
+#include "nrndlldef.h"
 #include <cstdint>
 using longdbl = long double;
 #if NRNMPI
@@ -62,7 +63,7 @@ extern int nrnmpi_bbsrecv(int source, bbsmpibuf* r);
 extern int nrnmpi_bbssendrecv(int dest, int tag, bbsmpibuf* s, bbsmpibuf* r);
 
 /* from nrnmpi.cpp */
-extern void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv);
+extern NRN_DLLSYM void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv);
 extern int nrnmpi_wrap_mpi_init(int* flag);
 extern double nrnmpi_wtime();
 extern void nrnmpi_terminate();

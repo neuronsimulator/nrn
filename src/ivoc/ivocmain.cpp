@@ -224,7 +224,7 @@ const char* path_prefix_to_libnrniv() {
 }
 #endif  // DARWIN || defined(__linux__)
 
-int ivocmain(int, const char**, const char**);
+NRN_DLLSYM int ivocmain(int, const char**, const char**);
 int ivocmain_session(int, const char**, const char**, int start_session);
 extern int nrn_global_argc;
 extern char** nrn_global_argv;
@@ -331,7 +331,7 @@ void hoc_nrnmpi_init() {
  * \param env environment variable array as optionally found in main functions.
  * \return 0 on success, otherwise error code.
  */
-int ivocmain(int argc, const char** argv, const char** env) {
+NRN_DLLSYM int ivocmain(int argc, const char** argv, const char** env) {
     return ivocmain_session(argc, argv, env, 1);
 }
 /**

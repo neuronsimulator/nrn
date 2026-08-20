@@ -330,7 +330,7 @@ void hoc_show_winio(void) {
     hoc_pushx(0.);
 }
 
-int nrn_main_launch;
+NRN_DLLSYM int nrn_main_launch;
 
 void hoc_nrnversion(void) {
     char** p = hoc_temp_charptr();
