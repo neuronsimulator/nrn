@@ -537,23 +537,20 @@ nrniv [options] [fileargs]
     }
 #endif
     if (session) {
-        const auto nrn_def_path1 = fs::path(neuron_home) / "lib" / "nrn.defaults";
-        const auto nrn_def_path2 = fs::path(neuron_home) / "lib" / "nrn.def";
+        const auto nrn_def_path = fs::path(neuron_home) / "lib" / "nrn.defaults";
         auto file_exists = [](const auto& path) noexcept -> bool {
             // make sure it doesn't throw
             std::error_code err;
             return fs::is_regular_file(path, err);
         };
 #ifdef WIN32
-        if (file_exists(nrn_def_path1)) {
-            session->style()->load_file(String(nrn_def_path1.string().c_str()), -5);
-        } else if (file_exists(nrn_def_path2)) {
-            session->style()->load_file(String(nrn_def_path2.string().c_str()), -5);
+        if (file_exists(nrn_def_path)) {
+            session->style()->load_file(String(nrn_def_path.string().c_str()), -5);
         } else {
-            fmt::print("Can't load NEURON resources from {}[aults]\n", nrn_def_path1.string());
+            fmt::print("Can't load NEURON resources from {}\n", nrn_def_path.string());
         }
 #else
-        session->style()->load_file(String(nrn_def_path1.string().c_str()), -5);
+        session->style()->load_file(String(nrn_def_path.string().c_str()), -5);
 #endif
         char* h = getenv("HOME");
         if (h) {
