@@ -816,7 +816,7 @@ void hoc_Chdir(void) {
     hoc_pushx((double) i);
 }
 
-int nrn_is_python_extension;
+NRN_DLLSYM int nrn_is_python_extension;
 int (*nrnpy_pr_stdoe_callback)(int, char*);
 static int (*nrnpy_pass_callback)();
 

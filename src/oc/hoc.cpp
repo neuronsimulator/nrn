@@ -49,11 +49,11 @@ int nrnignore;
 
 /* only set  in ivoc */
 int nrn_global_argc;
-char** nrn_global_argv;
+NRN_DLLSYM char** nrn_global_argv;
 
 #if defined(USE_PYTHON)
 int use_python_interpreter = 0;
-void (*p_nrnpython_finalize)();
+NRN_DLLSYM void (*p_nrnpython_finalize)();
 #endif
 int nrn_inpython_;
 int (*p_nrnpy_pyrun)(const char* fname);
@@ -122,7 +122,7 @@ extern void add_history(const char*);
 }
 #endif
 
-int nrn_nobanner_;
+NRN_DLLSYM int nrn_nobanner_;
 int hoc_pipeflag;
 int hoc_usegui;
 #if 1
