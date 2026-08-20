@@ -53,7 +53,11 @@ void hoc_stdout(void) {
         if (dup2(prev, 1) < 0) {
             hoc_execerror("Unable to restore stdout", (char*) 0);
         }
+#if defined(_MSC_VER)
+        _close(prev);
+#else
         close(prev);
+#endif
         prev = -1;
     }
     hoc_ret();
