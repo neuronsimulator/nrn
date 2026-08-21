@@ -7,6 +7,7 @@ foreach(
   object_new_nothrow.cpp
   object_new_wrap.cpp
   object_ptr_push.cpp
+  runtime_pythonobject_marshaling.cpp
   section_tree.cpp
   sectionlist_to_array.cpp
   segment_diam.cpp
@@ -29,6 +30,10 @@ foreach(
   set_property(TEST "${test_name}" PROPERTY ENVIRONMENT "${NRN_RUN_FROM_BUILD_DIR_ENV}"
                                             "CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}")
 endforeach()
+
+# This test implements a minimal runtime PythonObject provider without linking Python. It needs the
+# provider table declaration, which is intentionally an internal interface at present.
+target_include_directories(runtime_pythonobject_marshaling_cpp PRIVATE ${NRN_NRNIV_SRC_DIR})
 
 # The setpointer tests need mechanisms with a POINTER, which no built-in provides: a density
 # mechanism (ptrtest.mod) for nrn_setpointer_pop and a point process (ppptrtest.mod) for

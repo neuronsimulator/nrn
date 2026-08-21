@@ -1020,7 +1020,6 @@ void hoc_object_component() {
     }
     obp = hoc_obj_look_inside_stack(nindex + expect_stack_nsub);
     if (obp) {
-#if USE_PYTHON
         if (obp->ctemplate->sym == nrnpy_pyobj_sym_) {
             if (isfunc & 2) {
                 /* this is the final left hand side of an
@@ -1044,7 +1043,6 @@ void hoc_object_component() {
             }
             return;
         }
-#endif
         if (obp->ctemplate->id == *ptid) {
             sym = *psym;
         } else {
@@ -1476,7 +1474,6 @@ void hoc_object_asgn() {
         hoc_assign_str(pd, d);
         hoc_pushstr(pd);
     } break;
-#if USE_PYTHON
     case OBJECTTMP: { /* should be PythonObject */
         Object* o = hoc_obj_look_inside_stack(1);
         assert(o->ctemplate->sym == nrnpy_pyobj_sym_);
@@ -1485,7 +1482,6 @@ void hoc_object_asgn() {
         }
         neuron::python::methods.hpoasgn(o, type1);
     } break;
-#endif
     default:
         hoc_execerror("Cannot assign to left hand side", nullptr);
     }

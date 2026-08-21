@@ -871,6 +871,13 @@ Segments
 Functions, objects, and the stack
 ---------------------------------
 
+Reads and writes of a ``PythonObject`` component are dispatched through the
+provider registered in NEURON's Python method table at runtime, rather than
+being selected when NEURON is compiled. An embedding host can therefore supply
+that provider even in a build configured with ``NRN_ENABLE_PYTHON=OFF``,
+without NEURON itself linking against Python. When no provider is registered
+the dispatch is never reached, so such a build behaves exactly as before.
+
 .. c:function:: Symbol* nrn_symbol(const char* name)
 
     Get a symbol by name from NEURON's symbol table. Symbols represent variables,
