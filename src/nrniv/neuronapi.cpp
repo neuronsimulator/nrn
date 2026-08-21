@@ -534,6 +534,10 @@ int nrn_int_pop(void) {
     return hoc_ipop();
 }
 
+int nrn_ndim_pop(void) {
+    return hoc_pop_ndim();
+}
+
 void nrn_object_push(Object* obj) {
     hoc_push_object(obj);
 }

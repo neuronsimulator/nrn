@@ -15,6 +15,7 @@ using std::endl;
 // interpreter pushes one during object-component access -- so the test uses the
 // internal push to put a Symbol there, the way nrniv would mid-expression.
 extern void hoc_pushs(Symbol*);
+extern void hoc_push_ndim(int);
 
 extern "C" void modl_reg() {}
 
@@ -65,6 +66,13 @@ int main(void) {
     // segfault here.
     nrn_object_push(nullptr);
     ok &= check(nrn_object_pop() == nullptr, "object pop returns NULL for a nil objref");
+
+    // Array-dimension markers are a distinct stack variant, not USERINT.
+    // Exercise exact values and LIFO ordering through the matching public pop.
+    hoc_push_ndim(2);
+    hoc_push_ndim(7);
+    ok &= check(nrn_ndim_pop() == 7, "ndim pop returns the last pushed marker");
+    ok &= check(nrn_ndim_pop() == 2, "ndim pop returns the earlier marker (LIFO)");
 
     // Balance: with every push above consumed by exactly one pop, the sentinel
     // from the very start is what remains on top.
