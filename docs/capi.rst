@@ -1128,6 +1128,15 @@ Functions, objects, and the stack
         Most NEURON functions when accessed through the API return doubles not ints and may fail if an int is pushed instead.
         This is true even for functions that return an integer value in Python.
 
+.. c:function:: int nrn_ndim_pop(void)
+
+    Pop an array-dimension marker from the stack.
+
+    :returns: Dimension count from the marker at the top of the stack.
+
+    Dimension markers are a distinct internal stack value and cannot be popped
+    with :c:func:`nrn_int_pop`.
+
 .. c:function:: void nrn_object_push(Object* obj)
 
     Push an object onto the stack.
