@@ -1,0 +1,14 @@
+// variable-step-integrator with ida
+strdef path
+sprint(path, "%s/../variable-step-integrator/variable-step-integrator.hoc", BASE)
+{load_file(path)}
+
+{cvode.use_daspk(1)}
+variable_step_integrator()
+
+vec = new Vector()
+{vec.append(-40.037619989516983, -55.032413584792977)}
+{vec.append(-48.285557971651969, -59.927043712401343, -64.019558941495177)}
+
+b = fixed_step_result()
+if (b != 1) { quit(1) }
