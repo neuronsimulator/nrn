@@ -230,6 +230,35 @@ void nrn_rangevar_push(Symbol* sym, Section* sec, double x) {
     hoc_push(nrn_rangepointer(sec, sym, x));
 }
 
+Object* nrn_segment_nmodlrandom_get(Section* sec, double x, Symbol* sym) {
+    if (!sec || !nrn_section_is_active(sec) || !(x >= 0.0 && x <= 1.0) || !sym ||
+        sym->type != RANGEOBJ || sym->subtype != NMODLRANDOM) {
+        return nullptr;
+    }
+    Prop* prop = nrn_mechanism(sym->u.rng.type, node_exact(sec, x));
+    if (!prop) {
+        return nullptr;
+    }
+    Object* obj = nrn_nmodlrandom_wrap(prop, sym);
+    hoc_obj_ref(obj);
+    return obj;
+}
+
+Object* nrn_pntproc_nmodlrandom_get(Object* point_process, Symbol* sym) {
+    if (!point_process || !point_process->ctemplate || !point_process->ctemplate->is_point_ ||
+        !sym || sym->type != RANGEOBJ || sym->subtype != NMODLRANDOM ||
+        hoc_table_lookup(sym->name, point_process->ctemplate->symtable) != sym) {
+        return nullptr;
+    }
+    auto* pnt = ob2pntproc_0(point_process);
+    if (!pnt || !pnt->prop) {
+        return nullptr;
+    }
+    Object* obj = nrn_pntproc_nmodlrandom_wrap(pnt, sym);
+    hoc_obj_ref(obj);
+    return obj;
+}
+
 int nrn_setpointer_pop(Symbol* pointer_sym,
                        Section* sec,
                        double x,
