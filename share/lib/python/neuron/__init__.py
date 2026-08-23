@@ -124,17 +124,33 @@ if current_version not in supported_python_versions:
     ).format(current_version, " ".join(supported_python_versions))
     raise ImportError(message)
 
-try:  # needed since python 3.8 on windows if python launched
-    # do this here as NEURONHOME may be changed below
-    nrnbindir = os.path.abspath(os.environ["NEURONHOME"] + "/bin")
-    os.add_dll_directory(nrnbindir)
-except:
-    pass
-
 # With pip we need to rewrite the NEURONHOME
 nrn_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".data/share/nrn"))
 if os.path.isdir(nrn_path):
     os.environ["NEURONHOME"] = nrn_path
+
+# Python 3.8+ on Windows does not search PATH for DLL dependencies of a .pyd
+# (https://docs.python.org/3/library/os.html#os.add_dll_directory). hoc.pyd
+# needs nrniv.dll from the wheel .data/bin, cmake prefix/bin, or setup.exe
+# NEURONHOME/bin. Must run before `from . import hoc`.
+if os.name == "nt" and hasattr(os, "add_dll_directory"):
+    _dll_dirs = [
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), ".data", "bin"),
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), ".data", "lib"),
+    ]
+    _home = os.environ.get("NEURONHOME")
+    if _home:
+        _dll_dirs.append(os.path.join(os.path.abspath(_home), "bin"))
+        _dll_dirs.append(os.path.abspath(os.path.join(_home, "..", "..", "bin")))
+    _seen = set()
+    for _dll_dir in _dll_dirs:
+        _dll_dir = os.path.normpath(_dll_dir)
+        if _dll_dir in _seen or not os.path.isdir(_dll_dir):
+            continue
+        _seen.add(_dll_dir)
+        os.add_dll_directory(_dll_dir)
+        os.environ["PATH"] = _dll_dir + os.pathsep + os.environ.get("PATH", "")
+    del _dll_dirs, _home, _seen, _dll_dir
 
 # On OSX, dlopen might fail if not using full library path
 try:
