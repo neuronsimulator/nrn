@@ -404,7 +404,8 @@ if(NRN_ENABLE_COVERAGE
 endif()
 
 # When shipping the wheels we want to link readline libs statically.
-if(NRN_WHEEL_STATIC_READLINE)
+# Unix static libs are .a; MSVC uses .lib and fetches GNU readline itself.
+if(NRN_WHEEL_STATIC_READLINE AND NOT WIN32)
   # CMake will prefer dynamic libraries over static ones. With the following construct we make sure
   # we get them.
   set(ORIGINAL_CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
@@ -776,10 +777,15 @@ include(ConfigFileSetting)
 if(MINGW)
   set(NRN_INSTALL_SHARE_DIR ${CMAKE_INSTALL_PREFIX})
   set(NRN_BUILD_SHARE_DIR ${CMAKE_BINARY_DIR})
-  set(NRN_INSTALL_SHARE_LIB_DIR ${CMAKE_INSTALL_PREFIX}/bin)
 else()
   set(NRN_INSTALL_SHARE_DIR ${NRN_INSTALL_DATA_PREFIX}share/nrn)
   set(NRN_BUILD_SHARE_DIR ${CMAKE_BINARY_DIR}/share/nrn)
+endif()
+# Windows searches the executable directory for DLLs. MinGW setup.exe already
+# installed them in bin; MSVC wheels and cmake --install need the same.
+if(NRN_WINDOWS_BUILD)
+  set(NRN_INSTALL_SHARE_LIB_DIR ${NRN_INSTALL_DATA_PREFIX}bin)
+else()
   set(NRN_INSTALL_SHARE_LIB_DIR ${NRN_INSTALL_DATA_PREFIX}lib)
 endif()
 
