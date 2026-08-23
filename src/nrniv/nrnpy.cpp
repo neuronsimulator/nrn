@@ -299,10 +299,13 @@ static nrnpython_reg_real_t load_nrnpython() {
     name.append("nrnpython");
     name.append(pyversion);
     name.append(neuron::config::shared_library_suffix);
-#ifndef MINGW
+#ifndef _WIN32
     // Build a path from neuron_home on macOS and Linux
     name = neuron_home + ("/../../lib/" + name);
 #endif
+    // Windows: LoadLibrary searches the exe directory and add_dll_directory
+    // paths by basename. MinGW already did this; MSVC prefix is empty so the
+    // file is nrnpythonX.Y.dll in bin/.
     auto* const handle = dlopen(name.c_str(), RTLD_NOW);
     if (!handle) {
         Fprintf(stderr, fmt::format("Could not load {}\n", name).c_str());
