@@ -99,10 +99,16 @@ def _config_exe(exe_name):
 
     # nmodl module is inside <prefix>/lib directory
     sys.path.insert(0, os.path.join(NRN_PREFIX, "lib"))
-    os.environ["PYTHONPATH"] = ":".join(sys.path)
+    os.environ["PYTHONPATH"] = os.pathsep.join(sys.path)
+
+    bindir = os.path.join(NRN_PREFIX, "bin")
+    os.environ["PATH"] = bindir + os.pathsep + os.environ.get("PATH", "")
 
     _set_default_compiler()
-    return os.path.join(NRN_PREFIX, "bin", exe_name)
+    exe = os.path.join(bindir, exe_name)
+    if os.name == "nt" and not exe.lower().endswith(".exe") and os.path.isfile(exe + ".exe"):
+        exe = exe + ".exe"
+    return exe
 
 
 def _wrap_executable(output_name):
