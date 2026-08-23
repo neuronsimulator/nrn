@@ -100,12 +100,14 @@ function(nrn_find_python)
     string(SUBSTRING "${pyexe_hash}" 0 6 pyexe_hash)
     # Which attributes we're trying to learn about this Python
     set(python_vars Python_INCLUDE_DIRS Python_VERSION)
-    if(NRN_ENABLE_PYTHON_DYNAMIC AND NOT NRN_LINK_AGAINST_PYTHON)
+    if(NRN_ENABLE_PYTHON_DYNAMIC AND NOT NRN_LINK_AGAINST_PYTHON AND NOT WIN32)
       # Do not link against Python, so we don't need the library -- just as well, it's not available
       # in manylinux
       set(dev_component "Development.Module")
       set(Python_LIBRARIES "do-not-link-against-libpython-in-dynamic-python-builds")
     else()
+      # Windows .pyd / nrnpythonXY.dll must link pythonXY.lib. Unix manylinux
+      # modules leave libpython undefined; the Windows loader has no equivalent.
       set(dev_component "Development")
       list(APPEND python_vars Python_LIBRARIES)
     endif()
