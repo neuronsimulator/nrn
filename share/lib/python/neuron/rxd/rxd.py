@@ -506,8 +506,15 @@ def _find_librxdmath():
             break
     if not success:
         if sys.platform.lower().startswith("win"):
-            dll = os.path.join(h.neuronhome(), "bin", "librxdmath.dll")
-            success = os.path.exists(dll)
+            home = h.neuronhome()
+            for name in ("librxdmath.dll", "rxdmath.dll"):
+                for rel in (("bin", name), ("..", "..", "bin", name)):
+                    dll = os.path.join(home, *rel)
+                    if os.path.exists(dll):
+                        success = True
+                        break
+                if success:
+                    break
         if not success:
             raise RxDException("unable to connect to the librxdmath library")
     return dll
