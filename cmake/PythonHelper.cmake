@@ -13,6 +13,11 @@
 # * NRN_DEFAULT_PYTHON_EXECUTABLE is the default Python, which is used for running tests and so on.
 # * NRN_PYTHON_EXECUTABLES is a list of all the Pythons that we are building against. This will only
 #   have a length > 1 if NRN_ENABLE_PYTHON_DYNAMIC is defined.
+# scikit-build-core (and FindPython) set Python_EXECUTABLE, not the older
+# PYTHON_EXECUTABLE name this helper still uses. Same on Unix and Windows.
+if(NOT PYTHON_EXECUTABLE AND Python_EXECUTABLE)
+  set(PYTHON_EXECUTABLE "${Python_EXECUTABLE}")
+endif()
 if(NOT PYTHON_EXECUTABLE AND (NOT NRN_ENABLE_PYTHON_DYNAMIC OR NOT NRN_PYTHON_DYNAMIC))
   # Haven't been explicitly told about any Python versions, set PYTHON_EXECUTABLE by searching PATH
   message(STATUS "No python executable specified. Looking for `python3` in the PATH...")
