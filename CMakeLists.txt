@@ -610,6 +610,12 @@ endif()
 # =============================================================================
 if(NRN_ENABLE_SHARED)
   set(NRN_LIBRARY_TYPE "SHARED")
+  # MSVC does not export globals from a DLL; Unix .so and MinGW do. DYNAMIC
+  # Python (nrnpythonX.Y.dll) and hoc.pyd consume that ABI. Data symbols still
+  # need NRN_DLLSYM (CMake does not put data in the generated .def).
+  if(MSVC)
+    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+  endif()
 else()
   set(NRN_LIBRARY_TYPE "STATIC")
   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
