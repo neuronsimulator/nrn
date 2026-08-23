@@ -164,3 +164,11 @@ repair-wheel-command = "auditwheel -v repair -w {dest_dir} {wheel} --exclude 'li
 
 [tool.cibuildwheel.macos]
 repair-wheel-command = "delocate-listdeps {wheel} && delocate-wheel -v -w {dest_dir} {wheel}"
+
+# win_amd64 via MSVC (GitHub windows-2022). Not MinGW setup.exe.
+# CoreNEURON stays off. DYNAMIC Python is already ON above so nrniv.exe
+# is not linked to a specific pythonXY.dll. delvewheel vendors extra DLLs
+# that cmake --install did not already place in neuron/.data/bin.
+[tool.cibuildwheel.windows]
+before-build = "pip install delvewheel"
+repair-wheel-command = "delvewheel repair -w {dest_dir} {wheel} --ignore-in-wheel --no-dll msmpi.dll"

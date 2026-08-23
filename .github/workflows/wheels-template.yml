@@ -46,6 +46,20 @@ jobs:
           fetch-depth: ${{ inputs.clone_depth }}
           fetch-tags: true  # Ensures tags are available for git describe
 
+      - name: Setup host Python for cibuildwheel (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # MSVC win_amd64 wheel: ninja, winflexbison, MS-MPI. Not MSYS2/MinGW setup.exe.
+      # IV gitlink is still origin/master; the MSVC dirent/bind fixes live on the
+      # local iv branch until that SHA is pushed and pinned.
+      - name: Install MSVC wheel dependencies
+        if: runner.os == 'Windows'
+        run: .\ci\win_msvc_wheel_deps.cmd
+        shell: cmd
+
       - name: Install Python from python.org
         if: runner.os == 'macOS'
         run: |
@@ -132,8 +146,14 @@ jobs:
           echo SETUPTOOLS_SCM_PRETEND_VERSION=${{ inputs.version }} >> $GITHUB_ENV
 
       - name: Build wheel
+        shell: bash
         run: |
-          bash packaging/python/build_wheels.bash $(uname -s) ${{ inputs.python_version }}
+          if [ "${RUNNER_OS}" = "Windows" ]; then
+            plat=windows
+          else
+            plat="$(uname -s)"
+          fi
+          bash packaging/python/build_wheels.bash "${plat}" ${{ inputs.python_version }}
 
       - name: Upload wheel files
         uses: actions/upload-artifact@v4
@@ -172,6 +192,19 @@ jobs:
           echo CMAKE_GENERATOR=Ninja >> $GITHUB_ENV
 
       - name: Test wheel with ${{ inputs.python_version }}
+        if: runner.os != 'Windows'
         run: |
           minor_version="$(python${{ inputs.python_version }} -c 'import sys;print(sys.version_info.minor)')"
           bash packaging/python/test_wheels.sh $(command -v python${{ inputs.python_version }}) wheelhouse/*cp3${minor_version}*.whl
+
+      # test_wheels.sh is Unix (venv/bin, gcc, mpirun). First MSVC bar: pip
+      # install the win_amd64 wheel and import neuron without setup.exe on PATH.
+      - name: Test Windows wheel with ${{ inputs.python_version }}
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $whl = Get-ChildItem wheelhouse/*cp3*.whl | Select-Object -First 1
+          if (-not $whl) { throw "no wheel in wheelhouse" }
+          python -m pip install --force-reinstall $whl.FullName
+          python -c "import os, sys; print('python', sys.executable); import neuron; print(neuron.__file__); print(neuron.h.nrnversion()); print(neuron.h.neuronhome())"
+          python -c "import neuron; neuron.test()"
