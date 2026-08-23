@@ -519,7 +519,8 @@ if(NRN_ENABLE_MPI)
       target_link_libraries(${libname}_lib PRIVATE fmt::fmt)
       target_include_directories(${libname}_lib BEFORE PUBLIC ${include})
       # Note that we do not link here to libmpi. That is dlopen first.
-      if(MINGW) # type msmpi only
+      # Windows DLLs cannot leave MPI / nrniv symbols undefined; Unix can.
+      if(NRN_WINDOWS_BUILD) # type msmpi only
         add_dependencies(${libname}_lib nrniv_lib)
         target_link_libraries(${libname}_lib PUBLIC ${MPI_C_LIBRARIES})
         target_link_libraries(${libname}_lib PUBLIC nrniv_lib)
