@@ -412,6 +412,15 @@ if(NRN_WHEEL_STATIC_READLINE AND NOT WIN32)
   set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 endif()
 
+# Windows wheels are MSVC (cibuildwheel --platform windows). MinGW is the
+# setup.exe world. Ninja + C:/mingw64 on PATH would skip Win32Readline.
+if(SKBUILD AND MINGW)
+  message(
+    FATAL_ERROR
+      "Windows wheels must use MSVC, not MinGW (${CMAKE_CXX_COMPILER}). "
+      "Use CMAKE_GENERATOR=Visual Studio 17 2022 and CMAKE_GENERATOR_PLATFORM=x64.")
+endif()
+
 find_package(Readline)
 if(NOT READLINE_FOUND AND WIN32 AND NOT MINGW)
   include(cmake/Win32Readline.cmake)

@@ -121,11 +121,15 @@ set_cibw_environment() {
             [NRN_ENABLE_INTERVIEWS]="ON"
         )
     elif [ "${platform}" = 'windows' ]; then
-        # MSVC win_amd64. FindMPI uses C:/msmpi (ci/win_msvc_wheel_deps.cmd).
-        # Fetched GNU readline is already static; CoreNEURON is out of this line.
+        # MSVC win_amd64, same generator as the guest wheel. Ninja on
+        # windows-2022 finds C:/mingw64 GNU first; then MINGW is true and
+        # Win32Readline.cmake never runs. FindMPI uses C:/msmpi
+        # (ci/win_msvc_wheel_deps.cmd). Fetched GNU readline is already
+        # static; CoreNEURON is out of this line.
         declare -A defaults=(
             [CMAKE_PREFIX_PATH]="C:/msmpi"
-            [CMAKE_GENERATOR]="Ninja"
+            [CMAKE_GENERATOR]="Visual Studio 17 2022"
+            [CMAKE_GENERATOR_PLATFORM]="x64"
             [CMAKE_BUILD_TYPE]="Release"
             [NRN_ENABLE_MPI_DYNAMIC]="ON"
             [NRN_WHEEL_STATIC_READLINE]="OFF"
