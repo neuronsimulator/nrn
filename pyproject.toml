@@ -124,6 +124,12 @@ NRN_ENABLE_MPI_DYNAMIC = { default = "ON", env = "NRN_ENABLE_MPI_DYNAMIC" }
 # MPI headers are platform-specific, so we do not set defaults
 NRN_MPI_DYNAMIC = { env = "NRN_MPI_DYNAMIC" }
 
+# Windows has no X11. inherit=append keeps the rest of cmake.define.
+[[tool.scikit-build.overrides]]
+if.platform-system = "win32"
+inherit.cmake.define = "append"
+cmake.define.IV_ENABLE_X11_DYNAMIC = "OFF"
+
 [tool.cibuildwheel]
 # We can specify a custom Docker image when building NEURON
 manylinux-aarch64-image = "docker.io/neuronsimulator/neuron_wheel:manylinux_2_28_aarch64"

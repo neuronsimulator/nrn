@@ -546,6 +546,12 @@ if(NRN_ENABLE_INTERVIEWS)
       endif()
     endif()
     include_directories(${X11_INCLUDE_DIR})
+  else()
+    # Windows has no X11. pyproject defaults this ON for Unix wheels.
+    set(IV_ENABLE_X11_DYNAMIC
+        OFF
+        CACHE BOOL "dlopen X11 after launch"
+        FORCE)
   endif()
 
   find_package(iv QUIET PATHS ${IV_DIR}/lib/cmake ${IV_DIR})
