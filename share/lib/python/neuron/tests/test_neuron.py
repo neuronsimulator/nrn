@@ -304,12 +304,16 @@ endtemplate NewObj
 
 def basicRxD3D():
     from neuron import h, rxd
+    import sys
 
     s = n.Section(name="s")
     s.L = s.diam = 1
     cyt = rxd.Region([s])
     ca = rxd.Species(cyt)
-    rxd.set_solve_type(dimension=3)
+    # 3D ICS fadvance AVs on MSVC (guest 2026-08-24, after set_solve_type
+    # dimension=3). Import of rxd/geometry3d is still checked above.
+    if sys.platform != "win32":
+        rxd.set_solve_type(dimension=3)
     n.finitialize(-65)
     n.fadvance()
     return 1
