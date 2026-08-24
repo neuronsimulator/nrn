@@ -54,8 +54,8 @@ the handling of v_structure_change as long as possible.
 #define CACHELINE_CALLOC(name, type, size) \
     name = (type*) nrn_cacheline_calloc((void**) &name, size, sizeof(type))
 
-int nrn_nthread;
-NrnThread* nrn_threads;
+NRN_DLLSYM int nrn_nthread;
+NRN_DLLSYM NrnThread* nrn_threads;
 
 void (*nrn_mk_transfer_thread_data_)();
 

@@ -86,7 +86,7 @@ extern std::vector<PlayRecord*>* net_cvode_instance_prl();
 extern void nrn_use_busywait(int);
 void* nrn_interthread_enqueue(NrnThread*);
 extern void (*nrnthread_v_transfer_)(NrnThread*);
-Object* (*nrnpy_seg_from_sec_x)(Section*, double);
+NRN_DLLSYM Object* (*nrnpy_seg_from_sec_x)(Section*, double);
 extern "C" void nrnthread_get_trajectory_requests(int tid,
                                                   int& bsize,
                                                   int& n_pr,

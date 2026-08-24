@@ -53,7 +53,8 @@ extern void hoc_reg_ba(int, nrn_bamech_t, int);
 extern void nrn_popsec(void);
 
 extern int state_discon_allowed_;
-extern int section_object_seen;
+extern NRN_DLLSYM int section_object_seen;
+extern NRN_DLLSYM Symbol* nrn_child_sym;
 
 extern int nrn_isecstack(void);
 extern void nrn_secstack(int);

@@ -42,8 +42,8 @@
 extern Symlist* hoc_built_in_symlist;
 #endif  // HAVE_IV
 
-void* (*nrnpy_get_pyobj)(Object* obj) = 0;
-void (*nrnpy_decref)(void* pyobj) = 0;
+NRN_DLLSYM void* (*nrnpy_get_pyobj)(Object* obj) = 0;
+NRN_DLLSYM void (*nrnpy_decref)(void* pyobj) = 0;
 
 // PlotShape class registration for oc
 static double sh_flush(void* v) {

@@ -52,14 +52,14 @@ int tree_changed = 1; /* installing section, changeing nseg
               and connecting sections set this flag.
               The flag is set to 0 when the topology
               is set up */
-int diam_changed = 1; /* changing diameter, length set this flag
+NRN_DLLSYM int diam_changed = 1; /* changing diameter, length set this flag
               The flag is set to 0 when node.a and node.b
               is set up */
 extern int nrn_shape_changed_;
 
-char* (*nrnpy_pysec_name_p_)(Section*);
-Object* (*nrnpy_pysec_cell_p_)(Section*);
-int (*nrnpy_pysec_cell_equals_p_)(Section*, Object*);
+NRN_DLLSYM char* (*nrnpy_pysec_name_p_)(Section*);
+NRN_DLLSYM Object* (*nrnpy_pysec_cell_p_)(Section*);
+NRN_DLLSYM int (*nrnpy_pysec_cell_equals_p_)(Section*, Object*);
 
 /* switching from Ra being a global variable to it being a section variable
 opens up the possibility of a great deal of confusion and inadvertant wrong

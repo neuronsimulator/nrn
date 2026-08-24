@@ -27,8 +27,8 @@ static void free_one_point(Point_process* pnt);
 static void create_artcell_prop(Point_process* pnt, short type);
 
 Prop* nrn_point_prop_;
-void (*nrnpy_o2loc_p_)(Object*, Section**, double*);
-void (*nrnpy_o2loc2_p_)(Object*, Section**, double*);
+NRN_DLLSYM void (*nrnpy_o2loc_p_)(Object*, Section**, double*);
+NRN_DLLSYM void (*nrnpy_o2loc2_p_)(Object*, Section**, double*);
 
 void* create_point_process(int pointtype, Object* ho) {
     auto* const pp = new Point_process{};

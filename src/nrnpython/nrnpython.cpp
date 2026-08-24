@@ -20,21 +20,21 @@
 
 #include <nanobind/nanobind.h>
 
-extern HocStr* hoc_cbufstr;
-extern int nrnpy_nositeflag;
-extern std::string nrnpy_pyexe;
-extern char* hoc_ctp;
-extern FILE* hoc_fin;
-extern const char* hoc_promptstr;
+extern NRN_DLLSYM HocStr* hoc_cbufstr;
+extern NRN_DLLSYM int nrnpy_nositeflag;
+extern NRN_DLLSYM std::string nrnpy_pyexe;
+extern NRN_DLLSYM char* hoc_ctp;
+extern NRN_DLLSYM FILE* hoc_fin;
+extern NRN_DLLSYM const char* hoc_promptstr;
 extern char* neuronhome_forward();
 #if DARWIN || defined(__linux__)
 extern const char* path_prefix_to_libnrniv();
 #endif
 static char* nrnpython_getline(FILE*, FILE*, const char*);
-extern int nrn_global_argc;
-extern char** nrn_global_argv;
+extern NRN_DLLSYM int nrn_global_argc;
+extern NRN_DLLSYM char** nrn_global_argv;
 int nrnpy_pyrun(const char*);
-extern int (*p_nrnpy_pyrun)(const char*);
+extern NRN_DLLSYM int (*p_nrnpy_pyrun)(const char*);
 
 static std::string python_sys_path_to_append() {
     std::string path{neuronhome_forward()};

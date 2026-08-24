@@ -1,4 +1,5 @@
 #pragma once
+#include "nrndlldef.h"
 
 /*
 Starts from Hubert Eichner's modifications but incorporates a
@@ -106,8 +107,8 @@ struct NrnThread {
 };
 
 
-extern int nrn_nthread;
-extern NrnThread* nrn_threads;
+extern NRN_DLLSYM int nrn_nthread;
+extern NRN_DLLSYM NrnThread* nrn_threads;
 
 int nrn_allow_busywait(int b);
 int nrn_how_many_processors();

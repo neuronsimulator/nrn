@@ -152,7 +152,7 @@ extern const char* nrn_mech_dll;
 #if defined(USE_PYTHON)
 int nrn_nopython;
 extern int use_python_interpreter;
-std::string nrnpy_pyexe;
+NRN_DLLSYM std::string nrnpy_pyexe;
 #endif
 
 /*****************************************************************************/
@@ -180,7 +180,7 @@ int hoc_xopen1(const char* filename, const char* rcs);
 extern int units_on_flag_;
 extern double hoc_default_dll_loaded_;
 extern int hoc_print_first_instance;
-int nrnpy_nositeflag;
+NRN_DLLSYM int nrnpy_nositeflag;
 
 #if !defined(_WIN32)
 extern void setneuronhome(const char*) {

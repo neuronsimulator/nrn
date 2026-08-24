@@ -113,10 +113,10 @@ static double dmaxint_ = 9007199254740992;
 
 extern Object* hoc_thisobject;
 extern Symlist* hoc_top_level_symlist;
-IvocVect* (*nrnpy_vec_from_python_p_)(void*);
-Object** (*nrnpy_vec_to_python_p_)(void*);
-Object** (*nrnpy_vec_as_numpy_helper_)(int, double*);
-double (*nrnpy_call_func)(Object*, double);
+NRN_DLLSYM IvocVect* (*nrnpy_vec_from_python_p_)(void*);
+NRN_DLLSYM Object** (*nrnpy_vec_to_python_p_)(void*);
+NRN_DLLSYM Object** (*nrnpy_vec_as_numpy_helper_)(int, double*);
+NRN_DLLSYM double (*nrnpy_call_func)(Object*, double);
 
 static int narg() {
     int i = 0;

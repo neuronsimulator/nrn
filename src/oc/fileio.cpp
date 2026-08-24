@@ -817,7 +817,7 @@ void hoc_Chdir(void) {
 }
 
 NRN_DLLSYM int nrn_is_python_extension;
-int (*nrnpy_pr_stdoe_callback)(int, char*);
+NRN_DLLSYM int (*nrnpy_pr_stdoe_callback)(int, char*);
 static int (*nrnpy_pass_callback)();
 
 extern "C" NRN_DLLSYM void nrnpy_set_pr_etal(int (*cbpr_stdoe)(int, char*), int (*cbpass)()) {

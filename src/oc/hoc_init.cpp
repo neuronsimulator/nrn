@@ -219,7 +219,7 @@ static struct { /* functions that return an object */
 } objfun_bltin[] = {{"object_pushed", hoc_object_pushed}, {nullptr, nullptr}};
 
 double hoc_epsilon = 1.e-11;
-double hoc_ac_; /*known to the interpreter to evaluate expressions with hoc_oc() */
+NRN_DLLSYM double hoc_ac_; /*known to the interpreter to evaluate expressions with hoc_oc() */
 
 double hoc_cross_x_, hoc_cross_y_; /* For Graph class in ivoc */
 double hoc_default_dll_loaded_;

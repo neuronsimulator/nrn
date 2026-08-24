@@ -9,6 +9,8 @@
 // Use NRN_DLLSYM on public ABI in headers once CMake defines NRN_DLL.
 // Use NRN_EXPORT / NRN_DLLEXPORT on standalone exported definitions.
 // Do not add one-off per-symbol macros.
+// MSVC: WINDOWS_EXPORT_ALL_SYMBOLS covers functions only. Data (including
+// function pointers) must be NRN_DLLSYM or the consumer gets a local copy.
 
 #if defined(_WIN32)
 #define NRN_DLLEXPORT __declspec(dllexport)

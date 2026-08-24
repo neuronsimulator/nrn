@@ -105,7 +105,7 @@ void nrn_possible_mismatched_arch(const char* libname) {
 
 static char CHKmes[] = "The user defined name, %s, already exists\n";
 
-void (*nrnpy_reg_mech_p_)(int);
+NRN_DLLSYM void (*nrnpy_reg_mech_p_)(int);
 
 int secondorder = 0;
 int state_discon_allowed_;
@@ -113,7 +113,7 @@ extern int nrn_nobanner_;
 double t, dt, clamp_resist, celsius, htablemin, htablemax;
 int nrn_netrec_state_adjust = 0;
 int nrn_sparse_partrans = 0;
-hoc_List* section_list;
+NRN_DLLSYM hoc_List* section_list;
 int nrn_global_ncell = 0; /* used to be rootnodecount */
 extern double hoc_default_dll_loaded_;
 extern int nrn_istty_;
@@ -145,7 +145,7 @@ extern Symlist* nrn_load_dll_called_;
 extern int nrn_load_dll_recover_error();
 extern void nrn_load_name_check(const char* name);
 static int memb_func_size_;
-std::vector<Memb_func> memb_func;
+NRN_DLLSYM std::vector<Memb_func> memb_func;
 std::vector<Memb_list> memb_list;
 short* memb_order_;
 Symbol** pointsym;
@@ -153,7 +153,7 @@ Point_process** point_process;
 char* pnt_map; /* so prop_free can know its a point mech*/
 BAMech** bamech_;
 
-cTemplate** nrn_pnt_template_; /* for finding artificial cells */
+NRN_DLLSYM cTemplate** nrn_pnt_template_; /* for finding artificial cells */
 /* for synaptic events. */
 pnt_receive_t* pnt_receive;
 pnt_receive_init_t* pnt_receive_init;
@@ -214,7 +214,7 @@ void add_nrn_fornetcons(int type, int indx) {
 }
 
 /* array is parallel to memb_func. All are 0 except 1 for ARTIFICIAL_CELL */
-short* nrn_is_artificial_;
+NRN_DLLSYM short* nrn_is_artificial_;
 short* nrn_artcell_qindex_;
 
 void add_nrn_artcell(int mechtype, int qi) {
@@ -448,7 +448,7 @@ void initnrn(void) {
 }
 
 static int pointtype = 1; /* starts at 1 since 0 means not point in pnt_map*/
-int n_memb_func;
+NRN_DLLSYM int n_memb_func;
 
 
 void reallocate_mech_data(int mechtype);
@@ -963,7 +963,7 @@ void hoc_register_npy_direct(int mechtype, NPyDirectMechFunc* f) {
         fmap[f[i].name] = &f[i];
     }
 }
-std::unordered_map<int, NPyDirectMechFuncs> nrn_mech2funcs_map;
+NRN_DLLSYM std::unordered_map<int, NPyDirectMechFuncs> nrn_mech2funcs_map;
 
 /**
  * @brief Legacy way of registering mechanism data/pdata size.

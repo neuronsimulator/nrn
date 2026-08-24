@@ -160,9 +160,15 @@ double hoc_call_func(Symbol*, int narg);
 void hoc_call_func_result_on_stack(Symbol* s, int narg);
 // call a fuction within the context of an object.
 double hoc_call_objfunc(Symbol*, int narg, Object*);
-extern double hoc_ac_;
+extern NRN_DLLSYM double hoc_ac_;
 extern double hoc_epsilon;
-extern int nrn_inpython_;
+extern NRN_DLLSYM int nrn_inpython_;
+extern NRN_DLLSYM int nrn_global_argc;
+extern NRN_DLLSYM char** nrn_global_argv;
+struct HocStr;
+extern NRN_DLLSYM HocStr* hoc_cbufstr;
+extern NRN_DLLSYM char* hoc_ctp;
+extern NRN_DLLSYM const char* hoc_promptstr;
 
 extern int hoc_color;
 int hoc_set_color(int);

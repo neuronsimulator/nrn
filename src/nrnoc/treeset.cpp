@@ -63,7 +63,7 @@ When properties are allocated to nodes or freed, v_structure_change is
 set to 1. This means that the mechanism vectors need to be re-determined.
 */
 int v_structure_change;
-int structure_change_cnt;
+NRN_DLLSYM int structure_change_cnt;
 int diam_change_cnt;
 
 extern int section_count;

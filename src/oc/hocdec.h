@@ -284,8 +284,8 @@ using neuron::SprintfAsrt;
 // #define IFGUI  if (hoc_usegui) {
 // #define ENDGUI }
 
-extern int hoc_usegui; /* when 0 does not make interviews calls */
-extern int nrn_istty_;
+extern NRN_DLLSYM int hoc_usegui; /* when 0 does not make interviews calls */
+extern NRN_DLLSYM int nrn_istty_;
 
 /* Enter handling for PVM  NJP 11/21/94 */
 #ifdef PVM

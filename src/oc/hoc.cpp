@@ -48,15 +48,15 @@
 int nrnignore;
 
 /* only set  in ivoc */
-int nrn_global_argc;
+NRN_DLLSYM int nrn_global_argc;
 NRN_DLLSYM char** nrn_global_argv;
 
 #if defined(USE_PYTHON)
 int use_python_interpreter = 0;
 NRN_DLLSYM void (*p_nrnpython_finalize)();
 #endif
-int nrn_inpython_;
-int (*p_nrnpy_pyrun)(const char* fname);
+NRN_DLLSYM int nrn_inpython_;
+NRN_DLLSYM int (*p_nrnpy_pyrun)(const char* fname);
 
 #if 0 /* defined by cmake if rl_event_hook is not available */
 #define use_rl_getc_function
@@ -124,7 +124,7 @@ extern void add_history(const char*);
 
 NRN_DLLSYM int nrn_nobanner_;
 int hoc_pipeflag;
-int hoc_usegui;
+NRN_DLLSYM int hoc_usegui;
 #if 1
 /* no longer necessary to distinguish signed from unsigned since EOF
   never stored in a buffer.
@@ -141,10 +141,10 @@ int hoc_usegui;
 #define TMPBUFSIZE 512
 #define CBUFSIZE   512
 HocStr* hoc_tmpbuf;
-HocStr* hoc_cbufstr;
-const char* hoc_promptstr;
+NRN_DLLSYM HocStr* hoc_cbufstr;
+NRN_DLLSYM const char* hoc_promptstr;
 static CHAR* hoc_cbuf;
-CHAR* hoc_ctp;
+NRN_DLLSYM CHAR* hoc_ctp;
 int hoc_ictp;
 
 extern char* neuron_home;
@@ -155,7 +155,7 @@ extern int hoc_print_first_instance;
 used to be a FILE* but had fopen problems when 128K cores on BG/P
 tried to fopen the same file for reading at once.
 */
-NrnFILEWrap* hoc_fin; /* input file pointer */
+NRN_DLLSYM NrnFILEWrap* hoc_fin; /* input file pointer */
 
 #include <ctype.h>
 const char* progname; /* for error messages */
@@ -785,7 +785,7 @@ int hoc_pid(void) {
 } /* useful for making unique temporary file names */
 
 /* readline should be avoided if stdin is not a terminal */
-int nrn_istty_;
+NRN_DLLSYM int nrn_istty_;
 
 int hoc_main1_inited_;
 
