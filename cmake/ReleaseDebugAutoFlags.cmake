@@ -3,12 +3,15 @@
 # =============================================================================
 
 # default configuration
+# Visual Studio / Xcode / Ninja Multi-Config set CMAKE_CONFIGURATION_TYPES
+# and leave CMAKE_BUILD_TYPE empty. That is valid; only a non-empty unknown
+# type is an error. Default when both are unset (Unix single-config).
 if(NOT CMAKE_BUILD_TYPE AND (NOT CMAKE_CONFIGURATION_TYPES))
   set(CMAKE_BUILD_TYPE
       ${CMAKE_BUILD_TYPE_DEFAULT}
       CACHE STRING "Empty or one of ${allowableBuildTypes}." FORCE)
   message(STATUS "Setting build type to '${CMAKE_BUILD_TYPE}' as none was specified.")
-elseif(NOT CMAKE_BUILD_TYPE IN_LIST allowableBuildTypes)
+elseif(CMAKE_BUILD_TYPE AND (NOT CMAKE_BUILD_TYPE IN_LIST allowableBuildTypes))
   message(
     FATAL_ERROR "Invalid build type: ${CMAKE_BUILD_TYPE} : Must be one of ${allowableBuildTypes}")
 endif()
