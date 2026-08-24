@@ -63,8 +63,11 @@ extern int nrnmpi_bbsrecv(int source, bbsmpibuf* r);
 extern int nrnmpi_bbssendrecv(int dest, int tag, bbsmpibuf* s, bbsmpibuf* r);
 
 /* from nrnmpi.cpp */
-extern NRN_DLLSYM void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv);
-extern NRN_DLLSYM int nrnmpi_wrap_mpi_init(int* flag);
+/* Functions (not data). DYNAMIC MPI compiles these into the plugin as
+   f_nrnmpi_* while the plugin inherits NRN_DLL without NRN_DLL_EXPORTS, so
+   NRN_DLLSYM would be dllimport and MSVC C2491. Export-all covers them. */
+extern void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv);
+extern int nrnmpi_wrap_mpi_init(int* flag);
 extern double nrnmpi_wtime();
 extern void nrnmpi_terminate();
 extern void nrnmpi_abort(int errcode);

@@ -55,7 +55,7 @@ extern void nrnmpi_checkbufleak();
 static int nrnmpi_under_nrncontrol_;
 #endif
 
-extern "C" NRN_DLLSYM void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv) {
+extern "C" void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv) {
 #if NRNMPI
     int i, b, flag;
     if (nrnmpi_use) {
@@ -328,7 +328,7 @@ void nrnmpi_subworld_size(int n) {
 }
 
 /* so src/nrnpython/inithoc.cpp does not have to include a c++ mpi.h */
-extern "C" NRN_DLLSYM int nrnmpi_wrap_mpi_init(int* flag) {
+extern "C" int nrnmpi_wrap_mpi_init(int* flag) {
     return MPI_Initialized(flag);
 }
 
