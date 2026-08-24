@@ -29,7 +29,6 @@
 namespace nb = nanobind;
 
 extern PyTypeObject* psection_type;
-extern std::vector<const char*> py_exposed_classes;
 
 #include "parse.hpp"
 extern NRN_DLLSYM void (*nrnpy_sectionlist_helper_)(void*, Object*);
