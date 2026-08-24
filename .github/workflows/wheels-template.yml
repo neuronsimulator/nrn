@@ -53,8 +53,7 @@ jobs:
           python-version: '3.12'
 
       # MSVC win_amd64 wheel: ninja, winflexbison, MS-MPI. Not MSYS2/MinGW setup.exe.
-      # IV gitlink is still origin/master; the MSVC dirent/bind fixes live on the
-      # local iv branch until that SHA is pushed and pinned.
+      # IV gitlink ac31164 (neuronsimulator/iv hines-grok/msvc-windows).
       - name: Install MSVC wheel dependencies
         if: runner.os == 'Windows'
         run: .\ci\win_msvc_wheel_deps.cmd
