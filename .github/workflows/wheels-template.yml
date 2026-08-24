@@ -128,9 +128,10 @@ jobs:
 
       - name: Change name of package for release
         if: inputs.build_type == 'nightly'
+        shell: bash
         run: |
-          python3 -m venv venv
-          source venv/bin/activate
+          # Do not `source venv/bin/activate`: default Windows shell is pwsh,
+          # and a Windows venv has Scripts/, not bin/. The runner is disposable.
           python3 -m pip install tomli tomli-w
           python3 packaging/python/change_name.py ./pyproject.toml neuron-nightly
 
