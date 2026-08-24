@@ -86,10 +86,17 @@ extern int ifarg(int);
 extern void set_seed(double);
 extern int nrn_matrix_cnt_;       // defined in treeset.cpp
 extern NRN_DLLSYM int diam_changed;          // defined in cabcode.cpp
-extern int diam_change_cnt;       // defined in treeset.cpp
-extern NRN_DLLSYM int structure_change_cnt;  // defined in treeset.cpp
 extern int tree_changed;          // defined in cabcode.cpp
-extern int v_structure_change;    // defined in treeset.cpp
+// ctypes (rxd, gui2) looks these up by C name. MSVC C++ mangles data.
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern NRN_DLLSYM int diam_change_cnt;       // defined in treeset.cpp
+extern NRN_DLLSYM int structure_change_cnt;  // defined in treeset.cpp
+extern NRN_DLLSYM int v_structure_change;    // defined in treeset.cpp
+#ifdef __cplusplus
+}
+#endif
 
 // nrnmech stuff
 extern pnt_receive_t* pnt_receive;

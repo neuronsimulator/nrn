@@ -62,7 +62,7 @@ void (*nrn_mk_transfer_thread_data_)();
 static int busywait_;
 static int busywait_main_;
 extern void (*nrn_multisplit_setup_)();
-extern int v_structure_change;
+extern "C" int v_structure_change;
 extern int diam_changed;
 extern Section** secorder;
 extern int section_count;

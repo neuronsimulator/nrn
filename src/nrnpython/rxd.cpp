@@ -22,7 +22,7 @@ namespace nb = nanobind;
 
 static void ode_solve(double, double*, double*);
 extern PyTypeObject* hocobject_type;
-extern NRN_DLLSYM int structure_change_cnt;
+extern "C" NRN_DLLSYM int structure_change_cnt;
 extern int states_cvode_offset;
 int prev_structure_change_cnt = 0;
 unsigned char initialized = FALSE;

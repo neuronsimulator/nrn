@@ -644,13 +644,15 @@ def nrn_dll_sym_nt(name, type):
             for p in glob.glob(os.path.join(d, "*nrniv*.dll")):
                 _try_load(p)
     for dll in nt_dlls:
-        try:
-            a = dll.__getattr__(name)
-        except AttributeError:
-            continue
         if type is None:
-            return a
-        return type.in_dll(dll, name)
+            try:
+                return dll.__getattr__(name)
+            except AttributeError:
+                continue
+        try:
+            return type.in_dll(dll, name)
+        except (ValueError, AttributeError):
+            continue
     raise Exception("unable to connect to the NEURON library containing " + name)
 
 
