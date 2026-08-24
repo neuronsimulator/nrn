@@ -123,9 +123,9 @@ size_t hoc_total_array_data(const Symbol* s,
 }
 
 static int icntobjectdata = 0;
-Object* hoc_thisobject;
-Objectdata* hoc_objectdata = (Objectdata*) 0;
-Objectdata* hoc_top_level_data;
+NRN_DLLSYM Object* hoc_thisobject;
+NRN_DLLSYM Objectdata* hoc_objectdata = (Objectdata*) 0;
+NRN_DLLSYM Objectdata* hoc_top_level_data;
 static int icnttoplevel;
 int hoc_in_template = 0;
 

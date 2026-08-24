@@ -73,11 +73,11 @@ using StackDatum = std::variant<double,
 static std::vector<StackDatum> stack{};
 
 #define NPROG 50000
-Inst* hoc_prog;               /* the machine */
-Inst* hoc_progp;              /* next free spot for code generation */
-Inst* hoc_pc;                 /* program counter during execution */
-Inst* hoc_progbase;           /* start of current subprogram */
-Inst* hoc_prog_parse_recover; /* start after parse error */
+NRN_DLLSYM Inst* hoc_prog;               /* the machine */
+NRN_DLLSYM Inst* hoc_progp;              /* next free spot for code generation */
+NRN_DLLSYM Inst* hoc_pc;                 /* program counter during execution */
+NRN_DLLSYM Inst* hoc_progbase;           /* start of current subprogram */
+NRN_DLLSYM Inst* hoc_prog_parse_recover; /* start after parse error */
 int hoc_returning;            /* 1 if return stmt seen, 2 if break, 3 if continue */
 /* 4 if stop */
 namespace nrn::oc {

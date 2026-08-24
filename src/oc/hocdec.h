@@ -219,16 +219,22 @@ struct HocParmUnits { /* units for symbol values */
 };
 
 #include "oc_ansi.h"
+#include "nrndlldef.h"
 
-extern Inst *hoc_progp, *hoc_progbase, *hoc_prog, *hoc_prog_parse_recover;
-extern Inst* hoc_pc;
+// HOC interpreter global state. Functions are covered by
+// WINDOWS_EXPORT_ALL_SYMBOLS; MSVC still needs dllimport on data.
+extern NRN_DLLSYM Inst* hoc_progp;
+extern NRN_DLLSYM Inst* hoc_progbase;
+extern NRN_DLLSYM Inst* hoc_prog;
+extern NRN_DLLSYM Inst* hoc_prog_parse_recover;
+extern NRN_DLLSYM Inst* hoc_pc;
 
-extern Objectdata* hoc_objectdata;
-extern Objectdata* hoc_top_level_data;
-extern Object* hoc_thisobject;
-extern Symlist* hoc_symlist;
-extern Symlist* hoc_top_level_symlist;
-extern Symlist* hoc_built_in_symlist;
+extern NRN_DLLSYM Objectdata* hoc_objectdata;
+extern NRN_DLLSYM Objectdata* hoc_top_level_data;
+extern NRN_DLLSYM Object* hoc_thisobject;
+extern NRN_DLLSYM Symlist* hoc_symlist;
+extern NRN_DLLSYM Symlist* hoc_top_level_symlist;
+extern NRN_DLLSYM Symlist* hoc_built_in_symlist;
 extern Objectdata* hoc_objectdata_save(void);
 extern Objectdata* hoc_objectdata_restore(Objectdata*);
 #define OPVAL(sym)    hoc_objectdata[sym->u.oboff].pval
