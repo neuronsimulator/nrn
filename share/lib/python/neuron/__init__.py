@@ -133,6 +133,8 @@ if os.path.isdir(nrn_path):
 # (https://docs.python.org/3/library/os.html#os.add_dll_directory). hoc.pyd
 # needs nrniv.dll from the wheel .data/bin, cmake prefix/bin, or setup.exe
 # NEURONHOME/bin. Must run before `from . import hoc`.
+# Keep the cookies: discarding the return value calls RemoveDllDirectory.
+_nt_dll_dir_handles = []
 if os.name == "nt" and hasattr(os, "add_dll_directory"):
     _dll_dirs = [
         os.path.join(os.path.dirname(os.path.abspath(__file__)), ".data", "bin"),
@@ -148,7 +150,7 @@ if os.name == "nt" and hasattr(os, "add_dll_directory"):
         if _dll_dir in _seen or not os.path.isdir(_dll_dir):
             continue
         _seen.add(_dll_dir)
-        os.add_dll_directory(_dll_dir)
+        _nt_dll_dir_handles.append(os.add_dll_directory(_dll_dir))
         os.environ["PATH"] = _dll_dir + os.pathsep + os.environ.get("PATH", "")
     del _dll_dirs, _home, _seen, _dll_dir
 
@@ -564,45 +566,91 @@ def nrn_dll_sym(name, type=None):
 nt_dlls = []
 
 
+def _nt_neuron_dll_dirs():
+    """Directories that may contain nrniv.dll / nrnpython*.dll on Windows."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    dirs = [
+        os.path.join(here, ".data", "bin"),
+        os.path.join(here, ".data", "lib"),
+        here,
+    ]
+    home = os.environ.get("NEURONHOME")
+    if home:
+        home = os.path.abspath(home)
+        dirs.append(os.path.join(home, "bin"))
+        dirs.append(os.path.abspath(os.path.join(home, "..", "..", "bin")))
+    try:
+        nh = n.neuronhome().replace("/", os.sep)
+        dirs.append(os.path.join(nh, "bin"))
+        dirs.append(os.path.abspath(os.path.join(nh, "..", "..", "bin")))
+    except Exception:
+        pass
+    out = []
+    seen = set()
+    for d in dirs:
+        d = os.path.normpath(d)
+        if d not in seen and os.path.isdir(d):
+            seen.add(d)
+            out.append(d)
+    return out
+
+
 def nrn_dll_sym_nt(name, type):
     """return the specified object from the NEURON dlls.
     helper for nrn_dll_sym(name, type).
 
     Windows GetProcAddress does not search a module's dependents (Unix dlsym
-    does). hoc.pyd already loaded nrniv.dll; look there by basename. MSVC
-    CMake OUTPUT_NAME is nrniv.dll; MinGW/setup.exe is libnrniv.dll.
+    does). ctypes.CDLL of a basename also skips PATH (Python 3.8+). Load
+    nrniv / nrnpython from the wheel .data/bin (or setup.exe NEURONHOME/bin)
+    by full path. MSVC names are nrniv.dll / nrnpythonX.Y.dll; MinGW is
+    libnrniv.dll / libnrnpythonX.Y.dll.
     """
     global nt_dlls
     import ctypes
+    import glob
 
     if len(nt_dlls) == 0:
+        pyver = "{}.{}".format(*sys.version_info[:2])
+        pyver_nodot = "{}{}".format(*sys.version_info[:2])
         names = [
             "nrniv.dll",
             "libnrniv.dll",
-            "libnrnpython{}.{}.dll".format(*sys.version_info[:2]),
+            "nrnpython{}.dll".format(pyver),
+            "nrnpython{}.dll".format(pyver_nodot),
+            "libnrnpython{}.dll".format(pyver),
+            "libnrnpython{}.dll".format(pyver_nodot),
         ]
-        for dllname in names:
+        loaded = set()
+
+        def _try_load(path_or_name):
+            key = os.path.normcase(os.path.normpath(path_or_name))
+            if key in loaded:
+                return
             try:
-                nt_dlls.append(ctypes.cdll[dllname])
+                nt_dlls.append(ctypes.CDLL(path_or_name))
+                loaded.add(key)
             except OSError:
                 pass
-        path = os.path.join(n.neuronhome().replace("/", "\\"), "bin")
+
         for dllname in names:
-            p = os.path.join(path, dllname)
-            try:
-                nt_dlls.append(ctypes.cdll[p])
-            except OSError:
-                pass
+            _try_load(dllname)
+        for d in _nt_neuron_dll_dirs():
+            for dllname in names:
+                p = os.path.join(d, dllname)
+                if os.path.isfile(p):
+                    _try_load(p)
+            for p in glob.glob(os.path.join(d, "*nrnpython*.dll")):
+                _try_load(p)
+            for p in glob.glob(os.path.join(d, "*nrniv*.dll")):
+                _try_load(p)
     for dll in nt_dlls:
         try:
             a = dll.__getattr__(name)
         except AttributeError:
-            a = None
-        if a:
-            if type is None:
-                return a
-            else:
-                return type.in_dll(dll, name)
+            continue
+        if type is None:
+            return a
+        return type.in_dll(dll, name)
     raise Exception("unable to connect to the NEURON library containing " + name)
 
 
@@ -1680,16 +1728,16 @@ def _nrnpy_rvp_pyobj_callback(f):
 try:
     nrnpy_vec_math_register = nrn_dll_sym("nrnpy_vec_math_register")
     nrnpy_vec_math_register(ctypes.py_object(nrnpy_vec_math))
-except:
-    print("Failed to setup nrnpy_vec_math")
+except Exception as e:
+    print("Failed to setup nrnpy_vec_math:", type(e).__name__, e)
 
 try:
     _nrnpy_rvp_pyobj_callback_register = nrn_dll_sym(
         "nrnpy_rvp_pyobj_callback_register"
     )
     _nrnpy_rvp_pyobj_callback_register(ctypes.py_object(_nrnpy_rvp_pyobj_callback))
-except:
-    print("Failed to setup _nrnpy_rvp_pyobj_callback")
+except Exception as e:
+    print("Failed to setup _nrnpy_rvp_pyobj_callback:", type(e).__name__, e)
 
 try:
     from neuron.psection import psection
