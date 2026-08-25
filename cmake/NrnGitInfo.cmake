@@ -2,16 +2,16 @@ include_guard(GLOBAL)
 
 # Git identity for nrnversion / neuron.__version__.
 #
-# cmake -P cmake/NrnGitInfo.cmake
-#   Host: write cmake/nrn-git-info.cmake (gitignored). Guest cmake cannot
-#   run git: this tree is a Linux worktree whose .git file points at
-#   /home/hines/neuron/nrn/.git/worktrees/msvc-port, which is not on the
-#   vboxsf share.
+# cmake -P cmake/NrnGitInfo.cmake Host: write cmake/nrn-git-info.cmake (gitignored). Guest cmake
+# cannot run git: this tree is a Linux worktree whose .git file points at
+# /home/hines/neuron/nrn/.git/worktrees/msvc-port, which is not on the vboxsf share.
 #
 # add_cpp_git_information() uses live git when it works, else the stamp.
 
 function(nrn_collect_git_info src_dir ok_var)
-  set(${ok_var} FALSE PARENT_SCOPE)
+  set(${ok_var}
+      FALSE
+      PARENT_SCOPE)
   find_program(_nrn_git git)
   if(NOT _nrn_git)
     return()
@@ -46,12 +46,24 @@ function(nrn_collect_git_info src_dir ok_var)
   else()
     set(GIT_MODIFIED "")
   endif()
-  set(GIT_DATE "${GIT_DATE}" PARENT_SCOPE)
-  set(GIT_BRANCH "${GIT_BRANCH}" PARENT_SCOPE)
-  set(GIT_CHANGESET "${GIT_COMMIT_HASH}${GIT_MODIFIED}" PARENT_SCOPE)
-  set(GIT_DESCRIBE "${GIT_DESCRIBE}" PARENT_SCOPE)
-  set(GIT_DESCRIBE_FULL "${GIT_DESCRIBE}${GIT_MODIFIED}" PARENT_SCOPE)
-  set(${ok_var} TRUE PARENT_SCOPE)
+  set(GIT_DATE
+      "${GIT_DATE}"
+      PARENT_SCOPE)
+  set(GIT_BRANCH
+      "${GIT_BRANCH}"
+      PARENT_SCOPE)
+  set(GIT_CHANGESET
+      "${GIT_COMMIT_HASH}${GIT_MODIFIED}"
+      PARENT_SCOPE)
+  set(GIT_DESCRIBE
+      "${GIT_DESCRIBE}"
+      PARENT_SCOPE)
+  set(GIT_DESCRIBE_FULL
+      "${GIT_DESCRIBE}${GIT_MODIFIED}"
+      PARENT_SCOPE)
+  set(${ok_var}
+      TRUE
+      PARENT_SCOPE)
 endfunction()
 
 macro(nrn_write_git_info_stamp stamp_file)

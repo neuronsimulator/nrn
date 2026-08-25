@@ -106,7 +106,11 @@ def _config_exe(exe_name):
 
     _set_default_compiler()
     exe = os.path.join(bindir, exe_name)
-    if os.name == "nt" and not exe.lower().endswith(".exe") and os.path.isfile(exe + ".exe"):
+    if (
+        os.name == "nt"
+        and not exe.lower().endswith(".exe")
+        and os.path.isfile(exe + ".exe")
+    ):
         exe = exe + ".exe"
     return exe
 

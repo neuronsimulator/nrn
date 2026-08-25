@@ -43,8 +43,9 @@ NRN_DLLSYM int hoc_max_builtin_class_id = -1;
 static Symbol* hoc_obj_;
 
 NRN_DLLSYM int (*nrnpy_call_obj_method)(Object* obj, const char* method, Object* obj2) = nullptr;
-NRN_DLLSYM int (*nrnpy_call_obj_method_double)(Object* obj, const char* method, double value) =
-    nullptr;
+NRN_DLLSYM int (*nrnpy_call_obj_method_double)(Object* obj,
+                                               const char* method,
+                                               double value) = nullptr;
 
 
 void hoc_install_hoc_obj(void) {

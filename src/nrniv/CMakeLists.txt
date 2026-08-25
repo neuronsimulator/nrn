@@ -252,10 +252,9 @@ set(NRN_INCLUDE_DIRS
 # avoid error with nvector_serial.cpp for #include <../../../nrnconf.h>
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/src/sundials/shared)
 
-# generate hocusr.h
-# cl.exe treats //UNC/neuron.h as a switch; sed is not a Windows program.
-# cmake/generate_hocusr.cmake copies to the build dir, preprocesses the
-# local name, and runs mk_hocusr_h.py (which skips leftover #line lines).
+# generate hocusr.h cl.exe treats //UNC/neuron.h as a switch; sed is not a Windows program.
+# cmake/generate_hocusr.cmake copies to the build dir, preprocesses the local name, and runs
+# mk_hocusr_h.py (which skips leftover #line lines).
 set(_nrn_hocusr_out ${PROJECT_BINARY_DIR}/src/oc/hocusr.h)
 set(_nrn_hocusr_nologo 0)
 if(MSVC)
@@ -410,9 +409,8 @@ include_directories(${NRN_INCLUDE_DIRS})
 # =============================================================================
 add_library(nrniv_lib ${NRN_LIBRARY_TYPE} ${NRN_NRNIV_LIB_SRC_FILES})
 if(NRN_LIBRARY_TYPE STREQUAL "SHARED")
-  # Consumers inherit NRN_DLL so NRN_DLLSYM is dllimport; this target also
-  # gets NRN_DLL_EXPORTS so NRN_DLLSYM is dllexport. Static builds leave
-  # NRN_DLL unset and NRN_DLLSYM empty.
+  # Consumers inherit NRN_DLL so NRN_DLLSYM is dllimport; this target also gets NRN_DLL_EXPORTS so
+  # NRN_DLLSYM is dllexport. Static builds leave NRN_DLL unset and NRN_DLLSYM empty.
   target_compile_definitions(
     nrniv_lib
     PUBLIC NRN_DLL
@@ -463,8 +461,8 @@ if(NRN_WINDOWS_BUILD)
     target_link_libraries(nrniv_lib PUBLIC ${TERMCAP_LIBRARIES})
   endif()
   if(READLINE_FOUND)
-    # Fetched GNU readline is a static convenience lib; PUBLIC would require
-    # nrn_readline in NeuronTargets. MinGW's shared readline stays PUBLIC.
+    # Fetched GNU readline is a static convenience lib; PUBLIC would require nrn_readline in
+    # NeuronTargets. MinGW's shared readline stays PUBLIC.
     if(NRN_READLINE_FETCHED)
       target_link_libraries(nrniv_lib PRIVATE ${Readline_LIBRARY})
     else()
@@ -518,8 +516,8 @@ if(NRN_ENABLE_MPI)
       add_library(${libname}_lib SHARED ${NRN_NRNMPI_SRC_FILES})
       target_link_libraries(${libname}_lib PRIVATE fmt::fmt)
       target_include_directories(${libname}_lib BEFORE PUBLIC ${include})
-      # Note that we do not link here to libmpi. That is dlopen first.
-      # Windows DLLs cannot leave MPI / nrniv symbols undefined; Unix can.
+      # Note that we do not link here to libmpi. That is dlopen first. Windows DLLs cannot leave MPI
+      # / nrniv symbols undefined; Unix can.
       if(NRN_WINDOWS_BUILD) # type msmpi only
         add_dependencies(${libname}_lib nrniv_lib)
         target_link_libraries(${libname}_lib PUBLIC ${MPI_C_LIBRARIES})

@@ -253,9 +253,9 @@ extern Objectdata* hoc_objectdata_restore(Objectdata*);
     } /* so fprintf doesn't give lint */
 #undef NRN_IGNORE
 #define NRN_IGNORE(arg) \
-    {               \
-        if (arg)    \
-            ;       \
+    {                   \
+        if (arg)        \
+            ;           \
     }
 #define LINTUSE(arg) \
     {                \

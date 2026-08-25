@@ -38,7 +38,9 @@ extern NRN_DLLSYM void (*nrnpy_store_savestate)(char** save_data, uint64_t* save
 extern NRN_DLLSYM void (*nrnpy_decref)(void* pyobj);
 extern NRN_DLLSYM double (*nrnpy_call_func)(Object*, double);
 extern NRN_DLLSYM int (*nrnpy_call_obj_method)(Object* obj, const char* method, Object* obj2);
-extern NRN_DLLSYM int (*nrnpy_call_obj_method_double)(Object* obj, const char* method, double value);
+extern NRN_DLLSYM int (*nrnpy_call_obj_method_double)(Object* obj,
+                                                      const char* method,
+                                                      double value);
 extern void hoc_pushs(Symbol*);
 extern double cable_prop_eval(Symbol* sym);
 extern NRN_DLLSYM Symlist* hoc_top_level_symlist;

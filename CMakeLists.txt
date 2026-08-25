@@ -46,11 +46,10 @@ set(NRN_INSTALL_PYTHON_PREFIX
           "Path where NEURON Python components will be installed (relative to CMAKE_INSTALL_PREFIX)"
 )
 
-# if we're building a wheel, we have a different layout of files
-# NRN_INSTALL_DATA_PREFIX always ends with '/'. Concatenate as
-# ${NRN_INSTALL_DATA_PREFIX}bin (no extra slash). Never leave it empty:
-# Visual Studio treats an empty DESTINATION prefix as invalid, and
-# "${prefix}/${empty}/lib" is a poor relative path.
+# if we're building a wheel, we have a different layout of files NRN_INSTALL_DATA_PREFIX always ends
+# with '/'. Concatenate as ${NRN_INSTALL_DATA_PREFIX}bin (no extra slash). Never leave it empty:
+# Visual Studio treats an empty DESTINATION prefix as invalid, and "${prefix}/${empty}/lib" is a
+# poor relative path.
 if(SKBUILD)
   set(NRN_INSTALL_PYTHON_PREFIX
       "neuron/"
@@ -373,10 +372,9 @@ endif()
 # Find required packages
 # =============================================================================
 find_package(BISON REQUIRED)
-# FindFLEX parses `--version` as "<exe-basename> X.Y". Chocolatey win_flex
-# reports "win_flex.exe 2.6.4" while the found path is often `win_flex`
-# (no .exe), so FLEX_VERSION becomes the whole line and "2.6" fails.
-# Require Flex ourselves after taking the first X.Y / X.Y.Z in the string.
+# FindFLEX parses `--version` as "<exe-basename> X.Y". Chocolatey win_flex reports "win_flex.exe
+# 2.6.4" while the found path is often `win_flex` (no .exe), so FLEX_VERSION becomes the whole line
+# and "2.6" fails. Require Flex ourselves after taking the first X.Y / X.Y.Z in the string.
 find_package(FLEX)
 if(FLEX_VERSION AND NOT FLEX_VERSION MATCHES "^[0-9]")
   string(REGEX MATCH "[0-9]+\\.[0-9]+(\\.[0-9]+)?" _nrn_flex_ver "${FLEX_VERSION}")
@@ -403,8 +401,8 @@ if(NRN_ENABLE_COVERAGE
       " you may experience errors!")
 endif()
 
-# When shipping the wheels we want to link readline libs statically.
-# Unix static libs are .a; MSVC uses .lib and fetches GNU readline itself.
+# When shipping the wheels we want to link readline libs statically. Unix static libs are .a; MSVC
+# uses .lib and fetches GNU readline itself.
 if(NRN_WHEEL_STATIC_READLINE AND NOT WIN32)
   # CMake will prefer dynamic libraries over static ones. With the following construct we make sure
   # we get them.
@@ -412,31 +410,33 @@ if(NRN_WHEEL_STATIC_READLINE AND NOT WIN32)
   set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 endif()
 
-# Windows wheels are MSVC (cibuildwheel --platform windows). MinGW is the
-# setup.exe world. Ninja + C:/mingw64 on PATH would skip Win32Readline.
+# Windows wheels are MSVC (cibuildwheel --platform windows). MinGW is the setup.exe world. Ninja +
+# C:/mingw64 on PATH would skip Win32Readline.
 if(SKBUILD AND MINGW)
-  message(
-    FATAL_ERROR
-      "Windows wheels must use MSVC, not MinGW (${CMAKE_CXX_COMPILER}). "
-      "Use CMAKE_GENERATOR=Visual Studio 17 2022 and CMAKE_GENERATOR_PLATFORM=x64.")
+  message(FATAL_ERROR "Windows wheels must use MSVC, not MinGW (${CMAKE_CXX_COMPILER}). "
+                      "Use CMAKE_GENERATOR=Visual Studio 17 2022 and CMAKE_GENERATOR_PLATFORM=x64.")
 endif()
 
 find_package(Readline)
-if(NOT READLINE_FOUND AND WIN32 AND NOT MINGW)
+if(NOT READLINE_FOUND
+   AND WIN32
+   AND NOT MINGW)
   include(cmake/Win32Readline.cmake)
 endif()
 if(NOT READLINE_FOUND)
   message(FATAL_ERROR "Readline is required (HOC interactive input)")
 endif()
 if(READLINE_FOUND)
-  # MAC libedit.3.dylib does not have rl_event_hook. Readline_LIBRARY may be a
-  # binary lib, a Mac tbd, or (MSVC) a CMake target. file(STRINGS) is the
-  # portable equivalent of `grep -q` and does not need a Unix grep.
-  # this part has to be prior to adding the nrniv subdirectory.
+  # MAC libedit.3.dylib does not have rl_event_hook. Readline_LIBRARY may be a binary lib, a Mac
+  # tbd, or (MSVC) a CMake target. file(STRINGS) is the portable equivalent of `grep -q` and does
+  # not need a Unix grep. this part has to be prior to adding the nrniv subdirectory.
   if(NOT NRN_READLINE_HAS_EVENT_HOOK)
     set(_nrn_rl_event_hook)
     if(EXISTS "${Readline_LIBRARY}")
-      file(STRINGS "${Readline_LIBRARY}" _nrn_rl_event_hook REGEX "rl_event_hook" LIMIT_COUNT 1)
+      file(
+        STRINGS "${Readline_LIBRARY}" _nrn_rl_event_hook
+        REGEX "rl_event_hook"
+        LIMIT_COUNT 1)
     endif()
     if(NOT _nrn_rl_event_hook)
       # define for src/oc/hoc.cpp
@@ -445,8 +445,7 @@ if(READLINE_FOUND)
     unset(_nrn_rl_event_hook)
   endif()
   # If we are not using self contained, static readline library created for building wheel then only
-  # look for curses and termcap
-  # Fetched win32 GNU readline does not use curses/termcap. MinGW still
+  # look for curses and termcap Fetched win32 GNU readline does not use curses/termcap. MinGW still
   # requires Termcap below.
   if(NOT NRN_WHEEL_STATIC_READLINE AND NOT NRN_READLINE_FETCHED)
     find_package(Curses QUIET)
@@ -559,8 +558,7 @@ if(NRN_ENABLE_INTERVIEWS)
     # Windows has no X11. pyproject defaults this ON for Unix wheels.
     set(IV_ENABLE_X11_DYNAMIC
         OFF
-        CACHE BOOL "dlopen X11 after launch"
-        FORCE)
+        CACHE BOOL "dlopen X11 after launch" FORCE)
   endif()
 
   find_package(iv QUIET PATHS ${IV_DIR}/lib/cmake ${IV_DIR})
@@ -625,9 +623,9 @@ endif()
 # =============================================================================
 if(NRN_ENABLE_SHARED)
   set(NRN_LIBRARY_TYPE "SHARED")
-  # MSVC does not export globals from a DLL; Unix .so and MinGW do. DYNAMIC
-  # Python (nrnpythonX.Y.dll) and hoc.pyd consume that ABI. Data symbols still
-  # need NRN_DLLSYM (CMake does not put data in the generated .def).
+  # MSVC does not export globals from a DLL; Unix .so and MinGW do. DYNAMIC Python
+  # (nrnpythonX.Y.dll) and hoc.pyd consume that ABI. Data symbols still need NRN_DLLSYM (CMake does
+  # not put data in the generated .def).
   if(MSVC)
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
   endif()
@@ -802,8 +800,8 @@ else()
   set(NRN_INSTALL_SHARE_DIR ${NRN_INSTALL_DATA_PREFIX}share/nrn)
   set(NRN_BUILD_SHARE_DIR ${CMAKE_BINARY_DIR}/share/nrn)
 endif()
-# Windows searches the executable directory for DLLs. MinGW setup.exe already
-# installed them in bin; MSVC wheels and cmake --install need the same.
+# Windows searches the executable directory for DLLs. MinGW setup.exe already installed them in bin;
+# MSVC wheels and cmake --install need the same.
 if(NRN_WINDOWS_BUILD)
   set(NRN_INSTALL_SHARE_LIB_DIR ${NRN_INSTALL_DATA_PREFIX}bin)
 else()

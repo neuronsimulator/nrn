@@ -1,17 +1,13 @@
-# MSVC (and clang-cl) have no system GNU readline. MinGW uses the MSYS2
-# package (setup.exe world). wineditline is not enough: it has readline()
-# and add_history() but not rl_event_hook, which InterViews-while-prompt
-# uses on the existing #ifdef READLINE path.
+# MSVC (and clang-cl) have no system GNU readline. MinGW uses the MSYS2 package (setup.exe world).
+# wineditline is not enough: it has readline() and add_history() but not rl_event_hook, which
+# InterViews-while-prompt uses on the existing #ifdef READLINE path.
 #
-# vcpkg's Windows "readline" port is GNU readline 5.0
-# (xiaozhuai/readline-win32, GPL-2, same license as Unix GNU readline).
-# Fetch that port and static-link it so rl_event_hook is a real data
-# symbol (MSVC DLL data imports need dllimport; hoc.cpp uses extern "C"
-# declarations, not readline.h).
+# vcpkg's Windows "readline" port is GNU readline 5.0 (xiaozhuai/readline-win32, GPL-2, same license
+# as Unix GNU readline). Fetch that port and static-link it so rl_event_hook is a real data symbol
+# (MSVC DLL data imports need dllimport; hoc.cpp uses extern "C" declarations, not readline.h).
 #
-# Do not add_subdirectory their CMakeLists.txt: it is
-# cmake_minimum_required(VERSION 3.0), which CMake 4 rejects, and its
-# PUBLIC include dir is the source root (leaks their config.h into NEURON).
+# Do not add_subdirectory their CMakeLists.txt: it is cmake_minimum_required(VERSION 3.0), which
+# CMake 4 rejects, and its PUBLIC include dir is the source root (leaks their config.h into NEURON).
 
 include(FetchContent)
 
@@ -19,8 +15,8 @@ if(POLICY CMP0135)
   cmake_policy(SET CMP0135 NEW)
 endif()
 
-# Their doc/ has no CMakeLists.txt, so MakeAvailable populates without
-# adding their project(). <name>_SOURCE_DIR remains the source root.
+# Their doc/ has no CMakeLists.txt, so MakeAvailable populates without adding their project().
+# <name>_SOURCE_DIR remains the source root.
 FetchContent_Declare(
   nrn_readline_win32
   URL https://github.com/xiaozhuai/readline-win32/archive/0fa4001557c27157a51a9ca7f32a8c50bc97927a.tar.gz
@@ -68,11 +64,10 @@ set(_nrn_rl_srcs
 add_library(nrn_readline STATIC ${_nrn_rl_srcs})
 # PRIVATE: their config.h / readline.h live at the source root.
 target_include_directories(nrn_readline PRIVATE "${_nrn_rl_src}")
-# READLINE_LIBRARY must be on the command line: tilde.c includes tilde.h
-# before any #define, and that header uses <readline/rlstdc.h> otherwise.
-# Some .c files also #define it (C4005).
-target_compile_definitions(nrn_readline PRIVATE READLINE_LIBRARY HAVE_CONFIG_H _CRT_SECURE_NO_WARNINGS
-                                                READLINE_STATIC)
+# READLINE_LIBRARY must be on the command line: tilde.c includes tilde.h before any #define, and
+# that header uses <readline/rlstdc.h> otherwise. Some .c files also #define it (C4005).
+target_compile_definitions(nrn_readline PRIVATE READLINE_LIBRARY HAVE_CONFIG_H
+                                                _CRT_SECURE_NO_WARNINGS READLINE_STATIC)
 if(CMAKE_C_COMPILER_ID STREQUAL "MSVC")
   target_compile_options(nrn_readline PRIVATE /wd4005)
 endif()

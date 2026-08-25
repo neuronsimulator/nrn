@@ -9,9 +9,9 @@
 #undef NRN_IGNORE
 #if LINT
 #define NRN_IGNORE(arg) \
-    {               \
-        if (arg)    \
-            ;       \
+    {                   \
+        if (arg)        \
+            ;           \
     }
 #else
 #define NRN_IGNORE(arg) arg
@@ -407,7 +407,8 @@ void Fig_plt(int mode, double x, double y) {
         text = 0;
         state = 0;
         if (mode == -2) {
-            NRN_IGNORE(Sprintf(fig_text_preamble, "%s %d %d ", text_preamble, SCX(oldx), SCY(oldy)));
+            NRN_IGNORE(
+                Sprintf(fig_text_preamble, "%s %d %d ", text_preamble, SCX(oldx), SCY(oldy)));
             state = TEXT;
             text = 1;
             return;
@@ -514,7 +515,7 @@ void vtplot(int mode, double x, double y) {
             NRN_IGNORE(fprintf(gdev, "[2J"));
             break;
 
-        case -5:                                          /* switch to HP plotter */
+        case -5:                                              /* switch to HP plotter */
             NRN_IGNORE(fprintf(gdev, "%c\\%c[5i", ESC, ESC)); /* esc and open port */
             vtgrph = 0;
             hplot(-5, 0., 0.);

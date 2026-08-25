@@ -78,7 +78,7 @@ NRN_DLLSYM Inst* hoc_progp;              /* next free spot for code generation *
 NRN_DLLSYM Inst* hoc_pc;                 /* program counter during execution */
 NRN_DLLSYM Inst* hoc_progbase;           /* start of current subprogram */
 NRN_DLLSYM Inst* hoc_prog_parse_recover; /* start after parse error */
-int hoc_returning;            /* 1 if return stmt seen, 2 if break, 3 if continue */
+int hoc_returning;                       /* 1 if return stmt seen, 2 if break, 3 if continue */
 /* 4 if stop */
 namespace nrn::oc {
 struct frame {             /* proc/func call stack frame */

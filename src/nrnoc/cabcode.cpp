@@ -48,10 +48,10 @@ static char* escape_bracket(const char* s) {
 extern int hoc_execerror_messages;
 #define symlist hoc_symlist
 
-int tree_changed = 1; /* installing section, changeing nseg
-              and connecting sections set this flag.
-              The flag is set to 0 when the topology
-              is set up */
+int tree_changed = 1;            /* installing section, changeing nseg
+                         and connecting sections set this flag.
+                         The flag is set to 0 when the topology
+                         is set up */
 NRN_DLLSYM int diam_changed = 1; /* changing diameter, length set this flag
               The flag is set to 0 when node.a and node.b
               is set up */

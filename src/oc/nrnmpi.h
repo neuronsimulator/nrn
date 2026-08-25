@@ -31,7 +31,8 @@ struct NRNMPI_Spike {
 extern "C" {
 #endif
 extern NRN_DLLSYM int nrnmpi_use;                     /* NEURON does MPI init and terminate?*/
-extern NRN_DLLSYM int nrn_cannot_use_threads_and_mpi; /* 0 if required <= provided from MPI_Init_thread */
+extern NRN_DLLSYM int nrn_cannot_use_threads_and_mpi; /* 0 if required <= provided from
+                                                         MPI_Init_thread */
 #ifdef __cplusplus
 }
 #endif

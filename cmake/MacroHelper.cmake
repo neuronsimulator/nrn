@@ -225,17 +225,16 @@ function(nrn_mpi_clear_msvc_cache)
   unset(MPI_CXX_COMPILER_INCLUDE_DIRS CACHE)
 endfunction()
 
-# Microsoft MPI at C:/msmpi is the Windows prefix (ci/win_install_deps.cmd,
-# ci/win_build_cmake.sh). FindMPI's MSMPI guess uses MSMPI_INC / MSMPI_LIB64
-# only; CMAKE_PREFIX_PATH does not find lib/x64/msmpi.lib. The MinGW build
-# already passes FindMPI cache entries. Set the same ones from MPI_HOME,
-# CMAKE_PREFIX_PATH, or C:/msmpi when mpi.h and msmpi.lib are there.
+# Microsoft MPI at C:/msmpi is the Windows prefix (ci/win_install_deps.cmd, ci/win_build_cmake.sh).
+# FindMPI's MSMPI guess uses MSMPI_INC / MSMPI_LIB64 only; CMAKE_PREFIX_PATH does not find
+# lib/x64/msmpi.lib. The MinGW build already passes FindMPI cache entries. Set the same ones from
+# MPI_HOME, CMAKE_PREFIX_PATH, or C:/msmpi when mpi.h and msmpi.lib are there.
 function(nrn_windows_prepare_msmpi)
   if(NOT WIN32)
     return()
   endif()
-  # MS-MPI has no compiler wrapper. Skip interrogating cl.exe, which can
-  # cache the source tree as MPI_*_COMPILER_INCLUDE_DIRS.
+  # MS-MPI has no compiler wrapper. Skip interrogating cl.exe, which can cache the source tree as
+  # MPI_*_COMPILER_INCLUDE_DIRS.
   set(MPI_GUESS_LIBRARY_NAME
       MSMPI
       CACHE STRING "MPI implementation to guess on Windows")
@@ -309,8 +308,8 @@ function(nrn_windows_prepare_msmpi)
         break()
       endif()
     endforeach()
-    # Same cache entries as ci/win_build_cmake.sh. Unset NOTFOUND leftovers
-    # from a previous failed configure in this build dir.
+    # Same cache entries as ci/win_build_cmake.sh. Unset NOTFOUND leftovers from a previous failed
+    # configure in this build dir.
     set(MPI_C_LIB_NAMES
         msmpi
         CACHE STRING "MPI C libraries to link against" FORCE)
@@ -374,8 +373,8 @@ macro(nrn_mpi_find_package)
   else()
     find_package(MPI REQUIRED)
   endif()
-  # Keep only directories that actually contain mpi.h. FindMPI can assemble
-  # MPI_C_INCLUDE_DIRS from compiler-wrapper leftovers (the source tree).
+  # Keep only directories that actually contain mpi.h. FindMPI can assemble MPI_C_INCLUDE_DIRS from
+  # compiler-wrapper leftovers (the source tree).
   set(_nrn_mpi_incs)
   foreach(_d IN LISTS MPI_C_INCLUDE_DIRS MPI_INCLUDE_PATH)
     if(_d AND EXISTS "${_d}/mpi.h")

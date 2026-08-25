@@ -128,9 +128,9 @@ void hoc_Sred(void) {
 int hoc_sred(const char* prompt, char* defalt, char* charlist) {
     char istr[80], c[2], instring[40], *result;
 
-    for (;;) {                                              /* cycle until done */
+    for (;;) {                                                  /* cycle until done */
         NRN_IGNORE(fprintf(stderr, "%s (%s)", prompt, defalt)); /* print prompt */
-        if (fgets(istr, sizeof istr, stdin) != NULL) {         /* read input */
+        if (fgets(istr, sizeof istr, stdin) != NULL) {          /* read input */
             if (defalt[0] != '\0' && istr[0] == '\n') {
                 strcpy(istr, defalt); /* if CR only, use default */
             } else {

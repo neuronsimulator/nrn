@@ -445,8 +445,8 @@ typedef struct Eqnblock {
 } Eqnblock;
 #endif /*EXTRAEQN*/
 
-extern int nrn_global_ncell;   /* note that for multiple threads all the rootnodes are no longer
-                                  contiguous */
+extern int nrn_global_ncell; /* note that for multiple threads all the rootnodes are no longer
+                                contiguous */
 extern NRN_DLLSYM hoc_List* section_list; /* Where the Sections live */
 
 extern Section* sec_alloc();             /* Allocates a single section */

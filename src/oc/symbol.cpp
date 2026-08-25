@@ -31,11 +31,11 @@ NRN_DLLSYM Symlist* hoc_top_level_symlist = nullptr; /* all user names seen at t
         (non-public names inside templates do not appear here) */
 extern Objectdata* hoc_top_level_data;
 
-NRN_DLLSYM Symlist* hoc_symlist = nullptr;   /* the current user symbol table: linked list */
-Symlist* hoc_p_symlist = nullptr; /* current proc, func, or temp table */
-                                  /* containing constants, strings, and auto */
-                                  /* variables. Discarding these lists at */
-                                  /* appropriate times prevents storage leakage. */
+NRN_DLLSYM Symlist* hoc_symlist = nullptr; /* the current user symbol table: linked list */
+Symlist* hoc_p_symlist = nullptr;          /* current proc, func, or temp table */
+                                           /* containing constants, strings, and auto */
+                                           /* variables. Discarding these lists at */
+                                           /* appropriate times prevents storage leakage. */
 
 void print_symlist(const char* s, Symlist* tab) {
     Printf("%s\n", s);

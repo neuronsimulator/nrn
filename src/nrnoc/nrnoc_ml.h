@@ -117,9 +117,7 @@ struct Memb_list {
      * Defined in .cpp to hide neuron::container::Mechanism::storage layout from translated MOD file
      * code.
      */
-    [[nodiscard]] NRN_PURE double& data(std::size_t instance,
-                                        int variable,
-                                        int array_index = 0);
+    [[nodiscard]] NRN_PURE double& data(std::size_t instance, int variable, int array_index = 0);
 
     /**
      * @brief Get the `variable`-th pointer-to-double in `instance` of the mechanism.

@@ -84,9 +84,9 @@ void artcell_net_move(Datum*, Point_process*, double);
 
 extern int ifarg(int);
 extern void set_seed(double);
-extern int nrn_matrix_cnt_;       // defined in treeset.cpp
-extern NRN_DLLSYM int diam_changed;          // defined in cabcode.cpp
-extern int tree_changed;          // defined in cabcode.cpp
+extern int nrn_matrix_cnt_;          // defined in treeset.cpp
+extern NRN_DLLSYM int diam_changed;  // defined in cabcode.cpp
+extern int tree_changed;             // defined in cabcode.cpp
 // ctypes (rxd, gui2) looks these up by C name. MSVC C++ mangles data.
 #ifdef __cplusplus
 extern "C" {

@@ -1,10 +1,9 @@
-# Preprocess src/nrnoc/neuron.h and run mk_hocusr_h.py.
-# cl.exe treats a leading //UNC path as a switch, and sed is not a Windows
-# program. Copy neuron.h next to the output, preprocess the local name,
-# feed stdout to Python (which skips leftover #line markers).
+# Preprocess src/nrnoc/neuron.h and run mk_hocusr_h.py. cl.exe treats a leading //UNC path as a
+# switch, and sed is not a Windows program. Copy neuron.h next to the output, preprocess the local
+# name, feed stdout to Python (which skips leftover #line markers).
 #
-# -DNRN_HOCUSR_CC, _NRNOC, _OC, _NEURON_H, _PYTHON, _SCRIPT, _OUTPUT, _WORKDIR
-# Optional: NRN_HOCUSR_NOLOGO=1 for MSVC.
+# -DNRN_HOCUSR_CC, _NRNOC, _OC, _NEURON_H, _PYTHON, _SCRIPT, _OUTPUT, _WORKDIR Optional:
+# NRN_HOCUSR_NOLOGO=1 for MSVC.
 
 if(NOT NRN_HOCUSR_CC
    OR NOT NRN_HOCUSR_NRNOC

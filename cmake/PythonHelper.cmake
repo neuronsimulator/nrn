@@ -12,9 +12,9 @@
 #
 # * NRN_DEFAULT_PYTHON_EXECUTABLE is the default Python, which is used for running tests and so on.
 # * NRN_PYTHON_EXECUTABLES is a list of all the Pythons that we are building against. This will only
-#   have a length > 1 if NRN_ENABLE_PYTHON_DYNAMIC is defined.
-# scikit-build-core (and FindPython) set Python_EXECUTABLE, not the older
-# PYTHON_EXECUTABLE name this helper still uses. Same on Unix and Windows.
+#   have a length > 1 if NRN_ENABLE_PYTHON_DYNAMIC is defined. scikit-build-core (and FindPython)
+#   set Python_EXECUTABLE, not the older PYTHON_EXECUTABLE name this helper still uses. Same on Unix
+#   and Windows.
 if(NOT PYTHON_EXECUTABLE AND Python_EXECUTABLE)
   set(PYTHON_EXECUTABLE "${Python_EXECUTABLE}")
 endif()
@@ -100,14 +100,16 @@ function(nrn_find_python)
     string(SUBSTRING "${pyexe_hash}" 0 6 pyexe_hash)
     # Which attributes we're trying to learn about this Python
     set(python_vars Python_INCLUDE_DIRS Python_VERSION)
-    if(NRN_ENABLE_PYTHON_DYNAMIC AND NOT NRN_LINK_AGAINST_PYTHON AND NOT WIN32)
+    if(NRN_ENABLE_PYTHON_DYNAMIC
+       AND NOT NRN_LINK_AGAINST_PYTHON
+       AND NOT WIN32)
       # Do not link against Python, so we don't need the library -- just as well, it's not available
       # in manylinux
       set(dev_component "Development.Module")
       set(Python_LIBRARIES "do-not-link-against-libpython-in-dynamic-python-builds")
     else()
-      # Windows .pyd / nrnpythonXY.dll must link pythonXY.lib. Unix manylinux
-      # modules leave libpython undefined; the Windows loader has no equivalent.
+      # Windows .pyd / nrnpythonXY.dll must link pythonXY.lib. Unix manylinux modules leave
+      # libpython undefined; the Windows loader has no equivalent.
       set(dev_component "Development")
       list(APPEND python_vars Python_LIBRARIES)
     endif()

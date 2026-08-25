@@ -246,10 +246,7 @@ saves much time allocating and freeing during the solve phase
 */
 
 /* return pointer to row col element maintaining order in rows */
-inline NRN_ALWAYS_INLINE Elm* getelm(SparseObj* so,
-                                                  unsigned row,
-                                                  unsigned col,
-                                                  Elm* newElm) {
+inline NRN_ALWAYS_INLINE Elm* getelm(SparseObj* so, unsigned row, unsigned col, Elm* newElm) {
     Elm *el, *elnext;
     unsigned vrow, vcol;
 

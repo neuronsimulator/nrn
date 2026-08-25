@@ -140,9 +140,9 @@ nrn_check_symbol_exists("stty" "" HAVE_STTY)
 # =============================================================================
 # Check data types
 # =============================================================================
-# pid_t: record presence only. Do not set a CMake variable named pid_t for
-# #cmakedefine pid_t @pid_t@ — that emits `#define pid_t int`, and MSVC
-# Python's pyconfig.h then does `typedef int pid_t` → `typedef int int`.
+# pid_t: record presence only. Do not set a CMake variable named pid_t for #cmakedefine pid_t
+# @pid_t@ — that emits `#define pid_t int`, and MSVC Python's pyconfig.h then does `typedef int
+# pid_t` → `typedef int int`.
 check_c_source_compiles(
   "
 #include <sys/types.h>
