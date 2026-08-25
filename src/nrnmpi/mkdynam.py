@@ -17,6 +17,35 @@ from pathlib import Path
 
 DECL = re.compile(r"^extern\s+(?:NRN_DLLSYM\s+)?(\S+)\s+(nrnmpi_\w+)\((.*)\);\s*$")
 
+# CMake always passes ${PROJECT_BINARY_DIR}/src/nrnmpi.
+OUTPUT_DIR_NAME = "nrnmpi"
+OUTPUT_FILES = (
+    "nrnmpi_dynam_wrappers.inc",
+    "nrnmpi_dynam.h",
+    "nrnmpi_dynam_cinc",
+)
+
+
+def confined(directory: Path, name: str) -> Path:
+    """Write only the known basenames under the given directory."""
+    if name not in OUTPUT_FILES or Path(name).name != name:
+        raise ValueError(f"mkdynam.py: refusing filename {name!r}")
+    base = directory.resolve()
+    dest = (base / name).resolve()
+    dest.relative_to(base)
+    return dest
+
+
+def confined_outdir(raw: str) -> Path:
+    """CMake passes the build-tree nrnmpi dir; reject .. and other names."""
+    path = Path(raw)
+    if ".." in path.parts:
+        sys.exit(f"mkdynam.py: refusing path with '..': {raw}")
+    outdir = path.resolve()
+    if outdir.name != OUTPUT_DIR_NAME:
+        sys.exit(f"mkdynam.py: output directory must be named {OUTPUT_DIR_NAME}")
+    return outdir
+
 
 def declarations(path: Path) -> list[tuple[str, str, str]]:
     found: list[tuple[str, str, str]] = []
@@ -39,19 +68,19 @@ def call_args(proto: str) -> str:
     return ", ".join(names)
 
 
-def write_wrappers(path: Path, decls: list[tuple[str, str, str]]) -> None:
+def write_wrappers(directory: Path, decls: list[tuple[str, str, str]]) -> None:
     lines: list[str] = []
     for ret, name, proto in decls:
         prefix = "  " if ret == "void" else "  return "
         lines.append(f"{ret} {name}({proto}) {{")
         lines.append(f"{prefix}(*p_{name})({call_args(proto)});")
         lines.append("}")
-    path.write_text("\n".join(lines) + "\n")
+    confined(directory, "nrnmpi_dynam_wrappers.inc").write_text("\n".join(lines) + "\n")
 
 
-def write_dynam_h(path: Path, decls: list[tuple[str, str, str]]) -> None:
+def write_dynam_h(directory: Path, decls: list[tuple[str, str, str]]) -> None:
     body = "\n".join(f"#define {name} f_{name}" for _, name, _ in decls)
-    path.write_text(
+    confined(directory, "nrnmpi_dynam.h").write_text(
         "\n"
         "#ifndef nrnmpi_dynam_h\n"
         "#define nrnmpi_dynam_h\n"
@@ -68,10 +97,10 @@ def write_dynam_h(path: Path, decls: list[tuple[str, str, str]]) -> None:
     )
 
 
-def write_cinc(path: Path, decls: list[tuple[str, str, str]]) -> None:
+def write_cinc(directory: Path, decls: list[tuple[str, str, str]]) -> None:
     ptrs = [f"static {ret} (*p_{name})({proto});" for ret, name, proto in decls]
     table = [f'\t"f_{name}", (void**)&p_{name},' for _, name, _ in decls]
-    path.write_text(
+    confined(directory, "nrnmpi_dynam_cinc").write_text(
         "\n".join(ptrs)
         + "\n"
         + """
@@ -91,14 +120,13 @@ static struct {
 def main(argv: list[str]) -> None:
     if len(argv) < 2:
         sys.exit("usage: mkdynam.py <output-directory>")
-    outdir = Path(argv[-1])
-    outdir.mkdir(parents=True, exist_ok=True)
+    outdir = confined_outdir(argv[-1])
     decls = declarations(Path("nrnmpidec.h"))
     if not decls:
         sys.exit("mkdynam.py: no extern nrnmpi_* prototypes in nrnmpidec.h")
-    write_wrappers(outdir / "nrnmpi_dynam_wrappers.inc", decls)
-    write_dynam_h(outdir / "nrnmpi_dynam.h", decls)
-    write_cinc(outdir / "nrnmpi_dynam_cinc", decls)
+    write_wrappers(outdir, decls)
+    write_dynam_h(outdir, decls)
+    write_cinc(outdir, decls)
 
 
 if __name__ == "__main__":
