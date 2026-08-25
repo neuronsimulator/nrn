@@ -139,7 +139,9 @@ typedef ptrdiff_t ssize_t;
 #define chdir  _chdir
 #define dup    _dup
 #define dup2   _dup2
+#define fileno _fileno
 #define getcwd _getcwd
+#define isatty _isatty
 #define pclose _pclose
 #define popen  _popen
 #endif
