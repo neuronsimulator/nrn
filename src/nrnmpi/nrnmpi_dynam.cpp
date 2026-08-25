@@ -69,6 +69,15 @@ static void* load_nrnmpi(const char* name, std::string& mes) {
     }
     mes.append(name);
     mes.append("successful\n");
+    auto* const p_alloc = reinterpret_cast<char* (**) (std::size_t)>(
+        dlsym(handle, "p_cxx_char_alloc"));
+    if (!p_alloc) {
+        mes.append("load_nrnmpi: p_cxx_char_alloc ");
+        mes.append(dlerror());
+        mes.append("\n");
+        dlclose(handle);
+        return nullptr;
+    }
     for (int i = 0; ftable[i].name; ++i) {
         void* p = dlsym(handle, ftable[i].name);
         if (!p) {
@@ -82,18 +91,7 @@ static void* load_nrnmpi(const char* name, std::string& mes) {
         }
         *ftable[i].ppf = p;
     }
-    {
-        auto* const p = reinterpret_cast<char* (**) (std::size_t)>(
-            dlsym(handle, "p_cxx_char_alloc"));
-        if (!p) {
-            mes.append("load_nrnmpi: p_cxx_char_alloc ");
-            mes.append(dlerror());
-            mes.append("\n");
-            dlclose(handle);
-            return nullptr;
-        }
-        *p = cxx_char_alloc;
-    }
+    *p_alloc = cxx_char_alloc;
     return handle;
 }
 
