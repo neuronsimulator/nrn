@@ -162,13 +162,15 @@ int main(void) {
     ok &= check(write_calls == 1, "component write callback runs exactly once");
     ok &= check(write_frame_matches, "component write callback receives the expected frame");
 
-    ok &= check(nrn_hoc_call("strfun read_text() { return $o1.text }") == 0,
+    ok &= check(nrn_hoc_call("strdef read_text_result") == 0, "string result storage defined");
+    ok &= check(nrn_hoc_call("proc read_text() { read_text_result = $o1.text }") == 0,
                 "string read helper defined");
     nrn_double_push(1003.0);
     nrn_object_push(obj);
     nrn_function_call(nrn_symbol("read_text"), 1);
-    auto* text = nrn_str_pop();
-    ok &= check(text && std::strcmp(*text, "provider text") == 0,
+    ok &= check(nrn_double_pop() == 0.0, "string read procedure result is balanced");
+    const char* text = nrn_symbol_str_get(nrn_symbol("read_text_result"));
+    ok &= check(text && std::strcmp(text, "provider text") == 0,
                 "component string read returns provider text");
     ok &= check(nrn_double_pop() == 1003.0, "string read preserves the lower stack sentinel");
 
