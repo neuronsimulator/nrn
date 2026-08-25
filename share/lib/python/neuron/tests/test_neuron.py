@@ -176,8 +176,6 @@ class NeuronTestCase(unittest.TestCase):
     @classmethod
     def RxDexistence(cls):
         """test import rxd and geometry3d"""
-        import sys
-
         error = 0
         try:
             from neuron import rxd
@@ -188,17 +186,12 @@ class NeuronTestCase(unittest.TestCase):
             print("'from neuron import rxd' failed", e)
             error = 1
         else:
-            # 1D and 3D both AV in n.fadvance() on MSVC (guest/GHA). Import
-            # of rxd/geometry3d is the existence check on Windows.
-            if sys.platform == "win32":
-                print("skipping basicRxD3D fadvance on win32")
-            else:
-                try:
-                    a = basicRxD3D()
-                    print("    basicRxD3D() ran with no exception")
-                except Exception as e:
-                    print("'basicRxD3D()' failed", e)
-                    error = 1
+            try:
+                a = basicRxD3D()
+                print("    basicRxD3D() ran with no exception")
+            except Exception as e:
+                print("'basicRxD3D()' failed", e)
+                error = 1
         assert error == 0
         return 0
 
@@ -311,16 +304,12 @@ endtemplate NewObj
 
 def basicRxD3D():
     from neuron import h, rxd
-    import sys
 
     s = n.Section(name="s")
     s.L = s.diam = 1
     cyt = rxd.Region([s])
     ca = rxd.Species(cyt)
-    # 3D ICS fadvance AVs on MSVC (guest 2026-08-24, after set_solve_type
-    # dimension=3). Import of rxd/geometry3d is still checked above.
-    if sys.platform != "win32":
-        rxd.set_solve_type(dimension=3)
+    rxd.set_solve_type(dimension=3)
     n.finitialize(-65)
     n.fadvance()
     return 1
