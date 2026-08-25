@@ -4,6 +4,7 @@ A generic wrapper to access nrn binaries from a python installation
 Please create a softlink with the binary name to be called.
 """
 import os
+import platform
 import shutil
 import subprocess
 import sys
@@ -37,12 +38,19 @@ def _set_default_compiler():
     """Set (dont overwrite) CC/CXX so that apps dont use the build-time ones"""
     ccompiler = new_compiler()
     _customize_compiler(ccompiler)
-    # xcrun wrapper must bring all args
-    if ccompiler.compiler[0] == "xcrun":
+    # UnixCCompiler has .compiler / .compiler_cxx lists. MSVCCompiler does not.
+    compiler = getattr(ccompiler, "compiler", None)
+    compiler_cxx = getattr(ccompiler, "compiler_cxx", None)
+    # xcrun wrapper must bring all args (Mac)
+    if compiler and compiler[0] == "xcrun":
         ccompiler.compiler[0] = get_config_var("CC")
         ccompiler.compiler_cxx[0] = get_config_var("CXX")
-    os.environ.setdefault("CC", ccompiler.compiler[0])
-    os.environ.setdefault("CXX", ccompiler.compiler_cxx[0])
+        compiler = ccompiler.compiler
+        compiler_cxx = ccompiler.compiler_cxx
+    if compiler:
+        os.environ.setdefault("CC", compiler[0])
+    if compiler_cxx:
+        os.environ.setdefault("CXX", compiler_cxx[0])
 
 
 def _check_cpp_compiler_version(min_version: str):
@@ -126,10 +134,128 @@ def _wrap_executable(output_name):
     shutil.copy(__file__, file_path)
 
 
-if __name__ == "__main__":
-    exe = _config_exe(os.path.basename(sys.argv[0]))
+def _wrapper_stem(argv0):
+    """Command name without a Windows launcher suffix."""
+    name = os.path.basename(argv0)
+    if os.name == "nt":
+        lower = name.lower()
+        for suffix in (".exe", ".cmd", ".bat"):
+            if lower.endswith(suffix):
+                return name[: -len(suffix)]
+    return name
 
-    if Path(exe).name.startswith("nrnivmodl"):
+
+def _nrnivmodl_help():
+    print("Usage: nrnivmodl [options] [mod files or directories with mod files]")
+    print("Options:")
+    print("  -h, --help                       Show this help message and exit.")
+    print(
+        "If no MOD files or directories provided then MOD files from current directory are used."
+    )
+
+
+def _collect_mod_files(args):
+    if not args:
+        mods = sorted(Path(".").glob("*.mod"))
+    elif len(args) == 1 and Path(args[0]).is_dir():
+        mods = sorted(Path(args[0]).glob("*.mod"))
+    else:
+        mods = [Path(item) for item in args]
+    resolved = []
+    for mod in mods:
+        if not mod.is_file():
+            raise SystemExit(f"nrnivmodl: ERROR: Mod file {mod} does not exist!")
+        resolved.append(mod.resolve())
+    return resolved
+
+
+def _nrnivmodl_cmake(args):
+    """Build nrnmech via the shipped neuron CMake package (Windows wheel path)."""
+    rest = list(args)
+    while rest and rest[0].startswith("-"):
+        opt = rest.pop(0)
+        if opt in ("-h", "--help"):
+            _nrnivmodl_help()
+            return 0
+        if opt == "-coreneuron":
+            raise SystemExit(
+                "nrnivmodl: -coreneuron is not enabled in this Windows wheel"
+            )
+        raise SystemExit(f"{opt} unrecognized, check available CLI options with --help")
+
+    print(os.getcwd())
+    mods = _collect_mod_files(rest)
+    if not mods:
+        print("nrnivmodl: no MOD files to compile")
+        return 0
+
+    cmake = shutil.which("cmake")
+    if not cmake:
+        raise SystemExit(
+            "nrnivmodl: cmake not found on PATH; install CMake and a C++ compiler"
+        )
+
+    prefix = Path(os.environ["NRNHOME"])
+    srcdir = prefix / "lib" / "cmake" / "neuron" / "nrnivmodl"
+    if not (srcdir / "CMakeLists.txt").is_file():
+        raise SystemExit(f"nrnivmodl: missing {srcdir / 'CMakeLists.txt'}")
+
+    units = prefix / "share" / "nrn" / "lib" / "nrnunits.lib"
+    if units.is_file():
+        os.environ.setdefault("MODLUNIT", str(units))
+
+    # Match CMAKE_SYSTEM_PROCESSOR (AMD64 on win_amd64) and Unix uname -m layout.
+    builddir = Path.cwd() / platform.machine()
+    cmake_cfg = [
+        cmake,
+        "-S",
+        str(srcdir),
+        "-B",
+        str(builddir),
+        f"-DNRNIVMODL_MOD_FILES={';'.join(str(m) for m in mods)}",
+        "-DNRNIVMODL_NEURON=ON",
+        "-DNRNIVMODL_CORENEURON=OFF",
+        "-DNRNIVMODL_SPECIAL=OFF",
+        f"-DCMAKE_PREFIX_PATH={prefix}",
+    ]
+    gen = os.environ.get("CMAKE_GENERATOR", "")
+    if os.name == "nt" and "Ninja" not in gen:
+        cmake_cfg.extend(["-A", "x64"])
+
+    subprocess.check_call(cmake_cfg)
+    build_cmd = [cmake, "--build", str(builddir), "--parallel"]
+    if os.name == "nt" and "Ninja" not in gen:
+        # neuronTargets-release.cmake; VS defaults to Debug otherwise.
+        build_cmd.extend(["--config", "Release"])
+    subprocess.check_call(build_cmd)
+
+    if os.name == "nt":
+        dest = Path.cwd() / "nrnmech.dll"
+        candidates = [
+            builddir / "nrnmech.dll",
+            builddir / "Release" / "nrnmech.dll",
+            builddir / "RelWithDebInfo" / "nrnmech.dll",
+            builddir / "Debug" / "nrnmech.dll",
+        ]
+        for src in candidates:
+            if src.is_file():
+                if src.resolve() != dest.resolve():
+                    shutil.copy2(src, dest)
+                print(f"nrnivmodl: {dest}")
+                return 0
+        raise SystemExit("nrnivmodl: nrnmech.dll was not produced")
+    return 0
+
+
+if __name__ == "__main__":
+    wrapper_name = _wrapper_stem(sys.argv[0])
+    exe = _config_exe(wrapper_name)
+
+    if wrapper_name.startswith("nrnivmodl"):
+        if os.name == "nt":
+            if wrapper_name in ("nrnivmodl-core", "nrnivmodl-all-cmake"):
+                raise SystemExit("nrnivmodl-core is not enabled in this Windows wheel")
+            sys.exit(_nrnivmodl_cmake(sys.argv[1:]))
         # To create a wrapper for special (so it also gets ENV vars) we intercept nrnivmodl
         _check_cpp_compiler_version("10.0")
         subprocess.check_call([exe, *sys.argv[1:]])

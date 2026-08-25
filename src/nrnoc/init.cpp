@@ -107,17 +107,14 @@ static char CHKmes[] = "The user defined name, %s, already exists\n";
 
 NRN_DLLSYM void (*nrnpy_reg_mech_p_)(int);
 
-int secondorder = 0;
+NRN_DLLSYM int secondorder = 0;
 int state_discon_allowed_;
-extern int nrn_nobanner_;
 double t, dt, clamp_resist, celsius, htablemin, htablemax;
 int nrn_netrec_state_adjust = 0;
 int nrn_sparse_partrans = 0;
 NRN_DLLSYM hoc_List* section_list;
 int nrn_global_ncell = 0; /* used to be rootnodecount */
 extern double hoc_default_dll_loaded_;
-extern int nrn_istty_;
-extern int nrn_nobanner_;
 static std::vector<double> morph_parm_default{DEF_diam};
 
 static HocParmLimits _hoc_parm_limits[] = {{"Ra", {1e-6, 1e9}},
@@ -163,7 +160,7 @@ short* pnt_receive_size;
 int nrn_has_net_event_cnt_;
 int* nrn_has_net_event_;
 int* nrn_prop_param_size_;
-int* nrn_prop_dparam_size_;
+NRN_DLLSYM int* nrn_prop_dparam_size_;
 int* nrn_dparam_ptr_start_;
 int* nrn_dparam_ptr_end_;
 NrnWatchAllocateFunc_t* nrn_watch_allocate_;

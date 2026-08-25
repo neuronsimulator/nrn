@@ -188,7 +188,7 @@ extern NRN_DLLSYM int n_memb_func;
 extern NRN_DLLSYM short* nrn_is_artificial_;
 extern NRN_DLLSYM cTemplate** nrn_pnt_template_;
 extern int* nrn_prop_param_size_;
-extern int* nrn_prop_dparam_size_;
+extern NRN_DLLSYM int* nrn_prop_dparam_size_;
 extern int nrn_dparam_semantics_to_int(const char*);
 extern std::vector<int>& nrn_mech_random_indices(int type);
 
