@@ -11,8 +11,10 @@
 // Do not add one-off per-symbol macros.
 // MSVC: WINDOWS_EXPORT_ALL_SYMBOLS covers functions only. Data (including
 // function pointers) must be NRN_DLLSYM or the consumer gets a local copy.
+// MinGW auto-exports like ELF. __declspec(dllimport) there looks up __imp_*
+// and fails against an auto-export import library (Windows installer).
 
-#if defined(_WIN32)
+#if defined(_MSC_VER)
 #define NRN_DLLEXPORT __declspec(dllexport)
 #define NRN_DLLIMPORT __declspec(dllimport)
 #else
