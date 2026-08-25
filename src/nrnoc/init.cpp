@@ -109,7 +109,8 @@ NRN_DLLSYM void (*nrnpy_reg_mech_p_)(int);
 
 NRN_DLLSYM int secondorder = 0;
 int state_discon_allowed_;
-double t, dt, clamp_resist, celsius, htablemin, htablemax;
+double t, dt, clamp_resist, htablemin, htablemax;
+NRN_DLLSYM double celsius;
 int nrn_netrec_state_adjust = 0;
 int nrn_sparse_partrans = 0;
 NRN_DLLSYM hoc_List* section_list;
@@ -152,9 +153,9 @@ BAMech** bamech_;
 
 NRN_DLLSYM cTemplate** nrn_pnt_template_; /* for finding artificial cells */
 /* for synaptic events. */
-pnt_receive_t* pnt_receive;
-pnt_receive_init_t* pnt_receive_init;
-short* pnt_receive_size;
+NRN_DLLSYM pnt_receive_t* pnt_receive;
+NRN_DLLSYM pnt_receive_init_t* pnt_receive_init;
+NRN_DLLSYM short* pnt_receive_size;
 
 /* values are type numbers of mechanisms which do net_send call */
 int nrn_has_net_event_cnt_;

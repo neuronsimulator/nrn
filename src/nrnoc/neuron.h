@@ -27,7 +27,7 @@ extern int nrn_shape_changed_;
 extern NRN_DLLSYM int diam_changed;
 extern int nrn_netrec_state_adjust, nrn_sparse_partrans;
 extern double clamp_resist;
-extern double celsius;
+extern NRN_DLLSYM double celsius;
 extern int stoprun;
 extern void fit_praxis(), attr_praxis(), pval_praxis(), stop_praxis();
 #if KEEP_NSEG_PARM

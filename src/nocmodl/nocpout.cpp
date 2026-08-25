@@ -376,9 +376,9 @@ void parout() {
                 continue;
             }
             if (s->subtype & ARRAY) {
-                Sprintf(buf, "extern double* %s;\n", s->name);
+                Sprintf(buf, "extern NRN_DLLSYM double* %s;\n", s->name);
             } else {
-                Sprintf(buf, "extern double %s;\n", s->name);
+                Sprintf(buf, "extern NRN_DLLSYM double %s;\n", s->name);
             }
             Lappendstr(defs_list, buf);
         }
@@ -416,7 +416,7 @@ extern void nrn_promote(Prop*, int, int);\n\
 
     /**** create special point process functions */
     if (point_process) {
-        Lappendstr(defs_list, "extern Prop* nrn_point_prop_;\n");
+        Lappendstr(defs_list, "extern NRN_DLLSYM Prop* nrn_point_prop_;\n");
         Lappendstr(defs_list, "static int _pointtype;\n");
         Lappendstr(defs_list,
                    "static void* _hoc_create_pnt(Object* _ho) { void* create_point_process(int, "
