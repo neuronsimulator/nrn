@@ -7,7 +7,10 @@
 #include "hocdec.h"
 #include "classreg.h"
 #include "ocfunc.h"
+#include "objcmd.h"
+#include "nrnpy.h"
 
+#include <cstring>
 #include <sstream>
 
 TEST_CASE("Test hoc interpreter", "[NEURON][hoc_interpreter]") {
@@ -16,6 +19,18 @@ TEST_CASE("Test hoc interpreter", "[NEURON][hoc_interpreter]") {
     hoc_pushx(5.0);
     hoc_add();
     REQUIRE(hoc_xpop() == 9.0);
+}
+
+TEST_CASE("HocCommand normalizes HOC execution success", "[NEURON][hoc_interpreter]") {
+    HocCommand command("hoc_ac_ = 42");
+    REQUIRE(command.execute(false) == 1);
+
+    HocCommand failing_command("hoc_ac_ =");
+    REQUIRE(failing_command.execute(false) == 0);
+
+    HocCommand overload_command("unused");
+    REQUIRE(overload_command.execute("hoc_ac_ = 43", false) == 1);
+    REQUIRE(overload_command.execute("hoc_ac_ =", false) == 0);
 }
 
 constexpr static auto check_tempobj_canary = 0xDEADBEEF;
@@ -190,6 +205,71 @@ SCENARIO("Test calling code from HOC that throws exceptions", "[NEURON][hoc_inte
 }
 
 #if USE_PYTHON
+namespace {
+int fake_hoccommand_exec_success(Object*) {
+    return 1;
+}
+int fake_hoccommand_exec_failure(Object*) {
+    return 0;
+}
+int fake_hoccommand_exec_strret_success(Object*, char* buf, int size) {
+    constexpr char result[] = "callback result";
+    std::strncpy(buf, result, size);
+    if (size > 0) {
+        buf[size - 1] = '\0';
+    }
+    return 1;
+}
+int fake_hoccommand_exec_strret_failure(Object*, char*, int) {
+    return 0;
+}
+}  // namespace
+
+TEST_CASE("HocCommand normalizes Python callback success", "[NEURON][hoc_interpreter][nrnpython]") {
+    char python_object_name[] = "PythonObject";
+    Symbol python_object_symbol{};
+    python_object_symbol.name = python_object_name;
+    cTemplate python_object_template{};
+    python_object_template.sym = &python_object_symbol;
+    Object python_object{};
+    python_object.refcount = 1;
+    python_object.ctemplate = &python_object_template;
+
+    auto const original_hoccommand_exec = neuron::python::methods.hoccommand_exec;
+    neuron::python::methods.hoccommand_exec = fake_hoccommand_exec_success;
+    int const success_status = [&] {
+        HocCommand command(&python_object);
+        return command.execute(false);
+    }();
+    neuron::python::methods.hoccommand_exec = fake_hoccommand_exec_failure;
+    int const failure_status = [&] {
+        HocCommand command(&python_object);
+        return command.execute(false);
+    }();
+    auto const original_hoccommand_exec_strret = neuron::python::methods.hoccommand_exec_strret;
+    neuron::python::methods.hoccommand_exec_strret = fake_hoccommand_exec_strret_success;
+    char success_buf[32]{};
+    int const strret_success_status = [&] {
+        HocCommand command(&python_object);
+        return command.exec_strret(success_buf, sizeof(success_buf), false);
+    }();
+    neuron::python::methods.hoccommand_exec_strret = fake_hoccommand_exec_strret_failure;
+    char failure_buf[32] = "unchanged";
+    int const strret_failure_status = [&] {
+        HocCommand command(&python_object);
+        return command.exec_strret(failure_buf, sizeof(failure_buf), false);
+    }();
+    neuron::python::methods.hoccommand_exec = original_hoccommand_exec;
+    neuron::python::methods.hoccommand_exec_strret = original_hoccommand_exec_strret;
+
+    REQUIRE(success_status == 1);
+    REQUIRE(failure_status == 0);
+    REQUIRE(strret_success_status == 1);
+    REQUIRE(std::strcmp(success_buf, "callback result") == 0);
+    REQUIRE(strret_failure_status == 0);
+    REQUIRE(std::strcmp(failure_buf, "unchanged") == 0);
+}
+
 TEST_CASE("Test hoc_array_access", "[NEURON][hoc_interpreter][nrnpython][array_access]") {
     REQUIRE(hoc_oc("nrnpython(\"avec = [0,1,2]\")\n"
                    "objref po\n"
