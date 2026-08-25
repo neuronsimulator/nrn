@@ -197,14 +197,27 @@ jobs:
           minor_version="$(python${{ inputs.python_version }} -c 'import sys;print(sys.version_info.minor)')"
           bash packaging/python/test_wheels.sh $(command -v python${{ inputs.python_version }}) wheelhouse/*cp3${minor_version}*.whl
 
-      # test_wheels.sh is Unix (venv/bin, gcc, mpirun). First MSVC bar: pip
-      # install the win_amd64 wheel and import neuron without setup.exe on PATH.
+      # test_wheels.sh is Unix (venv/bin, gcc, mpirun). MSVC: pip install the
+      # win_amd64 wheel, import + neuron.test(), then the python MS-MPI gate
+      # (mpiexec + h.nrnmpi_init). nrniv hoc under mpiexec still needs the
+      # Windows launchers / nrnpyenv.sh (deferred).
       - name: Test Windows wheel with ${{ inputs.python_version }}
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           $whl = Get-ChildItem wheelhouse/*cp3*.whl | Select-Object -First 1
           if (-not $whl) { throw "no wheel in wheelhouse" }
+          Remove-Item Env:PYTHONPATH -ErrorAction SilentlyContinue
+          Remove-Item Env:NEURONHOME -ErrorAction SilentlyContinue
+          $env:NEURON_MODULE_OPTIONS = "-nogui"
           python -m pip install --force-reinstall $whl.FullName
           python -c "import os, sys; print('python', sys.executable); import neuron; print(neuron.__file__); print(neuron.h.nrnversion()); print(neuron.h.neuronhome())"
           python -c "import neuron; neuron.test()"
+          $mpiBin = if (Test-Path 'C:\msmpi\bin\mpiexec.exe') { 'C:\msmpi\bin' } else { 'C:\msmpi\Bin' }
+          $mpiexec = Join-Path $mpiBin 'mpiexec.exe'
+          if (-not (Test-Path $mpiexec)) { throw "MS-MPI mpiexec not found under C:\msmpi" }
+          $env:Path = "$mpiBin;" + $env:Path
+          $py = (Get-Command python).Source
+          Write-Host "MS-MPI python gate: $mpiexec -n 2 $py src/parallel/test0.py"
+          & $mpiexec -n 2 $py src/parallel/test0.py -mpi --expected-hosts 2
+          if ($LASTEXITCODE -ne 0) { throw "MS-MPI python gate failed ($LASTEXITCODE)" }

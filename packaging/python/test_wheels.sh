@@ -205,6 +205,12 @@ run_parallel_test() {
       sudo update-alternatives --set mpi-${ARCH_DIR}-linux-gnu /usr/lib/${ARCH_DIR}-linux-gnu/openmpi/include
       run_mpi_test "mpirun.openmpi --oversubscribe" "OpenMPI" ""
 
+    # Windows Git-bash / GHA: MS-MPI. Python gate only — nrniv hoc under
+    # mpiexec still needs the Windows launchers / nrnpyenv.sh (deferred).
+    elif [[ "$OSTYPE" == msys* || "$OSTYPE" == cygwin* || "${RUNNER_OS}" == "Windows" ]]; then
+      echo "======= Testing MS-MPI ========"
+      mpiexec -n 2 "$python_exe" src/parallel/test0.py -mpi --expected-hosts 2
+
     # linux desktop or docker container used for wheel
     else
       export PATH=/opt/mpich/bin:$PATH

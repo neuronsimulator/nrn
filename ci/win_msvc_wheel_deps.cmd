@@ -19,6 +19,13 @@ if exist C:\msmpi\Lib rename C:\msmpi\Lib lib
 if exist C:\msmpi\Include rename C:\msmpi\Include include
 if exist c:\Windows\System32\msmpi.dll copy /Y "c:\Windows\System32\msmpi.dll" "c:\msmpi\lib\x64\msmpi.dll" || goto :error
 
+:: Later GHA steps need mpiexec on PATH. The installer writes the machine PATH;
+:: GitHub Actions does not reload it unless we append GITHUB_PATH.
+if defined GITHUB_PATH (
+    if exist C:\msmpi\bin echo C:\msmpi\bin>> "%GITHUB_PATH%"
+    if exist C:\msmpi\Bin echo C:\msmpi\Bin>> "%GITHUB_PATH%"
+)
+
 goto :EOF
 
 :error
