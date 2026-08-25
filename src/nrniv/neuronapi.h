@@ -22,6 +22,18 @@ typedef struct SymbolTableIterator SymbolTableIterator;
 typedef struct Symlist Symlist;
 typedef struct ShapePlotInterface ShapePlotInterface;
 
+/* Non-owning hooks for provider-backed object components. A read callback
+ * consumes the component's deferred object frame and pushes one HOC value.
+ * An assignment callback consumes the typed RHS (the callback can query
+ * nrn_stack_type()) and then the metadata frame.
+ * Callbacks must not throw across the C ABI. A provider that cannot complete
+ * an operation must drain its frame, push a placeholder of the expected type
+ * for reads, and record the error for the host to report after its nothrow HOC
+ * call. The internal Python provider is the sole exception: it uses NEURON's
+ * established hoc_execerror path. */
+typedef void (*nrn_component_func)(Object*, Symbol*, int nindex, int isfunc);
+typedef void (*nrn_component_asgn_func)(Object*);
+
 typedef enum {
     STACK_IS_STR = 1,
     STACK_IS_VAR = 2,
@@ -88,6 +100,11 @@ int nrn_pp_setpointer_pop(Object* pp, const char* name, char* error_msg, size_t 
  * Functions, objects, and the stack
  ****************************************/
 Symbol* nrn_symbol(const char* name);
+bool nrn_template_set_component_hooks(Symbol* template_sym,
+                                      nrn_component_func component,
+                                      nrn_component_asgn_func component_asgn,
+                                      char* error_msg,
+                                      size_t error_msg_size);
 void nrn_symbol_push(Symbol* sym);
 Symbol* nrn_symbol_pop(void);
 int nrn_symbol_type(const Symbol* sym);

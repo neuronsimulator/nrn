@@ -1,0 +1,232 @@
+// Verify that a runtime PythonObject provider receives component reads and
+// writes even when NEURON itself is compiled without Python support. This test
+// supplies minimal callbacks and exact values; it does not link to Python.
+#include <array>
+#include <cstring>
+#include <iostream>
+
+#include "neuronapi.h"
+
+using std::cerr;
+using std::endl;
+
+extern "C" void modl_reg() {}
+
+static int read_calls{};
+static int write_calls{};
+static bool read_frame_matches{};
+static bool method_call_matches{};
+static bool write_frame_matches{};
+static double assigned_value{};
+static int read_kind{};
+static int write_kind{};
+static char provider_text[] = "provider text";
+static char* provider_text_ptr = provider_text;
+static bool assigned_object_matches{};
+
+static bool check(bool cond, const char* msg) {
+    if (!cond) {
+        cerr << "FAIL: " << msg << endl;
+    }
+    return cond;
+}
+
+static void read_component(Object* obj, Symbol* member, int nindex, int isfunc) {
+    ++read_calls;
+    read_kind = 0;
+    if (isfunc) {
+        const double rhs = nrn_double_pop();
+        const double lhs = nrn_double_pop();
+        Object* frame_obj = nrn_object_pop();
+        method_call_matches = frame_obj == obj && nindex == 2 && (isfunc & 1);
+        if (frame_obj) {
+            nrn_object_unref(frame_obj);
+        }
+        nrn_double_push(lhs + rhs);
+        return;
+    }
+    Object* frame_obj = nrn_object_pop();
+    read_frame_matches = frame_obj == obj && member && nindex == 0 && isfunc == 0;
+    const char* name = member ? nrn_symbol_name(member) : nullptr;
+    if (name && std::strcmp(name, "text") == 0) {
+        read_kind = 1;
+    } else if (name && std::strcmp(name, "object") == 0) {
+        read_kind = 2;
+    } else if (name && std::strcmp(name, "nil") == 0) {
+        read_kind = 3;
+    }
+    if (frame_obj) {
+        nrn_object_unref(frame_obj);
+    }
+    if (read_kind == 1) {
+        nrn_str_push(&provider_text_ptr);
+    } else if (read_kind == 2) {
+        nrn_object_push(obj);
+    } else if (read_kind == 3) {
+        nrn_object_push(nullptr);
+    } else {
+        nrn_double_push(42.5);
+    }
+}
+
+static void write_component(Object* obj) {
+    ++write_calls;
+    auto rhs_type = nrn_stack_type();
+    if (rhs_type == STACK_IS_NUM) {
+        assigned_value = nrn_double_pop();
+    } else if (rhs_type == STACK_IS_STR) {
+        auto* value = nrn_str_pop();
+        write_kind = value && *value && std::strcmp(*value, "assigned text") == 0;
+    } else {
+        Object* assigned_object = nrn_object_pop();
+        assigned_object_matches = assigned_object == obj;
+        if (assigned_object) {
+            nrn_object_unref(assigned_object);
+        }
+        write_kind = assigned_object ? 2 : 3;
+    }
+    Object* frame_obj = nrn_object_pop();
+    Symbol* member = nrn_symbol_pop();
+    int nindex = nrn_int_pop();
+    const char* member_name = member ? nrn_symbol_name(member) : nullptr;
+    const bool known_member = member_name && (std::strcmp(member_name, "answer") == 0 ||
+                                              std::strcmp(member_name, "text") == 0 ||
+                                              std::strcmp(member_name, "object") == 0);
+    write_frame_matches = frame_obj == obj && known_member && nindex == 0;
+    if (frame_obj) {
+        nrn_object_unref(frame_obj);
+    }
+}
+
+int main(void) {
+    static std::array<const char*, 4> argv = {"runtime_pythonobject_marshaling",
+                                              "-nogui",
+                                              "-nopython",
+                                              nullptr};
+    nrn_init(3, argv.data());
+
+    bool ok = true;
+    Symbol* pyobject = nrn_symbol("PythonObject");
+    ok &= check(pyobject != nullptr, "stub PythonObject class is registered");
+
+    char bad_error[128]{};
+    nrn_double_push(9182.0);
+    ok &= check(!nrn_template_set_component_hooks(
+                    nullptr, read_component, write_component, bad_error, sizeof(bad_error)),
+                "invalid component registration fails closed");
+    ok &= check(bad_error[0] != '\0', "invalid component registration reports an error");
+    ok &= check(nrn_double_pop() == 9182.0,
+                "invalid component registration leaves the HOC stack untouched");
+
+    // A host provider identifies its PythonObject template and installs the
+    // two callbacks through the public opaque registration API.
+    char error[128]{};
+    ok &= check(nrn_template_set_component_hooks(
+                    pyobject, read_component, write_component, error, sizeof(error)),
+                "component hooks registered");
+
+    Object* obj = nrn_object_new(pyobject, 0);
+    ok &= check(obj != nullptr, "PythonObject constructed");
+    ok &= check(nrn_hoc_call("func read_component() { return $o1.answer }") == 0,
+                "read helper defined");
+    ok &= check(nrn_hoc_call("func call_component() { return $o1.add($2, $3) }") == 0,
+                "method-call helper defined");
+    ok &= check(nrn_hoc_call("proc write_component() { $o1.answer = $2 }") == 0,
+                "write helper defined");
+
+    nrn_double_push(1001.0);
+    nrn_object_push(obj);
+    nrn_function_call(nrn_symbol("read_component"), 1);
+    ok &= check(nrn_double_pop() == 42.5, "component read returns the provider's exact value");
+    ok &= check(nrn_double_pop() == 1001.0, "numeric read preserves the lower stack sentinel");
+    ok &= check(read_calls == 1, "component read callback runs exactly once");
+    ok &= check(read_frame_matches, "component read callback receives the expected frame");
+
+    nrn_double_push(1009.0);
+    nrn_object_push(obj);
+    nrn_double_push(12.5);
+    nrn_double_push(30.25);
+    nrn_function_call(nrn_symbol("call_component"), 3);
+    ok &= check(nrn_double_pop() == 42.75, "component method call returns the exact sum");
+    ok &= check(nrn_double_pop() == 1009.0,
+                "component method call preserves the lower stack sentinel");
+    ok &= check(method_call_matches, "component method callback receives call metadata");
+
+    nrn_double_push(1002.0);
+    nrn_object_push(obj);
+    nrn_double_push(73.25);
+    nrn_function_call(nrn_symbol("write_component"), 2);
+    nrn_double_pop();
+    ok &= check(nrn_double_pop() == 1002.0, "numeric write preserves the lower stack sentinel");
+    ok &= check(assigned_value == 73.25, "component write receives the exact assigned value");
+    ok &= check(write_calls == 1, "component write callback runs exactly once");
+    ok &= check(write_frame_matches, "component write callback receives the expected frame");
+
+    ok &= check(nrn_hoc_call("strfun read_text() { return $o1.text }") == 0,
+                "string read helper defined");
+    nrn_double_push(1003.0);
+    nrn_object_push(obj);
+    nrn_function_call(nrn_symbol("read_text"), 1);
+    auto* text = nrn_str_pop();
+    ok &= check(text && std::strcmp(*text, "provider text") == 0,
+                "component string read returns provider text");
+    ok &= check(nrn_double_pop() == 1003.0, "string read preserves the lower stack sentinel");
+
+    ok &= check(nrn_hoc_call("obfunc read_object() { return $o1.object }") == 0,
+                "object read helper defined");
+    nrn_double_push(1004.0);
+    nrn_object_push(obj);
+    nrn_function_call(nrn_symbol("read_object"), 1);
+    Object* returned = nrn_object_pop();
+    ok &= check(returned == obj, "component object read returns provider object");
+    if (returned) {
+        nrn_object_unref(returned);
+    }
+    ok &= check(nrn_double_pop() == 1004.0, "object read preserves the lower stack sentinel");
+
+    ok &= check(nrn_hoc_call("obfunc read_nil() { return $o1.nil }") == 0,
+                "nil read helper defined");
+    nrn_double_push(1005.0);
+    nrn_object_push(obj);
+    nrn_function_call(nrn_symbol("read_nil"), 1);
+    ok &= check(nrn_object_pop() == nullptr, "component nil read returns nil");
+    ok &= check(nrn_double_pop() == 1005.0, "nil read preserves the lower stack sentinel");
+
+    ok &= check(nrn_hoc_call("proc write_text() { $o1.text = $s2 }") == 0,
+                "string write helper defined");
+    nrn_double_push(1006.0);
+    nrn_object_push(obj);
+    nrn_str_push(&provider_text_ptr);
+    std::strcpy(provider_text, "assigned text");
+    nrn_function_call(nrn_symbol("write_text"), 2);
+    ok &= check(write_kind == 1, "component string write receives provider text");
+    ok &= check(write_frame_matches, "component string write receives the expected frame");
+    ok &= check(nrn_double_pop() == 0.0, "string write procedure result is balanced");
+    ok &= check(nrn_double_pop() == 1006.0, "string write preserves the lower stack sentinel");
+
+    ok &= check(nrn_hoc_call("proc write_object() { $o1.object = $o2 }") == 0,
+                "object write helper defined");
+    nrn_double_push(1007.0);
+    nrn_object_push(obj);
+    nrn_object_push(obj);
+    nrn_function_call(nrn_symbol("write_object"), 2);
+    ok &= check(write_kind == 2 && assigned_object_matches,
+                "component object write receives provider object");
+    ok &= check(write_frame_matches, "component object write receives the expected frame");
+    ok &= check(nrn_double_pop() == 0.0, "object write procedure result is balanced");
+    ok &= check(nrn_double_pop() == 1007.0, "object write preserves the lower stack sentinel");
+
+    ok &= check(nrn_hoc_call("proc write_nil() { $o1.object = $o2 }") == 0,
+                "nil write helper defined");
+    nrn_double_push(1008.0);
+    nrn_object_push(obj);
+    nrn_object_push(nullptr);
+    nrn_function_call(nrn_symbol("write_nil"), 2);
+    ok &= check(write_kind == 3, "component nil write receives nil");
+    ok &= check(write_frame_matches, "component nil write receives the expected frame");
+    ok &= check(nrn_double_pop() == 0.0, "nil write procedure result is balanced");
+    ok &= check(nrn_double_pop() == 1008.0, "nil write preserves the lower stack sentinel");
+
+    nrn_object_unref(obj);
+    return ok ? 0 : 1;
+}

@@ -871,6 +871,35 @@ Segments
 Functions, objects, and the stack
 ---------------------------------
 
+Reads and writes of provider-backed object components are dispatched through
+per-template hooks registered at runtime, rather than being selected when
+NEURON is compiled. An embedding host can therefore supply a provider even in
+a build configured with ``NRN_ENABLE_PYTHON=OFF``, without NEURON itself
+linking against Python. The legacy Python methods-table callbacks remain a
+compatibility fallback for providers that have not installed per-template
+hooks. When no provider is registered, ordinary template lookup is unchanged.
+
+.. c:function:: bool nrn_template_set_component_hooks(Symbol* template_sym, nrn_component_func component, nrn_component_asgn_func component_asgn, char* error_msg, size_t error_msg_size)
+
+    Register non-owning provider callbacks for all dynamic components of a HOC
+    template. The template symbol must remain valid, and callback code must
+    remain loaded while any instance exists. The read callback consumes the
+    deferred object frame and pushes exactly one HOC value; the assignment
+    callback consumes the typed RHS, available through :c:func:`nrn_stack_type`,
+    followed by the component metadata frame. Both callbacks use the public
+    stack pop/push functions and must not throw across the C ABI. On failure a
+    provider drains its frame, pushes a typed placeholder for reads, and
+    reports the error after the enclosing nothrow HOC call.
+
+    Passing a null template or either callback returns ``false`` and writes a
+    diagnostic to ``error_msg`` when space is provided. Registration is
+    fail-closed and does not modify the HOC stack.
+
+    The ``nindex``/``isfunc`` arguments preserve HOC method-call information.
+    Indexed component access additionally carries an interpreter dimension
+    marker; providers should wait for the public ``nrn_ndim_pop`` API before
+    advertising indexed components.
+
 .. c:function:: Symbol* nrn_symbol(const char* name)
 
     Get a symbol by name from NEURON's symbol table. Symbols represent variables,
