@@ -203,7 +203,18 @@ run_serial_test () {
     neurondemo -c 'demo(4)' -c 'run()' -c 'quit()'
 
     # Test 11: modlunit available (and can find nrnunits.lib)
-    modlunit tmp_mod/cacum.mod
+    # Windows: extensionless Scripts/modlunit is a Python wrapper, not a
+    # Win32 image (Error 193). modlunit.cmd is the PATHEXT wrapper.
+    # nrnunits.lib ships at .data/share/nrn/lib.
+    if [[ "$OSTYPE" == msys* || "$OSTYPE" == cygwin* || "${RUNNER_OS}" == "Windows" ]]; then
+      modlunit_cmd="$(dirname "$python_exe")/modlunit.cmd"
+      if [[ ! -f "$modlunit_cmd" ]]; then
+        modlunit_cmd="modlunit.cmd"
+      fi
+      "$modlunit_cmd" tmp_mod/cacum.mod
+    else
+      modlunit tmp_mod/cacum.mod
+    fi
 }
 
 
