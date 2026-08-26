@@ -1299,12 +1299,15 @@ endif()
 # Print build status
 # =============================================================================
 
-# just for printing the compiler flags in the build status
-string(TOUPPER ${CMAKE_BUILD_TYPE} BUILD_TYPE_UPPER)
+# just for printing the compiler flags in the build status. Quote CMAKE_BUILD_TYPE: it is empty on
+# Visual Studio / Xcode / Ninja Multi-Config.
+string(TOUPPER "${CMAKE_BUILD_TYPE}" BUILD_TYPE_UPPER)
 if(BUILD_TYPE_UPPER MATCHES "CUSTOM")
   set(COMPILER_FLAGS "${CMAKE_CXX_FLAGS}")
-else()
+elseif(BUILD_TYPE_UPPER)
   set(COMPILER_FLAGS "${CMAKE_CXX_FLAGS_${BUILD_TYPE_UPPER}}")
+else()
+  set(COMPILER_FLAGS "${CMAKE_CXX_FLAGS}")
 endif()
 string(JOIN " " COMPILER_FLAGS "${COMPILER_FLAGS}" ${NRN_COMPILE_FLAGS} ${CMAKE_CXX_FLAGS})
 
@@ -1330,7 +1333,14 @@ message(STATUS " Build option | Status")
 message(STATUS "--------------+--------------------------------------------------------------")
 message(STATUS "C COMPILER    | ${CMAKE_C_COMPILER}")
 message(STATUS "CXX COMPILER  | ${CMAKE_CXX_COMPILER}")
-message(STATUS "BUILD_TYPE    | ${CMAKE_BUILD_TYPE} (allowed: ${allowableBuildTypes})")
+if(CMAKE_CONFIGURATION_TYPES)
+  message(
+    STATUS
+      "BUILD_TYPE    | ${CMAKE_BUILD_TYPE} (multi-config: ${CMAKE_CONFIGURATION_TYPES}; allowed: ${allowableBuildTypes})"
+  )
+else()
+  message(STATUS "BUILD_TYPE    | ${CMAKE_BUILD_TYPE} (allowed: ${allowableBuildTypes})")
+endif()
 message(STATUS "COMPILE FLAGS | ${COMPILER_FLAGS}")
 message(STATUS "Shared        | ${NRN_ENABLE_SHARED}")
 message(STATUS "MPI           | ${NRN_ENABLE_MPI}")
