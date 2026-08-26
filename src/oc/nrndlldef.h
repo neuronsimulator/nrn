@@ -14,11 +14,20 @@
 // MinGW auto-exports like ELF. __declspec(dllimport) there looks up __imp_*
 // and fails against an auto-export import library (Windows installer).
 
-#if defined(_MSC_VER)
+// PE (MSVC and MinGW): __declspec(dllexport) fills the export table and
+// import library. ELF visibility("default") is a no-op on PE, so MinGW
+// hoc.pyd cannot find nrnpy_hoc / Py2NRNString::as_ascii in
+// libnrnpython.dll.a (Windows installer). dllimport stays MSVC-only:
+// MinGW auto-import works without it, and dllimport looks up __imp_*
+// that an auto-export libnrniv.dll.a does not provide.
+#if defined(_WIN32)
 #define NRN_DLLEXPORT __declspec(dllexport)
-#define NRN_DLLIMPORT __declspec(dllimport)
 #else
 #define NRN_DLLEXPORT __attribute__((visibility("default")))
+#endif
+#if defined(_MSC_VER)
+#define NRN_DLLIMPORT __declspec(dllimport)
+#else
 #define NRN_DLLIMPORT
 #endif
 
