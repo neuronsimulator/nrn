@@ -81,7 +81,8 @@ def main(argv):
             if not os.path.isfile(other):
                 sys.stderr.write("nrnpyenv.py: not a file: %s\n" % other)
                 return 1
-            os.execv(other, [other, os.path.abspath(__file__)])
+            # argv list, not a shell. other is a python executable path.
+            os.execv(other, [other, os.path.abspath(__file__)])  # NOSONAR
     pylib = find_pylib()
     print('export NRN_PYTHONEXE="%s"' % sys.executable)
     print('export NRN_PYTHONVERSION="%d.%d"' % sys.version_info[:2])

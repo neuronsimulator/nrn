@@ -276,5 +276,5 @@ if __name__ == "__main__":
         # (list2cmdline, same as nrnivmodl).
         if not os.path.isfile(exe):
             raise SystemExit(f"neuron wrapper: not a file: {exe}")
-        raise SystemExit(subprocess.call([exe, *sys.argv[1:]]))
+        raise SystemExit(subprocess.call([exe, *sys.argv[1:]]))  # NOSONAR
     os.execv(exe, sys.argv)
