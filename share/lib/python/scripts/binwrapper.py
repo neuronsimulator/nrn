@@ -272,6 +272,9 @@ if __name__ == "__main__":
     if os.name == "nt":
         # os.execv is not exec on Windows: it rebuilds a command line with
         # MSVCRT quoting, which splits -c statements that contain spaces
-        # (print "hello"). subprocess uses list2cmdline, same as nrnivmodl.
+        # (print "hello"). subprocess.call with a list is argv, not a shell
+        # (list2cmdline, same as nrnivmodl).
+        if not os.path.isfile(exe):
+            raise SystemExit(f"neuron wrapper: not a file: {exe}")
         raise SystemExit(subprocess.call([exe, *sys.argv[1:]]))
     os.execv(exe, sys.argv)

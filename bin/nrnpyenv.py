@@ -78,6 +78,9 @@ def main(argv):
     if len(argv) > 1 and argv[1]:
         other = argv[1]
         if os.path.abspath(other) != os.path.abspath(sys.executable):
+            if not os.path.isfile(other):
+                sys.stderr.write("nrnpyenv.py: not a file: %s\n" % other)
+                return 1
             os.execv(other, [other, os.path.abspath(__file__)])
     pylib = find_pylib()
     print('export NRN_PYTHONEXE="%s"' % sys.executable)
