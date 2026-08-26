@@ -200,7 +200,19 @@ run_serial_test () {
 
 
     # Test 10: run demo
-    neurondemo -c 'demo(4)' -c 'run()' -c 'quit()'
+    # Windows: extensionless Scripts/neurondemo is a Python wrapper, not a
+    # Win32 image (Error 193). neurondemo.cmd is the PATHEXT wrapper and
+    # ports bash neurondemo.in (nrnivmodl of share/nrn/demo/release, then
+    # nrniv -dll nrnmech.dll demo.hoc). -nogui: IV is not this gate.
+    if [[ "$OSTYPE" == msys* || "$OSTYPE" == cygwin* || "${RUNNER_OS}" == "Windows" ]]; then
+      neurondemo_cmd="$(dirname "$python_exe")/neurondemo.cmd"
+      if [[ ! -f "$neurondemo_cmd" ]]; then
+        neurondemo_cmd="neurondemo.cmd"
+      fi
+      "$neurondemo_cmd" -nogui -c "demo(4)" -c "run()" -c "quit()"
+    else
+      neurondemo -c 'demo(4)' -c 'run()' -c 'quit()'
+    fi
 
     # Test 11: modlunit available (and can find nrnunits.lib)
     # Windows: extensionless Scripts/modlunit is a Python wrapper, not a

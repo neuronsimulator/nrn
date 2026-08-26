@@ -249,9 +249,63 @@ def _nrnivmodl_cmake(args):
     return 0
 
 
+def _posix_path(path):
+    """Forward slashes: InterViews -dll style treats \\n in a Win32 path as newline."""
+    return str(path).replace("\\", "/")
+
+
+def _neurondemo(args):
+    """Port of bin/neurondemo.in for Windows wheels (no bash).
+
+    CMake skips generate-neurondemo-mechanism-library on WIN32; the demo
+    MOD sources ship at share/nrn/demo/release. First run compiles them
+    with the same nrnivmodl CMake path as Test 4 (cwd/nrnmech.dll), then
+    nrniv -dll that DLL demo.hoc. NRNDEMO is the HOC $(NRNDEMO) prefix
+    (trailing slash). Unix appends '-' so stdin is read after demo.hoc.
+    """
+    home = Path(os.environ["NEURONHOME"])
+    demo = home / "demo"
+    release = demo / "release"
+    hoc = demo / "demo.hoc"
+    if not hoc.is_file():
+        raise SystemExit(f"neurondemo: missing {hoc}")
+    if not release.is_dir():
+        raise SystemExit(f"neurondemo: missing {release}")
+
+    os.environ["NRNDEMO"] = _posix_path(demo) + "/"
+
+    marker = demo / "neuron"
+    dll = release / "nrnmech.dll"
+    if not marker.is_file():
+        saved = Path.cwd()
+        try:
+            os.chdir(release)
+            rc = _nrnivmodl_cmake([])
+        finally:
+            os.chdir(saved)
+        if rc:
+            return rc
+        if not dll.is_file():
+            raise SystemExit(f"neurondemo: nrnivmodl did not produce {dll}")
+        marker.write_text("")
+
+    nrniv = Path(os.environ["NRNHOME"]) / "bin" / "nrniv.exe"
+    if not nrniv.is_file():
+        raise SystemExit(f"neurondemo: not a file: {nrniv}")
+    cmd = [str(nrniv), "-dll", _posix_path(dll), _posix_path(hoc), *args, "-"]
+    # GHA pwsh keeps stdin open; '-' would hang if quit() never ran.
+    kwargs = {}
+    if not sys.stdin.isatty():
+        kwargs["stdin"] = subprocess.DEVNULL
+    return subprocess.call(cmd, **kwargs)  # NOSONAR
+
+
 if __name__ == "__main__":
     wrapper_name = _wrapper_stem(sys.argv[0])
     exe = _config_exe(wrapper_name)
+
+    if wrapper_name == "neurondemo" and os.name == "nt":
+        sys.exit(_neurondemo(sys.argv[1:]))
 
     if wrapper_name.startswith("nrnivmodl"):
         if os.name == "nt":
