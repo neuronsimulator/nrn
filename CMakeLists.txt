@@ -629,6 +629,14 @@ if(NRN_ENABLE_SHARED)
   if(MSVC)
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
   endif()
+  # GNU ld's PE default is export-all until any symbol is __declspec(dllexport);
+  # then only the explicit ones remain. NRN_EXPORT on p_cxx_char_alloc in the
+  # MPI plugin hid f_nrnmpi_newbuf (Windows installer: load_nrnmpi succeeds,
+  # then "The specified procedure could not be found"). Force the ELF-like
+  # default. Counterpart of CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS above.
+  if(MINGW)
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export-all-symbols")
+  endif()
 else()
   set(NRN_LIBRARY_TYPE "STATIC")
   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
