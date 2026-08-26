@@ -107,7 +107,18 @@ run_serial_test () {
     $python_exe -c "import neuron; neuron.test(); neuron.test_rxd()"
 
     # Test 2: execute nrniv
-    nrniv -c "print \"hello\""
+    # Windows: mpiexec cannot CreateProcess extensionless Scripts/nrniv
+    # (Error 2); nrniv.cmd is the PATHEXT wrapper. Git bash keeps the
+    # quoted hello string; quit() so a failed -c does not sit on stdin.
+    if [[ "$OSTYPE" == msys* || "$OSTYPE" == cygwin* || "${RUNNER_OS}" == "Windows" ]]; then
+      nrniv_cmd="$(dirname "$python_exe")/nrniv.cmd"
+      if [[ ! -f "$nrniv_cmd" ]]; then
+        nrniv_cmd="nrniv.cmd"
+      fi
+      "$nrniv_cmd" -c "print \"hello\"" -c "quit()"
+    else
+      nrniv -c "print \"hello\""
+    fi
 
     # Test 3: run coreneuron binary shipped inside wheel
     if [[ "$has_coreneuron" == "true" ]]; then

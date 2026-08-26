@@ -269,4 +269,9 @@ if __name__ == "__main__":
             sys.argv[0] + ".nrn"
         )  # original special is renamed special.nrn
 
+    if os.name == "nt":
+        # os.execv is not exec on Windows: it rebuilds a command line with
+        # MSVCRT quoting, which splits -c statements that contain spaces
+        # (print "hello"). subprocess uses list2cmdline, same as nrnivmodl.
+        raise SystemExit(subprocess.call([exe, *sys.argv[1:]]))
     os.execv(exe, sys.argv)
