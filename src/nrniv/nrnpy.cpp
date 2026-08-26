@@ -17,6 +17,7 @@
 #include <sstream>
 #if defined(NRNPYTHON_DYNAMICLOAD) && defined(_WIN32) && !defined(MINGW)
 #include <filesystem>
+#include <windows.h>
 #endif
 
 namespace neuron::python {
@@ -152,11 +153,21 @@ static void set_nrnpylib() {
 #elif defined(_WIN32)
             // pythonXY.dll is a Windows ABI fact; do not require bash/cygcheck.
             auto quote = [](std::string const& s) { return "\"" + s + "\""; };
-            auto script = (std::filesystem::path{neuron_home} / ".." / ".." / "bin" / "nrnpyenv.py")
-                              .lexically_normal()
-                              .string();
+            // nrnpyenv.py is installed next to nrniv.exe. Unix uses
+            // neuron_home/../../bin (neuron_home is prefix/share/nrn). Windows
+            // setneuronhome is two dirs up from the EXE (the prefix), so that
+            // relative path misses the wheel.
+            char exe[MAX_PATH];
+            DWORD n = GetModuleFileNameA(nullptr, exe, MAX_PATH);
+            if (n == 0 || n >= MAX_PATH) {
+                throw std::runtime_error("GetModuleFileNameA failed for nrnpyenv.py");
+            }
+            auto script = (std::filesystem::path{exe}.parent_path() / "nrnpyenv.py").string();
             std::string py = nrnpy_pyexe.empty() ? std::string{"python"} : nrnpy_pyexe;
-            return quote(py) + " " + quote(script);
+            // MSVC _popen uses cmd.exe /c. If the command starts with ", cmd
+            // strips the first and last quote, so "python" "script.py" becomes
+            // python" "script.py (ERROR_INVALID_NAME). Extra-wrap the command.
+            return quote(quote(py) + " " + quote(script));
 #else
             return "bash " + std::string{neuron_home} + "/../../bin/nrnpyenv.sh " + nrnpy_pyexe;
 #endif
