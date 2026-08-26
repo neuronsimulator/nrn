@@ -131,29 +131,48 @@ run_serial_test () {
     fi
 
     # Test 4: execute nrnivmodl and friends
-    compilers=("nrnivmodl" "nrnivmodl-cmake")
-    for compiler in "${compilers[@]}"; do
-        rm -rf $ARCH_DIR
-        ${compiler} tmp_mod
+    # Windows: PATHEXT wrapper nrnivmodl.cmd drives the shipped CMake
+    # package (not bash nrnivmodl.in). Output is cwd/nrnmech.dll, not
+    # uname -m/special (NRNIVMODL_SPECIAL=OFF). nrnivmodl-cmake is the
+    # same code path; cmake finds VS without vcvars.
+    if [[ "$OSTYPE" == msys* || "$OSTYPE" == cygwin* || "${RUNNER_OS}" == "Windows" ]]; then
+      nrnivmodl_cmd="$(dirname "$python_exe")/nrnivmodl.cmd"
+      if [[ ! -f "$nrnivmodl_cmd" ]]; then
+        nrnivmodl_cmd="nrnivmodl.cmd"
+      fi
+      rm -rf AMD64 nrnmech.dll
+      "$nrnivmodl_cmd" tmp_mod
+      if [[ ! -f nrnmech.dll ]]; then
+        echo "nrnivmodl Test 4 did not produce nrnmech.dll"
+        exit 1
+      fi
+      # Test 7: compiled mod is loadable (Windows auto-loads cwd/nrnmech.dll).
+      $python_exe -c "from neuron import h; s = h.Section(); s.insert('cacum'); quit()"
+    else
+      compilers=("nrnivmodl" "nrnivmodl-cmake")
+      for compiler in "${compilers[@]}"; do
+          rm -rf $ARCH_DIR
+          ${compiler} tmp_mod
 
-        # Test 5: execute special hoc interpreter
-        ./$ARCH_DIR/special -c "print \"hello\""
+          # Test 5: execute special hoc interpreter
+          ./$ARCH_DIR/special -c "print \"hello\""
 
-        # Test 6: run basic tests via python while loading shared library
-        $python_exe -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
-
-        # Test 7: run basic test to use compiled mod file
-        $python_exe -c "import neuron; from neuron import h; s = h.Section(); s.insert('cacum'); quit()"
-
-        # Test 8: run basic tests via special : azure pipelines get stuck with their
-        # own python from hosted cache (most likely security settings).
-        if [[ "$SKIP_EMBEDED_PYTHON_TEST" != "true" ]]; then
-          ./$ARCH_DIR/special -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
-          nrniv -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
-        else
+          # Test 6: run basic tests via python while loading shared library
           $python_exe -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
-        fi
-    done
+
+          # Test 7: run basic test to use compiled mod file
+          $python_exe -c "import neuron; from neuron import h; s = h.Section(); s.insert('cacum'); quit()"
+
+          # Test 8: run basic tests via special : azure pipelines get stuck with their
+          # own python from hosted cache (most likely security settings).
+          if [[ "$SKIP_EMBEDED_PYTHON_TEST" != "true" ]]; then
+            ./$ARCH_DIR/special -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
+            nrniv -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
+          else
+            $python_exe -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
+          fi
+      done
+    fi
 
     # Test 9: coreneuron execution via neuron
     if [[ "$has_coreneuron" == "true" ]]; then
@@ -247,8 +266,12 @@ test_wheel () {
     trap "rm -fr tmp_mod ${ARCH_DIR}" EXIT SIGINT
     cp share/examples/nrniv/nmodl/cacum.mod tmp_mod/
 
-    # check gcc and python versions
-    gcc --version && python --version
+    # check gcc and python versions (Windows wheel uses MSVC, not gcc)
+    if [[ "$OSTYPE" == msys* || "$OSTYPE" == cygwin* || "${RUNNER_OS}" == "Windows" ]]; then
+      python --version
+    else
+      gcc --version && python --version
+    fi
 
     echo "Using `which $python_exe` : `$python_exe --version`"
     echo "=========== SERIAL TESTS ==========="
