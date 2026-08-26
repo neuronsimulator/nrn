@@ -31,8 +31,12 @@
 #include <io.h>
 #include <process.h>
 #endif
+#ifdef _WIN32
+#include <conio.h>
+#endif
 
 #include <cfenv>
+#include <chrono>
 #include <condition_variable>
 #include <filesystem>
 #include <iostream>
@@ -62,7 +66,7 @@ NRN_DLLSYM int (*p_nrnpy_pyrun)(const char* fname);
 #define use_rl_getc_function
 #endif
 
-#if defined(MINGW)
+#if defined(_WIN32)
 extern int stdin_event_ready();
 #endif
 
@@ -931,7 +935,7 @@ int hoc_main1(int argc, const char** argv, const char** envp) {
     }
 }
 
-#ifdef MINGW
+#ifdef _WIN32
 namespace {
 std::mutex inputMutex_;
 std::condition_variable inputCond_;
@@ -941,13 +945,13 @@ std::thread* inputReady_;
 int inputReadyFlag_;
 int inputReadyVal_;
 }  // namespace
-extern "C" int getch();
 
 void inputReadyThread() {
     for (;;) {
-        // The pthread version had pthread_testcancel() here, but the thread was
-        // never cancelled.
-        int i = getch();
+        // Console keys are not InterViews window messages. Unix watches fd 0
+        // with select(); Windows cannot. Read the console on this thread
+        // (_getch) and PostThreadMessage(WM_QUIT) so session->run() returns.
+        int i = _getch();
         std::unique_lock<std::mutex> lock{inputMutex_};
         inputReadyFlag_ = 1;
         inputReadyVal_ = i;
@@ -1495,7 +1499,7 @@ extern int run_til_stdin(); /* runs the interviews event loop. Returns 1
 extern void hoc_notify_value(void);
 
 #if READLINE
-#ifdef MINGW
+#ifdef _WIN32
 extern "C" int (*rl_getc_function)(void);
 extern "C" int rl_getc(void);
 static int getc_hook(void) {
@@ -1508,7 +1512,7 @@ static int getc_hook(void) {
     //	printf("run til stdin\n");
     while (!inputReadyFlag_) {
         run_til_stdin();
-        usleep(10000);
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
     inputReadyFlag_ = 0;
     int i = inputReadyVal_;
@@ -1516,7 +1520,7 @@ static int getc_hook(void) {
     inputCond_.notify_one();
     return i;
 }
-#else /* not MINGW */
+#else /* not _WIN32 */
 
 #if defined(use_rl_getc_function)
 /* e.g. mac libedit.3.dylib missing rl_event_hook */
@@ -1564,7 +1568,7 @@ static int event_hook(void) {
 
 #endif /* not use_rl_getc_function */
 
-#endif /* not MINGW */
+#endif /* not _WIN32 */
 #endif /* READLINE */
 #endif /* INTERVIEWS */
 
@@ -1648,7 +1652,7 @@ int hoc_get_line(void) { /* supports re-entry. fill hoc_cbuf with next line */
             char* line;
             int n;
 #if INTERVIEWS
-#ifdef MINGW
+#ifdef _WIN32
             if (hoc_usegui) {
                 if (hoc_interviews && !hoc_in_yyparse) {
                     rl_getc_function = getc_hook;
@@ -1657,7 +1661,7 @@ int hoc_get_line(void) { /* supports re-entry. fill hoc_cbuf with next line */
                     rl_getc_function = rl_getc;
                 }
             }
-#else /* not MINGW */
+#else /* not _WIN32 */
 #if defined(use_rl_getc_function)
             if (hoc_interviews && !hoc_in_yyparse) {
                 rl_getc_function = getc_hook;
@@ -1673,7 +1677,7 @@ int hoc_get_line(void) { /* supports re-entry. fill hoc_cbuf with next line */
                 rl_event_hook = NULL;
             }
 #endif /* not use_rl_getc_function */
-#endif /* not MINGW */
+#endif /* not _WIN32 */
 #endif /* INTERVIEWS */
             if ((line = readline(hoc_promptstr)) == (char*) 0) {
                 extern int hoc_notify_stop;
