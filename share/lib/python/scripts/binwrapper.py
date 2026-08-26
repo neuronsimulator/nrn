@@ -254,6 +254,30 @@ def _posix_path(path):
     return str(path).replace("\\", "/")
 
 
+def _nrngui(args):
+    """Port of bin/nrngui.in for Windows wheels (no bash).
+
+    Unix: nrniv $NEURONHOME/lib/hoc/nrngui.hoc "$@" -
+    .data/bin/nrngui is that bash script (Error 193, same as stock
+    neurondemo). Hoc path uses forward slashes so InterViews style
+    does not treat \\n in share\\nrn as newline. Trailing - like Unix.
+    Do not copy src/mswin/bin/nrngui (MinGW setup.exe; no trailing -).
+    """
+    home = Path(os.environ["NEURONHOME"])
+    hoc = home / "lib" / "hoc" / "nrngui.hoc"
+    if not hoc.is_file():
+        raise SystemExit(f"nrngui: missing {hoc}")
+    nrniv = Path(os.environ["NRNHOME"]) / "bin" / "nrniv.exe"
+    if not nrniv.is_file():
+        raise SystemExit(f"nrngui: not a file: {nrniv}")
+    cmd = [str(nrniv), _posix_path(hoc), *args, "-"]
+    # GHA pwsh keeps stdin open; '-' would hang if quit() never ran.
+    kwargs = {}
+    if not sys.stdin.isatty():
+        kwargs["stdin"] = subprocess.DEVNULL
+    return subprocess.call(cmd, **kwargs)  # NOSONAR
+
+
 def _neurondemo(args):
     """Port of bin/neurondemo.in for Windows wheels (no bash).
 
@@ -303,6 +327,9 @@ def _neurondemo(args):
 if __name__ == "__main__":
     wrapper_name = _wrapper_stem(sys.argv[0])
     exe = _config_exe(wrapper_name)
+
+    if wrapper_name == "nrngui" and os.name == "nt":
+        sys.exit(_nrngui(sys.argv[1:]))
 
     if wrapper_name == "neurondemo" and os.name == "nt":
         sys.exit(_neurondemo(sys.argv[1:]))
