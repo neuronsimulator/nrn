@@ -88,22 +88,24 @@ def _config_exe(exe_name):
     os.environ["NEURONHOME"] = os.path.join(NRN_PREFIX, "share/nrn")
     os.environ["NRNHOME"] = NRN_PREFIX
     os.environ["CORENRNHOME"] = NRN_PREFIX
+    # nrniv skips bash nrnpyenv.sh only when all three NRN_PY* are set.
     os.environ["NRN_PYTHONEXE"] = sys.executable
     os.environ["CORENRN_PYTHONEXE"] = sys.executable
+    os.environ["NRN_PYTHONVERSION"] = "{}.{}".format(*sys.version_info[:2])
     os.environ["NRNBIN"] = os.path.dirname(__file__)
 
     if "NMODLHOME" not in os.environ:
         os.environ["NMODLHOME"] = NRN_PREFIX
-    if "NMODL_PYLIB" not in os.environ:
-        result = find_libpython()
-        if not result:
-            raise ValueError(
-                "unable to locate the Python shared library; "
-                "please make sure it is installed, "
-                "or set the environmental variable `NMODL_PYLIB` "
-                "manually to the path to the Python shared library"
-            )
-        os.environ["NMODL_PYLIB"] = result
+    pylib = os.environ.get("NMODL_PYLIB") or find_libpython()
+    if not pylib:
+        raise ValueError(
+            "unable to locate the Python shared library; "
+            "please make sure it is installed, "
+            "or set the environmental variable `NMODL_PYLIB` "
+            "manually to the path to the Python shared library"
+        )
+    os.environ["NMODL_PYLIB"] = pylib
+    os.environ["NRN_PYLIB"] = pylib
 
     # nmodl module is inside <prefix>/lib directory
     sys.path.insert(0, os.path.join(NRN_PREFIX, "lib"))

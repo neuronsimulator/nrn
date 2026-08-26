@@ -198,9 +198,8 @@ jobs:
           bash packaging/python/test_wheels.sh $(command -v python${{ inputs.python_version }}) wheelhouse/*cp3${minor_version}*.whl
 
       # test_wheels.sh is Unix (venv/bin, gcc, mpirun). MSVC: pip install the
-      # win_amd64 wheel, import + neuron.test(), then the python MS-MPI gate
-      # (mpiexec + h.nrnmpi_init). nrniv hoc under mpiexec still needs the
-      # Windows launchers / nrnpyenv.sh (deferred).
+      # win_amd64 wheel, import + neuron.test(), python MS-MPI, then nrniv.cmd
+      # hoc under mpiexec (wrapper sets NRN_PY* so nrniv.exe skips bash).
       - name: Test Windows wheel with ${{ inputs.python_version }}
         if: runner.os == 'Windows'
         shell: pwsh
@@ -221,3 +220,8 @@ jobs:
           Write-Host "MS-MPI python gate: $mpiexec -n 2 $py src/parallel/test0.py"
           & $mpiexec -n 2 $py src/parallel/test0.py -mpi --expected-hosts 2
           if ($LASTEXITCODE -ne 0) { throw "MS-MPI python gate failed ($LASTEXITCODE)" }
+          $nrniv = Join-Path (Split-Path $py) 'nrniv.cmd'
+          if (-not (Test-Path $nrniv)) { throw "nrniv.cmd not found next to $py" }
+          Write-Host "MS-MPI nrniv gate: $mpiexec -n 2 $nrniv src/parallel/test0.hoc"
+          & $mpiexec -n 2 $nrniv src/parallel/test0.hoc -mpi --expected-hosts 2
+          if ($LASTEXITCODE -ne 0) { throw "MS-MPI nrniv gate failed ($LASTEXITCODE)" }

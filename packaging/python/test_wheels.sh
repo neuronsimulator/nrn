@@ -205,11 +205,16 @@ run_parallel_test() {
       sudo update-alternatives --set mpi-${ARCH_DIR}-linux-gnu /usr/lib/${ARCH_DIR}-linux-gnu/openmpi/include
       run_mpi_test "mpirun.openmpi --oversubscribe" "OpenMPI" ""
 
-    # Windows Git-bash / GHA: MS-MPI. Python gate only — nrniv hoc under
-    # mpiexec still needs the Windows launchers / nrnpyenv.sh (deferred).
+    # Windows Git-bash / GHA: MS-MPI. mpiexec cannot CreateProcess the
+    # extensionless Scripts/nrniv (Error 2); nrniv.cmd is the PATHEXT wrapper.
     elif [[ "$OSTYPE" == msys* || "$OSTYPE" == cygwin* || "${RUNNER_OS}" == "Windows" ]]; then
       echo "======= Testing MS-MPI ========"
       mpiexec -n 2 "$python_exe" src/parallel/test0.py -mpi --expected-hosts 2
+      nrniv_cmd="$(dirname "$python_exe")/nrniv.cmd"
+      if [[ ! -f "$nrniv_cmd" ]]; then
+        nrniv_cmd="nrniv.cmd"
+      fi
+      mpiexec -n 2 "$nrniv_cmd" src/parallel/test0.hoc -mpi --expected-hosts 2
 
     # linux desktop or docker container used for wheel
     else
