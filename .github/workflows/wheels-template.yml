@@ -215,8 +215,19 @@ jobs:
           python -c "import os, sys; print('python', sys.executable); import neuron; print(neuron.__file__); print(neuron.h.nrnversion()); print(neuron.h.neuronhome())"
           python -c "import neuron; neuron.test()"
           $py = (Get-Command python).Source
-          $nrniv = Join-Path (Split-Path $py) 'nrniv.cmd'
-          if (-not (Test-Path $nrniv)) { throw "nrniv.cmd not found next to $py" }
+          # venv: python.exe and *.cmd live in Scripts/. Hosted CPython:
+          # python.exe is in the prefix, pip console scripts in Scripts/.
+          function Get-NrnCmd([string]$name) {
+            $pydir = Split-Path $py
+            foreach ($c in @(
+              (Join-Path $pydir "$name.cmd"),
+              (Join-Path $pydir "Scripts\$name.cmd")
+            )) {
+              if (Test-Path $c) { return $c }
+            }
+            throw "$name.cmd not found next to $py or in Scripts"
+          }
+          $nrniv = Get-NrnCmd 'nrniv'
           # Unix Test 2 is nrniv -c 'print "hello"'. pwsh -> cmd %* drops the
           # inner quotes (print hello is an undefined variable). print 42 is
           # the same hoc print statement. mpiexec cannot CreateProcess
@@ -228,8 +239,7 @@ jobs:
           # Windows nrnivmodl is the CMake package (not bash nrnivmodl.in);
           # output is cwd/nrnmech.dll and NRNIVMODL_SPECIAL is OFF. cmake
           # finds VS without vcvars; cl.exe need not be on PATH.
-          $nrnivmodl = Join-Path (Split-Path $py) 'nrnivmodl.cmd'
-          if (-not (Test-Path $nrnivmodl)) { throw "nrnivmodl.cmd not found next to $py" }
+          $nrnivmodl = Get-NrnCmd 'nrnivmodl'
           if (-not (Get-Command cmake -ErrorAction SilentlyContinue)) { throw "cmake not on PATH for nrnivmodl" }
           $modsrc = Join-Path $pwd 'share/examples/nrniv/nmodl/cacum.mod'
           if (-not (Test-Path $modsrc)) { throw "cacum.mod not found at $modsrc" }
@@ -248,8 +258,7 @@ jobs:
           # Unix Test 11 is modlunit tmp_mod/cacum.mod (find nrnunits.lib).
           # Extensionless Scripts\modlunit is a Python wrapper, not a Win32
           # image (Error 193). modlunit.cmd is the PATHEXT wrapper.
-          $modlunit = Join-Path (Split-Path $py) 'modlunit.cmd'
-          if (-not (Test-Path $modlunit)) { throw "modlunit.cmd not found next to $py" }
+          $modlunit = Get-NrnCmd 'modlunit'
           python -c "import os, neuron; p=os.path.join(str(neuron.h.neuronhome()), 'lib', 'nrnunits.lib'); print(p); assert os.path.isfile(p), p"
           if ($LASTEXITCODE -ne 0) { throw "nrnunits.lib not found for modlunit Test 11" }
           $mod = Join-Path 'tmp_mod' 'cacum.mod'
