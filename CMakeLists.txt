@@ -60,13 +60,16 @@ if(SKBUILD)
   set(FMT_INC_DIR "${NRN_INSTALL_DATA_PREFIX}include")
   set(FMT_PKGCONFIG_DIR "${NRN_INSTALL_DATA_PREFIX}lib/pkgconfig")
   set(FMT_CMAKE_DIR "${NRN_INSTALL_DATA_PREFIX}lib/cmake/fmt")
-  # need to force IV install prefixes
-  set(IV_LIB_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}lib")
-  set(IV_HEADERS_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}include")
-  set(IV_BIN_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}bin")
 else()
   set(NRN_INSTALL_DATA_PREFIX "./")
 endif()
+# IV defaults IV_{LIB,HEADERS,BIN}_INSTALL_DIR to ${CMAKE_INSTALL_PREFIX}/lib
+# (absolute). CMake then emits CMAKE_ABSOLUTE_DESTINATION_FILES, so
+# cmake --install --prefix relocates NEURON but leaves InterViews at the
+# configure prefix. Keep destinations relative for wheels and source installs.
+set(IV_LIB_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}lib")
+set(IV_HEADERS_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}include")
+set(IV_BIN_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}bin")
 
 # Make python install path relative to CMAKE_INSTALL_PREFIX
 if(IS_ABSOLUTE "${NRN_INSTALL_PYTHON_PREFIX}")
