@@ -192,14 +192,13 @@ endforeach()
 # ringtest + connect_dend (HOC via foreign nrniv + RunHOCTest.cmake)
 # ---------------------------------------------------------------------------
 if(NOT NRN_FOREIGN_NRNIV STREQUAL "")
+  nrn_foreign_cmake_env_path(_nrn_hoc_path "${_nrn_foreign_py_bindir}")
   set(_ring_dir "${CMAKE_BINARY_DIR}/test/ringtest")
   file(MAKE_DIRECTORY "${_ring_dir}")
   add_test(
     NAME foreign::ringtest
     COMMAND
-      ${CMAKE_COMMAND} -E env "PYTHONPATH="
-      "PATH=${_nrn_foreign_py_bindir}${NRN_FOREIGN_ENV_SEP}$ENV{PATH}"
-      ${CMAKE_COMMAND}
+      ${CMAKE_COMMAND} -E env "PYTHONPATH=" "${_nrn_hoc_path}" ${CMAKE_COMMAND}
       -Dhoc_library_path=${NRN_FOREIGN_SOURCE_ROOT}/test/ringtest
       -Dexecutable=${NRN_FOREIGN_NRNIV}
       -Dexec_arg=${NRN_FOREIGN_SOURCE_ROOT}/test/ringtest/ring.hoc
@@ -215,9 +214,8 @@ if(NOT NRN_FOREIGN_NRNIV STREQUAL "")
   add_test(
     NAME foreign::connect_dend
     COMMAND
-      ${CMAKE_COMMAND} -E env "PYTHONPATH="
-      "PATH=${_nrn_foreign_py_bindir}${NRN_FOREIGN_ENV_SEP}$ENV{PATH}"
-      ${CMAKE_COMMAND} -Dexecutable=${NRN_FOREIGN_NRNIV}
+      ${CMAKE_COMMAND} -E env "PYTHONPATH=" "${_nrn_hoc_path}" ${CMAKE_COMMAND}
+      -Dexecutable=${NRN_FOREIGN_NRNIV}
       -Dexec_arg=${NRN_FOREIGN_SOURCE_ROOT}/test/hoc_tests/connect_dend/connect_dend.hoc
       -Dout_file=cell3soma.dat
       -Dref_file=${NRN_FOREIGN_SOURCE_ROOT}/test/hoc_tests/connect_dend/cell3soma.dat.ref

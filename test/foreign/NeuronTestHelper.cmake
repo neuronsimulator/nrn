@@ -510,6 +510,19 @@ function(nrn_add_test)
       cpp_cc_build_time_copy(
         INPUT "${test_source_directory}/${sim_directory}/${script_file}" OUTPUT
         "${working_directory}/${script_file}" NO_TARGET)
+      # VS multi-config: cmake --build --target foreign may not rebuild every
+      # copy-scripts utility project after reconfigure. Place the files now so
+      # ctest does not see an empty working directory. Build-time copy still
+      # refreshes after script edits.
+      if(WIN32 AND NRN_FOREIGN_MODE)
+        set(_nrn_script_src
+            "${test_source_directory}/${sim_directory}/${script_file}")
+        set(_nrn_script_dst "${working_directory}/${script_file}")
+        get_filename_component(_nrn_script_dstdir "${_nrn_script_dst}"
+                               DIRECTORY)
+        file(MAKE_DIRECTORY "${_nrn_script_dstdir}")
+        file(COPY "${_nrn_script_src}" DESTINATION "${_nrn_script_dstdir}")
+      endif()
       list(APPEND all_copied_script_files "${working_directory}/${script_file}")
     endforeach()
   endforeach()
@@ -635,20 +648,26 @@ function(nrn_add_test)
   #   the tests in parallel (which precludes blindly running everything in the
   #   same directory).
   set(_nrn_add_test_command ${NRN_ADD_TEST_COMMAND})
+  # cmake -E env uses CreateProcess, which does not search PATH for .cmd. Wheel
+  # Scripts/nrniv is a cmd wrapper; NRN_FOREIGN_NRNIV is nrniv.exe.
   if(WIN32
      AND NRN_FOREIGN_MODE
-     AND DEFINED nrnivmodl_directory
      AND NRN_FOREIGN_NRNIV)
-    list(LENGTH _nrn_add_test_command _nrn_add_test_n)
-    if(_nrn_add_test_n GREATER 0)
-      list(GET _nrn_add_test_command 0 _nrn_add_test_argv0)
-      if(_nrn_add_test_argv0 STREQUAL "special")
-        list(REMOVE_AT _nrn_add_test_command 0)
-        set(_nrn_add_test_command
-            "${NRN_FOREIGN_NRNIV}" -dll "${working_directory}/nrnmech.dll"
-            ${_nrn_add_test_command})
+    set(_nrn_rewritten_command)
+    foreach(_nrn_tok ${_nrn_add_test_command})
+      if(_nrn_tok STREQUAL "special")
+        list(APPEND _nrn_rewritten_command "${NRN_FOREIGN_NRNIV}")
+        if(DEFINED nrnivmodl_directory)
+          list(APPEND _nrn_rewritten_command -dll
+               "${working_directory}/nrnmech.dll")
+        endif()
+      elseif(_nrn_tok STREQUAL "nrniv")
+        list(APPEND _nrn_rewritten_command "${NRN_FOREIGN_NRNIV}")
+      else()
+        list(APPEND _nrn_rewritten_command "${_nrn_tok}")
       endif()
-    endif()
+    endforeach()
+    set(_nrn_add_test_command "${_nrn_rewritten_command}")
   endif()
   add_test(
     NAME "${test_name}"
