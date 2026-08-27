@@ -47,9 +47,6 @@ if(DEFINED NRN_FOREIGN_SITE_PYTHONPATH AND NOT NRN_FOREIGN_SITE_PYTHONPATH
       "${NRN_FOREIGN_SITE_PYTHONPATH}${NRN_FOREIGN_ENV_SEP}${_nrn_foreign_test_pythonpath}"
   )
 endif()
-set(NRN_RUN_FROM_BUILD_DIR_ENV
-    "PATH=${NRN_FOREIGN_PATH_PREFIX}${NRN_FOREIGN_ENV_SEP}$ENV{PATH}"
-    "PYTHONPATH=${_nrn_foreign_test_pythonpath}")
 
 # Prefer the foreign interpreter for any test that runs Python.
 set(NRN_DEFAULT_PYTHON_EXECUTABLE "${NRN_FOREIGN_PYTHON}")
@@ -76,11 +73,6 @@ if(NRN_ENABLE_MPI AND NOT MPIEXEC_NAME STREQUAL "")
     set(MPIEXEC_OVERSUBSCRIBE "--oversubscribe")
   endif()
   get_filename_component(_nrn_foreign_mpiexec_dir "${MPIEXEC_NAME}" DIRECTORY)
-  # Ensure launcher directory is on PATH for nested tools (keep site
-  # PYTHONPATH).
-  set(NRN_RUN_FROM_BUILD_DIR_ENV
-      "PATH=${NRN_FOREIGN_PATH_PREFIX}${NRN_FOREIGN_ENV_SEP}${_nrn_foreign_mpiexec_dir}${NRN_FOREIGN_ENV_SEP}$ENV{PATH}"
-      "PYTHONPATH=${_nrn_foreign_test_pythonpath}")
   message(STATUS "Foreign mpiexec           : ${MPIEXEC_NAME}")
   message(STATUS "Foreign mpiexec oversub   : ${MPIEXEC_OVERSUBSCRIBE}")
 endif()
@@ -121,6 +113,15 @@ if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/NeuronTestHelper.cmake")
 else()
   include("${NRN_FOREIGN_SOURCE_ROOT}/cmake/NeuronTestHelper.cmake")
 endif()
+
+nrn_foreign_cmake_env_path(_nrn_run_path "${NRN_FOREIGN_PATH_PREFIX}")
+if(DEFINED _nrn_foreign_mpiexec_dir AND NOT _nrn_foreign_mpiexec_dir STREQUAL
+                                        "")
+  nrn_foreign_cmake_env_path(_nrn_run_path "${NRN_FOREIGN_PATH_PREFIX}"
+                             "${_nrn_foreign_mpiexec_dir}")
+endif()
+set(NRN_RUN_FROM_BUILD_DIR_ENV "${_nrn_run_path}"
+                               "PYTHONPATH=${_nrn_foreign_test_pythonpath}")
 
 # Collect nrnivmodl custom targets so the top-level `foreign` target can depend
 # on them.

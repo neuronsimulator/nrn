@@ -118,6 +118,28 @@ if(NOT DEFINED NRN_FOREIGN_ENV_SEP)
     set(NRN_FOREIGN_ENV_SEP ":")
   endif()
 endif()
+# CMake lists split on ';'. Escape PATH so cmake -E env gets one NAME=VALUE.
+function(nrn_foreign_cmake_env_path out_var)
+  set(_acc "")
+  foreach(_p ${ARGN})
+    if(NOT _p STREQUAL "")
+      if(_acc STREQUAL "")
+        set(_acc "${_p}")
+      else()
+        set(_acc "${_acc}${NRN_FOREIGN_ENV_SEP}${_p}")
+      endif()
+    endif()
+  endforeach()
+  if(_acc STREQUAL "")
+    set(_acc "$ENV{PATH}")
+  else()
+    set(_acc "${_acc}${NRN_FOREIGN_ENV_SEP}$ENV{PATH}")
+  endif()
+  string(REPLACE ";" "\\;" _acc "${_acc}")
+  set(${out_var}
+      "PATH=${_acc}"
+      PARENT_SCOPE)
+endfunction()
 
 # Load the cpp_cc_build_time_copy helper function (or a minimal fallback).
 if(DEFINED CODING_CONV_CMAKE AND EXISTS
@@ -547,12 +569,11 @@ function(nrn_add_test)
     endif()
     # PATH will already be set in test_env
     if(WIN32 AND NRN_FOREIGN_MODE)
-      list(
-        TRANSFORM test_env
-        REPLACE
-          "^PATH="
-          "PATH=${nrnivmodl_directory}${NRN_FOREIGN_ENV_SEP}${working_directory}${NRN_FOREIGN_ENV_SEP}"
-      )
+      list(FILTER test_env EXCLUDE REGEX "^PATH=")
+      nrn_foreign_cmake_env_path(
+        _nrn_test_path "${nrnivmodl_directory}" "${working_directory}"
+        "${NRN_FOREIGN_PATH_PREFIX}")
+      list(INSERT test_env 0 "${_nrn_test_path}")
     else()
       list(
         TRANSFORM test_env
