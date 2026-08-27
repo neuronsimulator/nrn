@@ -14,6 +14,7 @@ import os
 import sysconfig
 import uuid
 import sys
+import subprocess
 import itertools
 from numpy.ctypeslib import ndpointer
 import re
@@ -520,58 +521,185 @@ def _find_librxdmath():
     return dll
 
 
+def _is_msvc_cxx(cxx):
+    name = os.path.basename(cxx.replace('"', "").split()[0]).lower()
+    return name in ("cl", "cl.exe", "clang-cl", "clang-cl.exe")
+
+
+def _win_env_get(env, name):
+    want = name.lower()
+    for k, v in env.items():
+        if k.lower() == want:
+            return v
+    return ""
+
+
+def _win_env_find_exe(env, exe):
+    for p in _win_env_get(env, "PATH").split(";"):
+        cand = os.path.join(p, exe)
+        if p and os.path.isfile(cand):
+            return cand
+    return None
+
+
+def _apply_vc_env(env, vc):
+    env.update(vc)
+    for name in ("PATH", "INCLUDE", "LIB", "LIBPATH"):
+        val = _win_env_get(vc, name)
+        if val:
+            env[name] = val
+
+
+def _msvc_vc_env():
+    """cl.exe needs the vcvars INCLUDE/LIB/PATH. vswhere is the public lookup."""
+    vswhere = os.path.join(
+        os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)"),
+        "Microsoft Visual Studio",
+        "Installer",
+        "vswhere.exe",
+    )
+    if os.path.isfile(vswhere):
+        try:
+            inst = subprocess.check_output(
+                [
+                    vswhere,
+                    "-latest",
+                    "-products",
+                    "*",
+                    "-requires",
+                    "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
+                    "-property",
+                    "installationPath",
+                ],
+                text=True,
+            ).strip()
+            vcvars = os.path.join(inst, "VC", "Auxiliary", "Build", "vcvarsall.bat")
+            if os.path.isfile(vcvars):
+                blob = subprocess.check_output(
+                    f'"{vcvars}" x64 >nul && set',
+                    shell=True,
+                    text=True,
+                    stderr=subprocess.DEVNULL,
+                )
+                env = {}
+                for line in blob.splitlines():
+                    if "=" in line:
+                        k, _, v = line.partition("=")
+                        env[k] = v
+                if _win_env_find_exe(env, "cl.exe"):
+                    return env
+        except (OSError, subprocess.CalledProcessError):
+            pass
+    try:
+        from setuptools._distutils._msvccompiler import _get_vc_env
+
+        extra = _get_vc_env("x86_amd64")
+        if extra and _win_env_find_exe(extra, "cl.exe"):
+            return extra
+    except Exception:
+        pass
+    return None
+
+
 def _cxx_compile(formula):
     filename = "rxddll" + str(uuid.uuid1())
-    with open(filename + ".cpp", "w") as f:
+    src = filename + ".cpp"
+    out = os.path.abspath(filename) + ".so"
+    with open(src, "w") as f:
         f.write(formula)
-    math_library = "-lm"
-    fpic = "-fPIC"
-    try:
-        gcc = os.environ["CXX"]
-    except:
-        # when running on windows try and used the gcc included with NEURON
-        if sys.platform.lower().startswith("win"):
-            math_library = ""
-            fpic = ""
-            gcc = os.path.join(
-                h.neuronhome(), "mingw", "mingw64", "bin", "x86_64-w64-mingw32-g++.exe"
-            )
-            if not os.path.isfile(gcc):
+    include = sysconfig.get_path("include")
+    rxdmath = _find_librxdmath()
+    cxx = os.environ.get("CXX")
+    env = os.environ.copy()
+    use_msvc = False
+    if cxx:
+        use_msvc = _is_msvc_cxx(cxx)
+        if use_msvc:
+            vc = _msvc_vc_env()
+            if vc:
+                _apply_vc_env(env, vc)
+                if not os.path.isfile(cxx):
+                    cxx = _win_env_find_exe(vc, "cl.exe") or cxx
+    elif sys.platform.lower().startswith("win"):
+        # setup.exe ships MinGW; the MSVC wheel does not.
+        mingw = os.path.join(
+            h.neuronhome(), "mingw", "mingw64", "bin", "x86_64-w64-mingw32-g++.exe"
+        )
+        if os.path.isfile(mingw):
+            cxx = mingw
+            env["PATH"] = os.path.dirname(mingw) + ";" + env.get("PATH", "")
+        else:
+            vc = _msvc_vc_env()
+            if not vc:
                 raise RxDException(
                     "unable to locate a CXX compiler. Please `set CXX=<path to CXX compiler>`"
                 )
-        else:
-            gcc = "g++"
-    # TODO: Check this works on non-Linux machines
-    gcc_cmd = f"{gcc} -I{sysconfig.get_path('include')} "
-    gcc_cmd += f"-shared {fpic} {filename}.cpp {_find_librxdmath()}"
-    gcc_cmd += f" -o {filename}.so {math_library}"
-    if sys.platform.lower().startswith("win"):
-        my_path = os.getenv("PATH")
-        os.putenv(
-            "PATH",
-            my_path + ";" + os.path.join(h.neuronhome(), "mingw", "mingw64", "bin"),
-        )
-        os.system(gcc_cmd)
-        os.putenv("PATH", my_path)
+            _apply_vc_env(env, vc)
+            cxx = _win_env_find_exe(vc, "cl.exe") or "cl.exe"
+            use_msvc = True
     else:
-        os.system(gcc_cmd)
+        cxx = "g++"
+    if use_msvc:
+        # MSVC does not accept -shared/-fPIC/-o. /LD makes a DLL; /EXPORT is
+        # required because cl does not export unadorned C symbols.
+        cmd = [
+            cxx,
+            "/nologo",
+            "/LD",
+            "/EHsc",
+            "/O2",
+            "/I" + include,
+            src,
+            "/Fe" + out,
+            "/link",
+            "/LIBPATH:" + os.path.dirname(rxdmath),
+            "rxdmath.lib",
+            "/EXPORT:reaction",
+        ]
+    else:
+        fpic = [] if sys.platform.lower().startswith("win") else ["-fPIC"]
+        math_library = [] if sys.platform.lower().startswith("win") else ["-lm"]
+        cmd = [
+            cxx,
+            "-I" + include,
+            "-shared",
+            *fpic,
+            src,
+            rxdmath,
+            "-o",
+            out,
+            *math_library,
+        ]
+        if sys.platform.lower().startswith("win"):
+            mingw_bin = os.path.join(h.neuronhome(), "mingw", "mingw64", "bin")
+            if os.path.isdir(mingw_bin):
+                env["PATH"] = mingw_bin + ";" + env.get("PATH", "")
+    try:
+        subprocess.check_call(cmd, env=env)
+    except (OSError, subprocess.CalledProcessError) as e:
+        raise RxDException(f"RxD C++ compile failed ({cmd!r}): {e}") from e
     # the rxdmath_dll appears necessary for using librxdmath under certain gcc/OS pairs
     rxdmath_dll = ctypes.cdll[_find_librxdmath()]
-    dll = ctypes.cdll[f"{os.path.abspath(filename)}.so"]
+    dll = ctypes.cdll[out]
     reaction = dll.reaction
     reaction.argtypes = [
         ctypes.POINTER(ctypes.c_double),
         ctypes.POINTER(ctypes.c_double),
     ]
     reaction.restype = ctypes.c_double
-    os.remove(f"{filename}.cpp")
+    os.remove(src)
     if sys.platform.lower().startswith("win"):
         # cannot remove dll that are in use
         _windows_dll.append(weakref.ref(dll))
-        _windows_dll_files.append(f"{filename}.so")
+        _windows_dll_files.append(out)
+        stem = os.path.splitext(out)[0]
+        for extra in (out + ".exp", out + ".lib", stem + ".exp", stem + ".lib"):
+            try:
+                os.remove(extra)
+            except OSError:
+                pass
     else:
-        os.remove(f"{filename}.so")
+        os.remove(out)
     return reaction
 
 
