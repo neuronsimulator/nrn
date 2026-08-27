@@ -600,10 +600,14 @@ def nrn_dll_sym_nt(name, type):
     helper for nrn_dll_sym(name, type).
 
     Windows GetProcAddress does not search a module's dependents (Unix dlsym
-    does). ctypes.CDLL of a basename also skips PATH (Python 3.8+). Load
-    nrniv / nrnpython from the wheel .data/bin (or setup.exe NEURONHOME/bin)
-    by full path. MSVC names are nrniv.dll / nrnpythonX.Y.dll; MinGW is
-    libnrniv.dll / libnrnpythonX.Y.dll.
+    does). ctypes of a basename also skips PATH (Python 3.8+). Load nrniv /
+    nrnpython from the wheel .data/bin (or setup.exe NEURONHOME/bin) by full
+    path. MSVC names are nrniv.dll / nrnpythonX.Y.dll; MinGW is libnrniv.dll
+    / libnrnpythonX.Y.dll.
+
+    Use PyDLL, not CDLL. Unix nrn_dll() is ctypes.pydll (GIL held). CDLL
+    releases the GIL; nrn_hocobj_ptr creates a Python object and must not
+    run without it.
     """
     global nt_dlls
     import ctypes
@@ -627,7 +631,7 @@ def nrn_dll_sym_nt(name, type):
             if key in loaded:
                 return
             try:
-                nt_dlls.append(ctypes.CDLL(path_or_name))
+                nt_dlls.append(ctypes.PyDLL(path_or_name))
                 loaded.add(key)
             except OSError:
                 pass
