@@ -165,7 +165,7 @@ NRN_DLLSYM int* nrn_prop_dparam_size_;
 int* nrn_dparam_ptr_start_;
 int* nrn_dparam_ptr_end_;
 NrnWatchAllocateFunc_t* nrn_watch_allocate_;
-std::unordered_map<int, void (*)(Prop*)> nrn_mech_inst_destruct;
+NRN_DLLSYM std::unordered_map<int, void (*)(Prop*)> nrn_mech_inst_destruct;
 
 void hoc_reg_watch_allocate(int type, NrnWatchAllocateFunc_t waf) {
     nrn_watch_allocate_[type] = waf;

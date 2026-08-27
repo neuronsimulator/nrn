@@ -330,4 +330,4 @@ _nrn_mechanism_get_param_handle(Prop* prop, int field, int array_index = 0) {
 
 // Rarely (e.g. NEURON {RANDOM123 ranvar}) instances of a mod file
 // need to deallocate owning objects at end of their life.
-extern std::unordered_map<int, void (*)(Prop*)> nrn_mech_inst_destruct;
+extern NRN_DLLSYM std::unordered_map<int, void (*)(Prop*)> nrn_mech_inst_destruct;
