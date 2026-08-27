@@ -63,10 +63,9 @@ if(SKBUILD)
 else()
   set(NRN_INSTALL_DATA_PREFIX "./")
 endif()
-# IV defaults IV_{LIB,HEADERS,BIN}_INSTALL_DIR to ${CMAKE_INSTALL_PREFIX}/lib
-# (absolute). CMake then emits CMAKE_ABSOLUTE_DESTINATION_FILES, so
-# cmake --install --prefix relocates NEURON but leaves InterViews at the
-# configure prefix. Keep destinations relative for wheels and source installs.
+# IV defaults IV_{LIB,HEADERS,BIN}_INSTALL_DIR to ${CMAKE_INSTALL_PREFIX}/lib (absolute). CMake then
+# emits CMAKE_ABSOLUTE_DESTINATION_FILES, so cmake --install --prefix relocates NEURON but leaves
+# InterViews at the configure prefix. Keep destinations relative for wheels and source installs.
 set(IV_LIB_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}lib")
 set(IV_HEADERS_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}include")
 set(IV_BIN_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}bin")
@@ -638,11 +637,10 @@ if(NRN_ENABLE_SHARED)
   if(MSVC)
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
   endif()
-  # GNU ld's PE default is export-all until any symbol is __declspec(dllexport);
-  # then only the explicit ones remain. NRN_EXPORT on p_cxx_char_alloc in the
-  # MPI plugin hid f_nrnmpi_newbuf (Windows installer: load_nrnmpi succeeds,
-  # then "The specified procedure could not be found"). Force the ELF-like
-  # default. Counterpart of CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS above.
+  # GNU ld's PE default is export-all until any symbol is __declspec(dllexport); then only the
+  # explicit ones remain. NRN_EXPORT on p_cxx_char_alloc in the MPI plugin hid f_nrnmpi_newbuf
+  # (Windows installer: load_nrnmpi succeeds, then "The specified procedure could not be found").
+  # Force the ELF-like default. Counterpart of CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS above.
   if(MINGW)
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export-all-symbols")
   endif()
