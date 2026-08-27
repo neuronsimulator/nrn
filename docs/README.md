@@ -99,6 +99,6 @@ To create a new public release on RTD, follow these steps:
 
 * create a new release (see [GHA Neuron Release - Manual Workflow](https://github.com/neuronsimulator/nrn/actions?query=workflow%3A%22NEURON+Release%22))
 * publish the wheels (these will be pip-installed by RTD)
-* go to [NRN RTD Versions page](https://readthedocs.org/projects/nrn/versions/) and activate the new tag. Make sure that the version is not marked as hidden.
+* go to [NRN RTD Versions page](https://readthedocs.org/projects/nrn/versions/) and activate the new **tag**. If the tag is missing from the list (new tags often do not appear under “Recently built” until they have been built once), click **+ Add version**, choose the tag, and save. Make sure the version is **not** marked as hidden.
 
 **NOTE**: builds can be re-launched as many times as needed
