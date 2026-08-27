@@ -260,8 +260,10 @@ def _nrngui(args):
     Unix: nrniv $NEURONHOME/lib/hoc/nrngui.hoc "$@" -
     .data/bin/nrngui is that bash script (Error 193, same as stock
     neurondemo). Hoc path uses forward slashes so InterViews style
-    does not treat \\n in share\\nrn as newline. Trailing - like Unix.
-    Do not copy src/mswin/bin/nrngui (MinGW setup.exe; no trailing -).
+    does not treat \\n in share\\nrn as newline.
+    Do not pass trailing -: Windows hoc_moreinput already starts stdin
+    after a .hoc file (cygonce); Unix - plus that is two Ctrl+D.
+    Same as MinGW setup.exe src/mswin/bin/nrngui.
     """
     home = Path(os.environ["NEURONHOME"])
     hoc = home / "lib" / "hoc" / "nrngui.hoc"
@@ -270,8 +272,8 @@ def _nrngui(args):
     nrniv = Path(os.environ["NRNHOME"]) / "bin" / "nrniv.exe"
     if not nrniv.is_file():
         raise SystemExit(f"nrngui: not a file: {nrniv}")
-    cmd = [str(nrniv), _posix_path(hoc), *args, "-"]
-    # GHA pwsh keeps stdin open; '-' would hang if quit() never ran.
+    cmd = [str(nrniv), _posix_path(hoc), *args]
+    # GHA pwsh keeps stdin open; a leftover '-' would hang if quit() never ran.
     kwargs = {}
     if not sys.stdin.isatty():
         kwargs["stdin"] = subprocess.DEVNULL
@@ -285,7 +287,8 @@ def _neurondemo(args):
     MOD sources ship at share/nrn/demo/release. First run compiles them
     with the same nrnivmodl CMake path as Test 4 (cwd/nrnmech.dll), then
     nrniv -dll that DLL demo.hoc. NRNDEMO is the HOC $(NRNDEMO) prefix
-    (trailing slash). Unix appends '-' so stdin is read after demo.hoc.
+    (trailing slash). Unix appends '-' so stdin is read after demo.hoc;
+    Windows omits it (cygonce).
     """
     home = Path(os.environ["NEURONHOME"])
     demo = home / "demo"
@@ -316,8 +319,9 @@ def _neurondemo(args):
     nrniv = Path(os.environ["NRNHOME"]) / "bin" / "nrniv.exe"
     if not nrniv.is_file():
         raise SystemExit(f"neurondemo: not a file: {nrniv}")
-    cmd = [str(nrniv), "-dll", _posix_path(dll), _posix_path(hoc), *args, "-"]
-    # GHA pwsh keeps stdin open; '-' would hang if quit() never ran.
+    # Windows hoc_moreinput already starts stdin after demo.hoc (cygonce).
+    cmd = [str(nrniv), "-dll", _posix_path(dll), _posix_path(hoc), *args]
+    # GHA pwsh keeps stdin open; a leftover '-' would hang if quit() never ran.
     kwargs = {}
     if not sys.stdin.isatty():
         kwargs["stdin"] = subprocess.DEVNULL
