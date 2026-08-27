@@ -79,7 +79,7 @@ static void* nulljob(NrnThread* nt) {
 int nrn_inthread_;
 
 namespace nrn {
-std::unique_ptr<std::mutex> nmodlmutex;
+NRN_DLLSYM std::unique_ptr<std::mutex> nmodlmutex;
 }
 
 namespace {
