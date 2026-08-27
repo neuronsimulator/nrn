@@ -141,7 +141,7 @@ void (*nrnthread_v_transfer_)(NrnThread* nt);
 void (*nrnthread_vi_compute_)(NrnThread* nt);
 #endif
 
-int cvode_active_;
+NRN_DLLSYM int cvode_active_;
 
 int stoprun;
 bool nrn_use_fast_imem;

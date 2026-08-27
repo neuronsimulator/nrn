@@ -18,7 +18,8 @@ using Datum = neuron::container::generic_data_handle;
 // It does not exist in CoreNEURON.
 neuron::container::non_owning_identifier_without_container _nrn_get_prop_id(Prop*);
 
-extern int cvode_active_;
+extern NRN_DLLSYM int cvode_active_;
+extern NRN_DLLSYM int nrn_netrec_state_adjust;
 extern NRN_DLLSYM int secondorder;
 extern int use_sparse13;
 

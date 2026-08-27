@@ -111,7 +111,7 @@ NRN_DLLSYM int secondorder = 0;
 int state_discon_allowed_;
 double t, dt, clamp_resist, htablemin, htablemax;
 NRN_DLLSYM double celsius;
-int nrn_netrec_state_adjust = 0;
+NRN_DLLSYM int nrn_netrec_state_adjust = 0;
 int nrn_sparse_partrans = 0;
 NRN_DLLSYM hoc_List* section_list;
 int nrn_global_ncell = 0; /* used to be rootnodecount */
