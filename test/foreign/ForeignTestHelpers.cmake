@@ -94,7 +94,33 @@ if(EXISTS
       "${NRN_FOREIGN_SOURCE_ROOT}/external/coding-conventions/cpp/cmake")
 endif()
 
-include("${NRN_FOREIGN_SOURCE_ROOT}/cmake/NeuronTestHelper.cmake")
+# Overlay of test/foreign onto another checkout still needs the 3829 helper
+# (msvc-portability's helper has no NRN_FOREIGN_MODE). Prefer a copy next to
+# this file; otherwise the parent tree's cmake/NeuronTestHelper.cmake.
+set(NRN_FOREIGN_VCVARS "")
+if(WIN32)
+  foreach(
+    _nrn_vcvars IN
+    ITEMS
+      "$ENV{VSINSTALLDIR}VC/Auxiliary/Build/vcvars64.bat"
+      "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Auxiliary/Build/vcvars64.bat"
+      "C:/Program Files/Microsoft Visual Studio/2022/Professional/VC/Auxiliary/Build/vcvars64.bat"
+      "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
+  )
+    if(EXISTS "${_nrn_vcvars}")
+      set(NRN_FOREIGN_VCVARS "${_nrn_vcvars}")
+      break()
+    endif()
+  endforeach()
+  if(NRN_FOREIGN_VCVARS)
+    message(STATUS "Foreign vcvars64          : ${NRN_FOREIGN_VCVARS}")
+  endif()
+endif()
+if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/NeuronTestHelper.cmake")
+  include("${CMAKE_CURRENT_LIST_DIR}/NeuronTestHelper.cmake")
+else()
+  include("${NRN_FOREIGN_SOURCE_ROOT}/cmake/NeuronTestHelper.cmake")
+endif()
 
 # Collect nrnivmodl custom targets so the top-level `foreign` target can depend
 # on them.
