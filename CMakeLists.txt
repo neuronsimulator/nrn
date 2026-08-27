@@ -282,14 +282,20 @@ include(ReleaseDebugAutoFlags)
 
 # ~~~
 # Figure out early what Python to use as a build helper for cmake.
-# Since PythonInterp module prefers system-wide python, if PYTHON_EXECUTABLE
-# is not set, look it up in the PATH exclusively.
+# PythonInterp/FindPython may prefer a system or registry interpreter, so if
+# PYTHON_EXECUTABLE is not set, look it up in the PATH exclusively.
+# PEP 394: Unix provides python3. Windows CPython installs python.exe on PATH
+# (not python3), so fall back to python. Same default-then-fallback as
+# NRN_ENABLE_PYTHON.
 # ~~~
 if(NOT PYTHON_EXECUTABLE)
   message(
-    STATUS "-DPYTHON_EXECUTABLE not specified. Looking for `python3` in the PATH exclusively...")
+    STATUS
+      "-DPYTHON_EXECUTABLE not specified. Looking for `python3` then `python` in the PATH exclusively..."
+  )
   find_program(
-    PYTHON_EXECUTABLE python3
+    PYTHON_EXECUTABLE
+    NAMES python3 python
     PATHS ENV PATH
     NO_DEFAULT_PATH)
   message(STATUS "\tSetting PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}")

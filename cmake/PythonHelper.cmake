@@ -19,12 +19,16 @@ if(NOT PYTHON_EXECUTABLE AND Python_EXECUTABLE)
   set(PYTHON_EXECUTABLE "${Python_EXECUTABLE}")
 endif()
 if(NOT PYTHON_EXECUTABLE AND (NOT NRN_ENABLE_PYTHON_DYNAMIC OR NOT NRN_PYTHON_DYNAMIC))
-  # Haven't been explicitly told about any Python versions, set PYTHON_EXECUTABLE by searching PATH
-  message(STATUS "No python executable specified. Looking for `python3` in the PATH...")
-  # Since PythonInterp module prefers system-wide python, if PYTHON_EXECUTABLE is not set, look it
-  # up in the PATH exclusively. Need to set PYTHON_EXECUTABLE before calling SanitizerHelper.cmake
+  # Haven't been explicitly told about any Python versions, set PYTHON_EXECUTABLE by searching PATH.
+  # python3 first (PEP 394); python second (Windows CPython is python.exe; some Unix setups too).
+  message(
+    STATUS "No python executable specified. Looking for `python3` then `python` in the PATH...")
+  # PythonInterp/FindPython may prefer a system or registry interpreter, so if PYTHON_EXECUTABLE is
+  # not set, look it up in the PATH exclusively. Need to set PYTHON_EXECUTABLE before calling
+  # SanitizerHelper.cmake
   find_program(
-    PYTHON_EXECUTABLE python3
+    PYTHON_EXECUTABLE
+    NAMES python3 python
     PATHS ENV PATH
     NO_DEFAULT_PATH)
   if(PYTHON_EXECUTABLE STREQUAL "PYTHON_EXECUTABLE-NOTFOUND")
