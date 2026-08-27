@@ -291,9 +291,10 @@ function(nrn_add_test_group)
           string(APPEND _nrn_nrnivmodl_bat_body
                  "call \"${NRN_FOREIGN_VCVARS}\" >nul\n")
         endif()
-        foreach(_nrn_kv ${NRN_RUN_FROM_BUILD_DIR_ENV})
-          string(APPEND _nrn_nrnivmodl_bat_body "set \"${_nrn_kv}\"\n")
-        endforeach()
+        # Do not foreach NRN_RUN_FROM_BUILD_DIR_ENV: PATH contains ';' and CMake
+        # would split it into bogus `set` commands.
+        string(APPEND _nrn_nrnivmodl_bat_body
+               "set \"PATH=${NRN_FOREIGN_PATH_PREFIX};%PATH%\"\n")
         string(APPEND _nrn_nrnivmodl_bat_body "\"${NRN_NRNIVMODL}\"")
         foreach(_nrn_arg ${NRN_ADD_TEST_GROUP_NRNIVMODL_ARGS})
           string(APPEND _nrn_nrnivmodl_bat_body " ${_nrn_arg}")
