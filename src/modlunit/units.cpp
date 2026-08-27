@@ -24,6 +24,7 @@
 
 #if defined(WIN32)
 #include <windows.h>
+#include "../oc/nrn_windows_home.hpp"
 #endif
 
 #ifndef _WIN32
@@ -173,16 +174,16 @@ static struct unit unit_stack[UNIT_STK_SIZE], *usp{nullptr};
 
 static std::string neuronhome() {
 #if defined(_WIN32)
-    std::string buf(256, '\0');
-    GetModuleFileName(nullptr, buf.data(), 256);
-    // Remove neuron.exe
-    auto pos = buf.find_last_of('\\');
-    buf.resize(pos);
-    // Remove bin
-    pos = buf.find_last_of('\\');
-    buf.resize(pos);
-    std::replace(buf.begin(), buf.end(), '\\', '/');
-    return buf;
+    if (const char* env = std::getenv("NEURONHOME")) {
+        return std::string(env);
+    }
+    auto home = nrn_win_neuronhome_from_file(nrn_win_module_path(nullptr));
+    if (home.empty()) {
+        return {};
+    }
+    auto s = home.string();
+    std::replace(s.begin(), s.end(), '\\', '/');
+    return s;
 #else
     char* buf = std::getenv("NEURONHOME");
     return (buf != nullptr) ? std::string(buf) : std::string();
