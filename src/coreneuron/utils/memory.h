@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <cstdlib>
@@ -183,26 +184,35 @@ class MemoryManaged {
 };
 
 #include <cstdlib>
+#ifdef _WIN32
+#include <malloc.h>
+#endif
 
 inline void alloc_memory(void*& pointer, size_t num_bytes, size_t alignment) {
+#ifdef _WIN32
+    // Windows has no aligned_alloc; _aligned_malloc pairs with _aligned_free.
+    if (alignment == 0) {
+        alignment = alignof(std::max_align_t);
+    }
+    if (num_bytes % alignment != 0) {
+        size_t multiple = num_bytes / alignment;
+        num_bytes = alignment * (multiple + 1);
+    }
+    pointer = _aligned_malloc(num_bytes, alignment);
+    nrn_assert(pointer != nullptr);
+#else
     size_t fill = 0;
     if (alignment > 0) {
         if (num_bytes % alignment != 0) {
             size_t multiple = num_bytes / alignment;
             fill = alignment * (multiple + 1) - num_bytes;
         }
-#ifndef _WIN32
         pointer = aligned_alloc(alignment, num_bytes + fill);
         nrn_assert(pointer != nullptr);
-#else   // is _WIN32
-        // Windows has _aligned_alloc, but that must be paired with
-        // _aligned_free
-        fprintf(stderr, "Windows has no std::aligned_alloc\n");
-        nrn_assert((pointer = std::malloc(num_bytes)) != nullptr);
-#endif  // is _WIN32
     } else {
         nrn_assert((pointer = std::malloc(num_bytes)) != nullptr);
     }
+#endif
 }
 
 inline void calloc_memory(void*& pointer, size_t num_bytes, size_t alignment) {
@@ -211,7 +221,11 @@ inline void calloc_memory(void*& pointer, size_t num_bytes, size_t alignment) {
 }
 
 inline void free_memory(void* pointer) {
+#ifdef _WIN32
+    _aligned_free(pointer);
+#else
     free(pointer);
+#endif
 }
 
 #endif
