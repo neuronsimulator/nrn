@@ -280,6 +280,9 @@ endif()
 if(_nrn_foreign_have_pytest)
   nrn_add_test_group(NAME gjtests MODFILE_PATTERNS test/gjtests/*.mod)
   nrn_foreign_note_nrnivmodl_group(gjtests)
+  # pytest -k "not par" still imports test_par_gj.py during collection.
+  # That file runs main() and h.quit() at module level (false ctest green).
+  # In-tree runs test_natrans.py as a script; gj_par is mpiexec of test_par_gj.py.
   nrn_add_test(
     GROUP
     gjtests
@@ -287,13 +290,8 @@ if(_nrn_foreign_have_pytest)
     gj_serial
     COMMAND
     "${NRN_FOREIGN_PYTHON}"
-    -m
-    pytest
-    ${_nrn_foreign_pytest_args}
-    "${NRN_FOREIGN_SOURCE_ROOT}/test/gjtests"
-    -k
-    "not par"
+    test/gjtests/test_natrans.py
     SCRIPT_PATTERNS
-    test/gjtests/*.py)
+    test/gjtests/test_natrans.py)
   nrn_foreign_finalize_test(gjtests gj_serial gjtests)
 endif()
