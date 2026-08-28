@@ -443,8 +443,8 @@ function(create_nrnmech)
     get_filename_component(MECH_REG "${_NEURON_MECH_REG}" NAME_WLE)
     configure_file(${_NEURON_MECH_REG} "${ARTIFACTS_OUTPUT_DIR}/${MECH_REG}" @ONLY)
     target_sources(${TARGET_LIBRARY_NAME} PRIVATE "${ARTIFACTS_OUTPUT_DIR}/${MECH_REG}")
-    # Unix nrnmech_makefile compiles with @NRN_COMPILE_DEFS_STRING@ (includes
-    # NRN_ENABLE_THREADS). Without that, nmodlmutex.h leaves PROTECT empty.
+    # Unix nrnmech_makefile compiles with @NRN_COMPILE_DEFS_STRING@ (includes NRN_ENABLE_THREADS).
+    # Without that, nmodlmutex.h leaves PROTECT empty.
     set(_nrn_mech_compile_defs AUTO_DLOPEN_NRNMECH=0)
     if(DEFINED NRN_COMPILE_DEFS)
       list(APPEND _nrn_mech_compile_defs ${NRN_COMPILE_DEFS})
