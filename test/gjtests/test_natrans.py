@@ -104,10 +104,11 @@ def _test_natrans():
 
     run()  # NEURON: Fails if tar.napre not what is expected
 
-    from neuron import coreneuron
+    from neuron import config, coreneuron
 
-    coreneuron.available = True
-    if coreneuron.available:
+    # coreneuron.available is not an API. Assigning True forced CoreNEURON
+    # even on installs built without it (psolve then misses corenrnmech.dll).
+    if config.arguments.get("NRN_ENABLE_CORENEURON"):
         coreneuron.enable = True
         coreneuron.cell_permute = 0
         run()  # Fails if CoreNEURON does not copy expected tar.napre to NEURON
@@ -118,8 +119,8 @@ def _test_natrans():
 def test_natrans():
     model = _test_natrans()
     pc.barrier()
-    h.quit()
 
 
 if __name__ == "__main__":
     test_natrans()
+    h.quit()
