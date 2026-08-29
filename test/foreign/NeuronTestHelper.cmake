@@ -141,6 +141,24 @@ function(nrn_foreign_cmake_env_path out_var)
       PARENT_SCOPE)
 endfunction()
 
+# One NAME=v1;v2;... for cmake -E env. Does not append $ENV{PATH}.
+function(nrn_foreign_cmake_env_nv out_var name)
+  set(_acc "")
+  foreach(_p ${ARGN})
+    if(NOT _p STREQUAL "")
+      if(_acc STREQUAL "")
+        set(_acc "${_p}")
+      else()
+        set(_acc "${_acc}${NRN_FOREIGN_ENV_SEP}${_p}")
+      endif()
+    endif()
+  endforeach()
+  string(REPLACE ";" "\\;" _acc "${_acc}")
+  set(${out_var}
+      "${name}=${_acc}"
+      PARENT_SCOPE)
+endfunction()
+
 # Load the cpp_cc_build_time_copy helper function (or a minimal fallback).
 if(DEFINED CODING_CONV_CMAKE AND EXISTS
                                  "${CODING_CONV_CMAKE}/build-time-copy.cmake")
@@ -587,6 +605,20 @@ function(nrn_add_test)
         _nrn_test_path "${nrnivmodl_directory}" "${working_directory}"
         "${NRN_FOREIGN_PATH_PREFIX}")
       list(INSERT test_env 0 "${_nrn_test_path}")
+      # set(test_env "${NRN_RUN_FROM_BUILD_DIR_ENV}") re-joins on ';' and
+      # undoes PYTHONPATH escaping (PATH is rebuilt above). Prefix + test/rxd
+      # must stay one cmake -E env NAME=VALUE.
+      list(FILTER test_env EXCLUDE REGEX "^PYTHONPATH=")
+      if(DEFINED NRN_FOREIGN_SITE_PYTHONPATH AND NOT NRN_FOREIGN_SITE_PYTHONPATH
+                                                 STREQUAL "")
+        nrn_foreign_cmake_env_nv(
+          _nrn_test_pp PYTHONPATH "${NRN_FOREIGN_SITE_PYTHONPATH}"
+          "${NRN_FOREIGN_SOURCE_ROOT}/test/rxd")
+      else()
+        nrn_foreign_cmake_env_nv(_nrn_test_pp PYTHONPATH
+                                 "${NRN_FOREIGN_SOURCE_ROOT}/test/rxd")
+      endif()
+      list(APPEND test_env "${_nrn_test_pp}")
     else()
       list(
         TRANSFORM test_env
@@ -677,12 +709,65 @@ function(nrn_add_test)
         list(APPEND _nrn_rewritten_command -c "quit()")
       endif()
     endif()
-    set(_nrn_add_test_command "${_nrn_rewritten_command}")
+    set(_nrn_add_test_command ${_nrn_rewritten_command})
   endif()
-  add_test(
-    NAME "${test_name}"
-    COMMAND ${CMAKE_COMMAND} -E env ${test_env} ${_nrn_add_test_command}
-    WORKING_DIRECTORY "${working_directory}")
+  # Windows: cmake -E env ${test_env} splits NAME=v1;v2 on ';'. PATH then
+  # becomes extra argv; the first extra is a directory ("no such file").
+  # A .cmd can set PATH/PYTHONPATH with real semicolons (same as
+  # run_nrnivmodl.cmd).
+  if(WIN32 AND NRN_FOREIGN_MODE)
+    set(_nrn_ctest_bat "${working_directory}/run_ctest.cmd")
+    set(_nrn_bat "@echo off\r\n")
+    if(DEFINED nrnivmodl_directory)
+      string(
+        APPEND _nrn_bat
+        "set \"PATH=${nrnivmodl_directory};${working_directory};${NRN_FOREIGN_PATH_PREFIX};%PATH%\"\r\n"
+      )
+    else()
+      string(APPEND _nrn_bat
+             "set \"PATH=${NRN_FOREIGN_PATH_PREFIX};%PATH%\"\r\n")
+    endif()
+    if(DEFINED NRN_FOREIGN_SITE_PYTHONPATH AND NOT NRN_FOREIGN_SITE_PYTHONPATH
+                                               STREQUAL "")
+      string(
+        APPEND _nrn_bat
+        "set \"PYTHONPATH=${NRN_FOREIGN_SITE_PYTHONPATH};${NRN_FOREIGN_SOURCE_ROOT}/test/rxd\"\r\n"
+      )
+    else()
+      string(
+        APPEND _nrn_bat
+        "set \"PYTHONPATH=${NRN_FOREIGN_SOURCE_ROOT}/test/rxd\"\r\n")
+    endif()
+    foreach(_nrn_ev ${test_env})
+      # test_env PATH may already be split on ';'; those fragments are not
+      # NAME=VALUE and become `set "C:/..."` (syntax of the command is
+      # incorrect). PATH/PYTHONPATH are set above.
+      if(NOT _nrn_ev MATCHES "^[A-Za-z_][A-Za-z0-9_]*=.")
+        continue()
+      endif()
+      if(_nrn_ev MATCHES "^PATH=" OR _nrn_ev MATCHES "^PYTHONPATH=")
+        continue()
+      endif()
+      string(APPEND _nrn_bat "set \"${_nrn_ev}\"\r\n")
+    endforeach()
+    foreach(_nrn_tok ${_nrn_add_test_command})
+      string(APPEND _nrn_bat " \"${_nrn_tok}\"")
+    endforeach()
+    string(APPEND _nrn_bat "\r\nexit /b %ERRORLEVEL%\r\n")
+    file(WRITE "${_nrn_ctest_bat}" "${_nrn_bat}")
+    # CTest quotes `cmd.exe /c` as `cmd.exe "/c"`; cmd then prints "The syntax of the command is
+    # incorrect" (CMake issue 25321). A .cmd COMMAND is launched without quoting the switch, same as
+    # run_nrnivmodl.cmd.
+    add_test(
+      NAME "${test_name}"
+      COMMAND "${_nrn_ctest_bat}"
+      WORKING_DIRECTORY "${working_directory}")
+  else()
+    add_test(
+      NAME "${test_name}"
+      COMMAND ${CMAKE_COMMAND} -E env ${test_env} ${_nrn_add_test_command}
+      WORKING_DIRECTORY "${working_directory}")
+  endif()
   set(test_names ${test_name})
   if(NRN_ADD_TEST_PRECOMMAND)
     add_test(

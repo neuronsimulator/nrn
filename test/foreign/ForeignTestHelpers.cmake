@@ -120,8 +120,13 @@ if(DEFINED _nrn_foreign_mpiexec_dir AND NOT _nrn_foreign_mpiexec_dir STREQUAL
   nrn_foreign_cmake_env_path(_nrn_run_path "${NRN_FOREIGN_PATH_PREFIX}"
                              "${_nrn_foreign_mpiexec_dir}")
 endif()
+# CMake lists split on ';'. Prefix + test/rxd is two Windows PYTHONPATH
+# entries; without escaping, cmake -E env treats the second as the program
+# ("no such file or directory"). Same trick as nrn_foreign_cmake_env_path.
+string(REPLACE ";" "\\;" _nrn_foreign_test_pythonpath_esc
+               "${_nrn_foreign_test_pythonpath}")
 set(NRN_RUN_FROM_BUILD_DIR_ENV "${_nrn_run_path}"
-                               "PYTHONPATH=${_nrn_foreign_test_pythonpath}")
+                               "PYTHONPATH=${_nrn_foreign_test_pythonpath_esc}")
 
 # Collect nrnivmodl custom targets so the top-level `foreign` target can depend
 # on them.
