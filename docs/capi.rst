@@ -364,6 +364,100 @@ Sections
     The ``nrn_Item*`` returned can be used for loops in the same way as the ``all_sections`` variable in
     the example in :c:func:`nrn_allsec`.
 
+.. c:function:: Section* nrn_section_parent(Section* sec)
+
+    Return the Section that ``sec`` is connected to, or ``NULL`` if ``sec`` is a
+    root.
+
+    This is the direct connectivity, the same Section a HOC ``SectionRef``'s
+    ``parent`` yields. It reads the connectivity directly, without creating a
+    ``SectionRef`` object.
+
+    :param sec: The Section whose parent is wanted.
+    :returns: The parent Section, or ``NULL`` if ``sec`` has no parent (or is
+        ``NULL``).
+
+.. c:function:: Section* nrn_section_trueparent(Section* sec)
+
+    Return the *true* parent of ``sec``, or ``NULL`` if there is none.
+
+    The true parent (``SectionRef``'s ``trueparent``) is normally the parent,
+    but a Section connected to the ``0`` end of its parent shares that parent's
+    true parent, so the relationship climbs until a connection that is not at
+    the parent's beginning.
+
+    :param sec: The Section whose true parent is wanted.
+    :returns: The true parent Section, or ``NULL`` if there is none (or ``sec``
+        is ``NULL``).
+
+.. c:function:: Section* nrn_section_child(Section* sec)
+
+    Return the first child Section connected to ``sec``, or ``NULL`` if it has
+    none.
+
+    Walk the remaining children with :c:func:`nrn_section_sibling`. The order
+    matches ``SectionRef``'s ``child[i]``.
+
+    :param sec: The parent Section.
+    :returns: The first child Section, or ``NULL`` (also if ``sec`` is ``NULL``).
+
+.. c:function:: Section* nrn_section_sibling(Section* sec)
+
+    Return the next Section that shares ``sec``'s parent, or ``NULL`` if ``sec``
+    is the last child.
+
+    Paired with :c:func:`nrn_section_child`, this iterates every child of a
+    Section:
+
+    .. code-block:: c
+
+        for (Section* c = nrn_section_child(parent); c; c = nrn_section_sibling(c)) {
+            printf("%s\n", nrn_secname(c));
+        }
+
+    :param sec: A Section.
+    :returns: The next sibling Section, or ``NULL`` (also if ``sec`` is
+        ``NULL``).
+
+.. c:function:: int nrn_sectionlist_to_array(nrn_Item* sl, Section** buf, int maxlen)
+
+    Snapshot a section list into a caller-provided array in one call.
+
+    This is the batched form of :c:func:`nrn_sectionlist_iterator_new`: it fills
+    ``buf`` with the live Sections of ``sl`` in a single crossing of the API
+    boundary rather than one crossing per Section, which speeds up building a
+    section array (for example an ``allsec`` gather, rebuilt whenever the
+    topology changes). Semi-deleted Sections are skipped; the list is not
+    modified.
+
+    Up to ``maxlen`` Sections are written, but the return value is always the
+    **total** number of live Sections, so a return greater than ``maxlen`` means
+    the buffer was too small and the snapshot is truncated. Call once with
+    ``buf = NULL`` and ``maxlen = 0`` to get that total first, then size the
+    buffer to it. (Detecting whether a *cached* snapshot has since gone stale is
+    a separate concern, handled by watching ``structure_change_cnt``, not by
+    re-counting.)
+
+    :param sl: A section list from :c:func:`nrn_allsec` or
+        :c:func:`nrn_sectionlist_data`.
+    :param buf: Array that receives up to ``maxlen`` ``Section*`` entries. May be
+        ``NULL`` only if ``maxlen`` is 0 (to count without writing).
+    :param maxlen: Capacity of ``buf``.
+    :returns: The total number of live Sections in ``sl``, or 0 if ``sl`` is
+        ``NULL``.
+
+    **C Usage:**
+
+    .. code-block:: c
+
+        int n = nrn_sectionlist_to_array(nrn_allsec(), NULL, 0);  // count pass
+        Section** secs = malloc(n * sizeof(Section*));
+        int total = nrn_sectionlist_to_array(nrn_allsec(), secs, n);
+        for (int i = 0; i < total; i++) {
+            printf("%s\n", nrn_secname(secs[i]));
+        }
+        free(secs);
+
 .. c:function:: bool nrn_section_is_active(const Section* sec)
 
     Check if a Section is active (exists and is valid).
@@ -668,6 +762,112 @@ Segments
             seg.g_pas = 0.001  # S/cm²
 
 
+.. c:function:: int nrn_setpointer_pop(Symbol* pointer_sym, Section* sec, double x, char* error_msg, size_t error_msg_size)
+
+    Wire an NMODL ``POINTER`` variable to the source pointer on top of the stack.
+
+    The source is whatever pointer the caller has pushed, e.g. with
+    :c:func:`nrn_rangevar_push`. Pushing the source rather than naming it lets
+    this single function accept a pointer obtained any way the stack supports,
+    instead of enumerating source kinds. The pushed pointer is consumed (popped)
+    even on the error paths, so the stack is left balanced.
+
+    :param pointer_sym: Symbol of the ``POINTER`` range variable to wire (the
+        target).
+    :param sec: Section of the mechanism instance owning the POINTER.
+    :param x: Normalized position (0.0 to 1.0) of that instance.
+    :param error_msg: Buffer filled with a message on failure (may be ``NULL``).
+    :param error_msg_size: Size of ``error_msg``.
+    :returns: 0 on success; nonzero on error, with ``error_msg`` populated when
+        ``pointer_sym`` is not a ``POINTER`` variable or its mechanism is not
+        present at the target segment.
+
+    This addresses the target by ``(sec, x)``, which identifies a density
+    mechanism's single instance at a segment. For a **point process**, where
+    several instances may share one location, use
+    :c:func:`nrn_pp_setpointer_pop`, which addresses the target by instance
+    object instead.
+
+    This is the C-API equivalent of the HOC ``setpointer`` statement and of
+    assigning a ``_ref_`` to a POINTER in Python. It stores a data handle to the
+    source, so the connection survives internal data reordering.
+
+    **C Usage:**
+
+    .. code-block:: c
+
+        // A density mechanism `cufl` has a POINTER `pv`. Wire dend's instance to
+        // read soma(0.5).v instead of its own segment's voltage. A density
+        // mechanism has one instance per segment, so (dend, 0.5) names it.
+        Symbol* pv = nrn_symbol("pv_cufl");
+        Symbol* v = nrn_symbol("v");
+        char err[256];
+        nrn_rangevar_push(v, soma, 0.5);  // push the source pointer
+        if (nrn_setpointer_pop(pv, dend, 0.5, err, sizeof(err))) {
+            fprintf(stderr, "setpointer failed: %s\n", err);
+        }
+
+    **Python Equivalent:**
+
+    .. code-block:: python
+
+        # cufl is a density mechanism (SUFFIX) with a POINTER pv
+        dend(0.5).cufl._ref_pv = soma(0.5)._ref_v
+
+    .. seealso::
+
+        :c:func:`nrn_pp_setpointer_pop`, :c:func:`nrn_rangevar_push`
+
+.. c:function:: int nrn_pp_setpointer_pop(Object* pp, const char* name, char* error_msg, size_t error_msg_size)
+
+    Wire a point process's NMODL ``POINTER`` variable to the source pointer on
+    top of the stack.
+
+    This is the point-process counterpart to :c:func:`nrn_setpointer_pop`. A
+    point process is addressed by its instance object rather than by ``(sec,
+    x)``: several point processes may occupy one location (two half-gaps at one
+    segment, say), so the segment alone cannot identify which instance owns the
+    ``POINTER`` slot. The ``POINTER`` is named within the point process's own
+    symbol table, exactly as in :c:func:`nrn_property_get`.
+
+    As with :c:func:`nrn_setpointer_pop`, the source is whatever pointer the
+    caller has pushed (e.g. with :c:func:`nrn_rangevar_push` or
+    :c:func:`nrn_property_push`), and it is consumed even on the error paths, so
+    the stack is left balanced.
+
+    :param pp: The point process instance whose ``POINTER`` is the target.
+    :param name: Name of the ``POINTER`` variable within the point process.
+    :param error_msg: Buffer filled with a message on failure (may be ``NULL``).
+    :param error_msg_size: Size of ``error_msg``.
+    :returns: 0 on success; nonzero on error, with ``error_msg`` populated when
+        ``pp`` is not a point process, ``name`` is not one of its ``POINTER``
+        variables, or the point process is not located in a section.
+
+    **C Usage:**
+
+    .. code-block:: c
+
+        // Wire a half-gap point process's vgap POINTER to the peer cell's
+        // voltage: cell2's membrane potential drives the gap current the
+        // HalfGap instance on cell1 computes. A true half gap wires both ways.
+        char err[256];
+        nrn_rangevar_push(nrn_symbol("v"), cell2, 0.5);  // push the source pointer
+        if (nrn_pp_setpointer_pop(halfgap1, "vgap", err, sizeof(err))) {
+            fprintf(stderr, "setpointer failed: %s\n", err);
+        }
+
+    **Python Equivalent:**
+
+    .. code-block:: python
+
+        # halfgap1 is a POINT_PROCESS instance with a POINTER vgap
+        halfgap1._ref_vgap = cell2(0.5)._ref_v
+
+    .. seealso::
+
+        :c:func:`nrn_setpointer_pop`, :c:func:`nrn_property_push`, :c:func:`nrn_rangevar_push`
+
+
 Functions, objects, and the stack
 ---------------------------------
 
@@ -709,6 +909,18 @@ Functions, objects, and the stack
     Push a symbol onto the HOC execution stack.
 
     :param sym: Pointer to the symbol to push.
+
+.. c:function:: Symbol* nrn_symbol_pop(void)
+
+    Pop a Symbol from the top of the stack.
+
+    The interpreter puts a Symbol on the stack when accessing an object
+    component (reading or assigning ``pyobj.attr``); a binding that unwinds
+    such a stack frame uses this to pop the attribute's Symbol. Use
+    :c:func:`nrn_stack_type` to confirm the top is a ``STACK_IS_SYM`` entry
+    before popping.
+
+    :returns: The Symbol from the top of the stack.
 
 .. c:function:: int nrn_symbol_type(const Symbol* sym)
 
@@ -965,13 +1177,20 @@ Functions, objects, and the stack
 
     Pop an object from the stack.
 
-    :returns: Pointer to object from the top of the stack.
+    Returns ``NULL`` for a nil object reference (an unset ``objref``) rather than
+    crashing, so it is safe to use when unwinding a stack that may carry a nil
+    object -- for example a HOC-to-Python write-back whose right-hand side is an
+    unset ``objref``.
+
+    :returns: Pointer to the object from the top of the stack, or ``NULL`` if it
+        is a nil object reference.
 
     **Usage Pattern:**
 
     Used to retrieve function/method return values. Use :c:func:`nrn_stack_type` to check the type
     before popping, or use the type of the function/method to know the expected return type in
-    advance.
+    advance. A non-``NULL`` result is reference-counted and should be released with
+    :c:func:`nrn_object_unref` when no longer needed.
 
 .. c:function:: nrn_stack_types_t nrn_stack_type(void)
 

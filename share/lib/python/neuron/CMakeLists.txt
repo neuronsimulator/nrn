@@ -30,6 +30,8 @@ set(NRN_PYTHON_FILES_LIST
     tests/utils/checkresult.py
     tests/test_neuron.py
     tests/test_vector.py
+    debug/__init__.py
+    debug/rdcellstate.py
     __init__.py
     coreneuron.py
     doc.py

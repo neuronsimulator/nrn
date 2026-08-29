@@ -56,6 +56,11 @@ void nrn_section_pop(void);
 void nrn_mechanism_insert(Section* sec, const Symbol* mechanism);
 nrn_Item* nrn_allsec(void);
 nrn_Item* nrn_sectionlist_data(const Object* obj);
+Section* nrn_section_parent(Section* sec);
+Section* nrn_section_trueparent(Section* sec);
+Section* nrn_section_child(Section* sec);
+Section* nrn_section_sibling(Section* sec);
+int nrn_sectionlist_to_array(nrn_Item* sl, Section** buf, int maxlen);
 bool nrn_section_is_active(const Section* sec);
 void nrn_section_ref(Section* sec);
 void nrn_section_unref(Section* sec);
@@ -72,12 +77,19 @@ int nrn_segment_node_index(Section* sec, double x);
 void nrn_rangevar_push(Symbol* sym, Section* sec, double x);
 double nrn_rangevar_get(Symbol* sym, Section* sec, double x);
 void nrn_rangevar_set(Symbol* sym, Section* sec, double x, double value);
+int nrn_setpointer_pop(Symbol* pointer_sym,
+                       Section* sec,
+                       double x,
+                       char* error_msg,
+                       size_t error_msg_size);
+int nrn_pp_setpointer_pop(Object* pp, const char* name, char* error_msg, size_t error_msg_size);
 
 /****************************************
  * Functions, objects, and the stack
  ****************************************/
 Symbol* nrn_symbol(const char* name);
 void nrn_symbol_push(Symbol* sym);
+Symbol* nrn_symbol_pop(void);
 int nrn_symbol_type(const Symbol* sym);
 int nrn_symbol_subtype(const Symbol* sym);
 double* nrn_symbol_dataptr(const Symbol* sym);
