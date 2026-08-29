@@ -1,18 +1,15 @@
-# Standalone project: run NEURON integration tests against a foreign (wheel)
-# install. See PLAN.md and README.md.
+# Standalone project: run NEURON integration tests against a foreign (wheel) install. See PLAN.md
+# and README.md.
 cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 project(nrn-foreign-ctest LANGUAGES NONE)
 
 include(CTest)
 if(NOT BUILD_TESTING)
-  message(
-    FATAL_ERROR
-      "BUILD_TESTING is OFF; foreign ctest requires testing to be enabled")
+  message(FATAL_ERROR "BUILD_TESTING is OFF; foreign ctest requires testing to be enabled")
 endif()
 
 # Repo root (nrn/) — this file lives at test/foreign/CMakeLists.txt
-get_filename_component(NRN_FOREIGN_SOURCE_ROOT
-                       "${CMAKE_CURRENT_SOURCE_DIR}/../.." ABSOLUTE)
+get_filename_component(NRN_FOREIGN_SOURCE_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../.." ABSOLUTE)
 set(NRN_FOREIGN_SOURCE_ROOT
     "${NRN_FOREIGN_SOURCE_ROOT}"
     CACHE PATH "NEURON source tree root used for tests and version matching")
@@ -24,53 +21,42 @@ include(VersionGate)
 include(ForeignTestHelpers)
 
 if(NOT DEFINED NRN_FOREIGN_PATH_PREFIX OR NRN_FOREIGN_PATH_PREFIX STREQUAL "")
-  get_filename_component(NRN_FOREIGN_PATH_PREFIX "${NRN_FOREIGN_PYTHON}"
-                         DIRECTORY)
+  get_filename_component(NRN_FOREIGN_PATH_PREFIX "${NRN_FOREIGN_PYTHON}" DIRECTORY)
 endif()
-# Prefer prefix site path when set; otherwise empty PYTHONPATH
-# (wheel/site-packages).
-if(DEFINED NRN_FOREIGN_SITE_PYTHONPATH AND NOT NRN_FOREIGN_SITE_PYTHONPATH
-                                           STREQUAL "")
+# Prefer prefix site path when set; otherwise empty PYTHONPATH (wheel/site-packages).
+if(DEFINED NRN_FOREIGN_SITE_PYTHONPATH AND NOT NRN_FOREIGN_SITE_PYTHONPATH STREQUAL "")
   set(_nrn_foreign_smoke_pythonpath "${NRN_FOREIGN_SITE_PYTHONPATH}")
 else()
   set(_nrn_foreign_smoke_pythonpath "")
 endif()
-set(_nrn_foreign_test_env
-    "PYTHONPATH=${_nrn_foreign_smoke_pythonpath}"
-    "PATH=${NRN_FOREIGN_PATH_PREFIX}${NRN_FOREIGN_ENV_SEP}$ENV{PATH}")
+set(_nrn_foreign_test_env "PYTHONPATH=${_nrn_foreign_smoke_pythonpath}"
+                          "PATH=${NRN_FOREIGN_PATH_PREFIX}${NRN_FOREIGN_ENV_SEP}$ENV{PATH}")
 
 # ---------------------------------------------------------------------------
 # Smoke tests (M1)
 # ---------------------------------------------------------------------------
 if(NRN_FOREIGN_NRNIV STREQUAL "")
-  message(
-    WARNING
-      "nrniv not found on PATH for foreign Python; nrniv smoke test skipped")
+  message(WARNING "nrniv not found on PATH for foreign Python; nrniv smoke test skipped")
 else()
-  add_test(NAME foreign::smoke_nrniv COMMAND "${NRN_FOREIGN_NRNIV}" -nogui
-                                             -nopython -nobanner -c "quit()")
-  set_tests_properties(
-    foreign::smoke_nrniv PROPERTIES LABELS "foreign;serial;smoke" TIMEOUT 60
-                                    ENVIRONMENT "${_nrn_foreign_test_env}")
+  add_test(NAME foreign::smoke_nrniv COMMAND "${NRN_FOREIGN_NRNIV}" -nogui -nopython -nobanner -c
+                                             "quit()")
+  set_tests_properties(foreign::smoke_nrniv PROPERTIES LABELS "foreign;serial;smoke" TIMEOUT 60
+                                                       ENVIRONMENT "${_nrn_foreign_test_env}")
 endif()
 
-add_test(NAME foreign::smoke_import
-         COMMAND "${NRN_FOREIGN_PYTHON}" -c
-                 "import neuron; print(neuron.__version__)")
-set_tests_properties(
-  foreign::smoke_import PROPERTIES LABELS "foreign;serial;smoke" TIMEOUT 60
-                                   ENVIRONMENT "${_nrn_foreign_test_env}")
+add_test(NAME foreign::smoke_import COMMAND "${NRN_FOREIGN_PYTHON}" -c
+                                            "import neuron; print(neuron.__version__)")
+set_tests_properties(foreign::smoke_import PROPERTIES LABELS "foreign;serial;smoke" TIMEOUT 60
+                                                      ENVIRONMENT "${_nrn_foreign_test_env}")
 
-option(NRN_FOREIGN_SMOKE_NEURON_TEST
-       "Run neuron.test() as a foreign smoke test" ON)
+option(NRN_FOREIGN_SMOKE_NEURON_TEST "Run neuron.test() as a foreign smoke test" ON)
 if(NRN_FOREIGN_SMOKE_NEURON_TEST)
   add_test(NAME foreign::smoke_neuron_test
            COMMAND "${NRN_FOREIGN_PYTHON}" -c
                    "import neuron; raise SystemExit(0 if neuron.test() else 1)")
   set_tests_properties(
-    foreign::smoke_neuron_test
-    PROPERTIES LABELS "foreign;serial;smoke" TIMEOUT 600 ENVIRONMENT
-               "${_nrn_foreign_test_env}")
+    foreign::smoke_neuron_test PROPERTIES LABELS "foreign;serial;smoke" TIMEOUT 600 ENVIRONMENT
+                                          "${_nrn_foreign_test_env}")
 endif()
 
 # ---------------------------------------------------------------------------
@@ -84,10 +70,9 @@ execute_process(
 if(_pytest_rc EQUAL 0)
   set(_nrn_foreign_have_pytest ON)
 else()
-  message(
-    WARNING "pytest is not installed for ${NRN_FOREIGN_PYTHON}. "
-            "Install with: \"${NRN_FOREIGN_PYTHON}\" -m pip install pytest\n"
-            "Python pytest-based groups will be skipped.")
+  message(WARNING "pytest is not installed for ${NRN_FOREIGN_PYTHON}. "
+                  "Install with: \"${NRN_FOREIGN_PYTHON}\" -m pip install pytest\n"
+                  "Python pytest-based groups will be skipped.")
 endif()
 
 include(SerialPortableTests.cmake)
@@ -103,8 +88,8 @@ else()
   message(STATUS "Foreign prep targets    : (none)")
 endif()
 
-# Default install check: build mechanisms, run serial ctest, print how to re-run
-# ctest. Full filtering stays with plain ctest --test-dir <this binary dir> ...
+# Default install check: build mechanisms, run serial ctest, print how to re-run ctest. Full
+# filtering stays with plain ctest --test-dir <this binary dir> ...
 set(NRN_FOREIGN_TEST_INSTALL_LABELS
     "serial"
     CACHE STRING "CTest -L expression used by the test-install target")
@@ -153,8 +138,6 @@ endforeach()
 message(STATUS "Foreign ctest source root : ${NRN_FOREIGN_SOURCE_ROOT}")
 message(STATUS "Foreign tests registered  : ${_n_all} total"
                " (serial≈${_n_serial}, mpi≈${_n_mpi}, coreneuron≈${_n_cn})")
-message(
-  STATUS "Inventory                 : ${CMAKE_CURRENT_SOURCE_DIR}/INVENTORY.md")
-message(
-  STATUS "Configure complete. cmake --build <build> --target test-install")
+message(STATUS "Inventory                 : ${CMAKE_CURRENT_SOURCE_DIR}/INVENTORY.md")
+message(STATUS "Configure complete. cmake --build <build> --target test-install")
 message(STATUS "  (or: --target foreign && ctest --test-dir <build> -L serial)")
