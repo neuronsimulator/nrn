@@ -21,6 +21,9 @@ jobs:
       platform: ${{ matrix.os }}
       python_version: ${{ matrix.python_version }}
       commit: ${{ github.sha }}
+      # Full history so setuptools-scm / nrnversion() embed the SHA. clone-depth 1
+      # yields 9.0.1.dev0 and foreign VersionGate (NRN_FOREIGN_CI) cannot match.
+      clone_depth: '0'
     strategy:
       fail-fast: false
       matrix:
