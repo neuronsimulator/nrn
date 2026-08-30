@@ -33,23 +33,18 @@ jobs:
         os: ['macos-15-intel', 'ubuntu-24.04', 'windows-2022']
         python_version: ['3.10', '3.14']
 
-  # Same-run 3.14 wheel from the merged `wheels` artifact (merge deletes
-  # wheels-* ). Serial foreign suite only; MPI is a later topic.
+  # Same-run 3.14 wheel from the per-OS upload (template name
+  # wheels-<py>-<os>). Runs in parallel with merge; merge must not
+  # delete-merged those names. Serial foreign suite only; MPI later.
   foreign-ctest:
     name: Foreign ctest 3.14 on ${{ matrix.os }}
-    needs: [merge]
+    needs: [build-test]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - os: macos-15-intel
-            wheel_glob: '*cp314*macosx*x86_64*.whl'
-          - os: ubuntu-24.04
-            wheel_glob: '*cp314*manylinux*x86_64*.whl'
-          - os: windows-2022
-            wheel_glob: '*cp314*win_amd64*.whl'
+        os: ['macos-15-intel', 'ubuntu-24.04', 'windows-2022']
     env:
       NEURON_MODULE_OPTIONS: '-nogui'
     steps:
@@ -67,26 +62,19 @@ jobs:
         with:
           python-version: '3.14'
 
-      - name: Download merged wheels artifact
+      - name: Download 3.14 wheel for this OS
         uses: actions/download-artifact@v4
         with:
-          name: wheels
+          name: wheels-3.14-${{ matrix.os }}
           path: wheelhouse
 
       - name: Install wheel and serial test Python deps
         shell: bash
-        env:
-          WHEEL_GLOB: ${{ matrix.wheel_glob }}
         run: |
           set -eux
           unset PYTHONPATH NEURONHOME || true
           python -m pip install --upgrade pip
-          whl="$(find wheelhouse -name "$WHEEL_GLOB" | head -n 1)"
-          if [ -z "${whl}" ]; then
-            echo "No wheel matching $WHEEL_GLOB under wheelhouse:" >&2
-            find wheelhouse -type f >&2 || true
-            exit 1
-          fi
+          whl="$(ls wheelhouse/*.whl | head -n 1)"
           python -m pip install --force-reinstall "${whl}"
           python -m pip install pytest matplotlib plotly anywidget
           python -c "import neuron; print(neuron.__file__); print(neuron.h.nrnversion())"
@@ -129,7 +117,9 @@ jobs:
         id: merge-artifacts
         uses: actions/upload-artifact/merge@v4
         with:
-          delete-merged: true
+          # Keep wheels-<py>-<os> so foreign-ctest can download them while
+          # this job still publishes the combined `wheels` URL.
+          delete-merged: false
           name: wheels
           pattern: wheels-*
 
