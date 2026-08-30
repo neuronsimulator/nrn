@@ -261,9 +261,8 @@ def _nrngui(args):
     .data/bin/nrngui is that bash script (Error 193, same as stock
     neurondemo). Hoc path uses forward slashes so InterViews style
     does not treat \\n in share\\nrn as newline.
-    Do not pass trailing -: Windows hoc_moreinput already starts stdin
-    after a .hoc file (cygonce); Unix - plus that is two Ctrl+D.
-    Same as MinGW setup.exe src/mswin/bin/nrngui.
+    Trailing - reads stdin after nrngui.hoc (same as Unix). File argv
+    ends like Unix; without -, the GUI would load and exit.
     """
     home = Path(os.environ["NEURONHOME"])
     hoc = home / "lib" / "hoc" / "nrngui.hoc"
@@ -272,7 +271,7 @@ def _nrngui(args):
     nrniv = Path(os.environ["NRNHOME"]) / "bin" / "nrniv.exe"
     if not nrniv.is_file():
         raise SystemExit(f"nrngui: not a file: {nrniv}")
-    cmd = [str(nrniv), _posix_path(hoc), *args]
+    cmd = [str(nrniv), _posix_path(hoc), *args, "-"]
     # GHA pwsh keeps stdin open; a leftover '-' would hang if quit() never ran.
     kwargs = {}
     if not sys.stdin.isatty():
@@ -288,7 +287,7 @@ def _neurondemo(args):
     with the same nrnivmodl CMake path as Test 4 (cwd/nrnmech.dll), then
     nrniv -dll that DLL demo.hoc. NRNDEMO is the HOC $(NRNDEMO) prefix
     (trailing slash). Unix appends '-' so stdin is read after demo.hoc;
-    Windows omits it (cygonce).
+    Windows does the same (file argv ends like Unix).
     """
     home = Path(os.environ["NEURONHOME"])
     demo = home / "demo"
@@ -319,8 +318,7 @@ def _neurondemo(args):
     nrniv = Path(os.environ["NRNHOME"]) / "bin" / "nrniv.exe"
     if not nrniv.is_file():
         raise SystemExit(f"neurondemo: not a file: {nrniv}")
-    # Windows hoc_moreinput already starts stdin after demo.hoc (cygonce).
-    cmd = [str(nrniv), "-dll", _posix_path(dll), _posix_path(hoc), *args]
+    cmd = [str(nrniv), "-dll", _posix_path(dll), _posix_path(hoc), *args, "-"]
     # GHA pwsh keeps stdin open; a leftover '-' would hang if quit() never ran.
     kwargs = {}
     if not sys.stdin.isatty():

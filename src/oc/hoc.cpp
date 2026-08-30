@@ -874,7 +874,7 @@ void hocstr_copy(HocStr* hs, const char* buf) {
 }
 
 #ifdef _WIN32
-static int cygonce; /* does not need the '-' after a list of hoc files */
+static int cygonce; /* argc==1 fakes "-"; file argv ends like Unix (no stdin inject) */
 #endif
 
 static int hoc_run1();
@@ -1040,20 +1040,6 @@ int hoc_moreinput() {
         hoc_pipeflag = 0;
         return 1;
     }
-#if defined(WIN32)
-    /* like mswin, do not need a '-' after hoc files, but ^D works */
-    if (gargc == 0 && cygonce == 0) {
-        cygonce = 1;
-        hoc_fin = nrn_fw_set_stdin();
-        infile = 0;
-        hoc_xopen_file_[0] = 0;
-#if defined(USE_PYTHON)
-        return use_python_interpreter ? 0 : 1;
-#else
-        return 1;
-#endif
-    }
-#endif  // WIN32
     if (hoc_fin && !nrn_fw_eq(hoc_fin, stdin)) {
         NRN_IGNORE(nrn_fw_fclose(hoc_fin));
     }
