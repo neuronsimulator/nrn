@@ -25,7 +25,9 @@ and ``make cover_html``. See [Simplified Workflow](#simplified-workflow) below.
 
 In addition to the COVERAGE_FLAGS use whatever cmake options you desire.
 But you will generally want ```-DNRN_ENABLE_TESTS=ON``` to see what
-effect your new tests have on coverage.
+effect your new tests have on coverage. Use in-tree `ctest` in the main
+build directory for coverage (not the foreign install/wheel
+`test-install` suite, which exercises an installed tree).
 ```
 COVERAGE_FLAGS="--coverage -O0 -fno-inline -g"
 cmake .. -DCMAKE_INSTALL_PREFIX=install -DCMAKE_C_FLAGS="${COVERAGE_FLAGS}" -DCMAKE_CXX_FLAGS="${COVERAGE_FLAGS}" -DNRN_ENABLE_TESTS=ON
