@@ -11,16 +11,8 @@
 #   - ref_file: reference file to compare the out_file
 # ~~~
 # =============================================================================
-# Windows injects stdin after .hoc files (cygonce). -c quit() is a filearg so the process exits
-# before that, like Unix after argv ends.
-if(WIN32)
-  set(_nrn_hoc_extra -c "quit()")
-else()
-  set(_nrn_hoc_extra)
-endif()
 execute_process(
   COMMAND ${CMAKE_COMMAND} -E env HOC_LIBRARY_PATH=${hoc_library_path} ${executable} ${exec_arg}
-          ${_nrn_hoc_extra}
   WORKING_DIRECTORY ${work_dir}
   RESULT_VARIABLE status)
 if(status)

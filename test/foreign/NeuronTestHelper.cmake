@@ -633,16 +633,6 @@ function(nrn_add_test)
         list(APPEND _nrn_rewritten_command "${_nrn_tok}")
       endif()
     endforeach()
-    # Windows hoc_moreinput injects stdin after the last file (no trailing - needed). CTest inherits
-    # a console, so nrniv waits at oc>. Unix exits when argv ends. -c quit() runs before that
-    # inject; Graph data from the file is unchanged. Only for rewritten nrniv/special, not python
-    # tests.
-    if(_nrn_rewritten_command)
-      list(FIND _nrn_rewritten_command "${NRN_FOREIGN_NRNIV}" _nrn_iv_idx)
-      if(NOT _nrn_iv_idx EQUAL -1)
-        list(APPEND _nrn_rewritten_command -c "quit()")
-      endif()
-    endif()
     set(_nrn_add_test_command ${_nrn_rewritten_command})
   endif()
   # Windows: cmake -E env ${test_env} splits NAME=v1;v2 on ';'. PATH then becomes extra argv; the
