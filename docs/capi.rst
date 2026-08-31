@@ -624,6 +624,8 @@ Segments
     segment diameter is derived from those points. This getter triggers that
     recompute if it is pending, so the value is correct even before an explicit
     geometry pass such as :func:`define_shape` or :func:`finitialize`.
+    Non-positive segment diameters are clamped to ``1e-6`` during this
+    recompute without propagating a HOC error across the C API.
 
     **C Usage:**
 
