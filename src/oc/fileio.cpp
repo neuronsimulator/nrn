@@ -653,6 +653,7 @@ void hoc_load_file(void) {
     hoc_pushx((double) i);
 }
 
+char* hoc_back2forward(char*);
 static constexpr auto hoc_load_file_size_ = 1024;
 static int hoc_Load_file(int always, const char* name) {
     /*
@@ -676,6 +677,16 @@ static int hoc_Load_file(int always, const char* name) {
 
     old[0] = '\0';
     goback = 0;
+#if defined(WIN32)
+    /* load_file interpolates the path into HOC xopen("..."); \ is an escape
+       (\b \t \r \n \f), and the directory prefix only looks for /. fopen
+       accepts /. */
+    char winname[hoc_load_file_size_];
+    winname[hoc_load_file_size_ - 1] = '\0';
+    strncpy(winname, name, hoc_load_file_size_);
+    assert(winname[hoc_load_file_size_ - 1] == '\0');
+    name = hoc_back2forward(winname);
+#endif
     /* has the file already been loaded */
     is_loaded = 0;
 
@@ -694,6 +705,9 @@ static int hoc_Load_file(int always, const char* name) {
     strncpy(expname, expand_env_var(name), hoc_load_file_size_);
     assert(expname[hoc_load_file_size_ - 1] == '\0');
     name = expname;
+#if defined(WIN32)
+    hoc_back2forward(expname);
+#endif
     if ((base = strrchr(name, '/')) != NULL) {
         strncpy(path, name, base - name);
         path[base - name] = '\0';
@@ -808,7 +822,7 @@ static int hoc_Load_file(int always, const char* name) {
 
     return b;
 }
-char* hoc_back2forward(char*);
+
 void hoc_getcwd(void) {
     int len;
     static char* buf;
