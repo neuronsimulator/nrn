@@ -989,6 +989,16 @@ void nrn_property_array_push(Object* obj, const char* name, int i) {
     }
 }
 
+bool nrn_property_data_handle_is_valid(const Object* obj, const char* name, int i) {
+    auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
+    if (!obj->ctemplate->is_point_) {
+        hoc_pushs(sym);
+        obj->ctemplate->steer(obj->u.this_pointer);
+        return static_cast<bool>(hoc_pop_handle<double>());
+    }
+    return static_cast<bool>(point_process_pointer(ob2pntproc_0(const_cast<Object*>(obj)), sym, i));
+}
+
 char const* nrn_symbol_name(const Symbol* sym) {
     return sym->name;
 }

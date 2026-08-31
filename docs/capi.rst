@@ -2064,6 +2064,29 @@ Miscellaneous
     :param name: Name of the property array.
     :param i: Index into the array (0-based).
 
+.. c:function:: bool nrn_property_data_handle_is_valid(const Object* obj, const char* name, int i)
+
+    Report whether an object's numeric property has a non-empty data handle.
+
+    This is intended as a second-line check after :c:func:`nrn_property_get` or
+    :c:func:`nrn_property_array_get` returns NaN. An unset or opaque NMODL
+    ``POINTER`` has an empty handle, while NaN is also a valid value in a
+    non-empty handle. The common path therefore needs only the value-accessor
+    call; callers use this predicate only when they need to distinguish those
+    two cases.
+
+    :param obj: Pointer to the object.
+    :param name: Name of the property or property array.
+    :param i: Element index for a point-process array property. Ignored for a
+        scalar property, and for an object that is not a point process, whose
+        storage is present or absent as a whole rather than per element.
+    :returns: true if the property's data handle is non-empty, false otherwise.
+
+    .. seealso::
+
+        :c:func:`nrn_property_get`,
+        :c:func:`nrn_property_array_get`
+
 .. c:function:: char const* nrn_symbol_name(const Symbol* sym)
 
     Get the name of a symbol as a string.
