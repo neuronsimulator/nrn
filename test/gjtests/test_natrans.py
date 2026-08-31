@@ -1,3 +1,5 @@
+import os
+
 from neuron import h
 
 pc = h.ParallelContext()
@@ -108,7 +110,11 @@ def _test_natrans():
 
     # coreneuron.available is not an API. Assigning True forced CoreNEURON
     # even on installs built without it (psolve then misses corenrnmech.dll).
-    if config.arguments.get("NRN_ENABLE_CORENEURON"):
+    # NRN_FOREIGN_SKIP_CORENEURON: foreign gj_serial CN psolve aborted on
+    # Linux/macOS wheels. NEURON half still runs. Not a CN fix.
+    if config.arguments.get("NRN_ENABLE_CORENEURON") and not os.environ.get(
+        "NRN_FOREIGN_SKIP_CORENEURON"
+    ):
         coreneuron.enable = True
         coreneuron.cell_permute = 0
         run()  # Fails if CoreNEURON does not copy expected tar.napre to NEURON

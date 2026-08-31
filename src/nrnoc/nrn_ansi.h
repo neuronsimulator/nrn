@@ -65,6 +65,7 @@ extern void single_prop_free(Prop*);
 extern void prop_free(Prop**);
 extern int can_change_morph(Section*);
 extern void nrn_area_ri(Section* sec);
+extern void nrn_area_ri_no_diam_error(Section* sec);
 extern void nrn_diam_change(Section*);
 extern void sec_free(hoc_Item*);
 extern void extcell_node_create(Node*);
