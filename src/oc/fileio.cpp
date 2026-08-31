@@ -705,8 +705,25 @@ static int hoc_Load_file(int always, const char* name) {
         /* otherwise find the file in the default directories */
         f = fopen(base, "r"); /* cwd */
         if (!f) {             /* try HOC_LIBRARY_PATH */
-            char* hlp;
-            hlp = getenv("HOC_LIBRARY_PATH");
+            char* hlp = getenv("HOC_LIBRARY_PATH");
+#if defined(WIN32)
+            /* load_proc already splits on ';'. ':' is a drive letter. */
+            if (hlp) {
+                for (const auto& dir: split_paths(hlp)) {
+                    if (dir.empty()) {
+                        continue;
+                    }
+                    nrn_assert(dir.size() < hoc_load_file_size_);
+                    std::snprintf(path, hoc_load_file_size_, "%s", dir.c_str());
+                    nrn_assert(snprintf(fname, hoc_load_file_size_, "%s/%s", path, base) <
+                               hoc_load_file_size_);
+                    f = fopen(expand_env_var(fname), "r");
+                    if (f) {
+                        break;
+                    }
+                }
+            }
+#else
             while (hlp && *hlp) {
                 char* cp = strchr(hlp, ':');
                 if (!cp) {
@@ -734,6 +751,7 @@ static int hoc_Load_file(int always, const char* name) {
                     break;
                 }
             }
+#endif
         }
         if (!f) { /* try NEURONHOME/lib/hoc */
             Sprintf(path, "$(NEURONHOME)/lib/hoc");
