@@ -6,8 +6,6 @@ wheel (for example `neuron-nightly` in a virtual environment).
 This is a **standalone** CMake project (`cmake -S test/foreign`). It does not build
 `libnrniv`.
 
-See [PLAN.md](PLAN.md) for milestones and design.
-
 ## Prerequisites
 
 - CMake ≥ 3.20
@@ -195,6 +193,5 @@ test/foreign/
   RunTestInstall.cmake        # body of test-install target
   probe_neuron.py
   INVENTORY.md                # foreign-ok vs build-only
-  PLAN.md
   README.md
 ```

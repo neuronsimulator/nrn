@@ -1,5 +1,4 @@
-# Standalone project: run NEURON integration tests against a foreign (wheel) install. See PLAN.md
-# and README.md.
+# Standalone project: run NEURON integration tests against a foreign (wheel) install. See README.md.
 cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 project(nrn-foreign-ctest LANGUAGES NONE)
 

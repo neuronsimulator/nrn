@@ -633,6 +633,8 @@ NRN_ENABLE_TESTS:BOOL=OFF
     make -j
     make test
     ctest -VV -R parallel_tests
+    cd ../test/pynrn
+    python3 -m pytest
 
 NRN_ENABLE_COVERAGE:BOOL=OFF
 ----------------------------
