@@ -416,10 +416,13 @@ def load_mechanisms(path: str, warn_if_already_loaded: bool = True) -> bool:
 
 
 if "NRN_NMODL_PATH" in os.environ:
-    nrn_nmodl_path = os.environ["NRN_NMODL_PATH"].split(":")
+    # os.pathsep is ':' on Unix and ';' on Windows (':' is a drive letter).
+    nrn_nmodl_path = os.environ["NRN_NMODL_PATH"].split(os.pathsep)
     print("Auto-loading mechanisms:")
     print(f"NRN_NMODL_PATH={os.environ['NRN_NMODL_PATH']}")
     for x in nrn_nmodl_path:
+        if not x:
+            continue
         # print(f"from path {x}:")
         load_mechanisms(x)
         # print "\n"
