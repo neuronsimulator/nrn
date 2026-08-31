@@ -761,6 +761,39 @@ Segments
         for seg in dend:
             seg.g_pas = 0.001  # S/cm²
 
+.. c:function:: Object* nrn_segment_nmodlrandom_get(Section* sec, double x, Symbol* sym)
+
+    Wrap a density mechanism's NMODL ``RANDOM`` variable as an
+    ``NMODLRandom`` object.
+
+    :param sec: Section containing the density mechanism.
+    :param x: Normalized position (0.0 to 1.0) of the mechanism instance.
+    :param sym: ``RANDOM`` range-object symbol, such as
+        ``nrn_symbol("rng_mechanism")``.
+    :returns: A retained ``NMODLRandom`` object, or ``NULL`` for an invalid
+        section or position, a null or non-``RANDOM`` symbol, or when the
+        mechanism is absent at ``(sec, x)``.
+
+    The returned object shares the mechanism-owned random state. Release the
+    retained reference with :c:func:`nrn_object_unref` after use.
+
+.. c:function:: Object* nrn_pntproc_nmodlrandom_get(Object* point_process, Symbol* sym)
+
+    Wrap a point process's NMODL ``RANDOM`` variable as an ``NMODLRandom``
+    object.
+
+    :param point_process: Point-process instance owning the random state.
+    :param sym: ``RANDOM`` symbol from the point process's symbol table, as
+        returned by ``nrn_method_symbol(point_process, "rng")``.
+    :returns: A retained ``NMODLRandom`` object, or ``NULL`` if the inputs do
+        not identify a located point process and one of its ``RANDOM``
+        variables.
+
+    Release the returned reference with :c:func:`nrn_object_unref`. Density and
+    point-process RANDOM variables require separate entry points because a
+    density instance is identified by ``(sec, x)``, while a point process is
+    identified by its object even when several instances share one location.
+
 
 .. c:function:: int nrn_setpointer_pop(Symbol* pointer_sym, Section* sec, double x, char* error_msg, size_t error_msg_size)
 
