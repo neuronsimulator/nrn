@@ -222,11 +222,33 @@ typedef struct FileStackItem {
 
 static List* filestack;
 
+static int is_dir_sep(char c) {
+#if defined(_WIN32)
+    return c == '/' || c == '\\';
+#else
+    return c == '/';
+#endif
+}
+
+static int is_complete_filename(const char* fname) {
+    /* highest precedence is complete filename: '/' Unix; Windows also '\\'
+       (current-drive absolute) and 'X:' (drive) */
+    if (fname[0] == '/') {
+        return 1;
+    }
+#if defined(_WIN32)
+    if (fname[0] == '\\' || (fname[0] && fname[1] == ':')) {
+        return 1;
+    }
+#endif
+    return 0;
+}
+
 static int getprefix(char* prefix, char* s) {
     char* cp;
     strcpy(prefix, s);
     for (cp = prefix + strlen(prefix); cp + 1 != prefix; --cp) {
-        if (*cp == '/') {
+        if (is_dir_sep(*cp)) {
             break;
         }
         *cp = '\0';
@@ -244,7 +266,7 @@ static FILE* include_open(char* fname, int err) {
 #else
     const char pathsep = ':';
 #endif
-    if (fname[0] == '/') { /* highest precedence is complete filename */
+    if (is_complete_filename(fname)) {
         return fopen(fname, "r");
     }
 
