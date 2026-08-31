@@ -51,6 +51,12 @@ int main(void) {
     // voltage clamp at soma(0.5)
     nrn_double_push(0.5);
     Object* vclamp = nrn_object_new(nrn_symbol("VClamp"), 1);
+    for (int index = 0; index < 3; ++index) {
+        if (!nrn_property_data_handle_is_valid(vclamp, "amp", index)) {
+            std::cerr << "FAIL: VClamp amp[" << index << "] has an empty data handle" << std::endl;
+            return 1;
+        }
+    }
     // 0 mV for 1 ms; 10 mV for the next 2 ms; 5 mV for the next 3 ms
     int i = 0;
     for (auto& [amp, dur]: std::initializer_list<std::pair<int, double>>{{0, 1}, {10, 2}, {5, 3}}) {

@@ -22,9 +22,9 @@ brew install clang-format
 
 ## Instructions
 
-Clone the nrn repository and configure with cmake. Cmake will
-automatically clone a subrepository into nrn/external/coding-conventions
-No special cmake formatting options are needed.
+Clone the nrn repository (a ``git worktree add`` checkout is fine) and
+configure with cmake. Cmake will automatically clone a subrepository into
+``external/coding-conventions``. No special cmake formatting options are needed.
 
 ```
 # from the CMake build directory (or with cmake --build)

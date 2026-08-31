@@ -12,6 +12,7 @@
 #include <cmath>
 #include <cstring>
 #include <iostream>
+#include <limits>
 #include "neuronapi.h"
 
 using std::cerr;
@@ -160,6 +161,20 @@ int main(void) {
                 "property_array_push preserves an unset POINTER as an empty handle");
     nrn_object_unref(pp_unset);
 
+    // An unset POINTER has an empty data handle, while an ordinary PARAMETER
+    // already has storage. The predicate is the second-line check for callers
+    // that receive NaN from a value accessor and need to distinguish an empty
+    // handle from a legitimate NaN value.
+    ok &= check(!nrn_property_data_handle_is_valid(pp1, "src", 0),
+                "unset point-process POINTER has no valid data handle");
+    ok &= check(nrn_property_data_handle_is_valid(pp1, "feed", 0),
+                "ordinary point-process property has a valid data handle");
+    nrn_property_set(pp1, "feed", std::numeric_limits<double>::quiet_NaN());
+    ok &= check(std::isnan(nrn_property_get(pp1, "feed")),
+                "ordinary property preserves a legitimate NaN value");
+    ok &= check(nrn_property_data_handle_is_valid(pp1, "feed", 0),
+                "legitimate NaN value still has a valid data handle");
+
     // Distinct, finitialize-stable source values (feed is a PARAMETER).
     nrn_property_set(pp1, "feed", 10);
     nrn_property_set(pp2, "feed", 20);
@@ -184,6 +199,10 @@ int main(void) {
     ok &= eq(nrn_double_pop(),
              SENTINEL,
              "second pp_setpointer_pop consumed exactly its source (sentinel intact)");
+    ok &= check(nrn_property_data_handle_is_valid(pp1, "src", 0),
+                "wired point-process POINTER has a valid data handle");
+    ok &= check(nrn_property_data_handle_is_valid(pp2, "src", 0),
+                "second wired point-process POINTER has a valid data handle");
 
     // finitialize(-65): INITIAL runs out = src, so pp1.out reads pp2.feed (20)
     // and pp2.out reads pp1.feed (10). If the wiring were segment-addressed and
