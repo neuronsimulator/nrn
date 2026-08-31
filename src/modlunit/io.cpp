@@ -237,8 +237,13 @@ static int getprefix(char* prefix, char* s) {
 static FILE* include_open(char* fname, int err) {
     FILE* f = (FILE*) 0;
     FileStackItem* fsi;
-    char *dirs, *colon;
+    char *dirs, *p;
     char buf2[200];
+#if defined(_WIN32)
+    const char pathsep = ';';
+#else
+    const char pathsep = ':';
+#endif
     if (fname[0] == '/') { /* highest precedence is complete filename */
         return fopen(fname, "r");
     }
@@ -265,17 +270,17 @@ static FILE* include_open(char* fname, int err) {
     if (err)
         fprintf(stderr, "Couldn't open: %s\n", fname);
     /* try all the directories in the environment variable */
-    /* a colon separated list of directories */
+    /* OS pathsep-separated list (':' Unix, ';' Windows; ':' is a drive letter) */
     dirs = getenv("MODL_INCLUDE");
     if (dirs) {
         strcpy(buf, dirs);
         dirs = buf;
-        colon = dirs;
-        for (dirs = colon; *dirs; dirs = colon) {
-            for (; *colon; ++colon) {
-                if (*colon == ':') {
-                    *colon = '\0';
-                    ++colon;
+        p = dirs;
+        for (dirs = p; *dirs; dirs = p) {
+            for (; *p; ++p) {
+                if (*p == pathsep) {
+                    *p = '\0';
+                    ++p;
                     break;
                 }
             }

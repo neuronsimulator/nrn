@@ -318,11 +318,16 @@ static int getprefix(char* prefix, char* s) {
 static FILE* include_open(char* fname, int err) {
     FILE* f = (FILE*) 0;
     FileStackItem* fsi;
-    char *dirs, *colon;
-    /* since dirs is a ':' separated list of paths, there is no
+    char *dirs, *p;
+    /* since dirs is a pathsep-separated list of paths, there is no
        limit to the size and so allocate from size of dirs and free
     */
     char *buf, *buf2;
+#if defined(_WIN32)
+    const char pathsep = ';';
+#else
+    const char pathsep = ':';
+#endif
     if (fname[0] == '/') { /* highest precedence is complete filename */
         return fopen(fname, "r");
     }
@@ -355,18 +360,18 @@ static FILE* include_open(char* fname, int err) {
     if (err)
         fprintf(stderr, "Couldn't open: %s\n", fname);
     /* try all the directories in the environment variable */
-    /* a colon separated list of directories */
+    /* OS pathsep-separated list (':' Unix, ';' Windows; ':' is a drive letter) */
     dirs = getenv("MODL_INCLUDE");
     if (dirs) {
         buf = stralloc(dirs, buf); /* frees old buf and allocates */
         dirs = buf;
-        colon = dirs;
-        for (dirs = colon; *dirs; dirs = colon) {
+        p = dirs;
+        for (dirs = p; *dirs; dirs = p) {
             buf2 = NULL;
-            for (; *colon; ++colon) {
-                if (*colon == ':') {
-                    *colon = '\0';
-                    ++colon;
+            for (; *p; ++p) {
+                if (*p == pathsep) {
+                    *p = '\0';
+                    ++p;
                     break;
                 }
             }
