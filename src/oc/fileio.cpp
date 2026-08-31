@@ -13,6 +13,9 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#if defined(_MSC_VER)
+#include <io.h>
+#endif
 #if defined(_WIN32)
 #include <direct.h>
 #endif
@@ -36,7 +39,11 @@ void hoc_stdout(void) {
         if (prev != -1) {
             hoc_execerror("stdout already switched", (char*) 0);
         }
+#if defined(_MSC_VER)
+        prev = _dup(1);
+#else
         prev = dup(1);
+#endif
         if (prev < 0) {
             hoc_execerror("Unable to backup stdout", (char*) 0);
         }
@@ -45,12 +52,20 @@ void hoc_stdout(void) {
         if (!f1) {
             hoc_execerror("Unable to open ", gargstr(1));
         }
+#if defined(_MSC_VER)
+        if (_dup2(_fileno(f1), 1) < 0) {
+#else
         if (dup2(fileno(f1), 1) < 0) {
+#endif
             hoc_execerror("Unable to attach stdout to ", gargstr(1));
         }
         fclose(f1);
     } else if (prev > -1) {
+#if defined(_MSC_VER)
+        if (_dup2(prev, 1) < 0) {
+#else
         if (dup2(prev, 1) < 0) {
+#endif
             hoc_execerror("Unable to restore stdout", (char*) 0);
         }
 #if defined(_MSC_VER)
@@ -61,7 +76,11 @@ void hoc_stdout(void) {
         prev = -1;
     }
     hoc_ret();
+#if defined(_MSC_VER)
+    hoc_pushx((double) _fileno(stdout));
+#else
     hoc_pushx((double) fileno(stdout));
+#endif
 }
 
 void hoc_ropen(void) /* open file for reading */
