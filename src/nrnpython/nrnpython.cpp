@@ -322,8 +322,14 @@ static int nrnpython_start(int b) {
         // Beginning with Python 3.13.0 it seems that the readline
         // module has not been loaded yet. Since PyInit_readline sets
         // PyOS_ReadlineFunctionPointer = call_readline; without checking,
-        // we need to import here.
-        PyRun_SimpleString("import readline as nrn_readline");
+        // we need to import here when the stdlib module exists. Windows
+        // Python has no stdlib readline (pyreadline3 is optional); HOC
+        // already replaces PyOS_ReadlineFunctionPointer below.
+        PyRun_SimpleString(
+            "try:\n"
+            "    import readline as nrn_readline\n"
+            "except ImportError:\n"
+            "    pass\n");
 
         PyOS_ReadlineFunctionPointer = nrnpython_getline;
 
