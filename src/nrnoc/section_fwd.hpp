@@ -1,10 +1,15 @@
 #pragma once
 #include "multicore.h"
 #include "neuron/container/generic_data_handle.hpp"
+#include "neuron/container/non_owning_soa_identifier.hpp"
 #include "nrnredef.h"
 /**
  * @file section_fwd.hpp
  * @brief Forward declarations of Section, Node etc. to be included in translated MOD files.
+ *
+ * Keep this header light: MOD / nrnivmodl compile against build/include only.
+ * Network SoA ownership lives in point.cpp (see nrn_point_process_soa_*), not
+ * as a heavy owning_handle member here.
  */
 struct Node;
 struct Prop;
@@ -83,4 +88,24 @@ struct Point_process {
     void* presyn_{}; /* non-threshold presynapse for NetCon */
     void* nvi_{};    /* NrnVarIntegrator (for local step method) */
     void* _vnt{};    /* NrnThread* (for NET_RECEIVE and multicore) */
+    /**
+     * @brief Non-owning id of the network::PointProcess SoA row (Phase 1 dual-write).
+     *
+     * Owning lifetime is managed in point.cpp so this header stays free of
+     * model_data / network SoA includes (required for nrnivmodl / demo MOD builds).
+     */
+    neuron::container::non_owning_identifier_without_container _soa_id{};
+
+    Point_process();
+    ~Point_process();
+    Point_process(Point_process const&) = delete;
+    Point_process& operator=(Point_process const&) = delete;
+    Point_process(Point_process&&) = delete;
+    Point_process& operator=(Point_process&&) = delete;
 };
+
+/** @brief Sync legacy Point_process fields into the network SoA row. */
+void nrn_point_process_soa_sync(Point_process* pnt);
+
+/** @brief Current SoA row of a Point_process dual-write entry (-1 if none). */
+int nrn_point_process_soa_row(Point_process const* pnt);

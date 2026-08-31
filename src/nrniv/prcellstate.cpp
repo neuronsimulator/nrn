@@ -76,7 +76,12 @@ static void pr_netcon(NrnThread& nt, FILE* f, const std::map<void*, int>& pnt2in
             }
             int wcnt = pnt_receive_size[nc->target_->prop->_type];
             for (int k = 0; k < wcnt; ++k) {
-                fprintf(f, " %.*g", precision, nc->weight_[k]);
+                fprintf(f,
+                        " %.*g",
+                        precision,
+                        nc->has_weight_soa() && k < nc->weight_block_->size()
+                            ? nc->weight_soa_value(k)
+                            : 0.);
             }
             fprintf(f, "\n");
         }

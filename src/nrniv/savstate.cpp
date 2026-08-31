@@ -14,13 +14,14 @@
 #include "vrecitem.h"
 #include "utils/enumerate.h"
 
-typedef void (*ReceiveFunc)(Point_process*, double*, double);
+#include <algorithm>
+
+// pnt_receive declared in nrniv_mf.h (heap-free 7a: weight_index ABI)
 
 #include "membfunc.h"
 extern int section_count;
 extern "C" void nrn_shape_update();
 extern Section** secorder;
-extern ReceiveFunc* pnt_receive;
 extern NetCvode* net_cvode_instance;
 extern TQueue* net_cvode_instance_event_queue(NrnThread*);
 extern std::vector<PreSyn*>* net_cvode_instance_psl();
@@ -929,8 +930,15 @@ void SaveState::savenet() {
         const NetCon* d = (NetCon*) ob->u.this_pointer;
         int n = ncs_[i].nstate;
         double* w = ncs_[i].state;
-        for (int j = 0; j < n; ++j) {
-            w[j] = d->weight_[j];
+        // Weight SoA only (heap-free step 6).
+        if (d->has_weight_soa()) {
+            int const m = std::min(n, d->weight_block_->size());
+            for (int j = 0; j < m; ++j) {
+                w[j] = d->weight_soa_value(j);
+            }
+            for (int j = m; j < n; ++j) {
+                w[j] = 0.;
+            }
         }
         ++i;
     }
@@ -974,8 +982,13 @@ void SaveState::restorenet() {
         NetCon* d = (NetCon*) ob->u.this_pointer;
         int n = ncs_[i].nstate;
         const double* w = ncs_[i].state;
-        for (int j = 0; j < n; ++j) {
-            d->weight_[j] = w[j];
+        // Restore into Weight SoA only (heap-free step 6).
+        if (d->has_weight_soa()) {
+            int const m = std::min(n, d->weight_block_->size());
+            for (int j = 0; j < m; ++j) {
+                d->weight_soa_value(j) = w[j];
+            }
+            d->soa_sync();
         }
         ++i;
     }

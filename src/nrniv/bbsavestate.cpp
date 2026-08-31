@@ -182,6 +182,7 @@ callback to bbss_early when needed.
 #include <sys/stat.h>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 #include "netcon.h"
 #include "nrniv_mf.h"
@@ -197,13 +198,11 @@ extern bool nrn_use_bin_queue_;
 extern void (*nrn_binq_enqueue_error_handler)(double, TQItem*);
 static void bbss_early(double td, TQItem* tq);
 
-typedef void (*ReceiveFunc)(Point_process*, double*, double);
-
 #include "membfunc.h"
 extern int section_count;
 extern "C" void nrn_shape_update();
 extern Section** secorder;
-extern ReceiveFunc* pnt_receive;
+// pnt_receive declared in nrniv_mf.h (heap-free 7a: weight_index ABI)
 extern NetCvode* net_cvode_instance;
 extern TQueue* net_cvode_instance_event_queue(NrnThread*);
 extern cTemplate** nrn_pnt_template_;
@@ -1107,13 +1106,42 @@ class SEWrap: public DiscreteEvent {
     double tt;
     int ncindex;  // in the DEList or -1 if no NetCon for self event.
 };
+
+/** True if SelfEvent is bound to this NetCon (heap base and/or Weight SoA index). */
+static bool selfevent_matches_netcon(SelfEvent const* se, NetCon const* nc) {
+    if (!se || !nc) {
+        return false;
+    }
+    // Weight SoA base row (heap-free identity).
+    int se_widx = se->weight_index_;
+    if (se_widx < 0) {
+        return false;
+    }
+    int const nc_widx = static_cast<int>(nc->weight_base());
+    return nc_widx == se_widx;
+}
+
+/** Bind SelfEvent weight_index_ from a NetCon (after BBSaveState restore). */
+static void selfevent_bind_netcon(SelfEvent* se, NetCon* nc) {
+    if (!se) {
+        return;
+    }
+    if (!nc) {
+        se->weight_index_ = -1;
+        return;
+    }
+    se->weight_index_ = static_cast<int>(nc->weight_base());
+}
+
 SEWrap::SEWrap(const TQItem* tq, DEList* dl) {
     tt = tq->t_;
     se = (SelfEvent*) tq->data_;
-    if (se->weight_) {
+    // SelfEvent identity for BBSaveState: index into target's NetCon DEList
+    // via weight_index_ (heap-free 7c: no SelfEvent::weight_).
+    if (se->weight_index_ >= 0) {
         ncindex = 0;
         for (; dl && dl->de && dl->de->type() == NetConType; dl = dl->next, ++ncindex) {
-            if (se->weight_ == ((NetCon*) dl->de)->weight_) {
+            if (selfevent_matches_netcon(se, static_cast<NetCon*>(dl->de))) {
                 return;
             }
         }
@@ -2201,7 +2229,27 @@ void BBSaveState::netrecv_pp(Point_process* pp) {
     f->s(buf, 1);
     for (; dl && dl->de->type() == NetConType; dl = dl->next) {
         NetCon* nc = (NetCon*) dl->de;
-        f->d(nc->cnt_, nc->weight_);
+        // Weight SoA only: use contiguous SoA data pointer when available.
+        double* wptr = nc->weight_soa_data();
+        std::vector<double> wtmp;
+        if (!wptr && nc->cnt_ > 0) {
+            wtmp.assign(static_cast<std::size_t>(nc->cnt_), 0.);
+            if (nc->has_weight_soa()) {
+                int const m = std::min(nc->cnt_, nc->weight_block_->size());
+                for (int i = 0; i < m; ++i) {
+                    wtmp[static_cast<std::size_t>(i)] = nc->weight_soa_value(i);
+                }
+            }
+            wptr = wtmp.data();
+        }
+        f->d(nc->cnt_, wptr);
+        if (f->type() == BBSS_IO::IN && nc->has_weight_soa() && wptr) {
+            int const m = std::min(nc->cnt_, nc->weight_block_->size());
+            for (int i = 0; i < m; ++i) {
+                nc->weight_soa_value(i) = wptr[i];
+            }
+            nc->soa_sync();
+        }
         if (f->type() != BBSS_IO::IN) {  // writing, counting
             DblList* db = 0;
             int j = 0;
@@ -2277,7 +2325,7 @@ void BBSaveState::netrecv_pp(Point_process* pp) {
         // since the queue has been cleared.
         for (int i = 0; i < cnt; ++i) {
             int ncindex, moff;
-            double flag, tt, *w;
+            double flag, tt;
             f->s(buf);
             f->d(1, flag);
             f->d(1, tt);
@@ -2287,7 +2335,7 @@ void BBSaveState::netrecv_pp(Point_process* pp) {
             // new SelfEvent item mostly filled in.
             // But starting out with NULL weight vector and
             // flag=1 so that tqi->data is the new SelfEvent
-            nrn_net_send(&tqi_datum, nullptr, pp, tt, 1.0);
+            nrn_net_send(&tqi_datum, -1, pp, tt, 1.0);
             auto* tqi = tqi_datum.get<TQItem*>();
             assert(tqi && tqi->data_ &&
                    static_cast<DiscreteEvent*>(tqi->data_)->type() == SelfEventType);
@@ -2302,16 +2350,16 @@ void BBSaveState::netrecv_pp(Point_process* pp) {
                 se->movable_ = movable;
             }
             if (ncindex == -1) {
-                w = NULL;
+                selfevent_bind_netcon(se, nullptr);
             } else {
                 int j;
                 for (j = 0, dl1 = dliter->second; j < ncindex; ++j, dl1 = dl1->next) {
                     ;
                 }
                 assert(dl1 && dl1->de->type() == NetConType);
-                w = ((NetCon*) dl1->de)->weight_;
+                // ncindex is position in target DEList (file identity), not weight_*.
+                selfevent_bind_netcon(se, static_cast<NetCon*>(dl1->de));
             }
-            se->weight_ = w;
         }
     }
     if (debug) {

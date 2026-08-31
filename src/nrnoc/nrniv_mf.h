@@ -19,25 +19,37 @@ using ldifusfunc3_t = double (*)(int,
 using ldifusfunc2_t =
     void(int, ldifusfunc3_t, void**, int, int, int, neuron::model_sorted_token const&, NrnThread&);
 using ldifusfunc_t = void (*)(ldifusfunc2_t, neuron::model_sorted_token const&, NrnThread&);
-typedef void (*pnt_receive_t)(Point_process*, double*, double);
-typedef void (*pnt_receive_init_t)(Point_process*, double*, double);
+/** @brief NET_RECEIVE callback: weight identity is SoA base (−1 if none). */
+typedef void (*pnt_receive_t)(Point_process*, int /*weight_index*/, double /*flag*/);
+typedef void (*pnt_receive_init_t)(Point_process*, int /*weight_index*/, double /*flag*/);
+
+/**
+ * @brief Deliver NET_RECEIVE by Weight SoA base index (heap-free 7a).
+ */
+void nrn_pnt_receive_by_weight_index(Point_process* pnt, int weight_index, double flag);
+
+/** @brief Resolve base → double* for generated NET_RECEIVE body (_args[i]). */
+double* _nrn_netrec_wsoa(int weight_index, int count);
+/** @brief Write back if _nrn_netrec_wsoa used TLS (no-op for zero-copy SoA). */
+void _nrn_netrec_wsoa_done(int weight_index, int count, double* buf);
 
 extern Prop* need_memb_cl(Symbol*, int*, int*);
 extern Prop* prop_alloc(Prop**, int, Node*);
 void prop_update_ion_variables(Prop*, Node*);
 
+/** @brief net_send: weight identity is SoA base index (−1 if none). */
 [[deprecated("non-void* overloads are preferred")]] void artcell_net_send(void* v,
-                                                                          double* weight,
+                                                                          int weight_index,
                                                                           Point_process* pnt,
                                                                           double td,
                                                                           double flag);
-void artcell_net_send(Datum* v, double* weight, Point_process* pnt, double td, double flag);
+void artcell_net_send(Datum* v, int weight_index, Point_process* pnt, double td, double flag);
 [[deprecated("non-void* overloads are preferred")]] void nrn_net_send(void* v,
-                                                                      double* weight,
+                                                                      int weight_index,
                                                                       Point_process* pnt,
                                                                       double td,
                                                                       double flag);
-void nrn_net_send(Datum* v, double* weight, Point_process* pnt, double td, double flag);
+void nrn_net_send(Datum* v, int weight_index, Point_process* pnt, double td, double flag);
 
 extern double nrn_ion_charge(Symbol*);
 extern Point_process* ob2pntproc(Object*);

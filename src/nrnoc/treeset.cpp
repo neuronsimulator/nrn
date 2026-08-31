@@ -9,6 +9,7 @@
 #include "neuron.h"
 #include "neuron/cache/mechanism_range.hpp"
 #include "neuron/cache/model_data.hpp"
+#include "neuron/container/network/sort.hpp"
 #include "neuron/container/soa_container.hpp"
 #include "node_order_optim/node_order_optim.h"
 #include "nonvintblock.h"
@@ -1704,6 +1705,7 @@ void v_setup_vectors(void) {
                     pnt->_vnt = nrn_threads + nti;
                     nti = (nti + 1) % nrn_nthread;
                 }
+                nrn_point_process_soa_sync(pnt);
                 auto const tid = static_cast<NrnThread*>(pnt->_vnt)->id;
                 ++thread_counts[tid];
                 // pnt->_i_instance = j;
@@ -2222,6 +2224,18 @@ neuron::model_sorted_token nrn_ensure_model_data_are_sorted() {
         mech_tokens.push_back(mech_data.issue_frozen_token());
         already_sorted = already_sorted && mech_data.is_sorted();
     });
+    // Network SoA containers (Phase 1–3 dual-write; sort after nodes+mechs).
+    std::vector<neuron::container::network::PointProcess::storage::frozen_token_type> pp_tokens;
+    std::vector<neuron::container::network::Weight::storage::frozen_token_type> weight_tokens;
+    std::vector<neuron::container::network::NetCon::storage::frozen_token_type> netcon_tokens;
+    std::vector<neuron::container::network::PreSyn::storage::frozen_token_type> presyn_tokens;
+    pp_tokens.push_back(model.point_processes().issue_frozen_token());
+    weight_tokens.push_back(model.weights().issue_frozen_token());
+    netcon_tokens.push_back(model.netcons().issue_frozen_token());
+    presyn_tokens.push_back(model.presyns().issue_frozen_token());
+    already_sorted = already_sorted && model.point_processes().is_sorted() &&
+                     model.weights().is_sorted() && model.netcons().is_sorted() &&
+                     model.presyns().is_sorted();
     // Now the whole model is marked frozen/read-only, but it may or may not be
     // marked sorted (if it is, the cache should be valid, otherwise it should
     // not be).
@@ -2266,11 +2280,23 @@ neuron::model_sorted_token nrn_ensure_model_data_are_sorted() {
         // Now that all the mechanism data is sorted we can fill in pdata caches
         model.apply_to_mechanisms(
             [&cache](auto& mech_data) { nrn_fill_mech_data_caches(cache, mech_data); });
+        // Network: PointProcess / Weight repack / NetCon / PreSyn + fanout.
+        // doc/network-soa-phase0.md §6.3, §8.4
+        neuron::container::network::sort_network_data(
+            cache, pp_tokens[0], weight_tokens[0], netcon_tokens[0], presyn_tokens[0]);
+        assert(model.point_processes().is_sorted());
+        assert(model.weights().is_sorted());
+        assert(model.netcons().is_sorted());
+        assert(model.presyns().is_sorted());
         // Move our working cache into the global storage.
         neuron::cache::model = std::move(cache);
     }
     // Move our tokens into the return value and be done with it.
     neuron::model_sorted_token ret{*neuron::cache::model, std::move(node_token)};
     ret.mech_data_tokens = std::move(mech_tokens);
+    ret.point_process_tokens = std::move(pp_tokens);
+    ret.weight_tokens = std::move(weight_tokens);
+    ret.netcon_tokens = std::move(netcon_tokens);
+    ret.presyn_tokens = std::move(presyn_tokens);
     return ret;
 }

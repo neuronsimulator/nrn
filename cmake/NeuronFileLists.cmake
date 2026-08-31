@@ -262,6 +262,7 @@ set(NRNCVODE_FILE_LIST
     cvtrset.cpp
     htlist.cpp
     netcvode.cpp
+    network_soa_sort.cpp
     nrndaspk.cpp
     occvode.cpp
     tqueue.cpp)

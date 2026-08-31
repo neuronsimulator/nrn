@@ -44,6 +44,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <regex>
+#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 
@@ -58,7 +59,7 @@ typedef void (*ReceiveFunc)(Point_process*, double*, double);
 #define PP2t(pp)    (PP2NT(pp)->_t)
 // classical and when DiscreteEvent::deliver is already in the right thread
 // via a future thread instance of NrnNetItem with its own tqe.
-#define POINT_RECEIVE(type, tar, w, f) (*pnt_receive[type])(tar, w, f)
+#define POINT_RECEIVE(type, tar, widx, f) (*pnt_receive[type])(tar, widx, f)
 // when global tqe is managed by master thread and the correct thread
 // needs to be fired to execute the NET_RECEIVE block.
 //#define POINT_RECEIVE(type, tar, w, f) ns->point_receive(type, tar, w, f)
@@ -118,9 +119,11 @@ double nrn_netcon_get_delay(NetCon* nc) {
 }
 void nrn_netcon_set_delay(NetCon* nc, double d) {
     nc->delay_ = d;
+    nc->soa_sync();
 }
 int nrn_netcon_weight(NetCon* nc, double** pw) {
-    *pw = nc->weight_;
+    // Heap-free: contiguous Weight SoA block (not per-NetCon weight_ heap).
+    *pw = nc->weight_soa_data();
     return nc->cnt_;
 }
 double nrn_event_queue_stats(double* stats) {
@@ -141,6 +144,7 @@ double nrn_netcon_get_thresh(NetCon* nc) {
 void nrn_netcon_set_thresh(NetCon* nc, double th) {
     if (nc->src_) {
         nc->src_->threshold_ = th;
+        nc->src_->soa_sync();
     }
 }
 
@@ -158,7 +162,7 @@ int nrn_netcon_info(NetCon* nc, double** pw, Point_process** target, double** th
     *target = (nc->target_) ? nc->target_ : (Point_process*) 0;
     *th = (nc->src_) ? &(nc->src_->threshold_) : (double*) 0;
     *del = &nc->delay_;
-    *pw = nc->weight_;
+    *pw = nc->weight_soa_data();
     return nc->cnt_;
 }
 
@@ -230,9 +234,18 @@ extern bool nrn_use_localgid_;
 extern void nrn_outputevent(unsigned char, double);
 #endif
 
+/**
+ * @brief Per-target FOR_NETCONS peer list (heap-free 7b).
+ *
+ * Identity is Weight SoA bases only — no owned double pool.
+ * Generated code: `_nrn_netcon_weight_bases` + `_nrn_fornetcon_weight(base)`
+ * (zero-copy into contiguous SoA, else shared TLS view + commit).
+ */
 struct ForNetConsInfo {
-    double** argslist;
-    int size;
+    int size{};
+    int arity{};
+    /** @brief Weight SoA base row for each NetCon targeting this PP. */
+    int* weight_bases{};
 };
 
 static unsigned long deliver_cnt_, net_event_cnt_;
@@ -644,8 +657,9 @@ static double nc_setpost(void* v) {
     }
     if (d->cnt_ != cnt) {
         d->cnt_ = cnt;
-        delete[] std::exchange(d->weight_, new double[d->cnt_]);
+        d->allocate_weight_soa(nullptr);
     }
+    d->soa_sync();
     return 0.;
 }
 
@@ -663,6 +677,7 @@ static double nc_active(void* v) {
     bool a = d->active_;
     if (d->target_ && ifarg(1)) {
         d->active_ = bool(chkarg(1, 0, 1));
+        d->soa_sync();
     }
     hoc_return_type_code = HocReturnType::boolean;
     return double(a);
@@ -690,7 +705,8 @@ static double nc_event(void* v) {
             hoc_execerror("Can only send fake self-events to ARTIFICIAL_CELLs", 0);
         }
         auto* pq = pnt->prop->dparam + nrn_artcell_qindex_[type];
-        nrn_net_send(pq, d->weight_, pnt, td, flag);
+        // Heap-free 7a: pass Weight SoA base index as SelfEvent identity.
+        nrn_net_send(pq, static_cast<int>(d->weight_base()), pnt, td, flag);
     } else {
         net_cvode_instance->event(td, d, PP2NT(d->target_));
     }
@@ -775,6 +791,7 @@ static void steer_val(void* v) {
     Symbol* s = hoc_spop();
     if (strcmp(s->name, "delay") == 0) {
         d->chksrc();
+        // HOC writes delay_; soa_sync mirrors into NetCon SoA.
         hoc_pushpx(&d->delay_);
         d->src_->use_min_delay_ = 0;
     } else if (strcmp(s->name, "weight") == 0) {
@@ -783,7 +800,14 @@ static void steer_val(void* v) {
             s->arayinfo->sub[0] = d->cnt_;
             index = hoc_araypt(s, SYMBOL);
         }
-        hoc_pushpx(d->weight_ + index);
+        // SoA-primary: stable data_handle into the weight block (base+i logical).
+        if (d->has_weight_soa() && index >= 0 && index < d->weight_block_->size()) {
+            hoc_push(d->weight_soa_handle(index));
+        } else {
+            static double dummy_weight = 0.;
+            dummy_weight = 0.;
+            hoc_pushpx(&dummy_weight);
+        }
     } else if (strcmp(s->name, "x") == 0) {
         static double dummy = 0.;
         d->chksrc();
@@ -2252,16 +2276,139 @@ void NetCvode::remove_event(TQItem* q, int tid) {
     p[tid].tqe_->remove(q);
 }
 
+namespace {
+/**
+ * Heap-free step 5 / 7b: ephemeral MOD scratch for double* ABI.
+ * Never use this buffer as SelfEvent / net_send identity — only weight_index.
+ * Primary NET_RECEIVE and FOR_NETCONS use separate TLS so they do not clobber.
+ */
+thread_local std::vector<double> g_mod_weight_scratch;
+thread_local std::vector<double> g_fornet_weight_scratch;
+/** @brief Weight SoA base of the NET_RECEIVE currently on the stack (−1 if none). */
+thread_local int g_tls_receive_weight_index = -1;
+/** @brief 1 if _nrn_netrec_wsoa returned TLS (needs commit). */
+thread_local int g_netrec_wsoa_is_tmp = 0;
+
+/** Active FOR_NETCONS edge view (commit on next peer or flush). */
+thread_local int g_fornet_active_base = -1;
+thread_local int g_fornet_active_arity = 0;
+thread_local double* g_fornet_active_buf = nullptr;
+thread_local int g_fornet_active_is_tmp = 0;
+/** @brief Arity from last _nrn_netcon_weight_bases (FOR_NETCONS walk). */
+thread_local int g_fornet_list_arity = 1;
+
+double* mod_weight_scratch(int n) {
+    if (n <= 0) {
+        return nullptr;
+    }
+    if (static_cast<int>(g_mod_weight_scratch.size()) < n) {
+        g_mod_weight_scratch.resize(static_cast<std::size_t>(n));
+    }
+    return g_mod_weight_scratch.data();
+}
+
+double* fornet_weight_scratch(int n) {
+    if (n <= 0) {
+        return nullptr;
+    }
+    if (static_cast<int>(g_fornet_weight_scratch.size()) < n) {
+        g_fornet_weight_scratch.resize(static_cast<std::size_t>(n));
+    }
+    return g_fornet_weight_scratch.data();
+}
+
+void fornet_weight_commit() {
+    if (g_fornet_active_is_tmp && g_fornet_active_buf && g_fornet_active_base >= 0 &&
+        g_fornet_active_arity > 0) {
+        neuron::container::network::SelfEventFields::store_weight_block(g_fornet_active_base,
+                                                                        g_fornet_active_arity,
+                                                                        g_fornet_active_buf);
+    }
+    g_fornet_active_is_tmp = 0;
+    g_fornet_active_base = -1;
+    g_fornet_active_arity = 0;
+    g_fornet_active_buf = nullptr;
+}
+
+struct ReceiveWeightIndexGuard {
+    int prev;
+    explicit ReceiveWeightIndexGuard(int idx)
+        : prev(g_tls_receive_weight_index) {
+        g_tls_receive_weight_index = idx;
+    }
+    ~ReceiveWeightIndexGuard() {
+        g_tls_receive_weight_index = prev;
+    }
+};
+}  // namespace
+
+double* _nrn_netrec_wsoa(int weight_index, int count) {
+    // CoreNEURON shape: weight_index addresses Weight SoA directly (no NetCon*).
+    g_netrec_wsoa_is_tmp = 0;
+    if (weight_index < 0 || count <= 0) {
+        return nullptr;
+    }
+    if (double* p = neuron::container::network::SelfEventFields::weight_soa_ptr(weight_index,
+                                                                                count)) {
+        return p;
+    }
+    // Scattered / incomplete pack: TLS materialize (commit in _nrn_netrec_wsoa_done).
+    double* buf = mod_weight_scratch(count);
+    neuron::container::network::SelfEventFields::materialize_weight_block(weight_index, count, buf);
+    g_netrec_wsoa_is_tmp = 1;
+    return buf;
+}
+
+void _nrn_netrec_wsoa_done(int weight_index, int count, double* buf) {
+    // Commit only if _nrn_netrec_wsoa returned TLS (scattered block).
+    // Zero-copy SoA pointers need no writeback. Flush pending FOR_NETCONS peer TLS.
+    if (g_netrec_wsoa_is_tmp && buf && weight_index >= 0 && count > 0) {
+        neuron::container::network::SelfEventFields::store_weight_block(weight_index, count, buf);
+    }
+    g_netrec_wsoa_is_tmp = 0;
+    fornet_weight_commit();
+}
+
+namespace {
+/** SelfEvent identity: weight_index (−1 if none); TLS receive base as fallback. */
+void selfevent_set_indices(SelfEvent* se, Point_process* pnt, int weight_index) {
+    se->target_row_ = nrn_point_process_soa_row(pnt);
+    se->weight_index_ = weight_index;
+    if (se->weight_index_ < 0 && g_tls_receive_weight_index >= 0) {
+        se->weight_index_ = g_tls_receive_weight_index;
+    }
+}
+
+}  // namespace
+
+void nrn_pnt_receive_by_weight_index(Point_process* pnt, int weight_index, double flag) {
+    if (!pnt || !pnt->prop) {
+        return;
+    }
+    int const type = pnt->prop->_type;
+    if (!pnt_receive[type]) {
+        return;
+    }
+    // Active base for net_send identity (generated code passes _weight_index).
+    ReceiveWeightIndexGuard const tls_guard(weight_index);
+
+    // Heap-free 7b: no FOR_NETCONS owned pool to sync — SoA / per-edge TLS only.
+    POINT_RECEIVE(type, pnt, weight_index, flag);
+    fornet_weight_commit();
+}
+
 // for threads, revised net_send to use absolute time (in the
 // mod file we add the thread time when we call it).
-void nrn_net_send(Datum* v, double* weight, Point_process* pnt, double td, double flag) {
+// Heap-free 7a: weight identity is SoA base index (−1 if none).
+void nrn_net_send(Datum* v, int weight_index, Point_process* pnt, double td, double flag) {
     STATISTICS(SelfEvent::selfevent_send_);
     NrnThread* nt = PP2NT(pnt);
     NetCvodeThreadData& p = net_cvode_instance->p[nt->id];
     SelfEvent* se = p.sepool_->alloc();
     se->flag_ = flag;
     se->target_ = pnt;
-    se->weight_ = weight;
+    // Identity is weight_index only (heap-free 7c: no SelfEvent::weight_).
+    selfevent_set_indices(se, pnt, weight_index);
     se->movable_ = v;  // needed for SaveState
     assert(net_cvode_instance);
     ++p.unreffed_event_cnt_;
@@ -2280,7 +2427,7 @@ void nrn_net_send(Datum* v, double* weight, Point_process* pnt, double td, doubl
     // printf("net_send %g %s %g %p\n", td, hoc_object_name(pnt->ob), flag, *v);
 }
 
-void artcell_net_send(Datum* v, double* weight, Point_process* pnt, double td, double flag) {
+void artcell_net_send(Datum* v, int weight_index, Point_process* pnt, double td, double flag) {
     if (nrn_use_selfqueue_ && flag == 1.0) {
         STATISTICS(SelfEvent::selfevent_send_);
         NrnThread* nt = PP2NT(pnt);
@@ -2288,7 +2435,7 @@ void artcell_net_send(Datum* v, double* weight, Point_process* pnt, double td, d
         SelfEvent* se = p.sepool_->alloc();
         se->flag_ = flag;
         se->target_ = pnt;
-        se->weight_ = weight;
+        selfevent_set_indices(se, pnt, weight_index);
         se->movable_ = v;  // needed for SaveState
         assert(net_cvode_instance);
         ++p.unreffed_event_cnt_;
@@ -2310,17 +2457,17 @@ void artcell_net_send(Datum* v, double* weight, Point_process* pnt, double td, d
             se->deliver(td, net_cvode_instance, nt);
         }
     } else {
-        nrn_net_send(v, weight, pnt, td, flag);
+        nrn_net_send(v, weight_index, pnt, td, flag);
     }
 }
 
 // Deprecated overloads for backwards compatibility
-void artcell_net_send(void* v, double* weight, Point_process* pnt, double td, double flag) {
-    artcell_net_send(static_cast<Datum*>(v), weight, pnt, td, flag);
+void artcell_net_send(void* v, int weight_index, Point_process* pnt, double td, double flag) {
+    artcell_net_send(static_cast<Datum*>(v), weight_index, pnt, td, flag);
 }
 
-void nrn_net_send(void* v, double* weight, Point_process* pnt, double td, double flag) {
-    nrn_net_send(static_cast<Datum*>(v), weight, pnt, td, flag);
+void nrn_net_send(void* v, int weight_index, Point_process* pnt, double td, double flag) {
+    nrn_net_send(static_cast<Datum*>(v), weight_index, pnt, td, flag);
 }
 
 void net_event(Point_process* pnt, double time) {
@@ -2621,10 +2768,12 @@ void NetCvode::allthread_handle(double tt, HocEvent* he, NrnThread* nt) {
 }
 
 #if 0
+// Dead alternate path: global TQE + per-thread NET_RECEIVE marshalling.
+// Kept for reference; signature matches heap-free 7a index ABI.
 struct PPArgs {
 	int type;
 	Point_process* pp;
-	double* w;
+	int widx;
 	double f;
 };
 
@@ -2632,21 +2781,21 @@ static PPArgs* ppargs;
 
 static void point_receive_job(NrnThread* nt) {
 	PPArgs* p = ppargs + nt->id;
-	(*pnt_receive[p->_type])(p->pp, p->w, p->f);
+	(*pnt_receive[p->_type])(p->pp, p->widx, p->f);
 }
 
-void NetCvode::point_receive(int type, Point_process* pp, double* w, double f) {
+void NetCvode::point_receive(int type, Point_process* pp, int widx, double f) {
 	// this is the master thread. need to execute the thread associated
 	// with the pp.
 	int id = PP2NT(pp)->id;
 	if (id == 0) { // execute on this, the master thread
-		(*pnt_receive[type])(pp, w, f);
+		(*pnt_receive[type])(pp, widx, f);
 	}else{
 		// marshall the args
 		PPArgs* p = ppargs + id;
 		p->_type = type;
 		p->pp = pp;
-		p->w = w;
+		p->widx = widx;
 		p->f = f;
 		nrn_onethread_job(id, point_receive_job);
 	}
@@ -2780,6 +2929,9 @@ void NetCvode::init_events() {
                 }
             }
         }
+        // Rebuild CoreNEURON-shaped fanout ranges before the run (not only on first spike).
+        PreSyn::mark_fanout_unsorted();
+        PreSyn::ensure_fanout_order();
     }
     // iterate over all NetCon in creation order to call
     // NETRECEIVE INITIAL blocks.
@@ -2792,14 +2944,20 @@ void NetCvode::init_events() {
     ITERATE(q, nclist) {
         Object* obj = OBJ(q);
         auto* d = static_cast<NetCon*>(obj->u.this_pointer);
-        if (d->target_) {
-            int type = d->target_->prop->_type;  // somehow prop is non-deterministically-null here
+        // target_ may outlive Prop (unlocated / free_one_point); skip dead targets.
+        if (d->target_ && d->target_->prop) {
+            int type = d->target_->prop->_type;
+            // Heap-free 7a: INITIAL receives weight_index; generated body uses
+            // _nrn_netrec_wsoa / _nrn_netrec_wsoa_done for SoA materialize.
+            int const widx = static_cast<int>(d->weight_base());
+            int const n = d->cnt_;
             if (pnt_receive_init[type]) {
-                (*pnt_receive_init[type])(d->target_, d->weight_, 0);
-            } else {
-                // not the first
-                for (j = d->cnt_ - 1; j > 0; --j) {
-                    d->weight_[j] = 0.;
+                ReceiveWeightIndexGuard const tls_guard(widx);
+                (*pnt_receive_init[type])(d->target_, widx, 0);
+            } else if (d->has_weight_soa()) {
+                // not the first weight: zero weight[1..] in SoA
+                for (j = n - 1; j > 0; --j) {
+                    d->weight_soa_value(j) = 0.;
                 }
             }
         }
@@ -2979,7 +3137,12 @@ void NetCon::deliver(double tt, NetCvode* ns, NrnThread* nt) {
 
     // printf("NetCon::deliver t=%g tt=%g %s\n", t, tt, hoc_object_name(target_->ob));
     STATISTICS(netcon_deliver_);
-    POINT_RECEIVE(type, target_, weight_, 0);
+    // Heap-free 7a: deliver by weight_index only (generated NET_RECEIVE resolves SoA).
+    int widx = _soa.weight_index();
+    if (widx < 0) {
+        widx = static_cast<int>(weight_base());
+    }
+    nrn_pnt_receive_by_weight_index(target_, widx, 0.);
     if (errno) {
         if (nrn_errno_check(type)) {
             hoc_warning("errno set during NetCon deliver to NET_RECEIVE", (char*) 0);
@@ -2995,7 +3158,11 @@ void NetCon::pgvts_deliver(double tt, NetCvode* ns) {
     assert(target_);
     int type = target_->prop->_type;
     STATISTICS(netcon_deliver_);
-    POINT_RECEIVE(type, target_, weight_, 0);
+    int widx = _soa.weight_index();
+    if (widx < 0) {
+        widx = static_cast<int>(weight_base());
+    }
+    nrn_pnt_receive_by_weight_index(target_, widx, 0.);
     if (errno) {
         if (nrn_errno_check(type)) {
             hoc_warning("errno set during NetCon deliver to NET_RECEIVE", (char*) 0);
@@ -3013,6 +3180,134 @@ void NetCon::pr(const char* s, double tt, NetCvode* ns) {
     Printf(" target=%s %.15g\n", (target_ ? hoc_object_name(target_->ob) : "nullptr"), tt);
 }
 
+namespace {
+// Global CoreNEURON-shaped fanout (heap-free step 3):
+//   g_network_fanout_order — NetCon SoA row indices (not NetCon*).
+//   g_netcon_by_soa_row   — O(1) resolve row → shell for TQueue DiscreteEvent*.
+// PreSyn NcIndex/NcCount describe ranges in g_network_fanout_order.
+// dil_ remains the rebuild source (and mid-update fallback).
+using neuron::container::network::netcon_index_t;
+
+std::vector<netcon_index_t> g_network_fanout_order;
+std::vector<NetCon*> g_netcon_by_soa_row;
+bool g_network_fanout_sorted = true;
+
+/** @brief Rebuild SoA-row → NetCon* table (valid only until next NetCon SoA permute). */
+void rebuild_netcon_by_soa_row() {
+    auto const n = neuron::model().netcons().size();
+    g_netcon_by_soa_row.assign(n, nullptr);
+    Symbol* sym = hoc_lookup("NetCon");
+    if (!sym || !sym->u.ctemplate || !sym->u.ctemplate->olist) {
+        return;
+    }
+    hoc_Item* q = nullptr;
+    ITERATE(q, sym->u.ctemplate->olist) {
+        auto* nc = static_cast<NetCon*>(OBJ(q)->u.this_pointer);
+        if (!nc) {
+            continue;
+        }
+        auto const row = nc->_soa.current_row();
+        if (row < n) {
+            g_netcon_by_soa_row[row] = nc;
+        }
+    }
+}
+
+[[nodiscard]] NetCon* netcon_from_soa_row(netcon_index_t row) {
+    if (row < 0 || static_cast<std::size_t>(row) >= g_netcon_by_soa_row.size()) {
+        return nullptr;
+    }
+    return g_netcon_by_soa_row[static_cast<std::size_t>(row)];
+}
+
+template <typename F>
+void for_each_fanout_netcon(PreSyn* ps, F&& fn) {
+    PreSyn::ensure_fanout_order();
+    int const base = ps->_soa.nc_index();
+    int const cnt = ps->_soa.nc_count();
+    if (base >= 0 && cnt == static_cast<int>(ps->dil_.size()) &&
+        base + cnt <= static_cast<int>(g_network_fanout_order.size())) {
+        for (int i = 0; i < cnt; ++i) {
+            NetCon* d = netcon_from_soa_row(
+                g_network_fanout_order[static_cast<std::size_t>(base + i)]);
+            if (d) {
+                fn(d);
+            }
+        }
+    } else {
+        // Fallback while topology is mid-update or PreSyn not in psl_.
+        for (NetCon* d: ps->dil_) {
+            fn(d);
+        }
+    }
+}
+}  // namespace
+
+void PreSyn::mark_fanout_unsorted() {
+    g_network_fanout_sorted = false;
+}
+
+void PreSyn::ensure_fanout_order() {
+    if (g_network_fanout_sorted) {
+        return;
+    }
+    g_network_fanout_order.clear();
+    rebuild_netcon_by_soa_row();
+    if (net_cvode_instance && net_cvode_instance->psl_) {
+        for (PreSyn* ps: *net_cvode_instance->psl_) {
+            // Refresh dual-write scalars (threshold may have been HOC-steered via double*).
+            ps->_soa.threshold() = ps->threshold_;
+            ps->_soa.gid() = ps->gid_;
+            ps->_soa.output_index() = ps->output_index_;
+            ps->_soa.thread_id() = ps->nt_ ? ps->nt_->id : -1;
+            if (ps->thvar_ && ps->thvar_.refers_to_a_modern_data_structure()) {
+                try {
+                    ps->_soa.thvar_row() = static_cast<int>(ps->thvar_.current_row());
+                } catch (...) {
+                    ps->_soa.thvar_row() = -1;
+                }
+            } else {
+                ps->_soa.thvar_row() = -1;
+            }
+            ps->_soa.nc_index() = static_cast<int>(g_network_fanout_order.size());
+            for (NetCon* nc: ps->dil_) {
+                // Store SoA row (index), not NetCon* — half the fanout table width on LP64.
+                auto const row = static_cast<netcon_index_t>(nc->_soa.current_row());
+                g_network_fanout_order.push_back(row);
+                // Keep reverse edge / delay dual-write current before sim.
+                nc->soa_sync();
+                // Ensure resolve table has this shell (soa_sync may not change row).
+                if (row >= 0 && static_cast<std::size_t>(row) < g_netcon_by_soa_row.size()) {
+                    g_netcon_by_soa_row[static_cast<std::size_t>(row)] = nc;
+                }
+            }
+            ps->_soa.nc_count() = static_cast<int>(ps->dil_.size());
+        }
+    }
+    g_network_fanout_sorted = true;
+}
+
+void PreSyn::soa_sync() {
+    _soa.threshold() = threshold_;
+    _soa.gid() = gid_;
+    _soa.output_index() = output_index_;
+    _soa.thread_id() = nt_ ? nt_->id : -1;
+    _soa.nc_count() = static_cast<int>(dil_.size());
+    // NcIndex is owned by ensure_fanout_order when sorted.
+    if (!g_network_fanout_sorted) {
+        _soa.nc_index() = -1;
+    }
+    if (thvar_ && thvar_.refers_to_a_modern_data_structure()) {
+        try {
+            _soa.thvar_row() = static_cast<int>(thvar_.current_row());
+        } catch (...) {
+            _soa.thvar_row() = -1;
+        }
+    } else {
+        _soa.thvar_row() = -1;
+    }
+}
+
 void PreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
     int i;
     record(tt);
@@ -3028,7 +3323,8 @@ void PreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
         }
     } else {
         STATISTICS(presyn_send_direct_);
-        for (const auto& d: dil_) {
+        // Fanout via NcIndex/NcCount into global SoA-row order (dil_ is rebuild source).
+        for_each_fanout_netcon(this, [&](NetCon* d) {
             if (d->active_ && d->target_) {
                 NrnThread* n = PP2NT(d->target_);
                 if (nt == n) {
@@ -3037,7 +3333,7 @@ void PreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
                     ns->p[n->id].interthread_send(tt + d->delay_, d, n);
                 }
             }
-        }
+        });
     }
 #endif  // ndef USENCS
 #if USENCS || NRNMPI
@@ -3091,7 +3387,7 @@ void PreSyn::deliver(double tt, NetCvode* ns, NrnThread* nt) {
     }
     // the thread is the one that owns the targets
     STATISTICS(presyn_deliver_netcon_);
-    for (const auto& d: dil_) {
+    for_each_fanout_netcon(this, [&](NetCon* d) {
         if (d->active_ && d->target_ && PP2NT(d->target_) == nt) {
             double dtt = d->delay_ - delay_;
             if (dtt == 0.) {
@@ -3105,19 +3401,19 @@ void PreSyn::deliver(double tt, NetCvode* ns, NrnThread* nt) {
                 ns->event(tt + dtt, d, nt);
             }
         }
-    }
+    });
 }
 
 // used by bbsavestate since during restore, some NetCon spikes may
 // have already been delivered while others need to be delivered in
 // the future. Not implemented fof qthresh_ case. No statistics.
 void PreSyn::fanout(double td, NetCvode* ns, NrnThread* nt) {
-    for (const auto& d: dil_) {
+    for_each_fanout_netcon(this, [&](NetCon* d) {
         if (d->active_ && d->target_ && PP2NT(d->target_) == nt) {
             double dtt = d->delay_ - delay_;
             ns->bin_event(td + dtt, d, nt);
         }
-    }
+    });
 }
 
 NrnThread* PreSyn::thread() {
@@ -3135,7 +3431,7 @@ void PreSyn::pgvts_deliver(double tt, NetCvode* ns) {
         return;
     }
     STATISTICS(presyn_deliver_netcon_);
-    for (const auto& d: dil_) {
+    for_each_fanout_netcon(this, [&](NetCon* d) {
         if (d->active_ && d->target_) {
             double dtt = d->delay_ - delay_;
             if (dtt < 0.) {
@@ -3145,7 +3441,7 @@ void PreSyn::pgvts_deliver(double tt, NetCvode* ns) {
                 ns->event(tt + dtt, d, nt);
             }
         }
-    }
+    });
 }
 
 void PreSyn::pr(const char* s, double tt, NetCvode* ns) {
@@ -3162,14 +3458,16 @@ DiscreteEvent* SelfEvent::savestate_save() {
     SelfEvent* se = new SelfEvent();
     se->flag_ = flag_;
     se->target_ = target_;
-    se->weight_ = weight_;
+    se->weight_index_ = weight_index_;
+    se->target_row_ = target_row_;
     se->movable_ = movable_;
     return se;
 }
 
 void SelfEvent::savestate_restore(double tt, NetCvode* nc) {
     //	pr("savestate_restore", tt, nc);
-    nrn_net_send(movable_, weight_, target_, tt, flag_);
+    // Rebind via weight_index only (heap-free 7a).
+    nrn_net_send(movable_, weight_index_, target_, tt, flag_);
 }
 
 DiscreteEvent* SelfEvent::savestate_read(FILE* f) {
@@ -3183,10 +3481,13 @@ DiscreteEvent* SelfEvent::savestate_read(FILE* f) {
         sscanf(buf, "%s %d %d %d %d %lf\n", ppname, &ppindex, &pptype, &ncindex, &moff, &flag) ==
         6);
     se->target_ = SelfEvent::index2pp(pptype, ppindex);
-    se->weight_ = nullptr;
+    se->weight_index_ = -1;
+    se->target_row_ = nrn_point_process_soa_row(se->target_);
     if (ncindex >= 0) {
+        // File identity is NetCon object index → Weight SoA base.
         NetCon* nc = NetConSave::index2netcon(ncindex);
-        se->weight_ = nc->weight_;
+        assert(nc);
+        se->weight_index_ = static_cast<int>(nc->weight_base());
     }
     se->flag_ = flag;
     se->movable_ = (moff >= 0) ? (se->target_->prop->dparam + moff) : nullptr;
@@ -3224,12 +3525,21 @@ void SelfEvent::savestate_free() {
 void SelfEvent::savestate_write(FILE* f) {
     fprintf(f, "%d\n", SelfEventType);
     int const moff = movable_ ? (movable_ - target_->prop->dparam) : -1;
+    // File format stores HOC NetCon object index (stable across weight repack).
+    // Cold path only: O(N) scan — not on the sim delivery path.
     int ncindex = -1;
-    // find the NetCon index for weight_
-    if (weight_) {
-        NetCon* nc = NetConSave::weight2netcon(weight_);
-        assert(nc);
-        ncindex = nc->obj_->index;
+    if (weight_index_ >= 0) {
+        Symbol* sym = hoc_lookup("NetCon");
+        if (sym && sym->u.ctemplate && sym->u.ctemplate->olist) {
+            hoc_Item* q = nullptr;
+            ITERATE(q, sym->u.ctemplate->olist) {
+                auto* nc = static_cast<NetCon*>(OBJ(q)->u.this_pointer);
+                if (nc && static_cast<int>(nc->weight_base()) == weight_index_ && nc->obj_) {
+                    ncindex = nc->obj_->index;
+                    break;
+                }
+            }
+        }
     }
 
     fprintf(f,
@@ -3280,7 +3590,8 @@ void SelfEvent::pgvts_deliver(double tt, NetCvode* ns) {
 }
 void SelfEvent::call_net_receive(NetCvode* ns) {
     STATISTICS(selfevent_deliver_);
-    POINT_RECEIVE(target_->prop->_type, target_, weight_, flag_);
+    // Deliver by weight_index (heap-free 7a); ephemeral scratch is never queue identity.
+    nrn_pnt_receive_by_weight_index(target_, weight_index_, flag_);
     if (errno) {
         if (nrn_errno_check(target_->prop->_type)) {
             hoc_warning("errno set during SelfEvent deliver to NET_RECEIVE", (char*) 0);
@@ -4002,10 +4313,7 @@ void NetCvode::fornetcon_prepare() {
         return;
     }
     int i, j;
-    // initialize a map from type to dparam index, -1 means no FOR_NETCONS statement
     std::vector<int> t2i(n_memb_func, -1);
-    // create ForNetConsInfo in all the relevant point processes
-    // and fill in the t2i map.
     for (i = 0; i < nrn_fornetcon_cnt_; ++i) {
         int index = nrn_fornetcon_index_[i];
         int type = nrn_fornetcon_type_[i];
@@ -4013,14 +4321,9 @@ void NetCvode::fornetcon_prepare() {
         if (nrn_is_artificial_[type]) {
             auto* const m = &memb_list[type];
             for (j = 0; j < m->nodecount; ++j) {
-                // Save ForNetConsInfo* as void* to avoid needing to expose the
-                // definition of ForNetConsInfo to translated MOD file code
                 void** v = &(m->pdata[j][index].literal_value<void*>());
                 _nrn_free_fornetcon(v);
-                ForNetConsInfo* fnc = new ForNetConsInfo;
-                *v = fnc;
-                fnc->argslist = 0;
-                fnc->size = 0;
+                *v = new ForNetConsInfo;
             }
         } else {
             for (NrnThread* nt: for_threads(nrn_threads, nrn_nthread))
@@ -4030,20 +4333,15 @@ void NetCvode::fornetcon_prepare() {
                         for (j = 0; j < m->nodecount; ++j) {
                             void** v = &(m->pdata[j][index].literal_value<void*>());
                             _nrn_free_fornetcon(v);
-                            ForNetConsInfo* fnc = new ForNetConsInfo;
-                            *v = fnc;
-                            fnc->argslist = 0;
-                            fnc->size = 0;
+                            *v = new ForNetConsInfo;
                         }
                     }
         }
     }
-    // two loops over all netcons. one to count, one to fill in argslist
-    // count
+    // count peers per target
     if (psl_)
         for (const PreSyn* ps: *psl_) {
-            const NetConPList& dil = ps->dil_;
-            for (const auto& d1: dil) {
+            for (const auto& d1: ps->dil_) {
                 Point_process* pnt = d1->target_;
                 if (pnt && t2i[pnt->prop->_type] > -1) {
                     auto* fnc = static_cast<ForNetConsInfo*>(
@@ -4054,62 +4352,97 @@ void NetCvode::fornetcon_prepare() {
             }
         }
 
-    // allocate argslist space and initialize for another count
+    // Heap-free 7b: allocate bases only (no owned double pool).
+    auto allocate_slots = [](ForNetConsInfo* fnc, int type) {
+        if (!fnc || fnc->size <= 0) {
+            return;
+        }
+        int const n = fnc->size;
+        int const arity = pnt_receive_size[type] > 0 ? pnt_receive_size[type] : 1;
+        fnc->arity = arity;
+        fnc->weight_bases = new int[n];
+        for (int s = 0; s < n; ++s) {
+            fnc->weight_bases[s] = -1;
+        }
+        fnc->size = 0;  // fill pass
+    };
+
     for (i = 0; i < nrn_fornetcon_cnt_; ++i) {
         int index = nrn_fornetcon_index_[i];
         int type = nrn_fornetcon_type_[i];
         if (nrn_is_artificial_[type]) {
             auto* const m = &memb_list[type];
             for (j = 0; j < m->nodecount; ++j) {
-                auto* fnc = static_cast<ForNetConsInfo*>(m->pdata[j][index].get<void*>());
-                if (fnc->size > 0) {
-                    fnc->argslist = new double*[fnc->size];
-                    fnc->size = 0;
-                }
+                allocate_slots(static_cast<ForNetConsInfo*>(m->pdata[j][index].get<void*>()), type);
             }
         } else {
             for (NrnThread* nt: for_threads(nrn_threads, nrn_nthread))
                 for (tml = nt->tml; tml; tml = tml->next)
-                    if (tml->index == nrn_fornetcon_type_[i]) {
+                    if (tml->index == type) {
                         Memb_list* m = tml->ml;
                         for (j = 0; j < m->nodecount; ++j) {
-                            auto* fnc = static_cast<ForNetConsInfo*>(
-                                m->pdata[j][index].get<void*>());
-                            if (fnc->size > 0) {
-                                fnc->argslist = new double*[fnc->size];
-                                fnc->size = 0;
-                            }
+                            allocate_slots(static_cast<ForNetConsInfo*>(
+                                               m->pdata[j][index].get<void*>()),
+                                           type);
                         }
                     }
         }
     }
-    // fill in argslist and count again
+    // fill Weight SoA bases only
     if (psl_) {
         for (const PreSyn* ps: *psl_) {
-            const NetConPList& dil = ps->dil_;
-            for (const auto& d1: dil) {
+            for (const auto& d1: ps->dil_) {
                 Point_process* pnt = d1->target_;
                 if (pnt && t2i[pnt->prop->_type] > -1) {
                     auto* fnc = static_cast<ForNetConsInfo*>(
                         pnt->prop->dparam[t2i[pnt->prop->_type]].get<void*>());
-                    fnc->argslist[fnc->size] = d1->weight_;
-                    fnc->size += 1;
+                    int const slot = fnc->size;
+                    fnc->weight_bases[slot] = static_cast<int>(d1->weight_base());
+                    fnc->size = slot + 1;
                 }
             }
         }
     }
 }
 
-int _nrn_netcon_args(void* v, double*** argslist) {
+int _nrn_netcon_weight_bases(void* v, int** bases) {
     auto* fnc = static_cast<ForNetConsInfo*>(v);
     assert(fnc);
-    *argslist = fnc->argslist;
+    *bases = fnc->weight_bases;
+    // Arity is per-mechanism (same for all peers); stash for _nrn_fornetcon_weight.
+    g_fornet_list_arity = fnc->arity > 0 ? fnc->arity : 1;
     return fnc->size;
+}
+
+double* _nrn_fornetcon_weight(int weight_base) {
+    // Commit previous peer edge (shared TLS view) before opening a new one.
+    fornet_weight_commit();
+    if (weight_base < 0) {
+        return nullptr;
+    }
+    int const arity = g_fornet_list_arity > 0 ? g_fornet_list_arity : 1;
+    // Direct SoA address (CoreNEURON shape); no NetCon reverse lookup.
+    if (double* p = neuron::container::network::SelfEventFields::weight_soa_ptr(weight_base,
+                                                                                arity)) {
+        g_fornet_active_base = weight_base;
+        g_fornet_active_arity = arity;
+        g_fornet_active_buf = p;
+        g_fornet_active_is_tmp = 0;
+        return p;
+    }
+    // Shared TLS view for one edge (not O(peers) owned pool).
+    double* buf = fornet_weight_scratch(arity);
+    neuron::container::network::SelfEventFields::materialize_weight_block(weight_base, arity, buf);
+    g_fornet_active_base = weight_base;
+    g_fornet_active_arity = arity;
+    g_fornet_active_buf = buf;
+    g_fornet_active_is_tmp = 1;
+    return buf;
 }
 
 void _nrn_free_fornetcon(void** v) {
     if (auto* fnc = static_cast<ForNetConsInfo*>(*v); fnc) {
-        delete[] std::exchange(fnc->argslist, nullptr);
+        delete[] std::exchange(fnc->weight_bases, nullptr);
         delete fnc;
         *v = nullptr;
     }
@@ -4616,7 +4949,11 @@ NetCon* NetCvode::install_deliver(neuron::container::data_handle<double> dsrc,
     ps_thread_link(ps);
     NetCon* d = new NetCon(ps, target);
     d->delay_ = delay;
-    d->weight_[0] = magnitude;
+    // HOC weight[] / deliver read Weight SoA only (no weight_ heap).
+    if (d->has_weight_soa()) {
+        d->weight_soa_value(0) = magnitude;
+    }
+    d->soa_sync();
     structure_change_cnt_ = 0;
     return d;
 }
@@ -4699,6 +5036,50 @@ void DiscreteEvent::savestate_write(FILE* f) {
     fprintf(f, "%d\n", DiscreteEventType);
 }
 
+void NetCon::allocate_weight_soa(double const* mirror) {
+    weight_block_ = neuron::container::network::Weight::allocate_weight_block(cnt_, mirror);
+    if (weight_block_) {
+        _soa.weight_index() = weight_block_->base_row();
+        _soa.weight_count() = weight_block_->size();
+    } else {
+        _soa.weight_index() = neuron::container::network::invalid_weight_index;
+        _soa.weight_count() = 0;
+    }
+}
+
+double* NetCon::weight_soa_data() {
+    if (!has_weight_soa() || cnt_ <= 0) {
+        return nullptr;
+    }
+    return weight_block_->data_if_contiguous();
+}
+
+double const* NetCon::weight_soa_data() const {
+    return const_cast<NetCon*>(this)->weight_soa_data();
+}
+
+void NetCon::soa_sync() {
+    _soa.delay() = delay_;
+    _soa.active() = active_ ? 1 : 0;
+    _soa.weight_count() = cnt_;
+    if (target_) {
+        _soa.target() = nrn_point_process_soa_row(target_);
+    } else {
+        _soa.target() = -1;
+    }
+    if (src_) {
+        _soa.src_presyn() = static_cast<int>(src_->_soa.current_row());
+    } else {
+        _soa.src_presyn() = -1;
+    }
+    if (has_weight_soa()) {
+        _soa.weight_index() = weight_block_->base_row();
+        _soa.weight_count() = weight_block_->size();
+    } else {
+        _soa.weight_index() = neuron::container::network::invalid_weight_index;
+    }
+}
+
 NetCon::NetCon(PreSyn* src, Object* target) {
     NetConSave::invalid();
     obj_ = nullptr;
@@ -4707,13 +5088,14 @@ NetCon::NetCon(PreSyn* src, Object* target) {
     if (src_) {
         src_->dil_.push_back(this);
         src_->use_min_delay_ = 0;
+        PreSyn::mark_fanout_unsorted();
     }
     if (target == nullptr) {
         target_ = nullptr;
         active_ = false;
         cnt_ = 1;
-        weight_ = new double[cnt_];
-        weight_[0] = 0.0;
+        allocate_weight_soa(nullptr);
+        soa_sync();
         return;
     }
     target_ = ob2pntproc(target);
@@ -4725,22 +5107,17 @@ NetCon::NetCon(PreSyn* src, Object* target) {
         hoc_execerror("No NET_RECEIVE in target PointProcess:", hoc_object_name(target));
     }
     cnt_ = pnt_receive_size[target_->prop->_type];
-    weight_ = nullptr;
     if (cnt_) {
-        weight_ = new double[cnt_];
-        for (int i = 0; i < cnt_; ++i) {
-            weight_[i] = 0.0;
-        }
+        allocate_weight_soa(nullptr);
     }
+    soa_sync();
 }
 
 NetCon::~NetCon() {
-    // printf("~NetCon\n");
     NetConSave::invalid();
     rmsrc();
-    if (cnt_) {
-        delete[] weight_;
-    }
+    weight_block_.reset();  // frees Weight SoA block rows
+    // _soa owning_handle frees the NetCon SoA row.
 #if DISCRETE_EVENT_OBSERVER
     if (target_) {
         ObjObservable::Detach(target_->ob, this);
@@ -4753,6 +5130,7 @@ void NetCon::rmsrc() {
         for (size_t i = 0; i < src_->dil_.size(); ++i) {
             if (src_->dil_[i] == this) {
                 src_->dil_.erase(src_->dil_.begin() + i);
+                PreSyn::mark_fanout_unsorted();
                 if (src_->dil_.size() == 0 && src_->tvec_ == NULL && src_->idvec_ == NULL) {
                     if (src_->output_index_ == -1) {
                         delete std::exchange(src_, nullptr);
@@ -4763,6 +5141,7 @@ void NetCon::rmsrc() {
         }
     }
     src_ = nullptr;
+    soa_sync();
 }
 
 void NetCon::replace_src(PreSyn* p) {
@@ -4771,7 +5150,9 @@ void NetCon::replace_src(PreSyn* p) {
     if (src_) {
         src_->dil_.push_back(this);
         src_->use_min_delay_ = 0;
+        PreSyn::mark_fanout_unsorted();
     }
+    soa_sync();
 }
 
 DiscreteEvent* NetCon::savestate_save() {
@@ -4821,6 +5202,9 @@ void NetConSave::invalid() {
 }
 
 NetCon* NetConSave::weight2netcon(double* pd) {
+    if (!pd) {
+        return nullptr;
+    }
     NetCon* nc;
     if (!wtable_) {
         hoc_Item* q;
@@ -4829,19 +5213,18 @@ NetCon* NetConSave::weight2netcon(double* pd) {
         ITERATE(q, sym->u.ctemplate->olist) {
             Object* obj = OBJ(q);
             nc = (NetCon*) obj->u.this_pointer;
-            if (nc->weight_) {
-                (*wtable_)[nc->weight_] = nc;
+            if (nc) {
+                if (double* p = nc->weight_soa_data()) {
+                    (*wtable_)[p] = nc;
+                }
             }
         }
     }
     auto wti = wtable_->find(pd);
     if (wti != wtable_->end()) {
-        nc = wti->second;
-        assert(nc->weight_ == pd);
-        return nc;
-    } else {
-        return nullptr;
+        return wti->second;
     }
+    return nullptr;
 }
 
 NetCon* NetConSave::index2netcon(long id) {
@@ -4853,7 +5236,9 @@ NetCon* NetConSave::index2netcon(long id) {
         ITERATE(q, sym->u.ctemplate->olist) {
             Object* obj = OBJ(q);
             nc = (NetCon*) obj->u.this_pointer;
-            if (nc->weight_) {
+            // Index all NetCons by HOC object index (identity for SaveState),
+            // not only those with a weight_ heap (heap-drop readiness).
+            if (nc) {
                 (*idxtable_)[obj->index] = nc;
             }
         }
@@ -4885,6 +5270,7 @@ void NetCvode::ps_thread_link(PreSyn* ps) {
         }
     }
     if (!ps->nt_) {  // premature, reorder_secorder() not called yet
+        ps->soa_sync();
         return;
     }
     if (ps->thvar_) {
@@ -4894,6 +5280,7 @@ void NetCvode::ps_thread_link(PreSyn* ps) {
         }
         ps->hi_th_ = hoc_l_insertvoid(p[i].psl_thr_, ps);
     }
+    ps->soa_sync();
 }
 
 void NetCvode::update_ps2nt() {
@@ -4970,10 +5357,13 @@ PreSyn::PreSyn(neuron::container::data_handle<double> src, Object* osrc, Section
         nrn_notify_when_void_freed(osrc_, this);
     }
 #endif
+    soa_sync();
+    mark_fanout_unsorted();
 }
 
 PreSyn::~PreSyn() {
     PreSynSave::invalid();
+    mark_fanout_unsorted();
     //	printf("~PreSyn %p\n", this);
     nrn_cleanup_presyn(this);
     delete std::exchange(stmt_, nullptr);
@@ -5342,7 +5732,10 @@ void WatchCondition::deliver(double tt, NetCvode* ns, NrnThread* nt) {
         PP2t(pnt_) = tt;
     }
     STATISTICS(watch_deliver_);
-    POINT_RECEIVE(type, pnt_, nullptr, nrflag_);
+    // WATCH-driven NET_RECEIVE (e.g. flag=2): no NetCon weight edge (−1).
+    // Heap-free 7b: FOR_NETCONS mutates SoA / peer TLS; flush after body.
+    POINT_RECEIVE(type, pnt_, -1, nrflag_);
+    fornet_weight_commit();
     if (errno) {
         if (nrn_errno_check(type)) {
             hoc_warning("errno set during WatchCondition deliver to NET_RECEIVE", (char*) 0);
@@ -5433,7 +5826,8 @@ void WatchCondition::pgvts_deliver(double tt, NetCvode* ns) {
     }
     int type = pnt_->prop->_type;
     STATISTICS(watch_deliver_);
-    POINT_RECEIVE(type, pnt_, nullptr, nrflag_);
+    POINT_RECEIVE(type, pnt_, -1, nrflag_);
+    fornet_weight_commit();
     if (errno) {
         if (nrn_errno_check(type)) {
             hoc_warning("errno set during WatchCondition deliver to NET_RECEIVE", (char*) 0);

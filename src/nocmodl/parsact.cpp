@@ -902,9 +902,10 @@ void vectorize_use_func(Item* qname, Item* qpar1, Item* qexpr, Item* qpar2, int 
             }
             Insertstr(qexpr, "t + ");
             if (blocktype == NETRECEIVE) {
-                Insertstr(qpar1->next, "_tqitem, _args, _pnt,");
+                /* Heap-free 7a: pass Weight SoA base index, not double*. */
+                Insertstr(qpar1->next, "_tqitem, _weight_index, _pnt,");
             } else if (blocktype == INITIAL1) {
-                Insertstr(qpar1->next, "_tqitem, nullptr, _ppvar[1].get<Point_process*>(),");
+                Insertstr(qpar1->next, "_tqitem, -1, _ppvar[1].get<Point_process*>(),");
             } else {
                 diag("net_send allowed only in INITIAL and NET_RECEIVE blocks", (char*) 0);
             }

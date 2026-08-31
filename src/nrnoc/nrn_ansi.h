@@ -30,6 +30,13 @@ extern "C" void modl_reg(void);
 
 // nrnmech stuff
 extern void _nrn_free_fornetcon(void**);
+/** @brief FOR_NETCONS by Weight SoA base list. */
+extern int _nrn_netcon_weight_bases(void*, int**);
+/**
+ * @brief Resolve weight SoA base → mutable double* for MOD FOR_NETCONS body.
+ * Zero-copy if contiguous; else shared TLS view (commit on next peer / receive end).
+ */
+extern double* _nrn_fornetcon_weight(int weight_base);
 extern double nrn_call_mech_func(Symbol*, int narg, Prop*, int type);
 
 // mod stuff

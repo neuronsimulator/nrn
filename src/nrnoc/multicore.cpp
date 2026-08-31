@@ -616,11 +616,13 @@ printf("thread_memblist_setup %lx v_node_count=%d ncell=%d end=%d\n", (long)nth,
             for (int i = 0; i < tml->ml->nodecount; ++i) {
                 auto* pnt = tml->ml->prop[i]->dparam[1].get<Point_process*>();
                 pnt->_vnt = _nt;
+                nrn_point_process_soa_sync(pnt);
             }
         } else {
             for (int i = 0; i < tml->ml->nodecount; ++i) {
                 auto* pnt = tml->ml->pdata[i][1].get<Point_process*>();
                 pnt->_vnt = _nt;
+                nrn_point_process_soa_sync(pnt);
             }
         }
     }
