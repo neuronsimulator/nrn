@@ -1,0 +1,48 @@
+// WATCH with threads, fixed step, and cvode with condition_order
+{load_file("stdrun.hoc")}
+
+begintemplate Cell
+public soma, s, w
+create soma
+objref s, w
+proc init() {
+    soma {
+	L = 10  diam=100/(PI*L)  insert hh
+	s = new IClamp(.5) s.dur=.1+.1*$1 s.amp=.2+.1*$1
+	w = new t12(.5) w.id=$1
+    }
+}
+endtemplate Cell
+
+n = 3
+objref cells[n]
+for i=0, n-1 cells[i] = new Cell(i)
+
+objref pc
+pc = new ParallelContext()
+b = execute1("{pc.nthread(3,1)}",0)
+if (b != 1) { printf("failed execute1") quit(1) }
+
+{hoc_stdout("nmodl-watch-output")}
+{printf("fixed step\n")}
+run()
+
+{cvode.use_long_double(1)}
+{cvode_active(1)}
+{printf("cvode\n")}
+run()
+
+{cvode.condition_order(2)}
+{printf("condition order 2\n")}
+run()
+{hoc_stdout()}
+
+{load_file("compare.hoc")}
+b = system("sortspike nmodl-watch-output nmodl-watch-output.sorted") == 0
+if (b != 1) { printf("failed to sortspike") quit(1) }
+
+strdef path
+
+sprint(path, "%s/nmodl-watch-expected", BASE)
+b = compare_files("nmodl-watch-output.sorted", path, 1e-7)
+if (b != 1) { printf("failed at nmodl-watch-output") quit(1) }

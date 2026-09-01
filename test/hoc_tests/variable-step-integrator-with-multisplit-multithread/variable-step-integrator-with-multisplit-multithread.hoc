@@ -1,0 +1,20 @@
+//  variable-step-integrator with threads and multisplit
+objref pc
+pc = new ParallelContext()
+if (execute1("{pc.nthread(3,1)}",0) == 0) {printf("%d\n", 2) quit()}
+
+strdef path
+sprint(path, "%s/../variable-step-integrator/variable-step-integrator.hoc", BASE)
+{load_file(path)}
+
+for i=1, n-1 cable[i] {
+	disconnect()
+	cable[i-1] pc.multisplit(1, i)
+	pc.multisplit(0, i)
+}
+{pc.multisplit()}
+
+variable_step_integrator()
+
+b = fixed_step_result()
+if (b != 1) { quit(1) }

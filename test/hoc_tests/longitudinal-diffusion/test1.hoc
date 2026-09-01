@@ -1,0 +1,88 @@
+load_file("nrngui.hoc")
+create a, b, c
+access a
+
+// ok
+//connect b(0), a(1)
+//connect c(0), b(1)
+
+// used to fail
+connect a(0), b(0)
+connect c(0), b(1)
+
+objref all
+all = new SectionList()
+forall {
+	L = 10
+	diam = 2
+	insert nadifl
+	Ra = diam/(4*D_nadifl)* 1e7
+	nseg = 21
+	if (issection("b")) nseg = 20
+	nai = 1
+	all.append()
+}
+
+//create d
+//connect b(0), d(1)
+//d { L=.001 diam=.001 }
+
+objref fih
+fih = new FInitializeHandler(1, "nc()")
+proc nc() {
+	forsec all nai = 1e-6
+	b.nai(0:.4999) = 10:10
+	b.v(0:.4999) = 10:10
+}
+
+load_file("test1.ses")
+
+objref rvp[2]
+rvp[0] = new RangeVarPlot("nai")
+rvp[1] = new RangeVarPlot("v")
+proc replt() {local i
+	Graph[0].erase_all()
+	for i=0,1 {
+		a rvp[i].begin(.5)
+		c rvp[i].end(.5)
+		rvp[i].origin(0)
+		Graph[0].addobject(rvp[i], i+1, 1+(1-i), 0.8, 0.9-.1*i)
+	}
+	stdinit()
+	Graph[0].exec_menu("View = plot")
+}
+
+proc recon() {
+	forall disconnect()
+	if (issection("a")) {
+		connect b($2), a($1)
+		connect c($3), b(1 - $2)
+	}else if (issection("c")) {
+		connect b(1-$2), c($3)
+		connect a($1), b($2)
+	}else{ 
+		connect a($1), b($2)
+		connect c($3), b(1-$2)
+	}
+	replt()
+	topology()
+}
+
+b recon(0,0,1)
+
+proc p() {
+	print t, a.v(.1), a.nai(.1), b.v(.1), b.nai(.1), c.v(.1), c.nai(.1)
+}
+
+proc prun() {
+
+	stdinit()
+	p()
+	Graph[0].exec_menu("Keep Lines")
+	continuerun(1)
+	p()
+	continuerun(20)
+	p()
+	Graph[0].exec_menu("Keep Lines")
+}
+prun()

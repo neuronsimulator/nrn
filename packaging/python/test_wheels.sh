@@ -50,7 +50,7 @@ run_mpi_test () {
       site_package_dir=`$python_exe -c 'import os, neuron; print(os.path.dirname(neuron.__file__))'`
       corenrn_mpi_lib=`ls $site_package_dir/.data/lib/libcorenrnmpi_mpich*`
 
-      HOC_LIBRARY_PATH=${PWD}/test/ringtest nrniv test/ringtest/ring.hoc
+      HOC_LIBRARY_PATH=${PWD}/test/hoc_tests/ringtest nrniv test/hoc_tests/ringtest/ringtest.hoc
       mv out.dat out.nrn.dat
       $mpi_launcher -n 1 nrniv-core --datpath . --mpi-lib=$corenrn_mpi_lib
       diff -w out.dat out.nrn.dat
@@ -112,7 +112,7 @@ run_serial_test () {
     # Test 3: run coreneuron binary shipped inside wheel
     if [[ "$has_coreneuron" == "true" ]]; then
         $python_exe -c "from neuron.tests import test_nmodl; test_nmodl.test_nmodl()"
-        HOC_LIBRARY_PATH=${PWD}/test/ringtest nrniv test/ringtest/ring.hoc
+        HOC_LIBRARY_PATH=${PWD}/test/hoc_tests/ringtest nrniv test/hoc_tests/ringtest/ringtest.hoc
         mv out.dat out.nrn.dat
         nrniv-core --datpath .
         diff -w out.dat out.nrn.dat

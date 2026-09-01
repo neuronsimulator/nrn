@@ -1,0 +1,20 @@
+// longitudinal_diffusion
+
+//{hoc_stdout("longitudinal_diffusion")}
+
+strdef path
+sprint(path, "%s/test1.hoc", BASE)
+bb = load_file(path)
+{hoc_stdout()}
+
+if (!bb) { quit(1) }
+
+tstop = 1
+run()
+objref v1, v2
+v1 = new Vector()
+v2 = new Vector()
+forall for(x,0) {v1.append(v(x))  v2.append(nai(x))}
+bb = (v1.meansqerr(v2) == 0)
+forall { delete_section() }
+if (bb != 1) { quit(1) }

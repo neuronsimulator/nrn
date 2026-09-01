@@ -1,0 +1,22 @@
+// fixed-step-integrator.hoc model and do cvode test
+
+strdef path
+sprint(path, "%s/../fixed-step-integrator/fixed-step-integrator.hoc", BASE)
+{load_file(path)}
+
+objref cvode
+cvode = new CVode()
+{cvode.active(1)}
+proc variable_step_integrator() {
+	finitialize(-65)
+	cvode.solve(.1)
+}
+variable_step_integrator()
+
+vec = new Vector()
+// NOTE! cable[0].v(0) is correct because voltage clamp turns off at 0.1
+//forall for (x) {printf("%s %g %.17g\n", secname(), x, v(x))}
+{vec.append(-40.037617165775991, -55.032390028739471)}
+{vec.append(-48.28527749947439, -59.927187457120887, -64.019518431979705)}
+b = fixed_step_result()
+if (b != 1) { quit() }

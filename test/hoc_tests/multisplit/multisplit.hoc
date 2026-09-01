@@ -1,0 +1,17 @@
+// fixed-step-integrator.hoc test then multisplit and rerun.
+strdef path
+sprint(path, "%s/../fixed-step-integrator/fixed-step-integrator.hoc", BASE)
+{load_file(path)}
+
+objref pc
+pc = new ParallelContext()
+
+for i=1, n-1 cable[i] {
+	disconnect()
+	cable[i-1] pc.multisplit(1, i)
+	pc.multisplit(0, i)
+}
+{pc.multisplit()}
+fixed_step_run()
+b = fixed_step_result()
+if (b != 1) { quit(1) }
