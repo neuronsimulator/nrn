@@ -49,9 +49,17 @@ If you don't use the GUI, you can still use the d_lambda rule. Just save this co
             return L/lam
     }
 
+    func ceil() {
+        if ($1 == int($1)) {
+            return $1
+        } else {
+            return int($1) + 1
+        }
+    }
+
     proc geom_nseg() {
-        soma area(0.5) // make sure diam reflects 3d points
-        forall { nseg = int((L/(d_lambda*lambda_f(freq))+0.9)/2)*2 + 1  }
+        area(0.5) // make sure diam reflects 3d points
+        forall { nseg = ceil((L/(d_lambda*lambda_f(freq)))/2)*2 + 1  }
     }
 
 
