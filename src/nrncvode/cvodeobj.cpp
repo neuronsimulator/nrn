@@ -7,6 +7,7 @@ void cvode_finitialize();
 extern void (*nrn_multisplit_setup_)();
 
 #include <cmath>
+#include <cstdio>
 #include <cstdlib>
 #include "classreg.h"
 #include "code.h"
@@ -20,6 +21,7 @@ extern void (*nrn_multisplit_setup_)();
 #include "nrndaspk.h"
 #include "nrniv_mf.h"
 #include "nrnpy.h"
+#include "ivocvect.h"
 #include "tqueue.hpp"
 #include "mymath.h"
 #include <nrnmutdec.h>
@@ -323,6 +325,88 @@ static double dae_init_dteps(void* v) {
     return Daspk::dteps_;
 }
 
+// 0 = heuristic only (shipped default if NRN_DAE_INIT_MODE_DEFAULT unset);
+// 1 = IDA_Y_INIT then heuristic fallback;
+// 2 = IDA_Y_INIT only; 3 = battery content hold + y' from C*y'=f(y).
+static int dae_init_mode_default_from_env() {
+    const char* env = std::getenv("NRN_DAE_INIT_MODE_DEFAULT");
+    if (!env) {
+        return 0;
+    }
+    char* end = nullptr;
+    const long val = std::strtol(env, &end, 10);
+    if (end == env || *end != '\0' || val < 0 || val > 3) {
+        // hoc_warning is unsafe here: Cvode_reg runs during hoc_init,
+        // before hoc_cbuf is a valid interpreter line.
+        std::fprintf(stderr,
+                     "NRN_DAE_INIT_MODE_DEFAULT must be an integer 0..3; using 0 (got '%s')\n",
+                     env);
+        return 0;
+    }
+    return static_cast<int>(val);
+}
+
+static double dae_init_mode(void* v) {
+    hoc_return_type_code = HocReturnType::integer;
+    if (ifarg(1)) {
+        Daspk::init_mode_ = (int) chkarg(1, 0, 3);
+    }
+    return (double) Daspk::init_mode_;
+}
+
+// Three-panel IDA IC audit: 0 off, 1 summary, 2 residual rows.
+// Optional second arg t arms first reinit with time >= t (one-shot).
+static double dae_init_audit(void* v) {
+    hoc_return_type_code = HocReturnType::integer;
+    if (ifarg(1)) {
+        int level = (int) chkarg(1, 0, 2);
+        Daspk::audit_set_level(level);
+        if (ifarg(2)) {
+            Daspk::audit_arm_at(*getarg(2));
+        }
+    }
+    return (double) Daspk::audit_level();
+}
+
+// Append audit text to path; no arg or empty string → stdout.
+static double dae_init_audit_file(void* v) {
+    if (ifarg(1)) {
+        Daspk::audit_set_file(gargstr(1));
+    } else {
+        Daspk::audit_set_file(nullptr);
+    }
+    return Daspk::audit_path_.empty() ? 0. : 1.;
+}
+
+// A5: IDA IC path statistics.
+//   dae_init_stats()           — print summary (same as part of statistics())
+//   dae_init_stats(1)          — reset counters
+//   dae_init_stats(vec)        — fill Vector: [n_init, mode3_ok, mode3_fb,
+//                                play, dforce, fd, last_path, last_flags]
+static double dae_init_stats(void* v) {
+    if (ifarg(1)) {
+        if (hoc_is_object_arg(1) && is_vector_arg(1)) {
+            IvocVect* vec = vector_arg(1);
+            vec->resize(8);
+            vec->elem(0) = (double) Daspk::ic_init_count_;
+            vec->elem(1) = (double) Daspk::ic_mode3_ok_count();
+            vec->elem(2) = (double) Daspk::ic_mode3_fallback_count();
+            vec->elem(3) = (double) Daspk::ic_forcing_play_inits_;
+            vec->elem(4) = (double) Daspk::ic_forcing_dforce_inits_;
+            vec->elem(5) = (double) Daspk::ic_forcing_fd_inits_;
+            vec->elem(6) = (double) Daspk::last_ic_path_mode();
+            vec->elem(7) = (double) Daspk::last_ic_forcing_flags();
+            return 8.;
+        }
+        if (chkarg(1, 0, 1) == 1.) {
+            Daspk::reset_ic_stats();
+            return 0.;
+        }
+    }
+    Daspk::print_ic_stats();
+    return (double) Daspk::ic_init_count_;
+}
+
 static double use_mxb(void* v) {
     hoc_return_type_code = HocReturnType::boolean;
     if (ifarg(1)) {
@@ -604,6 +688,10 @@ static Member_func members[] = {{"solve", solve},
                                 {"store_events", store_events},
                                 {"condition_order", condition_order},
                                 {"dae_init_dteps", dae_init_dteps},
+                                {"dae_init_mode", dae_init_mode},
+                                {"dae_init_audit", dae_init_audit},
+                                {"dae_init_audit_file", dae_init_audit_file},
+                                {"dae_init_stats", dae_init_stats},
                                 {"simgraph_remove", simgraph_remove},
                                 {"state_magnitudes", state_magnitudes},
                                 {"ncs_netcons", ncs_netcons},
@@ -654,6 +742,12 @@ void Cvode_reg() {
     class2oc("CVode", cons, destruct, members, omembers, nullptr);
     net_cvode_instance = new NetCvode(1);
     Daspk::dteps_ = 1e-9;  // change with cvode.dae_init_dteps(newval)
+    Daspk::init_mode_ = dae_init_mode_default_from_env();
+    Daspk::audit_level_ = 0;
+    Daspk::audit_armed_ = 0;
+    Daspk::audit_serial_ = 0;
+    Daspk::audit_path_.clear();
+    Daspk::reset_ic_stats();
 }
 
 /* Functions Called by the CVODE Solver */
