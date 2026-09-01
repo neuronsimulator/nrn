@@ -1150,13 +1150,17 @@ Functions, objects, and the stack
 
 .. c:function:: int nrn_int_pop(void)
 
-    Pop an integer from the stack.
+    Pop an integer or array-dimension marker from the stack.
 
     :returns: Integer value from the top of the stack.
 
     **Usage Pattern:**
 
     Used to retrieve function/method return values.
+
+    Indexed object-component access places an internal array-dimension marker
+    on the stack. :c:func:`nrn_int_pop` returns its dimension count through the
+    same API used for an ordinary integer.
 
     .. warning::
 
