@@ -44,6 +44,14 @@ if(_nrn_foreign_have_pytest)
             "${NRN_FOREIGN_SOURCE_ROOT}/test/unit_tests/hoc_python"
     SCRIPT_PATTERNS "test/unit_tests/hoc_python/*.py")
   nrn_foreign_finalize_test(unit_tests python_unit_tests unit)
+
+  nrn_add_test(
+    GROUP unit_tests
+    NAME path_semantics
+    COMMAND "${NRN_FOREIGN_PYTHON}" -m pytest ${_nrn_foreign_pytest_args}
+            "${NRN_FOREIGN_SOURCE_ROOT}/test/unit_tests/path_semantics"
+    SCRIPT_PATTERNS "test/unit_tests/path_semantics/*.py")
+  nrn_foreign_finalize_test(unit_tests path_semantics unit)
 endif()
 
 # ---------------------------------------------------------------------------

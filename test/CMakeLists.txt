@@ -220,6 +220,15 @@ if(NRN_ENABLE_PYTHON)
     PRELOAD_SANITIZER
     SCRIPT_PATTERNS "test/unit_tests/hoc_python/*.py")
 
+  # Extend test/unit_tests/path_semantics on each later Windows-path extract.
+  nrn_add_test(
+    GROUP unit_tests
+    NAME path_semantics
+    COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${pytest}
+            ${PROJECT_SOURCE_DIR}/test/unit_tests/path_semantics
+    PRELOAD_SANITIZER
+    SCRIPT_PATTERNS "test/unit_tests/path_semantics/*.py")
+
   # Pure-Python prcellstate .nrndat semantic compare (no special/modfiles/GPU).
   nrn_add_test(
     GROUP unit_tests
