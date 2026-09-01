@@ -299,3 +299,39 @@ def test_nrniv_dll_nogui_native_backslash():
     out = r.stdout or ""
     leftover = out.replace("nrnmech.dll", "")
     assert "rnmech.dll" not in leftover
+
+
+# ---------------------------------------------------------------------------
+# Import3d GUI chooser directory — last / is not the directory on Windows
+# ---------------------------------------------------------------------------
+
+# Same egrep class as import3d_gui.hoc (and mulfit .*[/:\\] basename).
+_IMPORT3D_CHOOSER_DIR_RE = "[^/\\\\]*$"
+
+
+def test_import3d_gui_chooser_dir(tmp_path):
+    """Import3d GUI chooser starts in the SWC directory.
+
+    import3d_gui.hoc used [^/]*$ so a native C:\\dir\\cell.swc left the
+    chooser directory empty (cwd) instead of C:\\dir\\.
+    """
+    gui_hoc = os.path.join(
+        REPO_ROOT, "share", "lib", "hoc", "import3d", "import3d_gui.hoc"
+    )
+    with open(gui_hoc) as f:
+        assert 'file.getname(), "[^/]*$"' not in f.read()
+    morph = str(tmp_path / "morph")
+    os.makedirs(morph)
+    swc = os.path.join(morph, "cell.swc")
+    _write(swc, "1 1 0 0 0 1 -1\n2 3 10 0 0 0.5 1\n")
+    h.load_file("import3d.hoc")
+    cell = h.Import3d_SWC_read()
+    cell.input(swc)
+    name = str(cell.file.getname())
+    if WIN:
+        assert "\\" in name
+    head = h.ref("")
+    h.StringFunctions().head(name, _IMPORT3D_CHOOSER_DIR_RE, head)
+    got = os.path.normpath(str(head[0]))
+    want = os.path.normpath(morph)
+    assert got == want, (name, head[0], got, want)
