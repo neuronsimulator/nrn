@@ -38,6 +38,9 @@
 
 static Symbol* file_class_sym_;
 extern char* ivoc_get_temp_file();
+#ifdef WIN32
+char* hoc_back2forward(char*);
+#endif
 static int ivoc_unlink(const char*);
 int ivoc_unlink(const char* s) {
     return unlink(s);
@@ -317,6 +320,14 @@ void OcFile::set_name(const char* s) {
     if (s != filename_.c_str()) {
         filename_ = s;
     }
+#ifdef WIN32
+    /* File.getname is interpolated into HOC xopen("%s") / load_file(1, "%s")
+       (stdrun save_session, retrieve). \ in HOC "..." is an escape; fopen
+       accepts /. Same as load_file / mktemp. */
+    if (!filename_.empty()) {
+        hoc_back2forward(&filename_[0]);
+    }
+#endif
 }
 
 #ifdef WIN32

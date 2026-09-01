@@ -29,9 +29,7 @@ import pytest
 from neuron import h
 
 WIN = sys.platform == "win32"
-REPO_ROOT = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "..", "..", "..")
-)
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 HH_MOD = os.path.join(REPO_ROOT, "src", "nrnoc", "hh.mod")
 
 
@@ -86,7 +84,7 @@ def test_load_file_hoc_library_path_os_pathsep(tmp_path):
     missing = str(tmp_path / "missing")
     _write(
         os.path.join(lib, "fromlib.hoc"),
-        "strdef pathsem_load_file\npathsem_load_file = \"fromlib-ok\"\n",
+        'strdef pathsem_load_file\npathsem_load_file = "fromlib-ok"\n',
     )
     os.environ["HOC_LIBRARY_PATH"] = os.pathsep.join([missing, lib])
     assert h.load_file("fromlib.hoc") == 1.0
@@ -203,9 +201,7 @@ def test_nocmodl_dash_o_writes_basename(tmp_path):
     assert r.returncode == 0, r.stdout
     assert os.path.isfile(os.path.join(out, "fromlib.cpp"))
     # Did not treat C:\\mods\\fromlib.mod as a relative name under outdir.
-    leftover = [
-        n for n in os.listdir(out) if n != "fromlib.cpp" and "fromlib" in n
-    ]
+    leftover = [n for n in os.listdir(out) if n != "fromlib.cpp" and "fromlib" in n]
     assert leftover == [], leftover
 
 
@@ -328,10 +324,34 @@ def test_import3d_gui_chooser_dir(tmp_path):
     cell = h.Import3d_SWC_read()
     cell.input(swc)
     name = str(cell.file.getname())
-    if WIN:
-        assert "\\" in name
     head = h.ref("")
     h.StringFunctions().head(name, _IMPORT3D_CHOOSER_DIR_RE, head)
     got = os.path.normpath(str(head[0]))
     want = os.path.normpath(morph)
     assert got == want, (name, head[0], got, want)
+
+
+# ---------------------------------------------------------------------------
+# File.getname — \ in HOC "..." is an escape (same as load_file / mktemp)
+# ---------------------------------------------------------------------------
+
+
+def test_file_getname_hoc_quoted_xopen(tmp_path):
+    """File.getname interpolated into HOC xopen(\"...\") must keep the path.
+
+    stdrun save_session and retrieve do sprint/execute of getname inside
+    quotes. A stored C:\\build-...\\fromgetname.hoc became
+    C:<BS>uild-...fromgetname.hoc (\\b backspace, other \\X dropped).
+    fopen accepts /.
+    """
+    d = str(tmp_path / "hoclib")
+    hoc = os.path.join(d, "fromgetname.hoc")
+    _write(
+        hoc,
+        'strdef pathsem_file_getname\npathsem_file_getname = "fromgetname-ok"\n',
+    )
+    f = h.File(hoc)
+    name = str(f.getname())
+    assert "\\" not in name
+    h('xopen("%s")' % name)
+    assert h.pathsem_file_getname == "fromgetname-ok"
