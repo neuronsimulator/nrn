@@ -576,9 +576,22 @@ static std::optional<std::string> search_hoc_files_regex(const std::regex& patte
         std::vector<std::string> paths_oc;
         std::vector<std::string> paths_hoc;
         for (const auto& entry: fs::directory_iterator(path)) {
-            if (entry.is_regular_file() && entry.path().extension() == ".oc") {
+            if (!entry.is_regular_file()) {
+                continue;
+            }
+            /* Windows filenames are case-insensitive; FROMFUNC.HOC is a
+               HOC file. Unix stays case-sensitive (.HOC is a different name). */
+            std::string ext = entry.path().extension().string();
+#if defined(WIN32)
+            for (char& c: ext) {
+                if (c >= 'A' && c <= 'Z') {
+                    c = static_cast<char>(c - 'A' + 'a');
+                }
+            }
+#endif
+            if (ext == ".oc") {
                 paths_oc.push_back(entry.path().string());
-            } else if (entry.is_regular_file() && entry.path().extension() == ".hoc") {
+            } else if (ext == ".hoc") {
                 paths_hoc.push_back(entry.path().string());
             }
         }

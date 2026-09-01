@@ -119,6 +119,20 @@ def test_load_proc_missing_only_does_not_throw(tmp_path):
     h.load_proc("pathsem_never_defined")
 
 
+@pytest.mark.skipif(not WIN, reason="Windows filenames are case-insensitive")
+def test_load_proc_windows_hoc_extension_case(tmp_path):
+    """load_proc finds FROMFUNC.HOC; the filesystem is case-insensitive.
+
+    directory_iterator compared extension == ".hoc" so .HOC was skipped
+    (Couldn't find). fopen of that name already succeeds.
+    """
+    lib = str(tmp_path / "lib1")
+    _write(os.path.join(lib, "FROMFUNC.HOC"), "proc pathsem_hoc_case() { }\n")
+    os.environ["HOC_LIBRARY_PATH"] = lib
+    h.load_proc("pathsem_hoc_case")
+    h.pathsem_hoc_case()
+
+
 # ---------------------------------------------------------------------------
 # 6f92db085 — NRN_NMODL_PATH os.pathsep (import-time; subprocess)
 # ---------------------------------------------------------------------------
