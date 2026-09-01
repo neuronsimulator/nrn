@@ -14,6 +14,8 @@ void hoc_main1_init(const char*, const char**);
 #include <stdio.h>
 #include <stdlib.h>
 #include <filesystem>
+#include <string>
+#include <vector>
 #if HAVE_UNISTD_H
 #include <unistd.h>
 #if !defined(__APPLE__)
@@ -249,6 +251,27 @@ static bool isdir(const char* p) {
 }
 #endif
 
+#if defined(WIN32)
+// InterViews Style parse_value treats \n as newline (X11 resource syntax).
+// A native path ...\nrnmech.dll always contains that sequence. fopen and
+// LoadLibrary accept '/'. Same rule as load_file / binwrapper _posix_path.
+static void nrn_forward_slash_win_path_args(int argc, const char** argv) {
+    static std::vector<std::string> owned;
+    for (int i = 0; i < argc - 1; ++i) {
+        if (strcmp(argv[i], "-dll") != 0 && strcmp(argv[i], "-pyexe") != 0) {
+            continue;
+        }
+        std::string s{argv[i + 1]};
+        for (char& c: s) {
+            if (c == '\\') {
+                c = '/';
+            }
+        }
+        owned.push_back(std::move(s));
+        argv[i + 1] = owned.back().c_str();
+    }
+}
+#endif
 
 static bool nrn_optarg_on(const char* opt, int* pargc, const char** argv) {
     for (int i = 0; i < *pargc; ++i) {
@@ -471,6 +494,9 @@ nrniv [options] [fileargs]
     const char** our_argv = argv;
     int exit_status = 0;
     Session* session = NULL;
+#if defined(WIN32)
+    nrn_forward_slash_win_path_args(our_argc, our_argv);
+#endif
 #if !defined(_WIN32)
     // Gary Holt's first pass at this was:
     //
