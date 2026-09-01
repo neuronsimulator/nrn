@@ -531,11 +531,10 @@ void nrn_int_push(int i) {
 }
 
 int nrn_int_pop(void) {
+    if (hoc_stack_type_is_ndim()) {
+        return hoc_pop_ndim();
+    }
     return hoc_ipop();
-}
-
-int nrn_ndim_pop(void) {
-    return hoc_pop_ndim();
 }
 
 void nrn_object_push(Object* obj) {

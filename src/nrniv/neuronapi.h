@@ -106,7 +106,6 @@ void nrn_str_push(char** str);
 char** nrn_str_pop(void);
 void nrn_int_push(int i);
 int nrn_int_pop(void);
-int nrn_ndim_pop(void);
 void nrn_object_push(Object* obj);
 void nrn_object_ptr_push(Object** obj_ref);
 Object* nrn_object_pop(void);

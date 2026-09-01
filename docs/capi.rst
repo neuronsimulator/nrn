@@ -1115,7 +1115,7 @@ Functions, objects, and the stack
 
 .. c:function:: int nrn_int_pop(void)
 
-    Pop an integer from the stack.
+    Pop an integer or array-dimension marker from the stack.
 
     :returns: Integer value from the top of the stack.
 
@@ -1123,19 +1123,14 @@ Functions, objects, and the stack
 
     Used to retrieve function/method return values.
 
+    Indexed object-component access places an internal array-dimension marker
+    on the stack. :c:func:`nrn_int_pop` returns its dimension count through the
+    same API used for an ordinary integer.
+
     .. warning::
 
         Most NEURON functions when accessed through the API return doubles not ints and may fail if an int is pushed instead.
         This is true even for functions that return an integer value in Python.
-
-.. c:function:: int nrn_ndim_pop(void)
-
-    Pop an array-dimension marker from the stack.
-
-    :returns: Dimension count from the marker at the top of the stack.
-
-    Dimension markers are a distinct internal stack value and cannot be popped
-    with :c:func:`nrn_int_pop`.
 
 .. c:function:: void nrn_object_push(Object* obj)
 
