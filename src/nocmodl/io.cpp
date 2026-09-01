@@ -213,13 +213,15 @@ void unGets(char* buf)		/* all this because we don't have an ENDBLOCK
 char* current_line() { /* assumes we actually want the previous line */
     static char buf[NRN_BUFSIZE];
     char* p;
+    /* path::c_str() is wchar_t on Windows; %s needs a narrow string.
+       generic_string() uses '/' so the C literal is not a backslash escape
+       (SOLVE error text is interpolated into std_cerr_stream << "..."). */
     SprintfAsrt(buf,
                 "at line %d in file %s:\\n%s",
                 linenum - 1,
 #if !defined(NRN_AVOID_ABSOLUTE_PATHS)
-                finname,
+                fs::absolute(finname).generic_string().c_str(),
 #else
-                /* path::c_str() is wchar_t on Windows; %s needs a narrow string. */
                 fs::absolute(finname).filename().generic_string().c_str(),
 #endif
                 inlinebuf[whichbuf ? 0 : 1] + 30);
