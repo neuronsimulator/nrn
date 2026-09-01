@@ -745,12 +745,10 @@ static void nonvint(neuron::model_sorted_token const& sorted_token, NrnThread& n
     errno = 0;
     for (auto* tml = nt.tml; tml; tml = tml->next) {
         if (memb_func[tml->index].state) {
-            std::string mechname("state-");
-            mechname += memb_func[tml->index].sym->name;
             auto const w = measure ? nrnmpi_wtime() : -1.0;
-            nrn::Instrumentor::phase_begin(mechname.c_str());
+            nrn::Instrumentor::phase_begin("state-", memb_func[tml->index].sym->name);
             memb_func[tml->index].state(sorted_token, &nt, tml->ml, tml->index);
-            nrn::Instrumentor::phase_end(mechname.c_str());
+            nrn::Instrumentor::phase_end("state-", memb_func[tml->index].sym->name);
             if (measure) {
                 nrn_mech_wtime_[tml->index] += nrnmpi_wtime() - w;
             }
