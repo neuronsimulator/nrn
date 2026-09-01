@@ -52,7 +52,7 @@ void (*p_nrnpython_finalize)();
 int nrn_inpython_;
 int (*p_nrnpy_pyrun)(const char* fname);
 
-#if 0 /* defined by cmake if rl_event_hook is not available */
+#if 0 /* defined by cmake (always, including when GNU readline has rl_event_hook) */
 #define use_rl_getc_function
 #endif
 
