@@ -27,19 +27,66 @@ import sys
 
 import pytest
 
-from neuron import h
+from neuron import config, h
 
 WIN = sys.platform == "win32"
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 HH_MOD = os.path.join(REPO_ROOT, "src", "nrnoc", "hh.mod")
 
 
+def _asan_or_tsan():
+    # Child python dlopen of instrumented libnrniv loads interceptors too late
+    # (macOS ASan/TSan). Skip that subprocess; do not spawn a second interpreter.
+    val = str(config.arguments.get("NRN_SANITIZERS") or "")
+    parts = [p.strip().lower() for p in val.replace(";", ",").split(",") if p.strip()]
+    return "address" in parts or "thread" in parts
+
+
+def _exe_names(name):
+    names = [name]
+    if WIN and not name.lower().endswith(".exe"):
+        names.append(name + ".exe")
+    return names
+
+
+def _tool_dirs():
+    """Directories that hold nrniv / nocmodl / modlunit besides PATH.
+
+    Unix foreign ctest: the wheel wrapper list has nrniv and modlunit but not
+    nocmodl. The binaries sit next to nrniv, in neuronhome()/bin, or in
+    neuronhome()/../../bin (wheel .data/bin; prefix/in-tree bin).
+    """
+    dirs = []
+    for nrn in _exe_names("nrniv"):
+        found = shutil.which(nrn)
+        if found:
+            dirs.append(os.path.dirname(os.path.abspath(found)))
+            break
+    nh = str(h.neuronhome())
+    dirs.append(os.path.join(nh, "bin"))
+    dirs.append(os.path.abspath(os.path.join(nh, "..", "..", "bin")))
+    out = []
+    seen = set()
+    for d in dirs:
+        d = os.path.normpath(os.path.abspath(d))
+        if d not in seen:
+            seen.add(d)
+            out.append(d)
+    return out
+
+
 def _tool(name):
-    exe = shutil.which(name)
-    if exe is None and WIN:
-        exe = shutil.which(name + ".exe")
-    assert exe, "missing %s on PATH" % name
-    return exe
+    names = _exe_names(name)
+    for n in names:
+        exe = shutil.which(n)
+        if exe:
+            return exe
+    for d in _tool_dirs():
+        for n in names:
+            cand = os.path.join(d, n)
+            if os.path.isfile(cand):
+                return cand
+    assert False, "missing %s on PATH" % name
 
 
 def _run(args, cwd=None, env=None, timeout=30):
@@ -210,6 +257,10 @@ def test_nrniv_python_windows_py_extension_case(tmp_path):
 # ---------------------------------------------------------------------------
 
 
+@pytest.mark.skipif(
+    _asan_or_tsan(),
+    reason="subprocess import neuron loads sanitizer interceptors too late",
+)
 def test_nrn_nmodl_path_os_pathsep(tmp_path):
     """NRN_NMODL_PATH splits on os.pathsep, not ':' (6f92db085)."""
     missing = str(tmp_path / "missing_mechs")
@@ -229,6 +280,49 @@ def test_nrn_nmodl_path_os_pathsep(tmp_path):
 # nocmodl INCLUDE / -o / nmodl_filename  (44ded77b8, f802de62b, 996c6da8b,
 # 1dc8133ce)
 # ---------------------------------------------------------------------------
+
+
+def test_nocmodl_next_to_nrniv():
+    """Unix foreign ctest: wheel nocmodl is next to nrniv, not on PATH.
+
+    shutil.which("nocmodl") is empty: wrappers include nrniv and modlunit
+    but not nocmodl. Look next to nrniv and in neuronhome()/bin (and .exe
+    on win32). Same for modlunit.
+    """
+    old = os.environ.get("PATH", "")
+    nh_bin = os.path.abspath(os.path.join(str(h.neuronhome()), "..", "..", "bin"))
+    nh_has_nocmodl = False
+    for n in _exe_names("nocmodl"):
+        if os.path.isfile(os.path.join(nh_bin, n)):
+            nh_has_nocmodl = True
+            break
+    keep = []
+    for p in old.split(os.pathsep):
+        if not p:
+            continue
+        has_nocmodl = False
+        has_nrniv = False
+        for n in _exe_names("nocmodl"):
+            if os.path.isfile(os.path.join(p, n)):
+                has_nocmodl = True
+                break
+        for n in _exe_names("nrniv"):
+            if os.path.isfile(os.path.join(p, n)):
+                has_nrniv = True
+                break
+        # Keep a PATH dir that has both unless neuronhome()/../../bin already
+        # has nocmodl (in-tree prefix). VS RelWithDebInfo is one bin, not that.
+        if has_nocmodl and (nh_has_nocmodl or not has_nrniv):
+            continue
+        keep.append(p)
+    os.environ["PATH"] = os.pathsep.join(keep)
+    try:
+        exe = _tool("nocmodl")
+        assert os.path.isfile(exe)
+        unit = _tool("modlunit")
+        assert os.path.isfile(unit)
+    finally:
+        os.environ["PATH"] = old
 
 
 def _tiny_mod(suffix):
