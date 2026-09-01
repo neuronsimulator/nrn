@@ -19,7 +19,7 @@
 
 class Rotate3Band: public Rubberband {
   public:
-    Rotate3Band(Rotation3d* = NULL, RubberAction* = NULL, Canvas* = NULL);
+    Rotate3Band(RubberAction* = NULL, Canvas* = NULL);
     virtual ~Rotate3Band();
 
     virtual void press(Event&);
