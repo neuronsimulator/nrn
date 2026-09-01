@@ -1107,13 +1107,57 @@ class SEWrap: public DiscreteEvent {
     double tt;
     int ncindex;  // in the DEList or -1 if no NetCon for self event.
 };
+
+/** True if SelfEvent is bound to this NetCon (heap base and/or Weight SoA index). */
+static bool selfevent_matches_netcon(SelfEvent const* se, NetCon const* nc) {
+    if (!se || !nc) {
+        return false;
+    }
+    // Legacy: long-lived heap base pointer identity.
+    if (se->weight_ && nc->weight_ && se->weight_ == nc->weight_) {
+        return true;
+    }
+    // Dual-write / heap-drop: Weight SoA base row (weight_index).
+    int se_widx = se->weight_index_;
+    if (se_widx < 0) {
+        return false;
+    }
+    int nc_widx = -1;
+    if (!nc->weight_soa_.empty()) {
+        nc_widx = static_cast<int>(nc->weight_soa_.front().current_row());
+    } else {
+        nc_widx = nc->_soa.weight_index();
+    }
+    return nc_widx == se_widx;
+}
+
+/** Bind SelfEvent weight_ / weight_index_ from a NetCon (after BBSaveState restore). */
+static void selfevent_bind_netcon(SelfEvent* se, NetCon* nc) {
+    if (!se) {
+        return;
+    }
+    if (!nc) {
+        se->weight_ = nullptr;
+        se->weight_index_ = -1;
+        return;
+    }
+    se->weight_ = nc->weight_;
+    if (!nc->weight_soa_.empty()) {
+        se->weight_index_ = static_cast<int>(nc->weight_soa_.front().current_row());
+    } else {
+        se->weight_index_ = nc->_soa.weight_index();
+    }
+}
+
 SEWrap::SEWrap(const TQItem* tq, DEList* dl) {
     tt = tq->t_;
     se = (SelfEvent*) tq->data_;
-    if (se->weight_) {
+    // SelfEvent identity for BBSaveState: index into target's NetCon DEList
+    // (same policy as SaveState NetCon object index), not weight_* alone.
+    if (se->weight_ || se->weight_index_ >= 0) {
         ncindex = 0;
         for (; dl && dl->de && dl->de->type() == NetConType; dl = dl->next, ++ncindex) {
-            if (se->weight_ == ((NetCon*) dl->de)->weight_) {
+            if (selfevent_matches_netcon(se, static_cast<NetCon*>(dl->de))) {
                 return;
             }
         }
@@ -2201,7 +2245,18 @@ void BBSaveState::netrecv_pp(Point_process* pp) {
     f->s(buf, 1);
     for (; dl && dl->de->type() == NetConType; dl = dl->next) {
         NetCon* nc = (NetCon*) dl->de;
+        // Dual-write: HOC weight[] is SoA-primary. Materialize SoA → heap before
+        // OUT/CNT so f->d sees current values; after IN, mirror heap → SoA.
+        if (f->type() != BBSS_IO::IN) {
+            nc->weights_soa_to_heap();
+        }
         f->d(nc->cnt_, nc->weight_);
+        if (f->type() == BBSS_IO::IN) {
+            nc->weights_heap_to_soa();
+            if (!nc->weight_soa_.empty()) {
+                nc->soa_sync();
+            }
+        }
         if (f->type() != BBSS_IO::IN) {  // writing, counting
             DblList* db = 0;
             int j = 0;
@@ -2277,7 +2332,7 @@ void BBSaveState::netrecv_pp(Point_process* pp) {
         // since the queue has been cleared.
         for (int i = 0; i < cnt; ++i) {
             int ncindex, moff;
-            double flag, tt, *w;
+            double flag, tt;
             f->s(buf);
             f->d(1, flag);
             f->d(1, tt);
@@ -2302,16 +2357,16 @@ void BBSaveState::netrecv_pp(Point_process* pp) {
                 se->movable_ = movable;
             }
             if (ncindex == -1) {
-                w = NULL;
+                selfevent_bind_netcon(se, nullptr);
             } else {
                 int j;
                 for (j = 0, dl1 = dliter->second; j < ncindex; ++j, dl1 = dl1->next) {
                     ;
                 }
                 assert(dl1 && dl1->de->type() == NetConType);
-                w = ((NetCon*) dl1->de)->weight_;
+                // ncindex is position in target DEList (file identity), not weight_*.
+                selfevent_bind_netcon(se, static_cast<NetCon*>(dl1->de));
             }
-            se->weight_ = w;
         }
     }
     if (debug) {

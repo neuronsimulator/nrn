@@ -22,6 +22,18 @@ using ldifusfunc_t = void (*)(ldifusfunc2_t, neuron::model_sorted_token const&, 
 typedef void (*pnt_receive_t)(Point_process*, double*, double);
 typedef void (*pnt_receive_init_t)(Point_process*, double*, double);
 
+/**
+ * @brief Phase 4 dual-write: call pnt_receive after materializing Weight SoA → heap buffer.
+ *
+ * Generated MOD still uses (Point_process*, double*, double). weight_index is the
+ * base row in neuron::model().weights(); count is pnt_receive_size[type].
+ * If weight_heap is non-null it is used as the buffer (and written back to SoA after).
+ */
+void nrn_pnt_receive_by_weight_index(Point_process* pnt,
+                                     int weight_index,
+                                     double flag,
+                                     double* weight_heap = nullptr);
+
 extern Prop* need_memb_cl(Symbol*, int*, int*);
 extern Prop* prop_alloc(Prop**, int, Node*);
 void prop_update_ion_variables(Prop*, Node*);

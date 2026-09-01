@@ -143,6 +143,8 @@ void nrnthreads_all_weights_return(std::vector<double*>& weights) {
         for (int i = 0; i < nc->cnt_; ++i) {
             nc->weight_[i] = weights[ith][iw[ith]++];
         }
+        // Dual-write: HOC weight[] is SoA-primary; keep Weight SoA in sync.
+        nc->weights_heap_to_soa();
     }
 }
 
@@ -508,6 +510,8 @@ int nrnthread_dat2_3(int tid,
     int iw = 0;
     for (int i = 0; i < n; ++i) {
         NetCon* nc = cg.netcons[i];
+        // Dual-write: HOC may have written Weight SoA only; materialize heap.
+        nc->weights_soa_to_heap();
         for (int j = 0; j < nc->cnt_; ++j) {
             weights[iw++] = nc->weight_[j];
         }

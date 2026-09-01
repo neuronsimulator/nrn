@@ -3,6 +3,11 @@
 #undef check
 
 #include "neuron/container/data_handle.hpp"
+#include "neuron/container/network/netcon.hpp"
+#include "neuron/container/network/presyn.hpp"
+#include "neuron/container/network/self_event.hpp"
+#include "neuron/container/network/weight_block.hpp"
+#include "neuron/model_data.hpp"
 #include "nrnmpi.h"
 #include "nrnneosm.h"
 #include "pool.hpp"
@@ -110,6 +115,13 @@ class NetCon: public DiscreteEvent {
     void replace_src(PreSyn*);
     virtual void disconnect(Observable*);
 
+    /** @brief Sync legacy NetCon fields into NetCon + Weight SoA (Phase 2). */
+    void soa_sync();
+    /** @brief Copy Weight SoA values → heap weight_ (before pnt_receive). */
+    void weights_soa_to_heap();
+    /** @brief Copy heap weight_ → Weight SoA (after pnt_receive / MOD writes). */
+    void weights_heap_to_soa();
+
     double delay_;
     PreSyn* src_;
     Point_process* target_;
@@ -117,6 +129,10 @@ class NetCon: public DiscreteEvent {
     Object* obj_;
     int cnt_;
     bool active_;
+    /** @brief Phase 1 dual-write owners for Weight SoA rows (see weight_block.hpp). */
+    std::vector<neuron::container::network::Weight::owning_handle> weight_soa_{};
+    /** @brief Phase 2 dual-write: NetCon integration row. */
+    neuron::container::network::NetCon::owning_handle _soa{neuron::model().netcons()};
 
     static unsigned long netcon_send_active_;
     static unsigned long netcon_send_inactive_;
@@ -135,8 +151,17 @@ class NetConSave: public DiscreteEvent {
     NetCon* netcon_;
 
     static void invalid();
+    /** @brief Map long-lived NetCon weight_ heap base → NetCon*. */
     static NetCon* weight2netcon(double*);
+    /** @brief Map HOC NetCon object index → NetCon*. */
     static NetCon* index2netcon(long);
+    /**
+     * @brief Map Weight SoA base row (weight_index) → NetCon*.
+     *
+     * Used when SelfEvent identity is carried as weight_index_ without a
+     * reliable weight_ heap pointer (dual-write / heap-drop path).
+     */
+    static NetCon* weight_index2netcon(int weight_index);
 
   private:
     static NetConSaveWeightTable* wtable_;
@@ -169,6 +194,10 @@ class SelfEvent: public DiscreteEvent {
     Point_process* target_;
     double* weight_;
     Datum* movable_;  // pointed-to Datum holds TQItem*
+    /** @brief Phase 4: base row in Weight SoA (-1 if unknown / null weights). */
+    int weight_index_{-1};
+    /** @brief Phase 4: PointProcess SoA row of target_ (-1 if unknown). */
+    int target_row_{-1};
 
     static unsigned long selfevent_send_;
     static unsigned long selfevent_move_;
@@ -291,6 +320,13 @@ class PreSyn: public ConditionEvent {
     double mindelay();
     void fanout(double, NetCvode*, NrnThread*);  // used by bbsavestate
 
+    /** @brief Sync legacy PreSyn fields into PreSyn SoA (Phase 3). */
+    void soa_sync();
+    /** @brief Mark global NetCon fanout order dirty (dil_ changed). */
+    static void mark_fanout_unsorted();
+    /** @brief Rebuild global fanout order from all PreSyn dil_ lists. */
+    static void ensure_fanout_order();
+
     NetConPList dil_;
     double threshold_;
     double delay_;
@@ -307,6 +343,8 @@ class PreSyn: public ConditionEvent {
     int rec_id_;
     int output_index_;
     int gid_;
+    /** @brief Phase 3 dual-write: PreSyn integration row. */
+    neuron::container::network::PreSyn::owning_handle _soa{neuron::model().presyns()};
 #if NRNMPI
     unsigned char localgid_;  // compressed gid for spike transfer
 #endif

@@ -15,6 +15,10 @@ void invalidate_cache() {
 namespace neuron {
 Model::Model() {
     m_node_data.set_unsorted_callback(invalidate_cache);
+    m_point_processes.set_unsorted_callback(invalidate_cache);
+    m_weights.set_unsorted_callback(invalidate_cache);
+    m_netcons.set_unsorted_callback(invalidate_cache);
+    m_presyns.set_unsorted_callback(invalidate_cache);
     // needs some re-organisation if we ever want to support multiple Model instances
     assert(!container::detail::defer_delete_storage);
     container::detail::defer_delete_storage = &m_ptrs_for_deferred_deletion;
@@ -37,6 +41,18 @@ std::unique_ptr<container::utils::storage_info> Model::find_container_info(void 
         if (auto maybe_info = mech_data->find_container_info(cont); maybe_info) {
             return maybe_info;
         }
+    }
+    if (auto maybe_info = m_point_processes.find_container_info(cont); maybe_info) {
+        return maybe_info;
+    }
+    if (auto maybe_info = m_weights.find_container_info(cont); maybe_info) {
+        return maybe_info;
+    }
+    if (auto maybe_info = m_netcons.find_container_info(cont); maybe_info) {
+        return maybe_info;
+    }
+    if (auto maybe_info = m_presyns.find_container_info(cont); maybe_info) {
+        return maybe_info;
     }
     return {};
 }
@@ -142,6 +158,19 @@ generic_data_handle promote_or_clear(generic_data_handle gdh) {
     });
     if (done) {
         return gdh;
+    }
+    if (auto h = model.point_processes().find_data_handle(gdh);
+        h.refers_to_a_modern_data_structure()) {
+        return h;
+    }
+    if (auto h = model.weights().find_data_handle(gdh); h.refers_to_a_modern_data_structure()) {
+        return h;
+    }
+    if (auto h = model.netcons().find_data_handle(gdh); h.refers_to_a_modern_data_structure()) {
+        return h;
+    }
+    if (auto h = model.presyns().find_data_handle(gdh); h.refers_to_a_modern_data_structure()) {
+        return h;
     }
     return {};
 }
