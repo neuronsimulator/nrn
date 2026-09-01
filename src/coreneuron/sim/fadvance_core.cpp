@@ -110,12 +110,6 @@ void nrn_fixed_step_minimal() { /* not so minimal anymore with gap junctions */
     }
 #endif
 
-#ifdef ENABLE_SONATA_REPORTS
-    {
-        Instrumentor::phase p("flush_reports");
-        nrn_flush_reports(nrn_threads[0]._t);
-    }
-#endif
     t = nrn_threads[0]._t;
 }
 
@@ -162,12 +156,6 @@ void nrn_fixed_step_group_minimal(int total_sim_steps) {
         nrn_spike_exchange(nrn_threads);
 #endif
 
-#ifdef ENABLE_SONATA_REPORTS
-        {
-            Instrumentor::phase p("flush_reports");
-            nrn_flush_reports(nrn_threads[0]._t);
-        }
-#endif
         if (stoprun) {
             break;
         }
@@ -366,6 +354,14 @@ static void* nrn_fixed_step_thread(NrnThread* nth) {
             Instrumentor::phase p("update");
             update(nth);
         }
+#ifdef ENABLE_SONATA_REPORTS
+#pragma omp single
+        {
+            Instrumentor::phase p("flush-reports");
+            // Check if is time to flush reports every sim step
+            nrn_flush_reports(nth->_t);
+        }
+#endif
     }
     if (!nrn_have_gaps) {
         nrn_fixed_step_lastpart(nth);
