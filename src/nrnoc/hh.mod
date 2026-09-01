@@ -63,6 +63,9 @@ ASSIGNED {
 ? currents
 BREAKPOINT {
         SOLVE states METHOD cnexp
+        CONDUCTANCE gna USEION na
+        CONDUCTANCE gk USEION k
+        CONDUCTANCE gl
         gna = gnabar*m*m*m*h
 	ina = gna*(v - ena)
         gk = gkbar*n*n*n*n

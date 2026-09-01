@@ -264,6 +264,7 @@ extern Symbol *install(const char*, int), /* Install token in symbol table */
 extern char finname[NRN_BUFSIZE]; /* the input file prefix */
 extern char buf[NRN_BUFSIZE];     /* general purpose temporary buffer */
 extern char* modprefix;
+extern char* mechname;
 
 extern List *intoken, /* Main list of input tokens */
     *initfunc,        /* see discussion above */

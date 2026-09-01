@@ -28,6 +28,7 @@ set(HEADER_FILES_TO_INSTALL
     nrnoc/nmodlmutex.h
     nrnoc/nrn_ansi.h
     nrnoc/nrncvode.h
+    nrnoc/nrn_trace.h
     nrnoc/nrniv_mf.h
     nrnoc/nrnoc_ml.h
     nrnoc/nrnredef.h
@@ -397,6 +398,7 @@ set(NOCMODL_FILES_LIST
     netrec_discon.cpp
     simultan.cpp
     solve.cpp
+    splitfor.cpp
     symbol.cpp)
 
 set(IVOS_FILES_LIST observe.cpp resource.cpp)
