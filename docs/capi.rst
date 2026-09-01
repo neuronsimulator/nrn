@@ -1971,7 +1971,9 @@ Miscellaneous
     **Usage Pattern:**
 
     Used to read object properties dynamically by name. Essential for
-    generic property access.
+    generic property access. For an NMODL ``POINTER`` property on a point
+    process, this returns the value referenced by the pointer. An unset or
+    opaque pointer returns NaN.
 
     **C Usage:**
     
@@ -2000,6 +2002,10 @@ Miscellaneous
 
     Used for properties that are arrays.
 
+    Point-process properties use the same data-handle resolution as
+    :c:func:`nrn_property_get` for the selected element, including returning NaN
+    for an unset or opaque pointer.
+
     **C Usage:**
 
     .. code-block:: c
@@ -2021,6 +2027,10 @@ Miscellaneous
     :param obj: Pointer to the object.
     :param name: Name of the property.
     :param value: Value to set.
+
+    For an NMODL ``POINTER`` property on a point process, this writes through
+    the pointer to the referenced value. A write to an unset or opaque pointer
+    is ignored.
 
     **C Usage:**
     
@@ -2045,6 +2055,10 @@ Miscellaneous
     :param i: Index into the array (0-based).
     :param value: Value to set at the specified index.
 
+    Point-process properties use the same data-handle resolution as
+    :c:func:`nrn_property_set` for the selected element, including ignoring a
+    write to an unset or opaque pointer.
+
 .. c:function:: void nrn_property_push(Object* obj, const char* name)
 
     Push a property value onto the NEURON stack.
@@ -2058,6 +2072,11 @@ Miscellaneous
     is how NEURON can implement non-square-wave current clamps. Here ``iclamp._ref_amp`` is a reference
     to the ``amp`` property of the ``IClamp`` object.
 
+    For an NMODL ``POINTER`` property on a point process, this pushes the
+    referenced data handle. It can, for example, be consumed by
+    :c:func:`nrn_pp_setpointer_pop` to wire another point-process pointer to
+    the same source. An unset or opaque pointer pushes an empty handle.
+
 .. c:function:: void nrn_property_array_push(Object* obj, const char* name, int i)
 
     Push a property array element onto the NEURON stack.
@@ -2065,6 +2084,10 @@ Miscellaneous
     :param obj: Pointer to the object.
     :param name: Name of the property array.
     :param i: Index into the array (0-based).
+
+    Point-process properties use the same data-handle resolution as
+    :c:func:`nrn_property_push` for the selected element, including pushing an
+    empty handle for an unset or opaque pointer.
 
 .. c:function:: bool nrn_property_data_handle_is_valid(const Object* obj, const char* name, int i)
 
