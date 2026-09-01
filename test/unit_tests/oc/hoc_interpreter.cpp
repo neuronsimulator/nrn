@@ -291,6 +291,7 @@ TEST_CASE("HocCommand normalizes Python callback success", "[NEURON][hoc_interpr
     REQUIRE(std::strcmp(success_buf, "callback result") == 0);
     REQUIRE(strret_failure_status == 0);
     REQUIRE(std::strcmp(failure_buf, "unchanged") == 0);
+    REQUIRE(python_object.refcount == 1);
 }
 
 TEST_CASE("Test hoc_array_access", "[NEURON][hoc_interpreter][nrnpython][array_access]") {
