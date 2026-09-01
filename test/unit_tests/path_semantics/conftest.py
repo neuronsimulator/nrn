@@ -11,4 +11,3 @@ if sys.platform == "win32":
         if p and os.path.isfile(os.path.join(p, "nrniv.dll")):
             os.add_dll_directory(p)
             break
-
