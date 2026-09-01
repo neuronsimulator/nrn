@@ -220,6 +220,14 @@ if(NRN_ENABLE_PYTHON)
     PRELOAD_SANITIZER
     SCRIPT_PATTERNS "test/unit_tests/hoc_python/*.py")
 
+  # Pure-Python prcellstate .nrndat semantic compare (no special/modfiles/GPU).
+  nrn_add_test(
+    GROUP unit_tests
+    NAME python_unit_tests_debug_rdcellstate
+    COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${pytest} ${PROJECT_SOURCE_DIR}/test/unit_tests/debug
+    PRELOAD_SANITIZER
+    SCRIPT_PATTERNS "test/unit_tests/debug/*.py" "test/unit_tests/debug/fixtures/*")
+
   # In brief:
   #
   # * tests and mod files under pytest/ are only compatible with NEURON

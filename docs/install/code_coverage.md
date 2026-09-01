@@ -4,6 +4,7 @@
 ## Dependencies (Linux)
 ```
 sudo apt install lcov
+pip install diff-cover
 ```
 
 ## Instructions
@@ -24,7 +25,9 @@ and ``make cover_html``. See [Simplified Workflow](#simplified-workflow) below.
 
 In addition to the COVERAGE_FLAGS use whatever cmake options you desire.
 But you will generally want ```-DNRN_ENABLE_TESTS=ON``` to see what
-effect your new tests have on coverage.
+effect your new tests have on coverage. Use in-tree `ctest` in the main
+build directory for coverage (not the foreign install/wheel
+`test-install` suite, which exercises an installed tree).
 ```
 COVERAGE_FLAGS="--coverage -O0 -fno-inline -g"
 cmake .. -DCMAKE_INSTALL_PREFIX=install -DCMAKE_C_FLAGS="${COVERAGE_FLAGS}" -DCMAKE_CXX_FLAGS="${COVERAGE_FLAGS}" -DNRN_ENABLE_TESTS=ON
@@ -88,9 +91,43 @@ cmake .. -DCMAKE_INSTALL_PREFIX=install \
 
 make -j 6 install
 
-make cover_begin
+make cover-begin
 
 make test
 
-make cover_html
+make cover-html
 ```
+
+## Changed-line coverage (pull requests)
+
+Whole-file ``cover_html`` reports do not distinguish lines you changed from
+legacy uncovered code. For pull-request iteration, use ``cover_diff`` after
+running tests. It wraps `diff-cover <https://github.com/Bachmann1234/diff_cover>`_
+and reports coverage on the diff against a base branch (Codecov "patch coverage"
+uses the same idea).
+
+```
+ninja cover-begin
+ctest -j8 -R 'some_test_pattern'
+ninja cover-diff
+```
+
+``cover_diff`` collects coverage, then prints uncovered **changed** lines on the
+console and writes ``html-diff/index.html``.
+
+The comparison branch defaults to ``master``. Override at configure time:
+
+```
+cmake .. -DNRN_COVERAGE_DIFF_BRANCH=master ...
+```
+
+Optional: limit instrumentation to compiled sources changed on your branch:
+
+```
+files=$(../ci/coverage_files_from_diff.sh master)
+cmake .. -DNRN_ENABLE_COVERAGE=ON -DNRN_COVERAGE_FILES="${files}" ...
+```
+
+The script lists only ``.cpp`` and ``.c`` files (headers are not compiled).
+It exits with an error when no such files changed; in that case omit
+``-DNRN_COVERAGE_FILES`` and use full or ``cover_diff`` reporting only.

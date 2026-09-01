@@ -6,6 +6,7 @@ set -eux
 #  - curl
 #  - C/C++ compiler
 #  - /opt/nrnwheel/[ARCH] folder created with access rights (this specific path is kept for consistency wrt `build_wheels.bash`)
+#  - repo checkout including ci/deps (fetches ncurses/readline from nrn-ci-deps Release ci-deps-v1)
 
 if [[ "$(uname -s)" != 'Darwin' ]]; then
     echo "Error: this script is for macOS only. readline is already built statically in the linux Docker images"
@@ -28,17 +29,33 @@ else
 	export MACOSX_DEPLOYMENT_TARGET=10.9  # for x86_64
 fi
 
-(curl --retry 3 -L -o ncurses-6.4.tar.gz http://ftpmirror.gnu.org/ncurses/ncurses-6.4.tar.gz \
-    && tar -xvzf ncurses-6.4.tar.gz \
-    && cd ncurses-6.4  \
-    && ./configure --prefix="${NRNWHEEL_DIR}/ncurses" --without-shared CFLAGS="-fPIC" \
-    && make -j install)
+# packaging/python -> repo root
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+FETCH="${REPO_ROOT}/ci/deps/fetch.sh"
+WORKDIR="$(mktemp -d -t nrn-readline-src.XXXXXX)"
+cleanup() { rm -rf "${WORKDIR}"; }
+trap cleanup EXIT
 
-(curl --retry 3 -L -o readline-8.3.tar.gz https://ftpmirror.gnu.org/gnu/readline/readline-8.3.tar.gz \
-    && tar -xvzf readline-8.3.tar.gz \
-    && cd readline-8.3  \
-    && ./configure --prefix="${NRNWHEEL_DIR}/readline" --disable-shared CFLAGS="-fPIC" \
-    && make -j install)
+export NRN_CI_DEPS_SOURCE="${NRN_CI_DEPS_SOURCE:-release}"
+bash "${FETCH}" ncurses-6.4-src "${WORKDIR}"
+# Keep Mac wheels on readline 7.0. 8.3 (from #3809) breaks tty input when
+# InterViews is multiplexing stdin with X11 (nrniv/nrngui with DISPLAY set).
+# Linux wheels already pin 7.0 in packaging/python/Dockerfile.
+bash "${FETCH}" readline-7.0-src "${WORKDIR}"
+
+(
+  tar -xzf "${WORKDIR}/ncurses-6.4.tar.gz" -C "${WORKDIR}"
+  cd "${WORKDIR}/ncurses-6.4"
+  ./configure --prefix="${NRNWHEEL_DIR}/ncurses" --without-shared CFLAGS="-fPIC"
+  make -j install
+)
+
+(
+  tar -xzf "${WORKDIR}/readline-7.0.tar.gz" -C "${WORKDIR}"
+  cd "${WORKDIR}/readline-7.0"
+  ./configure --prefix="${NRNWHEEL_DIR}/readline" --disable-shared CFLAGS="-fPIC"
+  make -j install
+)
 
 (cd "${NRNWHEEL_DIR}/readline/lib" \
     && ar -x libreadline.a \

@@ -2328,9 +2328,6 @@ void KSChan::alloc(Prop* prop) {
     if (!is_point() || nrn_point_prop_ == 0) {
         if (ppsize > 0) {
             prop->dparam = nrn_prop_datum_alloc(prop->_type, ppsize, prop);
-            if (is_point()) {
-                prop->dparam[2] = nullptr;
-            }
         } else {
             prop->dparam = 0;
         }

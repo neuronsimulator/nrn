@@ -1,0 +1,200 @@
+# NEURON CI dependency archive (catalog)
+#
+# Purpose: pin external CI downloads on a GitHub Release, prefer those over flaky
+# third-party hosts, and make upgrades explicit (update this file; re-publish;
+# run check-upstream.sh). Binary blobs are NOT committed under ci/deps/assets/
+# (that directory is gitignored scratch for publish.sh).
+#
+# Fetch order used by fetch.sh (unless NRN_CI_DEPS_SOURCE is set):
+#   1. local   — ci/deps/assets/<file>  (optional local scratch; not in git)
+#   2. release — ${NRN_CI_DEPS_BASE_URL}/<file> or default_release_base_url
+#   3. upstream — upstream_url (last resort)
+#
+# managed:
+#   true  — pin hosted on our GitHub Release (ci-deps-vN); CI should use fetch.sh
+#   false — catalog row only; not yet switched off upstream
+#
+# See ci/deps/README.md
+
+version: 1
+
+# GitHub Release assets for managed pins (override with NRN_CI_DEPS_BASE_URL).
+# Host repo is neuronsimulator/nrn-ci-deps (not product releases on nrn).
+# Navigate: https://github.com/neuronsimulator/nrn-ci-deps/releases → tag ci-deps-v1
+default_release_base_url: "https://github.com/neuronsimulator/nrn-ci-deps/releases/download/ci-deps-v1"
+
+assets:
+  # --- P0: wheel-test MPICH workaround (Ubuntu 24.04 / noble) ---
+  - id: mpich-noble-4.2.0-5.1
+    file: mpich_4.2.0-5.1_amd64.deb
+    sha256: c696dff0975f1857faaae0e450ce6262d13693a7894e523741e6b7581beee0ad
+    upstream_url: https://launchpad.net/ubuntu/+source/mpich/4.2.0-5.1/+build/28285882/+files/mpich_4.2.0-5.1_amd64.deb
+    managed: true
+    consumers:
+      - azure-pipelines.yml
+      - .github/workflows/wheels-template.yml
+      - ci/deps/install_mpich_noble.sh
+    notes: >
+      Ubuntu 24.04 LP#2072338 workaround. Pair with libmpich12-noble-4.2.0-5.1.
+      Only needed while distro mpich remains broken for our tests.
+
+  - id: libmpich12-noble-4.2.0-5.1
+    file: libmpich12_4.2.0-5.1_amd64.deb
+    sha256: 13a233b7dd6d8a51eccf58d981cdb1ae110b673e4dfdeb607fe439918340238f
+    upstream_url: https://launchpad.net/ubuntu/+source/mpich/4.2.0-5.1/+build/28285882/+files/libmpich12_4.2.0-5.1_amd64.deb
+    managed: true
+    consumers:
+      - azure-pipelines.yml
+      - .github/workflows/wheels-template.yml
+      - ci/deps/install_mpich_noble.sh
+    notes: Runtime library package for mpich-noble-4.2.0-5.1.
+
+  - id: mpich-noble-4.2.0-5.1-arm64
+    file: mpich_4.2.0-5.1_arm64.deb
+    sha256: c790342026ca5786bdad889af5b2c6f4c249bb07968aaf5435feb6b2771df452
+    upstream_url: https://launchpad.net/ubuntu/+source/mpich/4.2.0-5.1/+build/28285883/+files/mpich_4.2.0-5.1_arm64.deb
+    managed: true
+    consumers:
+      - .github/workflows/wheels-template.yml
+      - ci/deps/install_mpich_noble.sh
+    notes: >
+      arm64 counterpart of mpich-noble-4.2.0-5.1 (Launchpad build 28285883).
+      Pair with libmpich12-noble-4.2.0-5.1-arm64. Used by ubuntu-24.04-arm wheel tests.
+
+  - id: libmpich12-noble-4.2.0-5.1-arm64
+    file: libmpich12_4.2.0-5.1_arm64.deb
+    sha256: 4fdbdcdcf23a36f3f7fcd2f2fe2fdaff24629a107fa9f0c6904dd1c3aa662ae1
+    upstream_url: https://launchpad.net/ubuntu/+source/mpich/4.2.0-5.1/+build/28285883/+files/libmpich12_4.2.0-5.1_arm64.deb
+    managed: true
+    consumers:
+      - .github/workflows/wheels-template.yml
+      - ci/deps/install_mpich_noble.sh
+    notes: Runtime library package for mpich-noble-4.2.0-5.1-arm64.
+
+  # --- P0/P1: static readline/ncurses sources (GNU mirrors flake) ---
+  - id: ncurses-6.4-src
+    file: ncurses-6.4.tar.gz
+    sha256: 6931283d9ac87c5073f30b6290c4c75f21632bb4fc3603ac8100812bed248159
+    upstream_url: https://ftp.gnu.org/gnu/ncurses/ncurses-6.4.tar.gz
+    managed: true
+    consumers:
+      - packaging/python/build_static_readline_osx.bash
+      - packaging/python/Dockerfile
+    notes: Hosted on ci-deps-v1; consumers must not use ftpmirror.gnu.org.
+
+  - id: readline-7.0-src
+    file: readline-7.0.tar.gz
+    sha256: 750d437185286f40a369e1e4f4764eda932b9459b5ec9a731628393dd3d32334
+    upstream_url: https://ftp.gnu.org/gnu/readline/readline-7.0.tar.gz
+    managed: true
+    consumers:
+      - packaging/python/Dockerfile
+      - packaging/python/build_static_readline_osx.bash
+    notes: >
+      Linux manylinux Dockerfile and GH Actions Mac wheels use 7.0. Azure Mac
+      wheels still use prebuilt secure file readline7.0-ncurses6.4.tar.gz
+      (not in this manifest yet). Do not bump Mac wheels to 8.3: it breaks
+      tty input when InterViews multiplexes stdin with X11.
+
+  - id: readline-8.3-src
+    file: readline-8.3.tar.gz
+    sha256: fe5383204467828cd495ee8d1d3c037a7eba1389c22bc6a041f627976f9061cc
+    upstream_url: https://ftp.gnu.org/gnu/readline/readline-8.3.tar.gz
+    managed: true
+    consumers: []
+    notes: >
+      Hosted pin kept for reference. Mac wheels must stay on 7.0 (see
+      build_static_readline_osx.bash).
+
+  # --- P1: Windows installer toolchain ---
+  - id: nsis-3.05
+    file: nsis-3.05-setup.exe
+    sha256: ""  # fill when vendoring; SourceForge redirects make automated HEAD unreliable
+    upstream_url: http://prdownloads.sourceforge.net/nsis/nsis-3.05-setup.exe
+    managed: false
+    consumers:
+      - ci/win_download_deps.cmd
+    notes: SourceForge historically flaky.
+
+  - id: envar-plugin-0.3.1
+    file: EnVar-Plugin.zip
+    sha256: e5b337fcad68252d18282f7259a0306053626e41b9480fa09df3fab012b85e00
+    upstream_url: https://github.com/GsNSIS/EnVar/releases/download/v0.3.1/EnVar-Plugin.zip
+    managed: false
+    consumers:
+      - ci/win_download_deps.cmd
+
+  - id: msmpi-runtime
+    file: msmpisetup.exe
+    sha256: ""
+    upstream_url: https://download.microsoft.com/download/a/5/2/a5207ca5-1203-491a-8fb8-906fd68ae623/msmpisetup.exe
+    managed: false
+    consumers:
+      - ci/win_download_deps.cmd
+    notes: Opaque Microsoft CDN path; pin by URL + hash when vendoring.
+
+  - id: msmpi-sdk
+    file: msmpisdk.msi
+    sha256: ""
+    upstream_url: https://download.microsoft.com/download/a/5/2/a5207ca5-1203-491a-8fb8-906fd68ae623/msmpisdk.msi
+    managed: false
+    consumers:
+      - ci/win_download_deps.cmd
+
+  # --- P1/P2: occasional CI tools ---
+  - id: ccache-4.11.3-linux-x86_64
+    file: ccache-4.11.3-linux-x86_64.tar.xz
+    sha256: 7766991b91b3a5a177ab33fa043fe09e72c68586d5a86d20a563a05b74f119c0
+    upstream_url: https://github.com/ccache/ccache/releases/download/v4.11.3/ccache-4.11.3-linux-x86_64.tar.xz
+    managed: false
+    consumers:
+      - .github/workflows/coverage.yml
+    notes: Already on GitHub releases; low flake priority.
+
+  - id: automake-1.16.5-src
+    file: automake-1.16.5.tar.xz
+    sha256: f01d58cd6d9d77fbdca9eb4bbd5ead1988228fdb73d6f7a201f5f8d6b118b469
+    upstream_url: https://ftp.gnu.org/gnu/automake/automake-1.16.5.tar.xz
+    managed: true
+    consumers:
+      - .github/workflows/neuron-ci.yml
+    notes: Ubuntu MUSIC job path (neuron-ci); needs automake >= 1.16.5 for Python 3.12.
+
+  # --- Azure-only secure files (document; not managed by fetch.sh yet) ---
+  - id: azure-secure-readline7.0-ncurses6.4
+    file: readline7.0-ncurses6.4.tar.gz
+    sha256: ""
+    upstream_url: ""
+    managed: false
+    consumers:
+      - azure-pipelines.yml
+    notes: Azure Pipelines secure file (prebuilt Mac static libs). Prefer migrating to this archive.
+
+  - id: azure-secure-mpt-headers-2.21
+    file: mpt_headears.2.21.tar.gz
+    sha256: ""
+    upstream_url: ""
+    managed: false
+    consumers:
+      - azure-pipelines.yml
+    notes: Azure secure file for SGI MPT headers (dynamic MPI in Linux wheels). Typo "headears" is the uploaded name.
+
+  # --- Tier B (large; usually reliable; managed: false for now) ---
+  - id: python-3.10.0-amd64-exe
+    file: python-3.10.0-amd64.exe
+    sha256: ""
+    upstream_url: https://www.python.org/ftp/python/3.10.0/python-3.10.0-amd64.exe
+    managed: false
+    consumers:
+      - ci/win_download_deps.cmd
+    notes: ~28 MB; self-host only if python.org flakes.
+
+  - id: python-3.14.0-macos11-pkg
+    file: python-3.14.0-macos11.pkg
+    sha256: ""
+    upstream_url: https://www.python.org/ftp/python/3.14.0/python-3.14.0-macos11.pkg
+    managed: false
+    consumers:
+      - azure-pipelines.yml
+      - .github/workflows/wheels-template.yml
+    notes: Representative Mac python.org installer; matrix has one pkg per Python version.

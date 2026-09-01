@@ -114,12 +114,12 @@ jobs:
           sudo bash packaging/python/build_static_readline_osx.bash
 
       - name: Change name of package for release
-        if: inputs.build_type == 'release'
+        if: inputs.build_type == 'nightly'
         run: |
           python3 -m venv venv
           source venv/bin/activate
           python3 -m pip install tomli tomli-w
-          python3 packaging/python/change_name.py ./pyproject.toml neuron
+          python3 packaging/python/change_name.py ./pyproject.toml neuron-nightly
 
       - name: Optimize RX3D Python module
         if: inputs.optimize_rxd == true
@@ -151,18 +151,9 @@ jobs:
         run: |
           sudo apt update
           sudo apt install -y mpich openmpi-bin libopenmpi-dev libmpich-dev ninja-build
-
-      - name: "Apply workaround for MPICH on Ubuntu 24.04"
-        if: inputs.platform == 'ubuntu-24.04'
-        run: |
-          # mpich is fundamentally broken on Ubuntu 24.04 LTS, for more details see:
-          # https://bugs.launchpad.net/ubuntu/+source/mpich/+bug/2072338
-          # This is fixed in version 4.2.0-5.1, but this version has not been
-          # backported, so as a workaround, we install that version manually
-          sudo apt install -y mpich
-          wget 'https://launchpad.net/ubuntu/+source/mpich/4.2.0-5.1/+build/28285882/+files/mpich_4.2.0-5.1_amd64.deb'
-          wget 'https://launchpad.net/ubuntu/+source/mpich/4.2.0-5.1/+build/28285882/+files/libmpich12_4.2.0-5.1_amd64.deb'
-          sudo dpkg --install mpich_4.2.0-5.1_amd64.deb libmpich12_4.2.0-5.1_amd64.deb
+          # Ubuntu 24.04: pin working mpich from ci/deps (no Launchpad download).
+          # See ci/deps/README.md and LP#2072338.
+          bash ci/deps/install_mpich_noble.sh
 
       - name: Set env vars for testing (Linux)
         if: startsWith(inputs.platform, 'ubuntu')

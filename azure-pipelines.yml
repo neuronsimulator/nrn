@@ -63,6 +63,12 @@ stages:
 
       - script: |
           python3 -m pip install tomli tomli-w
+          python3 packaging/python/change_name.py ./pyproject.toml neuron-nightly
+        condition: and(in(variables['Build.Reason'], 'Manual', 'Schedule'), ne(variables['NRN_NIGHTLY_UPLOAD'], 'false'))
+        displayName: 'Change name of package for nightly'
+
+      - script: |
+          python3 -m pip install tomli tomli-w
           python3 packaging/python/change_name.py ./pyproject.toml neuron
         condition: and(in(variables['Build.Reason'], 'Manual'), eq(variables['NRN_RELEASE_UPLOAD'], 'true'))
         displayName: 'Change name of package for release'
@@ -81,21 +87,9 @@ stages:
       - script: |
           sudo apt update
           sudo apt install -y mpich openmpi-bin libopenmpi-dev libmpich-dev
-          # mpich is fundamentally broken on Ubuntu 24.04 LTS, for more details see:
-          # https://bugs.launchpad.net/ubuntu/+source/mpich/+bug/2072338
-          # This is fixed in version 4.2.0-5.1, but this version has not been
-          # backported, so as a workaround, we install that version manually
-          source /etc/os-release
-          if [[ "$ID" == "ubuntu" && "$VERSION_ID" == "24.04" ]]; then
-            # mpich is fundamentally broken on Ubuntu 24.04 LTS, for more details see:
-            # https://bugs.launchpad.net/ubuntu/+source/mpich/+bug/2072338
-            # This is fixed in version 4.2.0-5.1, but this version has not been
-            # backported, so as a workaround, we install that version manually
-            sudo apt install -y mpich
-            wget 'https://launchpad.net/ubuntu/+source/mpich/4.2.0-5.1/+build/28285882/+files/mpich_4.2.0-5.1_amd64.deb'
-            wget 'https://launchpad.net/ubuntu/+source/mpich/4.2.0-5.1/+build/28285882/+files/libmpich12_4.2.0-5.1_amd64.deb'
-            sudo dpkg --install mpich_4.2.0-5.1_amd64.deb libmpich12_4.2.0-5.1_amd64.deb
-          fi
+          # Ubuntu 24.04: pin working mpich from ci/deps (no Launchpad download).
+          # See ci/deps/README.md and LP#2072338.
+          ci/deps/install_mpich_noble.sh
         displayName: 'Install Test System Dependencies'
 
       - template: ci/azure-wheel-test-upload.yml
@@ -172,6 +166,12 @@ stages:
         displayName: 'Download readline secure file'
         inputs:
           secureFile: 'readline7.0-ncurses6.4.tar.gz'
+
+      - script: |
+          python3 -m pip install tomli tomli-w
+          python3 packaging/python/change_name.py ./pyproject.toml neuron-nightly
+        condition: and(in(variables['Build.Reason'], 'Manual', 'Schedule'), ne(variables['NRN_NIGHTLY_UPLOAD'], 'false'))
+        displayName: 'Change name of package for nightly'
 
       - script: |
           python3 -m pip install tomli tomli-w

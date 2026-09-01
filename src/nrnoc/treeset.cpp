@@ -749,7 +749,7 @@ sections */
 static double diam_from_list(Section* sec, int inode, Prop* p, double rparent);
 
 int recalc_diam_count_, nrn_area_ri_nocount_, nrn_area_ri_count_;
-void nrn_area_ri(Section* sec) {
+static void nrn_area_ri_impl(Section* sec, bool report_diam_error) {
     int j;
     double ra, dx, rright, rleft;
     Prop* p;
@@ -790,7 +790,9 @@ void nrn_area_ri(Section* sec) {
             auto& diam = p->param(0);
             if (diam <= 0.) {
                 diam = 1e-6;
-                hoc_execerror(secname(sec), "diameter diam = 0. Setting to 1e-6");
+                if (report_diam_error) {
+                    hoc_execerror(secname(sec), "diameter diam = 0. Setting to 1e-6");
+                }
             }
             nd->area() = PI * diam * dx;                            // um^2
             rleft = 1e-2 * ra * (dx / 2) / (PI * diam * diam / 4.); /*left half segment Megohms*/
@@ -804,6 +806,14 @@ void nrn_area_ri(Section* sec) {
     NODERINV(sec->pnode[j]) = 1. / rright;
     sec->recalc_area_ = 0;
     diam_changed = 1;
+}
+
+void nrn_area_ri(Section* sec) {
+    nrn_area_ri_impl(sec, true);
+}
+
+void nrn_area_ri_no_diam_error(Section* sec) {
+    nrn_area_ri_impl(sec, false);
 }
 
 Node* nrn_parent_node(Node* nd) {

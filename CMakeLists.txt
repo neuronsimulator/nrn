@@ -216,7 +216,7 @@ set(NRN_RX3D_OPT_LEVEL
     "${NRN_RX3D_OPT_LEVEL_DEFAULT}"
     CACHE STRING "Optimization level for Cython generated files (non-zero may compile slowly)")
 
-option(NRN_ENABLE_COVERAGE "EnableCode Coverage (make cover_begin, make cover_html)" OFF)
+option(NRN_ENABLE_COVERAGE "EnableCode Coverage (cover-begin, cover-html, cover-diff)" OFF)
 set(NRN_COVERAGE_FILES
     ""
     CACHE STRING "semicolon (;) separated list of files to collect code coverage")
@@ -1084,6 +1084,49 @@ if(NRN_ENABLE_TESTS)
   cpp_cc_git_submodule(rxd/testdata)
   set(${CODING_CONV_PREFIX}_3RDPARTY_DIR "${backup}")
   add_subdirectory(test)
+
+  # ---------------------------------------------------------------------------
+  # test-install: run portable foreign ctest against CMAKE_INSTALL_PREFIX. Requires a prior "ninja
+  # install" (or cmake --install). Configures the standalone test/foreign project into
+  # ${CMAKE_BINARY_DIR}/build-ctest.
+  # ---------------------------------------------------------------------------
+  set(NRN_FOREIGN_CTEST_BINARY_DIR
+      "${CMAKE_BINARY_DIR}/build-ctest"
+      CACHE PATH "Binary dir for foreign ctest (test/foreign) used by test-install")
+  if(NRN_ENABLE_PYTHON AND DEFINED NRN_DEFAULT_PYTHON_EXECUTABLE)
+    set(_nrn_test_install_python "${NRN_DEFAULT_PYTHON_EXECUTABLE}")
+  elseif(DEFINED Python3_EXECUTABLE)
+    set(_nrn_test_install_python "${Python3_EXECUTABLE}")
+  else()
+    set(_nrn_test_install_python "")
+  endif()
+  if(_nrn_test_install_python STREQUAL "")
+    message(
+      STATUS "test-install target not added: no Python interpreter available for foreign ctest")
+  else()
+    # Strict version match by default (same source tree that produced the prefix). Reconfigure
+    # build-ctest with -DNRN_FOREIGN_ALLOW_SKEW=ON if needed.
+    set(_nrn_test_install_skew OFF)
+    add_custom_target(
+      test-install
+      COMMAND
+        ${CMAKE_COMMAND} -E echo
+        "Configuring foreign ctest in ${NRN_FOREIGN_CTEST_BINARY_DIR} against ${CMAKE_INSTALL_PREFIX}"
+      COMMAND
+        ${CMAKE_COMMAND} -S "${PROJECT_SOURCE_DIR}/test/foreign" -B
+        "${NRN_FOREIGN_CTEST_BINARY_DIR}" -G "${CMAKE_GENERATOR}"
+        "-DNRN_FOREIGN_PYTHON=${_nrn_test_install_python}"
+        "-DNRN_FOREIGN_ROOT=${CMAKE_INSTALL_PREFIX}"
+        "-DNRN_FOREIGN_ALLOW_SKEW=${_nrn_test_install_skew}"
+      COMMAND ${CMAKE_COMMAND} --build "${NRN_FOREIGN_CTEST_BINARY_DIR}" --target test-install
+              --parallel
+      USES_TERMINAL
+      COMMENT
+        "Foreign install check (run 'ninja install' first). Dir: ${NRN_FOREIGN_CTEST_BINARY_DIR}")
+    message(
+      STATUS
+        "test-install   | ninja install && ninja test-install  -> ${NRN_FOREIGN_CTEST_BINARY_DIR}")
+  endif()
 elseif(NOT WIN32)
   # Windows installs the demo separately
   add_subdirectory(share/demo/release)
@@ -1335,7 +1378,7 @@ if(NRN_ENABLE_CORENEURON)
   message(STATUS "  PATH        | ${CORENEURON_DIR}")
   message(STATUS "  LINK FLAGS  | ${CORENRN_LIB_LINK_FLAGS}")
 endif()
-message(STATUS "NMODL codegen   | ${NRN_ENABLE_NMODL}")
+message(STATUS "NMODL codegen | ${NRN_ENABLE_NMODL}")
 if(NRN_UNIVERSAL2_BUILD)
   message(STATUS "CMAKE_OSX_ARCH| ${CMAKE_OSX_ARCHITECTURES}")
 endif()

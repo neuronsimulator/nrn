@@ -56,6 +56,11 @@ void nrn_section_pop(void);
 void nrn_mechanism_insert(Section* sec, const Symbol* mechanism);
 nrn_Item* nrn_allsec(void);
 nrn_Item* nrn_sectionlist_data(const Object* obj);
+Section* nrn_section_parent(Section* sec);
+Section* nrn_section_trueparent(Section* sec);
+Section* nrn_section_child(Section* sec);
+Section* nrn_section_sibling(Section* sec);
+int nrn_sectionlist_to_array(nrn_Item* sl, Section** buf, int maxlen);
 bool nrn_section_is_active(const Section* sec);
 void nrn_section_ref(Section* sec);
 void nrn_section_unref(Section* sec);
@@ -72,15 +77,28 @@ int nrn_segment_node_index(Section* sec, double x);
 void nrn_rangevar_push(Symbol* sym, Section* sec, double x);
 double nrn_rangevar_get(Symbol* sym, Section* sec, double x);
 void nrn_rangevar_set(Symbol* sym, Section* sec, double x, double value);
+Object* nrn_segment_nmodlrandom_get(Section* sec, double x, Symbol* sym);
+Object* nrn_pntproc_nmodlrandom_get(Object* point_process, Symbol* sym);
+int nrn_setpointer_pop(Symbol* pointer_sym,
+                       Section* sec,
+                       double x,
+                       char* error_msg,
+                       size_t error_msg_size);
+int nrn_pp_setpointer_pop(Object* pp, const char* name, char* error_msg, size_t error_msg_size);
 
 /****************************************
  * Functions, objects, and the stack
  ****************************************/
 Symbol* nrn_symbol(const char* name);
 void nrn_symbol_push(Symbol* sym);
+Symbol* nrn_symbol_pop(void);
 int nrn_symbol_type(const Symbol* sym);
 int nrn_symbol_subtype(const Symbol* sym);
 double* nrn_symbol_dataptr(const Symbol* sym);
+Object* nrn_symbol_object_get(const Symbol* sym);
+bool nrn_symbol_object_set(Symbol* sym, Object* obj);
+const char* nrn_symbol_str_get(const Symbol* sym);
+bool nrn_symbol_str_set(Symbol* sym, const char* value);
 bool nrn_symbol_is_array(const Symbol* sym);
 void nrn_double_push(double val);
 double nrn_double_pop(void);
@@ -91,10 +109,17 @@ char** nrn_str_pop(void);
 void nrn_int_push(int i);
 int nrn_int_pop(void);
 void nrn_object_push(Object* obj);
+void nrn_object_ptr_push(Object** obj_ref);
 Object* nrn_object_pop(void);
 nrn_stack_types_t nrn_stack_type(void);
 char const* nrn_stack_type_name(nrn_stack_types_t id);
 Object* nrn_object_new(Symbol* sym, int narg);
+Object* nrn_object_new_wrap(Symbol* sym, void* cpp_object);
+int nrn_object_new_nothrow(Symbol* sym,
+                           int narg,
+                           Object** result,
+                           char* error_msg,
+                           size_t error_msg_size);
 Symbol* nrn_method_symbol(const Object* obj, const char* name);
 // TODO: the next two functions throw exceptions in C++; need a version that
 //       returns a bool success indicator instead (this is actually the
@@ -142,6 +167,7 @@ void nrn_property_set(Object* obj, const char* name, double value);
 void nrn_property_array_set(Object* obj, const char* name, int i, double value);
 void nrn_property_push(Object* obj, const char* name);
 void nrn_property_array_push(Object* obj, const char* name, int i);
+bool nrn_property_data_handle_is_valid(const Object* obj, const char* name, int i);
 char const* nrn_symbol_name(const Symbol* sym);
 Symlist* nrn_symbol_table(const Symbol* sym);
 Symlist* nrn_global_symbol_table(void);
