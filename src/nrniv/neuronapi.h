@@ -77,6 +77,8 @@ int nrn_segment_node_index(Section* sec, double x);
 void nrn_rangevar_push(Symbol* sym, Section* sec, double x);
 double nrn_rangevar_get(Symbol* sym, Section* sec, double x);
 void nrn_rangevar_set(Symbol* sym, Section* sec, double x, double value);
+Object* nrn_segment_nmodlrandom_get(Section* sec, double x, Symbol* sym);
+Object* nrn_pntproc_nmodlrandom_get(Object* point_process, Symbol* sym);
 int nrn_setpointer_pop(Symbol* pointer_sym,
                        Section* sec,
                        double x,
@@ -165,6 +167,7 @@ void nrn_property_set(Object* obj, const char* name, double value);
 void nrn_property_array_set(Object* obj, const char* name, int i, double value);
 void nrn_property_push(Object* obj, const char* name);
 void nrn_property_array_push(Object* obj, const char* name, int i);
+bool nrn_property_data_handle_is_valid(const Object* obj, const char* name, int i);
 char const* nrn_symbol_name(const Symbol* sym);
 Symlist* nrn_symbol_table(const Symbol* sym);
 Symlist* nrn_global_symbol_table(void);
