@@ -219,7 +219,8 @@ char* current_line() { /* assumes we actually want the previous line */
 #if !defined(NRN_AVOID_ABSOLUTE_PATHS)
                 finname,
 #else
-                fs::absolute(finname).filename().c_str(),
+                /* path::c_str() is wchar_t on Windows; %s needs a narrow string. */
+                fs::absolute(finname).filename().generic_string().c_str(),
 #endif
                 inlinebuf[whichbuf ? 0 : 1] + 30);
     for (p = buf; *p; ++p) {
@@ -448,7 +449,8 @@ void include_file(Item* q) {
     Sprintf(buf, ":::%s", STR(qinc));
     replacstr(qinc, buf);
     try {
-        Sprintf(buf, ":::realpath %s\n", fs::absolute(fname).c_str());
+        /* path::c_str() is wchar_t on Windows; %s needs a narrow string. */
+        Sprintf(buf, ":::realpath %s\n", fs::absolute(fname).generic_string().c_str());
         lappendstr(filetxtlist, buf);
     } catch (const std::filesystem::filesystem_error&) {
         // If we are not able to get an absolute path from fname, simply avoid to write it.

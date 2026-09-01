@@ -149,12 +149,16 @@ int main(int argc, char** argv) {
         fprintf(
             fcout,
             "\n#if NMODL_TEXT\nstatic void register_nmodl_text_and_filename(int mech_type) {\n");
+        /* path::c_str() is wchar_t on Windows; %s needs a narrow string.
+           generic_string() uses '/' so the C literal is not a backslash escape. */
 #if !defined(NRN_AVOID_ABSOLUTE_PATHS)
-        fprintf(fcout, "    const char* nmodl_filename = \"%s\";\n", fs::absolute(finname).c_str());
+        fprintf(fcout,
+                "    const char* nmodl_filename = \"%s\";\n",
+                fs::absolute(finname).generic_string().c_str());
 #else
         fprintf(fcout,
                 "    const char* nmodl_filename = \"%s\";\n",
-                fs::path(finname).filename().c_str());
+                fs::path(finname).filename().generic_string().c_str());
 #endif
         fprintf(fcout, "    const char* nmodl_file_text = \n");
         ITERATE(q, filetxtlist) {

@@ -1424,16 +1424,18 @@ if (auto* const _extnode = _nrn_mechanism_access_extnode(_nd); _extnode) {\n\
                "    hoc_register_var(hoc_scdoub, hoc_vdoub, hoc_intfunc);\n");
     {
         char buf1[NRN_BUFSIZE];
+        /* path::c_str() is wchar_t on Windows; %s needs a narrow string.
+           generic_string() uses '/' so the C literal is not a backslash escape. */
 #if !defined(NRN_AVOID_ABSOLUTE_PATHS)
         Sprintf(buf1,
                 "\tivoc_help(\"help ?1 %s %s\\n\");\n",
                 mechname,
-                fs::absolute(finname).c_str());
+                fs::absolute(finname).generic_string().c_str());
 #else
         Sprintf(buf1,
                 "\tivoc_help(\"help ?1 %s %s\\n\");\n",
                 mechname,
-                fs::path(finname).filename().c_str());
+                fs::path(finname).filename().generic_string().c_str());
 #endif
         Lappendstr(defs_list, buf1);
     }
