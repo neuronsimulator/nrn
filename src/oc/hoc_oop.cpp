@@ -1031,7 +1031,11 @@ void hoc_object_component() {
                 hoc_pushs(sym0);
                 hoc_push_object(obp);
             } else {
-                obp->ctemplate->component(obp, sym0, nindex, isfunc);
+                if (const char* error = obp->ctemplate->component(obp, sym0, nindex, isfunc)) {
+                    // Copies the message before hoc_execerror's warning/dialog
+                    // hooks can re-enter provider code and clobber its buffer.
+                    hoc_execerror_fmt("{}", error);
+                }
             }
             return;
         } else if (obp->ctemplate->sym == nrnpy_pyobj_sym_ &&
@@ -1491,7 +1495,11 @@ void hoc_object_asgn() {
                           nullptr);
         }
         if (o->ctemplate->component_asgn) {
-            o->ctemplate->component_asgn(o);
+            if (const char* error = o->ctemplate->component_asgn(o)) {
+                // Copies the message before hoc_execerror's warning/dialog
+                // hooks can re-enter provider code and clobber its buffer.
+                hoc_execerror_fmt("{}", error);
+            }
         } else if (o->ctemplate->sym == nrnpy_pyobj_sym_ && neuron::python::methods.hpoasgn) {
             /* Compatibility for providers that populate only the methods
                table. */
@@ -1551,8 +1559,8 @@ void hoc_begintemplate(Symbol* t1) {
     t->u.ctemplate->destructor = 0;
     t->u.ctemplate->is_point_ = 0;
     t->u.ctemplate->steer = 0;
-    t->u.ctemplate->component = 0;
-    t->u.ctemplate->component_asgn = 0;
+    t->u.ctemplate->component = nullptr;
+    t->u.ctemplate->component_asgn = nullptr;
     t->u.ctemplate->id = ++template_id;
     pushtemplatei(icntobjectdata);
     pushtemplateodata(hoc_objectdata);
@@ -1626,8 +1634,8 @@ void class2oc_base(const char* name,
     t->constructor = cons;
     t->destructor = destruct;
     t->steer = 0;
-    t->component = 0;
-    t->component_asgn = 0;
+    t->component = nullptr;
+    t->component_asgn = nullptr;
 
     if (m)
         for (i = 0; m[i].name; ++i) {

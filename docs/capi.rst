@@ -886,10 +886,15 @@ hooks. When no provider is registered, ordinary template lookup is unchanged.
     remain loaded while any instance exists. The read callback consumes the
     deferred object frame and pushes exactly one HOC value; the assignment
     callback consumes the typed RHS, available through :c:func:`nrn_stack_type`,
-    followed by the component metadata frame. Both callbacks use the public
-    stack pop/push functions and must not throw across the C ABI. On failure a
-    provider drains its frame, pushes a typed placeholder for reads, and
-    reports the error after the enclosing nothrow HOC call.
+    followed by the component metadata frame. On success each callback returns
+    ``NULL``. On failure it returns an error message without changing the HOC
+    stack. The returned pointer must remain valid until the call returns
+    across the provider boundary; NEURON copies the message before running
+    anything else (its own warning and dialog hooks included) and then calls
+    ``hoc_execerror``.
+    This gives the enclosing :c:func:`nrn_function_call_nothrow` or
+    :c:func:`nrn_method_call_nothrow` normal error reporting and stack recovery
+    without an exception unwinding through a foreign callback.
 
     Passing a null template or either callback returns ``false`` and writes a
     diagnostic to ``error_msg`` when space is provided. Registration is

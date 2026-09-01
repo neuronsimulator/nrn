@@ -22,17 +22,21 @@ typedef struct SymbolTableIterator SymbolTableIterator;
 typedef struct Symlist Symlist;
 typedef struct ShapePlotInterface ShapePlotInterface;
 
-/* Non-owning hooks for provider-backed object components. A read callback
- * consumes the component's deferred object frame and pushes one HOC value.
- * An assignment callback consumes the typed RHS (the callback can query
- * nrn_stack_type()) and then the metadata frame.
- * Callbacks must not throw across the C ABI. A provider that cannot complete
- * an operation must drain its frame, push a placeholder of the expected type
- * for reads, and record the error for the host to report after its nothrow HOC
- * call. The internal Python provider is the sole exception: it uses NEURON's
- * established hoc_execerror path. */
-typedef void (*nrn_component_func)(Object*, Symbol*, int nindex, int isfunc);
-typedef void (*nrn_component_asgn_func)(Object*);
+/* Non-owning hooks for provider-backed object components. On success, a read
+ * callback consumes the component's deferred object frame, pushes one HOC
+ * value, and returns NULL. An assignment callback consumes the typed RHS (the
+ * callback can query nrn_stack_type()) and then the metadata frame before
+ * returning NULL.
+ *
+ * On failure, a callback returns a non-NULL error message without changing the
+ * HOC stack. NEURON copies the message before anything else runs and then
+ * raises hoc_execerror itself, so a foreign-ABI provider never needs a C++
+ * exception to cross its boundary. (An in-process C++ provider, such as the
+ * bundled Python extension, may still let hoc_execerror's own
+ * neuron::oc::runtime_error propagate through the hook; only providers behind
+ * a foreign ABI must use the return channel.) */
+typedef const char* (*nrn_component_func)(Object*, Symbol*, int nindex, int isfunc);
+typedef const char* (*nrn_component_asgn_func)(Object*);
 
 typedef enum {
     STACK_IS_STR = 1,

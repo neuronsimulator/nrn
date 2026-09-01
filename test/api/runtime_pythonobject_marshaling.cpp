@@ -31,9 +31,15 @@ static bool check(bool cond, const char* msg) {
     return cond;
 }
 
-static void read_component(Object* obj, Symbol* member, int nindex, int isfunc) {
+static bool fail_writes{};
+
+static const char* read_component(Object* obj, Symbol* member, int nindex, int isfunc) {
     ++read_calls;
     read_kind = 0;
+    const char* name = member ? nrn_symbol_name(member) : nullptr;
+    if (name && std::strcmp(name, "missing") == 0) {
+        return "provider read failed";
+    }
     if (isfunc) {
         const double rhs = nrn_double_pop();
         const double lhs = nrn_double_pop();
@@ -43,11 +49,10 @@ static void read_component(Object* obj, Symbol* member, int nindex, int isfunc) 
             nrn_object_unref(frame_obj);
         }
         nrn_double_push(lhs + rhs);
-        return;
+        return nullptr;
     }
     Object* frame_obj = nrn_object_pop();
     read_frame_matches = frame_obj == obj && member && nindex == 0 && isfunc == 0;
-    const char* name = member ? nrn_symbol_name(member) : nullptr;
     if (name && std::strcmp(name, "text") == 0) {
         read_kind = 1;
     } else if (name && std::strcmp(name, "object") == 0) {
@@ -67,10 +72,14 @@ static void read_component(Object* obj, Symbol* member, int nindex, int isfunc) 
     } else {
         nrn_double_push(42.5);
     }
+    return nullptr;
 }
 
-static void write_component(Object* obj) {
+static const char* write_component(Object* obj) {
     ++write_calls;
+    if (fail_writes) {
+        return "provider write failed";
+    }
     auto rhs_type = nrn_stack_type();
     if (rhs_type == STACK_IS_NUM) {
         assigned_value = nrn_double_pop();
@@ -96,6 +105,7 @@ static void write_component(Object* obj) {
     if (frame_obj) {
         nrn_object_unref(frame_obj);
     }
+    return nullptr;
 }
 
 int main(void) {
@@ -199,7 +209,9 @@ int main(void) {
     nrn_double_push(1006.0);
     nrn_object_push(obj);
     nrn_str_push(&provider_text_ptr);
-    std::strcpy(provider_text, "assigned text");
+    static_assert(sizeof(provider_text) >= sizeof("assigned text"),
+                  "provider_text must fit the assigned literal");
+    std::memcpy(provider_text, "assigned text", sizeof("assigned text"));
     nrn_function_call(nrn_symbol("write_text"), 2);
     ok &= check(write_kind == 1, "component string write receives provider text");
     ok &= check(write_frame_matches, "component string write receives the expected frame");
@@ -228,6 +240,42 @@ int main(void) {
     ok &= check(write_frame_matches, "component nil write receives the expected frame");
     ok &= check(nrn_double_pop() == 0.0, "nil write procedure result is balanced");
     ok &= check(nrn_double_pop() == 1008.0, "nil write preserves the lower stack sentinel");
+
+    ok &= check(nrn_hoc_call("func read_missing() { return $o1.missing }") == 0,
+                "failing read helper defined");
+    char call_error[128]{};
+    nrn_double_push(1010.0);
+    nrn_object_push(obj);
+    ok &= check(nrn_function_call_nothrow(
+                    nrn_symbol("read_missing"), 1, call_error, sizeof(call_error)) != 0,
+                "component read failure reaches the nothrow API");
+    ok &= check(std::strstr(call_error, "provider read failed") != nullptr,
+                "component read failure preserves the provider message");
+    Object* failed_read_arg = nrn_object_pop();
+    ok &= check(failed_read_arg == obj, "failed read restores its object argument");
+    if (failed_read_arg) {
+        nrn_object_unref(failed_read_arg);
+    }
+    ok &= check(nrn_double_pop() == 1010.0, "failed read restores the pre-call stack");
+
+    call_error[0] = '\0';
+    fail_writes = true;
+    nrn_double_push(1011.0);
+    nrn_object_push(obj);
+    nrn_double_push(88.0);
+    ok &= check(nrn_function_call_nothrow(
+                    nrn_symbol("write_component"), 2, call_error, sizeof(call_error)) != 0,
+                "component write failure reaches the nothrow API");
+    ok &= check(std::strstr(call_error, "provider write failed") != nullptr,
+                "component write failure preserves the provider message");
+    ok &= check(nrn_double_pop() == 88.0, "failed write restores its numeric argument");
+    Object* failed_write_arg = nrn_object_pop();
+    ok &= check(failed_write_arg == obj, "failed write restores its object argument");
+    if (failed_write_arg) {
+        nrn_object_unref(failed_write_arg);
+    }
+    ok &= check(nrn_double_pop() == 1011.0, "failed write restores the pre-call stack");
+    fail_writes = false;
 
     nrn_object_unref(obj);
     return ok ? 0 : 1;

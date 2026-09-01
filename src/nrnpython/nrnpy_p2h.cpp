@@ -302,6 +302,16 @@ static void hpoasgn_component(Object* o) {
     hpoasgn(o, hoc_stack_type());
 }
 
+static const char* py2n_component_hook(Object* o, Symbol* sym, int nindex, int isfunc) {
+    py2n_component(o, sym, nindex, isfunc);
+    return nullptr;
+}
+
+static const char* hpoasgn_component_hook(Object* o) {
+    hpoasgn_component(o);
+    return nullptr;
+}
+
 static nb::object hoccommand_exec_help1(nb::object po) {
     if (nb::tuple::check_(po)) {
         nb::object args = po[1];
@@ -924,7 +934,7 @@ extern "C" NRN_EXPORT void nrnpython_reg_real(neuron::python::impl_ptrs* ptrs) {
     assert(nrnpy_pyobj_sym_);
     char error[128]{};
     auto registered = nrn_template_set_component_hooks(
-        nrnpy_pyobj_sym_, py2n_component, hpoasgn_component, error, sizeof(error));
+        nrnpy_pyobj_sym_, py2n_component_hook, hpoasgn_component_hook, error, sizeof(error));
     assert(registered && "PythonObject component hook registration failed");
     ptrs->callable_with_args = callable_with_args;
     ptrs->call_func = func_call;
