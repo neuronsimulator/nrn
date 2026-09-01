@@ -563,6 +563,13 @@ static std::optional<std::string> search_hoc_files_regex(const std::regex& patte
                                                          const std::vector<std::string>& paths) {
     namespace fs = std::filesystem;
     for (const auto& path: paths) {
+        // load_file fopen-nulls a missing HOC_LIBRARY_PATH dir.
+        // directory_iterator throws (Unix ENOENT; Windows "The system cannot
+        // find the path specified").
+        std::error_code ec;
+        if (!fs::is_directory(path, ec)) {
+            continue;
+        }
         // construct a list containing names of, in this order:
         // - `.oc` files (sorted according to locale)
         // - `.hoc` files (sorted according to locale)
