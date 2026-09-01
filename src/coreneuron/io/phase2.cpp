@@ -962,7 +962,7 @@ void Phase2::set_vec_play(NrnThread& nt, NrnThreadChkpnt& ntc) {
 
 void Phase2::populate(NrnThread& nt, const UserParams& userParams) {
     NrnThreadChkpnt& ntc = nrnthread_chkpnt[nt.id];
-    ntc.file_id = userParams.gidgroups[nt.id];
+    ntc.file_id = userParams.cell_groups[nt.id];
 
     nt.ncell = n_real_cell;
     nt.end = n_node;
