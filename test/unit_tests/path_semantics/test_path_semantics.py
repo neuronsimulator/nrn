@@ -174,6 +174,37 @@ def test_nrniv_python_windows_hoc_extension_case(tmp_path):
     assert "pathsem-hoc-case-ok" in (r.stdout or "")
 
 
+def test_nrniv_python_py_file(tmp_path):
+    """nrniv -python script.py runs the file as Python."""
+    p = str(tmp_path / "script.py")
+    _write(p, "print('pathsem-python-py-ok')\n")
+    r = _run(
+        [_tool("nrniv"), "-python", "-nogui", "-nobanner", p],
+        timeout=20,
+    )
+    assert r.returncode == 0, r.stdout
+    assert "pathsem-python-py-ok" in (r.stdout or "")
+
+
+@pytest.mark.skipif(not WIN, reason="Windows filenames are case-insensitive")
+def test_nrniv_python_windows_py_extension_case(tmp_path):
+    """nrniv -python SCRIPT.PY runs the file; filenames are case-insensitive.
+
+    nrnpython_start compared the last 3 chars of argv to ".py" so .PY was
+    skipped (hoc_moreinput already skips non-.hoc when -python). Unix stays
+    case-sensitive.
+    """
+    p = str(tmp_path / "SCRIPT.PY")
+    _write(p, "print('pathsem-python-py-case-ok')\n")
+    r = _run(
+        [_tool("nrniv"), "-python", "-nogui", "-nobanner", p],
+        timeout=20,
+    )
+    assert r.returncode == 0, r.stdout
+    assert "pathsem-python-py-case-ok" in (r.stdout or "")
+    assert "syntax error" not in (r.stdout or "")
+
+
 # ---------------------------------------------------------------------------
 # 6f92db085 — NRN_NMODL_PATH os.pathsep (import-time; subprocess)
 # ---------------------------------------------------------------------------

@@ -180,6 +180,21 @@ static int nrnmingw_pyrun_interactiveloop() {
 extern "C" NRN_EXPORT PyObject* nrnpy_hoc();
 extern PyObject* nrnpy_nrn();
 
+/* Windows filenames are case-insensitive; SCRIPT.PY is a Python file.
+   Unix stays case-sensitive. Last 3 chars of the whole path is not the
+   filesystem filename extension. Same as hoc.cpp nrn_path_has_ext. */
+static bool nrn_path_has_ext(const char* path, const char* ext) {
+    std::string got = std::filesystem::path(path).extension().string();
+#if defined(WIN32)
+    for (char& c: got) {
+        if (c >= 'A' && c <= 'Z') {
+            c = static_cast<char>(c - 'A' + 'a');
+        }
+    }
+#endif
+    return got == ext;
+}
+
 /** @brief Start the Python interpreter.
  *  @arg b Mode of operation, can be 0 (finalize), 1 (initialize),
  *         or 2 (execute commands/scripts)
@@ -345,7 +360,7 @@ static int nrnpython_start(int b) {
                     python_error_encountered = true;
                 }
                 break;
-            } else if (strlen(arg) > 3 && strcmp(arg + strlen(arg) - 3, ".py") == 0) {
+            } else if (nrn_path_has_ext(arg, ".py")) {
                 if (!nrnpy_pyrun(arg)) {
                     python_error_encountered = true;
                 }
