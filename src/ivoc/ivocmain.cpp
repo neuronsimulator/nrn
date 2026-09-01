@@ -527,6 +527,20 @@ nrniv [options] [fileargs]
 #if defined(WIN32) && HAVE_IV
         bad_install_ok = 1;
 #endif
+#if defined(WIN32)
+        /* getenv NEURONHOME is a native path (wheel os.path.abspath, cmake
+           probe). \ in HOC "..." is an escape; ...\nrn always contains \n.
+           fopen accepts /. Same as setneuronhome / getcwd / File.getname.
+           Do not mutate the environment string. */
+        static std::string nrn_win_home_owned;
+        nrn_win_home_owned.assign(neuron_home);
+        for (char& c: nrn_win_home_owned) {
+            if (c == '\\') {
+                c = '/';
+            }
+        }
+        neuron_home = &nrn_win_home_owned[0];
+#endif
     } else {
         setneuronhome((argc > 0) ? argv[0] : 0);
     }

@@ -16,6 +16,7 @@ job. Point the commit message at the function.
 Linux CI runs the slash/colon rows. Native backslash / GUI ``-dll`` rows
 are ``win32`` only.
 """
+
 from __future__ import print_function
 
 import os
@@ -355,3 +356,25 @@ def test_file_getname_hoc_quoted_xopen(tmp_path):
     assert "\\" not in name
     h('xopen("%s")' % name)
     assert h.pathsem_file_getname == "fromgetname-ok"
+
+
+# ---------------------------------------------------------------------------
+# neuronhome() — getenv NEURONHOME is a native path; ...\nrn has \n
+# ---------------------------------------------------------------------------
+
+
+def test_neuronhome_hoc_quoted_ropen():
+    """neuronhome() interpolated into HOC File.ropen(\"...\") must keep .../nrn.
+
+    getenv NEURONHOME is a native path (wheel os.path.abspath, cmake probe).
+    A stored C:\\...\\share\\nrn became share + newline + rn (\\n). fopen
+    accepts /. Same as File.getname / getcwd / setneuronhome.
+    """
+    nh = str(h.neuronhome())
+    assert "\\" not in nh
+    stdlib = nh + "/lib/hoc/stdlib.hoc"
+    h("objref pathsem_nh_f_")
+    h("pathsem_nh_f_ = new File()")
+    h('pathsem_nh_open_ = pathsem_nh_f_.ropen("%s")' % stdlib)
+    assert h.pathsem_nh_open_ == 1.0, stdlib
+    h("pathsem_nh_f_.close()")
