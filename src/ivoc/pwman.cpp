@@ -3076,7 +3076,17 @@ void PWMImpl::retrieve_control() {
         if (ok_to_read(*fc_retrieve_->selected(), w_)) {
             Oc oc;
             char buf[256];
+#if defined(WIN32)
+            /* InterViews selected() is a native path. load_file interpolates
+               into HOC xopen("..."); \ is an escape. fopen accepts /. Dup;
+               do not mutate the chooser string. Same as File.getname. */
+            char winpath[256];
+            winpath[255] = '\0';
+            strncpy(winpath, fc_retrieve_->selected()->string(), 255);
+            Sprintf(buf, "{load_file(1, \"%s\")}\n", hoc_back2forward(winpath));
+#else
             Sprintf(buf, "{load_file(1, \"%s\")}\n", fc_retrieve_->selected()->string());
+#endif
             if (!oc.run(buf)) {
                 break;
             }

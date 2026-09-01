@@ -464,3 +464,36 @@ def test_neuronhome_hoc_quoted_ropen():
     h('pathsem_nh_open_ = pathsem_nh_f_.ropen("%s")' % stdlib)
     assert h.pathsem_nh_open_ == 1.0, stdlib
     h("pathsem_nh_f_.close()")
+
+
+# ---------------------------------------------------------------------------
+# GUI File/Retrieve — InterViews selected() interpolated into HOC load_file
+# ---------------------------------------------------------------------------
+
+
+def test_retrieve_session_hoc_quoted_load_file(tmp_path):
+    """GUI retrieve interpolates the chooser path into load_file(1, \"...\").
+
+    InterViews selected() is a native path. A stored
+    C:\\build-...\\fromretrieve.hoc became C:<BS>uild-...fromretrieve.hoc
+    (\\b backspace, other \\X dropped). fopen accepts /. Dup; do not mutate
+    the chooser string. Same as File.getname / neuronhome.
+    """
+    pwman = os.path.join(REPO_ROOT, "src", "ivoc", "pwman.cpp")
+    with open(pwman) as f:
+        src = f.read()
+    start = src.find("void PWMImpl::retrieve_control")
+    assert start != -1
+    end = src.find("class OcLabelGlyph", start)
+    body = src[start:end]
+    assert "hoc_back2forward" in body
+    assert "load_file(1," in body
+    d = str(tmp_path / "fromretrieve")
+    hoc = os.path.join(d, "fromretrieve.hoc")
+    _write(
+        hoc,
+        'strdef pathsem_retrieve\npathsem_retrieve = "retrieve-ok"\n',
+    )
+    converted = hoc.replace("\\", "/")
+    h('load_file(1, "%s")' % converted)
+    assert h.pathsem_retrieve == "retrieve-ok"
