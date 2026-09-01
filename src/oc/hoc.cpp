@@ -1035,6 +1035,21 @@ static const char* double_at2space(const char* infile) {
 }
 #endif /*MINGW*/
 
+/* Windows filenames are case-insensitive; SCRIPT.PY is a Python file and
+   FROMFUNC.HOC is a HOC file. Unix stays case-sensitive. Last 3/4 chars of
+   the whole path is not the filesystem filename extension. */
+static bool nrn_path_has_ext(const char* path, const char* ext) {
+    std::string got = std::filesystem::path(path).extension().string();
+#if defined(WIN32)
+    for (char& c: got) {
+        if (c >= 'A' && c <= 'Z') {
+            c = static_cast<char>(c - 'A' + 'a');
+        }
+    }
+#endif
+    return got == ext;
+}
+
 int hoc_moreinput() {
     if (hoc_pipeflag) {
         hoc_pipeflag = 0;
@@ -1076,7 +1091,7 @@ int hoc_moreinput() {
         only for legacy code and there is no notion of stdin interaction
         with the hoc interpreter.
         */
-        if (strlen(infile) < 4 || strcmp(infile + strlen(infile) - 4, ".hoc") != 0) {
+        if (!nrn_path_has_ext(infile, ".hoc")) {
             return hoc_moreinput();
         }
     }
@@ -1117,7 +1132,7 @@ int hoc_moreinput() {
             hoc_execerror("arg not valid statement:", infile);
         }
         return hoc_moreinput();
-    } else if (strlen(infile) > 3 && strcmp(infile + strlen(infile) - 3, ".py") == 0) {
+    } else if (nrn_path_has_ext(infile, ".py")) {
         if (!p_nrnpy_pyrun) {
             hoc_execerror("Python not available to interpret", infile);
         }

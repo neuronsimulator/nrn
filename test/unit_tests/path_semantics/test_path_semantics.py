@@ -133,6 +133,47 @@ def test_load_proc_windows_hoc_extension_case(tmp_path):
     h.pathsem_hoc_case()
 
 
+def test_nrniv_py_file(tmp_path):
+    """nrniv script.py runs the file as Python."""
+    p = str(tmp_path / "script.py")
+    _write(p, "print('pathsem-py-ok')\n")
+    r = _run([_tool("nrniv"), "-nogui", "-nobanner", p], timeout=20)
+    assert r.returncode == 0, r.stdout
+    assert "pathsem-py-ok" in (r.stdout or "")
+
+
+@pytest.mark.skipif(not WIN, reason="Windows filenames are case-insensitive")
+def test_nrniv_windows_py_extension_case(tmp_path):
+    """nrniv SCRIPT.PY runs the file as Python; the filesystem is case-insensitive.
+
+    hoc_moreinput compared the last 3 chars to ".py" so .PY was xopen'd as
+    HOC (syntax error). Unix stays case-sensitive.
+    """
+    p = str(tmp_path / "SCRIPT.PY")
+    _write(p, "print('pathsem-py-case-ok')\n")
+    r = _run([_tool("nrniv"), "-nogui", "-nobanner", p], timeout=20)
+    assert r.returncode == 0, r.stdout
+    assert "pathsem-py-case-ok" in (r.stdout or "")
+    assert "syntax error" not in (r.stdout or "")
+
+
+@pytest.mark.skipif(not WIN, reason="Windows filenames are case-insensitive")
+def test_nrniv_python_windows_hoc_extension_case(tmp_path):
+    """nrniv -python FROMFUNC.HOC xopen's the file; filenames are case-insensitive.
+
+    With -python, hoc_moreinput compared the last 4 chars to ".hoc" so .HOC
+    was skipped. Unix stays case-sensitive.
+    """
+    p = str(tmp_path / "FROMFUNC.HOC")
+    _write(p, 'print "pathsem-hoc-case-ok"\n')
+    r = _run(
+        [_tool("nrniv"), "-python", "-nogui", "-nobanner", p],
+        timeout=20,
+    )
+    assert r.returncode == 0, r.stdout
+    assert "pathsem-hoc-case-ok" in (r.stdout or "")
+
+
 # ---------------------------------------------------------------------------
 # 6f92db085 — NRN_NMODL_PATH os.pathsep (import-time; subprocess)
 # ---------------------------------------------------------------------------
