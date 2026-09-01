@@ -738,7 +738,25 @@ static int hoc_Load_file(int always, const char* name) {
         path[0] = '\0';
         /* otherwise find the file in the default directories */
         f = fopen(base, "r"); /* cwd */
-        if (!f) {             /* try HOC_LIBRARY_PATH */
+        if (!f && hoc_xopen_file_ && hoc_xopen_file_[0]) {
+            /* nrniv fopen's a path file without chdir. load_file of a path
+               already chdir's for relative xopen. Search next to the currently
+               open file. Last / is not the directory on Windows. */
+            std::filesystem::path parent = std::filesystem::path(hoc_xopen_file_).parent_path();
+            if (!parent.empty() && parent != ".") {
+                /* generic_string: '/' so chdir/fopen match load_file. */
+                std::string dir = parent.generic_string();
+                nrn_assert(dir.size() < hoc_load_file_size_);
+                std::snprintf(path, hoc_load_file_size_, "%s", dir.c_str());
+                nrn_assert(snprintf(fname, hoc_load_file_size_, "%s/%s", path, base) <
+                           hoc_load_file_size_);
+                f = fopen(expand_env_var(fname), "r");
+                if (!f) {
+                    path[0] = '\0';
+                }
+            }
+        }
+        if (!f) { /* try HOC_LIBRARY_PATH */
             char* hlp = getenv("HOC_LIBRARY_PATH");
 #if defined(WIN32)
             /* load_proc already splits on ';'. ':' is a drive letter. */

@@ -467,6 +467,33 @@ def test_neuronhome_hoc_quoted_ropen():
 
 
 # ---------------------------------------------------------------------------
+# nrniv file argv — load_file("rel.hoc") next to the currently open file
+# ---------------------------------------------------------------------------
+
+
+def test_nrniv_file_relative_load_file(tmp_path):
+    """nrniv of a path file finds relative load_file next to the file.
+
+    nrniv fopen's the argv file without chdir. load_file("rel.hoc") inside
+    looked in cwd (Couldn't find). load_file of a path already chdir's for
+    relative xopen. Last / is not the directory on Windows.
+    """
+    d = str(tmp_path / "sesrel")
+    _write(
+        os.path.join(d, "rel.hoc"),
+        'strdef pathsem_nrniv_rel\npathsem_nrniv_rel = "sesrel-ok"\n',
+    )
+    ses = os.path.join(d, "fromses.ses")
+    _write(ses, 'load_file("rel.hoc")\nprint pathsem_nrniv_rel\n')
+    elsewhere = str(tmp_path / "elsewhere")
+    os.makedirs(elsewhere)
+    r = _run([_tool("nrniv"), "-nogui", "-nobanner", ses], cwd=elsewhere, timeout=20)
+    assert r.returncode == 0, r.stdout
+    assert "sesrel-ok" in (r.stdout or "")
+    assert "Couldn't find" not in (r.stdout or "")
+
+
+# ---------------------------------------------------------------------------
 # GUI File/Retrieve — InterViews selected() interpolated into HOC load_file
 # ---------------------------------------------------------------------------
 
