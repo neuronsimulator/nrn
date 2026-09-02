@@ -470,6 +470,16 @@ const char* OcFile::dir() {
     {
         dirname_ = "";
     }
+#ifdef WIN32
+    /* File.dir is passed to chdir and File.chooser start (stdrun
+       change_working_dir). InterViews dir() is a native path. \ in HOC
+       "..." is an escape; ...\nrn always contains \n. chdir accepts /.
+       Dup into dirname_; do not mutate the chooser string. Same as
+       File.getname. */
+    if (!dirname_.empty()) {
+        hoc_back2forward(&dirname_[0]);
+    }
+#endif
     return dirname_.c_str();
 }
 

@@ -513,6 +513,45 @@ def test_import3d_gui_chooser_dir(tmp_path):
 
 
 # ---------------------------------------------------------------------------
+# File.dir — InterViews chooser dir() is a native path (same as getname)
+# ---------------------------------------------------------------------------
+
+
+def test_file_dir_hoc_quoted_chdir(tmp_path):
+    """File.dir interpolated into HOC chdir(\"...\") must keep .../nrn.
+
+    InterViews FileChooser dir() is a native path. stdrun
+    change_working_dir does chdir of File.dir and passes it as the next
+    chooser start. A stored C:\\...\\share\\nrn\\workdir became share +
+    newline + rn. chdir accepts /. Dup; do not mutate the chooser string.
+    Same as File.getname / neuronhome / retrieve.
+    """
+    ocfile = os.path.join(REPO_ROOT, "src", "ivoc", "ocfile.cpp")
+    with open(ocfile) as f:
+        src = f.read()
+    start = src.find("const char* OcFile::dir()")
+    assert start != -1
+    end = src.find("bool OcFile::file_chooser_popup", start)
+    body = src[start:end]
+    assert "hoc_back2forward" in body
+    d = str(tmp_path / "share" / "nrn" / "workdir")
+    os.makedirs(d)
+    _write(
+        os.path.join(d, "fromdir.hoc"),
+        'strdef pathsem_file_dir\npathsem_file_dir = "fromdir-ok"\n',
+    )
+    converted = d.replace("\\", "/")
+    assert "\\" not in converted
+    old = str(h.getcwd())
+    try:
+        h('chdir("%s")' % converted)
+        h('xopen("fromdir.hoc")')
+        assert h.pathsem_file_dir == "fromdir-ok"
+    finally:
+        h('chdir("%s")' % old.replace("\\", "/"))
+
+
+# ---------------------------------------------------------------------------
 # File.getname — \ in HOC "..." is an escape (same as load_file / mktemp)
 # ---------------------------------------------------------------------------
 
