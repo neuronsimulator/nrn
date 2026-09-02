@@ -732,3 +732,38 @@ def test_retrieve_session_hoc_quoted_load_file(tmp_path):
     converted = hoc.replace("\\", "/")
     h('load_file(1, "%s")' % converted)
     assert h.pathsem_retrieve == "retrieve-ok"
+
+
+# ---------------------------------------------------------------------------
+# PWM session filename — InterViews save path assigned into a HOC strdef
+# ---------------------------------------------------------------------------
+
+
+def test_pwm_session_filename_hoc_quoted_xopen(tmp_path):
+    """PWM session filename interpolated into HOC xopen(\"...\") must keep the path.
+
+    InterViews save filename is a native path assigned into a HOC strdef
+    (Box.save of pwm_session_filename). A stored
+    C:\\...\\share\\nrn\\frompwm.ses became share + newline + rn (\\n).
+    fopen accepts /. Dup into cur_ses_name_; do not mutate the chooser
+    string. Same as File.getname / retrieve.
+    """
+    pwman = os.path.join(REPO_ROOT, "src", "ivoc", "pwman.cpp")
+    with open(pwman) as f:
+        src = f.read()
+    start = src.find("void PWMImpl::set_ses_name")
+    assert start != -1
+    end = src.find("int PWMImpl::save_group", start)
+    body = src[start:end]
+    assert "hoc_back2forward" in body
+    assert "cur_ses_name_" in body
+    d = str(tmp_path / "share" / "nrn" / "frompwm")
+    hoc = os.path.join(d, "frompwm.hoc")
+    _write(
+        hoc,
+        'strdef pathsem_pwm_ses\npathsem_pwm_ses = "pwm-ses-ok"\n',
+    )
+    converted = hoc.replace("\\", "/")
+    assert "\\" not in converted
+    h('xopen("%s")' % converted)
+    assert h.pathsem_pwm_ses == "pwm-ses-ok"

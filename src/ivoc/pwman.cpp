@@ -277,6 +277,7 @@ class PaperItem;
     void save_control(int);
     void save_session(int, const char*, const char* head = NULL);
     int save_group(Object*, const char*);
+    void set_ses_name(const char*);
     void retrieve_control();
     float round(float);
     float round_factor() {
@@ -2896,6 +2897,20 @@ void PWMImpl::save_control(int mode) {
     }
 }
 
+void PWMImpl::set_ses_name(const char* filename) {
+    cur_ses_name_ = filename;
+#ifdef WIN32
+    /* InterViews save filename is a native path assigned into a HOC
+       strdef (Box.save of pwm_session_filename). \ in HOC "..." is an
+       escape; ...\nrn always contains \n. fopen accepts /. Dup into
+       cur_ses_name_; do not mutate the chooser string. Same as
+       File.getname / retrieve. */
+    if (cur_ses_name_.length() > 0) {
+        hoc_back2forward(const_cast<char*>(cur_ses_name_.string()));
+    }
+#endif
+}
+
 int PWMImpl::save_group(Object* ho, const char* filename) {
     int i;
     ScreenItem* si;
@@ -2911,7 +2926,7 @@ int PWMImpl::save_group(Object* ho, const char* filename) {
         }
     }
     if (nwin > 0) {
-        cur_ses_name_ = filename;
+        set_ses_name(filename);
         std::filebuf obuf;
 #ifdef WIN32
         unlink(filename);
@@ -2934,7 +2949,7 @@ void PWMImpl::save_session(int mode, const char* filename, const char* head) {
     ScreenItem** sivec = NULL;
 
     std::filebuf obuf;
-    cur_ses_name_ = filename;
+    set_ses_name(filename);
 #ifdef WIN32
     unlink(filename);
 #endif
