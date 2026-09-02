@@ -201,10 +201,10 @@ if(_nrn_foreign_have_pytest)
   # h.quit() at module level (false ctest green). In-tree runs test_natrans.py as a script; gj_par
   # is mpiexec of test_par_gj.py.
 
-  # Skip CN half of test_natrans.py. This group is not CORENEURON nrnivmodl.
-  # Enabling CN on a Linux/macOS wheel aborts at nrn_setup (SIGABRT, #3866).
-  # Same script after nrnivmodl -coreneuron passes; dedicated CN rows passed.
-  # NEURON half still runs. In-tree: coreneuron_modtests::test_natrans_py.
+  # Skip CN half of test_natrans.py. This group is not CORENEURON nrnivmodl. Enabling CN on a
+  # Linux/macOS wheel aborts at nrn_setup (SIGABRT, #3866). Same script after nrnivmodl -coreneuron
+  # passes; dedicated CN rows passed. NEURON half still runs. In-tree:
+  # coreneuron_modtests::test_natrans_py.
   nrn_add_test(
     GROUP gjtests
     NAME gj_serial
