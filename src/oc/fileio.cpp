@@ -28,7 +28,6 @@
 #include <fmt/format.h>
 
 extern char* neuron_home;
-extern char* hoc_xopen_file_;
 
 NrnFILEWrap* hoc_frin;
 FILE* hoc_fout;
@@ -198,8 +197,8 @@ const char* expand_env_var(const char* s) {
     return hs->buf + begin;
 }
 
-size_t hoc_xopen_file_size_;
-char* hoc_xopen_file_;
+NRN_DLLSYM size_t hoc_xopen_file_size_;
+NRN_DLLSYM char* hoc_xopen_file_;
 
 char* hoc_current_xopen(void) {
     return hoc_xopen_file_;

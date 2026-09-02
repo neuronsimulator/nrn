@@ -36,8 +36,8 @@ extern NRN_DLLSYM int nrn_global_argc;
 extern NRN_DLLSYM char** nrn_global_argv;
 int nrnpy_pyrun(const char*);
 extern NRN_DLLSYM int (*p_nrnpy_pyrun)(const char*);
-extern size_t hoc_xopen_file_size_;
-extern char* hoc_xopen_file_;
+extern NRN_DLLSYM size_t hoc_xopen_file_size_;
+extern NRN_DLLSYM char* hoc_xopen_file_;
 
 static std::string python_sys_path_to_append() {
     std::string path{neuronhome_forward()};

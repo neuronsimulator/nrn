@@ -8,6 +8,7 @@
 #include "wrap_sprintf.h"
 
 #include <iostream>
+#include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <vector>
@@ -287,6 +288,8 @@ using neuron::SprintfAsrt;
 extern NRN_DLLSYM int hoc_usegui; /* when 0 does not make interviews calls */
 extern NRN_DLLSYM int nrn_istty_;
 extern NRN_DLLSYM int nrn_nobanner_;
+extern NRN_DLLSYM size_t hoc_xopen_file_size_;
+extern NRN_DLLSYM char* hoc_xopen_file_;
 
 /* Enter handling for PVM  NJP 11/21/94 */
 #ifdef PVM

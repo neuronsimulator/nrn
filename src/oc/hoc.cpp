@@ -172,8 +172,6 @@ int hoc_lineno;
 int hoc_intset; /* safer interrupt handling */
 int hoc_indef;
 const char* infile; /* input file name */
-extern size_t hoc_xopen_file_size_;
-extern char* hoc_xopen_file_;
 const char** gargv; /* global argument list */
 int gargc;
 static int c = '\n'; /* global for use by warning() */
