@@ -676,6 +676,31 @@ def test_nrniv_file_relative_xopen(tmp_path):
     assert "Can't open" not in (r.stdout or "")
 
 
+def test_nrniv_file_relative_ropen(tmp_path):
+    """nrniv of a path file finds relative ropen next to the file.
+
+    nrniv fopen's the argv file without chdir. ropen("rel.dat") inside
+    looked in cwd (returned 0). xopen already searches next to the
+    currently open file. Last / is not the directory on Windows.
+    """
+    d = str(tmp_path / "sesrelr")
+    _write(os.path.join(d, "rel.dat"), "sesrelr-ok\n")
+    ses = os.path.join(d, "fromses.ses")
+    _write(
+        ses,
+        "strdef pathsem_nrniv_ropen\n"
+        'if (ropen("rel.dat") == 0) { print "ropen-miss" }\n'
+        "getstr(pathsem_nrniv_ropen)\n"
+        "print pathsem_nrniv_ropen\n",
+    )
+    elsewhere = str(tmp_path / "elsewhere")
+    os.makedirs(elsewhere)
+    r = _run([_tool("nrniv"), "-nogui", "-nobanner", ses], cwd=elsewhere, timeout=20)
+    assert r.returncode == 0, r.stdout
+    assert "sesrelr-ok" in (r.stdout or "")
+    assert "ropen-miss" not in (r.stdout or "")
+
+
 # ---------------------------------------------------------------------------
 # GUI File/Retrieve — InterViews selected() interpolated into HOC load_file
 # ---------------------------------------------------------------------------

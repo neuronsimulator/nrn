@@ -28,6 +28,7 @@
 #include <fmt/format.h>
 
 extern char* neuron_home;
+extern char* hoc_xopen_file_;
 
 NrnFILEWrap* hoc_frin;
 FILE* hoc_fout;
@@ -101,8 +102,24 @@ void hoc_ropen(void) /* open file for reading */
             const char* retry;
             retry = expand_env_var(fname);
             if ((hoc_frin = nrn_fw_fopen(retry, "r")) == (NrnFILEWrap*) 0) {
-                d = 0.;
-                hoc_frin = nrn_fw_set_stdin();
+                /* nrniv fopen's a path file without chdir. ropen("rel.dat")
+                   inside looked in cwd. xopen already searches next to
+                   the currently open file (nrniv argv HOC, or the running
+                   .py script). Last / is not the directory on Windows. */
+                std::filesystem::path want{retry};
+                if (want.is_relative() && hoc_xopen_file_ && hoc_xopen_file_[0]) {
+                    std::filesystem::path parent =
+                        std::filesystem::path(hoc_xopen_file_).parent_path();
+                    if (!parent.empty() && parent != ".") {
+                        /* generic_string: '/' so fopen matches xopen. */
+                        std::string next = (parent / want).generic_string();
+                        hoc_frin = nrn_fw_fopen(next.c_str(), "r");
+                    }
+                }
+                if (!hoc_frin) {
+                    d = 0.;
+                    hoc_frin = nrn_fw_set_stdin();
+                }
             }
         }
     }
