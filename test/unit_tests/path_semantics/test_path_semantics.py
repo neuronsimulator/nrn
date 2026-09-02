@@ -604,6 +604,34 @@ def test_neuronhome_hoc_quoted_ropen():
 # ---------------------------------------------------------------------------
 
 
+def test_nrniv_python_file_relative_load_file(tmp_path):
+    """nrniv of a path .py finds relative load_file next to the script.
+
+    nrniv of a .py does not chdir and did not set hoc_xopen_file_.
+    load_file("rel.hoc") inside looked in cwd (Couldn't find). nrniv of a
+    path .hoc already searches next to the currently open file. Last / is
+    not the directory on Windows.
+    """
+    d = str(tmp_path / "pyrel")
+    _write(
+        os.path.join(d, "rel.hoc"),
+        'strdef pathsem_nrniv_py_rel\npathsem_nrniv_py_rel = "pyrel-ok"\n',
+    )
+    py = os.path.join(d, "frompy.py")
+    _write(
+        py,
+        "from neuron import h\n"
+        "h.load_file('rel.hoc')\n"
+        "print(h.pathsem_nrniv_py_rel)\n",
+    )
+    elsewhere = str(tmp_path / "elsewhere")
+    os.makedirs(elsewhere)
+    r = _run([_tool("nrniv"), "-nogui", "-nobanner", py], cwd=elsewhere, timeout=20)
+    assert r.returncode == 0, r.stdout
+    assert "pyrel-ok" in (r.stdout or "")
+    assert "Couldn't find" not in (r.stdout or "")
+
+
 def test_nrniv_file_relative_load_file(tmp_path):
     """nrniv of a path file finds relative load_file next to the file.
 

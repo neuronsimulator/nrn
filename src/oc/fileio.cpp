@@ -741,7 +741,8 @@ static int hoc_Load_file(int always, const char* name) {
         if (!f && hoc_xopen_file_ && hoc_xopen_file_[0]) {
             /* nrniv fopen's a path file without chdir. load_file of a path
                already chdir's for relative xopen. Search next to the currently
-               open file. Last / is not the directory on Windows. */
+               open file (nrniv argv HOC, or the running .py script). Last /
+               is not the directory on Windows. */
             std::filesystem::path parent = std::filesystem::path(hoc_xopen_file_).parent_path();
             if (!parent.empty() && parent != ".") {
                 /* generic_string: '/' so chdir/fopen match load_file. */

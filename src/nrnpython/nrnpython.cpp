@@ -13,6 +13,7 @@
 #include <hocstr.h>
 #include "nrnpy.h"
 
+#include <cstring>
 #include <filesystem>
 #include <string>
 #include <sstream>
@@ -35,6 +36,8 @@ extern NRN_DLLSYM int nrn_global_argc;
 extern NRN_DLLSYM char** nrn_global_argv;
 int nrnpy_pyrun(const char*);
 extern NRN_DLLSYM int (*p_nrnpy_pyrun)(const char*);
+extern size_t hoc_xopen_file_size_;
+extern char* hoc_xopen_file_;
 
 static std::string python_sys_path_to_append() {
     std::string path{neuronhome_forward()};
@@ -118,6 +121,43 @@ static void nrnpython_set_path(std::string_view fname) {
     }
 }
 
+namespace {
+std::string nrn_forward_slash_path(std::string s) {
+#if defined(WIN32)
+    /* \ in HOC "..." and Python '...' is an escape; fopen accepts /. */
+    for (char& c: s) {
+        if (c == '\\') {
+            c = '/';
+        }
+    }
+#endif
+    return s;
+}
+
+void hoc_xopen_file_set(const std::string& name) {
+    if (!hoc_xopen_file_ || name.size() >= hoc_xopen_file_size_) {
+        hoc_xopen_file_size_ = name.size() + 100;
+        hoc_xopen_file_ = static_cast<char*>(erealloc(hoc_xopen_file_, hoc_xopen_file_size_));
+    }
+    std::strcpy(hoc_xopen_file_, name.c_str());
+}
+
+/* nrniv of a path .py does not chdir and does not set hoc_xopen_file_.
+   load_file("rel.hoc") inside looked in cwd. load_file of a path already
+   chdir's; nrniv of a path .hoc searches next to hoc_xopen_file_. Same
+   for the running Python script. Last / is not the directory on Windows. */
+struct HocXopenFileGuard {
+    std::string saved;
+    HocXopenFileGuard(const std::string& name) {
+        saved = (hoc_xopen_file_ && hoc_xopen_file_[0]) ? hoc_xopen_file_ : "";
+        hoc_xopen_file_set(name);
+    }
+    ~HocXopenFileGuard() {
+        hoc_xopen_file_set(saved);
+    }
+};
+}  // namespace
+
 /**
  * @brief Execute a Python script.
  * @return 0 on failure, 1 on success.
@@ -131,6 +171,7 @@ int nrnpy_pyrun(const char* fname) {
         return 0;
     }
     fclose(fp);
+    HocXopenFileGuard xopen_file{nrn_forward_slash_path(fname)};
 #if !defined(MINGW)
     fp = fopen(fname, "r");
     if (fp) {
@@ -141,9 +182,10 @@ int nrnpy_pyrun(const char* fname) {
     return 0;
 #else   // MINGW
     // MINGW and Python have incompatible FILE* so try to accomplish
-    // with pure Python
+    // with pure Python. Forward slashes so a native path is not a
+    // Python string escape (\b \t \n \f).
     std::string exec{"with open('"};
-    exec += fname;
+    exec += nrn_forward_slash_path(fname);
     exec +=
         "', 'rb') as nrnmingw_file:"
         " exec(nrnmingw_file.read(), globals())\n";
