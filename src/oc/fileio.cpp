@@ -222,9 +222,28 @@ int hoc_xopen1(const char* name, const char* rcs) {
         if (!(hoc_fin = nrn_fw_fopen(fname.c_str(), mode_str))) {
             fname = expand_env_var(fname.c_str());
             if (!(hoc_fin = nrn_fw_fopen(fname.c_str(), mode_str))) {
-                hoc_fin = savfin;
-                hoc_pipeflag = savpipflag;
-                hoc_execerror("Can't open ", fname.c_str());
+                /* nrniv fopen's a path file without chdir. xopen("rel.hoc")
+                   inside looked in cwd. load_file already searches next to
+                   the currently open file (nrniv argv HOC, or the running
+                   .py script). Last / is not the directory on Windows. */
+                std::filesystem::path want{fname};
+                if (want.is_relative() && hoc_xopen_file_ && hoc_xopen_file_[0]) {
+                    std::filesystem::path parent =
+                        std::filesystem::path(hoc_xopen_file_).parent_path();
+                    if (!parent.empty() && parent != ".") {
+                        /* generic_string: '/' so fopen matches load_file. */
+                        std::string next = (parent / want).generic_string();
+                        hoc_fin = nrn_fw_fopen(next.c_str(), mode_str);
+                        if (hoc_fin) {
+                            fname = std::move(next);
+                        }
+                    }
+                }
+                if (!hoc_fin) {
+                    hoc_fin = savfin;
+                    hoc_pipeflag = savpipflag;
+                    hoc_execerror("Can't open ", fname.c_str());
+                }
             }
         }
     }
