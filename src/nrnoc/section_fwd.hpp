@@ -21,6 +21,8 @@ neuron::container::non_owning_identifier_without_container _nrn_get_prop_id(Prop
 extern NRN_DLLSYM int cvode_active_;
 extern NRN_DLLSYM int nrn_netrec_state_adjust;
 extern NRN_DLLSYM int secondorder;
+// nocmodl AREA mods (areadec) take NODEAREA via this pointer.
+extern NRN_DLLSYM Node* nrn_alloc_node_;
 extern int use_sparse13;
 
 double nrn_ghk(double, double, double, double);

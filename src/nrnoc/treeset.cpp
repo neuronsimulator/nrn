@@ -668,7 +668,7 @@ Prop* need_memb(Symbol* sym) {
 }
 
 
-Node* nrn_alloc_node_; /* needed by models that use area */
+NRN_DLLSYM Node* nrn_alloc_node_; /* needed by models that use area */
 
 Prop* prop_alloc(Prop** pp, int type, Node* nd) {
     /* link in new property at head of list */

@@ -922,7 +922,7 @@ static const char *_mechanism[] = {\n\
         Lappendstr(defs_list, "static Symbol* _morphology_sym;\n");
     }
     if (areadec) {
-        Lappendstr(defs_list, "extern Node* nrn_alloc_node_;\n");
+        Lappendstr(defs_list, "extern NRN_DLLSYM Node* nrn_alloc_node_;\n");
     }
     ITERATE(q, useion) {
         sion = SYM(q);
