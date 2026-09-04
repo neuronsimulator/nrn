@@ -1082,7 +1082,7 @@ double _modl_get_dt_thread(NrnThread* nt) {
     return nt->_dt;
 }
 
-int state_discon_flag_ = 0;
+NRN_DLLSYM int state_discon_flag_ = 0;
 void state_discontinuity(int i, double* pd, double d) {
     if (state_discon_allowed_ && state_discon_flag_ == 0) {
         *pd = d;

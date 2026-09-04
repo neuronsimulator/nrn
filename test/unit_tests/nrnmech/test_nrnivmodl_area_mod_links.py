@@ -107,3 +107,32 @@ def test_nrnivmodl_area_mod_links(tmp_path):
     assert r.returncode == 0, out
     assert "LNK2019" not in out
     assert "unresolved external" not in out.lower()
+
+
+@pytest.mark.skipif(
+    _asan_or_tsan(),
+    reason="nrnivmodl subprocess import of neuron is late for sanitizer interceptors",
+)
+def test_nrnivmodl_state_discon_mod_links(tmp_path):
+    """nrnivmodl of state_discontinuity() must link state_discon_flag_.
+
+    nocmodl emits extern int state_discon_flag_ for BREAKPOINT use.
+    WINDOWS_EXPORT_ALL_SYMBOLS does not cover data, so MSVC nrnmech.dll
+    was LNK2001 (ModelDB 249705 glutamate and 12 others). Same NRN_DLLSYM
+    as nrn_alloc_node_.
+    """
+    _write(
+        os.path.join(str(tmp_path), "sdflag.mod"),
+        "NEURON { SUFFIX sdflag }\n"
+        "STATE { x }\n"
+        "BREAKPOINT { SOLVE states METHOD cnexp\n"
+        "  state_discontinuity(x, 0)\n"
+        "}\n"
+        "DERIVATIVE states { x' = -x }\n",
+    )
+    r = _run([_tool("nrnivmodl"), "sdflag.mod"], cwd=str(tmp_path), timeout=180)
+    out = r.stdout or ""
+    assert r.returncode == 0, out
+    assert "LNK2019" not in out
+    assert "LNK2001" not in out
+    assert "unresolved external" not in out.lower()
