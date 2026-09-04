@@ -95,14 +95,17 @@ int HocCommand::execute(bool notify) {
     int err;
     if (po_) {
         assert(neuron::python::methods.hoccommand_exec);
+        // hoccommand_exec returns a boolean success flag.
         err = neuron::python::methods.hoccommand_exec(po_);
     } else {
         if (!s_) {
-            return 0;
+            return 1;
         }
         char buf[256];
         Sprintf(buf, "{%s}\n", s_->c_str());
-        err = hoc_obj_run(buf, obj_);
+        // hoc_obj_run returns an error code, so invert it to match the boolean
+        // success convention used by the Python callback.
+        err = !hoc_obj_run(buf, obj_);
     }
 #if HAVE_IV
     if (notify) {
@@ -114,6 +117,7 @@ int HocCommand::execute(bool notify) {
 }
 int HocCommand::exec_strret(char* buf, int size, bool notify) {
     assert(po_);
+    // hoccommand_exec_strret returns a boolean success flag.
     int err = neuron::python::methods.hoccommand_exec_strret(po_, buf, size);
 #if HAVE_IV
     if (notify) {
@@ -127,7 +131,9 @@ int HocCommand::execute(const char* s, bool notify) {
     assert(po_ == NULL);
     char buf[256];
     Sprintf(buf, "{%s}\n", s);
-    int err = hoc_obj_run(buf, obj_);
+    // hoc_obj_run returns an error code, so invert it to match HocCommand's
+    // boolean success convention.
+    int err = !hoc_obj_run(buf, obj_);
 #if HAVE_IV
     if (notify) {
         Oc oc;

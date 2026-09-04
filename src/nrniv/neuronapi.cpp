@@ -15,6 +15,7 @@
 #include <cstring>
 #include <exception>
 #include <cstdio>
+#include <limits>
 
 /// A public face of hoc_Item
 struct nrn_Item: public hoc_Item {};
@@ -223,7 +224,11 @@ double nrn_segment_diam_get(Section* const sec, const double x) {
     // recalc_area_. Mirror the range-variable read path (nrnpy_nrn.cpp) so a
     // diam read after pt3dadd returns the 3d-derived value, not a stale default.
     if (sec && sec->recalc_area_) {
-        nrn_area_ri(sec);
+        // nrn_area_ri normally reports a non-positive diameter with
+        // hoc_execerror after clamping it to 1e-6. A C value accessor cannot
+        // let that C++ exception unwind across its ABI, so complete the same
+        // recompute without raising the HOC-level diagnostic.
+        nrn_area_ri_no_diam_error(sec);
     }
     Node* const node = node_exact(sec, x);
     for (auto prop = node->prop; prop; prop = prop->next) {
@@ -251,6 +256,35 @@ void nrn_rangevar_set(Symbol* sym, Section* sec, double x, double value) {
 
 void nrn_rangevar_push(Symbol* sym, Section* sec, double x) {
     hoc_push(nrn_rangepointer(sec, sym, x));
+}
+
+Object* nrn_segment_nmodlrandom_get(Section* sec, double x, Symbol* sym) {
+    if (!sec || !nrn_section_is_active(sec) || !(x >= 0.0 && x <= 1.0) || !sym ||
+        sym->type != RANGEOBJ || sym->subtype != NMODLRANDOM) {
+        return nullptr;
+    }
+    Prop* prop = nrn_mechanism(sym->u.rng.type, node_exact(sec, x));
+    if (!prop) {
+        return nullptr;
+    }
+    Object* obj = nrn_nmodlrandom_wrap(prop, sym);
+    hoc_obj_ref(obj);
+    return obj;
+}
+
+Object* nrn_pntproc_nmodlrandom_get(Object* point_process, Symbol* sym) {
+    if (!point_process || !point_process->ctemplate || !point_process->ctemplate->is_point_ ||
+        !sym || sym->type != RANGEOBJ || sym->subtype != NMODLRANDOM ||
+        hoc_table_lookup(sym->name, point_process->ctemplate->symtable) != sym) {
+        return nullptr;
+    }
+    auto* pnt = ob2pntproc_0(point_process);
+    if (!pnt || !pnt->prop) {
+        return nullptr;
+    }
+    Object* obj = nrn_pntproc_nmodlrandom_wrap(pnt, sym);
+    hoc_obj_ref(obj);
+    return obj;
 }
 
 int nrn_setpointer_pop(Symbol* pointer_sym,
@@ -554,6 +588,9 @@ void nrn_int_push(int i) {
 }
 
 int nrn_int_pop(void) {
+    if (hoc_stack_type_is_ndim()) {
+        return hoc_pop_ndim();
+    }
     return hoc_ipop();
 }
 
@@ -914,8 +951,8 @@ double nrn_property_get(const Object* obj, const char* name) {
         obj->ctemplate->steer(obj->u.this_pointer);
         return *hoc_pxpop();
     } else {
-        int index = sym->u.rng.index;
-        return ob2pntproc_0(const_cast<Object*>(obj))->prop->param_legacy(index);
+        auto handle = point_process_pointer(ob2pntproc_0(const_cast<Object*>(obj)), sym, 0);
+        return handle ? *handle : std::numeric_limits<double>::quiet_NaN();
     }
 }
 
@@ -927,8 +964,8 @@ double nrn_property_array_get(const Object* obj, const char* name, int i) {
         obj->ctemplate->steer(obj->u.this_pointer);
         return hoc_pxpop()[i];
     } else {
-        int index = sym->u.rng.index;
-        return ob2pntproc_0(const_cast<Object*>(obj))->prop->param_legacy(index + i);
+        auto handle = point_process_pointer(ob2pntproc_0(const_cast<Object*>(obj)), sym, i);
+        return handle ? *handle : std::numeric_limits<double>::quiet_NaN();
     }
 }
 
@@ -940,8 +977,10 @@ void nrn_property_set(Object* obj, const char* name, double value) {
         obj->ctemplate->steer(obj->u.this_pointer);
         *hoc_pxpop() = value;
     } else {
-        int index = sym->u.rng.index;
-        ob2pntproc_0(obj)->prop->param_legacy(index) = value;
+        auto handle = point_process_pointer(ob2pntproc_0(obj), sym, 0);
+        if (handle) {
+            *handle = value;
+        }
     }
 }
 
@@ -953,8 +992,10 @@ void nrn_property_array_set(Object* obj, const char* name, int i, double value) 
         obj->ctemplate->steer(obj->u.this_pointer);
         hoc_pxpop()[i] = value;
     } else {
-        int index = sym->u.rng.index;
-        ob2pntproc_0(obj)->prop->param_legacy(index + i) = value;
+        auto handle = point_process_pointer(ob2pntproc_0(obj), sym, i);
+        if (handle) {
+            *handle = value;
+        }
     }
 }
 
@@ -965,8 +1006,7 @@ void nrn_property_push(Object* obj, const char* name) {
         // put the pointer for the memory location on the stack
         obj->ctemplate->steer(obj->u.this_pointer);
     } else {
-        int index = sym->u.rng.index;
-        hoc_push(ob2pntproc_0(obj)->prop->param_handle_legacy(index));
+        hoc_push(point_process_pointer(ob2pntproc_0(obj), sym, 0));
     }
 }
 
@@ -978,9 +1018,18 @@ void nrn_property_array_push(Object* obj, const char* name, int i) {
         obj->ctemplate->steer(obj->u.this_pointer);
         hoc_pushpx(hoc_pxpop() + i);
     } else {
-        int index = sym->u.rng.index;
-        hoc_push(ob2pntproc_0(obj)->prop->param_handle_legacy(index + i));
+        hoc_push(point_process_pointer(ob2pntproc_0(obj), sym, i));
     }
+}
+
+bool nrn_property_data_handle_is_valid(const Object* obj, const char* name, int i) {
+    auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
+    if (!obj->ctemplate->is_point_) {
+        hoc_pushs(sym);
+        obj->ctemplate->steer(obj->u.this_pointer);
+        return static_cast<bool>(hoc_pop_handle<double>());
+    }
+    return static_cast<bool>(point_process_pointer(ob2pntproc_0(const_cast<Object*>(obj)), sym, i));
 }
 
 char const* nrn_symbol_name(const Symbol* sym) {
