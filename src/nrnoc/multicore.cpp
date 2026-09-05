@@ -1071,6 +1071,11 @@ double* NrnThread::node_d_storage() {
         _node_data_offset);
 }
 
+double* NrnThread::node_parent_contrib_storage() {
+    return &neuron::model().node_data().get<neuron::container::Node::field::ParentContrib>(
+        _node_data_offset);
+}
+
 double* NrnThread::node_rhs_storage() {
     return &neuron::model().node_data().get<neuron::container::Node::field::RHS>(_node_data_offset);
 }
