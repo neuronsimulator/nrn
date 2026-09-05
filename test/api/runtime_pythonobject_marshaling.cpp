@@ -16,6 +16,7 @@ static int read_calls{};
 static int write_calls{};
 static bool read_frame_matches{};
 static bool method_call_matches{};
+static bool failing_method_call_matches{};
 static bool write_frame_matches{};
 static double assigned_value{};
 static int read_kind{};
@@ -47,6 +48,10 @@ static const char* read_component(Object* obj, Symbol* member, int nindex, int i
         method_call_matches = frame_obj == obj && nindex == 2 && (isfunc & 1);
         if (frame_obj) {
             nrn_object_unref(frame_obj);
+        }
+        if (name && std::strcmp(name, "fail_method") == 0) {
+            failing_method_call_matches = method_call_matches && lhs == 12.5 && rhs == 30.25;
+            return "provider method failed";
         }
         nrn_double_push(lhs + rhs);
         return nullptr;
@@ -276,6 +281,47 @@ int main(void) {
     }
     ok &= check(nrn_double_pop() == 1011.0, "failed write restores the pre-call stack");
     fail_writes = false;
+
+    ok &= check(nrn_hoc_call("begintemplate ProviderMethodCaller\n"
+                             "public call\n"
+                             "func call() { return $o1.fail_method($2, $3) }\n"
+                             "endtemplate ProviderMethodCaller\n") == 0,
+                "failing method caller template defined");
+    Object* caller = nrn_object_new(nrn_symbol("ProviderMethodCaller"), 0);
+    ok &= check(caller != nullptr, "method caller constructed");
+    Symbol* call = nrn_method_symbol(caller, "call");
+    const int reads_before_failure = read_calls;
+    call_error[0] = '\0';
+    nrn_double_push(1012.0);
+    nrn_object_push(obj);
+    nrn_double_push(12.5);
+    nrn_double_push(30.25);
+    ok &= check(nrn_method_call_nothrow(caller, call, 3, call_error, sizeof(call_error)) != 0,
+                "component method failure reaches the method nothrow API");
+    ok &= check(read_calls == reads_before_failure + 1 && failing_method_call_matches,
+                "failing method callback consumes the expected isfunc frame exactly once");
+    ok &= check(std::strstr(call_error, "provider method failed") != nullptr,
+                "component method failure preserves the provider message");
+    ok &= check(nrn_double_pop() == 30.25, "failed method restores its last argument");
+    ok &= check(nrn_double_pop() == 12.5, "failed method restores its first numeric argument");
+    Object* failed_method_arg = nrn_object_pop();
+    ok &= check(failed_method_arg == obj, "failed method restores its object argument");
+    if (failed_method_arg) {
+        nrn_object_unref(failed_method_arg);
+    }
+    ok &= check(nrn_double_pop() == 1012.0, "failed method restores the pre-call stack");
+
+    // A successful call after the failure also checks the restored interpreter context.
+    nrn_double_push(1013.0);
+    nrn_object_push(obj);
+    nrn_double_push(12.5);
+    nrn_double_push(30.25);
+    ok &= check(nrn_function_call_nothrow(
+                    nrn_symbol("call_component"), 3, call_error, sizeof(call_error)) == 0,
+                "successful provider method still works after failure");
+    ok &= check(nrn_double_pop() == 42.75, "post-failure method returns the exact sum");
+    ok &= check(nrn_double_pop() == 1013.0, "post-failure method preserves the lower sentinel");
+    nrn_object_unref(caller);
 
     nrn_object_unref(obj);
     return ok ? 0 : 1;
