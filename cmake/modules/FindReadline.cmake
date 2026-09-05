@@ -14,6 +14,9 @@
 #                            readline if the module has problems finding the
 #                            proper installation path.
 #
+# On MSVC there is no system GNU readline. A failed find is expected;
+# cmake/Win32Readline.cmake then fetches GNU readline 5.0 (win32 port).
+#
 # Variables defined by this module:
 #
 #  READLINE_FOUND            System has readline, include and lib dirs found

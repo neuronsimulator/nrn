@@ -305,29 +305,29 @@ extern Item* qlint;
 #define Lappendstr  qlint = lappendstr
 #define Lappenditem qlint = lappenditem
 #define Lappendlst  qlint = lappendlst
-#define IGNORE(arg) \
-    {               \
-        if (arg)    \
-            ;       \
+#define NRN_IGNORE(arg) \
+    {                   \
+        if (arg)        \
+            ;           \
     }
 #define Free(arg) free((char*) (arg))
 #else
-#define Fprintf     fprintf
-#define Fclose      fclose
-#define Fflush      fflush
-#define Printf      printf
-#define Strcpy      strcpy
-#define Strcat      strcat
-#define Insertstr   insertstr
-#define Insertsym   insertsym
-#define Linsertsym  linsertsym
-#define Linsertstr  linsertstr
-#define Lappendsym  lappendsym
-#define Lappendstr  lappendstr
-#define Lappenditem lappenditem
-#define Lappendlst  lappendlst
-#define IGNORE(arg) arg
-#define Free(arg)   free((void*) (arg))
+#define Fprintf         fprintf
+#define Fclose          fclose
+#define Fflush          fflush
+#define Printf          printf
+#define Strcpy          strcpy
+#define Strcat          strcat
+#define Insertstr       insertstr
+#define Insertsym       insertsym
+#define Linsertsym      linsertsym
+#define Linsertstr      linsertstr
+#define Lappendsym      lappendsym
+#define Lappendstr      lappendstr
+#define Lappenditem     lappenditem
+#define Lappendlst      lappendlst
+#define NRN_IGNORE(arg) arg
+#define Free(arg)       free((void*) (arg))
 #endif
 using neuron::Sprintf;
 using neuron::SprintfAsrt;

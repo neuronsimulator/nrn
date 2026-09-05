@@ -15,13 +15,17 @@
 #include <algorithm>
 #include <cctype>
 #include <sstream>
+#if defined(NRNPYTHON_DYNAMICLOAD) && defined(_WIN32) && !defined(MINGW)
+#include <filesystem>
+#include <windows.h>
+#endif
 
 namespace neuron::python {
 // Declared extern in nrnpy.h, defined here.
 impl_ptrs methods;
 }  // namespace neuron::python
 // Backwards-compatibility hack
-int (*nrnpy_hoccommand_exec)(Object*);
+NRN_DLLSYM int (*nrnpy_hoccommand_exec)(Object*);
 
 extern int nrn_nopython;
 extern std::string nrnpy_pyexe;
@@ -62,7 +66,12 @@ static std::string nrnpy_pylib{}, nrnpy_pyversion{};
  * Throws std::runtime_error if the command does not execute cleanly.
  */
 static std::string check_output(std::string command) {
+    // MSVC CRT: POSIX popen/pclose are deprecated aliases of _popen/_pclose.
+#if defined(_MSC_VER)
+    std::FILE* const p = _popen(command.c_str(), "r");
+#else
     std::FILE* const p = popen(command.c_str(), "r");
+#endif
     if (!p) {
         throw std::runtime_error("popen(" + command + ", \"r\") failed");
     }
@@ -71,7 +80,11 @@ static std::string check_output(std::string command) {
     while (std::fgets(buffer.data(), buffer.size() - 1, p)) {
         output += buffer.data();
     }
+#if defined(_MSC_VER)
+    if (auto const code = _pclose(p)) {
+#else
     if (auto const code = pclose(p)) {
+#endif
         std::ostringstream err;
         err << "'" << command << "' did not terminate cleanly, pclose returned non-zero (" << code
             << ") after the following output had been read:\n"
@@ -106,9 +119,10 @@ static bool ends_with(std::string_view str, std::string_view suffix) {
  *   variables:
  *   * if all of them are set, nrnpyenv.sh is not run and they are assumed to
  *     form a coherent set
- *   * if only some, or none, of them are set, nrnpyenv.sh is run to fill in
- *     the missing values. NRN_PYTHONEXE is an input to nrnpyenv.sh, so if this
- *     is set then we will not search $PATH
+ *   * if only some, or none, of them are set, nrnpyenv.sh (Unix/MinGW) or
+ *     nrnpyenv.py (MSVC Windows) is run to fill in the missing values.
+ *     NRN_PYTHONEXE is an input to those helpers, so if this is set then we
+ *     will not search $PATH
  */
 static void set_nrnpylib() {
     std::array<std::pair<std::string&, const char*>, 3> params{
@@ -132,9 +146,10 @@ static void set_nrnpylib() {
             return;
         }
     }
-    // Populate missing values using nrnpyenv.sh. Pass the possibly-null value of nrnpy_pyexe, which
-    // may have come from -pyexe or NRN_PYTHONEXE, to nrnpyenv.sh. Do all of this on rank 0, and
-    // broadcast the results to other ranks afterwards.
+    // Populate missing values using nrnpyenv.sh (Unix/MinGW) or nrnpyenv.py
+    // (MSVC: no MinGW bash; Git bash still needs cygcheck). Pass the
+    // possibly-null value of nrnpy_pyexe, which may have come from -pyexe or
+    // NRN_PYTHONEXE. Do all of this on rank 0, and broadcast afterwards.
     if (nrnmpi_myid_world == 0) {
         // Construct a command to execute
         auto const command = []() -> std::string {
@@ -144,6 +159,24 @@ static void set_nrnpylib() {
             std::replace(fnrnhome.begin(), fnrnhome.end(), '\\', '/');
             return bnrnhome + R"(\mingw\usr\bin\bash )" + fnrnhome + "/bin/nrnpyenv.sh " +
                    nrnpy_pyexe + " --NEURON_HOME=" + fnrnhome;
+#elif defined(_WIN32)
+            // pythonXY.dll is a Windows ABI fact; do not require bash/cygcheck.
+            auto quote = [](std::string const& s) { return "\"" + s + "\""; };
+            // nrnpyenv.py is installed next to nrniv.exe. Unix uses
+            // neuron_home/../../bin (neuron_home is prefix/share/nrn). Windows
+            // setneuronhome is two dirs up from the EXE (the prefix), so that
+            // relative path misses the wheel.
+            char exe[MAX_PATH];
+            DWORD n = GetModuleFileNameA(nullptr, exe, MAX_PATH);
+            if (n == 0 || n >= MAX_PATH) {
+                throw std::runtime_error("GetModuleFileNameA failed for nrnpyenv.py");
+            }
+            auto script = (std::filesystem::path{exe}.parent_path() / "nrnpyenv.py").string();
+            std::string py = nrnpy_pyexe.empty() ? std::string{"python"} : nrnpy_pyexe;
+            // MSVC _popen uses cmd.exe /c. If the command starts with ", cmd
+            // strips the first and last quote, so "python" "script.py" becomes
+            // python" "script.py (ERROR_INVALID_NAME). Extra-wrap the command.
+            return quote(quote(py) + " " + quote(script));
 #else
             return "bash " + std::string{neuron_home} + "/../../bin/nrnpyenv.sh " + nrnpy_pyexe;
 #endif
@@ -169,17 +202,17 @@ static void set_nrnpylib() {
                 glob_var = line;
             }
         };
-        // Process the output of nrnpyenv.sh line by line
+        // Process the output of nrnpyenv.sh / nrnpyenv.py line by line
         while (std::getline(cmd_stdout, line)) {
             for (auto& [glob_var, env_var]: params) {
                 proc_line(line, glob_var, env_var);
             }
         }
-        // After having run nrnpyenv.sh, we should know everything about the Python library that is
+        // After having run the helper, we should know everything about the Python library that is
         // to be loaded.
         if (!all_set()) {
             std::ostringstream err;
-            err << "After running nrnpyenv.sh (" << command << ") with output:\n"
+            err << "After running nrnpyenv (" << command << ") with output:\n"
                 << cmd_stdout.str()
                 << "\nwe are still missing information about the Python to be loaded:\n"
                 << "  nrnpy_pyexe=" << nrnpy_pyexe << '\n'
@@ -299,10 +332,13 @@ static nrnpython_reg_real_t load_nrnpython() {
     name.append("nrnpython");
     name.append(pyversion);
     name.append(neuron::config::shared_library_suffix);
-#ifndef MINGW
+#ifndef _WIN32
     // Build a path from neuron_home on macOS and Linux
     name = neuron_home + ("/../../lib/" + name);
 #endif
+    // Windows: LoadLibrary searches the exe directory and add_dll_directory
+    // paths by basename. MinGW already did this; MSVC prefix is empty so the
+    // file is nrnpythonX.Y.dll in bin/.
     auto* const handle = dlopen(name.c_str(), RTLD_NOW);
     if (!handle) {
         Fprintf(stderr, fmt::format("Could not load {}\n", name).c_str());

@@ -66,3 +66,15 @@ if(CMAKE_C_COMPILER_ID MATCHES "PGI" OR CMAKE_C_COMPILER_ID MATCHES "NVHPC")
 else()
   set(NRN_HAVE_NVHPC_COMPILER OFF)
 endif()
+
+if(WIN32)
+  # windows.h defines min/max macros unless NOMINMAX. Those expand std::numeric_limits<T>::max()
+  # into a syntax error (C2589).
+  list(APPEND NRN_COMPILE_DEFS NOMINMAX)
+endif()
+
+if(MSVC)
+  # COFF objects are limited to 2^16 sections. Generated parsers and hoc.cpp exceed that (C1128)
+  # unless /bigobj is set.
+  list(APPEND NRN_COMPILE_FLAGS /bigobj)
+endif()

@@ -46,24 +46,29 @@ set(NRN_INSTALL_PYTHON_PREFIX
           "Path where NEURON Python components will be installed (relative to CMAKE_INSTALL_PREFIX)"
 )
 
-# if we're building a wheel, we have a different layout of files
+# if we're building a wheel, we have a different layout of files NRN_INSTALL_DATA_PREFIX always ends
+# with '/'. Concatenate as ${NRN_INSTALL_DATA_PREFIX}bin (no extra slash). Never leave it empty:
+# Visual Studio treats an empty DESTINATION prefix as invalid, and "${prefix}/${empty}/lib" is a
+# poor relative path.
 if(SKBUILD)
   set(NRN_INSTALL_PYTHON_PREFIX
       "neuron/"
       CACHE STRING "" FORCE)
   set(NRN_INSTALL_DATA_PREFIX "neuron/.data/")
   # need to force fmtlib install prefixes
-  set(FMT_LIB_DIR "${NRN_INSTALL_DATA_PREFIX}/lib")
-  set(FMT_INC_DIR "${NRN_INSTALL_DATA_PREFIX}/include")
-  set(FMT_PKGCONFIG_DIR "${NRN_INSTALL_DATA_PREFIX}/lib/pkgconfig")
-  set(FMT_CMAKE_DIR "${NRN_INSTALL_DATA_PREFIX}/lib/cmake/fmt")
-  # need to force IV install prefixes
-  set(IV_LIB_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}/lib")
-  set(IV_HEADERS_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}/include")
-  set(IV_BIN_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}/bin")
+  set(FMT_LIB_DIR "${NRN_INSTALL_DATA_PREFIX}lib")
+  set(FMT_INC_DIR "${NRN_INSTALL_DATA_PREFIX}include")
+  set(FMT_PKGCONFIG_DIR "${NRN_INSTALL_DATA_PREFIX}lib/pkgconfig")
+  set(FMT_CMAKE_DIR "${NRN_INSTALL_DATA_PREFIX}lib/cmake/fmt")
 else()
-  set(NRN_INSTALL_DATA_PREFIX)
+  set(NRN_INSTALL_DATA_PREFIX "./")
 endif()
+# IV defaults IV_{LIB,HEADERS,BIN}_INSTALL_DIR to ${CMAKE_INSTALL_PREFIX}/lib (absolute). CMake then
+# emits CMAKE_ABSOLUTE_DESTINATION_FILES, so cmake --install --prefix relocates NEURON but leaves
+# InterViews at the configure prefix. Keep destinations relative for wheels and source installs.
+set(IV_LIB_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}lib")
+set(IV_HEADERS_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}include")
+set(IV_BIN_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}bin")
 
 # Make python install path relative to CMAKE_INSTALL_PREFIX
 if(IS_ABSOLUTE "${NRN_INSTALL_PYTHON_PREFIX}")
@@ -75,7 +80,14 @@ endif()
 # =============================================================================
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+# Unix .a stays in lib. On Windows a SHARED ARCHIVE is the import library; put it next to the DLL
+# (NRN_INSTALL_SHARE_LIB_DIR is already bin). MSVC /IMPLIB into a stale lib/<config>/nrniv.lib owned
+# by another user is LNK1104.
+if(WIN32)
+  set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+else()
+  set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+endif()
 
 # =============================================================================
 # Include default build options
@@ -279,14 +291,20 @@ include(ReleaseDebugAutoFlags)
 
 # ~~~
 # Figure out early what Python to use as a build helper for cmake.
-# Since PythonInterp module prefers system-wide python, if PYTHON_EXECUTABLE
-# is not set, look it up in the PATH exclusively.
+# PythonInterp/FindPython may prefer a system or registry interpreter, so if
+# PYTHON_EXECUTABLE is not set, look it up in the PATH exclusively.
+# PEP 394: Unix provides python3. Windows CPython installs python.exe on PATH
+# (not python3), so fall back to python. Same default-then-fallback as
+# NRN_ENABLE_PYTHON.
 # ~~~
 if(NOT PYTHON_EXECUTABLE)
   message(
-    STATUS "-DPYTHON_EXECUTABLE not specified. Looking for `python3` in the PATH exclusively...")
+    STATUS
+      "-DPYTHON_EXECUTABLE not specified. Looking for `python3` then `python` in the PATH exclusively..."
+  )
   find_program(
-    PYTHON_EXECUTABLE python3
+    PYTHON_EXECUTABLE
+    NAMES python3 python
     PATHS ENV PATH
     NO_DEFAULT_PATH)
   message(STATUS "\tSetting PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}")
@@ -369,7 +387,23 @@ endif()
 # Find required packages
 # =============================================================================
 find_package(BISON REQUIRED)
-find_package(FLEX 2.6 REQUIRED)
+# FindFLEX parses `--version` as "<exe-basename> X.Y". Chocolatey win_flex reports "win_flex.exe
+# 2.6.4" while the found path is often `win_flex` (no .exe), so FLEX_VERSION becomes the whole line
+# and "2.6" fails. Require Flex ourselves after taking the first X.Y / X.Y.Z in the string.
+find_package(FLEX)
+if(FLEX_VERSION AND NOT FLEX_VERSION MATCHES "^[0-9]")
+  string(REGEX MATCH "[0-9]+\\.[0-9]+(\\.[0-9]+)?" _nrn_flex_ver "${FLEX_VERSION}")
+  if(_nrn_flex_ver)
+    set(FLEX_VERSION "${_nrn_flex_ver}")
+  endif()
+  unset(_nrn_flex_ver)
+endif()
+if(NOT FLEX_FOUND)
+  message(FATAL_ERROR "FLEX is required")
+endif()
+if(NOT FLEX_VERSION OR FLEX_VERSION VERSION_LESS "2.6")
+  message(FATAL_ERROR "FLEX >= 2.6 is required (found '${FLEX_VERSION}')")
+endif()
 
 # lcov >= 2 and bison < 3.7 do not play nicely
 if(NRN_ENABLE_COVERAGE
@@ -382,27 +416,53 @@ if(NRN_ENABLE_COVERAGE
       " you may experience errors!")
 endif()
 
-# When shipping the wheels we want to link readline libs statically.
-if(NRN_WHEEL_STATIC_READLINE)
+# When shipping the wheels we want to link readline libs statically. Unix static libs are .a; MSVC
+# uses .lib and fetches GNU readline itself.
+if(NRN_WHEEL_STATIC_READLINE AND NOT WIN32)
   # CMake will prefer dynamic libraries over static ones. With the following construct we make sure
   # we get them.
   set(ORIGINAL_CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
   set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 endif()
 
-find_package(Readline REQUIRED)
+# Windows wheels are MSVC (cibuildwheel --platform windows). MinGW is the setup.exe world. Ninja +
+# C:/mingw64 on PATH would skip Win32Readline.
+if(SKBUILD AND MINGW)
+  message(FATAL_ERROR "Windows wheels must use MSVC, not MinGW (${CMAKE_CXX_COMPILER}). "
+                      "Use CMAKE_GENERATOR=Visual Studio 17 2022 and CMAKE_GENERATOR_PLATFORM=x64.")
+endif()
+
+find_package(Readline)
+if(NOT READLINE_FOUND
+   AND WIN32
+   AND NOT MINGW)
+  include(cmake/Win32Readline.cmake)
+endif()
+if(NOT READLINE_FOUND)
+  message(FATAL_ERROR "Readline is required (HOC interactive input)")
+endif()
 if(READLINE_FOUND)
-  # MAC libedit.3.dylib does not have rl_event_hook Readline_LIBRARY may be a binary lib or (on the
-  # MAC) a tbd file that points to the library and mentions all its definitions. this part has to be
-  # prior to adding the nrniv subdirectory.
-  execute_process(COMMAND grep -q rl_event_hook ${Readline_LIBRARY} RESULT_VARIABLE result)
-  if(NOT result EQUAL 0)
-    # define for src/oc/hoc.cpp
-    set(DEF_RL_GETC_FUNCTION use_rl_getc_function)
+  # MAC libedit.3.dylib does not have rl_event_hook. Readline_LIBRARY may be a binary lib, a Mac
+  # tbd, or (MSVC) a CMake target. file(STRINGS) is the portable equivalent of `grep -q` and does
+  # not need a Unix grep. this part has to be prior to adding the nrniv subdirectory.
+  if(NOT NRN_READLINE_HAS_EVENT_HOOK)
+    set(_nrn_rl_event_hook)
+    if(EXISTS "${Readline_LIBRARY}")
+      file(
+        STRINGS "${Readline_LIBRARY}" _nrn_rl_event_hook
+        REGEX "rl_event_hook"
+        LIMIT_COUNT 1)
+    endif()
+    if(NOT _nrn_rl_event_hook)
+      # define for src/oc/hoc.cpp
+      set(DEF_RL_GETC_FUNCTION use_rl_getc_function)
+    endif()
+    unset(_nrn_rl_event_hook)
   endif()
   # If we are not using self contained, static readline library created for building wheel then only
-  # look for curses and termcap
-  if(NOT NRN_WHEEL_STATIC_READLINE)
+  # look for curses and termcap Fetched win32 GNU readline does not use curses/termcap. MinGW still
+  # requires Termcap below.
+  if(NOT NRN_WHEEL_STATIC_READLINE AND NOT NRN_READLINE_FETCHED)
     find_package(Curses QUIET)
     find_package(Termcap QUIET)
   endif()
@@ -509,6 +569,11 @@ if(NRN_ENABLE_INTERVIEWS)
       endif()
     endif()
     include_directories(${X11_INCLUDE_DIR})
+  else()
+    # Windows has no X11. pyproject defaults this ON for Unix wheels.
+    set(IV_ENABLE_X11_DYNAMIC
+        OFF
+        CACHE BOOL "dlopen X11 after launch" FORCE)
   endif()
 
   find_package(iv QUIET PATHS ${IV_DIR}/lib/cmake ${IV_DIR})
@@ -573,6 +638,19 @@ endif()
 # =============================================================================
 if(NRN_ENABLE_SHARED)
   set(NRN_LIBRARY_TYPE "SHARED")
+  # MSVC does not export globals from a DLL; Unix .so and MinGW do. DYNAMIC Python
+  # (nrnpythonX.Y.dll) and hoc.pyd consume that ABI. Data symbols still need NRN_DLLSYM (CMake does
+  # not put data in the generated .def).
+  if(MSVC)
+    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+  endif()
+  # GNU ld's PE default is export-all until any symbol is __declspec(dllexport); then only the
+  # explicit ones remain. NRN_EXPORT on p_cxx_char_alloc in the MPI plugin hid f_nrnmpi_newbuf
+  # (Windows installer: load_nrnmpi succeeds, then "The specified procedure could not be found").
+  # Force the ELF-like default. Counterpart of CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS above.
+  if(MINGW)
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export-all-symbols")
+  endif()
 else()
   set(NRN_LIBRARY_TYPE "STATIC")
   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
@@ -740,10 +818,15 @@ include(ConfigFileSetting)
 if(MINGW)
   set(NRN_INSTALL_SHARE_DIR ${CMAKE_INSTALL_PREFIX})
   set(NRN_BUILD_SHARE_DIR ${CMAKE_BINARY_DIR})
-  set(NRN_INSTALL_SHARE_LIB_DIR ${CMAKE_INSTALL_PREFIX}/bin)
 else()
   set(NRN_INSTALL_SHARE_DIR ${NRN_INSTALL_DATA_PREFIX}share/nrn)
   set(NRN_BUILD_SHARE_DIR ${CMAKE_BINARY_DIR}/share/nrn)
+endif()
+# Windows searches the executable directory for DLLs. MinGW setup.exe already installed them in bin;
+# MSVC wheels and cmake --install need the same.
+if(NRN_WINDOWS_BUILD)
+  set(NRN_INSTALL_SHARE_LIB_DIR ${NRN_INSTALL_DATA_PREFIX}bin)
+else()
   set(NRN_INSTALL_SHARE_LIB_DIR ${NRN_INSTALL_DATA_PREFIX}lib)
 endif()
 
@@ -1273,12 +1356,15 @@ endif()
 # Print build status
 # =============================================================================
 
-# just for printing the compiler flags in the build status
-string(TOUPPER ${CMAKE_BUILD_TYPE} BUILD_TYPE_UPPER)
+# just for printing the compiler flags in the build status. Quote CMAKE_BUILD_TYPE: it is empty on
+# Visual Studio / Xcode / Ninja Multi-Config.
+string(TOUPPER "${CMAKE_BUILD_TYPE}" BUILD_TYPE_UPPER)
 if(BUILD_TYPE_UPPER MATCHES "CUSTOM")
   set(COMPILER_FLAGS "${CMAKE_CXX_FLAGS}")
-else()
+elseif(BUILD_TYPE_UPPER)
   set(COMPILER_FLAGS "${CMAKE_CXX_FLAGS_${BUILD_TYPE_UPPER}}")
+else()
+  set(COMPILER_FLAGS "${CMAKE_CXX_FLAGS}")
 endif()
 string(JOIN " " COMPILER_FLAGS "${COMPILER_FLAGS}" ${NRN_COMPILE_FLAGS} ${CMAKE_CXX_FLAGS})
 
@@ -1304,7 +1390,14 @@ message(STATUS " Build option | Status")
 message(STATUS "--------------+--------------------------------------------------------------")
 message(STATUS "C COMPILER    | ${CMAKE_C_COMPILER}")
 message(STATUS "CXX COMPILER  | ${CMAKE_CXX_COMPILER}")
-message(STATUS "BUILD_TYPE    | ${CMAKE_BUILD_TYPE} (allowed: ${allowableBuildTypes})")
+if(CMAKE_CONFIGURATION_TYPES)
+  message(
+    STATUS
+      "BUILD_TYPE    | ${CMAKE_BUILD_TYPE} (multi-config: ${CMAKE_CONFIGURATION_TYPES}; allowed: ${allowableBuildTypes})"
+  )
+else()
+  message(STATUS "BUILD_TYPE    | ${CMAKE_BUILD_TYPE} (allowed: ${allowableBuildTypes})")
+endif()
 message(STATUS "COMPILE FLAGS | ${COMPILER_FLAGS}")
 message(STATUS "Shared        | ${NRN_ENABLE_SHARED}")
 message(STATUS "MPI           | ${NRN_ENABLE_MPI}")

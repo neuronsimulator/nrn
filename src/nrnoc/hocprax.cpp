@@ -36,6 +36,7 @@ also can use
 pval = pval_praxis(i, Vector)
 */
 
+#include <cstdint>
 #include <stdlib.h>
 #include "hocdec.h"
 #include "nrnpy.h"
@@ -45,7 +46,7 @@ pval = pval_praxis(i, Vector)
 extern double chkarg(int, double, double);
 extern IvocVect* vector_new2(IvocVect* vec);
 extern void vector_delete(IvocVect* vec);
-extern int nrn_praxis_ran_index;
+extern uint32_t nrn_praxis_ran_index;
 extern Object** hoc_objgetarg(int);
 
 static double efun(double*, long int);
@@ -221,9 +222,9 @@ void attr_praxis(void) {
         printmode = (int) chkarg(3, 0., 3.);
         hoc_retpushx(0.);
     } else {
-        int old = nrn_praxis_ran_index;
+        uint32_t old = nrn_praxis_ran_index;
         if (ifarg(1)) {
-            nrn_praxis_ran_index = (int) chkarg(1, 0., 1e9);
+            nrn_praxis_ran_index = (uint32_t) chkarg(1, 0., 1e9);
         }
         hoc_retpushx((double) old);
     }

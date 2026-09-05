@@ -13,7 +13,9 @@ on:
       os:
         description: "Comma-separated list of OSes"
         required: false
-        default: "macos-14,ubuntu-24.04-arm"
+        # windows-2022: MSVC win_amd64 (#3431), same template as wheels-ci.yml.
+        # Not MinGW setup.exe. Scheduled runs use the generate-matrix fallback.
+        default: "macos-14,ubuntu-24.04-arm,windows-2022"
       python_versions:
         description: "Comma-separated list of Python versions"
         required: false
@@ -47,7 +49,7 @@ jobs:
     steps:
       - id: set-matrix
         run: |
-          OS_INPUT="${{ github.event.inputs.os || 'macos-14,ubuntu-24.04-arm' }}"
+          OS_INPUT="${{ github.event.inputs.os || 'macos-14,ubuntu-24.04-arm,windows-2022' }}"
           PY_INPUT="${{ github.event.inputs.python_versions || '3.10,3.11,3.12,3.13,3.14' }}"
           OS_JSON=$(echo "$OS_INPUT" | jq -R 'split(",")')
           PY_JSON=$(echo "$PY_INPUT" | jq -R 'split(",")')

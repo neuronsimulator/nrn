@@ -73,6 +73,20 @@ HocDataPaths::HocDataPaths(int size, int pathstyle) {
     impl_ = new HocDataPathImpl(size, pathstyle);
 }
 
+HocDataPaths::HocDataPaths(HocDataPaths&& other) noexcept
+    : impl_(other.impl_) {
+    other.impl_ = nullptr;
+}
+
+HocDataPaths& HocDataPaths::operator=(HocDataPaths&& other) noexcept {
+    if (this != &other) {
+        delete impl_;
+        impl_ = other.impl_;
+        other.impl_ = nullptr;
+    }
+    return *this;
+}
+
 HocDataPaths::~HocDataPaths() {
     delete impl_;
 }

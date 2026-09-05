@@ -7,6 +7,8 @@
 /* 53 bit double precision of exp and pow from mpfr */
 #cmakedefine01 NRN_ENABLE_ARCH_INDEP_EXP_POW
 
+#include "nrndlldef.h"
+
 /* Define if building universal (internal helper macro) */
 #cmakedefine AC_APPLE_UNIVERSAL_BUILD @AC_APPLE_UNIVERSAL_BUILD@
 
@@ -113,8 +115,36 @@
    `char[]'. */
 #cmakedefine YYTEXT_POINTER @YYTEXT_POINTER@
 
-/* Define to `int' if <sys/types.h> does not define. */
-#cmakedefine pid_t @pid_t@
+/* Provide pid_t if <sys/types.h> does not. Must be a typedef, never
+   `#define pid_t int`: MSVC Python pyconfig.h does `typedef int pid_t`. */
+#cmakedefine01 NRN_HAVE_PID_T
+#if !NRN_HAVE_PID_T
+typedef int pid_t;
+#endif
+
+/* Provide ssize_t if the libc headers do not. Typedef, not a #define, so a
+   later identical typedef (MSVC Python) is valid. ptrdiff_t is the portable
+   signed counterpart of size_t. */
+#cmakedefine01 NRN_HAVE_SSIZE_T
+#if !NRN_HAVE_SSIZE_T
+#include <stddef.h>
+typedef ptrdiff_t ssize_t;
+#endif
+
+/* MSVC CRT POSIX names have a leading underscore. Do not #define close:
+   that would rewrite C++ methods named close(). */
+#if defined(_MSC_VER)
+#include <direct.h>
+#include <io.h>
+#define chdir  _chdir
+#define dup    _dup
+#define dup2   _dup2
+#define fileno _fileno
+#define getcwd _getcwd
+#define isatty _isatty
+#define pclose _pclose
+#define popen  _popen
+#endif
 
 /* __cplusplus guard still needed because this header is included from C code in
  * mesch (and maybe others)
@@ -133,6 +163,6 @@ namespace neuron::config {
 }
 #endif
 
-#ifdef MINGW
+#if defined(_WIN32)
 #define WIN32 1
 #endif

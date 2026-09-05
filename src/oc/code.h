@@ -1,11 +1,12 @@
 #pragma once
+#include "nrndlldef.h"
 enum class HocReturnType {
     floating = 0,
     integer = 1,
     boolean = 2,
 
 };
-extern HocReturnType hoc_return_type_code;
+extern NRN_DLLSYM HocReturnType hoc_return_type_code;
 
 extern void hoc_nopop(void);
 extern void edit(void);

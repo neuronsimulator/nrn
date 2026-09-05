@@ -1,4 +1,5 @@
 #pragma once
+#include "nrndlldef.h"
 #include "neuron/container/data_handle.hpp"
 #include "neuron/container/generic_data_handle.hpp"
 
@@ -159,9 +160,15 @@ double hoc_call_func(Symbol*, int narg);
 void hoc_call_func_result_on_stack(Symbol* s, int narg);
 // call a fuction within the context of an object.
 double hoc_call_objfunc(Symbol*, int narg, Object*);
-extern double hoc_ac_;
+extern NRN_DLLSYM double hoc_ac_;
 extern double hoc_epsilon;
-extern int nrn_inpython_;
+extern NRN_DLLSYM int nrn_inpython_;
+extern NRN_DLLSYM int nrn_global_argc;
+extern NRN_DLLSYM char** nrn_global_argv;
+struct HocStr;
+extern NRN_DLLSYM HocStr* hoc_cbufstr;
+extern NRN_DLLSYM char* hoc_ctp;
+extern NRN_DLLSYM const char* hoc_promptstr;
 
 extern int hoc_color;
 int hoc_set_color(int);
@@ -291,7 +298,7 @@ double* hoc_val_pointer(const char*);
 neuron::container::data_handle<double> hoc_val_handle(std::string_view);
 Symbol* hoc_table_lookup(const char*, Symlist*);
 Symbol* hoc_install(const char*, int, double, Symlist**);
-extern Objectdata* hoc_objectdata;
+extern NRN_DLLSYM Objectdata* hoc_objectdata;
 /** @brief Get the stack entry at depth i.
  *
  *  i=0 is the most recently pushed entry. This will raise an error if the stack

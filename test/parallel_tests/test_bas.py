@@ -1,3 +1,4 @@
+from glob import iglob
 from neuron import h
 from neuron.units import ms, mV
 
@@ -5,7 +6,8 @@ h("objref po")
 h.po = {}
 
 import numpy as np
-import subprocess
+import os
+import shutil
 
 pc = h.ParallelContext()
 
@@ -13,9 +15,10 @@ pc = h.ParallelContext()
 # start fresh with respect to SaveState and BBSaveState
 def rmfiles():
     if pc.id() == 0:
-        subprocess.run("rm -f state*.bin", shell=True)
-        subprocess.run("rm -r -f bbss_out", shell=True)
-        subprocess.run("rm -r -f in", shell=True)
+        for f in iglob("state*.bin"):
+            os.unlink(f)
+        shutil.rmtree("bbss_out", ignore_errors=True)
+        shutil.rmtree("in", ignore_errors=True)
     pc.barrier()
 
 
@@ -233,32 +236,23 @@ class StarNet:
         print(pc.id(), self.nclist)
 
 
-out2in_sh = r"""
-#!/usr/bin/env bash
-out=bbss_out
-rm -f in/*
-mkdir -p in
-cat $out/tmp > in/tmp
-for f in $out/tmp.*.* ; do
-  i=`echo "$f" | sed 's/.*tmp\.\([0-9]*\)\..*/\1/'`
-  if test ! -f in/tmp.$i ; then
-    cnt=`ls $out/tmp.$i.* | wc -l`
-    echo $cnt > in/tmp.$i
-    cat $out/tmp.$i.* >> in/tmp.$i
-  fi
-done
-"""
-
-
+# Same helper as test/pytest_coreneuron/test_hoc_po.py (Python, not /bin/bash).
 def cp_out_to_in():
     if pc.id() == 0:
-        import tempfile
-
-        with tempfile.NamedTemporaryFile("w") as scriptfile:
-            scriptfile.write(out2in_sh)
-            scriptfile.flush()
-            subprocess.check_call(["/bin/bash", scriptfile.name])
-
+        shutil.rmtree("in", ignore_errors=True)
+        os.mkdir("in")
+        shutil.copyfile("bbss_out/tmp", "in/tmp")
+        for f in iglob("bbss_out/tmp.*.*"):
+            # Get A from bbss_out/tmp.A.B
+            i = os.path.basename(f).split(".", 2)[1]
+            if not os.path.isfile("in/tmp.{}".format(i)):
+                files = list(iglob("bbss_out/tmp.{}.*".format(i)))
+                cnt = len(files)
+                with open("in/tmp.{}".format(i), "w") as ofile:
+                    ofile.write("{}\n".format(cnt))
+                    for fname in files:
+                        with open(fname, "r") as ifile:
+                            shutil.copyfileobj(ifile, ofile)
     pc.barrier()
 
 

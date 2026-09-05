@@ -8,6 +8,7 @@
 #include "wrap_sprintf.h"
 
 #include <iostream>
+#include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <vector>
@@ -219,16 +220,22 @@ struct HocParmUnits { /* units for symbol values */
 };
 
 #include "oc_ansi.h"
+#include "nrndlldef.h"
 
-extern Inst *hoc_progp, *hoc_progbase, *hoc_prog, *hoc_prog_parse_recover;
-extern Inst* hoc_pc;
+// HOC interpreter global state. Functions are covered by
+// WINDOWS_EXPORT_ALL_SYMBOLS; MSVC still needs dllimport on data.
+extern NRN_DLLSYM Inst* hoc_progp;
+extern NRN_DLLSYM Inst* hoc_progbase;
+extern NRN_DLLSYM Inst* hoc_prog;
+extern NRN_DLLSYM Inst* hoc_prog_parse_recover;
+extern NRN_DLLSYM Inst* hoc_pc;
 
-extern Objectdata* hoc_objectdata;
-extern Objectdata* hoc_top_level_data;
-extern Object* hoc_thisobject;
-extern Symlist* hoc_symlist;
-extern Symlist* hoc_top_level_symlist;
-extern Symlist* hoc_built_in_symlist;
+extern NRN_DLLSYM Objectdata* hoc_objectdata;
+extern NRN_DLLSYM Objectdata* hoc_top_level_data;
+extern NRN_DLLSYM Object* hoc_thisobject;
+extern NRN_DLLSYM Symlist* hoc_symlist;
+extern NRN_DLLSYM Symlist* hoc_top_level_symlist;
+extern NRN_DLLSYM Symlist* hoc_built_in_symlist;
 extern Objectdata* hoc_objectdata_save(void);
 extern Objectdata* hoc_objectdata_restore(Objectdata*);
 #define OPVAL(sym)    hoc_objectdata[sym->u.oboff].pval
@@ -245,11 +252,11 @@ extern Objectdata* hoc_objectdata_restore(Objectdata*);
         if (arg)    \
             ;       \
     } /* so fprintf doesn't give lint */
-#undef IGNORE
-#define IGNORE(arg) \
-    {               \
-        if (arg)    \
-            ;       \
+#undef NRN_IGNORE
+#define NRN_IGNORE(arg) \
+    {                   \
+        if (arg)        \
+            ;           \
     }
 #define LINTUSE(arg) \
     {                \
@@ -263,8 +270,8 @@ int ilint;
 #define Strcpy  cplint = strcpy
 #define Strncpy cplint = strncpy
 #else
-#undef IGNORE
-#define IGNORE(arg) arg
+#undef NRN_IGNORE
+#define NRN_IGNORE(arg) arg
 #define LINTUSE(arg)
 #define Strcat  strcat
 #define Strncat strncat
@@ -278,8 +285,11 @@ using neuron::SprintfAsrt;
 // #define IFGUI  if (hoc_usegui) {
 // #define ENDGUI }
 
-extern int hoc_usegui; /* when 0 does not make interviews calls */
-extern int nrn_istty_;
+extern NRN_DLLSYM int hoc_usegui; /* when 0 does not make interviews calls */
+extern NRN_DLLSYM int nrn_istty_;
+extern NRN_DLLSYM int nrn_nobanner_;
+extern NRN_DLLSYM size_t hoc_xopen_file_size_;
+extern NRN_DLLSYM char* hoc_xopen_file_;
 
 /* Enter handling for PVM  NJP 11/21/94 */
 #ifdef PVM

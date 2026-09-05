@@ -739,7 +739,7 @@ functableblk: FUNCTION_TABLE NAME '(' arglist ')' units
 		}
 	;
 funcblk: FUNCTION1 NAME '(' arglist ')' units
-		{IGNORE(copylocal(SYM($2))); set_inside_func(SYM($2));}
+		{NRN_IGNORE(copylocal(SYM($2))); set_inside_func(SYM($2));}
 	stmtlist '}'
 		/* boilerplate added to form double function(){...}
 		   Note all arguments have prefix _l */

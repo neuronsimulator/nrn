@@ -105,6 +105,15 @@ Azure macOS wheels still obtain a prebuilt static **readline** via an Azure
 *secure file* (see macOS section below). Migrating that class of blob into
 `ci/deps` is tracked as `managed: false` in the MANIFEST until promoted.
 
+## Windows wheels (`win_amd64`)
+
+GitHub Actions `windows-2022` builds an MSVC wheel (Visual Studio 17 2022 x64), not MinGW
+`setup.exe`. How to build locally, including `CMAKE_GENERATOR` / `CMAKE_GENERATOR_PLATFORM` and
+`ci/win_msvc_wheel_deps.cmd`, is under [Windows build — MSVC Python wheel](windows.md#msvc-python-wheel).
+
+`nrnivmodl` on that wheel needs `cl.exe` (Build Tools) and CMake; the wheel does not ship MinGW.
+See [Installing Binary Distribution — Windows](install_instructions.md#windows).
+
 ## macOS wheels
 
 Note that for macOS there is no docker image needed, but all required dependencies must exist.

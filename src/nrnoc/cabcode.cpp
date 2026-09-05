@@ -48,18 +48,18 @@ static char* escape_bracket(const char* s) {
 extern int hoc_execerror_messages;
 #define symlist hoc_symlist
 
-int tree_changed = 1; /* installing section, changeing nseg
-              and connecting sections set this flag.
-              The flag is set to 0 when the topology
-              is set up */
-int diam_changed = 1; /* changing diameter, length set this flag
+int tree_changed = 1;            /* installing section, changeing nseg
+                         and connecting sections set this flag.
+                         The flag is set to 0 when the topology
+                         is set up */
+NRN_DLLSYM int diam_changed = 1; /* changing diameter, length set this flag
               The flag is set to 0 when node.a and node.b
               is set up */
 extern int nrn_shape_changed_;
 
-char* (*nrnpy_pysec_name_p_)(Section*);
-Object* (*nrnpy_pysec_cell_p_)(Section*);
-int (*nrnpy_pysec_cell_equals_p_)(Section*, Object*);
+NRN_DLLSYM char* (*nrnpy_pysec_name_p_)(Section*);
+NRN_DLLSYM Object* (*nrnpy_pysec_cell_p_)(Section*);
+NRN_DLLSYM int (*nrnpy_pysec_cell_equals_p_)(Section*, Object*);
 
 /* switching from Ra being a global variable to it being a section variable
 opens up the possibility of a great deal of confusion and inadvertant wrong
@@ -870,7 +870,7 @@ void mech_insert1(Section* sec, int type) {
     m = nrn_mechanism(type, nd);
     if (!m) { /* all nodes get the property */
         for (i = n - 1; i >= 0; i--) {
-            IGNORE(prop_alloc(&(pnd[i]->prop), type, pnd[i]));
+            NRN_IGNORE(prop_alloc(&(pnd[i]->prop), type, pnd[i]));
         }
 #if EXTRACELLULAR
         if (type == EXTRACELL) {
@@ -1503,8 +1503,8 @@ void nrn_change_nseg(Section* sec, int n) {
         if (!keep_nseg_parm_ || nold == 0)
 #endif
             for (i = 0; i < n; i++) {
-                IGNORE(prop_alloc(&(pnd[i]->prop), MORPHOLOGY, pnd[i]));
-                IGNORE(prop_alloc(&(pnd[i]->prop), CAP, pnd[i]));
+                NRN_IGNORE(prop_alloc(&(pnd[i]->prop), MORPHOLOGY, pnd[i]));
+                NRN_IGNORE(prop_alloc(&(pnd[i]->prop), CAP, pnd[i]));
             }
     }
 }

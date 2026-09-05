@@ -38,6 +38,9 @@
 
 static Symbol* file_class_sym_;
 extern char* ivoc_get_temp_file();
+#ifdef WIN32
+char* hoc_back2forward(char*);
+#endif
 static int ivoc_unlink(const char*);
 int ivoc_unlink(const char* s) {
     return unlink(s);
@@ -91,9 +94,9 @@ static double f_aopen(void* v) {
         f->set_name(gargstr(1));
     }
     int err = f->open(f->get_name(), "a");
-#ifdef MINGW
-    /* ignore illegal seek */
-    if (err && errno == 29) {
+#ifdef _WIN32
+    /* Windows reports ESPIPE on append; Unix does not. */
+    if (err && errno == ESPIPE) {
         errno = 0;
     }
 #endif
@@ -317,6 +320,14 @@ void OcFile::set_name(const char* s) {
     if (s != filename_.c_str()) {
         filename_ = s;
     }
+#ifdef WIN32
+    /* File.getname is interpolated into HOC xopen("%s") / load_file(1, "%s")
+       (stdrun save_session, retrieve). \ in HOC "..." is an escape; fopen
+       accepts /. Same as load_file / mktemp. */
+    if (!filename_.empty()) {
+        hoc_back2forward(&filename_[0]);
+    }
+#endif
 }
 
 #ifdef WIN32
@@ -459,6 +470,16 @@ const char* OcFile::dir() {
     {
         dirname_ = "";
     }
+#ifdef WIN32
+    /* File.dir is passed to chdir and File.chooser start (stdrun
+       change_working_dir). InterViews dir() is a native path. \ in HOC
+       "..." is an escape; ...\nrn always contains \n. chdir accepts /.
+       Dup into dirname_; do not mutate the chooser string. Same as
+       File.getname. */
+    if (!dirname_.empty()) {
+        hoc_back2forward(&dirname_[0]);
+    }
+#endif
     return dirname_.c_str();
 }
 

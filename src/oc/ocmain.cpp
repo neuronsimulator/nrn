@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <hocdec.h>
 
-extern const char* neuron_home;
+extern char* neuron_home;
 
 #if defined(WIN32)
 void* cvode_pmem;
@@ -27,7 +27,7 @@ static void setnrnhome(const char* arg) {
     if (!neuron_home) {
 #if defined(HAVE_SETENV)
         setenv("NEURONHOME", NEURON_DATA_DIR, 1);
-        neuron_home = NEURON_DATA_DIR;
+        neuron_home = const_cast<char*>(NEURON_DATA_DIR);
 #else
 #error "I don't know how to set environment variables."
 // Maybe in this case the user will have to set it by hand.

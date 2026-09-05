@@ -477,13 +477,17 @@ void hoc_System(void) {
         }
 #endif
         hocstr_delete(st);
-        IGNORE(unlink(stdoutfile));
+        NRN_IGNORE(unlink(stdoutfile));
     } else if (ifarg(2)) {
         NrnFILEWrap* fpw;
         extern HocStr* hoc_tmpbuf;
         HocStr* line;
         int i;
+#if defined(_MSC_VER)
+        fp = _popen(gargstr(1), "r");
+#else
         fp = popen(gargstr(1), "r");
+#endif
         if (!fp) {
             hoc_execerror("could not popen the command:", gargstr(1));
         }
@@ -499,7 +503,11 @@ void hoc_System(void) {
             strcat(hoc_tmpbuf->buf, line->buf);
         }
         hocstr_delete(line);
+#if defined(_MSC_VER)
+        d = (double) _pclose(fp);
+#else
         d = (double) pclose(fp);
+#endif
         nrn_fw_delete(fpw);
         hoc_assign_str(hoc_pgargstr(2), hoc_tmpbuf->buf);
     } else {

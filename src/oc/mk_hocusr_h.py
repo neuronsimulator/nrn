@@ -53,6 +53,10 @@ text = remove_multiline_comments(text)
 
 skip = 1
 for line in text.splitlines():
+    # gcc -E and cl /E both emit #line (or # 1 "file") markers.
+    # Unix used to strip them with sed '/^#/d'; sed is not on MSVC.
+    if line.lstrip().startswith("#"):
+        continue
     if "disconnect" in line:
         skip = 0
     names = line.replace(",", " ").replace(";", " ").split()

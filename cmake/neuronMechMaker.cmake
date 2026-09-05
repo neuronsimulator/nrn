@@ -298,11 +298,12 @@ function(create_nrnmech)
           "NMODL_CORENEURON_EXTRA_ARGS | ${NMODL_CORENEURON_EXTRA_ARGS_SPACES}")
 
   # any extra environment variables that need to be passed (for testing purposes only). Because
-  # CMake likes to escape and quote things, we need to do it the roundabout way...
+  # CMake likes to escape and quote things, we need to do it the roundabout way... Visual Studio
+  # custom commands are not a shell: `VAR=value cmd` is not an assignment. cmake -E env is the
+  # portable form (Unix Makefile happens to accept the shell form).
+  set(ENV_COMMAND)
   if(NRN_MECH_EXTRA_ENV)
-    set(ENV_COMMAND "${CMAKE_COMMAND}" -E env ${NRN_MECH_EXTRA_ENV})
-  else()
-    set(ENV_COMMAND)
+    list(APPEND ENV_COMMAND ${NRN_MECH_EXTRA_ENV})
   endif()
 
   message("${MESSAGE_PRIORITY}" "EXTRA_ENV | ${NRN_MECH_EXTRA_ENV}")
@@ -311,6 +312,9 @@ function(create_nrnmech)
   # https://github.com/neuronsimulator/nrn/issues/3470
   if(DEFINED ENV{MODLUNIT})
     list(APPEND ENV_COMMAND "MODLUNIT=$ENV{MODLUNIT}")
+  endif()
+  if(ENV_COMMAND)
+    list(INSERT ENV_COMMAND 0 "${CMAKE_COMMAND}" -E env)
   endif()
 
   # Override the _target_ name, but not the library name. This is useful when we are using this
@@ -411,9 +415,25 @@ function(create_nrnmech)
 
     # add the nrnmech library
     add_library(${TARGET_LIBRARY_NAME} ${LIBRARY_TYPE} ${L_SOURCES})
+    # Windows shared libraries are RUNTIME (.dll) plus ARCHIVE (.lib). Multi-config generators
+    # otherwise append $<CONFIG>, so nrnmech.dll would land in Release/.
     set_target_properties(
-      ${TARGET_LIBRARY_NAME} PROPERTIES OUTPUT_NAME "${LIBNAME}" LIBRARY_OUTPUT_DIRECTORY
-                                                                 "${LIBRARY_OUTPUT_DIR}")
+      ${TARGET_LIBRARY_NAME}
+      PROPERTIES OUTPUT_NAME "${LIBNAME}"
+                 WINDOWS_EXPORT_ALL_SYMBOLS ON
+                 LIBRARY_OUTPUT_DIRECTORY "${LIBRARY_OUTPUT_DIR}"
+                 RUNTIME_OUTPUT_DIRECTORY "${LIBRARY_OUTPUT_DIR}"
+                 ARCHIVE_OUTPUT_DIRECTORY "${LIBRARY_OUTPUT_DIR}")
+    foreach(_nrn_mech_cfg IN ITEMS Release RelWithDebInfo Debug MinSizeRel)
+      string(TOUPPER "${_nrn_mech_cfg}" _nrn_mech_CFG)
+      set_target_properties(
+        ${TARGET_LIBRARY_NAME}
+        PROPERTIES LIBRARY_OUTPUT_DIRECTORY_${_nrn_mech_CFG} "${LIBRARY_OUTPUT_DIR}"
+                   RUNTIME_OUTPUT_DIRECTORY_${_nrn_mech_CFG} "${LIBRARY_OUTPUT_DIR}"
+                   ARCHIVE_OUTPUT_DIRECTORY_${_nrn_mech_CFG} "${LIBRARY_OUTPUT_DIR}")
+    endforeach()
+    unset(_nrn_mech_cfg)
+    unset(_nrn_mech_CFG)
     target_link_libraries(${TARGET_LIBRARY_NAME} PUBLIC neuron::nrniv)
 
     # we need to add the `mech_func.cpp` file as well since it handles registration of mechanisms
@@ -423,7 +443,15 @@ function(create_nrnmech)
     get_filename_component(MECH_REG "${_NEURON_MECH_REG}" NAME_WLE)
     configure_file(${_NEURON_MECH_REG} "${ARTIFACTS_OUTPUT_DIR}/${MECH_REG}" @ONLY)
     target_sources(${TARGET_LIBRARY_NAME} PRIVATE "${ARTIFACTS_OUTPUT_DIR}/${MECH_REG}")
-    target_compile_definitions(${TARGET_LIBRARY_NAME} PUBLIC AUTO_DLOPEN_NRNMECH=0)
+    # Unix nrnmech_makefile compiles with @NRN_COMPILE_DEFS_STRING@ (includes NRN_ENABLE_THREADS).
+    # Without that, nmodlmutex.h leaves PROTECT empty.
+    set(_nrn_mech_compile_defs AUTO_DLOPEN_NRNMECH=0)
+    if(DEFINED NRN_COMPILE_DEFS)
+      list(APPEND _nrn_mech_compile_defs ${NRN_COMPILE_DEFS})
+    elseif(NRN_ENABLE_THREADS)
+      list(APPEND _nrn_mech_compile_defs NRN_ENABLE_THREADS)
+    endif()
+    target_compile_definitions(${TARGET_LIBRARY_NAME} PUBLIC ${_nrn_mech_compile_defs})
     target_include_directories(${TARGET_LIBRARY_NAME} BEFORE PUBLIC ${_NEURON_MAIN_INCLUDE_DIR})
     # sometimes people will add `#include`s in VERBATIM blocks; usually those are in the same
     # directory as the mod file, so let's add that as well
@@ -439,6 +467,14 @@ function(create_nrnmech)
       set_target_properties(
         ${TARGET_EXECUTABLE_NAME} PROPERTIES OUTPUT_NAME "special" RUNTIME_OUTPUT_DIRECTORY
                                                                    "${EXECUTABLE_OUTPUT_DIR}")
+      foreach(_nrn_mech_cfg IN ITEMS Release RelWithDebInfo Debug MinSizeRel)
+        string(TOUPPER "${_nrn_mech_cfg}" _nrn_mech_CFG)
+        set_target_properties(
+          ${TARGET_EXECUTABLE_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_${_nrn_mech_CFG}
+                                               "${EXECUTABLE_OUTPUT_DIR}")
+      endforeach()
+      unset(_nrn_mech_cfg)
+      unset(_nrn_mech_CFG)
     endif()
 
   endif()

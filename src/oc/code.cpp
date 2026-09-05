@@ -39,7 +39,7 @@ extern void bbs_handle();
 int nrn_isecstack();
 
 extern void debugzz(Inst*);
-HocReturnType hoc_return_type_code = HocReturnType::floating;
+NRN_DLLSYM HocReturnType hoc_return_type_code = HocReturnType::floating;
 
 // array indices on the stack have their own type to help with determining when
 // a compiled fragment of HOC code is processing a variable whose number of
@@ -73,12 +73,12 @@ using StackDatum = std::variant<double,
 static std::vector<StackDatum> stack{};
 
 #define NPROG 50000
-Inst* hoc_prog;               /* the machine */
-Inst* hoc_progp;              /* next free spot for code generation */
-Inst* hoc_pc;                 /* program counter during execution */
-Inst* hoc_progbase;           /* start of current subprogram */
-Inst* hoc_prog_parse_recover; /* start after parse error */
-int hoc_returning;            /* 1 if return stmt seen, 2 if break, 3 if continue */
+NRN_DLLSYM Inst* hoc_prog;               /* the machine */
+NRN_DLLSYM Inst* hoc_progp;              /* next free spot for code generation */
+NRN_DLLSYM Inst* hoc_pc;                 /* program counter during execution */
+NRN_DLLSYM Inst* hoc_progbase;           /* start of current subprogram */
+NRN_DLLSYM Inst* hoc_prog_parse_recover; /* start after parse error */
+int hoc_returning;                       /* 1 if return stmt seen, 2 if break, 3 if continue */
 /* 4 if stop */
 namespace nrn::oc {
 struct frame {             /* proc/func call stack frame */
@@ -2620,12 +2620,12 @@ Inst* hoc_codeptr(void* vp) {
 
 void hoc_codesym(Symbol* f) {
     hoc_progp->sym = f;
-    IGNORE(codechk());
+    NRN_IGNORE(codechk());
 }
 
 void hoc_codein(Inst* f) {
     hoc_progp->in = f;
-    IGNORE(codechk());
+    NRN_IGNORE(codechk());
 }
 
 void hoc_insertcode(Inst* begin, Inst* end, Pfrv f) {

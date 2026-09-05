@@ -1,4 +1,7 @@
 #pragma once
+#include "nrndlldef.h"
+#include <cstdint>
+#include <string>
 #include <string_view>
 #include <vector>
 /**
@@ -7,6 +10,9 @@
  * defined in nrnpy.cpp.
  */
 struct Object;
+// Back-compat pointer filled from methods.hoccommand_exec. MOD VERBATIM
+// (e.g. test/rxd/beforestep_py.mod) imports this from nrniv.dll.
+extern NRN_DLLSYM int (*nrnpy_hoccommand_exec)(Object*);
 // PyObject is a typedef, so we can't forward-declare it as a type. This pattern is common enough in
 // the wild that we hope Python won't dare change it.
 struct _object;
@@ -15,6 +21,7 @@ struct _ts;
 typedef _ts PyThreadState;
 struct Section;
 struct Symbol;
+class IvocVect;
 namespace neuron::python {
 /**
  * @brief Collection of pointers to functions with python-version-specific implementations.
@@ -68,4 +75,36 @@ struct impl_ptrs {
  */
 extern impl_ptrs methods;
 }  // namespace neuron::python
-extern Symbol* nrnpy_pyobj_sym_;
+
+// DYNAMIC Python: these live in nrniv.dll and libnrnpythonX.Y.dll assigns them.
+extern NRN_DLLSYM Symbol* nrnpy_pyobj_sym_;
+extern NRN_DLLSYM std::vector<const char*> py_exposed_classes;
+extern NRN_DLLSYM std::string nrnpy_pyexe;
+extern NRN_DLLSYM int nrnpy_nositeflag;
+extern NRN_DLLSYM int hoc_max_builtin_class_id;
+extern NRN_DLLSYM int (*p_nrnpy_pyrun)(const char*);
+extern NRN_DLLSYM int (*nrnpy_pr_stdoe_callback)(int, char*);
+extern NRN_DLLSYM void (*nrnpy_sectionlist_helper_)(void*, Object*);
+extern NRN_DLLSYM void* (*nrnpy_get_pyobj)(Object*);
+extern NRN_DLLSYM void (*nrnpy_restore_savestate)(int64_t, char*);
+extern NRN_DLLSYM void (*nrnpy_store_savestate)(char**, uint64_t*);
+extern NRN_DLLSYM void (*nrnpy_decref)(void*);
+extern NRN_DLLSYM double (*nrnpy_call_func)(Object*, double);
+extern NRN_DLLSYM int (*nrnpy_call_obj_method)(Object*, const char*, Object*);
+extern NRN_DLLSYM int (*nrnpy_call_obj_method_double)(Object*, const char*, double);
+extern NRN_DLLSYM IvocVect* (*nrnpy_vec_from_python_p_)(void*);
+extern NRN_DLLSYM Object** (*nrnpy_vec_to_python_p_)(void*);
+extern NRN_DLLSYM Object** (*nrnpy_vec_as_numpy_helper_)(int, double*);
+extern NRN_DLLSYM Object* (*nrnpy_rvp_rxd_to_callable)(Object*);
+extern NRN_DLLSYM int (*nrnpy_nrncore_enable_value_p_)();
+extern NRN_DLLSYM int (*nrnpy_nrncore_file_mode_value_p_)();
+extern NRN_DLLSYM char* (*nrnpy_nrncore_arg_p_)(double);
+extern NRN_DLLSYM void (*nrnpy_reg_mech_p_)(int);
+extern NRN_DLLSYM int (*nrnpy_ob_is_seg)(Object*);
+extern NRN_DLLSYM Object* (*nrnpy_seg_from_sec_x)(Section*, double);
+extern NRN_DLLSYM Section* (*nrnpy_o2sec_p_)(Object*);
+extern NRN_DLLSYM void (*nrnpy_o2loc_p_)(Object*, Section**, double*);
+extern NRN_DLLSYM void (*nrnpy_o2loc2_p_)(Object*, Section**, double*);
+extern NRN_DLLSYM char* (*nrnpy_pysec_name_p_)(Section*);
+extern NRN_DLLSYM Object* (*nrnpy_pysec_cell_p_)(Section*);
+extern NRN_DLLSYM int (*nrnpy_pysec_cell_equals_p_)(Section*, Object*);

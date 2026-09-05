@@ -44,6 +44,22 @@ if(_nrn_foreign_have_pytest)
             "${NRN_FOREIGN_SOURCE_ROOT}/test/unit_tests/hoc_python"
     SCRIPT_PATTERNS "test/unit_tests/hoc_python/*.py")
   nrn_foreign_finalize_test(unit_tests python_unit_tests unit)
+
+  nrn_add_test(
+    GROUP unit_tests
+    NAME path_semantics
+    COMMAND "${NRN_FOREIGN_PYTHON}" -m pytest ${_nrn_foreign_pytest_args}
+            "${NRN_FOREIGN_SOURCE_ROOT}/test/unit_tests/path_semantics"
+    SCRIPT_PATTERNS "test/unit_tests/path_semantics/*.py")
+  nrn_foreign_finalize_test(unit_tests path_semantics unit)
+
+  nrn_add_test(
+    GROUP unit_tests
+    NAME nrnmech
+    COMMAND "${NRN_FOREIGN_PYTHON}" -m pytest ${_nrn_foreign_pytest_args}
+            "${NRN_FOREIGN_SOURCE_ROOT}/test/unit_tests/nrnmech"
+    SCRIPT_PATTERNS "test/unit_tests/nrnmech/*.py")
+  nrn_foreign_finalize_test(unit_tests nrnmech unit)
 endif()
 
 # ---------------------------------------------------------------------------
@@ -193,10 +209,10 @@ if(_nrn_foreign_have_pytest)
   # h.quit() at module level (false ctest green). In-tree runs test_natrans.py as a script; gj_par
   # is mpiexec of test_par_gj.py.
 
-  # cmake-format: off
-  # Skip CN half of test_natrans.py. NEURON half still runs. CN psolve of this
-  # script aborted on Linux/macOS wheels (#3866); dedicated CN rows passed.
-  # cmake-format: on
+  # Skip CN half of test_natrans.py. This group is not CORENEURON nrnivmodl. Enabling CN on a
+  # Linux/macOS wheel aborts at nrn_setup (SIGABRT, #3866). Same script after nrnivmodl -coreneuron
+  # passes; dedicated CN rows passed. NEURON half still runs. In-tree:
+  # coreneuron_modtests::test_natrans_py.
   nrn_add_test(
     GROUP gjtests
     NAME gj_serial

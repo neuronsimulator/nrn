@@ -124,6 +124,12 @@ NRN_ENABLE_MPI_DYNAMIC = { default = "ON", env = "NRN_ENABLE_MPI_DYNAMIC" }
 # MPI headers are platform-specific, so we do not set defaults
 NRN_MPI_DYNAMIC = { env = "NRN_MPI_DYNAMIC" }
 
+# Windows has no X11. inherit=append keeps the rest of cmake.define.
+[[tool.scikit-build.overrides]]
+if.platform-system = "win32"
+inherit.cmake.define = "append"
+cmake.define.IV_ENABLE_X11_DYNAMIC = "OFF"
+
 [tool.cibuildwheel]
 # We can specify a custom Docker image when building NEURON
 manylinux-aarch64-image = "docker.io/neuronsimulator/neuron_wheel:manylinux_2_28_aarch64"
@@ -164,3 +170,11 @@ repair-wheel-command = "auditwheel -v repair -w {dest_dir} {wheel} --exclude 'li
 
 [tool.cibuildwheel.macos]
 repair-wheel-command = "delocate-listdeps {wheel} && delocate-wheel -v -w {dest_dir} {wheel}"
+
+# win_amd64 via MSVC (GitHub windows-2022). Not MinGW setup.exe.
+# CoreNEURON stays off. DYNAMIC Python is already ON above so nrniv.exe
+# is not linked to a specific pythonXY.dll. delvewheel vendors extra DLLs
+# that cmake --install did not already place in neuron/.data/bin.
+[tool.cibuildwheel.windows]
+before-build = "pip install delvewheel"
+repair-wheel-command = "delvewheel repair -w {dest_dir} {wheel} --ignore-in-wheel --no-dll msmpi.dll"
