@@ -103,6 +103,33 @@ make setup_exe
 
 Note that by default, the install path is `C:\nrn-install`. When building the installer via `setup_exe`, that is the path that will be used.
 
+## MSVC Python wheel
+
+PyPI and GitHub Actions `windows-2022` wheels are **MSVC**, not this MinGW `setup.exe` path.
+They use the Visual Studio 17 2022 x64 generator (`NRN_ENABLE_PYTHON_DYNAMIC` stays on in
+`pyproject.toml`). Ninja on `windows-2022` picks MinGW; do not use it for the wheel.
+
+Dependencies: Visual Studio 2022 with C++ (or Build Tools), CMake, Git, and
+[winflexbison](https://github.com/lexxmark/winflexbison) / Ninja if you follow CI.
+`ci/win_msvc_wheel_deps.cmd` installs Ninja, winflexbison, and MS-MPI (same prefix as
+`ci/win_install_deps.cmd`). CoreNEURON is off for these wheels.
+
+From a **Developer Command Prompt for VS** (or after `vcvarsall x64`), in a clone of `nrn`
+(use a drive-letter path; do not pass a UNC path to `pip` / CMake `-S`):
+
+```bat
+set CMAKE_GENERATOR=Visual Studio 17 2022
+set CMAKE_GENERATOR_PLATFORM=x64
+
+python -m pip wheel -v --no-deps --wheel-dir=wheelhouse --config-settings=cmake.define.CMAKE_BUILD_TYPE=RelWithDebInfo --config-settings=cmake.define.NRN_ENABLE_CORENEURON=OFF .
+```
+
+Do **not** pass unquoted `-G Visual Studio 17 2022` on the `pip` command line (the spaces become
+extra pip requirements). `--no-deps` applies to `pip wheel` only; drop it on `pip install` of the
+wheel so numpy and other runtime deps install.
+
+See also [Building Python Wheels](python_wheels.md).
+
 ## Troubleshooting
 
 ### My PR is breaking the GitHub Windows CI
