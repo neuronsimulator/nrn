@@ -8,6 +8,13 @@ import ctypes
 import atexit
 from . import options
 from .rxdException import RxDException
+from .._windows_cxx import (
+    MSVC_CXX_MISSING,
+    _apply_vc_env,
+    _is_msvc_cxx,
+    _win_env_find_exe,
+    msvc_vc_env as _msvc_vc_env,
+)
 from . import initializer
 import collections
 import os
@@ -521,86 +528,6 @@ def _find_librxdmath():
     return dll
 
 
-def _is_msvc_cxx(cxx):
-    name = os.path.basename(cxx.replace('"', "").split()[0]).lower()
-    return name in ("cl", "cl.exe", "clang-cl", "clang-cl.exe")
-
-
-def _win_env_get(env, name):
-    want = name.lower()
-    for k, v in env.items():
-        if k.lower() == want:
-            return v
-    return ""
-
-
-def _win_env_find_exe(env, exe):
-    for p in _win_env_get(env, "PATH").split(";"):
-        cand = os.path.join(p, exe)
-        if p and os.path.isfile(cand):
-            return cand
-    return None
-
-
-def _apply_vc_env(env, vc):
-    env.update(vc)
-    for name in ("PATH", "INCLUDE", "LIB", "LIBPATH"):
-        val = _win_env_get(vc, name)
-        if val:
-            env[name] = val
-
-
-def _msvc_vc_env():
-    """cl.exe needs the vcvars INCLUDE/LIB/PATH. vswhere is the public lookup."""
-    vswhere = os.path.join(
-        os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)"),
-        "Microsoft Visual Studio",
-        "Installer",
-        "vswhere.exe",
-    )
-    if os.path.isfile(vswhere):
-        try:
-            inst = subprocess.check_output(
-                [
-                    vswhere,
-                    "-latest",
-                    "-products",
-                    "*",
-                    "-requires",
-                    "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
-                    "-property",
-                    "installationPath",
-                ],
-                text=True,
-            ).strip()
-            vcvars = os.path.join(inst, "VC", "Auxiliary", "Build", "vcvarsall.bat")
-            if os.path.isfile(vcvars):
-                blob = subprocess.check_output(
-                    f'"{vcvars}" x64 >nul && set',
-                    shell=True,
-                    text=True,
-                    stderr=subprocess.DEVNULL,
-                )
-                env = {}
-                for line in blob.splitlines():
-                    if "=" in line:
-                        k, _, v = line.partition("=")
-                        env[k] = v
-                if _win_env_find_exe(env, "cl.exe"):
-                    return env
-        except (OSError, subprocess.CalledProcessError):
-            pass
-    try:
-        from setuptools._distutils._msvccompiler import _get_vc_env
-
-        extra = _get_vc_env("x86_amd64")
-        if extra and _win_env_find_exe(extra, "cl.exe"):
-            return extra
-    except Exception:
-        pass
-    return None
-
-
 def _cxx_compile(formula):
     filename = "rxddll" + str(uuid.uuid1())
     src = filename + ".cpp"
@@ -631,9 +558,7 @@ def _cxx_compile(formula):
         else:
             vc = _msvc_vc_env()
             if not vc:
-                raise RxDException(
-                    "unable to locate a CXX compiler. Please `set CXX=<path to CXX compiler>`"
-                )
+                raise RxDException(MSVC_CXX_MISSING.strip())
             _apply_vc_env(env, vc)
             cxx = _win_env_find_exe(vc, "cl.exe") or "cl.exe"
             use_msvc = True
