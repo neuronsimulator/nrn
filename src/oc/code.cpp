@@ -293,7 +293,9 @@ int get_legacy_int_type(StackDatum const& entry) {
         return OBJECTVAR;
     } else if (std::holds_alternative<Object*>(entry)) {
         return OBJECTTMP;
-    } else if (std::holds_alternative<int>(entry)) {
+    } else if (std::holds_alternative<int>(entry) ||
+               std::holds_alternative<stack_ndim_datum>(entry)) {
+        // nrn_int_pop consumes both representations, so probe-before-pop must agree.
         return USERINT;
     } else if (std::holds_alternative<Symbol*>(entry)) {
         return SYMBOL;

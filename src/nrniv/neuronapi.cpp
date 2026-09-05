@@ -615,6 +615,7 @@ nrn_stack_types_t nrn_stack_type(void) {
     case OBJECTTMP:
         return STACK_IS_OBJTMP;
     case USERINT:
+        // Includes the distinct array-dimension marker accepted by nrn_int_pop.
         return STACK_IS_INT;
     case SYMBOL:
         return STACK_IS_SYM;

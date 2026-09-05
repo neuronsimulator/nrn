@@ -5,6 +5,7 @@
 // the interpreter left on the stack; nrn_object_pop pops an object but returns
 // NULL for a nil objref instead of dereferencing it to take a reference.
 #include <array>
+#include <cstring>
 #include <iostream>
 #include "neuronapi.h"
 
@@ -15,7 +16,6 @@ using std::endl;
 // interpreter pushes one during object-component access -- so the test uses the
 // internal push to put a Symbol there, the way nrniv would mid-expression.
 extern void hoc_pushs(Symbol*);
-extern void hoc_push_ndim(int);
 
 extern "C" void modl_reg() {}
 
@@ -24,6 +24,46 @@ static bool check(bool cond, const char* msg) {
         cerr << "FAIL: " << msg << endl;
     }
     return cond;
+}
+
+static bool awaiting_dimension{};
+static bool dimension_is_int{};
+static int observed_dimension{-1};
+
+static int inspect_indexed_error(int, char* message) {
+    if (awaiting_dimension && std::strstr(message, "not a public member")) {
+        awaiting_dimension = false;
+        dimension_is_int = nrn_stack_type() == STACK_IS_INT;
+        observed_dimension = nrn_int_pop();
+    }
+    return 0;
+}
+
+// The public HOC call produces an indexed-component frame before member lookup
+// fails. Its diagnostic callback can therefore inspect/pop the real ndim marker
+// using only public APIs. Error recovery below must restore the caller's frame;
+// this avoids depending on internal hoc_push_ndim or Python provider hooks.
+static bool inspect_dimension(Object* object, const char* function, int expected) {
+    observed_dimension = -1;
+    dimension_is_int = false;
+    awaiting_dimension = true;
+    char error[256]{};
+    nrn_double_push(424243.0);
+    nrn_object_push(object);
+    const int status = nrn_function_call_nothrow(nrn_symbol(function), 1, error, sizeof(error));
+    bool ok = check(status != 0, "indexed missing member fails through the nothrow API");
+    ok &= check(std::strstr(error, "not a public member") != nullptr,
+                "indexed lookup preserves its original error");
+    ok &= check(!awaiting_dimension, "diagnostic callback inspected the indexed frame");
+    ok &= check(dimension_is_int, "ndim marker probes as STACK_IS_INT before popping");
+    ok &= check(observed_dimension == expected, "int pop returns the API-produced ndim marker");
+    Object* restored = nrn_object_pop();
+    ok &= check(restored == object, "failed indexed lookup restores the object argument");
+    if (restored) {
+        nrn_object_unref(restored);
+    }
+    ok &= check(nrn_double_pop() == 424243.0, "failed indexed lookup preserves its lower sentinel");
+    return ok;
 }
 
 int main(void) {
@@ -69,13 +109,19 @@ int main(void) {
 
     // nrn_int_pop handles both ordinary USERINT values and the distinct array-
     // dimension marker used by indexed object-component access. Exercise exact
-    // values and LIFO ordering for both representations through the same API.
+    // values for both representations through the same public probe/pop APIs.
     nrn_int_push(3);
+    ok &= check(nrn_stack_type() == STACK_IS_INT, "ordinary integer probes as STACK_IS_INT");
     ok &= check(nrn_int_pop() == 3, "int pop returns an ordinary integer");
-    hoc_push_ndim(2);
-    hoc_push_ndim(7);
-    ok &= check(nrn_int_pop() == 7, "int pop returns the last pushed ndim marker");
-    ok &= check(nrn_int_pop() == 2, "int pop returns the earlier ndim marker (LIFO)");
+    ok &= check(nrn_hoc_call("func missing_1() { return $o1.missing[7] }") == 0,
+                "one-dimensional indexed helper defined");
+    ok &= check(nrn_hoc_call("func missing_2() { return $o1.missing[2][7] }") == 0,
+                "two-dimensional indexed helper defined");
+    nrn_stdout_redirect(inspect_indexed_error);
+    ok &= inspect_dimension(vec, "missing_1", 1);
+    ok &= inspect_dimension(vec, "missing_2", 2);
+    nrn_stdout_redirect(nullptr);
+    nrn_object_unref(vec);
 
     // Balance: with every push above consumed by exactly one pop, the sentinel
     // from the very start is what remains on top.
