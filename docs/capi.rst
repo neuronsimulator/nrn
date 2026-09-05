@@ -1234,6 +1234,8 @@ Functions, objects, and the stack
 .. c:function:: nrn_stack_types_t nrn_stack_type(void)
 
     Get the type of the value on top of the stack without removing it.
+    Both ordinary integers and array-dimension markers are reported as
+    ``STACK_IS_INT`` and can be consumed with :c:func:`nrn_int_pop`.
 
     :returns: Enumeration value indicating the stack top type.
 
