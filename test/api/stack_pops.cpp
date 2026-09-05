@@ -26,37 +26,31 @@ static bool check(bool cond, const char* msg) {
     return cond;
 }
 
-static bool awaiting_dimension{};
-static bool dimension_is_int{};
 static int observed_dimension{-1};
 
-static int inspect_indexed_error(int, char* message) {
-    if (awaiting_dimension && std::strstr(message, "not a public member")) {
-        awaiting_dimension = false;
-        dimension_is_int = nrn_stack_type() == STACK_IS_INT;
-        observed_dimension = nrn_int_pop();
-    }
-    return 0;
-}
-
-// The public HOC call produces an indexed-component frame before member lookup
-// fails. Its diagnostic callback can therefore inspect/pop the real ndim marker
-// using only public APIs. Error recovery below must restore the caller's frame;
-// this avoids depending on internal hoc_push_ndim or Python provider hooks.
-static bool inspect_dimension(Object* object, const char* function, int expected) {
+static bool check_indexed_dimension(Object* object, const char* function, int expected) {
     observed_dimension = -1;
-    dimension_is_int = false;
-    awaiting_dimension = true;
+    // HOC pushes a real dimension marker before reporting the missing member.
+    // Inspect it here, BEFORE nothrow recovery removes it. This is a stack
+    // inspection hook, not output capture; it avoids an internal marker-push API.
+    nrn_stdout_redirect([](int, char* message) {
+        if (observed_dimension == -1 && std::strstr(message, "not a public member")) {
+            if (nrn_stack_type() == STACK_IS_INT) {
+                observed_dimension = nrn_int_pop();
+            }
+        }
+        return 0;
+    });
     char error[256]{};
     nrn_double_push(424243.0);
     nrn_object_push(object);
     const int status = nrn_function_call_nothrow(nrn_symbol(function), 1, error, sizeof(error));
+    nrn_stdout_redirect(nullptr);
     bool ok = check(status != 0, "indexed missing member fails through the nothrow API");
     ok &= check(std::strstr(error, "not a public member") != nullptr,
                 "indexed lookup preserves its original error");
-    ok &= check(!awaiting_dimension, "diagnostic callback inspected the indexed frame");
-    ok &= check(dimension_is_int, "ndim marker probes as STACK_IS_INT before popping");
-    ok &= check(observed_dimension == expected, "int pop returns the API-produced ndim marker");
+    ok &= check(observed_dimension == expected,
+                "indexed access produces a STACK_IS_INT marker with the expected dimension");
     Object* restored = nrn_object_pop();
     ok &= check(restored == object, "failed indexed lookup restores the object argument");
     if (restored) {
@@ -117,10 +111,8 @@ int main(void) {
                 "one-dimensional indexed helper defined");
     ok &= check(nrn_hoc_call("func missing_2() { return $o1.missing[2][7] }") == 0,
                 "two-dimensional indexed helper defined");
-    nrn_stdout_redirect(inspect_indexed_error);
-    ok &= inspect_dimension(vec, "missing_1", 1);
-    ok &= inspect_dimension(vec, "missing_2", 2);
-    nrn_stdout_redirect(nullptr);
+    ok &= check_indexed_dimension(vec, "missing_1", 1);
+    ok &= check_indexed_dimension(vec, "missing_2", 2);
     nrn_object_unref(vec);
 
     // Balance: with every push above consumed by exactly one pop, the sentinel
