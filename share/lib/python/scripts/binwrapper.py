@@ -191,14 +191,12 @@ def _nrnivmodl_cmake(args):
         print("nrnivmodl: no MOD files to compile")
         return 0
 
-    cmake = shutil.which("cmake")
-    if not cmake:
-        raise SystemExit(
-            "nrnivmodl: cmake not found on PATH; install CMake from https://cmake.org/download/"
-        )
-
     if os.name == "nt":
-        from neuron._windows_cxx import MSVC_CXX_MISSING, msvc_cl_available
+        from neuron._windows_cxx import (
+            NRNIVMODL_WIN_TOOLS_MISSING,
+            find_cmake,
+            msvc_cl_available,
+        )
 
         mingw = (
             Path(os.environ.get("NRNHOME", ""))
@@ -207,8 +205,20 @@ def _nrnivmodl_cmake(args):
             / "bin"
             / "x86_64-w64-mingw32-g++.exe"
         )
-        if not mingw.is_file() and not msvc_cl_available():
-            raise SystemExit(MSVC_CXX_MISSING.strip())
+        cmake = find_cmake()
+        if mingw.is_file():
+            if not cmake:
+                raise SystemExit(
+                    "nrnivmodl: cmake not found; install CMake from https://cmake.org/download/"
+                )
+        elif not cmake or not msvc_cl_available():
+            raise SystemExit(NRNIVMODL_WIN_TOOLS_MISSING.strip())
+    else:
+        cmake = shutil.which("cmake")
+        if not cmake:
+            raise SystemExit(
+                "nrnivmodl: cmake not found on PATH; install CMake from https://cmake.org/download/"
+            )
 
     prefix = Path(os.environ["NRNHOME"])
     srcdir = prefix / "lib" / "cmake" / "neuron" / "nrnivmodl"

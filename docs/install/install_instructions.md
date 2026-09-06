@@ -138,10 +138,11 @@ Nightly builds: `python -m pip install neuron-nightly`. Unset `PYTHONPATH` and `
 older installer is not picked up.
 
 `nrnivmodl` and RxD reaction compilation on the wheel use **Microsoft `cl.exe`**, not the MinGW
-`g++` bundled with `setup.exe`. The wheel does not ship a compiler. Install
-[Build Tools for Visual Studio](https://visualstudio.microsoft.com/visual-cpp-build-tools/) with
-the **Desktop development with C++** workload, then use an **x64 Native Tools Command Prompt**
-(or run `vcvarsall x64`). CMake must be on `PATH` (`nrnivmodl` drives the shipped CMake package).
+`g++` bundled with `setup.exe`. The wheel does not ship a compiler. In Visual Studio Installer, on
+the Workloads page, select only
+[**Desktop development with C++**](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
+and leave its recommended components checked (MSVC, Windows SDK, CMake). Then use an **x64 Native
+Tools Command Prompt** (or run `vcvarsall x64`).
 
 The MinGW **binary installer** remains available if you do not want Visual Studio. Download
 releases from:

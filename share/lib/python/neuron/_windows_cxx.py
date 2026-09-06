@@ -1,4 +1,4 @@
-"""MSVC cl.exe lookup for the Windows pip wheel (not setup.exe MinGW)."""
+"""MSVC cl.exe / cmake lookup for the Windows pip wheel (not setup.exe MinGW)."""
 
 import os
 import subprocess
@@ -9,11 +9,36 @@ MSVC_CXX_MISSING = """\
 Windows pip wheels compile MOD files and RxD reactions with Microsoft cl.exe.
 The wheel does not ship a compiler (the setup.exe installer still bundles MinGW).
 
-Install Build Tools for Visual Studio with the "Desktop development with C++" workload:
+In Visual Studio Installer, on the Workloads page, select only
+"Desktop development with C++" (leave recommended components checked).
   https://visualstudio.microsoft.com/visual-cpp-build-tools/
-Then open an "x64 Native Tools Command Prompt for VS" (or run vcvarsall x64) and retry.
-CMake must be on PATH for nrnivmodl. Or set CXX to the full path of cl.exe.
+Then open an "x64 Native Tools Command Prompt for VS" (or run vcvarsall x64)
+and retry. Or set CXX to the full path of cl.exe.
 """
+
+NRNIVMODL_WIN_TOOLS_MISSING = """\
+nrnivmodl on a Windows pip wheel needs cl.exe and CMake.
+The wheel does not ship a compiler (the setup.exe installer still bundles MinGW).
+
+In Visual Studio Installer, on the Workloads page, select only:
+  Desktop development with C++
+Leave its recommended components checked (MSVC, Windows SDK, CMake).
+  https://visualstudio.microsoft.com/visual-cpp-build-tools/
+
+If that workload is already installed, open an "x64 Native Tools Command Prompt
+for VS" (or run vcvarsall x64) so cmake and cl.exe are on PATH, then retry.
+Or set CXX to the full path of cl.exe.
+"""
+
+_vswhere = os.path.join(
+    os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)"),
+    "Microsoft Visual Studio",
+    "Installer",
+    "vswhere.exe",
+)
+
+_vc_env_cache = None
+_vc_env_tried = False
 
 
 def _win_env_get(env, name):
@@ -45,31 +70,31 @@ def _is_msvc_cxx(cxx):
     return name in ("cl", "cl.exe", "clang-cl", "clang-cl.exe")
 
 
+def _vswhere_install_path(require_vc=False):
+    if not os.path.isfile(_vswhere):
+        return None
+    cmd = [_vswhere, "-latest", "-products", "*"]
+    if require_vc:
+        cmd.extend(["-requires", "Microsoft.VisualStudio.Component.VC.Tools.x86.x64"])
+    cmd.extend(["-property", "installationPath"])
+    try:
+        inst = subprocess.check_output(cmd, text=True).strip()
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    return inst or None
+
+
 def msvc_vc_env():
     """cl.exe needs the vcvars INCLUDE/LIB/PATH. vswhere is the public lookup."""
-    vswhere = os.path.join(
-        os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)"),
-        "Microsoft Visual Studio",
-        "Installer",
-        "vswhere.exe",
-    )
-    if os.path.isfile(vswhere):
-        try:
-            inst = subprocess.check_output(
-                [
-                    vswhere,
-                    "-latest",
-                    "-products",
-                    "*",
-                    "-requires",
-                    "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
-                    "-property",
-                    "installationPath",
-                ],
-                text=True,
-            ).strip()
-            vcvars = os.path.join(inst, "VC", "Auxiliary", "Build", "vcvarsall.bat")
-            if os.path.isfile(vcvars):
+    global _vc_env_cache, _vc_env_tried
+    if _vc_env_tried:
+        return _vc_env_cache
+    _vc_env_tried = True
+    inst = _vswhere_install_path(require_vc=True)
+    if inst:
+        vcvars = os.path.join(inst, "VC", "Auxiliary", "Build", "vcvarsall.bat")
+        if os.path.isfile(vcvars):
+            try:
                 blob = subprocess.check_output(
                     f'"{vcvars}" x64 >nul && set',
                     shell=True,
@@ -82,17 +107,20 @@ def msvc_vc_env():
                         k, _, v = line.partition("=")
                         env[k] = v
                 if _win_env_find_exe(env, "cl.exe"):
-                    return env
-        except (OSError, subprocess.CalledProcessError):
-            pass
+                    _vc_env_cache = env
+                    return _vc_env_cache
+            except (OSError, subprocess.CalledProcessError):
+                pass
     try:
         from setuptools._distutils._msvccompiler import _get_vc_env
 
         extra = _get_vc_env("x86_amd64")
         if extra and _win_env_find_exe(extra, "cl.exe"):
-            return extra
+            _vc_env_cache = extra
+            return _vc_env_cache
     except Exception:
         pass
+    _vc_env_cache = None
     return None
 
 
@@ -107,3 +135,38 @@ def msvc_cl_available():
         if which(name):
             return True
     return msvc_vc_env() is not None
+
+
+def find_cmake():
+    """cmake.exe on PATH, under vcvars, Program Files, or VS CMake tools."""
+    found = which("cmake") or which("cmake.exe")
+    if found:
+        return found
+    vc = msvc_vc_env()
+    if vc:
+        found = _win_env_find_exe(vc, "cmake.exe")
+        if found:
+            return found
+    for base in (
+        os.environ.get("ProgramFiles", r"C:\Program Files"),
+        os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)"),
+    ):
+        cand = os.path.join(base, "CMake", "bin", "cmake.exe")
+        if os.path.isfile(cand):
+            return cand
+    inst = _vswhere_install_path(require_vc=False)
+    if inst:
+        cand = os.path.join(
+            inst,
+            "Common7",
+            "IDE",
+            "CommonExtensions",
+            "Microsoft",
+            "CMake",
+            "CMake",
+            "bin",
+            "cmake.exe",
+        )
+        if os.path.isfile(cand):
+            return cand
+    return None
