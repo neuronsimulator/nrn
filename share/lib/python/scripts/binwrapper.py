@@ -325,7 +325,21 @@ def _neurondemo(args):
 
     marker = demo / "neuron"
     dll = release / "nrnmech.dll"
-    if not marker.is_file():
+    # Banner names are compiled into nrnmech.dll. pip install leaves a previous
+    # first-run dll and demo/neuron marker.
+    maker = (
+        Path(os.environ["NRNHOME"])
+        / "lib"
+        / "cmake"
+        / "neuron"
+        / "neuronMechMaker.cmake"
+    )
+    stale = (
+        dll.is_file()
+        and maker.is_file()
+        and maker.stat().st_mtime > dll.stat().st_mtime
+    )
+    if not marker.is_file() or not dll.is_file() or stale:
         saved = Path.cwd()
         try:
             os.chdir(release)
