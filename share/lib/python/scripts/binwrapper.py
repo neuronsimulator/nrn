@@ -231,6 +231,16 @@ def _nrnivmodl_cmake(args):
 
     # Match CMAKE_SYSTEM_PROCESSOR (AMD64 on win_amd64) and Unix uname -m layout.
     builddir = Path.cwd() / platform.machine()
+    if os.name == "nt" and builddir.exists():
+        # MSVC LNK1104 if a previous nrnmech.dll in -B is still mapped (pip
+        # install leaves the first-run AMD64 tree).
+        try:
+            shutil.rmtree(builddir)
+        except OSError as e:
+            raise SystemExit(
+                f"nrnivmodl: cannot replace {builddir}: {e}\n"
+                "Close other NEURON windows and retry."
+            ) from e
     cmake_cfg = [
         cmake,
         "-S",
@@ -256,6 +266,14 @@ def _nrnivmodl_cmake(args):
 
     if os.name == "nt":
         dest = Path.cwd() / "nrnmech.dll"
+        if dest.is_file():
+            try:
+                dest.unlink()
+            except OSError as e:
+                raise SystemExit(
+                    f"nrnivmodl: cannot replace {dest}: {e}\n"
+                    "Close other NEURON windows and retry."
+                ) from e
         candidates = [
             builddir / "nrnmech.dll",
             builddir / "Release" / "nrnmech.dll",
