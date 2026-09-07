@@ -111,15 +111,6 @@ def msvc_vc_env():
                     return _vc_env_cache
             except (OSError, subprocess.CalledProcessError):
                 pass
-    try:
-        from setuptools._distutils._msvccompiler import _get_vc_env
-
-        extra = _get_vc_env("x86_amd64")
-        if extra and _win_env_find_exe(extra, "cl.exe"):
-            _vc_env_cache = extra
-            return _vc_env_cache
-    except Exception:
-        pass
     _vc_env_cache = None
     return None
 
