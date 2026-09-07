@@ -377,6 +377,15 @@ function(create_nrnmech)
 
   message("${MESSAGE_PRIORITY}" "MOD_FILES | ${MOD_FILES}")
 
+  # Banner names: Unix nrnivmodl.in prints the path relative to the nrnivmodl cwd. The installed
+  # nrnivmodl CMake project has CMAKE_SOURCE_DIR in the cmake package, not that cwd (wheel
+  # neurondemo showed ../../../../share/nrn/demo/release/cabpump.mod). BINARY_DIR is cwd/<arch>.
+  if(PROJECT_NAME STREQUAL "nrnivmodl")
+    get_filename_component(_nrn_mech_print_base "${CMAKE_BINARY_DIR}" DIRECTORY)
+  else()
+    set(_nrn_mech_print_base "${CMAKE_SOURCE_DIR}")
+  endif()
+
   # We later include the directories where the mod files are in case people add headers in VERBATIM
   # blocks
   set(MOD_DIRECTORIES)
@@ -393,7 +402,7 @@ function(create_nrnmech)
         list(APPEND MOD_DIRECTORIES "${MOD_DIRECTORY}")
       endif()
       set(CPP_FILE "cpp/${MOD_STUB}.cpp")
-      file(RELATIVE_PATH MOD_SHORT "${CMAKE_SOURCE_DIR}" "${MOD_ABSPATH}")
+      file(RELATIVE_PATH MOD_SHORT "${_nrn_mech_print_base}" "${MOD_ABSPATH}")
 
       list(APPEND L_MECH_DECLARE "extern \"C\" void _${MOD_STUB}_reg(void)\;")
       list(APPEND L_MECH_PRINT "fprintf(stderr, \" \\\"${MOD_SHORT}\\\"\")\;")
@@ -497,7 +506,7 @@ function(create_nrnmech)
       # nmodl _may_ have trouble with symlinks, so we always use the real path
       get_filename_component(MOD_ABSPATH "${MOD_FILE}" REALPATH)
       set(CPP_FILE "cpp_core/${MOD_STUB}.cpp")
-      file(RELATIVE_PATH MOD_SHORT "${CMAKE_SOURCE_DIR}" "${MOD_ABSPATH}")
+      file(RELATIVE_PATH MOD_SHORT "${_nrn_mech_print_base}" "${MOD_ABSPATH}")
 
       list(APPEND L_CORE_MECH_DECLARE "extern int _${MOD_STUB}_reg(void)\;")
       list(APPEND L_CORE_MECH_PRINT "fprintf(stderr, \" \\\"${MOD_SHORT}\\\"\")\;")
