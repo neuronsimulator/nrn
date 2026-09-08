@@ -6,6 +6,7 @@ Please create a softlink with the binary name to be called.
 import os
 import platform
 import shutil
+import stat
 import subprocess
 import sys
 import warnings
@@ -171,6 +172,54 @@ def _collect_mod_files(args):
     return resolved
 
 
+def _nt_replace_file(path):
+    """Remove a file Windows may still have mapped (WinError 5 on unlink)."""
+    path = Path(path)
+    try:
+        os.chmod(path, stat.S_IWRITE)
+    except OSError:
+        pass
+    try:
+        path.unlink()
+        return
+    except OSError:
+        pass
+    bak = path.with_name(f"{path.name}.old.{os.getpid()}")
+    try:
+        path.rename(bak)
+    except OSError as e:
+        raise SystemExit(
+            f"nrnivmodl: cannot replace {path}: {e}\n"
+            "Close other NEURON windows and retry."
+        ) from e
+    try:
+        bak.unlink()
+    except OSError:
+        pass
+
+
+def _nt_replace_tree(path):
+    """Move a previous VS -B tree aside. A mapped nrnmech.dll cannot be deleted
+    (WinError 5) but the directory can be renamed."""
+    path = Path(path)
+    bak = path.with_name(f"{path.name}.old.{os.getpid()}")
+    n = 0
+    while bak.exists():
+        n += 1
+        bak = path.with_name(f"{path.name}.old.{os.getpid()}.{n}")
+    try:
+        path.rename(bak)
+    except OSError as e:
+        raise SystemExit(
+            f"nrnivmodl: cannot replace {path}: {e}\n"
+            "Close other NEURON windows and retry."
+        ) from e
+    try:
+        shutil.rmtree(bak)
+    except OSError:
+        pass
+
+
 def _nrnivmodl_cmake(args):
     """Build nrnmech via the shipped neuron CMake package (Windows wheel path)."""
     rest = list(args)
@@ -232,15 +281,7 @@ def _nrnivmodl_cmake(args):
     # Match CMAKE_SYSTEM_PROCESSOR (AMD64 on win_amd64) and Unix uname -m layout.
     builddir = Path.cwd() / platform.machine()
     if os.name == "nt" and builddir.exists():
-        # MSVC LNK1104 if a previous nrnmech.dll in -B is still mapped (pip
-        # install leaves the first-run AMD64 tree).
-        try:
-            shutil.rmtree(builddir)
-        except OSError as e:
-            raise SystemExit(
-                f"nrnivmodl: cannot replace {builddir}: {e}\n"
-                "Close other NEURON windows and retry."
-            ) from e
+        _nt_replace_tree(builddir)
     cmake_cfg = [
         cmake,
         "-S",
@@ -267,13 +308,7 @@ def _nrnivmodl_cmake(args):
     if os.name == "nt":
         dest = Path.cwd() / "nrnmech.dll"
         if dest.is_file():
-            try:
-                dest.unlink()
-            except OSError as e:
-                raise SystemExit(
-                    f"nrnivmodl: cannot replace {dest}: {e}\n"
-                    "Close other NEURON windows and retry."
-                ) from e
+            _nt_replace_file(dest)
         candidates = [
             builddir / "nrnmech.dll",
             builddir / "Release" / "nrnmech.dll",
