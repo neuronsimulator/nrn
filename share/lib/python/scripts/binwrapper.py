@@ -378,12 +378,12 @@ def _nrngui(args):
 def _neurondemo(args):
     """Port of bin/neurondemo.in for Windows wheels (no bash).
 
-    CMake skips generate-neurondemo-mechanism-library on WIN32; the demo
-    MOD sources ship at share/nrn/demo/release. First run compiles them
-    with the same nrnivmodl CMake path as Test 4 (cwd/nrnmech.dll), then
-    nrniv -dll that DLL demo.hoc. NRNDEMO is the HOC $(NRNDEMO) prefix
-    (trailing slash). Unix appends '-' so stdin is read after demo.hoc;
-    Windows does the same (file argv ends like Unix).
+    The MSVC wheel ships share/nrn/demo/release/nrnmech.dll (built at
+    wheel time). If that file is missing, compile with the same
+    nrnivmodl CMake path as Test 4 (needs cl.exe). Then nrniv -dll
+    that DLL demo.hoc. NRNDEMO is the HOC $(NRNDEMO) prefix (trailing
+    slash). Unix appends '-' so stdin is read after demo.hoc; Windows
+    does the same (file argv ends like Unix).
     """
     home = Path(os.environ["NEURONHOME"])
     demo = home / "demo"
@@ -396,23 +396,8 @@ def _neurondemo(args):
 
     os.environ["NRNDEMO"] = _posix_path(demo) + "/"
 
-    marker = demo / "neuron"
     dll = release / "nrnmech.dll"
-    # Banner names are compiled into nrnmech.dll. pip install leaves a previous
-    # first-run dll and demo/neuron marker.
-    maker = (
-        Path(os.environ["NRNHOME"])
-        / "lib"
-        / "cmake"
-        / "neuron"
-        / "neuronMechMaker.cmake"
-    )
-    stale = (
-        dll.is_file()
-        and maker.is_file()
-        and maker.stat().st_mtime > dll.stat().st_mtime
-    )
-    if not marker.is_file() or not dll.is_file() or stale:
+    if not dll.is_file():
         saved = Path.cwd()
         try:
             os.chdir(release)
@@ -423,7 +408,6 @@ def _neurondemo(args):
             return rc
         if not dll.is_file():
             raise SystemExit(f"neurondemo: nrnivmodl did not produce {dll}")
-        marker.write_text("")
 
     nrniv = Path(os.environ["NRNHOME"]) / "bin" / "nrniv.exe"
     if not nrniv.is_file():

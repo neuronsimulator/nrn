@@ -1211,7 +1211,8 @@ if(NRN_ENABLE_TESTS)
         "test-install   | ninja install && ninja test-install  -> ${NRN_FOREIGN_CTEST_BINARY_DIR}")
   endif()
 elseif(NOT WIN32)
-  # Windows installs the demo separately
+  # Unix wheels and source installs prebuild the demo library. Windows setup.exe does that in
+  # pre_setup_exe.sh; the MSVC wheel ships nrnmech.dll below.
   add_subdirectory(share/demo/release)
 
   add_custom_target(
@@ -1319,6 +1320,29 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/nrnivmodl.cmake
                ${CMAKE_CURRENT_BINARY_DIR}/lib/cmake/neuron/nrnivmodl/CMakeLists.txt @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/lib/cmake/neuron/nrnivmodl/CMakeLists.txt
         DESTINATION "${NRN_INSTALL_DATA_PREFIX}lib/cmake/neuron/nrnivmodl")
+
+# MSVC wheel: ship demo/release/nrnmech.dll so neurondemo does not need cl.exe. Same CMake nrnivmodl
+# path as binwrapper; fallback still compiles if the DLL is missing. setup.exe (MinGW) keeps
+# pre_setup_exe.sh.
+if(SKBUILD
+   AND WIN32
+   AND NOT MINGW)
+  set(_nrn_demo_dll "${NRN_BUILD_SHARE_DIR}/demo/release/nrnmech.dll")
+  add_custom_target(
+    neurondemo_msvc_dll ALL
+    COMMAND
+      ${CMAKE_COMMAND} "-DNRN_DEMO_RELEASE=${NRN_BUILD_SHARE_DIR}/demo/release"
+      "-DNRN_PREFIX=${PROJECT_BINARY_DIR}"
+      "-DNRN_NRNIVMODL_SRC=${PROJECT_BINARY_DIR}/lib/cmake/neuron/nrnivmodl"
+      "-DNRN_DEMO_DLL=${_nrn_demo_dll}" "-DNRN_DEMO_BUILDDIR=${PROJECT_BINARY_DIR}/demo_nrnmech"
+      "-DNRN_GENERATOR=${CMAKE_GENERATOR}" "-DNRN_GENERATOR_PLATFORM=${CMAKE_GENERATOR_PLATFORM}"
+      "-DNRN_CONFIG=$<CONFIG>" -P "${PROJECT_SOURCE_DIR}/cmake/MsvcWheelDemoNrnmech.cmake"
+    DEPENDS nrniv_lib nocmodl nrnivmodl_dependency copy_share_demo_to_build
+    COMMENT "Building demo nrnmech.dll for the MSVC wheel"
+    USES_TERMINAL VERBATIM)
+  install(FILES ${_nrn_demo_dll} DESTINATION ${NRN_INSTALL_SHARE_DIR}/demo/release)
+  unset(_nrn_demo_dll)
+endif()
 
 # =============================================================================
 # Copy bash executable for windows

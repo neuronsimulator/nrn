@@ -202,8 +202,9 @@ run_serial_test () {
     # Test 10: run demo
     # Windows: extensionless Scripts/neurondemo is a Python wrapper, not a
     # Win32 image (Error 193). neurondemo.cmd is the PATHEXT wrapper and
-    # ports bash neurondemo.in (nrnivmodl of share/nrn/demo/release, then
-    # nrniv -dll nrnmech.dll demo.hoc). -nogui: IV is not this gate.
+    # ports bash neurondemo.in (nrniv -dll of shipped
+    # share/nrn/demo/release/nrnmech.dll, or nrnivmodl if that DLL is
+    # missing). -nogui: IV is not this gate.
     if [[ "$OSTYPE" == msys* || "$OSTYPE" == cygwin* || "${RUNNER_OS}" == "Windows" ]]; then
       neurondemo_cmd="$(dirname "$python_exe")/neurondemo.cmd"
       if [[ ! -f "$neurondemo_cmd" ]]; then
