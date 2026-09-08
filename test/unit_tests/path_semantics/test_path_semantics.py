@@ -90,11 +90,15 @@ def _tool(name):
 
 
 def _run(args, cwd=None, env=None, timeout=30):
+    # nrniv -python starts PyRun_InteractiveLoop when stdin is a tty, so a
+    # coverage ctest from a terminal hung at >>> after script.py (CI stdin
+    # is not a tty). Batch the child like python script.py.
     return subprocess.run(
         args,
         cwd=cwd,
         env=env,
         timeout=timeout,
+        stdin=subprocess.DEVNULL,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         universal_newlines=True,
