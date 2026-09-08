@@ -8,12 +8,20 @@ import ctypes
 import atexit
 from . import options
 from .rxdException import RxDException
+from .._windows_cxx import (
+    MSVC_CXX_MISSING,
+    _apply_vc_env,
+    _is_msvc_cxx,
+    _win_env_find_exe,
+    msvc_vc_env as _msvc_vc_env,
+)
 from . import initializer
 import collections
 import os
 import sysconfig
 import uuid
 import sys
+import subprocess
 import itertools
 from numpy.ctypeslib import ndpointer
 import re
@@ -506,8 +514,15 @@ def _find_librxdmath():
             break
     if not success:
         if sys.platform.lower().startswith("win"):
-            dll = os.path.join(h.neuronhome(), "bin", "librxdmath.dll")
-            success = os.path.exists(dll)
+            home = h.neuronhome()
+            for name in ("librxdmath.dll", "rxdmath.dll"):
+                for rel in (("bin", name), ("..", "..", "bin", name)):
+                    dll = os.path.join(home, *rel)
+                    if os.path.exists(dll):
+                        success = True
+                        break
+                if success:
+                    break
         if not success:
             raise RxDException("unable to connect to the librxdmath library")
     return dll
@@ -515,56 +530,101 @@ def _find_librxdmath():
 
 def _cxx_compile(formula):
     filename = "rxddll" + str(uuid.uuid1())
-    with open(filename + ".cpp", "w") as f:
+    src = filename + ".cpp"
+    out = os.path.abspath(filename) + ".so"
+    with open(src, "w") as f:
         f.write(formula)
-    math_library = "-lm"
-    fpic = "-fPIC"
-    try:
-        gcc = os.environ["CXX"]
-    except:
-        # when running on windows try and used the gcc included with NEURON
-        if sys.platform.lower().startswith("win"):
-            math_library = ""
-            fpic = ""
-            gcc = os.path.join(
-                h.neuronhome(), "mingw", "mingw64", "bin", "x86_64-w64-mingw32-g++.exe"
-            )
-            if not os.path.isfile(gcc):
-                raise RxDException(
-                    "unable to locate a CXX compiler. Please `set CXX=<path to CXX compiler>`"
-                )
-        else:
-            gcc = "g++"
-    # TODO: Check this works on non-Linux machines
-    gcc_cmd = f"{gcc} -I{sysconfig.get_path('include')} "
-    gcc_cmd += f"-shared {fpic} {filename}.cpp {_find_librxdmath()}"
-    gcc_cmd += f" -o {filename}.so {math_library}"
-    if sys.platform.lower().startswith("win"):
-        my_path = os.getenv("PATH")
-        os.putenv(
-            "PATH",
-            my_path + ";" + os.path.join(h.neuronhome(), "mingw", "mingw64", "bin"),
+    include = sysconfig.get_path("include")
+    rxdmath = _find_librxdmath()
+    cxx = os.environ.get("CXX")
+    env = os.environ.copy()
+    use_msvc = False
+    if cxx:
+        use_msvc = _is_msvc_cxx(cxx)
+        if use_msvc:
+            vc = _msvc_vc_env()
+            if vc:
+                _apply_vc_env(env, vc)
+                if not os.path.isfile(cxx):
+                    cxx = _win_env_find_exe(vc, "cl.exe") or cxx
+    elif sys.platform.lower().startswith("win"):
+        # setup.exe ships MinGW; the MSVC wheel does not.
+        mingw = os.path.join(
+            h.neuronhome(), "mingw", "mingw64", "bin", "x86_64-w64-mingw32-g++.exe"
         )
-        os.system(gcc_cmd)
-        os.putenv("PATH", my_path)
+        if os.path.isfile(mingw):
+            cxx = mingw
+            env["PATH"] = os.path.dirname(mingw) + ";" + env.get("PATH", "")
+        else:
+            vc = _msvc_vc_env()
+            if not vc:
+                raise RxDException(MSVC_CXX_MISSING.strip())
+            _apply_vc_env(env, vc)
+            cxx = _win_env_find_exe(vc, "cl.exe") or "cl.exe"
+            use_msvc = True
     else:
-        os.system(gcc_cmd)
+        cxx = "g++"
+    if use_msvc:
+        # MSVC does not accept -shared/-fPIC/-o. /LD makes a DLL; /EXPORT is
+        # required because cl does not export unadorned C symbols.
+        cmd = [
+            cxx,
+            "/nologo",
+            "/LD",
+            "/EHsc",
+            "/O2",
+            "/I" + include,
+            src,
+            "/Fe" + out,
+            "/link",
+            "/LIBPATH:" + os.path.dirname(rxdmath),
+            "rxdmath.lib",
+            "/EXPORT:reaction",
+        ]
+    else:
+        fpic = [] if sys.platform.lower().startswith("win") else ["-fPIC"]
+        math_library = [] if sys.platform.lower().startswith("win") else ["-lm"]
+        cmd = [
+            cxx,
+            "-I" + include,
+            "-shared",
+            *fpic,
+            src,
+            rxdmath,
+            "-o",
+            out,
+            *math_library,
+        ]
+        if sys.platform.lower().startswith("win"):
+            mingw_bin = os.path.join(h.neuronhome(), "mingw", "mingw64", "bin")
+            if os.path.isdir(mingw_bin):
+                env["PATH"] = mingw_bin + ";" + env.get("PATH", "")
+    try:
+        subprocess.check_call(cmd, env=env)
+    except (OSError, subprocess.CalledProcessError) as e:
+        raise RxDException(f"RxD C++ compile failed ({cmd!r}): {e}") from e
     # the rxdmath_dll appears necessary for using librxdmath under certain gcc/OS pairs
     rxdmath_dll = ctypes.cdll[_find_librxdmath()]
-    dll = ctypes.cdll[f"{os.path.abspath(filename)}.so"]
+    dll = ctypes.cdll[out]
     reaction = dll.reaction
     reaction.argtypes = [
         ctypes.POINTER(ctypes.c_double),
         ctypes.POINTER(ctypes.c_double),
     ]
     reaction.restype = ctypes.c_double
-    os.remove(f"{filename}.cpp")
+    os.remove(src)
     if sys.platform.lower().startswith("win"):
         # cannot remove dll that are in use
         _windows_dll.append(weakref.ref(dll))
-        _windows_dll_files.append(f"{filename}.so")
+        _windows_dll_files.append(out)
+        stem = os.path.splitext(out)[0]
+        for extra in (out + ".exp", out + ".lib", stem + ".exp", stem + ".lib"):
+            try:
+                os.remove(extra)
+            except OSError:
+                pass
     else:
-        os.remove(f"{filename}.so")
+        os.remove(out)
     return reaction
 
 

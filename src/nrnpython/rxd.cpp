@@ -22,7 +22,7 @@ namespace nb = nanobind;
 
 static void ode_solve(double, double*, double*);
 extern PyTypeObject* hocobject_type;
-extern int structure_change_cnt;
+extern "C" NRN_DLLSYM int structure_change_cnt;
 extern int states_cvode_offset;
 int prev_structure_change_cnt = 0;
 unsigned char initialized = FALSE;
@@ -30,7 +30,7 @@ unsigned char initialized = FALSE;
 /*
     Globals
 */
-extern NrnThread* nrn_threads;
+extern NRN_DLLSYM NrnThread* nrn_threads;
 int NUM_THREADS = 1;
 namespace nrn {
 namespace rxd {
@@ -46,7 +46,7 @@ extern double* t_ptr;
 
 
 fptr *_setup, *_initialize, *_setup_matrices, *_setup_units;
-extern NrnThread* nrn_threads;
+extern NRN_DLLSYM NrnThread* nrn_threads;
 
 /*intracellular diffusion*/
 unsigned char diffusion = FALSE;

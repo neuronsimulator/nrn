@@ -127,7 +127,24 @@ Furthermore, GCC >= 10 is required (older versions of GCC may work, but are not 
 
 #### Windows
 
-On Windows, the only recommended way to install NEURON is using the binary installer. You can download
+Native Windows Python wheels (`win_amd64`) are provided on PyPI. In a Command Prompt or PowerShell
+with Python 3.10 or newer:
+
+```
+python -m pip install neuron
+```
+
+Nightly builds: `python -m pip install neuron-nightly`. Unset `PYTHONPATH` and `NEURONHOME` so an
+older installer is not picked up.
+
+`nrnivmodl` and RxD reaction compilation on the wheel use **Microsoft `cl.exe`**, not the MinGW
+`g++` bundled with `setup.exe`. The wheel does not ship a compiler. In Visual Studio Installer, on
+the Workloads page, select only
+[**Desktop development with C++**](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
+and leave its recommended components checked (MSVC, Windows SDK, CMake). Then use an **x64 Native
+Tools Command Prompt** (or run `vcvarsall x64`).
+
+The MinGW **binary installer** remains available if you do not want Visual Studio. Download
 releases from:
 
 * [https://github.com/neuronsimulator/nrn/releases](https://github.com/neuronsimulator/nrn/releases)
@@ -138,6 +155,7 @@ with Python versions 3.8, 3.9, 3.10 and 3.11. Once the installer is downloaded, 
 by double clicking like any other Windows application. Note that you have to install python separately
 if python support is required. You can find detailed step-by-step instructions in
 [this presentation](https://neuron.yale.edu/ftp/neuron/nrn_mswin_install.pdf).
+The installer still bundles a minimal MinGW toolchain for `nrnivmodl` / `mknrndll`.
 
 #### Windows Subsystem for Linux (WSL) Python Wheel
 

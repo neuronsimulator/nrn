@@ -13,7 +13,7 @@ INITIAL {
 }
 
 VERBATIM
-extern int (*nrnpy_hoccommand_exec)(Object*);
+extern NRN_DLLSYM int (*nrnpy_hoccommand_exec)(Object*);
 extern Object** hoc_objgetarg(int);
 extern int ifarg(int);
 extern void hoc_obj_ref(Object*);

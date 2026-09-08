@@ -44,7 +44,7 @@ struct SymbolTableIterator {
 extern int nrn_nobanner_;
 extern int diam_changed;
 extern int nrn_try_catch_nest_depth;
-extern "C" void nrnpy_set_pr_etal(int (*cbpr_stdoe)(int, char*), int (*cbpass)());
+extern "C" NRN_DLLSYM void nrnpy_set_pr_etal(int (*cbpr_stdoe)(int, char*), int (*cbpass)());
 int ivocmain_session(int, const char**, const char**, int start_session);
 void simpleconnectsection();
 extern Object* hoc_newobj1(Symbol*, int);

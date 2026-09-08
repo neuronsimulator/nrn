@@ -11,9 +11,17 @@ from testutils import compare_data, tol
 
 
 def check_platform_is_problematic():
+    """Gold is not bit-reproducible across compilers/Python.
+
+    See https://github.com/neuronsimulator/nrn-build-ci/issues/66.
+    ``ca`` is initialized with ``random.random()``, and RxD applies a callable
+    ``initial`` four times at ``finitialize``. The last pass is the recorded
+    state; an extra few Mersenne-Twister draws (Windows) or a different
+    compiler/libm (Ubuntu 22+) yields ``max_err`` ~0.5 vs 1e-10. Voxelization
+    and the deterministic-IC species on this test match gold on MSVC.
     """
-    Check whether the current platform is problematic so tests are skipped.
-    """
+    if platform.system() == "Windows":
+        return True
     if platform.system() == "Linux":
         # `freedesktop_os_release` is only defined in 3.10+
         if hasattr(platform, "freedesktop_os_release"):
@@ -28,8 +36,7 @@ def check_platform_is_problematic():
         else:
             # we cannot determine the flavor reliably (<3.10)
             return True
-    else:
-        return False
+    return False
 
 
 @pytest.mark.skipif(

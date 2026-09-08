@@ -1,6 +1,16 @@
 # NEURON 9.0
 
 
+## 9.1.0
+_Release Date_ : TBD
+
+### What's New
+- Native Windows `win_amd64` Python wheels built with MSVC
+  (`pip install neuron` / `neuron-nightly`). `nrnivmodl` and RxD
+  reaction compilation on that wheel use Microsoft `cl.exe`
+  (Build Tools), not the MinGW toolchain bundled with `setup.exe` (#3861)
+
+
 ## 9.0.2
 _Release Date_ : 10-08-2026
 

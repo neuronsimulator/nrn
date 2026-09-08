@@ -33,6 +33,7 @@ set(NRN_PYTHON_FILES_LIST
     debug/__init__.py
     debug/rdcellstate.py
     __init__.py
+    _windows_cxx.py
     coreneuron.py
     doc.py
     gui2/setup_threejs.py
