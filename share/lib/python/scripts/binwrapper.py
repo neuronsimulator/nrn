@@ -76,6 +76,17 @@ def _check_cpp_compiler_version(min_version: str):
         pass
 
 
+def _vendored_wheel_lib_dirs(site_packages):
+    """delvewheel copies MSVCP140.dll into <package>.libs next to neuron/."""
+    dirs = []
+    site = Path(site_packages)
+    for name in ("neuron_nightly.libs", "neuron.libs"):
+        d = site / name
+        if d.is_dir():
+            dirs.append(str(d))
+    return dirs
+
+
 def _config_exe(exe_name):
     """Sets the environment to run the real executable (returned)"""
     try:
@@ -84,7 +95,8 @@ def _config_exe(exe_name):
     except PackageNotFoundError:
         pass
 
-    NRN_PREFIX = str(Path(find_spec("neuron").origin).parent / ".data")
+    neuron_origin = Path(find_spec("neuron").origin)
+    NRN_PREFIX = str(neuron_origin.parent / ".data")
 
     os.environ["NEURONHOME"] = os.path.join(NRN_PREFIX, "share/nrn")
     os.environ["NRNHOME"] = NRN_PREFIX
@@ -113,7 +125,15 @@ def _config_exe(exe_name):
     os.environ["PYTHONPATH"] = os.pathsep.join(sys.path)
 
     bindir = os.path.join(NRN_PREFIX, "bin")
-    os.environ["PATH"] = bindir + os.pathsep + os.environ.get("PATH", "")
+    path_dirs = [bindir]
+    # Windows loads nrniv.exe's MSVCP140.dll from the exe directory, System32,
+    # then PATH. AddDllDirectory in this process is not inherited. delvewheel
+    # vendors that DLL in site-packages/*.libs (import neuron uses it).
+    if os.name == "nt":
+        path_dirs.extend(_vendored_wheel_lib_dirs(neuron_origin.parent.parent))
+    os.environ["PATH"] = (
+        os.pathsep.join(path_dirs) + os.pathsep + os.environ.get("PATH", "")
+    )
 
     _set_default_compiler()
     exe = os.path.join(bindir, exe_name)
