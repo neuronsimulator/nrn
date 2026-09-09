@@ -431,7 +431,7 @@ func some_format() {local i, a,b,c,d,e,f,g, n
 			return 0
 		}
 		file.gets(tstr)
-		if (hoc_sf_.head(tstr, "^\\<\\?xml", tstr1) != -1) {
+		if (hoc_sf_.head(tstr, "^<\\?xml", tstr1) != -1) {
 			if (nrnpython("")) {
 				swc = new Import3d_MorphML() break
 			}else{

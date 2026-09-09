@@ -1,0 +1,22 @@
+objref pyobj, rxd, cyt, ca, cl, n, reaction, cacl2
+
+{
+    if (nrnpython("from neuron import n, rxd")) {
+        pyobj = new PythonObject()
+        rxd = pyobj.rxd
+        n = pyobj.n
+        create soma
+        cyt = rxd.Region(n.allsec())
+        ca = rxd.Species(cyt, 0, "ca", 2, 1)
+        print "created ca"
+        cl = rxd.Species(cyt, 0, "cl", -1, 1)
+        print "created cl"
+        cacl2 = rxd.Species(cyt, 0, "cacl2", 0, 0)
+        print "preparing to define reaction"
+        reaction = rxd.Reaction(ca + 2 * cl, cacl2, 1)
+        print "defined reaction"
+        finitialize(-65)
+        fadvance()
+        print "advanced"
+    }
+}

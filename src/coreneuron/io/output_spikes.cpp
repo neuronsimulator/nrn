@@ -217,7 +217,9 @@ static void output_spikes_parallel(const char* outpath, const SpikesInfo& spikes
     const int SPIKE_RECORD_LEN = 64;
     size_t num_spikes = spikevec_gid.size();
     size_t num_bytes = (sizeof(char) * num_spikes * SPIKE_RECORD_LEN);
-    char* spike_data = (char*) malloc(num_bytes);
+
+    // ensure space for at least the null terminator when there are no spikes
+    char* spike_data = (char*) malloc(std::max(num_bytes, (size_t) 1));
 
     if (spike_data == nullptr) {
         printf("Error while writing spikes due to memory allocation\n");
@@ -225,7 +227,7 @@ static void output_spikes_parallel(const char* outpath, const SpikesInfo& spikes
     }
 
     // empty if no spikes
-    strcpy(spike_data, "");
+    spike_data[0] = '\0';
 
     // populate buffer with all spike entries
     char spike_entry[SPIKE_RECORD_LEN];

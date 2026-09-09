@@ -93,7 +93,7 @@ Example:
 
 :download:`initonerun.hoc <code/initonerun.ho.txt>`
 
-`code walkthrough <https://nrn.readthedocs.io/en/latest/courses/batch_runs_bulletin_board_parallelization.html?.py#initonerun-py>`_
+`code walkthrough <https://www.neuronsimulator.org/en/latest/courses/batch_runs_bulletin_board_parallelization.html?.py#initonerun-py>`_
 
 initbatser.hoc
 +++++++++
@@ -115,7 +115,7 @@ initbatser.hoc
 
 :download:`initbatseer.hoc <code/initbatser.ho.txt>`
 
-`code walkthrough <https://nrn.readthedocs.io/en/latest/courses/batch_runs_bulletin_board_parallelization.html?.py#initbatser-py>`_
+`code walkthrough <https://www.neuronsimulator.org/en/latest/courses/batch_runs_bulletin_board_parallelization.html?.py#initbatser-py>`_
 
 initbatpar.hoc
 ++++++++
@@ -148,7 +148,7 @@ launches N processes that carry out the simulations. On a multicore PC or Mac, p
 
 :download:`initbatpar.hoc <code/initbatpar.ho.txt>`
 
-`code walkthrough <https://nrn.readthedocs.io/en/latest/courses/batch_runs_bulletin_board_parallelization.html?.py#initbatpar-py>`_
+`code walkthrough <https://www.neuronsimulator.org/en/latest/courses/batch_runs_bulletin_board_parallelization.html?.py#initbatpar-py>`_
 
 Things to do
 ------

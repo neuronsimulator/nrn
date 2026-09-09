@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.19 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 # Note that this needs to happen **before** the call to project(...). This is because CMake reads
 # the CRAYPE_LINK_TYPE environment variable inside the call to project(...) and sets various flags
 # and properties based on its value. Because we are so early in the CMake processing, we have to
@@ -19,7 +19,7 @@ project(
   NEURON
   VERSION 9.0.1
   LANGUAGES C CXX
-  HOMEPAGE_URL "https://nrn.readthedocs.io/")
+  HOMEPAGE_URL "https://www.neuronsimulator.org/")
 
 # =============================================================================
 # CMake common project settings
@@ -39,7 +39,7 @@ if(POLICY CMP0177)
   cmake_policy(SET CMP0177 NEW)
 endif()
 
-# customizable install path to Python components. Mostly useful for Spack builds
+# customizable install path to Python components. Mostly useful for Spack & venv builds
 set(NRN_INSTALL_PYTHON_PREFIX
     "lib/python/neuron/"
     CACHE STRING
@@ -63,6 +63,11 @@ if(SKBUILD)
   set(IV_BIN_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}/bin")
 else()
   set(NRN_INSTALL_DATA_PREFIX)
+endif()
+
+# Make python install path relative to CMAKE_INSTALL_PREFIX
+if(IS_ABSOLUTE "${NRN_INSTALL_PYTHON_PREFIX}")
+  cmake_path(RELATIVE_PATH NRN_INSTALL_PYTHON_PREFIX BASE_DIRECTORY "${CMAKE_INSTALL_PREFIX}")
 endif()
 
 # =============================================================================
@@ -211,7 +216,7 @@ set(NRN_RX3D_OPT_LEVEL
     "${NRN_RX3D_OPT_LEVEL_DEFAULT}"
     CACHE STRING "Optimization level for Cython generated files (non-zero may compile slowly)")
 
-option(NRN_ENABLE_COVERAGE "EnableCode Coverage (make cover_begin, make cover_html)" OFF)
+option(NRN_ENABLE_COVERAGE "EnableCode Coverage (cover-begin, cover-html, cover-diff)" OFF)
 set(NRN_COVERAGE_FILES
     ""
     CACHE STRING "semicolon (;) separated list of files to collect code coverage")
@@ -944,21 +949,43 @@ add_custom_target(
   COMMAND ${PROJECT_SOURCE_DIR}/external/coding-conventions/bin/format
   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
-# Prepare a shell script to format only files modified with respect to master branch
+# Prepare a shell script to format only files modified with respect to master/main branch that still
+# exist on disk (filters out deleted files).
 file(
   WRITE ${CMAKE_CURRENT_BINARY_DIR}/format-pr.sh
-  "\
-#!bash\n\
-set -e\n\
-cmd='cd ${PROJECT_SOURCE_DIR} && external/coding-conventions/bin/format `git diff --name-only master`'\n\
-echo $cmd\n\
-cd ${PROJECT_SOURCE_DIR} && external/coding-conventions/bin/format `git diff --name-only master`\n\
+  "#!/bin/bash
+set -euo pipefail
+
+# Try 'main' first, then fall back to 'master'
+for base in main master; do
+    if git rev-parse --verify \"\$base\" >/dev/null 2>&1; then
+        BASE_BRANCH=\"\$base\"
+        break
+    fi
+done
+
+if [ -z \"\${BASE_BRANCH:-}\" ]; then
+    echo \"Error: Neither 'main' nor 'master' branch found.\" >&2
+    exit 1
+fi
+
+echo \"Formatting changes vs '\$BASE_BRANCH' (existing files only)...\" >&2
+
+# Get changed files (null-delimited so names with spaces work), only pass
+# files that still exist.
+git diff -z --name-only \"\$BASE_BRANCH\" | \\
+while IFS= read -r -d '' file; do
+    if [ -e \"\$file\" ]; then
+        printf '%s\\0' \"\$file\"
+    fi
+done | \\
+xargs -0 --no-run-if-empty external/coding-conventions/bin/format \"\$@\"
 ")
 
 add_custom_target(
   format-pr
   COMMAND bash ${CMAKE_CURRENT_BINARY_DIR}/format-pr.sh
-  COMMENT "Format only files modified with respect to master branch."
+  COMMENT "Format only files modified with respect to main/master (existing files only)"
   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
 # =============================================================================
@@ -1057,6 +1084,49 @@ if(NRN_ENABLE_TESTS)
   cpp_cc_git_submodule(rxd/testdata)
   set(${CODING_CONV_PREFIX}_3RDPARTY_DIR "${backup}")
   add_subdirectory(test)
+
+  # ---------------------------------------------------------------------------
+  # test-install: run portable foreign ctest against CMAKE_INSTALL_PREFIX. Requires a prior "ninja
+  # install" (or cmake --install). Configures the standalone test/foreign project into
+  # ${CMAKE_BINARY_DIR}/build-ctest.
+  # ---------------------------------------------------------------------------
+  set(NRN_FOREIGN_CTEST_BINARY_DIR
+      "${CMAKE_BINARY_DIR}/build-ctest"
+      CACHE PATH "Binary dir for foreign ctest (test/foreign) used by test-install")
+  if(NRN_ENABLE_PYTHON AND DEFINED NRN_DEFAULT_PYTHON_EXECUTABLE)
+    set(_nrn_test_install_python "${NRN_DEFAULT_PYTHON_EXECUTABLE}")
+  elseif(DEFINED Python3_EXECUTABLE)
+    set(_nrn_test_install_python "${Python3_EXECUTABLE}")
+  else()
+    set(_nrn_test_install_python "")
+  endif()
+  if(_nrn_test_install_python STREQUAL "")
+    message(
+      STATUS "test-install target not added: no Python interpreter available for foreign ctest")
+  else()
+    # Strict version match by default (same source tree that produced the prefix). Reconfigure
+    # build-ctest with -DNRN_FOREIGN_ALLOW_SKEW=ON if needed.
+    set(_nrn_test_install_skew OFF)
+    add_custom_target(
+      test-install
+      COMMAND
+        ${CMAKE_COMMAND} -E echo
+        "Configuring foreign ctest in ${NRN_FOREIGN_CTEST_BINARY_DIR} against ${CMAKE_INSTALL_PREFIX}"
+      COMMAND
+        ${CMAKE_COMMAND} -S "${PROJECT_SOURCE_DIR}/test/foreign" -B
+        "${NRN_FOREIGN_CTEST_BINARY_DIR}" -G "${CMAKE_GENERATOR}"
+        "-DNRN_FOREIGN_PYTHON=${_nrn_test_install_python}"
+        "-DNRN_FOREIGN_ROOT=${CMAKE_INSTALL_PREFIX}"
+        "-DNRN_FOREIGN_ALLOW_SKEW=${_nrn_test_install_skew}"
+      COMMAND ${CMAKE_COMMAND} --build "${NRN_FOREIGN_CTEST_BINARY_DIR}" --target test-install
+              --parallel
+      USES_TERMINAL
+      COMMENT
+        "Foreign install check (run 'ninja install' first). Dir: ${NRN_FOREIGN_CTEST_BINARY_DIR}")
+    message(
+      STATUS
+        "test-install   | ninja install && ninja test-install  -> ${NRN_FOREIGN_CTEST_BINARY_DIR}")
+  endif()
 elseif(NOT WIN32)
   # Windows installs the demo separately
   add_subdirectory(share/demo/release)
@@ -1308,7 +1378,7 @@ if(NRN_ENABLE_CORENEURON)
   message(STATUS "  PATH        | ${CORENEURON_DIR}")
   message(STATUS "  LINK FLAGS  | ${CORENRN_LIB_LINK_FLAGS}")
 endif()
-message(STATUS "NMODL codegen   | ${NRN_ENABLE_NMODL}")
+message(STATUS "NMODL codegen | ${NRN_ENABLE_NMODL}")
 if(NRN_UNIVERSAL2_BUILD)
   message(STATUS "CMAKE_OSX_ARCH| ${CMAKE_OSX_ARCHITECTURES}")
 endif()
@@ -1330,6 +1400,6 @@ if(NRN_ENABLE_DIGEST OR NRN_ENABLE_ARCH_INDEP_EXP_POW)
   message(STATUS "NRN_ENABLE_ARCH_INDEP_EXP_POW | ${NRN_ENABLE_ARCH_INDEP_EXP_POW}")
 endif()
 message(STATUS "--------------+--------------------------------------------------------------")
-message(STATUS " See documentation : https://www.neuron.yale.edu/neuron/")
+message(STATUS " See documentation : https://www.neuronsimulator.org")
 message(STATUS "--------------+--------------------------------------------------------------")
 message(STATUS "")

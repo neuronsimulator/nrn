@@ -36,6 +36,16 @@ extern void hoc_arayinstal(void);
 
 /* OOP */
 extern void hoc_objectvar(void), hoc_object_component(void), hoc_object_eval(void);
+extern void hoc_object_add(void), hoc_object_sub(void), hoc_object_mul(void), hoc_object_div(void),
+    hoc_object_pow(void), hoc_object_eq(void), hoc_object_ne(void);
+extern void hoc_object_add_number(void), hoc_number_add_object(void), hoc_object_sub_number(void),
+    hoc_number_sub_object(void), hoc_object_mul_number(void), hoc_number_mul_object(void),
+    hoc_object_div_number(void), hoc_number_div_object(void), hoc_object_pow_number(void),
+    hoc_number_pow_object(void);
+extern void hoc_object_add_expr(void), hoc_expr_add_object(void), hoc_object_sub_expr(void),
+    hoc_expr_sub_object(void), hoc_object_mul_expr(void), hoc_expr_mul_object(void),
+    hoc_object_div_expr(void), hoc_expr_div_object(void), hoc_object_pow_expr(void),
+    hoc_expr_pow_object(void);
 extern void hoc_object_asgn(void), hoc_objvardecl(void), hoc_cmp_otype(void), hoc_newobj(void);
 extern void hoc_asgn_obj_to_str(void), hoc_known_type(void);
 extern void hoc_objectarg(void), hoc_ob_pointer(void), hoc_constobject(void);

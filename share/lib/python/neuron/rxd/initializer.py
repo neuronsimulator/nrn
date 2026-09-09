@@ -3,7 +3,7 @@ from threading import RLock
 # TODO: monkey-patch everything that requires an init so only even attempts once
 
 
-def _do_ion_register():
+def _do_ion_register() -> None:
     from . import species
 
     for obj in species._all_species:
@@ -13,11 +13,11 @@ def _do_ion_register():
 
 
 _init_lock = RLock()
-has_initialized = False
-is_initializing = False
+has_initialized: bool = False
+is_initializing: bool = False
 
 
-def _do_init():
+def _do_init() -> None:
     global has_initialized, is_initializing, _init_lock
     with _init_lock:
         if not has_initialized and not is_initializing:
@@ -60,11 +60,11 @@ def _do_init():
             is_initializing = False
 
 
-def is_initialized():
+def is_initialized() -> bool:
     return has_initialized
 
 
-def assert_initialized(msg=""):
+def assert_initialized(msg: str = "") -> None:
     from . import species
 
     if not has_initialized and len(species._all_species) > 0:

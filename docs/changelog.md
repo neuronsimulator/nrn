@@ -1,6 +1,29 @@
 # NEURON 9.0
 
 
+## 9.0.2
+_Release Date_ : 10-08-2026
+
+This release includes documentation improvements, bug fixes, and NMODL enhancements.
+See [GitHub Issue #3816](https://github.com/neuronsimulator/nrn/issues/3816) for the full commit list.
+
+### What's New
+- Documentation enhancements (typo fixes (#3754, #3776), contributing documentation (#3721), C API corrections (#3785))
+
+### Bug Fixes
+- Import3D on mac can now detect swc files (#3788)
+- rxd fixed-step extracellular Neumann boundary conditions corrected (#3690)
+- Vector.min_ind(i1, i2) fix (#3787)
+- Iterating over segments with no mechanisms no longer segfaults (#3794)
+- Buffer overflow in output_spikes_parallel prevention (#3813)
+
+### Improvements /  Other Changes
+- C API always returns current diameter (#3814), supports top-level runtime scalars (#3815)
+- rxd reaction compilation now supports np.float64 and other np.generic types (#3808)
+- NMODL compiler enhancements (#3592, #3631, #3600, #3597, #3598, #3740)
+- CI is more robust (#3730, #3809)
+
+
 ## 9.0.1
 _Release Date_ : 17-11-2025
 

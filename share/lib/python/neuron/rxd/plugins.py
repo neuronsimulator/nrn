@@ -2,20 +2,23 @@
 
 Functions for allowing solver plugins/overrides.
 """
+
 from .rxdException import RxDException
 from . import rxd
 from . import species
 from . import node
 from . import section1d
+from typing import Any, Optional
+import numpy
 
 
 class SolverPlugin:
-    def __init__(self):
+    def __init__(self) -> None:
         _initialize(self)
 
     """Interface for solver plugins."""
 
-    def init(self, species_list, reactions_list):
+    def init(self, species_list: list, reactions_list: list) -> None:
         """Perform any needed initialization.
 
         This function may be called multiple times. Subsequent calls purge all
@@ -35,10 +38,10 @@ class SolverPlugin:
         self._set_reactions(reactions_list)
         self._set_values()
 
-    def _set_values(self):
+    def _set_values(self) -> None:
         """update self._values if necessary"""
 
-    def _set_species(self, species_list):
+    def _set_species(self, species_list: list) -> None:
         """Set the species to be used.
 
         They should be stored internally with weakrefs.
@@ -60,7 +63,7 @@ class SolverPlugin:
         self._species = [weakref.proxy(s) for s in species_list]
         self._set_mesh()
 
-    def _set_reactions(self, reactions_list):
+    def _set_reactions(self, reactions_list: list) -> None:
         """Store the reactions.
 
         Invokes self._process_reactions to do any necessary preprocessing.
@@ -72,26 +75,24 @@ class SolverPlugin:
         self._reactions = [weakref.proxy(s) for s in reactions_list]
         self._process_reactions()
 
-    def _process_reactions(self):
+    def _process_reactions(self) -> None:
         """Do any necessary preprocessing of the reactions."""
 
-    def _set_mesh(self):
+    def _set_mesh(self) -> None:
         """Use self._species to define a mesh."""
 
-    def _index(self, node):
+    def _index(self, node: Any) -> int:
         """Return the index of a node in the plugin's internal storage."""
 
-    def value(self, node):
+    def value(self, node: Any) -> numpy.ndarray:
         """Return the value (concentration or mass) associated with the node."""
         return self._values_from_indices([self._index(node)])
 
-    def _values_from_indices(self, indices):
+    def _values_from_indices(self, indices: list) -> numpy.ndarray:
         """Return a vector of values associated with a vector of indices."""
-        import numpy
-
         return numpy.asarray(self._values)[indices]
 
-    def advance(self, dt):
+    def advance(self, dt: float) -> None:
         """Advance the solver by dt.
 
         By default, the solver will use its local copy of state variables.

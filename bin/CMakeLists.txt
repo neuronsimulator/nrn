@@ -38,6 +38,8 @@ include(CMakeListsNrnMech)
 # =============================================================================
 configure_file("nrngui.in" "nrngui" @ONLY)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/sortspike ${CMAKE_CURRENT_BINARY_DIR}/sortspike COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/rdcellstate ${CMAKE_CURRENT_BINARY_DIR}/rdcellstate
+               COPYONLY)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/nrnivmodl_makefile_cmake.in
                ${PROJECT_BINARY_DIR}/bin/nrnmech_makefile @ONLY)
 string(JOIN " " NRN_PYTHON_VERSIONS_STRING ${NRN_PYTHON_VERSIONS})
@@ -98,6 +100,7 @@ if(NRN_ENABLE_CORENEURON)
 endif()
 
 install(FILES ${PROJECT_BINARY_DIR}/bin/nrnmech_makefile DESTINATION ${NRN_INSTALL_DATA_PREFIX}bin)
-install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/sortspike ${CMAKE_CURRENT_SOURCE_DIR}/mkthreadsafe
-                 ${PROJECT_BINARY_DIR}/bin/nrnpyenv.sh ${CMAKE_CURRENT_SOURCE_DIR}/set_nrnpyenv.sh
-        DESTINATION ${NRN_INSTALL_DATA_PREFIX}bin)
+install(
+  PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/sortspike ${CMAKE_CURRENT_BINARY_DIR}/rdcellstate
+           ${CMAKE_CURRENT_SOURCE_DIR}/mkthreadsafe ${PROJECT_BINARY_DIR}/bin/nrnpyenv.sh
+           ${CMAKE_CURRENT_SOURCE_DIR}/set_nrnpyenv.sh DESTINATION ${NRN_INSTALL_DATA_PREFIX}bin)

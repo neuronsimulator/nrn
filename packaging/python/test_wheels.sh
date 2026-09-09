@@ -268,6 +268,8 @@ $python_exe -m uv pip install -r packaging/python/test_requirements.txt
 $python_exe -m uv pip install --force-reinstall $python_wheel
 $python_exe -m uv pip show neuron || $python_exe -m uv pip show neuron-nightly
 
+# neuron.__version__ is nrnversion(5)/GIT_DESCRIBE; empty breaks ModelDB workdir naming
+$python_exe -c "import neuron; v = neuron.__version__; assert v and str(v).strip(), repr(v)"
 
 # check the existence of coreneuron support
 compile_options="$(nrniv -nobanner -nogui -c 'nrnversion(6)')"

@@ -256,10 +256,20 @@ endfunction()
 function(add_cpp_git_information target scope)
   find_program(GIT git)
   if(EXISTS "${PROJECT_SOURCE_DIR}/.git" AND GIT)
+    # Shallow clones: tags may not be ancestors of HEAD, so describe fails and GIT_DESCRIBE would
+    # stay empty (neuron.__version__ / nrnversion(5)). Fall back to PROJECT_VERSION so release
+    # dry-run and ship wheels match.
     execute_process(
       COMMAND "${GIT}" -C "${PROJECT_SOURCE_DIR}" describe
       OUTPUT_VARIABLE GIT_DESCRIBE
+      RESULT_VARIABLE GIT_DESCRIBE_RESULT
       OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+
+    if(GIT_DESCRIBE_RESULT OR "${GIT_DESCRIBE}" STREQUAL "")
+      set(GIT_DESCRIBE "${PROJECT_VERSION}")
+      message(
+        STATUS "git describe failed or empty; falling back to PROJECT_VERSION=${PROJECT_VERSION}")
+    endif()
 
     execute_process(
       COMMAND "${GIT}" -C "${PROJECT_SOURCE_DIR}" rev-parse --abbrev-ref HEAD

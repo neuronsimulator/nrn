@@ -56,7 +56,7 @@ If your notebook downloads external data or depends on MOD files, include all re
 
 ## Contributing Videos
 
-The [videos section of the NEURON documentation](https://nrn.readthedocs.io/en/latest/videos/) is primarily a curated list of recorded courses and lectures, many hosted externally on YouTube or similar platforms. Contributing a video is therefore a two-step process: creating the video itself, and then adding a reference to it in the documentation.
+The [videos section of the NEURON documentation](https://www.neuronsimulator.org/en/latest/videos/) is primarily a curated list of recorded courses and lectures, many hosted externally on YouTube or similar platforms. Contributing a video is therefore a two-step process: creating the video itself, and then adding a reference to it in the documentation.
 
 For the reference page, videos are documented in `.rst` files under `docs/videos/`. Each entry typically includes the video title, a brief description of what is covered, the year or course it belongs to, and an embedded link or thumbnail. Follow the existing format in those files when adding a new entry.
 

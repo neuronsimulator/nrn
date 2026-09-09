@@ -1,7 +1,7 @@
 [![Build Status](https://dev.azure.com/neuronsimulator/nrn/_apis/build/status/neuronsimulator.nrn?branchName=master)](https://dev.azure.com/neuronsimulator/nrn/_build/latest?definitionId=1&branchName=master) [![Actions Status](https://github.com/neuronsimulator/nrn/actions/workflows/windows.yml/badge.svg?branch=master)](https://github.com/neuronsimulator/nrn/actions) [![Actions Status](https://github.com/neuronsimulator/nrn/workflows/NEURON%20CI/badge.svg)](https://github.com/neuronsimulator/nrn/actions) [![codecov](https://codecov.io/gh/neuronsimulator/nrn/branch/master/graph/badge.svg?token=T7PIDw6LrC)](https://codecov.io/gh/neuronsimulator/nrn) [![Documentation Status](https://readthedocs.org/projects/nrn/badge/?version=latest)](http://nrn.readthedocs.io/?badge=latest)
 
 # NEURON
-NEURON is a simulator for models of neurons and networks of neuron. See [nrn.readthedocs.io](https://nrn.readthedocs.io) for documentation, tutorials, and announcements of courses and conferences. Installers are available on [GitHub Releases](https://github.com/neuronsimulator/nrn/releases) and the source code on [GitHub](https://github.com/neuronsimulator/nrn).
+NEURON is a simulator for models of neurons and networks of neuron. See [https://www.neuronsimulator.org](https://www.neuronsimulator.org) for documentation, tutorials, and announcements of courses and conferences. Installers are available on [GitHub Releases](https://github.com/neuronsimulator/nrn/releases) and the source code on [GitHub](https://github.com/neuronsimulator/nrn).
 Ask questions on our [Discussion Forum](https://github.com/neuronsimulator/nrn/discussions).
 
 ## Installing NEURON
@@ -26,7 +26,7 @@ It is possible to install the Linux Python wheels on Windows via the Windows Sub
 
 ## Documentation
 
-* See [https://nrn.readthedocs.io/en/latest/](https://nrn.readthedocs.io/en/latest/) for latest, nightly snapshot
+* See [https://www.neuronsimulator.org/en/latest/](https://www.neuronsimulator.org/en/latest/) for latest, nightly snapshot
 * See [docs/README.md](docs/README.md) for information on documentation (local build, Read the Docs setup)
 
 ## Changelog

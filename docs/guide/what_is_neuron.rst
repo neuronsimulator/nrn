@@ -113,7 +113,7 @@ Complex models often require custom initialization and/or simulation flow contro
 Large user base
 ---------------
 
-As of March 2026, we know of more than 3,000 scientific articles and books have reported work that was done with NEURON <https://nrn.readthedocs.io/en/9.0.1/publications-using-neuron.html>`_.
+As of March 2026, we know of more than 3,000 scientific articles and books have reported work that was done with NEURON <https://www.neuronsimulator.org/en/9.0.1/publications-using-neuron.html>`_.
 
 Development, support, and documentation
 ---------------------------------------

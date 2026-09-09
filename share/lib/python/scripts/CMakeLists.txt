@@ -12,6 +12,7 @@ if(SKBUILD)
       nrnivmodl-core
       nrnpyenv.sh
       sortspike
+      rdcellstate
       nrnivmodl-cmake)
 
   foreach(script IN LISTS scripts)

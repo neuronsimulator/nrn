@@ -85,7 +85,9 @@ jobs:
     needs:
       - build-wheels
     outputs:
-      artifacts-url: ${{ steps.merge-artifacts.outputs.artifacts-url }}
+      # upload-artifact/merge@v4 exports artifact-url (singular), not artifacts-url.
+      # Job output key stays artifacts-url for existing consumers (modeldb-ci, build-ci).
+      artifacts-url: ${{ steps.merge-artifacts.outputs.artifact-url }}
     steps:
       - name: Merge Artifacts
         id: merge-artifacts
@@ -159,7 +161,7 @@ jobs:
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v2
         with:
-          cmake-version : '3.19'
+          cmake-version : '3.20'
 
       - name: Set up Python
         id: setup-python

@@ -22,6 +22,8 @@ virtualenv
 *.lo
 docs/_build
 docs/_generated
+# CI managed-download scratch (publish.sh); blobs live on GitHub Releases
+ci/deps/assets/
 .vscode
 .coverage*
 coverage*.xml
