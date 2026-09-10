@@ -163,12 +163,63 @@ import _neuron_section
 # we keep the old h as before with the old repr and type
 h = hoc.HocObject()
 
-# work around linefeed with no return when print from a gui callback.
-try:
-    sys.stdout.reconfigure(newline="\r\n")
-    sys.stderr.reconfigure(newline="\r\n")
-except:
-    pass
+# Python 3.13+'s pyrepl (UnixConsole.prepare) clears OPOST, so the kernel
+# no longer maps NL to CRNL. GUI callbacks run on a background thread
+# while that mode is in effect, and print() then moves down without
+# returning to column 0 (CPython #129385). Emulate ONLCR only when the
+# kernel is not already doing it; never rewrite piped/MPI stdout.
+_raw_tty_newline_patched = set()
+
+
+def _kernel_maps_nl_to_crnl(fd):
+    """True if this tty will translate NL to CRNL on output."""
+    try:
+        import termios
+
+        oflag = termios.tcgetattr(fd)[1]
+        if not (oflag & termios.OPOST):
+            return False
+        onlcr = getattr(termios, "ONLCR", 0)
+        return bool(not onlcr or (oflag & onlcr))
+    except Exception:
+        return True
+
+
+def _with_explicit_cr(text):
+    if not text or "\n" not in text:
+        return text
+    return text.replace("\r\n", "\n").replace("\n", "\r\n")
+
+
+def install_raw_tty_newline_fix(streams=None):
+    """Make print() return to column 0 when the tty is in pyrepl/raw mode.
+
+    Safe to call more than once. Other GUIs that print from a background
+    thread (for example neurongui) can call this instead of wrapping
+    sys.stdout themselves.
+    """
+    if streams is None:
+        streams = (sys.stdout, sys.stderr)
+    for stream in streams:
+        stream_id = id(stream)
+        if stream_id in _raw_tty_newline_patched:
+            continue
+        try:
+            fd = stream.fileno()
+        except Exception:
+            continue
+        orig_write = stream.write
+
+        def write(s, _fd=fd, _orig=orig_write):
+            if s and "\n" in s and not _kernel_maps_nl_to_crnl(_fd):
+                s = _with_explicit_cr(s)
+            return _orig(s)
+
+        try:
+            stream.write = write
+        except Exception:
+            continue
+        _raw_tty_newline_patched.add(stream_id)
 
 
 class _NEURON_INTERFACE(hoc.HocObject):
