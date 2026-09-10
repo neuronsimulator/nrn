@@ -750,7 +750,7 @@ void RangeExpr::fill() {
             nrn_popsec();
             continue;
         }
-        if (cmd_->execute(bool(false)) == 0) {
+        if (cmd_->execute(bool(false))) {
             exist_[i] = true;
             val_[i] = 0.;
         } else {

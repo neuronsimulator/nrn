@@ -533,27 +533,98 @@ Readline_ROOT_DIR:PATH=/usr
 
 NRN_ENABLE_TESTS:BOOL=OFF
 -------------------------
-  Enable unit tests
+  Enable the NEURON test suite (build-tree and install checks).
 
-  Clones the submodule catch2 from https://github.com/catchorg/Catch2.git and after a build using
-  ``make`` can run the tests with ``make test``.
-  May also need to ``pip install pytest``.
-  ``make test`` is quite terse. To get the same verbose output that is
-  seen with the CI tests, use ``ctest -VV`` (executed in the
-  build folder) or an individual test with ``ctest -VV -R name_of_the_test``.
-  One can also run individual test files
-  with ``python3 -m pytest -s <testfile.py>`` or all the test files in that
-  folder with ``python3 -m pytest -s``. (The ``-s`` shows all output on
-  the terminal.) Note: It is helpful to ``make test``
-  first to ensure any mod files needed are available to the tests. If
-  running a test outside the folder where the test is located, it may be
-  necessary to add the folder to PYTHONPATH. Note: The last python
-  mentioned in the ``-DNRN_PYTHON_DYNAMIC=...`` (if the semicolon separated
-  list is non-empty and ``-DNRN_ENABLE_PYTHON_DYNAMIC=ON``)
-  is the one used for ``make test`` and ``ctest -VV``. Otherwise the
-  value specified by ``PYTHON_EXECUTABLE`` is used.
+  When ``ON``:
 
-  Example
+  * Clones the Catch2 submodule (https://github.com/catchorg/Catch2.git) for
+    C++ unit tests.
+  * Registers the full in-tree CTest suite under the main CMake binary
+    directory (unit tests, HOC/Python integration, RxD, optional MPI and
+    CoreNEURON paths, and so on).
+  * Adds a convenience target ``test-install`` that runs the **portable**
+    foreign test harness against ``CMAKE_INSTALL_PREFIX`` (see
+    :ref:`cmake-nrn-test-install` below).
+
+  You typically need ``pip install pytest`` (and, for RxD plots, packages
+  such as ``matplotlib`` / ``plotly`` / ``anywidget`` as required by
+  individual tests).
+
+  In-tree tests (build directory)
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  After configuring and building, run tests from the **main build**
+  directory. ``make test`` / ``ninja test`` is terse; prefer ``ctest`` for
+  the same verbose style as CI:
+
+  .. code-block:: shell
+
+    mkdir build && cd build
+    cmake .. -G Ninja -DNRN_ENABLE_TESTS=ON -DCMAKE_INSTALL_PREFIX=install ...
+    ninja          # or: cmake --build . -j
+    ctest --output-on-failure -j8
+    ctest -VV -R parallel_tests
+
+  It is helpful to complete a full ``ctest`` (or at least build the test
+  targets) once so that ``nrnivmodl`` has produced any mod-file libraries
+  the scripts expect.
+
+  One can also run individual Python test files with
+  ``python3 -m pytest -s <testfile.py>`` or all tests in a folder with
+  ``python3 -m pytest -s`` (``-s`` sends output to the terminal). If
+  running a test outside the folder where it lives, you may need that
+  folder on ``PYTHONPATH``.
+
+  Note: the last Python listed in ``-DNRN_PYTHON_DYNAMIC=...`` (when
+  non-empty and ``-DNRN_ENABLE_PYTHON_DYNAMIC=ON``) is used for
+  ``make test`` / default ``ctest``. Otherwise the value of
+  ``PYTHON_EXECUTABLE`` / the default discovered Python is used.
+
+  .. _cmake-nrn-test-install:
+
+  Install check (``test-install`` / foreign ctest)
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  Linked C++ unit tests require the build tree. To validate a **prefix
+  install** (or a pip wheel), NEURON also provides a standalone project
+  under ``test/foreign`` that discovers an installed NEURON and runs the
+  portable subset of the suite (no rebuild of ``libnrniv``).
+
+  With ``NRN_ENABLE_TESTS=ON``, the main build defines a target
+  ``test-install``. After installing into ``CMAKE_INSTALL_PREFIX``:
+
+  .. code-block:: shell
+
+    ninja install                 # or: cmake --build . --target install
+    ninja test-install            # or: cmake --build . --target test-install
+
+  That target:
+
+  1. Configures ``test/foreign`` into ``${CMAKE_BINARY_DIR}/build-ctest``
+     (for example ``build/build-ctest``), using the same CMake generator as
+     the main build (for example Ninja).
+  2. Points foreign discovery at the install prefix
+     (``NRN_FOREIGN_ROOT``) and the build’s default Python.
+  3. Builds mechanisms for the portable tests and runs a default
+     ``ctest -L serial`` install check.
+  4. Prints how to re-run ``ctest`` with other filters against that
+     foreign binary directory.
+
+  Afterwards you can use ordinary CTest options against the foreign dir:
+
+  .. code-block:: shell
+
+    ctest --test-dir build-ctest --output-on-failure
+    ctest --test-dir build-ctest -L mpi -j2
+    ctest --test-dir build-ctest -L coreneuron -j2
+    ctest --test-dir build-ctest -R 'pytest::' --rerun-failed
+
+  You can also configure the foreign project yourself (wheels, custom
+  prefixes, or a different binary dir). See ``test/foreign/README.md``
+  and ``test/foreign/INVENTORY.md`` (what runs under foreign mode vs
+  build-only).
+
+  Example (in-tree tests only, classic workflow)
 
   .. code-block:: shell
 
@@ -564,7 +635,6 @@ NRN_ENABLE_TESTS:BOOL=OFF
     ctest -VV -R parallel_tests
     cd ../test/pynrn
     python3 -m pytest
-    python3 -m pytest test_currents.py
 
 NRN_ENABLE_COVERAGE:BOOL=OFF
 ----------------------------

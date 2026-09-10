@@ -73,3 +73,39 @@ endif()
 add_test(NAME "api::setpointer_cpp" COMMAND setpointer_cpp)
 set_property(TEST "api::setpointer_cpp" PROPERTY ENVIRONMENT "${NRN_RUN_FROM_BUILD_DIR_ENV}"
                                                  "CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}")
+
+# Generate a density mechanism and a point process with NMODL RANDOM variables to exercise both
+# public wrapper APIs without Python support.
+set(nmodlrandom_gens "")
+foreach(nmodlrandom_mod_name randomdensity randompoint)
+  set(nmodlrandom_mod "${CMAKE_CURRENT_SOURCE_DIR}/${nmodlrandom_mod_name}.mod")
+  set(nmodlrandom_mod_copy "${CMAKE_CURRENT_BINARY_DIR}/${nmodlrandom_mod_name}.mod")
+  set(nmodlrandom_gen "${CMAKE_CURRENT_BINARY_DIR}/${nmodlrandom_mod_name}.cpp")
+  configure_file("${nmodlrandom_mod}" "${nmodlrandom_mod_copy}" COPYONLY)
+  add_custom_command(
+    OUTPUT ${nmodlrandom_gen}
+    COMMAND
+      ${CMAKE_COMMAND} -E env "MODLUNIT=${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib"
+      "NMODLHOME=${PROJECT_BINARY_DIR}" ${NRN_NOCMODL_SANITIZER_ENVIRONMENT}
+      $<TARGET_FILE:${NRN_CODEGENERATOR_TARGET}> ${nmodlrandom_mod_copy} ${NRN_NMODL_--neuron} -o
+      ${CMAKE_CURRENT_BINARY_DIR}
+    DEPENDS ${NRN_CODEGENERATOR_TARGET} ${nmodlrandom_mod}
+            ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+  list(APPEND nmodlrandom_gens ${nmodlrandom_gen})
+endforeach()
+
+add_executable(nmodlrandom_cpp nmodlrandom.cpp ${nmodlrandom_gens})
+cpp_cc_configure_sanitizers(TARGET nmodlrandom_cpp)
+target_include_directories(nmodlrandom_cpp PRIVATE $<TARGET_PROPERTY:nrniv_lib,INCLUDE_DIRECTORIES>
+                                                   ${PROJECT_BINARY_DIR}/include)
+target_compile_definitions(nmodlrandom_cpp PRIVATE $<TARGET_PROPERTY:nrniv_lib,COMPILE_DEFINITIONS>)
+target_link_libraries(nmodlrandom_cpp ${CMAKE_DL_LIBS})
+target_link_libraries(nmodlrandom_cpp nrniv_lib)
+target_link_options(nmodlrandom_cpp PRIVATE -rdynamic)
+if(NRN_ENABLE_CORENEURON)
+  target_compile_definitions(nmodlrandom_cpp PUBLIC CORENEURON_ENABLED)
+endif()
+add_test(NAME "api::nmodlrandom_cpp" COMMAND nmodlrandom_cpp)
+set_property(TEST "api::nmodlrandom_cpp" PROPERTY ENVIRONMENT "${NRN_RUN_FROM_BUILD_DIR_ENV}"
+                                                  "CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}")
