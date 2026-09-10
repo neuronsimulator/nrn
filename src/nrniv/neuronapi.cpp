@@ -14,6 +14,7 @@
 #include "shapeplt.h"
 #include <cstring>
 #include <exception>
+#include <limits>
 
 /// A public face of hoc_Item
 struct nrn_Item: public hoc_Item {};
@@ -200,7 +201,11 @@ double nrn_segment_diam_get(Section* const sec, const double x) {
     // recalc_area_. Mirror the range-variable read path (nrnpy_nrn.cpp) so a
     // diam read after pt3dadd returns the 3d-derived value, not a stale default.
     if (sec && sec->recalc_area_) {
-        nrn_area_ri(sec);
+        // nrn_area_ri normally reports a non-positive diameter with
+        // hoc_execerror after clamping it to 1e-6. A C value accessor cannot
+        // let that C++ exception unwind across its ABI, so complete the same
+        // recompute without raising the HOC-level diagnostic.
+        nrn_area_ri_no_diam_error(sec);
     }
     Node* const node = node_exact(sec, x);
     for (auto prop = node->prop; prop; prop = prop->next) {
@@ -228,6 +233,35 @@ void nrn_rangevar_set(Symbol* sym, Section* sec, double x, double value) {
 
 void nrn_rangevar_push(Symbol* sym, Section* sec, double x) {
     hoc_push(nrn_rangepointer(sec, sym, x));
+}
+
+Object* nrn_segment_nmodlrandom_get(Section* sec, double x, Symbol* sym) {
+    if (!sec || !nrn_section_is_active(sec) || !(x >= 0.0 && x <= 1.0) || !sym ||
+        sym->type != RANGEOBJ || sym->subtype != NMODLRANDOM) {
+        return nullptr;
+    }
+    Prop* prop = nrn_mechanism(sym->u.rng.type, node_exact(sec, x));
+    if (!prop) {
+        return nullptr;
+    }
+    Object* obj = nrn_nmodlrandom_wrap(prop, sym);
+    hoc_obj_ref(obj);
+    return obj;
+}
+
+Object* nrn_pntproc_nmodlrandom_get(Object* point_process, Symbol* sym) {
+    if (!point_process || !point_process->ctemplate || !point_process->ctemplate->is_point_ ||
+        !sym || sym->type != RANGEOBJ || sym->subtype != NMODLRANDOM ||
+        hoc_table_lookup(sym->name, point_process->ctemplate->symtable) != sym) {
+        return nullptr;
+    }
+    auto* pnt = ob2pntproc_0(point_process);
+    if (!pnt || !pnt->prop) {
+        return nullptr;
+    }
+    Object* obj = nrn_pntproc_nmodlrandom_wrap(pnt, sym);
+    hoc_obj_ref(obj);
+    return obj;
 }
 
 int nrn_setpointer_pop(Symbol* pointer_sym,
@@ -361,6 +395,37 @@ Section* nrn_section_sibling(Section* sec) {
     return sec->sibling;
 }
 
+int nrn_sectionlist_to_array(nrn_Item* sl, Section** buf, int maxlen) {
+    // Snapshot a section list (from nrn_allsec() or nrn_sectionlist_data(obj))
+    // into buf in a single call -- the batched form of the section-list
+    // iterator, which crosses the API boundary once per section. Building a
+    // section array this way (an allsec gather, rebuilt whenever the topology
+    // changes) becomes one crossing instead of one per section. The list is a
+    // circular doubly-linked list of hoc_Item with sl as the sentinel, so walk
+    // from sl->next back around to sl. Semi-deleted sections (no Section, or a
+    // freed prop) are skipped, matching SectionListIterator; read-only, it does
+    // not prune them.
+    //
+    // Fills up to maxlen entries and returns the TOTAL number of live sections,
+    // which may exceed maxlen when buf is too small. Call with buf=NULL and
+    // maxlen=0 to obtain just the count in one pass. Detecting whether a cached
+    // snapshot has gone stale is a separate matter -- watch structure_change_cnt.
+    if (!sl) {
+        return 0;
+    }
+    int total = 0;
+    for (hoc_Item* q = sl->next; q && q != sl; q = q->next) {
+        Section* sec = q->element.sec;
+        if (sec && sec->prop != nullptr) {
+            if (buf && total < maxlen) {
+                buf[total] = sec;
+            }
+            ++total;
+        }
+    }
+    return total;
+}
+
 /****************************************
  * Functions, objects, and the stack
  ****************************************/
@@ -463,6 +528,14 @@ void nrn_symbol_push(Symbol* sym) {
     hoc_pushpx(sym->u.pval);
 }
 
+Symbol* nrn_symbol_pop(void) {
+    // Pop a Symbol (a STACK_IS_SYM entry) off the interpreter stack. Interpreter
+    // frames for object-component access (e.g. reading or assigning pyobj.attr)
+    // carry the attribute's Symbol on the stack; a binding that unwinds such a
+    // frame needs to pop it. Public counterpart to the internal hoc_spop.
+    return hoc_spop();
+}
+
 void nrn_double_push(double val) {
     hoc_pushx(val);
 }
@@ -492,6 +565,9 @@ void nrn_int_push(int i) {
 }
 
 int nrn_int_pop(void) {
+    if (hoc_stack_type_is_ndim()) {
+        return hoc_pop_ndim();
+    }
     return hoc_ipop();
 }
 
@@ -511,12 +587,19 @@ void nrn_object_ptr_push(Object** obj_ref) {
 }
 
 Object* nrn_object_pop(void) {
-    // NOTE: the returned object should be unref'd when no longer needed
+    // Returns NULL for a nil object reference (an unset objref) rather than
+    // crashing: the ref-count bump that hands back a reference would otherwise
+    // dereference NULL. This matters when unwinding a stack that may carry a nil
+    // object -- e.g. the HOC-to-Python write-back path, where an objref RHS can
+    // be nil. A non-NULL result is reference-counted and should be unref'd
+    // (nrn_object_unref) when no longer needed.
     Object** obptr = hoc_objpop();
-    Object* new_ob_ptr = *obptr;
-    new_ob_ptr->refcount++;
+    Object* ob = *obptr;
+    if (ob) {
+        ob->refcount++;
+    }
     hoc_tobj_unref(obptr);
-    return new_ob_ptr;
+    return ob;
 }
 
 nrn_stack_types_t nrn_stack_type(void) {
@@ -845,8 +928,8 @@ double nrn_property_get(const Object* obj, const char* name) {
         obj->ctemplate->steer(obj->u.this_pointer);
         return *hoc_pxpop();
     } else {
-        int index = sym->u.rng.index;
-        return ob2pntproc_0(const_cast<Object*>(obj))->prop->param_legacy(index);
+        auto handle = point_process_pointer(ob2pntproc_0(const_cast<Object*>(obj)), sym, 0);
+        return handle ? *handle : std::numeric_limits<double>::quiet_NaN();
     }
 }
 
@@ -858,8 +941,8 @@ double nrn_property_array_get(const Object* obj, const char* name, int i) {
         obj->ctemplate->steer(obj->u.this_pointer);
         return hoc_pxpop()[i];
     } else {
-        int index = sym->u.rng.index;
-        return ob2pntproc_0(const_cast<Object*>(obj))->prop->param_legacy(index + i);
+        auto handle = point_process_pointer(ob2pntproc_0(const_cast<Object*>(obj)), sym, i);
+        return handle ? *handle : std::numeric_limits<double>::quiet_NaN();
     }
 }
 
@@ -871,8 +954,10 @@ void nrn_property_set(Object* obj, const char* name, double value) {
         obj->ctemplate->steer(obj->u.this_pointer);
         *hoc_pxpop() = value;
     } else {
-        int index = sym->u.rng.index;
-        ob2pntproc_0(obj)->prop->param_legacy(index) = value;
+        auto handle = point_process_pointer(ob2pntproc_0(obj), sym, 0);
+        if (handle) {
+            *handle = value;
+        }
     }
 }
 
@@ -884,8 +969,10 @@ void nrn_property_array_set(Object* obj, const char* name, int i, double value) 
         obj->ctemplate->steer(obj->u.this_pointer);
         hoc_pxpop()[i] = value;
     } else {
-        int index = sym->u.rng.index;
-        ob2pntproc_0(obj)->prop->param_legacy(index + i) = value;
+        auto handle = point_process_pointer(ob2pntproc_0(obj), sym, i);
+        if (handle) {
+            *handle = value;
+        }
     }
 }
 
@@ -896,8 +983,7 @@ void nrn_property_push(Object* obj, const char* name) {
         // put the pointer for the memory location on the stack
         obj->ctemplate->steer(obj->u.this_pointer);
     } else {
-        int index = sym->u.rng.index;
-        hoc_push(ob2pntproc_0(obj)->prop->param_handle_legacy(index));
+        hoc_push(point_process_pointer(ob2pntproc_0(obj), sym, 0));
     }
 }
 
@@ -909,9 +995,18 @@ void nrn_property_array_push(Object* obj, const char* name, int i) {
         obj->ctemplate->steer(obj->u.this_pointer);
         hoc_pushpx(hoc_pxpop() + i);
     } else {
-        int index = sym->u.rng.index;
-        hoc_push(ob2pntproc_0(obj)->prop->param_handle_legacy(index + i));
+        hoc_push(point_process_pointer(ob2pntproc_0(obj), sym, i));
     }
+}
+
+bool nrn_property_data_handle_is_valid(const Object* obj, const char* name, int i) {
+    auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
+    if (!obj->ctemplate->is_point_) {
+        hoc_pushs(sym);
+        obj->ctemplate->steer(obj->u.this_pointer);
+        return static_cast<bool>(hoc_pop_handle<double>());
+    }
+    return static_cast<bool>(point_process_pointer(ob2pntproc_0(const_cast<Object*>(obj)), sym, i));
 }
 
 char const* nrn_symbol_name(const Symbol* sym) {

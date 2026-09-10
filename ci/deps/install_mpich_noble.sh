@@ -30,6 +30,26 @@ if [[ "$(id -u)" -ne 0 ]]; then
   exit 1
 fi
 
+arch="$(dpkg --print-architecture)"
+case "${arch}" in
+  amd64)
+    mpich_id="mpich-noble-4.2.0-5.1"
+    lib_id="libmpich12-noble-4.2.0-5.1"
+    mpich_deb="mpich_4.2.0-5.1_amd64.deb"
+    lib_deb="libmpich12_4.2.0-5.1_amd64.deb"
+    ;;
+  arm64)
+    mpich_id="mpich-noble-4.2.0-5.1-arm64"
+    lib_id="libmpich12-noble-4.2.0-5.1-arm64"
+    mpich_deb="mpich_4.2.0-5.1_arm64.deb"
+    lib_deb="libmpich12_4.2.0-5.1_arm64.deb"
+    ;;
+  *)
+    echo "error: unsupported architecture '${arch}' for pinned mpich (need amd64 or arm64)" >&2
+    exit 1
+    ;;
+esac
+
 WORKDIR="$(mktemp -d -t nrn-mpich-noble.XXXXXX)"
 cleanup() { rm -rf "${WORKDIR}"; }
 trap cleanup EXIT
@@ -39,15 +59,15 @@ trap cleanup EXIT
 # Override with NRN_CI_DEPS_SOURCE=local if debugging with a gitignored assets/ copy.
 export NRN_CI_DEPS_SOURCE="${NRN_CI_DEPS_SOURCE:-release}"
 
-"${SCRIPT_DIR}/fetch.sh" mpich-noble-4.2.0-5.1 "${WORKDIR}"
-"${SCRIPT_DIR}/fetch.sh" libmpich12-noble-4.2.0-5.1 "${WORKDIR}"
+"${SCRIPT_DIR}/fetch.sh" "${mpich_id}" "${WORKDIR}"
+"${SCRIPT_DIR}/fetch.sh" "${lib_id}" "${WORKDIR}"
 
 # Ensure base packages exist (headers etc.) then overwrite with pinned debs.
 apt-get install -y -qq mpich libmpich-dev || true
 dpkg --install \
-  "${WORKDIR}/libmpich12_4.2.0-5.1_amd64.deb" \
-  "${WORKDIR}/mpich_4.2.0-5.1_amd64.deb"
+  "${WORKDIR}/${lib_deb}" \
+  "${WORKDIR}/${mpich_deb}"
 
-echo "installed pinned mpich 4.2.0-5.1 for Ubuntu 24.04"
+echo "installed pinned mpich 4.2.0-5.1 for Ubuntu 24.04 (${arch})"
 mpichversion 2>/dev/null || true
 mpirun.mpich --version 2>/dev/null || mpirun --version 2>/dev/null || true

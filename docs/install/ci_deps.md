@@ -39,12 +39,16 @@ ci/deps/fetch.sh --list
 
 # Download a managed asset from nrn-ci-deps (default for install helpers)
 NRN_CI_DEPS_SOURCE=release ci/deps/fetch.sh mpich-noble-4.2.0-5.1 /tmp/out
+# arm64 pin (ubuntu-24.04-arm wheel tests):
+# NRN_CI_DEPS_SOURCE=release ci/deps/fetch.sh mpich-noble-4.2.0-5.1-arm64 /tmp/out
 
 # Ubuntu 24.04 wheel tests: install pinned MPICH from the Release
+# (selects amd64 or arm64 debs via dpkg --print-architecture)
 ci/deps/install_mpich_noble.sh
 
 # Compare pins to upstream (awareness only; does not auto-upgrade)
 ci/deps/check-upstream.sh mpich-noble-4.2.0-5.1
+# ci/deps/check-upstream.sh mpich-noble-4.2.0-5.1-arm64
 ```
 
 Promote a new pin (files stay local/transient; then upload to **nrn-ci-deps**):
@@ -60,7 +64,8 @@ rm -f ci/deps/assets/*   # optional; assets/ is gitignored
 
 On **nrn-ci-deps** release **`ci-deps-v1`**:
 
-- Ubuntu 24.04 MPICH packages for wheel tests (LP#2072338)
+- Ubuntu 24.04 MPICH packages for wheel tests (LP#2072338), **amd64 and arm64**
+
 - GNU **ncurses** / **readline** sources for Mac static readline and the manylinux Dockerfile
 - **automake** 1.16.5 for the Ubuntu MUSIC job in `neuron-ci`
 

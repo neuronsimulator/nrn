@@ -60,6 +60,7 @@ Section* nrn_section_parent(Section* sec);
 Section* nrn_section_trueparent(Section* sec);
 Section* nrn_section_child(Section* sec);
 Section* nrn_section_sibling(Section* sec);
+int nrn_sectionlist_to_array(nrn_Item* sl, Section** buf, int maxlen);
 bool nrn_section_is_active(const Section* sec);
 void nrn_section_ref(Section* sec);
 void nrn_section_unref(Section* sec);
@@ -76,6 +77,8 @@ int nrn_segment_node_index(Section* sec, double x);
 void nrn_rangevar_push(Symbol* sym, Section* sec, double x);
 double nrn_rangevar_get(Symbol* sym, Section* sec, double x);
 void nrn_rangevar_set(Symbol* sym, Section* sec, double x, double value);
+Object* nrn_segment_nmodlrandom_get(Section* sec, double x, Symbol* sym);
+Object* nrn_pntproc_nmodlrandom_get(Object* point_process, Symbol* sym);
 int nrn_setpointer_pop(Symbol* pointer_sym,
                        Section* sec,
                        double x,
@@ -88,6 +91,7 @@ int nrn_pp_setpointer_pop(Object* pp, const char* name, char* error_msg, size_t 
  ****************************************/
 Symbol* nrn_symbol(const char* name);
 void nrn_symbol_push(Symbol* sym);
+Symbol* nrn_symbol_pop(void);
 int nrn_symbol_type(const Symbol* sym);
 int nrn_symbol_subtype(const Symbol* sym);
 double* nrn_symbol_dataptr(const Symbol* sym);
@@ -163,6 +167,7 @@ void nrn_property_set(Object* obj, const char* name, double value);
 void nrn_property_array_set(Object* obj, const char* name, int i, double value);
 void nrn_property_push(Object* obj, const char* name);
 void nrn_property_array_push(Object* obj, const char* name, int i);
+bool nrn_property_data_handle_is_valid(const Object* obj, const char* name, int i);
 char const* nrn_symbol_name(const Symbol* sym);
 Symlist* nrn_symbol_table(const Symbol* sym);
 Symlist* nrn_global_symbol_table(void);

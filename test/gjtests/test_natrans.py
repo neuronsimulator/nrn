@@ -1,3 +1,5 @@
+import os
+
 from neuron import h
 import sys
 from pathlib import Path
@@ -135,11 +137,15 @@ def _test_natrans():
         set_permute,
     )
 
-    enable_test_backend()
-    # CoreNEURON GPU forbids cell_permute=0 (valid {1,2}); native uses NRN_GPU_PERMUTE.
-    set_permute(next(iter_permute_values()))
-    run()  # Fails if GPU/backend does not copy expected tar.napre to NEURON
-    disable_test_backend()
+    # NRN_FOREIGN_SKIP_CORENEURON: foreign gj_serial CN psolve aborted on
+    # Linux/macOS wheels (GHA #3866). NEURON half still runs. Not a CN fix.
+    # Native GPU uses backend_helper (NRN_GPU_BACKEND_TEST / NRN_GPU_PERMUTE);
+    # CoreNEURON GPU forbids cell_permute=0 (valid {1,2}).
+    if not os.environ.get("NRN_FOREIGN_SKIP_CORENEURON"):
+        enable_test_backend()
+        set_permute(next(iter_permute_values()))
+        run()  # Fails if GPU/backend does not copy expected tar.napre to NEURON
+        disable_test_backend()
 
     return cells, gids, sgids, targets
 

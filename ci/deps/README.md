@@ -76,7 +76,7 @@ There is no automatic upgrade. `check-upstream.sh` is awareness only.
 
 Hosted on **nrn-ci-deps** release **`ci-deps-v1`**:
 
-- `mpich_4.2.0-5.1_amd64.deb` + `libmpich12_4.2.0-5.1_amd64.deb` — Ubuntu 24.04 wheel tests (LP#2072338)
+- `mpich_4.2.0-5.1_{amd64,arm64}.deb` + `libmpich12_4.2.0-5.1_{amd64,arm64}.deb` — Ubuntu 24.04 wheel tests (LP#2072338); `install_mpich_noble.sh` selects by `dpkg --print-architecture`
 - `ncurses-6.4.tar.gz`, `readline-8.3.tar.gz` — Mac static readline (`build_static_readline_osx.bash`)
 - `readline-7.0.tar.gz`, `ncurses-6.4.tar.gz` — manylinux wheel image (`packaging/python/Dockerfile`)
 - `automake-1.16.5.tar.xz` — Ubuntu MUSIC path in `neuron-ci.yml`

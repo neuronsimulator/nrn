@@ -77,10 +77,7 @@
 #    prepare input data for simulations. The PROCESSORS argument specifies the
 #    number of processors used by the test. This is passed to CTest and allows
 #    invocations such as `ctest -j 16` to avoid overcommitting resources by
-#    running too many tests with internal parallelism. Tests that REQUIRES gpu
-#    also get RESOURCE_LOCK gpu so that `ctest -j N` can still parallelize CPU
-#    work while only one GPU-using test runs at a time (important on single-GPU
-#    workstation nodes that share the device with the display). The PRELOAD_SANITIZER
+#    running too many tests with internal parallelism. The PRELOAD_SANITIZER
 #    flag controls whether or not the PRELOAD flag is passed to
 #    cpp_cc_configure_sanitizers; this needs to be set when the test executable
 #    is *not* built by NEURON, typically because it is `python`.
@@ -141,6 +138,24 @@ function(nrn_foreign_cmake_env_path out_var)
   string(REPLACE ";" "\\;" _acc "${_acc}")
   set(${out_var}
       "PATH=${_acc}"
+      PARENT_SCOPE)
+endfunction()
+
+# One NAME=v1;v2;... for cmake -E env. Does not append $ENV{PATH}.
+function(nrn_foreign_cmake_env_nv out_var name)
+  set(_acc "")
+  foreach(_p ${ARGN})
+    if(NOT _p STREQUAL "")
+      if(_acc STREQUAL "")
+        set(_acc "${_p}")
+      else()
+        set(_acc "${_acc}${NRN_FOREIGN_ENV_SEP}${_p}")
+      endif()
+    endif()
+  endforeach()
+  string(REPLACE ";" "\\;" _acc "${_acc}")
+  set(${out_var}
+      "${name}=${_acc}"
       PARENT_SCOPE)
 endfunction()
 
@@ -285,9 +300,6 @@ function(nrn_add_test_group)
       endforeach()
       # Construct the names of the important output files
       set(special "${nrnivmodl_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}/special")
-      set(nrnmech_lib
-          "${nrnivmodl_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}/${CMAKE_SHARED_LIBRARY_PREFIX}nrnmech${CMAKE_SHARED_LIBRARY_SUFFIX}"
-      )
       # Add the custom command to generate the binaries. nrnivmodl comes from the NEURON build tree
       # or from a foreign install (NRN_NRNIVMODL). Linked builds also depend on nrniv_lib.
       set(output_binaries "${special}")
@@ -316,13 +328,6 @@ function(nrn_add_test_group)
       elseif(NOT NRN_FOREIGN_MODE AND TARGET nrniv_lib)
         list(APPEND nrnivmodl_dependencies nrniv_lib)
       endif()
-      # Re-run nrnivmodl when libnrniv.so changes so test special does not retain stale NVHPC
-      # pgcudafat object paths from a prior libnrniv link line.
-      if(NOT NRN_FOREIGN_MODE)
-        list(
-          APPEND nrnivmodl_dependencies
-          "${CMAKE_BINARY_DIR}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}nrniv${CMAKE_SHARED_LIBRARY_SUFFIX}")
-      endif()
       if(NRN_ENABLE_CORENEURON AND NRN_ADD_TEST_GROUP_CORENEURON)
         if(NOT (WIN32 AND NRN_FOREIGN_MODE))
           list(APPEND output_binaries "${special}-core")
@@ -341,8 +346,6 @@ function(nrn_add_test_group)
       add_custom_command(
         OUTPUT ${output_binaries}
         DEPENDS ${nrnivmodl_dependencies} ${modfile_build_paths}
-        # Force libnrnmech relink when libnrniv.so changes (NVHPC embeds transient pgcudafat paths).
-        COMMAND ${CMAKE_COMMAND} -E rm -f ${nrnmech_lib} ${special}
         COMMAND ${nrnivmodl_command}
         COMMENT "Building mechanisms for test group ${NRN_ADD_TEST_GROUP_NAME}"
         WORKING_DIRECTORY "${nrnivmodl_directory}")
@@ -395,11 +398,7 @@ function(nrn_add_test)
   else()
     set(feature_mod_compatibility_enabled OFF)
   endif()
-  if(NRN_ENABLE_GPU OR (NRN_ENABLE_CORENEURON AND CORENRN_ENABLE_GPU))
-    set(feature_gpu_enabled ON)
-  else()
-    set(feature_gpu_enabled OFF)
-  endif()
+  set(feature_gpu_enabled ${CORENRN_ENABLE_GPU})
   # Check REQUIRES
   set(requires_coreneuron OFF)
   foreach(required_feature ${NRN_ADD_TEST_REQUIRES})
@@ -457,13 +456,6 @@ function(nrn_add_test)
   if(DEFINED NRN_ADD_TEST_SIM_DIRECTORY)
     set(sim_directory "${NRN_ADD_TEST_SIM_DIRECTORY}")
   endif()
-  # NVHPC may leave transient fat-object files in $TMPDIR when special runs with -gpu under MPI. Use
-  # a per-test TMPDIR under the build tree (see external_ringtest GPU ctest notes).
-  if("gpu" IN_LIST NRN_ADD_TEST_REQUIRES AND (CORENRN_ENABLE_GPU OR NRN_ENABLE_GPU))
-    set(gpu_tmpdir "${PROJECT_BINARY_DIR}/test/tmp/${NRN_ADD_TEST_GROUP}/${NRN_ADD_TEST_NAME}")
-    file(MAKE_DIRECTORY "${gpu_tmpdir}")
-    list(APPEND extra_environment "TMPDIR=${gpu_tmpdir}")
-  endif()
   # Finally a working directory for this specific test within the group
   set(working_directory "${NRN_TEST_BINARY_ROOT}/test/${NRN_ADD_TEST_GROUP}/${NRN_ADD_TEST_NAME}")
   file(MAKE_DIRECTORY "${working_directory}")
@@ -497,6 +489,16 @@ function(nrn_add_test)
         INPUT "${test_source_directory}/${sim_directory}/${script_file}"
         OUTPUT "${working_directory}/${script_file}"
         NO_TARGET)
+      # VS multi-config: cmake --build --target foreign may not rebuild every copy-scripts utility
+      # project after reconfigure. Place the files now so ctest does not see an empty working
+      # directory. Build-time copy still refreshes after script edits.
+      if(WIN32 AND NRN_FOREIGN_MODE)
+        set(_nrn_script_src "${test_source_directory}/${sim_directory}/${script_file}")
+        set(_nrn_script_dst "${working_directory}/${script_file}")
+        get_filename_component(_nrn_script_dstdir "${_nrn_script_dst}" DIRECTORY)
+        file(MAKE_DIRECTORY "${_nrn_script_dstdir}")
+        file(COPY "${_nrn_script_src}" DESTINATION "${_nrn_script_dstdir}")
+      endif()
       list(APPEND all_copied_script_files "${working_directory}/${script_file}")
     endforeach()
   endforeach()
@@ -549,23 +551,27 @@ function(nrn_add_test)
     if(NOT "PATH" IN_LIST test_env_var_names)
       message(FATAL_ERROR "Expected to find PATH in ${test_env_var_names} but didn't")
     endif()
-    set(_nrn_test_mech_dir "${nrnivmodl_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}")
     # PATH will already be set in test_env
     if(WIN32 AND NRN_FOREIGN_MODE)
       list(FILTER test_env EXCLUDE REGEX "^PATH=")
       nrn_foreign_cmake_env_path(_nrn_test_path "${nrnivmodl_directory}" "${working_directory}"
                                  "${NRN_FOREIGN_PATH_PREFIX}")
       list(INSERT test_env 0 "${_nrn_test_path}")
-    else()
-      list(TRANSFORM test_env REPLACE "^PATH="
-                                     "PATH=${_nrn_test_mech_dir}${NRN_FOREIGN_ENV_SEP}")
-      # pytest/python3 launches do not search PATH for dlopen(libnrnmech.so).
-      if("LD_LIBRARY_PATH" IN_LIST test_env_var_names)
-        list(TRANSFORM test_env REPLACE "^LD_LIBRARY_PATH="
-                                        "LD_LIBRARY_PATH=${_nrn_test_mech_dir}${NRN_FOREIGN_ENV_SEP}")
+      # set(test_env "${NRN_RUN_FROM_BUILD_DIR_ENV}") re-joins on ';' and undoes PYTHONPATH escaping
+      # (PATH is rebuilt above). Prefix + test/rxd must stay one cmake -E env NAME=VALUE.
+      list(FILTER test_env EXCLUDE REGEX "^PYTHONPATH=")
+      if(DEFINED NRN_FOREIGN_SITE_PYTHONPATH AND NOT NRN_FOREIGN_SITE_PYTHONPATH STREQUAL "")
+        nrn_foreign_cmake_env_nv(_nrn_test_pp PYTHONPATH "${NRN_FOREIGN_SITE_PYTHONPATH}"
+                                 "${NRN_FOREIGN_SOURCE_ROOT}/test/rxd")
       else()
-        list(APPEND test_env "LD_LIBRARY_PATH=${_nrn_test_mech_dir}")
+        nrn_foreign_cmake_env_nv(_nrn_test_pp PYTHONPATH "${NRN_FOREIGN_SOURCE_ROOT}/test/rxd")
       endif()
+      list(APPEND test_env "${_nrn_test_pp}")
+    else()
+      list(
+        TRANSFORM test_env
+        REPLACE "^PATH="
+                "PATH=${nrnivmodl_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}${NRN_FOREIGN_ENV_SEP}")
     endif()
   endif()
   # Prepend docs helper scripts on PYTHONPATH for in-tree builds only. In foreign mode PYTHONPATH=
@@ -609,24 +615,77 @@ function(nrn_add_test)
   #   ability to execute the tests in parallel (which precludes blindly running everything in the
   #   same directory).
   set(_nrn_add_test_command ${NRN_ADD_TEST_COMMAND})
+  # cmake -E env uses CreateProcess, which does not search PATH for .cmd. Wheel Scripts/nrniv is a
+  # cmd wrapper; NRN_FOREIGN_NRNIV is nrniv.exe.
   if(WIN32
      AND NRN_FOREIGN_MODE
-     AND DEFINED nrnivmodl_directory
      AND NRN_FOREIGN_NRNIV)
-    list(LENGTH _nrn_add_test_command _nrn_add_test_n)
-    if(_nrn_add_test_n GREATER 0)
-      list(GET _nrn_add_test_command 0 _nrn_add_test_argv0)
-      if(_nrn_add_test_argv0 STREQUAL "special")
-        list(REMOVE_AT _nrn_add_test_command 0)
-        set(_nrn_add_test_command "${NRN_FOREIGN_NRNIV}" -dll "${working_directory}/nrnmech.dll"
-                                  ${_nrn_add_test_command})
+    set(_nrn_rewritten_command)
+    foreach(_nrn_tok ${_nrn_add_test_command})
+      if(_nrn_tok STREQUAL "special")
+        list(APPEND _nrn_rewritten_command "${NRN_FOREIGN_NRNIV}")
+        if(DEFINED nrnivmodl_directory)
+          list(APPEND _nrn_rewritten_command -dll "${working_directory}/nrnmech.dll")
+        endif()
+      elseif(_nrn_tok STREQUAL "nrniv")
+        list(APPEND _nrn_rewritten_command "${NRN_FOREIGN_NRNIV}")
+      else()
+        list(APPEND _nrn_rewritten_command "${_nrn_tok}")
       endif()
-    endif()
+    endforeach()
+    set(_nrn_add_test_command ${_nrn_rewritten_command})
   endif()
-  add_test(
-    NAME "${test_name}"
-    COMMAND ${CMAKE_COMMAND} -E env ${test_env} ${_nrn_add_test_command}
-    WORKING_DIRECTORY "${working_directory}")
+  # Windows: cmake -E env ${test_env} splits NAME=v1;v2 on ';'. PATH then becomes extra argv; the
+  # first extra is a directory ("no such file"). A .cmd can set PATH/PYTHONPATH with real semicolons
+  # (same as run_nrnivmodl.cmd).
+  if(WIN32 AND NRN_FOREIGN_MODE)
+    set(_nrn_ctest_bat "${working_directory}/run_ctest.cmd")
+    set(_nrn_bat "@echo off\r\n")
+    if(DEFINED nrnivmodl_directory)
+      string(
+        APPEND
+        _nrn_bat
+        "set \"PATH=${nrnivmodl_directory};${working_directory};${NRN_FOREIGN_PATH_PREFIX};%PATH%\"\r\n"
+      )
+    else()
+      string(APPEND _nrn_bat "set \"PATH=${NRN_FOREIGN_PATH_PREFIX};%PATH%\"\r\n")
+    endif()
+    if(DEFINED NRN_FOREIGN_SITE_PYTHONPATH AND NOT NRN_FOREIGN_SITE_PYTHONPATH STREQUAL "")
+      string(
+        APPEND _nrn_bat
+        "set \"PYTHONPATH=${NRN_FOREIGN_SITE_PYTHONPATH};${NRN_FOREIGN_SOURCE_ROOT}/test/rxd\"\r\n")
+    else()
+      string(APPEND _nrn_bat "set \"PYTHONPATH=${NRN_FOREIGN_SOURCE_ROOT}/test/rxd\"\r\n")
+    endif()
+    foreach(_nrn_ev ${test_env})
+      # test_env PATH may already be split on ';'; those fragments are not NAME=VALUE and become
+      # `set "C:/..."` (syntax of the command is incorrect). PATH/PYTHONPATH are set above.
+      if(NOT _nrn_ev MATCHES "^[A-Za-z_][A-Za-z0-9_]*=.")
+        continue()
+      endif()
+      if(_nrn_ev MATCHES "^PATH=" OR _nrn_ev MATCHES "^PYTHONPATH=")
+        continue()
+      endif()
+      string(APPEND _nrn_bat "set \"${_nrn_ev}\"\r\n")
+    endforeach()
+    foreach(_nrn_tok ${_nrn_add_test_command})
+      string(APPEND _nrn_bat " \"${_nrn_tok}\"")
+    endforeach()
+    string(APPEND _nrn_bat "\r\nexit /b %ERRORLEVEL%\r\n")
+    file(WRITE "${_nrn_ctest_bat}" "${_nrn_bat}")
+    # CTest quotes `cmd.exe /c` as `cmd.exe "/c"`; cmd then prints "The syntax of the command is
+    # incorrect" (CMake issue 25321). A .cmd COMMAND is launched without quoting the switch, same as
+    # run_nrnivmodl.cmd.
+    add_test(
+      NAME "${test_name}"
+      COMMAND "${_nrn_ctest_bat}"
+      WORKING_DIRECTORY "${working_directory}")
+  else()
+    add_test(
+      NAME "${test_name}"
+      COMMAND ${CMAKE_COMMAND} -E env ${test_env} ${_nrn_add_test_command}
+      WORKING_DIRECTORY "${working_directory}")
+  endif()
   set(test_names ${test_name})
   if(NRN_ADD_TEST_PRECOMMAND)
     add_test(
@@ -639,11 +698,6 @@ function(nrn_add_test)
   set_tests_properties(${test_names} PROPERTIES TIMEOUT 1000)
   if(DEFINED NRN_ADD_TEST_PROCESSORS)
     set_tests_properties(${test_names} PROPERTIES PROCESSORS ${NRN_ADD_TEST_PROCESSORS})
-  endif()
-  # Serialize GPU device use across the suite. CPU tests remain free to run under
-  # ctest -j; any two tests that REQUIRES gpu wait on the same lock name.
-  if("gpu" IN_LIST NRN_ADD_TEST_REQUIRES)
-    set_tests_properties(${test_names} PROPERTIES RESOURCE_LOCK gpu)
   endif()
   # Construct an expression containing the names of the test output files that will be passed to the
   # comparison script.

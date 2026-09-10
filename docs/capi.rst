@@ -419,6 +419,45 @@ Sections
     :returns: The next sibling Section, or ``NULL`` (also if ``sec`` is
         ``NULL``).
 
+.. c:function:: int nrn_sectionlist_to_array(nrn_Item* sl, Section** buf, int maxlen)
+
+    Snapshot a section list into a caller-provided array in one call.
+
+    This is the batched form of :c:func:`nrn_sectionlist_iterator_new`: it fills
+    ``buf`` with the live Sections of ``sl`` in a single crossing of the API
+    boundary rather than one crossing per Section, which speeds up building a
+    section array (for example an ``allsec`` gather, rebuilt whenever the
+    topology changes). Semi-deleted Sections are skipped; the list is not
+    modified.
+
+    Up to ``maxlen`` Sections are written, but the return value is always the
+    **total** number of live Sections, so a return greater than ``maxlen`` means
+    the buffer was too small and the snapshot is truncated. Call once with
+    ``buf = NULL`` and ``maxlen = 0`` to get that total first, then size the
+    buffer to it. (Detecting whether a *cached* snapshot has since gone stale is
+    a separate concern, handled by watching ``structure_change_cnt``, not by
+    re-counting.)
+
+    :param sl: A section list from :c:func:`nrn_allsec` or
+        :c:func:`nrn_sectionlist_data`.
+    :param buf: Array that receives up to ``maxlen`` ``Section*`` entries. May be
+        ``NULL`` only if ``maxlen`` is 0 (to count without writing).
+    :param maxlen: Capacity of ``buf``.
+    :returns: The total number of live Sections in ``sl``, or 0 if ``sl`` is
+        ``NULL``.
+
+    **C Usage:**
+
+    .. code-block:: c
+
+        int n = nrn_sectionlist_to_array(nrn_allsec(), NULL, 0);  // count pass
+        Section** secs = malloc(n * sizeof(Section*));
+        int total = nrn_sectionlist_to_array(nrn_allsec(), secs, n);
+        for (int i = 0; i < total; i++) {
+            printf("%s\n", nrn_secname(secs[i]));
+        }
+        free(secs);
+
 .. c:function:: bool nrn_section_is_active(const Section* sec)
 
     Check if a Section is active (exists and is valid).
@@ -585,6 +624,8 @@ Segments
     segment diameter is derived from those points. This getter triggers that
     recompute if it is pending, so the value is correct even before an explicit
     geometry pass such as :func:`define_shape` or :func:`finitialize`.
+    Non-positive segment diameters are clamped to ``1e-6`` during this
+    recompute without propagating a HOC error across the C API.
 
     **C Usage:**
 
@@ -721,6 +762,39 @@ Segments
         # Set passive conductance at all segments of dend
         for seg in dend:
             seg.g_pas = 0.001  # S/cm²
+
+.. c:function:: Object* nrn_segment_nmodlrandom_get(Section* sec, double x, Symbol* sym)
+
+    Wrap a density mechanism's NMODL ``RANDOM`` variable as an
+    ``NMODLRandom`` object.
+
+    :param sec: Section containing the density mechanism.
+    :param x: Normalized position (0.0 to 1.0) of the mechanism instance.
+    :param sym: ``RANDOM`` range-object symbol, such as
+        ``nrn_symbol("rng_mechanism")``.
+    :returns: A retained ``NMODLRandom`` object, or ``NULL`` for an invalid
+        section or position, a null or non-``RANDOM`` symbol, or when the
+        mechanism is absent at ``(sec, x)``.
+
+    The returned object shares the mechanism-owned random state. Release the
+    retained reference with :c:func:`nrn_object_unref` after use.
+
+.. c:function:: Object* nrn_pntproc_nmodlrandom_get(Object* point_process, Symbol* sym)
+
+    Wrap a point process's NMODL ``RANDOM`` variable as an ``NMODLRandom``
+    object.
+
+    :param point_process: Point-process instance owning the random state.
+    :param sym: ``RANDOM`` symbol from the point process's symbol table, as
+        returned by ``nrn_method_symbol(point_process, "rng")``.
+    :returns: A retained ``NMODLRandom`` object, or ``NULL`` if the inputs do
+        not identify a located point process and one of its ``RANDOM``
+        variables.
+
+    Release the returned reference with :c:func:`nrn_object_unref`. Density and
+    point-process RANDOM variables require separate entry points because a
+    density instance is identified by ``(sec, x)``, while a point process is
+    identified by its object even when several instances share one location.
 
 
 .. c:function:: int nrn_setpointer_pop(Symbol* pointer_sym, Section* sec, double x, char* error_msg, size_t error_msg_size)
@@ -870,6 +944,18 @@ Functions, objects, and the stack
     Push a symbol onto the HOC execution stack.
 
     :param sym: Pointer to the symbol to push.
+
+.. c:function:: Symbol* nrn_symbol_pop(void)
+
+    Pop a Symbol from the top of the stack.
+
+    The interpreter puts a Symbol on the stack when accessing an object
+    component (reading or assigning ``pyobj.attr``); a binding that unwinds
+    such a stack frame uses this to pop the attribute's Symbol. Use
+    :c:func:`nrn_stack_type` to confirm the top is a ``STACK_IS_SYM`` entry
+    before popping.
+
+    :returns: The Symbol from the top of the stack.
 
 .. c:function:: int nrn_symbol_type(const Symbol* sym)
 
@@ -1064,13 +1150,17 @@ Functions, objects, and the stack
 
 .. c:function:: int nrn_int_pop(void)
 
-    Pop an integer from the stack.
+    Pop an integer or array-dimension marker from the stack.
 
     :returns: Integer value from the top of the stack.
 
     **Usage Pattern:**
 
     Used to retrieve function/method return values.
+
+    Indexed object-component access places an internal array-dimension marker
+    on the stack. :c:func:`nrn_int_pop` returns its dimension count through the
+    same API used for an ordinary integer.
 
     .. warning::
 
@@ -1126,13 +1216,20 @@ Functions, objects, and the stack
 
     Pop an object from the stack.
 
-    :returns: Pointer to object from the top of the stack.
+    Returns ``NULL`` for a nil object reference (an unset ``objref``) rather than
+    crashing, so it is safe to use when unwinding a stack that may carry a nil
+    object -- for example a HOC-to-Python write-back whose right-hand side is an
+    unset ``objref``.
+
+    :returns: Pointer to the object from the top of the stack, or ``NULL`` if it
+        is a nil object reference.
 
     **Usage Pattern:**
 
     Used to retrieve function/method return values. Use :c:func:`nrn_stack_type` to check the type
     before popping, or use the type of the function/method to know the expected return type in
-    advance.
+    advance. A non-``NULL`` result is reference-counted and should be released with
+    :c:func:`nrn_object_unref` when no longer needed.
 
 .. c:function:: nrn_stack_types_t nrn_stack_type(void)
 
@@ -1878,7 +1975,9 @@ Miscellaneous
     **Usage Pattern:**
 
     Used to read object properties dynamically by name. Essential for
-    generic property access.
+    generic property access. For an NMODL ``POINTER`` property on a point
+    process, this returns the value referenced by the pointer. An unset or
+    opaque pointer returns NaN.
 
     **C Usage:**
     
@@ -1907,6 +2006,10 @@ Miscellaneous
 
     Used for properties that are arrays.
 
+    Point-process properties use the same data-handle resolution as
+    :c:func:`nrn_property_get` for the selected element, including returning NaN
+    for an unset or opaque pointer.
+
     **C Usage:**
 
     .. code-block:: c
@@ -1928,6 +2031,10 @@ Miscellaneous
     :param obj: Pointer to the object.
     :param name: Name of the property.
     :param value: Value to set.
+
+    For an NMODL ``POINTER`` property on a point process, this writes through
+    the pointer to the referenced value. A write to an unset or opaque pointer
+    is ignored.
 
     **C Usage:**
     
@@ -1952,6 +2059,10 @@ Miscellaneous
     :param i: Index into the array (0-based).
     :param value: Value to set at the specified index.
 
+    Point-process properties use the same data-handle resolution as
+    :c:func:`nrn_property_set` for the selected element, including ignoring a
+    write to an unset or opaque pointer.
+
 .. c:function:: void nrn_property_push(Object* obj, const char* name)
 
     Push a property value onto the NEURON stack.
@@ -1965,6 +2076,11 @@ Miscellaneous
     is how NEURON can implement non-square-wave current clamps. Here ``iclamp._ref_amp`` is a reference
     to the ``amp`` property of the ``IClamp`` object.
 
+    For an NMODL ``POINTER`` property on a point process, this pushes the
+    referenced data handle. It can, for example, be consumed by
+    :c:func:`nrn_pp_setpointer_pop` to wire another point-process pointer to
+    the same source. An unset or opaque pointer pushes an empty handle.
+
 .. c:function:: void nrn_property_array_push(Object* obj, const char* name, int i)
 
     Push a property array element onto the NEURON stack.
@@ -1972,6 +2088,33 @@ Miscellaneous
     :param obj: Pointer to the object.
     :param name: Name of the property array.
     :param i: Index into the array (0-based).
+
+    Point-process properties use the same data-handle resolution as
+    :c:func:`nrn_property_push` for the selected element, including pushing an
+    empty handle for an unset or opaque pointer.
+
+.. c:function:: bool nrn_property_data_handle_is_valid(const Object* obj, const char* name, int i)
+
+    Report whether an object's numeric property has a non-empty data handle.
+
+    This is intended as a second-line check after :c:func:`nrn_property_get` or
+    :c:func:`nrn_property_array_get` returns NaN. An unset or opaque NMODL
+    ``POINTER`` has an empty handle, while NaN is also a valid value in a
+    non-empty handle. The common path therefore needs only the value-accessor
+    call; callers use this predicate only when they need to distinguish those
+    two cases.
+
+    :param obj: Pointer to the object.
+    :param name: Name of the property or property array.
+    :param i: Element index for a point-process array property. Ignored for a
+        scalar property, and for an object that is not a point process, whose
+        storage is present or absent as a whole rather than per element.
+    :returns: true if the property's data handle is non-empty, false otherwise.
+
+    .. seealso::
+
+        :c:func:`nrn_property_get`,
+        :c:func:`nrn_property_array_get`
 
 .. c:function:: char const* nrn_symbol_name(const Symbol* sym)
 
