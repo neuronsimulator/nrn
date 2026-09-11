@@ -332,6 +332,19 @@ class CodegenNeuronAccVisitor: public CodegenNeuronCppVisitor {
 
     void collect_ast_names(const ast::Ast& node, std::unordered_set<std::string>& names) const;
 
+    /** Names assigned (`=`) in \p node (RANGE/ASSIGNED LHS). */
+    void collect_assigned_names(const ast::Ast* node, std::unordered_set<std::string>& names) const;
+
+    /**
+     * Float SoA columns host NET_RECEIVE writes (WATCH / BBCOREPOINTER path,
+     * including PROCEDURE callees such as Gfluct3 oup). Empty → elide H→D.
+     */
+    [[nodiscard]] std::vector<int> host_net_receive_soa_float_indices() const;
+
+    [[nodiscard]] bool host_net_receive_on_native() const {
+        return info.is_watch_used() || info.bbcore_pointer_used;
+    }
+
     void print_present_fp_pointer_declarations() const;
     void print_present_fp_pointer_declarations_for(const std::unordered_set<int>& indices) const;
     void print_present_dptr_pointer_declarations() const;

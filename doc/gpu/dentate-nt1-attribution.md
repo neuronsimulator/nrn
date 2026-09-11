@@ -1,7 +1,7 @@
 # Dentate nt1 exclusive GPU: attribute native ≈3.4× vs CN GPU
 
 **Portfolio:** GPU-native · **Phase:** `GPU-P4-dentate-nt1`  
-**Tip (campaign):** `local/gpu-native` @ `76ba78245`  
+**Tip (campaign):** `local/gpu-native` @ `76ba78245` (pre-recode); host-NR SoA slim on tip after this session  
 **Hypothesis:** `H-dentate-1rank-cngpu` (measured; this file is how to split it)  
 **Campaign (wall + identity):** `~/neuron/devbench/campaigns/2026-09-10-tip-psolve-matrix`
 
@@ -13,8 +13,8 @@
 | Topology | **1 rank**, `nthread=1`, exclusive T1000 |
 | Identity | ✅ 400 spikes vs CPU of the same config (`cpu_same_cell`) |
 | Wall method | 3× `psolve` in one process; **warm** = last two |
-| Native warm | **1.796–1.809 s** (`psolve=`) |
-| CN GPU warm | **0.529–0.532 s** (`Solver Time`) ≈ **3.4×** |
+| Native warm | **1.796–1.809 s** (`psolve=`) pre-recode; **1.581–1.595 s** after host-NR SoA slim |
+| CN GPU warm | **0.529–0.532 s** (`Solver Time`) ≈ **3.4×** pre-recode; ≈ **3.0×** after slim |
 | CPU warm | **2.180–2.186 s** (native is already faster than CPU) |
 
 **Out of this cell**
@@ -167,9 +167,24 @@ The 292 620 H→D is **`upload_present_mechanism_soa_to_device`** after **host
 | H-dentate-nt1-nonvint | **closed** — STATE kernels ≈ CN |
 | H-dentate-nt1-setup | **closed** — CURRENT kernels ≲ CN |
 | H-dentate-nt1-gap | **closed** as 3.4× cause — 0.037 s, 0 scalar |
-| H-dentate-nt1-traffic (full_v / bulk_mech counters) | **closed** those counters; **open** the host-NR SoA push |
-| **H-dentate-nt1-host-nr-soa** | **measured** — next recode: elide/slim `upload_present_mechanism_soa_to_device` |
-| H-dentate-nt1-deliver (TQ) | **measured** — includes host NR + SoA push; re-measure after slim |
-| Uncovered ~0.83 s (gap single-step host loop / OpenACC lock) | parked until host-NR SoA is gone |
+| H-dentate-nt1-traffic (full_v / bulk_mech counters) | **closed** those counters; host-NR SoA push closed below |
+| **H-dentate-nt1-host-nr-soa** | **closed (2026-09-10)** — live RANGE + deliver-wave coalesce |
+| H-dentate-nt1-deliver (TQ) | **open** — t=1 still ~0.81 s after SoA slim; host NetCon/SelfEvent |
+| Uncovered ~0.83 s (gap single-step host loop / OpenACC lock) | still parked; re-time after deliver-tq |
 
-**Next session:** one hypothesis — stop full-mech SoA H→D on the host NET_RECEIVE path (live RANGE only, or skip when device CURRENT already owns those fields). Re-measure 1-rank Dentate nt1 wall. Not density. Not 4-rank MPS.
+## Recode results (2026-09-10, `H-dentate-nt1-host-nr-soa`)
+
+Product: host NET_RECEIVE no longer `update device` of every float column. Codegen registers RANGE **written** by NET_RECEIVE + PROCEDURE callees (Gfluct3: `g_e1`, `g_i1` only). Deliver waves coalesce; one H→D of those columns per dirty type.
+
+| | Before | After |
+|--|--------|-------|
+| Warm psolve | 1.796–1.809 s | **1.581–1.595 s** (Δ ≈ **0.21 s**) |
+| vs CN GPU 0.53 s | ≈3.4× | ≈**3.0×** |
+| ACC_TIME `upload_soa` float | 292 620 updates, 0.65 s | **`upload_soa_storage_fields` 234 updates, 0.9 ms** |
+| Identity | 400 | **400** (`gf_native` + `watchrange_native` green) |
+
+Steady ms ~0.11 → ~0.073 (Gfluct3 `h=0.25` fires every 10 dt; 12 instances × ~20 cols coalesced to 2 cols). **t=1 still ~0.81 s** — that was never the SoA push (NRB 0.009; deliver-tq host queue).
+
+OpenACC API `acc_copyin` still ~308 063 / ~1.0 s under ACC_TIME (present/setup, not this upload). Do not recode density. Not 4-rank MPS.
+
+**Next session:** `H-dentate-nt1-deliver` — t=1 host TQ/NetCon (~0.81 s of ~1.58 s). Not density. Not ion SoA / net_buf / NSB.

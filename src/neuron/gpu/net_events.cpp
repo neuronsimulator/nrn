@@ -2,6 +2,7 @@
 
 #include "neuron/gpu/config.hpp"
 #include "neuron/gpu/device_state.hpp"
+#include "neuron/gpu/download.hpp"
 #include "neuron/gpu/net_receive_buffer.hpp"
 #include "neuron/gpu/net_send_buffer.hpp"
 #include "neuron/gpu/offload.hpp"
@@ -175,11 +176,13 @@ void deliver_net_events_host(NrnThread* nt) {
     // Must flush before setup_tree_matrix / nrn_cur so synaptic g is visible this step.
     // Sub-buckets: deliver-thresh / deliver-tq (in NetCvode) + deliver-nrb (flush).
     int const saved = force_compute_gpu_for_device_deliver(nt);
+    begin_host_net_receive_soa_coalesce();
     deliver_net_events(nt);
     // Device net_send pending (NSB type 0) — same til as deliver_net_events.
     if (nt) {
         promote_pending_self_receives(nt, nt->_t + 0.5 * nt->_dt);
     }
+    end_host_net_receive_soa_coalesce();
     flush_net_receive_buffers(nt);
     restore_compute_gpu_after_deliver(nt, saved);
 }
@@ -190,6 +193,7 @@ void deliver_post_step_events_host(NrnThread* nt) {
     // Must keep compute_gpu=1 when the model is on device (see force_compute_gpu...).
     // Nested under lastpart-deliver; deliver-tq + deliver-nrb still accumulate.
     int const saved = force_compute_gpu_for_device_deliver(nt);
+    begin_host_net_receive_soa_coalesce();
     {
         phase_timer::Scope const timer{phase_timer::Id::deliver_tq};
         phase_timer::bump(phase_timer::Id::deliver_tq);
@@ -198,6 +202,7 @@ void deliver_post_step_events_host(NrnThread* nt) {
     if (nt) {
         promote_pending_self_receives(nt, nt->_t);
     }
+    end_host_net_receive_soa_coalesce();
     flush_net_receive_buffers(nt);
     restore_compute_gpu_after_deliver(nt, saved);
 }

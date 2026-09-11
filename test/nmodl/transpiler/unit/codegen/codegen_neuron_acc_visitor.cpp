@@ -510,4 +510,93 @@ SCENARIO("NEURON OpenACC codegen emits offload pragmas", "[codegen][neuron][acc]
             REQUIRE(nbuf.find("nrb->_pnt_index[:") == std::string::npos);
         }
     }
+
+    GIVEN("WATCH POINT_PROCESS with host NET_RECEIVE RANGE writes") {
+        const std::string nmodl_text = R"(
+            NEURON {
+                POINT_PROCESS WatchHostNr
+                NONSPECIFIC_CURRENT i
+                RANGE e, g
+            }
+            ASSIGNED {
+                v (mV)
+                i (nA)
+                e (mV)
+                g (umho)
+            }
+            BREAKPOINT {
+                i = g*(v - e)
+            }
+            NET_RECEIVE(w) {
+                if (flag == 1) {
+                    g = 0.1
+                    e = 50
+                    WATCH (v > 10) 2
+                }
+            }
+        )";
+
+        THEN("host NR marks dirty live RANGE (g,e) and does not full-SoA upload") {
+            const auto generated = get_neuron_acc_code(nmodl_text);
+            REQUIRE_THAT(generated,
+                         ContainsSubstring("neuron::gpu::mark_host_net_receive_soa_dirty"));
+            REQUIRE(generated.find("upload_present_mechanism_soa_to_device") == std::string::npos);
+            REQUIRE_THAT(generated,
+                         ContainsSubstring("register_host_net_receive_soa_fields"));
+            REQUIRE_THAT(generated, ContainsSubstring("// g"));
+            REQUIRE_THAT(generated, ContainsSubstring("// e"));
+        }
+    }
+
+    GIVEN("WATCH POINT_PROCESS with NET_RECEIVE calling a PROCEDURE (Gfluct3-like oup)") {
+        const std::string nmodl_text = R"(
+            NEURON {
+                POINT_PROCESS GfluctHostNr
+                RANGE g_e1, g_i1, g_e, g_i
+                NONSPECIFIC_CURRENT i
+            }
+            ASSIGNED {
+                v (mV)
+                i (nA)
+                g_e
+                g_i
+                g_e1
+                g_i1
+            }
+            BREAKPOINT {
+                g_e = g_e1
+                g_i = g_i1
+                i = g_e + g_i
+            }
+            PROCEDURE oup() {
+                g_e1 = g_e1 + 1
+                g_i1 = g_i1 + 1
+            }
+            NET_RECEIVE(w) {
+                if (flag == 1) {
+                    oup()
+                    net_send(0.025, 1)
+                    WATCH (v > 0) 2
+                }
+            }
+        )";
+
+        THEN("host NR follows oup() and registers g_e1/g_i1 only") {
+            const auto generated = get_neuron_acc_code(nmodl_text);
+            REQUIRE_THAT(generated,
+                         ContainsSubstring("neuron::gpu::mark_host_net_receive_soa_dirty"));
+            REQUIRE(generated.find("upload_present_mechanism_soa_to_device") == std::string::npos);
+            REQUIRE_THAT(generated, ContainsSubstring("// g_e1"));
+            REQUIRE_THAT(generated, ContainsSubstring("// g_i1"));
+            // Must not push CURRENT outputs that device nrn_cur owns.
+            const auto reg = generated.find("register_host_net_receive_soa_fields");
+            REQUIRE(reg != std::string::npos);
+            const auto arr = generated.rfind("_host_nr_soa_fields", reg);
+            REQUIRE(arr != std::string::npos);
+            const auto arr_block = generated.substr(arr, reg - arr);
+            REQUIRE(arr_block.find("// g_e\n") == std::string::npos);
+            REQUIRE(arr_block.find("// g_i\n") == std::string::npos);
+            REQUIRE(arr_block.find("// i\n") == std::string::npos);
+        }
+    }
 }

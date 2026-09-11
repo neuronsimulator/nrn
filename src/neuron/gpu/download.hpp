@@ -65,10 +65,32 @@ void upload_present_model_soa_to_device() noexcept;
 
 /**
  * Push one mechanism type's present double SoA columns host→device.
- * Used after host NET_RECEIVE/WATCH writes RANGE (e.g. hhwatch g,e) that device
- * CURRENT must see on the native path.
+ * Legacy full-type upload. Host NET_RECEIVE uses the dirty/coalesce path
+ * below (live RANGE only) so this is not the psolve hot path.
  */
 void upload_present_mechanism_soa_to_device(int type) noexcept;
+
+/**
+ * Register float SoA columns that host NET_RECEIVE writes and device
+ * CURRENT/STATE must see. n_fields == 0 means elide (nothing to push).
+ * Unregistered types keep a full-column upload on flush.
+ */
+void register_host_net_receive_soa_fields(int type,
+                                          int const* field_indices,
+                                          int n_fields) noexcept;
+
+/** After host NET_RECEIVE wrote RANGE: dirty this type (coalesced until flush). */
+void mark_host_net_receive_soa_dirty(int type) noexcept;
+
+/**
+ * Deliver-wave coalesce: mark_dirty batches; end flushes dirty types once.
+ * Nested. Depth 0 (finitialize / HOC) flushes immediately on mark.
+ */
+void begin_host_net_receive_soa_coalesce() noexcept;
+void end_host_net_receive_soa_coalesce() noexcept;
+
+/** Push dirty host-NR RANGE columns (registered live set, else full SoA). */
+void flush_host_net_receive_soa_to_device() noexcept;
 
 /** Push host voltages to the device after HOC/VecPlay writes. */
 void batch_upload_to_device();
@@ -81,5 +103,9 @@ void finalize_psolve_download();
  * Call at psolve entry after host may have advanced (mode-2 continuerun).
  */
 void refresh_device_from_host_if_on_device() noexcept;
+
+namespace detail {
+void reset_host_net_receive_soa_for_testing() noexcept;
+}  // namespace detail
 
 }  // namespace neuron::gpu

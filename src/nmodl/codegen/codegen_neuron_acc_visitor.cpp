@@ -150,6 +150,83 @@ void CodegenNeuronAccVisitor::collect_ast_names(const ast::Ast& node,
     }
 }
 
+void CodegenNeuronAccVisitor::collect_assigned_names(
+    const ast::Ast* node,
+    std::unordered_set<std::string>& names) const {
+    if (!node) {
+        return;
+    }
+    for (const auto& n: collect_nodes(*node, {ast::AstNodeType::BINARY_EXPRESSION})) {
+        auto* be = dynamic_cast<const ast::BinaryExpression*>(n.get());
+        if (!be || be->get_op().get_value() != ast::BOP_ASSIGN) {
+            continue;
+        }
+        const auto& lhs = be->get_lhs();
+        if (!lhs) {
+            continue;
+        }
+        for (const auto& nm: collect_nodes(*lhs, {ast::AstNodeType::NAME})) {
+            auto nname = nm->get_node_name();
+            if (!nname.empty()) {
+                names.insert(std::move(nname));
+            }
+        }
+    }
+}
+
+std::vector<int> CodegenNeuronAccVisitor::host_net_receive_soa_float_indices() const {
+    std::unordered_set<std::string> written;
+    std::unordered_set<std::string> visited_routines;
+    std::vector<const ast::Ast*> queue;
+    if (info.net_receive_node) {
+        queue.push_back(info.net_receive_node);
+    }
+
+    auto find_routine = [&](const std::string& name) -> const ast::Ast* {
+        for (const auto* p: info.procedures) {
+            if (p && p->get_node_name() == name) {
+                return p;
+            }
+        }
+        for (const auto* f: info.functions) {
+            if (f && f->get_node_name() == name) {
+                return f;
+            }
+        }
+        return nullptr;
+    };
+
+    while (!queue.empty()) {
+        const ast::Ast* node = queue.back();
+        queue.pop_back();
+        collect_assigned_names(node, written);
+        for (const auto& call: collect_nodes(*node, {ast::AstNodeType::FUNCTION_CALL})) {
+            auto cname = call->get_node_name();
+            if (cname.empty() || !visited_routines.insert(cname).second) {
+                continue;
+            }
+            if (auto* callee = find_routine(cname)) {
+                queue.push_back(callee);
+            }
+        }
+    }
+
+    std::vector<int> indices;
+    for (const auto& name: written) {
+        if (name == "v" || name == naming::VOLTAGE_UNUSED_VARIABLE) {
+            continue;
+        }
+        try {
+            indices.push_back(position_of_float_var(name));
+        } catch (...) {
+            // NET_RECEIVE arg / not a float SoA column.
+        }
+    }
+    std::sort(indices.begin(), indices.end());
+    indices.erase(std::unique(indices.begin(), indices.end()), indices.end());
+    return indices;
+}
+
 std::unordered_set<int> CodegenNeuronAccVisitor::live_float_indices_for_kernel(
     BlockType type) const {
     if (live_float_indices_override_) {
@@ -1927,6 +2004,31 @@ void CodegenNeuronAccVisitor::print_net_receive_registration() {
         printer->fmt_line("hoc_register_net_receive_buffering(net_buf_receive_{}, mech_type);",
                           info.mod_suffix);
     }
+    if (!host_net_receive_on_native()) {
+        return;
+    }
+    // Live RANGE only (H-dentate-nt1-host-nr-soa): do not H→D every float column.
+    const auto fields = host_net_receive_soa_float_indices();
+    if (fields.empty()) {
+        printer->add_line(
+            "neuron::gpu::register_host_net_receive_soa_fields(mech_type, nullptr, 0);");
+        return;
+    }
+    printer->add_line("static int const _host_nr_soa_fields[] = {");
+    printer->increase_indent();
+    for (int fi: fields) {
+        std::string name = "?";
+        if (fi >= 0 && static_cast<std::size_t>(fi) < codegen_float_variables.size() &&
+            codegen_float_variables[static_cast<std::size_t>(fi)]) {
+            name = codegen_float_variables[static_cast<std::size_t>(fi)]->get_name();
+        }
+        printer->fmt_line("{},  // {}", fi, name);
+    }
+    printer->decrease_indent();
+    printer->add_line("};");
+    printer->fmt_line(
+        "neuron::gpu::register_host_net_receive_soa_fields(mech_type, _host_nr_soa_fields, {});",
+        fields.size());
 }
 
 void CodegenNeuronAccVisitor::print_net_receive() {
@@ -1949,8 +2051,7 @@ void CodegenNeuronAccVisitor::print_net_receive() {
     // Stage 2: device net_buf_receive for ordinary NET_RECEIVE. Host path when:
     // - WATCH (host WatchCondition + RANGE write for device CURRENT)
     // - BBCOREPOINTER (Gfluct3 oup/mynormrand: host Random123; push SoA after)
-    const bool host_net_receive =
-        info.is_watch_used() || info.bbcore_pointer_used;
+    const bool host_net_receive = host_net_receive_on_native();
     if (net_receive_buffering_required() && !host_net_receive) {
         printer->push_block("if (nt && nt->compute_gpu)");
         printer->add_line(
@@ -1992,10 +2093,12 @@ void CodegenNeuronAccVisitor::print_net_receive() {
     printer->fmt_line("_nrn_netrec_wsoa_done(_weight_index, {}, _args);",
                       info.num_net_receive_parameters);
     if (host_net_receive) {
-        // Device CURRENT (and BA fold) need host-written RANGE (g,e / g_e1,g_i1).
+        // Device CURRENT needs host-written RANGE (g,e / g_e1,g_i1). Mark dirty;
+        // deliver-wave coalesce flushes live columns once (not every instance ×
+        // every float column).
         printer->push_block("if (nt && nt->compute_gpu)");
         printer->add_line(
-            "neuron::gpu::upload_present_mechanism_soa_to_device(_nrn_mechanism_get_type(_pnt->prop));");
+            "neuron::gpu::mark_host_net_receive_soa_dirty(_nrn_mechanism_get_type(_pnt->prop));");
         printer->pop_block();
     }
     printer->add_newline();

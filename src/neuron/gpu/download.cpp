@@ -16,6 +16,7 @@
 
 #include <cstring>
 #include <type_traits>
+#include <vector>
 
 namespace neuron::gpu {
 namespace {
@@ -144,6 +145,63 @@ void upload_sorted_model_soa_to_device() {
 #endif
 }
 
+struct HostNetReceiveSoa {
+    std::vector<int> fields{};
+    bool registered{false};
+    bool dirty{false};
+};
+
+std::vector<HostNetReceiveSoa> g_host_nr_soa{};
+int g_host_nr_soa_coalesce_depth{0};
+
+void ensure_host_nr_soa_size(int type) {
+    if (type < 0) {
+        return;
+    }
+    if (static_cast<std::size_t>(type) >= g_host_nr_soa.size()) {
+        g_host_nr_soa.resize(static_cast<std::size_t>(type) + 1);
+    }
+}
+
+template <typename Storage>
+void upload_soa_storage_fields_to_device(Storage const& storage,
+                                         int const* fields,
+                                         int n_fields) {
+#if defined(NRN_ENABLE_GPU) && defined(_OPENACC)
+    storage.for_each_vector_for_gpu_upload(
+        [&](auto const& /*tag*/, auto const& vec, int field_index, int /*array_dim*/) {
+            if (vec.empty()) {
+                return;
+            }
+            using Value = typename std::decay_t<decltype(vec)>::value_type;
+            if constexpr (std::is_same_v<Value, double>) {
+                if (n_fields > 0) {
+                    bool want = false;
+                    for (int i = 0; i < n_fields; ++i) {
+                        if (fields[i] == field_index) {
+                            want = true;
+                            break;
+                        }
+                    }
+                    if (!want) {
+                        return;
+                    }
+                }
+                Value const* const host = vec.data();
+                if (!nrn_target_is_present(host)) {
+                    return;
+                }
+                nrn_pragma_acc(update device(host [0:vec.size()]))
+                nrn_pragma_omp(target update to(host [0:vec.size()]))
+            }
+        });
+#else
+    (void) storage;
+    (void) fields;
+    (void) n_fields;
+#endif
+}
+
 }  // namespace
 
 void upload_present_model_soa_to_device() noexcept {
@@ -168,6 +226,86 @@ void upload_present_mechanism_soa_to_device(int type) noexcept {
     (void) type;
 #endif
 }
+
+void register_host_net_receive_soa_fields(int type,
+                                          int const* field_indices,
+                                          int n_fields) noexcept {
+    if (type < 0) {
+        return;
+    }
+    ensure_host_nr_soa_size(type);
+    auto& e = g_host_nr_soa[static_cast<std::size_t>(type)];
+    e.registered = true;
+    e.fields.clear();
+    if (field_indices && n_fields > 0) {
+        e.fields.assign(field_indices, field_indices + n_fields);
+    }
+}
+
+void mark_host_net_receive_soa_dirty(int type) noexcept {
+#if defined(NRN_ENABLE_GPU)
+    if (!enabled() || !backend_native() || !model_is_on_device()) {
+        return;
+    }
+    if (type < 0) {
+        return;
+    }
+    ensure_host_nr_soa_size(type);
+    g_host_nr_soa[static_cast<std::size_t>(type)].dirty = true;
+    if (g_host_nr_soa_coalesce_depth == 0) {
+        flush_host_net_receive_soa_to_device();
+    }
+#else
+    (void) type;
+#endif
+}
+
+void begin_host_net_receive_soa_coalesce() noexcept {
+    ++g_host_nr_soa_coalesce_depth;
+}
+
+void end_host_net_receive_soa_coalesce() noexcept {
+    if (g_host_nr_soa_coalesce_depth > 0) {
+        --g_host_nr_soa_coalesce_depth;
+    }
+    if (g_host_nr_soa_coalesce_depth == 0) {
+        flush_host_net_receive_soa_to_device();
+    }
+}
+
+void flush_host_net_receive_soa_to_device() noexcept {
+#if defined(NRN_ENABLE_GPU)
+    if (!enabled() || !backend_native() || !model_is_on_device()) {
+        return;
+    }
+    for (int type = 0; type < static_cast<int>(g_host_nr_soa.size()); ++type) {
+        auto& e = g_host_nr_soa[static_cast<std::size_t>(type)];
+        if (!e.dirty) {
+            continue;
+        }
+        e.dirty = false;
+        if (!neuron::model().is_valid_mechanism(type)) {
+            continue;
+        }
+        if (e.registered) {
+            if (e.fields.empty()) {
+                continue;  // elide: host NR wrote nothing device CURRENT needs
+            }
+            upload_soa_storage_fields_to_device(
+                neuron::model().mechanism_data(type), e.fields.data(), static_cast<int>(e.fields.size()));
+        } else {
+            upload_soa_storage_to_device(neuron::model().mechanism_data(type));
+        }
+    }
+#endif
+}
+
+namespace detail {
+void reset_host_net_receive_soa_for_testing() noexcept {
+    g_host_nr_soa.clear();
+    g_host_nr_soa_coalesce_depth = 0;
+}
+}  // namespace detail
 
 std::size_t download_flush_interval() noexcept {
     return g_flush_interval;
