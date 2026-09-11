@@ -196,8 +196,9 @@ static std::vector<std::vector<int>> native_gather_slot_by_tid_;
 static std::vector<std::vector<Node*>> native_gather_nd_by_tid_;
 static bool native_gap_tables_valid_ = false;
 // True only when gather_gap_voltage_mailbox actually read device voltages this step.
-// Finitialize may call transfer before ensure_on_device; mailbox would stay 0 and must
-// not overwrite host vgap before the first GPU upload.
+// Finitialize may call transfer before ensure_on_device (mailbox would stay 0) or
+// after persist (device V is still the previous psolve). In both cases host vgap
+// must come from host pointers, not a stale/empty mailbox.
 static bool native_mailbox_fresh_ = false;
 
 // S4 MechRange: unique non-voltage RANGE sources (type + field on Node).
@@ -862,9 +863,12 @@ static void mpi_transfer() {
     {
         neuron::gpu::phase_timer::Scope const timer{neuron::gpu::phase_timer::Id::gap_gather};
         neuron::gpu::phase_timer::bump(neuron::gpu::phase_timer::Id::gap_gather);
+        // Device outsrc gather only while psolve owns V. Finitialize / host
+        // fadvance must pack *poutsrc_ (host v_init or host-authoritative V).
         bool const gpu_gather = neuron::gpu::enabled() && neuron::gpu::backend_native() &&
-                                neuron::gpu::model_is_on_device() && n > 0 && poutsrc_indices_ &&
-                                static_cast<int>(poutsrc_.size()) >= n;
+                                neuron::gpu::model_is_on_device() &&
+                                neuron::gpu::use_native_gpu_fixed_step() && n > 0 &&
+                                poutsrc_indices_ && static_cast<int>(poutsrc_.size()) >= n;
         if (gpu_gather) {
             // Live v_node_index / thread after permute (same fix as local mailbox).
             std::vector<int> live_vnode(static_cast<size_t>(n), -1);
@@ -963,8 +967,15 @@ static void gap_v_transfer_controller() {
     native_msrc_fresh_ = false;
     native_same_thread_done_.assign(nrn_nthread, {});
 #if defined(NRN_ENABLE_GPU)
+    // Device gather only while psolve owns V (PsolveGpuScope). nrn_finitialize
+    // calls this after host setv v_init; persist GPU mirrors still hold the
+    // previous psolve voltages. Gathering those seeded vgap from stale V
+    // (Traub gap 7991 vs CPU 7873). Host pointers are the truth outside
+    // psolve; thread_transfer + nrn_native_gap_targets_to_device() still push
+    // host vgap to the device. Pre-persist, model_is_on_device() was already
+    // false here — this restores that finitialize path without tearing mirrors.
     if (neuron::gpu::enabled() && neuron::gpu::backend_native() && native_gap_tables_valid_ &&
-        neuron::gpu::model_is_on_device()) {
+        neuron::gpu::model_is_on_device() && neuron::gpu::use_native_gpu_fixed_step()) {
         neuron::gpu::gap_traffic_note_step();
         // Phase G: sparse mailbox gather (CoreNEURON-style). Device owns V / RANGE.
         bool const need_stream_wait = !native_vsrc_val_.empty() || !native_msrc_val_.empty();

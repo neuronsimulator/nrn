@@ -6,9 +6,17 @@
 device shortcut (default **off**). Buffer path remains product/ctest default.
 S4 MechRange + S3 multi-thread gap still green.
 
-**Product policy (2026-07-30):** device gather/scatter under native is mandatory.
-Silent no-op / host V pull when residency fails is **not** default. Opt-in debug:
-`NRN_GPU_GAP_HOST_FALLBACK=1`. Same spirit as threshold detect fail-loud.
+**Product policy (2026-07-30):** device gather/scatter under native is mandatory
+**during psolve** (`PsolveGpuScope`; device owns V). Silent no-op / host V pull
+when residency fails is **not** default. Opt-in debug: `NRN_GPU_GAP_HOST_FALLBACK=1`.
+Same spirit as threshold detect fail-loud.
+
+**Finitialize / persist (2026-09-11):** `nrn_finitialize` runs gap transfer after
+host `setv` v_init and **before INITIAL**. GPU mirrors that persist across
+psolve-end token death still hold the previous psolve voltages. Device gather
+there would seed `vgap` from stale V (Traub gap 7991 vs CPU 7873). Outside
+psolve, gather from **host** pointers; `nrn_native_gap_targets_to_device()` still
+pushes host `vgap` so device HalfGap matches. Do **not** tear persist mirrors.
 
 **Thread residency (2026-07-30):** **all** sim threads on device under native
 (see `GROK-GPU-NATIVE.md` → Permanent: thread residency). Gap traffic is only
