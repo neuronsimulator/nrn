@@ -46,6 +46,7 @@
 #include "neuron/gpu/device_state.hpp"
 #include "neuron/gpu/download.hpp"
 #include "neuron/gpu/mechanism_phases.hpp"
+#include "neuron/gpu/net_receive_buffer.hpp"
 #include "neuron/gpu/partrans.hpp"
 #include "neuron/gpu/phase_timer.hpp"
 #include "neuron/gpu/sync.hpp"
@@ -172,6 +173,38 @@ typedef void (*ReceiveFunc)(Point_process*, double*, double);
 
 #include "membfunc.h"
 extern void single_event_run();
+
+#if defined(NRN_ENABLE_GPU)
+namespace {
+/** Skip generated pnt_receive (TLS + Prop current_row) for buffered NET_RECEIVE. */
+bool gpu_nrb_enqueue_pnt(NrnThread* nt, Point_process* pnt, int weight_index, double flag) {
+    if (!nt || !nt->compute_gpu || !pnt || !pnt->prop) {
+        return false;
+    }
+    if (!neuron::gpu::backend_native()) {
+        return false;
+    }
+    int const type = pnt->prop->_type;
+    if (!neuron::gpu::net_receive_gpu_nrb_fast_ok(type)) {
+        return false;
+    }
+    Memb_list* const ml = (nt->_ml_list && type >= 0) ? nt->_ml_list[type] : nullptr;
+    if (!ml) {
+        return false;
+    }
+    auto const row = neuron::mechanism::_get::_current_row(pnt->prop);
+    if (row == neuron::container::invalid_row) {
+        return false;
+    }
+    int const pnt_index = static_cast<int>(row - ml->get_storage_offset());
+    if (!neuron::gpu::net_receive_buffer_enqueue(nt, ml, pnt_index, weight_index, flag)) {
+        return false;
+    }
+    neuron::gpu::note_deliver_tq_nrb_fast();
+    return true;
+}
+}  // namespace
+#endif
 extern NetCvode* net_cvode_instance;
 extern cTemplate** nrn_pnt_template_;
 extern double t, dt;
@@ -3226,6 +3259,19 @@ void NetCon::deliver(double tt, NetCvode* ns, NrnThread* nt) {
         Printf("NetCon::deliver nt=%d target=%d\n", nt->id, PP2NT(target_)->id);
     }
     assert(PP2NT(target_) == nt);
+#if defined(NRN_ENABLE_GPU)
+    neuron::gpu::phase_timer::Scope const timer{neuron::gpu::phase_timer::Id::deliver_tq_netcon};
+    neuron::gpu::phase_timer::bump(neuron::gpu::phase_timer::Id::deliver_tq_netcon);
+    neuron::gpu::note_deliver_tq_netcon();
+    // Native GPU: enqueue NRB directly (no pnt_receive TLS / host body).
+    if (!cvode_active_ && !(nrn_use_selfqueue_ && nrn_is_artificial_[type])) {
+        nt->_t = tt;
+        int const widx = static_cast<int>(weight_base());
+        if (gpu_nrb_enqueue_pnt(nt, target_, widx, 0.)) {
+            return;
+        }
+    }
+#endif
     // Fixed-step (typical native GPU): skip selfqueue + CVode retreat.
     if (nrn_use_selfqueue_ && nrn_is_artificial_[type]) {
         auto& datum = target_->prop->dparam[nrn_artcell_qindex_[type]];
@@ -3501,12 +3547,19 @@ void PreSyn::deliver(double tt, NetCvode* ns, NrnThread* nt) {
     }
     // the thread is the one that owns the targets
     STATISTICS(presyn_deliver_netcon_);
+#if defined(NRN_ENABLE_GPU)
+    neuron::gpu::phase_timer::Scope const timer{neuron::gpu::phase_timer::Id::deliver_tq_presyn};
+    neuron::gpu::phase_timer::bump(neuron::gpu::phase_timer::Id::deliver_tq_presyn);
+#endif
     for_each_fanout_netcon(this, [&](NetCon* d) {
         if (d->active_ && d->target_ && PP2NT(d->target_) == nt) {
             double dtt = d->delay_ - delay_;
             if (dtt == 0.) {
                 STATISTICS(presyn_deliver_direct_);
                 STATISTICS(deliver_cnt_);
+#if defined(NRN_ENABLE_GPU)
+                neuron::gpu::note_deliver_tq_presyn_direct();
+#endif
                 d->deliver(tt, ns, nt);
             } else if (dtt < 0.) {
                 hoc_execerror("internal error: Source delay is > NetCon delay", 0);
@@ -3667,6 +3720,10 @@ void SelfEvent::savestate_write(FILE* f) {
 }
 
 void SelfEvent::deliver(double tt, NetCvode* ns, NrnThread* nt) {
+#if defined(NRN_ENABLE_GPU)
+    neuron::gpu::phase_timer::Scope const timer{neuron::gpu::phase_timer::Id::deliver_tq_self};
+    neuron::gpu::phase_timer::bump(neuron::gpu::phase_timer::Id::deliver_tq_self);
+#endif
     Cvode* cv = (Cvode*) target_->nvi_;
     int type = target_->prop->_type;
     assert(nt == PP2NT(target_));
@@ -3704,6 +3761,16 @@ void SelfEvent::pgvts_deliver(double tt, NetCvode* ns) {
 }
 void SelfEvent::call_net_receive(NetCvode* ns) {
     STATISTICS(selfevent_deliver_);
+#if defined(NRN_ENABLE_GPU)
+    neuron::gpu::note_deliver_tq_self();
+    NrnThread* const nt = PP2NT(target_);
+    if (nt && !cvode_active_ && gpu_nrb_enqueue_pnt(nt, target_, weight_index_, flag_)) {
+        NetCvodeThreadData& nctd = ns->p[nt->id];
+        --nctd.unreffed_event_cnt_;
+        nctd.sepool_->hpfree(this);
+        return;
+    }
+#endif
     // Deliver by weight_index (heap-free 7a); ephemeral scratch is never queue identity.
     nrn_pnt_receive_by_weight_index(target_, weight_index_, flag_);
     if (errno) {
@@ -4133,6 +4200,7 @@ void ncs2nrn_integrate(double tstop) {
     // Host half may have advanced voltages/flags (mode 2); re-seed hysteresis.
     neuron::gpu::refresh_device_from_host_if_on_device();
     neuron::gpu::phase_timer::reset();
+    neuron::gpu::reset_deliver_tq_stats();
     neuron::gpu::gap_traffic_reset();
 #endif
     nrn_prcellstate_checkpoint_psolve_begin();

@@ -1,4 +1,5 @@
 #include "neuron/gpu/config.hpp"
+#include "neuron/gpu/download.hpp"
 #include "neuron/gpu/net_receive_buffer.hpp"
 #include "neuron/gpu/offload.hpp"
 
@@ -56,6 +57,36 @@ TEST_CASE("net_receive_buffer registry and host enqueue", "[gpu][net_receive]") 
 
     free_net_receive_buffer(ml);
     REQUIRE(ml->_net_receive_buffer == nullptr);
+#endif
+}
+
+TEST_CASE("net_receive_gpu_nrb_fast_ok skips host-NR types", "[gpu][net_receive]") {
+#if !defined(NRN_ENABLE_GPU)
+    SKIP("NRN_ENABLE_GPU required");
+#else
+    net_buf_receive.clear();
+    detail::reset_host_net_receive_soa_for_testing();
+    detail::set_netcon_nrb_fast_for_testing(true);
+    detail::reset_deliver_tq_stats_for_testing();
+
+    hoc_register_net_receive_buffering(stub_net_buf_receive, 42);
+    REQUIRE(net_receive_gpu_nrb_fast_ok(42));
+    REQUIRE_FALSE(net_receive_gpu_nrb_fast_ok(7));
+
+    // WATCH / BBCOREPOINTER register host-NR SoA — stay on generated pnt_receive.
+    register_host_net_receive_soa_fields(42, nullptr, 0);
+    REQUIRE(host_net_receive_soa_registered(42));
+    REQUIRE_FALSE(net_receive_gpu_nrb_fast_ok(42));
+
+    detail::set_netcon_nrb_fast_for_testing(false);
+    detail::reset_host_net_receive_soa_for_testing();
+    hoc_register_net_receive_buffering(stub_net_buf_receive, 9);
+    REQUIRE_FALSE(net_receive_gpu_nrb_fast_ok(9));
+    detail::set_netcon_nrb_fast_for_testing(true);
+    REQUIRE(net_receive_gpu_nrb_fast_ok(9));
+
+    net_buf_receive.clear();
+    detail::reset_host_net_receive_soa_for_testing();
 #endif
 }
 

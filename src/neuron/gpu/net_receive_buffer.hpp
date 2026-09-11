@@ -3,6 +3,8 @@
 #include "neuron/model_data.hpp"
 
 #include <cstddef>
+#include <cstdint>
+#include <cstdio>
 #include <utility>
 #include <vector>
 
@@ -44,6 +46,15 @@ bool net_receive_buffer_enqueue(NrnThread* nt,
                                 int pnt_index,
                                 int weight_index,
                                 double flag);
+
+/**
+ * Native GPU NetCon/SelfEvent hot path: enqueue into NRB without generated
+ * pnt_receive (TLS, current_row via Prop, host NET_RECEIVE body).
+ *
+ * True when type is net_buf_receive-registered and not host-NR (WATCH /
+ * BBCOREPOINTER). Opt out with NRN_GPU_NETCON_NRB_FAST=0.
+ */
+[[nodiscard]] bool net_receive_gpu_nrb_fast_ok(int type) noexcept;
 void realloc_net_receive_buffer(NrnThread* nt, Memb_list* ml);
 void update_net_receive_buffer(NrnThread* nt);
 void ensure_thread_net_receive_buffers(NrnThread* nt);
@@ -84,7 +95,18 @@ extern std::vector<std::pair<NetBufReceive_t, int>> net_buf_receive;
 namespace detail {
 void net_receive_buffer_order(NetReceiveBuffer_t* nrb);
 [[nodiscard]] int net_receive_buffer_device_cnt(NetReceiveBuffer_t const* host_nrb);
+void set_netcon_nrb_fast_for_testing(bool enabled);
+void reset_deliver_tq_stats_for_testing();
+[[nodiscard]] std::uint64_t nrb_fast_enqueue_count_for_testing();
 }  // namespace detail
+
+/** Per-psolve deliver-tq counts (NetCon / SelfEvent / PreSyn / NRB-fast). */
+void reset_deliver_tq_stats() noexcept;
+void note_deliver_tq_netcon() noexcept;
+void note_deliver_tq_self() noexcept;
+void note_deliver_tq_presyn_direct() noexcept;
+void note_deliver_tq_nrb_fast() noexcept;
+void print_deliver_tq_stats(FILE* out = stderr) noexcept;
 
 }  // namespace neuron::gpu
 

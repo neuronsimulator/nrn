@@ -1,7 +1,7 @@
 # Dentate nt1 exclusive GPU: attribute native ≈3.4× vs CN GPU
 
 **Portfolio:** GPU-native · **Phase:** `GPU-P4-dentate-nt1`  
-**Tip (campaign):** `local/gpu-native` @ `76ba78245` (pre-recode); host-NR SoA slim on tip after this session  
+**Tip (campaign):** `local/gpu-native` (host-NR SoA slim + NRB-fast enqueue)  
 **Hypothesis:** `H-dentate-1rank-cngpu` (measured; this file is how to split it)  
 **Campaign (wall + identity):** `~/neuron/devbench/campaigns/2026-09-10-tip-psolve-matrix`
 
@@ -169,8 +169,9 @@ The 292 620 H→D is **`upload_present_mechanism_soa_to_device`** after **host
 | H-dentate-nt1-gap | **closed** as 3.4× cause — 0.037 s, 0 scalar |
 | H-dentate-nt1-traffic (full_v / bulk_mech counters) | **closed** those counters; host-NR SoA push closed below |
 | **H-dentate-nt1-host-nr-soa** | **closed (2026-09-10)** — live RANGE + deliver-wave coalesce |
-| H-dentate-nt1-deliver (TQ) | **open** — t=1 still ~0.81 s after SoA slim; host NetCon/SelfEvent |
-| Uncovered ~0.83 s (gap single-step host loop / OpenACC lock) | still parked; re-time after deliver-tq |
+| H-dentate-nt1-deliver (TQ) | **closed (2026-09-10)** — deliver-tq **0.016 s**; not the 0.81 s |
+| **H-dentate-nt1-device-ensure** | **open** — first dt `ensure_on_device` **0.68 s** each psolve |
+| Uncovered ~0.83 s (gap single-step host loop / OpenACC lock) | **reclassified** as first-step device-ensure (0.68 s of ~0.77 s) |
 
 ## Recode results (2026-09-10, `H-dentate-nt1-host-nr-soa`)
 
@@ -187,4 +188,22 @@ Steady ms ~0.11 → ~0.073 (Gfluct3 `h=0.25` fires every 10 dt; 12 instances × 
 
 OpenACC API `acc_copyin` still ~308 063 / ~1.0 s under ACC_TIME (present/setup, not this upload). Do not recode density. Not 4-rank MPS.
 
-**Next session:** `H-dentate-nt1-deliver` — t=1 host TQ/NetCon (~0.81 s of ~1.58 s). Not density. Not ion SoA / net_buf / NSB.
+## Recode / attribution (2026-09-10, `H-dentate-nt1-deliver`)
+
+Re-timed after host-NR SoA slim. **deliver-tq is not the 0.81 s.**
+
+| | Warm i=2 (phase timer) |
+|--|--|
+| psolve | **1.56 s** (product no-timer **1.56–1.65 s**) |
+| deliver-tq | **0.016 s** (calls=800; NetCon 3163, SelfEvent 3922, PreSyn-direct 407) |
+| NRB-fast enqueue | **3163 / 3163** NetCon (opt out `NRN_GPU_NETCON_NRB_FAST=0`) |
+| slow-step | **t=0→0.025 wall 0.68 s** every psolve (incl. warm) |
+| device-ensure | **0.68 s** (calls=400; almost all on the first `ensure_on_device`) |
+| vs CN GPU 0.53 s | ≈**3.0×** (wall flat vs 1.58 s SoA-slim product) |
+| Identity | **400** (same spike multiset as campaign CPU) |
+
+The hoc `computation time at t=1 ms` (~0.75 s) is the first **1 ms** (40 dt) and is dominated by the **first dt**, not the mindelay NetCon wave. Host TQ recode is not ≥0.2 s (gate: no deliver-tq recode as the 3× cause).
+
+Product still skips generated `pnt_receive` TLS for buffered NET_RECEIVE (heap-free `weight_index` → NRB). WATCH/BBCORE stay on host-NR. Not density. Not 4-rank MPS.
+
+**Next session:** `H-dentate-nt1-device-ensure` — first-step `ensure_on_device` / `device_token` upload **0.68 s** each psolve (sorted-token teardown at psolve end). Not deliver-tq. Not density.

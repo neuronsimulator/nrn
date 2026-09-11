@@ -5,6 +5,7 @@
 #include "neuron/gpu/config.hpp"
 #include "neuron/gpu/mechanism_phases.hpp"
 #include "neuron/gpu/device_state.hpp"
+#include "neuron/gpu/net_receive_buffer.hpp"
 #include "neuron/gpu/offload.hpp"
 #include "neuron/gpu/partrans.hpp"
 #include "neuron/gpu/phase_timer.hpp"
@@ -242,6 +243,13 @@ void register_host_net_receive_soa_fields(int type,
     }
 }
 
+bool host_net_receive_soa_registered(int type) noexcept {
+    if (type < 0 || static_cast<std::size_t>(type) >= g_host_nr_soa.size()) {
+        return false;
+    }
+    return g_host_nr_soa[static_cast<std::size_t>(type)].registered;
+}
+
 void mark_host_net_receive_soa_dirty(int type) noexcept {
 #if defined(NRN_ENABLE_GPU)
     if (!enabled() || !backend_native() || !model_is_on_device()) {
@@ -456,6 +464,9 @@ void finalize_psolve_download() {
     trajectory_finalize_psolve();
     sync_state_to_host_for_host_reads();
     phase_timer::print_summary();
+    if (phase_timer::enabled()) {
+        print_deliver_tq_stats();
+    }
     // P4 A+B: gap traffic report when NRN_GAP_TRAFFIC_STATS=1 or phase timer on.
     print_gap_traffic_stats("psolve-end");
     reset_download_step_counter();

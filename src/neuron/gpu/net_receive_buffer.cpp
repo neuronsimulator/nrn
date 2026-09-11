@@ -2,6 +2,7 @@
 
 #include "neuron/container/network/weights.hpp"
 #include "neuron/event_order.hpp"
+#include "neuron/gpu/download.hpp"
 #include "neuron/gpu/offload.hpp"
 #include "neuron/gpu/phase_timer.hpp"
 #include "neuron/model_data.hpp"
@@ -9,8 +10,12 @@
 #include "nrnoc_ml.h"
 
 #include <algorithm>
+#include <atomic>
+#include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <mutex>
 #include <numeric>
 #include <queue>
 #include <utility>
@@ -25,7 +30,100 @@ std::vector<std::pair<NetBufReceive_t, int>> net_buf_receive;
 namespace {
 neuron::model_sorted_token const* g_flush_sorted_token = nullptr;
 bool g_net_buf_flush_active = false;
+
+std::once_flag g_nrb_fast_once;
+std::atomic<bool> g_nrb_fast_enabled{true};
+std::atomic<std::uint64_t> g_n_netcon{0};
+std::atomic<std::uint64_t> g_n_self{0};
+std::atomic<std::uint64_t> g_n_presyn_direct{0};
+std::atomic<std::uint64_t> g_n_nrb_fast{0};
+
+void init_nrb_fast_from_env() noexcept {
+    char const* const value = std::getenv("NRN_GPU_NETCON_NRB_FAST");
+    // Default on. Only "0" disables (A/B vs generated pnt_receive enqueue).
+    g_nrb_fast_enabled.store(!(value && value[0] == '0' && value[1] == '\0'),
+                             std::memory_order_relaxed);
+}
+
+[[nodiscard]] bool nrb_fast_enabled() noexcept {
+    std::call_once(g_nrb_fast_once, init_nrb_fast_from_env);
+    return g_nrb_fast_enabled.load(std::memory_order_relaxed);
+}
 }  // namespace
+
+bool net_receive_gpu_nrb_fast_ok(int type) noexcept {
+    if (type < 0 || !nrb_fast_enabled()) {
+        return false;
+    }
+    // WATCH / BBCOREPOINTER: host NET_RECEIVE body (not device NRB).
+    if (host_net_receive_soa_registered(type)) {
+        return false;
+    }
+    for (auto const& entry: net_buf_receive) {
+        if (entry.second == type) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void reset_deliver_tq_stats() noexcept {
+    g_n_netcon.store(0, std::memory_order_relaxed);
+    g_n_self.store(0, std::memory_order_relaxed);
+    g_n_presyn_direct.store(0, std::memory_order_relaxed);
+    g_n_nrb_fast.store(0, std::memory_order_relaxed);
+}
+
+void note_deliver_tq_netcon() noexcept {
+    g_n_netcon.fetch_add(1, std::memory_order_relaxed);
+}
+
+void note_deliver_tq_self() noexcept {
+    g_n_self.fetch_add(1, std::memory_order_relaxed);
+}
+
+void note_deliver_tq_presyn_direct() noexcept {
+    g_n_presyn_direct.fetch_add(1, std::memory_order_relaxed);
+}
+
+void note_deliver_tq_nrb_fast() noexcept {
+    g_n_nrb_fast.fetch_add(1, std::memory_order_relaxed);
+}
+
+void print_deliver_tq_stats(FILE* out) noexcept {
+    if (!out) {
+        return;
+    }
+    auto const n_netcon = g_n_netcon.load(std::memory_order_relaxed);
+    auto const n_self = g_n_self.load(std::memory_order_relaxed);
+    auto const n_presyn = g_n_presyn_direct.load(std::memory_order_relaxed);
+    auto const n_fast = g_n_nrb_fast.load(std::memory_order_relaxed);
+    if (n_netcon == 0 && n_self == 0 && n_presyn == 0 && n_fast == 0) {
+        return;
+    }
+    std::fprintf(out,
+                 "deliver-tq stats: netcon=%llu self=%llu presyn-direct=%llu nrb-fast=%llu "
+                 "nrb-fast-ok=%d\n",
+                 static_cast<unsigned long long>(n_netcon),
+                 static_cast<unsigned long long>(n_self),
+                 static_cast<unsigned long long>(n_presyn),
+                 static_cast<unsigned long long>(n_fast),
+                 nrb_fast_enabled() ? 1 : 0);
+}
+
+namespace detail {
+void set_netcon_nrb_fast_for_testing(bool enabled) {
+    g_nrb_fast_enabled.store(enabled, std::memory_order_relaxed);
+}
+
+void reset_deliver_tq_stats_for_testing() {
+    reset_deliver_tq_stats();
+}
+
+std::uint64_t nrb_fast_enqueue_count_for_testing() {
+    return g_n_nrb_fast.load(std::memory_order_relaxed);
+}
+}  // namespace detail
 
 neuron::model_sorted_token const* flush_sorted_token() noexcept {
     return g_flush_sorted_token;

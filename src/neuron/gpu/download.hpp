@@ -79,6 +79,9 @@ void register_host_net_receive_soa_fields(int type,
                                           int const* field_indices,
                                           int n_fields) noexcept;
 
+/** True if this type uses host NET_RECEIVE (WATCH / BBCOREPOINTER) on native GPU. */
+[[nodiscard]] bool host_net_receive_soa_registered(int type) noexcept;
+
 /** After host NET_RECEIVE wrote RANGE: dirty this type (coalesced until flush). */
 void mark_host_net_receive_soa_dirty(int type) noexcept;
 

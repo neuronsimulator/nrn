@@ -13,12 +13,22 @@ constexpr int phase_count = static_cast<int>(Id::count);
 
 char const* phase_name(Id id) noexcept {
     switch (id) {
+    case Id::fixed_step:
+        return "fixed-step";
+    case Id::device_ensure:
+        return "device-ensure";
     case Id::deliver_events:
         return "deliver-events";
     case Id::deliver_thresh:
         return "deliver-thresh";
     case Id::deliver_tq:
         return "deliver-tq";
+    case Id::deliver_tq_netcon:
+        return "deliver-tq-netcon";
+    case Id::deliver_tq_self:
+        return "deliver-tq-self";
+    case Id::deliver_tq_presyn:
+        return "deliver-tq-presyn";
     case Id::deliver_nrb:
         return "deliver-nrb";
     case Id::deliver_nrb_order:

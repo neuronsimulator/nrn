@@ -15,6 +15,8 @@
 #include "nrncvode.h"
 #include "spmatrix.h"
 
+#include <chrono>
+#include <cstdio>
 #include <memory>
 #include <vector>
 
@@ -386,6 +388,10 @@ static void nrn_fixed_step_deferred_gap_lastpart(neuron::model_sorted_token cons
 void nrn_fixed_step(neuron::model_sorted_token const& cache_token) {
     nrn::Instrumentor::phase p_timestep("timestep");
 #if defined(NRN_ENABLE_GPU)
+    neuron::gpu::phase_timer::Scope const step_timer{neuron::gpu::phase_timer::Id::fixed_step};
+    neuron::gpu::phase_timer::bump(neuron::gpu::phase_timer::Id::fixed_step);
+    double const t_step_begin = nrn_threads ? nrn_threads->_t : 0.0;
+    auto const step_wall0 = std::chrono::steady_clock::now();
     if (neuron::gpu::use_native_gpu_fixed_step()) {
         if (auto const* err = neuron::gpu::native_gpu_configuration_error()) {
             hoc_execerror(err, nullptr);
@@ -427,6 +433,20 @@ void nrn_fixed_step(neuron::model_sorted_token const& cache_token) {
     if (nrn_allthread_handle) {
         (*nrn_allthread_handle)();
     }
+#if defined(NRN_ENABLE_GPU)
+    if (neuron::gpu::phase_timer::enabled()) {
+        double const elapsed = std::chrono::duration<double>(std::chrono::steady_clock::now() -
+                                                             step_wall0)
+                                   .count();
+        if (elapsed > 0.05) {
+            std::fprintf(stderr,
+                         "slow-step t=%g->%g wall=%g s\n",
+                         t_step_begin,
+                         t,
+                         elapsed);
+        }
+    }
+#endif
     nrn_prcellstate_checkpoint_fixed_step_end();
     // Native end-of-psolve SoA download is NOT here: nrn_fixed_step is also the
     // per-step body of the gap (nrnthread_v_transfer_) path in ncs2nrn_integrate
@@ -537,8 +557,14 @@ static void nrn_fixed_step_thread(neuron::model_sorted_token const& cache_token,
     // Native GPU only inside psolve (ncs2nrn_integrate), matching CoreNEURON:
     // host continuerun/fadvance stay on CPU; mode 2 = host half + GPU psolve.
     if (neuron::gpu::use_native_gpu_fixed_step()) {
-        neuron::gpu::device_token const& dev = neuron::gpu::ensure_on_device(cache_token);
-        neuron::gpu::fixed_step_thread(cache_token, dev, nt);
+        neuron::gpu::device_token const* dev = nullptr;
+        {
+            neuron::gpu::phase_timer::Scope const timer{
+                neuron::gpu::phase_timer::Id::device_ensure};
+            neuron::gpu::phase_timer::bump(neuron::gpu::phase_timer::Id::device_ensure);
+            dev = &neuron::gpu::ensure_on_device(cache_token);
+        }
+        neuron::gpu::fixed_step_thread(cache_token, *dev, nt);
         return;
     }
 #endif

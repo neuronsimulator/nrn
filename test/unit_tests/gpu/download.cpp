@@ -81,9 +81,12 @@ TEST_CASE("sync_state_to_host_for_host_reads pulls SOA voltages", "[gpu][downloa
 
 TEST_CASE("host NET_RECEIVE SoA register/coalesce is resettable", "[gpu][download]") {
     detail::reset_host_net_receive_soa_for_testing();
+    REQUIRE_FALSE(host_net_receive_soa_registered(7));
     int const fields[] = {3, 5};
     register_host_net_receive_soa_fields(7, fields, 2);
     register_host_net_receive_soa_fields(8, nullptr, 0);
+    REQUIRE(host_net_receive_soa_registered(7));
+    REQUIRE(host_net_receive_soa_registered(8));
     begin_host_net_receive_soa_coalesce();
     mark_host_net_receive_soa_dirty(7);
     end_host_net_receive_soa_coalesce();
