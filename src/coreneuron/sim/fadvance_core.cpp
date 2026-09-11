@@ -126,16 +126,15 @@ integration interval before joining
 
 
 void nrn_fixed_single_steps_minimal(int total_sim_steps, double tstop) {
+    // n = (int)((tstop - t) / dt + 1e-9) from ncs2nrn_integrate — same as
+    // the grouped path. while (t <= tstop-dt) skips the last step when dt
+    // is not binary-exact (Traub gap 7867 vs NEURON 7873 at dt=0.025).
+    (void) tstop;
+    if (total_sim_steps < 0) {
+        total_sim_steps = 0;
+    }
     ProgressBar progress_bar(total_sim_steps);
-#if NRNMPI
-    double updated_tstop = tstop - dt;
-    nrn_assert(nrn_threads->_t <= tstop);
-    // It may very well be the case that we do not advance at all
-    while (nrn_threads->_t <= updated_tstop) {
-#else
-    double updated_tstop = tstop - .5 * dt;
-    while (nrn_threads->_t < updated_tstop) {
-#endif
+    for (int i = 0; i < total_sim_steps; ++i) {
         nrn_fixed_step_minimal();
         if (stoprun) {
             break;

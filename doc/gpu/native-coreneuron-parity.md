@@ -172,6 +172,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-08-06 | GPU-P3-dentate-segv | — | **Dentate native SEGV closed:** first psolve after stdinit. (1) ACC CURRENT/STATE `*(inst.celsius)` host pointer → Invalid permissions SEGV; product host-captures `_nrn_celsius`. (2) Eigen Newton STATE async without wait raced next mechs; product `wait(stream)` after Eigen STATE only (Session E exception). 1-rank **400** spikes; `reduced_dentate_native::neuron_gpu_native` green ~4.6 s. |
 | 2026-08-06 | GPU-P4-density-resmoke | — | **Optional density re-smoke (no new residual):** product dentate 4-rank MPS **Passed** (~4.2 s, psolve ~1.06 s). Traub product **4474** / **7873** exact. Multi-warm no-gap native **10.49 / 10.36 s** vs CN **9.47 / 9.38 s** (~**1.10×**). Gap multi-warm native **12.08 / 11.64 s** vs CN **11.03 / 10.85 s** (~**1.07×**; was ~21 s historical — density #1–#16 never re-smoked on gap). Warm phases (no-gap): nonvint ~**2.62 s**, setup-rhs ~**2.13 s**, matrix-solver ~**1.31 s**, deliver-events ~**0.76 s**. No actionable residual without a measured wall hypothesis beyond real STATE/CURRENT math; do not re-open ion SoA / net_buf / NSB. |
 | 2026-09-10 | GPU-P4-campaign-2026-09 | 01a08cc9 | Master merge into `local/gpu-native` (`76ba78245`). Devbench campaign `2026-09-10-tip-psolve-matrix`: 32/32 OK; `cpu_same_cell`. **H-dentate-1rank-cngpu measured:** 1-rank Dentate nt1 CN GPU ~0.53 s vs native ~1.80 s (≈3.4×), ✅ 400. Next: plan/explore that cell. |
+| 2026-09-11 | GPU-P4-traub-gap | 01a08df7 | **`H-traub-gap-cn-minus6` closed:** CN gap single-step uses integer `n=(tstop-t)/dt+1e-9` (NEURON group formula) not `while (t<=tstop-dt)`. CN GPU Traub gap **7873** vs CPU (was 7867, last-step-start spikes). |
 | 2026-09-11 | GPU-P4-traub-gap | 01a08df7 | **`H-traub-gap-persist` closed:** finitialize gap gather only inside psolve; persist V no longer seeds vgap. Traub gap throwaway+3 warms **7873** multiset vs ref (was 7991). Dentate nt1 persist **0.667–0.720 s ✅ 400**. |
 | 2026-09-11 | GPU-P4-dentate-nt1 | 01a08df7 | Persist GPU mirrors across psolve; warm **1.56→0.68 s** (≈1.28× CN). device-ensure 0.68→0. ✅ 400. |
 | 2026-09-10 | GPU-P4-dentate-nt1 | 01a08df7 | deliver-tq **0.016 s** (not the 0.81 s). NRB-fast 3163/3163 NetCon; identity 400. First dt `ensure_on_device` **0.68 s**. Next: device-ensure |
@@ -851,7 +852,7 @@ Commit locally without push. Update Status/Next before exit.
 
 ## Next (one line — update every session end)
 
-**Next:** Dentate nt1 exclusive remaining ~**1.24×** CN GPU (setup+3-warm: native 0.657–0.704 vs Solver 0.530–0.630). lastpart-nonvint + setup-rhs; kernels ≈ CN. Traub gap persist **closed** (7873). Not 4-rank MPS.
+**Next:** Dentate nt1 exclusive remaining ~**1.24×** CN GPU (setup+3-warm: native 0.657–0.704 vs Solver 0.530–0.630). lastpart-nonvint + setup-rhs; kernels ≈ CN. Traub gap persist **closed** (7873). Traub gap CN −6 **closed** (integer n last-step; CN GPU 7873). Not 4-rank MPS.
 
 ### Starting prompt — Traub gap persist (closed 2026-09-11; archive)
 
