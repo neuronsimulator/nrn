@@ -71,6 +71,12 @@ char const* phase_name(Id id) noexcept {
         return "lastpart-xfer";
     case Id::lastpart_nonvint:
         return "lastpart-nonvint";
+    case Id::lastpart_nonvint_prepare:
+        return "nonvint-prepare";
+    case Id::lastpart_nonvint_state:
+        return "nonvint-state";
+    case Id::lastpart_nonvint_finalize:
+        return "nonvint-finalize";
     case Id::lastpart_record:
         return "lastpart-record";
     case Id::lastpart_deliver:

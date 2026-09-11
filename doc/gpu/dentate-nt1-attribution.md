@@ -164,8 +164,8 @@ The 292 620 H→D is **`upload_present_mechanism_soa_to_device`** after **host
 
 | Child | State |
 |-------|--------|
-| H-dentate-nt1-nonvint | **closed** — STATE kernels ≈ CN |
-| H-dentate-nt1-setup | **closed** — CURRENT kernels ≲ CN |
+| H-dentate-nt1-nonvint | **closed (2026-09-11 re-time)** — STATE loop, not prepare/finalize |
+| H-dentate-nt1-setup | **open** — remaining named child (CURRENT kernels ≲ CN in L2; re-time before recode) |
 | H-dentate-nt1-gap | **closed** as 3.4× cause — 0.037 s, 0 scalar |
 | H-dentate-nt1-traffic (full_v / bulk_mech counters) | **closed** those counters; host-NR SoA push closed below |
 | **H-dentate-nt1-host-nr-soa** | **closed (2026-09-10)** — live RANGE + deliver-wave coalesce |
@@ -220,4 +220,29 @@ Last `model_sorted_token` at psolve end no longer `acc_delete`s GPU mirrors. Tea
 
 Timer (warm i=2): lastpart-nonvint 0.36, setup-rhs 0.18, deliver-tq 0.016, NRB 0.007, gap 0.032. STATE/CURRENT kernels already ≈ CN (L2). No remaining ≥ ~0.2 s recode without a new wall hypothesis. Not 4-rank MPS.
 
-**Next:** remaining ~1.28× is real kernel/launch (nonvint + setup-rhs). Do not reopen device-ensure / deliver-tq / ion SoA / net_buf / NSB.
+## L1 re-time (2026-09-11, tip `bc3f7a1e2` + nonvint sub-buckets)
+
+Exclusive 1-rank, throwaway `psolve(dt)` + 3 warms, `NRN_NATIVE_GPU_PHASE_TIMER=1`. Product (no timer) warm **0.675 / 0.674 s**, ✅ **400**. Timer warm i=2 psolve **0.669 s**.
+
+Warm i=2 (absolute s):
+
+| Bucket | s |
+|--------|---|
+| lastpart-nonvint | **0.358** |
+| nonvint-prepare (`_t` H→D + wait) | **0.0019** |
+| nonvint-state (`nonvint()` STATE loop) | **0.355** |
+| nonvint-finalize (stream wait + drain) | **0.0003** |
+| setup-rhs | **0.171** |
+| setup-lhs | 0.007 |
+| lastpart-deliver | 0.020 |
+| gap-gather + gap-scatter | 0.030 |
+| deliver-tq | 0.016 |
+| deliver-nrb | 0.006 |
+| device-ensure | 0.00002 |
+| `full_v_pulls` / `bulk_mech_pushes` | 0 / 0 |
+
+**`H-dentate-nt1-nonvint`:** prepare + finalize **~0.002 s** — not a slice of the ~0.13 s vs CN GPU (Solver 0.530–0.630). The 0.358 s is the STATE loop (kernels + launch); L2 already had STATE avgs **≈ CN**. No recode this child. Eigen per-mech wait stays (SEGV otherwise); do not drop it without a new wall number that isolates wait from kernel time.
+
+Native lastpart-nonvint + setup-rhs **~0.53 s** already matches CN Solver; the remaining ~0.13 s is spread (gap + lastpart-deliver + start-of-step deliver + matrix-solver).
+
+**Next:** `H-dentate-nt1-setup` only. Recode only if setup-rhs is a real slice of the ~0.13 s. Do not reopen nonvint / device-ensure / deliver-tq / host-NR SoA / ion SoA / net_buf / NSB / density. Not 4-rank MPS.

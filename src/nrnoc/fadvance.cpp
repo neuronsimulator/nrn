@@ -659,13 +659,31 @@ void nrn_fixed_step_lastpart(neuron::model_sorted_token const& cache_token, NrnT
             neuron::gpu::phase_timer::bump(neuron::gpu::phase_timer::Id::lastpart_nonvint);
         }
         if (native_lastpart) {
+            neuron::gpu::phase_timer::Scope const prepare_timer{
+                neuron::gpu::phase_timer::Id::lastpart_nonvint_prepare};
+            neuron::gpu::phase_timer::bump(
+                neuron::gpu::phase_timer::Id::lastpart_nonvint_prepare);
             neuron::gpu::sync_before_device_nonvint(nt);
             neuron::gpu::prepare_nonvint_on_device(nt);
         }
 #endif
-        nonvint(cache_token, nt);
+        {
+#if defined(NRN_ENABLE_GPU)
+            neuron::gpu::phase_timer::Scope const state_timer{
+                neuron::gpu::phase_timer::Id::lastpart_nonvint_state};
+            if (native_lastpart) {
+                neuron::gpu::phase_timer::bump(
+                    neuron::gpu::phase_timer::Id::lastpart_nonvint_state);
+            }
+#endif
+            nonvint(cache_token, nt);
+        }
 #if defined(NRN_ENABLE_GPU)
         if (native_lastpart) {
+            neuron::gpu::phase_timer::Scope const finalize_timer{
+                neuron::gpu::phase_timer::Id::lastpart_nonvint_finalize};
+            neuron::gpu::phase_timer::bump(
+                neuron::gpu::phase_timer::Id::lastpart_nonvint_finalize);
             neuron::gpu::finalize_nonvint_on_device(nt);
         }
 #endif

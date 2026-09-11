@@ -17,6 +17,7 @@ namespace neuron::gpu::phase_timer {
  * Lastpart sub-phases (P4): nest under coarse lastpart wall. Prefer absolute
  * seconds; tracked-total double-counts lastpart + lastpart-*.
  *   play / xfer / nonvint / record / deliver
+ *   nonvint-prepare / nonvint-state / nonvint-finalize nest under lastpart-nonvint
  *
  * Setup-tree-matrix sub-phases (P4 density): nest under setup-tree-matrix.
  *   setup-rhs — nrn_rhs (zero + CURRENT + axial)
@@ -52,6 +53,9 @@ enum class Id : int {
     lastpart_play,     // fixed_play_continuous
     lastpart_xfer,     // thread_transfer / extra_scatter_gather
     lastpart_nonvint,  // device STATE path
+    lastpart_nonvint_prepare,   // nested: sync_before + prepare (_t H→D + wait)
+    lastpart_nonvint_state,     // nested: nonvint() STATE loop
+    lastpart_nonvint_finalize,  // nested: stream wait + optional full-stream drain
     lastpart_record,   // AFTER_SOLVE + trajectory/record
     lastpart_deliver,  // post-step deliver (thresh + events)
     gap_sync,          // coarse / host post-solve residual
