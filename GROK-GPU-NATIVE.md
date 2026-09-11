@@ -400,7 +400,7 @@ Protocol: same special for `enable_gpu=0` and `=1`; count **and** sorted times.
 
 | Option | Content |
 |--------|---------|
-| **Default next** | Dentate nt1 remaining ~1.24× CN is spread; stop recode unless a named small-bucket wall hypothesis |
+| **Default next** | Dentate nt1 exclusive recode **closed** (spread; gap same-thread opt-in is a wall loss). New residual only with named bucket + wall hypothesis; device-resource owner only if leak |
 | P4 polish | **Closed** — slim JACOB on tip; Phase C parked flat |
 | Multi-rank MPS | **Closed** — `test/external/ensure_cuda_mps.sh` + ctests; Eigen full-present |
 | Eigen v_unused | **Closed** — STATE refresh for functors; kin-native green |
@@ -451,8 +451,8 @@ After ACC codegen changes to built-ins: `rm -f build-gpu/src/nrnoc/expsyn.cpp &&
 
 ## Starting prompt
 
-Traub identity **closed** (4474 no-gap / 7873 gap). Default next is optional
-density toward CN or a new measured residual:
+Traub identity **closed** (4474 no-gap / 7873 gap). Dentate nt1 exclusive
+recode **closed**. Default next is a new measured residual only:
 
 → **`doc/gpu/native-coreneuron-parity.md`** § Next + Status
 
@@ -463,7 +463,8 @@ GROK-GPU-NATIVE.md, AGENTS.md.
 
 Kind: feature. Portfolio: GPU-native.
 Tree: ~/neuron/nrngpu. Branch: local/gpu-native.
-Traub 4474/7873 closed. Optional density ~2×CN or new residual.
+Dentate nt1 exclusive recode closed. Product 688 / 400 / 4474 / 7873.
+New residual only with named bucket + wall hypothesis.
 High performance sacred; heap-free weight_index. Commit without push.
 ```
 

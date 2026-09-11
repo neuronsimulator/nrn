@@ -166,12 +166,13 @@ The 292 620 H→D is **`upload_present_mechanism_soa_to_device`** after **host
 |-------|--------|
 | H-dentate-nt1-nonvint | **closed (2026-09-11 re-time)** — STATE loop, not prepare/finalize |
 | H-dentate-nt1-setup | **closed (2026-09-11 re-time)** — CURRENT loop, not zero/axial/wait |
-| H-dentate-nt1-gap | **closed** as 3.4× cause — 0.037 s, 0 scalar |
+| H-dentate-nt1-gap | **closed** as 3.4× cause — 0.037 s, 0 scalar. Same-thread device opt-in is a **wall loss** (below) |
 | H-dentate-nt1-traffic (full_v / bulk_mech counters) | **closed** those counters; host-NR SoA push closed below |
 | **H-dentate-nt1-host-nr-soa** | **closed (2026-09-10)** — live RANGE + deliver-wave coalesce |
 | H-dentate-nt1-deliver (TQ) | **closed (2026-09-10)** — deliver-tq **0.016 s**; not the 0.81 s |
 | **H-dentate-nt1-device-ensure** | **closed (2026-09-11)** — persist GPU mirrors across psolve-end token death |
 | Uncovered ~0.83 s (gap single-step host loop / OpenACC lock) | **closed** as first-step device-ensure (was 0.68 s copyin) |
+| H-dentate-nt1-launch | **closed (2026-09-11)** — remaining exclusive ratio is spread launch tax + four small buckets; not one recode |
 
 ## Recode results (2026-09-10, `H-dentate-nt1-host-nr-soa`)
 
@@ -267,4 +268,40 @@ Warm i=2 (absolute s):
 
 Both named children closed without recode. Native nonvint-state + setup-rhs-cur **~0.56 s** already covers CN Solver; the remaining ~0.13 s is spread (gap ~0.03, lastpart-deliver ~0.02, start-of-step deliver ~0.02, matrix-solver ~0.04). Gate: split across many small buckets → **stop**. Not 4-rank MPS.
 
-**Next:** no Dentate nt1 recode without a new wall hypothesis on a **named** small bucket. Do not reopen nonvint / setup / device-ensure / deliver-tq / host-NR SoA / ion SoA / net_buf / NSB / density.
+**Next (then):** measure the four named small buckets; recode only with a wall hypothesis. Do not reopen nonvint / setup / device-ensure / deliver-tq / host-NR SoA / ion SoA / net_buf / NSB / density.
+
+## Named small buckets (2026-09-11, exclusive recode closed)
+
+Exclusive 1-rank, throwaway `psolve(dt)` + 3 warms, no MPS. Identity ✅ **400**. Logs: `/tmp/dentate-nt1-20260911-spread/`.
+
+Product (no timer):
+
+| Run | Native warm i=0/1/2 | CN GPU Solver i=0/1/2 |
+|-----|---------------------|------------------------|
+| After idle | 0.989 / 0.930 / 0.942 | 0.683 / 0.576 / 0.577 |
+| Warm GPU | 0.996 / 0.952 / **0.851** | 0.698 / 0.599 / **0.595** |
+
+Campaign 2026-09-11 was native **0.657–0.704** vs CN **0.530–0.630** (≈**1.24×** at 0.657/0.530). This session’s best pair is **0.851 / 0.595 ≈ 1.43×** (clocks; not a new residual). Session-to-session native warm spans **0.67–0.94 s**.
+
+Phase timer warm i=2 (psolve **0.926 s**; inflated vs product):
+
+| Bucket | s | Named hypothesis |
+|--------|---|------------------|
+| gap-gather + gap-scatter | **0.049** (0.016 + 0.033) | same-thread device copy (existing `NRN_GAP_SAME_THREAD_DEVICE=1`) |
+| lastpart-deliver | **0.041** | post-step thresh + events |
+| deliver-events (start-of-step) | **0.038** | already NRB-fast / deliver-tq 0.025 |
+| matrix-solver | **0.039** | host Hines vs CUDA launcher |
+| post-solve | 0.009 | |
+| nonvint-state | 0.433 | **closed** — STATE loop, kernels ≈ CN |
+| setup-rhs-cur | 0.248 | **closed** — CURRENT loop, kernels ≲ CN |
+| `full_v_pulls` / `bulk_mech_pushes` / `h2d_scalar` | 0 / 0 / 0 | |
+
+**Gap:** `NRN_GAP_SAME_THREAD_DEVICE=1` (no other recode) warm **3.33 / 3.27 / 2.72 s**, ✅ 400. vs product **~0.93 s** — **wall loss**. Buffer path stays product (`native-partrans.md`). Do not flip the opt-in default.
+
+**Matrix-solver:** `use_cuda_launcher()` is already true under native; permute=2 uses `coreneuron_solve_interleaved2_launcher_ptrs`. ~0.04 s is the CUDA Hines kernel, not a host fallback. No recode.
+
+**Deliver buckets:** start-of-step 0.038 + lastpart-deliver 0.041; deliver-tq 0.025 (calls=800) and NRB-fast 3163/3163 already closed. No recode.
+
+**`H-dentate-nt1-launch`:** remaining exclusive ratio is many unique mechs’ launch tax spread across STATE/CURRENT (L2 kernel avgs already ≈ CN) plus the four ≲0.05 s buckets. Not one recode.
+
+Gate: split across many small buckets → **stop**. Exclusive Dentate nt1 recode is **closed**. Do not reopen nonvint / setup / device-ensure / deliver-tq / host-NR SoA / ion SoA / net_buf / NSB / density / gap-same-thread / matrix-solver. Not 4-rank MPS.
