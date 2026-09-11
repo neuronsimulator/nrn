@@ -2,7 +2,7 @@
 
 **Portfolio:** GPU-native (feature)  
 **Tree:** `~/neuron/nrngpu`  
-**Living tip (2026-09-10):** `local/gpu-native` @ `76ba78245` (master merge + prior H4/B/E/MPS/Eigen/Traub/dentate). Campaign `2026-09-10-tip-psolve-matrix`: 8×4 psolve, identity vs CPU. Dentate nt1 1-rank: CN GPU warm ~**0.53 s** vs native ~**1.80 s** (≈**3.4×**, ✅ 400). Traub no-gap native ~**1.21×** CN GPU; Traub gap native ✅ 7873 / CN 7867. Ring160 nt1 native **faster** than CN GPU on T1000.  
+**Living tip (2026-09-10):** `local/gpu-native` @ `76ba78245` (master merge + prior H4/B/E/MPS/Eigen/Traub/dentate). Campaign `2026-09-10-tip-psolve-matrix`: 8×4 psolve, identity vs CPU. Dentate nt1 1-rank: CN GPU warm ~**0.53 s** vs native ~**1.80 s** (≈**3.4×**, ✅ 400). **Attributed (L1+L2):** STATE/CURRENT kernels ≈ CN; residual is host NET_RECEIVE → full mech SoA H→D (`H-dentate-nt1-host-nr-soa`). Traub no-gap native ~**1.21×** CN GPU; Traub gap native ✅ 7873 / CN 7867. Ring160 nt1 native **faster** than CN GPU on T1000.  
 **Parked explor:** `local/gpu-P4-hotpath-netreceive` + `local/gpu-p4-phase-c-remeasure` (superseded by tip residual #14); `local/gpu-p4-exclusive-residual` (slim JACOB archive, **merged to tip** as hygiene); `local/gpu-p4-setup-rhs-density` (Session E archive, **merged to tip**)  
 **Handoffs:** `GROK-GPU-NATIVE.md`, `AGENTS.md`, `~/neuron/notes/PORTFOLIO.md`  
 **This file:** ordered steps you can re-open without chat memory. Update **Status** at end of each session.
@@ -86,6 +86,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 
 | When | Title (`/rename`) | Session id (short) | Commit / note |
 |------|-------------------|--------------------|---------------|
+| 2026-09-10 | GPU-P4-dentate-nt1 | 01a08dc9 | L1+L2 attribution: STATE/CURRENT ≈ CN; host NR SoA H→D 292k `update device` (~244/step). Next: slim upload |
 | 2026-09-10 | GPU-P4-campaign-2026-09 | 01a08cc9 | Master merge `76ba78245`; psolve matrix closed; H-dentate-1rank-cngpu measured |
 | 2026-07-29 | (plan) | — | Plan created; no code |
 | 2026-07-29 | GPU-P0-triage | — | P0: classify A–D; harness green; CMake NONVINT for G4 native; fornetcon native green |
@@ -168,6 +169,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-08-06 | GPU-P3-dentate-segv | — | **Dentate native SEGV closed:** first psolve after stdinit. (1) ACC CURRENT/STATE `*(inst.celsius)` host pointer → Invalid permissions SEGV; product host-captures `_nrn_celsius`. (2) Eigen Newton STATE async without wait raced next mechs; product `wait(stream)` after Eigen STATE only (Session E exception). 1-rank **400** spikes; `reduced_dentate_native::neuron_gpu_native` green ~4.6 s. |
 | 2026-08-06 | GPU-P4-density-resmoke | — | **Optional density re-smoke (no new residual):** product dentate 4-rank MPS **Passed** (~4.2 s, psolve ~1.06 s). Traub product **4474** / **7873** exact. Multi-warm no-gap native **10.49 / 10.36 s** vs CN **9.47 / 9.38 s** (~**1.10×**). Gap multi-warm native **12.08 / 11.64 s** vs CN **11.03 / 10.85 s** (~**1.07×**; was ~21 s historical — density #1–#16 never re-smoked on gap). Warm phases (no-gap): nonvint ~**2.62 s**, setup-rhs ~**2.13 s**, matrix-solver ~**1.31 s**, deliver-events ~**0.76 s**. No actionable residual without a measured wall hypothesis beyond real STATE/CURRENT math; do not re-open ion SoA / net_buf / NSB. |
 | 2026-09-10 | GPU-P4-campaign-2026-09 | 01a08cc9 | Master merge into `local/gpu-native` (`76ba78245`). Devbench campaign `2026-09-10-tip-psolve-matrix`: 32/32 OK; `cpu_same_cell`. **H-dentate-1rank-cngpu measured:** 1-rank Dentate nt1 CN GPU ~0.53 s vs native ~1.80 s (≈3.4×), ✅ 400. Next: plan/explore that cell. |
+| 2026-09-10 | GPU-P4-dentate-nt1 | 01a08dc9 | Attribution L1+L2 (`doc/gpu/dentate-nt1-attribution.md`, campaign `2026-09-10-dentate-nt1-attr`). Phase: lastpart 0.76 (nonvint 0.37 + deliver 0.39), setup-rhs 0.19, deliver-tq **0.49**, nrb 0.009, gap 0.037, uncovered ~0.83. ACC_TIME: STATE/CURRENT **≈ CN**; `upload_soa_storage_to_device` **292 620** H→D (~244 cols/step) from host NET_RECEIVE. Next: slim that upload. Not density. Not 4-rank MPS. |
 
 ---
 
@@ -748,6 +750,7 @@ Milestone B (CURRENT specialization): `nrn_cur_hh` ≈ hand ~13 — **met** (~14
 16. **Ion SoA host-present (closed 2026-08-04 on tip; wall flat):** CN-style ion `base[idx]` with host present (not deviceptr). Product green 4474 + 688 noise. Multi-warm still ~**11.3–11.7 s** (~**1.13×** CN). Residual is real STATE/CURRENT math + launch density. Do not re-open ion dptr/SoA / net_buf / NSB pending / area SoA / stack-temp / cad / jacob / ion_cur.
 17. **Traub product harness/ctest (closed 2026-08-04 on tip):** `test/external/traub/` — script + refs + CMake. Product bars: ringtest **688**, dentate **400**, Traub **4474/7873** all ctest-native. Model stays out of tree.
 18. **Density re-smoke post-SEGV (closed 2026-08-06; no tip code):** Traub multi-warm no-gap ~**10.4 s** / CN ~**9.4 s** (~**1.10×**); gap multi-warm ~**11.6–12.1 s** / CN ~**10.9 s** (~**1.07×**; historical gap ~21 s was stale). Dentate product reconfirmed green. Residual still real STATE/CURRENT math + launch density — **no new residual** without a measured wall hypothesis.
+19. **Dentate nt1 exclusive 3.4× (attributed 2026-09-10; no tip code):** 1-rank ×3 psolve, ✅ 400. L1+L2: STATE/CURRENT kernels **≈ CN**; NRB 0.009; gap 0.037; 0 scalar H→D. Residual **host NET_RECEIVE → full mech SoA H→D** (`upload_present_mechanism_soa_to_device`, 292 620 updates, ~244 cols/step). Next recode that upload. Do not reopen density / ion SoA / net_buf / NSB for this cell.
 
 ---
 
@@ -840,23 +843,32 @@ Commit locally without push. Update Status/Next before exit.
 
 ## Next (one line — update every session end)
 
-**Next:** Plan/explore **Dentate nt1** (1-rank ×3 psolve) why CN GPU warm ~**0.53 s** vs native ~**1.80 s** (≈**3.4×**). Evidence: `devbench/campaigns/2026-09-10-tip-psolve-matrix` @ `76ba78245`; `H-dentate-1rank-cngpu`. Not 4-rank MPS. One measured hypothesis at a time; no ion SoA / net_buf / NSB reopen without a new wall number.
+**Next:** Slim/elide **`upload_present_mechanism_soa_to_device`** after host NET_RECEIVE (`H-dentate-nt1-host-nr-soa`). Evidence: `doc/gpu/dentate-nt1-attribution.md`; campaign `2026-09-10-dentate-nt1-attr`. Dentate nt1 native ~1.80 s vs CN GPU ~0.53 s is **not** STATE/CURRENT math. Not 4-rank MPS. Not ion SoA / net_buf / NSB.
 
-### Starting prompt — Dentate nt1 vs CN GPU (next)
+### Starting prompt — Dentate nt1 host-NR SoA H→D (next)
 
 ```text
-Read ~/neuron/notes/PORTFOLIO.md (GPU-native + Devbench).
-Kind: feature (plan/explore first). Cwd: ~/neuron/nrngpu @ local/gpu-native (76ba78245).
-Campaign: ~/neuron/devbench/campaigns/2026-09-10-tip-psolve-matrix
-Hypothesis: H-dentate-1rank-cngpu — 1-rank Dentate nt1, 3× psolve, identity ✅ 400.
-  CN GPU warm ~0.53 s vs native ~1.80 s (≈3.4×). CPU ~2.18 s. nt4 GPU is slower (not this cell).
+Read ~/neuron/notes/PORTFOLIO.md (GPU-native + Devbench),
+~/neuron/nrngpu/doc/gpu/dentate-nt1-attribution.md (L1+L2),
+native-coreneuron-parity.md Status/Next, GROK-GPU-NATIVE.md, AGENTS.md.
 
-This session: Plan how to attribute the 3.4× (phase timers / ACC_TIME / host traffic), then explore.
-Do not mix 4-rank MPS product (~1.2 s). Do not recode density until a measured sub-residual.
-High performance sacred; CoreNEURON is a guide; heap-free weight_index.
+Kind: feature. Cwd: ~/neuron/nrngpu @ local/gpu-native (76ba78245).
+Hypothesis: H-dentate-nt1-host-nr-soa — host NET_RECEIVE uploads every float
+  column of the mech (`upload_present_mechanism_soa_to_device`). ACC_TIME:
+  292620 update-device (~244 cols/step, ~0.22 s/psolve). STATE/CURRENT ≈ CN.
+  deliver-tq ~0.49 s. Product wall still ~1.80 s vs CN GPU ~0.53 s, ✅ 400.
+
+This session: slim or elide that H→D (live RANGE only, or skip when device
+CURRENT already owns the fields). Re-measure 1-rank Dentate nt1 3× psolve.
+Do not recode density. Do not mix 4-rank MPS. Heap-free weight_index.
 Commit locally, do not push unless asked.
 /rename GPU-P4-dentate-nt1
 ```
+
+### Starting prompt — Dentate nt1 vs CN GPU (closed 2026-09-10; archive)
+
+Session closed 2026-09-10: plan + L1 phase timer + L2 ACC_TIME. STATE/CURRENT
+kernels ≈ CN. Residual is host NET_RECEIVE full-mech SoA H→D, not density.
 
 ### Starting prompt — Traub product harness (closed 2026-08-04; archive)
 
