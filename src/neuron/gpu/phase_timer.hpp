@@ -22,6 +22,7 @@ namespace neuron::gpu::phase_timer {
  * Setup-tree-matrix sub-phases (P4 density): nest under setup-tree-matrix.
  *   setup-rhs — nrn_rhs (zero + CURRENT + axial)
  *   setup-lhs — nrn_lhs (zero d + JACOBIAN + axial)
+ *   setup-rhs-zero / setup-rhs-cur / setup-rhs-axial / setup-rhs-wait nest under setup-rhs
  */
 enum class Id : int {
     fixed_step,        // coarse: whole nrn_fixed_step (incl. deferred gap lastpart)
@@ -44,6 +45,10 @@ enum class Id : int {
     vecplay_sync,
     setup_tree_matrix,  // coarse wall
     setup_rhs,          // nrn_rhs
+    setup_rhs_zero,     // nested: zero rhs/d (async; no wait)
+    setup_rhs_current,  // nested: CURRENT loop + BA + electrode transform
+    setup_rhs_axial,    // nested: axial rhs kernel launch
+    setup_rhs_wait,     // nested: stream wait after axial (includes prior CURRENT GPU)
     setup_lhs,          // nrn_lhs
     matrix_sync,
     matrix_solver,

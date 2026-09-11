@@ -53,6 +53,14 @@ char const* phase_name(Id id) noexcept {
         return "setup-tree-matrix";
     case Id::setup_rhs:
         return "setup-rhs";
+    case Id::setup_rhs_zero:
+        return "setup-rhs-zero";
+    case Id::setup_rhs_current:
+        return "setup-rhs-cur";
+    case Id::setup_rhs_axial:
+        return "setup-rhs-axial";
+    case Id::setup_rhs_wait:
+        return "setup-rhs-wait";
     case Id::setup_lhs:
         return "setup-lhs";
     case Id::matrix_sync:

@@ -165,7 +165,7 @@ The 292 620 H→D is **`upload_present_mechanism_soa_to_device`** after **host
 | Child | State |
 |-------|--------|
 | H-dentate-nt1-nonvint | **closed (2026-09-11 re-time)** — STATE loop, not prepare/finalize |
-| H-dentate-nt1-setup | **open** — remaining named child (CURRENT kernels ≲ CN in L2; re-time before recode) |
+| H-dentate-nt1-setup | **closed (2026-09-11 re-time)** — CURRENT loop, not zero/axial/wait |
 | H-dentate-nt1-gap | **closed** as 3.4× cause — 0.037 s, 0 scalar |
 | H-dentate-nt1-traffic (full_v / bulk_mech counters) | **closed** those counters; host-NR SoA push closed below |
 | **H-dentate-nt1-host-nr-soa** | **closed (2026-09-10)** — live RANGE + deliver-wave coalesce |
@@ -246,3 +246,25 @@ Warm i=2 (absolute s):
 Native lastpart-nonvint + setup-rhs **~0.53 s** already matches CN Solver; the remaining ~0.13 s is spread (gap + lastpart-deliver + start-of-step deliver + matrix-solver).
 
 **Next:** `H-dentate-nt1-setup` only. Recode only if setup-rhs is a real slice of the ~0.13 s. Do not reopen nonvint / device-ensure / deliver-tq / host-NR SoA / ion SoA / net_buf / NSB / density. Not 4-rank MPS.
+
+## L1 re-time (2026-09-11, `H-dentate-nt1-setup` sub-buckets)
+
+Exclusive 1-rank, throwaway `psolve(dt)` + 3 warms. Product (no timer) warm **0.739 / 0.741 s**, ✅ **400**. Timer warm i=2 psolve **0.744 s**.
+
+Warm i=2 (absolute s):
+
+| Bucket | s |
+|--------|---|
+| setup-rhs | **0.189** |
+| setup-rhs-zero | **0.002** |
+| setup-rhs-cur (CURRENT loop + BA) | **0.177** |
+| setup-rhs-axial | **0.002** |
+| setup-rhs-wait (stream fence after axial) | **0.008** |
+| lastpart-nonvint (state 0.383) | 0.388 |
+| `full_v_pulls` / `bulk_mech_pushes` | 0 / 0 |
+
+**`H-dentate-nt1-setup`:** zero + axial + wait **~0.012 s** — not a slice of the ~0.13 s vs CN GPU. The 0.177 s is the CURRENT loop (kernels + launch); L2 already had CURRENT avgs **≲ CN**. No recode this child. Do not drop the axial stream fence (solver reads rhs/d).
+
+Both named children closed without recode. Native nonvint-state + setup-rhs-cur **~0.56 s** already covers CN Solver; the remaining ~0.13 s is spread (gap ~0.03, lastpart-deliver ~0.02, start-of-step deliver ~0.02, matrix-solver ~0.04). Gate: split across many small buckets → **stop**. Not 4-rank MPS.
+
+**Next:** no Dentate nt1 recode without a new wall hypothesis on a **named** small bucket. Do not reopen nonvint / setup / device-ensure / deliver-tq / host-NR SoA / ion SoA / net_buf / NSB / density.

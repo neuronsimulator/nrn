@@ -400,7 +400,7 @@ Protocol: same special for `enable_gpu=0` and `=1`; count **and** sorted times.
 
 | Option | Content |
 |--------|---------|
-| **Default next** | Dentate nt1 `H-dentate-nt1-setup` (setup-rhs ~0.17 of remaining ~1.24× CN) |
+| **Default next** | Dentate nt1 remaining ~1.24× CN is spread; stop recode unless a named small-bucket wall hypothesis |
 | P4 polish | **Closed** — slim JACOB on tip; Phase C parked flat |
 | Multi-rank MPS | **Closed** — `test/external/ensure_cuda_mps.sh` + ctests; Eigen full-present |
 | Eigen v_unused | **Closed** — STATE refresh for functors; kin-native green |

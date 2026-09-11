@@ -398,6 +398,13 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
         recalc_diam();
     }
     auto* const vec_rhs = nt.node_rhs_storage();
+    auto const vec_sav_rhs = _nt->node_sav_rhs_storage();
+#if defined(NRN_ENABLE_GPU)
+    {
+        neuron::gpu::phase_timer::Scope const zero_timer{
+            neuron::gpu::phase_timer::Id::setup_rhs_zero};
+        neuron::gpu::phase_timer::bump(neuron::gpu::phase_timer::Id::setup_rhs_zero);
+#endif
     if (use_sparse13) {
         int i, neqn;
         nrn_thread_error("nrn_rhs use_sparse13");
@@ -426,7 +433,6 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
             vec_rhs[i] = 0.;
         }
     }
-    auto const vec_sav_rhs = _nt->node_sav_rhs_storage();
     if (vec_sav_rhs) {
 #if defined(NRN_ENABLE_GPU)
         if (neuron::gpu::matrix_rhs_d_stays_on_device_for_solve(nt) && _nt->compute_gpu) {
@@ -443,6 +449,13 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
             }
         }
     }
+#if defined(NRN_ENABLE_GPU)
+    }
+    {
+        neuron::gpu::phase_timer::Scope const current_timer{
+            neuron::gpu::phase_timer::Id::setup_rhs_current};
+        neuron::gpu::phase_timer::bump(neuron::gpu::phase_timer::Id::setup_rhs_current);
+#endif
 
     nrn_ba(cache_token, nt, BEFORE_BREAKPOINT);
     /* note that CAP has no current */
@@ -502,6 +515,13 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
 
     activstim_rhs();
     activclamp_rhs();
+#if defined(NRN_ENABLE_GPU)
+    }
+    {
+        neuron::gpu::phase_timer::Scope const axial_timer{
+            neuron::gpu::phase_timer::Id::setup_rhs_axial};
+        neuron::gpu::phase_timer::bump(neuron::gpu::phase_timer::Id::setup_rhs_axial);
+#endif
     /* now the internal axial currents.
     The extracellular mechanism contribution is already done.
         rhs += ai_j*(vi_j - vi)
@@ -541,8 +561,14 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
     }
 #endif
 #if defined(NRN_ENABLE_GPU)
-    if (_nt->compute_gpu && i3 > i2) {
-        nrn_pragma_acc(wait(_nt->stream_id))
+    }
+    {
+        neuron::gpu::phase_timer::Scope const wait_timer{
+            neuron::gpu::phase_timer::Id::setup_rhs_wait};
+        neuron::gpu::phase_timer::bump(neuron::gpu::phase_timer::Id::setup_rhs_wait);
+        if (_nt->compute_gpu && i3 > i2) {
+            nrn_pragma_acc(wait(_nt->stream_id))
+        }
     }
 #endif
 }
