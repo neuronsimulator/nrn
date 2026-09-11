@@ -2,7 +2,7 @@
 
 **Portfolio:** GPU-native (feature)  
 **Tree:** `~/neuron/nrngpu`  
-**Living tip (2026-08-06):** `local/gpu-native` @ H4 + Session B + Session E + multi-rank MPS + Eigen + prcell morph + D→H fence + threshold header + slim JACOB + Traub ACC identity + density through #16 + **Traub product harness/ctest** + dentate SEGV fix. Exclusive ringtest multi-warm ~**1.14–1.17 s**; dentate 4-rank MPS psolve ~**1.1–1.6 s** (product **400**); Traub 1/10 **4474 / 7873** exact via `traub_native::neuron_gpu_native{,_gap}`; Traub multi-warm no-gap ~**10.4 s** (CN ~9.4 ≈ **~1.10×**); gap multi-warm ~**11.6–12.1 s** (CN ~10.9 ≈ **~1.07×**; was ~21 s pre-density re-smoke).  
+**Living tip (2026-09-10):** `local/gpu-native` @ `76ba78245` (master merge + prior H4/B/E/MPS/Eigen/Traub/dentate). Campaign `2026-09-10-tip-psolve-matrix`: 8×4 psolve, identity vs CPU. Dentate nt1 1-rank: CN GPU warm ~**0.53 s** vs native ~**1.80 s** (≈**3.4×**, ✅ 400). Traub no-gap native ~**1.21×** CN GPU; Traub gap native ✅ 7873 / CN 7867. Ring160 nt1 native **faster** than CN GPU on T1000.  
 **Parked explor:** `local/gpu-P4-hotpath-netreceive` + `local/gpu-p4-phase-c-remeasure` (superseded by tip residual #14); `local/gpu-p4-exclusive-residual` (slim JACOB archive, **merged to tip** as hygiene); `local/gpu-p4-setup-rhs-density` (Session E archive, **merged to tip**)  
 **Handoffs:** `GROK-GPU-NATIVE.md`, `AGENTS.md`, `~/neuron/notes/PORTFOLIO.md`  
 **This file:** ordered steps you can re-open without chat memory. Update **Status** at end of each session.
@@ -50,6 +50,7 @@ Immediately after `/new` or when the topic stabilizes:
 | `GPU-P4-multirank` | Multi-rank GPU share / MPS (ops closed on tip) |
 | `GPU-P4-traub` | Traub 1/10 identity + timing (product mix with ringtest/dentate) |
 | `GPU-P4-traub-harness` | Traub product harness/ctest (closed on tip) |
+| `GPU-P4-dentate-nt1` | 1-rank Dentate nt1 native vs CN GPU (~3.4×) |
 | `GPU-hygiene` | full-ctest noise not native product |
 
 **One living session per phase** (or cluster). Prefer **resume** that named session until the phase Status is done. When context is bloated or the agent is lost: **end checklist below → `/new` → paste the phase starting prompt** — do **not** resume a year-old auto-title.
@@ -85,6 +86,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 
 | When | Title (`/rename`) | Session id (short) | Commit / note |
 |------|-------------------|--------------------|---------------|
+| 2026-09-10 | GPU-P4-campaign-2026-09 | 01a08cc9 | Master merge `76ba78245`; psolve matrix closed; H-dentate-1rank-cngpu measured |
 | 2026-07-29 | (plan) | — | Plan created; no code |
 | 2026-07-29 | GPU-P0-triage | — | P0: classify A–D; harness green; CMake NONVINT for G4 native; fornetcon native green |
 | 2026-07-29 | GPU-P0-triage | — | Device nonvint mandatory under native; full NONVINT env removal; fail closed (no host STATE) |
@@ -165,6 +167,7 @@ Fill as you go. UUID is from `/session-info`; title is from `/rename`.
 | 2026-08-04 | GPU-P4-traub-harness | — | **Traub product harness/ctest:** `test/external/traub/run_traub_native.sh` + refs (no-gap **4474**, gap **7873** sorted). Model stays at `~/models/82894` (`NRN_TRAUB_MODEL`); CTest `traub_native::neuron_gpu_native` / `_gap` (skip 77 if model missing; RESOURCE_LOCK gpu). ctest no-gap **Passed ~18 s**; gap **Passed ~19 s**. Docs: `docs/dev/native-gpu-build.rst`. No density reopen. |
 | 2026-08-06 | GPU-P3-dentate-segv | — | **Dentate native SEGV closed:** first psolve after stdinit. (1) ACC CURRENT/STATE `*(inst.celsius)` host pointer → Invalid permissions SEGV; product host-captures `_nrn_celsius`. (2) Eigen Newton STATE async without wait raced next mechs; product `wait(stream)` after Eigen STATE only (Session E exception). 1-rank **400** spikes; `reduced_dentate_native::neuron_gpu_native` green ~4.6 s. |
 | 2026-08-06 | GPU-P4-density-resmoke | — | **Optional density re-smoke (no new residual):** product dentate 4-rank MPS **Passed** (~4.2 s, psolve ~1.06 s). Traub product **4474** / **7873** exact. Multi-warm no-gap native **10.49 / 10.36 s** vs CN **9.47 / 9.38 s** (~**1.10×**). Gap multi-warm native **12.08 / 11.64 s** vs CN **11.03 / 10.85 s** (~**1.07×**; was ~21 s historical — density #1–#16 never re-smoked on gap). Warm phases (no-gap): nonvint ~**2.62 s**, setup-rhs ~**2.13 s**, matrix-solver ~**1.31 s**, deliver-events ~**0.76 s**. No actionable residual without a measured wall hypothesis beyond real STATE/CURRENT math; do not re-open ion SoA / net_buf / NSB. |
+| 2026-09-10 | GPU-P4-campaign-2026-09 | 01a08cc9 | Master merge into `local/gpu-native` (`76ba78245`). Devbench campaign `2026-09-10-tip-psolve-matrix`: 32/32 OK; `cpu_same_cell`. **H-dentate-1rank-cngpu measured:** 1-rank Dentate nt1 CN GPU ~0.53 s vs native ~1.80 s (≈3.4×), ✅ 400. Next: plan/explore that cell. |
 
 ---
 
@@ -837,7 +840,23 @@ Commit locally without push. Update Status/Next before exit.
 
 ## Next (one line — update every session end)
 
-**Next:** Product bars closed (ringtest **688** + dentate **400** + Traub **4474/7873** ctest). Density re-smoke 2026-08-06: no-gap ~**1.10×** CN, gap multi-warm ~**1.07×** CN (was ~2× stale). Remaining wall is real STATE/CURRENT math — new residual only with a measured wall hypothesis. Optional: re-fill dentate GPU cells in perf matrix / other portfolio row. Do not re-open ion SoA / net_buf / NSB pending.
+**Next:** Plan/explore **Dentate nt1** (1-rank ×3 psolve) why CN GPU warm ~**0.53 s** vs native ~**1.80 s** (≈**3.4×**). Evidence: `devbench/campaigns/2026-09-10-tip-psolve-matrix` @ `76ba78245`; `H-dentate-1rank-cngpu`. Not 4-rank MPS. One measured hypothesis at a time; no ion SoA / net_buf / NSB reopen without a new wall number.
+
+### Starting prompt — Dentate nt1 vs CN GPU (next)
+
+```text
+Read ~/neuron/notes/PORTFOLIO.md (GPU-native + Devbench).
+Kind: feature (plan/explore first). Cwd: ~/neuron/nrngpu @ local/gpu-native (76ba78245).
+Campaign: ~/neuron/devbench/campaigns/2026-09-10-tip-psolve-matrix
+Hypothesis: H-dentate-1rank-cngpu — 1-rank Dentate nt1, 3× psolve, identity ✅ 400.
+  CN GPU warm ~0.53 s vs native ~1.80 s (≈3.4×). CPU ~2.18 s. nt4 GPU is slower (not this cell).
+
+This session: Plan how to attribute the 3.4× (phase timers / ACC_TIME / host traffic), then explore.
+Do not mix 4-rank MPS product (~1.2 s). Do not recode density until a measured sub-residual.
+High performance sacred; CoreNEURON is a guide; heap-free weight_index.
+Commit locally, do not push unless asked.
+/rename GPU-P4-dentate-nt1
+```
 
 ### Starting prompt — Traub product harness (closed 2026-08-04; archive)
 
