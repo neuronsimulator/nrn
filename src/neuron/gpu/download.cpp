@@ -143,6 +143,7 @@ void upload_sorted_model_soa_to_device() {
     upload_soa_storage_to_device(neuron::model().node_data());
     neuron::model().apply_to_mechanisms(
         [&](auto& mech_data) { upload_soa_storage_to_device(mech_data); });
+    upload_soa_storage_to_device(neuron::model().weights());
 #endif
 }
 

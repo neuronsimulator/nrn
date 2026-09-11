@@ -107,6 +107,33 @@ TEST_CASE("ensure_on_device shares upload across calls", "[gpu][device_state]") 
 #endif
 }
 
+TEST_CASE("ensure_on_device persists after last sorted token", "[gpu][device_state]") {
+#if !defined(NRN_ENABLE_GPU) || !defined(_OPENACC)
+    SKIP("NRN_ENABLE_GPU with OpenACC required");
+#else
+    if (acc_get_num_devices(acc_device_nvidia) < 1) {
+        SKIP("No NVIDIA GPU available");
+    }
+    acc_init(acc_device_nvidia);
+    acc_set_device_num(0, acc_device_nvidia);
+
+    DeferDeleteScope defer_delete{};
+    neuron::cache::Model cache{};
+    neuron::container::Node::storage nodes{};
+    auto node_token = nodes.issue_frozen_token();
+    {
+        neuron::model_sorted_token sorted{cache, std::move(node_token)};
+        device_token const& token = ensure_on_device(sorted);
+        REQUIRE(token.is_on_device());
+        REQUIRE(detail::is_on_device_for_testing());
+    }
+    // psolve-end: last model_sorted_token gone; ensure cache still owns mirrors.
+    REQUIRE(detail::is_on_device_for_testing());
+    invalidate_device_state();
+    REQUIRE_FALSE(detail::is_on_device_for_testing());
+#endif
+}
+
 TEST_CASE("invalidate_device_state clears GPU mirrors", "[gpu][device_state]") {
 #if !defined(NRN_ENABLE_GPU) || !defined(_OPENACC)
     SKIP("NRN_ENABLE_GPU with OpenACC required");

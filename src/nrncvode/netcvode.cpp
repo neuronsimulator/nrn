@@ -4263,7 +4263,7 @@ void ncs2nrn_integrate(double tstop) {
             neuron::gpu::finalize_psolve_download();
         }
 #endif
-    }  // cache_token destroyed (device teardown after host mirror)
+    }  // cache_token destroyed; GPU mirrors persist until unsorted/invalidate
     nrn_use_busywait(0);  // certainly not
 }
 

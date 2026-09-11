@@ -12,9 +12,12 @@ namespace neuron::gpu {
 /**
  * @brief RAII handle for GPU mirrors of a sorted model layout.
  *
- * Lifetime is tied to model_sorted_token / frozen-token refcounting: GPU teardown
- * runs when the last model_sorted_token for the active layout is destroyed.
- * Multiple device_token instances may share the same upload (refcounted).
+ * Lifetime is tied to the sorted layout, not a single psolve token: GPU
+ * teardown runs on unsorted (`invalidate_device_state`) or when the last
+ * device_token dies with no remaining sorted token. Mirrors persist across
+ * psolve-end model_sorted_token death so the next psolve can skip copyin
+ * (Dentate nt1 first-dt ensure_on_device). Multiple device_token instances
+ * may share the same upload (refcounted).
  */
 class device_token {
   public:
@@ -42,7 +45,8 @@ class device_token {
  * @brief Upload sorted SOA vectors to the device on first GPU step.
  *
  * Returns a device_token referencing the shared upload state for the current
- * sorted layout. Safe to call repeatedly; upload happens at most once per layout.
+ * sorted layout. Safe to call repeatedly; copyin happens at most once per
+ * layout, including across psolve-end token death (until unsorted).
  */
 [[nodiscard]] device_token const& ensure_on_device(model_sorted_token const& sorted);
 

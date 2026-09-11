@@ -1,7 +1,7 @@
 # Dentate nt1 exclusive GPU: attribute native ≈3.4× vs CN GPU
 
 **Portfolio:** GPU-native · **Phase:** `GPU-P4-dentate-nt1`  
-**Tip (campaign):** `local/gpu-native` (host-NR SoA slim + NRB-fast enqueue)  
+**Tip (campaign):** `local/gpu-native` (host-NR SoA slim + NRB-fast + device-ensure persist)  
 **Hypothesis:** `H-dentate-1rank-cngpu` (measured; this file is how to split it)  
 **Campaign (wall + identity):** `~/neuron/devbench/campaigns/2026-09-10-tip-psolve-matrix`
 
@@ -170,8 +170,8 @@ The 292 620 H→D is **`upload_present_mechanism_soa_to_device`** after **host
 | H-dentate-nt1-traffic (full_v / bulk_mech counters) | **closed** those counters; host-NR SoA push closed below |
 | **H-dentate-nt1-host-nr-soa** | **closed (2026-09-10)** — live RANGE + deliver-wave coalesce |
 | H-dentate-nt1-deliver (TQ) | **closed (2026-09-10)** — deliver-tq **0.016 s**; not the 0.81 s |
-| **H-dentate-nt1-device-ensure** | **open** — first dt `ensure_on_device` **0.68 s** each psolve |
-| Uncovered ~0.83 s (gap single-step host loop / OpenACC lock) | **reclassified** as first-step device-ensure (0.68 s of ~0.77 s) |
+| **H-dentate-nt1-device-ensure** | **closed (2026-09-11)** — persist GPU mirrors across psolve-end token death |
+| Uncovered ~0.83 s (gap single-step host loop / OpenACC lock) | **closed** as first-step device-ensure (was 0.68 s copyin) |
 
 ## Recode results (2026-09-10, `H-dentate-nt1-host-nr-soa`)
 
@@ -206,4 +206,18 @@ The hoc `computation time at t=1 ms` (~0.75 s) is the first **1 ms** (40 dt) and
 
 Product still skips generated `pnt_receive` TLS for buffered NET_RECEIVE (heap-free `weight_index` → NRB). WATCH/BBCORE stay on host-NR. Not density. Not 4-rank MPS.
 
-**Next session:** `H-dentate-nt1-device-ensure` — first-step `ensure_on_device` / `device_token` upload **0.68 s** each psolve (sorted-token teardown at psolve end). Not deliver-tq. Not density.
+## Recode (2026-09-11, `H-dentate-nt1-device-ensure`)
+
+Last `model_sorted_token` at psolve end no longer `acc_delete`s GPU mirrors. Teardown only on unsorted (`invalidate_device_state`) or last `device_token` with no remaining sorted token. `ensure_on_device` cache keeps the upload; next psolve `refresh_device_from_host_if_on_device` does `update device` of SoA (host INITIAL after stdinit). Cold first psolve still copyin (~0.9 s first dt).
+
+| | Before (warm) | After (warm) |
+|--|--------|--------|
+| Product psolve | 1.56–1.65 s | **0.679–0.681 s** |
+| vs CN GPU 0.53 s | ≈3.0× | ≈**1.28×** |
+| device-ensure | 0.68 s | **0.00003 s** |
+| t=1 hoc ms | ~0.75 s | **0.072 s** |
+| Identity | 400 | **400** (CPU multiset) |
+
+Timer (warm i=2): lastpart-nonvint 0.36, setup-rhs 0.18, deliver-tq 0.016, NRB 0.007, gap 0.032. STATE/CURRENT kernels already ≈ CN (L2). No remaining ≥ ~0.2 s recode without a new wall hypothesis. Not 4-rank MPS.
+
+**Next:** remaining ~1.28× is real kernel/launch (nonvint + setup-rhs). Do not reopen device-ensure / deliver-tq / ion SoA / net_buf / NSB.

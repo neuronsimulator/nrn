@@ -64,25 +64,23 @@ class DeviceStateRegistry {
     }
 
     void on_sorted_token_destroyed() {
-        std::shared_ptr<ModelDeviceState> state;
-        {
-            std::lock_guard lock{mut_};
-            state = active_;
-            if (!state) {
-                return;
-            }
-            auto const remaining = --state->sorted_token_refs;
-            if (remaining > 0) {
-                return;
-            }
-            cached_ensure_token_ = nullptr;
-            cached_ensure_storage_.reset();
-            // ensure_on_device caches a device_token in cached_ensure_storage_; reset()
-            // above destroys it. Any remaining count is stale bookkeeping.
-            state->device_token_refs = 0;
-            state->teardown();
-            reset_active_locked();
+        std::lock_guard lock{mut_};
+        if (!active_) {
+            return;
         }
+        auto const remaining = --active_->sorted_token_refs;
+        if (remaining > 0) {
+            return;
+        }
+        // Layout still valid: keep GPU mirrors while a device_token owns them
+        // (ensure_on_device cache). Tearing down here forced a full copyin on
+        // every psolve first dt (~0.68 s Dentate nt1). Unsorted still calls
+        // invalidate_device_state(). No device_token left → nothing to persist.
+        if (active_->device_token_refs > 0) {
+            return;
+        }
+        active_->teardown();
+        reset_active_locked();
     }
 
     void on_device_token_created(std::shared_ptr<ModelDeviceState> const& state) {
