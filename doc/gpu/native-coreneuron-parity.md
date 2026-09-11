@@ -849,7 +849,7 @@ Commit locally without push. Update Status/Next before exit.
 
 ## Next (one line — update every session end)
 
-**Next:** Dentate nt1 exclusive remaining ~**1.28×** CN (warm **0.68 s** vs **0.53 s**). lastpart-nonvint 0.36 + setup-rhs 0.18; kernels ≈ CN. No ≥ ~0.2 s recode without a new wall hypothesis. Not device-ensure / deliver-tq / density / ion SoA / net_buf / NSB. Not 4-rank MPS.
+**Next:** Traub gap native over-spike after GPU-mirror persist (`H-traub-gap-persist`): **7991 vs CPU 7873** (old 3× `prun` also 7978 on `75d218a3b`). Dentate nt1 exclusive remaining ~**1.24×** CN GPU (setup+3-warm: native 0.657–0.704 vs Solver 0.530–0.630). Not 4-rank MPS.
 
 ### Starting prompt — Dentate nt1 first-step device-ensure (closed 2026-09-11; archive)
 
