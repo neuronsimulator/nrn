@@ -1,0 +1,44 @@
+name: External modelDB CI
+
+concurrency:
+  # Don't cancel on master, creating a PR when a push workflow is already going will cancel the push workflow in favour of the PR workflow
+  group: ${{ github.workflow }}-${{ github.event.label.name }}-${{ github.ref == 'refs/heads/master' && github.run_id || github.event.number && github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+on:
+  pull_request:
+    types: [ labeled ]
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  get-last-azure-url:
+    name: 'Get Azure URL'
+    uses: ./.github/workflows/get-azure-url-template.yml
+    if: ${{ github.event.label.name == 'nrn-modeldb-ci-nightly' }}
+    with:
+      label: ${{ github.event.label.name }}
+      ci_name: 'NEURON ModelDB CI'
+      pr_url: ${{ github.event.pull_request.html_url }}
+
+  nrn-modeldb-ci:
+    needs: get-last-azure-url
+    uses: neuronsimulator/nrn-modeldb-ci/.github/workflows/nrn-modeldb-ci.yaml@master
+    with:
+      neuron_v1: ${{needs.get-last-azure-url.outputs.azure_drop_url}}
+      neuron_v2: neuron-nightly
+
+  pr-update:
+    name: 'Publish ModelDB CI report'
+    needs:
+      - nrn-modeldb-ci
+      - get-last-azure-url
+    runs-on: ubuntu-latest
+    steps:
+    - run: |
+        gh pr comment $PR_URL --body "NEURON ModelDB CI: ${pr_azure_sha} -> download reports [from here](${ARTIFACTS_URL})"
+      name: Post NEURON ModelDB CI Artifact URL
+      if: always() || cancelled()
+      env:
+        ARTIFACTS_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        pr_azure_sha: ${{ needs.get-last-azure-url.outputs.pr_azure_sha }}
