@@ -23,9 +23,8 @@ add_library(rxdmath SHARED ${CMAKE_CURRENT_SOURCE_DIR}/rxdmath.cpp)
 install(TARGETS rxdmath DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
 
 # =============================================================================
-# nrnpython libraries (one lib per python)
+# nrnpython libraries (one limited-API libnrnpython.abi3 when dynamic)
 # =============================================================================
-set(nrnpython_lib_list)
 
 set(NRNPYTHON_FILES_LIST
     nrnpython.cpp
@@ -57,69 +56,61 @@ else()
   list(APPEND INCLUDE_DIRS ../ivos)
 endif()
 
-# user has selected dynamic python support (could be multiple versions)
+# Dynamic Python: compile one limited-API libnrnpython.abi3 + hoc.abi3 against the default
+# Python. Extra NRN_PYTHON_DYNAMIC versions are for tests / nrniv -python search, not extra
+# compiles. libnrniv does not link libpython; nrniv dlopens it then this library.
 if(NRN_ENABLE_PYTHON_DYNAMIC)
-  foreach(val RANGE ${NRN_PYTHON_ITERATION_LIMIT})
+  make_nanobind_target(nanobind_py ${NRN_DEFAULT_PYTHON_INCLUDES} STABLE_ABI)
+  add_library(nrnpython SHARED ${NRNPYTHON_FILES_LIST})
+  add_dependencies(nrnpython generated_source_files nrniv_lib)
+  target_include_directories(nrnpython BEFORE PUBLIC ${NRN_DEFAULT_PYTHON_INCLUDES} ${INCLUDE_DIRS})
+  target_compile_definitions(nrnpython PUBLIC Py_LIMITED_API=0x030C0000)
+  target_link_libraries(nrnpython PUBLIC nrniv_lib)
+  target_link_libraries(nrnpython PRIVATE fmt::fmt ${Readline_LIBRARY} nanobind_py)
+  if(NRN_LINK_AGAINST_PYTHON)
+    target_link_libraries(nrnpython PUBLIC ${NRN_DEFAULT_PYTHON_LIBRARIES})
+  endif()
+  set_target_properties(nrnpython PROPERTIES OUTPUT_NAME "nrnpython.abi3")
+  install(TARGETS nrnpython DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
 
-    # the NEURON Python library (with nanobind)
-    list(GET NRN_PYTHON_VERSIONS ${val} pyver)
-    list(GET NRN_PYTHON_INCLUDES ${val} pyinc)
-    list(GET NRN_PYTHON_LIBRARIES ${val} pylib)
-    set(nanobind_target "nanobind_py${pyver}")
-    make_nanobind_target(${nanobind_target} ${pyinc} STABLE_ABI)
-    add_library(nrnpython${pyver} SHARED ${NRNPYTHON_FILES_LIST})
-    target_include_directories(nrnpython${pyver} BEFORE PUBLIC ${pyinc} ${INCLUDE_DIRS})
-    target_compile_definitions(nrnpython${pyver} PUBLIC Py_LIMITED_API=0x030C0000)
-    target_link_libraries(nrnpython${pyver} PUBLIC nrniv_lib)
-    target_link_libraries(nrnpython${pyver} PRIVATE fmt::fmt ${Readline_LIBRARY} ${nanobind_target})
-    if(NRN_LINK_AGAINST_PYTHON)
-      target_link_libraries(nrnpython${pyver} PUBLIC ${pylib})
-    endif()
-    add_dependencies(nrnpython${pyver} nrniv_lib)
-    list(APPEND nrnpython_lib_list nrnpython${pyver})
-    install(TARGETS nrnpython${pyver} DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
+  set(hoc_module_name hoc_module)
+  add_nrn_python_library(
+    hoc
+    TARGET
+    ${hoc_module_name}
+    PYTHON_VERSION
+    ${NRN_DEFAULT_PYTHON_VERSION}
+    STABLE_ABI
+    LANGUAGE
+    "CXX"
+    SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp
+    INCLUDES
+    ${PROJECT_SOURCE_DIR}/src
+    ${PROJECT_SOURCE_DIR}/src/oc
+    ${PROJECT_BINARY_DIR}/src/oc
+    ${PROJECT_BINARY_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    # for nrnconf.h
+    ${CMAKE_CURRENT_BINARY_DIR}
+    ${PROJECT_BINARY_DIR}/nrnmpi
+    ${NRN_DEFAULT_PYTHON_INCLUDES}
+    LIBRARIES
+    nrniv_lib
+    rxdmath
+    nrnpython
+    INSTALL_REL_RPATH
+    ${libraries_rpath}
+    OUTPUT_DIR
+    ${PROJECT_BINARY_DIR}/lib/python/neuron)
 
-    # the hoc Python library
-    set(hoc_module_name hoc${pyver})
-    add_nrn_python_library(
-      hoc
-      TARGET
-      ${hoc_module_name}
-      PYTHON_VERSION
-      ${pyver}
-      STABLE_ABI
-      LANGUAGE
-      "CXX"
-      SOURCES
-      ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp
-      INCLUDES
-      ${PROJECT_SOURCE_DIR}/src
-      ${PROJECT_SOURCE_DIR}/src/oc
-      ${PROJECT_BINARY_DIR}/src/oc
-      ${PROJECT_BINARY_DIR}/include
-      ${CMAKE_CURRENT_SOURCE_DIR}
-      # for nrnconf.h
-      ${CMAKE_CURRENT_BINARY_DIR}
-      ${PROJECT_BINARY_DIR}/nrnmpi
-      ${pyinc}
-      LIBRARIES
-      nrniv_lib
-      rxdmath
-      nrnpython${pyver}
-      INSTALL_REL_RPATH
-      ${libraries_rpath}
-      OUTPUT_DIR
-      ${PROJECT_BINARY_DIR}/lib/python/neuron)
+  if(NRN_LINK_AGAINST_PYTHON)
+    target_link_libraries(${hoc_module_name} PUBLIC ${NRN_DEFAULT_PYTHON_LIBRARIES})
+  endif()
 
-    if(NRN_LINK_AGAINST_PYTHON)
-      target_link_libraries(${hoc_module_name} PUBLIC ${pylib})
-    endif()
+  add_dependencies(${hoc_module_name} nrniv_lib rxdmath)
 
-    add_dependencies(${hoc_module_name} nrniv_lib rxdmath)
-
-    install(TARGETS ${hoc_module_name} DESTINATION ${NRN_INSTALL_PYTHON_PREFIX})
-
-  endforeach(val)
+  install(TARGETS ${hoc_module_name} DESTINATION ${NRN_INSTALL_PYTHON_PREFIX})
 else()
   # libnrnpython
   add_library(nrnpython OBJECT ${NRNPYTHON_FILES_LIST})

@@ -107,22 +107,24 @@ import weakref
 
 embedded = "hoc" in sys.modules
 
-# First, check that the compiled extension (neuron.hoc) was built for this version of
-# Python. If not, fail early and helpfully.
+# Importable extensions use the CPython 3.12 GIL limited API (abi3). Reject older
+# interpreters and free-threaded builds before loading native code.
 from ._config_params import (
-    supported_python_versions,
     mechanism_prefix,
     mechanism_suffix,
 )
 
 current_version = "{}.{}".format(*sys.version_info[:2])
-if current_version not in supported_python_versions:
-    message = (
-        "Python {} is not supported by this NEURON installation (supported: {}). Either re-build "
-        "NEURON with support for this version, use a supported version of Python, or try using "
-        "nrniv -python so that NEURON can suggest a compatible version for you."
-    ).format(current_version, " ".join(supported_python_versions))
-    raise ImportError(message)
+if sys.version_info < (3, 12):
+    raise ImportError(
+        "Python {} is not supported by this NEURON installation (requires CPython 3.12 "
+        "or later with the GIL).".format(current_version)
+    )
+if hasattr(sys, "_is_gil_enabled") and not sys._is_gil_enabled():
+    raise ImportError(
+        "This NEURON installation does not support free-threaded Python. "
+        "Use a GIL-enabled CPython 3.12 or later."
+    )
 
 try:  # needed since python 3.8 on windows if python launched
     # do this here as NEURONHOME may be changed below
@@ -551,7 +553,7 @@ nt_dlls = []
 def nrn_dll_sym_nt(name, type):
     """return the specified object from the NEURON dlls.
     helper for nrn_dll_sym(name, type). Try to find the name in either
-    nrniv.dll or libnrnpython1013.dll
+    libnrniv.dll or libnrnpython.abi3.dll
     """
     global nt_dlls
     import ctypes
@@ -561,7 +563,7 @@ def nrn_dll_sym_nt(name, type):
         path = os.path.join(n.neuronhome().replace("/", "\\"), b)
         for dllname in [
             "libnrniv.dll",
-            "libnrnpython{}.{}.dll".format(*sys.version_info[:2]),
+            "libnrnpython.abi3.dll",
         ]:
             p = os.path.join(path, dllname)
             try:

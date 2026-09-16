@@ -1,4 +1,4 @@
-# Needed in pure Python so that neuron/__init__.py can give a good error...
+# Python versions this build was configured with. Import accepts any GIL CPython 3.12+.
 supported_python_versions = [@NRN_DYNAMIC_PYTHON_LIST_OF_VERSION_STRINGS@]
 # Needed so we can figure out the prefix and suffix of nrnmech at runtime
 mechanism_prefix = "@CMAKE_SHARED_LIBRARY_PREFIX@"

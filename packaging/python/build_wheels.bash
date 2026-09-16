@@ -9,7 +9,7 @@ set -eux
 #  - cmake (>=3.15.0)
 #  - flex
 #  - bison
-#  - python >= 3.8
+#  - python >= 3.12
 #  - cython
 #  - MPI
 #  - X11

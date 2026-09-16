@@ -12,8 +12,8 @@ on:
         default: 'x.y.z'
         required: true
       python_versions:
-        description: "Comma-separated list of supported Python versions"
-        default: "3.10,3.11,3.12,3.13,3.14"
+        description: "Comma-separated list of Python versions to build with (abi3 wheel; 3.12 is enough)"
+        default: "3.12"
         required: true
         type: string
       os:
@@ -56,7 +56,7 @@ jobs:
       - id: set-matrix
         run: |
           OS_INPUT="${{ github.event.inputs.os || 'macos-15-intel,macos-14,ubuntu-24.04,ubuntu-24.04-arm' }}"
-          PY_INPUT="${{ github.event.inputs.python_versions || '3.10,3.11,3.12,3.13,3.14' }}"
+          PY_INPUT="${{ github.event.inputs.python_versions || '3.12' }}"
           OS_JSON=$(echo "$OS_INPUT" | jq -R 'split(",")')
           PY_JSON=$(echo "$PY_INPUT" | jq -R 'split(",")')
           echo "matrix=$(jq -c -n --argjson os "$OS_JSON" --argjson py "$PY_JSON" '{os: $os, python_version: $py}')" >> "$GITHUB_OUTPUT"
@@ -312,7 +312,7 @@ jobs:
       - name: Rename Windows installer
         id: rename
         run: |
-          # convert "3.10,3.11..." into "310-311-..."
+          # convert "3.12,3.13..." into "312-313-..."
           py_version_string="$(echo "${{ github.event.inputs.python_versions }}" | sed 's/\.//g; s/,/-/g')"
           win_installer_name="nrn-${{ env.REL_TAG }}.w64-mingw-py-${py_version_string}-setup.exe"
           echo "win_installer_name=${win_installer_name}" >> "$GITHUB_OUTPUT"

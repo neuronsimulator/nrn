@@ -214,7 +214,7 @@ In order to build NEURON from source, the following packages must be available:
 
 The following packages are optional (see build options):
 
-- Python >=3.10 (for Python interface)
+- Python >=3.12 (for Python interface; GIL-enabled CPython)
 - Cython (for RXD)
 - MPI (for parallel)
 - X11 (Linux) or XQuartz (MacOS) (for GUI)

@@ -8,8 +8,13 @@ on:
         required: true
         type: string
       python_version:
-        description: The Python version for which to build the wheel
+        description: The Python version used to build the abi3 wheel (3.12)
         required: true
+        type: string
+      test_python_versions:
+        description: Comma-separated GIL Python versions to test the abi3 wheel with
+        required: false
+        default: '3.12,3.13,3.14'
         type: string
       commit:
         description: The commit of NEURON for which to build the wheel
@@ -141,10 +146,20 @@ jobs:
           name: wheels-${{ inputs.python_version }}-${{ inputs.platform }}
           path: wheelhouse/*.whl
 
-      - name: Setup Python ${{ inputs.python_version }} for testing
+      - name: Setup Python 3.12 for testing
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ inputs.python_version }}
+          python-version: '3.12'
+
+      - name: Setup Python 3.13 for testing
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Setup Python 3.14 for testing
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
 
       - name: Install test dependencies
         if: runner.os == 'Linux'
@@ -171,7 +186,11 @@ jobs:
           fi
           echo CMAKE_GENERATOR=Ninja >> $GITHUB_ENV
 
-      - name: Test wheel with ${{ inputs.python_version }}
+      - name: Test abi3 wheel
         run: |
-          minor_version="$(python${{ inputs.python_version }} -c 'import sys;print(sys.version_info.minor)')"
-          bash packaging/python/test_wheels.sh $(command -v python${{ inputs.python_version }}) wheelhouse/*cp3${minor_version}*.whl
+          IFS=',' read -ra versions <<< "${{ inputs.test_python_versions }}"
+          wheel="$(ls -t wheelhouse/*.whl | head -n 1)"
+          for ver in "${versions[@]}"; do
+            ver="${ver// /}"
+            bash packaging/python/test_wheels.sh "$(command -v python${ver})" "${wheel}"
+          done
