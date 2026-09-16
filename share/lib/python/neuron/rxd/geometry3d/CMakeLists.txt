@@ -9,6 +9,8 @@ foreach(source ${rxd_sources})
     ${CMAKE_CURRENT_BINARY_DIR}/${source}.cpp
     LANGUAGE
     "C"
+    LANGUAGE_LEVEL
+    3
     PYTHON_EXECUTABLE
     ${NRN_DEFAULT_PYTHON_EXECUTABLE})
 endforeach(source)
@@ -48,6 +50,7 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
         ${source}${pyver}
         PYTHON_VERSION
         ${pyver}
+        STABLE_ABI
         LANGUAGE
         "C"
         SOURCES
@@ -86,6 +89,7 @@ else(NRN_ENABLE_PYTHON_DYNAMIC)
       ${source}
       PYTHON_VERSION
       ${NRN_DEFAULT_PYTHON_VERSION}
+      STABLE_ABI
       LANGUAGE
       "C"
       SOURCES
