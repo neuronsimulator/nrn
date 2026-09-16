@@ -13,6 +13,7 @@
 # [OUTPUT path/to/output]
 # [LANGUAGE language]
 # [PYTHON_EXECUTABLE path/to/executable]
+# [LANGUAGE_LEVEL n]
 # )
 #
 # Convert a pyx file into a c or cpp file using Cython.
@@ -22,11 +23,12 @@
 # LANGUAGE          - the language used for the output file
 # PYTHON_EXECUTABLE - (optional) the full path to the Python executable used for launching
 #                     Cython. If not specified, defaults to the value of `CYTHON_EXECUTABLE`.
+# LANGUAGE_LEVEL    - (optional) Cython language_level directive (e.g. 3).
 #
 # Note that `find_package(Cython)` must be called before invoking this function!
 # ~~~
 function(cythonize input_file)
-  cmake_parse_arguments(ARG "" "LANGUAGE;PYTHON_EXECUTABLE;OUTPUT" "" ${ARGN})
+  cmake_parse_arguments(ARG "" "LANGUAGE;PYTHON_EXECUTABLE;OUTPUT;LANGUAGE_LEVEL" "" ${ARGN})
   string(TOUPPER "${ARG_LANGUAGE}" ARG_LANGUAGE)
   set(supported_languages "C" "CXX")
   if(NOT ARG_LANGUAGE IN_LIST supported_languages)
@@ -44,6 +46,9 @@ function(cythonize input_file)
     set(command ${ARG_PYTHON_EXECUTABLE} -m cython --cplus)
   elseif(ARG_LANGUAGE STREQUAL "C")
     set(command ${ARG_PYTHON_EXECUTABLE} -m cython)
+  endif()
+  if(ARG_LANGUAGE_LEVEL)
+    list(APPEND command --directive "language_level=${ARG_LANGUAGE_LEVEL}")
   endif()
   add_custom_command(
     OUTPUT ${ARG_OUTPUT}
@@ -71,6 +76,8 @@ endfunction()
 # NO_EXTENSION      - (optional, default unset) in case one wants to create a
 #                     library without any platform-specific naming (so `hoc.so` instead of
 #                     `hoc.cpython39-darwin.so` or similar). Note that no prefix is added.
+# STABLE_ABI        - (optional) compile with Py_LIMITED_API=0x030C0000 and name
+#                     the module `<name>.abi3` (plus the platform suffix).
 # TARGET            - (optional, defaults to <name>) the name of the CMake
 #                     target. Can be anything, but may not conflict with existing targets.
 # PYTHON_VERSION    - the version of Python to create the library for (for example, 3.10).
@@ -83,7 +90,7 @@ endfunction()
 # BUILD_REL_RPATH   - (optional) the list of RPATHs to use when building the target.
 # ~~~
 function(add_nrn_python_library name)
-  set(options NO_EXTENSION)
+  set(options NO_EXTENSION STABLE_ABI)
   set(oneValueArgs TARGET PYTHON_VERSION LANGUAGE OUTPUT_DIR)
   set(multiValueArgs SOURCES INCLUDES LIBRARIES INSTALL_REL_RPATH BUILD_REL_RPATH)
   cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
@@ -172,7 +179,12 @@ function(add_nrn_python_library name)
   # set library name and output dir
   string(REPLACE "." "" pyver_nodot "${ARG_PYTHON_VERSION}")
 
-  if(ARG_NO_EXTENSION)
+  if(ARG_STABLE_ABI)
+    # CPython 3.12+ GIL limited API. Do not NEEDED libpython; the host interpreter provides
+    # stable-ABI symbols.
+    target_compile_definitions(${ARG_TARGET} PRIVATE Py_LIMITED_API=0x030C0000 CYTHON_LIMITED_API=1)
+    set(output_name "${name}.abi3")
+  elseif(ARG_NO_EXTENSION)
     set(output_name "${name}")
   else()
     set(output_name "${name}.${python_interp}${pyver_nodot}-${os_string}")

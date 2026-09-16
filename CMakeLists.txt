@@ -417,7 +417,9 @@ if(NRN_ENABLE_RX3D)
   if(NOT NRN_ENABLE_PYTHON)
     message(SEND_ERROR "NRN_ENABLE_RX3D requires NRN_ENABLE_PYTHON feature.")
   else()
-    find_package(Cython REQUIRED)
+    # RxD geometry3d uses the CPython 3.12 limited API; Cython 3.0 cannot emit that C. 3.1 is the
+    # first release that can.
+    find_package(Cython 3.1 REQUIRED)
     nrn_find_python_module(MODULE numpy REQUIRED)
   endif()
 endif()

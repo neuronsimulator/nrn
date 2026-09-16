@@ -87,6 +87,7 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
       ${hoc_module_name}
       PYTHON_VERSION
       ${pyver}
+      STABLE_ABI
       LANGUAGE
       "CXX"
       SOURCES
@@ -113,10 +114,6 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
     if(NRN_LINK_AGAINST_PYTHON)
       target_link_libraries(${hoc_module_name} PUBLIC ${pylib})
     endif()
-
-    target_compile_definitions(${hoc_module_name} PRIVATE Py_LIMITED_API=0x030C0000)
-    set_target_properties(${hoc_module_name} PROPERTIES OUTPUT_NAME "hoc.abi3"
-                                                        SUFFIX "${CMAKE_SHARED_MODULE_SUFFIX}")
 
     add_dependencies(${hoc_module_name} nrniv_lib rxdmath)
 
@@ -151,6 +148,7 @@ else()
     ${hoc_module_name}
     PYTHON_VERSION
     ${NRN_DEFAULT_PYTHON_VERSION}
+    STABLE_ABI
     LANGUAGE
     "CXX"
     SOURCES
@@ -174,9 +172,6 @@ else()
     ${PROJECT_BINARY_DIR}/lib/python/neuron)
 
   add_dependencies(${hoc_module_name} nrniv_lib rxdmath)
-  target_compile_definitions(${hoc_module_name} PRIVATE Py_LIMITED_API=0x030C0000)
-  set_target_properties(${hoc_module_name} PROPERTIES OUTPUT_NAME "hoc.abi3"
-                                                      SUFFIX "${CMAKE_SHARED_MODULE_SUFFIX}")
 
   install(TARGETS ${hoc_module_name} DESTINATION ${NRN_INSTALL_PYTHON_PREFIX})
 
