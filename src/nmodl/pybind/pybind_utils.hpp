@@ -7,101 +7,115 @@
 
 #pragma once
 
+#include <nanobind/nanobind.h>
+#include <nanobind/stl/string.h>
+
+#include <cstring>
+#include <istream>
 #include <memory>
-#include <pybind11/iostream.h>
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
+#include <ostream>
+#include <streambuf>
 
+namespace nb = nanobind;
 
-namespace pybind11 {
-namespace detail {
+namespace nmodl {
+namespace pybind_util {
 
-template <typename StringType>
-struct CopyFromPython {
-    void operator()(char* start, size_t n, StringType data) {
-        char* buffer;
-        ssize_t length;
-        if (PYBIND11_BYTES_AS_STRING_AND_SIZE(data.ptr(), &buffer, &length))
-            pybind11_fail("Unable to extract string contents! (invalid type)");
-        std::memcpy(start, buffer, n);
+template <typename StringType> class pythonibuf : public std::streambuf {
+private:
+  using traits_type = std::streambuf::traits_type;
+
+  const static std::size_t put_back_ = 1;
+  const static std::size_t buf_sz = 1024 + put_back_;
+  char d_buffer[buf_sz];
+
+  nb::object pyistream;
+  nb::object pyread;
+
+  pythonibuf(const pythonibuf &) = delete;
+  pythonibuf &operator=(const pythonibuf &) = delete;
+
+  int_type underflow() {
+    if (gptr() < egptr()) {
+      return traits_type::to_int_type(*gptr());
     }
+
+    char *base = d_buffer;
+    char *start = base;
+    if (eback() == base) {
+      std::memmove(base, egptr() - put_back_, put_back_);
+      start += put_back_;
+    }
+    nb::object data = pyread(buf_sz - (start - base));
+    if (data.is_none()) {
+      return traits_type::eof();
+    }
+    if (nb::isinstance<nb::str>(data)) {
+      data = data.attr("encode")("utf-8");
+    }
+    char *buffer = nullptr;
+    Py_ssize_t length = 0;
+    if (PyBytes_AsStringAndSize(data.ptr(), &buffer, &length) < 0) {
+      throw nb::python_error();
+    }
+    if (length == 0) {
+      return traits_type::eof();
+    }
+    std::memcpy(start, buffer, static_cast<size_t>(length));
+    setg(base, start, start + length);
+    return traits_type::to_int_type(*gptr());
+  }
+
+public:
+  pythonibuf(nb::object pyistream)
+      : pyistream(std::move(pyistream)), pyread(this->pyistream.attr("read")) {
+    char *end = d_buffer + buf_sz;
+    setg(end, end, end);
+  }
 };
 
+class pythonobuf : public std::streambuf {
+private:
+  nb::object pywrite;
 
-template <>
-struct CopyFromPython<str> {
-    void operator()(char* start, size_t n, str data) {
-        if (PyUnicode_Check(data.ptr())) {
-            data = reinterpret_steal<object>(PyUnicode_AsUTF8String(data.ptr()));
-            if (!data)
-                pybind11_fail("Unable to extract string contents! (encoding issue)");
-        }
-        CopyFromPython<bytes>()(start, n, data);
+  pythonobuf(const pythonobuf &) = delete;
+  pythonobuf &operator=(const pythonobuf &) = delete;
+
+  std::streamsize xsputn(const char *s, std::streamsize n) override {
+    pywrite(nb::str(s, static_cast<size_t>(n)));
+    return n;
+  }
+
+  int_type overflow(int_type ch) override {
+    if (traits_type::eq_int_type(ch, traits_type::eof())) {
+      return traits_type::not_eof(ch);
     }
+    char c = traits_type::to_char_type(ch);
+    pywrite(nb::str(&c, size_t{1}));
+    return ch;
+  }
+
+public:
+  explicit pythonobuf(nb::object pyostream)
+      : pywrite(pyostream.attr("write")) {}
 };
 
-
-template <typename StringType>
-class pythonibuf: public std::streambuf {
-  private:
-    using traits_type = std::streambuf::traits_type;
-
-    const static std::size_t put_back_ = 1;
-    const static std::size_t buf_sz = 1024 + put_back_;
-    char d_buffer[buf_sz];
-
-    object pyistream;
-    object pyread;
-
-    // copy ctor and assignment not implemented;
-    // copying not allowed
-    pythonibuf(const pythonibuf&);
-    pythonibuf& operator=(const pythonibuf&);
-
-    int_type underflow() {
-        if (gptr() < egptr()) {  // buffer not exhausted
-            return traits_type::to_int_type(*gptr());
-        }
-
-        char* base = d_buffer;
-        char* start = base;
-        if (eback() == base) {
-            std::memmove(base, egptr() - put_back_, put_back_);
-            start += put_back_;
-        }
-        StringType data = pyread(buf_sz - (start - base));
-        size_t n = len(data);
-        if (n == 0) {
-            return traits_type::eof();
-        }
-        CopyFromPython<StringType>()(start, n, data);
-        setg(base, start, start + n);
-        return traits_type::to_int_type(*gptr());
-    }
-
-
-  public:
-    pythonibuf(object pyistream)
-        : pyistream(pyistream)
-        , pyread(pyistream.attr("read")) {
-        char* end = d_buffer + buf_sz;
-        setg(end, end, end);
-    }
-};
-}  // namespace detail
-}  // namespace pybind11
+} // namespace pybind_util
+} // namespace nmodl
 
 class VisitorOStreamResources {
-  protected:
-    std::unique_ptr<pybind11::detail::pythonbuf> buf;
-    std::unique_ptr<std::ostream> ostream;
+protected:
+  std::unique_ptr<nmodl::pybind_util::pythonobuf> buf;
+  std::unique_ptr<std::ostream> ostream;
 
-  public:
-    VisitorOStreamResources() = default;
-    VisitorOStreamResources(pybind11::object object)
-        : buf(new pybind11::detail::pythonbuf(object))
-        , ostream(new std::ostream(buf.get())) {}
-    void flush() {
-        ostream->flush();
+public:
+  VisitorOStreamResources() = default;
+  VisitorOStreamResources(nb::object object)
+      : buf(new nmodl::pybind_util::pythonobuf(std::move(object))),
+        ostream(new std::ostream(buf.get())) {}
+  void flush() {
+    if (ostream) {
+      ostream->flush();
     }
+  }
 };

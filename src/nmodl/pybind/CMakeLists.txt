@@ -73,18 +73,35 @@ endif()
 
 # avoid _nmodl target if python bindings are disabled
 if(NMODL_ENABLE_PYTHON_BINDINGS)
-  # ~~~
-  # Note that LTO causes link time errors with GCC 8. To avoid this, we disable LTO
-  # for pybind using NO_EXTRAS. See #266.
-  # ~~~
-  pybind11_add_module(
-    _nmodl NO_EXTRAS ${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/ast/ast_common.hpp
+  # nanobind STABLE_ABI (CPython 3.12+ GIL). Separate from hoc's non-stable
+  # nanobind; the two ABIs are isolated in one process.
+  make_nanobind_target(nanobind_nmodl "${PYTHON_INCLUDE_DIRS}" STABLE_ABI)
+  add_library(
+    _nmodl MODULE ${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/ast/ast_common.hpp
     ${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/pybind/pybind_utils.hpp
     ${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/pybind/pynmodl.cpp ${PYBIND_GENERATED_SOURCES})
   add_dependencies(_nmodl lexer pyastgen util)
-  target_link_libraries(_nmodl PRIVATE printer symtab visitor pyembed)
-  set_target_properties(_nmodl PROPERTIES LIBRARY_OUTPUT_DIRECTORY_DEBUG
-                                          ${NMODL_PROJECT_PURELIB_BINARY_DIR})
+  target_link_libraries(_nmodl PRIVATE printer symtab visitor nanobind_nmodl)
+  target_include_directories(_nmodl PRIVATE ${PYTHON_INCLUDE_DIRS} ${CMAKE_CURRENT_BINARY_DIR})
+  set_target_properties(
+    _nmodl
+    PROPERTIES PREFIX ""
+               OUTPUT_NAME "_nmodl"
+               SUFFIX ".abi3${CMAKE_SHARED_MODULE_SUFFIX}"
+               CXX_VISIBILITY_PRESET "hidden"
+               VISIBILITY_INLINES_HIDDEN ON
+               LIBRARY_OUTPUT_DIRECTORY ${NMODL_PROJECT_PURELIB_BINARY_DIR}
+               LIBRARY_OUTPUT_DIRECTORY_DEBUG ${NMODL_PROJECT_PURELIB_BINARY_DIR}
+               RUNTIME_OUTPUT_DIRECTORY ${NMODL_PROJECT_PURELIB_BINARY_DIR}
+               RUNTIME_OUTPUT_DIRECTORY_DEBUG ${NMODL_PROJECT_PURELIB_BINARY_DIR})
+  if(APPLE)
+    target_link_options(_nmodl PRIVATE "-Wl,-undefined,dynamic_lookup")
+  elseif(UNIX)
+    target_link_options(_nmodl PRIVATE "-Wl,--unresolved-symbols=ignore-all")
+  elseif(WIN32)
+    # Limited API: python3.lib when CMake provides it; otherwise the versioned import lib.
+    target_link_libraries(_nmodl PRIVATE ${PYTHON_LIBRARIES})
+  endif()
 
   if(MSVC)
     target_compile_options(_nmodl PRIVATE /bigobj)

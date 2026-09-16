@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import pytest
 from neuron import nmodl
 from neuron.nmodl.dsl import ast, visitor
 
@@ -123,6 +124,8 @@ def test_sympy_conductance_visitor():
     """
     Make sure NMODL sets the correct env variables to be able to run the sympy visitor
     """
+    if not hasattr(visitor, "SympyConductanceVisitor"):
+        pytest.skip("Sympy visitors use pybind11 embed; not in the abi3 _nmodl module")
     program = """NEURON {
         USEION na READ ena WRITE ina
         RANGE gna

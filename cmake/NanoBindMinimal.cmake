@@ -4,10 +4,19 @@
 
 set(NB_DIR ${PROJECT_SOURCE_DIR}/external/nanobind)
 
+# make_nanobind_target(<name> <python_include_dir> [STABLE_ABI])
+#
+# STABLE_ABI compiles nanobind (and PUBLIC dependents) with
+# Py_LIMITED_API=0x030C0000 (CPython 3.12+ GIL). Use a separate target from
+# non-stable nanobind; nanobind isolates the two ABIs in one process.
 function(make_nanobind_target TARGET_NAME PYINC)
+  cmake_parse_arguments(NB "STABLE_ABI" "" "" ${ARGN})
   add_library(${TARGET_NAME} STATIC ${NB_DIR}/src/nb_combined.cpp)
   target_include_directories(${TARGET_NAME} SYSTEM PUBLIC ${NB_DIR}/include)
   target_include_directories(${TARGET_NAME} SYSTEM PRIVATE ${NB_DIR}/ext/robin_map/include ${PYINC})
+  if(NB_STABLE_ABI)
+    target_compile_definitions(${TARGET_NAME} PUBLIC Py_LIMITED_API=0x030C0000)
+  endif()
   if(MSVC)
     # Do not complain about vsnprintf
     target_compile_definitions(${TARGET_NAME} PRIVATE -D_CRT_SECURE_NO_WARNINGS)
