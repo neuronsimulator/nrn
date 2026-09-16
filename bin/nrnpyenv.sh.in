@@ -33,8 +33,8 @@ export originalPATH="$PATH"
 export originalPYTHONPATH="$PYTHONPATH"
 export originalLDLIBRARYPATH="$LD_LIBRARY_PATH"
 
-# list the Python versions that this NEURON build supports
-# the format is {major}.{minor}, i.e. 3.10, 3.11, 3.12, ...
+# Preferred pythonX.Y names to try after python/python3. Any GIL CPython 3.12+
+# is accepted (limited API / abi3); this list is only a search-order hint.
 _this_neuron_py_versions=(@NRN_PYTHON_VERSIONS_STRING@)
 
 # order of preference is: -pyexe, $NRN_PYTHONEXE, python, python3,
@@ -101,8 +101,16 @@ function try_python {
   fi
   full_path=${ver_and_path#* }
   version=${ver_and_path%" ${full_path}"}
-  if [[ ! " ${_this_neuron_py_versions[*]} " =~ " ${version} " ]]; then
-    echo "# ran ${cmd_name} (${full_path}) but Python ${version} is not supported by this NEURON installation (supported: ${_this_neuron_py_versions[*]})."
+  major="${version%%.*}"
+  minor="${version#*.}"
+  minor="${minor%%.*}"
+  if ! [[ "${major}" =~ ^[0-9]+$ && "${minor}" =~ ^[0-9]+$ ]] ||
+    [ "${major}" -lt 3 ] || { [ "${major}" -eq 3 ] && [ "${minor}" -lt 12 ]; }; then
+    echo "# ran ${cmd_name} (${full_path}) but Python ${version} is not supported by this NEURON installation (requires CPython 3.12 or later with the GIL)."
+    return 1
+  fi
+  if ! "${cmd_name}" -c "import sys; raise SystemExit(hasattr(sys, '_is_gil_enabled') and not sys._is_gil_enabled())" >/dev/null 2>&1; then
+    echo "# ran ${cmd_name} (${full_path}) but it is a free-threaded Python (GIL disabled)."
     return 1
   fi
   PYTHON="${full_path}"

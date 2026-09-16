@@ -14,13 +14,36 @@ steps:
 
   - task: UsePythonVersion@0
     inputs:
-      versionSpec: '$(python.version)'
+      versionSpec: '3.12'
+    displayName: 'Use Python 3.12'
 
   - script: |
       export SKIP_EMBEDED_PYTHON_TEST=true
       export CMAKE_BUILD_PARALLEL_LEVEL=4
       packaging/python/test_wheels.sh $(which python) $(ls -t wheelhouse/*.whl)
-    displayName: 'Test with System Python'
+    displayName: 'Test abi3 wheel with Python 3.12'
+
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.13'
+    displayName: 'Use Python 3.13'
+
+  - script: |
+      export SKIP_EMBEDED_PYTHON_TEST=true
+      export CMAKE_BUILD_PARALLEL_LEVEL=4
+      packaging/python/test_wheels.sh $(which python) $(ls -t wheelhouse/*.whl)
+    displayName: 'Test abi3 wheel with Python 3.13'
+
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.14'
+    displayName: 'Use Python 3.14'
+
+  - script: |
+      export SKIP_EMBEDED_PYTHON_TEST=true
+      export CMAKE_BUILD_PARALLEL_LEVEL=4
+      packaging/python/test_wheels.sh $(which python) $(ls -t wheelhouse/*.whl)
+    displayName: 'Test abi3 wheel with Python 3.14'
 
   - task: TwineAuthenticate@1
     inputs:

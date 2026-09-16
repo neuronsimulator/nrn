@@ -34,7 +34,7 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
       ${PROJECT_SOURCE_DIR}/src/nrnpython
       ${CMAKE_CURRENT_SOURCE_DIR}
       LIBRARIES
-      nrnpython${pyver}
+      nrnpython
       # TODO figure out where to put this module so RPATH can be adjusted
       INSTALL_REL_RPATH
       ${rel_rpath}

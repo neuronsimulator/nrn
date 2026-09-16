@@ -167,8 +167,9 @@ foreach(val RANGE ${NRN_PYTHON_COUNT})
           # Not an error if a user's system doesn't have all the names in ${search_names}
           continue()
         endif()
-        if(NOT nrnpy_VERSION IN_LIST NRN_PYTHON_VERSIONS)
-          # e.g. python or python3 points to a version we didn't build against
+        if(nrnpy_VERSION VERSION_LESS 3.12)
+          # nrnpyenv.sh accepts any GIL CPython 3.12+ (limited API), not only
+          # the versions this build was configured with.
           continue()
         endif()
         # Right, so the default should be nrnpy_EXECUTABLE, which is nrnpy_VERSION
