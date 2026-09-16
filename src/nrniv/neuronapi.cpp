@@ -14,6 +14,7 @@
 #include "shapeplt.h"
 #include <cstring>
 #include <exception>
+#include <cstdio>
 #include <limits>
 
 /// A public face of hoc_Item
@@ -51,6 +52,28 @@ extern Object* hoc_newobj1(Symbol*, int);
 extern std::tuple<int, const char**> nrn_mpi_setup(int argc, const char** argv);
 
 extern "C" {
+
+bool nrn_template_set_component_hooks(Symbol* template_sym,
+                                      nrn_component_func component,
+                                      nrn_component_asgn_func component_asgn,
+                                      char* error_msg,
+                                      size_t error_msg_size) {
+    auto fail = [&](const char* message) {
+        if (error_msg && error_msg_size) {
+            std::snprintf(error_msg, error_msg_size, "%s", message);
+        }
+        return false;
+    };
+    if (!template_sym || template_sym->type != TEMPLATE || !template_sym->u.ctemplate) {
+        return fail("template_sym is not a HOC template");
+    }
+    if (!component || !component_asgn) {
+        return fail("component and component_asgn callbacks are required");
+    }
+    template_sym->u.ctemplate->component = component;
+    template_sym->u.ctemplate->component_asgn = component_asgn;
+    return true;
+}
 
 /****************************************
  * Initialization
