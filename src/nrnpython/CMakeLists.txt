@@ -56,9 +56,9 @@ else()
   list(APPEND INCLUDE_DIRS ../ivos)
 endif()
 
-# Dynamic Python: compile one limited-API libnrnpython.abi3 + hoc.abi3 against the default
-# Python. Extra NRN_PYTHON_DYNAMIC versions are for tests / nrniv -python search, not extra
-# compiles. libnrniv does not link libpython; nrniv dlopens it then this library.
+# Dynamic Python: compile one limited-API libnrnpython.abi3 + hoc.abi3 against the default Python.
+# Extra NRN_PYTHON_DYNAMIC versions are for tests / nrniv -python search, not extra compiles.
+# libnrniv does not link libpython; nrniv dlopens it then this library.
 if(NRN_ENABLE_PYTHON_DYNAMIC)
   make_nanobind_target(nanobind_py ${NRN_DEFAULT_PYTHON_INCLUDES} STABLE_ABI)
   add_library(nrnpython SHARED ${NRNPYTHON_FILES_LIST})

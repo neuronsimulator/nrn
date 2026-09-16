@@ -6,9 +6,9 @@ set(NB_DIR ${PROJECT_SOURCE_DIR}/external/nanobind)
 
 # make_nanobind_target(<name> <python_include_dir> [STABLE_ABI])
 #
-# STABLE_ABI compiles nanobind (and PUBLIC dependents) with
-# Py_LIMITED_API=0x030C0000 (CPython 3.12+ GIL). Use a separate target from
-# non-stable nanobind; nanobind isolates the two ABIs in one process.
+# STABLE_ABI compiles nanobind (and PUBLIC dependents) with Py_LIMITED_API=0x030C0000 (CPython 3.12+
+# GIL). Use a separate target from non-stable nanobind; nanobind isolates the two ABIs in one
+# process.
 function(make_nanobind_target TARGET_NAME PYINC)
   cmake_parse_arguments(NB "STABLE_ABI" "" "" ${ARGN})
   add_library(${TARGET_NAME} STATIC ${NB_DIR}/src/nb_combined.cpp)

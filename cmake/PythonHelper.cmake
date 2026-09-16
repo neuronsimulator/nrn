@@ -1,10 +1,10 @@
 # =================================================================================================
 # Organise which Python versions are to be built against, and find their versions, include
-# directories and library paths. Importable extensions and libnrnpython use the CPython 3.12
-# limited API (https://docs.python.org/3/c-api/stable.html#stable-application-binary-interface),
-# so a dynamic-Python build compiles one libnrnpython.abi3 rather than libnrnpythonX.Y per
-# version. Extra entries in NRN_PYTHON_DYNAMIC are still discovered for tests and for
-# nrniv -python's interpreter search.
+# directories and library paths. Importable extensions and libnrnpython use the CPython 3.12 limited
+# API (https://docs.python.org/3/c-api/stable.html#stable-application-binary-interface), so a
+# dynamic-Python build compiles one libnrnpython.abi3 rather than libnrnpythonX.Y per version. Extra
+# entries in NRN_PYTHON_DYNAMIC are still discovered for tests and for nrniv -python's interpreter
+# search.
 # =================================================================================================
 
 # Parse commandline options so that:

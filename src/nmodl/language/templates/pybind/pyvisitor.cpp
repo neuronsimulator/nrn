@@ -88,45 +88,56 @@ using namespace nanobind::literals;
 namespace nb = nanobind;
 
 
-{% for node in nodes %}
-void PyVisitor::visit_{{ node.class_name|snake_case }}(ast::{{ node.class_name }}& node) {
-    nanobind::detail::ticket nb_ticket(nb_trampoline, "visit_{{ node.class_name|snake_case }}", true);
-    nb_trampoline.base().attr(nb_ticket.key)(
-        nanobind::cast(node, nanobind::rv_policy::reference));
+{% for node in nodes %
 }
-{% endfor %}
+void PyVisitor::visit_{{node.class_name | snake_case}}(ast::{{node.class_name}} & node) {
+    nanobind::detail::ticket nb_ticket(nb_trampoline,
+                                       "visit_{{ node.class_name|snake_case }}",
+                                       true);
+    nb_trampoline.base().attr(nb_ticket.key)(nanobind::cast(node, nanobind::rv_policy::reference));
+}
+{ % endfor % }
 
-{% for node in nodes %}
-void PyAstVisitor::visit_{{ node.class_name|snake_case }}(ast::{{ node.class_name }}& node) {
-    nanobind::detail::ticket nb_ticket(nb_trampoline, "visit_{{ node.class_name|snake_case }}", false);
+{% for node in nodes %
+}
+void PyAstVisitor::visit_{{node.class_name | snake_case}}(ast::{{node.class_name}} & node) {
+    nanobind::detail::ticket nb_ticket(nb_trampoline,
+                                       "visit_{{ node.class_name|snake_case }}",
+                                       false);
     if (nb_ticket.key.is_valid()) {
         nb_trampoline.base().attr(nb_ticket.key)(
             nanobind::cast(node, nanobind::rv_policy::reference));
         return;
     }
-    NBBase::visit_{{ node.class_name|snake_case }}(node);
+    NBBase::visit_{{node.class_name | snake_case}}(node);
 }
-{% endfor %}
+{ % endfor % }
 
-{% for node in nodes %}
-void PyConstVisitor::visit_{{ node.class_name|snake_case }}(const ast::{{ node.class_name }}& node) {
-    nanobind::detail::ticket nb_ticket(nb_trampoline, "visit_{{ node.class_name|snake_case }}", true);
-    nb_trampoline.base().attr(nb_ticket.key)(
-        nanobind::cast(node, nanobind::rv_policy::reference));
+{% for node in nodes %
 }
-{% endfor %}
+void PyConstVisitor::visit_{{node.class_name | snake_case}}(const ast::{{node.class_name}} & node) {
+    nanobind::detail::ticket nb_ticket(nb_trampoline,
+                                       "visit_{{ node.class_name|snake_case }}",
+                                       true);
+    nb_trampoline.base().attr(nb_ticket.key)(nanobind::cast(node, nanobind::rv_policy::reference));
+}
+{ % endfor % }
 
-{% for node in nodes %}
-void PyConstAstVisitor::visit_{{ node.class_name|snake_case }}(const ast::{{ node.class_name }}& node) {
-    nanobind::detail::ticket nb_ticket(nb_trampoline, "visit_{{ node.class_name|snake_case }}", false);
+{% for node in nodes %
+}
+void PyConstAstVisitor::visit_{{node.class_name | snake_case}}(const ast::{{node.class_name}} &
+                                                               node) {
+    nanobind::detail::ticket nb_ticket(nb_trampoline,
+                                       "visit_{{ node.class_name|snake_case }}",
+                                       false);
     if (nb_ticket.key.is_valid()) {
         nb_trampoline.base().attr(nb_ticket.key)(
             nanobind::cast(node, nanobind::rv_policy::reference));
         return;
     }
-    NBBase::visit_{{ node.class_name|snake_case }}(node);
+    NBBase::visit_{{node.class_name | snake_case}}(node);
 }
-{% endfor %}
+{ % endfor % }
 
 
 /**
@@ -146,12 +157,13 @@ class PyNmodlPrintVisitor: private VisitorOStreamResources, public NmodlPrintVis
         : VisitorOStreamResources(object)
         , NmodlPrintVisitor(*ostream){};
 
-    {% for node in nodes %}
-    void visit_{{ node.class_name|snake_case }}(const ast::{{ node.class_name }}& node) override {
-        NmodlPrintVisitor::visit_{{ node.class_name|snake_case }}(node);
+    {% for node in nodes %
+    }
+    void visit_{{node.class_name | snake_case}}(const ast::{{node.class_name}} & node) override {
+        NmodlPrintVisitor::visit_{{node.class_name | snake_case}}(node);
         flush();
     }
-    {% endfor %}
+    { % endfor % }
 };
 
 
@@ -159,87 +171,106 @@ void init_visitor_module(nb::module_& m) {
     nb::module_ m_visitor = m.def_submodule("visitor");
 
     nb::class_<Visitor, PyVisitor> visitor(m_visitor, "Visitor", docstring::visitor_class);
-    visitor.def(nb::init<>())
-    {% for node in nodes %}
-        .def("visit_{{ node.class_name | snake_case }}", &Visitor::visit_{{ node.class_name | snake_case }})
-        {% if loop.last -%};{% endif %}
-    {% endfor %}
+    visitor.def(nb::init<>()) {% for node in nodes %
+    }
+    .def("visit_{{ node.class_name | snake_case }}",
+         &Visitor::visit_{{node.class_name | snake_case}}) {
+        % if loop.last - %
+    };
+    { % endif % }
+    { % endfor % }
 
-    nb::class_<ConstVisitor, PyConstVisitor> const_visitor(m_visitor, "ConstVisitor", docstring::visitor_class);
-    const_visitor.def(nb::init<>())
-    {% for node in nodes %}
-    .def("visit_{{ node.class_name | snake_case }}", &ConstVisitor::visit_{{ node.class_name | snake_case }})
-        {% if loop.last -%};{% endif %}
-    {% endfor %}
+    nb::class_<ConstVisitor, PyConstVisitor> const_visitor(m_visitor,
+                                                           "ConstVisitor",
+                                                           docstring::visitor_class);
+    const_visitor.def(nb::init<>()) {% for node in nodes %
+    }
+    .def("visit_{{ node.class_name | snake_case }}",
+         &ConstVisitor::visit_{{node.class_name | snake_case}}) {
+        % if loop.last - %
+    };
+    { % endif % }
+    { % endfor % }
 
-    nb::class_<ConstAstVisitor, ConstVisitor, PyConstAstVisitor>
-        const_ast_visitor(m_visitor, "ConstAstVisitor", docstring::ast_visitor_class);
-    const_ast_visitor.def(nb::init<>())
-    {% for node in nodes %}
-        .def("visit_{{ node.class_name | snake_case }}", &ConstAstVisitor::visit_{{ node.class_name | snake_case }})
-        {% if loop.last -%};{% endif %}
-    {% endfor %}
+    nb::class_<ConstAstVisitor, ConstVisitor, PyConstAstVisitor> const_ast_visitor(
+        m_visitor, "ConstAstVisitor", docstring::ast_visitor_class);
+    const_ast_visitor.def(nb::init<>()) {% for node in nodes %
+    }
+    .def("visit_{{ node.class_name | snake_case }}",
+         &ConstAstVisitor::visit_{{node.class_name | snake_case}}) {
+        % if loop.last - %
+    };
+    { % endif % }
+    { % endfor % }
 
-    nb::class_<AstVisitor, Visitor, PyAstVisitor>
-            ast_visitor(m_visitor, "AstVisitor", docstring::ast_visitor_class);
-    ast_visitor.def(nb::init<>())
-    {% for node in nodes %}
-    .def("visit_{{ node.class_name | snake_case }}", &AstVisitor::visit_{{ node.class_name | snake_case }})
-        {% if loop.last -%};{% endif %}
-    {% endfor %}
+    nb::class_<AstVisitor, Visitor, PyAstVisitor> ast_visitor(m_visitor,
+                                                              "AstVisitor",
+                                                              docstring::ast_visitor_class);
+    ast_visitor.def(nb::init<>()) {% for node in nodes %
+    }
+    .def("visit_{{ node.class_name | snake_case }}",
+         &AstVisitor::visit_{{node.class_name | snake_case}}) {
+        % if loop.last - %
+    };
+    { % endif % }
+    { % endfor % }
 
-    nb::class_<PyNmodlPrintVisitor, ConstVisitor>
-        nmodl_visitor(m_visitor, "NmodlPrintVisitor", docstring::nmodl_print_visitor_class);
+    nb::class_<PyNmodlPrintVisitor, ConstVisitor> nmodl_visitor(
+        m_visitor, "NmodlPrintVisitor", docstring::nmodl_print_visitor_class);
     nmodl_visitor.def(nb::init<std::string>());
     nmodl_visitor.def(nb::init<nb::object>());
-    nmodl_visitor.def(nb::init<>())
-    {% for node in nodes %}
-        .def("visit_{{ node.class_name | snake_case }}", &PyNmodlPrintVisitor::visit_{{ node.class_name | snake_case }})
-        {% if loop.last -%};{% endif %}
-    {% endfor %}
+    nmodl_visitor.def(nb::init<>()) {% for node in nodes %
+    }
+    .def("visit_{{ node.class_name | snake_case }}",
+         &PyNmodlPrintVisitor::visit_{{node.class_name | snake_case}}) {
+        % if loop.last - %
+    };
+    { % endif % }
+    { % endfor % }
 
-    nb::class_<AstLookupVisitor, Visitor>
-        lookup_visitor(m_visitor, "AstLookupVisitor", docstring::ast_lookup_visitor_class);
+    nb::class_<AstLookupVisitor, Visitor> lookup_visitor(m_visitor,
+                                                         "AstLookupVisitor",
+                                                         docstring::ast_lookup_visitor_class);
     lookup_visitor.def(nb::init<>())
         .def(nb::init<ast::AstNodeType>())
         .def("get_nodes", &AstLookupVisitor::get_nodes)
         .def("clear", &AstLookupVisitor::clear)
         .def("lookup",
-             [](AstLookupVisitor& v, std::shared_ptr<ast::Ast> n) -> const std::vector<std::shared_ptr<ast::Ast>>& {
-                 return v.lookup(*n);
-             })
+             [](AstLookupVisitor& v, std::shared_ptr<ast::Ast> n)
+                 -> const std::vector<std::shared_ptr<ast::Ast>>& { return v.lookup(*n); })
         .def("lookup",
              [](AstLookupVisitor& v, std::shared_ptr<ast::Ast> n, ast::AstNodeType t)
-                 -> const std::vector<std::shared_ptr<ast::Ast>>& {
-                 return v.lookup(*n, t);
-             })
+                 -> const std::vector<std::shared_ptr<ast::Ast>>& { return v.lookup(*n, t); })
         .def("lookup",
              [](AstLookupVisitor& v,
                 std::shared_ptr<ast::Ast> n,
                 const std::vector<ast::AstNodeType>& types)
-                 -> const std::vector<std::shared_ptr<ast::Ast>>& {
-                 return v.lookup(*n, types);
-             });
+                 -> const std::vector<std::shared_ptr<ast::Ast>>& { return v.lookup(*n, types); });
 
-    nb::class_<ConstantFolderVisitor, AstVisitor> constant_folder_visitor(m_visitor, "ConstantFolderVisitor", docstring::constant_folder_visitor_class);
+    nb::class_<ConstantFolderVisitor, AstVisitor> constant_folder_visitor(
+        m_visitor, "ConstantFolderVisitor", docstring::constant_folder_visitor_class);
     constant_folder_visitor.def(nb::init<>())
         .def("visit_program", &ConstantFolderVisitor::visit_program);
 
-    nb::class_<InlineVisitor, AstVisitor> inline_visitor(m_visitor, "InlineVisitor", docstring::inline_visitor_class);
-    inline_visitor.def(nb::init<>())
-        .def("visit_program", &InlineVisitor::visit_program);
+    nb::class_<InlineVisitor, AstVisitor> inline_visitor(m_visitor,
+                                                         "InlineVisitor",
+                                                         docstring::inline_visitor_class);
+    inline_visitor.def(nb::init<>()).def("visit_program", &InlineVisitor::visit_program);
 
-    nb::class_<KineticBlockVisitor, AstVisitor> kinetic_block_visitor(m_visitor, "KineticBlockVisitor", docstring::kinetic_block_visitor_class);
+    nb::class_<KineticBlockVisitor, AstVisitor> kinetic_block_visitor(
+        m_visitor, "KineticBlockVisitor", docstring::kinetic_block_visitor_class);
     kinetic_block_visitor.def(nb::init<>())
         .def("visit_program", &KineticBlockVisitor::visit_program);
 
-    nb::class_<LocalVarRenameVisitor, AstVisitor> local_var_rename_visitor(m_visitor, "LocalVarRenameVisitor", docstring::local_var_rename_visitor_class);
+    nb::class_<LocalVarRenameVisitor, AstVisitor> local_var_rename_visitor(
+        m_visitor, "LocalVarRenameVisitor", docstring::local_var_rename_visitor_class);
     local_var_rename_visitor.def(nb::init<>())
         .def("visit_program", &LocalVarRenameVisitor::visit_program);
 
-    nb::class_<MatexpVisitor, AstVisitor> matexp_visitor(m_visitor, "MatexpVisitor", docstring::matexp_visitor_class);
-    matexp_visitor.def(nb::init<>())
-        .def("visit_program", &MatexpVisitor::visit_program);
+    nb::class_<MatexpVisitor, AstVisitor> matexp_visitor(m_visitor,
+                                                         "MatexpVisitor",
+                                                         docstring::matexp_visitor_class);
+    matexp_visitor.def(nb::init<>()).def("visit_program", &MatexpVisitor::visit_program);
 }
 
 #pragma clang diagnostic pop

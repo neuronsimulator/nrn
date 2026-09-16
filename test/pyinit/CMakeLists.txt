@@ -168,8 +168,8 @@ foreach(val RANGE ${NRN_PYTHON_COUNT})
           continue()
         endif()
         if(nrnpy_VERSION VERSION_LESS 3.12)
-          # nrnpyenv.sh accepts any GIL CPython 3.12+ (limited API), not only
-          # the versions this build was configured with.
+          # nrnpyenv.sh accepts any GIL CPython 3.12+ (limited API), not only the versions this
+          # build was configured with.
           continue()
         endif()
         # Right, so the default should be nrnpy_EXECUTABLE, which is nrnpy_VERSION
