@@ -66,9 +66,10 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
     list(GET NRN_PYTHON_INCLUDES ${val} pyinc)
     list(GET NRN_PYTHON_LIBRARIES ${val} pylib)
     set(nanobind_target "nanobind_py${pyver}")
-    make_nanobind_target(${nanobind_target} ${pyinc})
+    make_nanobind_target(${nanobind_target} ${pyinc} STABLE_ABI)
     add_library(nrnpython${pyver} SHARED ${NRNPYTHON_FILES_LIST})
     target_include_directories(nrnpython${pyver} BEFORE PUBLIC ${pyinc} ${INCLUDE_DIRS})
+    target_compile_definitions(nrnpython${pyver} PUBLIC Py_LIMITED_API=0x030C0000)
     target_link_libraries(nrnpython${pyver} PUBLIC nrniv_lib)
     target_link_libraries(nrnpython${pyver} PRIVATE fmt::fmt ${Readline_LIBRARY} ${nanobind_target})
     if(NRN_LINK_AGAINST_PYTHON)
@@ -113,6 +114,10 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
       target_link_libraries(${hoc_module_name} PUBLIC ${pylib})
     endif()
 
+    target_compile_definitions(${hoc_module_name} PRIVATE Py_LIMITED_API=0x030C0000)
+    set_target_properties(${hoc_module_name} PROPERTIES OUTPUT_NAME "hoc.abi3"
+                                                        SUFFIX "${CMAKE_SHARED_MODULE_SUFFIX}")
+
     add_dependencies(${hoc_module_name} nrniv_lib rxdmath)
 
     install(TARGETS ${hoc_module_name} DESTINATION ${NRN_INSTALL_PYTHON_PREFIX})
@@ -125,15 +130,17 @@ else()
   set_property(TARGET nrnpython PROPERTY POSITION_INDEPENDENT_CODE ON)
   target_include_directories(nrnpython PUBLIC ${INCLUDE_DIRS})
   target_include_directories(nrnpython PUBLIC "${NRN_DEFAULT_PYTHON_INCLUDES}")
-  # see nrn/issues/2358
-  if(NOT NRN_WITH_MACOS_CONDA_PYTHON)
+  # Limited API: do not NEEDED libpython on Unix; the host interpreter provides stable-ABI symbols.
+  # Windows still needs the import library. See also nrn/issues/2358 (macOS conda).
+  if(WIN32)
     target_link_libraries(nrnpython ${NRN_DEFAULT_PYTHON_LIBRARIES})
   endif()
   target_link_libraries(nrnpython fmt::fmt)
   target_include_directories(nrnpython SYSTEM
                              PUBLIC ${PROJECT_SOURCE_DIR}/${NRN_3RDPARTY_DIR}/eigen)
   target_include_directories(nrnpython PUBLIC ${PROJECT_BINARY_DIR}/src/nrniv/oc_generated)
-  make_nanobind_target(nanobind ${NRN_DEFAULT_PYTHON_INCLUDES})
+  make_nanobind_target(nanobind ${NRN_DEFAULT_PYTHON_INCLUDES} STABLE_ABI)
+  target_compile_definitions(nrnpython PUBLIC Py_LIMITED_API=0x030C0000)
   target_link_libraries(nrnpython nanobind)
 
   # the hoc Python library
@@ -167,6 +174,9 @@ else()
     ${PROJECT_BINARY_DIR}/lib/python/neuron)
 
   add_dependencies(${hoc_module_name} nrniv_lib rxdmath)
+  target_compile_definitions(${hoc_module_name} PRIVATE Py_LIMITED_API=0x030C0000)
+  set_target_properties(${hoc_module_name} PROPERTIES OUTPUT_NAME "hoc.abi3"
+                                                      SUFFIX "${CMAKE_SHARED_MODULE_SUFFIX}")
 
   install(TARGETS ${hoc_module_name} DESTINATION ${NRN_INSTALL_PYTHON_PREFIX})
 
