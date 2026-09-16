@@ -37,8 +37,8 @@ if(NOT "${STATUS_CODE}" STREQUAL "0")
   message(FATAL_ERROR "Could not find NumPy headers for ${NRN_DEFAULT_PYTHON_EXECUTABLE}")
 endif()
 
-# Limited API: one graphicsPrimitives.abi3 / ctng.abi3. Dynamic Python also links
-# libnrnpython.abi3 (in libnrniv when dynamic Python is off).
+# Limited API: one graphicsPrimitives.abi3 / ctng.abi3. Dynamic Python also links libnrnpython.abi3
+# (in libnrniv when dynamic Python is off).
 set(rxd_libs nrniv_lib rxdmath)
 if(NRN_ENABLE_PYTHON_DYNAMIC)
   list(APPEND rxd_libs nrnpython)
@@ -57,8 +57,8 @@ foreach(source ${rxd_sources})
     SOURCES
     ${${source}_sources}
     INCLUDES
-    # on Linux, if numpy is installed via the system package manager, CMake would use those
-    # instead, so we place the numpy headers before the Python ones
+    # on Linux, if numpy is installed via the system package manager, CMake would use those instead,
+    # so we place the numpy headers before the Python ones
     "${NUMPY_INCLUDE_DIR}"
     "${NRN_DEFAULT_PYTHON_INCLUDES}"
     LIBRARIES

@@ -77,13 +77,13 @@ void* nrnpy_dlsym(const char* name) {
 }
 
 void* nrnpy_raw_malloc(size_t n) {
-    using F = void* (*)(size_t);
+    using F = void* (*) (size_t);
     static F f = reinterpret_cast<F>(nrnpy_dlsym("PyMem_RawMalloc"));
     return f ? f(n) : std::malloc(n);
 }
 
 void* nrnpy_raw_calloc(size_t n, size_t sz) {
-    using F = void* (*)(size_t, size_t);
+    using F = void* (*) (size_t, size_t);
     static F f = reinterpret_cast<F>(nrnpy_dlsym("PyMem_RawCalloc"));
     return f ? f(n, sz) : std::calloc(n, sz);
 }
@@ -247,9 +247,8 @@ static int nrnpython_start(int b) {
                 throw std::runtime_error("Could not convert Python executable path to wchar_t");
             }
             saved_progname = static_cast<wchar_t*>(std::malloc((n + 1) * sizeof(wchar_t)));
-            if (!saved_progname ||
-                std::mbstowcs(saved_progname, pyexe.c_str(), n + 1) ==
-                    static_cast<std::size_t>(-1)) {
+            if (!saved_progname || std::mbstowcs(saved_progname, pyexe.c_str(), n + 1) ==
+                                       static_cast<std::size_t>(-1)) {
                 std::free(saved_progname);
                 saved_progname = nullptr;
                 throw std::runtime_error("Could not convert Python executable path to wchar_t");
@@ -346,7 +345,7 @@ static int nrnpython_start(int b) {
         // we need to import here.
         nrnpy_run_simple_string("import readline as nrn_readline");
 
-        using readline_fn = char* (*)(FILE*, FILE*, const char*);
+        using readline_fn = char* (*) (FILE*, FILE*, const char*);
         if (auto* slot = static_cast<readline_fn*>(nrnpy_dlsym("PyOS_ReadlineFunctionPointer"))) {
             *slot = nrnpython_getline;
         }

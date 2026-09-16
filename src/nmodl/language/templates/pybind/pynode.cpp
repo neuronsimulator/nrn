@@ -29,22 +29,22 @@ namespace nmodl {
 namespace ast {
 namespace pybind {
 
-void {{setup_pybind_method}}(nanobind::module_& m_ast) {
-    {% for node in nodes %}
+void{{setup_pybind_method}}(nanobind::module_& m_ast) {
+    {% for node in nodes %
+    }
     {
-        nanobind::class_<{{ node.class_name }}, {{node.base_class}}> tmp{m_ast, "{{ node.class_name }}", "{{ node.brief }}"};
-        {% if node.children %}
-        {% if node.class_name == 'Integer' %}
+        nanobind::class_<{{node.class_name}}, {{node.base_class}}> tmp{m_ast,
+                                                                       "{{ node.class_name }}",
+                                                                       "{{ node.brief }}"};
+        { % if node.children % }
+        { % if node.class_name == 'Integer' % }
         tmp.def(nanobind::init<int, std::shared_ptr<Name>>(),
                 nanobind::arg("value"),
                 nanobind::arg("macro") = nanobind::none());
-        {% else %}
-        tmp.def(nanobind::init<{{ args(node.children) }}>());
-        {% endif %}
-        {% endif %}
-        {% if node.is_program_node or node.is_ptr_excluded_node %}
+        { % else % } tmp.def(nanobind::init<{{args(node.children)}}>());
+        { % endif % } { % endif % } { % if node.is_program_node or node.is_ptr_excluded_node % }
         tmp.def(nanobind::init<>());
-        {% endif %}
+        { % endif % }
 
         tmp.def("__repr__", []({{node.class_name}} & n) {
             std::stringstream ss;
@@ -90,7 +90,7 @@ void {{setup_pybind_method}}(nanobind::module_& m_ast) {
 
         // clang-format on
     }
-    {% endfor %}
+    { % endfor % }
 }
 }  // namespace pybind
 }  // namespace ast

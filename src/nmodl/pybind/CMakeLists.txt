@@ -73,11 +73,12 @@ endif()
 
 # avoid _nmodl target if python bindings are disabled
 if(NMODL_ENABLE_PYTHON_BINDINGS)
-  # nanobind STABLE_ABI (CPython 3.12+ GIL). Separate from hoc's non-stable
-  # nanobind; the two ABIs are isolated in one process.
+  # nanobind STABLE_ABI (CPython 3.12+ GIL). Separate from hoc's non-stable nanobind; the two ABIs
+  # are isolated in one process.
   make_nanobind_target(nanobind_nmodl "${PYTHON_INCLUDE_DIRS}" STABLE_ABI)
   add_library(
-    _nmodl MODULE ${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/ast/ast_common.hpp
+    _nmodl MODULE
+    ${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/ast/ast_common.hpp
     ${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/pybind/pybind_utils.hpp
     ${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/pybind/pynmodl.cpp ${PYBIND_GENERATED_SOURCES})
   add_dependencies(_nmodl lexer pyastgen util)

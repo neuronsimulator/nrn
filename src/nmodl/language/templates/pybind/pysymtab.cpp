@@ -89,9 +89,7 @@ class PySymtabVisitor: private VisitorOStreamResources, public SymtabVisitor {
 void init_symtab_module(nb::module_& m) {
     nb::module_ m_symtab = m.def_submodule("symtab");
 
-    nb::enum_<syminfo::DeclarationType>(m_symtab,
-                                        "DeclarationType",
-                                        docstring::sym_decl_type_enum)
+    nb::enum_<syminfo::DeclarationType>(m_symtab, "DeclarationType", docstring::sym_decl_type_enum)
         .value("function", syminfo::DeclarationType::function)
         .value("variable", syminfo::DeclarationType::variable)
         .export_values();
@@ -127,8 +125,10 @@ void init_symtab_module(nb::module_& m) {
         .value("write", syminfo::Access::write)
         .export_values();
 
-    nb::enum_<syminfo::NmodlType> e_nmodltype(m_symtab, "NmodlType", nb::is_arithmetic(),
-                                             nb::is_flag());
+    nb::enum_<syminfo::NmodlType> e_nmodltype(m_symtab,
+                                              "NmodlType",
+                                              nb::is_arithmetic(),
+                                              nb::is_flag());
     e_nmodltype.value("empty", syminfo::NmodlType::empty)
         .value("argument", syminfo::NmodlType::argument)
         .value("bbcore_pointer_var", syminfo::NmodlType::bbcore_pointer_var)
@@ -177,7 +177,11 @@ void init_symtab_module(nb::module_& m) {
         .def("get_id", &Symbol::get_id)
         .def("get_status", &Symbol::get_status)
         .def("get_properties", &Symbol::get_properties)
-        .def("get_node", [](const std::shared_ptr<Symbol>& s){ auto n = s->get_nodes(); return n.empty() ? nullptr : n.front(); })
+        .def("get_node",
+             [](const std::shared_ptr<Symbol>& s) {
+                 auto n = s->get_nodes();
+                 return n.empty() ? nullptr : n.front();
+             })
         .def("get_nodes", &Symbol::get_nodes)
         .def("get_original_name", &Symbol::get_original_name)
         .def("get_name", &Symbol::get_name)
@@ -230,11 +234,14 @@ void init_symtab_module(nb::module_& m) {
         .def("setup_symbol_table_for_global_block",
              &PySymtabVisitor::setup_symbol_table_for_global_block)
         .def("setup_symbol_table_for_scoped_block",
-             &PySymtabVisitor::setup_symbol_table_for_scoped_block)
-    {% for node in nodes %}
-        .def("visit_{{ node.class_name | snake_case }}", &PySymtabVisitor::visit_{{ node.class_name | snake_case }})
-        {% if loop.last -%};{% endif %}
-    {% endfor %}
+             &PySymtabVisitor::setup_symbol_table_for_scoped_block) {% for node in nodes %
+    }
+    .def("visit_{{ node.class_name | snake_case }}",
+         &PySymtabVisitor::visit_{{node.class_name | snake_case}}) {
+        % if loop.last - %
+    };
+    { % endif % }
+    { % endfor % }
 }
 
 #pragma clang diagnostic pop

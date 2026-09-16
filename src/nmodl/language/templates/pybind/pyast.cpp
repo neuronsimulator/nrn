@@ -28,9 +28,10 @@
 namespace nmodl {
 namespace ast {
 namespace pybind {
-{% for setup_pybind_method in setup_pybind_methods %}
-void {{setup_pybind_method}}(nanobind::module_&);
-{% endfor %}
+{% for setup_pybind_method in setup_pybind_methods %
+}
+void{{setup_pybind_method}}(nanobind::module_&);
+{ % endfor % }
 }  // namespace pybind
 }  // namespace ast
 }  // namespace nmodl
@@ -42,7 +43,8 @@ namespace docstring = nmodl::docstring;
 
 
 void init_ast_module(nb::module_& m) {
-    nb::module_ m_ast = m.def_submodule("ast", "Abstract Syntax Tree (AST) related implementations");
+    nb::module_ m_ast = m.def_submodule("ast",
+                                        "Abstract Syntax Tree (AST) related implementations");
 
     nb::enum_<BinaryOp>(m_ast, "BinaryOp", docstring::binary_op_enum())
         .value("BOP_ADDITION", BinaryOp::BOP_ADDITION)

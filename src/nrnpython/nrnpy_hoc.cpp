@@ -1056,7 +1056,7 @@ static PyObject* hocclass_getattro(PyObject* self, PyObject* pyname) {
     }
 
     // Fall back to the base type's getattro
-    using getattrofunc_t = PyObject* (*)(PyObject*, PyObject*);
+    using getattrofunc_t = PyObject* (*) (PyObject*, PyObject*);
     auto type_getattro = reinterpret_cast<getattrofunc_t>(
         PyType_GetSlot(&PyType_Type, Py_tp_getattro));
     return type_getattro(self, pyname);
