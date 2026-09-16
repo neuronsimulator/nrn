@@ -11,9 +11,10 @@
 
 #include "visitors/symtab_visitor.hpp"
 
-#include <pybind11/iostream.h>
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
+#include <nanobind/nanobind.h>
+#include <nanobind/stl/shared_ptr.h>
+#include <nanobind/stl/string.h>
+#include <nanobind/stl/vector.h>
 
 #include "ast/all.hpp"
 #include "pybind/pybind_utils.hpp"
@@ -62,39 +63,16 @@ static const char* symtabvisitor_class = R"(
 }  // namespace nmodl
 
 
-namespace py = pybind11;
-using namespace pybind11::literals;
+namespace nb = nanobind;
+using namespace nanobind::literals;
 
 using namespace nmodl;
 using namespace symtab;
 using namespace visitor;
 
 
-// clang-format off
-{% macro var(node) -%}
-    {{ node.class_name | snake_case }}_
-{%- endmacro -%}
-
-{% macro args(children) %}
-    {% for c in children %} {{ c.get_typename() }} {%- if not loop.last %}, {% endif %} {% endfor %}
-{%- endmacro -%}
-// clang-format on
-
-/**
- *
- * @defgroup visitor_python Visitor Python Interface
- * @ingroup nmodl_python
- * @brief Visitor classes for Python bindings
- * @{
- */
-
 /**
  * \brief Class mirroring nmodl::visitor::SymtabVisitor for Python bindings
- *
- * \details \copydetails nmodl::visitor::SymtabVisitor
- *
- * This class is used to interface nmodl::visitor::SymtabVisitor with the Python
- * world using `pybind11`.
  */
 class PySymtabVisitor: private VisitorOStreamResources, public SymtabVisitor {
   public:
@@ -102,33 +80,32 @@ class PySymtabVisitor: private VisitorOStreamResources, public SymtabVisitor {
         : SymtabVisitor(update){};
     PySymtabVisitor(std::string filename, bool update = false)
         : SymtabVisitor(filename, update){};
-    PySymtabVisitor(py::object object, bool update = false)
+    PySymtabVisitor(nb::object object, bool update = false)
         : VisitorOStreamResources(object)
         , SymtabVisitor(*ostream, update){};
 };
 
-/** @} */  // end of visitor_python
 
+void init_symtab_module(nb::module_& m) {
+    nb::module_ m_symtab = m.def_submodule("symtab");
 
-void init_symtab_module(py::module& m) {
-    py::module m_symtab = m.def_submodule("symtab");
-
-    py::enum_<syminfo::DeclarationType>(m_symtab,
+    nb::enum_<syminfo::DeclarationType>(m_symtab,
                                         "DeclarationType",
                                         docstring::sym_decl_type_enum)
         .value("function", syminfo::DeclarationType::function)
         .value("variable", syminfo::DeclarationType::variable)
         .export_values();
 
-    py::enum_<syminfo::Scope>(m_symtab, "Scope")
+    nb::enum_<syminfo::Scope>(m_symtab, "Scope")
         .value("external", syminfo::Scope::external)
         .value("global", syminfo::Scope::global)
         .value("local", syminfo::Scope::local)
         .value("neuron", syminfo::Scope::neuron)
         .export_values();
 
-    py::enum_<syminfo::Status> e_status(m_symtab, "Status", py::arithmetic());
-    e_status.value("created", syminfo::Status::created)
+    nb::enum_<syminfo::Status> e_status(m_symtab, "Status", nb::is_arithmetic(), nb::is_flag());
+    e_status.value("empty", syminfo::Status::empty)
+        .value("created", syminfo::Status::created)
         .value("from_state", syminfo::Status::from_state)
         .value("globalized", syminfo::Status::globalized)
         .value("inlined", syminfo::Status::inlined)
@@ -140,18 +117,20 @@ void init_symtab_module(py::module& m) {
         .def("__and__", [](const syminfo::Status& x, syminfo::Status y) { return x & y; })
         .def("__str__", &syminfo::to_string<syminfo::Status>);
 
-    py::enum_<syminfo::VariableType>(m_symtab, "VariableType")
+    nb::enum_<syminfo::VariableType>(m_symtab, "VariableType")
         .value("array", syminfo::VariableType::array)
         .value("scalar", syminfo::VariableType::scalar)
         .export_values();
 
-    py::enum_<syminfo::Access>(m_symtab, "Access")
+    nb::enum_<syminfo::Access>(m_symtab, "Access")
         .value("read", syminfo::Access::read)
         .value("write", syminfo::Access::write)
         .export_values();
 
-    py::enum_<syminfo::NmodlType> e_nmodltype(m_symtab, "NmodlType", py::arithmetic());
-    e_nmodltype.value("argument", syminfo::NmodlType::argument)
+    nb::enum_<syminfo::NmodlType> e_nmodltype(m_symtab, "NmodlType", nb::is_arithmetic(),
+                                             nb::is_flag());
+    e_nmodltype.value("empty", syminfo::NmodlType::empty)
+        .value("argument", syminfo::NmodlType::argument)
         .value("bbcore_pointer_var", syminfo::NmodlType::bbcore_pointer_var)
         .value("constant_var", syminfo::NmodlType::constant_var)
         .value("assigned_definition", syminfo::NmodlType::assigned_definition)
@@ -190,8 +169,8 @@ void init_symtab_module(py::module& m) {
         .def("__str__", &syminfo::to_string<syminfo::NmodlType>);
 
 
-    py::class_<Symbol, std::shared_ptr<Symbol>> symbol(m_symtab, "Symbol", docstring::symbol_class);
-    symbol.def(py::init<std::string, ast::Ast*>(), "name"_a, "node"_a);
+    nb::class_<Symbol> symbol(m_symtab, "Symbol", docstring::symbol_class);
+    symbol.def(nb::init<std::string, ast::Ast*>(), "name"_a, "node"_a);
     symbol.def("get_token", &Symbol::get_token)
         .def("is_variable", &Symbol::is_variable)
         .def("is_external_variable", &Symbol::is_external_variable)
@@ -208,23 +187,23 @@ void init_symtab_module(py::module& m) {
         .def("has_all_status", &Symbol::has_all_status)
         .def("__str__", &Symbol::to_string);
 
-    py::class_<SymbolTable> symbol_table(m_symtab, "SymbolTable", docstring::symbol_table_class);
-    symbol_table.def(py::init<std::string, ast::Ast*, bool>(), "name"_a, "node"_a, "global"_a);
+    nb::class_<SymbolTable> symbol_table(m_symtab, "SymbolTable", docstring::symbol_table_class);
+    symbol_table.def(nb::init<std::string, ast::Ast*, bool>(), "name"_a, "node"_a, "global"_a);
     symbol_table.def("name", &SymbolTable::name)
         .def("title", &SymbolTable::title)
         .def("is_method_defined", &SymbolTable::is_method_defined)
         .def("get_variables",
              &SymbolTable::get_variables,
-             py::arg("with") = syminfo::NmodlType::empty,
-             py::arg("without") = syminfo::NmodlType::empty)
+             nb::arg("with") = syminfo::NmodlType::empty,
+             nb::arg("without") = syminfo::NmodlType::empty)
         .def("get_variables_with_properties",
              &SymbolTable::get_variables_with_properties,
-             py::arg("properties"),
-             py::arg("all") = false)
+             nb::arg("properties"),
+             nb::arg("all") = false)
         .def("get_variables_with_status",
              &SymbolTable::get_variables_with_status,
-             py::arg("status"),
-             py::arg("all") = false)
+             nb::arg("status"),
+             nb::arg("all") = false)
         .def("get_parent_table", &SymbolTable::get_parent_table)
         .def("get_parent_table_name", &SymbolTable::get_parent_table_name)
         .def("lookup", &SymbolTable::lookup)
@@ -233,13 +212,13 @@ void init_symtab_module(py::module& m) {
         .def("insert_table", &SymbolTable::insert_table)
         .def("__str__", &SymbolTable::to_string);
 
-    py::class_<SymtabVisitor, AstVisitor, PySymtabVisitor> symtab_visitor(
+    nb::class_<SymtabVisitor, AstVisitor, PySymtabVisitor> symtab_visitor(
         m_symtab, "SymtabVisitor", docstring::symtabvisitor_class);
-    symtab_visitor.def(py::init<std::string, bool>(),
-                       py::arg("filename"),
-                       py::arg("update") = false);
-    symtab_visitor.def(py::init<py::object, bool>(), py::arg("ostream"), py::arg("update") = false);
-    symtab_visitor.def(py::init<bool>(), py::arg("update") = false)
+    symtab_visitor.def(nb::init<std::string, bool>(),
+                       nb::arg("filename"),
+                       nb::arg("update") = false);
+    symtab_visitor.def(nb::init<nb::object, bool>(), nb::arg("ostream"), nb::arg("update") = false);
+    symtab_visitor.def(nb::init<bool>(), nb::arg("update") = false)
         .def("add_model_symbol_with_property",
              &PySymtabVisitor::add_model_symbol_with_property,
              "node"_a,
@@ -252,13 +231,10 @@ void init_symtab_module(py::module& m) {
              &PySymtabVisitor::setup_symbol_table_for_global_block)
         .def("setup_symbol_table_for_scoped_block",
              &PySymtabVisitor::setup_symbol_table_for_scoped_block)
-    // clang-format off
     {% for node in nodes %}
         .def("visit_{{ node.class_name | snake_case }}", &PySymtabVisitor::visit_{{ node.class_name | snake_case }})
         {% if loop.last -%};{% endif %}
     {% endfor %}
-    // clang-format on
 }
 
 #pragma clang diagnostic pop
-
