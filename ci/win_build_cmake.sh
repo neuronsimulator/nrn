@@ -10,7 +10,7 @@ export MSYSTEM_PREFIX=/mingw64
 export PATH=/mingw64/bin:$PATH
 
 # have compatible cython3
-python3 -m pip install "cython>=3.1,<=3.3.0"
+python3 -m pip install --only-binary :all: "cython>=3.1,<=3.3.0"
 
 # if BUILD_SOURCESDIRECTORY not available, use the root of the repo
 if [ -z "${BUILD_SOURCESDIRECTORY:-}" ]; then
