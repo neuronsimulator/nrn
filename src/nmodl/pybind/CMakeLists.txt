@@ -84,11 +84,17 @@ if(NMODL_ENABLE_PYTHON_BINDINGS)
   add_dependencies(_nmodl lexer pyastgen util)
   target_link_libraries(_nmodl PRIVATE printer symtab visitor nanobind_nmodl)
   target_include_directories(_nmodl PRIVATE ${PYTHON_INCLUDE_DIRS} ${CMAKE_CURRENT_BINARY_DIR})
+  # Windows import machinery has no .abi3.pyd suffix; Unix uses _nmodl.abi3.so.
+  if(WIN32)
+    set(_nmodl_suffix ".pyd")
+  else()
+    set(_nmodl_suffix ".abi3${CMAKE_SHARED_MODULE_SUFFIX}")
+  endif()
   set_target_properties(
     _nmodl
     PROPERTIES PREFIX ""
                OUTPUT_NAME "_nmodl"
-               SUFFIX ".abi3${CMAKE_SHARED_MODULE_SUFFIX}"
+               SUFFIX "${_nmodl_suffix}"
                CXX_VISIBILITY_PRESET "hidden"
                VISIBILITY_INLINES_HIDDEN ON
                LIBRARY_OUTPUT_DIRECTORY ${NMODL_PROJECT_PURELIB_BINARY_DIR}
@@ -100,8 +106,13 @@ if(NMODL_ENABLE_PYTHON_BINDINGS)
   elseif(UNIX)
     target_link_options(_nmodl PRIVATE "-Wl,--unresolved-symbols=ignore-all")
   elseif(WIN32)
-    # Limited API: python3.lib when CMake provides it; otherwise the versioned import lib.
-    target_link_libraries(_nmodl PRIVATE ${PYTHON_LIBRARIES})
+    # Limited API: python3.lib (python3.dll), not python3.XY.dll.
+    get_filename_component(_nmodl_pylib_dir "${PYTHON_LIBRARIES}" DIRECTORY)
+    if(EXISTS "${_nmodl_pylib_dir}/python3.lib")
+      target_link_libraries(_nmodl PRIVATE "${_nmodl_pylib_dir}/python3.lib")
+    else()
+      target_link_libraries(_nmodl PRIVATE ${PYTHON_LIBRARIES})
+    endif()
   endif()
 
   if(MSVC)

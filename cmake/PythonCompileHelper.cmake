@@ -146,6 +146,16 @@ function(add_nrn_python_library name)
     set(lib_suffix ".pyd")
     set(python_interp "cp")
     set(WINDOWS_EXPORT_ALL_SYMBOLS ON)
+    # Limited API must link python3.dll, not python3.XY.dll, so one .pyd loads on 3.12+. Windows
+    # import has no .abi3.pyd suffix (only .cpXY-*.pyd / .pyd).
+    if(ARG_STABLE_ABI)
+      get_filename_component(_nrn_pylib_dir "${nrnlib}" DIRECTORY)
+      if(EXISTS "${_nrn_pylib_dir}/python3.lib")
+        set(nrnlib "${_nrn_pylib_dir}/python3.lib")
+      elseif(EXISTS "${_nrn_pylib_dir}/libpython3.dll.a")
+        set(nrnlib "${_nrn_pylib_dir}/libpython3.dll.a")
+      endif()
+    endif()
     # On Windows we need to explicitly link to Python
     target_link_libraries(${ARG_TARGET} PRIVATE msvcrt ${nrnlib})
   else()
@@ -180,10 +190,15 @@ function(add_nrn_python_library name)
   string(REPLACE "." "" pyver_nodot "${ARG_PYTHON_VERSION}")
 
   if(ARG_STABLE_ABI)
-    # CPython 3.12+ GIL limited API. Do not NEEDED libpython; the host interpreter provides
-    # stable-ABI symbols.
+    # CPython 3.12+ GIL limited API. Do not NEEDED libpython on Unix; the host interpreter provides
+    # stable-ABI symbols. Windows has no .abi3.pyd import suffix, so the module is name.pyd and
+    # links python3.dll.
     target_compile_definitions(${ARG_TARGET} PRIVATE Py_LIMITED_API=0x030C0000 CYTHON_LIMITED_API=1)
-    set(output_name "${name}.abi3")
+    if(WIN32)
+      set(output_name "${name}")
+    else()
+      set(output_name "${name}.abi3")
+    endif()
   elseif(ARG_NO_EXTENSION)
     set(output_name "${name}")
   else()

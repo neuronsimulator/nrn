@@ -537,6 +537,12 @@ if(NRN_ENABLE_PYTHON)
   # Ensure nanobind is there, but dont import, we don't want its CMake
   nrn_add_external_project(nanobind DISABLE_ADD RECURSIVE SHALLOW)
   include(NanoBindMinimal)
+else()
+  # CoreNEURON/NMODL still configure pybind/CMakeLists.txt; do not call make_nanobind_target without
+  # Python.
+  set(NMODL_ENABLE_PYTHON_BINDINGS
+      OFF
+      CACHE BOOL "Enable NMODL python bindings" FORCE)
 endif()
 
 # =============================================================================
