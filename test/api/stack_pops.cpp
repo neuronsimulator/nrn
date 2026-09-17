@@ -27,27 +27,24 @@ static bool check(bool cond, const char* msg) {
 }
 
 static int observed_dimension{-1};
+static const char probe_error[] = "indexed component probe failed";
+
+static const char* probe_dimension(Object*, Symbol*, int, int) {
+    // Inspect the interpreter's real array marker before nothrow recovery.
+    if (nrn_stack_type() == STACK_IS_INT) {
+        observed_dimension = nrn_int_pop();
+    }
+    return probe_error;
+}
 
 static bool check_indexed_dimension(Object* object, const char* function, int expected) {
     observed_dimension = -1;
-    // HOC pushes a real dimension marker before reporting the missing member.
-    // Inspect it here, BEFORE nothrow recovery removes it. This is a stack
-    // inspection hook, not output capture; it avoids an internal marker-push API.
-    nrn_stdout_redirect([](int, char* message) {
-        if (observed_dimension == -1 && std::strstr(message, "not a public member")) {
-            if (nrn_stack_type() == STACK_IS_INT) {
-                observed_dimension = nrn_int_pop();
-            }
-        }
-        return 0;
-    });
     char error[256]{};
     nrn_double_push(424243.0);
     nrn_object_push(object);
     const int status = nrn_function_call_nothrow(nrn_symbol(function), 1, error, sizeof(error));
-    nrn_stdout_redirect(nullptr);
-    bool ok = check(status != 0, "indexed missing member fails through the nothrow API");
-    ok &= check(std::strstr(error, "not a public member") != nullptr,
+    bool ok = check(status != 0, "indexed component fails through the nothrow API");
+    ok &= check(std::strstr(error, probe_error) != nullptr,
                 "indexed lookup preserves its original error");
     ok &= check(observed_dimension == expected,
                 "indexed access produces a STACK_IS_INT marker with the expected dimension");
@@ -107,12 +104,24 @@ int main(void) {
     nrn_int_push(3);
     ok &= check(nrn_stack_type() == STACK_IS_INT, "ordinary integer probes as STACK_IS_INT");
     ok &= check(nrn_int_pop() == 3, "int pop returns an ordinary integer");
+    Symbol* pyobject = nrn_symbol("PythonObject");
+    char error[256]{};
+    ok &= check(nrn_template_set_component_hooks(
+                    pyobject,
+                    probe_dimension,
+                    [](Object*) { return "unexpected component assignment"; },
+                    error,
+                    sizeof(error)),
+                "dimension probe registered through the public component API");
+    Object* probe = nrn_object_new(pyobject, 0);
+    ok &= check(probe != nullptr, "probe PythonObject constructed");
     ok &= check(nrn_hoc_call("func missing_1() { return $o1.missing[7] }") == 0,
                 "one-dimensional indexed helper defined");
     ok &= check(nrn_hoc_call("func missing_2() { return $o1.missing[2][7] }") == 0,
                 "two-dimensional indexed helper defined");
-    ok &= check_indexed_dimension(vec, "missing_1", 1);
-    ok &= check_indexed_dimension(vec, "missing_2", 2);
+    ok &= check_indexed_dimension(probe, "missing_1", 1);
+    ok &= check_indexed_dimension(probe, "missing_2", 2);
+    nrn_object_unref(probe);
     nrn_object_unref(vec);
 
     // Balance: with every push above consumed by exactly one pop, the sentinel
