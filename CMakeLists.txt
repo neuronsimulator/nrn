@@ -801,7 +801,7 @@ set(NRN_RUN_FROM_BUILD_DIR_ENV "NEURONHOME=${PROJECT_BINARY_DIR}/share/nrn"
 # when building coreNEURON mod files
 if(NOT NRN_LINK_AGAINST_PYTHON)
   set(NRN_RUN_FROM_BUILD_DIR_ENV "${NRN_RUN_FROM_BUILD_DIR_ENV}" "NMODLHOME=${PROJECT_BINARY_DIR}"
-                                 "NMODL_PYLIB=${PYTHON_LIBRARY}")
+                                 "NMODL_PYLIB=${NRN_NMODL_PYLIB}")
 endif()
 prepend_to_var(PATH "${PROJECT_BINARY_DIR}/bin")
 if(APPLE)

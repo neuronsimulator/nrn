@@ -57,12 +57,19 @@ endif()
 target_link_libraries(pywrapper PRIVATE fmt::fmt)
 
 # CLI libpywrapper uses nanobind STABLE_ABI + limited-API Py_Initialize (no pybind11 embed).
-if(NOT TARGET nanobind_nmodl)
-  make_nanobind_target(nanobind_nmodl "${NRN_DEFAULT_PYTHON_INCLUDES}" STABLE_ABI)
+set(_nmodl_python_inc ${NRN_DEFAULT_PYTHON_INCLUDES})
+if(NOT _nmodl_python_inc)
+  find_package(
+    Python 3.12
+    COMPONENTS Interpreter Development.Module
+    REQUIRED)
+  set(_nmodl_python_inc ${Python_INCLUDE_DIRS})
 endif()
-target_include_directories(pyembed PRIVATE ${NRN_DEFAULT_PYTHON_INCLUDES})
-target_include_directories(pywrapper PRIVATE ${NRN_DEFAULT_PYTHON_INCLUDES}
-                                             ${CMAKE_CURRENT_BINARY_DIR})
+if(NOT TARGET nanobind_nmodl)
+  make_nanobind_target(nanobind_nmodl "${_nmodl_python_inc}" STABLE_ABI)
+endif()
+target_include_directories(pyembed PRIVATE ${_nmodl_python_inc})
+target_include_directories(pywrapper PRIVATE ${_nmodl_python_inc} ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(pywrapper PRIVATE nanobind_nmodl)
 target_link_libraries(pyembed PRIVATE ${CMAKE_DL_LIBS})
 if(NOT NRN_LINK_AGAINST_PYTHON)
@@ -72,6 +79,7 @@ if(NOT NRN_LINK_AGAINST_PYTHON)
     target_link_options(pywrapper PRIVATE "-Wl,--unresolved-symbols=ignore-all")
   endif()
 else()
+  target_compile_definitions(pyembed PRIVATE NMODL_STATIC_PYWRAPPER=1)
   set(_nmodl_embed_python ${NRN_DEFAULT_PYTHON_LIBRARIES})
   if(WIN32)
     get_filename_component(_nmodl_pylib_dir "${NRN_DEFAULT_PYTHON_LIBRARIES}" DIRECTORY)
@@ -99,8 +107,7 @@ if(NMODL_ENABLE_PYTHON_BINDINGS)
     ${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/pybind/pynmodl.cpp ${PYBIND_GENERATED_SOURCES})
   add_dependencies(_nmodl lexer pyastgen util)
   target_link_libraries(_nmodl PRIVATE printer symtab visitor nanobind_nmodl)
-  target_include_directories(_nmodl PRIVATE ${NRN_DEFAULT_PYTHON_INCLUDES}
-                                            ${CMAKE_CURRENT_BINARY_DIR})
+  target_include_directories(_nmodl PRIVATE ${_nmodl_python_inc} ${CMAKE_CURRENT_BINARY_DIR})
   # Windows import machinery has no .abi3.pyd suffix; Unix uses _nmodl.abi3.so.
   if(WIN32)
     set(_nmodl_suffix ".pyd")

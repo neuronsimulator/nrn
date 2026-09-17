@@ -226,6 +226,7 @@ if(NRN_ENABLE_PYTHON)
   list(LENGTH NRN_PYTHON_EXECUTABLES NRN_PYTHON_COUNT)
   math(EXPR NRN_PYTHON_ITERATION_LIMIT "${NRN_PYTHON_COUNT} - 1")
 endif()
+include(${CMAKE_CURRENT_LIST_DIR}/FindNmodlPyLib.cmake)
 if(NRN_ENABLE_TESTS AND NRN_ENABLE_PYTHON)
   # Make sure that, if NRN_PYTHON_EXTRA_FOR_TESTS is set, none of its versions clash with versions
   # we're building against

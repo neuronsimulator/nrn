@@ -40,7 +40,7 @@ bool EmbeddedPythonLoader::have_wrappers() {
 
 void EmbeddedPythonLoader::load_libraries() {
     const auto pylib_env = std::getenv("NMODL_PYLIB");
-    if (!pylib_env) {
+    if (!pylib_env || pylib_env[0] == '\0') {
         logger->critical("NMODL_PYLIB environment variable must be set to load embedded python");
         throw std::runtime_error("NMODL_PYLIB not set");
     }
