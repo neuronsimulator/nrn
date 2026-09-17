@@ -31,53 +31,49 @@ using namespace visitor;
  *
  * Slot count is an upper bound on AST node types (visit_* overrides).
  */
-class PyVisitor: public Visitor {
-  public:
+class PyVisitor : public Visitor {
+public:
     NB_TRAMPOLINE(Visitor, 256);
 
-    {% for node in nodes %
-    }
-    void visit_{{node.class_name | snake_case}}(ast::{{node.class_name}} & node) override;
-    { % endfor % }
+    {% for node in nodes %}
+    void visit_{{ node.class_name|snake_case }}(ast::{{ node.class_name }}& node) override;
+    {% endfor %}
 };
 
 
 /**
  * \brief Class mirroring nmodl::visitor::AstVisitor for Python bindings
  */
-class PyAstVisitor: public AstVisitor {
-  public:
+class PyAstVisitor : public AstVisitor {
+public:
     NB_TRAMPOLINE(AstVisitor, 256);
 
-    {% for node in nodes %
-    }
-    void visit_{{node.class_name | snake_case}}(ast::{{node.class_name}} & node) override;
-    { % endfor % }
+    {% for node in nodes %}
+    void visit_{{ node.class_name|snake_case }}(ast::{{ node.class_name }}& node) override;
+    {% endfor %}
 };
 
 /**
  * \brief Class mirroring nmodl::visitor::ConstVisitor for Python bindings
  */
-class PyConstVisitor: public ConstVisitor {
-  public:
+class PyConstVisitor : public ConstVisitor {
+public:
     NB_TRAMPOLINE(ConstVisitor, 256);
 
-    {% for node in nodes %
-    }
-    void visit_{{node.class_name | snake_case}}(const ast::{{node.class_name}} & node) override;
-    { % endfor % }
+    {% for node in nodes %}
+    void visit_{{ node.class_name|snake_case }}(const ast::{{ node.class_name }}& node) override;
+    {% endfor %}
 };
 
 
 /**
  * \brief Class mirroring nmodl::visitor::ConstAstVisitor for Python bindings
  */
-class PyConstAstVisitor: public ConstAstVisitor {
-  public:
+class PyConstAstVisitor : public ConstAstVisitor {
+public:
     NB_TRAMPOLINE(ConstAstVisitor, 256);
 
-    {% for node in nodes %
-    }
-    void visit_{{node.class_name | snake_case}}(const ast::{{node.class_name}} & node) override;
-    { % endfor % }
+    {% for node in nodes %}
+    void visit_{{ node.class_name|snake_case }}(const ast::{{ node.class_name }}& node) override;
+    {% endfor %}
 };

@@ -177,7 +177,7 @@ static Object* pysec_cell(Section* sec) {
     if (auto* pv = sec->prop->dparam[PROP_PY_INDEX].get<void*>(); pv) {
         PyObject* cell_weakref = static_cast<NPySecObj*>(pv)->cell_weakref_;
         if (cell_weakref) {
-#if PY_VERSION_HEX >= 0x030D0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API >= 0x030D0000
             PyObject* cell = nullptr;
             int err = PyWeakref_GetRef(cell_weakref, &cell);
             if (err == -1) {
@@ -229,7 +229,7 @@ static int pysec_cell_equals(Section* sec, Object* obj) {
     if (auto* pv = sec->prop->dparam[PROP_PY_INDEX].get<void*>(); pv) {
         PyObject* cell_weakref = static_cast<NPySecObj*>(pv)->cell_weakref_;
         if (cell_weakref) {
-#if PY_VERSION_HEX >= 0x030D0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API >= 0x030D0000
             PyObject* cell = nullptr;
             int err = PyWeakref_GetRef(cell_weakref, &cell);
             if (err == -1) {
@@ -1223,7 +1223,7 @@ static PyObject* pysec_wholetree_safe(NPySecObj* const self) {
 static PyObject* pysec2cell(NPySecObj* self) {
     nb::object result;
     if (self->cell_weakref_) {
-#if PY_VERSION_HEX >= 0x030D0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API >= 0x030D0000
         PyObject* cell = nullptr;
         int ret = PyWeakref_GetRef(self->cell_weakref_, &cell);
         if (ret > 0) {
