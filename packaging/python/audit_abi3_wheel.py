@@ -25,7 +25,10 @@ def main(argv: list[str]) -> int:
     )
     raw = proc.stdout.strip() or proc.stderr.strip()
     if not raw:
-        print(proc.stderr or proc.stdout or "abi3audit produced no output", file=sys.stderr)
+        print(
+            proc.stderr or proc.stdout or "abi3audit produced no output",
+            file=sys.stderr,
+        )
         return proc.returncode or 1
     try:
         report = json.loads(raw)

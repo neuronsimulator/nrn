@@ -133,6 +133,32 @@ static void nrnpython_set_path(std::string_view fname) {
  * @brief Execute a Python script.
  * @return 0 on failure, 1 on success.
  */
+// Limited-API Py_Initialize leaves sys.stdout fully buffered when nrniv is not a
+// TTY. Flush so output from script N is visible if script N+1 hoc_execerror's.
+static void nrnpy_flush_stdio() {
+    PyObject* sys = PyImport_ImportModule("sys");
+    if (!sys) {
+        PyErr_Clear();
+        fflush(stdout);
+        fflush(stderr);
+        return;
+    }
+    for (const char* name: {"stdout", "stderr"}) {
+        PyObject* stream = PyObject_GetAttrString(sys, name);
+        if (!stream) {
+            PyErr_Clear();
+            continue;
+        }
+        PyObject* r = PyObject_CallMethod(stream, "flush", nullptr);
+        Py_XDECREF(r);
+        PyErr_Clear();
+        Py_DECREF(stream);
+    }
+    Py_DECREF(sys);
+    fflush(stdout);
+    fflush(stderr);
+}
+
 int nrnpy_pyrun(const char* fname) {
     auto* fp = fopen(fname, "r");
     if (fp) {
@@ -147,6 +173,7 @@ int nrnpy_pyrun(const char* fname) {
     if (fp) {
         int const code = nrnpy_run_file(fp, fname);
         fclose(fp);
+        nrnpy_flush_stdio();
         return !code;
     }
     return 0;
@@ -161,9 +188,11 @@ int nrnpy_pyrun(const char* fname) {
     int const code = nrnpy_run_simple_string(exec.c_str());
     if (code) {
         PyErr_Print();
+        nrnpy_flush_stdio();
         return 0;
     }
     nrnpy_run_simple_string("del nrnmingw_file\n");
+    nrnpy_flush_stdio();
     return 1;
 #endif  // MINGW
 }
