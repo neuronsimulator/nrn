@@ -82,12 +82,6 @@ run_mpi_test () {
         cp "test/coreneuron/mod files/"* "${TEMP_DIR}/"
         # also copy one MOD file containing sparse solver
         cp share/examples/nrniv/nmodl/capmp.mod "${TEMP_DIR}"
-        # nmodl CLI embeds CPython via pybind11 (not abi3). An abi3 wheel built on
-        # 3.12 aborts nmodl on 3.13/3.14 with "Python version mismatch".
-        if [[ "$python_ver" != "312" ]]; then
-          echo "Skipping ${nrnivmodl_core}: nmodl was compiled for CPython 3.12 (this is ${python_ver})"
-          continue
-        fi
         ${nrnivmodl_core} "${TEMP_DIR}"
 
         $mpi_launcher -n 1 $python_exe test/coreneuron/test_direct.py
@@ -159,10 +153,6 @@ run_serial_test () {
           # first test vanialla coreneuron support, without nrnivmodl
           $python_exe test/coreneuron/test_psolve.py
 
-          if [[ "$python_ver" != "312" ]]; then
-            echo "Skipping ${compiler}: nmodl was compiled for CPython 3.12 (this is ${python_ver})"
-            continue
-          fi
           ${compiler} "test/coreneuron/mod files/"
 
           # coreneuron+gpu can be used via python but special only

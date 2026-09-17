@@ -10,8 +10,9 @@ endif()
 
 add_library(nmodl_test_flags INTERFACE)
 
-target_include_directories(nmodl_test_flags INTERFACE ${PYBIND11_INCLUDE_DIR}
-                                                      ${PYTHON_INCLUDE_DIRS})
+target_include_directories(
+  nmodl_test_flags INTERFACE ${NRN_DEFAULT_PYTHON_INCLUDES}
+                             ${PROJECT_SOURCE_DIR}/external/nanobind/include)
 target_include_directories(nmodl_test_flags INTERFACE ${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/solver)
 target_include_directories(nmodl_test_flags INTERFACE ${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/utils)
 target_include_directories(nmodl_test_flags INTERFACE ${NMODL_PROJECT_PLATLIB_SOURCE_DIR})
@@ -116,6 +117,7 @@ target_link_libraries(
           printer
           nmodl_codegen
           ${NMODL_WRAPPER_LIBS}
+          nanobind_nmodl
           nmodl_test_flags)
 target_link_libraries(
   testcodegen
@@ -208,7 +210,7 @@ else()
 endif()
 
 # =============================================================================
-# pybind11 tests
+# Python / sympy tests (nmodl CLI embed)
 # =============================================================================
 if(NRN_ENABLE_PYTHON)
   if(NOT (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" AND NRN_SANITIZERS))

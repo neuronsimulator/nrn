@@ -4,57 +4,69 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#define Py_LIMITED_API 0x030C0000
+#include <Python.h>
+
 #include <filesystem>
 #include <optional>
 #include <set>
+#include <string>
+#include <unordered_set>
 #include <vector>
 
-// 3rd party headers
 #include <fmt/format.h>
-#include <pybind11/embed.h>
-#include <pybind11/stl.h>
+#include <nanobind/eval.h>
+#include <nanobind/nanobind.h>
+#include <nanobind/stl/optional.h>
+#include <nanobind/stl/pair.h>
+#include <nanobind/stl/set.h>
+#include <nanobind/stl/string.h>
+#include <nanobind/stl/unordered_set.h>
+#include <nanobind/stl/vector.h>
 
-// NMODL headers
 #include "codegen/codegen_naming.hpp"
 #include "pybind/ode_py.hpp"
-#include "pybind/wrapper.hpp"
 #include "pybind/pyembed.hpp"
+#include "pybind/wrapper.hpp"
 #include "utils/common_utils.hpp"
 
-
 namespace fs = std::filesystem;
-namespace py = pybind11;
-using namespace py::literals;
+namespace nb = nanobind;
 
 namespace nmodl {
 namespace pybind_wrappers {
 
+static bool s_owned_interpreter = false;
+
+static void exec_in(const std::string& code, const nb::dict& locals) {
+    nb::exec(nb::str(code.c_str()), locals, locals);
+}
+
 // This wrapper is used for obtaining better coverage in `ode.py`.
 // Since we embed the `ode.py` as a string, there is no way to check what was covered via running
 // pytest or similar. Instead, we use the coverage.py API directly.
-static void run_python_script(const std::string& script, const py::dict& locals) {
+static void run_python_script(const std::string& script, const nb::dict& locals) {
 #ifdef NRN_ENABLE_COVERAGE
-    // to prevent race conditions during testing, we generate a random suffix
     const auto& suffix =
         nmodl::utils::generate_random_string(20, nmodl::utils::UseNumbersInString::WithoutNumbers);
 
-    py::exec(fmt::format(R"(
+    exec_in(fmt::format(R"(
 import coverage
 cov = coverage.Coverage(data_suffix='{}')
 cov.start()
 )",
-                         suffix),
-             locals);
+                        suffix),
+            locals);
     const auto& code_with_mapping = std::string("exec(compile(r'''" + ode_py + script + "''', '" +
                                                 ode_py_path + "', 'exec'))");
-    py::exec(code_with_mapping, locals);
+    exec_in(code_with_mapping, locals);
 #else
-    py::exec(ode_py + script, locals);
+    exec_in(ode_py + script, locals);
 #endif
 
 #ifdef NRN_ENABLE_COVERAGE
     const auto& path = fs::current_path() / fmt::format("coverage_{}.xml", suffix);
-    py::exec(fmt::format(R"(
+    exec_in(fmt::format(R"(
 cov.stop()
 cov.save()
 # Check if we have any coverage data
@@ -62,8 +74,8 @@ data = cov.get_data()
 if data.measured_files():
     cov.xml_report(outfile='{}')
 )",
-                         path.string()),
-             locals);
+                        path.string()),
+            locals);
 #endif
 }
 
@@ -75,13 +87,14 @@ call_solve_linear_system(const std::vector<std::string>& eq_system,
                          bool elimination,
                          const std::string& tmp_unique_prefix,
                          const std::set<std::string>& function_calls) {
-    const auto locals = py::dict("eq_strings"_a = eq_system,
-                                 "state_vars"_a = state_vars,
-                                 "vars"_a = vars,
-                                 "small_system"_a = small_system,
-                                 "do_cse"_a = elimination,
-                                 "function_calls"_a = function_calls,
-                                 "tmp_unique_prefix"_a = tmp_unique_prefix);
+    nb::dict locals;
+    locals["eq_strings"] = eq_system;
+    locals["state_vars"] = state_vars;
+    locals["vars"] = vars;
+    locals["small_system"] = small_system;
+    locals["do_cse"] = elimination;
+    locals["function_calls"] = function_calls;
+    locals["tmp_unique_prefix"] = tmp_unique_prefix;
     std::string script = R"(
 exception_message = ""
 try:
@@ -100,12 +113,9 @@ except Exception as e:
     exception_message = traceback.format_exc()
 )";
     run_python_script(script, locals);
-    // returns a vector of solutions, i.e. new statements to add to block:
-    auto solutions = locals["solutions"].cast<std::vector<std::string>>();
-    // and a vector of new local variables that need to be declared in the block:
-    auto new_local_vars = locals["new_local_vars"].cast<std::vector<std::string>>();
-    // may also return a python exception message:
-    auto exception_message = locals["exception_message"].cast<std::string>();
+    auto solutions = nb::cast<std::vector<std::string>>(locals["solutions"]);
+    auto new_local_vars = nb::cast<std::vector<std::string>>(locals["new_local_vars"]);
+    auto exception_message = nb::cast<std::string>(locals["exception_message"]);
 
     return {std::move(solutions), std::move(new_local_vars), std::move(exception_message)};
 }
@@ -116,10 +126,11 @@ std::tuple<std::vector<std::string>, std::string> call_solve_nonlinear_system(
     const std::vector<std::string>& state_vars,
     const std::set<std::string>& vars,
     const std::set<std::string>& function_calls) {
-    const auto locals = py::dict("equation_strings"_a = eq_system,
-                                 "state_vars"_a = state_vars,
-                                 "vars"_a = vars,
-                                 "function_calls"_a = function_calls);
+    nb::dict locals;
+    locals["equation_strings"] = eq_system;
+    locals["state_vars"] = state_vars;
+    locals["vars"] = vars;
+    locals["function_calls"] = function_calls;
     std::string script = R"(
 exception_message = ""
 try:
@@ -135,10 +146,8 @@ except Exception as e:
 )";
 
     run_python_script(script, locals);
-    // returns a vector of solutions, i.e. new statements to add to block:
-    auto solutions = locals["solutions"].cast<std::vector<std::string>>();
-    // may also return a python exception message:
-    auto exception_message = locals["exception_message"].cast<std::string>();
+    auto solutions = nb::cast<std::vector<std::string>>(locals["solutions"]);
+    auto exception_message = nb::cast<std::string>(locals["exception_message"]);
 
     return {std::move(solutions), std::move(exception_message)};
 }
@@ -150,16 +159,14 @@ std::tuple<std::string, std::string> call_diffeq_solver(const std::string& node_
                                                         bool use_pade_approx,
                                                         const std::set<std::string>& function_calls,
                                                         const std::string& method) {
-    const auto locals = py::dict("equation_string"_a = node_as_nmodl,
-                                 "dt_var"_a = dt_var,
-                                 "vars"_a = vars,
-                                 "use_pade_approx"_a = use_pade_approx,
-                                 "function_calls"_a = function_calls);
+    nb::dict locals;
+    locals["equation_string"] = node_as_nmodl;
+    locals["dt_var"] = dt_var;
+    locals["vars"] = vars;
+    locals["use_pade_approx"] = use_pade_approx;
+    locals["function_calls"] = function_calls;
 
     if (method == codegen::naming::EULER_METHOD) {
-        // replace x' = f(x) differential equation
-        // with forwards Euler timestep:
-        // x = x + f(x) * dt
         std::string script = R"(
 exception_message = ""
 try:
@@ -173,9 +180,6 @@ except Exception as e:
 
         run_python_script(script, locals);
     } else if (method == codegen::naming::CNEXP_METHOD) {
-        // replace x' = f(x) differential equation
-        // with analytic solution for x(t+dt) in terms of x(t)
-        // x = ...
         std::string script = R"(
 exception_message = ""
 try:
@@ -190,11 +194,10 @@ except Exception as e:
 
         run_python_script(script, locals);
     } else {
-        // nothing to do, but the caller should know.
         return {};
     }
-    auto solution = locals["solution"].cast<std::string>();
-    auto exception_message = locals["exception_message"].cast<std::string>();
+    auto solution = nb::cast<std::string>(locals["solution"]);
+    auto exception_message = nb::cast<std::string>(locals["exception_message"]);
 
     return {std::move(solution), std::move(exception_message)};
 }
@@ -203,7 +206,9 @@ except Exception as e:
 std::tuple<std::string, std::string> call_analytic_diff(
     const std::vector<std::string>& expressions,
     const std::set<std::string>& used_names_in_block) {
-    auto locals = py::dict("expressions"_a = expressions, "vars"_a = used_names_in_block);
+    nb::dict locals;
+    locals["expressions"] = expressions;
+    locals["vars"] = used_names_in_block;
     std::string script = R"(
 exception_message = ""
 try:
@@ -222,8 +227,8 @@ except Exception as e:
 
     run_python_script(script, locals);
 
-    auto solution = locals["solution"].cast<std::string>();
-    auto exception_message = locals["exception_message"].cast<std::string>();
+    auto solution = nb::cast<std::string>(locals["solution"]);
+    auto exception_message = nb::cast<std::string>(locals["exception_message"]);
 
     return {std::move(solution), std::move(exception_message)};
 }
@@ -233,7 +238,6 @@ std::tuple<std::string, std::string> call_diff2c(
     const std::pair<std::string, std::optional<int>>& variable,
     const std::unordered_set<std::string>& indexed_vars) {
     std::string statements;
-    // only indexed variables require special treatment
     for (const auto& var: indexed_vars) {
         statements += fmt::format("_allvars.append(sp.IndexedBase('{}', shape=[1]))\n", var);
     }
@@ -244,7 +248,8 @@ std::tuple<std::string, std::string> call_diff2c(
     } else {
         name = fmt::format("'{}'", name);
     }
-    auto locals = py::dict("expression"_a = expression);
+    nb::dict locals;
+    locals["expression"] = expression;
     std::string script =
         fmt::format(R"(
 _allvars = []
@@ -266,21 +271,29 @@ except Exception as e:
 
     run_python_script(script, locals);
 
-    auto solution = locals["solution"].cast<std::string>();
-    auto exception_message = locals["exception_message"].cast<std::string>();
+    auto solution = nb::cast<std::string>(locals["solution"]);
+    auto exception_message = nb::cast<std::string>(locals["exception_message"]);
 
     return {std::move(solution), std::move(exception_message)};
 }
 
 void initialize_interpreter_func() {
-    pybind11::initialize_interpreter(true);
+    if (!Py_IsInitialized()) {
+        Py_InitializeEx(1);
+        s_owned_interpreter = true;
+    }
 }
 
 void finalize_interpreter_func() {
-    pybind11::finalize_interpreter();
+    if (s_owned_interpreter && Py_IsInitialized()) {
+        if (PyErr_Occurred()) {
+            PyErr_Clear();
+        }
+        Py_Finalize();
+        s_owned_interpreter = false;
+    }
 }
 
-// Prevent mangling for easier `dlsym`.
 extern "C" {
 NMODL_EXPORT pybind_wrap_api nmodl_init_pybind_wrapper_api() noexcept {
     return {&nmodl::pybind_wrappers::initialize_interpreter_func,

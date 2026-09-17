@@ -129,7 +129,7 @@ NRN_MPI_DYNAMIC = { env = "NRN_MPI_DYNAMIC" }
 manylinux-aarch64-image = "docker.io/neuronsimulator/neuron_wheel:manylinux_2_28_aarch64"
 manylinux-x86_64-image = "docker.io/neuronsimulator/neuron_wheel:manylinux_2_28_x86_64"
 # Default `abi3audit --strict` scans every .so, including CLI libpywrapper
-# (pybind11 embed, not an importable module).
+# (nanobind limited-API embed, not an importable module).
 audit-requires = ["abi3audit"]
 audit-command = "python {project}/packaging/python/audit_abi3_wheel.py {abi3_wheel}"
 

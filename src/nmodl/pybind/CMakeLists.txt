@@ -56,26 +56,42 @@ endif()
 
 target_link_libraries(pywrapper PRIVATE fmt::fmt)
 
-target_include_directories(pyembed PRIVATE ${PYBIND11_INCLUDE_DIR} ${PYTHON_INCLUDE_DIRS})
-target_include_directories(pywrapper PRIVATE ${pybind11_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIRS})
-target_include_directories(pywrapper PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-# ~~~
-# pybind11::embed adds PYTHON_LIBRARIES to target_link_libraries. To avoid link to
-# libpython, we can use `module` interface library from pybind11.
-# ~~~
+# CLI libpywrapper uses nanobind STABLE_ABI + limited-API Py_Initialize (no pybind11 embed).
+if(NOT TARGET nanobind_nmodl)
+  make_nanobind_target(nanobind_nmodl "${NRN_DEFAULT_PYTHON_INCLUDES}" STABLE_ABI)
+endif()
+target_include_directories(pyembed PRIVATE ${NRN_DEFAULT_PYTHON_INCLUDES})
+target_include_directories(pywrapper PRIVATE ${NRN_DEFAULT_PYTHON_INCLUDES}
+                                             ${CMAKE_CURRENT_BINARY_DIR})
+target_link_libraries(pywrapper PRIVATE nanobind_nmodl)
 target_link_libraries(pyembed PRIVATE ${CMAKE_DL_LIBS})
 if(NOT NRN_LINK_AGAINST_PYTHON)
-  target_link_libraries(pywrapper PRIVATE pybind11::module)
+  if(APPLE)
+    target_link_options(pywrapper PRIVATE "-Wl,-undefined,dynamic_lookup")
+  elseif(UNIX)
+    target_link_options(pywrapper PRIVATE "-Wl,--unresolved-symbols=ignore-all")
+  endif()
 else()
-  target_link_libraries(pyembed PRIVATE ${PYTHON_LIBRARIES} pywrapper)
-  target_link_libraries(pywrapper PRIVATE pybind11::embed)
+  set(_nmodl_embed_python ${NRN_DEFAULT_PYTHON_LIBRARIES})
+  if(WIN32)
+    get_filename_component(_nmodl_pylib_dir "${NRN_DEFAULT_PYTHON_LIBRARIES}" DIRECTORY)
+    get_filename_component(_nmodl_pyprefix "${_nmodl_pylib_dir}" DIRECTORY)
+    foreach(_cand "${_nmodl_pylib_dir}/python3.lib" "${_nmodl_pylib_dir}/libs/python3.lib"
+                  "${_nmodl_pyprefix}/libs/python3.lib")
+      if(EXISTS "${_cand}")
+        set(_nmodl_embed_python "${_cand}")
+        break()
+      endif()
+    endforeach()
+  endif()
+  target_link_libraries(pyembed PRIVATE ${_nmodl_embed_python} pywrapper)
 endif()
 
 # avoid _nmodl target if python bindings are disabled
 if(NMODL_ENABLE_PYTHON_BINDINGS)
-  # nanobind STABLE_ABI (CPython 3.12+ GIL). Separate from hoc's non-stable nanobind; the two ABIs
-  # are isolated in one process.
-  make_nanobind_target(nanobind_nmodl "${PYTHON_INCLUDE_DIRS}" STABLE_ABI)
+  if(NOT TARGET nanobind_nmodl)
+    make_nanobind_target(nanobind_nmodl "${NRN_DEFAULT_PYTHON_INCLUDES}" STABLE_ABI)
+  endif()
   add_library(
     _nmodl MODULE
     ${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/ast/ast_common.hpp
@@ -83,7 +99,8 @@ if(NMODL_ENABLE_PYTHON_BINDINGS)
     ${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/pybind/pynmodl.cpp ${PYBIND_GENERATED_SOURCES})
   add_dependencies(_nmodl lexer pyastgen util)
   target_link_libraries(_nmodl PRIVATE printer symtab visitor nanobind_nmodl)
-  target_include_directories(_nmodl PRIVATE ${PYTHON_INCLUDE_DIRS} ${CMAKE_CURRENT_BINARY_DIR})
+  target_include_directories(_nmodl PRIVATE ${NRN_DEFAULT_PYTHON_INCLUDES}
+                                            ${CMAKE_CURRENT_BINARY_DIR})
   # Windows import machinery has no .abi3.pyd suffix; Unix uses _nmodl.abi3.so.
   if(WIN32)
     set(_nmodl_suffix ".pyd")
