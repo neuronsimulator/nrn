@@ -8,6 +8,26 @@
 # - neuronmusic
 # ~~~
 
+# Windows limited API must link python3.dll (python3.lib), not python3.XY.dll. pylib may be the
+# versioned DLL in the prefix or the import lib under libs/.
+function(nrn_python3_stable_import_lib pylib out_var)
+  set(_result "${pylib}")
+  if(pylib)
+    get_filename_component(_dir "${pylib}" DIRECTORY)
+    get_filename_component(_parent "${_dir}" DIRECTORY)
+    foreach(_cand "${_dir}/python3.lib" "${_dir}/libs/python3.lib" "${_parent}/libs/python3.lib"
+                  "${_dir}/libpython3.dll.a" "${_parent}/lib/libpython3.dll.a")
+      if(EXISTS "${_cand}")
+        set(_result "${_cand}")
+        break()
+      endif()
+    endforeach()
+  endif()
+  set(${out_var}
+      "${_result}"
+      PARENT_SCOPE)
+endfunction()
+
 # ~~~
 # cythonize(input_file
 # [OUTPUT path/to/output]
@@ -149,12 +169,7 @@ function(add_nrn_python_library name)
     # Limited API must link python3.dll, not python3.XY.dll, so one .pyd loads on 3.12+. Windows
     # import has no .abi3.pyd suffix (only .cpXY-*.pyd / .pyd).
     if(ARG_STABLE_ABI)
-      get_filename_component(_nrn_pylib_dir "${nrnlib}" DIRECTORY)
-      if(EXISTS "${_nrn_pylib_dir}/python3.lib")
-        set(nrnlib "${_nrn_pylib_dir}/python3.lib")
-      elseif(EXISTS "${_nrn_pylib_dir}/libpython3.dll.a")
-        set(nrnlib "${_nrn_pylib_dir}/libpython3.dll.a")
-      endif()
+      nrn_python3_stable_import_lib("${nrnlib}" nrnlib)
     endif()
     # On Windows we need to explicitly link to Python
     target_link_libraries(${ARG_TARGET} PRIVATE msvcrt ${nrnlib})

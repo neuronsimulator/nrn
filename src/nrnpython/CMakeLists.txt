@@ -68,7 +68,11 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
   target_link_libraries(nrnpython PUBLIC nrniv_lib)
   target_link_libraries(nrnpython PRIVATE fmt::fmt ${Readline_LIBRARY} nanobind_py)
   if(NRN_LINK_AGAINST_PYTHON)
-    target_link_libraries(nrnpython PUBLIC ${NRN_DEFAULT_PYTHON_LIBRARIES})
+    set(_nrnpy_link_lib ${NRN_DEFAULT_PYTHON_LIBRARIES})
+    if(WIN32)
+      nrn_python3_stable_import_lib("${NRN_DEFAULT_PYTHON_LIBRARIES}" _nrnpy_link_lib)
+    endif()
+    target_link_libraries(nrnpython PUBLIC ${_nrnpy_link_lib})
   endif()
   set_target_properties(nrnpython PROPERTIES OUTPUT_NAME "nrnpython.abi3")
   install(TARGETS nrnpython DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
@@ -104,7 +108,9 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
     OUTPUT_DIR
     ${PROJECT_BINARY_DIR}/lib/python/neuron)
 
-  if(NRN_LINK_AGAINST_PYTHON)
+  # Windows STABLE_ABI already linked python3.lib in add_nrn_python_library. Do not also link
+  # python3.XY.dll or 3.13+ cannot load hoc.pyd.
+  if(NRN_LINK_AGAINST_PYTHON AND NOT WIN32)
     target_link_libraries(${hoc_module_name} PUBLIC ${NRN_DEFAULT_PYTHON_LIBRARIES})
   endif()
 
@@ -118,11 +124,9 @@ else()
   set_property(TARGET nrnpython PROPERTY POSITION_INDEPENDENT_CODE ON)
   target_include_directories(nrnpython PUBLIC ${INCLUDE_DIRS})
   target_include_directories(nrnpython PUBLIC "${NRN_DEFAULT_PYTHON_INCLUDES}")
-  # Limited API: do not NEEDED libpython on Unix; the host interpreter provides stable-ABI symbols.
-  # Windows still needs the import library. See also nrn/issues/2358 (macOS conda).
-  if(WIN32)
-    target_link_libraries(nrnpython ${NRN_DEFAULT_PYTHON_LIBRARIES})
-  endif()
+  # OBJECT nrnpython is linked into libnrniv. nrnivmodl's `special` links libnrniv without extra
+  # Python libs, so libnrniv must NEEDED libpython. (Wheels use DYNAMIC=ON instead.)
+  target_link_libraries(nrnpython ${NRN_DEFAULT_PYTHON_LIBRARIES})
   target_link_libraries(nrnpython fmt::fmt)
   target_include_directories(nrnpython SYSTEM
                              PUBLIC ${PROJECT_SOURCE_DIR}/${NRN_3RDPARTY_DIR}/eigen)
