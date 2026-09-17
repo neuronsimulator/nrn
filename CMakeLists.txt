@@ -245,7 +245,7 @@ set(NRN_PROFILER
 # =============================================================================
 # Build options for NMODL
 # =============================================================================
-option(NMODL_ENABLE_PYTHON_BINDINGS "Enable pybind11 based python bindings" ON)
+option(NMODL_ENABLE_PYTHON_BINDINGS "Enable nanobind based python bindings" ON)
 set(NMODL_EXTRA_CXX_FLAGS
     ""
     CACHE STRING "Add extra compile flags for NMODL sources")
@@ -534,12 +534,15 @@ endif()
 if(NRN_ENABLE_PYTHON)
   # Make sure the USE_PYTHON macro is defined in the C++ code
   list(APPEND NRN_COMPILE_DEFS USE_PYTHON)
-  # Ensure nanobind is there, but dont import, we don't want its CMake
+endif()
+# nanobind: importable _nmodl/hoc and CLI libpywrapper (limited-API embed).
+if(NRN_ENABLE_PYTHON
+   OR NRN_ENABLE_NMODL
+   OR NRN_ENABLE_CORENEURON)
   nrn_add_external_project(nanobind DISABLE_ADD RECURSIVE SHALLOW)
   include(NanoBindMinimal)
-else()
-  # CoreNEURON/NMODL still configure pybind/CMakeLists.txt; do not call make_nanobind_target without
-  # Python.
+endif()
+if(NOT NRN_ENABLE_PYTHON)
   set(NMODL_ENABLE_PYTHON_BINDINGS
       OFF
       CACHE BOOL "Enable NMODL python bindings" FORCE)
@@ -619,7 +622,6 @@ if(NRN_ENABLE_NMODL
 
   # NMODL non-Python build dependencies
   cpp_cc_git_submodule(json BUILD PACKAGE nlohmann_json REQUIRED)
-  cpp_cc_git_submodule(pybind11 BUILD PACKAGE pybind11 REQUIRED)
 
   option(SPDLOG_FMT_EXTERNAL "Force to use an external {{fmt}}" ON)
   option(SPDLOG_SYSTEM_INCLUDE "Include spdlog as a system lib" ON)
