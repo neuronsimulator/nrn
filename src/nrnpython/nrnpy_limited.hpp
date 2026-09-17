@@ -130,6 +130,17 @@ inline int nrnpy_run_file(FILE* fp, const char* filename) {
         return -1;
     }
     PyObject* dict = PyModule_GetDict(main_mod);
+    // CPython sets __file__ in __main__ for `python script.py`; PyEval_EvalCode does not.
+    if (PyObject* fileobj = PyUnicode_DecodeFSDefault(filename)) {
+        if (PyDict_SetItemString(dict, "__file__", fileobj) < 0) {
+            Py_DECREF(fileobj);
+            PyErr_Print();
+            return -1;
+        }
+        Py_DECREF(fileobj);
+    } else {
+        PyErr_Clear();
+    }
     PyObject* code = Py_CompileString(src.c_str(), filename, Py_file_input);
     if (!code) {
         PyErr_Print();
