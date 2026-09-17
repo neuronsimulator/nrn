@@ -249,7 +249,11 @@ void nrnpython_finalize() {
             "except NameError:\n"
             "    pass\n");
 
-        // Finalize Python
+        // hoc quit() / process exit can reach here while a -c string is still on
+        // the stack; 3.14 then raises SystemError on threading shutdown.
+        if (PyErr_Occurred()) {
+            PyErr_Clear();
+        }
         Py_Finalize();
     }
 #if defined(__linux__) || defined(DARWIN)
