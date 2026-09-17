@@ -371,8 +371,12 @@ static int nrnpython_start(int b) {
         // Beginning with Python 3.13.0 it seems that the readline
         // module has not been loaded yet. Since PyInit_readline sets
         // PyOS_ReadlineFunctionPointer = call_readline; without checking,
-        // we need to import here.
-        nrnpy_run_simple_string("import readline as nrn_readline");
+        // we need to import here. Windows CPython has no readline module.
+        nrnpy_run_simple_string(
+            "try:\n"
+            "    import readline as nrn_readline\n"
+            "except ImportError:\n"
+            "    pass\n");
 
         using readline_fn = char* (*) (FILE*, FILE*, const char*);
         if (auto* slot = static_cast<readline_fn*>(nrnpy_dlsym("PyOS_ReadlineFunctionPointer"))) {
