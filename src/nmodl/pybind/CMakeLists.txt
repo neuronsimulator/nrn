@@ -41,10 +41,13 @@ target_link_libraries(pyembed PRIVATE util)
 target_link_libraries(pyembed PRIVATE fmt::fmt)
 
 if(NOT NRN_LINK_AGAINST_PYTHON)
+  # Wheels: nmodl dlopens libpython then this .so. Do not DT_NEEDED libpython.
   add_library(pywrapper SHARED ${CMAKE_CURRENT_SOURCE_DIR}/wrapper.cpp)
   set_target_properties(pywrapper PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
 else()
-  add_library(pywrapper ${CMAKE_CURRENT_SOURCE_DIR}/wrapper.cpp)
+  # In-tree: BUILD_SHARED_LIBS would otherwise make a .so that testcodegen DT_NEEDs without
+  # libpython (--as-needed), then fails at Catch discover with PyExc_ValueError.
+  add_library(pywrapper STATIC ${CMAKE_CURRENT_SOURCE_DIR}/wrapper.cpp)
   set_property(TARGET pywrapper PROPERTY POSITION_INDEPENDENT_CODE ON)
   target_compile_definitions(pyembed PRIVATE NMODL_STATIC_PYWRAPPER=1)
 endif()
