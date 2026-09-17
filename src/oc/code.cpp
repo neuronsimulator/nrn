@@ -305,6 +305,10 @@ int get_legacy_int_type(StackDatum const& entry) {
 }
 }  // namespace
 
+std::size_t hoc_stack_size() {
+    return stack.size();
+}
+
 /** Get the type of the top entry.
  */
 int hoc_stack_type() {
