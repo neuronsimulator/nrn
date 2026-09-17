@@ -2111,6 +2111,254 @@ CVode
 
 
 
+.. method:: CVode.dae_init_mode
+
+    .. tab:: Python
+
+        Syntax:
+            ``mode = cvode.dae_init_mode()``
+
+            ``mode = cvode.dae_init_mode(mode)``
+
+        Description:
+            Selects how the DAE (IDA) integrator obtains a consistent initial
+            condition after ``finitialize`` or a discontinuity, see
+            :meth:`CVode.use_daspk`.
+
+            * ``0`` — legacy short fully-implicit step heuristic
+              controlled by :meth:`CVode.dae_init_dteps`. This is the default
+              when the environment variable ``NRN_DAE_INIT_MODE_DEFAULT`` is
+              unset (see :doc:`../envvariables`).
+            * ``1`` — try Sundials ``IDACalcIC`` with ``IDA_Y_INIT`` (solve all
+              of ``y`` given ``y'``); on failure fall back to the heuristic.
+            * ``2`` — pure ``IDA_Y_INIT`` only (no heuristic fallback).
+            * ``3`` — **content hold + continuous** :math:`y'` recovery for
+              :math:`C(t)\,y' = f(y,t)`:
+
+              1. **Hold continuous content** and free absolute algebraics:
+                 LinearMechanism floating capacitors → voltage sources holding
+                 branch :math:`\Delta v`; diagonal mass (inductor current) held;
+                 op-amp lag (:math:`\tau v_k'`) holds the differentiated voltage;
+                 extracellular holds :math:`V_m` and capacitive layer drops.
+              2. **Recover** :math:`y'` from :math:`C\,y' = f(y,t)` at that
+                 fixed :math:`y` (diagonal membrane/mechanism mass, simple LM
+                 mass stamps). This is the continuous :math:`dt\to 0` limit and
+                 does **not** use :meth:`CVode.dae_init_dteps`.
+
+              On residual failure, prints a short equation classification
+              (algebraic vs near-singular :math:`c`) and falls back to the
+              mode-``0`` heuristic (unless an IC audit is armed, which keeps
+              pure mode-``3`` state for diagnosis).
+
+            ``IDA_Y_INIT`` does not require a differential/algebraic ``id`` vector.
+            It works well for invertible algebraic LinearMechanism systems.
+            For folded capacitor equations (``C*(v1'-v2')``) the Newton matrix
+            can be singular under ``IDA_Y_INIT``; mode ``1`` then falls back to
+            the heuristic. The shipped default remains ``0`` until mode ``3``
+            is fully validated across models. Set
+            ``NRN_DAE_INIT_MODE_DEFAULT`` to ``0``, ``1``, ``2``, or ``3``
+            before launching ``nrniv`` or importing the neuron module to
+            change the process default without editing scripts. An explicit
+            ``dae_init_mode(mode)`` call overrides that default. The
+            environment variable is read once at CVode class registration.
+
+            Mode ``3`` assumes the post-event (or ``finitialize``) :math:`y` is
+            already on the algebraic manifold for rows with :math:`C=0`. It
+            does not invent a consistent :math:`y` when user/``INITIAL`` state
+            is algebraically inconsistent (e.g. clamp amp ≠ :math:`v`, or
+            ``xc=0`` with an inconsistent ``vext`` gauge).
+
+            **Electrode / source currents** (e.g. :class:`IClamp`, continuous
+            :meth:`Vector.play` into a force, piecewise-linear test stimuli):
+
+            * Use :keyword:`ELECTRODE_CURRENT` and :func:`at_time` breakpoints
+              for step sources so IDA reinit lands on the event.
+            * A **jump** in electrode current is primarily an algebraic
+              :math:`y` problem after hold: free absolute levels (and free
+              end-node voltages when a point process sits at location ``0`` or
+              ``1``); continuous content (:math:`V_m`, floating :math:`\Delta v`,
+              capacitive :math:`xc` drops) is held. Classical :math:`i'` is not
+              required for residual success between flat segments.
+            * A **kink** or ramp (nonzero classical :math:`i'`) matters for free
+              algebraic rates when mass leaves a null space (e.g. series
+              :math:`C`–:math:`R` with play into :math:`b`). Prefer continuous
+              :meth:`Vector.play` or :meth:`LinearMechanism.dforce` for the
+              1-jet of the drive; mode ``3`` reuses that Plan-A path.
+            * With **extracellular**, electrode current is not transmembrane:
+              it couples into the ``vext`` network. Mode ``3`` holds membrane
+              :math:`V_m` (``seg.v``) and capacitive layer drops; algebraic
+              (``xc=0``) layer voltages keep the post-hold network solution
+              (per layer — not a single common-mode copied from ``vext[0]``).
+              Absolute ``vext`` may jump. For coupled membrane/``xc`` mass,
+              rates include electrode current in the :math:`C y' = f` seed.
+            * **Shipped default remains mode ``0``** until you validate mode
+              ``3`` on your models. Use ``NRN_DAE_INIT_MODE_DEFAULT`` (see
+              :doc:`../envvariables`) for a process-wide trial without
+              editing scripts. Use :meth:`CVode.dae_init_stats` and
+              :meth:`CVode.dae_init_audit` when diagnosing reinits.
+
+            **Forcing** :math:`t^+` **info:** the right-limit value
+            :math:`u(t^+)` and classical derivative :math:`u'(t^+)` of
+            exogenous drives after a discontinuity (or at ``finitialize``).
+            In the geometric / DAE literature this pair is the **1-jet** of
+            :math:`u` at :math:`t^+`. Continuous :meth:`Vector.play` supplies
+            this from piecewise-linear samples (outgoing segment slope at a
+            knot; linear extrapolation of the last two points past the end of
+            the ``t`` vector — see :meth:`Vector.play`). At each IDA reinit,
+            those plays are sampled and listed in :meth:`CVode.dae_init_audit`
+            under ``forcing t+ info``. Mode ``3`` uses the sample for
+            LinearMechanism free :math:`y'` (common mode of floating
+            capacitors, etc.): after seeding :math:`C y' = b - G y`, free
+            directions are adjusted so differentiated algebraics hold when
+            :math:`b'` is known from continuous play (e.g. series
+            :math:`C`–:math:`R` ramp: :math:`V_R' = R I'`) or from
+            :meth:`LinearMechanism.dforce` (analytic :math:`b'`, or a finite-
+            difference fallback when only the force callable is provided).
+
+    .. tab:: HOC
+
+        Syntax:
+            ``mode = cvode.dae_init_mode()``
+
+            ``mode = cvode.dae_init_mode(mode)``
+
+        Description:
+            Same as the Python tab: ``0`` heuristic (shipped default if
+            ``NRN_DAE_INIT_MODE_DEFAULT`` is unset), ``1``
+            ``IDA_Y_INIT`` with heuristic fallback, ``2`` pure ``IDA_Y_INIT``,
+            ``3`` battery content hold plus :math:`C y' = f(y)` for :math:`y'`,
+            including electrode/source and extracellular notes above.
+
+----
+
+
+
+.. method:: CVode.dae_init_stats
+
+    .. tab:: Python
+
+        Syntax:
+            ``n = cvode.dae_init_stats()``
+
+            ``cvode.dae_init_stats(1)``
+
+            ``n = cvode.dae_init_stats(vec)``
+
+        Description:
+            IDA consistent-initialization path counters (Plan A5).
+
+            * No argument — print a short summary (also included in
+              :meth:`CVode.statistics`) and return the number of IDA reinits.
+            * ``1`` — reset all IC counters.
+            * ``vec`` — fill a :class:`Vector` of length 8:
+
+              0. total IDA reinits
+              1. mode 3 successes
+              2. mode 3 residual failures that fell back to nano-step
+              3. reinits that applied free :math:`y'` from continuous play
+              4. reinits that applied free :math:`y'` from :meth:`LinearMechanism.dforce`
+              5. reinits that applied free :math:`y'` from FD of the force callable
+              6. last IC path mode (0 heuristic, 1/2 CalcIC, 3 battery+forcing)
+              7. last IC forcing source flags (bit 1=play, 2=dforce, 4=fd, 8=applied)
+
+    .. tab:: HOC
+
+        Same as Python: ``cvode.dae_init_stats()``, ``cvode.dae_init_stats(1)``,
+        or ``cvode.dae_init_stats(vec)``.
+
+----
+
+
+
+.. method:: CVode.dae_init_audit
+
+    .. tab:: Python
+
+        Syntax:
+            ``level = cvode.dae_init_audit()``
+
+            ``level = cvode.dae_init_audit(level)``
+
+            ``level = cvode.dae_init_audit(level, t)``
+
+        Description:
+            Diagnostic **three-panel audit** of DAE (IDA) consistent initialization
+            after ``finitialize`` or a discontinuity reinit. Intended for
+            development: after a run where something looks wrong near a known
+            time, re-run with the audit armed at that time.
+
+            * ``level = 0`` — off (default).
+            * ``level = 1`` — summary only (WRMS / max residual A·B·C, jump sizes).
+            * ``level = 2`` — summary plus top residual rows per panel
+              (``y``, ``y'``, residual ≈ ``c*y' - f(y)``).
+
+            With the optional second argument ``t``, the next reinit with
+            simulation time ``>= t`` produces one dump, then the audit disarms
+            (one-shot). Typical workflow: notice an issue near time ``T``, then
+            ``cvode.dae_init_audit(2, T)`` and re-run. Output goes to stdout, or
+            to a file set by :meth:`CVode.dae_init_audit_file`.
+
+            Panels:
+
+            * **A pre** — continuous ``(y, y')`` and residual at the integrator
+              **retreat** to the discontinuity time (``interpolate`` after a
+              step that may overshoot). Continuous play is synchronized to that
+              time when the residual is captured. Prefer this over the raw step
+              endpoint. Unavailable at the first ``finitialize``.
+            * **B post-event pre-IC** — state after the discontinuity and before
+              the IC projector; residual is usually large on affected equations.
+            * **C post-IC** — after heuristic / ``IDA_Y_INIT`` / mode-3
+              (content hold + :math:`C y'=f`). When mode ``3`` fails residual
+              and an audit is armed, fallback is suppressed so panel C shows
+              pure mode ``3``.
+
+            Here “event” means any discontinuity reinit (``NET_RECEIVE``,
+            ``Vector.play``, ``at_time``, clamps, etc.), not only network events.
+
+    .. tab:: HOC
+
+        Syntax:
+            ``level = cvode.dae_init_audit()``
+
+            ``level = cvode.dae_init_audit(level)``
+
+            ``level = cvode.dae_init_audit(level, t)``
+
+        Description:
+            Same as the Python tab.
+
+----
+
+
+
+.. method:: CVode.dae_init_audit_file
+
+    .. tab:: Python
+
+        Syntax:
+            ``cvode.dae_init_audit_file()``
+
+            ``cvode.dae_init_audit_file(path)``
+
+        Description:
+            Destination for :meth:`CVode.dae_init_audit` text. With no argument
+            or an empty string, write to stdout. With a path, append each audit
+            dump to that file. Returns ``1`` if a file path is set, else ``0``.
+
+    .. tab:: HOC
+
+        Syntax:
+            ``cvode.dae_init_audit_file()``
+
+            ``cvode.dae_init_audit_file("path")``
+
+        Description:
+            Same as the Python tab.
+
+----
+
+
+
 .. method:: CVode.dae_init_dteps
 
     .. tab:: Python
@@ -2128,7 +2376,8 @@ CVode
             The size of the "infinitesimal" fixed fully implicit step used for 
             initialization of the DAE solver, see :func:`use_daspk` , in order to 
             meet the the initial condition requirement of f(y',y,t)=0. The default 
-            is 1e-9 ms. 
+            is 1e-9 ms. Used when :meth:`CVode.dae_init_mode` is ``0``, or as the
+            fallback when mode is ``1``.
          
             The default heuristic for meeting the initial condition requirement based 
             on the pre-initialization value of all the states and an initialization time 
@@ -2194,8 +2443,9 @@ CVode
             The size of the "infinitesimal" fixed fully implicit step used for 
             initialization of the DAE solver, see :func:`use_daspk` , in order to
             meet the the initial condition requirement of f(y',y,t)=0. The default 
-            is 1e-9 ms. 
+            is 1e-9 ms. Also used as fallback when :meth:`CVode.dae_init_mode` is 1.
         
+
         
             The default heuristic for meeting the initial condition requirement based 
             on the pre-initialization value of all the states and an initialization time 
