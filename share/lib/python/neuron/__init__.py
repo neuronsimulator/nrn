@@ -107,23 +107,34 @@ import weakref
 
 embedded = "hoc" in sys.modules
 
-# Importable extensions use the CPython 3.12 GIL limited API (abi3). Reject older
-# interpreters and free-threaded builds before loading native code.
 from ._config_params import (
+    supported_python_versions,
+    limited_api,
     mechanism_prefix,
     mechanism_suffix,
 )
 
 current_version = "{}.{}".format(*sys.version_info[:2])
-if sys.version_info < (3, 12):
-    raise ImportError(
-        "Python {} is not supported by this NEURON installation (requires CPython 3.12 "
-        "or later with the GIL).".format(current_version)
-    )
+if limited_api:
+    if sys.version_info < (3, 12):
+        raise ImportError(
+            "Python {} is not supported by this NEURON installation (requires CPython 3.12 "
+            "or later with the GIL).".format(current_version)
+        )
+else:
+    if current_version not in supported_python_versions:
+        raise ImportError(
+            "Python {} is not supported by this NEURON installation (supported: {}). "
+            "Either re-build NEURON with support for this version, use a supported version "
+            "of Python, or try using nrniv -python so that NEURON can suggest a compatible "
+            "version for you.".format(
+                current_version, " ".join(supported_python_versions)
+            )
+        )
 if hasattr(sys, "_is_gil_enabled") and not sys._is_gil_enabled():
     raise ImportError(
         "This NEURON installation does not support free-threaded Python. "
-        "Use a GIL-enabled CPython 3.12 or later."
+        "Use a GIL-enabled CPython."
     )
 
 try:  # needed since python 3.8 on windows if python launched
@@ -553,7 +564,7 @@ nt_dlls = []
 def nrn_dll_sym_nt(name, type):
     """return the specified object from the NEURON dlls.
     helper for nrn_dll_sym(name, type). Try to find the name in either
-    libnrniv.dll or libnrnpython.abi3.dll
+    libnrniv.dll or libnrnpython*.dll
     """
     global nt_dlls
     import ctypes
@@ -561,9 +572,14 @@ def nrn_dll_sym_nt(name, type):
     if len(nt_dlls) == 0:
         b = "bin"
         path = os.path.join(n.neuronhome().replace("/", "\\"), b)
+        nrnpy_dll = (
+            "libnrnpython.abi3.dll"
+            if limited_api
+            else "libnrnpython{}.{}.dll".format(*sys.version_info[:2])
+        )
         for dllname in [
             "libnrniv.dll",
-            "libnrnpython.abi3.dll",
+            nrnpy_dll,
         ]:
             p = os.path.join(path, dllname)
             try:

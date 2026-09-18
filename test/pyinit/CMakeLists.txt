@@ -167,9 +167,13 @@ foreach(val RANGE ${NRN_PYTHON_COUNT})
           # Not an error if a user's system doesn't have all the names in ${search_names}
           continue()
         endif()
-        if(nrnpy_VERSION VERSION_LESS 3.12)
-          # nrnpyenv.sh accepts any GIL CPython 3.12+ (limited API), not only the versions this
-          # build was configured with.
+        if(NRN_ENABLE_ABI3)
+          if(nrnpy_VERSION VERSION_LESS 3.12)
+            # nrnpyenv.sh accepts any GIL CPython 3.12+ (limited API), not only the versions this
+            # build was configured with.
+            continue()
+          endif()
+        elseif(NOT nrnpy_VERSION IN_LIST NRN_PYTHON_VERSIONS)
           continue()
         endif()
         # Right, so the default should be nrnpy_EXECUTABLE, which is nrnpy_VERSION
@@ -268,12 +272,13 @@ foreach(val RANGE ${NRN_PYTHON_COUNT})
     COMMAND nrniv ${nrniv_args} -c "nrnpython(\"import sys$<SEMICOLON> print(sys.path)\")")
 endforeach()
 if(NRN_PYTHON_EXTRA_FOR_TESTS)
-  # Extra Pythons that were not used to compile. Importable extensions use the 3.12 GIL limited API,
-  # so GIL CPython 3.12+ should import; older versions should fail.
+  # Extra Pythons that were not used to compile. With ABI3, GIL CPython 3.12+ should import; older
+  # versions should fail. Without ABI3, only the versions this build compiled against import.
   foreach(val RANGE ${NRN_PYTHON_EXTRA_FOR_TESTS_ITERATION_LIMIT})
     list(GET NRN_PYTHON_EXTRA_FOR_TESTS_EXECUTABLES ${val} pyexe)
     list(GET NRN_PYTHON_EXTRA_FOR_TESTS_VERSIONS ${val} pyver)
-    if(pyver VERSION_GREATER_EQUAL 3.12)
+    if((NRN_ENABLE_ABI3 AND pyver VERSION_GREATER_EQUAL 3.12)
+       OR ((NOT NRN_ENABLE_ABI3) AND pyver IN_LIST NRN_PYTHON_VERSIONS))
       nrn_add_test(
         GROUP pyinit
         NAME python${pyver}_import_ok
@@ -310,10 +315,17 @@ if(NRN_PYTHON_EXTRA_FOR_TESTS)
           set(properties WILL_FAIL ON)
         else()
           string(REPLACE "." "\\." pyver_escaped "${pyver}")
-          set(properties
-              PASS_REGULAR_EXPRESSION
-              "Python ${pyver_escaped} is not supported by this NEURON installation \\(requires CPython 3\\.12"
-          )
+          if(NRN_ENABLE_ABI3)
+            set(properties
+                PASS_REGULAR_EXPRESSION
+                "Python ${pyver_escaped} is not supported by this NEURON installation \\(requires CPython 3\\.12"
+            )
+          else()
+            set(properties
+                PASS_REGULAR_EXPRESSION
+                "Python ${pyver_escaped} is not supported by this NEURON installation \\(supported:"
+            )
+          endif()
         endif()
         set_tests_properties(pyinit::python${pyver}_import_fail_check_${check}
                              PROPERTIES ${properties})

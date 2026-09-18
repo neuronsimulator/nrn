@@ -37,40 +37,79 @@ if(NOT "${STATUS_CODE}" STREQUAL "0")
   message(FATAL_ERROR "Could not find NumPy headers for ${NRN_DEFAULT_PYTHON_EXECUTABLE}")
 endif()
 
-# Limited API: one graphicsPrimitives.abi3 / ctng.abi3. Dynamic Python also links libnrnpython.abi3
-# (in libnrniv when dynamic Python is off).
+# ABI3=ON: one graphicsPrimitives.abi3 / ctng.abi3. ABI3=OFF + DYNAMIC: one module per Python.
 set(rxd_libs nrniv_lib rxdmath)
-if(NRN_ENABLE_PYTHON_DYNAMIC)
+if(NRN_ENABLE_PYTHON_DYNAMIC AND NRN_ENABLE_ABI3)
   list(APPEND rxd_libs nrnpython)
 endif()
 
-foreach(source ${rxd_sources})
-  add_nrn_python_library(
-    ${source}
-    TARGET
-    ${source}
-    PYTHON_VERSION
-    ${NRN_DEFAULT_PYTHON_VERSION}
-    STABLE_ABI
-    LANGUAGE
-    "C"
-    SOURCES
-    ${${source}_sources}
-    INCLUDES
-    # on Linux, if numpy is installed via the system package manager, CMake would use those instead,
-    # so we place the numpy headers before the Python ones
-    "${NUMPY_INCLUDE_DIR}"
-    "${NRN_DEFAULT_PYTHON_INCLUDES}"
-    LIBRARIES
-    ${rxd_libs}
-    INSTALL_REL_RPATH
-    ${rel_rpath}
-    OUTPUT_DIR
-    ${PROJECT_BINARY_DIR}/lib/python/neuron/rxd/geometry3d)
-  target_compile_options(${source} PRIVATE "-O${NRN_RX3D_OPT_LEVEL}")
-  target_compile_definitions(${source} PRIVATE NPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION)
-  if(APPLE)
-    target_link_options(${source} PRIVATE "-headerpad_max_install_names")
-  endif()
-endforeach()
-install(TARGETS graphicsPrimitives ctng DESTINATION ${NRN_INSTALL_PYTHON_PREFIX}/rxd/geometry3d)
+if(NRN_ENABLE_PYTHON_DYNAMIC AND NOT NRN_ENABLE_ABI3)
+  foreach(val RANGE ${NRN_PYTHON_ITERATION_LIMIT})
+    list(GET NRN_PYTHON_VERSIONS ${val} pyver)
+    list(GET NRN_PYTHON_INCLUDES ${val} pyinc)
+    foreach(source ${rxd_sources})
+      add_nrn_python_library(
+        ${source}
+        TARGET
+        ${source}${pyver}
+        PYTHON_VERSION
+        ${pyver}
+        LANGUAGE
+        "C"
+        SOURCES
+        ${${source}_sources}
+        INCLUDES
+        # on Linux, if numpy is installed via the system package manager, CMake would use those
+        # instead, so we place the numpy headers before the Python ones
+        "${NUMPY_INCLUDE_DIR}"
+        "${pyinc}"
+        LIBRARIES
+        nrniv_lib
+        rxdmath
+        nrnpython${pyver}
+        INSTALL_REL_RPATH
+        ${rel_rpath}
+        OUTPUT_DIR
+        ${PROJECT_BINARY_DIR}/lib/python/neuron/rxd/geometry3d)
+      target_compile_options(${source}${pyver} PRIVATE "-O${NRN_RX3D_OPT_LEVEL}")
+      target_compile_definitions(${source}${pyver}
+                                 PRIVATE NPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION)
+      if(APPLE)
+        target_link_options(${source}${pyver} PRIVATE "-headerpad_max_install_names")
+      endif()
+    endforeach()
+    install(TARGETS graphicsPrimitives${pyver} ctng${pyver}
+            DESTINATION ${NRN_INSTALL_PYTHON_PREFIX}/rxd/geometry3d)
+  endforeach()
+else()
+  foreach(source ${rxd_sources})
+    add_nrn_python_library(
+      ${source}
+      TARGET
+      ${source}
+      PYTHON_VERSION
+      ${NRN_DEFAULT_PYTHON_VERSION}
+      ${NRN_STABLE_ABI_ARG}
+      LANGUAGE
+      "C"
+      SOURCES
+      ${${source}_sources}
+      INCLUDES
+      # on Linux, if numpy is installed via the system package manager, CMake would use those
+      # instead, so we place the numpy headers before the Python ones
+      "${NUMPY_INCLUDE_DIR}"
+      "${NRN_DEFAULT_PYTHON_INCLUDES}"
+      LIBRARIES
+      ${rxd_libs}
+      INSTALL_REL_RPATH
+      ${rel_rpath}
+      OUTPUT_DIR
+      ${PROJECT_BINARY_DIR}/lib/python/neuron/rxd/geometry3d)
+    target_compile_options(${source} PRIVATE "-O${NRN_RX3D_OPT_LEVEL}")
+    target_compile_definitions(${source} PRIVATE NPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION)
+    if(APPLE)
+      target_link_options(${source} PRIVATE "-headerpad_max_install_names")
+    endif()
+  endforeach()
+  install(TARGETS graphicsPrimitives ctng DESTINATION ${NRN_INSTALL_PYTHON_PREFIX}/rxd/geometry3d)
+endif()

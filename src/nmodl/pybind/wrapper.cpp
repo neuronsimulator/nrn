@@ -4,7 +4,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#define Py_LIMITED_API 0x030C0000
 #include <Python.h>
 
 #include <filesystem>

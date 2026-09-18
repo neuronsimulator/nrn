@@ -59,17 +59,17 @@ endif()
 
 target_link_libraries(pywrapper PRIVATE fmt::fmt)
 
-# CLI libpywrapper uses nanobind STABLE_ABI + limited-API Py_Initialize (no pybind11 embed).
+# CLI libpywrapper uses nanobind (STABLE_ABI when NRN_ENABLE_ABI3) + Py_Initialize.
 set(_nmodl_python_inc ${NRN_DEFAULT_PYTHON_INCLUDES})
 if(NOT _nmodl_python_inc)
   find_package(
-    Python 3.12
+    Python ${NRN_MINIMUM_PYTHON_VERSION}
     COMPONENTS Interpreter Development.Module
     REQUIRED)
   set(_nmodl_python_inc ${Python_INCLUDE_DIRS})
 endif()
 if(NOT TARGET nanobind_nmodl)
-  make_nanobind_target(nanobind_nmodl "${_nmodl_python_inc}" STABLE_ABI)
+  make_nanobind_target(nanobind_nmodl "${_nmodl_python_inc}" ${NRN_STABLE_ABI_ARG})
 endif()
 target_include_directories(pyembed PRIVATE ${_nmodl_python_inc})
 target_include_directories(pywrapper PRIVATE ${_nmodl_python_inc} ${CMAKE_CURRENT_BINARY_DIR})
@@ -84,7 +84,7 @@ if(NOT NRN_LINK_AGAINST_PYTHON)
 else()
   target_compile_definitions(pyembed PRIVATE NMODL_STATIC_PYWRAPPER=1)
   set(_nmodl_embed_python ${NRN_DEFAULT_PYTHON_LIBRARIES})
-  if(WIN32)
+  if(WIN32 AND NRN_ENABLE_ABI3)
     get_filename_component(_nmodl_pylib_dir "${NRN_DEFAULT_PYTHON_LIBRARIES}" DIRECTORY)
     get_filename_component(_nmodl_pyprefix "${_nmodl_pylib_dir}" DIRECTORY)
     foreach(_cand "${_nmodl_pylib_dir}/python3.lib" "${_nmodl_pylib_dir}/libs/python3.lib"
@@ -101,7 +101,7 @@ endif()
 # avoid _nmodl target if python bindings are disabled
 if(NMODL_ENABLE_PYTHON_BINDINGS)
   if(NOT TARGET nanobind_nmodl)
-    make_nanobind_target(nanobind_nmodl "${NRN_DEFAULT_PYTHON_INCLUDES}" STABLE_ABI)
+    make_nanobind_target(nanobind_nmodl "${NRN_DEFAULT_PYTHON_INCLUDES}" ${NRN_STABLE_ABI_ARG})
   endif()
   add_library(
     _nmodl MODULE
@@ -111,11 +111,22 @@ if(NMODL_ENABLE_PYTHON_BINDINGS)
   add_dependencies(_nmodl lexer pyastgen util)
   target_link_libraries(_nmodl PRIVATE printer symtab visitor nanobind_nmodl)
   target_include_directories(_nmodl PRIVATE ${_nmodl_python_inc} ${CMAKE_CURRENT_BINARY_DIR})
-  # Windows import machinery has no .abi3.pyd suffix; Unix uses _nmodl.abi3.so.
-  if(WIN32)
-    set(_nmodl_suffix ".pyd")
+  if(NRN_ENABLE_ABI3)
+    # Windows import machinery has no .abi3.pyd suffix; Unix uses _nmodl.abi3.so.
+    if(WIN32)
+      set(_nmodl_suffix ".pyd")
+    else()
+      set(_nmodl_suffix ".abi3${CMAKE_SHARED_MODULE_SUFFIX}")
+    endif()
   else()
-    set(_nmodl_suffix ".abi3${CMAKE_SHARED_MODULE_SUFFIX}")
+    execute_process(
+      COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} -c
+              "import sysconfig; print(sysconfig.get_config_var('EXT_SUFFIX') or '')"
+      OUTPUT_VARIABLE _nmodl_suffix
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if(NOT _nmodl_suffix)
+      set(_nmodl_suffix "${CMAKE_SHARED_MODULE_SUFFIX}")
+    endif()
   endif()
   set_target_properties(
     _nmodl
@@ -133,17 +144,19 @@ if(NMODL_ENABLE_PYTHON_BINDINGS)
   elseif(UNIX)
     target_link_options(_nmodl PRIVATE "-Wl,--unresolved-symbols=ignore-all")
   elseif(WIN32)
-    # Limited API: python3.lib (python3.dll), not python3.XY.dll.
-    get_filename_component(_nmodl_pylib_dir "${PYTHON_LIBRARIES}" DIRECTORY)
-    get_filename_component(_nmodl_pyprefix "${_nmodl_pylib_dir}" DIRECTORY)
     set(_nmodl_pylib "${PYTHON_LIBRARIES}")
-    foreach(_cand "${_nmodl_pylib_dir}/python3.lib" "${_nmodl_pylib_dir}/libs/python3.lib"
-                  "${_nmodl_pyprefix}/libs/python3.lib")
-      if(EXISTS "${_cand}")
-        set(_nmodl_pylib "${_cand}")
-        break()
-      endif()
-    endforeach()
+    if(NRN_ENABLE_ABI3)
+      # Limited API: python3.lib (python3.dll), not python3.XY.dll.
+      get_filename_component(_nmodl_pylib_dir "${PYTHON_LIBRARIES}" DIRECTORY)
+      get_filename_component(_nmodl_pyprefix "${_nmodl_pylib_dir}" DIRECTORY)
+      foreach(_cand "${_nmodl_pylib_dir}/python3.lib" "${_nmodl_pylib_dir}/libs/python3.lib"
+                    "${_nmodl_pyprefix}/libs/python3.lib")
+        if(EXISTS "${_cand}")
+          set(_nmodl_pylib "${_cand}")
+          break()
+        endif()
+      endforeach()
+    endif()
     target_link_libraries(_nmodl PRIVATE ${_nmodl_pylib})
   endif()
 

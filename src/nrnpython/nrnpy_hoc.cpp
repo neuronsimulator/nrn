@@ -138,6 +138,7 @@ PyTypeObject* hocobject_type;
 static PyObject* hocobj_call(PyHocObject* self, PyObject* args, PyObject* kwrds);
 static PyObject* hocclass_getattro(PyObject* self, PyObject* pyname);
 
+#ifdef Py_LIMITED_API
 static PyTypeObject* hocclass_meta = nullptr;
 
 static Symbol*& hocclass_sym(PyObject* cls) {
@@ -152,6 +153,23 @@ static int hocclass_init(PyObject* cls, PyObject* args, PyObject* kwds) {
     }
     return 0;
 }
+#else
+struct hocclass {
+    PyTypeObject head;
+    Symbol* sym;
+};
+
+static Symbol*& hocclass_sym(PyObject* cls) {
+    return reinterpret_cast<hocclass*>(cls)->sym;
+}
+
+static int hocclass_init(PyObject* cls, PyObject* args, PyObject* kwds) {
+    if (PyType_Type.tp_init(cls, args, kwds) < 0) {
+        return -1;
+    }
+    return 0;
+}
+#endif
 
 // Returns a new reference.
 static PyObject* hocclass_getitem(PyObject* self, Py_ssize_t ix) {
@@ -3409,15 +3427,27 @@ extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
     }
 
     hocclass_slots[0].pfunc = (PyObject*) &PyType_Type;
+#ifdef Py_LIMITED_API
     // PEP 697: negative basicsize is extra bytes after the metaclass instance
     // size (opaque PyTypeObject). Holds Symbol* for each exposed HOC class.
     hocclass_spec.basicsize = -static_cast<int>(sizeof(Symbol*));
+#else
+    // Full C API: Symbol* lives after PyTypeObject (CPython < 3.12 / ABI3=OFF).
+    hocclass_spec.basicsize = PyType_Type.tp_basicsize + sizeof(Symbol*);
+    size_t alignment = alignof(Symbol*);
+    size_t remainder = hocclass_spec.basicsize % alignment;
+    if (remainder != 0) {
+        hocclass_spec.basicsize += alignment - remainder;
+    }
+#endif
 
     PyObject* custom_hocclass = PyType_FromSpec(&hocclass_spec);
     if (!custom_hocclass) {
         return nullptr;
     }
+#ifdef Py_LIMITED_API
     hocclass_meta = (PyTypeObject*) custom_hocclass;
+#endif
     if (PyModule_AddObject(m, "HocClass", custom_hocclass) < 0) {
         return nullptr;
     }
