@@ -4,9 +4,6 @@
 /* /local/src/master/nrn/src/oc/xred.cpp,v 1.3 1996/02/16 16:19:33 hines Exp */
 /*
 xred.cpp,v
- * Revision 1.3  1996/02/16  16:19:33  hines
- * OCSMALL used to throw out things not needed by teaching programs
- *
  * Revision 1.2  1995/04/03  13:58:43  hines
  * Port to MSWindows
  *
@@ -63,7 +60,6 @@ int hoc_ired(const char* prompt, int defalt, int min, int max) {
     input is freeform as scanf can make it.
 */
 double hoc_xred(const char* prompt, double defalt, double min, double max) {
-#if !OCSMALL
     char istr[80], c[2];
     double input;
     for (;;) {
@@ -91,9 +87,6 @@ double hoc_xred(const char* prompt, double defalt, double min, double max) {
         }
         IGNORE(fprintf(stderr, "input error\n"));
     }
-#else
-    return 0.;
-#endif
 }
 
 
@@ -102,20 +95,15 @@ double hoc_xred(const char* prompt, double defalt, double min, double max) {
 */
 
 void hoc_Sred(void) {
-#if !OCSMALL
     char defalt[80], **pdefalt;
     double x;
     strcpy(defalt, gargstr(2));
     pdefalt = hoc_pgargstr(2);
     x = (double) hoc_sred(gargstr(1), defalt, gargstr(3));
     hoc_assign_str(pdefalt, defalt);
-#else
-    double x = 0.;
-#endif
     hoc_ret();
     hoc_pushx(x);
 }
-#if !OCSMALL
 
 /*   sred.cpp  SW Jaslove    March 23, 1992
           n = sred(prompt,default,charlist)
@@ -165,5 +153,3 @@ int hoc_sred(const char* prompt, char* defalt, char* charlist) {
     }
     return 0;
 }
-
-#endif
