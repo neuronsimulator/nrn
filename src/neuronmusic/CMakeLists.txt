@@ -11,7 +11,7 @@ cythonize(
   PYTHON_EXECUTABLE
   ${NRN_DEFAULT_PYTHON_EXECUTABLE})
 
-if(NRN_ENABLE_PYTHON_DYNAMIC)
+if(NRN_ENABLE_PYTHON_DYNAMIC AND NOT NRN_ENABLE_ABI3)
   foreach(val RANGE ${NRN_PYTHON_ITERATION_LIMIT})
     list(GET NRN_PYTHON_VERSIONS ${val} pyver)
     list(GET NRN_PYTHON_INCLUDES ${val} pyinc)
@@ -34,7 +34,7 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
       ${PROJECT_SOURCE_DIR}/src/nrnpython
       ${CMAKE_CURRENT_SOURCE_DIR}
       LIBRARIES
-      nrnpython
+      nrnpython${pyver}
       # TODO figure out where to put this module so RPATH can be adjusted
       INSTALL_REL_RPATH
       ${rel_rpath}
@@ -43,12 +43,17 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
 
   endforeach()
 else()
+  set(_neuronmusic_libs)
+  if(NRN_ENABLE_PYTHON_DYNAMIC)
+    list(APPEND _neuronmusic_libs nrnpython)
+  endif()
   add_nrn_python_library(
     ${source}
     TARGET
     ${source}
     PYTHON_VERSION
     ${NRN_DEFAULT_PYTHON_VERSION}
+    ${NRN_STABLE_ABI_ARG}
     LANGUAGE
     "CXX"
     SOURCES
@@ -59,6 +64,8 @@ else()
     "${MPI_C_INCLUDE_DIRS}"
     ${PROJECT_SOURCE_DIR}/src/nrnpython
     ${CMAKE_CURRENT_SOURCE_DIR}
+    LIBRARIES
+    ${_neuronmusic_libs}
     # TODO figure out where to put this module so RPATH can be adjusted
     INSTALL_REL_RPATH
     ${rel_rpath}

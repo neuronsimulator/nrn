@@ -96,7 +96,8 @@ static bool ends_with(std::string_view str, std::string_view suffix) {
  * @brief Figure out which Python to load.
  *
  * When dynamic Python support is enabled, NEURON needs to figure out which
- * libpythonX.Y to load, and then load it followed by libnrnpython.abi3. This can
+ * libpythonX.Y to load, and then load it followed by libnrnpython.abi3 (limited
+ * API) or libnrnpythonX.Y. This can
  * be steered both using commandline options and by
  * using environment variables. The logic is as follows:
  *
@@ -234,7 +235,7 @@ void nrnpython_reg() {
             }
         }
         if (handle || nrn_is_python_extension) {
-            // Load libnrnpython.abi3.so
+            // Load libnrnpython.abi3.so or libnrnpythonX.Y.so
             reg_fn = load_nrnpython();
         }
 #else
@@ -288,20 +289,43 @@ static nrnpython_reg_real_t load_nrnpython() {
         }
         pyversion = nrnpy_pyversion;
     }
-    // Limited API floor is CPython 3.12. Free-threaded builds are rejected from Python on import.
-    if (!python_version_at_least_312(pyversion)) {
-        Fprintf(stderr,
-                fmt::format("Python {} is not supported by this NEURON installation (requires "
-                            "CPython 3.12 or later with the GIL). If you set NRN_PYLIB, "
-                            "NRN_PYTHONEXE or NRN_PYTHONVERSION, try unsetting them.\n",
-                            pyversion)
-                    .c_str());
-        return nullptr;
-    }
-    // Construct libnrnpython.abi3.so (or other platforms' equivalent)
     std::string name;
     name.append(neuron::config::shared_library_prefix);
-    name.append("nrnpython.abi3");
+    if (neuron::config::python_limited_api) {
+        // Limited API floor is CPython 3.12. Free-threaded builds are rejected from Python on
+        // import.
+        if (!python_version_at_least_312(pyversion)) {
+            Fprintf(stderr,
+                    fmt::format("Python {} is not supported by this NEURON installation (requires "
+                                "CPython 3.12 or later with the GIL). If you set NRN_PYLIB, "
+                                "NRN_PYTHONEXE or NRN_PYTHONVERSION, try unsetting them.\n",
+                                pyversion)
+                        .c_str());
+            return nullptr;
+        }
+        name.append("nrnpython.abi3");
+    } else {
+        auto const& supported_versions = neuron::config::supported_python_versions;
+        auto const iter =
+            std::find(supported_versions.begin(), supported_versions.end(), pyversion);
+        if (iter == supported_versions.end()) {
+            Fprintf(
+                stderr,
+                fmt::format("Python {} is not supported by this NEURON installation (supported:",
+                            pyversion)
+                    .c_str());
+            for (auto const& good_ver: supported_versions) {
+                Fprintf(stderr, fmt::format(" {}", good_ver).c_str());
+            }
+            Fprintf(stderr,
+                    "). If you are seeing this message, your environment probably contains "
+                    "NRN_PYLIB, NRN_PYTHONEXE and NRN_PYTHONVERSION settings that are "
+                    "incompatible with this NEURON. Try unsetting them.\n");
+            return nullptr;
+        }
+        name.append("nrnpython");
+        name.append(pyversion);
+    }
     name.append(neuron::config::shared_library_suffix);
 #ifndef MINGW
     // Build a path from neuron_home on macOS and Linux
