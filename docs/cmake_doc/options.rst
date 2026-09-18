@@ -353,7 +353,7 @@ NRN_PYTHON_DYNAMIC:STRING=
 
   .. code-block:: shell
 
-    -DNRN_PYTHON_DYNAMIC="python3.10;python3.11"
+    -DNRN_PYTHON_DYNAMIC="python3.12;python3.14"
 
   The first entry in the list is considered to be the default version, followed
   by alternatives in decreasing order of preference.
@@ -363,6 +363,39 @@ NRN_PYTHON_DYNAMIC:STRING=
   This option is ignored unless ``NRN_ENABLE_PYTHON_DYNAMIC=ON``, in which case
   ``PYTHON_EXECUTABLE`` is ignored.
 
+  How those listed interpreters are compiled depends on
+  :ref:`NRN_ENABLE_ABI3 <cmake-nrn-enable-abi3>` (one ``libnrnpython.abi3``
+  vs ``libnrnpythonX.Y`` per version).
+
+.. _cmake-nrn-enable-abi3:
+
+NRN_ENABLE_ABI3:BOOL=
+---------------------
+  Build Python extensions against the CPython 3.12 limited API (``abi3``).
+
+  * **ON**: ``Py_LIMITED_API=0x030C0000``. Extension names are
+    ``hoc.abi3`` / ``libnrnpython.abi3`` (Windows: ``hoc.pyd`` +
+    ``python3.dll``). Requires GIL-enabled CPython **3.12+** for every
+    interpreter in ``NRN_PYTHON_DYNAMIC``. A 3.12-built wheel
+    (``wheel.py-api=cp312``) then loads on 3.13/3.14 without rebuilding.
+    Default when the default Python is 3.12+ and for wheels (``SKBUILD``).
+    Wheel builds force this ON.
+  * **OFF**: no limited API. Versioned modules
+    (``hoc.cpython-3XY-…``, ``libnrnpythonX.Y``) for each configured
+    interpreter. Minimum Python is **3.10**. Default when the default
+    Python is older than 3.12.
+
+  Source users who still have 3.10/3.11 should leave this OFF (or pass
+  ``-DNRN_ENABLE_ABI3=OFF`` if CMake would otherwise default ON).
+  ``-DNRN_ENABLE_ABI3=ON`` with a 3.11 default is a configure error.
+
+  With ``NRN_ENABLE_PYTHON_DYNAMIC=ON``:
+
+  * ABI3 ON: one limited-API library against the default (first) Python;
+    extra list entries are for ``nrniv -python`` search and tests.
+  * ABI3 OFF: one ``libnrnpythonX.Y`` and versioned ``hoc`` per listed
+    version.
+
 PYTHON_EXECUTABLE:PATH=
 -----------------------
   Use provided python binary instead of the one found by CMake.
@@ -370,7 +403,7 @@ PYTHON_EXECUTABLE:PATH=
 
   .. code-block:: shell
 
-    -DPYTHON_EXECUTABLE=`which python3.8`
+    -DPYTHON_EXECUTABLE=`which python3.12`
 
 NRN_ENABLE_RX3D:BOOL=ON
 -----------------------
@@ -423,10 +456,11 @@ To see all the NMODL CMake options you can look in https://github.com/BlueBrain/
 
 NMODL_ENABLE_PYTHON_BINDINGS:BOOL=OFF
 -------------------------------------
-  Enable pybind11 based python bindings
+  Enable nanobind-based Python bindings (``neuron.nmodl`` / ``_nmodl``).
 
   Using this option the user can use the NMODL python package to use NMODL via python. For more information look at
   the NMODL documentation in https://bluebrain.github.io/nmodl/html/notebooks/nmodl-python-tutorial.html.
+  With ``NRN_ENABLE_ABI3=ON`` the extension is limited-API (``_nmodl.abi3``).
 
 
 Occasionally useful advanced options:
@@ -746,10 +780,10 @@ NRN_ENABLE_BACKTRACE:BOOL=OFF
 NRN_LINK_AGAINST_PYTHON:BOOL=OFF
 --------------------------------
   When ``NRN_ENABLE_PYTHON_DYNAMIC=ON`` then link the NEURON-Python interface
-  libraries ``libnrnpythonX.Y.so`` against the corresponding Python library
-  that was found at configuration time (``libpythonX.Y.so``).
-  This is enabled by default on Windows, but is not generally needed on macOS
-  and Linux, where the Python library is found and loaded dynamically at
+  library (``libnrnpython.abi3`` if ``NRN_ENABLE_ABI3=ON``, else
+  ``libnrnpythonX.Y.so``) against the Python library found at configuration
+  time. This is enabled by default on Windows, but is not generally needed on
+  macOS and Linux, where the Python library is found and loaded dynamically at
   runtime.
 
 NRN_PYTHON_EXTRA_FOR_TESTS:STRING=

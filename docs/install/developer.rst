@@ -4,6 +4,21 @@ Developer Builds
 Developer builds for creating Binary and Python wheel distributions, tests, documentation, code coverage.
 Each aspect generally has extra dependencies and special instructions.
 
+**Python versions**
+
+* Source CMake: GIL-enabled CPython **3.10+**. See
+  :ref:`NRN_ENABLE_ABI3 <cmake-nrn-enable-abi3>`.
+* ``NRN_ENABLE_ABI3=ON`` (default when the default Python is 3.12+, and
+  forced for wheels): limited API, ``cp312-abi3`` / ``libnrnpython.abi3``.
+  Needs CPython **3.12+**.
+* ``NRN_ENABLE_ABI3=OFF`` (default when the default Python is older than
+  3.12): versioned ``hoc.cpython-3XY`` and ``libnrnpythonX.Y``.
+* Wheels: one ``cp312-abi3`` artifact, tested on 3.12–3.14. Build with
+  Python 3.12 (see :doc:`python_wheels`). RxD needs Cython ≥ 3.1.
+* Free-threaded CPython is not supported.
+
+CMake option details live in :doc:`../cmake_doc/options`.
+
 **Tests overview**
 
 * In-tree CTest (build directory): enable with

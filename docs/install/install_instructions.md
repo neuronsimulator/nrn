@@ -214,8 +214,11 @@ In order to build NEURON from source, the following packages must be available:
 
 The following packages are optional (see build options):
 
-- Python >=3.12 (for Python interface; GIL-enabled CPython)
-- Cython (for RXD)
+- Python: GIL-enabled CPython **3.10+** for a source build with
+  `-DNRN_ENABLE_ABI3=OFF` (the default when the default interpreter is
+  older than 3.12). Wheels and `-DNRN_ENABLE_ABI3=ON` need **3.12+**.
+  See `NRN_ENABLE_ABI3` in [CMake options](../cmake_doc/options.rst).
+- Cython >= 3.1 (for RXD; limited-API wheels require Cython 3.1+)
 - MPI (for parallel)
 - X11 (Linux) or XQuartz (MacOS) (for GUI)
 
