@@ -29,7 +29,7 @@ foreach(modfile ${modfiles})
       ${test}
       PROPERTIES
         ENVIRONMENT
-        "PYTHONPATH=${NMODL_TEST_PYTHONPATH};NMODL_PYLIB=${PYTHON_LIBRARY};NMODLHOME=${CMAKE_BINARY_DIR}"
+        "PYTHONPATH=${NMODL_TEST_PYTHONPATH};NMODL_PYLIB=${NRN_NMODL_PYLIB};NMODLHOME=${CMAKE_BINARY_DIR}"
     )
     cpp_cc_configure_sanitizers(TEST ${test})
   endforeach()

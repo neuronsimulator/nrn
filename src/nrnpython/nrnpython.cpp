@@ -17,6 +17,15 @@
 #include <string>
 #include <sstream>
 #include <fstream>
+#include <cstdlib>
+#include <cstring>
+#include <cwchar>
+#if defined(_WIN32)
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#else
+#include <dlfcn.h>
+#endif
 
 #include <nanobind/nanobind.h>
 
@@ -55,27 +64,29 @@ static std::string python_sys_path_to_append() {
 }
 
 namespace {
-struct PythonConfigWrapper {
-    PythonConfigWrapper() {
-        PyConfig_InitPythonConfig(&config);
-    }
-    ~PythonConfigWrapper() {
-        PyConfig_Clear(&config);
-    }
-    operator PyConfig*() {
-        return &config;
-    }
-    PyConfig* operator->() {
-        return &config;
-    }
-    PyConfig config;
-};
-struct PyMem_RawFree_Deleter {
-    void operator()(wchar_t* ptr) const {
-        PyMem_RawFree(ptr);
-    }
-};
 PyObject* basic_sys_path{};
+wchar_t* saved_progname{};
+
+void* nrnpy_dlsym(const char* name) {
+#if defined(_WIN32)
+    HMODULE h = GetModuleHandleA("python3.dll");
+    return h ? reinterpret_cast<void*>(GetProcAddress(h, name)) : nullptr;
+#else
+    return dlsym(RTLD_DEFAULT, name);
+#endif
+}
+
+void* nrnpy_raw_malloc(size_t n) {
+    using F = void* (*) (size_t);
+    static F f = reinterpret_cast<F>(nrnpy_dlsym("PyMem_RawMalloc"));
+    return f ? f(n) : std::malloc(n);
+}
+
+void* nrnpy_raw_calloc(size_t n, size_t sz) {
+    using F = void* (*) (size_t, size_t);
+    static F f = reinterpret_cast<F>(nrnpy_dlsym("PyMem_RawCalloc"));
+    return f ? f(n, sz) : std::calloc(n, sz);
+}
 
 /**
  * @brief Reset sys.path to be basic_sys_path and prepend something.
@@ -122,6 +133,32 @@ static void nrnpython_set_path(std::string_view fname) {
  * @brief Execute a Python script.
  * @return 0 on failure, 1 on success.
  */
+// Limited-API Py_Initialize leaves sys.stdout fully buffered when nrniv is not a
+// TTY. Flush so output from script N is visible if script N+1 hoc_execerror's.
+static void nrnpy_flush_stdio() {
+    PyObject* sys = PyImport_ImportModule("sys");
+    if (!sys) {
+        PyErr_Clear();
+        fflush(stdout);
+        fflush(stderr);
+        return;
+    }
+    for (const char* name: {"stdout", "stderr"}) {
+        PyObject* stream = PyObject_GetAttrString(sys, name);
+        if (!stream) {
+            PyErr_Clear();
+            continue;
+        }
+        PyObject* r = PyObject_CallMethod(stream, "flush", nullptr);
+        Py_XDECREF(r);
+        PyErr_Clear();
+        Py_DECREF(stream);
+    }
+    Py_DECREF(sys);
+    fflush(stdout);
+    fflush(stderr);
+}
+
 int nrnpy_pyrun(const char* fname) {
     auto* fp = fopen(fname, "r");
     if (fp) {
@@ -134,8 +171,9 @@ int nrnpy_pyrun(const char* fname) {
 #if !defined(MINGW)
     fp = fopen(fname, "r");
     if (fp) {
-        int const code = PyRun_AnyFile(fp, fname);
+        int const code = nrnpy_run_file(fp, fname);
         fclose(fp);
+        nrnpy_flush_stdio();
         return !code;
     }
     return 0;
@@ -147,12 +185,14 @@ int nrnpy_pyrun(const char* fname) {
     exec +=
         "', 'rb') as nrnmingw_file:"
         " exec(nrnmingw_file.read(), globals())\n";
-    int const code = PyRun_SimpleString(exec.c_str());
+    int const code = nrnpy_run_simple_string(exec.c_str());
     if (code) {
         PyErr_Print();
+        nrnpy_flush_stdio();
         return 0;
     }
-    PyRun_SimpleString("del nrnmingw_file\n");
+    nrnpy_run_simple_string("del nrnmingw_file\n");
+    nrnpy_flush_stdio();
     return 1;
 #endif  // MINGW
 }
@@ -169,7 +209,7 @@ static int nrnmingw_pyrun_interactiveloop() {
         "nrnmingw_interpreter = nrnmingw_code.InteractiveConsole(locals=globals())\n",
         "nrnmingw_interpreter.interact(\"\")\n"};
     for (const auto& line: lines) {
-        if (PyRun_SimpleString(line.c_str())) {
+        if (nrnpy_run_simple_string(line.c_str())) {
             PyErr_Print();
             return -1;
         }
@@ -194,29 +234,11 @@ static int nrnpython_start(int b) {
     static int started = 0;
     if (b == 1 && !started) {
         p_nrnpy_pyrun = nrnpy_pyrun;
-        // Create a Python configuration, see
-        // https://docs.python.org/3.8/c-api/init_config.html#python-configuration, so that
-        // {nrniv,special} -python behaves as similarly as possible to python. In particular this
-        // affects locale coercion. Under some circumstances Python does not straightforwardly
-        // handle settings like LC_ALL=C, so using a different configuration can lead to surprising
-        // differences.
-        PythonConfigWrapper config;
+        // Limited API: PyConfig is not available. Use Py_SetProgramName + Py_Initialize
+        // and then set sys.executable / sys.argv. nosite (-S) is not expressible here.
         if (nrnpy_nositeflag) {
-            config->site_import = 0;
+            Fprintf(stderr, "Warning: -nosite is ignored when built with the Python limited API\n");
         }
-        auto const check = [](const char* desc, PyStatus status) {
-            if (PyStatus_Exception(status)) {
-                std::ostringstream oss;
-                oss << desc;
-                if (status.err_msg) {
-                    oss << ": " << status.err_msg;
-                    if (status.func) {
-                        oss << " in " << status.func;
-                    }
-                }
-                throw std::runtime_error(oss.str());
-            }
-        };
         // Virtual environments are discovered by Python by looking for pyvenv.cfg in the directory
         // above sys.executable (https://docs.python.org/3/library/site.html), so we want to make
         // sure that sys.executable is the path to a reasonable choice of Python executable. If we
@@ -236,31 +258,58 @@ static int nrnpython_start(int b) {
         }
 #endif
         if (pyexe.empty()) {
-            throw std::runtime_error("Do not know what to set PyConfig.program_name to");
+            throw std::runtime_error("Do not know what to set Py_SetProgramName to");
         }
-        // Surprisingly, given the documentation, it seems that passing a non-absolute path to
-        // PyConfig.program_name does not lead to a lookup in $PATH, but rather to the real (nrniv)
-        // path being placed in sys.executable -- at least on macOS.
         if (auto p = std::filesystem::path{pyexe}; !p.is_absolute()) {
             std::ostringstream oss;
-            oss << "Setting PyConfig.program_name to a non-absolute path (" << pyexe
+            oss << "Setting program name to a non-absolute path (" << pyexe
                 << ") is not portable; try passing an absolute path to -pyexe or NRN_PYTHONEXE";
             throw std::runtime_error(oss.str());
         }
         // TODO: in non-dynamic builds then -pyexe cannot change the used Python version, and `nrniv
         // -pyexe /path/to/python3.10 -python` may well not use Python 3.10 at all. Should we do
         // something about that?
-        check("Could not set PyConfig.program_name",
-              PyConfig_SetBytesString(config, &config->program_name, pyexe.c_str()));
-        // PySys_SetArgv is deprecated in Python 3.11+, write to config.XXX instead.
-        // nrn_global_argv contains the arguments passed to nrniv/special, which are not valid
-        // Python arguments, so tell Python not to try and parse them. In future we might like to
-        // remove the NEURON-specific arguments and pass whatever is left to Python?
-        config->parse_argv = 0;
-        check("Could not set PyConfig.argv",
-              PyConfig_SetBytesArgv(config, nrn_global_argc, nrn_global_argv));
-        // Initialise Python
-        check("Could not initialise Python", Py_InitializeFromConfig(config));
+        {
+            // PyUnicode_* is not usable before Py_Initialize.
+            std::size_t n = std::mbstowcs(nullptr, pyexe.c_str(), 0);
+            if (n == static_cast<std::size_t>(-1)) {
+                throw std::runtime_error("Could not convert Python executable path to wchar_t");
+            }
+            saved_progname = static_cast<wchar_t*>(std::malloc((n + 1) * sizeof(wchar_t)));
+            if (!saved_progname || std::mbstowcs(saved_progname, pyexe.c_str(), n + 1) ==
+                                       static_cast<std::size_t>(-1)) {
+                std::free(saved_progname);
+                saved_progname = nullptr;
+                throw std::runtime_error("Could not convert Python executable path to wchar_t");
+            }
+            Py_SetProgramName(saved_progname);
+        }
+        Py_Initialize();
+        {
+            PyObject* exe = PyUnicode_DecodeFSDefault(pyexe.c_str());
+            if (!exe || PySys_SetObject("executable", exe) < 0) {
+                Py_XDECREF(exe);
+                throw std::runtime_error("Could not set sys.executable");
+            }
+            Py_DECREF(exe);
+            PyObject* argv = PyList_New(nrn_global_argc);
+            if (!argv) {
+                throw std::runtime_error("Could not allocate sys.argv");
+            }
+            for (int i = 0; i < nrn_global_argc; ++i) {
+                PyObject* s = PyUnicode_DecodeFSDefault(nrn_global_argv[i]);
+                if (!s || PyList_SetItem(argv, i, s) < 0) {
+                    Py_XDECREF(s);
+                    Py_DECREF(argv);
+                    throw std::runtime_error("Could not set sys.argv");
+                }
+            }
+            if (PySys_SetObject("argv", argv) < 0) {
+                Py_DECREF(argv);
+                throw std::runtime_error("Could not set sys.argv");
+            }
+            Py_DECREF(argv);
+        }
         // Manipulate sys.path, starting from the default values
         {
             nanobind::gil_scoped_acquire _{};
@@ -322,10 +371,17 @@ static int nrnpython_start(int b) {
         // Beginning with Python 3.13.0 it seems that the readline
         // module has not been loaded yet. Since PyInit_readline sets
         // PyOS_ReadlineFunctionPointer = call_readline; without checking,
-        // we need to import here.
-        PyRun_SimpleString("import readline as nrn_readline");
+        // we need to import here. Windows CPython has no readline module.
+        nrnpy_run_simple_string(
+            "try:\n"
+            "    import readline as nrn_readline\n"
+            "except ImportError:\n"
+            "    pass\n");
 
-        PyOS_ReadlineFunctionPointer = nrnpython_getline;
+        using readline_fn = char* (*) (FILE*, FILE*, const char*);
+        if (auto* slot = static_cast<readline_fn*>(nrnpy_dlsym("PyOS_ReadlineFunctionPointer"))) {
+            *slot = nrnpython_getline;
+        }
 
         // Is there a -c "command" or file.py arg.
         bool python_error_encountered{false}, have_reset_sys_path{false};
@@ -335,7 +391,7 @@ static int nrnpython_start(int b) {
                 // sys.path[0] should be an empty string for -c
                 reset_sys_path("");
                 have_reset_sys_path = true;
-                if (PyRun_SimpleString(nrn_global_argv[i + 1])) {
+                if (nrnpy_run_simple_string(nrn_global_argv[i + 1])) {
                     python_error_encountered = true;
                 }
                 break;
@@ -357,15 +413,10 @@ static int nrnpython_start(int b) {
                 // it.
                 reset_sys_path("");
             }
-#if !defined(MINGW)
-            PyRun_InteractiveLoop(hoc_fin, "stdin");
-#else
-            // mingw FILE incompatible with windows11 Python FILE.
-            int ret = nrnmingw_pyrun_interactiveloop();
+            int ret = nrnpy_run_interactive_console();
             if (ret) {
                 python_error_encountered = ret;
             }
-#endif
         }
         return python_error_encountered;
     }
@@ -386,7 +437,7 @@ static void nrnpython_real() {
     {
         auto interp = HocTopContextManager();
         nanobind::gil_scoped_acquire lock{};
-        retval = (PyRun_SimpleString(hoc_gargstr(1)) == 0);
+        retval = (nrnpy_run_simple_string(hoc_gargstr(1)) == 0);
     }
 #endif
     hoc_retpushx(retval);
@@ -400,14 +451,14 @@ static char* nrnpython_getline(FILE*, FILE*, const char* prompt) {
     if (r == 1) {
         auto const n = std::strlen(hoc_cbufstr->buf) + 1;
         hoc_ctp = hoc_cbufstr->buf + n - 1;
-        auto* const p = static_cast<char*>(PyMem_RawMalloc(n));
+        auto* const p = static_cast<char*>(nrnpy_raw_malloc(n));
         if (!p) {
             return nullptr;
         }
         std::strcpy(p, hoc_cbufstr->buf);
         return p;
     } else if (r == EOF) {
-        return static_cast<char*>(PyMem_RawCalloc(1, sizeof(char)));
+        return static_cast<char*>(nrnpy_raw_calloc(1, sizeof(char)));
     }
     return 0;
 }

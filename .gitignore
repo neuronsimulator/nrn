@@ -27,3 +27,9 @@ ci/deps/assets/
 .vscode
 .coverage*
 coverage*.xml
+# scikit-build-core / cibuildwheel local outputs
+build_wheel
+wheelhouse
+nrn_build_venv*
+# leftover in-tree CMake tree used on this branch (`build` is already ignored)
+build-nmodl

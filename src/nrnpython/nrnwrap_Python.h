@@ -11,3 +11,7 @@
 #endif
 #include <Python.h>
 #undef snprintf
+
+#if defined(__cplusplus)
+#include "nrnpy_limited.hpp"
+#endif

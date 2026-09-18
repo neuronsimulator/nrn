@@ -126,6 +126,7 @@ namespace neuron::config {
 #ifdef USE_PYTHON
    constexpr std::string_view default_python_executable{R"(@NRN_DEFAULT_PYTHON_EXECUTABLE@)"};
    constexpr std::array<std::string_view, @NRN_PYTHON_COUNT@> supported_python_versions{@NRN_DYNAMIC_PYTHON_LIST_OF_VERSION_STRINGS@};
+   constexpr bool python_limited_api{@NRN_PYTHON_LIMITED_API@};
 #endif
    constexpr std::string_view shared_library_prefix{"@CMAKE_SHARED_LIBRARY_PREFIX@"};
    constexpr std::string_view shared_library_suffix{"@CMAKE_SHARED_LIBRARY_SUFFIX@"};

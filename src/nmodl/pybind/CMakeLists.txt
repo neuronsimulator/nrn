@@ -41,10 +41,13 @@ target_link_libraries(pyembed PRIVATE util)
 target_link_libraries(pyembed PRIVATE fmt::fmt)
 
 if(NOT NRN_LINK_AGAINST_PYTHON)
+  # Wheels: nmodl dlopens libpython then this .so. Do not DT_NEEDED libpython.
   add_library(pywrapper SHARED ${CMAKE_CURRENT_SOURCE_DIR}/wrapper.cpp)
   set_target_properties(pywrapper PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
 else()
-  add_library(pywrapper ${CMAKE_CURRENT_SOURCE_DIR}/wrapper.cpp)
+  # In-tree: BUILD_SHARED_LIBS would otherwise make a .so that testcodegen DT_NEEDs without
+  # libpython (--as-needed), then fails at Catch discover with PyExc_ValueError.
+  add_library(pywrapper STATIC ${CMAKE_CURRENT_SOURCE_DIR}/wrapper.cpp)
   set_property(TARGET pywrapper PROPERTY POSITION_INDEPENDENT_CODE ON)
   target_compile_definitions(pyembed PRIVATE NMODL_STATIC_PYWRAPPER=1)
 endif()
@@ -56,35 +59,106 @@ endif()
 
 target_link_libraries(pywrapper PRIVATE fmt::fmt)
 
-target_include_directories(pyembed PRIVATE ${PYBIND11_INCLUDE_DIR} ${PYTHON_INCLUDE_DIRS})
-target_include_directories(pywrapper PRIVATE ${pybind11_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIRS})
-target_include_directories(pywrapper PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-# ~~~
-# pybind11::embed adds PYTHON_LIBRARIES to target_link_libraries. To avoid link to
-# libpython, we can use `module` interface library from pybind11.
-# ~~~
+# CLI libpywrapper uses nanobind (STABLE_ABI when NRN_ENABLE_ABI3) + Py_Initialize.
+set(_nmodl_python_inc ${NRN_DEFAULT_PYTHON_INCLUDES})
+if(NOT _nmodl_python_inc)
+  find_package(
+    Python ${NRN_MINIMUM_PYTHON_VERSION}
+    COMPONENTS Interpreter Development.Module
+    REQUIRED)
+  set(_nmodl_python_inc ${Python_INCLUDE_DIRS})
+endif()
+if(NOT TARGET nanobind_nmodl)
+  make_nanobind_target(nanobind_nmodl "${_nmodl_python_inc}" ${NRN_STABLE_ABI_ARG})
+endif()
+target_include_directories(pyembed PRIVATE ${_nmodl_python_inc})
+target_include_directories(pywrapper PRIVATE ${_nmodl_python_inc} ${CMAKE_CURRENT_BINARY_DIR})
+target_link_libraries(pywrapper PRIVATE nanobind_nmodl)
 target_link_libraries(pyembed PRIVATE ${CMAKE_DL_LIBS})
 if(NOT NRN_LINK_AGAINST_PYTHON)
-  target_link_libraries(pywrapper PRIVATE pybind11::module)
+  if(APPLE)
+    target_link_options(pywrapper PRIVATE "-Wl,-undefined,dynamic_lookup")
+  elseif(UNIX)
+    target_link_options(pywrapper PRIVATE "-Wl,--unresolved-symbols=ignore-all")
+  endif()
 else()
-  target_link_libraries(pyembed PRIVATE ${PYTHON_LIBRARIES} pywrapper)
-  target_link_libraries(pywrapper PRIVATE pybind11::embed)
+  target_compile_definitions(pyembed PRIVATE NMODL_STATIC_PYWRAPPER=1)
+  set(_nmodl_embed_python ${NRN_DEFAULT_PYTHON_LIBRARIES})
+  if(WIN32 AND NRN_ENABLE_ABI3)
+    get_filename_component(_nmodl_pylib_dir "${NRN_DEFAULT_PYTHON_LIBRARIES}" DIRECTORY)
+    get_filename_component(_nmodl_pyprefix "${_nmodl_pylib_dir}" DIRECTORY)
+    foreach(_cand "${_nmodl_pylib_dir}/python3.lib" "${_nmodl_pylib_dir}/libs/python3.lib"
+                  "${_nmodl_pyprefix}/libs/python3.lib")
+      if(EXISTS "${_cand}")
+        set(_nmodl_embed_python "${_cand}")
+        break()
+      endif()
+    endforeach()
+  endif()
+  target_link_libraries(pyembed PRIVATE ${_nmodl_embed_python} pywrapper)
 endif()
 
 # avoid _nmodl target if python bindings are disabled
 if(NMODL_ENABLE_PYTHON_BINDINGS)
-  # ~~~
-  # Note that LTO causes link time errors with GCC 8. To avoid this, we disable LTO
-  # for pybind using NO_EXTRAS. See #266.
-  # ~~~
-  pybind11_add_module(
-    _nmodl NO_EXTRAS ${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/ast/ast_common.hpp
+  if(NOT TARGET nanobind_nmodl)
+    make_nanobind_target(nanobind_nmodl "${NRN_DEFAULT_PYTHON_INCLUDES}" ${NRN_STABLE_ABI_ARG})
+  endif()
+  add_library(
+    _nmodl MODULE
+    ${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/ast/ast_common.hpp
     ${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/pybind/pybind_utils.hpp
     ${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/pybind/pynmodl.cpp ${PYBIND_GENERATED_SOURCES})
   add_dependencies(_nmodl lexer pyastgen util)
-  target_link_libraries(_nmodl PRIVATE printer symtab visitor pyembed)
-  set_target_properties(_nmodl PROPERTIES LIBRARY_OUTPUT_DIRECTORY_DEBUG
-                                          ${NMODL_PROJECT_PURELIB_BINARY_DIR})
+  target_link_libraries(_nmodl PRIVATE printer symtab visitor nanobind_nmodl)
+  target_include_directories(_nmodl PRIVATE ${_nmodl_python_inc} ${CMAKE_CURRENT_BINARY_DIR})
+  if(NRN_ENABLE_ABI3)
+    # Windows import machinery has no .abi3.pyd suffix; Unix uses _nmodl.abi3.so.
+    if(WIN32)
+      set(_nmodl_suffix ".pyd")
+    else()
+      set(_nmodl_suffix ".abi3${CMAKE_SHARED_MODULE_SUFFIX}")
+    endif()
+  else()
+    execute_process(
+      COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} -c
+              "import sysconfig; print(sysconfig.get_config_var('EXT_SUFFIX') or '')"
+      OUTPUT_VARIABLE _nmodl_suffix
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if(NOT _nmodl_suffix)
+      set(_nmodl_suffix "${CMAKE_SHARED_MODULE_SUFFIX}")
+    endif()
+  endif()
+  set_target_properties(
+    _nmodl
+    PROPERTIES PREFIX ""
+               OUTPUT_NAME "_nmodl"
+               SUFFIX "${_nmodl_suffix}"
+               CXX_VISIBILITY_PRESET "hidden"
+               VISIBILITY_INLINES_HIDDEN ON
+               LIBRARY_OUTPUT_DIRECTORY ${NMODL_PROJECT_PURELIB_BINARY_DIR}
+               LIBRARY_OUTPUT_DIRECTORY_DEBUG ${NMODL_PROJECT_PURELIB_BINARY_DIR}
+               RUNTIME_OUTPUT_DIRECTORY ${NMODL_PROJECT_PURELIB_BINARY_DIR}
+               RUNTIME_OUTPUT_DIRECTORY_DEBUG ${NMODL_PROJECT_PURELIB_BINARY_DIR})
+  if(APPLE)
+    target_link_options(_nmodl PRIVATE "-Wl,-undefined,dynamic_lookup")
+  elseif(UNIX)
+    target_link_options(_nmodl PRIVATE "-Wl,--unresolved-symbols=ignore-all")
+  elseif(WIN32)
+    set(_nmodl_pylib "${PYTHON_LIBRARIES}")
+    if(NRN_ENABLE_ABI3)
+      # Limited API: python3.lib (python3.dll), not python3.XY.dll.
+      get_filename_component(_nmodl_pylib_dir "${PYTHON_LIBRARIES}" DIRECTORY)
+      get_filename_component(_nmodl_pyprefix "${_nmodl_pylib_dir}" DIRECTORY)
+      foreach(_cand "${_nmodl_pylib_dir}/python3.lib" "${_nmodl_pylib_dir}/libs/python3.lib"
+                    "${_nmodl_pyprefix}/libs/python3.lib")
+        if(EXISTS "${_cand}")
+          set(_nmodl_pylib "${_cand}")
+          break()
+        endif()
+      endforeach()
+    endif()
+    target_link_libraries(_nmodl PRIVATE ${_nmodl_pylib})
+  endif()
 
   if(MSVC)
     target_compile_options(_nmodl PRIVATE /bigobj)

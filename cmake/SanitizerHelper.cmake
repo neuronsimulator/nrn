@@ -4,8 +4,10 @@
 # implicit-signed-integer-truncation does not flagged undefined behaviour, but rather behaviour that
 # may be unintentional; unsigned-integer-overflow is similarly not actually undefined -- these
 # checks are not enabled because they cause too much noise at the moment.
+# implicit-integer-sign-change: nanobind STABLE_ABI uses PEP 697 negative basicsize (-8).
 set(${CODING_CONV_PREFIX}_SANITIZERS_UNDEFINED_EXCLUSIONS
     float-divide-by-zero implicit-signed-integer-truncation unsigned-integer-overflow
+    implicit-integer-sign-change
     CACHE STRING "" FORCE)
 include("${CODING_CONV_CMAKE}/sanitizers.cmake")
 include(${CODING_CONV_CMAKE}/build-time-copy.cmake)
