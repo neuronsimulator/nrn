@@ -254,7 +254,8 @@ if(NRN_ENABLE_PYTHON)
       file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/pybind)
       add_test(
         NAME Pybind
-        COMMAND ${PYTHON_EXECUTABLE} ${NRN_PYTEST_LAUNCHER} ${CMAKE_CURRENT_SOURCE_DIR}/pybind
+        COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${NRN_PYTEST_LAUNCHER}
+                ${CMAKE_CURRENT_SOURCE_DIR}/pybind
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/pybind)
       set_tests_properties(
         Pybind
