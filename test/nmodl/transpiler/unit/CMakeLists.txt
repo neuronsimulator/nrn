@@ -141,7 +141,9 @@ target_link_libraries(testunitparser PRIVATE lexer test_util config nmodl_test_f
 set(test_env ${NRN_SANITIZER_ENABLE_ENVIRONMENT})
 set(testvisitor_env "PYTHONPATH=${PROJECT_BINARY_DIR}/lib:$ENV{PYTHONPATH}")
 if(NOT NRN_LINK_AGAINST_PYTHON)
-  list(APPEND testvisitor_env "NMODL_PYLIB=$ENV{NMODL_PYLIB}")
+  # SHARED libpywrapper has no NEEDED libpython; Catch discover must dlopen via NMODL_PYLIB.
+  list(APPEND test_env "NMODL_PYLIB=${NRN_NMODL_PYLIB}" "NMODLHOME=${PROJECT_BINARY_DIR}")
+  list(APPEND testvisitor_env "NMODL_PYLIB=${NRN_NMODL_PYLIB}" "NMODLHOME=${PROJECT_BINARY_DIR}")
 endif()
 
 # Without main from Catch2
@@ -187,15 +189,27 @@ foreach(
 endforeach()
 
 foreach(test_name testcodegen testvisitor)
-  if(NOT NRN_LINK_AGAINST_PYTHON)
-    target_link_libraries(${test_name} PRIVATE pywrapper ${PYTHON_LIBRARY})
+  # Do not DT_NEEDED SHARED libpywrapper.so (no libpython). Catch POST_BUILD --list-tests would then
+  # die with PyExc_ValueError. The binaries dlopen via EmbeddedPythonLoader; PRE_TEST discovery runs
+  # with NMODL_PYLIB set. testvisitor embeds nanobind in sympy_solver.cpp and must NEEDED libpython.
+  if(NOT NRN_LINK_AGAINST_PYTHON
+     AND test_name STREQUAL "testvisitor"
+     AND NRN_NMODL_PYLIB)
+    target_link_libraries(testvisitor PRIVATE "${NRN_NMODL_PYLIB}")
   endif()
   cpp_cc_configure_sanitizers(TARGET ${test_name})
   set(env ${test_env})
   list(APPEND env ${${test_name}_env})
   string(REPLACE ";" ";ENVIRONMENT;" _environment_vars_list "${env}")
-  catch_discover_tests(${test_name} TEST_PREFIX "${test_name}/" PROPERTIES ENVIRONMENT
-                       "${_environment_vars_list}")
+  catch_discover_tests(
+    ${test_name}
+    TEST_PREFIX
+    "${test_name}/"
+    DISCOVERY_MODE
+    PRE_TEST
+    PROPERTIES
+    ENVIRONMENT
+    "${_environment_vars_list}")
 endforeach()
 
 # Generate include files used in test input, see
