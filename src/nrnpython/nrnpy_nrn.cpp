@@ -11,6 +11,7 @@
 #include "nrnpy.h"
 #include "nrnpy_utils.h"
 #include "convert_cxx_exceptions.hpp"
+#include "oc_ansi.h"
 #include "neuron/unique_cstr.hpp"
 
 #ifndef M_PI
@@ -1361,7 +1362,7 @@ static PyObject* NPyMechFunc_call(NPyMechFunc* self, PyObject* args) {
         result = nb::cast(x);
     } catch (std::exception const& e) {
         std::ostringstream oss;
-        oss << "mechanism.function call error: " << e.what();
+        oss << "mechanism.function call error: " << neuron::oc::safe_what(e);
         PyErr_SetString(PyExc_RuntimeError, oss.str().c_str());
     }
     hoc_pop_frame();
