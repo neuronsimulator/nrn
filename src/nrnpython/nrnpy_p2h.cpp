@@ -161,7 +161,9 @@ static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
         if (strcmp(sym->name, "_") == 0) {
             tail = head;
         } else {
-            tail = head.attr(sym->name);
+            // C API so a missing attribute is a null object, not nanobind::python_error.
+            // python_error::what() is noexcept and aborts under Py_LIMITED_API.
+            tail = nb::steal(PyObject_GetAttrString(head.ptr(), sym->name));
         }
     }
     if (!tail) {
@@ -215,7 +217,8 @@ static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
             // TypeError: list indices must be integers or slices, not hoc.HocObject
             arg = nb::steal(nrnpy_hoc_pop("nindex py2n_component"));
         }
-        result = tail[arg];
+        // C API so IndexError/KeyError is a null object, not nanobind::python_error.
+        result = nb::steal(PyObject_GetItem(tail.ptr(), arg.ptr()));
         if (!result) {
             PyErr_Print();
             hoc_execerror("Python get item failed:", hoc_object_name(ob));

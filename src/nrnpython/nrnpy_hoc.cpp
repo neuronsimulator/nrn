@@ -863,6 +863,10 @@ static PyObject* hocobj_call(PyHocObject* self, PyObject* args, PyObject* kwrds)
     } else if (self->type_ == PyHoc::HocFunction) {
         try {
             result = nb::steal(static_cast<PyObject*>(OcJump::fpycall(fcall, self, args)));
+        } catch (nb::python_error& e) {
+            // Do not call e.what(): it is noexcept and raises std::bad_cast under
+            // Py_LIMITED_API (obj_vectorcall with a null arg), which aborts.
+            e.restore();
         } catch (std::exception const& e) {
             std::ostringstream oss;
             oss << "hocobj_call error: " << e.what();
