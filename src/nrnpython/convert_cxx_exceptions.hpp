@@ -2,6 +2,7 @@
 #include <exception>
 #include <stdexcept>
 #include <type_traits>
+#include <nanobind/nanobind.h>
 
 namespace nrn {
 namespace detail {
@@ -43,6 +44,10 @@ static typename convert_cxx_exceptions_trait<F, Args...>::return_type convert_cx
     // Same mapping of C++ exceptions to Python errors that pybind11 uses.
     try {
         return f(std::forward<Args>(args)...);
+    } catch (nanobind::python_error& e) {
+        // Restore the original Python exception. Do not call e.what(): it is
+        // noexcept and aborts with std::bad_cast under Py_LIMITED_API.
+        e.restore();
     } catch (const std::bad_alloc& e) {
         PyErr_SetString(PyExc_MemoryError, e.what());
     } catch (const std::domain_error& e) {
