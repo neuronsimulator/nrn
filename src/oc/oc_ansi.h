@@ -65,7 +65,7 @@ struct runtime_error: ::std::runtime_error {
 /// e.what() except for nanobind::python_error, whose what() is noexcept and aborts
 /// under Py_LIMITED_API. libnrnpython registers the python_error check.
 const char* safe_what(const std::exception& e);
-void set_safe_what(const char* (*fn)(const std::exception&));
+void set_safe_what(const char* (*fn)(const std::exception&) );
 
 /**
  * @brief Execute C++ code that may throw and propagate HOC information.

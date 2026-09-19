@@ -614,7 +614,7 @@ namespace {
 const char* (*safe_what_fn)(const std::exception&){};
 }
 
-void set_safe_what(const char* (*fn)(const std::exception&)) {
+void set_safe_what(const char* (*fn)(const std::exception&) ) {
     safe_what_fn = fn;
 }
 
