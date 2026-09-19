@@ -634,7 +634,8 @@ std::vector<char> call_picklef(const std::vector<char>& fname, int narg) {
         args.append(arg);
     }
     args.reverse();  // since top of hoc stack was last arg before the for loop.
-    nb::object result = callable(*args);
+    // C API so a Python exception is a null object, not nanobind::python_error.
+    nb::object result = nrnpy_pyCallObject(callable, nb::tuple(args));
     if (!result) {
         auto mes = nrnpyerr_str();
         if (mes.is_valid()) {
