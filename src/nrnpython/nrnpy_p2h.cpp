@@ -1,6 +1,7 @@
 #include <../../nrnconf.h>
 
 #include <cstdio>
+#include <cstring>
 #include <exception>
 #include <optional>
 
@@ -488,34 +489,60 @@ static double func_call(Object* ho, int narg, int* err) {
 static double guigetval(Object* ho) {
     nb::gil_scoped_acquire lock{};
     nb::tuple po(((Py2Nrn*) ho->u.this_pointer)->po_);
+    nb::object item;
     if (nb::sequence::check_(po[0]) || nb::mapping::check_(po[0])) {
-        return nb::cast<double>(po[0][po[1]]);
+        item = nb::steal(PyObject_GetItem(po[0].ptr(), po[1].ptr()));
     } else {
-        return nb::cast<double>(po[0].attr(po[1]));
+        item = nb::steal(PyObject_GetAttr(po[0].ptr(), po[1].ptr()));
     }
+    if (!item) {
+        PyErr_Print();
+        hoc_execerror("Python GUI get failed:", hoc_object_name(ho));
+    }
+    double x = PyFloat_AsDouble(item.ptr());
+    if (x == -1.0 && PyErr_Occurred()) {
+        PyErr_Print();
+        hoc_execerror("Python GUI get failed:", hoc_object_name(ho));
+    }
+    return x;
 }
 
 static void guisetval(Object* ho, double x) {
     nb::gil_scoped_acquire lock{};
     nb::tuple po(((Py2Nrn*) ho->u.this_pointer)->po_);
+    nb::object val = nb::steal(PyFloat_FromDouble(x));
+    int err = 0;
     if (nb::sequence::check_(po[0]) || nb::mapping::check_(po[0])) {
-        po[0][po[1]] = x;
+        err = PyObject_SetItem(po[0].ptr(), po[1].ptr(), val.ptr());
     } else {
-        po[0].attr(po[1]) = x;
+        err = PyObject_SetAttr(po[0].ptr(), po[1].ptr(), val.ptr());
+    }
+    if (err) {
+        PyErr_Print();
+        hoc_execerror("Python GUI set failed:", hoc_object_name(ho));
     }
 }
 
 static int guigetstr(Object* ho, char** cpp) {
     nb::gil_scoped_acquire lock{};
     nb::tuple po(((Py2Nrn*) ho->u.this_pointer)->po_);
-    auto name = nb::cast<std::string>(po[0].attr(po[1]));
-    if (*cpp && name == *cpp) {
+    nb::object item = nb::steal(PyObject_GetAttr(po[0].ptr(), po[1].ptr()));
+    if (!item) {
+        PyErr_Print();
+        hoc_execerror("Python GUI get str failed:", hoc_object_name(ho));
+    }
+    auto name = Py2NRNString::as_ascii(item.ptr());
+    if (!name.is_valid()) {
+        PyErr_Print();
+        hoc_execerror("Python GUI get str failed:", hoc_object_name(ho));
+    }
+    if (*cpp && strcmp(*cpp, name.c_str()) == 0) {
         return 0;
     }
     if (*cpp) {
         delete[] * cpp;
     }
-    *cpp = new char[name.size() + 1];
+    *cpp = new char[strlen(name.c_str()) + 1];
     strcpy(*cpp, name.c_str());
     return 1;
 }
