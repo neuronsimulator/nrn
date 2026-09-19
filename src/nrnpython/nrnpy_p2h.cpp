@@ -1,6 +1,7 @@
 #include <../../nrnconf.h>
 
 #include <cstdio>
+#include <exception>
 #include <optional>
 
 #include <InterViews/resource.h>
@@ -931,8 +932,16 @@ static void p_destruct(void* v) {
  * @brief Populate NEURON state with information from a specific Python.
  * @param ptrs Logically a return value; avoidi
  */
+static const char* python_error_what(const std::exception& e) {
+    if (dynamic_cast<const nb::python_error*>(&e)) {
+        return "Python exception";
+    }
+    return nullptr;
+}
+
 extern "C" NRN_EXPORT void nrnpython_reg_real(neuron::python::impl_ptrs* ptrs) {
     assert(ptrs);
+    neuron::oc::set_safe_what(python_error_what);
     class2oc("PythonObject", p_cons, p_destruct, nullptr, nullptr, nullptr);
     nrnpy_pyobj_sym_ = hoc_lookup("PythonObject");
     assert(nrnpy_pyobj_sym_);
