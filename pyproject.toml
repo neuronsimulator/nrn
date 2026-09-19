@@ -9,7 +9,7 @@ build-backend = "scikit_build_core.build"
 # `build-system.requires` nor `project.dependencies`, so we need to list them
 # here manually. These are all of the dependencies that CMake finds as well.
 requires = [
-  "cython<=3.0.12",
+  "cython>=3.1,<=3.3.0",
   "jinja2>=2.9.3,<=3.1.6",
   "numpy<=2.2.3;python_version<'3.14'",
   "numpy>=2.3.2,<=2.3.3;python_version=='3.14'",
@@ -35,14 +35,12 @@ authors = [
   { name = "Yale" },
   { name = "Blue Brain Project" },
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 classifiers = [
   "License :: Other/Proprietary License",
   "Programming Language :: C++",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.10",
-  "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
@@ -73,6 +71,8 @@ local_scheme = "no-local-version"
 [tool.scikit-build]
 # delegate installation to CMake
 wheel.packages = [  ]
+# CPython 3.12+ GIL limited API; wheel tag is cp312-abi3-*.
+wheel.py-api = "cp312"
 metadata.version.provider = "scikit_build_core.metadata.setuptools_scm"
 # The default, `strip=true`, results in missing symbols on MacOS. For more
 # details, see: https://github.com/neuronsimulator/nrn/issues/3385
@@ -101,6 +101,7 @@ IV_ENABLE_X11_DYNAMIC = { default = "ON", env = "IV_ENABLE_X11_DYNAMIC" }
 
 # specific options that are hardcoded
 NRN_ENABLE_PYTHON_DYNAMIC = "ON"
+NRN_ENABLE_ABI3 = "ON"
 NRN_ENABLE_REL_RPATH = "ON"
 NRN_ENABLE_TESTS = "OFF"
 NRN_ENABLE_DOCS = "OFF"
@@ -128,6 +129,10 @@ NRN_MPI_DYNAMIC = { env = "NRN_MPI_DYNAMIC" }
 # We can specify a custom Docker image when building NEURON
 manylinux-aarch64-image = "docker.io/neuronsimulator/neuron_wheel:manylinux_2_28_aarch64"
 manylinux-x86_64-image = "docker.io/neuronsimulator/neuron_wheel:manylinux_2_28_x86_64"
+# Default `abi3audit --strict` scans every .so, including CLI libpywrapper
+# (nanobind limited-API embed, not an importable module).
+audit-requires = ["abi3audit"]
+audit-command = "python {project}/packaging/python/audit_abi3_wheel.py {abi3_wheel}"
 
 # certain platforms are not supported
 skip = [ "pp*", "cp*t*", "*-win32", "*-manylinux_i686", "*-musllinux_i686", "*-musllinux_x86_64", "*-musllinux_aarch64" ]

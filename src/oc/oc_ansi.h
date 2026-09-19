@@ -61,6 +61,12 @@ namespace neuron::oc {
 struct runtime_error: ::std::runtime_error {
     using ::std::runtime_error::runtime_error;
 };
+
+/// e.what() except for nanobind::python_error, whose what() is noexcept and aborts
+/// under Py_LIMITED_API. libnrnpython registers the python_error check.
+const char* safe_what(const std::exception& e);
+void set_safe_what(const char* (*fn)(const std::exception&) );
+
 /**
  * @brief Execute C++ code that may throw and propagate HOC information.
  *
@@ -81,7 +87,7 @@ decltype(auto) invoke_method_that_may_throw(Callable message_prefix, Args&&... a
         throw;
     } catch (std::exception const& e) {
         std::string message{message_prefix()};
-        std::string_view what{e.what()};
+        std::string_view what{safe_what(e)};
         if (!what.empty()) {
             message.append(": ");
             message.append(what);

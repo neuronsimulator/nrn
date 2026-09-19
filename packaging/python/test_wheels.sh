@@ -129,18 +129,18 @@ run_serial_test () {
         ./$ARCH_DIR/special -c "print \"hello\""
 
         # Test 6: run basic tests via python while loading shared library
-        $python_exe -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
+        $python_exe -c "import neuron; neuron.test(); neuron.test_rxd()"
 
         # Test 7: run basic test to use compiled mod file
-        $python_exe -c "import neuron; from neuron import h; s = h.Section(); s.insert('cacum'); quit()"
+        $python_exe -c "import neuron; from neuron import h; s = h.Section(); s.insert('cacum')"
 
         # Test 8: run basic tests via special : azure pipelines get stuck with their
         # own python from hosted cache (most likely security settings).
         if [[ "$SKIP_EMBEDED_PYTHON_TEST" != "true" ]]; then
-          ./$ARCH_DIR/special -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
-          nrniv -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
+          ./$ARCH_DIR/special -python -c "import neuron; neuron.test(); neuron.test_rxd()"
+          nrniv -python -c "import neuron; neuron.test(); neuron.test_rxd()"
         else
-          $python_exe -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
+          $python_exe -c "import neuron; neuron.test(); neuron.test_rxd()"
         fi
     done
 
