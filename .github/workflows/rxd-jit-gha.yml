@@ -1,0 +1,165 @@
+# Throwaway: overlay cached rxd.py onto published MSVC wheel + MinGW installer,
+# then foreign ctest of rxd_tests only with NRN_RXD_JIT_STATS=1.
+# Pushing this branch does not open a PR and does not match other workflows'
+# on: filters (master / pull_request to master).
+name: rxd JIT stats overlay
+
+concurrency:
+  group: rxd-jit-gha-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches:
+      - hines-grok/rxd-jit-gha
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  NRN_RXD_JIT_STATS: "1"
+  NEURON_MODULE_OPTIONS: "-nogui"
+  # Same bits as the win11_resizable guest overlay compare.
+  MSVC_WHEEL_URL: https://github.com/neuronsimulator/nrn/releases/download/msvc-wheel-dev/neuron_nightly-9.0.2.dev295-cp314-cp314-win_amd64.whl
+  MINGW_INSTALLER_RUN: "34291705052"
+
+jobs:
+  msvc-overlay:
+    name: MSVC wheel overlay rxd_tests
+    runs-on: windows-2022
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Init rxd testdata submodule
+        run: git submodule update --init -- test/rxd/testdata
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install published MSVC wheel and overlay rxd.py
+        shell: bash
+        run: |
+          set -eux
+          unset PYTHONPATH NEURONHOME || true
+          python -m pip install --upgrade pip
+          python -m pip install "${MSVC_WHEEL_URL}"
+          python -m pip install pytest matplotlib plotly anywidget
+          python -c "import pathlib, shutil, neuron; dst=pathlib.Path(neuron.__file__).resolve().parent/'rxd'/'rxd.py'; shutil.copy('share/lib/python/neuron/rxd/rxd.py', dst); print('overlay', dst)"
+          python -c "from neuron.rxd.rxd import _cxx_compile_cache; from neuron import h; print('cache-ok', _cxx_compile_cache); print('nrnversion', h.nrnversion()); print('neuronhome', h.neuronhome())"
+
+      - name: Foreign ctest rxd_tests
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Remove-Item Env:PYTHONPATH -ErrorAction SilentlyContinue
+          Remove-Item Env:NEURONHOME -ErrorAction SilentlyContinue
+          $py = (Get-Command python).Source
+          cmake -G "Visual Studio 17 2022" -A x64 -S test/foreign -B build-ctest `
+            "-DNRN_FOREIGN_PYTHON=$py" -DNRN_FOREIGN_ALLOW_SKEW=ON
+          if ($LASTEXITCODE -ne 0) { throw "cmake configure failed ($LASTEXITCODE)" }
+          cmake --build build-ctest --config Release --target foreign --parallel
+          if ($LASTEXITCODE -ne 0) { throw "cmake --build foreign failed ($LASTEXITCODE)" }
+          ctest --test-dir build-ctest -C Release -R rxdmod_tests::rxd_tests --output-on-failure -V --timeout 600
+          if ($LASTEXITCODE -ne 0) { throw "rxd_tests failed ($LASTEXITCODE)" }
+
+      - name: Upload LastTest.log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: msvc-rxd-LastTest
+          path: build-ctest/Testing/Temporary/LastTest.log
+          if-no-files-found: warn
+
+  mingw-overlay:
+    name: MinGW installer overlay rxd_tests
+    runs-on: windows-2022
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Init rxd testdata submodule
+        run: git submodule update --init -- test/rxd/testdata
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Download MinGW setup.exe from Windows Installer ${{ env.MINGW_INSTALLER_RUN }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force -Path installer | Out-Null
+          gh run download $env:MINGW_INSTALLER_RUN -n nrn-nightly-AMD64.exe -D installer --repo ${{ github.repository }}
+          Get-ChildItem -Recurse installer
+
+      - name: Silent-install to C:\nrn and overlay rxd.py
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $exe = Get-ChildItem -Recurse installer -Filter nrn-nightly-AMD64.exe | Select-Object -First 1
+          if (-not $exe) { throw "nrn-nightly-AMD64.exe not in artifact" }
+          Write-Host "installing $($exe.FullName)"
+          $p = Start-Process -FilePath $exe.FullName -ArgumentList '/S','/D=C:\nrn' -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "installer exit $($p.ExitCode)" }
+          $deadline = (Get-Date).AddMinutes(2)
+          while (-not (Test-Path C:\nrn\bin\nrniv.exe)) {
+            if ((Get-Date) -gt $deadline) { throw "C:\nrn\bin\nrniv.exe missing after silent install" }
+            Start-Sleep 2
+          }
+          Copy-Item share/lib/python/neuron/rxd/rxd.py C:\nrn\lib\python\neuron\rxd\rxd.py -Force
+          Write-Host "overlay C:\nrn\lib\python\neuron\rxd\rxd.py"
+
+      - name: Python deps, NRN_PYLIB, PATH
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -m pip install --upgrade pip
+          python -m pip install pytest matplotlib plotly anywidget
+          $pyDir = Split-Path (Get-Command python).Source
+          $dll = Join-Path $pyDir "python314.dll"
+          if (-not (Test-Path $dll)) { throw "missing $dll" }
+          Add-Content -Path $env:GITHUB_ENV -Value "NRN_PYLIB=$dll"
+          Add-Content -Path $env:GITHUB_ENV -Value "NEURONHOME=C:\nrn"
+          Add-Content -Path $env:GITHUB_ENV -Value "NRNHOME=C:\nrn"
+          Add-Content -Path $env:GITHUB_PATH -Value "C:\nrn\bin"
+          Add-Content -Path $env:GITHUB_PATH -Value $pyDir
+          Write-Host "NRN_PYLIB=$dll"
+          Write-Host "python=$pyDir"
+
+      - name: Probe MinGW neuron
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:PYTHONPATH = "C:\nrn\lib\python"
+          python -c "import os, neuron; from neuron import h; from neuron.rxd.rxd import _cxx_compile_cache; print('exe', __import__('sys').executable); print('NRN_PYLIB', os.environ.get('NRN_PYLIB')); print('nrnversion', h.nrnversion()); print('neuronhome', h.neuronhome()); print('cache', _cxx_compile_cache)"
+
+      - name: Foreign ctest rxd_tests
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:PYTHONPATH = "C:\nrn\lib\python"
+          $py = (Get-Command python).Source
+          cmake -G "Visual Studio 17 2022" -A x64 -S test/foreign -B build-ctest `
+            "-DNRN_FOREIGN_PYTHON=$py" "-DNRN_FOREIGN_ROOT=C:/nrn" -DNRN_FOREIGN_ALLOW_SKEW=ON
+          if ($LASTEXITCODE -ne 0) { throw "cmake configure failed ($LASTEXITCODE)" }
+          cmake --build build-ctest --config Release --target foreign --parallel
+          if ($LASTEXITCODE -ne 0) { throw "cmake --build foreign failed ($LASTEXITCODE)" }
+          ctest --test-dir build-ctest -C Release -R rxdmod_tests::rxd_tests --output-on-failure -V --timeout 600
+          if ($LASTEXITCODE -ne 0) { throw "rxd_tests failed ($LASTEXITCODE)" }
+
+      - name: Upload LastTest.log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mingw-rxd-LastTest
+          path: build-ctest/Testing/Temporary/LastTest.log
+          if-no-files-found: warn
