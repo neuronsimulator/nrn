@@ -1338,12 +1338,18 @@ int hoc_oc(const char* buf, std::ostream& os) {
     } else {
         // This is the highest level try/catch
         try_catch_depth_increment tell_children_we_will_catch{};
+        auto const stack_size = hoc_stack_size();
         try {
             signal_handler_guard _{};
             kernel();
         } catch (std::exception const& e) {
             os << "hoc_oc caught exception: " << e.what() << std::endl;
             hoc_initcode();
+            // initcode releases frame/temporary objects, but leaves operands.
+            // Keep entries owned by the caller below this command's stack.
+            while (hoc_stack_size() > stack_size) {
+                hoc_nopop();
+            }
             hoc_intset = 0;
             return 1;
         }

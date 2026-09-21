@@ -2,6 +2,7 @@
 #include "neuron/container/data_handle.hpp"
 #include "neuron/container/generic_data_handle.hpp"
 
+#include <cstddef>
 #include <cstdio>
 #include <functional>
 #include <memory>
@@ -184,6 +185,7 @@ void hoc_pushi(int);
 void hoc_push_ndim(int);
 int hoc_pop_ndim();
 int hoc_stack_type();
+std::size_t hoc_stack_size();
 bool hoc_stack_type_is_ndim();
 
 namespace neuron::oc::detail {
