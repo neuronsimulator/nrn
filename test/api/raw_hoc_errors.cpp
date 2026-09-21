@@ -1,6 +1,9 @@
 #include "neuronapi.h"
 #include <array>
+#include <cstdio>
+#include <cstdlib>
 #include <iostream>
+#include <unistd.h>
 
 extern "C" void modl_reg() {}
 
@@ -18,6 +21,35 @@ static bool check(bool condition, const char* message) {
     }
     return condition;
 }
+
+// Suppress expected interpreter diagnostics without changing the error boundary.
+// Scope exit restores stderr before assertions, including an early loop failure.
+class StderrSilencer {
+  public:
+    StderrSilencer() {
+        std::fflush(stderr);
+        saved_ = dup(STDERR_FILENO);
+        auto sink = std::fopen("/dev/null", "w");
+        if (saved_ == -1 || !sink || dup2(fileno(sink), STDERR_FILENO) == -1) {
+            std::perror("redirect stderr");
+            std::exit(1);
+        }
+        std::fclose(sink);
+    }
+    ~StderrSilencer() {
+        std::fflush(stderr);
+        if (dup2(saved_, STDERR_FILENO) == -1) {
+            std::cout << "FAIL: restore stderr" << std::endl;
+            std::exit(1);
+        }
+        close(saved_);
+    }
+    StderrSilencer(const StderrSilencer&) = delete;
+    StderrSilencer& operator=(const StderrSilencer&) = delete;
+
+  private:
+    int saved_;
+};
 
 int main() {
     std::array<const char*, 4> args = {"raw_hoc_errors", "-nogui", "-nopython", nullptr};
@@ -47,10 +79,18 @@ int main() {
     for (auto command: commands) {
         nrn_double_push(89.25);
         nrn_int_push(37);
-        for (int i = 0; i < 1200; ++i) {
-            if (!check(nrn_hoc_call(command) != 0, "raw command reports failure")) {
-                return 1;
+        bool reported_failure = true;
+        {
+            StderrSilencer silence;
+            for (int i = 0; i < 1200; ++i) {
+                if (nrn_hoc_call(command) == 0) {
+                    reported_failure = false;
+                    break;
+                }
             }
+        }
+        if (!check(reported_failure, "raw command reports failure")) {
+            return 1;
         }
         if (!check(nrn_stack_type() == STACK_IS_INT, "no operands remain above caller sentinels") ||
             !check(nrn_int_pop() == 37, "integer sentinel preserved") ||
