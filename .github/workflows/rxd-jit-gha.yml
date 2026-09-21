@@ -1,5 +1,5 @@
-# Throwaway: overlay cached rxd.py onto published MSVC wheel + MinGW installer,
-# then foreign ctest of rxd_tests only with NRN_RXD_JIT_STATS=1.
+# Throwaway: published MSVC wheel + MinGW installer as-is (no c5f8a5bea
+# rxd.py overlay), foreign ctest of rxd_tests only.
 # Pushing this branch does not open a PR and does not match other workflows'
 # on: filters (master / pull_request to master).
 name: rxd JIT stats overlay
@@ -37,11 +37,15 @@ jobs:
       - name: Init rxd testdata submodule
         run: git submodule update --init -- test/rxd/testdata
 
+      - name: Drop cache-only rxd test (stock wheel has no _cxx_compile_cache)
+        shell: bash
+        run: rm -f test/rxd/test_cxx_compile_cache.py
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.14"
 
-      - name: Install published MSVC wheel and overlay rxd.py
+      - name: Install published MSVC wheel (stock rxd.py)
         shell: bash
         run: |
           set -eux
@@ -49,8 +53,7 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install "${MSVC_WHEEL_URL}"
           python -m pip install pytest matplotlib plotly anywidget
-          python -c "import pathlib, shutil, neuron; dst=pathlib.Path(neuron.__file__).resolve().parent/'rxd'/'rxd.py'; shutil.copy('share/lib/python/neuron/rxd/rxd.py', dst); print('overlay', dst)"
-          python -c "from neuron.rxd.rxd import _cxx_compile_cache; from neuron import h; print('cache-ok', _cxx_compile_cache); print('nrnversion', h.nrnversion()); print('neuronhome', h.neuronhome())"
+          python -c "from neuron import h; import neuron.rxd.rxd as m; print('nrnversion', h.nrnversion()); print('neuronhome', h.neuronhome()); print('has_cache', hasattr(m, '_cxx_compile_cache'))"
 
       - name: Foreign ctest rxd_tests
         shell: pwsh
@@ -87,6 +90,10 @@ jobs:
       - name: Init rxd testdata submodule
         run: git submodule update --init -- test/rxd/testdata
 
+      - name: Drop cache-only rxd test (stock installer has no _cxx_compile_cache)
+        shell: bash
+        run: rm -f test/rxd/test_cxx_compile_cache.py
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.14"
@@ -101,7 +108,7 @@ jobs:
           gh run download $env:MINGW_INSTALLER_RUN -n nrn-nightly-AMD64.exe -D installer --repo ${{ github.repository }}
           Get-ChildItem -Recurse installer
 
-      - name: Silent-install to C:\nrn and overlay rxd.py
+      - name: Silent-install to C:\nrn (stock rxd.py)
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -115,8 +122,6 @@ jobs:
             if ((Get-Date) -gt $deadline) { throw "C:\nrn\bin\nrniv.exe missing after silent install" }
             Start-Sleep 2
           }
-          Copy-Item share/lib/python/neuron/rxd/rxd.py C:\nrn\lib\python\neuron\rxd\rxd.py -Force
-          Write-Host "overlay C:\nrn\lib\python\neuron\rxd\rxd.py"
 
       - name: Python deps, NRN_PYLIB, PATH
         shell: pwsh
@@ -140,7 +145,7 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $env:PYTHONPATH = "C:\nrn\lib\python"
-          python -c "import os, neuron; from neuron import h; from neuron.rxd.rxd import _cxx_compile_cache; print('exe', __import__('sys').executable); print('NRN_PYLIB', os.environ.get('NRN_PYLIB')); print('nrnversion', h.nrnversion()); print('neuronhome', h.neuronhome()); print('cache', _cxx_compile_cache)"
+          python -c "import os, neuron; from neuron import h; import neuron.rxd.rxd as m; print('exe', __import__('sys').executable); print('NRN_PYLIB', os.environ.get('NRN_PYLIB')); print('nrnversion', h.nrnversion()); print('neuronhome', h.neuronhome()); print('has_cache', hasattr(m, '_cxx_compile_cache'))"
 
       - name: Foreign ctest rxd_tests
         shell: pwsh
