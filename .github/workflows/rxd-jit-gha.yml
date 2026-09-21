@@ -22,6 +22,7 @@ env:
   NEURON_MODULE_OPTIONS: "-nogui"
   # Same bits as the win11_resizable guest overlay compare.
   MSVC_WHEEL_URL: https://github.com/neuronsimulator/nrn/releases/download/msvc-wheel-dev/neuron_nightly-9.0.2.dev295-cp314-cp314-win_amd64.whl
+  MAC_WHEEL_URL: https://github.com/neuronsimulator/nrn/releases/download/msvc-wheel-dev/neuron_nightly-9.0.2.dev295-cp314-cp314-macosx_10_15_x86_64.whl
   MINGW_INSTALLER_RUN: "34291705052"
 
 jobs:
@@ -168,3 +169,73 @@ jobs:
           name: mingw-rxd-LastTest
           path: build-ctest/Testing/Temporary/LastTest.log
           if-no-files-found: warn
+
+  macos-intel:
+    name: macOS Intel wheel rxd_tests with/without cache
+    runs-on: macos-15-intel
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Init rxd testdata submodule
+        run: git submodule update --init -- test/rxd/testdata
+
+      - name: Drop cache-only rxd test for 129-item compare
+        run: rm -f test/rxd/test_cxx_compile_cache.py
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install published macOS cp314 wheel
+        run: |
+          set -eux
+          unset PYTHONPATH NEURONHOME || true
+          python -m pip install --upgrade pip
+          python -m pip install "${MAC_WHEEL_URL}"
+          python -m pip install pytest matplotlib plotly anywidget
+          python -c "from neuron import h; import neuron.rxd.rxd as m; print('nrnversion', h.nrnversion()); print('neuronhome', h.neuronhome()); print('has_cache', hasattr(m, '_cxx_compile_cache'))"
+
+      - name: Configure foreign ctest
+        run: |
+          set -eux
+          unset PYTHONPATH NEURONHOME || true
+          py="$(command -v python)"
+          cmake -S test/foreign -B build-ctest \
+            -DNRN_FOREIGN_PYTHON="${py}" \
+            -DNRN_FOREIGN_ALLOW_SKEW=ON
+          cmake --build build-ctest --target foreign --parallel
+          rm -f build-ctest/test/rxdmod_tests/rxd_tests/test/rxd/test_cxx_compile_cache.py
+
+      - name: rxd_tests without cache
+        run: |
+          set -eux
+          unset PYTHONPATH NEURONHOME || true
+          cp .github/rxd_count_plugin.py build-ctest/test/rxdmod_tests/rxd_tests/rxd_count_plugin.py
+          export PYTEST_ADDOPTS='-p rxd_count_plugin'
+          ctest --test-dir build-ctest -R rxdmod_tests::rxd_tests --output-on-failure -V --timeout 600
+          cp build-ctest/Testing/Temporary/LastTest.log LastTest-macos-nocache.log
+
+      - name: Overlay cached rxd.py and rerun rxd_tests
+        run: |
+          set -eux
+          unset PYTHONPATH NEURONHOME PYTEST_ADDOPTS || true
+          python -c "import pathlib, shutil, neuron; dst=pathlib.Path(neuron.__file__).resolve().parent/'rxd'/'rxd.py'; shutil.copy('share/lib/python/neuron/rxd/rxd.py', dst); print('overlay', dst)"
+          python -c "import neuron.rxd.rxd as m; print('has_cache', hasattr(m, '_cxx_compile_cache'))"
+          export NRN_RXD_JIT_STATS=1
+          ctest --test-dir build-ctest -R rxdmod_tests::rxd_tests --output-on-failure -V --timeout 600
+          cp build-ctest/Testing/Temporary/LastTest.log LastTest-macos-cache.log
+
+      - name: Upload LastTest logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-rxd-LastTest
+          path: |
+            LastTest-macos-nocache.log
+            LastTest-macos-cache.log
+            build-ctest/Testing/Temporary/LastTest.log
+          if-no-files-found: warn
+
