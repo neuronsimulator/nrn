@@ -38,6 +38,10 @@ _external_solver = None
 _external_solver_initialized = False
 _windows_dll_files = []
 _windows_dll = []
+# Identical reaction C++ is compiled once per process. uuid filenames otherwise
+# rebuild the same DLL on every finitialize / SaveState restore.
+_cxx_compile_cache = {}
+_cxx_compile_stats = {"compile": 0, "hit": 0}
 
 
 make_time_ptr = nrn_dll_sym("make_time_ptr")
@@ -254,6 +258,13 @@ def byeworld() -> None:
     except NameError:
         #    # if it already didn't exist, that's fine
         pass
+    if os.environ.get("NRN_RXD_JIT_STATS"):
+        print(
+            "RxD JIT cache: {} compiles, {} hits".format(
+                _cxx_compile_stats["compile"], _cxx_compile_stats["hit"]
+            ),
+            file=sys.stderr,
+        )
     _windows_remove_dlls()
 
 
@@ -529,6 +540,10 @@ def _find_librxdmath():
 
 
 def _cxx_compile(formula):
+    cached = _cxx_compile_cache.get(formula)
+    if cached is not None:
+        _cxx_compile_stats["hit"] += 1
+        return cached
     filename = "rxddll" + str(uuid.uuid1())
     src = filename + ".cpp"
     out = os.path.abspath(filename) + ".so"
@@ -625,6 +640,8 @@ def _cxx_compile(formula):
                 pass
     else:
         os.remove(out)
+    _cxx_compile_cache[formula] = reaction
+    _cxx_compile_stats["compile"] += 1
     return reaction
 
 
