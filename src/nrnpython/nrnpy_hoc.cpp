@@ -29,22 +29,23 @@
 namespace nb = nanobind;
 
 extern PyTypeObject* psection_type;
-extern std::vector<const char*> py_exposed_classes;
 
 #include "parse.hpp"
-extern void (*nrnpy_sectionlist_helper_)(void*, Object*);
-extern void* (*nrnpy_get_pyobj)(Object* obj);
-extern void (*nrnpy_restore_savestate)(int64_t, char*);
-extern void (*nrnpy_store_savestate)(char** save_data, uint64_t* save_data_size);
-extern void (*nrnpy_decref)(void* pyobj);
-extern double (*nrnpy_call_func)(Object*, double);
-extern int (*nrnpy_call_obj_method)(Object* obj, const char* method, Object* obj2);
-extern int (*nrnpy_call_obj_method_double)(Object* obj, const char* method, double value);
+extern NRN_DLLSYM void (*nrnpy_sectionlist_helper_)(void*, Object*);
+extern NRN_DLLSYM void* (*nrnpy_get_pyobj)(Object* obj);
+extern NRN_DLLSYM void (*nrnpy_restore_savestate)(int64_t, char*);
+extern NRN_DLLSYM void (*nrnpy_store_savestate)(char** save_data, uint64_t* save_data_size);
+extern NRN_DLLSYM void (*nrnpy_decref)(void* pyobj);
+extern NRN_DLLSYM double (*nrnpy_call_func)(Object*, double);
+extern NRN_DLLSYM int (*nrnpy_call_obj_method)(Object* obj, const char* method, Object* obj2);
+extern NRN_DLLSYM int (*nrnpy_call_obj_method_double)(Object* obj,
+                                                      const char* method,
+                                                      double value);
 extern void hoc_pushs(Symbol*);
 extern double cable_prop_eval(Symbol* sym);
-extern Symlist* hoc_top_level_symlist;
-extern Symlist* hoc_built_in_symlist;
-extern Inst* hoc_pc;
+extern NRN_DLLSYM Symlist* hoc_top_level_symlist;
+extern NRN_DLLSYM Symlist* hoc_built_in_symlist;
+extern NRN_DLLSYM Inst* hoc_pc;
 extern void hoc_push_string();
 extern char** hoc_strpop();
 extern void hoc_objectvar();
@@ -53,10 +54,10 @@ extern int ivoc_list_count(Object*);
 extern Object** hoc_objpop();
 extern Object* hoc_obj_look_inside_stack(int);
 extern void hoc_object_component();
-extern int nrn_inpython_;
+extern NRN_DLLSYM int nrn_inpython_;
 extern int hoc_stack_type();
 extern void hoc_call();
-extern Objectdata* hoc_top_level_data;
+extern NRN_DLLSYM Objectdata* hoc_top_level_data;
 extern void hoc_tobj_unref(Object**);
 extern void hoc_unref_defer();
 extern void sec_access_push();
@@ -66,17 +67,17 @@ extern PyObject* nrnpy_cas(PyObject*, PyObject*);
 extern PyObject* nrnpy_cas_safe(PyObject*, PyObject*);
 extern PyObject* nrnpy_forall_safe(PyObject*, PyObject*);
 extern PyObject* nrnpy_newsecobj_safe(PyObject*, PyObject*, PyObject*);
-extern int section_object_seen;
-extern Symbol* nrn_child_sym;
+extern NRN_DLLSYM int section_object_seen;
+extern NRN_DLLSYM Symbol* nrn_child_sym;
 extern int nrn_secref_nchild(Section*);
 static void pyobject_in_objptr(Object**, PyObject*);
 static double nrnpy_call_func_(Object*, double);
 static int nrnpy_call_obj_method_(Object*, const char*, Object*);
 static int nrnpy_call_obj_method_double_(Object*, const char*, double);
-extern IvocVect* (*nrnpy_vec_from_python_p_)(void*);
-extern Object** (*nrnpy_vec_to_python_p_)(void*);
-extern Object** (*nrnpy_vec_as_numpy_helper_)(int, double*);
-extern Object* (*nrnpy_rvp_rxd_to_callable)(Object*);
+extern NRN_DLLSYM IvocVect* (*nrnpy_vec_from_python_p_)(void*);
+extern NRN_DLLSYM Object** (*nrnpy_vec_to_python_p_)(void*);
+extern NRN_DLLSYM Object** (*nrnpy_vec_as_numpy_helper_)(int, double*);
+extern NRN_DLLSYM Object* (*nrnpy_rvp_rxd_to_callable)(Object*);
 extern Symbol* ivoc_alias_lookup(const char* name, Object* ob);
 class NetCon;
 extern int nrn_netcon_weight(NetCon*, double**);
@@ -85,7 +86,7 @@ extern int nrn_matrix_dim(void*, int);
 extern PyObject* pmech_types;  // Python map for name to Mechanism
 extern PyObject* rangevars_;   // Python map for name to Symbol
 
-extern int hoc_max_builtin_class_id;
+extern NRN_DLLSYM int hoc_max_builtin_class_id;
 
 static cTemplate* hoc_vec_template_;
 static cTemplate* hoc_list_template_;
@@ -306,7 +307,7 @@ static PyObject* hocobj_new(PyTypeObject* subtype, PyObject* args, PyObject* kwd
         PyDict_DelItemString(kwds, "hocbase");
     }
 
-    if (hbase and hbase->type_ == PyHoc::HocFunction && hbase->sym_->type == TEMPLATE) {
+    if (hbase && hbase->type_ == PyHoc::HocFunction && hbase->sym_->type == TEMPLATE) {
         // printf("hocobj_new base %s\n", hbase->sym_->name);
         // remove the hocbase keyword since hocobj_call only allows
         // the "sec" keyword argument
@@ -3260,10 +3261,10 @@ static void sectionlist_helper_(void* sl, Object* args) {
 }
 
 /// value of neuron.coreneuron.enable as 0, 1 (-1 if error)
-extern int (*nrnpy_nrncore_enable_value_p_)();
+extern NRN_DLLSYM int (*nrnpy_nrncore_enable_value_p_)();
 
 /// value of neuron.coreneuron.file_mode as 0, 1 (-1 if error)
-extern int (*nrnpy_nrncore_file_mode_value_p_)();
+extern NRN_DLLSYM int (*nrnpy_nrncore_file_mode_value_p_)();
 
 /*
  * Helper function to inspect value of int/boolean option
@@ -3308,7 +3309,7 @@ static int nrncore_file_mode_value() {
     finishes with it. Return NULL if error or bool(neuron.coreneuron.enable)
     is False.
 */
-extern char* (*nrnpy_nrncore_arg_p_)(double tstop);
+extern NRN_DLLSYM char* (*nrnpy_nrncore_arg_p_)(double tstop);
 static char* nrncore_arg(double tstop) {
     PyObject* modules = PyImport_GetModuleDict();
     if (modules) {

@@ -1,9 +1,12 @@
 #pragma once
 
-extern Object* hoc_thisobject;
-extern Objectdata* hoc_top_level_data;
-extern Symlist* hoc_top_level_symlist;
-extern Symlist* hoc_symlist;
+#include "nrndlldef.h"
+
+extern NRN_DLLSYM Object* hoc_thisobject;
+extern NRN_DLLSYM Objectdata* hoc_objectdata;
+extern NRN_DLLSYM Objectdata* hoc_top_level_data;
+extern NRN_DLLSYM Symlist* hoc_top_level_symlist;
+extern NRN_DLLSYM Symlist* hoc_symlist;
 
 struct HocContext {
     Object* obj;

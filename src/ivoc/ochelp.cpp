@@ -15,10 +15,6 @@
 
 static FILE* help_pipe;
 
-#if defined(WIN32) && !defined(MINGW)
-#include "nrnbbs.h"
-#endif
-
 #ifndef WIN32
 #define WIN32
 #define UNIX 1

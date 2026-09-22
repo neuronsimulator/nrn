@@ -12,14 +12,23 @@
 #
 # * NRN_DEFAULT_PYTHON_EXECUTABLE is the default Python, which is used for running tests and so on.
 # * NRN_PYTHON_EXECUTABLES is a list of all the Pythons that we are building against. This will only
-#   have a length > 1 if NRN_ENABLE_PYTHON_DYNAMIC is defined.
+#   have a length > 1 if NRN_ENABLE_PYTHON_DYNAMIC is defined. scikit-build-core (and FindPython)
+#   set Python_EXECUTABLE, not the older PYTHON_EXECUTABLE name this helper still uses. Same on Unix
+#   and Windows.
+if(NOT PYTHON_EXECUTABLE AND Python_EXECUTABLE)
+  set(PYTHON_EXECUTABLE "${Python_EXECUTABLE}")
+endif()
 if(NOT PYTHON_EXECUTABLE AND (NOT NRN_ENABLE_PYTHON_DYNAMIC OR NOT NRN_PYTHON_DYNAMIC))
-  # Haven't been explicitly told about any Python versions, set PYTHON_EXECUTABLE by searching PATH
-  message(STATUS "No python executable specified. Looking for `python3` in the PATH...")
-  # Since PythonInterp module prefers system-wide python, if PYTHON_EXECUTABLE is not set, look it
-  # up in the PATH exclusively. Need to set PYTHON_EXECUTABLE before calling SanitizerHelper.cmake
+  # Haven't been explicitly told about any Python versions, set PYTHON_EXECUTABLE by searching PATH.
+  # python3 first (PEP 394); python second (Windows CPython is python.exe; some Unix setups too).
+  message(
+    STATUS "No python executable specified. Looking for `python3` then `python` in the PATH...")
+  # PythonInterp/FindPython may prefer a system or registry interpreter, so if PYTHON_EXECUTABLE is
+  # not set, look it up in the PATH exclusively. Need to set PYTHON_EXECUTABLE before calling
+  # SanitizerHelper.cmake
   find_program(
-    PYTHON_EXECUTABLE python3
+    PYTHON_EXECUTABLE
+    NAMES python3 python
     PATHS ENV PATH
     NO_DEFAULT_PATH)
   if(PYTHON_EXECUTABLE STREQUAL "PYTHON_EXECUTABLE-NOTFOUND")
@@ -95,12 +104,16 @@ function(nrn_find_python)
     string(SUBSTRING "${pyexe_hash}" 0 6 pyexe_hash)
     # Which attributes we're trying to learn about this Python
     set(python_vars Python_INCLUDE_DIRS Python_VERSION)
-    if(NRN_ENABLE_PYTHON_DYNAMIC AND NOT NRN_LINK_AGAINST_PYTHON)
+    if(NRN_ENABLE_PYTHON_DYNAMIC
+       AND NOT NRN_LINK_AGAINST_PYTHON
+       AND NOT WIN32)
       # Do not link against Python, so we don't need the library -- just as well, it's not available
       # in manylinux
       set(dev_component "Development.Module")
       set(Python_LIBRARIES "do-not-link-against-libpython-in-dynamic-python-builds")
     else()
+      # Windows .pyd / nrnpythonXY.dll must link pythonXY.lib. Unix manylinux modules leave
+      # libpython undefined; the Windows loader has no equivalent.
       set(dev_component "Development")
       list(APPEND python_vars Python_LIBRARIES)
     endif()

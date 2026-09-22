@@ -14,6 +14,8 @@ void hoc_main1_init(const char*, const char**);
 #include <stdio.h>
 #include <stdlib.h>
 #include <filesystem>
+#include <string>
+#include <vector>
 #if HAVE_UNISTD_H
 #include <unistd.h>
 #if !defined(__APPLE__)
@@ -64,7 +66,7 @@ static PropertyData properties[] = {{"*gui", "sgimotif"},
                                     {"*brush_width", "0"},
                                     {"*double_buffered", "on"},
                                     {"*flat", "#aaaaaa"},
-#ifdef MINGW
+#ifdef _WIN32
                                     {"*font", "*Arial*bold*--12*"},
                                     {"*MenuBar*font", "*Arial*bold*--12*"},
                                     {"*MenuItem*font", "*Arial*bold*--12*"},
@@ -152,7 +154,7 @@ extern const char* nrn_mech_dll;
 #if defined(USE_PYTHON)
 int nrn_nopython;
 extern int use_python_interpreter;
-std::string nrnpy_pyexe;
+NRN_DLLSYM std::string nrnpy_pyexe;
 #endif
 
 /*****************************************************************************/
@@ -170,18 +172,19 @@ static char* ocsmall_argv[] = {0, "difus.hoc"};
 #endif
 #if defined(WIN32) && HAVE_IV
 extern HWND hCurrWnd;
+extern "C" int bad_install_ok;
 #endif
 
 
 extern void setneuronhome(const char*);
-extern const char* neuron_home;
+extern char* neuron_home;
 int hoc_xopen1(const char* filename, const char* rcs);
 extern int units_on_flag_;
 extern double hoc_default_dll_loaded_;
 extern int hoc_print_first_instance;
-int nrnpy_nositeflag;
+NRN_DLLSYM int nrnpy_nositeflag;
 
-#if !defined(MINGW)
+#if !defined(_WIN32)
 extern void setneuronhome(const char*) {
     neuron_home = getenv("NEURONHOME");
 }
@@ -224,10 +227,10 @@ const char* path_prefix_to_libnrniv() {
 }
 #endif  // DARWIN || defined(__linux__)
 
-int ivocmain(int, const char**, const char**);
+NRN_DLLSYM int ivocmain(int, const char**, const char**);
 int ivocmain_session(int, const char**, const char**, int start_session);
 extern int nrn_global_argc;
-extern const char** nrn_global_argv;
+extern char** nrn_global_argv;
 int always_false;
 extern int nrn_is_python_extension;
 extern void hoc_nrnmpi_init();
@@ -248,6 +251,27 @@ static bool isdir(const char* p) {
 }
 #endif
 
+#if defined(WIN32)
+// InterViews Style parse_value treats \n as newline (X11 resource syntax).
+// A native path ...\nrnmech.dll always contains that sequence. fopen and
+// LoadLibrary accept '/'. Same rule as load_file / binwrapper _posix_path.
+static void nrn_forward_slash_win_path_args(int argc, const char** argv) {
+    static std::vector<std::string> owned;
+    for (int i = 0; i < argc - 1; ++i) {
+        if (strcmp(argv[i], "-dll") != 0 && strcmp(argv[i], "-pyexe") != 0) {
+            continue;
+        }
+        std::string s{argv[i + 1]};
+        for (char& c: s) {
+            if (c == '\\') {
+                c = '/';
+            }
+        }
+        owned.push_back(std::move(s));
+        argv[i + 1] = owned.back().c_str();
+    }
+}
+#endif
 
 static bool nrn_optarg_on(const char* opt, int* pargc, const char** argv) {
     for (int i = 0; i < *pargc; ++i) {
@@ -303,7 +327,7 @@ void hoc_nrnmpi_init() {
         }
 #endif
 
-        char** foo = (char**) nrn_global_argv;
+        char** foo = nrn_global_argv;
         nrnmpi_init(2, &nrn_global_argc, &foo);
         // if (nrnmpi_myid == 0) {printf("hoc_nrnmpi_init called nrnmpi_init\n");}
         // turn off gui for all ranks > 0
@@ -331,7 +355,7 @@ void hoc_nrnmpi_init() {
  * \param env environment variable array as optionally found in main functions.
  * \return 0 on success, otherwise error code.
  */
-int ivocmain(int argc, const char** argv, const char** env) {
+NRN_DLLSYM int ivocmain(int argc, const char** argv, const char** env) {
     return ivocmain_session(argc, argv, env, 1);
 }
 /**
@@ -396,9 +420,9 @@ nrniv [options] [fileargs]
     nrn_global_argc = argc;
     // https://en.cppreference.com/w/cpp/language/main_function, note that argv is
     // of length argc + 1 and argv[argc] is null.
-    nrn_global_argv = new const char*[argc + 1];
+    nrn_global_argv = new char*[argc + 1];
     for (int i = 0; i < argc + 1; ++i) {
-        nrn_global_argv[i] = argv[i];
+        nrn_global_argv[i] = const_cast<char*>(argv[i]);
     }
     nrn_assert(nrn_global_argv[nrn_global_argc] == nullptr);
     if (nrn_optarg_on("-help", &argc, argv) || nrn_optarg_on("-h", &argc, argv)) {
@@ -470,7 +494,10 @@ nrniv [options] [fileargs]
     const char** our_argv = argv;
     int exit_status = 0;
     Session* session = NULL;
-#if !defined(MINGW)
+#if defined(WIN32)
+    nrn_forward_slash_win_path_args(our_argc, our_argv);
+#endif
+#if !defined(_WIN32)
     // Gary Holt's first pass at this was:
     //
     // Set the NEURONHOME environment variable.  This should override any setting
@@ -482,7 +509,7 @@ nrniv [options] [fileargs]
     if (!neuron_home) {
 #if defined(HAVE_SETENV)
         setenv("NEURONHOME", NEURON_DATA_DIR, 1);
-        neuron_home = NEURON_DATA_DIR;
+        neuron_home = const_cast<char*>(NEURON_DATA_DIR);
 #else
 #error "I don't know how to set environment variables."
 // Maybe in this case the user will have to set it by hand.
@@ -493,7 +520,28 @@ nrniv [options] [fileargs]
 
 #else  // Not unix:
     neuron_home = getenv("NEURONHOME");
-    if (!neuron_home) {
+    if (neuron_home) {
+        // setneuronhome sets this when it derives NEURONHOME from the
+        // executable. If the user already set it (cmake/wheel tree), skip
+        // the InterViews win.ini abort; there is no [InterViews] location.
+#if defined(WIN32) && HAVE_IV
+        bad_install_ok = 1;
+#endif
+#if defined(WIN32)
+        /* getenv NEURONHOME is a native path (wheel os.path.abspath, cmake
+           probe). \ in HOC "..." is an escape; ...\nrn always contains \n.
+           fopen accepts /. Same as setneuronhome / getcwd / File.getname.
+           Do not mutate the environment string. */
+        static std::string nrn_win_home_owned;
+        nrn_win_home_owned.assign(neuron_home);
+        for (char& c: nrn_win_home_owned) {
+            if (c == '\\') {
+                c = '/';
+            }
+        }
+        neuron_home = &nrn_win_home_owned[0];
+#endif
+    } else {
         setneuronhome((argc > 0) ? argv[0] : 0);
     }
     if (!neuron_home) {
@@ -503,7 +551,7 @@ nrniv [options] [fileargs]
                    "NEURON Incomplete Installation",
                    MB_OK);
 #else
-        neuron_home = ".";
+        neuron_home = const_cast<char*>(".");
         fprintf(stderr,
                 "Warning: no NEURONHOME environment variable-- setting\
  to %s\n",
@@ -537,23 +585,20 @@ nrniv [options] [fileargs]
     }
 #endif
     if (session) {
-        const auto nrn_def_path1 = fs::path(neuron_home) / "lib" / "nrn.defaults";
-        const auto nrn_def_path2 = fs::path(neuron_home) / "lib" / "nrn.def";
+        const auto nrn_def_path = fs::path(neuron_home) / "lib" / "nrn.defaults";
         auto file_exists = [](const auto& path) noexcept -> bool {
             // make sure it doesn't throw
             std::error_code err;
             return fs::is_regular_file(path, err);
         };
 #ifdef WIN32
-        if (file_exists(nrn_def_path1)) {
-            session->style()->load_file(String(nrn_def_path1.string().c_str()), -5);
-        } else if (file_exists(nrn_def_path2)) {
-            session->style()->load_file(String(nrn_def_path2.string().c_str()), -5);
+        if (file_exists(nrn_def_path)) {
+            session->style()->load_file(String(nrn_def_path.string().c_str()), -5);
         } else {
-            fmt::print("Can't load NEURON resources from {}[aults]\n", nrn_def_path1.string());
+            fmt::print("Can't load NEURON resources from {}\n", nrn_def_path.string());
         }
 #else
-        session->style()->load_file(String(nrn_def_path1.string().c_str()), -5);
+        session->style()->load_file(String(nrn_def_path.string().c_str()), -5);
 #endif
         char* h = getenv("HOME");
         if (h) {

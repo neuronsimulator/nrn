@@ -54,15 +54,15 @@ the handling of v_structure_change as long as possible.
 #define CACHELINE_CALLOC(name, type, size) \
     name = (type*) nrn_cacheline_calloc((void**) &name, size, sizeof(type))
 
-int nrn_nthread;
-NrnThread* nrn_threads;
+NRN_DLLSYM int nrn_nthread;
+NRN_DLLSYM NrnThread* nrn_threads;
 
 void (*nrn_mk_transfer_thread_data_)();
 
 static int busywait_;
 static int busywait_main_;
 extern void (*nrn_multisplit_setup_)();
-extern int v_structure_change;
+extern "C" int v_structure_change;
 extern int diam_changed;
 extern Section** secorder;
 extern int section_count;
@@ -79,7 +79,7 @@ static void* nulljob(NrnThread* nt) {
 int nrn_inthread_;
 
 namespace nrn {
-std::unique_ptr<std::mutex> nmodlmutex;
+NRN_DLLSYM std::unique_ptr<std::mutex> nmodlmutex;
 }
 
 namespace {

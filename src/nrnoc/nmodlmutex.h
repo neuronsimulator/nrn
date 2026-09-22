@@ -1,10 +1,11 @@
 #pragma once
+#include "nrndlldef.h"
 #if NRN_ENABLE_THREADS
 #include <memory>
 #include <mutex>
 
 namespace nrn {
-extern std::unique_ptr<std::mutex> nmodlmutex;
+extern NRN_DLLSYM std::unique_ptr<std::mutex> nmodlmutex;
 }
 #define _NMODLMUTEXLOCK              \
     {                                \

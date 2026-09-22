@@ -23,6 +23,7 @@
    d and rhs is calculated from the property list.
 */
 #include "hoclist.h"
+#include "nrndlldef.h"
 #include "cabcode.h"
 #include "membfunc.h"
 #include "neuron/container/mechanism_data.hpp"
@@ -444,9 +445,9 @@ typedef struct Eqnblock {
 } Eqnblock;
 #endif /*EXTRAEQN*/
 
-extern int nrn_global_ncell;   /* note that for multiple threads all the rootnodes are no longer
-                                  contiguous */
-extern hoc_List* section_list; /* Where the Sections live */
+extern int nrn_global_ncell; /* note that for multiple threads all the rootnodes are no longer
+                                contiguous */
+extern NRN_DLLSYM hoc_List* section_list; /* Where the Sections live */
 
 extern Section* sec_alloc();             /* Allocates a single section */
 extern void node_alloc(Section*, short); /* Allocates node vectors in a section*/

@@ -6,8 +6,7 @@
 
 #include <stdio.h>
 #include "nrnmpidec.h"
-
-extern double nrn_timeus();
+#include "ocmisc.h"
 
 static void stub_nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv) {}
 static void stub_nrnmpi_terminate() {}
