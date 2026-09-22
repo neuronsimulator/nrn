@@ -64,6 +64,18 @@ int main(void) {
         nrn_property_array_set(vclamp, "dur", i, dur);
         ++i;
     }
+    // Array property handles use the same point-process property resolution as
+    // scalar handles. Verify that the pushed handle aliases the selected item.
+    nrn_property_array_push(vclamp, "amp", 1);
+    double* amp1 = nrn_double_ptr_pop();
+    if (*amp1 != 10) {
+        return 1;
+    }
+    *amp1 = 11;
+    if (nrn_property_array_get(vclamp, "amp", 1) != 11) {
+        return 1;
+    }
+    nrn_property_array_set(vclamp, "amp", 1, 10);
     // setup recording
     Object* v = nrn_object_new(nrn_symbol("Vector"), 0);
     nrn_rangevar_push(nrn_symbol("v"), soma, 0.5);

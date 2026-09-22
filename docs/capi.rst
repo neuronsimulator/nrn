@@ -906,6 +906,40 @@ Segments
 Functions, objects, and the stack
 ---------------------------------
 
+Reads and writes of provider-backed object components are dispatched through
+per-template hooks registered at runtime, rather than being selected when
+NEURON is compiled. An embedding host can therefore supply a provider even in
+a build configured with ``NRN_ENABLE_PYTHON=OFF``, without NEURON itself
+linking against Python. The legacy Python methods-table callbacks remain a
+compatibility fallback for providers that have not installed per-template
+hooks. When no provider is registered, ordinary template lookup is unchanged.
+
+.. c:function:: bool nrn_template_set_component_hooks(Symbol* template_sym, nrn_component_func component, nrn_component_asgn_func component_asgn, char* error_msg, size_t error_msg_size)
+
+    Register non-owning provider callbacks for all dynamic components of a HOC
+    template. The template symbol must remain valid, and callback code must
+    remain loaded while any instance exists. The read callback consumes the
+    deferred object frame and pushes exactly one HOC value; the assignment
+    callback consumes the typed RHS, available through :c:func:`nrn_stack_type`,
+    followed by the component metadata frame. On success each callback returns
+    ``NULL``. On failure it returns an error message without changing the HOC
+    stack. The returned pointer must remain valid until the call returns
+    across the provider boundary; NEURON copies the message before running
+    anything else (its own warning and dialog hooks included) and then calls
+    ``hoc_execerror``.
+    This gives the enclosing :c:func:`nrn_function_call_nothrow` or
+    :c:func:`nrn_method_call_nothrow` normal error reporting and stack recovery
+    without an exception unwinding through a foreign callback.
+
+    Passing a null template or either callback returns ``false`` and writes a
+    diagnostic to ``error_msg`` when space is provided. Registration is
+    fail-closed and does not modify the HOC stack.
+
+    The ``nindex``/``isfunc`` arguments preserve HOC method-call information.
+    Indexed component access additionally carries an interpreter dimension
+    marker; providers should wait for the public ``nrn_ndim_pop`` API before
+    advertising indexed components.
+
 .. c:function:: Symbol* nrn_symbol(const char* name)
 
     Get a symbol by name from NEURON's symbol table. Symbols represent variables,
@@ -1150,13 +1184,17 @@ Functions, objects, and the stack
 
 .. c:function:: int nrn_int_pop(void)
 
-    Pop an integer from the stack.
+    Pop an integer or array-dimension marker from the stack.
 
     :returns: Integer value from the top of the stack.
 
     **Usage Pattern:**
 
     Used to retrieve function/method return values.
+
+    Indexed object-component access places an internal array-dimension marker
+    on the stack. :c:func:`nrn_int_pop` returns its dimension count through the
+    same API used for an ordinary integer.
 
     .. warning::
 
@@ -1971,7 +2009,9 @@ Miscellaneous
     **Usage Pattern:**
 
     Used to read object properties dynamically by name. Essential for
-    generic property access.
+    generic property access. For an NMODL ``POINTER`` property on a point
+    process, this returns the value referenced by the pointer. An unset or
+    opaque pointer returns NaN.
 
     **C Usage:**
     
@@ -2000,6 +2040,10 @@ Miscellaneous
 
     Used for properties that are arrays.
 
+    Point-process properties use the same data-handle resolution as
+    :c:func:`nrn_property_get` for the selected element, including returning NaN
+    for an unset or opaque pointer.
+
     **C Usage:**
 
     .. code-block:: c
@@ -2021,6 +2065,10 @@ Miscellaneous
     :param obj: Pointer to the object.
     :param name: Name of the property.
     :param value: Value to set.
+
+    For an NMODL ``POINTER`` property on a point process, this writes through
+    the pointer to the referenced value. A write to an unset or opaque pointer
+    is ignored.
 
     **C Usage:**
     
@@ -2045,6 +2093,10 @@ Miscellaneous
     :param i: Index into the array (0-based).
     :param value: Value to set at the specified index.
 
+    Point-process properties use the same data-handle resolution as
+    :c:func:`nrn_property_set` for the selected element, including ignoring a
+    write to an unset or opaque pointer.
+
 .. c:function:: void nrn_property_push(Object* obj, const char* name)
 
     Push a property value onto the NEURON stack.
@@ -2058,6 +2110,11 @@ Miscellaneous
     is how NEURON can implement non-square-wave current clamps. Here ``iclamp._ref_amp`` is a reference
     to the ``amp`` property of the ``IClamp`` object.
 
+    For an NMODL ``POINTER`` property on a point process, this pushes the
+    referenced data handle. It can, for example, be consumed by
+    :c:func:`nrn_pp_setpointer_pop` to wire another point-process pointer to
+    the same source. An unset or opaque pointer pushes an empty handle.
+
 .. c:function:: void nrn_property_array_push(Object* obj, const char* name, int i)
 
     Push a property array element onto the NEURON stack.
@@ -2065,6 +2122,10 @@ Miscellaneous
     :param obj: Pointer to the object.
     :param name: Name of the property array.
     :param i: Index into the array (0-based).
+
+    Point-process properties use the same data-handle resolution as
+    :c:func:`nrn_property_push` for the selected element, including pushing an
+    empty handle for an unset or opaque pointer.
 
 .. c:function:: bool nrn_property_data_handle_is_valid(const Object* obj, const char* name, int i)
 
