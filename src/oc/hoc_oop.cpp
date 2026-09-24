@@ -1020,16 +1020,29 @@ void hoc_object_component() {
     }
     obp = hoc_obj_look_inside_stack(nindex + expect_stack_nsub);
     if (obp) {
-#if USE_PYTHON
-        if (obp->ctemplate->sym == nrnpy_pyobj_sym_) {
+        if (obp->ctemplate->component) {
             if (isfunc & 2) {
-                /* this is the final left hand side of an
-                assignment to the method of a PythonObject
-                and we need to put the PythonObject and the
-                method with all its info onto the stack so that
-                a proper __setattro__ or __setitem__ can be
-                accomplished in the next hoc_object_asgn
-                */
+                /* Leave the metadata frame for component_asgn. */
+                if (isfunc & 1) {
+                    hoc_execerror_fmt("Cannot assign to a component function call '{}'",
+                                      sym0->name);
+                }
+                hoc_pushi(nindex);
+                hoc_pushs(sym0);
+                hoc_push_object(obp);
+            } else {
+                if (const char* error = obp->ctemplate->component(obp, sym0, nindex, isfunc)) {
+                    // Copies the message before hoc_execerror's warning/dialog
+                    // hooks can re-enter provider code and clobber its buffer.
+                    hoc_execerror_fmt("{}", error);
+                }
+            }
+            return;
+        } else if (obp->ctemplate->sym == nrnpy_pyobj_sym_ &&
+                   neuron::python::methods.py2n_component) {
+            /* Compatibility for providers that populate only the methods
+               table. */
+            if (isfunc & 2) {
                 if (isfunc & 1) {
                     hoc_execerror_fmt("Cannot assign to a PythonObject function call '{}'",
                                       sym0->name);
@@ -1037,14 +1050,11 @@ void hoc_object_component() {
                 hoc_pushi(nindex);
                 hoc_pushs(sym0);
                 hoc_push_object(obp);
-                /* note obp is now on stack twice */
-                /* hpoasgn will pop both */
             } else {
                 neuron::python::methods.py2n_component(obp, sym0, nindex, isfunc);
             }
             return;
         }
-#endif
         if (obp->ctemplate->id == *ptid) {
             sym = *psym;
         } else {
@@ -1476,16 +1486,28 @@ void hoc_object_asgn() {
         hoc_assign_str(pd, d);
         hoc_pushstr(pd);
     } break;
-#if USE_PYTHON
-    case OBJECTTMP: { /* should be PythonObject */
+    case OBJECTTMP: {
         Object* o = hoc_obj_look_inside_stack(1);
-        assert(o->ctemplate->sym == nrnpy_pyobj_sym_);
         if (op) {
-            hoc_execerror("Invalid assignment operator for PythonObject", nullptr);
+            hoc_execerror(o->ctemplate->sym == nrnpy_pyobj_sym_
+                              ? "Invalid assignment operator for PythonObject"
+                              : "Invalid assignment operator for component",
+                          nullptr);
         }
-        neuron::python::methods.hpoasgn(o, type1);
+        if (o->ctemplate->component_asgn) {
+            if (const char* error = o->ctemplate->component_asgn(o)) {
+                // Copies the message before hoc_execerror's warning/dialog
+                // hooks can re-enter provider code and clobber its buffer.
+                hoc_execerror_fmt("{}", error);
+            }
+        } else if (o->ctemplate->sym == nrnpy_pyobj_sym_ && neuron::python::methods.hpoasgn) {
+            /* Compatibility for providers that populate only the methods
+               table. */
+            neuron::python::methods.hpoasgn(o, type1);
+        } else {
+            hoc_execerror("Cannot assign to component", nullptr);
+        }
     } break;
-#endif
     default:
         hoc_execerror("Cannot assign to left hand side", nullptr);
     }
@@ -1537,6 +1559,8 @@ void hoc_begintemplate(Symbol* t1) {
     t->u.ctemplate->destructor = 0;
     t->u.ctemplate->is_point_ = 0;
     t->u.ctemplate->steer = 0;
+    t->u.ctemplate->component = nullptr;
+    t->u.ctemplate->component_asgn = nullptr;
     t->u.ctemplate->id = ++template_id;
     pushtemplatei(icntobjectdata);
     pushtemplateodata(hoc_objectdata);
@@ -1610,6 +1634,8 @@ void class2oc_base(const char* name,
     t->constructor = cons;
     t->destructor = destruct;
     t->steer = 0;
+    t->component = nullptr;
+    t->component_asgn = nullptr;
 
     if (m)
         for (i = 0; m[i].name; ++i) {
