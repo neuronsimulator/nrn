@@ -29,8 +29,9 @@ void check_ss_consist(Item*);
 general list structure to handle it.  The element is a pointer to an
 item which is the first item in the statement sequence in another list.
 */
-static List* solvq; /* list of the solve statement locations */
-int numlist = 0;    /* number of slist's */
+/*static*/ List* solvq; /* list of the solve statement locations */
+
+int numlist = 0; /* number of slist's */
 
 void solvequeue(Item* qName, Item* qMethod, int blocktype) /*solve NAME [using METHOD]*/
 /* qMethod = nullptr means method wasn't there */

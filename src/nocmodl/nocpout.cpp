@@ -134,7 +134,7 @@ static List* nrn_mech_inst_destruct_list;
 static int num_random_vars = 0;
 static char suffix[256];
 static const char* rsuffix; /* point process range and functions don't have suffix*/
-static char* mechname;
+char* mechname;
 int point_process;      /* 1 if a point process model */
 int artificial_cell;    /* 1 if also explicitly declared an ARTIFICIAL_CELL */
 static int diamdec = 0; /*1 if diam is declared*/
