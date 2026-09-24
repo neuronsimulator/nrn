@@ -29,6 +29,7 @@
 
 #include <algorithm>
 #include <string>
+#include <vector>
 
 #include <fmt/format.h>
 
@@ -602,6 +603,108 @@ void setup_tree_matrix(neuron::model_sorted_token const& cache_token, NrnThread&
     nrn_lhs(cache_token, nt);
     nrn_nonvint_block_current(nt.end, nt.node_rhs_storage(), nt.id);
     nrn_nonvint_block_conductance(nt.end, nt.node_d_storage(), nt.id);
+}
+
+/*
+ * Battery-style free-y IC for cable algebraics (mode 3).
+ *
+ * Hold voltages on nodes with positive area (capacitive membrane content);
+ * leave zero-area nodes free so electrode current at loc 0/1 can set absolute
+ * levels through the axial network.  Uses cj=0 resistive matrix + stiff
+ * springs (delta-v ≈ 0) on held nodes, then exact restore of those voltages.
+ *
+ * Called from Daspk battery IC before extracellular battery projection.
+ * No-op when not using sparse13 (IDA/DASPK path).
+ */
+void nrn_cable_battery_ic() {
+    if (!use_sparse13) {
+        return;
+    }
+    auto const sorted_token = nrn_ensure_model_data_are_sorted();
+    for (int it = 0; it < nrn_nthread; ++it) {
+        NrnThread* nt = nrn_threads + it;
+        // Extracellular uses a separate battery path (Vm / layer holds).
+        // Applying absolute-v holds here fights vi/vext coordinates.
+        if (nt->_ecell_memb_list && nt->_ecell_memb_list->nodecount > 0) {
+            continue;
+        }
+        const int n = nt->end;
+        if (n <= 0) {
+            continue;
+        }
+        std::vector<double> v_hold(n);
+        std::vector<char> held(n, 0);
+        // Hold nodes that carry membrane capacitance in the CAP mechanism list.
+        // Section ends (loc 0/1) are omitted from CAP ⇒ free algebraics for
+        // electrode current.  NODEAREA is not a reliable zero-end test here
+        // (can be non-zero on connection nodes while CAP still omits them).
+        for (NrnThreadMembList* tml = nt->tml; tml; tml = tml->next) {
+            if (tml->index != CAP) {
+                continue;
+            }
+            Memb_list* ml = tml->ml;
+            for (int j = 0; j < ml->nodecount; ++j) {
+                Node* nd = ml->nodelist[j];
+                int i = nd->v_node_index;
+                if (i >= 0 && i < n) {
+                    held[i] = 1;
+                    v_hold[i] = nd->v();
+                }
+            }
+            break;
+        }
+        int nheld = 0, nfree = 0;
+        for (int i = 0; i < n; ++i) {
+            if (held[i]) {
+                ++nheld;
+            } else {
+                ++nfree;
+            }
+        }
+        // Need CAP content to hold and free algebraics to move.  Pure LM
+        // models (no CAP) must not run this path — cj=0 solve can singularize.
+        if (nheld == 0 || nfree == 0) {
+            continue;
+        }
+
+        double const cj_sav = nt->cj;
+        double const dt_sav = nt->_dt;
+        nt->cj = 0.0;
+        nt->_dt = 1e9;
+
+        setup_tree_matrix(sorted_token, *nt);
+
+        // Add hold springs on actual_d (nrn_solve copies actual_d → sparse13).
+        constexpr double ghold = 1e9;
+        for (int i = 0; i < n; ++i) {
+            if (!held[i]) {
+                continue;
+            }
+            nt->actual_d(i) += ghold;
+        }
+
+        int soft_sav = nrn_sparse13_soft_fail;
+        nrn_sparse13_soft_fail = 1;
+        nrn_solve(nt);
+        int ferr = nrn_sparse13_factor_error();
+        nrn_sparse13_soft_fail = soft_sav;
+        if (ferr) {
+            // Leave voltages unchanged on factor failure (e.g. LM+cable mix).
+            nt->cj = cj_sav;
+            nt->_dt = dt_sav;
+            continue;
+        }
+        nrn_update_voltage(sorted_token, *nt);
+
+        for (int i = 0; i < n; ++i) {
+            if (held[i]) {
+                nt->_v_node[i]->v() = v_hold[i];
+            }
+        }
+
+        nt->cj = cj_sav;
+        nt->_dt = dt_sav;
+    }
 }
 
 /* membrane mechanisms needed by other mechanisms (such as Eion by HH)

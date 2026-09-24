@@ -1,10 +1,19 @@
 #include <../../nrnconf.h>
+#include <cmath>
 #include <cstdio>
+#include <cstring>
+#include <vector>
 #include "nrndae.h"
 #include "nrndae_c.h"
 #include "nrnoc2iv.h"
 #include "treeset.h"
 #include "utils/enumerate.h"
+#include "linmod.h"
+#include "netcvode.h"
+#include "vrecitem.h"
+#include "vecplay_tplus.h"
+
+extern NetCvode* net_cvode_instance;
 
 extern int secondorder;
 
@@ -103,6 +112,21 @@ void nrndae_dkres(double* y, double* yprime, double* delta) {
     }
 }
 
+int nrndae_battery_ic_project() {
+    int err = 0;
+    for (NrnDAE* item: nrndae_list) {
+        auto* lm = dynamic_cast<LinearModelAddition*>(item);
+        if (!lm) {
+            continue;
+        }
+        const int e = lm->battery_ic_project();
+        if (e != 0) {
+            err = e;
+        }
+    }
+    return err;
+}
+
 inline void NrnDAE::alloc_(int size, int start, int nnode, Node** nodes, int* elayer) {}
 
 void NrnDAE::alloc(int start_index) {
@@ -163,14 +187,13 @@ NrnDAE::NrnDAE(Matrix* cmat,
         cmat = assumed_identity_;
     }
     c_ = new MatrixMap(cmat);
-    Vect& elay = *elayer;
     nnode_ = nnode;
     nodes_ = nodes;
     if (nnode_ > 0) {
         elayer_ = new int[nnode_];
         if (elayer) {
             for (int i = 0; i < nnode_; ++i) {
-                elayer_[i] = int(elay[i]);
+                elayer_[i] = int((*elayer)[i]);
             }
         } else {
             for (int i = 0; i < nnode_; ++i) {
@@ -236,20 +259,17 @@ void NrnDAE::update() {
 void NrnDAE::init() {
     // printf("NrnDAE::init %lx\n", (long)this);
     // printf("init size_=%d %d %d %d\n", size_, y_->size(), y0_->size(), b_->size());
-    Vect& y0 = *y0_;
 
     v2y();
     if (f_init_) {
         f_init_(data_);
+    } else if (y0_) {
+        for (int i = nnode_; i < size_; ++i) {
+            y_[i] = (*y0_)[i];
+        }
     } else {
-        if (y0_) {
-            for (int i = nnode_; i < size_; ++i) {
-                y_[i] = y0[i];
-            }
-        } else {
-            for (int i = nnode_; i < size_; ++i) {
-                y_[i] = 0.;
-            }
+        for (int i = nnode_; i < size_; ++i) {
+            y_[i] = 0.;
         }
     }
     // for (i=0; i < nnode_; ++i) printf(" i=%d y[i]=%g\n", i, y[i]);
@@ -298,6 +318,171 @@ void NrnDAE::dkres(double* y, double* yprime, double* delta) {
     }
     for (int i = 0; i < size_; ++i) {
         delta[bmap_[i] - 1] -= (*cyp)[i];
+    }
+}
+
+void NrnDAE::seed_yp_from_f(double* f, double* yp) {
+    // Set yp on mapped equations so C*yp ≈ f for simple mass structure.
+    // Residual uses delta -= C*yp with the same map (see dkres).
+    constexpr double ctol = 1e-18;
+    if (assumed_identity_) {
+        for (int i = 0; i < size_; ++i) {
+            yp[bmap_[i] - 1] = f[bmap_[i] - 1];
+        }
+        return;
+    }
+    if (!c_ || size_ <= 0) {
+        return;
+    }
+    for (int r = 0; r < size_; ++r) {
+        int jnz[8];
+        double cval[8];
+        int nnz = 0;
+        for (int j = 0; j < size_ && nnz < 8; ++j) {
+            const double cij = (*c_)(r, j);
+            if (std::fabs(cij) > ctol) {
+                jnz[nnz] = j;
+                cval[nnz] = cij;
+                ++nnz;
+            }
+        }
+        if (nnz == 0) {
+            continue;  // algebraic row: yp free / leave existing
+        }
+        if (nnz == 1) {
+            // Diagonal mass or one-sided lag: c_rj * yp_j = f_r
+            yp[bmap_[jnz[0]] - 1] = f[bmap_[r] - 1] / cval[0];
+            continue;
+        }
+        if (nnz == 2 && std::fabs(cval[0] + cval[1]) < ctol * (1. + std::fabs(cval[0]))) {
+            // Pure difference stamp C*(yp_a - yp_b) = f_r (floating capacitor row).
+            // Gauge: leave the more negative column's yp unchanged (often 0), set the other.
+            const int ja = jnz[0];
+            const int jb = jnz[1];
+            // c_ra * yp_a + c_rb * yp_b = f_r with c_rb ≈ -c_ra
+            // => yp_a - yp_b = f_r / c_ra
+            const double scale = cval[0];
+            const double dyp = f[bmap_[r] - 1] / scale;
+            // Keep yp[jb] as is (0 unless set by another row), set yp[ja]
+            yp[bmap_[ja] - 1] = yp[bmap_[jb] - 1] + dyp;
+        }
+        // denser rows: leave yp; residual check / heuristic fallback may apply
+    }
+}
+
+void nrndae_seed_yp_from_f(double* f, double* yp) {
+    for (NrnDAE* item: nrndae_list) {
+        item->seed_yp_from_f(f, yp);
+    }
+}
+
+int nrndae_complete_yp_from_forcing(double* yp, const std::vector<NrnForcingTPlus>& forcing) {
+    int flags = 0;
+    if (!yp) {
+        return 0;
+    }
+    std::vector<PlayRecord*>* prl = net_cvode_instance ? net_cvode_instance->playrec_list()
+                                                       : nullptr;
+    extern double t;
+
+    for (NrnDAE* item: nrndae_list) {
+        auto* lm = dynamic_cast<LinearModelAddition*>(item);
+        if (!lm) {
+            continue;
+        }
+        const int n = lm->size();
+        if (n <= 0) {
+            continue;
+        }
+        std::vector<double> bdot(n, 0.);
+        bool have_bdot = false;
+        int src = 0;
+
+        // A1/A2: continuous Vector.play → components of b
+        if (prl && !forcing.empty()) {
+            for (const auto& e: forcing) {
+                if (e.playrec_index < 0 || e.playrec_index >= (int) prl->size()) {
+                    continue;
+                }
+                PlayRecord* pr = (*prl)[e.playrec_index];
+                if (!pr || pr->type() != VecPlayContinuousType) {
+                    continue;
+                }
+                auto* vpc = static_cast<VecPlayContinuous*>(pr);
+                double* target = nullptr;
+                if (vpc->pd_) {
+                    target = static_cast<double*>(vpc->pd_);
+                }
+                if (!target) {
+                    continue;
+                }
+                for (int i = 0; i < n; ++i) {
+                    if (lm->b_element_is(i, target)) {
+                        bdot[i] = e.deriv;
+                        have_bdot = true;
+                        src |= NRN_IC_FORCING_PLAY;
+                    }
+                }
+            }
+        }
+
+        // A4: dforce / bdot vector (overrides play); else FD if f_callable and no play
+        const bool have_dforce = lm->bdot_vec() || lm->dforce_callable();
+        if (have_dforce || (lm->f_callable() && !have_bdot)) {
+            std::vector<double> bdot_df(n, 0.);
+            if (lm->fill_bdot_for_ic(t, bdot_df.data())) {
+                for (int i = 0; i < n; ++i) {
+                    bdot[i] = bdot_df[i];
+                }
+                have_bdot = true;
+                if (have_dforce) {
+                    src |= NRN_IC_FORCING_DFORCE;
+                } else {
+                    src |= NRN_IC_FORCING_FD;
+                }
+            }
+        }
+
+        if (have_bdot) {
+            lm->complete_yp_from_bdot(bdot.data(), yp);
+            flags |= src | NRN_IC_FORCING_APPLIED;
+        }
+    }
+    return flags;
+}
+
+void nrndae_append_dforce_to_forcing_list(double tt, std::vector<NrnForcingTPlus>& out) {
+    int lm_i = 0;
+    for (NrnDAE* item: nrndae_list) {
+        auto* lm = dynamic_cast<LinearModelAddition*>(item);
+        if (!lm || lm->size() <= 0) {
+            ++lm_i;
+            continue;
+        }
+        if (!lm->bdot_vec() && !lm->dforce_callable() && !lm->f_callable()) {
+            ++lm_i;
+            continue;
+        }
+        std::vector<double> bdot(lm->size(), 0.);
+        if (!lm->fill_bdot_for_ic(tt, bdot.data())) {
+            ++lm_i;
+            continue;
+        }
+        for (int i = 0; i < lm->size(); ++i) {
+            NrnForcingTPlus e{};
+            e.deriv = bdot[i];
+            e.playrec_index = -1 - lm_i;
+            e.ubound_index = i;
+            if (lm->dforce_callable()) {
+                std::snprintf(e.label, sizeof e.label, "LM[%d].dforce b'[%d]", lm_i, i);
+            } else if (lm->bdot_vec()) {
+                std::snprintf(e.label, sizeof e.label, "LM[%d].bdot[%d]", lm_i, i);
+            } else {
+                std::snprintf(e.label, sizeof e.label, "LM[%d].bdot_fd[%d]", lm_i, i);
+            }
+            out.push_back(e);
+        }
+        ++lm_i;
     }
 }
 
