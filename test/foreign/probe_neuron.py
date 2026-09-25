@@ -80,6 +80,7 @@ def main() -> int:
 
     tools = {
         "nrniv": _which("nrniv"),
+        "idraw": _which("idraw"),
         "nrnivmodl": _which("nrnivmodl"),
         "modlunit": _which("modlunit"),
         "nocmodl": _which("nocmodl"),
