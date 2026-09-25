@@ -1,0 +1,50 @@
+{load_file("stdlib.hoc")}
+// compare the numbers in two output files to see if they are withing a
+// specified resolution
+// destroys hoc_obj_[0 and 1]
+
+// $s1 first data file name
+// $s2 second data file name
+// $3 resolution
+// return 1 if files are the same, 0 otherwise
+
+func compare_files() {local b  localobj v1, v2, nil
+	v1 = rdnum($s1)
+	v2 = rdnum($s2)
+	b = compare_vectors(v1, v2, $3)
+	return b
+}
+
+func compare_vectors() { local b  localobj  dif
+	if (object_id($o1) == 0) { return 0 }
+	if (object_id($o2) == 0) { return 0 }
+	if ($o1.size != $o2.size) { return 0 }
+	dif = $o1.c.sub($o2).abs
+	b = (dif.indwhere(">", $3) < 0)
+	return b
+}
+
+obfunc rdnum() {local x  localobj f, vec, nil, s
+	s = new String()
+	f = new File()
+	if (f.ropen($s1) == 0) { return nil }
+	vec = new Vector(10000)
+	vec.resize(0)
+	hoc_obj_[0] = f
+	hoc_obj_[1] = vec
+	sprint(s.s, "_rdnum()", f, vec)
+	execute1(s.s, 0)
+	hoc_obj_[0] = nil
+	hoc_obj_[1] = nil
+	f.close()
+	return vec
+}
+
+// allow for text after last number
+proc _rdnum() {local x
+	while (!hoc_obj_[0].eof()) {
+		x = hoc_obj_[0].scanvar()
+		hoc_obj_[1].append(x)
+	}
+}
+

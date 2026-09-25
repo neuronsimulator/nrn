@@ -1,0 +1,20 @@
+// BEFORE and AFTER for 3 threads, fixed step and cvode
+strdef path
+sprint(path, "%s/../nmodl-before-after/nmodl-before-after.hoc", BASE)
+{load_file(path)}
+objref cvode
+cvode = new CVode()
+
+{delete_section()}
+create soma[3]
+forall insert t9
+objref pc
+pc = new ParallelContext()
+if (execute1("{pc.nthread(3,1)}",0) == 0) {printf("%d\n", 2) quit()}
+
+b = t9result(4,3,0)
+if (b != 1) { quit(1) }
+
+{cvode.active(1)}
+b = t9result(10, 10, 1)
+if (b != 1) { quit(1) }

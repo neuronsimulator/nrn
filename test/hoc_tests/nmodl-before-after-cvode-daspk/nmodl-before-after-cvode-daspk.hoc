@@ -1,0 +1,14 @@
+// nmodl before and after, but with cvode, ida.
+strdef path
+sprint(path, "%s/../nmodl-before-after/nmodl-before-after.hoc", BASE)
+{load_file(path)}
+
+objref cvode
+cvode = new CVode()
+{cvode.active(1)}
+b = t9result(10, 10, 1)
+if (b != 1) { quit(1) }
+
+{cvode.use_daspk(1)}
+b = t9result(10, 7, 0)
+if (b != 1) { quit(1) }

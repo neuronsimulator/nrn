@@ -1,0 +1,39 @@
+// test of SaveState
+
+strdef path
+sprint(path, "%s/../ring6.ses", BASE)
+{load_file(path)}
+
+objref pct
+pct = ParallelComputeTool[0]
+tstop=20
+func tst() {localobj ss
+	tstop = 10
+	run()
+	ss = new SaveState()
+	ss.save()
+	finitialize()
+	t = 15
+	tstop = 20
+	ss.restore()
+	continuerun(tstop)
+	return abs(C_Cell[0].soma.v(.5) - $1) < 1e-2 // note this was 1e-10
+}
+
+proc prun() {local pp
+	pp = pct.pinfo
+	pct.pinfo = 0
+	pct.nthread($1)
+	if ($2 > 1) { cvode_local(1) } else { cvode_active($2) }
+	cvode.condition_order($3)
+	b = tst($4)
+	//printf("%d %d %d %d %.12g %.12g\n", $1, $2, $3, b, $4, C_Cell[0].soma.v(.5))
+	pct.pinfo = pp
+	if (b != 1) {
+		quit(1)
+	}
+}
+
+//nth, meth, order, result
+prun(1, 0, 1, -76.0275849641)
+prun(3, 0, 1, -76.0275849641)

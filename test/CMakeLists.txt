@@ -1,5 +1,4 @@
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/test)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/test)
 
 include_directories(${NRN_INCLUDE_DIRS})
 
@@ -81,34 +80,38 @@ if(TARGET nrn-benchmarks AND NRN_ENABLE_PERFORMANCE_TESTS)
     COMMAND $<TARGET_FILE:nrn-benchmarks> --processors=16)
 endif()
 
-# =============================================================================
-# Add ringtest
-# =============================================================================
-set(RINGTEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/ringtest")
-file(MAKE_DIRECTORY "${RINGTEST_DIR}")
-add_test(
-  NAME ringtest
-  COMMAND
-    ${CMAKE_COMMAND} -Dhoc_library_path=${CMAKE_CURRENT_SOURCE_DIR}/ringtest
-    -Dexecutable=$<TARGET_FILE:nrniv> -Dexec_arg=${CMAKE_CURRENT_SOURCE_DIR}/ringtest/ring.hoc
-    -Dout_file=out.dat -Dref_file=${CMAKE_CURRENT_SOURCE_DIR}/ringtest/out.dat.ref
-    -Dwork_dir=${RINGTEST_DIR} -P ${PROJECT_SOURCE_DIR}/cmake/RunHOCTest.cmake)
-list(APPEND TESTS ringtest)
-
-# =============================================================================
-# Add small hoc test
-# =============================================================================
-set(HOCTEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/hoc_tests/connect_dend")
-file(MAKE_DIRECTORY "${HOCTEST_DIR}")
-set(REF_FILE "${CMAKE_CURRENT_SOURCE_DIR}/hoc_tests/connect_dend/cell3soma.dat.ref")
-add_test(
-  NAME connect_dend
-  COMMAND
-    ${CMAKE_COMMAND} -Dexecutable=$<TARGET_FILE:nrniv>
-    -Dexec_arg=${CMAKE_CURRENT_SOURCE_DIR}/hoc_tests/connect_dend/connect_dend.hoc
-    -Dout_file=cell3soma.dat -Dref_file=${REF_FILE} -Dwork_dir=${HOCTEST_DIR} -P
-    ${PROJECT_SOURCE_DIR}/cmake/RunHOCTest.cmake)
-list(APPEND TESTS connect_dend)
+nrn_add_test_group(NAME hoc_tests MODFILE_PATTERNS test/hoc_tests/*.mod)
+foreach(
+  hoc_test
+  ringtest
+  connect_dend
+  basic
+  load-neurondemo
+  fixed-step-integrator
+  multisplit
+  multithreading
+  variable-step-integrator
+  variable-step-integrator-with-multisplit-multithread
+  daspk-solver
+  nmodl-before-after
+  nmodl-before-after-cvode-daspk
+  nmodl-before-after-multithreading
+  nmodl-watch
+  savestate-ring6
+  vector
+  longitudinal-diffusion
+  for-netcons
+  ring6
+  savestate-single-compartment-HH)
+  nrn_add_test(
+    GROUP hoc_tests
+    NAME ${hoc_test}
+    COMMAND
+      ${CMAKE_COMMAND} -Dexecutable=special
+      -Dtest_path=${PROJECT_SOURCE_DIR}/test/hoc_tests/${hoc_test}
+      -Dwork_dir=${CMAKE_CURRENT_BINARY_DIR}/hoc_tests/${hoc_test} -P
+      ${PROJECT_SOURCE_DIR}/cmake/RunHOCTest.cmake)
+endforeach()
 
 # =============================================================================
 # Check if --oversubscribe is a valid option for mpiexec
@@ -823,7 +826,7 @@ cpp_cc_configure_sanitizers(TEST ${TESTS})
 if(NRN_ENABLE_PROFILING)
   set(TEST_PROFILING_ENV ${NRN_RUN_FROM_BUILD_DIR_ENV})
   list(APPEND TEST_PROFILING_ENV "CALI_CONFIG=runtime-report,calc.inclusive")
-  set_tests_properties(ringtest PROPERTIES ENVIRONMENT "${TEST_PROFILING_ENV}")
+  set_tests_properties(hoc_tests::ringtest PROPERTIES ENVIRONMENT "${TEST_PROFILING_ENV}")
 endif()
 
 # Add tests that are configured using external repositories

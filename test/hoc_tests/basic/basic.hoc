@@ -1,0 +1,3 @@
+// trivial test demonstrating the proper successful return value
+b = 1
+if (b != 1) { quit(1) }
