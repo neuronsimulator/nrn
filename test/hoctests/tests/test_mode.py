@@ -17,3 +17,16 @@ try:
 except RuntimeError:
     # RuntimeError is expected because ps.show(3) should fail
     ...
+
+""" Test File.dir() # issue 3652 """
+
+
+def test_filedir():
+    f = h.File()
+    f.chooser("d", "Directory", "", "Make nrnmech.dll", "Cancel", h.getcwd())
+    print(f"|{h.getcwd()}|")
+    print(f"|{f.dir()}|")
+    # assert f.dir() == h.getcwd() # gui not active on many CI. So dir empty.
+
+
+test_filedir()

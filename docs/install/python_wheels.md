@@ -1,10 +1,11 @@
-
 # Building Python Wheels
+
+See also [this document](../dev/python/wheels).
 
 ## Linux wheels
 
 In order to have NEURON binaries run on most Linux distros, we rely on the [manylinux project](https://github.com/pypa/manylinux).
-Current NEURON Linux image is based on `manylinux2014`.
+Current NEURON Linux image is based on `manylinux_2_28`.
 
 ### Setting up Docker
 
@@ -26,7 +27,7 @@ Any official update of these files shall imply a PR reviewed and merged before `
 
 All wheels built on Azure are:
 
-* Published to `Pypi.org` as
+* Published to `pypi.org` as
   * `neuron-nightly` -> when the pipeline is launched in CRON mode
   * `neuron-x.y.z` -> when the pipeline is manually triggered for release `x.y.z`
 * Stored as `Azure artifacts` in the Azure pipeline for every run.
@@ -35,23 +36,8 @@ Refer to the following image for the NEURON Docker Image workflow:
 ![](images/docker-workflow.png)
 
 
-### Building the docker images automatically
-If you run the workflow manually on Gitlab (with the "Run pipeline" button), it will now have the `mac_m1_container_build` and `x86_64_container_build` jobs added to it. These jobs need to be started manually and will not affect the overal workflow status. They don't need to be run every time, just when a refresh of the container images is necessary.
-They will build the container images and push to docker hub. If you want to, you can still build manually (see next section), but there shouldn't be a requirement to do so any more.
-
-A word of warning: podman on OSX uses a virtual machine. The job can take care of starting it, but we generally try to have it running to avoid jobs cleaning up after themselves and killing the machine for other jobs. When starting the machine, set the variables that need to be set during the container build, ie. proxy and `BUILDAH_FORMAT`.
-
-`BUILDAH_FORMAT` ensures that `ONBUILD` instructions are enabled.
-
-```
-export http_proxy=http://bbpproxy.epfl.ch:80
-export https_proxy=http://bbpproxy.epfl.ch:80
-export HTTP_PROXY=http://bbpproxy.epfl.ch:80
-export HTTPS_PROXY=http://bbpproxy.epfl.ch:80
-export BUILDAH_FORMAT=docker
-```
-
 ### Building the docker image manually
+
 After making updates to any of the docker files, you can build the image with:
 ```
 cd nrn/packaging/python
@@ -90,40 +76,42 @@ Status: Downloaded newer image for neuronsimulator/neuron_wheel:latest
 docker.io/neuronsimulator/neuron_wheel:latest-x86_64
 ```
 
-We can conveniently mount the local NEURON repository inside docker, by using the `-v` option:
-
-```
-docker run -v $PWD/nrn:/root/nrn -w /root/nrn -it neuronsimulator/neuron_wheel:latest-x86_64 bash
-```
-where `$PWD/nrn` is a NEURON repository on the host machine that ends up mounted at `/root/nrn`.
-This is how you can test your NEURON updates inside the NEURON Docker image.
-Note that `-w` sets the working directory inside the container.
-
 ### MPI support
 
 The `neuronsimulator/neuron_wheel` provides out-of-the-box support for `mpich` and `openmpi`.
-For `HPE-MPT MPI`, since it's not open source, you need to acquire the headers and mount them in the docker image:
+For `HPE-MPT MPI`, since it's not open source, they are provided automatically as part of Azure Pipelines and are not locally downloadable.
 
-```
-docker run -v $PWD/nrn:/root/nrn -w /root/nrn -v $PWD/mpt-headers/2.21/include:/nrnwheel/mpt/include -it neuronsimulator/neuron_wheel:latest-x86_64 bash
-```
-where `$PWD/mpt-headers` is the path to the HPE-MPT MPI headers on the host machine that end up mounted at `/nrnwheel/mpt/include`.
-You can download the headers with:
+### CI dependency archive (pinned downloads)
 
-```
-git clone ssh://bbpcode.epfl.ch/user/kumbhar/mpt-headers
-```
+Wheel **test** jobs install both MPICH and OpenMPI so
+[packaging/python/test_wheels.sh](../../packaging/python/test_wheels.sh) can
+exercise dynamic MPI. On Ubuntu 24.04, stock MPICH was broken
+([LP#2072338](https://bugs.launchpad.net/ubuntu/+source/mpich/+bug/2072338));
+CI therefore installs a **pinned** pair of `.deb` files from the dedicated
+CI-deps archive
+[nrn-ci-deps / ci-deps-v1](https://github.com/neuronsimulator/nrn-ci-deps/releases/tag/ci-deps-v1)
+instead of downloading them from Launchpad on every run (and instead of mixing
+pins into NEURON product Releases on `nrn`).
+
+See **[CI dependency archive](ci_deps.md)** and
+[ci/deps/README.md](../../ci/deps/README.md) for:
+
+* the catalog (`MANIFEST.yml`) and `managed: true|false`
+* hosting on [neuronsimulator/nrn-ci-deps](https://github.com/neuronsimulator/nrn-ci-deps)
+* `fetch.sh` / `install_mpich_noble.sh` / `publish.sh` / `check-upstream.sh`
+* how to add the next flaky third-party download
+
+Azure macOS wheels still obtain a prebuilt static **readline** via an Azure
+*secure file* (see macOS section below). Migrating that class of blob into
+`ci/deps` is tracked as `managed: false` in the MANIFEST until promoted.
 
 ## macOS wheels
 
 Note that for macOS there is no docker image needed, but all required dependencies must exist.
 In order to have the wheels working on multiple macOS target versions, special consideration must be made for `MACOSX_DEPLOYMENT_TARGET`.
 
-
 Taking Azure macOS `x86_64` wheels for example, `readline` was built with `MACOSX_DEPLOYMENT_TARGET=10.9` and stored as secure file on Azure (under `Pipelines > Library > Secure files`).
-For `arm64` we need to set `MACOSX_DEPLOYMENT_TARGET=11.0`. The wheels currently need to be built manually, using `universal2` Python installers.
-For upcoming `universal2` wheels (targeting both `x86_64` and `arm64`) we will consider leveling everything to `MACOSX_DEPLOYMENT_TARGET=11.0`.
-
+For `arm64` we need to set `MACOSX_DEPLOYMENT_TARGET=11.0`.
 
 You can use [packaging/python/build_static_readline_osx.bash](../../packaging/python/build_static_readline_osx.bash) to build a static readline library.
 You can have a look at the script for requirements and usage.
@@ -150,35 +138,28 @@ export PATH=/opt/homebrew/opt/bison/bin:/opt/homebrew/opt/flex/bin:$PATH
 ## Launch the wheel building
 
 ### Linux
-Once we've cloned and mounted NEURON inside Docker(c.f. `-v` option described previously), we can proceed with wheels building.
-There is a build script which loops over available pythons in the Docker image under `/opt/python`, and then builds and audits the generated wheels.
-Wheels are generated under `/root/nrn/wheelhouse` and also accessible in the mounted NEURON folder from outside the Docker image.
 
-```
-# Working directory is /root/nrn
-bash packaging/python/build_wheels.bash linux
-ls -la wheelhouse
-```
-
-You can build the wheel for a specific python version:
+You can build the wheel for a specific Python version using:
 ```
 bash packaging/python/build_wheels.bash linux 39    # 39 for Python v3.9
 ```
 
-To build wheels with CoreNEURON support you have to pass an additional argument: `coreneuron`.
+To build wheels with CoreNEURON support you have to set the environmental variable `NRN_ENABLE_CORENEURON=ON`:
 ```
-bash packaging/python/build_wheels.bash linux 3* coreneuron
+NRN_ENABLE_CORENEURON=ON bash packaging/python/build_wheels.bash linux '3*'
 ```
-Where we are passing `3*` to build the wheels with `CoreNEURON` support for all python 3 versions.
+where we are passing `'3*'` (note the quotes!) to build the wheels with `CoreNEURON` support for all python 3 versions.
 
-You can also control the level of parallelization used for the build using the `NRN_PARALLEL_BUILDS` env variable (default: 4).
+By default, the build system uses all of the processing units available on a machine; this can be customized using the `CMAKE_BUILD_PARALLEL_LEVEL` environmental variable.
+
+Note that using [podman](https://podman.io/) is supported, however, you must set the environmental variable `CIBW_CONTAINER_ENGINE=podman` before launching the `build_wheels.bash` script.
 
 ### macOS
 As mentioned above, for macOS all dependencies have to be available on a system. You have to then clone NEURON repository and execute:
 
 ```
 cd nrn
-bash packaging/python/build_wheels.bash osx
+bash packaging/python/build_wheels.bash osx 39  # 39 for Python v3.9
 ```
 
 In some cases, setuptools-scm will see extra commits and consider your build as "dirty," resulting in filenames such as `NEURON-9.0a1.dev0+g9a96a3a4d.d20230717-cp310-cp310-macosx_11_0_arm64.whl` (which should have been `NEURON-9.0a0-cp310-cp310-macosx_11_0_arm64.whl`). If this happens, you can set an environment variable to correct this behavior:
@@ -191,7 +172,13 @@ Change the pretend version to whatever is relevant for your case.
 
 ## Testing the wheels
 
-To test the generated wheels, you can do:
+There are two complementary approaches: a **smoke script** that ships with
+the packaging tree, and the **foreign CTest harness** that reuses a large
+portable subset of the developer suite against an installed wheel.
+
+### Smoke tests (`test_wheels.sh`)
+
+Quick health check after building a wheel (or against TestPyPI):
 
 ```
 # first arg is a python exe and second arg is the corresponding wheel
@@ -201,20 +188,55 @@ bash packaging/python/test_wheels.sh python3.9 wheelhouse/NEURON-7.8.0.236-cp39-
 bash packaging/python/test_wheels.sh python3.9 "-i https://test.pypi.org/simple/NEURON==7.8.11.2"
 ```
 
+This covers import/`neuron.test()`, basic `nrnivmodl`, and a few MPI /
+CoreNEURON paths when available. It is intentionally smaller than a full
+developer `ctest` run.
+
+### Foreign CTest against a wheel (portable suite)
+
+For broader coverage without rebuilding NEURON, configure the standalone
+project under `test/foreign` against a venv that has the wheel installed:
+
+```bash
+python3 -m venv .venv && source .venv/bin/activate
+pip install -U pip pytest
+# local wheel, or e.g. neuron-nightly from PyPI:
+pip install path/to/NEURON-*.whl
+# pip install neuron-nightly
+
+# From the NEURON source tree (same revision as the wheel when possible):
+cmake -S test/foreign -B build-ctest \
+  -DNRN_FOREIGN_PYTHON="$(which python)" \
+  -DNRN_FOREIGN_ALLOW_SKEW=ON   # only if source tip ≠ wheel revision
+
+cmake --build build-ctest --target test-install -j
+# default: build mechanisms + ctest -L serial
+
+# Full ctest control against the foreign binary dir:
+ctest --test-dir build-ctest -L mpi --output-on-failure -j2
+ctest --test-dir build-ctest -L coreneuron --output-on-failure -j2
+```
+
+Notes:
+
+* Version policy defaults to a hard match between the wheel’s git identity
+  and this source tree; use `-DNRN_FOREIGN_ALLOW_SKEW=ON` for exploratory
+  runs (for example `neuron-nightly` vs a feature branch).
+* MPI tests register only if the wheel was built with MPI **and** `mpiexec`
+  is on `PATH` at foreign configure time.
+* See `test/foreign/README.md` and `test/foreign/INVENTORY.md` for
+  labels, dependencies (e.g. RxD plot packages), and what remains
+  build-only (Catch2 unit tests, NMODL unit binaries, …).
+
+The same foreign harness is used after a **prefix install** via the main
+build target `test-install` when `NRN_ENABLE_TESTS=ON` (see the CMake
+option documentation for `NRN_ENABLE_TESTS`).
+
 ### MacOS considerations
 
 On MacOS, launching `nrniv -python` or `special -python` can fail to load `neuron` module due to security restrictions.
-For this specific purpose, please `export SKIP_EMBEDED_PYTHON_TEST=true` before launching the tests.
-
-### Testing on BB5
-On BB5, we can test CPU wheels with:
-
-```
-salloc -A proj16  -N 1 --ntasks-per-node=4 -C "cpu" --time=1:00:00 -p interactive
-module load unstable python
-bash packaging/python/test_wheels.sh python3.9 wheelhouse/NEURON-7.8.0.236-cp39-cp39-manylinux1_x86_64.whl
-```
-
+For this specific purpose, please `export SKIP_EMBEDED_PYTHON_TEST=true` before launching the tests
+(for `test_wheels.sh`).
 ## Publishing the wheels on Pypi via Azure
 
 ### Variables that drive PyPI upload
@@ -279,7 +301,6 @@ $ git diff
      resource_class: arm.medium
 
 @@ -54,6 +59,7 @@ jobs:
-               39) pyenv_py_ver="3.9.1" ;;
                310) pyenv_py_ver="3.10.1" ;;
                311) pyenv_py_ver="3.11.0" ;;
 +              312) pyenv_py_ver="3.12.2" ;;
@@ -291,13 +312,13 @@ $ git diff
            matrix:
              parameters:
 -              NRN_PYTHON_VERSION: ["311"]
-+              NRN_PYTHON_VERSION: ["39", "310", "311", "312"]
++              NRN_PYTHON_VERSION: ["310", "311", "312"]
                NRN_NIGHTLY_UPLOAD: ["false"]
 
    nightly:
 ```
 
-The reason we are setting `SETUPTOOLS_SCM_PRETEND_VERSION` to a desired version `8.1a` because `setup.py` uses `git describe` and it will give different version name as we are now on a new branch!
+The reason we are setting `SETUPTOOLS_SCM_PRETEND_VERSION` to a desired version `8.1a` because `pyproject.toml` uses `setuptools-scm` and it will give different version name as we are now on a new branch!
 `SETUPTOOLS_SCM_PRETEND_VERSION` will also stop your wheels from getting extra numbers on the version.
 
 

@@ -12,7 +12,7 @@
 #include <cmath>
 #include <cctype>
 #include <cerrno>
-
+#include <string>
 
 #include <InterViews/box.h>
 #include <IV-look/kit.h>
@@ -246,67 +246,54 @@ void hoc_xbutton() {
     hoc_pushx(0.);
 }
 
+static void hoc_state_or_checkbox(int style) {
+    if (hoc_usegui) {
+        char* sname = gargstr(1);
+        neuron::container::data_handle<double> ptr2{};
+        Object* ho2 = NULL;
+        char* s3 = NULL;
+        Object* ho3 = NULL;
+
+        if (hoc_is_object_arg(2)) {
+            ho2 = *hoc_objgetarg(2);
+        } else {
+            ptr2 = hoc_hgetarg<double>(2);
+        }
+
+        if (ifarg(3)) {
+            if (hoc_is_object_arg(3)) {
+                ho3 = *hoc_objgetarg(3);
+            } else {
+                s3 = gargstr(3);
+            }
+        }
+
+        hoc_ivstatebutton(ptr2, sname, s3, style, ho2, ho3);
+    }
+}
+
 /*
-xstatebutton("prompt",&var [,"action"])
+xstatebutton("prompt",&var [,"action" or ,pyact])
    like xbutton, but var is set to 0 or 1 depending to match the
    telltale state of the button
 */
 
 void hoc_xstatebutton() {
     TRY_GUI_REDIRECT_DOUBLE("xstatebutton", NULL);
-    if (hoc_usegui) {
-        char *s1, *s2 = (char*) 0;
-
-        s1 = gargstr(1);
-
-        if (hoc_is_object_arg(2)) {
-            neuron::container::data_handle<double> ptr1{};
-            hoc_ivstatebutton(ptr1,
-                              s1,
-                              NULL,
-                              HocStateButton::PALETTE,
-                              *hoc_objgetarg(2),
-                              ifarg(3) ? *hoc_objgetarg(3) : NULL);
-        } else {
-            if (ifarg(3)) {
-                s2 = gargstr(3);
-            }
-            hoc_ivstatebutton(hoc_hgetarg<double>(2), s1, s2, HocStateButton::PALETTE);
-        }
-    }
+    hoc_state_or_checkbox(HocStateButton::PALETTE);
     hoc_ret();
     hoc_pushx(0.);
 }
 
-
 /*
-xcheckbox("prompt",&var [,"action"])
+xcheckbox("prompt",&var [,"action" or ,pyact])
    like xbutton, but var is set to 0 or 1 depending to match the
    telltale state of the button
 */
 
 void hoc_xcheckbox() {
     TRY_GUI_REDIRECT_DOUBLE("xcheckbox", NULL);
-    if (hoc_usegui) {
-        char *s1, *s2 = (char*) 0;
-
-        s1 = gargstr(1);
-
-        if (hoc_is_object_arg(2)) {
-            neuron::container::data_handle<double> ptr1{};
-            hoc_ivstatebutton(ptr1,
-                              s1,
-                              NULL,
-                              HocStateButton::CHECKBOX,
-                              *hoc_objgetarg(2),
-                              ifarg(3) ? *hoc_objgetarg(3) : 0);
-        } else {
-            if (ifarg(3)) {
-                s2 = gargstr(3);
-            }
-            hoc_ivstatebutton(hoc_hgetarg<double>(2), s1, s2, HocStateButton::CHECKBOX);
-        }
-    }
+    hoc_state_or_checkbox(HocStateButton::CHECKBOX);
     hoc_ret();
     hoc_pushx(0.);
 }
@@ -1259,9 +1246,7 @@ HocMenu::~HocMenu() {
     menu_->unref();
 }
 void HocMenu::write(std::ostream& o) {
-    char buf[200];
-    Sprintf(buf, "xmenu(\"%s\", %d)", getStr(), add2menubar_);
-    o << buf << std::endl;
+    o << "xmenu(\"" << getStr() << "\", " << int(add2menubar_) << ")" << std::endl;
 }
 
 static Coord xvalue_field_size;
@@ -1359,18 +1344,15 @@ void HocPanel::save(std::ostream& o) {
 
 void HocPanel::write(std::ostream& o) {
     Oc oc;
-    char buf[200];
-    //	o << "xpanel(\"" << getName() << "\")" << std::endl;
-    Sprintf(buf, "xpanel(\"%s\", %d)", getName(), horizontal_);
-    o << buf << std::endl;
+    o << "xpanel(\"" << getName() << "\", " << (int) horizontal_ << ")" << std::endl;
     if (ilist_.size() > 1) {
         for (std::size_t i = 1; i < ilist_.size(); ++i) {
             ilist_[i]->write(o);
         }
     }
     if (has_window()) {
-        Sprintf(buf, "xpanel(%g,%g)", window()->save_left(), window()->save_bottom());
-        o << buf << std::endl;
+        o << "xpanel(" << double(window()->save_left()) << "," << double(window()->save_bottom())
+          << ")" << std::endl;
     } else {
         o << "xpanel()" << std::endl;
     }
@@ -1428,9 +1410,7 @@ HocLabel::HocLabel(const char* s)
     : HocItem(s) {}
 HocLabel::~HocLabel() {}
 void HocLabel::write(std::ostream& o) {
-    char buf[210];
-    Sprintf(buf, "xlabel(\"%s\")", hideQuote(getStr()));
-    o << buf << std::endl;
+    o << "xlabel(\"" << hideQuote(getStr()) << "\")" << std::endl;
 }
 
 #if 0
@@ -1467,9 +1447,7 @@ HocVarLabel::~HocVarLabel() {
 
 void HocVarLabel::write(std::ostream& o) {
     if (!variable_.empty() && cpp_) {
-        char buf[256];
-        Sprintf(buf, "xvarlabel(%s)", variable_.c_str());
-        o << buf << std::endl;
+        o << "xvarlabel(" << variable_ << ")" << std::endl;
     } else {
         o << "xlabel(\"<can't retrieve>\")" << std::endl;
     }
@@ -1919,7 +1897,6 @@ void HocValEditor::print(Printer* p, const Allocation& a) const {
 }
 
 void HocValEditor::set_val(double x) {
-    char buf[200];
     if (pyvar_) {
         neuron::python::methods.guisetval(pyvar_, x);
         return;
@@ -1929,21 +1906,18 @@ void HocValEditor::set_val(double x) {
     if (pval_) {
         *pval_ = hoc_ac_;
     } else if (!variable_.empty()) {
-        Sprintf(buf, "%s = hoc_ac_\n", variable_.c_str());
-        oc.run(buf);
+        oc.run(variable_ + " = hoc_ac_\n");
     }
 }
 
 double HocValEditor::get_val() {
-    char buf[200];
     if (pyvar_) {
         return neuron::python::methods.guigetval(pyvar_);
     } else if (pval_) {
         return *pval_;
     } else if (!variable_.empty()) {
         Oc oc;
-        Sprintf(buf, "hoc_ac_ = %s\n", variable_.c_str());
-        oc.run(buf);
+        oc.run(std::string("hoc_ac_ = ") + variable_ + "\n");
         return hoc_ac_;
     } else {
         return 0.;
@@ -1955,10 +1929,8 @@ double HocValEditor::domain_limits(double val) {
 }
 
 void HocValEditor::evalField() {
-    char buf[200];
     Oc oc;
-    Sprintf(buf, "hoc_ac_ = %s\n", fe_->text()->string());
-    oc.run(buf);
+    oc.run(std::string("hoc_ac_ = ") + fe_->text()->string() + "\n");
     hoc_ac_ = domain_limits(hoc_ac_);
     set_val(hoc_ac_);
     // prompt_->state()->set(TelltaleState::is_active, false);
@@ -3125,7 +3097,7 @@ static double vfe_default(void* v) {
 #endif
     return x;
 }
-static Member_func vfe_members[] = {{"default", vfe_default}, {0, 0}};
+static Member_func vfe_members[] = {{"default", vfe_default}, {nullptr, nullptr}};
 void ValueFieldEditor_reg() {
-    class2oc("ValueFieldEditor", vfe_cons, vfe_destruct, vfe_members, NULL, NULL);
+    class2oc("ValueFieldEditor", vfe_cons, vfe_destruct, vfe_members, nullptr, nullptr);
 }

@@ -804,7 +804,6 @@ void verify_structure(void) {
 
 void nrn_finitialize(int setv, double v) {
     int iord, i;
-    NrnThread* _nt;
     extern int _ninits;
     extern short* nrn_is_artificial_;
     ++_ninits;
@@ -834,14 +833,14 @@ void nrn_finitialize(int setv, double v) {
         nrn_deliver_events(nrn_threads + i); /* The play events at t=0 */
     }
     if (setv) {
-        FOR_THREADS(_nt) {
+        for (NrnThread* _nt: for_threads(nrn_threads, nrn_nthread)) {
             auto const vec_v = _nt->node_voltage_storage();
             std::fill_n(vec_v, _nt->end, v);
         }
     }
 #if 1 || NRNMPI
     if (nrnthread_vi_compute_)
-        FOR_THREADS(_nt) {
+        for (NrnThread* _nt: for_threads(nrn_threads, nrn_nthread)) {
             (*nrnthread_vi_compute_)(_nt);
         }
     {
@@ -850,7 +849,7 @@ void nrn_finitialize(int setv, double v) {
             (nrnmpi_v_transfer_)();
         }
         if (nrnthread_v_transfer_)
-            FOR_THREADS(_nt) {
+            for (NrnThread* _nt: for_threads(nrn_threads, nrn_nthread)) {
                 (*nrnthread_v_transfer_)(_nt);
             }
     }

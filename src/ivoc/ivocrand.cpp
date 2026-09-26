@@ -425,7 +425,7 @@ static Member_func r_members[] = {{"MCellRan4", r_MCellRan4},
                                   {nullptr, nullptr}};
 
 void Random_reg() {
-    class2oc("Random", r_cons, r_destruct, r_members, NULL, NULL);
+    class2oc("Random", r_cons, r_destruct, r_members, nullptr, nullptr);
     random_play_list_ = new RandomPlayList;
 }
 

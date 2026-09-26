@@ -20,3 +20,4 @@ Certain conditions that must be met are covered in the :ref:`CoreNEURON compatib
    installation.rst
    running-a-simulation.rst
    examples.rst
+   inputs.rst

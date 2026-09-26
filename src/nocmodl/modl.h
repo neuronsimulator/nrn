@@ -9,7 +9,7 @@
 
 /**
  * \dir
- * \brief NMODL NMODL Translator (NOCMODL) Implementation
+ * \brief NOCMODL Legacy NMODL Translator (NOCMODL) Implementation
  *
  * \file
  * \brief NMODL parser global flags / functions
@@ -330,6 +330,7 @@ extern Item* qlint;
 #define Free(arg)   free((void*) (arg))
 #endif
 using neuron::Sprintf;
+using neuron::SprintfAsrt;
 
 void verbatim_adjust(char* q);
 /** @} */  // end of hoc_functions

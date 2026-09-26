@@ -51,7 +51,6 @@ def model():
 
 
 def test_ste():
-
     m1 = model()
     # one state ste with two self transitions
     var = m1["s"](0.5)._ref_v

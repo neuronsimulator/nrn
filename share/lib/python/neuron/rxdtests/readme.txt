@@ -27,4 +27,4 @@ Notes:
     guarantees are made about the suitability of these files for self-learning.
     
     For more traditional Reaction-Diffusion tutorials see
-        https://nrn.readthedocs.io/en/latest/rxd-tutorials/index.html
+        https://www.neuronsimulator.org/en/latest/rxd-tutorials/index.html

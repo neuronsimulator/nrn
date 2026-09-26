@@ -10,7 +10,7 @@ on:
   workflow_call:
     inputs:
       tag:
-        description: 'Release version (tag name)'
+        description: 'The branch/commit of NEURON to checkout'
         default: ''
         required: true
         type: string
@@ -32,6 +32,7 @@ env:
 
 jobs:
   WindowsInstaller:
+    name: Windows installer
     runs-on: windows-latest
     timeout-minutes: 45
 
@@ -39,6 +40,8 @@ jobs:
     - uses: actions/checkout@v4
       with:
         ref: ${{ inputs.tag }}
+        submodules: recursive
+        fetch-tags: true  # Ensures tags are available for git describe
 
     - name: Retrieve rxd test data
       run: |
@@ -66,10 +69,24 @@ jobs:
       run: |
         rm.exe C:\WINDOWS\system32\bash.EXE
         %MSYS2_ROOT%\usr\bin\bash -lc "$BUILD_SOURCESDIRECTORY/ci/win_build_cmake.sh"
+        # create a manifest of the files in the build directory
+        %MSYS2_ROOT%\usr\bin\bash -lc "find ${BUILD_SOURCESDIRECTORY}/build > ${BUILD_SOURCESDIRECTORY}/build/build_files.txt 2>/dev/null"
       shell: cmd
       working-directory: ${{runner.workspace}}\nrn
       env:
         BUILD_SOURCESDIRECTORY: ${{runner.workspace}}\nrn
+
+    - name: Upload build files for diagnostics and debugging
+      if: ${{ always() }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: build_files
+        path: |
+          ${{runner.workspace}}/nrn/build/CMakeCache.txt
+          ${{runner.workspace}}/nrn/build/build.ninja
+          ${{runner.workspace}}/nrn/build/cmake_install.cmake
+          ${{runner.workspace}}/nrn/build/install_manifest.txt
+          ${{runner.workspace}}/nrn/build/build_files.txt
 
     # This step will set up an SSH connection on tmate.io for live debugging.
     # To enable it, you have to:
@@ -94,11 +111,3 @@ jobs:
       run: .\ci\win_test_installer.cmd
       shell: cmd
       working-directory: ${{runner.workspace}}\nrn
-
-    - name: Publish Release Installer
-      working-directory: ${{runner.workspace}}\nrn
-      if: inputs.tag != ''
-      run: |
-        gh release upload ${{ inputs.tag }} nrn-nightly-AMD64.exe
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

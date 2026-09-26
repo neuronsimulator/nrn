@@ -31,13 +31,13 @@ To work properly with variable time step methods, models that change states and/
         python
 
         def change():
-            print(f'change at {h.t}')
+            print(f'change at {n.t}')
             soma.v += 20
 
         def setup_discontinuities():
-            h.cvode.event(2, change)
+            n.cvode.event(2, change)
 
-        fih = h.FInitializeHandler(setup_discontinuities)
+        fih = n.FInitializeHandler(setup_discontinuities)
     
     Note the difference between the fixed and variable step methods.
 
@@ -50,9 +50,9 @@ To work properly with variable time step methods, models that change states and/
         python
 
         def change():
-            print(f'change at {h.t}')
+            print(f'change at {n.t}')
             soma.v += 20
-            h.cvode.re_init()
+            n.cvode.re_init()
 
 4.
 
@@ -62,17 +62,17 @@ To work properly with variable time step methods, models that change states and/
         python
 
         def change(action):
-            print(f'change at {h.t}: {action}')
+            print(f'change at {n.t}: {action}')
             if action == 'raise':
                 soma(0.5).hh.gnabar *= 2
             else:
                 soma(0.5).hh.gnabar /= 2
-            # h.cvode.re_init()   # should be here for cvode, but see below
+            # n.cvode.re_init()   # should be here for cvode, but see below
 
         def setup_discontinuities():
-            h.cvode.event(2, (change, 'raise'))
-            h.cvode.event(3, (change, 'lower'))
+            n.cvode.event(2, (change, 'raise'))
+            n.cvode.event(3, (change, 'lower'))
 
-        fih = h.FInitializeHandler(setup_discontinuities)
+        fih = n.FInitializeHandler(setup_discontinuities)
 
     It will be helpful to use the Crank-Nicolson fixed step method and compare the variable step method with and without the ``cvode.re_init()``. Zoom in around the discontinuity at 2 ms.

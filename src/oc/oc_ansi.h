@@ -156,6 +156,7 @@ double chkarg(int, double low, double high);
 // push first arg first. Warning: if the function is inside an object make sure
 // you know what you are doing.
 double hoc_call_func(Symbol*, int narg);
+void hoc_call_func_result_on_stack(Symbol* s, int narg);
 // call a fuction within the context of an object.
 double hoc_call_objfunc(Symbol*, int narg, Object*);
 extern double hoc_ac_;

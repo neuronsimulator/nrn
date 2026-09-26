@@ -45,9 +45,9 @@ Within any script that is to use NEURON, we begin by getting NEURON's ``h`` obje
 
     using PyCall
     neuron = pyimport("neuron")
-    h = neuron.h
+    n = neuron.n
 
-We can then use the ``h`` object as described in the `Python programmer's reference <python/index.html>`_.
+We can then use the ``n`` object as described in the `Python programmer's reference <python/index.html>`_.
 
 The following code simulates and plots an action potential in a Hodgkin-Huxley point cell:
 
@@ -61,25 +61,25 @@ The following code simulates and plots an action potential in a Hodgkin-Huxley p
 
     neuron = pyimport("neuron")
 
-    h = neuron.h
-    h.load_file("stdrun.hoc")
+    n = neuron.n
+    n.load_file("stdrun.hoc")
 
-    soma = h.Section("soma")
-    soma.insert(h.hh)
+    soma = n.Section("soma")
+    soma.insert(n.hh)
     soma.L = 10
     soma.diam = 10
 
-    ic = h.IClamp(soma(0.5))
+    ic = n.IClamp(soma(0.5))
     ic.amp = 0.5
     ic.dur = 0.1
     ic.delay = 1
 
-    t = h.Vector().record(h._ref_t)
-    v = h.Vector().record(soma(0.5)._ref_v)
+    t = n.Vector().record(n._ref_t)
+    v = n.Vector().record(soma(0.5)._ref_v)
 
     println("simulating...")
-    h.finitialize(-65)
-    h.continuerun(10)
+    n.finitialize(-65)
+    n.continuerun(10)
 
     println("plotting...")
     display(plot(t.to_python(), v.to_python()))
@@ -102,7 +102,7 @@ Such conversion is not always necessary; Julia correctly handles NEURON :class:`
     .. code::
         julia
         
-        julia> vec = h.Vector([5, 72, 16])
+        julia> vec = n.Vector([5, 72, 16])
         PyObject Vector[1]
 
         julia> vec[1]
