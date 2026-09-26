@@ -537,6 +537,7 @@ def _cxx_compile(formula):
             gcc = "g++"
     # TODO: Check this works on non-Linux machines
     gcc_cmd = f"{gcc} -I{sysconfig.get_path('include')} "
+    gcc_cmd += "-O2 -fno-math-errno "
     gcc_cmd += f"-shared {fpic} {filename}.cpp {_find_librxdmath()}"
     gcc_cmd += f" -o {filename}.so {math_library}"
     if sys.platform.lower().startswith("win"):
