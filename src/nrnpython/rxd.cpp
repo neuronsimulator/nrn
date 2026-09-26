@@ -673,6 +673,7 @@ extern "C" NRN_EXPORT void setup_currents(int num_currents,
     // initialize memory here to allow currents from an intracellular species
     // with no corresponding nrn_region='o' or Extracellular species
     memset(induced_currents_ecs_idx, SPECIES_ABSENT, sizeof(int) * _memb_curr_total);
+    memset(induced_currents_grid_id, SPECIES_ABSENT, sizeof(int) * _memb_curr_total);
 
     for (i = 0, k = 0; i < num_currents; i++) {
         _memb_cur_ptrs[i].resize(num_species[i]);
@@ -729,7 +730,7 @@ extern "C" NRN_EXPORT void setup_currents(int num_currents,
 
             for (i = 0, k = 0; k < _memb_curr_total; k++) {
                 if (induced_currents_grid_id[k] == id)
-                    _rxd_induced_currents_scale[k] = current_scales[i];
+                    _rxd_induced_currents_scale[k] = current_scales[i++];
             }
         }
     }
