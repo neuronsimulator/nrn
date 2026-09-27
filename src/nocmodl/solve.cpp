@@ -6,8 +6,6 @@
 #include "symbol.h"
 
 #include <cstdlib>
-#include <string>
-#include <unordered_map>
 
 /* make it an error if 2 solve statements are called on a single call to
 model() */
@@ -28,13 +26,25 @@ void whileloop(Item*, long, int);
 void check_ss_consist(Item*);
 
 namespace {
-enum class CVodeMethod { nomethod = 0, after_cvode = 1, cvode_t = 2, cvode_t_v = 3 };
-}
-static const std::unordered_map<std::string, CVodeMethod> cvode_method_map = {
-    {"after_cvode", CVodeMethod::after_cvode},
-    {"cvode_t", CVodeMethod::cvode_t},
-    {"cvode_t_v", CVodeMethod::cvode_t_v}};
+enum class CVodeMethod { none = 0, after_cvode = 1, cvode_t = 2, cvode_t_v = 3 };
 
+CVodeMethod deduce_cvode_method(Symbol* method) {
+    const char* const name = method ? method->name : nullptr;
+    if (name == nullptr) {
+        return CVodeMethod::none;
+    }
+    if (strcmp(name, "after_cvode") == 0) {
+        return CVodeMethod::after_cvode;
+    }
+    if (strcmp(name, "cvode_t") == 0) {
+        return CVodeMethod::cvode_t;
+    }
+    if (strcmp(name, "cvode_t_v") == 0) {
+        return CVodeMethod::cvode_t_v;
+    }
+    return CVodeMethod::none;
+}
+}  // namespace
 
 /* Need list of solve statements. We impress the
 general list structure to handle it.  The element is a pointer to an
@@ -136,11 +146,10 @@ void solvhandler() {
         qsol = ITM(lq);
         lq = lq->next;
         method = SYM(lq);
-        cvodemethod_ = CVodeMethod::nomethod;
-        if (method && cvode_method_map.count(method->name)) {
-            cvodemethod_ = cvode_method_map.at(method->name);
-            method = nullptr;
-            lq->element.sym = nullptr;
+        cvodemethod_ = deduce_cvode_method(method);
+        if (cvodemethod_ != CVodeMethod::none) {
+            method = SYM0;
+            lq->element.sym = SYM0;
         }
         lq = lq->next;
         errstmt = LST(lq);
