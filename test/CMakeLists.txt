@@ -45,6 +45,21 @@ foreach(target ${catch2_targets})
     target_link_libraries(${target} ${CMAKE_DL_LIBS})
   endif()
 endforeach()
+if(NRN_ENABLE_PYTHON)
+  # libnrniv does not re-export nanobind (those symbols are local), and it does not propagate
+  # nrnpython's usage requirements. Dynamic Python does not link nrnpython into libnrniv at all.
+  if(NRN_ENABLE_PYTHON_DYNAMIC)
+    list(GET NRN_PYTHON_VERSIONS 0 _cast_tuple_pyver)
+    set(_cast_tuple_nanobind "nanobind_py${_cast_tuple_pyver}")
+  else()
+    set(_cast_tuple_nanobind nanobind)
+  endif()
+  target_include_directories(testneuron SYSTEM PRIVATE "${NRN_DEFAULT_PYTHON_INCLUDES}")
+  target_link_libraries(testneuron PRIVATE ${_cast_tuple_nanobind})
+  if(NOT NRN_WITH_MACOS_CONDA_PYTHON)
+    target_link_libraries(testneuron PRIVATE "${NRN_DEFAULT_PYTHON_LIBRARIES}")
+  endif()
+endif()
 
 # =============================================================================
 # API test executables
