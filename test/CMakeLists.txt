@@ -56,7 +56,9 @@ if(NRN_ENABLE_PYTHON)
   endif()
   target_include_directories(testneuron SYSTEM PRIVATE "${NRN_DEFAULT_PYTHON_INCLUDES}")
   target_link_libraries(testneuron ${_cast_tuple_nanobind})
-  if(NOT NRN_WITH_MACOS_CONDA_PYTHON)
+  # Dynamic builds that do not link libpython store a sentinel in NRN_DEFAULT_PYTHON_LIBRARIES.
+  # testneuron allows unresolved Python symbols and dlopens libpython at runtime.
+  if(NOT NRN_WITH_MACOS_CONDA_PYTHON AND (NRN_LINK_AGAINST_PYTHON OR NOT NRN_ENABLE_PYTHON_DYNAMIC))
     target_link_libraries(testneuron "${NRN_DEFAULT_PYTHON_LIBRARIES}")
   endif()
 endif()
