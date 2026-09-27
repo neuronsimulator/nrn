@@ -195,7 +195,7 @@ Must declare an object reference (=object variable) before making an object
 
 Objref: manipulate references to objects, not the objects themselves
 
-- often names are chosen that make it easy to remember what an object reference is to be used for (eg g for a :hoc:class:`Graph` or vec for a :hoc:class:`Vector`) but it's important to remember that these are just for convenience and that any object reference can be used to point to any kind of object
+- often names are chosen that make it easy to remember what an object reference is to be used for (eg g for a :class:`Graph` or vec for a :class:`Vector`) but it's important to remember that these are just for convenience and that any object reference can be used to point to any kind of object
 
 Objects include vectors, graphs, lists, ...
 ###########################################
@@ -261,7 +261,7 @@ Lists are useful for maintaining pointers to objects so that they are maintained
 
 1. Make vec point to a new vector. Print out and record its identity (``print vec``). Now print using the object name (ie print Vector[#] with the right #). This confirms that the object exists. Destroy the object by reinitializing the vec reference. Now try to print using the object name. What does it say.
 
-2. As in Exercise 1: make vec point to a new :hoc:class:`Vector` and use print to find the vector name. Make XO a reference to a new list. Append the vector to the list: {XO.append(vec). Now dereference vec as in Exercise 1. Print out the object by name and confirm that it still exists. Even though the original objref is gone, it is still pointed to by the list.
+2. As in Exercise 1: make vec point to a new :class:`Vector` and use print to find the vector name. Make XO a reference to a new list. Append the vector to the list: {XO.append(vec). Now dereference vec as in Exercise 1. Print out the object by name and confirm that it still exists. Even though the original objref is gone, it is still pointed to by the list.
 
 3. Identify the vector on the list: (``print XO.object(0)``). Remove the vector from the list (``print XO.remove(0)``). Confirm that this vector no longer exists.
 
@@ -423,12 +423,12 @@ Graph
 
 .. seealso:: 
 
-    :hoc:class:`Graph`
+    :class:`Graph`
 
 Exercises
 #########
 
-1. write ``proc`` that draws a colored line ($1) from (0, 0) to given coordinate ($2, $3) assume g is a :hoc:class:`Graph` object
+1. write ``proc`` that draws a colored line ($1) from (0, 0) to given coordinate ($2, $3) assume g is a :class:`Graph` object
 
 2. write a ``proc`` that puts up two new graphs
 
@@ -467,7 +467,7 @@ Vector
 
 .. seealso::
 
-    :hoc:class:`Vector`
+    :class:`Vector`
 
 Exercises
 #########
@@ -475,7 +475,7 @@ Exercises
 1. 
     Write a ``proc`` to make ``$o1`` vec elements the product of $o2*$o3 elements
 
-    (Use :hoc:meth:`Vector.resize` to get ``$o1`` to right size; generate error if sizes wrong e.g. ``if ($o2.size!=$o3.size) { print "ERROR: wrong sizes" return }``)
+    (Use :meth:`Vector.resize` to get ``$o1`` to right size; generate error if sizes wrong e.g. ``if ($o2.size!=$o3.size) { print "ERROR: wrong sizes" return }``)
 
 2.
     Graph vector values: ``vec.line(g, 1)`` or ``vec.mark(g, 1)``
@@ -487,7 +487,7 @@ Exercises
 4.
     Write a ``proc`` to multiply the elements of a vector by sequential values from ``1`` to ``size-1``
 
-    Hint: use :hoc:meth:`vec.resize <Vector.resize>`, :hoc:meth:`vec.indgen <Vector.indgen>`, :hoc:meth:`vec.mul <Vector.mul>`
+    Hint: use :meth:`vec.resize <Vector.resize>`, :meth:`vec.indgen <Vector.indgen>`, :meth:`vec.mul <Vector.mul>`
 
 File
 ~~~~
@@ -517,7 +517,7 @@ File
 
 .. seealso::
 
-    :hoc:class:`File`
+    :class:`File`
 
 Exercises
 #########
@@ -554,7 +554,7 @@ List
 
 .. seealso::
 
-    :hoc:class:`List`
+    :class:`List`
 
 Exercises
 #########
@@ -621,7 +621,7 @@ Recording the simulation
 
 .. seealso::
 
-    :hoc:meth:`Vector.record`
+    :meth:`Vector.record`
 
 Graphing and analyzing data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -669,5 +669,5 @@ Roll your own GUI
 Exercise
 ########
 
-1. put up panel to run sim and display (in an :hoc:func:`xvalue`) the average frequency
+1. put up panel to run sim and display (in an :func:`xvalue`) the average frequency
 

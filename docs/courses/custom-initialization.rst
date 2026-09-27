@@ -93,37 +93,37 @@ In the same directory, make an :file:`init_ss.py` file with the contents:
 .. code:: 
     python
 
-    from neuron import h, gui
+    from neuron import n, gui
 
     def ss_init(t0=-1e3, dur=1e2, dt=0.025):
         """Initialize to steady state.  
-        Executes as part of h.finitialize()
+        Executes as part of n.finitialize()
         Appropriate parameters depend on your model
         t0 -- how far to jump back (should be < 0)
         dur -- time allowed to reach steady state
         dt -- initialization time step
         """
-        h.t = t0
+        n.t = t0
         # save CVode state to restore; initialization with fixed dt
-        old_cvode_state = h.cvode.active()
-        h.cvode.active(False)
-        h.dt = dt
-        while (h.t < t0 + dur): 
-            h.fadvance()
+        old_cvode_state = n.cvode.active()
+        n.cvode.active(False)
+        n.dt = dt
+        while (n.t < t0 + dur): 
+            n.fadvance()
         
         # restore cvode active/inactive state if necessary
-        h.cvode.active(old_cvode_state)
-        h.t = 0
-        if h.cvode.active():
-            h.cvode.re_init()
+        n.cvode.active(old_cvode_state)
+        n.t = 0
+        if n.cvode.active():
+            n.cvode.re_init()
         else:
-            h.fcurrent()
-        h.frecord_init()
+            n.fcurrent()
+        n.frecord_init()
 
-    fih = h.FInitializeHandler(ss_init)
+    fih = n.FInitializeHandler(ss_init)
 
     # model specification
-    h.load_file('all.ses') # ball and stick model with exptl rig
+    n.load_file('all.ses') # ball and stick model with exptl rig
 
 Now execute :file:`init_ss.py`.
 

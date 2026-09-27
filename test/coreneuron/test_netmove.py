@@ -46,7 +46,7 @@ class Cell:
         return (self.syn.n_netsend, self.syn.n_netmove, self.msgvec.c())
 
 
-def test_netmove():
+def _test_netmove():
     from neuron import coreneuron
 
     coreneuron.enable = False
@@ -111,10 +111,10 @@ def test_netmove():
     return stdlist
 
 
-if __name__ == "__main__":
+def test_netmove():
     from neuron import gui
 
-    stdlist = test_netmove()
+    stdlist = _test_netmove()
     g = h.Graph()
     print("n_netsend  n_netmove")
     for result in stdlist:
@@ -122,3 +122,7 @@ if __name__ == "__main__":
         result[2].line(g)
     g.exec_menu("View = plot")
     h.quit()
+
+
+if __name__ == "__main__":
+    test_netmove()

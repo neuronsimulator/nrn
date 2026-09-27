@@ -204,24 +204,25 @@ static void do_ode_thread(neuron::model_sorted_token const& sorted_token, NrnThr
     }
 }
 
+#if 0
 static double check(double t, Daspk* ida) {
     res_gvardt(t, ida->cv_->y_, ida->yp_, ida->delta_, ida->cv_);
     double norm = N_VWrmsNorm(ida->delta_, ((IDAMem) (ida->mem_))->ida_ewt);
     Printf("ida check t=%.15g norm=%g\n", t, norm);
 #if 0
-	for (int i=0; i < ida->cv_->neq_; ++i) {
-		printf(" %3d %22.15g %22.15g %22.15g\n", i,
+    for (int i=0; i < ida->cv_->neq_; ++i) {
+        printf(" %3d %22.15g %22.15g %22.15g\n", i,
 N_VGetArrayPointer(ida->cv_->y_)[i],
 N_VGetArrayPointer(ida->yp_)[i],
 N_VGetArrayPointer(ida->delta_)[i]);
-	}
+    }
 #endif
     return norm;
 }
+#endif
 
 int Daspk::init() {
     extern double t;
-    int i;
 #if 0
 printf("Daspk_init t_=%20.12g t-t_=%g t0_-t_=%g\n",
 cv_->t_, t-cv_->t_, cv_->t0_-cv_->t_);
@@ -301,7 +302,7 @@ cv_->t_, t-cv_->t_, cv_->t0_-cv_->t_);
             break;
         }
 #if 0
-for (i=0; i < cv_->neq_; ++i) {
+for (int i=0; i < cv_->neq_; ++i) {
 	printf("   %d %g %g %g %g\n", i, nt_t, N_VGetArrayPointer(cv_->y_)[i], N_VGetArrayPointer(yp_)[i], N_VGetArrayPointer(delta_)[i]);
 }
 #endif
@@ -449,14 +450,11 @@ void Cvode::daspk_gather_y(double* y, int tid) {
 int Cvode::res(double tt, double* y, double* yprime, double* delta, NrnThread* nt) {
     CvodeThreadData& z = ctd_[nt->id];
     ++f_calls_;
-    static int res_;
-    int i;
     nt->_t = tt;
-    res_++;
 
 #if 0
 printf("Cvode::res enter tt=%g\n", tt);
-for (i=0; i < z.nvsize_; ++i) {
+for (int i=0; i < z.nvsize_; ++i) {
 	printf("   %d %g %g %g\n", i, y[i], yprime[i], delta[i]);
 }
 #endif
@@ -482,10 +480,12 @@ for (i=0; i < z.nvsize_; ++i) {
     // subtract yp from mechanism state delta's
 
 #if 0
-printf("Cvode::res after ode and gather_ydot into delta\n");
-for (i=0; i < z.nvsize_; ++i) {
-	printf("   %d %g %g %g\n", i, y[i], yprime[i], delta[i]);
-}
+    static int res_ = 0;
+    ++res_;
+    printf("Cvode::res after ode and gather_ydot into delta\n");
+    for (int i=0; i < z.nvsize_; ++i) {
+        printf("   %d %g %g %g\n", i, y[i], yprime[i], delta[i]);
+    }
 #endif
     // the cap nodes : see nrnoc/capac.cpp for location of cm, etc.
     // these are not in same order as for cvode but are in
@@ -498,7 +498,7 @@ for (i=0; i < z.nvsize_; ++i) {
         Memb_list* ml = &z.cmlcap_->ml[0];
         int n = ml->nodecount;
         auto const vec_sav_rhs = nt->node_sav_rhs_storage();
-        for (i = 0; i < n; ++i) {
+        for (int i = 0; i < n; ++i) {
             Node* nd = ml->nodelist[i];
             int j = nd->eqn_index_ - 1;
             Extnode* nde = nd->extnode;
@@ -520,9 +520,9 @@ for (i=0; i < z.nvsize_; ++i) {
                 ml->data(i, 1) = cdvm;
             }
             if (vec_sav_rhs) {
-                int i = nd->v_node_index;
-                vec_sav_rhs[i] += cdvm;
-                vec_sav_rhs[i] *= NODEAREA(nd) * 0.01;
+                int j = nd->v_node_index;
+                vec_sav_rhs[j] += cdvm;
+                vec_sav_rhs[j] *= NODEAREA(nd) * 0.01;
             }
         }
     }
@@ -531,7 +531,7 @@ for (i=0; i < z.nvsize_; ++i) {
         assert(z.cmlext_->ml.size() == 1);
         Memb_list* ml = &z.cmlext_->ml[0];
         int n = ml->nodecount;
-        for (i = 0; i < n; ++i) {
+        for (int i = 0; i < n; ++i) {
             Node* nd = ml->nodelist[i];
             int j = nd->eqn_index_;
 #if EXTRACELLULAR
@@ -569,31 +569,31 @@ for (i=0; i < z.nvsize_; ++i) {
     nrndae_dkres(y, yprime, delta);
 
     // the ode's
-    for (i = z.neq_v_; i < z.nvsize_; ++i) {
+    for (int i = z.neq_v_; i < z.nvsize_; ++i) {
         delta[i] -= yprime[i];
     }
 
-    for (i = 0; i < z.nvsize_; ++i) {
+    for (int i = 0; i < z.nvsize_; ++i) {
         delta[i] *= -1.;
     }
     if (daspk_->use_parasite_ && tt - daspk_->t_parasite_ < 1e-6) {
         double fac = exp(1e7 * (daspk_->t_parasite_ - tt));
         double* tps = n_vector_data(daspk_->parasite_, nt->id);
-        for (i = 0; i < z.nvsize_; ++i) {
+        for (int i = 0; i < z.nvsize_; ++i) {
             delta[i] -= tps[i] * fac;
         }
     }
     before_after(sorted_token, z.after_solve_, nt);
 #if 0
 printf("Cvode::res exit res_=%d tt=%20.12g\n", res_, tt);
-for (i=0; i < z.nvsize_; ++i) {
+for (int i=0; i < z.nvsize_; ++i) {
 	printf("   %d %g %g %g\n", i, y[i], yprime[i], delta[i]);
 }
 #endif
     nt->_vcv = 0;
 #if 0
 double e = 0;
-for (i=0; i < z.nvsize_; ++i) {
+for (int i=0; i < z.nvsize_; ++i) {
 	e += delta[i]*delta[i];
 }
 printf("Cvode::res %d e=%g t=%.15g\n", res_, e, tt);

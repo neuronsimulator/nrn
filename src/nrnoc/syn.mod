@@ -1,5 +1,5 @@
 COMMENT
-an synaptic current with alpha function conductance defined by
+a synaptic current with alpha function conductance defined by
         i = g * (v - e)      i(nanoamps), g(microsiemens);
         where
          g = 0 for t < onset and

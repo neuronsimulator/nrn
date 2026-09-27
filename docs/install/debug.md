@@ -25,17 +25,64 @@ while continuing to experience the error, it may be worthwhile to look into
 [LLVM address sanitizer](https://github.com/neuronsimulator/nrn/issues/1213).
 
 #### NaN or Inf values
-Use [h.nrn_feenableexcept(1)](../python/programming/errors.rst#nrn_feenableexcept)
+Use [n.nrn_feenableexcept(1)](../python/programming/errors.rst#nrn_feenableexcept)
 to generate floating point exception for
 DIVBYZERO, INVALID, OVERFLOW, exp(700). [GDB](#GDB) can then be used to show
 where the SIGFPE occurred.
 
-#### Different results with different nhost or nthread.
+#### Different results with different nhost, nthread, or backend
 What is the gid and spiketime of the earliest difference?
-Use [ParallelContext.prcellstate](../python/modelspec/programmatic/network/parcon.rst#ParallelContext.prcellstate)
-for that gid at various times
-before spiketime to see why and when the prcellstate files become different.
-Time 0 after initialization is often a good place to start.
+Use a **progressive** focus: spikes first, then cell-state dumps, then (when available)
+fixed-step phase dumps, then field-level compare. The same ladder applies to
+nhost/nthread differences and to CPU vs GPU / NEURON vs CoreNEURON parity.
+
+**1. Spikes first.** Compare spike rasters (time, gid). Find the first mismatched
+spike; that gid (and time) is the focus. Tools such as ``sortspike`` plus
+``diff``/``awk`` are enough; a dedicated spike-first helper may be added later.
+
+**2. End-of-run prcellstate at that gid.** Use
+[ParallelContext.prcellstate](../python/modelspec/programmatic/network/parcon.rst#ParallelContext.prcellstate)
+to write ``<gid>_<suffix>.nrndat`` after a short run. Time 0 after initialization
+is often a good place to start.
+
+**3. First time dumps disagree.** Walk or bisect ``tstop`` with paired runs until
+you find the latest time dumps still match and the earliest time they differ.
+That brackets the failing fixed step.
+
+**4. Phase checkpoints (conceptual; not an API on every build).** On some feature
+lines, dumps can be taken at named fixed-step phases
+(``post_setup`` → ``post_solve`` → ``pre_nonvint`` → ``post_nonvint``) so you can
+see which part of the step first diverges. Phase dumps are still ordinary
+``.nrndat`` files. **Do not assume** ``pc.prcellstate_checkpoint`` exists on a
+stock master/release build; if your tree does not provide phase arming, stay
+with steps 2–3 (end-of-run dump + ``tstop`` search). GPU feature-line docs may
+describe the arm API when present.
+
+**5. Field-level compare with ``rdcellstate``.** Prefer the semantic comparator
+(not line-by-line HOC ``rdcellstate`` in ``prcellstate.hoc``, which misaligns when
+dump size or order differs)::
+
+    python -m neuron.debug.rdcellstate ref.nrndat other.nrndat
+    # or, if installed on PATH:
+    rdcellstate ref.nrndat other.nrndat --ignore-ion --top 25
+
+Paths must resolve under the current working directory (``realpath`` check)
+so agent/CLI path injection cannot read arbitrary files; ``cd`` to a parent of
+the dumps or use relative paths.
+
+Useful filters:
+
+- ``--ignore-ion`` — skip ``*_ion`` fields and capacitance ``i_cap`` noise paths
+- ``--ignore-unused`` — skip SOA ``*_unused`` fields (needs translated mod C++)
+- ``--ignore-matrix`` — skip Hines ``a,b,d,rhs``. Use when one dump has topology
+  header ``inode parent area a b`` (classic master / CoreNEURON) and the other
+  includes ``d rhs`` (some feature-line dumps); otherwise missing ``d``/``rhs``
+  keys look like hard failures.
+
+NetCon **payload** fields are not compared yet. If both files report
+``netcons N`` and ``N`` differs, the tool prints a stderr warning.
+
+Exit code is 0 when no differences remain after filters, else 1.
 
 #### GDB
 If you normally run with ```python args``` and get a segfault...
@@ -62,6 +109,38 @@ has proven effective.
 mpirun -np 4 xterm -e gdb `pyenv which python`
 ```
 
+#### The rr debugger
+
+As a complement to GDB, one can use the [rr debugger](https://rr-project.org/)
+to enhance the debugging experience. Running is as simple as:
+
+```
+rr record <executable> <args>
+```
+
+This should record a snapshot, which `rr` reports:
+
+```
+...
+rr: Saving execution to trace directory `<path>/.local/share/rr/nrniv-2'.
+...
+```
+
+which can later be replayed deterministically using:
+
+```
+rr replay <path to trace directory>
+```
+
+You can also bundle all of the dependencies of the executable using:
+
+```
+rr pack <path to trace directory>
+```
+
+after which you can send that directory (for instance, as a compressed archive)
+to other developers for portable and reliable debugging.
+
 #### Valgrind
 Extremely useful in debugging memory errors and memory leaks.
 
@@ -71,7 +150,7 @@ can be eliminated with `export PYTHONMALLOC=malloc`
 
 ```
 export PYTHONMALLOC=malloc
-valgrind `pyenv which python` -c 'from neuron import h'
+valgrind `pyenv which python` -c 'from neuron import n'
     ==47683== Memcheck, a memory error detector
     ==47683== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
     ==47683== Using Valgrind-3.17.0 and LibVEX; rerun with -h for copyright info
@@ -177,6 +256,14 @@ use `nrn-enable-sanitizer special -python path/to/script.py` or
 because the `python` binary is (presumably) not linked against the sanitizer
 runtime library.
 
+If ctest or nrn-enable-sanitizer runs generate a sanitizer error like
+`AddressSanitizer: CHECK failed: asan_interceptors.cpp`
+it might be that the automatically determined `LD_PRELOAD` is insufficient.
+(It happened to me with ubuntu 24.04 + gcc 13.2.0). In this case you
+can temporarily set the `NRN_OVERRIDE_LD_PRELOAD` environment variable before
+running cmake. In my case,
+`NRN_OVERRIDE_LD_PRELOAD="$(realpath "$(gcc -print-file-name=libasan.so)"):$(realpath "$(gcc -print-file-name=libstdc++.so)")" cmake ...` sufficed.
+
 LSan, TSan and UBSan support suppression files, which can be used to prevent
 tests failing due to known issues.
 NEURON includes a suppression file for TSan under `.sanitizers/thread.supp` and
@@ -198,9 +285,8 @@ In addition, there is a macOS-based ASan build using AppleClang, which has the
 advantage that it uses `libc++` instead of `libstdc++`.
 
 NMODL supports the sanitizers in a similar way, but this has to be enabled
-explicitly: `-DNRN_SANITIZERS=undefined` will not compile NMODL code with UBSan
-enabled, you must additionally pass `-DNMODL_SANITIZERS=undefined` to enable
-instrumentation of NMODL code.
+explicitly: `-DNRN_SANITIZERS=undefined` will also compile NMODL code with UBSan
+enabled.
 
 Profiling and performance benchmarking
 --------------------------------------
@@ -792,4 +878,3 @@ Unlike VTune, LIKWID doesn't support direct comparison of profile data. However,
 for code regions, and since the profile results are provided as text output, comparing results from two runs is straightforward.
 For instance, the screenshot below shows FLOPS instructions side by side between two runs:
 
-![VTune Comparison](images/nrn_likwid_presoa_master_comparison.png)

@@ -19,11 +19,10 @@
 #endif /* HAVE_IV */
 
 #include "oc2iv.h"
+#include "code.h"
 #include "classreg.h"
 
 #include "gui-redirect.h"
-
-extern int hoc_return_type_code;
 
 #if HAVE_IV
 
@@ -271,7 +270,7 @@ static double unmap(void* v) {
 }
 
 static double ismapped(void* v) {
-    hoc_return_type_code = 2;
+    hoc_return_type_code = HocReturnType::boolean;
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Box.ismapped", v);
 #if HAVE_IV
     bool b = false;
@@ -426,14 +425,14 @@ static Member_func members[] = {{"intercept", intercept},            // #if HAVE
                                 {"dialog", dialog},                  // #if HAVE_IV ok
                                 {"priority", ses_pri},
                                 {"size", b_size},
-                                {0, 0}};
+                                {nullptr, nullptr}};
 
 void HBox_reg() {
-    class2oc("HBox", hcons, destruct, members, NULL, NULL, NULL);
+    class2oc("HBox", hcons, destruct, members, nullptr, nullptr);
 }
 
 void VBox_reg() {
-    class2oc("VBox", vcons, destruct, members, NULL, NULL, NULL);
+    class2oc("VBox", vcons, destruct, members, nullptr, nullptr);
 }
 #if HAVE_IV
 OcGlyphContainer::OcGlyphContainer()

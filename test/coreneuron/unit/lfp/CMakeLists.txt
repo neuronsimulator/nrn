@@ -11,3 +11,8 @@ set_property(
   TEST lfp_test
   APPEND
   PROPERTY ENVIRONMENT OMP_NUM_THREADS=1)
+
+if(CMAKE_C_COMPILER_ID STREQUAL "NVHPC")
+  # test segfaults on NVHPC
+  set_tests_properties(lfp_test PROPERTIES DISABLED TRUE)
+endif()

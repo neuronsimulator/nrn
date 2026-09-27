@@ -25,7 +25,7 @@ static double pp_append(void* v) {
 static Member_func pp_members[] = {
     //	{"view", pp_view},
     {"append", pp_append},
-    {0, 0}};
+    {nullptr, nullptr}};
 
 static void* pp_cons(Object* ho) {
     TRY_GUI_REDIRECT_OBJ("PPShape", NULL);
@@ -54,7 +54,7 @@ static void pp_destruct(void* v) {
 
 void PPShape_reg() {
     //	printf("PPShape_reg\n");
-    class2oc("PPShape", pp_cons, pp_destruct, pp_members, NULL, NULL, NULL);
+    class2oc("PPShape", pp_cons, pp_destruct, pp_members, nullptr, nullptr);
 }
 
 #if HAVE_IV  // to end of file

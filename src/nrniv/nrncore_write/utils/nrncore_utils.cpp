@@ -72,6 +72,17 @@ int count_distinct(double* data, int len) {
 }
 
 
+/** @brief Validate electrode offsets: monotonically non-decreasing. */
+static void validate_electrode_offsets(const std::vector<size_t>& offsets) {
+    size_t prev = 0;
+    for (const auto off: offsets) {
+        if (off < prev) {
+            hoc_execerror("electrode_offsets must be monotonically non-decreasing", nullptr);
+        }
+        prev = off;
+    }
+}
+
 /** @brief For BBP use case, we want to write section-segment
  *  mapping to gid_3.dat file. This information will be
  *  provided through neurodamus HOC interface with following
@@ -94,7 +105,24 @@ void nrnbbcore_register_mapping() {
     Vect* sec = vector_arg(3);
     Vect* seg = vector_arg(4);
     Vect* lfp = ifarg(5) ? vector_arg(5) : new Vect();
-    int electrodes_per_segment = ifarg(6) ? *hoc_getarg(6) : 0;
+
+    // Argument 6: Vector of electrode offsets (CSR-style partial sums, e.g. [0, N]).
+    std::vector<size_t> electrode_offsets;
+    if (ifarg(6)) {
+        if (hoc_is_double_arg(6)) {
+            hoc_execerror(
+                "nrnbbcore_register_mapping: arg 6 must be a Vector of electrode offsets.",
+                "Version mismatch: update neurodamus or downgrade NEURON.");
+        }
+        Vect* offsets_vec = vector_arg(6);
+        const int n = vector_capacity(offsets_vec);
+        const double* vals = vector_vec(offsets_vec);
+        electrode_offsets.resize(n);
+        std::transform(vals, vals + n, electrode_offsets.begin(), [](double v) {
+            return static_cast<size_t>(v);
+        });
+        validate_electrode_offsets(electrode_offsets);
+    }
 
     double* sections = vector_vec(sec);
     double* segments = vector_vec(seg);
@@ -105,7 +133,7 @@ void nrnbbcore_register_mapping() {
     int nlfp = vector_capacity(lfp);
 
     if (nsec != nseg) {
-        std::cout << "Error: Section and Segment mapping vectors should have same size!\n";
+        Printf("Error: Section and Segment mapping vectors should have same size!\n");
         abort();
     }
 
@@ -116,7 +144,7 @@ void nrnbbcore_register_mapping() {
     smap->sections.assign(sections, sections + nseg);
     smap->segments.assign(segments, segments + nseg);
     smap->seglfp_factors.assign(seg_lfp_factors, seg_lfp_factors + nlfp);
-    smap->num_electrodes = electrodes_per_segment;
+    smap->electrode_offsets = std::move(electrode_offsets);
 
     // store mapping information
     mapinfo.add_sec_mapping(gid, smap);
@@ -220,7 +248,7 @@ void* get_coreneuron_handle() {
                                       .append("corenrnmech")
                                       .append(neuron::config::shared_library_suffix);
 
-    // first check if coreneuron specific library exist in <arch>/.libs
+    // first check if coreneuron specific library exist in <arch>
     // note that we need to get full path especially for OSX
     {
         auto const corenrn_lib_path = std::filesystem::current_path() /

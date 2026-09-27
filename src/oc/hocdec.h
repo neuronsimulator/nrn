@@ -158,7 +158,12 @@ struct cTemplate {
     void* (*constructor)(struct Object*);
     void (*destructor)(void*);
     void (*steer)(void*); /* normally nullptr */
-    int (*checkpoint)(void**);
+    /* Non-owning provider hooks. A provider keeps callback code loaded while
+       any instance of this template can dispatch through it. See
+       nrn_component_func in nrniv/neuronapi.h for the success/failure
+       return contract. */
+    const char* (*component)(Object*, Symbol*, int nindex, int isfunc);
+    const char* (*component_asgn)(Object*);
 };
 
 union Objectdata {
@@ -263,7 +268,6 @@ int ilint;
 #define Strncat cplint = strncat
 #define Strcpy  cplint = strcpy
 #define Strncpy cplint = strncpy
-#define Printf  ilint = printf
 #else
 #undef IGNORE
 #define IGNORE(arg) arg
@@ -272,11 +276,9 @@ int ilint;
 #define Strncat strncat
 #define Strcpy  strcpy
 #define Strncpy strncpy
-#define Printf  nrnpy_pr
 #endif
 using neuron::Sprintf;
-
-#define ERRCHK(c1) c1
+using neuron::SprintfAsrt;
 
 // No longer used because of clang format difficulty
 // #define IFGUI  if (hoc_usegui) {

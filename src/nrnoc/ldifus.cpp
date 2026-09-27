@@ -126,7 +126,7 @@ static void longdifusfree(LongDifus** ppld) {
 
 // sindex is a non-legacy field index
 static void longdifus_diamchange(LongDifus* pld, int m, int sindex, Memb_list* ml, NrnThread* _nt) {
-    int i, n, mi, mpi, j, index, pindex, vnodecount;
+    int i, n, mi, mpi, pindex;
     Node *nd, *pnd;
     double rall, dxp, dxc;
 
@@ -134,7 +134,6 @@ static void longdifus_diamchange(LongDifus* pld, int m, int sindex, Memb_list* m
         return;
     }
     /*printf("longdifus_diamchange %d %d\n", pld->dchange, diam_change_cnt);*/
-    vnodecount = _nt->end;
     n = ml->nodecount;
     for (i = 0; i < n; ++i) {
         /* For every child with a parent having this mechanism */
@@ -241,7 +240,6 @@ static void overall_setup(int m,
                           int dindex,
                           neuron::model_sorted_token const&,
                           NrnThread& ntr) {
-    auto* const _nt = &ntr;
     int i;
     LongDifusThreadData** ppldtd = (LongDifusThreadData**) v;
     LongDifusThreadData* ldtd = *ppldtd;
@@ -321,7 +319,6 @@ static void stagger(int m,
     /* setup matrix */
     for (int i = 0; i < n; ++i) {
         int pin = pld->pindex[i];
-        int mi = pld->mindex[i];
         pld->d[i] += 1. / nt_dt;
         pld->rhs[i] = *(pld->state[i].next_array_element(ai)) / nt_dt;
         if (pin > -1) {

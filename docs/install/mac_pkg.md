@@ -162,7 +162,7 @@ generally only for the architecture indicated by ```uname -m```. That is
 ok for openmpi but since the various python libraries are linked against
 during build to create the version specific neuron modules, those python
 installers also have to be universal. Fortunately, universal python versions
-can be found at [python.org](http://python.org/Downloads/macOS) at least for
+can be found at [python.org](https://www.python.org/downloads/macos) at least for
 (as of 2022-01-01) python3.8, python3.9, and python3.10.
 
 - ```xcode-select --install```:

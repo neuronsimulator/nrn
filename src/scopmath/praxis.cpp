@@ -143,7 +143,6 @@ int praxis_stop(int i) {
 static integer c__1 = 1;
 static integer c__2 = 2;
 static integer c__0 = 0;
-static integer c__10 = 10;
 static integer c__4 = 4;
 static integer c__3 = 3;
 

@@ -28,7 +28,7 @@ else:
     from neuron import h, gui
 
 
-def test_spikes(
+def _test_spikes(
     use_mpi4py=mpi4py_option,
     use_nrnmpi_init=nrnmpi_init_option,
     file_mode=file_mode_option,
@@ -132,9 +132,13 @@ def test_spikes(
     return h
 
 
-if __name__ == "__main__":
-    h = test_spikes()
+def test_spikes():
+    result = _test_spikes()
     if mpi4py_option or nrnmpi_init_option:
         pc = h.ParallelContext()
         pc.barrier()
-    h.quit()
+    result.quit()
+
+
+if __name__ == "__main__":
+    test_spikes()

@@ -1,9 +1,7 @@
 #pragma once
 
-#include "hoc.h"
+#include "hocdec.h"
 
-
-/* do not know why this is not in parse.hpp */
 extern int yyparse(void);
 extern int yylex(void);
 

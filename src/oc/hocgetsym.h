@@ -1,6 +1,6 @@
 #pragma once
 
-#include "hoc.h"
+#include "hocdec.h"
 
 typedef struct Psym {
     Symbol* sym;

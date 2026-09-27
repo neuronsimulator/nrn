@@ -9,6 +9,8 @@
 #include "bbsimpl.h"
 #include "hocdec.h"  //Printf
 
+#include "utils/logger.hpp"
+
 void nrnbbs_context_wait();
 
 BBSDirectServer* BBSDirectServer::server_;
@@ -194,7 +196,7 @@ void BBSDirectServer::post(const char* key, bbsmpibuf* send) {
     if (take_pending(key, &cid)) {
         nrnmpi_bbssend(cid, TAKE, send);
     } else {
-        MessageList::iterator m = messages_->emplace(newstr(key), send);
+        messages_->emplace(newstr(key), send);
         nrnmpi_ref(send);
     }
 }
