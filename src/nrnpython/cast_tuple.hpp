@@ -1,6 +1,8 @@
 #pragma once
 #include <cstddef>
 #include <stdexcept>
+#include <tuple>
+#include <utility>
 
 #include <nanobind/nanobind.h>
 #include <fmt/format.h>
