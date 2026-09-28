@@ -22,6 +22,7 @@ on:
         description: 'The name of the container registry to upload the image to (only useful if used with upload=true)'
         default: 'ghcr.io'
         required: true
+        type: choice
         options:
           - 'ghcr.io'
           - 'docker.io'
@@ -40,11 +41,11 @@ jobs:
         include:
           - platform: 'linux/amd64'
             arch: 'x86_64'
-            base_image: 'ubuntu-22.04'
+            base_image: 'ubuntu-24.04'
 
           - platform: 'linux/arm64'
             arch: 'aarch64'
-            base_image: 'ubuntu-22.04-arm'
+            base_image: 'ubuntu-24.04-arm'
 
     steps:
       - name: Login to Docker Hub
