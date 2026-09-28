@@ -137,7 +137,7 @@ inline int nrn_newton_thread(NewtonSpace* ns,
         }
 
         if (!done) {
-            nrn_scopmath_solve_thread(n, jacobian, value, perm, delta_x, (int*) 0, _threadargs_);
+            nrn_scopmath_solve_thread(n, jacobian, value, perm, delta_x, _threadargs_);
 
             /* Update solution vector and compute norms of delta_x and value */
 

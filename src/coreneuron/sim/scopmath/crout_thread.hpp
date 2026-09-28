@@ -14,12 +14,11 @@
 #include "coreneuron/sim/scopmath/newton_struct.h"
 
 namespace coreneuron {
-#if defined(scopmath_crout_ix) || defined(scopmath_crout_y) || defined(scopmath_crout_b)
+#if defined(scopmath_crout_ix) || defined(scopmath_crout_b)
 #error "naming clash on crout_thread.hpp-internal macros"
 #endif
 #define scopmath_crout_b(arg)  b[scopmath_crout_ix(arg)]
 #define scopmath_crout_ix(arg) CNRN_FLAT_INDEX_IML_ROW(arg)
-#define scopmath_crout_y(arg)  _p[CNRN_FLAT_INDEX_IML_ROW(y[arg])]
 
 /**
  * Performs an LU triangular factorization of a real matrix by the Crout
@@ -122,14 +121,13 @@ inline int nrn_crout_thread(NewtonSpace* ns, int n, double** a, int* perm, _thre
  *          coefficients of the linear equations
  * @param b vector of function values
  * @param perm permutation vector to store row interchanges
- * @param[out] p[y[i]] contains the solution vector
+ * @param[out] p solution vector. p[i] receives the solution for equation i
  */
 inline void nrn_scopmath_solve_thread(int n,
                                       double** a,
                                       double* b,
                                       int* perm,
                                       double* p,
-                                      int* y,
                                       _threadargsproto_) {
     /* Perform forward substitution with pivoting */
     for (int i = 0; i < n; i++) {
@@ -144,10 +142,9 @@ inline void nrn_scopmath_solve_thread(int n,
     }
 
     /*
-     * Note that the y vector is already in the correct order for back
-     * substitution.  Perform back substitution, pivoting the matrix but not
-     * the y vector.  There is no need to divide by the diagonal element as
-     * this is assumed to be unity.
+     * Perform back substitution, pivoting the matrix rows but not p.
+     * There is no need to divide by the diagonal element as this is
+     * assumed to be unity.
      */
     for (int i = n - 1; i >= 0; i--) {
         int pivot = perm[scopmath_crout_ix(i)];
@@ -159,5 +156,4 @@ inline void nrn_scopmath_solve_thread(int n,
 }
 #undef scopmath_crout_b
 #undef scopmath_crout_ix
-#undef scopmath_crout_y
 }  // namespace coreneuron
