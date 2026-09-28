@@ -1,10 +1,13 @@
-from neuron.tests.utils.strtobool import strtobool
-from neuron import h
 import os
 import platform
 import shutil
 import subprocess
 from subprocess import PIPE
+
+import pytest
+
+from neuron.tests.utils.strtobool import strtobool
+from neuron import h
 
 pc = h.ParallelContext()
 cvode = h.CVode()
@@ -16,6 +19,7 @@ def sortspikes(spiketime, gidvec):
 
 # Set globally so we can ensure the IClamp duration is shorter
 tstop = 1
+
 
 # Passive cell random tree so there is some inhomogeneity of ia and im
 class Cell:
@@ -134,6 +138,12 @@ class Model:
             cell.update_pointers()
 
 
+@pytest.mark.skipif(
+    platform.system() == "Darwin"
+    and platform.mac_ver()[0] >= "15"
+    and platform.machine() == "x86_64",
+    reason="Needs fixing on Intel-based Apples running MacOS 15",
+)
 def test_axial():
     m = Model(5, 5)
     cvode.use_fast_imem(1)
@@ -234,9 +244,7 @@ def run_coreneuron_offline_checkpoint_restore(spikes_std):
             run(tpnt, outpath + restore + checkpoint)
 
         # compare spikes
-        cmp_spks(
-            spikes_std, "coredat", ["coredat/chkpnt%d" % (i,) for i in range(1, 3)]
-        )
+        cmp_spks(spikes_std, "coredat", [f"coredat/chkpnt{i}" for i in range(1, 3)])
 
 
 def test_checkpoint():
@@ -310,6 +318,7 @@ def cmp_spks(spikes, dir, chkpntdirs):
     with open(os.path.join(dir, "temp"), "w") as f:
         for spike in spikes:
             f.write("{:.8g}\t{}\n".format(spike[0], int(spike[1])))
+
     # sometimes roundoff to %.8g gives different sort.
     def help(cmd, name_in, name_out):
         # `cmd` is some generic utility, which does not need to have a

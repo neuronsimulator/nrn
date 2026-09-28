@@ -314,7 +314,7 @@ void NetParEvent::savestate_restore(double tt, NetCvode* nc) {
     if (ithread_ == 0) {
         // npe_->pr("savestate_restore", tt, nc);
         for (int i = 0; i < nrn_nthread; ++i)
-            if (npe_ + i) {
+            if (i < n_npe_) {
                 nc->event(tt, npe_ + i, nrn_threads + i);
             }
     }
@@ -1353,10 +1353,8 @@ static double set_mindelay(double maxdelay) {
     double mindelay = maxdelay;
     last_maxstep_arg_ = maxdelay;
     if (nrn_use_selfqueue_ || net_cvode_instance->localstep() || nrn_nthread > 1) {
-        hoc_Item* q;
         if (net_cvode_instance->psl_)
-            ITERATE(q, net_cvode_instance->psl_) {
-                PreSyn* ps = (PreSyn*) VOIDITM(q);
+            for (PreSyn* ps: *net_cvode_instance->psl_) {
                 double md = ps->mindelay();
                 if (mindelay > md) {
                     mindelay = md;

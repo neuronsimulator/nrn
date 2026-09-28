@@ -41,7 +41,7 @@ Integrator-independent model specification
 NEURON offers several different, user-selectable numerical integration methods.
 
 * The default integration method is implicit Euler, which provides robust stability and first order accuracy in time (sufficient for most applications).
-* There is also a Crank-Nicholson method that provides second order accuracy at little additional computational cost. However, this is prone to numerical oscillations if dt is too long, voltage clamps are present, or system states are described by algebraic equations.
+* There is also a Crank-Nicolson method that provides second order accuracy at little additional computational cost. However, this is prone to numerical oscillations if dt is too long, voltage clamps are present, or system states are described by algebraic equations.
 * Increased accuracy, faster run times, and sometimes both, may be achieved by choosing adaptive integration, which adjusts integration order and time step as necessary to satisfy a local error criterion. For historical reasons, the adaptive integrators are genericallly called "CVODE" in NEURON; the actual method is either IDA (Hindmarsh and Taylor, 1999) or CVODES (Hindmarsh and Serban, 2002), a decision that is made automatically (i.e. without requiring user judgement) depending on whether or not a model involves states that are described by algebraic equations.
 
 Users can switch between these integration methods without having to rewrite the model specification because NEURON avoids computation-specific representations of biological properties. This convenience is essential because deciding which method is best in any particular situation is often an empirical question. Further details about numeric integration in NEURON are provided in chapter 4 of The NEURON Book (Carnevale and Hines, 2006).
@@ -113,7 +113,7 @@ Complex models often require custom initialization and/or simulation flow contro
 Large user base
 ---------------
 
-As of February 2021, we know of `more than 2400 scientific articles and books have reported work that was done with NEURON <https://neuron.yale.edu/neuron/publications/neuron-bibliography>`_. The NEURON mailing list has about 500 subscribers, and `The NEURON Forum <https://www.neuron.yale.edu/phpBB/>`_, which was started in May 2005 and is gradually supplanting the old mailing list, has more than 1600 registered users and over 17,000 posted messages in greater than 4000 discussion threads.
+As of March 2026, we know of more than 3,000 scientific articles and books have reported work that was done with NEURON <https://www.neuronsimulator.org/en/9.0.1/publications-using-neuron.html>`_.
 
 Development, support, and documentation
 ---------------------------------------

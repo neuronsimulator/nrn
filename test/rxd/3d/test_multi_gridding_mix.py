@@ -1,10 +1,41 @@
-from neuron.units import µm, mM, ms, mV
+import platform
 import sys
+
+import pytest
+from packaging.version import Version
+
+from neuron.units import µm, mM, ms, mV
 
 sys.path.append("..")
 from testutils import compare_data, tol
 
 
+def check_platform_is_problematic():
+    """
+    Check whether the current platform is problematic so tests are skipped.
+    """
+    if platform.system() == "Linux":
+        # `freedesktop_os_release` is only defined in 3.10+
+        if hasattr(platform, "freedesktop_os_release"):
+            try:
+                flavor = platform.freedesktop_os_release()
+                return flavor["ID"] == "ubuntu" and Version(
+                    flavor["VERSION_ID"]
+                ) > Version("22")
+            except OSError:
+                # we cannot determine the flavor reliably (no /etc/os-release file)
+                return True
+        else:
+            # we cannot determine the flavor reliably (<3.10)
+            return True
+    else:
+        return False
+
+
+@pytest.mark.skipif(
+    check_platform_is_problematic(),
+    reason="See https://github.com/neuronsimulator/nrn-build-ci/issues/66",
+)
 def test_multi_gridding_mix(neuron_instance):
     h, rxd, data, save_path = neuron_instance
     axon = h.Section(name="axon")

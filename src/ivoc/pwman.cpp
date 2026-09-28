@@ -2,7 +2,6 @@
 #include "gui-redirect.h"
 
 extern char* ivoc_get_temp_file();
-extern int hoc_return_type_code;
 
 #if HAVE_IV
 #if defined(WIN32)
@@ -24,6 +23,7 @@ extern int hoc_return_type_code;
 #endif  // HAVE_IV
 #include <stdio.h>
 #include <stdlib.h>
+#include "code.h"
 #include "classreg.h"
 #include "oc2iv.h"
 #include <cmath>
@@ -440,7 +440,7 @@ static void pwman_destruct(void* v) {
 
 static double pwman_count(void* v) {
     int cnt = 0;
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.count", v);
 #if HAVE_IV
     if (hoc_usegui) {
@@ -451,7 +451,7 @@ static double pwman_count(void* v) {
     return double(cnt);
 }
 static double pwman_is_mapped(void* v) {
-    hoc_return_type_code = 2;  // boolean
+    hoc_return_type_code = HocReturnType::boolean;
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.is_mapped", v);
 #if HAVE_IV
     if (hoc_usegui) {
@@ -561,7 +561,7 @@ static double pwman_deiconify(void* v) {
     return 0.;
 }
 static double pwman_leader(void* v) {
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.leader", v);
 #if HAVE_IV
     if (hoc_usegui) {
@@ -579,7 +579,7 @@ static double pwman_leader(void* v) {
     return -1.;
 }
 static double pwman_manager(void* v) {
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.manager", v);
 #if HAVE_IV
     if (hoc_usegui) {
@@ -794,14 +794,14 @@ static Member_func members[] = {{"count", pwman_count},
                                 {"printfile", pwman_printfile},
                                 {"landscape", pwman_landscape},
                                 {"deco", pwman_deco},
-                                {0, 0}};
+                                {nullptr, nullptr}};
 
-static Member_ret_obj_func retobj_members[] = {{"group", pwman_group}, {0, 0}};
+static Member_ret_obj_func retobj_members[] = {{"group", pwman_group}, {nullptr, nullptr}};
 
-static Member_ret_str_func s_memb[] = {{"name", pwman_name}, {0, 0}};
+static Member_ret_str_func s_memb[] = {{"name", pwman_name}, {nullptr, nullptr}};
 
 void PWManager_reg() {
-    class2oc("PWManager", pwman_cons, pwman_destruct, members, NULL, retobj_members, s_memb);
+    class2oc("PWManager", pwman_cons, pwman_destruct, members, retobj_members, s_memb);
 }
 
 #if HAVE_IV  // almost to end of file
@@ -1477,7 +1477,7 @@ void PrintableWindow::reconfigured() {
         xmove(x, y);
     }
 }
-// LCOV_EXCL_END
+// LCOV_EXCL_STOP
 
 void ViewWindow::reconfigured() {
     if (!pixres) {

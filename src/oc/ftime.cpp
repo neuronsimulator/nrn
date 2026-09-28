@@ -1,6 +1,7 @@
-#include "hoc.h"
+#include "oc_ansi.h"
 
 #include <chrono>
+
 static double start_time = 0.;
 
 double nrn_time() {

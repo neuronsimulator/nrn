@@ -1,5 +1,6 @@
 #include <../../nrnconf.h>
 #include "classreg.h"
+#include "code.h"
 #include "gui-redirect.h"
 #include "ocnotify.h"
 
@@ -40,8 +41,6 @@
 
 extern Symlist* hoc_built_in_symlist;
 #endif  // HAVE_IV
-
-extern int hoc_return_type_code;
 
 void* (*nrnpy_get_pyobj)(Object* obj) = 0;
 void (*nrnpy_decref)(void* pyobj) = 0;
@@ -216,7 +215,7 @@ static double sh_printfile(void* v) {
 
 static double sh_show(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PlotShape.show", v);
-    hoc_return_type_code = 1;
+    hoc_return_type_code = HocReturnType::integer;
 #if HAVE_IV
     if (hoc_usegui) {
         ShapeScene* s = (ShapeScene*) v;
@@ -347,11 +346,11 @@ static Member_func sh_members[] = {{"hinton", sh_hinton},
                                    {"erase_all", ivoc_erase_all},
                                    {"len_scale", nrniv_len_scale},
                                    {"gif", ivoc_gr_gif},
-                                   {0, 0}};
+                                   {nullptr, nullptr}};
 
 static Member_ret_obj_func retobj_members[] = {{"nearest_seg", nrniv_sh_nearest_seg},
                                                {"selected_seg", nrniv_sh_selected_seg},
-                                               {NULL, NULL}};
+                                               {nullptr, nullptr}};
 
 static void* sh_cons(Object* ho) {
     TRY_GUI_REDIRECT_OBJ("PlotShape", NULL);
@@ -426,7 +425,7 @@ static void sh_destruct(void* v) {
 }
 void PlotShape_reg() {
     //	printf("PlotShape_reg\n");
-    class2oc("PlotShape", sh_cons, sh_destruct, sh_members, NULL, retobj_members, NULL);
+    class2oc("PlotShape", sh_cons, sh_destruct, sh_members, retobj_members, nullptr);
 }
 
 void* ShapePlotData::varobj() const {
@@ -602,9 +601,7 @@ void ShapePlot::scale(float min, float max) {
 void ShapePlot::save_phase1(std::ostream& o) {
     o << "{" << std::endl;
     save_class(o, "PlotShape");
-    char buf[256];
-    Sprintf(buf, "save_window_.variable(\"%s\")", spi_->sym_->name);
-    o << buf << std::endl;
+    o << "save_window_.variable(\"" << spi_->sym_->name << "\")" << std::endl;
 }
 
 void ShapePlot::shape_plot() {}

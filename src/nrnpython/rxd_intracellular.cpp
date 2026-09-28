@@ -14,7 +14,6 @@
 extern int NUM_THREADS;
 extern TaskQueue* AllTasks;
 extern double* states;
-const int ICS_PREFETCH = 3;
 
 /*
  * Sets the data to be used by the grids for 1D/3D hybrid models

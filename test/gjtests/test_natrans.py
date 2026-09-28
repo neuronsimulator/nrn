@@ -1,3 +1,5 @@
+import os
+
 from neuron import h
 
 pc = h.ParallelContext()
@@ -36,7 +38,7 @@ endtemplate Cell
 )
 
 
-def test_natrans():
+def _test_natrans():
     gids = [gid for gid in range(rank, ncell, nhost)]
     cells = []
     for gid in range(rank, ncell, nhost):
@@ -106,16 +108,23 @@ def test_natrans():
 
     from neuron import coreneuron
 
-    coreneuron.available = True
-    if coreneuron.available:
-        coreneuron.enable = True
-        coreneuron.cell_permute = 0
-        run()  # Fails if CoreNEURON does not copy expected tar.napre to NEURON
+    # NRN_FOREIGN_SKIP_CORENEURON: foreign gj_serial CN psolve aborted on
+    # Linux/macOS wheels (GHA #3866). NEURON half still runs. Not a CN fix.
+    if not os.environ.get("NRN_FOREIGN_SKIP_CORENEURON"):
+        coreneuron.available = True
+        if coreneuron.available:
+            coreneuron.enable = True
+            coreneuron.cell_permute = 0
+            run()  # Fails if CoreNEURON does not copy expected tar.napre to NEURON
 
     return cells, gids, sgids, targets
 
 
-if __name__ == "__main__":
-    model = test_natrans()
+def test_natrans():
+    model = _test_natrans()
     pc.barrier()
     h.quit()
+
+
+if __name__ == "__main__":
+    test_natrans()

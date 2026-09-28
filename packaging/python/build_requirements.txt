@@ -1,8 +1,5 @@
-cython
-packaging
-numpy==1.17.5;python_version=='3.8'
-numpy==1.19.3;python_version=='3.9' and platform_machine!='arm64'
-numpy==1.21.3;python_version=='3.9' and platform_machine=='arm64'
-numpy==1.21.4;python_version=='3.10'
-numpy==1.23.5;python_version=='3.11'
-numpy==1.26.0;python_version=='3.12'
+scikit-build-core<=0.11.1
+setuptools-scm<=8.1.0
+cython<=3.0.12
+numpy<=2.2.3;python_version<"3.14"
+numpy>=2.3.2,<=2.3.3;python_version=="3.14"

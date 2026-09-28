@@ -1,4 +1,3 @@
-#cython: language_level=2
 # this contains cone, spherecone, and cylinder code translated and modified from Barbier and
 # Galin 2004's example code
 # see /u/ramcd/spatial/experiments/one_time_tests/2012-06-28/cone.cpp
@@ -9,7 +8,7 @@ import bisect
 cimport cython
 
 """
-The graphicsPrimitive module
+The graphicsPrimitives module
 """
 
 cdef extern from "math.h":
@@ -29,7 +28,7 @@ cdef class Complement:
     def __init__(self, obj):
         self.obj = obj
     def __repr__(self):
-        return 'Complement(%r)' % self.obj
+        return f"Complement({self.obj!r})"
     def distance(self, px, py, pz):
         return -self.obj.distance(px, py, pz)
     def starting_points(self, xs, ys, zs):
@@ -43,7 +42,7 @@ cdef class Union:
     def __init__(self, list objects):
         self.objects = objects
     def __repr__(self):
-        return 'Union(%r)' % self.objects
+        return f"Union({self.objects!r})"
     @cython.boundscheck(False)
     @cython.wraparound(False)
     cpdef double distance(self, px, py, pz):
@@ -65,7 +64,7 @@ cdef class Intersection:
     def __init__(self, list objects):
         self.objects = objects
     def __repr__(self):
-        return 'Intersection(%r)' % self.objects
+        return f"Intersection({self.objects!r})"
     @cython.boundscheck(False)
     @cython.wraparound(False)
     cpdef double distance(self, px, py, pz):
@@ -98,7 +97,7 @@ cdef class Plane:
     property primitives:
         def __get__(self): return []
     def __repr__(self):
-        return 'Plane(%g, %g, %g, %g, %g, %g)' % (self.px, self.py, self.pz, self.nx, self.ny, self.nz)
+        return f"Plane({self.px:g}, {self.py:g}, {self.pz:g}, {self.nx:g}, {self.ny:g}, {self.nz:g})"
     cpdef double distance(self, double x, double y, double z):
         return (self.nx * x + self.ny * y + self.nz * z + self.d) * self.mul
     cpdef list starting_points(self, xs, ys, zs):
@@ -120,9 +119,9 @@ cdef class Sphere:
         self.clips = []
     def __repr__(self):
         if self.clips:
-            return 'Sphere(%g, %g, %g, %g; clips=%r)' % (self._x, self._y, self._z, self._r, self.clips)
+            return f"Sphere({self._x:g}, {self._y:g}, {self._z:g}, {self._r:g}; clips={self.clips!r})"
         else:
-            return 'Sphere(%g, %g, %g, %g)' % (self._x, self._y, self._z, self._r)
+            return f"Sphere({self._x:g}, {self._y:g}, {self._z:g}, {self._r:g})"
     property x:
         def __get__(self): return self._x
     property y:
@@ -171,9 +170,9 @@ cdef class Cylinder:
     cdef list neighbors, clips, neighbor_regions
     def __repr__(self):
         if self.clips:
-            return 'Cylinder(%g, %g, %g, %g, %g, %g, %g; clips=%r)' % (self.x0, self.y0, self.z0, self.x1, self.y1, self.z1, self.r, self.clips)
+            return f"Cylinder({self.x0:g}, {self.y0:g}, {self.z0:g}, {self.x1:g}, {self.y1:g}, {self.z1:g}, {self.r:g}; clips={self.clips!r})"
         else:
-            return 'Cylinder(%g, %g, %g, %g, %g, %g, %g)' % (self.x0, self.y0, self.z0, self.x1, self.y1, self.z1, self.r)
+            return f"Cylinder({self.x0:g}, {self.y0:g}, {self.z0:g}, {self.x1:g}, {self.y1:g}, {self.z1:g}, {self.r:g})"
     property xlo:
         def __get__(self): return self._xlo
     property xhi:
@@ -319,7 +318,7 @@ cdef class SphereCone:
         def __get__(self): return [self]
 
     def __repr__(self):
-        return 'SphereCone(%g, %g, %g, %g, %g, %g, %g, %g)' % (self.x0, self.y0, self.z0, self.r0, self.x1, self.y1, self.z1, self.r1)
+        return f"SphereCone({self.x0:g}, {self.y0:g}, {self.z0:g}, {self.r0:g}, {self.x1:g}, {self.y1:g}, {self.z1:g}, {self.r1:g})"
 
     def set_clip(self, clips):
         self.clips = clips
@@ -441,9 +440,11 @@ cdef class Cone:
         else:
             order = [self.x0, self.y0, self.z0, self.r0, self.x1, self.y1, self.z1, self.r1]
         if self.clips:
-            return 'Cone(%g, %g, %g, %g, %g, %g, %g, %g; clips=%r)' % tuple(order + [self.clips])
+            return (f"Cone({order[0]:g}, {order[1]:g}, {order[2]:g}, {order[3]:g}, "
+                    f"{order[4]:g}, {order[5]:g}, {order[6]:g}, {order[7]:g}; clips={self.clips!r})")
         else:
-            return 'Cone(%g, %g, %g, %g, %g, %g, %g, %g)' % tuple(order)
+            return (f"Cone({order[0]:g}, {order[1]:g}, {order[2]:g}, {order[3]:g}, "
+                    f"{order[4]:g}, {order[5]:g}, {order[6]:g}, {order[7]:g})")
 
     property _x0:
         def __get__(self):

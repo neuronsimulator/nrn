@@ -1,4 +1,4 @@
-from neuron import h, gui
+from neuron import n, gui
 
 
 class Cell:
@@ -24,10 +24,10 @@ class Cell:
         coreneuron.enable = corenrn
         coreneuron.gpu = gpu
 
-        pc = h.ParallelContext()
+        pc = n.ParallelContext()
         pc.set_maxstep(10)
-        h.stdinit()
-        h.dt = dt
+        n.stdinit()
+        n.dt = dt
         pc.psolve(tstop)
 
     def output(self):

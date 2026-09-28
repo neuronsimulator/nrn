@@ -527,6 +527,21 @@ void write_nrnthread_task(const char* path, CellGroup* cgs, bool append) {
     }
 }
 
+/** @brief Write the section-list header line with electrode offsets */
+static void write_seclist_header(FILE* f,
+                                 const std::string& name,
+                                 int nsec,
+                                 int nseg,
+                                 size_t total_lfp_factors,
+                                 const std::vector<size_t>& electrode_offsets) {
+    const int offset_count = static_cast<int>(electrode_offsets.size());
+    fprintf(f, "%s %d %d %zd %d", name.c_str(), nsec, nseg, total_lfp_factors, offset_count);
+    for (const auto off: electrode_offsets) {
+        fprintf(f, " %zu", off);
+    }
+    fprintf(f, "\n");
+}
+
 /** @brief dump mapping information to gid_3.dat file */
 void nrn_write_mapping_info(const char* path, int gid, NrnMappingInfo& minfo) {
     if (minfo.size() <= 0) {
@@ -565,7 +580,7 @@ void nrn_write_mapping_info(const char* path, int gid, NrnMappingInfo& minfo) {
             std::string sclname;
             int nsec;
             int nseg;
-            int n_electrodes;
+            std::vector<size_t> electrode_offsets;
             size_t total_lfp_factors;
             std::vector<int> data_sec;
             std::vector<int> data_seg;
@@ -576,18 +591,11 @@ void nrn_write_mapping_info(const char* path, int gid, NrnMappingInfo& minfo) {
                                       nsec,
                                       nseg,
                                       total_lfp_factors,
-                                      n_electrodes,
+                                      electrode_offsets,
                                       data_sec,
                                       data_seg,
                                       data_lfp);
-            /** section list name, number of sections, number of segments */
-            fprintf(f,
-                    "%s %d %d %zd %d\n",
-                    sclname.c_str(),
-                    nsec,
-                    nseg,
-                    total_lfp_factors,
-                    n_electrodes);
+            write_seclist_header(f, sclname, nsec, nseg, total_lfp_factors, electrode_offsets);
 
             /** section - segment mapping */
             if (nseg) {

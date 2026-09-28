@@ -1,7 +1,8 @@
 #include <../../nrnconf.h>
 /* /local/src/master/nrn/src/nrnoc/eion.cpp,v 1.10 1998/02/26 16:42:50 hines Exp */
 
-#include <stdlib.h>
+#include <cstdlib>
+#include "cabcode.h"
 #include "section.h"
 #include "neuron.h"
 #include "neuron/cache/mechanism_range.hpp"
@@ -14,13 +15,11 @@
 #include <array>
 #include <string>
 
+#include <map>
+#include <set>
+
 #undef hoc_retpushx
 
-extern double chkarg(int, double low, double high);
-
-extern Section* nrn_noerr_access();
-
-extern void hoc_register_prop_size(int, int, int);
 
 static constexpr auto nparm = 5;
 static constexpr auto ndparam = 1;
@@ -64,7 +63,7 @@ double nrn_ion_charge(Symbol* sym) {
 
 void ion_register(void) {
     /* hoc level registration of ion name. Return -1 if name already
-    in use and not an ion;	and the mechanism subtype otherwise.
+    in use and not an ion;  and the mechanism subtype otherwise.
     */
     char* name;
     Symbol* s;
@@ -394,69 +393,72 @@ double nrn_nernst_coef(int type) {
 /*
 It is generally an error for two models to WRITE the same concentration.
 
-This functions checks that there's no write conflict; and warns if it detects
-one. It also sets respective write flag in the style of the ion.
+nrn_check_conc_write checks that there's no write conflict; and warns if it
+detects one. It also sets respective write flag in the style of the ion.
 
 The argument `i` specifies which concentration is being written to. It's 0 for
 exterior; and 1 for interior.
 */
-void nrn_check_conc_write(Prop* p_ok, Prop* pion, int i) {
-    static long *chk_conc_, *ion_bit_, size_;
+
+// Each mechanism type index that writes a concentration has a set of ion
+// type indices it writes to.
+// ionconctype is coded as iontype*2 + i where i=1 for interior
+// So number of distinct ion mechanisms is essentially unlimited, max_int/2.
+static std::map<int, std::set<int>> mechtype2ionconctype;
+
+static void add_mechtype2ionconctype(int mechtype, int iontype, int i) {
+    auto& set_of_ionconctypes = mechtype2ionconctype[mechtype];
+    set_of_ionconctypes.insert(2 * iontype + i);  // unique though inserting for each instance.
+}
+
+static bool mech_uses_ionconctype(int mechtype, int iontype, int i) {
+    if (auto search = mechtype2ionconctype.find(mechtype); search != mechtype2ionconctype.end()) {
+        auto& set_of_ionconctypes = search->second;
+        return set_of_ionconctypes.count(2 * iontype + i) == 1;
+    }
+    return false;
+}
+
+void nrn_check_conc_write(Prop* pmech, Prop* pion, int i) {
+    // Would be less redundant to generate the "database" at
+    // mechanism registration time. But NMODL presently gives us this info
+    // only at each mechanism instance allocation.
+    add_mechtype2ionconctype(pmech->_type, pion->_type, i);
+
     Prop* p;
-    int flag, j, k;
+    int flag;
     if (i == 1) {
         flag = 0200;
     } else {
         flag = 0400;
     }
-    /* an embarassing hack */
-    /* up to 32 possible ions */
-    /* continuously compute a bitmap that allows determination
-        of which models WRITE which ion concentrations */
-    if (n_memb_func > size_) {
-        if (!chk_conc_) {
-            chk_conc_ = (long*) ecalloc(2 * n_memb_func, sizeof(long));
-            ion_bit_ = (long*) ecalloc(n_memb_func, sizeof(long));
-        } else {
-            chk_conc_ = (long*) erealloc(chk_conc_, 2 * n_memb_func * sizeof(long));
-            ion_bit_ = (long*) erealloc(ion_bit_, n_memb_func * sizeof(long));
-            for (j = size_; j < n_memb_func; ++j) {
-                chk_conc_[2 * j] = 0;
-                chk_conc_[2 * j + 1] = 0;
-                ion_bit_[j] = 0;
-            }
-        }
-        size_ = n_memb_func;
-    }
-    for (k = 0, j = 0; j < n_memb_func; ++j) {
-        if (nrn_is_ion(j)) {
-            ion_bit_[j] = (1 << k);
-            ++k;
-            assert(k < sizeof(long) * 8);
-        }
-    }
 
-    chk_conc_[2 * p_ok->_type + i] |= ion_bit_[pion->_type];
-    if (pion->dparam[iontype_index_dparam].get<int>() & flag) {
-        /* now comes the hard part. Is the possibility in fact actual.*/
+    auto ii = pion->dparam[iontype_index_dparam].get<int>();
+    if (ii & flag) {
+        // Is the possibility in fact actual. Unfortunately, uninserting the
+        // mechanism that writes a concentration does not reset the flag bit.
+        // So search the node property list for another mechanism that also
+        // writes this ion concentration. (that is needed anyway to
+        // fill out the warning message.)
+
+        // the pion in the node property list is before mechanisms that use the ion
         for (p = pion->next; p; p = p->next) {
-            if (p == p_ok) {
+            if (p == pmech) {
                 continue;
             }
-            if (chk_conc_[2 * p->_type + i] & ion_bit_[pion->_type]) {
+            if (mech_uses_ionconctype(p->_type, pion->_type, i)) {
                 char buf[300];
                 Sprintf(buf,
                         "%.*s%c is being written at the same location by %s and %s",
                         (int) strlen(memb_func[pion->_type].sym->name) - 4,
                         memb_func[pion->_type].sym->name,
                         ((i == 1) ? 'i' : 'o'),
-                        memb_func[p_ok->_type].sym->name,
+                        memb_func[pmech->_type].sym->name,
                         memb_func[p->_type].sym->name);
                 hoc_warning(buf, (char*) 0);
             }
         }
     }
-    auto ii = pion->dparam[iontype_index_dparam].get<int>();
     ii |= flag;
     pion->dparam[iontype_index_dparam] = ii;
 }
@@ -639,7 +641,7 @@ void second_order_cur(NrnThread* nt) {
     extern int secondorder;
     NrnThreadMembList* tml;
     Memb_list* ml;
-    int j, i, i2;
+    int i, i2;
     constexpr auto c = 3;
     constexpr auto dc = 4;
     if (secondorder == 2) {

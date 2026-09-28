@@ -115,7 +115,8 @@ class MatrixMap {
     Matrix& m_;
 
     // the map
-    int plen_ = 0;
-    std::vector<double*> pm_{};
+    std::vector<std::pair<int, int>> pm_{};
     std::vector<double*> ptree_{};
+
+    int compute_index(int, int, int, Node**, int*) const;
 };

@@ -328,7 +328,7 @@ Then we write our own custom ``init()`` procedure that uses a forall loop to giv
 
 To simplify future code maintenance, we probably should put both of these code fragments into a single file called :file:`params.hoc`.
 
-To make use of :file:`params.hoc`, we have to add a new :hoc:func:`load_file` statement to :file:`init_iclampopt.hoc`. The proxy variables have to exist before the MRF can use them, so :file:`params.hoc` must be loaded before :file:`iclampfit.ses`. Here's the new :file:`init_iclampopt.hoc` :
+To make use of :file:`params.hoc`, we have to add a new :func:`load_file` statement to :file:`init_iclampopt.hoc`. The proxy variables have to exist before the MRF can use them, so :file:`params.hoc` must be loaded before :file:`iclampfit.ses`. Here's the new :file:`init_iclampopt.hoc` :
 
 .. code::
   hoc

@@ -92,19 +92,6 @@ uint32_t nrnRan4int(uint32_t* idx1, uint32_t idx2) {
     /*n ^= (((u >> 16) | (u << 16)) ^ 0x178b0f3c) + w * v;*/
     n ^= (((u >> 16) | (u << 16)) ^ 0xe874f0c3) + w * v;
     return n;
-
-    w = n ^ 0x03bcdc3c;
-    v = w >> 16;
-    w &= 0xffff;
-    u = (v - w) * (v + w);
-    m ^= (((u >> 16) | (u << 16)) ^ 0x96aa3a59) + w * v;
-
-    w = m ^ 0x0f33d1b2;
-    v = w >> 16;
-    w &= 0xffff;
-    u = (v - w) * (v + w);
-    n ^= (((u >> 16) | (u << 16)) ^ 0xaa5835b9) + w * v;
-    return n;
 }
 
 /*
@@ -128,7 +115,7 @@ uint32_t nrnRan4int(uint32_t* idx1, uint32_t idx2) {
 */
 static const double SHIFT32 = 1.0 / 4294967296.0; /* 2^-32 */
 double nrnRan4dbl(uint32_t* idx1, uint32_t idx2) {
-    uint32_t hi, lo, extra;
+    uint32_t hi;
     hi = (uint32_t) nrnRan4int(idx1, idx2); /*top 32 bits*/
                                             /*
                                             //    lo = (extra                               // low bits

@@ -8,8 +8,8 @@ extern int nrndae_extra_eqn_count(void);
 extern void nrndae_init(void);
 extern void nrndae_rhs(NrnThread*); /* relative to c*dy/dt = -g*y + b */
 extern void nrndae_lhs(void);
-void nrndae_dkmap(std::vector<neuron::container::data_handle<double>>&,
-                  std::vector<neuron::container::data_handle<double>>&);
+// Switch back from data_handle to double*
+void nrndae_dkmap(std::vector<double*>&, std::vector<double*>&);
 extern void nrndae_dkres(double*, double*, double*);
 extern void nrndae_dkpsol(double);
 extern void nrndae_update(NrnThread*);

@@ -67,9 +67,6 @@
  *      both real and complex systems at the same time, but there is a
  *      slight speed and memory advantage if the routines are complied
  *      to handle only real systems of equations.
- *  spCOMPLEX
- *      This specifies that the routines will be complied to handle
- *      complex systems of equations.
  *  EXPANDABLE
  *      Setting this compiler flag true (1) makes the matrix
  *      expandable before it has been factored.  If the matrix is
@@ -140,16 +137,6 @@
  *      must have an allocated length of one plus the size of the
  *      matrix.  ARRAY_OFFSET must be either 0 or 1, no other offsets
  *      are valid.
- *  spSEPARATED_COMPLEX_VECTORS
- *      This specifies the format for complex vectors.  If this is set
- *      false then a complex vector is made up of one double sized
- *      array of RealNumber's in which the real and imaginary numbers
- *      are placed in the alternately array in the array.  In other
- *      words, the first entry would be Complex[1].Real, then comes
- *      Complex[1].Imag, then Complex[1].Real, etc.  If
- *      spSEPARATED_COMPLEX_VECTORS is set true, then each complex
- *      vector is represented by two arrays of RealNumbers, one with
- *      the real terms, the other with the imaginary. [NO]
  *  MODIFIED_MARKOWITZ
  *      This specifies that the modified Markowitz method of pivot
  *      selection is to be used.  The modified Markowitz method differs
@@ -243,12 +230,6 @@
 /* Begin options. */
 #define REAL YES
 #define EXPANDABLE YES
-#if defined(cmplx_spPrefix)
-/* NEURON's nonlinz.cpp uses cmplx_spGetElement after previous use of matrix */
-#define TRANSLATE YES
-#else
-#define TRANSLATE NO /* instead of YES */
-#endif
 #define INITIALIZE NO /* instead of YES */
 #define DIAGONAL_PIVOTING YES
 #define ARRAY_OFFSET NOT FORTRAN
@@ -275,13 +256,6 @@
  *  with user code, so use 0 for NO and 1 for YES.
  */
 #endif /* spINSIDE_SPARSE */
-#if defined(cmplx_spPrefix)
-#define spCOMPLEX 1
-#define spSEPARATED_COMPLEX_VECTORS 1
-#else
-#define spCOMPLEX 0 /* instead of 1 */
-#define spSEPARATED_COMPLEX_VECTORS 0
-#endif
 #ifdef spINSIDE_SPARSE
 
 /*

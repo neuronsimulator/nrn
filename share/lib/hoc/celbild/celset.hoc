@@ -1,5 +1,6 @@
 begintemplate SNList // Like a Section List
 public name, name_, list, differ, name_differ, add, del_all, ml, geo, geobox
+public remove
 public domainparms, is_subset
 public export, sectionlist
 objref list, this, ml, geo, geobox, domainparms, sectionlist
@@ -14,6 +15,15 @@ proc init() {
 	name_differ = 0
 }
 func is_subset() { return 1 }
+
+proc remove() {local i
+	for (i = list.count - 1; i >= 0; i = i-1) {
+		if (list.o(i) == $o1) {
+			list.remove(i)
+		}
+	}
+}
+
 proc add() {
 	if ($o1.sets.index(this) == -1) { // only add if not already in list
 		list.append($o1)
@@ -70,7 +80,7 @@ endtemplate SDIDispListItem
 begintemplate SectionSubsets
 public topol, hbox, g, update, snlist, save_data, showsel, bild, pr
 public consist, esub, cexport, dpi, have_domainparm, xmlwrite
-public domain_iter, delsdi, neuroml
+public domain_iter, delsdi, neuroml, remove
 objref g, this, snlist, tobj, tobj1, tobj2, bild, smap, imap
 objref hb1, hb2, vb1, vb2, vb3, dk1, dk2
 objref sdidisplist, nil, dpi
@@ -91,6 +101,12 @@ proc init() {
 	panel()
 	dk1.map()
 	dk1.flip_to(0)
+}
+
+proc remove() {local i
+	for i = 0, snlist.count-1 {
+		snlist.o(i).remove($o1)
+	}
 }
 
 func have_domainparm() {local i

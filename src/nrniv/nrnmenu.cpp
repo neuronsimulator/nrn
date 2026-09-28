@@ -1,13 +1,15 @@
 
 #include <../../nrnconf.h>
 
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 
 #if HAVE_IV
 #include "secbrows.h"
 #include "ivoc.h"
 #endif
+#include "cabcode.h"
+#include "code.h"
 #include "nrniv_mf.h"
 #include "nrnoc2iv.h"
 #include "nrnpy.h"
@@ -15,20 +17,15 @@
 #include "classreg.h"
 #include "gui-redirect.h"
 
-typedef void (*ReceiveFunc)(Point_process*, double*, double);
-extern int hoc_return_type_code;
 // from nrnoc
 #include "membfunc.h"
 #include "parse.hpp"
 extern Symlist* hoc_built_in_symlist;
 extern Symbol** pointsym;
-extern ReceiveFunc* pnt_receive;
 extern int nrn_has_net_event_cnt_;
 extern int* nrn_has_net_event_;
 extern short* nrn_is_artificial_;
-extern int node_index(Section*, double);
 extern char* pnt_map;
-extern void nrn_parent_info(Section*);
 
 // to nrnoc
 void nrnallsectionmenu();
@@ -610,12 +607,12 @@ static double ms_get(void* v) {
     return ((MechanismStandard*) v)->get(gargstr(1), i);
 }
 static double ms_count(void* v) {
-    hoc_return_type_code = 1;
+    hoc_return_type_code = HocReturnType::integer;
     return ((MechanismStandard*) v)->count();
 }
 static double ms_is_array(void* v) {
     auto* ms = static_cast<MechanismStandard*>(v);
-    hoc_return_type_code = 2;
+    hoc_return_type_code = HocReturnType::boolean;
     return ms->is_array((int) chkarg(1, 0, ms->count() - 1));
 }
 static double ms_name(void* v) {
@@ -628,7 +625,7 @@ static double ms_name(void* v) {
         n = ms->name();
     }
     hoc_assign_str(hoc_pgargstr(1), n);
-    hoc_return_type_code = 1;
+    hoc_return_type_code = HocReturnType::integer;
     return double(rval);
 }
 
@@ -669,10 +666,10 @@ static Member_func ms_members[] = {{"panel", ms_panel},
                                    {"is_array", ms_is_array},
                                    {"name", ms_name},
                                    {"save", ms_save},
-                                   {0, 0}};
+                                   {nullptr, nullptr}};
 
 void MechanismStandard_reg() {
-    class2oc("MechanismStandard", ms_cons, ms_destruct, ms_members, NULL, NULL, NULL);
+    class2oc("MechanismStandard", ms_cons, ms_destruct, ms_members, nullptr, nullptr);
     ms_class_sym_ = hoc_lookup("MechanismStandard");
 }
 
@@ -890,15 +887,13 @@ void MechanismStandard::out(MechanismStandard* ms) {
 void MechanismStandard::save(const char* obref, std::ostream* po) {
     mschk("save");
     std::ostream& o = *po;
-    char buf[256];
-    Sprintf(buf, "%s = new MechanismStandard(\"%s\")", obref, np_->name());
-    o << buf << std::endl;
+    o << obref << " = new MechanismStandard(\"" << np_->name() << "\")" << std::endl;
     for (Symbol* sym = np_->first_var(); np_->more_var(); sym = np_->next_var()) {
         if (vartype_ == 0 || nrn_vartype(sym) == vartype_) {
             int i, cnt = hoc_total_array_data(sym, 0);
             for (i = 0; i < cnt; ++i) {
-                Sprintf(buf, "%s.set(\"%s\", %g, %d)", obref, sym->name, *np_->pval(sym, i), i);
-                o << buf << std::endl;
+                o << obref << ".set(\"" << sym->name << "\", " << *np_->pval(sym, i) << ", " << i
+                  << ")" << std::endl;
             }
         }
     }
@@ -994,7 +989,7 @@ static double mt_selected(void* v) {
     if (ifarg(1)) {
         hoc_assign_str(hoc_pgargstr(1), mt->selected());
     }
-    hoc_return_type_code = 1;
+    hoc_return_type_code = HocReturnType::integer;
     return double(i);
 }
 static double mt_internal_type(void* v) {
@@ -1017,7 +1012,7 @@ static double mt_remove(void* v) {
 }
 static double mt_count(void* v) {
     MechanismType* mt = (MechanismType*) v;
-    hoc_return_type_code = 1;
+    hoc_return_type_code = HocReturnType::integer;
     return double(mt->count());
 }
 static double mt_menu(void* v) {
@@ -1041,22 +1036,22 @@ static double mt_action(void* v) {
 }
 static double mt_is_target(void* v) {
     MechanismType* mt = (MechanismType*) v;
-    hoc_return_type_code = 2;
+    hoc_return_type_code = HocReturnType::boolean;
     return double(mt->is_netcon_target(int(chkarg(1, 0, mt->count()))));
 }
 static double mt_has_net_event(void* v) {
     MechanismType* mt = (MechanismType*) v;
-    hoc_return_type_code = 2;
+    hoc_return_type_code = HocReturnType::boolean;
     return double(mt->has_net_event(int(chkarg(1, 0, mt->count()))));
 }
 static double mt_is_artificial(void* v) {
     MechanismType* mt = (MechanismType*) v;
-    hoc_return_type_code = 2;
+    hoc_return_type_code = HocReturnType::boolean;
     return double(mt->is_artificial(int(chkarg(1, 0, mt->count()))));
 }
 static double mt_is_ion(void* v) {
     auto* mt = static_cast<MechanismType*>(v);
-    hoc_return_type_code = 2;
+    hoc_return_type_code = HocReturnType::boolean;
     return double(mt->is_ion());
 }
 
@@ -1132,8 +1127,7 @@ static Member_ret_obj_func mt_retobj_members[] = {{"pp_begin", mt_pp_begin},
                                                   {0, 0}};
 static Member_ret_str_func mt_retstr_func[] = {{"code", mt_code}, {"file", mt_file}, {0, 0}};
 void MechanismType_reg() {
-    class2oc(
-        "MechanismType", mt_cons, mt_destruct, mt_members, NULL, mt_retobj_members, mt_retstr_func);
+    class2oc("MechanismType", mt_cons, mt_destruct, mt_members, mt_retobj_members, mt_retstr_func);
     mt_class_sym_ = hoc_lookup("MechanismType");
 }
 
@@ -1272,8 +1266,7 @@ const char* MechanismType::selected() {
 int MechanismType::internal_type() {
     return mti_->type_[selected_item()];
 }
-extern void mech_insert1(Section*, int);
-extern void mech_uninsert1(Section*, Symbol*);
+
 void MechanismType::insert(Section* sec) {
     if (!mti_->is_point_) {
         mech_insert1(sec, memb_func[mti_->type_[selected_item()]].sym->subtype);

@@ -11,6 +11,10 @@
 #include <ostream>
 #include <vector>
 
+#include "utils/logger.hpp"
+
+#include "hocdec.h"
+
 namespace neuron::container {
 /**
  * @brief A non-owning permutation-stable identifier for a entry in a container.
@@ -164,11 +168,14 @@ struct owning_identifier {
             //   auto const read_only_token = node_data.issue_frozen_token();
             //   list_of_nodes.pop_back();
             // which tries to delete a row from a container in read-only mode.
-            std::cerr << "neuron::container::owning_identifier<"
-                      << cxx_demangle(typeid(Storage).name())
-                      << "> destructor could not delete from the underlying storage: " << e.what()
-                      << " [" << cxx_demangle(typeid(e).name())
-                      << "]. This is not recoverable, aborting." << std::endl;
+            Fprintf(stderr,
+                    fmt::format(
+                        "neuron::container::owning_identifier<{}> destructor could not delete from "
+                        "the underlying storage: {} [{}]. This is not recoverable, aborting.\n",
+                        cxx_demangle(typeid(Storage).name()),
+                        e.what(),
+                        cxx_demangle(typeid(e).name()))
+                        .c_str());
             terminate = true;
         }
         if (terminate) {
