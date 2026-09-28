@@ -20,12 +20,12 @@ on:
 
       container_registry:
         description: 'The name of the container registry to upload the image to (only useful if used with upload=true)'
-        default: 'ghcr.io'
+        default: 'docker.io'
         required: true
         type: choice
         options:
-          - 'ghcr.io'
           - 'docker.io'
+          - 'ghcr.io'
 
       prefix:
         description: 'The tag prefix for the final Docker image'

@@ -49,7 +49,7 @@ When `docker login` asks for a password, paste the personal access token.
 2. Fill in the form:
    * **The base Docker image to use:** `manylinux_2_28`
    * **Whether to upload (push) the image to the container registry:** off
-   * **The name of the container registry:** `docker.io`. The form opens on `ghcr.io`. Select `docker.io`. The wheel build reads the `docker.io` tags.
+   * **The name of the container registry:** `docker.io`
    * **The tag prefix for the final Docker image:** leave empty
 3. Run the workflow. It builds `x86_64` and `aarch64` and does not push.
 4. Run it again with upload turned on.
