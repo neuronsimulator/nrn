@@ -4,6 +4,7 @@ import numpy
 from neuron import h, nrn
 from .rxdException import RxDException
 from itertools import groupby
+from typing import Union, Callable
 
 try:
     from neuron.rxd import geometry3d
@@ -14,27 +15,33 @@ except ImportError:
 
 
 class RxDGeometry:
-    def volumes1d(self, sec):
+    def volumes1d(
+        self, sec: Union[nrn.Section, "rxdsection.RxDSection"]
+    ) -> numpy.ndarray:
         raise RxDException("volume1d unimplemented")
 
-    def surface_areas1d(self, sec):
+    def surface_areas1d(
+        self, sec: Union[nrn.Section, "rxdsection.RxDSection"]
+    ) -> numpy.ndarray:
         raise RxDException("surface_areas1d unimplemented")
 
-    def neighbor_areas1d(self, sec):
+    def neighbor_areas1d(
+        self, sec: Union[nrn.Section, "rxdsection.RxDSection"]
+    ) -> numpy.ndarray:
         raise RxDException("neighbor_areas1d unimplemented")
 
-    def is_volume(self):
+    def is_volume(self) -> bool:
         raise RxDException("is_volume unimplemented")
 
-    def is_area(self):
+    def is_area(self) -> bool:
         raise RxDException("is_area unimplemented")
 
-    def __call__(self):
+    def __call__(self) -> "RxDGeometry":
         """calling returns self to allow for rxd.inside or rxd.inside()"""
         return self
 
 
-def _volumes1d(sec):
+def _volumes1d(sec: Union[nrn.Section, "rxdsection.RxDSection"]) -> numpy.ndarray:
     if not isinstance(sec, nrn.Section):
         sec = sec._sec
     arc3d = [sec.arc3d(i) for i in range(sec.n3d())]
@@ -65,7 +72,7 @@ def _volumes1d(sec):
     return vols
 
 
-def _make_surfacearea1d_function(scale, diam_scale=1.0):
+def _make_surfacearea1d_function(scale: float, diam_scale: float = 1.0) -> Callable:
     def result(sec):
         if not isinstance(sec, nrn.Section):
             sec = sec._sec
@@ -98,7 +105,7 @@ def _make_surfacearea1d_function(scale, diam_scale=1.0):
     return result
 
 
-def _make_perimeter_function(scale, diam_scale=1.0):
+def _make_perimeter_function(scale: float, diam_scale: float = 1.0) -> Callable:
     def result(sec):
         if not isinstance(sec, nrn.Section):
             sec = sec._sec
@@ -115,7 +122,9 @@ _surface_areas1d = _make_surfacearea1d_function(numpy.pi)
 _perimeter1d = _make_perimeter_function(numpy.pi)
 
 
-def _neighbor_areas1d(sec):
+def _neighbor_areas1d(
+    sec: Union[nrn.Section, "rxdsection.RxDSection"],
+) -> numpy.ndarray:
     if not isinstance(sec, nrn.Section):
         sec = sec._sec
     arc3d = [sec.arc3d(i) for i in range(sec.n3d())]
@@ -125,23 +134,23 @@ def _neighbor_areas1d(sec):
     return numpy.pi * 0.25 * diams**2
 
 
-def constant_function_per_length(value):
+def constant_function_per_length(value: float) -> Callable:
     return lambda sec: [value * sec.L / sec.nseg for i in range(sec.nseg)]
 
 
-def constant_everywhere_1d(value):
+def constant_everywhere_1d(value: float) -> Callable:
     return lambda sec: value * numpy.ones(sec.nseg)
 
 
-def constant_everywhere_plus_one_1d(value):
+def constant_everywhere_plus_one_1d(value: float) -> Callable:
     return lambda sec: value * numpy.ones(sec.nseg + 1)
 
 
-def constant_function(value):
+def constant_function(value: Union[bool, int, float, str]) -> Callable:
     return lambda *args, **kwargs: value
 
 
-def scale_by_constant(scale, f):
+def scale_by_constant(scale: float, f: Callable) -> Callable:
     return lambda *args, **kwargs: scale * f(*args, **kwargs)
 
 

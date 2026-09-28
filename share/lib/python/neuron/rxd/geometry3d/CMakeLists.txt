@@ -1,7 +1,7 @@
 include(${PROJECT_SOURCE_DIR}/cmake/PythonCompileHelper.cmake)
 
 # Convert pyx files to C files using Cython.
-set(rxd_sources graphicsPrimitives ctng surfaces)
+set(rxd_sources graphicsPrimitives ctng)
 foreach(source ${rxd_sources})
   cythonize(
     "${CMAKE_CURRENT_SOURCE_DIR}/${source}.pyx"
@@ -15,10 +15,6 @@ endforeach(source)
 
 set(graphicsPrimitives_sources ${CMAKE_CURRENT_BINARY_DIR}/graphicsPrimitives.cpp)
 set(ctng_sources ${CMAKE_CURRENT_BINARY_DIR}/ctng.cpp)
-set(surfaces_sources
-    ${CMAKE_CURRENT_BINARY_DIR}/surfaces.cpp
-    ${PROJECT_SOURCE_DIR}/src/nrnpython/rxd_marching_cubes.cpp
-    ${PROJECT_SOURCE_DIR}/src/nrnpython/rxd_llgramarea.cpp)
 
 if(NOT SKBUILD)
   file(RELATIVE_PATH rel_path "${CMAKE_INSTALL_PREFIX}/${NRN_INSTALL_PYTHON_PREFIX}/rxd/geometry3d"
@@ -78,7 +74,7 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
     endforeach()
 
     # install in the correct location
-    install(TARGETS graphicsPrimitives${pyver} ctng${pyver} surfaces${pyver}
+    install(TARGETS graphicsPrimitives${pyver} ctng${pyver}
             DESTINATION ${NRN_INSTALL_PYTHON_PREFIX}/rxd/geometry3d)
 
   endforeach(val)
@@ -113,7 +109,6 @@ else(NRN_ENABLE_PYTHON_DYNAMIC)
     endif()
 
   endforeach()
-  install(TARGETS graphicsPrimitives ctng surfaces
-          DESTINATION ${NRN_INSTALL_PYTHON_PREFIX}/rxd/geometry3d)
+  install(TARGETS graphicsPrimitives ctng DESTINATION ${NRN_INSTALL_PYTHON_PREFIX}/rxd/geometry3d)
 
 endif(NRN_ENABLE_PYTHON_DYNAMIC)

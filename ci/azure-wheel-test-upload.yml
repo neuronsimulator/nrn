@@ -18,6 +18,7 @@ steps:
 
   - script: |
       export SKIP_EMBEDED_PYTHON_TEST=true
+      export CMAKE_BUILD_PARALLEL_LEVEL=4
       packaging/python/test_wheels.sh $(which python) $(ls -t wheelhouse/*.whl)
     displayName: 'Test with System Python'
 

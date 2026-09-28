@@ -10,7 +10,7 @@ NEURON Development topics
    gpu-testing.rst
    nmodl-development.rst
    workflow-code-paths.rst
+   nrnivmodl-cmake.rst
    ./python/wheels.md
    ./morphology/morphology.md
    hocdomain-sphinx.md
-
