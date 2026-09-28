@@ -50,7 +50,7 @@ Save the model in ``hhaxon.ses`` using :menuselection:`NEURONMainMenu --> File -
 Using the computational model
 +++++++++++++++++++++++++++++
 
-If starting from a fresh launch of python, you can load the saved ses file by loading NEURON and its GUI: ``from neuron import n. gui`` and then selecting :menuselection:`NEURONMainMenu --> File --> loadsession`
+If starting from a fresh launch of python, you can load the saved ses file by loading NEURON and its GUI: ``from neuron import n, gui`` and then selecting :menuselection:`NEURONMainMenu --> File --> loadsession`
 
 Alternatively you can use NEURON to execute ``hhaxon.ses``
 

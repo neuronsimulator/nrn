@@ -3,11 +3,78 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from neuron.nmodl.ode import differentiate2c, integrate2c, make_symbol
-from neuron.nmodl.ode import transform_expression, discretize_derivative
+from neuron.nmodl.ode import (
+    differentiate2c,
+    integrate2c,
+    make_symbol,
+    mangle_protected_identifiers,
+    demangle_protected_identifiers,
+    transform_expression,
+    discretize_derivative,
+)
 import pytest
 
 import sympy as sp
+
+
+def test_mangle():
+    # These inputs should be mangled
+    test_cases = [
+        # python keywords
+        [
+            "and",
+            "break",
+            "class",
+            "continue",
+            "def",
+            "del",
+            "from",
+            "in",
+            "is",
+            "lambda",
+            "pass",
+            "yield",
+        ],
+        # sympy keywords
+        "Symbol",
+        [
+            "beta",
+            "gamma",
+            "uppergamma",
+            "lowergamma",
+            "polygamma",
+            "loggamma",
+            "digamma",
+            "trigamma",
+            "gamma",
+        ],
+    ]
+    for eqs in test_cases:
+        mangled = mangle_protected_identifiers(eqs)
+        assert eqs != mangled  # name-mangling was applied
+        if isinstance(eqs, list):
+            # check that name-mangling was applied to each element in the list
+            assert all(a != b for a, b in zip(eqs, mangled))
+        sp.sympify(mangled)
+        demangled = demangle_protected_identifiers(mangled)
+        assert demangled == eqs  # restored to original state
+    # These inputs should NOT be mangled
+    test_cases = [
+        # No conflict
+        [],
+        "",
+        "foobar",
+        # Built-in functions for both NMODL and SymPy
+        ["exp", "log", "atan", "erf", "sin", "sinh"],
+        ["atan2(3,4)", "x", "y", "z"],
+    ]
+    for eqs in test_cases:
+        mangled = mangle_protected_identifiers(eqs)
+        assert eqs == mangled  # no change
+        if mangled:
+            sp.sympify(mangled)
+        demangled = demangle_protected_identifiers(mangled)
+        assert demangled == eqs  # no change
 
 
 def _equivalent(
@@ -28,6 +95,8 @@ def _equivalent(
     Returns:
         True if expressions are equivalent, False if they are not
     """
+    lhs = mangle_protected_identifiers(lhs)
+    rhs = mangle_protected_identifiers(rhs)
     lhs = lhs.replace("pow(", "Pow(")
     rhs = rhs.replace("pow(", "Pow(")
     sympy_vars = {str(var): make_symbol(var) for var in vars}
@@ -49,6 +118,8 @@ def test_differentiate2c():
     assert _equivalent(differentiate2c("a*x", "a", "x"), "x")
     assert _equivalent(differentiate2c("a*x", "y", {"x", "y"}), "0")
     assert _equivalent(differentiate2c("a*x + b*x*x", "x", {"a", "b"}), "2*b*x+a")
+
+    # SymPy can manipulate transcendental nmodl functions ("sin" & "cos" are not mangled)
     assert _equivalent(
         differentiate2c("a*cos(x+b)", "x", {"a", "b"}), "-a * sin(b + x)"
     )
@@ -168,8 +239,12 @@ def test_integrate2c():
         ("a", "x + a*dt"),
         ("a*x", "x*exp(a*dt)"),
         ("a*x+b", "(-b + (a*x + b)*exp(a*dt))/a"),
+        # Check that sympy can manipulate nmodl's transcendental functions
+        ("-exp(x)", "x - log(dt * exp(x) + 1)"),
         # assume custom_function is defined in mod file
         ("custom_function(a)*x", "x*exp(custom_function(a)*dt)"),
+        # name clashes with sympy
+        ("beta(a)*x", "x*exp(beta(a)*dt)"),
     ]
     for eq, sol in test_cases:
         assert _equivalent(

@@ -75,7 +75,7 @@ class CodegenHelperVisitor: public visitor::ConstAstVisitor {
     void find_ion_variables(const ast::Program& node);
     void find_table_variables();
     void find_range_variables();
-    void find_non_range_variables();
+    void find_non_range_variables(const ast::Program& node);
     void find_neuron_global_variables();
     static void sort_with_mod2c_symbol_order(std::vector<SymbolType>& symbols);
     void check_cvode_codegen(const ast::Program& node);
@@ -97,6 +97,7 @@ class CodegenHelperVisitor: public visitor::ConstAstVisitor {
     void visit_function_table_block(const ast::FunctionTableBlock& node) override;
     void visit_eigen_newton_solver_block(const ast::EigenNewtonSolverBlock& node) override;
     void visit_eigen_linear_solver_block(const ast::EigenLinearSolverBlock& node) override;
+    void visit_matexp_block(const ast::MatexpBlock& node) override;
     void visit_statement_block(const ast::StatementBlock& node) override;
     void visit_initial_block(const ast::InitialBlock& node) override;
     void visit_constructor_block(const ast::ConstructorBlock& node) override;

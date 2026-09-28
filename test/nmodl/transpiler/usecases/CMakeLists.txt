@@ -10,9 +10,11 @@ set(NMODL_USECASE_DIRS
     function_table
     global
     hodgkin_huxley
+    include
     kinetic
     linear
     longitudinal_diffusion
+    matexp
     morphology
     net_event
     net_move

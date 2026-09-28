@@ -76,7 +76,7 @@ std::vector<ReportConfiguration> create_report_configurations(const std::string&
         report.output_path = output_dir + "/" + report.name;
         // type
         report_conf >> token;
-        report.type = report_type_from_string(token);
+        report.type = report_type_from_string(token, conf_file);
         // report_on
         report_conf >> token;
         if (report.type == ReportType::Synapse || report.type == ReportType::Summation ||
@@ -86,17 +86,17 @@ std::vector<ReportConfiguration> create_report_configurations(const std::string&
         report_conf >> report.unit >> report.format;
         // sections
         report_conf >> token;
-        report.sections = section_type_from_string(token);
+        report.sections = section_type_from_string(token, conf_file);
         // compartments
         report_conf >> token;
-        report.compartments = compartments_from_string(token);
+        report.compartments = compartments_from_string(token, conf_file);
 
         // doubles
         report_conf >> report.report_dt >> report.start >> report.stop >> report.num_gids >>
             report.buffer_size;
         // scaling
         report_conf >> token;
-        report.scaling = scaling_from_string(token);
+        report.scaling = scaling_from_string(token, conf_file);
 
         if (report.type == ReportType::LFP) {
             nrn_use_fast_imem = true;

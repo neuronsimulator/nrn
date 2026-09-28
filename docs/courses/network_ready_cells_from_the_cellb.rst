@@ -72,7 +72,7 @@ This starts a NetReadyCellGUI window (nrc) and a SynTypeGUI window. (It would ha
     img/net2nrc1.gif
     :align: center
 
-From the SynTypeGUI window, create a "E" synapse type via a :menuselection:`New --> ExpSyn` followed by a Rename. Since the reversal potential for the standard `ExpSyn <https://nrn.readthedocs.io/en/latest/hoc/modelspec/programmatic/mechanisms/mech.html?highlight=expsyn#ExpSyn>`_ is 0 mV, it is already excitatory. However, change the time constant from 0.1 to 2 ms.
+From the SynTypeGUI window, create a "E" synapse type via a :menuselection:`New --> ExpSyn` followed by a Rename. Since the reversal potential for the standard :class:`ExpSyn` is 0 mV, it is already excitatory. However, change the time constant from 0.1 to 2 ms.
 
 In the same SynTypeGUI window create a "I" synapse type via a :menuselection:`New --> ExpSyn` followed by a Rename. Set the reversal potential "e" to -80 mV so that it will be inhibitory and set tau to 5ms.
 

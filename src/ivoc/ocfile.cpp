@@ -453,7 +453,7 @@ void OcFile::file_chooser_style(const char* type,
 const char* OcFile::dir() {
 #if HAVE_IV
     if (fc_) {
-        dirname_ = *fc_->dir()->string();
+        dirname_ = fc_->dir()->string();
     } else
 #endif
     {

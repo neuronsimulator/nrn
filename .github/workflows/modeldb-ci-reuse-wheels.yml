@@ -1,0 +1,93 @@
+name: ModelDB CI (reuse wheels)
+
+# Retest ModelDB against an existing multi-wheel artifact from a prior NEURON
+# Release (or other) run — without rebuilding wheels.
+#
+# Operator flow:
+#   1. Open a Release (or other) run that already uploaded artifact "wheels".
+#   2. Copy the wheels artifact id (or a github.com .../artifacts/<id> URL).
+#   3. Actions → ModelDB CI (reuse wheels) → Run workflow:
+#        wheels_artifact  = that id or URL
+#        neuron_v1        = baseline, e.g. neuron==9.0.1
+#        modeldb_ci_ref   = master, or a nrn-modeldb-ci branch (e.g. a fix PR)
+#        models_to_run    = optional subset; empty = all ModelDB NEURON models
+#
+# Note: ModelDB installs one compatible wheel from the zip (first that pip
+# accepts on ubuntu-latest / configured Python), not the full OS×Python matrix.
+
+on:
+  workflow_dispatch:
+    inputs:
+      wheels_artifact:
+        description: 'GHA wheels artifact id, or URL ending in that id (from a prior run)'
+        required: true
+        type: string
+      neuron_v1:
+        description: 'Baseline NEURON (PyPI), e.g. neuron==9.0.1 or neuron'
+        required: true
+        default: 'neuron'
+        type: string
+      modeldb_ci_ref:
+        description: 'nrn-modeldb-ci git ref (branch/tag/SHA) to checkout for the package'
+        required: false
+        default: 'master'
+        type: string
+      models_to_run:
+        description: 'Empty for all models; or space-separated ModelDB accession numbers'
+        required: false
+        default: ''
+        type: string
+
+jobs:
+  # Normalize bare artifact ids to a URL shape that nrn-modeldb-ci understands
+  # (starts with https://github.com/neuronsimulator/ and ends with the id).
+  normalize:
+    name: Normalize wheels artifact reference
+    runs-on: ubuntu-latest
+    outputs:
+      neuron_v2: ${{ steps.norm.outputs.neuron_v2 }}
+      modeldb_ci_ref: ${{ steps.norm.outputs.modeldb_ci_ref }}
+    steps:
+      - name: Build neuron_v2 string for modeldb-ci
+        id: norm
+        env:
+          RAW: ${{ inputs.wheels_artifact }}
+          REF: ${{ inputs.modeldb_ci_ref }}
+        run: |
+          set -euo pipefail
+          raw="$(echo "${RAW}" | tr -d '[:space:]')"
+          if [[ -z "${raw}" ]]; then
+            echo "wheels_artifact is empty" >&2
+            exit 1
+          fi
+          if [[ "${raw}" =~ ^[0-9]+$ ]]; then
+            v2="https://github.com/neuronsimulator/nrn/actions/artifacts/${raw}"
+          elif [[ "${raw}" =~ ^https://github.com/neuronsimulator/ ]]; then
+            v2="${raw}"
+          else
+            # Allow other strings that still end with an artifact id
+            if [[ "${raw}" =~ ([0-9]+)$ ]]; then
+              v2="https://github.com/neuronsimulator/nrn/actions/artifacts/${BASH_REMATCH[1]}"
+            else
+              echo "Cannot parse wheels_artifact: ${raw}" >&2
+              exit 1
+            fi
+          fi
+          ref="${REF:-master}"
+          echo "neuron_v2=${v2}"
+          echo "modeldb_ci_ref=${ref}"
+          echo "neuron_v2=${v2}" >> "${GITHUB_OUTPUT}"
+          echo "modeldb_ci_ref=${ref}" >> "${GITHUB_OUTPUT}"
+
+  nrn-modeldb-ci:
+    name: Run modelDB CI (reuse wheels)
+    needs:
+      - normalize
+    # ref input: neuronsimulator/nrn-modeldb-ci#154 (on master)
+    uses: neuronsimulator/nrn-modeldb-ci/.github/workflows/nrn-modeldb-ci.yaml@master
+    with:
+      neuron_v1: ${{ inputs.neuron_v1 }}
+      neuron_v2: ${{ needs.normalize.outputs.neuron_v2 }}
+      ref: ${{ needs.normalize.outputs.modeldb_ci_ref }}
+      models_to_run: ${{ inputs.models_to_run }}
+      repo: neuronsimulator/nrn-modeldb-ci

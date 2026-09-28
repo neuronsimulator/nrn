@@ -6,6 +6,7 @@
 #include <InterViews/resource.h>
 #include <nrnoc2iv.h>
 #include <classreg.h>
+#include "neuronapi.h"
 #include "neuron/unique_cstr.hpp"
 #include "nrnpython.h"
 #include "hoccontext.h"
@@ -253,13 +254,13 @@ static void hpoasgn(Object* o, int type) {
     if (type == NUMBER) {
         poright = nb::steal(PyFloat_FromDouble(hoc_xpop()));
     } else if (type == STRING) {
-        poright = nb::steal(Py_BuildValue("s", *hoc_strpop()));
+        poright = nb::cast(*hoc_strpop());
     } else if (type == OBJECTVAR || type == OBJECTTMP) {
         Object** po2 = hoc_objpop();
         poright = nb::steal(nrnpy_ho2po(*po2));
         hoc_tobj_unref(po2);
     } else {
-        hoc_execerror("Cannot assign that type to PythonObject", (char*) 0);
+        hoc_execerror("Cannot assign that type to PythonObject", nullptr);
     }
     auto stack_value = hoc_pop_object();
     assert(o == stack_value.get());
@@ -293,8 +294,22 @@ static void hpoasgn(Object* o, int type) {
     }
     if (err) {
         PyErr_Print();
-        hoc_execerror("Assignment to PythonObject failed", NULL);
+        hoc_execerror("Assignment to PythonObject failed", nullptr);
     }
+}
+
+static void hpoasgn_component(Object* o) {
+    hpoasgn(o, hoc_stack_type());
+}
+
+static const char* py2n_component_hook(Object* o, Symbol* sym, int nindex, int isfunc) {
+    py2n_component(o, sym, nindex, isfunc);
+    return nullptr;
+}
+
+static const char* hpoasgn_component_hook(Object* o) {
+    hpoasgn_component(o);
+    return nullptr;
 }
 
 static nb::object hoccommand_exec_help1(nb::object po) {
@@ -326,7 +341,7 @@ static double praxis_efun(Object* ho, Object* v) {
         auto mes = nrnpyerr_str();
         if (mes.is_valid()) {
             Fprintf(stderr, "%s\n", mes.c_str());
-            hoc_execerror("Call of Python Callable failed in praxis_efun", NULL);
+            hoc_execerror("Call of Python Callable failed in praxis_efun", nullptr);
         }
         if (PyErr_Occurred()) {
             PyErr_Print();
@@ -367,7 +382,7 @@ static int hoccommand_exec_strret(Object* ho, char* buf, int size) {
         auto mes = nrnpyerr_str();
         if (mes.is_valid()) {
             Fprintf(stderr, "%s\n", mes.c_str());
-            hoc_execerror("Python Callback failed", 0);
+            hoc_execerror("Python Callback failed", nullptr);
         }
         if (PyErr_Occurred()) {
             PyErr_Print();
@@ -386,7 +401,7 @@ static void grphcmdtool(Object* ho, int type, double x, double y, int key) {
         auto mes = nrnpyerr_str();
         if (mes.is_valid()) {
             Fprintf(stderr, "%s\n", mes.c_str());
-            hoc_execerror("Python Callback failed", 0);
+            hoc_execerror("Python Callback failed", nullptr);
         }
         if (PyErr_Occurred()) {
             PyErr_Print();
@@ -400,16 +415,16 @@ static Object* callable_with_args(Object* ho, int narg) {
 
     auto args = nb::steal(PyTuple_New((Py_ssize_t) narg));
     if (!args) {
-        hoc_execerror("PyTuple_New failed", 0);
+        hoc_execerror("PyTuple_New failed", nullptr);
     }
     for (int i = 0; i < narg; ++i) {
         // not used with datahandle args.
         auto item = nb::steal(nrnpy_hoc_pop("callable_with_args"));
         if (!item) {
-            hoc_execerror("nrnpy_hoc_pop failed", 0);
+            hoc_execerror("nrnpy_hoc_pop failed", nullptr);
         }
         if (PyTuple_SetItem(args.ptr(), (Py_ssize_t) (narg - i - 1), item.release().ptr()) != 0) {
-            hoc_execerror("PyTuple_SetItem failed", 0);
+            hoc_execerror("PyTuple_SetItem failed", nullptr);
         }
     }
 
@@ -428,7 +443,7 @@ static double func_call(Object* ho, int narg, int* err) {
     for (int i = 0; i < narg; ++i) {
         nb::object item = nb::steal(nrnpy_hoc_pop("func_call"));
         if (!item) {
-            hoc_execerror("nrnpy_hoc_pop failed", 0);
+            hoc_execerror("nrnpy_hoc_pop failed", nullptr);
         }
         args.append(item);
     }
@@ -449,7 +464,7 @@ static double func_call(Object* ho, int narg, int* err) {
             PyErr_Clear();
         }
         if (!err || *err) {
-            hoc_execerror("func_call failed", NULL);
+            hoc_execerror("func_call failed", nullptr);
         }
         if (err) {
             *err = 1;
@@ -511,7 +526,7 @@ static void setpickle() {
     dumps = pickle.attr("dumps");
     loads = pickle.attr("loads");
     if (!dumps || !loads) {
-        hoc_execerror("Neither Python cPickle nor pickle are available", 0);
+        hoc_execerror("Neither Python cPickle nor pickle are available", nullptr);
     }
     // We intentionally leak these, because if we don't
     // we observe SEGFAULTS during application shutdown.
@@ -619,7 +634,7 @@ std::vector<char> call_picklef(const std::vector<char>& fname, int narg) {
         auto mes = nrnpyerr_str();
         if (mes.is_valid()) {
             Fprintf(stderr, fmt::format("{}\n", mes.c_str()).c_str());
-            hoc_execerror("PyObject method call failed:", NULL);
+            hoc_execerror("PyObject method call failed:", nullptr);
         }
         if (PyErr_Occurred()) {
             PyErr_Print();
@@ -732,13 +747,13 @@ static Object* py_alltoall_type(int size, int type) {
         if (type == 1 || nrnmpi_myid == size) {  // if scatter only root must be a list
             psrc = nb::borrow(nrnpy_hoc2pyobject(o));
             if (!PyList_Check(psrc.ptr())) {
-                hoc_execerror("Argument must be a Python list", 0);
+                hoc_execerror("Argument must be a Python list", nullptr);
             }
             if (PyList_Size(psrc.ptr()) != np) {
                 if (type == 1) {
-                    hoc_execerror("py_alltoall list size must be nhost", 0);
+                    hoc_execerror("py_alltoall list size must be nhost", nullptr);
                 } else {
-                    hoc_execerror("py_scatter list size must be nhost", 0);
+                    hoc_execerror("py_scatter list size must be nhost", nullptr);
                 }
             }
         }
@@ -784,7 +799,7 @@ static Object* py_alltoall_type(int size, int type) {
     } else if (type != 1 && type != 5) {
         root = size;
         if (root < 0 || root >= np) {
-            hoc_execerror("root rank must be >= 0 and < nhost", 0);
+            hoc_execerror("root rank must be >= 0 and < nhost", nullptr);
         }
         if (type == 3) {
             pdest = nb::steal(py_gather(psrc.ptr(), root));
@@ -886,7 +901,7 @@ static Object* py_alltoall_type(int size, int type) {
     return ho;
 #else
     assert(0);
-    return NULL;
+    return nullptr;
 #endif
 }
 
@@ -917,6 +932,10 @@ extern "C" NRN_EXPORT void nrnpython_reg_real(neuron::python::impl_ptrs* ptrs) {
     class2oc("PythonObject", p_cons, p_destruct, nullptr, nullptr, nullptr);
     nrnpy_pyobj_sym_ = hoc_lookup("PythonObject");
     assert(nrnpy_pyobj_sym_);
+    char error[128]{};
+    auto registered = nrn_template_set_component_hooks(
+        nrnpy_pyobj_sym_, py2n_component_hook, hpoasgn_component_hook, error, sizeof(error));
+    assert(registered && "PythonObject component hook registration failed");
     ptrs->callable_with_args = callable_with_args;
     ptrs->call_func = func_call;
     ptrs->call_picklef = call_picklef;

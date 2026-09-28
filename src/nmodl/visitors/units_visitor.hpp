@@ -45,8 +45,8 @@ class UnitsVisitor: public AstVisitor {
     /// mod files' units
     parser::UnitDriver units_driver;
 
-    /// Directory of units lib file that defines all the basic units
-    std::string units_dir;
+    /// Content of units lib file that defines all the basic units
+    std::string units_content;
 
     /// Declaration of `fuzz` constant unit, which is the equivilant of `1`
     /// in mod files UNITS definitions
@@ -59,10 +59,10 @@ class UnitsVisitor: public AstVisitor {
     /// Default UnitsVisitor constructor
     UnitsVisitor() = default;
 
-    /// UnitsVisitor constructor that takes as argument the units file to parse
+    /// UnitsVisitor constructor that takes as argument the contents of the units file to parse
     /// the units from
-    explicit UnitsVisitor(std::string t_units_dir)
-        : units_dir(std::move(t_units_dir)) {}
+    explicit UnitsVisitor(std::string t_units_content)
+        : units_content(std::move(t_units_content)) {}
 
     /// \}
 
@@ -74,7 +74,7 @@ class UnitsVisitor: public AstVisitor {
     /// as ast::FactorDef in the UNITS block of mod files
     void visit_factor_def(ast::FactorDef& node) override;
 
-    /// Override visit_program function to parse the \c nrnunits.lib unit file
+    /// Override visit_program function to parse the contents of the \c nrnunits.lib unit file
     /// before starting visiting the AST to parse the units defined in mod files
     void visit_program(ast::Program& node) override;
 

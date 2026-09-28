@@ -1,5 +1,52 @@
 # NEURON 9.0
 
+
+## 9.0.2
+_Release Date_ : 10-08-2026
+
+This release includes documentation improvements, bug fixes, and NMODL enhancements.
+See [GitHub Issue #3816](https://github.com/neuronsimulator/nrn/issues/3816) for the full commit list.
+
+### What's New
+- Documentation enhancements (typo fixes (#3754, #3776), contributing documentation (#3721), C API corrections (#3785))
+
+### Bug Fixes
+- Import3D on mac can now detect swc files (#3788)
+- rxd fixed-step extracellular Neumann boundary conditions corrected (#3690)
+- Vector.min_ind(i1, i2) fix (#3787)
+- Iterating over segments with no mechanisms no longer segfaults (#3794)
+- Buffer overflow in output_spikes_parallel prevention (#3813)
+
+### Improvements /  Other Changes
+- C API always returns current diameter (#3814), supports top-level runtime scalars (#3815)
+- rxd reaction compilation now supports np.float64 and other np.generic types (#3808)
+- NMODL compiler enhancements (#3592, #3631, #3600, #3597, #3598, #3740)
+- CI is more robust (#3730, #3809)
+
+
+## 9.0.1
+_Release Date_ : 17-11-2025
+
+This release fixes several bugs and adds support for Python 3.14.
+
+### What's New
+- Add Python 3.14 support (#3635)
+- Remove doxygen from search results on readthedocs (#3664)
+- Add example with compilation for C API (#3658)
+
+### Bug Fixes
+- Use `[:blank:]` character class for SWC parser (#3651)
+- Fix HOC File.dir() on Windows (#3653)
+- NET_RECEIVE INITIAL not vectorized translation needs set_globals_from_prop (#3640)
+
+### Improvements /  Other Changes
+- Make `NRN_INSTALL_PYTHON_PREFIX` configurable (#3654)
+- Improve error message when Python lib is not found (#3650)
+- Use `command -v` instead of `which` in nrnpyenv.sh (#3516)
+- Better errors for `report.conf` (#3641)
+- Bump min required CMake version to 3.19
+
+
 ## 9.0.0
 _Release Date_ : 30-09-2025
 
@@ -502,5 +549,5 @@ See the list of contributors on respective GitHub projects:
 # Feedback / Help
 
 - Software related issues should be reported on GitHub : [https://github.com/neuronsimulator/nrn/issues/new/choose](https://github.com/neuronsimulator/nrn/issues/new/choose)
-- For developing models and any scientific questions, see NEURON forum : [https://www.neuron.yale.edu/phpBB/](https://www.neuron.yale.edu/phpBB/)
+- For developing models and any scientific questions, see the NEURON Discussion Board: [https://github.com/neuronsimulator/nrn/discussions](https://github.com/neuronsimulator/nrn/discussions)
 - If you want to participate / contribute to the development of NEURON, you can join monthly developers meeting : [https://github.com/neuronsimulator/nrn/wiki](https://github.com/neuronsimulator/nrn/wiki)

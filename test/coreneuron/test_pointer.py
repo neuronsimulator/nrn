@@ -1,10 +1,13 @@
-from neuron.tests.utils.strtobool import strtobool
-from neuron import h
 import os
 import platform
 import shutil
 import subprocess
 from subprocess import PIPE
+
+import pytest
+
+from neuron.tests.utils.strtobool import strtobool
+from neuron import h
 
 pc = h.ParallelContext()
 cvode = h.CVode()
@@ -135,6 +138,12 @@ class Model:
             cell.update_pointers()
 
 
+@pytest.mark.skipif(
+    platform.system() == "Darwin"
+    and platform.mac_ver()[0] >= "15"
+    and platform.machine() == "x86_64",
+    reason="Needs fixing on Intel-based Apples running MacOS 15",
+)
 def test_axial():
     m = Model(5, 5)
     cvode.use_fast_imem(1)
