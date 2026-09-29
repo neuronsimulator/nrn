@@ -30,7 +30,7 @@ on:
       prefix:
         description: 'The tag prefix for the final Docker image'
         default: ''
-        required: true
+        required: false
 
 jobs:
   docker:
