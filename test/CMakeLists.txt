@@ -13,20 +13,25 @@ include(NeuronTestHelper)
 # =============================================================================
 # Test executables
 # =============================================================================
-add_executable(
-  testneuron
-  common/catch2_main.cpp
-  unit_tests/basic.cpp
-  unit_tests/iovec.cpp
-  unit_tests/container/container.cpp
-  unit_tests/container/generic_data_handle.cpp
-  unit_tests/container/mechanism.cpp
-  unit_tests/container/node.cpp
-  unit_tests/node_order_optim/permutations.cpp
-  unit_tests/utils/enumerate.cpp
-  unit_tests/utils/Sprintf.cpp
-  unit_tests/oc/hoc_interpreter.cpp
-  cover/unit_tests/cover.cpp)
+set(TESTNEURON_SRC
+    common/catch2_main.cpp
+    unit_tests/basic.cpp
+    unit_tests/iovec.cpp
+    unit_tests/container/container.cpp
+    unit_tests/container/generic_data_handle.cpp
+    unit_tests/container/mechanism.cpp
+    unit_tests/container/node.cpp
+    unit_tests/node_order_optim/permutations.cpp
+    unit_tests/utils/enumerate.cpp
+    unit_tests/utils/Sprintf.cpp
+    unit_tests/oc/hoc_interpreter.cpp
+    cover/unit_tests/cover.cpp)
+
+if(NRN_ENABLE_PYTHON)
+  list(APPEND TESTNEURON_SRC "unit_tests/utils/cast_tuple.cpp")
+endif()
+
+add_executable(testneuron ${TESTNEURON_SRC})
 set(catch2_targets testneuron)
 if(NRN_ENABLE_THREADS)
   add_executable(nrn-benchmarks common/catch2_main.cpp benchmarks/threads/test_multicore.cpp)
@@ -40,6 +45,23 @@ foreach(target ${catch2_targets})
     target_link_libraries(${target} ${CMAKE_DL_LIBS})
   endif()
 endforeach()
+if(NRN_ENABLE_PYTHON)
+  # libnrniv does not re-export nanobind (those symbols are local), and it does not propagate
+  # nrnpython's usage requirements. Dynamic Python does not link nrnpython into libnrniv at all.
+  if(NRN_ENABLE_PYTHON_DYNAMIC)
+    list(GET NRN_PYTHON_VERSIONS 0 _cast_tuple_pyver)
+    set(_cast_tuple_nanobind "nanobind_py${_cast_tuple_pyver}")
+  else()
+    set(_cast_tuple_nanobind nanobind)
+  endif()
+  target_include_directories(testneuron SYSTEM PRIVATE "${NRN_DEFAULT_PYTHON_INCLUDES}")
+  target_link_libraries(testneuron ${_cast_tuple_nanobind})
+  # Dynamic builds that do not link libpython store a sentinel in NRN_DEFAULT_PYTHON_LIBRARIES.
+  # testneuron allows unresolved Python symbols and dlopens libpython at runtime.
+  if(NOT NRN_WITH_MACOS_CONDA_PYTHON AND (NRN_LINK_AGAINST_PYTHON OR NOT NRN_ENABLE_PYTHON_DYNAMIC))
+    target_link_libraries(testneuron "${NRN_DEFAULT_PYTHON_LIBRARIES}")
+  endif()
+endif()
 
 # =============================================================================
 # API test executables

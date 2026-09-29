@@ -10,6 +10,7 @@
 #include "nrnpy_utils.h"
 #include "nrnpython.h"
 #include "convert_cxx_exceptions.hpp"
+#include "cast_tuple.hpp"
 
 #include "nrnwrap_dlfcn.h"
 #include "ocfile.h"
@@ -26,6 +27,8 @@
 #include <unordered_map>
 
 #include <nanobind/nanobind.h>
+#include <nanobind/stl/string.h>
+
 namespace nb = nanobind;
 
 extern PyTypeObject* psection_type;
@@ -209,11 +212,8 @@ static int hoc_evalpointer_err() {
 
 // Returns a new reference.
 static PyObject* nrnexec(PyObject* self, PyObject* args) {
-    const char* cmd;
-    if (!PyArg_ParseTuple(args, "s", &cmd)) {
-        return nullptr;
-    }
-    bool b = hoc_valid_stmt(cmd, nullptr);
+    auto [cmd] = nrn::cast_tuple<const std::string>(nb::tuple(args));
+    bool b = hoc_valid_stmt(cmd.c_str(), nullptr);
     return PyBool_FromLong(b);
 }
 
