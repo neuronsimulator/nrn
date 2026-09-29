@@ -98,12 +98,6 @@ function(nrn_find_python)
     if(NRN_ENABLE_PYTHON_DYNAMIC AND NOT NRN_LINK_AGAINST_PYTHON)
       # Do not link against Python, so we don't need the library -- just as well, it's not available
       # in manylinux
-      if(${CMAKE_VERSION} VERSION_LESS 3.18)
-        message(
-          FATAL_ERROR
-            "NRN_ENABLE_PYTHON_DYNAMIC=ON and NRN_LINK_AGAINST_PYTHON=OFF requires CMake >= 3.18 for the Development.Module component in FindPython"
-        )
-      endif()
       set(dev_component "Development.Module")
       set(Python_LIBRARIES "do-not-link-against-libpython-in-dynamic-python-builds")
     else()

@@ -23,7 +23,7 @@ class Bench(object):
             t2 = time()
             t += t2 - t1
 
-        print('Executed "%s".  Elapsed = %f s' % (cmd, t / repeat))
+        print(f'Executed "{cmd}".  Elapsed = {t / repeat:f} s')
 
 
 class VectorTestCase(unittest.TestCase):
@@ -160,7 +160,6 @@ def suite():
 
 
 if __name__ == "__main__":
-
     # unittest.main()
     runner = unittest.TextTestRunner(verbosity=2)
     runner.run(suite())

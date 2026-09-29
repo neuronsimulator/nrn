@@ -1,0 +1,701 @@
+.. _mechtype:
+
+MechanismType
+-------------
+
+.. class:: MechanismType
+
+    .. tab:: Python
+    
+    
+        Syntax:
+            ``mt = n.MechanismType(0)``
+
+            ``mt = n.MechanismType(1)``
+
+
+        Description:
+            Provides a way of iterating over all membrane mechanisms or point 
+            processes and allows selection via a menu or under hoc control. 
+         
+            The 0 argument creates a list of all available distributed 
+            membrane mechanisms (as opposed to PointProcesses). eg "hh", "pas", "extracellular". that can 
+            be inserted into a section. 
+         
+            The 1 argument creates a 
+            list of all available Point Processes. 
+            eg. IClamp, AlphaSynapse, VClamp. 
+         
+            Mechanism order is the same as the argument order that created the "special" 
+            during ``nrnivmodl`` or ``mknrndll``. Therefore when a saved session depends 
+            on information in a ``MechanismType`` it is dependent on a particular special 
+            or dll. 
+         
+
+        Example:
+
+            .. code-block::
+                python
+
+                from neuron import n
+                # Print the names of all density mechanisms 
+                mt = n.MechanismType(0) 
+                mname  = n.ref('')
+                for i in range(mt.count()):
+                    mt.select(i) 
+                    mt.selected(mname) 
+                    print(mname[0])
+
+
+        .. seealso::
+            :class:`MechanismStandard`
+
+         
+
+    .. tab:: HOC
+
+
+        Syntax:
+            ``mt = new MechanismType(0)``
+        
+        
+            ``mt = new MechanismType(1)``
+        
+        
+        Description:
+            Provides a way of iterating over all membrane mechanisms or point 
+            processes and allows selection via a menu or under hoc control. 
+        
+        
+            The 0 argument creates a list of all available distributed 
+            membrane mechanisms (as opposed to PointProcesses). eg "hh", "pas", "extracellular". that can 
+            be inserted into a section. 
+        
+        
+            The 1 argument creates a 
+            list of all available Point Processes. 
+            eg. IClamp, AlphaSynapse, VClamp. 
+        
+        
+            Mechanism order is the same as the argument order that created the "special" 
+            during ``nrnivmodl`` or ``mknrndll``. Therefore when a saved session depends 
+            on information in a ``MechanismType`` it is dependent on a particular special 
+            or dll. 
+        
+        
+        Example:
+        
+        
+            .. code-block::
+                none
+        
+        
+                objref mt 
+                // Print the names of all density mechanisms 
+                mt = new MechanismType(0) 
+                strdef mname 
+                for i=0, mt.count()-1 { 
+                    mt.select(i) 
+                    mt.selected(mname) 
+                    print mname 
+                } 
+        
+        
+        .. seealso::
+            :class:`MechanismStandard`
+        
+----
+
+
+
+.. method:: MechanismType.select
+
+    .. tab:: Python
+    
+    
+        Syntax:
+            ``mt.select("name")``
+
+            ``mt.select(i)``
+
+
+        Description:
+            selects either the named mechanism or the i'th mechanism in the list. 
+
+         
+
+    .. tab:: HOC
+
+
+        Syntax:
+            ``mt.select("name")``
+        
+        
+            ``mt.select(i)``
+        
+        
+        Description:
+            selects either the named mechanism or the i'th mechanism in the list. 
+        
+----
+
+
+
+.. method:: MechanismType.selected
+
+    .. tab:: Python
+    
+    
+        Syntax:
+            ``i = mt.selected([strdef])``
+
+
+        Description:
+            returns the index of the current selection.  If present, strdef is assigned 
+            to the name of the current selection.
+
+        .. note::
+
+            ``strdef`` must be a NEURON string reference (e.g. one created via ``strdef = n.ref('')``);
+            to access its contents use ``strdef[0]``; see the example for the constructor above. In
+            particular ``strdef`` cannot be a Python string.
+
+         
+
+    .. tab:: HOC
+
+
+        Syntax:
+            ``i = mt.selected([strdef])``
+        
+        
+        Description:
+            returns the index of the current selection.  If present, strarg is assigned 
+            to the name of the current selection. 
+        
+----
+
+
+
+.. method:: MechanismType.remove
+
+    .. tab:: Python
+    
+    
+        Syntax:
+            ``mt.remove(sec=section)``
+
+
+        Description:
+            For distributed mechanisms invoked with the "insert" statement. 
+            Deletes selected mechanism from the specified section. A noop
+            if the mechanism is not in the section. 
+
+         
+
+    .. tab:: HOC
+
+
+        Syntax:
+            ``mt.remove()``
+        
+        
+        Description:
+            For distributed mechanisms invoked with the "insert" statement. 
+            Deletes selected mechanism from currently 
+            accessed section. A nop if the mechanism is not in the section. 
+        
+----
+
+
+
+.. method:: MechanismType.make
+
+    .. tab:: Python
+    
+    
+        Syntax:
+            ``mt.make(sec=section)``
+
+            ``mt.make(objectref)``
+
+
+        Description:
+
+
+            ``mt.make(sec=section)`` 
+                For distributed mechanisms. Inserts selected mechanism into ``section``. 
+
+            ``mt.make(objectref)`` 
+                For point processes.  The arg becomes a reference to a new point process 
+                of type given by the selection. 
+                Note that the newly created point process is not located in any section. 
+                If *objectref* was the only reference to another object then 
+                that object is destroyed. *objectref* is a NEURON pointer to an object, and
+                may be created via ``objectref = n.ref(None)``; the object created by a call
+                to ``make`` may be accessed via ``objectref[0]``.
+
+
+         
+
+    .. tab:: HOC
+
+
+        Syntax:
+            ``mt.make()``
+        
+        
+            ``mt.make(objectvar)``
+        
+        
+        Description:
+        
+        
+            ``mt.make()`` 
+                For distributed mechanisms. Inserts selected mechanism into currently 
+                accessed section. 
+        
+        
+            ``mt.make(objectvar)`` 
+                For point processes.  The arg becomes a reference to a new point process 
+                of type given by the selection. 
+                Note that the newly created point process is not located in any section. 
+                Note that if *objectvar* was the only reference to another object then 
+                that object is destroyed. 
+        
+----
+
+
+
+.. method:: MechanismType.count
+
+    .. tab:: Python
+    
+    
+        Syntax:
+            ``i = mt.count()``
+
+
+        Description:
+            The number of different mechanisms in the list. 
+
+         
+
+    .. tab:: HOC
+
+
+        Syntax:
+            ``i = mt.count()``
+        
+        
+        Description:
+            The number of  different mechanisms in the list. 
+        
+----
+
+
+
+.. method:: MechanismType.menu
+
+    .. tab:: Python
+    
+    
+        Syntax:
+            ``mt.menu()``
+
+
+        Description:
+            Inserts a special menu into the currently open \ ``xpanel``. The menu 
+            label always reflects the current selection. Submenu items are indexed 
+            according to position with the first item being item 0.  When the mouse 
+            button is released on a submenu item that item becomes the selection 
+            and the action (if any) is executed. 
+
+         
+
+    .. tab:: HOC
+
+
+        Syntax:
+            ``mt.menu()``
+        
+        
+        Description:
+            Inserts a special menu into the currently open \ ``xpanel``. The menu 
+            label always reflects the current selection. Submenu items are indexed 
+            according to position with the first item being item 0.  When the mouse 
+            button is released on a submenu item that item becomes the selection 
+            and the action (if any) is executed. 
+        
+----
+
+
+
+.. method:: MechanismType.action
+
+    .. tab:: Python
+    
+    
+        Syntax:
+            ``mt.action(py_callable)``
+
+
+        Description:
+            When a submenu item is selected, ``py_callable`` is invoked with two arguments:
+            the MechanismType object, and the index.
+
+        Example:
+
+            .. code-block::
+                python
+
+                from neuron import n, gui
+
+                def cb(mt, i):
+                    mt.select(i)
+                    nameref = n.ref("")
+                    mt.selected(nameref)
+                    print (f"selected {nameref[0]}")
+
+                mtypes = [n.MechanismType(i) for i in range(2)]
+                n.xpanel("MechanismTypes")
+                for mt in mtypes:
+                    mt.action(cb)
+                    mt.menu()
+                n.xpanel()
+
+
+        .. note::
+
+            Python support for this method was added in NEURON 7.5.
+
+    .. tab:: HOC
+
+
+        Syntax:
+            ``mt.action("command")``
+        
+        
+        Description:
+            The action to be executed when a submenu item is selected. 
+        
+----
+
+
+
+.. method:: MechanismType.is_netcon_target
+
+    .. tab:: Python
+    
+    
+        Syntax:
+            ``boolean =  mt.is_netcon_target(i)``
+
+
+        Description:
+            The i'th point process has a NET_RECEIVE block and can therefore be 
+            a target for a :class:`NetCon` object. 
+
+         
+
+    .. tab:: HOC
+
+
+        Syntax:
+            ``boolean =  mt.is_netcon_target(i)``
+        
+        
+        Description:
+            The i'th point process has a NET_RECEIVE block and can therefore be 
+            a target for a :class:`NetCon` object.
+        
+----
+
+
+
+.. method:: MechanismType.has_net_event
+
+    .. tab:: Python
+    
+    
+        Syntax:
+            ``boolean = mt.has_net_event(i)``
+
+
+        Description:
+            The i'th point process has a net_event call in its NET_RECEIVE block 
+            and can therefore be a source for a :class:`NetCon` object. 
+            This means it is :class:`NetCon` stimulator or that 
+            the point process can be used as an artificial neural network cell. 
+
+         
+
+    .. tab:: HOC
+
+
+        Syntax:
+            ``boolean = mt.has_net_event(i)``
+        
+        
+        Description:
+            The i'th point process has a net_event call in its NET_RECEIVE block 
+            and can therefore be a source for a :class:`NetCon` object.
+            This means it is :class:`NetCon` stimulator or that
+            the point process can be used as an artificial neural network cell. 
+        
+----
+
+
+
+.. method:: MechanismType.is_artificial
+
+    .. tab:: Python
+    
+    
+        Syntax:
+            ``boolean = mt.is_artificial(i)``
+
+
+        Description:
+            The i'th point process is an ARTIFICIAL_CELL 
+            and can therefore be a source for a :class:`NetCon` object. 
+            This means it is :class:`NetCon` stimulator or that 
+            the point process can be used as an artificial neural network cell. 
+         
+            This seems to have, but does not, equivalent functionality to 
+            :func:`has_net_event` and was introduced because ARTIFICIAL_CELL objects are no 
+            longer located in sections. Some ARTIFICIAL_CELLs such as the PatternStim 
+            do not make use of net_event in their implementation, and some PointProcesses 
+            do use net_event and must be located in sections for their proper function, 
+            e.g. reciprocal synapses. 
+
+         
+         
+
+    .. tab:: HOC
+
+
+        Syntax:
+            ``boolean = mt.is_artificial(i)``
+        
+        
+        Description:
+            The i'th point process is an ARTIFICIAL_CELL 
+            and can therefore be a source for a :class:`NetCon` object.
+            This means it is :class:`NetCon` stimulator or that
+            the point process can be used as an artificial neural network cell. 
+        
+        
+            This seems to have, but does not, equivalent functionality to 
+            :func:`has_net_event` and was introduced because ARTIFICIAL_CELL objects are no
+            longer located in sections. Some ARTIFICIAL_CELLs such as the PatternStim 
+            do not make use of net_event in their implementation, and some PointProcesses 
+            do use net_event and must be located in sections for their proper function, 
+            e.g. reciprocal synapses. 
+        
+----
+
+
+
+.. method:: MechanismType.pp_begin
+
+    .. tab:: Python
+    
+    
+        Syntax:
+            ``obj = mt.pp_begin(sec=section)``
+
+
+        Description:
+            Initializes an iterator used to iterate over point processes of 
+            a particular type in ``section``. 
+            Returns the first point process in 
+            ``section`` having the type specified by the :meth:`MechanismType.select` 
+            statement. This only works if the the MechanismType was instantiated 
+            with the (1) argument. If there is no such point process in the 
+            section the method returns ``None``. Note that, prior to version 
+            6.2, although 
+            the x=1 node is normally 
+            considered to be part of the section, the parent node 
+            was not looked at (normally x = 0) unless the section was the 
+            root of the tree. As of version 6.2, both the 0 and 1 locations 
+            are looked at and if the point process used the section to locate 
+            it, then it is returned. If the point process used the child or 
+            parent section to locate it, it is not returned. 
+
+        Example:
+
+            .. code-block::
+                python
+            
+                from neuron import n
+
+                cable = n.Section('cable')
+                cable.nseg = 5  
+                stim = [n.IClamp(cable(i/2.)) for i in range(3)]
+
+                mt = n.MechanismType(1) 
+                mt.select("IClamp") 
+                pp = mt.pp_begin()
+                while pp is not None:
+                    seg = pp.get_segment() 
+                    print(f"{pp} located at {seg}")
+                    pp = mt.pp_next()
+
+
+
+    .. tab:: HOC
+
+
+        Syntax:
+            ``obj = mt.pp_begin()``
+        
+        
+        Description:
+            Initializes an iterator used to iterate over point processes of 
+            a particular type in the currently accessed section. 
+            Returns the first point process in the currently accessed 
+            section having the type specified by the :meth:`MechanismType.select`
+            statement. This only works if the the MechanismType was instantiated 
+            with the (1) argument. If there is no such point process in the 
+            section the method returns NULLobject. Note that, prior to version 
+            6.2, although 
+            the x=1 node is normally 
+            considered to be part of the section, the parent node 
+            was not looked at (normally x = 0) unless the section was the 
+            root of the tree. As of version 6.2, both the 0 and 1 locations 
+            are looked at and if the point process used the section to locate 
+            it, then it is returned. If the point process used the child or 
+            parent section to locate it, it is not returned. 
+        
+        
+        Example:
+        
+        
+            .. code-block::
+                none
+        
+        
+                create cable 
+                access cable 
+                nseg = 5 
+                objref stim[3] 
+                for i=0,2 stim[i] = new IClamp(i/2) 
+        
+        
+                objref mt, pp 
+                mt = new MechanismType(1) 
+                mt.select("IClamp") 
+                for (pp = mt.pp_begin(); object_id(pp) != 0; pp = mt.pp_next()) { 
+                    x = pp.get_loc() 
+                    printf("%s located at %s(%g)\n", pp, secname(), x) 
+                    pop_section() 
+                } 
+        
+----
+
+
+
+.. method:: MechanismType.pp_next
+
+    .. tab:: Python
+    
+    
+        Syntax:
+            ``obj = mt.pp_next()``
+
+
+        Description:
+            Returns the next point process of the type and in the section that 
+            were specified in the earlier call to :meth:`MechanismType.pp_begin` . 
+            When there are no more point processes, the return value is ``None``. 
+
+         
+
+    .. tab:: HOC
+
+
+        Syntax:
+            ``obj = mt.pp_next()``
+        
+        
+        Description:
+            Returns the next point process of the type and in the section that 
+            were specified in the earlier call to :meth:`MechanismType.pp_begin` .
+            When there are no more point processes, the return value is NULLobject. 
+        
+----
+
+
+
+.. method:: MechanismType.internal_type
+
+    .. tab:: Python
+    
+    
+        Syntax:
+            ``internal_type = mt.internal_type()``
+
+
+        Description:
+            Return the internal type index of the selected mechanism. 
+
+
+    .. tab:: HOC
+
+
+        Syntax:
+            ``internal_type = mt.internal_type()``
+        
+        
+        Description:
+            Return the internal type index of the selected mechanism. 
+        
+----
+
+
+
+.. method:: MechanismType.file
+
+    .. tab:: Python
+    
+    
+        Syntax:
+            ``file_name = mt.file()``
+
+
+        Description:
+            Returns the mod file name for the currently selected mechanism.
+
+            .. code-block::
+                python
+            
+                from neuron import n
+                s = n.Section('s')
+                mt = n.MechanismType(0)
+                mt.select('hh')
+                print(mt.file())
+
+----
+
+
+
+.. method:: MechanismType.code
+
+    .. tab:: Python
+    
+    
+        Syntax:
+            ``code_string = mt.code()``
+
+
+        Description:
+            Returns the nmodl code for the currently selected mechanism.
+            .. code-block::
+                python
+            
+                from neuron import n
+                s = n.Section('s')
+                mt = n.MechanismType(0)
+                mt.select('hh')
+                print('\n'.join(mt.code().split('\n')[:4]))

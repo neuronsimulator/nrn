@@ -6,7 +6,7 @@ neuron
 For empirically-based simulations of neurons and networks of neurons in Python.
 
 This is the top-level module of the official python interface to
-the NEURON simulation environment (https://nrn.readthedocs.io).
+the NEURON simulation environment (https://www.neuronsimulator.org).
 
 Documentation is available in the docstrings.
 
@@ -109,7 +109,11 @@ embedded = "hoc" in sys.modules
 
 # First, check that the compiled extension (neuron.hoc) was built for this version of
 # Python. If not, fail early and helpfully.
-from ._config_params import supported_python_versions
+from ._config_params import (
+    supported_python_versions,
+    mechanism_prefix,
+    mechanism_suffix,
+)
 
 current_version = "{}.{}".format(*sys.version_info[:2])
 if current_version not in supported_python_versions:
@@ -161,6 +165,47 @@ h = hoc.HocObject()
 
 
 class _NEURON_INTERFACE(hoc.HocObject):
+    """
+    neuron.n
+    ========
+
+    neuron.n is the top-level NEURON inteface, starting in NEURON 9.
+
+    >>> from neuron import n
+    >>> n
+    <TopLevelNEURONInterface>
+
+    Most NEURON classes and functions are defined in the n namespace
+    and can be accessed as follows:
+
+    >>> v = n.Vector(10)
+    >>> soma = n.Section("soma")
+    >>> input = n.IClamp(soma(0.5))
+    >>> n.finitialize(-65)
+
+    Each built-in class has its own type, so for the above definitions we have:
+
+    >>> type(v)
+    <class 'hoc.Vector'>
+    >>> type(soma)
+    <class 'nrn.Section'>
+
+    But since ``IClamp`` is defined by a MOD file:
+
+    >>> type(input)
+    <class 'hoc.HocObject'>
+
+    Other submodules of neuron exist, including rxd and units.
+
+    You can see the functions, classes, etc available inside n via dir(n)
+    and can get help on each via the standard Python help system, e.g.,
+
+    >>> help(n.finitialize)
+
+    The full NEURON documentation is available online at
+    https://www.neuronsimulator.org
+    """
+
     def __repr__(self):
         return "<TopLevelNEURONInterface>"
 
@@ -180,7 +225,7 @@ from neuron import config
 config._parse_arguments(h)
 
 
-def _check_for_intel_openmp():
+def _check_for_intel_openmp() -> None:
     """Check if Intel's OpenMP runtime has already been loaded.
 
     This does not interact well with the NVIDIA OpenMP runtime in CoreNEURON GPU
@@ -257,7 +302,7 @@ else:
 # define a dummy help function which imports doc,
 # calls the real help function, and reassigns neuron.help to doc.help
 # (thus replacing the dummy)
-def help(request=None):
+def help(request: object = None) -> None:
     global help
     from neuron import doc
 
@@ -275,7 +320,7 @@ except:
 # Global test-suite function
 
 
-def test(exitOnError=True):
+def test(exitOnError: bool = True) -> bool:
     """Runs a global battery of unit tests on the neuron module."""
     import neuron.tests
     import unittest
@@ -287,7 +332,7 @@ def test(exitOnError=True):
     return result
 
 
-def test_rxd(exitOnError=True):
+def test_rxd(exitOnError: bool = True) -> bool:
     """Runs a tests on the rxd and crxd modules."""
     import neuron.tests
     import unittest
@@ -311,7 +356,7 @@ from neuron.hclass3 import HocBaseObject, hclass
 nrn_dll_loaded = []
 
 
-def load_mechanisms(path, warn_if_already_loaded=True):
+def load_mechanisms(path: str, warn_if_already_loaded: bool = True) -> bool:
     """
     load_mechanisms(path)
 
@@ -328,38 +373,36 @@ def load_mechanisms(path, warn_if_already_loaded=True):
     global nrn_dll_loaded
     if path in nrn_dll_loaded:
         if warn_if_already_loaded:
-            print("Mechanisms already loaded from path: %s.  Aborting." % path)
+            print(f"Mechanisms already loaded from path: {path}.  Aborting.")
         return True
 
     # in case NEURON is assuming a different architecture to Python,
     # we try multiple possibilities
 
-    libname = "libnrnmech.so"
-    libsubdir = ".libs"
+    libname = f"{mechanism_prefix}nrnmech{mechanism_suffix}"
     arch_list = [platform.machine(), "i686", "x86_64", "powerpc", "umac"]
 
     # windows loads nrnmech.dll
     if n.unix_mac_pc() == 3:
         libname = "nrnmech.dll"
-        libsubdir = ""
         arch_list = [""]
 
     for arch in arch_list:
-        lib_path = os.path.join(path, arch, libsubdir, libname)
+        lib_path = os.path.join(path, arch, libname)
         if os.path.exists(lib_path):
             n.nrn_load_dll(lib_path)
             nrn_dll_loaded.append(path)
             return True
-    print("NEURON mechanisms not found in %s." % path)
+    print(f"NEURON mechanisms not found in {path}.")
     return False
 
 
 if "NRN_NMODL_PATH" in os.environ:
     nrn_nmodl_path = os.environ["NRN_NMODL_PATH"].split(":")
     print("Auto-loading mechanisms:")
-    print("NRN_NMODL_PATH=%s" % os.environ["NRN_NMODL_PATH"])
+    print(f"NRN_NMODL_PATH={os.environ['NRN_NMODL_PATH']}")
     for x in nrn_nmodl_path:
-        # print "from path %s:" % x
+        # print(f"from path {x}:")
         load_mechanisms(x)
         # print "\n"
     print("Done.\n")
@@ -394,14 +437,14 @@ class Wrapper(object):
             object.__setattr__(self, name, value)
 
 
-def new_point_process(name, doc=None):
+def new_point_process(name: str, doc: str = None) -> type:
     """
     Returns a Python-wrapped hoc class where the object needs to be associated
     with a section.
 
     doc - specify a docstring for the new pointprocess class
     """
-    h("obfunc new_%s() { return new %s($1) }" % (name, name))
+    h(f"obfunc new_{name}() {{ return new {name}($1) }}")
 
     class someclass(Wrapper):
         __doc__ = doc
@@ -409,7 +452,7 @@ def new_point_process(name, doc=None):
         def __init__(self, section, position=0.5):
             assert 0 <= position <= 1
             section.push()
-            self.__dict__["hoc_obj"] = getattr(n, "new_%s" % name)(
+            self.__dict__["hoc_obj"] = getattr(n, f"new_{name}")(
                 position
             )  # have to put directly in __dict__ to avoid infinite recursion with __getattr__
             n.pop_section()
@@ -425,172 +468,18 @@ def new_hoc_class(name, doc=None):
 
     doc - specify a docstring for the new hoc class
     """
-    h("obfunc new_%s() { return new %s() }" % (name, name))
+    h(f"obfunc new_{name}() {{ return new {name}() }}")
 
     class someclass(Wrapper):
         __doc__ = doc
 
         def __init__(self, **kwargs):
-            self.__dict__["hoc_obj"] = getattr(h, "new_%s" % name)()
+            self.__dict__["hoc_obj"] = getattr(h, f"new_{name}")()
             for k, v in list(kwargs.items()):
                 setattr(self.hoc_obj, k, v)
 
     someclass.__name__ = name
     return someclass
-
-
-# ------------------------------------------------------------------------------
-# Python equivalents to Hoc functions
-# ------------------------------------------------------------------------------
-
-
-def xopen(*args, **kwargs):
-    """
-    Syntax:
-        ``neuron.xopen("hocfile")``
-
-
-        ``neuron.xopen("hocfile", "RCSrevision")``
-
-
-    Description:
-        ``n.xopen()`` executes the commands in ``hocfile``.  This is a convenient way
-        to define user functions and procedures.
-        An optional second argument is the RCS revision number in the form of a
-        string. The RCS file with that revision number is checked out into a
-        temporary file and executed. The temporary file is then removed.  A file
-        of the same primary name is unaffected.
-
-    This function is deprecated and will be removed in a future release.
-    Use ``n.xopen`` instead.
-    """
-    warnings.warn(
-        "neuron.xopen is deprecated; use n.xopen instead",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return n.xopen(*args, **kwargs)
-
-
-def quit(*args, **kwargs):
-    """
-    Exits the program. Can be used as the action of a button. If edit buffers
-    are open you will be asked if you wish to save them before the final exit.
-
-    This function is deprecated and will be removed in a future release.
-    Use ``n.quit()`` or ``sys.exit()`` instead. (Note: sys.exit will not prompt
-    for saving edit buffers.)
-    """
-    warnings.warn(
-        "neuron.quit() is deprecated; use n.quit() or sys.exit() instead",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return n.quit(*args, **kwargs)
-
-
-def psection(section):
-    """
-    function psection(section):
-
-    Print info about section in a hoc format which is executable.
-    (length, parent, diameter, membrane information)
-
-    Use section.psection() instead to get a data structure that
-    contains the same information and more.
-
-    This function is deprecated and will be removed in a future
-    release.
-
-    See:
-
-    https://nrn.readthedocs.io/en/latest/python/modelspec/programmatic/topology.html#psection
-    """
-    warnings.warn(
-        "neuron.psection() is deprecated; use print(sec.psection()) instead",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    n.psection(sec=section)
-
-
-def init():
-    """
-    function init():
-
-    Initialize the simulation kernel.  This should be called before a run(tstop) call.
-
-    ** This function exists for historical purposes. Use in new code is not recommended. **
-
-    Use n.finitialize() instead, which allows you to specify the membrane potential
-    to initialize to; via e.g. n.finitialize(-65)
-
-    This function is deprecated and will be removed in a future
-    release.
-
-    By default, the units used by n.finitialize are in mV, but you can be explicit using
-    NEURON's unit's library, e.g.
-
-    .. code-block:: python
-
-        from neuron.units import mV
-        n.finitialize(-65 * mV)
-
-    https://nrn.readthedocs.io/en/latest/python/simctrl/programmatic.html#finitialize
-
-    """
-    warnings.warn(
-        "neuron.init() is deprecated; use n.init() instead",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-
-    n.finitialize()
-
-
-def run(tstop):
-    """
-    function run(tstop)
-
-    Run the simulation (advance the solver) until tstop [ms]
-
-    `n.run()` and `n.continuerun(tstop)` are more powerful solutions defined in the `stdrun.hoc` library.
-
-    ** This function exists for historical purposes. Use in new code is not recommended. **
-
-    This function is deprecated and will be removed in a future
-    release.
-
-    For running a simulation, consider doing the following instead:
-
-    Begin your code with
-
-    .. code-block:: python
-
-        from neuron import n
-        from neuron.units import ms, mV
-        n.load_file('stdrun.hoc')
-
-    Then when it is time to initialize and run the simulation:
-
-    .. code-block:: python
-
-        n.finitialize(-65 * mV)
-        n.continuerun(100 * ms)
-
-    where the initial membrane potential and the simulation run time are adjusted as appropriate
-    for your model.
-
-    """
-    warnings.warn(
-        "neuron.run(tstop) is deprecated; use n.stdinit() and n.continuerun(tstop) instead",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-
-    n("tstop = %g" % tstop)
-    n("while (t < tstop) { fadvance() }")
-    # what about pc.psolve(tstop)?
 
 
 _nrn_dll = None
@@ -706,7 +595,7 @@ def nrn_dll(printpath=False):
     try:
         # extended? if there is a __file__, then use that
         if printpath:
-            print("hoc.__file__ %s" % _original_hoc_file)
+            print(f"hoc.__file__ {_original_hoc_file}")
         the_dll = ctypes.pydll[_original_hoc_file]
         return the_dll
     except:
@@ -714,7 +603,7 @@ def nrn_dll(printpath=False):
 
     success = False
     if sys.platform == "msys" or sys.platform == "win32":
-        p = "hoc%d%d" % (sys.version_info[0], sys.version_info[1])
+        p = f"hoc{sys.version_info[0]}{sys.version_info[1]}"
     else:
         p = "hoc"
 
@@ -802,7 +691,7 @@ def _create_sections_in_obj(obj, name, numsecs):
     setattr(
         obj,
         name,
-        [n.Section(name="%s[%d]" % (name, i), cell=obj) for i in range(int(numsecs))],
+        [n.Section(name=f"{name}[{i}]", cell=obj) for i in range(int(numsecs))],
     )
 
 
@@ -1098,7 +987,7 @@ class _PlotShapePlot(_WrapperPlot):
                                 val = _get_variable_seg(seg, variable)
                                 vals.append(val)
                                 if val is not None:
-                                    lines[line] = "%s at %s" % (val, seg)
+                                    lines[line] = f"{val} at {seg}"
                                 else:
                                     lines[line] = str(seg)
                             else:
@@ -1316,7 +1205,7 @@ class _PlotShapePlot(_WrapperPlot):
                         val = _get_variable_seg(seg, variable)
                         hover_template = str(seg)
                         if val is not None:
-                            hover_template += "<br>" + ("%.3f" % val)
+                            hover_template += "<br>" + f"{val:.3f}"
                         if color is None:
                             col = _get_color(variable, val, cmap, lo, hi, val_range)
                         else:
@@ -1383,7 +1272,7 @@ class DensityMechanism:
             pass
 
     def __repr__(self):
-        return "neuron.DensityMechanism(%r)" % self.__name
+        return f"neuron.DensityMechanism({self.__name!r})"
 
     def __dir__(self):
         my_dir = ["code", "file", "insert", "uninsert", "__repr__", "__str__"]
@@ -1415,6 +1304,10 @@ class DensityMechanism:
     def file(self):
         """source file path"""
         return self.__mt.file()
+
+    @property
+    def name(self):
+        return self.__name
 
     def insert(self, secs):
         """insert this mechanism into a section or iterable of sections"""

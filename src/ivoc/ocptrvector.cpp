@@ -10,6 +10,7 @@
     p.gather(Vector)
 */
 #include "classreg.h"
+#include "code.h"
 #include "oc2iv.h"
 #include "ocptrvector.h"
 #include "objcmd.h"
@@ -18,8 +19,6 @@
 #include "graph.h"
 #endif
 #include "gui-redirect.h"
-
-extern int hoc_return_type_code;
 
 static double dummy;
 
@@ -85,13 +84,13 @@ static const char** ptr_label(void* v) {
 }
 
 static double resize(void* v) {
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     ((OcPtrVector*) v)->resize((int(chkarg(1, 1., 2e9))));
     return double(((OcPtrVector*) v)->size());
 }
 
 static double get_size(void* v) {
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     return ((OcPtrVector*) v)->size();
 }
 

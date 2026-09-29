@@ -61,6 +61,7 @@ mem = rxd.Region(h.allsec(), name="cell_mem", geometry=rxd.membrane())
 # extracellular
 ecs = rxd.Extracellular(-100, -100, -100, 100, 100, 100, dx=100)
 
+
 # Who?
 def init(ics, ecs):
     return lambda nd: ecs if isinstance(nd, rxd.node.NodeExtracellular) else ics

@@ -82,13 +82,20 @@ def _config_exe(exe_name):
     os.environ["CORENRNHOME"] = NRN_PREFIX
     os.environ["NRN_PYTHONEXE"] = sys.executable
     os.environ["CORENRN_PYTHONEXE"] = sys.executable
-    os.environ["CORENRN_PERLEXE"] = shutil.which("perl")
     os.environ["NRNBIN"] = os.path.dirname(__file__)
 
     if "NMODLHOME" not in os.environ:
         os.environ["NMODLHOME"] = NRN_PREFIX
     if "NMODL_PYLIB" not in os.environ:
-        os.environ["NMODL_PYLIB"] = find_libpython()
+        result = find_libpython()
+        if not result:
+            raise ValueError(
+                "unable to locate the Python shared library; "
+                "please make sure it is installed, "
+                "or set the environmental variable `NMODL_PYLIB` "
+                "manually to the path to the Python shared library"
+            )
+        os.environ["NMODL_PYLIB"] = result
 
     # nmodl module is inside <prefix>/lib directory
     sys.path.insert(0, os.path.join(NRN_PREFIX, "lib"))
@@ -112,7 +119,7 @@ def _wrap_executable(output_name):
 if __name__ == "__main__":
     exe = _config_exe(os.path.basename(sys.argv[0]))
 
-    if exe.endswith("nrnivmodl"):
+    if Path(exe).name.startswith("nrnivmodl"):
         # To create a wrapper for special (so it also gets ENV vars) we intercept nrnivmodl
         _check_cpp_compiler_version("10.0")
         subprocess.check_call([exe, *sys.argv[1:]])

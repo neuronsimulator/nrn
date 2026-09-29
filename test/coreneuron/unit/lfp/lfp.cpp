@@ -127,19 +127,40 @@ TEST_CASE("LFP_ReportEvent") {
     auto* mapinfo = static_cast<NrnThreadMappingInfo*>(nt.mapping);
     // Generate mapinfo CellMapping
     for (const auto& gid: gids) {
-        mapinfo->mappingvec.push_back(new CellMapping(gid));
+        auto cmap = std::make_shared<CellMapping>(gid);
+        mapinfo->add_cell_mapping(cmap);
+        cmap->electrode_offsets = {0, 2};
         for (const auto& segment: segment_ids) {
             std::vector<double> lfp_factors{segment + 1.0, segment + 2.0};
-            mapinfo->mappingvec.back()->add_segment_lfp_factor(segment, lfp_factors);
+            cmap->add_segment_lfp_factor(segment, lfp_factors.begin(), lfp_factors.end());
         }
     }
     mapinfo->prepare_lfp();
     // Total number of electrodes 2 gids * 2 factors
 
-    CellMapping* c42 = mapinfo->mappingvec[0];
-    CellMapping* c134 = mapinfo->mappingvec[1];
-    REQUIRE(c42->lfp_factors.size() == 5);
+    auto c42 = mapinfo->get_cell_mapping(42);
+    auto c134 = mapinfo->get_cell_mapping(134);
+    REQUIRE(c42->lfp_segment_ids.size() == 5);
     REQUIRE(c134->num_electrodes() == 2);
+
+    // Property tests for num_electrodes() derivation from electrode_offsets
+    {
+        // Property 1: offsets [0, N] → num_electrodes() == N
+        auto ctest = std::make_shared<CellMapping>(999);
+        ctest->electrode_offsets = {0, 5};
+        REQUIRE(ctest->num_electrodes() == 5);
+
+        ctest->electrode_offsets = {0, 1};
+        REQUIRE(ctest->num_electrodes() == 1);
+
+        // Multi-report offsets [0, 2, 5] → num_electrodes() == 5 (total)
+        ctest->electrode_offsets = {0, 2, 5};
+        REQUIRE(ctest->num_electrodes() == 5);
+
+        // Property 5: empty offsets → num_electrodes() == 0
+        ctest->electrode_offsets = {};
+        REQUIRE(ctest->num_electrodes() == 0);
+    }
 
     // Pass _lfp variable to vars_to_report
     size_t offset_lfp = 0;
@@ -175,9 +196,8 @@ TEST_CASE("LFP_ReportEvent") {
     const double dt = 0.025;
     const double tstart = 0.0;
     const double report_dt = 0.1;
-    ReportType report_type = CompartmentReport;
 
-    ReportEvent event(dt, tstart, vars_to_report, report_name.data(), report_dt, report_type);
+    ReportEvent event(dt, tstart, vars_to_report, report_name.data(), report_dt, ReportType::LFP);
     event.lfp_calc(&nt);
 
     REQUIRE_THAT(mapinfo->_lfp[0], Catch::Matchers::WithinAbs(5.5, 1.0));

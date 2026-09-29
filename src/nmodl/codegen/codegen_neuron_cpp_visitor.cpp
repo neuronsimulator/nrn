@@ -744,7 +744,9 @@ std::vector<std::string> CodegenNeuronCppVisitor::print_verbatim_setup(
         print_macro(fmt::format("_l{}", mod_name), get_variable_name(current_name));
     }
 
+    print_macro("v", get_variable_name("v"));
     print_macro(naming::NTHREAD_T_VARIABLE, "nt->_t");
+    print_macro(naming::NTHREAD_DT_VARIABLE, "nt->_dt");
     print_macro("_nt", "nt");
     print_macro("_tqitem", "tqitem");
 
@@ -1094,6 +1096,9 @@ void CodegenNeuronCppVisitor::print_standard_includes() {
     )CODE");
     if (info.eigen_newton_solver_exist) {
         printer->add_multi_line(nmodl::solvers::newton_hpp);
+    }
+    if (!info.matexp_blocks.empty()) {
+        printer->add_line("#include <unsupported/Eigen/MatrixFunctions>");
     }
 }
 
@@ -2308,6 +2313,12 @@ void CodegenNeuronCppVisitor::print_nrn_state() {
 
     if (info.nrn_state_block) {
         info.nrn_state_block->visit_children(*this);
+    }
+
+    for (auto& block: info.matexp_blocks) {
+        if (!block->get_steadystate().get()->eval()) {
+            block->accept(*this);
+        }
     }
 
     if (info.currents.empty() && info.breakpoint_node != nullptr) {

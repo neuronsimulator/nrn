@@ -6,6 +6,7 @@
 #include <nrnmpi.h>
 #include "cabcode.h"
 #include "classreg.h"
+#include "code.h"
 #include "parse.hpp"
 #include "cvodeobj.h"
 #include "hoclist.h"
@@ -26,6 +27,7 @@
 #include "vrecitem.h"
 #include "oclist.h"
 #define PROFILE 0
+#include "htlist.h"
 #include "ivocvect.h"
 #include "netcon.h"
 #include "netcvode.h"
@@ -105,8 +107,6 @@ bool nrn_trajectory_request_per_time_step_ = false;
 #if NRN_MUSIC
 #include "nrnmusicapi.h"
 #endif
-
-extern int hoc_return_type_code;
 
 extern int nrn_fornetcon_cnt_;
 extern int* nrn_fornetcon_index_;
@@ -651,7 +651,7 @@ static double nc_setpost(void* v) {
 
 static double nc_valid(void* v) {
     NetCon* d = (NetCon*) v;
-    hoc_return_type_code = 2;
+    hoc_return_type_code = HocReturnType::boolean;
     if (d->src_ && d->target_) {
         return 1.;
     }
@@ -664,7 +664,7 @@ static double nc_active(void* v) {
     if (d->target_ && ifarg(1)) {
         d->active_ = bool(chkarg(1, 0, 1));
     }
-    hoc_return_type_code = 2;
+    hoc_return_type_code = HocReturnType::boolean;
     return double(a);
 }
 
@@ -721,7 +721,7 @@ static double nc_record(void* v) {
 
 static double nc_srcgid(void* v) {
     NetCon* d = (NetCon*) v;
-    hoc_return_type_code = 1;
+    hoc_return_type_code = HocReturnType::integer;
     if (d->src_) {
         return (double) d->src_->gid_;
     }
@@ -1231,10 +1231,6 @@ void BAMechList::destruct(BAMechList** first) {
 }
 
 CvodeThreadData::CvodeThreadData() {
-    no_cap_count_ = 0;
-    no_cap_child_count_ = 0;
-    no_cap_node_ = nullptr;
-    no_cap_child_ = nullptr;
     cv_memb_list_ = nullptr;
     cmlcap_ = nullptr;
     cmlext_ = nullptr;
@@ -1242,10 +1238,6 @@ CvodeThreadData::CvodeThreadData() {
     before_breakpoint_ = nullptr;
     after_solve_ = nullptr;
     before_step_ = nullptr;
-    rootnodecount_ = 0;
-    v_node_count_ = 0;
-    v_node_ = nullptr;
-    v_parent_ = nullptr;
     psl_th_ = nullptr;
     watch_list_ = nullptr;
     nvoffset_ = 0;
@@ -1259,12 +1251,8 @@ CvodeThreadData::~CvodeThreadData() {
     if (no_cap_memb_) {
         delete_memb_list(no_cap_memb_);
     }
-    if (no_cap_node_) {
-        delete[] no_cap_node_;
-        delete[] no_cap_child_;
-    }
     if (watch_list_) {
-        watch_list_->clear();
+        watch_list_->RemoveAll();
         delete watch_list_;
     }
 }
@@ -1321,10 +1309,6 @@ void NetCvode::del_cv_memb_list(Cvode* cvode) {
             delete std::exchange(z.psl_th_, nullptr);
         }
         if (cvode != gcv_) {
-            if (z.v_node_) {
-                delete[] std::exchange(z.v_node_, nullptr);
-                delete[] std::exchange(z.v_parent_, nullptr);
-            }
             z.delete_memb_list(std::exchange(z.cv_memb_list_, nullptr));
         } else {
             CvMembList *cml, *cmlnext;
@@ -1486,10 +1470,11 @@ bool NetCvode::init_global() {
         distribute_dinfo(nullptr, 0);
         for (NrnThread* _nt: for_threads(nrn_threads, nrn_nthread)) {
             CvodeThreadData& z = cv.ctd_[_nt->id];
-            z.rootnodecount_ = _nt->ncell;
-            z.v_node_count_ = _nt->end;
-            z.v_node_ = _nt->_v_node;
-            z.v_parent_ = _nt->_v_parent;
+
+            z.rootnode_begin_index_ = 0;
+            z.rootnode_end_index_ = _nt->ncell;
+            z.vnode_begin_index_ = _nt->ncell;
+            z.vnode_end_index_ = _nt->end;
 
             CvMembList* last = 0;
             for (NrnThreadMembList* tml = _nt->tml; tml; tml = tml->next) {
@@ -1577,26 +1562,23 @@ bool NetCvode::init_global() {
             }
 
             for (i = 0; i < _nt->ncell; ++i) {
-                d.lcv_[i].ctd_[0].v_node_count_ = 0;
+                auto& z = d.lcv_[i].ctd_[0];
+                z.rootnode_begin_index_ = i;
+                z.rootnode_end_index_ = i + 1;
+                // start counting these
+                z.vnode_begin_index_ = 0;
+                z.vnode_end_index_ = 0;
             }
-            for (i = 0; i < _nt->end; ++i) {
-                ++d.lcv_[cellnum[i]].ctd_[0].v_node_count_;
-            }
-            for (i = 0; i < _nt->ncell; ++i) {
-                d.lcv_[cellnum[i]].ctd_[0].v_node_ =
-                    new Node*[d.lcv_[cellnum[i]].ctd_[0].v_node_count_];
-                d.lcv_[cellnum[i]].ctd_[0].v_parent_ =
-                    new Node*[d.lcv_[cellnum[i]].ctd_[0].v_node_count_];
-            }
-            for (i = 0; i < _nt->ncell; ++i) {
-                d.lcv_[i].ctd_[0].v_node_count_ = 0;
-                d.lcv_[i].ctd_[0].rootnodecount_ = 1;
-            }
-            for (i = 0; i < _nt->end; ++i) {
-                d.lcv_[cellnum[i]].ctd_[0].v_node_[d.lcv_[cellnum[i]].ctd_[0].v_node_count_] =
-                    _nt->_v_node[i];
-                d.lcv_[cellnum[i]].ctd_[0].v_parent_[d.lcv_[cellnum[i]].ctd_[0].v_node_count_++] =
-                    _nt->_v_parent[i];
+            for (i = _nt->ncell; i < _nt->end; ++i) {
+                auto& z = d.lcv_[cellnum[i]].ctd_[0];
+                // valid only if cell contiguity (except root) is satisified.
+                if (!z.vnode_begin_index_) {
+                    z.vnode_begin_index_ = i;
+                }
+                if (z.vnode_end_index_ > 0) {  // verify contiguity constraint
+                    assert(z.vnode_end_index_ == i);
+                }
+                z.vnode_end_index_ = i + 1;
             }
             // divide the memb_list info into per cell info
             // count
@@ -1620,12 +1602,11 @@ bool NetCvode::init_global() {
             // The sum of the ml[i].nodecount must equal the mechanism
             // nodecount for the cell and each ml[i] data must be contiguous.
             // Ideally the node permutation would be such that each cell
-            // is contiguous. So only needing a ml[0]. That is sadly not
-            // the case with the default permutation. The cell root nodes are
-            // all at the beginning, and thereafter only Section nodes are
-            // contiguous. It would be easy to permute nodes so that each cell
-            // is contiguous (except root node). This would result in a
-            // CvMembList.ml.size() == 1 almost always with an exception of
+            // is contiguous. So only needing a ml[0]. This is now mostly
+            // the case with the default permutation. The root nodes are
+            // all at the beginning, and thereafter all the cell nodes are
+            // contiguous. This results in a
+            // CvMembList.ml.size() == 1 almost always, with an exception of
             // size() == 2 only for extracellular and for POINT_PROCESSes
             // located both in the root node and other cell nodes.
 
@@ -1674,6 +1655,9 @@ bool NetCvode::init_global() {
                                 // instance to cml->ml
                                 cml->ml.emplace_back(cml->index);
                                 assert(cml->ml.back().nodecount == 0);
+                                // For the default node permutation, cell
+                                // nodes are contiguous except for rootnode.
+                                assert(cml->ml.size() < 3);
                             }
                         }
 
@@ -2373,7 +2357,7 @@ void _nrn_watch_activate(Datum* d,
     }
     if (r == 0) {
         for (auto wc1: *wl) {
-            wc1->unregister.send(wc1);
+            wc1->Remove();
             if (wc1->qthresh_) {  // is it on the queue?
                 net_cvode_instance->remove_event(wc1->qthresh_, PP2NT(pnt)->id);
                 wc1->qthresh_ = nullptr;
@@ -2473,7 +2457,7 @@ void nrn_watch_clear() {
     assert(net_cvode_instance->wl_list_.size() == (size_t) nrn_nthread);
     for (auto& htlists_of_thread: net_cvode_instance->wl_list_) {
         for (auto* wl: htlists_of_thread) {
-            wl->clear();
+            wl->RemoveAll();
         }
     }
     // not necessary to empty the WatchList in the Point_process dparam array
@@ -2491,7 +2475,7 @@ void _nrn_free_watch(Datum* d, int offset, int n) {
     }
     for (i = offset + 1; i < nn; ++i) {
         if (auto* wc = d[i].get<WatchCondition*>(); wc) {
-            wc->unregister.send(wc);
+            wc->Remove();
             delete wc;
             d[i] = nullptr;
         }
@@ -2823,7 +2807,7 @@ void NetCvode::init_events() {
     if (gcv_) {
         for (int j = 0; j < nrn_nthread; ++j) {
             if (gcv_->ctd_[j].watch_list_) {
-                gcv_->ctd_[j].watch_list_->clear();
+                gcv_->ctd_[j].watch_list_->RemoveAll();
             }
         }
     } else {
@@ -2831,7 +2815,7 @@ void NetCvode::init_events() {
             NetCvodeThreadData& d = p[j];
             for (i = 0; i < d.nlcv_; ++i) {
                 if (d.lcv_[i].ctd_[0].watch_list_) {
-                    d.lcv_[i].ctd_[0].watch_list_->clear();
+                    d.lcv_[i].ctd_[0].watch_list_->RemoveAll();
                 }
             }
         }
@@ -4158,6 +4142,7 @@ void NetCvode::play_init() {
     }
 }
 
+#if 0  // never used, existed in Version 6.2
 int NetCvode::cellindex() {
     Section* sec = chk_access();
     int i, j, ii;
@@ -4166,7 +4151,9 @@ int NetCvode::cellindex() {
     } else {
         ii = 0;
         lvardtloop(i, j) {
-            if (sec == p[i].lcv_[j].ctd_[0].v_node_[p[i].lcv_[j].ctd_[0].rootnodecount_]->sec) {
+            NrnThread* nt_ = nrn_threads + i;
+            int inode = p[i].lcv_[j].ctd_[0].vnode_begin_index_;
+            if (sec == nt_->_v_node[inode]->sec) {
                 return ii;
             }
             ii++;
@@ -4175,6 +4162,7 @@ int NetCvode::cellindex() {
     hoc_execerror(secname(sec), " is not the root section for any local step cvode instance");
     return 0;
 }
+#endif
 
 void NetCvode::states() {
     Vect* v = vector_arg(1);
@@ -5294,7 +5282,7 @@ WatchCondition::WatchCondition(Point_process* pnt, double (*c)(Point_process*)) 
 }
 
 WatchCondition::~WatchCondition() {
-    unregister.send(this);
+    Remove();
 }
 
 // A WatchCondition but with different deliver
@@ -5320,17 +5308,11 @@ void WatchCondition::activate(double flag) {
     id = (cv->nctd_ > 1) ? thread()->id : 0;
     auto*& wl = cv->ctd_[id].watch_list_;
     if (!wl) {
-        wl = new std::list<WatchCondition*>();
+        wl = new HTList(nullptr);
         net_cvode_instance->wl_list_[id].push_back(wl);
     }
-    unregister.send(this);
-    wl->push_back(this);
-    unregister.connect([&](WatchCondition* wc) {
-        auto it = std::find(wl->begin(), wl->end(), wc);
-        if (it != wl->end()) {
-            wl->erase(it);
-        }
-    });
+    Remove();
+    wl->Append(this);
 }
 
 void WatchCondition::asf_err() {
@@ -5399,7 +5381,7 @@ void STETransition::deactivate() {
         net_cvode_instance->remove_event(stec_->qthresh_, stec_->thread()->id);
         stec_->qthresh_ = nullptr;
     }
-    stec_->unregister.send(stec_.get());
+    stec_->Remove();
 }
 
 void STECondition::deliver(double tt, NetCvode* ns, NrnThread* nt) {
@@ -5503,8 +5485,9 @@ void Cvode::evaluate_conditions(NrnThread* nt) {
         }
     }
     if (z.watch_list_) {
-        for (auto wc: *z.watch_list_) {
-            wc->condition(this);
+        for (HTList* item = z.watch_list_->First(); item != z.watch_list_->End();
+             item = item->Next()) {
+            ((WatchCondition*) item)->condition(this);
         }
     }
 }
@@ -5531,8 +5514,9 @@ void Cvode::check_deliver(NrnThread* nt) {
         }
     }
     if (z.watch_list_) {
-        for (auto wc: *z.watch_list_) {
-            wc->check(nt, nt->_t);
+        for (HTList* item = z.watch_list_->First(); item != z.watch_list_->End();
+             item = item->Next()) {
+            ((WatchCondition*) item)->check(nt, nt->_t);
         }
     }
 }
@@ -5944,8 +5928,9 @@ void NetCvode::check_thresh(NrnThread* nt) {  // for default method
         }
     }
 
-    for (const auto* wl: wl_list_[nt->id]) {
-        for (auto wc: *wl) {
+    for (auto* wl: wl_list_[nt->id]) {
+        for (HTList* item = wl->First(); item != wl->End(); item = item->Next()) {
+            WatchCondition* wc = static_cast<WatchCondition*>(item);
             wc->check(nt, nt->_t);
         }
     }
@@ -5961,8 +5946,9 @@ void nrn2core_transfer_WATCH(void (*cb)(int, int, int, int, int)) {
     // should be revisited for possible simplification since wl_list now
     // segregated by threads.
     for (auto& htlists_of_thread: net_cvode_instance->wl_list_) {
-        for (const auto* wl: htlists_of_thread) {
-            for (auto wc: *wl) {
+        for (HTList* wl: htlists_of_thread) {
+            for (HTList* item = wl->First(); item != wl->End(); item = item->Next()) {
+                WatchCondition* wc = static_cast<WatchCondition*>(item);
                 nrn2core_transfer_WatchCondition(wc, cb);
             }
         }
@@ -6391,11 +6377,16 @@ void NetCvode::playrec_setup() {
 
 // is a pointer to range variable in this cell
 bool Cvode::is_owner(neuron::container::data_handle<double> const& handle) {
-    int in, it;
-    for (it = 0; it < nrn_nthread; ++it) {
+    for (int it = 0; it < nrn_nthread; ++it) {
         CvodeThreadData& z = CTD(it);
-        for (in = 0; in < z.v_node_count_; ++in) {
-            Node* nd = z.v_node_[in];
+        NrnThread* nt_ = nrn_threads + it;
+        // inelegant start but include root in single for loop
+        for (int i = -1; i < z.vnode_end_index_; ++i) {
+            int in = (i == -1) ? z.rootnode_begin_index_ : i;
+            if (i == -1) {
+                i = z.vnode_begin_index_ - 1;  // ready for ++i on next iteration
+            }
+            Node* nd = nt_->_v_node[in];
             if (handle == nd->v_handle()) {
                 return true;
             }

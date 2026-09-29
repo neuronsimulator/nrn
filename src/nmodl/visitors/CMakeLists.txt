@@ -25,13 +25,16 @@ add_library(
   localize_visitor.cpp
   longitudinal_diffusion_visitor.cpp
   loop_unroll_visitor.cpp
+  matexp_visitor.cpp
   neuron_solve_visitor.cpp
   perf_visitor.cpp
   rename_visitor.cpp
   rename_function_arguments.cpp
   semantic_analysis_visitor.cpp
   solve_block_visitor.cpp
+  solve_without_method_visitor.cpp
   steadystate_visitor.cpp
+  state_discontinuity_visitor.cpp
   sympy_conductance_visitor.cpp
   sympy_replace_solutions_visitor.cpp
   sympy_solver_visitor.cpp

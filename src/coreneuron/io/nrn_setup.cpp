@@ -944,11 +944,11 @@ void read_phase3(NrnThread& nt, UserParams& userParams) {
 
     Phase3 p3;
     if (corenrn_embedded && !corenrn_file_mode) {
-        p3.read_direct(ntmapping);
+        p3.read_direct(ntmapping, nt);
     } else {
         auto& F = userParams.file_reader[nt.id];
         F.restore_checkpoint();
-        p3.read_file(F, ntmapping);
+        p3.read_file(F, ntmapping, nt);
     }
 
     // make number #cells match with mapping size

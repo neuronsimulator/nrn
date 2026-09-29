@@ -1,7 +1,7 @@
 #include <../../nrnconf.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include "classreg.h"
+#include "code.h"
 #include "oc2iv.h"
 #include <string.h>
 #include <regex>
@@ -21,13 +21,11 @@ extern Objectdata* hoc_top_level_data;
 extern Symlist* hoc_built_in_symlist;
 extern int nrn_is_artificial(int);
 
-extern int hoc_return_type_code;
-
 static double l_substr(void*) {
     char* s1 = gargstr(1);
     char* s2 = gargstr(2);
     char* p = strstr(s1, s2);
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     if (p) {
         return double(p - s1);
     } else {
@@ -36,19 +34,23 @@ static double l_substr(void*) {
 }
 
 static double l_len(void*) {
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     return double(strlen(gargstr(1)));
 }
 
+
+// Clean the text so we keep only the first line Imitation of std::multiline in our case
+
+static std::string imitate_multiline(const std::string& text) {
+    static const std::regex r(R"(^(.*)(\n|$))");
+    std::smatch sm;
+    std::regex_search(text, sm, r);
+    return sm[1];
+}
+
+
 static double l_head(void*) {
-    std::string text(gargstr(1));
-    {  // Clean the text so we keep only the first line
-       // Imitation of std::multiline in our case
-        std::regex r("^(.*)(\n|$)");
-        std::smatch sm;
-        std::regex_search(text, sm, r);
-        text = sm[1];
-    }
+    std::string text = imitate_multiline(gargstr(1));
     int i = -1;
     std::string result{};
     try {
@@ -62,19 +64,12 @@ static double l_head(void*) {
     }
     char** head = hoc_pgargstr(3);
     hoc_assign_str(head, result.c_str());
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     return double(i);
 }
 
 static double l_tail(void*) {
-    std::string text(gargstr(1));
-    {  // Clean the text so we keep only the first line
-       // Imitation of std::multiline in our case
-        std::regex r("^(.*)(\n|$)");
-        std::smatch sm;
-        std::regex_search(text, sm, r);
-        text = sm[1];
-    }
+    std::string text = imitate_multiline(gargstr(1));
     int i = -1;
     std::string result{};
     try {
@@ -88,7 +83,7 @@ static double l_tail(void*) {
     }
     char** tail = hoc_pgargstr(3);
     hoc_assign_str(tail, result.c_str());
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     return double(i);
 }
 
@@ -133,7 +128,7 @@ static double l_right(void*) {
 }
 
 static double l_is_name(void*) {
-    hoc_return_type_code = 2;  // boolean
+    hoc_return_type_code = HocReturnType::boolean;
     return hoc_lookup(gargstr(1)) ? 1. : 0.;
 }
 
@@ -325,7 +320,7 @@ static double l_ref(void*) {
     Object* ob = *hoc_objgetarg(1);
     int nr = ob ? ob->refcount : 0;
     Printf("%s has %d references\n", hoc_object_name(ob), nr);
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     if (nr == 0) {
         return 0.;
     }
@@ -343,14 +338,14 @@ static double l_ref(void*) {
 
 static double l_is_point(void*) {
     Object* ob = *hoc_objgetarg(1);
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     return double(ob ? ob->ctemplate->is_point_ : 0);
 }
 
 static double l_is_artificial(void*) {
     Object* ob = *hoc_objgetarg(1);
     int type = ob ? ob->ctemplate->is_point_ : 0;
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     if (type == 0) {
         return 0.;
     }

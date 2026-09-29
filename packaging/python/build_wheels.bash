@@ -5,7 +5,7 @@ set -eux
 #
 # Note: It should be invoked from nrn directory
 #
-# PREREQUESITES:
+# PREREQUISITES:
 #  - cmake (>=3.15.0)
 #  - flex
 #  - bison
@@ -94,6 +94,7 @@ set_cibw_environment() {
             [NRN_ENABLE_CORENEURON]="ON"
             [NRN_BINARY_DIST_BUILD]="ON"
             [NRN_RX3D_OPT_LEVEL]="0"
+            [NRN_ENABLE_INTERVIEWS]="ON"
             # 10.14 is required for full C++17 support according to
             # https://cibuildwheel.readthedocs.io/en/stable/cpp_standards, but it
             # seems that 10.15 is actually needed for std::filesystem::path.
@@ -110,6 +111,7 @@ set_cibw_environment() {
             [CORENRN_ENABLE_OPENMP]="ON"
             [NRN_BINARY_DIST_BUILD]="ON"
             [NRN_RX3D_OPT_LEVEL]="0"
+            [NRN_ENABLE_INTERVIEWS]="ON"
         )
     fi
 
@@ -129,16 +131,39 @@ set_cibw_environment() {
 build_wheel_portable() {
     platform="${1}"
     echo "[BUILD WHEEL] Building with cibuildwheel for ${platform}"
-    local skip=
-    setup_venv "$(command -v python3)"
-    (( skip )) && return 0
 
-    python -m pip install cibuildwheel
+    # cibuildwheel >=3 requires that the underlying Python version be at least 3.11
+    # NOTE: bump this when a new Python version is released
+    supported_versions=(3.11 3.12 3.12 3.14)
+    path_to_interpreter=""
+    for version in "${supported_versions[@]}"; do
+        if command -v "python${version}"; then
+            path_to_interpreter="$(command -v "python${version}")"
+            break
+        fi
+    done
+
+    if [ -z "${path_to_interpreter}" ]; then
+        echo "ERROR: Python 3.11 or above is required for building with cibuildwheel"
+        exit 1
+    fi
+
+    setup_venv "${path_to_interpreter}"
+
+    # earliest version of cibuildwheel that supports Python 3.14
+    python -m pip install 'cibuildwheel>=3.2.1'
     echo " - Building..."
     rm -rf "${build_dir}"
 
     if [ "${platform}" = 'linux' ]; then
-        NRN_MPI_DYNAMIC="/usr/include/openmpi-$(uname -m);/usr/include/mpich-$(uname -m)"
+        # detect whether we are cross compiling, see:
+        # https://github.com/neuronsimulator/nrn/issues/3535
+        if [ "$(uname -s)" = 'Darwin' ] && [ "$(uname -m)" = 'arm64' ]; then
+            NRN_MPI_DYNAMIC="${NRN_MPI_DYNAMIC:-/usr/include/openmpi-aarch64;/usr/include/mpich-aarch64}"
+        else
+            NRN_MPI_DYNAMIC="${NRN_MPI_DYNAMIC:-/usr/include/openmpi-$(uname -m);/usr/include/mpich-$(uname -m)}"
+        fi
+
         # if we are building on Azure, we can use the MPT headers as well
         if [ -n "${TF_BUILD:-}" ]; then
             NRN_MPI_DYNAMIC="${NRN_MPI_DYNAMIC};/host/opt/nrnwheel/mpt/include"
@@ -147,8 +172,21 @@ build_wheel_portable() {
     fi
 
     if [ "${platform}" = 'macos' ]; then
+
+        # Force use of system Apple clang/clang++ on macOS runners to avoid
+        # linking against Homebrew LLVM (which bundles newer libunwind requiring
+        # macOS 14+). Apple's clang uses system libunwind (no separate dylib).
+        # This should prevent delocate from bundling libunwind.1.0.dylib at all.
+        if command -v /usr/bin/clang++ >/dev/null 2>&1; then
+            export CC=/usr/bin/clang
+            export CXX=/usr/bin/clang++
+            echo "Forcing system clang: CC=$CC CXX=$CXX"
+        else
+            echo "Warning: /usr/bin/clang++ not found; using default compiler"
+        fi
+
         if [ "$(uname -m)" = 'arm64' ]; then
-            export MACOSX_DEPLOYMENT_TARGET='11.0'
+            export MACOSX_DEPLOYMENT_TARGET="${MACOSX_DEPLOYMENT_TARGET:-11.0}"
         fi
     fi
 

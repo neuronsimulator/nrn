@@ -6,7 +6,6 @@ from neuron import h
 
 
 def hash_array(x):
-
     return hashlib.sha256(" ".join([f"{xx:.10e}" for xx in x]).encode()).hexdigest()
 
 

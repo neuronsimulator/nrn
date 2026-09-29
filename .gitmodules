@@ -6,7 +6,7 @@
 	url = https://github.com/catchorg/Catch2.git
 [submodule "external/coding-conventions"]
 	path = external/coding-conventions
-	url = https://github.com/BlueBrain/hpc-coding-conventions.git
+	url = https://github.com/neuronsimulator/coding-conventions.git
 [submodule "test/rxd/testdata"]
 	path = test/rxd/testdata
 	url = https://github.com/neuronsimulator/rxdtestdata
