@@ -115,8 +115,8 @@ macro(nrn_enable_coverage_files)
 endmacro()
 
 if(NRN_ENABLE_COVERAGE)
-  # lcov >= 2 can capture .gcda files in parallel. On lcov 2.0-1, the same flag
-  # made genhtml several times slower and did not speed up --add-tracefile.
+  # lcov >= 2 can capture .gcda files in parallel. On lcov 2.0-1, the same flag made genhtml several
+  # times slower and did not speed up --add-tracefile.
   if(LCOV_VERSION GREATER_EQUAL "2.0")
     set(LCOV_CAPTURE ${LCOV} --parallel)
   else()
