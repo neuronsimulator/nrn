@@ -100,6 +100,11 @@ def test_multiple_soma(cell_model):
 def test_import_into_HOC_template(neuron_instance):
     """test that we can import at the top level without error"""
     h, rxd, data, save_path = neuron_instance
+    # HOC "..." treats \b \t \r \n \f as escapes; embed paths with /.
+    # Windows fopen accepts /; Unix paths are unchanged.
+    path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "simple.asc"
+    ).replace("\\", "/")
     h(
         """
         begintemplate HocTemplateTest
@@ -118,7 +123,7 @@ def test_import_into_HOC_template(neuron_instance):
 
         create soma[1], dend[1]
         endtemplate HocTemplateTest"""
-        % os.path.join(os.path.dirname(os.path.abspath(__file__)), "simple.asc")
+        % path
     )
     cell = h.HocTemplateTest()
     assert len(list(cell.all)) == 2

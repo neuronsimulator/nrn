@@ -71,7 +71,9 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
     target_include_directories(nrnpython${pyver} BEFORE PUBLIC ${pyinc} ${INCLUDE_DIRS})
     target_link_libraries(nrnpython${pyver} PUBLIC nrniv_lib)
     target_link_libraries(nrnpython${pyver} PRIVATE fmt::fmt ${Readline_LIBRARY} ${nanobind_target})
-    if(NRN_LINK_AGAINST_PYTHON)
+    if(NRN_LINK_AGAINST_PYTHON OR WIN32)
+      # Windows has no Unix-style undefined-symbol lookup; the DLL must link pythonXY.lib even when
+      # nrniv.dll does not (DYNAMIC + LINK_AGAINST off).
       target_link_libraries(nrnpython${pyver} PUBLIC ${pylib})
     endif()
     add_dependencies(nrnpython${pyver} nrniv_lib)
@@ -109,7 +111,7 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
       OUTPUT_DIR
       ${PROJECT_BINARY_DIR}/lib/python/neuron)
 
-    if(NRN_LINK_AGAINST_PYTHON)
+    if(NRN_LINK_AGAINST_PYTHON OR WIN32)
       target_link_libraries(${hoc_module_name} PUBLIC ${pylib})
     endif()
 

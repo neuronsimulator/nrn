@@ -180,6 +180,9 @@ callback to bbss_early when needed.
 #include <stdlib.h>
 #include <string>
 #include <sys/stat.h>
+#if defined(_WIN32)
+#include <direct.h>
+#endif
 #include <unordered_map>
 #include <unordered_set>
 
@@ -673,8 +676,8 @@ static double save_test(void* v) {
     BBSaveState* ss = (BBSaveState*) v;
     usebin_ = 0;
     if (nrnmpi_myid == 0) {  // save global time
-#ifdef MINGW
-        mkdir("bbss_out");
+#if defined(_WIN32)
+        _mkdir("bbss_out");
 #else
         mkdir("bbss_out", 0770);
 #endif

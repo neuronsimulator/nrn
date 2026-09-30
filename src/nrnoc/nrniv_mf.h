@@ -74,7 +74,7 @@ extern void destroy_point_process(void*);
 extern double has_loc_point(void*);
 extern double get_loc_point_process(void*);
 extern double loc_point_process(int, void*);
-extern Prop* nrn_point_prop_;
+extern NRN_DLLSYM Prop* nrn_point_prop_;
 neuron::container::data_handle<double> point_process_pointer(Point_process*, Symbol*, int);
 void steer_point_process(void* v);
 
@@ -84,17 +84,24 @@ void artcell_net_move(Datum*, Point_process*, double);
 
 extern int ifarg(int);
 extern void set_seed(double);
-extern int nrn_matrix_cnt_;       // defined in treeset.cpp
-extern int diam_changed;          // defined in cabcode.cpp
-extern int diam_change_cnt;       // defined in treeset.cpp
-extern int structure_change_cnt;  // defined in treeset.cpp
-extern int tree_changed;          // defined in cabcode.cpp
-extern int v_structure_change;    // defined in treeset.cpp
+extern int nrn_matrix_cnt_;          // defined in treeset.cpp
+extern NRN_DLLSYM int diam_changed;  // defined in cabcode.cpp
+extern int tree_changed;             // defined in cabcode.cpp
+// ctypes (rxd, gui2) looks these up by C name. MSVC C++ mangles data.
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern NRN_DLLSYM int diam_change_cnt;       // defined in treeset.cpp
+extern NRN_DLLSYM int structure_change_cnt;  // defined in treeset.cpp
+extern NRN_DLLSYM int v_structure_change;    // defined in treeset.cpp
+#ifdef __cplusplus
+}
+#endif
 
 // nrnmech stuff
-extern pnt_receive_t* pnt_receive;
-extern pnt_receive_init_t* pnt_receive_init;
-extern short* pnt_receive_size;
+extern NRN_DLLSYM pnt_receive_t* pnt_receive;
+extern NRN_DLLSYM pnt_receive_init_t* pnt_receive_init;
+extern NRN_DLLSYM short* pnt_receive_size;
 extern void nrn_net_event(Point_process*, double);
 void nrn_net_move(Datum*, Point_process*, double);
 

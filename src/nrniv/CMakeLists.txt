@@ -40,7 +40,8 @@ add_custom_command(
   DEPENDS "${NRN_MODLUNIT_SRC_DIR}/parse1.ypp"
   COMMENT "[BISON][modlunitparser] Building parser with bison ${BISON_VERSION}")
 
-add_custom_target(generated_source_files true)
+# Umbrella only. A COMMAND of `true` is not a Windows program.
+add_custom_target(generated_source_files)
 add_custom_target(modlunit_generated_files DEPENDS "${NRN_MODLUNIT_GEN}/lex.cpp"
                                                    "${NRN_MODLUNIT_GEN}/parse1.cpp")
 add_dependencies(generated_source_files modlunit_generated_files)
@@ -184,7 +185,7 @@ else()
   list(APPEND NRN_NRNIV_LIB_SRC_FILES ${NRN_NRNMPI_SRC_FILES})
 endif()
 
-if(MINGW)
+if(NRN_WINDOWS_BUILD)
   list(APPEND NRN_NRNIV_LIB_SRC_FILES ${PROJECT_SOURCE_DIR}/src/mswin/dlfcn.c)
 endif()
 
@@ -251,26 +252,36 @@ set(NRN_INCLUDE_DIRS
 # avoid error with nvector_serial.cpp for #include <../../../nrnconf.h>
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/src/sundials/shared)
 
-# generate hocusr.h
+# generate hocusr.h cl.exe treats //UNC/neuron.h as a switch; sed is not a Windows program.
+# cmake/generate_hocusr.cmake copies to the build dir, preprocesses the local name, and runs
+# mk_hocusr_h.py (which skips leftover #line lines).
+set(_nrn_hocusr_out ${PROJECT_BINARY_DIR}/src/oc/hocusr.h)
+set(_nrn_hocusr_nologo 0)
+if(MSVC)
+  set(_nrn_hocusr_nologo 1)
+endif()
 add_custom_command(
-  OUTPUT ${PROJECT_BINARY_DIR}/src/oc/hocusr.h
-  COMMAND ${CMAKE_C_COMPILER} -E -I${NRN_NRNOC_SRC_DIR} -I${NRN_OC_SRC_DIR}
-          ${NRN_NRNOC_SRC_DIR}/neuron.h > neuron.tmp1
-  COMMAND sed "/^#/d" neuron.tmp1 > neuron.tmp2
-  COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${NRN_OC_SRC_DIR}/mk_hocusr_h.py < neuron.tmp2 >
-          ${PROJECT_BINARY_DIR}/src/oc/hocusr.h
-  DEPENDS ${NRN_NRNOC_SRC_DIR}/neuron.h ${NRN_OC_SRC_DIR}/mk_hocusr_h.py)
+  OUTPUT ${_nrn_hocusr_out}
+  COMMAND
+    ${CMAKE_COMMAND} "-DNRN_HOCUSR_CC=${CMAKE_C_COMPILER}" "-DNRN_HOCUSR_NRNOC=${NRN_NRNOC_SRC_DIR}"
+    "-DNRN_HOCUSR_OC=${NRN_OC_SRC_DIR}" "-DNRN_HOCUSR_NEURON_H=${NRN_NRNOC_SRC_DIR}/neuron.h"
+    "-DNRN_HOCUSR_PYTHON=${NRN_DEFAULT_PYTHON_EXECUTABLE}"
+    "-DNRN_HOCUSR_SCRIPT=${NRN_OC_SRC_DIR}/mk_hocusr_h.py" "-DNRN_HOCUSR_OUTPUT=${_nrn_hocusr_out}"
+    "-DNRN_HOCUSR_WORKDIR=${PROJECT_BINARY_DIR}/src/oc" "-DNRN_HOCUSR_NOLOGO=${_nrn_hocusr_nologo}"
+    -P ${PROJECT_SOURCE_DIR}/cmake/generate_hocusr.cmake
+  DEPENDS ${NRN_NRNOC_SRC_DIR}/neuron.h ${NRN_OC_SRC_DIR}/mk_hocusr_h.py
+          ${PROJECT_SOURCE_DIR}/cmake/generate_hocusr.cmake)
 add_custom_target(generate_hocusr_header DEPENDS "${PROJECT_BINARY_DIR}/src/oc/hocusr.h")
 add_dependencies(generated_source_files generate_hocusr_header)
 
-# header for dynamic mpi
+# header for dynamic mpi (nrnmpi_dynam_cinc, nrnmpi_dynam.h, nrnmpi_dynam_wrappers.inc)
 if(NRN_ENABLE_MPI_DYNAMIC)
   file(MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/src/nrnmpi")
   add_custom_command(
     OUTPUT ${NRNMPI_DYNAMIC_INCLUDE_FILE}
-    COMMAND sh mkdynam.sh "${PROJECT_BINARY_DIR}/src/nrnmpi"
+    COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} mkdynam.py "${PROJECT_BINARY_DIR}/src/nrnmpi"
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/src/nrnmpi
-    DEPENDS ${PROJECT_SOURCE_DIR}/src/nrnmpi/mkdynam.sh
+    DEPENDS ${PROJECT_SOURCE_DIR}/src/nrnmpi/mkdynam.py
             ${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpidec.h)
 endif()
 
@@ -397,6 +408,14 @@ include_directories(${NRN_INCLUDE_DIRS})
 # All source directories to include
 # =============================================================================
 add_library(nrniv_lib ${NRN_LIBRARY_TYPE} ${NRN_NRNIV_LIB_SRC_FILES})
+if(NRN_LIBRARY_TYPE STREQUAL "SHARED")
+  # Consumers inherit NRN_DLL so NRN_DLLSYM is dllimport; this target also gets NRN_DLL_EXPORTS so
+  # NRN_DLLSYM is dllexport. Static builds leave NRN_DLL unset and NRN_DLLSYM empty.
+  target_compile_definitions(
+    nrniv_lib
+    PUBLIC NRN_DLL
+    PRIVATE NRN_DLL_EXPORTS)
+endif()
 add_dependencies(nrniv_lib generated_source_files)
 add_cpp_git_information(nrniv_lib PRIVATE)
 target_link_libraries(nrniv_lib PRIVATE nrngnu)
@@ -438,7 +457,18 @@ if(${NRN_ENABLE_ARCH_INDEP_EXP_POW})
 endif()
 
 if(NRN_WINDOWS_BUILD)
-  target_link_libraries(nrniv_lib PUBLIC ${TERMCAP_LIBRARIES} ${Readline_LIBRARY})
+  if(TERMCAP_FOUND)
+    target_link_libraries(nrniv_lib PUBLIC ${TERMCAP_LIBRARIES})
+  endif()
+  if(READLINE_FOUND)
+    # Fetched GNU readline is a static convenience lib; PUBLIC would require nrn_readline in
+    # NeuronTargets. MinGW's shared readline stays PUBLIC.
+    if(NRN_READLINE_FETCHED)
+      target_link_libraries(nrniv_lib PRIVATE ${Readline_LIBRARY})
+    else()
+      target_link_libraries(nrniv_lib PUBLIC ${Readline_LIBRARY})
+    endif()
+  endif()
 else()
   if(READLINE_FOUND)
     target_link_libraries(nrniv_lib PRIVATE ${Readline_LIBRARY})
@@ -486,8 +516,9 @@ if(NRN_ENABLE_MPI)
       add_library(${libname}_lib SHARED ${NRN_NRNMPI_SRC_FILES})
       target_link_libraries(${libname}_lib PRIVATE fmt::fmt)
       target_include_directories(${libname}_lib BEFORE PUBLIC ${include})
-      # Note that we do not link here to libmpi. That is dlopen first.
-      if(MINGW) # type msmpi only
+      # Note that we do not link here to libmpi. That is dlopen first. Windows DLLs cannot leave MPI
+      # / nrniv symbols undefined; Unix can.
+      if(NRN_WINDOWS_BUILD) # type msmpi only
         add_dependencies(${libname}_lib nrniv_lib)
         target_link_libraries(${libname}_lib PUBLIC ${MPI_C_LIBRARIES})
         target_link_libraries(${libname}_lib PUBLIC nrniv_lib)
@@ -564,7 +595,7 @@ target_link_libraries(nrniv PRIVATE nrniv_lib ${INTERNAL_READLINE} ${CMAKE_DL_LI
 if(NRN_ENABLE_THREADS)
   target_link_libraries(nrniv PRIVATE Threads::Threads)
 endif()
-if(NOT MINGW)
+if(NOT NRN_WINDOWS_BUILD)
   target_link_libraries(nrniv_lib PUBLIC ${CMAKE_DL_LIBS})
 endif()
 

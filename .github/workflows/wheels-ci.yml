@@ -21,10 +21,92 @@ jobs:
       platform: ${{ matrix.os }}
       python_version: ${{ matrix.python_version }}
       commit: ${{ github.sha }}
+      # Full history so setuptools-scm / nrnversion() embed the SHA. clone-depth 1
+      # yields 9.0.1.dev0 and foreign VersionGate (NRN_FOREIGN_CI) cannot match.
+      clone_depth: '0'
     strategy:
+      fail-fast: false
       matrix:
-        os: ['macos-15-intel', 'ubuntu-24.04']
+        # Same Python versions on every OS. windows-2022 is MSVC win_amd64
+        # (#3431), not MinGW setup.exe. DYNAMIC stays on in pyproject.toml.
+        # Nightly/release already use 3.10-3.14 on this OS (full cartesian).
+        os: ['macos-15-intel', 'ubuntu-24.04', 'windows-2022']
         python_version: ['3.10', '3.14']
+
+  # Same-run 3.14 wheel from the per-OS upload (template name
+  # wheels-<py>-<os>). Runs in parallel with merge; merge must not
+  # delete-merged those names. Serial foreign suite only; MPI later.
+  foreign-ctest:
+    name: Foreign ctest 3.14 on ${{ matrix.os }}
+    needs: [build-test]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ['macos-15-intel', 'ubuntu-24.04', 'windows-2022']
+    env:
+      NEURON_MODULE_OPTIONS: '-nogui'
+    steps:
+      - name: Check out source (for test/foreign + rxd testdata)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: false
+
+      - name: Init rxd testdata submodule
+        run: git submodule update --init -- test/rxd/testdata
+
+      - name: Setup Python 3.14
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+
+      - name: Download 3.14 wheel for this OS
+        uses: actions/download-artifact@v4
+        with:
+          name: wheels-3.14-${{ matrix.os }}
+          path: wheelhouse
+
+      - name: Install wheel and serial test Python deps
+        shell: bash
+        run: |
+          set -eux
+          unset PYTHONPATH NEURONHOME || true
+          python -m pip install --upgrade pip
+          whl="$(ls wheelhouse/*.whl | head -n 1)"
+          python -m pip install --force-reinstall "${whl}"
+          python -m pip install pytest matplotlib plotly anywidget
+          python -c "import neuron; print(neuron.__file__); print(neuron.h.nrnversion())"
+
+      - name: Configure and run foreign serial ctest (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          set -eux
+          unset PYTHONPATH NEURONHOME || true
+          py="$(command -v python)"
+          cmake -S test/foreign -B build-ctest \
+            -DNRN_FOREIGN_PYTHON="${py}" \
+            -DNRN_FOREIGN_CI=ON
+          cmake --build build-ctest --target foreign --parallel
+          ctest --test-dir build-ctest -L serial --output-on-failure --timeout 600 -j4
+
+      - name: Configure and run foreign serial ctest (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Remove-Item Env:PYTHONPATH -ErrorAction SilentlyContinue
+          Remove-Item Env:NEURONHOME -ErrorAction SilentlyContinue
+          $py = (Get-Command python).Source
+          cmake -G "Visual Studio 17 2022" -A x64 -S test/foreign -B build-ctest `
+            "-DNRN_FOREIGN_PYTHON=$py" -DNRN_FOREIGN_CI=ON
+          if ($LASTEXITCODE -ne 0) { throw "cmake configure failed ($LASTEXITCODE)" }
+          cmake --build build-ctest --config Release --target foreign --parallel
+          if ($LASTEXITCODE -ne 0) { throw "cmake --build foreign failed ($LASTEXITCODE)" }
+          ctest --test-dir build-ctest -C Release -L serial --output-on-failure --timeout 600 -j2
+          if ($LASTEXITCODE -ne 0) { throw "foreign ctest serial failed ($LASTEXITCODE)" }
 
   merge:
     name: Merge artifacts and post artifacts URL
@@ -35,7 +117,9 @@ jobs:
         id: merge-artifacts
         uses: actions/upload-artifact/merge@v4
         with:
-          delete-merged: true
+          # Keep wheels-<py>-<os> so foreign-ctest can download them while
+          # this job still publishes the combined `wheels` URL.
+          delete-merged: false
           name: wheels
           pattern: wheels-*
 

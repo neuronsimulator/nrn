@@ -20,7 +20,7 @@
 extern int nrn_multisplit_active_;
 extern int hoc_execerror_messages;
 extern int nrn_shape_changed_;
-Object* (*nrnpy_rvp_rxd_to_callable)(Object*) = 0;
+NRN_DLLSYM Object* (*nrnpy_rvp_rxd_to_callable)(Object*) = 0;
 
 class SecPos {
   public:

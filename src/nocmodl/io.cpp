@@ -24,9 +24,6 @@ int in_comment_;
 char* inputline() {
     /* and removes comment, newline, beginning and trailing blanks */
     /* used to get the TITLE line */
-#if SYSV || defined(MINGW)
-#define index strchr
-#endif
     char* cp;
     int i;
 
@@ -35,7 +32,7 @@ char* inputline() {
     i = strlen(buf);
     if (i)
         buf[i - 1] = '\0';
-    if ((cp = index(buf, '!')) != (char*) 0) {
+    if ((cp = strchr(buf, '!')) != (char*) 0) {
         *cp-- = '\0';
     }
     while (cp >= buf && isspace(*cp)) {
@@ -216,13 +213,16 @@ void unGets(char* buf)		/* all this because we don't have an ENDBLOCK
 char* current_line() { /* assumes we actually want the previous line */
     static char buf[NRN_BUFSIZE];
     char* p;
+    /* path::c_str() is wchar_t on Windows; %s needs a narrow string.
+       generic_string() uses '/' so the C literal is not a backslash escape
+       (SOLVE error text is interpolated into std_cerr_stream << "..."). */
     SprintfAsrt(buf,
                 "at line %d in file %s:\\n%s",
                 linenum - 1,
 #if !defined(NRN_AVOID_ABSOLUTE_PATHS)
-                finname,
+                fs::absolute(finname).generic_string().c_str(),
 #else
-                fs::absolute(finname).filename().c_str(),
+                fs::absolute(finname).filename().generic_string().c_str(),
 #endif
                 inlinebuf[whichbuf ? 0 : 1] + 30);
     for (p = buf; *p; ++p) {
@@ -306,11 +306,33 @@ typedef struct FileStackItem {
 
 static List* filestack;
 
+static int is_dir_sep(char c) {
+#if defined(_WIN32)
+    return c == '/' || c == '\\';
+#else
+    return c == '/';
+#endif
+}
+
+static int is_complete_filename(const char* fname) {
+    /* highest precedence is complete filename: '/' Unix; Windows also '\\'
+       (current-drive absolute) and 'X:' (drive) */
+    if (fname[0] == '/') {
+        return 1;
+    }
+#if defined(_WIN32)
+    if (fname[0] == '\\' || (fname[0] && fname[1] == ':')) {
+        return 1;
+    }
+#endif
+    return 0;
+}
+
 static int getprefix(char* prefix, char* s) {
     char* cp;
     strcpy(prefix, s);
     for (cp = prefix + strlen(prefix); cp + 1 != prefix; --cp) {
-        if (*cp == '/') {
+        if (is_dir_sep(*cp)) {
             break;
         }
         *cp = '\0';
@@ -321,12 +343,17 @@ static int getprefix(char* prefix, char* s) {
 static FILE* include_open(char* fname, int err) {
     FILE* f = (FILE*) 0;
     FileStackItem* fsi;
-    char *dirs, *colon;
-    /* since dirs is a ':' separated list of paths, there is no
+    char *dirs, *p;
+    /* since dirs is a pathsep-separated list of paths, there is no
        limit to the size and so allocate from size of dirs and free
     */
     char *buf, *buf2;
-    if (fname[0] == '/') { /* highest precedence is complete filename */
+#if defined(_WIN32)
+    const char pathsep = ';';
+#else
+    const char pathsep = ':';
+#endif
+    if (is_complete_filename(fname)) {
         return fopen(fname, "r");
     }
 
@@ -358,18 +385,18 @@ static FILE* include_open(char* fname, int err) {
     if (err)
         fprintf(stderr, "Couldn't open: %s\n", fname);
     /* try all the directories in the environment variable */
-    /* a colon separated list of directories */
+    /* OS pathsep-separated list (':' Unix, ';' Windows; ':' is a drive letter) */
     dirs = getenv("MODL_INCLUDE");
     if (dirs) {
         buf = stralloc(dirs, buf); /* frees old buf and allocates */
         dirs = buf;
-        colon = dirs;
-        for (dirs = colon; *dirs; dirs = colon) {
+        p = dirs;
+        for (dirs = p; *dirs; dirs = p) {
             buf2 = NULL;
-            for (; *colon; ++colon) {
-                if (*colon == ':') {
-                    *colon = '\0';
-                    ++colon;
+            for (; *p; ++p) {
+                if (*p == pathsep) {
+                    *p = '\0';
+                    ++p;
                     break;
                 }
             }
@@ -424,7 +451,8 @@ void include_file(Item* q) {
     Sprintf(buf, ":::%s", STR(qinc));
     replacstr(qinc, buf);
     try {
-        Sprintf(buf, ":::realpath %s\n", fs::absolute(fname).c_str());
+        /* path::c_str() is wchar_t on Windows; %s needs a narrow string. */
+        Sprintf(buf, ":::realpath %s\n", fs::absolute(fname).generic_string().c_str());
         lappendstr(filetxtlist, buf);
     } catch (const std::filesystem::filesystem_error&) {
         // If we are not able to get an absolute path from fname, simply avoid to write it.

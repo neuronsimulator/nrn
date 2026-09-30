@@ -18,16 +18,19 @@ execute_process(
 if(status)
   message(FATAL_ERROR "Running exec status: ${status}")
 endif()
+# --ignore-eol: Windows nrniv writes CRLF; Unix refs are LF. Content match is the rule; byte
+# identity is not. CMake 3.14+ (project requires 3.15).
 execute_process(
-  COMMAND ${CMAKE_COMMAND} -E compare_files ${out_file} ${ref_file}
+  COMMAND ${CMAKE_COMMAND} -E compare_files --ignore-eol ${out_file} ${ref_file}
   WORKING_DIRECTORY ${work_dir}
   RESULT_VARIABLE status)
 if(status)
+  # sdiff is a GNU diagnostic, not part of the verdict. Missing on Windows.
   execute_process(
     COMMAND sdiff -s ${out_file} ${ref_file}
     WORKING_DIRECTORY ${work_dir}
-    RESULT_VARIABLE status)
-  message(FATAL_ERROR "Validating results status: ${status}")
+    ERROR_QUIET)
+  message(FATAL_ERROR "${out_file} differs from ${ref_file} (compare status ${status})")
 else()
   file(REMOVE "${work_dir}/${out_file}")
 endif()

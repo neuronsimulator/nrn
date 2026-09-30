@@ -124,26 +124,26 @@ PyObject* rangevars_;   // Python map for name to Symbol
 
 extern PyTypeObject* hocobject_type;
 extern void simpleconnectsection();
-extern short* nrn_is_artificial_;
-extern cTemplate** nrn_pnt_template_;
+extern NRN_DLLSYM short* nrn_is_artificial_;
+extern NRN_DLLSYM cTemplate** nrn_pnt_template_;
 extern PyObject* nrnpy_forall_safe(PyObject* self, PyObject* args);
 static void nrnpy_reg_mech(int);
-extern void (*nrnpy_reg_mech_p_)(int);
+extern NRN_DLLSYM void (*nrnpy_reg_mech_p_)(int);
 static int ob_is_seg(Object*);
-extern int (*nrnpy_ob_is_seg)(Object*);
+extern NRN_DLLSYM int (*nrnpy_ob_is_seg)(Object*);
 static Object* seg_from_sec_x(Section*, double x);
-extern Object* (*nrnpy_seg_from_sec_x)(Section*, double x);
+extern NRN_DLLSYM Object* (*nrnpy_seg_from_sec_x)(Section*, double x);
 static Section* o2sec(Object*);
-extern Section* (*nrnpy_o2sec_p_)(Object*);
+extern NRN_DLLSYM Section* (*nrnpy_o2sec_p_)(Object*);
 static void o2loc(Object*, Section**, double*);
-extern void (*nrnpy_o2loc_p_)(Object*, Section**, double*);
-extern void (*nrnpy_o2loc2_p_)(Object*, Section**, double*);
-extern char* (*nrnpy_pysec_name_p_)(Section*);
+extern NRN_DLLSYM void (*nrnpy_o2loc_p_)(Object*, Section**, double*);
+extern NRN_DLLSYM void (*nrnpy_o2loc2_p_)(Object*, Section**, double*);
+extern NRN_DLLSYM char* (*nrnpy_pysec_name_p_)(Section*);
 static char* pysec_name(Section*);
-extern Object* (*nrnpy_pysec_cell_p_)(Section*);
+extern NRN_DLLSYM Object* (*nrnpy_pysec_cell_p_)(Section*);
 static Object* pysec_cell(Section*);
 static PyObject* pysec2cell(NPySecObj*);
-extern int (*nrnpy_pysec_cell_equals_p_)(Section*, Object*);
+extern NRN_DLLSYM int (*nrnpy_pysec_cell_equals_p_)(Section*, Object*);
 static int pysec_cell_equals(Section*, Object*);
 static void remake_pmech_types();
 

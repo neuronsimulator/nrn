@@ -71,6 +71,9 @@ directly by hoc.
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#if defined(_WIN32)
+#include <direct.h>
+#endif
 #include <filesystem>
 namespace fs = std::filesystem;
 #define GETWD(buf) getcwd(buf, NRN_BUFSIZE)
@@ -373,9 +376,9 @@ void parout() {
                 continue;
             }
             if (s->subtype & ARRAY) {
-                Sprintf(buf, "extern double* %s;\n", s->name);
+                Sprintf(buf, "extern NRN_DLLSYM double* %s;\n", s->name);
             } else {
-                Sprintf(buf, "extern double %s;\n", s->name);
+                Sprintf(buf, "extern NRN_DLLSYM double %s;\n", s->name);
             }
             Lappendstr(defs_list, buf);
         }
@@ -413,7 +416,7 @@ extern void nrn_promote(Prop*, int, int);\n\
 
     /**** create special point process functions */
     if (point_process) {
-        Lappendstr(defs_list, "extern Prop* nrn_point_prop_;\n");
+        Lappendstr(defs_list, "extern NRN_DLLSYM Prop* nrn_point_prop_;\n");
         Lappendstr(defs_list, "static int _pointtype;\n");
         Lappendstr(defs_list,
                    "static void* _hoc_create_pnt(Object* _ho) { void* create_point_process(int, "
@@ -919,7 +922,7 @@ static const char *_mechanism[] = {\n\
         Lappendstr(defs_list, "static Symbol* _morphology_sym;\n");
     }
     if (areadec) {
-        Lappendstr(defs_list, "extern Node* nrn_alloc_node_;\n");
+        Lappendstr(defs_list, "extern NRN_DLLSYM Node* nrn_alloc_node_;\n");
     }
     ITERATE(q, useion) {
         sion = SYM(q);
@@ -1421,16 +1424,18 @@ if (auto* const _extnode = _nrn_mechanism_access_extnode(_nd); _extnode) {\n\
                "    hoc_register_var(hoc_scdoub, hoc_vdoub, hoc_intfunc);\n");
     {
         char buf1[NRN_BUFSIZE];
+        /* path::c_str() is wchar_t on Windows; %s needs a narrow string.
+           generic_string() uses '/' so the C literal is not a backslash escape. */
 #if !defined(NRN_AVOID_ABSOLUTE_PATHS)
         Sprintf(buf1,
                 "\tivoc_help(\"help ?1 %s %s\\n\");\n",
                 mechname,
-                fs::absolute(finname).c_str());
+                fs::absolute(finname).generic_string().c_str());
 #else
         Sprintf(buf1,
                 "\tivoc_help(\"help ?1 %s %s\\n\");\n",
                 mechname,
-                fs::path(finname).filename().c_str());
+                fs::path(finname).filename().generic_string().c_str());
 #endif
         Lappendstr(defs_list, buf1);
     }

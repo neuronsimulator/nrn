@@ -35,6 +35,7 @@ Last updated with M5. Labels refer to `ctest -L …` on a `test/foreign` build.
 | Wheel without RX3D / empty testdata | No `rxdmod_tests` |
 | No `pytest` | Python pytest groups skipped (warning) |
 | GPU off in wheel | No GPU CoreNEURON variants (not registered) |
+| `gjtests::gj_serial` CN half | Env `NRN_FOREIGN_SKIP_CORENEURON`. Group is not `-coreneuron`; CN psolve aborts at `nrn_setup`. Same script after `nrnivmodl -coreneuron` passes. In-tree CN row is `coreneuron_modtests::test_natrans_py`. |
 
 ## Build-only (not foreign)
 

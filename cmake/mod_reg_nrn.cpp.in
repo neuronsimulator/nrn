@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include "hocdec.h"
-extern int nrnmpi_myid;
-extern int nrn_nobanner_;
+#include "nrnmpi.h"
 
 @MECH_DECLARE@
 

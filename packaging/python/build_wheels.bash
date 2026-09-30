@@ -26,7 +26,14 @@ setup_venv() {
 
     "$py_bin" -m venv "$venv_dir"
 
-    . "$venv_dir/bin/activate"
+    if [[ -f "$venv_dir/bin/activate" ]]; then
+        . "$venv_dir/bin/activate"
+    elif [[ -f "$venv_dir/Scripts/activate" ]]; then
+        . "$venv_dir/Scripts/activate"
+    else
+        echo "ERROR: venv activate script not found in $venv_dir"
+        exit 1
+    fi
 }
 
 
@@ -113,6 +120,24 @@ set_cibw_environment() {
             [NRN_RX3D_OPT_LEVEL]="0"
             [NRN_ENABLE_INTERVIEWS]="ON"
         )
+    elif [ "${platform}" = 'windows' ]; then
+        # MSVC win_amd64, same generator as the guest wheel. Ninja on
+        # windows-2022 finds C:/mingw64 GNU first; then MINGW is true and
+        # Win32Readline.cmake never runs. FindMPI uses C:/msmpi
+        # (ci/win_msvc_wheel_deps.cmd). Fetched GNU readline is already
+        # static; CoreNEURON is out of this line.
+        declare -A defaults=(
+            [CMAKE_PREFIX_PATH]="C:/msmpi"
+            [CMAKE_GENERATOR]="Visual Studio 17 2022"
+            [CMAKE_GENERATOR_PLATFORM]="x64"
+            [CMAKE_BUILD_TYPE]="Release"
+            [NRN_ENABLE_MPI_DYNAMIC]="ON"
+            [NRN_WHEEL_STATIC_READLINE]="OFF"
+            [NRN_ENABLE_CORENEURON]="OFF"
+            [NRN_BINARY_DIST_BUILD]="ON"
+            [NRN_RX3D_OPT_LEVEL]="0"
+            [NRN_ENABLE_INTERVIEWS]="ON"
+        )
     fi
 
     local env_string=""
@@ -142,6 +167,17 @@ build_wheel_portable() {
             break
         fi
     done
+    # Windows (and some GHA images) expose `python` / `python3`, not python3.12.
+    if [ -z "${path_to_interpreter}" ]; then
+        for cand in python3 python; do
+            if command -v "${cand}"; then
+                if "${cand}" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 11) else 1)'; then
+                    path_to_interpreter="$(command -v "${cand}")"
+                    break
+                fi
+            fi
+        done
+    fi
 
     if [ -z "${path_to_interpreter}" ]; then
         echo "ERROR: Python 3.11 or above is required for building with cibuildwheel"
@@ -235,7 +271,7 @@ PLATFORM_MACOS="Darwin"
 
 
 # help message in case of no arguments
-help_message="Usage: $(basename "$0") < CI | linux | osx | ${PLATFORM_LINUX} | ${PLATFORM_MACOS} > [python version 39|310|3*|path_to_interp]"
+help_message="Usage: $(basename "$0") < CI | linux | osx | windows | ${PLATFORM_LINUX} | ${PLATFORM_MACOS} > [python version 39|310|3*|path_to_interp]"
 
 if [[ $# -lt 2 ]]; then
     echo "${help_message}"
@@ -274,6 +310,13 @@ case "${platform}" in
     export NRN_WHEEL_STATIC_READLINE=ON
     export NRN_BINARY_DIST_BUILD=ON
     build_wheel_portable macos
+    ;;
+
+  windows | Windows | Windows_NT | MINGW* | MSYS* | CYGWIN*)
+    export NRN_WHEEL_STATIC_READLINE=OFF
+    export NRN_BINARY_DIST_BUILD=ON
+    export NRN_ENABLE_CORENEURON=OFF
+    build_wheel_portable windows
     ;;
 
   CI)

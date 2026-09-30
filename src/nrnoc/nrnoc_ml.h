@@ -3,6 +3,12 @@
 #include <limits>   // std::numeric_limits
 #include <vector>   // std::vector
 
+#if defined(__GNUC__)
+#define NRN_PURE __attribute__((pure))
+#else
+#define NRN_PURE
+#endif
+
 struct Node;
 struct Prop;
 
@@ -111,16 +117,14 @@ struct Memb_list {
      * Defined in .cpp to hide neuron::container::Mechanism::storage layout from translated MOD file
      * code.
      */
-    [[nodiscard]] __attribute__((pure)) double& data(std::size_t instance,
-                                                     int variable,
-                                                     int array_index = 0);
+    [[nodiscard]] NRN_PURE double& data(std::size_t instance, int variable, int array_index = 0);
 
     /**
      * @brief Get the `variable`-th pointer-to-double in `instance` of the mechanism.
      *
      * Defined in .cpp to hide the full definition of Datum from translated MOD file code.
      */
-    [[nodiscard]] __attribute__((pure)) double* dptr_field(std::size_t instance, int variable);
+    [[nodiscard]] NRN_PURE double* dptr_field(std::size_t instance, int variable);
 
     /**
      * @brief Get the `variable`-th floating point value in `instance` of the mechanism.
@@ -128,9 +132,9 @@ struct Memb_list {
      * Defined in .cpp to hide neuron::container::Mechanism::storage layout from translated MOD file
      * code.
      */
-    [[nodiscard]] __attribute__((pure)) double const& data(std::size_t instance,
-                                                           int variable,
-                                                           int array_index = 0) const;
+    [[nodiscard]] NRN_PURE double const& data(std::size_t instance,
+                                              int variable,
+                                              int array_index = 0) const;
 
 
     /**

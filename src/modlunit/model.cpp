@@ -25,8 +25,11 @@
  */
 
 #include <cstring>
+#include <filesystem>
 #include "model.h"
 #include "parse1.hpp"
+
+namespace fs = std::filesystem;
 
 extern int yyparse();
 
@@ -65,7 +68,7 @@ int main(int argc, char* argv[]) {
     lex_start();
     /* declare all used variables */
     parsepass(1);
-    IGNORE(yyparse());
+    NRN_IGNORE(yyparse());
     declare_implied();
     /* At this point The input file is in the intoken list */
 #if 0
@@ -94,18 +97,18 @@ int main(int argc, char* argv[]) {
 	cout();			/* print .c file */
 #endif
 #if 0
-	IGNORE(fclose(fparout));
-	IGNORE(fclose(fcout));
+	NRN_IGNORE(fclose(fparout));
+	NRN_IGNORE(fclose(fcout));
 	memory_usage();
 #endif
 #if LINT
     { /* for lex */
         extern int yytchar, yylineno;
         extern FILE* yyin;
-        IGNORE(yyin);
-        IGNORE(yytchar);
-        IGNORE(yylineno);
-        IGNORE(yyinput());
+        NRN_IGNORE(yyin);
+        NRN_IGNORE(yytchar);
+        NRN_IGNORE(yylineno);
+        NRN_IGNORE(yyinput());
         yyunput(ilint);
         yyoutput(ilint);
     }
@@ -114,14 +117,18 @@ int main(int argc, char* argv[]) {
 }
 
 static void openfiles(int argc, char* argv[]) {
-    char *cp, modprefix[NRN_BUFSIZE - 5];
+    char modprefix[NRN_BUFSIZE - 5];
     if (argc > 1) {
-        assert(strlen(argv[1]) < NRN_BUFSIZE - 5);
-        Sprintf(modprefix, "%s", argv[1]);
-        cp = strstr(modprefix, ".mod");
-        if (cp) {
-            *cp = '\0';
+        /* prefix is the input path without a filename extension.
+           strstr(".mod") matches a directory named foo.mod (Unix fopen of
+           that directory succeeds; Windows looks for foo.mod.mod). */
+        fs::path prefix{argv[1]};
+        if (prefix.has_extension()) {
+            prefix.replace_extension();
         }
+        auto const prefix_str = prefix.string();
+        assert(prefix_str.size() < NRN_BUFSIZE - 5);
+        Sprintf(modprefix, "%s", prefix_str.c_str());
     }
     if (argc == 2) {
         Sprintf(finname, "%s.mrg", modprefix);

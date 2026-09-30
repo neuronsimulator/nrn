@@ -23,10 +23,10 @@
 
 #define PDEBUG 0
 
-Symbol* nrnpy_pyobj_sym_{};
+NRN_DLLSYM Symbol* nrnpy_pyobj_sym_{};
 #include "section.h"
 #include "nrniv_mf.h"
-int section_object_seen;
+NRN_DLLSYM int section_object_seen;
 struct Section* nrn_sec_pop();
 static int connect_obsec_;
 
@@ -35,15 +35,17 @@ static int connect_obsec_;
 static void call_constructor(Object*, Symbol*, int);
 static void free_objectdata(Objectdata*, cTemplate*);
 
-std::vector<const char*> py_exposed_classes{};
+NRN_DLLSYM std::vector<const char*> py_exposed_classes{};
 
 int hoc_print_first_instance = 1;
-int hoc_max_builtin_class_id = -1;
+NRN_DLLSYM int hoc_max_builtin_class_id = -1;
 
 static Symbol* hoc_obj_;
 
-int (*nrnpy_call_obj_method)(Object* obj, const char* method, Object* obj2) = nullptr;
-int (*nrnpy_call_obj_method_double)(Object* obj, const char* method, double value) = nullptr;
+NRN_DLLSYM int (*nrnpy_call_obj_method)(Object* obj, const char* method, Object* obj2) = nullptr;
+NRN_DLLSYM int (*nrnpy_call_obj_method_double)(Object* obj,
+                                               const char* method,
+                                               double value) = nullptr;
 
 
 void hoc_install_hoc_obj(void) {
@@ -123,9 +125,9 @@ size_t hoc_total_array_data(const Symbol* s,
 }
 
 static int icntobjectdata = 0;
-Object* hoc_thisobject;
-Objectdata* hoc_objectdata = (Objectdata*) 0;
-Objectdata* hoc_top_level_data;
+NRN_DLLSYM Object* hoc_thisobject;
+NRN_DLLSYM Objectdata* hoc_objectdata = (Objectdata*) 0;
+NRN_DLLSYM Objectdata* hoc_top_level_data;
 static int icnttoplevel;
 int hoc_in_template = 0;
 

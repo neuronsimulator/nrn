@@ -1,4 +1,5 @@
 #pragma once
+#include "nrndlldef.h"
 extern void hoc_register_prop_size(int type, int psize, int dpsize);
 
 #include "neuron/container/data_handle.hpp"
@@ -16,6 +17,7 @@ typedef struct NrnThread NrnThread;
 struct Extnode;
 struct Section;
 struct Symbol;
+struct cTemplate;
 
 typedef Datum* (*Pfrpdat)();
 typedef void (*Pvmi)(struct NrnThread*, Memb_list*, int);
@@ -107,7 +109,7 @@ struct NPyDirectMechFunc {
 */
 using NPyDirectMechFuncs = std::unordered_map<std::string, NPyDirectMechFunc*>;
 extern void hoc_register_npy_direct(int type, NPyDirectMechFunc*);
-extern std::unordered_map<int, NPyDirectMechFuncs> nrn_mech2funcs_map;
+extern NRN_DLLSYM std::unordered_map<int, NPyDirectMechFuncs> nrn_mech2funcs_map;
 
 extern void hoc_register_parm_default(int type, const std::vector<double>*);
 
@@ -181,10 +183,12 @@ typedef struct BAMech {
 } BAMech;
 extern BAMech** bamech_;
 
-extern std::vector<Memb_func> memb_func;
-extern int n_memb_func;
+extern NRN_DLLSYM std::vector<Memb_func> memb_func;
+extern NRN_DLLSYM int n_memb_func;
+extern NRN_DLLSYM short* nrn_is_artificial_;
+extern NRN_DLLSYM cTemplate** nrn_pnt_template_;
 extern int* nrn_prop_param_size_;
-extern int* nrn_prop_dparam_size_;
+extern NRN_DLLSYM int* nrn_prop_dparam_size_;
 extern int nrn_dparam_semantics_to_int(const char*);
 extern std::vector<int>& nrn_mech_random_indices(int type);
 
@@ -326,4 +330,4 @@ _nrn_mechanism_get_param_handle(Prop* prop, int field, int array_index = 0) {
 
 // Rarely (e.g. NEURON {RANDOM123 ranvar}) instances of a mod file
 // need to deallocate owning objects at end of their life.
-extern std::unordered_map<int, void (*)(Prop*)> nrn_mech_inst_destruct;
+extern NRN_DLLSYM std::unordered_map<int, void (*)(Prop*)> nrn_mech_inst_destruct;

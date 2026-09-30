@@ -47,6 +47,7 @@ set(HEADER_FILES_TO_INSTALL
     oc/memory.hpp
     oc/nrnapi.h
     oc/nrnassrt.h
+    oc/nrndlldef.h
     oc/nrnmpi.h
     oc/nrnrandom.h
     oc/oc_ansi.h
@@ -188,7 +189,7 @@ set(IVOC_FILE_LIST
     utility.cpp
     xmenu.cpp
     xyview.cpp)
-if(MINGW)
+if(NRN_WINDOWS_BUILD)
   list(APPEND IVOC_FILE_LIST ivocwin.cpp)
 else()
   list(APPEND IVOC_FILE_LIST field.cpp xdep.cpp)

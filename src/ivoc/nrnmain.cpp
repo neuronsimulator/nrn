@@ -6,8 +6,8 @@
 #include <stdio.h>
 #include <string.h>
 
-extern int ivocmain(int, const char**, const char**);
-extern int nrn_main_launch;
+NRN_DLLSYM int ivocmain(int, const char**, const char**);
+NRN_DLLSYM extern int nrn_main_launch;
 extern int nrn_noauto_dlopen_nrnmech;
 #if NRNMPI_DYNAMICLOAD
 void nrnmpi_stubs();
@@ -16,9 +16,6 @@ void nrnmpi_load_or_exit();
 void nrnmusic_load();
 #endif  // NRN_MUSIC
 #endif  // NRNMPI_DYNAMICLOAD
-#if NRNMPI
-extern "C" void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv);
-#endif
 
 int main(int argc, char** argv, char** env) {
     nrn_main_launch = 1;

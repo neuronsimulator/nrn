@@ -94,7 +94,7 @@ else()
   unset(NRNMECH_DLL_STYLE)
 endif()
 
-if(NRN_ENABLE_INTERVIEWS AND NOT MINGW)
+if(NRN_ENABLE_INTERVIEWS AND NOT NRN_WINDOWS_BUILD)
   set(NRNOC_X11 1)
 else()
   set(NRNOC_X11 0)
@@ -140,7 +140,25 @@ nrn_check_symbol_exists("stty" "" HAVE_STTY)
 # =============================================================================
 # Check data types
 # =============================================================================
-nrn_check_type_exists(sys/types.h pid_t int pid_t)
+# pid_t: record presence only. Do not set a CMake variable named pid_t for #cmakedefine pid_t
+# @pid_t@ — that emits `#define pid_t int`, and MSVC Python's pyconfig.h then does `typedef int
+# pid_t` → `typedef int int`.
+check_c_source_compiles(
+  "
+#include <sys/types.h>
+int main(void) {
+  return (int) sizeof(pid_t);
+}
+"
+  NRN_HAVE_PID_T)
+check_c_source_compiles(
+  "
+#include <sys/types.h>
+int main(void) {
+  return (int) sizeof(ssize_t);
+}
+"
+  NRN_HAVE_SSIZE_T)
 
 # =============================================================================
 # Generate file from file.in template

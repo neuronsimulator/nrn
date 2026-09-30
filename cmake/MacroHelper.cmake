@@ -215,11 +215,137 @@ macro(nrn_install_dir_symlink source_dir symlink_dir)
   install(CODE "${configured_code}")
 endmacro()
 
+# Drop FindMPI cache leftovers from a failed configure / cl.exe wrapper guess.
+function(nrn_mpi_clear_msvc_cache)
+  unset(MPI_C_HEADER_DIR CACHE)
+  unset(MPI_CXX_HEADER_DIR CACHE)
+  unset(MPI_C_WORKS CACHE)
+  unset(MPI_CXX_WORKS CACHE)
+  unset(MPI_C_COMPILER_INCLUDE_DIRS CACHE)
+  unset(MPI_CXX_COMPILER_INCLUDE_DIRS CACHE)
+endfunction()
+
+# Microsoft MPI at C:/msmpi is the Windows prefix (ci/win_install_deps.cmd, ci/win_build_cmake.sh).
+# FindMPI's MSMPI guess uses MSMPI_INC / MSMPI_LIB64 only; CMAKE_PREFIX_PATH does not find
+# lib/x64/msmpi.lib. The MinGW build already passes FindMPI cache entries. Set the same ones from
+# MPI_HOME, CMAKE_PREFIX_PATH, or C:/msmpi when mpi.h and msmpi.lib are there.
+function(nrn_windows_prepare_msmpi)
+  if(NOT WIN32)
+    return()
+  endif()
+  # MS-MPI has no compiler wrapper. Skip interrogating cl.exe, which can cache the source tree as
+  # MPI_*_COMPILER_INCLUDE_DIRS.
+  set(MPI_GUESS_LIBRARY_NAME
+      MSMPI
+      CACHE STRING "MPI implementation to guess on Windows")
+  if(MPI_msmpi_LIBRARY AND EXISTS "${MPI_msmpi_LIBRARY}")
+    if(NOT MPI_C_ADDITIONAL_INCLUDE_DIRS)
+      get_filename_component(_nrn_msmpi_libdir "${MPI_msmpi_LIBRARY}" DIRECTORY)
+      get_filename_component(_nrn_msmpi_root "${_nrn_msmpi_libdir}" DIRECTORY)
+      get_filename_component(_nrn_msmpi_root "${_nrn_msmpi_root}" DIRECTORY)
+      if(EXISTS "${_nrn_msmpi_root}/include/mpi.h")
+        set(MPI_C_ADDITIONAL_INCLUDE_DIRS
+            "${_nrn_msmpi_root}/include"
+            CACHE STRING "MPI C additional include directories" FORCE)
+        set(MPI_CXX_ADDITIONAL_INCLUDE_DIRS
+            "${_nrn_msmpi_root}/include"
+            CACHE STRING "MPI CXX additional include directories" FORCE)
+      elseif(EXISTS "${_nrn_msmpi_root}/Include/mpi.h")
+        set(MPI_C_ADDITIONAL_INCLUDE_DIRS
+            "${_nrn_msmpi_root}/Include"
+            CACHE STRING "MPI C additional include directories" FORCE)
+        set(MPI_CXX_ADDITIONAL_INCLUDE_DIRS
+            "${_nrn_msmpi_root}/Include"
+            CACHE STRING "MPI CXX additional include directories" FORCE)
+      endif()
+    endif()
+    nrn_mpi_clear_msvc_cache()
+    return()
+  endif()
+
+  if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    set(_nrn_msmpi_libdirs lib/x64 Lib/x64)
+  else()
+    set(_nrn_msmpi_libdirs lib/x86 Lib/x86)
+  endif()
+
+  set(_nrn_msmpi_roots)
+  if(MPI_HOME)
+    list(APPEND _nrn_msmpi_roots "${MPI_HOME}")
+  endif()
+  if(DEFINED ENV{MPI_HOME} AND NOT "$ENV{MPI_HOME}" STREQUAL "")
+    list(APPEND _nrn_msmpi_roots "$ENV{MPI_HOME}")
+  endif()
+  foreach(_p IN LISTS CMAKE_PREFIX_PATH)
+    list(APPEND _nrn_msmpi_roots "${_p}")
+  endforeach()
+  list(APPEND _nrn_msmpi_roots "C:/msmpi" "C:/ms-mpi")
+
+  foreach(_root IN LISTS _nrn_msmpi_roots)
+    set(_inc "")
+    if(EXISTS "${_root}/include/mpi.h")
+      set(_inc "${_root}/include")
+    elseif(EXISTS "${_root}/Include/mpi.h")
+      set(_inc "${_root}/Include")
+    endif()
+    if(NOT _inc)
+      continue()
+    endif()
+    set(_lib "")
+    foreach(_libdir IN LISTS _nrn_msmpi_libdirs)
+      if(EXISTS "${_root}/${_libdir}/msmpi.lib")
+        set(_lib "${_root}/${_libdir}/msmpi.lib")
+        break()
+      endif()
+    endforeach()
+    if(NOT _lib)
+      continue()
+    endif()
+    set(_exec "")
+    foreach(_bin "${_root}/bin" "${_root}/Bin")
+      if(EXISTS "${_bin}/mpiexec.exe")
+        set(_exec "${_bin}/mpiexec.exe")
+        break()
+      endif()
+    endforeach()
+    # Same cache entries as ci/win_build_cmake.sh. Unset NOTFOUND leftovers from a previous failed
+    # configure in this build dir.
+    set(MPI_C_LIB_NAMES
+        msmpi
+        CACHE STRING "MPI C libraries to link against" FORCE)
+    set(MPI_CXX_LIB_NAMES
+        msmpi
+        CACHE STRING "MPI CXX libraries to link against" FORCE)
+    set(MPI_msmpi_LIBRARY
+        "${_lib}"
+        CACHE FILEPATH "Location of the msmpi library for Microsoft MPI" FORCE)
+    set(MPI_C_ADDITIONAL_INCLUDE_DIRS
+        "${_inc}"
+        CACHE STRING "MPI C additional include directories" FORCE)
+    set(MPI_CXX_ADDITIONAL_INCLUDE_DIRS
+        "${_inc}"
+        CACHE STRING "MPI CXX additional include directories" FORCE)
+    if(_exec AND NOT MPIEXEC_EXECUTABLE)
+      set(MPIEXEC_EXECUTABLE
+          "${_exec}"
+          CACHE FILEPATH "Executable for running MPI programs.")
+    endif()
+    nrn_mpi_clear_msvc_cache()
+    message(STATUS "MS-MPI from ${_root} (${_lib})")
+    return()
+  endforeach()
+endfunction()
+
 # ========================================================================
 # There is an edge case to 'find_package(MPI REQUIRED)' in that we can still build a universal2
 # macos package on an arm64 architecture even if the mpi library has no slice for x86_64.
 # ========================================================================
 macro(nrn_mpi_find_package)
+  nrn_windows_prepare_msmpi()
+  if(WIN32)
+    # MS-MPI has no compiler wrapper. Do not interrogate cl.exe.
+    set(MPI_SKIP_COMPILER_WRAPPER TRUE)
+  endif()
   if("arm64" IN_LIST CMAKE_OSX_ARCHITECTURES
      AND "x86_64" IN_LIST CMAKE_OSX_ARCHITECTURES
      AND NRN_ENABLE_MPI_DYNAMIC)
@@ -230,9 +356,35 @@ macro(nrn_mpi_find_package)
         ${_temp}
         CACHE INTERNAL "" FORCE)
     set(NRN_UNIVERSAL2_BUILD ON)
+  elseif(WIN32)
+    find_package(MPI)
+    if(NOT MPI_FOUND)
+      message(
+        FATAL_ERROR
+          "MPI is required when NRN_ENABLE_MPI=ON, but FindMPI did not find mpi.h / msmpi.lib. "
+          "The Windows prefix is C:/msmpi (include/mpi.h and lib/x64/msmpi.lib; SDK, not "
+          "runtime-only). Same FindMPI cache entries as ci/win_build_cmake.sh:\n"
+          "  -DCMAKE_PREFIX_PATH=C:/msmpi\n"
+          "  -DMPI_C_LIB_NAMES=msmpi -DMPI_CXX_LIB_NAMES=msmpi\n"
+          "  -DMPI_msmpi_LIBRARY=C:/msmpi/lib/x64/msmpi.lib\n"
+          "Or -DMPI_HOME=C:/msmpi. A probe without MPI is -DNRN_ENABLE_MPI=OFF; "
+          "that is not the Windows wheel product.")
+    endif()
   else()
     find_package(MPI REQUIRED)
   endif()
+  # Keep only directories that actually contain mpi.h. FindMPI can assemble MPI_C_INCLUDE_DIRS from
+  # compiler-wrapper leftovers (the source tree).
+  set(_nrn_mpi_incs)
+  foreach(_d IN LISTS MPI_C_INCLUDE_DIRS MPI_INCLUDE_PATH)
+    if(_d AND EXISTS "${_d}/mpi.h")
+      list(APPEND _nrn_mpi_incs "${_d}")
+    endif()
+  endforeach()
+  list(REMOVE_DUPLICATES _nrn_mpi_incs)
+  set(MPI_C_INCLUDE_DIRS "${_nrn_mpi_incs}")
+  set(MPI_INCLUDE_PATH "${_nrn_mpi_incs}")
+  unset(_nrn_mpi_incs)
 endmacro()
 
 # copy a list of files to the build dir
@@ -254,60 +406,23 @@ endfunction()
 # Replacement for git2nrnversion_h.sh. Add git information to `target` with scope `scope` (PRIVATE,
 # PUBLIC, or INTERFACE)
 function(add_cpp_git_information target scope)
-  find_program(GIT git)
-  if(EXISTS "${PROJECT_SOURCE_DIR}/.git" AND GIT)
-    # Shallow clones: tags may not be ancestors of HEAD, so describe fails and GIT_DESCRIBE would
-    # stay empty (neuron.__version__ / nrnversion(5)). Fall back to PROJECT_VERSION so release
-    # dry-run and ship wheels match.
-    execute_process(
-      COMMAND "${GIT}" -C "${PROJECT_SOURCE_DIR}" describe
-      OUTPUT_VARIABLE GIT_DESCRIBE
-      RESULT_VARIABLE GIT_DESCRIBE_RESULT
-      OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
-
-    if(GIT_DESCRIBE_RESULT OR "${GIT_DESCRIBE}" STREQUAL "")
-      set(GIT_DESCRIBE "${PROJECT_VERSION}")
-      message(
-        STATUS "git describe failed or empty; falling back to PROJECT_VERSION=${PROJECT_VERSION}")
-    endif()
-
-    execute_process(
-      COMMAND "${GIT}" -C "${PROJECT_SOURCE_DIR}" rev-parse --abbrev-ref HEAD
-      OUTPUT_VARIABLE GIT_BRANCH
-      OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
-
-    execute_process(
-      COMMAND "${GIT}" -C "${PROJECT_SOURCE_DIR}" -c log.showSignature=false log --format=%h -n 1
-      OUTPUT_VARIABLE GIT_COMMIT_HASH
-      OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
-
-    execute_process(
-      COMMAND "${GIT}" -C "${PROJECT_SOURCE_DIR}" -c log.showSignature=false log --format=%cd -n 1
-              --date=short
-      OUTPUT_VARIABLE GIT_DATE
-      OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
-
-    execute_process(
-      COMMAND "${GIT}" -C "${PROJECT_SOURCE_DIR}" status -s -uno --porcelain
-      OUTPUT_VARIABLE GIT_STATUS
-      ERROR_QUIET)
-
-    if(GIT_STATUS)
-      set(GIT_MODIFIED "+")
-    else()
-      set(GIT_MODIFIED "")
-    endif()
-
-    set(GIT_CHANGESET "${GIT_COMMIT_HASH}${GIT_MODIFIED}")
-    set(GIT_DESCRIBE_FULL "${GIT_DESCRIBE}${GIT_MODIFIED}")
-
+  include("${PROJECT_SOURCE_DIR}/cmake/NrnGitInfo.cmake")
+  set(_nrn_git_stamp "${PROJECT_SOURCE_DIR}/cmake/nrn-git-info.cmake")
+  nrn_collect_git_info("${PROJECT_SOURCE_DIR}" _nrn_git_ok)
+  if(_nrn_git_ok)
+    nrn_write_git_info_stamp("${_nrn_git_stamp}")
+  elseif(EXISTS "${_nrn_git_stamp}")
+    include("${_nrn_git_stamp}")
+    message(STATUS "git describe failed; using ${_nrn_git_stamp} (${GIT_CHANGESET})")
   else()
+    # Shallow clone, tarball, or a vboxsf worktree with no host stamp.
     string(TIMESTAMP BUILD_TIME "%Y-%m-%d-%H:%M:%S")
     set(GIT_DATE "Build Time: ${BUILD_TIME}")
     set(GIT_BRANCH "unknown branch")
     set(GIT_CHANGESET "unknown commit id")
     set(GIT_DESCRIBE "${PROJECT_VERSION}.dev0")
     set(GIT_DESCRIBE_FULL "${GIT_DESCRIBE}")
+    message(STATUS "git describe failed or empty; GIT_DESCRIBE=${GIT_DESCRIBE}")
   endif()
 
   set(git_def_keys GIT_DATE GIT_BRANCH GIT_CHANGESET GIT_DESCRIBE GIT_DESCRIBE_FULL)

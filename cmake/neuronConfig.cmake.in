@@ -8,6 +8,9 @@ get_filename_component(_dir "${CMAKE_CURRENT_LIST_FILE}" PATH)
 get_filename_component(_prefix "${_dir}/../../.." ABSOLUTE)
 
 set(NRN_ENABLE_CORENEURON @NRN_ENABLE_CORENEURON@)
+set(NRN_ENABLE_THREADS @NRN_ENABLE_THREADS@)
+# Same list the Unix nrnmech_makefile bakes into CXXCOMPILE as -D flags.
+set(NRN_COMPILE_DEFS "@NRN_COMPILE_DEFS@")
 
 set(_NEURON_MAIN "${_prefix}/share/nrn/nrnmain.cpp")
 set(_NEURON_MAIN_INCLUDE_DIR "${_prefix}/include/nrncvode" "${_prefix}/include")

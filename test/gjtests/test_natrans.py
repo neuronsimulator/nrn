@@ -106,16 +106,21 @@ def _test_natrans():
 
     run()  # NEURON: Fails if tar.napre not what is expected
 
-    from neuron import coreneuron
+    from neuron import config, coreneuron
 
-    # NRN_FOREIGN_SKIP_CORENEURON: foreign gj_serial CN psolve aborted on
-    # Linux/macOS wheels (GHA #3866). NEURON half still runs. Not a CN fix.
-    if not os.environ.get("NRN_FOREIGN_SKIP_CORENEURON"):
-        coreneuron.available = True
-        if coreneuron.available:
-            coreneuron.enable = True
-            coreneuron.cell_permute = 0
-            run()  # Fails if CoreNEURON does not copy expected tar.napre to NEURON
+    # coreneuron.available is not an API. Assigning True forced CoreNEURON
+    # even on installs built without it (psolve then misses corenrnmech.dll).
+    # NRN_FOREIGN_SKIP_CORENEURON: foreign gj_serial nrnivmodl is not
+    # -coreneuron. Enabling CN on a Linux/macOS wheel aborts at nrn_setup
+    # (SIGABRT). Same script after nrnivmodl -coreneuron passes. NEURON
+    # half still runs. In-tree CN row is coreneuron_modtests::test_natrans_py.
+    # Not a CN product fix.
+    if config.arguments.get("NRN_ENABLE_CORENEURON") and not os.environ.get(
+        "NRN_FOREIGN_SKIP_CORENEURON"
+    ):
+        coreneuron.enable = True
+        coreneuron.cell_permute = 0
+        run()  # Fails if CoreNEURON does not copy expected tar.napre to NEURON
 
     return cells, gids, sgids, targets
 
@@ -123,8 +128,8 @@ def _test_natrans():
 def test_natrans():
     model = _test_natrans()
     pc.barrier()
-    h.quit()
 
 
 if __name__ == "__main__":
     test_natrans()
+    h.quit()

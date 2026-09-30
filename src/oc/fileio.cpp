@@ -13,6 +13,12 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#if defined(_MSC_VER)
+#include <io.h>
+#endif
+#if defined(_WIN32)
+#include <direct.h>
+#endif
 #include "ocmisc.h"
 #include "hocstr.h"
 #include "parse.hpp"
@@ -33,7 +39,11 @@ void hoc_stdout(void) {
         if (prev != -1) {
             hoc_execerror("stdout already switched", (char*) 0);
         }
+#if defined(_MSC_VER)
+        prev = _dup(1);
+#else
         prev = dup(1);
+#endif
         if (prev < 0) {
             hoc_execerror("Unable to backup stdout", (char*) 0);
         }
@@ -42,19 +52,35 @@ void hoc_stdout(void) {
         if (!f1) {
             hoc_execerror("Unable to open ", gargstr(1));
         }
+#if defined(_MSC_VER)
+        if (_dup2(_fileno(f1), 1) < 0) {
+#else
         if (dup2(fileno(f1), 1) < 0) {
+#endif
             hoc_execerror("Unable to attach stdout to ", gargstr(1));
         }
         fclose(f1);
     } else if (prev > -1) {
+#if defined(_MSC_VER)
+        if (_dup2(prev, 1) < 0) {
+#else
         if (dup2(prev, 1) < 0) {
+#endif
             hoc_execerror("Unable to restore stdout", (char*) 0);
         }
+#if defined(_MSC_VER)
+        _close(prev);
+#else
         close(prev);
+#endif
         prev = -1;
     }
     hoc_ret();
+#if defined(_MSC_VER)
+    hoc_pushx((double) _fileno(stdout));
+#else
     hoc_pushx((double) fileno(stdout));
+#endif
 }
 
 void hoc_ropen(void) /* open file for reading */
@@ -68,15 +94,31 @@ void hoc_ropen(void) /* open file for reading */
         fname = "";
     d = 1.;
     if (!nrn_fw_eq(hoc_frin, stdin))
-        IGNORE(nrn_fw_fclose(hoc_frin));
+        NRN_IGNORE(nrn_fw_fclose(hoc_frin));
     hoc_frin = nrn_fw_set_stdin();
     if (fname[0] != 0) {
         if ((hoc_frin = nrn_fw_fopen(fname, "r")) == (NrnFILEWrap*) 0) {
             const char* retry;
             retry = expand_env_var(fname);
             if ((hoc_frin = nrn_fw_fopen(retry, "r")) == (NrnFILEWrap*) 0) {
-                d = 0.;
-                hoc_frin = nrn_fw_set_stdin();
+                /* nrniv fopen's a path file without chdir. ropen("rel.dat")
+                   inside looked in cwd. xopen already searches next to
+                   the currently open file (nrniv argv HOC, or the running
+                   .py script). Last / is not the directory on Windows. */
+                std::filesystem::path want{retry};
+                if (want.is_relative() && hoc_xopen_file_ && hoc_xopen_file_[0]) {
+                    std::filesystem::path parent =
+                        std::filesystem::path(hoc_xopen_file_).parent_path();
+                    if (!parent.empty() && parent != ".") {
+                        /* generic_string: '/' so fopen matches xopen. */
+                        std::string next = (parent / want).generic_string();
+                        hoc_frin = nrn_fw_fopen(next.c_str(), "r");
+                    }
+                }
+                if (!hoc_frin) {
+                    d = 0.;
+                    hoc_frin = nrn_fw_set_stdin();
+                }
             }
         }
     }
@@ -96,7 +138,7 @@ void hoc_wopen(void) /* open file for writing */
         fname = "";
     d = 1.;
     if (hoc_fout != stdout) {
-        IGNORE(fclose(hoc_fout));
+        NRN_IGNORE(fclose(hoc_fout));
     }
     hoc_fout = stdout;
     if (fname[0] != 0) {
@@ -155,8 +197,8 @@ const char* expand_env_var(const char* s) {
     return hs->buf + begin;
 }
 
-size_t hoc_xopen_file_size_;
-char* hoc_xopen_file_;
+NRN_DLLSYM size_t hoc_xopen_file_size_;
+NRN_DLLSYM char* hoc_xopen_file_;
 
 char* hoc_current_xopen(void) {
     return hoc_xopen_file_;
@@ -196,9 +238,28 @@ int hoc_xopen1(const char* name, const char* rcs) {
         if (!(hoc_fin = nrn_fw_fopen(fname.c_str(), mode_str))) {
             fname = expand_env_var(fname.c_str());
             if (!(hoc_fin = nrn_fw_fopen(fname.c_str(), mode_str))) {
-                hoc_fin = savfin;
-                hoc_pipeflag = savpipflag;
-                hoc_execerror("Can't open ", fname.c_str());
+                /* nrniv fopen's a path file without chdir. xopen("rel.hoc")
+                   inside looked in cwd. load_file already searches next to
+                   the currently open file (nrniv argv HOC, or the running
+                   .py script). Last / is not the directory on Windows. */
+                std::filesystem::path want{fname};
+                if (want.is_relative() && hoc_xopen_file_ && hoc_xopen_file_[0]) {
+                    std::filesystem::path parent =
+                        std::filesystem::path(hoc_xopen_file_).parent_path();
+                    if (!parent.empty() && parent != ".") {
+                        /* generic_string: '/' so fopen matches load_file. */
+                        std::string next = (parent / want).generic_string();
+                        hoc_fin = nrn_fw_fopen(next.c_str(), mode_str);
+                        if (hoc_fin) {
+                            fname = std::move(next);
+                        }
+                    }
+                }
+                if (!hoc_fin) {
+                    hoc_fin = savfin;
+                    hoc_pipeflag = savpipflag;
+                    hoc_execerror("Can't open ", fname.c_str());
+                }
             }
         }
     }
@@ -213,10 +274,10 @@ int hoc_xopen1(const char* name, const char* rcs) {
     strcpy(hoc_xopen_file_, fname.c_str());
     if (hoc_fin) {
         hoc_audit_from_xopen1(fname.c_str(), rcs);
-        IGNORE(hoc_xopen_run((Symbol*) 0, (char*) 0));
+        NRN_IGNORE(hoc_xopen_run((Symbol*) 0, (char*) 0));
     }
     if (hoc_fin && !nrn_fw_eq(hoc_fin, stdin)) {
-        IGNORE(nrn_fw_fclose(hoc_fin));
+        NRN_IGNORE(nrn_fw_fclose(hoc_fin));
     }
     hoc_fin = savfin;
     hoc_pipeflag = savpipflag;
@@ -537,15 +598,35 @@ static std::optional<std::string> search_hoc_files_regex(const std::regex& patte
                                                          const std::vector<std::string>& paths) {
     namespace fs = std::filesystem;
     for (const auto& path: paths) {
+        // load_file fopen-nulls a missing HOC_LIBRARY_PATH dir.
+        // directory_iterator throws (Unix ENOENT; Windows "The system cannot
+        // find the path specified").
+        std::error_code ec;
+        if (!fs::is_directory(path, ec)) {
+            continue;
+        }
         // construct a list containing names of, in this order:
         // - `.oc` files (sorted according to locale)
         // - `.hoc` files (sorted according to locale)
         std::vector<std::string> paths_oc;
         std::vector<std::string> paths_hoc;
         for (const auto& entry: fs::directory_iterator(path)) {
-            if (entry.is_regular_file() && entry.path().extension() == ".oc") {
+            if (!entry.is_regular_file()) {
+                continue;
+            }
+            /* Windows filenames are case-insensitive; FROMFUNC.HOC is a
+               HOC file. Unix stays case-sensitive (.HOC is a different name). */
+            std::string ext = entry.path().extension().string();
+#if defined(WIN32)
+            for (char& c: ext) {
+                if (c >= 'A' && c <= 'Z') {
+                    c = static_cast<char>(c - 'A' + 'a');
+                }
+            }
+#endif
+            if (ext == ".oc") {
                 paths_oc.push_back(entry.path().string());
-            } else if (entry.is_regular_file() && entry.path().extension() == ".hoc") {
+            } else if (ext == ".hoc") {
                 paths_hoc.push_back(entry.path().string());
             }
         }
@@ -627,6 +708,7 @@ void hoc_load_file(void) {
     hoc_pushx((double) i);
 }
 
+char* hoc_back2forward(char*);
 static constexpr auto hoc_load_file_size_ = 1024;
 static int hoc_Load_file(int always, const char* name) {
     /*
@@ -650,6 +732,16 @@ static int hoc_Load_file(int always, const char* name) {
 
     old[0] = '\0';
     goback = 0;
+#if defined(WIN32)
+    /* load_file interpolates the path into HOC xopen("..."); \ is an escape
+       (\b \t \r \n \f), and the directory prefix only looks for /. fopen
+       accepts /. */
+    char winname[hoc_load_file_size_];
+    winname[hoc_load_file_size_ - 1] = '\0';
+    strncpy(winname, name, hoc_load_file_size_);
+    assert(winname[hoc_load_file_size_ - 1] == '\0');
+    name = hoc_back2forward(winname);
+#endif
     /* has the file already been loaded */
     is_loaded = 0;
 
@@ -668,6 +760,9 @@ static int hoc_Load_file(int always, const char* name) {
     strncpy(expname, expand_env_var(name), hoc_load_file_size_);
     assert(expname[hoc_load_file_size_ - 1] == '\0');
     name = expname;
+#if defined(WIN32)
+    hoc_back2forward(expname);
+#endif
     if ((base = strrchr(name, '/')) != NULL) {
         strncpy(path, name, base - name);
         path[base - name] = '\0';
@@ -678,9 +773,45 @@ static int hoc_Load_file(int always, const char* name) {
         path[0] = '\0';
         /* otherwise find the file in the default directories */
         f = fopen(base, "r"); /* cwd */
-        if (!f) {             /* try HOC_LIBRARY_PATH */
-            char* hlp;
-            hlp = getenv("HOC_LIBRARY_PATH");
+        if (!f && hoc_xopen_file_ && hoc_xopen_file_[0]) {
+            /* nrniv fopen's a path file without chdir. load_file of a path
+               already chdir's for relative xopen. Search next to the currently
+               open file (nrniv argv HOC, or the running .py script). Last /
+               is not the directory on Windows. */
+            std::filesystem::path parent = std::filesystem::path(hoc_xopen_file_).parent_path();
+            if (!parent.empty() && parent != ".") {
+                /* generic_string: '/' so chdir/fopen match load_file. */
+                std::string dir = parent.generic_string();
+                nrn_assert(dir.size() < hoc_load_file_size_);
+                std::snprintf(path, hoc_load_file_size_, "%s", dir.c_str());
+                nrn_assert(snprintf(fname, hoc_load_file_size_, "%s/%s", path, base) <
+                           hoc_load_file_size_);
+                f = fopen(expand_env_var(fname), "r");
+                if (!f) {
+                    path[0] = '\0';
+                }
+            }
+        }
+        if (!f) { /* try HOC_LIBRARY_PATH */
+            char* hlp = getenv("HOC_LIBRARY_PATH");
+#if defined(WIN32)
+            /* load_proc already splits on ';'. ':' is a drive letter. */
+            if (hlp) {
+                for (const auto& dir: split_paths(hlp)) {
+                    if (dir.empty()) {
+                        continue;
+                    }
+                    nrn_assert(dir.size() < hoc_load_file_size_);
+                    std::snprintf(path, hoc_load_file_size_, "%s", dir.c_str());
+                    nrn_assert(snprintf(fname, hoc_load_file_size_, "%s/%s", path, base) <
+                               hoc_load_file_size_);
+                    f = fopen(expand_env_var(fname), "r");
+                    if (f) {
+                        break;
+                    }
+                }
+            }
+#else
             while (hlp && *hlp) {
                 char* cp = strchr(hlp, ':');
                 if (!cp) {
@@ -708,6 +839,7 @@ static int hoc_Load_file(int always, const char* name) {
                     break;
                 }
             }
+#endif
         }
         if (!f) { /* try NEURONHOME/lib/hoc */
             Sprintf(path, "$(NEURONHOME)/lib/hoc");
@@ -764,7 +896,7 @@ static int hoc_Load_file(int always, const char* name) {
 
     return b;
 }
-char* hoc_back2forward(char*);
+
 void hoc_getcwd(void) {
     int len;
     static char* buf;
@@ -809,11 +941,11 @@ void hoc_Chdir(void) {
     hoc_pushx((double) i);
 }
 
-int nrn_is_python_extension;
-int (*nrnpy_pr_stdoe_callback)(int, char*);
+NRN_DLLSYM int nrn_is_python_extension;
+NRN_DLLSYM int (*nrnpy_pr_stdoe_callback)(int, char*);
 static int (*nrnpy_pass_callback)();
 
-extern "C" void nrnpy_set_pr_etal(int (*cbpr_stdoe)(int, char*), int (*cbpass)()) {
+extern "C" NRN_DLLSYM void nrnpy_set_pr_etal(int (*cbpr_stdoe)(int, char*), int (*cbpass)()) {
     nrnpy_pr_stdoe_callback = cbpr_stdoe;
     nrnpy_pass_callback = cbpass;
 }
