@@ -3,10 +3,13 @@
 
 #include <stdio.h>
 #include <math.h>
+#include <vector>
 #include "section.h"
 #include "nrniv_mf.h"
 #include "hocassrt.h"
 #include "parse.hpp"
+#include "nrn_ansi.h"
+#include "multicore.h"
 
 
 extern int nrn_use_daspk_;
@@ -740,5 +743,118 @@ ndesave[i].rhs[j] -= ndesave[i].v[k]*ndesave[i].m[j][(nlayer)+k-j];
 #endif
 #endif
 
+/*
+ * Battery-style consistent IC for extracellular + membrane capacitance.
+ * Hold continuous content (Vm and xc layer drops / grounded xc voltages) via
+ * large conductances on the cj=0 (resistive) matrix, solve, then restore
+ * those holds exactly. Algebraic layers (xc==0) keep the spring-solve
+ * voltages — not a single common-mode copied from vext[0], which would
+ * smash a resistive ladder (e.g. default nlayer=2, all xc=0) onto one
+ * potential and leave xg[1]*vext[1] in the residual.
+ *
+ * Called from Daspk battery IC (dae_init_mode 3) after LinearMechanism project.
+ */
+void nrn_extracellular_battery_ic() {
+    if (!use_sparse13) {
+        return;
+    }
+    auto const sorted_token = nrn_ensure_model_data_are_sorted();
+    for (int it = 0; it < nrn_nthread; ++it) {
+        NrnThread* nt = nrn_threads + it;
+        Memb_list* ml = nt->_ecell_memb_list;
+        if (!ml || ml->nodecount == 0) {
+            continue;
+        }
+        const int cnt = ml->nodecount;
+        const int nl = nrn_nlayer_extracellular;
+
+        // Save continuous holds from current state
+        std::vector<double> vm_hold(cnt);
+        std::vector<double> vext_hold(cnt * nl);
+        for (int i = 0; i < cnt; ++i) {
+            Node* nd = ml->nodelist[i];
+            Extnode* nde = nd->extnode;
+            vm_hold[i] = nd->v();
+            for (int j = 0; j < nl; ++j) {
+                vext_hold[i * nl + j] = nde->v[j];
+            }
+        }
+
+        double const cj_sav = nt->cj;
+        double const dt_sav = nt->_dt;
+        nt->cj = 0.0;
+        nt->_dt = 1e9;
+
+        setup_tree_matrix(sorted_token, *nt);
+
+        // Stiff springs on actual_d / sparse entries.  nrn_solve copies
+        // actual_d → sparse13 diagonals, so node holds must update actual_d.
+        // Skip Vm hold on zero-area nodes (algebraic; electrode at loc 0/1).
+        constexpr double ghold = 1e9;
+        for (int i = 0; i < cnt; ++i) {
+            Node* nd = ml->nodelist[i];
+            Extnode* nde = nd->extnode;
+            const int vi = nd->v_node_index;
+            const bool hold_vm = (NODEAREA(nd) > 0.);
+            if (hold_vm) {
+                // Membrane: continuous Vm ⇒ dvi - dvx0 = 0
+                nt->actual_d(vi) += ghold;
+                if (nd->_d_matelm) {
+                    *nd->_d_matelm += ghold;
+                }
+                *nde->_d[0] += ghold;
+                *nde->_x12[0] -= ghold;
+                *nde->_x21[0] -= ghold;
+            }
+
+            for (int j = 0; j < nl; ++j) {
+                double const xc = *nde->param[xc_index_ext(j)];
+                if (xc <= 0.0) {
+                    continue;
+                }
+                if (j == nl - 1) {
+                    // Grounded layer capacitance: continuous vext[last]
+                    *nde->_d[j] += ghold;
+                } else {
+                    // Inter-layer drop continuous
+                    *nde->_d[j] += ghold;
+                    *nde->_d[j + 1] += ghold;
+                    *nde->_x12[j + 1] -= ghold;
+                    *nde->_x21[j + 1] -= ghold;
+                }
+            }
+        }
+
+        nrn_solve(nt);
+        nrn_update_voltage(sorted_token, *nt);
+
+        // Exact hold restore. Capacitive content is rebuilt from pre-solve
+        // holds. Algebraic xc==0 layers keep the spring-solve values.
+        for (int i = 0; i < cnt; ++i) {
+            Node* nd = ml->nodelist[i];
+            Extnode* nde = nd->extnode;
+            const bool hold_vm = (NODEAREA(nd) > 0.);
+            if (*nde->param[xc_index_ext(nl - 1)] > 0.0) {
+                nde->v[nl - 1] = vext_hold[i * nl + (nl - 1)];
+            }
+            // else: algebraic outer layer — keep spring-solve vext[last]
+            for (int j = nl - 2; j >= 0; --j) {
+                double const xc = *nde->param[xc_index_ext(j)];
+                if (xc > 0.0) {
+                    double const drop = vext_hold[i * nl + j] - vext_hold[i * nl + j + 1];
+                    nde->v[j] = nde->v[j + 1] + drop;
+                }
+                // else: algebraic layer — keep spring-solve vext[j]
+            }
+            if (hold_vm) {
+                nd->v() = vm_hold[i];
+            }
+            // else: leave solved Vm (algebraic zero-area end free)
+        }
+
+        nt->cj = cj_sav;
+        nt->_dt = dt_sav;
+    }
+}
 
 #endif /*EXTRACELLULAR*/

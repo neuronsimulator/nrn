@@ -12,6 +12,7 @@
 #pragma once
 #include "ivocvect.h"
 #include "matrixmap.h"
+#include "vecplay_tplus.h"
 
 #include "neuron/container/data_handle.hpp"
 
@@ -58,6 +59,16 @@ class NrnDAE {
      * @param delta         array to store the difference $f(y)-Cy'$
      */
     void dkres(double* y, double* yprime, double* delta);
+
+    /**
+     * Seed local contributions to yp from C*yp = f for simple C structure
+     * (identity, pure diagonal, or single-column lag). Floating mutual C
+     * uses a zero common-mode gauge when the row is a pure difference stamp.
+     *
+     * @param f   full-system rhs f(y) (same layout as IDA residual f-part)
+     * @param yp  full-system y' to fill (may already hold membrane rates)
+     */
+    void seed_yp_from_f(double* f, double* yp);
 
     /**
      * Initialize the dynamics.
@@ -158,6 +169,7 @@ class NrnDAE {
      */
     virtual void alloc_(int size, int start, int nnode, Node** nodes, int* elayer);
 
+  protected:
     /// the matrix \f[$C$ in $C y' = f(y)$\f]
     MatrixMap* c_;
 
@@ -217,6 +229,38 @@ void nrndae_register(NrnDAE* n);
  * @param n The NrnDAE object (ie the dynamics) to remove.
  */
 void nrndae_deregister(NrnDAE* n);
+
+/**
+ * Battery-style IC: for each LinearModelAddition, project states
+ * (capacitors → held Δv voltage sources, etc.). Returns 0 if all projections OK.
+ */
+int nrndae_battery_ic_project();
+
+/**
+ * After y is fixed, seed yp from diagonal / single-column C rows so that
+ * C*yp ≈ f on LinearMechanism equations (used by dae_init_mode 3).
+ * f and yp are full IDA state vectors (neq).
+ */
+void nrndae_seed_yp_from_f(double* f, double* yp);
+
+/**
+ * A2: using continuous Vector.play forcing t+ (u'), map db/dt into each
+ * LinearMechanism and complete free yp components (null space of C).
+ * forcing may be empty (no-op). yp is the full IDA y' vector.
+ */
+// Returns bitmask of sources used for free y': 1=play, 2=dforce/bdot, 4=FD, 8=applied.
+int nrndae_complete_yp_from_forcing(double* yp, const std::vector<NrnForcingTPlus>& forcing);
+
+/** Append LinearMechanism.dforce / FD b' entries for IC audit (A4). */
+void nrndae_append_dforce_to_forcing_list(double tt, std::vector<NrnForcingTPlus>& out);
+
+// Source bits for nrndae_complete_yp_from_forcing
+enum {
+    NRN_IC_FORCING_PLAY = 1,
+    NRN_IC_FORCING_DFORCE = 2,
+    NRN_IC_FORCING_FD = 4,
+    NRN_IC_FORCING_APPLIED = 8
+};
 
 typedef std::list<NrnDAE*> NrnDAEPtrList;
 typedef NrnDAEPtrList::const_iterator NrnDAEPtrListIterator;

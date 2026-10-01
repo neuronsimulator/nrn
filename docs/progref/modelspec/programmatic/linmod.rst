@@ -130,7 +130,67 @@ LinearMechanism
             callable can change the elements of b and g (but do not introduce new
             elements into g) as a function of time and states. It may be useful for
             stability and performance to place the linearized part of b into g.
-            Consider the following pendulum.py with equations 
+            Consider the following pendulum.py with equations
+
+    .. method:: LinearMechanism.dforce
+
+        Syntax:
+            ``lm.dforce(bdot)``
+
+            ``lm.dforce(dforce_callable, bdot)``
+
+        Description:
+            Supplies :math:`db/dt` for IDA consistent initialization when
+            :meth:`CVode.dae_init_mode` is 3 (forcing :math:`t^+` info). The
+            ``bdot`` Vector must have the same size as ``b``.
+
+            With a callable, that function is invoked at each IDA reinit with
+            ``t`` set to the IC time; it should fill ``bdot``. Without a
+            callable, ``bdot`` is used as-is (the user may update it before
+            ``re_init``).
+
+            If neither ``dforce`` nor continuous :meth:`Vector.play` into ``b``
+            provides :math:`b'`, but a force callable was passed to the
+            constructor, a one-sided finite difference of that callable is used
+            as a fallback.
+
+            Example (series :math:`C`–:math:`R` with sinusoid current into node 0):
+
+            .. code-block::
+                python
+
+                import math
+                from neuron import n
+
+                A, w = 1.0, 2 * math.pi
+                c = n.Matrix(2, 2)
+                g = n.Matrix(2, 2)
+                y = n.Vector(2)
+                b = n.Vector(2)
+                bdot = n.Vector(2)
+                c.setval(0, 0, 1); c.setval(0, 1, -1)
+                c.setval(1, 0, -1); c.setval(1, 1, 1)
+                g.setval(1, 1, 1)
+
+                def force():
+                    b.x[0] = A * math.sin(w * n.t)
+
+                def dforce():
+                    bdot.x[0] = A * w * math.cos(w * n.t)
+
+                lm = n.LinearMechanism(force, c, g, y, b)
+                lm.dforce(dforce, bdot)
+                n.CVode().active(True)
+                n.CVode().use_daspk(True)
+                n.CVode().dae_init_mode(3)
+                n.finitialize(0)
+
+        See also:
+            :meth:`CVode.dae_init_mode`, :meth:`CVode.dae_init_audit`
+
+    ..
+
+        Description (continued, pendulum): 
 
         Example:
 

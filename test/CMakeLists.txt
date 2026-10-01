@@ -26,7 +26,9 @@ add_executable(
   unit_tests/utils/enumerate.cpp
   unit_tests/utils/Sprintf.cpp
   unit_tests/oc/hoc_interpreter.cpp
+  unit_tests/vecplay_tplus.cpp
   cover/unit_tests/cover.cpp)
+target_include_directories(testneuron PRIVATE ${PROJECT_SOURCE_DIR}/src/nrniv)
 set(catch2_targets testneuron)
 if(NRN_ENABLE_THREADS)
   add_executable(nrn-benchmarks common/catch2_main.cpp benchmarks/threads/test_multicore.cpp)
