@@ -89,6 +89,80 @@ def _install_array_rangevar_procs(name):
     _ARRAY_RANGEVAR_PROCS.add(name)
 
 
+# A mechanism POINTER variable (membfunc.h NRNPOINTER). nrn_rangevar_get/set
+# dereference it without a check, and the core throws through ctypes (process
+# abort) when it was never set. Small HOC helpers called through the nothrow
+# function API report NEURON's own "wasn't made to point to anything" instead.
+_NRNPOINTER = 4
+_POINTER_RANGEVARS = {}
+_POINTER_RANGEVAR_PROCS = set()
+
+
+def _is_pointer_rangevar(name, sym):
+    flag = _POINTER_RANGEVARS.get(name)
+    if flag is None:
+        from .api import _nrn_symbol_subtype
+
+        flag = _POINTER_RANGEVARS[name] = int(_nrn_symbol_subtype(sym)) == _NRNPOINTER
+    return flag
+
+
+def _pointer_rangevar_procs(name):
+    from . import NEURON
+
+    n = NEURON()
+    if name not in _POINTER_RANGEVAR_PROCS:
+        # $1 = segment position x, $2 = value (set only)
+        n(f"func _mn_ptr_get_{name}() {{ return {name}($1) }}")
+        n(f"proc _mn_ptr_set_{name}() {{ {name}($1) = $2 }}")
+        _POINTER_RANGEVAR_PROCS.add(name)
+    return n
+
+
+class OpaquePointer:
+    """A POINTER holding a non-double handle (e.g. a BBCOREPOINTER stream)."""
+
+    __slots__ = ()
+
+
+OpaquePointer.__module__ = "nrn"
+
+
+def _call_pointer_proc(section, x, name, proc, *args):
+    from .object import _SuppressCStderr
+
+    n = _pointer_rangevar_procs(name)
+    try:
+        # NEURON reports these as Python exceptions without printing a HOC
+        # error trace; the helper's trace is suppressed to match.
+        with _SuppressCStderr():
+            return getattr(n, f"{proc}_{name}")(x, *args, sec=section)
+    except RuntimeError as exc:
+        # The core's own messages are the only signal for these two states;
+        # there is no public nothrow range-variable accessor reporting them.
+        message = str(exc)
+        if "cannot be converted to data_handle<double>" in message:
+            return OpaquePointer()
+        if "point to anything" in message:
+            raise AttributeError(
+                f"{name} was not made to point to anything at {section.name()}({x})"
+            ) from None
+        raise
+
+
+def _pointer_rangevar_get(section, x, name):
+    value = _call_pointer_proc(section, x, name, "_mn_ptr_get")
+    return value if isinstance(value, OpaquePointer) else float(value)
+
+
+def _pointer_rangevar_set(section, x, name, value):
+    import numbers
+
+    if isinstance(value, bool) or not isinstance(value, numbers.Real):
+        raise ValueError(f"bad value for {name}: must be a double")
+    _call_pointer_proc(section, x, name, "_mn_ptr_set", float(value))
+
+
 # ── _ArrayRangeVar ────────────────────────────────────────────────────────────
 
 def _diam_node_x(sec, x):
@@ -423,6 +497,8 @@ class Segment:
             info = _get_symbol_info(name)
             if info is None or info[1] != _TYPES.RANGEVAR:
                 raise AttributeError(f"Variable '{name}' not found in {self!r}.")
+            if _is_pointer_rangevar(name, info[0]):
+                _pointer_rangevar_get(self.sec, self.x, name)  # raises if unset
             return NrnRangeVarRef(self.sec, self.x, name)
 
         # Mechanism instance cache (Segment._mech_cache).
@@ -503,6 +579,8 @@ class Segment:
                 return _SEG_DIAM_GET(sec._sec, _diam_node_x(sec, self._x))
             if is_array:
                 return _ArrayRangeVar(sec, self._x, name, array_length)
+            if _is_pointer_rangevar(name, sym):
+                return _pointer_rangevar_get(sec, self._x, name)
             return _RANGEVAR_GET(sym, sec._sec, self._x)
         if sym_type == _TYPES.MECHANISM:
             from .mechanism import Mechanism
@@ -587,13 +665,12 @@ class Segment:
         self._check_rangevar_mechanism(name)
         if is_array:
             size = array_length
+            # Accepting a whole sequence is a myneuron extension; a scalar
+            # gets NEURON's own error.
             try:
                 vals = list(value)
             except TypeError:
-                raise TypeError(
-                    f"'{name}' is an array range variable of length {size}; "
-                    f"assign an iterable of that length or use {name}[i] = v"
-                )
+                raise IndexError(f"{name} needs an index for assignment") from None
             if len(vals) != size:
                 raise ValueError(
                     f"cannot assign sequence of length {len(vals)} to "
@@ -617,6 +694,9 @@ class Segment:
             _diam_hoc_assign(
                 sec, f"diam({self._x!r}) = {float(value)!r}", self._x, value
             )
+            return
+        if _is_pointer_rangevar(name, sym):
+            _pointer_rangevar_set(self._sec, self._x, name, value)
             return
         _RANGEVAR_SET(sym, self._sec._sec, self._x, value)
 

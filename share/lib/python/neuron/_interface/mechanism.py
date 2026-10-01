@@ -73,6 +73,14 @@ def _all_density_mechanism_names():
     return [name for _, name in mechs]
 
 
+def _array_length(full_name):
+    """Array size of a range variable, or 0 for a scalar."""
+    from .sections import _get_symbol_info
+
+    info = _get_symbol_info(full_name)
+    return info[3] if info is not None and info[2] else 0
+
+
 class RangeVar:
     """A single range variable on a mechanism at a segment.
 
@@ -99,6 +107,10 @@ class RangeVar:
         # read before it dereferences a freed Section*/node and aborts.
         self._seg._sec._check_alive()
         sym = _nrn_symbol(self._full_name.encode("utf-8"))
+        from .sections import _is_pointer_rangevar, _pointer_rangevar_get
+
+        if _is_pointer_rangevar(self._full_name, sym):
+            return _pointer_rangevar_get(self._seg._sec, self._seg._x, self._full_name)
         return _nrn_rangevar_get(sym, self._seg._sec._sec, self._seg._x)
 
     def __setitem__(self, idx, value):
@@ -108,6 +120,11 @@ class RangeVar:
 
         self._seg._sec._check_alive()  # HOC may have deleted the host section.
         sym = _nrn_symbol(self._full_name.encode("utf-8"))
+        from .sections import _is_pointer_rangevar, _pointer_rangevar_set
+
+        if _is_pointer_rangevar(self._full_name, sym):
+            _pointer_rangevar_set(self._seg._sec, self._seg._x, self._full_name, value)
+            return
         _nrn_rangevar_set(sym, self._seg._sec._sec, self._seg._x, value)
 
     def __repr__(self):
@@ -138,8 +155,8 @@ class Mechanism:
     def name(self):
         return self._name
 
-    @property
     def segment(self):
+        """The segment this mechanism belongs to (a method, as in NEURON)."""
         return self._seg
 
     def is_ion(self):
@@ -229,7 +246,11 @@ class Mechanism:
             var = name[5:]
             full = var if self._is_ion else "%s_%s" % (var, self._name)
             from .nrnref import NrnRangeVarRef
+            from .sections import _is_pointer_rangevar, _pointer_rangevar_get
 
+            sym = _NRN_SYMBOL(full.encode("utf-8"))
+            if sym and _is_pointer_rangevar(full, sym):
+                _pointer_rangevar_get(self._seg._sec, self._seg._x, full)  # raises if unset
             return NrnRangeVarRef(self._seg._sec, self._seg._x, full)
         # Per-mechanism symbol cache: keyed by mech name, then by attr name.
         # Range-variable Symbol* pointers are global HOC state — once registered
@@ -274,6 +295,18 @@ class Mechanism:
         if sym:
             sym_type = int(_NRN_SYMBOL_TYPE(sym))
             if sym_type == _TYPES.RANGEVAR:
+                size = _array_length(full_name)
+                if size:
+                    # seg.mech.c[i]: the scalar getter throws inside the core
+                    # for an array variable. Never cached as a scalar.
+                    from .sections import _ArrayRangeVar
+
+                    return _ArrayRangeVar(self._seg._sec, self._seg._x, full_name, size)
+                from .sections import _is_pointer_rangevar, _pointer_rangevar_get
+
+                if _is_pointer_rangevar(full_name, sym):
+                    # Never cached: the fast path would read it unchecked.
+                    return _pointer_rangevar_get(self._seg._sec, self._seg._x, full_name)
                 cache[name] = (full_name, sym, sym_type)
                 return _RANGEVAR_GET(sym, self._seg._sec._sec, self._seg._x)
             if sym_type == _TYPES.FUN_BLTIN and not self._is_ion:
@@ -420,6 +453,17 @@ class Mechanism:
         sym = _NRN_SYMBOL(full_name.encode("utf-8"))
         sym_type = int(_NRN_SYMBOL_TYPE(sym)) if sym else None
         if sym and sym_type == _TYPES.RANGEVAR:
+            if _array_length(full_name):
+                # Like NEURON, seg.mech.c = x on an array variable sets c[0].
+                from .sections import _ArrayRangeVar
+
+                _ArrayRangeVar(self._seg._sec, self._seg._x, full_name, 1)[0] = value
+                return
+            from .sections import _is_pointer_rangevar, _pointer_rangevar_set
+
+            if _is_pointer_rangevar(full_name, sym):
+                _pointer_rangevar_set(self._seg._sec, self._seg._x, full_name, value)
+                return
             if cache is None:
                 cache = {}
                 _MECH_ATTR_CACHE[self._name] = cache

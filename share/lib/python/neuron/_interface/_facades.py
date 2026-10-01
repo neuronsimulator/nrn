@@ -38,12 +38,13 @@ def _hoc_module(h):
 
 def _nrn_module():
     from .mechanism import Mechanism
-    from .sections import Section, Segment
+    from .sections import OpaquePointer, Section, Segment
 
     nrn = types.ModuleType("nrn", "Section, segment and mechanism types.")
     nrn.Section = Section
     nrn.Segment = Segment
     nrn.Mechanism = Mechanism
+    nrn.OpaquePointer = OpaquePointer
     psection = []
 
     def set_psection(function):
