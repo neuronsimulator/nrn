@@ -149,34 +149,64 @@ class NrnRangeVarRef(NrnRef):
         sec._check_alive()
         _nrn_rangevar_push(self._sym, sec._sec, self._x)
 
+    def _checked_target(self):
+        """Return (section, name, kind) or raise before the core is touched.
+
+        nrn_rangevar_get/set dereference unchecked: after the mechanism is
+        uninserted, on an array symbol, or through an unset POINTER the core
+        threw through ctypes and aborted the process.
+        """
+        from .sections import Segment, _get_symbol_info, _is_pointer_rangevar
+
+        sec = self._section()
+        sec._check_alive()  # HOC-deleted section: RuntimeError, not SIGABRT.
+        name = self._name.decode("utf-8") if isinstance(self._name, bytes) else self._name
+        try:
+            Segment(sec, self._x)._check_rangevar_mechanism(name)
+        except AttributeError:
+            raise ValueError("Invalid data_handle") from None
+        info = _get_symbol_info(name)
+        if info is None:
+            raise NameError(f"No such mechanism or variable: {name}")
+        if info[2]:
+            return sec, name, "array"
+        if _is_pointer_rangevar(name, info[0]):
+            return sec, name, "pointer"
+        return sec, name, info[0]
+
     def __getitem__(self, idx):
-        from .api import _nrn_rangevar_get, _nrn_symbol
+        from .api import _nrn_rangevar_get
 
         if idx != 0:
             raise IndexError("Only index 0 is supported")
-        sec = self._section()
-        sec._check_alive()  # HOC-deleted section: RuntimeError, not SIGABRT.
-        # TODO(gap-46): self._sym is already resolved in __init__; use it here
-        # instead of calling _nrn_symbol again. The re-lookup is redundant and
-        # slows hot reads. (_push already uses self._sym correctly.)
-        sym = _nrn_symbol(self._name)
-        if sym is None:
-            raise NameError(f"No such mechanism or variable: {self._name}")
-        return _nrn_rangevar_get(sym, sec._sec, self._x)
+        sec, name, kind = self._checked_target()
+        if kind == "array":
+            from .sections import _ArrayRangeVar
+
+            return _ArrayRangeVar(sec, self._x, name, 1)[0]
+        if kind == "pointer":
+            from .sections import _pointer_rangevar_get
+
+            return _pointer_rangevar_get(sec, self._x, name)
+        return _nrn_rangevar_get(kind, sec._sec, self._x)
 
     def __setitem__(self, idx, value):
-        from .api import _nrn_rangevar_set, _nrn_symbol
+        from .api import _nrn_rangevar_set
 
         if idx != 0:
             raise IndexError("Only index 0 is supported")
-        sec = self._section()
-        sec._check_alive()  # HOC-deleted section: RuntimeError, not SIGABRT.
-        # TODO(gap-46): same redundant _nrn_symbol re-lookup as __getitem__;
-        # use self._sym.
-        sym = _nrn_symbol(self._name)
-        if sym is None:
-            raise NameError(f"No such mechanism or variable: {self._name}")
-        _nrn_rangevar_set(sym, sec._sec, self._x, value)
+        sec, name, kind = self._checked_target()
+        if kind == "array":
+            from .sections import _ArrayRangeVar
+
+            _ArrayRangeVar(sec, self._x, name, 1)[0] = value
+            return
+        if kind == "pointer":
+            from .sections import _pointer_rangevar_set
+
+            _pointer_rangevar_set(sec, self._x, name, value)
+            return
+        _nrn_rangevar_set(kind, sec._sec, self._x, value)
 
 
 class NrnVarRef(NrnRef):

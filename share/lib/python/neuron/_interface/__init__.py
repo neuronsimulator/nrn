@@ -224,6 +224,9 @@ def _register_nrnpython_callback():
         _nrn_gargstr,
         _nrn_hoc_ret,
         _nrn_double_push,
+        _call_at_top_level,
+        _install_methods_slot,
+        _METHODS_HOC_NRNPYTHON_OFFSET,
     )
 
     def _nrnpython_callback():
@@ -231,7 +234,9 @@ def _register_nrnpython_callback():
             raw = _nrn_gargstr(1)
             code = raw.decode("utf-8") if isinstance(raw, bytes) else raw
             ns = sys.modules["__main__"].__dict__
-            exec(code, ns)  # noqa: S102 — the documented HOC behavior
+            # Like NEURON's nrnpython_real (HocTopContextManager): the code
+            # runs at HOC top level even when called from a template.
+            _call_at_top_level(exec, (code, ns))  # noqa: S102 — documented HOC behavior
             status = 1.0
         except BaseException as exc:
             import traceback
@@ -252,6 +257,7 @@ def _register_nrnpython_callback():
         b"nrnpython",
         280,
     )
+    _install_methods_slot(_METHODS_HOC_NRNPYTHON_OFFSET, _mn_nrnpython_cb)
 
 
 _register_nrnpython_callback()
@@ -795,6 +801,9 @@ class NEURON(metaclass=_Singleton):
                                         # (cabcode.cpp:2165), the same route
                                         # Section.__del__ uses.
                                         NEURON().pop_section()
+                                from .api import _hoc_unref_defer
+
+                                _hoc_unref_defer()
 
                         return FuncWrapper(
                             nrn_func,
@@ -1227,6 +1236,9 @@ class NEURON(metaclass=_Singleton):
         finally:
             if sec_pushed:
                 _nrn_section_pop()
+            from .api import _hoc_unref_defer
+
+            _hoc_unref_defer()
 
     def _gather_section_ptrs(self):
         """Return (list-of-Section-pointers, count) for every live section.

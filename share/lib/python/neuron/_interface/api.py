@@ -480,6 +480,43 @@ _hoc_top_level_symlist = ctypes.c_void_p.in_dll(
     libnrniv, "hoc_top_level_symlist"
 )
 
+
+def _call_at_top_level(target, args):
+    """Call with HOC temporarily switched to its top-level context."""
+    if not _hoc_thisobject.value:
+        return target(*args)
+    saved_object = _hoc_thisobject.value
+    saved_data = _hoc_objectdata.value
+    saved_symlist = _hoc_symlist.value
+    _hoc_thisobject.value = None
+    _hoc_objectdata.value = _hoc_top_level_data.value
+    _hoc_symlist.value = _hoc_top_level_symlist.value
+    try:
+        return target(*args)
+    finally:
+        _hoc_thisobject.value = saved_object
+        _hoc_objectdata.value = saved_data
+        _hoc_symlist.value = saved_symlist
+
+
+# hoc_nrnpython (field 13, after hoccommand_exec_strret at 96): the builtin
+# nrnpython() calls it. Inside a template HOC resolves the builtin rather than
+# a top-level registration (ModelView's `nrnpython("import neuron")`).
+_METHODS_HOC_NRNPYTHON_OFFSET = 104
+
+
+def _install_methods_slot(offset, callback):
+    """Fill one empty methods-table slot; a native provider's stays untouched."""
+    try:
+        methods = ctypes.c_void_p.in_dll(libnrniv, "_ZN6neuron6python7methodsE")
+    except ValueError:
+        return False
+    slot = ctypes.c_void_p.from_address(ctypes.addressof(methods) + offset)
+    if slot.value:
+        return False
+    slot.value = ctypes.cast(callback, ctypes.c_void_p).value
+    return True
+
 # --- Method-return typing (int / bool vs float) ---
 # A built-in class method declared to return an int or bool sets the global
 # hoc_return_type_code just before returning (HocReturnType in oc/code.h:
@@ -688,7 +725,7 @@ def _install_cfunctype_methods():
         # Called by NEURON's C core when an Object wrapping a Python
         # callable needs to fire. Read Object->u.this_pointer at
         # offset 8 (oc/hocdec.h:173 layout), cast to Py2Nrn*, recover
-        # the registry-owned PyObject*, call it with no args. Return 1
+        # the registry-owned PyObject*, and call it. Return 1
         # on success so cvodeobj.cpp:511 doesn't `hoc_execerror`.
         if not obj_ptr:
             return 0
@@ -696,22 +733,7 @@ def _install_cfunctype_methods():
             po_handle = _pythonobject_payload_ptr(obj_ptr)
             if not po_handle:
                 return 0
-            # Invoke via the CPython C API directly. PyObject_CallObject
-            # with NULL args means "call with empty tuple"; returns
-            # NULL on exception (which we map to return 0).
-            _PyCO = ctypes.pythonapi.PyObject_CallObject
-            _PyCO.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
-            _PyCO.restype = ctypes.c_void_p
-            result = _PyCO(po_handle, None)
-            if result is None:
-                # Python exception inside the callback.
-                ctypes.pythonapi.PyErr_Clear()
-                return 0
-            # PyObject_CallObject returns a new reference -- DECREF it.
-            ctypes.pythonapi.Py_DecRef.argtypes = [ctypes.c_void_p]
-            ctypes.pythonapi.Py_DecRef.restype = None
-            ctypes.pythonapi.Py_DecRef(result)
-            return 1
+            callback = ctypes.cast(po_handle, ctypes.py_object).value
         except BaseException as exc:
             import sys
             print(
@@ -719,6 +741,25 @@ def _install_cfunctype_methods():
                 f"{type(exc).__name__}: {exc}",
                 file=sys.stderr,
             )
+            return 0
+        try:
+            # Same dispatch as NEURON's hoccommand_exec_help1: a
+            # (callable, args) tuple calls callable(*args), with a non-tuple
+            # args value passed as the single argument.
+            if isinstance(callback, tuple):
+                args = callback[1] if isinstance(callback[1], tuple) else (callback[1],)
+                callback[0](*args)
+            else:
+                callback()
+            return 1
+        except BaseException:
+            # The core reports the failure from the return value; an
+            # exception must not cross ctypes. NEURON prints the same text.
+            import sys
+            import traceback
+
+            print("NEURON: Python Callback failed [hoccommand_exec]:", file=sys.stderr)
+            traceback.print_exc()
             return 0
 
     _CFUNCTYPE_KEEPALIVE.append(_py_hoccommand_exec)
@@ -840,29 +881,22 @@ def _install_cfunctype_methods():
                 # Transfer the creator-owned reference to the HOC temp stack.
                 _nrn_object_unref(obj_ptr)
 
-    def _call_python_component(target, args):
-        """Call with HOC temporarily switched to its top-level context."""
-        if not _hoc_thisobject.value:
-            return target(*args)
-        saved_object = _hoc_thisobject.value
-        saved_data = _hoc_objectdata.value
-        saved_symlist = _hoc_symlist.value
-        _hoc_thisobject.value = None
-        _hoc_objectdata.value = _hoc_top_level_data.value
-        _hoc_symlist.value = _hoc_top_level_symlist.value
-        try:
-            return target(*args)
-        finally:
-            _hoc_thisobject.value = saved_object
-            _hoc_objectdata.value = saved_data
-            _hoc_symlist.value = saved_symlist
+    _call_python_component = _call_at_top_level
 
     def _python_component_target(py_obj, name, obj):
-        # HOC's `._` denotes the payload itself, except on the top-level
-        # PythonObject proxy, where names are looked up in __main__.
+        # The top-level PythonObject (no payload) evaluates the name in
+        # __main__'s namespace like NEURON's py2n_component (PyRun_String),
+        # so builtins such as `list` resolve too. Otherwise `._` is the
+        # payload itself.
+        if not _pythonobject_payload_ptr(obj):
+            import __main__
+
+            try:
+                return eval(name, vars(__main__))
+            except NameError:
+                raise AttributeError(f"module '__main__' has no attribute {name!r}") from None
         if name == "_":
-            if _pythonobject_payload_ptr(obj):
-                return py_obj
+            return py_obj
         return getattr(py_obj, name)
 
     def _check_component_dimensions(ndim):
@@ -1426,6 +1460,20 @@ _MIN_VALID_DATAPTR = 0x10000
 _nrn_method_call = libnrniv.nrn_method_call_nothrow
 _nrn_method_call.argtypes = [Object, Symbol, ctypes.c_int, ctypes.c_char_p, ctypes.c_size_t]
 _nrn_method_call.restype = ctypes.c_int
+
+# HOC defers one object unref while popping an OBJECTTMP (hoc_pop_defer) and
+# NEURON's Python binding flushes it after every function/method call and when
+# a wrapper is released (nrnpy_hoc.cpp:264, :847). Without the flush the
+# deferred object outlives its owner: a NetCon destroyed after its source
+# double-frees in PreSyn::~PreSyn. Not in the public C API; bound by its
+# exported mangled name, a no-op if a core does not export it.
+try:
+    _hoc_unref_defer = libnrniv._Z15hoc_unref_deferv
+    _hoc_unref_defer.argtypes = []
+    _hoc_unref_defer.restype = None
+except AttributeError:
+    def _hoc_unref_defer():
+        pass
 
 _nrn_vector_data = libnrniv.nrn_vector_data
 _nrn_vector_data.argtypes = [Object]
@@ -2060,7 +2108,9 @@ class TypeCodes:
         # global symbol table (harmless, but shows up in a full name dump).
 
         # Define a top-level proc to discover the PROCEDURE code.
-        hoc_exec("proc _mn_type_probe_proc() { local x }")
+        # An empty body: `local x` left a global `x` declared at top level,
+        # breaking user code that later names something x (SectionRef.rename).
+        hoc_exec("proc _mn_type_probe_proc() { }")
         sym = _nrn_symbol(b"_mn_type_probe_proc")
         if sym:
             code = int(_nrn_symbol_type(sym))

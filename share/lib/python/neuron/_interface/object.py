@@ -396,9 +396,11 @@ class Object(metaclass=_HocClassMeta):
         except AttributeError:
             obj = None
         if obj is not None:
-            from .api import _nrn_object_unref
+            from .api import _hoc_unref_defer, _nrn_object_unref
 
             _nrn_object_unref(obj)
+            # Prompt deletion, as when NEURON releases a HocObject wrapper.
+            _hoc_unref_defer()
 
     def hname(self):
         from . import NEURON
@@ -919,6 +921,9 @@ class Object(metaclass=_HocClassMeta):
                     finally:
                         if use_sec is not None:
                             _nrn_section_pop()
+                        from .api import _hoc_unref_defer
+
+                        _hoc_unref_defer()
 
                 from .utils import FuncWrapper
 
@@ -1352,6 +1357,7 @@ class Vector(Object):
         self.resize(len(seq))
         for i, val in enumerate(seq):
             self.set(i, val)
+        return self
 
     def __len__(self):
         return int(self.size())

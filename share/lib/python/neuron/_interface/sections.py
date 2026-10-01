@@ -51,12 +51,23 @@ _V_SYMBOL = _NRN_SYMBOL(b"v")
 _CONNECT_ARG_UNSET = object()
 
 
+def _current_array_length(info):
+    # An array's length is not stable: nlayer_extracellular() resizes the
+    # extracellular arrays. Re-read it on every access; scalars stay cached.
+    from .api import _nrn_symbol_array_length
+
+    sym, sym_type, _, _ = info
+    return (sym, sym_type, True, int(_nrn_symbol_array_length(sym)))
+
+
 def _get_symbol_info(name):
     """Return (sym_ptr, sym_type, is_array, array_length) for *name*, or None
     if no such symbol exists. Cached after first lookup."""
     cached = _SYMBOL_INFO_CACHE.get(name)
     if cached is not None:
-        return cached if cached is not _MISSING_SYMBOL_INFO else None
+        if cached is _MISSING_SYMBOL_INFO:
+            return None
+        return _current_array_length(cached) if cached[2] else cached
     # These four are cold-path only (cache miss); not hoisted to module level.
     from .api import (
         _nrn_symbol,
@@ -303,7 +314,10 @@ class Segment:
         return _RANGEVAR_GET(_V_SYMBOL, sec._sec, self._x)
 
     def __repr__(self):
-        return f"{self._sec.name()}({self.x})"
+        # NEURON formats x with %g and names a dead host explicitly.
+        if not _SECTION_IS_ACTIVE(self._sec._sec):
+            return "<segment of deleted section>"
+        return f"{self._sec.name()}({self.x:g})"
 
     @staticmethod
     def _node_key(x, nseg):
@@ -520,6 +534,8 @@ class Segment:
             info = _get_symbol_info(name)
         elif info is _MISSING_SYMBOL_INFO:
             info = None
+        elif info[2]:
+            info = _current_array_length(info)
         if info is None:
             raise AttributeError(f"Variable '{name}' not found in {self!r}.")
         sym, sym_type, is_array, array_length = info
@@ -879,6 +895,11 @@ class Section:
             for i in range(nseg):
                 _SEG_DIAM_SET(self._sec, (i + 0.5) / nseg, value)
             _diam_hoc_assign(self, f"diam = {float(value)!r}", "0:1", value)
+        elif name == "v":
+            # NEURON sets v on every node of the section, both ends included;
+            # a child's x=0 node is its parent's node and changes too.
+            for seg in self.allseg():
+                seg.v = value
         else:
             for seg in self:
                 setattr(seg, name, value)
@@ -1052,6 +1073,8 @@ class Section:
         # name() is already cell-qualified (returns "<cell>.<raw>" when owned),
         # so prefixing the cell again would produce "<cell>.<cell>.<raw>".
         # Real NEURON prints the single cell-qualified name.
+        if not _SECTION_IS_ACTIVE(self._sec):
+            return "<deleted section>"
         return self.name()
 
     def __call__(self, x):
@@ -1513,7 +1536,7 @@ class Section:
     def n3d(self):
         from . import NEURON
 
-        return NEURON().n3d(sec=self)
+        return int(NEURON().n3d(sec=self))
 
     def x3d(self, i):
         from . import NEURON
