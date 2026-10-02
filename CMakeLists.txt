@@ -392,14 +392,11 @@ endif()
 
 find_package(Readline REQUIRED)
 if(READLINE_FOUND)
-  # MAC libedit.3.dylib does not have rl_event_hook Readline_LIBRARY may be a binary lib or (on the
-  # MAC) a tbd file that points to the library and mentions all its definitions. this part has to be
-  # prior to adding the nrniv subdirectory.
-  execute_process(COMMAND grep -q rl_event_hook ${Readline_LIBRARY} RESULT_VARIABLE result)
-  if(NOT result EQUAL 0)
-    # define for src/oc/hoc.cpp
-    set(DEF_RL_GETC_FUNCTION use_rl_getc_function)
-  endif()
+  # Always use getc_hook (src/oc/hoc.cpp) with InterViews, even when GNU readline exports
+  # rl_event_hook. Mac libedit lacks rl_event_hook and already used this path. GNU readline 8.x +
+  # rl_event_hook + run_til_stdin() swallows tty input (nrniv/nrngui with DISPLAY). getc_hook waits
+  # in run_til_stdin() then read(0), matching readline 8's rl_getc. Must be set before nrniv/.
+  set(DEF_RL_GETC_FUNCTION use_rl_getc_function)
   # If we are not using self contained, static readline library created for building wheel then only
   # look for curses and termcap
   if(NOT NRN_WHEEL_STATIC_READLINE)

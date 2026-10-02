@@ -89,22 +89,21 @@ assets:
     managed: true
     consumers:
       - packaging/python/Dockerfile
-      - packaging/python/build_static_readline_osx.bash
     notes: >
-      Linux manylinux Dockerfile and GH Actions Mac wheels use 7.0. Azure Mac
-      wheels still use prebuilt secure file readline7.0-ncurses6.4.tar.gz
-      (not in this manifest yet). Do not bump Mac wheels to 8.3: it breaks
-      tty input when InterViews multiplexes stdin with X11.
+      Linux manylinux Dockerfile uses 7.0. Azure Mac wheels still use the
+      prebuilt secure file readline7.0-ncurses6.4.tar.gz (not in this
+      manifest yet).
 
   - id: readline-8.3-src
     file: readline-8.3.tar.gz
     sha256: fe5383204467828cd495ee8d1d3c037a7eba1389c22bc6a041f627976f9061cc
     upstream_url: https://ftp.gnu.org/gnu/readline/readline-8.3.tar.gz
     managed: true
-    consumers: []
+    consumers:
+      - packaging/python/build_static_readline_osx.bash
     notes: >
-      Hosted pin kept for reference. Mac wheels must stay on 7.0 (see
-      build_static_readline_osx.bash).
+      GH Actions Mac wheels use 8.3. Safe with InterViews because hoc.cpp
+      always compiles use_rl_getc_function (not rl_event_hook).
 
   # --- P1: Windows installer toolchain ---
   - id: nsis-3.05
