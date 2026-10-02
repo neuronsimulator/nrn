@@ -97,18 +97,20 @@ version, needs an explicit decision.
 
 Dependabot is configured in `.github/dependabot.yml`:
 
-* It checks `/`, `/docs`, and `/packaging/python` monthly. Version updates are
-  grouped by dependency name across these directories, so the same dependency
-  can be updated in one pull request when its constraints allow a common
-  update. Different dependencies use separate pull requests. These paths are
+* It checks `/`, `/docs`, and `/packaging/python` monthly. These paths are
   the directories scanned for manifests; `/` means the repository root, not
-  every subdirectory under it.
-* Only one version-update pull request may be open for that entry at a time;
-  other dependency updates wait until it is merged or closed.
+  every subdirectory under it. Version updates for these directories are one
+  group (`python-direct`, `patterns: ["*"]`): one pull request updates every
+  dependency whose constraint allows a newer release. Security updates for
+  the same directories are a second group (`python-direct-security`, also
+  `patterns: ["*"]`): one pull request for every vulnerable dependency there.
+* Only one version-update pull request may be open for that entry at a time.
+  Further version-update pull requests wait until it is merged or closed.
 * Scheduled version updates look for newer releases. Security updates address
   known vulnerabilities and run only if the repository's **Dependabot security
   updates** setting is enabled. Version updates for `/ci` are disabled; the
-  zero PR limit there does not disable security updates.
+  zero PR limit there does not disable security updates. Security updates
+  under `/ci` are one group (`ci-security`, `patterns: ["*"]`).
 
 The direct-update entry uses `increase-if-necessary`: Dependabot leaves a
 constraint unchanged when it already allows the proposed version; otherwise it
