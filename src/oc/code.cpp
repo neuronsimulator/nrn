@@ -305,6 +305,10 @@ int get_legacy_int_type(StackDatum const& entry) {
 }
 }  // namespace
 
+std::size_t hoc_stack_size() {
+    return stack.size();
+}
+
 /** Get the type of the top entry.
  */
 int hoc_stack_type() {
@@ -613,8 +617,19 @@ int hoc_ParseExec(int yystart) {
 
     Frame *sframe, *sfp;
     Inst *sprogbase, *sprogp, *spc, *sprog_parse_recover;
-    Symlist* sp_symlist;
     std::size_t sstack{}, sstackp{};
+    // Nested execute errors must not lose the outer statement's parser symbols.
+    // Stack and frame recovery remain owned by the enclosing error boundary.
+    struct SymlistRestore {
+        Symlist* saved{};
+        bool active{false};
+        ~SymlistRestore() {
+            if (active) {
+                hoc_free_list(&hoc_p_symlist);
+                hoc_p_symlist = saved;
+            }
+        }
+    } symlist_guard;
 
     if (yystart) {
         sframe = rframe;
@@ -624,7 +639,8 @@ int hoc_ParseExec(int yystart) {
         spc = pc, sprog_parse_recover = hoc_prog_parse_recover;
         sstackp = stack.size();
         sstack = rstack;
-        sp_symlist = hoc_p_symlist;
+        symlist_guard.saved = hoc_p_symlist;
+        symlist_guard.active = true;
         rframe = fp;
         rstack = stack.size();
         hoc_progbase = hoc_progp;
@@ -658,7 +674,6 @@ int hoc_ParseExec(int yystart) {
         }
         stack.resize(sstackp);
         rstack = sstack;
-        hoc_p_symlist = sp_symlist;
     }
 
     return yret;
