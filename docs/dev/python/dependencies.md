@@ -1,106 +1,137 @@
-# Python dependency updates
+# Updating Python dependencies
 
-NEURON keeps two layers of Python dependency pins.
+Use this guide when changing Python dependency constraints or reviewing a
+Dependabot pull request.
 
-The direct requirement files and `pyproject.toml` carry `<=` ceilings from
-[#3338](https://github.com/neuronsimulator/nrn/pull/3338). A ceiling is the
-newest release known to work. Those ceilings are what stop a new PyPI release
-from floating CI, or a wheel build, onto a broken version.
+## Know which file to change
 
-CI does not install those files. It installs the hashed lock
-`ci/requirements.txt`, produced by `uv pip compile`. That lock includes the
-docs and test graph (Jupyter, notebook, Pillow, and the rest), not only the
-packages NEURON imports.
+The source files declare dependency constraints. CI installs a generated,
+fully pinned file from those sources.
 
-`.github/dependabot.yml` tells Dependabot how to propose changes. It does not
-turn security updates on or off. That switch is the repository setting
-**Dependabot security updates**.
+| File | Role |
+| --- | --- |
+| `nrn_requirements.txt` | Main development and CI dependencies; `-r` lines include the build, test, and NMODL requirement files below. |
+| `ci_requirements.txt` | Additional CI tools. |
+| `nmodl_requirements.txt` | NMODL dependencies, included through `nrn_requirements.txt`. |
+| `docs/docs_requirements.txt` | Documentation build dependencies. |
+| `packaging/python/build_requirements.txt` | Python wheel build dependencies. |
+| `packaging/python/test_requirements.txt` | Python package tests; included in the CI compile command. |
+| `pyproject.toml` | Python build-system requirements and dependencies installed for NEURON users. |
+| `packaging/python/oldest_numpy_requirements.txt` | Deliberately old NumPy versions for compatibility testing. |
+| `ci/requirements.txt` | Generated CI requirements with exact versions and hashes. Do not edit by hand. |
+| `ci/uv_requirements.txt` | Sets an allowed version range for the `uv` tool CI uses. This is a tool constraint, not NEURON's dependency set. |
 
-## Version updates
+Many source constraints have an upper bound (`<=`). Each bound is the highest
+PyPI release identified as compatible with NEURON when that constraint was
+last reviewed. It prevents builds from silently picking a newer, unverified
+release; it does not mean every platform and Python version was exhaustively
+tested with the bounded release. Treat raising a ceiling as a compatibility
+change, and check the relevant CI and build configurations before doing so.
 
-Once a month Dependabot opens at most one pull request. It may edit:
+## Update a dependency
 
-* `nrn_requirements.txt`
-* `ci_requirements.txt`
-* `nmodl_requirements.txt`
-* `pyproject.toml`
-* `docs/docs_requirements.txt`
-* `packaging/python/build_requirements.txt`
-* `packaging/python/test_requirements.txt`
-* `packaging/python/oldest_numpy_requirements.txt`
+1. Change the source file that declares the dependency for the build or test
+  you intend to affect. If the same dependency is declared in multiple files
+  for the same purpose, keep those constraints aligned. Some differences are
+  intentional: for example, `packaging/python/oldest_numpy_requirements.txt`
+  tests older NumPy versions, while `numpy>=1.9.3` in `pyproject.toml` is an
+  open-ended lower bound for NEURON users.
+2. If a file read by the `uv pip compile` command below changes, regenerate
+  `ci/requirements.txt` and include it in the same pull request. The exact
+  inputs, including files brought in with `-r`, are listed below. That command
+  does not read `pyproject.toml` or `ci/uv_requirements.txt`.
+3. Review the complete diff, especially major upgrades and compatibility
+   bounds, then run the relevant tests and CI checks.
 
-`versioning-strategy: increase-if-necessary` raises a ceiling only when the
-current constraint does not already allow the new release. A lower bound such
-as `numpy>=1.9.3` in `pyproject.toml` `[project.dependencies]` already allows
-the newest NumPy, so that line should stay a lower bound. Check the diff for
-that before merging.
+### Regenerate CI requirements
 
-`open-pull-requests-limit: 1` on that entry means a second version-update
-pull request waits until this one is merged or closed.
+`uv` is a Python package installer and dependency resolver. In this repository,
+CI uses it in two ways: `uv pip compile` resolves the source constraints into
+`ci/requirements.txt`, and `uv pip install` installs that compiled set. The
+compile output pins transitive dependencies and includes hashes, so CI gets a
+repeatable dependency set instead of resolving the latest allowed versions on
+every run.
 
-## Regenerating the lock
-
-CI keeps installing the old lock until `ci/requirements.txt` is regenerated.
-After reviewing the ceiling changes, regenerate the lock with the command in
-the header of `ci/requirements.txt` and include the result in the same pull
-request. Today that command is:
+CI installs `uv` using the constraint in `ci/uv_requirements.txt`. That file
+currently allows versions up to `0.7.3`; it does not select one exact version.
+To install an allowed version locally, run:
 
 ```bash
-uv pip compile nrn_requirements.txt ci_requirements.txt docs/docs_requirements.txt packaging/python/test_requirements.txt -o ci/requirements.txt --universal --python-version 3.9 --generate-hashes
+python -m pip install -r ci/uv_requirements.txt
 ```
 
-A major bump, such as pytest 9, is a decision inside that diff. Merge the
-pull request when the lock matches the ceilings and CI is green.
+From the repository root, regenerate the compiled CI requirements with the
+command recorded in the header of `ci/requirements.txt`. The command reads
+these files directly:
 
-The `/ci` entry sets `open-pull-requests-limit: 0`, so Dependabot does not
-open version-update pull requests for `ci/requirements.txt` or
-`ci/uv_requirements.txt`. A three-line edit of the lock is not a review unit.
-The lock moves when a person regenerates it.
+* `nrn_requirements.txt` (which includes `packaging/python/build_requirements.txt`,
+  `packaging/python/test_requirements.txt`, and `nmodl_requirements.txt` using
+  pip's `-r` syntax)
+* `ci_requirements.txt`
+* `docs/docs_requirements.txt`
+* `packaging/python/test_requirements.txt`
 
-## Security updates
+The test requirements file is both included by `nrn_requirements.txt` and
+listed directly in the command. `uv pip compile` resolves all these constraints
+together; it does not search the repository for every requirements file.
 
-Security-update pull requests are created only while **Dependabot security
-updates** is enabled. Leave that setting paused until the version-update job
-log described below has been checked.
+Run:
 
-When the setting is on, this file groups those pull requests:
+```bash
+uv pip compile \
+  nrn_requirements.txt \
+  ci_requirements.txt \
+  docs/docs_requirements.txt \
+  packaging/python/test_requirements.txt \
+  -o ci/requirements.txt \
+  --universal \
+  --python-version 3.9 \
+  --generate-hashes
+```
 
-* one group for the direct manifests listed above
-* one group for `/ci` (`ci/requirements.txt` and `ci/uv_requirements.txt`)
+Review the generated diff. It can include transitive package changes, not just
+the dependency you changed. A major upgrade, such as a new pytest major
+version, needs an explicit decision.
 
-`open-pull-requests-limit` does not apply to security updates. The groups do.
-Alerts stay on the security tab either way. They clear when the patched
-release is in the lock. The NumPy alerts on
-`packaging/python/oldest_numpy_requirements.txt` are the intentional old pin;
-dismiss those two with that reason.
+## Review Dependabot pull requests
 
-## Pull requests to close
+Dependabot is configured in `.github/dependabot.yml`:
 
-Close a Dependabot pull request that:
+* It checks `/`, `/docs`, and `/packaging/python` monthly. Version updates are
+  grouped by dependency name across these directories, so the same dependency
+  can be updated in one pull request when its constraints allow a common
+  update. Different dependencies use separate pull requests. These paths are
+  the directories scanned for manifests; `/` means the repository root, not
+  every subdirectory under it.
+* Only one version-update pull request may be open for that entry at a time;
+  other dependency updates wait until it is merged or closed.
+* Scheduled version updates look for newer releases. Security updates address
+  known vulnerabilities and run only if the repository's **Dependabot security
+  updates** setting is enabled. Version updates for `/ci` are disabled; the
+  zero PR limit there does not disable security updates.
 
-* edits `packaging/python/oldest_numpy_requirements.txt` (that file shares a
-  directory with the build and test requirements, so Dependabot can see it)
-* edits only `ci/requirements.txt` or `ci/uv_requirements.txt` without a
-  matching ceiling change and a full lock regeneration
+The direct-update entry uses `increase-if-necessary`: Dependabot leaves a
+constraint unchanged when it already allows the proposed version; otherwise it
+changes the constraint to allow the update. Review any changed upper bounds as
+compatibility decisions.
 
-The security-update pull requests that were already open before this file
-existed are duplicates of that second kind. Close them after this file is on
-`master` and the job log looks right. They predate the groups.
+When reviewing a PR, check which source files it changes and whether changes
+to the compiler inputs listed above are accompanied by a regenerated
+`ci/requirements.txt`.
+Do not accept an automated change to `packaging/python/oldest_numpy_requirements.txt`
+without reviewing the compatibility-test intent. Inspect the full PR before
+closing it, since it may contain other useful updates too.
 
-## First run after this file reaches master
+## Check the first Dependabot run
 
-GitHub reads `.github/dependabot.yml` only from the default branch. Merging
-it starts a version-update check immediately, without waiting for the monthly
-schedule. The same day, open **Insights → Dependency graph → Dependabot** and
-read the job log.
+GitHub reads `.github/dependabot.yml` from the default branch. When this file
+first reaches that branch, Dependabot starts a check immediately. Review the
+job log under **Insights → Dependency graph → Dependabot** and confirm that:
 
-The log should show:
+* the expected requirement files were found, with no configuration errors;
+* no version-update PR was opened for `/ci`;
+* proposed source changes and any regenerated `ci/requirements.txt` agree.
 
-* the direct manifests listed above, and no configuration error
-* no version-update pull request that edits only the lock
-* at most one version-update pull request
-
-`CMakeLists.txt` and `docs/rst_substitutions.txt` sit next to requirement
-files but are not manifests. If the log treats them as manifests, the
-directory list needs a follow-up. A follow-up edit of this config starts
-another immediate check.
+Security updates only run if enabled in the repository settings. Alerts remain
+until patched versions are represented in the dependencies used by CI. The
+old NumPy pins are intentional; dismiss their alerts only with that reason.
