@@ -34,6 +34,9 @@ stages:
         vmImage: 'ubuntu-24.04'
       strategy:
         matrix:
+          Python311:
+            python.version: '3.11'
+            python.nodot: '311'
           Python312:
             python.version: '3.12'
             python.nodot: '312'
@@ -90,6 +93,11 @@ stages:
         vmImage: 'macOS-15'
       strategy:
         matrix:
+          Python311:
+            python.version: '3.11'
+            python.nodot: '311'
+            python.org.version: '3.11.7'
+            python.installer.name: 'macos11.pkg'
           Python312:
             python.version: '3.12'
             python.nodot: '312'

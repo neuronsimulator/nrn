@@ -9,7 +9,7 @@ set -eux
 #  - cmake (>=3.15.0)
 #  - flex
 #  - bison
-#  - python >= 3.12
+#  - python >= 3.11
 #  - cython
 #  - MPI
 #  - X11
@@ -211,7 +211,12 @@ build_wheel_local() {
 
     # on some distributions, we need a newer pip to be able to use `--config-settings`
     python -m pip install --upgrade pip
-    python -m pip wheel -v --no-deps --config-settings=build-dir="${build_dir}" --wheel-dir=wheelhouse .
+    extra=()
+    # pyproject.toml defaults wheel.py-api=cp312; a 3.11 pip wheel must not be tagged abi3.
+    if [ "$("${interp}" -c "import sys; print('%d%d' % tuple(sys.version_info)[:2])")" = "311" ]; then
+        extra+=(--config-settings=wheel.py-api=)
+    fi
+    python -m pip wheel -v --no-deps --config-settings=build-dir="${build_dir}" "${extra[@]}" --wheel-dir=wheelhouse .
 
     deactivate
 }
@@ -235,7 +240,7 @@ PLATFORM_MACOS="Darwin"
 
 
 # help message in case of no arguments
-help_message="Usage: $(basename "$0") < CI | linux | osx | ${PLATFORM_LINUX} | ${PLATFORM_MACOS} > [python version 39|310|3*|path_to_interp]"
+help_message="Usage: $(basename "$0") < CI | linux | osx | ${PLATFORM_LINUX} | ${PLATFORM_MACOS} > [python version 311|312|3*|path_to_interp]"
 
 if [[ $# -lt 2 ]]; then
     echo "${help_message}"

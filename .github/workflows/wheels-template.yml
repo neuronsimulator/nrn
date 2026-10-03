@@ -8,11 +8,11 @@ on:
         required: true
         type: string
       python_version:
-        description: The Python version used to build the abi3 wheel (3.12)
+        description: The Python version used to build the wheel (3.11 versioned, 3.12 abi3)
         required: true
         type: string
       test_python_versions:
-        description: Comma-separated GIL Python versions to test the abi3 wheel with
+        description: Comma-separated GIL Python versions to test the abi3 wheel with (3.11 is always tested only on 3.11)
         required: false
         default: '3.12,3.13,3.14'
         type: string
@@ -146,6 +146,11 @@ jobs:
           name: wheels-${{ inputs.python_version }}-${{ inputs.platform }}
           path: wheelhouse/*.whl
 
+      - name: Setup Python 3.11 for testing
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
       - name: Setup Python 3.12 for testing
         uses: actions/setup-python@v5
         with:
@@ -186,9 +191,16 @@ jobs:
           fi
           echo CMAKE_GENERATOR=Ninja >> $GITHUB_ENV
 
-      - name: Test abi3 wheel
+      - name: Test wheel
         run: |
-          IFS=',' read -ra versions <<< "${{ inputs.test_python_versions }}"
+          py="${{ inputs.python_version }}"
+          py="${py// /}"
+          if [[ "${py}" == "3.11" ]]; then
+            versions="3.11"
+          else
+            versions="${{ inputs.test_python_versions }}"
+          fi
+          IFS=',' read -ra versions <<< "${versions}"
           wheel="$(ls -t wheelhouse/*.whl | head -n 1)"
           for ver in "${versions[@]}"; do
             ver="${ver// /}"

@@ -159,8 +159,8 @@ mark_as_advanced(NRN_BINARY_DIST_BUILD)
 #                                      can be steered with PYTHON_EXECUTABLE
 #   - NRN_ENABLE_PYTHON_DYNAMIC=ON   : libnrniv is not linked against Python.
 #                                      NRN_ENABLE_ABI3=ON  : one libnrnpython.abi3 (CPython 3.12+
-#                                      limited API); extra NRN_PYTHON_DYNAMIC entries are for
-#                                      nrniv -python interpreter search / tests.
+#                                      limited API, the cp312-abi3 wheel); extra NRN_PYTHON_DYNAMIC
+#                                      entries are for nrniv -python interpreter search / tests.
 #                                      NRN_ENABLE_ABI3=OFF : distinct libnrnpythonX.Y per configured
 #                                      major.minor. Linked against libpython only if
 #                                      NRN_LINK_AGAINST_PYTHON is true (default on Windows).
@@ -174,9 +174,10 @@ mark_as_advanced(NRN_BINARY_DIST_BUILD)
 #                                      default Python version.
 # Limited API (abi3):
 #   - NRN_ENABLE_ABI3=ON  : Py_LIMITED_API=0x030C0000, abi3 module names, requires CPython 3.12+.
-#                           Default when the default Python is 3.12+ and for wheels (SKBUILD).
+#                           Default when the default Python is 3.12+ (source and the cp312-abi3 wheel).
 #   - NRN_ENABLE_ABI3=OFF : versioned extensions for each configured interpreter (CPython 3.10+).
-#                           Default when the default Python is older than 3.12.
+#                           Default when the default Python is older than 3.12 (including the
+#                           CPython 3.11 wheel).
 # Extra options for extended Python tests:
 #   - NRN_PYTHON_EXTRA_FOR_TESTS=... : semicolon separated list of Python executables that NEURON
 #                                      is *not* built against. These are only used for testing, and
@@ -365,11 +366,10 @@ string(REPLACE "," ";" NRN_SANITIZERS_LIST "${NRN_SANITIZERS}")
 set(NRN_MINIMUM_PYTHON_VERSION 3.10)
 include(cmake/PythonHelper.cmake)
 
-# NRN_ENABLE_ABI3: wheels and 3.12+ source builds default ON; older source Pythons default OFF.
+# NRN_ENABLE_ABI3: 3.12+ source and the cp312-abi3 wheel default ON; older Pythons (including the
+# CPython 3.11 wheel) default OFF.
 if(NRN_ENABLE_PYTHON)
-  if(SKBUILD)
-    set(_nrn_abi3_default ON)
-  elseif(NRN_DEFAULT_PYTHON_VERSION VERSION_GREATER_EQUAL 3.12)
+  if(NRN_DEFAULT_PYTHON_VERSION VERSION_GREATER_EQUAL 3.12)
     set(_nrn_abi3_default ON)
   else()
     set(_nrn_abi3_default OFF)
@@ -378,8 +378,10 @@ if(NRN_ENABLE_PYTHON)
     NRN_ENABLE_ABI3
     "Build importable Python extensions against the CPython 3.12 limited API (abi3). OFF builds versioned extensions for the configured interpreter(s) (CPython 3.10+)."
     ${_nrn_abi3_default})
-  if(SKBUILD AND NOT NRN_ENABLE_ABI3)
-    message(FATAL_ERROR "Wheel builds require NRN_ENABLE_ABI3=ON")
+  if(SKBUILD
+     AND NRN_DEFAULT_PYTHON_VERSION VERSION_GREATER_EQUAL 3.12
+     AND NOT NRN_ENABLE_ABI3)
+    message(FATAL_ERROR "Wheel builds for CPython 3.12+ require NRN_ENABLE_ABI3=ON")
   endif()
   if(NRN_ENABLE_ABI3)
     foreach(_nrn_abi3_pyver ${NRN_PYTHON_VERSIONS})

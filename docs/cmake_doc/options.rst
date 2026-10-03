@@ -378,16 +378,17 @@ NRN_ENABLE_ABI3:BOOL=
     ``python3.dll``). Requires GIL-enabled CPython **3.12+** for every
     interpreter in ``NRN_PYTHON_DYNAMIC``. A 3.12-built wheel
     (``wheel.py-api=cp312``) then loads on 3.13/3.14 without rebuilding.
-    Default when the default Python is 3.12+ and for wheels (``SKBUILD``).
-    Wheel builds force this ON.
+    Default when the default Python is 3.12+ (source and the
+    ``cp312-abi3`` wheel).
   * **OFF**: no limited API. Versioned modules
     (``hoc.cpython-3XY-…``, ``libnrnpythonX.Y``) for each configured
     interpreter. Minimum Python is **3.10**. Default when the default
-    Python is older than 3.12.
+    Python is older than 3.12, including the CPython 3.11 wheel.
 
   Source users who still have 3.10/3.11 should leave this OFF (or pass
   ``-DNRN_ENABLE_ABI3=OFF`` if CMake would otherwise default ON).
   ``-DNRN_ENABLE_ABI3=ON`` with a 3.11 default is a configure error.
+  Wheel builds follow the same default: 3.11 is versioned, 3.12+ is abi3.
 
   With ``NRN_ENABLE_PYTHON_DYNAMIC=ON``:
 

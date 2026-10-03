@@ -82,7 +82,7 @@ To use the `cibuildwheel` mode, run it via:
 packaging/python/build_wheels.bash [platform] [python_version(s)]
 ```
 
-where `[platform]` is one of {linux, Linux, osx, Darwin}, and `[python_version(s)]` is a list of Python versions for which to build the wheel. The above will create a redistributable wheel under the `wheelhouse` subdirectory. To build wheels for all Python versions, use `'3*'` (note the quotation marks). To build wheels for only selected versions, use a space-separated list of versions surrounded by quotation marks, without any dots between the major and minor version (for example, `'39 310'`).
+where `[platform]` is one of {linux, Linux, osx, Darwin}, and `[python_version(s)]` is a list of Python versions for which to build the wheel. The above will create a redistributable wheel under the `wheelhouse` subdirectory. To build the product wheels (`cp311-cp311` and `cp312-abi3`), use `'3*'` (note the quotation marks). To build wheels for only selected versions, use a space-separated list of versions surrounded by quotation marks, without any dots between the major and minor version (for example, `'311 312'`).
 
 Note that, for the `cibuildwheel` mode, on Linux you must have either Docker or podman installed (by default, `cibuildwheel` uses Docker, and to use podman one must set the environmental variable `CIBW_CONTAINER_ENGINE=podman`), and on MacOS you must have the official MacOS Python installation for that particular Python version.
 
@@ -92,7 +92,7 @@ The built wheel can be customized using either environmental variables which hav
 
 ```sh
 export NRN_ENABLE_CORENEURON=ON
-bash packaging/python/build_wheels.bash linux 39
+bash packaging/python/build_wheels.bash linux 312
 ```
 
 The equivalent using `pip` is:
