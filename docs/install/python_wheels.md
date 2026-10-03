@@ -160,14 +160,15 @@ export PATH=/opt/homebrew/opt/bison/bin:/opt/homebrew/opt/flex/bin:$PATH
 
 You can build the wheel for a specific Python version using:
 ```
-bash packaging/python/build_wheels.bash linux 39    # 39 for Python v3.9
+bash packaging/python/build_wheels.bash linux 311   # 311 → cp311-cp311 (versioned, not abi3)
+bash packaging/python/build_wheels.bash linux 312   # 312 → cp312-abi3 (CPython 3.12 limited API)
 ```
 
 To build wheels with CoreNEURON support you have to set the environmental variable `NRN_ENABLE_CORENEURON=ON`:
 ```
 NRN_ENABLE_CORENEURON=ON bash packaging/python/build_wheels.bash linux '3*'
 ```
-where we are passing `'3*'` (note the quotes!) to build the wheels with `CoreNEURON` support for all python 3 versions.
+where we are passing `'3*'` (note the quotes!) to build the product wheels (`cp311-cp311` and `cp312-abi3`).
 
 By default, the build system uses all of the processing units available on a machine; this can be customized using the `CMAKE_BUILD_PARALLEL_LEVEL` environmental variable.
 
@@ -178,7 +179,8 @@ As mentioned above, for macOS all dependencies have to be available on a system.
 
 ```
 cd nrn
-bash packaging/python/build_wheels.bash osx 39  # 39 for Python v3.9
+bash packaging/python/build_wheels.bash osx 311  # 311 → cp311-cp311
+bash packaging/python/build_wheels.bash osx 312  # 312 → cp312-abi3
 ```
 
 In some cases, setuptools-scm will see extra commits and consider your build as "dirty," resulting in filenames such as `NEURON-9.0a1.dev0+g9a96a3a4d.d20230717-cp310-cp310-macosx_11_0_arm64.whl` (which should have been `NEURON-9.0a0-cp310-cp310-macosx_11_0_arm64.whl`). If this happens, you can set an environment variable to correct this behavior:

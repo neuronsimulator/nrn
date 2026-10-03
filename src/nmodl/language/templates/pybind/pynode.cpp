@@ -13,8 +13,11 @@
 #include "visitors/json_visitor.hpp"
 #include "visitors/nmodl_visitor.hpp"
 
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
+#include <nanobind/nanobind.h>
+#include <nanobind/stl/shared_ptr.h>
+#include <nanobind/stl/string.h>
+#include <nanobind/stl/vector.h>
+#include <sstream>
 
 // clang-format off
 {% macro args(children) %}
@@ -26,16 +29,21 @@ namespace nmodl {
 namespace ast {
 namespace pybind {
 
-void {{setup_pybind_method}}(pybind11::module& m_ast) {
+void {{setup_pybind_method}}(nanobind::module_& m_ast) {
     {% for node in nodes %}
     {
-        pybind11::class_<{{ node.class_name }}, {{node.base_class}}, std::shared_ptr<{{ node.class_name }}>> tmp{m_ast, "{{ node.class_name }}"};
-        tmp.doc() = "{{ node.brief }}";
+        nanobind::class_<{{ node.class_name }}, {{node.base_class}}> tmp{m_ast, "{{ node.class_name }}", "{{ node.brief }}"};
         {% if node.children %}
-        tmp.def(pybind11::init<{{ args(node.children) }}>());
+        {% if node.class_name == 'Integer' %}
+        tmp.def(nanobind::init<int, std::shared_ptr<Name>>(),
+                nanobind::arg("value"),
+                nanobind::arg("macro") = nanobind::none());
+        {% else %}
+        tmp.def(nanobind::init<{{ args(node.children) }}>());
+        {% endif %}
         {% endif %}
         {% if node.is_program_node or node.is_ptr_excluded_node %}
-        tmp.def(pybind11::init<>());
+        tmp.def(nanobind::init<>());
         {% endif %}
 
         tmp.def("__repr__", []({{node.class_name}} & n) {
@@ -55,20 +63,20 @@ void {{setup_pybind_method}}(pybind11::module& m_ast) {
 
         // clang-format off
         {% for member in node.public_members() %}
-        tmp.def_readwrite("{{ member[1] }}", &{{ node.class_name }}::{{ member[1] }});
+        tmp.def_rw("{{ member[1] }}", &{{ node.class_name }}::{{ member[1] }});
         {% endfor %}
 
         {% for member in node.properties() %}
         {% if member[2] == True %}
-        tmp.def_property("{{ member[1] }}", &{{ node.class_name }}::get_{{ member[1] }}, &{{ node.class_name }}::set_{{ member[1] }});
+        tmp.def_prop_rw("{{ member[1] }}", &{{ node.class_name }}::get_{{ member[1] }}, &{{ node.class_name }}::set_{{ member[1] }});
         {% else %}
-        tmp.def_property("{{ member[1] }}", &{{ node.class_name }}::get_{{ member[1] }}, static_cast<void ({{ node.class_name }}::*)(const {{ member[0] }}&)>(&{{ node.class_name }}::set_{{ member[1] }}));
+        tmp.def_prop_rw("{{ member[1] }}", &{{ node.class_name }}::get_{{ member[1] }}, static_cast<void ({{ node.class_name }}::*)(const {{ member[0] }}&)>(&{{ node.class_name }}::set_{{ member[1] }}));
         {% endif %}
         {% endfor %}
 
-        tmp.def("visit_children", static_cast<void ({{ node.class_name }}::*)(visitor::Visitor&)>(&{{ node.class_name }}::visit_children), docstring::visit_children_method())
-           .def("accept", static_cast<void ({{ node.class_name }}::*)(visitor::Visitor&)>(&{{ node.class_name }}::accept), docstring::accept_method())
-           .def("accept", static_cast<void ({{ node.class_name }}::*)(visitor::ConstVisitor&) const>(&{{ node.class_name }}::accept), docstring::accept_method())
+        tmp.def("visit_children", static_cast<void ({{ node.class_name }}::*)(nmodl::visitor::Visitor&)>(&{{ node.class_name }}::visit_children), nanobind::arg("v"), docstring::visit_children_method())
+           .def("accept", static_cast<void ({{ node.class_name }}::*)(nmodl::visitor::Visitor&)>(&{{ node.class_name }}::accept), nanobind::arg("v"), docstring::accept_method())
+           .def("accept", static_cast<void ({{ node.class_name }}::*)(nmodl::visitor::ConstVisitor&) const>(&{{ node.class_name }}::accept), nanobind::arg("v"), docstring::accept_method())
            .def("clone", &{{ node.class_name }}::clone, docstring::clone_method())
            .def("get_node_type", &{{ node.class_name }}::get_node_type, docstring::get_node_type_method())
            .def("get_node_type_name", &{{ node.class_name }}::get_node_type_name, docstring::get_node_type_name_method())

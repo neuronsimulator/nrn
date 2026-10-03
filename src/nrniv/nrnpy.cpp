@@ -15,6 +15,8 @@
 #include <algorithm>
 #include <cctype>
 #include <sstream>
+#include <string>
+#include <string_view>
 
 namespace neuron::python {
 // Declared extern in nrnpy.h, defined here.
@@ -94,8 +96,9 @@ static bool ends_with(std::string_view str, std::string_view suffix) {
  * @brief Figure out which Python to load.
  *
  * When dynamic Python support is enabled, NEURON needs to figure out which
- * libpythonX.Y to load, and then load it followed by the corresponding
- * libnrnpythonX.Y. This can be steered both using commandline options and by
+ * libpythonX.Y to load, and then load it followed by libnrnpython.abi3 (limited
+ * API) or libnrnpythonX.Y. This can
+ * be steered both using commandline options and by
  * using environment variables. The logic is as follows:
  *
  * * the -pyexe argument to nrniv (special) takes precedence over NRN_PYTHONEXE
@@ -232,7 +235,7 @@ void nrnpython_reg() {
             }
         }
         if (handle || nrn_is_python_extension) {
-            // Load libnrnpython.X.Y.so
+            // Load libnrnpython.abi3.so or libnrnpythonX.Y.so
             reg_fn = load_nrnpython();
         }
 #else
@@ -254,10 +257,24 @@ void nrnpython_reg() {
 }
 
 #ifdef NRNPYTHON_DYNAMICLOAD  // to end of file
+static bool python_version_at_least_312(std::string_view pyversion) {
+    auto const dot = pyversion.find('.');
+    if (dot == std::string_view::npos) {
+        return false;
+    }
+    try {
+        auto const major = std::stoi(std::string{pyversion.substr(0, dot)});
+        auto const minor = std::stoi(std::string{pyversion.substr(dot + 1)});
+        return major > 3 || (major == 3 && minor >= 12);
+    } catch (...) {
+        return false;
+    }
+}
+
 static nrnpython_reg_real_t load_nrnpython() {
     std::string pyversion{};
     if (auto const pv10 = nrn_is_python_extension; pv10 > 0) {
-        // pv10 is one of the packed integers like 310 (3.10) or 311 (3.11)
+        // pv10 is a packed integer like 312 (3.12) or 313 (3.13)
         auto const factor = (pv10 >= 100) ? 100 : 10;
         pyversion = std::to_string(pv10 / factor) + "." + std::to_string(pv10 % factor);
     } else {
@@ -271,9 +288,23 @@ static nrnpython_reg_real_t load_nrnpython() {
             return nullptr;
         }
         pyversion = nrnpy_pyversion;
-        // It's possible to get this far with an incompatible version, if nrnpy_pyversion and
-        // friends were set from the environment to bypass nrnpyenv.sh, and nrniv -python was
-        // launched.
+    }
+    std::string name;
+    name.append(neuron::config::shared_library_prefix);
+    if (neuron::config::python_limited_api) {
+        // Limited API floor is CPython 3.12. Free-threaded builds are rejected from Python on
+        // import.
+        if (!python_version_at_least_312(pyversion)) {
+            Fprintf(stderr,
+                    fmt::format("Python {} is not supported by this NEURON installation (requires "
+                                "CPython 3.12 or later with the GIL). If you set NRN_PYLIB, "
+                                "NRN_PYTHONEXE or NRN_PYTHONVERSION, try unsetting them.\n",
+                                pyversion)
+                        .c_str());
+            return nullptr;
+        }
+        name.append("nrnpython.abi3");
+    } else {
         auto const& supported_versions = neuron::config::supported_python_versions;
         auto const iter =
             std::find(supported_versions.begin(), supported_versions.end(), pyversion);
@@ -292,12 +323,9 @@ static nrnpython_reg_real_t load_nrnpython() {
                     "incompatible with this NEURON. Try unsetting them.\n");
             return nullptr;
         }
+        name.append("nrnpython");
+        name.append(pyversion);
     }
-    // Construct libnrnpythonX.Y.so (or other platforms' equivalent)
-    std::string name;
-    name.append(neuron::config::shared_library_prefix);
-    name.append("nrnpython");
-    name.append(pyversion);
     name.append(neuron::config::shared_library_suffix);
 #ifndef MINGW
     // Build a path from neuron_home on macOS and Linux

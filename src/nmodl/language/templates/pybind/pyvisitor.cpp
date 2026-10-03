@@ -12,9 +12,11 @@
 #include "pybind/pyvisitor.hpp"
 
 #include <memory>
-#include <pybind11/iostream.h>
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
+#include <nanobind/nanobind.h>
+#include <nanobind/stl/shared_ptr.h>
+#include <nanobind/stl/string.h>
+#include <nanobind/stl/vector.h>
+#include <nanobind/trampoline.h>
 
 #include "ast/all.hpp"
 #include "pybind/pybind_utils.hpp"
@@ -24,8 +26,6 @@
 #include "visitors/local_var_rename_visitor.hpp"
 #include "visitors/lookup_visitor.hpp"
 #include "visitors/nmodl_visitor.hpp"
-#include "visitors/sympy_conductance_visitor.hpp"
-#include "visitors/sympy_solver_visitor.hpp"
 #include "visitors/matexp_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"
 
@@ -76,14 +76,6 @@ static const char* local_var_rename_visitor_class = R"(
     LocalVarRenameVisitor class
 )";
 
-static const char* sympy_conductance_visitor_class = R"(
-    SympyConductanceVisitor class
-)";
-
-static const char* sympy_solver_visitor_class = R"(
-    SympySolverVisitor class
-)";
-
 static const char* matexp_visitor_class = R"(
     MatexpVisitor class
 )";
@@ -92,53 +84,53 @@ static const char* matexp_visitor_class = R"(
 }  // namespace nmodl
 
 
-using namespace pybind11::literals;
-namespace py = pybind11;
-
-
-// clang-format off
-{% macro var(node) -%}
-    {{ node.class_name | snake_case }}_
-{%- endmacro -%}
-
-{% macro args(children) %}
-    {% for c in children %} {{ c.get_typename() }} {%- if not loop.last %}, {% endif %} {% endfor %}
-{%- endmacro -%}
+using namespace nanobind::literals;
+namespace nb = nanobind;
 
 
 {% for node in nodes %}
 void PyVisitor::visit_{{ node.class_name|snake_case }}(ast::{{ node.class_name }}& node) {
-    PYBIND11_OVERRIDE_PURE(void, Visitor, visit_{{ node.class_name|snake_case }}, std::ref(node));
+    nanobind::detail::ticket nb_ticket(nb_trampoline, "visit_{{ node.class_name|snake_case }}", true);
+    nb_trampoline.base().attr(nb_ticket.key)(
+        nanobind::cast(node, nanobind::rv_policy::reference));
 }
 {% endfor %}
 
 {% for node in nodes %}
 void PyAstVisitor::visit_{{ node.class_name|snake_case }}(ast::{{ node.class_name }}& node) {
-    PYBIND11_OVERRIDE(void, AstVisitor, visit_{{ node.class_name|snake_case }}, std::ref(node));
+    nanobind::detail::ticket nb_ticket(nb_trampoline, "visit_{{ node.class_name|snake_case }}", false);
+    if (nb_ticket.key.is_valid()) {
+        nb_trampoline.base().attr(nb_ticket.key)(
+            nanobind::cast(node, nanobind::rv_policy::reference));
+        return;
+    }
+    NBBase::visit_{{ node.class_name|snake_case }}(node);
 }
 {% endfor %}
 
 {% for node in nodes %}
 void PyConstVisitor::visit_{{ node.class_name|snake_case }}(const ast::{{ node.class_name }}& node) {
-    PYBIND11_OVERRIDE_PURE(void, ConstVisitor, visit_{{ node.class_name|snake_case }}, std::cref(node));
+    nanobind::detail::ticket nb_ticket(nb_trampoline, "visit_{{ node.class_name|snake_case }}", true);
+    nb_trampoline.base().attr(nb_ticket.key)(
+        nanobind::cast(node, nanobind::rv_policy::reference));
 }
 {% endfor %}
 
 {% for node in nodes %}
 void PyConstAstVisitor::visit_{{ node.class_name|snake_case }}(const ast::{{ node.class_name }}& node) {
-    PYBIND11_OVERRIDE(void, ConstAstVisitor, visit_{{ node.class_name|snake_case }}, std::cref(node));
+    nanobind::detail::ticket nb_ticket(nb_trampoline, "visit_{{ node.class_name|snake_case }}", false);
+    if (nb_ticket.key.is_valid()) {
+        nb_trampoline.base().attr(nb_ticket.key)(
+            nanobind::cast(node, nanobind::rv_policy::reference));
+        return;
+    }
+    NBBase::visit_{{ node.class_name|snake_case }}(node);
 }
 {% endfor %}
-// clang-format on
 
 
 /**
  * \brief Class mirroring nmodl::NmodlPrintVisitor for Python bindings
- *
- * \details \copydetails nmodl::NmodlPrintVisitor
- *
- * This class is used to interface nmodl::NmodlPrintVisitor with the Python
- * world using `pybind11`.
  */
 class PyNmodlPrintVisitor: private VisitorOStreamResources, public NmodlPrintVisitor {
   public:
@@ -150,110 +142,104 @@ class PyNmodlPrintVisitor: private VisitorOStreamResources, public NmodlPrintVis
     PyNmodlPrintVisitor(std::string filename)
         : NmodlPrintVisitor(filename){};
 
-    PyNmodlPrintVisitor(py::object object)
+    PyNmodlPrintVisitor(nb::object object)
         : VisitorOStreamResources(object)
         , NmodlPrintVisitor(*ostream){};
 
-    // clang-format off
     {% for node in nodes %}
     void visit_{{ node.class_name|snake_case }}(const ast::{{ node.class_name }}& node) override {
         NmodlPrintVisitor::visit_{{ node.class_name|snake_case }}(node);
         flush();
     }
     {% endfor %}
-    // clang-format on
 };
 
 
-void init_visitor_module(py::module& m) {
-    py::module m_visitor = m.def_submodule("visitor");
+void init_visitor_module(nb::module_& m) {
+    nb::module_ m_visitor = m.def_submodule("visitor");
 
-    py::class_<Visitor, PyVisitor> visitor(m_visitor, "Visitor", docstring::visitor_class);
-    visitor.def(py::init<>())
-    // clang-format off
+    nb::class_<Visitor, PyVisitor> visitor(m_visitor, "Visitor", docstring::visitor_class);
+    visitor.def(nb::init<>())
     {% for node in nodes %}
         .def("visit_{{ node.class_name | snake_case }}", &Visitor::visit_{{ node.class_name | snake_case }})
         {% if loop.last -%};{% endif %}
-    {% endfor %}  // clang-format on
+    {% endfor %}
 
-    py::class_<ConstVisitor, PyConstVisitor> const_visitor(m_visitor, "ConstVisitor", docstring::visitor_class);
-    const_visitor.def(py::init<>())
-    // clang-format off
+    nb::class_<ConstVisitor, PyConstVisitor> const_visitor(m_visitor, "ConstVisitor", docstring::visitor_class);
+    const_visitor.def(nb::init<>())
     {% for node in nodes %}
     .def("visit_{{ node.class_name | snake_case }}", &ConstVisitor::visit_{{ node.class_name | snake_case }})
-    {% if loop.last -%};{% endif %}
-    {% endfor %}  // clang-format on
+        {% if loop.last -%};{% endif %}
+    {% endfor %}
 
-    py::class_<ConstAstVisitor, ConstVisitor, PyConstAstVisitor>
+    nb::class_<ConstAstVisitor, ConstVisitor, PyConstAstVisitor>
         const_ast_visitor(m_visitor, "ConstAstVisitor", docstring::ast_visitor_class);
-    const_ast_visitor.def(py::init<>())
-    // clang-format off
+    const_ast_visitor.def(nb::init<>())
     {% for node in nodes %}
         .def("visit_{{ node.class_name | snake_case }}", &ConstAstVisitor::visit_{{ node.class_name | snake_case }})
         {% if loop.last -%};{% endif %}
-    {% endfor %} // clang-format on
+    {% endfor %}
 
-    py::class_<AstVisitor, Visitor, PyAstVisitor>
+    nb::class_<AstVisitor, Visitor, PyAstVisitor>
             ast_visitor(m_visitor, "AstVisitor", docstring::ast_visitor_class);
-    ast_visitor.def(py::init<>())
-    // clang-format off
+    ast_visitor.def(nb::init<>())
     {% for node in nodes %}
     .def("visit_{{ node.class_name | snake_case }}", &AstVisitor::visit_{{ node.class_name | snake_case }})
-    {% if loop.last -%};{% endif %}
+        {% if loop.last -%};{% endif %}
     {% endfor %}
-    // clang-format on
 
-    py::class_<PyNmodlPrintVisitor, ConstVisitor>
+    nb::class_<PyNmodlPrintVisitor, ConstVisitor>
         nmodl_visitor(m_visitor, "NmodlPrintVisitor", docstring::nmodl_print_visitor_class);
-    nmodl_visitor.def(py::init<std::string>());
-    nmodl_visitor.def(py::init<py::object>());
-    nmodl_visitor.def(py::init<>())
-    // clang-format off
+    nmodl_visitor.def(nb::init<std::string>());
+    nmodl_visitor.def(nb::init<nb::object>());
+    nmodl_visitor.def(nb::init<>())
     {% for node in nodes %}
         .def("visit_{{ node.class_name | snake_case }}", &PyNmodlPrintVisitor::visit_{{ node.class_name | snake_case }})
         {% if loop.last -%};{% endif %}
-    {% endfor %}  // clang-format on
+    {% endfor %}
 
-    py::class_<AstLookupVisitor, Visitor>
+    nb::class_<AstLookupVisitor, Visitor>
         lookup_visitor(m_visitor, "AstLookupVisitor", docstring::ast_lookup_visitor_class);
-    // clang-format off
-    lookup_visitor.def(py::init<>())
-        .def(py::init<ast::AstNodeType>())
+    lookup_visitor.def(nb::init<>())
+        .def(nb::init<ast::AstNodeType>())
         .def("get_nodes", &AstLookupVisitor::get_nodes)
         .def("clear", &AstLookupVisitor::clear)
-        .def("lookup", static_cast<const std::vector<std::shared_ptr<ast::Ast>>& (AstLookupVisitor::*)(ast::Ast&)>(&AstLookupVisitor::lookup))
-        .def("lookup", static_cast<const std::vector<std::shared_ptr<ast::Ast>>& (AstLookupVisitor::*)(ast::Ast&, ast::AstNodeType)>(&AstLookupVisitor::lookup))
-        .def("lookup", static_cast<const std::vector<std::shared_ptr<ast::Ast>>& (AstLookupVisitor::*)(ast::Ast&, const std::vector<ast::AstNodeType>&)>(&AstLookupVisitor::lookup));
+        .def("lookup",
+             [](AstLookupVisitor& v, std::shared_ptr<ast::Ast> n) -> const std::vector<std::shared_ptr<ast::Ast>>& {
+                 return v.lookup(*n);
+             })
+        .def("lookup",
+             [](AstLookupVisitor& v, std::shared_ptr<ast::Ast> n, ast::AstNodeType t)
+                 -> const std::vector<std::shared_ptr<ast::Ast>>& {
+                 return v.lookup(*n, t);
+             })
+        .def("lookup",
+             [](AstLookupVisitor& v,
+                std::shared_ptr<ast::Ast> n,
+                const std::vector<ast::AstNodeType>& types)
+                 -> const std::vector<std::shared_ptr<ast::Ast>>& {
+                 return v.lookup(*n, types);
+             });
 
-    py::class_<ConstantFolderVisitor, AstVisitor> constant_folder_visitor(m_visitor, "ConstantFolderVisitor", docstring::constant_folder_visitor_class);
-    constant_folder_visitor.def(py::init<>())
+    nb::class_<ConstantFolderVisitor, AstVisitor> constant_folder_visitor(m_visitor, "ConstantFolderVisitor", docstring::constant_folder_visitor_class);
+    constant_folder_visitor.def(nb::init<>())
         .def("visit_program", &ConstantFolderVisitor::visit_program);
 
-    py::class_<InlineVisitor, AstVisitor> inline_visitor(m_visitor, "InlineVisitor", docstring::inline_visitor_class);
-    inline_visitor.def(py::init<>())
+    nb::class_<InlineVisitor, AstVisitor> inline_visitor(m_visitor, "InlineVisitor", docstring::inline_visitor_class);
+    inline_visitor.def(nb::init<>())
         .def("visit_program", &InlineVisitor::visit_program);
 
-    py::class_<KineticBlockVisitor, AstVisitor> kinetic_block_visitor(m_visitor, "KineticBlockVisitor", docstring::kinetic_block_visitor_class);
-    kinetic_block_visitor.def(py::init<>())
+    nb::class_<KineticBlockVisitor, AstVisitor> kinetic_block_visitor(m_visitor, "KineticBlockVisitor", docstring::kinetic_block_visitor_class);
+    kinetic_block_visitor.def(nb::init<>())
         .def("visit_program", &KineticBlockVisitor::visit_program);
 
-    py::class_<LocalVarRenameVisitor, AstVisitor> local_var_rename_visitor(m_visitor, "LocalVarRenameVisitor", docstring::local_var_rename_visitor_class);
-    local_var_rename_visitor.def(py::init<>())
+    nb::class_<LocalVarRenameVisitor, AstVisitor> local_var_rename_visitor(m_visitor, "LocalVarRenameVisitor", docstring::local_var_rename_visitor_class);
+    local_var_rename_visitor.def(nb::init<>())
         .def("visit_program", &LocalVarRenameVisitor::visit_program);
 
-    py::class_<SympyConductanceVisitor, AstVisitor> sympy_conductance_visitor(m_visitor, "SympyConductanceVisitor", docstring::sympy_conductance_visitor_class);
-    sympy_conductance_visitor.def(py::init<>())
-        .def("visit_program", &SympyConductanceVisitor::visit_program);
-
-    py::class_<SympySolverVisitor, AstVisitor> sympy_solver_visitor(m_visitor, "SympySolverVisitor", docstring::sympy_solver_visitor_class);
-    sympy_solver_visitor.def(py::init<bool>(), py::arg("use_pade_approx")=false)
-        .def("visit_program", &SympySolverVisitor::visit_program);
-
-    py::class_<MatexpVisitor, AstVisitor> matexp_visitor(m_visitor, "MatexpVisitor", docstring::matexp_visitor_class);
-    matexp_visitor.def(py::init<>())
+    nb::class_<MatexpVisitor, AstVisitor> matexp_visitor(m_visitor, "MatexpVisitor", docstring::matexp_visitor_class);
+    matexp_visitor.def(nb::init<>())
         .def("visit_program", &MatexpVisitor::visit_program);
-    // clang-format on
 }
 
 #pragma clang diagnostic pop
-

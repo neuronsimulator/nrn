@@ -561,6 +561,11 @@ if(NOT "${NRN_LINK_FLAGS_FOR_ENTRY_POINTS}" STREQUAL "")
   target_link_options(nrniv PUBLIC ${NRN_LINK_FLAGS_FOR_ENTRY_POINTS})
 endif()
 target_link_libraries(nrniv PRIVATE nrniv_lib ${INTERNAL_READLINE} ${CMAKE_DL_LIBS})
+if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_PYTHON_DYNAMIC)
+  # libnrniv uses the limited API without NEEDED libpython; nrniv must still provide Python symbols
+  # for `nrniv` / `nrniv -python`.
+  target_link_libraries(nrniv PRIVATE ${NRN_DEFAULT_PYTHON_LIBRARIES})
+endif()
 if(NRN_ENABLE_THREADS)
   target_link_libraries(nrniv PRIVATE Threads::Threads)
 endif()

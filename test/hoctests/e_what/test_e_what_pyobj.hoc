@@ -1,0 +1,11 @@
+// nrniv/special (hoc_run1) must raise on PythonObject attr/index, not abort.
+load_file("expect_err.hoc")
+
+nrnpython("a = [1]")
+objref po
+po = new PythonObject()
+if (po.a[0] != 1) {
+    execerror("in-range Python list index failed", "")
+}
+expect_err("po.a[90]")
+expect_err("po.nope")
