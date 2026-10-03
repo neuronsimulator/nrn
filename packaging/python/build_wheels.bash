@@ -211,12 +211,13 @@ build_wheel_local() {
 
     # on some distributions, we need a newer pip to be able to use `--config-settings`
     python -m pip install --upgrade pip
-    extra=()
     # pyproject.toml defaults wheel.py-api=cp312; a 3.11 pip wheel must not be tagged abi3.
+    # macOS /bin/bash is 3.2: empty "${arr[@]}" is an unbound variable under set -u.
     if [ "$("${interp}" -c "import sys; print('%d%d' % tuple(sys.version_info)[:2])")" = "311" ]; then
-        extra+=(--config-settings=wheel.py-api=)
+        python -m pip wheel -v --no-deps --config-settings=build-dir="${build_dir}" --config-settings=wheel.py-api= --wheel-dir=wheelhouse .
+    else
+        python -m pip wheel -v --no-deps --config-settings=build-dir="${build_dir}" --wheel-dir=wheelhouse .
     fi
-    python -m pip wheel -v --no-deps --config-settings=build-dir="${build_dir}" "${extra[@]}" --wheel-dir=wheelhouse .
 
     deactivate
 }
