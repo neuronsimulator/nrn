@@ -23,6 +23,17 @@ add_library(rxdmath SHARED ${CMAKE_CURRENT_SOURCE_DIR}/rxdmath.cpp)
 install(TARGETS rxdmath DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
 
 # =============================================================================
+# modl_reg stub for the Python interface (see modlreg_stub.c)
+# =============================================================================
+add_library(nrn_modlreg_stub SHARED ${CMAKE_CURRENT_SOURCE_DIR}/modlreg_stub.c)
+install(TARGETS nrn_modlreg_stub DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
+
+# `from neuron import h` no longer goes through the compiled hoc module. Python
+# imports an extension module before a same-named Python module, so building it
+# into the neuron package would shadow the interface's hoc facade.
+option(NRN_LEGACY_HOC_MODULE "Build the legacy compiled hoc Python module" OFF)
+
+# =============================================================================
 # nrnpython libraries (one lib per python)
 # =============================================================================
 set(nrnpython_lib_list)
@@ -77,6 +88,10 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
     add_dependencies(nrnpython${pyver} nrniv_lib)
     list(APPEND nrnpython_lib_list nrnpython${pyver})
     install(TARGETS nrnpython${pyver} DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
+
+    if(NOT NRN_LEGACY_HOC_MODULE)
+      continue()
+    endif()
 
     # the hoc Python library
     set(hoc_module_name hoc${pyver})
@@ -138,6 +153,8 @@ else()
 
   # the hoc Python library
   set(hoc_module_name "hoc_module")
+endif()
+if(NOT NRN_ENABLE_PYTHON_DYNAMIC AND NRN_LEGACY_HOC_MODULE)
   add_nrn_python_library(
     hoc
     TARGET
