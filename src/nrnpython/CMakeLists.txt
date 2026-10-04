@@ -28,9 +28,9 @@ install(TARGETS rxdmath DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
 add_library(nrn_modlreg_stub SHARED ${CMAKE_CURRENT_SOURCE_DIR}/modlreg_stub.c)
 install(TARGETS nrn_modlreg_stub DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
 
-# `from neuron import h` no longer goes through the compiled hoc module. Python
-# imports an extension module before a same-named Python module, so building it
-# into the neuron package would shadow the interface's hoc facade.
+# `from neuron import h` no longer goes through the compiled hoc module. Python imports an extension
+# module before a same-named Python module, so building it into the neuron package would shadow the
+# interface's hoc facade.
 option(NRN_LEGACY_HOC_MODULE "Build the legacy compiled hoc Python module" OFF)
 
 # =============================================================================

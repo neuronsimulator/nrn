@@ -2,32 +2,20 @@
 
 Two families live here:
 
-* **Binding refs** (`NrnRangeVarRef`, `NrnVarRef`, `NrnObjectPropertyRef`) — a
-  pointer to an *existing* symbol / property / range var, obtained via the
-  ``_ref_`` syntax (``seg._ref_v``, ``n._ref_t``, ``ic._ref_amp``).
-* **Fresh-value refs** (`NrnDoubleRef`, `NrnStrRef`, `NrnObjectRef`) — a
-  brand-new anonymous cell holding a copy of a value, matching real NEURON's
-  ``h.ref(x)``: ``h.ref(3.0)`` is a settable double cell, ``h.ref('')`` a
-  settable string cell, ``h.ref(obj)`` / ``h.ref(None)`` a settable objref
-  cell. These are minted by ``NEURON.ref`` (gap-37). The string cell is the
-  tricky one: HOC's ``$s1 = "..."`` writeback (``hoc_assign_str``) does
-  ``free(*cpp)`` then ``*cpp = emalloc(...)`` (= ``std::malloc``), so the cell's
-  ``char*`` must be libc-``malloc``/``strdup``-allocated or NULL — Python-owned
-  ctypes string memory would corrupt the heap on writeback. We therefore back
-  ``NrnStrRef`` with a libc-``strdup`` cell. Verified against the NEURON source
-  (``nrnpy_hoc.cpp`` ``mkref`` / ``hoc_assign_str``) and empirically through a
-  50× HOC-writeback stress loop. Closes the netpyne ``importCell`` /
-  ``mechVarList`` blocker.
+* **Binding refs** (`NrnRangeVarRef`, `NrnVarRef`, `NrnObjectPropertyRef`):
+  a pointer to an existing symbol, property or range variable, obtained with
+  ``_ref_`` (``seg._ref_v``, ``n._ref_t``, ``ic._ref_amp``).
+* **Fresh-value refs** (`NrnDoubleRef`, `NrnStrRef`, `NrnObjectRef`): a new
+  anonymous settable cell holding a value, like real NEURON's ``h.ref(x)``
+  (double, string, or objref cell). Created by ``NEURON.ref`` (gap-37).
 """
 import abc
 import ctypes
 import sys
 import weakref
 
-# libc handle for the string-ref cell. NrnStrRef's char* must share NEURON's
-# allocator (std::malloc, via emalloc) so HOC's hoc_assign_str writeback can
-# free()/realloc it. Loaded lazily so importing this module never fails on an
-# exotic platform that lacks the default name.
+# libc strdup/free for NrnStrRef. Loaded lazily so import never fails on an
+# exotic platform without the default libc name.
 _libc = None
 
 
@@ -97,17 +85,16 @@ class NrnRangeVarRef(NrnRef):
 
     Obtained via ``seg._ref_v`` / ``seg._ref_gnabar_hh``. Used as a HOC
     pointer (``netcon.record(seg._ref_v)``, ``vec.record(seg._ref_v)``).
-    Retains non-owning HOC/template Section wrappers so temporary expressions
-    such as ``cell.soma[0](0.5)._ref_v`` remain valid through argument push.
-    Python-owned Sections stay weakly held so dropping their final owning
-    wrapper preserves real NEURON's native-section lifetime.
+    HOC/template-owned Section wrappers are held strongly, so temporaries such
+    as ``cell.soma[0](0.5)._ref_v`` stay valid through argument push (gap-50).
+    Python-owned Sections are held weakly, so dropping the last owning wrapper
+    still frees the section as in real NEURON.
     """
 
     __slots__ = ("_sec", "_sec_ref", "_x", "_name", "_sym")
 
-    # _x is intentionally captured at construction. If nseg changes afterward,
-    # x may land in a different or nonexistent segment; real NEURON has the same
-    # reference-staleness behavior.
+    # _x is captured at construction. If nseg changes afterward, x may land in
+    # a different or nonexistent segment; real NEURON behaves the same way.
     def __init__(self, sec, x, name):
         from .api import _nrn_symbol
 
@@ -126,8 +113,8 @@ class NrnRangeVarRef(NrnRef):
             raise NameError(f"No such mechanism or variable: {self._name}")
 
     def __repr__(self):
-        # Keep repr diagnostic even after a weakly-held Python-owned Section
-        # has gone away; data access still raises through _section().
+        # repr stays usable after a weakly held Section is gone; data access
+        # still raises through _section().
         sec = self._sec if self._sec is not None else self._sec_ref()
         return f"<NrnRef to {sec}({self._x}).{self._name.decode('utf-8')}>"
 
@@ -143,24 +130,25 @@ class NrnRangeVarRef(NrnRef):
         from .api import _nrn_rangevar_push
 
         sec = self._section()
-        # A section deleted through HOC keeps its wrapper alive but frees the C
-        # section, so pushing its rangevar pointer would dereference freed state.
-        # _check_alive raises RuntimeError instead.
+        # A section deleted through HOC keeps its wrapper but frees the C
+        # section; _check_alive raises RuntimeError instead of pushing freed state.
         sec._check_alive()
         _nrn_rangevar_push(self._sym, sec._sec, self._x)
 
     def _checked_target(self):
         """Return (section, name, kind) or raise before the core is touched.
 
-        nrn_rangevar_get/set dereference unchecked: after the mechanism is
-        uninserted, on an array symbol, or through an unset POINTER the core
-        threw through ctypes and aborted the process.
+        nrn_rangevar_get/set dereference unchecked. The core throws through
+        ctypes and aborts the process after the mechanism is uninserted, on an
+        array symbol, or through an unset POINTER.
         """
         from .sections import Segment, _get_symbol_info, _is_pointer_rangevar
 
         sec = self._section()
         sec._check_alive()  # HOC-deleted section: RuntimeError, not SIGABRT.
-        name = self._name.decode("utf-8") if isinstance(self._name, bytes) else self._name
+        name = (
+            self._name.decode("utf-8") if isinstance(self._name, bytes) else self._name
+        )
         try:
             Segment(sec, self._x)._check_rangevar_mechanism(name)
         except AttributeError:
@@ -219,9 +207,8 @@ class NrnVarRef(NrnRef):
 
     __slots__ = ("_name", "_sym")
 
-    # Only doubles (subtype 0/2) are supported. Subtype 1 is the integer
-    # global path (e.g. some HOC globals registered as ints) and would need
-    # POINTER(c_int) handling everywhere _push and __getitem__ touch ctypes.
+    # Only doubles (subtype 0/2) are supported. Subtype 1 (integer globals)
+    # would need POINTER(c_int) handling in _push and __getitem__.
     def __init__(self, name):
         from .api import _nrn_symbol
 
@@ -236,12 +223,10 @@ class NrnVarRef(NrnRef):
         return f"<NrnRef to n.{self._name.decode()}>"
 
     def _push(self):
-        # Push a raw double* onto NEURON's stack so the HOC function we're
-        # about to call (typically Vector.record) can store the address for
-        # later read. NrnRangeVarRef has nrn_rangevar_push for the equivalent
-        # operation on segment-bound variables; there is no symbol_ptr_push
-        # variant in the C API, so we fetch the address via _nrn_symbol_dataptr
-        # and push it with the generic double_ptr_push.
+        # Push a raw double* so the HOC function being called (typically
+        # Vector.record) can store the address and read it later. The C API
+        # has no symbol-pointer push: fetch the address with
+        # nrn_symbol_dataptr and push it with double_ptr_push.
         import ctypes
         from .api import (
             _nrn_symbol_dataptr,
@@ -251,10 +236,8 @@ class NrnVarRef(NrnRef):
 
         value_ptr = _nrn_symbol_dataptr(self._sym)
         addr = ctypes.cast(value_ptr, ctypes.c_void_p).value if value_ptr else None
-        # A runtime (subtype-0) scalar on a libnrniv predating nrn#3815 returns a
-        # bogus small-int address here; pushing/dereferencing it SIGSEGVs.
-        # Detect it the same way top-level reads/writes do. Without
-        # a real address there is nothing recordable to push, so fail cleanly.
+        # Bogus small address: see api._MIN_VALID_DATAPTR. Pushing it would
+        # SIGSEGV, so fail cleanly.
         if not addr or addr < _MIN_VALID_DATAPTR:
             raise RuntimeError(
                 f"cannot take a recordable pointer to '{self._name.decode()}' "
@@ -270,8 +253,8 @@ class NrnVarRef(NrnRef):
 
         value_ptr = _nrn_symbol_dataptr(self._sym)
         addr = ctypes.cast(value_ptr, ctypes.c_void_p).value if value_ptr else None
-        # For a bogus runtime-scalar address, route the read through the
-        # guarded top-level path. n._ref_x[0] is by definition n.x.
+        # Bogus address (see api._MIN_VALID_DATAPTR): n._ref_x[0] is n.x, so
+        # read through the guarded top-level path.
         if not addr or addr < _MIN_VALID_DATAPTR:
             from . import NEURON
 
@@ -320,16 +303,14 @@ class NrnObjectPropertyRef(NrnRef):
         return f"<NrnRef to {clsname}.{name}[{self._idx}]>"
 
     def _push(self):
-        # idx=None → scalar property; idx=int → array element at that index.
-        # The outer __getitem__ index is always 0 — the outer interface is a
-        # scalar ref to one element.
+        # idx=None: scalar property; idx=int: that array element.
         obj = self._obj()
         if obj is None:
             raise ReferenceError("Referenced object no longer exists")
-        # The weakref catches a GC'd wrapper, but a point process whose host
-        # section was deleted through HOC keeps its wrapper alive while the C
-        # node is freed; pushing/reading its property then SIGABRTs.
-        # _check_host_alive is the same guard the direct ic.amp path uses.
+        # The weakref catches a collected wrapper, but a point process whose
+        # host section was deleted through HOC keeps its wrapper while the C
+        # node is freed, and pushing its property then SIGABRTs. Same guard as
+        # the direct ic.amp path.
         obj._check_host_alive()
 
         if self._idx is None:
@@ -427,12 +408,12 @@ class NrnHocTemplateVarRef(NrnRef):
 
 
 class NrnDoubleRef(NrnRef):
-    """Fresh anonymous double cell — real NEURON's ``h.ref(3.0)``.
+    """Fresh anonymous double cell, like real NEURON's ``h.ref(3.0)``.
 
     Owns a Python ``c_double`` and pushes its address as a HOC ``$&1``
-    pointer arg (``hoc_pushpx`` equivalent). HOC ``$&1 = v`` only writes the
-    double in place — no allocation — so a Python-owned cell is safe here
-    (unlike the string case). Settable from both sides via ``r[0]``.
+    pointer arg (``hoc_pushpx`` equivalent). HOC ``$&1 = v`` writes in place,
+    so a Python-owned cell is safe (unlike the string case). Settable from
+    both sides via ``r[0]``.
     """
 
     __slots__ = ("_cell",)
@@ -462,16 +443,20 @@ class NrnDoubleRef(NrnRef):
 
 
 class NrnStrRef(NrnRef):
-    """Fresh anonymous string cell — real NEURON's ``h.ref('')``.
+    """Fresh anonymous string cell, like real NEURON's ``h.ref('')``.
 
     Backs a libc-``strdup`` ``char*`` (a ``c_void_p`` cell) and pushes the
     cell's address as a HOC ``$s1`` string pointer arg (``hoc_pushstr``
-    equivalent, ``nrn_str_push(char**)``). When a HOC function writes
-    ``$s1 = "..."``, ``hoc_assign_str`` ``free()``s the current ``char*`` and
-    replaces it with an ``emalloc``'d (``std::malloc``) copy; because the cell
-    is libc-allocated the free is valid, and the new pointer lands back in the
-    cell. Python-side ``r[0] = s`` mirrors that: ``free`` the old, ``strdup``
-    the new. ``__del__`` frees the final buffer.
+    equivalent, ``nrn_str_push(char**)``).
+
+    The cell must be libc-allocated (or NULL). On ``$s1 = "..."``,
+    ``hoc_assign_str`` ``free()``s the current ``char*`` and stores an
+    ``emalloc``'d (``std::malloc``) copy, so Python-owned ctypes string memory
+    would corrupt the heap. See ``nrnpy_hoc.cpp`` ``mkref`` / ``hoc_assign_str``;
+    covered by a 50-writeback HOC stress test (``tests/regression/test_hoc_ref.py``
+    ``test_str_ref_repeated_hoc_writeback_no_corruption``).
+    Python-side ``r[0] = s`` does the same: ``free`` the old, ``strdup`` the
+    new. ``__del__`` frees the final buffer.
     """
 
     __slots__ = ("_cell",)
@@ -520,8 +505,7 @@ class NrnStrRef(NrnRef):
             libc.free(old)
 
     def __del__(self):
-        # Free the final buffer. Guarded so a half-constructed instance
-        # (strdup failed / _get_libc raised) doesn't raise in __del__.
+        # Guarded for a half-constructed instance (strdup or _get_libc failed).
         cell = getattr(self, "_cell", None)
         if cell is not None and cell.value:
             try:
@@ -531,17 +515,16 @@ class NrnStrRef(NrnRef):
 
 
 class NrnObjectRef(NrnRef):
-    """Fresh anonymous object cell — real NEURON's ``h.ref(obj)`` / ``h.ref(None)``.
+    """Fresh anonymous object cell, like real NEURON's ``h.ref(obj)`` / ``h.ref(None)``.
 
-    Holds an ``Object*`` cell (NULL for ``None``) and pushes the cell's address
-    as a HOC objref pointer arg (``Object**``, via ``nrn_object_ptr_push``). When a HOC
-    function assigns ``$o1 = x``, ``hoc_assign_obj`` unrefs the cell's old
-    content and refs the new, so the invariant "the cell owns exactly one
-    reference to its content (or holds NULL)" is preserved across the call. We
-    claim that one reference at construction (``nrn_object_ref``) and release it
-    in ``__del__`` (``nrn_object_unref``). Reading ``r[0]`` refs the content
-    again before wrapping it, so the returned myneuron ``Object`` owns its own
-    reference, independent of the cell's lifetime.
+    Holds an ``Object*`` cell (NULL for ``None``) and pushes its address as a
+    HOC objref pointer arg (``Object**``, via ``nrn_object_ptr_push``).
+    Invariant: the cell owns exactly one reference to its content, or holds
+    NULL. ``hoc_assign_obj`` (``$o1 = x``) unrefs the old content and refs the
+    new, preserving it. The cell takes its reference at construction
+    (``nrn_object_ref``) and releases it in ``__del__`` (``nrn_object_unref``).
+    ``r[0]`` refs the content again before wrapping, so the returned ``Object``
+    owns its own reference, independent of the cell.
 
     Foreign Python objects use the active PythonObject provider and read back
     as the original Python value, not a second HOC wrapper.
@@ -572,16 +555,16 @@ class NrnObjectRef(NrnRef):
         ptr = self._cell.value
         if not ptr:
             return None
-        # Conversion consumes a reference even for PythonObject payloads;
-        # the cell must retain its own independently.
+        # Conversion consumes a reference even for PythonObject payloads; the
+        # cell keeps its own.
         from .api import _nrn_object_ref
         from .utils import _wrap_owned_object
 
         _nrn_object_ref(ptr)
-        # Pass the raw int pointer, not c_void_p: Object._obj is an int
-        # everywhere (nrn_object_pop's c_void_p restype yields an int), and
-        # Object.__eq__ compares _obj, so wrapping in c_void_p would make a
-        # round-tripped object compare unequal to its source.
+        # Pass the raw int, not c_void_p: Object._obj is an int everywhere
+        # (nrn_object_pop's c_void_p restype yields one) and Object.__eq__
+        # compares it, so a c_void_p would make a round-tripped object
+        # unequal to its source.
         return _wrap_owned_object(ptr)
 
     def __setitem__(self, idx, value):
@@ -605,10 +588,12 @@ class NrnObjectRef(NrnRef):
             _nrn_object_unref(old)  # release the old content
 
     def __del__(self):
-        # Release the one reference the cell owns. Guarded against interpreter
-        # teardown (libnrniv may be gone) and half-constructed instances, the
-        # same way Object.__del__ is.
-        if getattr(sys, "meta_path", None) is None or getattr(sys, "modules", None) is None:
+        # Release the cell's one reference. Guarded like Object.__del__ against
+        # interpreter teardown and half-constructed instances.
+        if (
+            getattr(sys, "meta_path", None) is None
+            or getattr(sys, "modules", None) is None
+        ):
             return
         cell = getattr(self, "_cell", None)
         if cell is None or not cell.value:

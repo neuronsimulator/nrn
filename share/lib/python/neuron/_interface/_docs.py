@@ -7,24 +7,24 @@ import zlib
 
 
 _HELP = None
-_BUNDLED_HELP = Path(__file__).with_name('_data') / 'help_data.dat'
+_BUNDLED_HELP = Path(__file__).with_name("_data") / "help_data.dat"
 
 
 class _HelpUnpickler(pickle.Unpickler):
     def find_class(self, module, name):
         # The upstream format is a compressed dict[str, str], not executable
         # objects. Refuse GLOBAL/REDUCE constructors even from installed data.
-        raise pickle.UnpicklingError('documentation cannot load Python globals')
+        raise pickle.UnpicklingError("documentation cannot load Python globals")
 
 
 def _help_paths():
     try:
-        spec = importlib.util.find_spec('neuron')
+        spec = importlib.util.find_spec("neuron")
     except (ImportError, ValueError):
         spec = None
     if spec is not None:
         for directory in spec.submodule_search_locations or ():
-            yield Path(directory) / 'help_data.dat'
+            yield Path(directory) / "help_data.dat"
     yield _BUNDLED_HELP
 
 
@@ -53,7 +53,7 @@ def _load_help():
     return _HELP
 
 
-def get_doc(key, fallback=''):
+def get_doc(key, fallback=""):
     """Return the installed core's help text, or the bundled/fallback text."""
     return _load_help().get(key, fallback)
 
@@ -63,7 +63,7 @@ class _ClassDoc:
 
     def __init__(self, name, fallback=None):
         self.name = name
-        self.fallback = fallback or f'NEURON HOC class: {name}'
+        self.fallback = fallback or f"NEURON HOC class: {name}"
 
     def __get__(self, instance, owner=None):
         return get_doc(self.name, self.fallback)

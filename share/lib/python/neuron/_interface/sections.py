@@ -3,13 +3,11 @@ import ctypes
 import sys
 import weakref
 from .nrnref import NrnRangeVarRef
-# Hot-path imports hoisted from the bodies of __getattr__/__setattr__.
-# Measurement dates below: benchmarks/README.md#historical-implementation-measurements.
-# Profiling showed `from .api import ...` inside the hot
-# loop was the single biggest source of per-call overhead (~50% of
-# seg.v time spent in importlib._bootstrap.parent / str.rpartition).
-# api.py has no back-edge to this module, so the top-level import is
-# safe at module load.
+
+# Hot-path imports hoisted out of __getattr__/__setattr__: a `from .api import`
+# inside the loop cost ~50% of seg.v time in importlib bookkeeping.
+# Measurements: benchmarks/README.md#historical-implementation-measurements.
+# api.py has no back-edge to this module, so a top-level import is safe.
 from .api import (
     _diam_changed as _DIAM_CHANGED,
     _nrn_rangevar_get as _RANGEVAR_GET,
@@ -28,23 +26,20 @@ from .api import (
 )
 
 
-# HOC helper procs per array-rangevar name. HOC can't dereference a range
-# variable through a string arg ($s1), so we register one get/set proc per
-# distinct rangevar name on first access and cache the names here.
+# Names with registered get/set procs; see _ArrayRangeVar.
 _ARRAY_RANGEVAR_PROCS = set()
 
 
 # Symbol-info cache for Segment.__getattr__/__setattr__. Maps a name (str)
 # to (sym_ptr, sym_type, is_array, array_length).
 #
-# WHY: the encode/hash-lookup chain through nrn_symbol + nrn_symbol_type +
-# nrn_symbol_is_array + nrn_symbol_array_length costs ~3.5us per call out
-# of the ~4.7us seg.v total. Real NEURON uses pmech_types/rangevars_
-# Python dicts for O(1) lookup at nrnpy_nrn.cpp:3146-3155.
-# Populated on first lookup; HOC global symbols are stable for the process
-# lifetime — once `gnabar_hh` exists, its Symbol* never moves.
-# INVALIDATES: never. A (0, 0, False, 0) sentinel means the name resolves
-# to no symbol (cached so misses don't repeat the lookup).
+# WHY: the encode + nrn_symbol + nrn_symbol_type + nrn_symbol_is_array +
+# nrn_symbol_array_length chain costs ~3.5us of the ~4.7us seg.v total. Real
+# NEURON uses pmech_types/rangevars_ Python dicts for O(1) lookup
+# (nrnpy_nrn.cpp:3146-3155).
+# INVALIDATES: never. Global HOC symbols are stable for the process lifetime
+# (once `gnabar_hh` exists its Symbol* never moves). The (0, 0, False, 0)
+# sentinel caches names that resolve to no symbol.
 _SYMBOL_INFO_CACHE = {}
 _MISSING_SYMBOL_INFO = (0, 0, False, 0)
 _V_SYMBOL = _NRN_SYMBOL(b"v")
@@ -101,9 +96,9 @@ def _install_array_rangevar_procs(name):
 
 
 # A mechanism POINTER variable (membfunc.h NRNPOINTER). nrn_rangevar_get/set
-# dereference it without a check, and the core throws through ctypes (process
-# abort) when it was never set. Small HOC helpers called through the nothrow
-# function API report NEURON's own "wasn't made to point to anything" instead.
+# dereference it unchecked, and the core throws through ctypes (process abort)
+# when it was never set. Small HOC helpers called through the nothrow function
+# API report NEURON's "wasn't made to point to anything" instead.
 _NRNPOINTER = 4
 _POINTER_RANGEVARS = {}
 _POINTER_RANGEVAR_PROCS = set()
@@ -144,13 +139,13 @@ def _call_pointer_proc(section, x, name, proc, *args):
 
     n = _pointer_rangevar_procs(name)
     try:
-        # NEURON reports these as Python exceptions without printing a HOC
-        # error trace; the helper's trace is suppressed to match.
+        # NEURON raises these without printing a HOC error trace; suppress the
+        # helper's trace to match.
         with _SuppressCStderr():
             return getattr(n, f"{proc}_{name}")(x, *args, sec=section)
     except RuntimeError as exc:
-        # The core's own messages are the only signal for these two states;
-        # there is no public nothrow range-variable accessor reporting them.
+        # The core's messages are the only signal for these two states; no
+        # public nothrow range-variable accessor reports them.
         message = str(exc)
         if "cannot be converted to data_handle<double>" in message:
             return OpaquePointer()
@@ -176,12 +171,13 @@ def _pointer_rangevar_set(section, x, name, value):
 
 # ── _ArrayRangeVar ────────────────────────────────────────────────────────────
 
+
 def _diam_node_x(sec, x):
-    # The C diam accessors use node_exact (nrnoc/cabcode.cpp:1800), whereas
-    # Python diameter access resolves boundary positions to the adjacent
-    # interior segment — the 0/1 ends address a shared parent or terminal
-    # node, not diam storage. Reads and writes must remap identically or a
-    # written endpoint reads back the unrelated end-node value.
+    # The C diam accessors use node_exact (nrnoc/cabcode.cpp:1800), but Python
+    # diameter access resolves the 0/1 ends to the adjacent interior segment
+    # (the ends are a shared parent or terminal node, not diam storage). Reads
+    # and writes must remap identically, or a written endpoint reads back the
+    # unrelated end-node value.
     if x == 0.0:
         return 0.5 / sec.nseg
     if x == 1.0:
@@ -190,14 +186,13 @@ def _diam_node_x(sec, x):
 
 
 def _diam_hoc_assign(sec, cmd, x, value):
-    # Public HOC assignment reaches nrn_diam_change via
-    # range_interpolate_single (nrnoc/cabcode.cpp:1097), retaining the
-    # core's segment-to-pt3d mapping and length adjustment. Issued for
-    # every section — on a no-3d section it re-writes the same node
-    # (parity-verified), and gating on sec.n3d() cost more than
-    # it saved (~10 µs full HOC dispatch vs ~6 µs for this call). The raw
-    # node store happens first: pt3dconst(1) suppresses the HOC assignment
-    # while Python still writes the node and dirties geometry.
+    # HOC assignment reaches nrn_diam_change via range_interpolate_single
+    # (nrnoc/cabcode.cpp:1097), keeping the core's segment-to-pt3d mapping and
+    # length adjustment. Issued for every section: on a no-3d section it
+    # rewrites the same node, and gating on sec.n3d() cost more than it saved
+    # (~10 us full HOC dispatch vs ~6 us for this call). The raw node store
+    # happens first because pt3dconst(1) suppresses the HOC assignment while
+    # Python must still write the node and dirty the geometry.
     from . import NEURON
 
     try:
@@ -211,9 +206,10 @@ def _diam_hoc_assign(sec, cmd, x, value):
 class _ArrayRangeVar:
     """Subscriptable wrapper for an array-valued range variable on a segment.
 
-    Used for the extracellular mechanism (xraxial/xg/xc). Access goes through
-    two one-time-registered HOC helper procs because NEURON 9's C API exposes
-    nrn_rangevar_get/set/push only for scalar symbols.
+    Used for the extracellular mechanism (xraxial/xg/xc). The C API exposes
+    nrn_rangevar_get/set/push only for scalar symbols and HOC cannot
+    dereference a range variable through a string arg ($s1), so access goes
+    through one get/set HOC proc pair per name, registered on first use.
     """
 
     __slots__ = ("_section", "_x", "_name", "_size")
@@ -230,9 +226,7 @@ class _ArrayRangeVar:
         import numbers
 
         if isinstance(idx, bool) or not isinstance(idx, numbers.Integral):
-            raise TypeError(
-                f"indices must be integers, not {type(idx).__name__}"
-            )
+            raise TypeError(f"indices must be integers, not {type(idx).__name__}")
         idx = int(idx)
         if idx < 0:
             idx += self._size
@@ -278,6 +272,7 @@ class _ArrayRangeVar:
 
 # ── Segment ───────────────────────────────────────────────────────────────────
 
+
 class Segment:
     """A point at normalized position ``x`` in [0, 1] along a ``Section``.
 
@@ -291,9 +286,7 @@ class Segment:
     __slots__ = ("_sec", "_x", "_mech_cache")
 
     def __init__(self, sec, x):
-        # _mech_cache is a lazily-populated per-Segment dict (see __getattr__).
-        # With __slots__, accessing an unset slot raises AttributeError and
-        # cascades into __getattr__, so initialise it up front to None.
+        # Pre-set _mech_cache so an unset-slot read does not fall into __getattr__.
         super().__setattr__("_sec", sec)
         super().__setattr__("_x", x)
         super().__setattr__("_mech_cache", None)
@@ -321,11 +314,10 @@ class Segment:
 
     @staticmethod
     def _node_key(x, nseg):
-        # Real NEURON's node model: x=0 and x=1 are their own boundary nodes
-        # (distinct from the interior), while every interior x within a segment
-        # shares that segment's center node. Plain int(x*nseg) binning would
-        # merge the x=0 boundary into the first interior segment, making
-        # s(0) == s(0.1). Compute the key without an FFI call.
+        # Real NEURON's node model: x=0 and x=1 are their own boundary nodes,
+        # and every interior x in a segment shares that segment's center node.
+        # Plain int(x*nseg) binning would merge x=0 into the first segment,
+        # making s(0) == s(0.1). No FFI call.
         if x <= 0.0:
             return 0
         if x >= 1.0:
@@ -341,10 +333,9 @@ class Segment:
         return self._node_key(self._x, nseg) == self._node_key(other._x, nseg)
 
     def __hash__(self):
-        # Consistent with __eq__ (same node key). Real NEURON's own hash is
-        # x-based and inconsistent with its node-based eq (two equal interior
-        # segments can hash differently); myneuron keeps the Python-correct
-        # consistent hash. Deliberate departure — see docs/ARCHITECTURE.md.
+        # Consistent with __eq__ (same node key). Real NEURON's hash is x-based
+        # and disagrees with its node-based eq (two equal interior segments can
+        # hash differently). Deliberate departure; see docs/ARCHITECTURE.md.
         nseg = self._sec.nseg
         return hash((self._sec, self._node_key(self._x, nseg)))
 
@@ -359,7 +350,7 @@ class Segment:
         idx = name.rfind("_")
         if idx <= 0:
             return
-        suffix = name[idx + 1:]
+        suffix = name[idx + 1 :]
         mech_sym = _NRN_SYMBOL(suffix.encode("utf-8"))
         if mech_sym and int(_NRN_SYMBOL_TYPE(mech_sym)) == _TYPES.MECHANISM:
             from . import NEURON
@@ -372,11 +363,13 @@ class Segment:
     def area(self):
         """Return membrane area of this segment in um^2."""
         from . import NEURON
+
         return float(NEURON().area(self._x, sec=self._sec))
 
     def ri(self):
         """Return axial resistance to parent segment in MOhm."""
         from . import NEURON
+
         return float(NEURON().ri(self._x, sec=self._sec))
 
     def volume(self):
@@ -386,6 +379,7 @@ class Segment:
         only when diam is uniform within the segment.
         """
         import math
+
         r = self.diam / 2.0
         seg_length = self._sec.L / self._sec.nseg
         return math.pi * r * r * seg_length
@@ -404,21 +398,20 @@ class Segment:
         n_inst = NEURON()
         result = []
 
-        # Phase 1: collect PP class names from symbol table.
-        # Find type-325 classes that advertise has_loc. Skip PythonObject —
-        # calling nrn_symbol_table on it segfaults because its symbol table
-        # holds Python interpreter state, not HOC symbols, and the C iterator
-        # dereferences it as a Symlist.
+        # Step 1: collect point-process class names (type 325 with has_loc).
+        # Skip PythonObject: nrn_symbol_table on it segfaults because its table
+        # holds Python interpreter state and the C iterator dereferences it as
+        # a Symlist.
         _SKIP_CLASSES = {"PythonObject"}
         all_syms = list_functions()
         from .api import TYPES
+
         pp_classes = []
         for name, (t, _) in all_syms.items():
             if t != TYPES.TEMPLATE or name in _SKIP_CLASSES:
                 continue
             # Some type-325 entries (HOC templates with no methods, deprecated
-            # classes) raise on list_methods. Swallow and skip — we just want
-            # the ones that genuinely advertise has_loc.
+            # classes) raise on list_methods; skip them.
             try:
                 methods = list_methods(name)
                 if "has_loc" in methods:
@@ -429,21 +422,17 @@ class Segment:
         nseg = self._sec.nseg
 
         def _node_key(x):
-            # Membership = same NEURON node (node_exact), NOT int(x*nseg) bins.
-            # x=0 and x=1 are the zero-area boundary nodes, each distinct from
-            # every interior segment; only interior x falls in segment
-            # int(x*nseg). Plain int(x*nseg) would lump an x=0 point process
-            # into segment 0 (and any bin-boundary x into a neighbor).
+            # Same node model as Segment._node_key, with -1/nseg for the ends.
             if x <= 0.0:
-                return -1            # 0-end boundary node
+                return -1  # 0-end boundary node
             if x >= 1.0:
-                return nseg          # 1-end boundary node
+                return nseg  # 1-end boundary node
             b = int(x * nseg)
             return b if b < nseg else nseg - 1
 
         my_key = _node_key(self._x)
 
-        # Phase 2: iterate instances of each PP class.
+        # Step 2: iterate instances of each class.
         for cls_name in pp_classes:
             try:
                 lst = n_inst.List(cls_name)
@@ -457,7 +446,7 @@ class Segment:
                 try:
                     if int(pp.has_loc()) != 1:
                         continue
-                    # Phase 3: bin-compare location to this segment.
+                    # Step 3: compare location to this segment.
                     loc = pp.get_loc()
                     pp_sec_ptr = _nrn_cas()
                     _nrn_section_pop()  # get_loc pushes section
@@ -483,13 +472,27 @@ class Segment:
     def __dir__(self):
         attrs = set(super().__dir__())
         # Standard segment attributes always available
-        attrs.update(["v", "diam", "cm", "x", "sec", "area", "ri", "volume",
-                       "point_processes", "node_index", "ref"])
+        attrs.update(
+            [
+                "v",
+                "diam",
+                "cm",
+                "x",
+                "sec",
+                "area",
+                "ri",
+                "volume",
+                "point_processes",
+                "node_index",
+                "ref",
+            ]
+        )
         # Add _ref_ variants for standard range vars
         attrs.update(["_ref_v", "_ref_diam", "_ref_cm"])
         # Add mechanism names inserted in this section
         from .mechanism import _all_density_mechanism_names
         from . import NEURON
+
         try:
             n_inst = NEURON()
             for mech_name in _all_density_mechanism_names():
@@ -498,6 +501,7 @@ class Segment:
             # Also add ion mechanisms
             for ion_name in ("na_ion", "k_ion", "ca_ion"):
                 from .api import _nrn_symbol
+
                 sym = _nrn_symbol(ion_name.encode("utf-8"))
                 if sym and n_inst.ismembrane(ion_name, sec=self._sec):
                     attrs.add(ion_name)
@@ -518,11 +522,9 @@ class Segment:
         # Mechanism instance cache (Segment._mech_cache).
         # WHY: rebuilding a Mechanism wrapper on every seg.hh access
         # dominated seg.hh.gnabar cost (__init__ + __getattr__ symbol walk).
-        # INVALIDATES: never per Segment. The Mechanism wrapper is
-        # stateless beyond (seg, name) — different segments get their own
-        # cache because each Segment is a distinct Python object.
-        # Stored in a dedicated __slots__ entry; reads go straight to the
-        # slot descriptor (no __dict__ allocation per Segment).
+        # INVALIDATES: never per Segment. The wrapper is stateless beyond
+        # (seg, name), and each Segment object has its own cache. Stored in a
+        # __slots__ entry, so no __dict__ is allocated per Segment.
         mech_cache = self._mech_cache
         if mech_cache is not None:
             cached_mech = mech_cache.get(name)
@@ -540,45 +542,36 @@ class Segment:
             raise AttributeError(f"Variable '{name}' not found in {self!r}.")
         sym, sym_type, is_array, array_length = info
         if sym_type == _TYPES.RANGEVAR:
-            # Liveness guard before touching the C node: reading a range var on
-            # a HOC-deleted section dereferences a freed node and SIGABRTs
-            # (node_index assertion, cabcode.cpp). Real NEURON raises here, and
-            # so do we. Scoped to the range-var path — the
-            # mechanism-cache and seg.ptr()/cached() hot loops bypass it, and
-            # real NEURON pays an equivalent check on this same access.
+            # Reading a range var on a HOC-deleted section dereferences a freed
+            # node and SIGABRTs (node_index assertion, cabcode.cpp); raise
+            # like real NEURON instead, which pays an equivalent check on this
+            # access. Scoped to the range-var path: the mechanism cache and
+            # seg.ptr()/cached() hot loops bypass it.
             sec = self._sec
             sec._check_alive()
-            # Inline the cheap unsuffixed-name fast path. Mechanism
-            # suffixes only matter for names like `gnabar_hh`; for `v`,
-            # `diam`, `cm`, etc. there's nothing to check. Skipping the
-            # function call saves ~0.3 µs/access.
+            # Only suffixed names (`gnabar_hh`) need the mechanism check;
+            # skipping the call for `v`, `diam`, `cm` saves ~0.3 us/access.
             if name.rfind("_") > 0:
                 self._check_rangevar_mechanism(name)
             if name == "diam":
-                # Route diam through nrn_segment_diam_get so a
-                # 3d-defined section reports the recomputed value rather than a
-                # stale default before a geometry pass. The generic rangevar
-                # read hits the raw pointer and skips NEURON's per-section
-                # recalc_area_ recompute; the getter performs it (on a libnrniv
-                # carrying the upstream fix — older builds return the same value
-                # the generic read would, so this is safe either way).
-                # A non-positive diameter on a stylized section is NEURON's
-                # deferred error: the recompute clamps exactly ONE offending
-                # node per read (the last) and raises the literal
-                # "diam = 0." message, again on every read until none remain.
-                # On the supported dev114 core, nrn#3854 makes the public C
-                # getter suppress hoc_execerror at the ABI. Keep the scan to
-                # reproduce the error real Python raises, not for C-ABI
-                # safety (preventing an escaping throw was its historical
-                # role before nrn#3854). Gated on NEURON's own dirty flag
-                # (cleared by finitialize/global recompute, so hot loops pay
-                # one FFI call: 0.77 µs vs 58 µs ungated at nseg=101;
-                # while a recompute is pending the scan is
-                # O(nseg), the price of raising where real raises). The
-                # n3d guard scopes the scan to
-                # nrn_area_ri's no-3d-points branch — diam_from_list never
-                # raises, and a 3d section's raw node value is not what the
-                # getter returns anyway.
+                # Use nrn_segment_diam_get: it runs NEURON's per-section
+                # recalc_area_, so a 3d-defined section reports the recomputed
+                # diameter. The generic range-var read hits the raw pointer
+                # and skips that recompute. A libnrniv without the upstream
+                # fix returns the same value as the generic read, so this is
+                # safe on any build.
+                # NEURON defers the error for a non-positive diameter on a
+                # stylized section: each read clamps exactly one offending
+                # node (the last) and raises the literal "diam = 0." message,
+                # repeating until none remain. On dev114 and the pinned dev115
+                # (both include nrn#3854) the C getter suppresses hoc_execerror,
+                # so this scan exists only to raise the error real NEURON
+                # raises. It is gated on NEURON's dirty flag (cleared by
+                # finitialize or a global recompute), so hot loops pay one FFI
+                # call: 0.77 us vs 58 us ungated at nseg=101. While a recompute is pending the
+                # scan is O(nseg). The n3d guard limits it to nrn_area_ri's
+                # no-3d-points branch: diam_from_list never raises, and a 3d
+                # section's raw node value is not what the getter returns.
                 if _DIAM_CHANGED.value and sec.n3d() <= 1:
                     nseg = sec.nseg
                     bad_x = None
@@ -601,20 +594,20 @@ class Segment:
         if sym_type == _TYPES.MECHANISM:
             from .mechanism import Mechanism
 
-            # Only an inserted mechanism is accessible as seg.<mech>. Real NEURON
-            # raises AttributeError for a known-but-not-inserted mechanism;
-            # returning a Mechanism wrapper anyway lets a later range-var read
-            # dereference an absent prop and SIGABRT. Cold path
-            # only — warm hits return the cached wrapper above. Check the
-            # per-section inserted-mech cache first (built once per section,
-            # amortized across its segments, invalidated by Python insert/
-            # uninsert); has_membrane (one ismembrane call) is the fallback for
-            # ions, which the density-only cache omits, and the absent case.
+            # Only an inserted mechanism is accessible as seg.<mech>. Real
+            # NEURON raises AttributeError otherwise; a wrapper for an
+            # uninserted mechanism would let a later range-var read
+            # dereference an absent prop and SIGABRT. Cold path only (warm
+            # hits return the cached wrapper above). Check the per-section
+            # inserted-mech cache first, then has_membrane (one ismembrane
+            # call), which covers ions (the density-only cache omits them)
+            # and the absent case.
             self._sec._check_alive()
-            if name not in self._sec._get_inserted_mechs() and not self._sec.has_membrane(name):
-                raise AttributeError(
-                    f"'{name}' is not inserted in {self._sec!r}."
-                )
+            if (
+                name not in self._sec._get_inserted_mechs()
+                and not self._sec.has_membrane(name)
+            ):
+                raise AttributeError(f"'{name}' is not inserted in {self._sec!r}.")
             mech = Mechanism(self, name)
             if mech_cache is None:
                 mech_cache = {}
@@ -630,9 +623,7 @@ class Segment:
             )
             if wrapped is not None:
                 return wrapped
-        raise AttributeError(
-            f"'{name}' is not a range variable on {self!r}."
-        )
+        raise AttributeError(f"'{name}' is not a range variable on {self!r}.")
 
     def __iter__(self):
         """Iterate over Mechanism objects for each inserted mechanism."""
@@ -651,8 +642,7 @@ class Segment:
             yield mech
 
     def __setattr__(self, name, value):
-        # Internal bookkeeping (all underscore-prefixed slots) goes straight
-        # through to the slot descriptor — these are never range vars.
+        # Underscore-prefixed names are internal slots, never range vars.
         if name.startswith("_"):
             super().__setattr__(name, value)
             return
@@ -661,6 +651,7 @@ class Segment:
             raise AttributeError(f"Variable '{name}' not found in {self!r}.")
         sym, sym_type, is_array, array_length = info
         from .api import TYPES
+
         if TYPES.RANGEOBJ is None or sym_type == TYPES.RANGEOBJ:
             from .utils import _try_wrap_density_nmodlrandom
 
@@ -669,13 +660,9 @@ class Segment:
                 self._sec._sec, self._x, sym, sym_type
             )
             if wrapped is not None:
-                raise ValueError(
-                    f"NMODL RANDOM variable '{name}' is not assignable"
-                )
+                raise ValueError(f"NMODL RANDOM variable '{name}' is not assignable")
         if sym_type != TYPES.RANGEVAR:
-            raise AttributeError(
-                f"'{name}' is not a range variable on {self!r}."
-            )
+            raise AttributeError(f"'{name}' is not a range variable on {self!r}.")
         # Guard before writing a potentially freed C node; see __getattr__.
         self._sec._check_alive()
         self._check_rangevar_mechanism(name)
@@ -698,13 +685,12 @@ class Segment:
             return
         if name == "diam":
             # Real NEURON accepts finite non-positive values, then clamps and
-            # reports them on the next diam/geometry read. Preserve that
-            # behavior, while still rejecting NaN/Inf at the Python boundary.
+            # reports them on the next diam/geometry read. Keep that, but
+            # reject NaN/Inf at the Python boundary.
             import math
+
             if not math.isfinite(value):
-                raise ValueError(
-                    f"diam must be a finite number, got {value!r}"
-                )
+                raise ValueError(f"diam must be a finite number, got {value!r}")
             sec = self._sec
             _SEG_DIAM_SET(sec._sec, _diam_node_x(sec, self._x), value)
             _diam_hoc_assign(
@@ -755,17 +741,16 @@ class Segment:
             raise AttributeError(f"unknown range variable {name!r}")
         sym, sym_type, is_array, _ = info
         from .api import TYPES, _nrn_rangevar_push, _nrn_double_ptr_pop
+
         if sym_type != TYPES.RANGEVAR or is_array:
             raise AttributeError(
                 f"{name!r} is not a scalar range variable "
                 f"(type {sym_type}, array={is_array})"
             )
-        # Acquiring the pointer pushes a rangevar address for the C node; on a
-        # HOC-deleted section or for a mechanism not inserted at this segment
-        # that dereferences freed/absent state and SIGABRTs. Guard
-        # both, matching real NEURON (ReferenceError / AttributeError). This is
-        # the acquisition, not the returned pointer — the pointer's staleness
-        # contract (docstring above) is unchanged.
+        # Acquiring the pointer dereferences the C node: on a HOC-deleted
+        # section or an uninserted mechanism that SIGABRTs. Guard both like real
+        # NEURON (ReferenceError / AttributeError). This guards acquisition
+        # only; the returned pointer keeps the staleness contract above.
         self._sec._check_alive()
         self._check_rangevar_mechanism(name)
         _nrn_rangevar_push(sym, self._sec._sec, ctypes.c_double(self._x))
@@ -777,8 +762,8 @@ class Segment:
 
 # ── Section ───────────────────────────────────────────────────────────────────
 
-# Counter for auto-generated names of a nameless Section() — mirrors real
-# NEURON, whose h.Section() with no name auto-generates __nrnsec_0x<address>.
+# Counter for the auto-generated names of a nameless Section(). Real NEURON
+# names these __nrnsec_0x<address>; myneuron uses the same format with a counter.
 _anon_section_count = 0
 
 
@@ -794,9 +779,9 @@ class Section:
     ``soma(x)`` for ``x`` in [0, 1].
     """
 
-    # __weakref__ lets Python-owned Sections be weakly held by dependents, so
-    # their last owning wrapper still controls native lifetime. Non-owning
-    # HOC/template wrappers are retained strongly by dependents (gap-50).
+    # __weakref__: dependents hold Python-owned Sections weakly, so the last
+    # owning wrapper still controls native lifetime. Dependents hold non-owning
+    # HOC/template wrappers strongly (gap-50).
     __slots__ = (
         "_cell",
         "_sec",
@@ -812,23 +797,19 @@ class Section:
         if cell is not None and isinstance(cell, str):
             raise TypeError("cell must be an object, not a string")
         if name is None:
-            # h.Section() with no name: auto-generate a unique one, as real
-            # NEURON does (it names anonymous sections __nrnsec_0x<address>).
+            # No name: auto-generate a unique one, as real NEURON does.
             global _anon_section_count
             name = "__nrnsec_0x%x" % _anon_section_count
             _anon_section_count += 1
         self._cell = weakref.ref(cell) if cell is not None else None
         if "\x00" in name:
-            # ctypes' c_char_p accepts bytes-with-NUL without firing its guard,
-            # and nrn_section_new then truncates at the first NUL — two names
-            # differing only after a NUL would collapse to the same section.
-            # Reject like real NEURON (ValueError) instead.
+            # c_char_p accepts a NUL and nrn_section_new truncates there, so
+            # two names differing only after a NUL would collapse into one.
+            # Reject like real NEURON.
             raise ValueError("embedded null character")
         self._sec = _nrn_section_new(name.encode("utf-8"))
         self._pynative = _pynative
-        # Lazily populated by _get_inserted_mechs; invalidated on
-        # insert/uninsert/nseg-change by setting back to None, and on any
-        # HOC-side mutation via the model epoch.
+        # Lazy cache for _get_inserted_mechs (see there).
         self._inserted_mechs = None
         self._inserted_mechs_epoch = -1
 
@@ -836,14 +817,11 @@ class Section:
     def _from_ptr(cls, sec_ptr):
         """Create a non-owning Section wrapper from a raw C Section* pointer.
 
-        Hot path: only the two slots that change between non-owning
-        wrappers are written (`_sec` and `_pynative`). The lazy slots
-        `_cell` and `_inserted_mechs` are left unset; their readers
-        (`Section.cell()` and `Section._get_inserted_mechs()`) treat
-        an unset slot as the conceptual "None" default. That saves two
-        `object.__setattr__` calls per yielded section — about a third
-        of `_from_ptr`'s cost — and is on the dominant cost line in
-        `allsec()`.
+        Hot path: writes only `_sec` and `_pynative`. The lazy slots `_cell`
+        and `_inserted_mechs` stay unset, and their readers (`Section.cell()`,
+        `Section._get_inserted_mechs()`) treat an unset slot as None. This
+        saves two slot writes per yielded section on the allsec() hot path,
+        about a third of `_from_ptr`'s cost.
 
         CAUTION: any caller that adds code to _from_ptr paths must use
         object.__getattribute__ for _cell and _inserted_mechs; normal
@@ -876,21 +854,19 @@ class Section:
 
     def __setattr__(self, name, value):
         # Private names and known @property setters go to super();
-        # everything else broadcasts across segments — matches real NEURON's
+        # everything else broadcasts across segments, matching real NEURON's
         # `sec.gnabar_hh = ...` semantics.
         if name.startswith("_") or name in {"nseg", "L", "Ra", "rallbranch"}:
             super().__setattr__(name, value)
         elif name == "diam":
-            # One HOC-level broadcast reaches nrn_diam_change once instead
-            # of nseg round-trips (2.25 ms -> single-call cost at nseg=101).
-            # Raw per-node stores first, mirroring
-            # the per-segment path: under pt3dconst(1) they are the only
-            # write that lands.
+            # One HOC broadcast reaches nrn_diam_change once instead of nseg
+            # round trips (2.25 ms at nseg=101). Raw per-node stores come
+            # first, as in the per-segment path: under pt3dconst(1) they are
+            # the only write that lands.
             import math
+
             if not math.isfinite(value):
-                raise ValueError(
-                    f"diam must be a finite number, got {value!r}"
-                )
+                raise ValueError(f"diam must be a finite number, got {value!r}")
             nseg = self.nseg
             for i in range(nseg):
                 _SEG_DIAM_SET(self._sec, (i + 0.5) / nseg, value)
@@ -906,23 +882,53 @@ class Section:
 
     def __dir__(self):
         attrs = set(object.__dir__(self))
-        attrs.update([
-            "L", "Ra", "nseg", "rallbranch",
-            "allseg", "arc3d", "cell", "children", "connect",
-            "diam3d", "disconnect", "has_membrane", "hname",
-            "hoc_internal_name", "insert", "is_pysec", "n3d", "name",
-            "orientation", "parentseg", "psection", "pt3dadd",
-            "pt3dchange", "pt3dclear", "pt3dinsert", "pt3dremove",
-            "pt3dstyle", "push", "rallbranch", "same", "spine3d",
-            "subtree", "trueparentseg", "uninsert", "wholetree",
-            "x3d", "y3d", "z3d",
-        ])
+        attrs.update(
+            [
+                "L",
+                "Ra",
+                "nseg",
+                "rallbranch",
+                "allseg",
+                "arc3d",
+                "cell",
+                "children",
+                "connect",
+                "diam3d",
+                "disconnect",
+                "has_membrane",
+                "hname",
+                "hoc_internal_name",
+                "insert",
+                "is_pysec",
+                "n3d",
+                "name",
+                "orientation",
+                "parentseg",
+                "psection",
+                "pt3dadd",
+                "pt3dchange",
+                "pt3dclear",
+                "pt3dinsert",
+                "pt3dremove",
+                "pt3dstyle",
+                "push",
+                "rallbranch",
+                "same",
+                "spine3d",
+                "subtree",
+                "trueparentseg",
+                "uninsert",
+                "wholetree",
+                "x3d",
+                "y3d",
+                "z3d",
+            ]
+        )
         return sorted(attrs)
 
     def __getattr__(self, name):
-        # An unset _sec slot (partial __init__) would route through here
-        # again via _check_alive, recursing. Surface AttributeError
-        # directly in that case.
+        # An unset _sec slot (partial __init__) would recurse through
+        # _check_alive; raise AttributeError directly instead.
         try:
             object.__getattribute__(self, "_sec")
         except AttributeError:
@@ -949,8 +955,8 @@ class Section:
         from .api import _nrn_mechanism_insert, _nrn_symbol
         from .mechanism import DensityMechanism
 
-        # Direct-C path (no sec= push): guard explicitly. Inserting into a
-        # section freed through HOC SIGSEGVs the core.
+        # Direct-C path (no sec= push): inserting into a section freed through
+        # HOC SIGSEGVs the core.
         self._check_alive()
         if isinstance(mechanism, DensityMechanism):
             mechanism = mechanism.name
@@ -962,12 +968,13 @@ class Section:
         mech_symbol = _nrn_symbol(mechanism_bytes)
 
         if not mech_symbol:
-            # Enumerate insertable mechanisms from the cached top-level
-            # symbol table so the user can spot a typo.
+            # List insertable mechanisms so a typo is easy to spot.
             from . import NEURON
             from .api import TYPES
+
             available = sorted(
-                name for name, (sym_type, _) in NEURON()._top_level.items()
+                name
+                for name, (sym_type, _) in NEURON()._top_level.items()
                 if sym_type == TYPES.MECHANISM
             )
             hint = ", ".join(available) if available else "(none — run nrnivmodl)"
@@ -984,11 +991,9 @@ class Section:
     def uninsert(self, mechanism):
         """Remove a previously inserted mechanism.
 
-        Note: ``insert()`` calls the C API directly (``nrn_mechanism_insert``),
-        but ``uninsert()`` routes through the HOC ``uninsert`` statement
-        because there is no symmetric ``nrn_mechanism_uninsert`` in
-        ``neuronapi.h`` (gap-8, CLOSED via this HOC fallback). The HOC
-        path is correct — just slightly higher-overhead than insert.
+        Raises ``ValueError`` if the mechanism is not inserted. Routes through
+        the HOC ``uninsert`` statement because ``neuronapi.h`` has no
+        ``nrn_mechanism_uninsert`` (gap-8).
         """
         from .mechanism import DensityMechanism
 
@@ -1004,20 +1009,15 @@ class Section:
     def _get_inserted_mechs(self):
         """Return the cached list of mechanism names inserted on this section.
 
-        WHY: Segment.__iter__ used to call ismembrane(name) for every
-        density mechanism on every iteration — an N×M HOC roundtrip
-        where M = total registered mechs.
-        INVALIDATES: local insert()/uninsert()/nseg-set by setting the slot
-        back to None, plus cross-wrapper/HOC mutations through the global
-        model epoch. Kept on the Section instance (not class-level)
-        because the inserted-mech set is per-section state, but multiple
-        Python wrappers can still alias the same native Section*.
+        WHY: avoids an ismembrane call per mechanism per Segment iteration
+        (N x M HOC round trips, M = registered mechanisms).
+        INVALIDATES: local insert()/uninsert()/nseg-set reset the slot to None;
+        HOC-side mutations and inserts through another wrapper of the same
+        native Section* are caught by the global model epoch. The cache is
+        per Section wrapper.
 
-        The slot may also be entirely unset on non-owning wrappers
-        produced by `_from_ptr` — those skip the lazy-slot init in the
-        allsec() hot path. Use object.__getattribute__ to bypass the
-        __getattr__/__repr__ cycle described in Section.cell(); treat
-        an unset slot as the conceptual None.
+        The slot can be unset on wrappers from `_from_ptr`. Read it with
+        object.__getattribute__ (see Section.cell()) and treat unset as None.
         """
         try:
             cached = object.__getattribute__(self, "_inserted_mechs")
@@ -1027,12 +1027,9 @@ class Section:
 
         epoch = _model_epoch()
         if cached is not None:
-            # A HOC-side insert/uninsert (n("insert pas")) does not run the
-            # local Python invalidation, and a direct insert through a different
-            # wrapper only clears that wrapper's slot. Also require the cache to
-            # be from the current model epoch.
-            # The epoch slot may be unset on _from_ptr wrappers — treat that as
-            # stale.
+            # HOC-side inserts and inserts through another wrapper skip local
+            # invalidation, so also require the current model epoch (see
+            # _MODEL_EPOCH in __init__.py). An unset epoch slot counts as stale.
             try:
                 built = object.__getattribute__(self, "_inserted_mechs_epoch")
             except AttributeError:
@@ -1070,9 +1067,8 @@ class Section:
         return raw
 
     def __repr__(self):
-        # name() is already cell-qualified (returns "<cell>.<raw>" when owned),
-        # so prefixing the cell again would produce "<cell>.<cell>.<raw>".
-        # Real NEURON prints the single cell-qualified name.
+        # name() is already cell-qualified; prefixing again would give
+        # "<cell>.<cell>.<raw>". Real NEURON prints the single qualified name.
         if not _SECTION_IS_ACTIVE(self._sec):
             return "<deleted section>"
         return self.name()
@@ -1099,14 +1095,11 @@ class Section:
     @nseg.setter
     def nseg(self, value):
         self._check_alive()
-        # NEURON's hard limit is 32767 (NSEG_MAX in cabcode.cpp). The C
-        # API prints a warning and silently coerces to 1 on overflow,
-        # which is a footgun — match real NEURON's Python wrapper and
-        # raise instead.
-        # numbers.Integral, not int: numpy.int64/int32/uint* are NOT int
-        # subclasses but are everywhere in model-building loops, and real
-        # NEURON accepts them. bool is Integral too (True -> nseg 1), matching
-        # real NEURON.
+        # NSEG_MAX is 32767 (cabcode.cpp). The C API prints a warning and
+        # coerces to 1 on overflow; raise instead, as real NEURON's wrapper does.
+        # numbers.Integral, not int: numpy integer types are not int subclasses
+        # but real NEURON accepts them. bool is Integral too (True -> nseg 1),
+        # as in real NEURON.
         import numbers
 
         if not isinstance(value, numbers.Integral) or value <= 0 or value > 32767:
@@ -1116,22 +1109,17 @@ class Section:
         from .api import _nrn_nseg_set
 
         _nrn_nseg_set(self._sec, int(value))
-        # Staleness is tracked via NEURON's own diam_changed /
-        # structure_change_cnt globals (see api.get_topology_version) —
-        # nrn_nseg_set already flips diam_changed, so CachedSegment
-        # instances will detect this without a Python-side counter.
+        # nrn_nseg_set flips diam_changed, which CachedSegment watches
+        # (api.get_topology_version).
         self._inserted_mechs = None
 
     def cell(self):
         """Return the cell object owning this section, or None.
 
-        Uses object.__getattribute__ to avoid the __getattr__ recursion path
-        that fires for unset slots on non-owning wrappers produced by _from_ptr.
+        An unset slot (wrappers from _from_ptr) means no cell. Uses
+        object.__getattribute__ so the unset read does not recurse through
+        __getattr__.
         """
-        # Non-owning wrappers from _from_ptr leave _cell unset to save
-        # a slot write on the allsec() hot path. An unset slot is the
-        # conceptual "no cell binding," identical to the explicit None
-        # written by the owning __init__.
         try:
             cell_ref = object.__getattribute__(self, "_cell")
         except AttributeError:
@@ -1152,10 +1140,9 @@ class Section:
         self._check_alive()
         from .api import _nrn_section_length_set
 
-        # `value <= 0` lets NaN through (any comparison with NaN is False),
-        # and `inf` would also pass a naive `> 0` check. Reject both
-        # explicitly to match real NEURON's wrapper.
+        # NaN passes `value <= 0` and inf passes `> 0`; reject both explicitly.
         import math
+
         if not math.isfinite(value) or value <= 0:
             raise ValueError("L must be > 0.")
         _nrn_section_length_set(self._sec, value)
@@ -1170,12 +1157,11 @@ class Section:
     @Ra.setter
     def Ra(self, value):
         self._check_alive()
-        # The C API at neuronapi.cpp:115 has a pending "ensure val > 0"
-        # note and accepts anything. Real NEURON's Python wrapper
-        # validates at nrnpy_nrn.cpp:2065-2071. Match that contract here.
-        # NaN slips past `value <= 0` (NaN comparisons are all False) and
-        # `inf` passes `> 0` — reject both explicitly.
+        # The C API (neuronapi.cpp:115) accepts anything, with a pending
+        # "ensure val > 0" note. Real NEURON's wrapper validates
+        # (nrnpy_nrn.cpp:2065-2071); match it. NaN and inf need explicit checks.
         import math
+
         if not math.isfinite(value) or value <= 0:
             raise ValueError("Ra must be > 0.")
         from .api import _nrn_section_Ra_set
@@ -1252,15 +1238,14 @@ class Section:
             parent_x = 1
         if not isinstance(parent, Section):
             raise TypeError(f"parent must be a Section, got {type(parent).__name__}")
-        # Direct-C path: a deleted endpoint lets a C++ exception cross ctypes and
-        # abort. Guard both sections explicitly.
+        # Direct-C path: a deleted endpoint lets a C++ exception cross ctypes
+        # and abort.
         self._check_alive()
         parent._check_alive()
         if self._sec == parent._sec:
             raise ValueError("cannot connect a section to itself")
-        # Validate before the C call. nrn_section_connect raises an
-        # uncaught C++ exception on out-of-range positions, which
-        # std::terminate's the process rather than surfacing through ctypes.
+        # Validate first: nrn_section_connect throws on out-of-range positions,
+        # and the uncaught C++ exception std::terminate's the process.
         if not (0.0 <= float(parent_x) <= 1.0):
             raise ValueError(f"parent_x must be in [0, 1], got {parent_x}")
         if float(child_x) not in (0.0, 1.0):
@@ -1324,7 +1309,7 @@ class Section:
     def hname(self):
         """Return the HOC section name.
 
-        In myneuron this delegates to name() — both call n.secname(). Real
+        In myneuron this delegates to name(); both call n.secname(). Real
         NEURON distinguishes the two for cell-owned sections (hname() returns
         the qualified HOC path); this implementation does not.
         """
@@ -1337,12 +1322,12 @@ class Section:
         into this section through the cable equation. A section connected at its
         parent's oriented beginning (``nrn_at_beginning``: the child's
         connection position equals the parent's orientation) sits at the same
-        node as that parent, so it is skipped and the walk continues UP the
-        ancestor chain until a section is NOT at its parent's beginning — that
-        parent is the true parent. This is an ancestor walk, not a single hop:
-        mirrors NEURON's ``nrn_trueparent`` / ``pysec_trueparentseg``
-        (cabcode.cpp:1577, nrnpy_nrn.cpp:1096). The earlier one-hop version
-        diverged for multi-level 0-connected chains.
+        node as that parent, so it is skipped and the walk continues up the
+        ancestors until a section is not at its parent's beginning; that
+        parent is the true parent. This is an ancestor walk, not a single hop
+        (it differs from one hop for multi-level 0-connected chains). Mirrors
+        NEURON's ``nrn_trueparent`` / ``pysec_trueparentseg`` (cabcode.cpp:1577,
+        nrnpy_nrn.cpp:1096).
         """
         from . import NEURON
 
@@ -1365,6 +1350,7 @@ class Section:
     def spine3d(self, i):
         """Return spine flag at 3D point i."""
         from . import NEURON
+
         return int(NEURON().spine3d(i, sec=self))
 
     def disconnect(self):
@@ -1374,17 +1360,15 @@ class Section:
         NEURON()("disconnect()", sec=self)
 
     def __del__(self):
-        # Avoid errors during Python shutdown
+        # Skip during interpreter shutdown.
         if (
             getattr(sys, "meta_path", None) is None
             or getattr(sys, "modules", None) is None
         ):
             return
-        # __init__ may have raised before setting _pynative / _sec (e.g. a
-        # name-validation error in _nrn_section_new). With __slots__,
-        # reading an unset slot routes through __getattr__, which calls
-        # _check_alive() and recurses — bypass __getattr__ by going
-        # straight to the slot descriptor.
+        # __init__ may have raised before setting the slots. An unset-slot read
+        # recurses through __getattr__ and _check_alive, so go straight to the
+        # slot descriptor.
         try:
             pynative = object.__getattribute__(self, "_pynative")
             sec_ptr = object.__getattribute__(self, "_sec")
@@ -1398,14 +1382,13 @@ class Section:
 
             from . import n
 
-            # Pop via HOC `pop_section()` rather than the C
-            # `nrn_section_pop`. The C API calls chk_access first, which
-            # errors with "Accessing a deleted section" because delete_section
-            # already invalidated the top of the stack. HOC's pop_section
-            # bypasses that check (cabcode.cpp:2165) — without it, every
-            # __del__ leaks one section-stack slot and the stack overflows
-            # at N~200 (NSECSTACK in cabcode.cpp:73). Regression coverage and
-            # closure history are in KNOWN_GAPS.md's stack-leak section.
+            # Pop via HOC `pop_section()`, not the C `nrn_section_pop`. The C
+            # API calls chk_access first, which errors with "Accessing a
+            # deleted section" because delete_section already invalidated the
+            # top of the stack. HOC's pop_section skips that check
+            # (cabcode.cpp:2165). Without it every __del__ leaks one
+            # section-stack slot and the stack overflows at ~200 (NSECSTACK,
+            # cabcode.cpp:73). See the stack-leak section of KNOWN_GAPS.md.
             _nrn_section_push(sec_ptr)
             n.delete_section()
             n.pop_section()
@@ -1445,7 +1428,9 @@ class Section:
                         # Strip mechanism suffix for display name
                         vname = var.name()
                         suffix = f"_{mname}"
-                        short = vname[: -len(suffix)] if vname.endswith(suffix) else vname
+                        short = (
+                            vname[: -len(suffix)] if vname.endswith(suffix) else vname
+                        )
                         density_mechs[mname].setdefault(short, []).append(var[0])
                     suffix = f"_{mname}"
                     for full_name in mech._random_names():
@@ -1556,6 +1541,7 @@ class Section:
 
 # ── CachedSegment ─────────────────────────────────────────────────────────────
 
+
 class CachedSegment:
     """Convenience wrapper that caches ``c_double *`` pointers for a Segment.
 
@@ -1563,11 +1549,9 @@ class CachedSegment:
     over cached range-variable pointers, falling back to the underlying
     Segment for methods (``cs.area()``) and non-range attributes.
 
-    Note: ``cs.v`` is **not** measurably faster than ``seg.v`` because
-    Python's attribute-access overhead dominates the ctypes call this
-    avoids. For tight loops, call ``seg.ptr('v')`` once and read
-    ``ptr[0]`` inline — that path is roughly 15x faster and beats
-    real NEURON's CPython extension.
+    ``cs.v`` is not measurably faster than ``seg.v``: Python attribute-access
+    overhead dominates the ctypes call it avoids. For tight loops, call
+    ``seg.ptr('v')`` once and read ``ptr[0]`` inline (roughly 15x faster).
 
     Staleness: the snapshot is taken at construction. If ``sec.nseg``
     changes (or the section is otherwise reallocated), the next access
@@ -1588,19 +1572,17 @@ class CachedSegment:
             raise TypeError(f"expected Segment, got {type(segment).__name__}")
         object.__setattr__(self, "_seg", segment)
         object.__setattr__(self, "_ptrs", {})
-        # Snapshot NEURON's internal staleness counters (diam_changed +
-        # structure_change_cnt). Comparing the snapshot to the live
-        # counters detects any change to topology/diameter from any
-        # source — HOC code, real NEURON's Python extension, or external
-        # models that call nrn_section_new directly.
+        # Snapshot NEURON's staleness counters (diam_changed +
+        # structure_change_cnt); a mismatch detects a topology or diameter
+        # change from any source (HOC, real NEURON, nrn_section_new callers).
         from .api import get_topology_version
+
         object.__setattr__(self, "_topo_ver_at_cache", get_topology_version())
-        # ALSO snapshot nseg directly. The diam_changed/structure_change_cnt
-        # counters are updated lazily — they do NOT move when nseg= reallocates
-        # the node array or delete_section() frees it *before the first
-        # finitialize*, so the counters alone would serve a dangling pointer in
-        # that window. nseg reflects the reallocation immediately,
-        # and reading it via the property re-checks native liveness.
+        # Also snapshot nseg: the counters move lazily and do not change when
+        # nseg= reallocates the node array or delete_section() frees it before
+        # the first finitialize, so they alone would serve a dangling pointer.
+        # nseg reflects the reallocation immediately, and the property read
+        # re-checks native liveness.
         object.__setattr__(self, "_nseg_at_cache", segment._sec.nseg)
 
     @property
@@ -1612,18 +1594,15 @@ class CachedSegment:
         return self._seg.sec
 
     def _check_topology(self):
-        # nseg first: reading it via the property calls Section._check_alive
-        # (native is_active), so a section deleted through HOC raises here, and
-        # a comparison mismatch catches an nseg reallocation that the lazy
-        # diam/structure counters miss before the first finitialize.
+        # nseg first (see __init__): the property read also raises for a
+        # section deleted through HOC.
         if self._seg._sec.nseg != self._nseg_at_cache:
             raise RuntimeError(
-                "CachedSegment is stale: nseg changed since cache. "
-                "Call refresh()."
+                "CachedSegment is stale: nseg changed since cache. " "Call refresh()."
             )
-        # Then the internal counters: catch diam/topology changes from any
-        # source (HOC, real NEURON's extension, external nrn_section_new).
+        # Then the counters.
         from .api import get_topology_version
+
         if get_topology_version() != self._topo_ver_at_cache:
             raise RuntimeError(
                 "CachedSegment is stale: topology or diameter changed "
@@ -1639,17 +1618,18 @@ class CachedSegment:
         if info is None:
             return None
         sym, sym_type, is_array, _ = info
-        # Only scalar range variables are addressable via
-        # nrn_rangevar_push. Array range vars and ion globals fall through.
+        # Only scalar range variables are addressable via nrn_rangevar_push.
         from .api import TYPES
+
         if sym_type != TYPES.RANGEVAR or is_array:
             return None
         from .api import _nrn_rangevar_push, _nrn_double_ptr_pop
+
         try:
             _nrn_rangevar_push(sym, self._seg.sec._sec, ctypes.c_double(self._seg.x))
             raw = _nrn_double_ptr_pop()
         except Exception:
-            # Falls back to slow-path getattr on push failure — intentional silent degradation.
+            # Intentional silent degradation: fall back to the slow getattr path.
             return None
         if not raw:
             return None
@@ -1658,8 +1638,7 @@ class CachedSegment:
         return ptr
 
     def __getattr__(self, name):
-        # Only called when normal attribute lookup misses, so the
-        # @property and __slots__ entries are handled before reaching here.
+        # Runs only when normal lookup misses (properties and slots come first).
         if name.startswith("_"):
             raise AttributeError(name)
         self._check_topology()
@@ -1683,6 +1662,7 @@ class CachedSegment:
         """Re-cache pointers after an nseg or topology change."""
         object.__setattr__(self, "_ptrs", {})
         from .api import get_topology_version
+
         object.__setattr__(self, "_topo_ver_at_cache", get_topology_version())
         object.__setattr__(self, "_nseg_at_cache", self._seg._sec.nseg)
 

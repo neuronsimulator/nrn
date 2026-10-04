@@ -223,7 +223,6 @@ def _check_for_intel_openmp() -> None:
 _check_for_intel_openmp()
 
 
-
 # As a workaround to importing doc at neuron import time
 # (which leads to chicken and egg issues on some platforms)
 # define a dummy help function which imports doc,

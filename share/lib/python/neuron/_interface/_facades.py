@@ -69,8 +69,11 @@ def install(interface, embedded):
             f"{', '.join(present)} already imported; the legacy NEURON extension "
             "cannot share a process with this interface"
         )
-    modules = (_hoc_module(interface.h), _nrn_module(),
-               types.ModuleType("_neuron_section"))
+    modules = (
+        _hoc_module(interface.h),
+        _nrn_module(),
+        types.ModuleType("_neuron_section"),
+    )
     for name, module in zip(_NAMES, modules):
         sys.modules[name] = module
     sys.modules["neuron.hoc"] = modules[0]

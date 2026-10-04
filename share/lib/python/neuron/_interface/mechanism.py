@@ -1,7 +1,6 @@
 """Mechanism, DensityMechanism, and RangeVar wrappers for mechanism access."""
-# Hot-path API names hoisted to module scope; see sections.py for the
-# matching note. The deferred `from .api import` inside __getattr__ was
-# costing ~50% of seg.hh.gnabar time in importlib bookkeeping.
+# Hot-path API names hoisted to module scope (see the note in sections.py):
+# a deferred `from .api import` costs ~50% of seg.hh.gnabar time.
 from .api import (
     _nrn_rangevar_get as _RANGEVAR_GET,
     _nrn_rangevar_set as _RANGEVAR_SET,
@@ -16,11 +15,9 @@ from .api import (
 _SKIP_MECHS = frozenset({"morphology", "capacitance"})
 
 
-# The model-mutation epoch lives in the package __init__, which
-# cannot be imported at this module's top (circular). Bind it lazily on first use
-# and cache the reference, so the hot seg.<mech>.<var> read pays a call rather
-# than a per-read `from . import` — the same importlib overhead the note above
-# removed for the .api names.
+# The model epoch lives in the package __init__, which cannot be imported at
+# module top (circular). Bind lazily and cache, so the hot read avoids a
+# per-read `from . import`.
 _MODEL_EPOCH_FN = None
 
 
@@ -28,6 +25,7 @@ def _model_epoch_now():
     global _MODEL_EPOCH_FN
     if _MODEL_EPOCH_FN is None:
         from . import _model_epoch
+
         _MODEL_EPOCH_FN = _model_epoch
     return _MODEL_EPOCH_FN()
 
@@ -37,16 +35,13 @@ def _model_epoch_now():
 # where attr_name is the unsuffixed user-facing name ('gnabar') and
 # full_name is the resolved HOC symbol ('gnabar_hh').
 #
-# WHY: Mechanism.__getattr__ previously did encode + nrn_symbol +
-# nrn_symbol_type on every `seg.hh.gnabar` read. Real NEURON keeps the
-# equivalent pmech_types/rangevars_ Python dicts at nrnpy_nrn.cpp:3146-3155.
-# Combined with the Mechanism instance cache on Segment, this reduced
-# seg.hh.gnabar from ~10x+ overhead to ~2-3x (see
-# benchmarks/python/canonical_constants.py for current figures).
-# INVALIDATES: never. Range-var symbols in the global HOC symbol table
-# never move once registered (mod files load before any user code runs;
-# subsequent nrn_load_dll adds new mechs but doesn't disturb existing
-# entries).
+# WHY: avoids encode + nrn_symbol + nrn_symbol_type on every `seg.hh.gnabar`
+# read. Same approach as sections._SYMBOL_INFO_CACHE (real NEURON keeps the
+# equivalent pmech_types/rangevars_ dicts at nrnpy_nrn.cpp:3146-3155). With the
+# Mechanism instance cache on Segment this takes seg.hh.gnabar from ~10x+
+# overhead to ~2-3x (current figures: benchmarks/python/canonical_constants.py).
+# INVALIDATES: never. Range-var symbols never move once registered; a later
+# nrn_load_dll adds mechanisms without disturbing existing entries.
 _MECH_ATTR_CACHE = {}
 
 
@@ -55,11 +50,9 @@ def _all_density_mechanism_names():
     excluding morphology and capacitance (matching real NEURON's iteration
     behavior).
 
-    Intentionally not cached at the module level: nrn_load_dll() can add
-    new type-311 symbols at runtime (see tests/regression/test_mod_compilation
-    test_custom_mechanism_iteration), and the per-Section cache in
-    Section._get_inserted_mechs already absorbs the bulk of the cost on
-    the hot path.
+    Not cached: nrn_load_dll() can add type-311 symbols at runtime (see
+    tests/regression/test_mod_compilation test_custom_mechanism_iteration).
+    Section._get_inserted_mechs caches the hot path.
     """
     from .utils import list_functions
     from .api import TYPES
@@ -146,10 +139,8 @@ class Mechanism:
         self._seg = seg
         self._name = name
         self._is_ion = name.endswith("_ion")
-        # Model epoch at which this wrapper was validated as inserted (its
-        # creator in Segment.__getattr__ checked membrane presence). A later
-        # HOC/Python mutation bumps the epoch; __getattr__ then re-validates
-        # once.
+        # Model epoch at which Segment.__getattr__ validated this wrapper as
+        # inserted. A later mutation bumps the epoch and __getattr__ revalidates.
         self._epoch = _model_epoch_now()
 
     def name(self):
@@ -219,19 +210,16 @@ class Mechanism:
 
     def __getattr__(self, name):
         """Resolve unsuffixed attribute name to a range variable read or an NMODL function wrapper."""
-        # HOC can delete the host section while this Mechanism is held.
-        # Guard before dereferencing freed Section*/node storage. Dunder
-        # probes (copy/pickle) must still raise AttributeError without
-        # touching liveness on a held wrapper.
+        # HOC can delete the host section while this Mechanism is held; check
+        # before touching freed Section*/node storage. Dunder probes
+        # (copy/pickle) skip the check and raise AttributeError as usual.
         if not (name.startswith("__") and name.endswith("__")):
             self._seg._sec._check_alive()
-            # A mechanism uninserted while this wrapper is held keeps the section
-            # alive but frees its prop; reading a range var then SIGABRTs where
-            # real NEURON raises ReferenceError. Re-validate only
-            # when the model epoch changed since this wrapper was validated — a
-            # cheap int compare on the hot read path. has_membrane (one
-            # ismembrane) is paid once per mechanism across a mutation boundary,
-            # not per read. Ions are skipped (not tracked as insertable).
+            # An uninserted mechanism leaves the section alive but frees its
+            # prop, so a range-var read SIGABRTs where real NEURON raises
+            # ReferenceError. Revalidate only when the model epoch changed (a
+            # cheap int compare); has_membrane is paid once per mutation
+            # boundary, not per read. Ions are skipped.
             ep = _model_epoch_now()
             if ep != self._epoch:
                 if not self._is_ion and not self._seg._sec.has_membrane(self._name):
@@ -250,13 +238,10 @@ class Mechanism:
 
             sym = _NRN_SYMBOL(full.encode("utf-8"))
             if sym and _is_pointer_rangevar(full, sym):
-                _pointer_rangevar_get(self._seg._sec, self._seg._x, full)  # raises if unset
+                _pointer_rangevar_get(
+                    self._seg._sec, self._seg._x, full
+                )  # raises if unset
             return NrnRangeVarRef(self._seg._sec, self._seg._x, full)
-        # Per-mechanism symbol cache: keyed by mech name, then by attr name.
-        # Range-variable Symbol* pointers are global HOC state — once registered
-        # they never move — so caching is safe across all Mechanism instances of
-        # the same mechanism type. Saves the encode/nrn_symbol/nrn_symbol_type
-        # chain on each warm hit.
         cache = _MECH_ATTR_CACHE.get(self._name)
         if cache is None:
             cache = {}
@@ -277,11 +262,10 @@ class Mechanism:
                         f"NMODL RANDOM variable '{full_name}' is no longer live"
                     )
                 return wrapped
-            # FUN_BLTIN entries are intentionally not cached: each call wraps
-            # a new closure. Fall through to rebuild it below.
-            # TODO(gap-46): if seg.hh.rates(v)-style NMODL-function calls ever
-            # become a bottleneck, cache the (setdata, fn) pair keyed on
-            # (mech, name) instead of re-resolving each call (KNOWN_GAPS gap-46).
+            # FUN_BLTIN entries are not cached: each call wraps a new closure.
+            # Fall through to rebuild it below.
+            # TODO(gap-46): if seg.hh.rates(v)-style calls become a bottleneck,
+            # cache the (setdata, fn) pair keyed on (mech, name).
 
         # Map unsuffixed name to the suffixed range variable.
         # For ions: "ena" → "ena" (no suffix)
@@ -298,7 +282,7 @@ class Mechanism:
                 size = _array_length(full_name)
                 if size:
                     # seg.mech.c[i]: the scalar getter throws inside the core
-                    # for an array variable. Never cached as a scalar.
+                    # for an array variable, so never cache it as a scalar.
                     from .sections import _ArrayRangeVar
 
                     return _ArrayRangeVar(self._seg._sec, self._seg._x, full_name, size)
@@ -306,17 +290,17 @@ class Mechanism:
 
                 if _is_pointer_rangevar(full_name, sym):
                     # Never cached: the fast path would read it unchecked.
-                    return _pointer_rangevar_get(self._seg._sec, self._seg._x, full_name)
+                    return _pointer_rangevar_get(
+                        self._seg._sec, self._seg._x, full_name
+                    )
                 cache[name] = (full_name, sym, sym_type)
                 return _RANGEVAR_GET(sym, self._seg._sec._sec, self._seg._x)
             if sym_type == _TYPES.FUN_BLTIN and not self._is_ion:
-                # NMODL PROCEDURE and FUNCTION blocks both compile to
-                # FUN_BLTIN=280 in the HOC symbol table (not PROCEDURE=271,
-                # which is HOC-only `proc`). HOC name is `<name>_<mech>`.
-                # nmodl emits a per-mechanism setdata helper; the function
-                # needs the mechanism bound to a segment before the call.
-                # Wrap so the caller uses hh.rates(v) instead of the two-step
-                # setdata_hh(x, sec=sec) + rates_hh(sec=sec).
+                # NMODL PROCEDURE and FUNCTION both compile to FUN_BLTIN (280),
+                # not PROCEDURE (271, HOC-only `proc`); the HOC name is
+                # `<name>_<mech>`. The function needs its mechanism bound to a
+                # segment first via nmodl's setdata_<mech>, so wrap both:
+                # hh.rates(v) instead of setdata_hh(x, sec=sec) + rates_hh(sec=sec).
                 seg = self._seg
                 mech = self._name
                 qualified = f"{mech}.{name}"
@@ -338,9 +322,7 @@ class Mechanism:
                     f"NEURON mechanism function: {qualified}()",
                 )
 
-            # RANGEOBJ has no stock symbol to probe at import time. Let the
-            # fail-closed public wrapper validate an otherwise-unknown symbol,
-            # then cache the runtime code and the Symbol* like a RANGEVAR.
+            # RANGEOBJ: see api.TypeCodes.record_rangeobj. Cached like a RANGEVAR.
             if _TYPES.RANGEOBJ is None or sym_type == _TYPES.RANGEOBJ:
                 from .utils import _try_wrap_density_nmodlrandom
 
@@ -351,9 +333,7 @@ class Mechanism:
                     cache[name] = (full_name, sym, _TYPES.RANGEOBJ)
                     return wrapped
 
-        raise AttributeError(
-            f"'{self._name}' mechanism has no variable '{name}'"
-        )
+        raise AttributeError(f"'{self._name}' mechanism has no variable '{name}'")
 
     def _func_names(self):
         """Return list of NMODL PROCEDURE/FUNCTION names exposed by this mech."""
@@ -367,6 +347,7 @@ class Mechanism:
         skip = {f"setdata_{self._name}"}
         names = []
         from .api import TYPES
+
         for sym_name, (type_, _) in list_functions().items():
             if (
                 type_ == TYPES.FUN_BLTIN
@@ -398,8 +379,8 @@ class Mechanism:
         if not sym:
             raise NameError("no such density POINTER: %s" % target)
 
-        # Prepare every fallible Python value before pushing. The C API consumes
-        # the source handle on both success and failure.
+        # Fallible values are prepared before pushing; the C API consumes the
+        # source handle on success and failure.
         err = ctypes.create_string_buffer(_ERR_BUF_SIZE)
         src_ref._push()
         rc = _nrn_setpointer_pop(
@@ -429,8 +410,8 @@ class Mechanism:
             super().__setattr__(name, value)
             return
 
-        # A range-variable write below dereferences
-        # the host section; raise cleanly if it was deleted through HOC.
+        # The write below dereferences the host section; raise cleanly if HOC
+        # deleted it.
         self._seg._sec._check_alive()
         cache = _MECH_ATTR_CACHE.get(self._name)
         if cache is not None:
@@ -486,9 +467,7 @@ class Mechanism:
                     f"NMODL RANDOM variable '{full_name}' is not assignable"
                 )
 
-        raise AttributeError(
-            f"'{self._name}' mechanism has no variable '{name}'"
-        )
+        raise AttributeError(f"'{self._name}' mechanism has no variable '{name}'")
 
     def __iter__(self):
         """Iterate over RangeVar objects for this mechanism."""

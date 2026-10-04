@@ -5,9 +5,10 @@ from ._docs import get_doc
 
 
 class FuncWrapper:
-    # __doc__ is a property backed by _doc, never both a class variable and
-    # a same-named slot. Deferring lookup avoids help I/O during core probes.
-    # FuncWrapper.__doc__ on the class itself is the property, not help text.
+    # __doc__ is a property backed by the _doc slot (a class variable and a
+    # same-named slot would clash). Lookup is deferred to avoid help I/O
+    # during core probes. FuncWrapper.__doc__ on the class is the property
+    # object, not help text.
     __slots__ = ("_func", "_name", "_doc", "_doc_key", "_fallback_doc")
 
     def __init__(self, func, name, doc="", *, doc_key=None):
@@ -79,12 +80,10 @@ def _list_symbol_table(symtab):
 
 # Object method-table cache, keyed by HOC class name.
 #
-# WHY: Real NEURON caches the equivalent per-class method table in its
-# CPython type objects. We hit the same lookup on every Object
-# construction; walking the symbol table each time was the single largest
-# cost in IClamp/Vector creation in the object-construction profile. The
-# canonical benchmark no longer publishes constructor ratios, so keep the
-# invalidation contract here and the historical numbers in benchmark results.
+# WHY: real NEURON caches the equivalent table in its CPython type objects.
+# Walking the symbol table on every Object construction was the largest
+# cost in IClamp/Vector creation. Historical numbers:
+# benchmarks/README.md#historical-implementation-measurements.
 # INVALIDATES: only the late-definition case below. An already-loaded
 # template can't be redefined (NEURON raises an execerror on redefinition),
 # so its method-table entry is stable for the process lifetime.
@@ -159,26 +158,28 @@ def _is_python_object_arg(value):
     # Preserve numeric coercion for scalar protocols, but not containers
     # (notably singleton numpy arrays, which float() can otherwise collapse).
     kind = type(value)
-    return (isinstance(value, _PythonObjectArg) or callable(value)
-            or hasattr(kind, "__len__")
-            or not (hasattr(kind, "__float__") or hasattr(kind, "__index__")))
+    return (
+        isinstance(value, _PythonObjectArg)
+        or callable(value)
+        or hasattr(kind, "__len__")
+        or not (hasattr(kind, "__float__") or hasattr(kind, "__index__"))
+    )
 
 
 def _push_args(args, return_rollback=False):
     """Push positional args onto the HOC stack in order.
 
-    Two passes, deliberately. Pass 1 *resolves* every argument into a typed
-    (kind, payload) descriptor — running every conversion that can fail
-    (``float()`` coercion, ``.encode()``, PythonObject wrapping) and
-    raising on a dead Segment section — with **zero** HOC-stack side effects.
-    Pass 2 pushes the validated descriptors, rolling back earlier pushes if
-    a reference's liveness guard rejects its push.
+    Two passes. Pass 1 resolves every argument into a typed (kind, payload)
+    descriptor. It runs every conversion that can fail (``float()``,
+    ``.encode()``, PythonObject wrapping) and raises on a dead Segment
+    section, with no HOC-stack side effects. Pass 2 pushes the descriptors.
+    If a reference's liveness guard rejects its push (liveness can change
+    between passes), the earlier pushes are rolled back.
 
-    Conversions must finish before pushing: a later conversion failure must
-    not orphan earlier operand-stack slots. Repeated leaks can overflow HOC
-    ("Stack too deep"), whose ``neuron::oc::runtime_error`` can cross ctypes
-    and ``std::terminate`` the process. Liveness can still change between
-    passes, so a rejected push must also roll back the preceding pushes.
+    Conversions must finish before pushing, or a failure would orphan
+    operand-stack slots. Repeated leaks overflow HOC ("Stack too deep"),
+    whose ``neuron::oc::runtime_error`` can cross ctypes and
+    ``std::terminate`` the process.
 
     Returns (temp_strs, seg_sec), or (temp_strs, seg_sec, rollback) when
     ``return_rollback`` is true:
@@ -208,7 +209,7 @@ def _push_args(args, return_rollback=False):
     seg_sec = None
     descriptors = []  # (kind, payload); object kinds are borrowed or owned
 
-    # PASS 1 — resolve/validate only, no pushes.
+    # PASS 1: resolve/validate only, no pushes.
     try:
         for arg in args:
             if isinstance(arg, Segment):
@@ -251,14 +252,8 @@ def _push_args(args, return_rollback=False):
                 _nrn_object_unref(payload)
         raise
 
-    # PASS 2 — push the validated descriptors. A ref push (`payload._push()`)
-    # can raise if its liveness guard finds a stale section/host. Entries already pushed
-    # for this call must be rolled back, or they leak on the operand stack and
-    # accumulate into "Stack too deep" over repeated calls. Pop the
-    # already-pushed entries back off, newest first, by their recorded kind — the
-    # descriptors give the exact types, so no generic stack pop is needed. The
-    # failing ref pushed nothing (its guard raises before the push), so `pushed`
-    # counts only completed pushes.
+    # PASS 2: push the validated descriptors. Rollback pops completed
+    # pushes newest-first by recorded kind; the failing ref pushed nothing.
     def rollback(count):
         for kind, payload in reversed(descriptors[:count]):
             if kind == "double":
@@ -329,10 +324,7 @@ def _wrap_owned_object(obj):
         return _owned_pythonobject_to_python(obj)
 
     try:
-        # Use the dynamic class system so popped objects get their proper type.
-        # If the class hasn't been seen yet, mint it now -- this is the path
-        # taken when a HOC function returns an object whose class the user has
-        # never explicitly asked for via n.<ClassName>.
+        # Mint the class if no one has asked for it via n.<ClassName> yet.
         from . import _dynamic_classes
         from .object import Object
 
@@ -341,15 +333,21 @@ def _wrap_owned_object(obj):
             if name == "":
                 cls = Object
             else:
-                cls = type(name, (Object,), {
-                    "__module__": __package__,
-                    "__slots__": (),
-                    "_hoc_class_name": name,
-                })
+                cls = type(
+                    name,
+                    (Object,),
+                    {
+                        "__module__": __package__,
+                        "__slots__": (),
+                        "_hoc_class_name": name,
+                    },
+                )
                 _dynamic_classes[name] = cls
                 from . import object as _obj_mod
+
                 setattr(_obj_mod, name, cls)
                 import sys
+
                 setattr(sys.modules[__package__], name, cls)
     except BaseException:
         _nrn_object_unref(obj)
@@ -360,9 +358,7 @@ def _wrap_owned_object(obj):
 def _try_wrap_density_nmodlrandom(sec, x, sym, sym_type):
     """Return an NMODLRandom wrapper, or None when ``sym`` is not one.
 
-    RANGEOBJ cannot be probed at import time because stock NEURON has no such
-    symbol until a RANDOM-bearing MOD file is loaded. The public adapter fails
-    closed for other symbols, making a successful wrap the runtime type probe.
+    See api.TypeCodes.record_rangeobj for why this is probed at runtime.
     """
     from .api import _nrn_segment_nmodlrandom_get, TYPES
 
@@ -387,13 +383,12 @@ def _try_wrap_point_nmodlrandom(obj, sym, sym_type):
 def _object_pop():
     """Pop the top HOC Object from the stack and return a typed Python wrapper.
 
-    Returns Python ``None`` for a nil HOC object (an uninitialized ``objref``,
-    or an obfunc/method that yields nil — e.g. ``NetCon(None, syn).precell()``,
-    ``section_owner()`` on a non-template section). Real NEURON maps such a nil
-    to Python ``None``, so the everyday ``if x is None`` idiom must not crash.
+    Returns ``None`` for a nil HOC object (an uninitialized ``objref``, or an
+    obfunc/method that yields nil, e.g. ``NetCon(None, syn).precell()``), as
+    real NEURON does.
 
-    The required nil-safe ``nrn_object_pop`` returns an owned reference for a
-    non-nil object. ``_init_from_ptr`` takes ownership of that reference.
+    ``nrn_object_pop`` returns an owned reference for a non-nil object;
+    ``_init_from_ptr`` takes ownership of it.
     """
     from .api import _object_pop_safe
 

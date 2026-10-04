@@ -98,15 +98,11 @@ class _RangeVarPlot(_WrapperPlot):
 
         # matplotlib axes or pyplot (has .plot method)
         if hasattr(graph, "plot"):
-            return graph.plot(
-                xvec.to_python(), yvec.to_python(), *args, **kwargs
-            )
+            return graph.plot(xvec.to_python(), yvec.to_python(), *args, **kwargs)
 
         # bokeh (has .line method)
         if hasattr(graph, "line"):
-            return graph.line(
-                xvec.to_python(), yvec.to_python(), *args, **kwargs
-            )
+            return graph.line(xvec.to_python(), yvec.to_python(), *args, **kwargs)
 
         if str_type_graph == "<class 'matplotlib.figure.Figure'>":
             raise TypeError("plot to a matplotlib axis not a matplotlib figure")
@@ -190,7 +186,7 @@ def _color_for(val, cmap, lo, hi):
     else:
         t = min(max(val, lo), hi)
         c = cmap((t - lo) / rng)
-    # Return hex for consistency with upstream NEURON
+    # Return hex for consistency with real NEURON
     r, g, b = (int(round(255 * v)) for v in c[:3])
     return f"#{r:02x}{g:02x}{b:02x}"
 
@@ -217,13 +213,12 @@ class _PlotShapePlot(_WrapperPlot):
     __slots__ = ()
 
     def _get_plot_data(self):
-        """Return (variable_name, lo, hi, sections) via myneuron's bound
-        C API (nrn_get_plotshape_interface/low/high/varname + allsec).
+        """Return (variable_name, lo, hi, sections) from the C API
+        (nrn_get_plotshape_interface/low/high/varname + allsec).
 
-        Upstream NEURON's get_plotshape_data expects a Python-wrapped HOC
-        object (PyObject capsule) — myneuron stores raw uint64 C pointers,
-        so that code path would misinterpret them. We use the pure C-API
-        route instead.
+        Real NEURON's get_plotshape_data expects a Python-wrapped HOC object
+        (PyObject capsule); myneuron holds raw C pointers and would be
+        misread by it.
         """
         from . import NEURON
         from .api import (
@@ -240,13 +235,11 @@ class _PlotShapePlot(_WrapperPlot):
         hi = float(_nrn_get_plotshape_high(spi))
         varname_raw = _nrn_get_plotshape_varname(spi)
         var_name = varname_raw.decode("utf-8") if varname_raw else None
-        # C-side default string when no variable has been set via ps.variable().
+        # C default when ps.variable() was never called.
         if var_name == "no variable specified":
             var_name = None
-        # Use the PlotShape's own section list when it was constructed with one
-        # (PlotShape(SectionList([...]))); only fall back to all sections when it
-        # has none (the default PlotShape()). Unconditionally using all sections
-        # would silently ignore the selected list.
+        # Honor a section list given at construction (PlotShape(SectionList));
+        # only the default PlotShape() falls back to all sections.
         sl_obj = _nrn_get_plotshape_section_list(spi)
         if sl_obj:
             from .object import SectionList
@@ -264,16 +257,10 @@ class _PlotShapePlot(_WrapperPlot):
 
         var_name, lo, hi, sections = self._get_plot_data()
 
-        # String-based type dispatch: avoids importing optional backends that may
-        # not be installed. Mirrored from neuron/__init__.py:836.
-        is_pyplot = (
-            hasattr(graph, "__name__")
-            and graph.__name__ == "matplotlib.pyplot"
-        )
+        # Same string dispatch as _RangeVarPlot.__call__.
+        is_pyplot = hasattr(graph, "__name__") and graph.__name__ == "matplotlib.pyplot"
         is_figure = str(type(graph)) == "<class 'matplotlib.figure.Figure'>"
-        is_plotly_module = (
-            hasattr(graph, "__name__") and graph.__name__ == "plotly"
-        )
+        is_plotly_module = hasattr(graph, "__name__") and graph.__name__ == "plotly"
 
         if is_plotly_module:
             return self._plot_plotly(sections, var_name, lo, hi, *args, **kwargs)
@@ -287,8 +274,9 @@ class _PlotShapePlot(_WrapperPlot):
             "plotly module."
         )
 
-    def _plot_matplotlib(self, graph, sections, var_name, lo, hi,
-                          line_width=2, cmap=None, **kwargs):
+    def _plot_matplotlib(
+        self, graph, sections, var_name, lo, hi, line_width=2, cmap=None, **kwargs
+    ):
         import matplotlib.pyplot as plt
         from matplotlib import cm
         from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 — registers 3d
@@ -328,7 +316,9 @@ class _PlotShapePlot(_WrapperPlot):
         ax.set_xlim(mids[0] - half, mids[0] + half)
         ax.set_ylim(mids[1] - half, mids[1] + half)
         ax.set_zlim(mids[2] - half, mids[2] + half)
-        ax.set_xlabel("x"); ax.set_ylabel("y"); ax.set_zlabel("z")
+        ax.set_xlabel("x")
+        ax.set_ylabel("y")
+        ax.set_zlabel("z")
         if var_name:
             ax.set_title(f"PlotShape: {var_name}")
         return ax
@@ -342,6 +332,7 @@ class _PlotShapePlot(_WrapperPlot):
 
         if cmap is None:
             from matplotlib import cm as _cm
+
             cmap = _cm.cool
 
         ps = self._data
@@ -360,8 +351,11 @@ class _PlotShapePlot(_WrapperPlot):
                 hover = str(seg) + (f"<br>{val:.3f}" if val is not None else "")
                 traces.append(
                     go.Scatter3d(
-                        x=xs, y=ys, z=zs,
-                        name="", hovertemplate=hover,
+                        x=xs,
+                        y=ys,
+                        z=zs,
+                        name="",
+                        hovertemplate=hover,
                         mode="lines",
                         line=go.scatter3d.Line(color=col, width=w),
                     )

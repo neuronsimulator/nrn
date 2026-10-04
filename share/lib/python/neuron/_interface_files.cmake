@@ -12,5 +12,4 @@ set(NRN_PYTHON_INTERFACE_FILES_LIST
     _interface/object.py
     _interface/plotting.py
     _interface/sections.py
-    _interface/utils.py
-)
+    _interface/utils.py)

@@ -66,10 +66,9 @@ def _ensure_neuronhome():
 
     Mirrors neuron/__init__.py:135-137. libnrniv reads NEURONHOME at
     init time to find stdrun.hoc and the standard HOC library. Without
-    this, `load_file("stdrun.hoc")` fails — which breaks essentially
-    every model that uses `run()` or `finitialize()` via stdrun. We
-    set it as a default only; an existing value (system NEURON, custom
-    install) wins.
+    this, `load_file("stdrun.hoc")` fails, which breaks nearly every
+    model that uses `run()` or `finitialize()` via stdrun. Set only as a
+    default; an existing value (system NEURON, custom install) wins.
     """
     if os.environ.get("NEURONHOME") or os.environ.get("HOC_LIBRARY_PATH"):
         return
@@ -100,10 +99,8 @@ def _nrniv_candidates_from_neuron_wheel():
                 "libnrniv.dll",
             ):
                 candidates.append(libdir / name)
-    # Append fallback locations for the case where `find_spec("neuron")`
-    # points at something other than the pip-installed wheel — e.g. when
-    # `neuron` has been shimmed by an integration harness (the
-    # nrn-myneuron experiment) and its package dir has no `.data/`.
+    # Fallback locations: find_spec("neuron") may resolve to a shim package
+    # that has no `.data/`.
     candidates.extend(_extra_libnrniv_candidates())
     return candidates
 
@@ -120,6 +117,7 @@ def _extra_libnrniv_candidates():
     3. Common system install prefixes used by source builds.
     """
     import site
+
     out = []
     site_dirs = []
     try:
@@ -135,12 +133,12 @@ def _extra_libnrniv_candidates():
     for sp in site_dirs:
         if not isinstance(sp, str):
             continue
-        for name in ("libnrniv.so", "libnrniv.dylib", "nrniv.dll",
-                     "libnrniv.dll"):
+        for name in ("libnrniv.so", "libnrniv.dylib", "nrniv.dll", "libnrniv.dll"):
             out.append(Path(sp) / "neuron" / ".data" / "lib" / name)
 
     try:
         import importlib.metadata as md
+
         dist = md.distribution("neuron")
         for f in dist.files or []:
             if "libnrniv" in str(f):
@@ -162,13 +160,12 @@ _ensure_neuronhome()
 
 
 def _load_cdll_or_raise(*, label, envvar, candidates, mode=None, loader=ctypes.CDLL):
-    """Load a shared library. ``loader`` may be ``ctypes.CDLL`` (releases GIL
-    around each call — fine for most NEURON C API functions) or ``ctypes.PyDLL``
-    (holds GIL — required for libnrniv because HOC calls like ``nrn_load_dll``
-    ultimately invoke libnrnpython's ``nrnpy_reg_mech``, which does
-    ``PyDict_GetItemString`` without acquiring the GIL itself; dropping the
-    GIL around the HOC call segfaults on any mod file with a ``USEION``
-    declaration)."""
+    """Load a shared library.
+
+    Tries ``$envvar``, then ``candidates``, then ``ctypes.util.find_library``.
+    Raises ImportError listing the paths tried. ``loader`` is ``ctypes.CDLL``
+    or ``ctypes.PyDLL``; libnrniv needs PyDLL (see the comment above its load).
+    """
     tried = []
     env_path = os.environ.get(envvar)
     if env_path:
@@ -213,8 +210,11 @@ libmodlreg = _load_cdll_or_raise(
     envvar=_LIBMODLREG_ENV,
     candidates=[
         d / f"libnrn_modlreg_stub{suffix}"
-        for d in _vendored_lib_dirs() for suffix in (".so", ".dylib")
-    ] if _VENDORED else [
+        for d in _vendored_lib_dirs()
+        for suffix in (".so", ".dylib")
+    ]
+    if _VENDORED
+    else [
         *sorted(_bundled_lib_dir.glob("libmodlreg*.so")),
         *sorted(_bundled_lib_dir.glob("libmodlreg*.dylib")),
         _local_lib_dir / "libmodlreg.so",
@@ -223,19 +223,13 @@ libmodlreg = _load_cdll_or_raise(
     mode=_rtld_global,
 )
 
-# Load libnrniv (NEURON core library). Use ctypes.PyDLL so the GIL is held
-# around each libnrniv call. This is necessary because libnrniv functions
-# (most notably nrn_hoc_call executing ``nrn_load_dll(...)``) can call back
-# into libnrnpython's ``nrnpy_reg_mech``, which does ``PyDict_GetItemString``
-# without acquiring the GIL itself. A CDLL load would drop the GIL around
-# each call and segfault the first time a USEION mod file registers.
-#
-# The callback chain is documented:
-#   nrnoc/init.cpp:737  register_mech → nrnpy_reg_mech_p_(mechtype)
+# libnrniv must load as PyDLL so the GIL stays held around every call. HOC
+# calls such as nrn_load_dll reach libnrnpython's nrnpy_reg_mech, which calls
+# PyDict_GetItemString without taking the GIL. Every mod file with USEION
+# (ion_reg -> register_mech) takes this path; CDLL = process crash:
+#   nrnoc/init.cpp:737            register_mech -> nrnpy_reg_mech_p_(mechtype)
 #   nrnpython/nrnpy_nrn.cpp:3092  nrnpy_reg_mech_p_ = nrnpy_reg_mech
-#   nrnpython/nrnpy_nrn.cpp:3125  nrnpy_reg_mech → PyDict_GetItemString
-# So every mod file with USEION (ion_reg → register_mech) traverses this
-# path. CDLL = process crash.
+#   nrnpython/nrnpy_nrn.cpp:3125  nrnpy_reg_mech -> PyDict_GetItemString
 libnrniv = _load_cdll_or_raise(
     label="nrniv",
     envvar=_LIBNRNIV_ENV,
@@ -289,34 +283,32 @@ def _check_nrn_error(ret, err_buf):
         # Callers have already rolled back arguments restored by nothrow.
         # Public component hooks abort in core, without a return slot to pop.
         from . import _raise_pending_callback_exc
+
         _raise_pending_callback_exc()
         msg = err_buf.value.decode("utf-8", errors="replace").strip()
-        raise RuntimeError(f"NEURON error: {msg}" if msg else "NEURON error (no message)")
+        raise RuntimeError(
+            f"NEURON error: {msg}" if msg else "NEURON error (no message)"
+        )
 
 
 #
 # initialize NEURON
 #
-# argv reasoning:
-#   "-nogui"    → default-OFF (opt-IN via MYNEURON_NOGUI=1), matching
-#                 real NEURON's PyInit_hoc which never passes `-nogui`.
-#                 The flag forces Graph.view_count() to 0 even on a
-#                 live display — strictly worse than real NEURON on GUI
-#                 machines. See docs/ARCHITECTURE.md § argv strategy
-#                 for the -nogui / Graph / display interaction.
-#   "-nopython" → pass for an already-populated methods table and for the
-#                 default standalone CFUNCTYPE provider. The former avoids a
-#                 duplicate `class2oc("PythonObject", ...)` registration; the
-#                 latter lets libnrniv register its stub PythonObject before
-#                 myneuron installs Python callbacks. Only the explicit
-#                 `MYNEURON_USE_CFUNCTYPE=0` fallback drops this flag so
-#                 libnrnpython can populate the methods table.
+# argv:
+#   "-nogui"    Opt-in via MYNEURON_NOGUI=1. Real NEURON's PyInit_hoc never
+#               passes it, and it forces Graph.view_count() to 0 even on a
+#               live display. The test suite opts in so PlotShape/plotting
+#               tests are order-independent without a DISPLAY. See
+#               docs/ARCHITECTURE.md#nrn_init.
+#   "-nopython" Passed when the methods table is already populated (avoids a
+#               duplicate class2oc("PythonObject", ...)) and for Option B
+#               (libnrniv registers its stub PythonObject before myneuron
+#               installs callbacks). Only MYNEURON_USE_CFUNCTYPE=0 drops it,
+#               so libnrnpython can populate the methods table.
 
 _methods_populated = False
 try:
-    _methods_sym = ctypes.c_void_p.in_dll(
-        libnrniv, "_ZN6neuron6python7methodsE"
-    )
+    _methods_sym = ctypes.c_void_p.in_dll(libnrniv, "_ZN6neuron6python7methodsE")
     _methods_first_ptr = (ctypes.c_void_p * 1).from_address(
         ctypes.addressof(_methods_sym)
     )[0]
@@ -331,12 +323,14 @@ def _python_version_code():
     # uses MAJOR*10+MINOR, minor >= 10 uses MAJOR*100+MINOR. The encoded
     # value drives `libnrnpython<MAJOR>.<MINOR>.so` selection.
     import sys
+
     major, minor = sys.version_info[:2]
     return major * 100 + minor if minor >= 10 else major * 10 + minor
 
 
 def _libnrnpython_present_next_to_libnrniv():
     import glob
+
     lib_dir = os.path.dirname(libnrniv._name or "")
     if not lib_dir:
         return False
@@ -347,44 +341,34 @@ def _libnrnpython_present_next_to_libnrniv():
 
 
 # --- Methods-table population strategy ----------------------------
-# Three pathways exist for filling neuron::python::methods:
+# Three ways to fill neuron::python::methods (Options A/B/C are defined here;
+# tests and docs/KNOWN_GAPS.md use these letters):
 #
-#   A. already-populated → keep existing pointers (`import neuron`
-#      ran first, or libnrnpython auto-load ran in a prior process)
-#   B. CFUNCTYPE path (default when methods is empty) → don't load
-#      libnrnpython. Keep `-nopython`; libnrniv's `nrnpython_reg()`
-#      (src/nrniv/nrnpy.cpp:253) falls through to the stub
-#      `class2oc("PythonObject", stub_cons, stub_destruct, ...)`
-#      registration. After `nrn_init` we look up the stub symbol,
-#      set `nrnpy_pyobj_sym_`, and install Python-implemented
-#      function pointers into `methods` via `ctypes.CFUNCTYPE`. No
-#      libnrnpython is loaded; the HOC core calls into Python
-#      directly via the C function pointers.
-#   C. libnrnpython-load path (opt-out fallback via
-#      `MYNEURON_USE_CFUNCTYPE=0`) → drop `-nopython`, pre-set
-#      `nrn_is_python_extension`, let libnrniv's standard
-#      `nrnpython_reg → load_nrnpython → nrnpython_reg_real` chain
-#      populate all 29 pointers via libnrnpython's C++ code.
+#   A. Already populated: keep the existing pointers (`import neuron` ran
+#      first, or libnrnpython auto-loaded in a prior process).
+#   B. CFUNCTYPE (default when methods is empty): libnrnpython is not loaded.
+#      With `-nopython`, libnrniv's nrnpython_reg() (src/nrniv/nrnpy.cpp:253)
+#      registers the stub `class2oc("PythonObject", stub_cons, stub_destruct,
+#      ...)`. After `nrn_init` we look up the stub symbol, set
+#      `nrnpy_pyobj_sym_`, and install Python-implemented function pointers
+#      into `methods` via `ctypes.CFUNCTYPE`.
+#   C. libnrnpython load (opt-out via `MYNEURON_USE_CFUNCTYPE=0`): drop
+#      `-nopython`, pre-set `nrn_is_python_extension`, and let libnrniv's
+#      `nrnpython_reg -> load_nrnpython -> nrnpython_reg_real` chain populate
+#      all 29 pointers from libnrnpython's C++ code.
 #
-# Option B avoids loading libnrnpython entirely. After nrn_init registers its
-# no-op PythonObject stub, _install_cfunctype_methods replaces that template's
-# destructor with the matched registry cleanup callback below. Option A/C must
-# never use ctypes payloads: their real C++ destructor requires `new Py2Nrn`.
+# In B, _install_cfunctype_methods replaces the stub template's no-op
+# destructor with a registry cleanup callback. A and C must never use ctypes
+# payloads: their C++ destructor requires `new Py2Nrn`.
 _use_cfunctype = os.environ.get("MYNEURON_USE_CFUNCTYPE", "1") != "0"
 _libnrnpython_available = _libnrnpython_present_next_to_libnrniv()
 
-# Option C activates only when CFUNCTYPE is explicitly disabled AND
-# the libnrnpython sibling exists.
+# C only when CFUNCTYPE is disabled and a libnrnpython sibling exists.
 _use_libnrnpython_load = (
-    not _methods_populated
-    and not _use_cfunctype
-    and _libnrnpython_available
+    not _methods_populated and not _use_cfunctype and _libnrnpython_available
 )
 
-# MYNEURON_NOGUI=1 opts IN to `-nogui` (default OFF, matching real
-# NEURON which never passes the flag — see argv reasoning above). The
-# opt-in is what the test suite uses to preserve no-DISPLAY-friendly
-# behavior for PlotShape/plotting test-order isolation.
+# See the argv notes above.
 _pass_nogui = os.environ.get("MYNEURON_NOGUI", "0") == "1"
 _extra_argv = []
 if _pass_nogui:
@@ -399,14 +383,12 @@ if _use_libnrnpython_load:
         pass
     _nopython_argv = []
 else:
-    # Option A or B: always pass -nopython. For A, libnrnpython's
-    # functions are already in methods; we leave them alone. For B,
-    # the stub PythonObject template gets registered and we install
-    # CFUNCTYPE pointers after nrn_init.
+    # A and B pass -nopython.
     _nopython_argv = [b"-nopython"]
 
 if _VENDORED:
     from ._startup import startup_options
+
     _startup_argv = [arg.encode() for arg in startup_options()]
 else:
     _startup_argv = []
@@ -426,16 +408,11 @@ if ret:
     raise RuntimeError("nrn_init failed with return code %d" % ret)
 
 
-# --- Option B: CFUNCTYPE-based methods table population -----------
+# --- Option B: CFUNCTYPE methods table ----------------------------
 #
-# When `_use_cfunctype` and methods is still empty (i.e. neither
-# Option A nor the libnrnpython-load path ran), install Python-backed
-# callbacks directly into `neuron::python::methods`. The HOC core
-# calls them through C function pointers and never knows the work is
-# happening in Python.
-#
-# Layout we depend on (verified by
-# tests/regression/test_cfunctype_methods_layout.py):
+# Private layouts we depend on. tests/regression/test_cfunctype_methods_layout.py
+# asserts these against NEURON 9 at runtime; if a NEURON bump shifts them,
+# update the constants and re-run it:
 #   Object.u offset           : 8     (oc/hocdec.h:173)
 #   Py2Nrn.po_ offset         : 8     (nrnpython/nrnpy_p2h.cpp:27)
 #   sizeof(Py2Nrn)            : 16
@@ -444,9 +421,6 @@ if ret:
 #   impl_ptrs.pysame          : field 25 -> byte offset 200
 #   Object.ctemplate          : offset 16  (oc/hocdec.h:173)
 #   cTemplate.sym             : offset 0   (oc/hocdec.h:146)
-# Verified against NEURON 9 struct layouts. test_cfunctype_methods_layout.py
-# asserts these at runtime. A NEURON major-version bump may shift them;
-# update these constants and re-run the test.
 _OBJECT_U_OFFSET = 8
 _OBJECT_CTEMPLATE_OFFSET = 16
 _SYMBOL_U_OFFSET = 16
@@ -454,17 +428,15 @@ _CTEMPLATE_DESTRUCTOR_OFFSET = 80
 _PY2NRN_PO_OFFSET = 8
 _PY2NRN_SIZEOF = 16
 _METHODS_HOCCOMMAND_EXEC_OFFSET = 88
-# hpoasgn — HOC writing a Python object's component (`$o1.x = v`). Field 15 of
-# the impl_ptrs struct (nrn/src/nrniv/nrnpy.h) -> offset 15*8 = 120. The struct
-# is a flat array of 8-byte fn pointers, so offset = field_index*8; cross-checked
-# against hoccommand_exec=88, pysame=200, py2n_component=208 below.
+# hpoasgn: HOC writing a Python object's component (`$o1.x = v`). Field 15 of
+# impl_ptrs (nrn/src/nrniv/nrnpy.h). The struct is a flat array of 8-byte
+# function pointers, so offset = field_index * 8 = 120.
 _METHODS_HPOASGN_OFFSET = 120
 _METHODS_PYSAME_OFFSET = 200
-# py2n_component — HOC reading a Python object's component (`x = pyobj.attr`).
-# A probe callback at offset 208 fires from hoc_object_component with
-# nindex=0/isfunc=0 for `$o1.x`; using 216 instead leaves the live slot NULL
-# and causes SIGSEGV. 208 = 0-indexed field 26, right after pysame
-# (field 25 = 200), consistent with the verified field order.
+# py2n_component: HOC reading a Python object's component (`x = pyobj.attr`).
+# Field 26, right after pysame (field 25 = 200). A probe at offset 208 fires
+# from hoc_object_component with nindex=0/isfunc=0 for `$o1.x`; 216 leaves the
+# live slot NULL and SIGSEGVs.
 _METHODS_PY2N_COMPONENT_OFFSET = 208
 
 # HocTopContextManager's five globals. Python method calls can re-enter HOC;
@@ -476,9 +448,7 @@ _hoc_thisobject = ctypes.c_void_p.in_dll(libnrniv, "hoc_thisobject")
 _hoc_objectdata = ctypes.c_void_p.in_dll(libnrniv, "hoc_objectdata")
 _hoc_symlist = ctypes.c_void_p.in_dll(libnrniv, "hoc_symlist")
 _hoc_top_level_data = ctypes.c_void_p.in_dll(libnrniv, "hoc_top_level_data")
-_hoc_top_level_symlist = ctypes.c_void_p.in_dll(
-    libnrniv, "hoc_top_level_symlist"
-)
+_hoc_top_level_symlist = ctypes.c_void_p.in_dll(libnrniv, "hoc_top_level_symlist")
 
 
 def _call_at_top_level(target, args):
@@ -517,6 +487,7 @@ def _install_methods_slot(offset, callback):
     slot.value = ctypes.cast(callback, ctypes.c_void_p).value
     return True
 
+
 # --- Method-return typing (int / bool vs float) ---
 # A built-in class method declared to return an int or bool sets the global
 # hoc_return_type_code just before returning (HocReturnType in oc/code.h:
@@ -550,12 +521,13 @@ class _Py2Nrn(ctypes.Structure):
     # Mirrors `struct Py2Nrn` in nrnpython/nrnpy_p2h.cpp:27. Layout:
     #   int type_      // 4 bytes + 4 padding
     #   PyObject* po_  // 8 bytes, total = 16
-    # The native C++ destructor owns native allocations. Option B instead
-    # stores this ctypes allocation in _PY2NRN_REGISTRY and installs a matched
-    # template destructor that removes the registry entry.
-    _fields_ = [("type_", ctypes.c_int),
-                ("_pad", ctypes.c_int),
-                ("po_", ctypes.c_void_p)]
+    # Option B keeps this ctypes allocation in _PY2NRN_REGISTRY; its template
+    # destructor removes the entry.
+    _fields_ = [
+        ("type_", ctypes.c_int),
+        ("_pad", ctypes.c_int),
+        ("po_", ctypes.c_void_p),
+    ]
 
 
 # Module-level keepalive: every CFUNCTYPE callback must outlive the HOC core.
@@ -579,14 +551,20 @@ def _component_error_pointer(exc):
     _component_error.value = message or b"Python component callback failed"
     return ctypes.addressof(_component_error)
 
-# Optional on dev114: native providers keep their own hooks and ownership.
+
+# Present on the pinned dev115; absent on the dev114 lane, which falls back to
+# the legacy methods-table slots. Native providers keep their own hooks and
+# ownership.
 _nrn_template_set_component_hooks = getattr(
     libnrniv, "nrn_template_set_component_hooks", None
 )
 if _nrn_template_set_component_hooks is not None:
     _nrn_template_set_component_hooks.argtypes = [
-        ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p,
-        ctypes.c_char_p, ctypes.c_size_t,
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+        ctypes.c_char_p,
+        ctypes.c_size_t,
     ]
     _nrn_template_set_component_hooks.restype = ctypes.c_bool
 
@@ -600,8 +578,11 @@ def _pythonobject_payload_ptr(obj):
     # payload share this pinned layout, including on providers A/C.
     # nrnpy_hoc2pyobject (:77-89) maps NULL po_ to __main__; the standalone
     # stub instead has a NULL this_pointer. Neither denotes a dead payload.
-    return (ctypes.c_void_p.from_address(this_ptr + _PY2NRN_PO_OFFSET).value
-            if this_ptr else None)
+    return (
+        ctypes.c_void_p.from_address(this_ptr + _PY2NRN_PO_OFFSET).value
+        if this_ptr
+        else None
+    )
 
 
 def _unwrap_pythonobject(obj):
@@ -634,23 +615,24 @@ def _owned_hoc_object_to_python(obj):
 
     return _wrap_owned_object(obj)
 
+
 import collections as _collections
+
 # Bounded rotating keepalive for strings pushed back to HOC from a Python
 # component read. The pushed char** must stay valid until HOC consumes
-# it (within the same expression). Mirrors the real impl's hoc_temp_charptr,
+# it (within the same expression). Mirrors real NEURON's hoc_temp_charptr,
 # which hands out slots from a small rotating pool; a bounded ring keeps the
 # buffers alive across the immediate read without growing without bound.
 _PY2N_STR_POOL = _collections.deque(maxlen=64)
 
 
 def _install_cfunctype_methods():
-    """Install hoccommand_exec (field 11, offset 88) and pysame (field 25,
-    offset 200) into neuron::python::methods via CFUNCTYPE.
+    """Option B: populate the methods table with CFUNCTYPE callbacks.
 
-    Idempotent: exits immediately if hoccommand_exec is already set
-    (Options A or C ran first). When neither ran, installs Python-backed
-    C function pointers so HOC's callback table is populated without
-    loading libnrnpython.
+    Installs the stub template's destructor, hoccommand_exec (offset 88),
+    pysame (offset 200) and the PythonObject component read/write hooks
+    (public nrn_template_set_component_hooks on dev115; legacy slots 208/120
+    on dev114). No-op if hoccommand_exec is already set (Option A or C).
     """
     global _cfunctype_methods_installed, _public_component_hooks_installed
     public_components = _nrn_template_set_component_hooks is not None
@@ -660,9 +642,7 @@ def _install_cfunctype_methods():
 
     # If methods.hoccommand_exec is already set by another path, leave it.
     try:
-        _methods_sym2 = ctypes.c_void_p.in_dll(
-            libnrniv, "_ZN6neuron6python7methodsE"
-        )
+        _methods_sym2 = ctypes.c_void_p.in_dll(libnrniv, "_ZN6neuron6python7methodsE")
     except ValueError:
         return
     _methods_addr = ctypes.addressof(_methods_sym2)
@@ -672,11 +652,9 @@ def _install_cfunctype_methods():
     if _hcx_slot.value:
         return  # already populated
 
-    # Look up the stub PythonObject template and wire it into
-    # nrnpy_pyobj_sym_ so nrn_object_new_wrap(sym, payload) works later.
-    # Public `nrn_symbol` is literally `hoc_lookup` (neuronapi.cpp), so it
-    # replaces the C++-mangled `_Z10hoc_lookupPKc` with no behavior change.
-    # Bound locally to stay ordering-safe inside the methods-table bootstrap.
+    # Wire the stub PythonObject template into nrnpy_pyobj_sym_ so
+    # nrn_object_new_wrap(sym, payload) works later. Public `nrn_symbol` is
+    # hoc_lookup (neuronapi.cpp); it is bound locally for bootstrap ordering.
     try:
         _sym_lookup = libnrniv.nrn_symbol
         _sym_lookup.argtypes = [ctypes.c_char_p]
@@ -692,11 +670,10 @@ def _install_cfunctype_methods():
     except ValueError:
         return
 
-    # Option B uses libnrniv's stub PythonObject template, whose destructor is
-    # deliberately a no-op. Replace that one slot with a matched callback so a
-    # ctypes-owned Py2Nrn payload and its Python object are released when HOC's
-    # object refcount reaches zero. This patch is only made after proving the
-    # methods table was empty; Option A/C retain libnrnpython's C++ destructor.
+    # The stub template's destructor is a no-op. Replace it so the ctypes-owned
+    # Py2Nrn payload and its Python object are released when the HOC object's
+    # refcount reaches zero. Only done after the methods table was verified
+    # empty; A and C keep libnrnpython's C++ destructor.
     _PYOBJECT_DESTRUCTOR_T = ctypes.CFUNCTYPE(None, ctypes.c_void_p)
 
     @_PYOBJECT_DESTRUCTOR_T
@@ -706,9 +683,7 @@ def _install_cfunctype_methods():
             entry[0].po_ = None
 
     _CFUNCTYPE_KEEPALIVE.append(_py_pythonobject_destructor)
-    _ctemplate = ctypes.c_void_p.from_address(
-        _sym + _SYMBOL_U_OFFSET
-    ).value
+    _ctemplate = ctypes.c_void_p.from_address(_sym + _SYMBOL_U_OFFSET).value
     if not _ctemplate:
         return
     _destructor_slot = ctypes.c_void_p.from_address(
@@ -736,9 +711,9 @@ def _install_cfunctype_methods():
             callback = ctypes.cast(po_handle, ctypes.py_object).value
         except BaseException as exc:
             import sys
+
             print(
-                f"myneuron CFUNCTYPE hoccommand_exec: "
-                f"{type(exc).__name__}: {exc}",
+                f"myneuron CFUNCTYPE hoccommand_exec: " f"{type(exc).__name__}: {exc}",
                 file=sys.stderr,
             )
             return 0
@@ -770,24 +745,16 @@ def _install_cfunctype_methods():
     # dereferences a NULL function pointer. Mirrors `pysame` in
     # nrnpython/nrnpy_p2h.cpp:69 -- ho_eq_po composition collapsed
     # to: same PythonObject template AND same PyObject* handle.
-    _PYSAME_T = ctypes.CFUNCTYPE(
-        ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p
-    )
-    _nrnpy_sym_addr = ctypes.c_void_p.in_dll(
-        libnrniv, "nrnpy_pyobj_sym_"
-    ).value
+    _PYSAME_T = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p)
+    _nrnpy_sym_addr = ctypes.c_void_p.in_dll(libnrniv, "nrnpy_pyobj_sym_").value
 
     @_PYSAME_T
     def _py_pysame(o1, o2):
         if not o1 or not o2:
             return 0
         try:
-            ct1 = ctypes.c_void_p.from_address(
-                o1 + _OBJECT_CTEMPLATE_OFFSET
-            ).value
-            ct2 = ctypes.c_void_p.from_address(
-                o2 + _OBJECT_CTEMPLATE_OFFSET
-            ).value
+            ct1 = ctypes.c_void_p.from_address(o1 + _OBJECT_CTEMPLATE_OFFSET).value
+            ct2 = ctypes.c_void_p.from_address(o2 + _OBJECT_CTEMPLATE_OFFSET).value
             if not ct1 or not ct2:
                 return 0
             # cTemplate.sym is at offset 0.
@@ -802,13 +769,11 @@ def _install_cfunctype_methods():
             return 0
 
     _CFUNCTYPE_KEEPALIVE.append(_py_pysame)
-    _pysame_slot = ctypes.c_void_p.from_address(
-        _methods_addr + _METHODS_PYSAME_OFFSET
-    )
+    _pysame_slot = ctypes.c_void_p.from_address(_methods_addr + _METHODS_PYSAME_OFFSET)
     _pysame_slot.value = ctypes.cast(_py_pysame, ctypes.c_void_p).value
 
-    # Public neuronapi stack kinds. On dev114, querying the kind of a dimension
-    # marker throws. Consume known markers with nrn_int_pop, never stack_type.
+    # Public neuronapi stack kinds. On dev114 and dev115, querying the kind of a
+    # dimension marker throws. Consume known markers with nrn_int_pop, never stack_type.
     _STACK_IS_STR = 1
     _STACK_IS_VAR = 2
     _STACK_IS_NUM = 3
@@ -872,9 +837,7 @@ def _install_cfunctype_methods():
                 po2ho = _ensure_pyobj_to_hoc()
                 obj_ptr = po2ho(result) if po2ho is not None else None
             if not obj_ptr:
-                raise TypeError(
-                    f"cannot return Python {type(result).__name__} to HOC"
-                )
+                raise TypeError(f"cannot return Python {type(result).__name__} to HOC")
             try:
                 _nrn_object_push(obj_ptr)
             finally:
@@ -894,7 +857,9 @@ def _install_cfunctype_methods():
             try:
                 return eval(name, vars(__main__))
             except NameError:
-                raise AttributeError(f"module '__main__' has no attribute {name!r}") from None
+                raise AttributeError(
+                    f"module '__main__' has no attribute {name!r}"
+                ) from None
         if name == "_":
             return py_obj
         return getattr(py_obj, name)
@@ -907,20 +872,22 @@ def _install_cfunctype_methods():
                 "hoc syntax."
             )
 
-    # Public component hook (legacy methods.py2n_component at offset 208):
-    # HOC reading a Python object's component, `x = pyobj.attr`. A NULL
-    # legacy slot causes SIGSEGV inside hoc_object_component. Recover the
-    # live Python object, getattr by the HOC Symbol name, and push attributes
-    # or method results through the complete value matrix. Method arguments
-    # are popped by their public stack type and reversed into source order.
-    # Public hooks return an error pointer so core aborts before another HOC
-    # statement executes; dispatch rolls back restored arguments before raising
-    # the stashed Python exception. The dev114 fallback instead drains and
-    # supplies a placeholder until dispatch returns. For indexed reads, nindex tells
-    # us that a dimension marker precedes the indices; nrn_int_pop consumes it.
+    # Component read hook (legacy methods.py2n_component at offset 208):
+    # HOC reading a Python object's component, `x = pyobj.attr`. A NULL legacy
+    # slot SIGSEGVs inside hoc_object_component. Method arguments are popped by
+    # public stack type and reversed into source order. For indexed reads,
+    # nindex says a dimension marker precedes the indices; nrn_int_pop
+    # consumes it.
+    # Error contract: public hooks return an error pointer so core aborts
+    # before another HOC statement executes, and dispatch rolls back restored
+    # arguments before raising the stashed Python exception. The dev114
+    # fallback instead drains the frame and pushes a placeholder.
     _PY2N_COMPONENT_T = ctypes.CFUNCTYPE(
         ctypes.c_void_p if public_components else None,
-        ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_int
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+        ctypes.c_int,
+        ctypes.c_int,
     )
 
     @_PY2N_COMPONENT_T
@@ -951,7 +918,9 @@ def _install_cfunctype_methods():
             name = raw_name.decode("utf-8") if isinstance(raw_name, bytes) else raw_name
             if nindex and not isfunc:
                 if ndim != nindex:
-                    raise RuntimeError("PythonObject dimension marker disagrees with frame")
+                    raise RuntimeError(
+                        "PythonObject dimension marker disagrees with frame"
+                    )
                 _check_component_dimensions(ndim)
             # Attribute getters can re-enter HOC too, before __getitem__ or
             # a method starts. They need the same template-context boundary.
@@ -969,7 +938,9 @@ def _install_cfunctype_methods():
                 if numeric_index:
                     limit = 1 << (ctypes.sizeof(ctypes.c_long) * 8 - 1)
                     if not -limit <= key < limit:
-                        raise OverflowError("HOC read index is outside the C long range")
+                        raise OverflowError(
+                            "HOC read index is outside the C long range"
+                        )
                 result = _call_python_component(operator.getitem, (target, key))
             else:
                 result = target
@@ -979,6 +950,7 @@ def _install_cfunctype_methods():
             _push_py2n_result(result)
         except BaseException as exc:
             from . import _stash_callback_exc
+
             _stash_callback_exc(exc)
             if public_components:
                 # Return across ctypes first; core unwinds the interrupted
@@ -1003,33 +975,32 @@ def _install_cfunctype_methods():
 
     _CFUNCTYPE_KEEPALIVE.append(_py_py2n_component)
 
-    # Public assignment hook (legacy methods.hpoasgn at offset 120):
-    # HOC writing a Python object's component, `$o1.x = v`.
-    # Reached from hoc_object_asgn when the
-    # left-hand side is a PythonObject. On entry the operand stack is, top to
+    # Assignment hook (legacy methods.hpoasgn at offset 120): HOC writing a
+    # Python object's component, `$o1.x = v`. Called from hoc_object_asgn when
+    # the left-hand side is a PythonObject. Operand stack on entry, top to
     # bottom: the RHS value, the PythonObject `o`, the attribute-name Symbol,
-    # and nindex (0 for `.x`, 1 for a `._[i]` subscript), followed when indexed
-    # by a dimension marker and the indices — pushed by
-    # hoc_object_component under `isfunc & 2`. We pop them in that exact order
-    # (matching the real hpoasgn in nrnpy_p2h.cpp) so the stack stays balanced,
-    # then PyObject_SetAttrString on the recovered live object.
-    #   * number / string / object / nil RHS -> setattr with the Python value
-    #   * subscript -> numeric index truncation and Python __setitem__
-    # HPOASGN_RHS_* mirror parse.hpp (NUMBER/STRING/OBJECTVAR) and hocdec.h
-    # (OBJECTTMP=8) — the possible types of `type_`.
+    # and nindex (0 for `.x`, 1 for a `._[i]` subscript). When indexed, a
+    # dimension marker and the indices follow (pushed by hoc_object_component
+    # under `isfunc & 2`). Pop in exactly that order, as the real hpoasgn in
+    # nrnpy_p2h.cpp does, to keep the stack balanced; then setattr (or
+    # __setitem__ with a truncated numeric index) on the live object.
+    # Error contract: same as the read hook above.
+    # HPOASGN_RHS_* are the possible `type_` values: parse.hpp
+    # (NUMBER/STRING/OBJECTVAR) and hocdec.h (OBJECTTMP=8).
     _HPOASGN_RHS_NUMBER = 259
     _HPOASGN_RHS_STRING = 260
     _HPOASGN_RHS_OBJECTVAR = 324
     _HPOASGN_RHS_OBJECTTMP = 8
     _HPOASGN_T = (
         ctypes.CFUNCTYPE(ctypes.c_void_p, ctypes.c_void_p)
-        if public_components else
-        ctypes.CFUNCTYPE(None, ctypes.c_void_p, ctypes.c_int)
+        if public_components
+        else ctypes.CFUNCTYPE(None, ctypes.c_void_p, ctypes.c_int)
     )
 
     @_HPOASGN_T
     def _py_hpoasgn(o, type_=None):
         from . import _stash_callback_exc
+
         rhs_obj = None
         target_obj = None
         remaining_indices = 0
@@ -1074,10 +1045,14 @@ def _install_cfunctype_methods():
                 while remaining_indices:
                     indices.append(_pop_hoc_python_value(on_pop=index_popped))
                 if ndim != nindex:
-                    raise RuntimeError("PythonObject dimension marker disagrees with frame")
+                    raise RuntimeError(
+                        "PythonObject dimension marker disagrees with frame"
+                    )
                 _check_component_dimensions(ndim)
                 if not numeric_index:
-                    raise TypeError("HOC PythonObject assignment requires a numeric index")
+                    raise TypeError(
+                        "HOC PythonObject assignment requires a numeric index"
+                    )
                 # Only one dimension is accepted, so no reversal is needed.
                 # Unlike reads, native writes use PyLong_FromDouble, not C long.
                 key = int(indices[0])
@@ -1086,10 +1061,7 @@ def _install_cfunctype_methods():
 
             py_obj = _unwrap_pythonobject(target_obj)
             raw_name = _nrn_symbol_name(sym)
-            name = (
-                raw_name.decode("utf-8") if isinstance(raw_name, bytes)
-                else raw_name
-            )
+            name = raw_name.decode("utf-8") if isinstance(raw_name, bytes) else raw_name
             if type_ in (_HPOASGN_RHS_OBJECTVAR, _HPOASGN_RHS_OBJECTTMP):
                 owned_rhs = rhs_obj
                 rhs_obj = None
@@ -1122,10 +1094,15 @@ def _install_cfunctype_methods():
     if public_components:
         error = ctypes.create_string_buffer(_ERR_BUF_SIZE)
         if not _nrn_template_set_component_hooks(
-            _sym, ctypes.cast(_py_py2n_component, ctypes.c_void_p),
-            ctypes.cast(_py_hpoasgn, ctypes.c_void_p), error, len(error),
+            _sym,
+            ctypes.cast(_py_py2n_component, ctypes.c_void_p),
+            ctypes.cast(_py_hpoasgn, ctypes.c_void_p),
+            error,
+            len(error),
         ):
-            raise ImportError(f"PythonObject component registration failed: {error.value!r}")
+            raise ImportError(
+                f"PythonObject component registration failed: {error.value!r}"
+            )
         _public_component_hooks_installed = True
     else:
         # dev114 compatibility only: newer cores never touch these slots.
@@ -1141,16 +1118,16 @@ def _install_cfunctype_methods():
     # TODO(gap-41): retire the remaining private host-context/payload layouts.
     # Component reentry currently mirrors
     # HocTopContextManager via its exported globals; a public context boundary
-    # is still the version-safe upstream endgame.
+    # in NEURON is still the version-safe long-term fix.
 
 
 def _pop_looked_at_object():
     """Pop the PythonObject that hoc_obj_look_inside_stack left on the stack.
 
-    py2n_component is handed an object the interpreter *peeked* (did not pop),
-    and is expected to consume it before pushing the component's value — the
-    real impl does this with hoc_pop_defer(). The public pop returns an owned
-    reference, so the discard helper immediately releases it.
+    py2n_component receives an object the interpreter peeked, not popped, and
+    must consume it before pushing the component's value (real NEURON uses
+    hoc_pop_defer()). The public pop returns an owned reference, so the
+    discard helper releases it immediately.
     """
     try:
         _discard_object_stack_value()
@@ -1162,25 +1139,18 @@ _install_cfunctype_methods()
 
 
 def _py_pyobj_to_hoc_cfunctype(py_callable):
-    """Wrap a Python value as a HOC Object* (Option B).
+    """Wrap a Python value as a new HOC Object* (Option B only).
 
-    Allocate a Py2Nrn, retain the value in the payload registry, and hand both to
-    `nrn_object_new_wrap` — returns a fresh HOC Object whose `u.this_pointer`
-    is our Py2Nrn payload.
-
-    WHY: Mirrors `nrnpy_pyobject_in_obj` in
-    nrnpython/nrnpy_p2h.cpp:91 without loading libnrnpython.
-
-    This allocator is valid only when Option B installed the matching ctypes
-    destructor. With neuron-first Option A, return None so callers use native
-    nrnpy_po2ho and its C++ `delete Py2Nrn` destructor instead.
+    Allocates a Py2Nrn, keeps the value in the payload registry, and passes
+    both to `nrn_object_new_wrap`; the object's `u.this_pointer` is the
+    payload. Mirrors `nrnpy_pyobject_in_obj` (nrnpython/nrnpy_p2h.cpp:91).
+    Returns None under Option A so callers use native nrnpy_po2ho, whose C++
+    destructor matches its own payloads.
     """
     if not _cfunctype_methods_installed:
         return None
     try:
-        _pyobj_sym_value = ctypes.c_void_p.in_dll(
-            libnrniv, "nrnpy_pyobj_sym_"
-        ).value
+        _pyobj_sym_value = ctypes.c_void_p.in_dll(libnrniv, "nrnpy_pyobj_sym_").value
     except ValueError:
         return None
     if not _pyobj_sym_value:
@@ -1216,8 +1186,8 @@ def _py_pyobj_to_hoc_cfunctype(py_callable):
 # printf / hoc print. Signature: int (*)(int stream, char* msg) where
 # stream is 1 for stdout, 2 for stderr.
 #
-# The callback reference MUST be kept alive in module scope — if Python
-# GCs it, NEURON will call a dangling pointer and segfault.
+# The callback reference MUST be kept alive in module scope. If Python
+# collects it, NEURON calls a dangling pointer and segfaults.
 _STDOUT_CB_TYPE = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_int, ctypes.c_char_p)
 
 _nrn_stdout_redirect = libnrniv.nrn_stdout_redirect
@@ -1229,6 +1199,7 @@ _stdout_callback_ref = None  # keep-alive for the active callback
 
 def _default_stdout_sink(stream, msg):
     import sys
+
     try:
         text = msg.decode("utf-8", errors="replace") if msg else ""
     except Exception:
@@ -1255,6 +1226,7 @@ def install_stdout_redirect(sink=None):
     if sink is None:
         py_sink = _default_stdout_sink
     else:
+
         def py_sink(stream, msg):
             try:
                 text = msg.decode("utf-8", errors="replace") if msg else ""
@@ -1273,7 +1245,7 @@ install_stdout_redirect()
 
 # --- C API bindings (ctypes signatures for libnrniv functions) ---
 #
-# Define aliases for nonstandard data types
+# Aliases for opaque C types
 Section = ctypes.c_void_p
 Symlist = ctypes.c_void_p
 Symbol = ctypes.c_void_p
@@ -1283,7 +1255,6 @@ SectionListIterator = ctypes.c_void_p
 nrn_Item = ctypes.c_void_p
 ShapePlotInterface = ctypes.c_void_p
 
-# Load functions from libnrniv
 _nrn_section_new = libnrniv.nrn_section_new
 _nrn_section_new.argtypes = [ctypes.c_char_p]
 _nrn_section_new.restype = Section
@@ -1304,6 +1275,7 @@ def _nrn_hoc_call(cmd):
     if _hoc_valid_stmt is not None:
         return 0 if _hoc_valid_stmt(cmd, None) else 1
     return _nrn_hoc_call_raw(cmd)
+
 
 _nrn_double_push = libnrniv.nrn_double_push
 _nrn_double_push.argtypes = [ctypes.c_double]
@@ -1410,9 +1382,7 @@ def _nrn_object_new(sym, narg):
     """Construct a HOC object without allowing C++ exceptions across ctypes."""
     result = Object()
     err = ctypes.create_string_buffer(_ERR_BUF_SIZE)
-    rc = _nrn_object_new_nothrow(
-        sym, narg, ctypes.byref(result), err, _ERR_BUF_SIZE
-    )
+    rc = _nrn_object_new_nothrow(sym, narg, ctypes.byref(result), err, _ERR_BUF_SIZE)
     if rc:
         msg = err.value.decode("utf-8", errors="replace")
         raise RuntimeError(msg or "HOC object construction failed")
@@ -1446,34 +1416,40 @@ _nrn_symbol_dataptr = libnrniv.nrn_symbol_dataptr
 _nrn_symbol_dataptr.argtypes = [Symbol]
 _nrn_symbol_dataptr.restype = ctypes.POINTER(ctypes.c_double)
 
-# Smallest address treated as a real data pointer from nrn_symbol_dataptr.
-# For a NOTUSER runtime scalar (`n('x = 42')`) the correct storage is
-# hoc_top_level_data[sym->u.oboff].pval. A libnrniv carrying the upstream fix
-# (nrn#3815) returns that heap/data-segment address; older builds return the
-# raw sym->u.oboff — a small integer (symbol-table index, always well under
-# this threshold) reinterpreted as a pointer, whose dereference would segfault.
-# The __init__.py subtype-0 paths guard on this to pick the direct-deref fast
-# path vs. the hoc_ac_ trampoline / HOC-assign fallback, without ever
-# dereferencing a bogus pointer.
+# Smallest address treated as a real pointer from nrn_symbol_dataptr. For a
+# NOTUSER runtime scalar (`n('x = 42')`) the storage is
+# hoc_top_level_data[sym->u.oboff].pval. With nrn#3815 the call returns that
+# address; older builds return the raw sym->u.oboff (a small symbol-table
+# index, always below this threshold) as a pointer, and dereferencing it
+# segfaults. The subtype-0 paths in __init__.py test against this to choose
+# direct dereference or the hoc_ac_ trampoline / HOC-assign fallback.
 _MIN_VALID_DATAPTR = 0x10000
 
 _nrn_method_call = libnrniv.nrn_method_call_nothrow
-_nrn_method_call.argtypes = [Object, Symbol, ctypes.c_int, ctypes.c_char_p, ctypes.c_size_t]
+_nrn_method_call.argtypes = [
+    Object,
+    Symbol,
+    ctypes.c_int,
+    ctypes.c_char_p,
+    ctypes.c_size_t,
+]
 _nrn_method_call.restype = ctypes.c_int
 
-# HOC defers one object unref while popping an OBJECTTMP (hoc_pop_defer) and
-# NEURON's Python binding flushes it after every function/method call and when
-# a wrapper is released (nrnpy_hoc.cpp:264, :847). Without the flush the
-# deferred object outlives its owner: a NetCon destroyed after its source
-# double-frees in PreSyn::~PreSyn. Not in the public C API; bound by its
-# exported mangled name, a no-op if a core does not export it.
+# HOC defers one object unref when popping an OBJECTTMP (hoc_pop_defer).
+# Real NEURON flushes it after every function/method call and when a wrapper
+# is released (nrnpy_hoc.cpp:264, :847). Without the flush the deferred object
+# outlives its owner: a NetCon destroyed after its source double-frees in
+# PreSyn::~PreSyn. Not in the public C API; bound by its exported mangled
+# name, a no-op if the core does not export it.
 try:
     _hoc_unref_defer = libnrniv._Z15hoc_unref_deferv
     _hoc_unref_defer.argtypes = []
     _hoc_unref_defer.restype = None
 except AttributeError:
+
     def _hoc_unref_defer():
         pass
+
 
 _nrn_vector_data = libnrniv.nrn_vector_data
 _nrn_vector_data.argtypes = [Object]
@@ -1488,19 +1464,21 @@ _nrn_str_pop0 = libnrniv.nrn_str_pop
 _nrn_str_pop0.argtypes = []
 _nrn_str_pop0.restype = ctypes.POINTER(ctypes.c_char_p)
 
+
 def _decode_hoc_string(p):
     """Decode after frame accounting; invalid UTF-8 can raise after a raw pop."""
     if not p:
-        return ''
+        return ""
     s = p.contents.value
     if s is None:
-        return ''
+        return ""
     return s.decode("utf-8")
 
 
 def _nrn_str_pop():
     """Return a Python string from _nrn_str_pop0() result."""
     return _decode_hoc_string(_nrn_str_pop0())
+
 
 _nrn_object_pop = libnrniv.nrn_object_pop
 _nrn_object_pop.argtypes = []
@@ -1526,12 +1504,15 @@ def _discard_object_stack_value():
     if obj:
         _nrn_object_unref(obj)
 
+
 _nrn_int_pop = libnrniv.nrn_int_pop
 _nrn_int_pop.argtypes = []
 _nrn_int_pop.restype = ctypes.c_int
 
+
 def _symbol_pop():
     return _nrn_symbol_pop()
+
 
 _nrn_str_push = libnrniv.nrn_str_push
 _nrn_str_push.argtypes = [ctypes.POINTER(ctypes.c_char_p)]
@@ -1552,16 +1533,17 @@ def _object_ptr_push(obj_ref):
 
 # --- Python callable -> HOC PythonObject (lazy) ----------------------------
 # Real NEURON converts a Python callable to a HOC `Object*` of class
-# "PythonObject" via `nrnpy_po2ho` (src/nrnpython/nrnpy_hoc.cpp:598).
-# That function lives in libnrnpython.cpython-3.X.so (mangled symbol
-# `_Z11nrnpy_po2hoP7_object`), not libnrniv. It's only safe to call once
-# `nrnpython_reg_real` has run inside libnrnpython — that registration
-# installs the "PythonObject" template and populates
-# `neuron::python::methods` so `hoccommand_exec` can later call back into
-# the wrapped callable. We rely on neuron's own `import neuron` to do
-# that registration (the bootstrap-order rule in CLAUDE.md); in pure
-# standalone (no neuron loaded), the symbol still exists but the
-# template isn't registered, so the path raises a clear TypeError.
+# "PythonObject" via `nrnpy_po2ho` (src/nrnpython/nrnpy_hoc.cpp:598), which
+# lives in libnrnpython.cpython-3.X.so (mangled symbol
+# `_Z11nrnpy_po2hoP7_object`), not libnrniv. It is safe to call only after
+# `nrnpython_reg_real` has run inside libnrnpython: that registration
+# installs the "PythonObject" template and fills `neuron::python::methods`
+# so `hoccommand_exec` can call back into the wrapped callable. `import
+# neuron` does that registration (the bootstrap-order rule in CLAUDE.md).
+# Standalone myneuron (no neuron loaded) normally never reaches this path: the
+# default CFUNCTYPE provider wraps values itself (_py_pyobj_to_hoc_cfunctype).
+# It is the fallback when that provider is not installed. If libnrnpython or
+# the symbol cannot be found, this returns None and callers raise TypeError.
 
 _pyobj_to_hoc_object = None  # populated lazily by _ensure_pyobj_to_hoc()
 
@@ -1571,9 +1553,8 @@ def _ensure_pyobj_to_hoc():
 
     Returns None if libnrnpython can't be located or loaded.
 
-    Side effect: if nrnpy_pyobj_sym_ is unset, looks up the stub
-    PythonObject symbol and sets it — required when -nopython ran
-    without libnrnpython loading (Option B / standalone mode).
+    Side effect: if nrnpy_pyobj_sym_ is unset, sets it to the stub PythonObject
+    symbol (needed when -nopython ran without loading libnrnpython).
     """
     global _pyobj_to_hoc_object
     # TODO(gap-60): discover the native allocator in static Python extensions.
@@ -1581,6 +1562,7 @@ def _ensure_pyobj_to_hoc():
         return _pyobj_to_hoc_object
     import glob
     import os
+
     # Search next to libnrniv first (covers the neuron wheel layout).
     lib_dir = os.path.dirname(libnrniv._name or "")
     patterns = [
@@ -1602,26 +1584,19 @@ def _ensure_pyobj_to_hoc():
     except OSError:
         return None
 
-    # Ensure libnrnpython's "PythonObject" symbol pointer is set.
-    # `nrnpy_pyobj_sym_` (a libnrniv-owned symbol) is normally set by
-    # libnrnpython's `nrnpython_reg_real`. When myneuron starts with
-    # `-nopython`, libnrniv falls through to a stub `class2oc` for
-    # PythonObject but never sets `nrnpy_pyobj_sym_`. Re-calling
-    # `nrnpython_reg_real` here would hit
-    # "PythonObject already being used as a name" because the stub
-    # registration owns the symbol. Instead, do the one assignment
-    # that matters: look up the already-registered PythonObject and
-    # store it in `nrnpy_pyobj_sym_` ourselves. This lets
-    # `nrnpy_pyobject_in_obj` allocate Object* of class PythonObject
-    # (the stub p_cons isn't called from this path — only HOC's
-    # `new PythonObject()` would trigger it).
+    # Under -nopython the stub PythonObject is registered but
+    # nrnpy_pyobj_sym_ (normally set by nrnpython_reg_real) stays unset.
+    # Calling nrnpython_reg_real here would fail with "PythonObject already
+    # being used as a name", so assign the stub symbol ourselves. That is
+    # enough for nrnpy_pyobject_in_obj to allocate PythonObject Objects; the
+    # stub's p_cons is not called on this path (only HOC's
+    # `new PythonObject()` calls it).
     try:
         pyobj_sym = ctypes.c_void_p.in_dll(libnrniv, "nrnpy_pyobj_sym_")
     except ValueError:
         pyobj_sym = None
     if pyobj_sym is not None and not pyobj_sym.value:
-        # Public `nrn_symbol` == `hoc_lookup` (neuronapi.cpp); bound locally to
-        # stay ordering-safe here in the bootstrap path.
+        # Same local nrn_symbol binding as in _install_cfunctype_methods.
         try:
             _sym_lookup = libnrniv.nrn_symbol
             _sym_lookup.argtypes = [ctypes.c_char_p]
@@ -1835,10 +1810,7 @@ _nrn_pntproc_nmodlrandom_get = libnrniv.nrn_pntproc_nmodlrandom_get
 _nrn_pntproc_nmodlrandom_get.argtypes = [Object, Symbol]
 _nrn_pntproc_nmodlrandom_get.restype = Object
 
-# PlotShape bindings: used by plotting._PlotShapePlot._get_plot_data().
-# We can't use upstream NEURON's neuron.gui2.utilities.get_plotshape_data —
-# it expects a Python-wrapped HOC object (PyObject capsule), but myneuron
-# stores raw uint64 C pointers, so the capsule conversion misinterprets them.
+# PlotShape accessors; see plotting._PlotShapePlot._get_plot_data.
 _nrn_get_plotshape_interface = libnrniv.nrn_get_plotshape_interface
 _nrn_get_plotshape_interface.argtypes = [Object]
 _nrn_get_plotshape_interface.restype = ShapePlotInterface
@@ -1950,31 +1922,24 @@ _nrn_distance.restype = ctypes.c_double
 # ---------------------------------------------------------------------------
 # C-side staleness counters
 #
-# NEURON's internal globals that flip when topology / geometry changes:
-#   diam_changed         (cabcode.cpp:55)        — dirty flag, set on
-#                                                  nseg/diam/L mutation,
-#                                                  cleared at finitialize.
-#   structure_change_cnt (treeset.cpp:66)        — bumped when NEURON
-#                                                  recomputes structure
-#                                                  (typically at finitialize).
-#   nrn_shape_changed_   (treeset.cpp:37)        — bumped when geometry
-#                                                  (3D points) changes.
+# NEURON globals that change when topology or geometry changes:
+#   diam_changed         cabcode.cpp:55   dirty flag; set on nseg/diam/L
+#                                         mutation, cleared at finitialize
+#   structure_change_cnt treeset.cpp:66   bumped when NEURON recomputes
+#                                         structure (typically at finitialize)
+#   nrn_shape_changed_   treeset.cpp:37   bumped when 3D points change
 #
-# The pair (diam_changed, structure_change_cnt) is a reliable staleness
-# signal for cached pointers: if it changes between cache-time and
-# read-time, the pointer may be stale. Catches changes from ANY source
-# (HOC, real NEURON's Python extension, models that call nrn_section_new
-# directly), not just myneuron's setters.
+# (diam_changed, structure_change_cnt) is the staleness signal for cached
+# pointers: if it differs between cache time and read time, the pointer may
+# be stale. It catches changes from any source (HOC, real NEURON, models that
+# call nrn_section_new directly), not just myneuron's setters.
 _diam_changed = ctypes.c_int.in_dll(libnrniv, "diam_changed")
 _structure_change_cnt = ctypes.c_int.in_dll(libnrniv, "structure_change_cnt")
 _nrn_shape_changed = ctypes.c_int.in_dll(libnrniv, "nrn_shape_changed_")
 
-# Dated context: benchmarks/README.md#historical-implementation-measurements.
-# WHY ctypes.c_int.value, not numpy.frombuffer: the per-yield staleness
-# check in allsec() was benchmarked at 5M reads: ctypes .value ~94 ns/read
-# vs numpy [0] ~106 ns/read.
-# numpy is ~12% slower here and would add a hard numpy dependency
-# to the hot path. Keeping ctypes.
+# WHY ctypes .value: ~94 ns/read vs numpy ~106 ns at 5M reads, and no numpy
+# dependency on the hot path. Measurements:
+# benchmarks/README.md#historical-implementation-measurements.
 
 
 def get_topology_version():
@@ -1990,14 +1955,10 @@ def get_topology_version():
 # ---------------------------------------------------------------------------
 # Type code discovery
 #
-# parse.ypp's token enum values (VAR=263, FUNCTION=270, ...) are an
-# implementation detail of NEURON's parser. neuronapi.cpp:236 notes:
-# "types are in parse.hpp and are not the same between versions, so we
-# really should wrap." If a future NEURON renumbers, all hardcoded
-# `if sym_type == 263` checks would silently break.
-#
-# Instead, we probe known-stable symbols at import time and let NEURON
-# tell us the codes:
+# parse.ypp's token values (VAR=263, FUNCTION=270, ...) are parser internals;
+# neuronapi.cpp:236: "types are in parse.hpp and are not the same between
+# versions, so we really should wrap." So the codes are read at import time
+# from symbols whose kind is known:
 #   t           → VAR             (global double)
 #   sin         → BLTIN           (math built-in)
 #   finitialize → FUN_BLTIN       (function returning double)
@@ -2013,41 +1974,39 @@ def get_topology_version():
 class TypeCodes:
     """Type codes discovered at runtime by probing known symbols.
 
-    Replaces hardcoded parse.ypp constants throughout the dispatch chain
-    so myneuron survives if NEURON renumbers its token enum.
-
-    Use ``TYPES.VAR`` (etc.) in `if sym_type == TYPES.VAR` checks.
+    Dispatch compares against ``TYPES.VAR`` etc., never integer literals, so a
+    NEURON that renumbers its token enum does not break it.
     """
 
     __slots__ = (
         # Top-level codes
-        "STRING",       # top-level strdef (260) — also object STRDEF members
-        "VAR",          # global double (t, dt, celsius); also USERPROPERTY (L, nseg)
-        "BLTIN",        # math built-in (sin, cos, exp)
-        "FUNCTION",     # HOC func/method returning double (270); distinct from FUN_BLTIN (280)
-        "FUN_BLTIN",    # C-registered function returning double (finitialize, x3d)
-        "PROCEDURE",    # HOC PROC
-        "STRINGFUNC",   # function returning string (secname)
-        "OBJECTFUNC",   # built-in function returning object (object_pushed)
-        "OBJECTVAR",    # top-level objref (324) — `objref foo`
-        "MECHANISM",    # density mechanism (hh, pas)
-        "TEMPLATE",     # HOC class (IClamp, Vector)
-        "RANGEVAR",     # range variable on segment (v, gnabar_hh)
-        "RANGEOBJ",     # NMODL RANDOM range object (runtime-probed after MOD load)
+        "STRING",  # top-level strdef (260) — also object STRDEF members
+        "VAR",  # global double (t, dt, celsius); also USERPROPERTY (L, nseg)
+        "BLTIN",  # math built-in (sin, cos, exp)
+        "FUNCTION",  # HOC func/method returning double (270); distinct from FUN_BLTIN (280)
+        "FUN_BLTIN",  # C-registered function returning double (finitialize, x3d)
+        "PROCEDURE",  # HOC PROC
+        "STRINGFUNC",  # function returning string (secname)
+        "OBJECTFUNC",  # built-in function returning object (object_pushed)
+        "OBJECTVAR",  # top-level objref (324) — `objref foo`
+        "MECHANISM",  # density mechanism (hh, pas)
+        "TEMPLATE",  # HOC class (IClamp, Vector)
+        "RANGEVAR",  # range variable on segment (v, gnabar_hh)
+        "RANGEOBJ",  # NMODL RANDOM range object (runtime-probed after MOD load)
         # Template / method codes
-        "SECTION",      # template public section (cell.soma)
-        "OBFUNCTION",   # template method returning object (HOC obfunc)
-        "METHOD_OBFUNC",    # C-side method returning object (Vector.c, List.object)
-        "METHOD_STRFUNC",   # method returning string (Vector.label)
+        "SECTION",  # template public section (cell.soma)
+        "OBFUNCTION",  # template method returning object (HOC obfunc)
+        "METHOD_OBFUNC",  # C-side method returning object (Vector.c, List.object)
+        "METHOD_STRFUNC",  # method returning string (Vector.label)
         "METHOD_SECTIONREF",  # method returning Section (SectionRef.sec/parent/root)
         # Subtypes of VAR (hocdec.h:83-90 #defines, probed via known symbols)
-        "USERINT",      # int scalar VAR (stoprun, hoc_ac_)
-        "USERDOUBLE",   # double scalar VAR (t, dt, celsius)
-        "USERPROPERTY", # section-level property (L, nseg, Ra)
-        "USERFLOAT",    # float scalar VAR — declared in hocdec.h:86 but not
-                        # known to be probable from a stock symbol table;
-                        # left None unless discovery succeeds.
-        "_RAW",         # debug: full discovered map
+        "USERINT",  # int scalar VAR (stoprun, hoc_ac_)
+        "USERDOUBLE",  # double scalar VAR (t, dt, celsius)
+        "USERPROPERTY",  # section-level property (L, nseg, Ra)
+        "USERFLOAT",  # float scalar VAR — declared in hocdec.h:86 but not
+        # known to be probable from a stock symbol table;
+        # left None unless discovery succeeds.
+        "_RAW",  # debug: full discovered map
     )
 
     def __init__(self):
@@ -2057,19 +2016,16 @@ class TypeCodes:
 
     def discover(self):
         """Probe known top-level symbols to populate type codes."""
-        # x3d / finitialize → FUN_BLTIN (280, C-registered)
-        # FUNCTION (270, HOC `func`-style returning double) is the same
-        # code used for method-returns-double; we probe it via Vector.size
-        # in discover_template_scoped.
+        # FUNCTION (270) is probed via Vector.size in discover_template_scoped.
         probes = {
-            "VAR":        b"t",
-            "BLTIN":      b"sin",
-            "FUN_BLTIN":  b"finitialize",
+            "VAR": b"t",
+            "BLTIN": b"sin",
+            "FUN_BLTIN": b"finitialize",
             "STRINGFUNC": b"secname",
             "OBJECTFUNC": b"object_pushed",  # built-in obfunc returning Object
-            "MECHANISM":  b"hh",
-            "TEMPLATE":   b"IClamp",
-            "RANGEVAR":   b"v",
+            "MECHANISM": b"hh",
+            "TEMPLATE": b"IClamp",
+            "RANGEVAR": b"v",
         }
         for attr, sym_name in probes.items():
             sym = _nrn_symbol(sym_name)
@@ -2083,9 +2039,9 @@ class TypeCodes:
         # code. Expected: USERINT=1, USERDOUBLE=2, USERPROPERTY=3.
         # USERFLOAT (4) has no obvious stock probe and is left None.
         subtype_probes = {
-            "USERINT":      b"stoprun",  # int stop flag
-            "USERDOUBLE":   b"t",        # double simulation time
-            "USERPROPERTY": b"nseg",     # section-level property
+            "USERINT": b"stoprun",  # int stop flag
+            "USERDOUBLE": b"t",  # double simulation time
+            "USERPROPERTY": b"nseg",  # section-level property
         }
         for attr, sym_name in subtype_probes.items():
             sym = _nrn_symbol(sym_name)
@@ -2107,9 +2063,8 @@ class TypeCodes:
         # runs. No C API exists to delete HOC symbols, so they leak into the
         # global symbol table (harmless, but shows up in a full name dump).
 
-        # Define a top-level proc to discover the PROCEDURE code.
-        # An empty body: `local x` left a global `x` declared at top level,
-        # breaking user code that later names something x (SectionRef.rename).
+        # PROCEDURE code. The body must stay empty: `local x` would leave a
+        # global `x` that broke user code naming something x (SectionRef.rename).
         hoc_exec("proc _mn_type_probe_proc() { }")
         sym = _nrn_symbol(b"_mn_type_probe_proc")
         if sym:
@@ -2210,9 +2165,7 @@ class TypeCodes:
         code = int(code)
         current = self.RANGEOBJ
         if current is not None and current != code:
-            raise RuntimeError(
-                f"RANGEOBJ type code changed from {current} to {code}"
-            )
+            raise RuntimeError(f"RANGEOBJ type code changed from {current} to {code}")
         object.__setattr__(self, "RANGEOBJ", code)
         self._RAW["RANGEOBJ"] = code
 
@@ -2223,10 +2176,14 @@ class TypeCodes:
 
     def validate(self):
         """Return True if every required type code was discovered."""
-        missing = [n for n in self.__slots__
-                   if n not in self._OPTIONAL and getattr(self, n) is None]
+        missing = [
+            n
+            for n in self.__slots__
+            if n not in self._OPTIONAL and getattr(self, n) is None
+        ]
         if missing:
             import warnings
+
             warnings.warn(
                 "myneuron: could not discover type codes for: "
                 + ", ".join(missing)
@@ -2236,16 +2193,12 @@ class TypeCodes:
         return True
 
     def __repr__(self):
-        pairs = [(n, getattr(self, n)) for n in self.__slots__
-                 if n != "_RAW"]
+        pairs = [(n, getattr(self, n)) for n in self.__slots__ if n != "_RAW"]
         return "TypeCodes(" + ", ".join(f"{n}={v}" for n, v in pairs) + ")"
 
 
 # Global singleton, populated by discover() at module import time below.
 TYPES = TypeCodes()
 TYPES.discover()
-# Template-scoped discovery happens in __init__.py after the NEURON
-# singleton is constructed (avoids circular import). For now seed the
-# expected codes with what `discover()` finds; SECTION/OBFUNCTION are
-# filled later. Callers that read TYPES.SECTION before init finishes
-# get None — but that path doesn't run during normal startup.
+# Top-level codes are discovered here. Template-scoped ones are filled by
+# __init__.py after the singleton exists; TYPES.SECTION etc. are None until then.
