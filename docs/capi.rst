@@ -906,6 +906,40 @@ Segments
 Functions, objects, and the stack
 ---------------------------------
 
+Reads and writes of provider-backed object components are dispatched through
+per-template hooks registered at runtime, rather than being selected when
+NEURON is compiled. An embedding host can therefore supply a provider even in
+a build configured with ``NRN_ENABLE_PYTHON=OFF``, without NEURON itself
+linking against Python. The legacy Python methods-table callbacks remain a
+compatibility fallback for providers that have not installed per-template
+hooks. When no provider is registered, ordinary template lookup is unchanged.
+
+.. c:function:: bool nrn_template_set_component_hooks(Symbol* template_sym, nrn_component_func component, nrn_component_asgn_func component_asgn, char* error_msg, size_t error_msg_size)
+
+    Register non-owning provider callbacks for all dynamic components of a HOC
+    template. The template symbol must remain valid, and callback code must
+    remain loaded while any instance exists. The read callback consumes the
+    deferred object frame and pushes exactly one HOC value; the assignment
+    callback consumes the typed RHS, available through :c:func:`nrn_stack_type`,
+    followed by the component metadata frame. On success each callback returns
+    ``NULL``. On failure it returns an error message without changing the HOC
+    stack. The returned pointer must remain valid until the call returns
+    across the provider boundary; NEURON copies the message before running
+    anything else (its own warning and dialog hooks included) and then calls
+    ``hoc_execerror``.
+    This gives the enclosing :c:func:`nrn_function_call_nothrow` or
+    :c:func:`nrn_method_call_nothrow` normal error reporting and stack recovery
+    without an exception unwinding through a foreign callback.
+
+    Passing a null template or either callback returns ``false`` and writes a
+    diagnostic to ``error_msg`` when space is provided. Registration is
+    fail-closed and does not modify the HOC stack.
+
+    The ``nindex``/``isfunc`` arguments preserve HOC method-call information.
+    Indexed component access additionally carries an interpreter dimension
+    marker; providers should wait for the public ``nrn_ndim_pop`` API before
+    advertising indexed components.
+
 .. c:function:: Symbol* nrn_symbol(const char* name)
 
     Get a symbol by name from NEURON's symbol table. Symbols represent variables,
@@ -1751,7 +1785,13 @@ Miscellaneous
     Execute a HOC command string. HOC is NEURON's built-in scripting language.
 
     :param command: Null-terminated string containing the HOC command.
-    :returns: Status code
+    :returns: 0 on success, 1 when the top-level interpreter catches an error.
+
+    Top-level error recovery releases interpreter frames and temporary objects,
+    then removes operands left by the failed command back to the entry stack
+    depth. Repeated runtime errors therefore do not accumulate operand-stack
+    entries. When called within an existing interpreter exception boundary,
+    errors continue to propagate to that enclosing boundary.
 
     **Usage Pattern:**
 

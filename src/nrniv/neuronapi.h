@@ -22,6 +22,22 @@ typedef struct SymbolTableIterator SymbolTableIterator;
 typedef struct Symlist Symlist;
 typedef struct ShapePlotInterface ShapePlotInterface;
 
+/* Non-owning hooks for provider-backed object components. On success, a read
+ * callback consumes the component's deferred object frame, pushes one HOC
+ * value, and returns NULL. An assignment callback consumes the typed RHS (the
+ * callback can query nrn_stack_type()) and then the metadata frame before
+ * returning NULL.
+ *
+ * On failure, a callback returns a non-NULL error message without changing the
+ * HOC stack. NEURON copies the message before anything else runs and then
+ * raises hoc_execerror itself, so a foreign-ABI provider never needs a C++
+ * exception to cross its boundary. (An in-process C++ provider, such as the
+ * bundled Python extension, may still let hoc_execerror's own
+ * neuron::oc::runtime_error propagate through the hook; only providers behind
+ * a foreign ABI must use the return channel.) */
+typedef const char* (*nrn_component_func)(Object*, Symbol*, int nindex, int isfunc);
+typedef const char* (*nrn_component_asgn_func)(Object*);
+
 typedef enum {
     STACK_IS_STR = 1,
     STACK_IS_VAR = 2,
@@ -90,6 +106,11 @@ int nrn_pp_setpointer_pop(Object* pp, const char* name, char* error_msg, size_t 
  * Functions, objects, and the stack
  ****************************************/
 Symbol* nrn_symbol(const char* name);
+bool nrn_template_set_component_hooks(Symbol* template_sym,
+                                      nrn_component_func component,
+                                      nrn_component_asgn_func component_asgn,
+                                      char* error_msg,
+                                      size_t error_msg_size);
 void nrn_symbol_push(Symbol* sym);
 Symbol* nrn_symbol_pop(void);
 int nrn_symbol_type(const Symbol* sym);

@@ -573,42 +573,23 @@ is not allowed on the left hand side.");
     }
     lappendstr(procfunc, "return _reset;\n}\n");
 
-    /* don't emit _ode_matsol if the user has defined cvodematsol */
-    if (!lookup("cvodematsol")) {
-        Item* qq;
-        Item* qextra = q1->next->next->next->next;
-        Sprintf(buf, "static int _ode_matsol%d", numlist);
-        Lappendstr(procfunc, buf);
-        vectorize_substitute(lappendstr(procfunc, "() {\n"), "(_internalthreadargsproto_) {\n");
-        qq = procfunc->next;
-        cvode_cnexp_possible = 1;
-        ITERATE(q, cvode_diffeq_list) {
-            Symbol* s;
-            Item *q1, *q2;
-            s = SYM(q);
-            q = q->next;
-            q1 = ITM(q);
-            q = q->next;
-            q2 = ITM(q);
+    Item* qq;
+    Item* qextra = q1->next->next->next->next;
+    Sprintf(buf, "static int _ode_matsol%d", numlist);
+    Lappendstr(procfunc, buf);
+    vectorize_substitute(lappendstr(procfunc, "() {\n"), "(_internalthreadargsproto_) {\n");
+    qq = procfunc->next;
+    cvode_cnexp_possible = 1;
+    ITERATE(q, cvode_diffeq_list) {
+        Symbol* s;
+        Item *q1, *q2;
+        s = SYM(q);
+        q = q->next;
+        q1 = ITM(q);
+        q = q->next;
+        q2 = ITM(q);
 #if 1
-            while (qextra != q1) { /* must first have any intervening statements */
-                switch (qextra->itemtype) {
-                case STRING:
-                    Lappendstr(procfunc, STR(qextra));
-                    break;
-                case SYMBOL:
-                    Lappendsym(procfunc, SYM(qextra));
-                    break;
-                }
-                qextra = qextra->next;
-            }
-#endif
-            cvode_diffeq(s, q1, q2);
-            qextra = q2->next;
-        }
-#if 1
-        /* if we are not at the end, there is more extra */
-        while (qextra != q4) {
+        while (qextra != q1) { /* must first have any intervening statements */
             switch (qextra->itemtype) {
             case STRING:
                 Lappendstr(procfunc, STR(qextra));
@@ -620,9 +601,25 @@ is not allowed on the left hand side.");
             qextra = qextra->next;
         }
 #endif
-        Lappendstr(procfunc, " return 0;\n}\n");
-        vectorize_scan_for_func(qq, procfunc);
+        cvode_diffeq(s, q1, q2);
+        qextra = q2->next;
     }
+#if 1
+    /* if we are not at the end, there is more extra */
+    while (qextra != q4) {
+        switch (qextra->itemtype) {
+        case STRING:
+            Lappendstr(procfunc, STR(qextra));
+            break;
+        case SYMBOL:
+            Lappendsym(procfunc, SYM(qextra));
+            break;
+        }
+        qextra = qextra->next;
+    }
+#endif
+    Lappendstr(procfunc, " return 0;\n}\n");
+    vectorize_scan_for_func(qq, procfunc);
 
     Lappendstr(procfunc, "/*END CVODE*/\n");
     if (cvode_cnexp_solve && cvode_cnexp_success(q1, q4)) {
