@@ -35,10 +35,10 @@ Releasing
 ---
 - [ ] Update semantic version in `CMakeLists.txt`
 - [ ] Update changelog below and agree on it with everyone; then commit it to `docs/changelog` (copy structure as-is)
-- [ ] Activate ReadTheDocs for `release/x.y` (Hidden until ship). If the branch is missing from [the versions page](https://readthedocs.org/projects/nrn/versions/), use **+ Add version**. Inspect the Changelog page after the build.
+- [ ] Activate Read the Docs for `release/x.y` (Hidden until ship). If the branch is missing from [the versions page](https://readthedocs.org/projects/nrn/versions/), use **+ Add version**. Inspect the Changelog page after the build.
 - [ ] Ship with the **same** controller (`master`), `rel_branch`, `rel_tag`, and SHAs as the last green dry-run, **`upload=true`**. This creates the annotated tag, a **pre-release** on GitHub (full-src-package and Windows installer attach when those jobs finish), and publishes wheels to PyPI.
 - [ ] Upload the already-tested MacOS package installer to the GitHub pre-release
-- [ ] Once wheels are on PyPI, activate the `x.y.z` **tag** on ReadTheDocs: [versions page](https://readthedocs.org/projects/nrn/versions/) → **+ Add version** if the tag is not listed (new/unbuilt tags are hidden under “Recently built”). Leave it **not** Hidden.
+- [ ] Once wheels are on PyPI, activate the `x.y.z` **tag** on Read the Docs: [versions page](https://readthedocs.org/projects/nrn/versions/) → **+ Add version** if the tag is not listed (new/unbuilt tags are hidden under “Recently built”). Leave it **not** Hidden.
 - [ ] Publish release on GitHub (edit https://github.com/neuronsimulator/nrn/releases/tag/x.y.z and un-tick the pre-release checkbox)
 
 
@@ -47,8 +47,8 @@ Post-release
 - [ ] To mark the start of a new development cycle, tag `master` as follows:
   - minor version: `x.(y+1).dev`
   - major version: `(x+1).0.dev`
-- [ ] Deactivate ReadTheDocs build for `release/x.y` (keep the `x.y.z` tag active)
-- [ ] Go to [ReadTheDocs advanced settings](https://readthedocs.org/dashboard/nrn/advanced/) and set `Default version` to `x.y.z`
+- [ ] Deactivate Read the Docs build for `release/x.y` (keep the `x.y.z` tag active)
+- [ ] Go to [Read the Docs advanced settings](https://readthedocs.org/dashboard/nrn/advanced/) and set `Default version` to `x.y.z`
 - [ ] Let people know :rocket:
 - [ ] Cherrypick changelog to `master`
 - [ ] Update the changelog for the release on GitHub
@@ -92,7 +92,7 @@ _Release Date_ : DD-MM-YYYY
 
 For the complete list of features and bug fixes, see the list in [GitHub Issue #[GH_no.]](https://github.com/neuronsimulator/nrn/issues/#[GH_no.])
 
-ReadTheDocs sneak peek
+Read the Docs sneak peek
 ======================
 * https://nrn.readthedocs.io/en/release-x.y
 

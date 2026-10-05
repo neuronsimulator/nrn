@@ -27,7 +27,7 @@ Pre-release
 - [ ] Update cherrypicks PR:
   - [ ] Update semantic version in `CMakeLists.txt`
   - [ ] Update changelog below and agree on it with everyone; then commit it to `docs/changelog` in the cherrypicks PR (copy structure as-is)
-- [ ] Activate ReadTheDocs for the cherry-pick branch and ensure the documentation builds (when logged in, go to [the versions page](https://readthedocs.org/projects/nrn/versions/) and set the version to Active and Hidden; if the branch is missing, use **+ Add version**)
+- [ ] Activate Read the Docs for the cherry-pick branch and ensure the documentation builds (when logged in, go to [the versions page](https://readthedocs.org/projects/nrn/versions/) and set the version to Active and Hidden; if the branch is missing, use **+ Add version**)
 - [ ] Optional: [NEURON Release](https://github.com/neuronsimulator/nrn/actions/workflows/release.yml) dry-run on the cherry-pick branch (`Use workflow from` = `master`, `rel_branch` = the cherry-pick branch, `rel_tag` = `x.y.z`, **`upload=false`**) to confirm wheels build before merge
 
 Sanity checks
@@ -36,7 +36,7 @@ Sanity checks
 - [ ] Dry-run [NEURON Release](https://github.com/neuronsimulator/nrn/actions/workflows/release.yml) from **`master`**: `rel_branch=release/x.y`, `rel_tag=x.y.z`, **`upload=false`**. Confirm wheels are green, `neuron.__version__` is non-empty, and ModelDB V2 uses **this run’s** `wheels` artifact
 - [ ] If only ModelDB failed, do **not** rebuild wheels: [ModelDB CI (reuse wheels)](https://github.com/neuronsimulator/nrn/actions/workflows/modeldb-ci-reuse-wheels.yml) with the dry-run `wheels` artifact id or URL, `neuron_v1=neuron==<previous>`, `modeldb_ci_ref=master` (optional `models_to_run` for a subset)
 - [ ] nrn-build-ci runs inside NEURON Release; optional extra run: [nrn-build-ci](https://github.com/neuronsimulator/nrn-build-ci/actions/workflows/build-neuron.yml) with the same GHA `wheels` artifact URL ([manual workflow](https://github.com/neuronsimulator/nrn-build-ci#wheels-testing---manual-workflow))
-- [ ] Activate ReadTheDocs build for `release/x.y` and make it hidden. Check docs after the build. If the branch is missing, **+ Add version**.
+- [ ] Activate Read the Docs build for `release/x.y` and make it hidden. Check docs after the build. If the branch is missing, **+ Add version**.
 - [ ] Run BBP Simulation Stack & other relevant tests
 - [ ] Create and test manual artifacts (before freeze/ship — a needed code change must not follow the tag; PyPI cannot reuse `x.y.z`)
   - [ ] MacOS package installer (manual task, ask Michael)
@@ -47,14 +47,14 @@ Releasing
 ---
 - [ ] Ship with the **same** controller (`master`), `rel_branch`, `rel_tag`, and SHAs as the last green dry-run, **`upload=true`**. This creates the annotated tag, a **pre-release** on GitHub (full-src-package and Windows installer attach when those jobs finish), and publishes wheels to PyPI.
 - [ ] Upload the already-tested MacOS package installer to the GitHub pre-release
-- [ ] Once wheels are on PyPI, activate the `x.y.z` **tag** on ReadTheDocs: [versions page](https://readthedocs.org/projects/nrn/versions/) → **+ Add version** if the tag is not listed (new/unbuilt tags are hidden under “Recently built”). Leave it **not** Hidden.
+- [ ] Once wheels are on PyPI, activate the `x.y.z` **tag** on Read the Docs: [versions page](https://readthedocs.org/projects/nrn/versions/) → **+ Add version** if the tag is not listed (new/unbuilt tags are hidden under “Recently built”). Leave it **not** Hidden.
 - [ ] Publish release on GitHub (edit https://github.com/neuronsimulator/nrn/releases/tag/x.y.z and un-tick the pre-release checkbox)
 
 
 Post-release
 ---
-- [ ] Deactivate ReadTheDocs build for `release/x.y` (keep the `x.y.z` tag active)
-- [ ] Go to [ReadTheDocs advanced settings](https://readthedocs.org/dashboard/nrn/advanced/) and set `Default version` to `x.y.z`
+- [ ] Deactivate Read the Docs build for `release/x.y` (keep the `x.y.z` tag active)
+- [ ] Go to [Read the Docs advanced settings](https://readthedocs.org/dashboard/nrn/advanced/) and set `Default version` to `x.y.z`
 - [ ] Let people know :rocket:
 - [ ] Cherrypick changelog to `master`
 - [ ] Update the changelog for the release on GitHub
@@ -87,7 +87,7 @@ _Release Date_ : DD-MM-YYYY
 
 For the complete list of commits check  [GitHub Issue #[GH_no.]](https://github.com/neuronsimulator/nrn/issues/#[GH_no.])
 
-ReadTheDocs sneak peek
+Read the Docs sneak peek
 ======================
 * https://nrn.readthedocs.io/en/release-x.y
 
