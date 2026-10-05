@@ -9,8 +9,10 @@
 // modl_reg registers ptrtest (its generated _ptrtest_reg is compiled into this
 // test), the way nrniv registers built-ins.
 #include <array>
+#include <cmath>
 #include <cstring>
 #include <iostream>
+#include <limits>
 #include "neuronapi.h"
 
 using std::cerr;
@@ -134,6 +136,45 @@ int main(void) {
     nrn_section_pop();
     ok &= check(pp1 != nullptr && pp2 != nullptr, "two PPPtr point processes created at soma(0.5)");
 
+    // An unset POINTER has no double data handle. Plain C value accessors
+    // cannot propagate an exception across the ABI: reads return NaN, writes
+    // are ignored, and push accessors preserve the empty handle as nullptr.
+    nrn_section_push(soma);
+    nrn_double_push(0.5);
+    Object* pp_unset = nrn_object_new(nrn_symbol("PPPtr"), 1);
+    nrn_section_pop();
+    ok &= check(std::isnan(nrn_property_get(pp_unset, "src")),
+                "property_get returns NaN for an unset POINTER");
+    ok &= check(std::isnan(nrn_property_array_get(pp_unset, "src", 0)),
+                "property_array_get returns NaN for an unset POINTER");
+    nrn_property_set(pp_unset, "src", 1.0);
+    ok &= check(std::isnan(nrn_property_get(pp_unset, "src")),
+                "property_set ignores an unset POINTER");
+    nrn_property_array_set(pp_unset, "src", 0, 2.0);
+    ok &= check(std::isnan(nrn_property_array_get(pp_unset, "src", 0)),
+                "property_array_set ignores an unset POINTER");
+    nrn_property_push(pp_unset, "src");
+    ok &= check(nrn_double_ptr_pop() == nullptr,
+                "property_push preserves an unset POINTER as an empty handle");
+    nrn_property_array_push(pp_unset, "src", 0);
+    ok &= check(nrn_double_ptr_pop() == nullptr,
+                "property_array_push preserves an unset POINTER as an empty handle");
+    nrn_object_unref(pp_unset);
+
+    // An unset POINTER has an empty data handle, while an ordinary PARAMETER
+    // already has storage. The predicate is the second-line check for callers
+    // that receive NaN from a value accessor and need to distinguish an empty
+    // handle from a legitimate NaN value.
+    ok &= check(!nrn_property_data_handle_is_valid(pp1, "src", 0),
+                "unset point-process POINTER has no valid data handle");
+    ok &= check(nrn_property_data_handle_is_valid(pp1, "feed", 0),
+                "ordinary point-process property has a valid data handle");
+    nrn_property_set(pp1, "feed", std::numeric_limits<double>::quiet_NaN());
+    ok &= check(std::isnan(nrn_property_get(pp1, "feed")),
+                "ordinary property preserves a legitimate NaN value");
+    ok &= check(nrn_property_data_handle_is_valid(pp1, "feed", 0),
+                "legitimate NaN value still has a valid data handle");
+
     // Distinct, finitialize-stable source values (feed is a PARAMETER).
     nrn_property_set(pp1, "feed", 10);
     nrn_property_set(pp2, "feed", 20);
@@ -158,6 +199,10 @@ int main(void) {
     ok &= eq(nrn_double_pop(),
              SENTINEL,
              "second pp_setpointer_pop consumed exactly its source (sentinel intact)");
+    ok &= check(nrn_property_data_handle_is_valid(pp1, "src", 0),
+                "wired point-process POINTER has a valid data handle");
+    ok &= check(nrn_property_data_handle_is_valid(pp2, "src", 0),
+                "second wired point-process POINTER has a valid data handle");
 
     // finitialize(-65): INITIAL runs out = src, so pp1.out reads pp2.feed (20)
     // and pp2.out reads pp1.feed (10). If the wiring were segment-addressed and
@@ -167,6 +212,24 @@ int main(void) {
     nrn_double_pop();
     ok &= eq(nrn_property_get(pp1, "out"), 20.0, "pp1 read its own wired source (pp2.feed)");
     ok &= eq(nrn_property_get(pp2, "out"), 10.0, "pp2 read its own wired source (pp1.feed)");
+
+    // Property access to a point-process POINTER must follow its dparam data
+    // handle. Reading src returns the referenced feed value, and writing src
+    // mutates that referenced feed rather than unrelated parameter storage.
+    ok &= eq(nrn_property_get(pp1, "src"), 20.0, "property_get follows pp1.src -> pp2.feed");
+    ok &= eq(nrn_property_get(pp2, "src"), 10.0, "property_get follows pp2.src -> pp1.feed");
+    nrn_property_set(pp1, "src", 25.0);
+    ok &= eq(nrn_property_get(pp2, "feed"), 25.0, "property_set through pp1.src mutates pp2.feed");
+
+    // A pushed POINTER property must carry the referenced data handle. Rewire
+    // pp2.src from pp1.feed to pp1.src (which itself points at pp2.feed), then
+    // mutate pp2.feed and confirm both POINTER properties observe the change.
+    nrn_property_push(pp1, "src");
+    int rc_pp_chain = nrn_pp_setpointer_pop(pp2, "src", err, sizeof(err));
+    ok &= check(rc_pp_chain == 0, "property_push supplies a POINTER source handle");
+    nrn_property_set(pp2, "feed", 30.0);
+    ok &= eq(nrn_property_get(pp1, "src"), 30.0, "pp1.src still aliases pp2.feed");
+    ok &= eq(nrn_property_get(pp2, "src"), 30.0, "pp2.src aliases the pushed pp1.src handle");
 
     // Error path: a non-POINTER target name (out is a plain RANGE var) is
     // rejected, with the pushed source still consumed so the sentinel below

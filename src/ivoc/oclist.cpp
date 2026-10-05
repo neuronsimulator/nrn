@@ -664,7 +664,7 @@ void OcListBrowser::change_name(GlyphIndex i) {
         }
     } else if (plabel_) {
         hoc_ac_ = i;
-        if (label_action_->execute(bool(false)) == 0) {
+        if (label_action_->execute(bool(false))) {
             change_item(i, *plabel_);
         } else {
             change_item(i, "label error");

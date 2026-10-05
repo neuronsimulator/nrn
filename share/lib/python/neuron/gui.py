@@ -111,6 +111,11 @@ class LoopTimer(threading.Thread):
 
 
 if h.nrnversion(9) == "2":  # Launched with Python (instead of nrniv)
+    # Callbacks run on this thread while python -i holds the tty in
+    # pyrepl/raw mode (OPOST off). Restore NL->CRNL for those prints.
+    from neuron import install_raw_tty_newline_fix
+
+    install_raw_tty_newline_fix()
     timer = LoopTimer(0.1, process_events)
     timer.start()
 

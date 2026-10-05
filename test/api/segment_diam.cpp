@@ -54,5 +54,25 @@ int main(void) {
     nrn_double_pop();
     ok &= close_to(nrn_segment_diam_get(s, 0.5), 10.0, "diam read after finitialize");
 
+    // A non-positive diameter is clamped during the pending area/resistance
+    // recompute. The C accessor must finish that recompute without allowing
+    // hoc_execerror's C++ exception to cross the C ABI. Use multiple segments
+    // so a fix that merely catches the first clamp error cannot pass.
+    Section* zero_diam = nrn_section_new("zero_diam");
+    nrn_nseg_set(zero_diam, 3);
+    for (int i = 0; i < 3; ++i) {
+        double x = (i + 0.5) / 3.0;
+        nrn_segment_diam_set(zero_diam, x, 0.0);
+    }
+    ok &= close_to(nrn_segment_diam_get(zero_diam, 5.0 / 6.0),
+                   1e-6,
+                   "one getter completes the full zero-diam recompute");
+    for (int i = 0; i < 3; ++i) {
+        double x = (i + 0.5) / 3.0;
+        ok &= close_to(nrn_segment_diam_get(zero_diam, x),
+                       1e-6,
+                       "zero diam clamped without aborting");
+    }
+
     return ok ? 0 : 1;
 }
