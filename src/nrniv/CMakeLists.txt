@@ -302,13 +302,6 @@ set_property(
   APPEND
   PROPERTY COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src/scopmath")
 
-if(DEF_RL_GETC_FUNCTION)
-  set_property(
-    SOURCE ${NRN_OC_SRC_DIR}/hoc.cpp
-    APPEND
-    PROPERTY COMPILE_DEFINITIONS ${DEF_RL_GETC_FUNCTION})
-endif()
-
 if(NRN_USE_BACKWARD)
   set_property(
     SOURCE ${NRN_OC_SRC_DIR}/hoc.cpp
