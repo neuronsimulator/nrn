@@ -250,21 +250,20 @@ On MacOS, launching `nrniv -python` or `special -python` can fail to load `neuro
 For this specific purpose, please `export SKIP_EMBEDED_PYTHON_TEST=true` before launching the tests
 (for `test_wheels.sh`).
 
-## Publishing the wheels on Pypi via GitHub Actions
+## Publishing the wheels on PyPI via GitHub Actions
 
 Release wheels are built and published by the
 [NEURON Release](https://github.com/neuronsimulator/nrn/actions/workflows/release.yml)
 workflow, not Azure.
 
-### Three knobs
+### Workflow inputs
 
 When you click **Run workflow**:
 
 * **Use workflow from** (controller) — which checkout provides `release.yml`. Use **`master`** for dry-run and ship.
 * **`rel_branch`** — the git ref whose sources are built (usually `release/x.y`).
 * **`rel_tag`** — the version name (`x.y.z`).
-
-`upload` is a fourth input: `false` = dry-run, `true` = create the tag, attach artifacts to a GitHub pre-release, and publish wheels to PyPI.
+* **`upload`** — `false` = dry-run, `true` = create the tag, attach artifacts to a GitHub pre-release, and publish wheels to PyPI.
 
 ### Release wheels (dry-run, then ship)
 
@@ -285,10 +284,6 @@ Do not treat Azure `NRN_RELEASE_UPLOAD` as the release path.
 Nightly wheels are published from `master` by
 [wheels-nightly.yml](https://github.com/neuronsimulator/nrn/actions/workflows/wheels-nightly.yml)
 on a schedule (and can be dispatched manually).
-
-## Publishing the wheels on Pypi via CircleCI
-
-Linux/arm64 release wheels are now part of the GHA matrix (`ubuntu-24.04-arm`). There is no `.circleci` config in this repository; do not use CircleCI for a release.
 
 ## How to test GHA wheels locally
 

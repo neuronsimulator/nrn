@@ -10,9 +10,9 @@ assignees: ''
 Action items
 ============
 
-GHA release knobs
+NEURON Release inputs
 ---
-[NEURON Release](https://github.com/neuronsimulator/nrn/actions/workflows/release.yml) is the release path (wheels, ModelDB CI, nrn-build-ci, full-src, Windows installer, tag, PyPI). Three knobs:
+[NEURON Release](https://github.com/neuronsimulator/nrn/actions/workflows/release.yml) is the release path (wheels, ModelDB CI, nrn-build-ci, full-src, Windows installer, tag, PyPI). Inputs:
 
 * **Controller** — branch whose workflow YAML runs (`Use workflow from`). Ship from **`master`**.
 * **`rel_branch`** — content to build (usually `release/x.y`).
