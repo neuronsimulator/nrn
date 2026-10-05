@@ -20,7 +20,7 @@ GHA release knobs
 
 `upload=false` is a dry-run (no git tag, no GitHub release, no PyPI). `upload=true` ships. See [wheel publishing](https://nrn.readthedocs.io/en/latest/install/python_wheels.html#publishing-the-wheels-on-pypi-via-github-actions).
 
-Pre-release
+Cherrypicks branch
 ---
 - [ ] Create a cherrypicks branch where all commits go into new release and open a PR against `release/x.y` branch
 - [ ] Watch for ModelDB regressions (dry-run ModelDB below, or [ModelDB CI (reuse wheels)](https://github.com/neuronsimulator/nrn/actions/workflows/modeldb-ci-reuse-wheels.yml) against a prior `wheels` artifact vs the previous PyPI version). Local `nrn-modeldb-ci` is optional.
