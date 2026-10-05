@@ -28,7 +28,7 @@ Pre-release
   - [ ] Update semantic version in `CMakeLists.txt`
   - [ ] Update changelog below and agree on it with everyone; then commit it to `docs/changelog` in the cherrypicks PR (copy structure as-is)
 - [ ] Activate Read the Docs for the cherry-pick branch and ensure the documentation builds (when logged in, go to [the versions page](https://readthedocs.org/projects/nrn/versions/) and set the version to Active and Hidden; if the branch is missing, use **+ Add version**)
-- [ ] Optional: [NEURON Release](https://github.com/neuronsimulator/nrn/actions/workflows/release.yml) dry-run on the cherry-pick branch (`Use workflow from` = `master`, `rel_branch` = the cherry-pick branch, `rel_tag` = `x.y.z`, **`upload=false`**) to confirm wheels build before merge
+- [ ] Dry-run [NEURON Release](https://github.com/neuronsimulator/nrn/actions/workflows/release.yml) on the cherry-pick branch to confirm wheels build before merge. Optional but recommended to go as far as possible with a dry-run (no upload to PyPI), so a fix lands on this branch instead of in a second PR after merge. `Use workflow from` = `master`, `rel_branch` = the cherry-pick branch, `rel_tag` = `x.y.z`, **`upload=false`**.
 
 Sanity checks
 ---
