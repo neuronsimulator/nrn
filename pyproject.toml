@@ -60,7 +60,7 @@ dependencies = [
 ]
 
 urls.source = "https://github.com/neuronsimulator/nrn"
-urls.website = "https://neuron.yale.edu/neuron/"
+urls.website = "https://neuronsimulator.org"
 
 [tool.setuptools_scm]
 # Do not add commit info or state of repo (modified content, etc.).
