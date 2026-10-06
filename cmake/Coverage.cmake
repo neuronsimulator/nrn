@@ -115,13 +115,21 @@ macro(nrn_enable_coverage_files)
 endmacro()
 
 if(NRN_ENABLE_COVERAGE)
+  # lcov >= 2 can capture .gcda files in parallel. On lcov 2.0-1, the same flag made genhtml several
+  # times slower and did not speed up --add-tracefile.
+  if(LCOV_VERSION GREATER_EQUAL "2.0")
+    set(LCOV_CAPTURE ${LCOV} --parallel)
+  else()
+    set(LCOV_CAPTURE ${LCOV})
+  endif()
   set(cover_clean_command find "${PROJECT_BINARY_DIR}" "-name" "*.gcda" "-type" "f" "-delete")
   set(cover_baseline_command
-      "${LCOV}" "--capture" "--initial" "--no-external" "--directory" "${PROJECT_SOURCE_DIR}"
-      "--directory" "${PROJECT_BINARY_DIR}" "--output-file" "coverage-base.info")
+      "${LCOV_CAPTURE}" "--capture" "--initial" "--no-external" "--directory"
+      "${PROJECT_SOURCE_DIR}" "--directory" "${PROJECT_BINARY_DIR}" "--output-file"
+      "coverage-base.info")
   set(cover_collect_command
-      "${LCOV}" "--capture" "--no-external" "--directory" "${PROJECT_SOURCE_DIR}" "--directory"
-      "${PROJECT_BINARY_DIR}" "--output-file" "coverage-run.info")
+      "${LCOV_CAPTURE}" "--capture" "--no-external" "--directory" "${PROJECT_SOURCE_DIR}"
+      "--directory" "${PROJECT_BINARY_DIR}" "--output-file" "coverage-run.info")
   set(cover_combine_command "${LCOV}" "--add-tracefile" "coverage-base.info" "--add-tracefile"
                             "coverage-run.info" "--output-file" "coverage-combined.info")
   set(cover_html_command genhtml "coverage-combined.info" "--output-directory" html)

@@ -12,5 +12,6 @@ NEURON Development topics
    workflow-code-paths.rst
    nrnivmodl-cmake.rst
    ./python/wheels.md
+   ./python/dependencies.md
    ./morphology/morphology.md
    hocdomain-sphinx.md

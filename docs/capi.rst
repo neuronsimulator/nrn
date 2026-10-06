@@ -1785,7 +1785,13 @@ Miscellaneous
     Execute a HOC command string. HOC is NEURON's built-in scripting language.
 
     :param command: Null-terminated string containing the HOC command.
-    :returns: Status code
+    :returns: 0 on success, 1 when the top-level interpreter catches an error.
+
+    Top-level error recovery releases interpreter frames and temporary objects,
+    then removes operands left by the failed command back to the entry stack
+    depth. Repeated runtime errors therefore do not accumulate operand-stack
+    entries. When called within an existing interpreter exception boundary,
+    errors continue to propagate to that enclosing boundary.
 
     **Usage Pattern:**
 

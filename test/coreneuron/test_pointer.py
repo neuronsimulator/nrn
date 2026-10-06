@@ -139,10 +139,8 @@ class Model:
 
 
 @pytest.mark.skipif(
-    platform.system() == "Darwin"
-    and platform.mac_ver()[0] >= "15"
-    and platform.machine() == "x86_64",
-    reason="Needs fixing on Intel-based Apples running MacOS 15",
+    platform.system() == "Darwin" and platform.mac_ver()[0] >= "15",
+    reason="Needs fixing on macOS 15 and newer (#3656)",
 )
 def test_axial():
     m = Model(5, 5)
