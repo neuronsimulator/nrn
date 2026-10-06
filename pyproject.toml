@@ -68,6 +68,17 @@ urls.website = "https://neuron.yale.edu/neuron/"
 # it's a huge pain to modify in the CI because we would need to put an extra
 # setup.py in the repo, which does nothing other than obtaining the version.
 local_scheme = "no-local-version"
+# Default describe --match '*[0-9]*' also matches python-abi3-dev. Azure clones
+# tags, then setuptools-scm cannot parse that prerelease tag.
+git_describe_command = [
+  "git",
+  "describe",
+  "--dirty",
+  "--tags",
+  "--long",
+  "--match",
+  "[0-9]*",
+]
 
 [tool.scikit-build]
 # delegate installation to CMake
