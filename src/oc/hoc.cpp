@@ -42,6 +42,28 @@
 
 #include "utils/logger.hpp"
 
+#if defined(_WIN32)
+// Hardware traps are structured exceptions. /EHsc will not turn them into
+// C++ exceptions, so the handler reports and aborts.
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+// winbase.h defines IGNORE as 0 and would replace hocdec.h's IGNORE().
+#pragma push_macro("IGNORE")
+#include <windows.h>
+#include <float.h>
+#pragma pop_macro("IGNORE")
+#ifdef small
+#undef small
+#endif
+#ifdef byte
+#undef byte
+#endif
+#endif
+
 /* for eliminating "ignoreing return value" warnings. */
 int nrnignore;
 
@@ -128,8 +150,7 @@ static int nrn_fe_except_from_signal(int si_code, void* context) {
 #endif
 }
 
-static void nrn_fe_except_report(int si_code, void* context) {
-    const int kind = nrn_fe_except_from_signal(si_code, context);
+static void nrn_fe_except_report_kind(int kind) {
     if (kind & FE_DIVBYZERO) {
         fprintf(stderr, "Floating exception: Divide by zero\n");
     }
@@ -139,6 +160,14 @@ static void nrn_fe_except_report(int si_code, void* context) {
     if (kind & FE_OVERFLOW) {
         fprintf(stderr, "Floating exception: Overflow\n");
     }
+    // MSVCRT fully buffers stderr on a pipe. Fprintf writes through the Python
+    // stderr callback and skips that buffer, so flush or the kind line follows
+    // the backtrace.
+    fflush(stderr);
+}
+
+static void nrn_fe_except_report(int si_code, void* context) {
+    nrn_fe_except_report_kind(nrn_fe_except_from_signal(si_code, context));
 }
 
 static void nrn_fe_except_clear() {
@@ -213,11 +242,27 @@ static void nrn_apple_mask_live() {
 }
 #endif
 
+#if defined(_WIN32)
+// 1 in the control word masks the trap. Leave underflow and inexact masked.
+static unsigned int nrn_win_fp_bits() {
+    return _EM_INVALID | _EM_ZERODIVIDE | _EM_OVERFLOW;
+}
+
+static int nrn_win_traps_armed(unsigned int cw) {
+    const unsigned int bits = nrn_win_fp_bits();
+    return (cw & bits) != bits ? 1 : 0;
+}
+#endif
+
 static void nrn_fe_traps_mask() {
 #if HAVE_FEENABLEEXCEPT
     fedisableexcept(FEEXCEPT);
 #elif defined(__APPLE__)
     nrn_apple_mask_live();
+#elif defined(_WIN32)
+    unsigned int cw = 0;
+    _controlfp_s(&cw, _MCW_EM, _MCW_EM);
+    _clearfp();
 #endif
     nrn_fe_except_clear();
 }
@@ -229,6 +274,11 @@ static void nrn_fe_traps_rearm() {
 #elif defined(__APPLE__)
     nrn_fe_except_clear();
     nrn_apple_env_set(true);
+#elif defined(_WIN32)
+    unsigned int cw = 0;
+    _clearfp();
+    nrn_fe_except_clear();
+    _controlfp_s(&cw, ~nrn_win_fp_bits(), _MCW_EM);
 #endif
 }
 
@@ -269,6 +319,32 @@ static int nrn_fe_traps_set(bool enable) {
         nrn_ill_restore();
     }
     nrn_feenableexcept_ = enable ? 1 : 0;
+    return previous;
+#elif defined(_WIN32)
+    unsigned int cw = 0;
+    if (_controlfp_s(&cw, 0, 0) != 0) {
+        hoc_execerror("nrn_feenableexcept", "failed to read the floating-point environment");
+    }
+    const int previous = nrn_win_traps_armed(cw);
+    if (enable) {
+        // Clear before arming so a stale sticky flag does not trap inside the call.
+        _clearfp();
+        nrn_fe_except_clear();
+        nrn_fpe_install();
+        // The handler aborts only while this is set. Set it before unmasking.
+        nrn_feenableexcept_ = 1;
+        if (_controlfp_s(&cw, ~nrn_win_fp_bits(), _MCW_EM) != 0) {
+            nrn_feenableexcept_ = 0;
+            hoc_execerror("nrn_feenableexcept", "failed to set floating-point traps");
+        }
+    } else {
+        if (_controlfp_s(&cw, _MCW_EM, _MCW_EM) != 0) {
+            hoc_execerror("nrn_feenableexcept", "failed to set floating-point traps");
+        }
+        _clearfp();
+        nrn_fe_except_clear();
+        nrn_feenableexcept_ = 0;
+    }
     return previous;
 #else
     hoc_execerror("nrn_feenableexcept", "is not available on this build");
@@ -1056,7 +1132,63 @@ void nrn_fpe_reset_mask() {
     }
 }
 
+#if defined(_WIN32)
+static PVOID nrn_fpe_veh_handle = nullptr;
+
+static LONG CALLBACK nrn_fpe_veh(EXCEPTION_POINTERS* info) {
+    if (info == nullptr || info->ExceptionRecord == nullptr || !nrn_feenableexcept_) {
+        return EXCEPTION_CONTINUE_SEARCH;
+    }
+    const DWORD code = info->ExceptionRecord->ExceptionCode;
+    int kind = 0;
+    if (code == static_cast<DWORD>(EXCEPTION_FLT_DIVIDE_BY_ZERO)) {
+        kind = FE_DIVBYZERO;
+    } else if (code == static_cast<DWORD>(EXCEPTION_FLT_INVALID_OPERATION)) {
+        kind = FE_INVALID;
+    } else if (code == static_cast<DWORD>(EXCEPTION_FLT_OVERFLOW)) {
+        kind = FE_OVERFLOW;
+    } else {
+        return EXCEPTION_CONTINUE_SEARCH;
+    }
+    // Windows enters this handler with the traps still armed. Mask before the
+    // report so a later floating-point operation does not reenter. /EHsc does
+    // not turn the trap into a C++ exception, so abort after the report.
+    nrn_fe_traps_mask();
+    nrn_fe_except_report_kind(kind);
+    Fprintf(stderr, "Floating point exception\n");
+    print_bt();
+    fflush(stderr);
+    // MinGW's msvcrt import library does not provide this UCRT function.
+    // Python is built against ucrtbase, which does.
+    SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
+    HMODULE crt = GetModuleHandleA("ucrtbase.dll");
+    if (crt == nullptr) {
+        crt = LoadLibraryA("ucrtbase.dll");
+    }
+    if (crt != nullptr) {
+        using abort_behavior_fn = unsigned int(__cdecl*)(unsigned int, unsigned int);
+        auto* quiet_abort = reinterpret_cast<abort_behavior_fn>(
+            GetProcAddress(crt, "_set_abort_behavior"));
+        if (quiet_abort != nullptr) {
+            quiet_abort(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
+        }
+    }
+    abort();
+}
+#endif
+
 static void nrn_fpe_install() {
+#if defined(_WIN32)
+    // Re-add so this handler stays ahead of one installed earlier (faulthandler).
+    if (nrn_fpe_veh_handle != nullptr) {
+        RemoveVectoredExceptionHandler(nrn_fpe_veh_handle);
+        nrn_fpe_veh_handle = nullptr;
+    }
+    nrn_fpe_veh_handle = AddVectoredExceptionHandler(1, nrn_fpe_veh);
+    if (nrn_fpe_veh_handle == nullptr) {
+        hoc_execerror("nrn_feenableexcept", "failed to install the exception handler");
+    }
+#else
 #if HAVE_SIGACTION
     struct sigaction sa {};
     sa.sa_sigaction = fpecatch_info;
@@ -1068,6 +1200,7 @@ static void nrn_fpe_install() {
 #endif
     nrn_ill_install();
     nrn_fpe_unblock();
+#endif
 }
 
 static void nrn_fpe_install_saving() {
