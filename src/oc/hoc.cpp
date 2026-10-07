@@ -30,6 +30,9 @@
 
 #include <cfenv>
 #include <csignal>
+#if defined(__APPLE__)
+#include <sys/ucontext.h>
+#endif
 #include <condition_variable>
 #include <filesystem>
 #include <iostream>
@@ -72,6 +75,9 @@ extern "C" int fedisableexcept(int excepts);
 
 void fpecatch(int);
 static void nrn_fpe_install();
+static void nrn_fpe_unblock();
+static void nrn_ill_install();
+static void nrn_ill_restore();
 
 // Name the trap. In the handler, fetestexcept is 0: the kernel clears the live
 // status word and reports the cause as si_code. fetestexcept covers a call
@@ -96,8 +102,34 @@ static int nrn_fe_except_kind(int si_code) {
     return std::fetestexcept(FEEXCEPT);
 }
 
-static void nrn_fe_except_report(int si_code) {
-    const int kind = nrn_fe_except_kind(si_code);
+// Apple arm64 raises SIGILL, not SIGFPE, and clears both the live FPSR and the
+// copy in the signal context. The syndrome register still names the trap.
+// IOF/DZF/OFF are bits 0..2 and match this platform's FE_* values.
+static int nrn_fe_except_from_signal(int si_code, void* context) {
+#if defined(__APPLE__) && defined(__arm64__)
+    static_assert(FE_INVALID == 0x1, "ESR IOF bit");
+    static_assert(FE_DIVBYZERO == 0x2, "ESR DZF bit");
+    static_assert(FE_OVERFLOW == 0x4, "ESR OFF bit");
+    if (context != nullptr) {
+        auto* uc = static_cast<ucontext_t*>(context);
+        if (uc->uc_mcontext != nullptr) {
+            const unsigned esr = uc->uc_mcontext->__es.__esr;
+            const unsigned tfv = 1u << 23;
+            if ((esr >> 26) == 0x2C && (esr & tfv) != 0) {
+                return static_cast<int>(esr & FEEXCEPT);
+            }
+        }
+    }
+    (void) si_code;
+    return std::fetestexcept(FEEXCEPT);
+#else
+    (void) context;
+    return nrn_fe_except_kind(si_code);
+#endif
+}
+
+static void nrn_fe_except_report(int si_code, void* context) {
+    const int kind = nrn_fe_except_from_signal(si_code, context);
     if (kind & FE_DIVBYZERO) {
         fprintf(stderr, "Floating exception: Divide by zero\n");
     }
@@ -111,6 +143,93 @@ static void nrn_fe_except_report(int si_code) {
 
 static void nrn_fe_except_clear() {
     std::feclearexcept(FE_ALL_EXCEPT);
+}
+
+#if defined(__APPLE__)
+static bool nrn_apple_env_set(bool enable) {
+    fenv_t env{};
+    if (std::fegetenv(&env) != 0) {
+        return false;
+    }
+#if defined(__arm64__)
+    const unsigned long long traps = __fpcr_trap_invalid | __fpcr_trap_divbyzero |
+                                     __fpcr_trap_overflow;
+    if (enable) {
+        env.__fpsr &= ~static_cast<unsigned long long>(FE_ALL_EXCEPT);
+        env.__fpcr |= traps;
+    } else {
+        env.__fpcr &= ~traps;
+    }
+#else
+    // Intel: 1 in the control word and in MXCSR bits +7 means the trap is masked.
+    const unsigned int x = FEEXCEPT;
+    if (enable) {
+        env.__status = static_cast<unsigned short>(env.__status & ~FE_ALL_EXCEPT);
+        env.__mxcsr &= ~static_cast<unsigned int>(FE_ALL_EXCEPT);
+        env.__control = static_cast<unsigned short>(env.__control & ~x);
+        env.__mxcsr &= ~(x << 7);
+    } else {
+        env.__control = static_cast<unsigned short>(env.__control | x);
+        env.__mxcsr |= x << 7;
+    }
+#endif
+    return std::fesetenv(&env) == 0;
+}
+
+static int nrn_apple_traps_armed(const fenv_t& env) {
+#if defined(__arm64__)
+    const unsigned long long traps = __fpcr_trap_invalid | __fpcr_trap_divbyzero |
+                                     __fpcr_trap_overflow;
+    return (env.__fpcr & traps) != 0 ? 1 : 0;
+#else
+    const unsigned int x = FEEXCEPT;
+    const bool x87_armed = (env.__control & x) != x;
+    const bool sse_armed = (env.__mxcsr & (x << 7)) != (x << 7);
+    return (x87_armed || sse_armed) ? 1 : 0;
+#endif
+}
+#endif
+
+// Mask the three traps without changing nrn_feenableexcept_. The Apple handler
+// has to do this before throwing: the kernel leaves the trap bits armed, and
+// libunwind then hits a second trap. Linux already enters the handler masked.
+// arm64 uses mrs/msr here. fegetenv can run with the traps still armed.
+#if defined(__APPLE__)
+static void nrn_apple_mask_live() {
+#if defined(__arm64__)
+    const unsigned long long traps = __fpcr_trap_invalid | __fpcr_trap_divbyzero |
+                                     __fpcr_trap_overflow;
+    unsigned long long fpcr;
+    unsigned long long fpsr;
+    asm volatile("mrs %0, fpcr" : "=r"(fpcr));
+    fpcr &= ~traps;
+    asm volatile("msr fpcr, %0" ::"r"(fpcr));
+    asm volatile("mrs %0, fpsr" : "=r"(fpsr));
+    fpsr &= ~static_cast<unsigned long long>(FE_ALL_EXCEPT);
+    asm volatile("msr fpsr, %0" ::"r"(fpsr));
+#elif defined(__APPLE__)
+    nrn_apple_env_set(false);
+#endif
+}
+#endif
+
+static void nrn_fe_traps_mask() {
+#if HAVE_FEENABLEEXCEPT
+    fedisableexcept(FEEXCEPT);
+#elif defined(__APPLE__)
+    nrn_apple_mask_live();
+#endif
+    nrn_fe_except_clear();
+}
+
+static void nrn_fe_traps_rearm() {
+#if HAVE_FEENABLEEXCEPT
+    nrn_fe_except_clear();
+    feenableexcept(FEEXCEPT);
+#elif defined(__APPLE__)
+    nrn_fe_except_clear();
+    nrn_apple_env_set(true);
+#endif
 }
 
 // Arm or mask invalid, divide-by-zero, and overflow. Returns 1 if any of those
@@ -132,6 +251,25 @@ static int nrn_fe_traps_set(bool enable) {
     }
     nrn_feenableexcept_ = enable ? 1 : 0;
     return (previous_mask & FEEXCEPT) ? 1 : 0;
+#elif defined(__APPLE__)
+    fenv_t env{};
+    if (std::fegetenv(&env) != 0) {
+        hoc_execerror("nrn_feenableexcept", "failed to read the floating-point environment");
+    }
+    const int previous = nrn_apple_traps_armed(env);
+    if (enable) {
+        nrn_fe_except_clear();
+        nrn_fpe_install();
+    }
+    if (!nrn_apple_env_set(enable)) {
+        hoc_execerror("nrn_feenableexcept", "failed to set floating-point traps");
+    }
+    if (!enable) {
+        nrn_fe_except_clear();
+        nrn_ill_restore();
+    }
+    nrn_feenableexcept_ = enable ? 1 : 0;
+    return previous;
 #else
     hoc_execerror("nrn_feenableexcept", "is not available on this build");
 #endif
@@ -786,18 +924,18 @@ void print_bt() {
 
 static volatile sig_atomic_t nrn_fpe_needs_unblock = 0;
 
-static void nrn_fpe_finish(int si_code) {
-    nrn_fe_except_report(si_code);
-    nrn_fe_except_clear();
+static void nrn_fpe_finish(int si_code, void* context) {
+    nrn_fe_except_report(si_code, context);
+    // Mask before the backtrace and the throw. Apple leaves the trap bits
+    // armed, so libunwind would take a second trap. The depth helper rearms
+    // on the way out. With no HOC catch on the stack, abort after the report.
+    nrn_fe_traps_mask();
     Fprintf(stderr, "Floating point exception\n");
     print_bt();
     if (coredump) {
         abort();
     }
     nrn_fpe_install();
-    // A throw does not restore the unmasked control word saved in the signal
-    // frame. The depth helper rearms on the way out. With no HOC catch in
-    // the stack, abort after the report.
     nrn_fpe_needs_unblock = 1;
     if (nrn_try_catch_nest_depth == 0) {
         abort();
@@ -808,26 +946,99 @@ static void nrn_fpe_finish(int si_code) {
 void fpecatch(int /* sig */) /* catch floating point exceptions */
 {
     /*ARGSUSED*/
-    nrn_fpe_finish(0);
+    nrn_fpe_finish(0, nullptr);
 }
 
 #if HAVE_SIGACTION
-static void fpecatch_info(int /* sig */, siginfo_t* info, void* /* context */) {
-    nrn_fpe_finish(info ? info->si_code : 0);
-}
-
 static struct sigaction nrn_fpe_saved;
 #else
 static void (*nrn_fpe_saved_fn)(int) = nullptr;
 #endif
 static bool nrn_fpe_saved_valid = false;
 
+#if defined(__APPLE__) && defined(__arm64__)
+#if HAVE_SIGACTION
+static struct sigaction nrn_ill_saved;
+#else
+static void (*nrn_ill_saved_fn)(int) = nullptr;
+#endif
+static bool nrn_ill_saved_valid = false;
+#endif
+
+#if HAVE_SIGACTION
+static void fpecatch_info(int sig, siginfo_t* info, void* context);
+#endif
+
+static void nrn_ill_install() {
+#if defined(__APPLE__) && defined(__arm64__) && HAVE_SIGACTION
+    struct sigaction sa {};
+    sa.sa_sigaction = fpecatch_info;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_SIGINFO;
+    // Keep the handler we found at the first arm (often faulthandler).
+    if (!nrn_ill_saved_valid) {
+        sigaction(SIGILL, &sa, &nrn_ill_saved);
+        nrn_ill_saved_valid = true;
+    } else {
+        sigaction(SIGILL, &sa, nullptr);
+    }
+#elif defined(__APPLE__) && defined(__arm64__)
+    if (!nrn_ill_saved_valid) {
+        nrn_ill_saved_fn = signal(SIGILL, fpecatch);
+        nrn_ill_saved_valid = true;
+    } else {
+        signal(SIGILL, fpecatch);
+    }
+#endif
+}
+
+static void nrn_ill_restore() {
+#if defined(__APPLE__) && defined(__arm64__) && HAVE_SIGACTION
+    if (!nrn_ill_saved_valid) {
+        return;
+    }
+    sigaction(SIGILL, &nrn_ill_saved, nullptr);
+    nrn_ill_saved_valid = false;
+#elif defined(__APPLE__) && defined(__arm64__)
+    if (!nrn_ill_saved_valid) {
+        return;
+    }
+    signal(SIGILL, nrn_ill_saved_fn);
+    nrn_ill_saved_valid = false;
+#endif
+}
+
+#if HAVE_SIGACTION
+static void fpecatch_info(int sig, siginfo_t* info, void* context) {
+#if defined(__APPLE__) && defined(__arm64__) && defined(ILL_ILLTRP)
+    // SIGILL is also a real illegal instruction. Only ILL_ILLTRP is a float trap.
+    if (sig == SIGILL && !(info != nullptr && info->si_code == ILL_ILLTRP)) {
+        if (nrn_ill_saved_valid) {
+            nrn_ill_restore();
+        } else {
+            signal(SIGILL, SIG_DFL);
+        }
+        nrn_fpe_unblock();
+        raise(SIGILL);
+        return;
+    }
+#else
+    (void) sig;
+#endif
+    nrn_fpe_finish(info ? info->si_code : 0, context);
+}
+#endif
+
 static void nrn_fpe_unblock() {
 #if HAVE_SIGPROCMASK
-    // A throw can skip the normal return from the handler and leave SIGFPE blocked.
+    // A throw can skip the normal return from the handler and leave the
+    // signal blocked. arm64 float traps arrive as SIGILL.
     sigset_t set;
     sigemptyset(&set);
     sigaddset(&set, SIGFPE);
+#if defined(__APPLE__) && defined(__arm64__)
+    sigaddset(&set, SIGILL);
+#endif
     sigprocmask(SIG_UNBLOCK, &set, nullptr);
 #endif
 }
@@ -838,13 +1049,10 @@ void nrn_fpe_reset_mask() {
     }
     nrn_fpe_needs_unblock = 0;
     nrn_fpe_unblock();
-    // Leaving the handler by throwing keeps the kernel's masked control word.
-    // Put the traps back if the user still wants them.
+    // The handler masked the traps before throwing. Put them back if the
+    // user still wants them.
     if (nrn_feenableexcept_) {
-#if HAVE_FEENABLEEXCEPT
-        nrn_fe_except_clear();
-        feenableexcept(FEEXCEPT);
-#endif
+        nrn_fe_traps_rearm();
     }
 }
 
@@ -858,6 +1066,7 @@ static void nrn_fpe_install() {
 #else
     signal(SIGFPE, fpecatch);
 #endif
+    nrn_ill_install();
     nrn_fpe_unblock();
 }
 
@@ -873,6 +1082,9 @@ static void nrn_fpe_install_saving() {
     nrn_fpe_saved_fn = signal(SIGFPE, fpecatch);
     nrn_fpe_saved_valid = true;
 #endif
+    if (nrn_feenableexcept_) {
+        nrn_ill_install();
+    }
     nrn_fpe_unblock();
 }
 
@@ -1377,6 +1589,10 @@ static int hoc_run1() {
                     Fprintf(stderr, fmt::format(": {}", what).c_str());
                 }
                 Fprintf(stderr, "\n");
+                // The depth helper outlives this loop, so its destructor rearms
+                // only when hoc_run1 returns. A trap masks the exceptions before
+                // the throw. Put them back before the next statement.
+                nrn_fpe_reset_mask();
                 // Exit if we're not in interactive mode
                 if (!nrn_fw_eq(hoc_fin, stdin)) {
                     return EXIT_FAILURE;
