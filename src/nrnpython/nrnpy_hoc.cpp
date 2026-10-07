@@ -2797,7 +2797,7 @@ static Object** vec_as_numpy_helper(int size, double* data) {
     if (vec_as_numpy) {
         auto po = nb::steal((*vec_as_numpy)(size, data));
         if (!po.is_none()) {
-            Object* ho = nrnpy_po2ho(po.release().ptr());
+            Object* ho = nrnpy_po2ho(po.ptr());
             --ho->refcount;
             return hoc_temp_objptr(ho);
         }
