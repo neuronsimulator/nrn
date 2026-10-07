@@ -15,6 +15,9 @@ struct Symlist;
  */
 extern int nrn_try_catch_nest_depth;
 
+// After a throw from the trap handler, unblock SIGFPE and rearm the traps.
+extern void nrn_fpe_reset_mask();
+
 /** @brief Helper type for incrementing/decrementing nrn_try_catch_nest_depth.
  */
 struct try_catch_depth_increment {
@@ -23,6 +26,7 @@ struct try_catch_depth_increment {
     }
     ~try_catch_depth_increment() {
         --nrn_try_catch_nest_depth;
+        nrn_fpe_reset_mask();
     }
 };
 

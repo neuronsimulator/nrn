@@ -29,6 +29,7 @@
 #include "../utils/profile/profiler_interface.h"
 
 #include <cfenv>
+#include <csignal>
 #include <condition_variable>
 #include <filesystem>
 #include <iostream>
@@ -63,39 +64,89 @@ extern int stdin_event_ready();
 #endif
 
 #define FEEXCEPT (FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW)
-static void matherr1(void) {
-    const int e = std::fetestexcept(FEEXCEPT);
-    /* above gives the signal but for some reason fegetexcept returns 0 */
-    switch (e) {
-    case FE_DIVBYZERO:
-        fprintf(stderr, "Floating exception: Divide by zero\n");
-        break;
-    case FE_INVALID:
-        fprintf(stderr, "Floating exception: Invalid (no well defined result\n");
-        break;
-    case FE_OVERFLOW:
-        fprintf(stderr, "Floating exception: Overflow\n");
-        break;
+
+#if HAVE_FEENABLEEXCEPT
+extern "C" int feenableexcept(int excepts);
+extern "C" int fedisableexcept(int excepts);
+#endif
+
+void fpecatch(int);
+static void nrn_fpe_install();
+
+// Name the trap. In the handler, fetestexcept is 0: the kernel clears the live
+// status word and reports the cause as si_code. fetestexcept covers a call
+// that still has sticky flags and no si_code. MSVC has no POSIX si_code names.
+static int nrn_fe_except_kind(int si_code) {
+#if defined(FPE_FLTDIV)
+    if (si_code == FPE_FLTDIV) {
+        return FE_DIVBYZERO;
     }
+#endif
+#if defined(FPE_FLTINV)
+    if (si_code == FPE_FLTINV) {
+        return FE_INVALID;
+    }
+#endif
+#if defined(FPE_FLTOVF)
+    if (si_code == FPE_FLTOVF) {
+        return FE_OVERFLOW;
+    }
+#endif
+    (void) si_code;
+    return std::fetestexcept(FEEXCEPT);
+}
+
+static void nrn_fe_except_report(int si_code) {
+    const int kind = nrn_fe_except_kind(si_code);
+    if (kind & FE_DIVBYZERO) {
+        fprintf(stderr, "Floating exception: Divide by zero\n");
+    }
+    if (kind & FE_INVALID) {
+        fprintf(stderr, "Floating exception: Invalid (no well defined result)\n");
+    }
+    if (kind & FE_OVERFLOW) {
+        fprintf(stderr, "Floating exception: Overflow\n");
+    }
+}
+
+static void nrn_fe_except_clear() {
+    std::feclearexcept(FE_ALL_EXCEPT);
+}
+
+// Arm or mask invalid, divide-by-zero, and overflow. Returns 1 if any of those
+// traps were already armed. hoc_Exp reads nrn_feenableexcept_.
+static int nrn_fe_traps_set(bool enable) {
+#if HAVE_FEENABLEEXCEPT
+    int previous_mask;
+    if (enable) {
+        // Clear before arming so a stale sticky flag does not trap inside the call.
+        nrn_fe_except_clear();
+        nrn_fpe_install();
+        previous_mask = feenableexcept(FEEXCEPT);
+    } else {
+        previous_mask = fedisableexcept(FEEXCEPT);
+        nrn_fe_except_clear();
+    }
+    if (previous_mask == -1) {
+        hoc_execerror("nrn_feenableexcept", "failed to set floating-point traps");
+    }
+    nrn_feenableexcept_ = enable ? 1 : 0;
+    return (previous_mask & FEEXCEPT) ? 1 : 0;
+#else
+    hoc_execerror("nrn_feenableexcept", "is not available on this build");
+#endif
 }
 
 int nrn_mpiabort_on_error_{1};
 
-int nrn_feenableexcept_ = 0;  // 1 if feenableexcept(FEEXCEPT) is successful
+int nrn_feenableexcept_ = 0;  // 1 while FEEXCEPT traps are armed
 
 void nrn_feenableexcept() {
-    int result = -2;  // feenableexcept does not exist.
-    nrn_feenableexcept_ = 0;
-#if NRN_FLOAT_EXCEPTION
-    if (ifarg(1) && chkarg(1, 0., 1.) == 0.) {
-        result = fedisableexcept(FEEXCEPT);
-    } else {
-        result = feenableexcept(FEEXCEPT);
-        nrn_feenableexcept_ = (result == -1) ? 0 : 1;
-    }
-#endif
+    // No argument arms the traps. The return value is the previous 0 or 1 state.
+    const bool enable = !ifarg(1) || chkarg(1, 0., 1.) != 0.;
+    const int previous = nrn_fe_traps_set(enable);
     hoc_ret();
-    hoc_pushx((double) result);
+    hoc_pushx(static_cast<double>(previous));
 }
 
 void start_profile(int i) {}
@@ -733,19 +784,96 @@ void print_bt() {
 #endif
 }
 
-void fpecatch(int /* sig */) /* catch floating point exceptions */
-{
-    /*ARGSUSED*/
-#if NRN_FLOAT_EXCEPTION
-    matherr1();
-#endif
+static volatile sig_atomic_t nrn_fpe_needs_unblock = 0;
+
+static void nrn_fpe_finish(int si_code) {
+    nrn_fe_except_report(si_code);
+    nrn_fe_except_clear();
     Fprintf(stderr, "Floating point exception\n");
     print_bt();
     if (coredump) {
         abort();
     }
-    signal(SIGFPE, fpecatch);
+    nrn_fpe_install();
+    // A throw does not restore the unmasked control word saved in the signal
+    // frame. The depth helper rearms on the way out. With no HOC catch in
+    // the stack, abort after the report.
+    nrn_fpe_needs_unblock = 1;
+    if (nrn_try_catch_nest_depth == 0) {
+        abort();
+    }
     hoc_execerror("Floating point exception.", (char*) 0);
+}
+
+void fpecatch(int /* sig */) /* catch floating point exceptions */
+{
+    /*ARGSUSED*/
+    nrn_fpe_finish(0);
+}
+
+#if HAVE_SIGACTION
+static void fpecatch_info(int /* sig */, siginfo_t* info, void* /* context */) {
+    nrn_fpe_finish(info ? info->si_code : 0);
+}
+
+static struct sigaction nrn_fpe_saved;
+#else
+static void (*nrn_fpe_saved_fn)(int) = nullptr;
+#endif
+static bool nrn_fpe_saved_valid = false;
+
+static void nrn_fpe_unblock() {
+#if HAVE_SIGPROCMASK
+    // A throw can skip the normal return from the handler and leave SIGFPE blocked.
+    sigset_t set;
+    sigemptyset(&set);
+    sigaddset(&set, SIGFPE);
+    sigprocmask(SIG_UNBLOCK, &set, nullptr);
+#endif
+}
+
+void nrn_fpe_reset_mask() {
+    if (!nrn_fpe_needs_unblock) {
+        return;
+    }
+    nrn_fpe_needs_unblock = 0;
+    nrn_fpe_unblock();
+    // Leaving the handler by throwing keeps the kernel's masked control word.
+    // Put the traps back if the user still wants them.
+    if (nrn_feenableexcept_) {
+#if HAVE_FEENABLEEXCEPT
+        nrn_fe_except_clear();
+        feenableexcept(FEEXCEPT);
+#endif
+    }
+}
+
+static void nrn_fpe_install() {
+#if HAVE_SIGACTION
+    struct sigaction sa {};
+    sa.sa_sigaction = fpecatch_info;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_SIGINFO;
+    sigaction(SIGFPE, &sa, nullptr);
+#else
+    signal(SIGFPE, fpecatch);
+#endif
+    nrn_fpe_unblock();
+}
+
+static void nrn_fpe_install_saving() {
+#if HAVE_SIGACTION
+    struct sigaction sa {};
+    sa.sa_sigaction = fpecatch_info;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_SIGINFO;
+    sigaction(SIGFPE, &sa, &nrn_fpe_saved);
+    nrn_fpe_saved_valid = true;
+#else
+    nrn_fpe_saved_fn = signal(SIGFPE, fpecatch);
+    nrn_fpe_saved_valid = true;
+#endif
+    nrn_fpe_unblock();
 }
 
 __attribute__((noreturn)) void sigsegvcatch(int /* sig */) /* segmentation violation probably due to
@@ -1160,7 +1288,7 @@ static SignalType* signals[4];
 
 static void set_signals(void) {
     signals[0] = signal(SIGINT, onintr);
-    signals[1] = signal(SIGFPE, fpecatch);
+    nrn_fpe_install_saving();
     signals[2] = signal(SIGSEGV, sigsegvcatch);
 #if HAVE_SIGBUS
     signals[3] = signal(SIGBUS, sigbuscatch);
@@ -1169,7 +1297,15 @@ static void set_signals(void) {
 
 static void restore_signals(void) {
     signals[0] = signal(SIGINT, signals[0]);
-    signals[1] = signal(SIGFPE, signals[1]);
+    // While traps are armed, keep fpecatch. Restoring here puts SIGFPE back to
+    // SIG_DFL or faulthandler as soon as the HOC call returns.
+    if (!nrn_feenableexcept_ && nrn_fpe_saved_valid) {
+#if HAVE_SIGACTION
+        sigaction(SIGFPE, &nrn_fpe_saved, nullptr);
+#else
+        signal(SIGFPE, nrn_fpe_saved_fn);
+#endif
+    }
     signals[2] = signal(SIGSEGV, signals[2]);
 #if HAVE_SIGBUS
     signals[3] = signal(SIGBUS, signals[3]);
