@@ -166,10 +166,6 @@ static void nrn_fe_except_report_kind(int kind) {
     fflush(stderr);
 }
 
-static void nrn_fe_except_report(int si_code, void* context) {
-    nrn_fe_except_report_kind(nrn_fe_except_from_signal(si_code, context));
-}
-
 static void nrn_fe_except_clear() {
     std::feclearexcept(FE_ALL_EXCEPT);
 }
@@ -222,7 +218,8 @@ static int nrn_apple_traps_armed(const fenv_t& env) {
 // Mask the three traps without changing nrn_feenableexcept_. The Apple handler
 // has to do this before throwing: the kernel leaves the trap bits armed, and
 // libunwind then hits a second trap. Linux already enters the handler masked.
-// arm64 uses mrs/msr here. fegetenv can run with the traps still armed.
+// arm64 uses mrs/msr. Intel uses fldcw and ldmxcsr. fegetenv would raise the
+// pending exception while this signal is blocked.
 #if defined(__APPLE__)
 static void nrn_apple_mask_live() {
 #if defined(__arm64__)
@@ -236,8 +233,30 @@ static void nrn_apple_mask_live() {
     asm volatile("mrs %0, fpsr" : "=r"(fpsr));
     fpsr &= ~static_cast<unsigned long long>(FE_ALL_EXCEPT);
     asm volatile("msr fpsr, %0" ::"r"(fpsr));
-#elif defined(__APPLE__)
-    nrn_apple_env_set(false);
+#else
+    // fegetenv executes x87/SSE instructions and would raise the pending
+    // exception while this signal is blocked. fldcw also raises when an x87
+    // exception is already pending, so clear it first. One asm block keeps
+    // the compiler from inserting an SSE instruction while the trap is still armed.
+    static_assert(FE_INVALID == 0x01, "x87 invalid mask bit");
+    static_assert(FE_DIVBYZERO == 0x04, "x87 divide-by-zero mask bit");
+    static_assert(FE_OVERFLOW == 0x08, "x87 overflow mask bit");
+    unsigned short control = 0;
+    unsigned int mxcsr = 0;
+    asm volatile(
+        "fnclex\n\t"
+        "fnstcw %[cw]\n\t"
+        "orw %[x87], %[cw]\n\t"
+        "fldcw %[cw]\n\t"
+        "stmxcsr %[mx]\n\t"
+        "orl %[sse], %[mx]\n\t"
+        "andl %[keep], %[mx]\n\t"
+        "ldmxcsr %[mx]"
+        : [cw] "+m"(control), [mx] "+m"(mxcsr)
+        : [x87] "n"(static_cast<unsigned short>(FEEXCEPT)),
+          [sse] "n"(static_cast<unsigned int>(FEEXCEPT) << 7),
+          [keep] "n"(~static_cast<unsigned int>(FE_ALL_EXCEPT))
+        : "cc");
 #endif
 }
 #endif
@@ -1001,11 +1020,15 @@ void print_bt() {
 static volatile sig_atomic_t nrn_fpe_needs_unblock = 0;
 
 static void nrn_fpe_finish(int si_code, void* context) {
-    nrn_fe_except_report(si_code, context);
-    // Mask before the backtrace and the throw. Apple leaves the trap bits
-    // armed, so libunwind would take a second trap. The depth helper rearms
-    // on the way out. With no HOC catch on the stack, abort after the report.
+    // Name the trap before masking. Masking clears the sticky flags, and on
+    // Intel a floating-point instruction here raises SIGFPE again. The first
+    // signal is blocked in this handler, so that second signal kills the process.
+    const int kind = nrn_fe_except_from_signal(si_code, context);
     nrn_fe_traps_mask();
+    nrn_fe_except_report_kind(kind);
+    // Apple leaves the trap bits armed, so libunwind would take a second
+    // trap. The depth helper rearms on the way out. With no HOC catch on
+    // the stack, abort after the report.
     Fprintf(stderr, "Floating point exception\n");
     print_bt();
     if (coredump) {

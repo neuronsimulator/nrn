@@ -7,6 +7,7 @@ Windows reports the trap and then aborts, so these tests stay on the Unix path.
 
 import faulthandler
 import math
+import os
 import sys
 
 import pytest
@@ -92,6 +93,24 @@ def test_argument_out_of_range(traps_off):
     assert h.nrn_feenableexcept(0) == 0.0
 
 
+def _thread_sanitizer():
+    # The trap becomes a signal. ThreadSanitizer does not deliver that signal
+    # into hoc_execerror; the test process dies.
+    blob = " ".join(
+        os.environ.get(name, "")
+        for name in (
+            "NRN_SANITIZER_PRELOAD_VAL",
+            "LD_PRELOAD",
+            "DYLD_INSERT_LIBRARIES",
+        )
+    )
+    return "tsan" in blob.lower()
+
+
+@pytest.mark.skipif(
+    _thread_sanitizer(),
+    reason="ThreadSanitizer does not deliver a floating-point trap into hoc_execerror",
+)
 def test_faulthandler_and_three_traps(traps_off, capfd):
     assert _arm(capfd) == 0.0
 
