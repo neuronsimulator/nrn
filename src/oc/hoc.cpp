@@ -216,10 +216,11 @@ static int nrn_apple_traps_armed(const fenv_t& env) {
 #endif
 
 // Mask the three traps without changing nrn_feenableexcept_. The Apple handler
-// has to do this before throwing: the kernel leaves the trap bits armed, and
-// libunwind then hits a second trap. Linux already enters the handler masked.
-// arm64 uses mrs/msr. Intel uses fldcw and ldmxcsr. fegetenv would raise the
-// pending exception while this signal is blocked.
+// has to do this before it leaves the signal frame: the kernel leaves the trap
+// bits armed. arm64 then throws. Intel macOS siglongjmps back to the HOC try.
+// A throw inside that signal frame calls std::terminate. Linux already enters
+// the handler masked. arm64 uses mrs/msr. Intel uses fldcw and ldmxcsr.
+// fegetenv would raise the pending exception while this signal is blocked.
 #if defined(__APPLE__)
 static void nrn_apple_mask_live() {
 #if defined(__arm64__)
@@ -1019,6 +1020,108 @@ void print_bt() {
 
 static volatile sig_atomic_t nrn_fpe_needs_unblock = 0;
 
+#if defined(__APPLE__) && !defined(__arm64__)
+thread_local nrn_fpe_catch_jump* nrn_fpe_catch_jump::top_ = nullptr;
+
+void nrn_fpe_catch_jump::unlink() noexcept {
+    if (!linked_) {
+        return;
+    }
+    linked_ = false;
+    if (top_ == this) {
+        top_ = prev_;
+        return;
+    }
+    for (nrn_fpe_catch_jump** link = &top_; *link; link = &(*link)->prev_) {
+        if (*link == this) {
+            *link = prev_;
+            return;
+        }
+    }
+}
+
+static bool nrn_fpe_altstack_ready() {
+    stack_t old{};
+    if (sigaltstack(nullptr, &old) != 0) {
+        return false;
+    }
+    if (old.ss_sp != nullptr && (old.ss_flags & SS_DISABLE) == 0) {
+        return true;
+    }
+    // print_bt runs in the handler. On the normal stack that can overwrite the
+    // sigjmp_buf, which sits only a few frames above the trap.
+    struct buf {
+        char* p{};
+        ~buf() {
+            free(p);
+        }
+    };
+    thread_local buf stack;
+    if (stack.p == nullptr) {
+        stack.p = static_cast<char*>(malloc(128 * 1024));
+        if (stack.p == nullptr) {
+            return false;
+        }
+    }
+    stack_t ss{};
+    ss.ss_sp = stack.p;
+    ss.ss_size = 128 * 1024;
+    ss.ss_flags = 0;
+    return sigaltstack(&ss, nullptr) == 0;
+}
+
+static void nrn_fpe_altstack_rearm() {
+    // siglongjmp out of an SA_ONSTACK handler can leave SS_ONSTACK set, so the
+    // next trap would not switch stacks. Clear it from the normal stack.
+    stack_t cur{};
+    if (sigaltstack(nullptr, &cur) != 0 || (cur.ss_flags & SS_ONSTACK) == 0) {
+        return;
+    }
+    stack_t disable{};
+    disable.ss_flags = SS_DISABLE;
+    if (sigaltstack(&disable, nullptr) != 0) {
+        return;
+    }
+    cur.ss_flags = 0;
+    sigaltstack(&cur, nullptr);
+}
+
+void nrn_fpe_catch_jump::landed() {
+    // siglongjmp does not restore caller-saved registers. Use the TLS top,
+    // not the jump object's this pointer.
+    nrn_fpe_altstack_rearm();
+    if (top_ != nullptr) {
+        top_->unlink();
+    }
+    hoc_execerror("Floating point exception.", (char*) 0);
+}
+
+// Keep this frame. A tail call would save the wrong return address, and
+// splitting the throw into a cold section breaks the unwind back to the try.
+#if defined(__GNUC__) && !defined(__clang__)
+__attribute__((optimize("no-reorder-blocks-and-partition")))
+#endif
+__attribute__((noinline)) void
+nrn_fpe_catch_jump::arm() {
+    if (!linked_) {
+        prev_ = top_;
+        top_ = this;
+        linked_ = true;
+    }
+    if (sigsetjmp(buf_, 1) != 0) {
+        landed();
+    }
+}
+
+bool nrn_fpe_catch_jump::leave_handler() {
+    if (top_ == nullptr) {
+        return false;
+    }
+    siglongjmp(top_->buf_, 1);
+    return true;
+}
+#endif
+
 static void nrn_fpe_finish(int si_code, void* context) {
     // Name the trap before masking. Masking clears the sticky flags, and on
     // Intel a floating-point instruction here raises SIGFPE again. The first
@@ -1039,6 +1142,13 @@ static void nrn_fpe_finish(int si_code, void* context) {
     if (nrn_try_catch_nest_depth == 0) {
         abort();
     }
+#if defined(__APPLE__) && !defined(__arm64__)
+    // The Intel signal trampoline does not unwind. siglongjmp to the HOC try
+    // and throw from there. With no armed try, fall through.
+    if (nrn_fpe_catch_jump::leave_handler()) {
+        return;
+    }
+#endif
     hoc_execerror("Floating point exception.", (char*) 0);
 }
 
@@ -1217,6 +1327,12 @@ static void nrn_fpe_install() {
     sa.sa_sigaction = fpecatch_info;
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = SA_SIGINFO;
+#if defined(__APPLE__) && !defined(__arm64__)
+    // Keep print_bt off the stack that holds the sigjmp_buf.
+    if (nrn_fpe_altstack_ready()) {
+        sa.sa_flags |= SA_ONSTACK;
+    }
+#endif
     sigaction(SIGFPE, &sa, nullptr);
 #else
     signal(SIGFPE, fpecatch);
@@ -1232,6 +1348,11 @@ static void nrn_fpe_install_saving() {
     sa.sa_sigaction = fpecatch_info;
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = SA_SIGINFO;
+#if defined(__APPLE__) && !defined(__arm64__)
+    if (nrn_fpe_altstack_ready()) {
+        sa.sa_flags |= SA_ONSTACK;
+    }
+#endif
     sigaction(SIGFPE, &sa, &nrn_fpe_saved);
     nrn_fpe_saved_valid = true;
 #else
@@ -1694,21 +1815,24 @@ struct signal_handler_guard {
 template <typename T>
 struct temporarily_change {
     temporarily_change(T& global, T new_value)
-        : m_global_value{global}
+        : m_global_value{&global}
         , m_saved_value{std::exchange(global, new_value)} {}
     ~temporarily_change() {
-        m_global_value = m_saved_value;
+        // Intel macOS siglongjmp does not restore caller-saved registers.
+        *m_global_value = m_saved_value;
     }
 
   private:
-    T& m_global_value;
-    T m_saved_value;
+    T* volatile m_global_value;
+    volatile T m_saved_value;
 };
 
 // execute until EOF
 // called from a try { ... } block in hoc_main1
 static int hoc_run1() {
-    auto* const sav_fin = hoc_fin;
+    // The catch reloads this after a siglongjmp on Intel macOS. A pointer kept
+    // only in a register is not reliable there.
+    NrnFILEWrap* volatile sav_fin = hoc_fin;
     hoc_pipeflag = 0;
     hoc_execerror_messages = 1;
     auto const loop_body = []() {
@@ -1734,6 +1858,8 @@ static int hoc_run1() {
         hoc_intset = 0;
         for (;;) {
             try {
+                nrn_fpe_catch_jump fpe_jump;
+                fpe_jump.arm();
                 if (!loop_body()) {
                     break;
                 }
@@ -1848,12 +1974,15 @@ int hoc_oc(const char* buf, std::ostream& os) {
     } else {
         // This is the highest level try/catch
         try_catch_depth_increment tell_children_we_will_catch{};
-        auto const stack_size = hoc_stack_size();
+        const volatile std::size_t stack_size = hoc_stack_size();
+        std::ostream* volatile report_os = &os;
         try {
             signal_handler_guard _{};
+            nrn_fpe_catch_jump fpe_jump;
+            fpe_jump.arm();
             kernel();
         } catch (std::exception const& e) {
-            os << "hoc_oc caught exception: " << e.what() << std::endl;
+            *report_os << "hoc_oc caught exception: " << e.what() << std::endl;
             hoc_initcode();
             // initcode releases frame/temporary objects, but leaves operands.
             // Keep entries owned by the caller below this command's stack.

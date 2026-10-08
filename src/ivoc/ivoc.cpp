@@ -369,14 +369,18 @@ int Oc::run(const std::string& buf, bool show_err_mes) {
 }
 
 int Oc::run(const char* buf, bool show_err_mes) {
-    int hem = hoc_execerror_messages;
+    // Reloaded after a siglongjmp on Intel macOS. A register is not reliable there.
+    volatile int hem = hoc_execerror_messages;
     hoc_execerror_messages = show_err_mes;
     int err{};
+    const volatile bool show_mes = show_err_mes;
     try_catch_depth_increment tell_children_we_will_catch{};
     try {
+        nrn_fpe_catch_jump fpe_jump;
+        fpe_jump.arm();
         err = hoc_oc(buf);
     } catch (std::exception const& e) {
-        if (show_err_mes) {
+        if (show_mes) {
             Fprintf(stderr, "Oc::run: caught exception");
             std::string_view what{e.what()};
             if (!what.empty()) {

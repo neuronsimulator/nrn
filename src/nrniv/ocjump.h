@@ -15,8 +15,41 @@ struct Symlist;
  */
 extern int nrn_try_catch_nest_depth;
 
-// After a throw from the trap handler, unblock SIGFPE and rearm the traps.
+// After a floating-point trap is reported, unblock SIGFPE and rearm the traps.
 extern void nrn_fpe_reset_mask();
+
+#if defined(__APPLE__) && !defined(__arm64__)
+#include <setjmp.h>
+// Intel macOS cannot throw through a SIGFPE frame: std::terminate aborts.
+// arm() sigsetjmps. The handler siglongjmps here, then hoc_execerror throws
+// from ordinary code. The try that calls arm() is what catches that throw.
+struct nrn_fpe_catch_jump {
+    nrn_fpe_catch_jump() = default;
+    ~nrn_fpe_catch_jump() {
+        unlink();
+    }
+    nrn_fpe_catch_jump(const nrn_fpe_catch_jump&) = delete;
+    nrn_fpe_catch_jump& operator=(const nrn_fpe_catch_jump&) = delete;
+
+    void arm();
+    // From the signal handler. Returns false when no try is armed.
+    static bool leave_handler();
+
+  private:
+    void unlink() noexcept;
+    static void landed();
+
+    sigjmp_buf buf_{};
+    nrn_fpe_catch_jump* prev_{nullptr};
+    bool linked_{false};
+    static thread_local nrn_fpe_catch_jump* top_;
+};
+#else
+// Linux and Apple silicon throw from the handler. Windows aborts there.
+struct nrn_fpe_catch_jump {
+    void arm() {}
+};
+#endif
 
 /** @brief Helper type for incrementing/decrementing nrn_try_catch_nest_depth.
  */
