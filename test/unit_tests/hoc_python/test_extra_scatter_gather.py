@@ -3,6 +3,14 @@ import pytest
 from neuron import h
 
 
+# Callback times over five fixed steps (dt = 0.025), as released NEURON 9.0.2
+# produces them: scatter runs before each step, gather after it (via re_init).
+EXPECTED_TIMES = {
+    0: [0.0, 0.025, 0.05, 0.075, 0.1],
+    1: [0.025, 0.05, 0.075, 0.1, 0.125],
+}
+
+
 @pytest.mark.parametrize("direction", [0, 1], ids=["scatter", "gather"])
 def test_extra_scatter_gather_python_callable(direction):
     """Python callbacks still run and can be removed in both directions."""
@@ -27,16 +35,15 @@ def test_extra_scatter_gather_python_callable(direction):
             if direction == 1:
                 # Fixed-step gather callbacks run on explicit reinitialization.
                 cvode.re_init()
-        assert len(calls) > 0
+        assert calls == pytest.approx(EXPECTED_TIMES[direction])
 
         cvode.extra_scatter_gather_remove(callback)
         registered = False
-        count = len(calls)
         for _ in range(5):
             h.fadvance()
             if direction == 1:
                 cvode.re_init()
-        assert len(calls) == count
+        assert len(calls) == 5
     finally:
         if registered:
             cvode.extra_scatter_gather_remove(callback)
