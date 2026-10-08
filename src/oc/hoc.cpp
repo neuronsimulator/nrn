@@ -1103,6 +1103,11 @@ __attribute__((optimize("no-reorder-blocks-and-partition")))
 #endif
 __attribute__((noinline)) void
 nrn_fpe_catch_jump::arm() {
+    // While the traps are off, sigsetjmp only adds a sigprocmask to every OcJump.
+    // No trap can arrive until a later arm() sees nrn_feenableexcept_ set.
+    if (!nrn_feenableexcept_) {
+        return;
+    }
     if (!linked_) {
         prev_ = top_;
         top_ = this;
