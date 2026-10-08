@@ -62,10 +62,6 @@ the Windows installer checks `sqrt` and `log` in software, so those calls
 may report a domain error or return an infinity instead of raising the
 hardware trap.
 
-On Linux and macOS, Python's `faulthandler` replaces SIGFPE and, on
-Apple silicon, SIGILL. Call `nrn_feenableexcept` after enabling it so
-NEURON's handler is installed.
-
 #### Different results with different nhost, nthread, or backend
 What is the gid and spiketime of the earliest difference?
 Use a **progressive** focus: spikes first, then cell-state dumps, then (when available)
