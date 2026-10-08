@@ -1,17 +1,17 @@
-from neuron import h
+from neuron import n
 
 from utils.cell import Cell
 
 
 class TableCell(Cell):
     def _create_cell(self):
-        self.section = h.Section()
+        self.section = n.Section()
         self.section.insert("table")
 
     def record(self):
-        tvec = h.Vector()
-        tvec.record(h._ref_t, sec=self.section)
-        avec = h.Vector()
+        tvec = n.Vector()
+        tvec.record(n._ref_t, sec=self.section)
+        avec = n.Vector()
         avec.record(self.section(0.5)._ref_ainf_table, sec=self.section)
         self.record_vectors["ainf"] = avec
 

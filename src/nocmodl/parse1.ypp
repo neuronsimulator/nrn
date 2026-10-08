@@ -58,7 +58,6 @@ static int leftside;	/* inside left hand side of equation? */
 static int pstate;	/* number of state in a primary expression */
 static int tstate;	/* number of states in a term */
 static Item *lastok;	/* last token accepted by expr */
-static int scopindep = 0;/* SCoP independent explicitly declared if 1 */
 static int extdef2 = 0; /* flag that says we are in an EXTDEF2 function */
 static List *table_list = LIST0; /* table information for TABLE statement */
 static Item* astmt_end_;	/* see kinetic.c vectorizing */

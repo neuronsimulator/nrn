@@ -1,6 +1,6 @@
 #include "nrnconf.h"
 #include "nrnmpi.h"
-#include "../nrncvode/nrnneosm.h"
+#include "nrnneosm.h"
 
 #include <errno.h>
 #include <stdio.h>

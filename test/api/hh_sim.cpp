@@ -73,7 +73,7 @@ int main(void) {
     nrn_function_call(nrn_symbol("finitialize"), 1);
     nrn_double_pop();
 
-    // continuerun(10)
+    // continuerun(10.5)
     nrn_double_push(10.5);
     nrn_function_call(nrn_symbol("continuerun"), 1);
     nrn_double_pop();

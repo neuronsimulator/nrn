@@ -207,9 +207,9 @@ static double text(void* v) {
     return 0.;
 #endif /* HAVE_IV */
 }
-static Member_func members[] = {{"run", srun}, {"text", text}, {0, 0}};
+static Member_func members[] = {{"run", srun}, {"text", text}, {nullptr, nullptr}};
 void SymChooser_reg() {
-    class2oc("SymChooser", scons, sdestruct, members, NULL, NULL);
+    class2oc("SymChooser", scons, sdestruct, members, nullptr, nullptr);
 }
 #if HAVE_IV
 

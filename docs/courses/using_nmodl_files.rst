@@ -34,7 +34,7 @@ Using the location of :file:`hhkchan.mod` as the working directory, start NEURON
 .. code::
     python
 
-    from neuron import h, gui
+    from neuron import n, gui
 
 
 Step 3:

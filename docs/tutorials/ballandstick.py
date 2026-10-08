@@ -1,7 +1,7 @@
-from neuron import h, gui
+from neuron import n, gui
 from neuron.units import ms, mV
 
-h.load_file("stdrun.hoc")
+n.load_file("stdrun.hoc")
 
 
 class Cell:
@@ -11,18 +11,18 @@ class Cell:
         self.all = self.soma.wholetree()
         self._setup_biophysics()
         self.x = self.y = self.z = 0
-        h.define_shape()
+        n.define_shape()
         self._rotate_z(theta)
         self._set_position(x, y, z)
 
         # everything below here in this method is NEW
-        self._spike_detector = h.NetCon(self.soma(0.5)._ref_v, None, sec=self.soma)
-        self.spike_times = h.Vector()
+        self._spike_detector = n.NetCon(self.soma(0.5)._ref_v, None, sec=self.soma)
+        self.spike_times = n.Vector()
         self._spike_detector.record(self.spike_times)
 
         self._ncs = []
 
-        self.soma_v = h.Vector().record(self.soma(0.5)._ref_v)
+        self.soma_v = n.Vector().record(self.soma(0.5)._ref_v)
 
     def __repr__(self):
         return "{}[{}]".format(self.name, self._gid)
@@ -45,8 +45,8 @@ class Cell:
             for i in range(sec.n3d()):
                 x = sec.x3d(i)
                 y = sec.y3d(i)
-                c = h.cos(theta)
-                s = h.sin(theta)
+                c = n.cos(theta)
+                s = n.sin(theta)
                 xprime = x * c - y * s
                 yprime = x * s + y * c
                 sec.pt3dchange(i, xprime, yprime, sec.z3d(i), sec.diam3d(i))
@@ -56,8 +56,8 @@ class BallAndStick(Cell):
     name = "BallAndStick"
 
     def _setup_morphology(self):
-        self.soma = h.Section(name="soma", cell=self)
-        self.dend = h.Section(name="dend", cell=self)
+        self.soma = n.Section("soma", self)
+        self.dend = n.Section("dend", self)
         self.dend.connect(self.soma)
         self.soma.L = self.soma.diam = 12.6157
         self.dend.L = 200
@@ -67,7 +67,7 @@ class BallAndStick(Cell):
         for sec in self.all:
             sec.Ra = 100  # Axial resistance in Ohm * cm
             sec.cm = 1  # Membrane capacitance in micro Farads / cm^2
-        self.soma.insert("hh")
+        self.soma.insert(n.hh)
         for seg in self.soma:
             seg.hh.gnabar = 0.12  # Sodium conductance in S/cm2
             seg.hh.gkbar = 0.036  # Potassium conductance in S/cm2
@@ -80,5 +80,5 @@ class BallAndStick(Cell):
             seg.pas.e = -65  # Leak reversal potential mV
 
         # NEW: the synapse
-        self.syn = h.ExpSyn(self.dend(0.5))
+        self.syn = n.ExpSyn(self.dend(0.5))
         self.syn.tau = 2 * ms

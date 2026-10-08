@@ -46,8 +46,6 @@ Item* qlint;
 #endif
 
 static const char* pgm_name = "model";
-extern const char* RCS_version;
-extern const char* RCS_date;
 static void openfiles(int, char**);
 static void debug_item(Item* q, int indent, FILE* file);
 
@@ -57,9 +55,6 @@ int main(int argc, char* argv[]) {
      * files
      * We first look for a .mrg file and then a .mod file
      */
-    Fprintf(stderr, "%s   %s   %s\n", pgm_name, RCS_version, RCS_date);
-
-
     init(); /* keywords into symbol table, initialize
              * lists, etc. */
     unit_init();
@@ -121,7 +116,7 @@ int main(int argc, char* argv[]) {
 static void openfiles(int argc, char* argv[]) {
     char *cp, modprefix[NRN_BUFSIZE - 5];
     if (argc > 1) {
-        assert(strlen(argv[1]) < NRN_BUFSIZE);
+        assert(strlen(argv[1]) < NRN_BUFSIZE - 5);
         Sprintf(modprefix, "%s", argv[1]);
         cp = strstr(modprefix, ".mod");
         if (cp) {

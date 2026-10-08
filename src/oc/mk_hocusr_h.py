@@ -25,7 +25,7 @@ def processvar(a, names):
 
 def remove_multiline_comments(string):
     # remove all occurance comments (/*COMMENT */) from string
-    return re.sub(r"/\*.*?\*/", "", string, 0, re.DOTALL)
+    return re.sub(r"/\*.*?\*/", "", string, count=0, flags=re.DOTALL)
 
 
 types = {}

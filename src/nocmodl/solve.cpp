@@ -25,6 +25,27 @@ Symbol* cvode_nrn_current_solve_;
 void whileloop(Item*, long, int);
 void check_ss_consist(Item*);
 
+namespace {
+enum class CVodeMethod { none = 0, after_cvode = 1, cvode_t = 2, cvode_t_v = 3 };
+
+CVodeMethod deduce_cvode_method(Symbol* method) {
+    const char* const name = method ? method->name : nullptr;
+    if (name == nullptr) {
+        return CVodeMethod::none;
+    }
+    if (strcmp(name, "after_cvode") == 0) {
+        return CVodeMethod::after_cvode;
+    }
+    if (strcmp(name, "cvode_t") == 0) {
+        return CVodeMethod::cvode_t;
+    }
+    if (strcmp(name, "cvode_t_v") == 0) {
+        return CVodeMethod::cvode_t_v;
+    }
+    return CVodeMethod::none;
+}
+}  // namespace
+
 /* Need list of solve statements. We impress the
 general list structure to handle it.  The element is a pointer to an
 item which is the first item in the statement sequence in another list.
@@ -109,7 +130,7 @@ void solvhandler() {
     List* errstmt;
     Symbol *fun, *method;
     int numeqn, listnum, btype, steadystate;
-    int cvodemethod_;
+    CVodeMethod cvodemethod_;
 
     if (!solvq)
         solvq = newlist();
@@ -125,21 +146,10 @@ void solvhandler() {
         qsol = ITM(lq);
         lq = lq->next;
         method = SYM(lq);
-        cvodemethod_ = 0;
-        if (method && strcmp(method->name, "after_cvode") == 0) {
-            method = (Symbol*) 0;
-            lq->element.sym = (Symbol*) 0;
-            cvodemethod_ = 1;
-        }
-        if (method && strcmp(method->name, "cvode_t") == 0) {
-            method = (Symbol*) 0;
-            lq->element.sym = (Symbol*) 0;
-            cvodemethod_ = 2;
-        }
-        if (method && strcmp(method->name, "cvode_v") == 0) {
-            method = (Symbol*) 0;
-            lq->element.sym = (Symbol*) 0;
-            cvodemethod_ = 3;
+        cvodemethod_ = deduce_cvode_method(method);
+        if (cvodemethod_ != CVodeMethod::none) {
+            method = SYM0;
+            lq->element.sym = SYM0;
         }
         lq = lq->next;
         errstmt = LST(lq);
@@ -231,16 +241,16 @@ void solvhandler() {
         case PROCED:
             if (btype == BREAKPOINT) {
                 whileloop(qsol, (long) DERF, 0);
-                if (cvodemethod_ == 1) { /*after_cvode*/
+                if (cvodemethod_ == CVodeMethod::after_cvode) {
                     cvode_interface(fun, listnum, 0);
                 }
-                if (cvodemethod_ == 2) { /*cvode_t*/
+                if (cvodemethod_ == CVodeMethod::cvode_t) {
                     cvode_interface(fun, listnum, 0);
                     insertstr(qsol, "if (!cvode_active_)");
                     cvode_nrn_cur_solve_ = fun;
                     linsertstr(procfunc, "extern int cvode_active_;\n");
                 }
-                if (cvodemethod_ == 3) { /*cvode_t_v*/
+                if (cvodemethod_ == CVodeMethod::cvode_t_v) {
                     cvode_interface(fun, listnum, 0);
                     insertstr(qsol, "if (!cvode_active_)");
                     cvode_nrn_current_solve_ = fun;
@@ -314,7 +324,6 @@ void whileloop(Item* qsol, long type, int ss) {
     /* executing more that one for loop in a single call to model() is an error
     which is trapped in scop */
     static int called = 0, firstderf = 1;
-    const char* cp = 0;
 
     switch (type) {
     case DERF:
@@ -335,11 +344,6 @@ void whileloop(Item* qsol, long type, int ss) {
             }
             deltaindep = ifnew_parminstall(buf, sval, "", "");
             firstderf = 0;
-        }
-        if (type == DERF) {
-            cp = "dt";
-        } else if (type == DISCRETE) {
-            cp = "0.0";
         }
         if (ss) {
             return;

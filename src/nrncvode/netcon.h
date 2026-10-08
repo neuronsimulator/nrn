@@ -2,12 +2,12 @@
 
 #undef check
 
-#include "htlist.h"
 #include "neuron/container/data_handle.hpp"
 #include "nrnmpi.h"
 #include "nrnneosm.h"
 #include "pool.hpp"
 #include "tqitem.hpp"
+#include "htlist.h"
 
 #include <InterViews/observe.h>
 
@@ -247,11 +247,10 @@ class WatchCondition: public ConditionEvent, public HTList {
 class STECondition: public WatchCondition {
   public:
     STECondition(Point_process*, double (*)(Point_process*) = NULL);
-    virtual ~STECondition();
-    virtual void deliver(double, NetCvode*, NrnThread*);
-    virtual void pgvts_deliver(double t, NetCvode*);
-    virtual double value();
-    virtual NrnThread* thread();
+    void deliver(double, NetCvode*, NrnThread*) override;
+    void pgvts_deliver(double t, NetCvode*) override;
+    double value() override;
+    NrnThread* thread() override;
 
     STETransition* stet_;
 };
@@ -302,7 +301,6 @@ class PreSyn: public ConditionEvent {
     IvocVect* idvec_;
     HocCommand* stmt_;
     NrnThread* nt_;
-    hoc_Item* hi_;     // in the netcvode psl_
     hoc_Item* hi_th_;  // in the netcvode psl_th_
     long hi_index_;    // for SaveState read and write
     int use_min_delay_;

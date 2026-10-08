@@ -1,0 +1,16 @@
+---
+config:
+      theme: redux
+---
+flowchart TD
+        generate-wheel-matrix-->build-wheels
+        build-wheels-->merge-wheels
+        get-latest-wheel-version-->nrn-modeldb-ci
+        merge-wheels-->nrn-modeldb-ci
+        nrn-full-src-package-->test-full-src-package
+        merge-wheels-->nrn-build-ci
+        merge-wheels-->pypi-publish
+        nrn-full-src-package-->upload-src-package
+        tag-n-release-->upload-src-package
+        build-windows-installer-->upload-windows-installer
+        tag-n-release-->upload-windows-installer

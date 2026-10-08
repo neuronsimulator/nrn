@@ -6,6 +6,7 @@
 
 
 #include "classreg.h"
+#include "neuronapi.h"
 
 #include "hocstr.h"
 #include "parse.hpp"
@@ -40,6 +41,10 @@ int hoc_print_first_instance = 1;
 int hoc_max_builtin_class_id = -1;
 
 static Symbol* hoc_obj_;
+
+int (*nrnpy_call_obj_method)(Object* obj, const char* method, Object* obj2) = nullptr;
+int (*nrnpy_call_obj_method_double)(Object* obj, const char* method, double value) = nullptr;
+
 
 void hoc_install_hoc_obj(void) {
     /* see void hoc_objvardecl(void) */
@@ -584,28 +589,22 @@ void hoc_newobj_ret(void) {
 }
 
 void hoc_newobj(void) { /* template at pc+1 */
-    Object *ob, **obp;
-    Objectdata* obd;
-    Symbol *sym, *s;
-    int i, total;
-    int narg;
-
-    sym = (pc++)->sym;
-    narg = (pc++)->i;
+    Symbol* sym = (pc++)->sym;
+    int narg = (pc++)->i;
 #if USE_PYTHON
     /* look inside stack because of limited number of temporary objects? */
     /* whatever. we will keep the strategy */
     if (hoc_inside_stacktype(narg) == OBJECTVAR) {
 #endif
-        obp = hoc_look_inside_stack<Object**>(narg);
-        ob = hoc_newobj1(sym, narg);
+        Object** obp = hoc_look_inside_stack<Object**>(narg);
+        Object* ob = hoc_newobj1(sym, narg);
         hoc_nopop(); /* the object pointer */
         hoc_dec_refcount(obp);
         *(obp) = ob;
         hoc_pushobj(obp);
 #if USE_PYTHON
     } else { /* Assignment to OBJECTTMP not allowed */
-        Object* o = hoc_obj_look_inside_stack(narg);
+        hoc_obj_look_inside_stack(narg);
         hoc_execerror("Assignment to $o only allowed if caller arg was declared as objref",
                       nullptr);
     }
@@ -788,13 +787,11 @@ void hoc_objvardecl(void) { /* symbol at pc+1, number of indices at pc+2 */
 }
 
 void hoc_cmp_otype(void) { /* NUMBER, OBJECTVAR, or STRING must be the type */
-    int type;
-    type = (pc++)->i;
+    ++pc;
 }
 
 void hoc_known_type(void) {
-    int type;
-    type = ((pc++)->i);
+    ++pc;
 }
 
 void hoc_objectvar(void) { /* object variable symbol at pc+1. */
@@ -1023,16 +1020,29 @@ void hoc_object_component() {
     }
     obp = hoc_obj_look_inside_stack(nindex + expect_stack_nsub);
     if (obp) {
-#if USE_PYTHON
-        if (obp->ctemplate->sym == nrnpy_pyobj_sym_) {
+        if (obp->ctemplate->component) {
             if (isfunc & 2) {
-                /* this is the final left hand side of an
-                assignment to the method of a PythonObject
-                and we need to put the PythonObject and the
-                method with all its info onto the stack so that
-                a proper __setattro__ or __setitem__ can be
-                accomplished in the next hoc_object_asgn
-                */
+                /* Leave the metadata frame for component_asgn. */
+                if (isfunc & 1) {
+                    hoc_execerror_fmt("Cannot assign to a component function call '{}'",
+                                      sym0->name);
+                }
+                hoc_pushi(nindex);
+                hoc_pushs(sym0);
+                hoc_push_object(obp);
+            } else {
+                if (const char* error = obp->ctemplate->component(obp, sym0, nindex, isfunc)) {
+                    // Copies the message before hoc_execerror's warning/dialog
+                    // hooks can re-enter provider code and clobber its buffer.
+                    hoc_execerror_fmt("{}", error);
+                }
+            }
+            return;
+        } else if (obp->ctemplate->sym == nrnpy_pyobj_sym_ &&
+                   neuron::python::methods.py2n_component) {
+            /* Compatibility for providers that populate only the methods
+               table. */
+            if (isfunc & 2) {
                 if (isfunc & 1) {
                     hoc_execerror_fmt("Cannot assign to a PythonObject function call '{}'",
                                       sym0->name);
@@ -1040,14 +1050,11 @@ void hoc_object_component() {
                 hoc_pushi(nindex);
                 hoc_pushs(sym0);
                 hoc_push_object(obp);
-                /* note obp is now on stack twice */
-                /* hpoasgn will pop both */
             } else {
                 neuron::python::methods.py2n_component(obp, sym0, nindex, isfunc);
             }
             return;
         }
-#endif
         if (obp->ctemplate->id == *ptid) {
             sym = *psym;
         } else {
@@ -1374,12 +1381,10 @@ void hoc_object_eval(void) {
 }
 
 void hoc_ob_pointer(void) {
-    int type;
-    Symbol* sym;
 #if PDEBUG
     printf("code for hoc_ob_pointer\n");
 #endif
-    type = hoc_stacktype();
+    int type = hoc_stacktype();
     if (type == VAR) {
     } else if (type == SYMBOL) {
         auto* d_sym = hoc_look_inside_stack<Symbol*>(0);
@@ -1387,12 +1392,7 @@ void hoc_ob_pointer(void) {
             Symbol* sym = hoc_spop();
             int nindex = hoc_ipop();
             Section* sec = nrn_sec_pop();
-            double x;
-            if (nindex) {
-                x = hoc_xpop();
-            } else {
-                x = .5;
-            }
+            double x = nindex ? hoc_xpop() : .5;
             hoc_push(nrn_rangepointer(sec, sym, x));
         } else if (d_sym->type == VAR && d_sym->subtype == USERPROPERTY) {
             hoc_pushpx(cable_prop_eval_pointer(hoc_spop()));
@@ -1486,16 +1486,28 @@ void hoc_object_asgn() {
         hoc_assign_str(pd, d);
         hoc_pushstr(pd);
     } break;
-#if USE_PYTHON
-    case OBJECTTMP: { /* should be PythonObject */
+    case OBJECTTMP: {
         Object* o = hoc_obj_look_inside_stack(1);
-        assert(o->ctemplate->sym == nrnpy_pyobj_sym_);
         if (op) {
-            hoc_execerror("Invalid assignment operator for PythonObject", nullptr);
+            hoc_execerror(o->ctemplate->sym == nrnpy_pyobj_sym_
+                              ? "Invalid assignment operator for PythonObject"
+                              : "Invalid assignment operator for component",
+                          nullptr);
         }
-        neuron::python::methods.hpoasgn(o, type1);
+        if (o->ctemplate->component_asgn) {
+            if (const char* error = o->ctemplate->component_asgn(o)) {
+                // Copies the message before hoc_execerror's warning/dialog
+                // hooks can re-enter provider code and clobber its buffer.
+                hoc_execerror_fmt("{}", error);
+            }
+        } else if (o->ctemplate->sym == nrnpy_pyobj_sym_ && neuron::python::methods.hpoasgn) {
+            /* Compatibility for providers that populate only the methods
+               table. */
+            neuron::python::methods.hpoasgn(o, type1);
+        } else {
+            hoc_execerror("Cannot assign to component", nullptr);
+        }
     } break;
-#endif
     default:
         hoc_execerror("Cannot assign to left hand side", nullptr);
     }
@@ -1547,6 +1559,8 @@ void hoc_begintemplate(Symbol* t1) {
     t->u.ctemplate->destructor = 0;
     t->u.ctemplate->is_point_ = 0;
     t->u.ctemplate->steer = 0;
+    t->u.ctemplate->component = nullptr;
+    t->u.ctemplate->component_asgn = nullptr;
     t->u.ctemplate->id = ++template_id;
     pushtemplatei(icntobjectdata);
     pushtemplateodata(hoc_objectdata);
@@ -1596,8 +1610,8 @@ void hoc_endtemplate(Symbol* t) {
 }
 
 void class2oc_base(const char* name,
-                   void* (*cons)(Object*),
-                   void (*destruct)(void*),
+                   ctor_f* cons,
+                   dtor_f* destruct,
                    Member_func* m,
                    Member_ret_obj_func* mobjret,
                    Member_ret_str_func* strret) {
@@ -1620,6 +1634,8 @@ void class2oc_base(const char* name,
     t->constructor = cons;
     t->destructor = destruct;
     t->steer = 0;
+    t->component = nullptr;
+    t->component_asgn = nullptr;
 
     if (m)
         for (i = 0; m[i].name; ++i) {
@@ -1644,8 +1660,8 @@ void class2oc_base(const char* name,
 
 
 void class2oc(const char* name,
-              void* (*cons)(Object*),
-              void (*destruct)(void*),
+              ctor_f* cons,
+              dtor_f* destruct,
               Member_func* m,
               Member_ret_obj_func* mobjret,
               Member_ret_str_func* strret) {
@@ -2137,4 +2153,283 @@ void* nrn_opaque_obj2pyobj(Object* ho) {
         return neuron::python::methods.opaque_obj2pyobj(ho);
     }
     return nullptr;
+}
+
+// Helper functions for object arithmetic operations
+
+// Helper for object-object binary operations
+static void hoc_object_binary_op_helper(const char* method_name) {
+    Object** obj2_ptr = hoc_objpop();  // Second operand
+    Object** obj1_ptr = hoc_objpop();  // First operand (the one that has the method)
+
+    Object* obj1 = *obj1_ptr;
+    Object* obj2 = *obj2_ptr;
+
+    if (!obj1) {
+        hoc_execerror("Object arithmetic: first operand is null", nullptr);
+    }
+
+    // Try Python first if available
+    if (nrnpy_call_obj_method && nrnpy_call_obj_method(obj1, method_name, obj2) != 0) {
+        // Python handled the operation, result is on the stack
+        hoc_tobj_unref(obj1_ptr);
+        hoc_tobj_unref(obj2_ptr);
+        return;
+    }
+
+    // Look up the method
+    Symbol* method_sym = nrn_method_symbol(obj1, method_name);
+    if (!method_sym) {
+        hoc_execerror_fmt("Object arithmetic: method '{}' not found in object '{}'",
+                          method_name,
+                          obj1->ctemplate->sym->name);
+    }
+
+    // Call the HOC method: obj1.method(obj2)
+    hoc_pushobj(obj2_ptr);
+    nrn_method_call(obj1, method_sym, 1);
+
+    // Clean up temporary object references
+    hoc_tobj_unref(obj1_ptr);
+    hoc_tobj_unref(obj2_ptr);
+}
+
+// Helper for object-number binary operations (object op number)
+static void hoc_object_number_binary_op_helper(const char* method_name) {
+    double d = hoc_xpop();            // Second operand (number)
+    Object** obj_ptr = hoc_objpop();  // First operand (object)
+
+    Object* obj = *obj_ptr;
+    if (!obj) {
+        hoc_execerror("Object arithmetic: object operand is null", nullptr);
+    }
+
+    // Try Python first if available
+    if (nrnpy_call_obj_method_double && nrnpy_call_obj_method_double(obj, method_name, d) != 0) {
+        // Python handled the operation, result is on the stack
+        hoc_tobj_unref(obj_ptr);
+        return;
+    }
+
+    Symbol* method_sym = nrn_method_symbol(obj, method_name);
+    if (!method_sym) {
+        hoc_execerror_fmt("Object arithmetic: method '{}' not found in object '{}'",
+                          method_name,
+                          obj->ctemplate->sym->name);
+    }
+
+    // Push the number as argument for the method call
+    hoc_pushx(d);
+
+    // Call the method: obj.method(number)
+    nrn_method_call(obj, method_sym, 1);
+    hoc_tobj_unref(obj_ptr);
+}
+
+// Helper for number-object binary operations (number op object)
+// This uses the reverse magic method (e.g., __radd__ for addition)
+static void hoc_number_object_binary_op_helper(const char* method_name) {
+    Object** obj_ptr = hoc_objpop();  // Second operand (object)
+    double d = hoc_xpop();            // First operand (number)
+
+    Object* obj = *obj_ptr;
+    if (!obj) {
+        hoc_execerror("Object arithmetic: object operand is null", nullptr);
+    }
+
+    // Try Python first if available
+    if (nrnpy_call_obj_method_double && nrnpy_call_obj_method_double(obj, method_name, d) != 0) {
+        // Python handled the operation, result is on the stack
+        hoc_tobj_unref(obj_ptr);
+        return;
+    }
+
+    Symbol* method_sym = nrn_method_symbol(obj, method_name);
+    if (!method_sym) {
+        hoc_execerror_fmt("Object arithmetic: method '{}' not found in object '{}'",
+                          method_name,
+                          obj->ctemplate->sym->name);
+    }
+
+    // Push the number as argument for the method call
+    hoc_pushx(d);
+
+    // Call the method: obj.method(number)
+    nrn_method_call(obj, method_sym, 1);
+    hoc_tobj_unref(obj_ptr);
+}
+
+// Object arithmetic functions that call HOC object methods
+void hoc_object_add() {
+    hoc_object_binary_op_helper("__add__");
+}
+
+void hoc_object_sub() {
+    hoc_object_binary_op_helper("__sub__");
+}
+
+void hoc_object_mul() {
+    hoc_object_binary_op_helper("__mul__");
+}
+
+void hoc_object_div() {
+    hoc_object_binary_op_helper("__div__");
+}
+
+void hoc_object_pow() {
+    hoc_object_binary_op_helper("__pow__");
+}
+
+// Helper for comparison operations
+// Handles common setup, null checks, and Python attempts
+// Returns true if the operation was handled (caller should return)
+// Returns false if caller needs to handle HOC method lookup
+static bool hoc_object_comparison_setup(Object**& obj1_ptr,
+                                        Object**& obj2_ptr,
+                                        Object*& obj1,
+                                        Object*& obj2,
+                                        const char* method_name,
+                                        bool is_equality) {
+    obj2_ptr = hoc_objpop();  // Second operand
+    obj1_ptr = hoc_objpop();  // First operand
+
+    obj1 = *obj1_ptr;
+    obj2 = *obj2_ptr;
+
+    // Handle null object cases with pointer comparison fallback
+    if (!obj1 || !obj2) {
+        double result = is_equality ? ((*obj1_ptr == *obj2_ptr) ? 1.0 : 0.0)
+                                    : ((*obj1_ptr != *obj2_ptr) ? 1.0 : 0.0);
+        hoc_tobj_unref(obj1_ptr);
+        hoc_tobj_unref(obj2_ptr);
+        hoc_pushx(result);
+        return true;  // Handled
+    }
+
+    // Try Python first if available
+    if (nrnpy_call_obj_method && nrnpy_call_obj_method(obj1, method_name, obj2) != 0) {
+        // Python handled the operation, result is on the stack
+        hoc_tobj_unref(obj1_ptr);
+        hoc_tobj_unref(obj2_ptr);
+        return true;  // Handled
+    }
+
+    return false;  // Not handled, caller should proceed with HOC method lookup
+}
+
+// Helper to call a comparison method and cleanup
+static void hoc_object_comparison_call(Object** obj1_ptr,
+                                       Object** obj2_ptr,
+                                       Object* obj1,
+                                       Symbol* method_sym) {
+    hoc_pushobj(obj2_ptr);
+    nrn_method_call(obj1, method_sym, 1);
+    hoc_tobj_unref(obj1_ptr);
+    hoc_tobj_unref(obj2_ptr);
+}
+
+// Helper for pointer comparison fallback
+static void hoc_object_comparison_fallback(Object** obj1_ptr, Object** obj2_ptr, bool is_equality) {
+    double result = is_equality ? ((*obj1_ptr == *obj2_ptr) ? 1.0 : 0.0)
+                                : ((*obj1_ptr != *obj2_ptr) ? 1.0 : 0.0);
+    hoc_tobj_unref(obj1_ptr);
+    hoc_tobj_unref(obj2_ptr);
+    hoc_pushx(result);
+}
+
+void hoc_object_eq() {
+    Object** obj1_ptr;
+    Object** obj2_ptr;
+    Object* obj1;
+    Object* obj2;
+
+    if (hoc_object_comparison_setup(obj1_ptr, obj2_ptr, obj1, obj2, "__eq__", true)) {
+        return;  // Already handled by setup (Python or null case)
+    }
+
+    // Look up the __eq__ method
+    Symbol* method_sym = nrn_method_symbol(obj1, "__eq__");
+    if (!method_sym) {
+        // No __eq__ method found, fall back to pointer equality
+        hoc_object_comparison_fallback(obj1_ptr, obj2_ptr, true);
+        return;
+    }
+
+    // Call the method and cleanup
+    hoc_object_comparison_call(obj1_ptr, obj2_ptr, obj1, method_sym);
+}
+
+void hoc_object_ne() {
+    Object** obj1_ptr;
+    Object** obj2_ptr;
+    Object* obj1;
+    Object* obj2;
+
+    if (hoc_object_comparison_setup(obj1_ptr, obj2_ptr, obj1, obj2, "__ne__", false)) {
+        return;  // Already handled by setup (Python or null case)
+    }
+
+    // Look up the __ne__ method first
+    Symbol* method_sym = nrn_method_symbol(obj1, "__ne__");
+    if (method_sym) {
+        hoc_object_comparison_call(obj1_ptr, obj2_ptr, obj1, method_sym);
+        return;
+    }
+
+    // No __ne__ method, try __eq__ method and negate result
+    method_sym = nrn_method_symbol(obj1, "__eq__");
+    if (method_sym) {
+        hoc_pushobj(obj2_ptr);
+        nrn_method_call(obj1, method_sym, 1);
+        // Negate the result
+        double eq_result = hoc_xpop();
+        hoc_tobj_unref(obj1_ptr);
+        hoc_tobj_unref(obj2_ptr);
+        hoc_pushx(eq_result ? 0.0 : 1.0);
+        return;
+    }
+
+    // No magic methods found, fall back to pointer inequality
+    hoc_object_comparison_fallback(obj1_ptr, obj2_ptr, false);
+}
+
+// Mixed-type arithmetic functions (object with number)
+void hoc_object_add_number() {
+    hoc_object_number_binary_op_helper("__add__");
+}
+
+void hoc_number_add_object() {
+    hoc_number_object_binary_op_helper("__radd__");
+}
+
+void hoc_object_sub_number() {
+    hoc_object_number_binary_op_helper("__sub__");
+}
+
+void hoc_number_sub_object() {
+    hoc_number_object_binary_op_helper("__rsub__");
+}
+
+void hoc_object_mul_number() {
+    hoc_object_number_binary_op_helper("__mul__");
+}
+
+void hoc_number_mul_object() {
+    hoc_number_object_binary_op_helper("__rmul__");
+}
+
+void hoc_object_div_number() {
+    hoc_object_number_binary_op_helper("__div__");
+}
+
+void hoc_number_div_object() {
+    hoc_number_object_binary_op_helper("__rdiv__");
+}
+
+void hoc_object_pow_number() {
+    hoc_object_number_binary_op_helper("__pow__");
+}
+
+void hoc_number_pow_object() {
+    hoc_number_object_binary_op_helper("__rpow__");
 }

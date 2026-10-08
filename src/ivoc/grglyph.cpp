@@ -184,8 +184,6 @@ static Object** g_gif(void* v) {
 
 static Symbol* sggl_;
 
-Member_func members[] = {{0, 0}};
-
 Member_ret_obj_func objmembers[] = {{"path", g_new_path},
                                     {"m", g_move_to},
                                     {"l", g_line_to},
@@ -197,7 +195,7 @@ Member_ret_obj_func objmembers[] = {{"path", g_new_path},
                                     {"erase", g_erase},
                                     {"gif", g_gif},
                                     {"circle", g_circle},
-                                    {0, 0}};
+                                    {nullptr, nullptr}};
 
 static void* cons(Object* o) {
     TRY_GUI_REDIRECT_OBJ("Glyph", NULL);
@@ -213,7 +211,7 @@ static void destruct(void* v) {
 }
 
 void GrGlyph_reg() {
-    class2oc("Glyph", cons, destruct, members, objmembers, NULL);
+    class2oc("Glyph", cons, destruct, nullptr, objmembers, nullptr);
     sggl_ = hoc_lookup("Glyph");
 }
 

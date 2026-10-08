@@ -426,7 +426,7 @@ void nrn_check_conc_write(Prop* pmech, Prop* pion, int i) {
     add_mechtype2ionconctype(pmech->_type, pion->_type, i);
 
     Prop* p;
-    int flag, j, k;
+    int flag;
     if (i == 1) {
         flag = 0200;
     } else {

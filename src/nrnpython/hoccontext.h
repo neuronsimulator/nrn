@@ -5,23 +5,11 @@ extern Objectdata* hoc_top_level_data;
 extern Symlist* hoc_top_level_symlist;
 extern Symlist* hoc_symlist;
 
-#define HocTopContextSet                       \
-    HocContext hcref;                          \
-    HocContext* hc_ = 0;                       \
-    if (hoc_thisobject) {                      \
-        hc_ = hc_save_and_set_to_top_(&hcref); \
-    }
-
-#define HocContextRestore \
-    if (hc_) {            \
-        hc_restore_(hc_); \
-    }
-
-typedef struct HocContext {
+struct HocContext {
     Object* obj;
     Objectdata* obd;
     Symlist* sl;
-} HocContext;
+};
 
 static HocContext* hc_save_and_set_to_top_(HocContext* hc) {
     hc->obj = hoc_thisobject;
@@ -37,3 +25,23 @@ static void hc_restore_(HocContext* hc) {
     hoc_objectdata = hc->obd;
     hoc_symlist = hc->sl;
 }
+
+// RAII guard for the top HOC context
+class HocTopContextManager {
+  private:
+    HocContext hcref;
+    HocContext* hc_ = nullptr;
+
+  public:
+    HocTopContextManager() {
+        // ``hoc_thisobject`` is global
+        if (hoc_thisobject) {
+            hc_ = hc_save_and_set_to_top_(&hcref);
+        }
+    }
+    ~HocTopContextManager() {
+        if (hc_) {
+            hc_restore_(hc_);
+        }
+    }
+};

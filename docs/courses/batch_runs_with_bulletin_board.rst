@@ -93,7 +93,7 @@ Example:
 
 :download:`initonerun.hoc <code/initonerun.ho.txt>`
 
-`code walkthrough <https://nrn.readthedocs.io/en/latest/courses/batch_runs_bulletin_board_parallelization.html?.py#initonerun-py>`_
+`code walkthrough <https://www.neuronsimulator.org/en/latest/courses/batch_runs_bulletin_board_parallelization.html?.py#initonerun-py>`_
 
 initbatser.hoc
 +++++++++
@@ -115,7 +115,7 @@ initbatser.hoc
 
 :download:`initbatseer.hoc <code/initbatser.ho.txt>`
 
-`code walkthrough <https://nrn.readthedocs.io/en/latest/courses/batch_runs_bulletin_board_parallelization.html?.py#initbatser-py>`_
+`code walkthrough <https://www.neuronsimulator.org/en/latest/courses/batch_runs_bulletin_board_parallelization.html?.py#initbatser-py>`_
 
 initbatpar.hoc
 ++++++++
@@ -142,13 +142,13 @@ runs simulations one after another on a single processor, i.e. serially. Paralle
 
     mpiexec -n N nrniv -mpi initbatpar.hoc
 
-launches N processes that carry out the simulations. On a multicore PC or Mac, parallel execution with N equal to the number of cores can reduce total run time to about 1/N of the run time required by initbatser.hoc, serial execution of initbatpar.hoc, or parallel execution of initbatpar.hoc with N = 1.
+launches N processes that carry out the simulations. On a multicore PC or Mac, parallel execution with N equal to the number of cores can reduce total run time to about 1/N of the run time required by initbatser.hoc, serial execution of ``initbatpar.hoc``, or parallel execution of ``initbatpar.hoc`` with N = 1.
 
 **Source**
 
 :download:`initbatpar.hoc <code/initbatpar.ho.txt>`
 
-`code walkthrough <https://nrn.readthedocs.io/en/latest/courses/batch_runs_bulletin_board_parallelization.html?.py#initbatpar-py>`_
+`code walkthrough <https://www.neuronsimulator.org/en/latest/courses/batch_runs_bulletin_board_parallelization.html?.py#initbatpar-py>`_
 
 Things to do
 ------

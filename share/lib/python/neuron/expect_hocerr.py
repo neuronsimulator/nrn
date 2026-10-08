@@ -48,14 +48,14 @@ def expect_hocerr(callable, args, sec=None):
             callable(*args, sec=sec)
         else:
             callable(*args)
-            printerr("expect_hocerr: no err for %s%s" % (str(callable), str(args)))
+            printerr(f"expect_hocerr: no err for {str(callable)}{str(args)}")
     except Exception as e:
         err = True
         errmes = my_stderr.getvalue()
         if errmes:
             errmes = errmes.splitlines()[0]
             errmes = errmes[(errmes.find(":") + 2) :]
-            printerr("expect_hocerr: %s" % errmes)
+            printerr(f"expect_hocerr: {errmes}")
         elif e:
             printerr(e)
     finally:

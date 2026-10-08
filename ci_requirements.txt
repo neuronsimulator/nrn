@@ -1,3 +1,4 @@
-plotly
-ipywidgets>=7.0.0
-tenacity<8.4 # needed until plotly fixes it upstream
+plotly<=7.1.0
+ipywidgets>=7.0.0,<=8.1.9
+tenacity<9.2 # needed until plotly fixes it upstream
+anywidget<=0.11.0

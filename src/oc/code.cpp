@@ -39,8 +39,7 @@ extern void bbs_handle();
 int nrn_isecstack();
 
 extern void debugzz(Inst*);
-int hoc_return_type_code = 0; /* flag for allowing integers (1) and booleans (2) to be recognized as
-                                 such */
+HocReturnType hoc_return_type_code = HocReturnType::floating;
 
 // array indices on the stack have their own type to help with determining when
 // a compiled fragment of HOC code is processing a variable whose number of
@@ -305,6 +304,10 @@ int get_legacy_int_type(StackDatum const& entry) {
     }
 }
 }  // namespace
+
+std::size_t hoc_stack_size() {
+    return stack.size();
+}
 
 /** Get the type of the top entry.
  */
@@ -614,8 +617,19 @@ int hoc_ParseExec(int yystart) {
 
     Frame *sframe, *sfp;
     Inst *sprogbase, *sprogp, *spc, *sprog_parse_recover;
-    Symlist* sp_symlist;
     std::size_t sstack{}, sstackp{};
+    // Nested execute errors must not lose the outer statement's parser symbols.
+    // Stack and frame recovery remain owned by the enclosing error boundary.
+    struct SymlistRestore {
+        Symlist* saved{};
+        bool active{false};
+        ~SymlistRestore() {
+            if (active) {
+                hoc_free_list(&hoc_p_symlist);
+                hoc_p_symlist = saved;
+            }
+        }
+    } symlist_guard;
 
     if (yystart) {
         sframe = rframe;
@@ -625,7 +639,8 @@ int hoc_ParseExec(int yystart) {
         spc = pc, sprog_parse_recover = hoc_prog_parse_recover;
         sstackp = stack.size();
         sstack = rstack;
-        sp_symlist = hoc_p_symlist;
+        symlist_guard.saved = hoc_p_symlist;
+        symlist_guard.active = true;
         rframe = fp;
         rstack = stack.size();
         hoc_progbase = hoc_progp;
@@ -659,7 +674,6 @@ int hoc_ParseExec(int yystart) {
         }
         stack.resize(sstackp);
         rstack = sstack;
-        hoc_p_symlist = sp_symlist;
     }
 
     return yret;
@@ -1397,7 +1411,7 @@ void hoc_pop_frame(void) {
 
 // call a function
 void hoc_call() {
-    int i, isec;
+    int isec;
     Symbol* sp = pc[0].sym; /* symbol table entry */
     /* for function */
     if (++fp >= framelast) {
@@ -1476,10 +1490,15 @@ void hoc_fake_call(Symbol* s) {
 }
 
 double hoc_call_func(Symbol* s, int narg) {
+    hoc_call_func_result_on_stack(s, narg);
+    return hoc_xpop();
+}
+
+void hoc_call_func_result_on_stack(Symbol* s, int narg) {
     /* call the symbol as a function, The args better be pushed on the stack
     first arg first. */
     if (s->type == BLTIN) {
-        return (*(s->u.ptr))(xpop());
+        hoc_pushx((*(s->u.ptr))(xpop()));
     } else {
         Inst* pcsav;
         Inst fc[4];
@@ -1491,7 +1510,6 @@ double hoc_call_func(Symbol* s, int narg) {
         pcsav = hoc_pc;
         hoc_execute(fc);
         hoc_pc = pcsav;
-        return hoc_xpop();
     }
 }
 
@@ -1575,7 +1593,7 @@ void hoc_Numarg(void) {
 }
 
 void hoc_Argtype() {
-    int narg, iarg, type, itype = 0;
+    int iarg, itype = 0;
     Frame* f = fp - 1;
     if (f == frame) {
         hoc_execerror("argtype can only be called in a func or proc", 0);
@@ -1813,9 +1831,7 @@ Symbol* hoc_get_last_pointer_symbol(void) { /* hard to imagine a kludgier functi
 
 void hoc_autoobject(void) { /* AUTOOBJ symbol at pc+1. */
     /* pointer to object pointer left on stack */
-    int i;
     Symbol* obs;
-    Object** obp;
 #if PDEBUG
     printf("code for hoc_autoobject()\n");
 #endif
@@ -1967,6 +1983,28 @@ void hoc_evalpointer() {
 
 void hoc_add(void) /* add top two elems on stack */
 {
+    // Check if we have objects on the stack
+    auto const& entry1 = get_stack_entry_variant(0);  // Top of stack (second operand)
+    auto const& entry2 = get_stack_entry_variant(1);  // Below top (first operand)
+    auto stack_type_1 = get_legacy_int_type(entry1);
+    auto stack_type_2 = get_legacy_int_type(entry2);
+
+    if ((stack_type_1 == OBJECTVAR || stack_type_1 == OBJECTTMP) &&
+        (stack_type_2 == OBJECTVAR || stack_type_2 == OBJECTTMP)) {
+        // Both operands are objects, call object addition
+        hoc_object_add();
+        return;
+    } else if (stack_type_1 == NUMBER && (stack_type_2 == OBJECTVAR || stack_type_2 == OBJECTTMP)) {
+        // object + number (first operand=object, second operand=number)
+        hoc_object_add_number();
+        return;
+    } else if ((stack_type_1 == OBJECTVAR || stack_type_1 == OBJECTTMP) && stack_type_2 == NUMBER) {
+        // number + object (first operand=number, second operand=object)
+        hoc_number_add_object();
+        return;
+    }
+
+    // Regular numeric addition
     double d1, d2;
     d2 = hoc_xpop();
     d1 = hoc_xpop();
@@ -1976,6 +2014,27 @@ void hoc_add(void) /* add top two elems on stack */
 
 void hoc_sub(void) /* subtract top two elems on stack */
 {
+    // Check if we have objects on the stack
+    auto const& entry1 = get_stack_entry_variant(0);
+    auto const& entry2 = get_stack_entry_variant(1);
+    auto stack_type_1 = get_legacy_int_type(entry1);
+    auto stack_type_2 = get_legacy_int_type(entry2);
+
+    if ((stack_type_1 == OBJECTVAR || stack_type_1 == OBJECTTMP) &&
+        (stack_type_2 == OBJECTVAR || stack_type_2 == OBJECTTMP)) {
+        // Both operands are objects, call object subtraction
+        hoc_object_sub();
+        return;
+    } else if (stack_type_1 == NUMBER && (stack_type_2 == OBJECTVAR || stack_type_2 == OBJECTTMP)) {
+        // object - number (first operand=object, second operand=number)
+        hoc_object_sub_number();
+        return;
+    } else if ((stack_type_1 == OBJECTVAR || stack_type_1 == OBJECTTMP) && stack_type_2 == NUMBER) {
+        // number - object (first operand=number, second operand=object)
+        hoc_number_sub_object();
+        return;
+    }
+
     double d1, d2;
     d2 = hoc_xpop();
     d1 = hoc_xpop();
@@ -1985,6 +2044,27 @@ void hoc_sub(void) /* subtract top two elems on stack */
 
 void hoc_mul(void) /* multiply top two elems on stack */
 {
+    // Check if we have objects on the stack
+    auto const& entry1 = get_stack_entry_variant(0);
+    auto const& entry2 = get_stack_entry_variant(1);
+    auto stack_type_1 = get_legacy_int_type(entry1);
+    auto stack_type_2 = get_legacy_int_type(entry2);
+
+    if ((stack_type_1 == OBJECTVAR || stack_type_1 == OBJECTTMP) &&
+        (stack_type_2 == OBJECTVAR || stack_type_2 == OBJECTTMP)) {
+        // Both operands are objects, call object multiplication
+        hoc_object_mul();
+        return;
+    } else if (stack_type_1 == NUMBER && (stack_type_2 == OBJECTVAR || stack_type_2 == OBJECTTMP)) {
+        // object * number (first operand=object, second operand=number)
+        hoc_object_mul_number();
+        return;
+    } else if ((stack_type_1 == OBJECTVAR || stack_type_1 == OBJECTTMP) && stack_type_2 == NUMBER) {
+        // number * object (first operand=number, second operand=object)
+        hoc_number_mul_object();
+        return;
+    }
+
     double d1, d2;
     d2 = hoc_xpop();
     d1 = hoc_xpop();
@@ -1994,6 +2074,27 @@ void hoc_mul(void) /* multiply top two elems on stack */
 
 void hoc_div(void) /* divide top two elems on stack */
 {
+    // Check if we have objects on the stack
+    auto const& entry1 = get_stack_entry_variant(0);
+    auto const& entry2 = get_stack_entry_variant(1);
+    auto stack_type_1 = get_legacy_int_type(entry1);
+    auto stack_type_2 = get_legacy_int_type(entry2);
+
+    if ((stack_type_1 == OBJECTVAR || stack_type_1 == OBJECTTMP) &&
+        (stack_type_2 == OBJECTVAR || stack_type_2 == OBJECTTMP)) {
+        // Both operands are objects, call object division
+        hoc_object_div();
+        return;
+    } else if (stack_type_1 == NUMBER && (stack_type_2 == OBJECTVAR || stack_type_2 == OBJECTTMP)) {
+        // object / number (first operand=object, second operand=number)
+        hoc_object_div_number();
+        return;
+    } else if ((stack_type_1 == OBJECTVAR || stack_type_1 == OBJECTTMP) && stack_type_2 == NUMBER) {
+        // number / object (first operand=number, second operand=object)
+        hoc_number_div_object();
+        return;
+    }
+
     double d1, d2;
     d2 = hoc_xpop();
     if (d2 == 0.0)
@@ -2068,9 +2169,20 @@ void hoc_le(void) {
 }
 
 void hoc_eq() {
+    // Check if we have objects on the stack
     auto const& entry1 = get_stack_entry_variant(0);
     auto const& entry2 = get_stack_entry_variant(1);
-    auto const type2 = get_legacy_int_type(entry2);
+    auto stack_type_1 = get_legacy_int_type(entry1);
+    auto stack_type_2 = get_legacy_int_type(entry2);
+
+    if ((stack_type_1 == OBJECTVAR || stack_type_1 == OBJECTTMP) &&
+        (stack_type_2 == OBJECTVAR || stack_type_2 == OBJECTTMP)) {
+        // Both operands are objects, call object equality
+        hoc_object_eq();
+        return;
+    }
+
+    auto const type2 = stack_type_2;
     double result{};
     switch (type2) {
     case NUMBER: {
@@ -2083,8 +2195,8 @@ void hoc_eq() {
         break;
     case OBJECTTMP:
     case OBJECTVAR: {
-        Object** o1{hoc_objpop()};
         Object** o2{hoc_objpop()};
+        Object** o1{hoc_objpop()};
         result = (*o1 == *o2);
         hoc_tobj_unref(o1);
         hoc_tobj_unref(o2);
@@ -2099,6 +2211,14 @@ void hoc_ne() {
     auto const& entry1 = get_stack_entry_variant(0);
     auto const& entry2 = get_stack_entry_variant(1);
     auto const type1 = get_legacy_int_type(entry1);
+    auto const type2 = get_legacy_int_type(entry2);
+
+    // Check if either operand is an object
+    if (type1 == OBJECTVAR || type1 == OBJECTTMP || type2 == OBJECTVAR || type2 == OBJECTTMP) {
+        hoc_object_ne();
+        return;
+    }
+
     double result{};
     switch (type1) {
     case NUMBER: {
@@ -2109,14 +2229,6 @@ void hoc_ne() {
     case STRING:
         result = (strcmp(*hoc_strpop(), *hoc_strpop()) != 0);
         break;
-    case OBJECTTMP:
-    case OBJECTVAR: {
-        Object** o1{hoc_objpop()};
-        Object** o2{hoc_objpop()};
-        result = (*o1 != *o2);
-        hoc_tobj_unref(o1);
-        hoc_tobj_unref(o2);
-    } break;
     default:
         hoc_execerror("don't know how to compare these types", nullptr);
     }
@@ -2147,6 +2259,27 @@ void hoc_not(void) {
 
 // arg1 raised to arg2
 void hoc_power() {
+    // Check if we have objects on the stack
+    auto const& entry1 = get_stack_entry_variant(0);
+    auto const& entry2 = get_stack_entry_variant(1);
+    auto stack_type_1 = get_legacy_int_type(entry1);
+    auto stack_type_2 = get_legacy_int_type(entry2);
+
+    if ((stack_type_1 == OBJECTVAR || stack_type_1 == OBJECTTMP) &&
+        (stack_type_2 == OBJECTVAR || stack_type_2 == OBJECTTMP)) {
+        // Both operands are objects, call object power
+        hoc_object_pow();
+        return;
+    } else if (stack_type_1 == NUMBER && (stack_type_2 == OBJECTVAR || stack_type_2 == OBJECTTMP)) {
+        // object ^ number (first operand=object, second operand=number)
+        hoc_object_pow_number();
+        return;
+    } else if ((stack_type_1 == OBJECTVAR || stack_type_1 == OBJECTTMP) && stack_type_2 == NUMBER) {
+        // number ^ object (first operand=number, second operand=object)
+        hoc_number_pow_object();
+        return;
+    }
+
     double d1, d2;
     d2 = hoc_xpop();
     d1 = hoc_xpop();
@@ -2425,16 +2558,10 @@ list. */
 /* modified greatly by Hines. Very unsafe in general. */
 {
 #if 1
-    /*---- local variables -----*/
-    Symbol *doomed, *sp;
-    /*---- start function ------*/
-
     /* copy address of the symbol that will be deleted */
-    doomed = (pc++)->sym;
+    Symbol* doomed = (pc++)->sym;
 
-#endif
-/*	hoc_execerror("delete_symbol doesn't work right now.", (char *)0);*/
-#if 1
+    /*	hoc_execerror("delete_symbol doesn't work right now.", (char *)0);*/
     if (doomed->type == UNDEF)
         fprintf(stderr, "%s: no such variable\n", doomed->name);
     else if (doomed->defined_on_the_fly == 0)
