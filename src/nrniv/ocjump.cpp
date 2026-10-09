@@ -109,35 +109,50 @@ struct saved_state {
 
 bool OcJump::execute(Inst* p) {
     saved_state before{};
+    // Intel macOS reaches this catch through siglongjmp. A value kept only in
+    // a register is not reliable there, so reload the saved state through memory.
+    saved_state* volatile before_keep = &before;
     try_catch_depth_increment tell_children_we_will_catch{};
     try {
+        nrn_fpe_catch_jump fpe_jump;
+        fpe_jump.arm();
         hoc_execute(p);
         return true;
     } catch (...) {
-        before.restore();
+        before_keep->restore();
         return false;
     }
 }
 
 bool OcJump::execute(const char* stmt, Object* ob) {
     saved_state before{};
+    // Intel macOS reaches this catch through siglongjmp. A value kept only in
+    // a register is not reliable there, so reload the saved state through memory.
+    saved_state* volatile before_keep = &before;
     try_catch_depth_increment tell_children_we_will_catch{};
     try {
+        nrn_fpe_catch_jump fpe_jump;
+        fpe_jump.arm();
         hoc_obj_run(stmt, ob);
         return true;
     } catch (...) {
-        before.restore();
+        before_keep->restore();
         return false;
     }
 }
 
 void OcJump::execute_throw_on_exception(Object* obj, Symbol* sym, int narg) {
     saved_state before{};
+    // Intel macOS reaches this catch through siglongjmp. A value kept only in
+    // a register is not reliable there, so reload the saved state through memory.
+    saved_state* volatile before_keep = &before;
     try_catch_depth_increment tell_children_we_will_catch{};
     try {
+        nrn_fpe_catch_jump fpe_jump;
+        fpe_jump.arm();
         hoc_call_ob_proc(obj, sym, narg);
     } catch (...) {
-        before.restore();
+        before_keep->restore();
         throw;
     }
 }
@@ -145,11 +160,16 @@ void OcJump::execute_throw_on_exception(Object* obj, Symbol* sym, int narg) {
 void OcJump::execute_throw_on_exception(Symbol* sym, int narg) {
     // NOTE: return value is left on the stack
     saved_state before{};
+    // Intel macOS reaches this catch through siglongjmp. A value kept only in
+    // a register is not reliable there, so reload the saved state through memory.
+    saved_state* volatile before_keep = &before;
     try_catch_depth_increment tell_children_we_will_catch{};
     try {
+        nrn_fpe_catch_jump fpe_jump;
+        fpe_jump.arm();
         hoc_call_func_result_on_stack(sym, narg);
     } catch (...) {
-        before.restore();
+        before_keep->restore();
         throw;
     }
 }
@@ -161,22 +181,32 @@ Object* OcJump::newobj_throw_on_exception(Symbol* sym, int narg) {
     // the HOC constructor errors, so a caller can catch the exception without
     // leaving the stack dirty. Same pattern as execute_throw_on_exception.
     saved_state before{};
+    // Intel macOS reaches this catch through siglongjmp. A value kept only in
+    // a register is not reliable there, so reload the saved state through memory.
+    saved_state* volatile before_keep = &before;
     try_catch_depth_increment tell_children_we_will_catch{};
     try {
+        nrn_fpe_catch_jump fpe_jump;
+        fpe_jump.arm();
         return hoc_newobj1(sym, narg);
     } catch (...) {
-        before.restore();
+        before_keep->restore();
         throw;
     }
 }
 
 void* OcJump::fpycall(void* (*f)(void*, void*), void* a, void* b) {
     saved_state before{};
+    // Intel macOS reaches this catch through siglongjmp. A value kept only in
+    // a register is not reliable there, so reload the saved state through memory.
+    saved_state* volatile before_keep = &before;
     try_catch_depth_increment tell_children_we_will_catch{};
     try {
+        nrn_fpe_catch_jump fpe_jump;
+        fpe_jump.arm();
         return (*f)(a, b);
     } catch (...) {
-        before.restore();
+        before_keep->restore();
         throw;
     }
 }

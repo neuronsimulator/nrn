@@ -136,6 +136,8 @@ nrn_check_symbol_exists("sigaction" "signal.h" HAVE_SIGACTION)
 nrn_check_symbol_exists("sigprocmask" "signal.h" HAVE_SIGPROCMASK)
 nrn_check_symbol_exists("SIGBUS" "signal.h" HAVE_SIGBUS)
 nrn_check_symbol_exists("stty" "" HAVE_STTY)
+# glibc/musl extension. Declared in fenv.h; absent on macOS and Windows.
+nrn_check_cxx_symbol_exists("feenableexcept" "fenv.h" HAVE_FEENABLEEXCEPT)
 
 # =============================================================================
 # Check data types

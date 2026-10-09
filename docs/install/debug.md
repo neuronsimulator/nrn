@@ -25,10 +25,42 @@ while continuing to experience the error, it may be worthwhile to look into
 [LLVM address sanitizer](https://github.com/neuronsimulator/nrn/issues/1213).
 
 #### NaN or Inf values
-Use [n.nrn_feenableexcept(1)](../python/programming/errors.rst#nrn_feenableexcept)
-to generate floating point exception for
-DIVBYZERO, INVALID, OVERFLOW, exp(700). [GDB](#GDB) can then be used to show
-where the SIGFPE occurred.
+Use [n.nrn_feenableexcept(1)](../progref/programming/errors.rst#nrn_feenableexcept)
+to arm traps for an invalid operation, divide by zero, and overflow.
+The call returns the previous state, 0 or 1. With no argument the traps
+are armed. Underflow and inexact stay masked.
+
+A trap prints a kind line, then `Floating point exception`, then a
+backtrace when one is available:
+
+```
+Floating exception: Divide by zero
+Floating exception: Invalid (no well defined result)
+Floating exception: Overflow
+```
+
+On Linux and on Intel Mac, a debugger stops at the SIGFPE. On Apple
+silicon, lldb stops at `EXC_BAD_INSTRUCTION` before NEURON prints
+"Floating exception". If you continue, lldb stops again for SIGILL and
+the NEURON message is still not printed. Continue once more to see
+"Floating exception". You can skip that SIGILL stop if, after the first
+stop, you enter the following before continuing:
+
+```
+process handle -p true -s false -n false SIGILL
+```
+
+On Linux and macOS, a trap inside HOC error recovery becomes a NEURON
+error after the report. From Python that is a RuntimeError. With no HOC
+recovery, the process aborts after the report. On Windows the process
+prints the same report and then aborts. The trap does not become a
+Python exception.
+
+`print(1/0)` in HOC is rejected before the division. An overflow such as
+`print(1e308*1e308)` does raise the trap. The MinGW math library used by
+the Windows installer checks `sqrt` and `log` in software, so those calls
+may report a domain error or return an infinity instead of raising the
+hardware trap.
 
 #### Different results with different nhost, nthread, or backend
 What is the gid and spiketime of the earliest difference?
