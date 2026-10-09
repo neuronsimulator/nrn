@@ -2019,6 +2019,15 @@ Miscellaneous
     process, this returns the value referenced by the pointer. An unset or
     opaque pointer returns NaN.
 
+    On an object of a HOC template (``begintemplate``), any double member can
+    be read, public or not, as from Python. A name that is not a double member,
+    or an out-of-range index, returns NaN; the setters then do nothing. The same
+    holds for :c:func:`nrn_property_array_get`, :c:func:`nrn_property_set`,
+    :c:func:`nrn_property_array_set`, :c:func:`nrn_property_push`,
+    :c:func:`nrn_property_array_push` and
+    :c:func:`nrn_property_data_handle_is_valid`. For ``objref`` members, use
+    :c:func:`nrn_property_object_get` and :c:func:`nrn_property_object_set`.
+
     **C Usage:**
     
     .. code-block:: c
@@ -2155,6 +2164,36 @@ Miscellaneous
 
         :c:func:`nrn_property_get`,
         :c:func:`nrn_property_array_get`
+
+.. c:function:: Object* nrn_property_object_get(const Object* obj, const char* name)
+
+    Get the object held by an ``objref`` member of a HOC template object,
+    public or not.
+
+    :param obj: Object of a HOC template (``begintemplate``).
+    :param name: Name of the ``objref`` member.
+    :returns: The held object, or ``NULL`` if the member is nil, ``name`` is not
+        an ``objref`` member, or ``obj`` is a built-in class.
+
+    The object is returned *borrowed*, as by :c:func:`nrn_symbol_object_get`.
+    Call :c:func:`nrn_object_ref` to retain it past the next assignment to the
+    member.
+
+.. c:function:: bool nrn_property_object_set(Object* obj, const char* name, Object* value)
+
+    Assign an object to an ``objref`` member of a HOC template object, public or
+    not, following HOC's assignment reference counting: the previous object is
+    released and ``value`` is retained. ``NULL`` makes the member nil.
+
+    :param obj: Object of a HOC template (``begintemplate``).
+    :param name: Name of the ``objref`` member.
+    :param value: Object to assign, or ``NULL``.
+    :returns: ``true`` on success, ``false`` if ``name`` is not an ``objref``
+        member or ``obj`` is a built-in class.
+
+    .. seealso::
+
+        :c:func:`nrn_symbol_object_set`
 
 .. c:function:: char const* nrn_symbol_name(const Symbol* sym)
 
