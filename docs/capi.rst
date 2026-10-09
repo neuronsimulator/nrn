@@ -1495,6 +1495,11 @@ hooks. When no provider is registered, ordinary template lookup is unchanged.
     this function returns an error code instead of throwing exceptions, making it suitable for
     use in pure C code or via ``ctypes``.
 
+    Before returning, on success or error, the call releases any temporary object
+    HOC kept alive while evaluating it (for example the copy in ``vec.c.x[0]``),
+    as NEURON's Python interface does after each call. The return value keeps its
+    own reference.
+
     **C Usage:**
     
     .. code-block:: c
@@ -1557,6 +1562,11 @@ hooks. When no provider is registered, ordinary template lookup is unchanged.
     Arguments must be prepared on the stack before calling. Unlike :c:func:`nrn_function_call`,
     this function returns an error code instead of throwing exceptions, making it suitable for
     use in pure C code or via ``ctypes``.
+
+    Before returning, on success or error, the call releases any temporary object
+    HOC kept alive while evaluating it (for example the copy in ``vec.c.x[0]``),
+    as NEURON's Python interface does after each call. The return value keeps its
+    own reference.
 
     **C Usage:**
 
