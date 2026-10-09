@@ -626,6 +626,11 @@ Object* nrn_object_pop(void) {
 }
 
 nrn_stack_types_t nrn_stack_type(void) {
+    // An array-dimension marker is a distinct stack entry that core does not
+    // classify; nrn_int_pop consumes it, so report it as an integer.
+    if (hoc_stack_type_is_ndim()) {
+        return STACK_IS_INT;
+    }
     switch (hoc_stack_type()) {
     case STRING:
         return STACK_IS_STR;
@@ -638,7 +643,6 @@ nrn_stack_types_t nrn_stack_type(void) {
     case OBJECTTMP:
         return STACK_IS_OBJTMP;
     case USERINT:
-        // Includes the distinct array-dimension marker accepted by nrn_int_pop.
         return STACK_IS_INT;
     case SYMBOL:
         return STACK_IS_SYM;
