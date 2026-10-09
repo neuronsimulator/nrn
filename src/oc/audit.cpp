@@ -40,7 +40,6 @@ maintain a list of xopen statements with the proper rcs version number.
 
 
 static void hoc_audit_init(void) {
-#if !OCSMALL
     if (retrieve_audit.mode) {
         /* clean up. there must have been an execerror */
         retrieve_audit.mode = 0;
@@ -50,11 +49,9 @@ static void hoc_audit_init(void) {
             retrieve_audit.pipe = (FILE*) 0;
         }
     }
-#endif
 }
 
 void hoc_audit_from_hoc_main1(int argc, const char** argv, const char** envp) {
-#if !OCSMALL
     /*ARGSUSED*/
     int i;
     char buf[200];
@@ -101,10 +98,8 @@ void hoc_audit_from_hoc_main1(int argc, const char** argv, const char** envp) {
         }
     }
     fprintf(faudit, "\n");
-#endif
 }
 
-#if !OCSMALL
 static void pipesend(int type, const char* s) {
     int err;
     if (audit_pipe) {
@@ -118,25 +113,19 @@ static void pipesend(int type, const char* s) {
         fflush(audit_pipe);
     }
 }
-#endif
 void hoc_audit_command(const char* buf) {
-#if !OCSMALL
     if (doaudit) {
         fprintf(faudit, "%s", buf);
     }
-#endif
 }
 
 void hoc_audit_from_xopen1(const char* fname, const char* rcs) {
-#if !OCSMALL
     if (!hoc_retrieving_audit() && doaudit && !rcs) {
         pipesend(1, fname);
     }
-#endif
 }
 
 void hoc_audit_from_final_exit(void) {
-#if !OCSMALL
     if (faudit) {
         fclose(faudit);
         faudit = 0;
@@ -146,20 +135,16 @@ void hoc_audit_from_final_exit(void) {
         audit_pipe = 0;
     }
     doaudit = 0;
-#endif
 }
 
 void hoc_Saveaudit(void) {
     int err;
-#if !OCSMALL
     err = hoc_saveaudit();
-#endif
     hoc_ret();
     hoc_pushx((double) err);
 }
 
 int hoc_saveaudit(void) {
-#if !OCSMALL
     static int n = 0;
     char buf[200];
     if (hoc_retrieving_audit() || !doaudit) {
@@ -178,34 +163,26 @@ int hoc_saveaudit(void) {
         doaudit = 0;
         return 0;
     }
-#endif
     return 1;
 }
 
 int hoc_retrieving_audit(void) {
-#if !OCSMALL
     return retrieve_audit.mode;
-#else
-    return 0;
-#endif
 }
 
 void hoc_Retrieveaudit(void) {
     int err, id;
-#if !OCSMALL
     if (ifarg(1)) {
         id = (int) chkarg(1, 0., 1e7);
     } else {
         id = 0;
     }
-#endif
     err = hoc_retrieve_audit(id);
     hoc_ret();
     hoc_pushx((double) err);
 }
 
 static void xopen_audit(void) {
-#if !OCSMALL
     char buf[200], *bp;
     constexpr auto rm_str = "rm ";
     strcpy(buf, rm_str);
@@ -218,11 +195,9 @@ static void xopen_audit(void) {
 #if 1
     nrn_assert(system(buf) >= 0);
 #endif
-#endif
 }
 
 int hoc_retrieve_audit(int id) {
-#if !OCSMALL
     RetrieveAudit save;
     char buf[200];
     char retdir[200];
@@ -241,12 +216,10 @@ int hoc_retrieve_audit(int id) {
     /*	pclose(retrieve_audit.pipe);*/
     retrieve_audit = save;
     fprintf(stderr, "should now delete %s", retdir);
-#endif
     return 1;
 }
 
 void hoc_xopen_from_audit(const char* fname) {
-#if !OCSMALL
     char buf[200];
     /* check the synchronization */
     nrn_assert(fgets(buf, 200, retrieve_audit.pipe));
@@ -255,5 +228,4 @@ void hoc_xopen_from_audit(const char* fname) {
         fprintf(stderr, "Warning: xopen_from_audit files have different names %s %s\n", fname, buf);
     }
     xopen_audit();
-#endif
 }

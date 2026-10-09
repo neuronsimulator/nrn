@@ -20,7 +20,6 @@ typedef struct elm* Elm;
 
 void hoc_dep_make(void) /* tag the variable as dependent with a variable number */
 {
-#if !OCSMALL
     Symbol* sym;
     unsigned* numpt = 0;
 
@@ -58,18 +57,15 @@ void hoc_dep_make(void) /* tag the variable as dependent with a variable number 
     if (*numpt > 0)
         hoc_execerror(sym->name, "made dependent twice");
     *numpt = ++neqn;
-#endif
 }
 
 
 void init_access(void) /* zero the access array */
 {
-#if !OCSMALL
     if (hoc_access != (int*) 0)
         free((char*) hoc_access);
     hoc_access = (int*) ecalloc((neqn + 1), sizeof(int));
     hoc_var_access = -1;
-#endif
 }
 
 static void eqn_space(void);  /* reallocate space for matrix */
@@ -80,8 +76,6 @@ static unsigned maxeqn;
 
 void hoc_eqn_name(void) /* save row number for lhs and/or rhs */
 {
-#if !OCSMALL
-
     if (maxeqn != neqn) /* discard equations and reallocate space */
     {
         eqn_space();
@@ -95,11 +89,9 @@ void hoc_eqn_name(void) /* save row number for lhs and/or rhs */
         hoc_execerror("illegal equation name", (hoc_pc - 2)->sym->name);
     row = hoc_var_access;
     hoc_nopop();
-#endif
 }
 
 static void set_varble(void) { /* set up varble array by searching for tags */
-#if !OCSMALL
     Symbol* sp;
 
     for (sp = hoc_symlist->first; sp != (Symbol*) 0; sp = sp->next) {
@@ -117,14 +109,12 @@ static void set_varble(void) { /* set up varble array by searching for tags */
             }
         }
     }
-#endif
 }
 
 static double Delta = .001; /* variable variation */
 
 void hoc_eqinit(void) /* built in function to initialize equation solver */
 {
-#if !OCSMALL
     Symbol* sp;
 
     if (ifarg(1))
@@ -140,20 +130,17 @@ void hoc_eqinit(void) /* built in function to initialize equation solver */
     }
     neqn = 0;
     eqn_space();
-#endif
     hoc_ret();
     hoc_pushx(0.);
 }
 
 void hoc_eqn_init(void) /* initialize equation row */
 {
-#if !OCSMALL
     struct elm* el;
 
     for (el = rowst[row]; el != (struct elm*) 0; el = el->c_right)
         el->value = 0.;
     rhs[row] = 0.;
-#endif
 }
 
 void hoc_eqn_lhs(void) /* add terms to left hand side */
@@ -168,7 +155,6 @@ void hoc_eqn_rhs(void) /* add terms to right hand side */
 
 
 static void eqn_side(int lhs) {
-#if !OCSMALL
     int i;
     struct elm* el;
     double f0, f1;
@@ -199,11 +185,9 @@ static void eqn_side(int lhs) {
         el->value += (f1 - f0) / Delta;
     }
     hoc_pc++;
-#endif
 }
 
 static void eqn_space(void) { /* reallocate space for matrix */
-#if !OCSMALL
     int i;
     struct elm* el;
 
@@ -239,19 +223,15 @@ static void eqn_space(void) { /* reallocate space for matrix */
         eqord[i] = i;
         varord[i] = i;
     }
-#endif
 }
 
 void hoc_Prmat(void) {
-#if !OCSMALL
     prmat();
-#endif
     hoc_ret();
     hoc_pushx(1.);
 }
 
 void hoc_solve(void) {
-#if !OCSMALL
     /* Sum is a measure of the dependent variable accuracy
        and how well the equations are solved */
 
@@ -277,9 +257,6 @@ void hoc_solve(void) {
         }
         rowst[i] = colst[i] = (struct elm*) 0;
     }
-#else
-    double sum = 0;
-#endif
     hoc_ret();
     hoc_pushx(sum);
 }
