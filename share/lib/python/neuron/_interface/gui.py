@@ -9,11 +9,12 @@ Adapted from NEURON's share/lib/python/neuron/gui.py — imports myneuron's
 top-level singleton instead of the neuron CPython extension.
 """
 
-from . import n as h
-from contextlib import contextmanager
+import atexit
 import threading
 import time
-import atexit
+from contextlib import contextmanager
+
+from . import n as h
 
 # RLock: stop()/start() may be called re-entrantly from doNotify callbacks.
 _lock = threading.RLock()

@@ -2,23 +2,66 @@
 
 Provides the NEURON singleton (n/h), Section, and dynamic class dispatch.
 """
-from .nrnref import NrnVarRef, NrnDoubleRef, NrnStrRef, NrnObjectRef
 import builtins
-import collections.abc
 import ctypes
 import sys
 import threading
 
-from .object import Object, List, Vector, SectionList
+from .api import (
+    _ERR_BUF_SIZE,
+    _METHODS_HOC_NRNPYTHON_OFFSET,
+    _MIN_VALID_DATAPTR,
+    TYPES,
+    _call_at_top_level,
+    _check_nrn_error,
+    _install_methods_slot,
+    _nrn_allsec,
+    _nrn_cas,
+    _nrn_distance,
+    _nrn_double_pop,
+    _nrn_double_push,
+    _nrn_function_call,
+    _nrn_gargstr,
+    _nrn_getarg,
+    _nrn_hoc_call,
+    _nrn_hoc_ret,
+    _nrn_nseg_get,
+    _nrn_register_function,
+    _nrn_secname,
+    _nrn_section_length_get,
+    _nrn_section_pop,
+    _nrn_section_push,
+    _nrn_section_Ra_get,
+    _nrn_section_rallbranch_get,
+    _nrn_sectionlist_iterator_free,
+    _nrn_sectionlist_iterator_new,
+    _nrn_sectionlist_iterator_next,
+    _nrn_sectionlist_to_array,
+    _nrn_str_pop,
+    _nrn_symbol,
+    _nrn_symbol_array_length,
+    _nrn_symbol_dataptr,
+    _nrn_symbol_is_array,
+    _structure_change_cnt,
+    install_stdout_redirect,
+)
+from .nrnref import (
+    NrnDoubleRef,
+    NrnObjectPropertyRef,
+    NrnObjectRef,
+    NrnRangeVarRef,
+    NrnStrRef,
+    NrnVarRef,
+)
+from .object import List, Object, SectionList, Vector
 from .sections import Section
 from .utils import (
     FuncWrapper,
+    _is_python_object_arg,
+    _PythonObjectArg,
     _Singleton,
     list_functions,
-    _PythonObjectArg,
-    _is_python_object_arg,
 )
-
 
 # Slot that _mn_capture_cas writes cas() into; object._resolve_template_section
 # and object._steer_sectionref read it back. Module-global because a C callback cannot capture closure state.
@@ -31,12 +74,6 @@ def _register_template_section_callback():
     The brace-capture mechanism that uses it is described in
     object._resolve_template_section.
     """
-    from .api import (
-        _nrn_register_function,
-        _nrn_cas,
-        _nrn_hoc_ret,
-        _nrn_double_push,
-    )
 
     def _capture_cas():
         _template_section_capture.value = _nrn_cas() or 0
@@ -121,12 +158,6 @@ def _register_py_callback_dispatcher():
     where N selects the callable in _PY_CALLBACKS. Returns 0 so it stays
     type 280 (FUN_BLTIN, returning double).
     """
-    from .api import (
-        _nrn_register_function,
-        _nrn_getarg,
-        _nrn_hoc_ret,
-        _nrn_double_push,
-    )
 
     def _dispatch():
         # Bound before the try: if _nrn_getarg raises, the except handler still
@@ -194,15 +225,6 @@ def _register_nrnpython_callback():
       * Python exceptions are printed to stderr but do not propagate
         into the HOC frame.
     """
-    from .api import (
-        _nrn_register_function,
-        _nrn_gargstr,
-        _nrn_hoc_ret,
-        _nrn_double_push,
-        _call_at_top_level,
-        _install_methods_slot,
-        _METHODS_HOC_NRNPYTHON_OFFSET,
-    )
 
     def _nrnpython_callback():
         try:
@@ -271,8 +293,6 @@ def _read_hoc_objectvar(neuron_singleton, name):
     `object_id(nil) == 0` is the safe test: check it before the pop and return
     None, as real NEURON's `h.x is None` does.
     """
-    from .api import _nrn_symbol, _nrn_symbol_is_array, _nrn_symbol_array_length
-
     sym = _nrn_symbol(name.encode("utf-8"))
     if sym and _nrn_symbol_is_array(sym):
         # `objref g[N]`: subscriptable proxy like real NEURON's HocObject
@@ -396,8 +416,6 @@ _DISTANCE_MISSING = builtins.object()
 
 def _capture_hoc_string(action):
     """Run *action* while capturing one sentinel-delimited HOC string."""
-    from .api import install_stdout_redirect
-
     captured = []
 
     def sink(stream, msg):
@@ -466,8 +484,6 @@ def _allsec_head_links():
     interior sections may go unnoticed until ``finitialize`` (or anything that
     bumps ``structure_change_cnt``).
     """
-    from .api import _nrn_allsec
-
     head = _nrn_allsec()
     addr = ctypes.cast(head, ctypes.c_void_p).value or 0
     if not addr:
@@ -501,8 +517,6 @@ def hclass(cls):
 
 class NEURON(metaclass=_Singleton):
     def __init__(self):
-        from .api import _nrn_hoc_call
-
         self._nrn_hoc_call = _nrn_hoc_call
         self._top_level = list_functions()
         # Placeholder; _rebuild_function_types() fills it after template-scoped
@@ -527,8 +541,6 @@ class NEURON(metaclass=_Singleton):
 
     def _rebuild_function_types(self):
         """Repopulate the function-type set from the now-complete TYPES."""
-        from .api import TYPES
-
         self._function_types = frozenset(
             t
             for t in (
@@ -579,7 +591,6 @@ class NEURON(metaclass=_Singleton):
         #         subclassable and indexable via _HocClassMeta)
         # RANGEOBJ is segment/object scoped and runtime-probed after a
         # RANDOM-bearing MOD is loaded; see gap-22.
-        from .api import TYPES
 
         # Two passes: the cached _top_level, then a fresh list_functions() scan
         # for HOC symbols defined after import.
@@ -597,7 +608,6 @@ class NEURON(metaclass=_Singleton):
                         # subtype 2 = USERDOUBLE (t, dt, celsius), subtype 1 =
                         # USERINT (stoprun, use_mcell_ran4). Both live at the
                         # symbol's u.pval, read as double* or int*.
-                        from .api import _nrn_symbol, _nrn_symbol_dataptr
 
                         sym = _nrn_symbol(name.encode("utf-8"))
                         if not sym:
@@ -626,11 +636,6 @@ class NEURON(metaclass=_Singleton):
                         # `sym->u.pval`. See api._MIN_VALID_DATAPTR (nrn#3815):
                         # dereference only a real address; otherwise read via
                         # the hoc_ac_ trampoline.
-                        from .api import (
-                            _nrn_symbol,
-                            _nrn_symbol_dataptr,
-                            _MIN_VALID_DATAPTR,
-                        )
 
                         sym0 = _nrn_symbol(name.encode("utf-8"))
                         if sym0:
@@ -659,19 +664,8 @@ class NEURON(metaclass=_Singleton):
                     elif _type in self._function_types:
 
                         def nrn_func(*args, sec=None):
-                            from .api import (
-                                _nrn_symbol,
-                                _nrn_function_call,
-                                _nrn_double_pop,
-                                _nrn_str_pop,
-                                _nrn_section_push,
-                                _nrn_section_pop,
-                                _check_nrn_error,
-                                _ERR_BUF_SIZE,
-                            )
-
-                            from .utils import _push_args
                             from .sections import Segment
+                            from .utils import _push_args
 
                             if sec is not None and any(
                                 isinstance(arg, Segment) for arg in args
@@ -807,11 +801,6 @@ class NEURON(metaclass=_Singleton):
                         # `create soma` (scalar) or `create dend[N]` (array).
                         # Uses the brace capture of template sections with no
                         # owner prefix; see object._resolve_template_section.
-                        from .api import (
-                            _nrn_symbol,
-                            _nrn_symbol_is_array,
-                            _nrn_symbol_array_length,
-                        )
                         from .object import (
                             _resolve_template_section,
                             _TemplateSectionArray,
@@ -839,8 +828,6 @@ class NEURON(metaclass=_Singleton):
             super().__setattr__(name, value)
             return
 
-        from .api import TYPES
-
         info = self._top_level.get(name)
         if info is None:
             # The var may have been declared after the cache was built;
@@ -856,8 +843,6 @@ class NEURON(metaclass=_Singleton):
 
         # Built-in double globals (dt, celsius, t): direct pointer write.
         if _type == TYPES.VAR and _subtype in (1, 2):
-            from .api import _nrn_symbol, _nrn_symbol_dataptr
-
             sym = _nrn_symbol(name.encode("utf-8"))
             if not sym:
                 raise AttributeError(f"Variable '{name}' not found.")
@@ -883,8 +868,6 @@ class NEURON(metaclass=_Singleton):
         # sym->u.pval segfaults on a core without nrn#3815; see
         # api._MIN_VALID_DATAPTR. Otherwise assign through HOC.
         if _type == TYPES.VAR:
-            from .api import _nrn_symbol, _nrn_symbol_dataptr, _MIN_VALID_DATAPTR
-
             sym0 = _nrn_symbol(name.encode("utf-8"))
             if sym0:
                 dptr = _nrn_symbol_dataptr(sym0)
@@ -924,7 +907,6 @@ class NEURON(metaclass=_Singleton):
         # Mirrors the _read_hoc_objectvar read trampoline. None re-nils it.
         if _type == TYPES.OBJECTVAR:
             from .object import Object
-            from .api import _nrn_symbol, _nrn_symbol_is_array
 
             _sym = _nrn_symbol(name.encode("utf-8"))
             if _sym and _nrn_symbol_is_array(_sym):
@@ -984,12 +966,7 @@ class NEURON(metaclass=_Singleton):
     def setpointer(self, source_ref, pointer_name, target):
         """Assign a numeric NEURON reference to an NMODL POINTER target."""
         from .mechanism import Mechanism
-        from .nrnref import (
-            NrnDoubleRef,
-            NrnObjectPropertyRef,
-            NrnRangeVarRef,
-            NrnVarRef,
-        )
+        from .nrnref import NrnDoubleRef, NrnVarRef
         from .object import Object
 
         usage = (
@@ -1029,7 +1006,6 @@ class NEURON(metaclass=_Singleton):
         # init.hoc files trigger warnings real NEURON swallows.
         # raise_on_error=True raises RuntimeError. See docs/ARCHITECTURE.md
         # "Deliberate departures from h() behavior".
-        from .api import _nrn_section_push, _nrn_section_pop
 
         if sec is not None:
             sec._check_alive()  # Reject a deleted section before pushing it.
@@ -1063,8 +1039,6 @@ class NEURON(metaclass=_Singleton):
         section is on the access stack
         (``nrn/src/nrnpython/nrnpy_nrn.cpp:2967-2978``).
         """
-        from .api import _nrn_cas
-
         sec_ptr = _nrn_cas()
         if not sec_ptr:
             raise TypeError("Section access unspecified")
@@ -1091,14 +1065,6 @@ class NEURON(metaclass=_Singleton):
         overwrites seg_sec and would lose the first segment's section.
         """
         from .sections import Section, Segment
-        from .api import (
-            _nrn_distance,
-            _nrn_function_call,
-            _nrn_double_pop,
-            _ERR_BUF_SIZE,
-            _check_nrn_error,
-            _nrn_symbol,
-        )
         from .utils import _push_args
 
         if kwargs:
@@ -1133,8 +1099,6 @@ class NEURON(metaclass=_Singleton):
         sec_pushed = False
         call_sec = seg_sec if seg_sec is not None else (sec if explicit_sec else None)
         if call_sec is not None:
-            from .api import _nrn_section_push, _nrn_section_pop
-
             _nrn_section_push(call_sec._sec)
             sec_pushed = True
         try:
@@ -1160,10 +1124,7 @@ class NEURON(metaclass=_Singleton):
         c_void_p restype already yields Python ints. The list-vs-array reason
         is in NEURON.__init__.
         """
-        from .sections import _NRN_ALLSEC as _allsec
-        from .api import _nrn_sectionlist_to_array
-
-        items = _allsec()
+        items = _nrn_allsec()
         total = _nrn_sectionlist_to_array(items, None, 0)
         if total <= 0:
             return [], 0
@@ -1196,8 +1157,6 @@ class NEURON(metaclass=_Singleton):
         that also skips the model epoch may not invalidate. ``finitialize``
         resets the cache.
         """
-        from .api import _structure_change_cnt
-
         _from_ptr = Section._from_ptr
 
         link = _allsec_head_links()
@@ -1273,27 +1232,19 @@ class NEURON(metaclass=_Singleton):
         Same result as ``[s.name() for s in n.allsec()]``, but faster: it calls
         ``nrn_secname`` once per section pointer and creates no Section objects.
         """
-        from .sections import (
-            _NRN_ALLSEC as _allsec,
-            _SL_ITER_NEW as _new,
-            _SL_ITER_NEXT as _next,
-            _SL_ITER_FREE as _free,
-        )
-        from .api import _nrn_secname
-
-        iterator = _new(_allsec())
+        iterator = _nrn_sectionlist_iterator_new(_nrn_allsec())
         out = []
         push = out.append
         try:
             while True:
-                ptr = _next(iterator)
+                ptr = _nrn_sectionlist_iterator_next(iterator)
                 if not ptr:
                     break
                 raw = _nrn_secname(ptr).decode("utf-8")
                 # Strip the "_pysec." prefix nrn_secname adds, as Section.name() does.
                 push(raw[7:] if raw.startswith("_pysec.") else raw)
         finally:
-            _free(iterator)
+            _nrn_sectionlist_iterator_free(iterator)
         return out
 
     def allsec_data(self, *names):
@@ -1307,20 +1258,6 @@ class NEURON(metaclass=_Singleton):
         Supported names: ``L``, ``Ra``, ``nseg``, ``rallbranch``, ``name``.
         Other names raise ``ValueError``.
         """
-        from .sections import (
-            _NRN_ALLSEC as _allsec,
-            _SL_ITER_NEW as _new,
-            _SL_ITER_NEXT as _next,
-            _SL_ITER_FREE as _free,
-        )
-        from .api import (
-            _nrn_section_length_get,
-            _nrn_section_Ra_get,
-            _nrn_nseg_get,
-            _nrn_section_rallbranch_get,
-            _nrn_secname,
-        )
-
         if not names:
             raise ValueError("allsec_data() requires at least one property name")
 
@@ -1350,23 +1287,23 @@ class NEURON(metaclass=_Singleton):
         single = len(getters) == 1
         out = []
         push = out.append
-        iterator = _new(_allsec())
+        iterator = _nrn_sectionlist_iterator_new(_nrn_allsec())
         try:
             if single:
                 fn, cast = getters[0]
                 while True:
-                    ptr = _next(iterator)
+                    ptr = _nrn_sectionlist_iterator_next(iterator)
                     if not ptr:
                         break
                     push(cast(fn(ptr)))
             else:
                 while True:
-                    ptr = _next(iterator)
+                    ptr = _nrn_sectionlist_iterator_next(iterator)
                     if not ptr:
                         break
                     push(tuple(cast(fn(ptr)) for fn, cast in getters))
         finally:
-            _free(iterator)
+            _nrn_sectionlist_iterator_free(iterator)
         return out
 
 
@@ -1377,9 +1314,7 @@ n = h = NEURON()
 # discover() ran at api.py import for top-level codes. This fills in the codes
 # that need a live HOC session (PROCEDURE, SECTION, OBFUNCTION, METHOD_OBFUNC,
 # METHOD_STRFUNC, via a probe template and classes).
-from .api import TYPES as _TYPES
-
-_TYPES.discover_template_scoped(n)
+TYPES.discover_template_scoped(n)
 # Rebuild the function-type set before minting the probe Section below, because
 # Section.__del__ dispatches `delete_section` (type FUN_BLTIN).
 n._rebuild_function_types()
@@ -1387,7 +1322,7 @@ n._rebuild_function_types()
 _probe_sec = Section("_mn_types_probe_secref")
 try:
     _probe_sr = n.SectionRef(sec=_probe_sec)
-    _TYPES.probe_section_ref(_probe_sr._obj)
+    TYPES.probe_section_ref(_probe_sr._obj)
 finally:
     del _probe_sec
-_TYPES.validate()
+TYPES.validate()

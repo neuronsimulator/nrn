@@ -1,14 +1,26 @@
 """Mechanism, DensityMechanism, and RangeVar wrappers for mechanism access."""
-# Hot-path API names hoisted to module scope (see the note in sections.py):
-# a deferred `from .api import` costs ~50% of seg.hh.gnabar time.
-from .api import (
-    _nrn_rangevar_get as _RANGEVAR_GET,
-    _nrn_rangevar_set as _RANGEVAR_SET,
-    _nrn_symbol as _NRN_SYMBOL,
-    _nrn_symbol_type as _NRN_SYMBOL_TYPE,
-    TYPES as _TYPES,
-)
+# Imports from sections and the package stay inside functions (cycle); see
+# the note in sections.py.
+import ctypes
 
+from .api import (
+    _ERR_BUF_SIZE,
+    TYPES,
+    _nrn_rangevar_get,
+    _nrn_rangevar_set,
+    _nrn_setpointer_pop,
+    _nrn_symbol,
+    _nrn_symbol_type as _NRN_SYMBOL_TYPE,
+)
+from .nrnref import (
+    NrnRangeVarRef,
+    NrnRef,
+)
+from .utils import (
+    FuncWrapper,
+    _try_wrap_density_nmodlrandom,
+    list_functions,
+)
 
 # Mechanisms that are always present and should be skipped during iteration
 # (matches real NEURON's segment iteration behavior).
@@ -54,9 +66,6 @@ def _all_density_mechanism_names():
     tests/regression/test_mod_compilation test_custom_mechanism_iteration).
     Section._get_inserted_mechs caches the hot path.
     """
-    from .utils import list_functions
-    from .api import TYPES
-
     mechs = [
         (subtype, name)
         for name, (type_, subtype) in list_functions().items()
@@ -94,7 +103,6 @@ class RangeVar:
     def __getitem__(self, idx):
         if idx != 0:
             raise IndexError("Only index 0 is supported")
-        from .api import _nrn_symbol, _nrn_rangevar_get
 
         # HOC can delete the host section while this ref is held. Reject the
         # read before it dereferences a freed Section*/node and aborts.
@@ -109,7 +117,6 @@ class RangeVar:
     def __setitem__(self, idx, value):
         if idx != 0:
             raise IndexError("Only index 0 is supported")
-        from .api import _nrn_symbol, _nrn_rangevar_set
 
         self._seg._sec._check_alive()  # HOC may have deleted the host section.
         sym = _nrn_symbol(self._full_name.encode("utf-8"))
@@ -161,9 +168,6 @@ class Mechanism:
         a strict naming convention: eX, Xi, Xo, iX, diX_dv_ where X is
         the ion prefix (e.g. "na" for na_ion).
         """
-        from .utils import list_functions
-        from .api import TYPES
-
         all_syms = list_functions()
         names = []
 
@@ -188,8 +192,6 @@ class Mechanism:
         """Return full names of NMODL RANDOM members for this mechanism."""
         if self._is_ion:
             return []
-        from .api import TYPES
-        from .utils import list_functions, _try_wrap_density_nmodlrandom
 
         suffix = f"_{self._name}"
         names = []
@@ -200,7 +202,7 @@ class Mechanism:
                 if sym_type == TYPES.RANGEOBJ:
                     names.append(sym_name)
                 continue
-            sym = _NRN_SYMBOL(sym_name.encode("utf-8"))
+            sym = _nrn_symbol(sym_name.encode("utf-8"))
             wrapped = _try_wrap_density_nmodlrandom(
                 self._seg._sec._sec, self._seg._x, sym, sym_type
             )
@@ -233,10 +235,9 @@ class Mechanism:
         if name.startswith("_ref_"):
             var = name[5:]
             full = var if self._is_ion else "%s_%s" % (var, self._name)
-            from .nrnref import NrnRangeVarRef
             from .sections import _is_pointer_rangevar, _pointer_rangevar_get
 
-            sym = _NRN_SYMBOL(full.encode("utf-8"))
+            sym = _nrn_symbol(full.encode("utf-8"))
             if sym and _is_pointer_rangevar(full, sym):
                 _pointer_rangevar_get(
                     self._seg._sec, self._seg._x, full
@@ -249,11 +250,9 @@ class Mechanism:
         entry = cache.get(name)
         if entry is not None:
             full_name, sym, sym_type = entry
-            if sym_type == _TYPES.RANGEVAR:
-                return _RANGEVAR_GET(sym, self._seg._sec._sec, self._seg._x)
-            if sym_type == _TYPES.RANGEOBJ:
-                from .utils import _try_wrap_density_nmodlrandom
-
+            if sym_type == TYPES.RANGEVAR:
+                return _nrn_rangevar_get(sym, self._seg._sec._sec, self._seg._x)
+            if sym_type == TYPES.RANGEOBJ:
                 wrapped = _try_wrap_density_nmodlrandom(
                     self._seg._sec._sec, self._seg._x, sym, sym_type
                 )
@@ -275,10 +274,10 @@ class Mechanism:
         else:
             full_name = f"{name}_{self._name}"
 
-        sym = _NRN_SYMBOL(full_name.encode("utf-8"))
+        sym = _nrn_symbol(full_name.encode("utf-8"))
         if sym:
             sym_type = int(_NRN_SYMBOL_TYPE(sym))
-            if sym_type == _TYPES.RANGEVAR:
+            if sym_type == TYPES.RANGEVAR:
                 size = _array_length(full_name)
                 if size:
                     # seg.mech.c[i]: the scalar getter throws inside the core
@@ -294,8 +293,8 @@ class Mechanism:
                         self._seg._sec, self._seg._x, full_name
                     )
                 cache[name] = (full_name, sym, sym_type)
-                return _RANGEVAR_GET(sym, self._seg._sec._sec, self._seg._x)
-            if sym_type == _TYPES.FUN_BLTIN and not self._is_ion:
+                return _nrn_rangevar_get(sym, self._seg._sec._sec, self._seg._x)
+            if sym_type == TYPES.FUN_BLTIN and not self._is_ion:
                 # NMODL PROCEDURE and FUNCTION both compile to FUN_BLTIN (280),
                 # not PROCEDURE (271, HOC-only `proc`); the HOC name is
                 # `<name>_<mech>`. The function needs its mechanism bound to a
@@ -314,8 +313,6 @@ class Mechanism:
                     fn = getattr(n, full_name)
                     return fn(*args, sec=seg._sec)
 
-                from .utils import FuncWrapper
-
                 return FuncWrapper(
                     mech_func,
                     qualified,
@@ -323,14 +320,12 @@ class Mechanism:
                 )
 
             # RANGEOBJ: see api.TypeCodes.record_rangeobj. Cached like a RANGEVAR.
-            if _TYPES.RANGEOBJ is None or sym_type == _TYPES.RANGEOBJ:
-                from .utils import _try_wrap_density_nmodlrandom
-
+            if TYPES.RANGEOBJ is None or sym_type == TYPES.RANGEOBJ:
                 wrapped = _try_wrap_density_nmodlrandom(
                     self._seg._sec._sec, self._seg._x, sym, sym_type
                 )
                 if wrapped is not None:
-                    cache[name] = (full_name, sym, _TYPES.RANGEOBJ)
+                    cache[name] = (full_name, sym, TYPES.RANGEOBJ)
                     return wrapped
 
         raise AttributeError(f"'{self._name}' mechanism has no variable '{name}'")
@@ -339,14 +334,12 @@ class Mechanism:
         """Return list of NMODL PROCEDURE/FUNCTION names exposed by this mech."""
         if self._is_ion:
             return []
-        from .utils import list_functions
 
         suffix = f"_{self._name}"
         # Skip setdata helper — it's an internal nmodl entry, not a user-facing
         # procedure, and shouldn't appear in dir(hh).
         skip = {f"setdata_{self._name}"}
         names = []
-        from .api import TYPES
 
         for sym_name, (type_, _) in list_functions().items():
             if (
@@ -365,14 +358,6 @@ class Mechanism:
         Uses the public ``nrn_setpointer_pop`` API (nrn#3828), which consumes
         exactly one source handle.
         """
-        import ctypes
-
-        from .api import (
-            _nrn_setpointer_pop,
-            _nrn_symbol,
-            _ERR_BUF_SIZE,
-        )
-
         seg = self._seg
         target = "%s_%s" % (member, self._name)
         sym = _nrn_symbol(target.encode("utf-8"))
@@ -400,8 +385,6 @@ class Mechanism:
         """Write unsuffixed range variable on the mechanism at the current segment; populates cache."""
         # POINTER assignment: seg.mech._ref_PTR = src._ref_X.
         if name.startswith("_ref_"):
-            from .nrnref import NrnRef
-
             if isinstance(value, NrnRef):
                 self._seg._sec._check_alive()  # HOC may have deleted the host.
                 self._assign_pointer(name[5:], value)
@@ -418,10 +401,10 @@ class Mechanism:
             entry = cache.get(name)
             if entry is not None:
                 full_name, sym, sym_type = entry
-                if sym_type == _TYPES.RANGEVAR:
-                    _RANGEVAR_SET(sym, self._seg._sec._sec, self._seg._x, value)
+                if sym_type == TYPES.RANGEVAR:
+                    _nrn_rangevar_set(sym, self._seg._sec._sec, self._seg._x, value)
                     return
-                if sym_type == _TYPES.RANGEOBJ:
+                if sym_type == TYPES.RANGEOBJ:
                     raise ValueError(
                         f"NMODL RANDOM variable '{full_name}' is not assignable"
                     )
@@ -431,9 +414,9 @@ class Mechanism:
         else:
             full_name = f"{name}_{self._name}"
 
-        sym = _NRN_SYMBOL(full_name.encode("utf-8"))
+        sym = _nrn_symbol(full_name.encode("utf-8"))
         sym_type = int(_NRN_SYMBOL_TYPE(sym)) if sym else None
-        if sym and sym_type == _TYPES.RANGEVAR:
+        if sym and sym_type == TYPES.RANGEVAR:
             if _array_length(full_name):
                 # Like NEURON, seg.mech.c = x on an array variable sets c[0].
                 from .sections import _ArrayRangeVar
@@ -448,13 +431,11 @@ class Mechanism:
             if cache is None:
                 cache = {}
                 _MECH_ATTR_CACHE[self._name] = cache
-            cache[name] = (full_name, sym, _TYPES.RANGEVAR)
-            _RANGEVAR_SET(sym, self._seg._sec._sec, self._seg._x, value)
+            cache[name] = (full_name, sym, TYPES.RANGEVAR)
+            _nrn_rangevar_set(sym, self._seg._sec._sec, self._seg._x, value)
             return
 
-        if sym and (_TYPES.RANGEOBJ is None or sym_type == _TYPES.RANGEOBJ):
-            from .utils import _try_wrap_density_nmodlrandom
-
+        if sym and (TYPES.RANGEOBJ is None or sym_type == TYPES.RANGEOBJ):
             wrapped = _try_wrap_density_nmodlrandom(
                 self._seg._sec._sec, self._seg._x, sym, sym_type
             )
@@ -462,7 +443,7 @@ class Mechanism:
                 if cache is None:
                     cache = {}
                     _MECH_ATTR_CACHE[self._name] = cache
-                cache[name] = (full_name, sym, _TYPES.RANGEOBJ)
+                cache[name] = (full_name, sym, TYPES.RANGEOBJ)
                 raise ValueError(
                     f"NMODL RANDOM variable '{full_name}' is not assignable"
                 )

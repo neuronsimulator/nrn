@@ -14,6 +14,28 @@ import ctypes
 import sys
 import weakref
 
+from .api import (
+    _MIN_VALID_DATAPTR,
+    _discard_object_stack_value,
+    _nrn_double_ptr_pop,
+    _nrn_double_ptr_push,
+    _nrn_object_ref,
+    _nrn_rangevar_get,
+    _nrn_rangevar_push,
+    _nrn_rangevar_set,
+    _nrn_str_pop,
+    _nrn_str_push,
+    _nrn_symbol,
+    _nrn_symbol_dataptr,
+    _object_ptr_push,
+    _property_array_get_checked,
+    _property_array_push_checked,
+    _property_get_checked,
+    _property_push_checked,
+    _ref_property_array_set_checked,
+    _ref_property_set_checked,
+)
+
 # libc strdup/free for NrnStrRef. Loaded lazily so import never fails on an
 # exotic platform without the default libc name.
 _libc = None
@@ -50,8 +72,6 @@ class NrnRef(abc.ABC):
 
     def _pop(self):
         """Undo one successful ``_push`` during argument rollback."""
-        from .api import _nrn_double_ptr_pop
-
         _nrn_double_ptr_pop()
 
     @abc.abstractmethod
@@ -96,8 +116,6 @@ class NrnRangeVarRef(NrnRef):
     # _x is captured at construction. If nseg changes afterward, x may land in
     # a different or nonexistent segment; real NEURON behaves the same way.
     def __init__(self, sec, x, name):
-        from .api import _nrn_symbol
-
         self._sec = None
         self._sec_ref = None
         if sec.is_pysec():
@@ -127,8 +145,6 @@ class NrnRangeVarRef(NrnRef):
         return sec
 
     def _push(self):
-        from .api import _nrn_rangevar_push
-
         sec = self._section()
         # A section deleted through HOC keeps its wrapper but frees the C
         # section; _check_alive raises RuntimeError instead of pushing freed state.
@@ -163,8 +179,6 @@ class NrnRangeVarRef(NrnRef):
         return sec, name, info[0]
 
     def __getitem__(self, idx):
-        from .api import _nrn_rangevar_get
-
         if idx != 0:
             raise IndexError("Only index 0 is supported")
         sec, name, kind = self._checked_target()
@@ -179,8 +193,6 @@ class NrnRangeVarRef(NrnRef):
         return _nrn_rangevar_get(kind, sec._sec, self._x)
 
     def __setitem__(self, idx, value):
-        from .api import _nrn_rangevar_set
-
         if idx != 0:
             raise IndexError("Only index 0 is supported")
         sec, name, kind = self._checked_target()
@@ -210,8 +222,6 @@ class NrnVarRef(NrnRef):
     # Only doubles (subtype 0/2) are supported. Subtype 1 (integer globals)
     # would need POINTER(c_int) handling in _push and __getitem__.
     def __init__(self, name):
-        from .api import _nrn_symbol
-
         if not isinstance(name, bytes):
             name = name.encode("utf-8")
         self._name = name
@@ -227,12 +237,6 @@ class NrnVarRef(NrnRef):
         # Vector.record) can store the address and read it later. The C API
         # has no symbol-pointer push: fetch the address with
         # nrn_symbol_dataptr and push it with double_ptr_push.
-        import ctypes
-        from .api import (
-            _nrn_symbol_dataptr,
-            _nrn_double_ptr_push,
-            _MIN_VALID_DATAPTR,
-        )
 
         value_ptr = _nrn_symbol_dataptr(self._sym)
         addr = ctypes.cast(value_ptr, ctypes.c_void_p).value if value_ptr else None
@@ -248,8 +252,6 @@ class NrnVarRef(NrnRef):
     def __getitem__(self, idx):
         if idx != 0:
             raise IndexError("Only index 0 is supported")
-        import ctypes
-        from .api import _nrn_symbol_dataptr, _MIN_VALID_DATAPTR
 
         value_ptr = _nrn_symbol_dataptr(self._sym)
         addr = ctypes.cast(value_ptr, ctypes.c_void_p).value if value_ptr else None
@@ -264,8 +266,6 @@ class NrnVarRef(NrnRef):
     def __setitem__(self, idx, value):
         if idx != 0:
             raise IndexError("Only index 0 is supported")
-        import ctypes
-        from .api import _nrn_symbol_dataptr, _MIN_VALID_DATAPTR
 
         value_ptr = _nrn_symbol_dataptr(self._sym)
         addr = ctypes.cast(value_ptr, ctypes.c_void_p).value if value_ptr else None
@@ -314,12 +314,8 @@ class NrnObjectPropertyRef(NrnRef):
         obj._check_host_alive()
 
         if self._idx is None:
-            from .api import _property_push_checked
-
             _property_push_checked(obj._obj, self._name)
         else:
-            from .api import _property_array_push_checked
-
             _property_array_push_checked(obj._obj, self._name, int(self._idx))
 
     def __getitem__(self, idx):
@@ -331,12 +327,8 @@ class NrnObjectPropertyRef(NrnRef):
         obj._check_host_alive()  # HOC-deleted host: clean raise, not SIGABRT.
 
         if self._idx is None:
-            from .api import _property_get_checked
-
             return _property_get_checked(obj._obj, self._name)
         else:
-            from .api import _property_array_get_checked
-
             return _property_array_get_checked(obj._obj, self._name, int(self._idx))
 
     def __setitem__(self, idx, value):
@@ -348,12 +340,8 @@ class NrnObjectPropertyRef(NrnRef):
         obj._check_host_alive()  # HOC-deleted host: clean raise, not SIGABRT.
 
         if self._idx is None:
-            from .api import _ref_property_set_checked
-
             _ref_property_set_checked(obj._obj, self._name, value)
         else:
-            from .api import _ref_property_array_set_checked
-
             _ref_property_array_set_checked(obj._obj, self._name, int(self._idx), value)
 
 
@@ -425,8 +413,6 @@ class NrnDoubleRef(NrnRef):
         return f"<NrnDoubleRef {self._cell.value!r}>"
 
     def _push(self):
-        from .api import _nrn_double_ptr_push
-
         _nrn_double_ptr_push(
             ctypes.cast(ctypes.byref(self._cell), ctypes.POINTER(ctypes.c_double))
         )
@@ -473,15 +459,11 @@ class NrnStrRef(NrnRef):
         return f"<NrnStrRef {self[0]!r}>"
 
     def _push(self):
-        from .api import _nrn_str_push
-
         _nrn_str_push(
             ctypes.cast(ctypes.addressof(self._cell), ctypes.POINTER(ctypes.c_char_p))
         )
 
     def _pop(self):
-        from .api import _nrn_str_pop
-
         _nrn_str_pop()
 
     def __getitem__(self, idx):
@@ -540,13 +522,9 @@ class NrnObjectRef(NrnRef):
         return f"<NrnObjectRef {self[0]!r}>"
 
     def _push(self):
-        from .api import _object_ptr_push
-
         _object_ptr_push(ctypes.byref(self._cell))
 
     def _pop(self):
-        from .api import _discard_object_stack_value
-
         _discard_object_stack_value()
 
     def __getitem__(self, idx):
@@ -557,7 +535,6 @@ class NrnObjectRef(NrnRef):
             return None
         # Conversion consumes a reference even for PythonObject payloads; the
         # cell keeps its own.
-        from .api import _nrn_object_ref
         from .utils import _wrap_owned_object
 
         _nrn_object_ref(ptr)
@@ -570,7 +547,7 @@ class NrnObjectRef(NrnRef):
     def __setitem__(self, idx, value):
         if idx != 0:
             raise IndexError("Only index 0 is supported")
-        from .api import _nrn_object_ref, _nrn_object_unref
+        from .api import _nrn_object_unref
         from .object import Object
         from .utils import _new_python_object
 

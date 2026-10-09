@@ -1,9 +1,15 @@
 """ctypes bindings to libnrniv for NEURON 9+."""
+import collections as _collections
 import ctypes
 import ctypes.util
+import glob
+import importlib.util
 import math
 import operator
 import os
+import site
+import sys
+import warnings
 from pathlib import Path
 
 _LIBNRNIV_ENV = "MYNEURON_LIBNRNIV"
@@ -50,7 +56,6 @@ def _neuron_pkg_path():
     """
     if _VENDORED:
         return _HERE.parent
-    import importlib.util
 
     try:
         spec = importlib.util.find_spec("neuron")
@@ -116,8 +121,6 @@ def _extra_libnrniv_candidates():
        metadata survives even when ``__init__.py`` is replaced.
     3. Common system install prefixes used by source builds.
     """
-    import site
-
     out = []
     site_dirs = []
     try:
@@ -237,6 +240,15 @@ libnrniv = _load_cdll_or_raise(
     loader=ctypes.PyDLL,
 )
 
+
+def _bind(name, restype, *argtypes):
+    """Return libnrniv's function *name* with its C signature set."""
+    function = getattr(libnrniv, name)
+    function.argtypes = list(argtypes)
+    function.restype = restype
+    return function
+
+
 _REQUIRED_NIGHTLY_API = (
     "nrn_segment_node_index",
     "nrn_object_new_wrap",
@@ -322,15 +334,12 @@ def _python_version_code():
     # way neuron's PyInit_hoc does (inithoc.cpp:356-360): minor < 10
     # uses MAJOR*10+MINOR, minor >= 10 uses MAJOR*100+MINOR. The encoded
     # value drives `libnrnpython<MAJOR>.<MINOR>.so` selection.
-    import sys
 
     major, minor = sys.version_info[:2]
     return major * 100 + minor if minor >= 10 else major * 10 + minor
 
 
 def _libnrnpython_present_next_to_libnrniv():
-    import glob
-
     lib_dir = os.path.dirname(libnrniv._name or "")
     if not lib_dir:
         return False
@@ -399,9 +408,9 @@ for _i, _s in enumerate(_argv_list):
     argv[_i] = _s
 argv[_argc] = None
 
-nrn_init = libnrniv.nrn_init
-nrn_init.argtypes = [ctypes.c_int, ctypes.POINTER(ctypes.c_char_p)]
-nrn_init.restype = ctypes.c_int
+nrn_init = _bind(
+    "nrn_init", ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_char_p)
+)
 
 ret = nrn_init(_argc, argv)
 if ret:
@@ -593,8 +602,6 @@ def _unwrap_pythonobject(obj):
         raise TypeError("expected a HOC PythonObject")
     po_handle = _pythonobject_payload_ptr(obj)
     if not po_handle:
-        import sys
-
         return sys.modules["__main__"]
     return ctypes.cast(po_handle, ctypes.py_object).value
 
@@ -615,8 +622,6 @@ def _owned_hoc_object_to_python(obj):
 
     return _wrap_owned_object(obj)
 
-
-import collections as _collections
 
 # Bounded rotating keepalive for strings pushed back to HOC from a Python
 # component read. The pushed char** must stay valid until HOC consumes
@@ -656,9 +661,7 @@ def _install_cfunctype_methods():
     # nrn_object_new_wrap(sym, payload) works later. Public `nrn_symbol` is
     # hoc_lookup (neuronapi.cpp); it is bound locally for bootstrap ordering.
     try:
-        _sym_lookup = libnrniv.nrn_symbol
-        _sym_lookup.argtypes = [ctypes.c_char_p]
-        _sym_lookup.restype = ctypes.c_void_p
+        _sym_lookup = _bind("nrn_symbol", ctypes.c_void_p, ctypes.c_char_p)
         _sym = _sym_lookup(b"PythonObject")
     except (AttributeError, OSError):
         _sym = None
@@ -1190,16 +1193,12 @@ def _py_pyobj_to_hoc_cfunctype(py_callable):
 # collects it, NEURON calls a dangling pointer and segfaults.
 _STDOUT_CB_TYPE = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_int, ctypes.c_char_p)
 
-_nrn_stdout_redirect = libnrniv.nrn_stdout_redirect
-_nrn_stdout_redirect.argtypes = [_STDOUT_CB_TYPE]
-_nrn_stdout_redirect.restype = None
+_nrn_stdout_redirect = _bind("nrn_stdout_redirect", None, _STDOUT_CB_TYPE)
 
 _stdout_callback_ref = None  # keep-alive for the active callback
 
 
 def _default_stdout_sink(stream, msg):
-    import sys
-
     try:
         text = msg.decode("utf-8", errors="replace") if msg else ""
     except Exception:
@@ -1255,13 +1254,9 @@ SectionListIterator = ctypes.c_void_p
 nrn_Item = ctypes.c_void_p
 ShapePlotInterface = ctypes.c_void_p
 
-_nrn_section_new = libnrniv.nrn_section_new
-_nrn_section_new.argtypes = [ctypes.c_char_p]
-_nrn_section_new.restype = Section
+_nrn_section_new = _bind("nrn_section_new", Section, ctypes.c_char_p)
 
-_nrn_hoc_call_raw = libnrniv.nrn_hoc_call
-_nrn_hoc_call_raw.argtypes = [ctypes.c_char_p]
-_nrn_hoc_call_raw.restype = ctypes.c_int
+_nrn_hoc_call_raw = _bind("nrn_hoc_call", ctypes.c_int, ctypes.c_char_p)
 
 # TODO(gap-61): retire this private OcJump entry when public raw-HOC calls
 # restore the operand stack on failure. Its bool result is opposite the C API.
@@ -1277,105 +1272,88 @@ def _nrn_hoc_call(cmd):
     return _nrn_hoc_call_raw(cmd)
 
 
-_nrn_double_push = libnrniv.nrn_double_push
-_nrn_double_push.argtypes = [ctypes.c_double]
-_nrn_double_push.restype = None
+_nrn_double_push = _bind("nrn_double_push", None, ctypes.c_double)
 
-_nrn_global_symbol_table = libnrniv.nrn_global_symbol_table
-_nrn_global_symbol_table.argtypes = []
-_nrn_global_symbol_table.restype = Symlist
+_nrn_global_symbol_table = _bind("nrn_global_symbol_table", Symlist)
 
-_nrn_top_level_symbol_table = libnrniv.nrn_top_level_symbol_table
-_nrn_top_level_symbol_table.argtypes = []
-_nrn_top_level_symbol_table.restype = Symlist
+_nrn_top_level_symbol_table = _bind("nrn_top_level_symbol_table", Symlist)
 
 # --- Symbol table iterators ---
-_nrn_symbol_table_iterator_new = libnrniv.nrn_symbol_table_iterator_new
-_nrn_symbol_table_iterator_new.argtypes = [Symlist]
-_nrn_symbol_table_iterator_new.restype = SymbolTableIterator
+_nrn_symbol_table_iterator_new = _bind(
+    "nrn_symbol_table_iterator_new", SymbolTableIterator, Symlist
+)
 
-_nrn_symbol_table_iterator_free = libnrniv.nrn_symbol_table_iterator_free
-_nrn_symbol_table_iterator_free.argtypes = [SymbolTableIterator]
-_nrn_symbol_table_iterator_free.restype = None
+_nrn_symbol_table_iterator_free = _bind(
+    "nrn_symbol_table_iterator_free", None, SymbolTableIterator
+)
 
-_nrn_symbol_table_iterator_next = libnrniv.nrn_symbol_table_iterator_next
-_nrn_symbol_table_iterator_next.argtypes = [SymbolTableIterator]
-_nrn_symbol_table_iterator_next.restype = Symbol
+_nrn_symbol_table_iterator_next = _bind(
+    "nrn_symbol_table_iterator_next", Symbol, SymbolTableIterator
+)
 
-_nrn_symbol_table_iterator_done = libnrniv.nrn_symbol_table_iterator_done
-_nrn_symbol_table_iterator_done.argtypes = [SymbolTableIterator]
-_nrn_symbol_table_iterator_done.restype = ctypes.c_int
+_nrn_symbol_table_iterator_done = _bind(
+    "nrn_symbol_table_iterator_done", ctypes.c_int, SymbolTableIterator
+)
 
-_nrn_sectionlist_iterator_new = libnrniv.nrn_sectionlist_iterator_new
-_nrn_sectionlist_iterator_new.argtypes = [nrn_Item]
-_nrn_sectionlist_iterator_new.restype = SectionListIterator
+_nrn_sectionlist_iterator_new = _bind(
+    "nrn_sectionlist_iterator_new", SectionListIterator, nrn_Item
+)
 
-_nrn_sectionlist_iterator_free = libnrniv.nrn_sectionlist_iterator_free
-_nrn_sectionlist_iterator_free.argtypes = [SectionListIterator]
-_nrn_sectionlist_iterator_free.restype = None
+_nrn_sectionlist_iterator_free = _bind(
+    "nrn_sectionlist_iterator_free", None, SectionListIterator
+)
 
-_nrn_sectionlist_iterator_next = libnrniv.nrn_sectionlist_iterator_next
-_nrn_sectionlist_iterator_next.argtypes = [SectionListIterator]
-_nrn_sectionlist_iterator_next.restype = Section
+_nrn_sectionlist_iterator_next = _bind(
+    "nrn_sectionlist_iterator_next", Section, SectionListIterator
+)
 
-_nrn_sectionlist_iterator_done = libnrniv.nrn_sectionlist_iterator_done
-_nrn_sectionlist_iterator_done.argtypes = [SectionListIterator]
-_nrn_sectionlist_iterator_done.restype = ctypes.c_int
+_nrn_sectionlist_iterator_done = _bind(
+    "nrn_sectionlist_iterator_done", ctypes.c_int, SectionListIterator
+)
 
 # --- Symbol metadata ---
-_nrn_symbol = libnrniv.nrn_symbol
-_nrn_symbol.argtypes = [ctypes.c_char_p]
-_nrn_symbol.restype = Symbol
+_nrn_symbol = _bind("nrn_symbol", Symbol, ctypes.c_char_p)
 
-_nrn_symbol_type = libnrniv.nrn_symbol_type
-_nrn_symbol_type.argtypes = [Symbol]
-_nrn_symbol_type.restype = ctypes.c_int
+_nrn_symbol_type = _bind("nrn_symbol_type", ctypes.c_int, Symbol)
 
-_nrn_symbol_subtype = libnrniv.nrn_symbol_subtype
-_nrn_symbol_subtype.argtypes = [Symbol]
-_nrn_symbol_subtype.restype = ctypes.c_int
+_nrn_symbol_subtype = _bind("nrn_symbol_subtype", ctypes.c_int, Symbol)
 
-_nrn_symbol_name = libnrniv.nrn_symbol_name
-_nrn_symbol_name.argtypes = [Symbol]
-_nrn_symbol_name.restype = ctypes.c_char_p
+_nrn_symbol_name = _bind("nrn_symbol_name", ctypes.c_char_p, Symbol)
 
-_nrn_register_function = libnrniv.nrn_register_function
-_nrn_register_function.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_int]
-_nrn_register_function.restype = None
+_nrn_register_function = _bind(
+    "nrn_register_function", None, ctypes.c_void_p, ctypes.c_char_p, ctypes.c_int
+)
 
-_nrn_gargstr = libnrniv.nrn_gargstr
-_nrn_gargstr.argtypes = [ctypes.c_int]
-_nrn_gargstr.restype = ctypes.c_char_p
+_nrn_gargstr = _bind("nrn_gargstr", ctypes.c_char_p, ctypes.c_int)
 
 # --- Stack operations (push / pop / HOC call) ---
 # Read a double argument from the HOC operand stack inside a
 # C-registered function callback. Returned pointer is owned by NEURON.
-_nrn_getarg = libnrniv.nrn_getarg
-_nrn_getarg.argtypes = [ctypes.c_int]
-_nrn_getarg.restype = ctypes.POINTER(ctypes.c_double)
+_nrn_getarg = _bind("nrn_getarg", ctypes.POINTER(ctypes.c_double), ctypes.c_int)
 
-_nrn_hoc_ret = libnrniv.nrn_hoc_ret
-_nrn_hoc_ret.argtypes = []
-_nrn_hoc_ret.restype = None
+_nrn_hoc_ret = _bind("nrn_hoc_ret", None)
 
-_nrn_function_call = libnrniv.nrn_function_call_nothrow
-_nrn_function_call.argtypes = [Symbol, ctypes.c_int, ctypes.c_char_p, ctypes.c_size_t]
-_nrn_function_call.restype = ctypes.c_int
+_nrn_function_call = _bind(
+    "nrn_function_call_nothrow",
+    ctypes.c_int,
+    Symbol,
+    ctypes.c_int,
+    ctypes.c_char_p,
+    ctypes.c_size_t,
+)
 
-_nrn_double_pop = libnrniv.nrn_double_pop
-_nrn_double_pop.argtypes = []
-_nrn_double_pop.restype = ctypes.c_double
+_nrn_double_pop = _bind("nrn_double_pop", ctypes.c_double)
 
 # --- Object API ---
-_nrn_object_new_nothrow = libnrniv.nrn_object_new_nothrow
-_nrn_object_new_nothrow.argtypes = [
+_nrn_object_new_nothrow = _bind(
+    "nrn_object_new_nothrow",
+    ctypes.c_int,
     Symbol,
     ctypes.c_int,
     ctypes.POINTER(Object),
     ctypes.c_char_p,
     ctypes.c_size_t,
-]
-_nrn_object_new_nothrow.restype = ctypes.c_int
+)
 
 
 def _nrn_object_new(sym, narg):
@@ -1389,32 +1367,20 @@ def _nrn_object_new(sym, narg):
     return result.value
 
 
-_nrn_object_new_wrap = libnrniv.nrn_object_new_wrap
-_nrn_object_new_wrap.argtypes = [Symbol, ctypes.c_void_p]
-_nrn_object_new_wrap.restype = Object
+_nrn_object_new_wrap = _bind("nrn_object_new_wrap", Object, Symbol, ctypes.c_void_p)
 
-_nrn_object_ref = libnrniv.nrn_object_ref
-_nrn_object_ref.argtypes = [Object]
-_nrn_object_ref.restype = None
+_nrn_object_ref = _bind("nrn_object_ref", None, Object)
 
-_nrn_object_unref = libnrniv.nrn_object_unref
-_nrn_object_unref.argtypes = [Object]
-_nrn_object_unref.restype = None
+_nrn_object_unref = _bind("nrn_object_unref", None, Object)
 
-_nrn_symbol_table = libnrniv.nrn_symbol_table
-_nrn_symbol_table.argtypes = [Symbol]
-_nrn_symbol_table.restype = Symlist
+_nrn_symbol_table = _bind("nrn_symbol_table", Symlist, Symbol)
 
-_nrn_class_name = libnrniv.nrn_class_name
-_nrn_class_name.argtypes = [Object]
-_nrn_class_name.restype = ctypes.c_char_p
+_nrn_class_name = _bind("nrn_class_name", ctypes.c_char_p, Object)
 
-_nrn_method_symbol = libnrniv.nrn_method_symbol
-_nrn_method_symbol.argtypes = [Object, ctypes.c_char_p]
-_nrn_method_symbol.restype = Symbol
-_nrn_symbol_dataptr = libnrniv.nrn_symbol_dataptr
-_nrn_symbol_dataptr.argtypes = [Symbol]
-_nrn_symbol_dataptr.restype = ctypes.POINTER(ctypes.c_double)
+_nrn_method_symbol = _bind("nrn_method_symbol", Symbol, Object, ctypes.c_char_p)
+_nrn_symbol_dataptr = _bind(
+    "nrn_symbol_dataptr", ctypes.POINTER(ctypes.c_double), Symbol
+)
 
 # Smallest address treated as a real pointer from nrn_symbol_dataptr. For a
 # NOTUSER runtime scalar (`n('x = 42')`) the storage is
@@ -1425,15 +1391,15 @@ _nrn_symbol_dataptr.restype = ctypes.POINTER(ctypes.c_double)
 # direct dereference or the hoc_ac_ trampoline / HOC-assign fallback.
 _MIN_VALID_DATAPTR = 0x10000
 
-_nrn_method_call = libnrniv.nrn_method_call_nothrow
-_nrn_method_call.argtypes = [
+_nrn_method_call = _bind(
+    "nrn_method_call_nothrow",
+    ctypes.c_int,
     Object,
     Symbol,
     ctypes.c_int,
     ctypes.c_char_p,
     ctypes.c_size_t,
-]
-_nrn_method_call.restype = ctypes.c_int
+)
 
 # HOC defers one object unref when popping an OBJECTTMP (hoc_pop_defer).
 # Real NEURON flushes it after every function/method call and when a wrapper
@@ -1442,27 +1408,21 @@ _nrn_method_call.restype = ctypes.c_int
 # PreSyn::~PreSyn. Not in the public C API; bound by its exported mangled
 # name, a no-op if the core does not export it.
 try:
-    _hoc_unref_defer = libnrniv._Z15hoc_unref_deferv
-    _hoc_unref_defer.argtypes = []
-    _hoc_unref_defer.restype = None
+    _hoc_unref_defer = _bind("_Z15hoc_unref_deferv", None)
 except AttributeError:
 
     def _hoc_unref_defer():
         pass
 
 
-_nrn_vector_data = libnrniv.nrn_vector_data
-_nrn_vector_data.argtypes = [Object]
-_nrn_vector_data.restype = ctypes.POINTER(ctypes.c_double)
+_nrn_vector_data = _bind("nrn_vector_data", ctypes.POINTER(ctypes.c_double), Object)
+# Despite the name, returns the Vector's size (vector_capacity, ivocvect.cpp).
+_nrn_vector_capacity = _bind("nrn_vector_capacity", ctypes.c_int, Object)
 
-_nrn_section_pop = libnrniv.nrn_section_pop
-_nrn_section_pop.argtypes = []
-_nrn_section_pop.restype = None
+_nrn_section_pop = _bind("nrn_section_pop", None)
 
 # nrn_str_pop() returns char** owned by NEURON; _nrn_str_pop() decodes it to str.
-_nrn_str_pop0 = libnrniv.nrn_str_pop
-_nrn_str_pop0.argtypes = []
-_nrn_str_pop0.restype = ctypes.POINTER(ctypes.c_char_p)
+_nrn_str_pop0 = _bind("nrn_str_pop", ctypes.POINTER(ctypes.c_char_p))
 
 
 def _decode_hoc_string(p):
@@ -1480,17 +1440,11 @@ def _nrn_str_pop():
     return _decode_hoc_string(_nrn_str_pop0())
 
 
-_nrn_object_pop = libnrniv.nrn_object_pop
-_nrn_object_pop.argtypes = []
-_nrn_object_pop.restype = Object
+_nrn_object_pop = _bind("nrn_object_pop", Object)
 
-_nrn_stack_type = libnrniv.nrn_stack_type
-_nrn_stack_type.argtypes = []
-_nrn_stack_type.restype = ctypes.c_int
+_nrn_stack_type = _bind("nrn_stack_type", ctypes.c_int)
 
-_nrn_symbol_pop = libnrniv.nrn_symbol_pop
-_nrn_symbol_pop.argtypes = []
-_nrn_symbol_pop.restype = Symbol
+_nrn_symbol_pop = _bind("nrn_symbol_pop", Symbol)
 
 
 def _object_pop_safe():
@@ -1505,26 +1459,18 @@ def _discard_object_stack_value():
         _nrn_object_unref(obj)
 
 
-_nrn_int_pop = libnrniv.nrn_int_pop
-_nrn_int_pop.argtypes = []
-_nrn_int_pop.restype = ctypes.c_int
+_nrn_int_pop = _bind("nrn_int_pop", ctypes.c_int)
 
 
 def _symbol_pop():
     return _nrn_symbol_pop()
 
 
-_nrn_str_push = libnrniv.nrn_str_push
-_nrn_str_push.argtypes = [ctypes.POINTER(ctypes.c_char_p)]
-_nrn_str_push.restype = None
+_nrn_str_push = _bind("nrn_str_push", None, ctypes.POINTER(ctypes.c_char_p))
 
-_nrn_object_push = libnrniv.nrn_object_push
-_nrn_object_push.argtypes = [Object]
-_nrn_object_push.restype = None
+_nrn_object_push = _bind("nrn_object_push", None, Object)
 
-_nrn_object_ptr_push = libnrniv.nrn_object_ptr_push
-_nrn_object_ptr_push.argtypes = [ctypes.POINTER(Object)]
-_nrn_object_ptr_push.restype = None
+_nrn_object_ptr_push = _bind("nrn_object_ptr_push", None, ctypes.POINTER(Object))
 
 
 def _object_ptr_push(obj_ref):
@@ -1560,8 +1506,6 @@ def _ensure_pyobj_to_hoc():
     # TODO(gap-60): discover the native allocator in static Python extensions.
     if _pyobj_to_hoc_object is not None:
         return _pyobj_to_hoc_object
-    import glob
-    import os
 
     # Search next to libnrniv first (covers the neuron wheel layout).
     lib_dir = os.path.dirname(libnrniv._name or "")
@@ -1598,9 +1542,7 @@ def _ensure_pyobj_to_hoc():
     if pyobj_sym is not None and not pyobj_sym.value:
         # Same local nrn_symbol binding as in _install_cfunctype_methods.
         try:
-            _sym_lookup = libnrniv.nrn_symbol
-            _sym_lookup.argtypes = [ctypes.c_char_p]
-            _sym_lookup.restype = ctypes.c_void_p
+            _sym_lookup = _bind("nrn_symbol", ctypes.c_void_p, ctypes.c_char_p)
             sym = _sym_lookup(b"PythonObject")
         except (AttributeError, OSError):
             sym = None
@@ -1618,118 +1560,96 @@ def _ensure_pyobj_to_hoc():
     return fn
 
 
-_nrn_double_ptr_push = libnrniv.nrn_double_ptr_push
-_nrn_double_ptr_push.argtypes = [ctypes.POINTER(ctypes.c_double)]
-_nrn_double_ptr_push.restype = None
+_nrn_double_ptr_push = _bind(
+    "nrn_double_ptr_push", None, ctypes.POINTER(ctypes.c_double)
+)
 
-_nrn_allsec = libnrniv.nrn_allsec
-_nrn_allsec.argtypes = []
-_nrn_allsec.restype = nrn_Item
+_nrn_allsec = _bind("nrn_allsec", nrn_Item)
 
-_nrn_sectionlist_data = libnrniv.nrn_sectionlist_data
-_nrn_sectionlist_data.argtypes = [Object]
-_nrn_sectionlist_data.restype = nrn_Item
+_nrn_sectionlist_data = _bind("nrn_sectionlist_data", nrn_Item, Object)
 
 # Batched section-list gather (nrn#3834). Call with buf=NULL, maxlen=0 to
 # obtain the total live count, then again with a caller-owned buffer.
-_nrn_sectionlist_to_array = libnrniv.nrn_sectionlist_to_array
-_nrn_sectionlist_to_array.argtypes = [
+_nrn_sectionlist_to_array = _bind(
+    "nrn_sectionlist_to_array",
+    ctypes.c_int,
     nrn_Item,
     ctypes.POINTER(ctypes.c_void_p),
     ctypes.c_int,
-]
-_nrn_sectionlist_to_array.restype = ctypes.c_int
+)
 
 # --- Section API ---
-_nrn_section_push = libnrniv.nrn_section_push
-_nrn_section_push.argtypes = [Section]
-_nrn_section_push.restype = None
+_nrn_section_push = _bind("nrn_section_push", None, Section)
 
-_nrn_mechanism_insert = libnrniv.nrn_mechanism_insert
-_nrn_mechanism_insert.argtypes = [Section, Symbol]
-_nrn_mechanism_insert.restype = None
+_nrn_mechanism_insert = _bind("nrn_mechanism_insert", None, Section, Symbol)
 
-_nrn_rangevar_get = libnrniv.nrn_rangevar_get
-_nrn_rangevar_get.argtypes = [Symbol, Section, ctypes.c_double]
-_nrn_rangevar_get.restype = ctypes.c_double
+_nrn_rangevar_get = _bind(
+    "nrn_rangevar_get", ctypes.c_double, Symbol, Section, ctypes.c_double
+)
 
-_nrn_section_connect = libnrniv.nrn_section_connect
-_nrn_section_connect.argtypes = [Section, ctypes.c_double, Section, ctypes.c_double]
-_nrn_section_connect.restype = None
+_nrn_section_connect = _bind(
+    "nrn_section_connect", None, Section, ctypes.c_double, Section, ctypes.c_double
+)
 
-_nrn_section_length_set = libnrniv.nrn_section_length_set
-_nrn_section_length_set.argtypes = [Section, ctypes.c_double]
-_nrn_section_length_set.restype = None
+_nrn_section_length_set = _bind(
+    "nrn_section_length_set", None, Section, ctypes.c_double
+)
 
-_nrn_section_length_get = libnrniv.nrn_section_length_get
-_nrn_section_length_get.argtypes = [Section]
-_nrn_section_length_get.restype = ctypes.c_double
+_nrn_section_length_get = _bind("nrn_section_length_get", ctypes.c_double, Section)
 
-_nrn_secname = libnrniv.nrn_secname
-_nrn_secname.argtypes = [Section]
-_nrn_secname.restype = ctypes.c_char_p
+_nrn_secname = _bind("nrn_secname", ctypes.c_char_p, Section)
 
-_nrn_nseg_get = libnrniv.nrn_nseg_get
-_nrn_nseg_get.argtypes = [Section]
-_nrn_nseg_get.restype = ctypes.c_int
+_nrn_nseg_get = _bind("nrn_nseg_get", ctypes.c_int, Section)
 
-_nrn_nseg_set = libnrniv.nrn_nseg_set
-_nrn_nseg_set.argtypes = [Section, ctypes.c_int]
-_nrn_nseg_set.restype = None
+_nrn_nseg_set = _bind("nrn_nseg_set", None, Section, ctypes.c_int)
 
-_nrn_section_diam_set = libnrniv.nrn_segment_diam_set
-_nrn_section_diam_set.argtypes = [Section, ctypes.c_double, ctypes.c_double]
-_nrn_section_diam_set.restype = None
+_nrn_section_diam_set = _bind(
+    "nrn_segment_diam_set", None, Section, ctypes.c_double, ctypes.c_double
+)
 
-_nrn_section_diam_get = libnrniv.nrn_segment_diam_get
-_nrn_section_diam_get.argtypes = [Section, ctypes.c_double]
-_nrn_section_diam_get.restype = ctypes.c_double
+_nrn_section_diam_get = _bind(
+    "nrn_segment_diam_get", ctypes.c_double, Section, ctypes.c_double
+)
 
-_nrn_segment_node_index = libnrniv.nrn_segment_node_index
-_nrn_segment_node_index.argtypes = [Section, ctypes.c_double]
-_nrn_segment_node_index.restype = ctypes.c_int
+_nrn_segment_node_index = _bind(
+    "nrn_segment_node_index", ctypes.c_int, Section, ctypes.c_double
+)
 
 # Section-tree accessors (nrn#3835). Each returns a Section* or NULL.
-_nrn_section_parent = libnrniv.nrn_section_parent
-_nrn_section_parent.argtypes = [Section]
-_nrn_section_parent.restype = Section
+_nrn_section_parent = _bind("nrn_section_parent", Section, Section)
 
-_nrn_section_trueparent = libnrniv.nrn_section_trueparent
-_nrn_section_trueparent.argtypes = [Section]
-_nrn_section_trueparent.restype = Section
+_nrn_section_trueparent = _bind("nrn_section_trueparent", Section, Section)
 
-_nrn_section_child = libnrniv.nrn_section_child
-_nrn_section_child.argtypes = [Section]
-_nrn_section_child.restype = Section
+_nrn_section_child = _bind("nrn_section_child", Section, Section)
 
-_nrn_section_sibling = libnrniv.nrn_section_sibling
-_nrn_section_sibling.argtypes = [Section]
-_nrn_section_sibling.restype = Section
+_nrn_section_sibling = _bind("nrn_section_sibling", Section, Section)
 
-_nrn_property_get = libnrniv.nrn_property_get
-_nrn_property_get.argtypes = [Object, ctypes.c_char_p]
-_nrn_property_get.restype = ctypes.c_double
+_nrn_property_get = _bind("nrn_property_get", ctypes.c_double, Object, ctypes.c_char_p)
 
-_nrn_property_array_get = libnrniv.nrn_property_array_get
-_nrn_property_array_get.argtypes = [Object, ctypes.c_char_p, ctypes.c_int]
-_nrn_property_array_get.restype = ctypes.c_double
+_nrn_property_array_get = _bind(
+    "nrn_property_array_get", ctypes.c_double, Object, ctypes.c_char_p, ctypes.c_int
+)
 
-_nrn_property_set = libnrniv.nrn_property_set
-_nrn_property_set.argtypes = [Object, ctypes.c_char_p, ctypes.c_double]
-_nrn_property_set.restype = None
+_nrn_property_set = _bind(
+    "nrn_property_set", None, Object, ctypes.c_char_p, ctypes.c_double
+)
 
-_nrn_property_array_set = libnrniv.nrn_property_array_set
-_nrn_property_array_set.argtypes = [
+_nrn_property_array_set = _bind(
+    "nrn_property_array_set",
+    None,
     Object,
     ctypes.c_char_p,
     ctypes.c_int,
     ctypes.c_double,
-]
-_nrn_property_array_set.restype = None
+)
 
-_nrn_property_data_handle_is_valid = libnrniv.nrn_property_data_handle_is_valid
-_nrn_property_data_handle_is_valid.argtypes = [Object, ctypes.c_char_p, ctypes.c_int]
-_nrn_property_data_handle_is_valid.restype = ctypes.c_bool
+_nrn_property_data_handle_is_valid = _bind(
+    "nrn_property_data_handle_is_valid",
+    ctypes.c_bool,
+    Object,
+    ctypes.c_char_p,
+    ctypes.c_int,
+)
 
 
 def _property_get_checked(obj, name):
@@ -1793,130 +1713,104 @@ def _property_array_push_checked(obj, name, index):
     _nrn_property_array_push(obj, name, index)
 
 
-_nrn_section_is_active = libnrniv.nrn_section_is_active
-_nrn_section_is_active.argtypes = [Section]
-_nrn_section_is_active.restype = ctypes.c_bool
+_nrn_section_is_active = _bind("nrn_section_is_active", ctypes.c_bool, Section)
 
-_nrn_rangevar_set = libnrniv.nrn_rangevar_set
-_nrn_rangevar_set.argtypes = [Symbol, Section, ctypes.c_double, ctypes.c_double]
-_nrn_rangevar_set.restype = None
+_nrn_rangevar_set = _bind(
+    "nrn_rangevar_set", None, Symbol, Section, ctypes.c_double, ctypes.c_double
+)
 
 # Both return one owned Object* reference, or NULL for a non-live RANDOM member.
-_nrn_segment_nmodlrandom_get = libnrniv.nrn_segment_nmodlrandom_get
-_nrn_segment_nmodlrandom_get.argtypes = [Section, ctypes.c_double, Symbol]
-_nrn_segment_nmodlrandom_get.restype = Object
+_nrn_segment_nmodlrandom_get = _bind(
+    "nrn_segment_nmodlrandom_get", Object, Section, ctypes.c_double, Symbol
+)
 
-_nrn_pntproc_nmodlrandom_get = libnrniv.nrn_pntproc_nmodlrandom_get
-_nrn_pntproc_nmodlrandom_get.argtypes = [Object, Symbol]
-_nrn_pntproc_nmodlrandom_get.restype = Object
+_nrn_pntproc_nmodlrandom_get = _bind(
+    "nrn_pntproc_nmodlrandom_get", Object, Object, Symbol
+)
 
 # PlotShape accessors; see plotting._PlotShapePlot._get_plot_data.
-_nrn_get_plotshape_interface = libnrniv.nrn_get_plotshape_interface
-_nrn_get_plotshape_interface.argtypes = [Object]
-_nrn_get_plotshape_interface.restype = ShapePlotInterface
+_nrn_get_plotshape_interface = _bind(
+    "nrn_get_plotshape_interface", ShapePlotInterface, Object
+)
 
-_nrn_symbol_is_array = libnrniv.nrn_symbol_is_array
-_nrn_symbol_is_array.argtypes = [Symbol]
-_nrn_symbol_is_array.restype = ctypes.c_bool
+_nrn_symbol_is_array = _bind("nrn_symbol_is_array", ctypes.c_bool, Symbol)
 
-_nrn_get_plotshape_section_list = libnrniv.nrn_get_plotshape_section_list
-_nrn_get_plotshape_section_list.argtypes = [ShapePlotInterface]
-_nrn_get_plotshape_section_list.restype = Object
+_nrn_get_plotshape_section_list = _bind(
+    "nrn_get_plotshape_section_list", Object, ShapePlotInterface
+)
 
-_nrn_get_plotshape_varname = libnrniv.nrn_get_plotshape_varname
-_nrn_get_plotshape_varname.argtypes = [ShapePlotInterface]
-_nrn_get_plotshape_varname.restype = ctypes.c_char_p
+_nrn_get_plotshape_varname = _bind(
+    "nrn_get_plotshape_varname", ctypes.c_char_p, ShapePlotInterface
+)
 
-_nrn_get_plotshape_low = libnrniv.nrn_get_plotshape_low
-_nrn_get_plotshape_low.argtypes = [ShapePlotInterface]
-_nrn_get_plotshape_low.restype = ctypes.c_float
+_nrn_get_plotshape_low = _bind(
+    "nrn_get_plotshape_low", ctypes.c_float, ShapePlotInterface
+)
 
-_nrn_get_plotshape_high = libnrniv.nrn_get_plotshape_high
-_nrn_get_plotshape_high.argtypes = [ShapePlotInterface]
-_nrn_get_plotshape_high.restype = ctypes.c_float
+_nrn_get_plotshape_high = _bind(
+    "nrn_get_plotshape_high", ctypes.c_float, ShapePlotInterface
+)
 
-_nrn_symbol_array_length = libnrniv.nrn_symbol_array_length
-_nrn_symbol_array_length.argtypes = [Symbol]
-_nrn_symbol_array_length.restype = ctypes.c_int
+_nrn_symbol_array_length = _bind("nrn_symbol_array_length", ctypes.c_int, Symbol)
 
 # --- Ra, rallbranch, ref/unref, distance ---
-_nrn_section_Ra_get = libnrniv.nrn_section_Ra_get
-_nrn_section_Ra_get.argtypes = [Section]
-_nrn_section_Ra_get.restype = ctypes.c_double
+_nrn_section_Ra_get = _bind("nrn_section_Ra_get", ctypes.c_double, Section)
 
-_nrn_section_Ra_set = libnrniv.nrn_section_Ra_set
-_nrn_section_Ra_set.argtypes = [Section, ctypes.c_double]
-_nrn_section_Ra_set.restype = None
+_nrn_section_Ra_set = _bind("nrn_section_Ra_set", None, Section, ctypes.c_double)
 
-_nrn_section_rallbranch_get = libnrniv.nrn_section_rallbranch_get
-_nrn_section_rallbranch_get.argtypes = [Section]
-_nrn_section_rallbranch_get.restype = ctypes.c_double
+_nrn_section_rallbranch_get = _bind(
+    "nrn_section_rallbranch_get", ctypes.c_double, Section
+)
 
-_nrn_section_rallbranch_set = libnrniv.nrn_section_rallbranch_set
-_nrn_section_rallbranch_set.argtypes = [Section, ctypes.c_double]
-_nrn_section_rallbranch_set.restype = None
+_nrn_section_rallbranch_set = _bind(
+    "nrn_section_rallbranch_set", None, Section, ctypes.c_double
+)
 
-_nrn_rangevar_push = libnrniv.nrn_rangevar_push
-_nrn_rangevar_push.argtypes = [Symbol, Section, ctypes.c_double]
-_nrn_rangevar_push.restype = None
+_nrn_rangevar_push = _bind("nrn_rangevar_push", None, Symbol, Section, ctypes.c_double)
 
-_nrn_setpointer_pop = libnrniv.nrn_setpointer_pop
-_nrn_setpointer_pop.argtypes = [
+_nrn_setpointer_pop = _bind(
+    "nrn_setpointer_pop",
+    ctypes.c_int,
     Symbol,
     Section,
     ctypes.c_double,
     ctypes.c_char_p,
     ctypes.c_size_t,
-]
-_nrn_setpointer_pop.restype = ctypes.c_int
+)
 
-_nrn_pp_setpointer_pop = libnrniv.nrn_pp_setpointer_pop
-_nrn_pp_setpointer_pop.argtypes = [
+_nrn_pp_setpointer_pop = _bind(
+    "nrn_pp_setpointer_pop",
+    ctypes.c_int,
     Object,
     ctypes.c_char_p,
     ctypes.c_char_p,
     ctypes.c_size_t,
-]
-_nrn_pp_setpointer_pop.restype = ctypes.c_int
+)
 
-_nrn_property_push = libnrniv.nrn_property_push
-_nrn_property_push.argtypes = [Object, ctypes.c_char_p]
-_nrn_property_push.restype = None
+_nrn_property_push = _bind("nrn_property_push", None, Object, ctypes.c_char_p)
 
-_nrn_property_array_push = libnrniv.nrn_property_array_push
-_nrn_property_array_push.argtypes = [Object, ctypes.c_char_p, ctypes.c_int]
-_nrn_property_array_push.restype = None
+_nrn_property_array_push = _bind(
+    "nrn_property_array_push", None, Object, ctypes.c_char_p, ctypes.c_int
+)
 
-_nrn_double_ptr_pop = libnrniv.nrn_double_ptr_pop
-_nrn_double_ptr_pop.argtypes = []
-_nrn_double_ptr_pop.restype = ctypes.POINTER(ctypes.c_double)
+_nrn_double_ptr_pop = _bind("nrn_double_ptr_pop", ctypes.POINTER(ctypes.c_double))
 
 # Reserved: nrn_symbol_push is bound but not currently used in myneuron.
-_nrn_symbol_push = libnrniv.nrn_symbol_push
-_nrn_symbol_push.argtypes = [Symbol]
-_nrn_symbol_push.restype = None
+_nrn_symbol_push = _bind("nrn_symbol_push", None, Symbol)
 
-_nrn_section_ref = libnrniv.nrn_section_ref
-_nrn_section_ref.argtypes = [Section]
-_nrn_section_ref.restype = None
+_nrn_section_ref = _bind("nrn_section_ref", None, Section)
 
-_nrn_section_unref = libnrniv.nrn_section_unref
-_nrn_section_unref.argtypes = [Section]
-_nrn_section_unref.restype = None
+_nrn_section_unref = _bind("nrn_section_unref", None, Section)
 
-_nrn_cas = libnrniv.nrn_cas
-_nrn_cas.argtypes = []
-_nrn_cas.restype = Section
+_nrn_cas = _bind("nrn_cas", Section)
 
 # Reserved: nrn_prop_exists (check whether an Object has a given property)
 # is bound but not currently used in myneuron.
-_nrn_prop_exists = libnrniv.nrn_prop_exists
-_nrn_prop_exists.argtypes = [Object]
-_nrn_prop_exists.restype = ctypes.c_bool
+_nrn_prop_exists = _bind("nrn_prop_exists", ctypes.c_bool, Object)
 
-_nrn_distance = libnrniv.nrn_distance
-_nrn_distance.argtypes = [Section, ctypes.c_double, Section, ctypes.c_double]
-_nrn_distance.restype = ctypes.c_double
+_nrn_distance = _bind(
+    "nrn_distance", ctypes.c_double, Section, ctypes.c_double, Section, ctypes.c_double
+)
 
 
 # ---------------------------------------------------------------------------
@@ -1927,7 +1821,6 @@ _nrn_distance.restype = ctypes.c_double
 #                                         mutation, cleared at finitialize
 #   structure_change_cnt treeset.cpp:66   bumped when NEURON recomputes
 #                                         structure (typically at finitialize)
-#   nrn_shape_changed_   treeset.cpp:37   bumped when 3D points change
 #
 # (diam_changed, structure_change_cnt) is the staleness signal for cached
 # pointers: if it differs between cache time and read time, the pointer may
@@ -1935,7 +1828,6 @@ _nrn_distance.restype = ctypes.c_double
 # call nrn_section_new directly), not just myneuron's setters.
 _diam_changed = ctypes.c_int.in_dll(libnrniv, "diam_changed")
 _structure_change_cnt = ctypes.c_int.in_dll(libnrniv, "structure_change_cnt")
-_nrn_shape_changed = ctypes.c_int.in_dll(libnrniv, "nrn_shape_changed_")
 
 # WHY ctypes .value: ~94 ns/read vs numpy ~106 ns at 5M reads, and no numpy
 # dependency on the hot path. Measurements:
@@ -2182,8 +2074,6 @@ class TypeCodes:
             if n not in self._OPTIONAL and getattr(self, n) is None
         ]
         if missing:
-            import warnings
-
             warnings.warn(
                 "myneuron: could not discover type codes for: "
                 + ", ".join(missing)

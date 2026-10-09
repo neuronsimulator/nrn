@@ -2,6 +2,34 @@
 import ctypes
 
 from ._docs import get_doc
+from .api import (
+    TYPES,
+    _ensure_pyobj_to_hoc,
+    _nrn_double_pop,
+    _nrn_double_push,
+    _nrn_global_symbol_table,
+    _nrn_object_push,
+    _nrn_pntproc_nmodlrandom_get,
+    _nrn_segment_nmodlrandom_get,
+    _nrn_str_pop,
+    _nrn_str_push,
+    _nrn_symbol,
+    _nrn_symbol_name,
+    _nrn_symbol_subtype,
+    _nrn_symbol_table,
+    _nrn_symbol_table_iterator_done,
+    _nrn_symbol_table_iterator_free,
+    _nrn_symbol_table_iterator_new,
+    _nrn_symbol_table_iterator_next,
+    _nrn_symbol_type,
+    _nrn_top_level_symbol_table,
+    _object_pop_safe,
+    _owned_pythonobject_to_python,
+    _py_pyobj_to_hoc_cfunctype,
+)
+from .nrnref import (
+    NrnRef,
+)
 
 
 class FuncWrapper:
@@ -54,16 +82,6 @@ def _list_symbol_table(symtab):
     Return a dict of all symbols in the given symbol table.
     Keys are symbol names, values are (type, subtype) tuples.
     """
-    from .api import (
-        _nrn_symbol_table_iterator_new,
-        _nrn_symbol_table_iterator_free,
-        _nrn_symbol_table_iterator_next,
-        _nrn_symbol_table_iterator_done,
-        _nrn_symbol_name,
-        _nrn_symbol_type,
-        _nrn_symbol_subtype,
-    )
-
     entries = {}
     it = _nrn_symbol_table_iterator_new(symtab)
     while not _nrn_symbol_table_iterator_done(it):
@@ -98,8 +116,6 @@ def list_methods(obj):
     Return a dict of all methods for the given NEURON object/class.
     Keys are method names, values are (type, subtype) tuples.
     """
-    from .api import _nrn_symbol, _nrn_symbol_table
-
     # Accept either a class name (str) or an Object instance
     if isinstance(obj, str):
         class_name = obj
@@ -120,8 +136,6 @@ def list_functions():
     Return a dict of all top-level NEURON functions and their types.
     Keys are function/variable names, values are (type, subtype) tuples.
     """
-    from .api import _nrn_global_symbol_table, _nrn_top_level_symbol_table
-
     entries = {}
     for symtab_func in (_nrn_global_symbol_table, _nrn_top_level_symbol_table):
         symtab = symtab_func()
@@ -140,8 +154,6 @@ class _PythonObjectArg:
 
 def _new_python_object(value):
     """Return one creator-owned PythonObject reference from the active provider."""
-    from .api import _py_pyobj_to_hoc_cfunctype, _ensure_pyobj_to_hoc
-
     obj_ptr = _py_pyobj_to_hoc_cfunctype(value)
     if obj_ptr is None:
         po2ho = _ensure_pyobj_to_hoc()
@@ -191,17 +203,7 @@ def _push_args(args, return_rollback=False):
                   the callee consumed the arguments, even if a pending Python
                   callback exception is raised afterwards.
     """
-    from .api import (
-        _nrn_double_push,
-        _nrn_str_push,
-        _nrn_object_push,
-        _nrn_double_pop,
-        _nrn_str_pop,
-        _object_pop_safe,
-        _nrn_object_unref,
-        _nrn_double_ptr_pop,
-    )
-    from .nrnref import NrnRef
+    from .api import _nrn_object_unref
     from .object import Object
     from .sections import Segment
 
@@ -317,8 +319,6 @@ def _wrap_owned_object(obj):
         raise
 
     if name == "PythonObject":
-        from .api import _owned_pythonobject_to_python
-
         # The converter consumes ownership even on failure; keep it outside
         # the class-wrapper cleanup so the reference cannot be released twice.
         return _owned_pythonobject_to_python(obj)
@@ -360,8 +360,6 @@ def _try_wrap_density_nmodlrandom(sec, x, sym, sym_type):
 
     See api.TypeCodes.record_rangeobj for why this is probed at runtime.
     """
-    from .api import _nrn_segment_nmodlrandom_get, TYPES
-
     raw = _nrn_segment_nmodlrandom_get(sec, x, sym)
     if not raw:
         return None
@@ -371,8 +369,6 @@ def _try_wrap_density_nmodlrandom(sec, x, sym, sym_type):
 
 def _try_wrap_point_nmodlrandom(obj, sym, sym_type):
     """Return a point-process NMODLRandom wrapper, or None if not applicable."""
-    from .api import _nrn_pntproc_nmodlrandom_get, TYPES
-
     raw = _nrn_pntproc_nmodlrandom_get(obj, sym)
     if not raw:
         return None
@@ -390,7 +386,5 @@ def _object_pop():
     ``nrn_object_pop`` returns an owned reference for a non-nil object;
     ``_init_from_ptr`` takes ownership of it.
     """
-    from .api import _object_pop_safe
-
     obj = _object_pop_safe()
     return _wrap_owned_object(obj)

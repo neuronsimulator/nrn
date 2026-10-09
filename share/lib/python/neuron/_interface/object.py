@@ -1,10 +1,58 @@
 """Object, List, Vector wrappers — dynamic class system, refcounting, method dispatch."""
+import array
+import collections.abc
 import ctypes
+import numbers
+import operator
+import os
 import sys
 import warnings
+import weakref
 
 from ._docs import _ClassDoc
-
+from .api import (
+    _ERR_BUF_SIZE,
+    TYPES,
+    _check_nrn_error,
+    _hoc_return_type_code,
+    _hoc_unref_defer,
+    _nrn_double_pop,
+    _nrn_hoc_call,
+    _nrn_method_call,
+    _nrn_method_symbol,
+    _nrn_pp_setpointer_pop,
+    _nrn_section_pop,
+    _nrn_section_push,
+    _nrn_sectionlist_data,
+    _nrn_sectionlist_iterator_done,
+    _nrn_sectionlist_iterator_free,
+    _nrn_sectionlist_iterator_new,
+    _nrn_sectionlist_iterator_next,
+    _nrn_sectionlist_to_array,
+    _nrn_str_pop,
+    _nrn_symbol,
+    _nrn_symbol_array_length,
+    _nrn_symbol_is_array,
+    _nrn_vector_capacity,
+    _nrn_vector_data,
+    _object_is_builtin_class,
+    _property_array_get_checked,
+    _property_array_set_checked,
+    _property_get_checked,
+    _property_set_checked,
+)
+from .nrnref import (
+    NrnHocTemplateVarRef,
+    NrnObjectPropertyRef,
+    NrnRef,
+)
+from .utils import (
+    FuncWrapper,
+    _object_pop,
+    _try_wrap_point_nmodlrandom,
+    list_functions,
+    list_methods,
+)
 
 # ---------------------------------------------------------------------------
 # Metaclass — _HocClassMeta
@@ -96,13 +144,7 @@ def _construct_hoc_object(class_name, args, sec=None):
     Called from ``Object.__init__`` for direct construction
     (``n.IClamp(seg)``, ``MyIClamp(seg)``). ``Object._wrap`` does not use it.
     """
-    import collections.abc
-    from .api import (
-        _nrn_symbol,
-        _nrn_object_new,
-        _nrn_section_push,
-        _nrn_section_pop,
-    )
+    from .api import _nrn_object_new
     from .utils import _push_args
 
     initing_to_list_arg = None
@@ -125,8 +167,8 @@ def _construct_hoc_object(class_name, args, sec=None):
         and isinstance(args[0], collections.abc.Iterable)
         and not isinstance(args[0], str)
     ):
-        # n.Vector([1, 2, 3]) → HOC Vector(3) + later fill from Python.
-        initing_to_list_arg = list(args[0])
+        # n.Vector([1, 2, 3]) → HOC Vector(3), then one copy into its data.
+        initing_to_list_arg = _vector_values(args[0])
         args_for_push = (len(initing_to_list_arg),)
     elif (
         class_name == "SectionList"
@@ -203,8 +245,7 @@ def _construct_hoc_object(class_name, args, sec=None):
                 _unregister_py_callback(cb_id)
             fih_callback_ids.clear()
         if initing_to_list_arg is not None:
-            for i, data in enumerate(initing_to_list_arg):
-                wrapper[i] = data
+            _copy_into_vector(wrapper, initing_to_list_arg)
         if initing_sectionlist is not None:
             for s in initing_sectionlist:
                 wrapper.append(sec=s)
@@ -306,7 +347,6 @@ class Object(metaclass=_HocClassMeta):
 
         self._obj = obj
         self._class_name = _nrn_class_name(obj).decode("utf-8")
-        from .utils import list_methods
 
         self._methods = list_methods(self)
         # A HOC/template-owned Section wrapper is non-owning and may be a
@@ -317,8 +357,6 @@ class Object(metaclass=_HocClassMeta):
         self._host_section = None
         self._host_section_ref = None
         if host_section is not None and host_section.is_pysec():
-            import weakref
-
             self._host_section_ref = weakref.ref(host_section)
         elif host_section is not None:
             self._host_section = host_section
@@ -356,7 +394,7 @@ class Object(metaclass=_HocClassMeta):
         except AttributeError:
             obj = None
         if obj is not None:
-            from .api import _hoc_unref_defer, _nrn_object_unref
+            from .api import _nrn_object_unref
 
             _nrn_object_unref(obj)
             # _hoc_unref_defer: prompt deletion, as when NEURON releases a
@@ -433,13 +471,8 @@ class Object(metaclass=_HocClassMeta):
         return int(self._obj) if self._obj is not None else 0
 
     def ref(self, name, idx=None):
-        from .nrnref import NrnHocTemplateVarRef, NrnObjectPropertyRef
-        from .api import TYPES
-
         methods = getattr(self, "_methods", None)
         if methods is not None and name in methods and methods[name][0] == TYPES.VAR:
-            from .api import _nrn_method_symbol, _nrn_symbol_is_array
-
             sym = _nrn_method_symbol(self._obj, name.encode("utf-8"))
             is_array = bool(_nrn_symbol_is_array(sym))
             if is_array and idx is None:
@@ -513,8 +546,6 @@ class Object(metaclass=_HocClassMeta):
         The public ``nrn_pp_setpointer_pop`` API addresses the point process
         directly and consumes exactly one source handle.
         """
-        from .api import _nrn_pp_setpointer_pop, _ERR_BUF_SIZE
-
         member_encoded = member.encode("utf-8")
         err = ctypes.create_string_buffer(_ERR_BUF_SIZE)
         src_ref._push()
@@ -527,8 +558,6 @@ class Object(metaclass=_HocClassMeta):
         # POINTER assignment: obj._ref_PTR = src._ref_X wires an NMODL POINTER.
         # Must come before the generic underscore short-circuit below.
         if name.startswith("_ref_"):
-            from .nrnref import NrnRef
-
             if isinstance(val, NrnRef):
                 self._check_host_alive()
                 self._assign_pointer(name[5:], val)
@@ -561,20 +590,11 @@ class Object(metaclass=_HocClassMeta):
         # the C++ property `steer` callback used by nrn_property_set.
         if hasattr(self, "_methods") and actual_name in self._methods:
             _type, _ = self._methods[actual_name]
-            from .api import TYPES
 
             if _type == TYPES.STRING:
                 _write_hoc_template_string(self, actual_name, val)
                 return
             if _type in (TYPES.RANGEVAR, TYPES.VAR):
-                from .api import (
-                    _nrn_method_symbol,
-                    _nrn_symbol_is_array,
-                    _nrn_symbol_array_length,
-                    _property_set_checked,
-                    _property_array_set_checked,
-                )
-
                 name_encoded = actual_name.encode("utf-8")
                 sym = _nrn_method_symbol(self._obj, name_encoded)
                 if not _nrn_symbol_is_array(sym):
@@ -607,9 +627,6 @@ class Object(metaclass=_HocClassMeta):
                         )
                 return
             if TYPES.RANGEOBJ is None or _type == TYPES.RANGEOBJ:
-                from .api import _nrn_method_symbol
-                from .utils import _try_wrap_point_nmodlrandom
-
                 sym = _nrn_method_symbol(self._obj, actual_name.encode("utf-8"))
                 wrapped = _try_wrap_point_nmodlrandom(self._obj, sym, _type)
                 if wrapped is not None:
@@ -632,7 +649,7 @@ class Object(metaclass=_HocClassMeta):
         # Bail here, or the unset-slot AttributeError re-enters __getattr__
         # and recurses.
         try:
-            methods = object.__getattribute__(self, "_methods")
+            object.__getattribute__(self, "_methods")
         except AttributeError:
             raise AttributeError(name) from None
         # Skipped for underscore names so the weakref bookkeeping does not
@@ -648,8 +665,8 @@ class Object(metaclass=_HocClassMeta):
 
                 return _RangeVarPlot(self)
             elif self._class_name == "PlotShape":
-                from .plotting import _PlotShapePlot
                 from . import NEURON
+                from .plotting import _PlotShapePlot
 
                 NEURON().define_shape()
                 return _PlotShapePlot(self)
@@ -660,16 +677,12 @@ class Object(metaclass=_HocClassMeta):
         if name in self._methods:
             _type, _ = self._methods[name]
             qualified_name = f"{self._class_name}.{original_name}"
-            from .api import TYPES
 
             # RANGEOBJ not yet discovered (a point-process-only MOD may be the
             # first RANGEOBJ seen, with no density symbol to learn the code
             # from): probe via the fail-closed adapter (see
             # api.TypeCodes.record_rangeobj). Free once RANGEOBJ is known.
             if TYPES.RANGEOBJ is None:
-                from .api import _nrn_method_symbol
-                from .utils import _try_wrap_point_nmodlrandom
-
                 sym = _nrn_method_symbol(self._obj, name.encode("utf-8"))
                 wrapped = _try_wrap_point_nmodlrandom(self._obj, sym, _type)
                 if wrapped is not None:
@@ -688,13 +701,11 @@ class Object(metaclass=_HocClassMeta):
                     cached = sec_cache.get(name)
                     if cached is not None:
                         return cached
-                from .api import _nrn_method_symbol, _nrn_symbol_is_array
 
                 sym = _nrn_method_symbol(self._obj, name.encode("utf-8"))
                 if _nrn_symbol_is_array(sym):
                     # `create dend[N]`: subscriptable proxy (real NEURON
                     # returns a HocObject array).
-                    from .api import _nrn_symbol_array_length
 
                     size = int(_nrn_symbol_array_length(sym))
                     proxy = _TemplateSectionArray(self, name, size)
@@ -717,11 +728,6 @@ class Object(metaclass=_HocClassMeta):
                 # "unknown return type 271". Read via a per-member obfunc
                 # trampoline (_read_object_member). Import3d SectionLists
                 # (cell.all, somatic, ...) work this way.
-                from .api import (
-                    _nrn_method_symbol,
-                    _nrn_symbol_is_array,
-                    _nrn_symbol_array_length,
-                )
 
                 sym = _nrn_method_symbol(self._obj, name.encode("utf-8"))
                 if _nrn_symbol_is_array(sym):
@@ -736,13 +742,6 @@ class Object(metaclass=_HocClassMeta):
 
             # --- type RANGEVAR / VAR: scalar or array property (amp, tau1) ---
             if _type in (TYPES.RANGEVAR, TYPES.VAR):
-                from .api import (
-                    _nrn_method_symbol,
-                    _nrn_symbol_is_array,
-                    _nrn_symbol_array_length,
-                    _property_get_checked,
-                )
-
                 name_encoded = name.encode("utf-8")
                 sym = _nrn_method_symbol(self._obj, name_encoded)
                 if not _nrn_symbol_is_array(sym):
@@ -759,9 +758,6 @@ class Object(metaclass=_HocClassMeta):
                     )
 
             if TYPES.RANGEOBJ is not None and _type == TYPES.RANGEOBJ:
-                from .api import _nrn_method_symbol
-                from .utils import _try_wrap_point_nmodlrandom
-
                 sym = _nrn_method_symbol(self._obj, name.encode("utf-8"))
                 wrapped = _try_wrap_point_nmodlrandom(self._obj, sym, _type)
                 if wrapped is not None:
@@ -772,21 +768,7 @@ class Object(metaclass=_HocClassMeta):
             else:
 
                 def method_func(*args, sec=None):
-                    import ctypes
-                    from .api import (
-                        _nrn_method_symbol,
-                        _nrn_method_call,
-                        _nrn_double_pop,
-                        _nrn_str_pop,
-                        _nrn_object_pop,
-                        _nrn_section_push,
-                        _nrn_section_pop,
-                        _check_nrn_error,
-                        _ERR_BUF_SIZE,
-                        _hoc_return_type_code,
-                        _object_is_builtin_class,
-                    )
-                    from .utils import FuncWrapper, _push_args, _object_pop
+                    from .utils import _push_args
 
                     if _type == TYPES.METHOD_SECTIONREF:
                         # sec/parent/root/trueparent/child: the bare method
@@ -857,8 +839,6 @@ class Object(metaclass=_HocClassMeta):
                         from .api import _hoc_unref_defer
 
                         _hoc_unref_defer()
-
-                from .utils import FuncWrapper
 
                 return FuncWrapper(
                     method_func,
@@ -931,7 +911,7 @@ _HOC_TEMPLATE_STRING_TRAMPOLINES = set()
 def _ensure_hoc_template_string_trampolines(name):
     if name in _HOC_TEMPLATE_STRING_TRAMPOLINES:
         return
-    from . import NEURON, _STR_BEGIN, _STR_END
+    from . import _STR_BEGIN, _STR_END, NEURON
 
     n = NEURON()
     if not _HOC_TEMPLATE_STRING_TRAMPOLINES:
@@ -1000,16 +980,12 @@ class _SuppressCStderr:
     __slots__ = ("_saved", "_devnull")
 
     def __enter__(self):
-        import os
-
         self._saved = os.dup(2)
         self._devnull = os.open(os.devnull, os.O_WRONLY)
         os.dup2(self._devnull, 2)
         return self
 
     def __exit__(self, *exc):
-        import os
-
         os.dup2(self._saved, 2)
         os.close(self._devnull)
         os.close(self._saved)
@@ -1116,6 +1092,27 @@ class List(Object):
         return self.object(i)
 
 
+def _vector_values(seq):
+    """Return *seq* as an array of doubles, with NEURON's error for a non-number."""
+    values = seq if isinstance(seq, (list, tuple)) else list(seq)
+    try:
+        return array.array("d", values)
+    except TypeError:
+        for i, value in enumerate(values):
+            try:
+                float(value)
+            except (TypeError, ValueError):
+                raise RuntimeError(f"item {i} is not a valid number") from None
+        raise
+
+
+def _copy_into_vector(vec, values):
+    """Copy an array of doubles into a Vector already sized to hold it."""
+    if values:
+        address, count = values.buffer_info()
+        ctypes.memmove(_nrn_vector_data(vec._obj), address, count * values.itemsize)
+
+
 class _VectorXAccessor:
     """Proxy for ``v.x[i]``, delegating to the Vector. Without it ``v.x`` would
     reach HOC dispatch and return a float."""
@@ -1133,6 +1130,9 @@ class _VectorXAccessor:
 
     def __len__(self):
         return len(self._vec)
+
+    def __iter__(self):
+        return iter(self._vec)
 
     def __repr__(self):
         return f"<Vector.x ({len(self._vec)} elements)>"
@@ -1164,14 +1164,21 @@ class Vector(Object):
     def x(self):
         return _VectorXAccessor(self)
 
+    # Element access reads and writes the data pointer directly, one ctypes
+    # call instead of a HOC method call per element.
+    def _index(self, i):
+        size = _nrn_vector_capacity(self._obj)
+        i = operator.index(i)
+        if i < 0:
+            i += size
+        if i < 0 or i >= size:
+            raise IndexError("Vector index out of range")
+        return i
+
     def __getitem__(self, i):
         if isinstance(i, slice):
-            return [self.get(idx) for idx in range(*i.indices(len(self)))]
-        if i < 0:
-            i += len(self)
-        if i < 0 or i >= len(self):
-            raise IndexError()
-        return self.get(i)
+            return self.to_python()[i]
+        return _nrn_vector_data(self._obj)[self._index(i)]
 
     def __setitem__(self, i, val):
         if isinstance(i, slice):
@@ -1182,18 +1189,19 @@ class Vector(Object):
                     f"attempt to assign sequence of size {len(vals)} "
                     f"to extended slice of size {len(indices)}"
                 )
+            data = _nrn_vector_data(self._obj)
             for idx, v in zip(indices, vals):
-                self.set(idx, v)
+                data[idx] = v
             return
-        if i < 0:
-            i += len(self)
-        if i < 0 or i >= len(self):
-            raise IndexError()
-        self.set(i, val)
+        _nrn_vector_data(self._obj)[self._index(i)] = val
 
     def __iter__(self):
-        for i in range(len(self)):
-            yield self.get(i)
+        # Live, as in NEURON: elements appended during the loop are visited.
+        obj = self._obj
+        i = 0
+        while i < _nrn_vector_capacity(obj):
+            yield _nrn_vector_data(obj)[i]
+            i += 1
 
     @property
     def __array_interface__(self):
@@ -1212,9 +1220,6 @@ class Vector(Object):
         The dict is rebuilt on every access so resizes are seen. In tight
         loops, pin `numpy.asarray()` outside the loop or use `as_numpy()`.
         """
-        import ctypes
-        from .api import _nrn_vector_data
-
         size = len(self)
         if size == 0:
             # numpy guarantees its own empty-array data pointer is safe to expose.
@@ -1232,9 +1237,7 @@ class Vector(Object):
 
     def as_numpy(self):
         """Return a numpy array view of this Vector's data (zero-copy)."""
-        import ctypes
         import numpy
-        from .api import _nrn_vector_data
 
         size = len(self)
         if size == 0:
@@ -1250,8 +1253,6 @@ class Vector(Object):
 
     def to_python(self, dest=None):
         """Return Vector contents as a Python list (or fill *dest*)."""
-        from .api import _nrn_vector_data
-
         size = len(self)
         result = [] if size == 0 else _nrn_vector_data(self._obj)[:size]
         if dest is not None:
@@ -1261,14 +1262,13 @@ class Vector(Object):
 
     def from_python(self, seq):
         """Fill this Vector from a Python sequence. Resizes to match."""
-        seq = list(seq)
-        self.resize(len(seq))
-        for i, val in enumerate(seq):
-            self.set(i, val)
+        values = _vector_values(seq)
+        self.resize(len(values))
+        _copy_into_vector(self, values)
         return self
 
     def __len__(self):
-        return int(self.size())
+        return _nrn_vector_capacity(self._obj)
 
     # --- Arithmetic (numeric protocol) ---
     # Mirrors real NEURON's `nrnpy_vec_math` (called from `py_hocobj_math`,
@@ -1278,8 +1278,6 @@ class Vector(Object):
 
     @staticmethod
     def _is_arith_operand(other):
-        import numbers
-
         return isinstance(other, (Vector, numbers.Number))
 
     def __add__(self, other):
@@ -1377,13 +1375,6 @@ class SectionList(Object):
     _hoc_class_name = "SectionList"
 
     def __iter__(self):
-        from .api import (
-            _nrn_sectionlist_data,
-            _nrn_sectionlist_iterator_new,
-            _nrn_sectionlist_iterator_next,
-            _nrn_sectionlist_iterator_done,
-            _nrn_sectionlist_iterator_free,
-        )
         from .sections import Section
 
         items = _nrn_sectionlist_data(self._obj)
@@ -1399,8 +1390,6 @@ class SectionList(Object):
             _nrn_sectionlist_iterator_free(it)
 
     def __len__(self):
-        from .api import _nrn_sectionlist_data, _nrn_sectionlist_to_array
-
         items = _nrn_sectionlist_data(self._obj)
         return int(_nrn_sectionlist_to_array(items, None, 0))
 
@@ -1458,7 +1447,6 @@ def _resolve_template_section(owner, name, idx=None):
     """
     from . import _template_section_capture
     from .sections import Section
-    from .api import _nrn_hoc_call
 
     # Save/restore the module-global slot and read into a local, so a nested
     # section resolution during the block cannot clobber the pending value.
@@ -1498,7 +1486,6 @@ def _steer_sectionref(sr_obj, which, index=None):
     """
     from . import NEURON, _template_section_capture
     from .sections import Section
-    from .utils import list_functions
 
     n = NEURON()
     key = "child" if index is not None else which
@@ -1541,7 +1528,6 @@ def _read_object_member(owner, name):
     ``Object.__getattr__`` (e.g. an Import3d cell's ``cell.all``).
     """
     from . import NEURON
-    from .utils import list_functions
 
     n = NEURON()
     fn = f"_mn_memgrab_{name}"
@@ -1565,7 +1551,6 @@ def _read_object_member_index(owner, name, idx):
     Array analog of _read_object_member, with the same nil guard.
     """
     from . import NEURON
-    from .utils import list_functions
 
     n = NEURON()
     fn = f"_mn_memgrabidx_{name}"
@@ -1700,7 +1685,6 @@ class ArrayProperty:
     def _resolve(self, idx):
         # numbers.Integral accepts numpy.int64/int32 (not int subclasses) the
         # way real NEURON does; bool stays rejected.
-        import numbers
 
         if isinstance(idx, bool) or not isinstance(idx, numbers.Integral):
             raise TypeError(f"indices must be integers, not {type(idx).__name__}")
@@ -1715,8 +1699,6 @@ class ArrayProperty:
         return idx
 
     def __getitem__(self, idx):
-        from .api import _property_array_get_checked
-
         idx = self._resolve(idx)
         if self._hoc_template_var:
             return float(_read_hoc_template_var(self._owner, self._name, idx))
@@ -1725,8 +1707,6 @@ class ArrayProperty:
         )
 
     def __setitem__(self, idx, value):
-        from .api import _property_array_set_checked
-
         idx = self._resolve(idx)
         if self._hoc_template_var:
             _write_hoc_template_var(self._owner, self._name, value, idx)

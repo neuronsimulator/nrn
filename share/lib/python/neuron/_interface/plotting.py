@@ -3,6 +3,13 @@
 Dispatched directly by Object.__getattr__; these wrappers do not replace
 the legacy extension's registered plotting callbacks.
 """
+from .api import (
+    _nrn_get_plotshape_high,
+    _nrn_get_plotshape_interface,
+    _nrn_get_plotshape_low,
+    _nrn_get_plotshape_section_list,
+    _nrn_get_plotshape_varname,
+)
 
 
 class _WrapperPlot:
@@ -62,8 +69,8 @@ class _RangeVarPlot(_WrapperPlot):
 
         # plotnine ggplot
         if str_type_graph == "<class 'plotnine.ggplot.ggplot'>":
-            import plotnine as p9
             import pandas as pd
+            import plotnine as p9
 
             return graph + p9.geom_line(
                 *args,
@@ -86,8 +93,8 @@ class _RangeVarPlot(_WrapperPlot):
 
         # plotnine module
         if str_graph.startswith("<module 'plotnine' from "):
-            import plotnine as p9
             import pandas as pd
+            import plotnine as p9
 
             return p9.geom_line(
                 *args,
@@ -221,13 +228,6 @@ class _PlotShapePlot(_WrapperPlot):
         misread by it.
         """
         from . import NEURON
-        from .api import (
-            _nrn_get_plotshape_interface,
-            _nrn_get_plotshape_low,
-            _nrn_get_plotshape_high,
-            _nrn_get_plotshape_varname,
-            _nrn_get_plotshape_section_list,
-        )
 
         n = NEURON()
         spi = _nrn_get_plotshape_interface(self._data._obj)
@@ -277,7 +277,6 @@ class _PlotShapePlot(_WrapperPlot):
     def _plot_matplotlib(
         self, graph, sections, var_name, lo, hi, line_width=2, cmap=None, **kwargs
     ):
-        import matplotlib.pyplot as plt
         from matplotlib import cm
         from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 — registers 3d
 

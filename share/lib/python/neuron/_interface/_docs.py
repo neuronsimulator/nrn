@@ -1,10 +1,9 @@
 """Lazy HOC documentation data, without importing NEURON's Python binding."""
 import importlib.util
 import io
-from pathlib import Path
 import pickle
 import zlib
-
+from pathlib import Path
 
 _HELP = None
 _BUNDLED_HELP = Path(__file__).with_name("_data") / "help_data.dat"
