@@ -9,14 +9,14 @@ build-backend = "scikit_build_core.build"
 # `build-system.requires` nor `project.dependencies`, so we need to list them
 # here manually. These are all of the dependencies that CMake finds as well.
 requires = [
-  "cython<=3.0.12",
+  "cython<=3.3.0",
   "jinja2>=2.9.3,<=3.1.6",
   "numpy<=2.2.3;python_version<'3.14'",
   "numpy>=2.3.2,<=2.3.3;python_version=='3.14'",
   "pyyaml>=3.13,<=6.0.2;python_version<'3.14'",
   "pyyaml==6.0.3;python_version=='3.14'",
-  "scikit-build-core<=0.11.1",
-  "setuptools-scm<=8.1",
+  "scikit-build-core<=1.1.0",
+  "setuptools-scm<=10.3.4",
 ]
 
 [project]
@@ -61,7 +61,7 @@ dependencies = [
 ]
 
 urls.source = "https://github.com/neuronsimulator/nrn"
-urls.website = "https://neuron.yale.edu/neuron/"
+urls.website = "https://neuronsimulator.org"
 
 [tool.setuptools_scm]
 # Do not add commit info or state of repo (modified content, etc.).

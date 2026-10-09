@@ -52,9 +52,11 @@ void (*p_nrnpython_finalize)();
 int nrn_inpython_;
 int (*p_nrnpy_pyrun)(const char* fname);
 
-#if 0 /* defined by cmake if rl_event_hook is not available */
+/* InterViews always uses getc_hook. GNU readline 8 + rl_event_hook +
+   run_til_stdin() swallows tty input; getc_hook waits in run_til_stdin()
+   then read(0), matching readline 8's rl_getc. Undefine to restore
+   rl_event_hook. */
 #define use_rl_getc_function
-#endif
 
 #if defined(MINGW)
 extern int stdin_event_ready();
@@ -1338,12 +1340,18 @@ int hoc_oc(const char* buf, std::ostream& os) {
     } else {
         // This is the highest level try/catch
         try_catch_depth_increment tell_children_we_will_catch{};
+        auto const stack_size = hoc_stack_size();
         try {
             signal_handler_guard _{};
             kernel();
         } catch (std::exception const& e) {
             os << "hoc_oc caught exception: " << e.what() << std::endl;
             hoc_initcode();
+            // initcode releases frame/temporary objects, but leaves operands.
+            // Keep entries owned by the caller below this command's stack.
+            while (hoc_stack_size() > stack_size) {
+                hoc_nopop();
+            }
             hoc_intset = 0;
             return 1;
         }
@@ -1507,7 +1515,7 @@ static int getc_hook(void) {
 #else /* not MINGW */
 
 #if defined(use_rl_getc_function)
-/* e.g. mac libedit.3.dylib missing rl_event_hook */
+/* readline 7, readline 8, and libedit. rl_event_hook is the #else. */
 
 extern int iv_dialog_is_running;
 extern "C" int (*rl_getc_function)(void);
