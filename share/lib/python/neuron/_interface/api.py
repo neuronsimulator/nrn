@@ -412,6 +412,14 @@ nrn_init = _bind(
     "nrn_init", ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_char_p)
 )
 
+# gui.py starts its event loop only when nrnversion(9) is "2" (launched from
+# Python). NEURON's Python module sets nrn_main_launch to 2 before starting
+# NEURON (inithoc.cpp); nrniv sets 1. Set it only if nothing has, and before
+# nrnversion caches its answer.
+_main_launch = ctypes.c_int.in_dll(libnrniv, "nrn_main_launch")
+if _main_launch.value == 0:
+    _main_launch.value = 2
+
 ret = nrn_init(_argc, argv)
 if ret:
     raise RuntimeError("nrn_init failed with return code %d" % ret)
