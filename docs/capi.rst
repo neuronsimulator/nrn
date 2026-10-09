@@ -2199,6 +2199,32 @@ Miscellaneous
     :param sym: Pointer to the symbol.
     :returns: Length of the array, or 1 for non-arrays.
 
+.. c:function:: int nrn_symbol_array_dims(const Symbol* sym, int* dims, int max_dims)
+
+    Get every dimension of an array symbol. :c:func:`nrn_symbol_array_length`
+    gives only the first, so for ``double a[3][4]`` this is the way to learn the
+    4.
+
+    :param sym: Symbol of an array: a top-level ``double`` or ``objref``
+        array, or a mechanism range-variable array such as
+        ``xraxial``. ``NULL`` is allowed.
+    :param dims: Buffer for the sizes, outermost first, or ``NULL`` to only
+        count the dimensions.
+    :param max_dims: Number of entries in ``dims``; at most this many sizes are
+        written.
+    :returns: The number of dimensions; 0 if ``sym`` is ``NULL`` or not an array.
+
+    For arrays declared inside a template, use the per-object information; the
+    symbol holds the most recent declaration.
+
+    **C Usage:**
+
+    .. code-block:: c
+
+        int dims[4];
+        int ndim = nrn_symbol_array_dims(nrn_symbol("grid"), dims, 4);
+        // double grid[3][4]: ndim == 2, dims[0] == 3, dims[1] == 4
+
 .. c:function:: void nrn_register_function(void (*proc)(), const char* func_name, int type)
 
     Register a C function to be callable from NEURON/HOC.

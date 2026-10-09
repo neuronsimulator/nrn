@@ -1054,6 +1054,22 @@ int nrn_symbol_array_length(const Symbol* sym) {
     return sym->arayinfo->sub[0];
 }
 
+int nrn_symbol_array_dims(const Symbol* sym, int* dims, int max_dims) {
+    // Number of dimensions of an array symbol (0 for a scalar), with up to
+    // max_dims of the sizes written to dims; nrn_symbol_array_length gives
+    // only the first.
+    if (!sym || !sym->arayinfo) {
+        return 0;
+    }
+    const Arrayinfo* info = sym->arayinfo;
+    if (dims) {
+        for (int i = 0; i < info->nsub && i < max_dims; ++i) {
+            dims[i] = info->sub[i];
+        }
+    }
+    return info->nsub;
+}
+
 // Function to register function/object in hoc
 void nrn_register_function(void (*proc)(), const char* func_name, int type) {
     Symbol* sym;

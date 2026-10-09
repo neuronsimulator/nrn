@@ -14,6 +14,7 @@ foreach(
   segment_diam.cpp
   sections.cpp
   stack_pops.cpp
+  symbol_array_dims.cpp
   symbol_object_string.cpp
   vclamp.cpp)
   string(REPLACE "." "_" api_test_name "${api_test_file}")
