@@ -13,6 +13,8 @@
 #include <cstring>
 #include <sstream>
 
+extern void nrn_extra_scatter_gather(int direction, int tid);
+
 TEST_CASE("Test hoc interpreter", "[NEURON][hoc_interpreter]") {
     hoc_init_space();
     hoc_pushx(4.0);
@@ -31,6 +33,27 @@ TEST_CASE("HocCommand normalizes HOC execution success", "[NEURON][hoc_interpret
     HocCommand overload_command("unused");
     REQUIRE(overload_command.execute("hoc_ac_ = 43", false) == 1);
     REQUIRE(overload_command.execute("hoc_ac_ =", false) == 0);
+}
+
+TEST_CASE("CVode extra scatter/gather accepts HOC commands", "[NEURON][cvode]") {
+    REQUIRE(hoc_oc("proc task_z_scatter_callback() { hoc_ac_ = hoc_ac_ + 1 }\n"
+                   "objref task_z_cvode\n"
+                   "task_z_cvode = new CVode()\n"
+                   "task_z_cvode.extra_scatter_gather(0, \"task_z_scatter_callback()\")\n"
+                   "task_z_cvode.extra_scatter_gather(0, \"task_z_scatter_callback()\")\n"
+                   "task_z_cvode.extra_scatter_gather(1, \"task_z_scatter_callback()\")\n") == 0);
+
+    hoc_ac_ = 0.;
+    nrn_extra_scatter_gather(0, 0);
+    REQUIRE(hoc_ac_ == 2.);
+    nrn_extra_scatter_gather(1, 0);
+    REQUIRE(hoc_ac_ == 3.);
+
+    REQUIRE(hoc_oc("task_z_cvode.extra_scatter_gather_remove(\"task_z_scatter_callback()\")\n") ==
+            0);
+    nrn_extra_scatter_gather(0, 0);
+    nrn_extra_scatter_gather(1, 0);
+    REQUIRE(hoc_ac_ == 3.);
 }
 
 constexpr static auto check_tempobj_canary = 0xDEADBEEF;
@@ -268,6 +291,7 @@ TEST_CASE("HocCommand normalizes Python callback success", "[NEURON][hoc_interpr
     REQUIRE(std::strcmp(success_buf, "callback result") == 0);
     REQUIRE(strret_failure_status == 0);
     REQUIRE(std::strcmp(failure_buf, "unchanged") == 0);
+    REQUIRE(python_object.refcount == 1);
 }
 
 TEST_CASE("Test hoc_array_access", "[NEURON][hoc_interpreter][nrnpython][array_access]") {
