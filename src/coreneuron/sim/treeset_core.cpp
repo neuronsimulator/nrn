@@ -95,8 +95,8 @@ static void nrn_rhs(NrnThread* _nt) {
             rhs += ai_j*(vi_j - vi)
     */
     if (_nt->compute_gpu && _nt->_v_child_begin) {
-        int* child_begin = _nt->_v_child_begin;
-        int* child_index = _nt->_v_child_index;
+        const int* child_begin = _nt->_v_child_begin;
+        const int* child_index = _nt->_v_child_index;
         nrn_pragma_acc(parallel loop present(vec_rhs [0:i3],
                                              vec_a [0:i3],
                                              vec_b [0:i3],
@@ -198,8 +198,8 @@ static void nrn_lhs(NrnThread* _nt) {
 
     /* now add the axial currents */
     if (_nt->compute_gpu && _nt->_v_child_begin) {
-        int* child_begin = _nt->_v_child_begin;
-        int* child_index = _nt->_v_child_index;
+        const int* child_begin = _nt->_v_child_begin;
+        const int* child_index = _nt->_v_child_index;
         nrn_pragma_acc(parallel loop present(vec_d [0:i3],
                                              vec_a [0:i3],
                                              vec_b [0:i3],

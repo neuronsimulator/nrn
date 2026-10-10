@@ -481,8 +481,8 @@ static void create_child_index(NrnThread* nt) {
     if (nnode <= ncell) {
         return;
     }
-    int* begin = static_cast<int*>(ecalloc_align(nnode + 1, sizeof(int)));
-    int* child = static_cast<int*>(ecalloc_align(nnode - ncell, sizeof(int)));
+    auto* begin = static_cast<int*>(ecalloc_align(nnode + 1, sizeof(int)));
+    auto* child = static_cast<int*>(ecalloc_align(nnode - ncell, sizeof(int)));
     for (int i = ncell; i < nnode; ++i) {
         ++begin[nt->_v_parent_index[i] + 1];
     }
