@@ -797,6 +797,14 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     virtual void print_parallel_iteration_hint(BlockType type, const ast::Block* block);
 
 
+    /**
+     * Whether this is a point process that adds to an ion current (ica, dica/dv, ...) in nrn_cur.
+     * Its instances that share a node then add to the same elements, which the parallel or
+     * vectorised loop over instances must not do concurrently.
+     */
+    bool point_process_writes_ion_current() const;
+
+
     /****************************************************************************************/
     /*                                Backend specific routines                             */
     /****************************************************************************************/

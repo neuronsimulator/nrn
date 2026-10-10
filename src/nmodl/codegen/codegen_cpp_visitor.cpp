@@ -391,8 +391,22 @@ std::string CodegenCppVisitor::breakpoint_current(std::string current) const {
  *      for(int id = 0; id < nodecount; id++) {
  * \endcode
  */
-void CodegenCppVisitor::print_parallel_iteration_hint(BlockType /* type */,
-                                                      const ast::Block* block) {
+bool CodegenCppVisitor::point_process_writes_ion_current() const {
+    if (!info.point_process) {
+        return false;
+    }
+    for (const auto& ion: info.ions) {
+        for (const auto& var: ion.writes) {
+            if (ion.is_ionic_current(var)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
+void CodegenCppVisitor::print_parallel_iteration_hint(BlockType type, const ast::Block* block) {
     // ivdep allows SIMD parallelisation of a block/loop but doesn't provide
     // a standard mechanism for atomics. Also, even with openmp 5.0, openmp
     // atomics do not enable vectorisation under "omp simd" (gives compiler
@@ -406,7 +420,13 @@ void CodegenCppVisitor::print_parallel_iteration_hint(BlockType /* type */,
                                ast::AstNodeType::MUTEX_LOCK,
                                ast::AstNodeType::MUTEX_UNLOCK});
     }
-    if (nodes.empty()) {
+    // Instances of a point process that share a node add their ion currents to the same element.
+    // Vectorised, the instances in one vector that share a node all read the same old value, and
+    // all but one addition is lost (seen with gcc and clang for AVX-512), so that loop is left
+    // scalar. The matrix updates go through the shadow vectors either way.
+    bool const shared_ion_writes = type == BlockType::Equation &&
+                                   point_process_writes_ion_current();
+    if (nodes.empty() && !shared_ion_writes) {
         printer->add_line("#pragma omp simd");
         printer->add_line("#pragma ivdep");
     }
