@@ -75,10 +75,9 @@ jobs:
             -DPYTHON_EXECUTABLE="$(command -v python3)"
           cmake --build build
 
-      - name: Build axial mechanisms and run the diagnostic
+      - name: Build mechanisms and run test_axial
         run: |
           set -euo pipefail
-          set -o pipefail
           build="${GITHUB_WORKSPACE}/build"
           mech="${RUNNER_TEMP}/axial-mods"
           mkdir -p "${mech}"
@@ -88,18 +87,13 @@ jobs:
           export CORENRNHOME="${build}"
           export PATH="${build}/bin:${PATH}"
           export DYLD_LIBRARY_PATH="${build}/lib${DYLD_LIBRARY_PATH:+:${DYLD_LIBRARY_PATH}}"
-          export PYTHONPATH="${build}/lib/python"
+          export PYTHONPATH="${GITHUB_WORKSPACE}/test/coreneuron:${build}/lib/python"
           python3 -m pip install pytest
           (
             cd "${mech}"
-            nrnivmodl .
+            nrnivmodl -coreneuron .
           )
           cd "${mech}"
-          python3 -u "${GITHUB_WORKSPACE}/test/coreneuron/diag_axial_3656.py" | tee "${GITHUB_WORKSPACE}/axial-3656.txt"
-
-      - name: Upload diagnostic
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: axial-3656-diag
-          path: axial-3656.txt
+          # Call the function directly. The pytest skip on macOS 15 would
+          # otherwise hide whether the rename fixed #3656.
+          python3 -c 'import test_pointer; test_pointer.test_axial()'
