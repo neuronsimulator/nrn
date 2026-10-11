@@ -1,0 +1,95 @@
+# Diagnostic for neuronsimulator/nrn#3656. Push to hines-grok/axial-3656-diag
+# only. neuron-ci does not run for this branch, and this file does not run
+# on master.
+name: axial 3656 diag
+
+on:
+  push:
+    branches:
+      - hines-grok/axial-3656-diag
+
+concurrency:
+  group: axial-3656-diag-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  diag:
+    runs-on: macos-15
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.14
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install build tools
+        run: |
+          set -euo pipefail
+          export HOMEBREW_NO_AUTO_UPDATE=1
+          brew install ccache flex bison ninja
+          echo "$(brew --prefix)/opt/flex/bin:$(brew --prefix)/opt/bison/bin" >> "$GITHUB_PATH"
+          echo "--- sw_vers ---"
+          sw_vers
+          echo "--- clang ---"
+          clang --version
+          echo "--- xcodebuild ---"
+          xcodebuild -version || true
+
+      - name: Setup cmake
+        uses: jwlawson/actions-setup-cmake@v2
+        with:
+          cmake-version: "3.20"
+
+      - name: Configure and build
+        run: |
+          set -euo pipefail
+          # Same compiler selection as neuron-ci on macOS: /usr/bin/gcc is Apple Clang.
+          # RelWithDebInfo, no sanitizer. The 2025 macOS 15 failures included this
+          # kind of build; sanitizer jobs are the only ones still logged.
+          export CC=gcc
+          export CXX=g++
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_C_COMPILER="${CC}" \
+            -DCMAKE_CXX_COMPILER="${CXX}" \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DNRN_ENABLE_INTERVIEWS=OFF \
+            -DNRN_ENABLE_RX3D=OFF \
+            -DNRN_ENABLE_MPI=OFF \
+            -DNRN_ENABLE_CORENEURON=ON \
+            -DNRN_ENABLE_TESTS=OFF \
+            -DNRN_ENABLE_PYTHON=ON \
+            -DPYTHON_EXECUTABLE="$(command -v python3)"
+          cmake --build build
+
+      - name: Build axial mechanisms and run the diagnostic
+        run: |
+          set -euo pipefail
+          set -o pipefail
+          build="${GITHUB_WORKSPACE}/build"
+          mech="${RUNNER_TEMP}/axial-mods"
+          mkdir -p "${mech}"
+          cp "${GITHUB_WORKSPACE}/test/coreneuron/mod files/"* "${mech}/"
+          export NEURONHOME="${build}/share/nrn"
+          export NRNHOME="${build}"
+          export CORENRNHOME="${build}"
+          export PATH="${build}/bin:${PATH}"
+          export DYLD_LIBRARY_PATH="${build}/lib${DYLD_LIBRARY_PATH:+:${DYLD_LIBRARY_PATH}}"
+          export PYTHONPATH="${build}/lib/python"
+          python3 -m pip install pytest
+          (
+            cd "${mech}"
+            nrnivmodl .
+          )
+          cd "${mech}"
+          python3 -u "${GITHUB_WORKSPACE}/test/coreneuron/diag_axial_3656.py" | tee "${GITHUB_WORKSPACE}/axial-3656.txt"
+
+      - name: Upload diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: axial-3656-diag
+          path: axial-3656.txt

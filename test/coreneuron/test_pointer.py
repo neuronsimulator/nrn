@@ -160,8 +160,41 @@ def test_axial():
             ia.append(mech.ia)
             im.append(mech.im)
             imem.append(seg.i_membrane_)
+            if os.environ.get("AXIAL_3656_DIAG") == "1":
+                diff = mech.im - seg.i_membrane_
+                print(
+                    "AXIAL3656"
+                    f" cell={cell.id}"
+                    f" sec={seg.sec.name()}"
+                    f" x={seg.x:.17g}"
+                    f" ri={mech.ri:.17g}"
+                    f" ia={mech.ia:.17g}"
+                    f" im={mech.im:.17g}"
+                    f" imem={seg.i_membrane_:.17g}"
+                    f" diff={diff:.17g}",
+                    flush=True,
+                )
 
+        diag = os.environ.get("AXIAL_3656_DIAG") == "1"
+        if diag:
+            print(
+                f"AXIAL3656 t={h.t:.17g} dt={h.dt:.17g} ncell={len(m.cells)}",
+                flush=True,
+            )
         for cell in m.cells:
+            if diag:
+                clamp = cell.secs[2](0)
+                print(
+                    "AXIAL3656"
+                    f" cell={cell.id}"
+                    f" ic.i={cell.ic.i:.17g}"
+                    f" ic.amp={cell.ic.amp:.17g}"
+                    f" ic.del={cell.ic.delay:.17g}"
+                    f" ic.dur={cell.ic.dur:.17g}"
+                    f" clamp_sec={clamp.sec.name()}"
+                    f" clamp_x={clamp.x:.17g}",
+                    flush=True,
+                )
             add(cell, cell.secs[0](0))
             for sec in cell.secs:
                 for seg in sec:
@@ -172,6 +205,33 @@ def test_axial():
         mx = max([abs(y) for y in imem])
         mx = mx if mx > 0 else 1.0
         x = sum([abs(imem[i] - y) for i, y in enumerate(im)])
+        if diag:
+            ranked = sorted(
+                (
+                    abs(imem[i] - im[i]),
+                    i,
+                    im[i],
+                    imem[i],
+                    loc[i][0].sec.name(),
+                    loc[i][0].x,
+                )
+                for i in range(len(im))
+            )
+            print(
+                f"AXIAL3656 n={len(im)} sumabs={x:.17g} maxabs_imem={mx:.17g} ratio={x / mx:.17g}",
+                flush=True,
+            )
+            for diff, i, im_i, imem_i, secname, xloc in ranked[-8:]:
+                print(
+                    "AXIAL3656 worst"
+                    f" diff={diff:.17g}"
+                    f" sec={secname}"
+                    f" x={xloc:.17g}"
+                    f" im={im_i:.17g}"
+                    f" imem={imem_i:.17g}"
+                    f" ia={ia[i]:.17g}",
+                    flush=True,
+                )
         assert x / mx < 1e-9
         return v, ia, im, imem, loc
 
@@ -191,6 +251,10 @@ def test_axial():
         return result(m)
 
     std = run(tstop)
+    # The diagnostic job only needs this first fixed-step sample. The CoreNEURON
+    # compares below need mechanisms nrnivmodl has not built for that job.
+    if os.environ.get("AXIAL_3656_DIAG") == "1":
+        return
 
     chk(std, run(tstop))
 
