@@ -8,6 +8,7 @@
 
 #include <queue>
 #include <utility>
+#include <vector>
 
 #include "coreneuron/apps/corenrn_parameters.hpp"
 #include "coreneuron/gpu/nrn_acc_manager.hpp"
@@ -462,6 +463,41 @@ static void delete_ml_from_device(Memb_list* ml, int type) {
 
 #endif
 
+#ifdef CORENEURON_ENABLE_GPU
+static void destroy_child_index(NrnThread* nt) {
+    free_memory(nt->_v_child_begin);
+    free_memory(nt->_v_child_index);
+    nt->_v_child_begin = nullptr;
+    nt->_v_child_index = nullptr;
+}
+
+/* Each node's children in increasing index order (see NrnThread::_v_child_begin). With them a GPU
+ * thread per node adds the node's own axial term and then its children's, in the order of the CPU
+ * loop, instead of every child adding into its parent with an atomic update. */
+static void create_child_index(NrnThread* nt) {
+    destroy_child_index(nt);
+    int const nnode = nt->end;
+    int const ncell = nt->ncell;
+    if (nnode <= ncell) {
+        return;
+    }
+    auto* begin = static_cast<int*>(ecalloc_align(nnode + 1, sizeof(int)));
+    auto* child = static_cast<int*>(ecalloc_align(nnode - ncell, sizeof(int)));
+    for (int i = ncell; i < nnode; ++i) {
+        ++begin[nt->_v_parent_index[i] + 1];
+    }
+    for (int i = 0; i < nnode; ++i) {
+        begin[i + 1] += begin[i];
+    }
+    std::vector<int> next(begin, begin + nnode);
+    for (int i = ncell; i < nnode; ++i) {
+        child[next[nt->_v_parent_index[i]]++] = i;
+    }
+    nt->_v_child_begin = begin;
+    nt->_v_child_index = child;
+}
+#endif
+
 /* note: threads here are corresponding to global nrn_threads array */
 void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
 #ifdef CORENEURON_ENABLE_GPU
@@ -471,6 +507,9 @@ void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
         NrnThread* nt = threads + i;
         nt->compute_gpu = (nt->end > 0) ? 1 : 0;
         nt->_dt = dt;
+        if (nt->compute_gpu) {
+            create_child_index(nt);
+        }
     }
 
     nrn_ion_global_map_copyto_device();
@@ -567,6 +606,13 @@ void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
 
         int* d_v_parent_index = cnrn_target_copyin(nt->_v_parent_index, nt->end);
         cnrn_target_memcpy_to_device(&(d_nt->_v_parent_index), &(d_v_parent_index));
+
+        if (nt->_v_child_begin) {
+            int* d_v_child_begin = cnrn_target_copyin(nt->_v_child_begin, nt->end + 1);
+            cnrn_target_memcpy_to_device(&(d_nt->_v_child_begin), &(d_v_child_begin));
+            int* d_v_child_index = cnrn_target_copyin(nt->_v_child_index, nt->end - nt->ncell);
+            cnrn_target_memcpy_to_device(&(d_nt->_v_child_index), &(d_v_child_index));
+        }
 
         /* nt._ml_list is used in NET_RECEIVE block and should have valid membrane list id*/
         Memb_list** d_ml_list = cnrn_target_copyin(nt->_ml_list, corenrn.get_memb_funcs().size());
@@ -1236,6 +1282,11 @@ void delete_nrnthreads_on_device(NrnThread* threads, int nthreads) {
             cnrn_target_delete(tml);
         }
         cnrn_target_delete(nt->_ml_list, corenrn.get_memb_funcs().size());
+        if (nt->_v_child_begin) {
+            cnrn_target_delete(nt->_v_child_index, nt->end - nt->ncell);
+            cnrn_target_delete(nt->_v_child_begin, nt->end + 1);
+            destroy_child_index(nt);
+        }
         cnrn_target_delete(nt->_v_parent_index, nt->end);
         cnrn_target_delete(nt->_data, nt->_ndata);
     }

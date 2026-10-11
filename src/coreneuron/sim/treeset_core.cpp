@@ -20,6 +20,14 @@ Fixed step method with threads and cache efficiency. No extracellular,
 sparse matrix, multisplit, or legacy features.
 */
 
+/* On the GPU the node-parallel axial loops below add each node's own term and
+its children's terms from different threads with atomic updates. Their order
+changes from run to run, and floating-point addition is not associative, so
+identical runs can give different results. When each node's children are known
+(NrnThread::_v_child_begin, built for the GPU), one thread per node instead
+adds its own term and then its children's in increasing index order: the order
+of the CPU loop, without atomic updates. */
+
 static void nrn_rhs(NrnThread* _nt) {
     int i1 = 0;
     int i2 = i1 + _nt->ncell;
@@ -86,6 +94,35 @@ static void nrn_rhs(NrnThread* _nt) {
     The extracellular mechanism contribution is already done.
             rhs += ai_j*(vi_j - vi)
     */
+    if (_nt->compute_gpu && _nt->_v_child_begin) {
+        const int* child_begin = _nt->_v_child_begin;
+        const int* child_index = _nt->_v_child_index;
+        nrn_pragma_acc(parallel loop present(vec_rhs [0:i3],
+                                             vec_a [0:i3],
+                                             vec_b [0:i3],
+                                             vec_v [0:i3],
+                                             parent_index [0:i3],
+                                             child_begin [0:i3 + 1],
+                                             child_index [0:i3 - i2]) if (_nt->compute_gpu)
+                           async(_nt->stream_id))
+        nrn_pragma_omp(target teams distribute parallel for if(_nt->compute_gpu))
+        for (int i = i1; i < i3; ++i) {
+            double rhs = vec_rhs[i];
+            if (i >= i2) {
+                double dv = vec_v[parent_index[i]] - vec_v[i];
+                /* our connection coefficients are negative so */
+                rhs -= vec_b[i] * dv;
+            }
+            nrn_pragma_acc(loop seq)
+            for (int k = child_begin[i]; k < child_begin[i + 1]; ++k) {
+                int c = child_index[k];
+                double dv = vec_v[i] - vec_v[c];
+                rhs += vec_a[c] * dv;
+            }
+            vec_rhs[i] = rhs;
+        }
+        return;
+    }
     nrn_pragma_acc(parallel loop present(vec_rhs [0:i3],
                                          vec_d [0:i3],
                                          vec_a [0:i3],
@@ -160,6 +197,29 @@ static void nrn_lhs(NrnThread* _nt) {
     }
 
     /* now add the axial currents */
+    if (_nt->compute_gpu && _nt->_v_child_begin) {
+        const int* child_begin = _nt->_v_child_begin;
+        const int* child_index = _nt->_v_child_index;
+        nrn_pragma_acc(parallel loop present(vec_d [0:i3],
+                                             vec_a [0:i3],
+                                             vec_b [0:i3],
+                                             child_begin [0:i3 + 1],
+                                             child_index [0:i3 - i2]) if (_nt->compute_gpu)
+                           async(_nt->stream_id))
+        nrn_pragma_omp(target teams distribute parallel for if(_nt->compute_gpu))
+        for (int i = i1; i < i3; ++i) {
+            double d = vec_d[i];
+            if (i >= i2) {
+                d -= vec_b[i];
+            }
+            nrn_pragma_acc(loop seq)
+            for (int k = child_begin[i]; k < child_begin[i + 1]; ++k) {
+                d -= vec_a[child_index[k]];
+            }
+            vec_d[i] = d;
+        }
+        return;
+    }
     nrn_pragma_acc(parallel loop present(
         vec_d [0:i3], vec_a [0:i3], vec_b [0:i3], parent_index [0:i3]) if (_nt->compute_gpu)
                        async(_nt->stream_id))
