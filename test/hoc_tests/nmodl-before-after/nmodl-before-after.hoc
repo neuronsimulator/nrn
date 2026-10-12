@@ -1,0 +1,18 @@
+// basic test of BEFORE AFTER
+create soma
+insert t9
+
+func t9result() {local b, x
+	forall for (x, 0) { b_t9(x) = 0 }
+	finitialize(-65)
+	fadvance() fadvance() fadvance()
+	b = 1
+	forall for (x, 0) {
+		b = (b && (b_t9(x) == 1) && (x_t9(x) == 25) \
+			&& (abs(y_t9(x) - $1) <= $3) && (abs(z_t9(x) - $2)<$2))
+	}
+	return b
+}
+b = t9result(4, 3, 0)
+
+if (b != 1) { quit(1) }

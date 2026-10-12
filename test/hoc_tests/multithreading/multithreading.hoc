@@ -1,0 +1,14 @@
+// try multisplit.hoc with threads
+// note that one cannot change nthread when multisplit is active
+// so we set nthread first
+
+objref pc
+pc = new ParallelContext()
+if (execute1("{pc.nthread(3,1)}",0) == 0) {printf("%d\n", 2) quit(1)}
+
+strdef path
+sprint(path, "%s/../multisplit/multisplit.hoc", BASE)
+{load_file(path)}
+
+cable[2] { b = (pc.sec_in_thread() == 2) }
+if (b != 1) { quit(1) }

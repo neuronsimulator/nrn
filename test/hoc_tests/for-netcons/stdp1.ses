@@ -1,0 +1,258 @@
+{load_file("nrngui.hoc")}
+objectvar save_window_, rvp_
+objectvar scene_vector_[7]
+objectvar ocbox_, ocbox_list_, scene_, scene_list_
+{ocbox_list_ = new List()  scene_list_ = new List()}
+{pwman_place(0,0,0)}
+
+//Begin ArtCellGUI[0]
+{
+load_file("netbild.hoc")
+}
+ocbox_ = new ArtCellGUI(1)
+{object_push(ocbox_)}
+{
+tobj = new MechanismStandard("NetStim")
+tobj.set("interval", 10, 0)
+tobj.set("number", 100, 0)
+tobj.set("start", 1, 0)
+tobj.set("noise", 0, 0)
+}
+{append(tobj, "S1")}
+{
+tobj = new MechanismStandard("NetStim")
+tobj.set("interval", 12, 0)
+tobj.set("number", 100, 0)
+tobj.set("start", 3, 0)
+tobj.set("noise", 0, 0)
+}
+{append(tobj, "S2")}
+{object_pop()}
+{
+ocbox_.map("ArtCellGUI[0]", 0, 0, 449.28, 291.84)
+}
+objref ocbox_
+//End ArtCellGUI[0]
+
+{WindowMenu[0].ses_gid(1, 0, 0, "model")}
+
+//Begin NetReadyCellGUI[0]
+{
+load_file("netbild.hoc")
+}
+{ocbox_ = new NetReadyCellGUI(1)}
+{ocbox_.tobj = new CellBuild(1)}
+{object_push(ocbox_.tobj)}
+{
+version(5.7)
+continuous = 0
+}
+{object_push(topol)}
+{
+first = 0
+slist.remove_all()
+sname = "dend"
+objref tobj
+}
+{
+tobj = new CellBuildSection("soma",0, 0, tobj, 0) slist.append(tobj)
+  tobj.position(0,0,15,0) tobj.lx=7.5 tobj.ly=0 tobj.i3d=0
+all_init()
+}
+for i=0, slist.count-1 {slist.object(i).rdses()}
+{object_pop()}
+{
+}
+{object_push(subsets)}
+{first = 0}
+{ tobj = snlist.object(0)}
+{consist()}
+{object_pop()}
+{
+}
+{object_push(geom)}
+{
+first = 0
+tobj = new GeoSpec(4)
+tobj.value = 100
+bild.subsets.snlist.object(0).geo.append(tobj)
+set_default()
+}
+{object_pop()}
+{
+}
+{object_push(memb)}
+{first=0}
+{
+tobj = new MechanismStandard("pas")
+tobj.set("g_pas", 0.001, 0)
+tobj.set("e_pas", -65, 0)
+tobj = new MStanWrap(tobj, 1)
+bild.subsets.snlist.object(0).ml.append(tobj)
+}
+{object_pop()}
+{
+}
+{object_push(manage)}
+{
+first = 0
+classname = "Cell"
+etop=1 esub=1 egeom=1 emem=1
+itop=1 isub=0 igeom=0 imem=0
+bild.topol.names_off = 0
+bild.topol.circles_off = 0
+output_index = 0  output_x = 1
+}
+{object_pop()}
+{
+cexport()
+}
+{object_pop()}
+{
+save_window_=ocbox_.tobj.gtopol
+save_window_.size(-200,200,-150,150)
+scene_vector_[3] = save_window_
+ocbox_.tobj.gtopol = save_window_
+save_window_.save_name("ocbox_.tobj.gtopol")
+}
+{object_push(ocbox_)}
+stgui = new SynTypeGUI(1)
+{object_push(stgui)}
+{
+tobj = new MechanismStandard("ExpSynSTDP")
+tobj.set("tau", 0.1, 0)
+tobj.set("e", 0, 0)
+tobj.set("d", 0.5, 0)
+tobj.set("p", 0.5, 0)
+tobj.set("dtau", 34, 0)
+tobj.set("ptau", 17, 0)
+}
+{append(tobj, "E")}
+{object_pop()}
+nrc = new NetReadyCell(tobj, stgui.stypelist)
+nrc.name = "C"
+tobj = nrc.cb.topol.slist.object(0)
+{nrc.synlist.append(new SynTypeInstance(nrc.stype.object[0],tobj,0.5,0.5,0))}
+{g.size(-166.944,166.944,-125.26,125.26)}
+{object_pop()}
+{
+ocbox_.map("NetReadyCellGUI[0]", 0, 0, 404.16, 361.92)
+}
+objref ocbox_
+//End NetReadyCellGUI[0]
+
+{WindowMenu[0].ses_gid(0, 0, 0, "model")}
+
+//Begin NetGUI[0]
+{
+load_file("netbild.hoc")
+}
+{ocbox_ = new NetGUI(1)}
+{object_push(ocbox_)}
+{mapold2new = new Vector()  missing = new List()}
+original_type("C")
+original_type("S1")
+original_type("S2")
+newnode(0, -30, 27)
+newnode(1, -100, 28)
+newnode(2, -100, 9)
+newedge(1, 0, 0, 0, 1)
+newedge(2, 0, 0, 0, 1)
+{create_ = 1  create1()}
+{g.size(-166.667,166.667,-124.997,124.997)}
+{set_alias(0)}
+{object_pop()}
+{
+ocbox_.map("NetGUI[0]", 0, 0, 528, 327.36)
+}
+objref ocbox_
+//End NetGUI[0]
+
+{WindowMenu[0].ses_gid(0, 0, 0, "model")}
+
+//Begin PointProcessManager
+{
+load_file("pointman.hoc")
+}
+{
+C_Cell[0].soma ocbox_ = new PointProcessManager(0)
+}
+{object_push(ocbox_)}
+{
+mt.select("SEClamp") i = mt.selected()
+ms[i] = new MechanismStandard("SEClamp")
+ms[i].set("rs", 1, 0)
+ms[i].set("dur1", 100, 0)
+ms[i].set("amp1", -65, 0)
+ms[i].set("dur2", 1, 0)
+ms[i].set("amp2", 10, 0)
+ms[i].set("dur3", 1000, 0)
+ms[i].set("amp3", -65, 0)
+mt.select("SEClamp") i = mt.selected() maction(i)
+hoc_ac_ = 0.5
+sec.sec move() d1.flip_to(0)
+}
+{object_pop() doNotify()}
+{
+ocbox_ = ocbox_.v1
+ocbox_.map("PointProcessManager", 376, 252, 303.36, 475.2)
+}
+objref ocbox_
+//End PointProcessManager
+
+{
+xpanel("RunControl", 0)
+v_init = -65
+xvalue("Init","v_init", 1,"stdinit()", 1, 1 )
+xbutton("Init & Run","run()")
+xbutton("Stop","stoprun=1")
+runStopAt = 5
+xvalue("Continue til","runStopAt", 1,"{continuerun(runStopAt) stoprun=1}", 1, 1 )
+runStopIn = 1
+xvalue("Continue for","runStopIn", 1,"{continuerun(t + runStopIn) stoprun=1}", 1, 1 )
+xbutton("Single Step","steprun()")
+t = 500
+xvalue("t","t", 2 )
+tstop = 500
+xvalue("Tstop","tstop", 1,"tstop_changed()", 0, 1 )
+dt = 241.181
+xvalue("dt","dt", 1,"setdt()", 0, 1 )
+steps_per_ms = 40
+xvalue("Points plotted/ms","steps_per_ms", 1,"setdt()", 0, 1 )
+screen_update_invl = 0.05
+xvalue("Scrn update invl","screen_update_invl", 1,"", 0, 1 )
+realtime = 0.0200002
+xvalue("Real Time","realtime", 0,"", 0, 1 )
+xpanel(700,84)
+}
+
+//Begin VariableTimeStep
+{
+ocbox_ = NumericalMethodPanel[0]
+}
+{object_push(ocbox_)}
+{
+atol_ = 0.001  CVode[0].atol(atol_)
+restore(301, 1)
+}
+{object_pop()}
+{
+ocbox_.map("VariableTimeStep", 701, 486, 272.64, 113.28)
+}
+objref ocbox_
+//End VariableTimeStep
+
+{
+save_window_ = new Graph(0)
+save_window_.size(0,500,0,1)
+scene_vector_[6] = save_window_
+{save_window_.view(0, 0, 500, 1, 722, 633, 349.44, 232.96)}
+graphList[2].append(save_window_)
+save_window_.save_name("graphList[2].")
+save_window_.addexpr("NetCon[0].weight[1]", 1, 1, 0.555495, 0.965934, 2)
+save_window_.addexpr("NetCon[1].weight[1]", 2, 1, 0.558242, 0.953571, 2)
+save_window_.addexpr("NetCon[0].weight[2]", 3, 1, 0.555495, 0.932967, 2)
+save_window_.addexpr("NetCon[1].weight[2]", 5, 1, 0.555495, 0.920604, 2)
+}
+objectvar scene_vector_[1]
+{doNotify()}

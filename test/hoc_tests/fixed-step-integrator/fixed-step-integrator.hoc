@@ -1,0 +1,43 @@
+// three section model with no mechanisms except capacitance
+// voltage clamped at left end
+// do a fixed step test
+
+objref vc
+n = 3
+create cable[n]
+for i=1, n-1 {
+	connect cable[i](0), cable[i-1](1)
+}
+for i=0, n-1 cable[i] {
+	diam = 1
+	L = 100
+	nseg = 3
+}
+cable[0] vc = new SEClamp(0)
+vc.rs = .1
+vc.dur1 = .101
+vc.amp1 = -40
+proc fixed_step_run() {
+	finitialize(-65)
+	while (t < .1) {
+		fadvance()
+	}
+}
+fixed_step_run()
+
+objref vec
+vec = new Vector()
+{vec.append(-40.041975305758456, -55.791801104056724)}
+{vec.append(-49.068531999087007, -60.263208785186954, -63.751108119333516)}
+func fixed_step_result() {local result
+	result = 1
+	for i=0, 1 {
+		result = (result && (cable[0].v(i) == vec.x[i]))
+	}
+	for i=2, vec.size-1 {
+		result = (result && (cable[i-2].v(.5) == vec.x[i]))
+	}
+	return result
+}
+b = fixed_step_result()
+if (b != 1) { quit(1) }
