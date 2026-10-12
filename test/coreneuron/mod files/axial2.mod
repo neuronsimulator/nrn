@@ -1,3 +1,6 @@
+: Correctness of test_axial depends on nrnivmodl registering axial1.mod
+: before axial2.mod. This point process AFTER INITIAL must run second (#3656).
+
 NEURON {
     POINT_PROCESS AxialPP
     RANGE iaSum

@@ -814,7 +814,7 @@ add_modlunit_test("${PROJECT_SOURCE_DIR}/test/hoctests/rand.mod")
 add_test(
   NAME nocmodl::no_env
   COMMAND $<TARGET_FILE:nocmodl> -o "${CMAKE_CURRENT_BINARY_DIR}"
-          "${PROJECT_SOURCE_DIR}/test/coreneuron/mod files/axial.mod"
+          "${PROJECT_SOURCE_DIR}/test/coreneuron/mod files/axial1.mod"
   WORKING_DIRECTORY "${PROJECT_BINARY_DIR}")
 set_property(TEST modlunit_pattern PROPERTY WILL_FAIL ON)
 cpp_cc_configure_sanitizers(TEST nocmodl::no_env)
