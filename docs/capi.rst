@@ -1268,6 +1268,8 @@ hooks. When no provider is registered, ordinary template lookup is unchanged.
 .. c:function:: nrn_stack_types_t nrn_stack_type(void)
 
     Get the type of the value on top of the stack without removing it.
+    Both ordinary integers and array-dimension markers are reported as
+    ``STACK_IS_INT`` and can be consumed with :c:func:`nrn_int_pop`.
 
     :returns: Enumeration value indicating the stack top type.
 
@@ -1785,7 +1787,13 @@ Miscellaneous
     Execute a HOC command string. HOC is NEURON's built-in scripting language.
 
     :param command: Null-terminated string containing the HOC command.
-    :returns: Status code
+    :returns: 0 on success, 1 when the top-level interpreter catches an error.
+
+    Top-level error recovery releases interpreter frames and temporary objects,
+    then removes operands left by the failed command back to the entry stack
+    depth. Repeated runtime errors therefore do not accumulate operand-stack
+    entries. When called within an existing interpreter exception boundary,
+    errors continue to propagate to that enclosing boundary.
 
     **Usage Pattern:**
 
