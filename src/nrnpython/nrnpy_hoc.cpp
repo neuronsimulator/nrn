@@ -2768,7 +2768,7 @@ static Object** gui_helper_3_(const char* name, Object* obj, int handle_strptr) 
     if (gui_callback) {
         auto po = nb::steal(gui_helper_3_helper_(name, obj, handle_strptr));
         // TODO: something that allows None (currently nrnpy_po2ho returns NULL if po == Py_None)
-        Object* ho = nrnpy_po2ho(po.release().ptr());
+        Object* ho = nrnpy_po2ho(po.ptr());
         if (ho) {
             --ho->refcount;
         }
