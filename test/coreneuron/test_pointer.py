@@ -4,8 +4,6 @@ import shutil
 import subprocess
 from subprocess import PIPE
 
-import pytest
-
 from neuron.tests.utils.strtobool import strtobool
 from neuron import h
 
@@ -138,10 +136,6 @@ class Model:
             cell.update_pointers()
 
 
-@pytest.mark.skipif(
-    platform.system() == "Darwin" and platform.mac_ver()[0] >= "15",
-    reason="Needs fixing on macOS 15 and newer (#3656)",
-)
 def test_axial():
     m = Model(5, 5)
     cvode.use_fast_imem(1)
