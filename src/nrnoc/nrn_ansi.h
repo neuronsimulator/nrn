@@ -93,6 +93,12 @@ extern void hoc_level_pushsec(Section*);
 void nrn_ba(neuron::model_sorted_token const&, NrnThread&, int);
 extern void nrn_rhs_ext(NrnThread*);
 extern void nrn_setup_ext(NrnThread*);
+/** Battery-style IC: hold positive-area node V; free zero-area algebraics (end PP). */
+void nrn_cable_battery_ic();
+#if EXTRACELLULAR
+/** Battery-style IC: hold Vm and xc continuous content when extracellular present. */
+void nrn_extracellular_battery_ic();
+#endif
 void nrn_cap_jacob(neuron::model_sorted_token const&, NrnThread*, Memb_list*);
 void nrn_div_capacity(neuron::model_sorted_token const&, NrnThread*, Memb_list*);
 void nrn_mul_capacity(neuron::model_sorted_token const&, NrnThread*, Memb_list*);
@@ -100,6 +106,9 @@ extern void clear_point_process_struct(Prop* p);
 extern void ext_con_coef(void);
 extern void nrn_multisplit_ptr_update(void);
 extern void nrn_use_daspk(int);
+// When non-zero, sparse13 factor failures do not hoc_execerror; see nrn_sparse13_factor_error().
+extern int nrn_sparse13_soft_fail;
+extern int nrn_sparse13_factor_error();
 extern void nrn_update_ps2nt(void);
 neuron::model_sorted_token nrn_ensure_model_data_are_sorted();
 extern void activstim_rhs(void);
