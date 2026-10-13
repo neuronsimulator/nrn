@@ -2,11 +2,13 @@ foreach(
   api_test_file
   global_scalar.cpp
   hh_sim.cpp
+  nlayer_extracellular.cpp
   netcon.cpp
   node_index.cpp
   object_new_nothrow.cpp
   object_new_wrap.cpp
   object_ptr_push.cpp
+  raw_hoc_errors.cpp
   runtime_pythonobject_marshaling.cpp
   section_tree.cpp
   sectionlist_to_array.cpp
