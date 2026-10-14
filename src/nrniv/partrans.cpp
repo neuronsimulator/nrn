@@ -708,9 +708,9 @@ void nrnmpi_setup_transfer() {
         // 2) Call the have_to_want function.
         auto [send_to_want, recv_from_have] = have_to_want<sgid_t>(ownsrc, needsrc, sgid_alltoallv);
 
-        // sanity check. all the sgids we are asked to send, we actually have
+        // verify: all the sgids we are asked to send, we actually have
         int n = send_to_want.displ[nhost];
-        // sanity check. all the sgids we receive, we actually need.
+        // verify: all the sgids we receive, we actually need.
         // also set the sid2insrc_ value to the proper recv_from_have index.
         n = recv_from_have.displ[nhost];
         for (int i = 0; i < n; ++i) {

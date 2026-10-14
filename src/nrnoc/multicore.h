@@ -128,7 +128,43 @@ void reorder_secorder();
 void nrn_thread_memblist_setup();
 std::size_t nof_worker_threads();
 
-#define FOR_THREADS(nt) for (nt = nrn_threads; nt < nrn_threads + nrn_nthread; ++nt)
+
+// helper function for iterating over ``NrnThread``s
+inline auto for_threads(NrnThread* threads, int num_threads) {
+    struct iterator {
+        NrnThread* current;
+
+        NrnThread* operator*() const {
+            return current;
+        }
+        iterator& operator++() {
+            ++current;
+            return *this;
+        }
+        bool operator!=(const iterator& other) const {
+            return current != other.current;
+        }
+    };
+
+    struct iterable_wrapper {
+        NrnThread* base_;
+        int count_;
+
+        iterable_wrapper(NrnThread* base, int count)
+            : base_(base)
+            , count_(count) {}
+
+        iterator begin() const {
+            return iterator{base_};
+        }
+        iterator end() const {
+            return iterator{base_ + count_};
+        }
+    };
+
+    return iterable_wrapper(threads, num_threads);
+}
+
 
 // olupton 2022-01-31: could add a _NrnThread typedef here for .mod file
 //                     backwards compatibility if needed.

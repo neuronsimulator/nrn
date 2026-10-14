@@ -43,4 +43,5 @@ struct OcJump {
     static void* fpycall(void* (*) (void*, void*), void*, void*);
     static void execute_throw_on_exception(Symbol* sym, int narg);
     static void execute_throw_on_exception(Object* obj, Symbol* sym, int narg);
+    static Object* newobj_throw_on_exception(Symbol* sym, int narg);
 };

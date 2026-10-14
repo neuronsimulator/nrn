@@ -1427,7 +1427,10 @@ if (auto* const _extnode = _nrn_mechanism_access_extnode(_nd); _extnode) {\n\
                 mechname,
                 fs::absolute(finname).c_str());
 #else
-        Sprintf(buf1, "\tivoc_help(\"help ?1 %s %s\\n\");\n", mechname, finname);
+        Sprintf(buf1,
+                "\tivoc_help(\"help ?1 %s %s\\n\");\n",
+                mechname,
+                fs::path(finname).filename().c_str());
 #endif
         Lappendstr(defs_list, buf1);
     }
@@ -1772,7 +1775,7 @@ void units_reg() {
         if (s->nrntype & NRNGLOBAL) {
             decode_ustr(s, &d1, &d2, u);
             if (u[0]) {
-                Sprintf(buf, "{\"%s%s\", \"%s\"},\n", s->name, suffix, u);
+                SprintfAsrt(buf, "{\"%s%s\", \"%s\"},\n", s->name, suffix, u);
                 lappendstr(defs_list, buf);
             }
         }
@@ -1781,7 +1784,7 @@ void units_reg() {
         s = SYM(q);
         decode_ustr(s, &d1, &d2, u);
         if (u[0]) {
-            Sprintf(buf, "{\"%s%s\", \"%s\"},\n", s->name, rsuffix, u);
+            SprintfAsrt(buf, "{\"%s%s\", \"%s\"},\n", s->name, rsuffix, u);
             lappendstr(defs_list, buf);
         }
     }
@@ -1789,7 +1792,7 @@ void units_reg() {
         s = SYM(q);
         decode_ustr(s, &d1, &d2, u);
         if (u[0]) {
-            Sprintf(buf, "{\"%s%s\", \"%s\"},\n", s->name, rsuffix, u);
+            SprintfAsrt(buf, "{\"%s%s\", \"%s\"},\n", s->name, rsuffix, u);
             lappendstr(defs_list, buf);
         }
     }
@@ -1797,7 +1800,7 @@ void units_reg() {
         s = SYM(q);
         decode_ustr(s, &d1, &d2, u);
         if (u[0]) {
-            Sprintf(buf, "{\"%s%s\", \"%s\"},\n", s->name, rsuffix, u);
+            SprintfAsrt(buf, "{\"%s%s\", \"%s\"},\n", s->name, rsuffix, u);
             lappendstr(defs_list, buf);
         }
     }
@@ -1805,7 +1808,7 @@ void units_reg() {
         s = SYM(q);
         decode_ustr(s, &d1, &d2, u);
         if (u[0]) {
-            Sprintf(buf, "{\"%s%s\", \"%s\"},\n", s->name, rsuffix, u);
+            SprintfAsrt(buf, "{\"%s%s\", \"%s\"},\n", s->name, rsuffix, u);
             lappendstr(defs_list, buf);
         }
     }
@@ -3159,7 +3162,9 @@ void net_receive(Item* qarg, Item* qp1, Item* qp2, Item* qstmt, Item* qend) {
 void net_init(Item* qinit, Item* qp2) {
     /* qinit=INITIAL { stmtlist qp2=} */
     replacstr(qinit, "\nstatic void _net_init(Point_process* _pnt, double* _args, double _lflag)");
-    Sprintf(buf, "    _ppvar = _nrn_mechanism_access_dparam(_pnt->_prop);\n");
+    Sprintf(buf,
+            "    neuron::legacy::set_globals_from_prop(_pnt->_prop, _ml_real, _ml, _iml);\n"
+            "    _ppvar = _nrn_mechanism_access_dparam(_pnt->_prop);\n");
     vectorize_substitute(insertstr(qinit->next->next, buf),
                          "  _nrn_mechanism_cache_instance _ml_real{_pnt->_prop};\n"
                          "  auto* const _ml = &_ml_real;\n"

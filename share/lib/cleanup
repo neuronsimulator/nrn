@@ -1,8 +1,0 @@
-#!/usr/bin/env bash
-
-if [ $TEMP ] ; then
-	tmpdir=$TEMP
-else
-	tmpdir="/tmp"
-fi
-rm -f $tmpdir/oc"$1".hl

@@ -1,8 +1,9 @@
 from . import graphicsPrimitives as graphics
 from .. import options
+from typing import Any, Optional
 
 
-def find_voxel(x, y, z, g):
+def find_voxel(x: float, y: float, z: float, g: dict) -> tuple:
     """returns (i,j,k) of voxel containing point x,y,z if the point is within
     the grid, otherwise return the corresponding grid boundary.
     """
@@ -13,9 +14,9 @@ def find_voxel(x, y, z, g):
     return (i, j, k)
 
 
-def get_verts(voxel, g):
+def get_verts(voxel: tuple, g: dict) -> list:
     """return list (len=8) of point coordinates (x,y,z) that are vertices of the voxel (i,j,k)"""
-    (i, j, k) = voxel
+    i, j, k = voxel
     dx, dy, dz = g["dx"], g["dy"], g["dz"]
     v1_0, v1_1, v1_2 = g["xlo"] + i * dx, g["ylo"] + j * dy, g["zlo"] + k * dz
     vertices = [
@@ -31,10 +32,10 @@ def get_verts(voxel, g):
     return vertices
 
 
-def get_surr_rows(row, endpoints, g):
+def get_surr_rows(row: tuple, endpoints: Any, g: dict) -> list:
     """return list (len=4) of the rows surrounding the current one on all sides
     IF the surrounding row is within the bounds of the grid."""
-    (y, z) = row
+    y, z = row
     surr = []
     if y >= 1:
         surr.append(((y - 1, z), endpoints))
@@ -47,12 +48,12 @@ def get_surr_rows(row, endpoints, g):
     return surr
 
 
-def verts_in(f, voxel, surf, g):
+def verts_in(f: Any, voxel: tuple, surf: dict, g: dict) -> int:
     """return the number of vertices of this voxel that are contained within the surface"""
     verts = get_verts(voxel, g)
     ins = 0
     distlist = []
-    for (x, y, z) in verts:
+    for x, y, z in verts:
         if (
             g["xlo"] <= x <= g["xhi"]
             and g["ylo"] <= y <= g["yhi"]
@@ -69,7 +70,9 @@ def verts_in(f, voxel, surf, g):
     return ins
 
 
-def find_endpoints(f, surf, include_ga, row, guesses, g):
+def find_endpoints(
+    f: Any, surf: dict, include_ga: Any, row: tuple, guesses: tuple, g: dict
+) -> tuple:
     """return the endpoints (L,R) contained in the frustum f; if only one voxel both endpoints will be the same; if none both will be None
     f: frustum object
     surf: surface voxels
@@ -173,7 +176,8 @@ def find_endpoints(f, surf, include_ga, row, guesses, g):
 
 def voxelize(grid, Object, corners=None, include_ga=False):
     """return a list of all voxels (i,j,k) that contain part of the object
-    Other returned elements: set of surface voxels, possibly_missed for error handling"""
+    Other returned elements: set of surface voxels, possibly_missed for error handling
+    """
     # include_ga is whether to include grid-adjacent voxels in the surface, even if entirely within the surface
 
     yes_voxels = set()
@@ -183,7 +187,7 @@ def voxelize(grid, Object, corners=None, include_ga=False):
     if corners is not None:
         for i in range(4):
             x0, y0, z0 = corners[i][0], corners[i][1], corners[i][2]
-            (i0, j0, k0) = find_voxel(x0, y0, z0, grid)
+            i0, j0, k0 = find_voxel(x0, y0, z0, grid)
 
             # find the contained endpoints and start the set with initial row and initial endpoints
             s = set()
@@ -198,7 +202,7 @@ def voxelize(grid, Object, corners=None, include_ga=False):
             x0, y0, z0 = Object._x0, Object._y0, Object._z0
 
         # find the starting voxel
-        (i0, j0, k0) = find_voxel(x0, y0, z0, grid)
+        i0, j0, k0 = find_voxel(x0, y0, z0, grid)
         # find the contained endpoints and start the set with initial row and initial endpoints
         s = set()
         ends = find_endpoints(
@@ -222,9 +226,9 @@ def voxelize(grid, Object, corners=None, include_ga=False):
         startr = s.pop()
         newr = get_surr_rows(startr[0], startr[1], grid)
         for r in newr:
-            (row, guesses) = r
+            row, guesses = r
             if row not in checked:
-                (Lend, Rend) = find_endpoints(
+                Lend, Rend = find_endpoints(
                     Object, surface, include_ga, row, guesses, grid
                 )
                 if Lend is not None:

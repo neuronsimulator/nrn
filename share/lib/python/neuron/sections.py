@@ -41,7 +41,7 @@ class ExtendedSection(nrn.Section):
 
     def psection(self):
         if self.name != self.hoc_name:
-            sys.stdout.write("%s:  " % self.name)
+            sys.stdout.write(f"{self.name}:  ")
         neuron.psection(self)
 
 
@@ -79,7 +79,7 @@ class AllSegments(object):
                 object.__setattr__(self, name, value)
             except AttributeError:
                 raise AttributeError(
-                    "%s mechanism has no attribute %s" % (self.mech_name, name)
+                    f"{self.mech_name} mechanism has no attribute {name}"
                 )
 
     def __getattr__(self, name):

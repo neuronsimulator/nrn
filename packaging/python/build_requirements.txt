@@ -1,3 +1,5 @@
-cython
-packaging
-numpy
+scikit-build-core<=1.1.0
+setuptools-scm<=10.3.4
+cython<=3.3.0
+numpy<=2.2.3;python_version<"3.14"
+numpy>=2.3.2,<=2.3.3;python_version=="3.14"

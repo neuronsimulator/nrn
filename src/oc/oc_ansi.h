@@ -2,6 +2,7 @@
 #include "neuron/container/data_handle.hpp"
 #include "neuron/container/generic_data_handle.hpp"
 
+#include <cstddef>
 #include <cstdio>
 #include <functional>
 #include <memory>
@@ -156,6 +157,7 @@ double chkarg(int, double low, double high);
 // push first arg first. Warning: if the function is inside an object make sure
 // you know what you are doing.
 double hoc_call_func(Symbol*, int narg);
+void hoc_call_func_result_on_stack(Symbol* s, int narg);
 // call a fuction within the context of an object.
 double hoc_call_objfunc(Symbol*, int narg, Object*);
 extern double hoc_ac_;
@@ -183,6 +185,7 @@ void hoc_pushi(int);
 void hoc_push_ndim(int);
 int hoc_pop_ndim();
 int hoc_stack_type();
+std::size_t hoc_stack_size();
 bool hoc_stack_type_is_ndim();
 
 namespace neuron::oc::detail {

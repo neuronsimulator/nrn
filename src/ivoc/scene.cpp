@@ -753,14 +753,12 @@ long Scene::scene_list_index(Scene* s) {
 }
 
 void Scene::save_all(std::ostream& o) {
-    char buf[200];
     o << "objectvar save_window_, rvp_" << std::endl;
     if (!scene_list) {
         return;
     }
     if (!scene_list->empty()) {
-        Sprintf(buf, "objectvar scene_vector_[%ld]", scene_list->size());
-        o << buf << std::endl;
+        o << "objectvar scene_vector_[" << scene_list->size() << "]" << std::endl;
     }
     for (auto& scene: *scene_list) {
         scene->mark(false);

@@ -14,10 +14,8 @@ inline std::tuple<nb::object, nb::object, nb::object> fetch_pyerr() {
     return std::make_tuple(nb::steal(ptype), nb::steal(pvalue), nb::steal(ptraceback));
 }
 
-
-Py2NRNString::Py2NRNString(PyObject* python_string, bool disable_release) {
-    disable_release_ = disable_release;
-    str_ = NULL;
+neuron::unique_cstr Py2NRNString::as_ascii(PyObject* python_string) {
+    char* str_ = nullptr;
     if (PyUnicode_Check(python_string)) {
         auto py_bytes = nb::steal(PyUnicode_AsASCIIString(python_string));
         if (py_bytes) {
@@ -36,16 +34,13 @@ Py2NRNString::Py2NRNString(PyObject* python_string, bool disable_release) {
     } else {  // Neither Unicode or PyBytes
         PyErr_SetString(PyExc_TypeError, "Neither Unicode or PyBytes");
     }
+
+    return neuron::unique_cstr(str_);
 }
 
 void Py2NRNString::set_pyerr(PyObject* type, const char* message) {
-    nb::object err_type;
-    nb::object err_value;
-    nb::object err_traceback;
+    auto [err_type, err_value, err_traceback] = fetch_pyerr();
 
-    if (err()) {
-        std::tie(err_type, err_value, err_traceback) = fetch_pyerr();
-    }
     if (err_value && err_type) {
         auto umes = nb::steal(
             PyUnicode_FromFormat("%s (Note: %S: %S)", message, err_type.ptr(), err_value.ptr()));
@@ -55,48 +50,27 @@ void Py2NRNString::set_pyerr(PyObject* type, const char* message) {
     }
 }
 
-char* Py2NRNString::get_pyerr() {
-    if (err()) {
-        auto [ptype, pvalue, ptraceback] = fetch_pyerr();
-        if (pvalue) {
-            auto pstr = nb::steal(PyObject_Str(pvalue.ptr()));
-            if (pstr) {
-                const char* err_msg = PyUnicode_AsUTF8(pstr.ptr());
-                if (err_msg) {
-                    str_ = strdup(err_msg);
-                } else {
-                    str_ = strdup("get_pyerr failed at PyUnicode_AsUTF8");
-                }
-            } else {
-                str_ = strdup("get_pyerr failed at PyObject_Str");
-            }
-        } else {
-            str_ = strdup("get_pyerr failed at PyErr_Fetch");
-        }
-    }
-    PyErr_Clear();  // in case could not turn pvalue into c_str.
-    return str_;
-}
+neuron::unique_cstr Py2NRNString::get_pyerr() {
+    // Must be called after an error happend.
+    char* str_ = nullptr;
 
-char* PyErr2NRNString::get_pyerr() {
-    if (PyErr_Occurred()) {
-        auto [ptype, pvalue, ptraceback] = fetch_pyerr();
-        if (pvalue) {
-            auto pstr = nb::steal(PyObject_Str(pvalue.ptr()));
-            if (pstr) {
-                const char* err_msg = PyUnicode_AsUTF8(pstr.ptr());
-                if (err_msg) {
-                    str_ = strdup(err_msg);
-                } else {
-                    str_ = strdup("get_pyerr failed at PyUnicode_AsUTF8");
-                }
+    auto [ptype, pvalue, ptraceback] = fetch_pyerr();
+    if (pvalue) {
+        auto pstr = nb::steal(PyObject_Str(pvalue.ptr()));
+        if (pstr) {
+            const char* err_msg = PyUnicode_AsUTF8(pstr.ptr());
+            if (err_msg) {
+                str_ = strdup(err_msg);
             } else {
-                str_ = strdup("get_pyerr failed at PyObject_Str");
+                str_ = strdup("get_pyerr failed at PyUnicode_AsUTF8");
             }
         } else {
-            str_ = strdup("get_pyerr failed at PyErr_Fetch");
+            str_ = strdup("get_pyerr failed at PyObject_Str");
         }
+    } else {
+        str_ = strdup("get_pyerr failed at PyErr_Fetch");
     }
+
     PyErr_Clear();  // in case could not turn pvalue into c_str.
-    return str_;
+    return neuron::unique_cstr(str_);
 }

@@ -1,5 +1,6 @@
 from neuron.tests.utils.strtobool import strtobool
 import os
+import re
 from neuron import coreneuron, h
 
 
@@ -11,7 +12,10 @@ def test_version_macros():
     # Get the CMake PACKAGE_VERSION variable, which should always be in
     # major.minor.patch format. This should be baked into C++ as part of the main
     # NEURON build, not as part of nrnivmodl.
-    ver = tuple(int(x) for x in h.nrnversion(0).split(".", 2))
+    # Note the PACKAGE_VERSION now is pep 440 compliant with respect to
+    # 'git describe' if possible. This results in '9.0a-1388-ga24757450' being
+    # transformed into '9.0.0a0.post1388'. So now we get the 9.0.0 from...
+    ver = tuple(int(x) for x in re.split(r"[^\d]+", h.nrnversion(0))[:3] if x)
 
     pc = h.ParallelContext()
     s = h.Section()

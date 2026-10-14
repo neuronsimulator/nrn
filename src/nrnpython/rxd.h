@@ -62,6 +62,20 @@ struct ICSReactions {
     double** mc_multiplier;
     int* mc_flux_idx;
     double** vptrs;
+    double** states_for_reaction;
+    double** states_for_reaction_dx;
+    double** params_for_reaction;
+    double** result_array;
+    double** result_array_dx;
+    double* mc_mult;
+    double** flux;
+
+    double* ecs_states_for_reaction;
+    double* ecs_states_for_reaction_dx;
+    double* ecs_params_for_reaction;
+    double* ecs_result;
+    double* ecs_result_dx;
+    int* ecsindex;
     struct ICSReactions* next;
 };
 

@@ -19,7 +19,7 @@ def test(files, correct_data):
 
     for f in files:
         base_name = f[:-3]
-        print("%s: " % base_name)
+        print(f"{base_name}: ")
 
         output_file = os.path.join("test_data", base_name + ".dat")
         # remove any old test results
@@ -28,7 +28,7 @@ def test(files, correct_data):
         except OSError:
             pass
 
-        #        os.system('python do_test.py %s %s' % (os.path.join('tests', f), output_file))
+        #        os.system(f'python do_test.py {os.path.join("tests", f)} {output_file}')
 
         env = os.environ.copy()
         try:
@@ -108,10 +108,10 @@ def test(files, correct_data):
     print("Failed:     ", ", ".join(failed_list))
     print("Incomplete: ", ", ".join(incomplete_list))
     print("---")
-    print("Ran %d tests:" % len(files))
-    print("Passed:     %d" % len(passed_list))
-    print("Failed:     %d" % len(failed_list))
-    print("Incomplete: %d" % len(incomplete_list))
+    print(f"Ran {len(files)} tests:")
+    print(f"Passed:     {len(passed_list)}")
+    print(f"Failed:     {len(failed_list)}")
+    print(f"Incomplete: {len(incomplete_list)}")
     if len(passed_list) < len(files):
         return -1
     return 0

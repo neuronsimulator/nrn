@@ -145,7 +145,7 @@ def get_rxd_vars(secs):
                 result += [
                     {
                         "type": "NEURONRXD",
-                        "name": "%s[%s]" % (sp.name, r._name),
+                        "name": f"{sp.name}[{r._name}]",
                         "species": sp.name,
                         "region": r._name,
                     }

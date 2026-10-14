@@ -1,0 +1,3 @@
+[
+    { "output_reldir": "neuron", "nmodl_flags": ["--neuron"]}
+]

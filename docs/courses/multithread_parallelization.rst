@@ -72,7 +72,7 @@ I never bothered to make euler thread safe since the best practical methods are 
 
 Now one should build the dll as normally done on your machine and try the "Parallel Computing" tool again. My computer runs the model in 76s with one thread and 12s with 4 threads. The reason for the superlinear speedup is that multisplit forces "Cashe Efficient" on. It is often worthwhile turning that on even with a single thread (in my case, 49s).
 
-Note: Multisplit, divides the cell into many independent cells which are connected together internally (check with ":func:`h.topology() <topology>`"). When divided into pieces the cell as a whole is difficult to deal with (for example, :func:`h.distance() <distance>` and Shape tools don't work well. Even h.topology() gives an incomplete idea of what is going on). So it is best to turn off "Multisplit" to re-assemble the cell to its original condition before doing any GUI manipulation.
+Note: Multisplit, divides the cell into many independent cells which are connected together internally (check with ":func:`n.topology() <topology>`"). When divided into pieces the cell as a whole is difficult to deal with (for example, :func:`n.distance() <distance>` and Shape tools don't work well. Even n.topology() gives an incomplete idea of what is going on). So it is best to turn off "Multisplit" to re-assemble the cell to its original condition before doing any GUI manipulation.
 
  
 
@@ -97,12 +97,12 @@ This model has a home-brew interface that does not show elapsed walltime, but to
     python
 
     import time
-    from neuron import h, gui
+    from neuron import n, gui
 
-    h.load_file('mosinit.hoc')
+    n.load_file('mosinit.hoc')
 
     start_time = time.time()
-    h.run_u()
+    n.run_u()
     print(f'wall time: {time.time() - start_time}s')
 
 This model also has non-threadsafe mechanisms. So we need to repair with ``mkthreadsafe`` (Another case of using GLOBAL variables for temporary storage.) However, running a sim with two threads gives an error
@@ -117,7 +117,7 @@ Sadly, threads cannot be used when any :attr:`NetCon.delay` is 0. Fortunately, t
 .. code::
     python
     
-    for netcon in h.List('NetCon'):
+    for netcon in n.List('NetCon'):
         netcon.delay = 0.5
 
 With two threads the run will be faster, but far from twice as fast. Try again with "Cache Efficient" checked.

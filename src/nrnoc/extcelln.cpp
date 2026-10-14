@@ -225,9 +225,7 @@ void extnode_free_elements(Extnode* nde) {
 }
 
 static void check_if_extracellular_in_use() {
-    hoc_Item* qsec;
-    ITERATE(qsec, section_list) {
-        Section* sec = hocSEC(qsec);
+    for (const Section* sec: range_sec(section_list)) {
         if (sec->pnode[0]->extnode) {
             hoc_execerror("Cannot change nlayer_extracellular when instances exist", NULL);
         }
@@ -273,14 +271,13 @@ void nlayer_extracellular() {
         /* Note in section.h: #define  nlayer (nrn_nlayer_extracellular) */
         int old = nlayer;
         nrn_nlayer_extracellular = (int) chkarg(1, 1., 1000.);
-        if (nrn_nlayer_extracellular == old) {
-            return;
+        if (nrn_nlayer_extracellular != old) {
+            check_if_extracellular_in_use();
+            update_parmsize();
+            /*global nlayer is the new value. Following needs to know the previous */
+            update_extracellular_reg(old);
+            update_existing_extnode(old);
         }
-        check_if_extracellular_in_use();
-        update_parmsize();
-        /*global nlayer is the new value. Following needs to know the previous */
-        update_extracellular_reg(old);
-        update_existing_extnode(old);
     }
     hoc_retpushx((double) nlayer);
 }
@@ -486,14 +483,11 @@ void ext_con_coef(void) /* setup a and b */
 {
     int j, k;
     double dx, area;
-    hoc_Item* qsec;
     Node *nd, **pnd;
     Extnode* nde;
 
     /* temporarily store half segment resistances in rhs */
-    // ForAllSections(sec)
-    ITERATE(qsec, section_list) {
-        Section* sec = hocSEC(qsec);
+    for (Section* sec: range_sec(section_list)) {
         if (sec->pnode[0]->extnode) {
             dx = section_length(sec) / ((double) (sec->nnode - 1));
             for (j = 0; j < sec->nnode - 1; j++) {
@@ -529,9 +523,7 @@ void ext_con_coef(void) /* setup a and b */
     section connects straight to the point*/
     /* for the near future we always have a last node at x=1 with
     no properties */
-    // ForAllSections(sec)
-    ITERATE(qsec, section_list) {
-        Section* sec = hocSEC(qsec);
+    for (const Section* sec: range_sec(section_list)) {
         if (sec->pnode[0]->extnode) {
             /* node half resistances in general get added to the
             node and to the node's "child node in the same section".
@@ -549,9 +541,7 @@ void ext_con_coef(void) /* setup a and b */
             }
         }
     }
-    // ForAllSections(sec)
-    ITERATE(qsec, section_list) {
-        Section* sec = hocSEC(qsec);
+    for (Section* sec: range_sec(section_list)) {
         if (sec->pnode[0]->extnode) {
             /* convert to siemens/cm^2 for all nodes except last
             and microsiemens for last.  This means that a*V = mamps/cm2
@@ -578,9 +568,7 @@ void ext_con_coef(void) /* setup a and b */
         }
     }
     /* now the effect of parent on node equation. */
-    // ForAllSections(sec)
-    ITERATE(qsec, section_list) {
-        Section* sec = hocSEC(qsec);
+    for (const Section* sec: range_sec(section_list)) {
         if (sec->pnode[0]->extnode) {
             for (j = 0; j < sec->nnode; j++) {
                 nd = sec->pnode[j];
@@ -604,7 +592,7 @@ static void printnode(const char* s) {
 	Extnode* nde;	
 	double *pd;
 	NrnThread* _nt;
-	FOR_THREADS(_nt) for (in=0; in < _nt->end; ++in) {
+	for (NrnThread* _nt : for_threads(nrn_threads, nrn_nthread)) for (in=0; in < _nt->end; ++in) {
 		nd = _nt->_v_node[in];
 		if (nd->extnode) {
 			sec = nd->sec;

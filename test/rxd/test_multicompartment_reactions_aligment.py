@@ -32,14 +32,14 @@ def test_multicompartment_reactions_aligment(neuron_instance):
         shells.append(
             rxd.Region(
                 [dend],
-                name="shell%i" % i,
+                name=f"shell{i}",
                 geometry=rxd.Shell(float(i) / N, (1.0 + i) / N),
             )
         )
         border.append(
             rxd.Region(
                 [dend],
-                name="border%i" % i,
+                name=f"border{i}",
                 geometry=rxd.FixedPerimeter(2.0 * h.PI * (1.0 + i)),
             )
         )
@@ -48,7 +48,7 @@ def test_multicompartment_reactions_aligment(neuron_instance):
         rxd.Region(
             [dend, spine],
             nrn_region="i",
-            name="shell%i" % (N - 1),
+            name=f"shell{N - 1}",
             geometry=rxd.MultipleGeometry(
                 secs=[dend, spine], geos=[rxd.Shell((N - 1.0) / N, 1), rxd.inside]
             ),
