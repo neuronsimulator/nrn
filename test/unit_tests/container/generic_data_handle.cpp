@@ -1,5 +1,4 @@
 #include "neuron/container/generic_data_handle.hpp"
-#include "neuron/container/node.hpp"
 #include "neuron/model_data.hpp"
 
 #include <catch2/catch_test_macros.hpp>
