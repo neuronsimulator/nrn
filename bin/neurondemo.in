@@ -28,7 +28,7 @@ if [ ! -f "${NRNDEMO}neuron" ] ; then
 fi
 
 if [ "@NRN_ENABLE_SHARED@" = "ON" ]; then
-    ${NRNBIN}nrniv -dll "${NRNDEMO}release/${MODSUBDIR}/.libs/libnrnmech.so" "${NRNDEMO}demo.hoc" "$@" -
+    ${NRNBIN}nrniv -dll "${NRNDEMO}release/${MODSUBDIR}/@CMAKE_SHARED_LIBRARY_PREFIX@nrnmech@CMAKE_SHARED_LIBRARY_SUFFIX@" "${NRNDEMO}demo.hoc" "$@" -
 else
     "${NRNDEMO}release/${MODSUBDIR}/special" "${NRNDEMO}demo.hoc" "$@" -
 fi

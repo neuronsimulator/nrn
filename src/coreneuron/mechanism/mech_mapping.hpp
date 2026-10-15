@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include <string_view>
+
 /*
  * todo : currently mod2c has exactly 4 different variable categories
  * that are registered to coreneuron.
@@ -31,12 +33,13 @@ struct Memb_list;
 using SerializedNames = const char**;
 
 // return pointer to value of a variable's mechanism, or nullptr if not found
-extern double* get_var_location_from_var_name(int mech_id,
-                                              const char* variable_name,
-                                              Memb_list* ml,
-                                              int local_index);
+double* get_var_location_from_var_name(int mech_id,
+                                       const std::string_view mech_name,
+                                       const std::string_view variable_name,
+                                       Memb_list* ml,
+                                       int local_index);
 
 // initialize mapping of variable names of mechanism, to their places in memory
-extern void register_all_variables_offsets(int mech_id, SerializedNames variable_names);
+void register_all_variables_offsets(int mech_id, SerializedNames variable_names);
 
 }  // namespace coreneuron

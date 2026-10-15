@@ -23,7 +23,6 @@ def test_array_variable_transfer(
     file_mode=file_mode_option,
     create_plots=create_plots_option,
 ):
-
     h("""create soma""")
     h.soma.L = 5.6419
     h.soma.diam = 5.6419

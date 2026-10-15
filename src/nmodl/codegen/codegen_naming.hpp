@@ -41,6 +41,9 @@ static constexpr char CVODE_T_V_METHOD[] = "cvode_t_v";
 /// sparse method in nmodl
 static constexpr char SPARSE_METHOD[] = "sparse";
 
+/// matexp method in nmodl
+static constexpr char MATEXP_METHOD[] = "matexp";
+
 /// net_event function call in nmodl
 static constexpr char NET_EVENT_METHOD[] = "net_event";
 
@@ -52,6 +55,9 @@ static constexpr char NET_SEND_METHOD[] = "net_send";
 
 /// nrn_pointing function in nmodl
 static constexpr char NRN_POINTING_METHOD[] = "nrn_pointing";
+
+/// state_discontinuity function in nmodl
+static constexpr char NRN_STATE_DISC_METHOD[] = "state_discontinuity";
 
 /// artificial cell keyword in nmodl
 static constexpr char ARTIFICIAL_CELL[] = "ARTIFICIAL_CELL";

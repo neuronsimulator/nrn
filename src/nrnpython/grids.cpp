@@ -6,6 +6,7 @@ a linked list of Grid_nodes
 ******************************************************************/
 #include <stdio.h>
 #include <assert.h>
+#include <vector>
 #include "nrnpython.h"
 #include "grids.h"
 #include "rxd.h"
@@ -1093,10 +1094,18 @@ int ECS_Grid_node::add_multicompartment_reaction(int nstates, int* indices, int 
 void ECS_Grid_node::clear_multicompartment_reaction() {
     free(all_reaction_states);
     free(react_offsets);
-    if (multicompartment_inititalized)
+    if (multicompartment_inititalized) {
         free(all_reaction_indices);
-    else
+#if NRNMPI
+        if (nrnmpi_use)
+            free(reaction_indices);
+#endif
+    } else {
         free(reaction_indices);
+    }
+    free(induced_currents);
+    induced_currents = NULL;
+    local_induced_currents = NULL;
     all_reaction_indices = NULL;
     all_reaction_states = NULL;
     reaction_indices = NULL;
@@ -1125,12 +1134,11 @@ void ECS_Grid_node::initialize_multicompartment_reaction() {
                 break;
 
         if (i != nrnmpi_numprocs) {
+            total_reaction_states = 0;
             // number of offsets (Reaction) stored in each process
-            proc_num_reactions = (int*) calloc(nrnmpi_numprocs, sizeof(int));
             proc_num_reactions[nrnmpi_myid] = react_offset_count;
 
             // number of states/indices stored in each process
-            proc_num_reaction_states = (int*) calloc(nrnmpi_numprocs, sizeof(int));
             proc_num_reaction_states[nrnmpi_myid] = react_offsets[react_offset_count - 1];
             nrnmpi_int_allgather_inplace(proc_num_reactions, 1);
             nrnmpi_int_allgather_inplace(proc_num_reaction_states, 1);
@@ -1141,35 +1149,31 @@ void ECS_Grid_node::initialize_multicompartment_reaction() {
                 proc_num_reactions[i] = total_reaction_states;
                 total_reaction_states += proc_num_reaction_states[i];
             }
-
-            // Move the offsets for each reaction so they reference the
-            // corresponding indices in the all_reaction_indices array
-            for (j = 0; j < react_offset_count; j++)
-                react_offsets[j] += start_state;
+            free(all_reaction_indices);
+            free(all_reaction_states);
 
             all_reaction_indices = (int*) malloc(total_reaction_states * sizeof(int));
             all_reaction_states = (double*) calloc(total_reaction_states, sizeof(double));
-
             memcpy(&all_reaction_indices[start_state],
                    reaction_indices,
                    proc_num_reaction_states[nrnmpi_myid] * sizeof(int));
             nrnmpi_int_allgatherv_inplace(all_reaction_indices,
                                           proc_num_reaction_states,
                                           proc_num_reactions);
-            free(reaction_indices);
-            reaction_indices = NULL;
+
             multicompartment_inititalized = TRUE;
 
             // Handle currents induced by multicompartment reactions.
+            int local_induced_current_count = induced_current_count;
             proc_induced_current_count[nrnmpi_myid] = induced_current_count;
             nrnmpi_int_allgather_inplace(proc_induced_current_count, 1);
+
             proc_induced_current_offset[0] = 0;
             for (i = 1; i < nrnmpi_numprocs; i++)
                 proc_induced_current_offset[i] = proc_induced_current_offset[i - 1] +
                                                  proc_induced_current_count[i - 1];
             induced_current_count = proc_induced_current_offset[nrnmpi_numprocs - 1] +
                                     proc_induced_current_count[nrnmpi_numprocs - 1];
-
             all_scales = (double*) malloc(induced_current_count * sizeof(double));
             all_indices = (int*) malloc(induced_current_count * sizeof(int));
             memcpy(&all_scales[proc_induced_current_offset[nrnmpi_myid]],
@@ -1192,8 +1196,10 @@ void ECS_Grid_node::initialize_multicompartment_reaction() {
             free(induced_currents);
             induced_currents_scale = all_scales;
             induced_currents_index = all_indices;
-            induced_currents = (double*) malloc(induced_current_count * sizeof(double));
+            induced_currents = (double*) calloc(induced_current_count, sizeof(double));
             local_induced_currents = &induced_currents[proc_induced_current_offset[nrnmpi_myid]];
+            // set to local count to avoid accumulation with repeated calls
+            induced_current_count = local_induced_current_count;
         }
     } else {
         if (!multicompartment_inititalized) {
@@ -1201,7 +1207,7 @@ void ECS_Grid_node::initialize_multicompartment_reaction() {
             all_reaction_indices = reaction_indices;
             all_reaction_states = (double*) calloc(total_reaction_states, sizeof(double));
             multicompartment_inititalized = TRUE;
-            induced_currents = (double*) malloc(induced_current_count * sizeof(double));
+            induced_currents = (double*) calloc(induced_current_count, sizeof(double));
             local_induced_currents = induced_currents;
         }
     }
@@ -1211,7 +1217,7 @@ void ECS_Grid_node::initialize_multicompartment_reaction() {
         all_reaction_indices = reaction_indices;
         all_reaction_states = (double*) calloc(total_reaction_states, sizeof(double));
         multicompartment_inititalized = TRUE;
-        induced_currents = (double*) malloc(induced_current_count * sizeof(double));
+        induced_currents = (double*) calloc(induced_current_count, sizeof(double));
         local_induced_currents = induced_currents;
     }
 #endif
@@ -1236,7 +1242,7 @@ void ECS_Grid_node::do_multicompartment_reactions(double* result) {
         for (i = 0; i < total_reaction_states; i++)
             result[all_reaction_indices[i]] += all_reaction_states[i];
     }
-    memset(all_reaction_states, 0, total_reaction_states * sizeof(int));
+    memset(all_reaction_states, 0, total_reaction_states * sizeof(double));
 }
 
 // TODO: Implement this
@@ -1260,12 +1266,18 @@ ECS_Grid_node::~ECS_Grid_node() {
         free(proc_num_fluxes);
         free(proc_num_reaction_states);
         free(proc_num_reactions);
+        free(reaction_indices);
     }
 #endif
+    free(all_reaction_indices);
+    reaction_indices = nullptr;
+    free(react_offsets);
     free(all_currents);
     free(ecs_adi_dir_x);
     free(ecs_adi_dir_y);
     free(ecs_adi_dir_z);
+    if (get_alpha == get_alpha_scalar)
+        free(alpha);
     if (node_flux_count > 0) {
         free(node_flux_idx);
         free(node_flux_scale);
@@ -1307,7 +1319,9 @@ void ICS_Grid_node::divide_x_work(const int nthreads) {
     // To determine which index to put the start node and line length in thread_line_defs
     int* thread_idx_counter = (int*) calloc(nthreads, sizeof(int));
     // To determine which thread array to put the start node and line length in thread_line_defs
-    int line_thread_id[_x_lines_length / 2];
+    // warning: variable length arrays in C++ are a Clang extension [-Wvla-cxx-extension]
+    // int line_thread_id[_x_lines_length / 2];
+    std::vector<int> line_thread_id(_x_lines_length / 2);
     // Array of nthreads arrays that hold the line defs for each thread
     int** thread_line_defs = (int**) malloc(nthreads * sizeof(int*));
 
@@ -1402,7 +1416,7 @@ void ICS_Grid_node::divide_y_work(const int nthreads) {
     // To determine which index to put the start node and line length in thread_line_defs
     int* thread_idx_counter = (int*) calloc(nthreads, sizeof(int));
     // To determine which thread array to put the start node and line length in thread_line_defs
-    int line_thread_id[_y_lines_length / 2];
+    std::vector<int> line_thread_id(_y_lines_length / 2);
     // Array of nthreads arrays that hold the line defs for each thread
     int** thread_line_defs = (int**) malloc(nthreads * sizeof(int*));
 
@@ -1499,7 +1513,7 @@ void ICS_Grid_node::divide_z_work(const int nthreads) {
     // To determine which index to put the start node and line length in thread_line_defs
     int* thread_idx_counter = (int*) calloc(nthreads, sizeof(int));
     // To determine which thread array to put the start node and line length in thread_line_defs
-    int line_thread_id[_z_lines_length / 2];
+    std::vector<int> line_thread_id(_z_lines_length / 2);
     // Array of nthreads arrays that hold the line defs for each thread
     int** thread_line_defs = (int**) malloc(nthreads * sizeof(int*));
 

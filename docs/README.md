@@ -4,7 +4,7 @@
 
 Latest NEURON documentation is available on:
 
-* ReadTheDocs @ [https://nrn.readthedocs.io/en/latest/](https://nrn.readthedocs.io/en/latest/).
+* ReadTheDocs @ [https://www.neuronsimulator.org](https://www.neuronsimulator.org).
 
 Contents:
 

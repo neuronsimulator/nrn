@@ -341,11 +341,13 @@ extern "C" NRN_EXPORT PyObject* PyInit_hoc() {
     }
 
 #endif  // NRNMPI
-    std::string buf{neuron::config::system_processor};
-    buf += "/.libs/libnrnmech.so";
+    const auto& buf = std::string(neuron::config::system_processor) + "/" +
+                      std::string(neuron::config::shared_library_prefix) + "nrnmech" +
+                      std::string(neuron::config::shared_library_suffix);
+
     // printf("buf = |%s|\n", buf);
     FILE* f;
-    if ((f = fopen(buf.c_str(), "r")) != 0) {
+    if ((f = fopen(buf.c_str(), "r")) != nullptr) {
         fclose(f);
         add_arg("-dll", buf.c_str());
     }

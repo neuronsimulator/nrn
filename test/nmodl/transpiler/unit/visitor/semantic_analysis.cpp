@@ -336,3 +336,20 @@ SCENARIO("FUNCTION block that does not return anything must raise a warning",
         }
     }
 }
+
+SCENARIO("Duplicate names in a MOD file should throw an error", "[visitor][semantic_analysis]") {
+    GIVEN("A mod file with a PROCEDURE and RANGE variable with the same name") {
+        std::string nmodl_text = R"(
+            NEURON {
+                RANGE name
+            }
+            PROCEDURE name() {}
+        )";
+        THEN("Semantic analysis should throw an error") {
+            auto capture = test_utils::LoggerCapture();
+            REQUIRE(run_semantic_analysis_visitor(nmodl_text));
+            REQUIRE_THAT(capture.output(),
+                         Catch::Matchers::ContainsSubstring("Duplicate name(s) found: name"));
+        }
+    }
+}

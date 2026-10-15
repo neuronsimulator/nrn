@@ -20,7 +20,7 @@ namespace nmodl {
 namespace visitor {
 
 void UnitsVisitor::visit_program(ast::Program& node) {
-    units_driver.parse_file(units_dir);
+    units_driver.parse_string(units_content);
     node.visit_children(*this);
 }
 

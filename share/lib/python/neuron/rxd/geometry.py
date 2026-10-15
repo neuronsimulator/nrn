@@ -4,6 +4,7 @@ import numpy
 from neuron import h, nrn
 from .rxdException import RxDException
 from itertools import groupby
+from typing import Union, Callable
 
 try:
     from neuron.rxd import geometry3d
@@ -14,27 +15,33 @@ except ImportError:
 
 
 class RxDGeometry:
-    def volumes1d(self, sec):
+    def volumes1d(
+        self, sec: Union[nrn.Section, "rxdsection.RxDSection"]
+    ) -> numpy.ndarray:
         raise RxDException("volume1d unimplemented")
 
-    def surface_areas1d(self, sec):
+    def surface_areas1d(
+        self, sec: Union[nrn.Section, "rxdsection.RxDSection"]
+    ) -> numpy.ndarray:
         raise RxDException("surface_areas1d unimplemented")
 
-    def neighbor_areas1d(self, sec):
+    def neighbor_areas1d(
+        self, sec: Union[nrn.Section, "rxdsection.RxDSection"]
+    ) -> numpy.ndarray:
         raise RxDException("neighbor_areas1d unimplemented")
 
-    def is_volume(self):
+    def is_volume(self) -> bool:
         raise RxDException("is_volume unimplemented")
 
-    def is_area(self):
+    def is_area(self) -> bool:
         raise RxDException("is_area unimplemented")
 
-    def __call__(self):
+    def __call__(self) -> "RxDGeometry":
         """calling returns self to allow for rxd.inside or rxd.inside()"""
         return self
 
 
-def _volumes1d(sec):
+def _volumes1d(sec: Union[nrn.Section, "rxdsection.RxDSection"]) -> numpy.ndarray:
     if not isinstance(sec, nrn.Section):
         sec = sec._sec
     arc3d = [sec.arc3d(i) for i in range(sec.n3d())]
@@ -65,7 +72,7 @@ def _volumes1d(sec):
     return vols
 
 
-def _make_surfacearea1d_function(scale, diam_scale=1.0):
+def _make_surfacearea1d_function(scale: float, diam_scale: float = 1.0) -> Callable:
     def result(sec):
         if not isinstance(sec, nrn.Section):
             sec = sec._sec
@@ -98,7 +105,7 @@ def _make_surfacearea1d_function(scale, diam_scale=1.0):
     return result
 
 
-def _make_perimeter_function(scale, diam_scale=1.0):
+def _make_perimeter_function(scale: float, diam_scale: float = 1.0) -> Callable:
     def result(sec):
         if not isinstance(sec, nrn.Section):
             sec = sec._sec
@@ -115,7 +122,9 @@ _surface_areas1d = _make_surfacearea1d_function(numpy.pi)
 _perimeter1d = _make_perimeter_function(numpy.pi)
 
 
-def _neighbor_areas1d(sec):
+def _neighbor_areas1d(
+    sec: Union[nrn.Section, "rxdsection.RxDSection"],
+) -> numpy.ndarray:
     if not isinstance(sec, nrn.Section):
         sec = sec._sec
     arc3d = [sec.arc3d(i) for i in range(sec.n3d())]
@@ -125,23 +134,23 @@ def _neighbor_areas1d(sec):
     return numpy.pi * 0.25 * diams**2
 
 
-def constant_function_per_length(value):
+def constant_function_per_length(value: float) -> Callable:
     return lambda sec: [value * sec.L / sec.nseg for i in range(sec.nseg)]
 
 
-def constant_everywhere_1d(value):
+def constant_everywhere_1d(value: float) -> Callable:
     return lambda sec: value * numpy.ones(sec.nseg)
 
 
-def constant_everywhere_plus_one_1d(value):
+def constant_everywhere_plus_one_1d(value: float) -> Callable:
     return lambda sec: value * numpy.ones(sec.nseg + 1)
 
 
-def constant_function(value):
+def constant_function(value: Union[bool, int, float, str]) -> Callable:
     return lambda *args, **kwargs: value
 
 
-def scale_by_constant(scale, f):
+def scale_by_constant(scale: float, f: Callable) -> Callable:
     return lambda *args, **kwargs: scale * f(*args, **kwargs)
 
 
@@ -245,12 +254,9 @@ class DistributedBoundary(RxDGeometry):
 
     def __repr__(self):
         if self._perim_per_area == 0:
-            return "DistributedBoundary(%g)" % (self._area_per_vol)
+            return f"DistributedBoundary({self._area_per_vol:g})"
         else:
-            return "DistributedBoundary(%g, perim_per_area=%g)" % (
-                self._area_per_vol,
-                self._perim_per_area,
-            )
+            return f"DistributedBoundary({self._area_per_vol:g}, perim_per_area={self._perim_per_area:g})"
 
 
 class FractionalVolume(RxDGeometry):
@@ -310,14 +316,7 @@ class FractionalVolume(RxDGeometry):
         return internal_voxels, surface_voxels, mesh_grid
 
     def __repr__(self):
-        return (
-            "FractionalVolume(volume_fraction=%r, surface_fraction=%r, neighbor_areas_fraction=%r)"
-            % (
-                self._volume_fraction,
-                self._surface_fraction,
-                self._neighbor_areas_fraction,
-            )
-        )
+        return f"FractionalVolume(volume_fraction={self._volume_fraction!r}, surface_fraction={self._surface_fraction!r}, neighbor_areas_fraction={self._neighbor_areas_fraction!r})"
 
 
 # TODO: eliminate this class and replace with FixedCrossSection?
@@ -343,10 +342,7 @@ class FixedCrossSection(RxDGeometry):
         self._surface_area = surface_area
 
     def __repr__(self):
-        return "FixedCrossSection(%r, surface_area=%r)" % (
-            self._cross_area,
-            self._surface_area,
-        )
+        return f"FixedCrossSection({self._cross_area!r}, surface_area={self._surface_area!r})"
 
 
 class FixedPerimeter(RxDGeometry):
@@ -362,10 +358,7 @@ class FixedPerimeter(RxDGeometry):
         return [self._perim] * (sec.nseg + 1)
 
     def __repr__(self):
-        return "FixedPerimeter(%r, on_cell_surface=%r)" % (
-            self._perim,
-            self._on_surface,
-        )
+        return f"FixedPerimeter({self._perim!r}, on_cell_surface={self._on_surface!r})"
 
 
 class ScalableBorder(RxDGeometry):
@@ -417,10 +410,7 @@ class ScalableBorder(RxDGeometry):
         self._on_surface = on_cell_surface
 
     def __repr__(self):
-        return "ScalableBorder(%r, on_cell_surface=%r)" % (
-            self._scale,
-            self._on_surface,
-        )
+        return f"ScalableBorder({self._scale!r}, on_cell_surface={self._on_surface!r})"
 
 
 # TODO: remove this, use FixedPerimeter instead?
@@ -465,7 +455,7 @@ class Shell(RxDGeometry):
             self.surface_areas1d = _always_0
 
     def __repr__(self):
-        return "Shell(lo=%r, hi=%r)" % (self._lo, self._hi)
+        return f"Shell(lo={self._lo!r}, hi={self._hi!r})"
 
     def neighbor_areas1d(self, sec):
         if not isinstance(sec, nrn.Section):
@@ -575,7 +565,7 @@ class MultipleGeometry(RxDGeometry):
     def __repr__(self):
         secs = [[s for s in sl] for sl in self._secs]
         geos = [self._secs[sl] for sl in self._secs]
-        return "MultipleGeometry(secs=%r, geos=%r)" % (secs, geos)
+        return f"MultipleGeometry(secs={secs!r}, geos={geos!r})"
 
     def _get_geo(self, sec):
         if not isinstance(sec, nrn.Section):
@@ -589,7 +579,7 @@ class MultipleGeometry(RxDGeometry):
                 geo = self._default
             else:
                 raise RxDException(
-                    "MultipleGeometry is not defined on section %r" % sec
+                    f"MultipleGeometry is not defined on section {sec!r}"
                 )
         return geo
 

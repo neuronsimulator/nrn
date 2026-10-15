@@ -2162,15 +2162,6 @@ void section_orientation(void) {
     hoc_retpushx(nrn_section_orientation(sec));
 }
 
-void parent_node(void) {
-    Section* sec;
-    if (tree_changed) {
-        setup_topology();
-    }
-    sec = chk_access();
-    hoc_retpushx(chk_void2dbl(sec->parentnode, "parent_node"));
-}
-
 void pop_section(void) {
     --skip_secstack_check;
     if (skip_secstack_check < 0) {

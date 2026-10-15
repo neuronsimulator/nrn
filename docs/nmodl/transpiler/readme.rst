@@ -278,9 +278,9 @@ optimization passes and ODE solver) which can be listed as:
 Documentation
 -------------
 
-We are working on user documentation, you can find the current version as part of the NEURON readthedocs page:
+We are working on user documentation, you can find the current version as part of the NEURON website:
 
--  `Documentation <https://nrn.readthedocs.org/>`__
+-  `Documentation <https://www.neuronsimulator.org/>`__
 
 Citation
 --------

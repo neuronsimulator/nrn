@@ -10,12 +10,15 @@
 
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <vector>
 #include <cmath>
 #include <sys/stat.h>
 
-#include "coreneuron/utils/nrn_assert.h"
 #include "coreneuron/io/nrnsection_mapping.hpp"
+#include "coreneuron/permute/node_permute.h"
+#include "coreneuron/sim/multicore.hpp"
+#include "coreneuron/utils/nrn_assert.h"
 
 namespace coreneuron {
 /** Encapsulate low-level reading of coreneuron input data files.
@@ -112,43 +115,55 @@ class FileHandler {
      * Read count no of mappings for section to segment
      */
     template <typename T>
-    int read_mapping_info(T* mapinfo, NrnThreadMappingInfo* ntmapping, CellMapping* cmap) {
-        int nsec, nseg, n_scan;
-        size_t total_lfp_factors;
-        int num_electrodes;
-        char line_buf[max_line_length], name[max_line_length];
+    int read_mapping_info(T mapinfo,
+                          NrnThreadMappingInfo* ntmapping,
+                          std::shared_ptr<CellMapping> cmap,
+                          const NrnThread& nt) {
+        std::string line;
+        std::getline(F, line);
 
-        F.getline(line_buf, sizeof(line_buf));
-        n_scan = sscanf(
-            line_buf, "%s %d %d %zd %d", name, &nsec, &nseg, &total_lfp_factors, &num_electrodes);
+        std::istringstream iss(line);
+        std::string name_str;
+        int nsec = 0;
+        int nseg = 0;
+        size_t total_lfp_factors = 0;
+        int offset_count = 0;
+        iss >> name_str >> nsec >> nseg >> total_lfp_factors >> offset_count;
+        nrn_assert(!iss.fail());
 
-        nrn_assert(n_scan == 5);
+        if (offset_count > 0) {
+            cmap->electrode_offsets.resize(offset_count);
+            for (int k = 0; k < offset_count; k++) {
+                iss >> cmap->electrode_offsets[k];
+            }
+            nrn_assert(!iss.fail());
+        }
 
-        mapinfo->name = std::string(name);
+        mapinfo->type = section_type_from_string(name_str);
 
         if (nseg) {
             auto sec = read_vector<int>(nseg);
             auto seg = read_vector<int>(nseg);
+
+            if (nt._permute) {
+                node_permute(seg.data(), seg.size(), nt._permute);
+            }
 
             std::vector<double> lfp_factors;
             if (total_lfp_factors > 0) {
                 lfp_factors = read_vector<double>(total_lfp_factors);
             }
 
-            int factor_offset = 0;
             for (int i = 0; i < nseg; i++) {
                 mapinfo->add_segment(sec[i], seg[i]);
                 ntmapping->add_segment_id(seg[i]);
-                int factor_offset = i * num_electrodes;
                 if (total_lfp_factors > 0) {
-                    // Abort if the factors contains a NaN
+                    const auto num_electrodes = cmap->num_electrodes();
                     nrn_assert(count_if(lfp_factors.begin(), lfp_factors.end(), [](double d) {
                                    return std::isnan(d);
                                }) == 0);
-                    std::vector<double> segment_factors(lfp_factors.begin() + factor_offset,
-                                                        lfp_factors.begin() + factor_offset +
-                                                            num_electrodes);
-                    cmap->add_segment_lfp_factor(seg[i], segment_factors);
+                    auto begin = lfp_factors.begin() + i * num_electrodes;
+                    cmap->add_segment_lfp_factor(seg[i], begin, begin + num_electrodes);
                 }
             }
         }

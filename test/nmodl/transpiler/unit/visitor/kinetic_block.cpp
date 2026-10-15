@@ -730,12 +730,17 @@ SCENARIO("Convert KINETIC to DERIVATIVE using KineticBlock visitor", "[kinetic][
                 LOCAL kf0_, kb0_, kf1_, kb1_, kf2_, kb2_, kf3_, kb3_, source4_, kf5_
                 source4_ = a
                 {
+                    LOCAL i
+                    i = 0
                     kf0_ = b[0]
                     kb0_ = c[0]
+                    i = 1
                     kf1_ = b[1]
                     kb1_ = c[1]
+                    i = 2
                     kf2_ = b[2]
                     kb2_ = c[2]
+                    i = 3
                     kf3_ = b[3]
                     kb3_ = c[3]
                 }

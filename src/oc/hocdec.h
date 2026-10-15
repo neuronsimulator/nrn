@@ -158,6 +158,12 @@ struct cTemplate {
     void* (*constructor)(struct Object*);
     void (*destructor)(void*);
     void (*steer)(void*); /* normally nullptr */
+    /* Non-owning provider hooks. A provider keeps callback code loaded while
+       any instance of this template can dispatch through it. See
+       nrn_component_func in nrniv/neuronapi.h for the success/failure
+       return contract. */
+    const char* (*component)(Object*, Symbol*, int nindex, int isfunc);
+    const char* (*component_asgn)(Object*);
 };
 
 union Objectdata {

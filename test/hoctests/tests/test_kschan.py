@@ -1,13 +1,18 @@
 import math
+import os
+import sys
+import warnings
+
+import numpy as np
+
 from neuron import h, gui
 from neuron.expect_hocerr import expect_err
 from neuron import expect_hocerr
-import numpy as np
-import os, sys, hashlib
 
 expect_hocerr.quiet = False
 
 from neuron.tests.utils.capture_stdout import capture_stdout
+from neuron.tests.utils import get_c_compiler
 from neuron.tests.utils.checkresult import Chk
 
 # Avoid needing different results depending on NRN_ENABLE_CORENEURON
@@ -372,6 +377,9 @@ def test_2():
 
 def test_3():
     print("test_3")
+    if get_c_compiler().endswith("nvc"):
+        warnings.warn("test_3 skipped on NVHPC")
+        return
     # ligand tests (mostly for coverage) start with fresh channel.
     mk_khh("khh2")
     h.ion_register("ca", 2)

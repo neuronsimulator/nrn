@@ -40,8 +40,8 @@ Load mosinit.hoc
 .. code::
     python
 
-    from neuron import h, gui
-    h.load_file('mosinit.hoc')
+    from neuron import n, gui
+    n.load_file('mosinit.hoc')
 
 The PointProcessManager shows a shape plot of the cell.
 
@@ -53,7 +53,7 @@ This model was written in HOC, but we can still use Python to explore it. To see
 .. code::
     python
 
-    h.topology()
+    n.topology()
 
 and
 
@@ -61,7 +61,7 @@ and
     python
 
     from pprint import pprint  # optional; could use print
-    for sec in h.allsec():
+    for sec in n.allsec():
         pprint(sec.psection())
 
 at the >>> prompt.
@@ -119,7 +119,7 @@ Click on :menuselection:`NEURON Main Menu --> Window` and look for one or more w
 
 If a CellBuilder pops up, examine its Topology, Subsets, Geometry, and Biophysics pages.
 
-Do they agree with the output of ``for sec in h.allsec(): pprint(sec.psection(())`` and/or what you discovered with the Model View tool?
+Do they agree with the output of ``for sec in n.allsec(): pprint(sec.psection(())`` and/or what you discovered with the Model View tool?
 
 "Extra Credit" Question
 

@@ -51,7 +51,7 @@ def test_psolve():
     run(h.tstop)
     if vvec_std.eq(vvec) == 0:
         for i, x in enumerate(vvec_std):
-            print("%.3f %g %g %g" % (i * h.dt, x, vvec[i], x - vvec[i]))
+            print(f"{i * h.dt:.3f} {x:g} {vvec[i]:g} {x - vvec[i]:g}")
     assert vvec_std.eq(vvec)
     assert vvec_std.size() == vvec.size()
     coreneuron.enable = False
@@ -88,7 +88,7 @@ def test_NetStim_noise():
     pc.psolve(tstop)
     spiketime_std = spiketime.c()
     spikegid_std = spikegid.c()
-    print("spiketime_std.size %d" % spiketime_std.size())
+    print(f"spiketime_std.size {spiketime_std.size()}")
 
     spiketime.resize(0)
     spikegid.resize(0)
@@ -103,7 +103,7 @@ def test_NetStim_noise():
         h.continuerun(h.t + 5)
         pc.psolve(h.t + 5)
 
-    print("spiketime.size %d" % spiketime.size())
+    print(f"spiketime.size {spiketime.size()}")
     assert spiketime.eq(spiketime_std)
     assert spikegid.eq(spikegid_std)
 
