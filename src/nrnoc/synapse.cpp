@@ -84,7 +84,7 @@ void print_syn(void) {
 
 static double alpha(double x) {
     if (x > 0.0 && x < 10.0) {
-        return x * exp(-x + 1.0);
+        return x * hoc_Exp(-x + 1.0);  // as exp in mod files: follows use_exp_pow_precision
     }
     return 0.0;
 }
