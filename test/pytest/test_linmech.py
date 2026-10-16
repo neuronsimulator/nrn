@@ -98,7 +98,10 @@ def test_linmech_pendulum_callback():
         rotating, _ = run(2.0001)
         assert max(abs(value) for value in rotating) > math.pi
     finally:
+        del lm
         h.cvode.atol(saved_atol)
         h.cvode_active(saved_active)
         h.delete_section(sec=sec)
-        del lm
+        # The DAE turns the sparse solver on, and ~NrnDAE leaves it on.
+        # use_mxb(0) has to follow both, or recalc_diam turns it back on.
+        h.cvode.use_mxb(0)
