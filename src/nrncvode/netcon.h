@@ -1,14 +1,13 @@
-#ifndef netcon_h
-#define netcon_h
+#pragma once
 
 #undef check
-#if MAC
-#define NetCon nrniv_Dinfo
-#endif
 
-#include "htlist.h"
+#include "neuron/container/data_handle.hpp"
 #include "nrnmpi.h"
 #include "nrnneosm.h"
+#include "pool.hpp"
+#include "tqitem.hpp"
+#include "htlist.h"
 
 #include <InterViews/observe.h>
 
@@ -26,15 +25,15 @@ class PreSyn;
 class PlayRecord;
 class Cvode;
 class TQueue;
-class TQItem;
 struct NrnThread;
 class NetCvode;
-class HocEventPool;
+class HocEvent;
+using HocEventPool = MutexPool<HocEvent>;
 class HocCommand;
 struct STETransition;
 class IvocVect;
-class BGP_DMASend;
-class BGP_DMASend_Phase2;
+class Multisend_Send;
+class Multisend_Send_Phase2;
 struct hoc_Item;
 struct Object;
 struct Point_process;
@@ -248,18 +247,17 @@ class WatchCondition: public ConditionEvent, public HTList {
 class STECondition: public WatchCondition {
   public:
     STECondition(Point_process*, double (*)(Point_process*) = NULL);
-    virtual ~STECondition();
-    virtual void deliver(double, NetCvode*, NrnThread*);
-    virtual void pgvts_deliver(double t, NetCvode*);
-    virtual double value();
-    virtual NrnThread* thread();
+    void deliver(double, NetCvode*, NrnThread*) override;
+    void pgvts_deliver(double t, NetCvode*) override;
+    double value() override;
+    NrnThread* thread() override;
 
     STETransition* stet_;
 };
 
 class PreSyn: public ConditionEvent {
   public:
-    PreSyn(double* src, Object* osrc, Section* ssrc = nil);
+    PreSyn(neuron::container::data_handle<double> src, Object* osrc, Section* ssrc = nullptr);
     virtual ~PreSyn();
     virtual void send(double sendtime, NetCvode*, NrnThread*);
     virtual void deliver(double, NetCvode*, NrnThread*);
@@ -279,15 +277,15 @@ class PreSyn: public ConditionEvent {
     static DiscreteEvent* savestate_read(FILE*);
 
     virtual double value() {
+        assert(thvar_);
         return *thvar_ - threshold_;
     }
 
     void update(Observable*);
     void disconnect(Observable*);
-    void update_ptr(double*);
     void record_stmt(const char*);
     void record_stmt(Object*);
-    void record(IvocVect*, IvocVect* idvec = nil, int rec_id = 0);
+    void record(IvocVect*, IvocVect* idvec = nullptr, int rec_id = 0);
     void record(double t);
     void init();
     double mindelay();
@@ -296,14 +294,13 @@ class PreSyn: public ConditionEvent {
     NetConPList dil_;
     double threshold_;
     double delay_;
-    double* thvar_;
+    neuron::container::data_handle<double> thvar_{};
     Object* osrc_;
     Section* ssrc_;
     IvocVect* tvec_;
     IvocVect* idvec_;
     HocCommand* stmt_;
     NrnThread* nt_;
-    hoc_Item* hi_;     // in the netcvode psl_
     hoc_Item* hi_th_;  // in the netcvode psl_th_
     long hi_index_;    // for SaveState read and write
     int use_min_delay_;
@@ -316,11 +313,11 @@ class PreSyn: public ConditionEvent {
 #if NRN_MUSIC
     void* music_port_;
 #endif
-#if BGPDMA
+#if NRNMPI
     union {  // A PreSyn cannot be both a source spike generator
         // and a receiver of off-host spikes.
-        BGP_DMASend* dma_send_;
-        BGP_DMASend_Phase2* dma_send_phase2_;
+        Multisend_Send* multisend_send_;
+        Multisend_Send_Phase2* multisend_send_phase2_;
         int srchost_;
     } bgp;
 #endif
@@ -356,7 +353,7 @@ class HocEvent: public DiscreteEvent {
     HocEvent();
     virtual ~HocEvent();
     virtual void pr(const char*, double t, NetCvode*);
-    static HocEvent* alloc(const char* stmt, Object*, int, Object* pyact = nil);
+    static HocEvent* alloc(const char* stmt, Object*, int, Object* pyact = nullptr);
     void hefree();
     void clear();  // called by hepool_->free_all
     virtual void deliver(double, NetCvode*, NrnThread*);
@@ -417,5 +414,3 @@ class NetParEvent: public DiscreteEvent {
 };
 
 extern PreSyn* nrn_gid2outputpresyn(int gid);
-
-#endif

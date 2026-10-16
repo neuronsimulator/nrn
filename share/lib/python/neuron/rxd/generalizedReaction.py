@@ -4,6 +4,7 @@ import weakref
 import itertools
 from .rxdException import RxDException
 from .species import xyz_by_index
+from typing import Any, Optional, Union
 
 _weakref_ref = weakref.ref
 
@@ -12,7 +13,7 @@ _itertools_chain = itertools.chain
 _numpy_array = numpy.array
 
 
-def ref_list_with_mult(obj):
+def ref_list_with_mult(obj: dict) -> list:
     result = []
     for i, p in zip(list(obj.keys()), list(obj.values())):
         w = _weakref_ref(i)
@@ -20,7 +21,9 @@ def ref_list_with_mult(obj):
     return result
 
 
-def get_scheme_rate1_rate2_regions_custom_dynamics_mass_action(args, kwargs):
+def get_scheme_rate1_rate2_regions_custom_dynamics_mass_action(
+    args: tuple, kwargs: dict
+) -> tuple:
     """Parse the arguments to a rxd.Reaction or rxd.MultiCompartmentReaction.
 
     There are four valid options, two for historical
@@ -44,7 +47,8 @@ def get_scheme_rate1_rate2_regions_custom_dynamics_mass_action(args, kwargs):
             rate1 = args[1]
             rate2 = args[2]
         else:
-            scheme = args[0] > args[1]
+            scheme = args[0].__gt__(args[1])
+            # don't use '>' to avoid Python prioritizing subclass methods
             rate1 = args[2]
             rate2 = None
     elif len(args) == 2:
@@ -54,7 +58,7 @@ def get_scheme_rate1_rate2_regions_custom_dynamics_mass_action(args, kwargs):
         # because of the missing <>
         scheme = args[0]
         if not isinstance(scheme, rxdmath._Reaction):
-            raise RxDException("%r not a recognized reaction scheme" % scheme)
+            raise RxDException(f"{scheme!r} not a recognized reaction scheme")
         rate1 = args[1]
         rate2 = None
     else:
@@ -85,23 +89,6 @@ class GeneralizedReaction(object):
 
         from . import species
 
-        sources = [
-            r
-            for r in self._sources
-            if not isinstance(r(), species.SpeciesOnExtracellular)
-        ]
-        dests = [
-            r
-            for r in self._dests
-            if not isinstance(r(), species.SpeciesOnExtracellular)
-        ]
-
-        sources_ecs = [
-            r for r in self._sources if isinstance(r(), species.SpeciesOnExtracellular)
-        ]
-        dests_ecs = [
-            r for r in self._dests if isinstance(r(), species.SpeciesOnExtracellular)
-        ]
         # locate the regions containing all species (including the one that changes)
         # if all(sptr() for sptr in sources) and all(dptr() for dptr in dests):
         #    active_regions = [r for r in self._regions if all(sptr().indices(r) for sptr in sources + dests)]
@@ -114,7 +101,7 @@ class GeneralizedReaction(object):
                     node_indices_append(seg.node_index())
         self._do_memb_scales(cur_map)
 
-    def _get_args(self, states):
+    def _get_args(self, states: Any) -> Optional[list]:
         args = []
         args_append = args.append
         self_indices_dict = self._indices_dict
@@ -125,15 +112,13 @@ class GeneralizedReaction(object):
             args_append(states[self_indices_dict[s]])
         return args
 
-    def _update_indices(self):
+    def _update_indices(self) -> None:
         # this is called anytime the geometry changes as well as at init
         from . import species
 
         # Default values
         self._indices_dict = {}
         self._indices = []
-        # self._jac_rows = []
-        # self._jac_cols = []
         self._mult = [1]
         self._mult_extended = self._mult
         active_secs = None
@@ -180,26 +165,25 @@ class GeneralizedReaction(object):
         ]
 
         sp_regions = None
-        if self._trans_membrane and (
-            sources or dests
-        ):  # assume sources share common regions and destinations share common regions
-            sp_regions = list(
-                {sptr()._region() for sptr in sources}.union(
-                    {sptr()._region() for sptr in dests}
-                )
-            )
+        if self._trans_membrane:
+            if sources or dests:
+                # assume sources share common regions and destinations share common regions
+                sp_regions = list({sptr()._region() for sptr in sources + dests})
+            elif sources_ecs or dests_ecs and self._regions != [None]:
+                sp_regions = self._regions
         elif sources and dests:
             sp_regions = list(
                 set.intersection(
                     *[
-                        set(sptr()._regions)
-                        if isinstance(sptr(), species.Species)
-                        else {sptr()._region()}
+                        (
+                            set(sptr()._regions)
+                            if isinstance(sptr(), species.Species)
+                            else {sptr()._region()}
+                        )
                         for sptr in sources + dests
                     ]
                 )
             )
-
         # The reactants do not share a common region
         if not sp_regions:
             active_regions = [
@@ -269,32 +253,34 @@ class GeneralizedReaction(object):
             if self._trans_membrane:
                 src_regions = intersection(
                     [
-                        set(sptr()._regions)
-                        if isinstance(sptr(), species.Species)
-                        else {sptr()._region()}
+                        (
+                            set(sptr()._regions)
+                            if isinstance(sptr(), species.Species)
+                            else {sptr()._region()}
+                        )
                         for sptr in sources
                     ]
                 )
                 if not src_regions:
                     raise RxDException(
-                        "Error in %r. The source species do not share a common region"
-                        % self
+                        f"Error in {self}. The source species do not share a common region"
                     )
                 src_sections = intersection(
                     [set(reg.secs) for reg in src_regions if reg is not None]
                 )
                 dest_regions = intersection(
                     [
-                        set(sptr()._regions)
-                        if isinstance(sptr(), species.Species)
-                        else {sptr()._region()}
+                        (
+                            set(sptr()._regions)
+                            if isinstance(sptr(), species.Species)
+                            else {sptr()._region()}
+                        )
                         for sptr in dests
                     ]
                 )
                 if not dest_regions:
                     raise RxDException(
-                        "Error in %r. The destination species do not share a common region"
-                        % self
+                        f"Error in {self}. The destination species do not share a common region"
                     )
                 dest_sections = intersection(
                     [set(reg.secs) for reg in dest_regions if reg is not None]
@@ -305,16 +291,18 @@ class GeneralizedReaction(object):
                 active_regions = list(
                     intersection(
                         [
-                            set(sptr()._regions)
-                            if isinstance(sptr(), species.Species)
-                            else {sptr()._region()}
+                            (
+                                set(sptr()._regions)
+                                if isinstance(sptr(), species.Species)
+                                else {sptr()._region()}
+                            )
                             for sptr in sources + dests
                         ]
                     )
                 )
                 if not active_regions:
                     raise RxDException(
-                        "Error in %r. The species do not share a common region" % self
+                        f"Error in {self}. The species do not share a common region"
                     )
                 active_secs = set.intersection(
                     *[set(reg.secs) for reg in active_regions if reg]
@@ -384,13 +372,13 @@ class GeneralizedReaction(object):
             )
             if not self._scale_by_area:
                 areas = numpy.ones(len(areas))
-            if len(sources_ecs) == len(dests_ecs) == 0:
+            if not sources_ecs and not dests_ecs:
                 self._mult = [
                     -areas / volumes[si] / molecules_per_mM_um3
                     for si in sources_indices
                 ] + [areas / volumes[di] / molecules_per_mM_um3 for di in dests_indices]
             # TODO: check for multicompartment reaction within the ECS
-            elif len(sources_ecs) > 0 and len(dests_ecs) == 0:
+            elif sources_ecs and not dests_ecs:
                 self._mult = [
                     -areas
                     / (
@@ -400,7 +388,7 @@ class GeneralizedReaction(object):
                     / molecules_per_mM_um3
                     for s, di in zip(sources_ecs, dests_indices)
                 ] + [areas / volumes[di] / molecules_per_mM_um3 for di in dests_indices]
-            elif len(sources_ecs) == 0 and len(dests_ecs) > 0:
+            elif not sources_ecs and dests_ecs:
                 self._mult = [
                     -areas / volumes[si] / molecules_per_mM_um3
                     for si in sources_indices
@@ -413,13 +401,61 @@ class GeneralizedReaction(object):
                     / molecules_per_mM_um3
                     for s, si in zip(dests_ecs, sources_indices)
                 ]
+            elif self._trans_membrane:
+                # An ecs <-> ecs reaction that use the membrane area and intracellular concentration in the rates
+                if sources or dests:
+                    raise (
+                        RxDException(
+                            "A multi-compartment with extracellular source and destination can only be used in the absence of intracellular sources/destinations.  Please consider using two multi-compartment reactions instead"
+                        )
+                    )
 
+                if self._membrane_flux:
+                    raise (
+                        RxDException(
+                            "A multi-compartment with extracellular source and destination can not produce a membrane current, set 'membrane_flux=False'"
+                        )
+                    )
+                locs = []
+                for sec in active_secs_list:
+                    length = sec.L
+                    loc1d = [(i + 0.5) / sec.nseg for i in range(sec.nseg)]
+                    normalized_arc3d = [sec.arc3d(i) / length for i in range(sec.n3d())]
+                    x3d = [sec.x3d(i) for i in range(sec.n3d())]
+                    y3d = [sec.y3d(i) for i in range(sec.n3d())]
+                    z3d = [sec.z3d(i) for i in range(sec.n3d())]
+                    locs.extend(
+                        [
+                            (x, y, z)
+                            for x, y, z in zip(
+                                numpy.interp(loc1d, normalized_arc3d, x3d),
+                                numpy.interp(loc1d, normalized_arc3d, y3d),
+                                numpy.interp(loc1d, normalized_arc3d, z3d),
+                            )
+                        ]
+                    )
+                self._mult = [
+                    -area
+                    / (
+                        numpy.prod(s()._extracellular()._dx)
+                        * s().alpha_by_location(loc)
+                    )
+                    / molecules_per_mM_um3
+                    for loc, area in zip(locs, areas)
+                    for s in sources_ecs
+                ] + [
+                    area
+                    / (
+                        numpy.prod(d()._extracellular()._dx)
+                        * d().alpha_by_location(loc)
+                    )
+                    / molecules_per_mM_um3
+                    for loc, area in zip(locs, areas)
+                    for d in dests_ecs
+                ]
             else:
-                # If both the source & destination are in the ECS, they should use a reaction
-                # not a multicompartment reaction
-                RxDException(
-                    "An extracellular source and destination is not possible with a multi-compartment reaction."
-                )
+                # Should not reach here
+                raise (RxDException("A multicompartment reaction must have a membrane"))
         else:
             self._mult = list(-1 for v in sources_indices) + list(
                 1 for v in dests_indices
@@ -446,37 +482,4 @@ class GeneralizedReaction(object):
             return []
 
     def _update_jac_cache(self):
-        from . import species
-
-        num_involved = len(self._involved_species)
-        # self._jac_rows = list(_itertools_chain(*[ind * num_involved for ind in self._indices]))
-        num_ind = len(self._indices)
-        # self._jac_cols = list(_itertools_chain(*[self._indices_dict[s()] for s in self._involved_species if not isinstance(s(),species.SpeciesOnExtracellular)])) * num_ind
-        if self._trans_membrane:
-            self._mult_extended = self._mult
-            # self._mult_extended = [sum([list(mul) * num_involved], []) for mul in self._mult]
-            # self._mult_extended = [list(_itertools_chain.from_iterable(list(mul) * num_involved)) for mul in self._mult]
-        else:
-            self._mult_extended = self._mult
-
-
-"""
-    def _jacobian_entries(self, states, multiply=1, dx=1.e-10):
-        args = self._get_args(states)
-        indices, mult, base_value = self._evaluate_args(args)
-        mult = self._mult_extended
-        derivs = []
-        derivs_append = derivs.append
-        for i, arg in enumerate(args):
-            args[i] = arg + dx
-            new_value = self._evaluate_args(args)[2]
-            args[i] = arg
-            derivs_append((new_value - base_value) / dx)
-        derivs = _numpy_array(list(_itertools_chain(*derivs)))
-        if self._trans_membrane:
-            data = list(_itertools_chain(*[derivs * mul * multiply for mul in mult]))
-            #data = derivs * mult * multiply
-        else:
-            data = list(_itertools_chain(*[derivs * mul * multiply for mul in mult]))
-        return self._jac_rows, self._jac_cols, data
-"""
+        self._mult_extended = self._mult

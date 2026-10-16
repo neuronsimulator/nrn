@@ -1,6 +1,6 @@
 # Basically want to test that net_move statement doesn't get
 # mixed up with other instances.
-import distutils.util
+from neuron.tests.utils.strtobool import strtobool
 import os
 
 from neuron import h
@@ -46,7 +46,7 @@ class Cell:
         return (self.syn.n_netsend, self.syn.n_netmove, self.msgvec.c())
 
 
-def test_netmove():
+def _test_netmove():
     from neuron import coreneuron
 
     coreneuron.enable = False
@@ -76,12 +76,9 @@ def test_netmove():
     stdlist = [cell.result() for cell in cells]
 
     print("CoreNEURON run")
-    h.CVode().cache_efficient(1)
     coreneuron.enable = True
     coreneuron.verbose = 0
-    coreneuron.gpu = bool(
-        distutils.util.strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false"))
-    )
+    coreneuron.gpu = bool(strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false")))
 
     def runassert(mode):
         run(tstop, mode)
@@ -114,10 +111,10 @@ def test_netmove():
     return stdlist
 
 
-if __name__ == "__main__":
+def test_netmove():
     from neuron import gui
 
-    stdlist = test_netmove()
+    stdlist = _test_netmove()
     g = h.Graph()
     print("n_netsend  n_netmove")
     for result in stdlist:
@@ -125,3 +122,7 @@ if __name__ == "__main__":
         result[2].line(g)
     g.exec_menu("View = plot")
     h.quit()
+
+
+if __name__ == "__main__":
+    test_netmove()

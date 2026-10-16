@@ -1,10 +1,6 @@
 #include "options.h"
 
-#if NEMO
-extern int neuron2nemo(), nemo2neuron();
-#endif
-
-extern void node_data(), disconnect();
+extern void disconnect();
 extern void batch_run(), batch_save();
 extern void pt3dadd(), n3d(), x3d(), y3d(), z3d(), arc3d(), diam3d();
 extern void pt3dclear(), pt3dinsert(), pt3dremove(), pt3dchange();
@@ -29,7 +25,7 @@ extern int secondorder, diam_changed, nrn_shape_changed_;
 extern int nrn_netrec_state_adjust, nrn_sparse_partrans;
 extern double clamp_resist;
 extern double celsius;
-extern "C" int stoprun;
+extern int stoprun;
 extern void fit_praxis(), attr_praxis(), pval_praxis(), stop_praxis();
 #if KEEP_NSEG_PARM
 extern void keep_nseg_parm();
@@ -39,5 +35,6 @@ extern void nlayer_extracellular();
 #endif
 extern void nrnallsectionmenu(), nrnallpointmenu(), nrnsecmenu();
 extern void nrnglobalmechmenu(), nrnmechmenu(), nrnpointmenu();
-extern void this_section(), this_node(), parent_section(), parent_node();
+extern void this_section(), this_node(), parent_section();
 extern void parent_connection(), section_orientation();
+extern void print_local_memory_usage();

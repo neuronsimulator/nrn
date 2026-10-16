@@ -1,17 +1,20 @@
 #include <../../nrnconf.h>
 /* /local/src/master/nrn/src/oc/code2.cpp,v 1.12 1999/06/08 17:48:26 hines Exp */
 
-#include "hoc.h"
 #include "hocstr.h"
 #include "parse.hpp"
 #include "hocparse.h"
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <ctype.h>
 #include <errno.h>
 #include "nrnfilewrap.h"
 #include <cstring>
+
+#include "utils/logger.hpp"
 
 
 int units_on_flag_;
@@ -92,8 +95,8 @@ void hoc_Symbol_limits(void) {
     }
     assert(sym);
     hoc_symbol_limits(sym, *getarg(2), *getarg(3));
-    ret();
-    pushx(1.);
+    hoc_ret();
+    hoc_pushx(1.);
 }
 
 void hoc_symbol_limits(Symbol* sym, float low, float high) {
@@ -230,8 +233,8 @@ void hoc_Strcmp(void) {
     char *s1, *s2;
     s1 = gargstr(1);
     s2 = gargstr(2);
-    ret();
-    pushx((double) strcmp(s1, s2));
+    hoc_ret();
+    hoc_pushx((double) strcmp(s1, s2));
 }
 
 static int hoc_vsscanf(const char* buf);
@@ -239,8 +242,8 @@ static int hoc_vsscanf(const char* buf);
 void hoc_sscanf(void) {
     int n;
     n = hoc_vsscanf(gargstr(1));
-    ret();
-    pushx((double) n);
+    hoc_ret();
+    hoc_pushx((double) n);
 }
 
 static int hoc_vsscanf(const char* buf) {
@@ -366,13 +369,13 @@ static int hoc_vsscanf(const char* buf) {
                 switch (arg[iarg - 1].type) {
                 case 's':
                     if (!hoc_is_str_arg(iarg + 2)) {
-                        sprintf(errbuf, "arg %d must be a string", iarg + 2);
+                        Sprintf(errbuf, "arg %d must be a string", iarg + 2);
                         goto bad_arg;
                     }
                     break;
                 default:
                     if (!hoc_is_pdouble_arg(iarg + 2)) {
-                        sprintf(errbuf, "arg %d must be a pointer to a number", iarg + 2);
+                        Sprintf(errbuf, "arg %d must be a pointer to a number", iarg + 2);
                         goto bad_arg;
                     }
                     break;
@@ -381,9 +384,6 @@ static int hoc_vsscanf(const char* buf) {
         }
     }
 
-#if 0
-	n = vsscanf(buf, format, arglist);
-#else
     if (iarg < 4) {
         n = sscanf(buf, format, arglist[0], arglist[1], arglist[2]);
     } else if (iarg < 13) {
@@ -404,7 +404,6 @@ static int hoc_vsscanf(const char* buf) {
     } else {
         goto too_many;
     }
-#endif
     assert(n <= iarg);
 
     for (i = 0; i < n; ++i) {
@@ -431,18 +430,18 @@ static int hoc_vsscanf(const char* buf) {
     }
     goto normal;
 incomplete:
-    sprintf(errbuf, "incomplete format specifier for arg %d", iarg + 3);
+    Sprintf(errbuf, "incomplete format specifier for arg %d", iarg + 3);
     goto normal;
 bad_specifier:
-    sprintf(errbuf, "unknown conversion specifier for arg %d", iarg + 3);
+    Sprintf(errbuf, "unknown conversion specifier for arg %d", iarg + 3);
     goto normal;
 missing_arg:
-    sprintf(errbuf, "missing arg %d", iarg + 2);
+    Sprintf(errbuf, "missing arg %d", iarg + 2);
     goto normal;
 bad_arg:
     goto normal;
 too_many:
-    sprintf(errbuf, "too many ( > %d) args", iarg + 2);
+    Sprintf(errbuf, "too many ( > %d) args", iarg + 2);
     goto normal;
 normal:
     for (i = 0; i < iarg; ++i) {
@@ -456,7 +455,7 @@ normal:
     return n;
 }
 
-void System(void) {
+void hoc_System(void) {
     extern int hoc_plttext;
     static char stdoutfile[] = "/systmp.tmp";
     double d;
@@ -467,14 +466,14 @@ void System(void) {
         HocStr* st;
         n = strlen(gargstr(1)) + strlen(stdoutfile);
         st = hocstr_create(n + 256);
-        Sprintf(st->buf, "%s > %s", gargstr(1), stdoutfile);
+        std::snprintf(st->buf, st->size + 1, "%s > %s", gargstr(1), stdoutfile);
         d = (double) system(st->buf);
 #if 1
         if ((fp = fopen(stdoutfile, "r")) == (FILE*) 0) {
             hoc_execerror("Internal error in System(): can't open", stdoutfile);
         }
         while (fgets(st->buf, 255, fp) == st->buf) {
-            plprint(st->buf);
+            hoc_plprint(st->buf);
         }
 #endif
         hocstr_delete(st);
@@ -507,17 +506,17 @@ void System(void) {
         d = (double) system(gargstr(1));
     }
     errno = 0;
-    ret();
-    pushx(d);
+    hoc_ret();
+    hoc_pushx(d);
 }
 
-void Xred(void) /* read with prompt string and default and limits */
+void hoc_Xred(void) /* read with prompt string and default and limits */
 {
     double d;
 
-    d = xred(gargstr(1), *getarg(2), *getarg(3), *getarg(4));
-    ret();
-    pushx(d);
+    d = hoc_xred(gargstr(1), *getarg(2), *getarg(3), *getarg(4));
+    hoc_ret();
+    hoc_pushx(d);
 }
 
 static struct { /* symbol types */
@@ -541,7 +540,7 @@ static void symdebug(const char* s, Symlist* list) /* for debugging display the 
             Printf("name:%s\ntype:", sp->name);
             switch (sp->type) {
             case VAR:
-                if (!ISARRAY(sp)) {
+                if (!is_array(*sp)) {
                     if (sp->subtype == USERINT)
                         Printf("VAR USERINT  %8d", *(sp->u.pvalint));
                     else if (sp->subtype == USERDOUBLE)
@@ -591,20 +590,20 @@ static void symdebug(const char* s, Symlist* list) /* for debugging display the 
         }
 }
 
-void symbols(void) /* display the types above */
+void hoc_symbols(void) /* display the types above */
 {
     int i, j;
     Symbol* sp;
 
-    if (zzdebug == 0)
+    if (hoc_zzdebug == 0)
         for (i = 0; type_sym[i].t_type != 0; i++) {
             Printf("\n%s\n", type_sym[i].name);
-            for (sp = symlist->first; sp != (Symbol*) 0; sp = sp->next)
+            for (sp = hoc_symlist->first; sp != (Symbol*) 0; sp = sp->next)
                 if (sp->type == type_sym[i].t_type) {
                     Printf("\t%s", sp->name);
                     switch (sp->type) {
                     case VAR:
-                        if (ISARRAY(sp)) {
+                        if (is_array(*sp)) {
                             for (j = 0; j < sp->arayinfo->nsub; j++)
                                 Printf("[%d]", sp->arayinfo->sub[j]);
                         }
@@ -617,11 +616,11 @@ void symbols(void) /* display the types above */
             Printf("\n");
         }
     else {
-        symdebug("p_symlist", p_symlist);
-        symdebug("symlist", symlist);
+        symdebug("p_symlist", hoc_p_symlist);
+        symdebug("symlist", hoc_symlist);
     }
-    ret();
-    pushx(0.);
+    hoc_ret();
+    hoc_pushx(0.);
 }
 
 double chkarg(int arg, double low, double high) /* argument checking for user functions */
@@ -660,11 +659,11 @@ Symbol* hoc_parse_expr(const char* str, Symlist** psymlist) {
     if (strlen(str) > BUFSIZ - 20) {
         HocStr* s;
         s = hocstr_create(strlen(str) + 20);
-        sprintf(s->buf, "hoc_ac_ = %s\n", str);
+        std::snprintf(s->buf, s->size + 1, "hoc_ac_ = %s\n", str);
         hoc_xopen_run(sp, s->buf);
         hocstr_delete(s);
     } else {
-        sprintf(s, "hoc_ac_ = %s\n", str);
+        Sprintf(s, "hoc_ac_ = %s\n", str);
         hoc_xopen_run(sp, s);
     }
     return sp;
@@ -692,40 +691,42 @@ Symbol* hoc_parse_stmt(const char* str, Symlist** psymlist) {
     if (strlen(str) > BUFSIZ - 10) {
         HocStr* s;
         s = hocstr_create(strlen(str) + 10);
-        sprintf(s->buf, "{%s}\n", str);
+        std::snprintf(s->buf, s->size + 1, "{%s}\n", str);
         hoc_xopen_run(sp, s->buf);
         hocstr_delete(s);
     } else {
-        sprintf(s, "{%s}\n", str);
+        Sprintf(s, "{%s}\n", str);
         hoc_xopen_run(sp, s);
     }
     return sp;
 }
 
+/**
+ * @brief Executing hoc_pointer(&var) will put the address of the variable in this location.
+ */
+neuron::container::data_handle<double> hoc_varhandle;
 
-extern double* hoc_varpointer;
+void hoc_pointer() {
+    hoc_varhandle = hoc_hgetarg<double>(1);
+    hoc_ret();
+    hoc_pushx(1.);
+}
 
-void hoc_pointer(void) {
-    extern double* hoc_pgetarg(int);
-    hoc_varpointer = hoc_pgetarg(1);
-    ret();
-    pushx(1.);
+neuron::container::data_handle<double> hoc_val_handle(std::string_view s) {
+    constexpr std::string_view prefix{"{hoc_pointer_(&"}, suffix{")}\n"};
+    std::string code;
+    code.reserve(prefix.size() + suffix.size() + s.size());
+    code.append(prefix);
+    code.append(s);
+    code.append(")}\n");
+    hoc_varhandle = {};
+    auto const status = hoc_oc(code.c_str());
+    assert(status == 0);
+    return hoc_varhandle;
 }
 
 double* hoc_val_pointer(const char* s) {
-    char buf[BUFSIZ];
-    hoc_varpointer = 0;
-    if (strlen(s) > BUFSIZ - 20) {
-        HocStr* buf;
-        buf = hocstr_create(strlen(s) + 20);
-        sprintf(buf->buf, "{hoc_pointer_(&%s)}\n", s);
-        hoc_oc(buf->buf);
-        hocstr_delete(buf);
-    } else {
-        sprintf(buf, "{hoc_pointer_(&%s)}\n", s);
-        hoc_oc(buf);
-    }
-    return hoc_varpointer;
+    return static_cast<double*>(hoc_val_handle(s));
 }
 
 void hoc_name_declared(void) {
@@ -757,6 +758,6 @@ void hoc_name_declared(void) {
             x = (s->subtype == USERPROPERTY) ? 8 : x;
         }
     }
-    ret();
-    pushx((double) x);
+    hoc_ret();
+    hoc_pushx((double) x);
 }

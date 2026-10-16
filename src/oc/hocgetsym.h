@@ -1,7 +1,6 @@
-#ifndef hocgetsym_h
-#define hocgetsym_h
+#pragma once
 
-#include "hoc.h"
+#include "hocdec.h"
 
 typedef struct Psym {
     Symbol* sym;
@@ -14,5 +13,3 @@ Psym* hoc_getsym(const char*);
 double hoc_getsymval(Psym*);
 void hoc_assignsym(Psym* p, double val);
 void hoc_execstr(const char* cp);
-
-#endif

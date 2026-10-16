@@ -1,26 +1,12 @@
 : $Id: netstim.mod 2212 2008-09-08 14:32:26Z hines $
 : comments at end
 
-: the Random idiom has been extended to support CoreNEURON.
-
-: For backward compatibility, noiseFromRandom(hocRandom) can still be used
-: as well as the default low-quality scop_exprand generator.
-: However, CoreNEURON will not accept usage of the low-quality generator,
-: and, if noiseFromRandom is used to specify the random stream, that stream
-: must be using the Random123 generator.
-
-: The recommended idiom for specfication of the random stream is to use
-: noiseFromRandom123(id1, id2[, id3])
-
-: If any instance uses noiseFromRandom123, then no instance can use noiseFromRandom
-: and vice versa.
-
 NEURON	{ 
     ARTIFICIAL_CELL NetStim
+    THREADSAFE
     RANGE interval, number, start
     RANGE noise
-    THREADSAFE : only true if every instance has its own distinct Random
-    BBCOREPOINTER donotuse
+    RANDOM ranvar
 }
 
 PARAMETER {
@@ -34,41 +20,10 @@ ASSIGNED {
     event (ms)
     on
     ispike
-    donotuse
-}
-
-VERBATIM
-#if !NRNBBCORE
-/** If we're running in NEURON, specify the noise style for all instances.
- *  1 means noiseFromRandom was called when _ran_compat was previously 0.
- *  2 means noiseFromRandom123 was called when _ran_compat was previously 0.
- */
-static int _ran_compat;
-#endif
-ENDVERBATIM
-
-:backward compatibility
-PROCEDURE seed(x) {
-VERBATIM
-#if !NRNBBCORE
-ENDVERBATIM
-    set_seed(x)
-VERBATIM
-#endif
-ENDVERBATIM
 }
 
 INITIAL {
-    VERBATIM
-#if NRNBBCORE
-    if(_p_donotuse) {
-#else
-    if(_p_donotuse && _ran_compat == 2) {
-#endif
-        /* only this style initializes the stream on finitialize */
-        nrnran123_setseq(reinterpret_cast<nrnran123_State*>(_p_donotuse), 0, 0);
-    }
-    ENDVERBATIM
+    seed(0)
     on = 0 : off
     ispike = 0
     if (noise < 0) {
@@ -110,179 +65,8 @@ FUNCTION invl(mean (ms)) (ms) {
 }
 
 FUNCTION erand() {
-VERBATIM
-    if (_p_donotuse) {
-        /*
-        :Supports separate independent but reproducible streams for
-        : each instance. However, the corresponding hoc Random
-        : distribution MUST be set to Random.negexp(1)
-        */
-#if !NRNBBCORE
-        if (_ran_compat == 2) {
-            _lerand = nrnran123_negexp(reinterpret_cast<nrnran123_State*>(_p_donotuse));
-        } else {
-            _lerand = nrn_random_pick(reinterpret_cast<Rand*>(_p_donotuse));
-        }
-#else
-        _lerand = nrnran123_negexp(reinterpret_cast<nrnran123_State*>(_p_donotuse));
-#endif
-        return _lerand;
-    } else {
-#if NRNBBCORE
-        assert(0);
-#else
-        /*
-        : the old standby. Cannot use if reproducible parallel sim
-        : independent of nhost or which host this instance is on
-        : is desired, since each instance on this cpu draws from
-        : the same stream
-        */
-#endif
-    }
-#if !NRNBBCORE
-ENDVERBATIM
-    erand = exprand(1)
-VERBATIM
-#endif
-ENDVERBATIM
+    erand = random_negexp(ranvar)
 }
-
-PROCEDURE noiseFromRandom() {
-VERBATIM
-#if !NRNBBCORE
- {
-    if (_ran_compat == 2) {
-        fprintf(stderr, "NetStim.noiseFromRandom123 was previously called\n");
-        assert(0);
-    }
-    _ran_compat = 1;
-    auto& randstate = reinterpret_cast<Rand*&>(_p_donotuse);
-    if (ifarg(1)) {
-        randstate = nrn_random_arg(1);
-    } else {
-        randstate = nullptr;
-    }
- }
-#endif
-ENDVERBATIM
-}
-
-PROCEDURE noiseFromRandom123() {
-VERBATIM
-#if !NRNBBCORE
-    if (_ran_compat == 1) {
-        fprintf(stderr, "NetStim.noiseFromRandom was previously called\n");
-        assert(0);
-    }
-    _ran_compat = 2;
-    auto& r123state = reinterpret_cast<nrnran123_State*&>(_p_donotuse);
-    if (r123state) {
-        nrnran123_deletestream(r123state);
-        r123state = nullptr;
-    }
-    if (ifarg(3)) {
-        r123state = nrnran123_newstream3(static_cast<uint32_t>(*getarg(1)), static_cast<uint32_t>(*getarg(2)), static_cast<uint32_t>(*getarg(3)));
-    } else if (ifarg(2)) {
-        r123state = nrnran123_newstream(static_cast<uint32_t>(*getarg(1)), static_cast<uint32_t>(*getarg(2)));
-    }
-#endif
-ENDVERBATIM
-}
-
-DESTRUCTOR {
-VERBATIM
-    if (!noise) { return; }
-    if (_p_donotuse) {
-#if NRNBBCORE
-        { /* but note that mod2c does not translate DESTRUCTOR */
-#else
-        if (_ran_compat == 2) {
-#endif
-            auto& r123state = reinterpret_cast<nrnran123_State*&>(_p_donotuse);
-            nrnran123_deletestream(r123state);
-            r123state = nullptr;
-        }
-    }
-ENDVERBATIM
-}
-
-VERBATIM
-static void bbcore_write(double* x, int* d, int* xx, int *offset, _threadargsproto_) {
-    if (!noise) { return; }
-    /* error if using the legacy scop_exprand */
-    if (!_p_donotuse) {
-        fprintf(stderr, "NetStim: cannot use the legacy scop_negexp generator for the random stream.\n");
-        assert(0);
-    }
-    if (d) {
-        char which;
-        uint32_t* di = reinterpret_cast<uint32_t*>(d) + *offset;
-#if !NRNBBCORE
-        if (_ran_compat == 1) {
-            auto* rand = reinterpret_cast<Rand*>(_p_donotuse);
-            /* error if not using Random123 generator */
-            if (!nrn_random_isran123(rand, di, di+1, di+2)) {
-                fprintf(stderr, "NetStim: Random123 generator is required\n");
-                assert(0);
-            }
-            nrn_random123_getseq(rand, di+3, &which);
-            di[4] = which;
-        } else {
-#else
-    {
-#endif
-            auto& r123state = reinterpret_cast<nrnran123_State*&>(_p_donotuse);
-            nrnran123_getids3(r123state, di, di+1, di+2);
-            nrnran123_getseq(r123state, di+3, &which);
-            di[4] = which;
-#if NRNBBCORE
-            /* CoreNEURON does not call DESTRUCTOR so... */
-            nrnran123_deletestream(r123state);
-            r123state = nullptr;
-#endif
-        }
-        /*printf("Netstim bbcore_write %d %d %d\n", di[0], di[1], di[3]);*/
-    }
-    *offset += 5;
-}
-
-static void bbcore_read(double* x, int* d, int* xx, int* offset, _threadargsproto_) {
-    if (!noise) { return; }
-    /* Generally, CoreNEURON, in the context of psolve, begins with an empty
-     * model, so this call takes place in the context of a freshly created
-     * instance and _p_donotuse is not NULL.
-     * However, this function is also now called from NEURON at the end of
-     * coreneuron psolve in order to transfer back the nrnran123 sequence state.
-     * That allows continuation with a subsequent psolve within NEURON or
-     * properly transfer back to CoreNEURON if we continue the psolve there.
-     * So now, extra logic is needed for this call to work in a NEURON context.
-     */
-    uint32_t* di = reinterpret_cast<uint32_t*>(d) + *offset;
-#if NRNBBCORE
-    auto& r123state = reinterpret_cast<nrnran123_State*&>(_p_donotuse);
-    assert(!r123state);
-    r123state = nrnran123_newstream3(di[0], di[1], di[2]);
-    nrnran123_setseq(r123state, di[3], di[4]);
-#else
-    uint32_t id1, id2, id3;
-    assert(_p_donotuse);
-    if (_ran_compat == 1) { /* Hoc Random.Random123 */
-        auto* pv = reinterpret_cast<Rand*>(_p_donotuse);
-        int b = nrn_random_isran123(pv, &id1, &id2, &id3);
-        assert(b);
-        nrn_random123_setseq(pv, di[3], (char)di[4]);
-    } else {
-        assert(_ran_compat == 2);
-        auto* r123state = reinterpret_cast<nrnran123_State*>(_p_donotuse);
-        nrnran123_getids3(r123state, &id1, &id2, &id3);
-        nrnran123_setseq(r123state, di[3], di[4]);
-    }
-    /* Random123 on NEURON side has same ids as on CoreNEURON side */
-    assert(di[0] == id1 && di[1] == id2 && di[2] == id3);
-#endif
-    *offset += 5;
-}
-ENDVERBATIM
 
 PROCEDURE next_invl() {
     if (number > 0) {
@@ -323,34 +107,28 @@ NET_RECEIVE (w) {
     }
 }
 
-FUNCTION bbsavestate() {
-    bbsavestate = 0
-    : limited to noiseFromRandom123
-VERBATIM
-#if !NRNBBCORE
-    if (_ran_compat == 2) {
-        auto r123state = reinterpret_cast<nrnran123_State*>(_p_donotuse);
-        if (!r123state) { return 0.0; }
-        double* xdir = hoc_pgetarg(1);
-        if (*xdir == -1.) {
-            *xdir = 2;
-            return 0.0;
-        }
-        double* xval = hoc_pgetarg(2);
-        if (*xdir == 0.) {
-            char which;
-            uint32_t seq;
-            nrnran123_getseq(r123state, &seq, &which);
-            xval[0] = seq;
-            xval[1] = which;
-        }
-        if (*xdir == 1) {
-        nrnran123_setseq(r123state, xval[0], xval[1]);
-        }
-    }
-#endif
-ENDVERBATIM
-}
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+: Legacy API
+:
+:    Difference: seed(x) merely sets ranvar sequence to ((uint32_t)x, 0)
+:                noiseFromRandom HOC Random object must use Random123
+:                    generator. The ids and sequence are merely copied
+:                    into ranvar.
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+: the Random idiom has been extended to support CoreNEURON.
+
+: For backward compatibility, noiseFromRandom(hocRandom) can still be used
+: as well as the default low-quality scop_exprand generator.
+: However, CoreNEURON will not accept usage of the low-quality generator,
+: and, if noiseFromRandom is used to specify the random stream, that stream
+: must be using the Random123 generator.
+
+: The recommended idiom for specfication of the random stream is to use
+: noiseFromRandom123(id1, id2[, id3])
+
+: If any instance uses noiseFromRandom123, then no instance can use noiseFromRandom
+: and vice versa.
 
 
 COMMENT
@@ -388,3 +166,39 @@ its sequence.
 
 ENDCOMMENT
 
+PROCEDURE seed(x) {
+    random_setseq(ranvar, x)
+}
+
+PROCEDURE noiseFromRandom() {
+VERBATIM
+#if !NRNBBCORE
+ {
+    if (ifarg(1)) {
+        Rand* r = nrn_random_arg(1);
+        uint32_t id[3];
+        if (!nrn_random_isran123(r, &id[0], &id[1], &id[2])) {
+            hoc_execerr_ext("NetStim: Random.Random123 generator is required.");
+        }
+        nrnran123_setids(ranvar, id[0], id[1], id[2]);
+        char which;
+        nrn_random123_getseq(r, &id[0], &which);
+        nrnran123_setseq(ranvar, id[0], which);
+    }
+ }
+#endif
+ENDVERBATIM
+}
+
+PROCEDURE noiseFromRandom123() {
+VERBATIM
+#if !NRNBBCORE
+    if (ifarg(3)) {
+        nrnran123_setids(ranvar, static_cast<uint32_t>(*getarg(1)), static_cast<uint32_t>(*getarg(2)), static_cast<uint32_t>(*getarg(3)));
+    } else if (ifarg(2)) {
+        nrnran123_setids(ranvar, static_cast<uint32_t>(*getarg(1)), static_cast<uint32_t>(*getarg(2)), 0);
+    }
+    nrnran123_setseq(ranvar, 0, 0);
+#endif
+ENDVERBATIM
+}

@@ -1,5 +1,4 @@
-#ifndef hocmark_h
-#define hocmark_h
+#pragma once
 
 #undef check
 
@@ -37,5 +36,3 @@ class HocMark: public PolyGlyph {
     static PolyGlyph* mark_list_;
     static HocMark* most_recent_;
 };
-
-#endif

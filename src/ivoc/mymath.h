@@ -1,5 +1,4 @@
-#ifndef mymath_h
-#define mymath_h
+#pragma once
 
 #include <InterViews/geometry.h>
 
@@ -70,7 +69,7 @@ class MyMath {
 };
 
 inline void MyMath::extend(Extension& e, const Extension& x) {
-    e.set_xy(NULL,
+    e.set_xy(nullptr,
              e.left() + x.left(),
              e.bottom() + x.bottom(),
              e.right() + x.right(),
@@ -78,7 +77,7 @@ inline void MyMath::extend(Extension& e, const Extension& x) {
 }
 
 inline void MyMath::extend(Extension& e, Coord x) {
-    e.set_xy(NULL, e.left() - x, e.bottom() - x, e.right() + x, e.top() + x);
+    e.set_xy(nullptr, e.left() - x, e.bottom() - x, e.right() + x, e.top() + x);
 }
 
 inline void MyMath::minmax(Coord& x, Coord& y) {
@@ -96,5 +95,3 @@ inline bool MyMath::inside(Coord x, Coord x1, Coord x2) {
 inline bool MyMath::inside(Coord x, Coord y, Coord x1, Coord y1, Coord x2, Coord y2) {
     return inside(x, x1, x2) && inside(y, y1, y2);
 }
-
-#endif

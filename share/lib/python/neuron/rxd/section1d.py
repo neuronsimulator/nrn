@@ -1,9 +1,13 @@
+from typing import TYPE_CHECKING, Optional, Any, ItemsView
+
+if TYPE_CHECKING:
+    from .species import Species
+    from .region import Region
+    from .rxdsection import RxDSection
 import weakref
 from neuron import h, nrn
 from . import node, rxdsection, nodelist
-import numpy
 from .rxdException import RxDException
-import warnings
 
 # all concentration ptrs and indices
 _all_cptrs = []
@@ -14,23 +18,19 @@ _c_ptr_vector_storage = None
 _last_c_ptr_length = None
 
 
-def _donothing():
-    pass
-
-
 class _SectionLookup:
     class Lookup:
-        def __init__(self):
-            self.rxd_sec_list = {}
+        def __init__(self) -> None:
+            self.rxd_sec_list: dict = {}
             self.nrn_sec_list = h.SectionList()
 
-    _instance = None
+    _instance: Optional["_SectionLookup"] = None
 
-    def __init__(self):
+    def __init__(self) -> None:
         if _SectionLookup._instance is None:
             _SectionLookup._instance = _SectionLookup.Lookup()
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: Any) -> Any:
         if (
             key in _SectionLookup._instance.nrn_sec_list
             and key.hoc_internal_name() in _SectionLookup._instance.rxd_sec_list
@@ -38,11 +38,11 @@ class _SectionLookup:
             return _SectionLookup._instance.rxd_sec_list[key.hoc_internal_name()]
         return []
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: Any, value: Any) -> None:
         _SectionLookup._instance.nrn_sec_list.append(key)
         _SectionLookup._instance.rxd_sec_list[key.hoc_internal_name()] = value
 
-    def __delitem__(self, key):
+    def __delitem__(self, key: Any) -> None:
         _SectionLookup._instance.nrn_sec_list.remove(key)
         if key.hoc_internal_name() in _SectionLookup._instance.rxd_sec_list:
             del _SectionLookup._instance.rxd_sec_list[key.hoc_internal_name()]
@@ -50,24 +50,24 @@ class _SectionLookup:
     def __iter__(self):
         return iter(_SectionLookup._instance.nrn_sec_list)
 
-    def values(self):
+    def values(self) -> Any:
         return _SectionLookup._instance.rxd_sec_list.values()
 
-    def items(self):
+    def items(self) -> ItemsView[nrn.Section, list["Section1D"]]:
         res = {}
         for sec in _SectionLookup._instance.nrn_sec_list:
             res[sec] = _SectionLookup._instance.rxd_sec_list[sec.hoc_internal_name()]
         return res.items()
 
-    def remove(self, rxdsec):
+    def remove(self, rxdsec: Any) -> None:
         for key, val in _SectionLookup._instance.rxd_sec_list.items():
             if val == rxdsec:
                 del _SectionLookup._instance.rxd_sec_list[key]
 
 
-def add_values(mat, i, js, vals):
+def add_values(mat: list, i: int, js: list, vals: list) -> None:
     mat_i = mat[i]
-    for (j, val) in zip(js, vals):
+    for j, val in zip(js, vals):
         if val == 0:
             continue
         if j in mat_i:
@@ -78,7 +78,7 @@ def add_values(mat, i, js, vals):
             mat_i[j] = val
 
 
-def _parent(sec):
+def _parent(sec: nrn.Section) -> Optional[nrn.Segment]:
     """Return the parent of seg or None if sec is a root"""
     if sec:
         seg = sec.trueparentseg()
@@ -99,7 +99,7 @@ def _parent(sec):
     return None
 
 
-def _purge_cptrs():
+def _purge_cptrs() -> None:
     """purges all cptr information"""
 
     global _all_cptrs, _all_cindices, _c_ptr_vector, _last_c_ptr_length
@@ -112,7 +112,7 @@ def _purge_cptrs():
     _last_c_ptr_length = None
 
 
-def _transfer_to_legacy():
+def _transfer_to_legacy() -> None:
     global _c_ptr_vector, _c_ptr_vector_storage, _c_ptr_vector_storage_nrn
     global _last_c_ptr_length
 
@@ -120,7 +120,6 @@ def _transfer_to_legacy():
     if _last_c_ptr_length != size:
         if size:
             _c_ptr_vector = h.PtrVector(size)
-            _c_ptr_vector.ptr_update_callback(_donothing)
             for i, ptr in enumerate(_all_cptrs):
                 _c_ptr_vector.pset(i, ptr)
             _c_ptr_vector_storage_nrn = h.Vector(size)
@@ -133,7 +132,7 @@ def _transfer_to_legacy():
         _c_ptr_vector.scatter(_c_ptr_vector_storage_nrn)
 
 
-def replace(rmsec, offset, nseg):
+def replace(rmsec: "Section1D", offset: int, nseg: int) -> None:
     """Replace the section (rmsec) in node data lists and update the offsets"""
     # remove entries from node global variables and update the states
     node._replace(rmsec._offset, rmsec._nseg, offset, nseg)
@@ -151,7 +150,21 @@ def replace(rmsec, offset, nseg):
 
 
 class Section1D(rxdsection.RxDSection):
-    def __init__(self, species, sec, diff, r):
+    __slots__ = (
+        "_species",
+        "_diff",
+        "_secref",
+        "_concentration_ptrs",
+        "_num_roots",
+        "_offset",
+        "_nseg",
+        "_region",
+        "_rxd_sec_lookup",
+        "_neighbor_areas",
+        "_parent",
+    )
+
+    def __init__(self, species: "Species", sec: Any, diff: float, r: "Region") -> None:
         self._species = weakref.ref(species)
         self._diff = diff
         self._secref = h.SectionList([sec])
@@ -257,14 +270,12 @@ class Section1D(rxdsection.RxDSection):
         return list(range(self._offset, self._offset + self.nseg))
 
     def _setup_currents(self, indices, scales, ptrs, cur_map):
-        from . import rxd
-
         if (
             self.nrn_region is not None
             and self.species.name is not None
             and self.species.charge != 0
         ):
-            ion_curr = "_ref_i%s" % self.species.name
+            ion_curr = f"_ref_i{self.species.name}"
             indices.extend(self.indices)
             volumes, surface_area, diffs = node._get_data()
             # TODO: this implicitly assumes that o and i border the membrane
@@ -308,11 +319,10 @@ class Section1D(rxdsection.RxDSection):
     def _register_cptrs(self):
         global _all_cptrs, _all_cindices
         if self.nrn_region is not None and self.species.name is not None:
-            ion = "_ref_" + self.species.name + self.nrn_region
+            ion = f"_ref_{self.species.name}{self.nrn_region}"
             nseg = self.nseg
-            for i in range(nseg):
-                x = (i + 0.5) / nseg
-                _all_cptrs.append(getattr(self._sec(x), ion))
+            for i, seg in enumerate(self._sec):
+                _all_cptrs.append(getattr(seg, ion))
                 _all_cindices.append(self._offset + i)
             self._concentration_ptrs = _all_cptrs[-nseg:]
         else:
@@ -326,8 +336,6 @@ class Section1D(rxdsection.RxDSection):
         _volumes, _surface_area, _diffs = node._get_data()
         offset = self._offset
         dx = self.L / self.nseg
-        # print 'volumes:', _volumes
-        # print 'areas:', self._neighbor_areas
         for i in range(self.nseg):
             io = i + offset
             if i > 0:
@@ -364,7 +372,7 @@ class Section1D(rxdsection.RxDSection):
             #    g[io, io + 1] -= rate_r
             #    g[io, il] -= rate_l
             # except IndexError:
-            #    print(('indexerror: g.shape = %r, io = %r, il = %r, len(node._states) = %r' % (g.shape, io, il, len(node._states))))
+            #    print(f'indexerror: g.shape = {g.shape!r}, io = {io!r}, il = {il!r}, len(node._states) = {len(node._states)!r}')
             #    raise
             add_values(mat, io, [il, io, io + 1], [-rate_l, rate_r + rate_l, -rate_r])
 

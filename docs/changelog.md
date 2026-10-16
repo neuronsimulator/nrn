@@ -1,4 +1,285 @@
+# NEURON 9.0
+
+
+## 9.0.2
+_Release Date_ : 10-08-2026
+
+This release includes documentation improvements, bug fixes, and NMODL enhancements.
+See [GitHub Issue #3816](https://github.com/neuronsimulator/nrn/issues/3816) for the full commit list.
+
+### What's New
+- Documentation enhancements (typo fixes (#3754, #3776), contributing documentation (#3721), C API corrections (#3785))
+
+### Bug Fixes
+- Import3D on mac can now detect swc files (#3788)
+- rxd fixed-step extracellular Neumann boundary conditions corrected (#3690)
+- Vector.min_ind(i1, i2) fix (#3787)
+- Iterating over segments with no mechanisms no longer segfaults (#3794)
+- Buffer overflow in output_spikes_parallel prevention (#3813)
+
+### Improvements /  Other Changes
+- C API always returns current diameter (#3814), supports top-level runtime scalars (#3815)
+- rxd reaction compilation now supports np.float64 and other np.generic types (#3808)
+- NMODL compiler enhancements (#3592, #3631, #3600, #3597, #3598, #3740)
+- CI is more robust (#3730, #3809)
+
+
+## 9.0.1
+_Release Date_ : 17-11-2025
+
+This release fixes several bugs and adds support for Python 3.14.
+
+### What's New
+- Add Python 3.14 support (#3635)
+- Remove doxygen from search results on readthedocs (#3664)
+- Add example with compilation for C API (#3658)
+
+### Bug Fixes
+- Use `[:blank:]` character class for SWC parser (#3651)
+- Fix HOC File.dir() on Windows (#3653)
+- NET_RECEIVE INITIAL not vectorized translation needs set_globals_from_prop (#3640)
+
+### Improvements /  Other Changes
+- Make `NRN_INSTALL_PYTHON_PREFIX` configurable (#3654)
+- Improve error message when Python lib is not found (#3650)
+- Use `command -v` instead of `which` in nrnpyenv.sh (#3516)
+- Better errors for `report.conf` (#3641)
+- Bump min required CMake version to 3.19
+
+
+## 9.0.0
+_Release Date_ : 30-09-2025
+
+NEURON 9.0 marks a major milestone with significant under-the-hood
+updates.  This release features a redesign of internal data structures
+using the Structure-Of-Arrays (SoA) memory layout, replacement of
+pointers by DataHandles that are automatically updated when internal
+memory layout changes, migration of the
+codebase and translation of MOD files to C++, and the introduction of
+random number generator construct natively in the NMODL (and legacy but still default nocmodl) language.
+Additionally, many legacy NMODL constructs have been removed, and legacy
+code and libraries have been replaced with modern alternatives like
+Eigen, ensuring improved performance and maintainability. 
+
+What follows are a selection of the ~1500 pull request squash/merge
+commits to the master branch since
+the start of the 9.0a tag on 17-07-2023
+
+### What's New
+
+- Use of SoA memory layout for internal data structures (#2027, #2381, #2712)  
+  This is a prerequisite for adopting CoreNEURON GPU functionality natively into NEURON.
+- Replace pointers with DataHandles. DataHandles pointing to RANGE variables
+  always point to the correct value when memory is permuted or reallocated.
+- Support for random number generator language construct (`RANDOM`) in NMODL (#2627)  
+- Replace pthread-based threading implementation with `std::thread` (#1859)  
+- Introduce meaningful Python types: HOC classes associated with Python types (#1858)  
+- Formalization of C API for NEURON (first version) (#2357, #3557)  
+- Introduce nanobind to gradually replace C Python API usage (#2545)  
+- Requires C++17 compiler and `flex >= 2.6` (#1893)  
+- CoreNEURON repository is merged into NEURON (#2055)  
+- CoreNEURON report extensions (#3507, #3542)
+- Modern implementation of NMODL (eventually to replace the nocmodl MOD file translator) is merged into NEURON (#3333)
+- Support for `numpy>=2` added (#3040)  
+- Replace legacy Meschach source copy with Eigen library (#2470)  
+
+### Breaking Changes
+
+- MOD files are compiled as C++ instead of C (see [migration guide](https://nrn.readthedocs.io/en/latest/guide/porting_mechanisms_to_cpp.html#porting-mechanisms-to-cpp) for VERBATIM blocks)  
+- API changes in the functions related to random numbers, see #2618  
+- Restored usage of TABLE statement in hh.mod, results are now same as 8.0.2 (see #1764)  
+- NMODL: Disallow use of ion variable in the `CONSTANT` block (#1955)  
+- NMODL: Disallow declaring variables and functions with the same name (#1992)  
+- Usage of Eigen library could introduce floating point differences, but they are very small, validated and can be ignored  
+
+### Removal / Deprecation
+
+- Removed HOC function parent_node (Issue 3571) (#3576)
+- Removed usage of legacy OS X carbon libraries (#1869)  
+- Removed legacy LINDA code and Java bindings (#1919, #1937)  
+- Removed unused NMODL methods: `adams`, `heun`, `clsoda`, `seidel`, `simplex`, `gear` (#2032)  
+- Removed support for Python 3.7 and 3.8 (#2194, #3108)  
+- Removed support for legacy units and dynamic units selection (#2539)  
+- Removed unused NEMO simulator compatibility (#3035)  
+- Removed checkpoint feature (`h.checkpoint()`), superseded by `SaveState` (#3092)  
+- Removed legacy `Random.MLCG` and `Random.ACG` random number generators (#3189, #3190)  
+- Removed support for mod2c transpiler for CoreNEURON (#2247)  
+- Removed unused NMODL constructs: `PUTQ`, `GETQ`, `RESET`, `MATCH`, `TERMINAL`, `SECTION`,  
+  `IFERROR`, `MODEL_LEVEL`, `PLOT`, `SENS`, etc (#1956, #1974, #1975, #2001, #2004, #2005)
+- Removed `__MWERKS__` (CodeWarrior compiler) related code (#2655)  
+- Removed obsolete uxnrnbbs code (#2203)  
+- Removed old tqueue implementations (#2225, #2740)  
+- Removed unused RxD `code_matrix_to_rxd_sparse` (#3547)
+- `Py_NoSiteFlag` is deprecated for site_import (#3286)
+
+### Bug Fixes
+
+- Fix segfault from `unref hoc_obj`, see #1857 (#1917)  
+- Fix bug in rxd reactions involving rxd parameters (#1933)  
+- Fix CoreNEURON bug when checkpointing `VecPlay` instances (#2148)  
+- Fix nocmodl bug with unused `STATE` + `COMPARTMENT` variable in `KINETIC` block (#2210)  
+- Fix for dynamic ECS diffusion characteristics (#2229)  
+- Various fixes for compatibility with newer NVHPC compiler releases (#2239, #2591)  
+- Fix Windows and Mac crash on multiline HOC statements input from terminal (#2258)  
+- Fix for `Vector.max_ind` (#2251)  
+- Fix for detecting ION channel type in LoadBalance (#2310)  
+- Fix for `RangeVarPlot` adding extra point at section ends when using plotly (#2410)  
+- Fixed mod file array variable assignment (`seg.mech.array[i] = x`) (#2504)  
+- Various fixes in RxD features (#2593, #2588)  
+- Fix CoreNEURON bug causing in-memory model copy with file mode (#2767)  
+- Fix CoreNEURON bug when using array variables in MOD files (#2779)  
+- Fix lexer for ONTOLOGY parsing (#3091)
+- Fix issue while using Anaconda Python on MacOS (#3088)
+- Fix ParallelContext bbs memory leaks (#3563)
+- Fix RxD indexing bug (#3337)
+- Fix handling of `hh.mod` when using CoreNEURON (#3301)
+- On `h.quit()`, terminal settings are same as when neuron.hoc was imported (#3259)
+- `int` replaced by `floor` to accept negative coordinates (#3264)
+- Fix sanitizer leak involving `neuron import h, gui` (#3243)
+- Fix leaks in `get_endian_character` (#3257)
+- Fix leak in `pysec_children` and `pysec_subtree` (#3255)
+- Python 3.13.1 broke `[s for s in sl]` where `sl` is a `SectionList` (#3276)
+
+
+### Other Improvements and Changes
+
+- Allow `segment.mechanism.func(args)` to call a `FUNCTION` or `PROCEDURE` (#2475)  
+- Simplify `INDEPENDENT` statement as only `t` variable is accepted (#2013) 
+- Fix various memory leaks and related improvements (#3255, #3257, #3243, #2456)  
+- Support for reading reporting related information with in-memory mode (#2555)  
+- NMODL language documentation update (#2152, #2771, #2885)  
+- Documentation improvements including transfer from <https://neuron.yale.edu> to <https://nrn.readthedocs.io> (#1901, #2922, #2971, #3106, #3187)
+- Various test, CI, and build infrastructure improvements (#1991, #2260, #2474)  
+- Migrate many C code parts to C++ (#2083, #2305)  
+- Support online LFP calculation in CoreNEURON (via SONATA reports for BBP use cases) (#2118, #2360)  
+- Adopt CoreNEURON cell permute functionality into NEURON (#2598)  
+- Allow legacy `a.b(i)` syntax for 1d arrays (extend to `PointProcess.var[i]` and `ob.dblarray[i]`) (#2256)  
+- Add an ability to run NEURON ModelDB CI using label (#2108)  
+- Remove unused code parts under various preprocessor variables (#2007)  
+- Return error/exit codes properly in `nrniv -c` and nrnivmodl (#1871)    
+- No limit on number of ion mechanisms that can be used (#3089)  
+- Added Jupyter support for ModelView (#1907)  
+- Make notebooks work with `bokeh>=3` (#3061)  
+- Added new method `ParallelContext.get_partition()` (#2351)  
+- Unified docs: one file for all languages (#3466)
+- Improve rxd memory usage with `__slots__` (#3572) 
+- nrn_function_call now works with non-double returns (#3559)
+- Replaced `%` string formatting with f-strings (#3552)
+- `SectionList.size()` and `len(sectionlist)` skip deleted sections (#3524)
+- Add `.size()` to the `SectionList` object, returns the number of sections
+  in the list (#3520)
+- CVode no_cap uses direct backing store instead of `Node*` (#3314)
+- Documentation updated to use `from neuron import n` (#3459)
+- Default node order is cell contiguous (except for thread rootnodes) (#3300)
+- Support multicompartment reactions with source & destination in the ecs (#3296)
+- Update `rxd.MultipleGeometry` to support 3D and hybrid models (#3389)
+- Add NMODL warning if a `FUNCTION` does not have a return statement  (#3404)
+- Update species on region exception message (#3351)
+- Updated rxd reactions to allow pure backward reactions (#3273)
+- `Vector.apply` for Python functions (#3362)
+- Allow python callbacks for `xstatebutton` and `xcheckbox` (#3355)
+
+
 # NEURON 8.2
+
+## 8.2.7
+_Release Date_ : 25-05-2025
+
+This release allows use of Python 3.13.
+Pins numpy to >=2.
+Includes backports for several fixes.
+
+### Bug Fixes
+- On h.quit(), leave terminal settings in same state as when neuron.hoc was imported.
+
+## 8.2.6
+_Release Date_ : 24-07-2024
+
+This release pins numpy to <2 and includes backports for several fixes.
+
+### Bug Fixes
+- Informative error when cannot import hoc module
+- ParallelContext: hoc_ac_ encodes global id of submitted process.
+- Python 3.12 compatibility with Windows installer (#2963)
+- Windows 11 fix for nrniv -python (#2946)
+- Fix for dynamic ECS diffusion characteristics.
+- python38 is back. For testing can use rx3doptlevel=0 bash bldnrnmacpkgcmake.sh
+- Fix cvode.use_fast_imem(1) error with electrode time varying conductance.
+- Apple M1 cmake failure in cloning subrepository. See #2326.
+- Update iv
+
+## 8.2.4
+_Release Date_ : 08-02-2024
+
+
+### What's New
+
+This release brings no new features, just bugfixes and minor improvements.
+
+
+### Bug Fixes
+- Python 3.12 compatibility fixes
+    - replace distutils with setuptools
+    - fix segfault on exit
+- updates to CI
+    - move from MacOS 11 to MacOS 12
+    - add MUSIC
+    - bugfix for coverage CI
+- small bugfix for edge case in RX3D
+- unified setup.py
+- misc cmake improvements
+
+### Improvements /  Other Changes
+- Disabled RXD code in notebook to avoid breaking docs build (see [GitHub Issue #2710](https://github.com/neuronsimulator/nrn/issues/2710))
+- Disabled RXD tests on Windows (see [GitHub Issue #2585](https://github.com/neuronsimulator/nrn/issues/2585))
+
+
+For the complete list of commits check  [GitHub Issue #2700](https://github.com/neuronsimulator/nrn/issues/2700)
+
+## 8.2.3
+_Release Date_ : 15-09-2023
+
+### What's New
+
+- The primary purpose of 8.2.3 is to fix the HOC cursor control problems of
+  the wheel and windows installed versions.
+- Many fragments from current master to allow building of installers.
+  with current compiler toolchains and github actions.
+
+
+### Bug Fixes
+
+- Fix MacOS linux wheel HOC backspace.
+- Fix Windows HOC cursor issues.
+- Fix Windows 11 HOC icon.
+- Fix Windows and MacOS segfault on multiline HOC statements input from terminal.
+- Fix build issues with current compiler toolchains and github actions.
+- Deal with .inputrc if missing on Windows
+
+## 8.2.2
+_Release Date_ : 15-12-2022
+
+### What's New
+
+- Python 3.11 support
+- Re-enabled MUSIC support in NEURON (#1896)
+- CVode.poolshrink(1) deletes unused mechanism pools. (#2033)
+
+### Bug Fixes
+
+- Bugfix for rxd reactions involving rxd parameters. #1933
+
+### Improvements /  Other Changes
+
+- Documentation
+  - windows build updates (#1991)
+    - how to build NEURON
+    - adapt scripts for local usage
+  - added NMODL documentation in various constructs in hoc and python (#2011)
+- SETUPTOOLS_USE_DISTUTILS=stdlib (#1924)
+- Update CoreNEURON submodule to latest version
+
+For the complete list of commits, see the list in [GitHub Issue #2109](https://github.com/neuronsimulator/nrn/issues/2109)
 
 ## 8.2.1
 _Release Date_ : 12-08-2022
@@ -19,7 +300,7 @@ _Release Date_ : 12-08-2022
 - Documentation
   - added new INCF/CNS 2022 online material (#1932)
   - updates (dealing with sims, generating movie, modelview, more #1925 )
-  - transfer from Yale website (#1867) 
+  - transfer from Yale website (#1867)
 - nrnmpi_load: drop printf for already loaded lib (#1938)
 
 For the complete list of commits, see the list in [GitHub Issue #1944](https://github.com/neuronsimulator/nrn/issues/1944)
@@ -31,7 +312,7 @@ _Release Date_ : 01-07-2022
 * Allow multiple BEFORE/AFTER blocks of same type in a MOD file. #1722
 * Several documentation updates, including randomness in NEURON models #1727,
   NEURON course exercise sets from 2018 #1735 and publications using NEURON #1819.
-* CMake: improved documentation targets. (#1725)  
+* CMake: improved documentation targets. (#1725)
 
 ### Breaking Changes
 * Support for Python 3.6 was dropped, as it has reached end-of-life (#1733).
@@ -42,7 +323,7 @@ _Release Date_ : 01-07-2022
 * Declaring STATE variables as GLOBAL is now disallowed. (#1723)
 
 ### Deprecations & future changes
-* NEURON is in the process of being fully migrated to a `C++` codebase.  
+* NEURON is in the process of being fully migrated to a `C++` codebase.
   Starting with next major release `9.0.0`, `MOD` files will be converted to `C++` instead of `C`.
   This will break compatibility with some legacy MOD files containing VERBATIM blocks and code may have to be updated
   given that some valid C code is not valid C++.
@@ -57,7 +338,7 @@ _Release Date_ : 01-07-2022
 
 ### Improvements /  Other Changes
 * Support for using `mallinfo2()` (#1805)
-* HOC domain for Sphinx `5.0.1` 
+* HOC domain for Sphinx `5.0.1`
 
 ### Upgrade Steps
 * If your MOD files contain VERBATIM blocks you may need to refer to the aforementioned
@@ -117,7 +398,7 @@ _Release Date_ : 25-03-2022
 
 ### Bug Fixes
 * Can use ParallelContext.mpiabort_on_error(0) to say do not call to MPI_Abort on error (#1567)
-* OpenMPI initialisation crash: argv[argc] should be null. (#1682)
+* OpenMPI initialization crash: argv[argc] should be null. (#1682)
 * Avoid segfault if error during construction of POINT_PROCESS (#1627)
 * Fixes a 1D/3D voxelization problem where frusta are outside the 3D grid. (#1227)
 * Allow for two point (single section) SWC somas (#1144)
@@ -168,7 +449,7 @@ _Release Date_ : 25-03-2022
   * Internal API for saving/restoring 3D voxelization (#1476)
   * Prevent RxD keeping objects alive (#1270, #1103, #1072)
   * Improved assignment of 3D voxels to segments (#1149)
-  
+
 ### Upgrade Steps
 * Linux wheels are now `manylinux2014`: upgrade your `pip`
 * Legacy internal `readline` source code is removed: install `readline` on your system
@@ -201,7 +482,7 @@ For the complete list of bug fixes, see the list in [GitHub PR #1603](https://gi
 
 ### Improvements /  Other Changes
 
-- Introduce a Sphinx HOC domain for NEURON documentation 
+- Introduce a Sphinx HOC domain for NEURON documentation
 
 
 ## 8.0.0
@@ -225,7 +506,7 @@ _Release Date_ : 30-04-2021
 -  For 3d reaction-diffusion simulations, the voxelization and segment mapping algorithms have been adjusted, especially around the soma. Voxel indices and sometimes counts will change from previous versions.
 
 ### Deprecations
-- Five functions in the `neuron` module: `neuron.init`, `neuron.run`, `neuron.psection`, `neuron.xopen`, and `neuron.quit`. 
+- Five functions in the `neuron` module: `neuron.init`, `neuron.run`, `neuron.psection`, `neuron.xopen`, and `neuron.quit`.
 - Autotools build is deprecated and will be removed in the next release. Use CMake instead.
 - Python 2 and Python 3.5 support  is deprecated and will be removed in the next release. Use `Python >= 3.6`
 
@@ -234,7 +515,7 @@ _Release Date_ : 30-04-2021
 For the complete list of bug fixes, see the list on the [GitHub here](https://github.com/neuronsimulator/nrn/issues/1211#issuecomment-826919173).
 
 ### Improvements /  Other Changes
-- Allow for two point (single section) SWC somas 
+- Allow for two point (single section) SWC somas
 - GitHub Actions and Azure as primary CI systems. Travis CI removed.
 - GitHub [Releases](https://github.com/neuronsimulator/nrn/releases) provides full source tarballs, binary installers and python wheels.
 - Improved testing and CI infrastructure including GPUs
@@ -242,18 +523,18 @@ For the complete list of bug fixes, see the list on the [GitHub here](https://gi
 - Improved integration of CoreNEURON
 - Support for recent numpy version
 - Various build improvements on Linux, MacOS and HPC platforms
-- Documentation from various repositories is consolidated under `nrn` repository 
-- New releases via Spack and Easybuild package managers 
+- Documentation from various repositories is consolidated under `nrn` repository
+- New releases via Spack and Easybuild package managers
 - Fix deadlock when compiling NEURON with AVX-512
 - Add backward-cpp for better backtraces
-- NEURON_MODULE_OPTIONS environment variable to pass in nrniv options before `neuron import` 
+- NEURON_MODULE_OPTIONS environment variable to pass in nrniv options before `neuron import`
 
 ### Upgrade Steps
 
 Existing models should work without any changes.  In order to upgrade NEURON version you can:
 - Use python wheels provided for Linux or Mac OS platform
 - Use binary installer provided for windows
-- Install from source, preferably using CMake build system 
+- Install from source, preferably using CMake build system
 - For new version, it's always a good idea to start over from scratch with nrnivmodl (deleting existing directory like `x86_64`)
 
 See `Installation` section under [nrn.readthedocs.io/](nrn.readthedocs.io/). In the very rare case that numerical differences exist, check selection of legacy vs modern units.
@@ -268,5 +549,5 @@ See the list of contributors on respective GitHub projects:
 # Feedback / Help
 
 - Software related issues should be reported on GitHub : [https://github.com/neuronsimulator/nrn/issues/new/choose](https://github.com/neuronsimulator/nrn/issues/new/choose)
-- For developing models and any scientific questions, see NEURON forum : [https://www.neuron.yale.edu/phpBB/](https://www.neuron.yale.edu/phpBB/)
+- For developing models and any scientific questions, see the NEURON Discussion Board: [https://github.com/neuronsimulator/nrn/discussions](https://github.com/neuronsimulator/nrn/discussions)
 - If you want to participate / contribute to the development of NEURON, you can join monthly developers meeting : [https://github.com/neuronsimulator/nrn/wiki](https://github.com/neuronsimulator/nrn/wiki)

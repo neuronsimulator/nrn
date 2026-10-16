@@ -1,8 +1,5 @@
-#ifndef ivoc_config_h
-#define ivoc_config_h
+#pragma once
 
 #if __GNUC__
 #define NO_MULT_INHERIT 1
-#endif
-
 #endif

@@ -60,18 +60,10 @@ mv temp nvector_nrnparallel_ld.cpp
  * -----------------------------------------------------------------
  */
 
-#ifndef _NVECTOR_NRNPARALLEL_LD_H
-#define _NVECTOR_NRNPARALLEL_LD_H
-
+#pragma once
 
 #include <nrnmpiuse.h>
-#if NRNMPI_DYNAMICLOAD
-#define MPI_DOUBLE double
-#define MPI_LONG   long
-#define MPI_Comm   int
-#else
-#include <mpi.h>
-#endif
+#define MPI_Comm int
 
 #include "nvector.h"
 #include "sundialstypes.h"
@@ -81,24 +73,6 @@ mv temp nvector_nrnparallel_ld.cpp
  * PART I: PARALLEL implementation of N_Vector
  * -----------------------------------------------------------------
  */
-
-/* define MPI data types */
-
-#if defined(SUNDIALS_SINGLE_PRECISION)
-
-#define PVEC_REAL_MPI_TYPE MPI_FLOAT
-
-#elif defined(SUNDIALS_DOUBLE_PRECISION)
-
-#define PVEC_REAL_MPI_TYPE MPI_DOUBLE
-
-#elif defined(SUNDIALS_EXTENDED_PRECISION)
-
-#define PVEC_REAL_MPI_TYPE MPI_LONG_DOUBLE
-
-#endif
-
-#define PVEC_INTEGER_MPI_TYPE MPI_LONG
 
 /* parallel implementation of the N_Vector 'content' structure
    contains the global and local lengths of the vector, a pointer
@@ -340,6 +314,3 @@ void N_VCompare_NrnParallelLD(realtype c, N_Vector x, N_Vector z);
 booleantype N_VInvTest_NrnParallelLD(N_Vector x, N_Vector z);
 booleantype N_VConstrMask_NrnParallelLD(N_Vector c, N_Vector x, N_Vector m);
 realtype N_VMinQuotient_NrnParallelLD(N_Vector num, N_Vector denom);
-
-
-#endif

@@ -12,4 +12,4 @@ The answer to your problem is to break the simulation into shorter segments, eac
 Comments and suggestions
 -------------
 
-As always, these examples illustrate modular code organization, and iterative refinement and testing of code, both of which are useful strategies for productive programming. If you run into keywords that are new to you, or unfamilar usage of familiar keywords, be sure to look them up in the :ref:`programmer's reference <python_prog_ref>`.
+As always, these examples illustrate modular code organization, and iterative refinement and testing of code, both of which are useful strategies for productive programming. If you run into keywords that are new to you, or unfamiliar usage of familiar keywords, be sure to look them up in the :ref:`programmer's reference <python_prog_ref>`.

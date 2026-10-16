@@ -1,9 +1,7 @@
-#ifndef ocidraw_h
-#define ocidraw_h
+#pragma once
 /*
 Hooks for special processing make use of the request() method in Glyphs.
 */
-#include <ivstream.h>
 
 class Canvas;
 class Transformer;
@@ -105,6 +103,3 @@ class OcIdraw {
     if (OcIdraw::idraw_stream) { \
         OcIdraw::arg;            \
     }
-
-
-#endif

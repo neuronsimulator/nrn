@@ -1,12 +1,11 @@
 #include <../../nrnconf.h>
 #include <stdio.h>
 #include "classreg.h"
+#include "code.h"
 
 
 #include <vector>
-#include <OS/string.h>
 #include <string.h>
-#include <ivstream.h>
 #if HAVE_IV
 #include "graph.h"
 #include "scenepic.h"
@@ -20,9 +19,7 @@
 
 extern int nrn_multisplit_active_;
 extern int hoc_execerror_messages;
-extern int node_index(Section*, double);
 extern int nrn_shape_changed_;
-extern int hoc_return_type_code;
 Object* (*nrnpy_rvp_rxd_to_callable)(Object*) = 0;
 
 class SecPos {
@@ -52,58 +49,29 @@ class RangeExpr {
 };
 
 #if !HAVE_IV
-class NoIVGraphVector {
-  public:
-    NoIVGraphVector(const char*);
-    virtual ~NoIVGraphVector();
+struct NoIVGraphVector {
+    NoIVGraphVector(const char* /* name */) {}
+    virtual ~NoIVGraphVector() {}
     void begin();
-    void add(float, double*);
+    void add(float, neuron::container::data_handle<double>);
     int count();
-    CopyString name_;
-    int count_, size_;
-    double** py_;
-    float* x_;
+    std::vector<float> x_{};
+    std::vector<neuron::container::data_handle<double>> py_{};
 };
-NoIVGraphVector::NoIVGraphVector(const char* name) {
-    name_ = name;
-    size_ = 0;
-    count_ = 0;
-    py_ = NULL;
-    x_ = NULL;
-}
-NoIVGraphVector::~NoIVGraphVector() {
-    if (py_) {
-        delete[] py_;
-        delete[] x_;
-    }
-}
 int NoIVGraphVector::count() {
-    return count_;
+    auto const s = x_.size();
+    assert(s == py_.size());
+    return s;
 }
 void NoIVGraphVector::begin() {
-    count_ = 0;
-    if (!size_) {
-        size_ = 20;
-        py_ = new double*[size_];
-        x_ = new float[size_];
-    }
+    x_.clear();
+    py_.clear();
+    x_.reserve(20);
+    py_.reserve(20);
 }
-void NoIVGraphVector::add(float x, double* y) {
-    if (count_ == size_) {
-        size_ *= 2;
-        double** py = new double*[size_];
-        float* px = new float[size_];
-        for (int i = 0; i < count_; i++) {
-            py[i] = py_[i];
-            px[i] = x_[i];
-        }
-        delete[] py_;
-        delete[] x_;
-        py_ = py;
-        x_ = px;
-    }
-    py_[count_] = y;
-    x_[count_++] = x;
+void NoIVGraphVector::add(float x, neuron::container::data_handle<double> y) {
+    x_.push_back(x);
+    py_.push_back(std::move(y));
 }
 #endif
 
@@ -142,7 +110,7 @@ class RangeVarPlot: public NoIVGraphVector {
     Section *begin_section_, *end_section_;
     float x_begin_, x_end_, origin_;
     SecPosList* sec_list_;
-    CopyString expr_;
+    std::string expr_;
     int shape_changed_;
     int struc_changed_;
     double d2root_;  // distance to root of closest point to root
@@ -193,7 +161,7 @@ static double s_list(void* v) {
 
 static double s_color(void* v) {
     RangeVarPlot* me = (RangeVarPlot*) v;
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     int old_color = me->get_color();
     if (ifarg(1)) {
         me->set_color((int) chkarg(1, 0, 100));
@@ -286,9 +254,9 @@ static Member_func s_members[] = {{"begin", s_begin},
                                   {"color", s_color},
                                   {"to_vector", to_vector},
                                   {"from_vector", from_vector},
-                                  {0, 0}};
+                                  {nullptr, nullptr}};
 
-static Member_ret_obj_func rvp_retobj_members[] = {{"vector", rvp_vector}, {0, 0}};
+static Member_ret_obj_func rvp_retobj_members[] = {{"vector", rvp_vector}, {nullptr, nullptr}};
 
 static void* s_cons(Object*) {
     char* var = NULL;
@@ -323,7 +291,7 @@ static void s_destruct(void* v) {
 
 void RangeVarPlot_reg() {
     // printf("RangeVarPlot_reg\n");
-    class2oc("RangeVarPlot", s_cons, s_destruct, s_members, NULL, rvp_retobj_members, NULL);
+    class2oc("RangeVarPlot", s_cons, s_destruct, s_members, rvp_retobj_members, nullptr);
 }
 
 #if HAVE_IV
@@ -380,9 +348,9 @@ int RangeVarPlot::get_color(void) {
 void RangeVarPlot::set_color(int new_color) {
     color_ = new_color;
 #if HAVE_IV
-    IFGUI
-    color(colors->color(color_));
-    ENDGUI
+    if (hoc_usegui) {
+        color(colors->color(color_));
+    }
 #endif
 }
 
@@ -469,25 +437,15 @@ void RangeVarPlot::request(Requisition& req) const {
 
 #if HAVE_IV
 void RangeVarPlot::save(std::ostream& o) {
-    char buf[256];
     o << "objectvar rvp_" << std::endl;
-    sprintf(buf, "rvp_ = new RangeVarPlot(\"%s\")", expr_.string());
-    o << buf << std::endl;
-    sprintf(buf, "%s rvp_.begin(%g)", hoc_section_pathname(begin_section_), x_begin_);
-    o << buf << std::endl;
-    sprintf(buf, "%s rvp_.end(%g)", hoc_section_pathname(end_section_), x_end_);
-    o << buf << std::endl;
-    sprintf(buf, "rvp_.origin(%g)", origin_);
-    o << buf << std::endl;
+    o << "rvp_ = new RangeVarPlot(\"" << expr_ << "\")" << std::endl;
+    o << hoc_section_pathname(begin_section_) << " rvp_.begin(" << x_begin_ << ")" << std::endl;
+    o << hoc_section_pathname(end_section_) << " rvp_.end(" << x_end_ << ")" << std::endl;
+    o << "rvp_.origin(" << origin_ << ")" << std::endl;
     Coord x, y;
     label_loc(x, y);
-    sprintf(buf,
-            "save_window_.addobject(rvp_, %d, %d, %g, %g)",
-            colors->color(color()),
-            brushes->brush(brush()),
-            x,
-            y);
-    o << buf << std::endl;
+    o << "save_window_.addobject(rvp_, " << colors->color(color()) << ", "
+      << brushes->brush(brush()) << ", " << x << ", " << y << ")" << std::endl;
 }
 #endif
 
@@ -545,16 +503,16 @@ void RangeVarPlot::fill_pointers() {
         if (rexp_) {
             rexp_->fill();
         } else {
-            sscanf(expr_.string(), "%[^[]", buf);
+            sscanf(expr_.c_str(), "%[^[]", buf);
             sym = hoc_lookup(buf);
             if (!sym) {
                 return;
             }
-            sprintf(buf, "%s(hoc_ac_)", expr_.string());
+            Sprintf(buf, "%s(hoc_ac_)", expr_.c_str());
         }
         int noexist = 0;  // don't plot single points that don't exist
         bool does_exist;
-        double* pval = NULL;
+        neuron::container::data_handle<double> pval{};
         for (long i = 0; i < xcnt; ++i) {
             Section* sec = (*sec_list_)[i].sec;
             hoc_ac_ = (*sec_list_)[i].x;
@@ -567,12 +525,13 @@ void RangeVarPlot::fill_pointers() {
             }
             if (does_exist) {
                 if (rexp_) {
-                    pval = rexp_->pval(int(i));
+                    // TODO avoid conversion
+                    pval = neuron::container::data_handle<double>{rexp_->pval(int(i))};
                 } else {
-                    pval = hoc_val_pointer(buf);
+                    pval = hoc_val_handle(buf);
                 }
                 if (noexist > 1) {
-                    add((*sec_list_)[i - 1].len + origin_, 0);
+                    add((*sec_list_)[i - 1].len + origin_, {});
                     add((*sec_list_)[i - 1].len + origin_, pval);
                 }
                 if (i == 1 && noexist == 1) {
@@ -583,7 +542,7 @@ void RangeVarPlot::fill_pointers() {
             } else {
                 if (noexist == 1) {
                     add((*sec_list_)[i - 1].len + origin_, pval);
-                    add((*sec_list_)[i - 1].len + origin_, 0);
+                    add((*sec_list_)[i - 1].len + origin_, {});
                 }
                 if (i == xcnt - 1 && noexist == 0) {
                     add((*sec_list_)[i].len + origin_, pval);
@@ -739,7 +698,7 @@ RangeExpr::RangeExpr(const char* expr, Object* pycall, SecPosList* spl) {
     char buf[256];
     const char* p1;
     char* p2;
-    sprintf(buf, "hoc_ac_ = ");
+    Sprintf(buf, "hoc_ac_ = ");
     p2 = buf + strlen(buf);
     for (p1 = expr; *p1;) {
         if (p1[0] == '$' && p1[1] == '1') {
@@ -791,7 +750,7 @@ void RangeExpr::fill() {
             nrn_popsec();
             continue;
         }
-        if (cmd_->execute(bool(false)) == 0) {
+        if (cmd_->execute(bool(false))) {
             exist_[i] = true;
             val_[i] = 0.;
         } else {

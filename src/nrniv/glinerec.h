@@ -1,5 +1,4 @@
-#ifndef glinerec_h
-#define glinerec_h
+#pragma once
 
 #include "nrnoc2iv.h"
 #include "vrecitem.h"
@@ -53,8 +52,6 @@ class GVectorRecord: public PlayRecord {
     }
 
     int count();
-    double* pdata(int);
+    neuron::container::data_handle<double> pdata(int);
     GraphVector* gv_;
 };
-
-#endif

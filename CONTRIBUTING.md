@@ -26,7 +26,7 @@ favor of Python. The hoc code itself is in the nrn repository and also should no
 
 There are several NEURON-related repositories hosted elsewhere which also encourage contributions. Each of these will have its own *Contributing* document.
 1. [NMODL](https://github.com/BlueBrain/nmodl) -- improved method for compiling and porting *.mod* files using *abstract syntax trees*
-1. [CoreNEURON](https://github.com/BlueBrain/CoreNeuron) -- an optimized NEURON for running on high performance computers (HPCs)
+1. [CoreNEURON](https://github.com/neuronsimulator/nrn/tree/master/src/coreneuron) -- an optimized NEURON for running on high performance computers (HPCs)
 1. [NetPyNE](https://github.com/Neurosim-lab/netpyne) -- multiscale modeling tool for developing, simulating and analyzing networks which include complex cells, potentially
 with detailed molecular-modeling.
 1. [NetPyNE-UI](https://github.com/MetaCell/NetPyNE-UI) -- graphical user interface for NetPyNE
@@ -94,6 +94,10 @@ formatted, indented, documented, and commented.
 
 The [Neuron Development Topics](https://neuronsimulator.github.io/nrn/dev/index.html) section of the documentation provides a starting point for understanding NEURON's internals.
 
+### Building NEURON
+
+To build NEURON, please follow the instructions [here](docs/install/install_instructions.md#installing-source-distributions).
+
 ### Code Formatting
 
 Currently we have enabled CMake and Clang code formatting using [cmake-format](https://github.com/cheshirekow/cmake_format) and [clang-format](https://clang.llvm.org/docs/ClangFormat.html). Before submitting a PR, make sure to run cmake-format and clang-format as below:
@@ -106,18 +110,18 @@ brew install clang-format # or your favorite package manager
 ```
 Now you should have the `clang-format` and `cmake-format` commands available.
 
-* Use `-DNRN_CMAKE_FORMAT=ON` option of CMake to enable CMake code formatting targets:
+* CMake automatically creates the formatting targets ``format`` and ``format-pr``
+
+The former, formats all cmake, c++, and python files. The latter
+(usually much faster) formats
+only those files that differ from the master (``git diff --name-only master``).
 
 ```
-cmake .. -DPYTHON_EXECUTABLE=`which python3.7` -DNRN_CMAKE_FORMAT=ON
-```
-
-With this, new target called **cmake-format** can be used to automatically format all CMake files:
-
-```
-$ make cmake-format
-Scanning dependencies of target cmake-format
-Built target cmake-format
+$ make format-pr
+Format only files modified with respect to master branch.
+/home/hines/neuron/nrn
+/home/hines/neuron/format/external/coding-conventions/bin/format CMakeLists.txt
+Built target format-pr
 ```
 
 You can now use `git diff` to see how cmake-format has formatted existing CMake files.
@@ -141,26 +145,6 @@ Or,
 ```
 
 See [cmake-format](https://github.com/cheshirekow/cmake_format) documentation for details.
-
-* For `clang-format` you should restrict formatting to only the code parts relevant to your change.
-  This can be eachieved by setting following build options:
-
-```
-cmake .. -DNRN_CLANG_FORMAT=ON \
-    -DNRN_CMAKE_FORMAT=ON \
-    -DNRN_FORMATTING_ON="since-ref:master" \
-    -DNRN_FORMATTING_CPP_CHANGES_ONLY=ON
-```
-
-Note: Sometimes it might be necessary to point your build-system to the clang-format-diff utility,
-this can be done by supplying an additional flag:
-`-DClangFormatDiff_EXECUTABLE=/path/to/share/clang/clang-format-diff.py`
-
-* You can then run the `clang-format` target after a full build:
-
-```
-make && make clang-format
-```
 
 ## Python Contributions
 

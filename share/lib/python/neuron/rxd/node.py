@@ -1,15 +1,15 @@
 import neuron
 from neuron import h, nrn, hoc, nrn_dll_sym
-from . import region, constants
-from . import rxdsection
+from . import region, constants, species
+from . import rxdsection, rxdmath
 import numpy
 import weakref
 from .rxdException import RxDException
 import warnings
 import ctypes
+from typing import Any
 
 from collections.abc import Callable
-
 
 # function to change extracellular diffusion
 set_diffusion = nrn_dll_sym("set_diffusion")
@@ -35,16 +35,18 @@ _point_indices = {}
 _concentration_node = 0
 _molecule_node = 1
 
+_floor = numpy.floor
 
-def _get_data():
+
+def _get_data() -> tuple:
     return (_volumes, _surface_area, _diffs)
 
 
-def _get_states():
+def _get_states() -> numpy.ndarray:
     return _states
 
 
-def _allocate(num):
+def _allocate(num: int) -> int:
     """allocate storage for num more nodes, return the starting index
 
     Note: no guarantee is made of preserving previous _ref
@@ -59,7 +61,7 @@ def _allocate(num):
     return start_index
 
 
-def _remove(start, stop):
+def _remove(start: int, stop: int) -> None:
     """delete old volumes, surface areas and diff values in from global arrays"""
     global _volumes, _surface_area, _diffs, _states, _node_fluxes, _has_node_fluxes
     # Remove entries that have to be recalculated
@@ -71,21 +73,25 @@ def _remove(start, stop):
 
     # remove _node_flux
     newflux = {"index": [], "type": [], "source": [], "scale": [], "region": []}
-    for (i, idx) in enumerate(_node_fluxes["index"]):
-        if idx not in dels:
+    for i, (idx, typ) in enumerate(zip(_node_fluxes["index"], _node_fluxes["type"])):
+        if typ != -1 or idx not in dels:
             for key in _node_fluxes:
                 newflux[key].append(_node_fluxes[key][i])
+    newflux["index"] = [
+        idx - (stop - start) if typ == -1 and idx > start else idx
+        for idx, typ in zip(newflux["index"], newflux["type"])
+    ]
     _node_fluxes = newflux
     _has_node_fluxes = _node_fluxes["index"] != []
 
     # remove _node_flux
-    for (i, idx) in enumerate(_node_fluxes["index"]):
+    for i, idx in enumerate(_node_fluxes["index"]):
         if idx in dels:
             for lst in _node_fluxes.values():
                 del lst[i]
 
 
-def _replace(old_offset, old_nseg, new_offset, new_nseg):
+def _replace(old_offset: int, old_nseg: int, new_offset: int, new_nseg: int) -> None:
     """delete old volumes, surface areas and diff values in from global arrays
     move states so that the new segment value is equal to the old segment
     value that contains its centre"""
@@ -108,8 +114,8 @@ def _replace(old_offset, old_nseg, new_offset, new_nseg):
     _states = numpy.delete(_states, list(range(start, stop)))
 
     # update _node_flux index
-    for (i, idx) in enumerate(_node_fluxes["index"]):
-        if idx in dels:
+    for i, (idx, typ) in enumerate(zip(_node_fluxes["index"], _node_fluxes["type"])):
+        if typ == -1 and idx in dels:
             j = int(((idx + 0.5) / new_nseg) * old_nseg)
             _node_fluxes["index"][i] = j
 
@@ -117,7 +123,18 @@ def _replace(old_offset, old_nseg, new_offset, new_nseg):
 _numpy_element_ref = neuron.numpy_element_ref
 
 
+def eval_arith_flux(arith, nregion, node):
+    func, _species = rxdmath._compile(arith, [nregion])
+    c = compile(list(func.values())[0][0], "f", "eval")
+    s = [[None] * region._region_count for _ in range(species._species_count)]
+    for specie in _species:
+        s[specie()._id][nregion._id] = float(specie().nodes(node.segment).value[0])
+    return eval(c, {"species": s})
+
+
 class Node(object):
+    __slots__ = ()
+
     def satisfies(self, condition):
         """Tests if a Node satisfies a given condition.
 
@@ -135,10 +152,20 @@ class Node(object):
             return self.segment == condition
         elif isinstance(condition, region.Extracellular):
             return self.region == condition
-        raise RxDException("selector %r not supported for this node type" % condition)
+        raise RxDException(f"selector {condition!r} not supported for this node type")
+
+    def _safe_satisfies(self, condition: Any) -> bool:
+        """Tests if a Node satisfies a given condition.
+
+        Works the same as node.satisfies but replaces RxDException with False
+        """
+        try:
+            return self.satisfies(condition)
+        except RxDException:
+            return False
 
     @property
-    def _ref_concentration(self):
+    def _ref_concentration(self) -> Any:
         """Returns a NEURON reference to the Node's concentration
 
         (The node must store concentration data. Use _ref_molecules for nodes
@@ -153,7 +180,7 @@ class Node(object):
             )
 
     @property
-    def _ref_molecules(self):
+    def _ref_molecules(self) -> Any:
         """Returns a NEURON reference to the Node's concentration
 
         (The node must store molecule counts. Use _ref_concentrations for nodes
@@ -171,7 +198,7 @@ class Node(object):
         return _diffs[self._index]
 
     @d.setter
-    def d(self, value):
+    def d(self, value: float) -> None:
         """Sets the diffusion rate within the compartment."""
         from . import rxd
 
@@ -181,7 +208,7 @@ class Node(object):
         rxd._setup_matrices()
 
     @property
-    def concentration(self):
+    def concentration(self) -> float:
         """Gets the concentration at the Node."""
         # TODO: don't use an if statement here... put the if statement at node
         #       construction and change the actual function that is pointed to
@@ -194,7 +221,7 @@ class Node(object):
             )
 
     @concentration.setter
-    def concentration(self, value):
+    def concentration(self, value: float) -> None:
         """Sets the concentration at the Node"""
         # TODO: don't use an if statement here... put the if statement at node
         #       construction and change the actual function that is pointed to
@@ -207,7 +234,7 @@ class Node(object):
             )
 
     @property
-    def molecules(self):
+    def molecules(self) -> float:
         """Gets the molecule count at the Node."""
         # TODO: don't use an if statement here... put the if statement at node
         #       construction and change the actual function that is pointed to
@@ -220,7 +247,7 @@ class Node(object):
             )
 
     @molecules.setter
-    def molecules(self, value):
+    def molecules(self, value: float) -> None:
         """Sets the molecule count at the Node"""
         # TODO: don't use an if statement here... put the if statement at node
         #       construction and change the actual function that is pointed to
@@ -238,7 +265,7 @@ class Node(object):
         return _states[self._index]
 
     @value.setter
-    def value(self, v):
+    def value(self, v: float) -> None:
         """Sets the value associated with this Node.
 
         For Species nodes belonging to a deterministic simulation, this is a concentration.
@@ -247,11 +274,11 @@ class Node(object):
         _states[self._index] = v
 
     @property
-    def _ref_value(self):
+    def _ref_value(self) -> Any:
         """Returns a NEURON reference to the Node's value"""
         return _numpy_element_ref(_states, self._index)
 
-    def include_flux(self, *args, **kwargs):
+    def include_flux(self, *args: Any, **kwargs: Any) -> None:
         """Include a flux contribution to a specific node.
 
         The flux can be described as a NEURON reference, a point process and a
@@ -286,7 +313,7 @@ class Node(object):
         else:
             units = "molecule/ms"
         if len(kwargs):
-            raise RxDException("Unknown keyword arguments: %r" % list(kwargs.keys()))
+            raise RxDException(f"Unknown keyword arguments: {list(kwargs.keys())!r}")
         # take the value, divide by scale to get mM um^3
         # once this is done, we need to divide by volume to get mM
         # TODO: is division still slower than multiplication? Switch to mult.
@@ -305,24 +332,21 @@ class Node(object):
             #    / 1e-15
             scale = 1e-15
         else:
-            raise RxDException("unknown unit: %r" % units)
+            raise RxDException(f"unknown unit: {units!r}")
 
         if len(args) == 1 and isinstance(args[0], hoc.HocObject):
             source = args[0]
-            flux_type = 1
             try:
                 # just a test access
                 source[0]
             except:
                 raise RxDException("HocObject must be a pointer")
         elif len(args) == 1 and isinstance(args[0], Callable):
-            flux_type = 2
             source = args[0]
             warnings.warn(
                 "Adding a python callback may slow down execution. Consider using a Rate and Parameter."
             )
         elif len(args) == 2:
-            flux_type = 1
             try:
                 source = getattr(args[0], "_ref_" + args[1])
             except:
@@ -331,17 +355,20 @@ class Node(object):
             # TODO: figure out a units checking solution that works
             # source_units = h.units(source)
             # if source_units and source_units != units:
-            #    warnings.warn('Possible units conflict. NEURON says %r, but specified as %r.' % (source_units, units))
+            #    warnings.warn(f'Possible units conflict. NEURON says {source_units!r}, but specified as {units!r}.')
         else:
             success = False
             if len(args) == 1:
                 try:
                     f = float(args[0])
                     source = f
-                    flux_type = 3
                     success = True
                 except:
-                    pass
+                    arith = args[0]
+                    if isinstance(arith, rxdmath._Arithmeticed):
+                        source = lambda: eval_arith_flux(arith, self.region, self)
+                        scale = 1 / self.volume
+                        success = True
             if not success:
                 raise RxDException("unsupported flux form")
         _node_fluxes["index"].append(self._index)
@@ -366,6 +393,8 @@ class Node(object):
 
 
 class Node1D(Node):
+    __slots__ = ("_sec", "_location", "_index", "_loc3d", "_data_type")
+
     def __init__(self, sec, i, location, data_type=_concentration_node):
         """n = Node1D(sec, i, location)
         Description:
@@ -431,7 +460,7 @@ class Node1D(Node):
 
         except:
             pass
-        raise RxDException("unrecognized node condition: %r" % condition)
+        raise RxDException(f"unrecognized node condition: {condition!r}")
 
     @property
     def x3d(self):
@@ -467,6 +496,9 @@ class Node1D(Node):
     @property
     def segment(self):
         return self._sec._sec(self.x)
+
+    def _in_seg(self, segment):
+        return segment == self.segment
 
     @property
     def surface_area(self):
@@ -511,6 +543,25 @@ class Node1D(Node):
 
 
 class Node3D(Node):
+    __slots__ = (
+        "_index",
+        "_i",
+        "_j",
+        "_k",
+        "_neighbors",
+        "_r",
+        "_sec",
+        "_x",
+        "_speciesref",
+        "_data_type",
+        "_pos_x_neighbor",
+        "_neg_x_neighbor",
+        "_pos_y_neighbor",
+        "_neg_y_neighbor",
+        "_pos_z_neighbor",
+        "_neg_z_neighbor",
+    )
+
     def __init__(
         self, index, i, j, k, r, d, seg, speciesref, data_type=_concentration_node
     ):
@@ -624,23 +675,26 @@ class Node3D(Node):
             x, y, z = condition
             mesh = self._r._mesh_grid
             return (
-                int((x - mesh["xlo"]) / mesh["dx"]) == self._i
-                and int((y - mesh["ylo"]) / mesh["dy"]) == self._j
-                and int((z - mesh["zlo"]) / mesh["dz"]) == self._k
+                _floor((x - mesh["xlo"]) / mesh["dx"]) == self._i
+                and _floor((y - mesh["ylo"]) / mesh["dy"]) == self._j
+                and _floor((z - mesh["zlo"]) / mesh["dz"]) == self._k
             )
         # check for a position condition so as to provide a more useful error
+        checked_for_normalized_position = False
         try:
             if 0 <= condition <= 1:
                 # TODO: the trouble here is that you can't do this super-directly based on x
                 #       the way to do this is to find the minimum and maximum x values contained in the grid
                 #       the extra difficulty with that is to handle boundary cases correctly
                 #       (to test, consider a section 1 node wide by 15 discretized pieces long, access at 1./15, 2./15, etc...)
-                raise RxDException(
-                    "selecting nodes by normalized position not yet supported for 3D nodes; see comments in source about how to fix this"
-                )
+                checked_for_normalized_position = True
         except:
             pass
-        raise RxDException("unrecognized node condition: %r" % condition)
+        if checked_for_normalized_position:
+            raise RxDException(
+                "selecting nodes by normalized position not yet supported for 3D nodes; see comments in source about how to fix this"
+            )
+        raise RxDException(f"unrecognized node condition: {condition!r}")
 
     @property
     def x3d(self):
@@ -732,6 +786,8 @@ class Node3D(Node):
 
 
 class NodeExtracellular(Node):
+    __slots__ = ("_index", "_i", "_j", "_k", "_speciesref", "_regionref", "_data_type")
+
     def __init__(self, index, i, j, k, speciesref, regionref):
         """
         Parameters
@@ -832,8 +888,12 @@ class NodeExtracellular(Node):
         ecs = self._regionref()
         if numpy.isscalar(ecs.alpha):
             return numpy.prod(ecs._dx) * ecs.alpha
-        else:
+        elif hasattr(ecs.alpha, "__len__"):
             return numpy.prod(ecs._dx) * ecs.alpha[self._i, self._j, self._k]
+        else:
+            return (
+                numpy.prod(ecs._dx) * ecs.alpha[ecs].states3d[self._i, self._j, self._k]
+            )
 
     @property
     def _grid_id(self):
@@ -856,8 +916,8 @@ class NodeExtracellular(Node):
             x, y, z = condition
             r = self._regionref()
             return (
-                int((x - r._xlo) / r._dx[0]) == self._i
-                and int((y - r._ylo) / r._dx[1]) == self._j
-                and int((z - r._zlo) / r._dx[2]) == self._k
+                _floor((x - r._xlo) / r._dx[0]) == self._i
+                and _floor((y - r._ylo) / r._dx[1]) == self._j
+                and _floor((z - r._zlo) / r._dx[2]) == self._k
             )
-        raise RxDException("unrecognized node condition: %r" % condition)
+        raise RxDException(f"unrecognized node condition: {condition}")

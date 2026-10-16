@@ -16,15 +16,7 @@
 #undef DEBUG_SPCTRM
 
 #undef myfabs
-#if MAC
-#if __GNUC__ < 4
-#define myfabs std::fabs
-#else
-#define myfabs ::fabs
-#endif
-#else
 #define myfabs fabs
-#endif
 
 #include "oc_ansi.h"
 

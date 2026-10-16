@@ -1,11 +1,11 @@
 from .rxdException import RxDException
 import weakref
 from . import species, rxdmath, rxd, initializer
-import numpy
 from .rangevar import RangeVar
 import itertools
 import warnings
 from .generalizedReaction import GeneralizedReaction
+from typing import Union, Optional, Any
 
 # aliases to avoid repeatedly doing multiple hash-table lookups
 _itertools_chain = itertools.chain
@@ -27,7 +27,13 @@ class Rate(GeneralizedReaction):
     the same species, then their effects are summed.
     """
 
-    def __init__(self, species, rate, regions=None, membrane_flux=False):
+    def __init__(
+        self,
+        species: Any,
+        rate: Any,
+        regions: Optional[Union[list, Any]] = None,
+        membrane_flux: bool = False,
+    ) -> None:
         """create a rate of change for a species on a given region or set of regions
 
         if regions is None, then does it on all regions"""
@@ -77,7 +83,7 @@ class Rate(GeneralizedReaction):
         if initializer.is_initialized():
             self._do_init()
 
-    def _do_init(self):
+    def _do_init(self) -> None:
         from . import region, species
 
         rate = self._original_rate
@@ -134,11 +140,10 @@ class Rate(GeneralizedReaction):
             for sp in self._involved_species_ecs:
                 if ecs_region and isinstance(sp(), species.SpeciesOnRegion):
                     raise RxDException(
-                        "Error Rate %r: an extracellular rate can not depend on a SpeciesOnRegion"
-                        % self._original_rate
+                        f"Error Rate {self._original_rate}: an extracellular rate can not depend on a SpeciesOnRegion"
                     )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         short_rate = (
             self._original_rate._short_repr()
             if hasattr(self._original_rate, "_short_repr")
@@ -161,10 +166,10 @@ class Rate(GeneralizedReaction):
                 self._membrane_flux,
             )
 
-    def _rate_from_rangevar(self, *args):
+    def _rate_from_rangevar(self, *args: Any) -> Any:
         return self._original_rate._rangevar_vec()
 
-    def _update_indices(self):
+    def _update_indices(self) -> None:
         # this is called anytime the geometry changes as well as at init
         # TODO: is the above statement true?
 
@@ -202,9 +207,11 @@ class Rate(GeneralizedReaction):
                         sptr()._regions + sptr()._extracellular_regions
                         if isinstance(sptr(), species.Species)
                         else [
-                            sptr()._region()
-                            if isinstance(sptr(), species.SpeciesOnRegion)
-                            else sptr()._extracellular()
+                            (
+                                sptr()._region()
+                                if isinstance(sptr(), species.SpeciesOnRegion)
+                                else sptr()._extracellular()
+                            )
                         ]
                     )
                     for sptr in list(self._involved_species) + [self._species]
@@ -215,9 +222,11 @@ class Rate(GeneralizedReaction):
             self._species()._regions + self._species()._extracellular_regions
             if isinstance(self._species(), species.Species)
             else [
-                self._species()._region()
-                if isinstance(self._species(), species.SpeciesOnRegion)
-                else self._species()._extracellular()
+                (
+                    self._species()._region()
+                    if isinstance(self._species(), species.SpeciesOnRegion)
+                    else self._species()._extracellular()
+                )
             ]
         )
         actr = sp_regions
@@ -271,8 +280,7 @@ class Rate(GeneralizedReaction):
                     )
                 ):
                     raise RxDException(
-                        "Error in rate %r, the species do not share a common region"
-                        % self
+                        f"Error in rate {self}, the species do not share a common region"
                     )
                 # remove sections where species is absent
                 active_1d_secs = {
@@ -295,7 +303,7 @@ class Rate(GeneralizedReaction):
                 # print("we have an active 3d sec")
             else:
                 raise RxDException(
-                    "Error in rate %r, the species do not share a common section" % self
+                    "Error in rate {self}, the species do not share a common section"
                 )
         else:
             active_secs = [
@@ -329,12 +337,12 @@ class Rate(GeneralizedReaction):
         else:
             self._update_jac_cache()
 
-    def _do_memb_scales(self):
+    def _do_memb_scales(self) -> None:
         # TODO: does anyone still call this?
         # TODO: update self._memb_scales (this is just a dummy value to make things run)
         self._memb_scales = 1
 
-    def _get_memb_flux(self, states):
+    def _get_memb_flux(self, states) -> list:
         if self._membrane_flux:
             # raise RxDException('membrane flux due to rxd.Rate objects not yet supported')
             # TODO: refactor the inside of _evaluate so can construct args in a separate function and just get self._rate() result

@@ -2,18 +2,13 @@
 #undef check
 #include "nrniv_mf.h"
 #include "nrnmpi.h"
+#include "nrn_ansi.h"
 #include "nonlinz.h"
 #include <InterViews/resource.h>
 #include <complex>
 #include "nrnoc2iv.h"
 #include "classreg.h"
-#include <ivstream.h>
-#include <stdio.h>
 #include "membfunc.h"
-extern void nrn_rhs(NrnThread*);
-extern void nrn_lhs(NrnThread*);
-extern void setup_topology();
-extern void recalc_diam();
 
 typedef void (*Pfrv4)(int, Node**, double**, Datum**);
 
@@ -149,10 +144,10 @@ static Member_func members[] = {{"compute", compute},
                                 {"input_phase", input_phase},
                                 {"transfer_phase", transfer_phase},
                                 {"deltafac", deltafac},
-                                {0, 0}};
+                                {nullptr, nullptr}};
 
 void Impedance_reg() {
-    class2oc("Impedance", cons, destruct, members, nullptr, nullptr, nullptr);
+    class2oc("Impedance", cons, destruct, members, nullptr, nullptr);
 }
 
 Imp::~Imp() {
@@ -301,22 +296,23 @@ void Imp::setmat1() {
     The calculated g is good til someone else
     changes something having to do with the matrix.
     */
+    auto const sorted_token = nrn_ensure_model_data_are_sorted();
     const NrnThread* _nt = nrn_threads;
     const Memb_list* mlc = _nt->tml->ml;
     assert(_nt->tml->index == CAP);
     for (int i = 0; i < nrn_nthread; ++i) {
         double cj = nrn_threads[i].cj;
         nrn_threads[i].cj = 0;
-        nrn_rhs(nrn_threads + i);  // not useful except that many model description set g while
-        // computing i
-        nrn_lhs(nrn_threads + i);
+        // not useful except that many model description set g while computing i
+        nrn_rhs(sorted_token, nrn_threads[i]);
+        nrn_lhs(sorted_token, nrn_threads[i]);
         nrn_threads[i].cj = cj;
     }
     for (int i = 0; i < n; ++i) {
         NODERHS(_nt->_v_node[i]) = 0;
     }
     for (int i = 0; i < mlc->nodecount; ++i) {
-        NODERHS(mlc->nodelist[i]) = mlc->_data[i][0];
+        NODERHS(mlc->nodelist[i]) = mlc->data(i, 0);
     }
 }
 

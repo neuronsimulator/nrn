@@ -38,7 +38,6 @@ def save_data_from_test(save_path):
 
 def collect_data(h, rxd, data, save_path, num_record=10):
     """grabs the membrane potential data, h.t, and the rxd state values"""
-
     data["record_count"] += 1
     if data["record_count"] > num_record:
         h.stoprun = True
@@ -63,9 +62,14 @@ def collect_data(h, rxd, data, save_path, num_record=10):
         data["data"] = []
         data["record_count"] = 1
     # remove previous record if h.t is the same
-    if data["record_count"] > 1 and h.t == data["data"][-len(local_data)]:
-        data["record_count"] -= 1
-        del data["data"][-len(local_data) :]
+    if data["record_count"] > 1:
+        if len(local_data) > len(data["data"]):
+            # model changed -- reset data collection
+            data["data"] = []
+            data["record_count"] = 1
+        elif h.t == data["data"][-len(local_data)]:
+            data["record_count"] -= 1
+            del data["data"][-len(local_data) :]
     # add new data record
     data["data"].extend(local_data)
     if data["record_count"] == 2:
@@ -80,7 +84,10 @@ def collect_data(h, rxd, data, save_path, num_record=10):
 def compare_data(data):
     """compares the test data with the correct data"""
 
-    rlen = data["rlen"]
+    if "rlen" in data:
+        rlen = data["rlen"]
+    else:
+        return 0.0
     corr_dat = numpy.fromfile(get_correct_data_for_test()).reshape(-1, rlen)
     tst_dat = numpy.array(data["data"]).reshape(-1, rlen)
     t1 = corr_dat[:, 0]

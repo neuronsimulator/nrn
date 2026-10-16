@@ -26,6 +26,7 @@ class A1(_cls):
     def __init__(self, arg):  # note, arg used by h.A
         # self.bp = hoc.HocObject.baseattr(self, 'p')
         self.bp = self.baseattr("p")
+        self.__doc__ = "A1 docs"
 
     def p(self):
         self.bp()

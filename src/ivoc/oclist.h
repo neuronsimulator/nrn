@@ -1,5 +1,4 @@
-#ifndef oclist_h
-#define oclist_h
+#pragma once
 
 #include <vector>
 
@@ -41,5 +40,3 @@ class OcList: public Resource, public Observer {
     OcListBrowser* b_;
     cTemplate* ct_;
 };
-
-#endif

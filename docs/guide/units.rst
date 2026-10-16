@@ -10,12 +10,12 @@ Note: When programming, it is often convenient to use the units defined in :file
 
     .. code:: python
 
-        from neuron import h
+        from neuron import n
         from neuron.units import mV, ms
-        h.load_file("stdrun.hoc")
+        n.load_file("stdrun.hoc")
         ...
-        h.finitialize(-65 * mV)
-        h.continuerun(100 * ms)
+        n.finitialize(-65 * mV)
+        n.continuerun(100 * ms)
 
 The following table lists the units that NEURON uses by default. Point processes and distributed mechanisms may use other units, e.g. for certain concentrations and physical dimensions. The default behavior of GUI tools that manage parameters and monitor variables is to display the units next to the variable name, e.g. t (ms), L (µm), Ra (ohm-cm), gkbar_hh (S/cm2). Users can also determine what units have been assigned to mechanism-specific variables by examining the .mod file that defines the mechanism.
 
@@ -54,8 +54,10 @@ The following table lists the units that NEURON uses by default. Point processes
       - ``Ra``
       - [ohm cm]
     * - Resistance
-      - ``Ri( )``
+      - ``ri( )``
       -	[10 :superscript:`6` ohm]
+
+.. _units_within_nmodl:
 
 Units within NMODL files
 ------------------------

@@ -1,6 +1,6 @@
 # Example copied from the RxD tutorial
-# http://www.neuron.yale.edu/neuron/static/docs/rxd/index.html
-from neuron import crxd as rxd, h, gui
+# https://www.neuronsimulator.org/en/latest/rxd-tutorials/index.html
+from neuron import rxd, h, gui
 import numpy
 
 sec = h.Section()

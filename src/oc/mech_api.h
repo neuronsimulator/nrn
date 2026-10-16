@@ -17,4 +17,6 @@
 #include "oc_ansi.h"
 #include "nrnversionmacros.h"
 #include "scoplib.h"
-#include "treeset.h"
+
+#include <cmath>     // nocmodl uses std::isnan
+#include <iostream>  // nocmodl uses std::cerr

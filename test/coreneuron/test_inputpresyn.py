@@ -60,7 +60,6 @@ def test_inputpresyn():
         spikes = sortspikes(spiketime, gidvec)
         assert spikes_std == spikes
 
-    h.CVode().cache_efficient(1)
     from neuron import coreneuron
 
     coreneuron.enable = 1

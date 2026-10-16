@@ -22,8 +22,7 @@
  * OF THIS SOFTWARE.
  */
 
-#ifndef iv__scope_h
-#define iv__scope_h
+#pragma once
 
 #include <InterViews/iv.h>
 
@@ -38,17 +37,10 @@
 
 #ifndef iv_os__scope_h
 
-/*
- * Use OS bool and String definitions.
- */
-
 #include <OS/enter-scope.h>
 #include <OS/leave-scope.h>
 
-#define String _lib_os(String)
 #define u_char _lib_os(u_char)
-
-#endif
 
 #endif
 

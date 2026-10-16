@@ -1,5 +1,5 @@
-#ifndef bbsavestate_h
-#define bbsavestate_h
+#pragma once
+#include "neuron/container/data_handle.hpp"
 
 struct Object;
 struct Section;
@@ -17,6 +17,8 @@ class BBSS_IO {
     virtual void i(int& j, int chk = 0) = 0;
     virtual void d(int n, double& p) = 0;
     virtual void d(int n, double* p) = 0;
+    virtual void d(int n, double** p) = 0;
+    virtual void d(int n, neuron::container::data_handle<double> h) = 0;
     virtual void s(char* cp, int chk = 0) = 0;
     virtual Type type() = 0;
     virtual void skip(int) {}  // only when reading
@@ -46,6 +48,7 @@ class BBSaveState {
     void seccontents(Section*);
     void node(Node*);
     void node01(Section*, Node*);
+    void v_vext(Node*);
     void mech(Prop*);
     void netrecv_pp(Point_process*);
     void possible_presyn(int gid);
@@ -116,5 +119,3 @@ void bbss_save_done(void* bbss);
  *  cleanup. When this call returns, bbss will be invalid.
  */
 void bbss_restore_done(void* bbss);
-
-#endif

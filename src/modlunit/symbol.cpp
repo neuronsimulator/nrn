@@ -1,5 +1,6 @@
-#include <../../nmodlconf.h>
+#include <../../nrnconf.h>
 /* /local/src/master/nrn/src/modlunit/symbol.c,v 1.1.1.1 1994/10/12 17:22:50 hines Exp */
+#include <cstring>
 
 #include "model.h"
 #include "parse1.hpp"

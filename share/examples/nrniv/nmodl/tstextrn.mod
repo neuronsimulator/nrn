@@ -8,16 +8,11 @@
 :           in intfire4.mod
 
 NEURON {
-	EXTERNAL clamp_resist, eps_IntFire4
+	EXTERNAL eps_IntFire4
 }
 
 ASSIGNED {
-	clamp_resist (megohm)
 	eps_IntFire4
-}
-
-FUNCTION cr() (megohm) {
-	cr = clamp_resist
 }
 
 FUNCTION eps() {

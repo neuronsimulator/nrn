@@ -1,15 +1,10 @@
-import sys
 import ctypes
-import neuron
-import numpy
-from neuron import h
 import traceback
+import numpy
+import neuron
+from neuron import h
 
 # reducing the indirection improves performance
-try:
-    _numpy_core_multiarray_int_asbuffer = numpy.core.multiarray.int_asbuffer
-except:
-    pass
 _ctypes_addressof = ctypes.addressof
 _numpy_array = numpy.array
 _numpy_frombuffer = numpy.frombuffer
@@ -65,7 +60,7 @@ def ode_fun(t, y, ydot): #7 # from t, y, determine ydot
 def ode_solve(dt, t, b, y): #8 #solve mx=b replace b with x (y available if m depends on it
   print("ode_solve")
 def ode_jacobian(dt, t, ypred, fpred): #9 optionally prepare jacobaian for fast ode_solve.
-  print("ode_jacobian %g %g" % (t, dt))
+  print(f"ode_jacobian {t:g} {dt:g}")
 def ode_abs_tolerance(y_abs_tolerance): #10 fill with cvode.atol()*scalefactor
   print("ode_abs_tolerance") # on entry, y_abs_tolerance filled with cvode.atol()
 
@@ -106,7 +101,7 @@ def ode_count_all(offset):
     for c in call:
         if c[ode_count_method_index]:
             cnt += c[ode_count_method_index](nonvint_block_offset + cnt)
-    # print("ode_count_all %d, offset=%d\n"%(cnt, nonvint_block_offset))
+    # print(f"ode_count_all {cnt}, offset={nonvint_block_offset}\n")
     return cnt
 
 
@@ -132,7 +127,7 @@ def numpy_from_pointer(cpointer, size):
 
 
 def nonvint_block(method, size, pd1, pd2, tid):
-    # print('nonvint_block called with method = %d l=%d tid=%d' % (method,size,tid))
+    # print(f'nonvint_block called with method = {method} l={size} tid={tid}')
     try:
         assert tid == 0
         rval = 0

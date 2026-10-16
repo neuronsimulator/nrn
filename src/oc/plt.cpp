@@ -1,19 +1,12 @@
 #include <../../nrnconf.h>
 
-#define FIG                    \
-    1 /* version 7.1.1 12/8/88 \
-added plots in fig format      \
-*/
-#include "hoc.h"
 #include "gui-redirect.h"
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-extern double (*nrnpy_object_to_double_)(Object*);
 
 extern void Fig_file(const char*, int);
 
 #ifndef MINGW
 
-void Plt(void) {
+void hoc_Plt(void) {
     TRY_GUI_REDIRECT_DOUBLE("plt", NULL);
     int mode;
     double x, y;
@@ -30,17 +23,17 @@ void Plt(void) {
     } else {
         x = y = 0.;
     }
-    plt(mode, x, y);
-    ret();
-    pushx(1.);
+    hoc_plt(mode, x, y);
+    hoc_ret();
+    hoc_pushx(1.);
 }
 
-void Setcolor(void) {
+void hoc_Setcolor(void) {
     TRY_GUI_REDIRECT_DOUBLE("setcolor", NULL);
     double i;
-    i = set_color((int) *getarg(1));
-    ret();
-    pushx(i);
+    i = hoc_set_color((int) *getarg(1));
+    hoc_ret();
+    hoc_pushx(i);
 }
 
 void hoc_Lw(void) {
@@ -59,8 +52,8 @@ void hoc_Lw(void) {
     } else {
         Fig_file((char*) 0, dev);
     }
-    ret();
-    pushx(0.);
+    hoc_ret();
+    hoc_pushx(0.);
 }
 
 #endif /*!defined(MINGW)*/

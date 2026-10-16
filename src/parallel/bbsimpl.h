@@ -1,10 +1,11 @@
-#ifndef bbsimpl_h
-#define bbsimpl_h
+#pragma once
+
+#include <vector>
 
 class BBSImpl {
   public:
     BBSImpl();
-    virtual ~BBSImpl();
+    virtual ~BBSImpl() = default;
 
     virtual bool look(const char*) = 0;
 
@@ -14,8 +15,8 @@ class BBSImpl {
     virtual int upkint() = 0;
     virtual double upkdouble() = 0;
     virtual void upkvec(int, double*) = 0;
-    virtual char* upkstr() = 0;            // delete [] char* when finished
-    virtual char* upkpickle(size_t*) = 0;  // delete [] char* when finished
+    virtual char* upkstr() = 0;  // delete [] char* when finished
+    virtual std::vector<char> upkpickle() = 0;
 
     // before posting use these
     virtual void pkbegin() = 0;
@@ -23,7 +24,7 @@ class BBSImpl {
     virtual void pkdouble(double) = 0;
     virtual void pkvec(int, double*) = 0;
     virtual void pkstr(const char*) = 0;
-    virtual void pkpickle(const char*, size_t) = 0;
+    virtual void pkpickle(const std::vector<char>&) = 0;
     virtual void post(const char*) = 0;
 
     virtual void post_todo(int parentid) = 0;
@@ -55,8 +56,7 @@ class BBSImpl {
     double wait_time_;
     double integ_time_;
     double send_time_;
-    char* pickle_ret_;
-    size_t pickle_ret_size_;
+    std::vector<char> pickle_ret_;
     static bool is_master_;
     static bool started_, done_;
     static int mytid_;
@@ -64,14 +64,12 @@ class BBSImpl {
     static bool master_works_;
 
   protected:
-    char* execute_helper(size_t*, int id, bool exec = true);  // involves hoc specific details in
-                                                              // ocbbs.cpp
-    void subworld_worker_execute();                           // shadows execute_helper. ie. each of
+    std::vector<char> execute_helper(int id, bool exec = true);  // involves hoc specific details in
+                                                                 // ocbbs.cpp
+    void subworld_worker_execute();  // shadows execute_helper. ie. each of
                                      // the nrnmpi_myid_bbs workers (and master) need to execute
                                      // the same thing on each of the subworld processes
                                      // associated with nrnmpi_myid==0. A subworld does not
                                      // intracommunicate via the bulletin board but only via
                                      // mpi on the subworld communicator.
 };
-
-#endif

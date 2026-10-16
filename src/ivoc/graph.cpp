@@ -1,14 +1,14 @@
 #include <../../nrnconf.h>
 
-#include <string.h>
-#include <stdio.h>
-#include <ivstream.h>
-#include <math.h>
+#include <cstring>
+#include <cstdio>
+#include <cmath>
 #include <assert.h>
 
-extern int hoc_return_type_code;
+#include "code.h"
 
 #if HAVE_IV
+#include <string>
 #include <InterViews/glyph.h>
 #include <InterViews/hit.h>
 #include <InterViews/event.h>
@@ -49,10 +49,6 @@ extern Image* gif_image(const char*);
 
 #include "classreg.h"
 #include "gui-redirect.h"
-#include "treeset.h"
-
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-extern double (*nrnpy_object_to_double_)(Object*);
 
 #if HAVE_IV
 #define Graph_Crosshair_           "Crosshair Graph"
@@ -204,58 +200,58 @@ bool NewLabelHandler::event(Event& e) {
 
 // Graph registration for oc
 static void gr_axis(Graph* g, DimensionName d) {
-    IFGUI
-    int ntic = -1;
-    int nminor = 0;
-    int invert = 0;
-    bool number = true;
-    float x1 = 0;
-    float x2 = -1;
-    float pos = 0.;
-    if (!ifarg(2)) {
-        int i = 0;
-        if (ifarg(1)) {
-            i = int(chkarg(1, 0, 3));
+    if (hoc_usegui) {
+        int ntic = -1;
+        int nminor = 0;
+        int invert = 0;
+        bool number = true;
+        float x1 = 0;
+        float x2 = -1;
+        float pos = 0.;
+        if (!ifarg(2)) {
+            int i = 0;
+            if (ifarg(1)) {
+                i = int(chkarg(1, 0, 3));
+            }
+            switch (i) {
+            case 0:
+                g->view_axis();
+                break;
+            case 1:
+                g->erase_axis();
+                g->axis(Dimension_X, x1, x2, pos, ntic, nminor, invert, number);
+                g->axis(Dimension_Y, x1, x2, pos, ntic, nminor, invert, number);
+                break;
+            case 2:
+                g->view_box();
+                break;
+            case 3:
+                g->erase_axis();
+                break;
+            }
+            return;
         }
-        switch (i) {
-        case 0:
-            g->view_axis();
-            break;
-        case 1:
-            g->erase_axis();
-            g->axis(Dimension_X, x1, x2, pos, ntic, nminor, invert, number);
-            g->axis(Dimension_Y, x1, x2, pos, ntic, nminor, invert, number);
-            break;
-        case 2:
-            g->view_box();
-            break;
-        case 3:
-            g->erase_axis();
-            break;
+        if (ifarg(3)) {
+            pos = *getarg(3);
         }
-        return;
+        if (ifarg(4)) {
+            ntic = int(chkarg(4, -1, 100));
+        }
+        if (ifarg(2)) {
+            x1 = *getarg(1);
+            x2 = *getarg(2);
+        }
+        if (ifarg(5)) {
+            nminor = int(chkarg(5, 0, 100));
+        }
+        if (ifarg(6)) {
+            invert = int(chkarg(6, -1, 1));
+        }
+        if (ifarg(7) && !int(chkarg(7, 0, 1))) {
+            number = false;
+        }
+        g->axis(d, x1, x2, pos, ntic, nminor, invert, number);
     }
-    if (ifarg(3)) {
-        pos = *getarg(3);
-    }
-    if (ifarg(4)) {
-        ntic = int(chkarg(4, -1, 100));
-    }
-    if (ifarg(2)) {
-        x1 = *getarg(1);
-        x2 = *getarg(2);
-    }
-    if (ifarg(5)) {
-        nminor = int(chkarg(5, 0, 100));
-    }
-    if (ifarg(6)) {
-        invert = int(chkarg(6, -1, 1));
-    }
-    if (ifarg(7) && !int(chkarg(7, 0, 1))) {
-        number = false;
-    }
-    g->axis(d, x1, x2, pos, ntic, nminor, invert, number);
-    ENDGUI
 }
 #endif /* HAVE_IV */
 
@@ -280,21 +276,19 @@ static double gr_yaxis(void* v) {
 static double gr_save_name(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.save_name", v);
 #if HAVE_IV
-    IFGUI
-    Graph* g = (Graph*) v;
-    g->name(gargstr(1));
-    if (ifarg(2) && (chkarg(2, 0, 1) == 1.) && Oc::save_stream) {
-        char buf[80];
-        *Oc::save_stream << "{\nsave_window_=" << gargstr(1) << std::endl;
-        *Oc::save_stream << "save_window_.size(" << g->x1() << "," << g->x2() << "," << g->y1()
-                         << "," << g->y2() << ")\n";
-        long i = Scene::scene_list_index(g);
-        sprintf(buf, "scene_vector_[%ld] = save_window_", i);
-        *Oc::save_stream << buf << std::endl;
-        g->save_phase2(*Oc::save_stream);
-        g->Scene::mark(true);
+    if (hoc_usegui) {
+        Graph* g = (Graph*) v;
+        g->name(gargstr(1));
+        if (ifarg(2) && (chkarg(2, 0, 1) == 1.) && Oc::save_stream) {
+            *Oc::save_stream << "{\nsave_window_=" << gargstr(1) << std::endl;
+            *Oc::save_stream << "save_window_.size(" << g->x1() << "," << g->x2() << "," << g->y1()
+                             << "," << g->y2() << ")\n";
+            long i = Scene::scene_list_index(g);
+            *Oc::save_stream << "scene_vector_[" << i << "] = save_window_" << std::endl;
+            g->save_phase2(*Oc::save_stream);
+            g->Scene::mark(true);
+        }
     }
-    ENDGUI
     return 1.;
 #else
     return 0.;
@@ -315,13 +309,13 @@ static void move_label(Graph* g, const GLabel* lab, int ioff = 0) {
 static double gr_family(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.family", v);
 #if HAVE_IV
-    IFGUI
-    if (hoc_is_str_arg(1)) {
-        ((Graph*) v)->family(gargstr(1));
-    } else {
-        ((Graph*) v)->family(int(chkarg(1, 0, 1)));
+    if (hoc_usegui) {
+        if (hoc_is_str_arg(1)) {
+            ((Graph*) v)->family(gargstr(1));
+        } else {
+            ((Graph*) v)->family(int(chkarg(1, 0, 1)));
+        }
     }
-    ENDGUI
     return 1.;
 #else
     return 0.;
@@ -331,15 +325,15 @@ static double gr_family(void* v) {
 double ivoc_gr_menu_action(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.menu_action", v);
 #if HAVE_IV
-    IFGUI
-    HocCommand* hc;
-    if (hoc_is_object_arg(2)) {
-        hc = new HocCommand(*hoc_objgetarg(2));
-    } else {
-        hc = new HocCommand(gargstr(2));
+    if (hoc_usegui) {
+        HocCommand* hc;
+        if (hoc_is_object_arg(2)) {
+            hc = new HocCommand(*hoc_objgetarg(2));
+        } else {
+            hc = new HocCommand(gargstr(2));
+        }
+        ((Scene*) v)->picker()->add_menu(gargstr(1), new HocCommandAction(hc));
     }
-    ((Scene*) v)->picker()->add_menu(gargstr(1), new HocCommandAction(hc));
-    ENDGUI
     return 1.;
 #else
     return 0.;
@@ -349,21 +343,21 @@ double ivoc_gr_menu_action(void* v) {
 double ivoc_gr_menu_tool(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.menu_tool", v);
 #if HAVE_IV
-    IFGUI
-    if (hoc_is_object_arg(2)) {  // python style
-        HocPanel::paneltool(gargstr(1),
-                            NULL,
-                            NULL,
-                            ((Scene*) v)->picker(),
-                            *hoc_objgetarg(2),
-                            ifarg(3) ? *hoc_objgetarg(3) : NULL);
-    } else {
-        HocPanel::paneltool(gargstr(1),
-                            gargstr(2),
-                            ifarg(3) ? gargstr(3) : NULL,
-                            ((Scene*) v)->picker());
+    if (hoc_usegui) {
+        if (hoc_is_object_arg(2)) {  // python style
+            HocPanel::paneltool(gargstr(1),
+                                NULL,
+                                NULL,
+                                ((Scene*) v)->picker(),
+                                *hoc_objgetarg(2),
+                                ifarg(3) ? *hoc_objgetarg(3) : NULL);
+        } else {
+            HocPanel::paneltool(gargstr(1),
+                                gargstr(2),
+                                ifarg(3) ? gargstr(3) : NULL,
+                                ((Scene*) v)->picker());
+        }
     }
-    ENDGUI
     return 1.;
 #else
     return 0.;
@@ -373,82 +367,82 @@ double ivoc_gr_menu_tool(void* v) {
 double ivoc_view_info(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.view_info", v);
 #if HAVE_IV
-    IFGUI
-    int i;
-    Scene* s = (Scene*) v;
-    XYView* view;
-    if (!ifarg(1)) {
-        view = XYView::current_pick_view();
-        for (i = 0; i < s->view_count(); ++i) {
-            if (s->sceneview(i) == view) {
-                return double(i);
+    if (hoc_usegui) {
+        int i;
+        Scene* s = (Scene*) v;
+        XYView* view;
+        if (!ifarg(1)) {
+            view = XYView::current_pick_view();
+            for (i = 0; i < s->view_count(); ++i) {
+                if (s->sceneview(i) == view) {
+                    return double(i);
+                }
+            }
+            return -1.;
+        }
+        view = s->sceneview(int(chkarg(1, 0, s->view_count() - 1)));
+        float x1, y1, x2, y2;
+        i = int(chkarg(2, 1, 15));
+        switch (i) {
+        case 1:  // width
+            return view->width();
+        case 2:  // height
+            return view->height();
+        case 3:  // point width
+            view->view_ratio(0., 0., x1, y1);
+            view->view_ratio(1., 1., x2, y2);
+            return x2 - x1;
+        case 4:  // point height
+            view->view_ratio(0., 0., x1, y1);
+            view->view_ratio(1., 1., x2, y2);
+            return y2 - y1;
+        case 5:  // left
+            return view->left();
+        case 6:  // right
+            return view->right();
+        case 7:  // bottom
+            return view->bottom();
+        case 8:  // top
+            return view->top();
+        case 9:  // model x distance for one point
+            view->view_ratio(0., 0., x1, y1);
+            view->view_ratio(1., 1., x2, y2);
+            if (x2 > x1) {
+                return view->width() / (x2 - x1);
+            } else {
+                return 1.;
+            }
+        case 10:  // model y distance for one point
+            view->view_ratio(0., 0., x1, y1);
+            view->view_ratio(1., 1., x2, y2);
+            if (y2 > y1) {
+                return view->height() / (y2 - y1);
+            } else {
+                return 1.;
+            }
+        case 11:  // relative x location (from x model coord)
+            return (*getarg(3) - view->left()) / view->width();
+        case 12:  // relative y location (from y model coord)
+            return (*getarg(3) - view->bottom()) / view->height();
+        case 13:  // points from left (from x model coord)
+            x1 = (*getarg(3) - view->left()) / view->width();
+            view->view_ratio(x1, 1., x2, y2);
+            view->view_ratio(0., 1., x1, y1);
+            return x2 - x1;
+        case 14:  // points from top (from y model coord)
+            y1 = (*getarg(3) - view->bottom()) / view->height();
+            view->view_ratio(1., y1, x2, y2);
+            view->view_ratio(1., 1., x1, y1);
+            return y1 - y2;
+        case 15:  // label height in points
+            // return WidgetKit::instance()->font()->size();
+            {
+                FontBoundingBox b;
+                WidgetKit::instance()->font()->font_bbox(b);
+                return b.ascent() + b.descent();
             }
         }
-        return -1.;
     }
-    view = s->sceneview(int(chkarg(1, 0, s->view_count() - 1)));
-    float x1, y1, x2, y2;
-    i = int(chkarg(2, 1, 15));
-    switch (i) {
-    case 1:  // width
-        return view->width();
-    case 2:  // height
-        return view->height();
-    case 3:  // point width
-        view->view_ratio(0., 0., x1, y1);
-        view->view_ratio(1., 1., x2, y2);
-        return x2 - x1;
-    case 4:  // point height
-        view->view_ratio(0., 0., x1, y1);
-        view->view_ratio(1., 1., x2, y2);
-        return y2 - y1;
-    case 5:  // left
-        return view->left();
-    case 6:  // right
-        return view->right();
-    case 7:  // bottom
-        return view->bottom();
-    case 8:  // top
-        return view->top();
-    case 9:  // model x distance for one point
-        view->view_ratio(0., 0., x1, y1);
-        view->view_ratio(1., 1., x2, y2);
-        if (x2 > x1) {
-            return view->width() / (x2 - x1);
-        } else {
-            return 1.;
-        }
-    case 10:  // model y distance for one point
-        view->view_ratio(0., 0., x1, y1);
-        view->view_ratio(1., 1., x2, y2);
-        if (y2 > y1) {
-            return view->height() / (y2 - y1);
-        } else {
-            return 1.;
-        }
-    case 11:  // relative x location (from x model coord)
-        return (*getarg(3) - view->left()) / view->width();
-    case 12:  // relative y location (from y model coord)
-        return (*getarg(3) - view->bottom()) / view->height();
-    case 13:  // points from left (from x model coord)
-        x1 = (*getarg(3) - view->left()) / view->width();
-        view->view_ratio(x1, 1., x2, y2);
-        view->view_ratio(0., 1., x1, y1);
-        return x2 - x1;
-    case 14:  // points from top (from y model coord)
-        y1 = (*getarg(3) - view->bottom()) / view->height();
-        view->view_ratio(1., y1, x2, y2);
-        view->view_ratio(1., 1., x1, y1);
-        return y1 - y2;
-    case 15:  // label height in points
-        // return WidgetKit::instance()->font()->size();
-        {
-            FontBoundingBox b;
-            WidgetKit::instance()->font()->font_bbox(b);
-            return b.ascent() + b.descent();
-        }
-    }
-    ENDGUI
 #endif /* HAVE_IV  */
     return -1.;
 }
@@ -456,14 +450,14 @@ double ivoc_view_info(void* v) {
 double ivoc_view_size(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.view_size", v);
 #if HAVE_IV
-    IFGUI
-    int i;
-    Scene* s = (Scene*) v;
-    XYView* view;
-    view = s->sceneview(int(chkarg(1, 0, s->view_count() - 1)));
-    view->size(*getarg(2), *getarg(4), *getarg(3), *getarg(5));
-    view->damage_all();
-    ENDGUI
+    if (hoc_usegui) {
+        int i;
+        Scene* s = (Scene*) v;
+        XYView* view;
+        view = s->sceneview(int(chkarg(1, 0, s->view_count() - 1)));
+        view->size(*getarg(2), *getarg(4), *getarg(3), *getarg(5));
+        view->damage_all();
+    }
 #endif /* HAVE_IV  */
     return 0.;
 }
@@ -471,103 +465,104 @@ double ivoc_view_size(void* v) {
 double gr_line_info(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.line_info", v);
 #if HAVE_IV
-    IFGUI
-    Graph* g = (Graph*) v;
-    GlyphIndex i, cnt;
-    double* p;
-    cnt = g->count();
-    i = (int) chkarg(1, -1, cnt);
-    if (i < 0 || i > cnt - 1) {
-        i = -1;
-    }
-    Vect* x = vector_arg(2);
-    for (i += 1; i < cnt; ++i) {
-        GraphItem* gi = (GraphItem*) g->component(i);
-        if (gi->is_polyline()) {
-            GPolyLine* gpl = (GPolyLine*) gi->body();
-            x->resize(5);
-            p = vector_vec(x);
-            p[0] = colors->color(gpl->color());
-            p[1] = brushes->brush(gpl->brush());
-            if (gpl->label()) {
-                Coord a, b;
-                x->label(gpl->label()->text());
-                g->location(g->glyph_index(gpl->label()), a, b);
-                p[2] = a;
-                p[3] = b;
-                p[4] = gpl->label()->fixtype();
+    if (hoc_usegui) {
+        Graph* g = (Graph*) v;
+        GlyphIndex i, cnt;
+        double* p;
+        cnt = g->count();
+        i = (int) chkarg(1, -1, cnt);
+        if (i < 0 || i > cnt - 1) {
+            i = -1;
+        }
+        Vect* x = vector_arg(2);
+        for (i += 1; i < cnt; ++i) {
+            GraphItem* gi = (GraphItem*) g->component(i);
+            if (gi->is_polyline()) {
+                GPolyLine* gpl = (GPolyLine*) gi->body();
+                x->resize(5);
+                p = vector_vec(x);
+                p[0] = colors->color(gpl->color());
+                p[1] = brushes->brush(gpl->brush());
+                if (gpl->label()) {
+                    Coord a, b;
+                    x->label(gpl->label()->text());
+                    g->location(g->glyph_index(gpl->label()), a, b);
+                    p[2] = a;
+                    p[3] = b;
+                    p[4] = gpl->label()->fixtype();
+                }
+                return (double) i;
             }
-            return (double) i;
         }
     }
-    ENDGUI
 #endif /* HAVE_IV  */
     return -1.;
 }
 
 #if HAVE_IV
 static void gr_add(void* v, bool var) {
-    IFGUI
-    Graph* g = (Graph*) v;
-    GraphLine* gl;
-    Object* obj = NULL;
-    char* lab = NULL;
-    char* expr = NULL;
-    int ioff = 0;       // deal with 0, 1, or 2 optional arguments after first
-    double* pd = NULL;  // pointer to varname if second arg is varname string
-    int fixtype = g->labeltype();
-    // organize args for backward compatibility and the new
-    // addexpr("label, "expr", obj,.... style
-    if (ifarg(2)) {
-        if (var) {  // if string or address then variable and 1 was label
-            expr = gargstr(1);
-            if (hoc_is_str_arg(2)) {
-                pd = hoc_val_pointer(gargstr(2));
+    if (hoc_usegui) {
+        Graph* g = (Graph*) v;
+        GraphLine* gl;
+        Object* obj = NULL;
+        char* lab = NULL;
+        char* expr = NULL;
+        int ioff = 0;  // deal with 0, 1, or 2 optional arguments after first
+        // pointer to varname if second arg is varname string
+        neuron::container::data_handle<double> pd{};
+        int fixtype = g->labeltype();
+        // organize args for backward compatibility and the new
+        // addexpr("label, "expr", obj,.... style
+        if (ifarg(2)) {
+            if (var) {  // if string or address then variable and 1 was label
+                expr = hoc_gargstr(1);
+                if (hoc_is_str_arg(2)) {
+                    pd = hoc_val_handle(hoc_gargstr(2));
+                    ioff += 1;
+                } else if (hoc_is_pdouble_arg(2)) {
+                    pd = hoc_hgetarg<double>(2);
+                    ioff += 1;
+                }
+            } else if (hoc_is_str_arg(2)) {  // 1 label, 2 expression
+                lab = hoc_gargstr(1);
+                expr = hoc_gargstr(2);
                 ioff += 1;
-            } else if (hoc_is_pdouble_arg(2)) {
-                pd = hoc_pgetarg(2);
+                if (ifarg(3) && hoc_is_object_arg(3)) {  // object context
+                    obj = *hoc_objgetarg(3);
+                    ioff += 1;
+                }
+            } else if (hoc_is_object_arg(2)) {  // 1 expr, 2 object context
+                expr = hoc_gargstr(1);
+                obj = *hoc_objgetarg(2);
                 ioff += 1;
+            } else {
+                expr = hoc_gargstr(1);
             }
-        } else if (hoc_is_str_arg(2)) {  // 1 label, 2 expression
-            lab = gargstr(1);
-            expr = gargstr(2);
-            ioff += 1;
-            if (ifarg(3) && hoc_is_object_arg(3)) {  // object context
-                obj = *hoc_objgetarg(3);
-                ioff += 1;
-            }
-        } else if (hoc_is_object_arg(2)) {  // 1 expr, 2 object context
-            expr = gargstr(1);
-            obj = *hoc_objgetarg(2);
-            ioff += 1;
         } else {
-            expr = gargstr(1);
+            expr = hoc_gargstr(1);
         }
-    } else {
-        expr = gargstr(1);
-    }
-    if (ifarg(3 + ioff)) {
-        if (ifarg(6 + ioff)) {
-            fixtype = int(chkarg(6 + ioff, 0, 2));
-        } else if (ifarg(4 + ioff)) {
-            // old versions did not have the fixtype and for
-            // backward compatibility it must therefore be
-            // fixed.
-            fixtype = 1;
+        if (ifarg(3 + ioff)) {
+            if (ifarg(6 + ioff)) {
+                fixtype = int(chkarg(6 + ioff, 0, 2));
+            } else if (ifarg(4 + ioff)) {
+                // old versions did not have the fixtype and for
+                // backward compatibility it must therefore be
+                // fixed.
+                fixtype = 1;
+            }
+            gl = g->add_var(expr,
+                            colors->color(int(*getarg(2 + ioff))),
+                            brushes->brush(int(*getarg(3 + ioff))),
+                            var,
+                            fixtype,
+                            pd,
+                            lab,
+                            obj);
+        } else {
+            gl = g->add_var(expr, g->color(), g->brush(), var, fixtype, pd, lab, obj);
         }
-        gl = g->add_var(expr,
-                        colors->color(int(*getarg(2 + ioff))),
-                        brushes->brush(int(*getarg(3 + ioff))),
-                        var,
-                        fixtype,
-                        pd,
-                        lab,
-                        obj);
-    } else {
-        gl = g->add_var(expr, g->color(), g->brush(), var, fixtype, pd, lab, obj);
+        move_label(g, gl->label(), ioff);
     }
-    move_label(g, gl->label(), ioff);
-    ENDGUI
 }
 #endif /* HAVE_IV */
 static double gr_addvar(void* v) {
@@ -591,28 +586,28 @@ static double gr_addexpr(void* v) {
 static double gr_addobject(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.addobject", v);
 #if HAVE_IV
-    IFGUI
-    Graph* g = (Graph*) v;
-    Object* obj = *hoc_objgetarg(1);
-    if (is_obj_type(obj, "RangeVarPlot")) {
-        GraphVector* gv = (GraphVector*) obj->u.this_pointer;
-        if (ifarg(3)) {
-            gv->color(colors->color(int(*getarg(2))));
-            gv->brush(brushes->brush(int(*getarg(3))));
+    if (hoc_usegui) {
+        Graph* g = (Graph*) v;
+        Object* obj = *hoc_objgetarg(1);
+        if (is_obj_type(obj, "RangeVarPlot")) {
+            GraphVector* gv = (GraphVector*) obj->u.this_pointer;
+            if (ifarg(3)) {
+                gv->color(colors->color(int(*getarg(2))));
+                gv->brush(brushes->brush(int(*getarg(3))));
+            } else {
+                gv->color(g->color());
+                gv->brush(g->brush());
+            }
+            g->append(new VectorLineItem(gv));
+            GLabel* glab = g->label(gv->name());
+            gv->label(glab);
+            ((GraphItem*) g->component(g->glyph_index(glab)))->save(false);
+            g->see_range_plot(gv);
+            move_label(g, glab);
         } else {
-            gv->color(g->color());
-            gv->brush(g->brush());
+            hoc_execerror("Don't know how to plot this object type", 0);
         }
-        g->append(new VectorLineItem(gv));
-        GLabel* glab = g->label(gv->name());
-        gv->label(glab);
-        ((GraphItem*) g->component(g->glyph_index(glab)))->save(false);
-        g->see_range_plot(gv);
-        move_label(g, glab);
-    } else {
-        hoc_execerror("Don't know how to plot this object type", 0);
     }
-    ENDGUI
     return 1.;
 #else
     return 0.;
@@ -622,26 +617,26 @@ static double gr_addobject(void* v) {
 static double gr_vector(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.vector", v);
 #if HAVE_IV
-    IFGUI
-    Graph* g = (Graph*) v;
-    int n = int(chkarg(1, 1., 1.e5));
-    double* x = hoc_pgetarg(2);
-    double* y = hoc_pgetarg(3);
-    GraphVector* gv = new GraphVector("");
-    if (ifarg(4)) {
-        gv->color(colors->color(int(*getarg(4))));
-        gv->brush(brushes->brush(int(*getarg(5))));
-    } else {
-        gv->color(g->color());
-        gv->brush(g->brush());
+    if (hoc_usegui) {
+        Graph* g = (Graph*) v;
+        int n = int(chkarg(1, 1., 1.e5));
+        double* x = hoc_pgetarg(2);
+        auto y_handle = hoc_hgetarg<double>(3);
+        GraphVector* gv = new GraphVector("");
+        if (ifarg(4)) {
+            gv->color(colors->color(int(*getarg(4))));
+            gv->brush(brushes->brush(int(*getarg(5))));
+        } else {
+            gv->color(g->color());
+            gv->brush(g->brush());
+        }
+        for (int i = 0; i < n; ++i) {
+            gv->add(x[i], y_handle.next_array_element(i));
+        }
+        //	GLabel* glab = g->label(gv->name());
+        //	((GraphItem*)g->component(g->glyph_index(glab)))->save(false);
+        g->append(new GPolyLineItem(gv));
     }
-    for (int i = 0; i < n; ++i) {
-        gv->add(x[i], y + i);
-    }
-    //	GLabel* glab = g->label(gv->name());
-    //	((GraphItem*)g->component(g->glyph_index(glab)))->save(false);
-    g->append(new GPolyLineItem(gv));
-    ENDGUI
     return 1.;
 #else
     return 0.;
@@ -651,14 +646,14 @@ static double gr_vector(void* v) {
 static double gr_xexpr(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.xexpr", v);
 #if HAVE_IV
-    IFGUI
-    Graph* g = (Graph*) v;
-    int i = 0;
-    if (ifarg(2)) {
-        i = int(chkarg(2, 0, 1));
+    if (hoc_usegui) {
+        Graph* g = (Graph*) v;
+        int i = 0;
+        if (ifarg(2)) {
+            i = int(chkarg(2, 0, 1));
+        }
+        g->x_expr(gargstr(1), i);
     }
-    g->x_expr(gargstr(1), i);
-    ENDGUI
     return 1.;
 #else
     return 0.;
@@ -668,8 +663,9 @@ static double gr_xexpr(void* v) {
 static double gr_begin(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.begin", v);
 #if HAVE_IV
-    IFGUI((Graph*) v)->begin();
-    ENDGUI
+    if (hoc_usegui) {
+        ((Graph*) v)->begin();
+    }
     return 1.;
 #else
     return 0.;
@@ -679,8 +675,9 @@ static double gr_begin(void* v) {
 static double gr_plot(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.plot", v);
 #if HAVE_IV
-    IFGUI((Graph*) v)->plot(*getarg(1));
-    ENDGUI
+    if (hoc_usegui) {
+        ((Graph*) v)->plot(*getarg(1));
+    }
     return 1.;
 #else
     return 0.;
@@ -690,8 +687,9 @@ static double gr_plot(void* v) {
 static double gr_simgraph(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.simgraph", v);
 #if HAVE_IV
-    IFGUI((Graph*) v)->simgraph();
-    ENDGUI
+    if (hoc_usegui) {
+        ((Graph*) v)->simgraph();
+    }
     return 1.;
 #else
     return 0.;
@@ -701,19 +699,19 @@ static double gr_simgraph(void* v) {
 double ivoc_gr_begin_line(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.beginline", v);
 #if HAVE_IV
-    IFGUI
-    Graph* g = (Graph*) v;
-    int i = 1;
-    char* s = NULL;
-    if (ifarg(i) && hoc_is_str_arg(1)) {
-        s = gargstr(i++);
+    if (hoc_usegui) {
+        Graph* g = (Graph*) v;
+        int i = 1;
+        char* s = NULL;
+        if (ifarg(i) && hoc_is_str_arg(1)) {
+            s = gargstr(i++);
+        }
+        if (ifarg(i)) {
+            g->begin_line(colors->color(int(*getarg(i))), brushes->brush(int(*getarg(i + 1))), s);
+        } else {
+            g->begin_line(s);
+        }
     }
-    if (ifarg(i)) {
-        g->begin_line(colors->color(int(*getarg(i))), brushes->brush(int(*getarg(i + 1))), s);
-    } else {
-        g->begin_line(s);
-    }
-    ENDGUI
     return 1.;
 #else
     return 0.;
@@ -722,8 +720,9 @@ double ivoc_gr_begin_line(void* v) {
 double ivoc_gr_line(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.line", v);
 #if HAVE_IV
-    IFGUI((Graph*) v)->line(*getarg(1), *getarg(2));
-    ENDGUI
+    if (hoc_usegui) {
+        ((Graph*) v)->line(*getarg(1), *getarg(2));
+    }
     return 1.;
 #else
     return 0.;
@@ -733,8 +732,9 @@ static double gr_flush(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.flush", v);
 
 #if HAVE_IV
-    IFGUI((Graph*) v)->flush();
-    ENDGUI
+    if (hoc_usegui) {
+        ((Graph*) v)->flush();
+    }
     return 1.;
 #else
     return 0.;
@@ -744,8 +744,9 @@ static double gr_fast_flush(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.fast_flush", v);
 
 #if HAVE_IV
-    IFGUI((Graph*) v)->fast_flush();
-    ENDGUI
+    if (hoc_usegui) {
+        ((Graph*) v)->fast_flush();
+    }
     return 1.;
 #else
     return 0.;
@@ -754,8 +755,9 @@ static double gr_fast_flush(void* v) {
 double ivoc_gr_erase(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.erase", v);
 #if HAVE_IV
-    IFGUI((Graph*) v)->erase_lines();
-    ENDGUI
+    if (hoc_usegui) {
+        ((Graph*) v)->erase_lines();
+    }
     return 1.;
 #else
     return 0.;
@@ -765,8 +767,9 @@ double ivoc_gr_erase(void* v) {
 double ivoc_erase_all(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.erase_all", v);
 #if HAVE_IV
-    IFGUI((Graph*) v)->erase_all();
-    ENDGUI
+    if (hoc_usegui) {
+        ((Graph*) v)->erase_all();
+    }
     return 1.;
 #else
     return 0.;
@@ -776,34 +779,34 @@ double ivoc_erase_all(void* v) {
 double ivoc_gr_gif(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.gif", v);
 #if HAVE_IV
-    IFGUI
-    Graph* g = (Graph*) v;
-    Glyph* i = gif_image(gargstr(1));
-    if (i) {
-        Transformer t;
-        if (ifarg(4)) {
-            Coord x = *getarg(4);
-            Coord y = *getarg(5);
-            Requisition r;
-            i->request(r);
-            t.scale(x / r.x_requirement().natural(), y / r.y_requirement().natural());
-            i = new TransformSetter(i, t);
-        }
-        if (!ifarg(2)) {  // resize if smaller than gif
-            Requisition r;
-            i->request(r);
-            if (r.x_requirement().natural() > (g->x2() - g->x1()) ||
-                r.y_requirement().natural() > (g->y2() - g->y1())) {
-                g->new_size(0, 0, r.x_requirement().natural(), r.y_requirement().natural());
+    if (hoc_usegui) {
+        Graph* g = (Graph*) v;
+        Glyph* i = gif_image(gargstr(1));
+        if (i) {
+            Transformer t;
+            if (ifarg(4)) {
+                Coord x = *getarg(4);
+                Coord y = *getarg(5);
+                Requisition r;
+                i->request(r);
+                t.scale(x / r.x_requirement().natural(), y / r.y_requirement().natural());
+                i = new TransformSetter(i, t);
             }
+            if (!ifarg(2)) {  // resize if smaller than gif
+                Requisition r;
+                i->request(r);
+                if (r.x_requirement().natural() > (g->x2() - g->x1()) ||
+                    r.y_requirement().natural() > (g->y2() - g->y1())) {
+                    g->new_size(0, 0, r.x_requirement().natural(), r.y_requirement().natural());
+                }
+            }
+            g->append(new GraphItem(i, false, false));
+            if (ifarg(2)) {
+                g->move(g->count() - 1, *getarg(2), *getarg(3));
+            }
+            return 1.;
         }
-        g->append(new GraphItem(i, false, false));
-        if (ifarg(2)) {
-            g->move(g->count() - 1, *getarg(2), *getarg(3));
-        }
-        return 1.;
     }
-    ENDGUI
 #endif /* HAVE_IV  */
     return 0.;
 }
@@ -811,50 +814,50 @@ double ivoc_gr_gif(void* v) {
 double ivoc_gr_size(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.size", v);
 #if HAVE_IV
-    IFGUI
-    Coord x1, y1, x2, y2;
-    Graph* g = (Graph*) v;
-    XYView* view = g->sceneview(0);
-    if (ifarg(2)) {
-        g->new_size(*getarg(1), *getarg(3), *getarg(2), *getarg(4));
-    }
-    if (hoc_is_pdouble_arg(1)) {
-        g->wholeplot(x1, y1, x2, y2);
-        double* x = hoc_pgetarg(1);
-        x[0] = x1;
-        x[1] = x2;
-        x[2] = y1;
-        x[3] = y2;
-        return 0.;
-    }
-    if (!view) {
-        return 0.;
-    }
-
-    if (ifarg(2)) {
-        view->zout(x1, y1, x2, y2);
-        view->size(x1, y1, x2, y2);
-        return 1.;
-    } else {
-        view->zin(x1, y1, x2, y2);
-        double x = 0.;
-        switch (int(chkarg(1, 1., 4.))) {
-        case 1:
-            x = x1;
-            break;
-        case 2:
-            x = x2;
-            break;
-        case 3:
-            x = y1;
-            break;
-        case 4:
-            x = y2;
-            break;
+    if (hoc_usegui) {
+        Coord x1, y1, x2, y2;
+        Graph* g = (Graph*) v;
+        XYView* view = g->sceneview(0);
+        if (ifarg(2)) {
+            g->new_size(*getarg(1), *getarg(3), *getarg(2), *getarg(4));
         }
-        return x;
+        if (hoc_is_pdouble_arg(1)) {
+            g->wholeplot(x1, y1, x2, y2);
+            double* x = hoc_pgetarg(1);
+            x[0] = x1;
+            x[1] = x2;
+            x[2] = y1;
+            x[3] = y2;
+            return 0.;
+        }
+        if (!view) {
+            return 0.;
+        }
+
+        if (ifarg(2)) {
+            view->zout(x1, y1, x2, y2);
+            view->size(x1, y1, x2, y2);
+            return 1.;
+        } else {
+            view->zin(x1, y1, x2, y2);
+            double x = 0.;
+            switch (int(chkarg(1, 1., 4.))) {
+            case 1:
+                x = x1;
+                break;
+            case 2:
+                x = x2;
+                break;
+            case 3:
+                x = y1;
+                break;
+            case 4:
+                x = y2;
+                break;
+            }
+            return x;
+        }
     }
-    ENDGUI
     return 0.;
 #else
     return 0.;
@@ -864,27 +867,27 @@ double ivoc_gr_size(void* v) {
 double ivoc_gr_label(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.label", v);
 #if HAVE_IV
-    IFGUI
-    Graph* g = (Graph*) v;
-    if (ifarg(8)) {
-        g->label(*getarg(1),
-                 *getarg(2),
-                 gargstr(3),
-                 int(*getarg(4)),
-                 *getarg(5),
-                 *getarg(6),
-                 *getarg(7),
-                 colors->color(int(*getarg(8))));
-    } else if (ifarg(2)) {
-        char* s = NULL;
-        if (ifarg(3)) {
-            s = gargstr(3);
+    if (hoc_usegui) {
+        Graph* g = (Graph*) v;
+        if (ifarg(8)) {
+            g->label(*getarg(1),
+                     *getarg(2),
+                     gargstr(3),
+                     int(*getarg(4)),
+                     *getarg(5),
+                     *getarg(6),
+                     *getarg(7),
+                     colors->color(int(*getarg(8))));
+        } else if (ifarg(2)) {
+            char* s = NULL;
+            if (ifarg(3)) {
+                s = gargstr(3);
+            }
+            g->label(*getarg(1), *getarg(2), s);
+        } else {
+            g->label(gargstr(1));
         }
-        g->label(*getarg(1), *getarg(2), s);
-    } else {
-        g->label(gargstr(1));
     }
-    ENDGUI
     return 1.;
 #else
     return 0.;
@@ -893,13 +896,13 @@ double ivoc_gr_label(void* v) {
 static double gr_fixed(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.fixed", v);
 #if HAVE_IV
-    IFGUI
-    float scale = 1;
-    if (ifarg(1)) {
-        scale = chkarg(1, .01, 100);
+    if (hoc_usegui) {
+        float scale = 1;
+        if (ifarg(1)) {
+            scale = chkarg(1, .01, 100);
+        }
+        ((Graph*) v)->fixed(scale);
     }
-    ((Graph*) v)->fixed(scale);
-    ENDGUI
     return 1.;
 #else
     return 0.;
@@ -908,13 +911,13 @@ static double gr_fixed(void* v) {
 static double gr_vfixed(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.vfixed", v);
 #if HAVE_IV
-    IFGUI
-    float scale = 1;
-    if (ifarg(1)) {
-        scale = chkarg(1, .01, 100);
+    if (hoc_usegui) {
+        float scale = 1;
+        if (ifarg(1)) {
+            scale = chkarg(1, .01, 100);
+        }
+        ((Graph*) v)->vfixed(scale);
     }
-    ((Graph*) v)->vfixed(scale);
-    ENDGUI
     return 1.;
 #else
     return 0.;
@@ -923,13 +926,13 @@ static double gr_vfixed(void* v) {
 static double gr_relative(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.relative", v);
 #if HAVE_IV
-    IFGUI
-    float scale = 1.;
-    if (ifarg(1)) {
-        scale = chkarg(1, .01, 100.);
+    if (hoc_usegui) {
+        float scale = 1.;
+        if (ifarg(1)) {
+            scale = chkarg(1, .01, 100.);
+        }
+        ((Graph*) v)->relative(scale);
     }
-    ((Graph*) v)->relative(scale);
-    ENDGUI
     return 1.;
 #else
     return 0.;
@@ -938,16 +941,16 @@ static double gr_relative(void* v) {
 static double gr_align(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.align", v);
 #if HAVE_IV
-    IFGUI
-    float x = 0, y = 0;
-    if (ifarg(1)) {
-        x = chkarg(1, -10, 10);
+    if (hoc_usegui) {
+        float x = 0, y = 0;
+        if (ifarg(1)) {
+            x = chkarg(1, -10, 10);
+        }
+        if (ifarg(2)) {
+            y = chkarg(2, -10, 10);
+        }
+        ((Graph*) v)->align(x, y);
     }
-    if (ifarg(2)) {
-        y = chkarg(2, -10, 10);
-    }
-    ((Graph*) v)->align(x, y);
-    ENDGUI
     return 1.;
 #else
     return 0.;
@@ -956,17 +959,17 @@ static double gr_align(void* v) {
 static double gr_color(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.color", v);
 #if HAVE_IV
-    IFGUI
-    int i = 1;
-    if (ifarg(2)) {
-        colors->color(int(chkarg(1, 2, ColorPalette::COLOR_SIZE - 1)), gargstr(2));
-        return 1.;
+    if (hoc_usegui) {
+        int i = 1;
+        if (ifarg(2)) {
+            colors->color(int(chkarg(1, 2, ColorPalette::COLOR_SIZE - 1)), gargstr(2));
+            return 1.;
+        }
+        if (ifarg(1)) {
+            i = int(chkarg(1, -1, ColorPalette::COLOR_SIZE - 1));
+        }
+        ((Graph*) v)->color(i);
     }
-    if (ifarg(1)) {
-        i = int(chkarg(1, -1, ColorPalette::COLOR_SIZE - 1));
-    }
-    ((Graph*) v)->color(i);
-    ENDGUI
     return 1.;
 #else
     return 0.;
@@ -975,19 +978,19 @@ static double gr_color(void* v) {
 static double gr_brush(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.brush", v);
 #if HAVE_IV
-    IFGUI
-    int i = 0;
-    if (ifarg(3)) {
-        brushes->brush(int(chkarg(1, 1, BrushPalette::BRUSH_SIZE - 1)),
-                       int(*getarg(2)),
-                       float(chkarg(3, 0, 1000)));
-        return 1.;
+    if (hoc_usegui) {
+        int i = 0;
+        if (ifarg(3)) {
+            brushes->brush(int(chkarg(1, 1, BrushPalette::BRUSH_SIZE - 1)),
+                           int(*getarg(2)),
+                           float(chkarg(3, 0, 1000)));
+            return 1.;
+        }
+        if (ifarg(1)) {
+            i = int(chkarg(1, -1, 20));
+        }
+        ((Graph*) v)->brush(i);
     }
-    if (ifarg(1)) {
-        i = int(chkarg(1, -1, 20));
-    }
-    ((Graph*) v)->brush(i);
-    ENDGUI
     return 1.;
 #else
     return 0.;
@@ -997,28 +1000,28 @@ static double gr_brush(void* v) {
 static double gr_view(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.view", v);
 #if HAVE_IV
-    IFGUI
-    Graph* g = (Graph*) v;
-    if (ifarg(8)) {
-        Coord x[8];
-        int i;
-        for (i = 0; i < 8; ++i) {
-            x[i] = *getarg(i + 1);
+    if (hoc_usegui) {
+        Graph* g = (Graph*) v;
+        if (ifarg(8)) {
+            Coord x[8];
+            int i;
+            for (i = 0; i < 8; ++i) {
+                x[i] = *getarg(i + 1);
+            }
+            XYView* view = new XYView(x[0], x[1], x[2], x[3], g, x[6], x[7]);
+            Coord x1, x2, y1, y2;
+            view->zout(x1, y1, x2, y2);
+            view->size(x1, y1, x2, y2);
+            // printf("%g %g %g %g\n", view->left(), view->bottom(), view->right(), view->top());
+            ViewWindow* w = new ViewWindow(view, hoc_object_name(g->hoc_obj_ptr()));
+            w->xplace(int(x[4]), int(x[5]));
+            w->map();
+        } else if (ifarg(1) && *getarg(1) == 2.) {
+            View* view = new View(g);
+            ViewWindow* w = new ViewWindow(view, hoc_object_name(g->hoc_obj_ptr()));
+            w->map();
         }
-        XYView* view = new XYView(x[0], x[1], x[2], x[3], g, x[6], x[7]);
-        Coord x1, x2, y1, y2;
-        view->zout(x1, y1, x2, y2);
-        view->size(x1, y1, x2, y2);
-        // printf("%g %g %g %g\n", view->left(), view->bottom(), view->right(), view->top());
-        ViewWindow* w = new ViewWindow(view, hoc_object_name(g->hoc_obj_ptr()));
-        w->xplace(int(x[4]), int(x[5]));
-        w->map();
-    } else if (ifarg(1) && *getarg(1) == 2.) {
-        View* view = new View(g);
-        ViewWindow* w = new ViewWindow(view, hoc_object_name(g->hoc_obj_ptr()));
-        w->map();
     }
-    ENDGUI
 
     return 1.;
 #else
@@ -1029,31 +1032,31 @@ static double gr_view(void* v) {
 double ivoc_gr_mark(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.mark", v);
 #if HAVE_IV
-    IFGUI
-    Graph* g = (Graph*) v;
-    Coord x = *getarg(1);
-    Coord y = *getarg(2);
-    char style = '+';
-    if (ifarg(3)) {
-        if (hoc_is_str_arg(3)) {
-            style = *gargstr(3);
+    if (hoc_usegui) {
+        Graph* g = (Graph*) v;
+        Coord x = *getarg(1);
+        Coord y = *getarg(2);
+        char style = '+';
+        if (ifarg(3)) {
+            if (hoc_is_str_arg(3)) {
+                style = *gargstr(3);
+            } else {
+                style = char(chkarg(3, 0, 10));
+            }
+        }
+        if (!ifarg(4)) {
+            g->mark(x, y, style);
+        } else if (!ifarg(5)) {
+            g->mark(x, y, style, chkarg(4, .1, 100.), g->color(), g->brush());
         } else {
-            style = char(chkarg(3, 0, 10));
+            g->mark(x,
+                    y,
+                    style,
+                    chkarg(4, .1, 100.),
+                    colors->color(int(*getarg(5))),
+                    brushes->brush(int(*getarg(6))));
         }
     }
-    if (!ifarg(4)) {
-        g->mark(x, y, style);
-    } else if (!ifarg(5)) {
-        g->mark(x, y, style, chkarg(4, .1, 100.), g->color(), g->brush());
-    } else {
-        g->mark(x,
-                y,
-                style,
-                chkarg(4, .1, 100.),
-                colors->color(int(*getarg(5))),
-                brushes->brush(int(*getarg(6))));
-    }
-    ENDGUI
     return 1.;
 #else
     return 0.;
@@ -1061,13 +1064,13 @@ double ivoc_gr_mark(void* v) {
 }
 
 static double gr_view_count(void* v) {
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.view_count", v);
 #if HAVE_IV
     int n = 0;
-    IFGUI
-    n = ((Scene*) v)->view_count();
-    ENDGUI
+    if (hoc_usegui) {
+        n = ((Scene*) v)->view_count();
+    }
     return double(n);
 #else
     return 0.;
@@ -1077,10 +1080,10 @@ static double gr_view_count(void* v) {
 static double gr_unmap(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.unmap", v);
 #if HAVE_IV
-    IFGUI
-    Graph* g = (Graph*) v;
-    g->dismiss();
-    ENDGUI
+    if (hoc_usegui) {
+        Graph* g = (Graph*) v;
+        g->dismiss();
+    }
     return 0.;
 #else
     return 0.;
@@ -1090,18 +1093,18 @@ static double gr_unmap(void* v) {
 static double gr_set_cross_action(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.crosshair_action", v);
 #if HAVE_IV
-    IFGUI
-    Graph* g = (Graph*) v;
-    bool vector_copy = false;
-    if (ifarg(2)) {
-        vector_copy = int(chkarg(2, 0, 1));
+    if (hoc_usegui) {
+        Graph* g = (Graph*) v;
+        bool vector_copy = false;
+        if (ifarg(2)) {
+            vector_copy = int(chkarg(2, 0, 1));
+        }
+        if (hoc_is_str_arg(1)) {
+            g->set_cross_action(gargstr(1), NULL, vector_copy);
+        } else {
+            g->set_cross_action(NULL, *hoc_objgetarg(1), vector_copy);
+        }
     }
-    if (hoc_is_str_arg(1)) {
-        g->set_cross_action(gargstr(1), NULL, vector_copy);
-    } else {
-        g->set_cross_action(NULL, *hoc_objgetarg(1), vector_copy);
-    }
-    ENDGUI
     return 0.;
 #else
     return 0.;
@@ -1111,10 +1114,10 @@ static double gr_set_cross_action(void* v) {
 static double gr_printfile(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.printfile", v);
 #if HAVE_IV
-    IFGUI
-    Graph* g = (Graph*) v;
-    g->printfile(gargstr(1));
-    ENDGUI
+    if (hoc_usegui) {
+        Graph* g = (Graph*) v;
+        g->printfile(gargstr(1));
+    }
     return 1.;
 #else
     return 0.;
@@ -1124,8 +1127,9 @@ static double gr_printfile(void* v) {
 static double exec_menu(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.exec_menu", v);
 #if HAVE_IV
-    IFGUI((Scene*) v)->picker()->exec_item(gargstr(1));
-    ENDGUI
+    if (hoc_usegui) {
+        ((Scene*) v)->picker()->exec_item(gargstr(1));
+    }
 #endif
     return 0.;
 }
@@ -1133,8 +1137,9 @@ static double exec_menu(void* v) {
 double ivoc_gr_menu_remove(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.menu_remove", v);
 #if HAVE_IV
-    IFGUI((Scene*) v)->picker()->remove_item(gargstr(1));
-    ENDGUI
+    if (hoc_usegui) {
+        ((Scene*) v)->picker()->remove_item(gargstr(1));
+    }
 #endif
     return 0.;
 }
@@ -1188,21 +1193,21 @@ static Member_func gr_members[] = {{"plot", gr_plot},
                                    {"gif", ivoc_gr_gif},
                                    {"menu_remove", ivoc_gr_menu_remove},
                                    {"line_info", gr_line_info},
-                                   {0, 0}};
+                                   {nullptr, nullptr}};
 
 static void* gr_cons(Object* ho) {
     TRY_GUI_REDIRECT_OBJ("Graph", NULL);
 #if HAVE_IV
     Graph* g = NULL;
-    IFGUI
-    int i = 1;
-    if (ifarg(1)) {
-        i = (int) chkarg(1, 0, 1);
+    if (hoc_usegui) {
+        int i = 1;
+        if (ifarg(1)) {
+            i = (int) chkarg(1, 0, 1);
+        }
+        g = new Graph(i);
+        g->ref();
+        g->hoc_obj_ptr(ho);
     }
-    g = new Graph(i);
-    g->ref();
-    g->hoc_obj_ptr(ho);
-    ENDGUI
     return (void*) g;
 #else
     return (void*) 0;
@@ -1211,21 +1216,21 @@ static void* gr_cons(Object* ho) {
 static void gr_destruct(void* v) {
     TRY_GUI_REDIRECT_NO_RETURN("~Graph", v);
 #if HAVE_IV
-    IFGUI
-    Graph* g = (Graph*) v;
-    g->dismiss();
-    Resource::unref(g);
-    ENDGUI
+    if (hoc_usegui) {
+        Graph* g = (Graph*) v;
+        g->dismiss();
+        Resource::unref(g);
+    }
 #endif /* HAVE_IV */
 }
 void Graph_reg() {
     // printf("Graph_reg\n");
-    class2oc("Graph", gr_cons, gr_destruct, gr_members, NULL, NULL, NULL);
+    class2oc("Graph", gr_cons, gr_destruct, gr_members, NULL, NULL);
 #if HAVE_IV
-    IFGUI
-    colors = new ColorPalette();
-    brushes = new BrushPalette();
-    ENDGUI
+    if (hoc_usegui) {
+        colors = new ColorPalette();
+        brushes = new BrushPalette();
+    }
 #endif
 }
 #if HAVE_IV
@@ -1257,12 +1262,13 @@ ColorPalette::~ColorPalette() {
 }
 
 const Color* ColorPalette::color(int i) const {
-    IFGUI
-    if (i < 0)
-        i = 1;
-    i = i % COLOR_SIZE;
-    return color_palette[i];
-    ENDGUI else return NULL;
+    if (hoc_usegui) {
+        if (i < 0)
+            i = 1;
+        i = i % COLOR_SIZE;
+        return color_palette[i];
+    } else
+        return NULL;
 }
 const Color* ColorPalette::color(int i, const char* name) {
     const Color* c = Color::lookup(Session::instance()->default_display(), name);
@@ -1315,12 +1321,13 @@ BrushPalette::~BrushPalette() {
 }
 
 const Brush* BrushPalette::brush(int i) const {
-    IFGUI
-    if (i < 0)
-        i = 1;
-    i = i % BRUSH_SIZE;
-    return brush_palette[i];
-    ENDGUI else return NULL;
+    if (hoc_usegui) {
+        if (i < 0)
+            i = 1;
+        i = i % BRUSH_SIZE;
+        return brush_palette[i];
+    } else
+        return NULL;
 }
 const Brush* BrushPalette::brush(int i, int pattern, Coord width) {
     Brush* b;
@@ -1363,7 +1370,6 @@ void GraphItem::pick(Canvas* c, const Allocation& a, int depth, Hit& h) {
 }
 
 // Graph
-implementPtrList(LineList, GraphLine);
 declareActionCallback(Graph);
 implementActionCallback(Graph);
 
@@ -1373,8 +1379,7 @@ Graph::Graph(bool b)
     : Scene(0, 0, XSCENE, YSCENE) {
     loc_ = 0;
     x_expr_ = NULL;
-    x_pval_ = NULL;
-    var_name_ = NULL;
+    x_pval_ = {};
     rvp_ = NULL;
     cross_action_ = NULL;
     vector_copy_ = false;
@@ -1456,8 +1461,8 @@ Graph::Graph(bool b)
 
 Graph::~Graph() {
     // printf("~Graph\n");
-    for (long i = 0; i < line_list_.count(); ++i) {
-        Resource::unref(line_list_.item(i));
+    for (auto& item: line_list_) {
+        Resource::unref(item);
     }
     Resource::unref(keep_lines_toggle_);
     Resource::unref(x_);
@@ -1468,20 +1473,13 @@ Graph::~Graph() {
     Resource::unref(sc_);
     Resource::unref(current_polyline_);
     Resource::unref(family_label_);
-    if (var_name_) {
-        delete var_name_;
-    }
     if (cross_action_) {
         delete cross_action_;
     }
 }
 
 void Graph::name(char* s) {
-    if (var_name_) {
-        *var_name_ = s;
-    } else {
-        var_name_ = new CopyString(s);
-    }
+    var_name_ = s;
 }
 
 void Graph::help() {
@@ -1499,36 +1497,31 @@ void Graph::help() {
 }
 
 void Graph::delete_label(GLabel* glab) {
-    GraphLine* glin = NULL;
-    GlyphIndex i, cnt;
-    cnt = line_list_.count();
-    for (i = 0; i < cnt; ++i) {
-        if (line_list_.item(i)->label() == glab) {
-            glin = line_list_.item(i);
-            break;
-        }
-    }
-    if (glin) {
-        line_list_.remove(i);
+    GraphLine* glin = nullptr;
+    auto it = std::find_if(line_list_.begin(), line_list_.end(), [&](const auto& e) {
+        return e->label() == glab;
+    });
+    if (it != line_list_.end()) {
+        glin = *it;
+        line_list_.erase(it);
         glin->unref();
-        i = glyph_index(glin);
-        remove(i);
+        GlyphIndex index = glyph_index(glin);
+        remove(index);
     }
     if (!glin) {  // but possibly a vector line
-        cnt = count();
-        for (i = 0; i < cnt; ++i) {
-            GraphItem* gi = (GraphItem*) component(i);
+        for (GlyphIndex index = 0; index < count(); ++index) {
+            GraphItem* gi = (GraphItem*) component(index);
             if (gi->is_polyline()) {
                 GPolyLine* gpl = (GPolyLine*) gi->body();
                 if (gpl->label() == glab) {
-                    remove(i);
+                    remove(index);
                     break;
                 }
             }
         }
     }
-    i = glyph_index(glab);
-    remove(i);
+    GlyphIndex index = glyph_index(glab);
+    remove(index);
 }
 
 GLabel* Graph::new_proto_label() const {
@@ -1536,18 +1529,17 @@ GLabel* Graph::new_proto_label() const {
 }
 
 bool Graph::change_label(GLabel* glab, const char* text, GLabel* gl) {
-    GlyphIndex i, cnt = line_list_.count();
     if (strcmp(glab->text(), text)) {
-        for (i = 0; i < cnt; ++i) {
-            if (line_list_.item(i)->label() == glab) {
-                if (!line_list_.item(i)->change_expr(text, &symlist_)) {
+        for (auto& line: line_list_) {
+            if (line->label() == glab) {
+                if (!line->change_expr(text, &symlist_)) {
                     return false;
                 }
             }
         }
         glab->text(text);
     }
-    i = glyph_index(glab);
+    GlyphIndex i = glyph_index(glab);
     if (glab->fixtype() != gl->fixtype()) {
         if (gl->fixed()) {
             glab->fixed(gl->scale());
@@ -1580,8 +1572,8 @@ void Graph::change_line_color(GPolyLine* glin) {
 }
 
 GlyphIndex Graph::glyph_index(const Glyph* gl) {
-    GlyphIndex i, cnt = count();
-    for (i = 0; i < cnt; ++i) {
+    GlyphIndex cnt = count();
+    for (GlyphIndex i = 0; i < cnt; ++i) {
         Glyph* g = ((GraphItem*) component(i))->body();
         if (g == gl) {
             return i;
@@ -1601,13 +1593,12 @@ std::ostream* Graph::ascii() {
 }
 
 void Graph::draw(Canvas* c, const Allocation& a) const {
-    long i, cnt = line_list_.count();
     // if (!extension_flushed_) {
     Scene::draw(c, a);
     //}
     if (extension_flushed_) {
-        for (i = 0; i < cnt; ++i) {
-            line_list_.item(i)->extension()->draw(c, a);
+        for (auto& item: line_list_) {
+            item->extension()->draw(c, a);
         }
     }
     if (ascii_) {
@@ -1616,7 +1607,7 @@ void Graph::draw(Canvas* c, const Allocation& a) const {
 }
 
 void Graph::ascii_save(std::ostream& o) const {
-    long line, lcnt = line_list_.count();
+    long line, lcnt = line_list_.size();
     int i, dcnt;
     if (lcnt == 0 || !x_ || family_label_) {
         // tries to print in matrix form is labels and each line the same
@@ -1627,8 +1618,8 @@ void Graph::ascii_save(std::ostream& o) const {
         }
         if (lcnt) {
             o << lcnt << " addvar/addexpr lines:";
-            for (i = 0; i < lcnt; ++i) {
-                o << " " << line_list_.item(i)->name();
+            for (const auto& line: line_list_) {
+                o << " " << line->name();
             }
             o << std::endl;
         }
@@ -1734,15 +1725,15 @@ void Graph::ascii_save(std::ostream& o) const {
     } else {
         o << "x";
     }
-    for (line = 0; line < lcnt; ++line) {
-        o << " " << line_list_.item(line)->name();
+    for (const auto& item: line_list_) {
+        o << " " << item->name();
     }
     o << std::endl;
     dcnt = x_->count();
     for (i = 0; i < dcnt; ++i) {
         o << x_->get_val(i);
-        for (line = 0; line < lcnt; ++line) {
-            o << "\t" << line_list_.item(line)->y(i);
+        for (const auto& item: line_list_) {
+            o << "\t" << item->y(i);
         }
         o << std::endl;
     }
@@ -1814,10 +1805,6 @@ void Graph::wholeplot(Coord& l, Coord& b, Coord& r, Coord& t) const {
     GraphLine* gl;
     l = b = 1e9;
     r = t = -1e9;
-#if 0
-	cnt = line_list_.count();
-	if (!cnt) {
-#endif
     cnt = count();
     for (i = 0; i < cnt; ++i) {
         GraphItem* gi = (GraphItem*) component(i);
@@ -1858,19 +1845,6 @@ void Graph::wholeplot(Coord& l, Coord& b, Coord& r, Coord& t) const {
         t = -1e30;
     }
     return;
-#if 0
-	}
-	for (i = 0; i < cnt; ++i) {
-		gl = line_list_.item(i);
-		l = std::min(l, gl->x_data()->min());
-		b = std::min(b, gl->y_data()->min());
-		r = std::max(r, gl->x_data()->max());
-		t = std::max(t, gl->y_data()->max());
-	}
-	if (l >= r || b >= t) {
-		Scene::wholeplot(l, b, r, t);
-	}
-#endif
 }
 
 void Graph::axis(DimensionName d,
@@ -1909,7 +1883,7 @@ GraphLine* Graph::add_var(const char* expr,
                           const Brush* brush,
                           bool usepointer,
                           int fixtype,
-                          double* pd,
+                          neuron::container::data_handle<double> pd,
                           const char* lab,
                           Object* obj) {
     GraphLine* gl = new GraphLine(expr, x_, &symlist_, color, brush, usepointer, pd, obj);
@@ -1923,7 +1897,7 @@ GraphLine* Graph::add_var(const char* expr,
     ((GraphItem*) component(i))->save(false);
     glab->color(color);
     gl->label(glab);
-    line_list_.append(gl);
+    line_list_.push_back(gl);
     gl->ref();
     Scene::append(new GPolyLineItem(gl));
     return gl;
@@ -1944,12 +1918,12 @@ void Graph::x_expr(const char* expr, bool usepointer) {
         hoc_execerror(expr, "not an expression");
     }
     if (usepointer) {
-        x_pval_ = hoc_val_pointer(expr);
+        x_pval_ = hoc_val_handle(expr);
         if (!x_pval_) {
             hoc_execerror(expr, "is invalid left hand side of assignment statement");
         }
     } else {
-        x_pval_ = 0;
+        x_pval_ = {};
     }
 }
 
@@ -1959,10 +1933,8 @@ void Graph::begin() {
         keep_lines();
         family_value();
     }
-    long count = line_list_.count();
     int hem = hoc_execerror_messages;
-    for (long i = 0; i < count; ++i) {
-        GraphLine* gl = line_list_.item(i);
+    for (auto& gl: line_list_) {
         gl->erase();
         if (family_on_) {
             ((GPolyLine*) gl)->color(color());
@@ -1991,9 +1963,8 @@ void Graph::plot(float x) {
     } else {
         x_->add(x);
     }
-    long count = line_list_.count();
-    for (long i = 0; i < count; ++i) {
-        line_list_.item(i)->plot();
+    for (auto& item: line_list_) {
+        item->plot();
     }
 }
 void Graph::begin_line(const char* s) {
@@ -2025,37 +1996,23 @@ void Graph::flush() {
     //	damage_all();//too conservative. plots everything every time
 }
 void Graph::fast_flush() {
-#if 0
-	long i, cnt = line_list_.count();
-	for (i=0; i < cnt; ++i) {
-		modified(
-		  glyph_index(
-		    line_list_.item(i)->extension()
-		  )
-		);
-	}
-#else
-    long i, cnt = line_list_.count();
-    for (i = 0; i < cnt; ++i) {
-        line_list_.item(i)->extension()->damage(this);
+    for (auto& item: line_list_) {
+        item->extension()->damage(this);
     }
-#endif
     extension_flushed_ = true;
 }
 
 void Graph::extension_start() {
     x_->running_start();
-    long i, cnt = line_list_.count();
-    for (i = 0; i < cnt; ++i) {
-        line_list_.item(i)->extension_start();
+    for (auto& item: line_list_) {
+        item->extension_start();
     }
     extension_flushed_ = false;
 }
 void Graph::extension_continue() {
     x_->running_start();
-    long i, cnt = line_list_.count();
-    for (i = 0; i < cnt; ++i) {
-        line_list_.item(i)->extension_continue();
+    for (auto& item: line_list_) {
+        item->extension_continue();
     }
     extension_flushed_ = false;
 }
@@ -2108,7 +2065,7 @@ void Graph::cross_action(char c, Coord x, Coord y) {
         char buf[256];
         if (vector_copy_) {
         } else {
-            sprintf(buf, "%s(%g, %g, %d)", cross_action_->name(), x, y, c);
+            Sprintf(buf, "%s(%g, %g, %d)", cross_action_->name(), x, y, c);
             cross_action_->execute(buf);
         }
     } else {
@@ -2116,34 +2073,27 @@ void Graph::cross_action(char c, Coord x, Coord y) {
     }
 }
 void Graph::erase() {
-    long count = line_list_.count();
-    for (long i = 0; i < count; ++i) {
-        line_list_.item(i)->erase();
+    for (auto& item: line_list_) {
+        item->erase();
     }
     damage_all();
 }
 
 void Graph::erase_all() {
-    int i;
-#if 0
-	while(count()) {
-		remove(0);
-	}
-#else
-    for (i = count() - 1; i >= 0; --i) {
+    for (int i = count() - 1; i >= 0; --i) {
         remove(i);
     }
-#endif
-    while (line_list_.count()) {
-        Resource::unref(line_list_.item(0));
-        line_list_.remove(0);
+    for (auto& item: line_list_) {
+        Resource::unref(item);
     }
+    line_list_.clear();
+    line_list_.shrink_to_fit();
     label_n_ = 0;
 }
 void Graph::family_value() {
     if (family_label_) {
         char buf[256];
-        sprintf(buf, "hoc_ac_ = %s\n", family_label_->text());
+        Sprintf(buf, "hoc_ac_ = %s\n", family_label_->text());
         Oc oc;
         oc.run(buf);
         family_val_ = hoc_ac_;
@@ -2171,7 +2121,7 @@ void Graph::keep_lines() {
     if (f) {
         fi = glyph_index(f);
         location(fi, x, y);
-        sprintf(buf, "%g", family_val_);
+        Sprintf(buf, "%g", family_val_);
     }
     long lcnt = count();
     for (long i = lcnt - 1; i >= 0; --i) {
@@ -2208,9 +2158,7 @@ void Graph::family(bool i) {
     } else {
         family_on_ = false;
         keep_lines_toggle_->set(TelltaleState::is_chosen, false);
-        long count = line_list_.count();
-        for (long i = 0; i < count; ++i) {
-            GraphLine* gl = line_list_.item(i);
+        for (auto& gl: line_list_) {
             gl->color(gl->save_color());
             gl->brush(gl->save_brush());
         }
@@ -2326,18 +2274,14 @@ void Graph::erase_lines() {
             }
         }
     }
-    cnt = line_list_.count();
-    for (i = 0; i < cnt; ++i) {
-        GraphLine* gl = line_list_.item(i);
+    for (auto& gl: line_list_) {
         gl->label()->erase_flag(false);
     }
     cnt = count();
     for (i = cnt - 1; i >= 0; --i) {
         ((GraphItem*) component(i))->erase(this, i, GraphItem::ERASE_LINE);
     }
-    cnt = line_list_.count();
-    for (i = 0; i < cnt; ++i) {
-        GraphLine* gl = line_list_.item(i);
+    for (auto& gl: line_list_) {
         Scene::append(new GPolyLineItem(gl));
     }
     erase();
@@ -2419,22 +2363,20 @@ static Graph* current_save_graph;
 void Graph::save_phase2(std::ostream& o) {
     char buf[256];
     if (family_label_) {
-        sprintf(buf, "save_window_.family(\"%s\")", family_label_->text());
-        o << buf << std::endl;
+        o << "save_window_.family(\"" << family_label_->text() << "\")" << std::endl;
     }
-    if (var_name_) {
-        if ((var_name_->string())[var_name_->length() - 1] == '.') {
-            sprintf(buf, "%sappend(save_window_)", var_name_->string());
+    if (!var_name_.empty()) {
+        if (var_name_.back() == '.') {
+            Sprintf(buf, "%sappend(save_window_)", var_name_.c_str());
         } else {
-            sprintf(buf, "%s = save_window_", var_name_->string());
+            Sprintf(buf, "%s = save_window_", var_name_.c_str());
         }
         o << buf << std::endl;
-        sprintf(buf, "save_window_.save_name(\"%s\")", var_name_->string());
-        o << buf << std::endl;
+        o << "save_window_.save_name(\"" << var_name_ << "\")" << std::endl;
     }
     if (x_expr_) {
-        sprintf(buf, "save_window_.xexpr(\"%s\", %d)", x_expr_->name, x_pval_ ? 1 : 0);
-        o << buf << std::endl;
+        o << "save_window_.xexpr(\"" << x_expr_->name << "\", " << (x_pval_ ? 1 : 0) << ")"
+          << std::endl;
     }
     long cnt = count();
     current_save_graph = this;
@@ -2483,17 +2425,18 @@ void Graph::choose_sym() {
         w = v->canvas()->window();
     }
     while ((w && sc_->post_for_aligned(w, .5, 1.)) || (!w && sc_->post_at(300, 300))) {
-        // printf("Graph selected %s\n", sc_->selected()->string());
         char buf[256];
         double* pd = sc_->selected_var();
+        neuron::container::data_handle<double> pd_handle{pd};
+
         if (sc_->selected_vector_count()) {
-            sprintf(buf, "%s", sc_->selected()->string());
+            Sprintf(buf, "%s", sc_->selected().c_str());
             GraphVector* gv = new GraphVector(buf);
             gv->color(color());
             gv->brush(brush());
             int n = sc_->selected_vector_count();
             for (int i = 0; i < n; ++i) {
-                gv->add(double(i), pd + i);
+                gv->add(double(i), pd_handle.next_array_element(i));
             }
             GLabel* glab = label(gv->name());
             ((GraphItem*) component(glyph_index(glab)))->save(false);
@@ -2502,20 +2445,19 @@ void Graph::choose_sym() {
             flush();
             break;
         } else if (pd) {
-            //		add_var(sc_->selected()->string(), color(), brush(), 1, 2, pd);
-            add_var(sc_->selected()->string(), color(), brush(), 1, 2);
+            add_var(sc_->selected().c_str(), color(), brush(), 1, 2);
             break;
         } else {
-            CopyString s(*sc_->selected());
+            auto s = sc_->selected();
             // above required due to bug in mswindows version in which
             // sc_->selected seems volatile under some kinds of hoc
             // executions.
-            sprintf(buf, "hoc_ac_ = %s\n", s.string());
+            Sprintf(buf, "hoc_ac_ = %s\n", s.c_str());
             if (oc.run(buf) == 0) {
-                add_var(s.string(), color(), brush(), 0, 2);
+                add_var(s.c_str(), color(), brush(), 0, 2);
                 break;
             }
-            hoc_warning(s.string(), "is not an expression.");
+            hoc_warning(s.c_str(), "is not an expression.");
         }
     }
     //	sc_->unref();
@@ -2533,13 +2475,12 @@ void Graph::family_label_chooser() {
         fsc_->ref();
     }
     while (fsc_->post_for_aligned(XYView::current_pick_view()->canvas()->window(), .5, 1.)) {
-        char buf[256];
-        sprintf(buf, "hoc_ac_ = %s\n", fsc_->selected()->string());
+        auto buf = std::string("hoc_ac_ = ") + fsc_->selected() + "\n";
         if (oc.run(buf) == 0) {
-            family(fsc_->selected()->string());
+            family(fsc_->selected().c_str());
             break;
         }
-        hoc_warning(sc_->selected()->string(), "is not an expression.");
+        hoc_warning(sc_->selected().c_str(), "is not an expression.");
     }
 }
 
@@ -2550,7 +2491,7 @@ GraphLine::GraphLine(const char* expr,
                      const Color* c,
                      const Brush* b,
                      bool usepointer,
-                     double* pd,
+                     neuron::container::data_handle<double> pd,
                      Object* obj)
     : GPolyLine(x, c, b) {
     Oc oc;
@@ -2560,18 +2501,18 @@ GraphLine::GraphLine(const char* expr,
     if (usepointer) {
         if (pd) {
             // char buf[256];
-            // sprintf(buf, "%s", expr);
+            // Sprintf(buf, "%s", expr);
             // expr_ = oc.parseExpr(buf, symlist);
-            expr_ = NULL;
+            expr_ = nullptr;
             pval_ = pd;
         } else {
             expr_ = oc.parseExpr(expr, symlist);
-            pval_ = hoc_val_pointer(expr);
+            pval_ = hoc_val_handle(expr);
             if (!pval_) {
                 hoc_execerror(expr, "is invalid left hand side of assignment statement");
             }
         }
-        oc.notify_when_freed(pval_, this);
+        neuron::container::notify_when_handle_dies(pval_, this);
     } else {
         if (obj) {
             obj_ = obj;
@@ -2581,7 +2522,7 @@ GraphLine::GraphLine(const char* expr,
         } else {
             expr_ = oc.parseExpr(expr, symlist);
         }
-        pval_ = 0;
+        pval_ = {};
     }
     if (!pval_ && !expr_) {
         hoc_execerror(expr, "not an expression");
@@ -2675,7 +2616,7 @@ void GraphLine::simgraph_continuous(double tt) {
 
 void GraphLine::update(Observable*) {  // *pval_ has been freed
                                        // printf("GraphLine::update pval_ has been freed\n");
-    pval_ = NULL;
+    pval_ = {};
     if (obj_) {
         expr_ = NULL;
     }
@@ -2692,9 +2633,9 @@ bool GraphLine::change_expr(const char* expr, Symlist** symlist) {
     if (sym) {
         expr_ = sym;
         if (pval_) {
-            Oc oc;
-            oc.notify_pointer_disconnect(this);
-            pval_ = NULL;
+            // we are no longer interested in updates to pval_
+            nrn_notify_pointer_disconnect(this);
+            pval_ = {};
         }
         return true;
     } else {
@@ -2760,7 +2701,7 @@ void GraphLine::save(std::ostream& o) {
     GlyphIndex i = current_save_graph->glyph_index(label());
     current_save_graph->location(i, x, y);
     if (pval_) {
-        sprintf(buf,
+        Sprintf(buf,
                 "save_window_.addvar(\"%s\", %d, %d, %g, %g, %d)",
                 name(),
                 colors->color(color_),
@@ -2773,7 +2714,7 @@ void GraphLine::save(std::ostream& o) {
         // used but it is expected that in that case the graph is
         // encapsulated in an object and this info is incorrect anyway.
         // Can revisit later if this is a problem.
-        sprintf(buf,
+        Sprintf(buf,
                 "save_window_.addexpr(\"%s\", %d, %d, %g, %g, %d)",
                 name(),
                 colors->color(color_),
@@ -3069,7 +3010,7 @@ GLabel::~GLabel() {
 }
 
 Glyph* GLabel::clone() const {
-    return new GLabel(text_.string(), color_, fixtype_, scale_, x_align_, y_align_);
+    return new GLabel(text_.c_str(), color_, fixtype_, scale_, x_align_, y_align_);
 }
 
 void GLabel::save(std::ostream& o, Coord x, Coord y) {
@@ -3077,11 +3018,11 @@ void GLabel::save(std::ostream& o, Coord x, Coord y) {
         return;
     }
     char buf[256];
-    sprintf(buf,
+    Sprintf(buf,
             "save_window_.label(%g, %g, \"%s\", %d, %g, %g, %g, %d)",
             x,
             y,
-            text_.string(),
+            text_.c_str(),
             fixtype_,
             scale_,
             x_align_,
@@ -3109,7 +3050,7 @@ void GLabel::align(float x, float y) {
 void GLabel::color(const Color* c) {
     Resource::unref(label_);
     WidgetKit& kit = *WidgetKit::instance();
-    label_ = new Label(text_, kit.font(), c);
+    label_ = new Label(text_.c_str(), kit.font(), c);
     label_->ref();
     Resource::ref(c);
     Resource::unref(color_);
@@ -3123,7 +3064,7 @@ void GLabel::text(const char* t) {
     Resource::unref(label_);
     WidgetKit& kit = *WidgetKit::instance();
     text_ = t;
-    label_ = new Label(text_, kit.font(), color_);
+    label_ = new Label(text_.c_str(), kit.font(), color_);
     label_->ref();
 }
 
@@ -3165,7 +3106,7 @@ void GLabel::draw(Canvas* c, const Allocation& a1) const {
     // printf("transformer %g %g %g %g %g %g\n", a00, a01, a10, a11, a20, a21);
     label_->draw(c, a2);
     c->pop_transform();
-    IfIdraw(text(c, text_.string(), t, NULL, color()));
+    IfIdraw(text(c, text_.c_str(), t, NULL, color()));
 }
 
 // DataVec------------------
@@ -3330,27 +3271,6 @@ void DataVec::write() {
 #endif
 }
 
-DataPointers::DataPointers(int size) {
-    count_ = 0;
-    size_ = size;
-    px_ = new double*[size];
-}
-DataPointers::~DataPointers() {
-    delete[] px_;
-}
-void DataPointers::add(double* pd) {
-    if (count_ == size_) {
-        size_ *= 2;
-        double** px = new double*[size_];
-        for (int i = 0; i < count_; i++) {
-            px[i] = px_[i];
-        }
-        delete[] px_;
-        px_ = px;
-    }
-    px_[count_++] = pd;
-}
-
 GraphVector::GraphVector(const char* name, const Color* color, const Brush* brush)
     : GPolyLine(new DataVec(50), color, brush) {
     dp_ = new DataPointers();
@@ -3368,7 +3288,7 @@ GraphVector::~GraphVector() {
 }
 
 const char* GraphVector::name() const {
-    return name_.string();
+    return name_.c_str();
 }
 
 void GraphVector::save(std::ostream&) {}
@@ -3387,28 +3307,28 @@ void GraphVector::update(Observable*) {
     begin();
 }
 
-void GraphVector::add(float x, double* py) {
+void GraphVector::add(float x, neuron::container::data_handle<double> py) {
     if (disconnect_defer_) {
         Oc oc;
         oc.notify_pointer_disconnect(this);
         disconnect_defer_ = false;
     }
-    if (dp_->count() == 0 || py != dp_->p(dp_->count() - 1) + 1) {
-        Oc oc;
-        oc.notify_when_freed(py, this);
+    // Dubious
+    if (dp_->count() == 0 ||
+        static_cast<double*>(py) != static_cast<double*>(dp_->p(dp_->count() - 1)) + 1) {
+        neuron::container::notify_when_handle_dies(py, this);
     }
     x_->add(x);
-    double* p = &zero;
-    if (py) {
-        p = py;
+    if (!py) {
+        py = {neuron::container::do_not_search, &zero};
     }
-    dp_->add(p);
-    y_->add(float(*p));
+    y_->add(*py);
+    dp_->add(std::move(py));
 }
 
 bool GraphVector::trivial() const {
     for (int i = 0; i < dp_->count(); ++i) {
-        if (dp_->p(i) != &zero) {
+        if (static_cast<double const*>(dp_->p(i)) != &zero) {
             return false;
         }
     }
@@ -3488,48 +3408,6 @@ void Graph::change_prop() {
     ColorBrushWidget::start(this);
     if (Oc::helpmode()) {
         help();
-    }
-}
-
-void Graph::update_ptrs() {
-    if (x_pval_) {
-        x_pval_ = nrn_recalc_ptr(x_pval_);
-    }
-    if (rvp_) {
-        rvp_->update_ptrs();
-    }
-    GlyphIndex i, cnt = count();
-    for (i = 0; i < cnt; ++i) {
-        GraphItem* gi = (GraphItem*) component(i);
-        if (gi->is_graphVector()) {
-            GraphVector* gv = (GraphVector*) (gi->body());
-            if (gv) {
-                gv->update_ptrs();
-            }
-        }
-    }
-    cnt = line_list_.count();
-    for (i = 0; i < line_list_.count(); ++i) {
-        line_list_.item(i)->update_ptrs();
-    }
-}
-
-void DataPointers::update_ptrs() {
-    int i;
-    for (i = 0; i < count_; ++i) {
-        px_[i] = nrn_recalc_ptr(px_[i]);
-    }
-}
-
-void GraphLine::update_ptrs() {
-    if (pval_) {
-        pval_ = nrn_recalc_ptr(pval_);
-    }
-}
-
-void GraphVector::update_ptrs() {
-    if (dp_) {
-        dp_->update_ptrs();
     }
 }
 

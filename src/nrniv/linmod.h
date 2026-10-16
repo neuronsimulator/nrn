@@ -1,7 +1,5 @@
-#ifndef linmod_h
-#define linmod_h
+#pragma once
 
-#include <OS/list.h>
 #include "ocmatrix.h"
 #include "ivocvect.h"
 #include "nrnoc2iv.h"
@@ -32,5 +30,3 @@ class LinearModelAddition: public NrnDAE {
     Vect& b_;
     Object* f_callable_;
 };
-
-#endif

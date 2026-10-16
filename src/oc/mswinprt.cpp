@@ -2,7 +2,9 @@
 
 #ifdef MINGW
 
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <windows.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -10,13 +12,9 @@
 #include <string.h>
 #include <errno.h>
 #include "hoc.h"
-#include "../mswin/extra/d2upath.cpp"
+#include "../mswin/extra/d2upath.h"
 
 #include "gui-redirect.h"
-
-
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-extern double (*nrnpy_object_to_double_)(Object*);
 
 extern char* neuron_home;
 extern char* neuron_home_dos;
@@ -123,19 +121,6 @@ char* hoc_back2forward(char* s) {
 void ivoc_win32_cleanup();
 #endif
 
-void hoc_win32_cleanup() {
-    char buf[256];
-    char* path;
-#if HAVE_IV
-    ivoc_win32_cleanup();
-#endif
-    path = getenv("TEMP");
-    if (path) {
-        sprintf(buf, "%s/oc%d.hl", path, getpid());
-        unlink(buf);
-        //      DebugMessage("unlinked %s\n", buf);
-    }
-}
 
 void hoc_win_exec(void) {
     int i;
@@ -144,31 +129,29 @@ void hoc_win_exec(void) {
         i = (int) chkarg(2, -1000, 1000);
     }
     i = WinExec(gargstr(1), i);
-    ret();
-    pushx((double) i);
+    hoc_ret();
+    hoc_pushx((double) i);
 }
 
 void hoc_winio_show(int b) {}
 
-#if !defined(__MWERKS__)
 int getpid() {
     return 1;
 }
-#endif
 
 void hoc_Plt() {
     TRY_GUI_REDIRECT_DOUBLE("plt", NULL);
-    ret();
-    pushx(0.);
+    hoc_ret();
+    hoc_pushx(0.);
 }
 void hoc_Setcolor() {
     TRY_GUI_REDIRECT_DOUBLE("setcolor", NULL);
-    ret();
-    pushx(0.);
+    hoc_ret();
+    hoc_pushx(0.);
 }
 void hoc_Lw() {
-    ret();
-    pushx(0.);
+    hoc_ret();
+    hoc_pushx(0.);
 }
 
 #endif  // MINGW

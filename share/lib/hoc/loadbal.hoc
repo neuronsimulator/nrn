@@ -44,7 +44,7 @@ proc init() {local i, j  localobj ms
 			ms = new MechanismStandard(mname, 3)
 			m_complex_[j].x[i] = 1 + ms.count
 //			printf("complexity %d for %s\n", m_complex_[j].x[i], mname)
-			if (j == 0 && hoc_sf_.substr(mname, "_ion") != -1) {
+			if (j == 0 && mt[j].is_ion()) {
 				m_complex_[j].x[i] = 0
 				ion_complex_.x[i] = 1
 			}
@@ -388,7 +388,7 @@ proc ExperimentalMechComplex() {local i, j, k, b, ts, ns, baseindex, irun, par \
 	for i=0, mt[0].count-1 {
 		mt[0].select(i)
 		mt[0].selected(s.s)
-		if (hoc_sf_.substr(s.s, "_ion") != -1) {
+		if(mt[0].is_ion()) {
 			ionindices.x[i] = j
 			j += 1
 		}
@@ -404,7 +404,6 @@ proc ExperimentalMechComplex() {local i, j, k, b, ts, ns, baseindex, irun, par \
 	ninstance = new Matrix(j, j, 2)
 	// fixed step with cache efficiency
 	cvode.active(0)
-	cvode.cache_efficient(1)
 
 	cmd = new String()
 	ts = 100
@@ -652,7 +651,6 @@ obfunc makesec() {localobj s, sr
 	execute(s.s)
 	sr = hoc_obj_[1]
 	cvode.use_mxb(0) // extracellular would turn this on
-	cvode.cache_efficient(1) // extracellular would turn this off
 	return sr
 }
 

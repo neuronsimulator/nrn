@@ -15,32 +15,17 @@
  * of the NVECTOR package.
  * -----------------------------------------------------------------
  */
-
-#define USELONGDOUBLE 1
-
 #include <../../nrnconf.h>
 #include <hocassrt.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 
-/* for NRNMPI_DYNAMICLOAD */
 #include <nrnmpiuse.h>
-#if NRNMPI_DYNAMICLOAD
-extern "C" void nrnmpi_dbl_allreduce_vec(double* src, double* dest, int cnt, int type);
-extern "C" void nrnmpi_longdbl_allreduce_vec(long double* src,
-                                             long double* dest,
-                                             int cnt,
-                                             int type);
-extern "C" void nrnmpi_long_allreduce_vec(long* src, long* dest, int cnt, int type);
+#include <nrnmpidec.h>
 extern int nrnmpi_numprocs;
-#endif
 
 #include "nvector_nrnparallel_ld.h"
-#if NRNMPI_DYNAMICLOAD
-#else
-extern MPI_Comm nrnmpi_comm;
-#endif
 #include "sundialsmath.h"
 #include "sundialstypes.h"
 
@@ -48,13 +33,6 @@ extern MPI_Comm nrnmpi_comm;
 #define HALF   RCONST(0.5)
 #define ONE    RCONST(1.0)
 #define ONEPT5 RCONST(1.5)
-
-#if USELONGDOUBLE
-#define ldrealtype long double
-#else
-#define ldrealtype realtype
-#endif
-
 
 /* Error Message */
 
@@ -66,12 +44,8 @@ extern MPI_Comm nrnmpi_comm;
 
 /* Reduction operations add/max/min over the processor group */
 static realtype VAllReduce_NrnParallelLD(realtype d, int op, MPI_Comm comm);
-#if USELONGDOUBLE
 /* only for sum */
-static ldrealtype VAllReduce_long_NrnParallelLD(ldrealtype d, int op, MPI_Comm comm);
-#else
-#define VAllReduce_long_NrnParallelLD VAllReduce_NrnParallelLD
-#endif
+static realtype VAllReduce_long_NrnParallelLD(realtype d, int op, MPI_Comm comm);
 /* z=x */
 static void VCopy_NrnParallelLD(N_Vector x, N_Vector z);
 /* z=x+y */
@@ -111,12 +85,7 @@ N_Vector N_VNewEmpty_NrnParallelLD(MPI_Comm comm, long int local_length, long in
 
     /* Compute global length as sum of local lengths */
     n = local_length;
-#if NRNMPI_DYNAMICLOAD
     nrnmpi_long_allreduce_vec(&n, &Nsum, 1, 1);
-#else
-    comm = nrnmpi_comm;
-    MPI_Allreduce(&n, &Nsum, 1, PVEC_INTEGER_MPI_TYPE, MPI_SUM, comm);
-#endif
     if (Nsum != global_length) {
         printf(BAD_N);
         return (NULL);
@@ -390,13 +359,7 @@ void N_VPrint_NrnParallelLD(N_Vector x) {
     xd = NV_DATA_P_LD(x);
 
     for (i = 0; i < N; i++) {
-#if defined(SUNDIALS_EXTENDED_PRECISION)
-        printf("%Lg\n", *xd++);
-#elif defined(SUNDIALS_DOUBLE_PRECISION)
         printf("%lg\n", *xd++);
-#else
-        printf("%g\n", *xd++);
-#endif
     }
     printf("\n");
 }
@@ -448,11 +411,7 @@ void N_VSpace_NrnParallelLD(N_Vector v, long int* lrw, long int* liw) {
     int npes;
 
     comm = NV_COMM_P_LD(v);
-#if NRNMPI_DYNAMICLOAD
     npes = nrnmpi_numprocs;
-#else
-    MPI_Comm_size(comm, &npes);
-#endif
 
     *lrw = NV_GLOBLENGTH_P_LD(v);
     *liw = 2 * npes;
@@ -688,7 +647,6 @@ realtype N_VMaxNorm_NrnParallelLD(N_Vector x) {
 realtype N_VWrmsNorm_NrnParallelLD(N_Vector x, N_Vector w) {
     long int i, N, N_global;
     realtype prodi, *xd, *wd;
-    ldrealtype sum = ZERO, gsum;
     MPI_Comm comm;
 
     N = NV_LOCLENGTH_P_LD(x);
@@ -697,19 +655,22 @@ realtype N_VWrmsNorm_NrnParallelLD(N_Vector x, N_Vector w) {
     wd = NV_DATA_P_LD(w);
     comm = NV_COMM_P_LD(x);
 
+    realtype sum{}, c{};
     for (i = 0; i < N; i++) {
         prodi = (*xd++) * (*wd++);
-        sum += prodi * prodi;
+        auto const y = prodi * prodi - c;
+        auto const t = sum + y;
+        c = (t - sum) - y;
+        sum = t;
     }
 
-    gsum = VAllReduce_long_NrnParallelLD(sum, 1, comm);
-    return (RSqrt((realtype) gsum / N_global));
+    auto const gsum = VAllReduce_long_NrnParallelLD(sum, 1, comm);
+    return RSqrt(gsum / N_global);
 }
 
 realtype N_VWrmsNormMask_NrnParallelLD(N_Vector x, N_Vector w, N_Vector id) {
     long int i, N, N_global;
     realtype prodi, *xd, *wd, *idd;
-    ldrealtype sum = ZERO, gsum;
     MPI_Comm comm;
 
     N = NV_LOCLENGTH_P_LD(x);
@@ -719,15 +680,19 @@ realtype N_VWrmsNormMask_NrnParallelLD(N_Vector x, N_Vector w, N_Vector id) {
     idd = NV_DATA_P_LD(id);
     comm = NV_COMM_P_LD(x);
 
+    realtype sum{}, c{};
     for (i = 0; i < N; i++) {
         if (idd[i] > ZERO) {
             prodi = xd[i] * wd[i];
-            sum += prodi * prodi;
+            auto const y = prodi * prodi - c;
+            auto const t = sum + y;
+            c = (t - sum) - y;
+            sum = t;
         }
     }
 
-    gsum = VAllReduce_long_NrnParallelLD(sum, 1, comm);
-    return (RSqrt((realtype) gsum / N_global));
+    auto const gsum = VAllReduce_long_NrnParallelLD(sum, 1, comm);
+    return RSqrt(gsum / N_global);
 }
 
 realtype N_VMin_NrnParallelLD(N_Vector x) {
@@ -759,7 +724,6 @@ realtype N_VMin_NrnParallelLD(N_Vector x) {
 realtype N_VWL2Norm_NrnParallelLD(N_Vector x, N_Vector w) {
     long int i, N;
     realtype prodi, *xd, *wd;
-    ldrealtype sum = ZERO, gsum;
     MPI_Comm comm;
 
     N = NV_LOCLENGTH_P_LD(x);
@@ -767,30 +731,38 @@ realtype N_VWL2Norm_NrnParallelLD(N_Vector x, N_Vector w) {
     wd = NV_DATA_P_LD(w);
     comm = NV_COMM_P_LD(x);
 
+    realtype sum{}, c{};
     for (i = 0; i < N; i++) {
         prodi = (*xd++) * (*wd++);
-        sum += prodi * prodi;
+        auto const y = prodi * prodi - c;
+        auto const t = sum + y;
+        c = (t - sum) - y;
+        sum = t;
     }
 
-    gsum = VAllReduce_long_NrnParallelLD(sum, 1, comm);
-    return (RSqrt((realtype) gsum));
+    auto const gsum = VAllReduce_long_NrnParallelLD(sum, 1, comm);
+    return RSqrt(gsum);
 }
 
 realtype N_VL1Norm_NrnParallelLD(N_Vector x) {
     long int i, N;
     realtype* xd;
-    ldrealtype sum = ZERO, gsum;
     MPI_Comm comm;
 
     N = NV_LOCLENGTH_P_LD(x);
     xd = NV_DATA_P_LD(x);
     comm = NV_COMM_P_LD(x);
 
-    for (i = 0; i < N; i++, xd++)
-        sum += ABS(*xd);
+    realtype sum{}, c{};
+    for (i = 0; i < N; i++, xd++) {
+        auto const y = ABS(*xd) - c;
+        auto const t = sum + y;
+        c = (t - sum) - y;
+        sum = t;
+    }
 
-    gsum = VAllReduce_long_NrnParallelLD((realtype) sum, 1, comm);
-    return (gsum);
+    auto const gsum = VAllReduce_long_NrnParallelLD(sum, 1, comm);
+    return gsum;
 }
 
 void N_VCompare_NrnParallelLD(realtype c, N_Vector x, N_Vector z) {
@@ -912,35 +884,12 @@ static realtype VAllReduce_NrnParallelLD(realtype d, int op, MPI_Comm comm) {
      *   min if op = 3.
      * The operation is over all processors in the communicator
      */
-
     realtype out = 0.0;
-
-#if NRNMPI_DYNAMICLOAD
     nrnmpi_dbl_allreduce_vec(&d, &out, 1, op);
-#else
-    switch (op) {
-    case 1:
-        MPI_Allreduce(&d, &out, 1, PVEC_REAL_MPI_TYPE, MPI_SUM, comm);
-        break;
-
-    case 2:
-        MPI_Allreduce(&d, &out, 1, PVEC_REAL_MPI_TYPE, MPI_MAX, comm);
-        break;
-
-    case 3:
-        MPI_Allreduce(&d, &out, 1, PVEC_REAL_MPI_TYPE, MPI_MIN, comm);
-        break;
-
-    default:
-        break;
-    }
-#endif
-
-    return (out);
+    return out;
 }
 
-#if USELONGDOUBLE
-static ldrealtype VAllReduce_long_NrnParallelLD(ldrealtype d, int op, MPI_Comm comm) {
+static realtype VAllReduce_long_NrnParallelLD(realtype d, int op, MPI_Comm comm) {
     /*
      * This function does a global reduction.  The operation is
      *   sum if op = 1,
@@ -948,19 +897,11 @@ static ldrealtype VAllReduce_long_NrnParallelLD(ldrealtype d, int op, MPI_Comm c
      *   min if op = 3.
      * The operation is over all processors in the communicator
      */
-
-    ldrealtype out;
-
     assert(op == 1);
-#if NRNMPI_DYNAMICLOAD
-    nrnmpi_longdbl_allreduce_vec(&d, &out, 1, op);
-#else
-    MPI_Allreduce(&d, &out, 1, MPI_LONG_DOUBLE, MPI_SUM, comm);
-#endif
-
-    return (out);
+    long double ld_in{d}, ld_out{};
+    nrnmpi_longdbl_allreduce_vec(&ld_in, &ld_out, 1, op);
+    return ld_out;
 }
-#endif
 
 static void VCopy_NrnParallelLD(N_Vector x, N_Vector z) {
     long int i, N;

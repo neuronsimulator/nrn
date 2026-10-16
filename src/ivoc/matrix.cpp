@@ -3,35 +3,24 @@
 
 #include <stdio.h>
 #include <math.h>
+#include "code.h"
 #include "ocmatrix.h"
 #include "oc2iv.h"
 #include "parse.hpp"
 #include "ivocvect.h"
 
+#include "utils/logger.hpp"
+
 #define EPS hoc_epsilon
 Symbol* nrn_matrix_sym;  // also used in oc/hoc_oop.cpp
-
-extern int hoc_return_type_code;
 
 extern double hoc_scan(FILE*);
 extern Object** hoc_temp_objptr(Object*);
 
-#if 0
-	extern void install_matrix_method(const char* name, double (*)(...));
-	extern void* matrix_arg(int);
-	extern double* matrix_pelm(void*, int i, int j);
-	extern int matrix_nrow(void*);
-	extern int matrix_ncol(void*);
-	extern int matrix_type(void*);	// FULL 1, SPARSE 2, BAND 3
-	extern MAT* matrix_full(void*); // hoc_execerror if void* not right type
-	extern SPMAT* matrix_sparse(void*);
-#endif
-
 static void check_domain(int i, int j) {
     if (i > j || i < 0) {
-        char buf[256];
-        sprintf(buf, "index=%d  max_index=%d\n", i, j);
-        hoc_execerror("Matrix index out of range:", buf);
+        auto const tmp = "index=" + std::to_string(i) + "  max_index=" + std::to_string(j) + "\n";
+        hoc_execerror("Matrix index out of range:", tmp.c_str());
     }
 }
 
@@ -49,39 +38,35 @@ Matrix* matrix_arg(int i) {
     return (Matrix*) (ob->u.this_pointer);
 }
 
-Object** Matrix::temp_objvar() {
-    Matrix* m = (Matrix*) this;
+static Object** temp_objvar(Matrix* m) {
     Object** po;
     if (m->obj_) {
         po = hoc_temp_objptr(m->obj_);
     } else {
         po = hoc_temp_objvar(nrn_matrix_sym, (void*) m);
-        obj_ = *po;
+        m->obj_ = *po;
     }
     return po;
 }
 
 static double m_nrow(void* v) {
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     Matrix* m = (Matrix*) v;
     return (double) m->nrow();
 }
 
 static double m_ncol(void* v) {
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     Matrix* m = (Matrix*) v;
     return (double) m->ncol();
 }
 
 static double m_setval(void* v) {
     Matrix* m = (Matrix*) v;
-    int i, j;
-    double val, *pval;
-    i = (int) chkarg(1, 0, m->nrow() - 1);
-    j = (int) chkarg(2, 0, m->ncol() - 1);
-    val = *getarg(3);
-    pval = m->mep(i, j);
-    *pval = val;
+    int i = (int) chkarg(1, 0, m->nrow() - 1);
+    int j = (int) chkarg(2, 0, m->ncol() - 1);
+    double val = *getarg(3);
+    m->coeff(i, j) = val;
     return val;
 }
 
@@ -96,7 +81,7 @@ static double m_getval(void* v) {
 static double m_sprowlen(void* v) {
     Matrix* m = (Matrix*) v;
     int i;
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     i = (int) chkarg(1, 0, m->nrow() - 1);
     return double(m->sprowlen(i));
 }
@@ -182,7 +167,7 @@ static double m_scanf(void* v) {
     m->resize(nrow, ncol);
     for (i = 0; i < nrow; ++i)
         for (j = 0; j < ncol; ++j) {
-            *(m->mep(i, j)) = hoc_scan(f);
+            m->coeff(i, j) = hoc_scan(f);
         }
     return 0.;
 }
@@ -190,7 +175,7 @@ static double m_scanf(void* v) {
 static Object** m_resize(void* v) {
     Matrix* m = (Matrix*) v;
     m->resize((int) (chkarg(1, 1., 1e9) + EPS), (int) (chkarg(2, 1., 1e9) + EPS));
-    return m->temp_objvar();
+    return temp_objvar(m);
 }
 
 static Object** m_mulv(void* v) {
@@ -266,7 +251,7 @@ static Object** m_add(void* v) {
         out = matrix_arg(2);
     }
     m->add(matrix_arg(1), out);
-    return out->temp_objvar();
+    return temp_objvar(out);
 }
 
 static Object** m_bcopy(void* v) {
@@ -288,7 +273,7 @@ static Object** m_bcopy(void* v) {
     }
     out = get_out_mat(m, m0, n0, i);
     m->bcopy(out, i0, j0, m0, n0, i1, j1);
-    return out->temp_objvar();
+    return temp_objvar(out);
 }
 
 static Object** m_mulm(void* v) {
@@ -306,14 +291,14 @@ static Object** m_mulm(void* v) {
     out->resize(m->nrow(), in->ncol());
     check_domain(m->ncol(), in->nrow());
     m->mulm(in, out);
-    return out->temp_objvar();
+    return temp_objvar(out);
 }
 
 static Object** m_c(void* v) {
     Matrix* m = (Matrix*) v;
     Matrix* out = get_out_mat(m, 1);
     m->copy(out);
-    return out->temp_objvar();
+    return temp_objvar(out);
 }
 
 static Object** m_transpose(void* v) {
@@ -321,7 +306,7 @@ static Object** m_transpose(void* v) {
     Matrix* out = get_out_mat(m, 1);
     out->resize(m->ncol(), m->nrow());
     m->transpose(out);
-    return out->temp_objvar();
+    return temp_objvar(out);
 }
 
 static Object** m_symmeig(void* v) {
@@ -371,12 +356,8 @@ static Object** m_muls(void* v) {
     if (ifarg(2)) {
         out = matrix_arg(2);
     }
-    // 	I believe meschach does this for us
-    //	if (out != m) {
-    //		out->resize(...
-    //	}
     m->muls(*getarg(1), out);
-    return out->temp_objvar();
+    return temp_objvar(out);
 }
 
 static Object** m_getrow(void* v) {
@@ -445,7 +426,7 @@ static Object** m_setrow(void* v) {
 #endif
         m->setrow(k, in);
     }
-    return m->temp_objvar();
+    return temp_objvar(m);
 }
 
 static Object** m_setcol(void* v) {
@@ -462,7 +443,7 @@ static Object** m_setcol(void* v) {
 #endif
         m->setcol(k, in);
     }
-    return m->temp_objvar();
+    return temp_objvar(m);
 }
 
 static Object** m_setdiag(void* v) {
@@ -479,7 +460,7 @@ static Object** m_setdiag(void* v) {
 #endif
         m->setdiag(k, in);
     }
-    return m->temp_objvar();
+    return temp_objvar(m);
 }
 
 static Object** m_getdiag(void* v) {
@@ -511,20 +492,20 @@ static Object** m_getdiag(void* v) {
 static Object** m_zero(void* v) {
     Matrix* m = (Matrix*) v;
     m->zero();
-    return m->temp_objvar();
+    return temp_objvar(m);
 }
 
 static Object** m_ident(void* v) {
     Matrix* m = (Matrix*) v;
     m->ident();
-    return m->temp_objvar();
+    return temp_objvar(m);
 }
 
 static Object** m_exp(void* v) {
     Matrix* m = (Matrix*) v;
     Matrix* out = get_out_mat(m, 1, "exponentiation");
     m->exp(out);
-    return out->temp_objvar();
+    return temp_objvar(out);
 }
 
 static Object** m_pow(void* v) {
@@ -532,14 +513,14 @@ static Object** m_pow(void* v) {
     int k = (int) chkarg(1, 0., 100.);
     Matrix* out = get_out_mat(m, 2, "raising to a power");
     m->pow(k, out);
-    return out->temp_objvar();
+    return temp_objvar(out);
 }
 
 static Object** m_inverse(void* v) {
     Matrix* m = (Matrix*) v;
     Matrix* out = get_out_mat(m, 1);
     m->inverse(out);
-    return out->temp_objvar();
+    return temp_objvar(out);
 }
 
 static double m_det(void* v) {
@@ -617,10 +598,10 @@ static Object** m_set(void* v) {
     int k;
     for (k = 0, i = 0; i < nrow; ++i) {
         for (j = 0; j < ncol; ++j) {
-            *(m->mep(i, j)) = *getarg(++k);
+            m->coeff(i, j) = *getarg(++k);
         }
     }
-    return m->temp_objvar();
+    return temp_objvar(m);
 }
 
 static Object** m_to_vector(void* v) {
@@ -656,9 +637,9 @@ static Object** m_from_vector(void* v) {
     double* ve = vector_vec(vout);
     for (j = 0; j < ncol; ++j)
         for (i = 0; i < nrow; ++i) {
-            *(m->mep(i, j)) = ve[k++];
+            m->coeff(i, j) = ve[k++];
         }
-    return m->temp_objvar();
+    return temp_objvar(m);
 }
 
 static Member_func m_members[] = {
@@ -675,7 +656,7 @@ static Member_func m_members[] = {
     {"printf", m_printf},
     {"fprint", m_fprint},
     {"scanf", m_scanf},
-    {0, 0}};
+    {nullptr, nullptr}};
 
 static Member_ret_obj_func m_retobj_members[] = {
     // returns Vector
@@ -705,7 +686,7 @@ static Member_ret_obj_func m_retobj_members[] = {
     {"set", m_set},
     {"to_vector", m_to_vector},
     {"from_vector", m_from_vector},
-    {0, 0}};
+    {nullptr, nullptr}};
 
 static void* m_cons(Object* o) {
     int i = 1, j = 1, storage_type = Matrix::MFULL;
@@ -747,7 +728,7 @@ void Matrix_reg();
 #endif
 
 void Matrix_reg() {
-    class2oc("Matrix", m_cons, m_destruct, m_members, NULL, m_retobj_members, NULL);
+    class2oc("Matrix", m_cons, m_destruct, m_members, m_retobj_members, nullptr);
     nrn_matrix_sym = hoc_lookup("Matrix");
     // now make the x variable an actual double
     Symbol* sx = hoc_table_lookup("x", nrn_matrix_sym->u.ctemplate->symtable);

@@ -149,7 +149,7 @@ Topics:
 
 - synapses, spike-triggered transmission, :class:`NetCon`
 - artificial spiking cells (:class:`IntFire1`, :class:`IntFire2`, :class:`IntFire4`)
-- Forward Euler vs Backward Euler vs Crank-Nicholson; fixed step vs variable step
+- Forward Euler vs Backward Euler vs Crank-Nicolson; fixed step vs variable step
 
 .. raw:: html
 
@@ -199,7 +199,7 @@ ModelDB exercises 2021-07-27
 Scaling, spines, and reading HOC 2021-07-29
 -------------------------------------------
 
-We start with a discussion of the implementation of Mainen & Sejnowski 1996 `https://modeldb.yale.edu/2488 <https://modeldb.yale.edu/2488>`_ and implications for reuse. There was a brief discussion about Python based ion channels and working with density mechanisms. About an hour into the video, we turn to how to read HOC, how to use existing HOC libraries from Python (and vice-versa) , and how to gain insight from HOC code to design your own Python libraries.
+We start with a discussion of the implementation of Mainen & Sejnowski 1996 `https://modeldb.science/2488 <https://modeldb.science/2488>`_ and implications for reuse. There was a brief discussion about Python based ion channels and working with density mechanisms. About an hour into the video, we turn to how to read HOC, how to use existing HOC libraries from Python (and vice-versa) , and how to gain insight from HOC code to design your own Python libraries.
 
 .. raw:: html
 

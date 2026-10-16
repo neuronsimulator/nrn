@@ -49,13 +49,7 @@
 #ifndef _NVECTOR_PARALLEL_H
 #define _NVECTOR_PARALLEL_H
 
-#if NRNMPI_DYNAMICLOAD
-#define MPI_DOUBLE double
-#define MPI_LONG long
 #define MPI_Comm int
-#else
-#include <mpi.h>
-#endif
 
 #if defined(__cplusplus)
 extern "C" {

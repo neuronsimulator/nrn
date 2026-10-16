@@ -1,5 +1,4 @@
-#ifndef nonvintblock_h
-#define nonvintblock_h
+#pragma once
 
 
 /*
@@ -43,11 +42,11 @@ nonvintblock_extern int (
 /* called at end of nrnoc/treeset.cpp:rhs and nrncvode/cvtrset.cpp:rhs */
 #define nrn_nonvint_block_current(size, rhs, tid) nonvint_block(2, size, rhs, 0, tid)
 /*if any ionic membrane currents are generated, they subtract from
-  NrnThread._actual_rhs*/
+  NrnThread.node_rhs_storage()*/
 
 /* called at end of nrnoc/treeset.cpp:lhs and nrncvode/cvtrset.cpp:lhs */
 #define nrn_nonvint_block_conductance(size, d, tid) nonvint_block(3, size, d, 0, tid)
-/*if any ionic membrane currents are generated, di/dv adds to _actual_d */
+/*if any ionic membrane currents are generated, di/dv adds to the vector of diagonal values */
 
 /* called at end of nrnoc/fadvance.cpp:nonvint */
 #define nrn_nonvint_block_fixed_step_solve(tid) nonvint_block(4, 0, 0, 0, tid)
@@ -72,6 +71,3 @@ nonvintblock_extern int (
 
 /* multiply the existing values in y (cvode.atol()) with appropriate scale factors */
 #define nrn_nonvint_block_ode_abstol(size, y, tid) nonvint_block(10, size, y, 0, tid)
-
-
-#endif

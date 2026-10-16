@@ -1,6 +1,3 @@
-#ifndef nrnapi_h
-#define nrnapi_h
+#pragma once
 
 #define NRNAPI 2
-
-#endif

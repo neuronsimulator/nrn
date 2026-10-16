@@ -268,7 +268,7 @@ def prun(tstop, restore=False):
 
     if restore == "SaveState":
         ns = h.SaveState()
-        sf = h.File("state%d.bin" % pc.id())
+        sf = h.File(f"state{pc.id()}.bin")
         ns.fread(sf)
         ns.restore(0)  # event queue restored
         sf.close()
@@ -282,7 +282,7 @@ def prun(tstop, restore=False):
         # SaveState save
         ss = h.SaveState()
         ss.save()
-        sf = h.File("state%d.bin" % pc.id())
+        sf = h.File(f"state{pc.id()}.bin")
         ss.fwrite(sf)
         sf.close()
 
@@ -335,7 +335,6 @@ def compare_dicts(dict1, dict2):
 
 
 def test_bas():
-
     # h.execute1(...) does not call mpi_abort on failure
     assert h.execute1("1/0") == 0
     assert h.execute1("2/0", 0) == 0  # no error message printed

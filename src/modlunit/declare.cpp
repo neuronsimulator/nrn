@@ -1,11 +1,9 @@
-#include <../../nmodlconf.h>
+#include <../../nrnconf.h>
 #include <stdlib.h>
+#include <cstring>
 #include "model.h"
 #include "parse1.hpp"
 #include "symbol.h"
-#ifdef HAVE_STRINGS_H
-#include <strings.h>
-#endif
 
 Symbol* indepsym;  /* mathematical independent variable */
 Item** scop_indep; /* the scop swept information */
@@ -195,15 +193,10 @@ Symbol* basestate(Symbol* s) /* base state symbol for state''' or state0 */
     return base;
 }
 
-#if SYSV || !defined(HAVE_INDEX) || defined(HAVE_STRINGS_H)
-#undef index
-#define index strchr
-#endif
-
 static int nprime(char* s) {
     char* cp;
 
-    cp = index(s, '\'');
+    cp = strchr(s, '\'');
     return strlen(s) - (cp - s);
 }
 

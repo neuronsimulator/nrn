@@ -2,16 +2,15 @@
 #include "gui-redirect.h"
 
 extern char* ivoc_get_temp_file();
-extern int hoc_return_type_code;
 
 #if HAVE_IV
-#if MAC || defined(WIN32)
+#if defined(WIN32)
 #define MACPRINT 1
 #else
 #define MACPRINT 0
 #endif
 
-#if defined(WIN32) || MAC
+#if defined(WIN32)
 #define SNAPSHOT 0
 #else
 #define SNAPSHOT 1
@@ -19,12 +18,12 @@ extern int hoc_return_type_code;
 
 #define DECO 2  // 1 means default on, 2 off. for Carnvale,Hines book figures
 
-#include <ivstream.h>
 #include <string.h>
 #include "ivoc.h"
 #endif  // HAVE_IV
 #include <stdio.h>
 #include <stdlib.h>
+#include "code.h"
 #include "classreg.h"
 #include "oc2iv.h"
 #include <cmath>
@@ -42,20 +41,10 @@ void iv_display_scale(Coord, Coord);  // Make if fit into the screen
 char* hoc_back2forward(char*);
 #endif
 
-#if MAC
-#include <fstream.h>
-#include <file_io.h>
-#undef IOS_OUT
-#define IOS_OUT (ios::out | ios::trunc)
-extern char* mktemp(char*);
-extern int unlink(const char*);
-#include <IV-Mac/mprinter.h>
-extern void debugfile(const char*, ...);
-#else  //! MAC
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
-#define Output output
-#endif  // MAC
-
+#endif
+#define IOS_OUT std::ios::out
 
 #include <IV-look/kit.h>
 #include <IV-look/dialogs.h>
@@ -72,6 +61,7 @@ extern void debugfile(const char*, ...);
 #include <InterViews/style.h>
 #include <InterViews/background.h>
 #include <InterViews/label.h>
+#include <InterViews/resource.h>
 #include <OS/string.h>
 #include "apwindow.h"
 #include "scenevie.h"
@@ -434,17 +424,13 @@ char* hoc_back2forward(char*);
 #endif
 #endif  // HAVE_IV
 
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-extern double (*nrnpy_object_to_double_)(Object*);
-extern char** (*nrnpy_gui_helper3_str_)(const char* name, Object* obj, int handle_strptr);
-
 static void* pwman_cons(Object*) {
     TRY_GUI_REDIRECT_OBJ("PWManager", NULL);
     void* v = NULL;
 #if HAVE_IV
-    IFGUI
-    v = (void*) PrintableWindowManager::current();
-    ENDGUI
+    if (hoc_usegui) {
+        v = (void*) PrintableWindowManager::current();
+    }
 #endif
     return v;
 }
@@ -454,95 +440,96 @@ static void pwman_destruct(void* v) {
 
 static double pwman_count(void* v) {
     int cnt = 0;
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.count", v);
 #if HAVE_IV
-    IFGUI
-    PWMImpl* p = PrintableWindowManager::current()->pwmi_;
-    cnt = p->screen()->count();
-    ENDGUI
+    if (hoc_usegui) {
+        PWMImpl* p = PrintableWindowManager::current()->pwmi_;
+        cnt = p->screen()->count();
+    }
 #endif
     return double(cnt);
 }
 static double pwman_is_mapped(void* v) {
-    hoc_return_type_code = 2;  // boolean
+    hoc_return_type_code = HocReturnType::boolean;
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.is_mapped", v);
 #if HAVE_IV
-    IFGUI
-    PWMImpl* p = PrintableWindowManager::current()->pwmi_;
-    int i = (int) chkarg(1, 0, p->screen()->count() - 1);
-    ScreenItem* si = (ScreenItem*) p->screen()->component(i);
-    if (si->window()) {
-        return double(si->window()->is_mapped());
+    if (hoc_usegui) {
+        PWMImpl* p = PrintableWindowManager::current()->pwmi_;
+        int i = (int) chkarg(1, 0, p->screen()->count() - 1);
+        ScreenItem* si = (ScreenItem*) p->screen()->component(i);
+        if (si->window()) {
+            return double(si->window()->is_mapped());
+        }
     }
-    ENDGUI
 #endif
     return 0.;
 }
 static double pwman_map(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.map", v);
 #if HAVE_IV
-    IFGUI
-    PWMImpl* p = PrintableWindowManager::current()->pwmi_;
-    int i = (int) chkarg(1, 0, p->screen()->count() - 1);
-    ScreenItem* si = (ScreenItem*) p->screen()->component(i);
-    if (si->window()) {
-        si->window()->map();
+    if (hoc_usegui) {
+        PWMImpl* p = PrintableWindowManager::current()->pwmi_;
+        int i = (int) chkarg(1, 0, p->screen()->count() - 1);
+        ScreenItem* si = (ScreenItem*) p->screen()->component(i);
+        if (si->window()) {
+            si->window()->map();
+        }
     }
-    ENDGUI
 #endif
     return 0.;
 }
 static double pwman_hide(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.hide", v);
 #if HAVE_IV
-    IFGUI
-    PWMImpl* p = PrintableWindowManager::current()->pwmi_;
-    int i = (int) chkarg(1, 0, p->screen()->count() - 1);
-    ScreenItem* si = (ScreenItem*) p->screen()->component(i);
-    if (si->window()) {
-        si->window()->hide();
+    if (hoc_usegui) {
+        PWMImpl* p = PrintableWindowManager::current()->pwmi_;
+        int i = (int) chkarg(1, 0, p->screen()->count() - 1);
+        ScreenItem* si = (ScreenItem*) p->screen()->component(i);
+        if (si->window()) {
+            si->window()->hide();
+        }
     }
-    ENDGUI
 #endif
     return 0.;
 }
 static const char** pwman_name(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_STR("PWManager.name", v);
 #if HAVE_IV
-    IFGUI
-    PWMImpl* p = PrintableWindowManager::current()->pwmi_;
-    int i = (int) chkarg(1, 0, p->screen()->count() - 1);
-    ScreenItem* si = (ScreenItem*) p->screen()->component(i);
-    char** ps = hoc_temp_charptr();
-    if (si->window()) {
-        *ps = (char*) si->window()->name();
+    if (hoc_usegui) {
+        PWMImpl* p = PrintableWindowManager::current()->pwmi_;
+        int i = (int) chkarg(1, 0, p->screen()->count() - 1);
+        ScreenItem* si = (ScreenItem*) p->screen()->component(i);
+        char** ps = hoc_temp_charptr();
+        if (si->window()) {
+            *ps = (char*) si->window()->name();
+        }
+        return (const char**) ps;
     }
-    return (const char**) ps;
-    ENDGUI
 #endif
     return 0;
 }
 static double pwman_close(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.close", v);
 #if HAVE_IV
-    IFGUI
-    PWMImpl* p = PrintableWindowManager::current()->pwmi_;
-    int i = (int) chkarg(1, 0, p->screen()->count() - 1);
-    ScreenItem* si = (ScreenItem*) p->screen()->component(i);
-    if (p->window() == si->window()) {
-        p->window(NULL);
+    if (hoc_usegui) {
+        PWMImpl* p = PrintableWindowManager::current()->pwmi_;
+        int i = (int) chkarg(1, 0, p->screen()->count() - 1);
+        ScreenItem* si = (ScreenItem*) p->screen()->component(i);
+        if (p->window() == si->window()) {
+            p->window(NULL);
+        }
+        si->window()->dismiss();
     }
-    si->window()->dismiss();
-    ENDGUI
 #endif
     return 0.;
 }
 #ifdef MINGW
 static void pwman_iconify1(void* v) {
 #if HAVE_IV
-    IFGUI((PrintableWindow*) v)->dismiss();
-    ENDGUI
+    if (hoc_usegui) {
+        ((PrintableWindow*) v)->dismiss();
+    }
 #endif
 }
 #endif
@@ -550,62 +537,62 @@ static void pwman_iconify1(void* v) {
 static double pwman_iconify(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.iconify", v);
 #if HAVE_IV
-    IFGUI
-    PrintableWindow* pw = PrintableWindow::leader();
+    if (hoc_usegui) {
+        PrintableWindow* pw = PrintableWindow::leader();
 #ifdef MINGW
-    if (!nrn_is_gui_thread()) {
-        nrn_gui_exec(pwman_iconify1, pw);
-        return 0.;
-    }
+        if (!nrn_is_gui_thread()) {
+            nrn_gui_exec(pwman_iconify1, pw);
+            return 0.;
+        }
 #endif
-    pw->dismiss();
-    ENDGUI
+        pw->dismiss();
+    }
 #endif
     return 0.;
 }
 static double pwman_deiconify(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.deiconify", v);
 #if HAVE_IV
-    IFGUI
-    PrintableWindow* pw = PrintableWindow::leader();
-    pw->map();
-    ENDGUI
+    if (hoc_usegui) {
+        PrintableWindow* pw = PrintableWindow::leader();
+        pw->map();
+    }
 #endif
     return 0.;
 }
 static double pwman_leader(void* v) {
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.leader", v);
 #if HAVE_IV
-    IFGUI
-    PWMImpl* p = PrintableWindowManager::current()->pwmi_;
-    PrintableWindow* pw = PrintableWindow::leader();
-    int i, cnt = p->screen()->count();
-    for (i = 0; i < cnt; ++i) {
-        ScreenItem* si = (ScreenItem*) p->screen()->component(i);
-        if (si->window() == pw) {
-            return double(i);
+    if (hoc_usegui) {
+        PWMImpl* p = PrintableWindowManager::current()->pwmi_;
+        PrintableWindow* pw = PrintableWindow::leader();
+        int i, cnt = p->screen()->count();
+        for (i = 0; i < cnt; ++i) {
+            ScreenItem* si = (ScreenItem*) p->screen()->component(i);
+            if (si->window() == pw) {
+                return double(i);
+            }
         }
     }
-    ENDGUI
 #endif
     return -1.;
 }
 static double pwman_manager(void* v) {
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.manager", v);
 #if HAVE_IV
-    IFGUI
-    PWMImpl* p = PrintableWindowManager::current()->pwmi_;
-    PrintableWindow* pw = p->window();
-    int i, cnt = p->screen()->count();
-    for (i = 0; i < cnt; ++i) {
-        ScreenItem* si = (ScreenItem*) p->screen()->component(i);
-        if (si->window() == pw) {
-            return double(i);
+    if (hoc_usegui) {
+        PWMImpl* p = PrintableWindowManager::current()->pwmi_;
+        PrintableWindow* pw = p->window();
+        int i, cnt = p->screen()->count();
+        for (i = 0; i < cnt; ++i) {
+            ScreenItem* si = (ScreenItem*) p->screen()->component(i);
+            if (si->window() == pw) {
+                return double(i);
+            }
         }
     }
-    ENDGUI
 #endif
     return -1.;
 }
@@ -614,20 +601,20 @@ static double pwman_save(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.save", v);
     int n = 0;
 #if HAVE_IV
-    IFGUI
-    // if arg2 is an object then save all windows with that group_obj
-    // if arg2 is 1 then save all windows.
-    // if arg2 is 0 then save selected (on paper) windows.
-    PWMImpl* p = PrintableWindowManager::current()->pwmi_;
-    if (ifarg(2)) {
-        if (hoc_is_object_arg(2)) {
-            n = p->save_group(*hoc_objgetarg(2), gargstr(1));
-        } else {
-            n = (int) chkarg(2, 0, 1);
-            p->save_session((n ? 2 : 0), gargstr(1), (ifarg(3) ? gargstr(3) : NULL));
+    if (hoc_usegui) {
+        // if arg2 is an object then save all windows with that group_obj
+        // if arg2 is 1 then save all windows.
+        // if arg2 is 0 then save selected (on paper) windows.
+        PWMImpl* p = PrintableWindowManager::current()->pwmi_;
+        if (ifarg(2)) {
+            if (hoc_is_object_arg(2)) {
+                n = p->save_group(*hoc_objgetarg(2), gargstr(1));
+            } else {
+                n = (int) chkarg(2, 0, 1);
+                p->save_session((n ? 2 : 0), gargstr(1), (ifarg(3) ? gargstr(3) : NULL));
+            }
         }
     }
-    ENDGUI
 #endif
     return (double) n;
 }
@@ -635,18 +622,18 @@ static double pwman_save(void* v) {
 static Object** pwman_group(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_OBJ("PWManager.group", v);
 #if HAVE_IV
-    IFGUI
-    PWMImpl* p = PrintableWindowManager::current()->pwmi_;
-    int i;
-    i = int(chkarg(1, 0, p->screen()->count() - 1));
-    ScreenItem* si = (ScreenItem*) p->screen()->component(i);
-    if (ifarg(2)) {
-        hoc_obj_unref(si->group_obj_);
-        si->group_obj_ = *hoc_objgetarg(2);
-        hoc_obj_ref(si->group_obj_);
+    if (hoc_usegui) {
+        PWMImpl* p = PrintableWindowManager::current()->pwmi_;
+        int i;
+        i = int(chkarg(1, 0, p->screen()->count() - 1));
+        ScreenItem* si = (ScreenItem*) p->screen()->component(i);
+        if (ifarg(2)) {
+            hoc_obj_unref(si->group_obj_);
+            si->group_obj_ = *hoc_objgetarg(2);
+            hoc_obj_ref(si->group_obj_);
+        }
+        return hoc_temp_objptr(si->group_obj_);
     }
-    return hoc_temp_objptr(si->group_obj_);
-    ENDGUI
 #endif
     return hoc_temp_objptr(0);
 }
@@ -654,15 +641,15 @@ static Object** pwman_group(void* v) {
 static double pwman_snap(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.snap", v);
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
 #if SNAPSHOT
-    PWMImpl* p = PrintableWindowManager::current()->pwmi_;
-    if (!ifarg(1)) {
-        p->snapshot_control();
-    }
+        PWMImpl* p = PrintableWindowManager::current()->pwmi_;
+        if (!ifarg(1)) {
+            p->snapshot_control();
+        }
 #endif
-    return 1.;
-    ENDGUI
+        return 1.;
+    }
 #endif
     return 0;
 }
@@ -671,9 +658,9 @@ static double pwman_snap(void* v) {
 static double scale_;
 static void pwman_scale1(void*) {
 #if HAVE_IV
-    IFGUI
-    iv_display_scale(scale_);
-    ENDGUI
+    if (hoc_usegui) {
+        iv_display_scale(scale_);
+    }
 #endif
 }
 #endif
@@ -682,18 +669,18 @@ static double pwman_scale(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.scale", v);
     double scale = chkarg(1, .01, 100);
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
 #if defined(WIN32)
 #ifdef MINGW
-    if (!nrn_is_gui_thread()) {
-        scale_ = scale;
-        nrn_gui_exec(pwman_scale1, (void*) ((intptr_t) 1));
-        return scale;
+        if (!nrn_is_gui_thread()) {
+            scale_ = scale;
+            nrn_gui_exec(pwman_scale1, (void*) ((intptr_t) 1));
+            return scale;
+        }
+#endif
+        iv_display_scale(scale);
+#endif
     }
-#endif
-    iv_display_scale(scale);
-#endif
-    ENDGUI
 #endif
     return scale;
 }
@@ -701,15 +688,15 @@ static double pwman_scale(void* v) {
 static double pwman_window_place(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.window_place", v);
 #if HAVE_IV
-    IFGUI
-    int i;
-    PWMImpl* p = PrintableWindowManager::current()->pwmi_;
-    i = int(chkarg(1, 0, p->screen()->count() - 1));
-    ScreenItem* si = (ScreenItem*) p->screen()->component(i);
-    if (si->window()) {
-        si->window()->xmove(int(*getarg(2)), int(*getarg(3)));
+    if (hoc_usegui) {
+        int i;
+        PWMImpl* p = PrintableWindowManager::current()->pwmi_;
+        i = int(chkarg(1, 0, p->screen()->count() - 1));
+        ScreenItem* si = (ScreenItem*) p->screen()->component(i);
+        if (si->window()) {
+            si->window()->xmove(int(*getarg(2)), int(*getarg(3)));
+        }
     }
-    ENDGUI
 #endif
     return 1.;
 }
@@ -717,24 +704,24 @@ static double pwman_window_place(void* v) {
 static double pwman_paper_place(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.paper_place", v);
 #if HAVE_IV
-    IFGUI
-    // index, show=0 or 1
-    // index, x, y, scale where x and y in inches from left bottom
-    int i;
-    PWMImpl* p = PrintableWindowManager::current()->pwmi_;
-    i = int(chkarg(1, 0, p->screen()->count() - 1));
-    ScreenItem* si = (ScreenItem*) p->screen()->component(i);
-    p->append_paper(si);
-    PaperItem* pi = si->paper_item();
-    if (!ifarg(3)) {
-        if ((int(chkarg(2, 0, 1))) == 0) {
-            p->unshow_paper(pi);
+    if (hoc_usegui) {
+        // index, show=0 or 1
+        // index, x, y, scale where x and y in inches from left bottom
+        int i;
+        PWMImpl* p = PrintableWindowManager::current()->pwmi_;
+        i = int(chkarg(1, 0, p->screen()->count() - 1));
+        ScreenItem* si = (ScreenItem*) p->screen()->component(i);
+        p->append_paper(si);
+        PaperItem* pi = si->paper_item();
+        if (!ifarg(3)) {
+            if ((int(chkarg(2, 0, 1))) == 0) {
+                p->unshow_paper(pi);
+            }
+        } else {
+            pi->scale(chkarg(4, 1e-4, 1e4));
+            p->paper()->move(p->paper_index(pi), *getarg(2) / pr_scl, *getarg(3) / pr_scl);
         }
-    } else {
-        pi->scale(chkarg(4, 1e-4, 1e4));
-        p->paper()->move(p->paper_index(pi), *getarg(2) / pr_scl, *getarg(3) / pr_scl);
     }
-    ENDGUI
 #endif
     return 1.;
 }
@@ -742,28 +729,28 @@ static double pwman_paper_place(void* v) {
 static double pwman_printfile(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.printfile", v);
 #if HAVE_IV
-    IFGUI
-    // first arg is filename
-    // second arg is 0,1,2 refers to postscript, idraw, ascii mode
-    // third arg is 0,1 refers to selected, all
-    PWMImpl* p = PrintableWindowManager::current()->pwmi_;
-    bool ses_style = false;
-    if (ifarg(3)) {
-        ses_style = int(chkarg(3, 0, 1)) ? true : false;
+    if (hoc_usegui) {
+        // first arg is filename
+        // second arg is 0,1,2 refers to postscript, idraw, ascii mode
+        // third arg is 0,1 refers to selected, all
+        PWMImpl* p = PrintableWindowManager::current()->pwmi_;
+        bool ses_style = false;
+        if (ifarg(3)) {
+            ses_style = int(chkarg(3, 0, 1)) ? true : false;
+        }
+        char* fname = gargstr(1);
+        switch ((int) chkarg(2, 0, 2)) {
+        case 0:
+            p->ps_file_print(false, fname, p->is_landscape(), ses_style);
+            break;
+        case 1:
+            p->idraw_write(fname, ses_style);
+            break;
+        case 2:
+            p->ascii_write(fname, ses_style);
+            break;
+        }
     }
-    char* fname = gargstr(1);
-    switch ((int) chkarg(2, 0, 2)) {
-    case 0:
-        p->ps_file_print(false, fname, p->is_landscape(), ses_style);
-        break;
-    case 1:
-        p->idraw_write(fname, ses_style);
-        break;
-    case 2:
-        p->ascii_write(fname, ses_style);
-        break;
-    }
-    ENDGUI
 #endif
     return 1.;
 }
@@ -771,10 +758,10 @@ static double pwman_printfile(void* v) {
 static double pwman_landscape(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.landscape", v);
 #if HAVE_IV
-    IFGUI
-    PWMImpl* p = PrintableWindowManager::current()->pwmi_;
-    p->landscape(int(chkarg(1, 0, 1)) ? true : false);
-    ENDGUI
+    if (hoc_usegui) {
+        PWMImpl* p = PrintableWindowManager::current()->pwmi_;
+        p->landscape(int(chkarg(1, 0, 1)) ? true : false);
+    }
 #endif
     return 1.;
 }
@@ -782,10 +769,10 @@ static double pwman_landscape(void* v) {
 static double pwman_deco(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.deco", v);
 #if HAVE_IV
-    IFGUI
-    PWMImpl* p = PrintableWindowManager::current()->pwmi_;
-    p->deco(int(chkarg(1, 0, 2)));
-    ENDGUI
+    if (hoc_usegui) {
+        PWMImpl* p = PrintableWindowManager::current()->pwmi_;
+        p->deco(int(chkarg(1, 0, 2)));
+    }
 #endif
     return 1.;
 }
@@ -807,14 +794,14 @@ static Member_func members[] = {{"count", pwman_count},
                                 {"printfile", pwman_printfile},
                                 {"landscape", pwman_landscape},
                                 {"deco", pwman_deco},
-                                {0, 0}};
+                                {nullptr, nullptr}};
 
-static Member_ret_obj_func retobj_members[] = {{"group", pwman_group}, {0, 0}};
+static Member_ret_obj_func retobj_members[] = {{"group", pwman_group}, {nullptr, nullptr}};
 
-static Member_ret_str_func s_memb[] = {{"name", pwman_name}, {0, 0}};
+static Member_ret_str_func s_memb[] = {{"name", pwman_name}, {nullptr, nullptr}};
 
 void PWManager_reg() {
-    class2oc("PWManager", pwman_cons, pwman_destruct, members, NULL, retobj_members, s_memb);
+    class2oc("PWManager", pwman_cons, pwman_destruct, members, retobj_members, s_memb);
 }
 
 #if HAVE_IV  // almost to end of file
@@ -1167,13 +1154,11 @@ PrintableWindowManager::PrintableWindowManager() {
 
     Menu *mbar, *mprint, *mses, *mother;
 #if 0
-#if !MAC
 	if (q->value_is_on("pwm_help")) {
 		vb->append(kit.push_button("Help",
 			new ActionCallback(PWMImpl)(pwmi_, &PWMImpl::help)
 		));
 	}
-#endif
 #endif
     hb->append(mbar = kit.menubar());
 
@@ -1213,7 +1198,7 @@ PrintableWindowManager::PrintableWindowManager() {
     mi = K::menu_item("To Printer");
     mprint->append_item(mi);
     mi->action(new ActionCallback(PWMImpl)(pwmi_, &PWMImpl::do_print0));
-#if 1 || !MAC
+
     mi = K::menu_item("PostScript");
     mprint->append_item(mi);
     mi->action(new ActionCallback(PWMImpl)(pwmi_, &PWMImpl::file_control));
@@ -1223,7 +1208,6 @@ PrintableWindowManager::PrintableWindowManager() {
     mprint->append_item(mi);
     mi->action(new ActionCallback(PWMImpl)(pwmi_, &PWMImpl::snapshot_control));
 #endif
-#endif
 
     mi = K::menu_item("Idraw");
     mprint->append_item(mi);
@@ -1232,15 +1216,10 @@ PrintableWindowManager::PrintableWindowManager() {
     mi = K::menu_item("Ascii");
     mprint->append_item(mi);
     mi->action(new ActionCallback(PWMImpl)(pwmi_, &PWMImpl::ascii_control));
-#if MAC
-    mi = K::menu_item("Setup Printer");
-    mprint->append_item(mi);
-    mi->action(new ActionCallback(PWMImpl)(pwmi_, &PWMImpl::paperscale));
-#else
+
     mi = K::menu_item("Select Printer");
     mprint->append_item(mi);
     mi->action(new ActionCallback(PWMImpl)(pwmi_, &PWMImpl::printer_control));
-#endif
 
     mi = K::check_menu_item("Window Titles Printed");
     mprint->append_item(mi);
@@ -1274,11 +1253,9 @@ PrintableWindowManager::PrintableWindowManager() {
     mses->append_item(mi);
     mi->action(new ActionCallback(PWMImpl)(pwmi_, &PWMImpl::virt_screen));
 
-#if 1 || !MAC
     mi = K::menu_item("Land/Port");
     mprint->append_item(mi);
     mi->action(new ActionCallback(PWMImpl)(pwmi_, &PWMImpl::landscape));
-#endif
 
     mi = K::menu_item("Tray");
     mses->append_item(mi);
@@ -1298,11 +1275,7 @@ PrintableWindowManager::PrintableWindowManager() {
 #if OCSMALL
         pwmi_->w_->xplace(-800, 0);
 #else
-#if MAC
-        pwmi_->w_->xplace(0, 40);
-#else
         pwmi_->w_->xplace(0, 0);
-#endif
 #endif
         //		pwmi_->w_->map();
         PrintableWindow::intercept(ocg);
@@ -1361,13 +1334,13 @@ PrintableWindowManager::~PrintableWindowManager() {
 void hoc_pwman_place() {
     TRY_GUI_REDIRECT_DOUBLE("pwman_place", NULL);
 #if HAVE_IV
-    IFGUI
-    int x, y;
-    x = int(*getarg(1));
-    y = int(*getarg(2));
-    bool m = (ifarg(3) && int(*getarg(3)) == 0) ? false : true;
-    PrintableWindowManager::current()->xplace(x, y, m);
-    ENDGUI
+    if (hoc_usegui) {
+        int x, y;
+        x = int(*getarg(1));
+        y = int(*getarg(2));
+        bool m = (ifarg(3) && int(*getarg(3)) == 0) ? false : true;
+        PrintableWindowManager::current()->xplace(x, y, m);
+    }
 #endif
     hoc_ret();
     hoc_pushx(0.);
@@ -1376,11 +1349,11 @@ void hoc_pwman_place() {
 void hoc_save_session() {
     TRY_GUI_REDIRECT_DOUBLE("save_session", NULL);
 #if HAVE_IV
-    IFGUI
-    if (pwm_impl) {
-        pwm_impl->save_session(2, gargstr(1), (ifarg(2) ? gargstr(2) : NULL));
+    if (hoc_usegui) {
+        if (pwm_impl) {
+            pwm_impl->save_session(2, gargstr(1), (ifarg(2) ? gargstr(2) : NULL));
+        }
     }
-    ENDGUI
 #endif
     hoc_ret();
     hoc_pushx(0.);
@@ -1395,18 +1368,18 @@ const char* pwm_session_filename() {
 void hoc_print_session() {
     TRY_GUI_REDIRECT_DOUBLE("print_session", NULL);
 #if HAVE_IV
-    IFGUI
-    if (pwm_impl) {
-        if (ifarg(3) && chkarg(3, 0, 1) == 1.) {
-            pwm_impl->do_print((int) chkarg(1, 0, 1), gargstr(2));
-        } else if (ifarg(2)) {
-            pwm_impl->do_print_session((int) chkarg(1, 0, 1), gargstr(2));
-        } else {
-            bool b = ifarg(1) ? (chkarg(1, 0, 1) == 1.) : true;
-            pwm_impl->do_print_session(b);
+    if (hoc_usegui) {
+        if (pwm_impl) {
+            if (ifarg(3) && chkarg(3, 0, 1) == 1.) {
+                pwm_impl->do_print((int) chkarg(1, 0, 1), gargstr(2));
+            } else if (ifarg(2)) {
+                pwm_impl->do_print_session((int) chkarg(1, 0, 1), gargstr(2));
+            } else {
+                bool b = ifarg(1) ? (chkarg(1, 0, 1) == 1.) : true;
+                pwm_impl->do_print_session(b);
+            }
         }
     }
-    ENDGUI
 #endif
     hoc_ret();
     hoc_pushx(0.);
@@ -1431,9 +1404,6 @@ void PrintableWindowManager::xplace(int left, int top, bool m) {
     } else {
         w->hide();
     }
-#if MAC
-    reconfigured(w);
-#endif
 }
 
 void PrintableWindowManager::update(Observable* o) {
@@ -1493,6 +1463,7 @@ void PrintableWindow::map_notify() {
     }
 }
 
+// LCOV_EXCL_START
 void PrintableWindow::reconfigured() {
     if (!pixres) {
         return;
@@ -1506,6 +1477,7 @@ void PrintableWindow::reconfigured() {
         xmove(x, y);
     }
 }
+// LCOV_EXCL_STOP
 
 void ViewWindow::reconfigured() {
     if (!pixres) {
@@ -1630,13 +1602,7 @@ void PWMImpl::do_print0() {
         if (none_selected("No windows to print", "Print Anyway")) {
             return;
         }
-#if MAC
-        if (!mprinter_) {
-            continue_dialog("First select SetupPrinter");
-        } else {
-            mac_do_print();
-        }
-#else
+
         if (!b_printer_) {
             printer_control();
             if (!printer_control_accept_) {
@@ -1647,7 +1613,6 @@ void PWMImpl::do_print0() {
         }
         CopyString name(b_printer_->text()->string());
         do_print(use_printer, name.string());
-#endif
     } else {
         if (!fc_print_) {
             file_control();
@@ -1658,12 +1623,6 @@ void PWMImpl::do_print0() {
 }
 
 void PWMImpl::do_print(bool use_printer, const char* name) {
-#if MAC
-    if (use_printer) {
-        mac_do_print();
-        return;
-    }
-#endif
 #if defined(WIN32)
     if (use_printer && strcmp(name, "Windows") == 0) {
         mac_do_print();
@@ -1698,12 +1657,7 @@ void PWMImpl::do_print_session(bool also_leader) {
     float yoff = mprinter()->height() / 2 / sfac - (e.top() + e.bottom() + 23.) / 2.;
     Transformer t;
     t.translate(xoff, yoff);
-#if MAC
-    mprinter()->prolog();
-    t.scale(sfac, sfac);
-#else
     mprinter()->prolog(sfac);
-#endif
     mprinter()->push_transform();
     mprinter()->transform(t);
     common_print(mprinter(), false, true);
@@ -1711,7 +1665,7 @@ void PWMImpl::do_print_session(bool also_leader) {
     mprinter()->epilog();
 #endif
 
-#if (!MAC || DARWIN) && !defined(WIN32)
+#if !defined(WIN32)
     // must be a postscript printer so can use landscape mode
     if (!b_printer_) {
         printer_control();
@@ -1742,9 +1696,6 @@ void PWMImpl::ps_file_print(bool use_printer, const char* name, bool land_style,
     Style* s = Session::instance()->style();
     static char* tmpfile = (char*) 0;
     std::filebuf obuf;
-#if MAC && !DARWIN
-    obuf.open(name, IOS_OUT);
-#else
     if (!tmpfile) {
         tmpfile = ivoc_get_temp_file();
     }
@@ -1752,7 +1703,6 @@ void PWMImpl::ps_file_print(bool use_printer, const char* name, bool land_style,
     unlink(tmpfile);
 #endif
     obuf.open(tmpfile, IOS_OUT);
-#endif
     std::ostream o(&obuf);
     Printer* pr = new Printer(&o);
     pr->prolog();
@@ -1794,22 +1744,24 @@ void PWMImpl::ps_file_print(bool use_printer, const char* name, bool land_style,
     }
     pr->epilog();
     obuf.close();
-#if !MAC || DARWIN
+
     String filt("cat");
     s->find_attribute("pwm_postscript_filter", filt);
-    char* buf = new char[200 + strlen(name) + strlen(filt.string()) + 2 * strlen(tmpfile)];
+    auto const buf_size = 200 + strlen(name) + strlen(filt.string()) + 2 * strlen(tmpfile);
+    char* buf = new char[buf_size];
 
     if (use_printer) {
 #ifdef WIN32
-        sprintf(buf, "%s %s %s", filt.string(), tmpfile, name);
+        std::snprintf(buf, buf_size, "%s %s %s", filt.string(), tmpfile, name);
 #else
-        sprintf(buf, "%s < %s |  %s ; rm %s", filt.string(), tmpfile, name, tmpfile);
+        std::snprintf(
+            buf, buf_size, "%s < %s |  %s ; rm %s", filt.string(), tmpfile, name, tmpfile);
 #endif
     } else {
 #ifdef WIN32
-        sprintf(buf, "%s %s > %s", filt.string(), tmpfile, name);
+        std::snprintf(buf, buf_size, "%s %s > %s", filt.string(), tmpfile, name);
 #else
-        sprintf(buf, "%s < %s > %s ; rm %s", filt.string(), tmpfile, name, tmpfile);
+        std::snprintf(buf, buf_size, "%s < %s > %s ; rm %s", filt.string(), tmpfile, name, tmpfile);
 #endif
     }
     // printf("%s\n", buf);
@@ -1817,7 +1769,6 @@ void PWMImpl::ps_file_print(bool use_printer, const char* name, bool land_style,
     delete[] buf;
 #ifdef WIN32
     unlink(tmpfile);
-#endif
 #endif
     delete pr;  // input handlers later crash doing pr->damage()
 }
@@ -1931,9 +1882,7 @@ void PWMImpl::common_print(Printer* pr, bool land_style, bool ses_style) {
         // flush the allocation tables for InputHandler glyphs so
         // no glyphs try to use the Printer after it has been deleted
         pw->print_glyph()->undraw();
-#if !MAC
         redraw(pw);
-#endif
         // print the window titles
         if ((ses_style || p_title_->test(TelltaleState::is_chosen) == true)
 #if DECO
@@ -2048,14 +1997,14 @@ void PrintableWindowManager::psfilter(const char* filename) {
     char buf[512];
     String filt("cat");
     if (s->find_attribute("pwm_postscript_filter", filt)) {
-        sprintf(
+        Sprintf(
             buf, "cat %s > %s; %s < %s > %s", filename, tmpfile, filt.string(), tmpfile, filename);
         nrnignore = system(buf);
         unlink(tmpfile);
     }
 }
 
-#if defined(WIN32) || MAC
+#if defined(WIN32)
 void pwmimpl_redraw(Window* pw);
 #endif
 
@@ -2066,7 +2015,7 @@ void PWMImpl::redraw(Window* pw) {
     }
     Canvas* c = pw->canvas();
     c->damage_all();
-#if defined(WIN32) || MAC
+#if defined(WIN32)
     pwmimpl_redraw(pw);
 #else
     Requisition req;
@@ -2112,7 +2061,7 @@ ScreenItem::~ScreenItem() {
 
 void ScreenItem::relabel(GlyphIndex i) {
     char buf[10];
-    sprintf(buf, "%ld", i);
+    Sprintf(buf, "%ld", i);
     i_ = i;
     Glyph* g = WidgetKit::instance()->label(buf);
     Resource::ref(g);
@@ -2551,9 +2500,9 @@ static const char* DefaultPrintCmd() {
         const char* printer_name = getenv("PRINTER");
 
         if (printer_name == NULL) {
-            sprintf(buf, "lpr");
+            Sprintf(buf, "lpr");
         } else {
-            sprintf(buf, "lpr -P%s", printer_name);
+            Sprintf(buf, "lpr -P%s", printer_name);
         }
         print_cmd = buf;
     }
@@ -2697,24 +2646,24 @@ void PWMImpl::snap(Printer* pr, Window* w) {
     }
     char buf[256];
     if (pd) {
-        sprintf(buf,
+        Sprintf(buf,
                 "BoundingBox: %g %g %g %g",
                 w->left() - 3,
                 w->bottom() - 3,
                 w->left() + w->width() + 3,
                 w->bottom() + w->height() + 20 + 3);
         pr->comment(buf);
-        sprintf(buf, "\\begin{picture}(%g, %g)", w->width() + 6, w->height() + 23);
+        Sprintf(buf, "\\begin{picture}(%g, %g)", w->width() + 6, w->height() + 23);
         pr->comment(buf);
     } else {
-        sprintf(buf,
+        Sprintf(buf,
                 "BoundingBox: %g %g %g %g",
                 w->left(),
                 w->bottom(),
                 w->left() + w->width(),
                 w->bottom() + w->height());
         pr->comment(buf);
-        sprintf(buf, "\\begin{picture}(%g, %g)", w->width(), w->height());
+        Sprintf(buf, "\\begin{picture}(%g, %g)", w->width(), w->height());
         pr->comment(buf);
     }
     pr->push_transform();
@@ -3013,7 +2962,7 @@ void PWMImpl::save_session(int mode, const char* filename, const char* head) {
                             sivec[nwin++] = si;
                         } else {
                             char buf[100];
-                            sprintf(buf,
+                            Sprintf(buf,
                                     "{pwman_place(%d,%d,%d)}\n",
                                     w->xleft(),
                                     w->xtop(),
@@ -3036,7 +2985,7 @@ void PWMImpl::save_session(int mode, const char* filename, const char* head) {
                             sivec[nwin++] = si;
                         } else {
                             char buf[100];
-                            sprintf(buf, "{pwman_place(%d,%d)}\n", w->xleft(), w->xtop());
+                            Sprintf(buf, "{pwman_place(%d,%d)}\n", w->xleft(), w->xtop());
                             o << buf;
                         }
                     }
@@ -3094,7 +3043,7 @@ void PWMImpl::ses_group(ScreenItem* si, std::ostream& o) {
     char* name;
     if (si->group_obj_) {
         name = Oc2IV::object_str("name", si->group_obj_);
-        sprintf(buf,
+        Sprintf(buf,
                 "{WindowMenu[0].ses_gid(%d, %d, %d, \"%s\")}\n",
                 ses_group_first_,
                 si->group_obj_->index,
@@ -3127,7 +3076,7 @@ void PWMImpl::retrieve_control() {
         if (ok_to_read(*fc_retrieve_->selected(), w_)) {
             Oc oc;
             char buf[256];
-            sprintf(buf, "{load_file(1, \"%s\")}\n", fc_retrieve_->selected()->string());
+            Sprintf(buf, "{load_file(1, \"%s\")}\n", fc_retrieve_->selected()->string());
             if (!oc.run(buf)) {
                 break;
             }
@@ -3162,7 +3111,7 @@ OcLabelGlyph::~OcLabelGlyph() {
 void OcLabelGlyph::save(std::ostream& o) {
     char buf[256];
     o << "{xpanel(\"\")" << std::endl;
-    sprintf(buf, "xlabel(\"%s\")", label_.string());
+    Sprintf(buf, "xlabel(\"%s\")", label_.string());
     o << buf << std::endl;
     o << "xpanel()}" << std::endl;
     og_->save(o);
@@ -3382,30 +3331,19 @@ Window* PWMImpl::snap_owned(Printer* pr, Window* wp) {
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <InterViews/resource.h>
 #include "oc2iv.h"
 
 #endif  // HAVE_IV
 
 char* ivoc_get_temp_file() {
     char* tmpfile;
-#if MAC
-    FSSpec spec;
-    tmpfile = new char[512];
-    __temp_file_name(tmpfile, &spec);
-#else
     const char* tdir = getenv("TEMP");
     if (!tdir) {
         tdir = "/tmp";
     }
-#if defined(WIN32) && defined(__MWERKS__)
-    char tname[L_tmpnam + 1];
-    tmpnam(tname);
-    tmpfile = new char[strlen(tdir) + 1 + strlen(tname) + 1];
-    sprintf(tmpfile, "%s/%s", tdir, tname);
-#else
-    tmpfile = new char[strlen(tdir) + 1 + 9 + 1];
-    sprintf(tmpfile, "%s/nrnXXXXXX", tdir);
+    auto const length = strlen(tdir) + 1 + 9 + 1;
+    tmpfile = new char[length];
+    std::snprintf(tmpfile, length, "%s/nrnXXXXXX", tdir);
 #if HAVE_MKSTEMP
     int fd;
     if ((fd = mkstemp(tmpfile)) == -1) {
@@ -3415,10 +3353,8 @@ char* ivoc_get_temp_file() {
 #else
     mktemp(tmpfile);
 #endif
-#endif
 #if defined(WIN32)
     tmpfile = hoc_back2forward(tmpfile);
-#endif
 #endif
     return tmpfile;
 }

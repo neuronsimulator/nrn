@@ -1,4 +1,4 @@
-#include <../../nmodlconf.h>
+#include <../../nrnconf.h>
 /* /local/src/master/nrn/src/modlunit/model.c,v 1.6 1998/07/12 13:19:02 hines Exp */
 
 /*
@@ -24,6 +24,7 @@
  * still gives the prefix of the .c and .var files.
  */
 
+#include <cstring>
 #include "model.h"
 #include "parse1.hpp"
 
@@ -45,13 +46,8 @@ Item* qlint;
 #endif
 
 static const char* pgm_name = "model";
-extern const char* RCS_version;
-extern const char* RCS_date;
 static void openfiles(int, char**);
 static void debug_item(Item* q, int indent, FILE* file);
-#if MAC
-#include <sioux.h>
-#endif
 
 int main(int argc, char* argv[]) {
     /*
@@ -59,19 +55,10 @@ int main(int argc, char* argv[]) {
      * files
      * We first look for a .mrg file and then a .mod file
      */
-#if MAC
-    SIOUXSettings.asktosaveonclose = false;
-#endif
-    Fprintf(stderr, "%s   %s   %s\n", pgm_name, RCS_version, RCS_date);
-
-
     init(); /* keywords into symbol table, initialize
              * lists, etc. */
     unit_init();
     nrn_unit_init();
-#if MAC
-    mac_cmdline(&argc, &argv);
-#endif
     openfiles(argc, argv); /* .mrg else .mod,  .var, .c */
     Fprintf(stderr, "Checking units of %s\n", finname);
 
@@ -99,10 +86,6 @@ int main(int argc, char* argv[]) {
     /* check unit consistency */
     parsepass(3);
     yyparse();
-#if MAC
-    printf("Units consistent in %s\n", finname);
-    SIOUXSettings.autocloseonquit = true;
-#endif
 #if 0
 	parout();		/* print .var file.
 				 * Also #defines which used to be in defs.h
@@ -133,8 +116,8 @@ int main(int argc, char* argv[]) {
 static void openfiles(int argc, char* argv[]) {
     char *cp, modprefix[NRN_BUFSIZE - 5];
     if (argc > 1) {
-        assert(strlen(argv[1]) < NRN_BUFSIZE);
-        sprintf(modprefix, "%s", argv[1]);
+        assert(strlen(argv[1]) < NRN_BUFSIZE - 5);
+        Sprintf(modprefix, "%s", argv[1]);
         cp = strstr(modprefix, ".mod");
         if (cp) {
             *cp = '\0';
@@ -263,7 +246,7 @@ static void debug_item(Item* q, int indent, FILE* file) {
  * more changes for port to mac of modlunit
  *
  * Revision 1.3  1997/11/24  16:19:12  hines
- * modlunit port to MAC (not complete)
+ * modlunit port to mac (not complete)
  *
  * Revision 1.2  1997/10/20  14:58:07  hines
  * modlunit file.mod accepted (ie suffix allowed)

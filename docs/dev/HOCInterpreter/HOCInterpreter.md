@@ -4,8 +4,8 @@
   - [**Source Code**](#source-code)
   - [**HOC Grammar**](#hoc-grammar)
   - [**HOC Initialization**](#hoc-initialization)
-  - [****HOC Interpreter - executing the machine****](#hoc-interpreter-executing-the-machine)
-  - [****HOC Interpreter example - printf****](#hoc-interpreter-example-printf)
+  - [****HOC Interpreter - executing the machine****](#hoc-interpreter---executing-the-machine)
+  - [****HOC Interpreter example - printf****](#hoc-interpreter-example---printf)
 
   
 ---
@@ -223,7 +223,6 @@ With respect to the HOC grammar we have:
         }  // namespace nrn::oc
         using Frame = nrn::oc::frame;
         #define NFRAME 512 /* default size */
-        #define nframe hoc_nframe
         static Frame *frame, *fp, *framelast; /* first, frame pointer, last */
       ```
     
@@ -480,7 +479,7 @@ _**call()**_ will continue on to check the symbol, which  tells us we are callin
      315
   -> 316 	    hoc_sprint1(&buf, 1);
      317 	    d = (int) strlen(buf);
-     318 	    NOT_PARALLEL_SUB(plprint(buf);)
+     318 	    plprint(buf);
      319 	    fflush(stdout);
   Target 0: (nrniv) stopped.
   ```

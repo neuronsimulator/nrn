@@ -3,7 +3,7 @@
 #include <assert.h>
 #include "grids.h"
 #include "rxd.h"
-#include <nrnwrap_Python.h>
+#include "nrnwrap_Python.h"
 
 /*Tortuous diffusion coefficients*/
 #define DcX(x, y, z) (g->dc_x * PERM(x, y, z))

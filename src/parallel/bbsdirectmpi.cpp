@@ -1,10 +1,11 @@
 #include <../../nrnconf.h>
 #include <nrnmpi.h>
-#include "bbsconf.h"
 #ifdef NRNMPI  // to end of file
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <InterViews/resource.h>
 #include "oc2iv.h"
 #include "bbs.h"
@@ -14,45 +15,26 @@
 
 extern void nrnmpi_int_broadcast(int*, int, int);
 
-#if defined(HAVE_STL)
-#if defined(HAVE_SSTREAM)  // the standard ...
 #include <map>
-#else
-#include <pair.h>
-#include <map.h>
-#endif
 
 #define debug 0
 
-struct ltint {
-    bool operator()(int i, int j) const {
-        return i < j;
-    }
-};
-
-class KeepArgs: public std::map<int, bbsmpibuf*, ltint> {};
-
-#endif
-
+class KeepArgs: public std::map<int, bbsmpibuf*> {};
 
 BBSDirect::BBSDirect() {
     if (!BBSDirectServer::server_) {
         BBSDirectServer::server_ = new BBSDirectServer();
     }
-    sendbuf_ = nil;
-    recvbuf_ = nil;
+    sendbuf_ = nullptr;
+    recvbuf_ = nullptr;
     BBSDirect::start();
-#if defined(HAVE_STL)
     keepargs_ = new KeepArgs();
-#endif
 }
 
 BBSDirect::~BBSDirect() {
     nrnmpi_unref(sendbuf_);
     nrnmpi_unref(recvbuf_);
-#if defined(HAVE_STL)
     delete keepargs_;
-#endif
 }
 
 void BBSDirect::perror(const char* s) {
@@ -68,7 +50,6 @@ void BBSDirect::context() {
     // then id > 0 need to execute the context statement
     // but id == 0 does not.
     if (nrnmpi_numprocs > 1 && nrnmpi_numprocs_bbs < nrnmpi_numprocs_world) {
-        size_t n;
         bbsmpibuf* rsav = recvbuf_;  // May naturally be NULL anyway
         recvbuf_ = nrnmpi_newbuf(sendbuf_->size);
         nrnmpi_ref(recvbuf_);
@@ -76,13 +57,13 @@ void BBSDirect::context() {
         nrnmpi_upkbegin(recvbuf_);
         nrnmpi_upkint(recvbuf_);
         nrnmpi_upkint(recvbuf_);  // slot reserved for tag
-        execute_helper(&n, -1, false);
+        execute_helper(-1, false);
         nrnmpi_unref(recvbuf_);
         recvbuf_ = rsav;
     }
 
     nrnmpi_unref(sendbuf_);
-    sendbuf_ = nil;
+    sendbuf_ = nullptr;
 }
 
 int BBSDirect::upkint() {
@@ -116,13 +97,15 @@ char* BBSDirect::upkstr() {
     return s;
 }
 
-char* BBSDirect::upkpickle(size_t* n) {
-    char* s;
-    s = nrnmpi_upkpickle(n, recvbuf_);
+std::vector<char> BBSDirect::upkpickle() {
+    std::size_t n;
+    char* s = nrnmpi_upkpickle(&n, recvbuf_);
 #if debug
-    printf("upkpickle returning %d bytes\n", *n);
+    printf("upkpickle returning %d bytes\n", n);
 #endif
-    return s;
+    std::vector<char> ret(s, s + n);
+    delete[] s;
+    return ret;
 }
 
 void BBSDirect::pkbegin() {
@@ -163,11 +146,11 @@ void BBSDirect::pkstr(const char* s) {
     nrnmpi_pkstr(s, sendbuf_);
 }
 
-void BBSDirect::pkpickle(const char* s, size_t n) {
+void BBSDirect::pkpickle(const std::vector<char>& s) {
 #if debug
-    printf("%d BBSDirect::pkpickle %d bytes\n", nrnmpi_myid_bbs, n);
+    printf("%d BBSDirect::pkpickle %d bytes\n", nrnmpi_myid_bbs, s.size());
 #endif
-    nrnmpi_pkpickle(s, n, sendbuf_);
+    nrnmpi_pkpickle(s.data(), s.size(), sendbuf_);
 }
 
 void BBSDirect::post(const char* key) {
@@ -178,7 +161,7 @@ void BBSDirect::post(const char* key) {
     nrnmpi_pkstr(key, sendbuf_);
     BBSDirectServer::server_->post(key, sendbuf_);
     nrnmpi_unref(sendbuf_);
-    sendbuf_ = nil;
+    sendbuf_ = nullptr;
     BBSDirectServer::handle();
 }
 
@@ -190,7 +173,7 @@ void BBSDirect::post_todo(int parentid) {
     nrnmpi_pkint(parentid, sendbuf_);
     BBSDirectServer::server_->post_todo(parentid, nrnmpi_myid_bbs, sendbuf_);
     nrnmpi_unref(sendbuf_);
-    sendbuf_ = nil;
+    sendbuf_ = nullptr;
     BBSDirectServer::handle();
 }
 
@@ -202,7 +185,7 @@ void BBSDirect::post_result(int id) {
     nrnmpi_pkint(id, sendbuf_);
     BBSDirectServer::server_->post_result(id, sendbuf_);
     nrnmpi_unref(sendbuf_);
-    sendbuf_ = nil;
+    sendbuf_ = nullptr;
     BBSDirectServer::handle();
 }
 
@@ -263,26 +246,21 @@ int BBSDirect::master_take_result(int pid) {
 }
 
 void BBSDirect::save_args(int userid) {
-#if defined(HAVE_STL)
     nrnmpi_ref(sendbuf_);
-    keepargs_->insert(std::pair<const int, bbsmpibuf*>(userid, sendbuf_));
-
-#endif
+    keepargs_->emplace(userid, sendbuf_);
     post_todo(working_id_);
 }
 
 void BBSDirect::return_args(int userid) {
-#if defined(HAVE_STL)
     KeepArgs::iterator i = keepargs_->find(userid);
     nrnmpi_unref(recvbuf_);
-    recvbuf_ = nil;
+    recvbuf_ = nullptr;
     if (i != keepargs_->end()) {
         recvbuf_ = (*i).second;
         keepargs_->erase(i);
         nrnmpi_upkbegin(recvbuf_);
         BBSImpl::return_args(userid);
     }
-#endif
 }
 
 bool BBSDirect::look_take(const char* key) {

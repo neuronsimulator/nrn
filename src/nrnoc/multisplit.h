@@ -1,8 +1,4 @@
-#ifndef multisplit_h
-#define multisplit_h
-
-#include <nrnmpiuse.h>
-
+#pragma once
 #if 0 /* comment */
 
 in the classical order, knowing a node means you know the classical parent with
@@ -27,17 +23,5 @@ two parents. A center node may be reversed or not with respect to its classical
 parent. One of the present parents may or may not be its classical parent.
 
 #endif /* end comment */
-
-
-#if 1 || PARANEURON
-extern double* nrn_classicalNodeA(Node* n);
-extern double* nrn_classicalNodeB(Node* n);
-#define ClassicalNODEA(n) (*nrn_classicalNodeA(n))
-#define ClassicalNODEB(n) (*nrn_classicalNodeB(n))
-#else
-#define ClassicalNODEA(n) NODEA(n)
-#define ClassicalNODEB(n) NODEB(n)
-#endif
-
-
-#endif /* multisplit_h */
+double* nrn_classicalNodeA(Node* n);
+double* nrn_classicalNodeB(Node* n);

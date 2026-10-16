@@ -1,8 +1,5 @@
 #pragma once
-#undef HAVE_PUTENV
-#undef HAVE_FTIME
 #undef HAVE_PROTOTYPES
-#undef HAVE_DIRENT_H
 #if defined(__MINGW32__)
 #undef _hypot
 #define _hypot hypot
@@ -13,3 +10,4 @@
 #define PY_SSIZE_T_CLEAN
 #endif
 #include <Python.h>
+#undef snprintf

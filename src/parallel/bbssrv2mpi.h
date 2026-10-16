@@ -1,5 +1,4 @@
-#ifndef bbslsrv2_h
-#define bbslsrv2_h
+#pragma once
 
 #include <nrnmpiuse.h>
 #include <InterViews/resource.h>
@@ -54,5 +53,3 @@ class BBSDirectServer {
     bbsmpibuf* context_buf_;
     int remaining_context_cnt_;
 };
-
-#endif

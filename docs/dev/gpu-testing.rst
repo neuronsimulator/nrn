@@ -8,7 +8,7 @@ Other sections of the documentation that may be relevant are:
 - The :ref:`Running GPU benchmarks` section, which outlines how to use profiling tools such as Caliper, NVIDIA NSight Systems, and NVIDIA NSight Compute.
 
 This section aims to add some basic information about how to test if GPU execution is working.
-This might be useful if, for example, you need to test a change to the GPU wheel building, or test GPU execution on a new system.
+This might be useful if, for example, you need to test GPU execution on a new system.
 
 Accessing GPU resources
 ***********************
@@ -57,7 +57,10 @@ If you have configured NEURON with CoreNEURON, CoreNEURON GPU support and tests 
 
   $ ctest --output-on-failure
 
-in your CMake build directory will execute a large number of tests, many of them including GPU execution.
+in your **main** CMake build directory will execute a large number of tests, many of them including GPU execution.
+(That is the in-tree suite. The separate ``test-install`` / ``test/foreign`` path
+validates an install or wheel and is CPU-oriented; GPU install checks are not
+the focus of that harness yet.)
 You can filter which tests are run by name using the ``-R`` option to CTest, for example:
 
 .. code-block:: console

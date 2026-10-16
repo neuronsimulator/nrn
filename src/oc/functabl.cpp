@@ -1,9 +1,11 @@
 #include <../../nrnconf.h>
-#include "hoc.h"
+
+#include "hocdec.h"
+#include "oc_ansi.h"
 
 struct TableArg {
     int nsize;
-    double* argvec; /* if nil use min,max */
+    double* argvec; /* if nullptr use min,max */
     double min;
     double max;
     double frac; /* temporary storage */
@@ -29,9 +31,6 @@ static int arg_index(TableArg* ta, double x) {
         } else {
             while (t0 < (t1 - 1)) {
                 j = (t0 + t1) / 2;
-#if 0
-printf("x[%d]=%g  x[%d]=%g  x[%d]=%g\n", t0, ta->argvec[t0], j, ta->argvec[j], t1, ta->argvec[t1]);
-#endif
                 if (ta->argvec[j] <= x) {
                     t0 = j;
                 } else {
@@ -78,8 +77,13 @@ double hoc_func_table(void* vpft, int n, double* args) {
     if (!ft) {
         hoc_execerror("table not specified in hoc_func_table", nullptr);
     }
+    if (ft->value && ft->targs[0].nsize == 1) {
+        return ft->value;
+    }
     double* tab = ft->table;
     int j = 0;
+    // matrix order is row order.
+    // I.e. [irow][jcol] is at location irow*ncol + jcol
     for (size_t i = 0; i < n; ++i) {
         j = (j * ft->targs[i].nsize) + arg_index(ft->targs + i, args[i]);
     }
@@ -108,7 +112,6 @@ void hoc_spec_table(void** vppt, int n) {
     }
     FuncTable* ft = *ppt;
     TableArg* ta = ft->targs;
-    int argcnt = 2;
     if (!ifarg(2)) { /* set to constant */
         ft->value = *getarg(1);
         ft->table = &ft->value;
@@ -120,16 +123,26 @@ void hoc_spec_table(void** vppt, int n) {
         }
         return;
     }
-    if (hoc_is_object_arg(1)) {
+    if (hoc_is_object_arg(1) && hoc_is_object_arg(2)) {
         if (n > 1) {
             hoc_execerror("Vector arguments allowed only for functions", "of one variable");
         }
+        Object* ob1 = *hoc_objgetarg(1);
+        hoc_obj_ref(ob1);
+        Object* ob2 = *hoc_objgetarg(2);
+        hoc_obj_ref(ob2);
         int ns = vector_arg_px(1, &ft->table);
         ta[0].nsize = vector_arg_px(2, &ta[0].argvec);
         if (ns != ta[0].nsize) {
             hoc_execerror("Vector arguments not same size", nullptr);
         }
     } else {
+        if (hoc_is_object_arg(1)) {
+            Object* ob1 = *hoc_objgetarg(1);
+            hoc_obj_ref(ob1);
+        }
+        ft->table = hoc_pgetarg(1);
+        int argcnt = 2;
         for (size_t i = 0; i < n; ++i) {
             ta[i].nsize = *getarg(argcnt++);
             if (ta[i].nsize < 1) {
@@ -143,9 +156,12 @@ void hoc_spec_table(void** vppt, int n) {
                 }
                 ta[i].argvec = nullptr;
             } else {
+                if (hoc_is_object_arg(argcnt)) {
+                    Object* ob1 = *hoc_objgetarg(argcnt);
+                    hoc_obj_ref(ob1);
+                }
                 ta[i].argvec = hoc_pgetarg(argcnt++);
             }
         }
-        ft->table = hoc_pgetarg(1);
     }
 }

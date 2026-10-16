@@ -58,6 +58,7 @@ node.v + extnode.v[0]
 #include "ocnotify.h"
 #include "section.h"
 #include "spmatrix.h"
+#include "treeset.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -68,7 +69,7 @@ node.v + extnode.v[0]
 static void node_free();
 static void triang(NrnThread*), bksub(NrnThread*);
 
-#if PARANEURON
+#if NRNMPI
 void (*nrnmpi_splitcell_compute_)();
 #endif
 
@@ -99,17 +100,13 @@ Section** secorder;
 double debugsolve(void) /* returns solution error */
 {
     short inode;
-    int i;
-    Section *sec, *psec, *ch;
     Node *nd, *pnd, **ndP;
     double err, sum;
 
     /* save parts of matrix that will be destroyed */
-    assert(0)
-        /* need to save the rootnodes too */
-        // ForAllSections(sec)
-        ITERATE(qsec, section_list) {
-        Section* sec = hocSEC(qsec);
+    assert(0);
+    /* need to save the rootnodes too */
+    for (const Section* sec: range_sec(section_list)) {
         assert(sec->pnode && sec->nnode);
         for (inode = sec->nnode - 1; inode >= 0; inode--) {
             nd = sec->pnode[inode];
@@ -123,9 +120,7 @@ double debugsolve(void) /* returns solution error */
 
     err = 0.;
     /* need to check the rootnodes too */
-    // ForAllSections(sec)
-    ITERATE(qsec, section_list) {
-        Section* sec = hocSEC(qsec);
+    for (const Section* sec: range_sec(section_list)) {
         for (inode = sec->nnode - 1; inode >= 0; inode--) {
             ndP = sec->pnode + inode;
             nd = sec->pnode[inode];
@@ -140,10 +135,9 @@ double debugsolve(void) /* returns solution error */
             if (inode < sec->nnode - 1) {
                 sum += NODEA(ndP[1]) * NODERHS(ndP[1]);
             }
-            for (ch = nd->child; ch; ch = ch->sibling) {
-                psec = ch;
-                pnd = psec->pnode[0];
-                assert(pnd && psec->nnode);
+            for (const Section* ch = nd->child; ch; ch = ch->sibling) {
+                pnd = ch->pnode[0];
+                assert(pnd && ch->nnode);
                 sum += NODEA(pnd) * NODERHS(pnd);
             }
             sum -= nd->savrhs;
@@ -290,12 +284,9 @@ static void dashes(Section* sec, int offset, int first);
 
 void nrnhoc_topology(void) /* print the topology of the branched cable */
 {
-    hoc_Item* q;
-
     v_setup_vectors();
     Printf("\n");
-    ITERATE(q, section_list) {
-        Section* sec = (Section*) VOIDITM(q);
+    for (Section* sec: range_sec(section_list)) {
         if (sec->parentsec == (Section*) 0) {
             Printf("|");
             dashes(sec, 0, '-');
@@ -310,7 +301,7 @@ static void dashes(Section* sec, int offset, int first) {
     Section* ch;
     char direc[30];
     i = (int) nrn_section_orientation(sec);
-    sprintf(direc, "(%d-%d)", i, 1 - i);
+    Sprintf(direc, "(%d-%d)", i, 1 - i);
     for (i = 0; i < offset; i++)
         Printf(" ");
     Printf("%c", first);
@@ -344,7 +335,7 @@ void nrn_solve(NrnThread* _nt) {
 	printf("\nnrn_solve enter %lx\n", (long)_nt);
 	nrn_print_matrix(_nt);
 #endif
-#if PARANEURON
+#if NRNMPI
     if (nrn_multisplit_solve_) {
         nrn_thread_error("nrn_multisplit_solve");
         (*nrn_multisplit_solve_)();
@@ -365,6 +356,7 @@ void nrn_solve(NrnThread* _nt) {
     if (use_sparse13) {
         int e;
         nrn_thread_error("solve use_sparse13");
+        update_sp13_mat_based_on_actual_d(_nt);
         e = spFactor(_nt->_sp13mat);
         if (e != spOKAY) {
             switch (e) {
@@ -376,10 +368,13 @@ void nrn_solve(NrnThread* _nt) {
                 hoc_execerror("spFactor error:", "Singular");
             }
         }
-        spSolve(_nt->_sp13mat, _nt->_actual_rhs, _nt->_actual_rhs);
+        update_sp13_rhs_based_on_actual_rhs(_nt);
+        spSolve(_nt->_sp13mat, _nt->_sp13_rhs, _nt->_sp13_rhs);
+        update_actual_d_based_on_sp13_mat(_nt);
+        update_actual_rhs_based_on_sp13_rhs(_nt);
     } else {
         triang(_nt);
-#if PARANEURON
+#if NRNMPI
         if (nrnmpi_splitcell_compute_) {
             nrn_thread_error("nrnmpi_splitcell_compute");
             (*nrnmpi_splitcell_compute_)();
@@ -395,68 +390,41 @@ void nrn_solve(NrnThread* _nt) {
 }
 
 /* triangularization of the matrix equations */
-void triang(NrnThread* _nt) {
-    Node *nd, *pnd;
-    double p;
+static void triang(NrnThread* _nt) {
     int i, i2, i3;
     i2 = _nt->ncell;
     i3 = _nt->end;
-#if CACHEVEC
-    if (use_cachevec) {
-        for (i = i3 - 1; i >= i2; --i) {
-            p = VEC_A(i) / VEC_D(i);
-            VEC_D(_nt->_v_parent_index[i]) -= p * VEC_B(i);
-            VEC_RHS(_nt->_v_parent_index[i]) -= p * VEC_RHS(i);
-        }
-    } else
-#endif /* CACHEVEC */
-    {
-        for (i = i3 - 1; i >= i2; --i) {
-            nd = _nt->_v_node[i];
-            pnd = _nt->_v_parent[i];
-            p = NODEA(nd) / NODED(nd);
-            NODED(pnd) -= p * NODEB(nd);
-            NODERHS(pnd) -= p * NODERHS(nd);
-        }
+    auto* const vec_a = _nt->node_a_storage();
+    auto* const vec_b = _nt->node_b_storage();
+    auto* const vec_d = _nt->node_d_storage();
+    auto* const vec_rhs = _nt->node_rhs_storage();
+    for (i = i3 - 1; i >= i2; --i) {
+        auto const p = vec_a[i] / vec_d[i];
+        auto const pi = _nt->_v_parent_index[i];
+        vec_d[pi] -= p * vec_b[i];
+        vec_rhs[pi] -= p * vec_rhs[i];
     }
 }
 
 /* back substitution to finish solving the matrix equations */
 void bksub(NrnThread* _nt) {
-    Node *nd, *cnd;
-    int i, i1, i2, i3;
-    i1 = 0;
-    i2 = i1 + _nt->ncell;
-    i3 = _nt->end;
-#if CACHEVEC
-    if (use_cachevec) {
-        for (i = i1; i < i2; ++i) {
-            VEC_RHS(i) /= VEC_D(i);
-        }
-        for (i = i2; i < i3; ++i) {
-            VEC_RHS(i) -= VEC_B(i) * VEC_RHS(_nt->_v_parent_index[i]);
-            VEC_RHS(i) /= VEC_D(i);
-        }
-    } else
-#endif /* CACHEVEC */
-    {
-        for (i = i1; i < i2; ++i) {
-            NODERHS(_nt->_v_node[i]) /= NODED(_nt->_v_node[i]);
-        }
-        for (i = i2; i < i3; ++i) {
-            cnd = _nt->_v_node[i];
-            nd = _nt->_v_parent[i];
-            NODERHS(cnd) -= NODEB(cnd) * NODERHS(nd);
-            NODERHS(cnd) /= NODED(cnd);
-        }
+    auto const i1 = 0;
+    auto const i2 = i1 + _nt->ncell;
+    auto const i3 = _nt->end;
+    auto* const vec_b = _nt->node_b_storage();
+    auto* const vec_d = _nt->node_d_storage();
+    auto* const vec_rhs = _nt->node_rhs_storage();
+    for (int i = i1; i < i2; ++i) {
+        vec_rhs[i] /= vec_d[i];
+    }
+    for (int i = i2; i < i3; ++i) {
+        vec_rhs[i] -= vec_b[i] * vec_rhs[_nt->_v_parent_index[i]];
+        vec_rhs[i] /= vec_d[i];
     }
 }
 
 void nrn_clear_mark(void) {
-    hoc_Item* qsec;
-    // ForAllSections(sec)
-    ITERATE(qsec, section_list) {
-        Section* sec = hocSEC(qsec);
+    for (Section* sec: range_sec(section_list)) {
         sec->volatile_mark = 0;
     }
 }
@@ -467,33 +435,15 @@ short nrn_value_mark(Section* sec) {
     return sec->volatile_mark;
 }
 
-/* allocate space for sections (but no nodes) */
-/* returns pointer to Section */
-Section* sec_alloc(void) {
-    Section* sec;
-
-    /* changed from emalloc to allocation from a SectionPool in order
-       to allow safe checking of whether a void* is a possible Section*
-       without the possibility of invalid memory read errors.
-       Note that freeing sections must be done
-       with nrn_section_free(Section*)
-    */
-    sec = nrn_section_alloc();
-    sec->refcount = 0;
-    sec->nnode = 0;
-    sec->parentsec = sec->sibling = sec->child = (Section*) 0;
-    sec->parentnode = (Node*) 0;
-    sec->pnode = (Node**) 0;
-#if DIAMLIST
-    sec->npt3d = 0;
-    sec->pt3d_bsize = 0;
-    sec->pt3d = (Pt3d*) 0;
-    sec->logical_connection = (Pt3d*) 0;
-#endif
-    sec->prop = (Prop*) 0;
-    sec->recalc_area_ = 0;
-
-    return sec;
+/**
+ * @brief Allocate a new Section object.
+ *
+ * Changed from emalloc to allocation from a SectionPool in order to allow safe checking of whether
+ * a void* is a possible Section* without the possibility of invalid memory read errors. Note that
+ * freeing sections must be done with nrn_section_free(Section*).
+ */
+Section* sec_alloc() {
+    return nrn_section_alloc();
 }
 
 /* free a node vector for one section */
@@ -511,7 +461,7 @@ static void node_free(Section* sec) {
     sec->pnode = (Node**) 0;
     sec->nnode = 0;
 }
-void nrn_node_destruct1(Node*);
+
 static void section_unlink(Section* sec);
 /* free everything about sections */
 void sec_free(hoc_Item* secitem) {
@@ -537,7 +487,7 @@ void sec_free(hoc_Item* secitem) {
     prop_free(&(sec->prop));
     node_free(sec);
     if (!sec->parentsec && sec->parentnode) {
-        nrn_node_destruct1(sec->parentnode);
+        delete std::exchange(sec->parentnode, nullptr);
     }
 #if DIAMLIST
     if (sec->pt3d) {
@@ -566,6 +516,7 @@ printf("section_unref: freed\n");
         nrn_section_free(sec);
     }
 }
+
 void section_ref(Section* sec) {
     /*printf("section_ref %lx %d\n", (long)sec,sec->refcount+1);*/
     ++sec->refcount;
@@ -594,104 +545,46 @@ static void section_unlink(Section* sec) /* other sections no longer reference t
     nrn_disconnect(sec);
 }
 
-Node** node_construct(int n) {
-    Node *nd, **pnode;
-    int i;
-
-    pnode = (Node**) ecalloc((unsigned) n, sizeof(Node*));
-    for (i = n - 1; i >= 0; i--) {
-        nd = (Node*) ecalloc(1, sizeof(Node));
-#if CACHEVEC
-        nd->_v = &nd->_v_temp;
-        nd->_area = 100.;
-        nd->_rinv = 0.;
-#endif
-        nd->sec_node_index_ = i;
-        pnode[i] = nd;
-        nd->prop = (Prop*) 0;
-        NODEV(nd) = DEF_vrest;
+Node::~Node() {
+    prop_free(&prop);
 #if EXTRACELLULAR
-        nd->extnode = (Extnode*) 0;
-#endif
-#if EXTRAEQN
-        nd->eqnblock = (Eqnblock*) 0;
-#endif
-    }
-    return pnode;
-}
-
-Node* nrn_node_construct1(void) {
-    Node* nd;
-    Node** ndp;
-    ndp = node_construct(1);
-    nd = ndp[0];
-    free(ndp);
-    return nd;
-}
-
-void nrn_node_destruct1(Node* nd) {
-    if (!nd) {
-        return;
-    }
-    prop_free(&(nd->prop));
-#if CACHEVEC
-    notify_freed_val_array(&NODEV(nd), 1);
-    notify_freed_val_array(&NODEAREA(nd), 2);
-#else
-    notify_freed_val_array(&NODEV(nd), 2);
-#endif
-#if EXTRACELLULAR
-    if (nd->extnode) {
-        notify_freed_val_array(nd->extnode->v, nlayer);
+    if (extnode) {
+        notify_freed_val_array(extnode->v, nlayer);
     }
 #endif
 #if EXTRAEQN
-    {
-        Eqnblock *e, *e1;
-        for (e = nd->eqnblock; e; e = e1) {
-            e1 = e->eqnblock_next;
-            free((char*) e);
-        }
+    for (Eqnblock* e = eqnblock; e;) {
+        free(std::exchange(e, e->eqnblock_next));
     }
 #endif
 #if EXTRACELLULAR
-    if (nd->extnode) {
-        extnode_free_elements(nd->extnode);
-        free((char*) nd->extnode);
+    if (extnode) {
+        extnode_free_elements(extnode);
+        delete extnode;
     }
 #endif
-    free(nd);
 }
 
+// this is delete[]...apart from the order?
 void node_destruct(Node** pnode, int n) {
-    int i;
-    Node* nd;
-
-    for (i = n - 1; i >= 0; i--) {
-        if (pnode[i]) {
-            nrn_node_destruct1(pnode[i]);
-        }
+    for (int i = n - 1; i >= 0; --i) {
+        delete std::exchange(pnode[i], nullptr);
     }
-    free((char*) pnode);
+    delete[] std::exchange(pnode, nullptr);
 }
 
 #if KEEP_NSEG_PARM
 
 extern int keep_nseg_parm_;
 
+// TODO this logic should just be in the copy constructor...probably some of it
+// already does the right thing by default
 static Node* node_clone(Node* nd1) {
-    Node* nd2;
-    Prop *p1, *p2;
-    extern Prop* prop_alloc(Prop**, int, Node*);
-    int i, imax;
-    nd2 = (Node*) ecalloc(1, sizeof(Node));
-#if CACHEVEC
-    nd2->_v = &nd2->_v_temp;
-#endif
-    NODEV(nd2) = NODEV(nd1);
-    for (p1 = nd1->prop; p1; p1 = p1->next) {
+    Node* nd2 = new Node{};
+    nd2->v() = nd1->v();
+    for (Prop* p1 = nd1->prop; p1; p1 = p1->next) {
         if (!memb_func[p1->_type].is_point) {
-            p2 = prop_alloc(&(nd2->prop), p1->_type, nd2);
+            Prop* p2 = prop_alloc(&(nd2->prop), p1->_type, nd2);
             if (p2->ob) {
                 Symbol *s, *ps;
                 double *px, *py;
@@ -702,23 +595,25 @@ static Node* node_clone(Node* nd1) {
                     ps = s->u.ppsym[j];
                     px = p2->ob->u.dataspace[ps->u.rng.index].pval;
                     py = p1->ob->u.dataspace[ps->u.rng.index].pval;
-                    imax = hoc_total_array_data(ps, 0);
-                    for (i = 0; i < imax; ++i) {
+                    std::size_t imax{hoc_total_array_data(ps, 0)};
+                    for (std::size_t i = 0; i < imax; ++i) {
                         px[i] = py[i];
                     }
                 }
             } else {
-                for (i = 0; i < p1->param_size; ++i) {
-                    p2->param[i] = p1->param[i];
+                for (int i = 0; i < p1->param_num_vars(); ++i) {
+                    for (auto j = 0; j < p1->param_array_dimension(i); ++j) {
+                        p2->param(i, j) = p1->param(i, j);
+                    }
                 }
             }
         }
     }
     /* in case the user defined an explicit ion_style, make sure
        the new node has the same style for all ions. */
-    for (p1 = nd1->prop; p1; p1 = p1->next) {
+    for (Prop* p1 = nd1->prop; p1; p1 = p1->next) {
         if (nrn_is_ion(p1->_type)) {
-            p2 = nd2->prop;
+            Prop* p2 = nd2->prop;
             while (p2 && p2->_type != p1->_type) {
                 p2 = p2->next;
             }
@@ -730,23 +625,13 @@ static Node* node_clone(Node* nd1) {
     return nd2;
 }
 
-static Node* node_interp(Node* nd1, Node* nd2, double frac) {
-    Node* nd;
-    if (frac > .5) {
-        nd = node_clone(nd2);
-    } else {
-        nd = node_clone(nd1);
-    }
-    return nd;
-}
-
 static void node_realloc(Section* sec, short nseg) {
     Node **pn1, **pn2;
-    int n1, n2, i1, i2, i;
+    int n1, n2, i1, i2;
     double x;
     pn1 = sec->pnode;
     n1 = sec->nnode;
-    pn2 = (Node**) ecalloc((unsigned) nseg, sizeof(Node*));
+    pn2 = new Node* [nseg] {};
     n2 = nseg;
     sec->pnode = pn2;
     sec->nnode = n2;
@@ -829,8 +714,12 @@ void node_alloc(Section* sec, short nseg) {
         if (nseg == 0) {
             return;
         }
-        sec->pnode = node_construct(nseg);
+        sec->pnode = new Node* [nseg] {};
         sec->nnode = nseg;
+        for (i = 0; i < nseg; ++i) {
+            sec->pnode[i] = new Node{};
+            sec->pnode[i]->sec_node_index_ = i;
+        }
     }
     for (i = 0; i < nseg; ++i) {
         sec->pnode[i]->sec = sec;
@@ -842,15 +731,10 @@ void section_order(void) /* create a section order consistent */
 {
     int order, isec;
     Section* ch;
-    Section* sec;
-    hoc_Item* qsec;
 
     /* count the sections */
     section_count = 0;
-    /*SUPPRESS 765*/
-    // ForAllSections(sec)
-    ITERATE(qsec, section_list) {
-        Section* sec = hocSEC(qsec);
+    for (Section* sec: range_sec(section_list)) {
         sec->order = -1;
         ++section_count;
     }
@@ -863,9 +747,7 @@ void section_order(void) /* create a section order consistent */
         secorder = (Section**) emalloc(section_count * sizeof(Section*));
     }
     order = 0;
-    // ForAllSections(sec) /* all the roots first */
-    ITERATE(qsec, section_list) {
-        Section* sec = hocSEC(qsec);
+    for (Section* sec: range_sec(section_list)) {
         if (!sec->parentsec) {
             secorder[order] = sec;
             sec->order = order;
@@ -875,10 +757,7 @@ void section_order(void) /* create a section order consistent */
 
     for (isec = 0; isec < section_count; isec++) {
         if (isec >= order) {
-            // Sections form a loop.
-            // ForAllSections(sec)
-            ITERATE(qsec, section_list) {
-                Section* sec = hocSEC(qsec);
+            for (Section* sec: range_sec(section_list)) {
                 Section *psec, *s = sec;
                 for (psec = sec->parentsec; psec; s = psec, psec = psec->parentsec) {
                     if (!psec || s->order >= 0) {
@@ -896,7 +775,7 @@ void section_order(void) /* create a section order consistent */
                 }
             }
         }
-        sec = secorder[isec];
+        Section* sec = secorder[isec];
         for (ch = sec->child; ch; ch = ch->sibling) {
             secorder[order] = ch;
             ch->order = order;

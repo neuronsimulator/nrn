@@ -23,3 +23,32 @@ def test_in(neuron_instance):
         assert node not in soma
         assert node in cyt
         assert node not in er
+
+
+def test_in_segment(neuron_instance):
+    """Test 1D diffusion in a single segment"""
+    h, rxd, data, save_path = neuron_instance
+
+    dend1 = h.Section("dend1")
+    dend2 = h.Section("dend2")
+    dend1.nseg = 4
+
+    cyt1 = rxd.Region(dend1.wholetree(), nrn_region="i")
+    ca1 = rxd.Species(cyt1, name="ca1", charge=2, initial=1e-12)
+
+    node1 = ca1.nodes(dend1(0.5))[0]
+    node2 = ca1.nodes(dend1(0.3))[0]
+
+    assert node1 in dend1
+    assert node1 not in dend2
+    assert node1 not in dend1(0.125)
+    assert node1 not in dend1(0.375)
+    assert node1 in dend1(0.625)
+    assert node1 not in dend1(0.875)
+
+    assert node2 in dend1
+    assert node2 not in dend2
+    assert node2 not in dend1(0.125)
+    assert node2 in dend1(0.375)
+    assert node2 not in dend1(0.625)
+    assert node2 not in dend1(0.875)

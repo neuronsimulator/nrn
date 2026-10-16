@@ -42,7 +42,6 @@ proc save() {
 
 proc run() {
   sprint(tstr, "-e %g", tstop)
-  cvode.cache_efficient(1)
   coreneuronrunning_ = 1
   stdinit()
   coreneuronrunning_ = 0

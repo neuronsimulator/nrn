@@ -1,5 +1,4 @@
-#ifndef bbssrv_h
-#define bbssrv_h
+#pragma once
 
 #define QUIT             0
 #define POST             1
@@ -21,4 +20,3 @@
 #define CRAY_POST_TODO   18
 #define CRAY_POST_RESULT 19
 #define FIRSTID          20
-#endif

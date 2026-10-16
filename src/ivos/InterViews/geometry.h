@@ -22,11 +22,7 @@
  * OF THIS SOFTWARE.
  */
 
-#ifndef iv_geometry_h
-#define iv_geometry_h
-#if MAC
-#undef require
-#endif
+#pragma once
 
 #include <InterViews/coord.h>
 
@@ -300,5 +296,3 @@ inline Coord Extension::right() const { return x_end_; }
 inline Coord Extension::top() const { return y_end_; }
 
 #include <InterViews/_leave.h>
-
-#endif

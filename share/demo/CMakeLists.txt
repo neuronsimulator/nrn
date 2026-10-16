@@ -1,0 +1,32 @@
+set(NRN_DEMO_HOC_FILES_LIST
+    hh.hoc
+    singhhchan.hoc
+    nomodel.hoc
+    demo.hoc
+    release.hoc
+    cycle.hoc
+    d3init.hoc
+    dend3/control.hoc
+    dend3/syn3.hoc
+    sync/init.hoc
+    sync/demosync.hoc
+    sync/spkplot.hoc
+    sync/cell.hoc
+    sync/synchronize.hoc
+    dynclamp.hoc
+    singhh.hoc
+    reconst.hoc
+    testca.hoc
+    singhh.ses
+    dynchan.ses
+    dynclamp.ses
+    release.ses
+    pyramid.ses
+    dend3.ses
+    demo.ses
+    sync/start.ses
+    hh.ses
+    pyramid.nrn
+    dend3/dend3.nrn)
+
+copy_build_list(NRN_DEMO_HOC_FILES_LIST "${NRN_BUILD_SHARE_DIR}/demo")

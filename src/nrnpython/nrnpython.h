@@ -1,25 +1,24 @@
-#ifndef nrnpython_h
-#define nrnpython_h
+#pragma once
 
 #ifdef _WIN64
 #define MS_WIN64
 #define MS_WIN32
 #define MS_WINDOWS
 #endif
-
+#include "neuron/container/data_handle.hpp"
+#include "neuron/container/generic_data_handle.hpp"
 #include <../../nrnconf.h>
-#include <nrnpython_config.h>
-
-#if defined(NRNPYTHON_DYNAMICLOAD) && NRNPYTHON_DYNAMICLOAD >= 30
-#define PY_LIMITED_API
-#endif
 
 #if defined(USE_PYTHON)
 #undef _POSIX_C_SOURCE
 #undef _XOPEN_SOURCE
-#include <nrnwrap_Python.h>
+#include "nrnwrap_Python.h"
+
+#include "nrn_export.hpp"
 
 #endif /*USE_PYTHON*/
+
+#include <string_view>
 
 #define PyString_FromString PyUnicode_FromString
 #define PyInt_Check         PyLong_Check
@@ -28,10 +27,10 @@
 #define PyInt_AsLong        PyLong_AsLong
 #define PyInt_FromLong      PyLong_FromLong
 
-static_assert(PY_MAJOR_VERSION > 3 || (PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION >= 7),
-              "Python >= 3.7 required");
+static_assert(PY_MAJOR_VERSION > 3 || (PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION >= 10),
+              "Python >= 3.10 required");
 
-extern PyObject* nrnpy_hoc_pop();
+extern PyObject* nrnpy_hoc_pop(const char* mes);
 extern int nrnpy_numbercheck(PyObject*);
 
 #if defined(__SIZEOF_POINTER__) && __SIZEOF_POINTER__ > __SIZEOF_LONG__
@@ -71,5 +70,29 @@ enum ObjectType {
 };
 enum IteratorState { Begin, NextNotLast, Last };
 }  // namespace PyHoc
+// Declare methods that are used in different translation units within one libnrnpythonX.Y
+struct Object;
+struct Section;
+PyObject* hocobj_call_arg(int);
+struct NPySecObj {
+    PyObject_HEAD
+    Section* sec_;
+    char* name_;
+    PyObject* cell_weakref_;
+};
+NPySecObj* newpysechelp(Section* sec);
+PyObject* nrnpy_hoc2pyobject(Object* ho);
+int nrnpy_ho_eq_po(Object*, PyObject*);
+PyObject* nrnpy_ho2po(Object*);
+Object* nrnpy_po2ho(PyObject*);
+Object* nrnpy_pyobject_in_obj(PyObject*);
 
-#endif
+struct Prop;
+struct Symbol;
+
+bool nrn_chk_data_handle(const neuron::container::data_handle<double>&);
+PyObject* nrn_hocobj_handle(neuron::container::data_handle<double> d);
+extern "C" PyObject* nrn_hocobj_ptr(double*);
+int nrn_is_hocobj_ptr(PyObject*, neuron::container::data_handle<double>&);
+int nrn_pointer_assign(Prop*, Symbol*, PyObject*);
+neuron::container::generic_data_handle* nrnpy_setpointer_helper(PyObject*, PyObject*);

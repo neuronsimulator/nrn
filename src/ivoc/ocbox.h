@@ -1,8 +1,6 @@
-#ifndef ocbox_h
-#define ocbox_h
+#pragma once
 
 #include "ocglyph.h"
-#include <ivstream.h>
 
 class OcBoxImpl;
 class BoxAdjust;
@@ -36,5 +34,3 @@ class OcBox: public OcGlyphContainer {
   private:
     OcBoxImpl* bi_;
 };
-
-#endif

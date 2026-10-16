@@ -9,7 +9,6 @@
       assignment. It will be executed (and p.val assigned) when
     p.assign(val)
 */
-#include <InterViews/resource.h>
 #include <InterViews/observe.h>
 #include <string.h>
 #include "classreg.h"
@@ -69,7 +68,7 @@ static const char** pname(void* v) {
 
 static Member_func members[] = {{"val", 0},          // will be changed below
                                 {"assign", assign},  // will call assign_stmt if it exists
-                                {0, 0}};
+                                {nullptr, nullptr}};
 
 static Member_ret_str_func s_memb[] = {{"s", pname}, {nullptr, nullptr}};
 
@@ -109,7 +108,7 @@ static void steer_val(void* v) {
 }
 
 void OcPointer_reg() {
-    class2oc("Pointer", cons, destruct, members, NULL, NULL, s_memb);
+    class2oc("Pointer", cons, destruct, members, nullptr, s_memb);
     // now make the val variable an actual double
     Symbol* sv = hoc_lookup("Pointer");
     Symbol* sx = hoc_table_lookup("val", sv->u.ctemplate->symtable);
@@ -118,13 +117,12 @@ void OcPointer_reg() {
     sv->u.ctemplate->steer = steer_val;
 }
 
-StmtInfo::StmtInfo(const char* s) {
-    stmt_ = new CopyString(s);
+StmtInfo::StmtInfo(const char* s)
+    : stmt_(s) {
     parse();
 }
 
 StmtInfo::~StmtInfo() {
-    delete stmt_;
     hoc_free_list(&symlist_);
 }
 
@@ -135,7 +133,7 @@ void StmtInfo::parse() {
     symlist_ = NULL;
     ParseTopLevel ptl;
     bool see_arg = false;
-    for (s = stmt_->string(), d = buf; *s; ++s, ++d) {
+    for (s = stmt_.c_str(), d = buf; *s; ++s, ++d) {
         if (*s == '$' && s[1] == '1') {
             strcpy(d, "hoc_ac_");
             s++;

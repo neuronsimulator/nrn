@@ -1,12 +1,10 @@
-wheel
-setuptools
-scikit-build
-matplotlib
-# bokeh 3 seems to break docs notebooks
-bokeh<3
-ipython
-cython
-pytest
-pytest-cov
-mpi4py
-numpy
+matplotlib<=3.10.9; python_version < "3.14"
+matplotlib>=3.10.5,<=3.10.7; python_version >= "3.14"
+ipython<=8.39.0
+mpi4py<=4.1.2
+find_libpython<=0.5.1
+packaging>=22.0,<=26.3
+setuptools<=84.0.0
+-r packaging/python/build_requirements.txt
+-r packaging/python/test_requirements.txt
+-r nmodl_requirements.txt

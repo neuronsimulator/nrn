@@ -1,6 +1,7 @@
 #include <../../nrnconf.h>
-#include <../nrnpython/nrnpython_config.h>
 #include "nrn_ansi.h"
+
+#include "../utils/profile/profiler_interface.h"
 
 long hoc_nframe, hoc_nstack;
 
@@ -12,6 +13,7 @@ void hoc_main1_init(const char*, const char**);
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <filesystem>
 #if HAVE_UNISTD_H
 #include <unistd.h>
 #if !defined(__APPLE__)
@@ -21,26 +23,29 @@ extern char** environ;
 #endif
 #endif
 
+namespace fs = std::filesystem;
+
 #if HAVE_IV
 #ifdef WIN32
 #include <IV-Win/MWlib.h>
 void iv_display_scale(float);
 #endif
 
-#include <ivstream.h>
 #include <assert.h>
 #include "ivoc.h"
 #include "idraw.h"
 #include <InterViews/style.h>
 #endif
-#include <OS/string.h>
 #include "string.h"
 #include "oc2iv.h"
 #include "nrnmpi.h"
+#include "nrnpy.h"
 
-#if defined(IVX11_DYNAM)
+#if defined(HAVE_IV) && defined(IVX11_DYNAM)
 #include <IV-X11/ivx11_dynam.h>
 #endif
+
+#include "utils/logger.hpp"
 
 #if 1
 void pr_profile();
@@ -121,7 +126,6 @@ static OptionDesc options[] = {{"-dismissbutton", "*dismiss_button", OptionValue
                                {"-hidewinio", "*showwinio", OptionValueImplicit, "off"},
                                {"-isatty", "*isatty", OptionValueImplicit, "1"},
                                {"-notatty", "*isatty", OptionValueImplicit, "-1"},
-                               {"-neosim", "*neosim", OptionValueImplicit, "on"},
                                {"-bbs_nhost", "*bbs_nhost", OptionValueNext},
                                {"-NSTACK", "*NSTACK", OptionValueNext},
                                {"-NFRAME", "*NFRAME", OptionValueNext},
@@ -148,8 +152,7 @@ extern const char* nrn_mech_dll;
 #if defined(USE_PYTHON)
 int nrn_nopython;
 extern int use_python_interpreter;
-extern int (*p_nrnpython_start)(int);
-char* nrnpy_pyexe;
+std::string nrnpy_pyexe;
 #endif
 
 /*****************************************************************************/
@@ -178,18 +181,9 @@ extern double hoc_default_dll_loaded_;
 extern int hoc_print_first_instance;
 int nrnpy_nositeflag;
 
-#if !defined(MINGW) && !MAC
+#if !defined(MINGW)
 extern void setneuronhome(const char*) {
     neuron_home = getenv("NEURONHOME");
-}
-#endif
-
-#if 0
-void penv() {
-	int i;
-	for (i=0; environ[i]; ++i) {
-		printf("%p %s\n", environ[i], environ[i]);
-	}
 }
 #endif
 
@@ -230,40 +224,8 @@ const char* path_prefix_to_libnrniv() {
 }
 #endif  // DARWIN || defined(__linux__)
 
-#if MAC
-#include <string.h>
-#include <sioux.h>
-extern bool mac_load_dll(const char*);
-void mac_open_doc(const char* s) {
-    // only chdir and load dll on the first opendoc
-    static bool done = false;
-    char cs[256];
-    strncpy(cs, s, 256);
-    char* cp = strrchr(cs, ':');
-    if (cp && !done) {
-        *cp = '\0';
-        if (chdir(cs) == 0) {
-            done = true;
-            printf("current directory is \"%s\"\n", cs);
-            if (mac_load_dll("nrnmac.dll")) {
-                hoc_default_dll_loaded_ = 1.;
-            }
-        }
-    }
-    hoc_xopen1(s, 0);
-}
-void mac_open_app() {
-    hoc_xopen1(":lib:hoc:macload.hoc", 0);
-}
-#endif
-
-#ifdef MAC
-#pragma export on
-#endif
-
 int ivocmain(int, const char**, const char**);
 int ivocmain_session(int, const char**, const char**, int start_session);
-int (*p_neosim_main)(int, const char**, const char**);
 extern int nrn_global_argc;
 extern const char** nrn_global_argv;
 int always_false;
@@ -271,16 +233,9 @@ extern int nrn_is_python_extension;
 extern void hoc_nrnmpi_init();
 #if NRNMPI_DYNAMICLOAD
 extern void nrnmpi_stubs();
-extern std::string nrnmpi_load(int is_python);
+extern std::string nrnmpi_load();
+void nrnmpi_load_or_exit();
 #endif
-
-// some things are defined in libraries earlier than they are used so...
-#include <nrnisaac.h>
-static void force_load() {
-    if (always_false) {
-        nrnisaac_new();
-    }
-}
 
 #ifdef MINGW
 // see iv/src/OS/directory.cpp
@@ -293,19 +248,9 @@ static bool isdir(const char* p) {
 }
 #endif
 
-#ifdef MAC
-#pragma export off
-#endif
-
-// in case we are running without IV then get some important args this way
-static bool nrn_optarg_on(const char* opt, int* argc, char** argv);
-static char* nrn_optarg(const char* opt, int* argc, char** argv);
-static int nrn_optargint(const char* opt, int* argc, char** argv, int dflt);
 
 static bool nrn_optarg_on(const char* opt, int* pargc, const char** argv) {
-    char* a;
-    int i;
-    for (i = 0; i < *pargc; ++i) {
+    for (int i = 0; i < *pargc; ++i) {
         if (strcmp(opt, argv[i]) == 0) {
             *pargc -= 1;
             for (; i < *pargc; ++i) {
@@ -319,11 +264,9 @@ static bool nrn_optarg_on(const char* opt, int* pargc, const char** argv) {
 }
 
 static const char* nrn_optarg(const char* opt, int* pargc, const char** argv) {
-    const char* a;
-    int i;
-    for (i = 0; i < *pargc - 1; ++i) {
+    for (int i = 0; i < *pargc - 1; ++i) {
         if (strcmp(opt, argv[i]) == 0) {
-            a = argv[i + 1];
+            const char* a = argv[i + 1];
             *pargc -= 2;
             for (; i < *pargc; ++i) {
                 argv[i] = argv[i + 2];
@@ -336,10 +279,8 @@ static const char* nrn_optarg(const char* opt, int* pargc, const char** argv) {
 }
 
 static int nrn_optargint(const char* opt, int* pargc, const char** argv, int dflt) {
-    const char* a;
-    int i;
-    i = dflt;
-    a = nrn_optarg(opt, pargc, argv);
+    int i = dflt;
+    const char* a = nrn_optarg(opt, pargc, argv);
     if (a) {
         sscanf(a, "%d", &i);
     }
@@ -351,24 +292,14 @@ static int nrn_optargint(const char* opt, int* pargc, const char** argv, int dfl
 void nrn_InitializeJavaVM();
 #endif
 
-#if 0  // for debugging
-void prargs(const char* s, int argc, const char** argv) {
-	int i;
-	printf("%s argc=%d\n", s, argc);
-	for (i=0; i < argc; ++i) {
-		printf(" %d |%s|\n", i, argv[i]);
-	}
-}
-#endif
-
 void hoc_nrnmpi_init() {
 #if NRNMPI
     if (!nrnmpi_use) {
 #if NRNMPI_DYNAMICLOAD
         nrnmpi_stubs();
-        auto const pmes = nrnmpi_load(1);
+        auto const pmes = nrnmpi_load();
         if (!pmes.empty()) {
-            std::cout << pmes << std::endl;
+            Printf(fmt::format("{}\n", pmes).c_str());
         }
 #endif
 
@@ -428,49 +359,50 @@ int ivocmain(int argc, const char** argv, const char** env) {
  * \return 0 on success, otherwise error code.
  */
 int ivocmain_session(int argc, const char** argv, const char** env, int start_session) {
+    constexpr auto nrniv_help = R"(
+nrniv [options] [fileargs]
+  options:
+    -dll filename    dynamically load the linked mod files.
+    -h               print this help message
+    -help            print this help message
+    -isatty          unbuffered stdout, print prompt when waiting for stdin
+    -mpi             launched by mpirun or mpiexec, in parallel environment
+    -mswin_scale float   scales gui on screen
+    -music           launched as a process of the  MUlti SImulator Coordinator
+    -NSTACK integer  size of stack (default 1000)
+    -NFRAME integer  depth of function call nesting (default 200)
+    -nobanner        do not print startup banner
+    -nogui           do not send any gui info to screen
+    -notatty         buffered stdout and no prompt
+    -python          Python is the interpreter
+    -pyexe path      Python to use if python (or python3 fallback) not right.
+    -nopython        Do not initialize Python
+    -Py_NoSiteFlag   Set Py_NoSiteFlag=1 before initializing Python
+    -realtime        For hard real-time simulation for dynamic clamp
+    --version        print version info and all InterViews and X11 options
+  fileargs:          any number of following
+    -                input from stdin til ^D (end of file)
+    -c "statement"   execute next statement
+    filename         execute contents of filename
+)";
+
+    nrn::Instrumentor::init_profile();
+
     // third arg should not be used as it might become invalid
     // after putenv or setenv. Instead, if necessary use
     // #include <unistd.h>
     // extern char** environ;
-    int i;
     //	prargs("at beginning", argc, argv);
-    force_load();
     nrn_global_argc = argc;
     // https://en.cppreference.com/w/cpp/language/main_function, note that argv is
     // of length argc + 1 and argv[argc] is null.
     nrn_global_argv = new const char*[argc + 1];
-    for (i = 0; i < argc + 1; ++i) {
+    for (int i = 0; i < argc + 1; ++i) {
         nrn_global_argv[i] = argv[i];
     }
     nrn_assert(nrn_global_argv[nrn_global_argc] == nullptr);
     if (nrn_optarg_on("-help", &argc, argv) || nrn_optarg_on("-h", &argc, argv)) {
-        printf(
-            "nrniv [options] [fileargs]\n\
-  options:\n\
-    -dll filename    dynamically load the linked mod files.\n\
-    -h               print this help message\n\
-    -help            print this help message\n\
-    -isatty          unbuffered stdout, print prompt when waiting for stdin\n\
-    -mpi             launched by mpirun or mpiexec, in parallel environment\n\
-    -mswin_scale float   scales gui on screen\n\
-    -music           launched as a process of the  MUlti SImulator Coordinator\n\
-    -NSTACK integer  size of stack (default 1000)\n\
-    -NFRAME integer  depth of function call nesting (default 200)\n\
-    -nobanner        do not print startup banner\n\
-    -nogui           do not send any gui info to screen\n\
-    -notatty         buffered stdout and no prompt\n\
-    -python          Python is the interpreter\n\
-    -pyexe path      Python to use if python (or python3 fallback) not right.\n\
-    -nopython        Do not initialize Python\n\
-    -Py_NoSiteFlag   Set Py_NoSiteFlag=1 before initializing Python\n\
-    -realtime        For hard real-time simulation for dynamic clamp\n\
-    --version        print version info\n\
-    and all InterViews and X11 options\n\
-  fileargs:          any number of following\n\
-    -                input from stdin til ^D (end of file)\n\
-    -c \"statement\"    execute next statement\n\
-    filename         execute contents of filename\n\
-");
+        printf(nrniv_help);
         exit(0);
     }
     if (nrn_optarg_on("--version", &argc, argv)) {
@@ -504,37 +436,28 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
     // check if user is trying to use -mpi or -p4 when it was not
     // enabled at build time.  If so, issue a warning.
 
-    int b;
-    b = 0;
-    for (i = 0; i < argc; ++i) {
-        if (strncmp("-p4", (argv)[i], 3) == 0) {
-            b = 1;
+    for (int i = 0; i < argc; ++i) {
+        if ((strncmp("-p4", (argv)[i], 3) == 0) || (strcmp("-mpi", (argv)[i]) == 0)) {
+            printf(
+                "Warning: detected user attempt to enable MPI, but MPI support was disabled at "
+                "build "
+                "time.\n");
             break;
         }
-        if (strcmp("-mpi", (argv)[i]) == 0) {
-            b = 1;
-            break;
-        }
-    }
-    if (b) {
-        printf(
-            "Warning: detected user attempt to enable MPI, but MPI support was disabled at build "
-            "time.\n");
     }
 
 #endif
 
-#if defined(IVX11_DYNAM)
+#if defined(HAVE_IV) && defined(IVX11_DYNAM)
     if (hoc_usegui && ivx11_dyload()) {
         hoc_usegui = 0;
         hoc_print_first_instance = 0;
     }
 #endif
 
-#if NRN_MUSIC
-    nrn_optarg_on("-music", &argc, argv);
-#else
-    if (nrn_optarg_on("-music", &argc, argv)) {
+    const bool music_enabled = nrn_optarg_on("-music", &argc, argv);
+#if !NRN_MUSIC
+    if (music_enabled) {
         printf("Warning: attempt to enable MUSIC but MUSIC support was disabled at build time.\n");
     }
 #endif
@@ -547,7 +470,7 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
     const char** our_argv = argv;
     int exit_status = 0;
     Session* session = NULL;
-#if !defined(MINGW) && !defined(MAC)
+#if !defined(MINGW)
     // Gary Holt's first pass at this was:
     //
     // Set the NEURONHOME environment variable.  This should override any setting
@@ -557,14 +480,7 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
     // But I have decided to use the environment variable if it exists
     neuron_home = getenv("NEURONHOME");
     if (!neuron_home) {
-#if defined(HAVE_PUTENV)
-        // the only reason the following is static is to prevent valgrind
-        // from complaining it is a memory leak.
-        static char* buffer = new char[strlen(NEURON_DATA_DIR) + 12];
-        sprintf(buffer, "NEURONHOME=%s", NEURON_DATA_DIR);
-        putenv(buffer);
-        neuron_home = NEURON_DATA_DIR;
-#elif defined(HAVE_SETENV)
+#if defined(HAVE_SETENV)
         setenv("NEURONHOME", NEURON_DATA_DIR, 1);
         neuron_home = NEURON_DATA_DIR;
 #else
@@ -573,14 +489,6 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
 #endif
         // putenv and setenv may invalidate env but we no longer
         // use it so following should not be needed
-#if 0
-#if HAVE_UNISTD_H && !defined(__APPLE__)
-	env = environ;
-#endif
-#if defined(__APPLE__)
-	env = (*_NSGetEnviron());
-#endif
-#endif
     }
 
 #else  // Not unix:
@@ -612,77 +520,60 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
     our_argv[1] = ":lib:hoc:macload.hoc";
     session = new Session("NEURON", our_argc, our_argv, options, properties);
 #else
-#if MAC
-    our_argc = 1;
-    our_argv = new char*[1];
-    our_argv[0] = "Neuron";
-    session = new Session("NEURON", our_argc, our_argv, options, properties);
-    SIOUXSettings.asktosaveonclose = false;
-#else
 #if defined(WIN32)
-    IFGUI
-    session = new Session("NEURON", our_argc, (char**) our_argv, options, properties);
-    ENDGUI
-#else
-    IFGUI
-    if (getenv("DISPLAY")) {
+    if (hoc_usegui) {
         session = new Session("NEURON", our_argc, (char**) our_argv, options, properties);
-    } else {
-        fprintf(stderr,
-                "Warning: no DISPLAY environment variable.\
-\n--No graphics will be displayed.\n");
-        hoc_usegui = 0;
     }
-    ENDGUI
-#endif
-#endif
-    char* nrn_props;
-    nrn_props = new char[strlen(neuron_home) + 20];
-    if (session) {
-        sprintf(nrn_props, "%s/%s", neuron_home, "lib/nrn.defaults");
-#ifdef WIN32
-        FILE* f;
-        if ((f = fopen(nrn_props, "r")) != (FILE*) 0) {
-            fclose(f);
-            session->style()->load_file(String(nrn_props), -5);
-        } else {
-#ifdef MINGW
-            sprintf(nrn_props, "%s/%s", neuron_home, "lib/nrn.def");
 #else
-            sprintf(nrn_props, "%s\\%s", neuron_home, "lib\\nrn.def");
+    if (hoc_usegui) {
+        if (getenv("DISPLAY")) {
+            session = new Session("NEURON", our_argc, (char**) our_argv, options, properties);
+        } else {
+            fprintf(stderr,
+                    "Warning: no DISPLAY environment variable.\
+\n--No graphics will be displayed.\n");
+            hoc_usegui = 0;
+        }
+    }
 #endif
-            if ((f = fopen(nrn_props, "r")) != (FILE*) 0) {
-                fclose(f);
-                session->style()->load_file(String(nrn_props), -5);
-            } else {
-                char buf[256];
-                sprintf(buf, "Can't load NEURON resources from %s[aults]", nrn_props);
-                printf("%s\n", buf);
-            }
+    if (session) {
+        const auto nrn_def_path1 = fs::path(neuron_home) / "lib" / "nrn.defaults";
+        const auto nrn_def_path2 = fs::path(neuron_home) / "lib" / "nrn.def";
+        auto file_exists = [](const auto& path) noexcept -> bool {
+            // make sure it doesn't throw
+            std::error_code err;
+            return fs::is_regular_file(path, err);
+        };
+#ifdef WIN32
+        if (file_exists(nrn_def_path1)) {
+            session->style()->load_file(String(nrn_def_path1.string().c_str()), -5);
+        } else if (file_exists(nrn_def_path2)) {
+            session->style()->load_file(String(nrn_def_path2.string().c_str()), -5);
+        } else {
+            fmt::print("Can't load NEURON resources from {}[aults]\n", nrn_def_path1.string());
         }
 #else
-        session->style()->load_file(String(nrn_props), -5);
+        session->style()->load_file(String(nrn_def_path1.string().c_str()), -5);
 #endif
-#if !MAC
         char* h = getenv("HOME");
         if (h) {
-            sprintf(nrn_props, "%s/%s", h, ".nrn.defaults");
-            session->style()->load_file(String(nrn_props), -5);
+            const auto nrn_def_path_dot = fs::path(h) / ".nrn.defaults";
+            if (file_exists(nrn_def_path_dot)) {
+                session->style()->load_file(String(nrn_def_path_dot.string().c_str()), -5);
+            }
         }
-#endif
     }
-    delete[] nrn_props;
 
 #endif /*OCSMALL*/
 
     if (session) {
         session->style()->find_attribute("NSTACK", hoc_nstack);
         session->style()->find_attribute("NFRAME", hoc_nframe);
-        IFGUI
-        if (session->style()->value_is_on("err_dialog")) {
-            nrn_err_dialog_active_ = 1;
+        if (hoc_usegui) {
+            if (session->style()->value_is_on("err_dialog")) {
+                nrn_err_dialog_active_ = 1;
+            }
         }
-        ENDGUI
     } else
 #endif  // HAVE_IV
     {
@@ -700,7 +591,7 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
             }
             String str;
             if (session->style()->find_attribute("pyexe", str)) {
-                nrnpy_pyexe = strdup(str.string());
+                nrnpy_pyexe = str.string();
             }
         } else
 #endif
@@ -708,32 +599,31 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
             if (nrn_optarg_on("-nopython", &our_argc, our_argv)) {
                 nrn_nopython = 1;
             }
-            const char* buf = nrn_optarg("-pyexe", &our_argc, our_argv);
-            if (buf) {
-                nrnpy_pyexe = strdup(buf);
+            if (const char* buf = nrn_optarg("-pyexe", &our_argc, our_argv)) {
+                nrnpy_pyexe = buf;
             }
         }
     }
 #endif  // USE_PYTHON
 
 #if defined(WIN32) && HAVE_IV
-    IFGUI
-    double scale = 1.;
-    int pw = GetSystemMetrics(SM_CXVIRTUALSCREEN);
-    if (pw < 1100) {
-        scale = 1200. / double(pw);
+    if (hoc_usegui) {
+        double scale = 1.;
+        int pw = GetSystemMetrics(SM_CXVIRTUALSCREEN);
+        if (pw < 1100) {
+            scale = 1200. / double(pw);
+        }
+        session->style()->find_attribute("mswin_scale", scale);
+        iv_display_scale(float(scale));
     }
-    session->style()->find_attribute("mswin_scale", scale);
-    iv_display_scale(float(scale));
-    ENDGUI
 #endif
 
     // just eliminate from arg list
     nrn_optarg_on("-mpi", &our_argc, our_argv);
 
 #if (defined(NRNMECH_DLL_STYLE) || defined(WIN32))
-    String str;
 #if HAVE_IV
+    String str;
     if (session) {
         if (session->style()->find_attribute("nrnmechdll", str)) {
             nrn_mech_dll = str.string();
@@ -808,11 +698,10 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
     if (nrn_is_python_extension) {
         return 0;
     }
-    // printf("p_nrnpython_start = %p\n", p_nrnpython_start);
-    if (p_nrnpython_start) {
-        (*p_nrnpython_start)(1);
+    if (neuron::python::methods.interpreter_start) {
+        neuron::python::methods.interpreter_start(1);
     }
-    if (use_python_interpreter && !p_nrnpython_start) {
+    if (use_python_interpreter && !neuron::python::methods.interpreter_start) {
         fprintf(stderr, "Python not available\n");
         exit(1);
     }
@@ -826,33 +715,25 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
     } else {
         return 0;
     }
-#if HAVE_IV
-    if (session && session->style()->value_is_on("neosim")) {
-        if (p_neosim_main) {
-            (*p_neosim_main)(argc, argv, env);
-        } else {
-            printf(
-                "neosim not available.\nModify nrn/src/nrniv/Imakefile and remove "
-                "nrniv/$CPU/netcvode.o\n");
-        }
-    }
-#endif
     PR_PROFILE
 #if defined(USE_PYTHON)
     if (use_python_interpreter) {
         // process the .py files and an interactive interpreter
-        if (p_nrnpython_start && (*p_nrnpython_start)(2) != 0) {
+        if (neuron::python::methods.interpreter_start &&
+            neuron::python::methods.interpreter_start(2) != 0) {
             // We encountered an error when processing the -c argument or Python
             // script given on the commandline.
             exit_status = 1;
         }
     }
-    if (p_nrnpython_start) {
-        (*p_nrnpython_start)(0);
+    if (neuron::python::methods.interpreter_start) {
+        neuron::python::methods.interpreter_start(0);
     }
 #endif
     hoc_final_exit();
     ivoc_final_exit();
+    nrn::Instrumentor::finalize_profile();
+
     return exit_status;
 }
 
@@ -866,11 +747,11 @@ extern void hoc_ret(), hoc_pushx(double);
 
 void hoc_single_event_run() {
 #if HAVE_IV
-    IFGUI
-    void single_event_run();
+    if (hoc_usegui) {
+        void single_event_run();
 
-    single_event_run();
-    ENDGUI
+        single_event_run();
+    }
 #endif
     hoc_ret();
     hoc_pushx(1.);
@@ -882,3 +763,28 @@ int run_til_stdin() {
 }
 void hoc_notify_value() {}
 #endif
+
+
+/// A top-level initialization of MPI given argc and argv.
+/// Sets stubs, load dyn lib, and initializes
+std::tuple<int, const char**> nrn_mpi_setup(int argc, const char** argv) {
+#if defined(AUTO_DLOPEN_NRNMECH) && AUTO_DLOPEN_NRNMECH == 0
+    extern int nrn_noauto_dlopen_nrnmech;
+    nrn_noauto_dlopen_nrnmech = 1;
+#endif
+
+#if NRNMPI
+#if NRNMPI_DYNAMICLOAD
+    nrnmpi_stubs();
+    for (int i = 1; i < argc; ++i) {
+        if (strcmp("-mpi", argv[i]) == 0) {
+            nrnmpi_load_or_exit();
+            break;
+        }
+    }
+#endif                                           // NRNMPI_DYNAMICLOAD
+    auto argv_ptr = const_cast<char***>(&argv);  // safe if individual strings not modified
+    nrnmpi_init(1, &argc, argv_ptr);             // may change argc and argv
+#endif                                           // NRNMPI
+    return {argc, argv};
+}

@@ -1,4 +1,5 @@
-#include <../../nmodlconf.h>
+#include <../../nrnconf.h>
+#include <cstring>
 #include "model.h"
 #include "units.h"
 #include "parse1.hpp"
@@ -83,6 +84,12 @@ void nrn_list(Item* qtype, Item* qlist) {
         }
         if (strcmp(SYM(qtype)->name, "ARTIFICIAL_CELL") == 0) {
             point_process = 1;
+        }
+        break;
+    case RANDOM:
+        plist = (List**) 0;
+        ITERATE(q, qlist) {
+            declare(RANGEOBJ, q, nullptr);
         }
         break;
     default:

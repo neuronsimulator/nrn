@@ -1,9 +1,6 @@
-#ifndef nrnmenu_h
-#define nrnmenu_h
+#pragma once
 
-#include <OS/string.h>
 #include "ndatclas.h"
-#include <ivstream.h>
 class MechTypeImpl;
 
 class MechanismStandard: public Resource {
@@ -15,8 +12,9 @@ class MechanismStandard: public Resource {
     void action(const char*, Object* pyact);
 
     int count();
-    const char* name();
-    const char* name(int, int&);  // returns array dimension and name
+    const char* name() const;
+    const char* name(int, int&) const;  // returns array dimension and name
+    bool is_array(int) const;
 
     // from arg (section.node(x) (0 if x < 0) to this
     void in(Section*, double x = -1.);
@@ -40,7 +38,7 @@ class MechanismStandard: public Resource {
     int name_cnt_;
     int offset_;
     int vartype_;
-    CopyString action_;
+    std::string action_;
     Object* pyact_;
     Symbol** glosym_;
     void mschk(const char*);
@@ -54,6 +52,7 @@ class MechanismType: public Resource {
     bool is_netcon_target(int);
     bool has_net_event(int);
     bool is_artificial(int);
+    bool is_ion();
     void select(const char*);
     const char* selected();
     void insert(Section*);
@@ -74,5 +73,3 @@ class MechanismType: public Resource {
   private:
     MechTypeImpl* mti_;
 };
-
-#endif

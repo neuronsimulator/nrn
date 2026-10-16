@@ -25,17 +25,64 @@ while continuing to experience the error, it may be worthwhile to look into
 [LLVM address sanitizer](https://github.com/neuronsimulator/nrn/issues/1213).
 
 #### NaN or Inf values
-Use [h.nrn_feenableexcept(1)](../python/programming/errors.html#nrn_fenableexcept)
+Use [n.nrn_feenableexcept(1)](../python/programming/errors.rst#nrn_feenableexcept)
 to generate floating point exception for
 DIVBYZERO, INVALID, OVERFLOW, exp(700). [GDB](#GDB) can then be used to show
 where the SIGFPE occurred.
 
-#### Different results with different nhost or nthread.
+#### Different results with different nhost, nthread, or backend
 What is the gid and spiketime of the earliest difference?
-Use [ParallelContext.prcellstate](../python/modelspec/programmatic/network/parcon.html?highlight=prcellstate#ParallelContext.prcellstate)
-for that gid at various times
-before spiketime to see why and when the prcellstate files become different.
-Time 0 after initialization is often a good place to start.
+Use a **progressive** focus: spikes first, then cell-state dumps, then (when available)
+fixed-step phase dumps, then field-level compare. The same ladder applies to
+nhost/nthread differences and to CPU vs GPU / NEURON vs CoreNEURON parity.
+
+**1. Spikes first.** Compare spike rasters (time, gid). Find the first mismatched
+spike; that gid (and time) is the focus. Tools such as ``sortspike`` plus
+``diff``/``awk`` are enough; a dedicated spike-first helper may be added later.
+
+**2. End-of-run prcellstate at that gid.** Use
+[ParallelContext.prcellstate](../python/modelspec/programmatic/network/parcon.rst#ParallelContext.prcellstate)
+to write ``<gid>_<suffix>.nrndat`` after a short run. Time 0 after initialization
+is often a good place to start.
+
+**3. First time dumps disagree.** Walk or bisect ``tstop`` with paired runs until
+you find the latest time dumps still match and the earliest time they differ.
+That brackets the failing fixed step.
+
+**4. Phase checkpoints (conceptual; not an API on every build).** On some feature
+lines, dumps can be taken at named fixed-step phases
+(``post_setup`` → ``post_solve`` → ``pre_nonvint`` → ``post_nonvint``) so you can
+see which part of the step first diverges. Phase dumps are still ordinary
+``.nrndat`` files. **Do not assume** ``pc.prcellstate_checkpoint`` exists on a
+stock master/release build; if your tree does not provide phase arming, stay
+with steps 2–3 (end-of-run dump + ``tstop`` search). GPU feature-line docs may
+describe the arm API when present.
+
+**5. Field-level compare with ``rdcellstate``.** Prefer the semantic comparator
+(not line-by-line HOC ``rdcellstate`` in ``prcellstate.hoc``, which misaligns when
+dump size or order differs)::
+
+    python -m neuron.debug.rdcellstate ref.nrndat other.nrndat
+    # or, if installed on PATH:
+    rdcellstate ref.nrndat other.nrndat --ignore-ion --top 25
+
+Paths must resolve under the current working directory (``realpath`` check)
+so agent/CLI path injection cannot read arbitrary files; ``cd`` to a parent of
+the dumps or use relative paths.
+
+Useful filters:
+
+- ``--ignore-ion`` — skip ``*_ion`` fields and capacitance ``i_cap`` noise paths
+- ``--ignore-unused`` — skip SOA ``*_unused`` fields (needs translated mod C++)
+- ``--ignore-matrix`` — skip Hines ``a,b,d,rhs``. Use when one dump has topology
+  header ``inode parent area a b`` (classic master / CoreNEURON) and the other
+  includes ``d rhs`` (some feature-line dumps); otherwise missing ``d``/``rhs``
+  keys look like hard failures.
+
+NetCon **payload** fields are not compared yet. If both files report
+``netcons N`` and ``N`` differs, the tool prints a stderr warning.
+
+Exit code is 0 when no differences remain after filters, else 1.
 
 #### GDB
 If you normally run with ```python args``` and get a segfault...
@@ -62,6 +109,38 @@ has proven effective.
 mpirun -np 4 xterm -e gdb `pyenv which python`
 ```
 
+#### The rr debugger
+
+As a complement to GDB, one can use the [rr debugger](https://rr-project.org/)
+to enhance the debugging experience. Running is as simple as:
+
+```
+rr record <executable> <args>
+```
+
+This should record a snapshot, which `rr` reports:
+
+```
+...
+rr: Saving execution to trace directory `<path>/.local/share/rr/nrniv-2'.
+...
+```
+
+which can later be replayed deterministically using:
+
+```
+rr replay <path to trace directory>
+```
+
+You can also bundle all of the dependencies of the executable using:
+
+```
+rr pack <path to trace directory>
+```
+
+after which you can send that directory (for instance, as a compressed archive)
+to other developers for portable and reliable debugging.
+
 #### Valgrind
 Extremely useful in debugging memory errors and memory leaks.
 
@@ -71,7 +150,7 @@ can be eliminated with `export PYTHONMALLOC=malloc`
 
 ```
 export PYTHONMALLOC=malloc
-valgrind `pyenv which python` -c 'from neuron import h'
+valgrind `pyenv which python` -c 'from neuron import n'
     ==47683== Memcheck, a memory error detector
     ==47683== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
     ==47683== Using Valgrind-3.17.0 and LibVEX; rerun with -h for copyright info
@@ -128,8 +207,8 @@ the next valgrind error.
 
 
 #### Sanitizers
-The `AddressSanitizer` (ASan), `LeakSanitizer` (LSan), `ThreadSanitizer` (TSan,
-see below) and `UndefinedBehaviorSanitizer` (UBSan) are a collection of tools
+The `AddressSanitizer` (ASan), `LeakSanitizer` (LSan), `ThreadSanitizer` (TSan)
+and `UndefinedBehaviorSanitizer` (UBSan) are a collection of tools
 that rely on compiler instrumentation to catch dangerous behaviour at runtime.
 Compiler support is widespread but not ubiquitous, but both Clang and GCC
 provide support.
@@ -147,13 +226,14 @@ The typical example of this case is loading NEURON from Python, where the
 As of [#1842](https://github.com/neuronsimulator/nrn/pull/1842), the NEURON
 build system is aware of ASan, LSan and UBSan, and it tries to configure the
 sanitizers correctly based on the `NRN_SANITIZERS` CMake variable.
+In [#2034](https://github.com/neuronsimulator/nrn/pull/2034) this was extended
+to TSan via `-DNRN_SANITIZERS=thread`, and support for GCC was added.
 For example, `cmake -DNRN_SANITIZERS=address,leak ...` will enable ASan and
 LSan, while `-DNRN_SANITIZERS=undefined` will enable UBSan.
-Not all combinations of sanitizers are possible, so far ASan, ASan+LSan and
-UBSan have been tested with Clang, GCC has not been tested and likely needs
-minor changes.
-Support for standalone LSan and for TSan (see below for manual instructions)
-should be possible without major difficulties, but is not yet implemented.
+Not all combinations of sanitizers are possible, so far ASan, ASan+LSan, TSan
+and UBSan have been tested with Clang.
+Support for standalone LSan should be possible without major difficulties, but
+is not yet implemented.
 
 Depending on your system, you may also need to set the `LLVM_SYMBOLIZER_PATH`
 variable to point to the `llvm-symbolizer` executable matching your Clang.
@@ -176,59 +256,37 @@ use `nrn-enable-sanitizer special -python path/to/script.py` or
 because the `python` binary is (presumably) not linked against the sanitizer
 runtime library.
 
-LSan and UBSan support suppression files, which can be used to prevent tests
-failing due to known issues.
-NEURON includes a suppression file for UBSan under `.sanitizers/undefined.supp`
-in the GitHub repository, no LSan equivalent exists for the moment.
+If ctest or nrn-enable-sanitizer runs generate a sanitizer error like
+`AddressSanitizer: CHECK failed: asan_interceptors.cpp`
+it might be that the automatically determined `LD_PRELOAD` is insufficient.
+(It happened to me with ubuntu 24.04 + gcc 13.2.0). In this case you
+can temporarily set the `NRN_OVERRIDE_LD_PRELOAD` environment variable before
+running cmake. In my case,
+`NRN_OVERRIDE_LD_PRELOAD="$(realpath "$(gcc -print-file-name=libasan.so)"):$(realpath "$(gcc -print-file-name=libstdc++.so)")" cmake ...` sufficed.
+
+LSan, TSan and UBSan support suppression files, which can be used to prevent
+tests failing due to known issues.
+NEURON includes a suppression file for TSan under `.sanitizers/thread.supp` and
+one for UBSan under `.sanitizers/undefined.supp` in the GitHub repository, no
+LSan equivalent exists for the moment.
 
 Note that LSan and MPI implementations typically do not play nicely together, so
 if you want to use LSan with NEURON, you may need to disable MPI or add a
 suppression file that is tuned to your MPI implementation.
 
-The GitHub Actions CI for NEURON at the time of writing includes test jobs for
-ASan and UBSan using Clang 14, but does not enable LSan.
+Similarly, TSan does not work very well with MPI and (especially) OpenMP
+implementations that were not compiled with TSan instrumentation (which they
+are typically not).
 
-CoreNEURON and NMODL both support the sanitizers in a similar way, but this has
-to be enabled explicitly: `-DNRN_SANITIZERS=undefined` will not compile
-CoreNEURON code with UBSan enabled, you must additionally pass
-`-DCORENRN_SANITIZERS=undefined` to enable instrumentation of CoreNEURON code.
-The equivalent variable for NMODL is `NMODL_SANITIZERS`.
+The GitHub Actions CI for NEURON at the time of writing includes three jobs
+using Ubuntu 22.04: ASan (but not LSan) using Clang 14, UBSan using Clang 14,
+and TSan using GCC 12.
+In addition, there is a macOS-based ASan build using AppleClang, which has the
+advantage that it uses `libc++` instead of `libstdc++`.
 
-#### ThreadSanitizer (TSAN)
-`ThreadSanitizer` is a tool that detects data races. Be aware that a slowdown is incurred by using ThreadSanitizer of about 5x-15x, with typical memory overhead of about 5x-10x.  
-
-Here is how to enable it:
-```
-cmake ... -DNRN_ENABLE_TESTS=ON -DCMAKE_C_FLAGS="-O0 -fno-inline -g -fsanitize=thread" -DCMAKE_CXX_FLAGS="-O0 -fno-inline -g -fsanitize=thread" ..
-```
-You can then target a specific test (for example `ctest -VV -R test_name` or `bin/nrniv -nogui -nopython test.hoc`) and have a look at the generated output. In case of data races, you would see something similar to:
-```
-94: WARNING: ThreadSanitizer: data race (pid=2572)
-94:   Read of size 8 at 0x7b3c00000bf0 by thread T1:
-94:     #0 Cvode::at_time(double, NrnThread*) /home/savulesc/Workspace/nrn/src/nrncvode/cvodeobj.cpp:751 (libnrniv.so+0x38673e)
-94:     #1 at_time /home/savulesc/Workspace/nrn/src/nrncvode/cvodestb.cpp:133 (libnrniv.so+0x389e27)
-94:     #2 _nrn_current__IClamp /home/savulesc/Workspace/nrn/src/nrnoc/stim.c:266 (libnrniv.so+0x5b8f02)
-94:     #3 _nrn_cur__IClamp /home/savulesc/Workspace/nrn/src/nrnoc/stim.c:306 (libnrniv.so+0x5b9236)
-94:     #4 Cvode::rhs_memb(CvMembList*, NrnThread*) /home/savulesc/Workspace/nrn/src/nrncvode/cvtrset.cpp:68 (libnrniv.so+0x38a0eb)
-94:     #5 Cvode::rhs(NrnThread*) /home/savulesc/Workspace/nrn/src/nrncvode/cvtrset.cpp:35 (libnrniv.so+0x38a2f6)
-94:     #6 Cvode::fun_thread_transfer_part2(double*, NrnThread*) /home/savulesc/Workspace/nrn/src/nrncvode/occvode.cpp:671 (libnrniv.so+0x3bbbf1)
-94:     #7 Cvode::fun_thread(double, double*, double*, NrnThread*) /home/savulesc/Workspace/nrn/src/nrncvode/occvode.cpp:639 (libnrniv.so+0x3bd049)
-94:     #8 f_thread /home/savulesc/Workspace/nrn/src/nrncvode/cvodeobj.cpp:1532 (libnrniv.so+0x384f45)
-94:     #9 slave_main /home/savulesc/Workspace/nrn/src/nrnoc/multicore.cpp:337 (libnrniv.so+0x5157ee)
-94: 
-94:   Previous write of size 8 at 0x7b3c00000bf0 by main thread:
-94:     #0 Cvode::at_time(double, NrnThread*) /home/savulesc/Workspace/nrn/src/nrncvode/cvodeobj.cpp:753 (libnrniv.so+0x386759)
-94:     #1 at_time /home/savulesc/Workspace/nrn/src/nrncvode/cvodestb.cpp:133 (libnrniv.so+0x389e27)
-94:     #2 _nrn_current__IClamp /home/savulesc/Workspace/nrn/src/nrnoc/stim.c:266 (libnrniv.so+0x5b8f02)
-94:     #3 _nrn_cur__IClamp /home/savulesc/Workspace/nrn/src/nrnoc/stim.c:306 (libnrniv.so+0x5b9236)
-94:     #4 Cvode::rhs_memb(CvMembList*, NrnThread*) /home/savulesc/Workspace/nrn/src/nrncvode/cvtrset.cpp:68 (libnrniv.so+0x38a0eb)
-94:     #5 Cvode::rhs(NrnThread*) /home/savulesc/Workspace/nrn/src/nrncvode/cvtrset.cpp:35 (libnrniv.so+0x38a2f6)
-94:     #6 Cvode::fun_thread_transfer_part2(double*, NrnThread*) /home/savulesc/Workspace/nrn/src/nrncvode/occvode.cpp:671 (libnrniv.so+0x3bbbf1)
-..............................................................
-94: SUMMARY: ThreadSanitizer: data race /home/savulesc/Workspace/nrn/src/nrncvode/cvodeobj.cpp:751 in Cvode::at_time(double, NrnThread*)
-94: ==================
-```
-
+NMODL supports the sanitizers in a similar way, but this has to be enabled
+explicitly: `-DNRN_SANITIZERS=undefined` will also compile NMODL code with UBSan
+enabled.
 
 Profiling and performance benchmarking
 --------------------------------------
@@ -281,7 +339,7 @@ To enable a profiler, one needs to rebuild NEURON with the appropriate flags set
 
 ```bash
 mkdir build && cd build
-cmake .. -DNRN_ENABLE_PROFILING=ON -DNRN_PROFILER=caliper -DCMAKE_PREFIX_PATH=/path/to/caliper/share/cmake/caliper -DNRN_ENABLE_TESTS=ON
+cmake .. -DNRN_ENABLE_PROFILING=ON -DNRN_PROFILER=caliper -DCMAKE_PREFIX_PATH=/path/to/caliper/install/prefix -DNRN_ENABLE_TESTS=ON
 cmake --build . --parallel
 ```
 or if you are building CoreNEURON standalone:
@@ -397,3 +455,426 @@ Notes:
   small objects to dramatically reduce the number of calls to the CUDA runtime
   API to allocate managed memory. It is, therefore, highly recommended to make
   Boost available when using GPU profiling tools.
+
+
+#### Profiling With Intel Vtune
+
+Intel VTune is a powerful performance analysis tool and the preferred choice for debugging on node performance issues
+on Intel platforms. VTune is especially handy when the exact issue and type of analysis needed
+are unclear. For example, should we focus on hotspots, examine thread imbalance, analyze memory accesses, or
+collect some hardware counters? Intel VTune offers a variety of such detailed analysis types, making it easy to
+switch between them as needed. Additionally, VTune has a performance profile comparison feature, simplifying
+the analysis of different runs.
+
+There is no one recipe for using Intel VTune, as different projects have different needs. Depending on the
+issue to analyze, one might need to configure the experiment in a specific way. However, here are some general
+instructions and tips to get started with using Intel VTune with NEURON.
+
+
+###### Using Caliper VTune Service
+
+If we have installed NEURON with the standard build configuration (e.g. `-DCMAKE_BUILD_TYPE=RelWithDebInfo`) and run
+Vtune with a standard analysis like:
+
+```bash
+vtune -collect uarch-exploration --no-summary -result-dir=nrn_vtune_result x86_64/special -python model.py
+```
+
+and then visualize the results using:
+
+```bash
+vtune-gui nrn_vtune_result &
+```
+
+In the `Bottom-up` analysis, we should see output like this:
+
+![](images/nrn_vtune_uarch_default_bottom_up.png)
+
+This is the expected output, but there are some issues or inconveniences with using the profile in this way:
+
+- The profile will include information from both the model building phase and the simulation phase.
+  While one can `Zoom and Filter by Selection`, the UI is not fluid or user-friendly for such selections.
+- As Vtune is sampling-based, we have functions from the entire execution, making it inconvenient to find
+   the context in which they are called. Importantly, as we have seen in the Caliper profile, we would
+   like to have them grouped in NEURON's terminology and according to hierarchy they are called e.g.
+   "psolve", "timestep", "spike-exchange", "state-update", "hh-state", etc.
+
+This is where Caliper can help us! It uses the Instrumentation and Tracing Technology API, i.e., `ittnotify.h`,
+which we typically use to pause/resume profiling but additionally uses the [Task API](https://github.com/LLNL/Caliper/blob/releases/v2.11.0/src/services/vtune/VTuneBindings.cpp)
+to mark all our Caliper instrumentation regions with `__itt_task_begin()` and `__itt_task_end()`.
+Because of this, all our Caliper instrumentations now nicely appear in Intel Vtune in the views like `Summary`, `Bottom-up`, etc.
+
+![](images/nrn_vtune_uarch_caliper_step1_bottom_up.png)
+
+So let's look at how to build NEURON for Vtune Analysis with Caliper and how to profile execution with various analysis.
+
+
+###### Building NEURON for Vtune Analysis with Caliper
+
+The first step is to install Caliper with Intel VTune support. You can install [Caliper](https://github.com/LLNL/Caliper)
+without Spack, but if you are a Spack user, note that the `vtune` variant in Caliper was added in May 2024. Therefore,
+ensure you are using a newer version of Spack and have the `+vtune` variant activated.
+
+Once Caliper is available with Vtune support, we can build NEURON in a regular way:
+
+```bash
+cmake .. \
+        -DNRN_ENABLE_PROFILING=ON \
+        -DNRN_PROFILER=caliper \
+        -DCMAKE_PREFIX_PATH=/path/to/caliper/install/prefix \
+        -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+        -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer" \
+        -DCMAKE_INSTALL_PREFIX=/path/to/install
+make -j && make install
+```
+We have additionally specified `-fno-omit-frame-pointer` CXX flag which helps profiler to to accurately track function calls and execution paths.
+
+###### Running NEURON With Vtune And Caliper
+
+Once NEURON is installed, we can now run profiling with [Caliper's Vtune service](https://software.llnl.gov/Caliper/ThirdPartyTools.html#intel-vtune)
+by setting `CALI_SERVICES_ENABLE=vtune` environmental variable:
+
+```bash
+export CALI_SERVICES_ENABLE=vtune
+```
+
+and then launch Vtune profiling as:
+
+
+```bash
+vtune -start-paused -collect uarch-exploration --no-summary -result-dir=nrn_vtune_result x86_64/special -python model.py
+vtune-gui nrn_vtune_result &
+```
+
+Note that we have used `-start-paused` CLI option so that VTune profiling will be disabled until our Caliper instrumentation
+activates the recording for the simulation phase (i.e., ignoring the model building part). The highlighted `pause`
+region should indicate such time rane. When you open the analysis view, such as `Bottom-up`, make sure to change `Grouping` to
+`Task Type / Function / Call Stack` as shown below:
+
+![](images/nrn_vtune_uarch_caliper_step3_bottom_up.png)
+
+
+###### Typical Vtune Analysis
+
+From the available analysis, we might be inetrested in `performance-snapshot`, `hotspots`, `uarch-exploration`, `memory-access`,
+`threading` and  `hpc-performance`. We can get information about specific specific collenction type using:
+
+```bash
+vtune -help collect
+
+or
+
+vtune -help collect uarch-exploration
+```
+
+**Identifying Hotspots In A Model**
+
+Hotspots analysis is one of the most basic and essential types of analysis in Intel VTune. It helps pinpoint performance bottlenecks
+by highlighting sections of the code where the application spends a significant amount of time.
+Although Caliper's output already aids in identifying hotspots, there are instances where we might encounter unknown performance issues.
+In such cases, hotspot analysis is invaluable. By employing sampling-based mechanisms, it provides insights into what else might be
+contributing to the application's runtime.
+
+In order to run this analysis, we use the same CLI syntax as before:
+
+```bash
+vtune -start-paused -collect hotspots --no-summary -result-dir=nrn_vtune_result x86_64/special -python model.py
+```
+
+**Comparing Runtime of Two Different Executions**
+
+In certain situations, we want to compare two changesets/commits/versions or just two different builds to find out what is causing
+the difference in execution time. See the performance regression discussed in [#2787](https://github.com/neuronsimulator/nrn/issues/2787).
+
+In such situations, we first need to select the analysis type that is relevant for comparison. For example, if we need to
+find out which functions are causing the difference in execution time, then hotspot analysis will be sufficient. But,
+if we want to determine why a particular function in one build or commit is slower than in another commit or build, then we
+might need to deep dive into hardware counter analysis (e.g., to compare cache misses, instructions retired, etc). In this
+case, we might need to select the `uarch-exploration` analysis type.
+
+To perform such a comparison, we do two runs with two different executions and generate profiles in two different directories:
+
+```bash
+vtune -start-paused -collect uarch-exploration --no-summary -result-dir=nrn_vtune_result_build1 build1/x86_64/special -python model.py
+vtune -start-paused -collect uarch-exploration --no-summary -result-dir=nrn_vtune_result_build2 build2/x86_64/special -python model.py
+```
+
+Once we have profile results, we can open them in comparison view using `vtune-gui`:
+
+```bash
+vtune-gui nrn_vtune_result_build1 nrn_vtune_result_build2
+```
+
+As we have NEURON code regions and mechanisms functions annotated, they will appear as tasks, and the comparison will already be helpful
+to give a first impression of the differences between the two executions:
+
+![](images/nrn_vtune_uarch_caliper_step8_summary_compare.png)
+
+In this example, we can see the differences in execution time, and observing the difference in instruction count is already helpful. The Top Tasks
+region shows which tasks/functions are contributing to the biggest difference.
+
+We can then dive deeper into the `Bottom-up` analysis view and look into various hardware counter details. We can do the same in `Event Count`
+view. Note that VTune comes with hundreds of counters, which can be a bit overwhelming! What you want to look at depends on the problem you
+are trying to investigate. In the example below, we are simply comparing the instructions retired. Notice the `Grouping` that we mentioned earlier:
+
+![](images/nrn_vtune_uarch_caliper_step9_bottom_up_compare.png)
+
+We can further expand a specific `task`. As our grouping includes `Call Stack` context, we should be able to see everything that is happening inside that task:
+
+![](images/nrn_vtune_uarch_caliper_step10_bottom_up_expand.png)
+
+Importantly, note that we can change the `Grouping` as per the view we would like to see! In the screenshot below, you can see how we can do that:
+
+![](images/nrn_vtune_uarch_caliper_step11_grouping_expand.png)
+
+**Identifying False Sharing**
+
+False sharing is the situation where multiple threads update distinct elements that reside on the same cache line, causing performance
+degradation due to repeated cache invalidations.
+
+For a quite some time, Intel VTune has documented how to identify such situations. You can see the Cookbook example 
+[here](https://www.intel.com/content/www/us/en/docs/vtune-profiler/cookbook/2023-0/false-sharing.html) or older tutorials like 
+[this one](https://cdrdv2-public.intel.com/671363/vtune-tutorial-linux-identifying-false-sharing.pdf). In short, we need to find out memory
+objects where access latencies are significantly higher. To facilitate such investigations, VTune provides an analysis type `memory-access`. 
+We can configure this analysis using the CLI as follows:
+
+```bash
+taskset -c 0-7 vtune -collect memory-access \
+                     -knob analyze-mem-objects=true -knob mem-object-size-min-thres=1 -knob dram-bandwidth-limits=true \
+                     -start-paused -result-dir=nrn_vtune_result x86_64/special -python model.py
+```
+
+Here we specify additional parameters `analyze-mem-objects=true` and `mem-object-size-min-thres=1` 
+to track and analyze memory objects larger than 1 byte. Additionally, we use `taskset -c 0-7` 
+to assign threads to specific cores for consistent performance profiling results.
+
+Once we have profile data, we can examine access latencies for different memory objects. In the 
+example below, we view the `Bottom-up` pane with `Grouping` set to `Memory Object / Function / Call Stack`:
+
+![](images/nrn_vtune_memacs_caliper_step12_acs_lat.png)
+
+Here, we observe significantly higher access latencies in the `bksub()` function from `sparse_thread.hpp`.
+In order to understand the exact code location, we can double click the function name and it will takes us to the corresponding code section:
+
+![](images/nrn_vtune_memacs_caliper_step13_acs_lat_code.png)
+
+The high latencies are attributed to `SparseObj` objects. This suggests a need to revisit how 
+`SparseObj` objects are allocated, stored and updated during runtime.
+
+It's important to note that higher latencies do not necessarily indicate false sharing. For 
+instance, indirect-memory accesses with a strided pattern could lead to increased latencies. 
+One should examine how the memory object is used within a function to determine if false sharing 
+is a potential issue. Additionally, comparing access latencies with scenarios like single-threaded 
+execution or versions without such issues can provide further insights.
+
+#### Using LIKWID With NEURON
+
+As described in the previous section, Intel VTune is a powerful tool for node-level performance analysis.
+However, we might need alternative options like LIKWID profiling tools in scenarios such as:
+1) VTune is not available due to non-Intel CPUs or lack of necessary permissions.
+2) We prefer to precisely mark the code regions of interest rather than using a sampling-based approach.
+3) The raw events/performance counters shown by VTune are overwhelming, and we want high-level metrics that typically used in HPC/Scientific Computing.
+4) Or simply we want to cross-check VTune's results with another tool like LIKWID to ensure there are no false positives.
+
+LIKWID offers a comprehensive set of tools for performance measurement on HPC platforms. It supports Intel, AMD, and ARM CPUs.
+However, as it is not vendor-specific, it may lack support for specific CPUs (e.g., Intel Alder Lake). Despite this, LIKWID is still a valuable tool.
+Let’s quickly see how we can use LIKWID with NEURON.
+
+We assume LIKWID is installed with the necessary permissions (via `accessDaemon` or Linux `perf` mode).
+Usage of LIKWID is covered in multiple other tutorials like [this](https://github.com/RRZE-HPC/likwid/wiki/TutorialStart) and [this](https://hpc.fau.de/research/tools/likwid/).
+Here, we focus on its usage with NEURON.
+
+LIKWID can measure performance counters on any binary like NEURON. For example, in the execution below,
+we measure metrics from `FLOPS_DP` LIKWID group, i.e., double precision floating point related metrics:
+
+```console
+$ likwid-perfctr -C 0 -g FLOPS_DP ./x86_64/special -python test.py
+--------------------------------------------------------------------------------
+CPU name:	Intel(R) Xeon(R) Gold 6140 CPU @ 2.30GHz
+...
+--------------------------------------------------------------------------------
+Group 1: FLOPS_DP
++------------------------------------------+---------+------------+
+|                   Event                  | Counter | HWThread 0 |
++------------------------------------------+---------+------------+
+|             INSTR_RETIRED_ANY            |  FIXC0  | 8229299612 |
+|           CPU_CLK_UNHALTED_CORE          |  FIXC1  | 3491693048 |
+|           CPU_CLK_UNHALTED_REF           |  FIXC2  | 2690601456 |
+| FP_ARITH_INST_RETIRED_128B_PACKED_DOUBLE |   PMC0  |    1663849 |
+|    FP_ARITH_INST_RETIRED_SCALAR_DOUBLE   |   PMC1  |  740794589 |
+| FP_ARITH_INST_RETIRED_256B_PACKED_DOUBLE |   PMC2  |          0 |
+| FP_ARITH_INST_RETIRED_512B_PACKED_DOUBLE |   PMC3  |      -     |
++------------------------------------------+---------+------------+
+
++----------------------+------------+
+|        Metric        | HWThread 0 |
++----------------------+------------+
+|  Runtime (RDTSC) [s] |     1.4446 |
+| Runtime unhalted [s] |     1.5181 |
+|      Clock [MHz]     |  2984.7862 |
+|          CPI         |     0.4243 |
+|     DP [MFLOP/s]     |   515.0941 |
+|   AVX DP [MFLOP/s]   |          0 |
+|  AVX512 DP [MFLOP/s] |          0 |
+|   Packed [MUOPS/s]   |     1.1517 |
+|   Scalar [MUOPS/s]   |   512.7906 |
+|  Vectorization ratio |     0.2241 |
++----------------------+------------+
+```
+
+In this execution, we see information like the total number of instructions executed and contributions from SSE, AVX2, and AVX-512 instructions.
+
+But, in the context of NEURON model execution, this is not sufficient because the above measurements summarize the full execution,
+including model building and simulation phases. For detailed performance analysis, we need granular information. For example:
+1) We want to compare hardware counters for phases like current update (`BREAKPOINT`) vs. state update (`DERIVATIVE`) due to their different properties (memory-bound vs. compute-bound).
+2) We might want to analyze the performance of a specific MOD file and it's kernels.
+
+This is where [LIKWID's Marker API](https://github.com/RRZE-HPC/likwid/wiki/TutorialMarkerC) comes into play.
+Currently, Caliper doesn't integrate LIKWID as a service, but NEURON's profiler interface supports enabling LIKWID markers via the same
+[Instrumentor API](https://github.com/neuronsimulator/nrn/blob/master/src/coreneuron/utils/profile/profiler_interface.h).
+
+###### Building NEURON With LIKWID Support
+
+If LIKWID is already installed correctly with the necessary permissions, enabling LIKWID support into NEURON is not difficult:
+
+```console
+cmake .. \
+    -DNRN_ENABLE_PROFILING=ON \
+    -DNRN_PROFILER=likwid \
+    -DCMAKE_PREFIX_PATH=<likwid-install-prefix>/share/likwid \
+    -DCMAKE_INSTALL_PREFIX=$(pwd)/install \
+    -DCMAKE_BUILD_TYPE=RelWithDebInfo
+make -j && make install
+```
+
+Once built this way, LIKWID markers are added for the various simulation phases similar to those shown in Caliper and Vtune section.
+
+###### Measurement with LIKWID
+
+Measuring different metrics with LIKWID is easy, as seen earlier. By building LIKWID support via CMake, we now have enabled LIKWID markers 
+that help us see the performance counters for different phases of simulations. In the example below, we added the `-m` CLI option to enable markers:
+
+```console
+$ likwid-perfctr -C 0 -m -g FLOPS_DP ./x86_64/special -python test.py
+...
+...
+Region psolve, Group 1: FLOPS_DP
++-------------------+------------+
+|    Region Info    | HWThread 0 |
++-------------------+------------+
+| RDTSC Runtime [s] |  10.688310 |
+|     call count    |          1 |
++-------------------+------------+
+
++------------------------------------------+---------+------------+
+|                   Event                  | Counter | HWThread 0 |
++------------------------------------------+---------+------------+
+|             INSTR_RETIRED_ANY            |  FIXC0  | 5496569000 |
+|           CPU_CLK_UNHALTED_CORE          |  FIXC1  | 2753500000 |
+|           CPU_CLK_UNHALTED_REF           |  FIXC2  | 2111229000 |
+| FP_ARITH_INST_RETIRED_128B_PACKED_DOUBLE |   PMC0  |     489202 |
+|    FP_ARITH_INST_RETIRED_SCALAR_DOUBLE   |   PMC1  |  730000000 |
+| FP_ARITH_INST_RETIRED_256B_PACKED_DOUBLE |   PMC2  |          0 |
+| FP_ARITH_INST_RETIRED_512B_PACKED_DOUBLE |   PMC3  |      -     |
++------------------------------------------+---------+------------+
+...
+...
+Region state-cdp5StCmod, Group 1: FLOPS_DP
++-------------------+------------+
+|    Region Info    | HWThread 0 |
++-------------------+------------+
+| RDTSC Runtime [s] |   0.353965 |
+|     call count    |        400 |
++-------------------+------------+
+
++------------------------------------------+---------+------------+
+|                   Event                  | Counter | HWThread 0 |
++------------------------------------------+---------+------------+
+|             INSTR_RETIRED_ANY            |  FIXC0  | 2875111000 |
+|           CPU_CLK_UNHALTED_CORE          |  FIXC1  | 1057608000 |
+|           CPU_CLK_UNHALTED_REF           |  FIXC2  |  810826000 |
+| FP_ARITH_INST_RETIRED_128B_PACKED_DOUBLE |   PMC0  |     380402 |
+|    FP_ARITH_INST_RETIRED_SCALAR_DOUBLE   |   PMC1  |  358722700 |
+| FP_ARITH_INST_RETIRED_256B_PACKED_DOUBLE |   PMC2  |          0 |
+| FP_ARITH_INST_RETIRED_512B_PACKED_DOUBLE |   PMC3  |      -     |
++------------------------------------------+---------+------------+
+...
+Region state-Cav2_3, Group 1: FLOPS_DP
++-------------------+------------+
+|    Region Info    | HWThread 0 |
++-------------------+------------+
+| RDTSC Runtime [s] |   0.002266 |
+|     call count    |        400 |
++-------------------+------------+
+...
+...
+```
+
+Here, we see performance counters for the `psolve` region, which includes the full simulation loop,
+and a breakdown into channel-specific kernels like `state-cdp5StCmod` and `state-Cav2_3`.
+
+###### Avoiding Measurement Overhead with `NRN_PROFILE_REGIONS`
+
+When profiling with Caliper, careful instrumentation can ensure that measuring execution does not incur significant overhead.
+It's important to avoid instrumenting very small code regions to minimize performance impact.
+However, with LIKWID, starting and stopping measurement using high-level API like `LIKWID_MARKER_START()` and
+`LIKWID_MARKER_STOP()` can introduce relatively high overhead, especially when instrumentation covers small code regions.
+This is the case in NEURON as we instrument all simulation phases and individual mechanisms' state and current update kernels.
+In small models, such overhead could slow down execution by 10x.
+
+To avoid this, NEURON provides an environment variable `NRN_PROFILE_REGIONS` to enable profiling for specific code regions.
+For example, let's assume we want to understand hardware performance counters for two phases:
+- `psolve`: entire simulation phase
+- `state-hh`: one specific state update phase where we call `DERIVATIVE` block of the `hh.mod` file
+
+These names are the same as those instrumented in the code using `Instrumentor::phase` API (see previous step).
+We can specify these regions to profile as a *comma-separated list* via the `NRN_PROFILE_REGIONS` environment variable:
+
+```console
+$ export NRN_PROFILE_REGIONS=psolve,state-hh
+$ likwid-perfctr -C 0 -m -g FLOPS_DP ./x86_64/special -python test.py
+```
+
+Now, we should get the performance counter report only for these two regions with relatively small execution overhead:
+
+```console
+Region psolve, Group 1: FLOPS_DP
++-------------------+------------+
+|    Region Info    | HWThread 0 |
++-------------------+------------+
+| RDTSC Runtime [s] |  10.688310 |
+|     call count    |          1 |
++-------------------+------------+
+
++------------------------------------------+---------+------------+
+|                   Event                  | Counter | HWThread 0 |
++------------------------------------------+---------+------------+
+|             INSTR_RETIRED_ANY            |  FIXC0  | 5496569000 |
+|           CPU_CLK_UNHALTED_CORE          |  FIXC1  | 2753500000 |
+...
+...
+Region state-hh, Group 1: FLOPS_DP
++-------------------+------------+
+|    Region Info    | HWThread 0 |
++-------------------+------------+
+| RDTSC Runtime [s] |   0.180081 |
+|     call count    |        400 |
++-------------------+------------+
+
++------------------------------------------+---------+------------+
+|                   Event                  | Counter | HWThread 0 |
++------------------------------------------+---------+------------+
+|             INSTR_RETIRED_ANY            |  FIXC0  | 1341553000 |
+|           CPU_CLK_UNHALTED_CORE          |  FIXC1  |  540962900 |
+...
+```
+
+> NOTE: Currently, NEURON uses marker APIs `LIKWID_MARKER_START()` and `LIKWID_MARKER_STOP()` from LIKWID.
+> We should consider using `LIKWID_MARKER_REGISTER()` API to reduce overhead and prevent incorrect report counts for tiny code regions.
+
+### Comparing LIKWID Profiles
+
+Unlike VTune, LIKWID doesn't support direct comparison of profile data. However, the powerful CLI allows us to select specific metrics
+for code regions, and since the profile results are provided as text output, comparing results from two runs is straightforward.
+For instance, the screenshot below shows FLOPS instructions side by side between two runs:
+

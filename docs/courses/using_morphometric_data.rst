@@ -145,8 +145,11 @@ Some morphometric reconstructions contain orphan branches, or measurement points
 
 Here's an example that used a toy cell:
 
-.. image:: img/v5.gif
-    :align: center
+|left| |right|
+
+.. |left| image:: img/v0.gif
+
+.. |right| image:: img/v5.gif
 
 Left: Vm at t = 0 ms. Right: Vm at 5 ms.
 
@@ -158,7 +161,7 @@ This Python code checks for pt3d diameters smaller than 0.1 μm, and reports whe
 .. code::
     python
 
-    for sec in h.allsec():
+    for sec in n.allsec():
         for i in range(sec.n3d()):
             if sec.diam3d(i) < 0.1:
                 print(f'{sec} {i} {sec.diam3d(i)}')

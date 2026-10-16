@@ -1,5 +1,5 @@
-#ifndef arraypool_h
-#define arraypool_h
+#pragma once
+#include "oc_ansi.h"  // nrn_cacheline_calloc
 
 // create and manage a vector of arrays as a memory pool of those arrays
 // the idea is to allow the possibility of some extra cache efficiency
@@ -183,5 +183,3 @@ void ArrayPool<T>::free_all() {
     assert(put_ == count_);
     put_ = 0;
 }
-
-#endif

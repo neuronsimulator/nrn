@@ -1,6 +1,7 @@
 #include <../../nrnconf.h>
 #if HAVE_IV  // to end of file
 
+#include <algorithm>
 #include <OS/list.h>
 #include <InterViews/hit.h>
 #include <stdio.h>
@@ -36,20 +37,16 @@ ButtonHandler::~ButtonHandler() {
     Resource::unref(rband_);
 }
 
-declarePtrList(HandlerList, ButtonHandler);
-implementPtrList(HandlerList, ButtonHandler);
-
 StandardPicker::StandardPicker() {
     ms_ = unknown;
     for (int i = 0; i < unknown; ++i) {
-        handlers_[i] = new HandlerList(1);
+        handlers_[i] = new std::vector<ButtonHandler*>();
     }
 }
 StandardPicker::~StandardPicker() {
     for (int i = 0; i < unknown; ++i) {
-        long cnt = handlers_[i]->count();
-        for (long j = 0; j < cnt; j++) {
-            delete handlers_[i]->item(j);
+        for (auto& item: *handlers_[i]) {
+            delete item;
         }
         delete handlers_[i];
     }
@@ -65,15 +62,13 @@ bool StandardPicker::pick(Canvas* c, Glyph* glyph, int depth, Hit& h) {
     }
     event(e);
 
-    long cnt = handlers_[ms_]->count();
-    for (long i = 0; i < cnt; ++i) {
-        ButtonHandler& b = *handlers_[ms_]->item(i);
-        if (b.eb_ == Event::any || b.eb_ == mb_) {
-            if (b.handler_) {
-                h.target(depth, glyph, 0, b.handler_);
+    for (const auto& b: *handlers_[ms_]) {
+        if (b->eb_ == Event::any || b->eb_ == mb_) {
+            if (b->handler_) {
+                h.target(depth, glyph, 0, b->handler_);
             } else {
-                b.rband_->canvas(c);
-                h.target(depth, glyph, 0, b.rband_);
+                b->rband_->canvas(c);
+                h.target(depth, glyph, 0, b->rband_);
             }
             return true;
         }
@@ -109,23 +104,20 @@ void StandardPicker::event(const Event& e) {
 }
 
 void StandardPicker::unbind(int m, EventButton eb) {
-    long cnt = handlers_[m]->count();
-    long i, j;
-    for (i = 0, j = 0; i < cnt; ++i) {
-        ButtonHandler& b = *handlers_[m]->item(j);
-        if (b.eb_ == Event::any || b.eb_ == eb) {
-            delete handlers_[m]->item(j);
-            handlers_[m]->remove(j);
-        } else {
-            ++j;
+    for (auto& b: *handlers_[m]) {
+        if (b->eb_ == Event::any || b->eb_ == eb) {
+            delete b;
+            b = nullptr;
         }
     }
+    handlers_[m]->erase(std::remove(handlers_[m]->begin(), handlers_[m]->end(), nullptr),
+                        handlers_[m]->end());
 }
 
 void StandardPicker::bind(int m, EventButton eb, OcHandler* h) {
     unbind(m, eb);
     if (h) {
-        handlers_[m]->append(new ButtonHandler(eb, h));
+        handlers_[m]->push_back(new ButtonHandler(eb, h));
     }
 }
 
@@ -133,7 +125,7 @@ void StandardPicker::bind_press(EventButton eb, Rubberband* rb) {
     int m = 1;
     unbind(m, eb);
     if (rb) {
-        handlers_[m]->append(new ButtonHandler(eb, rb));
+        handlers_[m]->push_back(new ButtonHandler(eb, rb));
     }
 }
 

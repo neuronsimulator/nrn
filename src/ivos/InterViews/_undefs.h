@@ -5,9 +5,7 @@
 #undef point
 #undef points
 #undef RasterRect
-#if !MAC
 #undef Point
-#endif
 #undef Line
 #undef Ellipse
 #undef MultiLine
@@ -219,7 +217,6 @@
 #undef Raster
 #undef RasterRep
 #undef Reducer
-#undef Regexp
 #undef ReqErr
 #undef Requirement
 #undef Requisition

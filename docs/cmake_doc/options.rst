@@ -1,23 +1,79 @@
+CMake Build Options
+~~~~~~~~~~~~~~~~~~~
+
 Introduction
 ============
-The NEURON build system now uses cmake as of version 7.8 circa Nov 2019.
+The NEURON build system now uses CMake as of version 7.8 circa Nov 2019.
 The previous autotools (./configure) build system has been removed after
 8.0 release.
 
+The NEURON simulator as well as Interviews, CoreNEURON and NMODL can be installed
+together using the following instructions:
+
+1. Clone the latest version or specific release:
+
 .. code-block:: shell
 
-  git clone https://github.com/neuronsimulator/nrn nrn
-  cd nrn
-  mkdir build
-  cd build
-  cmake .. # default install to /usr/local
-  make -j
-  sudo make -j install
+   git clone https://github.com/neuronsimulator/nrn           # latest development branch
+   git clone https://github.com/neuronsimulator/nrn -b 8.2.3  # specific release version 8.2.3
+   cd nrn
 
-The ``-j`` option to make invokes a parallel make using all available cores.
-This is often very much faster than a single process make. One can add a number
-after the ``-j`` (e.g. ``make -j 6``) to specify the maximum number of processes
-to use. This can be useful if there is the possibility of running out of memory.
+..
+
+   .. warning:: To build NEURON from source you either need to clone the
+   NEURON Git repository or download a source code archive that includes
+   Git submodules, such as the ``nrn-full-src-package-X.Y.Z.tar.gz`` file in
+   the `NEURON
+   releases <https://github.com/neuronsimulator/nrn/releases>`__ on
+   GitHub. The tarballs like ``Source code (tar.gz)`` or
+   ``Source code (zip)`` created by GitHub are incomplete.
+
+2. Create a build directory:
+
+.. code-block:: shell
+
+   mkdir build
+   cd build
+
+3. Run ``cmake`` with the appropriate options (see below for a list of
+   common options). A full list of options can be found in
+   ``nrn/CMakeLists.txt`` and defaults are shown in
+   ``nrn/cmake/BuildOptionDefaults.cmake``. e.g. a bare-bones
+   installation:
+
+.. code-block:: shell
+
+   cmake .. \
+    -DNRN_ENABLE_INTERVIEWS=OFF \
+    -DNRN_ENABLE_MPI=OFF \
+    -DNRN_ENABLE_RX3D=OFF \
+    -DPYTHON_EXECUTABLE=$(which python3) \
+    -DCMAKE_INSTALL_PREFIX=/path/to/install/directory
+
+4. Build the code:
+
+.. code-block:: shell
+
+   cmake --build . --parallel 8 --target install
+
+Feel free to set the number of parallel jobs (i.e. 8) according to your
+system using the ``--parallel`` option.
+
+   .. warning:: When ``NEURON`` is installed with ``CoreNEURON`` option enabled then ``NMODL`` is also installed with the ``NMODL`` Python bindings which increase a lot the compilation complexity and memory requirements. For that purpose it’s recommended to either disable this option if the Python bindings are not needed using the ``CMake`` option ``-DNMODL_ENABLE_PYTHON_BINDINGS=OFF`` or restrict the number of parallel jobs running in parallel in the ``cmake`` command using ``cmake --parallel <number_of_parallel_jobs>``. i.e. in a machine with 8 threads do ``cmake -parallel 4``.
+
+5. Set PATH and PYTHONPATH environmental variables to use the
+   installation:
+
+.. code-block:: shell
+
+   export PATH=/path/to/install/directory/bin:$PATH
+   export PYTHONPATH=/path/to/install/directory/lib/python:$PYTHONPATH
+
+The make targets that are made available by CMake can be listed with
+
+.. code-block:: shell
+
+  make help
 
 You can list CMake options with
 ``cmake .. -LH``
@@ -184,8 +240,8 @@ IV_ENABLE_X11_DYNAMIC_MAKE_HEADERS:BOOL=OFF
   If it is ever necessary to remake the X11 dynamic .h files, I will
   do so and push them to the https://github.com/neuronsimulator/iv respository.
 
-MPI options:
-============
+MPI options
+===========
 
 NRN_ENABLE_MPI:BOOL=ON
 ----------------------
@@ -213,14 +269,67 @@ NRN_MPI_DYNAMIC:STRING=
 
   This option is ignored unless NRN_ENABLE_MPI_DYNAMIC=ON
 
-Python options:
-===============
+NRN_ENABLE_MUSIC:BOOL=OFF
+-------------------------
+  Enable MUSIC. MUlti SImulation Coordinator.
+
+  MUSIC must already be installed. See https://github.com/INCF/MUSIC.
+  Hints for MUSIC installation: use the switch-to-MPI-C-interface branch.
+  Python3 must have mpi4py and cython modules. I needed a PYTHON_PREFIX, so
+  on my Apple M1 used: ``./configure --prefix=`pwd`/musicinstall PYTHON_PREFIX=/Library/Frameworks/Python.framework/Versions/3.11 --disable-anysource``
+
+  MPI and Python must be enabled.
+
+  If MUSIC is installed but CMake cannot find its ``/path``, augment the
+  semicolon separated list of paths ``-DCMAKE_PREFIX_PATH=...;/path;...``
+  or pass the ``/path`` with ``-DMUSIC_ROOT=/path`` to cmake.
+  CMake needs to find
+
+  .. code-block:: shell
+
+    /path/include/music.hh
+    /path/lib/libmusic.so
+
+  With the music installed above, cmake configuration example is
+  ``build % cmake .. -G Ninja -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_INSTALL_PREFIX=install -DPYTHON_EXECUTABLE=`which python3.11` -DNRN_ENABLE_RX3D=OFF -DCMAKE_BUILD_TYPE=Debug -DNRN_ENABLE_TESTS=ON -DNRN_ENABLE_MUSIC=ON -DCMAKE_PREFIX_PATH=$HOME/neuron/MUSIC/musicinstall``
+
+  If -DNRN_ENABLE_MPI_DYNAMIC=ON then the nrnmusic interface to
+  NEURON will also be dynamically loaded at runtime. (Generally useful
+  only for binary distributions of NEURON (e.g. wheels) where NEURON may
+  be installed and used prior to installing music.)
+
+Python options
+==============
 
 NRN_ENABLE_PYTHON:BOOL=ON
 -------------------------
   Enable Python interpreter support
   (default python, fallback to python3, but see PYTHON_EXECUTABLE below)
 
+NRN_INSTALL_PYTHON_PREFIX:STRING="lib/python/neuron/"
+-----------------------------------------------------
+  Path where NEURON Python components will be installed, relative to
+  ``CMAKE_INSTALL_PREFIX``. Must end with a directory named "neuron".
+  Environment variable ``PYTHONPATH`` must contain the real path to
+  ``NRN_INSTALL_PYTHON_PREFIX`` in order for python to find neuron.
+
+  For venv's, configure cmake with:
+
+  .. code-block:: shell
+
+    -DCMAKE_INSTALL_PREFIX=$(python -c "import sysconfig; print(sysconfig.get_path('data', 'venv'))") \
+    -DNRN_INSTALL_PYTHON_PREFIX=$(python -c "import sysconfig; print(sysconfig.get_path('platlib', 'venv') + '/neuron')")
+
+  To install to your home directory, configure cmake with:
+
+  .. code-block:: shell
+
+    -DCMAKE_INSTALL_PREFIX=$(python3 -m site --user-base) \
+    -DNRN_INSTALL_PYTHON_PREFIX=$(python3 -m site --user-site)/neuron
+
+  This option is ignored when building a wheel, in which case the value is forced to "neuron/"
+
+.. _cmake_nrn_enable_python_dynamic:
 NRN_ENABLE_PYTHON_DYNAMIC:BOOL=OFF
 ----------------------------------
   Enable dynamic Python version support
@@ -228,21 +337,31 @@ NRN_ENABLE_PYTHON_DYNAMIC:BOOL=OFF
   This is mostly useful for binary distributions where it is unknown which
   version, if any, of python exists on the target machine.
 
+.. _cmake_nrn_python_dynamic:
 NRN_PYTHON_DYNAMIC:STRING=
 --------------------------
-  semicolon (;) separated list of python executables to create interfaces. (default python3)
+  Semicolon (;) separated list of Python executables to build support for.
 
-  If the string is empty use the python specified by PYTHON_EXECUTABLE
-  or else the default python. Binary distributions often specify a list
-  of python versions so that if any one of them is available on the
-  target machine, NEURON + Python will be fully functional. Eg. the
-  mac package build script on my machine, nrn/bldnrnmacpkgcmake.sh uses
+  If the string is empty use the python specified by ``PYTHON_EXECUTABLE``.
+  or else the default python (``python3`` in the ``$PATH``).
+  Binary distributions often specify a list of python versions so that if any
+  one of them is available on the target machine, NEURON + Python will be fully
+  functional.
+  You must specify exactly one executable for each minor version of Python that
+  you would like to support.
+  For example:
 
   .. code-block:: shell
 
-    -DNRN_PYTHON_DYNAMIC="python3.7;python3.8;python3.9;python3.10"
+    -DNRN_PYTHON_DYNAMIC="python3.10;python3.11"
 
-  This option is ignored unless NRN_ENABLE_PYTHON_DYNAMIC=ON
+  The first entry in the list is considered to be the default version, followed
+  by alternatives in decreasing order of preference.
+  The default version is used to execute build scripts, and many tests are only
+  executed using this version.
+
+  This option is ignored unless ``NRN_ENABLE_PYTHON_DYNAMIC=ON``, in which case
+  ``PYTHON_EXECUTABLE`` is ignored.
 
 PYTHON_EXECUTABLE:PATH=
 -----------------------
@@ -251,25 +370,7 @@ PYTHON_EXECUTABLE:PATH=
 
   .. code-block:: shell
 
-    -DPYTHON_EXECUTABLE=`which python3.7`
-
-NRN_ENABLE_MODULE_INSTALL:BOOL=ON
----------------------------------
-  Enable installation of NEURON Python module.
-
-  By default, the neuron module is installed in CMAKE_INSTALL_PREFIX/lib/python.
-
-NRN_MODULE_INSTALL_OPTIONS:STRING=--home=/usr/local
----------------------------------------------------
-  setup.py options, everything after setup.py install
-
-  To install in site-packages use an empty string
-
-  .. code-block:: shell
-
-    -DNRN_MODULE_INSTALL_OPTIONS=""
-
-  This option is (or should be) ignored unless NRN_ENABLE_MODULE_INSTALL=ON.
+    -DPYTHON_EXECUTABLE=`which python3.8`
 
 NRN_ENABLE_RX3D:BOOL=ON
 -----------------------
@@ -289,15 +390,15 @@ NRN_RX3D_OPT_LEVEL:STRING=0
 
     -DNRN_RX3D_OPT_LEVEL=2
 
-CoreNEURON options:
-===================
+CoreNEURON options
+==================
 
 NRN_ENABLE_CORENEURON:BOOL=OFF
 ------------------------------
   Enable CoreNEURON support
 
-  If ON and no argument pointing to an external installation, CoreNEURON
-  will be cloned as a submodule along with all its NMODL submodule dependencies.
+  If ON CoreNEURON will be built and any needed NMODL submodule dependencies
+  cloned as external submodules.
 
 NRN_ENABLE_MOD_COMPATIBILITY:BOOL=OFF
 -------------------------------------
@@ -311,23 +412,21 @@ NRN_ENABLE_MOD_COMPATIBILITY:BOOL=OFF
 Other CoreNEURON options:
 -------------------------
   There are 20 or so cmake arguments specific to a CoreNEURON
-  build that are listed in https://github.com/BlueBrain/CoreNeuron/blob/master/CMakeLists.txt.
-  The ones of particular interest that can be used on the NEURON
-  CMake configure line are `CORENRN_ENABLE_NMODL` and `CORENRN_ENABLE_GPU`.
-  For developers preparing a pull request that involves associated changes
-  to CoreNEURON sources, a CoreNEURON pull request will fail if the
-  changes are not formatted properly. In this case, note that
-  `CORENRN_CLANG_FORMAT` can only be used in a CoreNEURON specific CMake
-  configure line in external/coreneuron/build.
+  build that are listed in https://github.com/neuronsimulator/nrn/blob/master/src/coreneuron/CMakeLists.txt.
+  The one of particular interest that can be used on the NEURON
+  CMake configure line is `CORENRN_ENABLE_GPU`.
 
-  .. code-block::
+NMODL options
+=============
 
-    cd external/coreneuron
-    mkdir build
-    cd build
-    cmake .. -DCMAKE_INSTALL_PREFIX=install -DPYTHON_EXECUTABLE=`which python` -DCORENRN_CLANG_FORMAT=ON
-    make clang-format
+To see all the NMODL CMake options you can look in https://github.com/BlueBrain/nmodl/blob/master/CMakeLists.txt.
 
+NMODL_ENABLE_PYTHON_BINDINGS:BOOL=OFF
+-------------------------------------
+  Enable pybind11 based python bindings
+
+  Using this option the user can use the NMODL python package to use NMODL via python. For more information look at
+  the NMODL documentation in https://bluebrain.github.io/nmodl/html/notebooks/nmodl-python-tutorial.html.
 
 
 Occasionally useful advanced options:
@@ -434,27 +533,98 @@ Readline_ROOT_DIR:PATH=/usr
 
 NRN_ENABLE_TESTS:BOOL=OFF
 -------------------------
-  Enable unit tests
+  Enable the NEURON test suite (build-tree and install checks).
 
-  Clones the submodule catch2 from https://github.com/catchorg/Catch2.git and after a build using
-  ``make`` can run the tests with ``make test``.
-  May also need to ``pip install pytest``.
-  ``make test`` is quite terse. To get the same verbose output that is
-  seen with the CI tests, use ``ctest -VV`` (executed in the
-  build folder) or an individual test with ``ctest -VV -R name_of_the_test``.
-  One can also run individual test files
-  with ``python3 -m pytest -s <testfile.py>`` or all the test files in that
-  folder with ``python3 -m pytest -s``. (The ``-s`` shows all output on
-  the terminal.) Note: It is helpful to ``make test``
-  first to ensure any mod files needed are available to the tests. If
-  running a test outside the folder where the test is located, it may be
-  necessary to add the folder to PYTHONPATH. Note: The last python
-  mentioned in the ``-DNRN_PYTHON_DYNAMIC=...`` (if the semicolon separated
-  list is non-empty and ``-DNRN_ENABLE_PYTHON_DYNAMIC=ON``)
-  is the one used for ``make test`` and ``ctest -VV``. Otherwise the
-  value specified by ``PYTHON_EXECUTABLE`` is used.
+  When ``ON``:
 
-  Example
+  * Clones the Catch2 submodule (https://github.com/catchorg/Catch2.git) for
+    C++ unit tests.
+  * Registers the full in-tree CTest suite under the main CMake binary
+    directory (unit tests, HOC/Python integration, RxD, optional MPI and
+    CoreNEURON paths, and so on).
+  * Adds a convenience target ``test-install`` that runs the **portable**
+    foreign test harness against ``CMAKE_INSTALL_PREFIX`` (see
+    :ref:`cmake-nrn-test-install` below).
+
+  You typically need ``pip install pytest`` (and, for RxD plots, packages
+  such as ``matplotlib`` / ``plotly`` / ``anywidget`` as required by
+  individual tests).
+
+  In-tree tests (build directory)
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  After configuring and building, run tests from the **main build**
+  directory. ``make test`` / ``ninja test`` is terse; prefer ``ctest`` for
+  the same verbose style as CI:
+
+  .. code-block:: shell
+
+    mkdir build && cd build
+    cmake .. -G Ninja -DNRN_ENABLE_TESTS=ON -DCMAKE_INSTALL_PREFIX=install ...
+    ninja          # or: cmake --build . -j
+    ctest --output-on-failure -j8
+    ctest -VV -R parallel_tests
+
+  It is helpful to complete a full ``ctest`` (or at least build the test
+  targets) once so that ``nrnivmodl`` has produced any mod-file libraries
+  the scripts expect.
+
+  One can also run individual Python test files with
+  ``python3 -m pytest -s <testfile.py>`` or all tests in a folder with
+  ``python3 -m pytest -s`` (``-s`` sends output to the terminal). If
+  running a test outside the folder where it lives, you may need that
+  folder on ``PYTHONPATH``.
+
+  Note: the last Python listed in ``-DNRN_PYTHON_DYNAMIC=...`` (when
+  non-empty and ``-DNRN_ENABLE_PYTHON_DYNAMIC=ON``) is used for
+  ``make test`` / default ``ctest``. Otherwise the value of
+  ``PYTHON_EXECUTABLE`` / the default discovered Python is used.
+
+  .. _cmake-nrn-test-install:
+
+  Install check (``test-install`` / foreign ctest)
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  Linked C++ unit tests require the build tree. To validate a **prefix
+  install** (or a pip wheel), NEURON also provides a standalone project
+  under ``test/foreign`` that discovers an installed NEURON and runs the
+  portable subset of the suite (no rebuild of ``libnrniv``).
+
+  With ``NRN_ENABLE_TESTS=ON``, the main build defines a target
+  ``test-install``. After installing into ``CMAKE_INSTALL_PREFIX``:
+
+  .. code-block:: shell
+
+    ninja install                 # or: cmake --build . --target install
+    ninja test-install            # or: cmake --build . --target test-install
+
+  That target:
+
+  1. Configures ``test/foreign`` into ``${CMAKE_BINARY_DIR}/build-ctest``
+     (for example ``build/build-ctest``), using the same CMake generator as
+     the main build (for example Ninja).
+  2. Points foreign discovery at the install prefix
+     (``NRN_FOREIGN_ROOT``) and the build’s default Python.
+  3. Builds mechanisms for the portable tests and runs a default
+     ``ctest -L serial`` install check.
+  4. Prints how to re-run ``ctest`` with other filters against that
+     foreign binary directory.
+
+  Afterwards you can use ordinary CTest options against the foreign dir:
+
+  .. code-block:: shell
+
+    ctest --test-dir build-ctest --output-on-failure
+    ctest --test-dir build-ctest -L mpi -j2
+    ctest --test-dir build-ctest -L coreneuron -j2
+    ctest --test-dir build-ctest -R 'pytest::' --rerun-failed
+
+  You can also configure the foreign project yourself (wheels, custom
+  prefixes, or a different binary dir). See ``test/foreign/README.md``
+  and ``test/foreign/INVENTORY.md`` (what runs under foreign mode vs
+  build-only).
+
+  Example (in-tree tests only, classic workflow)
 
   .. code-block:: shell
 
@@ -465,23 +635,26 @@ NRN_ENABLE_TESTS:BOOL=OFF
     ctest -VV -R parallel_tests
     cd ../test/pynrn
     python3 -m pytest
-    python3 -m pytest test_currents.py
 
 NRN_ENABLE_COVERAGE:BOOL=OFF
----------------------------
+----------------------------
   Enable code coverage
 
   Requires ``lcov`` (e.g. ``sudo apt install lcov``).
 
-  Provides two make targets to simplify the repeated "run tests, examine coverage"
+  Provides make targets to simplify the repeated "run tests, examine coverage"
   workflow.
-    -- ``make cover_begin`` erases all previous coverage data
+    -- ``make cover-begin`` (``cover_begin``) erases all previous coverage data
     (``*.gcda`` files), and creates a baseline report. (Note all files and
     folders are created in the ``CMAKE_BINARY_DIR`` where you ran cmake.)
 
-    -- ``make cover_html`` creates a coverage report for the sum of all the
-    software runs since the last ``cover_begin`` and prints a file url
+    -- ``make cover-html`` (``cover_html``) creates a coverage report for the sum of all the
+    software runs since the last ``cover-begin`` and prints a file url
     that you can paste into your browser to review the coverage.
+
+    -- ``make cover-diff`` (``cover_diff``; requires ``pip install diff-cover``) reports
+    coverage on changed lines vs. ``NRN_COVERAGE_DIFF_BRANCH`` (default
+    ``master``). See `Developer Builds: Code Coverage <../install/code_coverage.html>`_.
 
   When using an iterative workflow to examine test coverage of a single
   or a few files, the above targets run much faster when this option is
@@ -497,36 +670,34 @@ NRN_COVERAGE_FILES:STRING=
 
   ``-DNRN_COVERAGE_FILES="src/nrniv/partrans.cpp;src/nmodl/parsact.cpp;src/nrnpython/nrnpy_hoc.cpp"``
 
-NRN_CMAKE_FORMAT:BOOL=OFF
-----------------------------
-  Enable CMake code formatting
+  For a list of compiled sources changed on a branch, use
 
-  Clones the submodule coding-conventions from https://github.com/BlueBrain/hpc-coding-conventions.git.
-  Also need to ``pip install cmake-format=0.6.0 --user``.
-  After a build using ``make`` can reformat cmake files with ``make cmake-format``
-  See nrn/CONTRIBUTING.md for further details.
-  How does one reformat a specific cmake file?
+  .. code-block:: shell
 
-NRN_CLANG_FORMAT:BOOL=OFF
--------------------------
-  Enable code formatting
+     ci/coverage_files_from_diff.sh master
 
-  Clones the submodule coding-conventions from https://github.com/BlueBrain/hpc-coding-conventions.git.
-  For mac, need: ``brew install clang-format``
-  After a build using ``make``, can reformat all sources with ``make clang_format``
-  Incremental code formatting (of the current patch) can be done by setting additional build flags
-  ``NRN_FORMATTING_ON="since-ref:master"`` and ``NRN_FORMATTING_CPP_CHANGES_ONLY=ON``.
-  ```
+  The script lists ``.cpp`` and ``.c`` files only. It exits with an error
+  when none changed (omit this option in that case).
 
-  To manually format a single file, run in the top folder, e.g.:
-  ``clang-format --style=file -i src/nrniv/bbsavestate.cpp``
+NRN_COVERAGE_DIFF_BRANCH:STRING=master
+--------------------------------------
+  Git branch passed to ``diff-cover --compare-branch`` for the
+  ``cover_diff`` target. Defaults to ``master``.
 
 NRN_SANITIZERS:STRING=
 ----------------------
-  Enable some combination of AddressSanitizer, LeakSanitizer and
-  UndefinedBehaviorSanitizer. Accepts a comma-separated list of ``address``,
-  ``leak`` and ``undefined``. See the "Diagnosis and Debugging" section for more
-  information.
+  Enable some combination of AddressSanitizer, LeakSanitizer, ThreadSanitizer
+  and UndefinedBehaviorSanitizer. Accepts a comma-separated list of ``address``,
+  ``leak``, ``thread`` and ``undefined``.
+  See the "Diagnosis and Debugging" section for more information.
+  Note that on macOS it can be a little intricate to combine
+  ``-DNRN_SANITIZERS=address`` with the use of Python virtual environments; if
+  you attempt this then the CMake code should recommend a solution.
+
+  Note: the ``address`` sanitizer also prints leak infornation when a
+  launch exits. That can be avoided with
+
+  ``export ASAN_OPTIONS=detect_leaks=0``
 
 Miscellaneous Rarely used options specific to NEURON:
 =====================================================
@@ -535,20 +706,6 @@ NRN_ENABLE_DISCRETE_EVENT_OBSERVER:BOOL=ON
 ------------------------------------------
   Enable Observer to be a subclass of DiscreteEvent
   Can save space but a lot of component destruction may not notify other components that are watching it to no longer use that component. Useful only if one builds a model without needing to eliminate pieces of the model.
-
-NRN_DYNAMIC_UNITS_USE_LEGACY:BOOL=OFF
-----------------------------
-  Default is to use modern faraday, R, etc. from 2019 nist constants.
-  When Off or ON, and in the absence of the ``NRNUNIT_USE_LEGACY=0or1``
-  environment variable, the default dynamic value of ``h.nrnunit_use_legacy()``
-  will be 0 or 1 respectively.
-
-  At launch time (or import neuron),
-  use of legacy or modern units can be specified with the
-  ``NRNUNIT_USE_LEGACY=0or1`` environment variable. The use of legacy or
-  modern units can be dynamically specified after launch with the
-  ``h.nrnunit_use_legacy(0or1)`` function (with no args, returns the
-  current use flag).
 
 NRN_ENABLE_MECH_DLL_STYLE:BOOL=ON
 ---------------------------------
@@ -585,3 +742,51 @@ NRN_ENABLE_BACKTRACE:BOOL=OFF
   Does not work with python.
 
   Note: floating exceptions are turned on with :func:`nrn_feenableexcept`.
+
+NRN_LINK_AGAINST_PYTHON:BOOL=OFF
+--------------------------------
+  When ``NRN_ENABLE_PYTHON_DYNAMIC=ON`` then link the NEURON-Python interface
+  libraries ``libnrnpythonX.Y.so`` against the corresponding Python library
+  that was found at configuration time (``libpythonX.Y.so``).
+  This is enabled by default on Windows, but is not generally needed on macOS
+  and Linux, where the Python library is found and loaded dynamically at
+  runtime.
+
+NRN_PYTHON_EXTRA_FOR_TESTS:STRING=
+----------------------------------
+  Semicolon (;) separated list of Python executables that NEURON is **not**
+  built with support for, for use in tests of error messages and reporting.
+  For these purposes, minor versions (3.X and 3.Y) are considered different
+  and patch versions (3.8.X and 3.8.Y) are considered to be the same.
+
+NRN_ENABLE_MATH_OPT:BOOL=OFF
+-------------------------------------
+  Enable extra math optimisations.
+
+  When using compilers like GCC and Clang, one needs to explicitly use compiler
+  flags like `-funsafe-math-optimizations` in order to generate SIMD/vectorised
+  code using vector math library. This flag adds these extra compiler flags
+  to enable SIMD code.
+
+  Note: Compilers like Intel, NVHPC, Cray etc enable such optimisations
+  by default.
+
+NRN_ENABLE_DIGEST:BOOL=OFF
+------------------------------
+  Provides \ :func:`nrn_digest` function for debugging cross platform floating
+  result differences.
+
+  Requires libcrypto
+
+NRN_ENABLE_ARCH_INDEP_EXP_POW:BOOL=OFF
+--------------------------------------
+  Provides \ :func:`use_exp_pow_precision` function so that exp and pow produce
+  same results on all platforms.
+
+  Requires mpfr (multiple precision floating-point computation). eg.
+  ``sudo apt install libmpfr-dev``
+
+  To get platform independent floating point results with clang,
+  also consider using
+  ``-DCMAKE_C_FLAGS="-ffp-contract=off" -DCMAKE_CXX_FLAGS="-ffp-contract=off"``
+  or, alternatively, ``"-fp-model=strict``

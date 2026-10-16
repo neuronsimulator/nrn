@@ -1,6 +1,7 @@
 # Basically want to test that net_move statement doesn't get
 # mixed up with other instances.
-import distutils.util
+# Augmented to also test RANDOM (Bounce2) with coreneuron permutation.
+from neuron.tests.utils.strtobool import strtobool
 import os
 
 from neuron import h
@@ -13,7 +14,7 @@ h.dt = 1.0 / h.steps_per_ms
 
 
 class Cell:
-    def __init__(self, gid):
+    def __init__(self, gid, bounce=0):
         self.soma = h.Section(name="soma", cell=self)
         if gid % 2 == 0:
             # CoreNEURON permutation not the identity if cell topology not homogeneous
@@ -21,17 +22,19 @@ class Cell:
             self.dend.connect(self.soma(0.5))
         self.gid = gid
         pc.set_gid2node(gid, pc.id())
-        self.r = h.Random()
-        self.r.Random123(gid, 0, 0)
-        self.syn = h.Bounce(self.soma(0.5))
+        if bounce == 0:
+            self.syn = h.Bounce(self.soma(0.5))
+            self.syn.noiseFromRandom123(gid, 0, 1)
+        else:
+            self.syn = h.Bounce2(self.soma(0.5))
+            self.syn.ran.set_ids(gid, 0, 1)
         pc.cell(gid, h.NetCon(self.soma(0.5)._ref_v, None, sec=self.soma))
-        self.syn.noiseFromRandom123(gid, 0, 1)
         self.t1vec = h.Vector()
-        self.t1vec.record(self.syn._ref_t1, sec=self.soma)
+        self.t1vec.record(self.syn, self.syn._ref_t1, sec=self.soma)
         self.xvec = h.Vector()
-        self.xvec.record(self.syn._ref_x, sec=self.soma)
+        self.xvec.record(self.syn, self.syn._ref_x, sec=self.soma)
         self.rvec = h.Vector()
-        self.rvec.record(self.syn._ref_r, sec=self.soma)
+        self.rvec.record(self.syn, self.syn._ref_r, sec=self.soma)
 
     def result(self):
         return (
@@ -44,7 +47,7 @@ class Cell:
         )
 
 
-def test_watchrange():
+def watchrange():
     from neuron import coreneuron
 
     coreneuron.enable = False
@@ -88,12 +91,9 @@ def test_watchrange():
     stdlist = [cell.result() for cell in cells]
 
     print("CoreNEURON run")
-    h.CVode().cache_efficient(1)
     coreneuron.enable = True
     coreneuron.verbose = 0
-    coreneuron.gpu = bool(
-        distutils.util.strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false"))
-    )
+    coreneuron.gpu = bool(strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false")))
 
     def runassert(mode):
         run(tstop, mode)
@@ -148,20 +148,68 @@ def test_watchrange():
     for mode in [0, 1, 2]:
         runassert(mode)
 
+    # replace Bounce with Bounce2 (Uses RANDOM declaration)
+    pc.gid_clear()
+    cells = [Cell(gid, bounce=2) for gid in gids]
+    for mode in [0, 1, 2]:
+        runassert(mode)
+
     coreneuron.enable = False
     # teardown
     pc.gid_clear()
     return stdlist, tvec
 
 
+def watchrange2():
+    # #3291 introduced a use of freed memory bug. Reverted by #3496
+    # Other fix attempts #3492 and #3495 did not succeed.
+
+    pc.gid_clear()
+
+    ncell = 10
+    gids = range(pc.id(), ncell, pc.nhost())  # round robin
+
+    cells = [Cell(gid) for gid in gids]
+
+    def run(method, nthread):
+        print(f"run {method} {nthread}")
+        h.cvode_active(method[0])
+        h.cvode_local(method[1])
+        pc.nthread(nthread)
+        pc.set_maxstep(10)
+        h.finitialize()  # one more line of lvardt coverage
+        h.run()
+
+    def series():
+        # the extra (0, 0) tests transition from fixed step 4 threads
+        # to fixed step 1 thread.
+        for method in [(0, 0), (0, 0), (1, 0), (1, 1)]:
+            for nthread in [1, 4]:
+                run(method, nthread)
+
+    series()
+    return cells
+
+
+def test_watchrange():
+    watchrange()
+
+
+def test_watchrange2():
+    watchrange2()
+
+
 if __name__ == "__main__":
     from neuron import gui
 
-    stdlist, tvec = test_watchrange()
+    stdlist, tvec = watchrange()
     g = h.Graph()
     print("n_high  n_mid  n_low")
     for i, result in enumerate(stdlist):
         print(result[0], result[1], result[2])
         result[4].line(g, tvec, i, 2)
     g.exec_menu("View = plot")
+
+    watchrange2()
+
     h.quit()

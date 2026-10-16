@@ -2,10 +2,10 @@ import pytest
 
 
 @pytest.fixture
-def simple_model(neuron_instance):
+def simple_model(neuron_nosave_instance):
     """A simple rxd model with species and extracellular regions."""
 
-    h, rxd, data, save_path = neuron_instance
+    h, rxd, save_path = neuron_nosave_instance
     dend = h.Section(name="dend")
     dend.diam = 2
     dend.nseg = 5
@@ -24,14 +24,14 @@ def simple_model(neuron_instance):
     paramB = rxd.Parameter([ecs], initial=0)
     decay = rxd.Rate(k, -0.1 * k)
     model = (dend, cyt, ecs, k, paramA, paramB, decay)
-    yield (neuron_instance, model)
+    yield (neuron_nosave_instance, model)
 
 
 def test_ecs_reinit(simple_model):
     """Test rxd.re_init updates extracellular node values from NEURON values"""
 
-    neuron_instance, model = simple_model
-    h, rxd, data, save_path = neuron_instance
+    neuron_nosave_instance, model = simple_model
+    h, rxd, save_path = neuron_nosave_instance
     dend, cyt, ecs, k, paramA, paramB, decay = model
     h.finitialize(-65)
     dend(0.2).ko = 0
@@ -44,8 +44,8 @@ def test_ecs_reinit_cvode(simple_model):
     """Test rxd.re_init updates extracellular node values from NEURON segments
     with CVode"""
 
-    neuron_instance, model = simple_model
-    h, rxd, data, save_path = neuron_instance
+    neuron_nosave_instance, model = simple_model
+    h, rxd, save_path = neuron_nosave_instance
     dend, cyt, ecs, k, paramA, paramB, decay = model
     h.CVode().active(True)
     h.finitialize(-65)

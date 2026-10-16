@@ -1,5 +1,4 @@
-#ifndef nrnmpi_h
-#define nrnmpi_h
+#pragma once
 #include "nrnmpiuse.h"
 
 /* by default nrnmpi_numprocs_world = nrnmpi_numprocs = nrnmpi_numsubworlds and
@@ -14,10 +13,10 @@ extern int nrnmpi_myid;           /* rank in subworld */
 extern int nrnmpi_numprocs_bbs;   /* number of subworlds */
 extern int nrnmpi_myid_bbs;       /* rank in nrn_bbs_comm of rank 0 of a subworld */
 
-typedef struct {
+struct NRNMPI_Spike {
     int gid;
     double spiketime;
-} NRNMPI_Spike;
+};
 
 #if NRNMPI
 
@@ -29,4 +28,3 @@ extern int nrn_cannot_use_threads_and_mpi; /* 0 if required <= provided from MPI
 #include "nrnmpidec.h"
 
 #endif /*NRNMPI*/
-#endif /*nrnmpi_h*/

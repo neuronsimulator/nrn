@@ -1,13 +1,14 @@
 #include <../../nrnconf.h>
-#include "../nrnpython/nrnpython_config.h"
 #include <nrnmpi.h>
-#include "bbsconf.h"
 #ifdef NRNMPI  // to end of file
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <InterViews/resource.h>
+#include "nrnpy.h"
 #include "oc2iv.h"
 #include "bbs.h"
 #include "bbsrcli.h"
@@ -17,38 +18,18 @@ extern void nrnmpi_int_broadcast(int*, int, int);
 
 #define debug 0
 
-#if defined(USE_PYTHON)
-extern int (*p_nrnpython_start)(int);
-#endif
-
-#if defined(HAVE_STL)
-#if defined(HAVE_SSTREAM)  // the standard ...
 #include <map>
-#else
-#include <pair.h>
-#include <map.h>
-#endif
 
-struct ltint {
-    bool operator()(int i, int j) const {
-        return i < j;
-    }
-};
-
-class KeepArgs: public std::map<int, bbsmpibuf*, ltint> {};
-
-#endif
+class KeepArgs: public std::map<int, bbsmpibuf*> {};
 
 int BBSClient::sid_;
 
 BBSClient::BBSClient() {
-    sendbuf_ = nil;
-    recvbuf_ = nil;
+    sendbuf_ = nullptr;
+    recvbuf_ = nullptr;
     request_ = nrnmpi_newbuf(100);
     nrnmpi_ref(request_);
-#if defined(HAVE_STL)
     keepargs_ = new KeepArgs();
-#endif
     BBSClient::start();
 }
 
@@ -56,9 +37,7 @@ BBSClient::~BBSClient() {
     nrnmpi_unref(sendbuf_);
     nrnmpi_unref(recvbuf_);
     nrnmpi_unref(request_);
-#if defined(HAVE_STL)
     delete keepargs_;
-#endif
 }
 
 void BBSClient::perror(const char* s) {
@@ -93,8 +72,12 @@ char* BBSClient::upkstr() {
     return nrnmpi_upkstr(recvbuf_);  // do not forget to free(string)
 }
 
-char* BBSClient::upkpickle(size_t* n) {
-    return nrnmpi_upkpickle(n, recvbuf_);  // do not forget to free(string)
+std::vector<char> BBSClient::upkpickle() {
+    std::size_t len{};
+    char* s = nrnmpi_upkpickle(&len, recvbuf_);
+    std::vector<char> ret(s, s + len);
+    delete[] s;
+    return ret;
 }
 
 void BBSClient::pkbegin() {
@@ -121,8 +104,8 @@ void BBSClient::pkstr(const char* s) {
     nrnmpi_pkstr(s, sendbuf_);
 }
 
-void BBSClient::pkpickle(const char* s, size_t n) {
-    nrnmpi_pkpickle(s, n, sendbuf_);
+void BBSClient::pkpickle(const std::vector<char>& s) {
+    nrnmpi_pkpickle(s.data(), s.size(), sendbuf_);
 }
 
 void BBSClient::post(const char* key) {
@@ -134,7 +117,7 @@ void BBSClient::post(const char* key) {
     nrnmpi_pkstr(key, sendbuf_);
     nrnmpi_bbssend(sid_, POST, sendbuf_);
     nrnmpi_unref(sendbuf_);
-    sendbuf_ = nil;
+    sendbuf_ = nullptr;
 }
 
 void BBSClient::post_todo(int parentid) {
@@ -146,7 +129,7 @@ void BBSClient::post_todo(int parentid) {
     nrnmpi_pkint(parentid, sendbuf_);
     nrnmpi_bbssend(sid_, POST_TODO, sendbuf_);
     nrnmpi_unref(sendbuf_);
-    sendbuf_ = nil;
+    sendbuf_ = nullptr;
 }
 
 void BBSClient::post_result(int id) {
@@ -158,7 +141,7 @@ void BBSClient::post_result(int id) {
     nrnmpi_pkint(id, sendbuf_);
     nrnmpi_bbssend(sid_, POST_RESULT, sendbuf_);
     nrnmpi_unref(sendbuf_);
-    sendbuf_ = nil;
+    sendbuf_ = nullptr;
 }
 
 int BBSClient::get(const char* key, int type) {
@@ -228,7 +211,6 @@ bool BBSClient::look(const char* key) {
 }
 
 void BBSClient::take(const char* key) {  // blocking
-    int bufid;
     get(key, TAKE);
     upkbegin();
 }
@@ -243,8 +225,6 @@ int BBSClient::look_take_todo() {
 
 int BBSClient::take_todo() {
     int type;
-    char* rs;
-    size_t n;
     while ((type = get(0, TAKE_TODO)) == CONTEXT) {
         upkbegin();
         upkint();  // throw away userid
@@ -253,10 +233,7 @@ int BBSClient::take_todo() {
         printf("%d execute context\n", nrnmpi_myid_bbs);
         fflush(stdout);
 #endif
-        rs = execute_helper(&n, -1);
-        if (rs) {
-            delete[] rs;
-        }
+        execute_helper(-1);
     }
     upkbegin();
     return type;
@@ -271,19 +248,15 @@ int BBSClient::look_take_result(int pid) {
 }
 
 void BBSClient::save_args(int userid) {
-#if defined(HAVE_STL)
     nrnmpi_ref(sendbuf_);
-    keepargs_->insert(std::pair<const int, bbsmpibuf*>(userid, sendbuf_));
-
-#endif
+    keepargs_->emplace(userid, sendbuf_);
     post_todo(working_id_);
 }
 
 void BBSClient::return_args(int userid) {
-#if defined(HAVE_STL)
     KeepArgs::iterator i = keepargs_->find(userid);
     nrnmpi_unref(recvbuf_);
-    recvbuf_ = nil;
+    recvbuf_ = nullptr;
     if (i != keepargs_->end()) {
         recvbuf_ = (*i).second;
         nrnmpi_ref(recvbuf_);
@@ -291,7 +264,6 @@ void BBSClient::return_args(int userid) {
         upkbegin();
         BBSImpl::return_args(userid);
     }
-#endif
 }
 
 void BBSClient::done() {
@@ -312,8 +284,8 @@ void BBSClient::done() {
         }
     }
 #if defined(USE_PYTHON)
-    if (p_nrnpython_start) {
-        (*p_nrnpython_start)(0);
+    if (neuron::python::methods.interpreter_start) {
+        neuron::python::methods.interpreter_start(0);
     }
 #endif
     BBSImpl::done();
@@ -327,9 +299,6 @@ void BBSClient::done() {
 }
 
 void BBSClient::start() {
-    char* client = 0;
-    int tid;
-    int n;
     if (started_) {
         return;
     }

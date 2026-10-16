@@ -1,5 +1,6 @@
-#ifndef dismiswin_h
-#define dismiswin_h
+#pragma once
+
+#include <string>
 
 #include <InterViews/window.h>
 
@@ -7,7 +8,6 @@
 #include <InterViews/handler.h>
 #include <InterViews/observe.h>
 #include <OS/string.h>
-#include <ivstream.h>
 
 class Menu;
 class MenuItem;
@@ -104,7 +104,7 @@ class PrintableWindow: public DismissableWindow, public Observable {
     virtual void default_geometry();
 
   private:
-    CopyString type_;
+    std::string type_;
     static OcGlyphContainer* intercept_;
     bool mappable_;
     bool xplace_;
@@ -159,5 +159,3 @@ class PrintableWindowManager: public Observer {
   private:
     static PrintableWindowManager* current_;
 };
-
-#endif

@@ -1,10 +1,6 @@
 from .rxdException import RxDException
 
-# import sys
-# if 'neuron.rxd' in sys.modules:
-#    raise RxDException('NEURON CRxD module cannot be used with NEURON RxD module.')
-
-from . import rxd, constants
+from . import rxd, constants, export
 from .species import Species, Parameter, State
 from .region import Region, Extracellular
 from .rate import Rate
@@ -31,6 +27,9 @@ from .geometry import (
     MultipleGeometry,
 )
 from .plugins import set_solver
+import neuron
+
+neuron._userrxd = True
 
 # deprecated:
 # from geometry import ConstantArea, ConstantVolume
@@ -38,7 +37,7 @@ from .plugins import set_solver
 #       rembember to call rxd._do_nbs_register()
 
 
-def _model_view(tree):
+def _model_view(tree: list) -> None:
     from . import species
     from neuron import h
 
@@ -62,7 +61,7 @@ def _model_view(tree):
         tree.append(rxd_head)
 
 
-def save_state():
+def save_state() -> bytes:
     """return a bytestring representation of the current rxd state
 
     Note: this is dependent on the order items were created."""
@@ -91,7 +90,7 @@ def save_state():
     return metadata + data
 
 
-def restore_state(oldstate):
+def restore_state(oldstate: bytes) -> None:
     """restore rxd state from a bytestring
 
     Note: this is dependent on the order items were created."""

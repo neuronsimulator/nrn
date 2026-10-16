@@ -8,7 +8,7 @@ Windows platforms.
 
 #### Mac OS
 
-Since version 7.8.1 we are providing Python wheels and NEURON can be installed using `pip` as:
+Since version 7.8.1 we are providing Python wheels and NEURON can be installed using `pip` by opening a Terminal (Press `⌘` + `Space` and type "terminal") and typing:
 
 ```
 pip3 install neuron
@@ -27,10 +27,10 @@ You can download legacy versions from:
 * [Legacy Versions](https://neuron.yale.edu/ftp/neuron/versions/)
 
 Earlier Mac OS pkg installers have name in the format of
-`nrn-<version-id>-osx-37-38-39-310.pkg`.
+`nrn-<version-id>-osx-38-39-310-311.pkg`.
 Like windows installers,
-the, `py-37-38-39-310` string in the installer name indicates that the given installer is
-compatible with Python versions  3.7, 3.8, 3.9 and 3.10. Note that if you double-click the installer
+the, `py-38-39-310-311` string in the installer name indicates that the given installer is
+compatible with Python versions  3.8, 3.9, 3.10 and 3.11. Note that if you double-click the installer
 then you might see warning like below. In this case you have to right-click on the installer and then
 click `Open`. You can then see an option to `Open` installer: 
 
@@ -54,7 +54,7 @@ architecture.
 
   ```
   python
-  from neuron import h
+  from neuron import n
   ```
   and ```nrnivmodl``` will by default create an nmodl mechanism library
   specifically for the architecture you run on.
@@ -67,7 +67,7 @@ architecture.
   program. E.g.
   ```
   arch -arch x86_64 nrniv -python
-  from neuron import h
+  from neuron import n
   ```
   Furthermore, be sure to run nrnivmodl in such a way that it compiles as an
   x86_64 library. e.g.
@@ -107,7 +107,7 @@ architecture.
 
 #### Linux
 
-Like Mac OS, since 7.8.1 release python wheels are provided and you can use `pip` to install NEURON as:
+Like Mac OS, since 7.8.1 release Python wheels are provided and you can use `pip` to install NEURON by opening a terminal and typing:
 
 ```
 pip3 install neuron
@@ -116,17 +116,25 @@ pip3 install neuron
 Note that Python2 wheels are provided for the 8.0.x release series exclusively. Also, we are not providing .rpm or .deb
 installers for recent releases.
 
+**Note**: as of NEURON major version 9, the minimum system requirements for using NEURON Python wheels on Linux are:
+
+* Debian 10 or higher
+* Ubuntu 18.10 or higher
+* Fedora 29 or higher
+* CentOS/RHEL 8 or higher
+
+Furthermore, GCC >= 10 is required (older versions of GCC may work, but are not recommended).
+
 #### Windows
 
-On Windows, the only recommended way to install NEURON is using the binary installer. You can download alpha
-or recent releases from:
+On Windows, the only recommended way to install NEURON is using the binary installer. You can download
+releases from:
 
-* [Alpha releases](https://neuron.yale.edu/ftp/neuron/versions/alpha/)
-* [Recent Releases](https://neuron.yale.edu/ftp/neuron/versions/)
+* [https://github.com/neuronsimulator/nrn/releases](https://github.com/neuronsimulator/nrn/releases)
 
-The naming convention for Windows installers is `nrn-<version-id>-mingw-py-37-38-39-310-setup.exe`.
-The `py-37-38-39-310` string in the installer name indicates that the given installer is compatible
-with Python versions 3.7, 3.8, 3.9 and 3.10. Once the installer is downloaded, you can install it
+The naming convention for Windows installers is `nrn-<version-id>-mingw-py-38-39-310-311-setup.exe`.
+The `py-38-39-310-311` string in the installer name indicates that the given installer is compatible
+with Python versions 3.8, 3.9, 3.10 and 3.11. Once the installer is downloaded, you can install it
 by double clicking like any other Windows application. Note that you have to install python separately
 if python support is required. You can find detailed step-by-step instructions in
 [this presentation](https://neuron.yale.edu/ftp/neuron/nrn_mswin_install.pdf).
@@ -199,12 +207,14 @@ In order to build NEURON from source, the following packages must be available:
 
 - Bison
 - Flex >= 2.6
-- C/C++ compiler suite supporting C++17
-- CMake 3.15.0
+- C/C++ compiler suite supporting C++17 (e.g. GCC >=9.3.1, Clang >= 11.0.0)
+  - Note that some C++17 features require a newer compiler version.
+  - C++17 features must be available without linking extra libraries. This notably excludes some older versions of GCC where `std::filesystem` required `libstdc++fs.so`.
+- CMake >= 3.15 (>= 3.18 if ``-DNRN_ENABLE_PYTHON_DYNAMIC=ON``)
 
 The following packages are optional (see build options):
 
-- Python >=3.7 (for Python interface)
+- Python >=3.10 (for Python interface)
 - Cython (for RXD)
 - MPI (for parallel)
 - X11 (Linux) or XQuartz (MacOS) (for GUI)
@@ -219,20 +229,29 @@ The easiest way to install dependencies on Mac OS is to use [brew](https://brew.
 once [brew is installed](https://docs.brew.sh/Installation) you can do:
 
 ```bash
-brew install coreutils openmpi cmake
+brew install coreutils openmpi cmake flex bison
 brew install --cask xquartz
 ```
 
 Once these packages are installed, setup PATH as:
 
 ```bash
-export PATH=/usr/local/bin/:$PATH
+export PATH="/usr/local/bin:/usr/local/opt/bison/bin:/usr/local/opt/flex/bin:$PATH"
 ```
 
 If the desired python version is not installed, you can install it using
-[official distribution](https://www.python.org/downloads/macos/). Also, note that
+[official distribution](https://www.python.org/downloads/macos/) or via brew. Also, note that
 [Xcode Command Line Tools](https://stackoverflow.com/questions/9329243/how-to-install-xcode-command-line-tools)
 needs to be installed for development.
+
+Finally, if you are building NEURON with the Python interface, you need to install all of the Python dependencies:
+
+```bash
+pip3 install --user --upgrade pip
+pip3 install --user -r nrn_requirements.txt
+```
+
+**NOTE**: to minimize the possibility of Python dependencies causing issues (conflicting requirements, etc.), you may install the same set of dependencies that the developers and the CI use via `pip3 install --user -r ci/requirements.txt`.
 
 <a name="Apple-M1-Build-Dependencies"></a>
 #### Mac OS - Apple M1
@@ -260,20 +279,17 @@ needs to be installed for development.
   echo 'eval $(/opt/homebrew/bin/brew shellenv)' >> $HOME/.zprofile
   eval $(/opt/homebrew/bin/brew shellenv)
 
-  brew install cmake
-  brew install open-mpi
+  brew install open-mpi cmake flex bison
 
   pip3 install --user --upgrade pip
-  export PATH="$HOME/Library/Python/3.8/bin":$PATH
-  pip3 install --user cython
+  pip3 install --user -r nrn_requirements.txt
   ```
 
 Once these packages are installed, setup PATH as:
 
 ```bash
-export PATH=/opt/homebrew/opt/bison/bin/:/opt/homebrew/opt/flex/bin/:/opt/homebrew/bin/:$PATH
+export PATH="/opt/homebrew/opt/bison/bin/:/opt/homebrew/opt/flex/bin/:/opt/homebrew/bin/:$PATH"
 ```
-
 
 #### Linux
 
@@ -284,9 +300,10 @@ install dependencies. For example, on Ubuntu:
 sudo apt-get update
 sudo apt-get install -y bison cmake flex git \
      libncurses-dev libopenmpi-dev libx11-dev \
-     libxcomposite-dev openmpi-bin python3-dev
+     libxcomposite-dev openmpi-bin python3-dev \
+     libreadline-dev
 # for python dependencies
-pip install scipy numpy cython
+pip install -r nrn_requirements.txt
 ```
 
 We recommend using platform specific instructions provided in [nrn-build-ci](https://github.com/neuronsimulator/nrn-build-ci#scheduled-ci-builds-for-neuron) repository.
@@ -296,105 +313,63 @@ We recommend using platform specific instructions provided in [nrn-build-ci](htt
 
 Starting with the 7.8.1 release, NEURON can be installed using the [CMake build system](https://cmake.org/).
 One of the primary advantages of a CMake-based build system is cross-platform support and integration with
-other projects like [Interviews](https://github.com/neuronsimulator/iv), [CoreNEURON](https://github.com/BlueBrain/CoreNeuron/),
+other projects like [Interviews](https://github.com/neuronsimulator/iv), [CoreNEURON](https://github.com/neuronsimulator/nrn/tree/master/src/coreneuron),
 [NMODL](https://github.com/BlueBrain/nmodl/) etc. These projects are now integrated into single a CMake-based
-build system, and they can be installed together as shown below:
+build system.
 
-1. Clone the latest version or specific release:
-
-  ```
-  git clone https://github.com/neuronsimulator/nrn           # latest development branch
-  git clone https://github.com/neuronsimulator/nrn -b 8.0.0  # specific release version 8.0.0
-  cd nrn
-  ```
-
-  > :warning: To build NEURON from source you either need to clone the NEURON Git repository or download a
-  > source code archive that includes Git submodules, such as the `full-src-package-X.Y.Z.tar.gz` file in
-  > the [NEURON releases](https://github.com/neuronsimulator/nrn/releases) on GitHub. The tarballs like
-  > `Source code (tar.gz)` or `Source code (zip)` created by GitHub are incomplete.
-
-
-2. Create a build directory:
-
-  ```
-  mkdir build
-  cd build
-  ```
-
-3. Run `cmake` with the appropriate options (see below for a list of common options). A full list of options
-can be found in `nrn/CMakeLists.txt` and defaults are shown in `nrn/cmake/BuildOptionDefaults.cmake`. e.g. a bare-bones installation:
-
-
-  ```
-  cmake .. \
-   -DNRN_ENABLE_INTERVIEWS=OFF \
-   -DNRN_ENABLE_MPI=OFF \
-   -DNRN_ENABLE_RX3D=OFF \
-   -DPYTHON_EXECUTABLE=$(which python3) \
-   -DCMAKE_INSTALL_PREFIX=/path/to/install/directory
-  ```
-
-4. Build the code:
-
-  ```
-  cmake --build . --parallel 8 --target install
-  ```
-  Feel free to set the number of parallel jobs (i.e. 8) according to your system using the `--parallel` option.
-
-5. Set PATH and PYTHONPATH environmental variables to use the installation:
-
-  ```
-  export PATH=/path/to/install/directory/bin:$PATH
-  export PYTHONPATH=/path/to/install/directory/lib/python:$PYTHONPATH
-  ```
-
-Particularly useful CMake options are (use **ON** to enable and **OFF** to disable feature):
-
-* **-DNRN\_ENABLE\_INTERVIEWS=OFF** : Disable Interviews (native GUI support)
-* **-DNRN\_ENABLE\_PYTHON=OFF** : Disable Python support
-* **-DNRN\_ENABLE\_MPI=OFF** : Disable MPI support for parallelization
-* **-DNRN\_ENABLE\_RX3D=OFF** : Disable rx3d support
-* **-DNRN\_ENABLE\_CORENEURON=ON** : Enable CoreNEURON support
-* **-DNRN\_ENABLE\_TESTS=ON** : Enable unit tests
-* **-DPYTHON\_EXECUTABLE=/python/binary/path** : Use provided Python binary to build Python interface
-* **-DCMAKE_INSTALL_PREFIX=/install/dir/path** : Location for installing
-* **-DCORENRN\_ENABLE\_NMODL=ON** : Use [NMODL](https://github.com/BlueBrain/nmodl/) instead of [MOD2C](https://github.com/BlueBrain/mod2c/) for code generation with CoreNEURON
-
-Please refer to [docs/cmake_doc/options.rst](docs/cmake_doc/options.rst) for more information on
-the CMake options.
+Please refer to [the CMake build system
+options](../cmake_doc/options.rst) for more information on how to
+install the project using ``CMake``.
 
 #### Optimized CPU and GPU Support using CoreNEURON
 
-NEURON now integrates [CoreNEURON library](https://github.com/BlueBrain/CoreNeuron/) for improved simulation
+NEURON now integrates [CoreNEURON library](https://github.com/neuronsimulator/nrn/blob/master/src/coreneuron) for improved simulation
 performance on modern CPU and GPU architectures. CoreNEURON is designed as a library within the NEURON simulator
 and can transparently handle all spiking network simulations including gap junction coupling with the fixed time
-step method. You can find detailed instructions [here](../coreneuron/index.html) and
-[here](https://github.com/BlueBrain/CoreNeuron/#installation).
+step method. You can find detailed instructions [here](../coreneuron/index.rst) and [here](../cmake_doc/options.rst).
 
 #### Run integrated tests
 
-**NEURON** includes also some unit and integration tests. To enable you need to set the `CMake` flag **-DNRN\_ENABLE\_TESTS=ON**.
-The tests lie in the `test` directory and cover various aspects of **NEURON**:
-* **CoreNEURON** integration (if enabled in build step)
-* Functionality and result regression test for [ringtest](https://github.com/neuronsimulator/ringtest) and [testcorenrn](https://github.com/neuronsimulator/testcorenrn)
-* HOC interpreter tests
-* Python interpreter tests
-* Parallel Context tests
+**NEURON** includes unit and integration tests. Enable them with the CMake
+flag **-DNRN\_ENABLE\_TESTS=ON**. Sources live under `test/` and cover
+(among other areas):
+* **CoreNEURON** integration (if enabled at configure time)
+* Functionality and result regression tests for [ringtest](https://github.com/neuronsimulator/ringtest) and [testcorenrn](https://github.com/neuronsimulator/testcorenrn)
+* HOC and Python interpreter tests
+* Parallel Context / MPI tests
 * Rx3d tests
-* Unit tests
-* GapJunction tests
+* C++ unit tests (Catch2)
+* Gap junction tests
 
-To run the tests it's needed to:
+**In-tree tests** (against the build directory; includes linked unit tests):
+
   ```bash
   cd nrn/build
   cmake .. \
+   -G Ninja \
+   -DNRN_ENABLE_TESTS=ON \
    -DNRN_ENABLE_INTERVIEWS=OFF \
    -DNRN_ENABLE_MPI=OFF \
    -DNRN_ENABLE_RX3D=OFF \
    -DCMAKE_INSTALL_PREFIX=/path/to/install/directory
   cmake --build . --parallel 8
-  ctest # use --parallel for speed, -R to run specific tests
+  ctest --output-on-failure -j8   # -R to select tests by name
   ```
+
+**Install check** (portable suite against the install prefix; no rebuild of
+`libnrniv`). After the same configure with `-DNRN_ENABLE_TESTS=ON`:
+
+  ```bash
+  cmake --build . --target install
+  cmake --build . --target test-install
+  # creates build/build-ctest and runs a default serial foreign ctest
+  ctest --test-dir build-ctest -L mpi --output-on-failure   # optional filters
+  ```
+
+Details, labels (`serial`, `mpi`, `coreneuron`), and wheel testing are
+documented under the CMake option `NRN_ENABLE_TESTS` and in
+`test/foreign/README.md`. For a short smoke test of a built wheel, see
+also `packaging/python/test_wheels.sh` in [Building Python Wheels](python_wheels.md).
 
 ### FAQs
 
@@ -467,10 +442,9 @@ being used by running following command:
 ```bash
 $ nrnpyenv.sh
 ...
-export NRN_PYTHONHOME="/python/install/path/python-3.8.3/"
 export NRN_PYLIB="/python/install/path/python-3.8.3/lib/libpython3.8.so.1.0"
 ```
-If `NRN_PYTHONHOME` and `NRN_PYLIB` are inappropriate then you can set them explicitly or use `-pyexe` option mentioned above.
+If `NRN_PYLIB` is inappropriate then you can set it explicitly or use `-pyexe` option mentioned above.
 
 * **How to build NEURON in cluster environment where build node architecture is different than compute node?**
 
@@ -526,3 +500,34 @@ export CFLAGS="-fno-strict-aliasing -fno-common -dynamic -g -Os -pipe -DMACOSX -
 ```
 
 If you see any other issues, please open [an issue here](https://github.com/neuronsimulator/nrn/issues/new/choose).
+
+* **I'm seeing compiler errors related to Python and RXD.***
+The error can manifest as follows:
+```
+share/lib/python/neuron/rxd/geometry3d/surfaces.cpp:14605:41: error: no member named 'subarray' in '_PyArray_Descr'
+    __Pyx_INCREF(((PyObject*)__pyx_v_d->subarray->shape));
+                             ~~~~~~~~~  ^
+```
+often there's something related to NumPy nearby, e.g. `npy`.
+
+The issue is that certain versions of NEURON (below 9.0) are not
+compatible with `numpy>=2`. Check the numpy version, e.g.,
+```
+python -c "import numpy; print(numpy.__version__)"
+```
+
+If it prints `2.0` or higher, try installing an older version:
+```
+pip install "numpy<2"
+```
+(mind the quotes.) Then delete the build directory, reconfigure and compile. If the error persists, carefully check which version of Python NEURON picked up by checking the output of the CMake configure command and make sure that that exact version of Python doesn't pick up an incompatible version of Numpy.
+
+
+* **NEURON segfaults when using the Anaconda Python distribution. What can I do?**
+
+Some Anaconda distributions (e.g., macOS) ship Python binaries with `libpython` statically linked,
+which has caused issues in NEURON and other packages (see discussion [here](https://github.com/neuronsimulator/nrn/issues/2358)).
+
+On the macOS platform, NEURON attempts to detect the use of Anaconda Python by checking for the `/anaconda`
+prefix in the Python binary path. An alternative solution is to build NEURON with the dynamic Python
+option enabled, using the CMake flag `-DNRN_ENABLE_PYTHON_DYNAMIC=ON`.

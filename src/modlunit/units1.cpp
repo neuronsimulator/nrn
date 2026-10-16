@@ -1,4 +1,4 @@
-#include <../../nmodlconf.h>
+#include <../../nrnconf.h>
 /* /local/src/master/nrn/src/modlunit/units1.c,v 1.1.1.1 1994/10/12 17:22:51 hines Exp */
 /* Just a connection to units.c so that file doesn't need to include modl.h */
 #include "model.h"
@@ -70,19 +70,6 @@ void unit_cmp(Item* q1, Item* q2, Item* q3) {
     qexpr[2] = q3;
     Unit_cmp();
 }
-
-void print_unit_expr(int i) {
-    if (i == 1) {
-        if (qexpr[0]) {
-            printitems(qexpr[0], qexpr[1]->prev);
-        }
-    } else {
-        if (qexpr[1]) {
-            printitems(qexpr[1]->next, qexpr[2]);
-        }
-    }
-}
-
 
 void unit_logic(int type, Item* q1, Item* q2, Item* q3) {
     /* if type is 1 then it doesn't matter what the

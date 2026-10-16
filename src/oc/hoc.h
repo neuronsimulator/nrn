@@ -1,6 +1,2 @@
-
-#ifndef hoc_h
-#define hoc_h
-#include "redef.h"
+#pragma once
 #include "hocdec.h"
-#endif

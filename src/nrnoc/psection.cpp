@@ -61,7 +61,7 @@ static void pnode(Prop* p1) {
                 if (p1->ob) {
                     printf(" %s=%g", s->name, p1->ob->u.dataspace[s->u.rng.index].pval[0]);
                 } else {
-                    Printf(" %s=%g", s->name, p1->param[s->u.rng.index]);
+                    Printf(" %s=%g", s->name, p1->param_legacy(s->u.rng.index));
                 }
             }
         }

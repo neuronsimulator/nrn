@@ -1,5 +1,4 @@
-#ifndef rect_h
-#define rect_h
+#pragma once
 
 #undef Rect
 #define Rect nrn_Rect
@@ -36,11 +35,6 @@ class Appear: public Glyph {
     static const Brush* db_;
 };
 
-#if defined(__MWERKS__)
-#undef Rect
-#define Rect ivoc_Rect
-#endif
-
 class Rect: public Appear {
   public:
     Rect(Coord left,
@@ -62,11 +56,6 @@ class Rect: public Appear {
   private:
     Coord l_, b_, w_, h_;
 };
-
-#if defined(__MWERKS__)
-#undef Line
-#define Line ivoc_Line
-#endif
 
 class Line: public Appear {
   public:
@@ -116,11 +105,6 @@ class Triangle: public Appear {
     float side_;
     bool filled_;
 };
-
-#if defined(__MWERKS__)
-#undef Rectangle
-#define Rectangle ivoc_Rectangle
-#endif
 
 class Rectangle: public Appear {
   public:
@@ -172,5 +156,3 @@ inline void Rect::width(Coord x) {
 inline void Rect::height(Coord x) {
     h_ = (x > 0) ? x : 1.;
 }
-
-#endif

@@ -1,0 +1,148 @@
+/*
+# =============================================================================
+# Copyright (c) 2016 - 2021 Blue Brain Project/EPFL
+#
+# See top-level LICENSE file for details.
+# =============================================================================
+*/
+
+#pragma once
+
+#include "coreneuron/utils/memory.h"
+#include <algorithm>
+#include <vector>
+
+#if CORENRN_BUILD
+namespace coreneuron {
+#else
+namespace neuron {
+#endif
+
+/**
+ * \brief Function that performs the permutation of the cells such that the
+ *        execution threads access coalesced memory.
+ *
+ * \param ith NrnThread to access
+ * \param ncell number of cells in NrnThread
+ * \param nnode number of compartments in the ncells
+ * \param parent parent indices of cells
+ *
+ * \return int* order, interleaved order of the cells
+ */
+#if CORENRN_BUILD
+int* interleave_order(int ith, int ncell, int nnode, int* parent);
+#else
+std::vector<int> interleave_order(int ith, int ncell, int nnode, int* parent);
+#endif
+
+void create_interleave_info();
+void destroy_interleave_info();
+
+#if CORENRN_BUILD
+/**
+ *
+ * \brief Solve the Hines matrices based on the interleave_permute_type (1 or 2).
+ *
+ * For interleave_permute_type == 1 : Naive interleaving -> Each execution thread deals with one
+ * Hines matrix (cell) For interleave_permute_type == 2 : Advanced interleaving -> Each Hines matrix
+ * is solved by multiple execution threads (with coalesced memory access as well)
+ */
+extern void solve_interleaved(int ith);
+#endif
+
+class InterleaveInfo;  // forward declaration
+#if CORENRN_BUILD
+/**
+ *
+ * \brief CUDA branch of the solve_interleaved with interleave_permute_type == 2.
+ *
+ * This branch is activated in runtime with the --cuda-interface CLI flag
+ */
+void solve_interleaved2_launcher(NrnThread* nt, InterleaveInfo* info, int ncore, void* stream);
+#endif
+
+class InterleaveInfo: public MemoryManaged {
+  public:
+    InterleaveInfo() = default;
+    InterleaveInfo(const InterleaveInfo&);
+    InterleaveInfo& operator=(const InterleaveInfo&);
+    ~InterleaveInfo();
+    int nwarp = 0;  // used only by interleave2
+    int nstride = 0;
+    int* stridedispl = nullptr;  // interleave2: nwarp+1
+    int* stride = nullptr;       // interleave2: stride  length is stridedispl[nwarp]
+    int* firstnode = nullptr;    // interleave2: rootbegin nwarp+1 displacements
+    int* lastnode = nullptr;     // interleave2: nodebegin nwarp+1 displacements
+    int* cellsize = nullptr;     // interleave2: ncycles nwarp
+
+    // statistics (nwarp of each)
+    size_t* nnode = nullptr;
+    size_t* ncycle = nullptr;
+    size_t* idle = nullptr;
+    size_t* cache_access = nullptr;
+    size_t* child_race = nullptr;
+
+  private:
+    void swap(InterleaveInfo& info);
+};
+
+/**
+ * \brief Function that returns a permutation of length nnode.
+ *
+ * There are two permutation strategies:
+ * For interleave_permute_type == 1 : Naive interleaving -> Each execution thread deals with one
+ * Hines matrix (cell) For interleave_permute_type == 2 : Advanced interleaving -> Each Hines matrix
+ * is solved by multiple execution threads (with coalesced memory access as well)
+ *
+ * \param ncell number of cells
+ * \param nnode number of compartments in the ncells
+ * \param parents parent indices of the cells
+ * \param nwarp number of warps
+ * \param nstride nstride is the maximum cell size (not counting root)
+ * \param stride stride[i] is the number of cells with an ith node:
+ *               using stride[i] we know how many positions to move in order to
+ *               access the next element of the same cell (given that the cells are
+ *               ordered with the treenode_order).
+ * \param firstnode firstnode[i] is the index of the first nonroot node of the cell
+ * \param lastnode lastnode[i] is the index of the last node of the cell
+ * \param cellsize cellsize is the number of nodes in the cell not counting root.
+ * \param stridedispl
+ * \return int* : a permutation of length nnode
+ */
+#if CORENRN_BUILD
+int* node_order(int ncell,
+#else
+std::vector<int> node_order(int ncell,
+#endif
+                int nnode,
+                int* parents,
+                int& nwarp,
+                int& nstride,
+                int*& stride,
+                int*& firstnode,
+                int*& lastnode,
+                int*& cellsize,
+                int*& stridedispl);
+
+// copy src array to dest with new allocation
+template <typename T>
+void copy_array(T*& dest, T* src, size_t n) {
+    dest = new T[n];
+    std::copy(src, src + n, dest);
+}
+
+// copy src array to dest with NRN_SOA_BYTE_ALIGN ecalloc_align allocation
+template <typename T>
+void copy_align_array(T*& dest, T* src, size_t n) {
+    dest = static_cast<T*>(ecalloc_align(n, sizeof(T)));
+    std::copy(src, src + n, dest);
+}
+
+#ifndef INTERLEAVE_DEBUG
+#define INTERLEAVE_DEBUG 0
+#endif
+
+#if INTERLEAVE_DEBUG
+void mk_cell_indices();
+#endif
+}  // namespace coreneuron

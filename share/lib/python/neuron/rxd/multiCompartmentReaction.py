@@ -1,5 +1,5 @@
 import weakref
-from . import rxdmath, rxd, node, species, region, initializer
+from . import rxdmath, rxd, species, initializer
 import numpy
 from .generalizedReaction import (
     GeneralizedReaction,
@@ -9,9 +9,10 @@ from .constants import molecules_per_mM_um3
 from neuron import h
 import itertools
 from .rxdException import RxDException
+from typing import Any, Optional
 
 
-def _ref_list_with_mult(obj):
+def _ref_list_with_mult(obj: dict) -> list:
     result = []
     for i, p in zip(list(obj.keys()), list(obj.values())):
         w = weakref.ref(i)
@@ -20,7 +21,7 @@ def _ref_list_with_mult(obj):
 
 
 class MultiCompartmentReaction(GeneralizedReaction):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Specify a reaction spanning multiple regions to be added to the system.
 
         Use this for, for example, pumps and channels, or interactions between
@@ -157,6 +158,8 @@ class MultiCompartmentReaction(GeneralizedReaction):
             if any(reg._secs1d) or any(reg._secs3d):
                 break
         else:
+            self._rate = None
+            self._involved_species = []
             return
 
         # check for 3D sections
@@ -292,7 +295,6 @@ class MultiCompartmentReaction(GeneralizedReaction):
                     sec for sec in active_secs if sec in sp()._region()._secs1d
                 ]
 
-        # TODO: Support intracellular 3D reactions
         if not self._scale_by_area:
             narea = sum([sec.nseg for sec in active_secs])
             areas = numpy.ones(narea)

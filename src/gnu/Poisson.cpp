@@ -1,5 +1,3 @@
-#include <../../nrnconf.h>
-
 /* 
 Copyright (C) 1988 Free Software Foundation
     written by Dirk Grunwald (grunwald@cs.uiuc.edu)
@@ -19,8 +17,8 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 #ifdef __GNUG__
 #pragma implementation
 #endif
-#include <Random.h>
-#include <Poisson.h>
+#include "Random.h"
+#include "Poisson.h"
 
 double Poisson::operator()()
 {

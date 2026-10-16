@@ -34,3 +34,30 @@ expect_err("h.array = 5")
 h("""objref oarray[4][4]""")
 # cannot reach line we want because of earlier array check
 expect_err("h.oarray[2] = []")
+
+
+# test assignment/evaluation of mod file array variable from python
+s = h.Section()
+s.nseg = 3
+s.insert("atst")
+for seg in s:
+    ar = seg.atst.arrayrng
+    assert len(ar) == 4
+    for i in range(len(ar)):
+        ar[i] = i + seg.x
+        seg.arrayrng_atst[i] = ar[i]
+for seg in s:
+    ar = seg.atst.arrayrng
+    for i in range(len(ar)):
+        assert ar[i] == i + seg.x
+        assert seg.arrayrng_atst[i] == i + seg.x
+
+ar = s.arrayrng_atst
+assert len(ar) == 4
+for i in range(len(ar)):
+    ar[i] = i
+for i in range(len(ar)):
+    assert ar[i] == float(i)
+
+expect_err("print(ar[10])")
+expect_err("ar[10] = 1")

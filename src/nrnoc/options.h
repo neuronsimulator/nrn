@@ -32,8 +32,4 @@ in one section is set but no others. But only the first time through treeset.
 #define KEEP_NSEG_PARM 1 /* Use old segment parameters to define */
 /* the new segment information */
 
-#if !defined(CACHEVEC)
-#define CACHEVEC 1 /* define to 0 doubles in nodes instead of vectors*/
-#endif
-
 #define MULTICORE 1 /* not optional */

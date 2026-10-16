@@ -125,7 +125,6 @@ def test_ba():
     cmp(r, std)
 
     coreneuron.enable = True
-    h.CVode().cache_efficient(1)
     r = run(m)
     cmp(r, std)
 

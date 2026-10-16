@@ -1,12 +1,11 @@
-
-#ifndef hocdec_h
-#define hocdec_h
+#pragma once
 #define INCLUDEHOCH 1
 
-
+#include "neuron/container/generic_data_handle.hpp"
 #include "nrnapi.h"
 #include "hocassrt.h" /* hoc_execerror instead of abort */
 #include "nrnassrt.h" /* assert in case of side effects (eg. scanf) */
+#include "wrap_sprintf.h"
 
 #include <iostream>
 #include <cstdint>
@@ -23,7 +22,6 @@ struct Symbol;
 struct Arrayinfo;
 struct Proc;
 struct Symlist;
-struct Datum;
 struct cTemplate;
 union Objectdata;
 struct Object;
@@ -85,11 +83,7 @@ typedef char* Upoint;
 #define USERINT      1 /* For subtype */
 #define USERDOUBLE   2
 #define USERPROPERTY 3 /* for newcable non-range variables */
-#define USERFLOAT    4 /* John Miller's NEMO uses floats */
-#if NEMO
-#define NEMONODE 5 /* looks syntactically like vector */
-#define NEMOAREA 6 /* looks like vector */
-#endif
+#define USERFLOAT    4
 #define SYMBOL       7  /* for stack type */
 #define OBJECTTMP    8  /* temporary object on stack */
 #define STKOBJ_UNREF 9  /* already unreffed temporary object on stack */
@@ -138,46 +132,16 @@ struct Symbol { /* symbol table entry */
                     with old nmodl dll's */
     Symbol* next;           /* to link to another */
 };
-#define ISARRAY(arg) (arg->arayinfo != (Arrayinfo*) 0)
+
+inline bool is_array(const Symbol& sym) {
+    return sym.arayinfo != nullptr;
+}
 
 using hoc_List = hoc_Item;
 
-struct Datum { /* interpreter stack type */
-    template <typename T>
-    [[nodiscard]] T& literal_value() {
-        static_assert(std::is_trivially_copyable_v<T> && std::is_trivially_destructible_v<T> &&
-                      sizeof(T) <= sizeof(this));
-        return *reinterpret_cast<T*>(&*this);  // Eww
-    }
-
-    template <typename T>
-    explicit operator T() = delete;
-
-    template <typename T>
-    T get() {
-        return literal_value<T>();
-    }
-
-    template <typename T>
-    Datum& operator=(const T& value) {
-        literal_value<T>() = value;
-        return *this;
-    }
-
-  private:
-    union {
-        double val;
-        Symbol* sym;
-        int i;
-        double* pval; /* first used with Eion in NEURON */
-        Object** pobj;
-        Object* obj; /* sections keep this to construct a name */
-        char** pstr;
-        hoc_Item* itm;
-        hoc_List* lst;
-        void* _pvoid; /* not used on stack, see nrnoc/point.cpp */
-    };
-};
+/** @brief Type of pdata in mechanisms.
+ */
+using Datum = neuron::container::generic_data_handle;
 
 struct cTemplate {
     Symbol* sym;
@@ -193,8 +157,13 @@ struct cTemplate {
     void* observers; /* hook to c++ ClassObservable */
     void* (*constructor)(struct Object*);
     void (*destructor)(void*);
-    void (*steer)(void*); /* normally nil */
-    int (*checkpoint)(void**);
+    void (*steer)(void*); /* normally nullptr */
+    /* Non-owning provider hooks. A provider keeps callback code loaded while
+       any instance of this template can dispatch through it. See
+       nrn_component_func in nrniv/neuronapi.h for the success/failure
+       return contract. */
+    const char* (*component)(Object*, Symbol*, int nindex, int isfunc);
+    const char* (*component_asgn)(Object*);
 };
 
 union Objectdata {
@@ -257,11 +226,6 @@ struct HocParmUnits { /* units for symbol values */
 
 #include "oc_ansi.h"
 
-// Used in sparse.c so needs C linkage.
-extern "C" void* emalloc(size_t n);
-void* ecalloc(size_t n, size_t size);
-void* erealloc(void* ptr, size_t n);
-
 extern Inst *hoc_progp, *hoc_progbase, *hoc_prog, *hoc_prog_parse_recover;
 extern Inst* hoc_pc;
 
@@ -304,8 +268,6 @@ int ilint;
 #define Strncat cplint = strncat
 #define Strcpy  cplint = strcpy
 #define Strncpy cplint = strncpy
-#define Sprintf cplint = sprintf
-#define Printf  ilint = printf
 #else
 #undef IGNORE
 #define IGNORE(arg) arg
@@ -314,24 +276,16 @@ int ilint;
 #define Strncat strncat
 #define Strcpy  strcpy
 #define Strncpy strncpy
-#define Sprintf sprintf
-#define Printf  nrnpy_pr
 #endif
+using neuron::Sprintf;
+using neuron::SprintfAsrt;
 
-#define ERRCHK(c1) c1
-
-#define IFGUI  if (hoc_usegui) {
-#define ENDGUI }
+// No longer used because of clang format difficulty
+// #define IFGUI  if (hoc_usegui) {
+// #define ENDGUI }
 
 extern int hoc_usegui; /* when 0 does not make interviews calls */
 extern int nrn_istty_;
-extern int parallel_sub; /* for use with parallel neuron (see parallel.cl) */
-
-#define NOT_PARALLEL_SUB(c1) \
-    {                        \
-        if (!parallel_sub)   \
-            c1               \
-    }
 
 /* Enter handling for PVM  NJP 11/21/94 */
 #ifdef PVM
@@ -340,7 +294,4 @@ int num_procs;
 int* tids;
 int node_num;
 int mytid;
-#endif
-
-
 #endif

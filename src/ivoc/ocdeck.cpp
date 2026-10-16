@@ -7,7 +7,6 @@
 #include <InterViews/layout.h>
 #include <InterViews/background.h>
 #include <IV-look/kit.h>
-#include <ivstream.h>
 #include <stdio.h>
 #include "ocdeck.h"
 #include "apwindow.h"
@@ -15,9 +14,6 @@
 #endif /* HAVE_IV */
 #include "classreg.h"
 #include "gui-redirect.h"
-
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-extern double (*nrnpy_object_to_double_)(Object*);
 
 #if HAVE_IV
 class SpecialPatch: public Patch {
@@ -76,10 +72,10 @@ static void* cons(Object*) {
     TRY_GUI_REDIRECT_OBJ("Deck", NULL);
 #if HAVE_IV
     OcDeck* b = NULL;
-    IFGUI
-    b = new OcDeck();
-    b->ref();
-    ENDGUI
+    if (hoc_usegui) {
+        b = new OcDeck();
+        b->ref();
+    }
     return (void*) b;
 #else
     return nullptr;
@@ -89,13 +85,13 @@ static void* cons(Object*) {
 static void destruct(void* v) {
     TRY_GUI_REDIRECT_NO_RETURN("~Deck", v);
 #if HAVE_IV
-    IFGUI
-    OcDeck* b = (OcDeck*) v;
-    if (b->has_window()) {
-        b->window()->dismiss();
+    if (hoc_usegui) {
+        OcDeck* b = (OcDeck*) v;
+        if (b->has_window()) {
+            b->window()->dismiss();
+        }
+        b->unref();
     }
-    b->unref();
-    ENDGUI
 #endif /* HAVE_IV  */
 }
 
@@ -103,8 +99,9 @@ static double intercept(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Deck.intercept", v);
 #if HAVE_IV
     bool b = int(chkarg(1, 0., 1.));
-    IFGUI((OcDeck*) v)->intercept(b);
-    ENDGUI
+    if (hoc_usegui) {
+        ((OcDeck*) v)->intercept(b);
+    }
     return double(b);
 #else
     return 0.;
@@ -114,23 +111,23 @@ static double intercept(void* v) {
 static double map(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Deck.map", v);
 #if HAVE_IV
-    IFGUI
-    OcDeck* b = (OcDeck*) v;
-    PrintableWindow* w;
-    if (ifarg(3)) {
-        w = b->make_window(float(*getarg(2)),
-                           float(*getarg(3)),
-                           float(*getarg(4)),
-                           float(*getarg(5)));
-    } else {
-        w = b->make_window();
+    if (hoc_usegui) {
+        OcDeck* b = (OcDeck*) v;
+        PrintableWindow* w;
+        if (ifarg(3)) {
+            w = b->make_window(float(*getarg(2)),
+                               float(*getarg(3)),
+                               float(*getarg(4)),
+                               float(*getarg(5)));
+        } else {
+            w = b->make_window();
+        }
+        if (ifarg(1)) {
+            char* name = gargstr(1);
+            w->name(name);
+        }
+        w->map();
     }
-    if (ifarg(1)) {
-        char* name = gargstr(1);
-        w->name(name);
-    }
-    w->map();
-    ENDGUI
     return 1.;
 #else
     return 0.;
@@ -140,12 +137,12 @@ static double map(void* v) {
 static double unmap(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Deck.unmap", v);
 #if HAVE_IV
-    IFGUI
-    OcDeck* b = (OcDeck*) v;
-    if (b->has_window()) {
-        b->window()->dismiss();
+    if (hoc_usegui) {
+        OcDeck* b = (OcDeck*) v;
+        if (b->has_window()) {
+            b->window()->dismiss();
+        }
     }
-    ENDGUI
     return 0.;
 #else
     return 0.;
@@ -155,8 +152,8 @@ static double unmap(void* v) {
 static double save(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Deck.save", v);
 #if HAVE_IV
-    IFGUI
-    OcDeck* b = (OcDeck*) v;
+    if (hoc_usegui) {
+        OcDeck* b = (OcDeck*) v;
 #if 0
 	int i;
 	Object* o[4];
@@ -169,9 +166,9 @@ static double save(void* v) {
 	}
 	b->save_action(gargstr(1), o[0]);
 #else
-    b->save_action(gargstr(1), 0);
+        b->save_action(gargstr(1), 0);
 #endif
-    ENDGUI
+    }
     return 1.;
 #else
     return 0.;
@@ -182,11 +179,11 @@ static double flip_to(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Deck.flip_to", v);
 #if HAVE_IV
     int i = -1;
-    IFGUI
-    OcDeck* b = (OcDeck*) v;
-    i = int(chkarg(1, -1, b->count() - 1));
-    b->flip_to(i);
-    ENDGUI
+    if (hoc_usegui) {
+        OcDeck* b = (OcDeck*) v;
+        i = int(chkarg(1, -1, b->count() - 1));
+        b->flip_to(i);
+    }
     return double(i);
 #else
     return 0.;
@@ -196,8 +193,9 @@ static double flip_to(void* v) {
 static double remove_last(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Deck.remove_last", v);
 #if HAVE_IV
-    IFGUI((OcDeck*) v)->remove_last();
-    ENDGUI
+    if (hoc_usegui) {
+        ((OcDeck*) v)->remove_last();
+    }
     return 0.;
 #else
     return 0.;
@@ -207,10 +205,10 @@ static double remove_last(void* v) {
 static double remove(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Deck.remove", v);
 #if HAVE_IV
-    IFGUI
-    OcDeck* b = (OcDeck*) v;
-    b->remove((int) chkarg(1, 0, b->count() - 1));
-    ENDGUI
+    if (hoc_usegui) {
+        OcDeck* b = (OcDeck*) v;
+        b->remove((int) chkarg(1, 0, b->count() - 1));
+    }
     return 0.;
 #else
     return 0.;
@@ -220,10 +218,10 @@ static double remove(void* v) {
 static double move_last(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Deck.move_last", v);
 #if HAVE_IV
-    IFGUI
-    OcDeck* b = (OcDeck*) v;
-    b->move_last((int) chkarg(1, 0, b->count() - 1));
-    ENDGUI
+    if (hoc_usegui) {
+        OcDeck* b = (OcDeck*) v;
+        b->move_last((int) chkarg(1, 0, b->count() - 1));
+    }
     return 0.;
 #else
     return 0.;
@@ -238,10 +236,10 @@ static Member_func members[] = {{"flip_to", flip_to},
                                 {"remove_last", remove_last},
                                 {"remove", remove},
                                 {"move_last", move_last},
-                                {0, 0}};
+                                {nullptr, nullptr}};
 
 void OcDeck_reg() {
-    class2oc("Deck", cons, destruct, members, NULL, NULL, NULL);
+    class2oc("Deck", cons, destruct, members, nullptr, nullptr);
 }
 #if HAVE_IV
 OcDeck::OcDeck()
@@ -332,7 +330,7 @@ void OcDeck::save_action(const char* creat, Object* o) {
 void OcDeck::save(std::ostream& o) {
     char buf[256];
     if (bi_->save_action_) {
-        sprintf(buf, "{ocbox_ = %s", bi_->save_action_->string());
+        Sprintf(buf, "{ocbox_ = %s", bi_->save_action_->string());
         o << buf << std::endl;
     } else {
         o << "{ocbox_ = new Deck()" << std::endl;
@@ -347,7 +345,7 @@ void OcDeck::save(std::ostream& o) {
         o << "ocbox_.intercept(0)" << std::endl;
     }
     if (has_window()) {
-        sprintf(buf,
+        Sprintf(buf,
                 "ocbox_.map(\"%s\", %g, %g, %g, %g)}",
                 window()->name(),
                 window()->save_left(),
@@ -359,7 +357,7 @@ void OcDeck::save(std::ostream& o) {
         o << "ocbox_.map()}" << std::endl;
     }
     if (bi_->oc_ref_) {
-        sprintf(buf, "%s = ocbox_", hoc_object_pathname(bi_->oc_ref_));
+        Sprintf(buf, "%s = ocbox_", hoc_object_pathname(bi_->oc_ref_));
         o << buf << std::endl;
     }
 }

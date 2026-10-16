@@ -9,4 +9,3 @@ attr_praxis(1e-5, .1, 1)
 fit_praxis(2, "err_fit1", &parm[0])
 
 printf("Final value a=%g  k=%g\n", parm[0], parm[1])
-

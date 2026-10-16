@@ -1,13 +1,6 @@
 /* /local/src/master/nrn/src/modlunit/model.h,v 1.2 1997/11/24 16:19:13 hines Exp */
-
+#include "wrap_sprintf.h"
 #include <stdio.h>
-#if 1
-#if defined(STDC_HEADERS) || defined(SYSV)
-#include <string.h>
-#else
-#include <strings.h>
-#endif
-#endif
 #include <assert.h>
 
 #define NRN_BUFSIZE 8192
@@ -128,29 +121,24 @@ extern List* _LST(Item* q, char* file, int line);
 #define LOCL          0400000L
 #define CNVFAC        01000000L
 #define UFACTOR       02000000L
+#define RANGEOBJ      04000000L
 
 #define EXPLICIT_DECL 01 /* usage field, variable occurs in input file */
 
 extern char* emalloc(unsigned);            /* malloc with out of space checking */
 extern char* stralloc(const char*, char*); /* copies string to new space */
 
-extern char *inputline(),      /* used only by parser to get title line */
-    *inputtopar(),             /* used only by parser to get units */
-    *unit_str(), *Gets(char*); /* used only in io.c to get string from fin. */
+extern char *inputline(), /* used only by parser to get title line */
+    *inputtopar(),        /* used only by parser to get units */
+    *Gets(char*);         /* used only in io.c to get string from fin. */
+const char* unit_str();
 extern const char* decode_units(Symbol*);
 
-extern List
-#if HAVE_STDARG_H || MAC
-		*makelist(int narg, ...),
-		*itemarray(int narg, ...),	/* item  ITEMARRAY, array of item pointers */
-#else
-		*makelist(),	/* item LIST */
-		*itemarray(),	/* item  ITEMARRAY, array of item pointers */
-#endif
-		*prepend(),
-		*newlist(),	/* begins new empty list */
-		*inputtext();	/* used by parser to get block text from
-				 * VERBATIM and COMMENT */
+extern List *makelist(int narg, ...),
+    *itemarray(int narg, ...), /* item  ITEMARRAY, array of item pointers */
+    *prepend(), *newlist(),    /* begins new empty list */
+    *inputtext();              /* used by parser to get block text from
+                                * VERBATIM and COMMENT */
 extern Item *putintoken(const char*s, short type, short), /* construct symbol and store input tokens
                                                            */
     *insertstr(Item*item, const char*str),                /* before a known Item */
@@ -170,8 +158,8 @@ extern Symbol *install(const char*, int), /* Install token in symbol table */
 
 extern int unitonflag;
 
-extern char finname[], /* the input file prefix */
-    buf[];             /* general purpose temporary buffer */
+extern char finname[NRN_BUFSIZE], /* the input file prefix */
+    buf[512];                     /* general purpose temporary buffer */
 
 extern Item *parseroot, *lex_tok; /* intoken pointer for nonzero parse passes */
 
@@ -201,7 +189,6 @@ extern Symbol *indepsym, /* The model independent variable */
 extern char* clint;
 extern int ilint;
 extern Item* qlint;
-#define Sprintf     clint = sprintf
 #define Fprintf     ilint = fprintf
 #define Fclose      ilint = fclose
 #define Fflush      ilint = fflush
@@ -220,9 +207,7 @@ extern Item* qlint;
         if (arg)    \
             ;       \
     }
-#define Free(arg) free((char*) (arg))
 #else
-#define Sprintf     sprintf
 #define Fprintf     fprintf
 #define Fclose      fclose
 #define Fflush      fflush
@@ -237,8 +222,9 @@ extern Item* qlint;
 #define Lappendstr  lappendstr
 #define Lappenditem lappenditem
 #define IGNORE(arg) arg
-#define Free(arg)   free((void*) (arg))
 #endif
+using neuron::Sprintf;
+using neuron::SprintfAsrt;
 
 /* model.h,v
  * Revision 1.2  1997/11/24  16:19:13  hines

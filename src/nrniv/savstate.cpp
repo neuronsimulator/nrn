@@ -7,12 +7,12 @@
 #include "nrncvode.h"
 #include "nrnoc2iv.h"
 #include "classreg.h"
-#include "ndatclas.h"
 #include "nrniv_mf.h"
 
-#include "tqueue.h"
+#include "tqueue.hpp"
 #include "netcon.h"
 #include "vrecitem.h"
+#include "utils/enumerate.h"
 
 typedef void (*ReceiveFunc)(Point_process*, double*, double);
 
@@ -23,8 +23,8 @@ extern Section** secorder;
 extern ReceiveFunc* pnt_receive;
 extern NetCvode* net_cvode_instance;
 extern TQueue* net_cvode_instance_event_queue(NrnThread*);
-extern hoc_Item* net_cvode_instance_psl();
-extern PlayRecList* net_cvode_instance_prl();
+extern std::vector<PreSyn*>* net_cvode_instance_psl();
+extern std::vector<PlayRecord*>* net_cvode_instance_prl();
 extern double t;
 extern short* nrn_is_artificial_;
 static void tqcallback(const TQItem* tq, int i);
@@ -231,14 +231,12 @@ void SaveState::ssi_def() {
     Symbol* s = hoc_lookup("NetCon");
     nct = s->u.ctemplate;
     ssi = new StateStructInfo[n_memb_func];
-    int sav = v_structure_change;
     for (int im = 0; im < n_memb_func; ++im) {
         ssi[im].offset = -1;
         ssi[im].size = 0;
         if (!memb_func[im].sym) {
             continue;
         }
-        NrnProperty* np = new NrnProperty(memb_func[im].sym->name);
         // generally we only save STATE variables. However for
         // models containing a NET_RECEIVE block, we also need to
         // save everything except the parameters
@@ -249,24 +247,26 @@ void SaveState::ssi_def() {
         // param array including PARAMETERs.
         if (pnt_receive[im]) {
             ssi[im].offset = 0;
-            ssi[im].size = np->prop()->param_size;
+            ssi[im].size = nrn_prop_param_size_[im];
         } else {
             int type = STATE;
-            for (Symbol* sym = np->first_var(); np->more_var(); sym = np->next_var()) {
-                if (np->var_type(sym) == type || np->var_type(sym) == STATE ||
-                    sym->subtype == _AMBIGUOUS) {
+            const Symbol* msym = memb_func[im].sym;
+            for (int i = 0; i < msym->s_varn; ++i) {
+                Symbol* sym = msym->u.ppsym[i];
+                int vartype = nrn_vartype(sym);
+                if (vartype == type || vartype == STATE || vartype == _AMBIGUOUS) {
                     if (ssi[im].offset < 0) {
-                        ssi[im].offset = np->prop_index(sym);
+                        ssi[im].offset = sym->u.rng.index;
+                    } else {
+                        // assert what we assume: that after this code the variables we want are
+                        // `size` contiguous legacy indices starting at `offset`
+                        assert(ssi[im].offset + ssi[im].size == sym->u.rng.index);
                     }
                     ssi[im].size += hoc_total_array_data(sym, 0);
                 }
             }
         }
-        delete np;
     }
-    // Following set to 1 when NrnProperty constructor calls prop_alloc.
-    // so change back to original value.
-    v_structure_change = sav;
 }
 
 bool SaveState::check(bool warn) {
@@ -475,8 +475,8 @@ void SaveState::alloc() {
             allocacell(acell_[j], i);
             ++j;
         }
-    PlayRecList* prl = net_cvode_instance_prl();
-    nprs_ = prl->count();
+    std::vector<PlayRecord*>* prl = net_cvode_instance_prl();
+    nprs_ = prl->size();
     if (nprs_) {
         prs_ = new PlayRecordSave*[nprs_];
     }
@@ -594,19 +594,17 @@ void SaveState::ssfree() {
 }
 
 void SaveState::save() {
-    NrnThread* nt;
     if (!check(false)) {
         alloc();
     }
-    FOR_THREADS(nt) {
+    for (const NrnThread* nt: for_threads(nrn_threads, nrn_nthread)) {
         assert(t == nt->_t);
     }
     t_ = t;
-    int inode;
     for (int isec = 0; isec < nsec_; ++isec) {
         SecState& ss = ss_[isec];
         Section* sec = ss.sec;
-        for (inode = 0; inode < ss.nnode; ++inode) {
+        for (int inode = 0; inode < ss.nnode; ++inode) {
             NodeState& ns = ss.ns[inode];
             Node* nd = sec->pnode[inode];
             savenode(ns, nd);
@@ -623,11 +621,10 @@ void SaveState::save() {
             ++j;
         }
     if (nprs_) {
-        PlayRecList* prl = net_cvode_instance_prl();
-        int i;
-        assert(nprs_ == prl->count());
-        for (i = 0; i < nprs_; ++i) {
-            prs_[i] = prl->item(i)->savestate_save();
+        std::vector<PlayRecord*>* prl = net_cvode_instance_prl();
+        assert(nprs_ == prl->size());
+        for (auto&& [i, e]: enumerate(*prl)) {
+            prs_[i] = e->savestate_save();
         }
     }
     savenet();
@@ -642,8 +639,7 @@ void SaveState::save() {
 void SaveState::savenode(NodeState& ns, Node* nd) {
     ns.v = NODEV(nd);
     int istate = 0;
-    Prop* p;
-    for (p = nd->prop; p; p = p->next) {
+    for (Prop* p = nd->prop; p; p = p->next) {
         if (ssi[p->_type].size == 0) {
             continue;
         }
@@ -658,7 +654,7 @@ void SaveState::savenode(NodeState& ns, Node* nd) {
 #endif
         {
             for (int ip = ssi[type].offset; ip < max; ++ip) {
-                ns.state[istate++] = p->param[ip];
+                ns.state[istate++] = p->param_legacy(ip);
             }
         }
     }
@@ -669,27 +665,24 @@ void SaveState::saveacell(ACellState& ac, int type) {
     int sz = ssi[type].size;
     double* p = ac.state;
     for (int i = 0; i < ml.nodecount; ++i) {
-        double* d = ml._data[i];
         for (int j = 0; j < sz; ++j) {
-            (*p++) = d[j];
+            (*p++) = ml.data(i, j);
         }
     }
 }
 
 void SaveState::restore(int type) {
-    NrnThread* nt;
     if (!check(true)) {
         hoc_execerror("SaveState:", "Stored state inconsistent with current neuron structure");
     }
     t = t_;
-    FOR_THREADS(nt) {
+    for (NrnThread* nt: for_threads(nrn_threads, nrn_nthread)) {
         nt->_t = t_;
     }
-    int inode;
     for (int isec = 0; isec < nsec_; ++isec) {
         SecState& ss = ss_[isec];
         Section* sec = ss.sec;
-        for (inode = 0; inode < ss.nnode; ++inode) {
+        for (int inode = 0; inode < ss.nnode; ++inode) {
             NodeState& ns = ss.ns[inode];
             Node* nd = sec->pnode[inode];
             restorenode(ns, nd);
@@ -708,12 +701,11 @@ void SaveState::restore(int type) {
     if (type == 1) {
         return;
     }
-    PlayRecList* prl = net_cvode_instance_prl();
-    // during a local step the PlayRecList is augmented with GLineRecord
+    std::vector<PlayRecord*>* prl = net_cvode_instance_prl();
+    // during a local step prl is augmented with GLineRecord
     // assert(nprs_ == prl->count());
-    assert(nprs_ <= prl->count());
-    int i;
-    for (i = 0; i < nprs_; ++i) {
+    assert(nprs_ <= prl->size());
+    for (int i = 0; i < nprs_; ++i) {
         prs_[i]->savestate_restore();
     }
     restorenet();
@@ -726,11 +718,9 @@ void SaveState::restore(int type) {
 }
 
 void SaveState::restorenode(NodeState& ns, Node* nd) {
-    NODEV(nd) = ns.v;
-    ;
+    nd->v() = ns.v;
     int istate = 0;
-    Prop* p;
-    for (p = nd->prop; p; p = p->next) {
+    for (Prop* p = nd->prop; p; p = p->next) {
         if (ssi[p->_type].size == 0) {
             continue;
         }
@@ -745,7 +735,7 @@ void SaveState::restorenode(NodeState& ns, Node* nd) {
 #endif
         {
             for (int ip = ssi[type].offset; ip < max; ++ip) {
-                p->param[ip] = ns.state[istate++];
+                p->param_legacy(ip) = ns.state[istate++];
             }
         }
     }
@@ -756,9 +746,8 @@ void SaveState::restoreacell(ACellState& ac, int type) {
     int sz = ssi[type].size;
     double* p = ac.state;
     for (int i = 0; i < ml.nodecount; ++i) {
-        double* d = ml._data[i];
         for (int j = 0; j < sz; ++j) {
-            d[j] = (*p++);
+            ml.data(i, j) = (*p++);
         }
     }
 }
@@ -933,27 +922,20 @@ void SaveState::write(OcFile* ocf, bool close) {
 }
 
 void SaveState::savenet() {
-    int i, j, n;
-    double* w;
     hoc_Item* q;
-    Object* ob;
-    NetCon* d;
-    PreSyn* ps;
-    i = 0;
+    int i = 0;
     ITERATE(q, nct->olist) {
-        ob = OBJ(q);
-        d = (NetCon*) ob->u.this_pointer;
-        n = ncs_[i].nstate;
-        w = ncs_[i].state;
-        for (j = 0; j < n; ++j) {
+        Object* ob = OBJ(q);
+        const NetCon* d = (NetCon*) ob->u.this_pointer;
+        int n = ncs_[i].nstate;
+        double* w = ncs_[i].state;
+        for (int j = 0; j < n; ++j) {
             w[j] = d->weight_[j];
         }
         ++i;
     }
-    i = 0;
-    if (net_cvode_instance_psl())
-        ITERATE(q, net_cvode_instance_psl()) {
-            ps = (PreSyn*) VOIDITM(q);
+    if (int i = 0; net_cvode_instance_psl()) {
+        for (PreSyn* ps: *net_cvode_instance_psl()) {
             ps->hi_index_ = i;
             pss_[i].flag = ps->flag_;
             pss_[i].valthresh = ps->valthresh_;
@@ -961,10 +943,10 @@ void SaveState::savenet() {
             pss_[i].told = ps->told_;
             ++i;
         }
+    }
     alloc_tq();
     tqcnt_ = 0;
-    NrnThread* nt;
-    FOR_THREADS(nt) {
+    for (NrnThread* nt: for_threads(nrn_threads, nrn_nthread)) {
         TQueue* tq = net_cvode_instance_event_queue(nt);
         this_savestate = this;
         callback_mode = 1;
@@ -984,29 +966,22 @@ void SaveState::tqsave(const TQItem* q, int) {
 }
 
 void SaveState::restorenet() {
-    int i, j, n;
-    double* w;
-    hoc_Item* q;
-    Object* ob;
-    NetCon* d;
-    PreSyn* ps;
     // NetCon's
-    i = 0;
+    int i = 0;
+    hoc_Item* q;
     ITERATE(q, nct->olist) {
-        ob = OBJ(q);
-        d = (NetCon*) ob->u.this_pointer;
-        n = ncs_[i].nstate;
-        w = ncs_[i].state;
-        for (j = 0; j < n; ++j) {
+        Object* ob = OBJ(q);
+        NetCon* d = (NetCon*) ob->u.this_pointer;
+        int n = ncs_[i].nstate;
+        const double* w = ncs_[i].state;
+        for (int j = 0; j < n; ++j) {
             d->weight_[j] = w[j];
         }
         ++i;
     }
     // PreSyn's
-    i = 0;
-    if (net_cvode_instance_psl())
-        ITERATE(q, net_cvode_instance_psl()) {
-            ps = (PreSyn*) VOIDITM(q);
+    if (int i = 0; net_cvode_instance_psl())
+        for (PreSyn* ps: *net_cvode_instance_psl()) {
             ps->hi_index_ = i;
             ps->flag_ = pss_[i].flag;
             ps->valthresh_ = pss_[i].valthresh;
@@ -1019,8 +994,7 @@ void SaveState::restorenet() {
     // clear it
     clear_event_queue();
     // restore it
-    n = tqs_->nstate;
-    for (i = 0; i < n; ++i) {
+    for (int i = 0; i < tqs_->nstate; ++i) {
         tqs_->items[i]->savestate_restore(tqs_->tdeliver[i], net_cvode_instance);
     }
 }
@@ -1033,8 +1007,7 @@ void SaveState::readnet(FILE* f) {
     if (nncs_ != 0) {
         ncs_ = new NetConState[nncs_];
     }
-    int i, n, type;
-    for (i = 0; i < nncs_; ++i) {
+    for (int i = 0; i < nncs_; ++i) {
         ASSERTfgets(buf, 200, f);
         sscanf(buf, "%d %d\n", &ncs_[i].object_index, &ncs_[i].nstate);
         if (ncs_[i].nstate) {
@@ -1048,18 +1021,16 @@ void SaveState::readnet(FILE* f) {
     if (npss_ != 0) {
         pss_ = new PreSynState[npss_];
         ASSERTfread(pss_, sizeof(PreSynState), npss_, f);
-        PreSyn* ps;
-        i = 0;
-        hoc_Item* q;
+        int i = 0;
         if (net_cvode_instance_psl())
-            ITERATE(q, net_cvode_instance_psl()) {
-                ps = (PreSyn*) VOIDITM(q);
+            for (PreSyn* ps: *net_cvode_instance_psl()) {
                 ps->hi_index_ = i;
                 ++i;
             }
         assert(npss_ == i);
     }
 
+    int n = 0;
     ASSERTfgets(buf, 200, f);
     sscanf(buf, "%d\n", &n);
     tqs_->nstate = n;
@@ -1067,9 +1038,10 @@ void SaveState::readnet(FILE* f) {
         tqs_->items = new DiscreteEvent*[n];
         tqs_->tdeliver = new double[n];
         ASSERTfread(tqs_->tdeliver, sizeof(double), n, f);
-        for (i = 0; i < n; ++i) {
+        for (int i = 0; i < n; ++i) {
             DiscreteEvent* de = NULL;
             ASSERTfgets(buf, 200, f);
+            int type = 0;
             sscanf(buf, "%d\n", &type);
             switch (type) {
             case DiscreteEventType:
@@ -1104,8 +1076,7 @@ void SaveState::readnet(FILE* f) {
 
 void SaveState::writenet(FILE* f) {
     fprintf(f, "%d\n", nncs_);
-    int i, n;
-    for (i = 0; i < nncs_; ++i) {
+    for (int i = 0; i < nncs_; ++i) {
         fprintf(f, "%d %d\n", ncs_[i].object_index, ncs_[i].nstate);
         if (ncs_[i].nstate) {
             ASSERTfwrite(ncs_[i].state, sizeof(double), ncs_[i].nstate, f);
@@ -1115,11 +1086,11 @@ void SaveState::writenet(FILE* f) {
     if (npss_) {
         ASSERTfwrite(pss_, sizeof(PreSynState), npss_, f);
     }
-    n = tqs_->nstate;
+    int n = tqs_->nstate;
     fprintf(f, "%d\n", n);
     if (n) {
         ASSERTfwrite(tqs_->tdeliver, sizeof(double), n, f);
-        for (i = 0; i < n; ++i) {
+        for (int i = 0; i < n; ++i) {
             tqs_->items[i]->savestate_write(f);
         }
     }
@@ -1135,14 +1106,11 @@ bool SaveState::checknet(bool warn) {
         }
         return false;
     }
-    int i;
     hoc_Item* q;
-    Object* ob;
-    NetCon* d;
-    i = 0;
+    int i = 0;
     ITERATE(q, nct->olist) {
-        ob = OBJ(q);
-        d = (NetCon*) ob->u.this_pointer;
+        Object* ob = OBJ(q);
+        const auto* d = static_cast<NetCon*>(ob->u.this_pointer);
         if (ob->index != ncs_[i].object_index) {
             if (warn) {
                 fprintf(stderr,
@@ -1166,10 +1134,9 @@ bool SaveState::checknet(bool warn) {
     }
     // PreSyn's
     i = 0;
-    if (net_cvode_instance_psl())
-        ITERATE(q, net_cvode_instance_psl()) {
-            ++i;
-        }
+    if (net_cvode_instance_psl()) {
+        i = net_cvode_instance_psl()->size();
+    }
     if (npss_ != i) {
         if (warn) {
             fprintf(stderr,
@@ -1187,14 +1154,11 @@ void SaveState::allocnet() {
     if (nncs_ != 0) {
         ncs_ = new NetConState[nncs_];
     }
-    int i, n;
     hoc_Item* q;
-    Object* ob;
-    NetCon* d;
-    i = 0;
+    int i = 0;
     ITERATE(q, nct->olist) {
-        ob = OBJ(q);
-        d = (NetCon*) ob->u.this_pointer;
+        Object* ob = OBJ(q);
+        const auto* d = static_cast<NetCon*>(ob->u.this_pointer);
         ncs_[i].object_index = ob->index;
         ncs_[i].nstate = d->cnt_;
         if (d->cnt_) {
@@ -1202,11 +1166,9 @@ void SaveState::allocnet() {
         }
         ++i;
     }
-    PreSyn* ps;
     npss_ = 0;
     if (net_cvode_instance_psl())
-        ITERATE(q, net_cvode_instance_psl()) {
-            ps = (PreSyn*) VOIDITM(q);
+        for (PreSyn* ps: *net_cvode_instance_psl()) {
             ps->hi_index_ = npss_;
             ++npss_;
         }
@@ -1218,9 +1180,8 @@ void SaveState::allocnet() {
 // The event TQueue is highly volatile so it needs to be freed and allocated
 // on every save and fread
 void SaveState::free_tq() {
-    int i;
     if (tqs_->nstate) {
-        for (i = 0; i < tqs_->nstate; ++i) {
+        for (int i = 0; i < tqs_->nstate; ++i) {
             delete tqs_->items[i];
         }
         tqs_->nstate = 0;
@@ -1229,17 +1190,15 @@ void SaveState::free_tq() {
     }
 }
 void SaveState::alloc_tq() {
-    int n;
     free_tq();
     tqcnt_ = 0;
-    NrnThread* nt;
-    FOR_THREADS(nt) {
+    for (NrnThread* nt: for_threads(nrn_threads, nrn_nthread)) {
         TQueue* tq = net_cvode_instance_event_queue(nt);
         this_savestate = this;
         callback_mode = 0;
         tq->forall_callback(tqcallback);
     }
-    n = tqcnt_;
+    int n = tqcnt_;
     tqs_->nstate = n;
     if (n) {
         tqs_->items = new DiscreteEvent*[n];
@@ -1304,8 +1263,8 @@ static Member_func members[] = {{"save", save},
                                 {"restore", restore},
                                 {"fread", ssread},
                                 {"fwrite", sswrite},
-                                {0, 0}};
+                                {nullptr, nullptr}};
 
 void SaveState_reg() {
-    class2oc("SaveState", cons, destruct, members, NULL, NULL, NULL);
+    class2oc("SaveState", cons, destruct, members, nullptr, nullptr);
 }

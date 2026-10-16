@@ -1,7 +1,6 @@
 #include <../../nrnconf.h>
 #include <stdlib.h>
 #include <math.h>
-#include "hoc.h"
 #include "parse.hpp"
 #include "hocparse.h"
 #include "equation.h"
@@ -9,9 +8,9 @@
 #include "code.h"
 
 
-int do_equation; /* switch for determining access to dep vars */
-int* hoc_access; /* links to next accessed variables */
-int var_access;  /* variable number as pointer into access array */
+int hoc_do_equation; /* switch for determining access to dep vars */
+int* hoc_access;     /* links to next accessed variables */
+int hoc_var_access;  /* variable number as pointer into access array */
 
 
 static double** varble; /* pointer to symbol values */
@@ -19,13 +18,13 @@ typedef struct elm* Elm;
 
 #define diag(s) hoc_execerror(s, (char*) 0);
 
-void dep_make(void) /* tag the variable as dependent with a variable number */
+void hoc_dep_make(void) /* tag the variable as dependent with a variable number */
 {
 #if !OCSMALL
     Symbol* sym;
     unsigned* numpt = 0;
 
-    sym = spop();
+    sym = hoc_spop();
     switch (sym->type) {
     case UNDEF:
         hoc_execerror(sym->name, "undefined in dep_make");
@@ -34,9 +33,9 @@ void dep_make(void) /* tag the variable as dependent with a variable number */
         *(OPVAL(sym)) = 0.;
     case VAR:
         if (sym->subtype != NOTUSER) {
-            execerror(sym->name, "can't be a dependent variable");
+            hoc_execerror(sym->name, "can't be a dependent variable");
         }
-        if (!ISARRAY(sym)) {
+        if (!is_array(*sym)) {
             numpt = &(sym->s_varn);
         } else {
             Arrayinfo* aray = OPARINFO(sym);
@@ -49,15 +48,15 @@ void dep_make(void) /* tag the variable as dependent with a variable number */
                 aray->a_varn = (unsigned*) ecalloc((unsigned) total, sizeof(unsigned));
                 sym->s_varn = (unsigned) total; /* set_varble() uses this */
             }
-            numpt = &((aray->a_varn)[araypt(sym, OBJECTVAR)]);
+            numpt = &((aray->a_varn)[hoc_araypt(sym, OBJECTVAR)]);
         }
         break;
 
     default:
-        execerror(sym->name, "can't be a dependent variable");
+        hoc_execerror(sym->name, "can't be a dependent variable");
     }
     if (*numpt > 0)
-        execerror(sym->name, "made dependent twice");
+        hoc_execerror(sym->name, "made dependent twice");
     *numpt = ++neqn;
 #endif
 }
@@ -69,7 +68,7 @@ void init_access(void) /* zero the access array */
     if (hoc_access != (int*) 0)
         free((char*) hoc_access);
     hoc_access = (int*) ecalloc((neqn + 1), sizeof(int));
-    var_access = -1;
+    hoc_var_access = -1;
 #endif
 }
 
@@ -79,7 +78,7 @@ static void eqn_side(int lhs);
 static unsigned row;
 static unsigned maxeqn;
 
-void eqn_name(void) /* save row number for lhs and/or rhs */
+void hoc_eqn_name(void) /* save row number for lhs and/or rhs */
 {
 #if !OCSMALL
 
@@ -89,13 +88,13 @@ void eqn_name(void) /* save row number for lhs and/or rhs */
         set_varble();
     }
     init_access();
-    do_equation = 1;
-    eval();
-    do_equation = 0;
-    if (var_access < 1)
-        execerror("illegal equation name", (pc - 2)->sym->name);
-    row = var_access;
-    nopop();
+    hoc_do_equation = 1;
+    hoc_eval();
+    hoc_do_equation = 0;
+    if (hoc_var_access < 1)
+        hoc_execerror("illegal equation name", (hoc_pc - 2)->sym->name);
+    row = hoc_var_access;
+    hoc_nopop();
 #endif
 }
 
@@ -103,10 +102,10 @@ static void set_varble(void) { /* set up varble array by searching for tags */
 #if !OCSMALL
     Symbol* sp;
 
-    for (sp = symlist->first; sp != (Symbol*) 0; sp = sp->next) {
+    for (sp = hoc_symlist->first; sp != (Symbol*) 0; sp = sp->next) {
         if (sp->s_varn != 0) {
             if (sp->type == VAR) {
-                if (!ISARRAY(sp)) {
+                if (!is_array(*sp)) {
                     varble[sp->s_varn] = OPVAL(sp);
                 } else {
                     int i;
@@ -123,16 +122,16 @@ static void set_varble(void) { /* set up varble array by searching for tags */
 
 static double Delta = .001; /* variable variation */
 
-void eqinit(void) /* built in function to initialize equation solver */
+void hoc_eqinit(void) /* built in function to initialize equation solver */
 {
 #if !OCSMALL
     Symbol* sp;
 
     if (ifarg(1))
         Delta = *getarg(1);
-    for (sp = symlist->first; sp != (Symbol*) 0; sp = sp->next) {
+    for (sp = hoc_symlist->first; sp != (Symbol*) 0; sp = sp->next) {
         if (sp->s_varn != 0) {
-            if (ISARRAY(sp)) {
+            if (is_array(*sp)) {
                 if (OPARINFO(sp)->a_varn != (unsigned*) 0)
                     free((char*) (OPARINFO(sp)->a_varn));
             }
@@ -142,11 +141,11 @@ void eqinit(void) /* built in function to initialize equation solver */
     neqn = 0;
     eqn_space();
 #endif
-    ret();
-    pushx(0.);
+    hoc_ret();
+    hoc_pushx(0.);
 }
 
-void eqn_init(void) /* initialize equation row */
+void hoc_eqn_init(void) /* initialize equation row */
 {
 #if !OCSMALL
     struct elm* el;
@@ -157,12 +156,12 @@ void eqn_init(void) /* initialize equation row */
 #endif
 }
 
-void eqn_lhs(void) /* add terms to left hand side */
+void hoc_eqn_lhs(void) /* add terms to left hand side */
 {
     eqn_side(1);
 }
 
-void eqn_rhs(void) /* add terms to right hand side */
+void hoc_eqn_rhs(void) /* add terms to right hand side */
 {
     eqn_side(0);
 }
@@ -173,33 +172,33 @@ static void eqn_side(int lhs) {
     int i;
     struct elm* el;
     double f0, f1;
-    Inst* savepc = pc;
+    Inst* savepc = hoc_pc;
 
     init_access();
-    do_equation = 1;
-    execute(savepc);
-    do_equation = 0;
+    hoc_do_equation = 1;
+    hoc_execute(savepc);
+    hoc_do_equation = 0;
 
     if (lhs) {
-        f0 = xpop();
+        f0 = hoc_xpop();
     } else {
-        f0 = -xpop();
+        f0 = -hoc_xpop();
     }
 
     rhs[row] -= f0;
-    for (i = var_access; i > 0; i = hoc_access[i]) {
+    for (i = hoc_var_access; i > 0; i = hoc_access[i]) {
         *varble[i] += Delta;
-        execute(savepc);
+        hoc_execute(savepc);
         *varble[i] -= Delta;
         if (lhs) {
-            f1 = xpop();
+            f1 = hoc_xpop();
         } else {
-            f1 = -xpop();
+            f1 = -hoc_xpop();
         }
         el = getelm((struct elm*) 0, row, (unsigned) i);
         el->value += (f1 - f0) / Delta;
     }
-    pc++;
+    hoc_pc++;
 #endif
 }
 
@@ -247,11 +246,11 @@ void hoc_Prmat(void) {
 #if !OCSMALL
     prmat();
 #endif
-    ret();
-    pushx(1.);
+    hoc_ret();
+    hoc_pushx(1.);
 }
 
-void solve(void) {
+void hoc_solve(void) {
 #if !OCSMALL
     /* Sum is a measure of the dependent variable accuracy
        and how well the equations are solved */
@@ -281,6 +280,6 @@ void solve(void) {
 #else
     double sum = 0;
 #endif
-    ret();
-    pushx(sum);
+    hoc_ret();
+    hoc_pushx(sum);
 }
