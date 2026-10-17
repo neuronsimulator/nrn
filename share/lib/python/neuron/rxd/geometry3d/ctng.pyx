@@ -1,3 +1,4 @@
+# cython: language_level=3
 from neuron import h
 import numpy
 import itertools

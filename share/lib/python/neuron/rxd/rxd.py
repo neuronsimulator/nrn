@@ -14,6 +14,8 @@ import os
 import sysconfig
 import uuid
 import sys
+import subprocess
+import shlex
 import itertools
 from numpy.ctypeslib import ndpointer
 import re
@@ -513,6 +515,29 @@ def _find_librxdmath():
     return dll
 
 
+def _macos_sdkroot():
+    """SDK path so Apple clang can find system headers such as math.h."""
+    if sys.platform != "darwin":
+        return ""
+    sdk = os.environ.get("SDKROOT", "")
+    if sdk and os.path.isdir(sdk):
+        return sdk
+    try:
+        sdk = subprocess.check_output(
+            ["xcrun", "--sdk", "macosx", "--show-sdk-path"],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        ).strip()
+        if sdk and os.path.isdir(sdk):
+            return sdk
+    except (OSError, subprocess.CalledProcessError):
+        pass
+    clt = "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+    if os.path.isdir(clt):
+        return clt
+    return ""
+
+
 def _cxx_compile(formula):
     filename = "rxddll" + str(uuid.uuid1())
     with open(filename + ".cpp", "w") as f:
@@ -536,7 +561,11 @@ def _cxx_compile(formula):
         else:
             gcc = "g++"
     # TODO: Check this works on non-Linux machines
-    gcc_cmd = f"{gcc} -I{sysconfig.get_path('include')} "
+    sysroot_flag = ""
+    sdk = _macos_sdkroot()
+    if sdk:
+        sysroot_flag = f" -isysroot {shlex.quote(sdk)}"
+    gcc_cmd = f"{gcc} -I{sysconfig.get_path('include')}{sysroot_flag} "
     gcc_cmd += f"-shared {fpic} {filename}.cpp {_find_librxdmath()}"
     gcc_cmd += f" -o {filename}.so {math_library}"
     if sys.platform.lower().startswith("win"):
