@@ -228,6 +228,20 @@ class CodegenCoreneuronCppVisitor: public CodegenCppVisitor {
 
 
     /**
+     * Print the beginning of the loop over instances in \c nrn\_cur
+     *
+     */
+    virtual void print_nrn_cur_loop_begin();
+
+
+    /**
+     * Print the end of the loop over instances in \c nrn\_cur
+     *
+     */
+    virtual void print_nrn_cur_loop_end();
+
+
+    /**
      * Print atomic update pragma for reduction statements
      */
     virtual void print_atomic_reduction_pragma();

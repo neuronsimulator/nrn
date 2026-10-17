@@ -79,6 +79,13 @@ class CodegenAccVisitor: public CodegenCoreneuronCppVisitor {
     /// reduction to matrix elements from shadow vectors
     void print_nrn_cur_matrix_shadow_reduction() override;
 
+    /// beginning of the loop over instances in nrn_cur: one thread per node for a point process
+    /// that writes an ion current
+    void print_nrn_cur_loop_begin() override;
+
+    /// end of the loop over instances in nrn_cur
+    void print_nrn_cur_loop_end() override;
+
     /// fast membrane current calculation
     void print_fast_imem_calculation() override;
 

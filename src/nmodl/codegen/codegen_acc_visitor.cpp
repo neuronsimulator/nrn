@@ -170,14 +170,44 @@ void CodegenAccVisitor::print_net_init_acc_serial_annotation_block_end() {
     }
 }
 
+/**
+ * Instances of a point process that share a node add to the same ion current elements (ica,
+ * dica/dv, ...), which nrn_cur, one thread per instance, does with a plain update: all but one
+ * addition can be lost. CoreNEURON sorts each mechanism's instances by node and keeps the order of
+ * those that share one (permute_nodeindices), so they are consecutive. For such a point process
+ * the first instance on each node handles all of the node's instances, in order, as the CPU does;
+ * the updates to the matrix and to fast_imem then need no atomics either.
+ */
+void CodegenAccVisitor::print_nrn_cur_loop_begin() {
+    if (!point_process_writes_ion_current()) {
+        CodegenCoreneuronCppVisitor::print_nrn_cur_loop_begin();
+        return;
+    }
+    printer->push_block("for (int first_id = 0; first_id < nodecount; first_id++)");
+    printer->push_block("if (first_id > 0 && node_index[first_id - 1] == node_index[first_id])");
+    printer->add_line("continue;");
+    printer->pop_block();
+    printer->add_line("nrn_pragma_acc(loop seq)");
+    printer->push_block(
+        "for (int id = first_id; id < nodecount && node_index[id] == node_index[first_id]; id++)");
+}
+
+void CodegenAccVisitor::print_nrn_cur_loop_end() {
+    if (point_process_writes_ion_current()) {
+        printer->pop_block();
+    }
+    printer->pop_block();
+}
+
 void CodegenAccVisitor::print_nrn_cur_matrix_shadow_update() {
     auto rhs_op = operator_for_rhs();
     auto d_op = operator_for_d();
-    if (info.point_process) {
+    bool const atomic = info.point_process && !point_process_writes_ion_current();
+    if (atomic) {
         print_atomic_reduction_pragma();
     }
     printer->fmt_line("vec_rhs[node_id] {} rhs;", rhs_op);
-    if (info.point_process) {
+    if (atomic) {
         print_atomic_reduction_pragma();
     }
     printer->fmt_line("vec_d[node_id] {} g;", d_op);
@@ -190,12 +220,13 @@ void CodegenAccVisitor::print_fast_imem_calculation() {
 
     auto rhs_op = operator_for_rhs();
     auto d_op = operator_for_d();
+    bool const atomic = info.point_process && !point_process_writes_ion_current();
     printer->push_block("if (nt->nrn_fast_imem)");
-    if (info.point_process) {
+    if (atomic) {
         print_atomic_reduction_pragma();
     }
     printer->fmt_line("nt->nrn_fast_imem->nrn_sav_rhs[node_id] {} rhs;", rhs_op);
-    if (info.point_process) {
+    if (atomic) {
         print_atomic_reduction_pragma();
     }
     printer->fmt_line("nt->nrn_fast_imem->nrn_sav_d[node_id] {} g;", d_op);
