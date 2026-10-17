@@ -189,6 +189,13 @@ void nrn_property_array_set(Object* obj, const char* name, int i, double value);
 void nrn_property_push(Object* obj, const char* name);
 void nrn_property_array_push(Object* obj, const char* name, int i);
 bool nrn_property_data_handle_is_valid(const Object* obj, const char* name, int i);
+int nrn_property_element_ptr(Object* obj,
+                             const char* name,
+                             const int* indices,
+                             int nindex,
+                             double** ptr,
+                             char* error_msg,
+                             size_t error_msg_size);
 char const* nrn_symbol_name(const Symbol* sym);
 Symlist* nrn_symbol_table(const Symbol* sym);
 Symlist* nrn_global_symbol_table(void);

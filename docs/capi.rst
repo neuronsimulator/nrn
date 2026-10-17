@@ -2052,6 +2052,11 @@ Miscellaneous
     :c:func:`nrn_property_get` for the selected element, including returning NaN
     for an unset or opaque pointer.
 
+    It also reads ``Vector.x[i]``, and the same holds for
+    :c:func:`nrn_property_array_set`, :c:func:`nrn_property_array_push` and
+    :c:func:`nrn_property_data_handle_is_valid`. ``Matrix.x`` has two indices; use
+    :c:func:`nrn_property_element_ptr`.
+
     **C Usage:**
 
     .. code-block:: c
@@ -2157,6 +2162,47 @@ Miscellaneous
 
         :c:func:`nrn_property_get`,
         :c:func:`nrn_property_array_get`
+
+.. c:function:: int nrn_property_element_ptr(Object* obj, const char* name, const int* indices, int nindex, double** ptr, char* error_msg, size_t error_msg_size)
+
+    Get a pointer to one element of an object's variable, giving every index,
+    the way HOC evaluates ``&obj.name[i][j]``. This is how a client gets
+    ``Matrix.x[i][j]``, which has two dimensions.
+
+    Works for ``Matrix.x``, ``Vector.x``, ``Pointer.val`` and point-process
+    variables (scalars and one-dimensional arrays). Errors are reported in
+    ``error_msg``, not raised, and leave the interpreter stack unchanged.
+
+    :param obj: Pointer to the object.
+    :param name: Name of the variable, such as ``"x"``.
+    :param indices: The element's indices, outermost first. May be ``NULL`` when
+        ``nindex`` is 0.
+    :param nindex: Number of indices: the variable's number of dimensions (see
+        :c:func:`nrn_symbol_array_dims`), 0 for a scalar.
+    :param ptr: Receives the pointer, or ``NULL`` on failure.
+    :param error_msg: Buffer for a diagnostic on failure.
+    :param error_msg_size: Size of ``error_msg``.
+    :returns: 0 on success, nonzero on failure: unknown name, a method rather than
+        a variable, the wrong number of indices, an index out of range, a
+        point-process ``POINTER`` that is not set, or a ``Pointer`` whose target was
+        freed.
+
+    The pointer stays valid until the object's storage changes (for example a
+    ``Vector`` is resized or a ``Matrix`` is reallocated) or the object is destroyed.
+
+    .. code-block:: c
+
+        int ij[2] = {1, 2};
+        double* p;
+        char err[256];
+        if (nrn_property_element_ptr(matrix, "x", ij, 2, &p, err, sizeof(err)) == 0) {
+            *p = 3.0;  // matrix.x[1][2] = 3
+        }
+
+    .. seealso::
+
+        :c:func:`nrn_property_array_push`,
+        :c:func:`nrn_vector_data`
 
 .. c:function:: char const* nrn_symbol_name(const Symbol* sym)
 
