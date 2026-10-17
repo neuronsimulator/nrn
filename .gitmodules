@@ -21,7 +21,7 @@
 	url = https://github.com/CLIUtils/CLI11.git
 [submodule "external/eigen"]
 	path = external/eigen
-	url = https://gitlab.com/libeigen/eigen.git
+	url = https://github.com/neuronsimulator/eigen.git
 [submodule "external/nanobind"]
 	path = external/nanobind
 	url = https://github.com/wjakob/nanobind

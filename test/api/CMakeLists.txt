@@ -2,6 +2,7 @@ foreach(
   api_test_file
   global_scalar.cpp
   hh_sim.cpp
+  nlayer_extracellular.cpp
   netcon.cpp
   node_index.cpp
   object_new_nothrow.cpp
