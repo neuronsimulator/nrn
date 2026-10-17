@@ -124,6 +124,11 @@ struct NrnThread: public MemoryManaged {
     NrnFastImem* nrn_fast_imem = nullptr;
 
     int* _v_parent_index = nullptr;
+    /* The children of node i are _v_child_index[_v_child_begin[i]] up to, not including,
+       _v_child_index[_v_child_begin[i + 1]], in increasing order. Built for the GPU only, where
+       treeset_core.cpp gathers each node's axial terms from them (nrn_acc_manager.cpp). */
+    int* _v_child_begin = nullptr;
+    int* _v_child_index = nullptr;
     int* _permute = nullptr;
     char* _sp13mat = nullptr;              /* handle to general sparse matrix */
     Memb_list* _ecell_memb_list = nullptr; /* normally nullptr */
