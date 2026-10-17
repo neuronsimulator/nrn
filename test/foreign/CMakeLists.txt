@@ -43,6 +43,29 @@ else()
                                                        ENVIRONMENT "${_nrn_foreign_test_env}")
 endif()
 
+# Linux only. libX11 is assumed to be loadable. A display name that cannot connect makes idraw exit
+# in SessionRep::init_display. "can't open DISPLAY" is also printed when ivx11_dyload fails, so the
+# dyload errors are an explicit failure.
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  if(NRN_FOREIGN_IDRAW STREQUAL "")
+    message(STATUS "Foreign idraw not found; idraw smoke test skipped")
+  else()
+    add_test(NAME foreign::smoke_idraw COMMAND "${NRN_FOREIGN_IDRAW}")
+    set_tests_properties(
+      foreign::smoke_idraw
+      PROPERTIES LABELS
+                 "foreign;serial;smoke"
+                 TIMEOUT
+                 30
+                 ENVIRONMENT
+                 "${_nrn_foreign_test_env};DISPLAY=idraw-ctest-no-server"
+                 PASS_REGULAR_EXPRESSION
+                 "can't open DISPLAY|can't open display"
+                 FAIL_REGULAR_EXPRESSION
+                 "invalid ELF header;Could not dynamically link")
+  endif()
+endif()
+
 add_test(NAME foreign::smoke_import COMMAND "${NRN_FOREIGN_PYTHON}" -c
                                             "import neuron; print(neuron.__version__)")
 set_tests_properties(foreign::smoke_import PROPERTIES LABELS "foreign;serial;smoke" TIMEOUT 60

@@ -11,8 +11,11 @@ from neuron.nmodl.ode import (
     demangle_protected_identifiers,
     transform_expression,
     discretize_derivative,
+    solve_non_lin_system,
 )
 import pytest
+import cmath
+import re
 
 import sympy as sp
 
@@ -282,3 +285,151 @@ def test_finite_difference():
         msg = f"'{actual}'  =!=  '{expected}'"
 
         assert _equivalent(str(actual), expected, vars=vars), msg
+
+
+@pytest.mark.parametrize(
+    "rhs",
+    [
+        ["-u + f(u)"],
+        ["-u + f(a*u + b)"],
+        ["-u + f(u*u + b)"],
+        ["-u + f(g(a*u + b))"],
+        ["-u + u*f(a*u + b)"],
+        ["-u + f(a*u + b)*g(u)"],
+        ["-u + h(a*u, u + b)"],
+        ["-u + f(a*u - b*v)", "(-v + f(b*u - a*v))/tau"],
+        ["-u + h(u*v, u + v)", "-v + f(g(u - v))"],
+    ],
+)
+def test_non_linear_composite_function_jacobian(rhs):
+    """Finite differences must use a bound step for the original state."""
+    states = ["u", "v"][: len(rhs)]
+    equations = [f"({x} - old_{x})/dt = {r}" for x, r in zip(states, rhs)]
+    parameters = dict(a=-1.7, b=0.4, tau=1.3, dt=0.025, old_u=0.2, old_v=-0.1)
+    functions = {
+        "f": lambda z: cmath.sin(z) + 0.1 * z**3,
+        "g": cmath.cos,
+        "h": lambda z, w: cmath.sin(z) + z * w * w,
+    }
+    code = solve_non_lin_system(equations, states, set(parameters), set(functions))
+    assert not re.search(r"(?<![A-Za-z0-9_])_[A-Za-z0-9_]+", "\n".join(code))
+    for statement in code:
+        if statement.startswith("J["):
+            flat_index = int(statement.split("]")[0][2:])
+            steps = set(re.findall(r"dX_\[(\d+)\]", statement))
+            assert steps <= {str(flat_index // len(states))}
+
+    # A complex-step derivative of the original residual is independent of
+    # both SymPy differentiation and the generated real finite differences.
+    for values in [[0.0, 0.0], [0.31, -0.27], [-1.1, 0.7]]:
+        values = values[: len(states)]
+        environment = {
+            **parameters,
+            **functions,
+            "X": values,
+            "dX_": [1e-5, 3e-5][: len(states)],
+            "F": [0.0] * len(states),
+            "J": [0.0] * len(states) ** 2,
+            "pow": pow,
+        }
+        for statement in code:
+            exec(statement, {"__builtins__": {}}, environment)
+        for i, expression in enumerate(rhs):
+            for j, state in enumerate(states):
+                shifted = dict(zip(states, values))
+                shifted[state] += 1e-30j
+                residual = eval(
+                    f"({expression}) - ({states[i]} - old_{states[i]})/dt",
+                    {"__builtins__": {}},
+                    {**parameters, **functions, **shifted},
+                )
+                assert environment["J"][i + len(states) * j] == pytest.approx(
+                    residual.imag / 1e-30, rel=2e-7, abs=2e-8
+                )
+
+
+def test_non_linear_reported_two_state_system():
+    equations = [
+        "(uu - old_uu)/dt = -uu + f(aee*uu - aie*vv - ze + i_e)",
+        "(vv - old_vv)/dt = (-vv + f(aei*uu - aii*vv - zi + i_i))/tau",
+    ]
+    parameters = dict(
+        aee=1.7,
+        aie=0.4,
+        aei=-0.6,
+        aii=1.2,
+        ze=0.3,
+        zi=-0.2,
+        i_e=0.7,
+        i_i=-0.4,
+        tau=1.3,
+        dt=0.025,
+        old_uu=0.2,
+        old_vv=-0.1,
+    )
+    code = solve_non_lin_system(equations, ["uu", "vv"], set(parameters), {"f"})
+    environment = {
+        **parameters,
+        "f": cmath.sin,
+        "X": [0.31, -0.27],
+        "dX_": [1e-5, 3e-5],
+        "F": [0.0] * 2,
+        "J": [0.0] * 4,
+    }
+    for statement in code:
+        exec(statement, {"__builtins__": {}}, environment)
+    z_e = (
+        parameters["aee"] * 0.31
+        - parameters["aie"] * (-0.27)
+        - parameters["ze"]
+        + parameters["i_e"]
+    )
+    z_i = (
+        parameters["aei"] * 0.31
+        - parameters["aii"] * (-0.27)
+        - parameters["zi"]
+        + parameters["i_i"]
+    )
+    expected = [
+        -1 - 1 / parameters["dt"] + parameters["aee"] * cmath.cos(z_e),
+        parameters["aei"] * cmath.cos(z_i) / parameters["tau"],
+        -parameters["aie"] * cmath.cos(z_e),
+        (-1 - parameters["aii"] * cmath.cos(z_i)) / parameters["tau"]
+        - 1 / parameters["dt"],
+    ]
+    assert environment["J"] == pytest.approx(expected, rel=2e-7, abs=2e-8)
+
+
+def test_non_linear_composite_preserves_exact_terms():
+    code = solve_non_lin_system(["0 = a*u + f(b*u) + c"], ["u"], {"a", "b", "c"}, {"f"})
+    jacobian = next(line.split("=", 1)[1] for line in code if line.startswith("J["))
+    x, dx, a, b, c = sp.symbols("x dx a b c")
+    actual = sp.sympify(
+        jacobian, locals={"X": [x], "dX_": [dx], "a": a, "b": b, "c": c}
+    )
+    f = sp.Function("f")
+    expected = a + (f(b * (x + dx / 2)) - f(b * (x - dx / 2))) / dx
+    assert sp.simplify(sp.nsimplify(actual) - expected) == 0
+    assert c not in actual.free_symbols
+
+
+def test_non_linear_composite_indexed_state():
+    code = solve_non_lin_system(
+        ["0 = -u[0] + f(a*u[0] + b)"], ["u[0]"], {"u[1]", "a", "b"}, {"f"}
+    )
+    assert not any("_xi_" in line or "_delta_" in line for line in code)
+    assert any("dX_[0]" in line for line in code)
+    environment = {
+        "X": [0.31],
+        "dX_": [1e-5],
+        "F": [0.0],
+        "J": [0.0],
+        "a": -1.7,
+        "b": 0.4,
+        "f": cmath.sin,
+    }
+    for statement in code:
+        exec(statement, {"__builtins__": {}}, environment)
+    assert environment["J"][0] == pytest.approx(
+        -1 - 1.7 * cmath.cos(-1.7 * 0.31 + 0.4), rel=2e-7, abs=2e-8
+    )
