@@ -42,7 +42,7 @@ class KSChanFunction {
         } else if (x < -700.) {
             return exp(-700.);
         } else {
-            return exp(x);
+            return hoc_Exp(x);  // as exp in mod files: follows use_exp_pow_precision
         }
     }
 };

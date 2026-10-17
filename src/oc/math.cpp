@@ -208,7 +208,7 @@ double hoc1_Exp(double x) {
         return errcheck(exp(700.), "exp");
     }
     clear_fe_except();
-    return errcheck(exp(x), "exp");
+    return errcheck(hoc_Exp(x), "exp");  // follows use_exp_pow_precision, as exp in mod files
 }
 
 double hoc_Sqrt(double x) {
