@@ -763,6 +763,45 @@ Segments
         for seg in dend:
             seg.g_pas = 0.001  # S/cm²
 
+.. c:function:: int nrn_rangevar_get_nothrow(Symbol* sym, Section* sec, double x, int index, double* value, char* error_msg, size_t error_msg_size)
+
+    Read element ``index`` of a range variable at position ``x``, reporting
+    problems as an error instead of raising a HOC error or throwing.
+
+    :param sym: Symbol of the range variable (e.g. ``v``, ``gnabar_hh``, ``xg``).
+    :param sec: The section.
+    :param x: Normalized position, 0 to 1.
+    :param index: Element of an array range variable (e.g. an extracellular
+        layer); 0 for a scalar.
+    :param value: Receives the value on success.
+    :param error_msg: Buffer for the error message.
+    :param error_msg_size: Size of ``error_msg``.
+    :returns: 0 on success, non-zero on error.
+
+    Errors that :c:func:`nrn_rangevar_get` raises (and that terminate a ctypes
+    caller) are returned instead: the mechanism is not inserted at ``x``, a
+    ``POINTER`` is not set, the pointer is opaque, ``i_membrane_`` without
+    ``cvode.use_fast_imem(1)``, and an index out of range. Unlike
+    :c:func:`nrn_rangevar_get`, array elements are selected by ``index`` rather
+    than an index on the interpreter stack.
+
+    **C Usage:**
+
+    .. code-block:: c
+
+        double value;
+        char err[256];
+        if (nrn_rangevar_get_nothrow(nrn_symbol("xg"), soma, 0.5, 1, &value, err, sizeof(err))) {
+            fprintf(stderr, "%s\n", err);
+        }
+
+.. c:function:: int nrn_rangevar_set_nothrow(Symbol* sym, Section* sec, double x, int index, double value, char* error_msg, size_t error_msg_size)
+
+    Write element ``index`` of a range variable at position ``x``, with the same
+    checks and error reporting as :c:func:`nrn_rangevar_get_nothrow`.
+
+    :returns: 0 on success, non-zero on error.
+
 .. c:function:: Object* nrn_segment_nmodlrandom_get(Section* sec, double x, Symbol* sym)
 
     Wrap a density mechanism's NMODL ``RANDOM`` variable as an
