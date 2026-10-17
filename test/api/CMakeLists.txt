@@ -3,6 +3,7 @@ foreach(
   deferred_unref.cpp
   global_scalar.cpp
   hh_sim.cpp
+  nlayer_extracellular.cpp
   netcon.cpp
   node_index.cpp
   object_new_nothrow.cpp
