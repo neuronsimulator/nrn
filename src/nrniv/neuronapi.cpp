@@ -948,95 +948,6 @@ double* nrn_vector_data(Object* vec) {
     return vector_vec((IvocVect*) vec->u.this_pointer);
 }
 
-double nrn_property_get(const Object* obj, const char* name) {
-    auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
-    if (!obj->ctemplate->is_point_) {
-        hoc_pushs(sym);
-        // put the pointer for the memory location on the stack
-        obj->ctemplate->steer(obj->u.this_pointer);
-        return *hoc_pxpop();
-    } else {
-        auto handle = point_process_pointer(ob2pntproc_0(const_cast<Object*>(obj)), sym, 0);
-        return handle ? *handle : std::numeric_limits<double>::quiet_NaN();
-    }
-}
-
-double nrn_property_array_get(const Object* obj, const char* name, int i) {
-    auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
-    if (!obj->ctemplate->is_point_) {
-        hoc_pushs(sym);
-        // put the pointer for the memory location on the stack
-        obj->ctemplate->steer(obj->u.this_pointer);
-        return hoc_pxpop()[i];
-    } else {
-        auto handle = point_process_pointer(ob2pntproc_0(const_cast<Object*>(obj)), sym, i);
-        return handle ? *handle : std::numeric_limits<double>::quiet_NaN();
-    }
-}
-
-void nrn_property_set(Object* obj, const char* name, double value) {
-    auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
-    if (!obj->ctemplate->is_point_) {
-        hoc_pushs(sym);
-        // put the pointer for the memory location on the stack
-        obj->ctemplate->steer(obj->u.this_pointer);
-        *hoc_pxpop() = value;
-    } else {
-        auto handle = point_process_pointer(ob2pntproc_0(obj), sym, 0);
-        if (handle) {
-            *handle = value;
-        }
-    }
-}
-
-void nrn_property_array_set(Object* obj, const char* name, int i, double value) {
-    auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
-    if (!obj->ctemplate->is_point_) {
-        hoc_pushs(sym);
-        // put the pointer for the memory location on the stack
-        obj->ctemplate->steer(obj->u.this_pointer);
-        hoc_pxpop()[i] = value;
-    } else {
-        auto handle = point_process_pointer(ob2pntproc_0(obj), sym, i);
-        if (handle) {
-            *handle = value;
-        }
-    }
-}
-
-void nrn_property_push(Object* obj, const char* name) {
-    auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
-    if (!obj->ctemplate->is_point_) {
-        hoc_pushs(sym);
-        // put the pointer for the memory location on the stack
-        obj->ctemplate->steer(obj->u.this_pointer);
-    } else {
-        hoc_push(point_process_pointer(ob2pntproc_0(obj), sym, 0));
-    }
-}
-
-void nrn_property_array_push(Object* obj, const char* name, int i) {
-    auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
-    if (!obj->ctemplate->is_point_) {
-        hoc_pushs(sym);
-        // put the pointer for the memory location on the stack
-        obj->ctemplate->steer(obj->u.this_pointer);
-        hoc_pushpx(hoc_pxpop() + i);
-    } else {
-        hoc_push(point_process_pointer(ob2pntproc_0(obj), sym, i));
-    }
-}
-
-bool nrn_property_data_handle_is_valid(const Object* obj, const char* name, int i) {
-    auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
-    if (!obj->ctemplate->is_point_) {
-        hoc_pushs(sym);
-        obj->ctemplate->steer(obj->u.this_pointer);
-        return static_cast<bool>(hoc_pop_handle<double>());
-    }
-    return static_cast<bool>(point_process_pointer(ob2pntproc_0(const_cast<Object*>(obj)), sym, i));
-}
-
 namespace {
 struct steer_request {
     Object* obj;
@@ -1062,7 +973,98 @@ void* steer_element(void* request, void*) {
     r->result = hoc_pxpop();
     return nullptr;
 }
+
+// Element i of a C++ class variable reached through its steer function. A
+// one-dimensional array (Vector.x) needs its index on the stack first, as HOC
+// pushes it; a scalar (Pointer.val) keeps the old pointer arithmetic.
+double* steered_element(const Object* obj, Symbol* sym, int i) {
+    int const nsub = sym->arayinfo ? sym->arayinfo->nsub : 0;
+    if (nsub > 1) {
+        hoc_execerr_ext("%s has %d dimensions; use nrn_property_element_ptr", sym->name, nsub);
+    }
+    steer_request request{const_cast<Object*>(obj), sym, &i, nsub, nullptr};
+    steer_element(&request, nullptr);
+    return nsub ? request.result : request.result + i;
+}
 }  // namespace
+
+double nrn_property_get(const Object* obj, const char* name) {
+    auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
+    if (!obj->ctemplate->is_point_) {
+        hoc_pushs(sym);
+        // put the pointer for the memory location on the stack
+        obj->ctemplate->steer(obj->u.this_pointer);
+        return *hoc_pxpop();
+    } else {
+        auto handle = point_process_pointer(ob2pntproc_0(const_cast<Object*>(obj)), sym, 0);
+        return handle ? *handle : std::numeric_limits<double>::quiet_NaN();
+    }
+}
+
+double nrn_property_array_get(const Object* obj, const char* name, int i) {
+    auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
+    if (!obj->ctemplate->is_point_) {
+        return *steered_element(obj, sym, i);
+    } else {
+        auto handle = point_process_pointer(ob2pntproc_0(const_cast<Object*>(obj)), sym, i);
+        return handle ? *handle : std::numeric_limits<double>::quiet_NaN();
+    }
+}
+
+void nrn_property_set(Object* obj, const char* name, double value) {
+    auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
+    if (!obj->ctemplate->is_point_) {
+        hoc_pushs(sym);
+        // put the pointer for the memory location on the stack
+        obj->ctemplate->steer(obj->u.this_pointer);
+        *hoc_pxpop() = value;
+    } else {
+        auto handle = point_process_pointer(ob2pntproc_0(obj), sym, 0);
+        if (handle) {
+            *handle = value;
+        }
+    }
+}
+
+void nrn_property_array_set(Object* obj, const char* name, int i, double value) {
+    auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
+    if (!obj->ctemplate->is_point_) {
+        *steered_element(obj, sym, i) = value;
+    } else {
+        auto handle = point_process_pointer(ob2pntproc_0(obj), sym, i);
+        if (handle) {
+            *handle = value;
+        }
+    }
+}
+
+void nrn_property_push(Object* obj, const char* name) {
+    auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
+    if (!obj->ctemplate->is_point_) {
+        hoc_pushs(sym);
+        // put the pointer for the memory location on the stack
+        obj->ctemplate->steer(obj->u.this_pointer);
+    } else {
+        hoc_push(point_process_pointer(ob2pntproc_0(obj), sym, 0));
+    }
+}
+
+void nrn_property_array_push(Object* obj, const char* name, int i) {
+    auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
+    if (!obj->ctemplate->is_point_) {
+        hoc_pushpx(steered_element(obj, sym, i));
+    } else {
+        hoc_push(point_process_pointer(ob2pntproc_0(obj), sym, i));
+    }
+}
+
+bool nrn_property_data_handle_is_valid(const Object* obj, const char* name, int i) {
+    auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
+    if (!obj->ctemplate->is_point_) {
+        return steered_element(obj, sym, i) != nullptr;
+    }
+    return static_cast<bool>(point_process_pointer(ob2pntproc_0(const_cast<Object*>(obj)), sym, i));
+}
 
 int nrn_property_element_ptr(Object* obj,
                              const char* name,
