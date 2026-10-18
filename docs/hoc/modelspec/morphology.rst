@@ -1,5 +1,7 @@
-Morphology Loading
-------------------
+:orphan:
+
+Morphology Loading (HOC)
+------------------------
 
 .. toctree::
     :maxdepth: 4

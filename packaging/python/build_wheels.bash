@@ -69,7 +69,7 @@ collect_dirs_macos() {
     NRN_MPI_DYNAMIC="$(parse_dirs "${MPI_POSSIBLE_INCLUDE_HEADERS}" "${NRN_MPI_DYNAMIC}")"
     export NRN_MPI_DYNAMIC
 
-    PREFIX_PATH_POSSIBLE_DIRS="/opt/nrnwheel/$(uname -m)/ncurses /opt/nrnwheel/$(uname -m)/readline /usr/x11"
+    PREFIX_PATH_POSSIBLE_DIRS="/opt/nrnwheel/$(uname -m)/ncurses /opt/nrnwheel/$(uname -m)/readline /usr/x11 ${BREW_PREFIX}/opt/hdf5"
     CMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH:-}"
     CMAKE_PREFIX_PATH="$(parse_dirs "${PREFIX_PATH_POSSIBLE_DIRS}" "${CMAKE_PREFIX_PATH}")"
     export CMAKE_PREFIX_PATH
@@ -87,7 +87,7 @@ set_cibw_environment() {
     platform="${1}"
     if [ "${platform}" = 'macos' ]; then
         declare -A defaults=(
-            [CMAKE_PREFIX_PATH]="/opt/nrnwheel/$(uname -m)/ncurses;/opt/nrnwheel/$(uname -m)/readline;/usr/x11"
+            [CMAKE_PREFIX_PATH]="/opt/nrnwheel/$(uname -m)/ncurses;/opt/nrnwheel/$(uname -m)/readline;/usr/x11;$(brew --prefix)/opt/hdf5"
             [NRN_ENABLE_MPI_DYNAMIC]="ON"
             [NRN_MPI_DYNAMIC]="$(brew --prefix)/opt/openmpi/include;$(brew --prefix)/opt/mpich/include"
             [NRN_WHEEL_STATIC_READLINE]="ON"

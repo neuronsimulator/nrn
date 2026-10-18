@@ -8,6 +8,7 @@
 #include <morphio/section.h>
 #include <morphio/soma.h>
 #include <unordered_map>
+#include <fmt/core.h>
 #include "morphio_wrapper/morphio_wrapper.hpp"
 #include "nrnpy.h"
 
@@ -25,30 +26,35 @@ std::string type2name(int type_id) {
     auto it = type2name_dict.find(type_id);
     if (it != type2name_dict.end()) {
         return it->second;
-    } else {
-        return (type_id < 0) ? "minus_" + std::to_string(-type_id)
-                             : "dend_" + std::to_string(type_id);
     }
+    return (type_id < 0) ? fmt::format("minus_{}", -type_id) : fmt::format("dend_{}", type_id);
 }
 
-std::string mksubset(int type_id, int freq, const std::string& type_name) {
+std::string mksubset(int type_id, [[maybe_unused]] int freq, const std::string& type_name) {
     static const std::unordered_map<int, std::string> mksubset_dict = {{1, "somatic"},
                                                                        {2, "axonal"},
                                                                        {3, "basal"},
                                                                        {4, "apical"}};
     auto it = mksubset_dict.find(type_id);
-    std::string tstr = (it != mksubset_dict.end())
-                           ? it->second
-                           : ((type_id < 0) ? "minus_" + std::to_string(-type_id) + "set"
-                                            : "dendritic_" + std::to_string(type_id));
-    return "forsec \"" + type_name + "\" " + tstr + ".append";
+    std::string tstr;
+    if (it != mksubset_dict.end()) {
+        tstr = it->second;
+    } else if (type_id < 0) {
+        tstr = fmt::format("minus_{}set", -type_id);
+    } else {
+        tstr = fmt::format("dendritic_{}", type_id);
+    }
+    return fmt::format("forsec \"{}\" {}.append", type_name, tstr);
 }
 
 std::string name(int type_id, int index) {
-    return type2name(type_id) + "[" + std::to_string(index) + "]";
+    return fmt::format("{}[{}]", type2name(type_id), index);
 }
 
-void morphio_load(PyObject* pyObj, MorphIOWrapper& morph) {
+void morphio_load(PyObject* pyObj, const MorphIOWrapper& morph) {
+    if (!neuron::python::methods.po2ho) {
+        hoc_execerror("Python support is disabled", nullptr);
+    }
     // Call nrn_po2ho on the PyObject
     Object* cell_obj = neuron::python::methods.po2ho(pyObj);
 
@@ -78,6 +84,9 @@ void morphio_load() {
     }
     // get the Cell object and check that it is a Cell object
     auto cell_obj = *hoc_objgetarg(1);
+    if (!cell_obj) {
+        hoc_execerror("morphio_load requires a Cell object", nullptr);
+    }
 
     if (!ifarg(2)) {
         hoc_execerror("morphio_load requires a path argument", nullptr);
@@ -90,14 +99,15 @@ void morphio_load() {
     // i.e. /path/to/morphology.h5 -> /path/to/morphology.hoc
     if (ifarg(3) && *hoc_getarg(3) == 1) {
         // get the path stem and append .hoc
-        std::string write_file = path.stem().c_str();
-        write_file.append(".hoc");
+        std::string write_file = path.stem().string() + ".hoc";
         std::filesystem::path write_path(path.parent_path() / write_file);
         auto f = std::fopen(write_path.c_str(), "w+");
-        for_each(result.begin(), result.end(), [&f](std::string const& s) {
-            // print to file
-            std::fprintf(f, "%s\n", s.c_str());
-        });
+        if (!f) {
+            hoc_execerror("Cannot open file for writing:", write_path.c_str());
+        }
+        for (const auto& s: result) {
+            fmt::print(f, "{}\n", s);
+        }
         std::fclose(f);
     }
 

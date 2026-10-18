@@ -8,7 +8,7 @@ The ``Import3D GUI`` tool is a graphical tool that allows the user to load a mor
 :ref:`import3d_tutorial` provides a tutorial on how to use the ``Import3D GUI`` tool.
 
 The underlying implementation is mostly HOC and the GUI constructs can in principle be disregarded, since loading numerous morphologies for simulation does not make any use of them.
-Note it is possible possible to load HOC-bound morphologies, but also Python-bound morphologies (refer to :ref:`bio_faq`).
+Note it is possible to load HOC-bound morphologies, but also Python-bound morphologies (refer to :ref:`bio_faq`).
 
 HOC Morphology Loading - Legacy Import3D_GUI
 --------------------------------------------
@@ -115,7 +115,7 @@ that will be executed in the HOC interpreter, thus loading the morphology: ::
     dend[1] { pt3dadd(-5, 5, 0, 3) }
     dend[0] connect dend[2](0), 1
     dend[2] { pt3dadd(0, 5, 0, 2) }
-    dend[2] { pt3dadd(6, 5, 0, 3) 
+    dend[2] { pt3dadd(6, 5, 0, 3) }
 
 
 
@@ -123,9 +123,9 @@ HOC Morphology Loading with MorphIO
 -----------------------------------
 
 Given that legacy morphology loading is implemented in HOC, it does incur a performance penalty.
-To that end, we are implementing a new mechanism for loading morphologies in NEURON, using the `MorphIO <https://github.com/BlueBrain/MorphIO>`_ library.
+To that end, we are implementing a new mechanism for loading morphologies in NEURON, using the `MorphIO <https://github.com/openbraininstitute/MorphIO>`_ library.
 
 The goal is to provide an API that will be backward compatible with the legacy mechanism, but will be implemented in C++ and will be more performant.
-Ultimately, it would even be possible to remove the legacy mechanism, but that is not straightforward, as we need to couple it to the Import3D GUI/CellBuilder(see:ref:`cell_builder`).
+Ultimately, it would even be possible to remove the legacy mechanism, but that is not straightforward, as we need to couple it to the Import3D GUI/CellBuilder (see :ref:`cell_builder`).
 
 .. image:: Import3D-hoc-morphio-backward.png

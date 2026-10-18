@@ -111,6 +111,9 @@ NRN_ENABLE_DOCS = "OFF"
 NRN_ENABLE_MUSIC = { default = "OFF", env = "NRN_ENABLE_MUSIC" }
 MUSIC_ROOT = { default = "", env = "MUSIC_ROOT" }
 
+# Configuration for MorphIO
+NRN_ENABLE_MORPHIO = { default = "ON", env = "NRN_ENABLE_MORPHIO" }
+
 # Configuration for coreNEURON. For Linux we enable OpenMP.
 CORENRN_ENABLE_OPENMP = { default = "OFF", env = "CORENRN_ENABLE_OPENMP" }
 
@@ -133,6 +136,7 @@ manylinux-x86_64-image = "docker.io/neuronsimulator/neuron_wheel:manylinux_2_28_
 skip = [ "pp*", "cp*t*", "*-win32", "*-manylinux_i686", "*-musllinux_i686", "*-musllinux_x86_64", "*-musllinux_aarch64" ]
 
 [tool.cibuildwheel.linux]
+before-all = "dnf install -y hdf5-devel || yum install -y hdf5-devel || true"
 # since the linux build uses containers (either docker or podman), we need to
 # explicitly pass any env vars to the container
 environment-pass = [
@@ -146,6 +150,7 @@ environment-pass = [
   "NRN_BINARY_DIST_BUILD",
   "NRN_RX3D_OPT_LEVEL",
   "NRN_ENABLE_INTERVIEWS",
+  "NRN_ENABLE_MORPHIO",
   # when making a release, we need to override the version
   "SETUPTOOLS_SCM_PRETEND_VERSION",
   # in case the user wants to use less resources
@@ -163,4 +168,5 @@ environment-pass = [
 repair-wheel-command = "auditwheel -v repair -w {dest_dir} {wheel} --exclude 'libgomp.so.1' --exclude 'libnrniv.so'"
 
 [tool.cibuildwheel.macos]
+before-all = "brew install hdf5 || true"
 repair-wheel-command = "delocate-listdeps {wheel} && delocate-wheel -v -w {dest_dir} {wheel}"

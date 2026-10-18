@@ -1,17 +1,28 @@
 #pragma once
-#include <string>
-#include <vector>
+#include <array>
 #include <memory>
+#include <string>
 #include <tuple>
+#include <utility>
+#include <vector>
 
 namespace neuron::morphology {
+
+using Point3D = std::array<double, 3>;
+
+std::pair<Point3D, std::vector<Point3D>> contourcenter(const std::vector<Point3D>& xyz);
+
+std::pair<std::vector<Point3D>, std::vector<double>> contour2centroid(
+    const Point3D& mean,
+    const std::vector<Point3D>& points);
+
 class MorphIOWrapper {
   public:
     explicit MorphIOWrapper(const std::string& filename);
     MorphIOWrapper(const MorphIOWrapper&) = delete;
     MorphIOWrapper& operator=(const MorphIOWrapper&) = delete;
-    MorphIOWrapper(MorphIOWrapper&&);
-    MorphIOWrapper& operator=(MorphIOWrapper&&);
+    MorphIOWrapper(MorphIOWrapper&&) noexcept;
+    MorphIOWrapper& operator=(MorphIOWrapper&&) noexcept;
     ~MorphIOWrapper();
 
     std::vector<std::string> morph_as_hoc() const;

@@ -117,6 +117,41 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
 
     install(TARGETS ${hoc_module_name} DESTINATION ${NRN_INSTALL_PYTHON_PREFIX})
 
+    if(NRN_ENABLE_MORPHIO)
+      set(morphio_module_name morphio_api${pyver})
+      add_nrn_python_library(
+        morphio_api
+        TARGET
+        ${morphio_module_name}
+        PYTHON_VERSION
+        ${pyver}
+        LANGUAGE
+        "CXX"
+        SOURCES
+        ${PROJECT_SOURCE_DIR}/src/nrniv/morphology/morphio_wrapper/morphio_wrapper_bind.cpp
+        INCLUDES
+        ${PROJECT_SOURCE_DIR}/src/nrniv/morphology/morphio_wrapper
+        ${pyinc}
+        LIBRARIES
+        nrniv_lib
+        nrnpython${pyver}
+        ${nanobind_target}
+        INSTALL_REL_RPATH
+        ${libraries_rpath}
+        OUTPUT_DIR
+        ${PROJECT_BINARY_DIR}/lib/python/neuron)
+
+      if(NRN_LINK_AGAINST_PYTHON)
+        target_link_libraries(${morphio_module_name} PUBLIC ${pylib})
+      endif()
+
+      add_dependencies(${morphio_module_name} nrniv_lib)
+      if(TARGET morphio-external)
+        add_dependencies(${morphio_module_name} morphio-external)
+      endif()
+      install(TARGETS ${morphio_module_name} DESTINATION ${NRN_INSTALL_PYTHON_PREFIX})
+    endif()
+
   endforeach(val)
 else()
   # libnrnpython
@@ -170,6 +205,36 @@ else()
 
   install(TARGETS ${hoc_module_name} DESTINATION ${NRN_INSTALL_PYTHON_PREFIX})
 
+  if(NRN_ENABLE_MORPHIO)
+    set(morphio_module_name "morphio_api_module")
+    add_nrn_python_library(
+      morphio_api
+      TARGET
+      ${morphio_module_name}
+      PYTHON_VERSION
+      ${NRN_DEFAULT_PYTHON_VERSION}
+      LANGUAGE
+      "CXX"
+      SOURCES
+      ${PROJECT_SOURCE_DIR}/src/nrniv/morphology/morphio_wrapper/morphio_wrapper_bind.cpp
+      INCLUDES
+      ${PROJECT_SOURCE_DIR}/src/nrniv/morphology/morphio_wrapper
+      ${NRN_DEFAULT_PYTHON_INCLUDES}
+      LIBRARIES
+      nrniv_lib
+      nanobind
+      INSTALL_REL_RPATH
+      ${libraries_rpath}
+      OUTPUT_DIR
+      ${PROJECT_BINARY_DIR}/lib/python/neuron)
+
+    add_dependencies(${morphio_module_name} nrniv_lib)
+    if(TARGET morphio-external)
+      add_dependencies(${morphio_module_name} morphio-external)
+    endif()
+    install(TARGETS ${morphio_module_name} DESTINATION ${NRN_INSTALL_PYTHON_PREFIX})
+  endif()
+
 endif()
 
 configure_file(_config_params.py.in "${PROJECT_BINARY_DIR}/lib/python/neuron/_config_params.py"
@@ -177,4 +242,3 @@ configure_file(_config_params.py.in "${PROJECT_BINARY_DIR}/lib/python/neuron/_co
 
 install(FILES "${PROJECT_BINARY_DIR}/lib/python/neuron/_config_params.py"
         DESTINATION ${NRN_INSTALL_PYTHON_PREFIX})
-

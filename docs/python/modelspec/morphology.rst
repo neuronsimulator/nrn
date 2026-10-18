@@ -1,5 +1,7 @@
-Morphology Loading
-------------------
+:orphan:
+
+Morphology Loading (Python)
+---------------------------
 
 .. toctree::
     :maxdepth: 4

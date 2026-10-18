@@ -505,6 +505,7 @@ class HOCObject(ObjectDescription[Tuple[str, str]]):
 
     option_spec: OptionSpec = {
         "noindex": directives.flag,
+        "no-index": directives.flag,
         "noindexentry": directives.flag,
         "nocontentsentry": directives.flag,
         "module": directives.unchanged,

@@ -11,7 +11,7 @@ class MorphIOWrapper;
 
 // MorphIO API
 std::vector<std::string> morphio_load(std::filesystem::path const& path);
-void morphio_load(PyObject* pyObj, MorphIOWrapper& morph);
+void morphio_load(PyObject* pyObj, const MorphIOWrapper& morph);
 
 
 // Morphology constructs

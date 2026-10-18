@@ -34,11 +34,11 @@ if(NRN_ENABLE_THREADS)
   target_link_libraries(nrn-benchmarks Threads::Threads)
   list(APPEND catch2_targets nrn-benchmarks)
 endif()
-# TODO: currently M1 BBP runner yields different rounding results, disable it for the time being
 if(NRN_ENABLE_MORPHIO)
-  if(NOT CMAKE_SYSTEM_PROCESSOR MATCHES "arm64")
-    add_executable(nrn-morphio common/catch2_main.cpp unit_tests/morphio/morphio.cpp)
-    list(APPEND catch2_targets nrn-morphio)
+  add_executable(nrn-morphio common/catch2_main.cpp unit_tests/morphio/morphio.cpp)
+  list(APPEND catch2_targets nrn-morphio)
+  if(TARGET morphio-external)
+    add_dependencies(nrn-morphio morphio-external)
   endif()
 endif()
 foreach(target ${catch2_targets})
@@ -92,7 +92,7 @@ if(TARGET nrn-morphio)
   nrn_add_test(
     GROUP unit_tests
     NAME nrn-morphio
-    SCRIPT_PATTERNS "test/morphology/soma_single_point.h5"
+    SCRIPT_PATTERNS "test/morphology/soma_single_point.h5" "test/morphology/test.h5"
     COMMAND $<TARGET_FILE:nrn-morphio>)
 endif()
 

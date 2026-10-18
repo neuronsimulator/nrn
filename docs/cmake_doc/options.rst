@@ -749,7 +749,7 @@ NRN_ENABLE_MORPHIO:BOOL=ON
 
   This is enabled by default. If you want to disable it, set this option to ``OFF``.
 
-  More information about the MorphIO library can be found at https://github.com/BlueBrain/MorphIO.
+  More information about the MorphIO library can be found at https://github.com/openbraininstitute/MorphIO.
 
 NRN_LINK_AGAINST_PYTHON:BOOL=OFF
 --------------------------------

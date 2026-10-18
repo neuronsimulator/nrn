@@ -71,8 +71,7 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           brew install --cask xquartz
-          brew uninstall cmake || echo "CMake was not pre-installed"
-          brew install flex bison cmake mpich ninja
+          brew install flex bison cmake mpich ninja hdf5
           brew unlink mpich && brew install openmpi
           # Install newer version of Bash on MacOS
           brew install bash

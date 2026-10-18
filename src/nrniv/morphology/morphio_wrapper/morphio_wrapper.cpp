@@ -1,20 +1,26 @@
 #include "morphology/morphology.hpp"
 #include "morphio_wrapper.hpp"
+#include <algorithm>
+#include <cmath>
+#include <numeric>
+#include <stdexcept>
+#include <unordered_map>
+#include <Eigen/Dense>
+#include <Eigen/Eigenvalues>
 #include <morphio/morphology.h>
 #include <morphio/section.h>
 #include <morphio/soma.h>
 #include <fmt/core.h>
 
-namespace morphio {
-class Morphology;
-class Section;
-}  // namespace morphio
-
-
 namespace neuron::morphology {
 
+class MorphologyError: public std::runtime_error {
+  public:
+    using std::runtime_error::runtime_error;
+};
+
 struct MorphIOWrapper::MorphIOWrapperImpl {
-    MorphIOWrapperImpl(morphio::Morphology&& morph)
+    explicit MorphIOWrapperImpl(morphio::Morphology&& morph)
         : _morph{std::move(morph)}
         , _sections{_morph.sections()} {}
     ~MorphIOWrapperImpl() = default;
@@ -22,25 +28,46 @@ struct MorphIOWrapper::MorphIOWrapperImpl {
     std::vector<morphio::Section> _sections;
 };
 
-MorphIOWrapper::MorphIOWrapper(MorphIOWrapper&&) = default;
-MorphIOWrapper& MorphIOWrapper::operator=(MorphIOWrapper&&) = default;
+MorphIOWrapper::MorphIOWrapper(MorphIOWrapper&&) noexcept = default;
+MorphIOWrapper& MorphIOWrapper::operator=(MorphIOWrapper&&) noexcept = default;
 MorphIOWrapper::~MorphIOWrapper() = default;
 
-morphio::Point operator-(const morphio::Point& lhs, const morphio::Point& rhs) {
-    return morphio::Point{lhs[0] - rhs[0], lhs[1] - rhs[1], lhs[2] - rhs[2]};
+namespace {
+
+// Matches HOC Vector.interpolate implementation from ivocvect
+std::vector<double> hoc_interpolate(const std::vector<double>& xd,
+                                    const std::vector<double>& xs,
+                                    const std::vector<double>& ys) {
+    const auto ns = static_cast<int>(xs.size());
+    const auto nd = static_cast<int>(xd.size());
+    std::vector<double> yd(nd, 0.0);
+    if (ns == 0 || nd == 0) {
+        return yd;
+    }
+    int id = 0;
+    for (id = 0; id < nd && xd[id] <= xs[0]; ++id) {
+        yd[id] = ys[0];
+    }
+    for (int is = 1; is < ns && id < nd; ++is) {
+        if (xs[is] <= xs[is - 1]) {
+            continue;
+        }
+        while (xd[id] <= xs[is]) {
+            const double thet = (xd[id] - xs[is - 1]) / (xs[is] - xs[is - 1]);
+            yd[id] = (1.0 - thet) * ys[is - 1] + thet * ys[is];
+            ++id;
+            if (id >= nd) {
+                break;
+            }
+        }
+    }
+    for (; id < nd; ++id) {
+        yd[id] = ys[ns - 1];
+    }
+    return yd;
 }
 
-morphio::floatType norm(morphio::Point p) {
-    return sqrt(p[0] * p[0] + p[1] * p[1]);
-}
-
-std::vector<morphio::floatType> norm(morphio::range<const morphio::Point> points) {
-    std::vector<morphio::floatType> norms(points.size());
-    std::transform(points.begin(), points.end(), norms.begin(), [](morphio::Point p) {
-        return norm(p);
-    });
-    return norms;
-}
+}  // namespace
 
 std::pair<std::vector<morphio::Point>, std::vector<morphio::floatType>>
 single_point_sphere_to_circular_contour(morphio::Morphology& neuron) {
@@ -60,273 +87,158 @@ single_point_sphere_to_circular_contour(morphio::Morphology& neuron) {
     return std::make_pair(points, std::vector<morphio::floatType>(N, radius));
 }
 
-std::pair<morphio::Point, std::vector<morphio::Point>> contourcenter(
-    std::vector<morphio::Point> xyz) {
-    const int POINTS = 101;
+// C++ implementation of HOC Import3d_Section.contourcenter
+// (share/lib/hoc/import3d/import3d_sec.hoc)
+std::pair<Point3D, std::vector<Point3D>> contourcenter(const std::vector<Point3D>& xyz) {
+    constexpr int POINTS = 101;
+    const size_t n = xyz.size();
+    if (n == 0) {
+        return {Point3D{0.0, 0.0, 0.0}, {}};
+    }
 
-    std::vector<morphio::Point> points(xyz.size());
-    std::adjacent_difference(xyz.begin(),
-                             xyz.end(),
-                             points.begin(),
-                             [](morphio::Point a, morphio::Point b) {
-                                 return morphio::Point{b[0] - a[0], b[1] - a[1], 0.0};
-                             });
-    points[0] = points.back();
-    std::vector<morphio::floatType> perim = norm(points);
-    std::partial_sum(perim.begin(), perim.end(), perim.begin());
+    std::vector<double> perim(n, 0.0);
+    for (size_t i = 1; i < n; ++i) {
+        const double dx = xyz[i][0] - xyz[i - 1][0];
+        const double dy = xyz[i][1] - xyz[i - 1][1];
+        perim[i] = perim[i - 1] + std::hypot(dx, dy);
+    }
 
-    std::vector<morphio::floatType> d(POINTS);
-    std::iota(d.begin(), d.end(), 0);
-    std::transform(d.begin(), d.end(), d.begin(), [&](morphio::floatType x) {
-        return x * perim.back() / (POINTS - 1);
-    });
+    std::vector<double> d(POINTS);
+    const double step = perim.back() / (POINTS - 1);
+    for (int i = 0; i < POINTS; ++i) {
+        d[i] = i * step;
+    }
 
-    std::vector<morphio::Point> new_xyz(POINTS, morphio::Point{0, 0, 0});
-    std::transform(d.begin(), d.end(), new_xyz.begin(), [&](morphio::floatType x) {
-        morphio::Point result{0, 0, 0};
-        auto it = std::lower_bound(perim.begin(), perim.end(), x);
-        int j = it - perim.begin();
-        if (j == 0)
-            result = xyz.front();
-        else if (j == perim.size())
-            result = xyz.back();
-        else {
-            morphio::floatType t = (x - perim[j - 1]) / (perim[j] - perim[j - 1]);
-            for (int i = 0; i < 3; i++) {
-                result[i] = xyz[j - 1][i] + t * (xyz[j][i] - xyz[j - 1][i]);
-            }
+    std::vector<Point3D> new_xyz(POINTS, Point3D{0.0, 0.0, 0.0});
+    for (int c = 0; c < 3; ++c) {
+        std::vector<double> coord(n);
+        for (size_t i = 0; i < n; ++i) {
+            coord[i] = xyz[i][c];
         }
-        return result;
-    });
+        auto interp_c = hoc_interpolate(d, perim, coord);
+        for (int i = 0; i < POINTS; ++i) {
+            new_xyz[i][c] = interp_c[i];
+        }
+    }
 
-    morphio::Point mean{0, 0, 0};
-    for (int i = 0; i < 3; i++) {
-        mean[i] =
-            std::accumulate(new_xyz.begin(),
-                            new_xyz.end(),
-                            0.0,
-                            [&](morphio::floatType a, morphio::Point p) { return a + p[i]; }) /
-            POINTS;
+    Point3D mean{0.0, 0.0, 0.0};
+    for (int i = 0; i < POINTS; ++i) {
+        for (int c = 0; c < 3; ++c) {
+            mean[c] += new_xyz[i][c];
+        }
+    }
+    for (int c = 0; c < 3; ++c) {
+        mean[c] /= POINTS;
     }
 
     return {mean, new_xyz};
 }
 
-
-template <typename T>
-T interp1d(const std::vector<T>& x, const std::vector<T>& y, T xi) {
-    auto it = std::lower_bound(x.begin(), x.end(), xi);
-    if (it == x.begin()) {
-        return y.front();
-    } else if (it == x.end()) {
-        return y.back();
-    } else {
-        int i = std::distance(x.begin(), it) - 1;
-        T x0 = x[i];
-        T x1 = x[i + 1];
-        T y0 = y[i];
-        T y1 = y[i + 1];
-        return y0 + (y1 - y0) * (xi - x0) / (x1 - x0);
-    }
-}
-
-std::pair<std::vector<morphio::Point>, std::vector<morphio::floatType>> contour2centroid(
-    morphio::Point mean,
-    std::vector<morphio::Point> points) {
-    // find the major axis of the ellipsoid that best fits the shape
-    // assuming (falsely in general) that the center is the mean
-
-    std::vector<morphio::Point> new_points(points.size());
-    std::transform(points.begin(), points.end(), new_points.begin(), [&](morphio::Point p) {
-        return p - mean;
-    });
-
-    morphio::floatType eigen_values[3];
-    morphio::floatType eigen_vectors[3][3];
-    morphio::floatType covariance_matrix[3][3] = {0};
-
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++) {
-            for (int k = 0; k < points.size(); k++) {
-                covariance_matrix[i][j] += new_points[k][i] * new_points[k][j];
-            }
-            covariance_matrix[i][j] /= points.size();
-        }
+// C++ implementation of HOC Import3d_GUI.contour2centroid (share/lib/hoc/import3d/import3d_gui.hoc)
+std::pair<std::vector<Point3D>, std::vector<double>> contour2centroid(
+    const Point3D& mean,
+    const std::vector<Point3D>& points) {
+    const size_t n = points.size();
+    if (n < 3) {
+        throw MorphologyError("Failed to compute soma centroid from contour.");
     }
 
-    morphio::floatType max_eigen_value = -1;
-    int max_eigen_value_index = -1;
-    for (int i = 0; i < 3; i++) {
-        eigen_values[i] = covariance_matrix[i][i];
-        if (eigen_values[i] > max_eigen_value) {
-            max_eigen_value = eigen_values[i];
-            max_eigen_value_index = i;
-        }
+    // Center contour around mean
+    Eigen::MatrixXd pts(3, n);
+    for (size_t i = 0; i < n; ++i) {
+        pts(0, i) = points[i][0] - mean[0];
+        pts(1, i) = points[i][1] - mean[1];
+        pts(2, i) = points[i][2] - mean[2];
     }
 
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++) {
-            eigen_vectors[i][j] = (i == j) ? 1 : 0;
-        }
+    // Find the major and minor axes of the 3x3 symmetric covariance matrix
+    // SelfAdjointEigenSolver returns eigenvalues in ascending order (like numpy.linalg.eigh
+    // in openbraininstitute/neurodamus): [0]=smallest, [1]=middle (minor), [2]=largest (major)
+    const Eigen::Matrix3d m = pts * pts.transpose();
+    Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> es(m);
+    const Eigen::Matrix3d eigvecs = es.eigenvectors();
+
+    Eigen::Vector3d major = eigvecs.col(2);
+    // Orientation heuristic from import3d_gui.hoc: major axis points in positive direction
+    Eigen::Index abs_max_ind = 0;
+    major.cwiseAbs().maxCoeff(&abs_max_ind);
+    if (major(abs_max_ind) < 0) {
+        major = -major;
     }
 
-    for (int i = 0; i < 3; i++) {
-        if (i == max_eigen_value_index) {
-            continue;
-        }
+    // Minor axis is normal and in xy plane
+    Eigen::Vector3d minor = eigvecs.col(1);
+    minor(2) = 0.0;
+    if (minor.norm() / (major.norm() + 1e-100) < 1e-6) {
+        throw MorphologyError("Failed to compute soma centroid from contour.");
+    }
+    minor.normalize();
 
-        morphio::floatType a = covariance_matrix[i][i];
-        morphio::floatType b = covariance_matrix[i][max_eigen_value_index];
-        morphio::floatType c = covariance_matrix[max_eigen_value_index][max_eigen_value_index];
-
-        morphio::floatType lambda = (a + c - std::sqrt((a - c) * (a - c) + 4 * b * b)) / 2;
-
-        eigen_values[i] = lambda;
-        eigen_vectors[i][0] = -b / (a - lambda);
-        eigen_vectors[i][1] = 1;
-        eigen_vectors[i][2] = 0;
-        morphio::floatType norm = std::sqrt(eigen_vectors[i][0] * eigen_vectors[i][0] +
-                                            eigen_vectors[i][1] * eigen_vectors[i][1]);
-        eigen_vectors[i][0] /= norm;
-        eigen_vectors[i][1] /= norm;
+    std::vector<double> d(n);
+    std::vector<double> rad(n);
+    for (size_t i = 0; i < n; ++i) {
+        const Eigen::Vector3d pt = pts.col(i);
+        d[i] = pt.dot(major);
+        rad[i] = pt.dot(minor);
     }
 
-    morphio::Point major_axis{eigen_vectors[max_eigen_value_index][0],
-                              eigen_vectors[max_eigen_value_index][1],
-                              eigen_vectors[max_eigen_value_index][2]};
-    morphio::Point minor_axis{eigen_vectors[0][0], eigen_vectors[0][1], eigen_vectors[0][2]};
+    const auto imax = std::distance(d.begin(), std::max_element(d.begin(), d.end()));
+    std::rotate(d.begin(), d.begin() + imax, d.end());
+    std::rotate(rad.begin(), rad.begin() + imax, rad.end());
 
-    for (int i = 1; i < 3; i++) {
-        if (eigen_values[i] > eigen_values[max_eigen_value_index]) {
-            minor_axis =
-                morphio::Point{eigen_vectors[i][0], eigen_vectors[i][1], eigen_vectors[i][2]};
-        }
-    }
+    const auto imin = std::distance(d.begin(), std::min_element(d.begin(), d.end()));
+    std::vector<double> side2(d.begin() + imin, d.end());
+    std::vector<double> rad2(rad.begin() + imin, rad.end());
+    d.resize(imin);
+    rad.resize(imin);
+    std::reverse(d.begin(), d.end());
+    std::reverse(rad.begin(), rad.end());
 
-    minor_axis[2] = 0;
-
-    std::vector<morphio::floatType> major_coord(points.size());
-    std::vector<morphio::floatType> minor_coord(points.size());
-    std::transform(points.begin(), points.end(), major_coord.begin(), [&](morphio::Point p) {
-        return p[0] * major_axis[0] + p[1] * major_axis[1] + p[2] * major_axis[2];
-        ;
-    });
-    std::transform(points.begin(), points.end(), minor_coord.begin(), [&](morphio::Point p) {
-        return p[0] * minor_axis[0] + p[1] * minor_axis[1] + p[2] * minor_axis[2];
-    });
-
-    int imax = std::distance(major_coord.begin(),
-                             std::max_element(major_coord.begin(), major_coord.end()));
-    std::rotate(major_coord.begin(), major_coord.begin() + imax, major_coord.end());
-    std::rotate(minor_coord.begin(), minor_coord.begin() + imax, minor_coord.end());
-
-    int imin = std::distance(major_coord.begin(),
-                             std::min_element(major_coord.begin(), major_coord.end()));
-
-    std::vector<std::vector<morphio::floatType>> sides(2);
-    std::vector<std::vector<morphio::floatType>> rads(2);
-
-    sides[0].resize(imin);
-    sides[1].resize(major_coord.size() - imin);
-    rads[0].resize(imin);
-    rads[1].resize(major_coord.size() - imin);
-
-    std::copy(major_coord.begin(), major_coord.begin() + imin, sides[0].rbegin());
-    std::copy(major_coord.begin() + imin, major_coord.end(), sides[1].begin());
-    std::copy(minor_coord.begin(), minor_coord.begin() + imin, rads[0].rbegin());
-    std::copy(minor_coord.begin() + imin, minor_coord.end(), rads[1].begin());
-
-    for (int i_side = 0; i_side < 2; i_side++) {
-        std::vector<morphio::floatType> m = sides[i_side];
-        std::vector<morphio::floatType> idx(m.size(), true);
-
-        morphio::floatType last_val = m.back();
-        for (int i = m.size() - 2; i >= 0; i--) {
-            if (m[i] < last_val) {
-                last_val = m[i];
-            } else {
-                idx[i] = false;
+    // Keep only points that make each side monotonically increasing (convex)
+    auto make_convex = [](std::vector<double>& side, std::vector<double>& r) {
+        for (int j = static_cast<int>(side.size()) - 1; j > 0; --j) {
+            if (side[j] <= side[j - 1] + 1e-11) {
+                side.erase(side.begin() + j);
+                r.erase(r.begin() + j);
+                if (j != static_cast<int>(side.size())) {
+                    ++j;
+                }
             }
         }
+    };
+    make_convex(d, rad);
+    make_convex(side2, rad2);
 
-        sides[i_side].erase(std::remove_if(sides[i_side].begin(),
-                                           sides[i_side].end(),
-                                           [&](morphio::floatType val) {
-                                               if (&val < &sides[i_side][0] ||
-                                                   &val >= &sides[i_side][sides[i_side].size()]) {
-                                                   return false;
-                                               }
-                                               return !idx[&val - &sides[i_side][0]];
-                                           }),
-                            sides[i_side].end());
-
-        rads[i_side].erase(std::remove_if(rads[i_side].begin(),
-                                          rads[i_side].end(),
-                                          [&](morphio::floatType val) {
-                                              if (&val < &rads[i_side][0] ||
-                                                  &val >= &rads[i_side][rads[i_side].size()]) {
-                                                  return false;
-                                              }
-                                              return !idx[&val - &rads[i_side][0]];
-                                          }),
-                           rads[i_side].end());
+    std::vector<double> tobj = d;
+    tobj.insert(tobj.end(), side2.begin(), side2.end());
+    std::sort(tobj.begin(), tobj.end());
+    if (tobj.size() < 4) {
+        throw MorphologyError("Failed to compute soma centroid from contour.");
     }
 
-    std::vector<morphio::Point> new_return_points(21);
-    std::vector<morphio::floatType> new_major_coord(21);
-    std::vector<morphio::floatType> new_rads[2];
+    const double x_start = tobj[1];
+    const double x_end = tobj[tobj.size() - 2];
+    constexpr int N_OUT = 21;
+    std::vector<double> d_grid(N_OUT);
+    for (int i = 0; i < N_OUT; ++i) {
+        d_grid[i] = x_start + i * (x_end - x_start) / (N_OUT - 1);
+    }
 
-    std::iota(new_major_coord.begin(), new_major_coord.end(), 0);
-    std::transform(new_major_coord.begin(),
-                   new_major_coord.end(),
-                   new_major_coord.begin(),
-                   [&](morphio::floatType val) {
-                       return major_coord.front() + val *
-                                                        (major_coord.back() - major_coord.front()) /
-                                                        (new_major_coord.size() - 1);
-                   });
+    const auto rad_interp = hoc_interpolate(d_grid, d, rad);
+    const auto rad2_interp = hoc_interpolate(d_grid, side2, rad2);
 
-    new_rads[0].resize(new_major_coord.size());
-    new_rads[1].resize(new_major_coord.size());
+    std::vector<Point3D> new_return_points(N_OUT);
+    std::vector<double> diameters(N_OUT);
+    const Eigen::Vector3d mean_vec(mean[0], mean[1], mean[2]);
+    for (int i = 0; i < N_OUT; ++i) {
+        const Eigen::Vector3d pt = major * d_grid[i] + mean_vec;
+        new_return_points[i] = {pt(0), pt(1), pt(2)};
+        diameters[i] = std::abs(rad_interp[i] - rad2_interp[i]);
+    }
 
-    std::transform(new_major_coord.begin(),
-                   new_major_coord.end(),
-                   new_rads[0].begin(),
-                   [&](morphio::floatType val) {
-                       if (sides[0].empty() || rads[0].empty()) {
-                           return 0.0f;
-                       }
-                       return interp1d(sides[0], rads[0], val);
-                   });
-
-    std::transform(new_major_coord.begin(),
-                   new_major_coord.end(),
-                   new_rads[1].begin(),
-                   [&](morphio::floatType val) {
-                       if (sides[1].empty() || rads[1].empty()) {
-                           return 0.0f;
-                       }
-                       return interp1d(sides[1], rads[1], val);
-                   });
-
-    std::transform(new_major_coord.begin(),
-                   new_major_coord.end(),
-                   new_return_points.begin(),
-                   [&](morphio::floatType val) {
-                       return morphio::Point{major_axis[0] * val + mean[0],
-                                             major_axis[1] * val + mean[1],
-                                             major_axis[2] * val + mean[2]};
-                   });
-
-    std::vector<morphio::floatType> diameters(new_rads[0].size());
-    std::transform(new_rads[0].begin(),
-                   new_rads[0].end(),
-                   new_rads[1].begin(),
-                   diameters.begin(),
-                   [](morphio::floatType a, morphio::floatType b) { return std::abs(a - b); });
-
+    // Avoid 0 diameter ends
     diameters.front() = (diameters[0] + diameters[1]) / 2.0;
-    diameters.back() = (diameters[diameters.size() - 2] + diameters.back()) / 2.0;
+    diameters.back() = (diameters[N_OUT - 2] + diameters[N_OUT - 1]) / 2.0;
 
     return {new_return_points, diameters};
 }
@@ -334,41 +246,31 @@ std::pair<std::vector<morphio::Point>, std::vector<morphio::floatType>> contour2
 MorphIOWrapper::MorphIOWrapper(const std::string& filename)
     : _pimpl{
           std::make_unique<MorphIOWrapperImpl>(morphio::Morphology(filename, morphio::NRN_ORDER))} {
-    int id = 1;
-    int count = 0;
-    int prev_type = _pimpl->_sections[0].type();
     _section_index_to_name.emplace_back("soma");
     _section_type_distribution.push_back({1, -1, 1});
-    int idx_adjust = 0;
-    int current_type = -1;
-    int i = 0;
-    for (const auto& sec: _pimpl->_sections) {
-        if (sec.type() == prev_type) {
-            ++count;
-        } else {
-            _section_type_distribution.push_back({prev_type, id, count});
+    if (!_pimpl->_sections.empty()) {
+        std::vector<int> type_order;
+        std::unordered_map<int, int> type_counts;
+        for (const auto& sec: _pimpl->_sections) {
+            const int t = sec.type();
+            if (type_counts.find(t) == type_counts.end()) {
+                type_order.push_back(t);
+                type_counts[t] = 0;
+            }
+            ++type_counts[t];
+        }
+        int id = 1;
+        for (const int t: type_order) {
+            _section_type_distribution.push_back({t, id, type_counts[t]});
             ++id;
-            count = 1;
-            prev_type = sec.type();
         }
-        if (sec.type() != current_type) {
-            current_type = sec.type();
-            idx_adjust = i;
+        std::unordered_map<int, int> type_next_index;
+        for (const auto& sec: _pimpl->_sections) {
+            const int t = sec.type();
+            const int idx = type_next_index[t]++;
+            _section_index_to_name.emplace_back(neuron::morphology::name(t, idx));
         }
-        _section_index_to_name.emplace_back(neuron::morphology::name(current_type, i - idx_adjust));
-        ++i;
     }
-    _section_type_distribution.push_back({prev_type, id, count});
-    // print _section_type_distribution
-    // for (const auto& [type_id, start_id, count] : _section_type_distribution) {
-    //     std::cout << "type_id: " << type_id << " start_id: " << start_id << " count: " << count
-    //     << std::endl;
-    // }
-
-    // print _section_index_to_name
-    // for (const auto& name : _section_index_to_name) {
-    //     std::cout << name << std::endl;
-    // }
 }
 
 // future improvement: stor_pt3d_vec
@@ -377,29 +279,19 @@ std::vector<std::string> MorphIOWrapper::morph_as_hoc() const {
 
     // generate create commands
     for (const auto& [type_id, start_id, count]: _section_type_distribution) {
-        std::string tstr = type2name(type_id);
-        std::string tstr1 = "create " + tstr + "[" + std::to_string(count) + "]";
-        cmds.push_back(tstr1);
-        tstr1 = mksubset(type_id, count, tstr);
-        cmds.push_back(tstr1);
+        const std::string tstr = type2name(type_id);
+        cmds.push_back(fmt::format("create {}[{}]", tstr, count));
+        cmds.push_back(mksubset(type_id, count, tstr));
     }
 
     cmds.emplace_back("forall all.append");
 
-    // generate 3D soma points commands. Order is reversed wrt NEURON's soma points.
+    // generate 3D soma points commands
     const auto& soma_points = _pimpl->_morph.soma().points();
     const auto& soma_diameters = _pimpl->_morph.soma().diameters();
 
-    // for (size_t i = soma_points.size(); i > 0; --i) {
-    //     const auto& p = soma_points[i - 1];
-    //     const auto& d = soma_diameters[i - 1];
-    //     cmds.emplace_back("soma { pt3dadd(" + fmt::format("{:.8g}", p[0]) + ", " +
-    //     fmt::format("{:.8g}", p[1]) + ", " + fmt::format("{:.8g}", p[2]) + ", " +
-    //     fmt::format("{:.8g}", d) + ") }");
-    // }
-
-    // convert soma_points to std::vector<std::array<double, 3>>
-    std::vector<morphio::Point> soma_points_vec;
+    std::vector<Point3D> soma_points_vec;
+    soma_points_vec.reserve(soma_points.size());
     for (const auto& point: soma_points) {
         soma_points_vec.push_back({point[0], point[1], point[2]});
     }
@@ -408,12 +300,11 @@ std::vector<std::string> MorphIOWrapper::morph_as_hoc() const {
     case morphio::SomaType::SOMA_SIMPLE_CONTOUR: {
         auto [mean, contour_xyz] = contourcenter(soma_points_vec);
         auto [new_xyz, new_diams] = contour2centroid(mean, contour_xyz);
-        for (size_t i = new_xyz.size(); i > 0; --i) {
-            const auto& p = new_xyz[i - 1];
-            const auto& d = new_diams[i - 1];
-            cmds.emplace_back("soma { pt3dadd(" + fmt::format("{:.8g}", p[0]) + ", " +
-                              fmt::format("{:.8g}", p[1]) + ", " + fmt::format("{:.8g}", p[2]) +
-                              ", " + fmt::format("{:.8g}", d) + ") }");
+        for (size_t i = 0; i < new_xyz.size(); ++i) {
+            const auto& p = new_xyz[i];
+            const auto& d = new_diams[i];
+            cmds.push_back(fmt::format(
+                "soma {{ pt3dadd({:.8g}, {:.8g}, {:.8g}, {:.8g}) }}", p[0], p[1], p[2], d));
         }
     } break;
     case morphio::SomaType::SOMA_SINGLE_POINT: {
@@ -421,51 +312,59 @@ std::vector<std::string> MorphIOWrapper::morph_as_hoc() const {
         for (size_t i = new_xyz.size(); i > 0; --i) {
             const auto& p = new_xyz[i - 1];
             const auto& d = new_diams[i - 1];
-            cmds.emplace_back("soma { pt3dadd(" + fmt::format("{:.8g}", p[0]) + ", " +
-                              fmt::format("{:.8g}", p[1]) + ", " + fmt::format("{:.8g}", p[2]) +
-                              ", " + fmt::format("{:.8g}", d) + ") }");
+            cmds.push_back(fmt::format(
+                "soma {{ pt3dadd({:.8g}, {:.8g}, {:.8g}, {:.8g}) }}", p[0], p[1], p[2], d));
+        }
+    } break;
+    case morphio::SomaType::SOMA_NEUROMORPHO_THREE_POINT_CYLINDERS: {
+        const double x0 = soma_points[0][0];
+        const double y0 = soma_points[0][1];
+        const double z0 = soma_points[0][2];
+        const double d0 = soma_diameters[0];
+        const double r0 = d0 / 2.0;
+        for (const double x: {x0 - r0, x0, x0 + r0}) {
+            cmds.push_back(
+                fmt::format("soma {{ pt3dadd({:.8g}, {:.8g}, {:.8g}, {:.8g}) }}", x, y0, z0, d0));
+        }
+    } break;
+    case morphio::SomaType::SOMA_CYLINDERS: {
+        for (size_t i = 0; i < soma_points.size(); ++i) {
+            const auto& p = soma_points[i];
+            const auto& d = soma_diameters[i];
+            cmds.push_back(fmt::format(
+                "soma {{ pt3dadd({:.8g}, {:.8g}, {:.8g}, {:.8g}) }}", p[0], p[1], p[2], d));
         }
     } break;
     default:
-        throw std::runtime_error("Soma type not supported: " +
-                                 std::to_string(static_cast<int>(_pimpl->_morph.soma().type())));
-        break;
+        throw MorphologyError(fmt::format("Soma type not supported: {}",
+                                          static_cast<int>(_pimpl->_morph.soma().type())));
     }
 
-
     // generate sections connect + their respective 3D points commands
-    auto i = 0;
-    for_each(_pimpl->_sections.begin(),
-             _pimpl->_sections.end(),
-             [&cmds, &i, this](const morphio::Section& sec) {
-                 const size_t index = i + 1;
-                 std::string tstr = _section_index_to_name[index];
+    for (size_t sec_idx = 0; sec_idx < _pimpl->_sections.size(); ++sec_idx) {
+        const auto& sec = _pimpl->_sections[sec_idx];
+        const size_t index = sec_idx + 1;
+        const std::string& tstr = _section_index_to_name[index];
 
-                 if (!sec.isRoot()) {
-                     const auto& parent = sec.parent();
-                     const size_t parent_index = parent.id() + 1;
-                     std::string tstr1 = _section_index_to_name[parent_index] + " connect " + tstr +
-                                         "(0), 1";
-                     cmds.emplace_back(tstr1);
+        if (!sec.isRoot()) {
+            const auto& parent = sec.parent();
+            const size_t parent_index = parent.id() + 1;
+            cmds.push_back(
+                fmt::format("{} connect {}(0), 1", _section_index_to_name[parent_index], tstr));
+        } else {
+            cmds.push_back(fmt::format("soma connect {}(0), 0.5", tstr));
+        }
 
-                 } else {
-                     std::string tstr1 = "soma connect " + tstr + "(0), 0.5";
-                     cmds.emplace_back(tstr1);
-                 }
-
-                 // 3D point info
-                 const auto& points = sec.points();
-                 const auto& diameters = sec.diameters();
-                 for (size_t j = 0; j < points.size(); ++j) {
-                     const auto& p = points[j];
-                     const auto& d = diameters[j];
-                     cmds.emplace_back(tstr + " { pt3dadd(" + fmt::format("{:.8g}", p[0]) + ", " +
-                                       fmt::format("{:.8g}", p[1]) + ", " +
-                                       fmt::format("{:.8g}", p[2]) + ", " +
-                                       fmt::format("{:.8g}", d) + ") }");
-                 }
-                 ++i;
-             });
+        // 3D point info
+        const auto& points = sec.points();
+        const auto& diameters = sec.diameters();
+        for (size_t j = 0; j < points.size(); ++j) {
+            const auto& p = points[j];
+            const auto& d = diameters[j];
+            cmds.push_back(fmt::format(
+                "{} {{ pt3dadd({:.8g}, {:.8g}, {:.8g}, {:.8g}) }}", tstr, p[0], p[1], p[2], d));
+        }
+    }
 
     return cmds;
 }
