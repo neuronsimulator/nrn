@@ -165,7 +165,7 @@ environment-pass = [
 #   libnrniv: we ship precompiled version of neurondemo containing libnrnmech.so
 #             which is linked to libnrniv.so. auditwheel manipulate rpaths and
 #             ships an extra copy of libnrniv.so and hence exclude it here.
-repair-wheel-command = "auditwheel -v repair -w {dest_dir} {wheel} --exclude 'libgomp.so.1' --exclude 'libnrniv.so'"
+repair-wheel-command = "auditwheel -v repair -w {dest_dir} {wheel} --exclude 'libgomp.so.1' --exclude 'libnrniv.so' --exclude 'libmorphio.so'"
 
 [tool.cibuildwheel.macos]
 before-all = "brew install hdf5 || true"

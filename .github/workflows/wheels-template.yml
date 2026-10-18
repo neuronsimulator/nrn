@@ -149,7 +149,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt update
-          sudo apt install -y mpich openmpi-bin libopenmpi-dev libmpich-dev ninja-build
+          sudo apt install -y mpich openmpi-bin libopenmpi-dev libmpich-dev ninja-build libhdf5-dev
           # Ubuntu 24.04: pin working mpich from ci/deps (no Launchpad download).
           # See ci/deps/README.md and LP#2072338.
           bash ci/deps/install_mpich_noble.sh
