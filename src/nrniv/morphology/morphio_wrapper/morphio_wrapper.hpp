@@ -25,7 +25,7 @@ class MorphIOWrapper {
     MorphIOWrapper& operator=(MorphIOWrapper&&) noexcept;
     ~MorphIOWrapper();
 
-    std::vector<std::string> morph_as_hoc() const;
+    std::vector<std::string> to_hoc() const;
 
     // Getter for _section_index_to_name
     inline const std::vector<std::string>& section_index_to_name() const {

@@ -72,7 +72,7 @@ TEST_CASE("MorphIOWrapper", "[NEURON][MorphIO][MorphIOWrapper][SinglePointSoma]"
         neuron::morphology::MorphIOWrapper morph{"test/morphology/soma_single_point.h5"};
 
         THEN("We check the HOC commands match the expected output") {
-            REQUIRE(morph.morph_as_hoc() == nrn::test::soma_single_point_h5_hoc);
+            REQUIRE(morph.to_hoc() == nrn::test::soma_single_point_h5_hoc);
         }
 
         THEN("We check the section index to names match expected ones") {
@@ -116,7 +116,7 @@ TEST_CASE("MorphIO Contour Soma Geometry", "[NEURON][MorphIO][ContourSoma]") {
 
     WHEN("We load test/morphology/test.h5 with a simple contour soma") {
         neuron::morphology::MorphIOWrapper morph{"test/morphology/test.h5"};
-        const auto cmds = morph.morph_as_hoc();
+        const auto cmds = morph.to_hoc();
         REQUIRE(!cmds.empty());
         REQUIRE(morph.section_index_to_name().front() == "soma");
         REQUIRE(hoc_oc("objref cell_contour\n"
@@ -144,7 +144,7 @@ TEST_CASE("MorphIO Three Point SOMA SWC", "[NEURON][MorphIO][ThreePointSoma]") {
         const auto c91662_path =
             find_file("share/lib/python/neuron/rxdtests/tests/c91662.swc").string();
         neuron::morphology::MorphIOWrapper morph{c91662_path};
-        const auto cmds = morph.morph_as_hoc();
+        const auto cmds = morph.to_hoc();
         REQUIRE(!cmds.empty());
         REQUIRE(morph.section_index_to_name().front() == "soma");
         // NeuroMorpho 3-point cylinder soma emits 3 points along X with radius = d0/2
@@ -171,7 +171,7 @@ TEST_CASE("MorphIO Cylinder SOMA and Heterogeneous Neurites", "[NEURON][MorphIO]
                 .string();
         if (std::filesystem::exists(frustum_swc)) {
             neuron::morphology::MorphIOWrapper morph{frustum_swc};
-            REQUIRE(count_soma_points(morph.morph_as_hoc()) == 2);
+            REQUIRE(count_soma_points(morph.to_hoc()) == 2);
         }
     }
 

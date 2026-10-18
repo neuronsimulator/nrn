@@ -22,7 +22,7 @@ void morphio_load_file(nb::handle pyObj, const std::string& filename) {
 NB_MODULE(morphio_api, m) {
     nb::class_<neuron::morphology::MorphIOWrapper>(m, "MorphIOWrapper")
         .def(nb::init<const std::string&>())
-        .def("morph_as_hoc", &neuron::morphology::MorphIOWrapper::morph_as_hoc)
+        .def("to_hoc", &neuron::morphology::MorphIOWrapper::to_hoc)
         .def_prop_ro("section_index_to_name",
                      &neuron::morphology::MorphIOWrapper::section_index_to_name)
         .def_prop_ro("section_type_distribution",

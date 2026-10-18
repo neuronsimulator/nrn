@@ -14,7 +14,7 @@
 
 namespace neuron::morphology {
 std::vector<std::string> morphio_load(std::filesystem::path const& path) {
-    return MorphIOWrapper{path}.morph_as_hoc();
+    return MorphIOWrapper{path}.to_hoc();
 }
 
 
@@ -61,7 +61,7 @@ void morphio_load(PyObject* pyObj, const MorphIOWrapper& morph) {
         hoc_execerror("morphio_load requires a Cell object", nullptr);
     }
 
-    auto result = morph.morph_as_hoc();
+    auto result = morph.to_hoc();
     // execute the hoc code in the cell_obj context
     auto err = 0.;
     for (const auto& s: result) {

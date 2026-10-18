@@ -277,7 +277,7 @@ MorphIOWrapper::MorphIOWrapper(const std::string& filename)
 }
 
 // future improvement: stor_pt3d_vec
-std::vector<std::string> MorphIOWrapper::morph_as_hoc() const {
+std::vector<std::string> MorphIOWrapper::to_hoc() const {
     std::vector<std::string> cmds;
 
     // generate create commands

@@ -55,7 +55,7 @@ MorphIO Python Classes
 
         Initialize the ``MorphIOWrapper`` object with a file path that contains morphology data.
 
-    .. py:method:: morph_as_hoc(self)
+    .. py:method:: to_hoc(self)
         :noindex:
 
         Get the HOC morphology as HOC commands.

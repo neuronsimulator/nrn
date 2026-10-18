@@ -78,12 +78,12 @@ MorphIO API
         Description:
             ``MorphIOWrapper`` is available through the Python ``neuron.morphio_api`` submodule. In HOC, use :func:`morphio_load` or ``morphio_read``.
 
-.. method:: MorphIOWrapper.morph_as_hoc
+.. method:: MorphIOWrapper.to_hoc
 
     .. tab:: Python
 
         Syntax:
-            ``cmds = m.morph_as_hoc()``
+            ``cmds = m.to_hoc()``
 
         Description:
             Returns the list of HOC commands that instantiate the morphology sections, subsets, soma 3D points, connections, and neurite 3D points.

@@ -61,7 +61,7 @@ def test_morphio_load_from_wrapper_binding():
     """test that we can import at the top level without error"""
     cell = h.HocBasicCell()
     m = morphio_api.MorphIOWrapper("test/morphology/test.h5")
-    assert len(m.morph_as_hoc()) > 0
+    assert len(m.to_hoc()) > 0
     assert m.section_index_to_name[0] == "soma"
     assert m.section_type_distribution[0] == (1, -1, 1)
     morphio_api.morphio_load(cell, m)
@@ -379,7 +379,7 @@ def test_morphio_h5_morphologies():
         m = morphio_api.MorphIOWrapper(fname)
         assert len(m.section_index_to_name) == expected_secs
         assert m.section_index_to_name[0] == "soma"
-        assert len(m.morph_as_hoc()) > 0
+        assert len(m.to_hoc()) > 0
 
 
 def test_morphio_multi_contour_error():
