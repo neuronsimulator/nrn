@@ -1325,7 +1325,7 @@ neuron::container::generic_data_handle nrnpy_rangepointer(Section* sec,
 #if EXTRACELLULAR
     if (s->u.rng.type == EXTRACELL) {
         auto* nd = node_ptr(sec, d, nullptr);
-        double* pd{nrn_vext_pd(s, 0, nd)};
+        double* pd{nrn_vext_pd(s, idx, nd)};
         if (pd) {
             return neuron::container::data_handle<double>{pd};
         }
