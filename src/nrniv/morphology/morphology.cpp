@@ -23,8 +23,7 @@ std::string type2name(int type_id) {
                                                                         {2, "axon"},
                                                                         {3, "dend"},
                                                                         {4, "apic"}};
-    auto it = type2name_dict.find(type_id);
-    if (it != type2name_dict.end()) {
+    if (const auto it = type2name_dict.find(type_id); it != type2name_dict.end()) {
         return it->second;
     }
     return (type_id < 0) ? fmt::format("minus_{}", -type_id) : fmt::format("dend_{}", type_id);
@@ -35,9 +34,8 @@ std::string mksubset(int type_id, [[maybe_unused]] int freq, const std::string& 
                                                                        {2, "axonal"},
                                                                        {3, "basal"},
                                                                        {4, "apical"}};
-    auto it = mksubset_dict.find(type_id);
     std::string tstr;
-    if (it != mksubset_dict.end()) {
+    if (const auto it = mksubset_dict.find(type_id); it != mksubset_dict.end()) {
         tstr = it->second;
     } else if (type_id < 0) {
         tstr = fmt::format("minus_{}set", -type_id);

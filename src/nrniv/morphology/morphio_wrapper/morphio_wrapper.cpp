@@ -40,7 +40,7 @@ std::vector<double> hoc_interpolate(const std::vector<double>& xd,
                                     const std::vector<double>& ys) {
     const auto ns = static_cast<int>(xs.size());
     const auto nd = static_cast<int>(xd.size());
-    std::vector<double> yd(nd, 0.0);
+    std::vector yd(nd, 0.0);
     if (ns == 0 || nd == 0) {
         return yd;
     }
@@ -48,17 +48,17 @@ std::vector<double> hoc_interpolate(const std::vector<double>& xd,
     for (id = 0; id < nd && xd[id] <= xs[0]; ++id) {
         yd[id] = ys[0];
     }
-    for (int is = 1; is < ns && id < nd; ++is) {
+    for (int is = 1; is < ns; ++is) {
+        if (id >= nd) {
+            break;
+        }
         if (xs[is] <= xs[is - 1]) {
             continue;
         }
-        while (xd[id] <= xs[is]) {
+        while (id < nd && xd[id] <= xs[is]) {
             const double thet = (xd[id] - xs[is - 1]) / (xs[is] - xs[is - 1]);
             yd[id] = (1.0 - thet) * ys[is - 1] + thet * ys[is];
             ++id;
-            if (id >= nd) {
-                break;
-            }
         }
     }
     for (; id < nd; ++id) {
@@ -96,7 +96,7 @@ std::pair<Point3D, std::vector<Point3D>> contourcenter(const std::vector<Point3D
         return {Point3D{0.0, 0.0, 0.0}, {}};
     }
 
-    std::vector<double> perim(n, 0.0);
+    std::vector perim(n, 0.0);
     for (size_t i = 1; i < n; ++i) {
         const double dx = xyz[i][0] - xyz[i - 1][0];
         const double dy = xyz[i][1] - xyz[i - 1][1];
@@ -109,7 +109,7 @@ std::pair<Point3D, std::vector<Point3D>> contourcenter(const std::vector<Point3D
         d[i] = i * step;
     }
 
-    std::vector<Point3D> new_xyz(POINTS, Point3D{0.0, 0.0, 0.0});
+    std::vector new_xyz(POINTS, Point3D{0.0, 0.0, 0.0});
     for (int c = 0; c < 3; ++c) {
         std::vector<double> coord(n);
         for (size_t i = 0; i < n; ++i) {
@@ -196,13 +196,16 @@ std::pair<std::vector<Point3D>, std::vector<double>> contour2centroid(
 
     // Keep only points that make each side monotonically increasing (convex)
     auto make_convex = [](std::vector<double>& side, std::vector<double>& r) {
-        for (int j = static_cast<int>(side.size()) - 1; j > 0; --j) {
+        int j = static_cast<int>(side.size()) - 1;
+        while (j > 0) {
             if (side[j] <= side[j - 1] + 1e-11) {
                 side.erase(side.begin() + j);
                 r.erase(r.begin() + j);
-                if (j != static_cast<int>(side.size())) {
-                    ++j;
+                if (j == static_cast<int>(side.size())) {
+                    --j;
                 }
+            } else {
+                --j;
             }
         }
     };
