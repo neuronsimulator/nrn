@@ -82,19 +82,22 @@ NB_MODULE(morphio_api, m) {
 
     m.def("morphio_load",
           &morphio_load_wrapper,
-          "cell"_a,
+          "cell"_a.none(),
           "morph"_a,
           "Load morphology from MorphIOWrapper into cell.");
     m.def("morphio_load",
           &morphio_load_file,
-          "cell"_a,
+          "cell"_a.none(),
           "filename"_a,
           "Load morphology from file into cell.");
     m.def("load",
           &morphio_load_wrapper,
-          "cell"_a,
+          "cell"_a.none(),
           "morph"_a,
           "Load morphology from MorphIOWrapper into cell.");
-    m.def(
-        "load", &morphio_load_file, "cell"_a, "filename"_a, "Load morphology from file into cell.");
+    m.def("load",
+          &morphio_load_file,
+          "cell"_a.none(),
+          "filename"_a,
+          "Load morphology from file into cell.");
 }

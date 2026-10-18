@@ -320,11 +320,41 @@ TEST_CASE("MorphIO Edge Cases and Error Handling", "[NEURON][MorphIO][EdgeCases]
         // Collinear points along X axis (minor axis is zero -> ratio < 1e-6)
         std::vector<Point3D> collinear = {Point3D{-1, 0, 0}, Point3D{0, 0, 0}, Point3D{1, 0, 0}};
         CHECK_THROWS_AS(neuron::morphology::contour2centroid(mean, collinear), std::runtime_error);
+
+        // Three non-collinear points (< 4 points in convex hull)
+        std::vector<Point3D> three_pts = {Point3D{0, 0, 0}, Point3D{1, 0, 0}, Point3D{0, 1, 0}};
+        CHECK_THROWS_AS(neuron::morphology::contour2centroid(mean, three_pts), std::runtime_error);
+    }
+
+    SECTION("MorphIOWrapper move constructor and assignment") {
+        auto fname = find_file("test/morphology/soma_single_point.h5").string();
+        neuron::morphology::MorphIOWrapper m1(fname);
+        CHECK(!m1.to_hoc().empty());
+        neuron::morphology::MorphIOWrapper m2(std::move(m1));
+        CHECK(!m2.to_hoc().empty());
+        neuron::morphology::MorphIOWrapper m3(fname);
+        m3 = std::move(m2);
+        CHECK(!m3.to_hoc().empty());
+    }
+
+    SECTION("find_file direct and non-existent search paths") {
+        auto current = std::filesystem::current_path();
+        CHECK(find_file(current) == current);
+        std::filesystem::path non_existent("/path_that_does_not_exist/test.h5");
+        CHECK(find_file(non_existent) == non_existent);
     }
 
     SECTION("HOC morphio_load invalid argument counts") {
         REQUIRE(hoc_oc("morphio_load()") == 1);
         REQUIRE(hoc_oc("objref c_err\n c_err = new HocBasicCell()\n morphio_load(c_err)") == 1);
+    }
+
+    SECTION("HOC morphio_load failure in cell context") {
+        REQUIRE(hoc_oc("begintemplate BrokenHocCell\nendtemplate BrokenHocCell\n"
+                       "objref broken_cell\nbroken_cell = new BrokenHocCell()") == 0);
+        auto fname = find_file("test/morphology/soma_single_point.h5").string();
+        std::string cmd = fmt::format("morphio_load(broken_cell, \"{}\")", fname);
+        REQUIRE(hoc_oc(cmd.c_str()) == 1);
     }
 
     SECTION("HOC morphio_load with optional 3rd argument debug export") {

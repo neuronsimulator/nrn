@@ -459,3 +459,59 @@ def test_morphio_multi_contour_error():
 
     with pytest.raises(RuntimeError):
         morphio_api.MorphIOWrapper(fname)
+
+
+def test_morphio_invalid_path_type():
+    """Verify TypeError when path argument is not str or PathLike"""
+    with pytest.raises(TypeError, match="Expected str or os.PathLike"):
+        morphio_api.MorphIOWrapper(12345)
+
+
+def test_morphio_load_requires_cell():
+    """Verify morphio_load requires a valid Cell object"""
+    fname = find_file("test/morphology/soma_single_point.h5")
+    m = morphio_api.MorphIOWrapper(fname)
+    with pytest.raises(RuntimeError, match="requires a Cell object"):
+        morphio_api.morphio_load(None, m)
+    with pytest.raises(RuntimeError, match="requires a Cell object"):
+        morphio_api.morphio_load(None, fname)
+    with pytest.raises(RuntimeError):
+        morphio_api.morphio_load("not_a_cell", m)
+
+
+def test_morphio_load_cell_context_failure():
+    """Verify error propagation when execution fails inside cell context"""
+    h(
+        """
+        begintemplate BrokenCell
+        endtemplate BrokenCell
+        """
+    )
+    b = h.BrokenCell()
+    fname = find_file("test/morphology/soma_single_point.h5")
+    m = morphio_api.MorphIOWrapper(fname)
+    with pytest.raises(RuntimeError, match="morphio_load failed"):
+        m.instantiate(b)
+
+
+def test_morphio_load_hoc_write_permission_error(tmp_path):
+    """Verify error when morphio_load fails to write <stem>.hoc"""
+    swc = tmp_path / "readonly.swc"
+    swc.write_text("1 1 0 0 0 1 -1\n")
+    os.chmod(tmp_path, 0o555)
+    cell = h.HocBasicCell()
+    try:
+        with pytest.raises(RuntimeError, match="Cannot open file for writing"):
+            h.morphio_load(cell, str(swc), 1)
+    finally:
+        os.chmod(tmp_path, 0o755)
+
+
+def test_morphio_swc_custom_types(tmp_path):
+    """Verify custom SWC section types formatting in type2name and mksubset"""
+    swc = tmp_path / "custom.swc"
+    swc.write_text("1 1 0 0 0 1 -1\n" "2 5 0 1 0 0.5 1\n" "3 5 0 2 0 0.5 2\n")
+    m = morphio_api.MorphIOWrapper(str(swc))
+    assert "dend_5[0]" in m.section_names
+    cmds = m.to_hoc()
+    assert any("dendritic_5" in c for c in cmds)
