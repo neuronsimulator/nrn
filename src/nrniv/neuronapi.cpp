@@ -50,6 +50,7 @@ extern "C" void nrnpy_set_pr_etal(int (*cbpr_stdoe)(int, char*), int (*cbpass)()
 int ivocmain_session(int, const char**, const char**, int start_session);
 void simpleconnectsection();
 extern Object* hoc_newobj1(Symbol*, int);
+extern void hoc_unref_defer();
 extern std::tuple<int, const char**> nrn_mpi_setup(int argc, const char** argv);
 
 extern "C" {
@@ -898,22 +899,26 @@ int nrn_method_call_nothrow(Object* obj,
         error_msg[0] = '\0';
     }
 
+    int status = 0;
     try {
         OcJump::execute_throw_on_exception(obj, method_sym, narg);
-        return 0;  // Success
     } catch (const std::exception& e) {
         if (error_msg && error_msg_size > 0) {
             strncpy(error_msg, e.what(), error_msg_size - 1);
             error_msg[error_msg_size - 1] = '\0';
         }
-        return 1;  // Error
+        status = 1;
     } catch (...) {
         if (error_msg && error_msg_size > 0) {
             strncpy(error_msg, "Unknown exception occurred", error_msg_size - 1);
             error_msg[error_msg_size - 1] = '\0';
         }
-        return 1;  // Error
+        status = 1;
     }
+    // Release the temporary object HOC kept alive during the call (hoc_pop_defer),
+    // as the Python binding does after each call; the result has its own reference.
+    hoc_unref_defer();
+    return status;
 }
 
 int nrn_function_call_nothrow(Symbol* sym, int narg, char* error_msg, size_t error_msg_size) {
@@ -922,22 +927,26 @@ int nrn_function_call_nothrow(Symbol* sym, int narg, char* error_msg, size_t err
         error_msg[0] = '\0';
     }
 
+    int status = 0;
     try {
         OcJump::execute_throw_on_exception(sym, narg);
-        return 0;  // Success
     } catch (const std::exception& e) {
         if (error_msg && error_msg_size > 0) {
             strncpy(error_msg, e.what(), error_msg_size - 1);
             error_msg[error_msg_size - 1] = '\0';
         }
-        return 1;  // Error
+        status = 1;
     } catch (...) {
         if (error_msg && error_msg_size > 0) {
             strncpy(error_msg, "Unknown exception occurred", error_msg_size - 1);
             error_msg[error_msg_size - 1] = '\0';
         }
-        return 1;  // Error
+        status = 1;
     }
+    // Release the temporary object HOC kept alive during the call (hoc_pop_defer),
+    // as the Python binding does after each call; the result has its own reference.
+    hoc_unref_defer();
+    return status;
 }
 
 void nrn_object_ref(Object* obj) {
@@ -1209,6 +1218,22 @@ Symlist* nrn_top_level_symbol_table(void) {
 
 int nrn_symbol_array_length(const Symbol* sym) {
     return sym->arayinfo->sub[0];
+}
+
+int nrn_symbol_array_dims(const Symbol* sym, int* dims, int max_dims) {
+    // Number of dimensions of an array symbol (0 for a scalar), with up to
+    // max_dims of the sizes written to dims; nrn_symbol_array_length gives
+    // only the first.
+    if (!sym || !sym->arayinfo) {
+        return 0;
+    }
+    const Arrayinfo* info = sym->arayinfo;
+    if (dims) {
+        for (int i = 0; i < info->nsub && i < max_dims; ++i) {
+            dims[i] = info->sub[i];
+        }
+    }
+    return info->nsub;
 }
 
 // Function to register function/object in hoc
