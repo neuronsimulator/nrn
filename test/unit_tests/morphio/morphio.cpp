@@ -6,7 +6,7 @@
 
 #include <sstream>
 #include <filesystem>
-#include <fmt/core.h>
+#include <fmt/format.h>
 #include "morphio.h"
 #include <morphology/morphio_wrapper/morphio_wrapper.hpp>
 #include <morphology/morphology.hpp>

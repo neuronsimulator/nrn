@@ -10,7 +10,7 @@
 #include <morphio/morphology.h>
 #include <morphio/section.h>
 #include <morphio/soma.h>
-#include <fmt/core.h>
+#include <fmt/format.h>
 
 namespace neuron::morphology {
 

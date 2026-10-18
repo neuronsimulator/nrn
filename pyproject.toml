@@ -169,4 +169,4 @@ repair-wheel-command = "auditwheel -v repair -w {dest_dir} {wheel} --exclude 'li
 
 [tool.cibuildwheel.macos]
 before-all = "brew install hdf5 || true"
-repair-wheel-command = "delocate-listdeps {wheel} && delocate-wheel -v -w {dest_dir} {wheel}"
+repair-wheel-command = "delocate-listdeps {wheel} && delocate-wheel -v -w {dest_dir} {wheel} --exclude 'libmorphio'"

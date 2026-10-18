@@ -467,18 +467,22 @@ if(NRN_ENABLE_MORPHIO)
       PARENT_SCOPE)
   set(HDF5_NO_FIND_PACKAGE_CONFIG_FILE ON)
   find_package(HDF5 REQUIRED COMPONENTS CXX)
-  target_link_libraries(nrniv_lib PUBLIC ${HDF5_LIBRARIES})
-  target_include_directories(nrniv_lib PUBLIC ${HDF5_INCLUDE_DIRS})
+  target_link_libraries(nrniv_lib PRIVATE ${HDF5_LIBRARIES})
+  target_include_directories(nrniv_lib PRIVATE ${HDF5_INCLUDE_DIRS})
   message(STATUS "HDF5_LIBRARIES: ${HDF5_LIBRARIES}")
   message(STATUS "HDF5_INCLUDE_DIRS: ${HDF5_INCLUDE_DIRS}")
   if(TARGET morphio-external)
     add_dependencies(nrniv_lib morphio-external)
   endif()
   target_link_libraries(nrniv_lib
-                        PUBLIC ${MorphIO_LIB_DIR}/libmorphio${CMAKE_SHARED_LIBRARY_SUFFIX})
-  target_include_directories(nrniv_lib PUBLIC $<BUILD_INTERFACE:${MorphIO_INCLUDE_DIR}>)
+                        PRIVATE ${MorphIO_LIB_DIR}/libmorphio${CMAKE_SHARED_LIBRARY_SUFFIX})
+  target_include_directories(nrniv_lib PRIVATE $<BUILD_INTERFACE:${MorphIO_INCLUDE_DIR}>)
   # morphio::floatType must match the library build (double, see FindMorphIO.cmake)
-  target_compile_definitions(nrniv_lib PUBLIC ${MorphIO_COMPILE_DEFINITIONS})
+  target_compile_definitions(nrniv_lib PRIVATE ${MorphIO_COMPILE_DEFINITIONS})
+  set_property(
+    TARGET nrniv_lib
+    APPEND
+    PROPERTY BUILD_RPATH "${MorphIO_LIB_DIR}")
 endif()
 
 set_target_properties(nrniv_lib PROPERTIES EXPORT_NAME nrniv OUTPUT_NAME nrniv)

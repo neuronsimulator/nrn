@@ -8,7 +8,7 @@
 #include <morphio/section.h>
 #include <morphio/soma.h>
 #include <unordered_map>
-#include <fmt/core.h>
+#include <fmt/format.h>
 #include "morphio_wrapper/morphio_wrapper.hpp"
 #include "nrnpy.h"
 
