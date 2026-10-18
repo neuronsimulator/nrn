@@ -802,6 +802,32 @@ Segments
 
     :returns: 0 on success, non-zero on error.
 
+.. c:function:: int nrn_rangevar_push_nothrow(Symbol* sym, Section* sec, double x, int index, char* error_msg, size_t error_msg_size)
+
+    Push a pointer to element ``index`` of a range variable at position ``x``
+    onto the interpreter stack, for a function that takes a pointer argument
+    (e.g. ``Vector.record``), with the same checks and error reporting as
+    :c:func:`nrn_rangevar_get_nothrow`. Nothing is pushed on error.
+
+    :returns: 0 on success, non-zero on error.
+
+    Unlike :c:func:`nrn_rangevar_push`, which reads an array element's index
+    from the interpreter stack, this takes the index as an argument, so it can
+    push a pointer to an element of an array such as ``xg`` or a mechanism's
+    ``ca[4]``.
+
+    **C Usage:**
+
+    .. code-block:: c
+
+        char err[256];
+        Object* vec = nrn_object_new(nrn_symbol("Vector"), 0);
+        if (nrn_rangevar_push_nothrow(nrn_symbol("xg"), soma, 0.5, 1, err, sizeof(err))) {
+            fprintf(stderr, "%s\n", err);
+        } else {
+            nrn_method_call(vec, nrn_method_symbol(vec, "record"), 1);
+        }
+
 .. c:function:: Object* nrn_segment_nmodlrandom_get(Section* sec, double x, Symbol* sym)
 
     Wrap a density mechanism's NMODL ``RANDOM`` variable as an

@@ -1,8 +1,9 @@
 // NOTE: this assumes neuronapi.h is on your CPLUS_INCLUDE_PATH
-// nrn_rangevar_get/set_nothrow report an error instead of throwing for cases
-// where nrn_rangevar_get/set raise a HOC error or throw through the caller: a
-// mechanism that is not inserted, an unset POINTER, i_membrane_ without
-// fast_imem, and array elements (which nrn_rangevar_get reads from the stack).
+// nrn_rangevar_get/set/push_nothrow report an error instead of throwing for
+// cases where nrn_rangevar_get/set/push raise a HOC error or throw through the
+// caller: a mechanism that is not inserted, an unset POINTER, i_membrane_
+// without fast_imem, and array elements (which nrn_rangevar_get/push read from
+// the stack).
 #include <array>
 #include <cmath>
 #include <cstring>
@@ -97,9 +98,29 @@ int main(void) {
                     std::strstr(err, "use_fast_imem") != nullptr,
                 "i_membrane_ without fast_imem is reported");
 
+    // A pointer to an array element, pushed for a function that takes one.
+    ok &= check(nrn_rangevar_push_nothrow(xg, sec, 0.5, 1, err, sizeof(err)) == 0, "push xg[1]");
+    double* pxg = nrn_double_ptr_pop();
+    ok &= check(pxg && *pxg == 7.25, "pushed pointer is xg[1]");
+    *pxg = 8.5;
+    ok &= check(nrn_rangevar_get_nothrow(xg, sec, 0.5, 1, &value, err, sizeof(err)) == 0 &&
+                    value == 8.5,
+                "write through the pushed pointer");
+    ok &= check(nrn_rangevar_push_nothrow(vext, sec, 0.5, 1, err, sizeof(err)) == 0 &&
+                    *nrn_double_ptr_pop() == 3.5,
+                "push vext[1]");
+    ok &= check(nrn_rangevar_push_nothrow(v, sec, 0.5, 0, err, sizeof(err)) == 0 &&
+                    *nrn_double_ptr_pop() == -61.5,
+                "push a scalar");
+    ok &= check(nrn_rangevar_push_nothrow(xg, sec, 0.5, 2, err, sizeof(err)) != 0 &&
+                    std::strstr(err, "index out of range") != nullptr,
+                "push xg[2] is out of range");
+
     // The stack is untouched by failures.
     nrn_double_push(-7.0);
     nrn_rangevar_get_nothrow(gnabar, sec, 0.5, 3, &value, err, sizeof(err));
+    nrn_rangevar_push_nothrow(gnabar, sec, 0.5, 3, err, sizeof(err));
+    nrn_rangevar_push_nothrow(nrn_symbol("src_ptrtest"), sec, 0.5, 0, err, sizeof(err));
     ok &= check(nrn_double_pop() == -7.0, "failures leave the stack alone");
 
     return ok ? 0 : 1;

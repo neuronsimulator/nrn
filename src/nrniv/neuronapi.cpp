@@ -263,19 +263,20 @@ namespace {
 // Locate element `index` of a range variable at x, as NEURON's Python module
 // does (nrnpy_rangepointer takes the array index directly, where
 // nrn_rangepointer reads it from the interpreter stack). Returns nullptr and
-// writes a message instead of raising a HOC error.
-double* rangevar_element(Symbol* sym,
-                         Section* sec,
-                         double x,
-                         int index,
-                         char* error_msg,
-                         size_t error_msg_size) {
-    auto fail = [&](const std::string& message) -> double* {
+// writes a message instead of raising a HOC error. The handle is invalid on
+// failure.
+neuron::container::data_handle<double> rangevar_handle(Symbol* sym,
+                                                       Section* sec,
+                                                       double x,
+                                                       int index,
+                                                       char* error_msg,
+                                                       size_t error_msg_size) {
+    auto fail = [&](const std::string& message) -> neuron::container::data_handle<double> {
         if (error_msg && error_msg_size) {
             std::strncpy(error_msg, message.c_str(), error_msg_size - 1);
             error_msg[error_msg_size - 1] = '\0';
         }
-        return nullptr;
+        return {};
     };
     if (!sym || sym->type != RANGEVAR) {
         return fail("not a range variable");
@@ -293,7 +294,7 @@ double* rangevar_element(Symbol* sym,
     if (sym->u.rng.type == EXTRACELL) {
         // nrnpy_rangepointer ignores the index for extracellular arrays.
         if (double* pd = nrn_vext_pd(sym, index, node_ptr(sec, x, nullptr))) {
-            return pd;
+            return neuron::container::data_handle<double>{pd};
         }
     }
     int err = 0;
@@ -313,7 +314,17 @@ double* rangevar_element(Symbol* sym,
     if (sym->u.rng.type == MORPHOLOGY && sec->recalc_area_) {
         nrn_area_ri(sec);
     }
-    return static_cast<double*>(neuron::container::data_handle<double>(handle));
+    return neuron::container::data_handle<double>(handle);
+}
+
+double* rangevar_element(Symbol* sym,
+                         Section* sec,
+                         double x,
+                         int index,
+                         char* error_msg,
+                         size_t error_msg_size) {
+    auto handle = rangevar_handle(sym, sec, x, index, error_msg, error_msg_size);
+    return handle ? static_cast<double*>(handle) : nullptr;
 }
 }  // namespace
 
@@ -364,6 +375,31 @@ int nrn_rangevar_set_nothrow(Symbol* sym,
         if (sym->u.rng.type == EXTRACELL && sym->u.rng.index == 0) {
             diam_changed = 1;  // xraxial, as the Python module's setter does
         }
+        return 0;
+    } catch (const std::exception& e) {
+        if (error_msg && error_msg_size) {
+            std::strncpy(error_msg, e.what(), error_msg_size - 1);
+            error_msg[error_msg_size - 1] = '\0';
+        }
+        return 1;
+    }
+}
+
+int nrn_rangevar_push_nothrow(Symbol* sym,
+                              Section* sec,
+                              double x,
+                              int index,
+                              char* error_msg,
+                              size_t error_msg_size) {
+    if (error_msg && error_msg_size) {
+        error_msg[0] = '\0';
+    }
+    try {
+        auto handle = rangevar_handle(sym, sec, x, index, error_msg, error_msg_size);
+        if (!handle) {
+            return 1;
+        }
+        hoc_push(std::move(handle));
         return 0;
     } catch (const std::exception& e) {
         if (error_msg && error_msg_size) {
