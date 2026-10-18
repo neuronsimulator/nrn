@@ -626,6 +626,11 @@ Object* nrn_object_pop(void) {
 }
 
 nrn_stack_types_t nrn_stack_type(void) {
+    // An array-dimension marker is a distinct stack entry that core does not
+    // classify; nrn_int_pop consumes it, so report it as an integer.
+    if (hoc_stack_type_is_ndim()) {
+        return STACK_IS_INT;
+    }
     switch (hoc_stack_type()) {
     case STRING:
         return STACK_IS_STR;
@@ -1052,6 +1057,22 @@ Symlist* nrn_top_level_symbol_table(void) {
 
 int nrn_symbol_array_length(const Symbol* sym) {
     return sym->arayinfo->sub[0];
+}
+
+int nrn_symbol_array_dims(const Symbol* sym, int* dims, int max_dims) {
+    // Number of dimensions of an array symbol (0 for a scalar), with up to
+    // max_dims of the sizes written to dims; nrn_symbol_array_length gives
+    // only the first.
+    if (!sym || !sym->arayinfo) {
+        return 0;
+    }
+    const Arrayinfo* info = sym->arayinfo;
+    if (dims) {
+        for (int i = 0; i < info->nsub && i < max_dims; ++i) {
+            dims[i] = info->sub[i];
+        }
+    }
+    return info->nsub;
 }
 
 // Function to register function/object in hoc

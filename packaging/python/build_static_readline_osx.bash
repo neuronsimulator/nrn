@@ -38,10 +38,9 @@ trap cleanup EXIT
 
 export NRN_CI_DEPS_SOURCE="${NRN_CI_DEPS_SOURCE:-release}"
 bash "${FETCH}" ncurses-6.4-src "${WORKDIR}"
-# Keep Mac wheels on readline 7.0. 8.3 (from #3809) breaks tty input when
-# InterViews is multiplexing stdin with X11 (nrniv/nrngui with DISPLAY set).
-# Linux wheels already pin 7.0 in packaging/python/Dockerfile.
-bash "${FETCH}" readline-7.0-src "${WORKDIR}"
+# GNU readline 8.3 is OK for Mac wheels now that hoc.cpp always uses
+# getc_hook (not rl_event_hook) with InterViews. Linux Docker stays on 7.0.
+bash "${FETCH}" readline-8.3-src "${WORKDIR}"
 
 (
   tar -xzf "${WORKDIR}/ncurses-6.4.tar.gz" -C "${WORKDIR}"
@@ -51,8 +50,8 @@ bash "${FETCH}" readline-7.0-src "${WORKDIR}"
 )
 
 (
-  tar -xzf "${WORKDIR}/readline-7.0.tar.gz" -C "${WORKDIR}"
-  cd "${WORKDIR}/readline-7.0"
+  tar -xzf "${WORKDIR}/readline-8.3.tar.gz" -C "${WORKDIR}"
+  cd "${WORKDIR}/readline-8.3"
   ./configure --prefix="${NRNWHEEL_DIR}/readline" --disable-shared CFLAGS="-fPIC"
   make -j install
 )

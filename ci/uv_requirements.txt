@@ -1,2 +1,2 @@
 # should be set to the latest version of uv that works
-uv<=0.7.3
+uv<=0.12.21

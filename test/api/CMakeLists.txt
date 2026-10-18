@@ -2,6 +2,7 @@ foreach(
   api_test_file
   global_scalar.cpp
   hh_sim.cpp
+  nlayer_extracellular.cpp
   netcon.cpp
   node_index.cpp
   object_new_nothrow.cpp
@@ -14,6 +15,7 @@ foreach(
   segment_diam.cpp
   sections.cpp
   stack_pops.cpp
+  symbol_array_dims.cpp
   symbol_object_string.cpp
   vclamp.cpp)
   string(REPLACE "." "_" api_test_name "${api_test_file}")
