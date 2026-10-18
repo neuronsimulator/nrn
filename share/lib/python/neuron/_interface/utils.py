@@ -96,6 +96,61 @@ def _list_symbol_table(symtab):
     return entries
 
 
+def _find_in_table(symtab, name, type_):
+    it = _nrn_symbol_table_iterator_new(symtab)
+    try:
+        while not _nrn_symbol_table_iterator_done(it):
+            sym = _nrn_symbol_table_iterator_next(it)
+            if _nrn_symbol_name(sym) == name and _nrn_symbol_type(sym) == type_:
+                return sym
+    finally:
+        _nrn_symbol_table_iterator_free(it)
+    return None
+
+
+def class_symbol(class_name):
+    """Return the symbol of the HOC class ``class_name``, or None.
+
+    nrn_symbol searches the current symbol table, not the top level, so while
+    HOC runs inside an object's method (a callback from Import3d_GUI's
+    instantiate, say) it misses top-level templates; the caller would then
+    read the symbol table of NULL. Fall back to the top-level and built-in
+    tables.
+    """
+    encoded = class_name.encode("utf-8")
+    sym = _nrn_symbol(encoded)
+    if sym and _nrn_symbol_type(sym) == TYPES.TEMPLATE:
+        return sym
+    for symtab_func in (_nrn_top_level_symbol_table, _nrn_global_symbol_table):
+        sym = _find_in_table(symtab_func(), encoded, TYPES.TEMPLATE)
+        if sym:
+            return sym
+    return None
+
+
+# Point-process status per HOC class name. A class's status never changes;
+# the MechanismType scan runs once per class. MechanismType is seeded: the
+# scan's own attribute reads on it come back through this check.
+_IS_POINT_PROCESS = {"MechanismType": False}
+
+
+def is_point_process_class(class_name):
+    """True if the HOC class ``class_name`` is a point process (IClamp, ExpSyn)."""
+    known = _IS_POINT_PROCESS.get(class_name)
+    if known is not None:
+        return known
+    from . import NEURON
+
+    n = NEURON()
+    mt = n.MechanismType(1)
+    selected = n.ref("")
+    for i in range(int(mt.count())):
+        mt.select(i)
+        mt.selected(selected)
+        _IS_POINT_PROCESS[selected[0]] = True
+    return _IS_POINT_PROCESS.setdefault(class_name, False)
+
+
 # Object method-table cache, keyed by HOC class name.
 #
 # WHY: real NEURON caches the equivalent table in its CPython type objects.
@@ -124,7 +179,9 @@ def list_methods(obj):
     cached = _CLASS_METHODS_CACHE.get(class_name)
     if cached is not None:
         return cached
-    sym = _nrn_symbol(class_name.encode("utf-8"))
+    sym = class_symbol(class_name)
+    if not sym:
+        raise LookupError(f"no HOC class named {class_name!r}")
     table = _nrn_symbol_table(sym)
     methods = _list_symbol_table(table)
     _CLASS_METHODS_CACHE[class_name] = methods

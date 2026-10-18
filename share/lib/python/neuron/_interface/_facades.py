@@ -13,11 +13,98 @@ import types
 _NAMES = ("hoc", "nrn", "_neuron_section")
 
 
+_CPLUSOBJECT = 16  # Symbol.subtype of a class registered from C++ (hocdec.h)
+
+
+def _is_python_type(h, cls):
+    """True for the classes NEURON's own interface exposes as Python types.
+
+    Built-in C++ classes (Vector, List, NetCon, ...) are types there. Point
+    processes and HOC templates (NetStim, IClamp, begintemplate classes) are
+    HocObject instances, which neuron.HocBaseObject subclasses take as
+    ``hoc_type``. Here every h.<class> is a type; this tells them apart.
+    """
+    from .api import _nrn_symbol_subtype
+    from .utils import class_symbol, is_point_process_class
+
+    name = getattr(cls, "_hoc_class_name", None)
+    if name is None:
+        return False
+    sym = class_symbol(name)
+    if not sym or _nrn_symbol_subtype(sym) != _CPLUSOBJECT:
+        return False
+    return not is_point_process_class(name)
+
+
+def _hoc_object_class(h):
+    """hoc.HocObject: isinstance/issubclass answers match NEURON's interface.
+
+    isinstance(x, hoc.HocObject) is true for HOC objects, references, h and
+    its functions, and for point-process and template classes (instances in
+    NEURON). issubclass(C, hoc.HocObject) is true for the built-in C++ classes
+    and for real subclasses such as neuron.HocBaseObject.
+    hoc.HocObject.__new__(cls, *args, hocbase=C, sec=None) creates an instance
+    of cls backed by a new HOC object of class C, as hclass3 needs.
+    """
+    from .nrnref import NrnRef
+    from .object import Object, _construct_hoc_object, _HocClassMeta
+    from .utils import FuncWrapper
+
+    class _HocObjectMeta(_HocClassMeta):
+        def __instancecheck__(cls, instance):
+            if cls is not HocObject:
+                return super().__instancecheck__(instance)
+            if isinstance(instance, (Object, NrnRef, FuncWrapper)) or instance is h:
+                return True
+            return (
+                isinstance(instance, _HocClassMeta)
+                and getattr(instance, "_hoc_class_name", None) is not None
+                and not _is_python_type(h, instance)
+            )
+
+        def __subclasscheck__(cls, subclass):
+            if super().__subclasscheck__(subclass):
+                return True
+            if cls is not HocObject:
+                return False
+            return isinstance(subclass, _HocClassMeta) and _is_python_type(h, subclass)
+
+    class HocObject(Object, metaclass=_HocObjectMeta):
+        __slots__ = ()
+
+        def __new__(cls, *args, hocbase=None, sec=None):
+            if hocbase is None:
+                raise TypeError("HocObject() needs hocbase=, the HOC class to create")
+            class_name = getattr(hocbase, "_hoc_class_name", None)
+            if class_name is None:
+                raise TypeError(f"hocbase {hocbase!r} is not a HOC class")
+            obj, host, post_init, abort_init = _construct_hoc_object(
+                class_name, args, sec=sec
+            )
+            instance = object.__new__(cls)
+            instance._obj = obj
+            try:
+                instance._init_from_ptr(obj, host)
+                post_init(instance)
+            except BaseException:
+                abort_init()
+                raise
+            return instance
+
+        def __init__(self, *args, **kwargs):
+            # __new__ built the HOC object; nothing is left to construct.
+            pass
+
+    HocObject.__module__ = "hoc"
+    HocObject.__qualname__ = "HocObject"
+    return HocObject
+
+
 def _hoc_module(h):
-    from .object import Object, _HocClassMeta
+    from .object import _HocClassMeta
 
     hoc = types.ModuleType("hoc", "HOC object types for the neuron package.")
-    hoc.HocObject = Object
+    hoc.HocObject = _hoc_object_class(h)
     hoc.HocClass = _HocClassMeta
 
     def __getattr__(name):

@@ -491,6 +491,13 @@ def _call_at_top_level(target, args):
 # a top-level registration (ModelView's `nrnpython("import neuron")`).
 _METHODS_HOC_NRNPYTHON_OFFSET = 104
 
+# mpi_alltoall_type (field 18): ParallelContext.py_alltoall, py_allgather,
+# py_gather, py_broadcast and py_scatter call it and assert it is set.
+_METHODS_MPI_ALLTOALL_TYPE_OFFSET = 144
+
+# praxis_efun (field 24): h.fit_praxis(python_callable, vec) asserts it is set.
+_METHODS_PRAXIS_EFUN_OFFSET = 192
+
 
 def _install_methods_slot(offset, callback):
     """Fill one empty methods-table slot; a native provider's stays untouched."""
@@ -1149,7 +1156,7 @@ def _pop_looked_at_object():
 _install_cfunctype_methods()
 
 
-def _py_pyobj_to_hoc_cfunctype(py_callable):
+def _py_pyobj_to_hoc_cfunctype(py_callable, take_ref=True):
     """Wrap a Python value as a new HOC Object* (Option B only).
 
     Allocates a Py2Nrn, keeps the value in the payload registry, and passes
@@ -1181,6 +1188,11 @@ def _py_pyobj_to_hoc_cfunctype(py_callable):
     if not obj:
         _PY2NRN_REGISTRY.pop(payload, None)
         raise RuntimeError("failed to create HOC PythonObject wrapper")
+    if not take_ref:
+        # Refcount 0, for a hook whose caller takes ownership through
+        # hoc_temp_objptr (NEURON's own hooks return po2ho's object after
+        # --refcount).
+        return obj
     # nrn_object_new_wrap returns the object at refcount 0; take one ref before
     # storing it (matches nrnpy_pyobject_in_obj's hoc_obj_ref(on)). Uses the
     # public `nrn_object_ref` (bound at module level) in place of the
@@ -1333,6 +1345,9 @@ _nrn_register_function = _bind(
 )
 
 _nrn_gargstr = _bind("nrn_gargstr", ctypes.c_char_p, ctypes.c_int)
+_nrn_objgetarg = _bind("nrn_objgetarg", ctypes.POINTER(Object), ctypes.c_int)
+_nrn_is_object_arg = _bind("nrn_is_object_arg", ctypes.c_bool, ctypes.c_int)
+_nrn_is_str_arg = _bind("nrn_is_str_arg", ctypes.c_bool, ctypes.c_int)
 
 # --- Stack operations (push / pop / HOC call) ---
 # Read a double argument from the HOC operand stack inside a

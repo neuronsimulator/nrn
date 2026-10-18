@@ -21,6 +21,7 @@ from .api import (
     _nrn_method_call,
     _nrn_method_symbol,
     _nrn_pp_setpointer_pop,
+    _nrn_prop_exists,
     _nrn_section_pop,
     _nrn_section_push,
     _nrn_sectionlist_data,
@@ -30,7 +31,6 @@ from .api import (
     _nrn_sectionlist_iterator_next,
     _nrn_sectionlist_to_array,
     _nrn_str_pop,
-    _nrn_symbol,
     _nrn_symbol_array_length,
     _nrn_symbol_is_array,
     _nrn_vector_capacity,
@@ -50,6 +50,8 @@ from .utils import (
     FuncWrapper,
     _object_pop,
     _try_wrap_point_nmodlrandom,
+    class_symbol,
+    is_point_process_class,
     list_functions,
     list_methods,
 )
@@ -218,7 +220,9 @@ def _construct_hoc_object(class_name, args, sec=None):
     if use_sec is not None:
         _nrn_section_push(use_sec._sec)
     try:
-        sym = _nrn_symbol(class_name.encode("utf-8"))
+        sym = class_symbol(class_name)
+        if not sym:
+            raise LookupError(f"no HOC class named {class_name!r}")
         obj = _nrn_object_new(sym, len(args_for_push))
     except BaseException:
         # No wrapper exists to release a registered FIH callback in __del__,
@@ -531,6 +535,15 @@ class Object(metaclass=_HocClassMeta):
         if host is None:
             ref = self._host_section_ref
             if ref is None:
+                # Wrapped from HOC (h.List("IClamp").o(0)): the host is not
+                # known here, and reading an unlocated point process throws
+                # through the C API. NEURON raises a Python error.
+                if is_point_process_class(self._class_name) and not _nrn_prop_exists(
+                    self._obj
+                ):
+                    raise ReferenceError(
+                        f"{self._class_name}: host section has been deleted"
+                    )
                 return
             host = ref()
             if host is None:
@@ -766,10 +779,19 @@ class Object(metaclass=_HocClassMeta):
             # --- all other callable types: FUNCTION, METHOD_SECTIONREF,
             #     METHOD_OBFUNC/OBFUNCTION, METHOD_STRFUNC ---
             else:
+                # NEURON's py_allgather/py_gather/py_broadcast read the raw
+                # Python argument, so 5 stays an int; pass it as a
+                # PythonObject instead of a HOC double.
+                raw_first_arg = (
+                    name in _PC_RAW_ARG_METHODS
+                    and self._class_name == "ParallelContext"
+                )
 
                 def method_func(*args, sec=None):
-                    from .utils import _push_args
+                    from .utils import _push_args, _PythonObjectArg
 
+                    if raw_first_arg and args:
+                        args = (_PythonObjectArg(args[0]),) + args[1:]
                     if _type == TYPES.METHOD_SECTIONREF:
                         # sec/parent/root/trueparent/child: the bare method
                         # call returns the tree ROOT for all of them (see
@@ -968,6 +990,9 @@ def _ensure_alias_trampolines(name):
         n(f"proc _mn_aliasset_{name}() {{ $o1.{name} = $2 }}")
         _OBJECT_ALIAS_TRAMPOLINES.add(name)
     return True
+
+
+_PC_RAW_ARG_METHODS = frozenset({"py_allgather", "py_gather", "py_broadcast"})
 
 
 class _SuppressCStderr:

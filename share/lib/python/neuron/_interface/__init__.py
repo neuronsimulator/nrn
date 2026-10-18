@@ -10,6 +10,8 @@ import threading
 from .api import (
     _ERR_BUF_SIZE,
     _METHODS_HOC_NRNPYTHON_OFFSET,
+    _METHODS_MPI_ALLTOALL_TYPE_OFFSET,
+    _METHODS_PRAXIS_EFUN_OFFSET,
     _MIN_VALID_DATAPTR,
     TYPES,
     _call_at_top_level,
@@ -23,6 +25,8 @@ from .api import (
     _nrn_function_call,
     _nrn_gargstr,
     _nrn_getarg,
+    _nrn_is_object_arg,
+    _nrn_is_str_arg,
     _nrn_hoc_call,
     _nrn_hoc_ret,
     _nrn_nseg_get,
@@ -44,6 +48,12 @@ from .api import (
     _nrn_symbol_is_array,
     _structure_change_cnt,
     install_stdout_redirect,
+    _nrn_objgetarg,
+    _nrn_class_name,
+    _unwrap_pythonobject,
+    _nrn_object_ref,
+    _py_pyobj_to_hoc_cfunctype,
+    libnrniv,
 )
 from .nrnref import (
     NrnDoubleRef,
@@ -60,6 +70,7 @@ from .utils import (
     _is_python_object_arg,
     _PythonObjectArg,
     _Singleton,
+    _wrap_owned_object,
     list_functions,
 )
 
@@ -124,6 +135,10 @@ _PY_CALLBACK_LOCK = threading.RLock()
 # plausible but wrong trace.
 _pending_callback_exc = None
 
+# stoprun before a failed fit_praxis evaluation set it (see _register_praxis_efun).
+_stoprun = ctypes.c_int.in_dll(libnrniv, "stoprun")
+_praxis_saved_stoprun = [None]
+
 
 def _stash_callback_exc(exc):
     """Stash *exc* for _raise_pending_callback_exc. The first writer wins.
@@ -145,6 +160,9 @@ def _raise_pending_callback_exc():
     operand stack leaks one slot per failed call.
     """
     global _pending_callback_exc
+    if _praxis_saved_stoprun[0] is not None:
+        _stoprun.value = _praxis_saved_stoprun[0]
+        _praxis_saved_stoprun[0] = None
     if _pending_callback_exc is not None:
         exc = _pending_callback_exc
         _pending_callback_exc = None
@@ -259,6 +277,94 @@ def _register_nrnpython_callback():
 
 
 _register_nrnpython_callback()
+
+
+def _hoc_arg_to_python(i):
+    """Argument i of the HOC call in progress as a Python value."""
+    if _nrn_is_object_arg(i):
+        obj = _nrn_objgetarg(i)[0]
+        if obj and _nrn_class_name(obj) == b"PythonObject":
+            return _unwrap_pythonobject(obj)
+        if not obj:
+            return None
+        _nrn_object_ref(obj)  # the wrapper releases its own reference
+        return _wrap_owned_object(obj)
+    if _nrn_is_str_arg(i):
+        return _nrn_gargstr(i).decode("utf-8")
+    return _nrn_getarg(i)[0]
+
+
+def _register_mpi_alltoall_type():
+    """ParallelContext's py_alltoall family, for a single process.
+
+    Core asserts methods.mpi_alltoall_type is set (ocbbs.cpp). With one rank
+    NEURON's implementation (nrnpy_p2h.cpp py_alltoall_type) only repackages
+    its argument; this does the same. myneuron does not run multi-rank MPI.
+    type: 1 alltoall, 2 allgather, 3 gather, 4 broadcast, 5 scatter.
+    """
+
+    def _alltoall_type(size, type_):
+        try:
+            if type_ in (1, 5):
+                source = _hoc_arg_to_python(1)
+                if not isinstance(source, list):
+                    raise TypeError("Argument must be a Python list")
+                if len(source) != 1:
+                    which = "py_alltoall" if type_ == 1 else "py_scatter"
+                    raise ValueError(f"{which} list size must be nhost")
+                if type_ == 1:
+                    return _nrn_objgetarg(1)[0]  # the argument itself, as NEURON
+                result = source[0]
+            else:
+                value = _hoc_arg_to_python(1)
+                result = value if type_ == 4 else [value]
+            return _py_pyobj_to_hoc_cfunctype(result, take_ref=False)
+        except BaseException as exc:
+            _stash_callback_exc(exc)
+            return None
+
+    global _mn_alltoall_type_cb
+    _mn_alltoall_type_cb = ctypes.CFUNCTYPE(
+        ctypes.c_void_p, ctypes.c_int, ctypes.c_int
+    )(_alltoall_type)
+    _install_methods_slot(_METHODS_MPI_ALLTOALL_TYPE_OFFSET, _mn_alltoall_type_cb)
+
+
+_register_mpi_alltoall_type()
+
+
+def _register_praxis_efun():
+    """h.fit_praxis with a Python callable as the function to minimize.
+
+    Core asserts methods.praxis_efun is set (hocprax.cpp). NEURON's version
+    (nrnpy_p2h.cpp) calls efun(vec) and raises a HOC error if it fails. A
+    ctypes callback cannot raise into core, so the error is stashed, the
+    evaluation returns 1e9 (NEURON's fallback value) and stoprun makes
+    praxis return; the error is raised when fit_praxis returns.
+    """
+
+    def _praxis_efun(callable_obj, vec_obj):
+        try:
+            efun = _unwrap_pythonobject(callable_obj)
+            _nrn_object_ref(vec_obj)  # the wrapper releases its own reference
+            return float(efun(_wrap_owned_object(vec_obj)))
+        except BaseException as exc:
+            _stash_callback_exc(exc)
+            # praxis returns as soon as it sees stoprun; a constant 1e9
+            # alone never converges. _raise_pending_callback_exc restores it.
+            if _praxis_saved_stoprun[0] is None:
+                _praxis_saved_stoprun[0] = _stoprun.value
+            _stoprun.value = 1
+            return 1e9
+
+    global _mn_praxis_efun_cb
+    _mn_praxis_efun_cb = ctypes.CFUNCTYPE(
+        ctypes.c_double, ctypes.c_void_p, ctypes.c_void_p
+    )(_praxis_efun)
+    _install_methods_slot(_METHODS_PRAXIS_EFUN_OFFSET, _mn_praxis_efun_cb)
+
+
+_register_praxis_efun()
 
 
 def _register_py_callback(fn):
