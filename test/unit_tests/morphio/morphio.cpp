@@ -329,10 +329,8 @@ TEST_CASE("MorphIO Edge Cases and Error Handling", "[NEURON][MorphIO][EdgeCases]
     }
 
     SECTION("HOC morphio_load with optional 3rd argument debug export") {
-        std::filesystem::path tmp_swc = std::filesystem::temp_directory_path() /
-                                        "test_debug_dump.swc";
-        std::filesystem::path tmp_hoc = std::filesystem::temp_directory_path() /
-                                        "test_debug_dump.hoc";
+        std::filesystem::path tmp_swc = std::filesystem::current_path() / "test_debug_dump.swc";
+        std::filesystem::path tmp_hoc = std::filesystem::current_path() / "test_debug_dump.hoc";
         {
             std::ofstream ofs(tmp_swc);
             ofs << "1 1 0 0 0 1 -1\n";
