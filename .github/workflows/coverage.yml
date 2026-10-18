@@ -232,6 +232,7 @@ jobs:
                       -DNRN_PYTHON_DYNAMIC="${PYTHON_MIN};${PYTHON_MAX}" \
                       -DNRN_PYTHON_EXTRA_FOR_TESTS=${PYTHON_MID} \
                       -DNRN_ENABLE_TESTS=ON \
+                      -DNRN_ENABLE_MORPHIO=ON \
                       -DNRN_ENABLE_MUSIC=ON \
                       -DCMAKE_PREFIX_PATH="${MUSIC_INSTALL_DIR}" \
                       -DMUSIC_ROOT="${MUSIC_INSTALL_DIR}")

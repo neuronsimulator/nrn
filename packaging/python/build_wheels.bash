@@ -95,6 +95,7 @@ set_cibw_environment() {
             [NRN_BINARY_DIST_BUILD]="ON"
             [NRN_RX3D_OPT_LEVEL]="0"
             [NRN_ENABLE_INTERVIEWS]="ON"
+            [NRN_ENABLE_MORPHIO]="ON"
             # Homebrew's hdf5 (needed by MorphIO) is built for macOS 14, so
             # delocate refuses to bundle it for any older deployment target.
             [MACOSX_DEPLOYMENT_TARGET]="14.0"
@@ -110,6 +111,7 @@ set_cibw_environment() {
             [NRN_BINARY_DIST_BUILD]="ON"
             [NRN_RX3D_OPT_LEVEL]="0"
             [NRN_ENABLE_INTERVIEWS]="ON"
+            [NRN_ENABLE_MORPHIO]="ON"
         )
     fi
 

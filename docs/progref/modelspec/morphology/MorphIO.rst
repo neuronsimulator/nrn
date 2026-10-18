@@ -15,10 +15,6 @@ Finally we will be able to update the Import3D_GUI HOC stack to use MorphIO so t
 
 MorphIO is not available for Windows, because further support is required in MorphIO for the MinGW toolchain.
 
-.. seealso::
-
-    For language-specific reference pages, see :ref:`MorphIO_python` and :ref:`MorphIO_hoc`.
-
 .. _morphio_api:
 
 MorphIO API
