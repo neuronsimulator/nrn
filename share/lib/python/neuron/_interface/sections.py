@@ -44,7 +44,7 @@ from .api import (
     _nrn_symbol_type,
     get_topology_version,
 )
-from .nrnref import NrnRangeVarRef
+from .nrnref import NrnRangeVarRef, NrnRef
 from .utils import (
     _try_wrap_density_nmodlrandom,
     list_functions,
@@ -527,13 +527,16 @@ class Segment:
         # Mechanism instance cache (Segment._mech_cache).
         # WHY: rebuilding a Mechanism wrapper on every seg.hh access
         # dominated seg.hh.gnabar cost (__init__ + __getattr__ symbol walk).
-        # INVALIDATES: never per Segment. The wrapper is stateless beyond
-        # (seg, name), and each Segment object has its own cache. Stored in a
-        # __slots__ entry, so no __dict__ is allocated per Segment.
+        # INVALIDATES: when nseg changed after the wrapper was made (it records
+        # NSEG_GENERATION, and NEURON's old nodes are gone): a new wrapper for
+        # the node now at x replaces it. Each Segment object has its own cache,
+        # stored in a __slots__ entry, so no __dict__ is allocated per Segment.
         mech_cache = self._mech_cache
         if mech_cache is not None:
             cached_mech = mech_cache.get(name)
-            if cached_mech is not None:
+            if cached_mech is not None and cached_mech._nseg == NSEG_GENERATION.get(
+                self._sec._sec, 0
+            ):
                 return cached_mech
 
         info = _SYMBOL_INFO_CACHE.get(name)
@@ -633,9 +636,11 @@ class Segment:
         from .mechanism import Mechanism
 
         mech_cache = self._mech_cache
+        generation = NSEG_GENERATION.get(self._sec._sec, 0)
         for mech_name in self._sec._get_inserted_mechs():
-            if mech_cache is not None and mech_name in mech_cache:
-                yield mech_cache[mech_name]
+            cached = mech_cache.get(mech_name) if mech_cache is not None else None
+            if cached is not None and cached._nseg == generation:
+                yield cached
                 continue
             mech = Mechanism(self, mech_name)
             if mech_cache is None:
@@ -644,7 +649,25 @@ class Segment:
             mech_cache[mech_name] = mech
             yield mech
 
+    def _assign_suffixed_pointer(self, suffixed, src_ref):
+        for mech in self:
+            mech_name = mech.name()
+            if suffixed.endswith("_" + mech_name):
+                try:
+                    mech._assign_pointer(suffixed[: -len(mech_name) - 1], src_ref)
+                except NameError as exc:
+                    raise AttributeError(str(exc)) from None
+                return
+        raise AttributeError(
+            f"'{suffixed}' is not a POINTER of a mechanism in {self!r}"
+        )
+
     def __setattr__(self, name, value):
+        # seg._ref_p_t2 = ref wires mechanism t2's POINTER p, the same as
+        # seg.t2._ref_p = ref (NEURON's test_pnt2).
+        if name.startswith("_ref_") and isinstance(value, NrnRef):
+            self._assign_suffixed_pointer(name[5:], value)
+            return
         # Underscore-prefixed names are internal slots, never range vars.
         if name.startswith("_"):
             super().__setattr__(name, value)
@@ -765,6 +788,18 @@ class Segment:
 _anon_section_count = 0
 
 
+# Times Section.nseg was assigned, per section pointer. Mechanism wrappers and
+# range-variable references record it at creation: NEURON frees the old nodes'
+# storage when nseg changes, so they die. A dict read is far cheaper than
+# reading nseg through the C API on every wrapper creation. An nseg change made
+# from HOC code is not counted.
+NSEG_GENERATION = {}
+
+# Sections created from Python, by pointer: a wrapper made from a raw pointer
+# (_from_ptr, e.g. sr.sec) can then tell a Python section from a HOC one.
+PYTHON_SECTIONS = weakref.WeakValueDictionary()
+
+
 class Section:
     """A NEURON section — a continuous unbranched cable, the unit of topology.
 
@@ -805,6 +840,8 @@ class Section:
             raise ValueError("embedded null character")
         self._sec = _nrn_section_new(name.encode("utf-8"))
         self._pynative = _pynative
+        if _pynative:
+            PYTHON_SECTIONS[self._sec] = self
         # Lazy cache for _get_inserted_mechs (see there).
         self._inserted_mechs = None
         self._inserted_mechs_epoch = -1
@@ -1066,7 +1103,7 @@ class Section:
             return "<deleted section>"
         return self.name()
 
-    def __call__(self, x):
+    def __call__(self, x=0.5):
         self._check_alive()
         if 0 <= x <= 1:
             return Segment(self, x)
@@ -1100,7 +1137,12 @@ class Section:
 
         _nrn_nseg_set(self._sec, int(value))
         # nrn_nseg_set flips diam_changed, which CachedSegment watches
-        # (api.get_topology_version).
+        # (api.get_topology_version). New nodes free the old mechanism storage,
+        # so Mechanism wrappers and range-variable references must revalidate.
+        NSEG_GENERATION[self._sec] = NSEG_GENERATION.get(self._sec, 0) + 1
+        from . import _bump_model_epoch
+
+        _bump_model_epoch()
         self._inserted_mechs = None
 
     def cell(self):

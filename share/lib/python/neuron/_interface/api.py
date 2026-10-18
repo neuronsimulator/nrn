@@ -579,6 +579,27 @@ def _component_error_pointer(exc):
 # Present on the pinned dev115; absent on the dev114 lane, which falls back to
 # the legacy methods-table slots. Native providers keep their own hooks and
 # ownership.
+# nrn#3889 (NEURON 9.1): every dimension of an array symbol. Optional; without
+# it objref arrays are treated as one-dimensional.
+_nrn_symbol_array_dims = getattr(libnrniv, "nrn_symbol_array_dims", None)
+if _nrn_symbol_array_dims is not None:
+    _nrn_symbol_array_dims.argtypes = [
+        ctypes.c_void_p,
+        ctypes.POINTER(ctypes.c_int),
+        ctypes.c_int,
+    ]
+    _nrn_symbol_array_dims.restype = ctypes.c_int
+
+
+def symbol_array_dims(sym, first_length):
+    """All dimensions of array symbol ``sym``, outermost first."""
+    if _nrn_symbol_array_dims is None:
+        return (first_length,)
+    dims = (ctypes.c_int * 8)()
+    ndim = _nrn_symbol_array_dims(sym, dims, 8)
+    return tuple(dims[: min(ndim, 8)]) or (first_length,)
+
+
 _nrn_template_set_component_hooks = getattr(
     libnrniv, "nrn_template_set_component_hooks", None
 )

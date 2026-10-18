@@ -4,6 +4,7 @@
 import ctypes
 
 from .api import (
+    _nrn_section_is_active,
     _ERR_BUF_SIZE,
     TYPES,
     _nrn_rangevar_get,
@@ -31,6 +32,12 @@ _SKIP_MECHS = frozenset({"morphology", "capacitance"})
 # module top (circular). Bind lazily and cache, so the hot read avoids a
 # per-read `from . import`.
 _MODEL_EPOCH_FN = None
+
+
+def _nseg_generation(sec_ptr):
+    from .sections import NSEG_GENERATION
+
+    return NSEG_GENERATION.get(sec_ptr, 0)
 
 
 def _model_epoch_now():
@@ -91,14 +98,21 @@ class RangeVar:
     via ``rv[0]``, write via ``rv[0] = value``.
     """
 
-    __slots__ = ("_seg", "_full_name")
+    __slots__ = ("_seg", "_full_name", "_mech")
 
-    def __init__(self, seg, full_name):
+    def __init__(self, seg, full_name, mech=None):
         self._seg = seg
         self._full_name = full_name
+        self._mech = mech
 
     def name(self):
         return self._full_name
+
+    def mech(self):
+        """The Mechanism this variable belongs to, as NEURON's RangeVar.mech()."""
+        if self._mech is None:
+            raise AttributeError("RangeVar has no mechanism")
+        return self._mech
 
     def __getitem__(self, idx):
         if idx != 0:
@@ -131,6 +145,32 @@ class RangeVar:
         return f"<RangeVar {self._full_name}>"
 
 
+class MechFunc(FuncWrapper):
+    """A mechanism's NMODL FUNCTION or PROCEDURE bound to its segment.
+
+    ``seg.hh.rates``: callable, ``name()`` is ``"hh.rates"``, ``mech()`` the
+    Mechanism, and the repr is the name, as NEURON's NPyMechFunc.
+    """
+
+    __slots__ = ("_mech",)
+
+    def __init__(self, func, name, doc="", *, mech):
+        super().__init__(func, name, doc)
+        self._mech = mech
+
+    def name(self):
+        return self._name
+
+    def mech(self):
+        return self._mech
+
+    def __repr__(self):
+        return self._name
+
+    def __str__(self):
+        return self._name
+
+
 class Mechanism:
     """A density mechanism (e.g. ``hh``, ``pas``) at a specific segment.
 
@@ -140,7 +180,7 @@ class Mechanism:
     insertion lives on the parent Section (``sec.insert('hh')``).
     """
 
-    __slots__ = ("_seg", "_name", "_is_ion", "_epoch")
+    __slots__ = ("_seg", "_name", "_is_ion", "_epoch", "_nseg")
 
     def __init__(self, seg, name):
         self._seg = seg
@@ -149,8 +189,46 @@ class Mechanism:
         # Model epoch at which Segment.__getattr__ validated this wrapper as
         # inserted. A later mutation bumps the epoch and __getattr__ revalidates.
         self._epoch = _model_epoch_now()
+        # NEURON frees a mechanism's storage when nseg changes (new nodes), so
+        # the wrapper is dead even though the section still has the mechanism.
+        self._nseg = _nseg_generation(seg._sec._sec)
+
+    def _check_valid(self):
+        """Raise ReferenceError if this mechanism's storage is gone, as NEURON.
+
+        The section deleted, the mechanism uninserted, or nseg changed. Checked
+        in full only after a model mutation (the epoch moved). A mechanism
+        uninserted and inserted again counts as valid here; in NEURON the old
+        wrapper stays dead.
+        """
+        try:
+            self._seg._sec._check_alive()
+        except RuntimeError:
+            raise ReferenceError(
+                f"mechanism '{self._name}' of a deleted section"
+            ) from None
+        ep = _model_epoch_now()
+        if ep != self._epoch:
+            sec = self._seg._sec
+            if (
+                not self._is_ion and not sec.has_membrane(self._name)
+            ) or _nseg_generation(sec._sec) != self._nseg:
+                raise ReferenceError(
+                    f"mechanism '{self._name}' is no longer inserted in {sec!r}"
+                )
+            self._epoch = ep
+
+    def _invalid_repr(self):
+        if not _nrn_section_is_active(self._seg._sec._sec):
+            return "<mechanism of deleted section>"
+        try:
+            self._check_valid()
+        except ReferenceError:
+            return "<segment invalid or or mechanism uninserted>"
+        return None
 
     def name(self):
+        self._check_valid()
         return self._name
 
     def segment(self):
@@ -216,20 +294,11 @@ class Mechanism:
         # before touching freed Section*/node storage. Dunder probes
         # (copy/pickle) skip the check and raise AttributeError as usual.
         if not (name.startswith("__") and name.endswith("__")):
-            self._seg._sec._check_alive()
             # An uninserted mechanism leaves the section alive but frees its
             # prop, so a range-var read SIGABRTs where real NEURON raises
-            # ReferenceError. Revalidate only when the model epoch changed (a
-            # cheap int compare); has_membrane is paid once per mutation
-            # boundary, not per read. Ions are skipped.
-            ep = _model_epoch_now()
-            if ep != self._epoch:
-                if not self._is_ion and not self._seg._sec.has_membrane(self._name):
-                    raise ReferenceError(
-                        f"mechanism '{self._name}' is no longer inserted in "
-                        f"{self._seg._sec!r}"
-                    )
-                self._epoch = ep
+            # ReferenceError. Revalidation is a cheap epoch compare except
+            # after a mutation.
+            self._check_valid()
         # Pointer/reference to a mechanism range variable: seg.brain._ref_V1.
         # Used as the source side of a setpointer (seg.body._ref_PTR = that).
         if name.startswith("_ref_"):
@@ -302,21 +371,24 @@ class Mechanism:
                 # hh.rates(v) instead of setdata_hh(x, sec=sec) + rates_hh(sec=sec).
                 seg = self._seg
                 mech = self._name
+                mech_obj = self
                 qualified = f"{mech}.{name}"
 
                 def mech_func(*args):
                     from . import NEURON
 
+                    mech_obj._check_valid()
                     n = NEURON()
                     setdata = getattr(n, f"setdata_{mech}")
                     setdata(seg._x, sec=seg._sec)
                     fn = getattr(n, full_name)
                     return fn(*args, sec=seg._sec)
 
-                return FuncWrapper(
+                return MechFunc(
                     mech_func,
                     qualified,
                     f"NEURON mechanism function: {qualified}()",
+                    mech=self,
                 )
 
             # RANGEOBJ: see api.TypeCodes.record_rangeobj. Cached like a RANGEVAR.
@@ -386,16 +458,16 @@ class Mechanism:
         # POINTER assignment: seg.mech._ref_PTR = src._ref_X.
         if name.startswith("_ref_"):
             if isinstance(value, NrnRef):
-                self._seg._sec._check_alive()  # HOC may have deleted the host.
+                self._check_valid()  # HOC may have deleted the host.
                 self._assign_pointer(name[5:], value)
                 return
         if name.startswith("_"):
             super().__setattr__(name, value)
             return
 
-        # The write below dereferences the host section; raise cleanly if HOC
-        # deleted it.
-        self._seg._sec._check_alive()
+        # The write below dereferences the mechanism's storage; raise cleanly
+        # if HOC deleted the section, uninserted the mechanism or changed nseg.
+        self._check_valid()
         cache = _MECH_ATTR_CACHE.get(self._name)
         if cache is not None:
             entry = cache.get(name)
@@ -453,7 +525,20 @@ class Mechanism:
     def __iter__(self):
         """Iterate over RangeVar objects for this mechanism."""
         for full_name in self._varnames():
-            yield RangeVar(self._seg, full_name)
+            yield RangeVar(self._seg, full_name, mech=self)
+
+    @property
+    def __dict__(self):
+        """Range variables and NMODL functions mapped to None, as NEURON's."""
+        symbols = list_functions()
+        suffix = "" if self._is_ion else f"_{self._name}"
+        names = [
+            full_name[: len(full_name) - len(suffix)]
+            for full_name in self._varnames()
+            if symbols.get(full_name, (None,))[0] == TYPES.RANGEVAR
+        ]
+        names.extend(self._func_names())
+        return dict.fromkeys(sorted(names))
 
     def __dir__(self):
         names = set()
@@ -476,8 +561,17 @@ class Mechanism:
         names.update(["name", "is_ion", "segment"])
         return sorted(names)
 
+    def __eq__(self, other):
+        if not isinstance(other, Mechanism):
+            return NotImplemented
+        return self._name == other._name and self._seg == other._seg
+
+    def __hash__(self):
+        return hash((self._name, self._seg))
+
     def __repr__(self):
-        return f"{self._seg}.{self._name}"
+        # NEURON prints the mechanism name, or why the wrapper is dead.
+        return self._invalid_repr() or self._name
 
 
 class DensityMechanism:

@@ -42,9 +42,11 @@ from .api import (
     _property_set_checked,
 )
 from .nrnref import (
+    NrnArrayPropertyRef,
     NrnHocTemplateVarRef,
     NrnObjectPropertyRef,
     NrnRef,
+    NrnVectorElementRef,
 )
 from .utils import (
     FuncWrapper,
@@ -312,7 +314,9 @@ class Object(metaclass=_HocClassMeta):
             obj, host_from_args, post_init, abort_init = _construct_hoc_object(
                 class_name, args, sec=sec
             )
-            if host_section is None:
+            if host_section is None and is_point_process_class(class_name):
+                # Only a point process lives in the section it was made in;
+                # SectionRef(sec=s) keeps working after s is deleted.
                 host_section = host_from_args
 
         try:
@@ -476,14 +480,24 @@ class Object(metaclass=_HocClassMeta):
 
     def ref(self, name, idx=None):
         methods = getattr(self, "_methods", None)
+        if methods is not None and name in methods and idx is None:
+            # obj._ref_<array>: [i] gives element i, as NEURON's array pointer.
+            sym = _nrn_method_symbol(self._obj, name.encode("utf-8"))
+            if methods[name][0] in (TYPES.VAR, TYPES.RANGEVAR) and _nrn_symbol_is_array(
+                sym
+            ):
+                if self._class_name == "Vector" and name == "x":
+                    size = _nrn_vector_capacity(self._obj)
+                elif self._class_name == "NetCon" and name == "weight":
+                    size = int(self.wcnt())
+                else:
+                    size = int(_nrn_symbol_array_length(sym))
+                return NrnArrayPropertyRef(self, name, size)
+        if self._class_name == "Vector" and name == "x" and idx is not None:
+            return NrnVectorElementRef(self, idx)
         if methods is not None and name in methods and methods[name][0] == TYPES.VAR:
             sym = _nrn_method_symbol(self._obj, name.encode("utf-8"))
             is_array = bool(_nrn_symbol_is_array(sym))
-            if is_array and idx is None:
-                raise TypeError(
-                    f"array property '{name}' requires an explicit index: "
-                    f"obj.ref('{name}', idx=i)"
-                )
             if not is_array and idx is not None:
                 raise TypeError(f"scalar property '{name}' does not take an index")
             return NrnHocTemplateVarRef(self, name, idx=idx)
@@ -535,15 +549,6 @@ class Object(metaclass=_HocClassMeta):
         if host is None:
             ref = self._host_section_ref
             if ref is None:
-                # Wrapped from HOC (h.List("IClamp").o(0)): the host is not
-                # known here, and reading an unlocated point process throws
-                # through the C API. NEURON raises a Python error.
-                if is_point_process_class(self._class_name) and not _nrn_prop_exists(
-                    self._obj
-                ):
-                    raise ReferenceError(
-                        f"{self._class_name}: host section has been deleted"
-                    )
                 return
             host = ref()
             if host is None:
@@ -551,6 +556,23 @@ class Object(metaclass=_HocClassMeta):
                     f"{self._class_name}: host section has been deleted"
                 )
         host._check_alive()
+
+    def _check_located(self):
+        """Raise TypeError, as NEURON does, before reading or writing a
+        variable of a point process that is in no section.
+
+        Never placed (h.IClamp()) or wrapped from HOC after its section was
+        deleted (h.List("IClamp").o(0)): no host section is known here, and
+        the C API throws "point process not located in a section" through
+        ctypes. Methods such as get_segment() and has_loc() still work.
+        """
+        if (
+            self._host_section is None
+            and self._host_section_ref is None
+            and is_point_process_class(self._class_name)
+            and not _nrn_prop_exists(self._obj)
+        ):
+            raise TypeError("No value")
 
     def _assign_pointer(self, member, src_ref):
         """Wire this object's NMODL POINTER ``member`` to the address referenced
@@ -573,6 +595,7 @@ class Object(metaclass=_HocClassMeta):
         if name.startswith("_ref_"):
             if isinstance(val, NrnRef):
                 self._check_host_alive()
+                self._check_located()
                 self._assign_pointer(name[5:], val)
                 return
         # Underscore names are internal bookkeeping, never HOC properties.
@@ -608,6 +631,7 @@ class Object(metaclass=_HocClassMeta):
                 _write_hoc_template_string(self, actual_name, val)
                 return
             if _type in (TYPES.RANGEVAR, TYPES.VAR):
+                self._check_located()
                 name_encoded = actual_name.encode("utf-8")
                 sym = _nrn_method_symbol(self._obj, name_encoded)
                 if not _nrn_symbol_is_array(sym):
@@ -755,6 +779,7 @@ class Object(metaclass=_HocClassMeta):
 
             # --- type RANGEVAR / VAR: scalar or array property (amp, tau1) ---
             if _type in (TYPES.RANGEVAR, TYPES.VAR):
+                self._check_located()
                 name_encoded = name.encode("utf-8")
                 sym = _nrn_method_symbol(self._obj, name_encoded)
                 if not _nrn_symbol_is_array(sym):
@@ -762,10 +787,16 @@ class Object(metaclass=_HocClassMeta):
                         return _read_hoc_template_var(self, name)
                     return _property_get_checked(self._obj, name_encoded)
                 else:
+                    if name == "weight" and self._class_name == "NetCon":
+                        # One weight per NET_RECEIVE argument of the target;
+                        # the symbol only holds the last steered length.
+                        size = int(self.wcnt())
+                    else:
+                        size = int(_nrn_symbol_array_length(sym))
                     return ArrayProperty(
                         self,
                         name,
-                        int(_nrn_symbol_array_length(sym)),
+                        size,
                         qualified_name=qualified_name,
                         hoc_template_var=(_type == TYPES.VAR),
                     )
@@ -776,8 +807,22 @@ class Object(metaclass=_HocClassMeta):
                 if wrapped is not None:
                     return wrapped
 
-            # --- all other callable types: FUNCTION, METHOD_SECTIONREF,
-            #     METHOD_OBFUNC/OBFUNCTION, METHOD_STRFUNC ---
+            elif _type == TYPES.METHOD_SECTIONREF:
+                # NEURON: sr.sec/parent/root/trueparent are Sections (TypeError
+                # "No value" when there is none, e.g. the parent of a root);
+                # sr.child is an array, sr.child[i].
+                if name == "child":
+                    return _SectionRefChildren(self)
+                try:
+                    section = _steer_sectionref(self, name)
+                except RuntimeError:
+                    section = None  # HOC: the steering has no such section
+                if section is None:
+                    raise TypeError("No value")
+                return section
+
+            # --- all other callable types: FUNCTION, METHOD_OBFUNC/OBFUNCTION,
+            #     METHOD_STRFUNC ---
             else:
                 # NEURON's py_allgather/py_gather/py_broadcast read the raw
                 # Python argument, so 5 stays an int; pass it as a
@@ -787,18 +832,28 @@ class Object(metaclass=_HocClassMeta):
                     and self._class_name == "ParallelContext"
                 )
 
+                # Python sections cannot be unnamed or renamed: core refuses for
+                # Python-owned sections (secref.cpp), which myneuron's are not
+                # in core until sections get a public owner (nrn fix 3).
+                pysec_name_change = self._class_name == "SectionRef" and name in (
+                    "unname",
+                    "rename",
+                )
+
                 def method_func(*args, sec=None):
                     from .utils import _push_args, _PythonObjectArg
 
+                    if pysec_name_change:
+                        try:
+                            ref_sec = _steer_sectionref(self, "sec")
+                        except RuntimeError:
+                            ref_sec = None
+                        from .sections import PYTHON_SECTIONS
+
+                        if ref_sec is not None and ref_sec._sec in PYTHON_SECTIONS:
+                            return 0.0
                     if raw_first_arg and args:
                         args = (_PythonObjectArg(args[0]),) + args[1:]
-                    if _type == TYPES.METHOD_SECTIONREF:
-                        # sec/parent/root/trueparent/child: the bare method
-                        # call returns the tree ROOT for all of them (see
-                        # _steer_sectionref). Route before pushing args so
-                        # child(i)'s index is not orphaned on the stack.
-                        idx = int(args[0]) if (name == "child" and args) else None
-                        return _steer_sectionref(self, name, idx)
 
                     sym = _nrn_method_symbol(self._obj, name.encode("utf-8"))
                     # Liveness check before pushing (see utils._push_args).
@@ -1534,6 +1589,34 @@ def _steer_sectionref(sr_obj, which, index=None):
     if not captured:
         return None
     return Section._from_ptr(captured)
+
+
+class _SectionRefChildren:
+    """``sr.child``: ``sr.child[i]`` is the i-th child Section, len() is nchild."""
+
+    __slots__ = ("_ref",)
+
+    def __init__(self, ref):
+        self._ref = ref
+
+    def __len__(self):
+        return int(self._ref.nchild())
+
+    def __getitem__(self, index):
+        n = len(self)
+        if not isinstance(index, int) or isinstance(index, bool):
+            raise TypeError("child index must be an integer")
+        if index < 0:
+            index += n
+        if not 0 <= index < n:
+            raise IndexError("child index out of range")
+        return _steer_sectionref(self._ref, "child", index)
+
+    def __iter__(self):
+        return (self[i] for i in range(len(self)))
+
+    def __repr__(self):
+        return f"{self._ref.hname()}.child"
 
 
 # Per-member obfunc trampolines that return a template's objref member

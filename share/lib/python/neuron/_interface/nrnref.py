@@ -15,6 +15,8 @@ import sys
 import weakref
 
 from .api import (
+    _nrn_vector_data,
+    _nrn_vector_capacity,
     _MIN_VALID_DATAPTR,
     _discard_object_stack_value,
     _nrn_double_ptr_pop,
@@ -54,6 +56,19 @@ def _get_libc():
         lib.free.restype = None
         _libc = lib
     return _libc
+
+
+_NSEG_GENERATION = None
+
+
+def _nseg_generations():
+    # sections imports this module; bind its counter on first use.
+    global _NSEG_GENERATION
+    if _NSEG_GENERATION is None:
+        from .sections import NSEG_GENERATION
+
+        _NSEG_GENERATION = NSEG_GENERATION
+    return _NSEG_GENERATION
 
 
 class NrnRef(abc.ABC):
@@ -111,7 +126,7 @@ class NrnRangeVarRef(NrnRef):
     still frees the section as in real NEURON.
     """
 
-    __slots__ = ("_sec", "_sec_ref", "_x", "_name", "_sym")
+    __slots__ = ("_sec", "_sec_ref", "_x", "_name", "_sym", "_nseg")
 
     # _x is captured at construction. If nseg changes afterward, x may land in
     # a different or nonexistent segment; real NEURON behaves the same way.
@@ -129,12 +144,25 @@ class NrnRangeVarRef(NrnRef):
         self._sym = _nrn_symbol(self._name)
         if self._sym is None:
             raise NameError(f"No such mechanism or variable: {self._name}")
+        # Changing nseg replaces the nodes, so NEURON's handle to this one dies.
+        self._nseg = _nseg_generations().get(sec._sec, 0)
+
+    def _check_nseg(self, sec):
+        if _nseg_generations().get(sec._sec, 0) != self._nseg:
+            raise ValueError("Invalid data_handle")
 
     def __repr__(self):
         # repr stays usable after a weakly held Section is gone; data access
-        # still raises through _section().
+        # still raises through _section(). A reference that can no longer
+        # be read (section deleted, mechanism uninserted) says "died", as
+        # NEURON's data_handle repr does.
         sec = self._sec if self._sec is not None else self._sec_ref()
-        return f"<NrnRef to {sec}({self._x}).{self._name.decode('utf-8')}>"
+        target = f"{sec}({self._x}).{self._name.decode('utf-8')}"
+        try:
+            self._checked_target()
+        except (ReferenceError, RuntimeError, ValueError):
+            return f"<NrnRef to {target}: died>"
+        return f"<NrnRef to {target}>"
 
     def _section(self):
         if self._sec is not None:
@@ -149,6 +177,7 @@ class NrnRangeVarRef(NrnRef):
         # A section deleted through HOC keeps its wrapper but frees the C
         # section; _check_alive raises RuntimeError instead of pushing freed state.
         sec._check_alive()
+        self._check_nseg(sec)
         _nrn_rangevar_push(self._sym, sec._sec, self._x)
 
     def _checked_target(self):
@@ -162,6 +191,7 @@ class NrnRangeVarRef(NrnRef):
 
         sec = self._section()
         sec._check_alive()  # HOC-deleted section: RuntimeError, not SIGABRT.
+        self._check_nseg(sec)
         name = (
             self._name.decode("utf-8") if isinstance(self._name, bytes) else self._name
         )
@@ -393,6 +423,86 @@ class NrnHocTemplateVarRef(NrnRef):
         clsname = getattr(obj, "_class_name", "?")
         suffix = "" if self._idx is None else f"[{self._idx}]"
         return f"<NrnRef to HOC template {clsname}.{self._name}{suffix}>"
+
+
+class NrnVectorElementRef(NrnRef):
+    """Pointer to element ``i`` of a Vector, ``vec._ref_x[i]``.
+
+    Pushed as the address in the Vector's data, as NEURON's pointer is; it
+    follows the Vector only until the Vector is resized. Holds the Vector.
+    """
+
+    __slots__ = ("_vec", "_index")
+
+    def __init__(self, vec, index):
+        self._vec = vec
+        self._index = index
+
+    def _address(self):
+        size = _nrn_vector_capacity(self._vec._obj)
+        if not 0 <= self._index < size:
+            raise IndexError(f"Vector index {self._index} out of range for size {size}")
+        return ctypes.cast(
+            ctypes.addressof(_nrn_vector_data(self._vec._obj).contents)
+            + 8 * self._index,
+            ctypes.POINTER(ctypes.c_double),
+        )
+
+    def _push(self):
+        _nrn_double_ptr_push(self._address())
+
+    def __getitem__(self, idx):
+        if idx != 0:
+            raise IndexError("Only index 0 is supported")
+        return self._address()[0]
+
+    def __setitem__(self, idx, value):
+        if idx != 0:
+            raise IndexError("Only index 0 is supported")
+        self._address()[0] = float(value)
+
+    def __repr__(self):
+        return f"<NrnRef to {self._vec.hname()}.x[{self._index}]>"
+
+
+class NrnArrayPropertyRef(NrnRef):
+    """``obj._ref_<array>``: ``[i]`` is a reference to element ``i``.
+
+    As in NEURON, pushed bare it points at element 0, and it has no len().
+    """
+
+    __slots__ = ("_owner", "_name", "_size")
+
+    def __init__(self, owner, name, size):
+        self._owner = owner
+        self._name = name
+        self._size = size
+
+    def __len__(self):
+        raise TypeError("Most HocObject have no len()")
+
+    def __getitem__(self, idx):
+        if not isinstance(idx, int) or isinstance(idx, bool):
+            raise TypeError("array reference index must be an integer")
+        if idx < 0:
+            idx += self._size
+        if not 0 <= idx < self._size:
+            raise IndexError(
+                f"index {idx} out of range [0, {self._size}) for {self._name}"
+            )
+        return self._owner.ref(self._name, idx=idx)
+
+    def __setitem__(self, idx, value):
+        self[idx][0] = value
+
+    def _push(self):
+        self[0]._push()
+
+    def _pop(self):
+        _nrn_double_ptr_pop()
+
+    def __repr__(self):
+        return f"<NrnRef to {self._owner.hname()}.{self._name}>"
 
 
 class NrnDoubleRef(NrnRef):

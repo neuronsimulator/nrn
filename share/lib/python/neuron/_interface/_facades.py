@@ -142,6 +142,27 @@ def _nrn_module():
     return nrn
 
 
+def _neuron_section_module(h, nrn):
+    # NEURON's _neuron_section holds the same Section/Segment types as nrn,
+    # plus cas() and allsec() (ModelView's realcell.hoc calls cas()).
+    module = types.ModuleType("_neuron_section", "Section and segment helpers.")
+    module.Section = nrn.Section
+    module.Segment = nrn.Segment
+    module.set_psection = nrn.set_psection
+
+    def cas():
+        """Return the currently accessed section."""
+        return h.cas()
+
+    def allsec():
+        """Iterate over all sections."""
+        return h.allsec()
+
+    module.cas = cas
+    module.allsec = allsec
+    return module
+
+
 def install(interface, embedded):
     """Register the facades and return (hoc, nrn, _neuron_section).
 
@@ -156,10 +177,11 @@ def install(interface, embedded):
             f"{', '.join(present)} already imported; the legacy NEURON extension "
             "cannot share a process with this interface"
         )
+    nrn = _nrn_module()
     modules = (
         _hoc_module(interface.h),
-        _nrn_module(),
-        types.ModuleType("_neuron_section"),
+        nrn,
+        _neuron_section_module(interface.h, nrn),
     )
     for name, module in zip(_NAMES, modules):
         sys.modules[name] = module

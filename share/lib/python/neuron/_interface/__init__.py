@@ -8,6 +8,7 @@ import sys
 import threading
 
 from .api import (
+    symbol_array_dims,
     _ERR_BUF_SIZE,
     _METHODS_HOC_NRNPYTHON_OFFSET,
     _METHODS_MPI_ALLTOALL_TYPE_OFFSET,
@@ -367,6 +368,42 @@ def _register_praxis_efun():
 _register_praxis_efun()
 
 
+def _register_vector_apply_callable():
+    """Vector.apply(python_callable): core calls nrnpy_call_func per element.
+
+    The Python module sets that exported pointer (nrnpy_hoc.cpp); without it
+    apply rejects a callable. NEURON's version raises a HOC error when the
+    call fails. A callback cannot, so the first error is stashed, the
+    remaining elements are left unchanged without calling Python again, and
+    the error is raised when apply returns. A pointer someone else set is
+    left alone.
+    """
+    try:
+        slot = ctypes.c_void_p.in_dll(libnrniv, "nrnpy_call_func")
+    except ValueError:
+        return
+    if slot.value:
+        return
+
+    def _call_func(func_obj, x):
+        if _pending_callback_exc is not None:
+            return x
+        try:
+            return float(_unwrap_pythonobject(func_obj)(x))
+        except BaseException as exc:
+            _stash_callback_exc(exc)
+            return x
+
+    global _mn_call_func_cb
+    _mn_call_func_cb = ctypes.CFUNCTYPE(
+        ctypes.c_double, ctypes.c_void_p, ctypes.c_double
+    )(_call_func)
+    slot.value = ctypes.cast(_mn_call_func_cb, ctypes.c_void_p).value
+
+
+_register_vector_apply_callable()
+
+
 def _register_py_callback(fn):
     """Add *fn* to the callback registry and return its id."""
     global _PY_CALLBACK_NEXT_ID
@@ -403,7 +440,11 @@ def _read_hoc_objectvar(neuron_singleton, name):
     if sym and _nrn_symbol_is_array(sym):
         # `objref g[N]`: subscriptable proxy like real NEURON's HocObject
         # array (g[i], len(), iteration); nil elements read as None.
-        return _ObjrefArray(neuron_singleton, name, int(_nrn_symbol_array_length(sym)))
+        return _ObjrefArray(
+            neuron_singleton,
+            name,
+            symbol_array_dims(sym, int(_nrn_symbol_array_length(sym))),
+        )
 
     fn = f"_mn_objgrab_{name}"
     if fn not in _OBJECTVAR_TRAMPOLINES:
@@ -419,97 +460,108 @@ def _read_hoc_objectvar(neuron_singleton, name):
     return getattr(neuron_singleton, fn)()
 
 
-def _read_hoc_objectvar_index(neuron_singleton, name, idx):
-    """Return the Object at ``name[idx]`` for a top-level objref array, or None.
-
-    Same nil guard as `_read_hoc_objectvar`.
-    """
-    fn = f"_mn_objgrabidx_{name}"
-    if fn not in _OBJECTVAR_TRAMPOLINES:
-        neuron_singleton(f"obfunc {fn}() {{ return {name}[$1] }}")
-        _OBJECTVAR_TRAMPOLINES.add(fn)
-        neuron_singleton._top_level = list_functions()
-    neuron_singleton(
-        ("hoc_ac_ = object_id(" + name + "[" + str(int(idx)) + "])").encode("utf-8")
-    )
-    if neuron_singleton.hoc_ac_ == 0.0:
-        return None
-    return getattr(neuron_singleton, fn)(idx)
+def _objref_trampolines(n, name, ndim):
+    """Per-name, per-rank HOC helpers to read, test and write ``name[i]...``."""
+    subs = "".join(f"[${k + 1}]" for k in range(ndim))
+    write_subs = "".join(f"[${k + 2}]" for k in range(ndim))
+    grab = f"_mn_objgrabidx{ndim}_{name}"
+    ident = f"_mn_objididx{ndim}_{name}"
+    put = f"_mn_setobjidx{ndim}_{name}"
+    nil = f"_mn_setobjidxnil{ndim}_{name}"
+    if grab not in _OBJECTVAR_TRAMPOLINES:
+        n("objref _mn_nilref")  # a persistent nil objref
+        n(f"obfunc {grab}() {{ return {name}{subs} }}")
+        n(f"func {ident}() {{ return object_id({name}{subs}) }}")
+        n(f"proc {put}() {{ {name}{write_subs} = $o1 }}")
+        n(f"proc {nil}() {{ {name}{subs} = _mn_nilref }}")
+        _OBJECTVAR_TRAMPOLINES.add(grab)
+        n._top_level = list_functions()
+    return grab, ident, put, nil
 
 
 class _ObjrefArray:
-    """Subscriptable proxy for a top-level HOC ``objref name[N]`` array.
+    """Subscriptable proxy for a top-level HOC ``objref name[N]...`` array.
 
-    Mirrors real NEURON's array HocObject: ``n.name[i]``, ``len(n.name)``, and
-    iteration. Each index resolves through ``_read_hoc_objectvar_index`` so nil
-    elements read as None instead of segfaulting.
+    Mirrors NEURON's array HocObject: ``n.name[i]``, ``n.name[i][j]`` for more
+    dimensions, ``len()`` and iteration. Nil elements read as None. Elements
+    take HOC objects, None, or any Python value (stored as a PythonObject and
+    read back as the value); a row of a multi-dimensional array is not
+    assignable.
     """
 
-    __slots__ = ("_n", "_name", "_size")
+    __slots__ = ("_n", "_name", "_dims", "_prefix")
 
-    def __init__(self, neuron_singleton, name, size):
+    def __init__(self, neuron_singleton, name, dims, prefix=()):
         self._n = neuron_singleton
         self._name = name
-        self._size = size
+        self._dims = tuple(dims)
+        self._prefix = tuple(prefix)
+
+    def _check_shape(self):
+        # The name can be redeclared (`objref po` after `objref po[3]`); NEURON
+        # then rejects the old array object.
+        sym = _nrn_symbol(self._name.encode("utf-8"))
+        if not sym or not _nrn_symbol_is_array(sym):
+            raise TypeError(f"'{self._name}' is no longer an array")
+        dims = symbol_array_dims(sym, int(_nrn_symbol_array_length(sym)))
+        if dims != self._dims:
+            raise TypeError(f"'{self._name}' was redeclared with dimensions {dims}")
+
+    def _index(self, idx):
+        self._check_shape()
+        if isinstance(idx, bool) or not isinstance(idx, int):
+            raise TypeError(
+                f"objref array indices must be integers, not {type(idx).__name__}"
+            )
+        size = self._dims[len(self._prefix)]
+        if idx < 0:
+            idx += size
+        if not 0 <= idx < size:
+            raise IndexError(f"index {idx} out of range [0, {size}) for {self._name}")
+        return idx
+
+    def _is_row(self):
+        return len(self._prefix) + 1 < len(self._dims)
 
     def __getitem__(self, idx):
         if isinstance(idx, slice):
-            return [self[i] for i in range(*idx.indices(self._size))]
-        if isinstance(idx, bool) or not isinstance(idx, int):
-            raise TypeError(
-                f"objref array indices must be integers, not {type(idx).__name__}"
-            )
-        if idx < 0:
-            idx += self._size
-        if not 0 <= idx < self._size:
-            raise IndexError(
-                f"index {idx} out of range [0, {self._size}) for {self._name}"
-            )
-        return _read_hoc_objectvar_index(self._n, self._name, idx)
+            return [self[i] for i in range(*idx.indices(len(self)))]
+        idx = self._index(idx)
+        indices = self._prefix + (idx,)
+        if self._is_row():
+            return _ObjrefArray(self._n, self._name, self._dims, indices)
+        grab, ident, _, _ = _objref_trampolines(self._n, self._name, len(self._dims))
+        if getattr(self._n, ident)(*indices) == 0.0:
+            return None
+        return getattr(self._n, grab)(*indices)
 
     def __setitem__(self, idx, value):
-        # Writes `n.name[i] = obj` through a per-name proc trampoline
-        # `NAME[$2] = $o1`; None nils the element. Same as the scalar path in
-        # NEURON.__setattr__.
-        if isinstance(idx, bool) or not isinstance(idx, int):
+        idx = self._index(idx)
+        if self._is_row():
             raise TypeError(
-                f"objref array indices must be integers, not {type(idx).__name__}"
-            )
-        if idx < 0:
-            idx += self._size
-        if not 0 <= idx < self._size:
-            raise IndexError(
-                f"index {idx} out of range [0, {self._size}) for {self._name}"
+                f"'{self._name}' has {len(self._dims)} dimensions; assign an element"
             )
         from .object import Object
 
-        n = self._n
+        indices = self._prefix + (idx,)
+        _, _, put, nil = _objref_trampolines(self._n, self._name, len(self._dims))
         if value is None:
-            n("objref _mn_nilref")  # a persistent nil objref
-            fn = "_mn_setobjidxnil_%s" % self._name
-            if fn not in _OBJECTVAR_TRAMPOLINES:
-                n("proc %s() { %s[$1] = _mn_nilref }" % (fn, self._name))
-                _OBJECTVAR_TRAMPOLINES.add(fn)
-                n._top_level = list_functions()
-            getattr(n, fn)(idx)
+            getattr(self._n, nil)(*indices)
             return
         if not isinstance(value, Object):
-            raise TypeError(
-                f"'{self._name}[{idx}]' is a HOC objref; cannot assign a "
-                f"{type(value).__name__}."
-            )
-        fn = "_mn_setobjidx_%s" % self._name
-        if fn not in _OBJECTVAR_TRAMPOLINES:
-            n("proc %s() { %s[$2] = $o1 }" % (fn, self._name))
-            _OBJECTVAR_TRAMPOLINES.add(fn)
-            n._top_level = list_functions()
-        getattr(n, fn)(value, idx)
+            value = _PythonObjectArg(value)
+        getattr(self._n, put)(value, *indices)
 
     def __len__(self):
-        return self._size
+        self._check_shape()
+        return self._dims[len(self._prefix)]
+
+    def __bool__(self):
+        self._check_shape()
+        return True
 
     def __iter__(self):
-        for i in range(self._size):
+        for i in range(len(self)):
             yield self[i]
 
 
@@ -975,6 +1027,9 @@ class NEURON(metaclass=_Singleton):
         # api._MIN_VALID_DATAPTR. Otherwise assign through HOC.
         if _type == TYPES.VAR:
             sym0 = _nrn_symbol(name.encode("utf-8"))
+            if sym0 and _nrn_symbol_is_array(sym0):
+                # `double a[4]`: NEURON assigns elements only (h.a[i] = x).
+                raise TypeError("Wrong number of subscripts")
             if sym0:
                 dptr = _nrn_symbol_dataptr(sym0)
                 addr = ctypes.cast(dptr, ctypes.c_void_p).value
@@ -1072,17 +1127,24 @@ class NEURON(metaclass=_Singleton):
     def setpointer(self, source_ref, pointer_name, target):
         """Assign a numeric NEURON reference to an NMODL POINTER target."""
         from .mechanism import Mechanism
-        from .nrnref import NrnDoubleRef, NrnVarRef
+        from .nrnref import (
+            NrnArrayPropertyRef,
+            NrnDoubleRef,
+            NrnVarRef,
+            NrnVectorElementRef,
+        )
         from .object import Object
 
         usage = (
             "setpointer(_ref_hocvar, 'POINTER_name', point_process or " "nrn.Mechanism)"
         )
         numeric_refs = (
+            NrnArrayPropertyRef,
             NrnDoubleRef,
             NrnObjectPropertyRef,
             NrnRangeVarRef,
             NrnVarRef,
+            NrnVectorElementRef,
         )
         if not isinstance(source_ref, numeric_refs):
             raise TypeError(usage)
@@ -1095,6 +1157,7 @@ class NEURON(metaclass=_Singleton):
 
         if isinstance(target, Object):
             target._check_host_alive()
+            target._check_located()
         elif isinstance(target, Mechanism):
             target._seg._sec._check_alive()
         else:
