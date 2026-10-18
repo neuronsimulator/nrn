@@ -743,11 +743,11 @@ NRN_ENABLE_BACKTRACE:BOOL=OFF
 
   Note: floating exceptions are turned on with :func:`nrn_feenableexcept`.
 
-NRN_ENABLE_MORPHIO:BOOL=ON
--------------------------------------
+NRN_ENABLE_MORPHIO:BOOL=OFF
+--------------------------------------
   Enable the use of the MorphIO library for reading SWC, ASC and HDF5 morphology files.
 
-  This is enabled by default. If you want to disable it, set this option to ``OFF``.
+  This is disabled by default. If you want to enable it, set this option to ``ON`` (requires HDF5 development libraries). Wheel distributions enable this option by default.
 
   More information about the MorphIO library can be found at https://github.com/openbraininstitute/MorphIO.
 
