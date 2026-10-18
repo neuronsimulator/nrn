@@ -247,9 +247,10 @@ std::pair<std::vector<Point3D>, std::vector<double>> contour2centroid(
 }
 
 MorphIOWrapper::MorphIOWrapper(const std::string& filename)
-    : _pimpl{
+    : _filename{filename}
+    , _pimpl{
           std::make_unique<MorphIOWrapperImpl>(morphio::Morphology(filename, morphio::NRN_ORDER))} {
-    _section_index_to_name.emplace_back("soma");
+    _section_names.emplace_back("soma");
     _section_type_distribution.push_back({1, -1, 1});
     if (!_pimpl->_sections.empty()) {
         std::vector<int> type_order;
@@ -271,9 +272,17 @@ MorphIOWrapper::MorphIOWrapper(const std::string& filename)
         for (const auto& sec: _pimpl->_sections) {
             const int t = sec.type();
             const int idx = type_next_index[t]++;
-            _section_index_to_name.emplace_back(neuron::morphology::name(t, idx));
+            _section_names.emplace_back(neuron::morphology::name(t, idx));
         }
     }
+}
+
+std::map<std::string, int> MorphIOWrapper::section_counts() const {
+    std::map<std::string, int> counts;
+    for (const auto& [type_id, start_id, count]: _section_type_distribution) {
+        counts[type2name(type_id)] += count;
+    }
+    return counts;
 }
 
 // future improvement: stor_pt3d_vec
@@ -347,13 +356,12 @@ std::vector<std::string> MorphIOWrapper::to_hoc() const {
     for (size_t sec_idx = 0; sec_idx < _pimpl->_sections.size(); ++sec_idx) {
         const auto& sec = _pimpl->_sections[sec_idx];
         const size_t index = sec_idx + 1;
-        const std::string& tstr = _section_index_to_name[index];
+        const std::string& tstr = _section_names[index];
 
         if (!sec.isRoot()) {
             const auto& parent = sec.parent();
             const size_t parent_index = parent.id() + 1;
-            cmds.push_back(
-                fmt::format("{} connect {}(0), 1", _section_index_to_name[parent_index], tstr));
+            cmds.push_back(fmt::format("{} connect {}(0), 1", _section_names[parent_index], tstr));
         } else {
             cmds.push_back(fmt::format("soma connect {}(0), 0.5", tstr));
         }

@@ -62,7 +62,7 @@ def test_morphio_load_from_wrapper_binding():
     cell = h.HocBasicCell()
     m = morphio_api.MorphIOWrapper("test/morphology/test.h5")
     assert len(m.to_hoc()) > 0
-    assert m.section_index_to_name[0] == "soma"
+    assert m.section_names[0] == "soma"
     assert m.section_type_distribution[0] == (1, -1, 1)
     morphio_api.morphio_load(cell, m)
 
@@ -77,6 +77,52 @@ def test_morphio_load_from_wrapper_binding():
     with pytest.raises(RuntimeError):
         h.morphio_load("not_a_cell", "test/morphology/test.h5")
     h.topology()
+
+
+def test_morphology_pythonic_api():
+    from pathlib import Path
+    from neuron import morphology
+
+    p = Path("test/morphology/test.h5")
+    m = morphology.MorphIOWrapper(p)
+
+    # 1. Path handling
+    assert m.filename == "test/morphology/test.h5"
+
+    # 2. len, repr, and indexing
+    assert len(m) == len(m.section_names)
+    assert len(m) == 193
+    assert repr(m) == "<MorphIOWrapper 'test/morphology/test.h5' (sections=193)>"
+    assert m[0] == "soma"
+    assert m.section_names[0] == "soma"
+
+    # 3. section_counts dict
+    counts = m.section_counts
+    assert isinstance(counts, dict)
+    assert counts["soma"] == 1
+    assert counts["axon"] == 61
+    assert counts["dend"] == 60
+    assert counts["apic"] == 71
+    assert sum(counts.values()) == len(m)
+
+    # 4. instantiate method on wrapper
+    cell = h.HocBasicCell()
+    m.instantiate(cell)
+    assert sum(1 for _ in cell.somatic) == 1
+    assert sum(1 for _ in cell.axonal) == 61
+
+    # 5. morphology.load with Path and str
+    cell2 = h.HocBasicCell()
+    m2 = morphology.load(cell2, p)
+    assert repr(m2) == repr(m)
+
+    cell3 = h.HocBasicCell()
+    m3 = morphology.load(cell3, m)
+    assert m3 is m
+
+    # 6. Type error on invalid path
+    with pytest.raises(TypeError):
+        morphology.MorphIOWrapper(12345)
 
 
 def test_morphio_load_hoc():
@@ -103,6 +149,7 @@ def test_morphio_hoc_api():
         load_file("MorphIO.hoc")
         """
     )
+    # 1. Procedural morphio_read
     assert h(
         """
         objref cell1 
@@ -116,6 +163,28 @@ def test_morphio_hoc_api():
         morphio_read(empty, "test/morphology/test.h5")
         """
     )
+
+    # 2. Object-oriented MorphIOWrapper template
+    assert h(
+        """
+        objref cell2, m_hoc
+        cell2 = new HocBasicCell()
+        m_hoc = new MorphIOWrapper("test/morphology/test.h5")
+        m_hoc.instantiate(cell2)
+        """
+    )
+    assert h.m_hoc.filename == "test/morphology/test.h5"
+
+    # 3. Object-oriented MorphIO alias template
+    assert h(
+        """
+        objref cell3, m_alias
+        cell3 = new HocBasicCell()
+        m_alias = new MorphIO("test/morphology/test.h5")
+        m_alias.instantiate(cell3)
+        """
+    )
+
     h.topology()
     if path.exists("test/morphology/test.hoc"):
         import os
@@ -233,7 +302,7 @@ def test_morphio_heterogeneous_neurites():
     # verify distribution groups contiguous counts
     assert len(m.section_type_distribution) == 3
     # verify section names are unique
-    names = m.section_index_to_name
+    names = m.section_names
     assert len(names) == len(set(names))
     assert names[0] == "soma"
     assert "axon[0]" in names
@@ -377,8 +446,8 @@ def test_morphio_h5_morphologies():
         if not os.path.exists(fname):
             continue
         m = morphio_api.MorphIOWrapper(fname)
-        assert len(m.section_index_to_name) == expected_secs
-        assert m.section_index_to_name[0] == "soma"
+        assert len(m.section_names) == expected_secs
+        assert m.section_names[0] == "soma"
         assert len(m.to_hoc()) > 0
 
 

@@ -43,3 +43,22 @@ MorphIO HOC API
     :noindex:
 
     Convenience wrapper defined in ``MorphIO.hoc`` that calls ``morphio_load(obj, morph_file, 1)``.
+
+.. hoc:class:: MorphIOWrapper
+    :noindex:
+
+    Object-oriented HOC template defined in ``MorphIO.hoc`` providing an interface similar to ``Import3d_GUI``. Also accessible via the alias template ``MorphIO``.
+
+    .. code-block:: hoc
+
+        load_file("MorphIO.hoc")
+
+        objref morph, cell
+        cell = new HocBasicCell()
+        morph = new MorphIOWrapper("path/to/neuron.swc")
+        morph.instantiate(cell)
+
+    .. hoc:method:: instantiate(cell[, write_hoc])
+        :noindex:
+
+        Instantiates the morphology into the provided Cell object. When optional second argument ``write_hoc`` is set to 1, writes the generated HOC commands to ``<stem>.hoc``.

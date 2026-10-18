@@ -75,9 +75,8 @@ TEST_CASE("MorphIOWrapper", "[NEURON][MorphIO][MorphIOWrapper][SinglePointSoma]"
             REQUIRE(morph.to_hoc() == nrn::test::soma_single_point_h5_hoc);
         }
 
-        THEN("We check the section index to names match expected ones") {
-            REQUIRE(morph.section_index_to_name() ==
-                    nrn::test::soma_single_point_h5_section_index_to_name);
+        THEN("We check the section names match expected ones") {
+            REQUIRE(morph.section_names() == nrn::test::soma_single_point_h5_section_names);
         }
 
         THEN("We check the section distribution matches expected one") {
@@ -118,7 +117,7 @@ TEST_CASE("MorphIO Contour Soma Geometry", "[NEURON][MorphIO][ContourSoma]") {
         neuron::morphology::MorphIOWrapper morph{"test/morphology/test.h5"};
         const auto cmds = morph.to_hoc();
         REQUIRE(!cmds.empty());
-        REQUIRE(morph.section_index_to_name().front() == "soma");
+        REQUIRE(morph.section_names().front() == "soma");
         REQUIRE(hoc_oc("objref cell_contour\n"
                        "cell_contour = new HocBasicCell()\n"
                        "morphio_load(cell_contour, \"test/morphology/test.h5\", 1)") == 0);
@@ -146,7 +145,7 @@ TEST_CASE("MorphIO Three Point SOMA SWC", "[NEURON][MorphIO][ThreePointSoma]") {
         neuron::morphology::MorphIOWrapper morph{c91662_path};
         const auto cmds = morph.to_hoc();
         REQUIRE(!cmds.empty());
-        REQUIRE(morph.section_index_to_name().front() == "soma");
+        REQUIRE(morph.section_names().front() == "soma");
         // NeuroMorpho 3-point cylinder soma emits 3 points along X with radius = d0/2
         size_t soma_pts = 0;
         for (const auto& c: cmds) {
@@ -185,7 +184,7 @@ TEST_CASE("MorphIO Cylinder SOMA and Heterogeneous Neurites", "[NEURON][MorphIO]
             const auto& dist = morph.section_type_distribution();
             // Should contain exactly 1 entry for each unique section type (soma, axon, dend)
             REQUIRE(dist.size() == 3);
-            const auto& names = morph.section_index_to_name();
+            const auto& names = morph.section_names();
             // Verify names are unique
             std::vector<std::string> sorted_names = names;
             std::sort(sorted_names.begin(), sorted_names.end());
@@ -234,7 +233,7 @@ TEST_CASE("MorphIO Four Standard Section Types SWC", "[NEURON][MorphIO][SWC]") {
         find_file("external/MorphIO/src/morphio-external/tests/data/three_point_soma.swc").string();
     if (std::filesystem::exists(swc_path)) {
         neuron::morphology::MorphIOWrapper morph{swc_path};
-        const auto& names = morph.section_index_to_name();
+        const auto& names = morph.section_names();
         REQUIRE(names.size() == 5);
         REQUIRE(names[0] == "soma");
         REQUIRE(names[1] == "axon[0]");
@@ -253,7 +252,7 @@ TEST_CASE("MorphIO Pia ASC Contour Soma and Axon", "[NEURON][MorphIO][ASC]") {
     if (const auto pia_path = find_file("external/MorphIO/src/morphio-external/tests/data/pia.asc");
         std::filesystem::exists(pia_path)) {
         neuron::morphology::MorphIOWrapper morph{pia_path.string()};
-        const auto& names = morph.section_index_to_name();
+        const auto& names = morph.section_names();
         REQUIRE(names.size() == 2);
         REQUIRE(names[0] == "soma");
         REQUIRE(names[1] == "axon[0]");
@@ -270,14 +269,14 @@ TEST_CASE("MorphIO HDF5 Large Morphologies", "[NEURON][MorphIO][H5]") {
             "external/MorphIO/src/morphio-external/tests/data/h5/v1/Neuron.h5");
         std::filesystem::exists(neuron_h5)) {
         neuron::morphology::MorphIOWrapper morph{neuron_h5.string()};
-        REQUIRE(morph.section_index_to_name().size() == 85);
+        REQUIRE(morph.section_names().size() == 85);
     }
 
     if (const auto astrocyte_h5 = find_file(
             "external/MorphIO/src/morphio-external/tests/data/astrocyte.h5");
         std::filesystem::exists(astrocyte_h5)) {
         neuron::morphology::MorphIOWrapper morph{astrocyte_h5.string()};
-        REQUIRE(morph.section_index_to_name().size() == 1316);
+        REQUIRE(morph.section_names().size() == 1316);
     }
 }
 

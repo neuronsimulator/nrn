@@ -9,8 +9,9 @@ It supports the following formats: SWC, ASC (aka. Neurolucida) and H5 v1.
 We use MorphIO to provide a C++ implementation that matches the ``Import3d_GUI`` HOC stack.
 This allows reading neuron morphology files in a variety of formats with increased performance, supporting single-point somas (``SOMA_SINGLE_POINT``), simple contour somas (``SOMA_SIMPLE_CONTOUR``), NeuroMorpho three-point cylinder somas (``SOMA_NEUROMORPHO_THREE_POINT_CYLINDERS``), and cylinder/frustum stack somas (``SOMA_CYLINDERS``).
 
-There is also a backward-compatible layer that allows using the HOC stack together with MorphIO.
+There will also be a backward-compatible layer that will allow us to use the HOC stack together with MorphIO.
 The implementation is located in the ``MorphIO.hoc`` file from the HOC library.
+Finally we will be able to update the Import3D_GUI HOC stack to use MorphIO so that CellBuilder/Import3d can use it.
 
 MorphIO is not available for Windows, because further support is required in MorphIO for the MinGW toolchain.
 
@@ -23,31 +24,33 @@ MorphIO is not available for Windows, because further support is required in Mor
 MorphIO API
 ===========
 
-.. function:: morphio_load
+.. function:: load
 
     .. tab:: Python
 
         Syntax:
+            ``from neuron import morphology``
+
+            ``morphology.load(cell_obj, morph_file_or_wrapper)``
+
+            ``m.instantiate(cell_obj)``
+
             ``h.morphio_load(cell_obj, morph_file[, write_hoc])``
 
-            ``morphio_api.morphio_load(cell_obj, morph_file)``
-
-            ``morphio_api.morphio_load(cell_obj, morph_wrapper)``
-
         Description:
-            Loads a morphology from a file or a :class:`MorphIOWrapper` instance and executes its HOC representation in the ``cell_obj`` context.
+            Loads a morphology from a file path (string or ``pathlib.Path``) or a :class:`MorphIOWrapper` instance and instantiates it into ``cell_obj``.
 
-            If the optional third argument ``write_hoc`` in ``h.morphio_load`` is set to ``1``, the generated HOC commands are written to ``<stem>.hoc`` in the same directory as ``morph_file``.
+            Alternatively, call :meth:`MorphIOWrapper.instantiate` on an existing wrapper. The underlying HOC function ``h.morphio_load`` can also be called directly; when its optional third argument ``write_hoc`` is set to ``1``, the generated HOC commands are written to ``<stem>.hoc`` in the same directory as ``morph_file``.
 
         Example:
 
             .. code-block:: python
 
-                from neuron import h, morphio_api
+                from pathlib import Path
+                from neuron import h, morphology
 
                 cell = h.HocBasicCell()
-                m = morphio_api.MorphIOWrapper("test/morphology/test.h5")
-                morphio_api.morphio_load(cell, m)
+                m = morphology.load(cell, Path("test/morphology/test.h5"))
 
     .. tab:: HOC
 
@@ -68,15 +71,44 @@ MorphIO API
     .. tab:: Python
 
         Syntax:
-            ``m = morphio_api.MorphIOWrapper(morph_file)``
+            ``from neuron.morphology import MorphIOWrapper``
+
+            ``m = MorphIOWrapper(morph_file)``
 
         Description:
-            Python binding for ``neuron::morphology::MorphIOWrapper``. Holds the loaded MorphIO morphology and provides access to the generated HOC commands and section metadata.
+            Python binding for ``neuron::morphology::MorphIOWrapper``. Holds the loaded MorphIO morphology and provides access to the generated HOC commands, instantiation into cells, and section metadata. Accepts strings and ``pathlib.Path`` objects.
 
     .. tab:: HOC
 
+        Syntax:
+            ``load_file("MorphIO.hoc")``
+
+            ``objref m``
+
+            ``m = new MorphIOWrapper(morph_file)``
+
+            ``m = new MorphIO(morph_file)``
+
         Description:
-            ``MorphIOWrapper`` is available through the Python ``neuron.morphio_api`` submodule. In HOC, use :func:`morphio_load` or ``morphio_read``.
+            Object-oriented HOC template defined in ``MorphIO.hoc`` providing an interface similar to ``Import3d_GUI``. Also accessible via the alias template ``MorphIO``.
+
+.. method:: MorphIOWrapper.instantiate
+
+    .. tab:: Python
+
+        Syntax:
+            ``m.instantiate(cell)``
+
+        Description:
+            Instantiates the morphology into the provided Cell object.
+
+    .. tab:: HOC
+
+        Syntax:
+            ``m.instantiate(cell[, write_hoc])``
+
+        Description:
+            Instantiates the morphology into the provided Cell object. When optional second argument ``write_hoc`` is set to 1, writes the generated HOC commands to ``<stem>.hoc``.
 
 .. method:: MorphIOWrapper.to_hoc
 
@@ -88,12 +120,12 @@ MorphIO API
         Description:
             Returns the list of HOC commands that instantiate the morphology sections, subsets, soma 3D points, connections, and neurite 3D points.
 
-.. data:: MorphIOWrapper.section_index_to_name
+.. data:: MorphIOWrapper.section_names
 
     .. tab:: Python
 
         Syntax:
-            ``names = m.section_index_to_name``
+            ``names = m.section_names``
 
         Description:
             Read-only property returning the list of section names ordered by section ID:
@@ -109,6 +141,16 @@ MorphIO API
                     "dend[1]",  # section id 5
                     "dend[2]"   # section id 6
                 ]
+
+.. data:: MorphIOWrapper.section_counts
+
+    .. tab:: Python
+
+        Syntax:
+            ``counts = m.section_counts``
+
+        Description:
+            Read-only property returning a dictionary mapping section types to their counts, e.g. ``{'soma': 1, 'axon': 61, 'dend': 60, 'apic': 72}``.
 
 .. data:: MorphIOWrapper.section_type_distribution
 

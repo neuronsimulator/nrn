@@ -4,43 +4,68 @@ MorphIO (Python)
 ================
 
 MorphIO is a library for reading and writing neuron morphology files.
-It supports the following formats: SWC, ASC (aka. Neurolucida) and H5 v1.
+It supports SWC, ASC (Neurolucida), and HDF5 (H5 v1) formats.
 
-We use MorphIO to provide a C++ implementation that will match Import3D_GUI HOC stack.
-This will allow us to read neuron morphology files in a variety of formats, with an increased performance, supporting single-point somas (``SOMA_SINGLE_POINT``), simple contour somas (``SOMA_SIMPLE_CONTOUR``), NeuroMorpho three-point cylinder somas (``SOMA_NEUROMORPHO_THREE_POINT_CYLINDERS``), and cylinder/frustum stack somas (``SOMA_CYLINDERS``).
+We use MorphIO to provide a fast C++ implementation matching the Import3D_GUI HOC stack,
+supporting single-point somas (``SOMA_SINGLE_POINT``), simple contour somas (``SOMA_SIMPLE_CONTOUR``),
+NeuroMorpho three-point cylinder somas (``SOMA_NEUROMORPHO_THREE_POINT_CYLINDERS``), and cylinder/frustum stack somas (``SOMA_CYLINDERS``).
 
 There will also be a backward-compatible layer that will allow us to use the HOC stack together with MorphIO.
 The implementation is located in the ``MorphIO.hoc`` file from the HOC library.
 Finally we will be able to update the Import3D_GUI HOC stack to use MorphIO so that CellBuilder/Import3d can use it.
 
-MorphIO is not available for Windows, because further support is required in MorphIO for the MinGW toolchain.
+MorphIO is not available on Windows, because further support is required in MorphIO for the MinGW toolchain.
 
 .. _morphio_python_api:
 
 MorphIO Python API
 ==================
 
-The ``morphio_api`` submodule provides a Python interface to the MorphIO morphology loading,
-which is used to load neuronal morphology data.
+The ``neuron.morphology`` module (also accessible via ``neuron.morphio_api``) provides an idiomatic Python interface for loading and querying morphologies.
+
+Examples
+--------
+
+Loading directly into a cell:
+
+.. code-block:: python
+
+    from pathlib import Path
+    from neuron import h, morphology
+
+    # Define a cell template with standard section lists
+    cell = h.HocBasicCell()
+
+    # Load from a string path or pathlib.Path
+    morph = morphology.load(cell, Path("path/to/neuron.swc"))
+    print(morph)  # <MorphIOWrapper 'path/to/neuron.swc' (sections=194)>
+    print(f"Total sections: {len(morph)}")
+    print(f"Section counts: {morph.section_counts}")  # {'soma': 1, 'axon': 61, 'dend': 60, 'apic': 72}
+
+Instantiating from an existing wrapper:
+
+.. code-block:: python
+
+    from neuron.morphology import MorphIOWrapper
+
+    # Pre-parse and inspect before instantiating
+    m = MorphIOWrapper("path/to/astrocyte.h5")
+    print(m.section_names[:5])
+
+    cell = h.HocBasicCell()
+    m.instantiate(cell)
 
 MorphIO Python Functions
 ------------------------
 
-.. py:function:: morphio_load(obj, morph_file)
+.. py:function:: load(cell, morphology)
     :noindex:
 
-    Load morphology data from a morphology file.
+    Load morphology data from a file or wrapper into a NEURON cell.
 
-    :param obj: A NEURON Cell object.
-    :param morph_file: A file path that contains morphology data.
-
-.. py:function:: morphio_load(obj, MorphIOWrapper)
-    :noindex:
-
-    Load morphology data from a morphology MorphIO wrapper.
-
-    :param obj: A NEURON Cell object.
-    :param MorphIOWrapper: A MorphIOWrapper object (see below).
+    :param cell: A NEURON Cell object (containing ``somatic``, ``axonal``, ``basal``, and ``apical`` SectionLists).
+    :param morphology: A file path (``str`` or ``pathlib.Path`` / ``os.PathLike``) or an existing ``MorphIOWrapper`` instance.
+    :return: The ``MorphIOWrapper`` instance.
 
 MorphIO Python Classes
 ----------------------
@@ -48,56 +73,50 @@ MorphIO Python Classes
 .. py:class:: MorphIOWrapper
     :noindex:
 
-    A Python binding for the MorphIOWrapper. This holds the MorphIO object and provides utility functions to access the data.
+    Holds the loaded MorphIO morphology and provides utility methods and properties to inspect and instantiate the data.
 
-    .. py:method:: __init__(self, path_or_file)
+    .. py:method:: __init__(self, path)
         :noindex:
 
-        Initialize the ``MorphIOWrapper`` object with a file path that contains morphology data.
+        Initialize the ``MorphIOWrapper`` from a morphology file path (accepts ``str`` or ``os.PathLike`` / ``pathlib.Path``).
+
+    .. py:method:: instantiate(self, cell)
+        :noindex:
+
+        Instantiate the morphology into a NEURON cell object.
 
     .. py:method:: to_hoc(self)
         :noindex:
 
-        Get the HOC morphology as HOC commands.
+        Return the list of HOC statements defining the morphology sections, subsets, and 3D points.
 
-    .. py:attribute:: section_index_to_name
+    .. py:attribute:: filename
         :noindex:
 
-        Get a list of strings that represents the names of the sections in the morphology data ordered by section ids.
+        The path of the loaded morphology file.
 
-        An example:
+    .. py:attribute:: section_names
+        :noindex:
 
-        .. code-block:: python
+        List of section name strings in the morphology, e.g. ``["soma", "axon[0]", "dend[0]", ...]``.
+        Indexing ``m[i]`` or iterating over ``m`` delegates to this list.
 
-            [
-                "soma",     # section id 0
-                "axon[0]",  # section id 1
-                "axon[1]",  # section id 2
-                "axon[2]",  # section id 3
-                "dend[0]",  # section id 4
-                "dend[1]",  # section id 5
-                "dend[2]"   # section id 6
-            ]
+    .. py:attribute:: section_counts
+        :noindex:
 
-        :return: A list of section name strings.
+        Dictionary mapping section types to their counts, e.g. ``{'soma': 1, 'axon': 61, 'dend': 60, 'apic': 72}``.
 
     .. py:attribute:: section_type_distribution
         :noindex:
 
-        Get a list of tuples that represent the distribution of section type IDs in the morphology data.
+        List of ``(type_id, start_id, count)`` tuples describing the internal section distribution.
 
-        A distribution looks like:
+    .. py:method:: __len__(self)
+        :noindex:
 
-        .. code-block:: text
+        Returns the total number of sections in the morphology.
 
-            # This will hold the distribution that will map the different type ids to the
-            # start id with regard to section types and their count. For example, axon type(2)
-            # starts at section id 0 and totals 2724 sections.
+    .. py:method:: __getitem__(self, index)
+        :noindex:
 
-                | type_id | start_id  |   count   |
-                | ------- | --------- | --------- |
-                |      1  |       -1  |        1  |
-                |      2  |        0  |     2724  |
-                |      3  |     2724  |       75  |
-
-        :return: A list of ``(type_id, start_id, count)`` tuples.
+        Returns the section name at the specified index.
