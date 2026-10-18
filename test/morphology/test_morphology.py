@@ -71,7 +71,11 @@ def test_morphio_load_from_wrapper_binding():
     with pytest.raises((RuntimeError, TypeError)):
         morphio_api.morphio_load(None, m)
     with pytest.raises(RuntimeError):
+        morphio_api.morphio_load("not_a_cell", m)
+    with pytest.raises(RuntimeError):
         h.morphio_load(None, "test/morphology/test.h5")
+    with pytest.raises(RuntimeError):
+        h.morphio_load("not_a_cell", "test/morphology/test.h5")
     h.topology()
 
 

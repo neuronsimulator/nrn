@@ -5,6 +5,7 @@
 #include "ocfunc.h"
 
 #include <sstream>
+#include <fstream>
 #include <filesystem>
 #include <fmt/format.h>
 #include "morphio.h"
@@ -284,5 +285,64 @@ TEST_CASE("MorphIO Multi-Contour SOMA Rejection", "[NEURON][MorphIO][ErrorHandli
     if (const auto stack_asc = find_file("test/hoctests/tests/test_pt3dstyle_stack.asc");
         std::filesystem::exists(stack_asc)) {
         REQUIRE_THROWS(neuron::morphology::MorphIOWrapper{stack_asc.string()});
+    }
+}
+
+TEST_CASE("MorphIO Edge Cases and Error Handling", "[NEURON][MorphIO][EdgeCases]") {
+    SECTION("type2name and mksubset with custom or negative type IDs") {
+        CHECK(neuron::morphology::type2name(-1) == "minus_1");
+        CHECK(neuron::morphology::type2name(-2) == "minus_2");
+        CHECK(neuron::morphology::type2name(5) == "dend_5");
+        CHECK(neuron::morphology::type2name(10) == "dend_10");
+
+        CHECK(neuron::morphology::mksubset(-1, 0, "minus_1") ==
+              "forsec \"minus_1\" minus_1set.append");
+        CHECK(neuron::morphology::mksubset(5, 0, "dend_5") ==
+              "forsec \"dend_5\" dendritic_5.append");
+    }
+
+    SECTION("contourcenter empty input") {
+        auto [mean, pts] = neuron::morphology::contourcenter({});
+        CHECK(pts.empty());
+        CHECK(mean[0] == 0.0);
+        CHECK(mean[1] == 0.0);
+        CHECK(mean[2] == 0.0);
+    }
+
+    SECTION("contour2centroid degenerate / collinear contours throw") {
+        using neuron::morphology::Point3D;
+        Point3D mean{0.0, 0.0, 0.0};
+        // Too few points (< 3)
+        CHECK_THROWS_AS(neuron::morphology::contour2centroid(mean, {}), std::runtime_error);
+        CHECK_THROWS_AS(neuron::morphology::contour2centroid(mean,
+                                                             {Point3D{1, 0, 0}, Point3D{2, 0, 0}}),
+                        std::runtime_error);
+
+        // Collinear points along X axis (minor axis is zero -> ratio < 1e-6)
+        std::vector<Point3D> collinear = {Point3D{-1, 0, 0}, Point3D{0, 0, 0}, Point3D{1, 0, 0}};
+        CHECK_THROWS_AS(neuron::morphology::contour2centroid(mean, collinear), std::runtime_error);
+    }
+
+    SECTION("HOC morphio_load invalid argument counts") {
+        REQUIRE(hoc_oc("morphio_load()") == 1);
+        REQUIRE(hoc_oc("objref c_err\n c_err = new HocBasicCell()\n morphio_load(c_err)") == 1);
+    }
+
+    SECTION("HOC morphio_load with optional 3rd argument debug export") {
+        std::filesystem::path tmp_swc = std::filesystem::temp_directory_path() /
+                                        "test_debug_dump.swc";
+        std::filesystem::path tmp_hoc = std::filesystem::temp_directory_path() /
+                                        "test_debug_dump.hoc";
+        {
+            std::ofstream ofs(tmp_swc);
+            ofs << "1 1 0 0 0 1 -1\n";
+        }
+        std::string cmd = fmt::format(
+            "objref cell_dump\ncell_dump = new HocBasicCell()\nmorphio_load(cell_dump, \"{}\", 1)",
+            tmp_swc.string());
+        REQUIRE(hoc_oc(cmd.c_str()) == 0);
+        CHECK(std::filesystem::exists(tmp_hoc));
+        std::filesystem::remove(tmp_swc);
+        std::filesystem::remove(tmp_hoc);
     }
 }
