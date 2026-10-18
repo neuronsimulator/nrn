@@ -95,11 +95,9 @@ set_cibw_environment() {
             [NRN_BINARY_DIST_BUILD]="ON"
             [NRN_RX3D_OPT_LEVEL]="0"
             [NRN_ENABLE_INTERVIEWS]="ON"
-            # 10.14 is required for full C++17 support according to
-            # https://cibuildwheel.readthedocs.io/en/stable/cpp_standards, but it
-            # seems that 10.15 is actually needed for std::filesystem::path.
-            # 11.0 is required on ARM machines
-            [MACOSX_DEPLOYMENT_TARGET]="10.15"
+            # Homebrew's hdf5 (needed by MorphIO) is built for macOS 14, so
+            # delocate refuses to bundle it for any older deployment target.
+            [MACOSX_DEPLOYMENT_TARGET]="14.0"
         )
     elif [ "${platform}" = 'linux' ]; then
         declare -A defaults=(
@@ -186,7 +184,7 @@ build_wheel_portable() {
         fi
 
         if [ "$(uname -m)" = 'arm64' ]; then
-            export MACOSX_DEPLOYMENT_TARGET="${MACOSX_DEPLOYMENT_TARGET:-11.0}"
+            export MACOSX_DEPLOYMENT_TARGET="${MACOSX_DEPLOYMENT_TARGET:-14.0}"
         fi
     fi
 
