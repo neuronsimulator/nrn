@@ -10,6 +10,7 @@ import sys
 import weakref
 
 from .api import (
+    HOC_LOCK,
     TYPES,
     _diam_changed as _DIAM_CHANGED,
     _nrn_cas,
@@ -44,7 +45,7 @@ from .api import (
     _nrn_symbol_type,
     get_topology_version,
 )
-from .nrnref import NrnRangeVarRef, NrnRef
+from .nrnref import NrnRangeArrayRef, NrnRangeVarRef, NrnRef
 from .utils import (
     _try_wrap_density_nmodlrandom,
     list_functions,
@@ -520,6 +521,8 @@ class Segment:
             info = _get_symbol_info(name)
             if info is None or info[1] != TYPES.RANGEVAR:
                 raise AttributeError(f"Variable '{name}' not found in {self!r}.")
+            if info[2]:
+                return NrnRangeArrayRef(self.sec, self.x, name)
             if _is_pointer_rangevar(name, info[0]):
                 _pointer_rangevar_get(self.sec, self.x, name)  # raises if unset
             return NrnRangeVarRef(self.sec, self.x, name)
@@ -616,7 +619,7 @@ class Segment:
                 and not self._sec.has_membrane(name)
             ):
                 raise AttributeError(f"'{name}' is not inserted in {self._sec!r}.")
-            mech = Mechanism(self, name)
+            mech = Mechanism(self._uncached_copy(), name)
             if mech_cache is None:
                 mech_cache = {}
                 object.__setattr__(self, "_mech_cache", mech_cache)
@@ -642,12 +645,21 @@ class Segment:
             if cached is not None and cached._nseg == generation:
                 yield cached
                 continue
-            mech = Mechanism(self, mech_name)
+            mech = Mechanism(self._uncached_copy(), mech_name)
             if mech_cache is None:
                 mech_cache = {}
                 object.__setattr__(self, "_mech_cache", mech_cache)
             mech_cache[mech_name] = mech
             yield mech
+
+    def _uncached_copy(self):
+        # A cached Mechanism holds a copy of this Segment, not the Segment
+        # itself: Segment -> cache -> Mechanism -> Segment would be a
+        # reference cycle, and the Section (a Python-owned one is deleted
+        # when its last reference goes) would then live until the next
+        # garbage collection. NEURON frees it at once (test_nrntest_thread
+        # counted an extra cell's mechanism instances).
+        return Segment(self._sec, self._x)
 
     def _assign_suffixed_pointer(self, suffixed, src_ref):
         for mech in self:
@@ -788,12 +800,62 @@ class Segment:
 _anon_section_count = 0
 
 
-# Times Section.nseg was assigned, per section pointer. Mechanism wrappers and
+# Times Section.nseg was changed, per section pointer. Mechanism wrappers and
 # range-variable references record it at creation: NEURON frees the old nodes'
 # storage when nseg changes, so they die. A dict read is far cheaper than
 # reading nseg through the C API on every wrapper creation. An nseg change made
 # from HOC code is not counted.
 NSEG_GENERATION = {}
+
+# nseg at each generation, per section pointer: NSEG_HISTORY[sec][g]. NEURON
+# reuses some nodes when nseg changes (node_realloc in nrnoc/solve.cpp): all of
+# them when it grows, and one per new node when it shrinks. A range-variable
+# reference follows its node through those changes as NEURON's data handle
+# does (follow_node), and dies only with it.
+NSEG_HISTORY = {}
+
+
+def _record_nseg_change(sec_ptr, old, new):
+    history = NSEG_HISTORY.get(sec_ptr)
+    if history is None:
+        history = NSEG_HISTORY[sec_ptr] = [old]
+    history.append(new)
+    NSEG_GENERATION[sec_ptr] = len(history) - 1
+
+
+def follow_node(sec_ptr, generation, x, reversed_):
+    """Where the node at ``x`` when ``generation`` was current is now.
+
+    Returns the x of that node's center now, or None if NEURON destroyed the
+    node. ``x`` of 0 or 1 is an end node, which nseg changes keep. The index
+    arithmetic is node_realloc's, in node (pnode) order, which is reversed
+    for a section with orientation 1.
+    """
+    history = NSEG_HISTORY.get(sec_ptr)
+    if not history or generation >= len(history) - 1 or x <= 0.0 or x >= 1.0:
+        return x
+    n = history[generation]
+    index = min(int(n * x), n - 1)  # node_index
+    if reversed_:
+        index = n - index - 1
+    for n1, n2 in zip(history[generation:-1], history[generation + 1 :]):
+        if n1 < n2:
+            # every old node is reused
+            index = int(n2 * ((index + 0.5) / n1))
+            continue
+        # new node i2 reuses old node int(n1 * (i2 + .5) / n2); others die
+        guess = int(index * n2 / n1)
+        for i2 in (guess - 1, guess, guess + 1):
+            if 0 <= i2 < n2 and int(n1 * ((i2 + 0.5) / n2)) == index:
+                index = i2
+                break
+        else:
+            return None
+    n = history[-1]
+    if reversed_:
+        index = n - index - 1
+    return (index + 0.5) / n
+
 
 # Sections created from Python, by pointer: a wrapper made from a raw pointer
 # (_from_ptr, e.g. sr.sec) can then tell a Python section from a HOC one.
@@ -1075,7 +1137,9 @@ class Section:
             if n.ismembrane(name, sec=self)
         ]
         self._inserted_mechs = inserted
-        self._inserted_mechs_epoch = epoch
+        # ismembrane is a HOC call, which itself bumps the epoch; record the
+        # epoch after the calls or the cache is stale as soon as it is built.
+        self._inserted_mechs_epoch = _model_epoch()
         return inserted
 
     def has_membrane(self, mechanism):
@@ -1135,11 +1199,14 @@ class Section:
                 f"nseg must be an integer in range 1 to 32767, got {value!r}"
             )
 
+        old = int(_nrn_nseg_get(self._sec))
         _nrn_nseg_set(self._sec, int(value))
         # nrn_nseg_set flips diam_changed, which CachedSegment watches
         # (api.get_topology_version). New nodes free the old mechanism storage,
         # so Mechanism wrappers and range-variable references must revalidate.
-        NSEG_GENERATION[self._sec] = NSEG_GENERATION.get(self._sec, 0) + 1
+        # Setting the same nseg changes nothing in NEURON.
+        if int(value) != old:
+            _record_nseg_change(self._sec, old, int(value))
         from . import _bump_model_epoch
 
         _bump_model_epoch()
@@ -1405,9 +1472,10 @@ class Section:
             # (cabcode.cpp:2165). Without it every __del__ leaks one
             # section-stack slot and the stack overflows at ~200 (NSECSTACK,
             # cabcode.cpp:73). See the stack-leak section of KNOWN_GAPS.md.
-            _nrn_section_push(sec_ptr)
-            n.delete_section()
-            n.pop_section()
+            with HOC_LOCK:
+                _nrn_section_push(sec_ptr)
+                n.delete_section()
+                n.pop_section()
 
     def psection(self):
         """Return a dict of section properties matching real NEURON's format."""

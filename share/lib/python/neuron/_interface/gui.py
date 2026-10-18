@@ -15,9 +15,14 @@ import time
 from contextlib import contextmanager
 
 from . import n as h
+from .api import HOC_LOCK
 
-# RLock: stop()/start() may be called re-entrantly from doNotify callbacks.
-_lock = threading.RLock()
+# HOC_LOCK, the lock every HOC call holds, so doNotify never runs inside
+# another thread's HOC call and stop()/start() order with HOC calls under one
+# lock (two locks could deadlock: a callback calling stop() inside a HOC call
+# while the event thread holds the loop lock and waits for HOC). Reentrant:
+# stop()/start() may be called from doNotify callbacks.
+_lock = HOC_LOCK
 
 
 def stop():

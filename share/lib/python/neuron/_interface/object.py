@@ -11,6 +11,7 @@ import weakref
 
 from ._docs import _ClassDoc
 from .api import (
+    hoc_locked,
     _ERR_BUF_SIZE,
     TYPES,
     _check_nrn_error,
@@ -46,6 +47,7 @@ from .nrnref import (
     NrnHocTemplateVarRef,
     NrnObjectPropertyRef,
     NrnRef,
+    NrnMatrixElementRef,
     NrnVectorElementRef,
 )
 from .utils import (
@@ -53,6 +55,7 @@ from .utils import (
     _object_pop,
     _try_wrap_point_nmodlrandom,
     class_symbol,
+    is_located_point_process_class,
     is_point_process_class,
     list_functions,
     list_methods,
@@ -132,6 +135,7 @@ class _HocClassMeta(type):
         raise IndexError(f"{class_name}[{index}] not found")
 
 
+@hoc_locked
 def _construct_hoc_object(class_name, args, sec=None):
     """Create the HOC object backing a user-side construction call.
 
@@ -165,6 +169,10 @@ def _construct_hoc_object(class_name, args, sec=None):
             _unregister_py_callback(cb_id)
         fih_callback_ids.clear()
 
+    if class_name == "SectionRef":
+        # SectionRef(sec) reads its Section through nrn_secarg too.
+        args, sec = _section_arg_as_sec(args, sec)
+        args_for_push = args
     if (
         class_name == "Vector"
         and len(args) == 1
@@ -486,6 +494,8 @@ class Object(metaclass=_HocClassMeta):
             if methods[name][0] in (TYPES.VAR, TYPES.RANGEVAR) and _nrn_symbol_is_array(
                 sym
             ):
+                if self._class_name == "Matrix" and name == "x":
+                    return _MatrixX(self, ref=True)
                 if self._class_name == "Vector" and name == "x":
                     size = _nrn_vector_capacity(self._obj)
                 elif self._class_name == "NetCon" and name == "weight":
@@ -557,6 +567,20 @@ class Object(metaclass=_HocClassMeta):
                 )
         host._check_alive()
 
+    def _get_segment(self):
+        """The Segment this point process is in, or None if it is in none."""
+        from . import NEURON
+
+        if not self.has_loc():
+            return None
+        n = NEURON()
+        x = self.get_loc()  # also makes the section the accessed one
+        try:
+            sec = n.cas()
+        finally:
+            n.pop_section()
+        return sec(x)
+
     def _check_located(self):
         """Raise TypeError, as NEURON does, before reading or writing a
         variable of a point process that is in no section.
@@ -598,6 +622,18 @@ class Object(metaclass=_HocClassMeta):
                 self._check_located()
                 self._assign_pointer(name[5:], val)
                 return
+            member = name[5:]
+            methods = getattr(self, "_methods", None) or {}
+            if member in methods:
+                from .api import _nrn_symbol_subtype
+                from .sections import _NRNPOINTER
+
+                sym = _nrn_method_symbol(self._obj, member.encode("utf-8"))
+                if sym and int(_nrn_symbol_subtype(sym)) == _NRNPOINTER:
+                    raise ValueError("must be a hoc pointer")
+                raise AttributeError(
+                    " For assignment, only POINTER var can have a _ref_ prefix"
+                )
         # Underscore names are internal bookkeeping, never HOC properties.
         if name.startswith("_"):
             super().__setattr__(name, val)
@@ -695,6 +731,12 @@ class Object(metaclass=_HocClassMeta):
             self._check_host_alive()
         if name.startswith("_ref_"):
             return self.ref(name[5:])
+        # NEURON's Python module adds get_segment() to every point process
+        # that can be located (not an ARTIFICIAL_CELL). Ahead of the method
+        # table: with NEURON's module loaded first, the table holds its native
+        # get_segment, which returns NEURON's own Segment type.
+        if name == "get_segment" and is_located_point_process_class(self._class_name):
+            return self._get_segment
         # .plot() on RangeVarPlot / PlotShape — not a HOC method
         if name == "plot":
             if self._class_name == "RangeVarPlot":
@@ -787,6 +829,8 @@ class Object(metaclass=_HocClassMeta):
                         return _read_hoc_template_var(self, name)
                     return _property_get_checked(self._obj, name_encoded)
                 else:
+                    if name == "x" and self._class_name == "Matrix":
+                        return _MatrixX(self)
                     if name == "weight" and self._class_name == "NetCon":
                         # One weight per NET_RECEIVE argument of the target;
                         # the symbol only holds the last steered length.
@@ -835,11 +879,13 @@ class Object(metaclass=_HocClassMeta):
                 # Python sections cannot be unnamed or renamed: core refuses for
                 # Python-owned sections (secref.cpp), which myneuron's are not
                 # in core until sections get a public owner (nrn fix 3).
+                section_arg = name in _SECTION_ARG_METHODS.get(self._class_name, ())
                 pysec_name_change = self._class_name == "SectionRef" and name in (
                     "unname",
                     "rename",
                 )
 
+                @hoc_locked
                 def method_func(*args, sec=None):
                     from .utils import _push_args, _PythonObjectArg
 
@@ -854,6 +900,10 @@ class Object(metaclass=_HocClassMeta):
                             return 0.0
                     if raw_first_arg and args:
                         args = (_PythonObjectArg(args[0]),) + args[1:]
+                    if section_arg:
+                        args, sec = _section_arg_as_sec(
+                            args, sec, allow_object=name == "remove"
+                        )
 
                     sym = _nrn_method_symbol(self._obj, name.encode("utf-8"))
                     # Liveness check before pushing (see utils._push_args).
@@ -1048,6 +1098,46 @@ def _ensure_alias_trampolines(name):
 
 
 _PC_RAW_ARG_METHODS = frozenset({"py_allgather", "py_gather", "py_broadcast"})
+
+# Core reads a positional Section in these through nrn_secarg, which unwraps it
+# with a hook that only NEURON's own Python module installs (nrnpy_o2sec_p_);
+# without it, nrn_secarg silently uses the currently accessed section instead.
+# Passing the Section as the accessed section (sec=) is what nrn_secarg then
+# reads.
+_SECTION_ARG_METHODS = {
+    "SectionList": frozenset(
+        {"append", "children", "contains", "remove", "subtree", "wholetree"}
+    ),
+}
+
+
+def _section_arg_as_sec(args, sec, allow_object=False):
+    """``(args, sec)`` with a lone Section argument moved to ``sec``.
+
+    Any other lone argument is an error, as in NEURON, except a HOC object
+    where ``allow_object`` (``SectionList.remove(other_list)``).
+    """
+    from .sections import Section
+
+    if len(args) != 1:
+        return args, sec
+    arg = args[0]
+    if isinstance(arg, Section):
+        return (), arg
+    if allow_object and isinstance(arg, Object):
+        return args, sec
+    raise RuntimeError("hoc_execerror: not a Python nrn.Section")
+    arg = args[0]
+    if isinstance(arg, Section):
+        return (), arg
+    if (
+        not isinstance(arg, (Object, NrnRef, str, bytes))
+        and arg is not None
+        and _is_python_object_arg(arg)
+    ):
+        # NEURON's o2sec rejects any other Python object.
+        raise RuntimeError("hoc_execerror: not a Python nrn.Section")
+    return args, sec
 
 
 class _SuppressCStderr:
@@ -1512,6 +1602,7 @@ class SectionList(Object):
 # ---------------------------------------------------------------------------
 
 
+@hoc_locked
 def _resolve_template_section(owner, name, idx=None):
     """Push a HOC section onto the stack via braces and snapshot it.
 
@@ -1636,7 +1727,16 @@ def _read_object_member(owner, name):
     ``Object.__getattr__`` (e.g. an Import3d cell's ``cell.all``).
     """
     from . import NEURON
+    from .api import _nrn_object_ref, _nrn_property_object_get
+    from .utils import _wrap_owned_object
 
+    if _nrn_property_object_get is not None:
+        # Reads non-public members too, as NEURON's Python module does.
+        obj = _nrn_property_object_get(owner._obj, name.encode("utf-8"))
+        if not obj:
+            return None
+        _nrn_object_ref(obj)  # borrowed; the wrapper owns one reference
+        return _wrap_owned_object(obj)
     n = NEURON()
     fn = f"_mn_memgrab_{name}"
     idfn = f"_mn_memid_{name}"
@@ -1759,6 +1859,64 @@ class _TemplateSectionArray:
 # ---------------------------------------------------------------------------
 # ArrayProperty
 # ---------------------------------------------------------------------------
+
+
+class _MatrixX:
+    """``m.x`` of a Matrix: ``m.x[i][j]`` is element ``(i, j)``, as in NEURON.
+
+    Matrix.x steers with two indices, which nrn_property_array_get/set (one
+    index) cannot pass, so elements go through Matrix.getval/setval. With
+    ``ref`` it is ``m._ref_x``, whose elements are pointers
+    (NrnMatrixElementRef). Holds the Matrix.
+    """
+
+    __slots__ = ("_matrix", "_row", "_ref")
+
+    def __init__(self, matrix, row=None, ref=False):
+        self._matrix = matrix
+        self._row = row
+        self._ref = ref
+
+    def __len__(self):
+        if self._row is None:
+            return int(self._matrix.nrow())
+        return int(self._matrix.ncol())
+
+    def _index(self, idx):
+        if isinstance(idx, bool) or not isinstance(idx, numbers.Integral):
+            raise TypeError(f"indices must be integers, not {type(idx).__name__}")
+        size = len(self)
+        idx = int(idx)
+        if idx < 0:
+            idx += size
+        if not 0 <= idx < size:
+            raise IndexError(f"{self._matrix.hname()}.x")
+        return idx
+
+    def __getitem__(self, idx):
+        idx = self._index(idx)
+        if self._row is None:
+            return _MatrixX(self._matrix, idx, self._ref)
+        if self._ref:
+            return NrnMatrixElementRef(self._matrix, self._row, idx)
+        return float(self._matrix.getval(self._row, idx))
+
+    def __setitem__(self, idx, value):
+        idx = self._index(idx)
+        if self._row is None:
+            raise TypeError("Wrong number of subscripts")
+        if self._ref:
+            self[idx][0] = value
+            return
+        self._matrix.setval(self._row, idx, float(value))
+
+    def __iter__(self):
+        for i in range(len(self)):
+            yield self[i]
+
+    def __repr__(self):
+        row = "" if self._row is None else f"[{self._row}]"
+        return f"{self._matrix.hname()}.x{row}[?]"
 
 
 class ArrayProperty:

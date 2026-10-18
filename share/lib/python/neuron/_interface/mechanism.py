@@ -14,6 +14,7 @@ from .api import (
     _nrn_symbol_type as _NRN_SYMBOL_TYPE,
 )
 from .nrnref import (
+    NrnRangeArrayRef,
     NrnRangeVarRef,
     NrnRef,
 )
@@ -88,6 +89,18 @@ def _array_length(full_name):
 
     info = _get_symbol_info(full_name)
     return info[3] if info is not None and info[2] else 0
+
+
+def _reject_ref_assignment(owner, name, full_name, type_name):
+    """Raise NEURON's error for ``owner._ref_x = value`` with a non-pointer value."""
+    from .sections import _is_pointer_rangevar
+
+    sym = _nrn_symbol(full_name.encode("utf-8"))
+    if not sym:
+        raise AttributeError(f"'{type_name}' object has no attribute '{name}'")
+    if _is_pointer_rangevar(full_name, sym):
+        raise ValueError("must be a hoc pointer")
+    raise AttributeError(" For assignment, only POINTER var can have a _ref_ prefix")
 
 
 class RangeVar:
@@ -196,10 +209,10 @@ class Mechanism:
     def _check_valid(self):
         """Raise ReferenceError if this mechanism's storage is gone, as NEURON.
 
-        The section deleted, the mechanism uninserted, or nseg changed. Checked
-        in full only after a model mutation (the epoch moved). A mechanism
-        uninserted and inserted again counts as valid here; in NEURON the old
-        wrapper stays dead.
+        The section deleted, the mechanism uninserted, or its node freed by an
+        nseg change. Checked in full only after a model mutation (the epoch
+        moved). A mechanism uninserted and inserted again counts as valid here;
+        in NEURON the old wrapper stays dead.
         """
         try:
             self._seg._sec._check_alive()
@@ -210,13 +223,29 @@ class Mechanism:
         ep = _model_epoch_now()
         if ep != self._epoch:
             sec = self._seg._sec
-            if (
-                not self._is_ion and not sec.has_membrane(self._name)
-            ) or _nseg_generation(sec._sec) != self._nseg:
+            if not self._is_ion and not sec.has_membrane(self._name):
                 raise ReferenceError(
                     f"mechanism '{self._name}' is no longer inserted in {sec!r}"
                 )
-            self._epoch = ep
+            generation = _nseg_generation(sec._sec)
+            if generation != self._nseg:
+                # NEURON keeps a node's mechanisms when an nseg change reuses
+                # the node, and frees them otherwise (sections.follow_node).
+                from .sections import Segment, follow_node
+
+                x = follow_node(
+                    sec._sec, self._nseg, self._seg._x, bool(sec.orientation())
+                )
+                if x is None:
+                    raise ReferenceError(
+                        f"mechanism '{self._name}' is no longer inserted in {sec!r}"
+                    )
+                if x != self._seg._x:
+                    self._seg = Segment(sec, x)
+                self._nseg = generation
+            # has_membrane is a HOC call, which itself bumps the epoch; record
+            # the epoch after it or the next access checks again.
+            self._epoch = _model_epoch_now()
 
     def _invalid_repr(self):
         if not _nrn_section_is_active(self._seg._sec._sec):
@@ -304,8 +333,19 @@ class Mechanism:
         if name.startswith("_ref_"):
             var = name[5:]
             full = var if self._is_ion else "%s_%s" % (var, self._name)
-            from .sections import _is_pointer_rangevar, _pointer_rangevar_get
+            from .sections import (
+                _get_symbol_info,
+                _is_pointer_rangevar,
+                _pointer_rangevar_get,
+            )
 
+            info = _get_symbol_info(full)
+            if info is None:
+                raise AttributeError(
+                    f"'nrn.Mechanism' object has no attribute '{name}'"
+                )
+            if info[2]:
+                return NrnRangeArrayRef(self._seg._sec, self._seg._x, full)
             sym = _nrn_symbol(full.encode("utf-8"))
             if sym and _is_pointer_rangevar(full, sym):
                 _pointer_rangevar_get(
@@ -461,6 +501,9 @@ class Mechanism:
                 self._check_valid()  # HOC may have deleted the host.
                 self._assign_pointer(name[5:], value)
                 return
+            _reject_ref_assignment(
+                self, name, "%s_%s" % (name[5:], self._name), "nrn.Mechanism"
+            )
         if name.startswith("_"):
             super().__setattr__(name, value)
             return

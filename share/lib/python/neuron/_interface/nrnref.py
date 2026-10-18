@@ -11,6 +11,7 @@ Two families live here:
 """
 import abc
 import ctypes
+import numbers
 import sys
 import weakref
 
@@ -24,6 +25,7 @@ from .api import (
     _nrn_object_ref,
     _nrn_rangevar_get,
     _nrn_rangevar_push,
+    _nrn_rangevar_push_nothrow,
     _nrn_rangevar_set,
     _nrn_str_pop,
     _nrn_str_push,
@@ -36,6 +38,7 @@ from .api import (
     _property_push_checked,
     _ref_property_array_set_checked,
     _ref_property_set_checked,
+    _ERR_BUF_SIZE,
 )
 
 # libc strdup/free for NrnStrRef. Loaded lazily so import never fails on an
@@ -69,6 +72,12 @@ def _nseg_generations():
 
         _NSEG_GENERATION = NSEG_GENERATION
     return _NSEG_GENERATION
+
+
+def _symbol_info(name):
+    from .sections import _get_symbol_info
+
+    return _get_symbol_info(name.decode("utf-8"))
 
 
 class NrnRef(abc.ABC):
@@ -126,11 +135,14 @@ class NrnRangeVarRef(NrnRef):
     still frees the section as in real NEURON.
     """
 
-    __slots__ = ("_sec", "_sec_ref", "_x", "_name", "_sym", "_nseg")
+    __slots__ = ("_sec", "_sec_ref", "_x", "_name", "_sym", "_nseg", "_index")
 
     # _x is captured at construction. If nseg changes afterward, x may land in
     # a different or nonexistent segment; real NEURON behaves the same way.
-    def __init__(self, sec, x, name):
+    # _index is the element of a range variable array (None for a scalar);
+    # NrnRangeArrayRef makes these for seg._ref_<array>[i].
+    def __init__(self, sec, x, name, index=None):
+        self._index = index
         self._sec = None
         self._sec_ref = None
         if sec.is_pysec():
@@ -144,12 +156,21 @@ class NrnRangeVarRef(NrnRef):
         self._sym = _nrn_symbol(self._name)
         if self._sym is None:
             raise NameError(f"No such mechanism or variable: {self._name}")
-        # Changing nseg replaces the nodes, so NEURON's handle to this one dies.
+        # NEURON's handle follows its node through nseg changes and dies with
+        # it (sections.follow_node); _check_nseg moves _x along.
         self._nseg = _nseg_generations().get(sec._sec, 0)
 
     def _check_nseg(self, sec):
-        if _nseg_generations().get(sec._sec, 0) != self._nseg:
+        generation = _nseg_generations().get(sec._sec, 0)
+        if generation == self._nseg:
+            return
+        from .sections import follow_node
+
+        x = follow_node(sec._sec, self._nseg, self._x, bool(sec.orientation()))
+        if x is None:
             raise ValueError("Invalid data_handle")
+        self._x = x
+        self._nseg = generation
 
     def __repr__(self):
         # repr stays usable after a weakly held Section is gone; data access
@@ -158,6 +179,8 @@ class NrnRangeVarRef(NrnRef):
         # NEURON's data_handle repr does.
         sec = self._sec if self._sec is not None else self._sec_ref()
         target = f"{sec}({self._x}).{self._name.decode('utf-8')}"
+        if self._index is not None:
+            target += f"[{self._index}]"
         try:
             self._checked_target()
         except (ReferenceError, RuntimeError, ValueError):
@@ -178,7 +201,22 @@ class NrnRangeVarRef(NrnRef):
         # section; _check_alive raises RuntimeError instead of pushing freed state.
         sec._check_alive()
         self._check_nseg(sec)
-        _nrn_rangevar_push(self._sym, sec._sec, self._x)
+        info = _symbol_info(self._name)
+        if not info[2]:
+            _nrn_rangevar_push(self._sym, sec._sec, self._x)
+            return
+        # nrn_rangevar_push on an array symbol reads its index from the HOC
+        # stack and throws through ctypes (process abort) without it.
+        if _nrn_rangevar_push_nothrow is None:
+            raise RuntimeError(
+                f"a pointer to {self._name.decode('utf-8')}[{self._index or 0}] "
+                "needs nrn_rangevar_push_nothrow, which this NEURON lacks (gap-70)"
+            )
+        err = ctypes.create_string_buffer(_ERR_BUF_SIZE)
+        if _nrn_rangevar_push_nothrow(
+            self._sym, sec._sec, self._x, self._index or 0, err, _ERR_BUF_SIZE
+        ):
+            raise RuntimeError(err.value.decode("utf-8", "replace"))
 
     def _checked_target(self):
         """Return (section, name, kind) or raise before the core is touched.
@@ -203,19 +241,32 @@ class NrnRangeVarRef(NrnRef):
         if info is None:
             raise NameError(f"No such mechanism or variable: {name}")
         if info[2]:
-            return sec, name, "array"
+            return sec, name, ("array", info[3])
         if _is_pointer_rangevar(name, info[0]):
             return sec, name, "pointer"
         return sec, name, info[0]
 
+    def _element(self, idx, name, length):
+        # NEURON's element pointer indexes relative to itself:
+        # seg._ref_xg[0][1] is xg[1], and seg._ref_xg[1][-1] is xg[0].
+        if isinstance(idx, bool) or not isinstance(idx, numbers.Integral):
+            raise TypeError(f"indices must be integers, not {type(idx).__name__}")
+        base = self._index or 0
+        element = base + int(idx)
+        if not 0 <= element < length:
+            raise IndexError(f"{name}[{base}] next_array_element({idx}): out of range")
+        return element
+
     def __getitem__(self, idx):
-        if idx != 0:
-            raise IndexError("Only index 0 is supported")
         sec, name, kind = self._checked_target()
-        if kind == "array":
+        if isinstance(kind, tuple):  # ("array", length)
             from .sections import _ArrayRangeVar
 
-            return _ArrayRangeVar(sec, self._x, name, 1)[0]
+            length = kind[1]
+            element = self._element(idx, name, length)
+            return _ArrayRangeVar(sec, self._x, name, length)[element]
+        if idx != 0:
+            raise IndexError("Only index 0 is supported")
         if kind == "pointer":
             from .sections import _pointer_rangevar_get
 
@@ -223,20 +274,71 @@ class NrnRangeVarRef(NrnRef):
         return _nrn_rangevar_get(kind, sec._sec, self._x)
 
     def __setitem__(self, idx, value):
-        if idx != 0:
-            raise IndexError("Only index 0 is supported")
         sec, name, kind = self._checked_target()
-        if kind == "array":
+        if isinstance(kind, tuple):  # ("array", length)
             from .sections import _ArrayRangeVar
 
-            _ArrayRangeVar(sec, self._x, name, 1)[0] = value
+            length = kind[1]
+            element = self._element(idx, name, length)
+            _ArrayRangeVar(sec, self._x, name, length)[element] = value
             return
+        if idx != 0:
+            raise IndexError("Only index 0 is supported")
         if kind == "pointer":
             from .sections import _pointer_rangevar_set
 
             _pointer_rangevar_set(sec, self._x, name, value)
             return
         _nrn_rangevar_set(kind, sec._sec, self._x, value)
+
+
+class NrnRangeArrayRef(NrnRef):
+    """``seg._ref_<array>`` / ``seg.mech._ref_<array>``: ``[i]`` points at element ``i``.
+
+    Like NEURON's ``nrn.RangeVar``, it has a len() and iterates over the
+    element pointers, but is not itself a pointer: ``vec.record(seg._ref_xg)``
+    fails where ``vec.record(seg._ref_xg[1])`` records ``xg[1]``.
+    """
+
+    __slots__ = ("_sec", "_x", "_name")
+
+    def __init__(self, sec, x, name):
+        self._sec = sec
+        self._x = x
+        self._name = name
+
+    def __len__(self):
+        return _symbol_info(self._name.encode("utf-8"))[3]
+
+    def _resolve(self, idx):
+        if isinstance(idx, bool) or not isinstance(idx, numbers.Integral):
+            raise TypeError(f"indices must be integers, not {type(idx).__name__}")
+        length = len(self)
+        idx = int(idx)
+        if idx < 0:
+            idx += length
+        if not 0 <= idx < length:
+            raise IndexError(self._name)
+        return idx
+
+    def __getitem__(self, idx):
+        return NrnRangeVarRef(self._sec, self._x, self._name, self._resolve(idx))
+
+    def __setitem__(self, idx, value):
+        self[idx][0] = value
+
+    def __iter__(self):
+        for i in range(len(self)):
+            yield self[i]
+
+    def _push(self):
+        raise RuntimeError(
+            f"{self._name} is a range variable array; pass a pointer to one "
+            f"element, e.g. _ref_{self._name}[0]"
+        )
+
+    def __repr__(self):
+        return f"<NrnRef to {self._sec}({self._x}).{self._name}[]>"
 
 
 class NrnVarRef(NrnRef):
@@ -463,6 +565,129 @@ class NrnVectorElementRef(NrnRef):
 
     def __repr__(self):
         return f"<NrnRef to {self._vec.hname()}.x[{self._index}]>"
+
+
+def _double_array_data(name, dims):
+    """Base ``double*`` of top-level ``double name[...]`` with shape ``dims``.
+
+    Looked up on every access: redeclaring the array reallocates it.
+    """
+    from .api import _nrn_symbol_array_length, _nrn_symbol_is_array, symbol_array_dims
+
+    sym = _nrn_symbol(name.encode("utf-8"))
+    if not sym or not _nrn_symbol_is_array(sym):
+        raise TypeError(f"'{name}' is no longer an array")
+    current = symbol_array_dims(sym, int(_nrn_symbol_array_length(sym)))
+    if current != dims:
+        raise TypeError(f"'{name}' was redeclared with dimensions {current}")
+    data = _nrn_symbol_dataptr(sym)
+    address = ctypes.cast(data, ctypes.c_void_p).value
+    if not address or address < _MIN_VALID_DATAPTR:
+        raise RuntimeError(f"no data pointer for HOC array '{name}'")
+    return data
+
+
+class NrnDoubleArrayElementRef(NrnRef):
+    """Pointer to an element of a top-level double array, ``n._ref_a[i][j]``.
+
+    As NEURON's pointer, ``[k]`` reads the element ``k`` places further on in
+    the array's row-major storage (``_ref_a[0][0][6]`` is ``a[1][2]`` for
+    ``double a[3][4]``); unlike NEURON's raw pointer, reading past the end of
+    the array raises.
+    """
+
+    __slots__ = ("_name", "_dims", "_flat")
+
+    def __init__(self, name, dims, flat):
+        self._name = name
+        self._dims = dims
+        self._flat = flat
+
+    def _address(self, offset=0):
+        if isinstance(offset, bool) or not isinstance(offset, numbers.Integral):
+            raise TypeError(f"indices must be integers, not {type(offset).__name__}")
+        data = _double_array_data(self._name, self._dims)
+        total = 1
+        for d in self._dims:
+            total *= d
+        element = self._flat + int(offset)
+        if not 0 <= element < total:
+            raise IndexError(self._name)
+        return ctypes.cast(
+            ctypes.addressof(data.contents) + 8 * element,
+            ctypes.POINTER(ctypes.c_double),
+        )
+
+    def _push(self):
+        _nrn_double_ptr_push(self._address())
+
+    def __getitem__(self, idx):
+        return self._address(idx)[0]
+
+    def __setitem__(self, idx, value):
+        self._address(idx)[0] = float(value)
+
+    def __repr__(self):
+        return f"<NrnRef to {self._name}[{self._flat}]>"
+
+
+class NrnMatrixElementRef(NrnRef):
+    """Pointer to element ``(i, j)`` of a Matrix, ``m._ref_x[i][j]``.
+
+    As NEURON's pointer, ``[k]`` reads the element ``k`` places further on in
+    row-major order (``_ref_x[0][0][ncol]`` is ``x[1][0]``), within the
+    matrix. Pushing it needs nrn_property_element_ptr (nrn#3900). Holds the
+    Matrix.
+    """
+
+    __slots__ = ("_matrix", "_flat")
+
+    def __init__(self, matrix, row, col):
+        self._matrix = matrix
+        self._flat = row * int(matrix.ncol()) + col
+
+    def _element(self, offset=0):
+        if isinstance(offset, bool) or not isinstance(offset, numbers.Integral):
+            raise TypeError(f"indices must be integers, not {type(offset).__name__}")
+        nrow, ncol = int(self._matrix.nrow()), int(self._matrix.ncol())
+        flat = self._flat + int(offset)
+        if not 0 <= flat < nrow * ncol:
+            raise IndexError(f"{self._matrix.hname()}.x")
+        return divmod(flat, ncol)
+
+    def _push(self):
+        from .api import _nrn_property_element_ptr
+
+        row, col = self._element()
+        if _nrn_property_element_ptr is None:
+            raise RuntimeError(
+                "a pointer to a Matrix element needs nrn_property_element_ptr, "
+                "which this NEURON lacks (nrn#3900)"
+            )
+        indices = (ctypes.c_int * 2)(row, col)
+        ptr = ctypes.POINTER(ctypes.c_double)()
+        err = ctypes.create_string_buffer(_ERR_BUF_SIZE)
+        if _nrn_property_element_ptr(
+            self._matrix._obj,
+            b"x",
+            indices,
+            2,
+            ctypes.byref(ptr),
+            err,
+            _ERR_BUF_SIZE,
+        ):
+            raise RuntimeError(err.value.decode("utf-8", "replace"))
+        _nrn_double_ptr_push(ptr)
+
+    def __getitem__(self, idx):
+        return float(self._matrix.getval(*self._element(idx)))
+
+    def __setitem__(self, idx, value):
+        self._matrix.setval(*self._element(idx), float(value))
+
+    def __repr__(self):
+        row, col = divmod(self._flat, max(int(self._matrix.ncol()), 1))
+        return f"<NrnRef to {self._matrix.hname()}.x[{row}][{col}]>"
 
 
 class NrnArrayPropertyRef(NrnRef):

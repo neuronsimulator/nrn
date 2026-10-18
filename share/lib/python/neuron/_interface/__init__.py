@@ -4,10 +4,12 @@ Provides the NEURON singleton (n/h), Section, and dynamic class dispatch.
 """
 import builtins
 import ctypes
+import numbers
 import sys
 import threading
 
 from .api import (
+    hoc_locked,
     symbol_array_dims,
     _ERR_BUF_SIZE,
     _METHODS_HOC_NRNPYTHON_OFFSET,
@@ -58,6 +60,7 @@ from .api import (
 )
 from .nrnref import (
     NrnDoubleRef,
+    NrnRef,
     NrnObjectPropertyRef,
     NrnObjectRef,
     NrnRangeVarRef,
@@ -67,11 +70,13 @@ from .nrnref import (
 from .object import List, Object, SectionList, Vector
 from .sections import Section
 from .utils import (
+    TEMPLATE_CONVERTERS,
     FuncWrapper,
     _is_python_object_arg,
     _PythonObjectArg,
     _Singleton,
     _wrap_owned_object,
+    forget_class,
     list_functions,
 )
 
@@ -545,7 +550,7 @@ class _ObjrefArray:
 
         indices = self._prefix + (idx,)
         _, _, put, nil = _objref_trampolines(self._n, self._name, len(self._dims))
-        if value is None:
+        if value is None or isinstance(value, NrnRef):  # see __setattr__
             getattr(self._n, nil)(*indices)
             return
         if not isinstance(value, Object):
@@ -563,6 +568,91 @@ class _ObjrefArray:
     def __iter__(self):
         for i in range(len(self)):
             yield self[i]
+
+
+class _DoubleArray:
+    """Subscriptable proxy for a top-level HOC ``double name[N]...`` array.
+
+    Mirrors NEURON's array HocObject: ``n.a[i]``, ``n.a[i][j]`` for more
+    dimensions, ``len()`` and iteration; a row of a multi-dimensional array
+    is not assignable. With ``ref`` it is ``n._ref_a``, whose elements are
+    pointers (NrnDoubleArrayElementRef). Elements are read and written in the
+    array's row-major storage through nrn_symbol_dataptr.
+    """
+
+    __slots__ = ("_name", "_dims", "_prefix", "_ref")
+
+    def __init__(self, name, dims, prefix=(), ref=False):
+        self._name = name
+        self._dims = tuple(dims)
+        self._prefix = tuple(prefix)
+        self._ref = ref
+
+    def _index(self, idx):
+        if isinstance(idx, bool) or not isinstance(idx, numbers.Integral):
+            raise TypeError(f"indices must be integers, not {type(idx).__name__}")
+        size = self._dims[len(self._prefix)]
+        idx = int(idx)
+        if idx < 0:
+            idx += size
+        if not 0 <= idx < size:
+            raise IndexError(self._name)
+        return idx
+
+    def _flat(self, indices):
+        flat = 0
+        for i, d in zip(indices, self._dims):
+            flat = flat * d + i
+        return flat
+
+    def _is_row(self):
+        return len(self._prefix) + 1 < len(self._dims)
+
+    def __getitem__(self, idx):
+        from .nrnref import NrnDoubleArrayElementRef, _double_array_data
+
+        if isinstance(idx, slice):
+            return [self[i] for i in range(*idx.indices(len(self)))]
+        indices = self._prefix + (self._index(idx),)
+        if self._is_row():
+            return _DoubleArray(self._name, self._dims, indices, self._ref)
+        flat = self._flat(indices)
+        if self._ref:
+            return NrnDoubleArrayElementRef(self._name, self._dims, flat)
+        return _double_array_data(self._name, self._dims)[flat]
+
+    def __setitem__(self, idx, value):
+        from .nrnref import _double_array_data
+
+        indices = self._prefix + (self._index(idx),)
+        if self._is_row():
+            raise TypeError("Wrong number of subscripts")
+        if self._ref:
+            self[idx][0] = value
+            return
+        _double_array_data(self._name, self._dims)[self._flat(indices)] = float(value)
+
+    def __len__(self):
+        return self._dims[len(self._prefix)]
+
+    def __iter__(self):
+        for i in range(len(self)):
+            yield self[i]
+
+    def __repr__(self):
+        if self._ref:
+            return f"<incomplete pointer to hoc array {self._name}>"
+        return self._name + "".join(f"[{i}]" for i in self._prefix) + "[?]"
+
+
+def _double_array(name, ref=False):
+    """A _DoubleArray for top-level VAR ``name``, or None if it is a scalar."""
+    sym = _nrn_symbol(name.encode("utf-8"))
+    if not sym or not _nrn_symbol_is_array(sym):
+        return None
+    return _DoubleArray(
+        name, symbol_array_dims(sym, int(_nrn_symbol_array_length(sym))), ref=ref
+    )
 
 
 # Delimit the captured strdef value in HOC `print` output. Assumed not to
@@ -758,6 +848,9 @@ class NEURON(metaclass=_Singleton):
                 if base_name in self._top_level:
                     _type, _subtype = self._top_level[base_name]
                     if _type == TYPES.VAR and _subtype in (0, 2):
+                        array = _double_array(base_name, ref=True)
+                        if array is not None:
+                            return array
                         return NrnVarRef(base_name)
             else:
                 if name in self._top_level:
@@ -796,6 +889,8 @@ class NEURON(metaclass=_Singleton):
                         # the hoc_ac_ trampoline.
 
                         sym0 = _nrn_symbol(name.encode("utf-8"))
+                        if sym0 and _nrn_symbol_is_array(sym0):
+                            return _double_array(name)
                         if sym0:
                             dptr = _nrn_symbol_dataptr(sym0)
                             addr = ctypes.cast(dptr, ctypes.c_void_p).value
@@ -821,6 +916,7 @@ class NEURON(metaclass=_Singleton):
 
                     elif _type in self._function_types:
 
+                        @hoc_locked
                         def nrn_func(*args, sec=None):
                             from .sections import Segment
                             from .utils import _push_args
@@ -853,6 +949,9 @@ class NEURON(metaclass=_Singleton):
                                 # n.delete_section(sec=s), which may not move the
                                 # head-link fingerprint.
                                 _bump_model_epoch()
+                                converted = TEMPLATE_CONVERTERS.get(name)
+                                if converted is not None and len(args) > converted:
+                                    forget_class(str(args[converted]))
                                 if ret:
                                     # Nothrow restores the stack to after the
                                     # arg push; release those slots (gap-56).
@@ -1079,7 +1178,8 @@ class NEURON(metaclass=_Singleton):
                     f"'{name}' is an object array; assign an element "
                     f"(n.{name}[i] = ...), not the whole array"
                 )
-            if value is None:
+            # A reference is not a HOC object; NEURON leaves the objref nil.
+            if value is None or isinstance(value, NrnRef):
                 self("objref %s" % name)
                 return
             if not isinstance(value, Object):
@@ -1169,6 +1269,7 @@ class NEURON(metaclass=_Singleton):
             raise TypeError(usage) from None
         return None
 
+    @hoc_locked
     def __call__(self, cmd, *, sec=None, raise_on_error=False, _no_epoch_bump=False):
         # Returns True on success, False on a HOC execution error. Like real
         # NEURON's h(), HOC errors print to stderr and do not raise: ModelDB
@@ -1213,6 +1314,7 @@ class NEURON(metaclass=_Singleton):
             raise TypeError("Section access unspecified")
         return Section._from_ptr(sec_ptr)
 
+    @hoc_locked
     def distance(
         self,
         arg1=_DISTANCE_MISSING,

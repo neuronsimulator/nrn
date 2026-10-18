@@ -128,10 +128,13 @@ def class_symbol(class_name):
     return None
 
 
-# Point-process status per HOC class name. A class's status never changes;
-# the MechanismType scan runs once per class. MechanismType is seeded: the
-# scan's own attribute reads on it come back through this check.
+# Point-process status per HOC class name. The MechanismType scan runs once
+# per class; make_pointprocess turns a HOC template into one (forget_class).
+# MechanismType is seeded: the scan's own attribute reads on it come back
+# through this check.
 _IS_POINT_PROCESS = {"MechanismType": False}
+# ARTIFICIAL_CELL point processes, recorded by the same scan.
+_IS_ARTIFICIAL = set()
 
 
 def is_point_process_class(class_name):
@@ -148,7 +151,14 @@ def is_point_process_class(class_name):
         mt.select(i)
         mt.selected(selected)
         _IS_POINT_PROCESS[selected[0]] = True
+        if mt.is_artificial(i):
+            _IS_ARTIFICIAL.add(selected[0])
     return _IS_POINT_PROCESS.setdefault(class_name, False)
+
+
+def is_located_point_process_class(class_name):
+    """True for a point process that sits in a section (not an ARTIFICIAL_CELL)."""
+    return is_point_process_class(class_name) and class_name not in _IS_ARTIFICIAL
 
 
 # Object method-table cache, keyed by HOC class name.
@@ -157,13 +167,28 @@ def is_point_process_class(class_name):
 # Walking the symbol table on every Object construction was the largest
 # cost in IClamp/Vector creation. Historical numbers:
 # benchmarks/README.md#historical-implementation-measurements.
-# INVALIDATES: only the late-definition case below. An already-loaded
-# template can't be redefined (NEURON raises an execerror on redefinition),
-# so its method-table entry is stable for the process lifetime.
+# INVALIDATES: make_pointprocess / make_mechanism add methods to a HOC
+# template (loc, get_loc, has_loc, ...), so they drop its entry
+# (forget_class); otherwise only the late-definition case below. An
+# already-loaded template can't be redefined (NEURON raises an execerror on
+# redefinition).
 # TODO(gap-46): if a template name is first queried before the template is
 # defined, the cache holds a stale empty entry for it. In practice templates
 # are fully defined before first use.
 _CLASS_METHODS_CACHE = {}
+
+
+# HOC functions that turn a template into a mechanism, and the position of
+# the template name among their arguments.
+TEMPLATE_CONVERTERS = {"make_pointprocess": 0, "make_mechanism": 1}
+
+
+def forget_class(class_name):
+    """Drop the cached method table and point-process status of a HOC class."""
+    _CLASS_METHODS_CACHE.pop(class_name, None)
+    if class_name != "MechanismType":
+        _IS_POINT_PROCESS.pop(class_name, None)
+        _IS_ARTIFICIAL.discard(class_name)
 
 
 def list_methods(obj):

@@ -9,6 +9,7 @@ import operator
 import os
 import site
 import sys
+import threading
 import warnings
 from pathlib import Path
 
@@ -589,6 +590,32 @@ if _nrn_symbol_array_dims is not None:
         ctypes.c_int,
     ]
     _nrn_symbol_array_dims.restype = ctypes.c_int
+
+
+# nrn#3900 (pending): a pointer to one element of an object's array property,
+# with every index (Matrix.x takes two). Optional; without it an element of
+# Matrix.x cannot be passed as a pointer.
+_nrn_property_element_ptr = getattr(libnrniv, "nrn_property_element_ptr", None)
+if _nrn_property_element_ptr is not None:
+    _nrn_property_element_ptr.argtypes = [
+        ctypes.c_void_p,
+        ctypes.c_char_p,
+        ctypes.POINTER(ctypes.c_int),
+        ctypes.c_int,
+        ctypes.POINTER(ctypes.POINTER(ctypes.c_double)),
+        ctypes.c_char_p,
+        ctypes.c_size_t,
+    ]
+    _nrn_property_element_ptr.restype = ctypes.c_int
+
+# nrn#3888 (pending): the Object bound to an objref member of a HOC template
+# object, public or not, as NEURON's Python module reads it (borrowed; NULL
+# when nil or not an objref member). Optional; without it members are read
+# through HOC, which allows only public ones.
+_nrn_property_object_get = getattr(libnrniv, "nrn_property_object_get", None)
+if _nrn_property_object_get is not None:
+    _nrn_property_object_get.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
+    _nrn_property_object_get.restype = ctypes.c_void_p
 
 
 def symbol_array_dims(sym, first_length):
@@ -1307,6 +1334,31 @@ if _hoc_valid_stmt is not None:
     _hoc_valid_stmt.restype = ctypes.c_bool
 
 
+# One lock for every multi-step HOC interaction. A call from Python is several
+# C calls (push the arguments, call, pop the result) on NEURON's single
+# interpreter stack and parser buffer, and the GIL can switch threads between
+# them; NEURON's own module makes each call one C call under the GIL. The GUI
+# event thread (doNotify every 0.1 s) and any user thread would otherwise pop
+# another thread's values or overwrite its statement mid-parse (gap-72).
+# Reentrant: HOC calls back into Python, which calls HOC again.
+HOC_LOCK = threading.RLock()
+
+
+def hoc_locked(func):
+    """Run ``func`` holding HOC_LOCK."""
+
+    def locked(*args, **kwargs):
+        with HOC_LOCK:
+            return func(*args, **kwargs)
+
+    locked.__name__ = func.__name__
+    locked.__qualname__ = func.__qualname__
+    locked.__doc__ = func.__doc__
+    locked.__wrapped__ = func
+    return locked
+
+
+@hoc_locked
 def _nrn_hoc_call(cmd):
     if _hoc_valid_stmt is not None:
         return 0 if _hoc_valid_stmt(cmd, None) else 1
@@ -1762,6 +1814,22 @@ _nrn_section_is_active = _bind("nrn_section_is_active", ctypes.c_bool, Section)
 _nrn_rangevar_set = _bind(
     "nrn_rangevar_set", None, Symbol, Section, ctypes.c_double, ctypes.c_double
 )
+
+# Pending upstream (nrn#3905): push a pointer to element `index` of a range
+# variable array. nrn_rangevar_push reads the index from the HOC stack behind
+# an array-dimension marker the C API cannot push, and throws without it.
+# Optional; without it an element reference cannot be passed as a pointer.
+_nrn_rangevar_push_nothrow = getattr(libnrniv, "nrn_rangevar_push_nothrow", None)
+if _nrn_rangevar_push_nothrow is not None:
+    _nrn_rangevar_push_nothrow.argtypes = [
+        Symbol,
+        Section,
+        ctypes.c_double,
+        ctypes.c_int,
+        ctypes.c_char_p,
+        ctypes.c_size_t,
+    ]
+    _nrn_rangevar_push_nothrow.restype = ctypes.c_int
 
 # Both return one owned Object* reference, or NULL for a non-live RANDOM member.
 _nrn_segment_nmodlrandom_get = _bind(
