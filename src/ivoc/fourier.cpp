@@ -9,10 +9,12 @@
 #define _USE_MATH_DEFINES
 
 #include <cmath>
+#include <complex>
 #include <cstddef>
-#include <cstdlib>
 #include <cstdio>
+#include <cstdlib>
 #include <utility>
+#include <vector>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -35,186 +37,65 @@ static inline double SQUARE(double a) {
 }
 
 /*
- * Self-contained BSD-3-clause Cooley-Tukey radix-2 real FFT and half-complex inverse FFT.
+ * BSD-3-Clause Fast Fourier Transform using pocketfft (Martin Reinecke).
  *
- * Frequency domain format:
+ * Frequency domain format (NEURON half-complex layout):
  *   data[0]   = Re(X_0) (DC)
  *   data[k]   = Re(X_k)
  *   data[n-k] = Im(X_k)  for k = 1 .. n/2 - 1
  *   data[n/2] = Re(X_{n/2}) (Nyquist)
  */
 
-static inline void bit_reverse_permute(double* data, size_t n) {
-    size_t j = 0;
-    for (size_t i = 0; i < n - 1; ++i) {
-        size_t k = n / 2;
-        if (i < j) {
-            std::swap(data[i], data[j]);
-        }
-        while (k <= j) {
-            j -= k;
-            k /= 2;
-        }
-        j += k;
-    }
-}
-
-static inline int compute_logn(size_t n) {
-    if (n == 0 || (n & (n - 1)) != 0) {
-        return -1;
-    }
-    int logn = 0;
-    while ((size_t(1) << logn) < n) {
-        logn++;
-    }
-    return logn;
-}
-
-static void real_radix2_forward(double* data, size_t n, int logn) {
-    bit_reverse_permute(data, n);
-
-    size_t p = 1;
-    size_t q = n;
-
-    for (int i = 1; i <= logn; ++i) {
-        size_t p_half = p;
-        p *= 2;
-        q /= 2;
-
-        // Butterfly for a = 0
-        for (size_t b = 0; b < q; ++b) {
-            double t0 = data[b * p] + data[b * p + p_half];
-            double t1 = data[b * p] - data[b * p + p_half];
-            data[b * p] = t0;
-            data[b * p + p_half] = t1;
-        }
-
-        // Butterflies for a = 1 .. p_half/2 - 1
-        {
-            double w_real = 1.0;
-            double w_imag = 0.0;
-            const double theta = -2.0 * M_PI / static_cast<double>(p);
-            const double s = std::sin(theta);
-            const double t = std::sin(theta * 0.5);
-            const double s2 = 2.0 * t * t;
-
-            for (size_t a = 1; a < p_half / 2; ++a) {
-                const double tmp_real = w_real - s * w_imag - s2 * w_real;
-                const double tmp_imag = w_imag + s * w_real - s2 * w_imag;
-                w_real = tmp_real;
-                w_imag = tmp_imag;
-
-                for (size_t b = 0; b < q; ++b) {
-                    double z0_real = data[b * p + a];
-                    double z0_imag = data[b * p + p_half - a];
-                    double z1_real = data[b * p + p_half + a];
-                    double z1_imag = data[b * p + p - a];
-
-                    double t0_real = z0_real + w_real * z1_real - w_imag * z1_imag;
-                    double t0_imag = z0_imag + w_real * z1_imag + w_imag * z1_real;
-
-                    double t1_real = z0_real - w_real * z1_real + w_imag * z1_imag;
-                    double t1_imag = z0_imag - w_real * z1_imag - w_imag * z1_real;
-
-                    data[b * p + a] = t0_real;
-                    data[b * p + p - a] = t0_imag;
-                    data[b * p + p_half - a] = t1_real;
-                    data[b * p + p_half + a] = -t1_imag;
-                }
-            }
-        }
-
-        if (p_half > 1) {
-            for (size_t b = 0; b < q; ++b) {
-                data[b * p + p - p_half / 2] *= -1.0;
-            }
-        }
-    }
-}
-
-static void halfcomplex_radix2_inverse(double* data, size_t n, int logn) {
-    size_t p = n;
-    size_t q = 1;
-    size_t p_half = n / 2;
-
-    for (int i = 1; i <= logn; ++i) {
-        // Butterfly for a = 0
-        for (size_t b = 0; b < q; ++b) {
-            const double z0 = data[b * p];
-            const double z1 = data[b * p + p_half];
-            data[b * p] = z0 + z1;
-            data[b * p + p_half] = z0 - z1;
-        }
-
-        // Butterflies for a = 1 .. p_half/2 - 1
-        {
-            double w_real = 1.0;
-            double w_imag = 0.0;
-            const double theta = 2.0 * M_PI / static_cast<double>(p);
-            const double s = std::sin(theta);
-            const double t = std::sin(theta * 0.5);
-            const double s2 = 2.0 * t * t;
-
-            for (size_t a = 1; a < p_half / 2; ++a) {
-                const double tmp_real = w_real - s * w_imag - s2 * w_real;
-                const double tmp_imag = w_imag + s * w_real - s2 * w_imag;
-                w_real = tmp_real;
-                w_imag = tmp_imag;
-
-                for (size_t b = 0; b < q; ++b) {
-                    double z0_real = data[b * p + a];
-                    double z0_imag = data[b * p + p - a];
-                    double z1_real = data[b * p + p_half - a];
-                    double z1_imag = -data[b * p + p_half + a];
-
-                    double t0_real = z0_real + z1_real;
-                    double t0_imag = z0_imag + z1_imag;
-
-                    double t1_real = z0_real - z1_real;
-                    double t1_imag = z0_imag - z1_imag;
-
-                    data[b * p + a] = t0_real;
-                    data[b * p + p_half - a] = t0_imag;
-                    data[b * p + p_half + a] = (w_real * t1_real - w_imag * t1_imag);
-                    data[b * p + p - a] = (w_real * t1_imag + w_imag * t1_real);
-                }
-            }
-        }
-
-        if (p_half > 1) {
-            for (size_t b = 0; b < q; ++b) {
-                data[b * p + p_half / 2] *= 2.0;
-                data[b * p + p_half + p_half / 2] *= -2.0;
-            }
-        }
-
-        p_half /= 2;
-        p /= 2;
-        q *= 2;
-    }
-
-    bit_reverse_permute(data, n);
-
-    const double norm = 1.0 / static_cast<double>(n);
-    for (size_t i = 0; i < n; ++i) {
-        data[i] *= norm;
-    }
-}
+#define POCKETFFT_NO_MULTITHREADING
+#include "../pocketfft/pocketfft_hdronly.h"
 
 void nrngsl_realft(double* data, unsigned long n, int direction) {
     if (n <= 1) {
         return;
     }
-    int logn = compute_logn(n);
-    if (logn == -1) {
+    if ((n & (n - 1)) != 0) {
         hoc_execerror("n is not a power of 2", nullptr);
     }
+
+    const size_t n2 = n / 2;
     if (direction == 1) {
-        real_radix2_forward(data, n, logn);
+        std::vector<std::complex<double>> spectrum(n2 + 1);
+        const pocketfft::shape_t shape_in{n};
+        const pocketfft::stride_t stride_in{sizeof(double)};
+        const pocketfft::stride_t stride_out{sizeof(std::complex<double>)};
+
+        pocketfft::r2c(
+            shape_in, stride_in, stride_out, 0, /*forward=*/true, data, spectrum.data(), 1.0);
+
+        data[0] = spectrum[0].real();
+        data[n2] = spectrum[n2].real();
+        for (size_t k = 1; k < n2; ++k) {
+            data[k] = spectrum[k].real();
+            data[n - k] = spectrum[k].imag();
+        }
     } else {
-        halfcomplex_radix2_inverse(data, n, logn);
+        std::vector<std::complex<double>> spectrum(n2 + 1);
+        spectrum[0] = std::complex<double>(data[0], 0.0);
+        spectrum[n2] = std::complex<double>(data[n2], 0.0);
+        for (size_t k = 1; k < n2; ++k) {
+            spectrum[k] = std::complex<double>(data[k], data[n - k]);
+        }
+
+        const pocketfft::shape_t shape_out{n};
+        const pocketfft::stride_t stride_in{sizeof(std::complex<double>)};
+        const pocketfft::stride_t stride_out{sizeof(double)};
+
+        pocketfft::c2r(shape_out,
+                       stride_in,
+                       stride_out,
+                       0,
+                       /*forward=*/false,
+                       spectrum.data(),
+                       data,
+                       1.0 / static_cast<double>(n));
     }
 }
+
 
 /*
   convlv()  -- convolution of a read data set with a response function
