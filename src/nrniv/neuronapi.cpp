@@ -16,6 +16,7 @@
 #include <exception>
 #include <cstdio>
 #include <limits>
+#include <string>
 
 /// A public face of hoc_Item
 struct nrn_Item: public hoc_Item {};
@@ -257,6 +258,157 @@ void nrn_rangevar_set(Symbol* sym, Section* sec, double x, double value) {
 
 void nrn_rangevar_push(Symbol* sym, Section* sec, double x) {
     hoc_push(nrn_rangepointer(sec, sym, x));
+}
+
+namespace {
+// Locate element `index` of a range variable at x, as NEURON's Python module
+// does (nrnpy_rangepointer takes the array index directly, where
+// nrn_rangepointer reads it from the interpreter stack). Returns nullptr and
+// writes a message instead of raising a HOC error. The handle is invalid on
+// failure.
+neuron::container::data_handle<double> rangevar_handle(Symbol* sym,
+                                                       Section* sec,
+                                                       double x,
+                                                       int index,
+                                                       char* error_msg,
+                                                       size_t error_msg_size) {
+    auto fail = [&](const std::string& message) -> neuron::container::data_handle<double> {
+        if (error_msg && error_msg_size) {
+            std::strncpy(error_msg, message.c_str(), error_msg_size - 1);
+            error_msg[error_msg_size - 1] = '\0';
+        }
+        return {};
+    };
+    if (!sym || sym->type != RANGEVAR) {
+        return fail("not a range variable");
+    }
+    if (!sec || !sec->prop) {
+        return fail("section was deleted");
+    }
+    if (!(x >= 0.0 && x <= 1.0)) {
+        return fail("x must be in [0, 1]");
+    }
+    int const length = is_array(*sym) ? sym->arayinfo->sub[0] : 1;
+    if (index < 0 || index >= length) {
+        return fail(std::string(sym->name) + ": index out of range");
+    }
+    if (sym->u.rng.type == EXTRACELL) {
+        // nrnpy_rangepointer ignores the index for extracellular arrays.
+        if (double* pd = nrn_vext_pd(sym, index, node_ptr(sec, x, nullptr))) {
+            return neuron::container::data_handle<double>{pd};
+        }
+    }
+    int err = 0;
+    auto const handle = nrnpy_rangepointer(sec, sym, x, &err, index);
+    if (handle.is_invalid_handle()) {
+        if (sym->u.rng.type == IMEMFAST) {
+            return fail("i_membrane_ needs cvode.use_fast_imem(1)");
+        }
+        if (err == 2) {
+            return fail(std::string(sym->name) + ": POINTER is not set");
+        }
+        return fail(std::string(sym->name) + ": mechanism is not inserted at this location");
+    }
+    if (!handle.holds<double*>()) {
+        return fail(std::string(sym->name) + ": opaque pointer has no numeric value");
+    }
+    if (sym->u.rng.type == MORPHOLOGY && sec->recalc_area_) {
+        nrn_area_ri(sec);
+    }
+    return neuron::container::data_handle<double>(handle);
+}
+
+double* rangevar_element(Symbol* sym,
+                         Section* sec,
+                         double x,
+                         int index,
+                         char* error_msg,
+                         size_t error_msg_size) {
+    auto handle = rangevar_handle(sym, sec, x, index, error_msg, error_msg_size);
+    return handle ? static_cast<double*>(handle) : nullptr;
+}
+}  // namespace
+
+int nrn_rangevar_get_nothrow(Symbol* sym,
+                             Section* sec,
+                             double x,
+                             int index,
+                             double* value,
+                             char* error_msg,
+                             size_t error_msg_size) {
+    if (error_msg && error_msg_size) {
+        error_msg[0] = '\0';
+    }
+    try {
+        double* pd = rangevar_element(sym, sec, x, index, error_msg, error_msg_size);
+        if (!pd) {
+            return 1;
+        }
+        if (value) {
+            *value = *pd;
+        }
+        return 0;
+    } catch (const std::exception& e) {
+        if (error_msg && error_msg_size) {
+            std::strncpy(error_msg, e.what(), error_msg_size - 1);
+            error_msg[error_msg_size - 1] = '\0';
+        }
+        return 1;
+    }
+}
+
+int nrn_rangevar_set_nothrow(Symbol* sym,
+                             Section* sec,
+                             double x,
+                             int index,
+                             double value,
+                             char* error_msg,
+                             size_t error_msg_size) {
+    if (error_msg && error_msg_size) {
+        error_msg[0] = '\0';
+    }
+    try {
+        double* pd = rangevar_element(sym, sec, x, index, error_msg, error_msg_size);
+        if (!pd) {
+            return 1;
+        }
+        *pd = value;
+        if (sym->u.rng.type == EXTRACELL && sym->u.rng.index == 0) {
+            diam_changed = 1;  // xraxial, as the Python module's setter does
+        }
+        return 0;
+    } catch (const std::exception& e) {
+        if (error_msg && error_msg_size) {
+            std::strncpy(error_msg, e.what(), error_msg_size - 1);
+            error_msg[error_msg_size - 1] = '\0';
+        }
+        return 1;
+    }
+}
+
+int nrn_rangevar_push_nothrow(Symbol* sym,
+                              Section* sec,
+                              double x,
+                              int index,
+                              char* error_msg,
+                              size_t error_msg_size) {
+    if (error_msg && error_msg_size) {
+        error_msg[0] = '\0';
+    }
+    try {
+        auto handle = rangevar_handle(sym, sec, x, index, error_msg, error_msg_size);
+        if (!handle) {
+            return 1;
+        }
+        hoc_push(std::move(handle));
+        return 0;
+    } catch (const std::exception& e) {
+        if (error_msg && error_msg_size) {
+            std::strncpy(error_msg, e.what(), error_msg_size - 1);
+            error_msg[error_msg_size - 1] = '\0';
+        }
+        return 1;
+    }
 }
 
 Object* nrn_segment_nmodlrandom_get(Section* sec, double x, Symbol* sym) {
