@@ -107,6 +107,12 @@ int nrn_rangevar_set_nothrow(Symbol* sym,
                              double value,
                              char* error_msg,
                              size_t error_msg_size);
+int nrn_rangevar_push_nothrow(Symbol* sym,
+                              Section* sec,
+                              double x,
+                              int index,
+                              char* error_msg,
+                              size_t error_msg_size);
 Object* nrn_segment_nmodlrandom_get(Section* sec, double x, Symbol* sym);
 Object* nrn_pntproc_nmodlrandom_get(Object* point_process, Symbol* sym);
 int nrn_setpointer_pop(Symbol* pointer_sym,
@@ -203,11 +209,14 @@ void nrn_property_array_set(Object* obj, const char* name, int i, double value);
 void nrn_property_push(Object* obj, const char* name);
 void nrn_property_array_push(Object* obj, const char* name, int i);
 bool nrn_property_data_handle_is_valid(const Object* obj, const char* name, int i);
+Object* nrn_property_object_get(const Object* obj, const char* name);
+bool nrn_property_object_set(Object* obj, const char* name, Object* value);
 char const* nrn_symbol_name(const Symbol* sym);
 Symlist* nrn_symbol_table(const Symbol* sym);
 Symlist* nrn_global_symbol_table(void);
 Symlist* nrn_top_level_symbol_table(void);
 int nrn_symbol_array_length(const Symbol* sym);
+int nrn_symbol_array_dims(const Symbol* sym, int* dims, int max_dims);
 void nrn_register_function(void (*proc)(), const char* func_name, int type);
 void nrn_hoc_ret(void);
 
