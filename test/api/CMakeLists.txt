@@ -1,5 +1,6 @@
 foreach(
   api_test_file
+  deferred_unref.cpp
   global_scalar.cpp
   hh_sim.cpp
   nlayer_extracellular.cpp
@@ -17,6 +18,7 @@ foreach(
   stack_pops.cpp
   symbol_array_dims.cpp
   symbol_object_string.cpp
+  template_property.cpp
   vclamp.cpp)
   string(REPLACE "." "_" api_test_name "${api_test_file}")
   add_executable(${api_test_name} ${api_test_file})
