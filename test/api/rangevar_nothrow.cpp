@@ -102,5 +102,25 @@ int main(void) {
     nrn_rangevar_get_nothrow(gnabar, sec, 0.5, 3, &value, err, sizeof(err));
     ok &= check(nrn_double_pop() == -7.0, "failures leave the stack alone");
 
+    // A diam write updates the area, through either setter, as HOC assignment does.
+    Section* cyl = nrn_section_new("cyl");
+    nrn_section_length_set(cyl, 10.0);
+    Symbol* diam = nrn_symbol("diam");
+    double* ac = nrn_symbol_dataptr(nrn_symbol("hoc_ac_"));
+    double const pi = std::acos(-1.0);
+    auto area = [&]() {
+        nrn_section_push(cyl);
+        nrn_hoc_call("hoc_ac_ = area(0.5)");
+        nrn_section_pop();
+        return *ac;
+    };
+    area();  // computed once, so a missed update would leave it stale
+    ok &= check(nrn_rangevar_set_nothrow(diam, cyl, 0.5, 0, 2.0, err, sizeof(err)) == 0 &&
+                    std::fabs(area() - pi * 2.0 * 10.0) < 1e-9,
+                "diam via set_nothrow updates area");
+    nrn_rangevar_set(diam, cyl, 0.5, 4.0);
+    ok &= check(std::fabs(area() - pi * 4.0 * 10.0) < 1e-9,
+                "diam via nrn_rangevar_set updates area");
+
     return ok ? 0 : 1;
 }

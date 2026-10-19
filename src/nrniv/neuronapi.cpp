@@ -251,8 +251,24 @@ double nrn_rangevar_get(Symbol* sym, Section* sec, double x) {
     return *nrn_rangepointer(sec, sym, x);
 }
 
+namespace {
+// After a range-variable write, what HOC assignment and the Python setter do:
+// a diam write updates area and 3-d points, an xraxial write recomputes the
+// axial terms.
+void rangevar_written(Symbol* sym, Section* sec) {
+    if (sym->u.rng.type == MORPHOLOGY) {
+        diam_changed = 1;
+        sec->recalc_area_ = 1;
+        nrn_diam_change(sec);
+    } else if (sym->u.rng.type == EXTRACELL && sym->u.rng.index == 0) {
+        diam_changed = 1;
+    }
+}
+}  // namespace
+
 void nrn_rangevar_set(Symbol* sym, Section* sec, double x, double value) {
     *nrn_rangepointer(sec, sym, x) = value;
+    rangevar_written(sym, sec);
 }
 
 void nrn_rangevar_push(Symbol* sym, Section* sec, double x) {
@@ -361,9 +377,7 @@ int nrn_rangevar_set_nothrow(Symbol* sym,
             return 1;
         }
         *pd = value;
-        if (sym->u.rng.type == EXTRACELL && sym->u.rng.index == 0) {
-            diam_changed = 1;  // xraxial, as the Python module's setter does
-        }
+        rangevar_written(sym, sec);
         return 0;
     } catch (const std::exception& e) {
         if (error_msg && error_msg_size) {
