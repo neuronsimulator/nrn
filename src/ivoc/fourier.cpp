@@ -207,7 +207,7 @@ void nrngsl_realft(double* data, unsigned long n, int direction) {
     }
     int logn = compute_logn(n);
     if (logn == -1) {
-        hoc_execerror("n is not a power of 2", 0);
+        hoc_execerror("n is not a power of 2", nullptr);
     }
     if (direction == 1) {
         real_radix2_forward(data, n, logn);

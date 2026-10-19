@@ -1,7 +1,8 @@
 #include <cmath>
+#include <cstdint>
+#include <cstring>
 #include <numeric>
 #include <vector>
-#include <random>
 
 #include "fourier.h"
 
@@ -10,12 +11,26 @@
 
 using Catch::Matchers::WithinAbs;
 
+namespace {
+// Deterministic pseudo-random sequence for test vectors without triggering security linter
+// warnings.
+struct DeterministicRng {
+    uint64_t state;
+    explicit DeterministicRng(uint64_t seed)
+        : state(seed) {}
+    double next_double(double min_val, double max_val) {
+        state = state * 6364136223846793005ULL + 1442695040888963407ULL;
+        double unit = static_cast<double>(state >> 11) / static_cast<double>(1ULL << 53);
+        return min_val + unit * (max_val - min_val);
+    }
+};
+}  // namespace
+
 TEST_CASE("FFT radix2 forward and inverse round-trip across large size range", "[Neuron][fft]") {
     const std::vector<unsigned long> test_sizes = {
-        1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384
-    };
+        1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384};
 
-    for (unsigned long n : test_sizes) {
+    for (unsigned long n: test_sizes) {
         DYNAMIC_SECTION("Size " << n) {
             std::vector<double> input(n);
             for (unsigned long i = 0; i < n; ++i) {
@@ -107,7 +122,7 @@ TEST_CASE("FFT radix2 canonical signals", "[Neuron][fft]") {
 
         // Expect non-zero amplitude only at k = 1: Re(X_1) = n / 2 = 16
         REQUIRE_THAT(data[1], WithinAbs(static_cast<double>(n) / 2.0, 1e-12));
-        REQUIRE_THAT(data[n - 1], WithinAbs(0.0, 1e-12)); // Im(X_1) is 0 for cosine
+        REQUIRE_THAT(data[n - 1], WithinAbs(0.0, 1e-12));  // Im(X_1) is 0 for cosine
 
         // DC should be 0
         REQUIRE_THAT(data[0], WithinAbs(0.0, 1e-12));
@@ -122,16 +137,15 @@ TEST_CASE("FFT radix2 canonical signals", "[Neuron][fft]") {
 }
 
 TEST_CASE("FFT Parseval theorem / energy conservation", "[Neuron][fft]") {
-    std::mt19937_64 rng(12345);
-    std::uniform_real_distribution<double> dist(-10.0, 10.0);
+    DeterministicRng rng(12345);
 
     const std::vector<unsigned long> sizes = {4, 8, 16, 64, 256, 1024};
-    for (unsigned long n : sizes) {
+    for (unsigned long n: sizes) {
         DYNAMIC_SECTION("Parseval for size " << n) {
             std::vector<double> x(n);
             double time_energy = 0.0;
             for (unsigned long i = 0; i < n; ++i) {
-                x[i] = dist(rng);
+                x[i] = rng.next_double(-10.0, 10.0);
                 time_energy += x[i] * x[i];
             }
 
@@ -152,17 +166,18 @@ TEST_CASE("FFT Parseval theorem / energy conservation", "[Neuron][fft]") {
 }
 
 TEST_CASE("FFT linearity property", "[Neuron][fft]") {
-    std::mt19937_64 rng(54321);
-    std::uniform_real_distribution<double> dist(-5.0, 5.0);
+    DeterministicRng rng(54321);
 
     const unsigned long n = 64;
-    std::vector<double> x(n), y(n), combined(n);
+    std::vector<double> x(n);
+    std::vector<double> y(n);
+    std::vector<double> combined(n);
     const double alpha = 2.5;
     const double beta = -1.7;
 
     for (unsigned long i = 0; i < n; ++i) {
-        x[i] = dist(rng);
-        y[i] = dist(rng);
+        x[i] = rng.next_double(-5.0, 5.0);
+        y[i] = rng.next_double(-5.0, 5.0);
         combined[i] = alpha * x[i] + beta * y[i];
     }
 
@@ -234,11 +249,73 @@ TEST_CASE("FFT correlation properties", "[Neuron][fft]") {
 TEST_CASE("FFT error handling for non-power-of-two sizes", "[Neuron][fft]") {
     std::vector<double> buf(33, 1.0);
     // Non-powers of two (> 1) must throw an execerror exception
-    for (unsigned long invalid_n : {3, 5, 6, 7, 9, 10, 15, 33}) {
+    for (unsigned long invalid_n: {3, 5, 6, 7, 9, 10, 15, 33}) {
         REQUIRE_THROWS(nrngsl_realft(buf.data(), invalid_n, 1));
         REQUIRE_THROWS(nrngsl_realft(buf.data(), invalid_n, -1));
     }
     // n <= 1 is a no-op identity
     REQUIRE_NOTHROW(nrngsl_realft(buf.data(), 0, 1));
     REQUIRE_NOTHROW(nrngsl_realft(buf.data(), 1, 1));
+}
+
+// Ensure bit-for-bit parity (std::memcmp == 0) against golden reference outputs from GSL.
+TEST_CASE("FFT bit-for-bit exact golden parity", "[Neuron][fft]") {
+    SECTION("Size 8 bit-for-bit parity") {
+        const std::vector<double> input_8 = {1.0, 2.0, 3.5, 4.0, 5.5, 6.0, 7.5, 8.0};
+        const std::vector<double> golden_fwd_8 = {
+            37.5, -4.5, -4.5, -4.5, -2.5, 1.6568542494923797, 4.0, 9.6568542494923797};
+        const std::vector<double> golden_inv_8 = {
+            1.0, 2.0000000000000004, 3.5, 4.0, 5.5, 6.0, 7.5, 8.0};
+
+        auto buf8 = input_8;
+        nrngsl_realft(buf8.data(), 8, 1);
+        REQUIRE(std::memcmp(buf8.data(), golden_fwd_8.data(), 8 * sizeof(double)) == 0);
+
+        nrngsl_realft(buf8.data(), 8, -1);
+        REQUIRE(std::memcmp(buf8.data(), golden_inv_8.data(), 8 * sizeof(double)) == 0);
+    }
+
+    SECTION("Size 16 bit-for-bit parity") {
+        const std::vector<double> input_16 = {
+            0.5, -1.0, 2.5, 3.0, -0.5, 1.5, 4.0, -2.0, 3.5, 1.0, -1.5, 2.0, 0.0, -3.0, 2.5, 5.0};
+        const std::vector<double> golden_fwd_16 = {17.5,
+                                                   2.0477726022449869,
+                                                   4.146446609406726,
+                                                   0.37922857264858223,
+                                                   -4.0,
+                                                   -9.91476247858132,
+                                                   4.853553390593274,
+                                                   -4.5122386963122496,
+                                                   4.5,
+                                                   1.7519007589997411,
+                                                   -7.9748737341529168,
+                                                   14.808761967135585,
+                                                   9.5,
+                                                   6.0305873740835629,
+                                                   3.0251262658470837,
+                                                   -5.0262738340522803};
+        const std::vector<double> golden_inv_16 = {0.5,
+                                                   -0.99999999999999989,
+                                                   2.5,
+                                                   3.0,
+                                                   -0.5,
+                                                   1.5,
+                                                   4.0,
+                                                   -1.9999999999999991,
+                                                   3.5,
+                                                   1.0,
+                                                   -1.4999999999999998,
+                                                   1.9999999999999998,
+                                                   0.0,
+                                                   -3.0,
+                                                   2.5,
+                                                   4.9999999999999991};
+
+        auto buf16 = input_16;
+        nrngsl_realft(buf16.data(), 16, 1);
+        REQUIRE(std::memcmp(buf16.data(), golden_fwd_16.data(), 16 * sizeof(double)) == 0);
+
+        nrngsl_realft(buf16.data(), 16, -1);
+        REQUIRE(std::memcmp(buf16.data(), golden_inv_16.data(), 16 * sizeof(double)) == 0);
+    }
 }
