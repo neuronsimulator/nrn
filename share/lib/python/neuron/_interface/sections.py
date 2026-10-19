@@ -286,6 +286,32 @@ class _ArrayRangeVar:
 # ── Segment ───────────────────────────────────────────────────────────────────
 
 
+# Ion variable name -> its ion mechanism ("ena" -> "na_ion"), or None for a
+# name that is not an ion variable. Only names that are range variables reach
+# the lookup, so a cached None never hides an ion loaded later.
+_ION_VAR_MECH = {}
+_UNSET = object()
+
+
+def _ion_mechanism_of(name):
+    candidates = []
+    if name.startswith("di") and name.endswith("_dv_"):
+        candidates.append(name[2:-4])
+    elif len(name) > 1:
+        if name[0] in "ei":
+            candidates.append(name[1:])
+        if name[-1] in "io":
+            candidates.append(name[:-1])
+    mech = None
+    for ion in candidates:
+        sym = _nrn_symbol(f"{ion}_ion".encode("utf-8"))
+        if sym and int(_nrn_symbol_type(sym)) == TYPES.MECHANISM:
+            mech = f"{ion}_ion"
+            break
+    _ION_VAR_MECH[name] = mech
+    return mech
+
+
 class Segment:
     """A point at normalized position ``x`` in [0, 1] along a ``Section``.
 
@@ -358,8 +384,21 @@ class Segment:
     def _check_rangevar_mechanism(self, name):
         """Raise AttributeError if a suffixed range variable's mechanism
         is not inserted in this section."""
+        # Ion variables (ena, ina, nai, nao, dina_dv_) belong to <ion>_ion;
+        # reading one where the ion is absent throws through ctypes.
+        ion_mech = _ION_VAR_MECH.get(name, _UNSET)
+        if ion_mech is _UNSET:
+            ion_mech = _ion_mechanism_of(name)
+        if ion_mech is not None:
+            from . import NEURON
+
+            if not NEURON().ismembrane(ion_mech, sec=self._sec):
+                raise AttributeError(
+                    f"mechanism '{ion_mech}' is not inserted in {self._sec!r}"
+                )
+            return
         # Range variables like gnabar_hh have a mechanism suffix.
-        # Unsuffixed vars (v, diam, cm, ena, ek, ...) are always valid.
+        # Other unsuffixed vars (v, diam, cm) are always valid.
         idx = name.rfind("_")
         if idx <= 0:
             return
@@ -521,6 +560,7 @@ class Segment:
             info = _get_symbol_info(name)
             if info is None or info[1] != TYPES.RANGEVAR:
                 raise AttributeError(f"Variable '{name}' not found in {self!r}.")
+            self._check_rangevar_mechanism(name)
             if info[2]:
                 return NrnRangeArrayRef(self.sec, self.x, name)
             if _is_pointer_rangevar(name, info[0]):
@@ -560,9 +600,10 @@ class Segment:
             # seg.ptr()/cached() hot loops bypass it.
             sec = self._sec
             sec._check_alive()
-            # Only suffixed names (`gnabar_hh`) need the mechanism check;
-            # skipping the call for `v`, `diam`, `cm` saves ~0.3 us/access.
-            if name.rfind("_") > 0:
+            # Only suffixed names (`gnabar_hh`) and ion variables need the
+            # mechanism check; skipping the call for `v`, `diam`, `cm` saves
+            # ~0.3 us/access.
+            if name.rfind("_") > 0 or _ION_VAR_MECH.get(name, _UNSET) is not None:
                 self._check_rangevar_mechanism(name)
             if name == "diam":
                 # Use nrn_segment_diam_get: it runs NEURON's per-section

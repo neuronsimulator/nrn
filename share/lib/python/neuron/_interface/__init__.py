@@ -1010,6 +1010,7 @@ class NEURON(metaclass=_Singleton):
                             f"n.{name}",
                             f"NEURON top-level function: n.{name}()",
                             doc_key=name,
+                            key=name,
                         )
                     elif _type == TYPES.TEMPLATE:
                         # Return the dynamic class: callable (``n.IClamp(seg)``

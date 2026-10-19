@@ -715,7 +715,7 @@ class NrnArrayPropertyRef(NrnRef):
             raise IndexError(
                 f"index {idx} out of range [0, {self._size}) for {self._name}"
             )
-        return self._owner.ref(self._name, idx=idx)
+        return self._owner._property_ref(self._name, idx=idx)
 
     def __setitem__(self, idx, value):
         self[idx][0] = value

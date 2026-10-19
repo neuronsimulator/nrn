@@ -2,6 +2,7 @@
 import array
 import collections.abc
 import ctypes
+import functools
 import numbers
 import operator
 import os
@@ -486,7 +487,15 @@ class Object(metaclass=_HocClassMeta):
         """Return the raw C pointer to the underlying HOC object as an int."""
         return int(self._obj) if self._obj is not None else 0
 
-    def ref(self, name, idx=None):
+    def ref(self, *args, **kwargs):
+        """Reference to property *name* (``obj.ref("amp", idx=0)``), or the
+        class's own HOC ``ref`` method where it has one (``VBox.ref(obj)``)."""
+        methods = getattr(self, "_methods", None)
+        if methods is not None and "ref" in methods:
+            return self.__getattr__("ref")(*args, **kwargs)
+        return self._property_ref(*args, **kwargs)
+
+    def _property_ref(self, name, idx=None):
         methods = getattr(self, "_methods", None)
         if methods is not None and name in methods and idx is None:
             # obj._ref_<array>: [i] gives element i, as NEURON's array pointer.
@@ -579,6 +588,26 @@ class Object(metaclass=_HocClassMeta):
             sec = n.cas()
         finally:
             n.pop_section()
+        return sec(x)
+
+    def _netcon_seg(self, loc_method):
+        """NetCon.preseg()/postseg(): the Segment from preloc()/postloc().
+
+        Core builds these through a hook only NEURON's own Python module
+        installs (nrnpy_seg_from_sec_x); without it they return nil.
+        """
+        from . import NEURON
+
+        x = self.__getattr__(loc_method)()
+        if x == -1:  # no source/target section; nothing was pushed
+            return None
+        n = NEURON()
+        try:
+            sec = n.cas()
+        finally:
+            n.pop_section()
+        if x < 0:  # source is not a voltage
+            return None
         return sec(x)
 
     def _check_located(self):
@@ -730,13 +759,15 @@ class Object(metaclass=_HocClassMeta):
         if not name.startswith("_"):
             self._check_host_alive()
         if name.startswith("_ref_"):
-            return self.ref(name[5:])
+            return self._property_ref(name[5:])
         # NEURON's Python module adds get_segment() to every point process
         # that can be located (not an ARTIFICIAL_CELL). Ahead of the method
         # table: with NEURON's module loaded first, the table holds its native
         # get_segment, which returns NEURON's own Segment type.
         if name == "get_segment" and is_located_point_process_class(self._class_name):
             return self._get_segment
+        if self._class_name == "NetCon" and name in _NETCON_SEG_METHODS:
+            return functools.partial(self._netcon_seg, _NETCON_SEG_METHODS[name])
         # .plot() on RangeVarPlot / PlotShape — not a HOC method
         if name == "plot":
             if self._class_name == "RangeVarPlot":
@@ -1093,9 +1124,13 @@ def _ensure_alias_trampolines(name):
         n = NEURON()
         n(f"func _mn_aliasget_{name}() {{ return $o1.{name} }}")
         n(f"proc _mn_aliasset_{name}() {{ $o1.{name} = $2 }}")
+        n(f"obfunc _mn_aliasobj_{name}() {{ return $o1.{name} }}")
         _OBJECT_ALIAS_TRAMPOLINES.add(name)
     return True
 
+
+# NetCon.preseg/postseg rebuilt from the location methods (Object._netcon_seg).
+_NETCON_SEG_METHODS = {"preseg": "preloc", "postseg": "postloc"}
 
 _PC_RAW_ARG_METHODS = frozenset({"py_allgather", "py_gather", "py_broadcast"})
 
@@ -1170,9 +1205,17 @@ def _read_object_alias(obj, name):
 
     if not _ensure_alias_trampolines(name):
         raise AttributeError(name)
+    n = NEURON()
     try:
         with _SuppressCStderr():
-            return getattr(NEURON(), f"_mn_aliasget_{name}")(obj)
+            return getattr(n, f"_mn_aliasget_{name}")(obj)
+    except RuntimeError:
+        pass
+    # An object alias (sf.alias(obj, name, someobj)) only reads in an
+    # object context.
+    try:
+        with _SuppressCStderr():
+            return getattr(n, f"_mn_aliasobj_{name}")(obj)
     except RuntimeError:
         raise AttributeError(name) from None
 

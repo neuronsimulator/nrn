@@ -37,14 +37,17 @@ class FuncWrapper:
     # same-named slot would clash). Lookup is deferred to avoid help I/O
     # during core probes. FuncWrapper.__doc__ on the class is the property
     # object, not help text.
-    __slots__ = ("_func", "_name", "_doc", "_doc_key", "_fallback_doc")
+    __slots__ = ("_func", "_name", "_doc", "_doc_key", "_fallback_doc", "_key")
 
-    def __init__(self, func, name, doc="", *, doc_key=None):
+    def __init__(self, func, name, doc="", *, doc_key=None, key=None):
         self._func = func
         self._name = name
         self._doc = doc if doc_key is None else None
         self._doc_key = doc_key
         self._fallback_doc = doc
+        # Wrappers with the same key are the same HOC function: NEURON's
+        # h.xvalue == h.xvalue. Without a key (bound methods), identity.
+        self._key = key
 
     @property
     def __doc__(self):
@@ -65,6 +68,18 @@ class FuncWrapper:
 
     def __str__(self):
         return f"{self._name}()"
+
+    def __eq__(self, other):
+        if not isinstance(other, FuncWrapper):
+            return NotImplemented
+        if self._key is None:
+            return self is other
+        return self._key == other._key
+
+    def __hash__(self):
+        if self._key is None:
+            return object.__hash__(self)
+        return hash(self._key)
 
 
 class _Singleton(type):
