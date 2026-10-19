@@ -1,17 +1,22 @@
 #include <../../nrnconf.h>
-/* (C) Copr. 1986-92 Numerical Recipes Software #.,. */
+/*
+ * Copyright (C) 2018-2026 Michael Hines and NEURON contributors
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 
 /* Algorithms for Fourier Transform Spectral Methods */
 
 #define _USE_MATH_DEFINES
 
-#include <math.h>
-#include <stdio.h>
-#include <stddef.h>
-#include <stdlib.h>
-#include <iostream>
-#include <complex>
-#include <valarray>
+#include <cmath>
+#include <cstddef>
+#include <cstdlib>
+#include <cstdio>
+#include <utility>
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 // to print diagnostic statements
 // #define DEBUG_SPCTRM
@@ -29,51 +34,185 @@ static inline double SQUARE(double a) {
     return a * a;
 }
 
+/*
+ * Self-contained BSD-3-clause Cooley-Tukey radix-2 real FFT and half-complex inverse FFT.
+ *
+ * Frequency domain format:
+ *   data[0]   = Re(X_0) (DC)
+ *   data[k]   = Re(X_k)
+ *   data[n-k] = Im(X_k)  for k = 1 .. n/2 - 1
+ *   data[n/2] = Re(X_{n/2}) (Nyquist)
+ */
 
-void fft(std::vector<std::complex<double>>& x, bool inverse = false) {
-    const int n = x.size();
-    const double pi = inverse ? acos(-1) : -acos(-1);
-    for (int i = 1, j = 0; i < n; i++) {
-        int bit = n >> 1;
-        for (; j >= bit; bit >>= 1) {
-            j -= bit;
-        }
-        j += bit;
+static inline void bit_reverse_permute(double* data, size_t n) {
+    size_t j = 0;
+    for (size_t i = 0; i < n - 1; ++i) {
+        size_t k = n / 2;
         if (i < j) {
-            std::swap(x[i], x[j]);
+            std::swap(data[i], data[j]);
         }
+        while (k <= j) {
+            j -= k;
+            k /= 2;
+        }
+        j += k;
     }
-    for (int len = 2; len <= n; len <<= 1) {
-        double ang = 2 * pi / len;
-        std::complex<double> wlen(cos(ang), sin(ang));
-        for (int i = 0; i < n; i += len) {
-            std::complex<double> w(1);
-            for (int j = 0; j < len / 2; j++) {
-                std::complex<double> u = x[i + j], v = x[i + j + len / 2] * w;
-                x[i + j] = u + v;
-                x[i + j + len / 2] = u - v;
-                w *= wlen;
+}
+
+static inline int compute_logn(size_t n) {
+    if (n == 0 || (n & (n - 1)) != 0) {
+        return -1;
+    }
+    int logn = 0;
+    while ((size_t(1) << logn) < n) {
+        logn++;
+    }
+    return logn;
+}
+
+static void real_radix2_forward(double* data, size_t n, int logn) {
+    bit_reverse_permute(data, n);
+
+    size_t p = 1;
+    size_t q = n;
+
+    for (int i = 1; i <= logn; ++i) {
+        size_t p_half = p;
+        p *= 2;
+        q /= 2;
+
+        // Butterfly for a = 0
+        for (size_t b = 0; b < q; ++b) {
+            double t0 = data[b * p] + data[b * p + p_half];
+            double t1 = data[b * p] - data[b * p + p_half];
+            data[b * p] = t0;
+            data[b * p + p_half] = t1;
+        }
+
+        // Butterflies for a = 1 .. p_half/2 - 1
+        {
+            double w_real = 1.0;
+            double w_imag = 0.0;
+            const double theta = -2.0 * M_PI / static_cast<double>(p);
+            const double s = std::sin(theta);
+            const double t = std::sin(theta * 0.5);
+            const double s2 = 2.0 * t * t;
+
+            for (size_t a = 1; a < p_half / 2; ++a) {
+                const double tmp_real = w_real - s * w_imag - s2 * w_real;
+                const double tmp_imag = w_imag + s * w_real - s2 * w_imag;
+                w_real = tmp_real;
+                w_imag = tmp_imag;
+
+                for (size_t b = 0; b < q; ++b) {
+                    double z0_real = data[b * p + a];
+                    double z0_imag = data[b * p + p_half - a];
+                    double z1_real = data[b * p + p_half + a];
+                    double z1_imag = data[b * p + p - a];
+
+                    double t0_real = z0_real + w_real * z1_real - w_imag * z1_imag;
+                    double t0_imag = z0_imag + w_real * z1_imag + w_imag * z1_real;
+
+                    double t1_real = z0_real - w_real * z1_real + w_imag * z1_imag;
+                    double t1_imag = z0_imag - w_real * z1_imag - w_imag * z1_real;
+
+                    data[b * p + a] = t0_real;
+                    data[b * p + p - a] = t0_imag;
+                    data[b * p + p_half - a] = t1_real;
+                    data[b * p + p_half + a] = -t1_imag;
+                }
             }
         }
-    }
-    if (inverse) {
-        for (int i = 0; i < n; i++) {
-            x[i] /= n;
+
+        if (p_half > 1) {
+            for (size_t b = 0; b < q; ++b) {
+                data[b * p + p - p_half / 2] *= -1.0;
+            }
         }
     }
 }
 
-void nrngsl_realft(double* data, unsigned long size, int direction) {  
-    // fft_radix2(data, size, direction);
-    
-    const int padded_n = std::pow(2, std::ceil(std::log2(size)));
-    std::vector<std::complex<double>> padded(padded_n);
-    for (int i = 0; i < size; ++i) {
-        padded[i] = std::complex<double>(data[i], 0.0);
+static void halfcomplex_radix2_inverse(double* data, size_t n, int logn) {
+    size_t p = n;
+    size_t q = 1;
+    size_t p_half = n / 2;
+
+    for (int i = 1; i <= logn; ++i) {
+        // Butterfly for a = 0
+        for (size_t b = 0; b < q; ++b) {
+            const double z0 = data[b * p];
+            const double z1 = data[b * p + p_half];
+            data[b * p] = z0 + z1;
+            data[b * p + p_half] = z0 - z1;
+        }
+
+        // Butterflies for a = 1 .. p_half/2 - 1
+        {
+            double w_real = 1.0;
+            double w_imag = 0.0;
+            const double theta = 2.0 * M_PI / static_cast<double>(p);
+            const double s = std::sin(theta);
+            const double t = std::sin(theta * 0.5);
+            const double s2 = 2.0 * t * t;
+
+            for (size_t a = 1; a < p_half / 2; ++a) {
+                const double tmp_real = w_real - s * w_imag - s2 * w_real;
+                const double tmp_imag = w_imag + s * w_real - s2 * w_imag;
+                w_real = tmp_real;
+                w_imag = tmp_imag;
+
+                for (size_t b = 0; b < q; ++b) {
+                    double z0_real = data[b * p + a];
+                    double z0_imag = data[b * p + p - a];
+                    double z1_real = data[b * p + p_half - a];
+                    double z1_imag = -data[b * p + p_half + a];
+
+                    double t0_real = z0_real + z1_real;
+                    double t0_imag = z0_imag + z1_imag;
+
+                    double t1_real = z0_real - z1_real;
+                    double t1_imag = z0_imag - z1_imag;
+
+                    data[b * p + a] = t0_real;
+                    data[b * p + p_half - a] = t0_imag;
+                    data[b * p + p_half + a] = (w_real * t1_real - w_imag * t1_imag);
+                    data[b * p + p - a] = (w_real * t1_imag + w_imag * t1_real);
+                }
+            }
+        }
+
+        if (p_half > 1) {
+            for (size_t b = 0; b < q; ++b) {
+                data[b * p + p_half / 2] *= 2.0;
+                data[b * p + p_half + p_half / 2] *= -2.0;
+            }
+        }
+
+        p_half /= 2;
+        p /= 2;
+        q *= 2;
     }
-    fft(padded, direction == -1);
-    for (int i = 0; i < size; ++i) {
-        data[i] = padded[i].real();
+
+    bit_reverse_permute(data, n);
+
+    const double norm = 1.0 / static_cast<double>(n);
+    for (size_t i = 0; i < n; ++i) {
+        data[i] *= norm;
+    }
+}
+
+void nrngsl_realft(double* data, unsigned long n, int direction) {
+    if (n <= 1) {
+        return;
+    }
+    int logn = compute_logn(n);
+    if (logn == -1) {
+        hoc_execerror("n is not a power of 2", 0);
+    }
+    if (direction == 1) {
+        real_radix2_forward(data, n, logn);
+    } else {
+        halfcomplex_radix2_inverse(data, n, logn);
     }
 }
 
