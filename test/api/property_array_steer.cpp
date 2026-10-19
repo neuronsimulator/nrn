@@ -2,9 +2,11 @@
 // nrn_property_array_get/set/push and nrn_property_data_handle_is_valid on a
 // C++ class array (Vector.x) push the index as HOC does, so they reach element
 // i; they used to raise "array dimension of x now 1". Matrix.x, which has two
-// dimensions, raises a HOC error naming nrn_property_element_ptr. Point
-// processes are unchanged.
+// dimensions, has no element i: get returns NaN, set does nothing, push pushes
+// a null pointer and the data handle is not valid, as for an invalid
+// point-process handle. Point processes are unchanged.
 #include <array>
+#include <cmath>
 #include <exception>
 #include <iostream>
 #include "neuronapi.h"
@@ -51,7 +53,7 @@ int main(void) {
     ok &= check(nrn_double_ptr_pop() == data + 2, "push &vec.x[2]");
     ok &= check(nrn_property_data_handle_is_valid(vec, "x", 1), "vec.x[1] has data");
 
-    // An index out of range and a two-dimensional array are HOC errors.
+    // An index out of range is the HOC error HOC itself gives.
     bool raised = false;
     try {
         nrn_property_array_get(vec, "x", 5);
@@ -59,13 +61,16 @@ int main(void) {
         raised = true;
     }
     ok &= check(raised, "vec.x[5] raises");
-    raised = false;
-    try {
-        nrn_property_array_get(object("mat"), "x", 0);
-    } catch (const std::exception&) {
-        raised = true;
-    }
-    ok &= check(raised, "Matrix.x through a one-index accessor raises");
+
+    // Matrix.x needs two indices, so the one-index accessors find no element.
+    Object* mat = object("mat");
+    ok &= check(std::isnan(nrn_property_array_get(mat, "x", 0)), "get Matrix.x is NaN");
+    nrn_property_array_set(mat, "x", 0, 7);
+    nrn_hoc_call("hoc_ac_ = mat.x[0][0]");
+    ok &= check(*nrn_symbol_dataptr(nrn_symbol("hoc_ac_")) == 0, "set Matrix.x does nothing");
+    nrn_property_array_push(mat, "x", 0);
+    ok &= check(nrn_double_ptr_pop() == nullptr, "push Matrix.x is null");
+    ok &= check(!nrn_property_data_handle_is_valid(mat, "x", 0), "Matrix.x has no data handle");
 
     // Point-process arrays are unchanged.
     ok &= check(nrn_property_array_get(object("vc"), "amp", 2) == 5, "get vc.amp[2]");

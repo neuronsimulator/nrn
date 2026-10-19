@@ -976,11 +976,13 @@ void* steer_element(void* request, void*) {
 
 // Element i of a C++ class variable reached through its steer function. A
 // one-dimensional array (Vector.x) needs its index on the stack first, as HOC
-// pushes it; a scalar (Pointer.val) keeps the old pointer arithmetic.
+// pushes it; a scalar (Pointer.val) keeps the old pointer arithmetic. An array
+// with more than one index (Matrix.x) has no element i: nullptr, which the
+// callers treat like an invalid point-process handle.
 double* steered_element(const Object* obj, Symbol* sym, int i) {
     int const nsub = sym->arayinfo ? sym->arayinfo->nsub : 0;
     if (nsub > 1) {
-        hoc_execerr_ext("%s has %d dimensions; use nrn_property_element_ptr", sym->name, nsub);
+        return nullptr;
     }
     steer_request request{const_cast<Object*>(obj), sym, &i, nsub, nullptr};
     steer_element(&request, nullptr);
@@ -1004,7 +1006,8 @@ double nrn_property_get(const Object* obj, const char* name) {
 double nrn_property_array_get(const Object* obj, const char* name, int i) {
     auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
     if (!obj->ctemplate->is_point_) {
-        return *steered_element(obj, sym, i);
+        auto element = steered_element(obj, sym, i);
+        return element ? *element : std::numeric_limits<double>::quiet_NaN();
     } else {
         auto handle = point_process_pointer(ob2pntproc_0(const_cast<Object*>(obj)), sym, i);
         return handle ? *handle : std::numeric_limits<double>::quiet_NaN();
@@ -1029,7 +1032,9 @@ void nrn_property_set(Object* obj, const char* name, double value) {
 void nrn_property_array_set(Object* obj, const char* name, int i, double value) {
     auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
     if (!obj->ctemplate->is_point_) {
-        *steered_element(obj, sym, i) = value;
+        if (auto element = steered_element(obj, sym, i)) {
+            *element = value;
+        }
     } else {
         auto handle = point_process_pointer(ob2pntproc_0(obj), sym, i);
         if (handle) {

@@ -2054,8 +2054,10 @@ Miscellaneous
 
     It also reads ``Vector.x[i]``, and the same holds for
     :c:func:`nrn_property_array_set`, :c:func:`nrn_property_array_push` and
-    :c:func:`nrn_property_data_handle_is_valid`. ``Matrix.x`` has two indices; use
-    :c:func:`nrn_property_element_ptr`.
+    :c:func:`nrn_property_data_handle_is_valid`. ``Matrix.x`` has two indices, so
+    these functions find no element: the get returns NaN, the set does nothing,
+    the push pushes a null pointer and the data handle is not valid. Use
+    :c:func:`nrn_property_element_ptr` for it.
 
     **C Usage:**
 
