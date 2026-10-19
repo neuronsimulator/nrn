@@ -20,6 +20,7 @@ extern void (*nrn_multisplit_setup_)();
 #include "nrndaspk.h"
 #include "nrniv_mf.h"
 #include "nrnpy.h"
+#include "objcmd.h"
 #include "tqueue.hpp"
 #include "mymath.h"
 #include <nrnmutdec.h>
@@ -500,15 +501,15 @@ static double nrn_diam_change_count(void* v) {
     return double(diam_change_cnt);
 }
 
-using ExtraScatterList = std::vector<Object*>;
+using ExtraScatterList = std::vector<HocCommand*>;
 static ExtraScatterList* extra_scatterlist[2];  // 0 scatter, 1 gather
 
 void nrn_extra_scatter_gather(int direction, int tid) {
     ExtraScatterList* esl = extra_scatterlist[direction];
     if (esl) {
         nrn_thread_error("extra_scatter_gather not allowed with multiple threads");
-        for (Object* callable: *esl) {
-            if (!neuron::python::methods.hoccommand_exec(callable)) {
+        for (HocCommand* callable: *esl) {
+            if (!callable->execute()) {
                 hoc_execerror("extra_scatter_gather runtime error", 0);
             }
         }
@@ -517,29 +518,44 @@ void nrn_extra_scatter_gather(int direction, int tid) {
 
 static double extra_scatter_gather(void* v) {
     int direction = int(chkarg(1, 0, 1));
-    Object* o = *hoc_objgetarg(2);
-    check_obj_type(o, "PythonObject");
     ExtraScatterList* esl = extra_scatterlist[direction];
     if (!esl) {
         esl = new ExtraScatterList;
         extra_scatterlist[direction] = esl;
     }
-    esl->push_back(o);
-    hoc_obj_ref(o);
+    if (hoc_is_object_arg(2)) {
+        Object* o = *hoc_objgetarg(2);
+        check_obj_type(o, "PythonObject");
+        esl->push_back(new HocCommand(o));
+    } else {
+        esl->push_back(new HocCommand(gargstr(2)));
+    }
     return 0.;
 }
 
 static double extra_scatter_gather_remove(void* v) {
-    Object* o = *hoc_objgetarg(1);
+    Object* o = nullptr;
+    const char* command = nullptr;
+    if (hoc_is_object_arg(1)) {
+        o = *hoc_objgetarg(1);
+        check_obj_type(o, "PythonObject");
+    } else {
+        command = gargstr(1);
+    }
     for (int direction = 0; direction < 2; ++direction) {
         ExtraScatterList* esl = extra_scatterlist[direction];
         if (esl) {
             for (auto it = esl->begin(); it != esl->end();) {
-                Object* o1 = *it;
-                // if esl exists then python exists
-                if (neuron::python::methods.pysame(o, o1)) {
+                HocCommand* command_object = *it;
+                bool matches = false;
+                if (o && command_object->pyobject()) {
+                    matches = neuron::python::methods.pysame(o, command_object->pyobject());
+                } else if (command && !command_object->pyobject()) {
+                    matches = strcmp(command, command_object->name()) == 0;
+                }
+                if (matches) {
                     it = esl->erase(it);
-                    hoc_obj_unref(o1);
+                    delete command_object;
                 } else {
                     ++it;
                 }
