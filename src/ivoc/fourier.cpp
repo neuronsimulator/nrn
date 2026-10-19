@@ -49,6 +49,12 @@ static inline double SQUARE(double a) {
 #define POCKETFFT_NO_MULTITHREADING
 #include "../pocketfft/pocketfft_hdronly.h"
 
+namespace {
+inline double normalize_zero(double x) {
+    return x == 0.0 ? 0.0 : x;
+}
+}  // namespace
+
 void nrngsl_realft(double* data, unsigned long n, int direction) {
     if (n <= 1) {
         return;
@@ -67,11 +73,11 @@ void nrngsl_realft(double* data, unsigned long n, int direction) {
         pocketfft::r2c(
             shape_in, stride_in, stride_out, 0, /*forward=*/true, data, spectrum.data(), 1.0);
 
-        data[0] = spectrum[0].real();
-        data[n2] = spectrum[n2].real();
+        data[0] = normalize_zero(spectrum[0].real());
+        data[n2] = normalize_zero(spectrum[n2].real());
         for (size_t k = 1; k < n2; ++k) {
-            data[k] = spectrum[k].real();
-            data[n - k] = spectrum[k].imag();
+            data[k] = normalize_zero(spectrum[k].real());
+            data[n - k] = normalize_zero(spectrum[k].imag());
         }
     } else {
         std::vector<std::complex<double>> spectrum(n2 + 1);
@@ -93,6 +99,10 @@ void nrngsl_realft(double* data, unsigned long n, int direction) {
                        spectrum.data(),
                        data,
                        1.0 / static_cast<double>(n));
+
+        for (size_t i = 0; i < n; ++i) {
+            data[i] = normalize_zero(data[i]);
+        }
     }
 }
 
@@ -106,14 +116,14 @@ void nrngsl_realft(double* data, unsigned long n, int direction) {
 void nrn_gsl2nrc(double* x, double* y, unsigned long n) {
     unsigned long i, n2;
     n2 = n / 2;
-    y[0] = x[0];
+    y[0] = normalize_zero(x[0]);
     if (n < 2) {
         return;
     }
-    y[1] = x[n2];
+    y[1] = normalize_zero(x[n2]);
     for (i = 1; i < n2; ++i) {
-        y[2 * i] = x[i];
-        y[2 * i + 1] = -x[n - i];
+        y[2 * i] = normalize_zero(x[i]);
+        y[2 * i + 1] = normalize_zero(-x[n - i]);
     }
 }
 void nrn_nrc2gsl(double* x, double* y, unsigned long n) {
@@ -122,16 +132,17 @@ void nrn_nrc2gsl(double* x, double* y, unsigned long n) {
     n2 = n / 2;
     xn = n;
     xn2 = .5 * xn;
-    y[0] = x[0] * xn2;
+    y[0] = normalize_zero(x[0] * xn2);
     if (n < 2) {
         return;
     }
-    y[n2] = x[1] * xn2;
+    y[n2] = normalize_zero(x[1] * xn2);
     for (i = 1; i < n2; ++i) {
-        y[i] = x[2 * i] * xn2;
-        y[n - i] = -x[2 * i + 1] * xn2;
+        y[i] = normalize_zero(x[2 * i] * xn2);
+        y[n - i] = normalize_zero(-x[2 * i + 1] * xn2);
     }
 }
+
 
 void nrn_convlv(double* data,
                 unsigned long n,
