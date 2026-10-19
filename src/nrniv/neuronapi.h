@@ -196,11 +196,14 @@ int nrn_property_element_ptr(Object* obj,
                              double** ptr,
                              char* error_msg,
                              size_t error_msg_size);
+Object* nrn_property_object_get(const Object* obj, const char* name);
+bool nrn_property_object_set(Object* obj, const char* name, Object* value);
 char const* nrn_symbol_name(const Symbol* sym);
 Symlist* nrn_symbol_table(const Symbol* sym);
 Symlist* nrn_global_symbol_table(void);
 Symlist* nrn_top_level_symbol_table(void);
 int nrn_symbol_array_length(const Symbol* sym);
+int nrn_symbol_array_dims(const Symbol* sym, int* dims, int max_dims);
 void nrn_register_function(void (*proc)(), const char* func_name, int type);
 void nrn_hoc_ret(void);
 
