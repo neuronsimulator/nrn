@@ -728,6 +728,10 @@ Segments
     :param x: Normalized position along Section (0.0 to 1.0).
     :param value: Value to set for the range variable.
 
+    As with a HOC or Python assignment, writing ``diam`` updates the section's
+    area and 3-d points, and writing ``xraxial`` marks the axial terms for
+    recomputation.
+
     **Usage Pattern:**
 
     Used to configure biophysical properties of Sections, such as:
@@ -798,7 +802,8 @@ Segments
 .. c:function:: int nrn_rangevar_set_nothrow(Symbol* sym, Section* sec, double x, int index, double value, char* error_msg, size_t error_msg_size)
 
     Write element ``index`` of a range variable at position ``x``, with the same
-    checks and error reporting as :c:func:`nrn_rangevar_get_nothrow`.
+    checks and error reporting as :c:func:`nrn_rangevar_get_nothrow`. Writing
+    ``diam`` or ``xraxial`` updates the section as :c:func:`nrn_rangevar_set` does.
 
     :returns: 0 on success, non-zero on error.
 
