@@ -252,8 +252,24 @@ double nrn_rangevar_get(Symbol* sym, Section* sec, double x) {
     return *nrn_rangepointer(sec, sym, x);
 }
 
+namespace {
+// After a range-variable write, what HOC assignment and the Python setter do:
+// a diam write updates area and 3-d points, an xraxial write recomputes the
+// axial terms.
+void rangevar_written(Symbol* sym, Section* sec) {
+    if (sym->u.rng.type == MORPHOLOGY) {
+        diam_changed = 1;
+        sec->recalc_area_ = 1;
+        nrn_diam_change(sec);
+    } else if (sym->u.rng.type == EXTRACELL && sym->u.rng.index == 0) {
+        diam_changed = 1;
+    }
+}
+}  // namespace
+
 void nrn_rangevar_set(Symbol* sym, Section* sec, double x, double value) {
     *nrn_rangepointer(sec, sym, x) = value;
+    rangevar_written(sym, sec);
 }
 
 void nrn_rangevar_push(Symbol* sym, Section* sec, double x) {
@@ -373,9 +389,7 @@ int nrn_rangevar_set_nothrow(Symbol* sym,
             return 1;
         }
         *pd = value;
-        if (sym->u.rng.type == EXTRACELL && sym->u.rng.index == 0) {
-            diam_changed = 1;  // xraxial, as the Python module's setter does
-        }
+        rangevar_written(sym, sec);
         return 0;
     } catch (const std::exception& e) {
         if (error_msg && error_msg_size) {
@@ -1259,6 +1273,98 @@ bool nrn_property_data_handle_is_valid(const Object* obj, const char* name, int 
         return static_cast<bool>(hoc_pop_handle<double>());
     }
     return static_cast<bool>(point_process_pointer(ob2pntproc_0(const_cast<Object*>(obj)), sym, i));
+}
+
+namespace {
+struct steer_request {
+    Object* obj;
+    Symbol* sym;
+    const int* indices;
+    int nindex;
+    double* result;
+};
+
+// What hoc_object_component does for a C++ class variable such as Vector.x or
+// Matrix.x: indices, then the array-dimension marker, then the symbol, then the
+// class's steer function, which leaves a pointer to the element.
+void* steer_element(void* request, void*) {
+    auto* r = static_cast<steer_request*>(request);
+    for (int k = 0; k < r->nindex; ++k) {
+        hoc_pushx(r->indices[k]);
+    }
+    if (r->nindex) {
+        hoc_push_ndim(r->nindex);
+    }
+    hoc_pushs(r->sym);
+    r->obj->ctemplate->steer(r->obj->u.this_pointer);
+    r->result = hoc_pxpop();
+    return nullptr;
+}
+}  // namespace
+
+int nrn_property_element_ptr(Object* obj,
+                             const char* name,
+                             const int* indices,
+                             int nindex,
+                             double** ptr,
+                             char* error_msg,
+                             size_t error_msg_size) {
+    auto fail = [&](const char* message) {
+        if (error_msg && error_msg_size) {
+            std::strncpy(error_msg, message, error_msg_size - 1);
+            error_msg[error_msg_size - 1] = '\0';
+        }
+        return 1;
+    };
+    if (error_msg && error_msg_size) {
+        error_msg[0] = '\0';
+    }
+    if (!ptr) {
+        return fail("ptr is NULL");
+    }
+    *ptr = nullptr;
+    if (!obj || !name || nindex < 0 || (nindex && !indices)) {
+        return fail("invalid argument");
+    }
+    Symbol* sym = hoc_table_lookup(name, obj->ctemplate->symtable);
+    if (!sym) {
+        return fail("no such property");
+    }
+    int const nsub = sym->arayinfo ? sym->arayinfo->nsub : 0;
+    if (obj->ctemplate->is_point_) {
+        // Point-process arrays are one-dimensional; a scalar takes no index.
+        if (nindex != nsub || nsub > 1) {
+            return fail("wrong number of indices");
+        }
+        int const i = nindex ? indices[0] : 0;
+        if (i < 0 || (nsub && i >= sym->arayinfo->sub[0])) {
+            return fail("index out of range");
+        }
+        auto handle = point_process_pointer(ob2pntproc_0(obj), sym, i);
+        if (!handle) {
+            return fail("no data for this property (POINTER not set?)");
+        }
+        *ptr = &*handle;
+        return 0;
+    }
+    if (!obj->ctemplate->steer || sym->type != VAR) {
+        return fail("not a variable of a point process or of Vector, Matrix or Pointer");
+    }
+    if (nindex != nsub) {
+        return fail("wrong number of indices");
+    }
+    // The steer function raises HOC errors (index out of range, freed Pointer);
+    // fpycall restores the interpreter state, including the stack, and rethrows.
+    steer_request request{obj, sym, indices, nindex, nullptr};
+    try {
+        OcJump::fpycall(steer_element, &request, nullptr);
+    } catch (const std::exception& e) {
+        return fail(e.what());
+    } catch (...) {
+        return fail("unknown error");
+    }
+    *ptr = request.result;
+    return 0;
 }
 
 Object* nrn_property_object_get(const Object* obj, const char* name) {
