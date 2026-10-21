@@ -29,6 +29,10 @@
 #include "../utils/profile/profiler_interface.h"
 
 #include <cfenv>
+#include <csignal>
+#if defined(__APPLE__)
+#include <sys/ucontext.h>
+#endif
 #include <condition_variable>
 #include <filesystem>
 #include <iostream>
@@ -37,6 +41,28 @@
 #include <utility>
 
 #include "utils/logger.hpp"
+
+#if defined(_WIN32)
+// Hardware traps are structured exceptions. /EHsc will not turn them into
+// C++ exceptions, so the handler reports and aborts.
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+// winbase.h defines IGNORE as 0 and would replace hocdec.h's IGNORE().
+#pragma push_macro("IGNORE")
+#include <windows.h>
+#include <float.h>
+#pragma pop_macro("IGNORE")
+#ifdef small
+#undef small
+#endif
+#ifdef byte
+#undef byte
+#endif
+#endif
 
 /* for eliminating "ignoreing return value" warnings. */
 int nrnignore;
@@ -63,39 +89,298 @@ extern int stdin_event_ready();
 #endif
 
 #define FEEXCEPT (FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW)
-static void matherr1(void) {
-    const int e = std::fetestexcept(FEEXCEPT);
-    /* above gives the signal but for some reason fegetexcept returns 0 */
-    switch (e) {
-    case FE_DIVBYZERO:
-        fprintf(stderr, "Floating exception: Divide by zero\n");
-        break;
-    case FE_INVALID:
-        fprintf(stderr, "Floating exception: Invalid (no well defined result\n");
-        break;
-    case FE_OVERFLOW:
-        fprintf(stderr, "Floating exception: Overflow\n");
-        break;
+
+#if HAVE_FEENABLEEXCEPT
+extern "C" int feenableexcept(int excepts);
+extern "C" int fedisableexcept(int excepts);
+#endif
+
+void fpecatch(int);
+static void nrn_fpe_install();
+static void nrn_fpe_unblock();
+static void nrn_ill_install();
+static void nrn_ill_restore();
+
+// Name the trap. In the handler, fetestexcept is 0: the kernel clears the live
+// status word and reports the cause as si_code. fetestexcept covers a call
+// that still has sticky flags and no si_code. MSVC has no POSIX si_code names.
+static int nrn_fe_except_kind(int si_code) {
+#if defined(FPE_FLTDIV)
+    if (si_code == FPE_FLTDIV) {
+        return FE_DIVBYZERO;
     }
+#endif
+#if defined(FPE_FLTINV)
+    if (si_code == FPE_FLTINV) {
+        return FE_INVALID;
+    }
+#endif
+#if defined(FPE_FLTOVF)
+    if (si_code == FPE_FLTOVF) {
+        return FE_OVERFLOW;
+    }
+#endif
+    (void) si_code;
+    return std::fetestexcept(FEEXCEPT);
+}
+
+// Apple arm64 raises SIGILL, not SIGFPE, and clears both the live FPSR and the
+// copy in the signal context. The syndrome register still names the trap.
+// IOF/DZF/OFF are bits 0..2 and match this platform's FE_* values.
+static int nrn_fe_except_from_signal(int si_code, void* context) {
+#if defined(__APPLE__) && defined(__arm64__)
+    static_assert(FE_INVALID == 0x1, "ESR IOF bit");
+    static_assert(FE_DIVBYZERO == 0x2, "ESR DZF bit");
+    static_assert(FE_OVERFLOW == 0x4, "ESR OFF bit");
+    if (context != nullptr) {
+        auto* uc = static_cast<ucontext_t*>(context);
+        if (uc->uc_mcontext != nullptr) {
+            const unsigned esr = uc->uc_mcontext->__es.__esr;
+            const unsigned tfv = 1u << 23;
+            if ((esr >> 26) == 0x2C && (esr & tfv) != 0) {
+                return static_cast<int>(esr & FEEXCEPT);
+            }
+        }
+    }
+    (void) si_code;
+    return std::fetestexcept(FEEXCEPT);
+#else
+    (void) context;
+    return nrn_fe_except_kind(si_code);
+#endif
+}
+
+static void nrn_fe_except_report_kind(int kind) {
+    if (kind & FE_DIVBYZERO) {
+        fprintf(stderr, "Floating exception: Divide by zero\n");
+    }
+    if (kind & FE_INVALID) {
+        fprintf(stderr, "Floating exception: Invalid (no well defined result)\n");
+    }
+    if (kind & FE_OVERFLOW) {
+        fprintf(stderr, "Floating exception: Overflow\n");
+    }
+    // MSVCRT fully buffers stderr on a pipe. Fprintf writes through the Python
+    // stderr callback and skips that buffer, so flush or the kind line follows
+    // the backtrace.
+    fflush(stderr);
+}
+
+static void nrn_fe_except_clear() {
+    std::feclearexcept(FE_ALL_EXCEPT);
+}
+
+#if defined(__APPLE__)
+static bool nrn_apple_env_set(bool enable) {
+    fenv_t env{};
+    if (std::fegetenv(&env) != 0) {
+        return false;
+    }
+#if defined(__arm64__)
+    const unsigned long long traps = __fpcr_trap_invalid | __fpcr_trap_divbyzero |
+                                     __fpcr_trap_overflow;
+    if (enable) {
+        env.__fpsr &= ~static_cast<unsigned long long>(FE_ALL_EXCEPT);
+        env.__fpcr |= traps;
+    } else {
+        env.__fpcr &= ~traps;
+    }
+#else
+    // Intel: 1 in the control word and in MXCSR bits +7 means the trap is masked.
+    const unsigned int x = FEEXCEPT;
+    if (enable) {
+        env.__status = static_cast<unsigned short>(env.__status & ~FE_ALL_EXCEPT);
+        env.__mxcsr &= ~static_cast<unsigned int>(FE_ALL_EXCEPT);
+        env.__control = static_cast<unsigned short>(env.__control & ~x);
+        env.__mxcsr &= ~(x << 7);
+    } else {
+        env.__control = static_cast<unsigned short>(env.__control | x);
+        env.__mxcsr |= x << 7;
+    }
+#endif
+    return std::fesetenv(&env) == 0;
+}
+
+static int nrn_apple_traps_armed(const fenv_t& env) {
+#if defined(__arm64__)
+    const unsigned long long traps = __fpcr_trap_invalid | __fpcr_trap_divbyzero |
+                                     __fpcr_trap_overflow;
+    return (env.__fpcr & traps) != 0 ? 1 : 0;
+#else
+    const unsigned int x = FEEXCEPT;
+    const bool x87_armed = (env.__control & x) != x;
+    const bool sse_armed = (env.__mxcsr & (x << 7)) != (x << 7);
+    return (x87_armed || sse_armed) ? 1 : 0;
+#endif
+}
+#endif
+
+// Mask the three traps without changing nrn_feenableexcept_. The Apple handler
+// has to do this before it leaves the signal frame: the kernel leaves the trap
+// bits armed. arm64 then throws. Intel macOS siglongjmps back to the HOC try.
+// A throw inside that signal frame calls std::terminate. Linux already enters
+// the handler masked. arm64 uses mrs/msr. Intel uses fldcw and ldmxcsr.
+// fegetenv would raise the pending exception while this signal is blocked.
+#if defined(__APPLE__)
+static void nrn_apple_mask_live() {
+#if defined(__arm64__)
+    const unsigned long long traps = __fpcr_trap_invalid | __fpcr_trap_divbyzero |
+                                     __fpcr_trap_overflow;
+    unsigned long long fpcr;
+    unsigned long long fpsr;
+    asm volatile("mrs %0, fpcr" : "=r"(fpcr));
+    fpcr &= ~traps;
+    asm volatile("msr fpcr, %0" ::"r"(fpcr));
+    asm volatile("mrs %0, fpsr" : "=r"(fpsr));
+    fpsr &= ~static_cast<unsigned long long>(FE_ALL_EXCEPT);
+    asm volatile("msr fpsr, %0" ::"r"(fpsr));
+#else
+    // fegetenv executes x87/SSE instructions and would raise the pending
+    // exception while this signal is blocked. fldcw also raises when an x87
+    // exception is already pending, so clear it first. One asm block keeps
+    // the compiler from inserting an SSE instruction while the trap is still armed.
+    static_assert(FE_INVALID == 0x01, "x87 invalid mask bit");
+    static_assert(FE_DIVBYZERO == 0x04, "x87 divide-by-zero mask bit");
+    static_assert(FE_OVERFLOW == 0x08, "x87 overflow mask bit");
+    unsigned short control = 0;
+    unsigned int mxcsr = 0;
+    asm volatile(
+        "fnclex\n\t"
+        "fnstcw %[cw]\n\t"
+        "orw %[x87], %[cw]\n\t"
+        "fldcw %[cw]\n\t"
+        "stmxcsr %[mx]\n\t"
+        "orl %[sse], %[mx]\n\t"
+        "andl %[keep], %[mx]\n\t"
+        "ldmxcsr %[mx]"
+        : [cw] "+m"(control), [mx] "+m"(mxcsr)
+        : [x87] "n"(static_cast<unsigned short>(FEEXCEPT)),
+          [sse] "n"(static_cast<unsigned int>(FEEXCEPT) << 7),
+          [keep] "n"(~static_cast<unsigned int>(FE_ALL_EXCEPT))
+        : "cc");
+#endif
+}
+#endif
+
+#if defined(_WIN32)
+// 1 in the control word masks the trap. Leave underflow and inexact masked.
+static unsigned int nrn_win_fp_bits() {
+    return _EM_INVALID | _EM_ZERODIVIDE | _EM_OVERFLOW;
+}
+
+static int nrn_win_traps_armed(unsigned int cw) {
+    const unsigned int bits = nrn_win_fp_bits();
+    return (cw & bits) != bits ? 1 : 0;
+}
+#endif
+
+static void nrn_fe_traps_mask() {
+#if HAVE_FEENABLEEXCEPT
+    fedisableexcept(FEEXCEPT);
+#elif defined(__APPLE__)
+    nrn_apple_mask_live();
+#elif defined(_WIN32)
+    unsigned int cw = 0;
+    _controlfp_s(&cw, _MCW_EM, _MCW_EM);
+    _clearfp();
+#endif
+    nrn_fe_except_clear();
+}
+
+static void nrn_fe_traps_rearm() {
+#if HAVE_FEENABLEEXCEPT
+    nrn_fe_except_clear();
+    feenableexcept(FEEXCEPT);
+#elif defined(__APPLE__)
+    nrn_fe_except_clear();
+    nrn_apple_env_set(true);
+#elif defined(_WIN32)
+    unsigned int cw = 0;
+    _clearfp();
+    nrn_fe_except_clear();
+    _controlfp_s(&cw, ~nrn_win_fp_bits(), _MCW_EM);
+#endif
+}
+
+// Arm or mask invalid, divide-by-zero, and overflow. Returns 1 if any of those
+// traps were already armed. hoc_Exp reads nrn_feenableexcept_.
+static int nrn_fe_traps_set(bool enable) {
+#if HAVE_FEENABLEEXCEPT
+    int previous_mask;
+    if (enable) {
+        // Clear before arming so a stale sticky flag does not trap inside the call.
+        nrn_fe_except_clear();
+        nrn_fpe_install();
+        previous_mask = feenableexcept(FEEXCEPT);
+    } else {
+        previous_mask = fedisableexcept(FEEXCEPT);
+        nrn_fe_except_clear();
+    }
+    if (previous_mask == -1) {
+        hoc_execerror("nrn_feenableexcept", "failed to set floating-point traps");
+    }
+    nrn_feenableexcept_ = enable ? 1 : 0;
+    return (previous_mask & FEEXCEPT) ? 1 : 0;
+#elif defined(__APPLE__)
+    fenv_t env{};
+    if (std::fegetenv(&env) != 0) {
+        hoc_execerror("nrn_feenableexcept", "failed to read the floating-point environment");
+    }
+    const int previous = nrn_apple_traps_armed(env);
+    if (enable) {
+        nrn_fe_except_clear();
+        nrn_fpe_install();
+    }
+    if (!nrn_apple_env_set(enable)) {
+        hoc_execerror("nrn_feenableexcept", "failed to set floating-point traps");
+    }
+    if (!enable) {
+        nrn_fe_except_clear();
+        nrn_ill_restore();
+    }
+    nrn_feenableexcept_ = enable ? 1 : 0;
+    return previous;
+#elif defined(_WIN32)
+    unsigned int cw = 0;
+    if (_controlfp_s(&cw, 0, 0) != 0) {
+        hoc_execerror("nrn_feenableexcept", "failed to read the floating-point environment");
+    }
+    const int previous = nrn_win_traps_armed(cw);
+    if (enable) {
+        // Clear before arming so a stale sticky flag does not trap inside the call.
+        _clearfp();
+        nrn_fe_except_clear();
+        nrn_fpe_install();
+        // The handler aborts only while this is set. Set it before unmasking.
+        nrn_feenableexcept_ = 1;
+        if (_controlfp_s(&cw, ~nrn_win_fp_bits(), _MCW_EM) != 0) {
+            nrn_feenableexcept_ = 0;
+            hoc_execerror("nrn_feenableexcept", "failed to set floating-point traps");
+        }
+    } else {
+        if (_controlfp_s(&cw, _MCW_EM, _MCW_EM) != 0) {
+            hoc_execerror("nrn_feenableexcept", "failed to set floating-point traps");
+        }
+        _clearfp();
+        nrn_fe_except_clear();
+        nrn_feenableexcept_ = 0;
+    }
+    return previous;
+#else
+    hoc_execerror("nrn_feenableexcept", "is not available on this build");
+#endif
 }
 
 int nrn_mpiabort_on_error_{1};
 
-int nrn_feenableexcept_ = 0;  // 1 if feenableexcept(FEEXCEPT) is successful
+int nrn_feenableexcept_ = 0;  // 1 while FEEXCEPT traps are armed
 
 void nrn_feenableexcept() {
-    int result = -2;  // feenableexcept does not exist.
-    nrn_feenableexcept_ = 0;
-#if NRN_FLOAT_EXCEPTION
-    if (ifarg(1) && chkarg(1, 0., 1.) == 0.) {
-        result = fedisableexcept(FEEXCEPT);
-    } else {
-        result = feenableexcept(FEEXCEPT);
-        nrn_feenableexcept_ = (result == -1) ? 0 : 1;
-    }
-#endif
+    // No argument arms the traps. The return value is the previous 0 or 1 state.
+    const bool enable = !ifarg(1) || chkarg(1, 0., 1.) != 0.;
+    const int previous = nrn_fe_traps_set(enable);
     hoc_ret();
-    hoc_pushx((double) result);
+    hoc_pushx(static_cast<double>(previous));
 }
 
 void start_profile(int i) {}
@@ -733,19 +1018,356 @@ void print_bt() {
 #endif
 }
 
-void fpecatch(int /* sig */) /* catch floating point exceptions */
-{
-    /*ARGSUSED*/
-#if NRN_FLOAT_EXCEPTION
-    matherr1();
+static volatile sig_atomic_t nrn_fpe_needs_unblock = 0;
+
+#if defined(__APPLE__) && !defined(__arm64__)
+thread_local nrn_fpe_catch_jump* nrn_fpe_catch_jump::top_ = nullptr;
+
+void nrn_fpe_catch_jump::unlink() noexcept {
+    if (!linked_) {
+        return;
+    }
+    linked_ = false;
+    if (top_ == this) {
+        top_ = prev_;
+        return;
+    }
+    for (nrn_fpe_catch_jump** link = &top_; *link; link = &(*link)->prev_) {
+        if (*link == this) {
+            *link = prev_;
+            return;
+        }
+    }
+}
+
+static bool nrn_fpe_altstack_ready() {
+    stack_t old{};
+    if (sigaltstack(nullptr, &old) != 0) {
+        return false;
+    }
+    if (old.ss_sp != nullptr && (old.ss_flags & SS_DISABLE) == 0) {
+        return true;
+    }
+    // print_bt runs in the handler. On the normal stack that can overwrite the
+    // sigjmp_buf, which sits only a few frames above the trap.
+    struct buf {
+        char* p{};
+        ~buf() {
+            free(p);
+        }
+    };
+    thread_local buf stack;
+    if (stack.p == nullptr) {
+        stack.p = static_cast<char*>(malloc(128 * 1024));
+        if (stack.p == nullptr) {
+            return false;
+        }
+    }
+    stack_t ss{};
+    ss.ss_sp = stack.p;
+    ss.ss_size = 128 * 1024;
+    ss.ss_flags = 0;
+    return sigaltstack(&ss, nullptr) == 0;
+}
+
+static void nrn_fpe_altstack_rearm() {
+    // siglongjmp out of an SA_ONSTACK handler can leave SS_ONSTACK set, so the
+    // next trap would not switch stacks. Clear it from the normal stack.
+    stack_t cur{};
+    if (sigaltstack(nullptr, &cur) != 0 || (cur.ss_flags & SS_ONSTACK) == 0) {
+        return;
+    }
+    stack_t disable{};
+    disable.ss_flags = SS_DISABLE;
+    if (sigaltstack(&disable, nullptr) != 0) {
+        return;
+    }
+    cur.ss_flags = 0;
+    sigaltstack(&cur, nullptr);
+}
+
+void nrn_fpe_catch_jump::landed() {
+    // siglongjmp does not restore caller-saved registers. Use the TLS top,
+    // not the jump object's this pointer.
+    nrn_fpe_altstack_rearm();
+    if (top_ != nullptr) {
+        top_->unlink();
+    }
+    hoc_execerror("Floating point exception.", (char*) 0);
+}
+
+// Keep this frame. A tail call would save the wrong return address, and
+// splitting the throw into a cold section breaks the unwind back to the try.
+#if defined(__GNUC__) && !defined(__clang__)
+__attribute__((optimize("no-reorder-blocks-and-partition")))
 #endif
+__attribute__((noinline)) void
+nrn_fpe_catch_jump::arm() {
+    // While the traps are off, sigsetjmp only adds a sigprocmask to every OcJump.
+    // No trap can arrive until a later arm() sees nrn_feenableexcept_ set.
+    if (!nrn_feenableexcept_) {
+        return;
+    }
+    if (!linked_) {
+        prev_ = top_;
+        top_ = this;
+        linked_ = true;
+    }
+    if (sigsetjmp(buf_, 1) != 0) {
+        landed();
+    }
+}
+
+bool nrn_fpe_catch_jump::leave_handler() {
+    if (top_ == nullptr) {
+        return false;
+    }
+    siglongjmp(top_->buf_, 1);
+    return true;
+}
+#endif
+
+static void nrn_fpe_finish(int si_code, void* context) {
+    // Name the trap before masking. Masking clears the sticky flags, and on
+    // Intel a floating-point instruction here raises SIGFPE again. The first
+    // signal is blocked in this handler, so that second signal kills the process.
+    const int kind = nrn_fe_except_from_signal(si_code, context);
+    nrn_fe_traps_mask();
+    nrn_fe_except_report_kind(kind);
+    // Apple leaves the trap bits armed, so libunwind would take a second
+    // trap. The depth helper rearms on the way out. With no HOC catch on
+    // the stack, abort after the report.
     Fprintf(stderr, "Floating point exception\n");
     print_bt();
     if (coredump) {
         abort();
     }
-    signal(SIGFPE, fpecatch);
+    nrn_fpe_install();
+    nrn_fpe_needs_unblock = 1;
+    if (nrn_try_catch_nest_depth == 0) {
+        abort();
+    }
+#if defined(__APPLE__) && !defined(__arm64__)
+    // The Intel signal trampoline does not unwind. siglongjmp to the HOC try
+    // and throw from there. With no armed try, fall through.
+    if (nrn_fpe_catch_jump::leave_handler()) {
+        return;
+    }
+#endif
     hoc_execerror("Floating point exception.", (char*) 0);
+}
+
+void fpecatch(int /* sig */) /* catch floating point exceptions */
+{
+    /*ARGSUSED*/
+    nrn_fpe_finish(0, nullptr);
+}
+
+#if HAVE_SIGACTION
+static struct sigaction nrn_fpe_saved;
+#else
+static void (*nrn_fpe_saved_fn)(int) = nullptr;
+#endif
+static bool nrn_fpe_saved_valid = false;
+
+#if defined(__APPLE__) && defined(__arm64__)
+#if HAVE_SIGACTION
+static struct sigaction nrn_ill_saved;
+#else
+static void (*nrn_ill_saved_fn)(int) = nullptr;
+#endif
+static bool nrn_ill_saved_valid = false;
+#endif
+
+#if HAVE_SIGACTION
+static void fpecatch_info(int sig, siginfo_t* info, void* context);
+#endif
+
+static void nrn_ill_install() {
+#if defined(__APPLE__) && defined(__arm64__) && HAVE_SIGACTION
+    struct sigaction sa {};
+    sa.sa_sigaction = fpecatch_info;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_SIGINFO;
+    // Keep the handler we found at the first arm (often faulthandler).
+    if (!nrn_ill_saved_valid) {
+        sigaction(SIGILL, &sa, &nrn_ill_saved);
+        nrn_ill_saved_valid = true;
+    } else {
+        sigaction(SIGILL, &sa, nullptr);
+    }
+#elif defined(__APPLE__) && defined(__arm64__)
+    if (!nrn_ill_saved_valid) {
+        nrn_ill_saved_fn = signal(SIGILL, fpecatch);
+        nrn_ill_saved_valid = true;
+    } else {
+        signal(SIGILL, fpecatch);
+    }
+#endif
+}
+
+static void nrn_ill_restore() {
+#if defined(__APPLE__) && defined(__arm64__) && HAVE_SIGACTION
+    if (!nrn_ill_saved_valid) {
+        return;
+    }
+    sigaction(SIGILL, &nrn_ill_saved, nullptr);
+    nrn_ill_saved_valid = false;
+#elif defined(__APPLE__) && defined(__arm64__)
+    if (!nrn_ill_saved_valid) {
+        return;
+    }
+    signal(SIGILL, nrn_ill_saved_fn);
+    nrn_ill_saved_valid = false;
+#endif
+}
+
+#if HAVE_SIGACTION
+static void fpecatch_info(int sig, siginfo_t* info, void* context) {
+#if defined(__APPLE__) && defined(__arm64__) && defined(ILL_ILLTRP)
+    // SIGILL is also a real illegal instruction. Only ILL_ILLTRP is a float trap.
+    if (sig == SIGILL && !(info != nullptr && info->si_code == ILL_ILLTRP)) {
+        if (nrn_ill_saved_valid) {
+            nrn_ill_restore();
+        } else {
+            signal(SIGILL, SIG_DFL);
+        }
+        nrn_fpe_unblock();
+        raise(SIGILL);
+        return;
+    }
+#else
+    (void) sig;
+#endif
+    nrn_fpe_finish(info ? info->si_code : 0, context);
+}
+#endif
+
+static void nrn_fpe_unblock() {
+#if HAVE_SIGPROCMASK
+    // A throw can skip the normal return from the handler and leave the
+    // signal blocked. arm64 float traps arrive as SIGILL.
+    sigset_t set;
+    sigemptyset(&set);
+    sigaddset(&set, SIGFPE);
+#if defined(__APPLE__) && defined(__arm64__)
+    sigaddset(&set, SIGILL);
+#endif
+    sigprocmask(SIG_UNBLOCK, &set, nullptr);
+#endif
+}
+
+void nrn_fpe_reset_mask() {
+    if (!nrn_fpe_needs_unblock) {
+        return;
+    }
+    nrn_fpe_needs_unblock = 0;
+    nrn_fpe_unblock();
+    // The handler masked the traps before throwing. Put them back if the
+    // user still wants them.
+    if (nrn_feenableexcept_) {
+        nrn_fe_traps_rearm();
+    }
+}
+
+#if defined(_WIN32)
+static PVOID nrn_fpe_veh_handle = nullptr;
+
+static LONG CALLBACK nrn_fpe_veh(EXCEPTION_POINTERS* info) {
+    if (info == nullptr || info->ExceptionRecord == nullptr || !nrn_feenableexcept_) {
+        return EXCEPTION_CONTINUE_SEARCH;
+    }
+    const DWORD code = info->ExceptionRecord->ExceptionCode;
+    int kind = 0;
+    if (code == static_cast<DWORD>(EXCEPTION_FLT_DIVIDE_BY_ZERO)) {
+        kind = FE_DIVBYZERO;
+    } else if (code == static_cast<DWORD>(EXCEPTION_FLT_INVALID_OPERATION)) {
+        kind = FE_INVALID;
+    } else if (code == static_cast<DWORD>(EXCEPTION_FLT_OVERFLOW)) {
+        kind = FE_OVERFLOW;
+    } else {
+        return EXCEPTION_CONTINUE_SEARCH;
+    }
+    // Windows enters this handler with the traps still armed. Mask before the
+    // report so a later floating-point operation does not reenter. /EHsc does
+    // not turn the trap into a C++ exception, so abort after the report.
+    nrn_fe_traps_mask();
+    nrn_fe_except_report_kind(kind);
+    Fprintf(stderr, "Floating point exception\n");
+    print_bt();
+    fflush(stderr);
+    // MinGW's msvcrt import library does not provide this UCRT function.
+    // Python is built against ucrtbase, which does.
+    SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
+    HMODULE crt = GetModuleHandleA("ucrtbase.dll");
+    if (crt == nullptr) {
+        crt = LoadLibraryA("ucrtbase.dll");
+    }
+    if (crt != nullptr) {
+        using abort_behavior_fn = unsigned int(__cdecl*)(unsigned int, unsigned int);
+        auto* quiet_abort = reinterpret_cast<abort_behavior_fn>(
+            GetProcAddress(crt, "_set_abort_behavior"));
+        if (quiet_abort != nullptr) {
+            quiet_abort(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
+        }
+    }
+    abort();
+}
+#endif
+
+static void nrn_fpe_install() {
+#if defined(_WIN32)
+    // Re-add so this handler stays ahead of one installed earlier (faulthandler).
+    if (nrn_fpe_veh_handle != nullptr) {
+        RemoveVectoredExceptionHandler(nrn_fpe_veh_handle);
+        nrn_fpe_veh_handle = nullptr;
+    }
+    nrn_fpe_veh_handle = AddVectoredExceptionHandler(1, nrn_fpe_veh);
+    if (nrn_fpe_veh_handle == nullptr) {
+        hoc_execerror("nrn_feenableexcept", "failed to install the exception handler");
+    }
+#else
+#if HAVE_SIGACTION
+    struct sigaction sa {};
+    sa.sa_sigaction = fpecatch_info;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_SIGINFO;
+#if defined(__APPLE__) && !defined(__arm64__)
+    // Keep print_bt off the stack that holds the sigjmp_buf.
+    if (nrn_fpe_altstack_ready()) {
+        sa.sa_flags |= SA_ONSTACK;
+    }
+#endif
+    sigaction(SIGFPE, &sa, nullptr);
+#else
+    signal(SIGFPE, fpecatch);
+#endif
+    nrn_ill_install();
+    nrn_fpe_unblock();
+#endif
+}
+
+static void nrn_fpe_install_saving() {
+#if HAVE_SIGACTION
+    struct sigaction sa {};
+    sa.sa_sigaction = fpecatch_info;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_SIGINFO;
+#if defined(__APPLE__) && !defined(__arm64__)
+    if (nrn_fpe_altstack_ready()) {
+        sa.sa_flags |= SA_ONSTACK;
+    }
+#endif
+    sigaction(SIGFPE, &sa, &nrn_fpe_saved);
+    nrn_fpe_saved_valid = true;
+#else
+    nrn_fpe_saved_fn = signal(SIGFPE, fpecatch);
+    nrn_fpe_saved_valid = true;
+#endif
+    if (nrn_feenableexcept_) {
+        nrn_ill_install();
+    }
+    nrn_fpe_unblock();
 }
 
 __attribute__((noreturn)) void sigsegvcatch(int /* sig */) /* segmentation violation probably due to
@@ -1160,7 +1782,7 @@ static SignalType* signals[4];
 
 static void set_signals(void) {
     signals[0] = signal(SIGINT, onintr);
-    signals[1] = signal(SIGFPE, fpecatch);
+    nrn_fpe_install_saving();
     signals[2] = signal(SIGSEGV, sigsegvcatch);
 #if HAVE_SIGBUS
     signals[3] = signal(SIGBUS, sigbuscatch);
@@ -1169,7 +1791,15 @@ static void set_signals(void) {
 
 static void restore_signals(void) {
     signals[0] = signal(SIGINT, signals[0]);
-    signals[1] = signal(SIGFPE, signals[1]);
+    // While traps are armed, keep fpecatch. Restoring here puts SIGFPE back to
+    // SIG_DFL or faulthandler as soon as the HOC call returns.
+    if (!nrn_feenableexcept_ && nrn_fpe_saved_valid) {
+#if HAVE_SIGACTION
+        sigaction(SIGFPE, &nrn_fpe_saved, nullptr);
+#else
+        signal(SIGFPE, nrn_fpe_saved_fn);
+#endif
+    }
     signals[2] = signal(SIGSEGV, signals[2]);
 #if HAVE_SIGBUS
     signals[3] = signal(SIGBUS, signals[3]);
@@ -1190,21 +1820,24 @@ struct signal_handler_guard {
 template <typename T>
 struct temporarily_change {
     temporarily_change(T& global, T new_value)
-        : m_global_value{global}
+        : m_global_value{&global}
         , m_saved_value{std::exchange(global, new_value)} {}
     ~temporarily_change() {
-        m_global_value = m_saved_value;
+        // Intel macOS siglongjmp does not restore caller-saved registers.
+        *m_global_value = m_saved_value;
     }
 
   private:
-    T& m_global_value;
-    T m_saved_value;
+    T* volatile m_global_value;
+    volatile T m_saved_value;
 };
 
 // execute until EOF
 // called from a try { ... } block in hoc_main1
 static int hoc_run1() {
-    auto* const sav_fin = hoc_fin;
+    // The catch reloads this after a siglongjmp on Intel macOS. A pointer kept
+    // only in a register is not reliable there.
+    NrnFILEWrap* volatile sav_fin = hoc_fin;
     hoc_pipeflag = 0;
     hoc_execerror_messages = 1;
     auto const loop_body = []() {
@@ -1230,6 +1863,8 @@ static int hoc_run1() {
         hoc_intset = 0;
         for (;;) {
             try {
+                nrn_fpe_catch_jump fpe_jump;
+                fpe_jump.arm();
                 if (!loop_body()) {
                     break;
                 }
@@ -1241,6 +1876,10 @@ static int hoc_run1() {
                     Fprintf(stderr, fmt::format(": {}", what).c_str());
                 }
                 Fprintf(stderr, "\n");
+                // The depth helper outlives this loop, so its destructor rearms
+                // only when hoc_run1 returns. A trap masks the exceptions before
+                // the throw. Put them back before the next statement.
+                nrn_fpe_reset_mask();
                 // Exit if we're not in interactive mode
                 if (!nrn_fw_eq(hoc_fin, stdin)) {
                     return EXIT_FAILURE;
@@ -1340,12 +1979,15 @@ int hoc_oc(const char* buf, std::ostream& os) {
     } else {
         // This is the highest level try/catch
         try_catch_depth_increment tell_children_we_will_catch{};
-        auto const stack_size = hoc_stack_size();
+        const volatile std::size_t stack_size = hoc_stack_size();
+        std::ostream* volatile report_os = &os;
         try {
             signal_handler_guard _{};
+            nrn_fpe_catch_jump fpe_jump;
+            fpe_jump.arm();
             kernel();
         } catch (std::exception const& e) {
-            os << "hoc_oc caught exception: " << e.what() << std::endl;
+            *report_os << "hoc_oc caught exception: " << e.what() << std::endl;
             hoc_initcode();
             // initcode releases frame/temporary objects, but leaves operands.
             // Keep entries owned by the caller below this command's stack.

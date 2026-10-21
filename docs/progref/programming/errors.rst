@@ -11,7 +11,7 @@ Error Handling
         Description:
             On unix machines, sets a flag which requests (True) a coredump in case 
             of memory or bus errors --- Or floating exceptions if
-            :func:`nrn_fenableexcept` has been turned on. 1 or 0 may be used as synonyms
+            :func:`nrn_feenableexcept` has been turned on. 1 or 0 may be used as synonyms
             for True and False, respectively.
 
     .. tab:: HOC
@@ -24,7 +24,7 @@ Error Handling
         Description:
             On unix machines, sets a flag which requests (1) a coredump in case 
             of memory or bus errors --- Or floating exceptions if
-            :func:`nrn_fenableexcept` has been turned on.
+            :func:`nrn_feenableexcept` has been turned on.
         
 ----
 
@@ -33,48 +33,124 @@ Error Handling
     .. tab:: Python
     
         Syntax:
-            ``previous_floating_point_mask = n.nrn_feenableexcept(boolean)``
+            ``old = n.nrn_feenableexcept(1)``
+
+            ``n.nrn_feenableexcept(old)``
+
+            ``n.nrn_feenableexcept(0)``
+
+            ``n.nrn_feenableexcept()``
 
         Description:
-            Sets or turns off a flag which, if on, causes a SIGFPE when a floating error occurs which consist of
-            divide by zero, overflow, or invalid result. Known to work on linux. Turning on the flag is very helpful
-            in finding the code location at which a variable is assigned a value of NaN or Inf. For a serial model, this
-            is most easily done when running under gdb (or lldb on macOS). For a parallel model, one can combine with coredump_on_error
-            and, to force a coredump on abort(), use the bash command 'ulimit -c unlimited'.
+            Arm or mask hardware traps for an invalid operation, divide by
+            zero, and overflow. Underflow and inexact stay masked. The
+            setting applies to the current thread. The argument should be 0 or
+            1. 0 disables floating exception interrupts and 1 enables them.
 
-            Return is the previous value of the floating-point mask. (or -1
-            on failure to set the floating-point flags; or -2 if feenableexcept
-            does not exist).
+            The return value is the previous state, 0 or 1, so it can be
+            saved and restored. A failure to change the traps raises a
+            NEURON error.
 
-            Without an arg, SIGFPE is turned on.
+            When a trap fires, NEURON prints one of
+
+            ``Floating exception: Divide by zero``
+
+            ``Floating exception: Invalid (no well defined result)``
+
+            ``Floating exception: Overflow``
+
+            then ``Floating point exception`` and a backtrace when one is
+            available.
+
+            On Linux and macOS, a trap inside HOC error recovery becomes a
+            NEURON error. From Python that is a ``RuntimeError`` after the
+            report has been printed, and the traps stay armed. With no HOC
+            recovery on the stack, or after :func:`coredump_on_error`, the
+            process aborts after the report. By default, a parallel run aborts
+            when the trap becomes a NEURON error. On Apple silicon the trap
+            arrives as ``SIGILL``.
+            On Linux and on Intel Mac it arrives as ``SIGFPE``. lldb on
+            Apple silicon stops on the Mach exception
+            ``EXC_BAD_INSTRUCTION`` before that signal is delivered.
+
+            On Windows the same report is printed and the process aborts.
+            The trap does not become a Python exception.
+
+            HOC ``print(1/0)`` is rejected by the interpreter and is not one
+            of these traps. A hardware overflow is an expression such as
+            ``1e308*1e308``. Some math libraries, including the MinGW library
+            in the Windows installer, check ``sqrt`` and ``log`` in software
+            and do not raise the hardware trap for those calls.
+
+            Arming the traps is a way to find the assignment that first
+            produces a NaN or an Inf. Run under a debugger to stop at the
+            trap. The installation debug notes give the lldb command for
+            Apple silicon.
         Note:
-            The normal trap for exp(x) for x > 700 in mod files becomes
-            a floating exception when x is out of range.
+            While these traps are off, ``exp(x)`` for ``x > 700`` in mod
+            files warns and returns ``exp(700)``. While they are on, that
+            clamp is skipped and an out-of-range ``exp`` can raise the
+            overflow trap.
 
     .. tab:: HOC
 
 
         Syntax:
-            ``previous_floating_point_mask = nrn_feenableexcept(boolean)``
-        
-        
+            ``old = nrn_feenableexcept(1)``
+
+            ``nrn_feenableexcept(old)``
+
+            ``nrn_feenableexcept(0)``
+
+            ``nrn_feenableexcept()``
+
         Description:
-            Sets or turns off a flag which, if on, causes a SIGFPE when a floating error occurs which consist of
-            divide by zero, overflow, or invalid result. Known to work on linux. Turning on the flag is very helpful
-            in finding the code location at which a variable is assigned a value of NaN or Inf. For a serial model, this
-            is most easily done when running under gdb. For a parallel model, one can combine with coredump_on_error
-            and, to force a coredump on abort(), use the bash command 'ulimit -c unlimited'.
-        
-        
-            Return is the previous value of the floating-point mask. (or -1
-            on failure to set the floating-point flags; or -2 if feenableexcept  
-            does not exist).
-        
-        
-            Without an arg, SIGFPE is turned on.
+            Arm or mask hardware traps for an invalid operation, divide by
+            zero, and overflow. Underflow and inexact stay masked. The
+            setting applies to the current thread. The argument should be 0 or
+            1. 0 disables floating exception interrupts and 1 enables them.
+
+            The return value is the previous state, 0 or 1, so it can be
+            saved and restored. A failure to change the traps raises an
+            interpreter error.
+
+            When a trap fires, NEURON prints one of
+
+            ``Floating exception: Divide by zero``
+
+            ``Floating exception: Invalid (no well defined result)``
+
+            ``Floating exception: Overflow``
+
+            then ``Floating point exception`` and a backtrace when one is
+            available.
+
+            On Linux and macOS, a trap inside the interpreter's error
+            recovery raises an error after the report, and the traps stay
+            armed. With no recovery on the stack, or after
+            :func:`coredump_on_error`, the process aborts after the report.
+            By default, a parallel run aborts when the trap becomes a NEURON
+            error. On Apple silicon the trap arrives as ``SIGILL``. On Linux
+            and on Intel Mac it
+            arrives as ``SIGFPE``. lldb on Apple silicon stops on the Mach
+            exception ``EXC_BAD_INSTRUCTION`` before that signal is
+            delivered.
+
+            On Windows the same report is printed and the process aborts.
+
+            ``print(1/0)`` is rejected by the interpreter and is not one of
+            these traps. A hardware overflow is an expression such as
+            ``1e308*1e308``. Some math libraries, including the MinGW library
+            in the Windows installer, check ``sqrt`` and ``log`` in software
+            and do not raise the hardware trap for those calls.
+
+            Arming the traps is a way to find the assignment that first
+            produces a NaN or an Inf.
         Note:
-            The normal trap for exp(x) for x > 700 in mod files becomes
-            a floating exception when x is out of range.
+            While these traps are off, ``exp(x)`` for ``x > 700`` in mod
+            files warns and returns ``exp(700)``. While they are on, that
+            clamp is skipped and an out-of-range ``exp`` can raise the
+            overflow trap.
         
 ----
 
