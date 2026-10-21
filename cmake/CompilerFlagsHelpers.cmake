@@ -28,8 +28,7 @@ foreach(COMPILER_LANGUAGE ${SUPPORTED_COMPILER_LANGUAGE_LIST})
   endif()
 endforeach()
 
-set(UNSAFE_MATH_FLAG
-    "-ffinite-math-only -fno-math-errno -funsafe-math-optimizations -fno-associative-math")
+set(UNSAFE_MATH_FLAG "-fno-math-errno -funsafe-math-optimizations -fno-associative-math")
 set(FASTDEBUG_FLAG "-g -O1")
 
 # Set optimization flags for each compiler
