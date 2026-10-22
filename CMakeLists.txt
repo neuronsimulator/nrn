@@ -524,9 +524,18 @@ endif()
 if(NRN_ENABLE_PYTHON)
   # Make sure the USE_PYTHON macro is defined in the C++ code
   list(APPEND NRN_COMPILE_DEFS USE_PYTHON)
-  # Ensure nanobind is there, but dont import, we don't want its CMake
+endif()
+# nanobind: importable _nmodl/hoc and CLI libpywrapper (limited-API embed).
+if(NRN_ENABLE_PYTHON
+   OR NRN_ENABLE_NMODL
+   OR NRN_ENABLE_CORENEURON)
   nrn_add_external_project(nanobind DISABLE_ADD RECURSIVE SHALLOW)
   include(NanoBindMinimal)
+endif()
+if(NOT NRN_ENABLE_PYTHON)
+  set(NMODL_ENABLE_PYTHON_BINDINGS
+      OFF
+      CACHE BOOL "Enable NMODL python bindings" FORCE)
 endif()
 
 # =============================================================================
