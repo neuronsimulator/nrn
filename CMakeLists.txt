@@ -358,6 +358,35 @@ string(REPLACE "," ";" NRN_SANITIZERS_LIST "${NRN_SANITIZERS}")
 set(NRN_MINIMUM_PYTHON_VERSION 3.10)
 include(cmake/PythonHelper.cmake)
 
+if(NRN_ENABLE_PYTHON)
+  set(_nrn_abi3_default OFF)
+  option(
+    NRN_ENABLE_ABI3
+    "Build importable Python extensions against the CPython 3.12 limited API (abi3). OFF builds versioned extensions for the configured interpreter(s) (CPython 3.10+)."
+    ${_nrn_abi3_default})
+  if(NRN_ENABLE_ABI3)
+    foreach(_nrn_abi3_pyver ${NRN_PYTHON_VERSIONS})
+      if(_nrn_abi3_pyver VERSION_LESS 3.12)
+        message(
+          FATAL_ERROR "NRN_ENABLE_ABI3=ON requires CPython 3.12+ (got ${_nrn_abi3_pyver}). "
+                      "Use -DNRN_ENABLE_ABI3=OFF for a versioned build against this interpreter.")
+      endif()
+    endforeach()
+    set(NRN_STABLE_ABI_ARG STABLE_ABI)
+    set(NRN_PYTHON_LIMITED_API true)
+    set(NRN_PYTHON_LIMITED_API_PY True)
+  else()
+    set(NRN_STABLE_ABI_ARG)
+    set(NRN_PYTHON_LIMITED_API false)
+    set(NRN_PYTHON_LIMITED_API_PY False)
+  endif()
+else()
+  set(NRN_ENABLE_ABI3 OFF)
+  set(NRN_STABLE_ABI_ARG)
+  set(NRN_PYTHON_LIMITED_API false)
+  set(NRN_PYTHON_LIMITED_API_PY False)
+endif()
+
 # This needs NRN_DEFAULT_PYTHON_EXECUTABLE, which comes from PythonHelper.cmake
 if(NRN_SANITIZERS)
   configure_file(bin/nrn-enable-sanitizer.in bin/nrn-enable-sanitizer @ONLY)
@@ -1334,6 +1363,7 @@ endif()
 message(STATUS "Python        | ${NRN_ENABLE_PYTHON}")
 if(NRN_ENABLE_PYTHON)
   message(STATUS "  DYNAMIC     | ${NRN_ENABLE_PYTHON_DYNAMIC}")
+  message(STATUS "  ABI3        | ${NRN_ENABLE_ABI3}")
   foreach(val RANGE ${NRN_PYTHON_ITERATION_LIMIT})
     list(GET NRN_PYTHON_EXECUTABLES ${val} exe)
     list(GET NRN_PYTHON_VERSIONS ${val} pyver)
