@@ -115,6 +115,12 @@ from ._config_params import (
 )
 
 current_version = "{}.{}".format(*sys.version_info[:2])
+if sys.implementation.name != "cpython":
+    raise ImportError(
+        "This NEURON installation supports CPython only (this interpreter is {}).".format(
+            sys.implementation.name
+        )
+    )
 if limited_api:
     if sys.version_info < (3, 12):
         raise ImportError(

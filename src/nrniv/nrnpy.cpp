@@ -92,6 +92,27 @@ static bool ends_with(std::string_view str, std::string_view suffix) {
            str.substr(str.size() - suffix.size(), std::string_view::npos) == suffix;
 }
 
+// nrnpyenv.sh rejects non-CPython while it is choosing an interpreter. When NRN_PYLIB,
+// NRN_PYTHONEXE, and NRN_PYTHONVERSION are already set, that script does not run.
+// Check the executable before dlopen.
+static void ensure_cpython(std::string const& pyexe) {
+    std::string command = "\"" + pyexe + "\" -c \"import sys; print(sys.implementation.name)\"";
+    std::string name;
+    try {
+        name = check_output(std::move(command));
+    } catch (std::exception const& e) {
+        throw std::runtime_error("Could not run '" + pyexe + "' to check the interpreter.\n" +
+                                 e.what());
+    }
+    while (!name.empty() && (name.back() == '\n' || name.back() == '\r')) {
+        name.pop_back();
+    }
+    if (name != "cpython") {
+        throw std::runtime_error(
+            "This NEURON installation supports CPython only (this interpreter is " + name + ").");
+    }
+}
+
 /**
  * @brief Figure out which Python to load.
  *
@@ -107,8 +128,8 @@ static bool ends_with(std::string_view str, std::string_view suffix) {
  *   i.e. -pyexe implies that NRN_PY* are ignored.
  * * if -pyexe is *not* passed, then we examine the NRN_PY* environment
  *   variables:
- *   * if all of them are set, nrnpyenv.sh is not run and they are assumed to
- *     form a coherent set
+ *   * if all of them are set, nrnpyenv.sh is not run. The executable must be
+ *     CPython. The three values are otherwise assumed to form a coherent set
  *   * if only some, or none, of them are set, nrnpyenv.sh is run to fill in
  *     the missing values. NRN_PYTHONEXE is an input to nrnpyenv.sh, so if this
  *     is set then we will not search $PATH
@@ -131,7 +152,8 @@ static void set_nrnpylib() {
             }
         }
         if (all_set()) {
-            // the environment specified everything, nothing more to do
+            // the environment specified everything, so nrnpyenv.sh will not run
+            ensure_cpython(nrnpy_pyexe);
             return;
         }
     }
