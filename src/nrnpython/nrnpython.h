@@ -70,7 +70,7 @@ enum ObjectType {
 };
 enum IteratorState { Begin, NextNotLast, Last };
 }  // namespace PyHoc
-// Declare methods that are used in different translation units within one libnrnpythonX.Y
+// Declare methods that are used in different translation units within libnrnpython.abi3
 struct Object;
 struct Section;
 PyObject* hocobj_call_arg(int);
