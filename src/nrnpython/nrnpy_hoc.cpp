@@ -143,8 +143,12 @@ struct hocclass {
     Symbol* sym;
 };
 
-static int hocclass_init(hocclass* cls, PyObject* args, PyObject* kwds) {
-    if (PyType_Type.tp_init((PyObject*) cls, args, kwds) < 0) {
+static Symbol*& hocclass_sym(PyObject* cls) {
+    return reinterpret_cast<hocclass*>(cls)->sym;
+}
+
+static int hocclass_init(PyObject* cls, PyObject* args, PyObject* kwds) {
+    if (PyType_Type.tp_init(cls, args, kwds) < 0) {
         return -1;
     }
     return 0;
@@ -152,8 +156,7 @@ static int hocclass_init(hocclass* cls, PyObject* args, PyObject* kwds) {
 
 // Returns a new reference.
 static PyObject* hocclass_getitem(PyObject* self, Py_ssize_t ix) {
-    hocclass* hclass = (hocclass*) self;
-    Symbol* sym = hclass->sym;
+    Symbol* sym = hocclass_sym(self);
     assert(sym);
 
     assert(sym->type == TEMPLATE);
@@ -256,7 +259,7 @@ static void hocobj_dealloc(PyHocObject* self) {
     if (self->type_ == PyHoc::HocRefPStr && self->u.pstr_) {
         // nothing deleted
     }
-    ((PyObject*) self)->ob_type->tp_free((PyObject*) self);
+    nrnpy_tp_free(self);
 
     // Deferred deletion of HOC Objects is unnecessary when a HocObject is
     // destroyed. And we would like to have prompt deletion if this HocObject
@@ -269,7 +272,7 @@ static PyObject* hocobj_new(PyTypeObject* subtype, PyObject* args, PyObject* kwd
     PyObject* base;
     PyHocObject* hbase = nullptr;
 
-    auto subself = nb::steal(subtype->tp_alloc(subtype, 0));
+    auto subself = nb::steal(nrnpy_tp_alloc(subtype, 0));
     // printf("hocobj_new %s %p %p\n", subtype->tp_name, subtype, subself.ptr());
     if (!subself) {
         return nullptr;
@@ -284,9 +287,13 @@ static PyObject* hocobj_new(PyTypeObject* subtype, PyObject* args, PyObject* kwd
     self->iteritem_ = 0;
 
     // if subtype is a subclass of some NEURON class, then one of its
-    // tp_mro's is in sym_to_type_map
-    for (Py_ssize_t i = 0; i < PyTuple_Size(subtype->tp_mro); i++) {
-        PyObject* item = PyTuple_GetItem(subtype->tp_mro, i);
+    // MRO entries is in sym_to_type_map
+    auto mro = nb::steal(nrnpy_type_mro(subtype));
+    if (!mro) {
+        return nullptr;
+    }
+    for (Py_ssize_t i = 0; i < PyTuple_Size(mro.ptr()); i++) {
+        PyObject* item = PyTuple_GetItem(mro.ptr(), i);
         auto symbol_result = type_to_sym_map.find((PyTypeObject*) item);
         if (symbol_result != type_to_sym_map.end()) {
             hbase = (PyHocObject*) hocobj_new(hocobject_type, 0, 0);
@@ -553,7 +560,7 @@ int nrnpy_numbercheck(PyObject* po) {
     // number system, e.g. type(1) is <type 'sage.rings.integer.Integer'>
     int rval = PyNumber_Check(po);
     // but do not allow sequences
-    if (rval == 1 && po->ob_type->tp_as_sequence) {
+    if (rval == 1 && PySequence_Check(po)) {
         rval = 0;
     }
     // or things that fail when float(po) fails. ARGGH! This
@@ -587,7 +594,7 @@ PyObject* nrnpy_ho2po(Object* o) {
         auto location = sym_to_type_map.find(o->ctemplate->sym);
         if (location != sym_to_type_map.end()) {
             Py_INCREF(location->second);
-            po.ptr()->ob_type = location->second;
+            Py_SET_TYPE(po.ptr(), location->second);
         }
         hoc_obj_ref(o);
     }
@@ -759,7 +766,7 @@ static void* fcall(void* vself, void* vargs) {
         auto location = sym_to_type_map.find(ho->ctemplate->sym);
         if (location != sym_to_type_map.end()) {
             Py_INCREF(location->second);
-            result.ptr()->ob_type = location->second;
+            Py_SET_TYPE(result.ptr(), location->second);
         }
 
         return result.release().ptr();
@@ -1027,7 +1034,6 @@ static int setup_doc_system() {
 
 // Returns a new reference.
 static PyObject* hocclass_getattro(PyObject* self, PyObject* pyname) {
-    hocclass* hclass = (hocclass*) self;
     auto name = Py2NRNString::as_ascii(pyname);
     const auto n = name.c_str();
     if (!n) {
@@ -1038,9 +1044,10 @@ static PyObject* hocclass_getattro(PyObject* self, PyObject* pyname) {
     if (strcmp(n, "__doc__") == 0) {
         if (setup_doc_system()) {
             nb::object docobj;
-            if (hclass->sym) {
+            Symbol* sym = hocclass_sym(self);
+            if (sym) {
                 // For class types, pass the class name and empty string for symbol
-                docobj = nb::make_tuple("", hclass->sym->name);
+                docobj = nb::make_tuple("", sym->name);
             } else {
                 // Fallback
                 docobj = nb::make_tuple("", "");
@@ -1054,7 +1061,10 @@ static PyObject* hocclass_getattro(PyObject* self, PyObject* pyname) {
     }
 
     // Fall back to the base type's getattro
-    return PyType_Type.tp_getattro(self, pyname);
+    using getattrofunc_t = PyObject* (*) (PyObject*, PyObject*);
+    auto type_getattro = reinterpret_cast<getattrofunc_t>(
+        PyType_GetSlot(&PyType_Type, Py_tp_getattro));
+    return type_getattro(self, pyname);
 }
 
 // Most likely returns a new reference.
@@ -1063,9 +1073,11 @@ PyObject* toplevel_get(PyObject* subself, const char* n) {
     if (self->type_ == PyHoc::HocTopLevelInterpreter) {
         auto descr = nb::borrow(PyDict_GetItemString(topmethdict, n));
         if (descr) {
-            descrgetfunc f = descr.ptr()->ob_type->tp_descr_get;
-            assert(f);
-            return f(descr.ptr(), subself, (PyObject*) Py_TYPE(subself));
+            return PyObject_CallMethod(descr.ptr(),
+                                       "__get__",
+                                       "OO",
+                                       subself,
+                                       reinterpret_cast<PyObject*>(Py_TYPE(subself)));
         }
     }
     return nullptr;
@@ -2650,7 +2662,8 @@ static void nrnpy_restore_savestate_(int64_t size, char* data) {
         if (!py_data) {
             hoc_execerror("SaveState:", "Data restore failure.");
         }
-        auto result = nb::steal(PyObject_CallOneArg(restore_savestate_, py_data.ptr()));
+        auto result = nb::steal(
+            PyObject_CallFunctionObjArgs(restore_savestate_, py_data.ptr(), nullptr));
         if (!result) {
             hoc_execerror("SaveState:", "Data restore failure.");
         }
@@ -3438,12 +3451,10 @@ extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
         spec = obj_spec_from_name(exposed_py_type_names.back().c_str());
         pto = (PyTypeObject*)
             nrn_type_from_metaclass((PyTypeObject*) custom_hocclass, m, &spec, bases.ptr());
-        hocclass* hclass = (hocclass*) pto;
-        hclass->sym = hoc_lookup(name);
-        // printf("%s hocclass pto->tp_basicsize = %zd sizeof(*pto)=%zd\n",
-        // hclass->sym->name, pto->tp_basicsize, sizeof(*pto));
-        sym_to_type_map[hclass->sym] = pto;
-        type_to_sym_map[pto] = hclass->sym;
+        Symbol* hsym = hoc_lookup(name);
+        hocclass_sym((PyObject*) pto) = hsym;
+        sym_to_type_map[hsym] = pto;
+        type_to_sym_map[pto] = hsym;
         if (PyType_Ready(pto) < 0) {
             return nullptr;
         }
