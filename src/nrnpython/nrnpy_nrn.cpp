@@ -3020,15 +3020,12 @@ PyObject* nrnpy_nrn(void) {
         return m.ptr();
     }
     psection_type = (PyTypeObject*) PyType_FromSpec(&nrnpy_SectionType_spec);
-    psection_type->tp_new = PyType_GenericNew;
     if (PyType_Ready(psection_type) < 0)
         goto fail;
     Py_INCREF(psection_type);
 
     pallseg_of_sec_iter_type = (PyTypeObject*) PyType_FromSpec(&nrnpy_AllSegOfSecIterType_spec);
     pseg_of_sec_iter_type = (PyTypeObject*) PyType_FromSpec(&nrnpy_SegOfSecIterType_spec);
-    pallseg_of_sec_iter_type->tp_new = PyType_GenericNew;
-    pseg_of_sec_iter_type->tp_new = PyType_GenericNew;
     if (PyType_Ready(pallseg_of_sec_iter_type) < 0)
         goto fail;
     if (PyType_Ready(pseg_of_sec_iter_type) < 0)
@@ -3037,7 +3034,6 @@ PyObject* nrnpy_nrn(void) {
     Py_INCREF(pseg_of_sec_iter_type);
 
     psegment_type = (PyTypeObject*) PyType_FromSpec(&nrnpy_SegmentType_spec);
-    psegment_type->tp_new = PyType_GenericNew;
     if (PyType_Ready(psegment_type) < 0)
         goto fail;
     if (PyType_Ready(pallseg_of_sec_iter_type) < 0)
@@ -3049,13 +3045,11 @@ PyObject* nrnpy_nrn(void) {
     Py_INCREF(pseg_of_sec_iter_type);
 
     range_type = (PyTypeObject*) PyType_FromSpec(&nrnpy_RangeType_spec);
-    range_type->tp_new = PyType_GenericNew;
     if (PyType_Ready(range_type) < 0)
         goto fail;
     Py_INCREF(range_type);
 
     opaque_pointer_type = (PyTypeObject*) PyType_FromSpec(&nrnpy_OpaquePointerType_spec);
-    opaque_pointer_type->tp_new = PyType_GenericNew;
     if (PyType_Ready(opaque_pointer_type) < 0)
         goto fail;
     Py_INCREF(opaque_pointer_type);
@@ -3077,10 +3071,6 @@ PyObject* nrnpy_nrn(void) {
     pmechfunc_generic_type = (PyTypeObject*) PyType_FromSpec(&nrnpy_MechFuncType_spec);
     pmech_of_seg_iter_generic_type = (PyTypeObject*) PyType_FromSpec(&nrnpy_MechOfSegIterType_spec);
     pvar_of_mech_iter_generic_type = (PyTypeObject*) PyType_FromSpec(&nrnpy_VarOfMechIterType_spec);
-    pmech_generic_type->tp_new = PyType_GenericNew;
-    pmechfunc_generic_type->tp_new = PyType_GenericNew;
-    pmech_of_seg_iter_generic_type->tp_new = PyType_GenericNew;
-    pvar_of_mech_iter_generic_type->tp_new = PyType_GenericNew;
     if (PyType_Ready(pmech_generic_type) < 0)
         goto fail;
     if (PyType_Ready(pmechfunc_generic_type) < 0)
