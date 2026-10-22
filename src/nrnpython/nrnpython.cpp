@@ -76,6 +76,49 @@ void* nrnpy_dlsym(const char* name) {
 #endif
 }
 
+// PyConfig is not in the stable ABI. Py_Initialize() still copies this global
+// into site_import when it uses the compat config. The symbol is not in the
+// limited API, and on Windows it is not exported from python3.dll.
+int* nrnpy_no_site_flag() {
+    if (void* p = nrnpy_dlsym("Py_NoSiteFlag")) {
+        return static_cast<int*>(p);
+    }
+#if defined(_WIN32)
+    auto from_module = [](const char* module) -> int* {
+        if (!module || !module[0]) {
+            return nullptr;
+        }
+        HMODULE h = GetModuleHandleA(module);
+        if (!h) {
+            return nullptr;
+        }
+        return static_cast<int*>(reinterpret_cast<void*>(GetProcAddress(h, "Py_NoSiteFlag")));
+    };
+    if (const char* pylib = std::getenv("NRN_PYLIB")) {
+        if (int* flag = from_module(pylib)) {
+            return flag;
+        }
+        const char* base = pylib;
+        for (const char* s = pylib; *s; ++s) {
+            if (*s == '/' || *s == '\\') {
+                base = s + 1;
+            }
+        }
+        if (int* flag = from_module(base)) {
+            return flag;
+        }
+    }
+    for (int minor = 10; minor <= 30; ++minor) {
+        char name[32];
+        std::snprintf(name, sizeof name, "python3%d.dll", minor);
+        if (int* flag = from_module(name)) {
+            return flag;
+        }
+    }
+#endif
+    return nullptr;
+}
+
 void* nrnpy_raw_malloc(size_t n) {
     using F = void* (*) (size_t);
     static F f = reinterpret_cast<F>(nrnpy_dlsym("PyMem_RawMalloc"));
@@ -235,9 +278,16 @@ static int nrnpython_start(int b) {
     if (b == 1 && !started) {
         p_nrnpy_pyrun = nrnpy_pyrun;
         // Limited API: PyConfig is not available. Use Py_SetProgramName + Py_Initialize
-        // and then set sys.executable / sys.argv. nosite (-S) is not expressible here.
+        // and then set sys.executable / sys.argv. -Py_NoSiteFlag is the global that
+        // Py_Initialize() copies into site_import. If that symbol is gone, site runs.
         if (nrnpy_nositeflag) {
-            Fprintf(stderr, "Warning: -nosite is ignored when built with the Python limited API\n");
+            if (int* flag = nrnpy_no_site_flag()) {
+                *flag = 1;
+            } else {
+                Fprintf(stderr,
+                        "Warning: -Py_NoSiteFlag is ignored. Py_Initialize() imports site, "
+                        "so sitecustomize and usercustomize still run.\n");
+            }
         }
         // Virtual environments are discovered by Python by looking for pyvenv.cfg in the directory
         // above sys.executable (https://docs.python.org/3/library/site.html), so we want to make
