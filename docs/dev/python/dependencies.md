@@ -19,7 +19,7 @@ fully pinned file from those sources.
 | `pyproject.toml` | Python build-system requirements and dependencies installed for NEURON users. |
 | `packaging/python/oldest_numpy_requirements.txt` | Deliberately old NumPy versions for compatibility testing. |
 | `ci/requirements.txt` | Generated CI requirements with exact versions and hashes. Do not edit by hand. |
-| `ci/uv_requirements.txt` | Sets an allowed version range for the `uv` tool CI uses. This is a tool constraint, not NEURON's dependency set. |
+| `ci/uv_requirements.txt` | Exact pin for the `uv` tool CI installs. This is a tool constraint, not NEURON's dependency set. |
 
 Many source constraints have an upper bound (`<=`). Each bound is the highest
 PyPI release identified as compatible with NEURON when that constraint was
@@ -52,9 +52,10 @@ compile output pins transitive dependencies and includes hashes, so CI gets a
 repeatable dependency set instead of resolving the latest allowed versions on
 every run.
 
-CI installs `uv` using the constraint in `ci/uv_requirements.txt`. That file
-currently allows versions up to `0.7.3`; it does not select one exact version.
-To install an allowed version locally, run:
+CI installs `uv` using the pin in `ci/uv_requirements.txt`. That file
+selects uv 0.13.4 exactly. uv before 0.13.4 trusts the compromised
+emSign root (GHSA-hq85-5cpj-mr62).
+To install that version locally, run:
 
 ```bash
 python -m pip install -r ci/uv_requirements.txt
