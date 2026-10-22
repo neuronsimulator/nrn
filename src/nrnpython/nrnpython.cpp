@@ -416,15 +416,10 @@ static int nrnpython_start(int b) {
                 // it.
                 reset_sys_path("");
             }
-#if !defined(MINGW)
-            PyRun_InteractiveLoop(hoc_fin, "stdin");
-#else
-            // mingw FILE incompatible with windows11 Python FILE.
-            int ret = nrnmingw_pyrun_interactiveloop();
+            int ret = nrnpy_run_interactive_console();
             if (ret) {
                 python_error_encountered = ret;
             }
-#endif
         }
         return python_error_encountered;
     }

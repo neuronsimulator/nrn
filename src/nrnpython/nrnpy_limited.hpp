@@ -155,3 +155,19 @@ inline int nrnpy_run_file(FILE* fp, const char* filename) {
     Py_DECREF(result);
     return 0;
 }
+
+inline int nrnpy_run_interactive_console() {
+    static const char* lines[] = {
+        "import code as nrn_limited_code\n",
+        "nrn_limited_interpreter = "
+        "nrn_limited_code.InteractiveConsole(locals=globals())\n",
+        "nrn_limited_interpreter.interact(\"\")\n",
+    };
+    for (const char* line: lines) {
+        if (nrnpy_run_simple_string(line)) {
+            PyErr_Print();
+            return -1;
+        }
+    }
+    return 0;
+}
