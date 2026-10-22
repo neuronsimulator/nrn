@@ -72,6 +72,11 @@ if(NOT TARGET nanobind_nmodl)
   make_nanobind_target(nanobind_nmodl "${_nmodl_python_inc}" ${NRN_STABLE_ABI_ARG})
 endif()
 target_include_directories(pyembed PRIVATE ${_nmodl_python_inc})
+# Versioned (ABI3-off) pywrapper uses one minor's full C API. Reject another minor after dlopen.
+# ABI3 is the 3.12 limited API and must keep loading on later GIL CPython.
+if(NOT NRN_ENABLE_ABI3)
+  target_compile_definitions(pyembed PRIVATE NRN_NMODL_PYTHON_VERSION_CHECK=1)
+endif()
 target_include_directories(pywrapper PRIVATE ${_nmodl_python_inc} ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(pywrapper PRIVATE nanobind_nmodl)
 target_link_libraries(pyembed PRIVATE ${CMAKE_DL_LIBS})
