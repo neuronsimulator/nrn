@@ -17,6 +17,15 @@
 #include <string>
 #include <sstream>
 #include <fstream>
+#include <cstdlib>
+#include <cstring>
+#include <cwchar>
+#if defined(_WIN32)
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#else
+#include <dlfcn.h>
+#endif
 
 #include <nanobind/nanobind.h>
 
@@ -76,6 +85,27 @@ struct PyMem_RawFree_Deleter {
     }
 };
 PyObject* basic_sys_path{};
+
+void* nrnpy_dlsym(const char* name) {
+#if defined(_WIN32)
+    HMODULE h = GetModuleHandleA("python3.dll");
+    return h ? reinterpret_cast<void*>(GetProcAddress(h, name)) : nullptr;
+#else
+    return dlsym(RTLD_DEFAULT, name);
+#endif
+}
+
+void* nrnpy_raw_malloc(size_t n) {
+    using F = void* (*) (size_t);
+    static F f = reinterpret_cast<F>(nrnpy_dlsym("PyMem_RawMalloc"));
+    return f ? f(n) : std::malloc(n);
+}
+
+void* nrnpy_raw_calloc(size_t n, size_t sz) {
+    using F = void* (*) (size_t, size_t);
+    static F f = reinterpret_cast<F>(nrnpy_dlsym("PyMem_RawCalloc"));
+    return f ? f(n, sz) : std::calloc(n, sz);
+}
 
 /**
  * @brief Reset sys.path to be basic_sys_path and prepend something.
@@ -351,10 +381,17 @@ static int nrnpython_start(int b) {
         // Beginning with Python 3.13.0 it seems that the readline
         // module has not been loaded yet. Since PyInit_readline sets
         // PyOS_ReadlineFunctionPointer = call_readline; without checking,
-        // we need to import here.
-        PyRun_SimpleString("import readline as nrn_readline");
+        // we need to import here. Windows CPython has no readline module.
+        nrnpy_run_simple_string(
+            "try:\n"
+            "    import readline as nrn_readline\n"
+            "except ImportError:\n"
+            "    pass\n");
 
-        PyOS_ReadlineFunctionPointer = nrnpython_getline;
+        using readline_fn = char* (*) (FILE*, FILE*, const char*);
+        if (auto* slot = static_cast<readline_fn*>(nrnpy_dlsym("PyOS_ReadlineFunctionPointer"))) {
+            *slot = nrnpython_getline;
+        }
 
         // Is there a -c "command" or file.py arg.
         bool python_error_encountered{false}, have_reset_sys_path{false};
@@ -437,14 +474,14 @@ static char* nrnpython_getline(FILE*, FILE*, const char* prompt) {
     if (r == 1) {
         auto const n = std::strlen(hoc_cbufstr->buf) + 1;
         hoc_ctp = hoc_cbufstr->buf + n - 1;
-        auto* const p = static_cast<char*>(PyMem_RawMalloc(n));
+        auto* const p = static_cast<char*>(nrnpy_raw_malloc(n));
         if (!p) {
             return nullptr;
         }
         std::strcpy(p, hoc_cbufstr->buf);
         return p;
     } else if (r == EOF) {
-        return static_cast<char*>(PyMem_RawCalloc(1, sizeof(char)));
+        return static_cast<char*>(nrnpy_raw_calloc(1, sizeof(char)));
     }
     return 0;
 }
