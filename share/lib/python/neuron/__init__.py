@@ -131,6 +131,11 @@ else:
                 current_version, " ".join(supported_python_versions)
             )
         )
+if hasattr(sys, "_is_gil_enabled") and not sys._is_gil_enabled():
+    raise ImportError(
+        "This NEURON installation does not support free-threaded Python. "
+        "Use a GIL-enabled CPython."
+    )
 
 try:  # needed since python 3.8 on windows if python launched
     # do this here as NEURONHOME may be changed below

@@ -128,6 +128,10 @@ function try_python {
       return 1
     fi
   fi
+  if ! "${cmd_name}" -c "import sys; raise SystemExit(hasattr(sys, '_is_gil_enabled') and not sys._is_gil_enabled())" >/dev/null 2>&1; then
+    echo "# ran ${cmd_name} (${full_path}) but it is a free-threaded Python (GIL disabled)."
+    return 1
+  fi
   PYTHON="${full_path}"
   PYTHON_VERSION="${version}"
 }
