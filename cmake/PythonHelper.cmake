@@ -1,11 +1,10 @@
 # =================================================================================================
 # Organise which Python versions are to be built against, and find their versions, include
-# directories and library paths. This is used both for dynamic Python (>= 1 libnrnpythonX.Y) and
-# standard Python (libnrniv linked against one Python version) builds. To avoid the restrictions
-# inherent in Python's limited API / stable ABI (see
-# https://docs.python.org/3/c-api/stable.html#stable-application-binary-interface), we build
-# Python-related NEURON code separately for each version of Python: libnrnpythonX.Y. Historically
-# macOS and Linux were built ignoring the minor version, but this is unsafe without the limited API
+# directories and library paths. Minimum interpreter is CPython 3.10. When NRN_ENABLE_ABI3=ON
+# (resolved after this file), importable extensions use the CPython 3.12 limited API and a
+# dynamic-Python build compiles one libnrnpython.abi3. When NRN_ENABLE_ABI3=OFF, a dynamic-Python
+# build compiles libnrnpythonX.Y per configured version. Extra NRN_PYTHON_DYNAMIC entries are always
+# discovered for tests and for nrniv -python's interpreter search.
 # =================================================================================================
 
 # Parse commandline options so that:

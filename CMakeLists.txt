@@ -157,13 +157,15 @@ mark_as_advanced(NRN_BINARY_DIST_BUILD)
 # Dynamic Python version support:
 #   - NRN_ENABLE_PYTHON_DYNAMIC=OFF  : libnrniv is linked against a single Python version, which
 #                                      can be steered with PYTHON_EXECUTABLE
-#   - NRN_ENABLE_PYTHON_DYNAMIC=ON   : libnrniv is not linked against Python, distinct libnrnpython
-#                                      libraries are built for each configured Python major.minor
-#                                      version but are only linked against the relevant libpython
-#                                      if NRN_LINK_AGAINST_PYTHON is true, which is by default only
-#                                      the case on windows.
+#   - NRN_ENABLE_PYTHON_DYNAMIC=ON   : libnrniv is not linked against Python.
+#                                      NRN_ENABLE_ABI3=ON  : one libnrnpython.abi3 (CPython 3.12+
+#                                      limited API, the cp312-abi3 wheel); extra NRN_PYTHON_DYNAMIC
+#                                      entries are for nrniv -python interpreter search / tests.
+#                                      NRN_ENABLE_ABI3=OFF : distinct libnrnpythonX.Y per configured
+#                                      major.minor. Linked against libpython only if
+#                                      NRN_LINK_AGAINST_PYTHON is true (default on Windows).
 #                                      nrniv/special still works in the absence of Python, and
-#                                      dynamically loads the appropriate libnrnpythonX.Y as needed
+#                                      dynamically loads libnrnpython.abi3 or libnrnpythonX.Y.
 #   - NRN_PYTHON_DYNAMIC=pythonX;... : semicolon separated list of Python versions used when
 #                                      NRN_ENABLE_PYTHON_DYNAMIC=ON, if not set then it defaults to
 #                                      PYTHON_EXECUTABLE. This must include all major.minor
@@ -350,7 +352,7 @@ string(REPLACE "," ";" NRN_SANITIZERS_LIST "${NRN_SANITIZERS}")
 #   NRN_DEFAULT_PYTHON_LIBRARIES are its include direcory and library
 # * NRN_PYTHON_EXECUTABLES is a list of absolute paths to all Python executables to be built against
 #   (length >=1 if NRN_ENABLE_PYTHON_DYNAMIC else == 1)
-# * NRN_PYTHON_VERSIONS (3.10, 3.12, ...), NRN_PYTHON_INCLUDES and NRN_PYTHON_LIBRARIES are
+# * NRN_PYTHON_VERSIONS (3.10, 3.11, ...), NRN_PYTHON_INCLUDES and NRN_PYTHON_LIBRARIES are
 #   populated with values patching NRN_PYTHON_EXECUTABLES
 # * NRN_PYTHON_COUNT is set to the number of entries in those lists (i.e. number of Pythons), and
 #   NRN_PYTHON_ITERATION_LIMIT is set to ${NRN_PYTHON_COUNT} - 1
