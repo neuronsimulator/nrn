@@ -143,8 +143,12 @@ struct hocclass {
     Symbol* sym;
 };
 
-static int hocclass_init(hocclass* cls, PyObject* args, PyObject* kwds) {
-    if (PyType_Type.tp_init((PyObject*) cls, args, kwds) < 0) {
+static Symbol*& hocclass_sym(PyObject* cls) {
+    return reinterpret_cast<hocclass*>(cls)->sym;
+}
+
+static int hocclass_init(PyObject* cls, PyObject* args, PyObject* kwds) {
+    if (PyType_Type.tp_init(cls, args, kwds) < 0) {
         return -1;
     }
     return 0;
@@ -152,8 +156,7 @@ static int hocclass_init(hocclass* cls, PyObject* args, PyObject* kwds) {
 
 // Returns a new reference.
 static PyObject* hocclass_getitem(PyObject* self, Py_ssize_t ix) {
-    hocclass* hclass = (hocclass*) self;
-    Symbol* sym = hclass->sym;
+    Symbol* sym = hocclass_sym(self);
     assert(sym);
 
     assert(sym->type == TEMPLATE);
@@ -1027,7 +1030,6 @@ static int setup_doc_system() {
 
 // Returns a new reference.
 static PyObject* hocclass_getattro(PyObject* self, PyObject* pyname) {
-    hocclass* hclass = (hocclass*) self;
     auto name = Py2NRNString::as_ascii(pyname);
     const auto n = name.c_str();
     if (!n) {
@@ -1038,9 +1040,10 @@ static PyObject* hocclass_getattro(PyObject* self, PyObject* pyname) {
     if (strcmp(n, "__doc__") == 0) {
         if (setup_doc_system()) {
             nb::object docobj;
-            if (hclass->sym) {
+            Symbol* sym = hocclass_sym(self);
+            if (sym) {
                 // For class types, pass the class name and empty string for symbol
-                docobj = nb::make_tuple("", hclass->sym->name);
+                docobj = nb::make_tuple("", sym->name);
             } else {
                 // Fallback
                 docobj = nb::make_tuple("", "");
@@ -3444,12 +3447,10 @@ extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
         spec = obj_spec_from_name(exposed_py_type_names.back().c_str());
         pto = (PyTypeObject*)
             nrn_type_from_metaclass((PyTypeObject*) custom_hocclass, m, &spec, bases.ptr());
-        hocclass* hclass = (hocclass*) pto;
-        hclass->sym = hoc_lookup(name);
-        // printf("%s hocclass pto->tp_basicsize = %zd sizeof(*pto)=%zd\n",
-        // hclass->sym->name, pto->tp_basicsize, sizeof(*pto));
-        sym_to_type_map[hclass->sym] = pto;
-        type_to_sym_map[pto] = hclass->sym;
+        Symbol* hsym = hoc_lookup(name);
+        hocclass_sym((PyObject*) pto) = hsym;
+        sym_to_type_map[hsym] = pto;
+        type_to_sym_map[pto] = hsym;
         if (PyType_Ready(pto) < 0) {
             return nullptr;
         }
