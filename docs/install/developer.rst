@@ -6,7 +6,7 @@ Each aspect generally has extra dependencies and special instructions.
 
 **Python versions**
 
-* Source CMake: GIL-enabled CPython **3.10+**. See
+* Source CMake: GIL-enabled CPython **3.11+**. See
   :ref:`NRN_ENABLE_ABI3 <cmake-nrn-enable-abi3>`.
 * ``NRN_ENABLE_ABI3=ON`` (default when the default Python is 3.12+):
   limited API, ``cp312-abi3`` / ``libnrnpython.abi3``. Needs CPython

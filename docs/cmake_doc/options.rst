@@ -382,10 +382,10 @@ NRN_ENABLE_ABI3:BOOL=
     ``cp312-abi3`` wheel).
   * **OFF**: no limited API. Versioned modules
     (``hoc.cpython-3XY-…``, ``libnrnpythonX.Y``) for each configured
-    interpreter. Minimum Python is **3.10**. Default when the default
+    interpreter. Minimum Python is **3.11**. Default when the default
     Python is older than 3.12, including the CPython 3.11 wheel.
 
-  Source users who still have 3.10/3.11 should leave this OFF (or pass
+  Source users who still have 3.11 should leave this OFF (or pass
   ``-DNRN_ENABLE_ABI3=OFF`` if CMake would otherwise default ON).
   ``-DNRN_ENABLE_ABI3=ON`` with a 3.11 default is a configure error.
   Wheel builds follow the same default: 3.11 is versioned, 3.12+ is abi3.

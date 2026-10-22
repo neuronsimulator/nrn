@@ -175,7 +175,7 @@ mark_as_advanced(NRN_BINARY_DIST_BUILD)
 # Limited API (abi3):
 #   - NRN_ENABLE_ABI3=ON  : Py_LIMITED_API=0x030C0000, abi3 module names, requires CPython 3.12+.
 #                           Default when the default Python is 3.12+ (source and the cp312-abi3 wheel).
-#   - NRN_ENABLE_ABI3=OFF : versioned extensions for each configured interpreter (CPython 3.10+).
+#   - NRN_ENABLE_ABI3=OFF : versioned extensions for each configured interpreter (CPython 3.11+).
 #                           Default when the default Python is older than 3.12 (including the
 #                           CPython 3.11 wheel).
 # Extra options for extended Python tests:
@@ -300,7 +300,7 @@ if(NOT PYTHON_EXECUTABLE)
   message(STATUS "\tSetting PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}")
 endif()
 
-find_package(Python 3.10 REQUIRED)
+find_package(Python 3.11 REQUIRED)
 
 # Try and emit an intelligent warning if the version number currently set in the CMake project(...)
 # call is inconsistent with the output of git describe.
@@ -358,12 +358,12 @@ string(REPLACE "," ";" NRN_SANITIZERS_LIST "${NRN_SANITIZERS}")
 #   NRN_DEFAULT_PYTHON_LIBRARIES are its include direcory and library
 # * NRN_PYTHON_EXECUTABLES is a list of absolute paths to all Python executables to be built against
 #   (length >=1 if NRN_ENABLE_PYTHON_DYNAMIC else == 1)
-# * NRN_PYTHON_VERSIONS (3.10, 3.11, ...), NRN_PYTHON_INCLUDES and NRN_PYTHON_LIBRARIES are
+# * NRN_PYTHON_VERSIONS (3.11, 3.12, ...), NRN_PYTHON_INCLUDES and NRN_PYTHON_LIBRARIES are
 #   populated with values patching NRN_PYTHON_EXECUTABLES
 # * NRN_PYTHON_COUNT is set to the number of entries in those lists (i.e. number of Pythons), and
 #   NRN_PYTHON_ITERATION_LIMIT is set to ${NRN_PYTHON_COUNT} - 1
 # =================================================================================================
-set(NRN_MINIMUM_PYTHON_VERSION 3.10)
+set(NRN_MINIMUM_PYTHON_VERSION 3.11)
 include(cmake/PythonHelper.cmake)
 
 # NRN_ENABLE_ABI3: 3.12+ source and the cp312-abi3 wheel default ON; older Pythons (including the
@@ -376,7 +376,7 @@ if(NRN_ENABLE_PYTHON)
   endif()
   option(
     NRN_ENABLE_ABI3
-    "Build importable Python extensions against the CPython 3.12 limited API (abi3). OFF builds versioned extensions for the configured interpreter(s) (CPython 3.10+)."
+    "Build importable Python extensions against the CPython 3.12 limited API (abi3). OFF builds versioned extensions for the configured interpreter(s) (CPython 3.11+)."
     ${_nrn_abi3_default})
   if(SKBUILD
      AND NRN_DEFAULT_PYTHON_VERSION VERSION_GREATER_EQUAL 3.12
