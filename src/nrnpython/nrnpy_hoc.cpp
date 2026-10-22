@@ -256,7 +256,7 @@ static void hocobj_dealloc(PyHocObject* self) {
     if (self->type_ == PyHoc::HocRefPStr && self->u.pstr_) {
         // nothing deleted
     }
-    ((PyObject*) self)->ob_type->tp_free((PyObject*) self);
+    nrnpy_tp_free(self);
 
     // Deferred deletion of HOC Objects is unnecessary when a HocObject is
     // destroyed. And we would like to have prompt deletion if this HocObject
@@ -269,7 +269,7 @@ static PyObject* hocobj_new(PyTypeObject* subtype, PyObject* args, PyObject* kwd
     PyObject* base;
     PyHocObject* hbase = nullptr;
 
-    auto subself = nb::steal(subtype->tp_alloc(subtype, 0));
+    auto subself = nb::steal(nrnpy_tp_alloc(subtype, 0));
     // printf("hocobj_new %s %p %p\n", subtype->tp_name, subtype, subself.ptr());
     if (!subself) {
         return nullptr;
