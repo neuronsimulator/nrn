@@ -612,7 +612,6 @@ if(NRN_ENABLE_NMODL
 
   # NMODL non-Python build dependencies
   cpp_cc_git_submodule(json BUILD PACKAGE nlohmann_json REQUIRED)
-  cpp_cc_git_submodule(pybind11 BUILD PACKAGE pybind11 REQUIRED)
 
   option(SPDLOG_FMT_EXTERNAL "Force to use an external {{fmt}}" ON)
   option(SPDLOG_SYSTEM_INCLUDE "Include spdlog as a system lib" ON)
