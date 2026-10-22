@@ -19,7 +19,6 @@
 #include <fstream>
 #include <cstdlib>
 #include <cstring>
-#include <cwchar>
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -129,6 +128,36 @@ void* nrnpy_raw_calloc(size_t n, size_t sz) {
     using F = void* (*) (size_t, size_t);
     static F f = reinterpret_cast<F>(nrnpy_dlsym("PyMem_RawCalloc"));
     return f ? f(n, sz) : std::calloc(n, sz);
+}
+
+// Py_DecodeLocale memory. PyMem_RawFree is not in the 3.12 stable ABI, and
+// std::free is the wrong heap. If the symbol is missing, leak rather than free.
+void nrnpy_raw_free(void* p) {
+    if (!p) {
+        return;
+    }
+    using F = void (*)(void*);
+    static F f = nullptr;
+    static bool looked = false;
+    if (!looked) {
+        looked = true;
+        f = reinterpret_cast<F>(nrnpy_dlsym("PyMem_RawFree"));
+#if defined(_WIN32)
+        // python3.dll exports PyMem_RawFree from the 3.13 stable ABI on.
+        // The versioned python3XY.dll has exported it since 3.4.
+        for (int minor = 10; minor <= 30 && !f; ++minor) {
+            char name[32];
+            std::snprintf(name, sizeof name, "python3%d.dll", minor);
+            if (HMODULE h = GetModuleHandleA(name)) {
+                f = reinterpret_cast<F>(
+                    reinterpret_cast<void*>(GetProcAddress(h, "PyMem_RawFree")));
+            }
+        }
+#endif
+    }
+    if (f) {
+        f(p);
+    }
 }
 
 /**
@@ -320,18 +349,20 @@ static int nrnpython_start(int b) {
         // -pyexe /path/to/python3.10 -python` may well not use Python 3.10 at all. Should we do
         // something about that?
         {
-            // PyUnicode_* is not usable before Py_Initialize.
-            std::size_t n = std::mbstowcs(nullptr, pyexe.c_str(), 0);
-            if (n == static_cast<std::size_t>(-1)) {
-                throw std::runtime_error("Could not convert Python executable path to wchar_t");
+            // mbstowcs fails when the locale cannot represent the path.
+            // Py_DecodeLocale is the decoder PyConfig_SetBytesString uses.
+            // Py_Initialize() keeps the compat config, so the C locale stays
+            // ascii/surrogateescape and this spelling still encodes back to
+            // the original bytes. Py_SetProgramName does not copy.
+            wchar_t* decoded = Py_DecodeLocale(pyexe.c_str(), nullptr);
+            if (!decoded) {
+                throw std::runtime_error(
+                    "Could not decode the Python executable path from the locale encoding");
             }
-            saved_progname = static_cast<wchar_t*>(std::malloc((n + 1) * sizeof(wchar_t)));
-            if (!saved_progname || std::mbstowcs(saved_progname, pyexe.c_str(), n + 1) ==
-                                       static_cast<std::size_t>(-1)) {
-                std::free(saved_progname);
-                saved_progname = nullptr;
-                throw std::runtime_error("Could not convert Python executable path to wchar_t");
+            if (saved_progname && !Py_IsInitialized()) {
+                nrnpy_raw_free(saved_progname);
             }
+            saved_progname = decoded;
             Py_SetProgramName(saved_progname);
         }
         Py_Initialize();
@@ -403,6 +434,8 @@ static int nrnpython_start(int b) {
         Py_DECREF(basic_sys_path);
         basic_sys_path = nullptr;
         Py_Finalize();
+        nrnpy_raw_free(saved_progname);
+        saved_progname = nullptr;
         // because of finalize, no PyGILState_Release(gilsav);
         started = 0;
     }
