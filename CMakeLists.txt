@@ -245,7 +245,7 @@ set(NRN_PROFILER
 # =============================================================================
 # Build options for NMODL
 # =============================================================================
-option(NMODL_ENABLE_PYTHON_BINDINGS "Enable pybind11 based python bindings" ON)
+option(NMODL_ENABLE_PYTHON_BINDINGS "Enable nanobind based python bindings" ON)
 set(NMODL_EXTRA_CXX_FLAGS
     ""
     CACHE STRING "Add extra compile flags for NMODL sources")
