@@ -557,7 +557,7 @@ int nrnpy_numbercheck(PyObject* po) {
     // number system, e.g. type(1) is <type 'sage.rings.integer.Integer'>
     int rval = PyNumber_Check(po);
     // but do not allow sequences
-    if (rval == 1 && po->ob_type->tp_as_sequence) {
+    if (rval == 1 && PySequence_Check(po)) {
         rval = 0;
     }
     // or things that fail when float(po) fails. ARGGH! This
