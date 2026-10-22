@@ -284,9 +284,13 @@ static PyObject* hocobj_new(PyTypeObject* subtype, PyObject* args, PyObject* kwd
     self->iteritem_ = 0;
 
     // if subtype is a subclass of some NEURON class, then one of its
-    // tp_mro's is in sym_to_type_map
-    for (Py_ssize_t i = 0; i < PyTuple_Size(subtype->tp_mro); i++) {
-        PyObject* item = PyTuple_GetItem(subtype->tp_mro, i);
+    // MRO entries is in sym_to_type_map
+    auto mro = nb::steal(nrnpy_type_mro(subtype));
+    if (!mro) {
+        return nullptr;
+    }
+    for (Py_ssize_t i = 0; i < PyTuple_Size(mro.ptr()); i++) {
+        PyObject* item = PyTuple_GetItem(mro.ptr(), i);
         auto symbol_result = type_to_sym_map.find((PyTypeObject*) item);
         if (symbol_result != type_to_sym_map.end()) {
             hbase = (PyHocObject*) hocobj_new(hocobject_type, 0, 0);
@@ -587,7 +591,7 @@ PyObject* nrnpy_ho2po(Object* o) {
         auto location = sym_to_type_map.find(o->ctemplate->sym);
         if (location != sym_to_type_map.end()) {
             Py_INCREF(location->second);
-            po.ptr()->ob_type = location->second;
+            Py_SET_TYPE(po.ptr(), location->second);
         }
         hoc_obj_ref(o);
     }
@@ -759,7 +763,7 @@ static void* fcall(void* vself, void* vargs) {
         auto location = sym_to_type_map.find(ho->ctemplate->sym);
         if (location != sym_to_type_map.end()) {
             Py_INCREF(location->second);
-            result.ptr()->ob_type = location->second;
+            Py_SET_TYPE(result.ptr(), location->second);
         }
 
         return result.release().ptr();
@@ -1050,7 +1054,10 @@ static PyObject* hocclass_getattro(PyObject* self, PyObject* pyname) {
     }
 
     // Fall back to the base type's getattro
-    return PyType_Type.tp_getattro(self, pyname);
+    using getattrofunc_t = PyObject* (*) (PyObject*, PyObject*);
+    auto type_getattro = reinterpret_cast<getattrofunc_t>(
+        PyType_GetSlot(&PyType_Type, Py_tp_getattro));
+    return type_getattro(self, pyname);
 }
 
 // Most likely returns a new reference.
@@ -1059,9 +1066,11 @@ PyObject* toplevel_get(PyObject* subself, const char* n) {
     if (self->type_ == PyHoc::HocTopLevelInterpreter) {
         auto descr = nb::borrow(PyDict_GetItemString(topmethdict, n));
         if (descr) {
-            descrgetfunc f = descr.ptr()->ob_type->tp_descr_get;
-            assert(f);
-            return f(descr.ptr(), subself, (PyObject*) Py_TYPE(subself));
+            return PyObject_CallMethod(descr.ptr(),
+                                       "__get__",
+                                       "OO",
+                                       subself,
+                                       reinterpret_cast<PyObject*>(Py_TYPE(subself)));
         }
     }
     return nullptr;
@@ -2646,7 +2655,8 @@ static void nrnpy_restore_savestate_(int64_t size, char* data) {
         if (!py_data) {
             hoc_execerror("SaveState:", "Data restore failure.");
         }
-        auto result = nb::steal(PyObject_CallOneArg(restore_savestate_, py_data.ptr()));
+        auto result = nb::steal(
+            PyObject_CallFunctionObjArgs(restore_savestate_, py_data.ptr(), nullptr));
         if (!result) {
             hoc_execerror("SaveState:", "Data restore failure.");
         }
