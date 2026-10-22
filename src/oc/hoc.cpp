@@ -936,7 +936,8 @@ int hoc_main1(int argc, const char** argv, const char** envp) {
         }
         return exit_status;
     } catch (std::exception const& e) {
-        Fprintf(stderr, fmt::format("hoc_main1 caught exception: {}\n", e.what()).c_str());
+        Fprintf(stderr,
+                fmt::format("hoc_main1 caught exception: {}\n", neuron::oc::safe_what(e)).c_str());
         nrn_exit(1);
     }
 }
@@ -1256,7 +1257,7 @@ static int hoc_run1() {
             } catch (std::exception const& e) {
                 hoc_fin = sav_fin;
                 Fprintf(stderr, "hoc_run1: caught exception");
-                std::string_view what{e.what()};
+                std::string_view what{neuron::oc::safe_what(e)};
                 if (!what.empty()) {
                     Fprintf(stderr, fmt::format(": {}", what).c_str());
                 }
@@ -1365,7 +1366,7 @@ int hoc_oc(const char* buf, std::ostream& os) {
             signal_handler_guard _{};
             kernel();
         } catch (std::exception const& e) {
-            os << "hoc_oc caught exception: " << e.what() << std::endl;
+            os << "hoc_oc caught exception: " << neuron::oc::safe_what(e) << std::endl;
             hoc_initcode();
             // initcode releases frame/temporary objects, but leaves operands.
             // Keep entries owned by the caller below this command's stack.
