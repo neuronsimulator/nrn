@@ -8,6 +8,52 @@
 #include <cstring>
 #include <string>
 
+#ifndef PyList_GET_ITEM
+#define PyList_GET_ITEM(op, i) PyList_GetItem((op), (i))
+#endif
+#ifndef PyTuple_GET_SIZE
+#define PyTuple_GET_SIZE(op) PyTuple_Size(op)
+#endif
+#ifndef PyFloat_AS_DOUBLE
+#define PyFloat_AS_DOUBLE(op) PyFloat_AsDouble(op)
+#endif
+
+#if defined(Py_LIMITED_API)
+#define PyUnicode_AsUTF8(op) PyUnicode_AsUTF8AndSize((op), nullptr)
+
+template <class T>
+inline void nrn_Py_IncRef(T* o) {
+    Py_IncRef(reinterpret_cast<PyObject*>(o));
+}
+#undef Py_INCREF
+#define Py_INCREF(op) nrn_Py_IncRef(op)
+
+template <class T>
+inline void nrn_Py_DecRef(T* o) {
+    Py_DecRef(reinterpret_cast<PyObject*>(o));
+}
+#undef Py_DECREF
+#define Py_DECREF(op) nrn_Py_DecRef(op)
+
+template <class T>
+inline void nrn_Py_XIncRef(T* o) {
+    if (o) {
+        Py_IncRef(reinterpret_cast<PyObject*>(o));
+    }
+}
+#undef Py_XINCREF
+#define Py_XINCREF(op) nrn_Py_XIncRef(op)
+
+template <class T>
+inline void nrn_Py_XDecRef(T* o) {
+    if (o) {
+        Py_DecRef(reinterpret_cast<PyObject*>(o));
+    }
+}
+#undef Py_XDECREF
+#define Py_XDECREF(op) nrn_Py_XDecRef(op)
+#endif
+
 inline PyObject* nrnpy_tp_alloc(PyTypeObject* type, Py_ssize_t nitems = 0) {
     using allocfunc_t = PyObject* (*) (PyTypeObject*, Py_ssize_t);
     auto alloc = reinterpret_cast<allocfunc_t>(PyType_GetSlot(type, Py_tp_alloc));
@@ -28,6 +74,11 @@ inline void nrnpy_tp_free(T* self) {
         PyObject_Free(py);
     }
 }
+
+#if defined(Py_LIMITED_API)
+#undef PyObject_New
+#define PyObject_New(type, typeobj) ((type*) nrnpy_tp_alloc((typeobj), 0))
+#endif
 
 inline PyObject* nrnpy_type_mro(PyTypeObject* type) {
     return PyObject_GetAttrString(reinterpret_cast<PyObject*>(type), "__mro__");

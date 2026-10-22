@@ -138,6 +138,22 @@ PyTypeObject* hocobject_type;
 static PyObject* hocobj_call(PyHocObject* self, PyObject* args, PyObject* kwrds);
 static PyObject* hocclass_getattro(PyObject* self, PyObject* pyname);
 
+#ifdef Py_LIMITED_API
+static PyTypeObject* hocclass_meta = nullptr;
+
+static Symbol*& hocclass_sym(PyObject* cls) {
+    return *static_cast<Symbol**>(PyObject_GetTypeData(cls, hocclass_meta));
+}
+
+static int hocclass_init(PyObject* cls, PyObject* args, PyObject* kwds) {
+    using initproc_t = int (*)(PyObject*, PyObject*, PyObject*);
+    auto type_init = reinterpret_cast<initproc_t>(PyType_GetSlot(&PyType_Type, Py_tp_init));
+    if (type_init(cls, args, kwds) < 0) {
+        return -1;
+    }
+    return 0;
+}
+#else
 struct hocclass {
     PyTypeObject head;
     Symbol* sym;
@@ -153,6 +169,7 @@ static int hocclass_init(PyObject* cls, PyObject* args, PyObject* kwds) {
     }
     return 0;
 }
+#endif
 
 // Returns a new reference.
 static PyObject* hocclass_getitem(PyObject* self, Py_ssize_t ix) {
@@ -3412,34 +3429,27 @@ extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
     }
 
     hocclass_slots[0].pfunc = (PyObject*) &PyType_Type;
-    // I have no idea what is going on here. If use
-    // hocclass_spec.basicsize = sizeof(hocclass);
-    // then get error
-    // TypeError: tp_basicsize for type 'hoc.HocClass' (424) is
-    // too small for base 'type' (920)
-
-#if 1
+#ifdef Py_LIMITED_API
+    // PEP 697: negative basicsize is extra bytes after the metaclass instance
+    // size (opaque PyTypeObject). Holds Symbol* for each exposed HOC class.
+    hocclass_spec.basicsize = -static_cast<int>(sizeof(Symbol*));
+#else
+    // Full C API: Symbol* lives after PyTypeObject (CPython < 3.12 / ABI3=OFF).
     hocclass_spec.basicsize = PyType_Type.tp_basicsize + sizeof(Symbol*);
-    // and what about alignment?
-    // recommended by chatgpt
     size_t alignment = alignof(Symbol*);
     size_t remainder = hocclass_spec.basicsize % alignment;
     if (remainder != 0) {
         hocclass_spec.basicsize += alignment - remainder;
-        // printf("aligned hocclass_spec.basicsize = %d\n", hocclass_spec.basicsize);
     }
-#else
-    // chatgpt agrees that the following suggestion
-    // https://github.com/neuronsimulator/nrn/pull/2862/files#r1749797713
-    // is equivalent to the '#if 1' fragment above. However the above
-    // may "ensures portability and correctness across different architectures."
-    hocclass_spec.basicsize = PyType_Type.tp_basicsize + sizeof(hocclass) - sizeof(PyTypeObject);
 #endif
 
     PyObject* custom_hocclass = PyType_FromSpec(&hocclass_spec);
     if (!custom_hocclass) {
         return nullptr;
     }
+#ifdef Py_LIMITED_API
+    hocclass_meta = (PyTypeObject*) custom_hocclass;
+#endif
     if (PyModule_AddObject(m, "HocClass", custom_hocclass) < 0) {
         return nullptr;
     }
