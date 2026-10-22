@@ -64,27 +64,8 @@ static std::string python_sys_path_to_append() {
 }
 
 namespace {
-struct PythonConfigWrapper {
-    PythonConfigWrapper() {
-        PyConfig_InitPythonConfig(&config);
-    }
-    ~PythonConfigWrapper() {
-        PyConfig_Clear(&config);
-    }
-    operator PyConfig*() {
-        return &config;
-    }
-    PyConfig* operator->() {
-        return &config;
-    }
-    PyConfig config;
-};
-struct PyMem_RawFree_Deleter {
-    void operator()(wchar_t* ptr) const {
-        PyMem_RawFree(ptr);
-    }
-};
 PyObject* basic_sys_path{};
+wchar_t* saved_progname{};
 
 void* nrnpy_dlsym(const char* name) {
 #if defined(_WIN32)
@@ -253,29 +234,11 @@ static int nrnpython_start(int b) {
     static int started = 0;
     if (b == 1 && !started) {
         p_nrnpy_pyrun = nrnpy_pyrun;
-        // Create a Python configuration, see
-        // https://docs.python.org/3.8/c-api/init_config.html#python-configuration, so that
-        // {nrniv,special} -python behaves as similarly as possible to python. In particular this
-        // affects locale coercion. Under some circumstances Python does not straightforwardly
-        // handle settings like LC_ALL=C, so using a different configuration can lead to surprising
-        // differences.
-        PythonConfigWrapper config;
+        // Limited API: PyConfig is not available. Use Py_SetProgramName + Py_Initialize
+        // and then set sys.executable / sys.argv. nosite (-S) is not expressible here.
         if (nrnpy_nositeflag) {
-            config->site_import = 0;
+            Fprintf(stderr, "Warning: -nosite is ignored when built with the Python limited API\n");
         }
-        auto const check = [](const char* desc, PyStatus status) {
-            if (PyStatus_Exception(status)) {
-                std::ostringstream oss;
-                oss << desc;
-                if (status.err_msg) {
-                    oss << ": " << status.err_msg;
-                    if (status.func) {
-                        oss << " in " << status.func;
-                    }
-                }
-                throw std::runtime_error(oss.str());
-            }
-        };
         // Virtual environments are discovered by Python by looking for pyvenv.cfg in the directory
         // above sys.executable (https://docs.python.org/3/library/site.html), so we want to make
         // sure that sys.executable is the path to a reasonable choice of Python executable. If we
@@ -295,31 +258,58 @@ static int nrnpython_start(int b) {
         }
 #endif
         if (pyexe.empty()) {
-            throw std::runtime_error("Do not know what to set PyConfig.program_name to");
+            throw std::runtime_error("Do not know what to set Py_SetProgramName to");
         }
-        // Surprisingly, given the documentation, it seems that passing a non-absolute path to
-        // PyConfig.program_name does not lead to a lookup in $PATH, but rather to the real (nrniv)
-        // path being placed in sys.executable -- at least on macOS.
         if (auto p = std::filesystem::path{pyexe}; !p.is_absolute()) {
             std::ostringstream oss;
-            oss << "Setting PyConfig.program_name to a non-absolute path (" << pyexe
+            oss << "Setting program name to a non-absolute path (" << pyexe
                 << ") is not portable; try passing an absolute path to -pyexe or NRN_PYTHONEXE";
             throw std::runtime_error(oss.str());
         }
         // TODO: in non-dynamic builds then -pyexe cannot change the used Python version, and `nrniv
         // -pyexe /path/to/python3.10 -python` may well not use Python 3.10 at all. Should we do
         // something about that?
-        check("Could not set PyConfig.program_name",
-              PyConfig_SetBytesString(config, &config->program_name, pyexe.c_str()));
-        // PySys_SetArgv is deprecated in Python 3.11+, write to config.XXX instead.
-        // nrn_global_argv contains the arguments passed to nrniv/special, which are not valid
-        // Python arguments, so tell Python not to try and parse them. In future we might like to
-        // remove the NEURON-specific arguments and pass whatever is left to Python?
-        config->parse_argv = 0;
-        check("Could not set PyConfig.argv",
-              PyConfig_SetBytesArgv(config, nrn_global_argc, nrn_global_argv));
-        // Initialise Python
-        check("Could not initialise Python", Py_InitializeFromConfig(config));
+        {
+            // PyUnicode_* is not usable before Py_Initialize.
+            std::size_t n = std::mbstowcs(nullptr, pyexe.c_str(), 0);
+            if (n == static_cast<std::size_t>(-1)) {
+                throw std::runtime_error("Could not convert Python executable path to wchar_t");
+            }
+            saved_progname = static_cast<wchar_t*>(std::malloc((n + 1) * sizeof(wchar_t)));
+            if (!saved_progname || std::mbstowcs(saved_progname, pyexe.c_str(), n + 1) ==
+                                       static_cast<std::size_t>(-1)) {
+                std::free(saved_progname);
+                saved_progname = nullptr;
+                throw std::runtime_error("Could not convert Python executable path to wchar_t");
+            }
+            Py_SetProgramName(saved_progname);
+        }
+        Py_Initialize();
+        {
+            PyObject* exe = PyUnicode_DecodeFSDefault(pyexe.c_str());
+            if (!exe || PySys_SetObject("executable", exe) < 0) {
+                Py_XDECREF(exe);
+                throw std::runtime_error("Could not set sys.executable");
+            }
+            Py_DECREF(exe);
+            PyObject* argv = PyList_New(nrn_global_argc);
+            if (!argv) {
+                throw std::runtime_error("Could not allocate sys.argv");
+            }
+            for (int i = 0; i < nrn_global_argc; ++i) {
+                PyObject* s = PyUnicode_DecodeFSDefault(nrn_global_argv[i]);
+                if (!s || PyList_SetItem(argv, i, s) < 0) {
+                    Py_XDECREF(s);
+                    Py_DECREF(argv);
+                    throw std::runtime_error("Could not set sys.argv");
+                }
+            }
+            if (PySys_SetObject("argv", argv) < 0) {
+                Py_DECREF(argv);
+                throw std::runtime_error("Could not set sys.argv");
+            }
+            Py_DECREF(argv);
+        }
         // Manipulate sys.path, starting from the default values
         {
             nanobind::gil_scoped_acquire _{};
