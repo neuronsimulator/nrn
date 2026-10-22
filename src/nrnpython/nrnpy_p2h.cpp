@@ -1,6 +1,8 @@
 #include <../../nrnconf.h>
 
 #include <cstdio>
+#include <cstring>
+#include <exception>
 #include <optional>
 
 #include <InterViews/resource.h>
@@ -155,12 +157,15 @@ static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
             Py_INCREF(main_module);
             Py_INCREF(main_namespace);
         }
-        tail = nb::steal(PyRun_String(sym->name, Py_eval_input, main_namespace, main_namespace));
+        tail = nb::steal(
+            nrnpy_run_string(sym->name, Py_eval_input, main_namespace, main_namespace));
     } else {
         if (strcmp(sym->name, "_") == 0) {
             tail = head;
         } else {
-            tail = head.attr(sym->name);
+            // C API so a missing attribute is a null object, not nanobind::python_error.
+            // python_error::what() is noexcept and aborts under Py_LIMITED_API.
+            tail = nb::steal(PyObject_GetAttrString(head.ptr(), sym->name));
         }
     }
     if (!tail) {
@@ -214,7 +219,8 @@ static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
             // TypeError: list indices must be integers or slices, not hoc.HocObject
             arg = nb::steal(nrnpy_hoc_pop("nindex py2n_component"));
         }
-        result = tail[arg];
+        // C API so IndexError/KeyError is a null object, not nanobind::python_error.
+        result = nb::steal(PyObject_GetItem(tail.ptr(), arg.ptr()));
         if (!result) {
             PyErr_Print();
             hoc_execerror("Python get item failed:", hoc_object_name(ob));
@@ -483,34 +489,60 @@ static double func_call(Object* ho, int narg, int* err) {
 static double guigetval(Object* ho) {
     nb::gil_scoped_acquire lock{};
     nb::tuple po(((Py2Nrn*) ho->u.this_pointer)->po_);
+    nb::object item;
     if (nb::sequence::check_(po[0]) || nb::mapping::check_(po[0])) {
-        return nb::cast<double>(po[0][po[1]]);
+        item = nb::steal(PyObject_GetItem(po[0].ptr(), po[1].ptr()));
     } else {
-        return nb::cast<double>(po[0].attr(po[1]));
+        item = nb::steal(PyObject_GetAttr(po[0].ptr(), po[1].ptr()));
     }
+    if (!item) {
+        PyErr_Print();
+        hoc_execerror("Python GUI get failed:", hoc_object_name(ho));
+    }
+    double x = PyFloat_AsDouble(item.ptr());
+    if (x == -1.0 && PyErr_Occurred()) {
+        PyErr_Print();
+        hoc_execerror("Python GUI get failed:", hoc_object_name(ho));
+    }
+    return x;
 }
 
 static void guisetval(Object* ho, double x) {
     nb::gil_scoped_acquire lock{};
     nb::tuple po(((Py2Nrn*) ho->u.this_pointer)->po_);
+    nb::object val = nb::steal(PyFloat_FromDouble(x));
+    int err = 0;
     if (nb::sequence::check_(po[0]) || nb::mapping::check_(po[0])) {
-        po[0][po[1]] = x;
+        err = PyObject_SetItem(po[0].ptr(), po[1].ptr(), val.ptr());
     } else {
-        po[0].attr(po[1]) = x;
+        err = PyObject_SetAttr(po[0].ptr(), po[1].ptr(), val.ptr());
+    }
+    if (err) {
+        PyErr_Print();
+        hoc_execerror("Python GUI set failed:", hoc_object_name(ho));
     }
 }
 
 static int guigetstr(Object* ho, char** cpp) {
     nb::gil_scoped_acquire lock{};
     nb::tuple po(((Py2Nrn*) ho->u.this_pointer)->po_);
-    auto name = nb::cast<std::string>(po[0].attr(po[1]));
-    if (*cpp && name == *cpp) {
+    nb::object item = nb::steal(PyObject_GetAttr(po[0].ptr(), po[1].ptr()));
+    if (!item) {
+        PyErr_Print();
+        hoc_execerror("Python GUI get str failed:", hoc_object_name(ho));
+    }
+    auto name = Py2NRNString::as_ascii(item.ptr());
+    if (!name.is_valid()) {
+        PyErr_Print();
+        hoc_execerror("Python GUI get str failed:", hoc_object_name(ho));
+    }
+    if (*cpp && strcmp(*cpp, name.c_str()) == 0) {
         return 0;
     }
     if (*cpp) {
         delete[] * cpp;
     }
-    *cpp = new char[name.size() + 1];
+    *cpp = new char[strlen(name.c_str()) + 1];
     strcpy(*cpp, name.c_str());
     return 1;
 }
@@ -629,7 +661,8 @@ std::vector<char> call_picklef(const std::vector<char>& fname, int narg) {
         args.append(arg);
     }
     args.reverse();  // since top of hoc stack was last arg before the for loop.
-    nb::object result = callable(*args);
+    // C API so a Python exception is a null object, not nanobind::python_error.
+    nb::object result = nrnpy_pyCallObject(callable, nb::tuple(args));
     if (!result) {
         auto mes = nrnpyerr_str();
         if (mes.is_valid()) {
@@ -927,8 +960,16 @@ static void p_destruct(void* v) {
  * @brief Populate NEURON state with information from a specific Python.
  * @param ptrs Logically a return value; avoidi
  */
+static const char* python_error_what(const std::exception& e) {
+    if (dynamic_cast<const nb::python_error*>(&e)) {
+        return "Python exception";
+    }
+    return nullptr;
+}
+
 extern "C" NRN_EXPORT void nrnpython_reg_real(neuron::python::impl_ptrs* ptrs) {
     assert(ptrs);
+    neuron::oc::set_safe_what(python_error_what);
     class2oc("PythonObject", p_cons, p_destruct, nullptr, nullptr, nullptr);
     nrnpy_pyobj_sym_ = hoc_lookup("PythonObject");
     assert(nrnpy_pyobj_sym_);

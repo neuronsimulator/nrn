@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from neuron import nmodl
-from neuron.nmodl.dsl import ast, visitor
+from neuron.nmodl.dsl import ast, symtab, visitor
 
 
 def test_lookup_visitor(ch_ast):
@@ -132,3 +132,24 @@ def test_sympy_conductance_visitor():
     }"""
     driver = nmodl.NmodlDriver()
     visitor.SympyConductanceVisitor().visit_program(driver.parse_string(program))
+
+
+def test_sympy_solver_visitor():
+    """
+    SympySolverVisitor is reachable from Python and solves a cnexp ODE analytically
+    """
+    program = """NEURON { SUFFIX test }
+    STATE { m }
+    ASSIGNED { minf mtau }
+    BREAKPOINT { SOLVE states METHOD cnexp }
+    DERIVATIVE states { m' = (minf-m)/mtau }"""
+    driver = nmodl.NmodlDriver()
+    tree = driver.parse_string(program)
+    symtab.SymtabVisitor().visit_program(tree)
+    visitor.SympySolverVisitor(use_pade_approx=False).visit_program(tree)
+    solved = [
+        line.strip()
+        for line in nmodl.dsl.to_nmodl(tree).splitlines()
+        if "m = " in line
+    ]
+    assert solved == ["m = minf-(-m+minf)*exp(-dt/mtau)"]
