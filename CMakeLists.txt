@@ -172,6 +172,12 @@ mark_as_advanced(NRN_BINARY_DIST_BUILD)
 #                                      versions that you want nrniv -python to be able to load. If
 #                                      this *is* set then the first entry will be used as the
 #                                      default Python version.
+# Limited API (abi3):
+#   - NRN_ENABLE_ABI3=ON  : Py_LIMITED_API=0x030C0000, abi3 module names, requires CPython 3.12+.
+#                           Default when the default Python is 3.12+ (source and the cp312-abi3 wheel).
+#   - NRN_ENABLE_ABI3=OFF : versioned extensions for each configured interpreter (CPython 3.10+).
+#                           Default when the default Python is older than 3.12 (including the
+#                           CPython 3.11 wheel).
 # Extra options for extended Python tests:
 #   - NRN_PYTHON_EXTRA_FOR_TESTS=... : semicolon separated list of Python executables that NEURON
 #                                      is *not* built against. These are only used for testing, and
@@ -360,12 +366,23 @@ string(REPLACE "," ";" NRN_SANITIZERS_LIST "${NRN_SANITIZERS}")
 set(NRN_MINIMUM_PYTHON_VERSION 3.10)
 include(cmake/PythonHelper.cmake)
 
+# NRN_ENABLE_ABI3: 3.12+ source and the cp312-abi3 wheel default ON; older Pythons (including the
+# CPython 3.11 wheel) default OFF.
 if(NRN_ENABLE_PYTHON)
-  set(_nrn_abi3_default OFF)
+  if(NRN_DEFAULT_PYTHON_VERSION VERSION_GREATER_EQUAL 3.12)
+    set(_nrn_abi3_default ON)
+  else()
+    set(_nrn_abi3_default OFF)
+  endif()
   option(
     NRN_ENABLE_ABI3
     "Build importable Python extensions against the CPython 3.12 limited API (abi3). OFF builds versioned extensions for the configured interpreter(s) (CPython 3.10+)."
     ${_nrn_abi3_default})
+  if(SKBUILD
+     AND NRN_DEFAULT_PYTHON_VERSION VERSION_GREATER_EQUAL 3.12
+     AND NOT NRN_ENABLE_ABI3)
+    message(FATAL_ERROR "Wheel builds for CPython 3.12+ require NRN_ENABLE_ABI3=ON")
+  endif()
   if(NRN_ENABLE_ABI3)
     foreach(_nrn_abi3_pyver ${NRN_PYTHON_VERSIONS})
       if(_nrn_abi3_pyver VERSION_LESS 3.12)
