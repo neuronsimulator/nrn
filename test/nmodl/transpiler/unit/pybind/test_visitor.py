@@ -148,8 +148,6 @@ def test_sympy_solver_visitor():
     symtab.SymtabVisitor().visit_program(tree)
     visitor.SympySolverVisitor(use_pade_approx=False).visit_program(tree)
     solved = [
-        line.strip()
-        for line in nmodl.dsl.to_nmodl(tree).splitlines()
-        if "m = " in line
+        line.strip() for line in nmodl.dsl.to_nmodl(tree).splitlines() if "m = " in line
     ]
     assert solved == ["m = minf-(-m+minf)*exp(-dt/mtau)"]
