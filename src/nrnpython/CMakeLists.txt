@@ -183,10 +183,9 @@ else()
   set_property(TARGET nrnpython PROPERTY POSITION_INDEPENDENT_CODE ON)
   target_include_directories(nrnpython PUBLIC ${INCLUDE_DIRS})
   target_include_directories(nrnpython PUBLIC "${NRN_DEFAULT_PYTHON_INCLUDES}")
-  # see nrn/issues/2358
-  if(NOT NRN_WITH_MACOS_CONDA_PYTHON)
-    target_link_libraries(nrnpython ${NRN_DEFAULT_PYTHON_LIBRARIES})
-  endif()
+  # OBJECT nrnpython is linked into libnrniv. nrnivmodl's `special` links libnrniv without extra
+  # Python libs, so libnrniv must NEEDED libpython. (Wheels use DYNAMIC=ON instead.)
+  target_link_libraries(nrnpython ${NRN_DEFAULT_PYTHON_LIBRARIES})
   target_link_libraries(nrnpython fmt::fmt)
   target_include_directories(nrnpython SYSTEM
                              PUBLIC ${PROJECT_SOURCE_DIR}/${NRN_3RDPARTY_DIR}/eigen)
