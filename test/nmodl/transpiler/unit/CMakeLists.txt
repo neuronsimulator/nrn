@@ -10,8 +10,9 @@ endif()
 
 add_library(nmodl_test_flags INTERFACE)
 
-target_include_directories(nmodl_test_flags INTERFACE ${PYBIND11_INCLUDE_DIR}
-                                                      ${PYTHON_INCLUDE_DIRS})
+target_include_directories(
+  nmodl_test_flags INTERFACE ${NRN_DEFAULT_PYTHON_INCLUDES}
+                             ${PROJECT_SOURCE_DIR}/external/nanobind/include)
 target_include_directories(nmodl_test_flags INTERFACE ${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/solver)
 target_include_directories(nmodl_test_flags INTERFACE ${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/utils)
 target_include_directories(nmodl_test_flags INTERFACE ${NMODL_PROJECT_PLATLIB_SOURCE_DIR})
@@ -116,6 +117,7 @@ target_link_libraries(
           printer
           nmodl_codegen
           ${NMODL_WRAPPER_LIBS}
+          nanobind_nmodl
           nmodl_test_flags)
 target_link_libraries(
   testcodegen
@@ -139,7 +141,9 @@ target_link_libraries(testunitparser PRIVATE lexer test_util config nmodl_test_f
 set(test_env ${NRN_SANITIZER_ENABLE_ENVIRONMENT})
 set(testvisitor_env "PYTHONPATH=${PROJECT_BINARY_DIR}/lib:$ENV{PYTHONPATH}")
 if(NOT NRN_LINK_AGAINST_PYTHON)
-  list(APPEND testvisitor_env "NMODL_PYLIB=$ENV{NMODL_PYLIB}")
+  # SHARED libpywrapper has no NEEDED libpython; Catch discover must dlopen via NMODL_PYLIB.
+  list(APPEND test_env "NMODL_PYLIB=${NRN_NMODL_PYLIB}" "NMODLHOME=${PROJECT_BINARY_DIR}")
+  list(APPEND testvisitor_env "NMODL_PYLIB=${NRN_NMODL_PYLIB}" "NMODLHOME=${PROJECT_BINARY_DIR}")
 endif()
 
 # Without main from Catch2
@@ -185,15 +189,27 @@ foreach(
 endforeach()
 
 foreach(test_name testcodegen testvisitor)
-  if(NOT NRN_LINK_AGAINST_PYTHON)
-    target_link_libraries(${test_name} PRIVATE pywrapper ${PYTHON_LIBRARY})
+  # Do not DT_NEEDED SHARED libpywrapper.so (no libpython). Catch POST_BUILD --list-tests would then
+  # die with PyExc_ValueError. The binaries dlopen via EmbeddedPythonLoader; PRE_TEST discovery runs
+  # with NMODL_PYLIB set. testvisitor embeds nanobind in sympy_solver.cpp and must NEEDED libpython.
+  if(NOT NRN_LINK_AGAINST_PYTHON
+     AND test_name STREQUAL "testvisitor"
+     AND NRN_NMODL_PYLIB)
+    target_link_libraries(testvisitor PRIVATE "${NRN_NMODL_PYLIB}")
   endif()
   cpp_cc_configure_sanitizers(TARGET ${test_name})
   set(env ${test_env})
   list(APPEND env ${${test_name}_env})
   string(REPLACE ";" ";ENVIRONMENT;" _environment_vars_list "${env}")
-  catch_discover_tests(${test_name} TEST_PREFIX "${test_name}/" PROPERTIES ENVIRONMENT
-                       "${_environment_vars_list}")
+  catch_discover_tests(
+    ${test_name}
+    TEST_PREFIX
+    "${test_name}/"
+    DISCOVERY_MODE
+    PRE_TEST
+    PROPERTIES
+    ENVIRONMENT
+    "${_environment_vars_list}")
 endforeach()
 
 # Generate include files used in test input, see
@@ -208,7 +224,7 @@ else()
 endif()
 
 # =============================================================================
-# pybind11 tests
+# Python / sympy tests (nmodl CLI embed)
 # =============================================================================
 if(NRN_ENABLE_PYTHON)
   if(NOT (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" AND NRN_SANITIZERS))
@@ -238,7 +254,8 @@ if(NRN_ENABLE_PYTHON)
       file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/pybind)
       add_test(
         NAME Pybind
-        COMMAND ${PYTHON_EXECUTABLE} ${NRN_PYTEST_LAUNCHER} ${CMAKE_CURRENT_SOURCE_DIR}/pybind
+        COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${NRN_PYTEST_LAUNCHER}
+                ${CMAKE_CURRENT_SOURCE_DIR}/pybind
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/pybind)
       set_tests_properties(
         Pybind

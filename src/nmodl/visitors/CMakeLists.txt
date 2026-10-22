@@ -6,7 +6,6 @@ set_source_files_properties(${VISITORS_GENERATED_SOURCES} PROPERTIES GENERATED T
 # =============================================================================
 # Visitor library and executable
 # =============================================================================
-include_directories(${PYBIND11_INCLUDE_DIR} ${PYTHON_INCLUDE_DIRS})
 add_library(
   visitor STATIC
   after_cvode_to_cnexp_visitor.cpp
@@ -47,16 +46,6 @@ add_library(
 set_property(TARGET visitor PROPERTY POSITION_INDEPENDENT_CODE ON)
 add_dependencies(visitor pywrapper)
 target_link_libraries(visitor PUBLIC lexer util)
-
-# ~~~
-# pybind11::embed adds PYTHON_LIBRARIES to target_link_libraries. To avoid link to
-# libpython, we can use `pybind11::module` interface library from pybind11.
-# ~~~
-if(NOT NRN_LINK_AGAINST_PYTHON)
-  target_link_libraries(visitor PRIVATE pybind11::module)
-else()
-  target_link_libraries(visitor PRIVATE pybind11::embed)
-endif()
 
 if(NOT NMODL_AS_SUBPROJECT)
   add_executable(nmodl_visitor main.cpp)
