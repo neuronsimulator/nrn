@@ -839,9 +839,13 @@ static PyObject* hocobj_call(PyHocObject* self, PyObject* args, PyObject* kwrds)
     } else if (self->type_ == PyHoc::HocFunction) {
         try {
             result = nb::steal(static_cast<PyObject*>(OcJump::fpycall(fcall, self, args)));
+        } catch (nb::python_error& e) {
+            // Do not call e.what(): it is noexcept and raises std::bad_cast under
+            // Py_LIMITED_API (obj_vectorcall with a null arg), which aborts.
+            e.restore();
         } catch (std::exception const& e) {
             std::ostringstream oss;
-            oss << "hocobj_call error: " << e.what();
+            oss << "hocobj_call error: " << neuron::oc::safe_what(e);
             PyErr_SetString(PyExc_RuntimeError, oss.str().c_str());
         }
         hoc_unref_defer();
@@ -932,7 +936,7 @@ static int hocobj_objectvar(Symbol* sym) {
         hoc_pc = pcsav;
     } catch (std::exception const& e) {
         std::ostringstream oss;
-        oss << "number of dimensions error:" << e.what();
+        oss << "number of dimensions error:" << neuron::oc::safe_what(e);
         PyErr_SetString(PyExc_IndexError, oss.str().c_str());
         err = 1;
     }
