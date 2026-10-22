@@ -1,9 +1,17 @@
 # Set NRN_NMODL_PYLIB to the libpython that nmodl dlopens (even if we do not link it).
-if(NRN_ENABLE_PYTHON
-   AND NRN_LINK_AGAINST_PYTHON
-   AND NRN_DEFAULT_PYTHON_LIBRARIES
-   AND EXISTS "${NRN_DEFAULT_PYTHON_LIBRARIES}")
-  set(NRN_NMODL_PYLIB "${NRN_DEFAULT_PYTHON_LIBRARIES}")
+# Python_LIBRARIES is that shared object on Unix. On Windows it is an import library (.lib or
+# .dll.a); LoadLibrary needs Python_RUNTIME_LIBRARY, the DLL.
+set(_nmodl_dlopen_lib "")
+if(NRN_ENABLE_PYTHON AND NRN_LINK_AGAINST_PYTHON)
+  if(EXISTS "${NRN_DEFAULT_PYTHON_RUNTIME_LIBRARY}")
+    set(_nmodl_dlopen_lib "${NRN_DEFAULT_PYTHON_RUNTIME_LIBRARY}")
+  elseif(EXISTS "${NRN_DEFAULT_PYTHON_LIBRARIES}" AND NOT NRN_DEFAULT_PYTHON_LIBRARIES MATCHES
+                                                      "\\.(lib|a)$")
+    set(_nmodl_dlopen_lib "${NRN_DEFAULT_PYTHON_LIBRARIES}")
+  endif()
+endif()
+if(_nmodl_dlopen_lib)
+  set(NRN_NMODL_PYLIB "${_nmodl_dlopen_lib}")
 elseif(NRN_DEFAULT_PYTHON_EXECUTABLE)
   execute_process(
     COMMAND "${NRN_DEFAULT_PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_LIST_DIR}/find_nmodl_pylib.py"

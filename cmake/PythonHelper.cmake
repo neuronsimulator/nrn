@@ -103,6 +103,9 @@ function(nrn_find_python)
       set(dev_component "Development")
       list(APPEND python_vars Python_LIBRARIES)
     endif()
+    # Optional. Windows sets this to the DLL; Unix leaves it *-NOTFOUND. An empty match must not
+    # fail configuration.
+    set(Python_RUNTIME_LIBRARY "")
     execute_process(
       COMMAND
         ${CMAKE_COMMAND} "-DPython_EXECUTABLE:STRING=${opt_NAME}"
@@ -124,11 +127,20 @@ function(nrn_find_python)
       endif()
       set(${var} "${CMAKE_MATCH_1}")
     endforeach()
+    string(REGEX MATCH "-- Python_RUNTIME_LIBRARY=([^\n]*)\n" _junk "${stdout}")
+    if(_junk
+       AND CMAKE_MATCH_1
+       AND NOT CMAKE_MATCH_1 MATCHES "NOTFOUND$")
+      set(Python_RUNTIME_LIBRARY "${CMAKE_MATCH_1}")
+    endif()
     set("${opt_PREFIX}_INCLUDES"
         "${Python_INCLUDE_DIRS}"
         PARENT_SCOPE)
     set("${opt_PREFIX}_LIBRARIES"
         "${Python_LIBRARIES}"
+        PARENT_SCOPE)
+    set("${opt_PREFIX}_RUNTIME_LIBRARY"
+        "${Python_RUNTIME_LIBRARY}"
         PARENT_SCOPE)
     set("${opt_PREFIX}_VERSION"
         "${Python_VERSION}"
@@ -188,6 +200,7 @@ set(NRN_PYTHON_EXECUTABLES)
 set(NRN_PYTHON_VERSIONS)
 set(NRN_PYTHON_INCLUDES)
 set(NRN_PYTHON_LIBRARIES)
+set(NRN_PYTHON_RUNTIME_LIBRARIES)
 foreach(pyexe ${python_executables})
   message(STATUS "Checking if ${pyexe} is a working python")
   nrn_find_python(NAME "${pyexe}" PREFIX nrnpy)
@@ -213,6 +226,7 @@ foreach(pyexe ${python_executables})
     list(APPEND NRN_PYTHON_VERSIONS "${nrnpy_VERSION}")
     list(APPEND NRN_PYTHON_INCLUDES "${nrnpy_INCLUDES}")
     list(APPEND NRN_PYTHON_LIBRARIES "${nrnpy_LIBRARIES}")
+    list(APPEND NRN_PYTHON_RUNTIME_LIBRARIES "${nrnpy_RUNTIME_LIBRARY}")
   endif()
   list(APPEND NRN_PYTHON_EXECUTABLES "${nrnpy_EXECUTABLE}")
 endforeach()
@@ -223,6 +237,7 @@ list(GET NRN_PYTHON_VERSIONS 0 NRN_DEFAULT_PYTHON_VERSION)
 if(NRN_ENABLE_PYTHON)
   list(GET NRN_PYTHON_INCLUDES 0 NRN_DEFAULT_PYTHON_INCLUDES)
   list(GET NRN_PYTHON_LIBRARIES 0 NRN_DEFAULT_PYTHON_LIBRARIES)
+  list(GET NRN_PYTHON_RUNTIME_LIBRARIES 0 NRN_DEFAULT_PYTHON_RUNTIME_LIBRARY)
   list(LENGTH NRN_PYTHON_EXECUTABLES NRN_PYTHON_COUNT)
   math(EXPR NRN_PYTHON_ITERATION_LIMIT "${NRN_PYTHON_COUNT} - 1")
 endif()
