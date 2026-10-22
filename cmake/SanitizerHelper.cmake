@@ -40,6 +40,16 @@ if(NRN_SANITIZERS)
   endif()
   if("address" IN_LIST nrn_sanitizers)
     list(APPEND NRN_COMPILE_DEFS NRN_ASAN_ENABLED)
+    if(APPLE)
+      list(
+        TRANSFORM NRN_SANITIZER_ENABLE_ENVIRONMENT
+        APPEND ":detect_container_overflow=0"
+        REGEX "^ASAN_OPTIONS=")
+      list(
+        TRANSFORM NRN_SANITIZER_DISABLE_ENVIRONMENT
+        APPEND ":detect_container_overflow=0"
+        REGEX "^ASAN_OPTIONS=")
+    endif()
   endif()
   if("thread" IN_LIST nrn_sanitizers)
     list(APPEND NRN_COMPILE_DEFS NRN_TSAN_ENABLED)

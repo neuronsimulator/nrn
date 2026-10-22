@@ -125,6 +125,10 @@ In order to have the wheels working on multiple macOS target versions, special c
 Taking Azure macOS `x86_64` wheels for example, `readline` was built with `MACOSX_DEPLOYMENT_TARGET=10.9` and stored as secure file on Azure (under `Pipelines > Library > Secure files`).
 For `arm64` we need to set `MACOSX_DEPLOYMENT_TARGET=11.0`.
 
+The wheel build (`packaging/python/build_wheels.bash`) now defaults to `MACOSX_DEPLOYMENT_TARGET=14.0` for both architectures, because Homebrew's `hdf5` (needed by MorphIO) is built for macOS 14 and `delocate` refuses to bundle it for older targets.
+The static `readline` built by `build_static_readline_osx.bash` keeps its own 10.9 (x86_64) / 11.0 (arm64) target; it is linked into the 14.0 wheels without conflict.
+As a consequence, the produced wheels require macOS 14 or newer.
+
 You can use [packaging/python/build_static_readline_osx.bash](../../packaging/python/build_static_readline_osx.bash) to build a static readline library.
 You can have a look at the script for requirements and usage.
 

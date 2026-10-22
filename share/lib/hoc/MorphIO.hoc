@@ -1,0 +1,42 @@
+/*
+ *   MorphIO HOC API
+ */
+
+// Procedural convenience function: loads morphology and exports <stem>.hoc
+func morphio_read() {
+    return morphio_load($o1, $s2, 1)
+}
+
+// Object-oriented template matching Python MorphIOWrapper and Import3d
+begintemplate MorphIOWrapper
+    public init, instantiate, filename
+    strdef filename
+
+    proc init() {
+        filename = $s1
+    }
+
+    func instantiate() {
+        if (numarg() > 1) {
+            return morphio_load($o1, filename, $2)
+        }
+        return morphio_load($o1, filename)
+    }
+endtemplate MorphIOWrapper
+
+// Alias template matching the MorphIO library name
+begintemplate MorphIO
+    public init, instantiate, filename
+    strdef filename
+
+    proc init() {
+        filename = $s1
+    }
+
+    func instantiate() {
+        if (numarg() > 1) {
+            return morphio_load($o1, filename, $2)
+        }
+        return morphio_load($o1, filename)
+    }
+endtemplate MorphIO

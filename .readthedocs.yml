@@ -27,6 +27,8 @@ build:
     - flex
     - libfl-dev
     - libreadline-dev
+    - hdf5-tools
+    - libhdf5-dev
 
 submodules:
   recursive: true

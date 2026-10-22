@@ -69,7 +69,7 @@ templates_path = ["_templates"]
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "python/venv"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "python/venv", "guide/data"]
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -80,6 +80,21 @@ html_theme = "sphinx_rtd_theme"
 
 # Sphinx expects the master doc to be contents
 master_doc = "index"
+
+# Ensure docs/index.rst exists even if CMake has not been configured
+_index_rst = Path(__file__).parent / "index.rst"
+_index_rst_in = Path(__file__).parent / "index.rst.in"
+if not _index_rst.exists() and _index_rst_in.exists():
+    _content = _index_rst_in.read_text()
+    _content = _content.replace(
+        "@NRN_MACOS_INSTALLER_URL@",
+        "https://github.com/neuronsimulator/nrn/releases/latest",
+    ).replace(
+        "@NRN_WINDOWS_INSTALLER_URL@",
+        "https://github.com/neuronsimulator/nrn/releases/latest",
+    )
+    _index_rst.write_text(_content)
+
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -121,6 +136,7 @@ if os.environ.get("READTHEDOCS"):
             "-DNRN_ENABLE_MPI=ON",
             "-DNRN_ENABLE_DOCS=ON",
             "-DNMODL_ENABLE_PYTHON_BINDINGS=ON",
+            "-DNRN_ENABLE_MORPHIO=ON",
             "-B",
             Path(__file__).parent.parent / "build",
             "-S",
