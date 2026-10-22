@@ -65,6 +65,13 @@ jobs:
               python_max_version: "3.14"
           - os: ubuntu-22.04
             config:
+              # Versioned (ABI3=OFF) source build on the CMake minimum.
+              # Non-dynamic, so PYTHON_EXECUTABLE is python${python_max_version}.
+              matrix_eval: "CC=gcc-12 CXX=g++-12"
+              build_mode: cmake
+              python_max_version: "3.10"
+          - os: ubuntu-22.04
+            config:
               build_mode: cmake
               cmake_option: -DNRN_ENABLE_CORENEURON=ON
                 -DNRN_ENABLE_INTERVIEWS=OFF
