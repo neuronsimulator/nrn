@@ -30,6 +30,7 @@
 
 #include <cfenv>
 #include <condition_variable>
+#include <exception>
 #include <filesystem>
 #include <iostream>
 #include <mutex>
@@ -609,6 +610,25 @@ void hoc_show_errmess_always(void) {
 int hoc_execerror_messages;
 int nrn_try_catch_nest_depth{0};
 int yystart;
+
+namespace neuron::oc {
+namespace {
+const char* (*safe_what_fn)(const std::exception&){};
+}
+
+void set_safe_what(const char* (*fn)(const std::exception&) ) {
+    safe_what_fn = fn;
+}
+
+const char* safe_what(const std::exception& e) {
+    if (safe_what_fn) {
+        if (const char* m = safe_what_fn(e)) {
+            return m;
+        }
+    }
+    return e.what();
+}
+}  // namespace neuron::oc
 
 void hoc_execerror_mes(const char* s, const char* t, int prnt) { /* recover from run-time error */
     hoc_in_yyparse = 0;
