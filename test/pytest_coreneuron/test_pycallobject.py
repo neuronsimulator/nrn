@@ -83,6 +83,24 @@ def test_py2n_component():
     h("objref po")
 
 
+def test_py2n_getitem_and_attr_errors():
+    # HOC $o1.attr[i] must raise, not abort via nanobind::python_error::what().
+    class Box:
+        data = [1]
+
+        def __call__(self):
+            pass
+
+    h("func abi_ok() { return $o1.data[0] }")
+    assert h.abi_ok(Box()) == 1.0
+
+    h("func abi_error() { return $o1.data[90] }")
+    expect_err("h.abi_error(Box())")
+
+    h("func abi_miss() { return $o1.nope }")
+    expect_err("h.abi_miss(Box())")
+
+
 def test_func_call():
     for sec in h.allsec():
         h.delete_section(sec=sec)
