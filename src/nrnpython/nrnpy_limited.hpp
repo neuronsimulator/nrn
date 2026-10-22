@@ -103,6 +103,16 @@ inline int nrnpy_run_simple_string(const char* command) {
     return 0;
 }
 
+inline PyObject* nrnpy_run_string(const char* str, int start, PyObject* globals, PyObject* locals) {
+    PyObject* code = Py_CompileString(str, "<string>", start);
+    if (!code) {
+        return nullptr;
+    }
+    PyObject* result = PyEval_EvalCode(code, globals, locals);
+    Py_DECREF(code);
+    return result;
+}
+
 inline int nrnpy_run_file(FILE* fp, const char* filename) {
     std::string src;
     char buf[4096];

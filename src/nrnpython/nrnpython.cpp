@@ -198,7 +198,7 @@ static int nrnmingw_pyrun_interactiveloop() {
         "nrnmingw_interpreter = nrnmingw_code.InteractiveConsole(locals=globals())\n",
         "nrnmingw_interpreter.interact(\"\")\n"};
     for (const auto& line: lines) {
-        if (PyRun_SimpleString(line.c_str())) {
+        if (nrnpy_run_simple_string(line.c_str())) {
             PyErr_Print();
             return -1;
         }
@@ -364,7 +364,10 @@ static int nrnpython_start(int b) {
                 // sys.path[0] should be an empty string for -c
                 reset_sys_path("");
                 have_reset_sys_path = true;
-                if (PyRun_SimpleString(nrn_global_argv[i + 1])) {
+                if (nrnpy_run_simple_string(nrn_global_argv[i + 1])) {
+                    // Like PyRun_SimpleString: print the traceback, clear the error, and let
+                    // SystemExit end the process.
+                    PyErr_Print();
                     python_error_encountered = true;
                 }
                 break;
@@ -415,7 +418,12 @@ static void nrnpython_real() {
     {
         auto interp = HocTopContextManager();
         nanobind::gil_scoped_acquire lock{};
-        retval = (PyRun_SimpleString(hoc_gargstr(1)) == 0);
+        retval = (nrnpy_run_simple_string(hoc_gargstr(1)) == 0);
+        if (!retval) {
+            // Like PyRun_SimpleString: print the traceback, clear the error, and let
+            // SystemExit end the process.
+            PyErr_Print();
+        }
     }
 #endif
     hoc_retpushx(retval);

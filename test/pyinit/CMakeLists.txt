@@ -60,6 +60,35 @@ nrn_add_test(
   NAME nrniv_python_command_error
   COMMAND nrniv ${nrniv_args} -python -c "assert False")
 set_property(TEST pyinit::nrniv_python_command_error PROPERTY WILL_FAIL ON)
+# A failing -c command must print its traceback, not fail silently
+nrn_add_test(
+  GROUP pyinit
+  NAME nrniv_python_command_error_traceback
+  COMMAND nrniv ${nrniv_args} -python -c "raise ValueError('nrn-c-traceback')")
+set_property(TEST pyinit::nrniv_python_command_error_traceback
+             PROPERTY PASS_REGULAR_EXPRESSION "ValueError: nrn-c-traceback")
+# HOC nrnpython("...") must print a Python error, return 0, and clear the error so that the next
+# nrnpython call works
+nrn_add_test(
+  GROUP pyinit
+  NAME nrniv_hoc_nrnpython_error_output
+  COMMAND nrniv ${nrniv_args} -c "nrnpython(\"1/0\")")
+set_property(TEST pyinit::nrniv_hoc_nrnpython_error_output PROPERTY PASS_REGULAR_EXPRESSION
+                                                                    "ZeroDivisionError")
+nrn_add_test(
+  GROUP pyinit
+  NAME nrniv_hoc_nrnpython_error_then_ok
+  COMMAND
+    nrniv ${nrniv_args} -c "if (nrnpython(\"1/0\") != 0) { execerror(\"error not reported\") }"
+    -c "if (nrnpython(\"x = 1\") != 1) { execerror(\"next nrnpython failed\") }")
+# sys.exit() inside nrnpython("...") ends the process, as in python itself
+nrn_add_test(
+  GROUP pyinit
+  NAME nrniv_hoc_nrnpython_sys_exit
+  COMMAND nrniv ${nrniv_args} -c "nrnpython(\"import sys$<SEMICOLON> sys.exit(0)\")"
+          -c "print \"after-exit\"")
+set_property(TEST pyinit::nrniv_hoc_nrnpython_sys_exit PROPERTY FAIL_REGULAR_EXPRESSION
+                                                                "after-exit")
 # Then test -python foo.py
 nrn_add_test(
   GROUP pyinit
