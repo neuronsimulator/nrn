@@ -167,8 +167,13 @@ foreach(val RANGE ${NRN_PYTHON_COUNT})
           # Not an error if a user's system doesn't have all the names in ${search_names}
           continue()
         endif()
-        if(NOT nrnpy_VERSION IN_LIST NRN_PYTHON_VERSIONS)
-          # e.g. python or python3 points to a version we didn't build against
+        if(NRN_ENABLE_ABI3)
+          if(nrnpy_VERSION VERSION_LESS 3.12)
+            # nrnpyenv.sh accepts any GIL CPython 3.12+ (limited API), not only the versions this
+            # build was configured with.
+            continue()
+          endif()
+        elseif(NOT nrnpy_VERSION IN_LIST NRN_PYTHON_VERSIONS)
           continue()
         endif()
         # Right, so the default should be nrnpy_EXECUTABLE, which is nrnpy_VERSION
@@ -267,41 +272,23 @@ foreach(val RANGE ${NRN_PYTHON_COUNT})
     COMMAND nrniv ${nrniv_args} -c "nrnpython(\"import sys$<SEMICOLON> print(sys.path)\")")
 endforeach()
 if(NRN_PYTHON_EXTRA_FOR_TESTS)
-  # Run some tests using Python versions that are installed on the system, but which NEURON is *not*
-  # built with support for.
+  # Extra Pythons that were not used to compile. With ABI3, GIL CPython 3.12+ should import; older
+  # versions should fail. Without ABI3, only the versions this build compiled against import.
   foreach(val RANGE ${NRN_PYTHON_EXTRA_FOR_TESTS_ITERATION_LIMIT})
     list(GET NRN_PYTHON_EXTRA_FOR_TESTS_EXECUTABLES ${val} pyexe)
     list(GET NRN_PYTHON_EXTRA_FOR_TESTS_VERSIONS ${val} pyver)
-    # As above, we can't easily add CTest tests that check exit codes *and* regex output. So we just
-    # run the tests twice.
-    foreach(check code output)
-      # Should not be able to import NEURON
+    if((NRN_ENABLE_ABI3 AND pyver VERSION_GREATER_EQUAL 3.12)
+       OR ((NOT NRN_ENABLE_ABI3) AND pyver IN_LIST NRN_PYTHON_VERSIONS))
       nrn_add_test(
         GROUP pyinit
-        NAME python${pyver}_import_fail_check_${check}
+        NAME python${pyver}_import_ok
         COMMAND "${pyexe}" -c "import neuron"
         PRELOAD_SANITIZER)
-      if(check STREQUAL code)
-        set(properties WILL_FAIL ON)
-      else()
-        # output
-        string(REPLACE "." "\\." pyver_escaped "${pyver}")
-        set(properties
-            PASS_REGULAR_EXPRESSION
-            "Python ${pyver_escaped} is not supported by this NEURON installation \\(supported:")
-      endif()
-      set_tests_properties(pyinit::python${pyver}_import_fail_check_${check}
-                           PROPERTIES ${properties})
-      # Telling nrniv to use this Python should fail if dynamic Python is enabled. TODO: figured out
-      # the desired behaviour for non-dynamic Python.
       if(NRN_ENABLE_PYTHON_DYNAMIC)
         nrn_add_test(
           GROUP pyinit
-          NAME nrniv_py${pyver}_import_fail_check_${check}
+          NAME nrniv_py${pyver}_import_ok
           COMMAND nrniv ${nrniv_args_common} -pyexe ${pyexe} -python -c "import neuron")
-        # Setting the full set of environment variables (NRN_PYLIB, NRN_PYTHONEXE and
-        # NRN_PYTHONVERSION) will prevent nrnpyenv.sh from being run, but we should still get an
-        # error if NRN_PYTHONVERSION is not valid for this NEURON.
         execute_process(
           COMMAND "${pyexe}" -c "import sysconfig; print(sysconfig.get_config_var('LIBDIR'))"
           RESULT_VARIABLE code
@@ -309,22 +296,69 @@ if(NRN_PYTHON_EXTRA_FOR_TESTS)
           OUTPUT_STRIP_TRAILING_WHITESPACE)
         set(pylib
             "${libdir}/${CMAKE_SHARED_LIBRARY_PREFIX}python${pyver}${CMAKE_SHARED_LIBRARY_SUFFIX}")
-        if(code OR NOT EXISTS "${pylib}")
-          message(
-            WARNING
-              "Could not identify libpythonX.Y for NRN_PYTHON_EXTRA_FOR_TESTS test (tried ${pylib})"
-          )
-          continue()
+        if(NOT code AND EXISTS "${pylib}")
+          nrn_add_test(
+            GROUP pyinit
+            NAME nrniv_py${pyver}_forced_from_env_ok
+            COMMAND NRN_PYTHONVERSION=${pyver} "NRN_PYLIB=${pylib}" "NRN_PYTHONEXE=${pyexe}" nrniv
+                    -python -c "import neuron")
         endif()
+      endif()
+    else()
+      foreach(check code output)
         nrn_add_test(
           GROUP pyinit
-          NAME nrniv_py${pyver}_forced_from_env_check_${check}
-          COMMAND NRN_PYTHONVERSION=${pyver} "NRN_PYLIB=${pylib}" "NRN_PYTHONEXE=${pyexe}" nrniv
-                  -python -c "import neuron")
-        set_tests_properties(
-          pyinit::nrniv_py${pyver}_import_fail_check_${check}
-          pyinit::nrniv_py${pyver}_forced_from_env_check_${check} PROPERTIES ${properties})
-      endif()
-    endforeach()
+          NAME python${pyver}_import_fail_check_${check}
+          COMMAND "${pyexe}" -c "import neuron"
+          PRELOAD_SANITIZER)
+        if(check STREQUAL code)
+          set(properties WILL_FAIL ON)
+        else()
+          string(REPLACE "." "\\." pyver_escaped "${pyver}")
+          if(NRN_ENABLE_ABI3)
+            set(properties
+                PASS_REGULAR_EXPRESSION
+                "Python ${pyver_escaped} is not supported by this NEURON installation \\(requires CPython 3\\.12"
+            )
+          else()
+            set(properties
+                PASS_REGULAR_EXPRESSION
+                "Python ${pyver_escaped} is not supported by this NEURON installation \\(supported:"
+            )
+          endif()
+        endif()
+        set_tests_properties(pyinit::python${pyver}_import_fail_check_${check}
+                             PROPERTIES ${properties})
+        if(NRN_ENABLE_PYTHON_DYNAMIC)
+          nrn_add_test(
+            GROUP pyinit
+            NAME nrniv_py${pyver}_import_fail_check_${check}
+            COMMAND nrniv ${nrniv_args_common} -pyexe ${pyexe} -python -c "import neuron")
+          execute_process(
+            COMMAND "${pyexe}" -c "import sysconfig; print(sysconfig.get_config_var('LIBDIR'))"
+            RESULT_VARIABLE code
+            OUTPUT_VARIABLE libdir
+            OUTPUT_STRIP_TRAILING_WHITESPACE)
+          set(pylib
+              "${libdir}/${CMAKE_SHARED_LIBRARY_PREFIX}python${pyver}${CMAKE_SHARED_LIBRARY_SUFFIX}"
+          )
+          if(code OR NOT EXISTS "${pylib}")
+            message(
+              WARNING
+                "Could not identify libpythonX.Y for NRN_PYTHON_EXTRA_FOR_TESTS test (tried ${pylib})"
+            )
+            continue()
+          endif()
+          nrn_add_test(
+            GROUP pyinit
+            NAME nrniv_py${pyver}_forced_from_env_check_${check}
+            COMMAND NRN_PYTHONVERSION=${pyver} "NRN_PYLIB=${pylib}" "NRN_PYTHONEXE=${pyexe}" nrniv
+                    -python -c "import neuron")
+          set_tests_properties(
+            pyinit::nrniv_py${pyver}_import_fail_check_${check}
+            pyinit::nrniv_py${pyver}_forced_from_env_check_${check} PROPERTIES ${properties})
+        endif()
+      endforeach()
+    endif()
   endforeach()
 endif()
