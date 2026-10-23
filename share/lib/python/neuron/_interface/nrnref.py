@@ -74,6 +74,18 @@ def _nseg_generations():
     return _NSEG_GENERATION
 
 
+_sync_nseg = None
+
+
+def _nseg_generation(sec_ptr):
+    generation = _nseg_generations().get(sec_ptr)
+    if generation is None:
+        from .sections import nseg_generation
+
+        generation = nseg_generation(sec_ptr)
+    return generation
+
+
 def _symbol_info(name):
     from .sections import _get_symbol_info
 
@@ -158,9 +170,15 @@ class NrnRangeVarRef(NrnRef):
             raise NameError(f"No such mechanism or variable: {self._name}")
         # NEURON's handle follows its node through nseg changes and dies with
         # it (sections.follow_node); _check_nseg moves _x along.
-        self._nseg = _nseg_generations().get(sec._sec, 0)
+        self._nseg = _nseg_generation(sec._sec)
 
     def _check_nseg(self, sec):
+        # Also catches an nseg change made from HOC code (sync_nseg), which
+        # NEURON's handle sees: its node may be gone (datahandle test_1).
+        global _sync_nseg
+        if _sync_nseg is None:
+            from .sections import sync_nseg as _sync_nseg
+        _sync_nseg(sec._sec)
         generation = _nseg_generations().get(sec._sec, 0)
         if generation == self._nseg:
             return

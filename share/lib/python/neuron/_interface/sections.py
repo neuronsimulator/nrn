@@ -180,7 +180,11 @@ def _pointer_rangevar_get(section, x, name):
 def _pointer_rangevar_set(section, x, name, value):
     if isinstance(value, bool) or not isinstance(value, numbers.Real):
         raise ValueError(f"bad value for {name}: must be a double")
-    _call_pointer_proc(section, x, name, "_mn_ptr_set", float(value))
+    if isinstance(
+        _call_pointer_proc(section, x, name, "_mn_ptr_set", float(value)),
+        OpaquePointer,
+    ):
+        raise ValueError("can't assign value to opaque pointer")
 
 
 # ── _ArrayRangeVar ────────────────────────────────────────────────────────────
@@ -564,7 +568,10 @@ class Segment:
             if info[2]:
                 return NrnRangeArrayRef(self.sec, self.x, name)
             if _is_pointer_rangevar(name, info[0]):
-                _pointer_rangevar_get(self.sec, self.x, name)  # raises if unset
+                # raises if unset; an opaque POINTER is its own reference
+                value = _pointer_rangevar_get(self.sec, self.x, name)
+                if isinstance(value, OpaquePointer):
+                    return value
             return NrnRangeVarRef(self.sec, self.x, name)
 
         # Mechanism instance cache (Segment._mech_cache).
@@ -845,7 +852,7 @@ _anon_section_count = 0
 # range-variable references record it at creation: NEURON frees the old nodes'
 # storage when nseg changes, so they die. A dict read is far cheaper than
 # reading nseg through the C API on every wrapper creation. An nseg change made
-# from HOC code is not counted.
+# from HOC code is counted when a range-variable reference is used (sync_nseg).
 NSEG_GENERATION = {}
 
 # nseg at each generation, per section pointer: NSEG_HISTORY[sec][g]. NEURON
@@ -858,10 +865,45 @@ NSEG_HISTORY = {}
 
 def _record_nseg_change(sec_ptr, old, new):
     history = NSEG_HISTORY.get(sec_ptr)
-    if history is None:
+    if history is None or history[-1] != old:
+        # None, or left by a deleted section at this address (a HOC-created
+        # section can take one without passing through Section.__init__)
         history = NSEG_HISTORY[sec_ptr] = [old]
     history.append(new)
     NSEG_GENERATION[sec_ptr] = len(history) - 1
+
+
+def nseg_generation(sec_ptr):
+    """The section's current generation, recording its nseg on first use.
+
+    One nseg read per section, not per wrapper: later calls are a dict hit.
+    """
+    generation = NSEG_GENERATION.get(sec_ptr)
+    if generation is None:
+        NSEG_HISTORY[sec_ptr] = [int(_nrn_nseg_get(sec_ptr))]
+        generation = NSEG_GENERATION[sec_ptr] = 0
+    return generation
+
+
+def sync_nseg(sec_ptr):
+    """Count an nseg change made from HOC code, which Section.nseg never saw.
+
+    Reads nseg, so it is for a reference being used, not one being made.
+    """
+    history = NSEG_HISTORY.get(sec_ptr)
+    if history is None:
+        nseg_generation(sec_ptr)
+        return
+    nseg = int(_nrn_nseg_get(sec_ptr))
+    if nseg != history[-1]:
+        _record_nseg_change(sec_ptr, history[-1], nseg)
+
+
+def _forget_nseg_history(sec_ptr):
+    # NEURON allocates sections from a pool and reuses their addresses, so
+    # the history must not outlive its section.
+    NSEG_HISTORY.pop(sec_ptr, None)
+    NSEG_GENERATION.pop(sec_ptr, None)
 
 
 def follow_node(sec_ptr, generation, x, reversed_):
@@ -942,6 +984,7 @@ class Section:
             # Reject like real NEURON.
             raise ValueError("embedded null character")
         self._sec = _nrn_section_new(name.encode("utf-8"))
+        _forget_nseg_history(self._sec)
         self._pynative = _pynative
         if _pynative:
             PYTHON_SECTIONS[self._sec] = self
@@ -1501,6 +1544,7 @@ class Section:
         except AttributeError:
             return
         if pynative:
+            _forget_nseg_history(sec_ptr)
             if not _nrn_section_is_active(sec_ptr):
                 return
 
