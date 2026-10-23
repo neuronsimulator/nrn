@@ -69,7 +69,12 @@ cp_dlls $N/bin
   nx=`cygpath -U "$N"`
   export N
   export MODLUNIT=$N/lib/nrnunits.lib
-  export PATH=$nx/bin:$nx/mingw/usr/bin:$nx/mingw/mingw64/bin:$PATH
+  # Leave $nx/mingw/usr/bin off PATH. Those MSYS2 tools load the
+  # msys-2.0.dll copied next to them, and started from this build's MSYS2
+  # bash they fail to load (exit 127). The /usr/bin tools work the same,
+  # and the compiler still comes from $nx/mingw/mingw64/bin. The shipped
+  # tools are tested after install by ci/win_test_installer.cmd.
+  export PATH=$nx/bin:$nx/mingw/mingw64/bin:$PATH
   mkdir -p $N/demo/release
   cd $N/demo/release
   # wrapper for mknrndl2.sh is needed because child bash has almost empty environment
