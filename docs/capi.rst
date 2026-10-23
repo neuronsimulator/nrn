@@ -728,6 +728,10 @@ Segments
     :param x: Normalized position along Section (0.0 to 1.0).
     :param value: Value to set for the range variable.
 
+    As with a HOC or Python assignment, writing ``diam`` updates the section's
+    area and 3-d points, and writing ``xraxial`` marks the axial terms for
+    recomputation.
+
     **Usage Pattern:**
 
     Used to configure biophysical properties of Sections, such as:
@@ -762,6 +766,72 @@ Segments
         # Set passive conductance at all segments of dend
         for seg in dend:
             seg.g_pas = 0.001  # S/cm²
+
+.. c:function:: int nrn_rangevar_get_nothrow(Symbol* sym, Section* sec, double x, int index, double* value, char* error_msg, size_t error_msg_size)
+
+    Read element ``index`` of a range variable at position ``x``, reporting
+    problems as an error instead of raising a HOC error or throwing.
+
+    :param sym: Symbol of the range variable (e.g. ``v``, ``gnabar_hh``, ``xg``).
+    :param sec: The section.
+    :param x: Normalized position, 0 to 1.
+    :param index: Element of an array range variable (e.g. an extracellular
+        layer); 0 for a scalar.
+    :param value: Receives the value on success.
+    :param error_msg: Buffer for the error message.
+    :param error_msg_size: Size of ``error_msg``.
+    :returns: 0 on success, non-zero on error.
+
+    Errors that :c:func:`nrn_rangevar_get` raises (and that terminate a ctypes
+    caller) are returned instead: the mechanism is not inserted at ``x``, a
+    ``POINTER`` is not set, the pointer is opaque, ``i_membrane_`` without
+    ``cvode.use_fast_imem(1)``, and an index out of range. Unlike
+    :c:func:`nrn_rangevar_get`, array elements are selected by ``index`` rather
+    than an index on the interpreter stack.
+
+    **C Usage:**
+
+    .. code-block:: c
+
+        double value;
+        char err[256];
+        if (nrn_rangevar_get_nothrow(nrn_symbol("xg"), soma, 0.5, 1, &value, err, sizeof(err))) {
+            fprintf(stderr, "%s\n", err);
+        }
+
+.. c:function:: int nrn_rangevar_set_nothrow(Symbol* sym, Section* sec, double x, int index, double value, char* error_msg, size_t error_msg_size)
+
+    Write element ``index`` of a range variable at position ``x``, with the same
+    checks and error reporting as :c:func:`nrn_rangevar_get_nothrow`. Writing
+    ``diam`` or ``xraxial`` updates the section as :c:func:`nrn_rangevar_set` does.
+
+    :returns: 0 on success, non-zero on error.
+
+.. c:function:: int nrn_rangevar_push_nothrow(Symbol* sym, Section* sec, double x, int index, char* error_msg, size_t error_msg_size)
+
+    Push a pointer to element ``index`` of a range variable at position ``x``
+    onto the interpreter stack, for a function that takes a pointer argument
+    (e.g. ``Vector.record``), with the same checks and error reporting as
+    :c:func:`nrn_rangevar_get_nothrow`. Nothing is pushed on error.
+
+    :returns: 0 on success, non-zero on error.
+
+    Unlike :c:func:`nrn_rangevar_push`, which reads an array element's index
+    from the interpreter stack, this takes the index as an argument, so it can
+    push a pointer to an element of an array such as ``xg`` or a mechanism's
+    ``ca[4]``.
+
+    **C Usage:**
+
+    .. code-block:: c
+
+        char err[256];
+        Object* vec = nrn_object_new(nrn_symbol("Vector"), 0);
+        if (nrn_rangevar_push_nothrow(nrn_symbol("xg"), soma, 0.5, 1, err, sizeof(err))) {
+            fprintf(stderr, "%s\n", err);
+        } else {
+            nrn_method_call(vec, nrn_method_symbol(vec, "record"), 1);
+        }
 
 .. c:function:: Object* nrn_segment_nmodlrandom_get(Section* sec, double x, Symbol* sym)
 
@@ -1495,6 +1565,11 @@ hooks. When no provider is registered, ordinary template lookup is unchanged.
     this function returns an error code instead of throwing exceptions, making it suitable for
     use in pure C code or via ``ctypes``.
 
+    Before returning, on success or error, the call releases any temporary object
+    HOC kept alive while evaluating it (for example the copy in ``vec.c.x[0]``),
+    as NEURON's Python interface does after each call. The return value keeps its
+    own reference.
+
     **C Usage:**
     
     .. code-block:: c
@@ -1557,6 +1632,11 @@ hooks. When no provider is registered, ordinary template lookup is unchanged.
     Arguments must be prepared on the stack before calling. Unlike :c:func:`nrn_function_call`,
     this function returns an error code instead of throwing exceptions, making it suitable for
     use in pure C code or via ``ctypes``.
+
+    Before returning, on success or error, the call releases any temporary object
+    HOC kept alive while evaluating it (for example the copy in ``vec.c.x[0]``),
+    as NEURON's Python interface does after each call. The return value keeps its
+    own reference.
 
     **C Usage:**
 
@@ -2021,6 +2101,15 @@ Miscellaneous
     process, this returns the value referenced by the pointer. An unset or
     opaque pointer returns NaN.
 
+    On an object of a HOC template (``begintemplate``), any double member can
+    be read, public or not, as from Python. A name that is not a double member,
+    or an out-of-range index, returns NaN; the setters then do nothing. The same
+    holds for :c:func:`nrn_property_array_get`, :c:func:`nrn_property_set`,
+    :c:func:`nrn_property_array_set`, :c:func:`nrn_property_push`,
+    :c:func:`nrn_property_array_push` and
+    :c:func:`nrn_property_data_handle_is_valid`. For ``objref`` members, use
+    :c:func:`nrn_property_object_get` and :c:func:`nrn_property_object_set`.
+
     **C Usage:**
     
     .. code-block:: c
@@ -2206,6 +2295,36 @@ Miscellaneous
         :c:func:`nrn_property_array_push`,
         :c:func:`nrn_vector_data`
 
+.. c:function:: Object* nrn_property_object_get(const Object* obj, const char* name)
+
+    Get the object held by an ``objref`` member of a HOC template object,
+    public or not.
+
+    :param obj: Object of a HOC template (``begintemplate``).
+    :param name: Name of the ``objref`` member.
+    :returns: The held object, or ``NULL`` if the member is nil, ``name`` is not
+        an ``objref`` member, or ``obj`` is a built-in class.
+
+    The object is returned *borrowed*, as by :c:func:`nrn_symbol_object_get`.
+    Call :c:func:`nrn_object_ref` to retain it past the next assignment to the
+    member.
+
+.. c:function:: bool nrn_property_object_set(Object* obj, const char* name, Object* value)
+
+    Assign an object to an ``objref`` member of a HOC template object, public or
+    not, following HOC's assignment reference counting: the previous object is
+    released and ``value`` is retained. ``NULL`` makes the member nil.
+
+    :param obj: Object of a HOC template (``begintemplate``).
+    :param name: Name of the ``objref`` member.
+    :param value: Object to assign, or ``NULL``.
+    :returns: ``true`` on success, ``false`` if ``name`` is not an ``objref``
+        member or ``obj`` is a built-in class.
+
+    .. seealso::
+
+        :c:func:`nrn_symbol_object_set`
+
 .. c:function:: char const* nrn_symbol_name(const Symbol* sym)
 
     Get the name of a symbol as a string.
@@ -2248,6 +2367,32 @@ Miscellaneous
 
     :param sym: Pointer to the symbol.
     :returns: Length of the array, or 1 for non-arrays.
+
+.. c:function:: int nrn_symbol_array_dims(const Symbol* sym, int* dims, int max_dims)
+
+    Get every dimension of an array symbol. :c:func:`nrn_symbol_array_length`
+    gives only the first, so for ``double a[3][4]`` this is the way to learn the
+    4.
+
+    :param sym: Symbol of an array: a top-level ``double`` or ``objref``
+        array, or a mechanism range-variable array such as
+        ``xraxial``. ``NULL`` is allowed.
+    :param dims: Buffer for the sizes, outermost first, or ``NULL`` to only
+        count the dimensions.
+    :param max_dims: Number of entries in ``dims``; at most this many sizes are
+        written.
+    :returns: The number of dimensions; 0 if ``sym`` is ``NULL`` or not an array.
+
+    For arrays declared inside a template, use the per-object information; the
+    symbol holds the most recent declaration.
+
+    **C Usage:**
+
+    .. code-block:: c
+
+        int dims[4];
+        int ndim = nrn_symbol_array_dims(nrn_symbol("grid"), dims, 4);
+        // double grid[3][4]: ndim == 2, dims[0] == 3, dims[1] == 4
 
 .. c:function:: void nrn_register_function(void (*proc)(), const char* func_name, int type)
 

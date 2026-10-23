@@ -1,14 +1,24 @@
 #include <../../nrnconf.h>
-/* (C) Copr. 1986-92 Numerical Recipes Software #.,. */
+/*
+ * Copyright (C) 2018-2026 Michael Hines and NEURON contributors
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 
 /* Algorithms for Fourier Transform Spectral Methods */
 
 #define _USE_MATH_DEFINES
 
-#include <math.h>
-#include <stdio.h>
-#include <stddef.h>
-#include <stdlib.h>
+#include <cmath>
+#include <complex>
+#include <cstddef>
+#include <cstdio>
+#include <cstdlib>
+#include <utility>
+#include <vector>
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 // to print diagnostic statements
 // #define DEBUG_SPCTRM
@@ -26,16 +36,76 @@ static inline double SQUARE(double a) {
     return a * a;
 }
 
-#include "nrngsl_real_radix2.cpp"
-#include "nrngsl_hc_radix2.cpp"
+/*
+ * BSD-3-Clause Fast Fourier Transform using pocketfft (Martin Reinecke).
+ *
+ * Frequency domain format (NEURON half-complex layout):
+ *   data[0]   = Re(X_0) (DC)
+ *   data[k]   = Re(X_k)
+ *   data[n-k] = Im(X_k)  for k = 1 .. n/2 - 1
+ *   data[n/2] = Re(X_{n/2}) (Nyquist)
+ */
+
+#define POCKETFFT_NO_MULTITHREADING
+#include "../pocketfft/pocketfft_hdronly.h"
+
+namespace {
+inline double normalize_zero(double x) {
+    return x == 0.0 ? 0.0 : x;
+}
+}  // namespace
 
 void nrngsl_realft(double* data, unsigned long n, int direction) {
+    if (n <= 1) {
+        return;
+    }
+    if ((n & (n - 1)) != 0) {
+        hoc_execerror("n is not a power of 2", nullptr);
+    }
+
+    const size_t n2 = n / 2;
     if (direction == 1) {
-        nrngsl_fft_real_radix2_transform(data, 1, n);
+        std::vector<std::complex<double>> spectrum(n2 + 1);
+        const pocketfft::shape_t shape_in{n};
+        const pocketfft::stride_t stride_in{sizeof(double)};
+        const pocketfft::stride_t stride_out{sizeof(std::complex<double>)};
+
+        pocketfft::r2c(
+            shape_in, stride_in, stride_out, 0, /*forward=*/true, data, spectrum.data(), 1.0);
+
+        data[0] = normalize_zero(spectrum[0].real());
+        data[n2] = normalize_zero(spectrum[n2].real());
+        for (size_t k = 1; k < n2; ++k) {
+            data[k] = normalize_zero(spectrum[k].real());
+            data[n - k] = normalize_zero(spectrum[k].imag());
+        }
     } else {
-        nrngsl_fft_halfcomplex_radix2_inverse(data, 1, n);
+        std::vector<std::complex<double>> spectrum(n2 + 1);
+        spectrum[0] = std::complex<double>(data[0], 0.0);
+        spectrum[n2] = std::complex<double>(data[n2], 0.0);
+        for (size_t k = 1; k < n2; ++k) {
+            spectrum[k] = std::complex<double>(data[k], data[n - k]);
+        }
+
+        const pocketfft::shape_t shape_out{n};
+        const pocketfft::stride_t stride_in{sizeof(std::complex<double>)};
+        const pocketfft::stride_t stride_out{sizeof(double)};
+
+        pocketfft::c2r(shape_out,
+                       stride_in,
+                       stride_out,
+                       0,
+                       /*forward=*/false,
+                       spectrum.data(),
+                       data,
+                       1.0 / static_cast<double>(n));
+
+        for (size_t i = 0; i < n; ++i) {
+            data[i] = normalize_zero(data[i]);
+        }
     }
 }
+
 
 /*
   convlv()  -- convolution of a read data set with a response function
@@ -46,14 +116,14 @@ void nrngsl_realft(double* data, unsigned long n, int direction) {
 void nrn_gsl2nrc(double* x, double* y, unsigned long n) {
     unsigned long i, n2;
     n2 = n / 2;
-    y[0] = x[0];
+    y[0] = normalize_zero(x[0]);
     if (n < 2) {
         return;
     }
-    y[1] = x[n2];
+    y[1] = normalize_zero(x[n2]);
     for (i = 1; i < n2; ++i) {
-        y[2 * i] = x[i];
-        y[2 * i + 1] = -x[n - i];
+        y[2 * i] = normalize_zero(x[i]);
+        y[2 * i + 1] = normalize_zero(-x[n - i]);
     }
 }
 void nrn_nrc2gsl(double* x, double* y, unsigned long n) {
@@ -62,16 +132,17 @@ void nrn_nrc2gsl(double* x, double* y, unsigned long n) {
     n2 = n / 2;
     xn = n;
     xn2 = .5 * xn;
-    y[0] = x[0] * xn2;
+    y[0] = normalize_zero(x[0] * xn2);
     if (n < 2) {
         return;
     }
-    y[n2] = x[1] * xn2;
+    y[n2] = normalize_zero(x[1] * xn2);
     for (i = 1; i < n2; ++i) {
-        y[i] = x[2 * i] * xn2;
-        y[n - i] = -x[2 * i + 1] * xn2;
+        y[i] = normalize_zero(x[2 * i] * xn2);
+        y[n - i] = normalize_zero(-x[2 * i + 1] * xn2);
     }
 }
+
 
 void nrn_convlv(double* data,
                 unsigned long n,
