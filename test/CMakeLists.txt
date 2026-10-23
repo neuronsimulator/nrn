@@ -28,7 +28,8 @@ add_executable(
   unit_tests/oc/hoc_interpreter.cpp
   unit_tests/fourier.cpp
   cover/unit_tests/cover.cpp)
-if(NRN_ENABLE_PYTHON)
+# Dynamic-Python builds do not link libpython (NRN_DEFAULT_PYTHON_LIBRARIES is a placeholder).
+if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_PYTHON_DYNAMIC)
   target_sources(testneuron PRIVATE unit_tests/nrnpython/nrnpy_limited.cpp)
   target_include_directories(testneuron PRIVATE ${NRN_DEFAULT_PYTHON_INCLUDES})
   target_link_libraries(testneuron ${NRN_DEFAULT_PYTHON_LIBRARIES})
