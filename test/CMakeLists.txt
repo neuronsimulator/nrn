@@ -28,6 +28,11 @@ add_executable(
   unit_tests/oc/hoc_interpreter.cpp
   unit_tests/fourier.cpp
   cover/unit_tests/cover.cpp)
+if(NRN_ENABLE_PYTHON)
+  target_sources(testneuron PRIVATE unit_tests/nrnpython/nrnpy_limited.cpp)
+  target_include_directories(testneuron PRIVATE ${NRN_DEFAULT_PYTHON_INCLUDES})
+  target_link_libraries(testneuron ${NRN_DEFAULT_PYTHON_LIBRARIES})
+endif()
 set(catch2_targets testneuron)
 if(NRN_ENABLE_THREADS)
   add_executable(nrn-benchmarks common/catch2_main.cpp benchmarks/threads/test_multicore.cpp)
