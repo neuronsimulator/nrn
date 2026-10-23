@@ -50,7 +50,7 @@ recv = new Vector()
 
 objref savdata
 savdata = new File()
-savdata.wopen("cell3soma.dat")
+savdata.wopen("connect_dend.out")
 
 recv.record(&soma.v(0.5))
 rect.record(&t)

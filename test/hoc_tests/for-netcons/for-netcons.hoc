@@ -1,0 +1,24 @@
+// FOR_NETCONS
+{load_file("nrngui.hoc")}
+
+strdef path
+sprint(path, "%s/stdp1.ses", BASE)
+{load_file(path)}
+
+objref pc
+pc = new ParallelContext()
+b = (execute1("{pc.nthread(2,1)}",0) == 1)
+
+dt = 0.025
+{hoc_stdout("for-netcons.out.unsorted")}
+{printf("fixed step\n")}
+{cvode_active(0)}
+run()
+{cvode.use_long_double(1)}
+{cvode_active(1)}
+{printf("cvode\n")}
+run()
+{hoc_stdout()}
+
+strdef s
+{system("LC_ALL=C sort for-netcons.out.unsorted > for-netcons.out", s)}

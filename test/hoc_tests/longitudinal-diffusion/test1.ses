@@ -1,0 +1,71 @@
+{load_file("nrngui.hoc")}
+objectvar save_window_, rvp_
+objectvar scene_vector_[3]
+objectvar ocbox_, ocbox_list_, scene_, scene_list_
+{ocbox_list_ = new List()  scene_list_ = new List()}
+{pwman_place(0,0,0)}
+{
+xpanel("RunControl", 0)
+v_init = 0
+xvalue("Init","v_init", 1,"stdinit()", 1, 1 )
+xbutton("Init & Run","run()")
+xbutton("Stop","stoprun=1")
+runStopAt = 20
+xvalue("Continue til","runStopAt", 1,"{continuerun(runStopAt) stoprun=1}", 1, 1 )
+runStopIn = 1
+xvalue("Continue for","runStopIn", 1,"{continuerun(t + runStopIn) stoprun=1}", 1, 1 )
+xbutton("Single Step","steprun()")
+t = 1000
+xvalue("t","t", 2 )
+tstop = 1000
+xvalue("Tstop","tstop", 1,"tstop_changed()", 0, 1 )
+dt = 0.025
+xvalue("dt","dt", 1,"setdt()", 0, 1 )
+steps_per_ms = 40
+xvalue("Points plotted/ms","steps_per_ms", 1,"setdt()", 0, 1 )
+screen_update_invl = 0.05
+xvalue("Scrn update invl","screen_update_invl", 1,"", 0, 1 )
+realtime = 0.00999999
+xvalue("Real Time","realtime", 0,"", 0, 1 )
+xpanel(11,129)
+}
+{
+save_window_ = new Graph(0)
+save_window_.size(-10,20,0,10)
+scene_vector_[2] = save_window_
+{save_window_.view(-10, 0, 30, 10, 315, 124, 300.48, 200.32)}
+flush_list.append(save_window_)
+save_window_.save_name("flush_list.")
+objectvar rvp_
+rvp_ = new RangeVarPlot("nai")
+a rvp_.begin(0.5)
+c rvp_.end(0.5)
+rvp_.origin(0)
+save_window_.addobject(rvp_, 2, 1, 0.8, 0.9)
+}
+
+//Begin VariableTimeStep
+{
+ocbox_ = NumericalMethodPanel[0]
+}
+{object_push(ocbox_)}
+{
+atol_ = 0.001  CVode[0].atol(atol_)
+restore(301, 1)
+}
+{object_pop()}
+{
+ocbox_.map("VariableTimeStep", 19, 538, 272.64, 113.28)
+}
+objref ocbox_
+//End VariableTimeStep
+
+{
+xpanel("Movie Run", 0)
+xbutton("Init & Run","movierun()")
+movie_frame_dur_ = 0.01
+xvalue("Seconds per step","movie_frame_dur_", 1,"", 0, 1 )
+xpanel(20,692)
+}
+objectvar scene_vector_[1]
+{doNotify()}
