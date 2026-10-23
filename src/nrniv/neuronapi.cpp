@@ -1155,6 +1155,48 @@ Object** template_objref(const Object* obj, const char* name) {
 }
 }  // namespace
 
+namespace {
+struct steer_request {
+    Object* obj;
+    Symbol* sym;
+    const int* indices;
+    int nindex;
+    double* result;
+};
+
+// What hoc_object_component does for a C++ class variable such as Vector.x or
+// Matrix.x: indices, then the array-dimension marker, then the symbol, then the
+// class's steer function, which leaves a pointer to the element.
+void* steer_element(void* request, void*) {
+    auto* r = static_cast<steer_request*>(request);
+    for (int k = 0; k < r->nindex; ++k) {
+        hoc_pushx(r->indices[k]);
+    }
+    if (r->nindex) {
+        hoc_push_ndim(r->nindex);
+    }
+    hoc_pushs(r->sym);
+    r->obj->ctemplate->steer(r->obj->u.this_pointer);
+    r->result = hoc_pxpop();
+    return nullptr;
+}
+
+// Element i of a C++ class variable reached through its steer function. A
+// one-dimensional array (Vector.x) needs its index on the stack first, as HOC
+// pushes it; a scalar (Pointer.val) keeps the old pointer arithmetic. An array
+// with more than one index (Matrix.x) has no element i: nullptr, which the
+// callers treat like an invalid point-process handle.
+double* steered_element(const Object* obj, Symbol* sym, int i) {
+    int const nsub = sym->arayinfo ? sym->arayinfo->nsub : 0;
+    if (nsub > 1) {
+        return nullptr;
+    }
+    steer_request request{const_cast<Object*>(obj), sym, &i, nsub, nullptr};
+    steer_element(&request, nullptr);
+    return nsub ? request.result : request.result + i;
+}
+}  // namespace
+
 double nrn_property_get(const Object* obj, const char* name) {
     if (is_hoc_template(obj)) {
         auto const pd = template_var(obj, name, 0);
@@ -1179,10 +1221,8 @@ double nrn_property_array_get(const Object* obj, const char* name, int i) {
     }
     auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
     if (!obj->ctemplate->is_point_) {
-        hoc_pushs(sym);
-        // put the pointer for the memory location on the stack
-        obj->ctemplate->steer(obj->u.this_pointer);
-        return hoc_pxpop()[i];
+        auto element = steered_element(obj, sym, i);
+        return element ? *element : std::numeric_limits<double>::quiet_NaN();
     } else {
         auto handle = point_process_pointer(ob2pntproc_0(const_cast<Object*>(obj)), sym, i);
         return handle ? *handle : std::numeric_limits<double>::quiet_NaN();
@@ -1219,10 +1259,9 @@ void nrn_property_array_set(Object* obj, const char* name, int i, double value) 
     }
     auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
     if (!obj->ctemplate->is_point_) {
-        hoc_pushs(sym);
-        // put the pointer for the memory location on the stack
-        obj->ctemplate->steer(obj->u.this_pointer);
-        hoc_pxpop()[i] = value;
+        if (auto element = steered_element(obj, sym, i)) {
+            *element = value;
+        }
     } else {
         auto handle = point_process_pointer(ob2pntproc_0(obj), sym, i);
         if (handle) {
@@ -1253,10 +1292,7 @@ void nrn_property_array_push(Object* obj, const char* name, int i) {
     }
     auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
     if (!obj->ctemplate->is_point_) {
-        hoc_pushs(sym);
-        // put the pointer for the memory location on the stack
-        obj->ctemplate->steer(obj->u.this_pointer);
-        hoc_pushpx(hoc_pxpop() + i);
+        hoc_pushpx(steered_element(obj, sym, i));
     } else {
         hoc_push(point_process_pointer(ob2pntproc_0(obj), sym, i));
     }
@@ -1268,39 +1304,10 @@ bool nrn_property_data_handle_is_valid(const Object* obj, const char* name, int 
     }
     auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
     if (!obj->ctemplate->is_point_) {
-        hoc_pushs(sym);
-        obj->ctemplate->steer(obj->u.this_pointer);
-        return static_cast<bool>(hoc_pop_handle<double>());
+        return steered_element(obj, sym, i) != nullptr;
     }
     return static_cast<bool>(point_process_pointer(ob2pntproc_0(const_cast<Object*>(obj)), sym, i));
 }
-
-namespace {
-struct steer_request {
-    Object* obj;
-    Symbol* sym;
-    const int* indices;
-    int nindex;
-    double* result;
-};
-
-// What hoc_object_component does for a C++ class variable such as Vector.x or
-// Matrix.x: indices, then the array-dimension marker, then the symbol, then the
-// class's steer function, which leaves a pointer to the element.
-void* steer_element(void* request, void*) {
-    auto* r = static_cast<steer_request*>(request);
-    for (int k = 0; k < r->nindex; ++k) {
-        hoc_pushx(r->indices[k]);
-    }
-    if (r->nindex) {
-        hoc_push_ndim(r->nindex);
-    }
-    hoc_pushs(r->sym);
-    r->obj->ctemplate->steer(r->obj->u.this_pointer);
-    r->result = hoc_pxpop();
-    return nullptr;
-}
-}  // namespace
 
 int nrn_property_element_ptr(Object* obj,
                              const char* name,
