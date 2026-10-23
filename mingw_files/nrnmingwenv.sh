@@ -46,10 +46,9 @@ done
 cp_dlls() {
 (
   upath=`cygpath "$1"`
-  export PATH="$upath":$PATH
   rm -f temp.tmp
   for i in $1/*.exe ; do
-    cygcheck $i | sed 's/^ *//' >> temp.tmp
+    PATH="$upath":$PATH cygcheck $i | sed 's/^ *//' >> temp.tmp
   done
   sort temp.tmp | uniq | grep 'msys64' | sed 's,\\,/,g' > temp2.tmp
   for i in $(cat temp2.tmp) ; do
