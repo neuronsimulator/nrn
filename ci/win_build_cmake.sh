@@ -43,7 +43,8 @@ ${CMAKE_COMMAND} \
     -DNRN_BINARY_DIST_BUILD=ON \
     -DPYTHON_EXECUTABLE=/c/Python312/python.exe \
     -DNRN_ENABLE_PYTHON_DYNAMIC=ON  \
-    -DNRN_PYTHON_DYNAMIC='c:/Python312/python.exe;c:/Python313/python.exe;c:/Python314/python.exe'  \
+    -DNRN_ENABLE_ABI3=OFF \
+    -DNRN_PYTHON_DYNAMIC='c:/Python312/python.exe;c:/Python313/python.exe;c:/Python314/python.exe;c:/Python311/python.exe'  \
     -DCMAKE_INSTALL_PREFIX='/c/nrn-install' \
     -DMPI_CXX_LIB_NAMES:STRING=msmpi \
     -DMPI_C_LIB_NAMES:STRING=msmpi \

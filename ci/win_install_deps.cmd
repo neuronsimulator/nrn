@@ -3,14 +3,17 @@
 :: install all dependencies
 
 :: install python
+python-3.11.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\Python311 || goto :error
 python-3.12.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\Python312 || goto :error
 python-3.13.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\Python313 || goto :error
 python-3.14.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\Python314 || goto :error
 
 :: install numpy
+C:\Python311\python.exe -m pip install "numpy<=2.2.3" "cython>=3.1,<=3.3.0" || goto :error
 C:\Python312\python.exe -m pip install "numpy<=2.2.3" "cython>=3.1,<=3.3.0" || goto :error
 C:\Python313\python.exe -m pip install "numpy<=2.2.3" "cython>=3.1,<=3.3.0" || goto :error
 C:\Python314\python.exe -m pip install "numpy>=2.3.2,<=2.3.3" "cython>=3.1,<=3.3.0" || goto :error
+C:\Python311\python.exe -m pip install "setuptools<=80.8.0" || goto :error
 C:\Python312\python.exe -m pip install "setuptools<=80.8.0" || goto :error
 C:\Python313\python.exe -m pip install "setuptools<=80.8.0" || goto :error
 C:\Python314\python.exe -m pip install "setuptools<=80.8.0" || goto :error

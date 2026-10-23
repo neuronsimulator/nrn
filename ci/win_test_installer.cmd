@@ -16,17 +16,20 @@ echo %NEURONHOME%
 :: If so, try again to generate it. No wait required like previous strategies, we rely on testing entropy from this point on.
 if not exist association.hoc.out (start /wait /REALTIME %cd%\ci\association.hoc)
 
-:: test all pythons (CPython 3.12+ GIL limited API)
+:: test all pythons (versioned interfaces, CPython 3.11-3.14)
+C:\Python311\python -c "import neuron; neuron.test()" || set "errorfound=y"
 C:\Python312\python -c "import neuron; neuron.test()" || set "errorfound=y"
 C:\Python313\python -c "import neuron; neuron.test()" || set "errorfound=y"
 C:\Python314\python -c "import neuron; neuron.test()" || set "errorfound=y"
 
 :: install oldest supported numpy
+C:\Python311\python.exe -m pip install -r packaging/python/oldest_numpy_requirements.txt || goto :error
 C:\Python312\python.exe -m pip install -r packaging/python/oldest_numpy_requirements.txt || goto :error
 C:\Python313\python.exe -m pip install -r packaging/python/oldest_numpy_requirements.txt || goto :error
 C:\Python314\python.exe -m pip install -r packaging/python/oldest_numpy_requirements.txt || goto :error
 
 :: test all pythons again
+C:\Python311\python -c "import neuron; neuron.test()" || set "errorfound=y"
 C:\Python312\python -c "import neuron; neuron.test()" || set "errorfound=y"
 C:\Python313\python -c "import neuron; neuron.test()" || set "errorfound=y"
 C:\Python314\python -c "import neuron; neuron.test()" || set "errorfound=y"
