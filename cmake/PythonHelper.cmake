@@ -1,6 +1,6 @@
 # =================================================================================================
 # Organise which Python versions are to be built against, and find their versions, include
-# directories and library paths. Minimum interpreter is CPython 3.10. When NRN_ENABLE_ABI3=ON
+# directories and library paths. Minimum interpreter is CPython 3.11. When NRN_ENABLE_ABI3=ON
 # (resolved after this file), importable extensions use the CPython 3.12 limited API and a
 # dynamic-Python build compiles one libnrnpython.abi3. When NRN_ENABLE_ABI3=OFF, a dynamic-Python
 # build compiles libnrnpythonX.Y per configured version. Extra NRN_PYTHON_DYNAMIC entries are always

@@ -346,7 +346,7 @@ static int nrnpython_start(int b) {
             throw std::runtime_error(oss.str());
         }
         // TODO: in non-dynamic builds then -pyexe cannot change the used Python version, and `nrniv
-        // -pyexe /path/to/python3.10 -python` may well not use Python 3.10 at all. Should we do
+        // -pyexe /path/to/python3.11 -python` may well not use Python 3.11 at all. Should we do
         // something about that?
         {
             // mbstowcs fails when the locale cannot represent the path.
