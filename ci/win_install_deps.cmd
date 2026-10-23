@@ -44,7 +44,26 @@ set PATH=%MSYS2_ROOT%\usr\bin;%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\Sy
 :: update pacman cache (sometimes required when new GH/Azure runner images are deployed)
 :: %MSYS2_ROOT%\usr\bin\pacman -Syy
 
-%MSYS2_ROOT%\usr\bin\pacman --noconfirm --needed -S --disable-download-timeout ^
+:: Mirrors often answer 429. Retry the same install; a failed download does not commit.
+set "pacman_ok="
+for /L %%i in (1,1,4) do (
+  if not defined pacman_ok (
+    echo pacman attempt %%i of 4
+    call :pacman_install && set "pacman_ok=1"
+    if not defined pacman_ok if %%i lss 4 (
+      echo pacman failed, pausing 30 seconds before retry
+      "%MSYS2_ROOT%\usr\bin\bash.exe" -lc "rm -f /var/lib/pacman/db.lck"
+      "%MSYS2_ROOT%\usr\bin\bash.exe" -lc "sleep 30"
+    )
+  )
+)
+if not defined pacman_ok goto :error
+
+:: if all goes well, go to end
+goto :EOF
+
+:pacman_install
+"%MSYS2_ROOT%\usr\bin\pacman" --noconfirm --needed -S --disable-download-timeout ^
 cmake ^
 git ^
 zip ^
@@ -59,10 +78,8 @@ mingw-w64-x86_64-python-setuptools ^
 mingw-w64-x86_64-python-packaging ^
 mingw-w64-x86_64-python-pip ^
 mingw64/mingw-w64-x86_64-dlfcn ^
-mingw-w64-x86_64-toolchain || goto :error
-
-:: if all goes well, go to end
-goto :EOF
+mingw-w64-x86_64-toolchain
+exit /b
 
 :: something has failed, teminate with error code
 :error
