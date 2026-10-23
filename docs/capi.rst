@@ -728,6 +728,10 @@ Segments
     :param x: Normalized position along Section (0.0 to 1.0).
     :param value: Value to set for the range variable.
 
+    As with a HOC or Python assignment, writing ``diam`` updates the section's
+    area and 3-d points, and writing ``xraxial`` marks the axial terms for
+    recomputation.
+
     **Usage Pattern:**
 
     Used to configure biophysical properties of Sections, such as:
@@ -798,7 +802,8 @@ Segments
 .. c:function:: int nrn_rangevar_set_nothrow(Symbol* sym, Section* sec, double x, int index, double value, char* error_msg, size_t error_msg_size)
 
     Write element ``index`` of a range variable at position ``x``, with the same
-    checks and error reporting as :c:func:`nrn_rangevar_get_nothrow`.
+    checks and error reporting as :c:func:`nrn_rangevar_get_nothrow`. Writing
+    ``diam`` or ``xraxial`` updates the section as :c:func:`nrn_rangevar_set` does.
 
     :returns: 0 on success, non-zero on error.
 
@@ -2241,6 +2246,47 @@ Miscellaneous
 
         :c:func:`nrn_property_get`,
         :c:func:`nrn_property_array_get`
+
+.. c:function:: int nrn_property_element_ptr(Object* obj, const char* name, const int* indices, int nindex, double** ptr, char* error_msg, size_t error_msg_size)
+
+    Get a pointer to one element of an object's variable, giving every index,
+    the way HOC evaluates ``&obj.name[i][j]``. This is how a client gets
+    ``Matrix.x[i][j]``, which has two dimensions.
+
+    Works for ``Matrix.x``, ``Vector.x``, ``Pointer.val`` and point-process
+    variables (scalars and one-dimensional arrays). Errors are reported in
+    ``error_msg``, not raised, and leave the interpreter stack unchanged.
+
+    :param obj: Pointer to the object.
+    :param name: Name of the variable, such as ``"x"``.
+    :param indices: The element's indices, outermost first. May be ``NULL`` when
+        ``nindex`` is 0.
+    :param nindex: Number of indices: the variable's number of dimensions (see
+        :c:func:`nrn_symbol_array_dims`), 0 for a scalar.
+    :param ptr: Receives the pointer, or ``NULL`` on failure.
+    :param error_msg: Buffer for a diagnostic on failure.
+    :param error_msg_size: Size of ``error_msg``.
+    :returns: 0 on success, nonzero on failure: unknown name, a method rather than
+        a variable, the wrong number of indices, an index out of range, a
+        point-process ``POINTER`` that is not set, or a ``Pointer`` whose target was
+        freed.
+
+    The pointer stays valid until the object's storage changes (for example a
+    ``Vector`` is resized or a ``Matrix`` is reallocated) or the object is destroyed.
+
+    .. code-block:: c
+
+        int ij[2] = {1, 2};
+        double* p;
+        char err[256];
+        if (nrn_property_element_ptr(matrix, "x", ij, 2, &p, err, sizeof(err)) == 0) {
+            *p = 3.0;  // matrix.x[1][2] = 3
+        }
+
+    .. seealso::
+
+        :c:func:`nrn_property_array_push`,
+        :c:func:`nrn_vector_data`
 
 .. c:function:: Object* nrn_property_object_get(const Object* obj, const char* name)
 
