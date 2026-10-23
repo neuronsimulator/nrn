@@ -728,6 +728,10 @@ Segments
     :param x: Normalized position along Section (0.0 to 1.0).
     :param value: Value to set for the range variable.
 
+    As with a HOC or Python assignment, writing ``diam`` updates the section's
+    area and 3-d points, and writing ``xraxial`` marks the axial terms for
+    recomputation.
+
     **Usage Pattern:**
 
     Used to configure biophysical properties of Sections, such as:
@@ -762,6 +766,72 @@ Segments
         # Set passive conductance at all segments of dend
         for seg in dend:
             seg.g_pas = 0.001  # S/cm²
+
+.. c:function:: int nrn_rangevar_get_nothrow(Symbol* sym, Section* sec, double x, int index, double* value, char* error_msg, size_t error_msg_size)
+
+    Read element ``index`` of a range variable at position ``x``, reporting
+    problems as an error instead of raising a HOC error or throwing.
+
+    :param sym: Symbol of the range variable (e.g. ``v``, ``gnabar_hh``, ``xg``).
+    :param sec: The section.
+    :param x: Normalized position, 0 to 1.
+    :param index: Element of an array range variable (e.g. an extracellular
+        layer); 0 for a scalar.
+    :param value: Receives the value on success.
+    :param error_msg: Buffer for the error message.
+    :param error_msg_size: Size of ``error_msg``.
+    :returns: 0 on success, non-zero on error.
+
+    Errors that :c:func:`nrn_rangevar_get` raises (and that terminate a ctypes
+    caller) are returned instead: the mechanism is not inserted at ``x``, a
+    ``POINTER`` is not set, the pointer is opaque, ``i_membrane_`` without
+    ``cvode.use_fast_imem(1)``, and an index out of range. Unlike
+    :c:func:`nrn_rangevar_get`, array elements are selected by ``index`` rather
+    than an index on the interpreter stack.
+
+    **C Usage:**
+
+    .. code-block:: c
+
+        double value;
+        char err[256];
+        if (nrn_rangevar_get_nothrow(nrn_symbol("xg"), soma, 0.5, 1, &value, err, sizeof(err))) {
+            fprintf(stderr, "%s\n", err);
+        }
+
+.. c:function:: int nrn_rangevar_set_nothrow(Symbol* sym, Section* sec, double x, int index, double value, char* error_msg, size_t error_msg_size)
+
+    Write element ``index`` of a range variable at position ``x``, with the same
+    checks and error reporting as :c:func:`nrn_rangevar_get_nothrow`. Writing
+    ``diam`` or ``xraxial`` updates the section as :c:func:`nrn_rangevar_set` does.
+
+    :returns: 0 on success, non-zero on error.
+
+.. c:function:: int nrn_rangevar_push_nothrow(Symbol* sym, Section* sec, double x, int index, char* error_msg, size_t error_msg_size)
+
+    Push a pointer to element ``index`` of a range variable at position ``x``
+    onto the interpreter stack, for a function that takes a pointer argument
+    (e.g. ``Vector.record``), with the same checks and error reporting as
+    :c:func:`nrn_rangevar_get_nothrow`. Nothing is pushed on error.
+
+    :returns: 0 on success, non-zero on error.
+
+    Unlike :c:func:`nrn_rangevar_push`, which reads an array element's index
+    from the interpreter stack, this takes the index as an argument, so it can
+    push a pointer to an element of an array such as ``xg`` or a mechanism's
+    ``ca[4]``.
+
+    **C Usage:**
+
+    .. code-block:: c
+
+        char err[256];
+        Object* vec = nrn_object_new(nrn_symbol("Vector"), 0);
+        if (nrn_rangevar_push_nothrow(nrn_symbol("xg"), soma, 0.5, 1, err, sizeof(err))) {
+            fprintf(stderr, "%s\n", err);
+        } else {
+            nrn_method_call(vec, nrn_method_symbol(vec, "record"), 1);
+        }
 
 .. c:function:: Object* nrn_segment_nmodlrandom_get(Section* sec, double x, Symbol* sym)
 
@@ -2176,6 +2246,47 @@ Miscellaneous
 
         :c:func:`nrn_property_get`,
         :c:func:`nrn_property_array_get`
+
+.. c:function:: int nrn_property_element_ptr(Object* obj, const char* name, const int* indices, int nindex, double** ptr, char* error_msg, size_t error_msg_size)
+
+    Get a pointer to one element of an object's variable, giving every index,
+    the way HOC evaluates ``&obj.name[i][j]``. This is how a client gets
+    ``Matrix.x[i][j]``, which has two dimensions.
+
+    Works for ``Matrix.x``, ``Vector.x``, ``Pointer.val`` and point-process
+    variables (scalars and one-dimensional arrays). Errors are reported in
+    ``error_msg``, not raised, and leave the interpreter stack unchanged.
+
+    :param obj: Pointer to the object.
+    :param name: Name of the variable, such as ``"x"``.
+    :param indices: The element's indices, outermost first. May be ``NULL`` when
+        ``nindex`` is 0.
+    :param nindex: Number of indices: the variable's number of dimensions (see
+        :c:func:`nrn_symbol_array_dims`), 0 for a scalar.
+    :param ptr: Receives the pointer, or ``NULL`` on failure.
+    :param error_msg: Buffer for a diagnostic on failure.
+    :param error_msg_size: Size of ``error_msg``.
+    :returns: 0 on success, nonzero on failure: unknown name, a method rather than
+        a variable, the wrong number of indices, an index out of range, a
+        point-process ``POINTER`` that is not set, or a ``Pointer`` whose target was
+        freed.
+
+    The pointer stays valid until the object's storage changes (for example a
+    ``Vector`` is resized or a ``Matrix`` is reallocated) or the object is destroyed.
+
+    .. code-block:: c
+
+        int ij[2] = {1, 2};
+        double* p;
+        char err[256];
+        if (nrn_property_element_ptr(matrix, "x", ij, 2, &p, err, sizeof(err)) == 0) {
+            *p = 3.0;  // matrix.x[1][2] = 3
+        }
+
+    .. seealso::
+
+        :c:func:`nrn_property_array_push`,
+        :c:func:`nrn_vector_data`
 
 .. c:function:: Object* nrn_property_object_get(const Object* obj, const char* name)
 

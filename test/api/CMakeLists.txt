@@ -9,6 +9,7 @@ foreach(
   object_new_nothrow.cpp
   object_new_wrap.cpp
   object_ptr_push.cpp
+  property_element_ptr.cpp
   raw_hoc_errors.cpp
   runtime_pythonobject_marshaling.cpp
   section_tree.cpp
@@ -79,6 +80,28 @@ endif()
 add_test(NAME "api::setpointer_cpp" COMMAND setpointer_cpp)
 set_property(TEST "api::setpointer_cpp" PROPERTY ENVIRONMENT "${NRN_RUN_FROM_BUILD_DIR_ENV}"
                                                  "CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}")
+
+# The same POINTER mechanism exercises the nothrow range-variable accessors.
+add_executable(rangevar_nothrow_cpp rangevar_nothrow.cpp ${setpointer_gens})
+cpp_cc_configure_sanitizers(TARGET rangevar_nothrow_cpp)
+# The generated mechanism includes NEURON internal headers (mech_api.h, the mechanism-cache headers,
+# ...); inherit them from nrniv_lib, plus the build's generated-header dir (nrnsemanticversion.h
+# etc.), which is a directory-scoped include not carried on the nrniv_lib target.
+target_include_directories(
+  rangevar_nothrow_cpp PRIVATE $<TARGET_PROPERTY:nrniv_lib,INCLUDE_DIRECTORIES>
+                               ${PROJECT_BINARY_DIR}/include)
+target_compile_definitions(rangevar_nothrow_cpp
+                           PRIVATE $<TARGET_PROPERTY:nrniv_lib,COMPILE_DEFINITIONS>)
+target_link_libraries(rangevar_nothrow_cpp ${CMAKE_DL_LIBS})
+target_link_libraries(rangevar_nothrow_cpp nrniv_lib)
+target_link_options(rangevar_nothrow_cpp PRIVATE -rdynamic)
+if(NRN_ENABLE_CORENEURON)
+  target_compile_definitions(rangevar_nothrow_cpp PUBLIC CORENEURON_ENABLED)
+endif()
+add_test(NAME "api::rangevar_nothrow_cpp" COMMAND rangevar_nothrow_cpp)
+set_property(
+  TEST "api::rangevar_nothrow_cpp" PROPERTY ENVIRONMENT "${NRN_RUN_FROM_BUILD_DIR_ENV}"
+                                            "CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}")
 
 # Generate a density mechanism and a point process with NMODL RANDOM variables to exercise both
 # public wrapper APIs without Python support.

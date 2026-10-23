@@ -26,6 +26,7 @@ add_executable(
   unit_tests/utils/enumerate.cpp
   unit_tests/utils/Sprintf.cpp
   unit_tests/oc/hoc_interpreter.cpp
+  unit_tests/fourier.cpp
   cover/unit_tests/cover.cpp)
 set(catch2_targets testneuron)
 if(NRN_ENABLE_THREADS)
