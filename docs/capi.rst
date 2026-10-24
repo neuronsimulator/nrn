@@ -890,7 +890,9 @@ Segments
     :param pointer_sym: Symbol of the ``POINTER`` range variable to wire (the
         target).
     :param sec: Section of the mechanism instance owning the POINTER.
-    :param x: Normalized position (0.0 to 1.0) of that instance.
+    :param x: Normalized position (0.0 to 1.0) of that instance. As in the HOC
+        ``setpointer`` statement, 0 and 1 mean the Section's own first and last
+        segment.
     :param error_msg: Buffer filled with a message on failure (may be ``NULL``).
     :param error_msg_size: Size of ``error_msg``.
     :returns: 0 on success; nonzero on error, with ``error_msg`` populated when

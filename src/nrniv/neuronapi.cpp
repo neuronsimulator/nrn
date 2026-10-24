@@ -505,8 +505,10 @@ int nrn_setpointer_pop(Symbol* pointer_sym,
     if (!pointer_sym || pointer_sym->type != RANGEVAR || pointer_sym->subtype != NRNPOINTER) {
         return fail("target is not a POINTER range variable");
     }
-    // Locate the mechanism instance that owns this POINTER at (sec, x).
-    Node* const nd = node_exact(sec, x);
+    // Locate the mechanism instance that owns this POINTER at (sec, x), as the
+    // HOC setpointer statement does (connectpointer uses node_index): x = 0 and
+    // x = 1 mean this section's first and last segment, never the parent's.
+    Node* const nd = segment_node(sec, x);
     Prop* prop = nullptr;
     for (Prop* p = nd->prop; p; p = p->next) {
         if (p->_type == pointer_sym->u.rng.type) {
