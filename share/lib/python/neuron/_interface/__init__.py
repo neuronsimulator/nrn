@@ -14,6 +14,7 @@ from .api import (
     _ERR_BUF_SIZE,
     _METHODS_HOC_NRNPYTHON_OFFSET,
     _METHODS_MPI_ALLTOALL_TYPE_OFFSET,
+    _METHODS_OPAQUE_OBJ2PYOBJ_OFFSET,
     _METHODS_PRAXIS_EFUN_OFFSET,
     _MIN_VALID_DATAPTR,
     TYPES,
@@ -371,6 +372,33 @@ def _register_praxis_efun():
 
 
 _register_praxis_efun()
+
+
+def _register_opaque_obj2pyobj():
+    """The PyObject* a PythonObject wraps, borrowed; NULL for anything else.
+
+    BBSaveState uses it to key a Python cell's sections. NEURON's version
+    (nrnpy_p2h.cpp) asserts the object is a PythonObject; a ctypes callback
+    returns NULL instead, which core reports as a section not associated with
+    a Python cell.
+    """
+
+    def _opaque_obj2pyobj(obj):
+        try:
+            if obj and _nrn_class_name(obj) == b"PythonObject":
+                return id(_unwrap_pythonobject(obj))
+        except BaseException:
+            pass
+        return None
+
+    global _mn_opaque_obj2pyobj_cb
+    _mn_opaque_obj2pyobj_cb = ctypes.CFUNCTYPE(ctypes.c_void_p, ctypes.c_void_p)(
+        _opaque_obj2pyobj
+    )
+    _install_methods_slot(_METHODS_OPAQUE_OBJ2PYOBJ_OFFSET, _mn_opaque_obj2pyobj_cb)
+
+
+_register_opaque_obj2pyobj()
 
 
 def _register_vector_apply_callable():

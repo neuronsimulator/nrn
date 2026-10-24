@@ -125,6 +125,7 @@ class RangeVar:
         """The Mechanism this variable belongs to, as NEURON's RangeVar.mech()."""
         if self._mech is None:
             raise AttributeError("RangeVar has no mechanism")
+        self._mech._check_valid()  # NEURON checks the section first
         return self._mech
 
     def __getitem__(self, idx):
@@ -262,9 +263,11 @@ class Mechanism:
 
     def segment(self):
         """The segment this mechanism belongs to (a method, as in NEURON)."""
+        self._check_valid()
         return self._seg
 
     def is_ion(self):
+        self._check_valid()
         return self._is_ion
 
     def _varnames(self):
@@ -321,7 +324,12 @@ class Mechanism:
         """Resolve unsuffixed attribute name to a range variable read or an NMODL function wrapper."""
         # HOC can delete the host section while this Mechanism is held; check
         # before touching freed Section*/node storage. Dunder probes
-        # (copy/pickle) skip the check and raise AttributeError as usual.
+        # (copy/pickle) skip the check and raise AttributeError as usual, but
+        # not __name__, which help() probes first: NEURON's help() of a dead
+        # mechanism raises.
+        if name == "__name__":
+            self._check_valid()
+            raise AttributeError(name)
         if not (name.startswith("__") and name.endswith("__")):
             # An uninserted mechanism leaves the section alive but frees its
             # prop, so a range-var read SIGABRTs where real NEURON raises
@@ -569,6 +577,7 @@ class Mechanism:
 
     def __iter__(self):
         """Iterate over RangeVar objects for this mechanism."""
+        self._check_valid()
         for full_name in self._varnames():
             yield RangeVar(self._seg, full_name, mech=self)
 
@@ -586,6 +595,7 @@ class Mechanism:
         return dict.fromkeys(sorted(names))
 
     def __dir__(self):
+        self._check_valid()
         names = set()
         # Range variables: hh exposes "gnabar", "m", etc. (unsuffixed)
         for full_name in self._varnames():

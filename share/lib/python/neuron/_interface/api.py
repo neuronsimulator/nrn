@@ -499,6 +499,10 @@ _METHODS_MPI_ALLTOALL_TYPE_OFFSET = 144
 # praxis_efun (field 24): h.fit_praxis(python_callable, vec) asserts it is set.
 _METHODS_PRAXIS_EFUN_OFFSET = 192
 
+# opaque_obj2pyobj (field 20): BBSaveState maps a Python cell's PythonObject
+# to the PyObject* it wraps, to group a cell's sections (gap-69).
+_METHODS_OPAQUE_OBJ2PYOBJ_OFFSET = 160
+
 
 def _install_methods_slot(offset, callback):
     """Fill one empty methods-table slot; a native provider's stays untouched."""
@@ -1323,6 +1327,35 @@ nrn_Item = ctypes.c_void_p
 ShapePlotInterface = ctypes.c_void_p
 
 _nrn_section_new = _bind("nrn_section_new", Section, ctypes.c_char_p)
+
+# Pending upstream (gap-69): sections owned by an interface's objects, as
+# NEURON's Python module makes its own. Optional; without them myneuron's
+# sections are free-standing HOC sections (nrn_section_new).
+SECTION_OWNER_NAME_T = ctypes.CFUNCTYPE(ctypes.c_void_p, Section)
+SECTION_OWNER_CELL_T = ctypes.CFUNCTYPE(ctypes.c_void_p, Section)
+SECTION_OWNER_CELL_EQUALS_T = ctypes.CFUNCTYPE(ctypes.c_int, Section, ctypes.c_void_p)
+_nrn_section_owner_hooks_set = getattr(libnrniv, "nrn_section_owner_hooks_set", None)
+_nrn_section_new_owned = getattr(libnrniv, "nrn_section_new_owned", None)
+_nrn_section_owned_release = getattr(libnrniv, "nrn_section_owned_release", None)
+if None in (
+    _nrn_section_owner_hooks_set,
+    _nrn_section_new_owned,
+    _nrn_section_owned_release,
+):
+    _nrn_section_owner_hooks_set = None
+else:
+    _nrn_section_owner_hooks_set.argtypes = [
+        SECTION_OWNER_NAME_T,
+        SECTION_OWNER_CELL_T,
+        SECTION_OWNER_CELL_EQUALS_T,
+        ctypes.c_char_p,
+        ctypes.c_size_t,
+    ]
+    _nrn_section_owner_hooks_set.restype = ctypes.c_bool
+    _nrn_section_new_owned.argtypes = [ctypes.c_void_p]
+    _nrn_section_new_owned.restype = Section
+    _nrn_section_owned_release.argtypes = [Section]
+    _nrn_section_owned_release.restype = None
 
 _nrn_hoc_call_raw = _bind("nrn_hoc_call", ctypes.c_int, ctypes.c_char_p)
 

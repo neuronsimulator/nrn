@@ -497,6 +497,8 @@ class Object(metaclass=_HocClassMeta):
 
     def _property_ref(self, name, idx=None):
         methods = getattr(self, "_methods", None)
+        if methods is not None and name == "delay" and "del" in methods:
+            name = "del"  # Python keyword; NEURON's getsym maps it the same way
         if methods is not None and name in methods and idx is None:
             # obj._ref_<array>: [i] gives element i, as NEURON's array pointer.
             sym = _nrn_method_symbol(self._obj, name.encode("utf-8"))
@@ -571,10 +573,30 @@ class Object(metaclass=_HocClassMeta):
                 return
             host = ref()
             if host is None:
-                raise ReferenceError(
-                    f"{self._class_name}: host section has been deleted"
-                )
-        host._check_alive()
+                if not self._follow_relocation():
+                    raise ReferenceError(
+                        f"{self._class_name}: host section has been deleted"
+                    )
+                return
+        try:
+            host._check_alive()
+        except RuntimeError:
+            if not self._follow_relocation():
+                raise
+
+    def _follow_relocation(self):
+        """Record the section the point process is in now, after loc() moved it
+        off a deleted host. False if it is in no section."""
+        seg = self._get_segment()  # has_loc/get_loc skip the host check
+        if seg is None:
+            return False
+        self._host_section = None
+        self._host_section_ref = None
+        if seg.sec.is_pysec():
+            self._host_section_ref = weakref.ref(seg.sec)
+        else:
+            self._host_section = seg.sec
+        return True
 
     def _get_segment(self):
         """The Segment this point process is in, or None if it is in none."""
@@ -756,7 +778,7 @@ class Object(metaclass=_HocClassMeta):
             raise AttributeError(name) from None
         # Skipped for underscore names so the weakref bookkeeping does not
         # recurse.
-        if not name.startswith("_"):
+        if not name.startswith("_") and name not in _LOCATION_METHODS:
             self._check_host_alive()
         if name.startswith("_ref_"):
             return self._property_ref(name[5:])
@@ -1139,6 +1161,10 @@ def _ensure_alias_trampolines(name):
 _NETCON_SEG_METHODS = {"preseg": "preloc", "postseg": "postloc"}
 
 _PC_RAW_ARG_METHODS = frozenset({"py_allgather", "py_gather", "py_broadcast"})
+
+# Point-process methods that work after the host section is deleted, as in
+# NEURON: core checks the location itself (get_loc raises a HOC error).
+_LOCATION_METHODS = frozenset({"get_segment", "has_loc", "get_loc", "loc"})
 
 # Core reads a positional Section in these through nrn_secarg, which unwraps it
 # with a hook that only NEURON's own Python module installs (nrnpy_o2sec_p_);

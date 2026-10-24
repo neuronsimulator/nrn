@@ -519,7 +519,13 @@ class Segment:
         return int(_nrn_segment_node_index(self._sec._sec, self._x))
 
     def __dir__(self):
-        attrs = set(super().__dir__())
+        self._sec._check_alive()  # NEURON's dir() of a dead segment raises
+        # Private helpers are not part of NEURON's segment; _ref_ names are.
+        attrs = {
+            name
+            for name in super().__dir__()
+            if not name.startswith("_") or name.startswith(("__", "_ref_"))
+        }
         # Standard segment attributes always available
         attrs.update(
             [
@@ -559,6 +565,10 @@ class Segment:
         return sorted(attrs)
 
     def __getattr__(self, name):
+        if name == "__name__":
+            # help() probes this first; NEURON's help() of a dead segment raises.
+            self._sec._check_alive()
+            raise AttributeError(name)
         if name.startswith("_ref_"):
             name = name[5:]
             info = _get_symbol_info(name)
@@ -945,6 +955,138 @@ def follow_node(sec_ptr, generation, x, reversed_):
 PYTHON_SECTIONS = weakref.WeakValueDictionary()
 
 
+# Sections owned by myneuron in core (gap-69), as NEURON's Python module owns
+# its sections: no HOC symbol, and core asks the hooks below for the name and
+# cell. secname, section_owner, gid2cell, NetCon.precell, the _pysec lookup,
+# cvode.statename and BBSaveState then see the cell. Section pointer ->
+# (name bytes, weakref to the cell or None). The name is fixed at creation,
+# "<str(cell)>.<name>" as in NEURON.
+OWNED_SECTIONS = {}
+# Entry for the section being created: core asks for its name before
+# nrn_section_new_owned returns its pointer.
+_creating = [None]
+# The last name handed to core; it must stay valid until the next call.
+_name_buffer = [None]
+# None until the first Section; then True if the hooks are ours.
+_owner_hooks = [None]
+# Core only stores the owner pointer; any non-NULL value identifies one.
+_next_owner = [1]
+
+
+def _owned_entry(sec):
+    entry = OWNED_SECTIONS.get(sec)
+    return entry if entry is not None else _creating[0]
+
+
+def _owner_name(sec):
+    try:
+        entry = _owned_entry(sec)
+        name = entry[0] if entry is not None else None
+        if name is None:
+            name = b"__nrnsec_0x%x" % sec
+    except BaseException:  # never raise through core; the name must not be NULL
+        name = b"__nrnsec_0x%x" % (sec or 0)
+    _name_buffer[0] = ctypes.create_string_buffer(name)
+    return ctypes.addressof(_name_buffer[0])
+
+
+def _owner_cell_object(sec):
+    entry = OWNED_SECTIONS.get(sec)
+    cell = entry[1]() if entry is not None and entry[1] is not None else None
+    return cell
+
+
+def _owner_cell(sec):
+    # A new reference to the cell as a HOC object, or NULL.
+    try:
+        cell = _owner_cell_object(sec)
+        if cell is None:
+            return None
+        from .api import _nrn_object_ref
+        from .object import Object
+        from .utils import _new_python_object
+
+        if isinstance(cell, Object):
+            _nrn_object_ref(cell._obj)
+            return cell._obj
+        return _new_python_object(cell)
+    except BaseException as exc:
+        print(f"myneuron: section owner cell hook: {exc!r}", file=sys.stderr)
+        return None
+
+
+def _owner_cell_equals(sec, obj):
+    try:
+        if sec not in OWNED_SECTIONS:
+            return 0
+        cell = _owner_cell_object(sec)
+        from .api import _nrn_class_name, _unwrap_pythonobject
+        from .object import Object
+
+        if isinstance(cell, Object):
+            return int(cell._obj == obj)
+        if obj and _nrn_class_name(obj) == b"PythonObject":
+            return int(_unwrap_pythonobject(obj) is cell)
+        return int(cell is None and not obj)
+    except BaseException as exc:
+        print(f"myneuron: section owner cell_equals hook: {exc!r}", file=sys.stderr)
+        return 0
+
+
+def _install_owner_hooks():
+    from . import api
+
+    _owner_hooks[0] = False
+    if api._nrn_section_owner_hooks_set is None:
+        return
+    hooks = (
+        api.SECTION_OWNER_NAME_T(_owner_name),
+        api.SECTION_OWNER_CELL_T(_owner_cell),
+        api.SECTION_OWNER_CELL_EQUALS_T(_owner_cell_equals),
+    )
+    error = ctypes.create_string_buffer(256)
+    # Refused when NEURON's Python module already installed its own hooks
+    # (neuron imported first); myneuron's sections then stay free-standing.
+    if api._nrn_section_owner_hooks_set(*hooks, error, len(error)):
+        api._CFUNCTYPE_KEEPALIVE.extend(hooks)
+        _owner_hooks[0] = True
+
+
+def _new_owned_section(name, cell):
+    """Create a section owned by myneuron in core, or return None."""
+    if _owner_hooks[0] is None:
+        _install_owner_hooks()
+    if not _owner_hooks[0]:
+        return None
+    from .api import _nrn_section_new_owned
+
+    if name is not None:
+        if cell is not None:
+            name = f"{cell}.{name}"
+        name = name.encode("utf-8")
+    entry = (name, weakref.ref(cell) if cell is not None else None)
+    owner = _next_owner[0]
+    _next_owner[0] += 1
+    _creating[0] = entry
+    try:
+        with HOC_LOCK:
+            sec = _nrn_section_new_owned(owner)
+    finally:
+        _creating[0] = None
+    if not sec:
+        return None
+    OWNED_SECTIONS[sec] = entry
+    return sec
+
+
+def _release_owned_section(sec):
+    from .api import _nrn_section_owned_release
+
+    with HOC_LOCK:
+        _nrn_section_owned_release(sec)  # asks the name hook; entry still present
+    OWNED_SECTIONS.pop(sec, None)
+
+
 class Section:
     """A NEURON section — a continuous unbranched cable, the unit of topology.
 
@@ -972,6 +1114,7 @@ class Section:
     def __init__(self, name=None, cell=None, _pynative=True):
         if cell is not None and isinstance(cell, str):
             raise TypeError("cell must be an object, not a string")
+        raw_name = name
         if name is None:
             # No name: auto-generate a unique one, as real NEURON does.
             global _anon_section_count
@@ -983,7 +1126,8 @@ class Section:
             # two names differing only after a NUL would collapse into one.
             # Reject like real NEURON.
             raise ValueError("embedded null character")
-        self._sec = _nrn_section_new(name.encode("utf-8"))
+        sec = _new_owned_section(raw_name, cell) if _pynative else None
+        self._sec = sec if sec else _nrn_section_new(name.encode("utf-8"))
         _forget_nseg_history(self._sec)
         self._pynative = _pynative
         if _pynative:
@@ -1125,9 +1269,14 @@ class Section:
 
     def allseg(self):
         """Iterate all segments including endpoints at x=0 and x=1."""
-        yield self(0)
-        yield from self
-        yield self(1)
+        self._check_alive()  # now, as NEURON does, not on the first next()
+
+        def segments():
+            yield self(0)
+            yield from self
+            yield self(1)
+
+        return segments()
 
     def insert(self, mechanism):
         from .mechanism import DensityMechanism
@@ -1239,6 +1388,8 @@ class Section:
         raw = NEURON().secname(sec=self)
         if raw.startswith("_pysec."):
             raw = raw[7:]
+        if self._sec in OWNED_SECTIONS:
+            return raw  # core's name already has the cell, as in NEURON
         cell = self.cell()
         if cell is not None:
             return f"{cell}.{raw}"
@@ -1306,7 +1457,8 @@ class Section:
         try:
             cell_ref = object.__getattribute__(self, "_cell")
         except AttributeError:
-            return None
+            entry = OWNED_SECTIONS.get(object.__getattribute__(self, "_sec"))
+            cell_ref = entry[1] if entry is not None else None
         if cell_ref is None:
             return None
         return cell_ref()
@@ -1429,6 +1581,7 @@ class Section:
 
     def parentseg(self):
         """Return the parent Segment, or None if this is a root section."""
+        self._check_alive()
         from . import NEURON
 
         n = NEURON()
@@ -1445,6 +1598,7 @@ class Section:
         Walks the section's own child/sibling chain via the nrn#3835 accessors,
         in the same order as real NEURON's ``SectionRef.child[i]``.
         """
+        self._check_alive()
         result = []
         child_ptr = _nrn_section_child(self._sec)
         while child_ptr:
@@ -1460,6 +1614,7 @@ class Section:
 
     def subtree(self):
         """Return a list of this section and all its descendants."""
+        self._check_alive()
         result = [self]
         for child in self.children():
             result.extend(child.subtree())
@@ -1467,6 +1622,7 @@ class Section:
 
     def wholetree(self):
         """Return all sections in the tree containing this section."""
+        self._check_alive()
         root = self
         while True:
             ps = root.parentseg()
@@ -1498,6 +1654,7 @@ class Section:
         NEURON's ``nrn_trueparent`` / ``pysec_trueparentseg`` (cabcode.cpp:1577,
         nrnpy_nrn.cpp:1096).
         """
+        self._check_alive()
         from . import NEURON
 
         n = NEURON()
@@ -1545,6 +1702,10 @@ class Section:
             return
         if pynative:
             _forget_nseg_history(sec_ptr)
+            if sec_ptr in OWNED_SECTIONS:
+                # Frees it, or drops the reference a HOC delete_section kept.
+                _release_owned_section(sec_ptr)
+                return
             if not _nrn_section_is_active(sec_ptr):
                 return
 
