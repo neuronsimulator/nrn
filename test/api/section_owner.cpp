@@ -115,6 +115,10 @@ int main(void) {
     nrn_double_pop();
     ok &= check(section_count(ok) == 0.0, "HOC delete removes it from the section list");
     ok &= check(!nrn_section_is_active(owned), "deleted section is inactive");
+    // Its _pysec name went with it: the lookup must not reach a freed section.
+    nrn_hoc_call("pysec_L = 0\n_pysec.cellA.soma { pysec_L = L }\n");
+    ok &= check(*nrn_symbol_dataptr(nrn_symbol("pysec_L")) == 0.0,
+                "_pysec name removed by delete_section");
     nrn_section_owned_release(owned);
 
     nrn_object_unref(cell);
