@@ -220,6 +220,7 @@ def install_raw_tty_newline_fix(streams=None):
             continue
         _raw_tty_newline_patched.add(stream_id)
 
+
 version = n.nrnversion(5)
 __version__ = version
 _userrxd = False
