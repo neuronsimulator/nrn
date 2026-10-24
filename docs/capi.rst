@@ -609,11 +609,15 @@ Segments
     ``x = 0`` and ``x = 1`` mean the first and last segment, as for any range
     variable.
 
-    .. warning::
+    .. note::
 
-        Setting segment diameters will have no effect if 3d points have been specified
-        for that Section via ``pt3dadd``. To allow diameter specification after that,
-        first call ``pt3dclear`` to remove the 3d points.
+        If 3d points have been specified for the Section via ``pt3dadd``, the
+        new diameter is first copied into the 3d points that lie in the
+        segment, and the segment diameters are then recomputed from the points,
+        as for ``sec(x).diam = d`` in Python. The value read back can therefore
+        differ from the value written. If :func:`pt3dconst` is 1, the write has
+        no lasting effect. To set diameters directly, first call ``pt3dclear``
+        to remove the 3d points.
 
 .. c:function:: double nrn_segment_diam_get(Section* sec, double x)
 
