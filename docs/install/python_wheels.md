@@ -153,7 +153,7 @@ export PATH=/opt/homebrew/opt/bison/bin:/opt/homebrew/opt/flex/bin:$PATH
 
 You can build the wheel for a specific Python version using:
 ```
-bash packaging/python/build_wheels.bash linux 39    # 39 for Python v3.9
+bash packaging/python/build_wheels.bash linux 311   # 311 for Python v3.11
 ```
 
 To build wheels with CoreNEURON support you have to set the environmental variable `NRN_ENABLE_CORENEURON=ON`:
@@ -171,7 +171,7 @@ As mentioned above, for macOS all dependencies have to be available on a system.
 
 ```
 cd nrn
-bash packaging/python/build_wheels.bash osx 39  # 39 for Python v3.9
+bash packaging/python/build_wheels.bash osx 311  # 311 for Python v3.11
 ```
 
 In some cases, setuptools-scm will see extra commits and consider your build as "dirty," resulting in filenames such as `NEURON-9.0a1.dev0+g9a96a3a4d.d20230717-cp310-cp310-macosx_11_0_arm64.whl` (which should have been `NEURON-9.0a0-cp310-cp310-macosx_11_0_arm64.whl`). If this happens, you can set an environment variable to correct this behavior:

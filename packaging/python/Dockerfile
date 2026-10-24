@@ -78,12 +78,12 @@ RUN cd /nrnwheel/readline/lib \
 # implementation of NMODL, for now, we are making libpython available inside
 # the manylinux container which is just used during the build step (nothing is
 # linked to libraries or binaries of distribution).
-RUN curl -L -o Python-3.10.0.tar.gz https://www.python.org/ftp/python/3.10.0/Python-3.10.0.tgz \
-    && tar -xvzf Python-3.10.0.tar.gz \
-    && cd Python-3.10.0 \
+RUN curl -L -o Python-3.11.17.tar.gz https://www.python.org/ftp/python/3.11.17/Python-3.11.17.tgz \
+    && tar -xvzf Python-3.11.17.tar.gz \
+    && cd Python-3.11.17 \
     && ./configure --prefix=/nrnwheel/python --enable-shared --with-static-libpython=no \
     && make -j altinstall \
-    && cd .. && rm -rf Python-3.10.0 Python-3.10.0.tar.gz
+    && cd .. && rm -rf Python-3.11.17 Python-3.11.17.tar.gz
 
 RUN yum -y install epel-release libX11-devel libXcomposite-devel vim-enhanced && yum -y clean all && rm -rf /var/cache
 RUN yum -y remove ncurses-devel
@@ -94,7 +94,7 @@ WORKDIR /root
 # remove Python 3.13t since we do not support the free-threaded build yet
 RUN rm -fr /opt/python/cp313-cp313t
 
-ENV NMODL_PYLIB=/nrnwheel/python/lib/libpython3.10.so.1.0
+ENV NMODL_PYLIB=/nrnwheel/python/lib/libpython3.11.so.1.0
 
 ENV PATH /usr/lib64/openmpi/bin:$PATH
 

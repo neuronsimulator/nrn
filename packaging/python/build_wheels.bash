@@ -235,7 +235,7 @@ PLATFORM_MACOS="Darwin"
 
 
 # help message in case of no arguments
-help_message="Usage: $(basename "$0") < CI | linux | osx | ${PLATFORM_LINUX} | ${PLATFORM_MACOS} > [python version 39|310|3*|path_to_interp]"
+help_message="Usage: $(basename "$0") < CI | linux | osx | ${PLATFORM_LINUX} | ${PLATFORM_MACOS} > [python version 311|312|3*|path_to_interp]"
 
 if [[ $# -lt 2 ]]; then
     echo "${help_message}"
