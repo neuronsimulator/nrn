@@ -409,6 +409,34 @@ def _register_vector_apply_callable():
 _register_vector_apply_callable()
 
 
+def _register_pc_pyjob():
+    """``_mn_pyjob(payload)``: the HOC function a Python callable job runs as.
+
+    See myneuron/parallel.py. A failing job stashes its error, which is raised
+    when the pc.working() call that ran it returns.
+    """
+
+    def _pyjob():
+        from .parallel import run_job
+
+        try:
+            token = run_job(_nrn_gargstr(1).decode("ascii"))
+        except BaseException as exc:
+            _stash_callback_exc(exc)
+            token = 0.0
+        _nrn_hoc_ret()
+        _nrn_double_push(token)
+
+    global _mn_pyjob_cb
+    _mn_pyjob_cb = ctypes.CFUNCTYPE(None)(_pyjob)
+    _nrn_register_function(
+        ctypes.cast(_mn_pyjob_cb, ctypes.c_void_p), b"_mn_pyjob", 280
+    )
+
+
+_register_pc_pyjob()
+
+
 def _register_py_callback(fn):
     """Add *fn* to the callback registry and return its id."""
     global _PY_CALLBACK_NEXT_ID

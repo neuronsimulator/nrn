@@ -10,6 +10,7 @@ set(NRN_PYTHON_INTERFACE_FILES_LIST
     _interface/mechanism.py
     _interface/nrnref.py
     _interface/object.py
+    _interface/parallel.py
     _interface/plotting.py
     _interface/sections.py
     _interface/utils.py)

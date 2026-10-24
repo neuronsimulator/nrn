@@ -998,8 +998,14 @@ class Object(metaclass=_HocClassMeta):
 
                         _hoc_unref_defer()
 
+                func = method_func
+                if self._class_name == "ParallelContext":
+                    from .parallel import PYTHON_METHODS, python_method
+
+                    if name in PYTHON_METHODS:
+                        func = python_method(self, name, method_func)
                 return FuncWrapper(
-                    method_func,
+                    func,
                     qualified_name,
                     f"NEURON object method: {self._class_name}.{name}()",
                     doc_key=f"{self._class_name}.{name}",
