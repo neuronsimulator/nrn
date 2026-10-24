@@ -208,8 +208,20 @@ void nrn_nseg_set(Section* const sec, const int nseg) {
     nrn_change_nseg(sec, nseg);
 }
 
+namespace {
+// The node holding a mechanism's range variables at x, located as
+// nrn_rangepointer locates them: x = 0 and x = 1 mean the first and last
+// segment, not the zero-area nodes at the section's ends. x outside [0, 1] is
+// clamped, as node_exact does, because node_index would raise a HOC error.
+Node* segment_node(Section* sec, double x) {
+    x = (x < 0.) ? 0. : x;
+    x = (x > 1.) ? 1. : x;
+    return sec->pnode[node_index(sec, x)];
+}
+}  // namespace
+
 void nrn_segment_diam_set(Section* const sec, const double x, const double diam) {
-    Node* const node = node_exact(sec, x);
+    Node* const node = segment_node(sec, x);
     // TODO: this is fine if no 3D points; does it work if there are 3D points?
     for (auto prop = node->prop; prop; prop = prop->next) {
         if (prop->_type == MORPHOLOGY) {
@@ -232,7 +244,7 @@ double nrn_segment_diam_get(Section* const sec, const double x) {
         // recompute without raising the HOC-level diagnostic.
         nrn_area_ri_no_diam_error(sec);
     }
-    Node* const node = node_exact(sec, x);
+    Node* const node = segment_node(sec, x);
     for (auto prop = node->prop; prop; prop = prop->next) {
         if (prop->_type == MORPHOLOGY) {
             return prop->param(0);

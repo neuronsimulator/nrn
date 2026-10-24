@@ -4,6 +4,7 @@
 // diam lazily (gated per-section on recalc_area_). nrn_segment_diam_get must
 // trigger that recompute so a read before any geometry pass returns the
 // 3d-derived value, matching what Python's seg.diam already does.
+// It also checks that x = 0 and x = 1 name the first and last segment.
 #include <array>
 #include <cmath>
 #include <iostream>
@@ -72,6 +73,41 @@ int main(void) {
         ok &= close_to(nrn_segment_diam_get(zero_diam, x),
                        1e-6,
                        "zero diam clamped without aborting");
+    }
+
+    // x = 0 and x = 1 name the first and last segment, as for any range
+    // variable: the HOC expression sec.diam(x) and Python's sec(x).diam read
+    // those segments, not the zero-area nodes at the section's ends. Give each
+    // segment its own diameter so a read of the wrong segment cannot pass.
+    Section* root = nrn_section_new("root");
+    Section* kid = nrn_section_new("kid");
+    nrn_section_connect(kid, 0, root, 1);
+    nrn_nseg_set(root, 3);
+    nrn_segment_diam_set(root, 1.0 / 6.0, 2.0);
+    nrn_segment_diam_set(root, 0.5, 4.0);
+    nrn_segment_diam_set(root, 5.0 / 6.0, 6.0);
+    nrn_segment_diam_set(kid, 0.5, 3.0);
+    ok &= close_to(nrn_segment_diam_get(root, 0.0), 2.0, "root diam at x = 0 is the first segment");
+    ok &= close_to(nrn_segment_diam_get(root, 1.0), 6.0, "root diam at x = 1 is the last segment");
+    // kid(0) shares its node with root(1); the diameter is still kid's own.
+    ok &= close_to(nrn_segment_diam_get(kid, 0.0), 3.0, "kid diam at x = 0 is kid's segment");
+    ok &= close_to(nrn_segment_diam_get(kid, 1.0), 3.0, "kid diam at x = 1 is kid's segment");
+
+    // A write at an end reaches that end's segment and no other.
+    nrn_segment_diam_set(root, 0.0, 7.0);
+    nrn_segment_diam_set(root, 1.0, 9.0);
+    ok &= close_to(nrn_segment_diam_get(root, 1.0 / 6.0), 7.0, "write at x = 0 sets first segment");
+    ok &= close_to(nrn_segment_diam_get(root, 0.5), 4.0, "end writes leave the middle segment");
+    ok &= close_to(nrn_segment_diam_get(root, 5.0 / 6.0), 9.0, "write at x = 1 sets last segment");
+    ok &= close_to(nrn_segment_diam_get(kid, 0.5), 3.0, "write at root(1) leaves kid alone");
+
+    // The accessor agrees with the interpreter's range-variable lookup
+    // (nrn_rangevar_get goes through nrn_rangepointer, as sec.diam(x) does).
+    Symbol* diam_sym = nrn_symbol("diam");
+    for (double x: {0.0, 1.0 / 6.0, 0.5, 5.0 / 6.0, 1.0}) {
+        ok &= close_to(nrn_segment_diam_get(root, x),
+                       nrn_rangevar_get(diam_sym, root, x),
+                       "C accessor matches range-variable lookup");
     }
 
     return ok ? 0 : 1;

@@ -606,6 +606,9 @@ Segments
         # Set diameter everywhere
         dend.diam = 10
     
+    ``x = 0`` and ``x = 1`` mean the first and last segment, as for any range
+    variable.
+
     .. warning::
 
         Setting segment diameters will have no effect if 3d points have been specified
