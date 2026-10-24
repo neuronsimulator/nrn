@@ -88,6 +88,51 @@ Sections
         soma = n.Section('soma')
         dendrite = n.Section('dendrite')
 
+.. c:function:: bool nrn_section_owner_hooks_set(nrn_section_owner_name_func name, nrn_section_owner_cell_func cell, nrn_section_owner_cell_equals_func cell_equals, char* error_msg, size_t error_msg_size)
+
+    Install the hooks NEURON uses for sections owned by an object of the calling
+    interface (see :c:func:`nrn_section_new_owned`), such as a Python or MATLAB
+    ``Section``. NEURON's own Python module installs the same hooks for its
+    sections; this lets an interface built on the C API provide them instead.
+    Only one set of hooks can be installed at a time.
+
+    :param name: Returns the section's name, such as ``"cell.soma"``. Called only
+        for owned sections, including while one is being created; it must
+        not return ``NULL``, and the string must stay valid until the next call.
+    :param cell: Returns the owning cell with a new reference, or ``NULL``. Called
+        for any section, so it must return ``NULL`` for sections it does not own.
+    :param cell_equals: Returns nonzero if the section belongs to the given cell.
+    :param error_msg: Buffer for a diagnostic if installation fails.
+    :param error_msg_size: Size of ``error_msg``.
+    :returns: ``true`` on success. ``false`` if a hook is ``NULL``, if different
+        hooks are already installed (for example by NEURON's Python module), or if
+        NEURON was built without Python support (core keeps owned sections
+        only in Python-enabled builds).
+
+    The hooks are used by ``secname``, ``section_owner``,
+    ``ParallelContext.gid2cell``, ``NetCon.precell``/``postcell``, the
+    ``_pysec`` name lookup and ``BBSaveState``. They must not raise HOC errors.
+
+.. c:function:: Section* nrn_section_new_owned(void* owner)
+
+    Create a section owned by an object of the calling interface, as NEURON's
+    Python module creates its sections: it has no HOC name of its own; its name and cell come from the hooks installed
+    with :c:func:`nrn_section_owner_hooks_set`.
+
+    :param owner: Opaque pointer to the owning object, stored with the section.
+    :returns: The new section, or ``NULL`` if ``owner`` is ``NULL``, the hooks are
+        not installed, or NEURON was built without Python support.
+
+    Call :c:func:`nrn_section_owned_release` when the owner is destroyed.
+
+.. c:function:: void nrn_section_owned_release(Section* sec)
+
+    Release a section created with :c:func:`nrn_section_new_owned` when its owner
+    is destroyed. The section is freed; if HOC already deleted it
+    (``delete_section``), only the reference HOC kept for the owner is dropped.
+
+    :param sec: The section, or ``NULL`` (no effect).
+
 .. c:function:: void nrn_section_connect(Section* child_sec, double child_x, Section* parent_sec, double parent_x)
 
     Connect a child Section to a parent Section at specified locations. This defines
