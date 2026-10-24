@@ -1,26 +1,30 @@
-foreach(
-  api_test_file
-  deferred_unref.cpp
-  global_scalar.cpp
-  hh_sim.cpp
-  nlayer_extracellular.cpp
-  netcon.cpp
-  node_index.cpp
-  object_new_nothrow.cpp
-  object_new_wrap.cpp
-  object_ptr_push.cpp
-  property_element_ptr.cpp
-  raw_hoc_errors.cpp
-  runtime_pythonobject_marshaling.cpp
-  section_tree.cpp
-  sectionlist_to_array.cpp
-  segment_diam.cpp
-  sections.cpp
-  stack_pops.cpp
-  symbol_array_dims.cpp
-  symbol_object_string.cpp
-  template_property.cpp
-  vclamp.cpp)
+set(api_test_files
+    deferred_unref.cpp
+    global_scalar.cpp
+    hh_sim.cpp
+    nlayer_extracellular.cpp
+    netcon.cpp
+    node_index.cpp
+    object_new_nothrow.cpp
+    object_new_wrap.cpp
+    object_ptr_push.cpp
+    property_element_ptr.cpp
+    raw_hoc_errors.cpp
+    runtime_pythonobject_marshaling.cpp
+    section_tree.cpp
+    sectionlist_to_array.cpp
+    segment_diam.cpp
+    sections.cpp
+    stack_pops.cpp
+    symbol_array_dims.cpp
+    symbol_object_string.cpp
+    template_property.cpp
+    vclamp.cpp)
+if(NRN_ENABLE_PYTHON)
+  # Owned sections exist only in builds with Python support.
+  list(APPEND api_test_files section_owner.cpp)
+endif()
+foreach(api_test_file ${api_test_files})
   string(REPLACE "." "_" api_test_name "${api_test_file}")
   add_executable(${api_test_name} ${api_test_file})
   cpp_cc_configure_sanitizers(TARGET ${api_test_name})
