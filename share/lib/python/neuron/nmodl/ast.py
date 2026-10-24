@@ -5,16 +5,12 @@ Module for vizualization of NMODL abstract syntax trees (ASTs).
 import getpass
 import json
 import os
-import sys
 import tempfile
 import webbrowser
 from shutil import copytree
 
 
-if sys.version_info >= (3, 9):
-    from importlib.resources import files
-else:
-    from importlib_resources import files
+from importlib.resources import files
 
 from ._nmodl import to_json
 from ._nmodl.ast import *  # noqa
