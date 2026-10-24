@@ -179,10 +179,10 @@ assets:
     notes: Azure secure file for SGI MPT headers (dynamic MPI in Linux wheels). Typo "headears" is the uploaded name.
 
   # --- Tier B (large; usually reliable; managed: false for now) ---
-  - id: python-3.10.0-amd64-exe
-    file: python-3.10.0-amd64.exe
+  - id: python-3.11.1-amd64-exe
+    file: python-3.11.1-amd64.exe
     sha256: ""
-    upstream_url: https://www.python.org/ftp/python/3.10.0/python-3.10.0-amd64.exe
+    upstream_url: https://www.python.org/ftp/python/3.11.1/python-3.11.1-amd64.exe
     managed: false
     consumers:
       - ci/win_download_deps.cmd
