@@ -12,6 +12,7 @@ foreach(
   property_element_ptr.cpp
   raw_hoc_errors.cpp
   runtime_pythonobject_marshaling.cpp
+  section_length.cpp
   section_tree.cpp
   sectionlist_to_array.cpp
   segment_diam.cpp

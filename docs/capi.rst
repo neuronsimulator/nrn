@@ -122,6 +122,9 @@ Sections
     :param sec: Pointer to the Section.
     :param length: Length in microns.
 
+    As for ``sec.L = length`` in Python and HOC, the call does nothing while
+    :func:`pt3dconst` is 1.
+
     **C Usage:**
     
     .. code-block:: c

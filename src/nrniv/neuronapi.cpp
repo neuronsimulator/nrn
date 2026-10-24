@@ -121,8 +121,11 @@ void nrn_section_connect(Section* child_sec, double child_x, Section* parent_sec
 }
 
 void nrn_section_length_set(Section* sec, const double length) {
-    // TODO: call can_change_morph(sec) to check pt3dconst_; how should we handle
-    // that?
+    // As sec.L = x in HOC and Python: while pt3dconst(1) is in effect the
+    // assignment is silently ignored, on every section.
+    if (!can_change_morph(sec)) {
+        return;
+    }
     // TODO: is there a named constant so we don't have to use the magic number 2?
     sec->prop->dparam[2] = length;
     // nrn_length_change updates 3D points if needed
