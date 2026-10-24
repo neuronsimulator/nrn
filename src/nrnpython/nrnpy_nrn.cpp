@@ -2376,6 +2376,13 @@ static int segment_setattro(NPySegObj* self, PyObject* pyname, PyObject* value) 
                 rv_noexist(sec, n, self->x_, errp);
                 return -1;
             }
+            if (sym->u.rng.type == MORPHOLOGY && sec->recalc_area_ && sec->npt3d) {
+                // nrn_diam_change below copies every segment's diam into the
+                // 3-d points, so first derive the segment diameters from the
+                // points if that is pending (e.g. just after pt3dadd), or the
+                // other segments' stale values overwrite the points' diameters.
+                nrn_area_ri(sec);
+            }
             if (d.holds<double*>()) {
                 if (!PyArg_Parse(value, "d", d.get<double*>())) {
                     PyErr_SetString(PyExc_ValueError, "bad value");

@@ -51,6 +51,17 @@ def test_hoc_diam_range():
     check_same(fresh, reference)
 
 
+def test_python_seg_diam():
+    fresh = make("py_fresh")
+    reference = make("py_reference")
+    reference(0.5).diam
+    fresh(0.5).diam = 42
+    reference(0.5).diam = 42
+    assert [fresh.diam3d(i) for i in range(3)] == [3, 42, 3]
+    check_same(fresh, reference)
+
+
 if __name__ == "__main__":
     test_hoc_diam_x()
     test_hoc_diam_range()
+    test_python_seg_diam()
