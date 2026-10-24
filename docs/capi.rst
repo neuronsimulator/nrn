@@ -661,6 +661,40 @@ Segments
 
         idx = soma(0.5).node_index()  # node index at middle of Section
 
+.. c:function:: int nrn_segment_mechanisms(Section* sec, double x, Symbol** mechanisms, int max)
+
+    List the mechanisms in the node of the segment at normalized position x,
+    in the order of the node's property list. That is the order in which
+    Python's ``for mech in seg`` yields density mechanisms; it depends on the
+    order the mechanisms were added to the node and can differ between nodes
+    of one Section after an ``nseg`` change. The list includes every property
+    of the node: built-in ones such as ``capacitance`` and ``morphology``, ions
+    and point processes as well as density mechanisms.
+
+    :param sec: Pointer to the Section.
+    :param x: Normalized position along Section (0.0 to 1.0).
+    :param mechanisms: Array that receives up to ``max`` mechanism symbols, or
+        ``NULL`` to only count them.
+    :param max: Size of ``mechanisms``.
+    :returns: The number of mechanisms in the node, which may exceed ``max``;
+        -1 if sec is NULL or has been deleted.
+
+    **C Usage:**
+
+    .. code-block:: c
+
+        Symbol* mechs[32];
+        int n = nrn_segment_mechanisms(soma, 0.5, mechs, 32);
+        for (int i = 0; i < n && i < 32; ++i) {
+            printf("%s\n", nrn_symbol_name(mechs[i]));
+        }
+
+    **Python Equivalent:**
+
+    .. code-block:: python
+
+        names = [mech.name() for mech in soma(0.5)]  # density mechanisms only
+
 .. c:function:: void nrn_rangevar_push(Symbol* sym, Section* sec, double x)
 
     Push a range variable for a Section at position x onto the NEURON stack.

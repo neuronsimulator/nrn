@@ -90,6 +90,7 @@ void nrn_nseg_set(Section* sec, int nseg);
 void nrn_segment_diam_set(Section* sec, double x, double diam);
 double nrn_segment_diam_get(Section* sec, double x);
 int nrn_segment_node_index(Section* sec, double x);
+int nrn_segment_mechanisms(Section* sec, double x, Symbol** mechanisms, int max);
 void nrn_rangevar_push(Symbol* sym, Section* sec, double x);
 double nrn_rangevar_get(Symbol* sym, Section* sec, double x);
 void nrn_rangevar_set(Symbol* sym, Section* sec, double x, double value);
