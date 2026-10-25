@@ -8,10 +8,12 @@ import numbers
 import sys
 import threading
 
+from ._docs import top_level_doc as _top_level_doc
 from .api import (
     hoc_locked,
     symbol_array_dims,
     _ERR_BUF_SIZE,
+    _METHODS_CALL_FUNC_OFFSET,
     _METHODS_HOC_NRNPYTHON_OFFSET,
     _METHODS_MPI_ALLTOALL_TYPE_OFFSET,
     _METHODS_OPAQUE_OBJ2PYOBJ_OFFSET,
@@ -67,10 +69,12 @@ from .nrnref import (
     NrnRangeVarRef,
     NrnStrRef,
     NrnVarRef,
+    numpy_element_ref,
 )
 from .object import List, Object, SectionList, Vector
 from .sections import Section
 from .utils import (
+    _name_error,
     TEMPLATE_CONVERTERS,
     FuncWrapper,
     _is_python_object_arg,
@@ -399,6 +403,71 @@ def _register_opaque_obj2pyobj():
 
 
 _register_opaque_obj2pyobj()
+
+
+def _register_call_func():
+    """methods.call_func: call a PythonObject with `narg` values from the stack.
+
+    HocCommand::func_call uses it, e.g. RangeVarPlot(python_callable, ...)
+    for each point. As NEURON's (nrnpy_p2h.cpp func_call): with `*err` 0 on
+    entry a failure is only reported through `*err` (the point does not
+    exist); otherwise it is a HOC error ("func_call failed"), which a ctypes
+    callback cannot raise: it is stashed and raised when the HOC call returns.
+    """
+    from .api import (
+        _decode_hoc_string,
+        _nrn_double_ptr_pop,
+        _nrn_int_pop,
+        _nrn_stack_type,
+        _nrn_str_pop0,
+        _object_pop_safe,
+        _owned_hoc_object_to_python,
+    )
+
+    def _pop_value():
+        stack_type = _nrn_stack_type()
+        if stack_type == 1:
+            return _decode_hoc_string(_nrn_str_pop0())
+        if stack_type == 2:
+            pointer = _nrn_double_ptr_pop()
+            return float(pointer[0]) if pointer else 0.0
+        if stack_type in (4, 5):
+            return _owned_hoc_object_to_python(_object_pop_safe())
+        if stack_type == 6:
+            return _nrn_int_pop()
+        return _nrn_double_pop()
+
+    def _call_func(func_obj, narg, perr):
+        quiet = bool(perr) and perr[0] == 0
+        try:
+            args = [_pop_value() for _ in range(narg)]
+            args.reverse()
+            result = _unwrap_pythonobject(func_obj)(*args)
+            value = float(result) if isinstance(result, numbers.Real) else 0.0
+            if perr:
+                perr[0] = 0
+            return value
+        except BaseException as exc:
+            if perr:
+                perr[0] = 1
+            if not quiet:
+                import traceback
+
+                traceback.print_exc()
+                error = RuntimeError("hoc_execerror: func_call failed")
+                error.__cause__ = exc
+                _stash_callback_exc(error)
+            return 0.0
+
+    # Its own name: _mn_call_func_cb keeps Vector.apply's callback alive.
+    global _mn_methods_call_func_cb
+    _mn_methods_call_func_cb = ctypes.CFUNCTYPE(
+        ctypes.c_double, ctypes.c_void_p, ctypes.c_int, ctypes.POINTER(ctypes.c_int)
+    )(_call_func)
+    _install_methods_slot(_METHODS_CALL_FUNC_OFFSET, _mn_methods_call_func_cb)
+
+
+_register_call_func()
 
 
 def _register_vector_apply_callable():
@@ -820,6 +889,9 @@ def hclass(cls):
 
 
 class NEURON(metaclass=_Singleton):
+    # h.__doc__ is neuron.doc's text for the top-level HocObject.
+    __doc__ = property(lambda self: _top_level_doc())
+
     def __init__(self):
         self._nrn_hoc_call = _nrn_hoc_call
         self._top_level = list_functions()
@@ -1131,7 +1203,9 @@ class NEURON(metaclass=_Singleton):
             # update the function list before giving up
             self._top_level = list_functions()
 
-        raise AttributeError(f"'NEURON' object has no attribute '{name}'")
+        raise _name_error(
+            AttributeError, name, f"'NEURON' object has no attribute '{name}'"
+        )
 
     def __setattr__(self, name, value):
         # Internal state (`Section`, `hclass`, every underscore-prefixed name)
@@ -1151,7 +1225,9 @@ class NEURON(metaclass=_Singleton):
         if info is None:
             # Real NEURON raises here (LookupError: not a defined hoc variable
             # name) rather than creating a shadowing Python attribute.
-            raise LookupError(f"'{name}' is not a defined hoc variable name.")
+            raise _name_error(
+                LookupError, name, f"'{name}' is not a defined hoc variable name."
+            )
 
         _type, _subtype = info
 
@@ -1253,10 +1329,10 @@ class NEURON(metaclass=_Singleton):
             return
 
         # Functions, mechanisms, templates, sections: not assignable.
-        raise TypeError(f"Cannot assign to HOC symbol '{name}' (symbol type {_type}).")
+        raise TypeError("not assignable")  # NEURON's text
 
     def __repr__(self):
-        return "<NEURON>"
+        return "<TopLevelHocInterpreter>"  # NEURON's name for h
 
     def ref(self, value):
         """Return a fresh anonymous reference cell, like real NEURON's ``h.ref(x)``.
@@ -1278,6 +1354,8 @@ class NEURON(metaclass=_Singleton):
         if isinstance(value, (int, float)) or not _is_python_object_arg(value):
             return NrnDoubleRef(float(value))
         if isinstance(value, (str, bytes)):
+            if isinstance(value, str) and not value.isascii():
+                raise TypeError("string arg must have only ascii characters")
             return NrnStrRef(value)
         return NrnObjectRef(value)
 
@@ -1349,9 +1427,23 @@ class NEURON(metaclass=_Singleton):
             # Measurements: benchmarks/README.md#historical-implementation-measurements.
             if not _no_epoch_bump:
                 _bump_model_epoch()
-            # The n(cmd) no-raise contract (CLAUDE.md rule 9) covers HOC errors
-            # only; a callback's Python exception is raised even by default.
-            _raise_pending_callback_exc()
+            # A Python callback that failed inside the statement is a HOC
+            # error of the statement, as in NEURON: h() prints it and returns
+            # False (NEURON's test_pycallobject), and raise_on_error raises it.
+            try:
+                _raise_pending_callback_exc()
+            except Exception as exc:
+                if raise_on_error:
+                    raise
+                import traceback
+
+                traceback.print_exception(exc)
+                # The traceback's frames would keep the callback's locals (and
+                # any Section among them) alive in a cycle that the garbage
+                # collector frees later, possibly mid-finitialize when core's
+                # node storage is frozen and a section cannot be deleted.
+                traceback.clear_frames(exc.__traceback__)
+                return False
             if ret != 0 and raise_on_error:
                 raise RuntimeError(f"HOC execution failed: {cmd!r}")
             return ret == 0

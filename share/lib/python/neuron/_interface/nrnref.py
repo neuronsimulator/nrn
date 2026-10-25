@@ -781,6 +781,45 @@ class NrnDoubleRef(NrnRef):
         self._cell.value = float(value)
 
 
+class NrnRawDoubleRef(NrnRef):
+    """A reference to a double at a raw address, e.g. a numpy array element.
+
+    NEURON's ``numpy_element_ref(array, i)`` (no bounds checking). Holds the
+    owner (the array) so the memory outlives the reference.
+    """
+
+    __slots__ = ("_address", "_owner")
+
+    def __init__(self, address, owner=None):
+        self._address = int(address)
+        self._owner = owner
+
+    def __repr__(self):
+        return f"<NrnRawDoubleRef 0x{self._address:x}>"
+
+    def _push(self):
+        _nrn_double_ptr_push(
+            ctypes.cast(self._address, ctypes.POINTER(ctypes.c_double))
+        )
+
+    def __getitem__(self, idx):
+        if idx != 0:
+            raise IndexError("Only index 0 is supported")
+        return ctypes.c_double.from_address(self._address).value
+
+    def __setitem__(self, idx, value):
+        if idx != 0:
+            raise IndexError("Only index 0 is supported")
+        ctypes.c_double.from_address(self._address).value = float(value)
+
+
+def numpy_element_ref(numpy_array, index):
+    """A HOC reference to element `index` of a contiguous float64 array, as
+    neuron.numpy_element_ref. No bounds checking, as in NEURON."""
+    address = numpy_array.ctypes.data + int(index) * ctypes.sizeof(ctypes.c_double)
+    return NrnRawDoubleRef(address, numpy_array)
+
+
 class NrnStrRef(NrnRef):
     """Fresh anonymous string cell, like real NEURON's ``h.ref('')``.
 

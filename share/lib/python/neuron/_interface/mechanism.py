@@ -19,6 +19,7 @@ from .nrnref import (
     NrnRef,
 )
 from .utils import (
+    _name_error,
     FuncWrapper,
     _try_wrap_density_nmodlrandom,
     list_functions,
@@ -83,6 +84,33 @@ def _all_density_mechanism_names():
     return [name for _, name in mechs]
 
 
+# Mechanism name -> its variable names in declaration order. Fixed once the
+# mechanism is registered.
+_DECLARATION_ORDER = {}
+
+
+def _declaration_order(mech_name):
+    """A mechanism's variables in the order NEURON's ``for var in mech`` yields
+    them: the mechanism symbol's own list, which MechanismStandard(name, 0)
+    walks."""
+    order = _DECLARATION_ORDER.get(mech_name)
+    if order is None:
+        from . import NEURON
+
+        n = NEURON()
+        try:
+            standard = n.MechanismStandard(mech_name, 0)
+            text = n.ref("")
+            order = []
+            for i in range(int(standard.count())):
+                standard.name(text, i)
+                order.append(text[0])
+        except Exception:
+            order = []
+        _DECLARATION_ORDER[mech_name] = order
+    return order
+
+
 def _array_length(full_name):
     """Array size of a range variable, or 0 for a scalar."""
     from .sections import _get_symbol_info
@@ -128,13 +156,33 @@ class RangeVar:
         self._mech._check_valid()  # NEURON checks the section first
         return self._mech
 
-    def __getitem__(self, idx):
-        if idx != 0:
-            raise IndexError("Only index 0 is supported")
+    def _array(self):
+        """The segment's array accessor for an array variable, else None.
 
+        A scalar read of an array (extracellular's xraxial, xg, ...) throws
+        through ctypes; NEURON's RangeVar indexes its elements.
+        """
+        self._seg._sec._check_alive()  # every RangeVar method checks first
+        from .sections import _get_symbol_info
+
+        info = _get_symbol_info(self._full_name)
+        if info is None or not info[2]:
+            return None
+        return getattr(self._seg, self._full_name)
+
+    def __len__(self):
+        array = self._array()
+        return 1 if array is None else len(array)
+
+    def __getitem__(self, idx):
         # HOC can delete the host section while this ref is held. Reject the
         # read before it dereferences a freed Section*/node and aborts.
         self._seg._sec._check_alive()
+        array = self._array()
+        if array is not None:
+            return array[idx]
+        if idx != 0:
+            raise IndexError("Only index 0 is supported")
         sym = _nrn_symbol(self._full_name.encode("utf-8"))
         from .sections import _is_pointer_rangevar, _pointer_rangevar_get
 
@@ -143,6 +191,11 @@ class RangeVar:
         return _nrn_rangevar_get(sym, self._seg._sec._sec, self._seg._x)
 
     def __setitem__(self, idx, value):
+        array = self._array()
+        if array is not None:
+            self._seg._sec._check_alive()
+            array[idx] = value
+            return
         if idx != 0:
             raise IndexError("Only index 0 is supported")
 
@@ -296,6 +349,16 @@ class Mechanism:
                 if type_ == TYPES.RANGEVAR and sym_name.endswith(suffix):
                     names.append(sym_name)
 
+        # NEURON lists the mechanism symbol's own variables, which include
+        # unsuffixed ones such as extracellular's xraxial and vext.
+        # NMODL RANDOM members are listed too; they are objects (_random_names).
+        order = [
+            name
+            for name in _declaration_order(self._name)
+            if all_syms.get(name, (None,))[0] == TYPES.RANGEVAR
+        ]
+        if order:
+            return order
         return sorted(names)
 
     def _random_names(self):
@@ -450,7 +513,9 @@ class Mechanism:
                     cache[name] = (full_name, sym, TYPES.RANGEOBJ)
                     return wrapped
 
-        raise AttributeError(f"'{self._name}' mechanism has no variable '{name}'")
+        raise _name_error(
+            AttributeError, name, f"'{self._name}' mechanism has no variable '{name}'"
+        )
 
     def _func_names(self):
         """Return list of NMODL PROCEDURE/FUNCTION names exposed by this mech."""
@@ -573,7 +638,9 @@ class Mechanism:
                     f"NMODL RANDOM variable '{full_name}' is not assignable"
                 )
 
-        raise AttributeError(f"'{self._name}' mechanism has no variable '{name}'")
+        raise _name_error(
+            AttributeError, name, f"'{self._name}' mechanism has no variable '{name}'"
+        )
 
     def __iter__(self):
         """Iterate over RangeVar objects for this mechanism."""

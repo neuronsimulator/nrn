@@ -37,16 +37,20 @@ from .api import (
     _nrn_section_rallbranch_get,
     _nrn_section_rallbranch_set,
     _nrn_section_sibling,
+    _nrn_segment_mechanisms,
     _nrn_segment_node_index,
     _nrn_symbol,
     _nrn_symbol_array_length,
     _nrn_symbol_is_array,
+    _nrn_symbol_name,
     _nrn_symbol_subtype,
     _nrn_symbol_type,
+    Symbol,
     get_topology_version,
 )
 from .nrnref import NrnRangeArrayRef, NrnRangeVarRef, NrnRef
 from .utils import (
+    _name_error,
     _try_wrap_density_nmodlrandom,
     list_functions,
     list_methods,
@@ -70,6 +74,13 @@ _SYMBOL_INFO_CACHE = {}
 _MISSING_SYMBOL_INFO = (0, 0, False, 0)
 _V_SYMBOL = _nrn_symbol(b"v")
 _CONNECT_ARG_UNSET = object()
+
+
+def _is_rangevar_name(name):
+    """True if `name` (or its _ref_ form) is a range variable, which a Section
+    attribute assignment sets on every segment."""
+    info = _get_symbol_info(name[5:] if name.startswith("_ref_") else name)
+    return info is not None and info[1] == TYPES.RANGEVAR
 
 
 def _current_array_length(info):
@@ -353,7 +364,8 @@ class Segment:
         # NEURON formats x with %g and names a dead host explicitly.
         if not _nrn_section_is_active(self._sec._sec):
             return "<segment of deleted section>"
-        return f"{self._sec.name()}({self.x:g})"
+        # Section.name, not a subclass's: ExtendedSection makes name a property.
+        return f"{Section.name(self._sec)}({self.x:g})"
 
     @staticmethod
     def _node_key(x, nseg):
@@ -573,7 +585,9 @@ class Segment:
             name = name[5:]
             info = _get_symbol_info(name)
             if info is None or info[1] != TYPES.RANGEVAR:
-                raise AttributeError(f"Variable '{name}' not found in {self!r}.")
+                raise _name_error(
+                    AttributeError, name, f"Variable '{name}' not found in {self!r}."
+                )
             self._check_rangevar_mechanism(name)
             if info[2]:
                 return NrnRangeArrayRef(self.sec, self.x, name)
@@ -607,7 +621,9 @@ class Segment:
         elif info[2]:
             info = _current_array_length(info)
         if info is None:
-            raise AttributeError(f"Variable '{name}' not found in {self!r}.")
+            raise _name_error(
+                AttributeError, name, f"Variable '{name}' not found in {self!r}."
+            )
         sym, sym_type, is_array, array_length = info
         if sym_type == TYPES.RANGEVAR:
             # Reading a range var on a HOC-deleted section dereferences a freed
@@ -698,7 +714,7 @@ class Segment:
 
         mech_cache = self._mech_cache
         generation = NSEG_GENERATION.get(self._sec._sec, 0)
-        for mech_name in self._sec._get_inserted_mechs():
+        for mech_name in self._mechanism_order():
             cached = mech_cache.get(mech_name) if mech_cache is not None else None
             if cached is not None and cached._nseg == generation:
                 yield cached
@@ -709,6 +725,30 @@ class Segment:
                 object.__setattr__(self, "_mech_cache", mech_cache)
             mech_cache[mech_name] = mech
             yield mech
+
+    def _mechanism_order(self):
+        """The inserted density mechanisms, in NEURON's order where known.
+
+        NEURON yields them in the order of the node's property list, which
+        depends on insertion order and differs between nodes after an nseg
+        change; nrn_segment_mechanisms (pending upstream) reports it. Without
+        it, registration order.
+        """
+        inserted = self._sec._get_inserted_mechs()
+        if _nrn_segment_mechanisms is None or len(inserted) < 2:
+            return inserted
+        buf = (Symbol * 64)()
+        count = _nrn_segment_mechanisms(self._sec._sec, self._x, buf, 64)
+        if count < 0 or count > 64:
+            return inserted
+        wanted = set(inserted)
+        order = []
+        for i in range(count):
+            name = _nrn_symbol_name(buf[i]).decode("utf-8")
+            if name in wanted:
+                order.append(name)
+                wanted.discard(name)
+        return order + [name for name in inserted if name in wanted]
 
     def _uncached_copy(self):
         # A cached Mechanism holds a copy of this Segment, not the Segment
@@ -744,7 +784,9 @@ class Segment:
             return
         info = _get_symbol_info(name)
         if info is None:
-            raise AttributeError(f"Variable '{name}' not found in {self!r}.")
+            raise _name_error(
+                AttributeError, name, f"Variable '{name}' not found in {self!r}."
+            )
         sym, sym_type, is_array, array_length = info
 
         if TYPES.RANGEOBJ is None or sym_type == TYPES.RANGEOBJ:
@@ -1114,6 +1156,8 @@ class Section:
     def __init__(self, name=None, cell=None, _pynative=True):
         if cell is not None and isinstance(cell, str):
             raise TypeError("cell must be an object, not a string")
+        if cell is not None and not str(cell).isascii():
+            raise TypeError("cell name contains non ascii character")
         raw_name = name
         if name is None:
             # No name: auto-generate a unique one, as real NEURON does.
@@ -1198,6 +1242,10 @@ class Section:
             # a child's x=0 node is its parent's node and changes too.
             for seg in self.allseg():
                 seg.v = value
+        elif type(self) is not Section and not _is_rangevar_name(name):
+            # A subclass (neuron.sections.ExtendedSection) keeps its own
+            # attributes and properties; NEURON broadcasts range variables only.
+            object.__setattr__(self, name, value)
         else:
             for seg in self:
                 setattr(seg, name, value)

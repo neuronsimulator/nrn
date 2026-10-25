@@ -74,6 +74,8 @@ def _hoc_object_class(h):
 
         def __new__(cls, *args, hocbase=None, sec=None):
             if hocbase is None:
+                if cls is HocObject and not args and sec is None:
+                    return h  # hoc.HocObject() is the top-level interpreter
                 raise TypeError("HocObject() needs hocbase=, the HOC class to create")
             class_name = getattr(hocbase, "_hoc_class_name", None)
             if class_name is None:

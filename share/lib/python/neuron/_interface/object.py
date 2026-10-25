@@ -7,10 +7,11 @@ import numbers
 import operator
 import os
 import sys
+import types
 import warnings
 import weakref
 
-from ._docs import _ClassDoc
+from ._docs import _ClassDoc, help_doc
 from .api import (
     hoc_locked,
     _ERR_BUF_SIZE,
@@ -52,6 +53,7 @@ from .nrnref import (
     NrnVectorElementRef,
 )
 from .utils import (
+    _name_error,
     FuncWrapper,
     _object_pop,
     _try_wrap_point_nmodlrandom,
@@ -158,6 +160,7 @@ def _construct_hoc_object(class_name, args, sec=None):
 
     initing_to_list_arg = None
     initing_sectionlist = None
+    rvp_ends = ()
     fih_callback_ids = []
     args_for_push = args
 
@@ -170,6 +173,17 @@ def _construct_hoc_object(class_name, args, sec=None):
             _unregister_py_callback(cb_id)
         fih_callback_ids.clear()
 
+    if class_name == "RangeVarPlot" and len(args) > 1:
+        # RangeVarPlot(expr, seg0, seg1): core reads each end as an x on the
+        # accessed section, or a segment object through a hook only NEURON's
+        # module installs. One section push cannot carry two ends, so set them
+        # with begin()/end() after construction, as HOC code does.
+        from .sections import Segment
+
+        if all(isinstance(a, Segment) for a in args[1:3]):
+            rvp_ends = tuple(args[1:3])
+            args_for_push = args[:1]
+            args = args_for_push
     if class_name == "SectionRef":
         # SectionRef(sec) reads its Section through nrn_secarg too.
         args, sec = _section_arg_as_sec(args, sec)
@@ -264,6 +278,8 @@ def _construct_hoc_object(class_name, args, sec=None):
         if initing_sectionlist is not None:
             for s in initing_sectionlist:
                 wrapper.append(sec=s)
+        for method, seg in zip(("begin", "end"), rvp_ends):
+            getattr(wrapper, method)(seg.x, sec=seg.sec)
 
     return obj, use_sec, post_init, cleanup_fih_callbacks
 
@@ -271,6 +287,31 @@ def _construct_hoc_object(class_name, args, sec=None):
 # ---------------------------------------------------------------------------
 # Base wrapper class
 # ---------------------------------------------------------------------------
+
+
+def _instance_hname(self):
+    from . import NEURON
+
+    idx = int(NEURON().object_id(self, 1))
+    return f"{self._class_name}[{idx}]"
+
+
+class _Hname:
+    """``obj.hname()`` is ``"A[0]"``. On a template or point-process class,
+    ``A.hname()`` is ``"A()"``: those classes are HocObject instances in NEURON
+    (neuron.hclass names its class from it). Built-in C++ classes are Python
+    types there, so ``Vector.hname()`` stays an unbound method.
+    """
+
+    def __get__(self, instance, owner):
+        if instance is not None:
+            return types.MethodType(_instance_hname, instance)
+        from ._facades import _is_python_type
+
+        name = getattr(owner, "_hoc_class_name", None)
+        if name is None or _is_python_type(None, owner):
+            return _instance_hname
+        return lambda: f"{name}()"
 
 
 class Object(metaclass=_HocClassMeta):
@@ -418,11 +459,7 @@ class Object(metaclass=_HocClassMeta):
             # HocObject wrapper (api.py has the reason).
             _hoc_unref_defer()
 
-    def hname(self):
-        from . import NEURON
-
-        idx = int(NEURON().object_id(self, 1))
-        return f"{self._class_name}[{idx}]"
+    hname = _Hname()
 
     def baseattr(self, name):
         """Look up *name* on the HOC side, ignoring Python-level overrides.
@@ -436,6 +473,21 @@ class Object(metaclass=_HocClassMeta):
         `type(self).__getattr__`, so subclasses can override `__getattr__`
         for non-HOC reasons.
         """
+        if type(self).__dictoffset__:
+            # A subclass instance usually stores the result (self.bp =
+            # self.baseattr("p")). Bind it to a plain wrapper of the same HOC
+            # object, as NEURON's result refers to the HOC object only:
+            # bound to self it would be a reference cycle, and the object
+            # would outlive its last Python reference until a collection.
+            from .api import _nrn_object_ref
+            from .utils import _wrap_owned_object
+
+            _nrn_object_ref(self._obj)
+            twin = _wrap_owned_object(self._obj)
+            if self._host_section is not None or self._host_section_ref is not None:
+                object.__setattr__(twin, "_host_section", self._host_section)
+                object.__setattr__(twin, "_host_section_ref", self._host_section_ref)
+            return Object.__getattr__(twin, name)
         return Object.__getattr__(self, name)
 
     def __repr__(self):
@@ -691,7 +743,7 @@ class Object(metaclass=_HocClassMeta):
             return
         # A subclass with a per-instance __dict__ may carry ad-hoc Python
         # attributes (a.bp = ...) unless the name is a real HOC property.
-        if "__dict__" in getattr(type(self), "__dict__", {}):
+        if type(self).__dictoffset__:  # also when a base class added the __dict__
             methods = getattr(self, "_methods", None)
             if methods is None or name not in methods:
                 object.__setattr__(self, name, val)
@@ -1002,6 +1054,10 @@ class Object(metaclass=_HocClassMeta):
                             result = _object_pop()
                         elif _type == TYPES.METHOD_STRFUNC:
                             result = _nrn_str_pop()
+                        elif _type == TYPES.PROCEDURE:
+                            # A template proc: hoc_call_ob_proc drops its 0.0
+                            # sentinel (hoc_nopop) and NEURON returns 0.0.
+                            result = 0.0
                         else:
                             warnings.warn(f"Ignoring unknown return type {_type}")
                             result = None
@@ -1040,7 +1096,11 @@ class Object(metaclass=_HocClassMeta):
                 return _read_object_alias(self, name)
             except AttributeError:
                 pass
-        raise AttributeError(f"'{self._class_name}' object has no attribute '{name}'")
+        raise _name_error(
+            AttributeError,
+            name,
+            f"'{self._class_name}' object has no attribute '{name}'",
+        )
 
 
 # User HOC-template numeric members. nrn_property_get/set go through
@@ -1070,8 +1130,13 @@ def _ensure_hoc_template_var_trampolines(name, array):
 
 def _read_hoc_template_var(owner, name, idx=None):
     from . import NEURON
+    from .api import _nrn_property_get, _nrn_property_object_get
 
     array = idx is not None
+    if not array and _nrn_property_object_get is not None:
+        # nrn#3888 (which added nrn_property_object_get) reads a template's
+        # double from its data, public or not, as NEURON's interface does.
+        return _nrn_property_get(owner._obj, name.encode("utf-8"))
     _ensure_hoc_template_var_trampolines(name, array)
     fn = f"_mn_hvget_{'a' if array else 's'}_{name}"
     args = (owner, idx) if array else (owner,)
@@ -1080,8 +1145,12 @@ def _read_hoc_template_var(owner, name, idx=None):
 
 def _write_hoc_template_var(owner, name, value, idx=None):
     from . import NEURON
+    from .api import _nrn_property_object_get, _nrn_property_set
 
     array = idx is not None
+    if not array and _nrn_property_object_get is not None:
+        _nrn_property_set(owner._obj, name.encode("utf-8"), float(value))
+        return
     _ensure_hoc_template_var_trampolines(name, array)
     fn = f"_mn_hvset_{'a' if array else 's'}_{name}"
     args = (owner, idx, float(value)) if array else (owner, float(value))
@@ -1496,6 +1565,7 @@ class Vector(Object):
         cbuffer = buf_from_mem(ptr, size * numpy.dtype(float).itemsize, 0x200)
         return numpy.ndarray((size,), float, cbuffer, order="C")
 
+    @help_doc("Vector.to_python")
     def to_python(self, dest=None):
         """Return Vector contents as a Python list (or fill *dest*)."""
         size = len(self)
@@ -1505,6 +1575,7 @@ class Vector(Object):
             return dest
         return result
 
+    @help_doc("Vector.from_python")
     def from_python(self, seq):
         """Fill this Vector from a Python sequence. Resizes to match."""
         values = _vector_values(seq)
@@ -1921,14 +1992,18 @@ class _TemplateSectionArray:
     def __len__(self):
         return self._size
 
+    def __setitem__(self, idx, value):
+        raise TypeError("not assignable")  # NEURON's text for dend[1] = x
+
     def __iter__(self):
         for i in range(self._size):
             yield self[i]
 
     def __repr__(self):
-        # _owner is None for a top-level array.
-        scope = f"{self._owner._class_name}." if self._owner is not None else ""
-        return f"<template section array {scope}{self._name}[{self._size}]>"
+        # As NEURON: "dend[?]", or "C[0].d[?]" in a template (_owner is None
+        # for a top-level array).
+        scope = f"{self._owner.hname()}." if self._owner is not None else ""
+        return f"{scope}{self._name}[?]"
 
 
 # ---------------------------------------------------------------------------

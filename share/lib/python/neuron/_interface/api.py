@@ -499,6 +499,10 @@ _METHODS_MPI_ALLTOALL_TYPE_OFFSET = 144
 # praxis_efun (field 24): h.fit_praxis(python_callable, vec) asserts it is set.
 _METHODS_PRAXIS_EFUN_OFFSET = 192
 
+# call_func (field 1): HocCommand::func_call for a Python callable, e.g. a
+# RangeVarPlot of a Python function; it fails without the slot.
+_METHODS_CALL_FUNC_OFFSET = 8
+
 # opaque_obj2pyobj (field 20): BBSaveState maps a Python cell's PythonObject
 # to the PyObject* it wraps, to group a cell's sections (gap-69).
 _METHODS_OPAQUE_OBJ2PYOBJ_OFFSET = 160
@@ -805,6 +809,19 @@ def _install_cfunctype_methods():
 
             print("NEURON: Python Callback failed [hoccommand_exec]:", file=sys.stderr)
             traceback.print_exc()
+            # NEURON raises it as a HOC error of the call that ran the command
+            # (finitialize for an FInitializeHandler); it is raised there.
+            try:
+                from . import _stash_callback_exc
+
+                _stash_callback_exc(
+                    RuntimeError(
+                        "hoc_execerror: Python Callback failed [hoccommand_exec]:\n"
+                        + traceback.format_exc()
+                    )
+                )
+            except BaseException:
+                pass
             return 0
 
     _CFUNCTYPE_KEEPALIVE.append(_py_hoccommand_exec)
@@ -1743,6 +1760,19 @@ _nrn_section_diam_get = _bind(
 _nrn_segment_node_index = _bind(
     "nrn_segment_node_index", ctypes.c_int, Section, ctypes.c_double
 )
+
+# Pending upstream: a node's mechanisms in the order of its property list, the
+# order NEURON's `for mech in seg` follows. Optional; without it a segment
+# yields its mechanisms in registration order.
+_nrn_segment_mechanisms = getattr(libnrniv, "nrn_segment_mechanisms", None)
+if _nrn_segment_mechanisms is not None:
+    _nrn_segment_mechanisms.argtypes = [
+        Section,
+        ctypes.c_double,
+        ctypes.POINTER(Symbol),
+        ctypes.c_int,
+    ]
+    _nrn_segment_mechanisms.restype = ctypes.c_int
 
 # Section-tree accessors (nrn#3835). Each returns a Section* or NULL.
 _nrn_section_parent = _bind("nrn_section_parent", Section, Section)

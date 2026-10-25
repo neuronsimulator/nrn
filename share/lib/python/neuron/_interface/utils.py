@@ -326,6 +326,11 @@ def _push_args(args, return_rollback=False):
             elif isinstance(arg, NrnRef):
                 descriptors.append(("ref", arg))
             elif isinstance(arg, (str, bytes)):
+                if isinstance(arg, str) and not arg.isascii():
+                    # NEURON's hocobj_pushargs: HOC string arguments are ASCII.
+                    raise RuntimeError(
+                        "hoc_execerror: python string arg cannot decode into c_str"
+                    )
                 b = arg.encode("utf-8") if isinstance(arg, str) else arg
                 c_arg = ctypes.c_char_p(b)
                 temp_strs.append(c_arg)
@@ -396,6 +401,14 @@ def _push_args(args, return_rollback=False):
     if return_rollback:
         return temp_strs, seg_sec, lambda: rollback(len(descriptors))
     return temp_strs, seg_sec
+
+
+def _name_error(exc_type, name, message):
+    """The error for a name HOC does not know: TypeError for a non-ASCII name,
+    as NEURON (HOC names are ASCII, and hasattr must not swallow it)."""
+    if isinstance(name, str) and not name.isascii():
+        return TypeError("attribute name must be a string")
+    return exc_type(message)
 
 
 def _wrap_owned_object(obj):
