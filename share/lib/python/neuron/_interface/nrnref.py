@@ -203,7 +203,27 @@ class NrnRangeVarRef(NrnRef):
             self._checked_target()
         except (ReferenceError, RuntimeError, ValueError):
             return f"<NrnRef to {target}: died>"
-        return f"<NrnRef to {target}>"
+        described = self._handle_text(sec)
+        return described if described is not None else f"<NrnRef to {target}>"
+
+    def _handle_text(self, sec):
+        """NEURON's text for the reference, from the core (gap-65), or None."""
+        from .api import _nrn_rangevar_handle_str
+
+        if _nrn_rangevar_handle_str is None or sec is None:
+            return None
+        buf = ctypes.create_string_buffer(256)
+        length = _nrn_rangevar_handle_str(
+            self._sym, sec._sec, self._x, self._index or 0, buf, len(buf)
+        )
+        if length < 0:
+            return None
+        if length >= len(buf):
+            buf = ctypes.create_string_buffer(length + 1)
+            _nrn_rangevar_handle_str(
+                self._sym, sec._sec, self._x, self._index or 0, buf, len(buf)
+            )
+        return buf.value.decode("utf-8", errors="replace")
 
     def _section(self):
         if self._sec is not None:

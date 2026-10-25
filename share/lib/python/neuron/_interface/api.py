@@ -1882,6 +1882,20 @@ _nrn_rangevar_set = _bind(
 # variable array. nrn_rangevar_push reads the index from the HOC stack behind
 # an array-dimension marker the C API cannot push, and throws without it.
 # Optional; without it an element reference cannot be passed as a pointer.
+# Pending upstream (gap-65): the text NEURON prints for a reference, e.g.
+# data_handle<double>{Node::field::Voltage row=0/2 val=-65}. Optional.
+_nrn_rangevar_handle_str = getattr(libnrniv, "nrn_rangevar_handle_str", None)
+if _nrn_rangevar_handle_str is not None:
+    _nrn_rangevar_handle_str.argtypes = [
+        Symbol,
+        Section,
+        ctypes.c_double,
+        ctypes.c_int,
+        ctypes.c_char_p,
+        ctypes.c_size_t,
+    ]
+    _nrn_rangevar_handle_str.restype = ctypes.c_int
+
 _nrn_rangevar_push_nothrow = getattr(libnrniv, "nrn_rangevar_push_nothrow", None)
 if _nrn_rangevar_push_nothrow is not None:
     _nrn_rangevar_push_nothrow.argtypes = [
