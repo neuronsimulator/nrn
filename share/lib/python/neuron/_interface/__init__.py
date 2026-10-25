@@ -888,6 +888,32 @@ def hclass(cls):
     return cls
 
 
+class _AllSecIterator:
+    """What n.allsec() returns: an iterator with a __len__ that raises, as
+    NEURON's "hoc all section iterator". rxd.Region(n.allsec()) relies on
+    hasattr(secs, "__len__") to take it as a collection of sections."""
+
+    __slots__ = ("_items",)
+
+    def __init__(self, items):
+        self._items = items
+
+    def __iter__(self):
+        return self._items  # the generator itself: no per-item overhead
+
+    def __next__(self):
+        return next(self._items)
+
+    def __len__(self):
+        raise TypeError("hoc all section iterator() has no len()")
+
+    def __bool__(self):
+        return True  # as NEURON's; truth would otherwise call __len__
+
+    def __repr__(self):
+        return "<all section iterator next>"  # NEURON's repr
+
+
 class NEURON(metaclass=_Singleton):
     # h.__doc__ is neuron.doc's text for the top-level HocObject.
     __doc__ = property(lambda self: _top_level_doc())
@@ -1577,6 +1603,9 @@ class NEURON(metaclass=_Singleton):
         that also skips the model epoch may not invalidate. ``finitialize``
         resets the cache.
         """
+        return _AllSecIterator(self._allsec_items())
+
+    def _allsec_items(self):
         _from_ptr = Section._from_ptr
 
         link = _allsec_head_links()

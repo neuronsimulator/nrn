@@ -41,8 +41,12 @@ from .api import (
     _ERR_BUF_SIZE,
 )
 
-# libc strdup/free for NrnStrRef. Loaded lazily so import never fails on an
-# exotic platform without the default libc name.
+# strdup/free for NrnStrRef. Loaded lazily so import never fails on an
+# exotic platform without the default libc name. The strings are freed by
+# NEURON (hoc_assign_str) and NEURON's strings by us, so they must come from
+# the allocator libnrniv uses: the process's global symbols, which include a
+# sanitizer's interceptors (an AddressSanitizer build preloads them; libc's own
+# free would abort on their pointers).
 _libc = None
 
 
@@ -51,8 +55,11 @@ def _get_libc():
     if _libc is None:
         import ctypes.util
 
-        name = ctypes.util.find_library("c") or "libc.so.6"
-        lib = ctypes.CDLL(name)
+        try:
+            lib = ctypes.CDLL(None)
+            lib.strdup
+        except (OSError, AttributeError):
+            lib = ctypes.CDLL(ctypes.util.find_library("c") or "libc.so.6")
         lib.strdup.argtypes = [ctypes.c_char_p]
         lib.strdup.restype = ctypes.c_void_p
         lib.free.argtypes = [ctypes.c_void_p]
