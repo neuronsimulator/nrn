@@ -30,7 +30,10 @@ static int row_of(const std::string& text) {
 }
 
 int main(void) {
-    static std::array<const char*, 4> argv = {"rangevar_handle_str", "-nogui", "-nopython", nullptr};
+    static std::array<const char*, 4> argv = {"rangevar_handle_str",
+                                              "-nogui",
+                                              "-nopython",
+                                              nullptr};
     nrn_init(3, argv.data());
 
     bool ok = true;
@@ -68,8 +71,7 @@ int main(void) {
 
     // Errors, with a message: an uninserted mechanism, an unset POINTER, no
     // section.
-    ok &= check(nrn_rangevar_handle_str(nrn_symbol("gl_hh"), soma, 0.5, 0, text, sizeof(text)) >=
-                    0,
+    ok &= check(nrn_rangevar_handle_str(nrn_symbol("gl_hh"), soma, 0.5, 0, text, sizeof(text)) >= 0,
                 "inserted mechanism");
     Section* dend = nrn_section_new("dend");
     ok &= check(nrn_rangevar_handle_str(nrn_symbol("gl_hh"), dend, 0.5, 0, text, sizeof(text)) ==
@@ -77,8 +79,8 @@ int main(void) {
                     std::strstr(text, "not inserted"),
                 "uninserted mechanism is an error");
     nrn_mechanism_insert(dend, nrn_symbol("ptrtest"));
-    ok &= check(nrn_rangevar_handle_str(nrn_symbol("src_ptrtest"), dend, 0.5, 0, text, sizeof(text)) ==
-                        -1 &&
+    ok &= check(nrn_rangevar_handle_str(
+                    nrn_symbol("src_ptrtest"), dend, 0.5, 0, text, sizeof(text)) == -1 &&
                     std::strstr(text, "POINTER is not set"),
                 "unset POINTER is an error");
     ok &= check(nrn_rangevar_handle_str(v, nullptr, 0.5, 0, text, sizeof(text)) == -1,
