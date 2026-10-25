@@ -833,6 +833,38 @@ Segments
             nrn_method_call(vec, nrn_method_symbol(vec, "record"), 1);
         }
 
+.. c:function:: int nrn_rangevar_handle_str(Symbol* sym, Section* sec, double x, int index, char* buf, size_t size)
+
+    Describe the data handle of element ``index`` of a range variable at
+    position ``x``: the text NEURON's Python interface prints for a reference
+    such as ``seg._ref_v``, for example
+    ``data_handle<double>{Node::field::Voltage row=0/2 val=-65}``. It names the
+    storage the value lives in and its row there, which changes with the node
+    order (:meth:`ParallelContext.optimize_node_order`). For a ``POINTER``
+    variable it describes the handle the pointer holds. The checks are those
+    of :c:func:`nrn_rangevar_get_nothrow`.
+
+    :param buf: Buffer for the text (truncated to ``size - 1`` characters), or
+        for the error message on failure.
+    :param size: Size of ``buf``.
+    :returns: The length of the full text, which may be ``size`` or more; -1 on
+        error.
+
+    **C Usage:**
+
+    .. code-block:: c
+
+        char text[128];
+        if (nrn_rangevar_handle_str(nrn_symbol("v"), soma, 0.5, 0, text, sizeof(text)) >= 0) {
+            printf("%s\n", text);
+        }
+
+    **Python Equivalent:**
+
+    .. code-block:: python
+
+        text = str(soma(0.5)._ref_v)
+
 .. c:function:: Object* nrn_segment_nmodlrandom_get(Section* sec, double x, Symbol* sym)
 
     Wrap a density mechanism's NMODL ``RANDOM`` variable as an
