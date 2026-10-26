@@ -122,7 +122,31 @@ def _hoc_module(h):
         raise AttributeError(f"module 'hoc' has no attribute {name!r}")
 
     hoc.__getattr__ = __getattr__
+    hoc.ref_address = _ref_address
     return hoc
+
+
+_STACK_IS_POINTER = 2  # nrn_stack_type
+
+
+def _ref_address(ref):
+    """hoc.ref_address: the address of the number a reference holds.
+
+    rxd's C code takes plain double pointers; it gets them from references such
+    as h._ref_t and seg._ref_v through this, as from NEURON's hoc module.
+    """
+    import ctypes
+
+    from .api import _nrn_double_ptr_pop, _nrn_stack_type
+    from .nrnref import NrnRef
+
+    if not isinstance(ref, NrnRef):
+        raise TypeError("not a reference to a number")
+    ref._push()
+    if _nrn_stack_type() != _STACK_IS_POINTER:
+        ref._pop()
+        raise TypeError("not a reference to a number")
+    return ctypes.cast(_nrn_double_ptr_pop(), ctypes.c_void_p).value
 
 
 def _nrn_module():

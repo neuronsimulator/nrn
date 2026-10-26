@@ -708,6 +708,12 @@ class Segment:
                 return wrapped
         raise AttributeError(f"'{name}' is not a range variable on {self!r}.")
 
+    def __contains__(self, obj):
+        """True if obj.segment is this segment (an rxd node), as NEURON's."""
+        if not hasattr(obj, "segment"):
+            return False
+        return self == obj.segment
+
     def __iter__(self):
         """Iterate over Mechanism objects for each inserted mechanism."""
         from .mechanism import Mechanism
@@ -1305,6 +1311,12 @@ class Section:
             raise AttributeError(name) from None
         self._check_alive()
         return getattr(self(0.5), name)
+
+    def __contains__(self, obj):
+        """True if obj.sec is this section (a Segment, an rxd node), as NEURON's."""
+        if not hasattr(obj, "sec"):
+            return False
+        return self == obj.sec
 
     def __iter__(self):
         self._check_alive()

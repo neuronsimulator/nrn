@@ -826,6 +826,15 @@ def _install_cfunctype_methods():
 
     _CFUNCTYPE_KEEPALIVE.append(_py_hoccommand_exec)
     _hcx_slot.value = ctypes.cast(_py_hoccommand_exec, ctypes.c_void_p).value
+    # Legacy mod files (test/rxd/beforestep_py.mod, nrntest) call the global
+    # nrnpy_hoccommand_exec, which NEURON copies from methods.hoccommand_exec
+    # when it registers its Python module (nrnpy.cpp); NULL, they jump to 0.
+    try:
+        _legacy_hcx = ctypes.c_void_p.in_dll(libnrniv, "nrnpy_hoccommand_exec")
+    except ValueError:
+        _legacy_hcx = None
+    if _legacy_hcx is not None and not _legacy_hcx.value:
+        _legacy_hcx.value = _hcx_slot.value
 
     # methods.pysame: needed by cvodeobj.cpp:540's
     # extra_scatter_gather_remove. Without it, removing a callback
@@ -1394,12 +1403,26 @@ if _hoc_valid_stmt is not None:
 HOC_LOCK = threading.RLock()
 
 
+# Nesting of hoc_locked calls: 1 in a call from user code, more in a call a
+# Python callback makes from inside HOC.
+_hoc_call_depth = 0
+
+
+def hoc_call_depth():
+    return _hoc_call_depth
+
+
 def hoc_locked(func):
     """Run ``func`` holding HOC_LOCK."""
 
     def locked(*args, **kwargs):
+        global _hoc_call_depth
         with HOC_LOCK:
-            return func(*args, **kwargs)
+            _hoc_call_depth += 1
+            try:
+                return func(*args, **kwargs)
+            finally:
+                _hoc_call_depth -= 1
 
     locked.__name__ = func.__name__
     locked.__qualname__ = func.__qualname__

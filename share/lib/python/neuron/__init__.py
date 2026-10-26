@@ -1556,19 +1556,10 @@ def _nrnpy_rvp_pyobj_callback(f):
     return result
 
 
-try:
-    nrnpy_vec_math_register = nrn_dll_sym("nrnpy_vec_math_register")
-    nrnpy_vec_math_register(ctypes.py_object(nrnpy_vec_math))
-except:
-    print("Failed to setup nrnpy_vec_math")
-
-try:
-    _nrnpy_rvp_pyobj_callback_register = nrn_dll_sym(
-        "nrnpy_rvp_pyobj_callback_register"
-    )
-    _nrnpy_rvp_pyobj_callback_register(ctypes.py_object(_nrnpy_rvp_pyobj_callback))
-except:
-    print("Failed to setup _nrnpy_rvp_pyobj_callback")
+# Vector arithmetic with numbers is implemented by the interface's Vector, so
+# nrnpy_vec_math is not registered with the core; the RangeVarPlot hook that
+# turns an rxd species into a callable is the interface's.
+_interface._rvp_hook.set_pyobj_callback(_nrnpy_rvp_pyobj_callback)
 
 try:
     from neuron.psection import psection

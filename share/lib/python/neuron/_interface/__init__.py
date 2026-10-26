@@ -8,9 +8,10 @@ import numbers
 import sys
 import threading
 
-from . import _coreneuron
+from . import _coreneuron, _rvp_hook
 from ._docs import top_level_doc as _top_level_doc
 from .api import (
+    hoc_call_depth,
     hoc_locked,
     symbol_array_dims,
     _ERR_BUF_SIZE,
@@ -146,6 +147,9 @@ _PY_CALLBACK_LOCK = threading.RLock()
 # Otherwise the simulation would continue on half-initialized state and give a
 # plausible but wrong trace.
 _pending_callback_exc = None
+# hoc_call_depth() when it was stashed: only a call at that depth or an outer
+# one raises it.
+_pending_callback_depth = 0
 
 # stoprun before a failed fit_praxis evaluation set it (see _register_praxis_efun).
 _stoprun = ctypes.c_int.in_dll(libnrniv, "stoprun")
@@ -158,9 +162,10 @@ def _stash_callback_exc(exc):
     Called by the FInitializeHandler trampoline and the gap-41 py2n_component
     bridge (api.py).
     """
-    global _pending_callback_exc
+    global _pending_callback_exc, _pending_callback_depth
     if _pending_callback_exc is None:
         _pending_callback_exc = exc
+        _pending_callback_depth = hoc_call_depth()
 
 
 def _raise_pending_callback_exc():
@@ -172,6 +177,12 @@ def _raise_pending_callback_exc():
     operand stack leaks one slot per failed call.
     """
     global _pending_callback_exc
+    if _pending_callback_exc is not None and hoc_call_depth() > _pending_callback_depth:
+        # A call made from inside a callback after an outer call's callback
+        # failed (rxd's initializer calls back into HOC during finitialize)
+        # leaves the error for that outer call, as NEURON's HOC error
+        # unwinds to it.
+        return
     if _praxis_saved_stoprun[0] is not None:
         _stoprun.value = _praxis_saved_stoprun[0]
         _praxis_saved_stoprun[0] = None
@@ -204,7 +215,7 @@ def _register_py_callback_dispatcher():
                     cb()
         except Exception as exc:
             # Stash for re-raise after the HOC call; also print for visibility.
-            _pending_callback_exc = exc
+            _stash_callback_exc(exc)
             import sys
 
             print(
@@ -507,6 +518,7 @@ def _register_vector_apply_callable():
 _register_vector_apply_callable()
 
 _coreneuron.register(libnrniv)
+_rvp_hook.register(libnrniv)
 
 
 def _register_pc_pyjob():
@@ -790,6 +802,24 @@ _STR_END = "\x01_mn_str_end_\x01"
 _DISTANCE_MISSING = builtins.object()
 
 
+def _distance_location(arg):
+    """A distance() location as NEURON's o2loc2 reads it (nrnpy_nrn.cpp).
+
+    An object with a ``segment`` (an rxd node), or a one-element list of one
+    (an rxd NodeList), gives that Segment. Anything else is passed on, for
+    HOC's distance to accept or reject in NEURON's order.
+    """
+    from numbers import Number
+
+    from .sections import Segment
+
+    if arg is _DISTANCE_MISSING or isinstance(arg, (Number, Segment)):
+        return arg
+    item = arg[0] if isinstance(arg, list) and len(arg) == 1 else arg
+    segment = getattr(item, "segment", None)
+    return segment if isinstance(segment, Segment) else arg
+
+
 def _capture_hoc_string(action):
     """Run *action* while capturing one sentinel-delimited HOC string."""
     captured = []
@@ -894,15 +924,19 @@ def hclass(cls):
 class _AllSecIterator:
     """What n.allsec() returns: an iterator with a __len__ that raises, as
     NEURON's "hoc all section iterator". rxd.Region(n.allsec()) relies on
-    hasattr(secs, "__len__") to take it as a collection of sections."""
+    hasattr(secs, "__len__") to take it as a collection of sections.
 
-    __slots__ = ("_items",)
+    As NEURON's, each iteration starts over: rxd.Region iterates it once to
+    check the sections and again to build its SectionList."""
 
-    def __init__(self, items):
-        self._items = items
+    __slots__ = ("_items", "_source")
+
+    def __init__(self, source):
+        self._source = source
+        self._items = source()
 
     def __iter__(self):
-        return self._items  # the generator itself: no per-item overhead
+        return self._source()  # a fresh generator: no per-item overhead
 
     def __next__(self):
         return next(self._items)
@@ -1510,6 +1544,9 @@ class NEURON(metaclass=_Singleton):
             n.distance(seg)             -> distance from current origin
             n.distance(x, sec=sec)      -> location in an explicit section
 
+        A location may also be anything with a ``segment``, such as an rxd
+        node, or a one-element list of one (an rxd NodeList), as in NEURON.
+
         The two-segment form calls nrn_distance directly because _push_args
         overwrites seg_sec and would lose the first segment's section.
         """
@@ -1518,6 +1555,8 @@ class NEURON(metaclass=_Singleton):
 
         if kwargs:
             raise RuntimeError("invalid keyword argument")
+        arg1 = _distance_location(arg1)
+        arg2 = _distance_location(arg2)
         explicit_sec = sec is not _DISTANCE_MISSING
         if explicit_sec:
             if not isinstance(sec, Section):
@@ -1606,7 +1645,7 @@ class NEURON(metaclass=_Singleton):
         that also skips the model epoch may not invalidate. ``finitialize``
         resets the cache.
         """
-        return _AllSecIterator(self._allsec_items())
+        return _AllSecIterator(self._allsec_items)
 
     def _allsec_items(self):
         _from_ptr = Section._from_ptr
