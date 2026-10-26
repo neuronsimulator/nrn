@@ -16,6 +16,7 @@ import os
 import sysconfig
 import uuid
 import sys
+import traceback
 import itertools
 from numpy.ctypeslib import ndpointer
 import re
@@ -198,14 +199,23 @@ _node_flux_callables = []
 _node_flux_constants = numpy.array([])
 
 
-def _eval_node_flux_callable(i: int) -> float:
-    result = _node_flux_callables[i]()
-    if not isinstance(result, (float, int)):
-        raise RxDException("node._include_flux callback did not return a number.")
-    return float(result)
+def _eval_node_flux_callable(i: int, flux) -> int:
+    """Store callable i's flux; on an error print it and return 1 (C then stops with a hoc error).
+
+    An exception must not propagate into the C code that calls this.
+    """
+    try:
+        result = _node_flux_callables[i]()
+        if not isinstance(result, (float, int)):
+            raise RxDException("node._include_flux callback did not return a number.")
+        flux[0] = float(result)
+        return 0
+    except BaseException:
+        traceback.print_exc()
+        return 1
 
 
-_node_flux_callback = ctypes.CFUNCTYPE(ctypes.c_double, ctypes.c_long)(
+_node_flux_callback = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_long, _double_ptr)(
     _eval_node_flux_callable
 )
 _rxd_set_node_flux_callback = nrn_dll_sym("rxd_set_node_flux_callback")

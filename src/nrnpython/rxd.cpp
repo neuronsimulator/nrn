@@ -108,7 +108,7 @@ double* _node_flux_scale = NULL;
 double** _node_flux_src = NULL;
 long* _node_flux_callable = NULL;
 /* evaluates the Python callable flux source with the given id */
-static double (*_node_flux_callback)(long) = NULL;
+static int (*_node_flux_callback)(long, double*) = NULL;
 
 static void free_zvi_child() {
     int i;
@@ -317,12 +317,13 @@ extern "C" NRN_EXPORT void rxd_include_node_flux1D(int n,
 }
 
 
-extern "C" NRN_EXPORT void rxd_set_node_flux_callback(double (*callback)(long)) {
+extern "C" NRN_EXPORT void rxd_set_node_flux_callback(int (*callback)(long, double*)) {
     _node_flux_callback = callback;
 }
 
 /* A source is a pointer to the flux (a NEURON variable, or a constant stored by Python), or, when
- * the pointer is NULL, a Python callable that _node_flux_callback evaluates by its id. */
+ * the pointer is NULL, a Python callable that _node_flux_callback evaluates by its id. The callback
+ * stores the flux and returns 0, or reports the Python error and returns nonzero. */
 void apply_node_flux(int n,
                      long* index,
                      double* scale,
@@ -335,7 +336,11 @@ void apply_node_flux(int n,
         if (source[i]) {
             states[j] += dt * *source[i] / scale[i];
         } else if (_node_flux_callback) {
-            states[j] += dt * _node_flux_callback(callable[i]) / scale[i];
+            double flux;
+            if (_node_flux_callback(callable[i], &flux) != 0) {
+                hoc_execerror("node._include_flux callback failed", nullptr);
+            }
+            states[j] += dt * flux / scale[i];
         }
     }
 }
