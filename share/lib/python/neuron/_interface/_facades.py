@@ -36,7 +36,7 @@ def _is_python_type(h, cls):
     return not is_point_process_class(name)
 
 
-def _hoc_object_class(h):
+def _hoc_object_class(h, legacy=None):
     """hoc.HocObject: isinstance/issubclass answers match NEURON's interface.
 
     isinstance(x, hoc.HocObject) is true for HOC objects, references, h and
@@ -55,6 +55,9 @@ def _hoc_object_class(h):
             if cls is not HocObject:
                 return super().__instancecheck__(instance)
             if isinstance(instance, (Object, NrnRef, FuncWrapper)) or instance is h:
+                return True
+            if legacy is not None and isinstance(instance, legacy):
+                # nrniv -python: objects NEURON's own module still makes
                 return True
             return (
                 isinstance(instance, _HocClassMeta)
@@ -102,11 +105,11 @@ def _hoc_object_class(h):
     return HocObject
 
 
-def _hoc_module(h):
+def _hoc_module(h, legacy=None):
     from .object import _HocClassMeta
 
     hoc = types.ModuleType("hoc", "HOC object types for the neuron package.")
-    hoc.HocObject = _hoc_object_class(h)
+    hoc.HocObject = _hoc_object_class(h, legacy)
     hoc.HocClass = _HocClassMeta
 
     def __getattr__(name):
@@ -192,20 +195,29 @@ def _neuron_section_module(h, nrn):
 def install(interface, embedded):
     """Register the facades and return (hoc, nrn, _neuron_section).
 
-    ``embedded`` means nrniv -python already created the legacy modules; they
-    are returned unchanged so the session keeps one set of them.
+    ``embedded`` means nrniv -python already created the legacy modules. The
+    facades replace them in sys.modules all the same: ``h`` is this
+    interface's, so hoc.HocObject, nrn.Section and the rest must be its types
+    too (hclass(h.A), ExtendedSection(nrn.Section)). The legacy modules stay
+    under ``_legacy_<name>``, and hoc.HocObject also accepts the objects the
+    legacy module still makes.
     """
+    legacy_hoc = None
     if embedded:
-        return tuple(sys.modules.get(name) for name in _NAMES)
-    present = [name for name in _NAMES if name in sys.modules]
-    if present:
-        raise ImportError(
-            f"{', '.join(present)} already imported; the legacy NEURON extension "
-            "cannot share a process with this interface"
-        )
+        for name in _NAMES:
+            if name in sys.modules:
+                sys.modules["_legacy_" + name] = sys.modules[name]
+        legacy_hoc = getattr(sys.modules.get("hoc"), "HocObject", None)
+    else:
+        present = [name for name in _NAMES if name in sys.modules]
+        if present:
+            raise ImportError(
+                f"{', '.join(present)} already imported; the legacy NEURON "
+                "extension cannot share a process with this interface"
+            )
     nrn = _nrn_module()
     modules = (
-        _hoc_module(interface.h),
+        _hoc_module(interface.h, legacy_hoc),
         nrn,
         _neuron_section_module(interface.h, nrn),
     )

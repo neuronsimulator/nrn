@@ -1411,6 +1411,10 @@ try:
             _mech_classes[name] = my_class
         return my_class(name)
 
+    # h.<mechanism> is the interface's; it calls this factory, as NEURON's
+    # Python module calls the one registered below.
+    _interface.mechanism.set_density_mechanism_factory(_get_mech_object)
+
     set_toplevel_callbacks = nrn_dll_sym("nrnpy_set_toplevel_callbacks")
     _rvp_plot_callback = ctypes.py_object(_rvp_plot)
     _plotshape_plot_callback = ctypes.py_object(_plotshape_plot)

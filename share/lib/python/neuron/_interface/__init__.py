@@ -1230,9 +1230,9 @@ class NEURON(metaclass=_Singleton):
                         return _dynamic_classes[name]
 
                     elif _type == TYPES.MECHANISM:
-                        from .mechanism import DensityMechanism
+                        from .mechanism import density_mechanism
 
-                        return DensityMechanism(name)
+                        return density_mechanism(name)
 
                     elif _type == TYPES.OBJECTVAR:
                         # Real NEURON (nrnpy_hoc.cpp:1346-1357) uses the

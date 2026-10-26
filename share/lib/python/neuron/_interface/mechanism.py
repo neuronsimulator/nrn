@@ -696,6 +696,25 @@ class Mechanism:
         return self._invalid_repr() or self._name
 
 
+# Set by the neuron package: builds what h.<mechanism> returns (its
+# neuron.DensityMechanism, with code, file, ast, ions), as NEURON's Python
+# module calls the factory the package registers. None: DensityMechanism.
+_density_mechanism_factory = None
+
+
+def set_density_mechanism_factory(factory):
+    """Register the function that makes the object h.<mechanism name> returns."""
+    global _density_mechanism_factory
+    _density_mechanism_factory = factory
+
+
+def density_mechanism(name):
+    """What n.<mechanism name> returns."""
+    if _density_mechanism_factory is not None:
+        return _density_mechanism_factory(name)
+    return DensityMechanism(name)
+
+
 class DensityMechanism:
     """Represents a density mechanism type (e.g. hh, pas).
 

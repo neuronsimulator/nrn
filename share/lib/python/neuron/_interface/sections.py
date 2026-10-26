@@ -1346,6 +1346,17 @@ class Section:
         self._check_alive()
         if isinstance(mechanism, DensityMechanism):
             mechanism = mechanism.name
+        elif not isinstance(mechanism, (str, bytes)):
+            # As NEURON's: an object with an insert method inserts itself
+            # (neuron.DensityMechanism, which the neuron package's h.hh returns).
+            insert = getattr(mechanism, "insert", None)
+            if insert is None:
+                raise TypeError(
+                    "insert argument must be either a string or an object with "
+                    "an insert method"
+                )
+            insert(self)
+            return self
         if not isinstance(mechanism, bytes):
             mechanism_bytes = mechanism.encode("utf-8")
         else:
@@ -1372,6 +1383,7 @@ class Section:
 
         _bump_model_epoch()
         self._inserted_mechs = None
+        return self  # as NEURON's, so inserts chain
 
     def uninsert(self, mechanism):
         """Remove a previously inserted mechanism.
@@ -1460,7 +1472,9 @@ class Section:
         # "<cell>.<cell>.<raw>". Real NEURON prints the single qualified name.
         if not _nrn_section_is_active(self._sec):
             return "<deleted section>"
-        return self.name()
+        # Section.name, not self.name: a subclass may define its own `name`
+        # (neuron.sections.ExtendedSection makes it a property).
+        return Section.name(self)
 
     def __call__(self, x=0.5):
         self._check_alive()
@@ -1696,9 +1710,10 @@ class Section:
 
         In myneuron this delegates to name(); both call n.secname(). Real
         NEURON distinguishes the two for cell-owned sections (hname() returns
-        the qualified HOC path); this implementation does not.
+        the qualified HOC path); this implementation does not. Section.name, as
+        in __repr__: a subclass's own `name` does not change it.
         """
-        return self.name()
+        return Section.name(self)
 
     def trueparentseg(self):
         """Return the true parent Segment, or None.
@@ -1862,7 +1877,7 @@ class Section:
             "cm": [seg.cm for seg in segments],
             "regions": set(),
             "species": set(),
-            "name": self.name(),
+            "name": Section.name(self),
             "hoc_internal_name": raw,
             "cell": self.cell(),
         }
