@@ -8,6 +8,7 @@ import numbers
 import sys
 import threading
 
+from . import _coreneuron
 from ._docs import top_level_doc as _top_level_doc
 from .api import (
     hoc_locked,
@@ -504,6 +505,8 @@ def _register_vector_apply_callable():
 
 
 _register_vector_apply_callable()
+
+_coreneuron.register(libnrniv)
 
 
 def _register_pc_pyjob():
