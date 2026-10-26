@@ -27,20 +27,8 @@ install(TARGETS rxdmath DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
 # =============================================================================
 set(nrnpython_lib_list)
 
-set(NRNPYTHON_FILES_LIST
-    nrnpython.cpp
-    nrnpy_hoc.cpp
-    nrn_metaclass.cpp
-    nrnpy_nrn.cpp
-    nrnpy_p2h.cpp
-    nrnpy_utils.cpp
-    grids.cpp
-    rxd.cpp
-    rxd_extracellular.cpp
-    rxd_intracellular.cpp
-    rxd_vol.cpp
-    rxd_marching_cubes.cpp
-    rxd_llgramarea.cpp)
+set(NRNPYTHON_FILES_LIST nrnpython.cpp nrnpy_hoc.cpp nrn_metaclass.cpp nrnpy_nrn.cpp nrnpy_p2h.cpp
+                         nrnpy_utils.cpp)
 
 set(INCLUDE_DIRS
     ..
