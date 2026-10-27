@@ -3,14 +3,7 @@ import ctypes
 import pytest
 
 
-@pytest.fixture(autouse=True)
-def errors_do_not_abort_mpi(neuron_nosave_instance):
-    """With more than one MPI rank every hoc error ends in MPI_Abort unless it is turned off."""
-    h, rxd, save_path = neuron_nosave_instance
-    pc = h.ParallelContext()
-    old = pc.mpiabort_on_error(0)
-    yield
-    pc.mpiabort_on_error(old)
+pytestmark = pytest.mark.usefixtures("errors_do_not_abort_mpi")
 
 
 def _model(h, rxd, ecs):

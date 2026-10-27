@@ -2,6 +2,8 @@ import warnings
 
 import pytest
 
+pytestmark = pytest.mark.usefixtures("errors_do_not_abort_mpi")
+
 
 def _node_with_ref_flux(h, rxd, source):
     """1D species over three segments; the middle node gets the flux `source`."""
