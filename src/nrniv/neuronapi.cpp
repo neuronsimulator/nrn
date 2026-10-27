@@ -17,6 +17,7 @@
 #include <cstdio>
 #include <limits>
 #include <string>
+#include <utility>
 
 /// A public face of hoc_Item
 struct nrn_Item: public hoc_Item {};
@@ -46,6 +47,7 @@ struct SymbolTableIterator {
 extern int nrn_nobanner_;
 extern int diam_changed;
 extern int nrn_try_catch_nest_depth;
+extern int hoc_execerror_messages;
 extern "C" void nrnpy_set_pr_etal(int (*cbpr_stdoe)(int, char*), int (*cbpass)());
 int ivocmain_session(int, const char**, const char**, int start_session);
 void simpleconnectsection();
@@ -1181,6 +1183,22 @@ void* steer_element(void* request, void*) {
     return nullptr;
 }
 
+// OcJump::fpycall with HOC error messages and the MPI abort on error turned
+// off, as hoc_execute1 does, so an error the caller reports itself is neither
+// printed nor fatal on more than one rank. Both flags are restored, also after
+// an error (hoc_execerror sets hoc_execerror_messages to 1).
+void* quiet_fpycall(void* (*f)(void*, void*), void* a) {
+    struct restore {
+        int messages = std::exchange(hoc_execerror_messages, 0);
+        int mpiabort = std::exchange(nrn_mpiabort_on_error_, 0);
+        ~restore() {
+            hoc_execerror_messages = messages;
+            nrn_mpiabort_on_error_ = mpiabort;
+        }
+    } const saved{};
+    return OcJump::fpycall(f, a, nullptr);
+}
+
 // Element i of a C++ class variable reached through its steer function. A
 // one-dimensional array (Vector.x) needs its index on the stack first, as HOC
 // pushes it; a scalar (Pointer.val) keeps the old pointer arithmetic. An array
@@ -1192,16 +1210,24 @@ double* steered_element(const Object* obj, Symbol* sym, int i) {
     if (nsub > 1) {
         return nullptr;
     }
-    // The steer function raises a HOC error for an index out of range (or a freed
-    // Pointer). fpycall restores the interpreter state, including the HOC stack,
-    // and rethrows. The caller made a mistake, not the user: report no element.
-    steer_request request{const_cast<Object*>(obj), sym, &i, nsub, nullptr};
+    // A one-dimensional steer function (Vector.x, NetCon.weight) sets the array
+    // size and then raises a HOC error for an index outside it. Ask for element 0
+    // and check i against the size it left in the symbol, so an index out of range
+    // raises nothing. What cannot be checked first (an empty array, a freed
+    // Pointer) still raises; quiet_fpycall restores the interpreter state and
+    // silences the error as hoc_execute1 does: no message, no MPI abort.
+    int const first = 0;
+    steer_request request{const_cast<Object*>(obj), sym, &first, nsub, nullptr};
+    bool failed = false;
     try {
-        OcJump::fpycall(steer_element, &request, nullptr);
+        quiet_fpycall(steer_element, &request);
     } catch (...) {
+        failed = true;
+    }
+    if (failed || (nsub && (i < 0 || i >= sym->arayinfo->sub[0]))) {
         return nullptr;
     }
-    return nsub ? request.result : request.result + i;
+    return request.result + i;
 }
 }  // namespace
 
