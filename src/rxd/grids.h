@@ -9,7 +9,6 @@ and Flux_pair structs and their respective functions
 #include <nrnmpi.h>
 
 #include "neuron/container/data_handle.hpp"
-#include "nrn_export.hpp"
 
 #include <stdlib.h>
 #include <string.h>
