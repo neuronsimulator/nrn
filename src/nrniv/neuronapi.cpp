@@ -253,7 +253,8 @@ int nrn_segment_mechanisms(Section* const sec,
                            const double x,
                            Symbol** const mechanisms,
                            const int max) {
-    if (!sec || !sec->prop) {
+    // Same x rule as nrn_segment_nmodlrandom_get; NaN would index past the node array.
+    if (!sec || !nrn_section_is_active(sec) || !(x >= 0.0 && x <= 1.0)) {
         return -1;
     }
     // The node's property list, head first, as Python's segment iterator walks it.

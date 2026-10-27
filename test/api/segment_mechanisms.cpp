@@ -2,6 +2,7 @@
 // Exercises nrn_segment_mechanisms: a node's mechanisms in the order of its
 // property list, the order Python's `for mech in seg` follows.
 #include <array>
+#include <cmath>
 #include <cstring>
 #include <iostream>
 #include <string>
@@ -54,8 +55,8 @@ int main(void) {
     bool ok = true;
     Section* soma = nrn_section_new("soma");
 
-    // Each insert puts the mechanism at the head of every node's list; hh adds
-    // the ions it uses after itself.
+    // Each insert puts the mechanism at the head of every node's list; inserting
+    // hh then inserts the ions it uses, which land in front of it.
     nrn_mechanism_insert(soma, nrn_symbol("pas"));
     nrn_mechanism_insert(soma, nrn_symbol("hh"));
     const std::vector<std::string> order = {
@@ -79,5 +80,34 @@ int main(void) {
                 "a new node lists the same mechanisms in another order");
 
     ok &= check(nrn_segment_mechanisms(nullptr, 0.5, nullptr, 0) == -1, "NULL section");
+
+    // x outside [0, 1], including NaN, is rejected as nrn_segment_nmodlrandom_get does;
+    // it is not clamped to an end node (NaN used to index past the node array).
+    for (double bad: std::array<double, 6>{-0.5, 1.5, 1e300, INFINITY, -INFINITY, NAN}) {
+        ok &= check(nrn_segment_mechanisms(soma, bad, nullptr, 0) == -1, "x out of range");
+    }
+
+    // The end nodes x=0 and x=1 carry no mechanisms.
+    ok &= check(nrn_segment_mechanisms(soma, 0.0, nullptr, 0) == 0, "x=0 has no mechanisms");
+    ok &= check(nrn_segment_mechanisms(soma, 1.0, nullptr, 0) == 0, "x=1 has no mechanisms");
+
+    // Point processes are in the node's list, at the head if inserted last.
+    nrn_hoc_call(
+        "create dend\n"
+        "dend { insert pas nseg = 3 }\n"
+        "objref ic\n"
+        "dend ic = new IClamp(0.5)\n"
+        "access dend\n");
+    Section* dend = nrn_cas();
+    ok &= check_order(dend, 0.5, {"IClamp", "pas", "capacitance", "morphology"});
+    ok &= check_order(dend, 1.0 / 6, {"morphology", "capacitance", "pas"});
+
+    // A deleted section.
+    nrn_hoc_call(
+        "create gone\n"
+        "access gone\n");
+    Section* gone = nrn_cas();
+    nrn_hoc_call("gone { delete_section() }\n");
+    ok &= check(nrn_segment_mechanisms(gone, 0.5, nullptr, 0) == -1, "deleted section");
     return ok ? 0 : 1;
 }

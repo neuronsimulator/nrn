@@ -677,7 +677,8 @@ Segments
         ``NULL`` to only count them.
     :param max: Size of ``mechanisms``.
     :returns: The number of mechanisms in the node, which may exceed ``max``;
-        -1 if sec is NULL or has been deleted.
+        -1 if sec is NULL or has been deleted, or if x is outside 0 to 1 or NaN.
+        The end nodes at x = 0 and x = 1 carry no mechanisms (the count is 0).
 
     **C Usage:**
 
