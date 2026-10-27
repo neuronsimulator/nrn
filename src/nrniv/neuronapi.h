@@ -67,7 +67,9 @@ bool nrn_section_owner_hooks_set(nrn_section_owner_name_func name,
                                  nrn_section_owner_cell_equals_func cell_equals,
                                  char* error_msg,
                                  size_t error_msg_size);
+bool nrn_section_owner_hooks_clear(char* error_msg, size_t error_msg_size);
 Section* nrn_section_new_owned(void* owner);
+void* nrn_section_owner_get(Section* sec);
 void nrn_section_owned_release(Section* sec);
 void nrn_section_connect(Section* child_sec, double child_x, Section* parent_sec, double parent_x);
 void nrn_section_length_set(Section* sec, double length);

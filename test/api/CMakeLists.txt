@@ -21,8 +21,9 @@ set(api_test_files
     template_property.cpp
     vclamp.cpp)
 if(NRN_ENABLE_PYTHON)
-  # Owned sections exist only in builds with Python support.
-  list(APPEND api_test_files section_owner.cpp)
+  # Owned sections exist only in builds with Python support; section_owner_python also imports
+  # NEURON's Python module.
+  list(APPEND api_test_files section_owner.cpp section_owner_python.cpp)
 endif()
 foreach(api_test_file ${api_test_files})
   string(REPLACE "." "_" api_test_name "${api_test_file}")
