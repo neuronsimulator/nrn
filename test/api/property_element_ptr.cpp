@@ -152,7 +152,7 @@ int main(void) {
     // which this function does not reach; it must not return another variable.
     ok &= check(nrn_property_element_ptr(object("hocpnt"), "b", nullptr, 0, &p, err, sizeof(err)) !=
                         0 &&
-                    p == nullptr,
+                    p == nullptr && std::strstr(err, "make_pointprocess") != nullptr,
                 "make_pointprocess variable is reported");
 
     // Failures leave the stack alone.

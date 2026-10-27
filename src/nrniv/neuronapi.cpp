@@ -1334,7 +1334,11 @@ int nrn_property_element_ptr(Object* obj,
     if (obj->ctemplate->is_point_) {
         // point_process_pointer reads sym->u.rng, which only a RANGEVAR has.
         if (sym->type != RANGEVAR) {
-            return fail("not a variable of a point process or of Vector, Matrix or Pointer");
+            // A make_pointprocess template keeps its variables in the HOC
+            // dataspace, which this function does not reach.
+            return fail(is_hoc_template(obj)
+                            ? "variables of a make_pointprocess template are not supported"
+                            : "not a variable of a point process or of Vector, Matrix or Pointer");
         }
         // Point-process arrays are one-dimensional; a scalar takes no index.
         if (nindex != nsub || nsub > 1) {
