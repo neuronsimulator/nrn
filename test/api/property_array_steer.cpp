@@ -4,12 +4,16 @@
 // i; they used to raise "array dimension of x now 1". Matrix.x, which has two
 // dimensions, has no element i: get returns NaN, set does nothing, push pushes
 // a null pointer and the data handle is not valid, as for an invalid
-// point-process handle. Point processes are unchanged.
+// point-process handle, as does an index out of range. Point processes are
+// unchanged.
 #include <array>
+#include <cstddef>
 #include <cmath>
 #include <exception>
 #include <iostream>
 #include "neuronapi.h"
+
+std::size_t hoc_stack_size();  // NEURON internal: the HOC stack depth
 
 using std::cerr;
 using std::endl;
@@ -53,14 +57,39 @@ int main(void) {
     ok &= check(nrn_double_ptr_pop() == data + 2, "push &vec.x[2]");
     ok &= check(nrn_property_data_handle_is_valid(vec, "x", 1), "vec.x[1] has data");
 
-    // An index out of range is the HOC error HOC itself gives.
-    bool raised = false;
-    try {
-        nrn_property_array_get(vec, "x", 5);
-    } catch (const std::exception&) {
-        raised = true;
+    // An index out of range is a caller mistake, not a user error: it behaves like
+    // an invalid point-process handle (NaN, nothing written, null pointer, not
+    // valid) and leaves the HOC stack as it found it.
+    std::size_t const depth = hoc_stack_size();
+    for (int bad: {5, 100}) {
+        bool raised = false;
+        try {
+            ok &= check(std::isnan(nrn_property_array_get(vec, "x", bad)), "get vec.x[bad] is NaN");
+            nrn_property_array_set(vec, "x", bad, 7);
+            nrn_property_array_push(vec, "x", bad);
+            ok &= check(nrn_double_ptr_pop() == nullptr, "push vec.x[bad] is null");
+            ok &= check(!nrn_property_data_handle_is_valid(vec, "x", bad),
+                        "vec.x[bad] has no data handle");
+        } catch (const std::exception&) {
+            raised = true;
+        }
+        ok &= check(!raised, "an out-of-range index does not raise");
+        ok &= check(hoc_stack_size() == depth, "an out-of-range index leaves the stack alone");
     }
-    ok &= check(raised, "vec.x[5] raises");
+    ok &= check(data[4] == 40, "an out-of-range set wrote nothing");
+
+    // NetCon.weight is a C++ class array too: bounds checked by the same code.
+    nrn_hoc_call(
+        "objref nc, stim\n"
+        "soma stim = new NetStim(0.5)\n"
+        "nc = new NetCon(stim, stim)\n"
+        "nc.weight = 3\n");
+    Object* nc = object("nc");
+    ok &= check(nrn_property_array_get(nc, "weight", 0) == 3, "get nc.weight[0]");
+    nrn_property_array_set(nc, "weight", 0, 4);
+    ok &= check(nrn_property_array_get(nc, "weight", 0) == 4, "set nc.weight[0]");
+    ok &= check(std::isnan(nrn_property_array_get(nc, "weight", 1)), "nc.weight[1] is NaN");
+    ok &= check(hoc_stack_size() == depth, "NetCon.weight leaves the stack alone");
 
     // Matrix.x needs two indices, so the one-index accessors find no element.
     Object* mat = object("mat");

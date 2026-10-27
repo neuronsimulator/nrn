@@ -1185,14 +1185,22 @@ void* steer_element(void* request, void*) {
 // one-dimensional array (Vector.x) needs its index on the stack first, as HOC
 // pushes it; a scalar (Pointer.val) keeps the old pointer arithmetic. An array
 // with more than one index (Matrix.x) has no element i: nullptr, which the
-// callers treat like an invalid point-process handle.
+// callers treat like an invalid point-process handle, as they do an index out of
+// range.
 double* steered_element(const Object* obj, Symbol* sym, int i) {
     int const nsub = sym->arayinfo ? sym->arayinfo->nsub : 0;
     if (nsub > 1) {
         return nullptr;
     }
+    // The steer function raises a HOC error for an index out of range (or a freed
+    // Pointer). fpycall restores the interpreter state, including the HOC stack,
+    // and rethrows. The caller made a mistake, not the user: report no element.
     steer_request request{const_cast<Object*>(obj), sym, &i, nsub, nullptr};
-    steer_element(&request, nullptr);
+    try {
+        OcJump::fpycall(steer_element, &request, nullptr);
+    } catch (...) {
+        return nullptr;
+    }
     return nsub ? request.result : request.result + i;
 }
 }  // namespace
