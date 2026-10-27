@@ -170,6 +170,12 @@ static char* pysec_name(Section* sec) {
     return nullptr;
 }
 
+// Are the section owner hooks another provider's (a C API interface's, from
+// nrn_section_owner_hooks_set)? Its owners are not Python Sections.
+bool nrnpy_pysec_hooks_foreign() {
+    return nrnpy_pysec_name_p_ && nrnpy_pysec_name_p_ != pysec_name;
+}
+
 static Object* pysec_cell(Section* sec) {
     if (!sec->prop) {
         return nullptr;
