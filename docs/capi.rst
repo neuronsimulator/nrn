@@ -844,8 +844,13 @@ Segments
     variable it describes the handle the pointer holds. The checks are those
     of :c:func:`nrn_rangevar_get_nothrow`.
 
-    :param buf: Buffer for the text (truncated to ``size - 1`` characters), or
-        for the error message on failure.
+    :param sym: Range variable symbol.
+    :param sec: Pointer to the Section.
+    :param x: Normalized position along Section (0.0 to 1.0).
+    :param index: Element of an array range variable; 0 for a scalar.
+    :param buf: Buffer for the text (truncated to ``size - 1`` characters and
+        always terminated), or for the error message on failure. May be ``NULL``
+        to only get the length; nothing is written if ``size`` is 0.
     :param size: Size of ``buf``.
     :returns: The length of the full text, which may be ``size`` or more; -1 on
         error.
