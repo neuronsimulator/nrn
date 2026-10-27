@@ -223,8 +223,11 @@ _rxd_set_node_flux_callback.argtypes = [ctypes.c_void_p]
 _rxd_set_node_flux_callback(ctypes.cast(_node_flux_callback, ctypes.c_void_p))
 
 
-def _node_flux_sources(sources: list, offset: int):
-    """C arrays of the pointers to sources (NULL for a callable) and of the callables' ids."""
+def _node_flux_sources(sources: list, constants, callables: list, offset: int):
+    """C arrays of the pointers to sources (NULL for a callable) and of the callables' ids.
+
+    The constants are stored in `constants` and the callables appended to `callables`.
+    """
     if not sources:
         return None, None
     ptrs = []
@@ -232,14 +235,14 @@ def _node_flux_sources(sources: list, offset: int):
     for i, src in enumerate(sources, offset):
         callable_id = -1
         if isinstance(src, numbers.Real):
-            _node_flux_constants[i] = src
-            ptr = _node_flux_constants.ctypes.data + i * _node_flux_constants.itemsize
+            constants[i] = src
+            ptr = constants.ctypes.data + i * constants.itemsize
         elif isinstance(src, hoc.HocObject):
             ptr = address(src)
         elif callable(src):
             ptr = None
-            callable_id = len(_node_flux_callables)
-            _node_flux_callables.append(src)
+            callable_id = len(callables)
+            callables.append(src)
         else:
             raise RxDException("node._include_flux unrecognised source term.")
         ptrs.append(ptr)
@@ -1929,13 +1932,17 @@ def _include_flux(force=False):
             source3D.extend(grids[gid]["source"])
             scale3D.extend(grids[gid]["scale"])
         global _node_flux_constants
-        _node_flux_callables.clear()
-        _node_flux_constants = numpy.zeros(len(source1D) + len(source3D))
+        # Build everything before touching what the C code points into, so that an error in
+        # a source leaves the previous sources as they were.
+        constants = numpy.zeros(len(source1D) + len(source3D))
+        callables = []
+        sources1D = _node_flux_sources(source1D, constants, callables, 0)
+        sources3D = _node_flux_sources(source3D, constants, callables, len(source1D))
         rxd_include_node_flux1D(
             len(index1D),
             _list_to_clong_array(index1D),
             _list_to_cdouble_array(scale1D),
-            *_node_flux_sources(source1D, 0),
+            *sources1D,
         )
 
         rxd_include_node_flux3D(
@@ -1944,8 +1951,10 @@ def _include_flux(force=False):
             _list_to_cint_array(grids3D),
             _list_to_clong_array(index3D),
             _list_to_cdouble_array(scale3D),
-            *_node_flux_sources(source3D, len(source1D)),
+            *sources3D,
         )
+        _node_flux_constants = constants
+        _node_flux_callables[:] = callables
         node._has_node_fluxes = False
 
 

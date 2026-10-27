@@ -239,7 +239,13 @@ static PyObject* ref_address(PyObject* self, PyObject* args) {
     }
     auto* pho = (PyHocObject*) po;
     if (pho->type_ == PyHoc::HocScalarPtr) {
-        return PyLong_FromVoidPtr(static_cast<double*>(pho->u.px_));
+        auto* const px = static_cast<double*>(pho->u.px_);
+        if (!px) {
+            // A null address would read as "no pointer" to the C code that is given it.
+            PyErr_SetString(PyExc_ValueError, "the reference is no longer valid");
+            return nullptr;
+        }
+        return PyLong_FromVoidPtr(px);
     }
     if (pho->type_ == PyHoc::HocRefNum) {
         return PyLong_FromVoidPtr(&pho->u.x_);

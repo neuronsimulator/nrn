@@ -43,3 +43,12 @@ def test_not_a_reference_to_a_number(value):
 def test_not_a_hoc_object():
     with pytest.raises(TypeError):
         hoc.ref_address(1.0)
+
+
+def test_reference_to_a_deleted_section():
+    sec = h.Section(name="ref_address_deleted")
+    ref = sec(0.5)._ref_v
+    assert hoc.ref_address(ref) != 0
+    h.delete_section(sec=sec)
+    with pytest.raises(ValueError):
+        hoc.ref_address(ref)
