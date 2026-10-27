@@ -19,7 +19,9 @@ endif()
 # =============================================================================
 # rxdmath libraries (always build)
 # =============================================================================
-add_library(rxdmath SHARED ${CMAKE_CURRENT_SOURCE_DIR}/rxdmath.cpp)
+add_library(rxdmath SHARED ${PROJECT_SOURCE_DIR}/src/rxd/rxdmath.cpp)
+# nrn_export.hpp
+target_include_directories(rxdmath PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 install(TARGETS rxdmath DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
 
 # =============================================================================
