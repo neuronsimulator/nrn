@@ -71,11 +71,12 @@ def test_flux_added_after_a_run(neuron_nosave_instance):
     assert second.concentration - c2 > 0
 
 
-def test_reference_to_deleted_section_is_an_error(neuron_nosave_instance):
+def test_reference_to_deleted_section_is_an_error(neuron_nosave_instance, capfd):
     """A reference that has become invalid must not turn into a NULL source.
 
     A NULL source means 'evaluate a callable', so the invalid reference used to run
-    the last callable that was registered.
+    the last callable that was registered. Here the section is gone before the sources
+    are built, so hoc.ref_address refuses the reference.
     """
     h, rxd, save_path = neuron_nosave_instance
     calls = []
@@ -93,10 +94,27 @@ def test_reference_to_deleted_section_is_an_error(neuron_nosave_instance):
     node.include_flux(gone(0.5)._ref_v)
     h.delete_section(sec=gone)
     h.CVode().active(False)
-    with pytest.raises(RuntimeError):
+    with pytest.raises(RuntimeError, match="Python Callback failed"):
         h.finitialize(-65)
         h.fadvance()
+    assert "ValueError: the reference is no longer valid" in capfd.readouterr().err
     assert calls == []
+
+
+def test_reference_deleted_after_the_sources_were_built(neuron_nosave_instance, capfd):
+    """The C code finds out that a data_handle it holds has become invalid, and stops the run."""
+    h, rxd, save_path = neuron_nosave_instance
+    sec, x, node = _node_with_ref_flux(h, rxd, 0.0)
+    gone = h.Section(name="gone")
+    node.include_flux(gone(0.5)._ref_v)
+    h.CVode().active(False)
+    h.finitialize(-65)
+    h.fadvance()
+    h.delete_section(sec=gone)
+    with pytest.raises(
+        RuntimeError, match="node._include_flux reference is no longer valid"
+    ):
+        h.fadvance()
 
 
 def test_vector_is_not_a_flux_reference(neuron_nosave_instance):
