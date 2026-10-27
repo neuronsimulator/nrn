@@ -17,6 +17,7 @@
 #include <cstdio>
 #include <limits>
 #include <string>
+#include <utility>
 
 /// A public face of hoc_Item
 struct nrn_Item: public hoc_Item {};
@@ -46,6 +47,7 @@ struct SymbolTableIterator {
 extern int nrn_nobanner_;
 extern int diam_changed;
 extern int nrn_try_catch_nest_depth;
+extern int hoc_execerror_messages;
 extern "C" void nrnpy_set_pr_etal(int (*cbpr_stdoe)(int, char*), int (*cbpass)());
 int ivocmain_session(int, const char**, const char**, int start_session);
 void simpleconnectsection();
@@ -1300,6 +1302,22 @@ void* steer_element(void* request, void*) {
     r->result = hoc_pxpop();
     return nullptr;
 }
+
+// OcJump::fpycall with HOC error messages and the MPI abort on error turned
+// off, as hoc_execute1 does, so an error the caller reports itself is neither
+// printed nor fatal on more than one rank. Both flags are restored, also after
+// an error (hoc_execerror sets hoc_execerror_messages to 1).
+void* quiet_fpycall(void* (*f)(void*, void*), void* a) {
+    struct restore {
+        int messages = std::exchange(hoc_execerror_messages, 0);
+        int mpiabort = std::exchange(nrn_mpiabort_on_error_, 0);
+        ~restore() {
+            hoc_execerror_messages = messages;
+            nrn_mpiabort_on_error_ = mpiabort;
+        }
+    } const saved{};
+    return OcJump::fpycall(f, a, nullptr);
+}
 }  // namespace
 
 int nrn_property_element_ptr(Object* obj,
@@ -1370,7 +1388,7 @@ int nrn_property_element_ptr(Object* obj,
     // fpycall restores the interpreter state, including the stack, and rethrows.
     steer_request request{obj, sym, indices, nindex, nullptr};
     try {
-        OcJump::fpycall(steer_element, &request, nullptr);
+        quiet_fpycall(steer_element, &request);
     } catch (const std::exception& e) {
         return fail(e.what());
     } catch (...) {

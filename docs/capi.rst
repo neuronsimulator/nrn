@@ -2255,7 +2255,8 @@ Miscellaneous
 
     Works for ``Matrix.x``, ``Vector.x``, ``Pointer.val`` and point-process
     variables (scalars and one-dimensional arrays). Errors are reported in
-    ``error_msg``, not raised, and leave the interpreter stack unchanged.
+    ``error_msg``, not raised or printed, and leave the interpreter stack
+    unchanged.
 
     :param obj: Pointer to the object.
     :param name: Name of the variable, such as ``"x"``.

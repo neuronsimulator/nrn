@@ -3,9 +3,11 @@
 // variable, given every index: Matrix.x[i][j], Vector.x[i], Pointer.val and
 // point-process variables (scalars and arrays). Errors are reported, not thrown.
 #include <array>
+#include <cstdio>
 #include <cstring>
 #include <iostream>
 #include <string>
+#include <unistd.h>
 #include "neuronapi.h"
 
 using std::cerr;
@@ -18,6 +20,29 @@ static bool check(bool cond, const char* msg) {
         cerr << "FAIL: " << msg << endl;
     }
     return cond;
+}
+
+// What f writes to stderr (fd 2), which is restored before returning.
+template <class F>
+static std::string stderr_of(F f) {
+    std::fflush(stderr);
+    FILE* const sink = std::tmpfile();
+    int const saved = dup(STDERR_FILENO);
+    if (!sink || saved == -1 || dup2(fileno(sink), STDERR_FILENO) == -1) {
+        std::perror("redirect stderr");
+        std::exit(1);
+    }
+    f();
+    std::fflush(stderr);
+    dup2(saved, STDERR_FILENO);
+    close(saved);
+    std::string text;
+    std::rewind(sink);
+    for (int c; (c = std::fgetc(sink)) != EOF;) {
+        text += static_cast<char>(c);
+    }
+    std::fclose(sink);
+    return text;
 }
 
 static Object* object(const char* name) {
@@ -162,6 +187,22 @@ int main(void) {
     i = 9;
     nrn_property_element_ptr(vec, "x", &i, 1, &p, err, sizeof(err));
     ok &= check(nrn_double_pop() == -7.0, "failures leave the stack alone");
+
+    // A steer error goes only to error_msg: HOC prints nothing, and HOC errors
+    // print again afterwards.
+    std::string const printed = stderr_of([&] {
+        ij = {3, 0};
+        nrn_property_element_ptr(mat, "x", ij.data(), 2, &p, err, sizeof(err));
+        i = 5;
+        nrn_property_element_ptr(vec, "x", &i, 1, &p, err, sizeof(err));
+    });
+    ok &= check(printed.empty(), "a steer error prints nothing");
+    if (!printed.empty()) {
+        cerr << printed;
+    }
+    ok &= check(std::strstr(err, "out of range") != nullptr, "the steer error is still reported");
+    ok &= check(!stderr_of([] { nrn_hoc_call("mat.x[9][9] = 1\n"); }).empty(),
+                "HOC error messages are restored");
 
     return ok ? 0 : 1;
 }
