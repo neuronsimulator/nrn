@@ -686,6 +686,9 @@ bool nrn_symbol_object_set(Symbol* sym, Object* obj) {
         return false;
     }
     Object** cell = hoc_top_level_data[sym->u.oboff].pobj;
+    if (*cell == obj) {  // `o = o` is a no-op in HOC too
+        return true;
+    }
     hoc_obj_ref(obj);        // NULL-safe
     hoc_dec_refcount(cell);  // unref the old content and NULL the cell
     *cell = obj;
@@ -1378,14 +1381,23 @@ Object* nrn_property_object_get(const Object* obj, const char* name) {
 
 bool nrn_property_object_set(Object* obj, const char* name, Object* value) {
     // HOC assignment refcount rules, as nrn_symbol_object_set: retain the new
-    // object, then release the old one; NULL makes the member nil.
+    // object, then release the old one; NULL makes the member nil. Assigning
+    // the current value is a no-op, as `a.m = a.m` is. The cell is written
+    // before the old object is released: if the old object held the last
+    // reference to `obj`, releasing it frees `obj` and its cells, and freeing
+    // the cell releases `value` with the other members. `obj` itself is not
+    // ref'd or unref'd, so a template's unref() sees the same calls as for HOC.
     Object** cell = template_objref(obj, name);
     if (!cell) {
         return false;
     }
+    Object* old = *cell;
+    if (old == value) {
+        return true;
+    }
     hoc_obj_ref(value);  // NULL-safe
-    hoc_dec_refcount(cell);
     *cell = value;
+    hoc_obj_unref(old);  // NULL-safe; may free obj (see above)
     return true;
 }
 
