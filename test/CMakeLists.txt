@@ -364,7 +364,7 @@ if(NRN_ENABLE_PYTHON)
                       ${change_test_tolerance}
           COMMAND
             ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
-            ${CMAKE_COMMAND} -E env COVERAGE_FILE=${COVERAGE_FILE}\$ENV{OMPI_COMM_WORLD_RANK}
+            ${CMAKE_COMMAND} -E env "COVERAGE_FILE=${COVERAGE_FILE}_$ENV{OMPI_COMM_WORLD_RANK}"
             ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${MPIEXEC_POSTFLAGS} ${pytest}
             ./test/rxd/ecs/test_ecs_example.py --mpi)
       endif()
