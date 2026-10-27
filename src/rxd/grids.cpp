@@ -25,7 +25,7 @@ extern double* _rxd_induced_currents_ecs;
 extern double* _rxd_induced_currents_scale;
 
 // Set dt, t pointers
-extern "C" NRN_EXPORT void make_time_ptr(double* my_dt_ptr, double* my_t_ptr) {
+extern "C" void make_time_ptr(double* my_dt_ptr, double* my_t_ptr) {
     dt_ptr = my_dt_ptr;
     t_ptr = my_t_ptr;
 }
@@ -197,24 +197,24 @@ ECS_Grid_node::ECS_Grid_node(double* my_states,
 // Insert a Grid_node "new_Grid" into the list located at grid_list_index in Parallel_grids
 /* returns the grid number
    TODO: change this to returning the pointer */
-extern "C" NRN_EXPORT int ECS_insert(int grid_list_index,
-                                     double* my_states,
-                                     int my_num_states_x,
-                                     int my_num_states_y,
-                                     int my_num_states_z,
-                                     double my_dc_x,
-                                     double my_dc_y,
-                                     double my_dc_z,
-                                     double my_dx,
-                                     double my_dy,
-                                     double my_dz,
-                                     double* my_alpha,
-                                     double my_alpha_value,
-                                     double* my_permeability,
-                                     double my_permeability_value,
-                                     int bc,
-                                     double bc_value,
-                                     double atolscale) {
+extern "C" int ECS_insert(int grid_list_index,
+                          double* my_states,
+                          int my_num_states_x,
+                          int my_num_states_y,
+                          int my_num_states_z,
+                          double my_dc_x,
+                          double my_dc_y,
+                          double my_dc_z,
+                          double my_dx,
+                          double my_dy,
+                          double my_dz,
+                          double* my_alpha,
+                          double my_alpha_value,
+                          double* my_permeability,
+                          double my_permeability_value,
+                          int bc,
+                          double bc_value,
+                          double atolscale) {
     ECS_Grid_node* new_Grid = new ECS_Grid_node(my_states,
                                                 my_num_states_x,
                                                 my_num_states_y,
@@ -389,21 +389,21 @@ ICS_Grid_node::ICS_Grid_node(double* my_states,
 // Insert a Grid_node "new_Grid" into the list located at grid_list_index in Parallel_grids
 /* returns the grid number
    TODO: change this to returning the pointer */
-extern "C" NRN_EXPORT int ICS_insert(int grid_list_index,
-                                     double* my_states,
-                                     long num_nodes,
-                                     long* neighbors,
-                                     long* x_line_defs,
-                                     long x_lines_length,
-                                     long* y_line_defs,
-                                     long y_lines_length,
-                                     long* z_line_defs,
-                                     long z_lines_length,
-                                     double* dcs,
-                                     double dx,
-                                     bool is_diffusable,
-                                     double atolscale,
-                                     double* ics_alphas) {
+extern "C" int ICS_insert(int grid_list_index,
+                          double* my_states,
+                          long num_nodes,
+                          long* neighbors,
+                          long* x_line_defs,
+                          long x_lines_length,
+                          long* y_line_defs,
+                          long y_lines_length,
+                          long* z_line_defs,
+                          long z_lines_length,
+                          double* dcs,
+                          double dx,
+                          bool is_diffusable,
+                          double atolscale,
+                          double* ics_alphas) {
     ICS_Grid_node* new_Grid = new ICS_Grid_node(my_states,
                                                 num_nodes,
                                                 neighbors,
@@ -423,21 +423,21 @@ extern "C" NRN_EXPORT int ICS_insert(int grid_list_index,
     return new_Grid->insert(grid_list_index);
 }
 
-extern "C" NRN_EXPORT int ICS_insert_inhom(int grid_list_index,
-                                           double* my_states,
-                                           long num_nodes,
-                                           long* neighbors,
-                                           long* x_line_defs,
-                                           long x_lines_length,
-                                           long* y_line_defs,
-                                           long y_lines_length,
-                                           long* z_line_defs,
-                                           long z_lines_length,
-                                           double* dcs,
-                                           double dx,
-                                           bool is_diffusable,
-                                           double atolscale,
-                                           double* ics_alphas) {
+extern "C" int ICS_insert_inhom(int grid_list_index,
+                                double* my_states,
+                                long num_nodes,
+                                long* neighbors,
+                                long* x_line_defs,
+                                long x_lines_length,
+                                long* y_line_defs,
+                                long y_lines_length,
+                                long* z_line_defs,
+                                long z_lines_length,
+                                double* dcs,
+                                double dx,
+                                bool is_diffusable,
+                                double atolscale,
+                                double* ics_alphas) {
     ICS_Grid_node* new_Grid = new ICS_Grid_node(my_states,
                                                 num_nodes,
                                                 neighbors,
@@ -457,7 +457,7 @@ extern "C" NRN_EXPORT int ICS_insert_inhom(int grid_list_index,
 }
 
 
-extern "C" NRN_EXPORT int set_diffusion(int grid_list_index, int grid_id, double* dc, int length) {
+extern "C" int set_diffusion(int grid_list_index, int grid_id, double* dc, int length) {
     int id = 0;
     Grid_node* node = Parallel_grids[grid_list_index];
     while (id < grid_id) {
@@ -470,10 +470,10 @@ extern "C" NRN_EXPORT int set_diffusion(int grid_list_index, int grid_id, double
     return 0;
 }
 
-extern "C" NRN_EXPORT int set_tortuosity(int grid_list_index,
-                                         int grid_id,
-                                         double* my_permeability,
-                                         double my_permeability_value) {
+extern "C" int set_tortuosity(int grid_list_index,
+                              int grid_id,
+                              double* my_permeability,
+                              double my_permeability_value) {
     int id = 0;
     Grid_node* node = Parallel_grids[grid_list_index];
     while (id < grid_id) {
@@ -524,10 +524,10 @@ void ECS_Grid_node::set_tortuosity(double* my_permeability, double my_permeabili
     }
 }
 
-extern "C" NRN_EXPORT int set_volume_fraction(int grid_list_index,
-                                              int grid_id,
-                                              double* my_alpha,
-                                              double my_alpha_value) {
+extern "C" int set_volume_fraction(int grid_list_index,
+                                   int grid_id,
+                                   double* my_alpha,
+                                   double my_alpha_value) {
     int id = 0;
     Grid_node* node = Parallel_grids[grid_list_index];
     while (id < grid_id) {
@@ -599,12 +599,12 @@ void ECS_Grid_node::set_diffusion(double* dc, int) {
 }
 
 
-extern "C" NRN_EXPORT void ics_set_grid_concentrations(int grid_list_index,
-                                                       int index_in_list,
-                                                       int64_t* nodes_per_seg,
-                                                       int64_t* nodes_per_seg_start_indices,
-                                                       int n,  // number of segments
-                                                       double** neuron_pointers) {
+extern "C" void ics_set_grid_concentrations(int grid_list_index,
+                                            int index_in_list,
+                                            int64_t* nodes_per_seg,
+                                            int64_t* nodes_per_seg_start_indices,
+                                            int n,  // number of segments
+                                            double** neuron_pointers) {
     Grid_node* g;
     int i;
 
@@ -623,11 +623,11 @@ extern "C" NRN_EXPORT void ics_set_grid_concentrations(int grid_list_index,
     }
 }
 
-extern "C" NRN_EXPORT void ics_set_grid_currents(int grid_list_index,
-                                                 int index_in_list,
-                                                 int n,
-                                                 double** neuron_pointers,
-                                                 double* scale_factors) {
+extern "C" void ics_set_grid_currents(int grid_list_index,
+                                      int index_in_list,
+                                      int n,
+                                      double** neuron_pointers,
+                                      double* scale_factors) {
     Grid_node* g;
     int i;
     /* Find the Grid Object */
@@ -646,11 +646,11 @@ extern "C" NRN_EXPORT void ics_set_grid_currents(int grid_list_index,
 
 
 /* TODO: make this work with Grid_node ptrs instead of pairs of list indices */
-extern "C" NRN_EXPORT void set_grid_concentrations(int grid_list_index,
-                                                   int index_in_list,
-                                                   int n,
-                                                   long* grid_indices,
-                                                   double** neuron_pointers) {
+extern "C" void set_grid_concentrations(int grid_list_index,
+                                        int index_in_list,
+                                        int n,
+                                        long* grid_indices,
+                                        double** neuron_pointers) {
     /*
     Preconditions:
 
@@ -685,12 +685,12 @@ extern "C" NRN_EXPORT void set_grid_concentrations(int grid_list_index,
 }
 
 /* TODO: make this work with Grid_node ptrs instead of pairs of list indices */
-extern "C" NRN_EXPORT void set_grid_currents(int grid_list_index,
-                                             int index_in_list,
-                                             int n,
-                                             long* grid_indices,
-                                             double** neuron_pointers,
-                                             double* scale_factors) {
+extern "C" void set_grid_currents(int grid_list_index,
+                                  int index_in_list,
+                                  int n,
+                                  long* grid_indices,
+                                  double** neuron_pointers,
+                                  double* scale_factors) {
     /*
     Preconditions:
 
@@ -778,7 +778,7 @@ int remove(Grid_node** head, Grid_node* find) {
     return 1;
 }
 
-extern "C" NRN_EXPORT void delete_by_id(int id) {
+extern "C" void delete_by_id(int id) {
     Grid_node* grid;
     int k;
     for (k = 0, grid = Parallel_grids[0]; grid != NULL; grid = grid->next, k++) {
