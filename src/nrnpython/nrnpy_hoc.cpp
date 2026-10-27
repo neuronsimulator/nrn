@@ -1211,6 +1211,12 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
             if (!sec) {
                 PyErr_SetString(PyExc_NameError, n);
             } else if (sec && sec->prop && sec->prop->dparam[PROP_PY_INDEX].get<void*>()) {
+                if (nrnpy_pysec_hooks_foreign()) {
+                    PyErr_SetString(PyExc_RuntimeError,
+                                    "another interface's section owner hooks are installed "
+                                    "(nrn_section_owner_hooks_set)");
+                    return nullptr;
+                }
                 result = nb::borrow(
                     static_cast<PyObject*>(sec->prop->dparam[PROP_PY_INDEX].get<void*>()));
             } else {
@@ -1224,6 +1230,12 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
             if (!sec) {
                 PyErr_SetString(PyExc_NameError, n);
             } else if (sec && sec->prop && sec->prop->dparam[PROP_PY_INDEX].get<void*>()) {
+                if (nrnpy_pysec_hooks_foreign()) {
+                    PyErr_SetString(PyExc_RuntimeError,
+                                    "another interface's section owner hooks are installed "
+                                    "(nrn_section_owner_hooks_set)");
+                    return nullptr;
+                }
                 result = nb::borrow(
                     static_cast<PyObject*>(sec->prop->dparam[PROP_PY_INDEX].get<void*>()));
             } else {

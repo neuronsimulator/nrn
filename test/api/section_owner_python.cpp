@@ -24,7 +24,9 @@ static bool check(bool cond, const char* msg) {
 
 static int owner_token;
 static char name[] = "capi_cell.soma";
+static int name_calls;
 static char* section_name(Section*) {
+    ++name_calls;
     return name;
 }
 static Object* section_cell(Section*) {
@@ -75,6 +77,21 @@ int main(void) {
     Section* owned = nrn_section_new_owned(&owner_token);
     ok &= check(owned && std::strcmp(nrn_secname(owned), "capi_cell.soma") == 0,
                 "owned section after the takeover");
+
+    // The module stays loaded but must not make or wrap owned sections while
+    // our hooks are installed: its sections would be named by our hook, and it
+    // would read our owner as a Python Section.
+    name_calls = 0;
+    ok &= check(run_python("s = neuron.h.Section(name='late')") == 0.0,
+                "the module refuses to create a section");
+    ok &= check(name_calls == 0, "no section named by our hook");
+    ok &= check(run_python("[str(x) for x in neuron.h.allsec()]") == 0.0,
+                "the module refuses to wrap our section in allsec");
+    nrn_section_push(owned);
+    ok &= check(run_python("neuron.h.cas()") == 0.0,
+                "the module refuses to wrap our section in cas");
+    nrn_section_pop();
+    ok &= check(std::strcmp(nrn_secname(owned), "capi_cell.soma") == 0, "our section is untouched");
     nrn_section_owned_release(owned);
     return ok ? 0 : 1;
 }

@@ -134,7 +134,9 @@ Sections
     Remove the installed section owner hooks, whoever installed them, so that
     :c:func:`nrn_section_owner_hooks_set` can install others. An interface that
     replaces NEURON's Python module in a running ``nrniv -python`` takes over
-    its hooks this way; the module must not create sections afterwards.
+    its hooks this way. While other hooks are installed, the still-loaded
+    module raises ``RuntimeError`` instead of creating a Python section or
+    wrapping an owned one (``h.allsec()``, ``h.cas()``).
 
     :param error_msg: Buffer for a diagnostic if the hooks are not removed.
     :param error_msg_size: Size of ``error_msg``.

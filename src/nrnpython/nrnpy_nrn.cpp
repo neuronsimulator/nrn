@@ -176,6 +176,19 @@ bool nrnpy_pysec_hooks_foreign() {
     return nrnpy_pysec_name_p_ && nrnpy_pysec_name_p_ != pysec_name;
 }
 
+// While another provider's hooks are installed (it took them over with
+// nrn_section_owner_hooks_clear), this module must not own sections, or wrap
+// that provider's, whose owner it would read as a Python Section.
+static bool pysec_hooks_foreign_err() {
+    if (nrnpy_pysec_hooks_foreign()) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "another interface's section owner hooks are installed "
+                        "(nrn_section_owner_hooks_set)");
+        return true;
+    }
+    return false;
+}
+
 static Object* pysec_cell(Section* sec) {
     if (!sec->prop) {
         return nullptr;
@@ -412,6 +425,9 @@ static int NPySecObj_init(NPySecObj* self, PyObject* args, PyObject* kwds) {
     // printf("NPySecObj_init %p %p\n", self, self->sec_);
     static const char* kwlist[] = {"name", "cell", nullptr};
     if (self && !self->sec_) {
+        if (pysec_hooks_foreign_err()) {
+            return -1;
+        }
         delete[] self->name_;
         self->name_ = nullptr;
         self->cell_weakref_ = nullptr;
@@ -1052,6 +1068,9 @@ NPySecObj* newpysechelp(Section* sec) {
     }
     NPySecObj* pysec = NULL;
     if (auto* pv = sec->prop->dparam[PROP_PY_INDEX].get<void*>(); pv) {
+        if (pysec_hooks_foreign_err()) {
+            return NULL;
+        }
         pysec = static_cast<NPySecObj*>(pv);
         Py_INCREF(pysec);
         assert(pysec->sec_ == sec);
@@ -1072,6 +1091,10 @@ static PyObject* newpyseghelp(Section* sec, double x) {
     }
     seg->x_ = x;
     seg->pysec_ = newpysechelp(sec);
+    if (!seg->pysec_) {
+        Py_DECREF(seg);
+        return nullptr;
+    }
     return (PyObject*) seg;
 }
 
@@ -1915,6 +1938,10 @@ static Object* seg_from_sec_x(Section* sec, double x) {
     auto pyseg = nb::steal((PyObject*) PyObject_New(NPySegObj, psegment_type));
     auto* pseg = (NPySegObj*) pyseg.ptr();
     pseg->pysec_ = newpysechelp(sec);  // newpysechelp() already increfs
+    if (!pseg->pysec_) {
+        PyErr_Print();
+        hoc_execerror("no Python segment for", secname(sec));
+    }
     pseg->x_ = x;
     return nrnpy_pyobject_in_obj((PyObject*) pseg);
 }
