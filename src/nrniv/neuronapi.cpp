@@ -1332,6 +1332,10 @@ int nrn_property_element_ptr(Object* obj,
     }
     int const nsub = sym->arayinfo ? sym->arayinfo->nsub : 0;
     if (obj->ctemplate->is_point_) {
+        // point_process_pointer reads sym->u.rng, which only a RANGEVAR has.
+        if (sym->type != RANGEVAR) {
+            return fail("not a variable of a point process or of Vector, Matrix or Pointer");
+        }
         // Point-process arrays are one-dimensional; a scalar takes no index.
         if (nindex != nsub || nsub > 1) {
             return fail("wrong number of indices");
@@ -1340,7 +1344,12 @@ int nrn_property_element_ptr(Object* obj,
         if (i < 0 || (nsub && i >= sym->arayinfo->sub[0])) {
             return fail("index out of range");
         }
-        auto handle = point_process_pointer(ob2pntproc_0(obj), sym, i);
+        // Checked here because point_process_pointer raises a HOC error for it.
+        auto* const pnt = ob2pntproc_0(obj);
+        if (!pnt || !pnt->prop) {
+            return fail("point process not located in a section");
+        }
+        auto handle = point_process_pointer(pnt, sym, i);
         if (!handle) {
             return fail("no data for this property (POINTER not set?)");
         }

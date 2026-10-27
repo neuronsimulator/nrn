@@ -2268,8 +2268,8 @@ Miscellaneous
     :param error_msg_size: Size of ``error_msg``.
     :returns: 0 on success, nonzero on failure: unknown name, a method rather than
         a variable, the wrong number of indices, an index out of range, a
-        point-process ``POINTER`` that is not set, or a ``Pointer`` whose target was
-        freed.
+        point process that is not located in a section, a point-process
+        ``POINTER`` that is not set, or a ``Pointer`` whose target was freed.
 
     The pointer stays valid until the object's storage changes (for example a
     ``Vector`` is resized or a ``Matrix`` is reallocated) or the object is destroyed.

@@ -49,7 +49,19 @@ int main(void) {
         "soma ic = new IClamp(0.5)\n"
         "soma vc = new VClamp(0.5)\n"
         "ic.amp = 0.25\n"
-        "vc.amp[1] = -20\n");
+        "vc.amp[1] = -20\n"
+        "objref ic_unlocated, ic_deleted\n"
+        "ic_unlocated = new IClamp()\n"
+        "create dend\n"
+        "dend ic_deleted = new IClamp(0.5)\n"
+        "dend delete_section()\n"
+        "begintemplate HocPnt\n"
+        "public a, b\n"
+        "proc init() { a = 3  b = 5 }\n"
+        "endtemplate HocPnt\n"
+        "make_pointprocess(\"HocPnt\")\n"
+        "objref hocpnt\n"
+        "soma hocpnt = new HocPnt(0.5)\n");
 
     bool ok = true;
     char err[256]{};
@@ -114,6 +126,34 @@ int main(void) {
                 "unknown property");
     ok &= check(nrn_property_element_ptr(vec, "size", nullptr, 0, &p, err, sizeof(err)) != 0,
                 "a method is not a variable");
+
+    // A point process with no section has no data. This is reported, not raised
+    // as the HOC error "point process not located in a section".
+    nrn_double_push(-7.0);
+    ok &= check(nrn_property_element_ptr(
+                    object("ic_unlocated"), "amp", nullptr, 0, &p, err, sizeof(err)) != 0 &&
+                    p == nullptr && std::strstr(err, "not located in a section") != nullptr,
+                "unlocated point process is reported");
+    ok &= check(nrn_property_element_ptr(
+                    object("ic_deleted"), "amp", nullptr, 0, &p, err, sizeof(err)) != 0 &&
+                    p == nullptr && std::strstr(err, "not located in a section") != nullptr,
+                "point process of a deleted section is reported");
+    ok &= check(nrn_double_pop() == -7.0, "unlocated point process leaves the stack alone");
+
+    // A point-process method is not a variable either.
+    for (const char* method: {"loc", "get_loc", "has_loc"}) {
+        ok &= check(
+            nrn_property_element_ptr(object("ic"), method, nullptr, 0, &p, err, sizeof(err)) != 0 &&
+                p == nullptr && std::strstr(err, "not a variable") != nullptr,
+            method);
+    }
+
+    // A make_pointprocess template keeps its variables in the HOC dataspace,
+    // which this function does not reach; it must not return another variable.
+    ok &= check(nrn_property_element_ptr(object("hocpnt"), "b", nullptr, 0, &p, err, sizeof(err)) !=
+                        0 &&
+                    p == nullptr,
+                "make_pointprocess variable is reported");
 
     // Failures leave the stack alone.
     nrn_double_push(-7.0);
