@@ -87,7 +87,7 @@ int main(void) {
         ok &= check(nrn_segment_mechanisms(soma, bad, nullptr, 0) == -1, "x out of range");
     }
 
-    // The end nodes x=0 and x=1 carry no mechanisms.
+    // The end nodes x=0 and x=1 of a root section carry no mechanisms.
     ok &= check(nrn_segment_mechanisms(soma, 0.0, nullptr, 0) == 0, "x=0 has no mechanisms");
     ok &= check(nrn_segment_mechanisms(soma, 1.0, nullptr, 0) == 0, "x=1 has no mechanisms");
 
@@ -101,6 +101,15 @@ int main(void) {
     Section* dend = nrn_cas();
     ok &= check_order(dend, 0.5, {"IClamp", "pas", "capacitance", "morphology"});
     ok &= check_order(dend, 1.0 / 6, {"morphology", "capacitance", "pas"});
+
+    // x=0 of a child section is the node of its parent, with that node's mechanisms.
+    nrn_hoc_call(
+        "create kid\n"
+        "connect kid(0), dend(0.5)\n"
+        "access kid\n");
+    Section* kid = nrn_cas();
+    ok &= check_order(kid, 0.0, {"IClamp", "pas", "capacitance", "morphology"});
+    ok &= check(nrn_segment_mechanisms(kid, 1.0, nullptr, 0) == 0, "x=1 of a leaf has none");
 
     // A deleted section.
     nrn_hoc_call(
