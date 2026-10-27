@@ -5,6 +5,7 @@ Description: Header File for grids.cpp. Allows access to Grid_node
 and Flux_pair structs and their respective functions
 ******************************************************************/
 #include <stdio.h>
+#include <vector>
 #include <assert.h>
 #include <nrnmpi.h>
 
@@ -140,7 +141,8 @@ class Grid_node {
     int node_flux_count;
     long* node_flux_idx;
     double* node_flux_scale;
-    double** node_flux_src;
+    // where the flux of each source is read, for the sources that are not callables
+    std::vector<neuron::container::data_handle<double>> node_flux_src;
     long* node_flux_callable;
 
 
@@ -382,16 +384,13 @@ extern Grid_node* Parallel_grids[100];  // Array of Grid_node * lists
 void make_dt_ptr(double* my_dt_ptr);
 
 
-// Create a single Grid_node
-/* Parameters:  Python object that includes array of double pointers,
-                size of x, y, and z dimensions
+// Create a single Grid_node and insert it into the list located at grid_list_index in
+// Parallel_grids.
+/* Parameters:  pointer to the states, size of x, y, and z dimensions
                 x, y, and z diffusion constants
-                delta x, delta y, and delta z*/
-
-// Free a single Grid_node "grid"
-// void free_Grid(Grid_node *grid);
-
-// Insert a Grid_node "new_Grid" into the list located at grid_list_index in Parallel_grids
+                delta x, delta y, and delta z
+                volume fraction and permeability: a pointer to per-voxel values, or NULL
+                and the uniform value*/
 extern "C" int ECS_insert(int grid_list_index,
                           double* my_states,
                           int my_num_states_x,
@@ -469,4 +468,10 @@ int remove(Grid_node** head, Grid_node* find);
 // Destroy the list located at list_index and free all memory
 void empty_list(int list_index);
 
-void apply_node_flux(int, long*, double*, double**, long*, double, double*);
+void apply_node_flux(int,
+                     long*,
+                     double*,
+                     const neuron::container::data_handle<double>*,
+                     long*,
+                     double,
+                     double*);

@@ -139,3 +139,30 @@ def test_failed_rebuild_keeps_the_previous_sources(neuron_nosave_instance):
     assert rxd_module._node_flux_constants is constants
     assert (rxd_module._node_flux_constants == values).all()
     assert rxd_module._node_flux_callables == callables
+
+
+def test_reference_follows_a_data_permutation(neuron_nosave_instance):
+    """The flux source is a data_handle: the value is still read after NEURON re-sorts its data."""
+    h, rxd, save_path = neuron_nosave_instance
+    other = h.Section(name="other")
+    other.nseg = 1
+    sec, x, node = _node_with_ref_flux(h, rxd, other(0.5)._ref_v)
+
+    def flux(v):
+        h.CVode().active(False)
+        h.finitialize(-65)
+        other(0.5).v = v
+        before = node.concentration
+        h.fadvance()
+        return (node.concentration - before) / v
+
+    before = flux(-20.0)
+    assert before != 0
+    # more sections change the layout of the voltages
+    extra = [h.Section(name=f"extra{i}") for i in range(4)]
+    for s in extra:
+        s.nseg = 5
+    for i in range(3):
+        extra[i + 1].connect(extra[i])
+    assert flux(-40.0) == pytest.approx(before, rel=1e-9, abs=0)
+    assert flux(-20.0) == pytest.approx(before, rel=1e-9, abs=0)

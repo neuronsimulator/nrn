@@ -105,7 +105,7 @@ int* _membrane_lookup;                /*states index -> position in _rxd_induced
 int _node_flux_count = 0;
 long* _node_flux_idx = NULL;
 double* _node_flux_scale = NULL;
-double** _node_flux_src = NULL;
+static std::vector<neuron::container::data_handle<double>> _node_flux_src;
 long* _node_flux_callable = NULL;
 /* evaluates the Python callable flux source with the given id */
 static int (*_node_flux_callback)(long, double*) = NULL;
@@ -136,6 +136,17 @@ static inline void* allocopy(void* src, size_t size) {
     void* dst = malloc(size);
     memcpy(dst, src, size);
     return dst;
+}
+
+/* The sources as data_handles, so that a value NEURON moves is still found. A pointer into memory
+ * that is not NEURON's (a constant stored by Python, h.ref(x)) is kept as it is. */
+static std::vector<neuron::container::data_handle<double>> source_handles(double** sources, int n) {
+    std::vector<neuron::container::data_handle<double>> handles;
+    handles.reserve(n);
+    for (int i = 0; i < n; i++) {
+        handles.emplace_back(sources[i]);
+    }
+    return handles;
 }
 
 extern "C" void rxd_set_no_diffusion() {
@@ -219,7 +230,7 @@ extern "C" void rxd_include_node_flux3D(int grid_count,
             g->node_flux_count = 0;
             free(g->node_flux_scale);
             free(g->node_flux_idx);
-            free(g->node_flux_src);
+            g->node_flux_src.clear();
             free(g->node_flux_callable);
         }
     }
@@ -244,7 +255,7 @@ extern "C" void rxd_include_node_flux3D(int grid_count,
             if (n > 0) {
                 g->node_flux_idx = (long*) malloc(g->node_flux_count * sizeof(long));
                 g->node_flux_scale = (double*) malloc(g->node_flux_count * sizeof(double));
-                g->node_flux_src = (double**) allocopy(&sources[offset], n * sizeof(double*));
+                g->node_flux_src = source_handles(&sources[offset], n);
                 g->node_flux_callable = (long*) allocopy(&callables[offset], n * sizeof(long));
             }
 
@@ -268,8 +279,7 @@ extern "C" void rxd_include_node_flux3D(int grid_count,
                                                         grid_counts[i] * sizeof(long));
                     g->node_flux_scale = (double*) allocopy(&scales[offset],
                                                             grid_counts[i] * sizeof(double));
-                    g->node_flux_src = (double**) allocopy(&sources[offset],
-                                                           grid_counts[i] * sizeof(double*));
+                    g->node_flux_src = source_handles(&sources[offset], grid_counts[i]);
                     g->node_flux_callable = (long*) allocopy(&callables[offset],
                                                              grid_counts[i] * sizeof(long));
                 }
@@ -283,8 +293,7 @@ extern "C" void rxd_include_node_flux3D(int grid_count,
                 g->node_flux_idx = (long*) allocopy(&index[offset], grid_counts[i] * sizeof(long));
                 g->node_flux_scale = (double*) allocopy(&scales[offset],
                                                         grid_counts[i] * sizeof(double));
-                g->node_flux_src = (double**) allocopy(&sources[offset],
-                                                       grid_counts[i] * sizeof(double*));
+                g->node_flux_src = source_handles(&sources[offset], grid_counts[i]);
                 g->node_flux_callable = (long*) allocopy(&callables[offset],
                                                          grid_counts[i] * sizeof(long));
             }
@@ -302,14 +311,14 @@ extern "C" void rxd_include_node_flux1D(int n,
     if (_node_flux_count != 0) {
         free(_node_flux_idx);
         free(_node_flux_scale);
-        free(_node_flux_src);
         free(_node_flux_callable);
     }
+    _node_flux_src.clear();
     _node_flux_count = n;
     if (n > 0) {
         _node_flux_idx = (long*) allocopy(index, n * sizeof(long));
         _node_flux_scale = (double*) allocopy(scales, n * sizeof(double));
-        _node_flux_src = (double**) allocopy(sources, n * sizeof(double*));
+        _node_flux_src = source_handles(sources, n);
         _node_flux_callable = (long*) allocopy(callables, n * sizeof(long));
     }
 }
@@ -319,26 +328,28 @@ extern "C" void rxd_set_node_flux_callback(int (*callback)(long, double*)) {
     _node_flux_callback = callback;
 }
 
-/* A source is a pointer to the flux (a NEURON variable, or a constant stored by Python), or, when
- * the pointer is NULL, a Python callable that _node_flux_callback evaluates by its id. The callback
- * stores the flux and returns 0, or reports the Python error and returns nonzero. */
+/* A source is a callable, when its id is not negative, or the flux itself: a NEURON variable or a
+ * number stored by Python. A callable is evaluated by _node_flux_callback, which stores the flux
+ * and returns 0, or reports the Python error and returns nonzero. */
 void apply_node_flux(int n,
                      long* index,
                      double* scale,
-                     double** source,
+                     const neuron::container::data_handle<double>* source,
                      long* callable,
                      double dt,
                      double* states) {
-    for (size_t i = 0; i < n; i++) {
+    for (int i = 0; i < n; i++) {
         size_t j = index == nullptr ? i : index[i];
-        if (source[i]) {
-            states[j] += dt * *source[i] / scale[i];
-        } else if (_node_flux_callback) {
+        if (callable[i] >= 0) {
             double flux;
-            if (_node_flux_callback(callable[i], &flux) != 0) {
+            if (_node_flux_callback == NULL || _node_flux_callback(callable[i], &flux) != 0) {
                 hoc_execerror("node._include_flux callback failed", nullptr);
             }
             states[j] += dt * flux / scale[i];
+        } else if (source[i]) {
+            states[j] += dt * *source[i] / scale[i];
+        } else {
+            hoc_execerror("node._include_flux reference is no longer valid", nullptr);
         }
     }
 }
@@ -348,7 +359,7 @@ static void apply_node_flux1D(double dt, double* states) {
     apply_node_flux(_node_flux_count,
                     _node_flux_idx,
                     _node_flux_scale,
-                    _node_flux_src,
+                    _node_flux_src.data(),
                     _node_flux_callable,
                     dt,
                     states);
@@ -1388,7 +1399,9 @@ void _rhs_variable_step(const double* p1, double* p2) {
     }
 
     /*diffusion*/
-    rhs = (double*) calloc(num_states, sizeof(double));
+    /* a vector, so that an error in a node flux source (hoc_execerror) does not leak it */
+    std::vector<double> rhs_storage(num_states);
+    rhs = rhs_storage.data();
 
     if (diffusion)
         mul(_rxd_euler_nnonzero,
@@ -1434,7 +1447,6 @@ void _rhs_variable_step(const double* p1, double* p2) {
     } else {
         memcpy(ydot, rhs, sizeof(double) * num_states);
     }
-    free(rhs);
 }
 
 void get_reaction_rates(ICSReactions* react, double* states, double* rates, double* ydot) {
