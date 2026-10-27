@@ -322,7 +322,8 @@ def _register_mpi_alltoall_type():
 
     Core asserts methods.mpi_alltoall_type is set (ocbbs.cpp). With one rank
     NEURON's implementation (nrnpy_p2h.cpp py_alltoall_type) only repackages
-    its argument; this does the same. myneuron does not run multi-rank MPI.
+    its argument; this does the same. Calls from Python do not get here:
+    parallel.py handles them, on any number of ranks.
     type: 1 alltoall, 2 allgather, 3 gather, 4 broadcast, 5 scatter.
     """
 

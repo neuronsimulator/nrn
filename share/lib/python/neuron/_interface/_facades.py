@@ -200,7 +200,7 @@ def install(interface, embedded):
     interface's, so hoc.HocObject, nrn.Section and the rest must be its types
     too (hclass(h.A), ExtendedSection(nrn.Section)). The legacy modules stay
     under ``_legacy_<name>``, and hoc.HocObject also accepts the objects the
-    legacy module still makes.
+    legacy module still makes. The section owner hooks become this interface's.
     """
     legacy_hoc = None
     if embedded:
@@ -208,6 +208,9 @@ def install(interface, embedded):
             if name in sys.modules:
                 sys.modules["_legacy_" + name] = sys.modules[name]
         legacy_hoc = getattr(sys.modules.get("hoc"), "HocObject", None)
+        from .sections import take_over_legacy_owner_hooks
+
+        take_over_legacy_owner_hooks()
     else:
         present = [name for name in _NAMES if name in sys.modules]
         if present:

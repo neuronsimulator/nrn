@@ -535,6 +535,15 @@ class Object(metaclass=_HocClassMeta):
         """Reject deepcopy for HOC objects other than Vector."""
         raise TypeError("HocObject: Only Vector instance can be pickled")
 
+    def __reduce_ex__(self, protocol):
+        """Reject pickling HOC objects other than Vector.
+
+        The default would pickle the wrapper's slots, the native pointer
+        among them, and the copy would unref an object it holds no
+        reference to.
+        """
+        raise TypeError("HocObject: Only Vector instance can be pickled")
+
     def hocobjptr(self):
         """Return the raw C pointer to the underlying HOC object as an int."""
         return int(self._obj) if self._obj is not None else 0
@@ -1452,6 +1461,13 @@ class _VectorXAccessor:
         return f"<Vector.x ({len(self._vec)} elements)>"
 
 
+def _pkl(arg):
+    """Unpickling a Vector starts from an empty one (NEURON's neuron._pkl)."""
+    from . import n
+
+    return n.Vector(0)
+
+
 class Vector(Object):
     """A HOC ``Vector`` — dynamic array of doubles with 100+ HOC methods.
 
@@ -1473,6 +1489,29 @@ class Vector(Object):
         copied = self.c()
         memo[id(self)] = copied
         return copied
+
+    def __reduce_ex__(self, protocol):
+        """Pickle as NEURON's hocpickle_reduce: a new Vector, then the state
+        (version 1, the double 2.0 as an endianness sentinel, size, raw data)."""
+        data = array.array("d", self.to_python())
+        sentinel = array.array("d", [2.0]).tobytes()
+        return (_pkl, (0,), (1, sentinel, len(data), data.tobytes()))
+
+    def __setstate__(self, state):
+        version, sentinel, size, raw = state
+        if not isinstance(raw, bytes) or not isinstance(sentinel, bytes):
+            raise TypeError("pickle not returning string")
+        if len(sentinel) != 8:
+            raise ValueError("endian_data size is not sizeof(double)")
+        if len(raw) != size * 8:
+            raise ValueError("buffer size does not match array size")
+        data = array.array("d")
+        data.frombytes(raw)
+        check = array.array("d")
+        check.frombytes(sentinel)
+        if check[0] != 2.0:  # written with the other byte order
+            data.byteswap()
+        self.from_python(data)
 
     @property
     def x(self):

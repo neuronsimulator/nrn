@@ -86,6 +86,22 @@ def mechanism_library(cwd="."):
     return path if os.path.isfile(os.path.join(cwd, path)) else None
 
 
+def _wants_mpi(environ):
+    """PyInit_hoc adds -mpi for NEURON_INIT_MPI=1, or when MPI is already initialized.
+
+    nrn_init then loads and initializes MPI (nrn_mpi_setup). Already initialized
+    is checked through mpi4py, the usual way a script starts MPI first; the
+    legacy module asked MPI itself (MPI_Initialized).
+    """
+    init_mpi = environ.get("NEURON_INIT_MPI")
+    if init_mpi == "1":
+        return True
+    if init_mpi == "0":
+        return False
+    mpi = sys.modules.get("mpi4py.MPI")
+    return mpi is not None and bool(mpi.Is_initialized())
+
+
 def startup_options(write=sys.stdout.write, environ=os.environ):
     """Arguments after argv[0], in the order PyInit_hoc adds them."""
     args = []
@@ -95,11 +111,8 @@ def startup_options(write=sys.stdout.write, environ=os.environ):
             print_options = True
         else:
             _add(args, token)
-    if environ.get("NEURON_INIT_MPI") == "1" or "-mpi" in args:
-        raise ImportError(
-            "MPI initialization through `import neuron` is not supported by "
-            "this interface yet; unset NEURON_INIT_MPI and drop -mpi"
-        )
+    if _wants_mpi(environ):
+        _add(args, "-mpi")
     library = mechanism_library()
     if library:
         _add(args, "-dll", library)

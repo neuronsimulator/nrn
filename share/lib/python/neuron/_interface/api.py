@@ -1666,35 +1666,21 @@ _pyobj_to_hoc_object = None  # populated lazily by _ensure_pyobj_to_hoc()
 def _ensure_pyobj_to_hoc():
     """Return a ctypes-bound ``nrnpy_po2ho(PyObject*) -> Object*`` or None.
 
-    Returns None if libnrnpython can't be located or loaded.
+    The native allocator of the active provider: in libnrniv itself when
+    Python is linked in (NRN_ENABLE_PYTHON_DYNAMIC=OFF; nrniv -python and
+    source builds), else in the libnrnpython next to it (wheels). Returns None
+    if neither has it.
 
     Side effect: if nrnpy_pyobj_sym_ is unset, sets it to the stub PythonObject
     symbol (needed when -nopython ran without loading libnrnpython).
     """
     global _pyobj_to_hoc_object
-    # TODO(gap-60): discover the native allocator in static Python extensions.
     if _pyobj_to_hoc_object is not None:
         return _pyobj_to_hoc_object
 
-    # Search next to libnrniv first (covers the neuron wheel layout).
-    lib_dir = os.path.dirname(libnrniv._name or "")
-    patterns = [
-        os.path.join(lib_dir, "libnrnpython*.so"),
-        os.path.join(lib_dir, "libnrnpython*.dylib"),
-    ]
-    candidate = None
-    for pat in patterns:
-        matches = sorted(glob.glob(pat))
-        if matches:
-            candidate = matches[0]
-            break
-    if candidate is None:
-        return None
-    try:
-        # RTLD_GLOBAL so libnrnpython sees libnrniv's already-loaded
-        # symbols (hoc_obj_ref, nrnpy_pyobj_sym_, etc.) without re-dlopen.
-        lib = ctypes.PyDLL(candidate, mode=ctypes.RTLD_GLOBAL)
-    except OSError:
+    sym_name = "_Z11nrnpy_po2hoP7_object"  # nrnpy_po2ho(PyObject*)
+    lib = libnrniv if hasattr(libnrniv, sym_name) else _load_sibling_libnrnpython()
+    if lib is None:
         return None
 
     # Under -nopython the stub PythonObject is registered but
@@ -1718,7 +1704,6 @@ def _ensure_pyobj_to_hoc():
         if sym:
             pyobj_sym.value = sym
 
-    sym_name = "_Z11nrnpy_po2hoP7_object"  # nrnpy_po2ho(PyObject*)
     try:
         fn = getattr(lib, sym_name)
     except AttributeError:
@@ -1727,6 +1712,21 @@ def _ensure_pyobj_to_hoc():
     fn.restype = Object
     _pyobj_to_hoc_object = fn
     return fn
+
+
+def _load_sibling_libnrnpython():
+    """The libnrnpython next to libnrniv (the neuron wheel layout), or None."""
+    lib_dir = os.path.dirname(libnrniv._name or "")
+    for pattern in ("libnrnpython*.so", "libnrnpython*.dylib"):
+        matches = sorted(glob.glob(os.path.join(lib_dir, pattern)))
+        if matches:
+            try:
+                # RTLD_GLOBAL so libnrnpython sees libnrniv's already-loaded
+                # symbols (hoc_obj_ref, nrnpy_pyobj_sym_, etc.) without re-dlopen.
+                return ctypes.PyDLL(matches[0], mode=ctypes.RTLD_GLOBAL)
+            except OSError:
+                return None
+    return None
 
 
 _nrn_double_ptr_push = _bind(

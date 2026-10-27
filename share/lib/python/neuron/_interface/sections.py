@@ -1100,6 +1100,27 @@ def _install_owner_hooks():
         _owner_hooks[0] = True
 
 
+def take_over_legacy_owner_hooks():
+    """nrniv -python: clear the owner hooks NEURON's own module installed.
+
+    nrn_section_owner_hooks_set refuses another provider's hooks. Embedded,
+    the facades replace that module, so it makes no sections of its own;
+    this interface's hooks go (back) in at the next Section.
+    """
+    from . import api
+
+    for name in (
+        "nrnpy_pysec_name_p_",
+        "nrnpy_pysec_cell_p_",
+        "nrnpy_pysec_cell_equals_p_",
+    ):
+        try:
+            ctypes.c_void_p.in_dll(api.libnrniv, name).value = None
+        except ValueError:  # not a Python-enabled core
+            return
+    _owner_hooks[0] = None
+
+
 def _new_owned_section(name, cell):
     """Create a section owned by myneuron in core, or return None."""
     if _owner_hooks[0] is None:
