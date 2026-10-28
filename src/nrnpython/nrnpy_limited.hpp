@@ -85,19 +85,26 @@ inline PyObject* nrnpy_type_mro(PyTypeObject* type) {
 }
 
 inline int nrnpy_run_simple_string(const char* command) {
+    // PyRun_SimpleString prints and clears the error. SystemExit makes
+    // PyErr_Print terminate the process with that status. A later call must
+    // not see a pending exception.
+    auto fail = []() {
+        PyErr_Print();
+        return -1;
+    };
     PyObject* main_mod = PyImport_AddModule("__main__");
     if (!main_mod) {
-        return -1;
+        return fail();
     }
     PyObject* dict = PyModule_GetDict(main_mod);
     PyObject* code = Py_CompileString(command, "<string>", Py_file_input);
     if (!code) {
-        return -1;
+        return fail();
     }
     PyObject* result = PyEval_EvalCode(code, dict, dict);
     Py_DECREF(code);
     if (!result) {
-        return -1;
+        return fail();
     }
     Py_DECREF(result);
     return 0;

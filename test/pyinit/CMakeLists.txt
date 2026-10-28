@@ -128,6 +128,15 @@ nrn_add_test(
   COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} no_site_flag.py $<TARGET_FILE:nrniv>
   SCRIPT_PATTERNS no_site_flag.py)
 set_property(TEST pyinit::no_site_flag PROPERTY PASS_REGULAR_EXPRESSION "no-site-flag-ok")
+# nrnpy_run_simple_string prints a traceback, exits on SystemExit, and clears
+# the error so a later nrnpython() call still runs.
+nrn_add_test(
+  GROUP pyinit
+  NAME run_simple_string_errors
+  COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} run_simple_string_errors.py $<TARGET_FILE:nrniv>
+  SCRIPT_PATTERNS run_simple_string_errors.py)
+set_property(TEST pyinit::run_simple_string_errors PROPERTY PASS_REGULAR_EXPRESSION
+                                                            "run-simple-string-ok")
 # With -nopython then there should be a dummy PythonObject implementation, and Python-related
 # settings should be ignored
 set(PythonObject_cmd -c "objref x" -c "x=new PythonObject()")
