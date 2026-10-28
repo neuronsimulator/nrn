@@ -121,7 +121,8 @@ if(UNIX)
                                                              "c-locale-pyexe-ok")
 endif()
 # -Py_NoSiteFlag must skip site, so a marker sitecustomize on PYTHONPATH does not run.
-# The Windows installer ctest runs this group.
+# Not inside if(UNIX). The installer job leaves NRN_ENABLE_TESTS off, so this
+# ctest runs only when tests are enabled.
 nrn_add_test(
   GROUP pyinit
   NAME no_site_flag
