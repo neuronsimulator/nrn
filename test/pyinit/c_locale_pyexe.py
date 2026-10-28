@@ -23,7 +23,10 @@ def main():
         os.mkdir(dest)
         link = os.path.join(dest, "python")
         os.symlink(pyexe, link)
-        link_bytes = os.fsencode(link)
+        # macOS /tmp is a symlink to /private/tmp. sys.executable uses that
+        # real directory and keeps the final name, so the python symlink is
+        # not replaced by its target. The café bytes still have to match.
+        expected = os.fsencode(os.path.join(os.path.realpath(dest), "python"))
         inner = (
             "import os, sys\n"
             "print('EXEBYTES:' + os.fsencode(sys.executable).hex())\n"
@@ -37,7 +40,7 @@ def main():
                 nrniv,
                 "-notatty",
                 "-pyexe",
-                os.fsdecode(link_bytes),
+                link,
                 "-python",
                 "-c",
                 inner,
@@ -50,12 +53,12 @@ def main():
         for line in proc.stdout.splitlines():
             if line.startswith(marker):
                 got = bytes.fromhex(line[len(marker) :].decode("ascii"))
-        if proc.returncode != 0 or got != link_bytes:
+        if proc.returncode != 0 or got != expected or name not in got:
             sys.stderr.buffer.write(proc.stdout)
             sys.stderr.buffer.write(proc.stderr)
             raise SystemExit(
                 "c-locale pyexe failed: status {} got {!r} expected {!r}".format(
-                    proc.returncode, got, link_bytes
+                    proc.returncode, got, expected
                 )
             )
     print("c-locale-pyexe-ok")
