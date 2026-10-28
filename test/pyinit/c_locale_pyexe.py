@@ -23,10 +23,13 @@ def main():
         os.mkdir(dest)
         link = os.path.join(dest, "python")
         os.symlink(pyexe, link)
-        # macOS /tmp is a symlink to /private/tmp. sys.executable uses that
-        # real directory and keeps the final name, so the python symlink is
-        # not replaced by its target. The café bytes still have to match.
-        expected = os.fsencode(os.path.join(os.path.realpath(dest), "python"))
+        # A non-dynamic build reports the -pyexe spelling. A dynamic build
+        # reports sys.executable, and macOS realpath turns /tmp into
+        # /private/tmp. Either spelling is accepted. The café bytes still
+        # have to match, and the final python symlink is not replaced by
+        # its target.
+        spelling = os.fsencode(link)
+        real = os.fsencode(os.path.join(os.path.realpath(dest), "python"))
         inner = (
             "import os, sys\n"
             "print('EXEBYTES:' + os.fsencode(sys.executable).hex())\n"
@@ -53,12 +56,12 @@ def main():
         for line in proc.stdout.splitlines():
             if line.startswith(marker):
                 got = bytes.fromhex(line[len(marker) :].decode("ascii"))
-        if proc.returncode != 0 or got != expected or name not in got:
+        if proc.returncode != 0 or got not in (spelling, real) or name not in got:
             sys.stderr.buffer.write(proc.stdout)
             sys.stderr.buffer.write(proc.stderr)
             raise SystemExit(
-                "c-locale pyexe failed: status {} got {!r} expected {!r}".format(
-                    proc.returncode, got, expected
+                "c-locale pyexe failed: status {} got {!r} expected {!r} or {!r}".format(
+                    proc.returncode, got, spelling, real
                 )
             )
     print("c-locale-pyexe-ok")

@@ -108,8 +108,9 @@ nrn_add_test(
   COMMAND nrniv ${nrniv_args} -python assert_last_args_are_foo_and_bar.py foo bar
   SCRIPT_PATTERNS assert_last_args_are_foo_and_bar.py)
 # LC_ALL=C and a non-ASCII -pyexe. Py_DecodeLocale runs before Py_Initialize; the path must come
-# back as surrogate code points that encode to the same bytes. The directory may be realpath'd (/tmp
-# -> /private/tmp on macOS). Windows has no LC_ALL=C filesystem encoding of this kind.
+# back as surrogate code points that encode to the same bytes. Either the -pyexe spelling or its
+# realpath is accepted (/tmp and /private/tmp on macOS). Windows has no LC_ALL=C filesystem encoding
+# of this kind.
 if(UNIX)
   nrn_add_test(
     GROUP pyinit
