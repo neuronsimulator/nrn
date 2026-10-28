@@ -15,6 +15,13 @@ using std::endl;
 
 extern "C" void modl_reg() {}
 
+// make_pointprocess registers a mechanism for the rest of the process, and LeakSanitizer reports
+// that registration (common_register in hocmech.cpp) as leaked at exit. Only an ASan build reads
+// this hook.
+extern "C" const char* __lsan_default_suppressions() {
+    return "leak:make_pointprocess\n";
+}
+
 static bool check(bool cond, const char* msg) {
     if (!cond) {
         cerr << "FAIL: " << msg << endl;
