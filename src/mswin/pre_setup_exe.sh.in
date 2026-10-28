@@ -46,19 +46,20 @@ cp $N/bin/nrnivmodl.bat $N/bin/mknrndll.bat
 
 cp_dlls() {
 (
+  # PATH starts with the folder being filled. Run the real MSYS tools.
   upath=`cygpath "$1"`
   export PATH="$upath":$PATH
-  rm -f temp.tmp
+  /usr/bin/rm -f temp.tmp
   for i in $1/*.exe ; do
-    cygcheck $i | sed 's/^ *//' >> temp.tmp
+    /usr/bin/cygcheck $i | /usr/bin/sed 's/^ *//' >> temp.tmp
   done
-  sort temp.tmp | uniq | grep 'msys64' | sed 's,\\,/,g' > temp2.tmp
-  for i in $(cat temp2.tmp) ; do
+  /usr/bin/sort temp.tmp | /usr/bin/uniq | /usr/bin/grep 'msys64' | /usr/bin/sed 's,\\,/,g' > temp2.tmp
+  for i in $(/usr/bin/cat temp2.tmp) ; do
     echo $i
-    cp "$i" "$1"
+    /usr/bin/cp "$i" "$1"
   done
-  rm temp.tmp
-  rm temp2.tmp
+  /usr/bin/rm temp.tmp
+  /usr/bin/rm temp2.tmp
 )
 }
 
@@ -69,8 +70,10 @@ cp_dlls $N/bin
   nx=`cygpath -U "$N"`
   export N
   export MODLUNIT=$N/lib/nrnunits.lib
-  export PATH=$nx/bin:$nx/mingw/usr/bin:$nx/mingw/mingw64/bin:$PATH
-  mkdir -p $N/demo/release
+  # The copies under $N/mingw were just written. mkdir from that tree exits
+  # 127 on the GitHub runner. Build neurondemo with the CI toolchain.
+  export PATH=/usr/bin:/mingw64/bin:$nx/bin:$PATH
+  /usr/bin/mkdir -p $N/demo/release
   cd $N/demo/release
   # wrapper for mknrndl2.sh is needed because child bash has almost empty environment
   $srcdir/src/mswin/lib/mknrndl2a.sh "$N" "$PATH" "$MODLUNIT"
