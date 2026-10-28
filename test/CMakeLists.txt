@@ -345,7 +345,7 @@ if(NRN_ENABLE_PYTHON)
       COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${pytest} ./test/rxd)
     if(NRN_ENABLE_MPI)
       nrn_find_python_module(MODULE mpi4py)
-      if(mpi4py_FOUND)
+      if(MPI4PY_FOUND)
         nrn_add_test(
           GROUP rxdmod_tests
           NAME rxd_mpi_tests
@@ -701,7 +701,7 @@ if(NRN_ENABLE_PYTHON)
 
     if(NRN_ENABLE_MPI)
       nrn_find_python_module(MODULE mpi4py)
-      if(mpi4py_FOUND)
+      if(MPI4PY_FOUND)
         nrn_add_test(
           GROUP coreneuron_modtests
           NAME spikes_mpi_py_${processor}
