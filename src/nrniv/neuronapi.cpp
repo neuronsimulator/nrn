@@ -446,14 +446,12 @@ int nrn_rangevar_handle_str(Symbol* sym,
         os << handle;
         auto const text = os.str();
         if (buf && size) {
-            std::strncpy(buf, text.c_str(), size - 1);
-            buf[size - 1] = '\0';
+            std::snprintf(buf, size, "%s", text.c_str());
         }
         return static_cast<int>(text.size());
     } catch (const std::exception& e) {
         if (buf && size) {
-            std::strncpy(buf, e.what(), size - 1);
-            buf[size - 1] = '\0';
+            std::snprintf(buf, size, "%s", e.what());
         }
         return -1;
     }

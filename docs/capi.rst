@@ -852,8 +852,9 @@ Segments
         always terminated), or for the error message on failure. May be ``NULL``
         to only get the length; nothing is written if ``size`` is 0.
     :param size: Size of ``buf``.
-    :returns: The length of the full text, which may be ``size`` or more; -1 on
-        error.
+    :returns: The length of the full text, not counting the terminating ``'\0'``,
+        or -1 on error. If it is ``size`` or more, the text was cut short and
+        ``buf`` holds only its first ``size - 1`` characters.
 
     **C Usage:**
 
