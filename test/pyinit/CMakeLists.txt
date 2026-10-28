@@ -120,6 +120,14 @@ if(UNIX)
   set_property(TEST pyinit::c_locale_nonascii_pyexe PROPERTY PASS_REGULAR_EXPRESSION
                                                              "c-locale-pyexe-ok")
 endif()
+# -Py_NoSiteFlag must skip site, so a marker sitecustomize on PYTHONPATH does not run.
+# The Windows installer ctest runs this group.
+nrn_add_test(
+  GROUP pyinit
+  NAME no_site_flag
+  COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} no_site_flag.py $<TARGET_FILE:nrniv>
+  SCRIPT_PATTERNS no_site_flag.py)
+set_property(TEST pyinit::no_site_flag PROPERTY PASS_REGULAR_EXPRESSION "no-site-flag-ok")
 # With -nopython then there should be a dummy PythonObject implementation, and Python-related
 # settings should be ignored
 set(PythonObject_cmd -c "objref x" -c "x=new PythonObject()")
