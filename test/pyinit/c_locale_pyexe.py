@@ -2,7 +2,9 @@
 
 Py_DecodeLocale runs before Py_Initialize. Under the C locale the path is
 surrogate code points, and ascii/surrogateescape encodes them back to the
-original bytes. A throw, or a different byte string, is a failure.
+original bytes. An absolute -pyexe is kept on a dynamic build, so the
+discovery probe's sys.executable does not replace it. A throw, or a
+different byte string, is a failure.
 """
 
 import os
@@ -23,13 +25,7 @@ def main():
         os.mkdir(dest)
         link = os.path.join(dest, "python")
         os.symlink(pyexe, link)
-        # A non-dynamic build reports the -pyexe spelling. A dynamic build
-        # reports sys.executable, and macOS realpath turns /tmp into
-        # /private/tmp. Either spelling is accepted. The café bytes still
-        # have to match, and the final python symlink is not replaced by
-        # its target.
-        spelling = os.fsencode(link)
-        real = os.fsencode(os.path.join(os.path.realpath(dest), "python"))
+        link_bytes = os.fsencode(link)
         inner = (
             "import os, sys\n"
             "print('EXEBYTES:' + os.fsencode(sys.executable).hex())\n"
@@ -56,12 +52,12 @@ def main():
         for line in proc.stdout.splitlines():
             if line.startswith(marker):
                 got = bytes.fromhex(line[len(marker) :].decode("ascii"))
-        if proc.returncode != 0 or got not in (spelling, real) or name not in got:
+        if proc.returncode != 0 or got != link_bytes:
             sys.stderr.buffer.write(proc.stdout)
             sys.stderr.buffer.write(proc.stderr)
             raise SystemExit(
-                "c-locale pyexe failed: status {} got {!r} expected {!r} or {!r}".format(
-                    proc.returncode, got, spelling, real
+                "c-locale pyexe failed: status {} got {!r} expected {!r}".format(
+                    proc.returncode, got, link_bytes
                 )
             )
     print("c-locale-pyexe-ok")

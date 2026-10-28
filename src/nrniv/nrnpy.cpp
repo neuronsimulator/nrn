@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <filesystem>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -134,6 +135,12 @@ static void ensure_cpython(std::string const& pyexe) {
  *   * if only some, or none, of them are set, nrnpyenv.sh is run to fill in
  *     the missing values. NRN_PYTHONEXE is an input to nrnpyenv.sh, so if this
  *     is set then we will not search $PATH
+ * * An absolute path from -pyexe or NRN_PYTHONEXE is kept as the program name.
+ *   The script still supplies the library and the version. The probe's
+ *   sys.executable replaces the path only when NEURON searched for the
+ *   interpreter, or the supplied path is not absolute. Replacing an absolute
+ *   path would change the spelling of sys.executable (macOS /tmp and
+ *   /private/tmp) and the directory Python searches for pyvenv.cfg.
  */
 static void set_nrnpylib() {
     std::array<std::pair<std::string&, const char*>, 3> params{
@@ -158,6 +165,10 @@ static void set_nrnpylib() {
             return;
         }
     }
+    // See the comment above. Rank 0 is the only one that has read -pyexe or the
+    // environment; the broadcast below publishes the kept path.
+    bool const keep_supplied_pyexe =
+        !nrnpy_pyexe.empty() && std::filesystem::path{nrnpy_pyexe}.is_absolute();
     // Populate missing values using nrnpyenv.sh. Pass the possibly-null value of nrnpy_pyexe, which
     // may have come from -pyexe or NRN_PYTHONEXE, to nrnpyenv.sh. Do all of this on rank 0, and
     // broadcast the results to other ranks afterwards.
@@ -181,12 +192,16 @@ static void set_nrnpylib() {
         // if line is of the form:
         // export FOO="bar"
         // then proc_line(x, "FOO") sets x to bar
-        auto const proc_line = [](std::string_view line, auto& glob_var, std::string_view env_var) {
+        auto const proc_line =
+            [&](std::string_view line, auto& glob_var, std::string_view env_var) {
             std::string_view const suffix{"\""};
             auto const prefix = "export " + std::string{env_var} + "=\"";
             if (starts_with(line, prefix) && ends_with(line, suffix)) {
                 line.remove_prefix(prefix.size());
                 line.remove_suffix(suffix.size());
+                if (keep_supplied_pyexe && env_var == "NRN_PYTHONEXE") {
+                    return;
+                }
                 if (!glob_var.empty() && glob_var != line) {
                     Printf(fmt::format(
                                "WARNING: overriding {} = {} with {}\n", env_var, glob_var, line)

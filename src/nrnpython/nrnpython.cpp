@@ -324,7 +324,8 @@ static int nrnpython_start(int b) {
         // sure that sys.executable is the path to a reasonable choice of Python executable. If we
         // were to let sys.executable be `/some/path/to/arch/special` then we pick up a surprising
         // dependency on whether or not `nrnivmodl` happened to be run in the root directory of the
-        // virtual environment
+        // virtual environment. An absolute -pyexe or NRN_PYTHONEXE is that path: discovery does
+        // not replace it with the probe's sys.executable.
         auto pyexe = nrnpy_pyexe;
 #ifndef NRNPYTHON_DYNAMICLOAD
         // In non-dynamic builds, the -pyexe option has no effect on which Python is linked and
