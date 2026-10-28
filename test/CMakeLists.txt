@@ -357,15 +357,12 @@ if(NRN_ENABLE_PYTHON)
             ${pytest} ./test/rxd --mpi)
         nrn_add_test(
           GROUP rxdmod_tests
-          NAME rxd_mpi_two_process_tests WORKING_DIRECTORY
-                                         "${CMAKE_BINARY_DIR}/test/rxdmod_tests/rxd_tests"
+          NAME rxd_mpi_two_process_tests
           PRELOAD_SANITIZER
-          ENVIRONMENT COVERAGE_FILE=.coverage.rxd_mpi_two_process_tests COVERAGE_FILE_SUFFIX=true
-                      ${change_test_tolerance}
+          ENVIRONMENT ${change_test_tolerance}
           COMMAND
             ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
-            ${CMAKE_COMMAND} -E env "COVERAGE_FILE=${COVERAGE_FILE}_$ENV{OMPI_COMM_WORLD_RANK}"
-            ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${MPIEXEC_POSTFLAGS} ${pytest}
+            ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${MPIEXEC_POSTFLAGS} -m pytest --capture=tee-sys
             ./test/rxd/ecs/test_ecs_example.py --mpi)
       endif()
     endif()
