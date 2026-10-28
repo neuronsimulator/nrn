@@ -64,7 +64,9 @@ def main():
             sys.stderr.buffer.write(b"--- without flag ---\n")
             sys.stderr.buffer.write(plain.stdout)
             sys.stderr.buffer.write(plain.stderr)
-            sys.stderr.buffer.write("plain status {}\n".format(plain.returncode).encode("ascii"))
+            sys.stderr.buffer.write(
+                "plain status {}\n".format(plain.returncode).encode("ascii")
+            )
             sys.stderr.buffer.write(b"--- with -Py_NoSiteFlag ---\n")
             sys.stderr.buffer.write(flagged.stdout)
             sys.stderr.buffer.write(flagged.stderr)

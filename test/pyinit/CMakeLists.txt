@@ -107,9 +107,9 @@ nrn_add_test(
   NAME nrniv_python_script.py_args
   COMMAND nrniv ${nrniv_args} -python assert_last_args_are_foo_and_bar.py foo bar
   SCRIPT_PATTERNS assert_last_args_are_foo_and_bar.py)
-# LC_ALL=C and a non-ASCII -pyexe. Py_DecodeLocale runs before Py_Initialize;
-# the path must come back as surrogate code points that encode to the same bytes.
-# Windows has no LC_ALL=C filesystem encoding of this kind.
+# LC_ALL=C and a non-ASCII -pyexe. Py_DecodeLocale runs before Py_Initialize; the path must come
+# back as surrogate code points that encode to the same bytes. Windows has no LC_ALL=C filesystem
+# encoding of this kind.
 if(UNIX)
   nrn_add_test(
     GROUP pyinit
@@ -120,17 +120,17 @@ if(UNIX)
   set_property(TEST pyinit::c_locale_nonascii_pyexe PROPERTY PASS_REGULAR_EXPRESSION
                                                              "c-locale-pyexe-ok")
 endif()
-# -Py_NoSiteFlag must skip site, so a marker sitecustomize on PYTHONPATH does not run.
-# Not inside if(UNIX). The installer job leaves NRN_ENABLE_TESTS off, so this
-# ctest runs only when tests are enabled.
+# -Py_NoSiteFlag must skip site, so a marker sitecustomize on PYTHONPATH does not run. Not inside
+# if(UNIX). The installer job leaves NRN_ENABLE_TESTS off, so this ctest runs only when tests are
+# enabled.
 nrn_add_test(
   GROUP pyinit
   NAME no_site_flag
   COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} no_site_flag.py $<TARGET_FILE:nrniv>
   SCRIPT_PATTERNS no_site_flag.py)
 set_property(TEST pyinit::no_site_flag PROPERTY PASS_REGULAR_EXPRESSION "no-site-flag-ok")
-# nrnpy_run_simple_string prints a traceback, exits on SystemExit, and clears
-# the error so a later nrnpython() call still runs.
+# nrnpy_run_simple_string prints a traceback, exits on SystemExit, and clears the error so a later
+# nrnpython() call still runs.
 nrn_add_test(
   GROUP pyinit
   NAME run_simple_string_errors

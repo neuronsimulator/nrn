@@ -24,13 +24,24 @@ def main():
         link = os.path.join(dest, "python")
         os.symlink(pyexe, link)
         link_bytes = os.fsencode(link)
-        inner = "import os, sys\n" "print('EXEBYTES:' + os.fsencode(sys.executable).hex())\n"
+        inner = (
+            "import os, sys\n"
+            "print('EXEBYTES:' + os.fsencode(sys.executable).hex())\n"
+        )
         env = os.environ.copy()
         env["LC_ALL"] = "C"
         for key in ("LANG", "LC_CTYPE", "LC_MESSAGES", "LANGUAGE"):
             env.pop(key, None)
         proc = subprocess.run(
-            [nrniv, "-notatty", "-pyexe", os.fsdecode(link_bytes), "-python", "-c", inner],
+            [
+                nrniv,
+                "-notatty",
+                "-pyexe",
+                os.fsdecode(link_bytes),
+                "-python",
+                "-c",
+                inner,
+            ],
             env=env,
             capture_output=True,
         )

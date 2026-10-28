@@ -205,10 +205,9 @@ endforeach()
 # =============================================================================
 if(NRN_ENABLE_PYTHON)
   # Pure Python. The abi3 wheel gate fails closed on an empty report.
-  add_test(
-    NAME audit_abi3_wheel
-    COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE}
-            ${PROJECT_SOURCE_DIR}/packaging/python/test_audit_abi3_wheel.py)
+  add_test(NAME audit_abi3_wheel
+           COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE}
+                   ${PROJECT_SOURCE_DIR}/packaging/python/test_audit_abi3_wheel.py)
 
   # use `--capture=tee-sys`: combines 'sys' and '-s', capturing sys.stdout/stderr and passing it
   # along to the actual sys.stdout/stderr
