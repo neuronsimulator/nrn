@@ -107,6 +107,19 @@ nrn_add_test(
   NAME nrniv_python_script.py_args
   COMMAND nrniv ${nrniv_args} -python assert_last_args_are_foo_and_bar.py foo bar
   SCRIPT_PATTERNS assert_last_args_are_foo_and_bar.py)
+# LC_ALL=C and a non-ASCII -pyexe. Py_DecodeLocale runs before Py_Initialize;
+# the path must come back as surrogate code points that encode to the same bytes.
+# Windows has no LC_ALL=C filesystem encoding of this kind.
+if(UNIX)
+  nrn_add_test(
+    GROUP pyinit
+    NAME c_locale_nonascii_pyexe
+    COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} c_locale_pyexe.py $<TARGET_FILE:nrniv>
+            ${NRN_DEFAULT_PYTHON_EXECUTABLE}
+    SCRIPT_PATTERNS c_locale_pyexe.py)
+  set_property(TEST pyinit::c_locale_nonascii_pyexe PROPERTY PASS_REGULAR_EXPRESSION
+                                                             "c-locale-pyexe-ok")
+endif()
 # With -nopython then there should be a dummy PythonObject implementation, and Python-related
 # settings should be ignored
 set(PythonObject_cmd -c "objref x" -c "x=new PythonObject()")

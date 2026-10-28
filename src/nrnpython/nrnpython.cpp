@@ -130,8 +130,9 @@ void* nrnpy_raw_calloc(size_t n, size_t sz) {
     return f ? f(n, sz) : std::calloc(n, sz);
 }
 
-// Py_DecodeLocale memory. PyMem_RawFree is not in the 3.12 stable ABI, and
-// std::free is the wrong heap. If the symbol is missing, leak rather than free.
+// Release Py_DecodeLocale memory. The allocation is released with
+// PyMem_RawFree, looked up from the loaded Python library. If that symbol
+// is missing, leak rather than free with the wrong heap.
 void nrnpy_raw_free(void* p) {
     if (!p) {
         return;
@@ -349,11 +350,22 @@ static int nrnpython_start(int b) {
         // -pyexe /path/to/python3.11 -python` may well not use Python 3.11 at all. Should we do
         // something about that?
         {
-            // mbstowcs fails when the locale cannot represent the path.
-            // Py_DecodeLocale is the decoder PyConfig_SetBytesString uses.
-            // Py_Initialize() keeps the compat config, so the C locale stays
-            // ascii/surrogateescape and this spelling still encodes back to
-            // the original bytes. Py_SetProgramName does not copy.
+            // Called before Py_Initialize on purpose. Py_PreInitialize and
+            // PyPreConfig are not in the limited API, so this startup cannot
+            // preinitialize. Py_Initialize() uses the compat config: UTF-8 mode
+            // stays off, the C locale is not coerced, and PYTHONUTF8 is ignored.
+            // nrniv has not called setlocale, so the locale here is still "C"
+            // even when the environment names a UTF-8 locale. Py_DecodeLocale
+            // then maps bytes that locale cannot represent to surrogates
+            // (U+DC80..U+DCFF). Under LC_ALL=C the filesystem encoding stays
+            // ascii/surrogateescape and those surrogates encode back to the
+            // original bytes. The same call after Py_Initialize returns the
+            // same code points on CPython 3.11 through 3.14.
+            // A Python-config preinit would turn UTF-8 mode on for the C locale
+            // and decode U+00E9 instead. Passing that spelling to Py_Initialize
+            // aborts while evaluating the path. Py_SetProgramName does not copy.
+            // The allocation is released with PyMem_RawFree, looked up from the
+            // loaded Python library.
             wchar_t* decoded = Py_DecodeLocale(pyexe.c_str(), nullptr);
             if (!decoded) {
                 throw std::runtime_error(
