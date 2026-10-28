@@ -122,7 +122,7 @@ if(UNIX)
 endif()
 # -Py_NoSiteFlag must skip site, so a marker sitecustomize on PYTHONPATH does not run. Not inside
 # if(UNIX). The installer job leaves NRN_ENABLE_TESTS off, so this ctest runs only when tests are
-# enabled.
+# enabled. Discovery probes use python -S, so that marker is not read as the Python version.
 nrn_add_test(
   GROUP pyinit
   NAME no_site_flag

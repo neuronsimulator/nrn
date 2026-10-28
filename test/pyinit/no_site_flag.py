@@ -3,7 +3,8 @@
 Py_Initialize copies Py_NoSiteFlag into site_import. The marker module is on
 PYTHONPATH. Without the flag it prints and site is loaded. With the flag the
 marker must not print, site must stay out of sys.modules, and the ignore
-warning must stay absent. The same script runs on Windows.
+warning must stay absent. Discovery probes use python -S, so the marker is
+not parsed as the Python version. The same script runs on Windows.
 """
 
 import os

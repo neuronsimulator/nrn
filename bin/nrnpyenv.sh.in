@@ -88,10 +88,12 @@ function trypy {
 
 unset PYTHON
 unset PYTHON_VERSION
+# -S skips site. A sitecustomize on PYTHONPATH prints before the version line, and
+# that text is then parsed as the version.
 function require_cpython {
   cmd_name="$1"
   full_path="$2"
-  impl=$("${cmd_name}" -c "import sys; print(sys.implementation.name)" 2>/dev/null) || {
+  impl=$("${cmd_name}" -S -c "import sys; print(sys.implementation.name)" 2>/dev/null) || {
     echo "# ran ${cmd_name} (${full_path}) but could not read sys.implementation.name."
     return 1
   }
@@ -107,7 +109,7 @@ function try_python {
   if [ -z "${cmd_name}" ]; then
     return 1
   fi
-  ver_and_path=$("${cmd_name}" -c "import sys; print('{}.{} {}'.format(*sys.version_info[:2], sys.executable))" 2>&1)
+  ver_and_path=$("${cmd_name}" -S -c "import sys; print('{}.{} {}'.format(*sys.version_info[:2], sys.executable))" 2>&1)
   code="$?"
   if [ $code -ne 0 ]; then
     echo "# failed to run ${cmd_name} (${ver_and_path})"
@@ -148,7 +150,7 @@ function try_python {
       return 1
     fi
   fi
-  if ! "${cmd_name}" -c "import sys; raise SystemExit(hasattr(sys, '_is_gil_enabled') and not sys._is_gil_enabled())" >/dev/null 2>&1; then
+  if ! "${cmd_name}" -S -c "import sys; raise SystemExit(hasattr(sys, '_is_gil_enabled') and not sys._is_gil_enabled())" >/dev/null 2>&1; then
     echo "# ran ${cmd_name} (${full_path}) but it is a free-threaded Python (GIL disabled)."
     return 1
   fi
@@ -258,7 +260,7 @@ if [ -z "${PYTHON}" -a "${OS}" = "Windows_NT" -a -n "${APPDATA}" ]; then
       echo "Cannot use ${PYTHON}: this NEURON installation supports CPython only." 1>&2
       exit 1
     fi
-    PYTHON_VERSION=$("${PYTHON}" -c "import sys; print(\"{}.{}\".format(*sys.version_info[:2]))")
+    PYTHON_VERSION=$("${PYTHON}" -S -c "import sys; print(\"{}.{}\".format(*sys.version_info[:2]))")
   fi
 fi
 
@@ -281,7 +283,7 @@ if test "$kernel_name" = "Darwin" ; then
   python_path=`$WHICH $PYTHON`
   pyexedir=`dirname $python_path`
   # Get the python lib dir in an official way, working with virtualenv
-  PYLIB=$($python_path -c 'import sysconfig; print(sysconfig.get_config_var("LIBDIR"))')
+  PYLIB=$($python_path -S -c 'import sysconfig; print(sysconfig.get_config_var("LIBDIR"))')
   for path in $PYLIB/libpython*.dylib; do
     if test -f "$path"; then
       nrn_pylib="$path"
@@ -310,9 +312,9 @@ except:
   if test "$nrn_pylib" = "" ; then
     DYLD_PRINT_LIBRARIES=1
     export DYLD_PRINT_LIBRARIES
-    nrn_pylib=`$PYTHON -c 'quit()' 2>&1 | sed -n 's/^dyld: loaded: //p' | sed -n /libpython/p`
+    nrn_pylib=`$PYTHON -S -c 'quit()' 2>&1 | sed -n 's/^dyld: loaded: //p' | sed -n /libpython/p`
     if test "$nrn_pylib" = "" ; then
-      nrn_pylib=`$PYTHON -c 'quit()' 2>&1 | sed -n 's/^dyld: loaded: //p' | sed -n 2p`
+      nrn_pylib=`$PYTHON -S -c 'quit()' 2>&1 | sed -n 's/^dyld: loaded: //p' | sed -n 2p`
     fi
     unset DYLD_PRINT_LIBRARIES
     if test "$nrn_pylib" != "" ; then

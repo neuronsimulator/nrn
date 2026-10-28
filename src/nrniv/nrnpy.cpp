@@ -94,9 +94,10 @@ static bool ends_with(std::string_view str, std::string_view suffix) {
 
 // nrnpyenv.sh rejects non-CPython while it is choosing an interpreter. When NRN_PYLIB,
 // NRN_PYTHONEXE, and NRN_PYTHONVERSION are already set, that script does not run.
-// Check the executable before dlopen.
+// Check the executable before dlopen. -S skips site, so a sitecustomize print is
+// not part of the name.
 static void ensure_cpython(std::string const& pyexe) {
-    std::string command = "\"" + pyexe + "\" -c \"import sys; print(sys.implementation.name)\"";
+    std::string command = "\"" + pyexe + "\" -S -c \"import sys; print(sys.implementation.name)\"";
     std::string name;
     try {
         name = check_output(std::move(command));
