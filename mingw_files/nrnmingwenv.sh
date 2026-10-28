@@ -45,19 +45,22 @@ done
 # Second arg is the folder into which to copy the dlls.
 cp_dlls() {
 (
+  # PATH starts with this half-built folder, which already contains cp.exe.
+  # After msys-2.0.dll is copied beside it, that cp.exe loads the new DLL
+  # and exits 127. Always run the real MSYS tools.
   upath=`cygpath "$1"`
   export PATH="$upath":$PATH
-  rm -f temp.tmp
+  /usr/bin/rm -f temp.tmp
   for i in $1/*.exe ; do
-    cygcheck $i | sed 's/^ *//' >> temp.tmp
+    /usr/bin/cygcheck $i | /usr/bin/sed 's/^ *//' >> temp.tmp
   done
-  sort temp.tmp | uniq | grep 'msys64' | sed 's,\\,/,g' > temp2.tmp
-  for i in $(cat temp2.tmp) ; do
+  /usr/bin/sort temp.tmp | /usr/bin/uniq | /usr/bin/grep 'msys64' | /usr/bin/sed 's,\\,/,g' > temp2.tmp
+  for i in $(/usr/bin/cat temp2.tmp) ; do
     echo $i
-    cp "$i" "$2"
+    /usr/bin/cp "$i" "$2"
   done
-  rm temp.tmp
-  rm temp2.tmp
+  /usr/bin/rm temp.tmp
+  /usr/bin/rm temp2.tmp
 )
 }
 
