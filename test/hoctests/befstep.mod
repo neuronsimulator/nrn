@@ -19,15 +19,6 @@ ASSIGNED {
     tsave
 }
 
-PROCEDURE add_nstep() {
-    nstep = nstep + 1
-    : A verbatim return keeps NMODL from inlining this call.
-    : nocmodl procedures are int and have no ret_add_nstep variable.
-    VERBATIM
-    return 0;
-    ENDVERBATIM
-}
-
 BEFORE INITIAL {
     nbi = nbi + 1
 }
@@ -45,7 +36,9 @@ AFTER SOLVE {
 }
 
 BEFORE STEP {
-    add_nstep()
+    : Direct assignment. A PROCEDURE that contains VERBATIM is not thread
+    : safe under nocmodl, so the call would miss this callback's cache.
+    nstep = nstep + 1
     vsave = v
     tsave = t
 }
