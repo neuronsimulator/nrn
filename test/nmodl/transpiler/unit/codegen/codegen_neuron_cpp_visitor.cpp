@@ -294,18 +294,24 @@ SCENARIO("NEURON backend emits BEFORE/AFTER as per-instance callbacks", "[codege
         const auto step = generated_function(cpp, "nrn_before_after_4_ba1");
 
         THEN("hoc_reg_ba uses the nocmodl type integers") {
-            REQUIRE_THAT(cpp, ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_0_ba1, 11);"));
-            REQUIRE_THAT(cpp, ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_1_ba1, 22);"));
-            REQUIRE_THAT(cpp, ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_2_ba1, 13);"));
-            REQUIRE_THAT(cpp, ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_3_ba1, 23);"));
-            REQUIRE_THAT(cpp, ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_4_ba1, 14);"));
+            REQUIRE_THAT(cpp,
+                         ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_0_ba1, 11);"));
+            REQUIRE_THAT(cpp,
+                         ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_1_ba1, 22);"));
+            REQUIRE_THAT(cpp,
+                         ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_2_ba1, 13);"));
+            REQUIRE_THAT(cpp,
+                         ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_3_ba1, 23);"));
+            REQUIRE_THAT(cpp,
+                         ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_4_ba1, 14);"));
         }
         THEN("the callback is nrn_bamech_t and assigns v_unused from the node") {
             REQUIRE_THAT(cpp, ContainsSubstring("for (int id = 0; id < nodecount"));
-            REQUIRE_THAT(
-                body,
-                ContainsSubstring(
-                    "static void nrn_before_after_0_ba1(Node* _nd, Datum* _ppvar, Datum* _thread, NrnThread* nt, Memb_list* _ml_arg, size_t id, const _nrn_model_sorted_token& _sorted_token)"));
+            REQUIRE_THAT(body,
+                         ContainsSubstring(
+                             "static void nrn_before_after_0_ba1(Node* _nd, Datum* _ppvar, Datum* "
+                             "_thread, NrnThread* nt, Memb_list* _ml_arg, size_t id, const "
+                             "_nrn_model_sorted_token& _sorted_token)"));
             REQUIRE_THAT(body, !ContainsSubstring("nrn_before_after_0_ba1(const"));
             REQUIRE_THAT(body, !ContainsSubstring("for (int id = 0; id < nodecount"));
             REQUIRE_THAT(body, !ContainsSubstring("double v"));
@@ -313,10 +319,9 @@ SCENARIO("NEURON backend emits BEFORE/AFTER as per-instance callbacks", "[codege
             REQUIRE_THAT(body,
                          ContainsSubstring(
                              "inst.v_unused[id] = node_data.node_voltages[node_id];"));
-            REQUIRE_THAT(
-                step,
-                ContainsSubstring(
-                    "take_v_ba1(_lmc, inst, node_data, id, _ppvar, _thread, nt);"));
+            REQUIRE_THAT(step,
+                         ContainsSubstring(
+                             "take_v_ba1(_lmc, inst, node_data, id, _ppvar, _thread, nt);"));
         }
     }
 }
@@ -420,8 +425,8 @@ SCENARIO("LAG inside BEFORE STEP calls scopmath lag", "[codegen][ba]") {
 
         THEN("the lagged value is stored in lag_v_dur") {
             REQUIRE_THAT(body,
-                         ContainsSubstring(
-                             "static double lag_v_dur; lag_v_dur = *lag(&(inst.v_unused[id]), nt->_t, inst.dur[id], 0);"));
+                         ContainsSubstring("static double lag_v_dur; lag_v_dur = "
+                                           "*lag(&(inst.v_unused[id]), nt->_t, inst.dur[id], 0);"));
             REQUIRE_THAT(body, ContainsSubstring("inst.x[id] = lag_v_dur"));
         }
     }
