@@ -21,10 +21,10 @@ ASSIGNED {
 
 PROCEDURE add_nstep() {
     nstep = nstep + 1
-    : A return keeps this call from being inlined, so the generated
-    : callback has to pass the per-instance arguments.
+    : A verbatim return keeps NMODL from inlining this call.
+    : nocmodl procedures are int and have no ret_add_nstep variable.
     VERBATIM
-    return ret_add_nstep;
+    return 0;
     ENDVERBATIM
 }
 
