@@ -765,6 +765,19 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
 
 
     /**
+     * Print one NEURON before/after callback.
+     *
+     * \p node is a BeforeBlock or AfterBlock. The generated function is one
+     * mechanism instance per call (\c nrn_bamech_t). \c nrn_ba and
+     * \c Cvode::before_after already loop over the Memb_list.
+     *
+     * \param node     AST node for the before/after block
+     * \param block_id Index of this block in \c info.before_after_blocks
+     */
+    void print_before_after_block(const ast::Block* node, size_t block_id);
+
+
+    /**
      * Print all compute functions for every backend
      *
      */
@@ -840,6 +853,7 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
     void visit_longitudinal_diffusion_block(const ast::LongitudinalDiffusionBlock& node) override;
     void visit_lon_diffuse(const ast::LonDiffuse& node) override;
     void visit_protect_statement(const ast::ProtectStatement& node) override;
+    void visit_lag_statement(const ast::LagStatement& node) override;
 
   public:
     /****************************************************************************************/
