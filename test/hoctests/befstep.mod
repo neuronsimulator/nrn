@@ -8,6 +8,8 @@ NEURON {
 }
 
 ASSIGNED {
+    : nocmodl requires this declaration. v is the node voltage, not a RANGE slot.
+    v (millivolt)
     nbi
     nai
     nbb
