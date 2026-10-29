@@ -167,8 +167,8 @@ static void set_nrnpylib() {
     }
     // See the comment above. Rank 0 is the only one that has read -pyexe or the
     // environment; the broadcast below publishes the kept path.
-    bool const keep_supplied_pyexe =
-        !nrnpy_pyexe.empty() && std::filesystem::path{nrnpy_pyexe}.is_absolute();
+    bool const keep_supplied_pyexe = !nrnpy_pyexe.empty() &&
+                                     std::filesystem::path{nrnpy_pyexe}.is_absolute();
     // Populate missing values using nrnpyenv.sh. Pass the possibly-null value of nrnpy_pyexe, which
     // may have come from -pyexe or NRN_PYTHONEXE, to nrnpyenv.sh. Do all of this on rank 0, and
     // broadcast the results to other ranks afterwards.
@@ -194,22 +194,22 @@ static void set_nrnpylib() {
         // then proc_line(x, "FOO") sets x to bar
         auto const proc_line =
             [&](std::string_view line, auto& glob_var, std::string_view env_var) {
-            std::string_view const suffix{"\""};
-            auto const prefix = "export " + std::string{env_var} + "=\"";
-            if (starts_with(line, prefix) && ends_with(line, suffix)) {
-                line.remove_prefix(prefix.size());
-                line.remove_suffix(suffix.size());
-                if (keep_supplied_pyexe && env_var == "NRN_PYTHONEXE") {
-                    return;
+                std::string_view const suffix{"\""};
+                auto const prefix = "export " + std::string{env_var} + "=\"";
+                if (starts_with(line, prefix) && ends_with(line, suffix)) {
+                    line.remove_prefix(prefix.size());
+                    line.remove_suffix(suffix.size());
+                    if (keep_supplied_pyexe && env_var == "NRN_PYTHONEXE") {
+                        return;
+                    }
+                    if (!glob_var.empty() && glob_var != line) {
+                        Printf(fmt::format(
+                                   "WARNING: overriding {} = {} with {}\n", env_var, glob_var, line)
+                                   .c_str());
+                    }
+                    glob_var = line;
                 }
-                if (!glob_var.empty() && glob_var != line) {
-                    Printf(fmt::format(
-                               "WARNING: overriding {} = {} with {}\n", env_var, glob_var, line)
-                               .c_str());
-                }
-                glob_var = line;
-            }
-        };
+            };
         // Process the output of nrnpyenv.sh line by line
         while (std::getline(cmd_stdout, line)) {
             for (auto& [glob_var, env_var]: params) {
