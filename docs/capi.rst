@@ -2141,6 +2141,15 @@ Miscellaneous
     :c:func:`nrn_property_get` for the selected element, including returning NaN
     for an unset or opaque pointer.
 
+    It also reads ``Vector.x[i]``, and the same holds for
+    :c:func:`nrn_property_array_set`, :c:func:`nrn_property_array_push` and
+    :c:func:`nrn_property_data_handle_is_valid`. An index out of range, and
+    ``Matrix.x`` (which has two indices), find no element: the get returns NaN,
+    the set does nothing, the push pushes a null pointer and the data handle is
+    not valid. No HOC error is raised and the HOC stack is left as it was. Use
+    :c:func:`nrn_property_element_ptr` for ``Matrix.x`` or to get an error
+    message.
+
     **C Usage:**
 
     .. code-block:: c
