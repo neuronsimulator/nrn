@@ -1,9 +1,5 @@
 # NEURON source directory
 
-This directory contains NEURON's simulator, language interfaces, mechanism
-compilers, numerical libraries, and platform support. Use this guide to find the
-module relevant to a change.
-
 | Directory | Contents |
 | --- | --- |
 | [coreneuron/](coreneuron/) | CoreNEURON simulation engine, optimized for large networks, with CPU and GPU support. |
@@ -19,10 +15,10 @@ module relevant to a change.
 | [nocmodl/](nocmodl/) | Traditional `nocmodl` translator from NMODL mechanism files to C++. |
 | [node_order_optim/](node_order_optim/) | Tree-node ordering and permutation helpers for improving simulation performance. |
 | [nrncvode/](nrncvode/) | Variable time step solver integration, network event delivery, event queues, and recording support. |
-| [nrniv/](nrniv/) | Simulator integration: morphology GUI, network parallelism, state saving, CoreNEURON transfer, and the C API; also builds the main executable and library. |
+| [nrniv/](nrniv/) | Simulator integration: morphology GUI, network parallelism, state saving, CoreNEURON transfer, and the C API; also builds the main executable and library. It also contains impedance analysis (Impedance), kinetic scheme channels (KSChan), LinearMechanism, multisplit, differential-algebraic equation support, and CVODE's NVector implementations. |
 | [nrnmpi/](nrnmpi/) | MPI communication wrappers, spike exchange, message packing, and dynamic MPI loading. |
 | [nrnoc/](nrnoc/) | Core compartment simulation: sections, cable equations, membrane mechanisms, ions, time stepping, and built-in MOD mechanisms. |
-| [nrnpython/](nrnpython/) | Python interpreter integration, HOC/Python and section/segment bindings, and reaction-diffusion (RxD) computational code. |
+| [nrnpython/](nrnpython/) | Python interpreter integration, HOC/Python and section/segment bindings, and reaction-diffusion (RxD) computational code. This is the C++ part; the Python code lives in `share/lib/python/neuron/` |
 | [oc/](oc/) | HOC language parser, interpreter, object system, symbols, built-in functions, and I/O. |
 | [parallel/](parallel/) | ParallelContext interface and bulletin-board task scheduling, with local and MPI implementations. |
 | [pocketfft/](pocketfft/) | Bundled header-only FFT library used by Vector Fourier transforms. |
