@@ -102,6 +102,7 @@ $Id: __init__.py,v 1.1 2008/05/26 11:39:44 hines Exp hines $
 
 import sys
 import os
+import sysconfig
 import warnings
 import weakref
 
@@ -136,10 +137,13 @@ elif current_version not in supported_python_versions:
         "of Python, or try using nrniv -python so that NEURON can suggest a compatible "
         "version for you.".format(current_version, " ".join(supported_python_versions))
     )
-if hasattr(sys, "_is_gil_enabled") and not sys._is_gil_enabled():
+# Py_GIL_DISABLED is the interpreter build. 1 and "1" are free-threaded.
+# 0, "0", and None are a GIL build: the string "0" is truthy. Enabling the
+# GIL at runtime does not make a free-threaded build acceptable.
+if sysconfig.get_config_var("Py_GIL_DISABLED") in (1, "1"):
     raise ImportError(
-        "This NEURON installation does not support free-threaded Python. "
-        "Use a GIL-enabled CPython."
+        "This NEURON installation does not support a free-threaded CPython build "
+        "(Py_GIL_DISABLED)."
     )
 
 try:  # needed since python 3.8 on windows if python launched

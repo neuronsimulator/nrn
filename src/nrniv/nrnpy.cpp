@@ -93,10 +93,10 @@ static bool ends_with(std::string_view str, std::string_view suffix) {
            str.substr(str.size() - suffix.size(), std::string_view::npos) == suffix;
 }
 
-// nrnpyenv.sh rejects non-CPython while it is choosing an interpreter. When NRN_PYLIB,
-// NRN_PYTHONEXE, and NRN_PYTHONVERSION are already set, that script does not run.
-// Check the executable before dlopen. -S skips site, so a sitecustomize print is
-// not part of the name.
+// nrnpyenv.sh rejects non-CPython and a free-threaded build while it is choosing an
+// interpreter. When NRN_PYLIB, NRN_PYTHONEXE, and NRN_PYTHONVERSION are already set,
+// that script does not run. Check the executable before dlopen. -S skips site, so a
+// sitecustomize print is not part of the answer.
 static void ensure_cpython(std::string const& pyexe) {
     std::string command = "\"" + pyexe + "\" -S -c \"import sys; print(sys.implementation.name)\"";
     std::string name;
@@ -112,6 +112,34 @@ static void ensure_cpython(std::string const& pyexe) {
     if (name != "cpython") {
         throw std::runtime_error(
             "This NEURON installation supports CPython only (this interpreter is " + name + ").");
+    }
+}
+
+// Print 0 or 1 and exit 0. check_output throws on any other status, so a failed
+// launch stays "Could not run" and is not reported as free-threaded. 1 and "1"
+// are a free-threaded build. 0, "0", and None are a GIL build.
+static void ensure_gil_build(std::string const& pyexe) {
+    std::string command = "\"" + pyexe +
+                          "\" -S -c \"import sysconfig; v = sysconfig.get_config_var"
+                          "('Py_GIL_DISABLED'); print(1 if v in (1, '1') else 0)\"";
+    std::string answer;
+    try {
+        answer = check_output(std::move(command));
+    } catch (std::exception const& e) {
+        throw std::runtime_error("Could not run '" + pyexe +
+                                 "' to check whether the build is free-threaded.\n" + e.what());
+    }
+    while (!answer.empty() && (answer.back() == '\n' || answer.back() == '\r')) {
+        answer.pop_back();
+    }
+    if (answer == "1") {
+        throw std::runtime_error(
+            "This NEURON installation does not support a free-threaded CPython build "
+            "(Py_GIL_DISABLED).");
+    }
+    if (answer != "0") {
+        throw std::runtime_error("Could not read Py_GIL_DISABLED from '" + pyexe + "' (got '" +
+                                 answer + "').");
     }
 }
 
@@ -131,7 +159,8 @@ static void ensure_cpython(std::string const& pyexe) {
  * * if -pyexe is *not* passed, then we examine the NRN_PY* environment
  *   variables:
  *   * if all of them are set, nrnpyenv.sh is not run. The executable must be
- *     CPython. The three values are otherwise assumed to form a coherent set
+ *     CPython, and Py_GIL_DISABLED must not say the build is free-threaded.
+ *     The three values are otherwise assumed to form a coherent set
  *   * if only some, or none, of them are set, nrnpyenv.sh is run to fill in
  *     the missing values. NRN_PYTHONEXE is an input to nrnpyenv.sh, so if this
  *     is set then we will not search $PATH
@@ -162,6 +191,7 @@ static void set_nrnpylib() {
         if (all_set()) {
             // the environment specified everything, so nrnpyenv.sh will not run
             ensure_cpython(nrnpy_pyexe);
+            ensure_gil_build(nrnpy_pyexe);
             return;
         }
     }
@@ -330,8 +360,8 @@ static nrnpython_reg_real_t load_nrnpython() {
     std::string name;
     name.append(neuron::config::shared_library_prefix);
     if (neuron::config::python_limited_api) {
-        // Limited API floor is CPython 3.12. Free-threaded builds are rejected from Python on
-        // import.
+        // Limited API floor is CPython 3.12. A free-threaded build (Py_GIL_DISABLED)
+        // is already rejected before libpython is loaded.
         if (!python_version_at_least_312(pyversion)) {
             Fprintf(stderr,
                     fmt::format("Python {} is not supported by this NEURON installation (requires "

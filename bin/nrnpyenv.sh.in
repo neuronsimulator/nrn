@@ -38,6 +38,8 @@ export originalLDLIBRARYPATH="$LD_LIBRARY_PATH"
 # is a search-order hint). Otherwise only the versions this build was configured
 # with. A non-dynamic build links one libpython, so the limited API does not
 # widen this check. Non-CPython interpreters are rejected in either case.
+# A free-threaded build (Py_GIL_DISABLED of 1 or "1") is rejected in either
+# case. Enabling the GIL at runtime does not change that.
 _this_neuron_py_versions=(@NRN_PYTHON_VERSIONS_STRING@)
 _nrn_limited_api=@NRN_PYTHON_LIMITED_API@
 _nrn_python_dynamic=@NRN_PYTHON_DYNAMIC_SH@
@@ -152,8 +154,10 @@ function try_python {
       return 1
     fi
   fi
-  if ! "${cmd_name}" -S -c "import sys; raise SystemExit(hasattr(sys, '_is_gil_enabled') and not sys._is_gil_enabled())" >/dev/null 2>&1; then
-    echo "# ran ${cmd_name} (${full_path}) but it is a free-threaded Python (GIL disabled)."
+  # Py_GIL_DISABLED is the build. 1 and "1" are free-threaded. 0, "0", and
+  # None are a GIL build (the string "0" is truthy). Exit 1 still means reject.
+  if ! "${cmd_name}" -S -c "import sysconfig; v = sysconfig.get_config_var('Py_GIL_DISABLED'); raise SystemExit(v in (1, '1'))" >/dev/null 2>&1; then
+    echo "# ran ${cmd_name} (${full_path}) but it is a free-threaded CPython build (Py_GIL_DISABLED)."
     return 1
   fi
   PYTHON="${full_path}"

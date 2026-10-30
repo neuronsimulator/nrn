@@ -138,6 +138,16 @@ nrn_add_test(
   SCRIPT_PATTERNS run_simple_string_errors.py)
 set_property(TEST pyinit::run_simple_string_errors PROPERTY PASS_REGULAR_EXPRESSION
                                                             "run-simple-string-ok")
+# Free-threaded builds are Py_GIL_DISABLED in (1, "1"). The runtime GIL is not the test. Import,
+# nrnpyenv.sh, and (when dynamic) the fully set NRN_PY* environment all reject before native code is
+# loaded.
+nrn_add_test(
+  GROUP pyinit
+  NAME gil_build
+  COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} gil_build.py $<TARGET_FILE:nrniv>
+          ${NRN_DEFAULT_PYTHON_EXECUTABLE} $<BOOL:${NRN_ENABLE_PYTHON_DYNAMIC}>
+  SCRIPT_PATTERNS gil_build.py)
+set_property(TEST pyinit::gil_build PROPERTY PASS_REGULAR_EXPRESSION "gil-build-ok")
 # With -nopython then there should be a dummy PythonObject implementation, and Python-related
 # settings should be ignored
 set(PythonObject_cmd -c "objref x" -c "x=new PythonObject()")
