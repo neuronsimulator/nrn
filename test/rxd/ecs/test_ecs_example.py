@@ -6,7 +6,7 @@ from testutils import compare_data, tol
 
 
 @pytest.fixture
-def ecs_example(neuron_instance):
+def ecs_example_mpi(neuron_instance):
     """A model where something is created in one cell and diffuses to another.
 
     This model makes use of parameters, multicompartment reactions, an NMODL
@@ -16,25 +16,35 @@ def ecs_example(neuron_instance):
     """
 
     h, rxd, data, save_path = neuron_instance
+    pc = h.ParallelContext()
+    nhost = pc.nhost()
+    rank = pc.id()
 
-    def make_model(alpha, lambd, mech=True):
-        # create cell1 where `x` will be created and leak out
-        cell1 = h.Section(name="cell1")
-        cell1.pt3dclear()
-        cell1.pt3dadd(-2, 0, 0, 1)
-        cell1.pt3dadd(-1, 0, 0, 1)
-        cell1.nseg = 11
-        if mech:
-            cell1.insert("pump")
+    def make_model(alpha, lambd, mech=True, membrane_flux=True):
+        pc = h.ParallelContext()
+        nhost = pc.nhost()
+        rank = pc.id()
 
-        # create cell2 where `x` will be pumped in and accumulate
-        cell2 = h.Section(name="cell2")
-        cell2.pt3dclear()
-        cell2.pt3dadd(1, 0, 0, 1)
-        cell2.pt3dadd(2, 0, 0, 1)
-        cell2.nseg = 11
-        if mech:
-            cell2.insert("pump")
+        cell1, cell2 = None, None
+        if rank == 0:
+            # create cell1 where `x` will be created and leak out
+            cell1 = h.Section(name="cell1")
+            cell1.pt3dclear()
+            cell1.pt3dadd(-2, 0, 0, 1)
+            cell1.pt3dadd(-1, 0, 0, 1)
+            cell1.nseg = 11
+            if mech:
+                cell1.insert("pump")
+
+        if rank == nhost - 1:
+            # create cell2 where `x` will be pumped in and accumulate
+            cell2 = h.Section(name="cell2")
+            cell2.pt3dclear()
+            cell2.pt3dadd(1, 0, 0, 1)
+            cell2.pt3dadd(2, 0, 0, 1)
+            cell2.nseg = 11
+            if mech:
+                cell2.insert("pump")
 
         # Where?
         # the intracellular spaces
@@ -106,12 +116,20 @@ def ecs_example(neuron_instance):
                 1.0 * scale * Xcyt / (1.0 + Xcyt),
                 1.0 * scale * Xecs / (1.0 + Xecs),
                 mass_action=False,
-                membrane_flux=True,
+                membrane_flux=membrane_flux,
                 membrane=cyt_ecs_membrane,
             )
             model += [cyt_ecs_membrane, Xecs, cyt_ecs_pump]
         return model
 
+    yield (neuron_instance, make_model, nhost, rank)
+
+
+@pytest.fixture
+def ecs_example(ecs_example_mpi):
+    (neuron_instance, make_model, nhost, rank) = ecs_example_mpi
+    if nhost > 1:
+        pytest.skip("run test with nhost = 1")
     yield (neuron_instance, make_model)
 
 
@@ -284,8 +302,50 @@ def test_ecs_multi_example(ecs_example):
     model = make_model(0.2, 1.6, mech=False)
     h.finitialize(-65)
     h.continuerun(1000)
+    if not save_path:
+        max_err = compare_data(data)
+        assert max_err < tol
+
+
+def test_ecs_multi_example_mpi(ecs_example_mpi):
+    """Test ecs_example with multicompartment reactions and fixed step methods"""
+
+    (h, rxd, data, save_path), make_model, nhost, rank = ecs_example_mpi
+    if nhost == 1:
+        pytest.skip("test with two processes")
+
+    model = make_model(0.2, 1.6, mech=False)
+    h.finitialize(-65)
+    h.continuerun(1000)
+    if not save_path:
+        max_err = compare_data(data)
+        assert max_err < tol
+
+
+def test_ecs_multi_example_no_current(ecs_example):
+    """Test ecs_example with multicompartment reactions and fixed step methods"""
+
+    (h, rxd, data, save_path), make_model = ecs_example
+    model = make_model(0.2, 1.6, mech=False, membrane_flux=False)
+    h.finitialize(-65)
+    h.continuerun(1000)
 
     if not save_path:
+        max_err = compare_data(data)
+        assert max_err < tol
+
+
+def test_ecs_multi_example_no_current_mpi(ecs_example_mpi):
+    """Test ecs_example with multicompartment reactions and fixed step methods"""
+
+    (h, rxd, data, save_path), make_model, nhost, rank = ecs_example_mpi
+    if nhost == 1:
+        pytest.skip("test with two processes")
+    model = make_model(0.2, 1.6, mech=False, membrane_flux=False)
+    h.finitialize(-65)
+    h.continuerun(1000)
+
+    if not save_path and rank == 0:
         max_err = compare_data(data)
         assert max_err < tol
 
