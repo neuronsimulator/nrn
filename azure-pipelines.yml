@@ -86,7 +86,7 @@ stages:
 
       - script: |
           sudo apt update
-          sudo apt install -y mpich openmpi-bin libopenmpi-dev libmpich-dev
+          sudo apt install -y mpich openmpi-bin libopenmpi-dev libmpich-dev libhdf5-dev
           # Ubuntu 24.04: pin working mpich from ci/deps (no Launchpad download).
           # See ci/deps/README.md and LP#2072338.
           ci/deps/install_mpich_noble.sh
@@ -139,7 +139,7 @@ stages:
 
       - script: |
           brew install --cask xquartz
-          brew install flex bison mpich
+          brew install flex bison mpich hdf5
           brew unlink mpich && brew install openmpi
           cmake --version
           # the version of bash used by Azure (which is the default one

@@ -20,34 +20,37 @@ class HTMLTranslator(sphinx.writers.html.HTMLTranslator):
         methods_by_class = {}
         for i, tag in enumerate(self.body):
             if re.match(r'<dl class="((py|hoc) )?method">', tag):
-                method_id = self.body[i + 1].split("id=")[1].split('"')[1].split(".")
-                method_name = method_id[-1]
-                method_class = ".".join(method_id[:-1])
-                if method_class not in methods_by_class:
-                    methods_by_class[method_class] = []
-                methods_by_class[method_class].append(method_name)
+                if i + 1 < len(self.body) and "id=" in self.body[i + 1]:
+                    method_id = (
+                        self.body[i + 1].split("id=")[1].split('"')[1].split(".")
+                    )
+                    method_name = method_id[-1]
+                    method_class = ".".join(method_id[:-1])
+                    if method_class not in methods_by_class:
+                        methods_by_class[method_class] = []
+                    methods_by_class[method_class].append(method_name)
         class_names = set(methods_by_class.keys())
         for i, tag in enumerate(self.body):
             if re.match(r'<dl class="((py|hoc) )?class">', tag):
-                class_names.add(self.body[i + 1].split("id=")[1].split('"')[1])
+                if i + 1 < len(self.body) and "id=" in self.body[i + 1]:
+                    class_names.add(self.body[i + 1].split("id=")[1].split('"')[1])
         functions = []
         for i, tag in enumerate(self.body):
             if re.match(r'<dl class="((py|hoc) )?function">', tag):
-                try:
+                if i + 1 < len(self.body) and "id=" in self.body[i + 1]:
                     functions.append(self.body[i + 1].split("id=")[1].split('"')[1])
-                except:
-                    functions.append(self.body[i + 3])
         for i, tag in enumerate(self.body):
             if re.match(r'<dl class="((py|hoc) )?data">', tag):
-                data_id = self.body[i + 1].split("id=")[1].split('"')[1].split(".")
-                data_name = data_id[-1]
-                data_class = ".".join(data_id[:-1])
-                if data_class:
-                    if data_class not in methods_by_class:
-                        methods_by_class[data_class] = []
-                    methods_by_class[data_class].append(data_name)
-                else:
-                    functions.append(data_name)
+                if i + 1 < len(self.body) and "id=" in self.body[i + 1]:
+                    data_id = self.body[i + 1].split("id=")[1].split('"')[1].split(".")
+                    data_name = data_id[-1]
+                    data_class = ".".join(data_id[:-1])
+                    if data_class:
+                        if data_class not in methods_by_class:
+                            methods_by_class[data_class] = []
+                        methods_by_class[data_class].append(data_name)
+                    else:
+                        functions.append(data_name)
 
         # sort everything
         sort_key = lambda s: s.lower()

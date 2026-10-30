@@ -20,6 +20,7 @@ set(NRN_PYTHON_FILES_LIST
     config.py
     units.py
     sections.py
+    morphology.py
     tests/_subclass.py
     tests/test_all.py
     tests/__init__.py

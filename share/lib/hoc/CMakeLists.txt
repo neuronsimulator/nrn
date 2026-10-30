@@ -22,6 +22,7 @@ set(NRN_HOC_FILES_LIST
     showmech.hoc
     mulfit.hoc
     import3d.hoc
+    MorphIO.hoc
     movierun.hoc
     parcom.hoc
     noload.hoc
