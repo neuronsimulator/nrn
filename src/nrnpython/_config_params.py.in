@@ -1,8 +1,11 @@
 # Python versions this build was configured with.
-# limited_api True: import accepts any GIL CPython 3.12+. False: only supported_python_versions.
+# Any GIL CPython 3.12+ is accepted only when limited_api and python_dynamic are
+# both true. A non-dynamic build links one libpython, so limited_api does not
+# widen the check. Otherwise only supported_python_versions.
 # Non-CPython interpreters are rejected in either case.
 supported_python_versions = [@NRN_DYNAMIC_PYTHON_LIST_OF_VERSION_STRINGS@]
 limited_api = @NRN_PYTHON_LIMITED_API_PY@
+python_dynamic = @NRN_PYTHON_DYNAMIC_PY@
 # Needed so we can figure out the prefix and suffix of nrnmech at runtime
 mechanism_prefix = "@CMAKE_SHARED_LIBRARY_PREFIX@"
 mechanism_suffix = "@CMAKE_SHARED_LIBRARY_SUFFIX@"

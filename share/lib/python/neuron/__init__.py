@@ -110,6 +110,7 @@ embedded = "hoc" in sys.modules
 from ._config_params import (
     supported_python_versions,
     limited_api,
+    python_dynamic,
     mechanism_prefix,
     mechanism_suffix,
 )
@@ -121,22 +122,20 @@ if sys.implementation.name != "cpython":
             sys.implementation.name
         )
     )
-if limited_api:
+# Cross-version import is safe only when libnrniv is not linked to one libpython.
+if limited_api and python_dynamic:
     if sys.version_info < (3, 12):
         raise ImportError(
             "Python {} is not supported by this NEURON installation (requires CPython 3.12 "
             "or later with the GIL).".format(current_version)
         )
-else:
-    if current_version not in supported_python_versions:
-        raise ImportError(
-            "Python {} is not supported by this NEURON installation (supported: {}). "
-            "Either re-build NEURON with support for this version, use a supported version "
-            "of Python, or try using nrniv -python so that NEURON can suggest a compatible "
-            "version for you.".format(
-                current_version, " ".join(supported_python_versions)
-            )
-        )
+elif current_version not in supported_python_versions:
+    raise ImportError(
+        "Python {} is not supported by this NEURON installation (supported: {}). "
+        "Either re-build NEURON with support for this version, use a supported version "
+        "of Python, or try using nrniv -python so that NEURON can suggest a compatible "
+        "version for you.".format(current_version, " ".join(supported_python_versions))
+    )
 if hasattr(sys, "_is_gil_enabled") and not sys._is_gil_enabled():
     raise ImportError(
         "This NEURON installation does not support free-threaded Python. "

@@ -303,12 +303,13 @@ foreach(val RANGE ${NRN_PYTHON_COUNT})
     COMMAND nrniv ${nrniv_args} -c "nrnpython(\"import sys$<SEMICOLON> print(sys.path)\")")
 endforeach()
 if(NRN_PYTHON_EXTRA_FOR_TESTS)
-  # Extra Pythons that were not used to compile. With ABI3, GIL CPython 3.12+ should import; older
-  # versions should fail. Without ABI3, only the versions this build compiled against import.
+  # Extra Pythons that were not used to compile. With ABI3 and dynamic loading, GIL
+  # CPython 3.12+ should import. Otherwise only a version this build was configured
+  # with should import. A non-dynamic ABI3 build is linked to one libpython.
   foreach(val RANGE ${NRN_PYTHON_EXTRA_FOR_TESTS_ITERATION_LIMIT})
     list(GET NRN_PYTHON_EXTRA_FOR_TESTS_EXECUTABLES ${val} pyexe)
     list(GET NRN_PYTHON_EXTRA_FOR_TESTS_VERSIONS ${val} pyver)
-    if((NRN_ENABLE_ABI3 AND pyver VERSION_GREATER_EQUAL 3.12)
+    if((NRN_ENABLE_ABI3 AND NRN_ENABLE_PYTHON_DYNAMIC AND pyver VERSION_GREATER_EQUAL 3.12)
        OR ((NOT NRN_ENABLE_ABI3) AND pyver IN_LIST NRN_PYTHON_VERSIONS))
       nrn_add_test(
         GROUP pyinit
@@ -346,7 +347,7 @@ if(NRN_PYTHON_EXTRA_FOR_TESTS)
           set(properties WILL_FAIL ON)
         else()
           string(REPLACE "." "\\." pyver_escaped "${pyver}")
-          if(NRN_ENABLE_ABI3)
+          if(NRN_ENABLE_ABI3 AND NRN_ENABLE_PYTHON_DYNAMIC)
             set(properties
                 PASS_REGULAR_EXPRESSION
                 "Python ${pyver_escaped} is not supported by this NEURON installation \\(requires CPython 3\\.12"

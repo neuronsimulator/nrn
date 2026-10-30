@@ -156,7 +156,8 @@ mark_as_advanced(NRN_BINARY_DIST_BUILD)
 #   NOTE: When building the wheel, this is set to OFF.
 # Dynamic Python version support:
 #   - NRN_ENABLE_PYTHON_DYNAMIC=OFF  : libnrniv is linked against a single Python version, which
-#                                      can be steered with PYTHON_EXECUTABLE
+#                                      can be steered with PYTHON_EXECUTABLE. Import accepts only
+#                                      that version, including when NRN_ENABLE_ABI3=ON.
 #   - NRN_ENABLE_PYTHON_DYNAMIC=ON   : libnrniv is not linked against Python.
 #                                      NRN_ENABLE_ABI3=ON  : one libnrnpython.abi3 (CPython 3.12+
 #                                      limited API, the cp312-abi3 wheel); extra NRN_PYTHON_DYNAMIC
@@ -199,6 +200,14 @@ mark_as_advanced(NRN_BINARY_DIST_BUILD)
 # ~~~
 option(NRN_ENABLE_PYTHON_DYNAMIC "Enable dynamic Python version support"
        ${NRN_ENABLE_PYTHON_DYNAMIC_DEFAULT})
+# True/False for generated Python, and true/false for nrnpyenv.sh.
+if(NRN_ENABLE_PYTHON_DYNAMIC)
+  set(NRN_PYTHON_DYNAMIC_PY True)
+  set(NRN_PYTHON_DYNAMIC_SH true)
+else()
+  set(NRN_PYTHON_DYNAMIC_PY False)
+  set(NRN_PYTHON_DYNAMIC_SH false)
+endif()
 option(NRN_LINK_AGAINST_PYTHON
        "Link libnrnpythonX.Y against libpythonX.Y when NRN_ENABLE_PYTHON_DYNAMIC=ON"
        ${NRN_LINK_AGAINST_PYTHON_DEFAULT})
