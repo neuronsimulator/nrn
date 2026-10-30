@@ -123,8 +123,11 @@ void nrn_section_connect(Section* child_sec, double child_x, Section* parent_sec
 }
 
 void nrn_section_length_set(Section* sec, const double length) {
-    // TODO: call can_change_morph(sec) to check pt3dconst_; how should we handle
-    // that?
+    // As sec.L = x in HOC and Python: while pt3dconst(1) is in effect the
+    // assignment is silently ignored, on every section.
+    if (!can_change_morph(sec)) {
+        return;
+    }
     // TODO: is there a named constant so we don't have to use the magic number 2?
     sec->prop->dparam[2] = length;
     // nrn_length_change updates 3D points if needed
@@ -210,14 +213,37 @@ void nrn_nseg_set(Section* const sec, const int nseg) {
     nrn_change_nseg(sec, nseg);
 }
 
+namespace {
+// The node holding a mechanism's range variables at x, located as
+// nrn_rangepointer locates them: x = 0 and x = 1 mean the first and last
+// segment, not the zero-area nodes at the section's ends. x outside [0, 1] is
+// clamped, as node_exact does, because node_index would raise a HOC error.
+Node* segment_node(Section* sec, double x) {
+    x = (x < 0.) ? 0. : x;
+    x = (x > 1.) ? 1. : x;
+    return sec->pnode[node_index(sec, x)];
+}
+}  // namespace
+
 void nrn_segment_diam_set(Section* const sec, const double x, const double diam) {
-    Node* const node = node_exact(sec, x);
-    // TODO: this is fine if no 3D points; does it work if there are 3D points?
+    Node* const node = segment_node(sec, x);
     for (auto prop = node->prop; prop; prop = prop->next) {
         if (prop->_type == MORPHOLOGY) {
+            // nrn_diam_change below copies every segment's diam into the 3-d
+            // points, so first derive the segment diameters from the points if
+            // that is pending (e.g. just after pt3dadd), or the other segments'
+            // stale values, such as the 500 µm default, overwrite the points'
+            // own diameters.
+            if (sec->recalc_area_ && sec->npt3d) {
+                nrn_area_ri_no_diam_error(sec);
+            }
             prop->param(0) = diam;
+            // As for sec.diam(x) = d in HOC and sec(x).diam = d in Python: on a
+            // section with 3-d points, copy the new diameter into those points,
+            // because the next area recompute derives diam from them.
             diam_changed = 1;
             node->sec->recalc_area_ = 1;
+            nrn_diam_change(node->sec);
             break;
         }
     }
@@ -234,7 +260,7 @@ double nrn_segment_diam_get(Section* const sec, const double x) {
         // recompute without raising the HOC-level diagnostic.
         nrn_area_ri_no_diam_error(sec);
     }
-    Node* const node = node_exact(sec, x);
+    Node* const node = segment_node(sec, x);
     for (auto prop = node->prop; prop; prop = prop->next) {
         if (prop->_type == MORPHOLOGY) {
             return prop->param(0);
@@ -481,8 +507,10 @@ int nrn_setpointer_pop(Symbol* pointer_sym,
     if (!pointer_sym || pointer_sym->type != RANGEVAR || pointer_sym->subtype != NRNPOINTER) {
         return fail("target is not a POINTER range variable");
     }
-    // Locate the mechanism instance that owns this POINTER at (sec, x).
-    Node* const nd = node_exact(sec, x);
+    // Locate the mechanism instance that owns this POINTER at (sec, x), as the
+    // HOC setpointer statement does (connectpointer uses node_index): x = 0 and
+    // x = 1 mean this section's first and last segment, never the parent's.
+    Node* const nd = segment_node(sec, x);
     Prop* prop = nullptr;
     for (Prop* p = nd->prop; p; p = p->next) {
         if (p->_type == pointer_sym->u.rng.type) {
