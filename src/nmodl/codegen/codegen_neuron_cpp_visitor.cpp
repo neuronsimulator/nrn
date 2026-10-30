@@ -1499,6 +1499,48 @@ void CodegenNeuronCppVisitor::print_global_variables_for_hoc() {
     }
 }
 
+/**
+ * Integer passed to hoc_reg_ba. Same encoding as nocmodl bablk:
+ * BEFORE is 10, AFTER is 20, plus breakpoint 1, solve 2, initial 3, step 4.
+ * hoc_reg_ba rejects any other combination.
+ */
+static int neuron_ba_register_type(const ast::Block* block) {
+    constexpr int before_code = 10;
+    constexpr int after_code = 20;
+    constexpr int breakpoint_code = 1;
+    constexpr int solve_code = 2;
+    constexpr int initial_code = 3;
+    constexpr int step_code = 4;
+
+    int register_type = 0;
+    BAType ba_type{};
+    if (block->is_before_block()) {
+        register_type = before_code;
+        ba_type =
+            dynamic_cast<const ast::BeforeBlock*>(block)->get_bablock()->get_type()->get_value();
+    } else if (block->is_after_block()) {
+        register_type = after_code;
+        ba_type =
+            dynamic_cast<const ast::AfterBlock*>(block)->get_bablock()->get_type()->get_value();
+    } else {
+        throw std::runtime_error("Unhandled Before/After type encountered during code generation");
+    }
+
+    if (ba_type == BATYPE_BREAKPOINT) {
+        register_type += breakpoint_code;
+    } else if (ba_type == BATYPE_SOLVE) {
+        register_type += solve_code;
+    } else if (ba_type == BATYPE_INITIAL) {
+        register_type += initial_code;
+    } else if (ba_type == BATYPE_STEP) {
+        register_type += step_code;
+    } else {
+        throw std::runtime_error("Unhandled Before/After type encountered during code generation");
+    }
+    return register_type;
+}
+
+
 void CodegenNeuronCppVisitor::print_mechanism_register() {
     printer->add_newline(2);
     printer->fmt_push_block("extern \"C\" void _{}_reg()", info.mod_file);
@@ -1653,6 +1695,14 @@ void CodegenNeuronCppVisitor::print_mechanism_register_regular() {
         printer->fmt_line("hoc_register_dparam_semantics(mech_type, {}, \"{}\");",
                           i,
                           info.semantics[i].name);
+    }
+
+    for (size_t i = 0; i < info.before_after_blocks.size(); ++i) {
+        const auto& block = info.before_after_blocks[i];
+        const auto function_name = method_name(fmt::format("nrn_before_after_{}", i));
+        printer->fmt_line("hoc_reg_ba(mech_type, {}, {});",
+                          function_name,
+                          neuron_ba_register_type(block));
     }
 
     if (!info.longitudinal_diffusion_info.empty()) {
@@ -2665,6 +2715,78 @@ void CodegenNeuronCppVisitor::print_function_definitions() {
     }
 }
 
+void CodegenNeuronCppVisitor::print_before_after_block(const ast::Block* node, size_t block_id) {
+    std::shared_ptr<ast::BABlock> ba_block;
+    std::string ba_type;
+    if (node->is_before_block()) {
+        ba_block = dynamic_cast<const ast::BeforeBlock*>(node)->get_bablock();
+        ba_type = "BEFORE";
+    } else {
+        ba_block = dynamic_cast<const ast::AfterBlock*>(node)->get_bablock();
+        ba_type = "AFTER";
+    }
+
+    const auto ba_block_type = ba_block->get_type()->eval();
+    const auto function_name = method_name(fmt::format("nrn_before_after_{}", block_id));
+
+    // One instance per call. nrn_ba and Cvode::before_after already loop.
+    // This is not the Memb_list signature used by nrn_init / nrn_cur.
+    ParamVector args = {{"", "Node*", "", "_nd"},
+                        {"", "Datum*", "", "_ppvar"},
+                        {"", "Datum*", "", "_thread"},
+                        {"", "NrnThread*", "", "nt"},
+                        {"", "Memb_list*", "", "_ml_arg"},
+                        {"", "size_t", "", "id"},
+                        {"", "const _nrn_model_sorted_token&", "", "_sorted_token"}};
+
+    printer->add_newline(2);
+    printer->fmt_line("/** {} {} # {} */", ba_type, ba_block_type, block_id);
+    printer->fmt_push_block("static void {}({})", function_name, get_parameter_str(args));
+
+    // Present so an empty block stays clean under -Wextra.
+    printer->add_line("(void) _nd;");
+    printer->add_line("(void) _ppvar;");
+    printer->add_line("(void) _thread;");
+
+    // Same cache and instance the other per-instance entrypoints use.
+    // _ppvar and _thread are the callback parameters; do not redeclare them.
+    printer->add_line(
+        "_nrn_mechanism_cache_range _lmc{_sorted_token, *nt, *_ml_arg, _ml_arg->type()};");
+    printer->fmt_line("auto inst = make_instance_{}(&_lmc);", info.mod_suffix);
+    if (!info.artificial_cell) {
+        printer->fmt_line("auto node_data = make_node_data_{}(*nt, *_ml_arg);", info.mod_suffix);
+        printer->add_line("int node_id = node_data.nodeindices[id];");
+        // Statements name the voltage `v`, which this backend stores as the
+        // RANGE slot v_unused so NEURON and CoreNEURON data sizes match.
+        // Assign that slot from the node, the same way nrn_init does.
+        printer->add_line("inst.v_unused[id] = node_data.node_voltages[node_id];");
+    }
+    if (!codegen_thread_variables.empty()) {
+        printer->fmt_line("auto _thread_vars = {}(_thread[{}].get<double*>());",
+                          thread_variables_struct(),
+                          info.thread_var_thread_id);
+    }
+
+    // Ion updates follow the equation-block path (nocmodl bablk block 0):
+    // currents are accumulated, concentrations are assigned, and
+    // nrn_wrote_conc stays on the INITIAL block.
+    const auto& read_statements = ion_read_statements(BlockType::Equation);
+    for (auto& statement: read_statements) {
+        printer->add_line(statement);
+    }
+
+    print_statement_block(*ba_block->get_statement_block(), false, false);
+
+    const auto& write_statements = ion_write_statements(BlockType::Equation);
+    for (auto& statement: write_statements) {
+        auto text = process_shadow_update_statement(statement, BlockType::Equation);
+        printer->add_line(text);
+    }
+
+    printer->pop_block();
+}
+
+
 void CodegenNeuronCppVisitor::print_compute_functions() {
     print_nrn_init();
     print_nrn_cur();
@@ -2672,6 +2794,9 @@ void CodegenNeuronCppVisitor::print_compute_functions() {
     print_nrn_jacob();
     print_net_receive();
     print_net_init();
+    for (size_t i = 0; i < info.before_after_blocks.size(); ++i) {
+        print_before_after_block(info.before_after_blocks[i], i);
+    }
 }
 
 void CodegenNeuronCppVisitor::print_codegen_routines_regular() {
@@ -2698,7 +2823,7 @@ void CodegenNeuronCppVisitor::print_codegen_routines_regular() {
     print_global_variables_for_hoc();
     print_thread_memory_callbacks();
     print_function_definitions();
-    print_compute_functions();  // only nrn_cur and nrn_state
+    print_compute_functions();
     print_nrn_constructor();
     print_nrn_destructor();
     print_sdlists_init(true);
@@ -3074,6 +3199,23 @@ void CodegenNeuronCppVisitor::visit_for_netcon(const ast::ForNetcon& node) {
     print_statement_block(*statement_block, false, false);
     printer->pop_block();
 }
+
+void CodegenNeuronCppVisitor::visit_lag_statement(const ast::LagStatement& node) {
+    // nocmodl lag_stmt. The history lives in scopmath::lag and is keyed by the
+    // address of the variable, so pass the instance slot rather than a local.
+    // lag_<var>_<by> is a function-local static: the MOD file reads that name
+    // later in the same call, and it is not a RANGE variable.
+    const auto var_name = node.get_name()->get_node_name();
+    const auto by_name = node.get_byname()->get_node_name();
+    const auto lag_var = fmt::format("lag_{}_{}", var_name, by_name);
+    printer->fmt_text("static double {}; {} = *lag(&({}), {}, {}, 0)",
+                      lag_var,
+                      lag_var,
+                      get_variable_name(var_name),
+                      get_variable_name("t"),
+                      get_variable_name(by_name));
+}
+
 
 void CodegenNeuronCppVisitor::visit_protect_statement(const ast::ProtectStatement& node) {
     printer->add_line("_NMODLMUTEXLOCK");

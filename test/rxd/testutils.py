@@ -87,7 +87,9 @@ def compare_data(data):
     if "rlen" in data:
         rlen = data["rlen"]
     else:
-        return 0.0
+        # rlen is set on the second BEFORE STEP sample. Returning 0 made
+        # tests pass when the NMODL backend dropped the block entirely.
+        raise AssertionError("BEFORE STEP recorded no samples")
     corr_dat = numpy.fromfile(get_correct_data_for_test()).reshape(-1, rlen)
     tst_dat = numpy.array(data["data"]).reshape(-1, rlen)
     t1 = corr_dat[:, 0]
