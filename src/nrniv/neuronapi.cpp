@@ -16,6 +16,7 @@
 #include <exception>
 #include <cstdio>
 #include <limits>
+#include <sstream>
 #include <string>
 
 /// A public face of hoc_Item
@@ -422,6 +423,37 @@ int nrn_rangevar_push_nothrow(Symbol* sym,
             error_msg[error_msg_size - 1] = '\0';
         }
         return 1;
+    }
+}
+
+int nrn_rangevar_handle_str(Symbol* sym,
+                            Section* sec,
+                            double x,
+                            int index,
+                            char* buf,
+                            size_t size) {
+    if (buf && size) {
+        buf[0] = '\0';
+    }
+    try {
+        auto handle = rangevar_handle(sym, sec, x, index, buf, size);
+        if (!handle) {
+            return -1;
+        }
+        // The text Python's interface prints for a reference, e.g.
+        // data_handle<double>{Node::field::Voltage row=0/2 val=-65}.
+        std::ostringstream os;
+        os << handle;
+        auto const text = os.str();
+        if (buf && size) {
+            std::snprintf(buf, size, "%s", text.c_str());
+        }
+        return static_cast<int>(text.size());
+    } catch (const std::exception& e) {
+        if (buf && size) {
+            std::snprintf(buf, size, "%s", e.what());
+        }
+        return -1;
     }
 }
 
