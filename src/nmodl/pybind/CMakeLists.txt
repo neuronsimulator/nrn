@@ -114,7 +114,10 @@ if(NMODL_ENABLE_PYTHON_BINDINGS)
     ${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/pybind/pybind_utils.hpp
     ${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/pybind/pynmodl.cpp ${PYBIND_GENERATED_SOURCES})
   add_dependencies(_nmodl lexer pyastgen util)
-  target_link_libraries(_nmodl PRIVATE printer symtab visitor nanobind_nmodl)
+  # Public Sympy visitors call EmbeddedPythonLoader. A wheel does not link libpywrapper into _nmodl;
+  # pyembed dlopens it. Linking Python uses the static wrapper and the interpreter that already
+  # imported this module.
+  target_link_libraries(_nmodl PRIVATE printer symtab visitor pyembed nanobind_nmodl)
   target_include_directories(_nmodl PRIVATE ${_nmodl_python_inc} ${CMAKE_CURRENT_BINARY_DIR})
   if(NRN_ENABLE_ABI3)
     # Windows import machinery has no .abi3.pyd suffix; Unix uses _nmodl.abi3.so.

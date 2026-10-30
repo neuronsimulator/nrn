@@ -27,6 +27,8 @@
 #include "visitors/lookup_visitor.hpp"
 #include "visitors/nmodl_visitor.hpp"
 #include "visitors/matexp_visitor.hpp"
+#include "visitors/sympy_conductance_visitor.hpp"
+#include "visitors/sympy_solver_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"
 
 #pragma clang diagnostic push
@@ -74,6 +76,14 @@ static const char* kinetic_block_visitor_class = R"(
 
 static const char* local_var_rename_visitor_class = R"(
     LocalVarRenameVisitor class
+)";
+
+static const char* sympy_conductance_visitor_class = R"(
+    SympyConductanceVisitor class
+)";
+
+static const char* sympy_solver_visitor_class = R"(
+    SympySolverVisitor class
 )";
 
 static const char* matexp_visitor_class = R"(
@@ -236,6 +246,14 @@ void init_visitor_module(nb::module_& m) {
     nb::class_<LocalVarRenameVisitor, AstVisitor> local_var_rename_visitor(m_visitor, "LocalVarRenameVisitor", docstring::local_var_rename_visitor_class);
     local_var_rename_visitor.def(nb::init<>())
         .def("visit_program", &LocalVarRenameVisitor::visit_program);
+
+    nb::class_<SympyConductanceVisitor, AstVisitor> sympy_conductance_visitor(m_visitor, "SympyConductanceVisitor", docstring::sympy_conductance_visitor_class);
+    sympy_conductance_visitor.def(nb::init<>())
+        .def("visit_program", &SympyConductanceVisitor::visit_program);
+
+    nb::class_<SympySolverVisitor, AstVisitor> sympy_solver_visitor(m_visitor, "SympySolverVisitor", docstring::sympy_solver_visitor_class);
+    sympy_solver_visitor.def(nb::init<bool>(), "use_pade_approx"_a = false)
+        .def("visit_program", &SympySolverVisitor::visit_program);
 
     nb::class_<MatexpVisitor, AstVisitor> matexp_visitor(m_visitor, "MatexpVisitor", docstring::matexp_visitor_class);
     matexp_visitor.def(nb::init<>())
