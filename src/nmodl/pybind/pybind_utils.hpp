@@ -15,6 +15,8 @@
 #include <memory>
 #include <ostream>
 #include <streambuf>
+#include <string>
+#include <vector>
 
 namespace nb = nanobind;
 
@@ -26,9 +28,17 @@ class pythonibuf: public std::streambuf {
   private:
     using traits_type = std::streambuf::traits_type;
 
-    const static std::size_t put_back_ = 1;
-    const static std::size_t buf_sz = 1024 + put_back_;
-    char d_buffer[buf_sz];
+    // One byte so sputbackc can see the last byte of the previous fill.
+    static constexpr std::size_t put_back_ = 1;
+    // Characters requested from read(), and the most bytes placed in one fill.
+    // read() counts characters; UTF-8 can be longer, so a fill never uses that
+    // count as a byte size.
+    static constexpr std::size_t chunk_ = 1024;
+
+    std::vector<char> d_buffer;
+    // Encoded bytes not yet placed in the get area.
+    std::string pending_;
+    std::size_t pending_off_ = 0;
 
     nb::object pyistream;
     nb::object pyread;
@@ -36,44 +46,59 @@ class pythonibuf: public std::streambuf {
     pythonibuf(const pythonibuf&) = delete;
     pythonibuf& operator=(const pythonibuf&) = delete;
 
-    int_type underflow() {
+    int_type underflow() override {
         if (gptr() < egptr()) {
             return traits_type::to_int_type(*gptr());
         }
 
-        char* base = d_buffer;
+        // Save the put-back byte before resizing. The vector may move.
+        char put_back_ch = 0;
+        const bool have_put_back = !d_buffer.empty() && eback() == d_buffer.data() &&
+                                   static_cast<std::size_t>(egptr() - eback()) >= put_back_;
+        if (have_put_back) {
+            put_back_ch = *(egptr() - static_cast<std::ptrdiff_t>(put_back_));
+        }
+
+        if (pending_off_ >= pending_.size()) {
+            pending_.clear();
+            pending_off_ = 0;
+            nb::object data = pyread(chunk_);
+            if (data.is_none()) {
+                return traits_type::eof();
+            }
+            if (nb::isinstance<nb::str>(data)) {
+                data = data.attr("encode")("utf-8");
+            }
+            char* buffer = nullptr;
+            Py_ssize_t length = 0;
+            if (PyBytes_AsStringAndSize(data.ptr(), &buffer, &length) < 0) {
+                throw nb::python_error();
+            }
+            if (length <= 0) {
+                return traits_type::eof();
+            }
+            pending_.assign(buffer, buffer + static_cast<std::size_t>(length));
+        }
+
+        const std::size_t available = pending_.size() - pending_off_;
+        const std::size_t n = available < chunk_ ? available : chunk_;
+        d_buffer.resize(put_back_ + n);
+        char* const base = d_buffer.data();
         char* start = base;
-        if (eback() == base) {
-            std::memmove(base, egptr() - put_back_, put_back_);
+        if (have_put_back) {
+            *base = put_back_ch;
             start += put_back_;
         }
-        nb::object data = pyread(buf_sz - (start - base));
-        if (data.is_none()) {
-            return traits_type::eof();
-        }
-        if (nb::isinstance<nb::str>(data)) {
-            data = data.attr("encode")("utf-8");
-        }
-        char* buffer = nullptr;
-        Py_ssize_t length = 0;
-        if (PyBytes_AsStringAndSize(data.ptr(), &buffer, &length) < 0) {
-            throw nb::python_error();
-        }
-        if (length == 0) {
-            return traits_type::eof();
-        }
-        std::memcpy(start, buffer, static_cast<size_t>(length));
-        setg(base, start, start + length);
+        std::memcpy(start, pending_.data() + pending_off_, n);
+        pending_off_ += n;
+        setg(base, start, start + n);
         return traits_type::to_int_type(*gptr());
     }
 
   public:
     pythonibuf(nb::object pyistream)
         : pyistream(std::move(pyistream))
-        , pyread(this->pyistream.attr("read")) {
-        char* end = d_buffer + buf_sz;
-        setg(end, end, end);
-    }
+        , pyread(this->pyistream.attr("read")) {}
 };
 
 class pythonobuf: public std::streambuf {
