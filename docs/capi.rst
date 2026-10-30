@@ -88,6 +88,51 @@ Sections
         soma = n.Section('soma')
         dendrite = n.Section('dendrite')
 
+.. c:function:: bool nrn_section_owner_hooks_set(nrn_section_owner_name_func name, nrn_section_owner_cell_func cell, nrn_section_owner_cell_equals_func cell_equals, char* error_msg, size_t error_msg_size)
+
+    Install the hooks NEURON uses for sections owned by an object of the calling
+    interface (see :c:func:`nrn_section_new_owned`), such as a Python or MATLAB
+    ``Section``. NEURON's own Python module installs the same hooks for its
+    sections; this lets an interface built on the C API provide them instead.
+    Only one set of hooks can be installed at a time.
+
+    :param name: Returns the section's name, such as ``"cell.soma"``. Called only
+        for owned sections, including while one is being created; it must
+        not return ``NULL``, and the string must stay valid until the next call.
+    :param cell: Returns the owning cell with a new reference, or ``NULL``. Called
+        for any section, so it must return ``NULL`` for sections it does not own.
+    :param cell_equals: Returns nonzero if the section belongs to the given cell.
+    :param error_msg: Buffer for a diagnostic if installation fails.
+    :param error_msg_size: Size of ``error_msg``.
+    :returns: ``true`` on success. ``false`` if a hook is ``NULL``, if different
+        hooks are already installed (for example by NEURON's Python module), or if
+        NEURON was built without Python support (core keeps owned sections
+        only in Python-enabled builds).
+
+    The hooks are used by ``secname``, ``section_owner``,
+    ``ParallelContext.gid2cell``, ``NetCon.precell``/``postcell``, the
+    ``_pysec`` name lookup and ``BBSaveState``. They must not raise HOC errors.
+
+.. c:function:: Section* nrn_section_new_owned(void* owner)
+
+    Create a section owned by an object of the calling interface, as NEURON's
+    Python module creates its sections: it has no HOC name of its own; its name and cell come from the hooks installed
+    with :c:func:`nrn_section_owner_hooks_set`.
+
+    :param owner: Opaque pointer to the owning object, stored with the section.
+    :returns: The new section, or ``NULL`` if ``owner`` is ``NULL``, the hooks are
+        not installed, or NEURON was built without Python support.
+
+    Call :c:func:`nrn_section_owned_release` when the owner is destroyed.
+
+.. c:function:: void nrn_section_owned_release(Section* sec)
+
+    Release a section created with :c:func:`nrn_section_new_owned` when its owner
+    is destroyed. The section is freed; if HOC already deleted it
+    (``delete_section``), only the reference HOC kept for the owner is dropped.
+
+    :param sec: The section, or ``NULL`` (no effect).
+
 .. c:function:: void nrn_section_connect(Section* child_sec, double child_x, Section* parent_sec, double parent_x)
 
     Connect a child Section to a parent Section at specified locations. This defines
@@ -661,6 +706,40 @@ Segments
 
         idx = soma(0.5).node_index()  # node index at middle of Section
 
+.. c:function:: int nrn_segment_mechanisms(Section* sec, double x, Symbol** mechanisms, int max)
+
+    List the mechanisms in the node of the segment at normalized position x,
+    in the order of the node's property list. That is the order in which
+    Python's ``for mech in seg`` yields density mechanisms; it depends on the
+    order the mechanisms were added to the node and can differ between nodes
+    of one Section after an ``nseg`` change. The list includes every property
+    of the node: built-in ones such as ``capacitance`` and ``morphology``, ions
+    and point processes as well as density mechanisms.
+
+    :param sec: Pointer to the Section.
+    :param x: Normalized position along Section (0.0 to 1.0).
+    :param mechanisms: Array that receives up to ``max`` mechanism symbols, or
+        ``NULL`` to only count them.
+    :param max: Size of ``mechanisms``.
+    :returns: The number of mechanisms in the node, which may exceed ``max``;
+        -1 if sec is NULL or has been deleted.
+
+    **C Usage:**
+
+    .. code-block:: c
+
+        Symbol* mechs[32];
+        int n = nrn_segment_mechanisms(soma, 0.5, mechs, 32);
+        for (int i = 0; i < n && i < 32; ++i) {
+            printf("%s\n", nrn_symbol_name(mechs[i]));
+        }
+
+    **Python Equivalent:**
+
+    .. code-block:: python
+
+        names = [mech.name() for mech in soma(0.5)]  # density mechanisms only
+
 .. c:function:: void nrn_rangevar_push(Symbol* sym, Section* sec, double x)
 
     Push a range variable for a Section at position x onto the NEURON stack.
@@ -832,6 +911,38 @@ Segments
         } else {
             nrn_method_call(vec, nrn_method_symbol(vec, "record"), 1);
         }
+
+.. c:function:: int nrn_rangevar_handle_str(Symbol* sym, Section* sec, double x, int index, char* buf, size_t size)
+
+    Describe the data handle of element ``index`` of a range variable at
+    position ``x``: the text NEURON's Python interface prints for a reference
+    such as ``seg._ref_v``, for example
+    ``data_handle<double>{Node::field::Voltage row=0/2 val=-65}``. It names the
+    storage the value lives in and its row there, which changes with the node
+    order (:meth:`ParallelContext.optimize_node_order`). For a ``POINTER``
+    variable it describes the handle the pointer holds. The checks are those
+    of :c:func:`nrn_rangevar_get_nothrow`.
+
+    :param buf: Buffer for the text (truncated to ``size - 1`` characters), or
+        for the error message on failure.
+    :param size: Size of ``buf``.
+    :returns: The length of the full text, which may be ``size`` or more; -1 on
+        error.
+
+    **C Usage:**
+
+    .. code-block:: c
+
+        char text[128];
+        if (nrn_rangevar_handle_str(nrn_symbol("v"), soma, 0.5, 0, text, sizeof(text)) >= 0) {
+            printf("%s\n", text);
+        }
+
+    **Python Equivalent:**
+
+    .. code-block:: python
+
+        text = str(soma(0.5)._ref_v)
 
 .. c:function:: Object* nrn_segment_nmodlrandom_get(Section* sec, double x, Symbol* sym)
 

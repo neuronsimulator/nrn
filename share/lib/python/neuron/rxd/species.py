@@ -8,6 +8,7 @@ import warnings
 import itertools
 from . import options
 from .rxdException import RxDException
+from ._pointers import address, ptr_array, ptr_array_type, ptr_or_value
 from . import initializer
 from collections.abc import Callable
 from typing import Any, Optional
@@ -35,7 +36,7 @@ set_initialize.argtypes = [fptr_prototype]
 ECS_insert = nrn_dll_sym("ECS_insert")
 ECS_insert.argtypes = [
     ctypes.c_int,
-    ctypes.py_object,
+    ctypes.c_void_p,  # states
     ctypes.c_int,
     ctypes.c_int,
     ctypes.c_int,
@@ -45,8 +46,10 @@ ECS_insert.argtypes = [
     ctypes.c_double,
     ctypes.c_double,
     ctypes.c_double,
-    ctypes.py_object,
-    ctypes.py_object,
+    ctypes.c_void_p,  # volume fraction array, or NULL for the value that follows
+    ctypes.c_double,
+    ctypes.c_void_p,  # permeability array, or NULL for the value that follows
+    ctypes.c_double,
     ctypes.c_int,
     ctypes.c_double,
     ctypes.c_double,
@@ -59,7 +62,7 @@ ICS_insert_inhom = nrn_dll_sym("ICS_insert_inhom")
 
 ICS_insert_inhom.argtypes = ICS_insert.argtypes = [
     ctypes.c_int,
-    ctypes.py_object,
+    ctypes.c_void_p,  # states
     ctypes.c_long,
     numpy.ctypeslib.ndpointer(dtype=ctypes.c_long),
     numpy.ctypeslib.ndpointer(dtype=ctypes.c_long),
@@ -96,8 +99,9 @@ _set_grid_concentrations = nrn_dll_sym("set_grid_concentrations")
 _set_grid_concentrations.argtypes = [
     ctypes.c_int,
     ctypes.c_int,
-    ctypes.py_object,
-    ctypes.py_object,
+    ctypes.c_int,  # number of segments
+    numpy.ctypeslib.ndpointer(dtype=ctypes.c_long),  # grid indices
+    ptr_array_type,  # concentrations
 ]
 
 _ics_set_grid_concentrations = nrn_dll_sym("ics_set_grid_concentrations")
@@ -106,23 +110,26 @@ _ics_set_grid_concentrations.argtypes = [
     ctypes.c_int,
     numpy.ctypeslib.ndpointer(dtype=numpy.int64),
     numpy.ctypeslib.ndpointer(dtype=numpy.int64),
-    ctypes.py_object,
+    ctypes.c_int,  # number of segments
+    ptr_array_type,  # concentrations
 ]
 
 _set_grid_currents = nrn_dll_sym("set_grid_currents")
 _set_grid_currents.argtypes = [
     ctypes.c_int,
     ctypes.c_int,
-    ctypes.py_object,
-    ctypes.py_object,
-    ctypes.py_object,
+    ctypes.c_int,  # number of segments
+    numpy.ctypeslib.ndpointer(dtype=ctypes.c_long),  # grid indices
+    ptr_array_type,  # currents
+    numpy.ctypeslib.ndpointer(dtype=float),  # scale factors
 ]
 
 _ics_set_grid_currents = nrn_dll_sym("ics_set_grid_currents")
 _ics_set_grid_currents.argtypes = [
     ctypes.c_int,
     ctypes.c_int,
-    ctypes.py_object,
+    ctypes.c_int,  # number of segments
+    ptr_array_type,  # currents
     numpy.ctypeslib.ndpointer(dtype=float),
 ]
 
@@ -132,11 +139,21 @@ _delete_by_id.argtypes = [ctypes.c_int]
 
 # function to change extracellular tortuosity
 _set_tortuosity = nrn_dll_sym("set_tortuosity")
-_set_tortuosity.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.py_object]
+_set_tortuosity.argtypes = [
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_double,
+]
 
 # function to change extracellular volume fraction
 _set_volume_fraction = nrn_dll_sym("set_volume_fraction")
-_set_volume_fraction.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.py_object]
+_set_volume_fraction.argtypes = [
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_double,
+]
 
 
 # The difference here is that defined species only exists after rxd initialization
@@ -170,9 +187,11 @@ def _update_tortuosity(region) -> None:
             and not s._diffusion_characteristic
         ):
             if hasattr(region._permeability_vector, "_ref_x"):
-                _set_tortuosity(0, s._grid_id, region._permeability_vector._ref_x[0])
+                _set_tortuosity(
+                    0, s._grid_id, address(region._permeability_vector._ref_x[0]), 0.0
+                )
             else:
-                _set_tortuosity(0, s._grid_id, region._permeability_vector)
+                _set_tortuosity(0, s._grid_id, None, region._permeability_vector)
 
 
 def _update_volume_fraction(region) -> None:
@@ -187,10 +206,15 @@ def _update_volume_fraction(region) -> None:
         ):
             if hasattr(region._volume_fraction_vector, "_ref_x"):
                 _set_volume_fraction(
-                    0, s._grid_id, region._volume_fraction_vector._ref_x[0]
+                    0,
+                    s._grid_id,
+                    address(region._volume_fraction_vector._ref_x[0]),
+                    0.0,
                 )
             else:
-                _set_volume_fraction(0, s._grid_id, region._volume_fraction_vector)
+                _set_volume_fraction(
+                    0, s._grid_id, None, region._volume_fraction_vector
+                )
 
 
 def _1d_submatrix_n() -> int:
@@ -706,7 +730,7 @@ class _IntracellularSpecies(_SpeciesMathable):
         if hasattr(self, "_dgrid"):
             self._grid_id = ICS_insert_inhom(
                 0,
-                self._states._ref_x[0],
+                address(self._states._ref_x[0]),
                 len(self.states),
                 self.neighbors,
                 self._x_line_defs,
@@ -724,7 +748,7 @@ class _IntracellularSpecies(_SpeciesMathable):
         else:
             self._grid_id = ICS_insert(
                 0,
-                self._states._ref_x[0],
+                address(self._states._ref_x[0]),
                 len(self.states),
                 self.neighbors,
                 self._x_line_defs,
@@ -922,7 +946,8 @@ class _IntracellularSpecies(_SpeciesMathable):
                     self._grid_id,
                     self._surface_nodes_per_seg,
                     self._surface_nodes_per_seg_start_indices,
-                    self._concentration_neuron_pointers,
+                    len(self._concentration_neuron_pointers),
+                    ptr_array(self._concentration_neuron_pointers),
                 )
 
                 if self._name is not None and self._charge != 0:
@@ -961,7 +986,8 @@ class _IntracellularSpecies(_SpeciesMathable):
                     _ics_set_grid_currents(
                         grid_list_start,
                         self._grid_id,
-                        self._current_neuron_pointers,
+                        len(self._current_neuron_pointers),
+                        ptr_array(self._current_neuron_pointers),
                         self._scale_factors,
                     )
 
@@ -1235,7 +1261,7 @@ class _ExtracellularSpecies(_SpeciesMathable):
         if not hasattr(self._d, "__len__"):
             self._grid_id = ECS_insert(
                 0,
-                self._states._ref_x[0],
+                address(self._states._ref_x[0]),
                 self._nx,
                 self._ny,
                 self._nz,
@@ -1245,8 +1271,8 @@ class _ExtracellularSpecies(_SpeciesMathable):
                 self._dx[0],
                 self._dx[1],
                 self._dx[2],
-                self._alpha,
-                self._permability,
+                *ptr_or_value(self._alpha),
+                *ptr_or_value(self._permability),
                 bc_type,
                 bc_value,
                 atolscale,
@@ -1254,7 +1280,7 @@ class _ExtracellularSpecies(_SpeciesMathable):
         elif len(self._d) == 3:
             self._grid_id = ECS_insert(
                 0,
-                self._states._ref_x[0],
+                address(self._states._ref_x[0]),
                 self._nx,
                 self._ny,
                 self._nz,
@@ -1264,8 +1290,8 @@ class _ExtracellularSpecies(_SpeciesMathable):
                 self._dx[0],
                 self._dx[1],
                 self._dx[2],
-                self._alpha,
-                self._permability,
+                *ptr_or_value(self._alpha),
+                *ptr_or_value(self._permability),
                 bc_type,
                 bc_value,
                 atolscale,
@@ -1455,12 +1481,23 @@ class _ExtracellularSpecies(_SpeciesMathable):
                     grid_indices.append(i)
                     neuron_pointers.append(getattr(seg, stateo))
         _set_grid_concentrations(
-            grid_list, self._grid_id, grid_indices, neuron_pointers
+            grid_list,
+            self._grid_id,
+            len(grid_indices),
+            numpy.array(grid_indices, dtype=ctypes.c_long),
+            ptr_array(neuron_pointers),
         )
         if self._charge == 0 or isinstance(
             _defined_species[self._species][self._region](), Parameter
         ):
-            _set_grid_currents(grid_list, self._grid_id, [], [], [])
+            _set_grid_currents(
+                grid_list,
+                self._grid_id,
+                0,
+                numpy.array([], dtype=ctypes.c_long),
+                None,
+                numpy.array([], dtype=float),
+            )
         else:
             tenthousand_over_charge_faraday = 10000.0 / (self._charge * h.FARADAY)
             scale_factor = tenthousand_over_charge_faraday / (numpy.prod(self._dx))
@@ -1474,7 +1511,12 @@ class _ExtracellularSpecies(_SpeciesMathable):
                         scale_factors.append(float(scale_factor * surface_area))
             # TODO: MultiCompartment reactions ?
             _set_grid_currents(
-                grid_list, self._grid_id, grid_indices, neuron_pointers, scale_factors
+                grid_list,
+                self._grid_id,
+                len(grid_indices),
+                numpy.array(grid_indices, dtype=ctypes.c_long),
+                ptr_array(neuron_pointers),
+                numpy.array(scale_factors, dtype=float),
             )
 
     def _import_concentration(self):

@@ -149,19 +149,18 @@ try:
 except:
     pass
 
-# Import the compiled HOC extension. We already checked above that it exists for the
-# current Python version.
-from . import hoc
+# `from neuron import h` is served by the pure-Python interface in _interface,
+# which drives libnrniv through NEURON's C API; the compiled hoc extension is not
+# loaded. It applies the startup options the extension used to (neuron_options,
+# NEURON_MODULE_OPTIONS, the <arch>/libnrnmech auto-load). Inside nrniv -python
+# the legacy extension has already initialized NEURON and created `hoc`; the
+# interface then attaches to that session rather than initializing again.
+from . import _interface
+from ._interface import _facades
 
-# These are strange beasts that are defined inside the compiled `hoc` extension, all
-# efforts to make them relative imports (because they are internal) have failed. It's
-# not clear if the import of _neuron_section is needed, and this could probably be
-# handled more idiomatically.
-import nrn
-import _neuron_section
-
-# we keep the old h as before with the old repr and type
-h = hoc.HocObject()
+h = _interface.h
+n = _interface.n
+hoc, nrn, _neuron_section = _facades.install(_interface, embedded)
 
 # Python 3.13+'s pyrepl (UnixConsole.prepare) clears OPOST, so the kernel
 # no longer maps NL to CRNL. GUI callbacks run on a background thread
@@ -222,57 +221,6 @@ def install_raw_tty_newline_fix(streams=None):
         _raw_tty_newline_patched.add(stream_id)
 
 
-class _NEURON_INTERFACE(hoc.HocObject):
-    """
-    neuron.n
-    ========
-
-    neuron.n is the top-level NEURON inteface, starting in NEURON 9.
-
-    >>> from neuron import n
-    >>> n
-    <TopLevelNEURONInterface>
-
-    Most NEURON classes and functions are defined in the n namespace
-    and can be accessed as follows:
-
-    >>> v = n.Vector(10)
-    >>> soma = n.Section("soma")
-    >>> input = n.IClamp(soma(0.5))
-    >>> n.finitialize(-65)
-
-    Each built-in class has its own type, so for the above definitions we have:
-
-    >>> type(v)
-    <class 'hoc.Vector'>
-    >>> type(soma)
-    <class 'nrn.Section'>
-
-    But since ``IClamp`` is defined by a MOD file:
-
-    >>> type(input)
-    <class 'hoc.HocObject'>
-
-    Other submodules of neuron exist, including rxd and units.
-
-    You can see the functions, classes, etc available inside n via dir(n)
-    and can get help on each via the standard Python help system, e.g.,
-
-    >>> help(n.finitialize)
-
-    The full NEURON documentation is available online at
-    https://www.neuronsimulator.org
-    """
-
-    def __repr__(self):
-        return "<TopLevelNEURONInterface>"
-
-    def __dir__(self):
-        return dir(h)
-
-
-n = _NEURON_INTERFACE()
-
 version = n.nrnversion(5)
 __version__ = version
 _userrxd = False
@@ -332,27 +280,6 @@ def _check_for_intel_openmp() -> None:
 
 
 _check_for_intel_openmp()
-
-_original_hoc_file = None
-if not hasattr(hoc, "__file__"):
-    # first try is to derive from neuron.__file__
-    origin = None  # path to neuron/__init__.py
-    from importlib import util
-
-    mspec = util.find_spec("neuron")
-    if mspec:
-        origin = mspec.origin
-    if origin is not None:
-        import sysconfig
-
-        hoc_path = (
-            origin.rstrip("__init__.py")
-            + "hoc"
-            + sysconfig.get_config_var("EXT_SUFFIX")
-        )
-        setattr(hoc, "__file__", hoc_path)
-else:
-    _original_hoc_file = hoc.__file__
 
 
 # As a workaround to importing doc at neuron import time
@@ -541,9 +468,6 @@ def new_hoc_class(name, doc=None):
 
 
 _nrn_dll = None
-_nrn_hocobj_ptr = None
-_double_ptr = None
-_double_size = None
 
 
 def numpy_element_ref(numpy_array, index):
@@ -566,19 +490,8 @@ def numpy_element_ref(numpy_array, index):
         using slices. If the array is multi-dimensional,
         the user must figure out the integer index to the desired element.
     """
-    global _nrn_dll, _double_ptr, _double_size, _nrn_hocobj_ptr
-    import ctypes
-
-    if _nrn_hocobj_ptr is None:
-        _nrn_hocobj_ptr = nrn_dll_sym("nrn_hocobj_ptr")
-        _nrn_hocobj_ptr.restype = ctypes.py_object
-        _double_ptr = ctypes.POINTER(ctypes.c_double)
-        _double_size = ctypes.sizeof(ctypes.c_double)
-    void_p = (
-        ctypes.cast(numpy_array.ctypes.data_as(_double_ptr), ctypes.c_voidp).value
-        + index * _double_size
-    )
-    return _nrn_hocobj_ptr(ctypes.cast(void_p, _double_ptr))
+    # The interface's reference; nrn_hocobj_ptr lived in the compiled extension.
+    return _interface.numpy_element_ref(numpy_array, index)
 
 
 def nrn_dll_sym(name, type=None):
@@ -647,58 +560,9 @@ def nrn_dll(printpath=False):
         This provides access to the C-language internals of NEURON and should
         be used with care.
     """
-    import ctypes
-    import glob
-
-    try:
-        # extended? if there is a __file__, then use that
-        if printpath:
-            print(f"hoc.__file__ {_original_hoc_file}")
-        the_dll = ctypes.pydll[_original_hoc_file]
-        return the_dll
-    except:
-        pass
-
-    success = False
-    if sys.platform == "msys" or sys.platform == "win32":
-        p = f"hoc{sys.version_info[0]}{sys.version_info[1]}"
-    else:
-        p = "hoc"
-
-    try:
-        # maybe hoc.so in this neuron module
-        base_path = os.path.join(os.path.split(__file__)[0], p)
-        dlls = glob.glob(base_path + "*.*")
-        for dll in dlls:
-            try:
-                the_dll = ctypes.pydll[dll]
-                if printpath:
-                    print(dll)
-                return the_dll
-            except:
-                pass
-    except:
-        pass
-    # maybe old default module location
-    neuron_home = os.path.split(os.path.split(n.neuronhome())[0])[0]
-    base_path = os.path.join(neuron_home, "lib", "python", "neuron", p)
-    for extension in ["", ".dll", ".so", ".dylib"]:
-        dlls = glob.glob(base_path + "*" + extension)
-        for dll in dlls:
-            try:
-                the_dll = ctypes.pydll[dll]
-                if printpath:
-                    print(dll)
-                success = True
-            except:
-                pass
-            if success:
-                break
-        if success:
-            break
-    else:
-        raise Exception("unable to connect to the NEURON library")
-    return the_dll
+    if printpath:
+        print(_interface.api.libnrniv._name)
+    return _interface.api.libnrniv
 
 
 def _modelview_mechanism_docstrings(dmech, tree):
@@ -1547,6 +1411,10 @@ try:
             _mech_classes[name] = my_class
         return my_class(name)
 
+    # h.<mechanism> is the interface's; it calls this factory, as NEURON's
+    # Python module calls the one registered below.
+    _interface.mechanism.set_density_mechanism_factory(_get_mech_object)
+
     set_toplevel_callbacks = nrn_dll_sym("nrnpy_set_toplevel_callbacks")
     _rvp_plot_callback = ctypes.py_object(_rvp_plot)
     _plotshape_plot_callback = ctypes.py_object(_plotshape_plot)
@@ -1615,26 +1483,8 @@ def nrnpy_pr(stdoe, s):
     return 0
 
 
-# nrnpy_pr callback in place of hoc printf
-# ensures consistent with python stdout even with jupyter notebook.
-# nrnpy_pass callback used by n.doNotify() in MINGW when not called from
-# gui thread in order to allow the gui thread to run.
-# When this was introduced in ef4da5dbf293580ee1bf86b3a94d3d2f80226f62 it was wrapped in a
-# try .. except .. pass block for reasons that are not obvious to olupton, who removed it.
-if not embedded:
-    # Unconditionally redirecting NEURON printing via Python seemed to cause re-ordering
-    # of NEURON output in the ModelDB CI. This might be because the redirection is only
-    # triggered by `import neuron`, and an arbitrary amount of NEURON code may have been
-    # executed before that point.
-    nrnpy_set_pr_etal = nrn_dll_sym("nrnpy_set_pr_etal")
-
-    nrnpy_pr_proto = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_int, ctypes.c_char_p)
-    nrnpy_pass_proto = ctypes.CFUNCTYPE(ctypes.c_int)
-    nrnpy_set_pr_etal.argtypes = [nrnpy_pr_proto, nrnpy_pass_proto]
-
-    nrnpy_pr_callback = nrnpy_pr_proto(nrnpy_pr)
-    nrnpy_pass_callback = nrnpy_pass_proto(nrnpy_pass)
-    nrnpy_set_pr_etal(nrnpy_pr_callback, nrnpy_pass_callback)
+# HOC output already goes through Python's sys.stdout: the interface installs
+# the same nrnpy_set_pr_etal hook (via nrn_stdout_redirect) when it initializes.
 
 
 def nrnpy_vec_math(op, flag, arg1, arg2=None):
@@ -1710,19 +1560,10 @@ def _nrnpy_rvp_pyobj_callback(f):
     return result
 
 
-try:
-    nrnpy_vec_math_register = nrn_dll_sym("nrnpy_vec_math_register")
-    nrnpy_vec_math_register(ctypes.py_object(nrnpy_vec_math))
-except:
-    print("Failed to setup nrnpy_vec_math")
-
-try:
-    _nrnpy_rvp_pyobj_callback_register = nrn_dll_sym(
-        "nrnpy_rvp_pyobj_callback_register"
-    )
-    _nrnpy_rvp_pyobj_callback_register(ctypes.py_object(_nrnpy_rvp_pyobj_callback))
-except:
-    print("Failed to setup _nrnpy_rvp_pyobj_callback")
+# Vector arithmetic with numbers is implemented by the interface's Vector, so
+# nrnpy_vec_math is not registered with the core; the RangeVarPlot hook that
+# turns an rxd species into a callable is the interface's.
+_interface._rvp_hook.set_pyobj_callback(_nrnpy_rvp_pyobj_callback)
 
 try:
     from neuron.psection import psection

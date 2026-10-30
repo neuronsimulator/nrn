@@ -37,6 +37,9 @@ typedef struct ShapePlotInterface ShapePlotInterface;
  * a foreign ABI must use the return channel.) */
 typedef const char* (*nrn_component_func)(Object*, Symbol*, int nindex, int isfunc);
 typedef const char* (*nrn_component_asgn_func)(Object*);
+typedef char* (*nrn_section_owner_name_func)(Section*);
+typedef Object* (*nrn_section_owner_cell_func)(Section*);
+typedef int (*nrn_section_owner_cell_equals_func)(Section*, Object*);
 
 typedef enum {
     STACK_IS_STR = 1,
@@ -59,6 +62,13 @@ void nrn_stdout_redirect(int (*myprint)(int, char*));
  * Sections
  ****************************************/
 Section* nrn_section_new(const char* name);
+bool nrn_section_owner_hooks_set(nrn_section_owner_name_func name,
+                                 nrn_section_owner_cell_func cell,
+                                 nrn_section_owner_cell_equals_func cell_equals,
+                                 char* error_msg,
+                                 size_t error_msg_size);
+Section* nrn_section_new_owned(void* owner);
+void nrn_section_owned_release(Section* sec);
 void nrn_section_connect(Section* child_sec, double child_x, Section* parent_sec, double parent_x);
 void nrn_section_length_set(Section* sec, double length);
 double nrn_section_length_get(Section* sec);
@@ -90,6 +100,7 @@ void nrn_nseg_set(Section* sec, int nseg);
 void nrn_segment_diam_set(Section* sec, double x, double diam);
 double nrn_segment_diam_get(Section* sec, double x);
 int nrn_segment_node_index(Section* sec, double x);
+int nrn_segment_mechanisms(Section* sec, double x, Symbol** mechanisms, int max);
 void nrn_rangevar_push(Symbol* sym, Section* sec, double x);
 double nrn_rangevar_get(Symbol* sym, Section* sec, double x);
 void nrn_rangevar_set(Symbol* sym, Section* sec, double x, double value);
@@ -113,6 +124,7 @@ int nrn_rangevar_push_nothrow(Symbol* sym,
                               int index,
                               char* error_msg,
                               size_t error_msg_size);
+int nrn_rangevar_handle_str(Symbol* sym, Section* sec, double x, int index, char* buf, size_t size);
 Object* nrn_segment_nmodlrandom_get(Section* sec, double x, Symbol* sym);
 Object* nrn_pntproc_nmodlrandom_get(Object* point_process, Symbol* sym);
 int nrn_setpointer_pop(Symbol* pointer_sym,

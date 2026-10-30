@@ -1,26 +1,31 @@
-foreach(
-  api_test_file
-  deferred_unref.cpp
-  global_scalar.cpp
-  hh_sim.cpp
-  nlayer_extracellular.cpp
-  netcon.cpp
-  node_index.cpp
-  object_new_nothrow.cpp
-  object_new_wrap.cpp
-  object_ptr_push.cpp
-  property_element_ptr.cpp
-  raw_hoc_errors.cpp
-  runtime_pythonobject_marshaling.cpp
-  section_tree.cpp
-  sectionlist_to_array.cpp
-  segment_diam.cpp
-  sections.cpp
-  stack_pops.cpp
-  symbol_array_dims.cpp
-  symbol_object_string.cpp
-  template_property.cpp
-  vclamp.cpp)
+set(api_test_files
+    deferred_unref.cpp
+    global_scalar.cpp
+    hh_sim.cpp
+    nlayer_extracellular.cpp
+    netcon.cpp
+    node_index.cpp
+    object_new_nothrow.cpp
+    object_new_wrap.cpp
+    object_ptr_push.cpp
+    property_element_ptr.cpp
+    raw_hoc_errors.cpp
+    runtime_pythonobject_marshaling.cpp
+    section_tree.cpp
+    sectionlist_to_array.cpp
+    segment_diam.cpp
+    segment_mechanisms.cpp
+    sections.cpp
+    stack_pops.cpp
+    symbol_array_dims.cpp
+    symbol_object_string.cpp
+    template_property.cpp
+    vclamp.cpp)
+if(NRN_ENABLE_PYTHON)
+  # Owned sections exist only in builds with Python support.
+  list(APPEND api_test_files section_owner.cpp)
+endif()
+foreach(api_test_file ${api_test_files})
   string(REPLACE "." "_" api_test_name "${api_test_file}")
   add_executable(${api_test_name} ${api_test_file})
   cpp_cc_configure_sanitizers(TARGET ${api_test_name})
@@ -102,6 +107,27 @@ add_test(NAME "api::rangevar_nothrow_cpp" COMMAND rangevar_nothrow_cpp)
 set_property(
   TEST "api::rangevar_nothrow_cpp" PROPERTY ENVIRONMENT "${NRN_RUN_FROM_BUILD_DIR_ENV}"
                                             "CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}")
+
+add_executable(rangevar_handle_str_cpp rangevar_handle_str.cpp ${setpointer_gens})
+cpp_cc_configure_sanitizers(TARGET rangevar_handle_str_cpp)
+# The generated mechanism includes NEURON internal headers (mech_api.h, the mechanism-cache headers,
+# ...); inherit them from nrniv_lib, plus the build's generated-header dir (nrnsemanticversion.h
+# etc.), which is a directory-scoped include not carried on the nrniv_lib target.
+target_include_directories(
+  rangevar_handle_str_cpp PRIVATE $<TARGET_PROPERTY:nrniv_lib,INCLUDE_DIRECTORIES>
+                                  ${PROJECT_BINARY_DIR}/include)
+target_compile_definitions(rangevar_handle_str_cpp
+                           PRIVATE $<TARGET_PROPERTY:nrniv_lib,COMPILE_DEFINITIONS>)
+target_link_libraries(rangevar_handle_str_cpp ${CMAKE_DL_LIBS})
+target_link_libraries(rangevar_handle_str_cpp nrniv_lib)
+target_link_options(rangevar_handle_str_cpp PRIVATE -rdynamic)
+if(NRN_ENABLE_CORENEURON)
+  target_compile_definitions(rangevar_handle_str_cpp PUBLIC CORENEURON_ENABLED)
+endif()
+add_test(NAME "api::rangevar_handle_str_cpp" COMMAND rangevar_handle_str_cpp)
+set_property(
+  TEST "api::rangevar_handle_str_cpp" PROPERTY ENVIRONMENT "${NRN_RUN_FROM_BUILD_DIR_ENV}"
+                                               "CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}")
 
 # Generate a density mechanism and a point process with NMODL RANDOM variables to exercise both
 # public wrapper APIs without Python support.
