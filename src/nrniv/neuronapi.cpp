@@ -2,6 +2,7 @@
 
 #include "../../nrnconf.h"
 #include "hocdec.h"
+#include "membfunc.h"
 #include "cabcode.h"
 #include "nrniv_mf.h"
 #include "nrnmpi.h"
@@ -248,6 +249,25 @@ int nrn_segment_node_index(Section* const sec, const double x) {
         return -1;
     }
     return node_exact(sec, x)->v_node_index;
+}
+
+int nrn_segment_mechanisms(Section* const sec,
+                           const double x,
+                           Symbol** const mechanisms,
+                           const int max) {
+    // Same x rule as nrn_segment_nmodlrandom_get; NaN would index past the node array.
+    if (!sec || !nrn_section_is_active(sec) || !(x >= 0.0 && x <= 1.0)) {
+        return -1;
+    }
+    // The node's property list, head first, as Python's segment iterator walks it.
+    int count = 0;
+    for (Prop* p = node_exact(sec, x)->prop; p; p = p->next) {
+        if (mechanisms && count < max) {
+            mechanisms[count] = memb_func[p->_type].sym;
+        }
+        ++count;
+    }
+    return count;
 }
 
 double nrn_rangevar_get(Symbol* sym, Section* sec, double x) {

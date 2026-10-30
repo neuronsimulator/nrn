@@ -15,6 +15,7 @@ foreach(
   section_tree.cpp
   sectionlist_to_array.cpp
   segment_diam.cpp
+  segment_mechanisms.cpp
   sections.cpp
   stack_pops.cpp
   symbol_array_dims.cpp
