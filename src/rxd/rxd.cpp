@@ -8,20 +8,13 @@
 #include <../nrnoc/section.h>
 #include <../nrnoc/nrn_ansi.h>
 #include <../nrnoc/multicore.h>
-#include "nrnwrap_Python.h"
-#include "nrnpython.h"
 
 #include <thread>
 #include <vector>
 #include "ocmatrix.h"
 #include "ivocvect.h"
 
-#include <nanobind/nanobind.h>
-
-namespace nb = nanobind;
-
 static void ode_solve(double, double*, double*);
-extern PyTypeObject* hocobject_type;
 extern int structure_change_cnt;
 extern int states_cvode_offset;
 int prev_structure_change_cnt = 0;
@@ -112,7 +105,10 @@ int* _membrane_lookup;                /*states index -> position in _rxd_induced
 int _node_flux_count = 0;
 long* _node_flux_idx = NULL;
 double* _node_flux_scale = NULL;
-PyObject** _node_flux_src = NULL;
+static std::vector<neuron::container::data_handle<double>> _node_flux_src;
+long* _node_flux_callable = NULL;
+/* evaluates the Python callable flux source with the given id */
+static int (*_node_flux_callback)(long, double*) = NULL;
 
 static void free_zvi_child() {
     int i;
@@ -142,7 +138,18 @@ static inline void* allocopy(void* src, size_t size) {
     return dst;
 }
 
-extern "C" NRN_EXPORT void rxd_set_no_diffusion() {
+/* The sources as data_handles, so that a value NEURON moves is still found. A pointer into memory
+ * that is not NEURON's (a constant stored by Python, h.ref(x)) is kept as it is. */
+static std::vector<neuron::container::data_handle<double>> source_handles(double** sources, int n) {
+    std::vector<neuron::container::data_handle<double>> handles;
+    handles.reserve(n);
+    for (int i = 0; i < n; i++) {
+        handles.emplace_back(sources[i]);
+    }
+    return handles;
+}
+
+extern "C" void rxd_set_no_diffusion() {
     diffusion = FALSE;
     if (_rxd_a != NULL) {
         free(_rxd_a);
@@ -157,7 +164,7 @@ extern "C" NRN_EXPORT void rxd_set_no_diffusion() {
     }
 }
 
-extern "C" NRN_EXPORT void free_curr_ptrs() {
+extern "C" void free_curr_ptrs() {
     _curr_count = 0;
     if (_curr_indices != NULL)
         free(_curr_indices);
@@ -168,7 +175,7 @@ extern "C" NRN_EXPORT void free_curr_ptrs() {
     _curr_ptrs.clear();
 }
 
-extern "C" NRN_EXPORT void free_conc_ptrs() {
+extern "C" void free_conc_ptrs() {
     _conc_count = 0;
     if (_conc_indices != NULL)
         free(_conc_indices);
@@ -177,10 +184,10 @@ extern "C" NRN_EXPORT void free_conc_ptrs() {
 }
 
 
-extern "C" NRN_EXPORT void rxd_setup_curr_ptrs(int num_currents,
-                                               int* curr_index,
-                                               double* curr_scale,
-                                               PyHocObject** curr_ptrs) {
+extern "C" void rxd_setup_curr_ptrs(int num_currents,
+                                    int* curr_index,
+                                    double* curr_scale,
+                                    double** curr_ptrs) {
     free_curr_ptrs();
     /* info for NEURON currents - to update states */
     _curr_count = num_currents;
@@ -192,12 +199,10 @@ extern "C" NRN_EXPORT void rxd_setup_curr_ptrs(int num_currents,
 
     _curr_ptrs.resize(num_currents);
     for (int i = 0; i < num_currents; i++)
-        _curr_ptrs[i] = curr_ptrs[i]->u.px_;
+        _curr_ptrs[i] = neuron::container::data_handle<double>{curr_ptrs[i]};
 }
 
-extern "C" NRN_EXPORT void rxd_setup_conc_ptrs(int conc_count,
-                                               int* conc_index,
-                                               PyHocObject** conc_ptrs) {
+extern "C" void rxd_setup_conc_ptrs(int conc_count, int* conc_index, double** conc_ptrs) {
     /* info for NEURON concentration - to transfer to legacy */
     int i;
     free_conc_ptrs();
@@ -206,15 +211,16 @@ extern "C" NRN_EXPORT void rxd_setup_conc_ptrs(int conc_count,
     memcpy(_conc_indices, conc_index, sizeof(int) * conc_count);
     _conc_ptrs.resize(conc_count);
     for (i = 0; i < conc_count; i++)
-        _conc_ptrs[i] = conc_ptrs[i]->u.px_;
+        _conc_ptrs[i] = neuron::container::data_handle<double>{conc_ptrs[i]};
 }
 
-extern "C" NRN_EXPORT void rxd_include_node_flux3D(int grid_count,
-                                                   int* grid_counts,
-                                                   int* grids,
-                                                   long* index,
-                                                   double* scales,
-                                                   PyObject** sources) {
+extern "C" void rxd_include_node_flux3D(int grid_count,
+                                        int* grid_counts,
+                                        int* grids,
+                                        long* index,
+                                        double* scales,
+                                        double** sources,
+                                        long* callables) {
     Grid_node* g;
     int i = 0, j, k, n, grid_id;
     int offset = 0;
@@ -224,7 +230,8 @@ extern "C" NRN_EXPORT void rxd_include_node_flux3D(int grid_count,
             g->node_flux_count = 0;
             free(g->node_flux_scale);
             free(g->node_flux_idx);
-            free(g->node_flux_src);
+            g->node_flux_src.clear();
+            free(g->node_flux_callable);
         }
     }
     if (grid_count == 0)
@@ -248,7 +255,8 @@ extern "C" NRN_EXPORT void rxd_include_node_flux3D(int grid_count,
             if (n > 0) {
                 g->node_flux_idx = (long*) malloc(g->node_flux_count * sizeof(long));
                 g->node_flux_scale = (double*) malloc(g->node_flux_count * sizeof(double));
-                g->node_flux_src = (PyObject**) allocopy(&sources[offset], n * sizeof(PyObject*));
+                g->node_flux_src = source_handles(&sources[offset], n);
+                g->node_flux_callable = (long*) allocopy(&callables[offset], n * sizeof(long));
             }
 
             for (j = 0, k = g->proc_flux_offsets[nrnmpi_myid]; j < n; j++, k++) {
@@ -271,8 +279,9 @@ extern "C" NRN_EXPORT void rxd_include_node_flux3D(int grid_count,
                                                         grid_counts[i] * sizeof(long));
                     g->node_flux_scale = (double*) allocopy(&scales[offset],
                                                             grid_counts[i] * sizeof(double));
-                    g->node_flux_src = (PyObject**) allocopy(&sources[offset],
-                                                             grid_counts[i] * sizeof(PyObject*));
+                    g->node_flux_src = source_handles(&sources[offset], grid_counts[i]);
+                    g->node_flux_callable = (long*) allocopy(&callables[offset],
+                                                             grid_counts[i] * sizeof(long));
                 }
                 offset += grid_counts[i++];
             }
@@ -284,8 +293,9 @@ extern "C" NRN_EXPORT void rxd_include_node_flux3D(int grid_count,
                 g->node_flux_idx = (long*) allocopy(&index[offset], grid_counts[i] * sizeof(long));
                 g->node_flux_scale = (double*) allocopy(&scales[offset],
                                                         grid_counts[i] * sizeof(double));
-                g->node_flux_src = (PyObject**) allocopy(&sources[offset],
-                                                         grid_counts[i] * sizeof(PyObject*));
+                g->node_flux_src = source_handles(&sources[offset], grid_counts[i]);
+                g->node_flux_callable = (long*) allocopy(&callables[offset],
+                                                         grid_counts[i] * sizeof(long));
             }
             offset += grid_counts[i++];
         }
@@ -293,74 +303,74 @@ extern "C" NRN_EXPORT void rxd_include_node_flux3D(int grid_count,
     }
 }
 
-extern "C" NRN_EXPORT void rxd_include_node_flux1D(int n,
-                                                   long* index,
-                                                   double* scales,
-                                                   PyObject** sources) {
+extern "C" void rxd_include_node_flux1D(int n,
+                                        long* index,
+                                        double* scales,
+                                        double** sources,
+                                        long* callables) {
     if (_node_flux_count != 0) {
         free(_node_flux_idx);
         free(_node_flux_scale);
-        free(_node_flux_src);
+        free(_node_flux_callable);
     }
+    _node_flux_src.clear();
     _node_flux_count = n;
     if (n > 0) {
         _node_flux_idx = (long*) allocopy(index, n * sizeof(long));
         _node_flux_scale = (double*) allocopy(scales, n * sizeof(double));
-        _node_flux_src = (PyObject**) allocopy(sources, n * sizeof(PyObject*));
+        _node_flux_src = source_handles(sources, n);
+        _node_flux_callable = (long*) allocopy(callables, n * sizeof(long));
     }
 }
 
 
+extern "C" void rxd_set_node_flux_callback(int (*callback)(long, double*)) {
+    _node_flux_callback = callback;
+}
+
+/* A source is a callable, when its id is not negative, or the flux itself: a NEURON variable or a
+ * number stored by Python. A callable is evaluated by _node_flux_callback, which stores the flux
+ * and returns 0, or reports the Python error and returns nonzero. */
 void apply_node_flux(int n,
                      long* index,
                      double* scale,
-                     PyObject** source,
+                     const neuron::container::data_handle<double>* source,
+                     long* callable,
                      double dt,
                      double* states) {
-    for (size_t i = 0; i < n; i++) {
+    for (int i = 0; i < n; i++) {
         size_t j = index == nullptr ? i : index[i];
-        if (PyFloat_Check(source[i])) {
-            states[j] += dt * PyFloat_AsDouble(source[i]) / scale[i];
-        } else if (PyCallable_Check(source[i])) {
-            /* It is a Python function or a PyHocObject*/
-            if (PyObject_TypeCheck(source[i], hocobject_type)) {
-                auto src = (PyHocObject*) source[i];
-                /*TODO: check it is a reference */
-                if (src->type_ == PyHoc::HocRefNum) {
-                    states[j] += dt * (src->u.x_) / scale[i];
-                } else {
-                    states[j] += dt * *(src->u.px_) / scale[i];
-                }
-            } else {
-                auto result = nb::steal(PyObject_CallObject(source[i], nullptr));
-                if (PyFloat_Check(result.ptr())) {
-                    states[j] += dt * PyFloat_AsDouble(result.ptr()) / scale[i];
-                } else if (PyLong_Check(result.ptr())) {
-                    states[j] += dt * (double) PyLong_AsLong(result.ptr()) / scale[i];
-                } else if (PyInt_Check(result.ptr())) {
-                    states[j] += dt * (double) PyInt_AsLong(result.ptr()) / scale[i];
-                } else {
-                    PyErr_SetString(PyExc_Exception,
-                                    "node._include_flux callback did not return a number.\n");
-                }
+        if (callable[i] >= 0) {
+            double flux;
+            if (_node_flux_callback == NULL || _node_flux_callback(callable[i], &flux) != 0) {
+                hoc_execerror("node._include_flux callback failed", nullptr);
             }
+            states[j] += dt * flux / scale[i];
+        } else if (source[i]) {
+            states[j] += dt * *source[i] / scale[i];
         } else {
-            PyErr_SetString(PyExc_Exception, "node._include_flux unrecognised source term.\n");
+            hoc_execerror("node._include_flux reference is no longer valid", nullptr);
         }
     }
 }
 
 
 static void apply_node_flux1D(double dt, double* states) {
-    apply_node_flux(_node_flux_count, _node_flux_idx, _node_flux_scale, _node_flux_src, dt, states);
+    apply_node_flux(_node_flux_count,
+                    _node_flux_idx,
+                    _node_flux_scale,
+                    _node_flux_src.data(),
+                    _node_flux_callable,
+                    dt,
+                    states);
 }
 
-extern "C" NRN_EXPORT void rxd_set_euler_matrix(int nrow,
-                                                int nnonzero,
-                                                long* nonzero_i,
-                                                long* nonzero_j,
-                                                double* nonzero_values,
-                                                double* c_diagonal) {
+extern "C" void rxd_set_euler_matrix(int nrow,
+                                     int nnonzero,
+                                     long* nonzero_i,
+                                     long* nonzero_j,
+                                     double* nonzero_values,
+                                     double* c_diagonal) {
     long i, j, idx;
     double val;
     unsigned int k, ps;
@@ -477,20 +487,20 @@ static void mul(int nnonzero,
     }
 }
 
-extern "C" NRN_EXPORT void set_setup(fptr* setup_fn) {
+extern "C" void set_setup(fptr* setup_fn) {
     _setup = setup_fn;
 }
 
-extern "C" NRN_EXPORT void set_initialize(fptr* initialize_fn) {
+extern "C" void set_initialize(fptr* initialize_fn) {
     _initialize = initialize_fn;
     set_num_threads(NUM_THREADS);
 }
 
-extern "C" NRN_EXPORT void set_setup_matrices(fptr* setup_matrices) {
+extern "C" void set_setup_matrices(fptr* setup_matrices) {
     _setup_matrices = setup_matrices;
 }
 
-extern "C" NRN_EXPORT void set_setup_units(fptr* setup_units) {
+extern "C" void set_setup_units(fptr* setup_units) {
     _setup_units = setup_units;
 }
 
@@ -632,20 +642,20 @@ static void free_currents() {
     _membrane_flux = FALSE;
 }
 
-extern "C" NRN_EXPORT void setup_currents(int num_currents,
-                                          int num_fluxes,
-                                          int* num_species,
-                                          int* node_idxs,
-                                          double* scales,
-                                          PyHocObject** ptrs,
-                                          int* mapped,
-                                          int* mapped_ecs) {
+extern "C" void setup_currents(int num_currents,
+                               int num_fluxes,
+                               int* num_species,
+                               int* node_idxs,
+                               double* scales,
+                               double** ptrs,
+                               int* mapped,
+                               int* mapped_ecs) {
     int i, j, k, id, side, count;
     int* induced_currents_ecs_idx;
     int* induced_currents_grid_id;
     int* ecs_indices;
     double* current_scales;
-    PyHocObject** ecs_ptrs;
+    double** ecs_ptrs;
 
     Grid_node* g;
     ECS_Grid_node* grid;
@@ -681,7 +691,7 @@ extern "C" NRN_EXPORT void setup_currents(int num_currents,
 
 
         for (j = 0; j < num_species[i]; j++, k++) {
-            _memb_cur_ptrs[i][j] = ptrs[k]->u.px_;
+            _memb_cur_ptrs[i][j] = neuron::container::data_handle<double>{ptrs[k]};
             _memb_cur_mapped[i][j] = (int*) malloc(2 * sizeof(int));
             _memb_cur_mapped_ecs[i][j] = (int*) malloc(2 * sizeof(int));
 
@@ -717,7 +727,7 @@ extern "C" NRN_EXPORT void setup_currents(int num_currents,
         }
         if (count > 0) {
             ecs_indices = (int*) malloc(count * sizeof(int));
-            ecs_ptrs = (PyHocObject**) malloc(count * sizeof(PyHocObject*));
+            ecs_ptrs = (double**) malloc(count * sizeof(double*));
             for (i = 0, k = 0; k < _memb_curr_total; k++) {
                 if (induced_currents_grid_id[k] == id) {
                     ecs_indices[i] = induced_currents_ecs_idx[k];
@@ -774,7 +784,7 @@ static void _currents(double* rhs) {
     }
 }
 
-extern "C" NRN_EXPORT int rxd_nonvint_block(int method, int size, double* p1, double* p2, int) {
+extern "C" int rxd_nonvint_block(int method, int size, double* p1, double* p2, int) {
     if (initialized) {
         if (structure_change_cnt != prev_structure_change_cnt) {
             /*TODO: Exclude irrelevant (non-rxd) structural changes*/
@@ -854,19 +864,19 @@ extern "C" NRN_EXPORT int rxd_nonvint_block(int method, int size, double* p1, do
  *****************************************************************************/
 
 
-extern "C" NRN_EXPORT void register_rate(int nspecies,
-                                         int nparam,
-                                         int nregions,
-                                         int nseg,
-                                         int* sidx,
-                                         int necs,
-                                         int necsparam,
-                                         int* ecs_ids,
-                                         int* ecsidx,
-                                         int nmult,
-                                         double* mult,
-                                         PyHocObject** vptrs,
-                                         ReactionRate* f) {
+extern "C" void register_rate(int nspecies,
+                              int nparam,
+                              int nregions,
+                              int nseg,
+                              int* sidx,
+                              int necs,
+                              int necsparam,
+                              int* ecs_ids,
+                              int* ecsidx,
+                              int nmult,
+                              double* mult,
+                              double** vptrs,
+                              ReactionRate* f) {
     int i, j, k, idx, ecs_id, ecs_index, ecs_offset;
     unsigned char counted;
     Grid_node* g;
@@ -883,9 +893,7 @@ extern "C" NRN_EXPORT void register_rate(int nspecies,
     react->icsN = 0;
     react->ecsN = 0;
     if (vptrs != NULL) {
-        react->vptrs = (double**) malloc(nseg * sizeof(double*));
-        for (i = 0; i < nseg; i++)
-            react->vptrs[i] = static_cast<double*>(vptrs[i]->u.px_);
+        react->vptrs = (double**) allocopy(vptrs, nseg * sizeof(double*));
     } else {
         react->vptrs = NULL;
     }
@@ -1012,7 +1020,7 @@ extern "C" NRN_EXPORT void register_rate(int nspecies,
     }
 }
 
-extern "C" NRN_EXPORT void clear_rates() {
+extern "C" void clear_rates() {
     ICSReactions *react, *prev;
     int i, j;
     for (react = _reactions; react != NULL;) {
@@ -1089,7 +1097,7 @@ extern "C" NRN_EXPORT void clear_rates() {
 }
 
 
-extern "C" NRN_EXPORT void species_atolscale(int id, double scale, int len, int* idx) {
+extern "C" void species_atolscale(int id, double scale, int len, int* idx) {
     SpeciesIndexList* list;
     SpeciesIndexList* prev;
     if (species_indices != NULL) {
@@ -1114,7 +1122,7 @@ extern "C" NRN_EXPORT void species_atolscale(int id, double scale, int len, int*
     list->next = NULL;
 }
 
-extern "C" NRN_EXPORT void remove_species_atolscale(int id) {
+extern "C" void remove_species_atolscale(int id) {
     SpeciesIndexList* list;
     SpeciesIndexList* prev;
     for (list = species_indices, prev = NULL; list != NULL; prev = list, list = list->next) {
@@ -1130,10 +1138,7 @@ extern "C" NRN_EXPORT void remove_species_atolscale(int id) {
     }
 }
 
-extern "C" NRN_EXPORT void setup_solver(double* my_states,
-                                        int my_num_states,
-                                        long* zvi,
-                                        int num_zvi) {
+extern "C" void setup_solver(double* my_states, int my_num_states, long* zvi, int num_zvi) {
     free_currents();
     states = my_states;
     num_states = my_num_states;
@@ -1219,7 +1224,7 @@ void TaskQueue_exe_tasks(std::size_t thread_index, TaskQueue* q) {
 }
 
 
-extern "C" NRN_EXPORT void set_num_threads(const int n) {
+extern "C" void set_num_threads(const int n) {
     assert(n > 0);
     assert(NUM_THREADS > 0);
     // n and NUM_THREADS include the main thread, old_num and new_num refer to
@@ -1273,7 +1278,7 @@ void TaskQueue_sync(TaskQueue* q) {
     q->waiting_cond.wait(lock, [q] { return q->length == 0; });
 }
 
-extern "C" NRN_EXPORT int get_num_threads(void) {
+extern "C" int get_num_threads(void) {
     return NUM_THREADS;
 }
 
@@ -1394,7 +1399,9 @@ void _rhs_variable_step(const double* p1, double* p2) {
     }
 
     /*diffusion*/
-    rhs = (double*) calloc(num_states, sizeof(double));
+    /* a vector, so that an error in a node flux source (hoc_execerror) does not leak it */
+    std::vector<double> rhs_storage(num_states);
+    rhs = rhs_storage.data();
 
     if (diffusion)
         mul(_rxd_euler_nnonzero,
@@ -1440,7 +1447,6 @@ void _rhs_variable_step(const double* p1, double* p2) {
     } else {
         memcpy(ydot, rhs, sizeof(double) * num_states);
     }
-    free(rhs);
 }
 
 void get_reaction_rates(ICSReactions* react, double* states, double* rates, double* ydot) {

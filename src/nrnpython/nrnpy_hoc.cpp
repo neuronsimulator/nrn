@@ -230,12 +230,44 @@ static PyObject* hoc_ac_safe(PyObject* self, PyObject* args) {
     return nrn::convert_cxx_exceptions(hoc_ac, self, args);
 }
 
+// The address of the double a reference such as h._ref_t, seg._ref_v or h.ref(1.0) holds, for C
+// code (rxd) that takes plain pointers.
+static PyObject* ref_address(PyObject* self, PyObject* args) {
+    PyObject* po;
+    if (!PyArg_ParseTuple(args, "O!", hocobject_type, &po)) {
+        return nullptr;
+    }
+    auto* pho = (PyHocObject*) po;
+    if (pho->type_ == PyHoc::HocScalarPtr) {
+        auto* const px = static_cast<double*>(pho->u.px_);
+        if (!px) {
+            // A null address would read as "no pointer" to the C code that is given it.
+            PyErr_SetString(PyExc_ValueError, "the reference is no longer valid");
+            return nullptr;
+        }
+        return PyLong_FromVoidPtr(px);
+    }
+    if (pho->type_ == PyHoc::HocRefNum) {
+        return PyLong_FromVoidPtr(&pho->u.x_);
+    }
+    PyErr_SetString(PyExc_TypeError, "not a reference to a number");
+    return nullptr;
+}
+
+static PyObject* ref_address_safe(PyObject* self, PyObject* args) {
+    return nrn::convert_cxx_exceptions(ref_address, self, args);
+}
+
 static PyMethodDef HocMethods[] = {
     {"execute",
      nrnexec_safe,
      METH_VARARGS,
      "Execute a hoc command, return True on success, False on failure."},
     {"hoc_ac", hoc_ac_safe, METH_VARARGS, "Get (or set) the scalar hoc_ac_."},
+    {"ref_address",
+     ref_address_safe,
+     METH_VARARGS,
+     "Return the address of the number a reference holds."},
     {nullptr, nullptr, 0, nullptr}};
 
 static void hocobj_dealloc(PyHocObject* self) {
