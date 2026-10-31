@@ -89,3 +89,55 @@ def test_patched_write_inserts_cr_only_when_opost_off():
     assert b"\r\r" not in cooked
     assert cooked.endswith(b"\n")
     assert cooked.startswith(b"hello")
+
+
+def test_untrackable_stream_is_left_alone():
+    class Unhashable:
+        def __eq__(self, other):
+            return self is other
+
+        def fileno(self):
+            return 1
+
+        def write(self, s):
+            return len(s)
+
+    class NoWeakRef:
+        __slots__ = ("write",)
+
+        def __init__(self):
+            self.write = self._write
+
+        def fileno(self):
+            return 1
+
+        def _write(self, s):
+            return len(s)
+
+    # Class functions make a new bound method on each access. An instance
+    # assignment is the sign that the helper wrapped write.
+    stream = Unhashable()
+    install_raw_tty_newline_fix(streams=(stream,))
+    assert "write" not in stream.__dict__
+
+    stream = NoWeakRef()
+    original = stream.write
+    install_raw_tty_newline_fix(streams=(stream,))
+    assert stream.write is original
+
+
+def test_trackable_stream_is_patched_once():
+    class Trackable:
+        def fileno(self):
+            return 1
+
+        def write(self, s):
+            return len(s)
+
+    stream = Trackable()
+    original = stream.write
+    install_raw_tty_newline_fix(streams=(stream,))
+    patched = stream.write
+    assert patched is not original
+    install_raw_tty_newline_fix(streams=(stream,))
+    assert stream.write is patched

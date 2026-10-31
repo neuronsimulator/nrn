@@ -214,6 +214,22 @@ def _with_explicit_cr(text):
     return text.replace("\r\n", "\n").replace("\n", "\r\n")
 
 
+def _can_track_stream(stream):
+    """True when the stream can live in the WeakSet.
+
+    Membership hashes the stream and weakref.ref requires a slot for it.
+    A custom stream that defines __eq__ without __hash__, or a slots object
+    with no __weakref__, cannot be tracked. Leave it unpatched: wrapping
+    write without remembering the stream would wrap it again on the next call.
+    """
+    try:
+        hash(stream)
+        weakref.ref(stream)
+    except TypeError:
+        return False
+    return True
+
+
 def install_raw_tty_newline_fix(streams=None):
     """Make print() return to column 0 when the tty is in pyrepl/raw mode.
 
@@ -224,7 +240,12 @@ def install_raw_tty_newline_fix(streams=None):
     if streams is None:
         streams = (sys.stdout, sys.stderr)
     for stream in streams:
-        if stream in _raw_tty_newline_patched:
+        if not _can_track_stream(stream):
+            continue
+        try:
+            if stream in _raw_tty_newline_patched:
+                continue
+        except TypeError:
             continue
         try:
             fd = stream.fileno()
@@ -241,7 +262,13 @@ def install_raw_tty_newline_fix(streams=None):
             stream.write = write
         except Exception:
             continue
-        _raw_tty_newline_patched.add(stream)
+        try:
+            _raw_tty_newline_patched.add(stream)
+        except TypeError:
+            try:
+                stream.write = orig_write
+            except Exception:
+                pass
 
 
 class _NEURON_INTERFACE(hoc.HocObject):
