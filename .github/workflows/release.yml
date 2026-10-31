@@ -305,15 +305,17 @@ jobs:
       - tag-n-release
     runs-on: ubuntu-latest
     steps:
-      - name: Download Windows installer artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: nrn-nightly-AMD64.exe
-
+      # Checkout first. actions/checkout cleans untracked files, so a download
+      # done before this step is removed before the rename.
       - name: Checkout the installer sources
         uses: actions/checkout@v4
         with:
           ref: ${{ needs.tag-n-release.outputs.ref }}
+
+      - name: Download Windows installer artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: nrn-nightly-AMD64.exe
 
       - name: Rename Windows installer
         id: rename
