@@ -7,6 +7,7 @@
 * **[Howto](#how)**
 * **[Reporting a bug](#bug)**
 * **[Code review process](#process)**
+* **[AI-assisted contributions](#ai)**
 
 ## Navigation<a name="nav"></a>
 
@@ -192,3 +193,18 @@ Sometimes, this process alone is enough to identify the bug as a function limita
 
 Pull requests are reviewed by the development team.
 If you don't receive any feedback after a couple weeks, please follow up with a new comment.
+
+## AI-assisted contributions<a name="ai"></a>
+
+The rules below apply to every contribution made with the help of AI coding
+tools. [AGENTS.md](AGENTS.md) gives these rules and more, and more detail on
+building, testing and the code layout, to the tools themselves.
+
+* **You are the author.** You submit the work and answer for every line of it.
+* **Review every edit yourself.** Read and understand all changes before you submit them,
+  and be ready to explain them to a reviewer. Do not submit code you have not reviewed and
+  tested.
+* **A human stays in the loop.** Do not let a tool open pull requests, post issues or
+  comments, or answer review on GitHub without you reviewing each action first.
+* **Disclose AI assistance.** End each commit made with an AI tool's help with an
+  `Assisted-by: <tool> (<model>)` line that names the tool and the model it used.
