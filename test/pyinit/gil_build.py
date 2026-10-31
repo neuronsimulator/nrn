@@ -14,6 +14,7 @@ import os
 import stat
 import subprocess
 import sys
+import sysconfig
 import tempfile
 
 PHRASE = "free-threaded CPython build (Py_GIL_DISABLED)"
@@ -62,6 +63,54 @@ if log:
         out.write(args[1] + "\n---\n")
 exec(args[1], {"__name__": "__main__"})
 """
+
+
+def _config_var(name):
+    value = sysconfig.get_config_var(name) or ""
+    if value == "None":
+        return ""
+    return value
+
+
+def libpython_candidates(libdir, ldlibrary, framework_prefix, version):
+    """Paths that can be this interpreter's shared libpython.
+
+    LDLIBRARY is a file name in LIBDIR on most builds. A macOS framework
+    build sets it to Python.framework/Versions/X.Y/Python, which is relative
+    to PYTHONFRAMEWORKPREFIX. Joining that onto LIBDIR is not the library.
+    libpythonX.Y.dylib is the other file a framework install provides.
+    """
+    candidates = []
+    if ldlibrary and os.path.isabs(ldlibrary):
+        candidates.append(ldlibrary)
+    if libdir and ldlibrary:
+        candidates.append(os.path.join(libdir, ldlibrary))
+        base = os.path.basename(ldlibrary)
+        if base != ldlibrary:
+            candidates.append(os.path.join(libdir, base))
+    if framework_prefix and version:
+        candidates.append(
+            os.path.join(
+                framework_prefix, "Python.framework", "Versions", version, "Python"
+            )
+        )
+    if libdir and version:
+        candidates.append(os.path.join(libdir, "libpython{}.dylib".format(version)))
+        candidates.append(os.path.join(libdir, "libpython{}.so".format(version)))
+    return candidates
+
+
+def find_libpython():
+    version = "{}.{}".format(*sys.version_info[:2])
+    for path in libpython_candidates(
+        _config_var("LIBDIR"),
+        _config_var("LDLIBRARY"),
+        _config_var("PYTHONFRAMEWORKPREFIX"),
+        version,
+    ):
+        if path and os.path.isfile(path):
+            return path
+    return ""
 
 
 def fail(message, proc=None):
@@ -114,6 +163,9 @@ def import_code(value_src):
 
 
 def main():
+    if len(sys.argv) == 2 and sys.argv[1] == "--libpython":
+        print(find_libpython())
+        return
     if len(sys.argv) != 4:
         raise SystemExit("usage: gil_build.py nrniv python dynamic")
     nrniv = sys.argv[1]
@@ -230,15 +282,7 @@ def main():
 
         if dynamic:
             lib = run(
-                [
-                    pyexe,
-                    "-S",
-                    "-c",
-                    "import os, sysconfig\n"
-                    "libdir = sysconfig.get_config_var('LIBDIR') or ''\n"
-                    "ld = sysconfig.get_config_var('LDLIBRARY') or ''\n"
-                    "print(ld if os.path.isabs(ld) else os.path.join(libdir, ld))\n",
-                ],
+                [pyexe, "-S", os.path.abspath(__file__), "--libpython"],
                 base,
             )
             pylib = lib.stdout.decode("utf-8", "replace").strip()
