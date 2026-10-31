@@ -2,7 +2,10 @@
 """Unit tests for the abi3 wheel audit gate. No wheel or abi3audit required."""
 from __future__ import annotations
 
+import tempfile
 import unittest
+import zipfile
+from pathlib import Path
 
 import audit_abi3_wheel as audit
 
@@ -49,6 +52,29 @@ class AuditAbi3WheelTests(unittest.TestCase):
         self.assertTrue(
             any(line.startswith("checked 5 abi3 objects:") for line in messages)
         )
+
+    def test_libpywrapper_does_not_mask_an_unreported_object(self) -> None:
+        objects = _linux_objects() + [
+            {
+                "name": "libpywrapper.so",
+                "result": {"is_abi3": False, "is_abi3_baseline_compatible": False},
+            }
+        ]
+        wheel_objects = [obj["name"] for obj in objects] + ["missing.abi3.so"]
+        code, messages = audit.judge(_report(objects), 1, LINUX, wheel_objects)
+        self.assertEqual(code, 1)
+        self.assertIn("abi3 audit: missing.abi3.so was not in the report", messages)
+
+    def test_complete_report_still_ignores_libpywrapper(self) -> None:
+        objects = _linux_objects() + [
+            {
+                "name": "libpywrapper.so",
+                "result": {"is_abi3": False, "is_abi3_baseline_compatible": False},
+            }
+        ]
+        wheel_objects = [obj["name"] for obj in objects] + ["libnrnpython.abi3.dylib"]
+        code, _messages = audit.judge(_report(objects), 1, LINUX, wheel_objects)
+        self.assertEqual(code, 0)
 
     def test_empty_specs(self) -> None:
         code, _messages = audit.judge({"specs": {}}, 0, LINUX)
@@ -196,6 +222,20 @@ class AuditAbi3WheelTests(unittest.TestCase):
         objects.append(_ok("nrnpython.abi3.so"))
         code, _messages = audit.judge(_report(objects), 0, LINUX)
         self.assertEqual(code, 0)
+
+    def test_shared_object_names_skip_dylib_and_dll(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            wheel = Path(tmp) / "sample.whl"
+            with zipfile.ZipFile(wheel, "w") as archive:
+                archive.writestr("neuron/hoc.abi3.so", b"so")
+                archive.writestr("neuron/hoc.pyd", b"pyd")
+                archive.writestr("neuron/libnrnpython.abi3.dylib", b"dylib")
+                archive.writestr("neuron/python3.dll", b"dll")
+                archive.writestr("neuron/README.txt", b"txt")
+            self.assertEqual(
+                audit.shared_object_names(wheel),
+                ["hoc.abi3.so", "hoc.pyd"],
+            )
 
 
 if __name__ == "__main__":

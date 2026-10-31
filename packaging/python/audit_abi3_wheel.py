@@ -4,7 +4,8 @@
 The report is accepted only when the expected extensions were inspected and
 each one is abi3 for the wheel baseline. An empty or unexpected report fails.
 A nonzero abi3audit status fails unless the only failing object is the ignored
-libpywrapper CLI library.
+libpywrapper CLI library and every other .so and .pyd in the wheel is in the
+report. A failing libpywrapper does not explain a missing object.
 """
 from __future__ import annotations
 
@@ -13,6 +14,7 @@ import os
 import shutil
 import subprocess
 import sys
+import zipfile
 from pathlib import Path
 
 # NMODL CLI sympy embed; not an importable extension. A reported non-abi3
@@ -70,11 +72,31 @@ def _object_list(spec_name: object, spec: dict) -> tuple[list, str | None]:
     return listed, None
 
 
-def judge(report: object, tool_status: int, wheel_name: str) -> tuple[int, list[str]]:
+def shared_object_names(wheel: Path) -> list[str]:
+    """Basenames of .so and .pyd members. abi3audit does not scan .dylib or .dll."""
+    names: list[str] = []
+    with zipfile.ZipFile(wheel) as archive:
+        for info in archive.infolist():
+            if info.is_dir():
+                continue
+            base = os.path.basename(info.filename)
+            if base.endswith(".so") or base.endswith(".pyd"):
+                names.append(base)
+    return names
+
+
+def judge(
+    report: object,
+    tool_status: int,
+    wheel_name: str,
+    wheel_objects: list[str] | None = None,
+) -> tuple[int, list[str]]:
     """Return an exit code and the lines to print.
 
     ``tool_status`` is abi3audit's exit code. Nonzero is accepted only when an
-    ignored libpywrapper object is the failure that explains it.
+    ignored libpywrapper object is the failure that explains it. When
+    ``wheel_objects`` is given, a shared object from the wheel that is absent
+    from the report is its own failure, including when libpywrapper also failed.
     """
     if not isinstance(report, dict):
         return 1, ["abi3 audit: report is not an object"]
@@ -85,6 +107,7 @@ def judge(report: object, tool_status: int, wheel_name: str) -> tuple[int, list[
     messages: list[str] = []
     problems: list[str] = []
     inspected: list[str] = []
+    seen: set[str] = set()
     ignored_failure = False
     for spec_name, spec in specs.items():
         if not isinstance(spec, dict):
@@ -100,6 +123,7 @@ def judge(report: object, tool_status: int, wheel_name: str) -> tuple[int, list[
                 problems.append("abi3 audit: wheel object has no name")
                 continue
             result = obj.get("result")
+            seen.add(name)
             if name in _IGNORE_NAMES:
                 if _result_problems(name, result):
                     ignored_failure = True
@@ -120,6 +144,13 @@ def judge(report: object, tool_status: int, wheel_name: str) -> tuple[int, list[
     if _requires_libnrnpython(wheel_name):
         if not any(_is_libnrnpython(name) for name in inspected):
             problems.append("abi3 audit: missing libnrnpython")
+    if wheel_objects is not None:
+        for raw_name in wheel_objects:
+            base = os.path.basename(str(raw_name))
+            if not base.endswith(".so") and not base.endswith(".pyd"):
+                continue
+            if base not in seen:
+                problems.append(f"abi3 audit: {base} was not in the report")
     if tool_status != 0 and not ignored_failure:
         problems.append(
             "abi3 audit: abi3audit exited "
@@ -162,7 +193,9 @@ def main(argv: list[str]) -> int:
         sys.stdout.write(proc.stdout)
         sys.stderr.write(proc.stderr)
         return proc.returncode or 1
-    code, messages = judge(report, proc.returncode, wheel.name)
+    code, messages = judge(
+        report, proc.returncode, wheel.name, shared_object_names(wheel)
+    )
     for line in messages:
         print(line, file=sys.stderr)
     return code
