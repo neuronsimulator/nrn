@@ -293,17 +293,22 @@ SCENARIO("NEURON backend emits BEFORE/AFTER as per-instance callbacks", "[codege
         const auto body = generated_function(cpp, "nrn_before_after_0_ba1");
         const auto step = generated_function(cpp, "nrn_before_after_4_ba1");
 
-        THEN("hoc_reg_ba uses the nocmodl type integers") {
+        THEN("hoc_reg_ba names BAType from neuron/ba_reg.h") {
             REQUIRE_THAT(cpp,
-                         ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_0_ba1, 11);"));
+                         ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_0_ba1, "
+                                           "BAType::Before + BAType::Breakpoint);"));
             REQUIRE_THAT(cpp,
-                         ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_1_ba1, 22);"));
+                         ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_1_ba1, "
+                                           "BAType::After + BAType::Solve);"));
             REQUIRE_THAT(cpp,
-                         ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_2_ba1, 13);"));
+                         ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_2_ba1, "
+                                           "BAType::Before + BAType::Initial);"));
             REQUIRE_THAT(cpp,
-                         ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_3_ba1, 23);"));
+                         ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_3_ba1, "
+                                           "BAType::After + BAType::Initial);"));
             REQUIRE_THAT(cpp,
-                         ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_4_ba1, 14);"));
+                         ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_4_ba1, "
+                                           "BAType::Before + BAType::Step);"));
         }
         THEN("the callback is nrn_bamech_t and assigns v_unused from the node") {
             REQUIRE_THAT(cpp, ContainsSubstring("for (int id = 0; id < nodecount"));
@@ -341,9 +346,11 @@ SCENARIO("Two BEFORE STEP blocks are both registered", "[codegen][ba]") {
 
         THEN("each block gets its own callback and the same type code") {
             REQUIRE_THAT(cpp,
-                         ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_0_ba2, 14);"));
+                         ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_0_ba2, "
+                                           "BAType::Before + BAType::Step);"));
             REQUIRE_THAT(cpp,
-                         ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_1_ba2, 14);"));
+                         ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_1_ba2, "
+                                           "BAType::Before + BAType::Step);"));
             REQUIRE(cpp.find("static void nrn_before_after_0_ba2(Node*") != std::string::npos);
             REQUIRE(cpp.find("static void nrn_before_after_1_ba2(Node*") != std::string::npos);
         }
@@ -372,7 +379,8 @@ SCENARIO("POINT_PROCESS BEFORE STEP keeps the POINTER verbatim macro", "[codegen
 
         THEN("the callback receives instance pdata and exposes _p_p") {
             REQUIRE_THAT(cpp,
-                         ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_0_bapp, 14);"));
+                         ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_0_bapp, "
+                                           "BAType::Before + BAType::Step);"));
             REQUIRE_THAT(body, ContainsSubstring("Datum* _ppvar"));
             REQUIRE_THAT(body, ContainsSubstring("literal_value<void*>()"));
             REQUIRE_THAT(body,
@@ -398,7 +406,8 @@ SCENARIO("ARTIFICIAL_CELL BEFORE STEP has no node voltage", "[codegen][ba]") {
 
         THEN("the callback is registered and does not read node_data") {
             REQUIRE_THAT(cpp,
-                         ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_0_baart, 14);"));
+                         ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_0_baart, "
+                                           "BAType::Before + BAType::Step);"));
             REQUIRE_THAT(body, !ContainsSubstring("node_data"));
             REQUIRE_THAT(body, !ContainsSubstring("v_unused"));
             REQUIRE_THAT(body, !ContainsSubstring("double v"));

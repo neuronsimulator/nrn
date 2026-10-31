@@ -1500,26 +1500,19 @@ void CodegenNeuronCppVisitor::print_global_variables_for_hoc() {
 }
 
 /**
- * Integer passed to hoc_reg_ba. Same encoding as nocmodl bablk:
- * BEFORE is 10, AFTER is 20, plus breakpoint 1, solve 2, initial 3, step 4.
+ * Text passed to hoc_reg_ba. Names are BAType in neuron/ba_reg.h:
+ * Before or After, plus Breakpoint, Solve, Initial, or Step.
  * hoc_reg_ba rejects any other combination.
  */
-static int neuron_ba_register_type(const ast::Block* block) {
-    constexpr int before_code = 10;
-    constexpr int after_code = 20;
-    constexpr int breakpoint_code = 1;
-    constexpr int solve_code = 2;
-    constexpr int initial_code = 3;
-    constexpr int step_code = 4;
-
-    int register_type = 0;
+static std::string neuron_ba_register_type(const ast::Block* block) {
+    std::string register_type{};
     BAType ba_type{};
     if (block->is_before_block()) {
-        register_type = before_code;
+        register_type = "BAType::Before";
         ba_type =
             dynamic_cast<const ast::BeforeBlock*>(block)->get_bablock()->get_type()->get_value();
     } else if (block->is_after_block()) {
-        register_type = after_code;
+        register_type = "BAType::After";
         ba_type =
             dynamic_cast<const ast::AfterBlock*>(block)->get_bablock()->get_type()->get_value();
     } else {
@@ -1527,13 +1520,13 @@ static int neuron_ba_register_type(const ast::Block* block) {
     }
 
     if (ba_type == BATYPE_BREAKPOINT) {
-        register_type += breakpoint_code;
+        register_type += " + BAType::Breakpoint";
     } else if (ba_type == BATYPE_SOLVE) {
-        register_type += solve_code;
+        register_type += " + BAType::Solve";
     } else if (ba_type == BATYPE_INITIAL) {
-        register_type += initial_code;
+        register_type += " + BAType::Initial";
     } else if (ba_type == BATYPE_STEP) {
-        register_type += step_code;
+        register_type += " + BAType::Step";
     } else {
         throw std::runtime_error("Unhandled Before/After type encountered during code generation");
     }
