@@ -28,6 +28,7 @@ def _linux_objects() -> list[dict]:
         _ok("hoc.abi3.so"),
         _ok("graphicsPrimitives.abi3.so"),
         _ok("ctng.abi3.so"),
+        _ok("_nmodl.abi3.so"),
         _ok("libnrnpython.abi3.so"),
     ]
 
@@ -46,7 +47,7 @@ class AuditAbi3WheelTests(unittest.TestCase):
             any("ignoring non-abi3 CLI libpywrapper.so" in line for line in messages)
         )
         self.assertTrue(
-            any(line.startswith("checked 4 abi3 objects:") for line in messages)
+            any(line.startswith("checked 5 abi3 objects:") for line in messages)
         )
 
     def test_empty_specs(self) -> None:
@@ -116,6 +117,14 @@ class AuditAbi3WheelTests(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn("abi3 audit: missing ctng", messages)
 
+    def test_missing_nmodl(self) -> None:
+        objects = [
+            obj for obj in _linux_objects() if not obj["name"].startswith("_nmodl")
+        ]
+        code, messages = audit.judge(_report(objects), 0, LINUX)
+        self.assertEqual(code, 1)
+        self.assertIn("abi3 audit: missing _nmodl", messages)
+
     def test_longer_hoc_name_does_not_count(self) -> None:
         objects = _linux_objects()
         objects[0] = _ok("hocfoo.abi3.so")
@@ -128,12 +137,18 @@ class AuditAbi3WheelTests(unittest.TestCase):
             _ok("hoc.abi3.so"),
             _ok("graphicsPrimitives.abi3.so"),
             _ok("ctng.abi3.so"),
+            _ok("_nmodl.abi3.so"),
         ]
         code, _messages = audit.judge(_report(objects), 0, MACOS)
         self.assertEqual(code, 0)
 
     def test_windows_pyd_without_nrnpython(self) -> None:
-        objects = [_ok("hoc.pyd"), _ok("graphicsPrimitives.pyd"), _ok("ctng.pyd")]
+        objects = [
+            _ok("hoc.pyd"),
+            _ok("graphicsPrimitives.pyd"),
+            _ok("ctng.pyd"),
+            _ok("_nmodl.pyd"),
+        ]
         code, _messages = audit.judge(_report(objects), 0, WINDOWS)
         self.assertEqual(code, 0)
 
@@ -142,6 +157,7 @@ class AuditAbi3WheelTests(unittest.TestCase):
             _ok("hoc.abi3.so"),
             _ok("graphicsPrimitives.abi3.so"),
             _ok("ctng.abi3.so"),
+            _ok("_nmodl.abi3.so"),
         ]
         code, messages = audit.judge(_report(objects), 0, LINUX)
         self.assertEqual(code, 1)
@@ -152,6 +168,7 @@ class AuditAbi3WheelTests(unittest.TestCase):
             _ok("hoc.abi3.so"),
             _ok("graphicsPrimitives.abi3.so"),
             _ok("ctng.abi3.so"),
+            _ok("_nmodl.abi3.so"),
         ]
         code, _messages = audit.judge(_report(objects), 0, MUSL)
         self.assertEqual(code, 1)
@@ -174,6 +191,7 @@ class AuditAbi3WheelTests(unittest.TestCase):
             _ok("hoc.abi3.so"),
             _ok("graphicsPrimitives.abi3.so"),
             _ok("ctng.abi3.so"),
+            _ok("_nmodl.abi3.so"),
         ]
         objects.append(_ok("nrnpython.abi3.so"))
         code, _messages = audit.judge(_report(objects), 0, LINUX)

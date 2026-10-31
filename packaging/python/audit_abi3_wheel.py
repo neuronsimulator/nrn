@@ -15,13 +15,14 @@ import subprocess
 import sys
 from pathlib import Path
 
-# NMODL CLI sympy embed; not an importable extension. cibuildwheel's default
-# `abi3audit --strict` scans every .so in the wheel.
+# NMODL CLI sympy embed; not an importable extension. A reported non-abi3
+# result for this library is ignored. An audit error (the object is skipped)
+# is not: --strict makes abi3audit fail instead of omitting it.
 _IGNORE_NAMES = {"libpywrapper.so", "libpywrapper.dylib", "libpywrapper.dll"}
 
 # Importable extensions on every abi3 wheel. RxD is on for wheels.
-# "hoc." does not match a longer stem.
-_REQUIRED_STEMS = ("hoc", "graphicsPrimitives", "ctng")
+# "hoc." does not match a longer stem. _nmodl is the importable NMODL module.
+_REQUIRED_STEMS = ("hoc", "graphicsPrimitives", "ctng", "_nmodl")
 
 
 def _requires_libnrnpython(wheel_name: str) -> bool:
@@ -143,7 +144,7 @@ def main(argv: list[str]) -> int:
         print("abi3audit not found on PATH", file=sys.stderr)
         return 1
     proc = subprocess.run(
-        [abi3audit, "--report", os.fspath(wheel)],
+        [abi3audit, "--strict", "--report", os.fspath(wheel)],
         check=False,
         capture_output=True,
         text=True,
