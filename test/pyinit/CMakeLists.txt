@@ -313,13 +313,15 @@ foreach(val RANGE ${NRN_PYTHON_COUNT})
     COMMAND nrniv ${nrniv_args} -c "nrnpython(\"import sys$<SEMICOLON> print(sys.path)\")")
 endforeach()
 if(NRN_PYTHON_EXTRA_FOR_TESTS)
-  # Extra Pythons that were not used to compile. With ABI3 and dynamic loading, GIL
-  # CPython 3.12+ should import. Otherwise only a version this build was configured
-  # with should import. A non-dynamic ABI3 build is linked to one libpython.
+  # Extra Pythons that were not used to compile. With ABI3 and dynamic loading, GIL CPython 3.12+
+  # should import. Otherwise only a version this build was configured with should import. A
+  # non-dynamic ABI3 build is linked to one libpython.
   foreach(val RANGE ${NRN_PYTHON_EXTRA_FOR_TESTS_ITERATION_LIMIT})
     list(GET NRN_PYTHON_EXTRA_FOR_TESTS_EXECUTABLES ${val} pyexe)
     list(GET NRN_PYTHON_EXTRA_FOR_TESTS_VERSIONS ${val} pyver)
-    if((NRN_ENABLE_ABI3 AND NRN_ENABLE_PYTHON_DYNAMIC AND pyver VERSION_GREATER_EQUAL 3.12)
+    if((NRN_ENABLE_ABI3
+        AND NRN_ENABLE_PYTHON_DYNAMIC
+        AND pyver VERSION_GREATER_EQUAL 3.12)
        OR ((NOT NRN_ENABLE_ABI3) AND pyver IN_LIST NRN_PYTHON_VERSIONS))
       nrn_add_test(
         GROUP pyinit
