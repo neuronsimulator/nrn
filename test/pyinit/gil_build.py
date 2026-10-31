@@ -129,6 +129,64 @@ def text(proc):
     return (proc.stdout + proc.stderr).decode("utf-8", "replace")
 
 
+def with_sanitizer_preload(env):
+    """Copy env and put the sanitizer runtime back when SIP removed it.
+
+    The test helper stores the loader variable name and its value in
+    NRN_SANITIZER_PRELOAD_VAR and NRN_SANITIZER_PRELOAD_VAL. macOS SIP drops
+    DYLD_INSERT_LIBRARIES before this process and its children see it. An
+    import of the instrumented extension needs that variable set at exec.
+    """
+    child = env.copy()
+    name = child.get("NRN_SANITIZER_PRELOAD_VAR") or ""
+    value = child.get("NRN_SANITIZER_PRELOAD_VAL") or ""
+    if name and value:
+        child[name] = value
+    return child
+
+
+def without_sanitizer_preload(env):
+    """Copy env without a sanitizer preload.
+
+    nrnpyenv.sh is bash. bash plus LD_PRELOAD=libtsan crashes. Import
+    children keep the preload; only this shell stage drops it.
+    """
+    child = env.copy()
+    child.pop("LD_PRELOAD", None)
+    child.pop("DYLD_INSERT_LIBRARIES", None)
+    name = child.get("NRN_SANITIZER_PRELOAD_VAR") or ""
+    if name:
+        child.pop(name, None)
+    return child
+
+
+def check_preload_helpers():
+    stripped = {
+        "NRN_SANITIZER_PRELOAD_VAR": "DYLD_INSERT_LIBRARIES",
+        "NRN_SANITIZER_PRELOAD_VAL": "/tmp/libclang_rt.tsan.dylib",
+        "PATH": "/usr/bin",
+    }
+    restored = with_sanitizer_preload(stripped)
+    if restored.get("DYLD_INSERT_LIBRARIES") != stripped["NRN_SANITIZER_PRELOAD_VAL"]:
+        raise SystemExit("preload was not restored for an import child")
+    if "DYLD_INSERT_LIBRARIES" in stripped:
+        raise SystemExit("preload restore mutated the parent environment")
+    if "DYLD_INSERT_LIBRARIES" in without_sanitizer_preload(restored):
+        raise SystemExit("bash environment kept DYLD_INSERT_LIBRARIES")
+    linux = {
+        "LD_PRELOAD": "/tmp/libtsan.so",
+        "NRN_SANITIZER_PRELOAD_VAR": "LD_PRELOAD",
+        "NRN_SANITIZER_PRELOAD_VAL": "/tmp/libtsan.so",
+        "PATH": "/usr/bin",
+    }
+    if with_sanitizer_preload(linux).get("LD_PRELOAD") != "/tmp/libtsan.so":
+        raise SystemExit("import environment lost LD_PRELOAD")
+    if "LD_PRELOAD" in without_sanitizer_preload(linux):
+        raise SystemExit("bash environment kept LD_PRELOAD")
+    if with_sanitizer_preload({"PATH": "/usr/bin"}) != {"PATH": "/usr/bin"}:
+        raise SystemExit("preload restore invented a variable")
+
+
 def write_standin(path, python):
     with open(path, "w", encoding="ascii", newline="\n") as out:
         out.write("#!" + python + "\n")
@@ -165,6 +223,10 @@ def import_code(value_src):
 def main():
     if len(sys.argv) == 2 and sys.argv[1] == "--libpython":
         print(find_libpython())
+        return
+    if len(sys.argv) == 2 and sys.argv[1] == "--check-preload":
+        check_preload_helpers()
+        print("preload-ok")
         return
     if len(sys.argv) != 4:
         raise SystemExit("usage: gil_build.py nrniv python dynamic")
@@ -210,7 +272,7 @@ def main():
         fail("this interpreter is already a free-threaded build", probe)
 
     for value_src in ("1", "'1'"):
-        proc = run([pyexe, "-c", import_code(value_src)], base)
+        proc = run([pyexe, "-c", import_code(value_src)], with_sanitizer_preload(base))
         out = text(proc)
         if (
             proc.returncode != 0
@@ -223,12 +285,15 @@ def main():
             fail("import accepted Py_GIL_DISABLED {}".format(value_src), proc)
 
     for value_src in ("0", "'0'", "None"):
-        proc = run([pyexe, "-c", import_code(value_src)], base)
+        proc = run([pyexe, "-c", import_code(value_src)], with_sanitizer_preload(base))
         out = text(proc)
         if proc.returncode != 0 or "IMPORT-OK" not in out or "HOC:True" not in out:
             fail("import rejected Py_GIL_DISABLED {}".format(value_src), proc)
 
-    plain = run([pyexe, "-c", "import neuron\nprint('IMPORT-OK')\n"], base)
+    plain = run(
+        [pyexe, "-c", "import neuron\nprint('IMPORT-OK')\n"],
+        with_sanitizer_preload(base),
+    )
     if plain.returncode != 0 or b"IMPORT-OK" not in plain.stdout:
         fail("unpatched import failed", plain)
 
@@ -247,14 +312,14 @@ def main():
         env = base.copy()
         env["NRN_TEST_GIL_LOG"] = log
 
-        real = run(["bash", script, pyexe], env)
+        real = run(["bash", script, pyexe], without_sanitizer_preload(env))
         if real.returncode != 0 or b"export NRN_PYLIB=" not in real.stdout:
             fail("nrnpyenv.sh rejected the GIL build", real)
 
         for mode in ("int1", "str1"):
             open(log, "w").close()
             env["NRN_TEST_PY_GIL_DISABLED"] = mode
-            proc = run(["bash", script, standin], env)
+            proc = run(["bash", script, standin], without_sanitizer_preload(env))
             logged = open(log, encoding="ascii").read()
             out = text(proc)
             if (
@@ -270,7 +335,7 @@ def main():
         for mode in ("int0", "str0", "none"):
             open(log, "w").close()
             env["NRN_TEST_PY_GIL_DISABLED"] = mode
-            proc = run(["bash", script, standin], env)
+            proc = run(["bash", script, standin], without_sanitizer_preload(env))
             logged = open(log, encoding="ascii").read()
             if (
                 proc.returncode != 0
