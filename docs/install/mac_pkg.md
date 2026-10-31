@@ -61,7 +61,7 @@ In order to build CoreNEURON support, one must add following options:
 
 The default variables above will be
 ```
-pythons="python3.8;python3.9;python3.10;python3.11"
+pythons="python3.12;python3.13;python3.14"
 archs_cmake='-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64'
 ```
 
@@ -202,7 +202,7 @@ can be found at [python.org](https://www.python.org/downloads/macos) at least fo
   - At least one python3 in your PATH needs cython installed.
     And, to avoid compile errors, the minimum version is 0.29.26
     ```
-    python3.10 -m pip install --user cython
+    python3.12 -m pip install --user cython
     ```
 
 #### Signing and Notarization

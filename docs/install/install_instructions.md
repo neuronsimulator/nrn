@@ -132,9 +132,11 @@ releases from:
 
 * [https://github.com/neuronsimulator/nrn/releases](https://github.com/neuronsimulator/nrn/releases)
 
-The naming convention for Windows installers is `nrn-<version-id>-mingw-py-38-39-310-311-setup.exe`.
-The `py-38-39-310-311` string in the installer name indicates that the given installer is compatible
-with Python versions 3.8, 3.9, 3.10 and 3.11. Once the installer is downloaded, you can install it
+Earlier Windows installers have names in the format `nrn-<version-id>-mingw-py-38-39-310-311-setup.exe`.
+The `py-38-39-310-311` string in that name indicates compatibility with Python versions 3.8, 3.9, 3.10, and 3.11.
+The current MinGW installer is built with ABI3 off and supports GIL-enabled CPython 3.11, 3.12, 3.13, and 3.14.
+Nightly builds are published as `nrn-nightly-AMD64.exe`. A release file uses the form `nrn-<version>.w64-mingw-py-<versions>-setup.exe`.
+Once the installer is downloaded, you can install it
 by double clicking like any other Windows application. Note that you have to install python separately
 if python support is required. You can find detailed step-by-step instructions in
 [this presentation](https://neuron.yale.edu/ftp/neuron/nrn_mswin_install.pdf).
@@ -214,8 +216,12 @@ In order to build NEURON from source, the following packages must be available:
 
 The following packages are optional (see build options):
 
-- Python >=3.10 (for Python interface)
-- Cython (for RXD)
+- Python: GIL-enabled CPython **3.11+** for a source build with
+  `-DNRN_ENABLE_ABI3=OFF` (the default when the default interpreter is
+  older than 3.12). `-DNRN_ENABLE_ABI3=ON` and the ``cp312-abi3`` wheel
+  need **3.12+**. A separate versioned wheel covers CPython 3.11.
+  See `NRN_ENABLE_ABI3` in [CMake options](../cmake_doc/options.rst).
+- Cython >= 3.1 (for RXD; limited-API wheels require Cython 3.1+)
 - MPI (for parallel)
 - X11 (Linux) or XQuartz (MacOS) (for GUI)
 

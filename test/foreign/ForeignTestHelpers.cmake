@@ -113,6 +113,25 @@ endif()
 # nrn_foreign_cmake_env_path.
 string(REPLACE ";" "\\;" _nrn_foreign_test_pythonpath_esc "${_nrn_foreign_test_pythonpath}")
 set(NRN_RUN_FROM_BUILD_DIR_ENV "${_nrn_run_path}" "PYTHONPATH=${_nrn_foreign_test_pythonpath_esc}")
+# RxD JIT and Apple clang need an SDK to find <math.h>. cmake -E env keeps other variables, but
+# special/nrniv can drop SDKROOT; tests still get it here.
+if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+  set(_nrn_foreign_sdkroot "$ENV{SDKROOT}")
+  if(_nrn_foreign_sdkroot STREQUAL "")
+    execute_process(
+      COMMAND xcrun --sdk macosx --show-sdk-path
+      OUTPUT_VARIABLE _nrn_foreign_sdkroot
+      OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+  endif()
+  if(_nrn_foreign_sdkroot STREQUAL "" AND EXISTS
+                                          "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk")
+    set(_nrn_foreign_sdkroot "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk")
+  endif()
+  if(NOT _nrn_foreign_sdkroot STREQUAL "")
+    list(APPEND NRN_RUN_FROM_BUILD_DIR_ENV "SDKROOT=${_nrn_foreign_sdkroot}")
+    message(STATUS "Foreign SDKROOT            : ${_nrn_foreign_sdkroot}")
+  endif()
+endif()
 
 # Collect nrnivmodl custom targets so the top-level `foreign` target can depend on them.
 set(NRN_FOREIGN_NRNIVMODL_TARGETS

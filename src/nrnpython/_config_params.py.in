@@ -1,5 +1,12 @@
-# Needed in pure Python so that neuron/__init__.py can give a good error...
+# Python versions this build was configured with.
+# Any GIL CPython 3.x from 3.12 on is accepted only when limited_api and
+# python_dynamic are both true. A later major is not. A non-dynamic build
+# links one libpython, so limited_api does not
+# widen the check. Otherwise only supported_python_versions.
+# Non-CPython interpreters are rejected in either case.
 supported_python_versions = [@NRN_DYNAMIC_PYTHON_LIST_OF_VERSION_STRINGS@]
+limited_api = @NRN_PYTHON_LIMITED_API_PY@
+python_dynamic = @NRN_PYTHON_DYNAMIC_PY@
 # Needed so we can figure out the prefix and suffix of nrnmech at runtime
 mechanism_prefix = "@CMAKE_SHARED_LIBRARY_PREFIX@"
 mechanism_suffix = "@CMAKE_SHARED_LIBRARY_SUFFIX@"

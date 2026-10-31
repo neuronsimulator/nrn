@@ -131,4 +131,6 @@ def test_sympy_conductance_visitor():
         ina = gna*(v - ena)
     }"""
     driver = nmodl.NmodlDriver()
-    visitor.SympyConductanceVisitor().visit_program(driver.parse_string(program))
+    modast = driver.parse_string(program)
+    visitor.SympyConductanceVisitor().visit_program(modast)
+    visitor.SympySolverVisitor().visit_program(modast)

@@ -156,20 +156,31 @@ mark_as_advanced(NRN_BINARY_DIST_BUILD)
 #   NOTE: When building the wheel, this is set to OFF.
 # Dynamic Python version support:
 #   - NRN_ENABLE_PYTHON_DYNAMIC=OFF  : libnrniv is linked against a single Python version, which
-#                                      can be steered with PYTHON_EXECUTABLE
-#   - NRN_ENABLE_PYTHON_DYNAMIC=ON   : libnrniv is not linked against Python, distinct libnrnpython
-#                                      libraries are built for each configured Python major.minor
-#                                      version but are only linked against the relevant libpython
-#                                      if NRN_LINK_AGAINST_PYTHON is true, which is by default only
-#                                      the case on windows.
+#                                      can be steered with PYTHON_EXECUTABLE. Import accepts only
+#                                      that version, including when NRN_ENABLE_ABI3=ON.
+#   - NRN_ENABLE_PYTHON_DYNAMIC=ON   : libnrniv is not linked against Python.
+#                                      NRN_ENABLE_ABI3=ON  : one libnrnpython.abi3 (CPython 3.12+
+#                                      limited API, the cp312-abi3 wheel); extra NRN_PYTHON_DYNAMIC
+#                                      entries are for nrniv -python interpreter search / tests.
+#                                      NRN_ENABLE_ABI3=OFF : distinct libnrnpythonX.Y per configured
+#                                      major.minor. Linked against libpython only if
+#                                      NRN_LINK_AGAINST_PYTHON is true (default on Windows).
+#                                      ABI3 and dynamic together reject that link on Unix:
+#                                      a versioned libpython is not cross-version safe.
 #                                      nrniv/special still works in the absence of Python, and
-#                                      dynamically loads the appropriate libnrnpythonX.Y as needed
+#                                      dynamically loads libnrnpython.abi3 or libnrnpythonX.Y.
 #   - NRN_PYTHON_DYNAMIC=pythonX;... : semicolon separated list of Python versions used when
 #                                      NRN_ENABLE_PYTHON_DYNAMIC=ON, if not set then it defaults to
 #                                      PYTHON_EXECUTABLE. This must include all major.minor
 #                                      versions that you want nrniv -python to be able to load. If
 #                                      this *is* set then the first entry will be used as the
 #                                      default Python version.
+# Limited API (abi3):
+#   - NRN_ENABLE_ABI3=ON  : Py_LIMITED_API=0x030C0000, abi3 module names, requires CPython 3.12+.
+#                           Default when the default Python is 3.12+ (source and the cp312-abi3 wheel).
+#   - NRN_ENABLE_ABI3=OFF : versioned extensions for each configured interpreter (CPython 3.11+).
+#                           Default when the default Python is older than 3.12 (including the
+#                           CPython 3.11 wheel).
 # Extra options for extended Python tests:
 #   - NRN_PYTHON_EXTRA_FOR_TESTS=... : semicolon separated list of Python executables that NEURON
 #                                      is *not* built against. These are only used for testing, and
@@ -191,6 +202,14 @@ mark_as_advanced(NRN_BINARY_DIST_BUILD)
 # ~~~
 option(NRN_ENABLE_PYTHON_DYNAMIC "Enable dynamic Python version support"
        ${NRN_ENABLE_PYTHON_DYNAMIC_DEFAULT})
+# True/False for generated Python, and true/false for nrnpyenv.sh.
+if(NRN_ENABLE_PYTHON_DYNAMIC)
+  set(NRN_PYTHON_DYNAMIC_PY True)
+  set(NRN_PYTHON_DYNAMIC_SH true)
+else()
+  set(NRN_PYTHON_DYNAMIC_PY False)
+  set(NRN_PYTHON_DYNAMIC_SH false)
+endif()
 option(NRN_LINK_AGAINST_PYTHON
        "Link libnrnpythonX.Y against libpythonX.Y when NRN_ENABLE_PYTHON_DYNAMIC=ON"
        ${NRN_LINK_AGAINST_PYTHON_DEFAULT})
@@ -245,7 +264,7 @@ set(NRN_PROFILER
 # =============================================================================
 # Build options for NMODL
 # =============================================================================
-option(NMODL_ENABLE_PYTHON_BINDINGS "Enable pybind11 based python bindings" ON)
+option(NMODL_ENABLE_PYTHON_BINDINGS "Enable nanobind based python bindings" ON)
 set(NMODL_EXTRA_CXX_FLAGS
     ""
     CACHE STRING "Add extra compile flags for NMODL sources")
@@ -292,7 +311,7 @@ if(NOT PYTHON_EXECUTABLE)
   message(STATUS "\tSetting PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}")
 endif()
 
-find_package(Python 3.10 REQUIRED)
+find_package(Python 3.11 REQUIRED)
 
 # Try and emit an intelligent warning if the version number currently set in the CMake project(...)
 # call is inconsistent with the output of git describe.
@@ -350,13 +369,67 @@ string(REPLACE "," ";" NRN_SANITIZERS_LIST "${NRN_SANITIZERS}")
 #   NRN_DEFAULT_PYTHON_LIBRARIES are its include direcory and library
 # * NRN_PYTHON_EXECUTABLES is a list of absolute paths to all Python executables to be built against
 #   (length >=1 if NRN_ENABLE_PYTHON_DYNAMIC else == 1)
-# * NRN_PYTHON_VERSIONS (3.10, 3.12, ...), NRN_PYTHON_INCLUDES and NRN_PYTHON_LIBRARIES are
+# * NRN_PYTHON_VERSIONS (3.11, 3.12, ...), NRN_PYTHON_INCLUDES and NRN_PYTHON_LIBRARIES are
 #   populated with values patching NRN_PYTHON_EXECUTABLES
 # * NRN_PYTHON_COUNT is set to the number of entries in those lists (i.e. number of Pythons), and
 #   NRN_PYTHON_ITERATION_LIMIT is set to ${NRN_PYTHON_COUNT} - 1
 # =================================================================================================
-set(NRN_MINIMUM_PYTHON_VERSION 3.10)
+set(NRN_MINIMUM_PYTHON_VERSION 3.11)
 include(cmake/PythonHelper.cmake)
+
+# NRN_ENABLE_ABI3: 3.12+ source and the cp312-abi3 wheel default ON; older Pythons (including the
+# CPython 3.11 wheel) default OFF.
+if(NRN_ENABLE_PYTHON)
+  if(NRN_DEFAULT_PYTHON_VERSION VERSION_GREATER_EQUAL 3.12)
+    set(_nrn_abi3_default ON)
+  else()
+    set(_nrn_abi3_default OFF)
+  endif()
+  option(
+    NRN_ENABLE_ABI3
+    "Build importable Python extensions against the CPython 3.12 limited API (abi3). OFF builds versioned extensions for the configured interpreter(s) (CPython 3.11+)."
+    ${_nrn_abi3_default})
+  if(SKBUILD
+     AND NRN_DEFAULT_PYTHON_VERSION VERSION_GREATER_EQUAL 3.12
+     AND NOT NRN_ENABLE_ABI3)
+    message(FATAL_ERROR "Wheel builds for CPython 3.12+ require NRN_ENABLE_ABI3=ON")
+  endif()
+  if(NRN_ENABLE_ABI3)
+    foreach(_nrn_abi3_pyver ${NRN_PYTHON_VERSIONS})
+      if(_nrn_abi3_pyver VERSION_LESS 3.12)
+        message(
+          FATAL_ERROR "NRN_ENABLE_ABI3=ON requires CPython 3.12+ (got ${_nrn_abi3_pyver}). "
+                      "Use -DNRN_ENABLE_ABI3=OFF for a versioned build against this interpreter.")
+      endif()
+    endforeach()
+    set(NRN_STABLE_ABI_ARG STABLE_ABI)
+    set(NRN_PYTHON_LIMITED_API true)
+    set(NRN_PYTHON_LIMITED_API_PY True)
+  else()
+    set(NRN_STABLE_ABI_ARG)
+    set(NRN_PYTHON_LIMITED_API false)
+    set(NRN_PYTHON_LIMITED_API_PY False)
+  endif()
+  # Windows links python3.lib (the stable import library). On Unix, NRN_DEFAULT_PYTHON_LIBRARIES is
+  # a versioned libpython.
+  if(NRN_ENABLE_PYTHON_DYNAMIC
+     AND NRN_ENABLE_ABI3
+     AND NRN_LINK_AGAINST_PYTHON
+     AND NOT WIN32)
+    message(
+      FATAL_ERROR
+        "NRN_ENABLE_ABI3=ON with NRN_ENABLE_PYTHON_DYNAMIC=ON cannot set "
+        "NRN_LINK_AGAINST_PYTHON=ON on Unix. That links nrnpython and hoc to a "
+        "versioned libpython, while the import gate treats the build as safe on "
+        "any GIL CPython 3.12 or newer 3.x. Leave NRN_LINK_AGAINST_PYTHON=OFF, or use "
+        "NRN_ENABLE_ABI3=OFF.")
+  endif()
+else()
+  set(NRN_ENABLE_ABI3 OFF)
+  set(NRN_STABLE_ABI_ARG)
+  set(NRN_PYTHON_LIMITED_API false)
+  set(NRN_PYTHON_LIMITED_API_PY False)
+endif()
 
 # This needs NRN_DEFAULT_PYTHON_EXECUTABLE, which comes from PythonHelper.cmake
 if(NRN_SANITIZERS)
@@ -409,7 +482,9 @@ if(NRN_ENABLE_RX3D)
   if(NOT NRN_ENABLE_PYTHON)
     message(SEND_ERROR "NRN_ENABLE_RX3D requires NRN_ENABLE_PYTHON feature.")
   else()
-    find_package(Cython REQUIRED)
+    # RxD geometry3d uses the CPython 3.12 limited API; Cython 3.0 cannot emit that C. 3.1 is the
+    # first release that can.
+    find_package(Cython 3.1 REQUIRED)
     nrn_find_python_module(MODULE numpy REQUIRED)
   endif()
 endif()
@@ -524,9 +599,18 @@ endif()
 if(NRN_ENABLE_PYTHON)
   # Make sure the USE_PYTHON macro is defined in the C++ code
   list(APPEND NRN_COMPILE_DEFS USE_PYTHON)
-  # Ensure nanobind is there, but dont import, we don't want its CMake
+endif()
+# nanobind: importable _nmodl/hoc and CLI libpywrapper (limited-API embed).
+if(NRN_ENABLE_PYTHON
+   OR NRN_ENABLE_NMODL
+   OR NRN_ENABLE_CORENEURON)
   nrn_add_external_project(nanobind DISABLE_ADD RECURSIVE SHALLOW)
   include(NanoBindMinimal)
+endif()
+if(NOT NRN_ENABLE_PYTHON)
+  set(NMODL_ENABLE_PYTHON_BINDINGS
+      OFF
+      CACHE BOOL "Enable NMODL python bindings" FORCE)
 endif()
 
 # =============================================================================
@@ -603,7 +687,6 @@ if(NRN_ENABLE_NMODL
 
   # NMODL non-Python build dependencies
   cpp_cc_git_submodule(json BUILD PACKAGE nlohmann_json REQUIRED)
-  cpp_cc_git_submodule(pybind11 BUILD PACKAGE pybind11 REQUIRED)
 
   option(SPDLOG_FMT_EXTERNAL "Force to use an external {{fmt}}" ON)
   option(SPDLOG_SYSTEM_INCLUDE "Include spdlog as a system lib" ON)
@@ -783,7 +866,7 @@ set(NRN_RUN_FROM_BUILD_DIR_ENV "NEURONHOME=${PROJECT_BINARY_DIR}/share/nrn"
 # when building coreNEURON mod files
 if(NOT NRN_LINK_AGAINST_PYTHON)
   set(NRN_RUN_FROM_BUILD_DIR_ENV "${NRN_RUN_FROM_BUILD_DIR_ENV}" "NMODLHOME=${PROJECT_BINARY_DIR}"
-                                 "NMODL_PYLIB=${PYTHON_LIBRARY}")
+                                 "NMODL_PYLIB=${NRN_NMODL_PYLIB}")
 endif()
 prepend_to_var(PATH "${PROJECT_BINARY_DIR}/bin")
 if(APPLE)
@@ -1326,6 +1409,7 @@ endif()
 message(STATUS "Python        | ${NRN_ENABLE_PYTHON}")
 if(NRN_ENABLE_PYTHON)
   message(STATUS "  DYNAMIC     | ${NRN_ENABLE_PYTHON_DYNAMIC}")
+  message(STATUS "  ABI3        | ${NRN_ENABLE_ABI3}")
   foreach(val RANGE ${NRN_PYTHON_ITERATION_LIMIT})
     list(GET NRN_PYTHON_EXECUTABLES ${val} exe)
     list(GET NRN_PYTHON_VERSIONS ${val} pyver)

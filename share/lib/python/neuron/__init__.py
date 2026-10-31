@@ -102,27 +102,49 @@ $Id: __init__.py,v 1.1 2008/05/26 11:39:44 hines Exp hines $
 
 import sys
 import os
+import sysconfig
 import warnings
 import weakref
 
 embedded = "hoc" in sys.modules
 
-# First, check that the compiled extension (neuron.hoc) was built for this version of
-# Python. If not, fail early and helpfully.
 from ._config_params import (
     supported_python_versions,
+    limited_api,
+    python_dynamic,
     mechanism_prefix,
     mechanism_suffix,
 )
 
 current_version = "{}.{}".format(*sys.version_info[:2])
-if current_version not in supported_python_versions:
-    message = (
-        "Python {} is not supported by this NEURON installation (supported: {}). Either re-build "
-        "NEURON with support for this version, use a supported version of Python, or try using "
-        "nrniv -python so that NEURON can suggest a compatible version for you."
-    ).format(current_version, " ".join(supported_python_versions))
-    raise ImportError(message)
+if sys.implementation.name != "cpython":
+    raise ImportError(
+        "This NEURON installation supports CPython only (this interpreter is {}).".format(
+            sys.implementation.name
+        )
+    )
+# Cross-version import is safe only when libnrniv is not linked to one libpython.
+if limited_api and python_dynamic:
+    if sys.version_info[0] != 3 or sys.version_info[1] < 12:
+        raise ImportError(
+            "Python {} is not supported by this NEURON installation (requires CPython 3.12 "
+            "or a newer 3.x minor, with the GIL).".format(current_version)
+        )
+elif current_version not in supported_python_versions:
+    raise ImportError(
+        "Python {} is not supported by this NEURON installation (supported: {}). "
+        "Either re-build NEURON with support for this version, use a supported version "
+        "of Python, or try using nrniv -python so that NEURON can suggest a compatible "
+        "version for you.".format(current_version, " ".join(supported_python_versions))
+    )
+# Py_GIL_DISABLED is the interpreter build. 1 and "1" are free-threaded.
+# 0, "0", and None are a GIL build: the string "0" is truthy. Enabling the
+# GIL at runtime does not make a free-threaded build acceptable.
+if sysconfig.get_config_var("Py_GIL_DISABLED") in (1, "1"):
+    raise ImportError(
+        "This NEURON installation does not support a free-threaded CPython build "
+        "(Py_GIL_DISABLED)."
+    )
 
 try:  # needed since python 3.8 on windows if python launched
     # do this here as NEURONHOME may be changed below
@@ -168,7 +190,8 @@ h = hoc.HocObject()
 # while that mode is in effect, and print() then moves down without
 # returning to column 0 (CPython #129385). Emulate ONLCR only when the
 # kernel is not already doing it; never rewrite piped/MPI stdout.
-_raw_tty_newline_patched = set()
+# WeakSet, not id(): a closed stream's id can be reused by the next pty.
+_raw_tty_newline_patched = weakref.WeakSet()
 
 
 def _kernel_maps_nl_to_crnl(fd):
@@ -191,6 +214,22 @@ def _with_explicit_cr(text):
     return text.replace("\r\n", "\n").replace("\n", "\r\n")
 
 
+def _can_track_stream(stream):
+    """True when the stream can live in the WeakSet.
+
+    Membership hashes the stream and weakref.ref requires a slot for it.
+    A custom stream that defines __eq__ without __hash__, or a slots object
+    with no __weakref__, cannot be tracked. Leave it unpatched: wrapping
+    write without remembering the stream would wrap it again on the next call.
+    """
+    try:
+        hash(stream)
+        weakref.ref(stream)
+    except TypeError:
+        return False
+    return True
+
+
 def install_raw_tty_newline_fix(streams=None):
     """Make print() return to column 0 when the tty is in pyrepl/raw mode.
 
@@ -201,8 +240,12 @@ def install_raw_tty_newline_fix(streams=None):
     if streams is None:
         streams = (sys.stdout, sys.stderr)
     for stream in streams:
-        stream_id = id(stream)
-        if stream_id in _raw_tty_newline_patched:
+        if not _can_track_stream(stream):
+            continue
+        try:
+            if stream in _raw_tty_newline_patched:
+                continue
+        except TypeError:
             continue
         try:
             fd = stream.fileno()
@@ -219,7 +262,13 @@ def install_raw_tty_newline_fix(streams=None):
             stream.write = write
         except Exception:
             continue
-        _raw_tty_newline_patched.add(stream_id)
+        try:
+            _raw_tty_newline_patched.add(stream)
+        except TypeError:
+            try:
+                stream.write = orig_write
+            except Exception:
+                pass
 
 
 class _NEURON_INTERFACE(hoc.HocObject):
@@ -609,7 +658,7 @@ nt_dlls = []
 def nrn_dll_sym_nt(name, type):
     """return the specified object from the NEURON dlls.
     helper for nrn_dll_sym(name, type). Try to find the name in either
-    nrniv.dll or libnrnpython1013.dll
+    libnrniv.dll or libnrnpython*.dll
     """
     global nt_dlls
     import ctypes
@@ -617,9 +666,14 @@ def nrn_dll_sym_nt(name, type):
     if len(nt_dlls) == 0:
         b = "bin"
         path = os.path.join(n.neuronhome().replace("/", "\\"), b)
+        nrnpy_dll = (
+            "libnrnpython.abi3.dll"
+            if limited_api
+            else "libnrnpython{}.{}.dll".format(*sys.version_info[:2])
+        )
         for dllname in [
             "libnrniv.dll",
-            "libnrnpython{}.{}.dll".format(*sys.version_info[:2]),
+            nrnpy_dll,
         ]:
             p = os.path.join(path, dllname)
             try:

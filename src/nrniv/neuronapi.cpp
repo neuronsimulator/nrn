@@ -2,6 +2,7 @@
 
 #include "../../nrnconf.h"
 #include "hocdec.h"
+#include "oc_ansi.h"
 #include "cabcode.h"
 #include "nrniv_mf.h"
 #include "nrnmpi.h"
@@ -883,7 +884,7 @@ int nrn_object_new_nothrow(Symbol* sym,
         return 0;
     } catch (const std::exception& e) {
         if (error_msg && error_msg_size > 0) {
-            strncpy(error_msg, e.what(), error_msg_size - 1);
+            strncpy(error_msg, neuron::oc::safe_what(e), error_msg_size - 1);
             error_msg[error_msg_size - 1] = '\0';
         }
         return 1;
@@ -925,7 +926,7 @@ int nrn_method_call_nothrow(Object* obj,
         OcJump::execute_throw_on_exception(obj, method_sym, narg);
     } catch (const std::exception& e) {
         if (error_msg && error_msg_size > 0) {
-            strncpy(error_msg, e.what(), error_msg_size - 1);
+            strncpy(error_msg, neuron::oc::safe_what(e), error_msg_size - 1);
             error_msg[error_msg_size - 1] = '\0';
         }
         status = 1;
@@ -953,7 +954,7 @@ int nrn_function_call_nothrow(Symbol* sym, int narg, char* error_msg, size_t err
         OcJump::execute_throw_on_exception(sym, narg);
     } catch (const std::exception& e) {
         if (error_msg && error_msg_size > 0) {
-            strncpy(error_msg, e.what(), error_msg_size - 1);
+            strncpy(error_msg, neuron::oc::safe_what(e), error_msg_size - 1);
             error_msg[error_msg_size - 1] = '\0';
         }
         status = 1;

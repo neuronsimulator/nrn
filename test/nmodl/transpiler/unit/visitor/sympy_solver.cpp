@@ -8,8 +8,9 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
-#include <pybind11/embed.h>
-#include <pybind11/stl.h>
+#include <nanobind/eval.h>
+#include <nanobind/nanobind.h>
+#include <nanobind/stl/string.h>
 
 #include "ast/program.hpp"
 #include "codegen/codegen_coreneuron_cpp_visitor.hpp"
@@ -138,11 +139,14 @@ bool is_unique_vars(std::string result) {
 void compare_blocks(const std::string& result,
                     const std::string& expected,
                     const bool require_fail = false) {
-    using namespace pybind11::literals;
-
-    auto locals =
-        pybind11::dict("result"_a = result, "expected"_a = expected, "is_equal"_a = false);
-    pybind11::exec(R"(
+    namespace nb = nanobind;
+    nb::dict locals;
+    locals["result"] = result;
+    locals["expected"] = expected;
+    locals["is_equal"] = false;
+    nb::object main_mod = nb::module_::import_("__main__");
+    nb::object globals = main_mod.attr("__dict__");
+    nb::exec(R"(
                     # Comments are in the doxygen for better highlighting
                     def compare_blocks(result, expected):
     
@@ -224,11 +228,11 @@ void compare_blocks(const std::string& result,
                         return compare_systems_of_eq(result_dict, expected_dict)
 
                     is_equal = compare_blocks(result, expected))",
-                   pybind11::globals(),
-                   locals);
+             globals,
+             locals);
 
     // Error log
-    if (require_fail == locals["is_equal"].cast<bool>()) {
+    if (require_fail == nb::cast<bool>(locals["is_equal"])) {
         if (require_fail) {
             REQUIRE(result != expected);
         } else {
