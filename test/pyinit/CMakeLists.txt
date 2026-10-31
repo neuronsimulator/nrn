@@ -146,7 +146,8 @@ nrn_add_test(
   NAME gil_build
   COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} gil_build.py $<TARGET_FILE:nrniv>
           ${NRN_DEFAULT_PYTHON_EXECUTABLE} $<BOOL:${NRN_ENABLE_PYTHON_DYNAMIC}>
-  SCRIPT_PATTERNS gil_build.py)
+  SCRIPT_PATTERNS gil_build.py
+  PRELOAD_SANITIZER)
 set_property(TEST pyinit::gil_build PROPERTY PASS_REGULAR_EXPRESSION "gil-build-ok")
 # With -nopython then there should be a dummy PythonObject implementation, and Python-related
 # settings should be ignored
