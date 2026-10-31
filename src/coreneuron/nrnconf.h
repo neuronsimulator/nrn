@@ -48,6 +48,10 @@ extern void* nrn_cacheline_alloc(void** memptr, size_t size);
 extern void* emalloc_align(size_t size, size_t alignment);
 extern void* ecalloc_align(size_t n, size_t size, size_t alignment);
 extern void check_bbcore_write_version(const char*);
+// Read one whitespace-delimited token into buf[n]. Abort if it is missing or
+// longer than n - 1 characters. Consume the whitespace that ended the token so
+// a following fgets starts at the next line, matching fscanf("%s\n").
+extern void read_bbcore_token(FILE* fp, char* buf, size_t n);
 
 
 }  // namespace coreneuron

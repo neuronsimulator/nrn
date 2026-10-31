@@ -6,7 +6,9 @@
 # =============================================================================.
 */
 
+#include <cctype>
 #include <cstring>
+#include <iomanip>
 #include <map>
 #include <iostream>
 #include <fstream>
@@ -37,6 +39,17 @@ void (*nrn2core_mkmech_info_)(std::ostream&);
 }
 static void mk_mech();
 static void mk_mech(std::istream&);
+
+// operator>> into a char* stores at most n - 1 characters when setw(n) is set.
+// Abort when the next character is still part of the token.
+static void read_dataset_token(std::istream& in, char* buf, size_t n) {
+    buf[0] = '\0';
+    nrn_assert(n > 1);
+    nrn_assert(in >> std::setw(static_cast<std::streamsize>(n)) >> buf);
+    const auto next = in.peek();
+    nrn_assert(next == std::char_traits<char>::eof() ||
+               std::isspace(static_cast<unsigned char>(next)));
+}
 
 /// Read meta data about the mechanisms and allocate corresponding mechanism management data
 /// structures
@@ -79,7 +92,7 @@ static void mk_mech() {
 
 static void mk_mech(std::istream& s) {
     char version[256];
-    s >> version;
+    read_dataset_token(s, version, sizeof(version));
     check_bbcore_write_version(version);
 
     //  printf("reading %s\n", fname);
@@ -93,7 +106,8 @@ static void mk_mech(std::istream& s) {
     for (int i = 2; i < n; ++i) {
         char mname[100];
         int type = 0, pnttype = 0, is_art = 0, is_ion = 0, dsize = 0, pdsize = 0, vsize = 0;
-        nrn_assert(s >> mname >> type >> pnttype >> is_art >> is_ion >> dsize >> pdsize >> vsize);
+        read_dataset_token(s, mname, sizeof(mname));
+        nrn_assert(s >> type >> pnttype >> is_art >> is_ion >> dsize >> pdsize >> vsize);
         nrn_assert(i == type);
 
         std::vector<int> array_dims(vsize);
