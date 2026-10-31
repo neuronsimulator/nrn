@@ -53,6 +53,9 @@ int ivocmain_session(int, const char**, const char**, int start_session);
 void simpleconnectsection();
 extern Object* hoc_newobj1(Symbol*, int);
 extern void hoc_unref_defer();
+extern char* (*nrnpy_pysec_name_p_)(Section*);
+extern Object* (*nrnpy_pysec_cell_p_)(Section*);
+extern int (*nrnpy_pysec_cell_equals_p_)(Section*, Object*);
 extern std::tuple<int, const char**> nrn_mpi_setup(int argc, const char** argv);
 
 extern "C" {
@@ -112,6 +115,72 @@ Section* nrn_section_new(char const* const name) {
     hoc_top_level_data[symbol->u.oboff].psecitm = pitm;
     new_sections(nullptr, symbol, pitm, 1);
     return (*pitm)->element.sec;
+}
+
+bool nrn_section_owner_hooks_set(nrn_section_owner_name_func name,
+                                 nrn_section_owner_cell_func cell,
+                                 nrn_section_owner_cell_equals_func cell_equals,
+                                 char* error_msg,
+                                 size_t error_msg_size) {
+    auto fail = [&](const char* message) {
+        if (error_msg && error_msg_size) {
+            std::strncpy(error_msg, message, error_msg_size - 1);
+            error_msg[error_msg_size - 1] = '\0';
+        }
+        return false;
+    };
+#if USE_PYTHON
+    if (!name || !cell || !cell_equals) {
+        return fail("all three section owner hooks are required");
+    }
+    // The hooks are global. Refuse to replace another provider's (NEURON's own
+    // Python module installs them), whose sections would then be misread.
+    if ((nrnpy_pysec_name_p_ && nrnpy_pysec_name_p_ != name) ||
+        (nrnpy_pysec_cell_p_ && nrnpy_pysec_cell_p_ != cell) ||
+        (nrnpy_pysec_cell_equals_p_ && nrnpy_pysec_cell_equals_p_ != cell_equals)) {
+        return fail("section owner hooks are already installed by another provider");
+    }
+    nrnpy_pysec_name_p_ = name;
+    nrnpy_pysec_cell_p_ = cell;
+    nrnpy_pysec_cell_equals_p_ = cell_equals;
+    return true;
+#else
+    return fail("NEURON was built without Python support");
+#endif
+}
+
+Section* nrn_section_new_owned(void* owner) {
+    // A section owned by an interface object, as NEURON's Python module creates its own:
+    // no HOC symbol, owner stored in dparam[PROP_PY_INDEX]; the name and cell
+    // come from the hooks.
+#if USE_PYTHON
+    if (!owner || !nrnpy_pysec_name_p_) {
+        return nullptr;
+    }
+    Section* sec = nrnpy_newsection(static_cast<NPySecObj*>(owner));
+    nrnpy_pysecname2sec_add(sec);
+    return sec;
+#else
+    return nullptr;
+#endif
+}
+
+void nrn_section_owned_release(Section* sec) {
+    // Called when the owner is destroyed; mirrors the Python module's section
+    // deallocation. Frees the section, or drops the reference HOC's
+    // delete_section kept if it was deleted from HOC first.
+#if USE_PYTHON
+    if (!sec) {
+        return;
+    }
+    if (sec->prop && sec->prop->dparam[PROP_PY_INDEX].get<void*>()) {
+        nrnpy_pysecname2sec_remove(sec);
+        sec->prop->dparam[PROP_PY_INDEX] = nullptr;
+        sec_free(sec->prop->dparam[8].get<hoc_Item*>());
+    } else if (!sec->prop) {
+        section_unref(sec);
+    }
+#endif
 }
 
 void nrn_section_connect(Section* child_sec, double child_x, Section* parent_sec, double parent_x) {
