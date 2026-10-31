@@ -1,5 +1,7 @@
 import os
+import select
 import sys
+import time
 
 import pytest
 
@@ -35,6 +37,24 @@ def test_kernel_maps_nl_cooked_vs_raw_pty():
         os.close(slave)
 
 
+def _read_pty_line(master, timeout=1.0):
+    """Read until a newline. One os.read can return before ONLCR posts it."""
+    data = b""
+    deadline = time.monotonic() + timeout
+    while b"\n" not in data:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            break
+        ready, _, _ = select.select([master], [], [], remaining)
+        if not ready:
+            break
+        chunk = os.read(master, 64)
+        if not chunk:
+            break
+        data += chunk
+    return data
+
+
 @pytest.mark.skipif(sys.platform == "win32", reason="termios/pty Unix only")
 def test_patched_write_inserts_cr_only_when_opost_off():
     import termios
@@ -54,7 +74,7 @@ def test_patched_write_inserts_cr_only_when_opost_off():
             install_raw_tty_newline_fix(streams=(stream,))
             stream.write("hello\n")
             stream.flush()
-            return os.read(master, 64)
+            return _read_pty_line(master)
         finally:
             if stream is not None:
                 stream.close()

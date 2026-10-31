@@ -190,7 +190,8 @@ h = hoc.HocObject()
 # while that mode is in effect, and print() then moves down without
 # returning to column 0 (CPython #129385). Emulate ONLCR only when the
 # kernel is not already doing it; never rewrite piped/MPI stdout.
-_raw_tty_newline_patched = set()
+# WeakSet, not id(): a closed stream's id can be reused by the next pty.
+_raw_tty_newline_patched = weakref.WeakSet()
 
 
 def _kernel_maps_nl_to_crnl(fd):
@@ -223,8 +224,7 @@ def install_raw_tty_newline_fix(streams=None):
     if streams is None:
         streams = (sys.stdout, sys.stderr)
     for stream in streams:
-        stream_id = id(stream)
-        if stream_id in _raw_tty_newline_patched:
+        if stream in _raw_tty_newline_patched:
             continue
         try:
             fd = stream.fileno()
@@ -241,7 +241,7 @@ def install_raw_tty_newline_fix(streams=None):
             stream.write = write
         except Exception:
             continue
-        _raw_tty_newline_patched.add(stream_id)
+        _raw_tty_newline_patched.add(stream)
 
 
 class _NEURON_INTERFACE(hoc.HocObject):
