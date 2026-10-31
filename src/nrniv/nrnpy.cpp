@@ -325,7 +325,7 @@ void nrnpython_reg() {
 }
 
 #ifdef NRNPYTHON_DYNAMICLOAD  // to end of file
-static bool python_version_at_least_312(std::string_view pyversion) {
+static bool cpython3_at_least_312(std::string_view pyversion) {
     auto const dot = pyversion.find('.');
     if (dot == std::string_view::npos) {
         return false;
@@ -333,7 +333,9 @@ static bool python_version_at_least_312(std::string_view pyversion) {
     try {
         auto const major = std::stoi(std::string{pyversion.substr(0, dot)});
         auto const minor = std::stoi(std::string{pyversion.substr(dot + 1)});
-        return major > 3 || (major == 3 && minor >= 12);
+        // The limited API here is the CPython 3 stable ABI. A future major is
+        // not covered by that guarantee.
+        return major == 3 && minor >= 12;
     } catch (...) {
         return false;
     }
@@ -362,12 +364,13 @@ static nrnpython_reg_real_t load_nrnpython() {
     if (neuron::config::python_limited_api) {
         // Limited API floor is CPython 3.12. A free-threaded build (Py_GIL_DISABLED)
         // is already rejected before libpython is loaded.
-        if (!python_version_at_least_312(pyversion)) {
+        if (!cpython3_at_least_312(pyversion)) {
             Fprintf(stderr,
-                    fmt::format("Python {} is not supported by this NEURON installation (requires "
-                                "CPython 3.12 or later with the GIL). If you set NRN_PYLIB, "
-                                "NRN_PYTHONEXE or NRN_PYTHONVERSION, try unsetting them.\n",
-                                pyversion)
+                    fmt::format(
+                        "Python {} is not supported by this NEURON installation (requires "
+                        "CPython 3.12 or a newer 3.x minor, with the GIL). If you set NRN_PYLIB, "
+                        "NRN_PYTHONEXE or NRN_PYTHONVERSION, try unsetting them.\n",
+                        pyversion)
                         .c_str());
             return nullptr;
         }

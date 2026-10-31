@@ -125,10 +125,10 @@ if sys.implementation.name != "cpython":
     )
 # Cross-version import is safe only when libnrniv is not linked to one libpython.
 if limited_api and python_dynamic:
-    if sys.version_info < (3, 12):
+    if sys.version_info[0] != 3 or sys.version_info[1] < 12:
         raise ImportError(
             "Python {} is not supported by this NEURON installation (requires CPython 3.12 "
-            "or later with the GIL).".format(current_version)
+            "or a newer 3.x minor, with the GIL).".format(current_version)
         )
 elif current_version not in supported_python_versions:
     raise ImportError(

@@ -34,10 +34,11 @@ export originalPYTHONPATH="$PYTHONPATH"
 export originalLDLIBRARYPATH="$LD_LIBRARY_PATH"
 
 # Preferred pythonX.Y names to try after python/python3.
-# limited_api and dynamic loading: any GIL CPython 3.12+ is accepted (the list
-# is a search-order hint). Otherwise only the versions this build was configured
-# with. A non-dynamic build links one libpython, so the limited API does not
-# widen this check. Non-CPython interpreters are rejected in either case.
+# limited_api and dynamic loading: any GIL CPython 3.x from 3.12 on is
+# accepted (the list is a search-order hint). A later major is not.
+# Otherwise only the versions this build was configured with. A non-dynamic
+# build links one libpython, so the limited API does not widen this check.
+# Non-CPython interpreters are rejected in either case.
 # A free-threaded build (Py_GIL_DISABLED of 1 or "1") is rejected in either
 # case. Enabling the GIL at runtime does not change that.
 _this_neuron_py_versions=(@NRN_PYTHON_VERSIONS_STRING@)
@@ -137,8 +138,8 @@ function try_python {
     return 1
   fi
   if [ "${_nrn_limited_api}" = true ] && [ "${_nrn_python_dynamic}" = true ]; then
-    if [ "${major}" -lt 3 ] || { [ "${major}" -eq 3 ] && [ "${minor}" -lt 12 ]; }; then
-      echo "# ran ${cmd_name} (${full_path}) but Python ${version} is not supported by this NEURON installation (requires CPython 3.12 or later with the GIL)."
+    if [ "${major}" -ne 3 ] || [ "${minor}" -lt 12 ]; then
+      echo "# ran ${cmd_name} (${full_path}) but Python ${version} is not supported by this NEURON installation (requires CPython 3.12 or a newer 3.x minor, with the GIL)."
       return 1
     fi
   else
