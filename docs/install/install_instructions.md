@@ -132,9 +132,11 @@ releases from:
 
 * [https://github.com/neuronsimulator/nrn/releases](https://github.com/neuronsimulator/nrn/releases)
 
-The naming convention for Windows installers is `nrn-<version-id>-mingw-py-38-39-310-311-setup.exe`.
-The `py-38-39-310-311` string in the installer name indicates that the given installer is compatible
-with Python versions 3.8, 3.9, 3.10 and 3.11. Once the installer is downloaded, you can install it
+Earlier Windows installers have names in the format `nrn-<version-id>-mingw-py-38-39-310-311-setup.exe`.
+The `py-38-39-310-311` string in that name indicates compatibility with Python versions 3.8, 3.9, 3.10, and 3.11.
+The current MinGW installer is built with ABI3 off and supports GIL-enabled CPython 3.11, 3.12, 3.13, and 3.14.
+Nightly builds are published as `nrn-nightly-AMD64.exe`. A release file uses the form `nrn-<version>.w64-mingw-py-<versions>-setup.exe`.
+Once the installer is downloaded, you can install it
 by double clicking like any other Windows application. Note that you have to install python separately
 if python support is required. You can find detailed step-by-step instructions in
 [this presentation](https://neuron.yale.edu/ftp/neuron/nrn_mswin_install.pdf).
