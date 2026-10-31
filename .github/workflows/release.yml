@@ -302,6 +302,7 @@ jobs:
     if: github.event.inputs.upload == 'true'
     needs:
       - build-windows-installer
+      - tag-n-release
     runs-on: ubuntu-latest
     steps:
       - name: Download Windows installer artifact
@@ -309,11 +310,26 @@ jobs:
         with:
           name: nrn-nightly-AMD64.exe
 
+      - name: Checkout the installer sources
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.tag-n-release.outputs.ref }}
+
       - name: Rename Windows installer
         id: rename
         run: |
-          # convert "3.12,3.13..." into "312-313-..."
-          py_version_string="$(echo "${{ github.event.inputs.python_versions }}" | sed 's/\.//g; s/,/-/g')"
+          # python_versions is the wheel matrix. The installer list is
+          # NRN_PYTHON_DYNAMIC in ci/win_build_cmake.sh (the script this ref built).
+          raw="$(sed -n "s/.*NRN_PYTHON_DYNAMIC='\([^']*\)'.*/\1/p" ci/win_build_cmake.sh)"
+          if [ -z "${raw}" ]; then
+            echo "NRN_PYTHON_DYNAMIC not found in ci/win_build_cmake.sh" >&2
+            exit 1
+          fi
+          py_version_string="$(printf '%s' "${raw}" | grep -oE 'Python[0-9]+' | sed 's/Python//' | sort -n | paste -sd-)"
+          if [ -z "${py_version_string}" ]; then
+            echo "no Python versions in NRN_PYTHON_DYNAMIC" >&2
+            exit 1
+          fi
           win_installer_name="nrn-${{ env.REL_TAG }}.w64-mingw-py-${py_version_string}-setup.exe"
           echo "win_installer_name=${win_installer_name}" >> "$GITHUB_OUTPUT"
           cp nrn-nightly-AMD64.exe "${win_installer_name}"
