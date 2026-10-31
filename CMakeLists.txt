@@ -165,6 +165,8 @@ mark_as_advanced(NRN_BINARY_DIST_BUILD)
 #                                      NRN_ENABLE_ABI3=OFF : distinct libnrnpythonX.Y per configured
 #                                      major.minor. Linked against libpython only if
 #                                      NRN_LINK_AGAINST_PYTHON is true (default on Windows).
+#                                      ABI3 and dynamic together reject that link on Unix:
+#                                      a versioned libpython is not cross-version safe.
 #                                      nrniv/special still works in the absence of Python, and
 #                                      dynamically loads libnrnpython.abi3 or libnrnpythonX.Y.
 #   - NRN_PYTHON_DYNAMIC=pythonX;... : semicolon separated list of Python versions used when
@@ -407,6 +409,20 @@ if(NRN_ENABLE_PYTHON)
     set(NRN_STABLE_ABI_ARG)
     set(NRN_PYTHON_LIMITED_API false)
     set(NRN_PYTHON_LIMITED_API_PY False)
+  endif()
+  # Windows links python3.lib (the stable import library). On Unix, NRN_DEFAULT_PYTHON_LIBRARIES is
+  # a versioned libpython.
+  if(NRN_ENABLE_PYTHON_DYNAMIC
+     AND NRN_ENABLE_ABI3
+     AND NRN_LINK_AGAINST_PYTHON
+     AND NOT WIN32)
+    message(
+      FATAL_ERROR
+        "NRN_ENABLE_ABI3=ON with NRN_ENABLE_PYTHON_DYNAMIC=ON cannot set "
+        "NRN_LINK_AGAINST_PYTHON=ON on Unix. That links nrnpython and hoc to a "
+        "versioned libpython, while the import gate treats the build as safe on "
+        "any GIL CPython 3.12 or newer 3.x. Leave NRN_LINK_AGAINST_PYTHON=OFF, or use "
+        "NRN_ENABLE_ABI3=OFF.")
   endif()
 else()
   set(NRN_ENABLE_ABI3 OFF)
