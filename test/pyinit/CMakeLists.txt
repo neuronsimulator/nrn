@@ -149,6 +149,14 @@ nrn_add_test(
   SCRIPT_PATTERNS gil_build.py
   PRELOAD_SANITIZER)
 set_property(TEST pyinit::gil_build PROPERTY PASS_REGULAR_EXPRESSION "gil-build-ok")
+# Helper only: SIP strips DYLD_INSERT_LIBRARIES before the process starts. The nrniv launch above is
+# the integration check. This one does not load hoc.
+nrn_add_test(
+  GROUP pyinit
+  NAME gil_build_preload
+  COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} gil_build.py --check-preload
+  SCRIPT_PATTERNS gil_build.py)
+set_property(TEST pyinit::gil_build_preload PROPERTY PASS_REGULAR_EXPRESSION "preload-ok")
 # With -nopython then there should be a dummy PythonObject implementation, and Python-related
 # settings should be ignored
 set(PythonObject_cmd -c "objref x" -c "x=new PythonObject()")

@@ -368,7 +368,7 @@ def main():
                         "-c",
                         "print('gil-build-should-not-run')",
                     ],
-                    env,
+                    with_sanitizer_preload(env),
                 )
                 logged = open(log, encoding="ascii").read()
                 out = text(proc)
@@ -397,7 +397,7 @@ def main():
                     "-c",
                     "import neuron\nprint('gil-build-nrniv-ok')\n",
                 ],
-                env,
+                with_sanitizer_preload(env),
             )
             if proc.returncode != 0 or b"gil-build-nrniv-ok" not in proc.stdout:
                 fail("populated NRN_PY* rejected the GIL build", proc)
