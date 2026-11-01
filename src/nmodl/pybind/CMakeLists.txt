@@ -152,10 +152,12 @@ if(NMODL_ENABLE_PYTHON_BINDINGS)
   elseif(UNIX)
     target_link_options(_nmodl PRIVATE "-Wl,--unresolved-symbols=ignore-all")
   elseif(WIN32)
-    set(_nmodl_pylib "${PYTHON_LIBRARIES}")
+    # FindPython publishes NRN_DEFAULT_PYTHON_LIBRARIES. PYTHON_LIBRARIES is the old FindPythonLibs
+    # name and is not set in this build.
+    set(_nmodl_pylib "${NRN_DEFAULT_PYTHON_LIBRARIES}")
     if(NRN_ENABLE_ABI3)
       # Limited API: python3.lib (python3.dll), not python3.XY.dll.
-      get_filename_component(_nmodl_pylib_dir "${PYTHON_LIBRARIES}" DIRECTORY)
+      get_filename_component(_nmodl_pylib_dir "${NRN_DEFAULT_PYTHON_LIBRARIES}" DIRECTORY)
       get_filename_component(_nmodl_pyprefix "${_nmodl_pylib_dir}" DIRECTORY)
       foreach(_cand "${_nmodl_pylib_dir}/python3.lib" "${_nmodl_pylib_dir}/libs/python3.lib"
                     "${_nmodl_pyprefix}/libs/python3.lib")
