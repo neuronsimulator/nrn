@@ -120,9 +120,9 @@ void OcFullMatrix::transpose(Matrix* out) {
 // As only symmetric matrix are accepted, eigenvalues are not complex
 void OcFullMatrix::symmeigen(Matrix* mout, Vect* vout) const {
     auto v1 = Vect2VEC(vout);
-    Eigen::EigenSolver<Eigen::MatrixXd> es(m_);
-    v1 = es.eigenvalues().real();
-    mout->full()->m_ = es.eigenvectors().real();
+    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(m_);
+    v1 = es.eigenvalues();
+    mout->full()->m_ = es.eigenvectors();
 }
 
 void OcFullMatrix::svd1(Matrix* u, Matrix* v, Vect* d) const {
