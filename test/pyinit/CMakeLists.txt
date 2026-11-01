@@ -157,6 +157,15 @@ nrn_add_test(
   COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} gil_build.py --check-preload
   SCRIPT_PATTERNS gil_build.py)
 set_property(TEST pyinit::gil_build_preload PROPERTY PASS_REGULAR_EXPRESSION "preload-ok")
+# nrniv -python uses code.InteractiveConsole on every build. exitmsg="" must suppress "now exiting
+# InteractiveConsole..." at EOF. -isatty runs that loop when stdin is a pipe.
+nrn_add_test(
+  GROUP pyinit
+  NAME interactive_console_eof
+  COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} interactive_console.py $<TARGET_FILE:nrniv>
+  SCRIPT_PATTERNS interactive_console.py)
+set_property(TEST pyinit::interactive_console_eof PROPERTY PASS_REGULAR_EXPRESSION
+                                                           "interactive-console-ok")
 # With -nopython then there should be a dummy PythonObject implementation, and Python-related
 # settings should be ignored
 set(PythonObject_cmd -c "objref x" -c "x=new PythonObject()")

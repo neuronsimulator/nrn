@@ -168,7 +168,7 @@ inline int nrnpy_run_interactive_console() {
         "import code as nrn_limited_code\n",
         "nrn_limited_interpreter = "
         "nrn_limited_code.InteractiveConsole(locals=globals())\n",
-        "nrn_limited_interpreter.interact(\"\")\n",
+        "nrn_limited_interpreter.interact(\"\", exitmsg=\"\")\n",
     };
     for (const char* line: lines) {
         if (nrnpy_run_simple_string(line)) {

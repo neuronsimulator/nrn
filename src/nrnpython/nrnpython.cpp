@@ -280,7 +280,7 @@ static int nrnmingw_pyrun_interactiveloop() {
     std::string lines[3]{
         "import code as nrnmingw_code\n",
         "nrnmingw_interpreter = nrnmingw_code.InteractiveConsole(locals=globals())\n",
-        "nrnmingw_interpreter.interact(\"\")\n"};
+        "nrnmingw_interpreter.interact(\"\", exitmsg=\"\")\n"};
     for (const auto& line: lines) {
         if (nrnpy_run_simple_string(line.c_str())) {
             PyErr_Print();
