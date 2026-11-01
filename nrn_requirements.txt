@@ -4,7 +4,7 @@ ipython<=8.39.0
 mpi4py<=4.1.2
 find_libpython<=0.5.1
 packaging>=22.0,<=26.3
-setuptools<=84.0.0
+setuptools<=84.2.1
 -r packaging/python/build_requirements.txt
 -r packaging/python/test_requirements.txt
 -r nmodl_requirements.txt
