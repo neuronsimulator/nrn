@@ -3193,20 +3193,38 @@ void CodegenNeuronCppVisitor::visit_for_netcon(const ast::ForNetcon& node) {
     printer->pop_block();
 }
 
-void CodegenNeuronCppVisitor::visit_lag_statement(const ast::LagStatement& node) {
-    // nocmodl lag_stmt. The history lives in scopmath::lag and is keyed by the
-    // address of the variable, so pass the instance slot rather than a local.
-    // lag_<var>_<by> is a function-local static: the MOD file reads that name
-    // later in the same call, and it is not a RANGE variable.
+std::pair<std::string, std::string> CodegenNeuronCppVisitor::lag_declaration_and_assignment(
+    const ast::LagStatement& node) {
+    // scopmath::lag keeps the history, keyed by the address of the variable.
+    // The MOD file reads lag_<var>_<by> later; that name is not a RANGE slot.
     const auto var_name = node.get_name()->get_node_name();
     const auto by_name = node.get_byname()->get_node_name();
     const auto lag_var = fmt::format("lag_{}_{}", var_name, by_name);
-    printer->fmt_text("static double {}; {} = *lag(&({}), {}, {}, 0)",
-                      lag_var,
-                      lag_var,
-                      get_variable_name(var_name),
-                      get_variable_name("t"),
-                      get_variable_name(by_name));
+    const auto [is_array, array_length] = check_if_var_is_array(var_name);
+    const auto time_name = get_variable_name("t");
+    const auto by_var = get_variable_name(by_name);
+    if (is_array) {
+        // get_variable_name is already the instance pointer (inst.x+id*n).
+        // nocmodl passes that pointer and the array dimension.
+        const auto declaration = fmt::format("static double* {}", lag_var);
+        const auto assignment = fmt::format("{} = lag({}, {}, {}, {})",
+                                            lag_var,
+                                            get_variable_name(var_name),
+                                            time_name,
+                                            by_var,
+                                            array_length);
+        return {declaration, assignment};
+    }
+    const auto declaration = fmt::format("static double {}", lag_var);
+    const auto assignment = fmt::format(
+        "{} = *lag(&({}), {}, {}, 0)", lag_var, get_variable_name(var_name), time_name, by_var);
+    return {declaration, assignment};
+}
+
+
+void CodegenNeuronCppVisitor::visit_lag_statement(const ast::LagStatement& node) {
+    const auto [declaration, assignment] = lag_declaration_and_assignment(node);
+    printer->fmt_text("{}; {}", declaration, assignment);
 }
 
 

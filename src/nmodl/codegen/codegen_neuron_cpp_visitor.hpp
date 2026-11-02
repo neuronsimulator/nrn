@@ -855,6 +855,15 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
     void visit_protect_statement(const ast::ProtectStatement& node) override;
     void visit_lag_statement(const ast::LagStatement& node) override;
 
+    /**
+     * nocmodl lag_stmt. The first string is the static result
+     * (`static double` or `static double*`). The second is the assignment
+     * at the LAG statement. An array passes its dimension to scopmath::lag
+     * and keeps the pointer; a scalar passes 0 and dereferences it.
+     */
+    std::pair<std::string, std::string> lag_declaration_and_assignment(
+        const ast::LagStatement& node);
+
   public:
     /****************************************************************************************/
     /*          Public printing routines for code generation for use in unit tests          */

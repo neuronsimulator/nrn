@@ -8,6 +8,13 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
+#include <cstdlib>
+#include <filesystem>
+#include <fstream>
+#ifndef _WIN32
+#include <unistd.h>
+#endif
+
 #include "ast/program.hpp"
 #include "codegen/codegen_neuron_cpp_visitor.hpp"
 #include "parser/nmodl_driver.hpp"
@@ -249,6 +256,37 @@ SCENARIO("ARTIFICIAL_CELL with `net_move`") {
     }
 }
 
+/// Compile the generated translation unit. A string match does not show that
+/// the LAG expression is valid C++.
+void require_generated_cpp_compiles(const std::string& cpp) {
+#ifndef _WIN32
+    namespace fs = std::filesystem;
+    static int sequence = 0;
+    const auto dir = fs::temp_directory_path() /
+                     ("nmodl-lag-" + std::to_string(::getpid()) + "-" + std::to_string(sequence++));
+    fs::create_directories(dir);
+    const auto source = dir / "lag.cpp";
+    const auto log = dir / "compile.log";
+    {
+        std::ofstream out(source);
+        out << cpp;
+    }
+    const std::string command = std::string("\"") + NRN_CXX_FOR_CODEGEN_TEST + "\" " +
+                                NRN_CODEGEN_SYNTAX_FLAGS + " -I\"" + NRN_BUILD_INCLUDE_DIR +
+                                "\" \"" + source.string() + "\" >\"" + log.string() + "\" 2>&1";
+    const int status = std::system(command.c_str());
+    std::ifstream log_in(log);
+    std::string log_text((std::istreambuf_iterator<char>(log_in)),
+                         std::istreambuf_iterator<char>());
+    fs::remove_all(dir);
+    if (status != 0) {
+        FAIL(command + "\n" + log_text);
+    }
+#else
+    (void) cpp;
+#endif
+}
+
 /// Text of one generated function, from its signature up to the next
 /// `static void` definition. Namespace indentation means that marker is not
 /// at column 0.
@@ -437,6 +475,35 @@ SCENARIO("LAG inside BEFORE STEP calls scopmath lag", "[codegen][ba]") {
                          ContainsSubstring("static double lag_v_dur; lag_v_dur = "
                                            "*lag(&(inst.v_unused[id]), nt->_t, inst.dur[id], 0);"));
             REQUIRE_THAT(body, ContainsSubstring("inst.x[id] = lag_v_dur"));
+            require_generated_cpp_compiles(cpp);
+        }
+    }
+}
+
+SCENARIO("Array LAG keeps the pointer and the dimension", "[codegen][ba][lag]") {
+    GIVEN("ASSIGNED x[2] and LAG x BY dur") {
+        std::string nmodl = R"(
+            NEURON {
+                SUFFIX lagarr
+                RANGE y, dur
+            }
+            PARAMETER { dur = 1 }
+            ASSIGNED { x[2] y }
+            BEFORE STEP {
+                LAG x BY dur
+                y = lag_x_dur[0]
+            }
+        )";
+        std::string cpp = transpile(nmodl);
+        const auto body = generated_function(cpp, "nrn_before_after_0_lagarr");
+
+        THEN("the result is a pointer, as in nocmodl lag_stmt") {
+            REQUIRE_THAT(body,
+                         ContainsSubstring("static double* lag_x_dur; lag_x_dur = "
+                                           "lag((inst.x+id*2), nt->_t, inst.dur[id], 2);"));
+            REQUIRE_THAT(body, !ContainsSubstring("&((inst.x"));
+            REQUIRE_THAT(body, ContainsSubstring("lag_x_dur[static_cast<int>(0)]"));
+            require_generated_cpp_compiles(cpp);
         }
     }
 }
