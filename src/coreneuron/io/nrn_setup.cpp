@@ -186,7 +186,7 @@ void nrn_read_filesdat(int& ngrp, int*& grp, const char* filesdat) {
     }
 
     char version[256];
-    nrn_assert(fscanf(fp, "%s\n", version) == 1);
+    read_bbcore_token(fp, version, sizeof(version));
     check_bbcore_write_version(version);
 
     int iNumFiles = 0;

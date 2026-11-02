@@ -3,27 +3,17 @@
 :: install all dependencies
 
 :: install python
-python-3.10.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\Python310 || goto :error
 python-3.11.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\Python311 || goto :error
 python-3.12.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\Python312 || goto :error
 python-3.13.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\Python313 || goto :error
 python-3.14.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\Python314 || goto :error
 
-:: fix msvcc version for all python3
-pwsh -command "(Get-Content C:\Python310\Lib\distutils\cygwinccompiler.py) -replace 'elif msc_ver == ''1600'':', 'elif msc_ver == ''1929'':' | Out-File C:\Python310\Lib\distutils\cygwinccompiler.py"
-pwsh -command "(Get-Content C:\Python311\Lib\distutils\cygwinccompiler.py) -replace 'elif msc_ver == ''1600'':', 'elif msc_ver == ''1934'':' | Out-File C:\Python311\Lib\distutils\cygwinccompiler.py"
-
-
-:: fix msvc runtime library for all python
-pwsh -command "(Get-Content C:\Python310\Lib\distutils\cygwinccompiler.py) -replace 'msvcr100', 'msvcrt' | Out-File C:\Python310\Lib\distutils\cygwinccompiler.py"
-pwsh -command "(Get-Content C:\Python311\Lib\distutils\cygwinccompiler.py) -replace 'msvcr100', 'msvcrt' | Out-File C:\Python311\Lib\distutils\cygwinccompiler.py"
-
 :: install numpy
-C:\Python310\python.exe -m pip install "numpy<=2.2.3" "cython<=3.0.12" || goto :error
-C:\Python311\python.exe -m pip install "numpy<=2.2.3" "cython<=3.0.12" || goto :error
-C:\Python312\python.exe -m pip install "numpy<=2.2.3" "cython<=3.0.12" || goto :error
-C:\Python313\python.exe -m pip install "numpy<=2.2.3" "cython<=3.0.12" || goto :error
-C:\Python314\python.exe -m pip install "numpy>=2.3.2,<=2.3.3" "cython<=3.0.12" || goto :error
+C:\Python311\python.exe -m pip install "numpy<=2.2.3" "cython>=3.1,<=3.3.0" || goto :error
+C:\Python312\python.exe -m pip install "numpy<=2.2.3" "cython>=3.1,<=3.3.0" || goto :error
+C:\Python313\python.exe -m pip install "numpy<=2.2.3" "cython>=3.1,<=3.3.0" || goto :error
+C:\Python314\python.exe -m pip install "numpy>=2.3.2,<=2.3.3" "cython>=3.1,<=3.3.0" || goto :error
+C:\Python311\python.exe -m pip install "setuptools<=80.8.0" || goto :error
 C:\Python312\python.exe -m pip install "setuptools<=80.8.0" || goto :error
 C:\Python313\python.exe -m pip install "setuptools<=80.8.0" || goto :error
 C:\Python314\python.exe -m pip install "setuptools<=80.8.0" || goto :error
@@ -54,7 +44,26 @@ set PATH=%MSYS2_ROOT%\usr\bin;%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\Sy
 :: update pacman cache (sometimes required when new GH/Azure runner images are deployed)
 :: %MSYS2_ROOT%\usr\bin\pacman -Syy
 
-%MSYS2_ROOT%\usr\bin\pacman --noconfirm --needed -S --disable-download-timeout ^
+:: Mirrors often answer 429. Retry the same install; a failed download does not commit.
+set "pacman_ok="
+for /L %%i in (1,1,4) do (
+  if not defined pacman_ok (
+    echo pacman attempt %%i of 4
+    call :pacman_install && set "pacman_ok=1"
+    if not defined pacman_ok if %%i lss 4 (
+      echo pacman failed, pausing 30 seconds before retry
+      "%MSYS2_ROOT%\usr\bin\bash.exe" -lc "rm -f /var/lib/pacman/db.lck"
+      "%MSYS2_ROOT%\usr\bin\bash.exe" -lc "sleep 30"
+    )
+  )
+)
+if not defined pacman_ok goto :error
+
+:: if all goes well, go to end
+goto :EOF
+
+:pacman_install
+"%MSYS2_ROOT%\usr\bin\pacman" --noconfirm --needed -S --disable-download-timeout ^
 cmake ^
 git ^
 zip ^
@@ -69,10 +78,8 @@ mingw-w64-x86_64-python-setuptools ^
 mingw-w64-x86_64-python-packaging ^
 mingw-w64-x86_64-python-pip ^
 mingw64/mingw-w64-x86_64-dlfcn ^
-mingw-w64-x86_64-toolchain || goto :error
-
-:: if all goes well, go to end
-goto :EOF
+mingw-w64-x86_64-toolchain
+exit /b
 
 :: something has failed, teminate with error code
 :error

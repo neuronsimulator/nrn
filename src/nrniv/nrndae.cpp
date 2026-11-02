@@ -163,12 +163,12 @@ NrnDAE::NrnDAE(Matrix* cmat,
         cmat = assumed_identity_;
     }
     c_ = new MatrixMap(cmat);
-    Vect& elay = *elayer;
     nnode_ = nnode;
     nodes_ = nodes;
     if (nnode_ > 0) {
         elayer_ = new int[nnode_];
         if (elayer) {
+            Vect& elay = *elayer;
             for (int i = 0; i < nnode_; ++i) {
                 elayer_[i] = int(elay[i]);
             }
