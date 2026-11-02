@@ -1,0 +1,31 @@
+# Throwaway. A push of hines-grok/msvc-win-wheels runs only the windows-2022
+# wheel build and test jobs. Do not open a pull request, and do not copy this
+# file onto hines-grok/msvc-portability: that push starts the full CI matrix.
+name: MSVC Windows wheels
+
+on:
+  push:
+    branches:
+      - hines-grok/msvc-win-wheels
+
+concurrency:
+  group: msvc-win-wheels-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows-311:
+    name: windows-2022 Python 3.11
+    uses: ./.github/workflows/wheels-template.yml
+    with:
+      platform: windows-2022
+      python_version: '3.11'
+      commit: ${{ github.sha }}
+      clone_depth: '0'
+  windows-312:
+    name: windows-2022 Python 3.12
+    uses: ./.github/workflows/wheels-template.yml
+    with:
+      platform: windows-2022
+      python_version: '3.12'
+      commit: ${{ github.sha }}
+      clone_depth: '0'
