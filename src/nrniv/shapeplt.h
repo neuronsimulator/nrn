@@ -9,7 +9,7 @@ class ShapePlotImpl;
 class SectionList;
 
 
-class ShapePlotInterface {
+struct ShapePlotInterface {
   public:
     virtual void scale(float min, float max) = 0;
     virtual const char* varname() const = 0;
@@ -20,6 +20,7 @@ class ShapePlotInterface {
     virtual float high() = 0;
     virtual Object* neuron_section_list() = 0;
     virtual bool has_iv_view() = 0;
+    virtual ~ShapePlotInterface() = default;
 };
 
 class ShapePlotData: public ShapePlotInterface {

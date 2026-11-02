@@ -8,8 +8,9 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
-#include <pybind11/embed.h>
-#include <pybind11/stl.h>
+#include <nanobind/eval.h>
+#include <nanobind/nanobind.h>
+#include <nanobind/stl/string.h>
 
 #include "ast/program.hpp"
 #include "codegen/codegen_coreneuron_cpp_visitor.hpp"
@@ -45,14 +46,10 @@ using nmodl::parser::NmodlDriver;
 // SympySolver visitor tests
 //=============================================================================
 
-std::vector<std::string> run_sympy_solver_visitor(
-    const std::string& text,
-    bool pade = false,
-    bool cse = false,
-    AstNodeType ret_nodetype = AstNodeType::DIFF_EQ_EXPRESSION,
-    bool kinetic = false) {
-    std::vector<std::string> results;
-
+auto run_sympy_solver_visitor_ast(const std::string& text,
+                                  bool pade = false,
+                                  bool cse = false,
+                                  bool kinetic = false) {
     // construct AST from text
     NmodlDriver driver;
     const auto& ast = driver.parse_string(text);
@@ -75,6 +72,19 @@ std::vector<std::string> run_sympy_solver_visitor(
 
     // check that, after visitor rearrangement, parents are still up-to-date
     CheckParentVisitor().check_ast(*ast);
+
+    return ast;
+}
+
+std::vector<std::string> run_sympy_solver_visitor(
+    const std::string& text,
+    bool pade = false,
+    bool cse = false,
+    AstNodeType ret_nodetype = AstNodeType::DIFF_EQ_EXPRESSION,
+    bool kinetic = false) {
+    std::vector<std::string> results;
+
+    const auto& ast = run_sympy_solver_visitor_ast(text, pade, cse, kinetic);
 
     // run lookup visitor to extract results from AST
     for (const auto& eq: collect_nodes(*ast, {ret_nodetype})) {
@@ -129,11 +139,14 @@ bool is_unique_vars(std::string result) {
 void compare_blocks(const std::string& result,
                     const std::string& expected,
                     const bool require_fail = false) {
-    using namespace pybind11::literals;
-
-    auto locals =
-        pybind11::dict("result"_a = result, "expected"_a = expected, "is_equal"_a = false);
-    pybind11::exec(R"(
+    namespace nb = nanobind;
+    nb::dict locals;
+    locals["result"] = result;
+    locals["expected"] = expected;
+    locals["is_equal"] = false;
+    nb::object main_mod = nb::module_::import_("__main__");
+    nb::object globals = main_mod.attr("__dict__");
+    nb::exec(R"(
                     # Comments are in the doxygen for better highlighting
                     def compare_blocks(result, expected):
     
@@ -215,11 +228,11 @@ void compare_blocks(const std::string& result,
                         return compare_systems_of_eq(result_dict, expected_dict)
 
                     is_equal = compare_blocks(result, expected))",
-                   pybind11::globals(),
-                   locals);
+             globals,
+             locals);
 
     // Error log
-    if (require_fail == locals["is_equal"].cast<bool>()) {
+    if (require_fail == nb::cast<bool>(locals["is_equal"])) {
         if (require_fail) {
             REQUIRE(result != expected);
         } else {
@@ -1932,6 +1945,27 @@ SCENARIO("Solve KINETIC block using SympySolver Visitor", "[visitor][solver][sym
             REQUIRE_NOTHROW(result = run_sympy_solver_visitor(
                                 nmodl_text, false, false, AstNodeType::DERIVATIVE_BLOCK, true));
             compare_blocks(reindent_text(result[0]), reindent_text(expected_text));
+        }
+    }
+}
+
+SCENARIO("Replace unimplementable cnexp solution with derivimplicit solution",
+         "[visitor][sympy][cnexp][derivimplicit]") {
+    GIVEN("Derivative block that has a LambertW analytic solution") {
+        std::string nmodl_text = R"(
+            STATE {
+                a
+            }
+            BREAKPOINT  {
+                SOLVE states METHOD cnexp
+            }
+            DERIVATIVE states {
+                a' = -a/(1 + a)
+            }
+        )";
+        THEN("The method has been replaced with derivimplicit") {
+            const auto& result = run_sympy_solver_visitor_ast(nmodl_text);
+            REQUIRE_THAT(to_nmodl(result), Catch::Matchers::ContainsSubstring("derivimplicit"));
         }
     }
 }

@@ -6,6 +6,7 @@
  */
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "ast/program.hpp"
 #include "parser/nmodl_driver.hpp"
@@ -300,6 +301,55 @@ SCENARIO("RANGE and FUNCTION/PROCEDURE block", "[visitor][semantic_analysis]") {
         )";
         THEN("Semantic analysis should fail") {
             REQUIRE(run_semantic_analysis_visitor(nmodl_text));
+        }
+    }
+}
+
+SCENARIO("FUNCTION block that does not return anything must raise a warning",
+         "[visitor][semantic_analysis]") {
+    GIVEN("A mod file with a FUNCTION that does not return anything") {
+        std::string nmodl_text = R"(
+            FUNCTION asdf() {
+            }
+        )";
+        THEN("Semantic analysis should raise a warning") {
+            auto capture = test_utils::LoggerCapture();
+            run_semantic_analysis_visitor(nmodl_text);
+            REQUIRE_THAT(capture.output(),
+                         Catch::Matchers::ContainsSubstring("does not have a return statement"));
+        }
+    }
+    GIVEN("A mod file with a FUNCTION that does not return anything and VERBATIM block") {
+        std::string nmodl_text = R"(
+            FUNCTION asdf() {
+                VERBATIM
+                _lasdf = 1;
+                ENDVERBATIM
+            }
+        )";
+        THEN("Semantic analysis should raise a warning") {
+            auto capture = test_utils::LoggerCapture();
+            run_semantic_analysis_visitor(nmodl_text);
+            REQUIRE_THAT(capture.output(),
+                         Catch::Matchers::ContainsSubstring(
+                             "possible return statement in VERBATIM block"));
+        }
+    }
+}
+
+SCENARIO("Duplicate names in a MOD file should throw an error", "[visitor][semantic_analysis]") {
+    GIVEN("A mod file with a PROCEDURE and RANGE variable with the same name") {
+        std::string nmodl_text = R"(
+            NEURON {
+                RANGE name
+            }
+            PROCEDURE name() {}
+        )";
+        THEN("Semantic analysis should throw an error") {
+            auto capture = test_utils::LoggerCapture();
+            REQUIRE(run_semantic_analysis_visitor(nmodl_text));
+            REQUIRE_THAT(capture.output(),
+                         Catch::Matchers::ContainsSubstring("Duplicate name(s) found: name"));
         }
     }
 }

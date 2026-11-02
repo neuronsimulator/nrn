@@ -7,11 +7,13 @@ _h_ptrvector = h.PtrVector
 
 
 class RangeVar:
-    def __init__(self, name):
+    __slots__ = ("_name", "_ptr_vector", "_locs", "_pv")
+
+    def __init__(self, name: str) -> None:
         self._name = name
         self._ptr_vector = None
 
-    def _init_ptr_vectors(self, nodes):
+    def _init_ptr_vectors(self, nodes) -> None:
         # TODO: make sure this gets changed everytime there is a structurechange event
         #       or everytime the nodes change
         ptrs = []
@@ -32,7 +34,7 @@ class RangeVar:
             pv_pset(i, ptr)
         self._pv = pv
 
-    def _rangevar_vec(self):
+    def _rangevar_vec(self) -> numpy.ndarray:
         pv = self._pv
         result = _numpy_zeros(pv.size())
         vec = _h_vector(pv.size())

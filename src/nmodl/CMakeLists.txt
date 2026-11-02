@@ -1,4 +1,5 @@
 include(${PROJECT_SOURCE_DIR}/cmake/nmodl/FlexHelper.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/nmodl/CompilerHelper.cmake)
 include_directories(${NMODL_PROJECT_PLATLIB_SOURCE_DIR} ${NMODL_PROJECT_PLATLIB_BINARY_DIR})
 
 list(APPEND NMODL_EXTRA_CXX_FLAGS ${NRN_SANITIZER_COMPILER_FLAGS})
@@ -64,6 +65,7 @@ add_custom_command(
   DEPENDS ${CODE_GENERATOR_JINJA_FILES}
   DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/language/code_generator_opts
   COMMENT "-- NMODL : GENERATING AST CLASSES WITH PYTHON GENERATOR! --")
+add_custom_target(nmodl_gen_sources DEPENDS ${NMODL_GENERATED_SOURCES})
 unset(CODE_GENERATOR_OPTS)
 
 # -----------------------------------------------------------------------------
@@ -75,6 +77,9 @@ add_custom_target(pyastgen DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/ast/ast.cpp)
 # Add extra compile flags to NMODL sources
 # =============================================================================
 add_compile_options(${NMODL_EXTRA_CXX_FLAGS})
+if(NMODL_COMPILER_WARNING_SUPPRESSIONS)
+  add_compile_options(${NMODL_COMPILER_WARNING_SUPPRESSIONS})
+endif()
 add_link_options(${NMODL_EXTRA_CXX_FLAGS})
 
 add_subdirectory(codegen)
@@ -91,7 +96,7 @@ add_subdirectory(solver)
 # =============================================================================
 # NMODL sources
 # =============================================================================
-include_directories(${PYBIND11_INCLUDE_DIR} ${PYTHON_INCLUDE_DIRS})
+include_directories(${NRN_DEFAULT_PYTHON_INCLUDES})
 
 # =============================================================================
 # Add executables
@@ -101,7 +106,7 @@ target_link_libraries(
   nmodl
   CLI11::CLI11
   printer
-  codegen
+  nmodl_codegen
   visitor
   symtab
   util
@@ -125,13 +130,22 @@ endif()
 # =============================================================================
 # Install executable
 # =============================================================================
+set(NMODL_INSTALL_DIR_SUFFIX ${NRN_INSTALL_DATA_PREFIX})
+
 install(
   TARGETS nmodl
   EXPORT nmodlTargets
   RUNTIME DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}bin)
 
-configure_file(${PROJECT_SOURCE_DIR}/share/nmodl/nrnunits.lib
-               ${CMAKE_CURRENT_BINARY_DIR}/share/nmodl/nrnunits.lib COPYONLY)
+set(nrnunits_start "")
+set(nrnunits_stop "")
+configure_file(${PROJECT_SOURCE_DIR}/share/nmodl/nrnunits.lib.in
+               ${CMAKE_CURRENT_BINARY_DIR}/share/nmodl/nrnunits.lib @ONLY)
+set(nrnunits_start "R\"nrnunits(")
+set(nrnunits_stop ")nrnunits\"")
+configure_file(${PROJECT_SOURCE_DIR}/share/nmodl/nrnunits.lib.in
+               ${PROJECT_BINARY_DIR}/share/nmodl/embedded_nrnunits.lib @ONLY)
+
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/share/nmodl/nrnunits.lib
         DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}share/nmodl)
 
@@ -164,6 +178,7 @@ message(STATUS " Build option       | Status")
 message(STATUS "--------------------+--------------------------------------------------------")
 message(STATUS "CXX COMPILER        | ${CMAKE_CXX_COMPILER}")
 message(STATUS "COMPILE FLAGS       | ${COMPILER_FLAGS}")
+message(STATUS "EXTRA FLAGS         | ${NMODL_EXTRA_CXX_FLAGS}")
 message(STATUS "Build Type          | ${CMAKE_BUILD_TYPE}")
 message(STATUS "Python Bindings     | ${NMODL_ENABLE_PYTHON_BINDINGS}")
 message(STATUS "Flex                | ${FLEX_EXECUTABLE}")

@@ -147,7 +147,23 @@ void OcJump::execute_throw_on_exception(Symbol* sym, int narg) {
     saved_state before{};
     try_catch_depth_increment tell_children_we_will_catch{};
     try {
-        hoc_pushx(hoc_call_func(sym, narg));
+        hoc_call_func_result_on_stack(sym, narg);
+    } catch (...) {
+        before.restore();
+        throw;
+    }
+}
+
+extern Object* hoc_newobj1(Symbol*, int);
+
+Object* OcJump::newobj_throw_on_exception(Symbol* sym, int narg) {
+    // Construct an object, restoring interpreter state (including the stack) if
+    // the HOC constructor errors, so a caller can catch the exception without
+    // leaving the stack dirty. Same pattern as execute_throw_on_exception.
+    saved_state before{};
+    try_catch_depth_increment tell_children_we_will_catch{};
+    try {
+        return hoc_newobj1(sym, narg);
     } catch (...) {
         before.restore();
         throw;

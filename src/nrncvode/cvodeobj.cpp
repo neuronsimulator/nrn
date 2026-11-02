@@ -6,11 +6,10 @@
 void cvode_finitialize();
 extern void (*nrn_multisplit_setup_)();
 
-extern int hoc_return_type_code;
-
 #include <cmath>
 #include <cstdlib>
 #include "classreg.h"
+#include "code.h"
 #include "nrnoc2iv.h"
 #include "datapath.h"
 #include "cvodeobj.h"
@@ -21,6 +20,7 @@ extern int hoc_return_type_code;
 #include "nrndaspk.h"
 #include "nrniv_mf.h"
 #include "nrnpy.h"
+#include "objcmd.h"
 #include "tqueue.hpp"
 #include "mymath.h"
 #include <nrnmutdec.h>
@@ -116,7 +116,7 @@ static double spikestat(void* v) {
     return 0;
 }
 static double queue_mode(void* v) {
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     if (ifarg(1)) {
         nrn_use_bin_queue_ = chkarg(1, 0, 1) ? true : false;
     }
@@ -197,7 +197,7 @@ static double active(void* v) {
             static_cast<NetCvode*>(v)->re_init(nt_t);
         }
     }
-    hoc_return_type_code = 2;  // boolean
+    hoc_return_type_code = HocReturnType::boolean;
     return cvode_active_;
 }
 static double stiff(void* v) {
@@ -205,7 +205,7 @@ static double stiff(void* v) {
     if (ifarg(1)) {
         d->stiff((int) chkarg(1, 0, 2));
     }
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     return double(d->stiff());
 }
 static double maxorder(void* v) {
@@ -213,13 +213,13 @@ static double maxorder(void* v) {
     if (ifarg(1)) {
         d->maxorder((int) chkarg(1, 0, 5));
     }
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     return d->maxorder();
 }
 static double order(void* v) {
     NetCvode* d = (NetCvode*) v;
     int i = 0;
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     if (ifarg(1)) {
         // only thread 0
         i = int(chkarg(1, 0, d->p->nlcv_ - 1));
@@ -248,7 +248,7 @@ static double jacobian(void* v) {
     if (ifarg(1)) {
         d->jacobian((int) chkarg(1, 0, 2));
     }
-    hoc_return_type_code = 1;  // int
+    hoc_return_type_code = HocReturnType::integer;
     return double(d->jacobian());
 }
 
@@ -294,7 +294,7 @@ static double statename(void* v) {
 
 static double use_local_dt(void* v) {
     NetCvode* d = (NetCvode*) v;
-    hoc_return_type_code = 2;  // boolean
+    hoc_return_type_code = HocReturnType::boolean;
     if (ifarg(1)) {
         int i = (int) chkarg(1, 0, 1);
         d->localstep(i);
@@ -304,7 +304,7 @@ static double use_local_dt(void* v) {
 
 static double use_daspk(void* v) {
     NetCvode* d = (NetCvode*) v;
-    hoc_return_type_code = 2;  // boolean
+    hoc_return_type_code = HocReturnType::boolean;
     if (ifarg(1)) {
         int i = (int) chkarg(1, 0, 1);
         if ((i != 0) != d->use_daspk()) {
@@ -325,7 +325,7 @@ static double dae_init_dteps(void* v) {
 }
 
 static double use_mxb(void* v) {
-    hoc_return_type_code = 2;  // boolean
+    hoc_return_type_code = HocReturnType::boolean;
     if (ifarg(1)) {
         int i = (int) chkarg(1, 0, 1);
         if (use_sparse13 != i) {
@@ -339,13 +339,13 @@ static double use_mxb(void* v) {
 static double cache_efficient(void* v) {
     // Perhaps a warning on cache_efficient(True) and an error on cache_efficient(False) would be
     // justified.
-    hoc_return_type_code = 2;  // boolean
+    hoc_return_type_code = HocReturnType::boolean;
     return 1.0;
 }
 
 static double use_long_double(void* v) {
     NetCvode* d = (NetCvode*) v;
-    hoc_return_type_code = 2;  // boolean
+    hoc_return_type_code = HocReturnType::boolean;
     if (ifarg(1)) {
         int i = (int) chkarg(1, 0, 1);
         d->use_long_double_ = i;
@@ -360,7 +360,7 @@ static double condition_order(void* v) {
         int i = (int) chkarg(1, 1, 2);
         d->condition_order(i);
     }
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     return (double) d->condition_order();
 }
 
@@ -370,7 +370,7 @@ static double debug_event(void* v) {
         int i = (int) chkarg(1, 0, 10);
         d->print_event_ = i;
     }
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     return (double) d->print_event_;
 }
 
@@ -432,7 +432,7 @@ static double tstop_event(void* v) {
 
 static double current_method(void* v) {
     NetCvode* d = (NetCvode*) v;
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     int modeltype = nrn_modeltype();
     int methodtype = secondorder;  // 0, 1, or 2
     int localtype = 0;
@@ -492,24 +492,24 @@ static double use_parallel(void* v) {
 }
 
 static double nrn_structure_change_count(void* v) {
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     return double(structure_change_cnt);
 }
 
 static double nrn_diam_change_count(void* v) {
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     return double(diam_change_cnt);
 }
 
-using ExtraScatterList = std::vector<Object*>;
+using ExtraScatterList = std::vector<HocCommand*>;
 static ExtraScatterList* extra_scatterlist[2];  // 0 scatter, 1 gather
 
 void nrn_extra_scatter_gather(int direction, int tid) {
     ExtraScatterList* esl = extra_scatterlist[direction];
     if (esl) {
         nrn_thread_error("extra_scatter_gather not allowed with multiple threads");
-        for (Object* callable: *esl) {
-            if (!neuron::python::methods.hoccommand_exec(callable)) {
+        for (HocCommand* callable: *esl) {
+            if (!callable->execute()) {
                 hoc_execerror("extra_scatter_gather runtime error", 0);
             }
         }
@@ -518,29 +518,44 @@ void nrn_extra_scatter_gather(int direction, int tid) {
 
 static double extra_scatter_gather(void* v) {
     int direction = int(chkarg(1, 0, 1));
-    Object* o = *hoc_objgetarg(2);
-    check_obj_type(o, "PythonObject");
     ExtraScatterList* esl = extra_scatterlist[direction];
     if (!esl) {
         esl = new ExtraScatterList;
         extra_scatterlist[direction] = esl;
     }
-    esl->push_back(o);
-    hoc_obj_ref(o);
+    if (hoc_is_object_arg(2)) {
+        Object* o = *hoc_objgetarg(2);
+        check_obj_type(o, "PythonObject");
+        esl->push_back(new HocCommand(o));
+    } else {
+        esl->push_back(new HocCommand(gargstr(2)));
+    }
     return 0.;
 }
 
 static double extra_scatter_gather_remove(void* v) {
-    Object* o = *hoc_objgetarg(1);
+    Object* o = nullptr;
+    const char* command = nullptr;
+    if (hoc_is_object_arg(1)) {
+        o = *hoc_objgetarg(1);
+        check_obj_type(o, "PythonObject");
+    } else {
+        command = gargstr(1);
+    }
     for (int direction = 0; direction < 2; ++direction) {
         ExtraScatterList* esl = extra_scatterlist[direction];
         if (esl) {
             for (auto it = esl->begin(); it != esl->end();) {
-                Object* o1 = *it;
-                // if esl exists then python exists
-                if (neuron::python::methods.pysame(o, o1)) {
+                HocCommand* command_object = *it;
+                bool matches = false;
+                if (o && command_object->pyobject()) {
+                    matches = neuron::python::methods.pysame(o, command_object->pyobject());
+                } else if (command && !command_object->pyobject()) {
+                    matches = strcmp(command, command_object->name()) == 0;
+                }
+                if (matches) {
                     it = esl->erase(it);
-                    hoc_obj_unref(o1);
+                    delete command_object;
                 } else {
                     ++it;
                 }
@@ -552,7 +567,7 @@ static double extra_scatter_gather_remove(void* v) {
 
 static double use_fast_imem(void* v) {
     auto i = nrn_use_fast_imem;
-    hoc_return_type_code = 2;  // boolean
+    hoc_return_type_code = HocReturnType::boolean;
     if (ifarg(1)) {
         nrn_use_fast_imem = chkarg(1, 0., 1.);
         nrn_fast_imem_alloc();
@@ -1050,6 +1065,11 @@ void NetCvode::set_CVRhsFn() {
     }
 }
 
+static Section* cv_rootsec(const Cvode* cv) {
+    NrnThread* nt = cv->nth_ ? cv->nth_ : nrn_threads;
+    return nt->_v_node[cv->ctd_[0].vnode_begin_index_]->sec;
+}
+
 int Cvode::cvode_init(double) {
     int err = SUCCESS;
     // note, a change in stiff_ due to call of stiff() destroys mem_
@@ -1062,7 +1082,7 @@ int Cvode::cvode_init(double) {
         if (err != SUCCESS) {
             Printf("Cvode %p %s CVReInit error %d\n",
                    fmt::ptr(this),
-                   secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec),
+                   secname(cv_rootsec(this)),
                    err);
             return err;
         }
@@ -1078,7 +1098,7 @@ int Cvode::cvode_init(double) {
         if (err != SUCCESS) {
             Printf("Cvode %p %s CVodeMalloc error %d\n",
                    fmt::ptr(this),
-                   secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec),
+                   secname(cv_rootsec(this)),
                    err);
             return err;
         }
@@ -1317,7 +1337,7 @@ int Cvode::cvode_advance_tn(neuron::model_sorted_token const& sorted_token) {
     if (err < 0) {
         Printf("CVode %p %s advance_tn failed, err=%d.\n",
                fmt::ptr(this),
-               secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec),
+               secname(cv_rootsec(this)),
                err);
         pf_(t_, y_, nullptr, &opaque);
         return err;
@@ -1360,7 +1380,7 @@ int Cvode::cvode_interpolate(double tout) {
     if (err < 0) {
         Printf("CVode %p %s interpolate failed, err=%d.\n",
                fmt::ptr(this),
-               secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec),
+               secname(cv_rootsec(this)),
                err);
         return err;
     }
@@ -1404,7 +1424,7 @@ void Cvode::statistics() {
 #if 1
     Printf("\nCvode instance %p %s statistics : %d %s states\n",
            fmt::ptr(this),
-           secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec),
+           secname(cv_rootsec(this)),
            neq_,
            (use_daspk_ ? "IDA" : "CVode"));
     Printf("   %d advance_tn, %d interpolate, %d init (%d due to at_time)\n",

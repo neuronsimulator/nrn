@@ -302,5 +302,9 @@ bool is_nrn_pointing(const std::string& name) {
     return name == codegen::naming::NRN_POINTING_METHOD;
 }
 
+bool is_nrn_state_disc(const std::string& name) {
+    return name == codegen::naming::NRN_STATE_DISC_METHOD;
+}
+
 
 }  // namespace nmodl

@@ -1325,7 +1325,7 @@ neuron::container::generic_data_handle nrnpy_rangepointer(Section* sec,
 #if EXTRACELLULAR
     if (s->u.rng.type == EXTRACELL) {
         auto* nd = node_ptr(sec, d, nullptr);
-        double* pd{nrn_vext_pd(s, 0, nd)};
+        double* pd{nrn_vext_pd(s, idx, nd)};
         if (pd) {
             return neuron::container::data_handle<double>{pd};
         }
@@ -2160,15 +2160,6 @@ void section_orientation(void) {
     Section* sec;
     sec = chk_access();
     hoc_retpushx(nrn_section_orientation(sec));
-}
-
-void parent_node(void) {
-    Section* sec;
-    if (tree_changed) {
-        setup_topology();
-    }
-    sec = chk_access();
-    hoc_retpushx(chk_void2dbl(sec->parentnode, "parent_node"));
 }
 
 void pop_section(void) {

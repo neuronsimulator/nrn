@@ -41,9 +41,19 @@ if(CMAKE_C_COMPILER_ID MATCHES "PGI" OR CMAKE_C_COMPILER_ID MATCHES "NVHPC")
     # "src/nrnpython/rxdmath.cpp", warning #541-D: allowing all exceptions is incompatible with previous function
     # "src/nmodl/nocpout.cpp", warning #550-D: variable "sion" was set but never used
     # "src/gnu/neuron_gnu_builtin.h", warning #816-D: type qualifier on return type is meaningless"
+    # "external/fmt/include/fmt/format.h", warning #1626-D: warning: routine is both "inline" and "noinline" [inline_gnu_noinline_conflict]
     # "src/modlunit/consist.cpp", warning #2465-D: conversion from a string literal to "char *" is deprecated
     # ~~~
-    list(APPEND NRN_COMPILE_FLAGS --diag_suppress=1,47,111,128,170,174,177,186,541,550,816,2465)
+    list(APPEND NRN_COMPILE_FLAGS
+         --diag_suppress=1,47,111,128,170,174,177,186,541,550,816,1626,2465)
+    # ~~~
+    # "external/CLI11/include/CLI/TypeTools.hpp", warning #2362-D: invalid narrowing conversion from "int" to "double" [narrowing_conversion]
+    # ~~~
+    list(APPEND NRN_NOCMODL_COMPILER_WARNING_SUPPRESSIONS --diag_suppress=2362)
+    # ~~~
+    # "external/fmt/include/fmt/format.h", warning #1626-D: warning: routine is both "inline" and "noinline" [inline_gnu_noinline_conflict]
+    # ~~~
+    list(APPEND NRN_FMT_COMPILER_WARNING_SUPPRESSIONS --diag_suppress=1626)
   endif()
   list(APPEND NRN_COMPILE_FLAGS -noswitcherror)
   list(APPEND NRN_LINK_FLAGS -noswitcherror)

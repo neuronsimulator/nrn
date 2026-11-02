@@ -402,6 +402,42 @@ void SympySolverVisitor::visit_var_name(ast::VarName& node) {
 // Skip visiting CVODE block
 void SympySolverVisitor::visit_cvode_block(ast::CvodeBlock& node) {}
 
+
+void SympySolverVisitor::collect_odes(ast::DiffEqExpression& node) {
+    const auto& lhs = node.get_expression()->get_lhs();
+    auto lhs_name = std::dynamic_pointer_cast<ast::VarName>(lhs)->get_name();
+    auto eq_str = to_nmodl_for_sympy(node);
+    auto var_name = lhs_name->get_node_name();
+    if (lhs_name->is_indexed_name()) {
+        auto index_name = std::dynamic_pointer_cast<ast::IndexedName>(lhs_name);
+        var_name += "[" +
+                    std::to_string(
+                        std::dynamic_pointer_cast<ast::Integer>(index_name->get_length())->eval()) +
+                    "]";
+    }
+    logger->debug("SympySolverVisitor :: adding ODE system: {}", eq_str);
+    eq_system.push_back(eq_str);
+    logger->debug("SympySolverVisitor :: adding state var: {}", var_name);
+    state_vars_in_block.insert(var_name);
+    expression_statements.insert(current_expression_statement);
+    last_expression_statement = current_expression_statement;
+}
+
+/// Check that the sympy solution can be implemented in C++.
+/// Usecase: sympy uses the Lambert W function sometimes, which is not
+/// implemented in NEURON nor any C++ standard. NOCMODL handles this by falling
+/// back to the `derivimplicit` method, so we mimic this usage here
+static bool check_solution_is_implementable(const std::string& solution) {
+    const std::unordered_set<std::string> unsolvable_in_cpp = {"LambertW"};
+    for (const auto& item: unsolvable_in_cpp) {
+        if (solution.find(item) != std::string::npos) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
 void SympySolverVisitor::visit_diff_eq_expression(ast::DiffEqExpression& node) {
     const auto& lhs = node.get_expression()->get_lhs();
 
@@ -435,24 +471,19 @@ void SympySolverVisitor::visit_diff_eq_expression(ast::DiffEqExpression& node) {
         // with analytic solution for x(t+dt) in terms of x(t)
         // x = ...
         logger->debug("SympySolverVisitor :: CNEXP - solving: {}", node_as_nmodl);
+        if (!check_solution_is_implementable(solution)) {
+            logger->warn(
+                fmt::format("Could not solve ODE {} using {} method; using {} method instead",
+                            node_as_nmodl,
+                            solve_method,
+                            codegen::naming::DERIVIMPLICIT_METHOD));
+            solve_method = codegen::naming::DERIVIMPLICIT_METHOD;
+            collect_odes(node);
+            return;
+        }
     } else {
         // for other solver methods: just collect the ODEs & return
-        std::string eq_str = to_nmodl_for_sympy(node);
-        std::string var_name = lhs_name->get_node_name();
-        if (lhs_name->is_indexed_name()) {
-            auto index_name = std::dynamic_pointer_cast<ast::IndexedName>(lhs_name);
-            var_name +=
-                "[" +
-                std::to_string(
-                    std::dynamic_pointer_cast<ast::Integer>(index_name->get_length())->eval()) +
-                "]";
-        }
-        logger->debug("SympySolverVisitor :: adding ODE system: {}", eq_str);
-        eq_system.push_back(eq_str);
-        logger->debug("SympySolverVisitor :: adding state var: {}", var_name);
-        state_vars_in_block.insert(var_name);
-        expression_statements.insert(current_expression_statement);
-        last_expression_statement = current_expression_statement;
+        collect_odes(node);
         return;
     }
 
@@ -508,6 +539,11 @@ void SympySolverVisitor::visit_derivative_block(ast::DerivativeBlock& node) {
     //  - for CNEXP or EULER, each equation is independent & is replaced with its solution
     //  - otherwise, each equation is added to eq_system
     node.visit_children(*this);
+
+    // if there are changes to the solver method, register them to be consistent
+    if (solve_method != derivative_block_solve_method[node.get_node_name()]) {
+        derivative_block_solve_method[node.get_node_name()] = solve_method;
+    }
 
     if (eq_system_is_valid && !eq_system.empty()) {
         // solve system of ODEs in eq_system
@@ -688,6 +724,22 @@ void SympySolverVisitor::visit_program(ast::Program& node) {
     }
 
     node.visit_children(*this);
+
+    // if the solver method changed, also change the AST to be consistent
+    for (const auto& block: solve_block_nodes) {
+        if (auto block_ptr = std::dynamic_pointer_cast<ast::SolveBlock>(block)) {
+            const auto& block_name = block_ptr->get_block_name()->get_value()->eval();
+            if (block_ptr->get_method()) {
+                // Note: solve method name is an optional parameter
+                // LINEAR and NONLINEAR blocks do not have solve method specified
+                const auto& solve_method = block_ptr->get_method()->get_value()->eval();
+                if (solve_method != derivative_block_solve_method[block_name]) {
+                    block_ptr->set_method(std::make_shared<ast::Name>(
+                        std::make_shared<ast::String>(derivative_block_solve_method[block_name])));
+                }
+            }
+        }
+    }
 }
 
 }  // namespace visitor

@@ -54,7 +54,7 @@ architecture.
 
   ```
   python
-  from neuron import h
+  from neuron import n
   ```
   and ```nrnivmodl``` will by default create an nmodl mechanism library
   specifically for the architecture you run on.
@@ -67,7 +67,7 @@ architecture.
   program. E.g.
   ```
   arch -arch x86_64 nrniv -python
-  from neuron import h
+  from neuron import n
   ```
   Furthermore, be sure to run nrnivmodl in such a way that it compiles as an
   x86_64 library. e.g.
@@ -127,15 +127,16 @@ Furthermore, GCC >= 10 is required (older versions of GCC may work, but are not 
 
 #### Windows
 
-On Windows, the only recommended way to install NEURON is using the binary installer. You can download alpha
-or recent releases from:
+On Windows, the only recommended way to install NEURON is using the binary installer. You can download
+releases from:
 
-* [Alpha releases](https://neuron.yale.edu/ftp/neuron/versions/alpha/)
-* [Recent Releases](https://neuron.yale.edu/ftp/neuron/versions/)
+* [https://github.com/neuronsimulator/nrn/releases](https://github.com/neuronsimulator/nrn/releases)
 
-The naming convention for Windows installers is `nrn-<version-id>-mingw-py-38-39-310-311-setup.exe`.
-The `py-38-39-310-311` string in the installer name indicates that the given installer is compatible
-with Python versions 3.8, 3.9, 3.10 and 3.11. Once the installer is downloaded, you can install it
+Earlier Windows installers have names in the format `nrn-<version-id>-mingw-py-38-39-310-311-setup.exe`.
+The `py-38-39-310-311` string in that name indicates compatibility with Python versions 3.8, 3.9, 3.10, and 3.11.
+The current MinGW installer is built with ABI3 off and supports GIL-enabled CPython 3.11, 3.12, 3.13, and 3.14.
+Nightly builds are published as `nrn-nightly-AMD64.exe`. A release file uses the form `nrn-<version>.w64-mingw-py-<versions>-setup.exe`.
+Once the installer is downloaded, you can install it
 by double clicking like any other Windows application. Note that you have to install python separately
 if python support is required. You can find detailed step-by-step instructions in
 [this presentation](https://neuron.yale.edu/ftp/neuron/nrn_mswin_install.pdf).
@@ -215,8 +216,12 @@ In order to build NEURON from source, the following packages must be available:
 
 The following packages are optional (see build options):
 
-- Python >=3.8 (for Python interface)
-- Cython (for RXD)
+- Python: GIL-enabled CPython **3.11+** for a source build with
+  `-DNRN_ENABLE_ABI3=OFF` (the default when the default interpreter is
+  older than 3.12). `-DNRN_ENABLE_ABI3=ON` and the ``cp312-abi3`` wheel
+  need **3.12+**. A separate versioned wheel covers CPython 3.11.
+  See `NRN_ENABLE_ABI3` in [CMake options](../cmake_doc/options.rst).
+- Cython >= 3.1 (for RXD; limited-API wheels require Cython 3.1+)
 - MPI (for parallel)
 - X11 (Linux) or XQuartz (MacOS) (for GUI)
 
@@ -251,6 +256,8 @@ Finally, if you are building NEURON with the Python interface, you need to insta
 pip3 install --user --upgrade pip
 pip3 install --user -r nrn_requirements.txt
 ```
+
+**NOTE**: to minimize the possibility of Python dependencies causing issues (conflicting requirements, etc.), you may install the same set of dependencies that the developers and the CI use via `pip3 install --user -r ci/requirements.txt`.
 
 <a name="Apple-M1-Build-Dependencies"></a>
 #### Mac OS - Apple M1
@@ -329,28 +336,46 @@ step method. You can find detailed instructions [here](../coreneuron/index.rst) 
 
 #### Run integrated tests
 
-**NEURON** includes also some unit and integration tests. To enable you need to set the `CMake` flag **-DNRN\_ENABLE\_TESTS=ON**.
-The tests lie in the `test` directory and cover various aspects of **NEURON**:
-* **CoreNEURON** integration (if enabled in build step)
-* Functionality and result regression test for [ringtest](https://github.com/neuronsimulator/ringtest) and [testcorenrn](https://github.com/neuronsimulator/testcorenrn)
-* HOC interpreter tests
-* Python interpreter tests
-* Parallel Context tests
+**NEURON** includes unit and integration tests. Enable them with the CMake
+flag **-DNRN\_ENABLE\_TESTS=ON**. Sources live under `test/` and cover
+(among other areas):
+* **CoreNEURON** integration (if enabled at configure time)
+* Functionality and result regression tests for [ringtest](https://github.com/neuronsimulator/ringtest) and [testcorenrn](https://github.com/neuronsimulator/testcorenrn)
+* HOC and Python interpreter tests
+* Parallel Context / MPI tests
 * Rx3d tests
-* Unit tests
-* GapJunction tests
+* C++ unit tests (Catch2)
+* Gap junction tests
 
-To run the tests it's needed to:
+**In-tree tests** (against the build directory; includes linked unit tests):
+
   ```bash
   cd nrn/build
   cmake .. \
+   -G Ninja \
+   -DNRN_ENABLE_TESTS=ON \
    -DNRN_ENABLE_INTERVIEWS=OFF \
    -DNRN_ENABLE_MPI=OFF \
    -DNRN_ENABLE_RX3D=OFF \
    -DCMAKE_INSTALL_PREFIX=/path/to/install/directory
   cmake --build . --parallel 8
-  ctest # use --parallel for speed, -R to run specific tests
+  ctest --output-on-failure -j8   # -R to select tests by name
   ```
+
+**Install check** (portable suite against the install prefix; no rebuild of
+`libnrniv`). After the same configure with `-DNRN_ENABLE_TESTS=ON`:
+
+  ```bash
+  cmake --build . --target install
+  cmake --build . --target test-install
+  # creates build/build-ctest and runs a default serial foreign ctest
+  ctest --test-dir build-ctest -L mpi --output-on-failure   # optional filters
+  ```
+
+Details, labels (`serial`, `mpi`, `coreneuron`), and wheel testing are
+documented under the CMake option `NRN_ENABLE_TESTS` and in
+`test/foreign/README.md`. For a short smoke test of a built wheel, see
+also `packaging/python/test_wheels.sh` in [Building Python Wheels](python_wheels.md).
 
 ### FAQs
 

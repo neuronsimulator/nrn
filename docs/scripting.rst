@@ -135,9 +135,9 @@ Multiple script files and commands:
     .. code-block:: shell
         
         python -c "import neuron"        # fails, NEURON not installed
-        python3.10 -c "import neuron"    # succeeds, NEURON installed for 3.10
+        python3.11 -c "import neuron"    # succeeds, NEURON installed for 3.11
         nrniv -python -c "import neuron" # succeeds, search ignores `python`
-                                         # and continues to find `python3.10`
+                                         # and continues to find `python3.11`
 
     Installations using Python wheels (``pip install neuron``) explicitly set
     the ``NRN_PYTHONEXE`` variable, so this section is unlikely to be relevant

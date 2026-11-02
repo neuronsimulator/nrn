@@ -2,7 +2,6 @@
 #include "nrn_ansi.h"
 #include "nrnassrt.h"
 #include "nrnconfigargs.h"
-#include "nrnversion.h"
 
 #include <stdio.h>
 #include <string.h>

@@ -2,19 +2,7 @@ import neuron
 import os
 import numpy
 import numpy.linalg
-
-# from mayavi import mlab
-
-# TODO: remove circular dependency
-from . import surfaces
-
-
-def _register_on_neighbor_map(the_map, pt, neighbor):
-    # does not assume neighbor relations are bidirectional
-    if pt in the_map:
-        the_map[pt].append(neighbor)
-    else:
-        the_map[pt] = [neighbor]
+from typing import Any, Optional
 
 
 class TriangularMesh:
@@ -22,7 +10,7 @@ class TriangularMesh:
     A triangular mesh, typically of a surface.
     """
 
-    def __init__(self, data):
+    def __init__(self, data: Any) -> None:
         """
         Parameters
         ----------
@@ -32,31 +20,26 @@ class TriangularMesh:
         self.data = data
 
     @property
-    def x(self):
+    def x(self) -> Any:
         """The x coordinates of the vertices."""
         return self.data[0::3]
 
     @property
-    def y(self):
+    def y(self) -> Any:
         """The y coordinates of the vertices."""
         return self.data[1::3]
 
     @property
-    def z(self):
+    def z(self) -> Any:
         """The z coordinates of the vertices."""
         return self.data[2::3]
 
     @property
-    def faces(self):
+    def faces(self) -> list:
         """A list of the triangles, described as lists of the indices of three points."""
         return [(i, i + 1, i + 2) for i in range(0, len(self.data) / 3, 3)]
 
-    @property
-    def area(self):
-        """The sum of the areas of the constituent triangles."""
-        return surfaces.tri_area(triangles)
-
-    def has_unmatched_edge(self, precision=3):
+    def has_unmatched_edge(self, precision: int = 3) -> bool:
         """Checks for edges that belong to only one triangle. True if they exist; else False.
 
         Parameters
@@ -84,7 +67,7 @@ class TriangularMesh:
                 for j in range(3):
                     for k in range(3):
                         if j != k:
-                            _register_on_neighbor_map(pt_neighbor_map, pts[j], pts[k])
+                            pt_neighbor_map.setdefault(pts[j], []).append(pts[k])
             # else:
             #    print '** discarded zero-area triangle **'
         edge_count = 0
@@ -111,10 +94,7 @@ class TriangularMesh:
                             bad_pts.append(neighbor)
                         # TODO: remove this; should never get here anyways
                         print(
-                            (
-                                "exposed edge: (%g, %g, %g) to (%g, %g, %g)"
-                                % (pt + neighbor)
-                            )
+                            f"exposed edge: ({pt[0]:g}, {pt[1]:g}, {pt[2]:g}) to ({neighbor[0]:g}, {neighbor[1]:g}, {neighbor[2]:g})"
                         )
 
         if edge_count:

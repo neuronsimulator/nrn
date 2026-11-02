@@ -89,8 +89,7 @@ void nrndae_lhs() {
     }
 }
 
-void nrndae_dkmap(std::vector<neuron::container::data_handle<double>>& pv,
-                  std::vector<neuron::container::data_handle<double>>& pvdot) {
+void nrndae_dkmap(std::vector<double*>& pv, std::vector<double*>& pvdot) {
     for (NrnDAE* item: nrndae_list) {
         item->dkmap(pv, pvdot);
     }
@@ -164,12 +163,12 @@ NrnDAE::NrnDAE(Matrix* cmat,
         cmat = assumed_identity_;
     }
     c_ = new MatrixMap(cmat);
-    Vect& elay = *elayer;
     nnode_ = nnode;
     nodes_ = nodes;
     if (nnode_ > 0) {
         elayer_ = new int[nnode_];
         if (elayer) {
+            Vect& elay = *elayer;
             for (int i = 0; i < nnode_; ++i) {
                 elayer_[i] = int(elay[i]);
             }
@@ -211,17 +210,14 @@ int NrnDAE::extra_eqn_count() {
     return c_->nrow() - nnode_;
 }
 
-void NrnDAE::dkmap(std::vector<neuron::container::data_handle<double>>& pv,
-                   std::vector<neuron::container::data_handle<double>>& pvdot) {
+// Switch back from data_handle to double*
+void NrnDAE::dkmap(std::vector<double*>& pv, std::vector<double*>& pvdot) {
     // printf("NrnDAE::dkmap\n");
     NrnThread* _nt = nrn_threads;
     for (int i = nnode_; i < size_; ++i) {
         // printf("bmap_[%d] = %d\n", i, bmap_[i]);
-        pv[bmap_[i] - 1] = neuron::container::data_handle<double>{neuron::container::do_not_search,
-                                                                  y_.data() + i};
-        pvdot[bmap_[i] - 1] =
-            neuron::container::data_handle<double>{neuron::container::do_not_search,
-                                                   _nt->_sp13_rhs + bmap_[i]};
+        pv[bmap_[i] - 1] = y_.data() + i;
+        pvdot[bmap_[i] - 1] = _nt->_sp13_rhs + bmap_[i];
     }
 }
 

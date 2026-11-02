@@ -6,7 +6,7 @@
 	url = https://github.com/catchorg/Catch2.git
 [submodule "external/coding-conventions"]
 	path = external/coding-conventions
-	url = https://github.com/BlueBrain/hpc-coding-conventions.git
+	url = https://github.com/neuronsimulator/coding-conventions.git
 [submodule "test/rxd/testdata"]
 	path = test/rxd/testdata
 	url = https://github.com/neuronsimulator/rxdtestdata
@@ -21,16 +21,13 @@
 	url = https://github.com/CLIUtils/CLI11.git
 [submodule "external/eigen"]
 	path = external/eigen
-	url = https://gitlab.com/libeigen/eigen.git
+	url = https://github.com/neuronsimulator/eigen.git
 [submodule "external/nanobind"]
 	path = external/nanobind
 	url = https://github.com/wjakob/nanobind
 [submodule "external/fmt"]
 	path = external/fmt
 	url = https://github.com/fmtlib/fmt
-[submodule "external/pybind11"]
-	path = external/pybind11
-	url = https://github.com/pybind/pybind11.git
 [submodule "external/json"]
 	path = external/json
 	url = https://github.com/nlohmann/json.git

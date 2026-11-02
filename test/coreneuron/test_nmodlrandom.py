@@ -40,7 +40,7 @@ def model():
 def pspike(m):
     print("spike raster")
     for i, t in enumerate(m[1]):
-        print("%.5f %g" % (t, m[2][i]))
+        print(f"{t:.5f} {m[2][i]:g}")
 
 
 def run(tstop, m):

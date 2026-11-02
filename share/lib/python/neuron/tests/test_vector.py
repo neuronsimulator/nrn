@@ -5,7 +5,7 @@ $Id$
 """
 
 import unittest
-from neuron import h
+from neuron import n
 
 
 class Bench(object):
@@ -23,7 +23,7 @@ class Bench(object):
             t2 = time()
             t += t2 - t1
 
-        print('Executed "%s".  Elapsed = %f s' % (cmd, t / repeat))
+        print(f'Executed "{cmd}".  Elapsed = {t / repeat:f} s')
 
 
 class VectorTestCase(unittest.TestCase):
@@ -37,7 +37,7 @@ class VectorTestCase(unittest.TestCase):
         import sys
 
         sys_endian = endian_map[sys.byteorder]
-        v = h.Vector(10)
+        v = n.Vector(10)
         assert sys_endian == v.__array_interface__["typestr"][0]
 
     def testBytesize(self):
@@ -46,7 +46,7 @@ class VectorTestCase(unittest.TestCase):
         try:
             import numpy
 
-            v = h.Vector(10)
+            v = n.Vector(10)
             a = numpy.array([], dtype=float)
             assert a.__array_interface__["typestr"] == v.__array_interface__["typestr"]
         except:
@@ -61,19 +61,19 @@ class VectorTestCase(unittest.TestCase):
             bench = Bench(globals(), locals())
             print("\n")
             bench("l = range(1000000)")
-            bench("v = h.Vector(l)")
+            bench("v = n.Vector(l)")
             print("inplace:")
             bench("v.from_python(l)")
             bench("a = numpy.array(v)")
             print("inplace:")
             bench("v.to_python(a)")
-            bench("v2 = h.Vector(a)")
+            bench("v2 = n.Vector(a)")
             print("inplace:")
             bench("v2.from_python(a)")
             bench("l2 = list(v2)")
             print("inplace:")
             bench("v.to_python(l2)")
-            bench("v2 = h.Vector(a[::-1])")
+            bench("v2 = n.Vector(a[::-1])")
             bench("a2 = numpy.array(v2)")
         except:
             pass
@@ -87,10 +87,10 @@ class VectorTestCase(unittest.TestCase):
 
             a = numpy.random.normal(size=10000)
             # b = numpy.random.normal(size=10000)
-            v = h.Vector(a)
+            v = n.Vector(a)
             a1 = array(v)
             assert alltrue(a == a1), 'numpy array "a" not equal to array(Vector(a))'
-            v = h.Vector(a[::-1])
+            v = n.Vector(a[::-1])
             assert alltrue(
                 array(v)[::-1] == a
             ), "Vector(a) malfuctions when a is a sliced array"
@@ -103,7 +103,7 @@ class VectorTestCase(unittest.TestCase):
 
     def testNegativeIndex(self):
         l = [i for i in range(10)]
-        v = h.Vector(l)
+        v = n.Vector(l)
         assert v[-3] == l[-3], "v[-3] Failed"
         v[-3] = 42
         l[-3] = 42
@@ -111,7 +111,7 @@ class VectorTestCase(unittest.TestCase):
 
     def testSlicing(self):
         l = [i for i in range(10)]
-        v = h.Vector(l)
+        v = n.Vector(l)
         assert list(v[2:6]) == l[2:6], "v[2:6] Failed"
         assert list(v[-3:-1]) == l[-3:-1], "v[-3:-1] Failed"
         assert list(v[::2]) == l[::2], "v[::2] Failed"
@@ -125,7 +125,7 @@ class VectorTestCase(unittest.TestCase):
 
     def testAssignmentSlicing(self):
         l = [i for i in range(10)]
-        v = h.Vector(l)
+        v = n.Vector(l)
         v[2:4] = [12, 13]
         l[2:4] = [12, 13]
         assert list(v[2:4]) == l[2:4], "v[2:4] Failed"
@@ -141,13 +141,13 @@ class VectorTestCase(unittest.TestCase):
         v[3:6:2] = [-123, -456]
         l[3:6:2] = [-123, -456]
         assert list(v[3:6:2]) == l[3:6:2], "v[3:6] Failed"
-        v2 = h.Vector(x for x in range(10, 20))
+        v2 = n.Vector(x for x in range(10, 20))
         v[3:8] = v2[3:8]
         assert list(v[3:8]) == list(v2[3:8]), "v[3:8] = v2[3:8] Failed"
 
     def testErrorHandling(self):
         l = [i for i in range(10)]
-        v = h.Vector(l)
+        v = n.Vector(l)
         # Input that is too short or long should raise an IndexError
         with self.assertRaises(IndexError):
             v[0:3] = [55]
@@ -160,7 +160,6 @@ def suite():
 
 
 if __name__ == "__main__":
-
     # unittest.main()
     runner = unittest.TextTestRunner(verbosity=2)
     runner.run(suite())

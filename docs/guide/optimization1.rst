@@ -490,7 +490,7 @@ Whether this discrepancy matters or not depends entirely on what we intend to do
 
     Now see what happens when the parameters have very different magnitudes.
 
-3. Read the data file into NEURON's clipboard, and then type ``h.hoc_obj_[0].mul(1e-5)`` at the >>> Python prompt or ``hoc_obj_[0].mul(1e-5)`` at HOC's oc> prompt. This makes the data values 5 orders of magnitude smaller.
+3. Read the data file into NEURON's clipboard, and then type ``n.hoc_obj_[0].mul(1e-5)`` at the >>> Python prompt or ``hoc_obj_[0].mul(1e-5)`` at HOC's oc> prompt. This makes the data values 5 orders of magnitude smaller.
 4. Transfer these scaled data into the Generator (Regions / Data from Clipboard).
 5. In the Parameter Panel, set k1 = 1, k2 = 10, and A = 1e-5.
 6. In the Domain Panel, go back to linear scaling.

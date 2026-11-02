@@ -27,10 +27,12 @@ ASSIGNED {
 }
 
 AFTER INITIAL {
-    im = 0 : pia not ready yet
+    : Parent ia is not a defined input yet, so do not form im from pia.
+    : The root has ri == 0 and never executes im = ia in AFTER SOLVE,
+    : so this zero is the value it starts from (#3656).
+    im = 0
     if (ri > 0) {
         ia = (pv - v) / ri
-        foo()
     }
 }
 
@@ -44,13 +46,5 @@ AFTER SOLVE {
 BEFORE STEP {
     if (ri > 0) {
         PROTECT pim = pim - ia : child contributions
-    }
-}
-
-PROCEDURE foo() { : neuronsimulator/nrn#1782 is fixed
-    if (ri > 0) {
-        : just for compile test. Although this overwrites im from BEFORE STEP
-        : the recording of im takes place before the AFTER INITIAL
-        pim = pim + 1
     }
 }

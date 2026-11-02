@@ -19,11 +19,10 @@
 #endif /* HAVE_IV */
 
 #include "oc2iv.h"
+#include "code.h"
 #include "classreg.h"
 
 #include "gui-redirect.h"
-
-extern int hoc_return_type_code;
 
 #if HAVE_IV
 
@@ -271,7 +270,7 @@ static double unmap(void* v) {
 }
 
 static double ismapped(void* v) {
-    hoc_return_type_code = 2;
+    hoc_return_type_code = HocReturnType::boolean;
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Box.ismapped", v);
 #if HAVE_IV
     bool b = false;

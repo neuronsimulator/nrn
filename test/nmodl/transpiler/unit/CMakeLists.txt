@@ -4,12 +4,15 @@
 include(${PROJECT_SOURCE_DIR}/cmake/nmodl/FlexHelper.cmake)
 add_compile_options(${NMODL_EXTRA_CXX_FLAGS})
 add_link_options(${NMODL_EXTRA_CXX_FLAGS})
-add_compile_options(${NMODL_TESTS_COMPILER_WARNING_SUPPRESSIONS})
+if(NMODL_TESTS_COMPILER_WARNING_SUPPRESSIONS)
+  add_compile_options(${NMODL_TESTS_COMPILER_WARNING_SUPPRESSIONS})
+endif()
 
 add_library(nmodl_test_flags INTERFACE)
 
-target_include_directories(nmodl_test_flags INTERFACE ${PYBIND11_INCLUDE_DIR}
-                                                      ${PYTHON_INCLUDE_DIRS})
+target_include_directories(
+  nmodl_test_flags INTERFACE ${NRN_DEFAULT_PYTHON_INCLUDES}
+                             ${PROJECT_SOURCE_DIR}/external/nanobind/include)
 target_include_directories(nmodl_test_flags INTERFACE ${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/solver)
 target_include_directories(nmodl_test_flags INTERFACE ${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/utils)
 target_include_directories(nmodl_test_flags INTERFACE ${NMODL_PROJECT_PLATLIB_SOURCE_DIR})
@@ -28,6 +31,7 @@ target_link_libraries(test_util PUBLIC spdlog::spdlog nmodl_test_flags)
 # =============================================================================
 add_library(config STATIC ${PROJECT_BINARY_DIR}/src/nmodl/config/config.cpp)
 target_link_libraries(config PUBLIC nmodl_test_flags)
+target_include_directories(config PUBLIC "${PROJECT_BINARY_DIR}/share/nmodl")
 
 # =============================================================================
 # Test executables
@@ -54,6 +58,8 @@ add_executable(
   visitor/local_to_assigned.cpp
   visitor/lookup.cpp
   visitor/loop_unroll.cpp
+  visitor/matexp.cpp
+  visitor/merge_top_level_blocks.cpp
   visitor/misc.cpp
   visitor/neuron_solve.cpp
   visitor/nmodl.cpp
@@ -62,12 +68,14 @@ add_executable(
   visitor/rename_function_arguments.cpp
   visitor/semantic_analysis.cpp
   visitor/solve_block.cpp
+  visitor/solve_without_method.cpp
   visitor/steadystate.cpp
   visitor/sympy_conductance.cpp
   visitor/sympy_solver.cpp
   visitor/units.cpp
   visitor/var_usage.cpp
   visitor/verbatim.cpp
+  visitor/state_discontinuity.cpp
   visitor/node_index.cpp)
 add_executable(testprinter printer/printer.cpp)
 add_executable(testsymtab symtab/symbol_table.cpp)
@@ -107,12 +115,13 @@ target_link_libraries(
           util
           test_util
           printer
-          codegen
+          nmodl_codegen
           ${NMODL_WRAPPER_LIBS}
+          nanobind_nmodl
           nmodl_test_flags)
 target_link_libraries(
   testcodegen
-  PRIVATE codegen
+  PRIVATE nmodl_codegen
           visitor
           symtab
           lexer
@@ -132,7 +141,9 @@ target_link_libraries(testunitparser PRIVATE lexer test_util config nmodl_test_f
 set(test_env ${NRN_SANITIZER_ENABLE_ENVIRONMENT})
 set(testvisitor_env "PYTHONPATH=${PROJECT_BINARY_DIR}/lib:$ENV{PYTHONPATH}")
 if(NOT NRN_LINK_AGAINST_PYTHON)
-  list(APPEND testvisitor_env "NMODL_PYLIB=$ENV{NMODL_PYLIB}")
+  # SHARED libpywrapper has no NEEDED libpython; Catch discover must dlopen via NMODL_PYLIB.
+  list(APPEND test_env "NMODL_PYLIB=${NRN_NMODL_PYLIB}" "NMODLHOME=${PROJECT_BINARY_DIR}")
+  list(APPEND testvisitor_env "NMODL_PYLIB=${NRN_NMODL_PYLIB}" "NMODLHOME=${PROJECT_BINARY_DIR}")
 endif()
 
 # Without main from Catch2
@@ -178,15 +189,27 @@ foreach(
 endforeach()
 
 foreach(test_name testcodegen testvisitor)
-  if(NOT NRN_LINK_AGAINST_PYTHON)
-    target_link_libraries(${test_name} PRIVATE pywrapper ${PYTHON_LIBRARY})
+  # Do not DT_NEEDED SHARED libpywrapper.so (no libpython). Catch POST_BUILD --list-tests would then
+  # die with PyExc_ValueError. The binaries dlopen via EmbeddedPythonLoader; PRE_TEST discovery runs
+  # with NMODL_PYLIB set. testvisitor embeds nanobind in sympy_solver.cpp and must NEEDED libpython.
+  if(NOT NRN_LINK_AGAINST_PYTHON
+     AND test_name STREQUAL "testvisitor"
+     AND NRN_NMODL_PYLIB)
+    target_link_libraries(testvisitor PRIVATE "${NRN_NMODL_PYLIB}")
   endif()
   cpp_cc_configure_sanitizers(TARGET ${test_name})
   set(env ${test_env})
   list(APPEND env ${${test_name}_env})
   string(REPLACE ";" ";ENVIRONMENT;" _environment_vars_list "${env}")
-  catch_discover_tests(${test_name} TEST_PREFIX "${test_name}/" PROPERTIES ENVIRONMENT
-                       "${_environment_vars_list}")
+  catch_discover_tests(
+    ${test_name}
+    TEST_PREFIX
+    "${test_name}/"
+    DISCOVERY_MODE
+    PRE_TEST
+    PROPERTIES
+    ENVIRONMENT
+    "${_environment_vars_list}")
 endforeach()
 
 # Generate include files used in test input, see
@@ -201,12 +224,26 @@ else()
 endif()
 
 # =============================================================================
-# pybind11 tests
+# Python / sympy tests (nmodl CLI embed)
 # =============================================================================
 if(NRN_ENABLE_PYTHON)
   if(NOT (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" AND NRN_SANITIZERS))
-    add_test(NAME Ode COMMAND ${PYTHON_EXECUTABLE} -m pytest ${CMAKE_CURRENT_SOURCE_DIR}/ode)
-    set_tests_properties(Ode PROPERTIES ENVIRONMENT "PYTHONPATH=${NMODL_TEST_PYTHONPATH}")
+    # Most of the Python tests added by `add_nrn_test` run in their own directories. Unfortunately,
+    # pytest-cov does not seem to have an option to specify the output file (it _always_ outputs to
+    # `coverage.xml`), which means that the various tests here may clobber each other's coverage
+    # reports. The way out of this is to a) either specify `WORKING_DIRECTORY` of each test, or b)
+    # use a coverage config file (see
+    # https://coverage.readthedocs.io/en/latest/config.html#xml-output); the latter requires far
+    # more work than the former, so we use option a) in the below.
+    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/ode)
+    add_test(
+      NAME Ode
+      COMMAND ${PYTHON_EXECUTABLE} ${NRN_PYTEST_LAUNCHER} ${CMAKE_CURRENT_SOURCE_DIR}/ode
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/ode)
+    set_tests_properties(
+      Ode
+      PROPERTIES ENVIRONMENT
+                 "PYTHONPATH=${NMODL_TEST_PYTHONPATH};NEURONHOME=${PROJECT_BINARY_DIR}/share/nrn")
     cpp_cc_configure_sanitizers(TEST Ode PRELOAD)
   endif()
 
@@ -214,11 +251,18 @@ if(NRN_ENABLE_PYTHON)
     # Apple Clang and ASAN do not play along nicely with NMODL's Python bindings, so we skip these
     # tests
     if(NOT (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" AND NRN_SANITIZERS))
-      add_test(NAME Pybind COMMAND ${PYTHON_EXECUTABLE} -m pytest
-                                   ${CMAKE_CURRENT_SOURCE_DIR}/pybind)
+      file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/pybind)
+      add_test(
+        NAME Pybind
+        COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${NRN_PYTEST_LAUNCHER}
+                ${CMAKE_CURRENT_SOURCE_DIR}/pybind
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/pybind)
       set_tests_properties(
-        Pybind PROPERTIES ENVIRONMENT
-                          "PYTHONPATH=${NMODL_TEST_PYTHONPATH};NMODLHOME=${PROJECT_BINARY_DIR}")
+        Pybind
+        PROPERTIES
+          ENVIRONMENT
+          "PYTHONPATH=${NMODL_TEST_PYTHONPATH};NMODLHOME=${PROJECT_BINARY_DIR};NEURONHOME=${PROJECT_BINARY_DIR}/share/nrn"
+      )
       cpp_cc_configure_sanitizers(TEST Pybind PRELOAD)
     endif()
   endif()

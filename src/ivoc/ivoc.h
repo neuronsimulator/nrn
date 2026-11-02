@@ -5,6 +5,7 @@
 #include <InterViews/session.h>
 #include <OS/string.h>
 #include <stdio.h>
+#include <string>
 #include "gui-redirect.h"
 extern int nrn_err_dialog_active_;
 
@@ -40,6 +41,7 @@ class Oc {
 
     int run(int argc, const char** argv);
     int run(const char*, bool show_err_mes = true);
+    int run(const std::string&, bool show_err_mes = true);
 
     Symbol* parseExpr(const char*, Symlist** = NULL);
     double runExpr(Symbol*);

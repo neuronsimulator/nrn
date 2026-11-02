@@ -186,7 +186,7 @@ void nrn_read_filesdat(int& ngrp, int*& grp, const char* filesdat) {
     }
 
     char version[256];
-    nrn_assert(fscanf(fp, "%s\n", version) == 1);
+    read_bbcore_token(fp, version, sizeof(version));
     check_bbcore_write_version(version);
 
     int iNumFiles = 0;
@@ -944,11 +944,11 @@ void read_phase3(NrnThread& nt, UserParams& userParams) {
 
     Phase3 p3;
     if (corenrn_embedded && !corenrn_file_mode) {
-        p3.read_direct(ntmapping);
+        p3.read_direct(ntmapping, nt);
     } else {
         auto& F = userParams.file_reader[nt.id];
         F.restore_checkpoint();
-        p3.read_file(F, ntmapping);
+        p3.read_file(F, ntmapping, nt);
     }
 
     // make number #cells match with mapping size

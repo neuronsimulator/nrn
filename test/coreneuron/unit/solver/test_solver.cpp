@@ -70,7 +70,7 @@ struct ToyModelConfig {
         produce_rhs{[](auto, auto) { return -16.0; }};
 };
 
-// TODO include some global lock as a sanity check (only one instance of
+// TODO include some global lock as a consistency check (only one instance of
 // SetupThreads should exist at any given time)
 struct SetupThreads {
     SetupThreads(SolverImplementation impl, ToyModelConfig config = {}) {

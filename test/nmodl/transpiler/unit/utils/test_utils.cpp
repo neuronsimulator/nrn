@@ -6,10 +6,12 @@
  */
 
 #include "test_utils.hpp"
-#include "utils/logger.hpp"
+#include "nmodl/utils/logger.hpp"
 #include "utils/string_utils.hpp"
 
 #include <cassert>
+
+#include <spdlog/sinks/ostream_sink.h>
 
 namespace nmodl {
 namespace test_utils {
@@ -81,6 +83,24 @@ std::string reindent_text(const std::string& text, int indent_level) {
     }
     return indented_text;
 }
+
+LoggerCapture::LoggerCapture()
+    : original_logger(nmodl::logger) {
+    capture_stream = std::make_shared<std::ostringstream>();
+    auto capture_sink = std::make_shared<spdlog::sinks::ostream_sink_mt>(*capture_stream);
+    auto test_logger = std::make_shared<spdlog::logger>("TEST_LOGGER", capture_sink);
+    test_logger->set_pattern("[%n] [%l] :: %v");
+    nmodl::logger = test_logger;
+}
+
+LoggerCapture::~LoggerCapture() {
+    nmodl::logger = original_logger;
+}
+
+std::string LoggerCapture::output() const {
+    return capture_stream->str();
+}
+
 
 }  // namespace test_utils
 }  // namespace nmodl
