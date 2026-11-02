@@ -129,8 +129,11 @@ MUSIC_ROOT = { default = "", env = "MUSIC_ROOT" }
 # Configuration for coreNEURON. For Linux we enable OpenMP.
 CORENRN_ENABLE_OPENMP = { default = "OFF", env = "CORENRN_ENABLE_OPENMP" }
 
-# NMODL bindings are always on for wheels
+# NMODL bindings are always on for wheels. NRN_ENABLE_NMODL stays off, so
+# nrnivmodl remains nocmodl. Windows wheels have CoreNEURON off; this flag
+# is what adds src/nmodl so the abi3 audit can see _nmodl.pyd.
 NMODL_ENABLE_PYTHON_BINDINGS = "ON"
+NRN_ENABLE_NMODL_PYTHON = "ON"
 
 # MPI options
 NRN_ENABLE_MPI = { default = "ON", env = "NRN_ENABLE_MPI" }

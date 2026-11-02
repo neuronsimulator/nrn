@@ -120,6 +120,10 @@ option(NRN_ENABLE_MPI "Enable MPI support" ${NRN_ENABLE_MPI_DEFAULT})
 option(NRN_ENABLE_MUSIC "Enable MUSIC support" ${NRN_ENABLE_MUSIC_DEFAULT})
 option(NRN_ENABLE_RX3D "Enable rx3d support" ${NRN_ENABLE_RX3D_DEFAULT})
 option(NRN_ENABLE_NMODL "Enable NMODL code-generator support" ${NRN_ENABLE_NMODL_DEFAULT})
+# Wheels set this so importable _nmodl is built. It does not select nmodl as the nrnivmodl
+# generator; that switch is NRN_ENABLE_NMODL alone.
+option(NRN_ENABLE_NMODL_PYTHON
+       "Build importable NMODL bindings without switching nrnivmodl to nmodl" OFF)
 option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ${NRN_ENABLE_CORENEURON_DEFAULT})
 option(NRN_ENABLE_BACKTRACE "Enable pretty-printed backtraces" ${NRN_ENABLE_BACKTRACE_DEFAULT})
 option(NRN_ENABLE_TESTS "Enable unit tests" ${NRN_ENABLE_TESTS_DEFAULT})
@@ -746,7 +750,8 @@ cpp_cc_git_submodule(CLI11 BUILD PACKAGE CLI11 REQUIRED)
 # =============================================================================
 if(NRN_ENABLE_NMODL
    OR NRN_ENABLE_CORENEURON
-   OR NRN_ENABLE_DOCS)
+   OR NRN_ENABLE_DOCS
+   OR (NRN_ENABLE_NMODL_PYTHON AND NRN_ENABLE_PYTHON))
   # NMODL Python build dependencies
   nrn_find_python_module(MODULE jinja2 REQUIRED)
   # N.B. `nrn_find_python_module` uses the _importable_ name of the package to find it, _not_ the
@@ -772,6 +777,13 @@ if(NRN_ENABLE_NMODL
   set(NMODL_ENABLE_PYTHON_BINDINGS
       OFF
       CACHE BOOL "Enable NMODL python bindings")
+  # set() does not override a cache value that is already ON. Wheels pass NRN_ENABLE_NMODL_PYTHON
+  # and still need _nmodl compiled.
+  if(NRN_ENABLE_NMODL_PYTHON AND NRN_ENABLE_PYTHON)
+    set(NMODL_ENABLE_PYTHON_BINDINGS
+        ON
+        CACHE BOOL "Enable NMODL python bindings" FORCE)
+  endif()
 
   include(${PROJECT_SOURCE_DIR}/cmake/nmodl/PythonLinkHelper.cmake)
 
@@ -1563,6 +1575,7 @@ if(NRN_ENABLE_CORENEURON)
   message(STATUS "  LINK FLAGS  | ${CORENRN_LIB_LINK_FLAGS}")
 endif()
 message(STATUS "NMODL codegen | ${NRN_ENABLE_NMODL}")
+message(STATUS "NMODL python  | ${NRN_ENABLE_NMODL_PYTHON}")
 if(NRN_UNIVERSAL2_BUILD)
   message(STATUS "CMAKE_OSX_ARCH| ${CMAKE_OSX_ARCHITECTURES}")
 endif()
