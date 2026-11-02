@@ -14,6 +14,7 @@
 #include <optional>
 #include <regex>
 #include <stdexcept>
+#include <unordered_set>
 
 #include "ast/all.hpp"
 #include "ast/procedure_block.hpp"
@@ -3223,8 +3224,31 @@ std::pair<std::string, std::string> CodegenNeuronCppVisitor::lag_declaration_and
 
 
 void CodegenNeuronCppVisitor::visit_lag_statement(const ast::LagStatement& node) {
-    const auto [declaration, assignment] = lag_declaration_and_assignment(node);
-    printer->fmt_text("{}; {}", declaration, assignment);
+    // The static is printed from print_namespace_start. nocmodl inserts it
+    // before the procedure, so a LAG inside a conditional stays in scope.
+    printer->add_text(lag_declaration_and_assignment(node).second);
+}
+
+
+void CodegenNeuronCppVisitor::setup(const ast::Program& node) {
+    CodegenCppVisitor::setup(node);
+    lag_declarations.clear();
+    std::unordered_set<std::string> seen;
+    for (const auto& ast_node: collect_nodes(node, {AstNodeType::LAG_STATEMENT})) {
+        const auto& lag = dynamic_cast<const LagStatement&>(*ast_node);
+        const auto declaration = lag_declaration_and_assignment(lag).first + ";";
+        if (seen.insert(declaration).second) {
+            lag_declarations.push_back(declaration);
+        }
+    }
+}
+
+
+void CodegenNeuronCppVisitor::print_namespace_start() {
+    CodegenCppVisitor::print_namespace_start();
+    for (const auto& declaration: lag_declarations) {
+        printer->add_line(declaration);
+    }
 }
 
 

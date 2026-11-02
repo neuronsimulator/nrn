@@ -23,6 +23,7 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 #include "ast/function_block.hpp"
 #include "ast/procedure_block.hpp"
@@ -857,12 +858,17 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
 
     /**
      * nocmodl lag_stmt. The first string is the static result
-     * (`static double` or `static double*`). The second is the assignment
-     * at the LAG statement. An array passes its dimension to scopmath::lag
-     * and keeps the pointer; a scalar passes 0 and dereferences it.
+     * (`static double` or `static double*`), printed once at namespace
+     * scope. The second is the assignment at the LAG statement. An array
+     * passes its dimension to scopmath::lag and keeps the pointer; a
+     * scalar passes 0 and dereferences it.
      */
     std::pair<std::string, std::string> lag_declaration_and_assignment(
         const ast::LagStatement& node);
+    void setup(const ast::Program& node) override;
+    void print_namespace_start();
+    /// `static double[ *] lag_<var>_<by>;` lines, in source order.
+    std::vector<std::string> lag_declarations;
 
   public:
     /****************************************************************************************/

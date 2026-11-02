@@ -471,9 +471,15 @@ SCENARIO("LAG inside BEFORE STEP calls scopmath lag", "[codegen][ba]") {
         const auto body = generated_function(cpp, "nrn_before_after_0_lagba");
 
         THEN("the lagged value is stored in lag_v_dur") {
+            const auto declaration = cpp.find("static double lag_v_dur;");
+            const auto signature = cpp.find("static void nrn_before_after_0_lagba(");
+            REQUIRE(declaration != std::string::npos);
+            REQUIRE(signature != std::string::npos);
+            REQUIRE(declaration < signature);
             REQUIRE_THAT(body,
-                         ContainsSubstring("static double lag_v_dur; lag_v_dur = "
+                         ContainsSubstring("lag_v_dur = "
                                            "*lag(&(inst.v_unused[id]), nt->_t, inst.dur[id], 0);"));
+            REQUIRE_THAT(body, !ContainsSubstring("static double lag_v_dur"));
             REQUIRE_THAT(body, ContainsSubstring("inst.x[id] = lag_v_dur"));
             require_generated_cpp_compiles(cpp);
         }
@@ -498,11 +504,54 @@ SCENARIO("Array LAG keeps the pointer and the dimension", "[codegen][ba][lag]") 
         const auto body = generated_function(cpp, "nrn_before_after_0_lagarr");
 
         THEN("the result is a pointer, as in nocmodl lag_stmt") {
+            const auto declaration = cpp.find("static double* lag_x_dur;");
+            const auto signature = cpp.find("static void nrn_before_after_0_lagarr(");
+            REQUIRE(declaration != std::string::npos);
+            REQUIRE(signature != std::string::npos);
+            REQUIRE(declaration < signature);
             REQUIRE_THAT(body,
-                         ContainsSubstring("static double* lag_x_dur; lag_x_dur = "
-                                           "lag((inst.x+id*2), nt->_t, inst.dur[id], 2);"));
-            REQUIRE_THAT(body, !ContainsSubstring("&((inst.x"));
+                         ContainsSubstring(
+                             "lag_x_dur = lag((inst.x+id*2), nt->_t, inst.dur[id], 2);"));
+            REQUIRE_THAT(body, !ContainsSubstring("static double"));
+            REQUIRE_THAT(cpp, !ContainsSubstring("&((inst.x"));
             REQUIRE_THAT(body, ContainsSubstring("lag_x_dur[static_cast<int>(0)]"));
+            require_generated_cpp_compiles(cpp);
+        }
+    }
+}
+
+SCENARIO("LAG inside a conditional is visible after the conditional", "[codegen][ba][lag]") {
+    GIVEN("if (t >= 0) { LAG v BY dur } then x = lag_v_dur") {
+        std::string nmodl = R"(
+            NEURON {
+                SUFFIX lagvis
+                RANGE x, dur
+            }
+            PARAMETER { dur = 1 }
+            ASSIGNED { v (millivolt) x }
+            BEFORE STEP {
+                if (t >= 0) { LAG v BY dur }
+                x = lag_v_dur
+            }
+        )";
+        std::string cpp = transpile(nmodl);
+        const auto body = generated_function(cpp, "nrn_before_after_0_lagvis");
+
+        THEN("the static is outside the function and the assignment stays inside the if") {
+            const auto declaration = cpp.find("static double lag_v_dur;");
+            const auto signature = cpp.find("static void nrn_before_after_0_lagvis(");
+            REQUIRE(declaration != std::string::npos);
+            REQUIRE(signature != std::string::npos);
+            REQUIRE(declaration < signature);
+            REQUIRE(body.find("static double lag_v_dur") == std::string::npos);
+            const auto if_pos = body.find("if (");
+            const auto assign = body.find("lag_v_dur = *lag(&(inst.v_unused[id])");
+            const auto use = body.find("inst.x[id] = lag_v_dur");
+            REQUIRE(if_pos != std::string::npos);
+            REQUIRE(assign != std::string::npos);
+            REQUIRE(use != std::string::npos);
+            REQUIRE(if_pos < assign);
+            REQUIRE(assign < use);
             require_generated_cpp_compiles(cpp);
         }
     }
