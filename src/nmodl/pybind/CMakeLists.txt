@@ -39,11 +39,25 @@ add_library(pyembed STATIC pyembed.cpp)
 set_property(TARGET pyembed PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(pyembed PRIVATE util)
 target_link_libraries(pyembed PRIVATE fmt::fmt)
+if(WIN32)
+  # pyembed.cpp includes this directory's dlfcn.h. The .c file is the implementation.
+  target_sources(pyembed PRIVATE ${PROJECT_SOURCE_DIR}/src/mswin/dlfcn.c)
+  target_include_directories(pyembed BEFORE PRIVATE ${PROJECT_SOURCE_DIR}/src/mswin)
+endif()
 
 if(NOT NRN_LINK_AGAINST_PYTHON)
   # Wheels: nmodl dlopens libpython then this .so. Do not DT_NEEDED libpython.
   add_library(pywrapper SHARED ${CMAKE_CURRENT_SOURCE_DIR}/wrapper.cpp)
-  set_target_properties(pywrapper PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
+  set_target_properties(
+    pywrapper
+    PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib
+               RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib
+               RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_BINARY_DIR}/lib
+               RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_BINARY_DIR}/lib)
+  if(WIN32)
+    # Loader opens NMODLHOME/lib/libpywrapper.dll. MSVC's default PREFIX is empty.
+    set_target_properties(pywrapper PROPERTIES PREFIX "lib")
+  endif()
 else()
   # In-tree: BUILD_SHARED_LIBS would otherwise make a .so that testcodegen DT_NEEDs without
   # libpython (--as-needed), then fails at Catch discover with PyExc_ValueError.
@@ -85,6 +99,20 @@ if(NOT NRN_LINK_AGAINST_PYTHON)
     target_link_options(pywrapper PRIVATE "-Wl,-undefined,dynamic_lookup")
   elseif(UNIX)
     target_link_options(pywrapper PRIVATE "-Wl,--unresolved-symbols=ignore-all")
+  elseif(WIN32)
+    # No Unix undefined-symbol lookup. pyconfig.h also pragma-comments python3.lib (limited API) or
+    # pythonXY.lib, which the linker opens by that bare name.
+    include(${PROJECT_SOURCE_DIR}/cmake/PythonCompileHelper.cmake)
+    set(_pywrapper_pylib "${NRN_DEFAULT_PYTHON_LIBRARIES}")
+    if(NRN_ENABLE_ABI3)
+      nrn_python3_stable_import_lib("${NRN_DEFAULT_PYTHON_LIBRARIES}" _pywrapper_pylib)
+    endif()
+    if(NOT EXISTS "${_pywrapper_pylib}")
+      message(FATAL_ERROR "pywrapper Python import library not found: '${_pywrapper_pylib}'")
+    endif()
+    get_filename_component(_pywrapper_pylib_dir "${_pywrapper_pylib}" DIRECTORY)
+    target_link_directories(pywrapper PRIVATE "${_pywrapper_pylib_dir}")
+    target_link_libraries(pywrapper PRIVATE "${_pywrapper_pylib}")
   endif()
 else()
   target_compile_definitions(pyembed PRIVATE NMODL_STATIC_PYWRAPPER=1)
@@ -167,6 +195,10 @@ if(NMODL_ENABLE_PYTHON_BINDINGS)
         endif()
       endforeach()
     endif()
+    # Same bare-name pragma as pywrapper. The import lib's directory has to be on the link path or
+    # the linker never opens python3.lib / pythonXY.lib.
+    get_filename_component(_nmodl_link_dir "${_nmodl_pylib}" DIRECTORY)
+    target_link_directories(_nmodl PRIVATE "${_nmodl_link_dir}")
     target_link_libraries(_nmodl PRIVATE ${_nmodl_pylib})
   endif()
 

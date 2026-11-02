@@ -8,8 +8,14 @@
 
 #include <cstdlib>
 #include <cstring>
-#include <dlfcn.h>
 #include <filesystem>
+#if defined(_WIN32)
+// No system dlfcn.h. src/mswin/dlfcn.h is LoadLibrary/GetProcAddress, and
+// pyembed compiles src/mswin/dlfcn.c. RTLD_DEFAULT still searches loaded modules.
+#include "dlfcn.h"
+#else
+#include <dlfcn.h>
+#endif
 
 #include <fmt/format.h>
 
