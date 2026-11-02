@@ -97,6 +97,26 @@ NRN_DLLSYM int nrn_segment_node_index(Section* sec, double x);
 NRN_DLLSYM void nrn_rangevar_push(Symbol* sym, Section* sec, double x);
 NRN_DLLSYM double nrn_rangevar_get(Symbol* sym, Section* sec, double x);
 NRN_DLLSYM void nrn_rangevar_set(Symbol* sym, Section* sec, double x, double value);
+NRN_DLLSYM int nrn_rangevar_get_nothrow(Symbol* sym,
+                                        Section* sec,
+                                        double x,
+                                        int index,
+                                        double* value,
+                                        char* error_msg,
+                                        size_t error_msg_size);
+NRN_DLLSYM int nrn_rangevar_set_nothrow(Symbol* sym,
+                                        Section* sec,
+                                        double x,
+                                        int index,
+                                        double value,
+                                        char* error_msg,
+                                        size_t error_msg_size);
+NRN_DLLSYM int nrn_rangevar_push_nothrow(Symbol* sym,
+                                         Section* sec,
+                                         double x,
+                                         int index,
+                                         char* error_msg,
+                                         size_t error_msg_size);
 NRN_DLLSYM Object* nrn_segment_nmodlrandom_get(Section* sec, double x, Symbol* sym);
 NRN_DLLSYM Object* nrn_pntproc_nmodlrandom_get(Object* point_process, Symbol* sym);
 NRN_DLLSYM int nrn_setpointer_pop(Symbol* pointer_sym,
@@ -199,11 +219,21 @@ NRN_DLLSYM void nrn_property_array_set(Object* obj, const char* name, int i, dou
 NRN_DLLSYM void nrn_property_push(Object* obj, const char* name);
 NRN_DLLSYM void nrn_property_array_push(Object* obj, const char* name, int i);
 NRN_DLLSYM bool nrn_property_data_handle_is_valid(const Object* obj, const char* name, int i);
+NRN_DLLSYM int nrn_property_element_ptr(Object* obj,
+                                        const char* name,
+                                        const int* indices,
+                                        int nindex,
+                                        double** ptr,
+                                        char* error_msg,
+                                        size_t error_msg_size);
+NRN_DLLSYM Object* nrn_property_object_get(const Object* obj, const char* name);
+NRN_DLLSYM bool nrn_property_object_set(Object* obj, const char* name, Object* value);
 NRN_DLLSYM char const* nrn_symbol_name(const Symbol* sym);
 NRN_DLLSYM Symlist* nrn_symbol_table(const Symbol* sym);
 NRN_DLLSYM Symlist* nrn_global_symbol_table(void);
 NRN_DLLSYM Symlist* nrn_top_level_symbol_table(void);
 NRN_DLLSYM int nrn_symbol_array_length(const Symbol* sym);
+NRN_DLLSYM int nrn_symbol_array_dims(const Symbol* sym, int* dims, int max_dims);
 NRN_DLLSYM void nrn_register_function(void (*proc)(), const char* func_name, int type);
 NRN_DLLSYM void nrn_hoc_ret(void);
 

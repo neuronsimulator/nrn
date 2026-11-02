@@ -87,7 +87,9 @@ jobs:
               cmake_option: -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_INTERVIEWS=OFF
                 -DNRN_ENABLE_RX3D=OFF
               sanitizer: address
-          - os: macOS-14
+          # arm64 (3-core M1). macOS-15-intel above is the separate x86_64 image.
+          # macos-14 retires 2026-11-02; macos-15 is the same runner class.
+          - os: macOS-15
             config:
               build_mode: cmake
               # TODO: investigate rxd test timeouts in this build and re-enable them
@@ -121,7 +123,8 @@ jobs:
           brew unlink mpich
           brew install openmpi
           brew install --cask xquartz
-          if [[ "${{matrix.os}}" == "macOS-14" ]]; then
+          # arm64 only. Prefer Homebrew CMake over actions-setup-cmake (#3585).
+          if [[ "${{matrix.os}}" == "macOS-15" ]]; then
             brew uninstall cmake || echo "CMake was not pre-installed"
             brew install cmake
             echo "$(brew --prefix)/opt/cmake/bin" >> $GITHUB_PATH
@@ -143,6 +146,9 @@ jobs:
       - name: Install apt packages
         if: startsWith(matrix.os, 'ubuntu')
         run: |
+          # Runner images keep a stale package index. Ubuntu removed the
+          # previous libevent debs on 2026-09-30; install 404s without this.
+          sudo apt-get update
           sudo apt-get install build-essential ccache libopenmpi-dev \
             libmpich-dev libx11-dev libxcomposite-dev mpich ninja-build \
             openmpi-bin flex libfl-dev bison libreadline-dev

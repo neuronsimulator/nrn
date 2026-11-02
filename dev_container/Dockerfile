@@ -76,9 +76,9 @@ ENV PATH="/opt/venv_${NRN_PYTHON_DEFAULT}/bin:/opt/venv_${NRN_PYTHON_MIN}/bin:/o
 WORKDIR /scratch
 
 # install MUSIC
-RUN ${NRN_PYTHON_DEFAULT} -m pip install 'uv==0.9.15'
-RUN ${NRN_PYTHON_MIN} -m pip install 'uv==0.9.15'
-RUN ${NRN_PYTHON_MAX} -m pip install 'uv==0.9.15'
+RUN ${NRN_PYTHON_DEFAULT} -m pip install 'uv==0.13.4'
+RUN ${NRN_PYTHON_MIN} -m pip install 'uv==0.13.4'
+RUN ${NRN_PYTHON_MAX} -m pip install 'uv==0.13.4'
 RUN ${NRN_PYTHON_DEFAULT} -m uv pip install 'mpi4py' 'cython' 'setuptools'
 RUN ${NRN_PYTHON_MIN} -m uv pip install 'mpi4py' 'cython' 'setuptools'
 RUN ${NRN_PYTHON_MAX} -m uv pip install 'mpi4py' 'cython' 'setuptools'

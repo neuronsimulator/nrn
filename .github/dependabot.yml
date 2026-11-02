@@ -1,0 +1,44 @@
+# How to handle the pull requests this file creates:
+# docs/dev/python/dependencies.md
+version: 2
+updates:
+  # Direct requirement files and pyproject.toml. One grouped version-update
+  # pull request per month. Security updates for these files are grouped too.
+  - package-ecosystem: "pip"
+    directories:
+      - "/"
+      - "/docs"
+      - "/packaging/python"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 1
+    versioning-strategy: "increase-if-necessary"
+    labels:
+      - "dependencies"
+      - "python"
+    groups:
+      python-direct:
+        applies-to: "version-updates"
+        patterns:
+          - "*"
+      python-direct-security:
+        applies-to: "security-updates"
+        patterns:
+          - "*"
+
+  # ci/requirements.txt (the lock CI installs) and ci/uv_requirements.txt.
+  # Version-update pull requests are disabled. Security updates, when the
+  # repository setting is on, are one group.
+  - package-ecosystem: "pip"
+    directory: "/ci"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 0
+    labels:
+      - "dependencies"
+      - "python"
+    groups:
+      ci-security:
+        applies-to: "security-updates"
+        patterns:
+          - "*"

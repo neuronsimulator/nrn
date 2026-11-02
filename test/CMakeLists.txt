@@ -26,6 +26,7 @@ add_executable(
   unit_tests/utils/enumerate.cpp
   unit_tests/utils/Sprintf.cpp
   unit_tests/oc/hoc_interpreter.cpp
+  unit_tests/fourier.cpp
   cover/unit_tests/cover.cpp)
 set(catch2_targets testneuron)
 if(NRN_ENABLE_THREADS)
@@ -334,7 +335,8 @@ if(NRN_ENABLE_PYTHON)
         NAME ${name}_${ext} ${${ext}_preload} # PRELOAD_SANITIZER for Python
         ENVIRONMENT CC=${CMAKE_C_COMPILER}
         COMMAND ${${ext}_exe} "${hoc_script}"
-        SCRIPT_PATTERNS "${hoc_script}" "tests/${name}.json" ${${ext}test_utils})
+        SCRIPT_PATTERNS "${hoc_script}" "tests/${name}.json" "tests/${name}.asc"
+                        ${${ext}test_utils})
     endforeach()
   endforeach()
 

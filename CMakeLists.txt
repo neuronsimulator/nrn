@@ -17,7 +17,7 @@ if(DEFINED ENV{CRAYPE_VERSION})
 endif()
 project(
   NEURON
-  VERSION 9.0.1
+  VERSION 9.1.0
   LANGUAGES C CXX
   HOMEPAGE_URL "https://www.neuronsimulator.org/")
 
@@ -442,23 +442,6 @@ if(NOT READLINE_FOUND)
   message(FATAL_ERROR "Readline is required (HOC interactive input)")
 endif()
 if(READLINE_FOUND)
-  # MAC libedit.3.dylib does not have rl_event_hook. Readline_LIBRARY may be a binary lib, a Mac
-  # tbd, or (MSVC) a CMake target. file(STRINGS) is the portable equivalent of `grep -q` and does
-  # not need a Unix grep. this part has to be prior to adding the nrniv subdirectory.
-  if(NOT NRN_READLINE_HAS_EVENT_HOOK)
-    set(_nrn_rl_event_hook)
-    if(EXISTS "${Readline_LIBRARY}")
-      file(
-        STRINGS "${Readline_LIBRARY}" _nrn_rl_event_hook
-        REGEX "rl_event_hook"
-        LIMIT_COUNT 1)
-    endif()
-    if(NOT _nrn_rl_event_hook)
-      # define for src/oc/hoc.cpp
-      set(DEF_RL_GETC_FUNCTION use_rl_getc_function)
-    endif()
-    unset(_nrn_rl_event_hook)
-  endif()
   # If we are not using self contained, static readline library created for building wheel then only
   # look for curses and termcap Fetched win32 GNU readline does not use curses/termcap. MinGW still
   # requires Termcap below.

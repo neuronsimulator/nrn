@@ -5,9 +5,9 @@
 #
 # Sets (CACHE INTERNAL unless noted): NRN_FOREIGN_PYTHON              - interpreter used for
 # discovery (user-facing CACHE) NRN_FOREIGN_NEURON_VERSION NRN_FOREIGN_NEURON_VERSION_FULL
-# NRN_FOREIGN_NEURON_GIT_SHA NRN_FOREIGN_NEURON_FILE NRN_FOREIGN_NRNIV NRN_FOREIGN_NRNIVMODL
-# NRN_FOREIGN_MODLUNIT NRN_FOREIGN_MPIEXEC NRN_FOREIGN_FEATURE_<NAME>      - ON/OFF for known keys
-# NRN_FOREIGN_PROBE_JSON          - path to last probe output file
+# NRN_FOREIGN_NEURON_GIT_SHA NRN_FOREIGN_NEURON_FILE NRN_FOREIGN_NRNIV NRN_FOREIGN_IDRAW
+# NRN_FOREIGN_NRNIVMODL NRN_FOREIGN_MODLUNIT NRN_FOREIGN_MPIEXEC NRN_FOREIGN_FEATURE_<NAME> - ON/OFF
+# for known keys NRN_FOREIGN_PROBE_JSON          - path to last probe output file
 
 set(NRN_FOREIGN_PYTHON
     ""
@@ -138,6 +138,7 @@ _nrn_foreign_json_get(NRN_FOREIGN_NEURON_VERSION_FULL "${_probe_stdout}" version
 _nrn_foreign_json_get(NRN_FOREIGN_NEURON_GIT_SHA "${_probe_stdout}" git_sha)
 _nrn_foreign_json_get(NRN_FOREIGN_NEURON_FILE "${_probe_stdout}" neuron_file)
 _nrn_foreign_json_get(NRN_FOREIGN_NRNIV "${_probe_stdout}" tools nrniv)
+_nrn_foreign_json_get(NRN_FOREIGN_IDRAW "${_probe_stdout}" tools idraw)
 _nrn_foreign_json_get(NRN_FOREIGN_NRNIVMODL "${_probe_stdout}" tools nrnivmodl)
 _nrn_foreign_json_get(NRN_FOREIGN_MODLUNIT "${_probe_stdout}" tools modlunit)
 _nrn_foreign_json_get(NRN_FOREIGN_MPIEXEC "${_probe_stdout}" tools mpiexec)
@@ -223,6 +224,7 @@ message(STATUS "Foreign NEURON module     : ${NRN_FOREIGN_NEURON_FILE}")
 message(STATUS "Foreign NEURON version    : ${NRN_FOREIGN_NEURON_VERSION_FULL}")
 message(STATUS "Foreign NEURON git sha    : ${NRN_FOREIGN_NEURON_GIT_SHA}")
 message(STATUS "Foreign nrniv             : ${NRN_FOREIGN_NRNIV}")
+message(STATUS "Foreign idraw             : ${NRN_FOREIGN_IDRAW}")
 message(STATUS "Foreign nrnivmodl         : ${NRN_FOREIGN_NRNIVMODL}")
 message(STATUS "Foreign MPI               : ${NRN_FOREIGN_FEATURE_NRN_ENABLE_MPI}")
 message(STATUS "Foreign MPI dynamic       : ${NRN_FOREIGN_FEATURE_NRN_ENABLE_MPI_DYNAMIC}")
