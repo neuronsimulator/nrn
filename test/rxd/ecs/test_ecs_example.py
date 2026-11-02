@@ -20,7 +20,7 @@ def ecs_example_mpi(neuron_instance):
     nhost = pc.nhost()
     rank = pc.id()
 
-    def make_model(alpha, lambd, mech=True, membrane_flux=True):
+    def make_model(alpha, lambd, size=110, dx=33, mech=True, membrane_flux=True):
         pc = h.ParallelContext()
         nhost = pc.nhost()
         rank = pc.id()
@@ -65,7 +65,15 @@ def ecs_example_mpi(neuron_instance):
 
         # the extracellular space
         ecs = rxd.Extracellular(
-            -55, -55, -55, 55, 55, 55, dx=33, volume_fraction=alpha, tortuosity=lambd
+            -size / 2,
+            -size / 2,
+            -size / 2,
+            size / 2,
+            size / 2,
+            size / 2,
+            dx=dx,
+            volume_fraction=alpha,
+            tortuosity=lambd,
         )
 
         # Who?
@@ -326,7 +334,8 @@ def test_ecs_multi_example_no_current(ecs_example):
     """Test ecs_example with multicompartment reactions and fixed step methods"""
 
     (h, rxd, data, save_path), make_model = ecs_example
-    model = make_model(0.2, 1.6, mech=False, membrane_flux=False)
+    model = make_model(0.2, 1.6, size=10, dx=5, mech=False, membrane_flux=False)
+    h.dt = 100
     h.finitialize(-65)
     h.continuerun(1000)
 
@@ -341,12 +350,14 @@ def test_ecs_multi_example_no_current_mpi(ecs_example_mpi):
     (h, rxd, data, save_path), make_model, nhost, rank = ecs_example_mpi
     if nhost == 1:
         pytest.skip("test with two processes")
-    model = make_model(0.2, 1.6, mech=False, membrane_flux=False)
+    model = make_model(0.2, 1.6, size=10, dx=5, mech=False, membrane_flux=False)
+    h.dt = 100
     h.finitialize(-65)
     h.continuerun(1000)
 
     if not save_path and rank == 0:
         max_err = compare_data(data)
+
         assert max_err < tol
 
 
