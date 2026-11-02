@@ -121,13 +121,13 @@ foreach(ext hoc py)
         GROUP hoctests
         NAME ${name}_${ext}
         COMMAND "${NRN_FOREIGN_PYTHON}" "${hoc_script}"
-        SCRIPT_PATTERNS "${hoc_script}" "tests/${name}.json" ${hoctest_utils})
+        SCRIPT_PATTERNS "${hoc_script}" "tests/${name}.json" "tests/${name}.asc" ${hoctest_utils})
     else()
       nrn_add_test(
         GROUP hoctests
         NAME ${name}_${ext}
         COMMAND special "${hoc_script}"
-        SCRIPT_PATTERNS "${hoc_script}" "tests/${name}.json" ${hoctest_utils})
+        SCRIPT_PATTERNS "${hoc_script}" "tests/${name}.json" "tests/${name}.asc" ${hoctest_utils})
     endif()
     nrn_foreign_finalize_test(hoctests ${name}_${ext} hoctests)
   endforeach()
