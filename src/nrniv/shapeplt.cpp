@@ -1225,6 +1225,9 @@ ShapePlotData::ShapePlotData(Symbol* sym, Object* sl) {
     }
     varobj(NULL);
     show_mode = 1;
+    // variable(Symbol) sets this scale. variable(Python object) only stores
+    // the object, and plot still reads lo and hi.
+    scale(-80, 40);
 }
 
 ShapePlotData::~ShapePlotData() {

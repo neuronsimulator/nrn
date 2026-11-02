@@ -539,6 +539,29 @@ def _find_librxdmath():
     return dll
 
 
+def _macos_sdkroot():
+    """SDK path so Apple clang can find system headers such as math.h."""
+    if sys.platform != "darwin":
+        return ""
+    sdk = os.environ.get("SDKROOT", "")
+    if sdk and os.path.isdir(sdk):
+        return sdk
+    try:
+        sdk = subprocess.check_output(
+            ["xcrun", "--sdk", "macosx", "--show-sdk-path"],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        ).strip()
+        if sdk and os.path.isdir(sdk):
+            return sdk
+    except (OSError, subprocess.CalledProcessError):
+        pass
+    clt = "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+    if os.path.isdir(clt):
+        return clt
+    return ""
+
+
 def _cxx_compile(formula):
     cached = _cxx_compile_cache.get(formula)
     if cached is not None:
@@ -599,9 +622,12 @@ def _cxx_compile(formula):
     else:
         fpic = [] if sys.platform.lower().startswith("win") else ["-fPIC"]
         math_library = [] if sys.platform.lower().startswith("win") else ["-lm"]
+        sdk = _macos_sdkroot()
+        sysroot = ["-isysroot", sdk] if sdk else []
         cmd = [
             cxx,
             "-I" + include,
+            *sysroot,
             "-shared",
             *fpic,
             src,

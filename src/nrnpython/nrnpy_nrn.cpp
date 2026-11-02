@@ -11,6 +11,7 @@
 #include "nrnpy.h"
 #include "nrnpy_utils.h"
 #include "convert_cxx_exceptions.hpp"
+#include "oc_ansi.h"
 #include "neuron/unique_cstr.hpp"
 
 #ifndef M_PI
@@ -177,7 +178,8 @@ static Object* pysec_cell(Section* sec) {
     if (auto* pv = sec->prop->dparam[PROP_PY_INDEX].get<void*>(); pv) {
         PyObject* cell_weakref = static_cast<NPySecObj*>(pv)->cell_weakref_;
         if (cell_weakref) {
-#if PY_VERSION_HEX >= 0x030D0000
+#if (defined(Py_LIMITED_API) && Py_LIMITED_API >= 0x030D0000) || \
+    (!defined(Py_LIMITED_API) && PY_VERSION_HEX >= 0x030D0000)
             PyObject* cell = nullptr;
             int err = PyWeakref_GetRef(cell_weakref, &cell);
             if (err == -1) {
@@ -229,7 +231,8 @@ static int pysec_cell_equals(Section* sec, Object* obj) {
     if (auto* pv = sec->prop->dparam[PROP_PY_INDEX].get<void*>(); pv) {
         PyObject* cell_weakref = static_cast<NPySecObj*>(pv)->cell_weakref_;
         if (cell_weakref) {
-#if PY_VERSION_HEX >= 0x030D0000
+#if (defined(Py_LIMITED_API) && Py_LIMITED_API >= 0x030D0000) || \
+    (!defined(Py_LIMITED_API) && PY_VERSION_HEX >= 0x030D0000)
             PyObject* cell = nullptr;
             int err = PyWeakref_GetRef(cell_weakref, &cell);
             if (err == -1) {
@@ -270,7 +273,7 @@ static void NPySecObj_dealloc(NPySecObj* self) {
             section_unref(self->sec_);
         }
     }
-    ((PyObject*) self)->ob_type->tp_free((PyObject*) self);
+    nrnpy_tp_free(self);
 }
 
 static void NPySecObj_dealloc_safe(NPySecObj* self) {
@@ -282,7 +285,7 @@ static void NPySecObj_dealloc_safe(NPySecObj* self) {
 static void NPyAllSegOfSecIter_dealloc(NPyAllSegOfSecIter* self) {
     // printf("NPyAllSegOfSecIter_dealloc %p %s\n", self, secname(self->pysec_->sec_));
     Py_XDECREF(self->pysec_);
-    ((PyObject*) self)->ob_type->tp_free((PyObject*) self);
+    nrnpy_tp_free(self);
 }
 
 static void NPyAllSegOfSecIter_dealloc_safe(NPyAllSegOfSecIter* self) {
@@ -293,7 +296,7 @@ static void NPyAllSegOfSecIter_dealloc_safe(NPyAllSegOfSecIter* self) {
 static void NPySegOfSecIter_dealloc(NPySegOfSecIter* self) {
     // printf("NPySegOfSecIter_dealloc %p %s\n", self, secname(self->pysec_->sec_));
     Py_XDECREF(self->pysec_);
-    ((PyObject*) self)->ob_type->tp_free((PyObject*) self);
+    nrnpy_tp_free(self);
 }
 
 static void NPySegOfSecIter_dealloc_safe(NPySegOfSecIter* self) {
@@ -304,7 +307,7 @@ static void NPySegOfSecIter_dealloc_safe(NPySegOfSecIter* self) {
 static void NPySegObj_dealloc(NPySegObj* self) {
     // printf("NPySegObj_dealloc %p\n", self);
     Py_XDECREF(self->pysec_);
-    ((PyObject*) self)->ob_type->tp_free((PyObject*) self);
+    nrnpy_tp_free(self);
 }
 
 static void NPySegObj_dealloc_safe(NPySegObj* self) {
@@ -315,7 +318,7 @@ static void NPySegObj_dealloc_safe(NPySegObj* self) {
 static void NPyRangeVar_dealloc(NPyRangeVar* self) {
     // printf("NPyRangeVar_dealloc %p\n", self);
     Py_XDECREF(self->pymech_);
-    ((PyObject*) self)->ob_type->tp_free((PyObject*) self);
+    nrnpy_tp_free(self);
 }
 
 static void NPyRangeVar_dealloc_safe(NPyRangeVar* self) {
@@ -327,7 +330,7 @@ static void NPyMechObj_dealloc(NPyMechObj* self) {
     Py_XDECREF(self->pyseg_);
     // Must manually call destructor since it was manually constructed in new_pymechobj wrapper
     self->prop_id_.~non_owning_identifier_without_container();
-    ((PyObject*) self)->ob_type->tp_free((PyObject*) self);
+    nrnpy_tp_free(self);
 }
 
 static void NPyMechObj_dealloc_safe(NPyMechObj* self) {
@@ -365,7 +368,7 @@ static NPyMechObj* new_pymechobj(NPySegObj* pyseg, Prop* p) {
 static void NPyMechFunc_dealloc(NPyMechFunc* self) {
     // printf("NPyMechFunc_dealloc %p %s\n", self, self->ob_type->tp_name);
     Py_XDECREF(self->pymech_);
-    ((PyObject*) self)->ob_type->tp_free((PyObject*) self);
+    nrnpy_tp_free(self);
 }
 
 static void NPyMechFunc_dealloc_safe(NPyMechFunc* self) {
@@ -375,7 +378,7 @@ static void NPyMechFunc_dealloc_safe(NPyMechFunc* self) {
 static void NPyMechOfSegIter_dealloc(NPyMechOfSegIter* self) {
     // printf("NPyMechOfSegIter_dealloc %p %s\n", self, self->ob_type->tp_name);
     Py_XDECREF(self->pymech_);
-    ((PyObject*) self)->ob_type->tp_free((PyObject*) self);
+    nrnpy_tp_free(self);
 }
 
 static void NPyMechOfSegIter_dealloc_safe(NPyMechOfSegIter* self) {
@@ -385,7 +388,7 @@ static void NPyMechOfSegIter_dealloc_safe(NPyMechOfSegIter* self) {
 static void NPyVarOfMechIter_dealloc(NPyVarOfMechIter* self) {
     // printf("NPyVarOfMechIter_dealloc %p %s\n", self, self->ob_type->tp_name);
     Py_XDECREF(self->pymech_);
-    ((PyObject*) self)->ob_type->tp_free((PyObject*) self);
+    nrnpy_tp_free(self);
 }
 
 static void NPyVarOfMechIter_dealloc_safe(NPyVarOfMechIter* self) {
@@ -480,7 +483,7 @@ static int NPyAllSegOfSecIter_init_safe(NPyAllSegOfSecIter* self, PyObject* args
 }
 
 PyObject* NPySecObj_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
-    auto self = nb::steal(type->tp_alloc(type, 0));
+    auto self = nb::steal(nrnpy_tp_alloc(type, 0));
     // printf("NPySecObj_new %p\n", self.ptr());
     if (self) {
         if (NPySecObj_init((NPySecObj*) self.ptr(), args, kwds) != 0) {
@@ -495,7 +498,7 @@ PyObject* NPySecObj_new_safe(PyTypeObject* type, PyObject* args, PyObject* kwds)
 }
 
 PyObject* NPyAllSegOfSecIter_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
-    auto self = nb::steal(type->tp_alloc(type, 0));
+    auto self = nb::steal(nrnpy_tp_alloc(type, 0));
     // printf("NPyAllSegOfSecIter_new %p\n", self.ptr());
     if (self) {
         if (NPyAllSegOfSecIter_init((NPyAllSegOfSecIter*) self.ptr(), args, kwds) != 0) {
@@ -531,7 +534,7 @@ static PyObject* NPySegObj_new(PyTypeObject* type, PyObject* args, PyObject* /* 
         return nullptr;
     }
     NPySegObj* self;
-    self = (NPySegObj*) type->tp_alloc(type, 0);
+    self = (NPySegObj*) nrnpy_tp_alloc(type, 0);
     // printf("NPySegObj_new %p\n", self);
     if (self) {
         Py_INCREF(pysec);
@@ -551,7 +554,7 @@ static PyObject* NPyMechObj_new(PyTypeObject* type, PyObject* args, PyObject* /*
         return nullptr;
     }
     NPyMechObj* self;
-    self = (NPyMechObj*) type->tp_alloc(type, 0);
+    self = (NPyMechObj*) nrnpy_tp_alloc(type, 0);
     // printf("NPyMechObj_new %p %s\n", self,
     // ((PyObject*)self)->ob_type->tp_name);
     if (self) {
@@ -577,7 +580,7 @@ static int NPySegObj_contains_safe(PyObject* segment, PyObject* obj) {
 
 static PyObject* NPyRangeVar_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
     NPyRangeVar* self;
-    self = (NPyRangeVar*) type->tp_alloc(type, 0);
+    self = (NPyRangeVar*) nrnpy_tp_alloc(type, 0);
     if (self) {
         self->pymech_ = nullptr;
         self->sym_ = nullptr;
@@ -1050,7 +1053,7 @@ NPySecObj* newpysechelp(Section* sec) {
         Py_INCREF(pysec);
         assert(pysec->sec_ == sec);
     } else {
-        pysec = (NPySecObj*) psection_type->tp_alloc(psection_type, 0);
+        pysec = (NPySecObj*) nrnpy_tp_alloc(psection_type, 0);
         pysec->sec_ = sec;
         section_ref(sec);
         pysec->name_ = 0;
@@ -1223,7 +1226,8 @@ static PyObject* pysec_wholetree_safe(NPySecObj* const self) {
 static PyObject* pysec2cell(NPySecObj* self) {
     nb::object result;
     if (self->cell_weakref_) {
-#if PY_VERSION_HEX >= 0x030D0000
+#if (defined(Py_LIMITED_API) && Py_LIMITED_API >= 0x030D0000) || \
+    (!defined(Py_LIMITED_API) && PY_VERSION_HEX >= 0x030D0000)
         PyObject* cell = nullptr;
         int ret = PyWeakref_GetRef(self->cell_weakref_, &cell);
         if (ret > 0) {
@@ -1358,7 +1362,7 @@ static PyObject* NPyMechFunc_call(NPyMechFunc* self, PyObject* args) {
         result = nb::cast(x);
     } catch (std::exception const& e) {
         std::ostringstream oss;
-        oss << "mechanism.function call error: " << e.what();
+        oss << "mechanism.function call error: " << neuron::oc::safe_what(e);
         PyErr_SetString(PyExc_RuntimeError, oss.str().c_str());
     }
     hoc_pop_frame();
@@ -3017,15 +3021,12 @@ PyObject* nrnpy_nrn(void) {
         return m.ptr();
     }
     psection_type = (PyTypeObject*) PyType_FromSpec(&nrnpy_SectionType_spec);
-    psection_type->tp_new = PyType_GenericNew;
     if (PyType_Ready(psection_type) < 0)
         goto fail;
     Py_INCREF(psection_type);
 
     pallseg_of_sec_iter_type = (PyTypeObject*) PyType_FromSpec(&nrnpy_AllSegOfSecIterType_spec);
     pseg_of_sec_iter_type = (PyTypeObject*) PyType_FromSpec(&nrnpy_SegOfSecIterType_spec);
-    pallseg_of_sec_iter_type->tp_new = PyType_GenericNew;
-    pseg_of_sec_iter_type->tp_new = PyType_GenericNew;
     if (PyType_Ready(pallseg_of_sec_iter_type) < 0)
         goto fail;
     if (PyType_Ready(pseg_of_sec_iter_type) < 0)
@@ -3034,7 +3035,6 @@ PyObject* nrnpy_nrn(void) {
     Py_INCREF(pseg_of_sec_iter_type);
 
     psegment_type = (PyTypeObject*) PyType_FromSpec(&nrnpy_SegmentType_spec);
-    psegment_type->tp_new = PyType_GenericNew;
     if (PyType_Ready(psegment_type) < 0)
         goto fail;
     if (PyType_Ready(pallseg_of_sec_iter_type) < 0)
@@ -3046,13 +3046,11 @@ PyObject* nrnpy_nrn(void) {
     Py_INCREF(pseg_of_sec_iter_type);
 
     range_type = (PyTypeObject*) PyType_FromSpec(&nrnpy_RangeType_spec);
-    range_type->tp_new = PyType_GenericNew;
     if (PyType_Ready(range_type) < 0)
         goto fail;
     Py_INCREF(range_type);
 
     opaque_pointer_type = (PyTypeObject*) PyType_FromSpec(&nrnpy_OpaquePointerType_spec);
-    opaque_pointer_type->tp_new = PyType_GenericNew;
     if (PyType_Ready(opaque_pointer_type) < 0)
         goto fail;
     Py_INCREF(opaque_pointer_type);
@@ -3074,10 +3072,6 @@ PyObject* nrnpy_nrn(void) {
     pmechfunc_generic_type = (PyTypeObject*) PyType_FromSpec(&nrnpy_MechFuncType_spec);
     pmech_of_seg_iter_generic_type = (PyTypeObject*) PyType_FromSpec(&nrnpy_MechOfSegIterType_spec);
     pvar_of_mech_iter_generic_type = (PyTypeObject*) PyType_FromSpec(&nrnpy_VarOfMechIterType_spec);
-    pmech_generic_type->tp_new = PyType_GenericNew;
-    pmechfunc_generic_type->tp_new = PyType_GenericNew;
-    pmech_of_seg_iter_generic_type->tp_new = PyType_GenericNew;
-    pvar_of_mech_iter_generic_type->tp_new = PyType_GenericNew;
     if (PyType_Ready(pmech_generic_type) < 0)
         goto fail;
     if (PyType_Ready(pmechfunc_generic_type) < 0)
