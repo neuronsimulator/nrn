@@ -1,2 +1,2 @@
-# should be set to the latest version of uv that works
-uv<=0.12.21
+# Exact pin. uv < 0.13.4 trusts the compromised emSign root (GHSA-hq85-5cpj-mr62).
+uv==0.13.4

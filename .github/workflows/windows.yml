@@ -69,7 +69,14 @@ jobs:
       run: |
         rm.exe C:\WINDOWS\system32\bash.EXE
         %MSYS2_ROOT%\usr\bin\bash -lc "$BUILD_SOURCESDIRECTORY/ci/win_build_cmake.sh"
-        # create a manifest of the files in the build directory
+      shell: cmd
+      working-directory: ${{runner.workspace}}\nrn
+      env:
+        BUILD_SOURCESDIRECTORY: ${{runner.workspace}}\nrn
+
+    - name: Record build file manifest
+      run: |
+        rem create a manifest of the files in the build directory
         %MSYS2_ROOT%\usr\bin\bash -lc "find ${BUILD_SOURCESDIRECTORY}/build > ${BUILD_SOURCESDIRECTORY}/build/build_files.txt 2>/dev/null"
       shell: cmd
       working-directory: ${{runner.workspace}}\nrn

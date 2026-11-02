@@ -16,6 +16,8 @@
 #include <exception>
 #include <cstdio>
 #include <limits>
+#include <string>
+#include <utility>
 
 /// A public face of hoc_Item
 struct nrn_Item: public hoc_Item {};
@@ -45,10 +47,12 @@ struct SymbolTableIterator {
 extern int nrn_nobanner_;
 extern int diam_changed;
 extern int nrn_try_catch_nest_depth;
+extern int hoc_execerror_messages;
 extern "C" void nrnpy_set_pr_etal(int (*cbpr_stdoe)(int, char*), int (*cbpass)());
 int ivocmain_session(int, const char**, const char**, int start_session);
 void simpleconnectsection();
 extern Object* hoc_newobj1(Symbol*, int);
+extern void hoc_unref_defer();
 extern std::tuple<int, const char**> nrn_mpi_setup(int argc, const char** argv);
 
 extern "C" {
@@ -250,12 +254,177 @@ double nrn_rangevar_get(Symbol* sym, Section* sec, double x) {
     return *nrn_rangepointer(sec, sym, x);
 }
 
+namespace {
+// After a range-variable write, what HOC assignment and the Python setter do:
+// a diam write updates area and 3-d points, an xraxial write recomputes the
+// axial terms.
+void rangevar_written(Symbol* sym, Section* sec) {
+    if (sym->u.rng.type == MORPHOLOGY) {
+        diam_changed = 1;
+        sec->recalc_area_ = 1;
+        nrn_diam_change(sec);
+    } else if (sym->u.rng.type == EXTRACELL && sym->u.rng.index == 0) {
+        diam_changed = 1;
+    }
+}
+}  // namespace
+
 void nrn_rangevar_set(Symbol* sym, Section* sec, double x, double value) {
     *nrn_rangepointer(sec, sym, x) = value;
+    rangevar_written(sym, sec);
 }
 
 void nrn_rangevar_push(Symbol* sym, Section* sec, double x) {
     hoc_push(nrn_rangepointer(sec, sym, x));
+}
+
+namespace {
+// Locate element `index` of a range variable at x, as NEURON's Python module
+// does (nrnpy_rangepointer takes the array index directly, where
+// nrn_rangepointer reads it from the interpreter stack). Returns nullptr and
+// writes a message instead of raising a HOC error. The handle is invalid on
+// failure.
+neuron::container::data_handle<double> rangevar_handle(Symbol* sym,
+                                                       Section* sec,
+                                                       double x,
+                                                       int index,
+                                                       char* error_msg,
+                                                       size_t error_msg_size) {
+    auto fail = [&](const std::string& message) -> neuron::container::data_handle<double> {
+        if (error_msg && error_msg_size) {
+            std::strncpy(error_msg, message.c_str(), error_msg_size - 1);
+            error_msg[error_msg_size - 1] = '\0';
+        }
+        return {};
+    };
+    if (!sym || sym->type != RANGEVAR) {
+        return fail("not a range variable");
+    }
+    if (!sec || !sec->prop) {
+        return fail("section was deleted");
+    }
+    if (!(x >= 0.0 && x <= 1.0)) {
+        return fail("x must be in [0, 1]");
+    }
+    int const length = is_array(*sym) ? sym->arayinfo->sub[0] : 1;
+    if (index < 0 || index >= length) {
+        return fail(std::string(sym->name) + ": index out of range");
+    }
+    if (sym->u.rng.type == EXTRACELL) {
+        // nrnpy_rangepointer ignores the index for extracellular arrays.
+        if (double* pd = nrn_vext_pd(sym, index, node_ptr(sec, x, nullptr))) {
+            return neuron::container::data_handle<double>{pd};
+        }
+    }
+    int err = 0;
+    auto const handle = nrnpy_rangepointer(sec, sym, x, &err, index);
+    if (handle.is_invalid_handle()) {
+        if (sym->u.rng.type == IMEMFAST) {
+            return fail("i_membrane_ needs cvode.use_fast_imem(1)");
+        }
+        if (err == 2) {
+            return fail(std::string(sym->name) + ": POINTER is not set");
+        }
+        return fail(std::string(sym->name) + ": mechanism is not inserted at this location");
+    }
+    if (!handle.holds<double*>()) {
+        return fail(std::string(sym->name) + ": opaque pointer has no numeric value");
+    }
+    if (sym->u.rng.type == MORPHOLOGY && sec->recalc_area_) {
+        nrn_area_ri(sec);
+    }
+    return neuron::container::data_handle<double>(handle);
+}
+
+double* rangevar_element(Symbol* sym,
+                         Section* sec,
+                         double x,
+                         int index,
+                         char* error_msg,
+                         size_t error_msg_size) {
+    auto handle = rangevar_handle(sym, sec, x, index, error_msg, error_msg_size);
+    return handle ? static_cast<double*>(handle) : nullptr;
+}
+}  // namespace
+
+int nrn_rangevar_get_nothrow(Symbol* sym,
+                             Section* sec,
+                             double x,
+                             int index,
+                             double* value,
+                             char* error_msg,
+                             size_t error_msg_size) {
+    if (error_msg && error_msg_size) {
+        error_msg[0] = '\0';
+    }
+    try {
+        double* pd = rangevar_element(sym, sec, x, index, error_msg, error_msg_size);
+        if (!pd) {
+            return 1;
+        }
+        if (value) {
+            *value = *pd;
+        }
+        return 0;
+    } catch (const std::exception& e) {
+        if (error_msg && error_msg_size) {
+            std::strncpy(error_msg, e.what(), error_msg_size - 1);
+            error_msg[error_msg_size - 1] = '\0';
+        }
+        return 1;
+    }
+}
+
+int nrn_rangevar_set_nothrow(Symbol* sym,
+                             Section* sec,
+                             double x,
+                             int index,
+                             double value,
+                             char* error_msg,
+                             size_t error_msg_size) {
+    if (error_msg && error_msg_size) {
+        error_msg[0] = '\0';
+    }
+    try {
+        double* pd = rangevar_element(sym, sec, x, index, error_msg, error_msg_size);
+        if (!pd) {
+            return 1;
+        }
+        *pd = value;
+        rangevar_written(sym, sec);
+        return 0;
+    } catch (const std::exception& e) {
+        if (error_msg && error_msg_size) {
+            std::strncpy(error_msg, e.what(), error_msg_size - 1);
+            error_msg[error_msg_size - 1] = '\0';
+        }
+        return 1;
+    }
+}
+
+int nrn_rangevar_push_nothrow(Symbol* sym,
+                              Section* sec,
+                              double x,
+                              int index,
+                              char* error_msg,
+                              size_t error_msg_size) {
+    if (error_msg && error_msg_size) {
+        error_msg[0] = '\0';
+    }
+    try {
+        auto handle = rangevar_handle(sym, sec, x, index, error_msg, error_msg_size);
+        if (!handle) {
+            return 1;
+        }
+        hoc_push(std::move(handle));
+        return 0;
+    } catch (const std::exception& e) {
+        if (error_msg && error_msg_size) {
+            std::strncpy(error_msg, e.what(), error_msg_size - 1);
+            error_msg[error_msg_size - 1] = '\0';
+        }
+        return 1;
+    }
 }
 
 Object* nrn_segment_nmodlrandom_get(Section* sec, double x, Symbol* sym) {
@@ -510,16 +679,21 @@ Object* nrn_symbol_object_get(const Symbol* sym) {
 
 bool nrn_symbol_object_set(Symbol* sym, Object* obj) {
     // Bind `obj` to a top-level objref, following HOC's assignment refcount
-    // rules: release the previously bound object and retain the new one. A NULL
-    // obj clears the objref (makes it nil). Returns true on success, false if
-    // `sym` is not an objref.
+    // rules (hoc_obj_set): retain the new object, then release the previously
+    // bound one. Retaining first keeps `obj` alive when the old object holds its
+    // only reference (self-assignment, or an element or member of the old
+    // object). A NULL obj clears the objref (makes it nil). Returns true on
+    // success, false if `sym` is not an objref.
     if (!sym || sym->type != OBJECTVAR) {
         return false;
     }
     Object** cell = hoc_top_level_data[sym->u.oboff].pobj;
+    if (*cell == obj) {  // `o = o` is a no-op in HOC too
+        return true;
+    }
+    hoc_obj_ref(obj);        // NULL-safe
     hoc_dec_refcount(cell);  // unref the old content and NULL the cell
     *cell = obj;
-    hoc_obj_ref(obj);  // NULL-safe
     return true;
 }
 
@@ -746,22 +920,26 @@ int nrn_method_call_nothrow(Object* obj,
         error_msg[0] = '\0';
     }
 
+    int status = 0;
     try {
         OcJump::execute_throw_on_exception(obj, method_sym, narg);
-        return 0;  // Success
     } catch (const std::exception& e) {
         if (error_msg && error_msg_size > 0) {
             strncpy(error_msg, e.what(), error_msg_size - 1);
             error_msg[error_msg_size - 1] = '\0';
         }
-        return 1;  // Error
+        status = 1;
     } catch (...) {
         if (error_msg && error_msg_size > 0) {
             strncpy(error_msg, "Unknown exception occurred", error_msg_size - 1);
             error_msg[error_msg_size - 1] = '\0';
         }
-        return 1;  // Error
+        status = 1;
     }
+    // Release the temporary object HOC kept alive during the call (hoc_pop_defer),
+    // as the Python binding does after each call; the result has its own reference.
+    hoc_unref_defer();
+    return status;
 }
 
 int nrn_function_call_nothrow(Symbol* sym, int narg, char* error_msg, size_t error_msg_size) {
@@ -770,22 +948,26 @@ int nrn_function_call_nothrow(Symbol* sym, int narg, char* error_msg, size_t err
         error_msg[0] = '\0';
     }
 
+    int status = 0;
     try {
         OcJump::execute_throw_on_exception(sym, narg);
-        return 0;  // Success
     } catch (const std::exception& e) {
         if (error_msg && error_msg_size > 0) {
             strncpy(error_msg, e.what(), error_msg_size - 1);
             error_msg[error_msg_size - 1] = '\0';
         }
-        return 1;  // Error
+        status = 1;
     } catch (...) {
         if (error_msg && error_msg_size > 0) {
             strncpy(error_msg, "Unknown exception occurred", error_msg_size - 1);
             error_msg[error_msg_size - 1] = '\0';
         }
-        return 1;  // Error
+        status = 1;
     }
+    // Release the temporary object HOC kept alive during the call (hoc_pop_defer),
+    // as the Python binding does after each call; the result has its own reference.
+    hoc_unref_defer();
+    return status;
 }
 
 void nrn_object_ref(Object* obj) {
@@ -948,7 +1130,43 @@ double* nrn_vector_data(Object* vec) {
     return vector_vec((IvocVect*) vec->u.this_pointer);
 }
 
+namespace {
+// Classes declared with begintemplate keep their members in the object's
+// dataspace; built-in (C++) classes expose them through ctemplate->steer,
+// which HOC templates do not have.
+bool is_hoc_template(const Object* obj) {
+    return !(obj->ctemplate->sym->subtype & (CPLUSOBJECT | JAVAOBJECT));
+}
+
+// Element i of a HOC template's double member, public or not (as the Python
+// interface allows), or nullptr if `name` is not one or i is out of range.
+double* template_var(const Object* obj, const char* name, int i) {
+    Symbol* sym = hoc_table_lookup(name, obj->ctemplate->symtable);
+    if (!sym || sym->type != VAR || i < 0 ||
+        static_cast<size_t>(i) >= hoc_total_array_data(sym, obj->u.dataspace)) {
+        return nullptr;
+    }
+    return obj->u.dataspace[sym->u.oboff].pval + i;
+}
+
+// The slot of a HOC template's objref member, or nullptr if `name` is not one.
+Object** template_objref(const Object* obj, const char* name) {
+    if (!is_hoc_template(obj)) {
+        return nullptr;
+    }
+    Symbol* sym = hoc_table_lookup(name, obj->ctemplate->symtable);
+    if (!sym || sym->type != OBJECTVAR) {
+        return nullptr;
+    }
+    return obj->u.dataspace[sym->u.oboff].pobj;
+}
+}  // namespace
+
 double nrn_property_get(const Object* obj, const char* name) {
+    if (is_hoc_template(obj)) {
+        auto const pd = template_var(obj, name, 0);
+        return pd ? *pd : std::numeric_limits<double>::quiet_NaN();
+    }
     auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
     if (!obj->ctemplate->is_point_) {
         hoc_pushs(sym);
@@ -962,6 +1180,10 @@ double nrn_property_get(const Object* obj, const char* name) {
 }
 
 double nrn_property_array_get(const Object* obj, const char* name, int i) {
+    if (is_hoc_template(obj)) {
+        auto const pd = template_var(obj, name, i);
+        return pd ? *pd : std::numeric_limits<double>::quiet_NaN();
+    }
     auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
     if (!obj->ctemplate->is_point_) {
         hoc_pushs(sym);
@@ -975,6 +1197,12 @@ double nrn_property_array_get(const Object* obj, const char* name, int i) {
 }
 
 void nrn_property_set(Object* obj, const char* name, double value) {
+    if (is_hoc_template(obj)) {
+        if (auto const pd = template_var(obj, name, 0)) {
+            *pd = value;
+        }
+        return;
+    }
     auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
     if (!obj->ctemplate->is_point_) {
         hoc_pushs(sym);
@@ -990,6 +1218,12 @@ void nrn_property_set(Object* obj, const char* name, double value) {
 }
 
 void nrn_property_array_set(Object* obj, const char* name, int i, double value) {
+    if (is_hoc_template(obj)) {
+        if (auto const pd = template_var(obj, name, i)) {
+            *pd = value;
+        }
+        return;
+    }
     auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
     if (!obj->ctemplate->is_point_) {
         hoc_pushs(sym);
@@ -1005,6 +1239,10 @@ void nrn_property_array_set(Object* obj, const char* name, int i, double value) 
 }
 
 void nrn_property_push(Object* obj, const char* name) {
+    if (is_hoc_template(obj)) {
+        hoc_pushpx(template_var(obj, name, 0));
+        return;
+    }
     auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
     if (!obj->ctemplate->is_point_) {
         hoc_pushs(sym);
@@ -1016,6 +1254,10 @@ void nrn_property_push(Object* obj, const char* name) {
 }
 
 void nrn_property_array_push(Object* obj, const char* name, int i) {
+    if (is_hoc_template(obj)) {
+        hoc_pushpx(template_var(obj, name, i));
+        return;
+    }
     auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
     if (!obj->ctemplate->is_point_) {
         hoc_pushs(sym);
@@ -1028,6 +1270,9 @@ void nrn_property_array_push(Object* obj, const char* name, int i) {
 }
 
 bool nrn_property_data_handle_is_valid(const Object* obj, const char* name, int i) {
+    if (is_hoc_template(obj)) {
+        return template_var(obj, name, i) != nullptr;
+    }
     auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
     if (!obj->ctemplate->is_point_) {
         hoc_pushs(sym);
@@ -1035,6 +1280,156 @@ bool nrn_property_data_handle_is_valid(const Object* obj, const char* name, int 
         return static_cast<bool>(hoc_pop_handle<double>());
     }
     return static_cast<bool>(point_process_pointer(ob2pntproc_0(const_cast<Object*>(obj)), sym, i));
+}
+
+namespace {
+struct steer_request {
+    Object* obj;
+    Symbol* sym;
+    const int* indices;
+    int nindex;
+    double* result;
+};
+
+// What hoc_object_component does for a C++ class variable such as Vector.x or
+// Matrix.x: indices, then the array-dimension marker, then the symbol, then the
+// class's steer function, which leaves a pointer to the element.
+void* steer_element(void* request, void*) {
+    auto* r = static_cast<steer_request*>(request);
+    for (int k = 0; k < r->nindex; ++k) {
+        hoc_pushx(r->indices[k]);
+    }
+    if (r->nindex) {
+        hoc_push_ndim(r->nindex);
+    }
+    hoc_pushs(r->sym);
+    r->obj->ctemplate->steer(r->obj->u.this_pointer);
+    r->result = hoc_pxpop();
+    return nullptr;
+}
+
+// OcJump::fpycall with HOC error messages and the MPI abort on error turned
+// off, as hoc_execute1 does, so an error the caller reports itself is neither
+// printed nor fatal on more than one rank. Both flags are restored, also after
+// an error (hoc_execerror sets hoc_execerror_messages to 1).
+void* quiet_fpycall(void* (*f)(void*, void*), void* a) {
+    struct restore {
+        int messages = std::exchange(hoc_execerror_messages, 0);
+        int mpiabort = std::exchange(nrn_mpiabort_on_error_, 0);
+        ~restore() {
+            hoc_execerror_messages = messages;
+            nrn_mpiabort_on_error_ = mpiabort;
+        }
+    } const saved{};
+    return OcJump::fpycall(f, a, nullptr);
+}
+}  // namespace
+
+int nrn_property_element_ptr(Object* obj,
+                             const char* name,
+                             const int* indices,
+                             int nindex,
+                             double** ptr,
+                             char* error_msg,
+                             size_t error_msg_size) {
+    auto fail = [&](const char* message) {
+        if (error_msg && error_msg_size) {
+            std::strncpy(error_msg, message, error_msg_size - 1);
+            error_msg[error_msg_size - 1] = '\0';
+        }
+        return 1;
+    };
+    if (error_msg && error_msg_size) {
+        error_msg[0] = '\0';
+    }
+    if (!ptr) {
+        return fail("ptr is NULL");
+    }
+    *ptr = nullptr;
+    if (!obj || !name || nindex < 0 || (nindex && !indices)) {
+        return fail("invalid argument");
+    }
+    Symbol* sym = hoc_table_lookup(name, obj->ctemplate->symtable);
+    if (!sym) {
+        return fail("no such property");
+    }
+    int const nsub = sym->arayinfo ? sym->arayinfo->nsub : 0;
+    if (obj->ctemplate->is_point_) {
+        // point_process_pointer reads sym->u.rng, which only a RANGEVAR has.
+        if (sym->type != RANGEVAR) {
+            // A make_pointprocess template keeps its variables in the HOC
+            // dataspace, which this function does not reach.
+            return fail(is_hoc_template(obj)
+                            ? "variables of a make_pointprocess template are not supported"
+                            : "not a variable of a point process or of Vector, Matrix or Pointer");
+        }
+        // Point-process arrays are one-dimensional; a scalar takes no index.
+        if (nindex != nsub || nsub > 1) {
+            return fail("wrong number of indices");
+        }
+        int const i = nindex ? indices[0] : 0;
+        if (i < 0 || (nsub && i >= sym->arayinfo->sub[0])) {
+            return fail("index out of range");
+        }
+        // Checked here because point_process_pointer raises a HOC error for it.
+        auto* const pnt = ob2pntproc_0(obj);
+        if (!pnt || !pnt->prop) {
+            return fail("point process not located in a section");
+        }
+        auto handle = point_process_pointer(pnt, sym, i);
+        if (!handle) {
+            return fail("no data for this property (POINTER not set?)");
+        }
+        *ptr = &*handle;
+        return 0;
+    }
+    if (!obj->ctemplate->steer || sym->type != VAR) {
+        return fail("not a variable of a point process or of Vector, Matrix or Pointer");
+    }
+    if (nindex != nsub) {
+        return fail("wrong number of indices");
+    }
+    // The steer function raises HOC errors (index out of range, freed Pointer);
+    // fpycall restores the interpreter state, including the stack, and rethrows.
+    steer_request request{obj, sym, indices, nindex, nullptr};
+    try {
+        quiet_fpycall(steer_element, &request);
+    } catch (const std::exception& e) {
+        return fail(e.what());
+    } catch (...) {
+        return fail("unknown error");
+    }
+    *ptr = request.result;
+    return 0;
+}
+
+Object* nrn_property_object_get(const Object* obj, const char* name) {
+    // Borrowed, as nrn_symbol_object_get: NULL if the member is nil or `name` is
+    // not an objref member of a HOC template.
+    Object** cell = template_objref(obj, name);
+    return cell ? *cell : nullptr;
+}
+
+bool nrn_property_object_set(Object* obj, const char* name, Object* value) {
+    // HOC assignment refcount rules, as nrn_symbol_object_set: retain the new
+    // object, then release the old one; NULL makes the member nil. Assigning
+    // the current value is a no-op, as `a.m = a.m` is. The cell is written
+    // before the old object is released: if the old object held the last
+    // reference to `obj`, releasing it frees `obj` and its cells, and freeing
+    // the cell releases `value` with the other members. `obj` itself is not
+    // ref'd or unref'd, so a template's unref() sees the same calls as for HOC.
+    Object** cell = template_objref(obj, name);
+    if (!cell) {
+        return false;
+    }
+    Object* old = *cell;
+    if (old == value) {
+        return true;
+    }
+    hoc_obj_ref(value);  // NULL-safe
+    *cell = value;
+    hoc_obj_unref(old);  // NULL-safe; may free obj (see above)
+    return true;
 }
 
 char const* nrn_symbol_name(const Symbol* sym) {
@@ -1057,6 +1452,22 @@ Symlist* nrn_top_level_symbol_table(void) {
 
 int nrn_symbol_array_length(const Symbol* sym) {
     return sym->arayinfo->sub[0];
+}
+
+int nrn_symbol_array_dims(const Symbol* sym, int* dims, int max_dims) {
+    // Number of dimensions of an array symbol (0 for a scalar), with up to
+    // max_dims of the sizes written to dims; nrn_symbol_array_length gives
+    // only the first.
+    if (!sym || !sym->arayinfo) {
+        return 0;
+    }
+    const Arrayinfo* info = sym->arayinfo;
+    if (dims) {
+        for (int i = 0; i < info->nsub && i < max_dims; ++i) {
+            dims[i] = info->sub[i];
+        }
+    }
+    return info->nsub;
 }
 
 // Function to register function/object in hoc
