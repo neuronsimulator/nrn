@@ -93,19 +93,6 @@ add_executable(
   codegen/transform.cpp
   codegen/codegen_compatibility_visitor.cpp)
 
-# Compile generated C++ in the LAG tests. String checks do not catch an expression that is not valid
-# C++.
-if(MSVC)
-  set(NRN_CODEGEN_SYNTAX_FLAGS "/nologo /Zs /std:c++17 /DCORENRN_BUILD=0 /DHAVE_CONFIG_H")
-else()
-  set(NRN_CODEGEN_SYNTAX_FLAGS "-std=c++17 -fsyntax-only -fPIC -DCORENRN_BUILD=0 -DHAVE_CONFIG_H")
-endif()
-target_compile_definitions(
-  testcodegen
-  PRIVATE "NRN_CXX_FOR_CODEGEN_TEST=\"${CMAKE_CXX_COMPILER}\""
-          "NRN_CODEGEN_SYNTAX_FLAGS=\"${NRN_CODEGEN_SYNTAX_FLAGS}\""
-          "NRN_BUILD_INCLUDE_DIR=\"${PROJECT_BINARY_DIR}/include\"")
-
 target_link_libraries(testutils PRIVATE lexer util nmodl_test_flags)
 target_link_libraries(testmodtoken PRIVATE lexer util nmodl_test_flags)
 target_link_libraries(testlexer PRIVATE lexer util nmodl_test_flags)
