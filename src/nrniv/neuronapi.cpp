@@ -2,6 +2,7 @@
 
 #include "../../nrnconf.h"
 #include "hocdec.h"
+#include "oc_ansi.h"
 #include "cabcode.h"
 #include "nrniv_mf.h"
 #include "nrnmpi.h"
@@ -17,6 +18,7 @@
 #include <cstdio>
 #include <limits>
 #include <string>
+#include <utility>
 
 /// A public face of hoc_Item
 struct nrn_Item: public hoc_Item {};
@@ -46,6 +48,7 @@ struct SymbolTableIterator {
 extern int nrn_nobanner_;
 extern int diam_changed;
 extern int nrn_try_catch_nest_depth;
+extern int hoc_execerror_messages;
 extern "C" void nrnpy_set_pr_etal(int (*cbpr_stdoe)(int, char*), int (*cbpass)());
 int ivocmain_session(int, const char**, const char**, int start_session);
 void simpleconnectsection();
@@ -677,16 +680,21 @@ Object* nrn_symbol_object_get(const Symbol* sym) {
 
 bool nrn_symbol_object_set(Symbol* sym, Object* obj) {
     // Bind `obj` to a top-level objref, following HOC's assignment refcount
-    // rules: release the previously bound object and retain the new one. A NULL
-    // obj clears the objref (makes it nil). Returns true on success, false if
-    // `sym` is not an objref.
+    // rules (hoc_obj_set): retain the new object, then release the previously
+    // bound one. Retaining first keeps `obj` alive when the old object holds its
+    // only reference (self-assignment, or an element or member of the old
+    // object). A NULL obj clears the objref (makes it nil). Returns true on
+    // success, false if `sym` is not an objref.
     if (!sym || sym->type != OBJECTVAR) {
         return false;
     }
     Object** cell = hoc_top_level_data[sym->u.oboff].pobj;
+    if (*cell == obj) {  // `o = o` is a no-op in HOC too
+        return true;
+    }
+    hoc_obj_ref(obj);        // NULL-safe
     hoc_dec_refcount(cell);  // unref the old content and NULL the cell
     *cell = obj;
-    hoc_obj_ref(obj);  // NULL-safe
     return true;
 }
 
@@ -876,7 +884,7 @@ int nrn_object_new_nothrow(Symbol* sym,
         return 0;
     } catch (const std::exception& e) {
         if (error_msg && error_msg_size > 0) {
-            strncpy(error_msg, e.what(), error_msg_size - 1);
+            strncpy(error_msg, neuron::oc::safe_what(e), error_msg_size - 1);
             error_msg[error_msg_size - 1] = '\0';
         }
         return 1;
@@ -918,7 +926,7 @@ int nrn_method_call_nothrow(Object* obj,
         OcJump::execute_throw_on_exception(obj, method_sym, narg);
     } catch (const std::exception& e) {
         if (error_msg && error_msg_size > 0) {
-            strncpy(error_msg, e.what(), error_msg_size - 1);
+            strncpy(error_msg, neuron::oc::safe_what(e), error_msg_size - 1);
             error_msg[error_msg_size - 1] = '\0';
         }
         status = 1;
@@ -946,7 +954,7 @@ int nrn_function_call_nothrow(Symbol* sym, int narg, char* error_msg, size_t err
         OcJump::execute_throw_on_exception(sym, narg);
     } catch (const std::exception& e) {
         if (error_msg && error_msg_size > 0) {
-            strncpy(error_msg, e.what(), error_msg_size - 1);
+            strncpy(error_msg, neuron::oc::safe_what(e), error_msg_size - 1);
             error_msg[error_msg_size - 1] = '\0';
         }
         status = 1;
@@ -1300,6 +1308,22 @@ void* steer_element(void* request, void*) {
     r->result = hoc_pxpop();
     return nullptr;
 }
+
+// OcJump::fpycall with HOC error messages and the MPI abort on error turned
+// off, as hoc_execute1 does, so an error the caller reports itself is neither
+// printed nor fatal on more than one rank. Both flags are restored, also after
+// an error (hoc_execerror sets hoc_execerror_messages to 1).
+void* quiet_fpycall(void* (*f)(void*, void*), void* a) {
+    struct restore {
+        int messages = std::exchange(hoc_execerror_messages, 0);
+        int mpiabort = std::exchange(nrn_mpiabort_on_error_, 0);
+        ~restore() {
+            hoc_execerror_messages = messages;
+            nrn_mpiabort_on_error_ = mpiabort;
+        }
+    } const saved{};
+    return OcJump::fpycall(f, a, nullptr);
+}
 }  // namespace
 
 int nrn_property_element_ptr(Object* obj,
@@ -1332,6 +1356,14 @@ int nrn_property_element_ptr(Object* obj,
     }
     int const nsub = sym->arayinfo ? sym->arayinfo->nsub : 0;
     if (obj->ctemplate->is_point_) {
+        // point_process_pointer reads sym->u.rng, which only a RANGEVAR has.
+        if (sym->type != RANGEVAR) {
+            // A make_pointprocess template keeps its variables in the HOC
+            // dataspace, which this function does not reach.
+            return fail(is_hoc_template(obj)
+                            ? "variables of a make_pointprocess template are not supported"
+                            : "not a variable of a point process or of Vector, Matrix or Pointer");
+        }
         // Point-process arrays are one-dimensional; a scalar takes no index.
         if (nindex != nsub || nsub > 1) {
             return fail("wrong number of indices");
@@ -1340,7 +1372,12 @@ int nrn_property_element_ptr(Object* obj,
         if (i < 0 || (nsub && i >= sym->arayinfo->sub[0])) {
             return fail("index out of range");
         }
-        auto handle = point_process_pointer(ob2pntproc_0(obj), sym, i);
+        // Checked here because point_process_pointer raises a HOC error for it.
+        auto* const pnt = ob2pntproc_0(obj);
+        if (!pnt || !pnt->prop) {
+            return fail("point process not located in a section");
+        }
+        auto handle = point_process_pointer(pnt, sym, i);
         if (!handle) {
             return fail("no data for this property (POINTER not set?)");
         }
@@ -1357,7 +1394,7 @@ int nrn_property_element_ptr(Object* obj,
     // fpycall restores the interpreter state, including the stack, and rethrows.
     steer_request request{obj, sym, indices, nindex, nullptr};
     try {
-        OcJump::fpycall(steer_element, &request, nullptr);
+        quiet_fpycall(steer_element, &request);
     } catch (const std::exception& e) {
         return fail(e.what());
     } catch (...) {
@@ -1375,15 +1412,24 @@ Object* nrn_property_object_get(const Object* obj, const char* name) {
 }
 
 bool nrn_property_object_set(Object* obj, const char* name, Object* value) {
-    // HOC assignment refcount rules, as nrn_symbol_object_set: release the old
-    // object and retain the new one; NULL makes the member nil.
+    // HOC assignment refcount rules, as nrn_symbol_object_set: retain the new
+    // object, then release the old one; NULL makes the member nil. Assigning
+    // the current value is a no-op, as `a.m = a.m` is. The cell is written
+    // before the old object is released: if the old object held the last
+    // reference to `obj`, releasing it frees `obj` and its cells, and freeing
+    // the cell releases `value` with the other members. `obj` itself is not
+    // ref'd or unref'd, so a template's unref() sees the same calls as for HOC.
     Object** cell = template_objref(obj, name);
     if (!cell) {
         return false;
     }
-    hoc_dec_refcount(cell);
-    *cell = value;
+    Object* old = *cell;
+    if (old == value) {
+        return true;
+    }
     hoc_obj_ref(value);  // NULL-safe
+    *cell = value;
+    hoc_obj_unref(old);  // NULL-safe; may free obj (see above)
     return true;
 }
 

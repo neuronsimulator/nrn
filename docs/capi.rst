@@ -2255,7 +2255,8 @@ Miscellaneous
 
     Works for ``Matrix.x``, ``Vector.x``, ``Pointer.val`` and point-process
     variables (scalars and one-dimensional arrays). Errors are reported in
-    ``error_msg``, not raised, and leave the interpreter stack unchanged.
+    ``error_msg``, not raised or printed, and leave the interpreter stack
+    unchanged.
 
     :param obj: Pointer to the object.
     :param name: Name of the variable, such as ``"x"``.
@@ -2268,8 +2269,10 @@ Miscellaneous
     :param error_msg_size: Size of ``error_msg``.
     :returns: 0 on success, nonzero on failure: unknown name, a method rather than
         a variable, the wrong number of indices, an index out of range, a
-        point-process ``POINTER`` that is not set, or a ``Pointer`` whose target was
-        freed.
+        point process that is not located in a section, a point-process
+        ``POINTER`` that is not set, a ``Pointer`` whose target was freed, or a
+        variable of a point process defined with ``make_pointprocess`` from a
+        HOC template, which is not supported.
 
     The pointer stays valid until the object's storage changes (for example a
     ``Vector`` is resized or a ``Matrix`` is reallocated) or the object is destroyed.
