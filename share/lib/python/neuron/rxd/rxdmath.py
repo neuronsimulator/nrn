@@ -152,10 +152,9 @@ def _ensure_arithmeticed(other: Any) -> Any:
     elif isinstance(other, _Reaction):
         raise RxDException("Cannot do arithmetic on a reaction")
     elif not isinstance(other, _Arithmeticed):
-        raise RxDException(f"{type(other)=} : {isinstance(other, _Arithmeticed)=}")
-        # raise RxDException(
-        #     f"{other} of type {type(other)} is not a valid arithmetic object."
-        # )
+        raise RxDException(
+             f"{other} of type {type(other)} is not a valid _Arithmeticed object."
+        )
     return other
 
 
