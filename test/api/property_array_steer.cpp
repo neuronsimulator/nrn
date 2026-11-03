@@ -31,27 +31,26 @@ static bool check(bool cond, const char* msg) {
     return cond;
 }
 
-// Everything written to stderr (fd 2) while f runs.
+// Everything written to stderr (fd 2) while f runs; fd 2 is restored before returning.
 template <typename F>
 static std::string stderr_of(F f) {
-    char path[] = "/tmp/property_array_steerXXXXXX";
-    int const tmp = mkstemp(path);
     std::fflush(stderr);
-    int const saved = dup(2);
-    dup2(tmp, 2);
+    FILE* const sink = std::tmpfile();
+    int const saved = dup(STDERR_FILENO);
+    if (!sink || saved == -1 || dup2(fileno(sink), STDERR_FILENO) == -1) {
+        std::perror("redirect stderr");
+        std::exit(1);
+    }
     f();
     std::fflush(stderr);
-    dup2(saved, 2);
+    dup2(saved, STDERR_FILENO);
     close(saved);
     std::string out;
-    char buf[256];
-    lseek(tmp, 0, SEEK_SET);
-    ssize_t n;
-    while ((n = read(tmp, buf, sizeof buf)) > 0) {
-        out.append(buf, n);
+    std::rewind(sink);
+    for (int c; (c = std::fgetc(sink)) != EOF;) {
+        out += static_cast<char>(c);
     }
-    close(tmp);
-    unlink(path);
+    std::fclose(sink);
     return out;
 }
 
@@ -113,6 +112,9 @@ int main(void) {
     if (!messages.empty()) {
         cerr << messages;
     }
+    // The capture does see a HOC error, so the empty result above means something.
+    ok &= check(!stderr_of([] { nrn_hoc_call("vec.x[99] = 1\n"); }).empty(),
+                "a HOC error is captured");
     ok &= check(hoc_stack_size() == depth, "an empty Vector leaves the stack alone");
     ok &= check(data[4] == 40, "an out-of-range set wrote nothing");
 
