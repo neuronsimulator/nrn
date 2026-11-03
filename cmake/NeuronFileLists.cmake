@@ -352,11 +352,11 @@ set(NRNMPI_FILES_LIST nrnmpi.cpp memory_usage.cpp bbsmpipack.cpp mpispike.cpp)
 set(RXD_FILES_LIST
     grids.cpp
     rxd.cpp
-    rxd_extracellular.cpp
-    rxd_intracellular.cpp
-    rxd_vol.cpp
-    rxd_marching_cubes.cpp
-    rxd_llgramarea.cpp)
+    extracellular.cpp
+    intracellular.cpp
+    vol.cpp
+    marching_cubes.cpp
+    llgramarea.cpp)
 
 # built-in mod files
 set(MODFILE_BASE_NAMES
