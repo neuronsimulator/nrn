@@ -1,5 +1,7 @@
 import os
+import select
 import sys
+import time
 
 import pytest
 
@@ -35,6 +37,24 @@ def test_kernel_maps_nl_cooked_vs_raw_pty():
         os.close(slave)
 
 
+def _read_pty_line(master, timeout=1.0):
+    """Read until a newline. One os.read can return before ONLCR posts it."""
+    data = b""
+    deadline = time.monotonic() + timeout
+    while b"\n" not in data:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            break
+        ready, _, _ = select.select([master], [], [], remaining)
+        if not ready:
+            break
+        chunk = os.read(master, 64)
+        if not chunk:
+            break
+        data += chunk
+    return data
+
+
 @pytest.mark.skipif(sys.platform == "win32", reason="termios/pty Unix only")
 def test_patched_write_inserts_cr_only_when_opost_off():
     import termios
@@ -54,7 +74,7 @@ def test_patched_write_inserts_cr_only_when_opost_off():
             install_raw_tty_newline_fix(streams=(stream,))
             stream.write("hello\n")
             stream.flush()
-            return os.read(master, 64)
+            return _read_pty_line(master)
         finally:
             if stream is not None:
                 stream.close()
@@ -69,3 +89,55 @@ def test_patched_write_inserts_cr_only_when_opost_off():
     assert b"\r\r" not in cooked
     assert cooked.endswith(b"\n")
     assert cooked.startswith(b"hello")
+
+
+def test_untrackable_stream_is_left_alone():
+    class Unhashable:
+        def __eq__(self, other):
+            return self is other
+
+        def fileno(self):
+            return 1
+
+        def write(self, s):
+            return len(s)
+
+    class NoWeakRef:
+        __slots__ = ("write",)
+
+        def __init__(self):
+            self.write = self._write
+
+        def fileno(self):
+            return 1
+
+        def _write(self, s):
+            return len(s)
+
+    # Class functions make a new bound method on each access. An instance
+    # assignment is the sign that the helper wrapped write.
+    stream = Unhashable()
+    install_raw_tty_newline_fix(streams=(stream,))
+    assert "write" not in stream.__dict__
+
+    stream = NoWeakRef()
+    original = stream.write
+    install_raw_tty_newline_fix(streams=(stream,))
+    assert stream.write is original
+
+
+def test_trackable_stream_is_patched_once():
+    class Trackable:
+        def fileno(self):
+            return 1
+
+        def write(self, s):
+            return len(s)
+
+    stream = Trackable()
+    original = stream.write
+    install_raw_tty_newline_fix(streams=(stream,))
+    patched = stream.write
+    assert patched is not original
+    install_raw_tty_newline_fix(streams=(stream,))
+    assert stream.write is patched
