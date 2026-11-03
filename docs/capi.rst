@@ -678,9 +678,11 @@ Segments
     :param max: Size of ``mechanisms``.
     :returns: The number of mechanisms in the node, which may exceed ``max``;
         -1 if sec is NULL or has been deleted, or if x is outside 0 to 1 or NaN.
-        At x = 0 and x = 1 the node is the end node, as for :c:func:`nrn_segment_node_index`:
-        x = 0 of a child Section is its parent's node, which has that node's
-        mechanisms, and the end nodes of a root Section have none (the count is 0).
+        At x = 0 and x = 1 the node is the end node, as for :c:func:`nrn_segment_node_index`.
+        x = 0 of a child Section is the parent's node it connects to, with that
+        node's mechanisms. The node at x = 1, and x = 0 of a root Section, has no
+        density mechanisms: it lists only what was placed there, such as a point
+        process at that end, and the count is 0 otherwise.
 
     **C Usage:**
 

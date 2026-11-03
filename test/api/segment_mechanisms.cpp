@@ -111,6 +111,12 @@ int main(void) {
     ok &= check_order(kid, 0.0, {"IClamp", "pas", "capacitance", "morphology"});
     ok &= check(nrn_segment_mechanisms(kid, 1.0, nullptr, 0) == 0, "x=1 of a leaf has none");
 
+    // A point process at an end sits on the end node, which then lists it.
+    nrn_hoc_call(
+        "objref endclamp\n"
+        "kid endclamp = new IClamp(1)\n");
+    ok &= check_order(kid, 1.0, {"IClamp"});
+
     // A deleted section.
     nrn_hoc_call(
         "create gone\n"
