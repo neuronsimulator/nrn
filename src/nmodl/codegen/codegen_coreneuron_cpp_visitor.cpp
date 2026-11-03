@@ -259,6 +259,16 @@ void CodegenCoreneuronCppVisitor::print_nrn_cur_matrix_shadow_update() {
 }
 
 
+void CodegenCoreneuronCppVisitor::print_nrn_cur_loop_begin() {
+    printer->push_block("for (int id = 0; id < nodecount; id++)");
+}
+
+
+void CodegenCoreneuronCppVisitor::print_nrn_cur_loop_end() {
+    printer->pop_block();
+}
+
+
 void CodegenCoreneuronCppVisitor::print_nrn_cur_matrix_shadow_reduction() {
     auto rhs_op = operator_for_rhs();
     auto d_op = operator_for_d();
@@ -2861,13 +2871,13 @@ void CodegenCoreneuronCppVisitor::print_nrn_cur() {
     printer->add_line("/** update current */");
     print_global_function_common_code(BlockType::Equation);
     print_parallel_iteration_hint(BlockType::Equation, info.breakpoint_node);
-    printer->push_block("for (int id = 0; id < nodecount; id++)");
+    print_nrn_cur_loop_begin();
     print_nrn_cur_kernel(*info.breakpoint_node);
     print_nrn_cur_matrix_shadow_update();
     if (!nrn_cur_reduction_loop_required()) {
         print_fast_imem_calculation();
     }
-    printer->pop_block();
+    print_nrn_cur_loop_end();
 
     if (nrn_cur_reduction_loop_required()) {
         printer->push_block("for (int id = 0; id < nodecount; id++)");

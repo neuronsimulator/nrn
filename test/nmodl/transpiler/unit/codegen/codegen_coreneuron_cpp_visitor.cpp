@@ -1212,3 +1212,85 @@ SCENARIO("Array STATE variable", "[codegen][array_state]") {
         }
     }
 }
+
+
+SCENARIO("Point processes that share a node", "[codegen][point_process]") {
+    GIVEN("A point process that writes an ion current") {
+        std::string const nmodl_text = R"(
+            NEURON {
+                POINT_PROCESS CaPP
+                USEION ca WRITE ica
+                RANGE amp
+            }
+            PARAMETER {
+                amp = 0.001
+            }
+            ASSIGNED {
+                ica
+            }
+            BREAKPOINT {
+                ica = amp
+            }
+        )";
+
+        THEN("on the GPU, the first instance on each node handles all of the node's, in order") {
+            auto const generated = get_coreneuron_cpp_code(nmodl_text, true);
+            REQUIRE_THAT(generated,
+                         ContainsSubstring(
+                             "for (int first_id = 0; first_id < nodecount; first_id++) {"));
+            REQUIRE_THAT(generated,
+                         ContainsSubstring("if (first_id > 0 && node_index[first_id - 1] == "
+                                           "node_index[first_id]) {"));
+            REQUIRE_THAT(generated,
+                         ContainsSubstring("for (int id = first_id; id < nodecount && "
+                                           "node_index[id] == node_index[first_id]; id++) {"));
+            REQUIRE_THAT(generated, !ContainsSubstring("atomic update"));
+        }
+
+        THEN("on the CPU, nrn_cur's loop over instances is not vectorised") {
+            auto const generated = get_coreneuron_cpp_code(nmodl_text);
+            REQUIRE_THAT(generated, ContainsSubstring("for (int id = 0; id < nodecount; id++) {"));
+            REQUIRE_THAT(generated, !ContainsSubstring("first_id"));
+            auto const nrn_cur = generated.substr(generated.find("void nrn_cur_CaPP"));
+            auto const loop =
+                nrn_cur.substr(0, nrn_cur.find("for (int id = 0; id < nodecount; id++)"));
+            REQUIRE_THAT(loop, !ContainsSubstring("#pragma omp simd"));
+            REQUIRE_THAT(loop, !ContainsSubstring("#pragma ivdep"));
+        }
+    }
+
+    GIVEN("A point process that writes no ion current") {
+        std::string const nmodl_text = R"(
+            NEURON {
+                POINT_PROCESS Syn
+                NONSPECIFIC_CURRENT i
+                RANGE g, e
+            }
+            PARAMETER {
+                g = 0.001
+                e = 0
+            }
+            ASSIGNED {
+                v
+                i
+            }
+            BREAKPOINT {
+                i = g*(v - e)
+            }
+        )";
+
+        THEN("the GPU code keeps one thread per instance, with atomic updates to the matrix") {
+            auto const generated = get_coreneuron_cpp_code(nmodl_text, true);
+            REQUIRE_THAT(generated, !ContainsSubstring("first_id"));
+            REQUIRE_THAT(generated, ContainsSubstring("nrn_pragma_acc(atomic update)"));
+        }
+
+        THEN("the CPU code keeps nrn_cur's loop vectorised") {
+            auto const generated = get_coreneuron_cpp_code(nmodl_text);
+            auto const nrn_cur = generated.substr(generated.find("void nrn_cur_Syn"));
+            auto const loop =
+                nrn_cur.substr(0, nrn_cur.find("for (int id = 0; id < nodecount; id++)"));
+            REQUIRE_THAT(loop, ContainsSubstring("#pragma omp simd"));
+        }
+    }
+}
