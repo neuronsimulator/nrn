@@ -38,47 +38,68 @@ def save_data_from_test(save_path):
 
 def collect_data(h, rxd, data, save_path, num_record=10):
     """grabs the membrane potential data, h.t, and the rxd state values"""
-    data["record_count"] += 1
-    if data["record_count"] > num_record:
+
+    pc = h.ParallelContext()
+    nhost = pc.nhost()
+    rank = pc.id()
+
+    # let rank 0 handle the data dict
+    all_stop = False
+    if rank == 0:
+        data["record_count"] += 1
+        if data["record_count"] > num_record:
+            all_stop = True
+    if nhost > 1:
+        all_stop = pc.allreduce(all_stop, 2)
+    if all_stop:
         h.stoprun = True
         return
+
     all_potentials = [seg.v for seg in itertools.chain.from_iterable(h.allsec())]
-    rxd_1d = list(rxd.node._states)
+    rxd_1d = list(rxd.node._get_states())
     rxd_3d = []
     rxd_ecs = []
-    for sp in rxd.species._all_species:
-        s = sp()
+    for s in rxd.species._all_species:
+        s = s()
         if s and hasattr(s, "_intracellular_instances"):
-            for ics in s._intracellular_instances.values():
-                rxd_3d += list(ics.states)
+            for i in s._intracellular_instances.values():
+                rxd_3d += list(i.states)
         if s and hasattr(s, "_extracellular_instances"):
             for ecs in s._extracellular_instances.values():
                 rxd_ecs += list(ecs.states.flatten())
-    all_rxd = rxd_1d + rxd_3d + rxd_ecs
-    local_data = [h.t] + all_potentials + all_rxd
 
-    # remove data before t=0
-    if h.t == 0:
-        data["data"] = []
-        data["record_count"] = 1
-    # remove previous record if h.t is the same
-    if data["record_count"] > 1:
-        if len(local_data) > len(data["data"]):
-            # model changed -- reset data collection
+    if nhost > 1:
+        gathered = pc.py_gather([all_potentials, rxd_1d, rxd_3d], 0)
+        if rank == 0:
+            all_potentials, rxd_1d, rxd_3d = [
+                list(itertools.chain.from_iterable(parts)) for parts in zip(*gathered)
+            ]
+    if rank == 0:
+        all_rxd = rxd_1d + rxd_3d + rxd_ecs
+        local_data = [h.t] + all_potentials + all_rxd
+
+        # remove data before t=0
+        if h.t == 0:
             data["data"] = []
             data["record_count"] = 1
-        elif h.t == data["data"][-len(local_data)]:
-            data["record_count"] -= 1
-            del data["data"][-len(local_data) :]
-    # add new data record
-    data["data"].extend(local_data)
-    if data["record_count"] == 2:
-        data["rlen"] = len(local_data)
+        # remove previous record if h.t is the same
+        if data["record_count"] > 1:
+            if len(local_data) > len(data["data"]):
+                # model changed -- reset data collection
+                data["data"] = []
+                data["record_count"] = 1
+            elif h.t == data["data"][-len(local_data)]:
+                data["record_count"] -= 1
+                del data["data"][-len(local_data) :]
+        # add new data record
+        data["data"].extend(local_data)
+        if data["record_count"] == 2:
+            data["rlen"] = len(local_data)
 
-    # save the test data (if the --save option was used)
-    if save_path:
-        with open(save_data_from_test(save_path), "wb") as f:
-            numpy.array(data["data"]).tofile(f)
+        # save the test data (if the --save option was used)
+        if save_path:
+            with open(save_data_from_test(save_path), "wb") as f:
+                numpy.array(data["data"]).tofile(f)
 
 
 def compare_data(data):
