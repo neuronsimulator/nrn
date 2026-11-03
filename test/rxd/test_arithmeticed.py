@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 
 def test_invalid_arith_objects(neuron_nosave_instance):
@@ -6,30 +7,9 @@ def test_invalid_arith_objects(neuron_nosave_instance):
 
     h, rxd, _ = neuron_nosave_instance
 
-    try:
-        rxd.rxdmath._ensure_arithmeticed(None)
-    except Exception as e:
-        assert isinstance(e, rxd.RxDException)
-
-    try:
-        rxd.rxdmath._ensure_arithmeticed("hello")
-    except Exception as e:
-        assert isinstance(e, rxd.RxDException)
-
-    try:
-        rxd.rxdmath._ensure_arithmeticed([])
-    except Exception as e:
-        assert isinstance(e, rxd.RxDException)
-
-    try:
-        rxd.rxdmath._ensure_arithmeticed([1, 2])
-    except Exception as e:
-        assert isinstance(e, rxd.RxDException)
-
-    try:
-        rxd.rxdmath._ensure_arithmeticed(1 + 1j)
-    except Exception as e:
-        assert isinstance(e, rxd.RxDException)
+    for invalid in (None, "hello", [], [1, 2], 1 + 1j):
+        with pytest.raises(rxd.RxDException):
+            rxd.rxdmath._ensure_arithmeticed(invalid)
 
 
 def test_valid_arith_objects(neuron_nosave_instance):
