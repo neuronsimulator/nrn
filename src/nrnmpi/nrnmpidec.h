@@ -4,8 +4,7 @@ be of the form "type foo(type arg, ...)". Moreover, the * needs to be attached
 to the type, e.g. `T*` is valid, but `T *` isn't.
 */
 
-#ifndef nrnmpidec_h
-#define nrnmpidec_h
+#pragma once
 #include <nrnmpiuse.h>
 #include <cstdint>
 using longdbl = long double;
@@ -92,7 +91,7 @@ extern void nrnmpi_int_allgatherv_inplace(int* srcdest, int* n, int* dspl);
 extern void nrnmpi_int_allgatherv(int* s, int* r, int* n, int* dspl);
 extern void nrnmpi_char_allgatherv(char* s, char* r, int* n, int* dspl);
 extern void nrnmpi_int_alltoall(int* s, int* r, int n);
-extern void nrnmpi_int_alltoallv(int* s, int* scnt, int* sdispl, int* r, int* rcnt, int* rdispl);
+extern void nrnmpi_int_alltoallv(const int* s, const int* scnt, const int* sdispl, int* r, int* rcnt, int* rdispl);
 extern void nrnmpi_int_alltoallv_sparse(int* s, int* scnt, int* sdispl, int* r, int* rcnt, int* rdispl);
 extern void nrnmpi_long_allgatherv(int64_t* s, int64_t* r, int* n, int* dspl);
 extern void nrnmpi_long_allgatherv_inplace(long* srcdest, int* n, int* dspl);
@@ -100,7 +99,7 @@ extern void nrnmpi_long_alltoallv(int64_t* s, int* scnt, int* sdispl, int64_t* r
 extern void nrnmpi_long_alltoallv_sparse(int64_t* s, int* scnt, int* sdispl, int64_t* r, int* rcnt, int* rdispl);
 extern void nrnmpi_dbl_allgatherv(double* s, double* r, int* n, int* dspl);
 extern void nrnmpi_dbl_allgatherv_inplace(double* srcdest, int* n, int* dspl);
-extern void nrnmpi_dbl_alltoallv(double* s, int* scnt, int* sdispl, double* r, int* rcnt, int* rdispl);
+extern void nrnmpi_dbl_alltoallv(const double* s, const int* scnt, const int* sdispl, double* r, int* rcnt, int* rdispl);
 extern void nrnmpi_dbl_alltoallv_sparse(double* s, int* scnt, int* sdispl, double* r, int* rcnt, int* rdispl);
 extern void nrnmpi_char_alltoallv(char* s, int* scnt, int* sdispl, char* r, int* rcnt, int* rdispl);
 extern void nrnmpi_dbl_broadcast(double* buf, int cnt, int root);
@@ -131,6 +130,4 @@ extern int nrnmpi_multisend_conserve(int nsend, int nrecv);
 #endif
 // clang-format on
 }
-
-#endif
 #endif

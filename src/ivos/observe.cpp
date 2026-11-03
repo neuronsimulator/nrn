@@ -30,58 +30,28 @@
  */
 
 #include <InterViews/observe.h>
-#include <OS/list.h>
-
-declarePtrList(ObserverList,Observer)
-implementPtrList(ObserverList,Observer)
-
-Observable::Observable() {
-    observers_ = nil;
-}
+#include "utils/enumerate.h"
 
 Observable::~Observable() {
-    ObserverList* list = observers_;
-    if (list != nil) {
-	// in case a disconnect removes items from the ObserverList
-	for (long i = list->count() - 1; i >= 0; --i) {
-	    list->item(i)->disconnect(this);
-	    if (i > list->count()) { i = list->count(); }
+	// in case a disconnect removes items from the observers
+    for (long long i = static_cast<long long>(observers_.size()) - 1; i >= 0; --i) {
+	    observers_[i]->disconnect(this);
+        if (i > observers_.size()) {
+            i = observers_.size();
+        }
 	}
-	delete list;
-    }
 }
 
 void Observable::attach(Observer* o) {
-    ObserverList* list = observers_;
-    if (list == nil) {
-	list = new ObserverList(5);
-	observers_ = list;
-    }
-    list->append(o);
+    observers_.push_back(o);
 }
 
 void Observable::detach(Observer* o) {
-    ObserverList* list = observers_;
-    if (list != nil) {
-	for (ListUpdater(ObserverList) i(*list); i.more(); i.next()) {
-	    if (i.cur() == o) {
-		i.remove_cur();
-		break;
-	    }
-	}
-    }
+    erase_first(observers_, o);
 }
 
 void Observable::notify() {
-    ObserverList* list = observers_;
-    if (list != nil) {
-	for (ListItr(ObserverList) i(*list); i.more(); i.next()) {
-	    i.cur()->update(this);
-	}
+	for (auto& obs: observers_) {
+	    obs->update(this);
     }
 }
-
-Observer::Observer() { }
-Observer::~Observer() { }
-void Observer::update(Observable*) { }
-void Observer::disconnect(Observable*) { }

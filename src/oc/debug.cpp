@@ -1,23 +1,31 @@
 #include <../../nrnconf.h>
 /* /local/src/master/nrn/src/oc/debug.cpp,v 1.7 1996/04/09 16:39:14 hines Exp */
-#include "hoc.h"
+
+#include "hocdec.h"
 #include "code.h"
 #include "equation.h"
+#include "multicore.h"
 #include <stdio.h>
-int zzdebug;
 
-#if DOS
-#define prcod(c1, c2) else if (p->pf == c1) Printf("%p %p %s", p, p->pf, c2)
-#else
-#define prcod(c1, c2) else if (p->pf == c1) Printf("%p %p %s", p, p->pf, c2)
+#include "utils/logger.hpp"
+
+#include "nrndigest.h"
+#if NRN_DIGEST
+#include <openssl/sha.h>
+#include <vector>
+#include <string>
 #endif
 
-void debug(void) /* print the machine */
+int hoc_zzdebug;
+
+#define prcod(c1, c2) else if (p->pf == c1) Printf("%p %p %s", fmt::ptr(p), fmt::ptr(p->pf), c2)
+
+void hoc_debug(void) /* print the machine */
 {
-    if (zzdebug == 0)
-        zzdebug = 1;
+    if (hoc_zzdebug == 0)
+        hoc_zzdebug = 1;
     else
-        zzdebug = 0;
+        hoc_zzdebug = 0;
 }
 
 /* running copy of calls to execute */
@@ -26,64 +34,60 @@ void debugzz(Inst* p) {
     {
         if (p->in == STOP)
             Printf("STOP\n");
-        prcod(nopop, "POP\n");
-        prcod(eval, "EVAL\n");
-        prcod(add, "ADD\n");
+        prcod(hoc_nopop, "POP\n");
+        prcod(hoc_eval, "EVAL\n");
+        prcod(hoc_add, "ADD\n");
         prcod(hoc_sub, "SUB\n");
-        prcod(mul, "MUL\n");
+        prcod(hoc_mul, "MUL\n");
         prcod(hoc_div, "DIV\n");
         prcod(hoc_negate, "NEGATE\n");
-        prcod(power, "POWER\n");
+        prcod(hoc_power, "POWER\n");
         prcod(hoc_assign, "ASSIGN\n");
-        prcod(bltin, "BLTIN\n");
-        prcod(varpush, "VARPUSH\n");
-        prcod(constpush, "CONSTPUSH\n");
-        prcod(pushzero, "PUSHZERO\n");
-        prcod(print, "PRINT\n");
-        prcod(varread, "VARREAD\n");
-        prcod(prexpr, "PREXPR\n");
-        prcod(prstr, "PRSTR\n");
-        prcod(gt, "GT\n");
+        prcod(hoc_bltin, "BLTIN\n");
+        prcod(hoc_varpush, "VARPUSH\n");
+        prcod(hoc_constpush, "CONSTPUSH\n");
+        prcod(hoc_pushzero, "PUSHZERO\n");
+        prcod(hoc_print, "PRINT\n");
+        prcod(hoc_varread, "VARREAD\n");
+        prcod(hoc_prexpr, "PREXPR\n");
+        prcod(hoc_prstr, "PRSTR\n");
+        prcod(hoc_gt, "GT\n");
         prcod(hoc_lt, "LT\n");
         prcod(hoc_eq, "EQ\n");
-        prcod(ge, "GE\n");
-        prcod(le, "LE\n");
-        prcod(ne, "NE\n");
+        prcod(hoc_ge, "GE\n");
+        prcod(hoc_le, "LE\n");
+        prcod(hoc_ne, "NE\n");
         prcod(hoc_and, "AND\n");
         prcod(hoc_or, "OR\n");
         prcod(hoc_not, "NOT\n");
-        prcod(ifcode, "IFCODE\n");
-        prcod(forcode, "FORCODE\n");
-        prcod(shortfor, "SHORTFOR\n");
-        prcod(call, "CALL\n");
+        prcod(hoc_ifcode, "IFCODE\n");
+        prcod(hoc_forcode, "FORCODE\n");
+        prcod(hoc_shortfor, "SHORTFOR\n");
+        prcod(hoc_call, "CALL\n");
         prcod(hoc_arg, "ARG\n");
-        prcod(argassign, "ARGASSIGN\n");
-        prcod(funcret, "FUNCRET\n");
-        prcod(procret, "PROCRET\n");
+        prcod(hoc_argassign, "ARGASSIGN\n");
+        prcod(hoc_funcret, "FUNCRET\n");
+        prcod(hoc_procret, "PROCRET\n");
         prcod(hocobjret, "HOCOBJRET\n");
-#if DOS
-/* no room for all this stuff */
-#else
         prcod(hoc_iterator_stmt, "hoc_iterator_stmt\n");
         prcod(hoc_iterator, "hoc_iterator\n");
         prcod(hoc_argrefasgn, "ARGREFASSIGN\n");
         prcod(hoc_argref, "ARGREF\n");
         prcod(hoc_stringarg, "STRINGARG\n");
-        prcod(hoc_push_string, "push_string\n");
-        prcod(Break, "Break\n");
-        prcod(Continue, "Continue\n");
-        prcod(Stop, "Stop()\n");
-        prcod(assstr, "assstr\n");
+        prcod(hoc_Break, "Break\n");
+        prcod(hoc_Continue, "Continue\n");
+        prcod(hoc_Stop, "Stop()\n");
+        prcod(hoc_assstr, "assstr\n");
         prcod(hoc_evalpointer, "evalpointer\n");
         prcod(hoc_newline, "newline\n");
         prcod(hoc_delete_symbol, "delete_symbol\n");
         prcod(hoc_cyclic, "cyclic\n");
 
-        prcod(dep_make, "DEPENDENT\n");
-        prcod(eqn_name, "EQUATION\n");
-        prcod(eqn_init, "eqn_init()\n");
-        prcod(eqn_lhs, "eqn_lhs()\n");
-        prcod(eqn_rhs, "eqn_rhs()\n");
+        prcod(hoc_dep_make, "DEPENDENT\n");
+        prcod(hoc_eqn_name, "EQUATION\n");
+        prcod(hoc_eqn_init, "eqn_init()\n");
+        prcod(hoc_eqn_lhs, "eqn_lhs()\n");
+        prcod(hoc_eqn_rhs, "eqn_rhs()\n");
         /*OOP*/
         prcod(hoc_push_current_object, "hoc_push_current_object\n");
         prcod(hoc_objectvar, "objectvar\n");
@@ -126,15 +130,14 @@ void debugzz(Inst* p) {
         prcod(rangevarevalpointer, "rangevarevalpointer\n");
         prcod(sec_access_object, "sec_access_object\n");
         prcod(mech_uninsert, "mech_uninsert\n");
-#endif
         else {
             size_t offset = (size_t) p->in;
             if (offset < 1000)
                 Printf("relative %d\n", p->i);
             else {
                 offset = (size_t) (p->in) - (size_t) p;
-                if (offset > (size_t) prog - (size_t) p &&
-                    offset < (size_t) (&prog[2000]) - (size_t) p)
+                if (offset > (size_t) hoc_prog - (size_t) p &&
+                    offset < (size_t) (&hoc_prog[2000]) - (size_t) p)
                     Printf("relative %ld\n", p->in - p);
                 else if (p->sym->name != (char*) 0) {
                     if (p->sym->name[0] == '\0') {
@@ -150,3 +153,86 @@ void debugzz(Inst* p) {
     }
 #endif /*OCSMALL*/
 }
+
+#if NRN_DIGEST
+
+int nrn_digest_;
+static std::vector<std::vector<std::string>> digest;  // nthread string vectors
+static std::vector<size_t> digest_cnt;                // nthread counts.
+static int nrn_digest_print_item_ = -1;
+static int nrn_digest_print_tid_ = 0;
+static bool nrn_digest_abort_ = false;
+
+void nrn_digest() {
+    if (ifarg(1) && hoc_is_str_arg(1)) {
+        // print the digest to the file and turn off accumulation
+        const char* fname = gargstr(1);
+        FILE* f = fopen(fname, "w");
+        if (!f) {
+            hoc_execerr_ext("Could not open %s for writing", fname);
+        }
+
+        int tid = 0;
+        for (auto& d: digest) {
+            fprintf(f, "tid=%d size=%zd\n", tid, digest[tid].size());
+            for (auto& s: d) {
+                fprintf(f, "%s\n", s.c_str());
+            }
+            tid++;
+        }
+        fclose(f);
+        nrn_digest_ = 0;
+    } else {  // start accumulating digest info
+        nrn_digest_ = 1;
+        nrn_digest_print_item_ = -1;
+        nrn_digest_print_tid_ = 0;
+        if (ifarg(2)) {
+            nrn_digest_print_tid_ = int(chkarg(1, 0., nrn_nthread - 1));
+            nrn_digest_print_item_ = int(chkarg(2, 0., 1e9));
+        }
+        nrn_digest_abort_ = (ifarg(3) && strcmp(gargstr(3), "abort") == 0);
+    }
+    size_t size = digest.size() ? digest[0].size() : 0;
+    digest.clear();  // in any case, start over.
+    digest.resize(nrn_nthread);
+    digest_cnt.clear();
+    digest_cnt.resize(nrn_nthread);
+    hoc_ret();
+    hoc_pushx(double(size));
+}
+
+void nrn_digest_dbl_array(const char* msg, int tid, double t, double* array, size_t sz) {
+    if (!nrn_digest_) {
+        return;
+    }
+    unsigned char md[SHA_DIGEST_LENGTH];
+    size_t n = sz * sizeof(double);
+    unsigned char* d = (unsigned char*) array;
+    SHA1(d, n, md);
+
+    std::string s(msg);
+    char buf[100];
+    int ix = int(digest_cnt[tid]);
+    digest_cnt[tid]++;
+    sprintf(buf, " %d %d %.17g ", tid, ix, t);
+    s += buf;
+
+    for (int i = 0; i < 8; ++i) {
+        sprintf(buf, "%02x", (int) md[i]);
+        s += buf;
+    }
+
+    digest[tid].push_back(s);
+
+    if (nrn_digest_print_item_ == ix && nrn_digest_print_tid_ == tid) {
+        printf("ZZ %s\n", s.c_str());
+        if (nrn_digest_abort_) {
+            abort();
+        }
+        for (size_t i = 0; i < sz; ++i) {
+            printf("Z %zd %.20g\n", i, array[i]);
+        }
+    }
+}
+
+#endif  // NRN_DIGEST

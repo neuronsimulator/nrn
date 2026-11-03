@@ -14,7 +14,7 @@ struct row_view {
     }
     /**
      * @brief Wrapper taking plain int indices.
-     * @see @ref simeq for why :-(
+     * @see @ref simeq for why
      */
     [[nodiscard]] double& operator[](int col) {
         return m_ml->data(m_iml, container::field_index{col, 0});
@@ -22,7 +22,7 @@ struct row_view {
 
     /**
      * @brief Wrapper taking plain int indices.
-     * @see @ref simeq for why :-(
+     * @see @ref simeq for why
      */
     [[nodiscard]] double const& operator[](int col) const {
         return m_ml->data(m_iml, container::field_index{col, 0});

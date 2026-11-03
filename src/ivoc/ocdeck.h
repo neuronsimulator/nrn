@@ -1,5 +1,4 @@
-#ifndef ocdeck_h
-#define ocdeck_h
+#pragma once
 
 #include "ocglyph.h"
 
@@ -21,5 +20,3 @@ class OcDeck: public OcGlyphContainer {
   private:
     OcDeckImpl* bi_;
 };
-
-#endif

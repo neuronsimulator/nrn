@@ -53,9 +53,7 @@
  * -----------------------------------------------------------------
  */
 
-#ifndef _NVECTOR_NRNTHREAD_H
-#define _NVECTOR_NRNTHREAD_H
-
+#pragma once
 
 #include "nvector.h"
 #include "sundialstypes.h"
@@ -289,6 +287,3 @@ void N_VCompare_NrnThread(realtype c, N_Vector x, N_Vector z);
 booleantype N_VInvTest_NrnThread(N_Vector x, N_Vector z);
 booleantype N_VConstrMask_NrnThread(N_Vector c, N_Vector x, N_Vector m);
 realtype N_VMinQuotient_NrnThread(N_Vector num, N_Vector denom);
-
-
-#endif

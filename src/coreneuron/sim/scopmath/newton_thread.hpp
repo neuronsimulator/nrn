@@ -21,9 +21,9 @@ namespace coreneuron {
 #if defined(scopmath_newton_ix) || defined(scopmath_newton_s) || defined(scopmath_newton_x)
 #error "naming clash on newton_thread.hpp-internal macros"
 #endif
-#define scopmath_newton_ix(arg) ((arg) *_STRIDE)
-#define scopmath_newton_s(arg)  _p[s[arg] * _STRIDE]
-#define scopmath_newton_x(arg)  _p[(arg) *_STRIDE]
+#define scopmath_newton_ix(arg) CNRN_FLAT_INDEX_IML_ROW(arg)
+#define scopmath_newton_s(arg)  _p[CNRN_FLAT_INDEX_IML_ROW(s[arg])]
+#define scopmath_newton_x(arg)  _p[CNRN_FLAT_INDEX_IML_ROW(arg)]
 namespace detail {
 /**
  * @brief Calculate the Jacobian matrix using finite central differences.

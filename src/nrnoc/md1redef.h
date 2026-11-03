@@ -1,5 +1,4 @@
-#ifndef nmodl1_redef_h
-#define nmodl1_redef_h
+#pragma once
 
 #define v        _v
 #define area     _area
@@ -24,5 +23,3 @@
 #define prop        _prop
 #define nodecount   _nodecount
 #define id          _id
-
-#endif

@@ -8,6 +8,8 @@
 #include <math.h>
 #include <stdio.h>
 
+#include "nrn_export.hpp"
+
 const int edgeTable[] = {
     0x0,   0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c, 0x80c, 0x905, 0xa0f, 0xb06, 0xc0a,
     0xd03, 0xe09, 0xf00, 0x190, 0x99,  0x393, 0x29a, 0x596, 0x49f, 0x795, 0x69c, 0x99c, 0x895,
@@ -333,22 +335,22 @@ void vi(double* p1, double* p2, double v1, double v2, double* out) {
     out[2] = p1[2] + mu * (p2[2] - p1[2]);
 }
 
-extern "C" int find_triangles(double thresh,
-                              double value0,
-                              double value1,
-                              double value2,
-                              double value3,
-                              double value4,
-                              double value5,
-                              double value6,
-                              double value7,
-                              double x0,
-                              double x1,
-                              double y0,
-                              double y1,
-                              double z0,
-                              double z1,
-                              double* out) {
+extern "C" NRN_EXPORT int find_triangles(double thresh,
+                                         double value0,
+                                         double value1,
+                                         double value2,
+                                         double value3,
+                                         double value4,
+                                         double value5,
+                                         double value6,
+                                         double value7,
+                                         double x0,
+                                         double x1,
+                                         double y0,
+                                         double y1,
+                                         double z0,
+                                         double z1,
+                                         double* out) {
     double position[8][3] = {{x0, y0, z0},
                              {x1, y0, z0},
                              {x1, y1, z0},

@@ -1,5 +1,4 @@
-#ifndef shape_h
-#define shape_h
+#pragma once
 
 #include "scenevie.h"
 #include "graph.h"
@@ -80,7 +79,7 @@ class ShapeScene: public Graph {  // entire neuron
     SectionHandler* section_handler_;
     PolyGlyph* sg_;
     Rotate3Band* r3b_;
-    CopyString* var_name_;
+    std::string var_name_;
     ShapeChangeObserver* shape_changed_;
 };
 
@@ -178,5 +177,3 @@ class SectionHandler: public Handler {
   private:
     ShapeSection* ss_;
 };
-
-#endif

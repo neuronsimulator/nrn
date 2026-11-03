@@ -121,13 +121,11 @@ struct MemoryUsage {
     ModelMemoryUsage model{};
     cache::ModelMemoryUsage cache_model{};
     VectorMemoryUsage stable_pointers{};
-    VectorMemoryUsage stable_identifiers{};
 
     const MemoryUsage& operator+=(const MemoryUsage& other) {
         model += other.model;
         cache_model += other.cache_model;
         stable_pointers += other.stable_pointers;
-        stable_identifiers += other.stable_identifiers;
 
         return *this;
     }
@@ -136,7 +134,6 @@ struct MemoryUsage {
         auto total = model.compute_total();
         total += cache_model.compute_total();
         total += stable_pointers;
-        total += stable_identifiers;
 
         return total;
     }
@@ -174,7 +171,6 @@ struct MemoryUsageSummary {
         add(memory_usage.model);
         add(memory_usage.cache_model);
         add(leaked, memory_usage.stable_pointers);
-        add(leaked, memory_usage.stable_identifiers);
     }
 
   private:

@@ -11,16 +11,9 @@
 #include "bbsrcli.h"
 #endif
 
-#if defined(HAVE_TMS) && !NRNMPI
-#include <time.h>
-#include <sys/times.h>
-#include <limits.h>
-static struct tms tmsbuf, tms_start_;
-static clock_t starttime;
-#endif
-
 extern int nrn_global_argc;
 extern char** nrn_global_argv;
+extern double nrn_timeus();
 
 bool BBSImpl::is_master_ = false;
 bool BBSImpl::started_ = false;
@@ -94,18 +87,10 @@ BBSImpl::BBSImpl() {
     integ_time_ = 0.;
     working_id_ = 0;
     n_ = 0;
-    pickle_ret_ = 0;
-    pickle_ret_size_ = 0;
 }
 
 BBS::~BBS() {
     delete impl_;
-}
-
-BBSImpl::~BBSImpl() {
-    if (pickle_ret_) {
-        delete[] pickle_ret_;
-    }
 }
 
 bool BBS::is_master() {
@@ -132,11 +117,7 @@ double BBSImpl::time() {
 #if NRNMPI
     return nrnmpi_wtime();
 #else
-#ifdef HAVE_TMS
-    return double(times(&tmsbuf)) / 100.;
-#else
-    return 0.;
-#endif
+    return nrn_timeus();
 #endif
 }
 
@@ -190,10 +171,10 @@ char* BBS::upkstr() {
     return s;
 }
 
-char* BBS::upkpickle(size_t* n) {
-    char* s = impl_->upkpickle(n);
+std::vector<char> BBS::upkpickle() {
+    auto s = impl_->upkpickle();
     if (debug) {
-        printf("upkpickle %lu |%s|\n", *n, s);
+        printf("upkpickle %lu |%s|\n", s.size(), s.data());
     }
     return s;
 }
@@ -233,11 +214,11 @@ void BBS::pkstr(const char* s) {
     impl_->pkstr(s);
 }
 
-void BBS::pkpickle(const char* s, size_t n) {
+void BBS::pkpickle(const std::vector<char>& s) {
     if (debug) {
-        printf("pkpickle %lu |%s|\n", n, s);
+        printf("pkpickle %lu |%s|\n", s.size(), s.data());
     }
-    impl_->pkpickle(s, n);
+    impl_->pkpickle(s);
 }
 
 #if 0
@@ -281,10 +262,6 @@ void BBSImpl::execute(int id) {  // assumes a "_todo" message in receive buffer
     ++etaskcnt;
     double st, et;
     int userid;
-    char* rs;
-    char* s;
-    size_t n;
-    int i;
     int save_id = working_id_;
     int save_n = n_;
     working_id_ = id;
@@ -296,7 +273,7 @@ void BBSImpl::execute(int id) {  // assumes a "_todo" message in receive buffer
     userid = upkint();
     int wid = upkint();
     hoc_ac_ = double(id);
-    rs = execute_helper(&n, id);  // builds and execute hoc statement
+    auto rs = execute_helper(id);  // builds and execute hoc statement
     et = time() - st;
     total_exec_time += et;
     if (debug) {
@@ -305,12 +282,11 @@ void BBSImpl::execute(int id) {  // assumes a "_todo" message in receive buffer
     pkbegin();
     pkint(userid);
     pkint(wid);
-    pkint(rs ? 1 : 0);
-    if (!rs) {
+    pkint(!rs.empty() ? 1 : 0);
+    if (rs.empty()) {
         pkdouble(hoc_ac_);
     } else {
-        pkpickle(rs, n);
-        delete[] rs;
+        pkpickle(rs);
     }
     working_id_ = save_id;
     n_ = save_n;
@@ -381,17 +357,14 @@ bool BBSImpl::working(int& id, double& x, int& userid) {
         }
         if (id != 0) {
             userid = upkint();
-            int wid = upkint();
+            /* int wid = */ upkint();
             rtype = upkint();
             if (rtype == 0) {
                 x = upkdouble();
             } else {
                 assert(rtype == 1);
                 x = 0.0;
-                if (pickle_ret_) {
-                    delete[] pickle_ret_;
-                }
-                pickle_ret_ = upkpickle(&pickle_ret_size_);
+                pickle_ret_ = upkpickle();
             }
             --n_;
             if (debug) {
@@ -493,18 +466,6 @@ void BBSImpl::done() {
         return;
     }
     done_ = true;
-#ifdef HAVE_TMS
-    clock_t elapsed = times(&tmsbuf) - starttime;
-    printf("%d tasks in %g seconds. %g seconds waiting for tasks\n",
-           etaskcnt,
-           total_exec_time,
-           worker_take_time);
-    printf("user=%g sys=%g elapsed=%g %g%%\n",
-           (double) (tmsbuf.tms_utime - tms_start_.tms_utime) / 100,
-           (double) (tmsbuf.tms_stime - tms_start_.tms_stime) / 100,
-           (double) (elapsed) / 100,
-           100. * (double) (tmsbuf.tms_utime - tms_start_.tms_utime) / (double) elapsed);
-#endif
 }
 
 void BBSImpl::start() {
@@ -512,7 +473,4 @@ void BBSImpl::start() {
         return;
     }
     started_ = 1;
-#ifdef HAVE_TMS
-    starttime = times(&tms_start_);
-#endif
 }

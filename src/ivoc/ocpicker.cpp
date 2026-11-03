@@ -1,6 +1,7 @@
 #include <../../nrnconf.h>
 #if HAVE_IV  // to end of file
 
+#include <algorithm>
 #include <OS/list.h>
 #include <InterViews/hit.h>
 #include <stdio.h>
@@ -103,16 +104,14 @@ void StandardPicker::event(const Event& e) {
 }
 
 void StandardPicker::unbind(int m, EventButton eb) {
-    long cnt = handlers_[m]->size();
-    for (long i = 0, j = 0; i < cnt; ++i) {
-        ButtonHandler* b = handlers_[m]->at(j);
+    for (auto& b: *handlers_[m]) {
         if (b->eb_ == Event::any || b->eb_ == eb) {
             delete b;
-            handlers_[m]->erase(handlers_[m]->begin() + j);
-        } else {
-            ++j;
+            b = nullptr;
         }
     }
+    handlers_[m]->erase(std::remove(handlers_[m]->begin(), handlers_[m]->end(), nullptr),
+                        handlers_[m]->end());
 }
 
 void StandardPicker::bind(int m, EventButton eb, OcHandler* h) {

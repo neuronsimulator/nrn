@@ -2,20 +2,14 @@
 #include <InterViews/resource.h>
 #include "oc2iv.h"
 #include "bbslocal.h"
-#include "bbslsrv.h"
+#include "bbslsrv.hpp"
 #include <nrnmpi.h>
 
 #include <map>
 #include <set>
 #include <string>
 
-struct ltint {
-    bool operator()(int i, int j) const {
-        return i < j;
-    }
-};
-
-class KeepArgs: public std::map<int, const MessageValue*, ltint> {};
+class KeepArgs: public std::map<int, const MessageValue*> {};
 
 static MessageValue* posting_;
 static MessageValue* taking_;
@@ -76,17 +70,16 @@ char* BBSLocal::upkstr() {
     return s;
 }
 
-char* BBSLocal::upkpickle(size_t* n) {
+std::vector<char> BBSLocal::upkpickle() {
     int len{};
-    char* s;
     if (!taking_ || taking_->upkint(&len)) {
         perror("upkpickle length");
     }
-    s = new char[len];
-    if (taking_->upkpickle(s, n)) {
+    std::vector<char> s{};
+    if (taking_->upkpickle(s)) {
         perror("upkpickle data");
     }
-    assert(*n == len);
+    assert(s.size() == len);
     return s;
 }
 
@@ -123,11 +116,11 @@ void BBSLocal::pkstr(const char* s) {
     }
 }
 
-void BBSLocal::pkpickle(const char* s, size_t n) {
-    if (!posting_ || posting_->pkint(n)) {
+void BBSLocal::pkpickle(const std::vector<char>& s) {
+    if (!posting_ || posting_->pkint(s.size())) {
         perror("pkpickle size");
     }
-    if (!posting_ || posting_->pkpickle(s, n)) {
+    if (!posting_ || posting_->pkpickle(s)) {
         perror("pkpickle data");
     }
 }
@@ -205,7 +198,7 @@ int BBSLocal::take_todo() {
 
 void BBSLocal::save_args(int userid) {
     server_->post_todo(working_id_, posting_);
-    keepargs_->insert(std::pair<const int, const MessageValue*>(userid, posting_));
+    keepargs_->emplace(userid, posting_);
     posting_ = nullptr;
 }
 
@@ -213,7 +206,7 @@ void BBSLocal::return_args(int userid) {
     KeepArgs::iterator i = keepargs_->find(userid);
     assert(i != keepargs_->end());
     Resource::unref(taking_);
-    taking_ = (MessageValue*) ((*i).second);
+    taking_ = const_cast<MessageValue*>((*i).second);
     keepargs_->erase(i);
     taking_->init_unpack();
     BBSImpl::return_args(userid);

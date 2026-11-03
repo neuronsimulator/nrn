@@ -14,7 +14,7 @@
 
 namespace coreneuron {
 
-#define _STRIDE _cntml_padded + _iml
+#define CNRN_FLAT_INDEX_IML_ROW(i) ((i) * (_cntml_padded) + (_iml))
 
 #define _threadargscomma_ _iml, _cntml_padded, _p, _ppvar, _thread, _nt, _ml, _v,
 #define _threadargsprotocomma_                                                                    \
@@ -77,7 +77,7 @@ int euler_thread(int neqn, int* var, int* der, F fun, _threadargsproto_) {
     fun(_threadargs_);  // std::invoke in C++17
     /* update dependent variables */
     for (int i = 0; i < neqn; i++) {
-        _p[var[i] * _STRIDE] += dt * (_p[der[i] * _STRIDE]);
+        _p[CNRN_FLAT_INDEX_IML_ROW(var[i])] += dt * (_p[CNRN_FLAT_INDEX_IML_ROW(der[i])]);
     }
     return 0;
 }

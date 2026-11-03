@@ -13,11 +13,14 @@ static void cap_init(neuron::model_sorted_token const&, NrnThread*, Memb_list*, 
 
 static constexpr auto nparm = 2;
 static constexpr auto ndparm = 0;
+static std::vector<double> parm_default{DEF_cm};
+
 extern "C" void capac_reg_(void) {
     int mechtype;
     /* all methods deal with capacitance in special ways */
     register_mech(mechanism, cap_alloc, nullptr, nullptr, nullptr, cap_init, -1, 1);
     mechtype = nrn_get_mechtype(mechanism[1]);
+    hoc_register_parm_default(mechtype, &parm_default);
     using neuron::mechanism::field;
     neuron::mechanism::register_data_fields(mechtype, field<double>{"cm"}, field<double>{"i_cap"});
     hoc_register_prop_size(mechtype, nparm, 0);
@@ -61,7 +64,6 @@ void nrn_capacity_current(neuron::model_sorted_token const& sorted_token,
     neuron::cache::MechanismRange<nparm, ndparm> ml_cache{sorted_token, *_nt, *ml, ml->type()};
     auto* const vec_rhs = _nt->node_rhs_storage();
     int count = ml->nodecount;
-    Node** vnode = ml->nodelist;
     double cfac = .001 * _nt->cj;
     /* since rhs is dvm for a full or half implicit step */
     /* (nrn_update_2d() replaces dvi by dvi-dvx) */
@@ -111,5 +113,5 @@ void nrn_div_capacity(neuron::model_sorted_token const& sorted_token,
 static void cap_alloc(Prop* p) {
     assert(p->param_size() == nparm);
     assert(p->param_num_vars() == nparm);
-    p->param(0) = DEF_cm;  // default capacitance/cm^2
+    p->param(0) = parm_default[0];  // DEF_cm default capacitance/cm^2
 }

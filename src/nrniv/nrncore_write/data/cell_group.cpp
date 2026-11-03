@@ -227,8 +227,8 @@ void CellGroup::datumtransform(CellGroup* cgs) {
                 DatumIndices& di = cg.datumindices[i++];
                 di.type = type;
                 int n = ml->nodecount * sz;
-                di.ion_type = new int[n];
-                di.ion_index = new int[n];
+                di.datum_type = new int[n];
+                di.datum_index = new int[n];
                 // fill the indices.
                 // had tointroduce a memb_func[i].dparam_semantics registered by each mod file.
                 datumindex_fill(ith, cg, di, ml);
@@ -252,13 +252,12 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
     if (dsize == 0) {
         return;
     }
-    int* dmap = memb_func[di.type].dparam_semantics;
+    int* dmap = memb_func[di.type].dparam_semantics.get();
     assert(dmap);
     // what is the size of the nt._vdata portion needed for a single ml->dparam[i]
     int vdata_size = 0;
     for (int i = 0; i < dsize; ++i) {
-        int* ds = memb_func[di.type].dparam_semantics;
-        if (ds[i] == -4 || ds[i] == -6 || ds[i] == -7 || ds[i] == 0) {
+        if (dmap[i] == -4 || dmap[i] == -6 || dmap[i] == -7 || dmap[i] == -11 || dmap[i] == 0) {
             ++vdata_size;
         }
     }
@@ -311,6 +310,9 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
             } else if (dmap[j] == -10) {  // fornetcon
                 etype = -10;
                 eindex = 0;
+            } else if (dmap[j] == -11) {  // random
+                etype = -11;
+                eindex = vdata_offset++;
             } else if (dmap[j] == -9) {  // diam
                 cg.ndiam = nt.end;
                 etype = -9;
@@ -341,15 +343,15 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
                 }
                 assert(etype != 0);
                 // pointer into one of the tml types?
-            } else if (dmap[j] > 0 && dmap[j] < 1000) {  // double* into eion type data
-                etype = dmap[j];
+            } else if (nrn_semantics_is_ion(dmap[j])) {  // double* into eion type data
+                etype = nrn_semantics_ion_type(dmap[j]);
                 Memb_list* eml = cg.type2ml[etype];
                 assert(eml);
                 auto* const pval = dparam[j].get<double*>();
                 auto const legacy_index = eml->legacy_index(pval);
                 assert(legacy_index >= 0);
                 eindex = legacy_index;
-            } else if (dmap[j] > 1000) {  // int* into ion dparam[xxx][0]
+            } else if (nrn_semantics_is_ionstyle(dmap[j])) {  // int* into ion dparam[xxx][0]
                 // store the actual ionstyle
                 etype = dmap[j];
                 eindex = *dparam[j].get<int*>();
@@ -358,8 +360,8 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
                 Sprintf(errmes, "Unknown semantics type %d for dparam item %d of", dmap[j], j);
                 hoc_execerror(errmes, memb_func[di.type].sym->name);
             }
-            di.ion_type[offset + j] = etype;
-            di.ion_index[offset + j] = eindex;
+            di.datum_type[offset + j] = etype;
+            di.datum_index[offset + j] = eindex;
         }
     }
 }
@@ -550,9 +552,8 @@ void CellGroup::mk_tml_with_art(neuron::model_sorted_token const& cache_token, C
 size_t CellGroup::get_mla_rankbytes(CellGroup* cellgroups_) {
     size_t mla_rankbytes = 0;
     size_t nbytes;
-    NrnThread* nt;
     NrnThreadMembList* tml;
-    FOR_THREADS(nt) {
+    for (const NrnThread* nt: for_threads(nrn_threads, nrn_nthread)) {
         size_t threadbytes = 0;
         size_t npnt = 0;
         size_t nart = 0;

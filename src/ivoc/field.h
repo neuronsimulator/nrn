@@ -26,8 +26,7 @@
  * FieldSEditor -- simple editor for text fields
  */
 
-#ifndef ivlook_sfield_h
-#define ivlook_sfield_h
+#pragma once
 
 #include <InterViews/input.h>
 #include <InterViews/resource.h>
@@ -126,5 +125,3 @@ class FieldSEditor: public InputHandler {
   private:
     FieldSEditorImpl* impl_;
 };
-
-#endif

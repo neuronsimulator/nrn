@@ -15,10 +15,10 @@ Type 3 are at the very beginning of finitialize. ie structure changes
 
 #include <vector>
 #include <cstdio>
-#include <OS/list.h>
 #include <nrnoc2iv.h>
 #include <classreg.h>
 #include <objcmd.h>
+#include "utils/enumerate.h"
 
 class FInitialHandler {
   public:
@@ -89,7 +89,7 @@ static void finithnd_destruct(void* v) {
 }
 
 void FInitializeHandler_reg() {
-    class2oc("FInitializeHandler", finithnd_cons, finithnd_destruct, members, NULL, NULL, NULL);
+    class2oc("FInitializeHandler", finithnd_cons, finithnd_destruct, members, nullptr, nullptr);
 }
 
 std::vector<FInitialHandler*> FInitialHandler::fihlist_[4];
@@ -106,10 +106,5 @@ FInitialHandler::FInitialHandler(int i, const char* s, Object* obj, Object* pyac
 
 FInitialHandler::~FInitialHandler() {
     delete stmt_;
-    for (auto it = fihlist_[type_].begin(); it != fihlist_[type_].end(); ++it) {
-        if ((*it) == this) {
-            fihlist_[type_].erase(it);
-            return;
-        }
-    }
+    erase_first(fihlist_[type_], this);
 }

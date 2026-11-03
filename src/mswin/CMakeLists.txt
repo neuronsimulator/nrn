@@ -12,9 +12,10 @@
 #  /mingw64/bin/cmake .. -G "Unix Makefiles" \
 #    -DCMAKE_INSTALL_PREFIX=/C/marshalnrn/nrn \
 #    -DIV_DIR=/home/hines/neuron/ivcmake/build/install \
-#    -DPYTHON_EXECUTABLE=/e/python38/python \
+#    -DPYTHON_EXECUTABLE=/c/Python312/python.exe \
 #    -DNRN_ENABLE_PYTHON_DYNAMIC=ON \
-#    -DNRN_PYTHON_DYNAMIC="e:/python38/python;e:/python39/python;e:/python310/python;e:/python311/python" \
+#    -DNRN_ENABLE_ABI3=OFF \
+#    -DNRN_PYTHON_DYNAMIC="c:/Python312/python.exe;c:/Python313/python.exe;c:/Python314/python.exe;c:/Python311/python.exe" \
 #    -DNRN_ENABLE_MPI_DYNAMIC=ON \
 #    -DCMAKE_PREFIX_PATH="/c/ms-mpi" \
 #    -DNRN_ENABLE_CORENEURON=Off
@@ -31,8 +32,8 @@ if(MINGW)
     DEPENDS ${mswinsrc}/nrniv10.ico)
   set_source_files_properties(${mswinsrc}/extra/neuron.cpp ${mswinsrc}/extra/mos2nrn.cpp
                               ${mswinsrc}/extra/nrnbinstr.cpp PROPERTIES COMPILE_DEFINITIONS MINGW)
-  add_executable(neuron ${mswinsrc}/extra/neuron.cpp nrnicon.res)
-  add_executable(mos2nrn ${mswinsrc}/extra/mos2nrn.cpp)
+  add_executable(neuron ${mswinsrc}/extra/neuron.cpp ${mswinsrc}/extra/d2upath.cpp nrnicon.res)
+  add_executable(mos2nrn ${mswinsrc}/extra/mos2nrn.cpp ${mswinsrc}/extra/d2upath.cpp)
   add_executable(nrnbinstr ${mswinsrc}/extra/nrnbinstr.cpp)
   set(INCDIRS ${PROJECT_SOURCE_DIR}/src/oc)
   target_include_directories(mos2nrn PUBLIC ${INCDIRS})

@@ -1,5 +1,4 @@
-#ifndef grglyph_h
-#define grglyph_h
+#pragma once
 
 #include <InterViews/transformer.h>
 #include "graph.h"
@@ -48,5 +47,3 @@ class GrGlyph: public Glyph {
     Object* obj_;
     Glyph* gif_;
 };
-
-#endif

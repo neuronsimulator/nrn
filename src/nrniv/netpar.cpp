@@ -156,11 +156,7 @@ void ncs_netcon_inject(int srcgid, int netconIndex, double spikeTime, bool local
     NetCon* d = ps->dil_.item(netconIndex);
     NrnThread* nt = nrn_threads;
     if (d->active_ && d->target_) {
-#if BBTQ == 5
         ns->bin_event(spikeTime + d->delay_, d, nt);
-#else
-        ns->event(spikeTime + d->delay_, d, nt);
-#endif
     }
 }
 
@@ -240,6 +236,8 @@ NetParEvent::~NetParEvent() {}
 void NetParEvent::send(double tt, NetCvode* nc, NrnThread* nt) {
     nc->event(tt + usable_mindelay_, this, nt);
 }
+
+
 void NetParEvent::deliver(double tt, NetCvode* nc, NrnThread* nt) {
     int seq;
     if (nrn_use_selfqueue_) {  // first handle pending flag=1 self events
@@ -316,7 +314,7 @@ void NetParEvent::savestate_restore(double tt, NetCvode* nc) {
     if (ithread_ == 0) {
         // npe_->pr("savestate_restore", tt, nc);
         for (int i = 0; i < nrn_nthread; ++i)
-            if (npe_ + i) {
+            if (i < n_npe_) {
                 nc->event(tt, npe_ + i, nrn_threads + i);
             }
     }
@@ -1355,10 +1353,8 @@ static double set_mindelay(double maxdelay) {
     double mindelay = maxdelay;
     last_maxstep_arg_ = maxdelay;
     if (nrn_use_selfqueue_ || net_cvode_instance->localstep() || nrn_nthread > 1) {
-        hoc_Item* q;
         if (net_cvode_instance->psl_)
-            ITERATE(q, net_cvode_instance->psl_) {
-                PreSyn* ps = (PreSyn*) VOIDITM(q);
+            for (PreSyn* ps: *net_cvode_instance->psl_) {
                 double md = ps->mindelay();
                 if (mindelay > md) {
                     mindelay = md;

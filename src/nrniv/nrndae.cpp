@@ -4,6 +4,7 @@
 #include "nrndae_c.h"
 #include "nrnoc2iv.h"
 #include "treeset.h"
+#include "utils/enumerate.h"
 
 extern int secondorder;
 
@@ -24,16 +25,16 @@ void nrndae_deregister(NrnDAE* n) {
 
 int nrndae_extra_eqn_count() {
     int neqn = 0;
-    for (NrnDAEPtrListIterator m = nrndae_list.begin(); m != nrndae_list.end(); m++) {
-        neqn += (*m)->extra_eqn_count();
+    for (NrnDAE* item: nrndae_list) {
+        neqn += item->extra_eqn_count();
     }
     return neqn;
 }
 
 void nrndae_update(NrnThread* _nt) {
     update_sp13_rhs_based_on_actual_rhs(_nt);
-    for (NrnDAEPtrListIterator m = nrndae_list.begin(); m != nrndae_list.end(); m++) {
-        (*m)->update();
+    for (NrnDAE* item: nrndae_list) {
+        item->update();
     }
     update_actual_rhs_based_on_sp13_rhs(_nt);
 }
@@ -45,9 +46,9 @@ void nrndae_alloc() {
     if (_nt->_ecell_memb_list) {
         neqn += _nt->_ecell_memb_list->nodecount * nlayer;
     }
-    for (NrnDAEPtrListIterator m = nrndae_list.begin(); m != nrndae_list.end(); m++) {
-        (*m)->alloc(neqn + 1);
-        neqn += (*m)->extra_eqn_count();
+    for (NrnDAE* item: nrndae_list) {
+        item->alloc(neqn + 1);
+        neqn += item->extra_eqn_count();
     }
 }
 
@@ -62,8 +63,8 @@ void nrndae_init() {
         (secondorder > 0 || ((cvode_active_ > 0) && (nrn_use_daspk_ == 0)))) {
         hoc_execerror("NrnDAEs only work with secondorder==0 or daspk", 0);
     }
-    for (NrnDAEPtrListIterator m = nrndae_list.begin(); m != nrndae_list.end(); m++) {
-        (*m)->init();
+    for (NrnDAE* item: nrndae_list) {
+        item->init();
     }
     for (int it = 0; it < nrn_nthread; ++it) {
         auto* const nt = std::next(nrn_threads, it);
@@ -75,31 +76,30 @@ void nrndae_init() {
 void nrndae_rhs(NrnThread* _nt) {
     update_sp13_mat_based_on_actual_d(_nt);
     update_sp13_rhs_based_on_actual_rhs(_nt);
-    for (NrnDAEPtrListIterator m = nrndae_list.begin(); m != nrndae_list.end(); m++) {
-        (*m)->rhs();
+    for (NrnDAE* item: nrndae_list) {
+        item->rhs();
     }
     update_actual_d_based_on_sp13_mat(_nt);
     update_actual_rhs_based_on_sp13_rhs(_nt);
 }
 
 void nrndae_lhs() {
-    for (NrnDAEPtrListIterator m = nrndae_list.begin(); m != nrndae_list.end(); m++) {
-        (*m)->lhs();
+    for (NrnDAE* item: nrndae_list) {
+        item->lhs();
     }
 }
 
-void nrndae_dkmap(std::vector<neuron::container::data_handle<double>>& pv,
-                  std::vector<neuron::container::data_handle<double>>& pvdot) {
-    for (NrnDAEPtrListIterator m = nrndae_list.begin(); m != nrndae_list.end(); m++) {
-        (*m)->dkmap(pv, pvdot);
+void nrndae_dkmap(std::vector<double*>& pv, std::vector<double*>& pvdot) {
+    for (NrnDAE* item: nrndae_list) {
+        item->dkmap(pv, pvdot);
     }
 }
 
 void nrndae_dkres(double* y, double* yprime, double* delta) {
     // c*y' = f(y) so
     // delta = c*y' - f(y)
-    for (NrnDAEPtrListIterator m = nrndae_list.begin(); m != nrndae_list.end(); m++) {
-        (*m)->dkres(y, yprime, delta);
+    for (NrnDAE* item: nrndae_list) {
+        item->dkres(y, yprime, delta);
     }
 }
 
@@ -163,12 +163,12 @@ NrnDAE::NrnDAE(Matrix* cmat,
         cmat = assumed_identity_;
     }
     c_ = new MatrixMap(cmat);
-    Vect& elay = *elayer;
     nnode_ = nnode;
     nodes_ = nodes;
     if (nnode_ > 0) {
         elayer_ = new int[nnode_];
         if (elayer) {
+            Vect& elay = *elayer;
             for (int i = 0; i < nnode_; ++i) {
                 elayer_[i] = int(elay[i]);
             }
@@ -210,17 +210,14 @@ int NrnDAE::extra_eqn_count() {
     return c_->nrow() - nnode_;
 }
 
-void NrnDAE::dkmap(std::vector<neuron::container::data_handle<double>>& pv,
-                   std::vector<neuron::container::data_handle<double>>& pvdot) {
+// Switch back from data_handle to double*
+void NrnDAE::dkmap(std::vector<double*>& pv, std::vector<double*>& pvdot) {
     // printf("NrnDAE::dkmap\n");
     NrnThread* _nt = nrn_threads;
     for (int i = nnode_; i < size_; ++i) {
         // printf("bmap_[%d] = %d\n", i, bmap_[i]);
-        pv[bmap_[i] - 1] = neuron::container::data_handle<double>{neuron::container::do_not_search,
-                                                                  y_.data() + i};
-        pvdot[bmap_[i] - 1] =
-            neuron::container::data_handle<double>{neuron::container::do_not_search,
-                                                   _nt->_sp13_rhs + bmap_[i]};
+        pv[bmap_[i] - 1] = y_.data() + i;
+        pvdot[bmap_[i] - 1] = _nt->_sp13_rhs + bmap_[i];
     }
 }
 

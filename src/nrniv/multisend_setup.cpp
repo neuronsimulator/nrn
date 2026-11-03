@@ -9,7 +9,7 @@ the source host owning the gid.
 */
 #include "oc_ansi.h"
 
-#include "oc_ansi.h"
+#include <nrnran123.h>
 
 static void del(int* a) {
     if (a) {
@@ -94,18 +94,16 @@ void TarList::alloc() {
     }
 }
 
-#include <nrnisaac.h>
-static void* ranstate;
+static nrnran123_State* ranstate;
 
 static void random_init(int i) {
     if (!ranstate) {
-        ranstate = nrnisaac_new();
+        ranstate = nrnran123_newstream(i, 0);
     }
-    nrnisaac_init(ranstate, nrnmpi_myid + 1);
 }
 
 static unsigned int get_random() {
-    return nrnisaac_uint32_pick(ranstate);
+    return nrnran123_ipick(ranstate);
 }
 
 static int iran(int i1, int i2) {

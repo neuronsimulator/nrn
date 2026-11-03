@@ -1,6 +1,3 @@
-/***
-  THIS FILE IS AUTO GENERATED DONT MODIFY IT.
- ***/
 /*
 # =============================================================================
 # Copyright (c) 2016 - 2021 Blue Brain Project/EPFL
@@ -15,7 +12,7 @@
 #define _PRAGMA_FOR_INIT_ACC_LOOP_                                                               \
     nrn_pragma_acc(parallel loop present(vdata [0:_cntml_padded * nparm]) if (_nt->compute_gpu)) \
     nrn_pragma_omp(target teams distribute parallel for simd if(_nt->compute_gpu))
-#define _STRIDE _cntml_padded + _iml
+#define CNRN_FLAT_INDEX_IML_ROW(i) ((i) * (_cntml_padded) + (_iml))
 
 namespace coreneuron {
 
@@ -45,8 +42,8 @@ void capacitance_reg(void) {
     hoc_register_prop_size(mechtype, nparm, 0);
 }
 
-#define cm    vdata[0 * _STRIDE]
-#define i_cap vdata[1 * _STRIDE]
+#define cm    vdata[CNRN_FLAT_INDEX_IML_ROW(0)]
+#define i_cap vdata[CNRN_FLAT_INDEX_IML_ROW(1)]
 
 /*
 cj is analogous to 1/dt for cvode and daspk

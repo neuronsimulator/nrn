@@ -1,3 +1,4 @@
+from typing import Optional, Any
 from neuron import h, nrn, nrn_dll_sym
 from . import species, node, section1d, region, generalizedReaction, constants
 from .node import _point_indices
@@ -13,6 +14,8 @@ import os
 import sysconfig
 import uuid
 import sys
+import subprocess
+import shlex
 import itertools
 from numpy.ctypeslib import ndpointer
 import re
@@ -61,7 +64,7 @@ setup_solver = nrn_dll_sym("setup_solver")
 setup_solver.argtypes = [
     ndpointer(ctypes.c_double),
     ctypes.c_int,
-    numpy.ctypeslib.ndpointer(numpy.int_, flags="contiguous"),
+    numpy.ctypeslib.ndpointer(ctypes.c_long, flags="contiguous"),
     ctypes.c_int,
 ]
 
@@ -200,35 +203,35 @@ double vtrap(const double, const double);
 """
 
 
-def _list_to_cint_array(data):
+def _list_to_cint_array(data: list) -> Optional[ctypes.Array[ctypes.c_int]]:
     if data is None or len(data) == 0:
         return None
     else:
         return (ctypes.c_int * len(data))(*tuple(data))
 
 
-def _list_to_cdouble_array(data):
+def _list_to_cdouble_array(data: list) -> Optional[ctypes.Array[ctypes.c_double]]:
     if data is None or len(data) == 0:
         return None
     else:
         return (ctypes.c_double * len(data))(*tuple(data))
 
 
-def _list_to_clong_array(data):
+def _list_to_clong_array(data: list) -> Optional[ctypes.Array[ctypes.c_long]]:
     if data is None or len(data) == 0:
         return None
     else:
         return (ctypes.c_long * len(data))(*tuple(data))
 
 
-def _list_to_pyobject_array(data):
+def _list_to_pyobject_array(data: list) -> Optional[ctypes.Array[ctypes.py_object]]:
     if data is None or len(data) == 0:
         return None
     else:
         return (ctypes.py_object * len(data))(*tuple(data))
 
 
-def byeworld():
+def byeworld() -> None:
     # do not call __del__ that rearrange memory for states
     species.Species.__del__ = lambda x: None
     species._ExtracellularSpecies.__del__ = lambda x: None
@@ -254,8 +257,6 @@ _cvode_object = h.CVode()
 
 last_diam_change_cnt = None
 last_structure_change_cnt = None
-last_nrn_legacy_units = h.nrnunit_use_legacy()
-
 
 _all_reactions = []
 
@@ -275,7 +276,7 @@ _diffusion_p = None
 _diffusion_a_ptr, _diffusion_b_ptr, _diffusion_p_ptr = None, None, None
 
 
-def _domain_lookup(sec, dim=None):
+def _domain_lookup(sec: nrn.Section, dim: Optional[int] = None) -> int:
     for d, sl in _dimensions.items():
         if sec in sl:
             if dim is not None and d != dim:
@@ -287,12 +288,22 @@ def _domain_lookup(sec, dim=None):
     return dimension
 
 
-def set_solve_type(domain=None, dimension=None, dx=None, nsubseg=None, method=None):
+def set_solve_type(
+    domain: Optional[Any] = None,
+    dimension: Optional[int] = None,
+    dx: Optional[float] = None,
+    nsubseg: Optional[int] = None,
+    method: Optional[str] = None,
+) -> None:
     """Specify the numerical discretization and solver options.
 
     domain -- a section or Python iterable of sections"""
 
     global _dimensions_default, _dimensions
+
+    if initializer.is_initialized():
+        raise RxDException("set_solve_type must be called before any access to nodes.")
+
     setting_default = False
     if domain is None:
         domain = h.allsec()
@@ -504,6 +515,29 @@ def _find_librxdmath():
     return dll
 
 
+def _macos_sdkroot():
+    """SDK path so Apple clang can find system headers such as math.h."""
+    if sys.platform != "darwin":
+        return ""
+    sdk = os.environ.get("SDKROOT", "")
+    if sdk and os.path.isdir(sdk):
+        return sdk
+    try:
+        sdk = subprocess.check_output(
+            ["xcrun", "--sdk", "macosx", "--show-sdk-path"],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        ).strip()
+        if sdk and os.path.isdir(sdk):
+            return sdk
+    except (OSError, subprocess.CalledProcessError):
+        pass
+    clt = "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+    if os.path.isdir(clt):
+        return clt
+    return ""
+
+
 def _cxx_compile(formula):
     filename = "rxddll" + str(uuid.uuid1())
     with open(filename + ".cpp", "w") as f:
@@ -527,10 +561,11 @@ def _cxx_compile(formula):
         else:
             gcc = "g++"
     # TODO: Check this works on non-Linux machines
-    gcc_cmd = "%s -I%s " % (
-        gcc,
-        sysconfig.get_path("include"),
-    )
+    sysroot_flag = ""
+    sdk = _macos_sdkroot()
+    if sdk:
+        sysroot_flag = f" -isysroot {shlex.quote(sdk)}"
+    gcc_cmd = f"{gcc} -I{sysconfig.get_path('include')}{sysroot_flag} "
     gcc_cmd += f"-shared {fpic} {filename}.cpp {_find_librxdmath()}"
     gcc_cmd += f" -o {filename}.so {math_library}"
     if sys.platform.lower().startswith("win"):
@@ -570,10 +605,8 @@ _diam_change_count = nrn_dll_sym("diam_change_cnt", _ctypes_c_int)
 
 
 def _setup_units(force=False):
-    global last_nrn_legacy_units
     if initializer.is_initialized():
-        if force or last_nrn_legacy_units != h.nrnunit_use_legacy():
-            last_nrn_legacy_units = h.nrnunit_use_legacy()
+        if force:
             clear_rates()
             _setup_memb_currents()
             _compile_reactions()
@@ -623,23 +656,6 @@ def _update_node_data(force=False, newspecies=False):
                 _setup_memb_currents()
 
 
-def _matrix_to_rxd_sparse(m):
-    """precondition: assumes m a numpy array"""
-    nonzero_i, nonzero_j = list(zip(*list(m.keys())))
-    nonzero_values = numpy.ascontiguousarray(list(m.values()), dtype=float)
-
-    # number of rows
-    n = m.shape[1]
-
-    return (
-        n,
-        len(nonzero_i),
-        numpy.ascontiguousarray(nonzero_i, dtype=numpy.int_),
-        numpy.ascontiguousarray(nonzero_j, dtype=numpy.int_),
-        nonzero_values,
-    )
-
-
 def _get_root(sec):
     while sec is not None:
         last_sec = sec
@@ -674,7 +690,7 @@ def _do_section_groups_border(groups):
     return False
 
 
-def _check_multigridding_supported_3d():
+def _check_multigridding_supported_3d() -> bool:
     # if there are no 3D sections, then all is well
     if not species._has_3d:
         return True
@@ -713,7 +729,7 @@ def _setup_matrices():
         n = len(_node_get_states())
 
         volumes = node._get_data()[0]
-        zero_volume_indices = (numpy.where(volumes == 0)[0]).astype(numpy.int_)
+        zero_volume_indices = (numpy.where(volumes == 0)[0]).astype(ctypes.c_long)
         if species._has_1d:
             # TODO: initialization is slow. track down why
             for sr in _species_get_all_species():
@@ -739,7 +755,7 @@ def _setup_matrices():
                     if s is not None:
                         s._setup_diffusion_matrix(diffusion_matrix)
                         s._setup_c_matrix(c_diagonal)
-                        # print '_diffusion_matrix.shape = %r, n = %r, species._has_3d = %r' % (_diffusion_matrix.shape, n, species._has_3d)
+                        # print f'_diffusion_matrix.shape = {_diffusion_matrix.shape!r}, n = {n!r}, species._has_3d = {species._has_3d!r}'
                 euler_matrix_i, euler_matrix_j, euler_matrix_nonzero = [], [], []
                 for i in range(n):
                     mat_i = diffusion_matrix[i]
@@ -909,6 +925,7 @@ def _setup_matrices():
             num_3d_indices_per_1d_seg = numpy.asarray(
                 num_3d_indices_per_1d_seg, dtype=numpy.int64
             )
+            hybrid_grid_ids.append(-1)
             hybrid_grid_ids = numpy.asarray(hybrid_grid_ids, dtype=numpy.int64)
 
             hybrid_indices3d = numpy.asarray(hybrid_indices3d, dtype=numpy.int64)
@@ -916,18 +933,19 @@ def _setup_matrices():
             volumes1d = numpy.asarray(volumes1d, dtype=float)
             volumes3d = numpy.asarray(volumes3d, dtype=float)
             dxs = numpy.asarray(grids_dx, dtype=float)
-            set_hybrid_data(
-                num_1d_indices_per_grid,
-                num_3d_indices_per_grid,
-                hybrid_indices1d,
-                hybrid_indices3d,
-                num_3d_indices_per_1d_seg,
-                hybrid_grid_ids,
-                rates,
-                volumes1d,
-                volumes3d,
-                dxs,
-            )
+            if hybrid_grid_ids.size > 1:
+                set_hybrid_data(
+                    num_1d_indices_per_grid,
+                    num_3d_indices_per_grid,
+                    hybrid_indices1d,
+                    hybrid_indices3d,
+                    num_3d_indices_per_1d_seg,
+                    hybrid_grid_ids,
+                    rates,
+                    volumes1d,
+                    volumes3d,
+                    dxs,
+                )
 
         # TODO: Replace this this to handle 1d/3d hybrid models
         """
@@ -1089,8 +1107,8 @@ def _get_node_indices(species, region, sec3d, x3d, sec1d, x1d):
     # TODO: remove need for this assumption
     assert x1d in (0, 1)
     disc_indices = region._indices_from_sec_x(sec3d, x3d)
-    # print '%r(%g) connects to the 1d section %r(%g)' % (sec3d, x3d, sec1d, x1d)
-    # print 'disc indices: %r' % disc_indices
+    # print f'{sec3d!r}({x3d:g}) connects to the 1d section {sec1d!r}({x1d:g})'
+    # print f'disc indices: {disc_indices!r}'
     indices3d = []
     vols3d = []
     for point in disc_indices:
@@ -1100,10 +1118,10 @@ def _get_node_indices(species, region, sec3d, x3d, sec1d, x1d):
         ):
             indices3d.append(_point_indices[region][point])
             vols3d.append(surf[point][0] if point in surf else region.dx ** 3)
-            # print 'found node %d with coordinates (%g, %g, %g)' % (node._index, node.x3d, node.y3d, node.z3d)
+            # print f'found node {node._index} with coordinates ({node.x3d:g}, {node.y3d:g}, {node.z3d:g})'
     # discard duplicates...
     # TODO: really, need to figure out all the 3d nodes connecting to a given 1d endpoint, then unique that
-    # print '3d matrix indices: %r' % indices3d
+    # print f'3d matrix indices: {indices3d!r}'
     # TODO: remove the need for this assertion
     if x1d == sec1d.orientation():
         # TODO: make this whole thing more efficient
@@ -1248,10 +1266,7 @@ def _compile_reactions():
             for reg in react_regions:
                 if isinstance(reg, region.Extracellular):
                     continue
-                if reg in regions_inv:
-                    regions_inv[reg].append(rptr)
-                else:
-                    regions_inv[reg] = [rptr]
+                regions_inv.setdefault(reg, []).append(rptr)
                 if reg in species_by_region:
                     species_by_region[reg] = species_by_region[reg].union(
                         species_involved
@@ -1288,10 +1303,7 @@ def _compile_reactions():
                 for reg in react_regions:
                     if not isinstance(reg, region.Extracellular):
                         continue
-                    if reg in ecs_regions_inv:
-                        ecs_regions_inv[reg].append(rptr)
-                    else:
-                        ecs_regions_inv[reg] = [rptr]
+                    ecs_regions_inv.setdefault(reg, []).append(rptr)
                     if reg in ecs_species_by_region:
                         ecs_species_by_region[reg] = ecs_species_by_region[reg].union(
                             ecs_species_involved
@@ -1332,30 +1344,22 @@ def _compile_reactions():
     def localize_index(creg, rate):
         rate_str = re.sub(
             r"species\[(\d+)\]\[(\d+)\]",
-            lambda m: "species[%i][%i]"
-            % (
-                creg._species_ids.get(int(m.groups()[0])),
-                creg._region_ids.get(int(m.groups()[1])),
-            ),
+            lambda m: f"species[{creg._species_ids.get(int(m.groups()[0]))}][{creg._region_ids.get(int(m.groups()[1]))}]",
             rate,
         )
         rate_str = re.sub(
             r"params\[(\d+)\]\[(\d+)\]",
-            lambda m: "params[%i][%i]"
-            % (
-                creg._params_ids.get(int(m.groups()[0])),
-                creg._region_ids.get(int(m.groups()[1])),
-            ),
+            lambda m: f"params[{creg._params_ids.get(int(m.groups()[0]))}][{creg._region_ids.get(int(m.groups()[1]))}]",
             rate_str,
         )
         rate_str = re.sub(
             r"species_3d\[(\d+)\]",
-            lambda m: "species_3d[%i]" % creg._ecs_species_ids.get(int(m.groups()[0])),
+            lambda m: f"species_3d[{creg._ecs_species_ids.get(int(m.groups()[0]))}]",
             rate_str,
         )
         rate_str = re.sub(
             r"params_3d\[(\d+)\]",
-            lambda m: "params_3d[%i]" % creg._ecs_params_ids.get(int(m.groups()[0])),
+            lambda m: f"params_3d[{creg._ecs_params_ids.get(int(m.groups()[0]))}]",
             rate_str,
         )
         return rate_str
@@ -1388,8 +1392,7 @@ def _compile_reactions():
                     s = r._species()
                     if s._id in creg._params_ids:
                         warn(
-                            "Parameters values are fixed, %r will not change the value of %r"
-                            % (r, s)
+                            f"Parameters values are fixed, {r!r} will not change the value of {s!r}"
                         )
                         continue
                     species_id = creg._species_ids[s._id]
@@ -1400,31 +1403,24 @@ def _compile_reactions():
                                 rate_str = localize_index(creg, r._rate[reg()][0])
                             except KeyError:
                                 warn(
-                                    "Species not on the region specified, %r will be ignored.\n"
-                                    % r
+                                    f"Species not on the region specified, {r!r} will be ignored.\n"
                                 )
                                 continue
                             operator = (
                                 "+=" if species_ids_used[species_id][region_id] else "="
                             )
-                            fxn_string += "\n\trhs[%d][%d] %s %s;" % (
-                                species_id,
-                                region_id,
-                                operator,
-                                rate_str,
-                            )
+                            fxn_string += f"\n\trhs[{species_id}][{region_id}] {operator} {rate_str};"
                             species_ids_used[species_id][region_id] = True
                 elif isinstance(r, multiCompartmentReaction.MultiCompartmentReaction):
                     # Lookup the region_id for the reaction
                     try:
                         for reg in r._rate:
                             rate_str = localize_index(creg, r._rate[reg][0])
-                            fxn_string += "\n\trate = %s;" % rate_str
+                            fxn_string += f"\n\trate = {rate_str};"
                             break
                     except KeyError:
                         warn(
-                            "Species not on the region specified, %r will be ignored.\n"
-                            % r
+                            f"Species not on the region specified, {r!r} will be ignored.\n"
                         )
                         continue
 
@@ -1438,11 +1434,7 @@ def _compile_reactions():
                                 operator = (
                                     "+=" if ecs_species_ids_used[species_id] else "="
                                 )
-                                fxn_string += "\n\trhs_3d[%d] %s mult[%d] * rate;" % (
-                                    species_id,
-                                    operator,
-                                    mc_mult_count,
-                                )
+                                fxn_string += f"\n\trhs_3d[{species_id}] {operator} mult[{mc_mult_count}] * rate;"
                                 ecs_species_ids_used[species_id] = True
                         elif not isinstance(s, species.Parameter) and not isinstance(
                             s, species.ParameterOnRegion
@@ -1452,12 +1444,7 @@ def _compile_reactions():
                             operator = (
                                 "+=" if species_ids_used[species_id][region_id] else "="
                             )
-                            fxn_string += "\n\trhs[%d][%d] %s mult[%d] * rate;" % (
-                                species_id,
-                                region_id,
-                                operator,
-                                mc_mult_count,
-                            )
+                            fxn_string += f"\n\trhs[{species_id}][{region_id}] {operator} mult[{mc_mult_count}] * rate;"
                             species_ids_used[species_id][region_id] = True
                             if r._membrane_flux:
                                 operator = (
@@ -1465,15 +1452,7 @@ def _compile_reactions():
                                     if flux_ids_used[species_id][region_id]
                                     else "="
                                 )
-                                fxn_string += (
-                                    "\n\tif(flux) flux[%d][%d] %s %1.1f * rate;"
-                                    % (
-                                        species_id,
-                                        region_id,
-                                        operator,
-                                        r._cur_charges[i],
-                                    )
-                                )
+                                fxn_string += f"\n\tif(flux) flux[{species_id}][{region_id}] {operator} {r._cur_charges[i]:1.1f} * rate;"
                                 flux_ids_used[species_id][region_id] = True
                             # TODO: Fix problem if the whole region isn't part of the same aggregate c_region
                         mc_mult_count += 1
@@ -1485,23 +1464,17 @@ def _compile_reactions():
                             rate_str = localize_index(creg, r._rate[reg()][0])
                         except KeyError:
                             warn(
-                                "Species not on the region specified, %r will be ignored.\n"
-                                % r
+                                f"Species not on the region specified, {r!r} will be ignored.\n"
                             )
                             continue
-                        fxn_string += "\n\trate = %s;" % rate_str
+                        fxn_string += f"\n\trate = {rate_str};"
                         summed_mults = collections.defaultdict(lambda: 0)
                         for mult, sp in zip(r._mult, r._sources + r._dests):
                             summed_mults[creg._species_ids.get(sp()._id)] += mult
                         for idx in sorted([k for k in summed_mults if k is not None]):
                             operator = "+=" if species_ids_used[idx][region_id] else "="
                             species_ids_used[idx][region_id] = True
-                            fxn_string += "\n\trhs[%d][%d] %s (%g) * rate;" % (
-                                idx,
-                                region_id,
-                                operator,
-                                summed_mults[idx],
-                            )
+                            fxn_string += f"\n\trhs[{idx}][{region_id}] {operator} ({summed_mults[idx]:g}) * rate;"
             fxn_string += "\n}\n}\n"
             register_rate(
                 creg.num_species,
@@ -1638,7 +1611,7 @@ def _compile_reactions():
                     pid = [
                         pid for pid, gid in enumerate(all_ics_gids) if gid == s._grid_id
                     ][0]
-                    fxn_string += "\n\trhs[%d] %s %s;" % (pid, operator, rate_str)
+                    fxn_string += f"\n\trhs[{pid}] {operator} {rate_str};"
                 elif isinstance(r, multiCompartmentReaction.MultiCompartmentReaction):
                     if reg in r._regions:
                         from . import geometry
@@ -1673,10 +1646,7 @@ def _compile_reactions():
                                     for pid, gid in enumerate(all_ics_gids)
                                     if gid == s3d._grid_id
                                 ][0]
-                                fxn_string += (
-                                    "\n\trhs[%d] %s -mc3d_mults[%d] * rate;"
-                                    % (pid, operator, pid)
-                                )
+                                fxn_string += f"\n\trhs[{pid}] {operator} -mc3d_mults[{pid}] * rate;"
                         for sptr in r._dests:
                             s = sptr()
                             if not isinstance(s, species.Parameter) and not isinstance(
@@ -1704,10 +1674,7 @@ def _compile_reactions():
                                     for pid, gid in enumerate(all_ics_gids)
                                     if gid == s3d._grid_id
                                 ][0]
-                                fxn_string += (
-                                    "\n\trhs[%d] %s mc3d_mults[%d] * rate;"
-                                    % (pid, operator, pid)
-                                )
+                                fxn_string += f"\n\trhs[{pid}] {operator} mc3d_mults[{pid}] * rate;"
 
                 else:
                     idx = 0
@@ -1737,10 +1704,8 @@ def _compile_reactions():
                             for pid, gid in enumerate(all_ics_gids)
                             if gid == s._grid_id
                         ][0]
-                        fxn_string += "\n\trhs[%d] %s (%s)*rate;" % (
-                            pid,
-                            operator,
-                            r._mult[idx],
+                        fxn_string += (
+                            f"\n\trhs[{pid}] {operator} ({r._mult[idx]})*rate;"
                         )
                         idx += 1
             fxn_string += "\n}\n}\n"
@@ -1860,10 +1825,8 @@ def _compile_reactions():
                         pid = [
                             pid for pid, gid in enumerate(all_gids) if gid == s._grid_id
                         ][0]
-                        fxn_string += "\n\trhs[%d] %s (%s)*rate;" % (
-                            pid,
-                            operator,
-                            r._mult[idx],
+                        fxn_string += (
+                            f"\n\trhs[{pid}] {operator} ({r._mult[idx]})*rate;"
                         )
                         idx += 1
             fxn_string += "\n}\n}\n"
@@ -1898,7 +1861,7 @@ def _init():
     _setup_matrices()
     # if species._has_1d and species._1d_submatrix_n():
     # volumes = node._get_data()[0]
-    # zero_volume_indices = (numpy.where(volumes == 0)[0]).astype(numpy.int_)
+    # zero_volume_indices = (numpy.where(volumes == 0)[0]).astype(ctypes.c_long)
     # setup_solver(_node_get_states(), len(_node_get_states()), zero_volume_indices, len(zero_volume_indices), h._ref_t, h._ref_dt)
     clear_rates()
     _setup_memb_currents()

@@ -20,14 +20,14 @@ These papers present models implemented with NEURON that provide some examples o
 
         Carnevale NT, Hines ML. (2008). Translating network models to parallel hardware in NEURON. *Journal of neuroscience methods*, 169(2), 425. `doi:10.1016/j.jneumeth.2007.09.010 <https://doi.org/10.1016/j.jneumeth.2007.09.010>`_
 
-        Preprint available from http://www.neuron.yale.edu/neuron/nrnpubs/, source code available via accession number 96444 from ModelDB http://modeldb.yale.edu/96444
+        Preprint available from http://www.neuron.yale.edu/neuron/nrnpubs/, source code available via accession number 96444 from ModelDB http://modeldb.science/96444
 
 *
     The network models in
 
         Brette, R., Rudolph, M., Carnevale, T., Hines, M., Beeman, D., Bower, J. M., ...  Destexhe, A. (2007). Simulation of networks of spiking neurons: a review of tools and strategies. *Journal of computational neuroscience*, 23(3), 349-398. `doi:10.1007/s10827-007-0038-6 <https://doi.org/10.1007/s10827-007-0038-6>`_
 
-        Preprint available from http://www.neuron.yale.edu/neuron/nrnpubs/, source code available via accession number 83319 from ModelDB http://modeldb.yale.edu/83319
+        Preprint available from http://www.neuron.yale.edu/neuron/nrnpubs/, source code available via accession number 83319 from ModelDB http://modeldb.science/83319
 
 Interested users are encouraged to read these papers, and download and analyze the related source code, in order to better understand how to apply randomization in the construction and simulation of models.
 
@@ -125,9 +125,9 @@ Save the following to a file called :file:`initn.py`, then use python to execute
     # load libraries
     #
 
-    from neuron import h
+    from neuron import n
     from neuron.units import ms, mV
-    h.load_file("stdrun.hoc")
+    n.load_file("stdrun.hoc")
 
     #
     # constants/simulation parameters
@@ -148,7 +148,7 @@ Save the following to a file called :file:`initn.py`, then use python to execute
     #
 
     # create netstims
-    ns_list = [h.NetStim() for _ in range(NSNUM)]
+    ns_list = [n.NetStim() for _ in range(NSNUM)]
 
     # set netstim parameters
     for ns in ns_list:
@@ -161,10 +161,10 @@ Save the following to a file called :file:`initn.py`, then use python to execute
     # instrumentation (record NetStim behavior)
     #
 
-    stim_t = h.Vector()
-    stim_id = h.Vector()
+    stim_t = n.Vector()
+    stim_id = n.Vector()
     for ns in ns_list:
-        nc = h.NetCon(ns, None)
+        nc = n.NetCon(ns, None)
         nc.record(stim_t, stim_id)
 
     #
@@ -175,8 +175,8 @@ Save the following to a file called :file:`initn.py`, then use python to execute
         # set random seed
         for ns in ns_list:
             ns.seed(1)
-        h.finitialize(-65 * mV)
-        h.continuerun(TSTOP)
+        n.finitialize(-65 * mV)
+        n.continuerun(TSTOP)
         print(" time         cell")
         for t, id_ in zip(stim_t, stim_id):
             print(f"{t:7.3f} \t{id_}")
@@ -257,10 +257,10 @@ This file shows how to take advantage of :meth:`NetStim.noiseFromRandom123` in y
     # load libraries
     #
 
-    from neuron import h
+    from neuron import n
     from neuron.units import ms, mV
     import matplotlib.pyplot as plt
-    h.load_file("stdrun.hoc")
+    n.load_file("stdrun.hoc")
 
     #
     # constants/simulation parameters
@@ -281,7 +281,7 @@ This file shows how to take advantage of :meth:`NetStim.noiseFromRandom123` in y
     #
 
     # create netstims
-    ns_list = [h.NetStim() for _ in range(NSNUM)]
+    ns_list = [n.NetStim() for _ in range(NSNUM)]
 
     all_random_streams = []
 
@@ -299,10 +299,10 @@ This file shows how to take advantage of :meth:`NetStim.noiseFromRandom123` in y
     # instrumentation (record NetStim behavior)
     #
 
-    stim_t = h.Vector()
-    stim_id = h.Vector()
+    stim_t = n.Vector()
+    stim_id = n.Vector()
     for ns in ns_list:
-        nc = h.NetCon(ns, None)
+        nc = n.NetCon(ns, None)
         nc.record(stim_t, stim_id)
 
     #
@@ -313,8 +313,8 @@ This file shows how to take advantage of :meth:`NetStim.noiseFromRandom123` in y
         # set random seed
         for ns in ns_list:
             ns.seed(1)
-        h.finitialize(-65 * mV)
-        h.continuerun(TSTOP)
+        n.finitialize(-65 * mV)
+        n.continuerun(TSTOP)
 
         print(" time       cell")
         for t, id_ in zip(stim_t, stim_id):

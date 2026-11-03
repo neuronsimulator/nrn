@@ -8,7 +8,7 @@ You can do this exercise on your own, or you might prefer to form a team of 2-4 
 On your own computer:
 ---------------------
 
-Whether you're working on your own or in a team, everyone should start by downloading the zip file for the `Jones et al. 2009 model <https://modeldb.yale.edu/136803>`_ from ModelDB. Also get a copy of their paper and examine it to discover what is being modeled and what results are produced.
+Whether you're working on your own or in a team, everyone should start by downloading the zip file for the `Jones et al. 2009 model <https://modeldb.science/136803>`_ from ModelDB. Also get a copy of their paper and examine it to discover what is being modeled and what results are produced.
 
 Expand the zip file and examine its contents to figure out how to run a simulation (look for a "readme" file).
 

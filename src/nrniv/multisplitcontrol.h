@@ -1,5 +1,4 @@
-#ifndef multisplitcontrol_h
-#define multisplitcontrol_h
+#pragma once
 
 class MultiSplitThread {
   public:
@@ -84,5 +83,3 @@ class MultiSplitControl {
     int nth_;
     MultiSplitThread* mth_;
 };
-
-#endif

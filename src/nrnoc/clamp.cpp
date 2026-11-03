@@ -188,7 +188,6 @@ void activclamp_rhs(void) {
 }
 
 void activclamp_lhs(void) {
-    double v;
     if (!maxlevel) {
         return;
     }

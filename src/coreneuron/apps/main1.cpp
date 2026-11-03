@@ -15,6 +15,7 @@
 #include <cstring>
 #include <climits>
 #include <dlfcn.h>
+#include <filesystem>
 #include <memory>
 #include <vector>
 
@@ -40,19 +41,15 @@
 #include "coreneuron/network/partrans.hpp"
 #include "coreneuron/network/multisend.hpp"
 #include "coreneuron/io/nrn_setup.hpp"
-#include "coreneuron/io/file_utils.hpp"
 #include "coreneuron/io/nrn2core_direct.h"
 #include "coreneuron/io/core2nrn_data_return.hpp"
 #include "coreneuron/utils/utils.hpp"
 
+namespace fs = std::filesystem;
+
 extern "C" {
 const char* corenrn_version() {
     return coreneuron::bbcore_write_version;
-}
-
-// the CORENEURON_USE_LEGACY_UNITS determined by CORENRN_ENABLE_LEGACY_UNITS
-bool corenrn_units_use_legacy() {
-    return CORENEURON_USE_LEGACY_UNITS;
 }
 
 void (*nrn2core_part2_clean_)();
@@ -92,13 +89,16 @@ char* prepare_args(int& argc, char**& argv, std::string& args) {
     free(first);
 
     // now build char*argv
-    argv = new char*[argc];
+    argv = new char*[argc + 1];
     first = strdup(args.c_str());
     token = strtok(first, sep);
     for (int i = 0; token; i++) {
         argv[i] = token;
         token = strtok(nullptr, sep);
     }
+
+    // make sure argv is terminated by NULL!
+    argv[argc] = nullptr;
 
     // return actual data to be freed
     return first;
@@ -139,7 +139,7 @@ void get_nrn_trajectory_requests(int bsize) {
                 tr->varrays = varrays;
                 tr->scatter = pvars;
                 for (int i = 0; i < n_trajec; ++i) {
-                    tr->gather[i] = stdindex2ptr(types[i], indices[i], nt);
+                    tr->gather[i] = legacy_index2pointer(types[i], indices[i], nt);
                 }
                 delete[] types;
                 delete[] indices;
@@ -195,8 +195,10 @@ void nrn_init_and_load_data(int argc,
     }
 #endif
 
-    // full path of files.dat file
-    std::string filesdat(corenrn_param.datpath + "/" + corenrn_param.filesdat);
+    // Default path of files.dat is relative to datpath
+    if (corenrn_param.filesdat.empty()) {
+        corenrn_param.filesdat = corenrn_param.datpath + "/" + corenrn_param.default_dat_filename;
+    }
 
     // read the global variable names and set their values from globals.dat
     set_globals(corenrn_param.datpath.c_str(), (corenrn_param.seed >= 0), corenrn_param.seed);
@@ -257,7 +259,7 @@ void nrn_init_and_load_data(int argc,
     use_phase2_ = (corenrn_param.ms_phases == 2) ? 1 : 0;
 
     // reading *.dat files and setting up the data structures, setting mindelay
-    nrn_setup(filesdat.c_str(),
+    nrn_setup(corenrn_param.filesdat.c_str(),
               is_mapping_needed,
               checkPoints,
               run_setup_cleanup,
@@ -501,7 +503,7 @@ extern "C" int run_solve_core(int argc, char** argv) {
 
     // Create outpath if it does not exist
     if (nrnmpi_myid == 0) {
-        mkdir_p(corenrn_param.outpath.c_str());
+        fs::create_directories(corenrn_param.outpath);
     }
 
     if (!corenrn_param.reportfilepath.empty()) {
@@ -522,7 +524,7 @@ extern "C" int run_solve_core(int argc, char** argv) {
     std::string output_dir = corenrn_param.outpath;
 
     if (nrnmpi_myid == 0) {
-        mkdir_p(output_dir.c_str());
+        fs::create_directories(output_dir);
     }
 #if NRNMPI
     if (corenrn_param.mpi_enable) {
@@ -559,7 +561,11 @@ extern "C" int run_solve_core(int argc, char** argv) {
 
         // register all reports with libsonata
         double min_report_dt = INT_MAX;
+        size_t lfp_report_counter = 0;
         for (size_t i = 0; i < configs.size(); i++) {
+            if (configs[i].type == ReportType::LFP) {
+                configs[i].lfp_report_index = lfp_report_counter++;
+            }
             std::unique_ptr<ReportHandler> report_handler = create_report_handler(configs[i],
                                                                                   spikes_info);
             if (report_handler) {

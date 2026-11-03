@@ -18,8 +18,8 @@ namespace coreneuron {
 #error "naming clash on crout_thread.hpp-internal macros"
 #endif
 #define scopmath_crout_b(arg)  b[scopmath_crout_ix(arg)]
-#define scopmath_crout_ix(arg) ((arg) *_STRIDE)
-#define scopmath_crout_y(arg)  _p[y[arg] * _STRIDE]
+#define scopmath_crout_ix(arg) CNRN_FLAT_INDEX_IML_ROW(arg)
+#define scopmath_crout_y(arg)  _p[CNRN_FLAT_INDEX_IML_ROW(y[arg])]
 
 /**
  * Performs an LU triangular factorization of a real matrix by the Crout

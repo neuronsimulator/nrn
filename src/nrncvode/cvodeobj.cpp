@@ -6,11 +6,10 @@
 void cvode_finitialize();
 extern void (*nrn_multisplit_setup_)();
 
-extern int hoc_return_type_code;
-
 #include <cmath>
 #include <cstdlib>
 #include "classreg.h"
+#include "code.h"
 #include "nrnoc2iv.h"
 #include "datapath.h"
 #include "cvodeobj.h"
@@ -21,10 +20,9 @@ extern int hoc_return_type_code;
 #include "nrndaspk.h"
 #include "nrniv_mf.h"
 #include "nrnpy.h"
-#include "tqueue.h"
+#include "objcmd.h"
+#include "tqueue.hpp"
 #include "mymath.h"
-#include "htlist.h"
-#include <OS/list.h>
 #include <nrnmutdec.h>
 
 #if NRN_ENABLE_THREADS
@@ -80,9 +78,7 @@ extern N_Vector N_VNew_NrnParallelLD(int comm, long int local_length, long int g
 #endif
 
 extern bool nrn_use_fifo_queue_;
-#if BBTQ == 5
 extern bool nrn_use_bin_queue_;
-#endif
 
 #undef SUCCESS
 #define SUCCESS CV_SUCCESS
@@ -120,14 +116,7 @@ static double spikestat(void* v) {
     return 0;
 }
 static double queue_mode(void* v) {
-    hoc_return_type_code = 1;  // integer
-#if BBTQ == 4
-    if (ifarg(1)) {
-        nrn_use_fifo_queue_ = chkarg(1, 0, 1) ? true : false;
-    }
-    return double(nrn_use_fifo_queue_);
-#endif
-#if BBTQ == 5
+    hoc_return_type_code = HocReturnType::integer;
     if (ifarg(1)) {
         nrn_use_bin_queue_ = chkarg(1, 0, 1) ? true : false;
     }
@@ -142,7 +131,6 @@ static double queue_mode(void* v) {
 #endif
     }
     return double(nrn_use_bin_queue_ + 2 * nrn_use_selfqueue_);
-#endif
     return 0.;
 }
 
@@ -209,7 +197,7 @@ static double active(void* v) {
             static_cast<NetCvode*>(v)->re_init(nt_t);
         }
     }
-    hoc_return_type_code = 2;  // boolean
+    hoc_return_type_code = HocReturnType::boolean;
     return cvode_active_;
 }
 static double stiff(void* v) {
@@ -217,7 +205,7 @@ static double stiff(void* v) {
     if (ifarg(1)) {
         d->stiff((int) chkarg(1, 0, 2));
     }
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     return double(d->stiff());
 }
 static double maxorder(void* v) {
@@ -225,13 +213,13 @@ static double maxorder(void* v) {
     if (ifarg(1)) {
         d->maxorder((int) chkarg(1, 0, 5));
     }
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     return d->maxorder();
 }
 static double order(void* v) {
     NetCvode* d = (NetCvode*) v;
     int i = 0;
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     if (ifarg(1)) {
         // only thread 0
         i = int(chkarg(1, 0, d->p->nlcv_ - 1));
@@ -260,7 +248,7 @@ static double jacobian(void* v) {
     if (ifarg(1)) {
         d->jacobian((int) chkarg(1, 0, 2));
     }
-    hoc_return_type_code = 1;  // int
+    hoc_return_type_code = HocReturnType::integer;
     return double(d->jacobian());
 }
 
@@ -306,7 +294,7 @@ static double statename(void* v) {
 
 static double use_local_dt(void* v) {
     NetCvode* d = (NetCvode*) v;
-    hoc_return_type_code = 2;  // boolean
+    hoc_return_type_code = HocReturnType::boolean;
     if (ifarg(1)) {
         int i = (int) chkarg(1, 0, 1);
         d->localstep(i);
@@ -316,7 +304,7 @@ static double use_local_dt(void* v) {
 
 static double use_daspk(void* v) {
     NetCvode* d = (NetCvode*) v;
-    hoc_return_type_code = 2;  // boolean
+    hoc_return_type_code = HocReturnType::boolean;
     if (ifarg(1)) {
         int i = (int) chkarg(1, 0, 1);
         if ((i != 0) != d->use_daspk()) {
@@ -337,7 +325,7 @@ static double dae_init_dteps(void* v) {
 }
 
 static double use_mxb(void* v) {
-    hoc_return_type_code = 2;  // boolean
+    hoc_return_type_code = HocReturnType::boolean;
     if (ifarg(1)) {
         int i = (int) chkarg(1, 0, 1);
         if (use_sparse13 != i) {
@@ -351,13 +339,13 @@ static double use_mxb(void* v) {
 static double cache_efficient(void* v) {
     // Perhaps a warning on cache_efficient(True) and an error on cache_efficient(False) would be
     // justified.
-    hoc_return_type_code = 2;  // boolean
+    hoc_return_type_code = HocReturnType::boolean;
     return 1.0;
 }
 
 static double use_long_double(void* v) {
     NetCvode* d = (NetCvode*) v;
-    hoc_return_type_code = 2;  // boolean
+    hoc_return_type_code = HocReturnType::boolean;
     if (ifarg(1)) {
         int i = (int) chkarg(1, 0, 1);
         d->use_long_double_ = i;
@@ -372,7 +360,7 @@ static double condition_order(void* v) {
         int i = (int) chkarg(1, 1, 2);
         d->condition_order(i);
     }
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     return (double) d->condition_order();
 }
 
@@ -382,7 +370,7 @@ static double debug_event(void* v) {
         int i = (int) chkarg(1, 0, 10);
         d->print_event_ = i;
     }
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     return (double) d->print_event_;
 }
 
@@ -444,7 +432,7 @@ static double tstop_event(void* v) {
 
 static double current_method(void* v) {
     NetCvode* d = (NetCvode*) v;
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     int modeltype = nrn_modeltype();
     int methodtype = secondorder;  // 0, 1, or 2
     int localtype = 0;
@@ -504,24 +492,24 @@ static double use_parallel(void* v) {
 }
 
 static double nrn_structure_change_count(void* v) {
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     return double(structure_change_cnt);
 }
 
 static double nrn_diam_change_count(void* v) {
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     return double(diam_change_cnt);
 }
 
-using ExtraScatterList = std::vector<Object*>;
+using ExtraScatterList = std::vector<HocCommand*>;
 static ExtraScatterList* extra_scatterlist[2];  // 0 scatter, 1 gather
 
 void nrn_extra_scatter_gather(int direction, int tid) {
     ExtraScatterList* esl = extra_scatterlist[direction];
     if (esl) {
         nrn_thread_error("extra_scatter_gather not allowed with multiple threads");
-        for (Object* callable: *esl) {
-            if (!neuron::python::methods.hoccommand_exec(callable)) {
+        for (HocCommand* callable: *esl) {
+            if (!callable->execute()) {
                 hoc_execerror("extra_scatter_gather runtime error", 0);
             }
         }
@@ -530,29 +518,44 @@ void nrn_extra_scatter_gather(int direction, int tid) {
 
 static double extra_scatter_gather(void* v) {
     int direction = int(chkarg(1, 0, 1));
-    Object* o = *hoc_objgetarg(2);
-    check_obj_type(o, "PythonObject");
     ExtraScatterList* esl = extra_scatterlist[direction];
     if (!esl) {
         esl = new ExtraScatterList;
         extra_scatterlist[direction] = esl;
     }
-    esl->push_back(o);
-    hoc_obj_ref(o);
+    if (hoc_is_object_arg(2)) {
+        Object* o = *hoc_objgetarg(2);
+        check_obj_type(o, "PythonObject");
+        esl->push_back(new HocCommand(o));
+    } else {
+        esl->push_back(new HocCommand(gargstr(2)));
+    }
     return 0.;
 }
 
 static double extra_scatter_gather_remove(void* v) {
-    Object* o = *hoc_objgetarg(1);
+    Object* o = nullptr;
+    const char* command = nullptr;
+    if (hoc_is_object_arg(1)) {
+        o = *hoc_objgetarg(1);
+        check_obj_type(o, "PythonObject");
+    } else {
+        command = gargstr(1);
+    }
     for (int direction = 0; direction < 2; ++direction) {
         ExtraScatterList* esl = extra_scatterlist[direction];
         if (esl) {
             for (auto it = esl->begin(); it != esl->end();) {
-                Object* o1 = *it;
-                // if esl exists then python exists
-                if (neuron::python::methods.pysame(o, o1)) {
+                HocCommand* command_object = *it;
+                bool matches = false;
+                if (o && command_object->pyobject()) {
+                    matches = neuron::python::methods.pysame(o, command_object->pyobject());
+                } else if (command && !command_object->pyobject()) {
+                    matches = strcmp(command, command_object->name()) == 0;
+                }
+                if (matches) {
                     it = esl->erase(it);
-                    hoc_obj_unref(o1);
+                    delete command_object;
                 } else {
                     ++it;
                 }
@@ -564,7 +567,7 @@ static double extra_scatter_gather_remove(void* v) {
 
 static double use_fast_imem(void* v) {
     auto i = nrn_use_fast_imem;
-    hoc_return_type_code = 2;  // boolean
+    hoc_return_type_code = HocReturnType::boolean;
     if (ifarg(1)) {
         nrn_use_fast_imem = chkarg(1, 0., 1.);
         nrn_fast_imem_alloc();
@@ -664,7 +667,7 @@ static void destruct(void* v) {
 #endif
 }
 void Cvode_reg() {
-    class2oc("CVode", cons, destruct, members, NULL, omembers, NULL);
+    class2oc("CVode", cons, destruct, members, omembers, nullptr);
     net_cvode_instance = new NetCvode(1);
     Daspk::dteps_ = 1e-9;  // change with cvode.dae_init_dteps(newval)
 }
@@ -718,9 +721,6 @@ void Cvode::cvode_constructor() {
     ctd_ = nullptr;
     tqitem_ = nullptr;
     mem_ = nullptr;
-#if NEOSIMorNCS
-    neosim_self_events_ = nullptr;
-#endif
     initialize_ = false;
     can_retreat_ = false;
     tstop_begin_ = 0.;
@@ -849,11 +849,6 @@ void Cvode::atolvec_alloc(int i) {
 }
 
 Cvode::~Cvode() {
-#if NEOSIMorNCS
-    if (neosim_self_events_) {
-        delete neosim_self_events_;
-    }
-#endif
     if (daspk_) {
         delete daspk_;
     }
@@ -975,14 +970,12 @@ void Cvode::maxstate(bool b, NrnThread* nt) {
 }
 
 void Cvode::maxstate(double* pd) {
-    int i;
-    NrnThread* nt;
     if (maxstate_) {
-        FOR_THREADS(nt) {
+        for (NrnThread* nt: for_threads(nrn_threads, nrn_nthread)) {
             double* m = n_vector_data(maxstate_, nt->id);
             int n = ctd_[nt->id].nvsize_;
             int o = ctd_[nt->id].nvoffset_;
-            for (i = 0; i < n; ++i) {
+            for (int i = 0; i < n; ++i) {
                 pd[i + o] = m[i];
             }
         }
@@ -990,14 +983,12 @@ void Cvode::maxstate(double* pd) {
 }
 
 void Cvode::maxacor(double* pd) {
-    int i;
-    NrnThread* nt;
     if (maxacor_) {
-        FOR_THREADS(nt) {
+        for (const NrnThread* nt: for_threads(nrn_threads, nrn_nthread)) {
             double* m = n_vector_data(maxacor_, nt->id);
             int n = ctd_[nt->id].nvsize_;
             int o = ctd_[nt->id].nvoffset_;
-            for (i = 0; i < n; ++i) {
+            for (int i = 0; i < n; ++i) {
                 pd[i + o] = m[i];
             }
         }
@@ -1074,6 +1065,11 @@ void NetCvode::set_CVRhsFn() {
     }
 }
 
+static Section* cv_rootsec(const Cvode* cv) {
+    NrnThread* nt = cv->nth_ ? cv->nth_ : nrn_threads;
+    return nt->_v_node[cv->ctd_[0].vnode_begin_index_]->sec;
+}
+
 int Cvode::cvode_init(double) {
     int err = SUCCESS;
     // note, a change in stiff_ due to call of stiff() destroys mem_
@@ -1085,8 +1081,8 @@ int Cvode::cvode_init(double) {
         // printf("CVodeReInit\n");
         if (err != SUCCESS) {
             Printf("Cvode %p %s CVReInit error %d\n",
-                   this,
-                   secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec),
+                   fmt::ptr(this),
+                   secname(cv_rootsec(this)),
                    err);
             return err;
         }
@@ -1101,8 +1097,8 @@ int Cvode::cvode_init(double) {
         CVodeMalloc(mem_, pf_, t0_, y_, CV_SV, &ncv_->rtol_, atolnvec_);
         if (err != SUCCESS) {
             Printf("Cvode %p %s CVodeMalloc error %d\n",
-                   this,
-                   secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec),
+                   fmt::ptr(this),
+                   secname(cv_rootsec(this)),
                    err);
             return err;
         }
@@ -1240,13 +1236,12 @@ int Cvode::init(double tout) {
 }
 
 int Cvode::interpolate(double tout) {
-    NrnThread* _nt;
     if (neq_ == 0) {
         t_ = tout;
         if (nth_) {
             nth_->_t = t_;
         } else {
-            FOR_THREADS(_nt) {
+            for (NrnThread* _nt: for_threads(nrn_threads, nrn_nthread)) {
                 _nt->_t = t_;
             }
         }
@@ -1260,7 +1255,7 @@ int Cvode::interpolate(double tout) {
         if (nth_) {  // lvardt
             nth_->_t = tout;
         } else {
-            FOR_THREADS(_nt) {
+            for (NrnThread* _nt: for_threads(nrn_threads, nrn_nthread)) {
                 _nt->_t = tout;  // but leave t_ at the initialization point.
             }
         }
@@ -1321,7 +1316,7 @@ int Cvode::cvode_advance_tn(neuron::model_sorted_token const& sorted_token) {
 #if PRINT_EVENT
     if (net_cvode_instance->print_event_ > 1) {
         Printf("Cvode::cvode_advance_tn %p %d initialize_=%d tstop=%.20g t_=%.20g to ",
-               this,
+               fmt::ptr(this),
                nth_ ? nth_->id : 0,
                initialize_,
                tstop_,
@@ -1341,8 +1336,8 @@ int Cvode::cvode_advance_tn(neuron::model_sorted_token const& sorted_token) {
 #endif
     if (err < 0) {
         Printf("CVode %p %s advance_tn failed, err=%d.\n",
-               this,
-               secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec),
+               fmt::ptr(this),
+               secname(cv_rootsec(this)),
                err);
         pf_(t_, y_, nullptr, &opaque);
         return err;
@@ -1363,7 +1358,7 @@ int Cvode::cvode_interpolate(double tout) {
 #if PRINT_EVENT
     if (net_cvode_instance->print_event_ > 1) {
         Printf("Cvode::cvode_interpolate %p %d initialize_%d t=%.20g to ",
-               this,
+               fmt::ptr(this),
                nth_ ? nth_->id : 0,
                initialize_,
                t_);
@@ -1384,8 +1379,8 @@ int Cvode::cvode_interpolate(double tout) {
 #endif
     if (err < 0) {
         Printf("CVode %p %s interpolate failed, err=%d.\n",
-               this,
-               secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec),
+               fmt::ptr(this),
+               secname(cv_rootsec(this)),
                err);
         return err;
     }
@@ -1428,8 +1423,8 @@ N_Vector Cvode::acorvec() {
 void Cvode::statistics() {
 #if 1
     Printf("\nCvode instance %p %s statistics : %d %s states\n",
-           this,
-           secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec),
+           fmt::ptr(this),
+           secname(cv_rootsec(this)),
            neq_,
            (use_daspk_ ? "IDA" : "CVode"));
     Printf("   %d advance_tn, %d interpolate, %d init (%d due to at_time)\n",

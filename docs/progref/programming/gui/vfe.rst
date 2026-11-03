@@ -1,0 +1,64 @@
+.. _vfe:
+
+ValueFieldEditor
+----------------
+
+
+
+.. class:: ValueFieldEditor
+
+    .. tab:: Python
+    
+    
+        Syntax:
+            ``vfe = n.ValueFieldEditor(...)``
+
+
+        Description:
+            Takes exactly the same args as :func:`xvalue` or :func:`xpvalue` but is an object 
+            which can change some features (default) under program control. 
+            Note that when this object is created, there must be an open :func:`xpanel`. 
+
+
+    .. tab:: HOC
+
+
+        Syntax:
+            ``vfe = new ValueFieldEditor(...)``
+        
+        
+        Description:
+            Takes exactly the same args as :func:`xvalue` or :func:`xpvalue` but is an object
+            which can change some features (default) under program control. 
+            Note that when this object is created, there must be an open :func:`xpanel`.
+        
+----
+
+
+
+.. method:: ValueFieldEditor.default
+
+    .. tab:: Python
+    
+    
+        Syntax:
+            ``vfe.default()``
+
+
+        Description:
+            If the field editor is a default field editor then the current value 
+            becomes the default value. ie. the red checkmark is turned off. 
+
+         
+
+    .. tab:: HOC
+
+
+        Syntax:
+            ``vfe.default``
+        
+        
+        Description:
+            If the field editor is a default field editor then the current value 
+            becomes the default value. ie. the red checkmark is turned off. 
+        

@@ -1,0 +1,465 @@
+Optimization
+============
+
+
+.. function:: fit_praxis
+
+    .. tab:: Python
+
+        Syntax:
+
+        .. code-block:: python
+
+            min = n.fit_praxis(num, "funname", x._ref_x[0])
+            min = n.fit_praxis(num, "funname", Vector)
+            min = n.fit_praxis(..., ..., ..., "after quad statement")
+            min = n.fit_praxis(efun_as_python_callable, neuron_vector)
+
+
+        Description:
+            This is the principal axis method for minimizing a function. See praxis.c 
+            in the scopmath library. 
+            
+
+
+            ``1 <= num < 20`` 
+                is the number of parameters to vary (number 
+                of arguments to *funname*). 
+
+            *funname* 
+                the name of the function to minimize, eg. least square difference between model and data. 
+                The funname must take two arguments, the first arg 
+                is the number of elements in second arg vector.. 
+
+            *x* 
+                is a double :class:`Vector` of at least length *n*. Prior to the call set 
+                it to a guess of the parameter values. On return it contains the 
+                values of the args that minimize ``funname()``. 
+
+            
+            *funname* may be either 
+            an interpreted HOC function or a compiled NMODL function. This form of calling
+            cannot optimize Python functions directly.
+            
+            If the variable stoprun is set to 1 during a call to fit_praxis, it will 
+            return immediately (when the current call to  funname returns) with 
+            a return value and varx values set to the best minimum found so far. Use 
+            :func:`stop_praxis` to stop after finishing the current principal axis calculation. 
+            
+            The fourth argument, if present, specifies a statement to be executed at 
+            the end of each principal axis evaluation. 
+            
+            If the third argument is a Vector, then that style is used to specify 
+            the initial starting point and return the final value. However the 
+            function is still called with second arg as a pointer into a double array. 
+            
+            The Python callable form uses a Python Callable as the function to 
+            minimize and it must take a single NEURON Vector argument specifying the 
+            values of the parameters for use in evaluation the function. On entry to 
+            fit_praxis the Vector specifies the number of parameters and the 
+            parameter starting values. On return the vector contains the values of 
+            parameters which generated the least minimum found so far. 
+            
+            
+            Example: minimize :math:`(x+y - 5)^2 + 5*((x-y) - 15)^2`
+
+            .. code-block::
+                python
+
+                from neuron import n
+
+                v = n.Vector([0, 0]) 
+                
+                def efun(v): 
+                    return (v[0] + v[1] - 5) ** 2 + 5 * (v[0] -v[1] - 15) ** 2 
+                
+                n.attr_praxis(1e-5, 0.5, 0) 
+                e = n.fit_praxis(efun, v) 
+                print(f"e={e} x={v[0]} y={v[1]}\n")
+
+
+        .. warning::
+            Up to version 4.0.1, the arguments to *funname* were an explicit 
+            list of *n* arguments. ie ``numarg()==n``. 
+
+    .. tab:: HOC
+
+        Syntax:
+
+        .. code-block:: C++
+
+            min = fit_praxis(n, "funname", x._ref_x[0])
+            min = fit_praxis(n, "funname", Vector)
+            min = fit_praxis(..., ..., ..., "after quad statement")
+
+        Description:
+            This is the principal axis method for minimizing a function. See praxis.c
+            in the scopmath library.
+
+            ``1 <= n < 20``
+                is the number of parameters to vary (number
+                of arguments to *funname*).
+
+            *funname*
+                the name of the function to minimize, eg. least square difference between model and data.
+                The funname must take two arguments, the first arg, ``$1``,
+                is the number of elements in second arg vector, ``$&2``. The ith index of the
+                vector is given by ``$&2[i]``.
+
+            *x*
+                is a double vector of at least length *n*. Prior to the call set
+                it to a guess of the parameter values. On return it contains the
+                values of the args that minimize ``funname()``.
+
+
+            *funname* may be either
+            an interpreted hoc function or a compiled NMODL function.
+
+            If the variable stoprun is set to 1 during a call to fit_praxis, it will
+            return immediately (when the current call to  funname returns) with
+            a return value and varx values set to the best minimum found so far. Use
+            :func:`stop_praxis` to stop after finishing the current principal axis calculation.
+
+            The fourth argument, if present, specifies a statement to be executed at
+            the end of each principal axis evaluation.
+
+            If the third argument is a :class:`Vector`, then that style is used to specify
+            the initial starting point and return the final value. However the
+            function is still called with second arg as a pointer into a double array.
+
+            On entry to
+            ``fit_praxis`` the :class:`Vector` specifies the number of parameters and the
+            parameter starting values. On return the vector contains the values of
+            parameters which generated the least minimum found so far.
+
+            Hoc example: minimize ``(x+y - 5)^2 + 5*((x-y) - 15)^2``
+
+            .. code-block::
+                C++
+
+                objref vec
+                vec = new Vector(2) // vec.x[0] is x, vec.x[1] is y
+                func efun() {local x, y
+                    x = $&2[0]  y = $&2[1]
+                    return (x+y - 5)^2 + 5*(x-y - 15)^2
+                }
+                attr_praxis(1e-5, .5, 0)
+                e = fit_praxis(vec.size(), "efun", vec)
+                printf("e=%g x=%g y=%g\n", e, vec.x[0], vec.x[1])
+
+                objref paxis
+                paxis = new Vector()
+                for i=0, 1 {
+                    pval = pval_praxis(i, paxis)
+                    printf("%d  %10g      %10g %10g\n", i, pval, paxis.x[0], paxis.x[1])
+                }
+
+    .. tab:: MATLAB
+
+        Syntax:
+
+        ..
+            .. code-block:: matlab
+
+                min = n.fit_praxis(num, "funname", x.ref());
+                min = n.fit_praxis(num, "funname", Vector);
+                min = n.fit_praxis(..., ..., ..., "after quad statement");
+
+
+            Description:
+                This is the principal axis method for minimizing a function. See praxis.c 
+                in the scopmath library. 
+
+                ``1 <= n < 20`` 
+                    is the number of parameters to vary (number 
+                    of arguments to *funname*). 
+
+                *funname* 
+                    the name of the function to minimize, eg. least square difference between model and data. 
+                    The funname must take two arguments, the first arg 
+                    is the number of elements in second arg vector.. 
+
+                *x* 
+                    is a double :class:`Vector` of at least length *n*. Prior to the call set 
+                    it to a guess of the parameter values. On return it contains the 
+                    values of the args that minimize ``funname()``. 
+
+                
+                *funname* may be either 
+                    an interpreted HOC function or a compiled NMODL function. This form of calling
+                    cannot optimize MATLAB functions directly.
+                
+                If the variable :data:`stoprun` is set to 1 during a call to ``fit_praxis``, it will 
+                return immediately (when the current call to funname returns) with 
+                a return value and varx values set to the best minimum found so far. Use 
+                :func:`stop_praxis` to stop after finishing the current principal axis calculation. 
+                
+                The fourth argument, if present, specifies a statement to be executed at 
+                the end of each principal axis evaluation. 
+                
+                If the third argument is a Vector, then that style is used to specify 
+                the initial starting point and return the final value. However the 
+                function is still called with second arg as a pointer into a double array. 
+                
+                On entry to 
+                ``fit_praxis`` the :class:`Vector` specifies the number of parameters and the 
+                parameter starting values. On return the vector contains the values of 
+                parameters which generated the least minimum found so far. 
+                
+                
+                Example: minimize :math:`(x+y - 5)^2 + 5*((x-y) - 15)^2`
+
+                .. code-block::
+                    matlab
+
+                    % Define the HOC function efun that we wish to minimize
+                    n(sprintf([ ...
+                        'func efun() {local x, y\n' ...
+                        '    x = $&2[0]  y = $&2[1]\n' ...
+                        '    return (x+y - 5)^2 + 5*(x-y - 15)^2\n' ...
+                        '}\n' ...
+                    ]));
+
+                    % Create a NEURON Vector for initial guess
+                    vec = n.Vector([0 0]); % vec.x(1) is x, vec.x(2) is y
+
+                    % Set praxis attributes
+                    n.attr_praxis(1e-5, 0.5, 0);
+
+                    % Minimize the function using the HOC efun
+                    e = n.fit_praxis(length(vec), 'efun', vec);
+
+                    fprintf('e=%g x=%g y=%g\n', e, vec.x(1), vec.x(2));
+
+                    % Get principal axes
+                    paxis = n.Vector();
+                    for i = 0:1
+                        pval = n.pval_praxis(i, paxis);
+                        fprintf('%d  %10g      %10g %10g\n', i, pval, paxis.x(1), paxis.x(2));
+                    end
+            
+            .. note::
+
+                MATLAB has a number of built-in optimization functions;
+                see the `MATLAB Optimization documentation <https://www.mathworks.com/help/matlab/optimization.html>`_
+                and their `Optimization Toolbox <https://www.mathworks.com/products/optimization.html>`_.
+
+    .. seealso::
+        :func:`attr_praxis`, :func:`stop_praxis`, :func:`pval_praxis`
+
+         
+
+----
+
+
+
+.. function:: attr_praxis
+
+    .. tab:: Python
+
+        Syntax:
+
+        .. code-block:: python
+
+            n.attr_praxis(tolerance, maxstepsize, printmode)
+            previous_index = n.attr_praxis(mcell_ran4_index)
+
+
+        Description:
+            Set the attributes of the praxis method. This must be called before 
+            the first call to :func:`fit_praxis`. 
+
+
+            tolerance 
+                praxis attempts to return f(x) such that if x0 is the true 
+                local minimum then ``norm(x-x0) < tolerance`` 
+
+            maxstepsize 
+                should be set to about the maximum distance from 
+                initial guess to the minimum. 
+
+            printmode=0 
+                    no printing 
+
+            printmode=1,2,3 
+                more and more verbose 
+
+            The single argument form causes praxis to pick its random numbers from 
+            the the mcellran4 generator beginning at the specified index. This 
+            allows reproducible fitting. The return value is the previously picked 
+            index. (see :func:`mcell_ran4`) 
+
+    .. tab:: HOC
+
+        Syntax:
+
+        .. code-block:: C++
+
+            attr_praxis(tolerance, maxstepsize, printmode)
+            previous_index = attr_praxis(mcell_ran4_index)
+
+
+        Description:
+            Set the attributes of the praxis method. This must be called before 
+            the first call to :func:`fit_praxis`. 
+
+
+            tolerance 
+                praxis attempts to return f(x) such that if x0 is the true 
+                local minimum then ``norm(x-x0) < tolerance`` 
+
+            maxstepsize 
+                should be set to about the maximum distance from 
+                initial guess to the minimum. 
+
+            printmode=0 
+                    no printing 
+
+            printmode=1,2,3 
+                more and more verbose 
+
+            The single argument form causes praxis to pick its random numbers from 
+            the the mcellran4 generator beginning at the specified index. This 
+            allows reproducible fitting. The return value is the previously picked 
+            index. (see :func:`mcell_ran4`) 
+
+    .. tab:: MATLAB
+
+        Syntax:
+
+        .. code-block:: matlab
+
+            n.attr_praxis(tolerance, maxstepsize, printmode);
+            previous_index = n.attr_praxis(mcell_ran4_index);
+
+
+        Description:
+            Set the attributes of the praxis method. This must be called before 
+            the first call to :func:`fit_praxis`. 
+
+
+            tolerance 
+                praxis attempts to return f(x) such that if x0 is the true 
+                local minimum then ``norm(x-x0) < tolerance`` 
+
+            maxstepsize 
+                should be set to about the maximum distance from 
+                initial guess to the minimum. 
+
+            printmode=0 
+                    no printing 
+
+            printmode=1,2,3 
+                more and more verbose 
+
+            The single argument form causes praxis to pick its random numbers from 
+            the the mcellran4 generator beginning at the specified index. This 
+            allows reproducible fitting. The return value is the previously picked 
+            index. (see :func:`mcell_ran4`) 
+
+
+----
+
+
+
+.. function:: pval_praxis
+
+    .. tab:: Python
+
+        Syntax:
+
+        .. code-block:: python
+
+            pval = n.pval_praxis(i)
+            pval = n.pval_praxis(i, paxis._ref_x[0])
+            pval = n.pval_praxis(i, Vector) 
+
+
+        Description:
+            Return the ith principal value. If the second argument is present, ``pval_praxis`` also fills 
+            the :class:`Vector` with the ith principal axis. 
+
+    .. tab:: HOC
+
+        Syntax:
+
+        .. code-block:: C++
+
+            pval = pval_praxis(i)
+            pval = pval_praxis(i, &paxis[0])
+            pval = pval_praxis(i, Vector)
+
+
+        Description:
+            Return the ith principal value. If the second argument is present, ``pval_praxis`` also fills
+            the vector with the ith principal axis.
+
+    ..
+        .. tab:: MATLAB
+
+            Syntax:
+
+            .. code-block:: matlab
+
+                pval = n.pval_praxis(i);
+                pval = n.pval_praxis(i, paxis.ref());
+                pval = n.pval_praxis(i, Vector);
+
+
+            Description:
+                Return the ith principal value. If the second argument is present, ``pval_praxis`` also fills 
+                the :class:`Vector` with the ith principal axis. 
+
+----
+
+
+
+.. function:: stop_praxis
+
+    .. tab:: Python
+
+        Syntax:
+
+        .. code-block:: python
+
+            n.stop_praxis()
+            n.stop_praxis(i)
+
+        Description:
+            Set a flag in the praxis function that will cause it to stop after 
+            it finishes the current (or ith subsequent) 
+            principal axis calculation. If this function 
+            is called before :func:`fit_praxis`, then praxis will do a single 
+            (or i) principal axis calculation and then exit.
+
+    .. tab:: HOC
+
+        Syntax:
+
+        .. code-block:: C++
+
+            stop_praxis()
+            stop_praxis(i)
+
+        Description:
+            Set a flag in the praxis function that will cause it to stop after 
+            it finishes the current (or ith subsequent) 
+            principal axis calculation. If this function 
+            is called before :func:`fit_praxis`, then praxis will do a single 
+            (or i) principal axis calculation and then exit.
+
+    .. tab:: MATLAB
+
+        Syntax:
+
+        .. code-block:: matlab
+
+            n.stop_praxis();
+            n.stop_praxis(i);
+
+        Description:
+            Set a flag in the praxis function that will cause it to stop after 
+            it finishes the current (or ith subsequent) 
+            principal axis calculation. If this function 
+            is called before :func:`fit_praxis`, then praxis will do a single 
+            (or i) principal axis calculation and then exit.

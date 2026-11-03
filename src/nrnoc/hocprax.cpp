@@ -89,7 +89,7 @@ void fit_praxis(void) {
 
     /* save before setting statics, restore after prax */
     double minerrsav, *minargsav, maxstepsizesav, tolerancesav;
-    long int printmodesav, nvarsav;
+    long int printmodesav;
     Symbol* efun_sym_sav;
     Object *efun_py_save, *efun_py_arg_save;
     void* vec_py_save_save;
@@ -157,7 +157,6 @@ void fit_praxis(void) {
     tolerancesav = tolerance;
     maxstepsizesav = maxstepsize;
     printmodesav = printmode;
-    nvarsav = nvar;
     efun_sym_sav = hoc_efun_sym;
     efun_py_save = efun_py;
     efun_py_arg_save = efun_py_arg;
@@ -264,7 +263,6 @@ static double efun(double* v, long int n) {
             v[i] = px[i];
         }
     } else {
-        int i;
         hoc_pushx((double) n);
         hoc_pushpx(v);
         err = hoc_call_func(hoc_efun_sym, 2);

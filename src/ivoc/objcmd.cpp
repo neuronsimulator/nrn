@@ -31,12 +31,11 @@ HocCommand::HocCommand(Object* pobj) {
     }
     po_ = pobj;
     hoc_obj_ref(po_);
-    s_ = NULL;
     obj_ = NULL;
 }
 
 void HocCommand::init(const char* cmd, Object* obj) {
-    s_ = new CopyString(cmd);
+    s_ = std::make_unique<std::string>(cmd);
     obj_ = obj;
     po_ = NULL;
     if (obj_) {
@@ -46,16 +45,12 @@ void HocCommand::init(const char* cmd, Object* obj) {
 
 void HocCommand::update(Observable*) {  // obj_ has been freed
     obj_ = NULL;
-    delete s_;
-    s_ = new CopyString("");
+    s_ = std::make_unique<std::string>("");
 }
 
 HocCommand::~HocCommand() {
     if (obj_) {
         nrn_notify_pointer_disconnect(this);
-    }
-    if (s_) {
-        delete s_;
     }
     if (po_) {
         hoc_obj_unref(po_);
@@ -66,9 +61,9 @@ void HocCommand::help() {
 #if HAVE_IV
     char buf[200];
     if (obj_) {
-        Sprintf(buf, "%s %s", s_->string(), obj_->ctemplate->sym->name);
+        Sprintf(buf, "%s %s", s_->c_str(), obj_->ctemplate->sym->name);
     } else {
-        Sprintf(buf, "%s", s_->string());
+        Sprintf(buf, "%s", s_->c_str());
     }
     Oc::help(buf);
 #endif
@@ -77,7 +72,7 @@ void HocCommand::help() {
 const char* ccc = "PythonObject";
 const char* HocCommand::name() {
     if (po_ == NULL) {
-        return s_->string();
+        return s_->c_str();
     } else {
         return ccc;
     }
@@ -100,14 +95,17 @@ int HocCommand::execute(bool notify) {
     int err;
     if (po_) {
         assert(neuron::python::methods.hoccommand_exec);
+        // hoccommand_exec returns a boolean success flag.
         err = neuron::python::methods.hoccommand_exec(po_);
     } else {
         if (!s_) {
-            return 0;
+            return 1;
         }
         char buf[256];
-        Sprintf(buf, "{%s}\n", s_->string());
-        err = hoc_obj_run(buf, obj_);
+        Sprintf(buf, "{%s}\n", s_->c_str());
+        // hoc_obj_run returns an error code, so invert it to match the boolean
+        // success convention used by the Python callback.
+        err = !hoc_obj_run(buf, obj_);
     }
 #if HAVE_IV
     if (notify) {
@@ -119,6 +117,7 @@ int HocCommand::execute(bool notify) {
 }
 int HocCommand::exec_strret(char* buf, int size, bool notify) {
     assert(po_);
+    // hoccommand_exec_strret returns a boolean success flag.
     int err = neuron::python::methods.hoccommand_exec_strret(po_, buf, size);
 #if HAVE_IV
     if (notify) {
@@ -132,7 +131,9 @@ int HocCommand::execute(const char* s, bool notify) {
     assert(po_ == NULL);
     char buf[256];
     Sprintf(buf, "{%s}\n", s);
-    int err = hoc_obj_run(buf, obj_);
+    // hoc_obj_run returns an error code, so invert it to match HocCommand's
+    // boolean success convention.
+    int err = !hoc_obj_run(buf, obj_);
 #if HAVE_IV
     if (notify) {
         Oc oc;

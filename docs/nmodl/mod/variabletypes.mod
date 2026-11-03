@@ -8,7 +8,6 @@ NEURON {
 	RANGE range_var, parameter_var
 	POINTER p1
 	BBCOREPOINTER my_data : changed from POINTER
-	EXTERNAL clamp_resist : 
 }
 
 PARAMETER {
@@ -20,15 +19,10 @@ ASSIGNED {
 	range_var
 	p1
 	my_data
-	clamp_resist
 }
 
 INITIAL {
 	range_var = 42
-}
-
-FUNCTION cr() (megohm) {
-	cr = clamp_resist
 }
 
 FUNCTION f1() {

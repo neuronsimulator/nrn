@@ -157,9 +157,6 @@ PROCEDURE update() {
 	e0 = e
 	vo0 = vo
 	vi0 = vi
-	VERBATIM
-	return 0;
-	ENDVERBATIM
 }
 
 COMMENT

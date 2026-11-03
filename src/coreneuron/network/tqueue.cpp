@@ -124,7 +124,7 @@ void BinQ::remove(TQItem* q) {
     }
 }
 
-//#include "coreneuron/nrniv/sptree.h"
+//#include "coreneuron/nrniv/sptree.hpp"
 
 /*
  *  The following code implements the basic operations on

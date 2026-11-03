@@ -9,6 +9,8 @@
 #include "bbsimpl.h"
 #include "hocdec.h"  //Printf
 
+#include "utils/logger.hpp"
+
 void nrnbbs_context_wait();
 
 BBSDirectServer* BBSDirectServer::server_;
@@ -40,12 +42,6 @@ class WorkItem {
 struct ltstr {
     bool operator()(const char* s1, const char* s2) const {
         return strcmp(s1, s2) < 0;
-    }
-};
-
-struct ltint {
-    bool operator()(int i, int j) const {
-        return i < j;
     }
 };
 
@@ -95,10 +91,10 @@ bool WorkItem::todo_less_than(const WorkItem* w) const {
 
 class MessageList: public std::multimap<const char*, bbsmpibuf*, ltstr> {};
 class PendingList: public std::multimap<const char*, const int, ltstr> {};
-class WorkList: public std::map<int, const WorkItem*, ltint> {};
-class LookingToDoList: public std::set<int, ltint> {};
+class WorkList: public std::map<int, const WorkItem*> {};
+class LookingToDoList: public std::set<int> {};
 class ReadyList: public std::set<const WorkItem*, ltWorkItem> {};
-class ResultList: public std::multimap<int, const WorkItem*, ltint> {};
+class ResultList: public std::multimap<int, const WorkItem*> {};
 
 BBSDirectServer::BBSDirectServer() {
     messages_ = new MessageList();
@@ -173,7 +169,7 @@ void BBSDirectServer::put_pending(const char* key, int cid) {
     printf("put_pending |%s| %d\n", key, cid);
 #endif
     char* s = newstr(key);
-    pending_->insert(std::pair<const char* const, const int>(s, cid));
+    pending_->emplace(s, cid);
 }
 
 bool BBSDirectServer::take_pending(const char* key, int* cid) {
@@ -200,14 +196,13 @@ void BBSDirectServer::post(const char* key, bbsmpibuf* send) {
     if (take_pending(key, &cid)) {
         nrnmpi_bbssend(cid, TAKE, send);
     } else {
-        MessageList::iterator m = messages_->insert(
-            std::pair<const char* const, bbsmpibuf*>(newstr(key), send));
+        messages_->emplace(newstr(key), send);
         nrnmpi_ref(send);
     }
 }
 
 void BBSDirectServer::add_looking_todo(int cid) {
-    looking_todo_->insert(cid);
+    looking_todo_->emplace(cid);
 }
 
 void BBSDirectServer::post_todo(int pid, int cid, bbsmpibuf* send) {
@@ -220,7 +215,7 @@ void BBSDirectServer::post_todo(int pid, int cid, bbsmpibuf* send) {
     if (p != work_->end()) {
         w->parent_ = (WorkItem*) ((*p).second);
     }
-    work_->insert(std::pair<const int, const WorkItem*>(w->id_, w));
+    work_->emplace(w->id_, w);
 #if debug
     printf("work insert %d\n", w->id_);
 #endif
@@ -234,7 +229,7 @@ void BBSDirectServer::post_todo(int pid, int cid, bbsmpibuf* send) {
 #if debug
         printf("todo insert\n");
 #endif
-        todo_->insert(w);
+        todo_->emplace(w);
     }
 }
 
@@ -258,7 +253,7 @@ void BBSDirectServer::context(bbsmpibuf* send) {
     }
     remaining_context_cnt_ = nrnmpi_numprocs_bbs - 1;
     for (j = 1; j < nrnmpi_numprocs_bbs; ++j) {
-        send_context_->insert(j);
+        send_context_->emplace(j);
     }
     LookingToDoList::iterator i = looking_todo_->begin();
     while (i != looking_todo_->end()) {
@@ -320,7 +315,7 @@ void BBSDirectServer::post_result(int id, bbsmpibuf* send) {
     nrnmpi_ref(send);
     nrnmpi_unref(w->buf_);
     w->buf_ = send;
-    results_->insert(std::pair<const int, const WorkItem*>(w->parent_ ? w->parent_->id_ : 0, w));
+    results_->emplace(w->parent_ ? w->parent_->id_ : 0, w);
 }
 
 int BBSDirectServer::look_take_todo(bbsmpibuf** recv) {

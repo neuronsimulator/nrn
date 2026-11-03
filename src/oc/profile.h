@@ -1,5 +1,4 @@
-#ifndef profile_h
-
+#pragma once
 extern void start_profile(int);
 extern void add_profile(int);
 
@@ -9,6 +8,4 @@ extern void add_profile(int);
 #else
 #define PSTART(i) /**/
 #define PSTOP(i)  /**/
-#endif
-
 #endif

@@ -1,5 +1,5 @@
 .. generated from HTML via
-.. pandoc publications-using-neuron.html -f html -t rst -o publications-using-neuron.rst 
+.. pandoc citedneuron20250111edited.html -f html -t rst --wrap=none | fmt -w 66 > citedneuron20250111edited.rst
 
 .. _publications_using_neuron:
 
@@ -14,9 +14,10 @@ dot edu**
 
 ----
 
-Total of **2672** items verified as of *February 15, 2022*.
+Total of **3098** items verified as of *January 11, 2025*.
 
 ----
+
 
 Abbasi, S., Abbasi, A. and Sarbaz, Y.. Introducing treatment
 strategy for cerebellar ataxia in mutant med mice: combination of
@@ -36,9 +37,19 @@ Clinical Neuroscience* 7:57-62, 2016.
 Abdelaal, A. Y., Mousa, M. H., Gamal, M., Khalil, M. I.,
 Elbasiouny, S. M. and Eldawlatly, S.. A classification approach to
 recognize the firing of spinal motoneurons in amyotrophic lateral
-sclerosis. *Annual International Conference of the IEEE
-Engineering in Medicine and Biology Society* 2020:3680-3683,
-10.1109/EMBC44109.2020.9176551, 2020.
+sclerosis. *IEEE Engineering in Medicine and Biology Society.
+Annual Conference* 2020:3680-3683, 10.1109/EMBC44109.2020.9176551,
+2020.
+
+Abdollahi, N. and Prescott, S. A.. Impact of extracellular current
+flow on action potential propagation in myelinated axons. *Journal
+of Neuroscience* 4410.1523/JNEUROSCI.0569-24.2024, 2024.
+
+Aberra, A. S., Lopez, A., Grill, W. M. and Peterchev, A. V.. Rapid
+estimation of cortical neuron activation thresholds by
+transcranial magnetic stimulation using convolutional neural
+networks. *NeuroImage* 275:120184,
+10.1016/j.neuroimage.2023.120184, 2023a.
 
 Aberra, A. S., Peterchev, A. V. and Grill, W. M.. Biophysically
 realistic neuron models for simulation of cortical stimulation.
@@ -49,6 +60,12 @@ Aberra, A. S., Wang, B., Grill, W. M. and Peterchev, A. V..
 Simulation of transcranial magnetic stimulation in head model with
 morphologically-realistic cortical neurons. *Brain Stimulation*
 13:175-189, 10.1016/j.brs.2019.10.002, 2020.
+
+Aberra, A. S., Wang, R., Grill, W. M. and Peterchev, A. V..
+Multi-scale model of axonal and dendritic polarization by
+transcranial direct current stimulation in realistic head
+geometry. *Brain Stimulation* 16:1776-1791,
+10.1016/j.brs.2023.11.018, 2023b.
 
 Abrahamsson, T., Cathala, L., Matsui, K., Shigemoto, R. and
 Digregorio, D. A.. Thin dendrites of cerebellar interneurons
@@ -105,6 +122,12 @@ logic circuits: a molecular communications analysis. *IEEE
 Transactions on NanoBioscience* 19:224-236,
 10.1109/TNB.2020.2975942, 2020b.
 
+Aghvami, S. S., Kubota, Y. and Egger, V.. Anatomical and
+functional connectivity at the dendrodendritic reciprocal mitral
+cell-granule cell synapse: impact on recurrent and lateral
+inhibition. *Frontiers in Neural Circuits* 16:933201,
+10.3389/fncir.2022.933201, 2022.
+
 Aghvami, S. S., Müller, M., Araabi, B. N. and Egger, V..
 Coincidence detection within the excitable rat olfactory bulb
 granule cell spines. *Journal of Neuroscience* 39:584-595,
@@ -129,11 +152,24 @@ Whitteridge, D.. Estimates of the net excitatory currents evoked
 by visual stimulation of identified neurons in cat visual cortex.
 *Cerebral Cortex* 8:462-476, 1998.
 
+Ahmed, M. and Campbell, S. A.. Modelling the effect of
+allopregnanolone on the resolution of spike-wave discharges.
+*Journal of Computational Neuroscience*
+10.1007/s10827-024-00887-x, 2024.
+
 Ait Ouares, K., Filipis, L., Tzilivaki, A., Poirazi, P. and
 Canepari, M.. Two distinct sets of Ca2+ and K+ channels are
 activated at different membrane potentials by the climbing fiber
 synaptic potential in Purkinje neuron dendrites. *Journal of
 Neuroscience* 39:1969-1981, 10.1523/JNEUROSCI.2155-18.2018, 2019.
+
+Akar, N. A., Cumming, B., Karakasis, V., Küsters, A., Klijn, W.,
+Peyser, A. and Yates, S.. Arbor — a morphologically-detailed
+neural network simulation library for contemporary
+high-performance computing architectures [Online]. *2019 27th
+Euromicro International Conference on Parallel, Distributed and
+Network-Based Processing (PDP)* :274-282,
+10.1109/EMPDP.2019.8671560, 2019.
 
 Akbari, A., Moradi, K., Hadaeghi, F., Gharibzadeh, S. and
 Emkanjoo, Z.. Is "capacitive coupling" purely excitatory in the
@@ -204,10 +240,21 @@ Voltage-gated sodium channels in neocortical pyramidal neurons
 display Cole-Moore activation kinetics. *Frontiers in Cellular
 Neuroscience* 12:187, 10.3389/fncel.2018.00187, 2018.
 
+Almog, M., Degani-Katzav, N. and Korngreen, A.. Kinetic and
+thermodynamic modeling of a voltage-gated sodium channel.
+*European Biophysics Journal* 51:241-256,
+10.1007/s00249-022-01591-3, 2022.
+
 Almog, M. and Korngreen, A.. A quantitative description of
 dendritic conductances and its application to dendritic excitation
 in layer 5 pyramidal neurons. *Journal of Neuroscience*
 34:182-196, 10.1523/JNEUROSCI.2896-13.2014, 2014.
+
+Alqahtani, A., Alabed, A., Alharbi, Y., Bakouri, M., Lovell, N. H.
+and Dokos, S.. A varying-radius cable equation for the modelling
+of impulse propagation in excitable fibres. *International Journal
+for Numerical Methods in Biomedical Engineering* 38:e3616,
+10.1002/cnm.3616, 2022.
 
 Alturki, A., Feng, F., Nair, A., Guntu, V. and Nair, S. S..
 Distinct current modules shape cellular dynamics in model neurons.
@@ -332,6 +379,15 @@ Pan, J. Q.. A rare schizophrenia risk variant of CACNA1I disrupts
 CaV3.3 channel activity. *Scientific Reports* 6:34233,
 10.1038/srep34233, 2016.
 
+Andreakos, N., Yue, S. and Cutsuridis, V.. Recall performance
+improvement in a bio-inspired model of the mammalian hippocampus
+[Online]. *Brain Informatics* :319-328, 2020.
+
+Andreakos, N., Yue, S. and Cutsuridis, V.. Quantitative
+investigation of memory recall performance of a computational
+microcircuit model of the hippocampus. *Brain Informatics* 8:9,
+10.1186/s40708-021-00131-7, 2021.
+
 Andree, A., Li, N., Butenko, K., Kober, M., Chen, J. Z., Higuchi,
 T., Fauser, M., Storch, A., Ip, C. W., Kühn, A. A., Horn, A. and
 van Rienen, U.. Deep brain stimulation electrode modeling in rats.
@@ -341,7 +397,7 @@ van Rienen, U.. Deep brain stimulation electrode modeling in rats.
 Andreozzi, E., Carannante, I., D'Addio, G., Cesarelli, M. and
 Balbi, P.. Phenomenological models of Nav1.5. A side by side,
 procedural, hands-on comparison between Hodgkin-Huxley and kinetic
-formalisms.. *Scientific Reports* 9:17493,
+formalisms. *Scientific Reports* 9:17493,
 10.1038/s41598-019-53662-9, 2019.
 
 Androuin, A., Potier, B., Nägerl, U. V., Cattaert, D., Danglot,
@@ -383,6 +439,13 @@ are affected by channelopathies associated with autism spectrum
 disorder. *International Journal of Neural Systems* 28:1750058,
 10.1142/S0129065717500587, 2018.
 
+Anwar, H., Caby, S., Dura-Bernal, S., D'Onofrio, D., Hasegan, D.,
+Deible, M., Grunblatt, S., Chadderdon, G. L., Kerr, C. C.,
+Lakatos, P., Lytton, W. W., Hazan, H. and Neymotin, S. A..
+Training a spiking neuronal network model of visual-motor cortex
+to play a virtual racket-ball game using reinforcement learning.
+*PLoS ONE* 17:e0265808, 10.1371/journal.pone.0265808, 2022.
+
 Anwar, H., Hepburn, I., Nedelescu, H., Chen, W. and De Schutter,
 E.. Stochastic calcium mechanisms cause dendritic calcium spike
 variability. *Journal of Neuroscience* 33:15848-15867,
@@ -409,6 +472,11 @@ C. and Magee, J. C.. Axonal filtering allows reliable output
 during dendritic plateau-driven complex spiking in Ca1 neurons.
 *Neuron* 89:770-783, 10.1016/j.neuron.2015.12.040, 2016.
 
+Appukuttan, S., Bologna, L. L., Schürmann, F., Migliore, M. and
+Davison, A. P.. EBRAINS Live Papers - Interactive Resource Sheets
+for Computational Studies in Neuroscience. *Neuroinformatics*
+10.1007/s12021-022-09598-z, 2022.
+
 Appukuttan, S., Brain, K. L. and Manchanda, R.. A computational
 model of urinary bladder smooth muscle syncytium: validation and
 investigation of electrical properties. *Journal of Computational
@@ -424,6 +492,17 @@ variations in gap junctional coupling on the frequency of
 oscillatory action potentials in a smooth muscle syncytium.
 *Frontiers in Physiology* 12:655225, 10.3389/fphys.2021.655225,
 2021.
+
+Appukuttan, S. and Davison, A. P.. Reproducing and quantitatively
+validating a biologically-constrained point-neuron model of CA1
+pyramidal cells. *Frontiers in Integrative Neuroscience*
+1610.3389/fnint.2022.1041423, 2022.
+
+Appukuttan, S., Mandge, D. and Manchanda, R.. Implementation of
+syncytial models in NEURON simulator for improved efficiency
+[Online]. *2020 28th Euromicro International Conference on
+Parallel, Distributed and Network-Based Processing (PDP)*
+:266-273, 10.1109/PDP50117.2020.00048, 2020.
 
 Appukuttan, S., Padmakumar, M., Brain, K. L. and Manchanda, R.. A
 method for the analysis of AP foot convexity: insights into smooth
@@ -489,6 +568,13 @@ strength. *Proceedings of the National Academy of Sciences of the
 United States of America* 111:E2895-E2904,
 10.1073/pnas.1321869111, 2014.
 
+Arcas, J. M., Oudaha, K., González, A., Fernández-Trillo, J.,
+Peralta, F. A., Castro-Marsal, J., Poyraz, S., Taberner, F., Sala,
+S., de la Peña, E., Gomis, A. and Viana, F.. The ion channel TRPM8
+is a direct target of the immunosuppressant rapamycin in primary
+sensory neurons. *British Journal of Pharmacology* 181:3192-3214,
+10.1111/bph.16402, 2024.
+
 Archie, K. A. and Mel, B. W.. A model for intradendritic
 computation of binocular disparity. *Nature Neuroscience* 3:54-63,
 2000.
@@ -519,6 +605,11 @@ neuronal transmission: information-theoretic analysis in a
 cerebellar granule cell. *Neural Computation* 22:2031-2058,
 10.1162/NECO_a_00006-Arleo, 2010.
 
+Arnaudon, A., Reva, M., Zbili, M., Markram, H., Van Geit, W. and
+Kanari, L.. Controlling morpho-electrophysiological variability of
+neurons with detailed biophysical models. *iScience* 26:108222,
+10.1016/j.isci.2023.108222, 2023.
+
 Arruda, D., Publio, R. and Roque, A. C.. The periglomerular cell
 of the olfactory bulb and its role in controlling mitral cell
 spiking: a computational model. *PLoS ONE* 8:e56148,
@@ -528,6 +619,11 @@ Arsiero, M., Lüscher, H.-R., Lundstrom, B. N. and Giugliano, M..
 The impact of input fluctuations on the frequency-current
 relationships of layer 5 pyramidal neurons in the rat medial
 prefrontal cortex. *Journal of Neuroscience* 27:3274-3284, 2007.
+
+Aruljothi, S. and Manchanda, R.. A biophysically comprehensive
+model of urothelial afferent neurons: implications for sensory
+signalling in urinary bladder. *Journal of Computational
+Neuroscience* 52:21-37, 10.1007/s10827-024-00865-3, 2024.
 
 Aruljothi, S., Mandge, D. and Manchanda, R.. A biophysical model
 of heat sensitivity in nociceptive C-fiber neurons [Online]. *2017
@@ -602,6 +698,13 @@ Modulation of presynaptic Ca(2+) currents in frog motor nerve
 terminals by high pressure.. *European Journal of Neuroscience*
 38:2716-2729, 10.1111/ejn.12267, 2013.
 
+Awile, O., Kumbhar, P., Cornu, N., Dura-Bernal, S., King, J. G.,
+Lupton, O., Magkanaris, I., McDougal, R. A., Newton, A. J. H.,
+Pereira, F., Săvulescu, A., Carnevale, N. T., Lytton, W. W.,
+Hines, M. L. and Schürmann, F.. Modernizing the NEURON simulator
+for sustainability, portability, and performance. *Frontiers in
+Neuroinformatics* 16:884046, 10.3389/fninf.2022.884046, 2022.
+
 Azouz, R.. Dynamic spatiotemporal synaptic integration in cortical
 neurons: neuronal gain, revisited. *Journal of Neurophysiology*
 94:2785-2796, 2005.
@@ -630,6 +733,18 @@ Baccus, S. A., Sahley, C. L. and Muller, K. J.. Multiple sites of
 action potential initiation increase neuronal firing rate.
 *Journal of Neurophysiology* 86:1226-1236, 2001.
 
+Bacmeister, C. M., Huang, R., Osso, L. A., Thornton, M. A.,
+Conant, L., Chavez, A. R., Poleg-Polsky, A. and Hughes, E. G..
+Motor learning drives dynamic patterns of intermittent myelination
+on learning-activated axons. *Nature Neuroscience* 25:1300-1313,
+10.1038/s41593-022-01169-4, 2022.
+
+Bacqué-Cazenave, J., Courtand, G., Beraneck, M., Straka, H.,
+Combes, D. and Lambert, F. M.. Locomotion-induced ocular motor
+behavior in larval Xenopus is developmentally tuned by
+visuo-vestibular reflexes. *Nature Communications*
+1310.1038/s41467-022-30636-6, 2022.
+
 Badoual, M., Rudolph, M., Piwkowska, Z., Destexhe, A. and Bal, T..
 High discharge variability in neurons driven by current noise.
 *Neurocomputing* 65:493-498, 2005.
@@ -639,6 +754,13 @@ Fregnac, Y. and Destexhe, A.. Biophysical and phenomenological
 models of multiple spike interactions in spike-timing dependent
 plasticity. *International Journal of Neural Systems* 16:79-97,
 2006.
+
+Baez-Nieto, D., Allen, A., Akers-Campbell, S., Yang, L., Budnik,
+N., Pupo, A., Shin, Y.-C., Genovese, G., Liao, M., Pérez-Palma,
+E., Heyne, H., Lal, D., Lipscombe, D. and Pan, J. Q.. Analysing an
+allelic series of rare missense variants of CACNA1I in a Swedish
+schizophrenia cohort. *Brain* 145:1839-1853,
+10.1093/brain/awab443, 2022.
 
 BagheriMofidi, S. M., Pouladian, M., Jameie, S. B. and
 Tehrani-Fard, A. A.. Computational modeling of neuronal current
@@ -718,6 +840,12 @@ of all human voltage-gated sodium channel isoforms. *PLoS
 Computational Biology* 13:e1005737, 10.1371/journal.pcbi.1005737,
 2017.
 
+Balcioglu, A., Gillani, R., Doron, M., Burnell, K., Ku, T.,
+Erisir, A., Chung, K., Segev, I. and Nedivi, E.. Mapping thalamic
+innervation to individual L2/3 pyramidal neurons and modeling
+their 'readout' of visual input. *Nature Neuroscience* 26:470-480,
+10.1038/s41593-022-01253-9, 2023.
+
 Ball, J. M., Hummos, A. M. and Nair, S. S.. Role of sensory input
 distribution and intrinsic connectivity in lateral amygdala during
 auditory fear conditioning: a computational study. *Neuroscience*
@@ -761,11 +889,27 @@ determinants of the onset dynamics of action potentials in a
 computational model. *Neuroscience* 167:1070-1090,
 10.1016/j.neuroscience.2010.02.072, 2010.
 
+Baratham, V. L., Dougherty, M. E., Hermiz, J., Ledochowitsch, P.,
+Maharbiz, M. M. and Bouchard, K. E.. Columnar localization and
+laminar origin of cortical surface electrical potentials. *Journal
+of Neuroscience* 42:3733-3748, 10.1523/JNEUROSCI.1787-21.2022,
+2022.
+
 Barbieri, R., Bertelli, S., Pusch, M. and Gavazzo, P.. Late sodium
 current blocker GS967 inhibits persistent currents induced by
 familial hemiplegic migraine type 3 mutations of the SCN1A gene.
 *Journal of Headache and Pain* 20:107, 10.1186/s10194-019-1056-2,
 2019.
+
+Barbulescu, R., Ciuprina, G., Ionescu, T., Ioan, D. and Silveira,
+L. M.. Efficient model reduction of myelinated compartments as
+port-Hamiltonian systems [Online]. *Scientific Computing in
+Electrical Engineering* :3-12, 2021.
+
+Barbulescu, R., Mestre, G., Oliveira, A. L. and Silveira, L. M..
+Learning the dynamics of realistic models of C. elegans nervous
+system with recurrent neural networks. *Scientific Reports*
+13:467, 10.1038/s41598-022-25421-w, 2023.
 
 Barela, A. J., Waddy, S. P., Lickfett, J. G., Hunter, J., Anido,
 A., Helmers, S. L., Goldin, A. L. and Escayg, A.. An epilepsy
@@ -787,11 +931,21 @@ Barlow, B. M., Joos, B., Trinh, A. K. and Longtin, A.. Cooling
 reverses pathological bifurcations to spontaneous firing caused by
 mild traumatic injury. *Chaos* 28:106328, 10.1063/1.5040288, 2018.
 
+Barlow, B. S. M., Longtin, A. and Joós, B.. Impact on
+backpropagation of the spatial heterogeneity of sodium channel
+kinetics in the axon initial segment. *PLoS Computational Biology*
+20:e1011846, 10.1371/journal.pcbi.1011846, 2024.
+
 Barriga-Rivera, A., Guo, T., Yang, C.-Y., Abed, A. A., Dokos, S.,
 Lovell, N. H., Morley, J. W. and Suaning, G. J.. High-amplitude
 electrical stimulation can reduce elicited neuronal activity in
 visual prosthesis. *Scientific Reports* 7:42682,
 10.1038/srep42682, 2017.
+
+Barros, M. T., Siljak, H., Mullen, P., Papadias, C., Hyttinen, J.
+and Marchetti, N.. Objective supervised machine learning-based
+classification and inference of biological neuronal networks.
+*Molecules* 2710.3390/molecules27196256, 2022.
 
 Barros-Zulaica, N., Rahmon, J., Chindemi, G., Perin, R., Markram,
 H., Muller, E. and Ramaswamy, S.. Estimating the
@@ -845,6 +999,11 @@ coding in a laminar computational model of cat primary visual
 cortex. *Journal of Computational Neuroscience* 34:273-283,
 10.1007/s10827-012-0420-x, 2013.
 
+Bast, A., Fruengel, R., de Kock, C. P. J. and Oberlaender, M..
+Network-neuron interactions underlying sensory responses of layer
+5 pyramidal tract neurons in barrel cortex. *PLoS Computational
+Biology* 20:e1011468, 10.1371/journal.pcbi.1011468, 2024.
+
 Basu, J., Srinivas, K. V., Cheung, S. K., Taniguchi, H., Huang, Z.
 J. and Siegelbaum, S. A.. A cortico-hippocampal learning rule
 shapes inhibitory microcircuit activity to enhance hippocampal
@@ -866,6 +1025,26 @@ M. H. P.. Heteromeric Kv7.2/7.3 channels differentially regulate
 action potential initiation and conduction in neocortical
 myelinated axons. *Journal of Neuroscience* 34:3719-3732,
 10.1523/JNEUROSCI.4206-13.2014, 2014.
+
+Beaubois, R., Cheslet, J., Ikeuchi, Y., Branchereau, P. and Levi,
+T.. Real-time multicompartment Hodgkin-Huxley neuron emulation on
+SoC FPGA. *Frontiers in Neuroscience* 18:1457774,
+10.3389/fnins.2024.1457774, 2024.
+
+Beaubois, R., Khoyratee, F., Branchereau, P., Ikeuchi, Y. and
+Levi, T.. From real-time single to multicompartmental
+Hodgkin-Huxley neurons on FPGA for bio-hybrid systems. *Annual
+International Conference of the IEEE Engineering in Medicine and
+Biology Society. IEEE Engineering in Medicine and Biology Society.
+Annual International Conference* 2022:1602-1606,
+10.1109/EMBC48229.2022.9871176, 2022.
+
+Beauchamp, J. A., Pearcey, G. E. P., Khurram, O. U., Chardon, M.,
+Wang, Y. C., Powers, R. K., Dewald, J. P. A. and Heckman, C. J.. A
+geometric approach to quantifying the neuromodulatory effects of
+persistent inward currents on individual motor unit discharge
+patterns. *Journal of Neural Engineering*
+2010.1088/1741-2552/acb1d7, 2023.
 
 Beaulieu-Laroche, L., Brown, N. J., Hansen, M., Toloza, E. H. S.,
 Sharma, J., Williams, Z. M., Frosch, M. P., Cosgrove, G. R., Cash,
@@ -976,6 +1155,16 @@ potential generation during single and dual electrode stimulation
 of CA3 axons in hippocampal slice. *Computers in Biology and
 Medicine* 40:487-497, 10.1016/j.compbiomed.2010.03.003, 2010.
 
+Beniaguev, D., Segev, I. and London, M.. Single cortical neurons
+as deep artificial neural networks. *Neuron* 109:2727-2739.e3,
+10.1016/j.neuron.2021.07.002, 2021.
+
+Benites, N. M., Rodrigues, B., da Silveira, C. H., Kushmerick, C.
+and Leão, R. M.. Development of electrophysiological properties of
+fusiform neurons from the dorsal cochlear nucleus of mice before
+and after hearing onset. *Journal of Neurophysiology* 130:5-22,
+10.1152/jn.00239.2022, 2023.
+
 Benke, T. A., Lüthi, A., Palmer, M. J., Wikström, M. A., Anderson,
 W. W., Isaac, J. T. R. and Collingridge, G. L.. Mathematical
 modelling of non-stationary fluctuation analysis for studying
@@ -992,7 +1181,7 @@ processors. *Journal of Neuroscience Methods* 206:183-194,
 10.1016/j.jneumeth.2012.02.024, 2012.
 
 Ben-Shalom, R., Keeshen, C. M., Berrios, K. N., An, J. Y.,
-Sanders, S. J. and Bender, K. J.. Opposing effects on NAV1.2
+Sanders, S. J. and Bender, K. J.. Opposing effects on Nav1.2
 function underlie differences between SCN2A variants observed in
 individuals with autism spectrum disorder or infantile seizures.
 *Biological Psychiatry* 82:224-232,
@@ -1024,6 +1213,11 @@ infantile encephalopathy. *Annals of Neurology* 85:514-525,
 Berends, M., Maex, R. and De Schutter, E.. The effect of NMDA
 receptors on gain modulation. *Neural Computation* 17:2531-2547,
 2005.
+
+Berling, D., Baroni, L., Chaffiol, A., Gauvain, G., Picaud, S. and
+Antolík, J.. Optogenetic stimulation recruits cortical neurons in
+a morphology-dependent manner. *Journal of Neuroscience*
+4410.1523/JNEUROSCI.1215-24.2024, 2024.
 
 Bernander, Ö., Douglas, R. J., Martin, K. A. C. and Koch, C..
 Synaptic background activity influences spatiotemporal integration
@@ -1068,6 +1262,12 @@ Simulation of high-frequency sinusoidal electrical block of
 mammalian myelinated axons. *Journal of Computational
 Neuroscience* 22:313-326, 2007.
 
+Bhowmick, S., Graham, R. D., Verma, N., Trevathan, J. K., Franke,
+M., Nieuwoudt, S., Fisher, L. E., Shoffstall, A. J., Weber, D. J.,
+Ludwig, K. A. and Lempka, S. F.. Computational modeling of dorsal
+root ganglion stimulation using an Injectrode. *Journal of Neural
+Engineering* 2110.1088/1741-2552/ad357f, 2024.
+
 Bhumbra, G. S., Bannatyne, B. A., Watanabe, M., Todd, A. J.,
 Maxwell, D. J. and Beato, M.. The recurrent case for the Renshaw
 cell. *Journal of Neuroscience* 34:12919-12932,
@@ -1104,9 +1304,25 @@ Cathala, L.. Developmental emergence of two-stage nonlinear
 synaptic integration in cerebellar interneurons. *eLife*
 1010.7554/eLife.65954, 2021.
 
+Bichler, E. K., Cavarretta, F. and Jaeger, D.. Changes in
+excitability properties of ventromedial motor thalamic neurons in
+6-OHDA lesioned mice. *eNeuro* 810.1523/ENEURO.0436-20.2021, 2021.
+
 Bicknell, B. A. and Häusser, M.. A synaptic learning rule for
 exploiting nonlinear dendritic computation. *Neuron*
 109:4001-4017.e10, 10.1016/j.neuron.2021.09.044, 2021.
+
+Biddell, K. M. and Johnson, J. D.. A biophysical model of cortical
+glutamate excitation of medium spiny neurons in the dorsal lateral
+striatum [Online]. *2013 IEEE 56th International Midwest Symposium
+on Circuits and Systems (MWSCAS)*, 10.1109/mwscas.2013.6674811,
+2013a.
+
+Biddell, K. M. and Johnson, J. D.. The effects of NMDA receptor
+model time dynamics over the short and long term when set to
+striatal dorsolateral and ventromedial medium spiny neurons
+[Online]. *2013 6th International IEEE/EMBS Conference on Neural
+Engineering (NER)*, 10.1109/ner.2013.6696141, 2013b.
 
 Bieda, M. C. and Copenhagen, D. R.. Inhibition is not required for
 the production of transient spiking responses from retinal
@@ -1144,6 +1360,16 @@ analysis of electrode placement and pulse amplitude for
 hippocampal stimulation. *IEEE Transactions on Bio-Medical
 Engineering* 65:2278-2289, 10.1109/TBME.2018.2791860, 2018b.
 
+Bingham, C. S. and McIntyre, C. C.. Subthalamic deep brain
+stimulation of an anatomically detailed model of the human
+hyperdirect pathway. *Journal of Neurophysiology* 127:1209-1220,
+10.1152/jn.00004.2022, 2022.
+
+Bingham, C. S. and McIntyre, C. C.. Coupled activation of the
+hyperdirect and cerebellothalamic pathways with zona incerta deep
+brain stimulation. *Movement Disorders* 39:539-545,
+10.1002/mds.29717, 2024.
+
 Bingham, C. S., Mergenthal, A., Bouteiller, J.-M. C., Song, D.,
 Lazzi, G. and Berger, T. W.. ROOTS: an algorithm to generate
 biologically realistic cortical axons and an application to
@@ -1172,6 +1398,12 @@ Birdno, M. J., Tang, W., Dostrovsky, J. O., Hutchison, W. D. and
 Grill, W. M.. Response of human thalamic neurons to high-frequency
 stimulation. *PLoS ONE* 9:e96026, 10.1371/journal.pone.0096026,
 2014.
+
+Birgiolas, J., Haynes, V., Gleeson, P., Gerkin, R. C., Dietrich,
+S. W. and Crook, S.. NeuroML-DB: sharing and characterizing
+data-driven neuroscience models described in NeuroML. *PLoS
+Computational Biology* 19:e1010941, 10.1371/journal.pcbi.1010941,
+2023.
 
 Biró, Á. A., Brémaud, A., Falck, J. and Ruiz, A. J.. A-type K+
 channels impede supralinear summation of clustered glutamatergic
@@ -1203,6 +1435,14 @@ recurrent excitation amplification in biophysically plausible
 neuron models [Online]. *Proceedings of the 2nd ICSD Symposium on
 Neural Computation* 2:463-469, 2000.
 
+Blanz, S. L., Musselman, E. D., Settell, M. L., Knudsen, B. E.,
+Nicolai, E. N., Trevathan, J. K., Verner, R. S., Begnaud, J.,
+Skubal, A. C., Suminski, A. J., Williams, J. C., Shoffstall, A.
+J., Grill, W. M., Pelot, N. A. and Ludwig, K. A.. Spatially
+selective stimulation of the pig vagus nerve to modulate target
+effect versus side effect. *Journal of Neural Engineering*
+2010.1088/1741-2552/acb3fd, 2023.
+
 Bloss, E. B., Cembrowski, M. S., Karsh, B., Colonell, J., Fetter,
 R. D. and Spruston, N.. Structured dendritic inhibition supports
 branch-selective integration in CA1 pyramidal cells. *Neuron*
@@ -1233,15 +1473,37 @@ of cellular and network mechanisms in spatiotemporal pattern
 formation in neuronal networks. *Journal of Neuroscience*
 29:1677-1687, 2009.
 
+Bok, I., Haber, I., Qu, X. and Hai, A.. In silico assessment of
+electrophysiological neuronal recordings mediated by
+magnetoelectric nanoparticles. *Scientific Reports* 12:8386,
+10.1038/s41598-022-12303-4, 2022.
+
 Bolduan, F., Grosser, S. and Vida, I.. Minimizing shrinkage of
 acute brain slices using metal spacers during histological
 embedding. *Brain Structure and Function* 225:2577-2589,
 10.1007/s00429-020-02141-3, 2020.
 
+Bologna, L. L., Smiriglia, R., Lupascu, C. A., Appukuttan, S.,
+Davison, A. P., Ivaska, G., Courcol, J.-D. and Migliore, M.. The
+EBRAINS Hodgkin-Huxley Neuron Builder: An online resource for
+building data-driven neuron models. *Frontiers in
+Neuroinformatics* 1610.3389/fninf.2022.991609, 2022.
+
+Bologna, L. L., Tocco, A., Smiriglia, R., Romani, A., Schürmann,
+F. and Migliore, M.. Online interoperable resources for building
+hippocampal neuron models via the Hippocampus Hub. *Frontiers in
+Neuroinformatics* 17:1271059, 10.3389/fninf.2023.1271059, 2023.
+
 Bonaiuto, J. J., Little, S., Neymotin, S. A., Jones, S. R.,
 Barnes, G. R. and Bestmann, S.. Laminar dynamics of high amplitude
 beta bursts in human motor cortex. *NeuroImage* 242:118479,
 10.1016/j.neuroimage.2021.118479, 2021.
+
+Bono, F. D., Rapeaux, A., Demarchi, D. and Constandinou, T. G..
+Translating node of Ranvier currents to extraneural electrical
+fields: a flexible FEM modeling approach [Online]. *IEEE
+Engineering in Medicine and Biology Society. Annual Conference*,
+10.1109/embc46164.2021.9629677, 2021.
 
 Booker, S. A., Gross, A., Althof, D., Shigemoto, R., Bettler, B.,
 Frotscher, M., Hearing, M., Wickman, K., Watanabe, M., Kulik, Á.
@@ -1273,11 +1535,27 @@ Frequency dependence of CA3 spike phase response arising from
 h-current properties. *Frontiers In Cellular Neuroscience*
 710.3389/fncel.2013.00263, 2013.
 
+Borges, F. S., Moreira, J. V. S., Takarabe, L. M., Lytton, W. W.
+and Dura-Bernal, S.. Large-scale biophysically detailed model of
+somatosensory thalamocortical circuits in NetPyNE. *Frontiers in
+Neuroinformatics* 16:884245, 10.3389/fninf.2022.884245, 2022.
+
+Borges, F. S., Protachevicz, P. R., Souza, D. L. M., Bittencourt,
+C. F., Gabrick, E. C., Bentivoglio, L. E., Szezech, J. D.,
+Batista, A. M., Caldas, I. L., Dura-Bernal, S. and Pena, R. F. O..
+The roles of potassium and calcium currents in the bistable firing
+transition.. *Brain Sciences* 1310.3390/brainsci13091347, 2023.
+
 Bos, R., Harris-Warrick, R. M., Brocard, C., Demianenko, L. E.,
 Manuel, M., Zytnicki, D., Korogod, S. M. and Brocard, F.. Kv1.2
 channels promote nonlinear spiking motoneurons for powering up
 locomotion. *Cell Reports* 22:3315-3327,
 10.1016/j.celrep.2018.02.093, 2018.
+
+Bossetti, C. A., Birdno, M. J. and Grill, W. M.. Analysis of the
+quasi-static approximation for calculating potentials generated by
+neural stimulation. *Journal of Neural Engineering* 5:44-53,
+10.1088/1741-2560/5/1/005, 2008.
 
 Botta, P., Simões de Souza, F. M., Sangrey, T., De Schutter, E.
 and Valenzuela, C. F.. Alcohol excites cerebellar Golgi cells by
@@ -1476,6 +1754,10 @@ exposure to aglycemia in central white matter is mediated by
 acidification. *Physiological Reports* 7:e14007,
 10.14814/phy2.14007, 2019.
 
+Brown, A. M. and Hamann, M.. Computational modeling of the effects
+of auditory nerve dysmyelination. *Frontiers in Neuroanatomy*
+8:73, 10.3389/fnana.2014.00073, 2014.
+
 Brown, D., Feng, J. and Feerick, S.. Variability of firing of
 Hodgkin-Huxley and FitzHugh-Nagumo neurons with stochastic
 synaptic input. *Physical Review Letters* 82:4731-4734, 1999.
@@ -1503,6 +1785,13 @@ Hebbian computations in hippocampal dendrites and spines. In:
 Zornetzer, S. F.. San Diego: San Diego, Academic Press, 1992, pp.
 81-116.
 
+Brucker-Hahn, M. K., Zander, H. J., Will, A. J., Vallabh, J. C.,
+Wolff, J. S., Dinsmoor, D. A. and Lempka, S. F.. Evoked compound
+action potentials during spinal cord stimulation: effects of
+posture and pulse width on signal features and neural activation
+within the spinal cord. *Journal of Neural Engineering*
+2010.1088/1741-2552/aceca4, 2023.
+
 Brüderle, D., Petrovici, M. A., Vogginger, B., Ehrlich, M., Pfeil,
 T., Millner, S., Gruebl, A., Wendt, K., Mueller, E., Schwartz,
 M.-O., de Oliveira, D. H., Jeltsch, S., Fieres, J., Schilling, M.,
@@ -1514,6 +1803,11 @@ Schemmel, J. and Meier, K.. A comprehensive workflow for
 general-purpose neural modeling with highly configurable
 neuromorphic hardware systems. *Biological Cybernetics*
 104:263-296, 10.1007/s00422-011-0435-9, 2011.
+
+Brunner, J., Arszovszki, A., Tarcsay, G. and Szabadics, J.. Axons
+compensate for biophysical constraints of variable size to
+uniformize their action potentials. *PLoS Biology* 22:e3002929,
+10.1371/journal.pbio.3002929, 2024.
 
 Brunner, J., Ster, J., Van-Weert, S., Andrási, T., Neubrandt, M.,
 Corti, C., Corsi, M., Ferraguti, F., Gerber, U. and Szabadics, J..
@@ -1541,8 +1835,15 @@ Bryson, A., Hatch, R. J., Zandt, B.-J., Rossert, C., Berkovic, S.
 F., Reid, C. A., Grayden, D. B., Hill, S. L. and Petrou, S..
 GABA-mediated tonic inhibition differentially modulates gain in
 functional subtypes of cortical interneurons. *Proceedings of the
-National Academy of Sciences* 117:3192-3202,
-10.1073/pnas.1906369117, 2020.
+National Academy of Sciences of the United States of America*
+117:3192-3202, 10.1073/pnas.1906369117, 2020.
+
+Buccino, A. P., Damart, T., Bartram, J., Mandge, D., Xue, X.,
+Zbili, M., Gänswein, T., Jaquier, A., Emmenegger, V., Markram, H.,
+Hierlemann, A. and Van Geit, W.. A multimodal fitting approach to
+construct single-neuron models with patch clamp and high-density
+microelectrode arrays. *Neural Computation* 36:1286-1331,
+10.1162/neco_a_01672, 2024.
 
 Buccino, A. P. and Einevoll, G. T.. MEArec: a fast and
 customizable testbench simulator for ground-truth extracellular
@@ -1584,6 +1885,19 @@ of neuronal cell types. *IEEE Engineering in Medicine and Biology
 Society. Annual Conference* 2018:999-1002,
 10.1109/EMBC.2018.8512498, 2018c.
 
+Buccino, A. P., Yuan, X., Emmenegger, V., Xue, X., Gänswein, T.
+and Hierlemann, A.. An automated method for precise axon
+reconstruction from recordings of high-density micro-electrode
+arrays. *Journal of Neural Engineering*
+1910.1088/1741-2552/ac59a2, 2022.
+
+Buchin, A., de Frates, R., Nandi, A., Mann, R., Chong, P., Ng, L.,
+Miller, J., Hodge, R., Kalmbach, B., Bose, S., Rutishauser, U.,
+McConoughey, S., Lein, E., Berg, J., Sorensen, S., Gwinn, R.,
+Koch, C., Ting, J. and Anastassiou, C. A.. Multi-modal
+characterization and simulation of human epileptic circuitry.
+*Cell Reports* 41:111873, 10.1016/j.celrep.2022.111873, 2022.
+
 Buckingham, S. D. and Spencer, A. N.. Role of high-voltage
 activated potassium currents in high-frequency neuronal firing:
 evidence from a basal metazoan. *Journal of Neurophysiology*
@@ -1592,6 +1906,16 @@ evidence from a basal metazoan. *Journal of Neurophysiology*
 Buckingham, S. D. and Ali, D. W.. Computer simulations of
 high-pass filtering in zebrafish larval muscle fibres. *Journal of
 Experimental Biology* 208:3055-3063, 2005.
+
+Bucksot, J. E., Chandler, C. R., Intharuck, N. M., Rennaker, R.
+L., Kilgard, M. P. and Hays, S. A.. Validation of a parameterized,
+open-source model of nerve stimulation. *Journal of Neural
+Engineering* 1810.1088/1741-2552/ac1983, 2021.
+
+Bucksot, J. E., Wells, A. J., Rahebi, K. C., Sivaji, V.,
+Romero-Ortega, M., Kilgard, M. P., Rennaker, R. L. and Hays, S.
+A.. Flat electrode contacts for vagus nerve stimulation. *PloS
+One* 14:e0215191, 10.1371/journal.pone.0215191, 2019.
 
 Bucurenciu, I., Kulik, A., Schwaller, B., Frotscher, M. and Jonas,
 P.. Nanodomain coupling between Ca2+ channels and Ca2+ sensors
@@ -1621,6 +1945,11 @@ short-term synaptic plasticity. *Journal of Neuroscience*
 Buonomano, D. V.. A learning rule for the emergence of stable
 dynamics and timing in recurrent networks. *Journal of
 Neurophysiology* 94:2275-2283, 2005.
+
+Burman, R. J., Brodersen, P. J. N., Raimondo, J. V., Sen, A. and
+Akerman, C. J.. Active cortical networks promote shunting fast
+synaptic inhibition in vivo. *Neuron* 111:3531-3540.e6,
+10.1016/j.neuron.2023.08.005, 2023.
 
 Burton, S. D. and Urban, N. N.. Rapid feedforward inhibition and
 asynchronous excitation regulate granule cell activity in the
@@ -1653,6 +1982,11 @@ Bush, P. and Sejnowski, T.. Inhibition synchronizes sparsely
 connected cortical neurons within and between columns in realistic
 network models. *Journal of Computational Neuroscience* 3:91-110,
 1996.
+
+Bushnell, H., Banks, I., Guntu, V., Glickert, G. and Nair, S. S..
+Modeling neural circuit of lower urinary tract [Online]. *2024
+IEEE 67th International Midwest Symposium on Circuits and Systems
+(MWSCAS)* :647-650, 10.1109/mwscas60917.2024.10658907, 2024.
 
 Butenko, K., Bahls, C., Schröder, M., Köhling, R. and van Rienen,
 U.. OSS-DBS: open-source simulation platform for deep brain
@@ -1714,6 +2048,11 @@ segmentation methods for neural activation modeling [Online].
 *Medical Imaging 2019: Image-Guided Procedures, Robotic
 Interventions, and Modeling*, 10.1117/12.2513006, 2019.
 
+Caldas-Martinez, S., Goswami, C., Forssell, M., Cao, J., Barth, A.
+L. and Grover, P.. Cell-specific effects of temporal interference
+stimulation on cortical function. *Communications Biology* 7:1076,
+10.1038/s42003-024-06728-y, 2024.
+
 Cali, C., Berger, T. K., Pignatelli, M., Carleton, A., Markram, H.
 and Giugliano, M.. Inferring connection proximity in networks of
 electrically coupled cells by subthreshold frequency response
@@ -1742,6 +2081,12 @@ Camiré, O., Lazarevich, I., Gilbert, T. and Topolnik, L..
 Mechanisms of supralinear calcium integration in dendrites of
 hippocampal ca1 fast-spiking cells. *Frontiers in Synaptic
 Neuroscience* 10:47, 10.3389/fnsyn.2018.00047, 2018.
+
+Campagner, D., Vale, R., Tan, Y. L., Iordanidou, P., Pavón Arocas,
+O., Claudi, F., Stempel, A. V., Keshavarzi, S., Petersen, R. S.,
+Margrie, T. W. and Branco, T.. A cortico-collicular circuit for
+orienting to shelter during escape. *Nature* 613:111-119,
+10.1038/s41586-022-05553-9, 2023.
 
 Camuñas-Mesa, L. A. and Quiroga, R. Q.. A detailed and fast model
 of extracellular recordings. *Neural Computation* 25:1191-1212,
@@ -1774,9 +2119,9 @@ the spatial discretisation of myelinated axon models [Online].
 10.1109/ceec.2016.7835916, 2016.
 
 Capllonch-Juan, M., Kolbl, F. and Sepulveda, F.. Unidirectional
-ephaptic stimulation between two myelinated axons [Online]. *2017
-39th Annual International Conference of the IEEE Engineering in
-Medicine and Biology Society*, 10.1109/embc.2017.8036804, 2017.
+ephaptic stimulation between two myelinated axons [Online]. *IEEE
+Engineering in Medicine and Biology Society. Annual Conference*,
+10.1109/embc.2017.8036804, 2017.
 
 Capllonch-Juan, M. and Sepulveda, F.. Conduction velocity effects
 due to ephaptic interactions between myelinated axons. In: *EMBEC
@@ -1810,6 +2155,18 @@ Capurro, A., Diambra, L. and Malta, C. P.. Model for the heart
 beat-to-beat time series during meditation. *Physica A-Statistical
 Mechanics and its Applications* 327:168-173, 2003.
 
+Carannante, I., Johansson, Y., Silberberg, G. and Hellgren
+Kotaleski, J.. Data-driven model of postsynaptic currents mediated
+by NMDA or AMPA receptors in striatal neurons. *Frontiers in
+Computational Neuroscience* 16:806086, 10.3389/fncom.2022.806086,
+2022.
+
+Carannante, I., Scolamiero, M., Hjorth, J. J. J., Kozlov, A.,
+Bekkouche, B., Guo, L., Kumar, A., Chachólski, W. and Kotaleski,
+J. H.. The impact of Parkinson's disease on striatal network
+connectivity and corticostriatal drive: an in silico study.
+*Network Neuroscience* 8:1149-1172, 10.1162/netn_a_00394, 2024.
+
 Carbunaru, R. and Durand, D. M.. Axonal stimulation under MRI
 magnetic field z gradients: a modeling study. *Magnetic Resonance
 in Medicine* 38:750-758, 1997.
@@ -1827,6 +2184,10 @@ Neuroscience* 29:5343-5353, 10.1523/JNEUROSCI.5458-08.2009, 2009.
 Carnevale, N. T. and Hines, M. L.. A functional basis for choosing
 compartment size in neuronal models [Online]. *Society for
 Neuroscience Abstracts* 31, 2001.
+
+Carnevale, N. T. and Hines, M. L.. 312.10 Efficient discrete event
+simulation of spiking neurons in NEURON [Online]. *Annual Meeting
+of the Society for Neuroscience* 32, 2002.
 
 Carnevale, N. T. and Hines, M. L.. *The NEURON Book*. Cambridge,
 UK: address, Cambridge University Press, 2006.
@@ -1898,6 +2259,11 @@ Acute effect of pore-forming Clostridium perfringens ε-toxin on
 compound action potentials of optic nerve of mouse. *eNeuro*
 4:ENEURO.0051-17.2017, 10.1523/ENEURO.0051-17.2017, 2017.
 
+Caspi, Y., Mazar, M., Kushnir, Y., Mazor, Y., Katz, B., Lev, S.
+and Binshtok, A. M.. Structural plasticity of axon initial segment
+in spinal cord neurons underlies inflammatory pain. *Pain*
+164:1388-1401, 10.1097/j.pain.0000000000002829, 2023.
+
 Cassara, A. M., Hagberg, G. E., Bianciardi, M., Migliore, M. and
 Maraviglia, B.. Realistic simulations of neuronal activity: a
 contribution to the debate on direct detection of neuronal
@@ -1906,6 +2272,10 @@ currents by MRI. *Neuroimage* 39:87-106, 2008.
 Cassara, A. M. and Maraviglia, B.. Microscopic investigation of
 the resonant mechanism for the implementation of nc-MRI at
 ultra-low field MRI. *Neuroimage* 41:1228-1241, 2008.
+
+Castañares, M. L., Bachor, H.-A. and Daria, V. R.. Analyzing
+branch-specific dendritic spikes using an ultrafast laser scalpel.
+*Frontiers in Physics* 810.3389/fphy.2020.600971, 2020.
 
 Castelfranco, A. M. and Hartline, D. K.. Simulations of
 space-clamp errors in estimating parameters of voltage-gated
@@ -1958,6 +2328,11 @@ Effects of low frequency electric fields on synaptic integration
 in hippocampal CA1 pyramidal neurons: implications for power line
 emissions. *Frontiers in Cellular Neuroscience* 8:310,
 10.3389/fncel.2014.00310, 2014.
+
+Cavarretta, F. and Jaeger, D.. Modeling synaptic integration of
+bursty and β oscillatory inputs in ventromedial motor thalamic
+neurons in normal and parkinsonian states. *eNeuro*
+1010.1523/ENEURO.0237-23.2023, 2023.
 
 Cavarretta, F., Marasco, A., Hines, M. L., Shepherd, G. M. and
 Migliore, M.. Glomerular and mitral-granule cell microcircuits
@@ -2016,7 +2391,7 @@ release in cultured leech neurons. *Journal of Neurophysiology*
 
 Cerina, M., Szkudlarek, H. J., Coulon, P., Meuth, P., Kanyshkova,
 T., Nguyen, X. V., Göbel, K., Seidenbecher, T., Meuth, S. G.,
-Pape, H.-C. and Budde, T.. Thalamic Kv 7 channels: pharmacological
+Pape, H.-C. and Budde, T.. Thalamic Kv7 channels: pharmacological
 properties and activity control during noxious signal processing.
 *British Journal of Pharmacology* 172:3126-3140,
 10.1111/bph.13113, 2015.
@@ -2047,6 +2422,12 @@ model of motor cortex. *PLoS ONE* 7:e47251,
 Chakraborty, D., Truong, D. Q., Bikson, M. and Kaphzan, H..
 Neuromodulation of axon terminals. *Cerebral Cortex* 28:2786-2794,
 10.1093/cercor/bhx158, 2018.
+
+Chamberland, S., Nebet, E. R., Valero, M., Hanani, M., Egger, R.,
+Larsen, S. B., Eyring, K. W., Buzsáki, G. and Tsien, R. W.. Brief
+synaptic inhibition persistently interrupts firing of fast-spiking
+interneurons. *Neuron* 111:1264-1281.e5,
+10.1016/j.neuron.2023.01.017, 2023.
 
 Chambers, J. D., Bethwaite, B., Diamond, N. T., Peachey, T.,
 Abramson, D., Petrou, S. and Thomas, E. A.. Parametric computation
@@ -2085,6 +2466,39 @@ Chang, J. T. and Higley, M. J.. Potassium channels contribute to
 activity-dependent regulation of dendritic inhibition.
 *Physiological Reports* 6:e13747, 10.14814/phy2.13747, 2018.
 
+Chapman, D. P., Vicini, S., Burns, M. P. and Evans, R.. Single
+neuron modeling identifies potassium channel modulation as
+potential target for repetitive head impacts. *Neuroinformatics*
+21:501-516, 10.1007/s12021-023-09633-7, 2023.
+
+Chardon, M. K., Wang, Y. C., Garcia, M., Besler, E., Beauchamp, J.
+A., D'Mello, M., Powers, R. K. and Heckman, C. J.. Supercomputer
+framework for reverse engineering firing patterns of neuron
+populations to identify their synaptic inputs. *eLife*
+1210.7554/eLife.90624, 2024.
+
+Chartrand, T., Dalley, R., Close, J., Goriounova, N. A., Lee, B.
+R., Mann, R., Miller, J. A., Molnar, G., Mukora, A., Alfiler, L.,
+Baker, K., Bakken, T. E., Berg, J., Bertagnolli, D., Braun, T.,
+Brouner, K., Casper, T., Csajbok, E. A., Dee, N., Egdorf, T.,
+Enstrom, R., Galakhova, A. A., Gary, A., Gelfand, E., Goldy, J.,
+Hadley, K., Heistek, T. S., Hill, D., Jorstad, N., Kim, L.,
+Kocsis, A. K., Kruse, L., Kunst, M., Leon, G., Long, B., Mallory,
+M., McGraw, M., McMillen, D., Melief, E. J., Mihut, N., Ng, L.,
+Nyhus, J., Oláh, G., Ozsvár, A., Omstead, V., Peterfi, Z., Pom,
+A., Potekhina, L., Rajanbabu, R., Rozsa, M., Ruiz, A., Sandle, J.,
+Sunkin, S. M., Szots, I., Tieu, M., Toth, M., Trinh, J., Vargas,
+S., Vumbaco, D., Williams, G., Wilson, J., Yao, Z., Barzo, P.,
+Cobbs, C., Ellenbogen, R. G., Esposito, L., Ferreira, M., Gouwens,
+N. W., Grannan, B., Gwinn, R. P., Hauptman, J. S., Jarsky, T.,
+Keene, C. D., Ko, A. L., Koch, C., Ojemann, J. G., Patel, A.,
+Ruzevick, J., Silbergeld, D. L., Smith, K., Sorensen, S. A.,
+Tasic, B., Ting, J. T., Waters, J., de Kock, C. P. J., Mansvelder,
+H. D., Tamas, G., Zeng, H., Kalmbach, B. and Lein, E. S..
+Morphoelectric and transcriptomic divergence of the layer 1
+interneuron repertoire in human versus mouse neocortex. *Science*
+382:eadf0805, 10.1126/science.adf0805, 2023.
+
 Chaturvedi, A., Butson, C. R., Lempka, S. F., Cooper, S. E. and
 McIntyre, C. C.. Patient-specific models of deep brain
 stimulation: influence of field model complexity on neural
@@ -2110,6 +2524,13 @@ Chatzikalymniou, A. P. and Skinner, F. K.. Deciphering the
 contribution of oriens-lacunosum/moleculare (olm) cells to
 intrinsic θ rhythms using biophysical local field potential (LFP)
 models. *eNeuro* 510.1523/ENEURO.0146-18.2018, 2018.
+
+Chaudhary, R., Albrecht, S., Datunashvili, M., Cerina, M.,
+Lüttjohann, A., Han, Y., Narayanan, V., Chetkovich, D. M., Ruck,
+T., Kuhlmann, T., Pape, H.-C., Meuth, S. G., Zobeiri, M. and
+Budde, T.. Modulation of pacemaker channel function in a model of
+thalamocortical hyperexcitability by demyelination and cytokines.
+*Cerebral Cortex* 32:4397-4421, 10.1093/cercor/bhab491, 2022.
 
 Chemin, J., Monteil, A., Bourinet, E., Nargeot, J. and Lory, P..
 Alternatively spliced a1G(CaV3.1) intracellular loops promote
@@ -2150,6 +2571,11 @@ Model of traveling waves in a coral nerve network. *Journal of
 Comparative Physiology. A, Neuroethology, Sensory, Neural, and
 Behavioral Physiology* 194:195-200, 2008.
 
+Chen, H., Noor, M. S., Bingham, C. S. and McIntyre, C. C..
+Optimization of an anatomically and electrically detailed rodent
+subthalamic nucleus neuron model. *Journal of Neurophysiology*
+132:136-146, 10.1152/jn.00287.2023, 2024a.
+
 Chen, J.-Y.. A simulation study investigating the impact of
 dendritic morphology and synaptic topology on neuronal firing
 patterns. *Neural Computation* 22:1086-1111,
@@ -2162,8 +2588,8 @@ inhibition to hyperexcitability. *Nature Medicine* 7:331-337,
 2001a.
 
 Chen, K., Jiang, Y., Wu, Z., Zheng, N., Wang, H. and Hong, H..
-HTsort: Enabling Fast and Accurate Spike Sorting on
-Multi-Electrode Arrays.. *Frontiers in computational neuroscience*
+HTsort: enabling fast and accurate spike sorting on
+multi-electrode arrays. *Frontiers in Computational Neuroscience*
 15:657151, 10.3389/fncom.2021.657151, 2021.
 
 Chen, N. S., Li, B., Murphy, T. H. and Raymond, L. A.. Site within
@@ -2191,6 +2617,14 @@ Voltage sensor movement and cAMP binding allosterically regulate
 an inherently voltage-independent closed-open transition in HCN
 channels. *Journal of General Physiology* 129:175-188, 2007.
 
+Chen, W., Carel, T., Awile, O., Cantarutti, N., Castiglioni, G.,
+Cattabiani, A., Del Marmol, B., Hepburn, I., King, J. G.,
+Kotsalos, C., Kumbhar, P., Lallouette, J., Melchior, S.,
+Schürmann, F. and De Schutter, E.. STEPS 4.0: Fast and
+memory-efficient molecular simulations of neurons at the
+nanoscale. *Frontiers in Neuroinformatics* 16:883742,
+10.3389/fninf.2022.883742, 2022.
+
 Chen, W. R., Shen, G. Y., Shepherd, G. M., Hines, M. L. and
 Midtgaard, J.. Multiple modes of action potential initiation and
 propagation in mitral cell primary dendrite. *Journal of
@@ -2211,6 +2645,21 @@ Chen, Y. A., Yu, F. H., Surmeier, D. J., Scheuer, T. and
 Catterall, W. A.. Neuromodulation of Na+ channel slow inactivation
 via cAMP-dependent protein kinase and protein kinase C. *Neuron*
 49:409-420, 2006.
+
+Chen, Z., Carroll, M. and Nair, S. S.. Inferring pyramidal neuron
+morphology using EAP data. *International IEEE EMBS Conference on
+Neural Engineering* 202310.1109/ner52421.2023.10123903, 2023a.
+
+Chen, Z., Headley, D. B., Gomez-Alatorre, L. F., Kanta, V., Ho, K.
+C., Pare, D. and Nair, S. S.. Approaches to characterizing
+oscillatory burst detection algorithms for electrophysiological
+recordings. *Journal of Neuroscience Methods* 391:109865,
+10.1016/j.jneumeth.2023.109865, 2023b.
+
+Chen, Z., Ho, K. C. and Nair, S. S.. Methodology and toolkit for
+spectral analysis of neural signals [Online]. *2024 IEEE 67th
+International Midwest Symposium on Circuits and Systems (MWSCAS)*
+:596-599, 10.1109/mwscas60917.2024.10658855, 2024b.
 
 Chéreau, R., Saraceno, G. E., Angibaud, J., Cattaert, D. and
 Nägerl, U. V.. Superresolution imaging reveals activity-dependent
@@ -2233,6 +2682,14 @@ sections. *Journal of Neurophysiology* 71:1883-1896, 1994.
 Chimento, T. C. and Ross, M. D.. Evidence of a sensory processing
 unit in the mammalian macula. *Annals of the New York Academy of
 Sciences* 781:196-212, 1996.
+
+Chindemi, G., Abdellah, M., Amsalem, O., Benavides-Piccione, R.,
+Delattre, V., Doron, M., Ecker, A., Jaquier, A. T., King, J.,
+Kumbhar, P., Monney, C., Perin, R., Rössert, C., Tuncel, A. M.,
+Geit, W. V., DeFelipe, J., Graupner, M., Segev, I., Markram, H.
+and Muller, E. B.. A calcium-based plasticity model for predicting
+long-term potentiation and depression in the neocortex. *Nature
+Communications* 1310.1038/s41467-022-30214-w, 2022.
 
 Chiovini, B., Turi, G. F., Katona, G., Kaszás, A., Pálfi, D.,
 Maák, P., Szalay, G., Szabó, M. F., Szabó, G., Szadai, Z., Káli,
@@ -2280,11 +2737,42 @@ neurons in electrical brain stimulation: a computational study
 Medicine Biology Society (EMBC)* :2938-2941,
 10.1109/EMBC44109.2020.9175250, 2020.
 
+Chung, H., Im, C., Seo, H. and Jun, S. C.. Is electric field
+strength deterministic in cortical neurons' response to
+transcranial electrical stimulation?. *IEEE Engineering in
+Medicine and Biology Society. Annual Conference* 2021:6025-6028,
+10.1109/EMBC46164.2021.9629873, 2021.
+
+Chung, H., Im, C., Seo, H. and Jun, S. C.. Key factors in the
+cortical response to transcranial electrical stimulations--a
+multi-scale modeling study. *Computers in Biology and Medicine*
+144:105328, 10.1016/j.compbiomed.2022.105328, 2022.
+
+Cimolato, A., Ciotti, F., Kljajić, J., Valle, G. and Raspopovic,
+S.. Symbiotic electroneural and musculoskeletal framework to
+encode proprioception via neurostimulation: ProprioStim.
+*iScience* 26:106248, 10.1016/j.isci.2023.106248, 2023.
+
+Ciotti, F., Cimolato, A., Valle, G. and Raspopovic, S.. Design of
+an adaptable intrafascicular electrode (AIR) for selective nerve
+stimulation by model-based optimization. *PLoS Computational
+Biology* 19:e1011184, 10.1371/journal.pcbi.1011184, 2023.
+
+Ciotti, F., John, R., Katic Secerovic, N., Gozzi, N., Cimolato,
+A., Jayaprakash, N., Song, W., Toth, V., Zanos, T., Zanos, S. and
+Raspopovic, S.. Towards enhanced functionality of vagus
+neuroprostheses through in silico optimized stimulation. *Nature
+Communications* 15:6119, 10.1038/s41467-024-50523-6, 2024.
+
 Ciotti, F., Valle, G., Pedrocchi, A. and Raspopovic, S.. A
 computational model of the pudendal nerve for the bioelectronic
 treatment of sexual dysfunctions [Online]. *Proc. 10th Int.
 IEEE/EMBS Conf. Neural Engineering* :267-270,
 10.1109/NER49283.2021.9441309, 2021.
+
+Cirtala, G. and De Schutter, E.. Branch-specific clustered
+parallel fiber input controls dendritic computation in Purkinje
+cells. *iScience* 27:110756, 10.1016/j.isci.2024.110756, 2024.
 
 Claiborne, B. J., Zador, A. M., Mainen, Z. F. and Brown, T. H..
 Computational models of hippocampal neurons. In: *Single Neuron
@@ -2315,6 +2803,11 @@ Connectivity reflects coding: a model of voltage-based STDP with
 homeostasis. *Nature Neuroscience* 13:344-352, 10.1038/nn.2479,
 2010.
 
+Cobb, E. A. W., Petroccione, M. A. and Scimemi, A.. NRN-EZ: an
+application to streamline biophysical modeling of synaptic
+integration using NEURON. *Scientific Reports* 13:464,
+10.1038/s41598-022-27302-8, 2023.
+
 Cochran, A. L., Nieser, K. J., Forger, D. B., Zöllner, S. and
 McInnis, M. G.. Gene-set enrichment with mathematical biology
 (GEMB). *GigaScience* 910.1093/gigascience/giaa091, 2020.
@@ -2330,6 +2823,12 @@ Schürmann, F. and Magistretti, P. J.. Norepinephrine stimulates
 glycogenolysis in astrocytes to fuel neurons with lactate. *PLoS
 Computational Biology* 14:e1006392, 10.1371/journal.pcbi.1006392,
 2018.
+
+Coggan, J. S., Keller, D., Markram, H., Schürmann, F. and
+Magistretti, P. J.. Excitation states of metabolic networks
+predict dose-response fingerprinting and ligand pulse phase
+signalling. *Journal of Theoretical Biology* 487:110123,
+10.1016/j.jtbi.2019.110123, 2020.
 
 Coggan, J. S., Sejnowski, T. J. and Prescott, S. A.. Cooperativity
 between remote sites of ectopic spiking allows afterdischarge to
@@ -2377,10 +2876,22 @@ brainstem responses to bilateral electrical stimulation. *Journal
 of the Association for Research in Otolaryngology* 10:91-110,
 2009.
 
+Colella, M., Press, D. Z., Laher, R. M., McIlduff, C. E., Rutkove,
+S. B., Cassarà, A. M., Apollonio, F., Pascual-Leone, A., Liberti,
+M. and Bonmassar, G.. A study of flex miniaturized coils for focal
+nerve magnetic stimulation. *Medical Physics* 10.1002/mp.16148,
+2022.
+
 Combe, C. L., Canavier, C. C. and Gasparini, S.. Intrinsic
 mechanisms of frequency selectivity in the proximal dendrites of
 Ca1 pyramidal neurons. *Journal of Neuroscience* 38:8110-8127,
 10.1523/JNEUROSCI.0449-18.2018, 2018.
+
+Combe, C. L., Upchurch, C. M., Canavier, C. C. and Gasparini, S..
+Cholinergic modulation shifts the response of CA1 pyramidal cells
+to depolarizing ramps via TRPM4 channels with potential
+implications for place field firing. *eLife*
+1210.7554/eLife.84387, 2023.
 
 Conde-Sousa, E. and Aguiar, P.. A working memory model for serial
 order that stores information in the intrinsic excitability
@@ -2408,6 +2919,11 @@ computational characterization of the intracortical inhibitory
 control of synchronized thalamic inputs in vivo. *Journal of
 Neurophysiology* 78:335-350, 1997.
 
+Conway, M., Oncul, M., Allen, K., Zhang, Z. and Johnston, J..
+Perceptual constancy for an odor is acquired through changes in
+primary sensory neurons. *Science Advances* 10:eado9205,
+10.1126/sciadv.ado9205, 2024.
+
 Cook, D. L., Schwindt, P. C., Grande, L. A. and Spain, W. J..
 Synaptic depression in the localization of sound. *Nature*
 421:66-70, 2003.
@@ -2424,6 +2940,12 @@ Cook, E. P., Wilhelm, A. C., Guest, J. A., Liang, Y., Masse, N. Y.
 and Colbert, C. M.. The neuronal transfer function: contributions
 from voltage- and time-dependent mechanisms.. *Progress in Brain
 Research* 165:1-12, 10.1016/S0079-6123(06)65001-2, 2007.
+
+Coolen, R. L., Emmer, K. M., Spantidea, P. I., van Asselt, E.,
+Scheepe, J. R., Serdijn, W. A. and Blok, B. F. M.. Kilohertz
+alternating current neuromodulation of the pudendal nerves:
+effects on the anal canal and anal sphincter in rats. *Journal of
+Applied Biomedicine* 20:56-69, 10.32725/jab.2022.009, 2022.
 
 Coombes, S., Timofeeva, Y., Svensson, C.-M., Lord, G. J., Josic,
 K., Cox, S. J. and Colbert, C. M.. Branching dendrites with
@@ -2446,6 +2968,12 @@ consequences of age-related morphologic changes to pyramidal
 neurons of the rhesus monkey prefrontal cortex. *Journal of
 Computational Neuroscience* 38:263-283, 10.1007/s10827-014-0541-5,
 2015.
+
+Couppey, T., Regnacq, L., Giraud, R., Romain, O., Bornat, Y. and
+Kolbl, F.. NRV: an open framework for in silico evaluation of
+peripheral nerve electrical stimulation strategies. *PLoS
+Computational Biology* 20:e1011826, 10.1371/journal.pcbi.1011826,
+2024.
 
 Couto, J. and Grill, W. M.. Kilohertz frequency deep brain
 stimulation is ineffective at regularizing the firing of model
@@ -2526,6 +3054,11 @@ the homeostatic regulation of the D-type potassium current.
 *Journal of Neuroscience* 30:12885-12895,
 10.1523/JNEUROSCI.0740-10.2010, 2010.
 
+Cudone, E., Lower, A. M. and McDougal, R. A.. Reproducibility of
+biophysical in silico neuron states and spikes from event-based
+partial histories. *PLoS Computational Biology* 19:e1011548,
+10.1371/journal.pcbi.1011548, 2023.
+
 Culmone, V. and Migliore, M.. Progressive effect of beta amyloid
 peptides accumulation on CA1 pyramidal neurons: a model study
 suggesting possible treatments. *Frontiers in Computational
@@ -2551,6 +3084,11 @@ between fly visual interneurons. *Proceedings of the National
 Academy of Sciences of the United States of America*
 104:10229-10233, 2007b.
 
+Currin, C. B. and Raimondo, J. V.. Computational models reveal how
+chloride dynamics determine the optimal distribution of inhibitory
+synapses to minimise dendritic excitability. *PLoS Computational
+Biology* 18:e1010534, 10.1371/journal.pcbi.1010534, 2022.
+
 Currin, C. B., Trevelyan, A. J., Akerman, C. J. and Raimondo, J.
 V.. Chloride dynamics alter the input-output properties of
 neurons. *PLoS Computational Biology* 16:e1007932,
@@ -2574,11 +3112,26 @@ modulated inhibition can account for the long temporal windows in
 the entorhinal-hippocampal loop. *Neurobiology of Learning and
 Memory* 120:69-83, 10.1016/j.nlm.2015.02.002, 2015.
 
+Cuziol, V. V. and Murta Jr., L. O.. Computational model of the
+effects of transcranial magnetic stimulation on cortical networks
+with subject-specific neuroanatomy [Online]. *XXVII Brazilian
+Congress on Biomedical Engineering* :2301-2308, 2022.
+
+Czerwonky, D. M., Aberra, A. S. and Gomez, L. J.. A boundary
+element method of bidomain modeling for predicting cellular
+responses to electromagnetic fields.. *Journal of Neural
+Engineering* 2110.1088/1741-2552/ad5704, 2024.
+
+D'Amico, M., Garcia-Gasulla, M., López, V., Jokanovic, A.,
+Sirvent, R. and Corbalan, J.. DROM [Online]. *Proceedings of the
+47th International Conference on Parallel Processing Companion*,
+10.1145/3229710.3229752, 2018.
+
 D'Angelo, E.. The critical role of Golgi cells in regulating
 spatio-temporal integration and plasticity at the cerebellum input
 stage. *Frontiers in Neuroscience* 2:35-46, 2008.
 
-D’Angelo, E., Nieus, T., Bezzi, M., Arleo, A. and Coenen, O.-M.
+D'Angelo, E., Nieus, T., Bezzi, M., Arleo, A. and Coenen, O.-M.
 D.. Modeling synaptic transmission and quantifying information
 transfer in the granular layer of the cerebellum. In:
 *Computational Intelligence and Bioinspired Systems*, edited by
@@ -2606,10 +3159,18 @@ The SONATA data format for efficient description of large-scale
 network models. *PLoS Computational Biology* 16:e1007696,
 10.1371/journal.pcbi.1007696, 2020b.
 
-D'Amico, M., Garcia-Gasulla, M., López, V., Jokanovic, A.,
-Sirvent, R. and Corbalan, J.. DROM [Online]. *Proceedings of the
-47th International Conference on Parallel Processing Companion*,
-10.1145/3229710.3229752, 2018.
+Dainauskas, J. J., Marie, H., Migliore, M. and Saudargiene, A..
+GluN2B-NMDAR subunit contribution on synaptic plasticity: A
+phenomenological model for CA3-CA1 synapses. *Frontiers in
+Synaptic Neuroscience* 15:1113957, 10.3389/fnsyn.2023.1113957,
+2023a.
+
+Dainauskas, J. J., Vitale, P., Moreno, S., Marie, H., Migliore, M.
+and Saudargiene, A.. Altered synaptic plasticity at hippocampal
+CA1-CA3 synapses in Alzheimer's disease: integration of amyloid
+precursor protein intracellular domain and amyloid beta effects
+into computational models. *Frontiers in Computational
+Neuroscience* 17:1305169, 10.3389/fncom.2023.1305169, 2023b.
 
 Dan, O., Hopp, E., Borst, A. and Segev, I.. Non-uniform weighting
 of local motion inputs underlies dendritic computation in the fly
@@ -2650,9 +3211,8 @@ Neuroscience* 13:477, 10.3389/fncel.2019.00477, 2019.
 
 Dave, V., Mahapatra, C. and Manchanda, R.. A mathematical model of
 the calcium transient in urinary bladder smooth muscle cells.
-*Annual International Conference of the IEEE Engineering in
-Medicine and Biology Society* 2015:5359-5362,
-10.1109/EMBC.2015.7319602, 2015.
+*IEEE Engineering in Medicine and Biology Society. Annual
+Conference* 2015:5359-5362, 10.1109/EMBC.2015.7319602, 2015.
 
 Dave, V. and Manchanda, R.. A computational model of the Ca2+
 transients and influence of buffering in guinea pig urinary
@@ -2679,6 +3239,12 @@ L.. Prediction of peripheral nerve stimulation thresholds of MRI
 gradient coils using coupled electromagnetic and neurodynamic
 simulations. *Magnetic Resonance in Medicine* 81:686-701,
 10.1002/mrm.27382, 2019.
+
+Davis, C. J., Musselman, E. D., Grill, W. M. and Pelot, N. A..
+Fibers in smaller fascicles have lower activation thresholds with
+cuff electrodes due to thinner perineurium and smaller
+cross-sectional area. *Journal of Neural Engineering*
+2010.1088/1741-2552/acc42b, 2023.
 
 Davis, O., Merrison-Hort, R., Soffe, S. R. and Borisyuk, R..
 Studying the role of axon fasciculation during development in a
@@ -2716,6 +3282,22 @@ electrically coupled primary afferents is heterogeneous and is
 enhanced by H-current (IH) modulation. *Journal of
 Neurophysiology* 122:151-175, 10.1152/jn.00029.2019, 2019.
 
+Davoine, F., Curti, S. and Monzón, P.. Spike transmission between
+electrically coupled sensory neurons is improved by filter
+properties [Online]. :1-5, 10.1109/ISCAS45731.2020.9180747, 2020.
+
+Day, M., Belal, M., Surmeier, W. C., Melendez, A., Wokosin, D.,
+Tkatch, T., Clarke, V. R. J. and Surmeier, D. J.. Correction:
+GABAergic regulation of striatal spiny projection neurons depends
+upon their activity state. *PLoS Biology* 22:e3002752,
+10.1371/journal.pbio.3002752, 2024a.
+
+Day, M., Belal, M., Surmeier, W. C., Melendez, A., Wokosin, D.,
+Tkatch, T., Clarke, V. R. J. and Surmeier, D. J.. GABAergic
+regulation of striatal spiny projection neurons depends upon their
+activity state. *PLoS Biology* 22:e3002483,
+10.1371/journal.pbio.3002483, 2024b.
+
 Day, M., Carr, D. B., Ulrich, S., Ilijic, E., Tkatch, T. and
 Surmeier, D. J.. Dendritic excitability of mouse frontal cortex
 pyramidal neurons is shaped by the interaction among HCN, Kir2,
@@ -2732,10 +3314,21 @@ Henao-Gallo, Ó. A., Daza-Santacoloma, G. and Orozco-Gutiérrez, Á.
 during deep brain stimulation using Gaussian processes. *Revista
 Facultad de Ingeniería Universidad de Antioquia* 84:17-26, 2017.
 
+De Schepper, R., Geminiani, A., Masoli, S., Rizza, M. F.,
+Antonietti, A., Casellato, C. and D'Angelo, E.. Model simulations
+unveil the structure-function-dynamics relationship of the
+cerebellar cortical microcircuit. *Communications Biology* 5:1240,
+10.1038/s42003-022-04213-y, 2022.
+
 Debay, D., Wolfart, J., Le Franc, Y., Le Masson, G. and Bal, T..
 Exploring spike transfer through the thalamus using hybrid
 artificial-biological neuronal networks. *Journal of Physiology,
 Paris* 98:540-558, 2004.
+
+Degro, C. E., Bolduan, F., Vida, I. and Booker, S. A.. Interneuron
+diversity in the rat dentate gyrus: An unbiased in vitro
+classification. *Hippocampus* 32:310-331, 10.1002/hipo.23408,
+2022.
 
 Degro, C. E., Kulik, A., Booker, S. A. and Vida, I.. Compartmental
 distribution of GABAB receptor-mediated currents along the
@@ -2810,6 +3403,16 @@ bursting activity of a hyppocampal granule neuron possessing
 thermosensitive TRP channels (a model study: biophysical and
 clinical aspects). *Neurophysiology* 49:8-18,
 10.1007/s11062-017-9624-z, 2017.
+
+Dervinis, M. and Crunelli, V.. Sleep waves in a large-scale
+corticothalamic model constrained by activities intrinsic to
+neocortical networks and single thalamic neurons. *CNS
+Neuroscience and Therapeutics* 10.1111/cns.14206, 2023a.
+
+Dervinis, M. and Crunelli, V.. Spike-and-wave discharges of
+absence seizures in a sleep waves-constrained corticothalamic
+model. *CNS Neuroscience and Therapeutics* 10.1111/cns.14204,
+2023b.
 
 Desjardins, A. E., Li, Y. X., Reinker, S., Miura, R. M. and
 Neuman, R. S.. The influences of I-h on temporal summation in
@@ -3026,6 +3629,11 @@ morphology of a collision detection neuron broaden its impedance
 profile and improve discrimination of input synchrony. *Journal of
 Neurophysiology* 122:691-706, 10.1152/jn.00048.2019, 2019.
 
+Dewell, R. B., Zhu, Y., Eisenbrandt, M., Morse, R. and Gabbiani,
+F.. Contrast polarity-specific mapping improves efficiency of
+neuronal computation for collision detection. *eLife*
+1110.7554/eLife.79772, 2022.
+
 Deyo, S. N. and Lytton, W. W.. Inhibition can disrupt
 hypersynchrony in model neuronal networks. *Progress in
 Neuro-Psychopharmacology and Biological Psychiatry* 21:735-750,
@@ -3049,6 +3657,11 @@ Neuroscience* 20:77-84, 2006.
 Diba, K., Lester, H. A. and Koch, C.. Intrinsic noise in cultured
 hippocampal neurons: Experiment and modeling. *Journal of
 Neuroscience* 24:9723-9733, 2004.
+
+Diesburg, D. A., Wessel, J. R. and Jones, S. R.. Biophysical
+modeling of frontocentral ERP generation links circuit-level
+mechanisms of action-stopping to a behavioral race model. *Journal
+of Neuroscience* 4410.1523/JNEUROSCI.2016-23.2024, 2024.
 
 Dietz, M., Wang, L., Greenberg, D. and McAlpine, D.. Sensitivity
 to interaural time differences conveyed in the stimulus envelope:
@@ -3199,6 +3812,13 @@ procedures of neuron models by experimental and surrogate data.
 *Biological Cybernetics* 99:371-379, 10.1007/s00422-008-0269-2,
 2008.
 
+Du, J., Morales, A., Paknahad, J., Kosta, P., Bouteiller, J.-M.
+C., Fernandez, E. and Lazzi, G.. Electrode Spacing and Current
+Distribution in Electrical Stimulation of Peripheral Nerve: A
+Computational Modeling Study using Realistic Nerve Models.. *IEEE
+Engineering in Medicine and Biology Society. Annual Conference*
+2021:4416-4419, 10.1109/EMBC46164.2021.9631068, 2021.
+
 Du, J. L. and Yang, X. L.. Glycinergic synaptic transmission to
 bullfrog retinal bipolar cells is input-specific. *Neuroscience*
 113:779-784, 2002.
@@ -3216,6 +3836,11 @@ somatic membrane potential in nociceptive neurons and its
 implications for peripheral nociceptive transmission. *Pain*
 155:2306-2322, 10.1016/j.pain.2014.08.025, 2014.
 
+Dudai, A., Doron, M., Segev, I. and London, M.. Synaptic input and
+ACh modulation regulate dendritic Ca2+ spike duration in pyramidal
+neurons, directly affecting their somatic output. *Journal of
+Neuroscience* 42:1184-1195, 10.1523/JNEUROSCI.1470-21.2021, 2022.
+
 Dudman, J. T. and Nolan, M. F.. Stochastically gating ion channels
 enable patterned spike firing through activity-dependent
 modulation of spike probability. *PLoS Computational Biology*
@@ -3226,6 +3851,10 @@ Duffley, G., Anderson, D. N., Vorwerk, J., Dorval, A. D. and
 Butson, C. R.. Evaluation of methodologies for computing the deep
 brain stimulation volume of tissue activated. *Journal of Neural
 Engineering* 16:066024, 10.1088/1741-2552/ab3c95, 2019.
+
+Duggins, P. and Eliasmith, C.. Constructing functional models from
+biophysically-detailed neurons. *PLoS Computational Biology*
+18:e1010461, 10.1371/journal.pcbi.1010461, 2022.
 
 Dugladze, T., Maziashvili, N., Börgers, C., Gurgenidze, S.,
 Häussler, U., Winkelmann, A., Haas, C. A., Meier, J. C., Vida, I.,
@@ -3260,6 +3889,13 @@ model of sensorimotor cortex and a robotic arm. *Pattern
 Recognition Letters* 36:204 - 212,
 http://dx.doi.org/10.1016/j.patrec.2013.05.019, 2014.
 
+Dura-Bernal, S., Griffith, E. Y., Barczak, A., O'Connell, M. N.,
+McGinnis, T., Moreira, J. V. S., Schroeder, C. E., Lytton, W. W.,
+Lakatos, P. and Neymotin, S. A.. Data-driven multiscale model of
+macaque auditory thalamocortical circuits reproduces in vivo
+dynamics. *Cell Reports* 42:113378, 10.1016/j.celrep.2023.113378,
+2023a.
+
 Dura-Bernal, S., Li, K., Neymotin, S. A., Francis, J. T.,
 Principe, J. C. and Lytton, W. W.. Restoring behavior via inverse
 neurocontroller in a lesioned cortical spiking model driving a
@@ -3271,6 +3907,13 @@ Majumdar, A., Francis, J. T. and Lytton, W. W.. Evolutionary
 algorithm optimization of biological learning parameters in a
 biomimetic neuroprosthesis. *IBM Journal of Research and
 Development* 61:6.1-6.14, 10.1147/JRD.2017.2656758, 2017.
+
+Dura-Bernal, S., Neymotin, S. A., Suter, B. A., Dacre, J.,
+Moreira, J. V. S., Urdapilleta, E., Schiemann, J., Duguid, I.,
+Shepherd, G. M. G. and Lytton, W. W.. Multiscale model of primary
+motor cortex circuits predicts in vivo cell-type-specific,
+behavioral state-dependent dynamics. *Cell Reports* 42:112574,
+10.1016/j.celrep.2023.112574, 2023b.
 
 Dura-Bernal, S., Suter, B. A., Gleeson, P., Cantarelli, M.,
 Quintana, A., Rodriguez, F., Kedziora, D. J., Chadderdon, G. L.,
@@ -3307,6 +3950,11 @@ Ebner, C., Clopath, C., Jedlicka, P. and Cuntz, H.. Unifying
 long-term plasticity rules for excitatory synapses by modeling
 dendrites of cortical pyramidal neurons. *Cell Reports*
 29:4295-4307.e6, 10.1016/j.celrep.2019.11.068, 2019.
+
+Ecker, A., Egas Santander, D., Bolaños-Puchet, S., Isbister, J. B.
+and Reimann, M. W.. Cortical cell assemblies and their underlying
+connectivity: an in silico study. *PLoS Computational Biology*
+20:e1011891, 10.1371/journal.pcbi.1011891, 2024.
 
 Ecker, A., Romani, A., Sáray, S., Káli, S., Migliore, M., Falck,
 J., Lange, S., Mercer, A., Thomson, A. M., Muller, E., Reimann, M.
@@ -3415,7 +4063,7 @@ of Ca2+ persistent inward currents in spinal motoneurones: mode of
 activation and integration of synaptic inputs. *Journal of
 Physiology* 570:355-374, 2006.
 
-ElBasiouny, S. M.. Development of modified cable models to
+Elbasiouny, S. M.. Development of modified cable models to
 simulate accurate neuronal active behaviors. *Journal of Applied
 Physiology* 117:1243-1261, 10.1152/japplphysiol.00496.2014, 2014.
 
@@ -3424,6 +4072,11 @@ Evidence from computer simulations for alterations in the membrane
 biophysical properties and dendritic processing of synaptic inputs
 in mutant superoxide dismutase-1 motoneurons. *Journal of
 Neuroscience* 30:5544-5558, 10.1523/JNEUROSCI.0434-10.2010, 2010.
+
+Elbasiouny, S. M. and Mousa, M. H.. Morphologically detailed
+cellular and pool motoneuron models. In: *Encyclopedia of
+Computational Neuroscience*. Springer New York, 2022, pp.
+2091-2096.
 
 ElBasiouny, S. M. and Mushahwar, V. K.. Modulation of motoneuronal
 firing behavior after spinal cord injury using intraspinal
@@ -3475,6 +4128,12 @@ interneurons maintain hippocampal epileptiform activity via
 synchronous afterdischarges. *Journal of Neuroscience*
 34:15208-15222, 10.1523/JNEUROSCI.1747-14.2014, 2014.
 
+Elmasri, M., Hunter, D. W., Winchester, G., Bates, E. E., Aziz,
+W., Van Der Does, D. M., Karachaliou, E., Sakimura, K. and Penn,
+A. C.. Common synaptic phenotypes arising from diverse mutations
+in the human NMDA receptor subunit GluN2A. *Communications
+Biology* 5:174, 10.1038/s42003-022-03115-3, 2022.
+
 Emnett, C. M., Eisenman, L. N., Taylor, A. M., Izumi, Y.,
 Zorumski, C. F. and Mennerick, S.. Indistinguishable synaptic
 pharmacodynamics of the N-methyl-D-aspartate receptor channel
@@ -3515,6 +4174,13 @@ triggering of spontaneous glutamate release by P/Q-, N- and R-type
 Ca2+ channels. *Nature Neuroscience* 16:1754-1763,
 10.1038/nn.3563, 2013.
 
+Eskikand, P. Z., Koussoulas, K., Gwynne, R. M. and Bornstein, J.
+C.. Computational simulations and Ca2+ imaging reveal that slow
+synaptic depolarizations (slow EPSPs) inhibit fast EPSP evoked
+action potentials for most of their time course in enteric
+neurons. *PLoS Computational Biology* 18:e1009717,
+10.1371/journal.pcbi.1009717, 2022.
+
 Esler, T. B., Maturana, M. I., Kerr, R. R., Grayden, D. B.,
 Burkitt, A. N. and Meffin, H.. Biophysical basis of the linear
 electrical receptive fields of retinal ganglion cells. *Journal of
@@ -3523,6 +4189,11 @@ Neural Engineering* 15:055001, 10.1088/1741-2552/aacbaa, 2018.
 Evans, B. D., Jarvis, S., Schultz, S. R. and Nikolic, K.. PyRhO: a
 multiscale optogenetics simulation platform. *Frontiers in
 Neuroinformatics* 10:8, 10.3389/fninf.2016.00008, 2016.
+
+Evers, J., Sridhar, K., Liegey, J., Brady, J., Jahns, H. and
+Lowery, M.. Stimulation-induced changes at the electrode-tissue
+interface and their influence on deep brain stimulation. *Journal
+of Neural Engineering* 1910.1088/1741-2552/ac7ad6, 2022.
 
 Ewart, T., Planas, J., Cremonesi, F., Langen, K., Schürmann, F.
 and Delalondre, F.. Neuromapp: a mini-application framework to
@@ -3553,10 +4224,20 @@ differential role of excitation and inhibition to starburst
 amacrine cells in direction selectivity. *PLoS Computational
 Biology* 17:e1009754, 10.1371/journal.pcbi.1009754, 2021.
 
+Fan, Y., Wei, X., Yi, G., Lu, M. and Wang, J.. Effects of
+hyperpolarization-active cation current (Ih) on sublinear
+dendritic integration under applied electric fields. *Nonlinear
+Dynamics* 108:4335-4356, 10.1007/s11071-022-07427-1, 2022.
+
 Fan, Y., Wei, X., Yi, G., Lu, M., Wang, J. and Deng, B..
 Asymptotic input-output relationship predicts electric field
 effect on sublinear dendritic integration of AMPA synapses.
 *Neural Computation* :1-37, 10.1162/neco_a_01438, 2021.
+
+Fan, Y.-Q., Wei, X.-L., Lu, M.-L. and Yi, G.-S.. Effect of applied
+electric fields on supralinear dendritic integration of
+interneuron. *Chinese Physics B* 33:020202,
+10.1088/1674-1056/ad09cc, 2024.
 
 Farahani, F., Kronberg, G., FallahRad, M., Oviedo, H. V. and
 Parra, L. C.. Effects of direct current stimulation on synaptic
@@ -3580,6 +4261,12 @@ extrasynaptic origin of the excitation/inhibition imbalance in the
 hippocampus of synapsin I/II/III knockout mice. *Cerebral Cortex*
 23:581-593, 10.1093/cercor/bhs041, 2013.
 
+Farooqui, J., Nanivadekar, A. C., Capogrosso, M., Lempka, S. F.
+and Fisher, L. E.. The effects of neuron morphology and spatial
+distribution on the selectivity of dorsal root ganglion
+stimulation. *Journal of Neural Engineering*
+2110.1088/1741-2552/ad7760, 2024.
+
 Farries, M. A. and Wilson, C. J.. Biophysical basis of the phase
 response curve of subthalamic neurons with generalization to other
 cell types. *Journal of Neurophysiology* 108:1838-1855,
@@ -3588,6 +4275,14 @@ cell types. *Journal of Neurophysiology* 108:1838-1855,
 Farrow, K., Haag, J. and Borst, A.. Nonlinear, binocular
 interactions underlying flow field selectivity of a
 motion-sensitive neuron. *Nature Neuroscience* 9:1312-1320, 2006.
+
+Farzad, S., Kosta, P., Iseri, E., Walston, S. T., Bouteiller,
+J.-M. C., Pfeiffer, R. L., Sigulinsky, C. L., Yang, J.-H., Garcia,
+J. C., Anderson, J. R., Jones, B. W. and Lazzi, G.. Impact of
+retinal degeneration on response of ON and OFF cone bipolar cells
+to electrical stimulation. *IEEE Transactions on Neural Systems
+and Rehabilitation Engineering* 31:2424-2437,
+10.1109/tnsre.2023.3276431, 2023.
 
 Feetham, C. H., Nunn, N., Lewis, R., Dart, C. and Barrett-Jolley,
 R.. TRPV4 and K(Ca) ion channels functionally couple as
@@ -3640,9 +4335,9 @@ cell discharge. *Journal of Neuroscience* 30:4613-4625,
 
 Ferdous, Z. I., Yu, A., Zeng, Y., Guo, X., Yan, Z. and
 Berdichevsky, Y.. Efficient and accurate computational model of
-neuron with spike frequency adaptation. *Annual International
-Conference of the IEEE Engineering in Medicine and Biology
-Society* 2021:6496-6499, 10.1109/EMBC46164.2021.9629799, 2021.
+neuron with spike frequency adaptation. *IEEE Engineering in
+Medicine and Biology Society. Annual Conference* 2021:6496-6499,
+10.1109/EMBC46164.2021.9629799, 2021.
 
 Ferguson, K. A., Huh, C. Y. L., Amilhon, B., Manseau, F.,
 Williams, S. and Skinner, F. K.. Network models provide insights
@@ -3655,6 +4350,11 @@ Fernández de Sevilla, D., Fuenzalida, M., Porto Pazos, A. B. and
 Buño, W.. Selective shunting of the NMDA EPSP component by the
 slow afterhyperpolarization in rat CA1 pyramidal neurons. *Journal
 of Neurophysiology* 97:3242-3255, 2007.
+
+Fernandez Pujol, C., Blundon, E. G. and Dykstra, A. R.. Laminar
+specificity of the auditory perceptual awareness negativity: a
+biophysical modeling study. *PLoS Computational Biology*
+19:e1011003, 10.1371/journal.pcbi.1011003, 2023.
 
 Ferrante, M. and Ascoli, G. A.. Distinct and synergistic
 feedforward inhibition of pyramidal cells by basket and
@@ -3675,6 +4375,12 @@ Ferrante, M., Migliore, M. and Ascoli, G. A.. Functional impact of
 dendritic branch-point morphology. *Journal of Neuroscience*
 33:2156-2165, 10.1523/JNEUROSCI.3495-12.2013, 2013.
 
+Ferrante, M., Shay, C. F., Tsuno, Y., William Chapman, G. and
+Hasselmo, M. E.. Post-inhibitory rebound spikes in rat medial
+entorhinal layer II/III principal cells: in vivo, in vitro, and
+computational modeling characterization. *Cerebral Cortex*
+27:2111-2125, 10.1093/cercor/bhw058, 2017.
+
 Ferrarese, L., Jouhanneau, J.-S., Remme, M. W. H., Kremkow, J.,
 Katona, G., Rózsa, B., Schreiber, S. and Poulet, J. F. A..
 Dendrite-specific amplification of weak synaptic input during
@@ -3693,16 +4399,30 @@ decision-making and reproduces unpredictable swimming movements in
 response to sensory signals. *PLoS Computational Biology*
 17:e1009654, 10.1371/journal.pcbi.1009654, 2021.
 
+Fiasconaro, A. and Migliore, M.. Hippocampal synchronization in a
+realistic CA1 neuron model. *Physical Review E* 110:044406,
+10.1103/physreve.110.044406, 2024.
+
 Fietkiewicz, C., Loparo, K. A. and Wilson, C. G.. Drive latencies
 in hypoglossal motoneurons indicate developmental change in the
 brainstem respiratory network. *Journal of Neural Engineering*
 8:065011, 10.1088/1741-2560/8/6/065011, 2011.
+
+Fietkiewicz, C., McDougal, R. A., Corrales Marco, D., Chiel, H. J.
+and Thomas, P. J.. Tutorial: using NEURON for neuromechanical
+simulations. *Frontiers in Computational Neuroscience* 17:1143323,
+10.3389/fncom.2023.1143323, 2023.
 
 Fietkiewicz, C., Shafer, G. O., Platt, E. A. and Wilson, C. G..
 Variability in respiratory rhythm generation: In vitro and in
 silico models. *Communications in Nonlinear Science and Numerical
 Simulation* 32:158 - 168,
 http://dx.doi.org/10.1016/j.cnsns.2015.08.018, 2016.
+
+Filipis, L., Blömer, L. A., Montnach, J., Loussouarn, G., De
+Waard, M. and Canepari, M.. Nav1.2 and BK channel interaction
+shapes the action potential in the axon initial segment. *Journal
+of Physiology* 601:1957-1979, 10.1113/JP283801, 2023.
 
 Fineberg, J. D., Ritter, D. M. and Covarrubias, M..
 Modeling-independent elucidation of inactivation pathways in
@@ -3719,9 +4439,14 @@ mechanisms generating abnormal and normal hippocampal
 high-frequency oscillations: a computational analysis. *eNeuro*
 2:ENEURO.0024-15.2015, 10.1523/ENEURO.0024-15.2015, 2015.
 
+Fink, C. G., Sanda, P., Bayer, L., Abeysinghe, E., Bazhenov, M.
+and Krishnan, G. P.. Python/NEURON code for simulating
+biophysically realistic thalamocortical dynamics during sleep.
+*Software Impacts* 2110.1016/j.simpa.2024.100667, 2024.
+
 Finn, K. E., Zander, H. J., Graham, R. D., Lempka, S. F. and
 Weiland, J. D.. A patient-specific computational framework for the
-Argus ii implant. *IEEE Open Journal of Engineering in Medicine
+Argus II implant. *IEEE Open Journal of Engineering in Medicine
 and Biology* 1:190-196, 10.1109/ojemb.2020.3001563, 2020.
 
 Fiorillo, C. D., Kim, J. K. and Hong, S. Z.. The meaning of spikes
@@ -3765,6 +4490,11 @@ beta oscillations: analytical derivation and numerical validation.
 *Frontiers in Neuroscience* 14:639, 10.3389/fnins.2020.00639,
 2020b.
 
+Fleming, J. E., Senneff, S. and Lowery, M. M.. Multivariable
+closed-loop control of deep brain stimulation for Parkinson's
+disease. *Journal of Neural Engineering*
+2010.1088/1741-2552/acfbfa, 2023.
+
 Fletcher, L. N. and Williams, S. R.. Neocortical topology governs
 the dendritic integrative capacity of layer 5 pyramidal neurons.
 *Neuron* 101:76-90.e4, 10.1016/j.neuron.2018.10.048, 2019.
@@ -3773,6 +4503,11 @@ Flores-Barrera, E., Laville, A., Plata, V., Tapia, D., Bargas, J.
 and Galarraga, E.. Inhibitory contribution to suprathreshold
 corticostriatal responses: an experimental and modeling study.
 *Cellular and Molecular Neurobiology* 29:719-731, 2009.
+
+Florimbi, G., Torti, E., Masoli, S., D'Angelo, E. and Leporati,
+F.. Granular layEr Simulator: design and multi-gpu simulation of
+the cerebellar granular layer. *Frontiers in Computational
+Neuroscience* 1510.3389/fncom.2021.630795, 2021.
 
 Fohlmeister, J. F. and Miller, R. F.. Impulse encoding mechanisms
 of ganglion cells in the tiger salamander retina. *Journal of
@@ -3874,9 +4609,9 @@ properties of hippocampal Ca1 VIP interneurons during aging.
 Franke, F., Natora, M., Meier, P., Hagen, E., Pettersen, K. H.,
 Linden, H., Einevoll, G. T. and Obermayer, K.. An automated online
 positioning system and simulation environment for multi-electrodes
-in extracellular recordings. *Annual International Conference of
-the IEEE Engineering in Medicine and Biology Society*
-2010:593-597, 10.1109/IEMBS.2010.5626631, 2010.
+in extracellular recordings. *IEEE Engineering in Medicine and
+Biology Society. Annual Conference* 2010:593-597,
+10.1109/IEMBS.2010.5626631, 2010.
 
 Franks, K. M., Bartol, T. M. and Sejnowski, T. J.. An MCell model
 of calcium dynamics and frequency-dependence of calmodulin
@@ -3902,6 +4637,18 @@ Freeman, D. K., Jeng, J. S., Kelly, S. K., Hartveit, E. and Fried,
 S. I.. Calcium channel dynamics limit synaptic release in response
 to prosthetic stimulation with sinusoidal waveforms. *Journal of
 Neural Engineering* 8:046005, 10.1088/1741-2560/8/4/046005, 2011.
+
+de Freitas, R. M., Capogrosso, M., Nomura, T. and Milosevic, M..
+Optimizing sensory fiber activation during cervical transcutaneous
+spinal stimulation using different electrode configurations: A
+computational analysis. *Artificial Organs* 46:2015-2026,
+10.1111/aor.14323, 2022a.
+
+de Freitas, R. M., Capogrosso, M., Nomura, T. and Milosevic, M..
+Preferential activation of proprioceptive and cutaneous sensory
+fibers compared to motor fibers during cervical transcutaneous
+spinal cord stimulation: a computational study. *Journal of Neural
+Engineering* 1910.1088/1741-2552/ac6a7c, 2022b.
 
 Frey, U., Egert, U., Heer, F., Hafizovic, S. and Hierlemann, A..
 Microelectronic system for high-resolution mapping of
@@ -3944,6 +4691,12 @@ Markram, H. and Segev, I.. The role of hub neurons in modulating
 cortical dynamics. *Frontiers in Neural Circuits* 15:718270,
 10.3389/fncir.2021.718270, 2021.
 
+Galan-Gadea, A., Salvador, R., Bartolomei, F., Wendling, F. and
+Ruffini, G.. Spherical harmonics representation of the
+steady-state membrane potential shift induced by tDCS in realistic
+neuron models. *Journal of Neural Engineering*
+2010.1088/1741-2552/acbabd, 2023.
+
 Galati, D. F., Hiester, B. G. and Jones, K. R.. Computer
 simulations support a morphological contribution to BDNF
 enhancement of action potential generation. *Frontiers in Cellular
@@ -3965,6 +4718,13 @@ In-silico development and assessment of a Kalman filter motor
 decoder for prosthetic hand control. *Computers in Biology and
 Medicine* 132:104353, 10.1016/j.compbiomed.2021.104353, 2021.
 
+Ganguly, M., Jenkins, M. W., Chiel, H. J. and Jansen, E. D..
+Modeling the effects of elevated temperatures on action potential
+propagation in unmyelinated axons [Online]. *Clinical and
+Translational Neurophotonics; Neural Imaging and Sensing; and
+Optogenetics and Optical Manipulation* 9690:96901O,
+10.1117/12.2211048, 2016.
+
 Ganguly, M., Jenkins, M. W., Jansen, E. D. and Chiel, H. J..
 Thermal block of action potentials is primarily due to
 voltage-dependent potassium currents: a modeling study.. *Journal
@@ -3975,6 +4735,15 @@ Dura-Bernal, S., Hines, M., Lytton, W. W. and Antic, S. D.. Local
 glutamate-mediated dendritic plateau potentials change the state
 of the cortical pyramidal neuron. *Journal of Neurophysiology*
 125:23-42, 10.1152/jn.00734.2019, 2021.
+
+Garcia, S., Buccino, A. P. and Yger, P.. How do spike collisions
+affect spike sorting performance?. *eNeuro*
+910.1523/ENEURO.0105-22.2022, 2022.
+
+Garcia, S., Windolf, C., Boussard, J., Dichter, B., Buccino, A. P.
+and Yger, P.. A modular implementation to handle and benchmark
+drift correction for high-density extracellular recordings.
+*eNeuro* 1110.1523/ENEURO.0229-23.2023, 2024.
 
 García-Grajales, J. A., Rucabado, G., García-Dopico, A., Peña,
 J.-M. and Jérusalem, A.. Neurite, a finite difference large scale
@@ -4006,6 +4775,11 @@ Gasparini, S., Migliore, M. and Magee, J. C.. On the initiation
 and propagation of dendritic spikes in CA1 pyramidal neurons.
 *Journal of Neuroscience* 24:11046-11056, 2004.
 
+Gaugain, G., Quéguiner, L., Bikson, M., Sauleau, R., Zhadobov, M.,
+Modolo, J. and Nikolayev, D.. Quasi-static approximation error of
+electric field analysis for transcranial current stimulation.
+*Journal of Neural Engineering* 2010.1088/1741-2552/acb14d, 2023.
+
 Ge, R., Qian, H., Chen, N. and Wang, J.-H.. Input-dependent
 subcellular localization of spike initiation between soma and axon
 at cortical pyramidal neurons. *Molecular Brain* 7:26,
@@ -4014,6 +4788,11 @@ at cortical pyramidal neurons. *Molecular Brain* 7:26,
 Ge, R., Qian, H. and Wang, J.-H.. Physiological synaptic signals
 initiate sequential spikes at soma of cortical pyramidal neurons.
 *Molecular Brain* 4:19, 10.1186/1756-6606-4-19, 2011.
+
+Geerts, H. and Spiros, A.. Learning from amyloid trials in
+Alzheimer's disease. A virtual patient analysis using a
+quantitative systems pharmacology approach. *Alzheimer's &
+Dementia* 16:862-872, 10.1002/alz.12082, 2020.
 
 Geerts, H., Spiros, A. and Roberts, P.. Impact of amyloid-beta
 changes on cognitive outcomes in Alzheimer's disease: analysis of
@@ -4053,6 +4832,11 @@ Dendritic signals command firing dynamics in a mathematical model
 of cerebellar Purkinje cells. *Biophysical Journal* 99:427-436,
 10.1016/j.bpj.2010.04.056, 2010.
 
+Gentiletti, D., de Curtis, M., Gnatkovsky, V. and Suffczynski, P..
+Focal seizures are organized by feedback between neural activity
+and ion concentration changes. *eLife* 1110.7554/eLife.68541,
+2022.
+
 Gentiletti, D., Suffczynski, P., Gnatkovsky, V. and de Curtis, M..
 Changes of ionic concentrations during seizure transitions--a
 modeling study. *International Journal of Neural Systems*
@@ -4068,6 +4852,11 @@ M.. Computational modelling of pathogenic protein spread in
 neurodegenerative diseases. *PLoS ONE* 13:e0192518,
 10.1371/journal.pone.0192518, 2018.
 
+Georgiev, G., Valova, I., Gueorguieva, N. and Brady, D..
+Simulating influence of channel kinetics and temperature on
+hodgkin-huxley threshold dynamics. *Procedia Computer Science*
+36:464-469, 10.1016/j.procs.2014.09.022, 2014.
+
 Gerlei, K., Passlack, J., Hawes, I., Vandrey, B., Stevens, H.,
 Papastathopoulos, I. and Nolan, M. F.. Grid cells are modulated by
 local head direction. *Nature Communications* 11:4228,
@@ -4076,6 +4865,14 @@ local head direction. *Nature Communications* 11:4228,
 Gertler, T. S., Chan, C. S. and Surmeier, D. J.. Dichotomous
 anatomical properties of adult striatal medium spiny neurons.
 *Journal of Neuroscience* 28:10814-10824, 2008.
+
+Ghazal, M., Scholaert, C., Dumortier, C., Lefebvre, C., Barois,
+N., Janel, S., Tarhan, M. C., Colin, M., Buée, L., Halliez, S.,
+Pecqueur, S., Coffinier, Y., Alibart, F. and Yger, P.. Precision
+of neuronal localization in 2D cell cultures by using
+high-performance electropolymerized microelectrode arrays
+correlated with optical imaging. *Biomedical Physics & Engineering
+Express* 910.1088/2057-1976/acb93e, 2023.
 
 Gherardi, K. and Töreyin, H.. A cortical extracellular simulation
 model to create synthetic neural recordings [Online]. *2021 10th
@@ -4101,6 +4898,22 @@ Dendritic action potentials and computation in human layer 2/3
 cortical neurons. *Science* 367:83-87, 10.1126/science.aax6239,
 2020.
 
+Gilbert, J. E., Titus, N., Zhang, T., Esteller, R. and Grill, W.
+M.. Surround inhibition mediates pain relief by low amplitude
+spinal cord stimulation: modeling and measurement. *eNeuro*
+910.1523/ENEURO.0058-22.2022, 2022a.
+
+Gilbert, J. E., Zhang, T., Esteller, R. and Grill, W. M..
+Evaluating optimized temporal patterns of spinal cord stimulation
+(SCS). *Brain Stimulation* 15:1051-1062,
+10.1016/j.brs.2022.07.046, 2022b.
+
+Gilbert, J. E., Zhang, T., Esteller, R. and Grill, W. M.. Network
+model of nociceptive processing in the superficial spinal dorsal
+horn reveals mechanisms of hyperalgesia, allodynia, and spinal
+cord stimulation. *Journal of Neurophysiology* 130:1103-1117,
+10.1152/jn.00186.2023, 2023.
+
 Gillies, A. and Willshaw, D.. Membrane channel interactions
 underlying rat subthalamic projection neuron rhythmic and bursting
 activity. *Journal of Neurophysiology* 95:2352-2365, 2006.
@@ -4112,14 +4925,29 @@ predicted to differentially control transmitter release. *Journal
 of Neuroscience* 40:3504-3516, 10.1523/JNEUROSCI.2415-19.2020,
 2020.
 
+Girard, C. B. C. and Song, D.. Adaptive octree meshes for
+simulation of extracellular electrophysiology. *Journal of Neural
+Engineering* 2010.1088/1741-2552/acfabf, 2023.
+
 Gire, D. H., Franks, K. M., Zak, J. D., Tanaka, K. F., Whitesell,
 J. D., Mulligan, A. A., Hen, R. and Schoppa, N. E.. Mitral cells
 in the olfactory bulb are mainly excited through a multistep
 signaling path. *Journal of Neuroscience* 32:2964-2975,
 10.1523/JNEUROSCI.5580-11.2012, 2012.
 
+Giugliano, M., Gambazzi, L., Ballerini, L., Prato, M. and
+Campidelli, S.. Carbon nanotubes as electrical interfaces to
+neurons. In: *Nanotechnology for Biology and Medicine: At the
+Building Block Level*. New York, NY: Springer New York, 2012, pp.
+187-207.
+
 Glasauer, S. and Rössert, C.. Modelling drug modulation of
 nystagmus. *Progress in Brain Research* 171:527-534, 2008.
+
+Glasgow, N. G., Chen, Y., Korngreen, A., Kass, R. E. and Urban, N.
+N.. A biophysical and statistical modeling paradigm for connecting
+neural physiology and function. *Journal of Computational
+Neuroscience* 51:263-282, 10.1007/s10827-023-00847-x, 2023.
 
 Gleeson, P., Cantarelli, M., Marin, B., Quintana, A., Earnshaw,
 M., Sadeh, S., Piasini, E., Birgiolas, J., Cannon, R. C.,
@@ -4163,6 +4991,11 @@ Goffredo, M., Schmid, M., Conforto, S., Bilotti, F., Palma, C.,
 Vegni, L. and D'Alessio, T.. A two-step model to optimise
 transcutaneous electrical stimulation of the human upper arm.
 *Compel* 33:1329-1345, 10.1108/COMPEL-04-2013-0118, 2014.
+
+Golabek, J., Schiefer, M., Wong, J. K., Saxena, S. and Patrick,
+E.. Artificial neural network-based rapid predictor of biological
+nerve fiber activation for DBS applications. *Journal of Neural
+Engineering* 2010.1088/1741-2552/acb016, 2023.
 
 Gold, C., Girardin, C. C., Martin, K. A. C. and Koch, C..
 High-amplitude positive spikes recorded extracellularly in cat
@@ -4210,7 +5043,7 @@ stimulation on the prediction of volume of activated tissue.
 *Progress In Electromagnetics Research* 126:1-16,
 10.2528/PIER12013108, 2012.
 
-Gomes, J.-M., Bedard, C., Valtcheva, S., Nelson, M., Khokhlova,
+Gomes, J.-M., Bédard, C., Valtcheva, S., Nelson, M., Khokhlova,
 V., Pouget, P., Venance, L., Bal, T. and Destexhe, A..
 Intracellular impedance measurements reveal non-ohmic properties
 of the extracellular medium around neurons. *Biophysical Journal*
@@ -4224,6 +5057,12 @@ it's about time. *Frontiers in Computational Neuroscience* 5:44,
 Gomez, L., Budelli, R. and Pakdaman, K.. Dynamical behavior of a
 pacemaker neuron model with fixed delay stimulation. *Physical
 Review E* 64:061910, 2001.
+
+Gómez-Orozco, V., De La Pava, I., Álvarez-Meza, A., Álvarez, M. A.
+and Orozco-Gutiérrez, Á.. A machine learning approach to support
+deep brain stimulation programming. *Revista Facultad de
+Ingeniería Universidad de Antioquia* :20–33,
+10.17533/udea.redin.20190729, 2020.
 
 González, A., Ugarte, G., Restrepo, C., Herrera, G., Piña, R.,
 Gómez-Sánchez, J. A., Pertusa, M., Orio, P. and Madrid, R.. Role
@@ -4256,6 +5095,12 @@ H., Verberne, M., Idema, S., Baayen, J. C., Pieneman, A. W., de
 Kock, C. P., Klein, M. and Mansvelder, H. D.. Large and fast human
 pyramidal neurons associate with intelligence. *eLife* 7:e41714,
 10.7554/eLife.41714, 2018.
+
+Gorman, J. C., Tufte, O. L., Miller, A. V. R., DeBello, W. M.,
+Peña, J. L. and Fischer, B. J.. Diverse processing underlying
+frequency integration in midbrain neurons of barn owls. *PLoS
+Computational Biology* 17:e1009569, 10.1371/journal.pcbi.1009569,
+2021.
 
 Goudar, V. and Buonomano, D. V.. A model of order-selectivity
 based on dynamic changes in the balance of excitation and
@@ -4346,6 +5191,24 @@ effect of clinically controllable factors on neural activation
 during dorsal root ganglion stimulation. *Neuromodulation*
 24:655-671, 10.1111/ner.13211, 2021.
 
+Graham, R. D., Fang, L. Z., Tooley, J. R., Kalyanaraman, V.,
+Stander, M. C., Sapkota, D., Lynch, M. R., Dougherty, J. D.,
+Copits, B. A. and Creed, M. C.. Parvalbumin expression does not
+account for discrete electrophysiological profiles of
+glutamatergic ventral pallidal subpopulations. *Addiction
+Neuroscience* 12:100170, 10.1016/j.addicn.2024.100170, 2024.
+
+Graham, R. D., Jhand, A. S. and Lempka, S. F.. Dorsal root
+ganglion stimulation produces differential effects on action
+potential propagation across a population of biophysically
+distinct C-neurons. *Frontiers in Pain Research* 3:1017344,
+10.3389/fpain.2022.1017344, 2022.
+
+Graham, R. T., Parrish, R. R., Alberio, L., Johnson, E. L., Owens,
+L. and Trevelyan, A. J.. Optogenetic stimulation reveals a latent
+tipping point in cortical networks during ictogenesis. *Brain*
+146:2814-2827, 10.1093/brain/awac487, 2023.
+
 Grant, P. F. and Lowery, M. M.. Effect of dispersive conductivity
 and permittivity in volume conductor models of deep brain
 stimulation. *IEEE Transactions on Biomedical Engineering*
@@ -4420,6 +5283,13 @@ distribution of presynaptic boutons tunes frequency-dependent
 dendritic integration. *Neuron* 99:275-282.e3,
 10.1016/j.neuron.2018.06.015, 2018.
 
+Grimes, W. N., Sedlacek, M., Musgrove, M., Nath, A., Tian, H.,
+Hoon, M., Rieke, F., Singer, J. H. and Diamond, J. S..
+Dendro-somatic synaptic inputs to ganglion cells contradict
+receptive field and connectivity conventions in the mammalian
+retina. *Current Biology* 32:315-328.e4,
+10.1016/j.cub.2021.11.005, 2022.
+
 Grimes, W. N., Zhang, J., Graydon, C. W., Kachar, B. and Diamond,
 J. S.. Retinal parallel processors: more than 100 independent
 microcircuits operate within a single interneuron. *Neuron*
@@ -4428,6 +5298,12 @@ microcircuits operate within a single interneuron. *Neuron*
 Grisham, W., Schottler, N. A. and Krasne, F. B.. SWIMMY: free
 software for teaching neurophysiology of neuronal circuits.
 *Journal of Undergraduate Neuroscience Education* 7:A1-A8, 2008.
+
+Groden, M., Moessinger, H. M., Schaffran, B., DeFelipe, J.,
+Benavides-Piccione, R., Cuntz, H. and Jedlicka, P.. A biologically
+inspired repair mechanism for neuronal reconstructions with a
+focus on human dendrites. *PLoS Computational Biology*
+20:e1011267, 10.1371/journal.pcbi.1011267, 2024.
 
 Groen, M. R., Paulsen, O., Pérez-Garci, E., Nevian, T., Wortel,
 J., Dekker, M. P., Mansvelder, H. D., van Ooyen, A. and Meredith,
@@ -4468,7 +5344,7 @@ directional selectivity in Drosophila. *Nature Neuroscience*
 21:250-257, 10.1038/s41593-017-0046-4, 2018.
 
 Gu, Y., Barry, J., McDougel, R., Terman, D. and Gu, C..
-Alternative splicing regulates kv3.1 polarized targeting to adjust
+Alternative splicing regulates Kv3.1 polarized targeting to adjust
 maximal spiking frequency. *Journal of Biological Chemistry*
 287:1755-1769, 10.1074/jbc.M111.299305, 2012.
 
@@ -4483,6 +5359,23 @@ Using a semi-automated strategy to develop multi-compartment
 models that predict biophysical properties of interneuron-specific
 3 (IS3) cells in hippocampus. *eNeuro* 3:ENEURO.0087-16.2016,
 10.1523/ENEURO.0087-16.2016, 2016.
+
+Guet-McCreight, A., Chameh, H. M., Mahallati, S., Wishart, M.,
+Tripathy, S. J., Valiante, T. A. and Hay, E.. Age-dependent
+increased sag amplitude in human pyramidal neurons dampens
+baseline cortical activity. *Cerebral Cortex* 33:4360-4373,
+10.1093/cercor/bhac348, 2023.
+
+Guet-McCreight, A., Chameh, H. M., Mazza, F., Prevot, T. D.,
+Valiante, T. A., Sibille, E. and Hay, E.. In-silico testing of new
+pharmacology for restoring inhibition and human cortical function
+in depression. *Communications Biology* 7:225,
+10.1038/s42003-024-05907-1, 2024a.
+
+Guet-McCreight, A., Mazza, F., Prevot, T. D., Sibille, E. and Hay,
+E.. Therapeutic dose prediction of α5-GABA receptor modulation
+from simulated EEG of depression severity. *PLoS Computational
+Biology* 20:e1012693, 10.1371/journal.pcbi.1012693, 2024b.
 
 Guet-McCreight, A. and Skinner, F. K.. Using computational models
 to predict in vivo synaptic inputs to interneuron specific 3 (IS3)
@@ -4591,6 +5484,11 @@ Mediating retinal ganglion cell spike rates using high-frequency
 electrical stimulation. *Frontiers in Neuroscience* 13:413,
 10.3389/fnins.2019.00413, 2019.
 
+Guo, Z., Feng, Z., Wang, Y. and Wei, X.. Simulation study of
+intermittent axonal block and desynchronization effect induced by
+high-frequency stimulation of electrical pulses. *Frontiers in
+Neuroscience* 1210.3389/fnins.2018.00858, 2018b.
+
 Gupta, I., Cassará, A. M., Tarotin, I., Donega, M., Miranda, J.
 A., Sokal, D. M., Ouchouche, S., Dopson, W., Matteucci, P.,
 Neufeld, E., Schiefer, M. A., Rowles, A., McGill, P., Perkins, J.,
@@ -4622,10 +5520,21 @@ Kinetic modeling of Nav1.7 provides insight into
 erythromelalgia-associated F1449V mutation. *Journal of
 Neurophysiology* 105:1546-1557, 10.1152/jn.00703.2010, 2011.
 
+Gurnani, H. and Silver, R. A.. Multidimensional population
+activity in an electrically coupled inhibitory circuit in the
+cerebellar cortex. *Neuron* 109:1739-1753.e8,
+10.1016/j.neuron.2021.03.027, 2021.
+
 Guzman, J. N., Sánchez-Padilla, J., Chan, C. S. and Surmeier, D.
 J.. Robust pacemaking in substantia nigra dopaminergic neurons.
 *Journal of Neuroscience* 29:11011-11019,
 10.1523/JNEUROSCI.2519-09.2009, 2009.
+
+Guzman, S. J., Schlögl, A., Espinoza, C., Zhang, X., Suter, B. A.
+and Jonas, P.. How connectivity rules and synaptic properties
+shape the efficacy of pattern separation in the entorhinal
+cortex-dentate gyrus-CA3 network. *Nature Computational Science*
+1:830-842, 10.1038/s43588-021-00157-1, 2021.
 
 Gwak, J. and Kwag, J.. Distinct subtypes of inhibitory
 interneurons differentially promote the propagation of rate and
@@ -4656,6 +5565,16 @@ Marqueze-Pouey, B., Amalric, M. and Goaillard, J.-M.. Refining the
 identity and role of Kv4 channels in mouse substantia nigra
 dopaminergic neurons. *eNeuro* 810.1523/ENEURO.0207-21.2021, 2021.
 
+Hadler, M. D., Tzilivaki, A., Schmitz, D., Alle, H. and Geiger, J.
+R. P.. Gamma oscillation plasticity is mediated via parvalbumin
+interneurons. *Science Advances* 10:eadj7427,
+10.1126/sciadv.adj7427, 2024.
+
+Hafez, O. A., Escribano, B., Ziegler, R. L., Hirtz, J. J., Niebur,
+E. and Pielage, J.. The cellular architecture of memory modules in
+Drosophila supports stochastic input integration. *eLife*
+1210.7554/elife.77578, 2023.
+
 Hagen, E., Dahmen, D., Stavrinou, M. L., Lindén, H., Tetzlaff, T.,
 van Albada, S. J., Grün, S., Diesmann, M. and Einevoll, G. T..
 Hybrid scheme for modeling local field potentials from
@@ -4667,6 +5586,12 @@ Swadlow, H. A. and Einevoll, G. T.. Focal local field potential
 signature of the single-axon monosynaptic thalamocortical
 connection. *Journal of Neuroscience* 37:5123-5143,
 10.1523/JNEUROSCI.2715-16.2017, 2017.
+
+Hagen, E., Magnusson, S. H., Ness, T. V., Halnes, G., Babu, P. N.,
+Linssen, C., Morrison, A. and Einevoll, G. T.. Brain signal
+predictions from multi-scale networks using a linearized
+framework. *PLoS Computational Biology* 18:e1010353,
+10.1371/journal.pcbi.1010353, 2022.
 
 Hagen, E., Næss, S., Ness, T. V. and Einevoll, G. T.. Multimodal
 modeling of neural network activity: computing LFP, ECoG, EEG, and
@@ -4766,6 +5691,12 @@ function of the dentate gyrus. In: *Hippocampal Microcircuits: A
 Computational Modeler's Resource Book*. Cham: Springer
 International Publishing, 2018, pp. 779-805.
 
+Hao, H., Ramli, R., Wang, C., Liu, C., Shah, S., Mullen, P., Lall,
+V., Jones, F., Shao, J., Zhang, H., Jaffe, D. B., Gamper, N. and
+Du, X.. Dorsal root ganglia control nociceptive input to the
+central nervous system. *PLoS Biology* 21:e3001958,
+10.1371/journal.pbio.3001958, 2023.
+
 Hao, J., Wang, X.-d., Dan, Y., Poo, M.-m. and Zhang, X.-h.. An
 arithmetic rule for spatial summation of excitatory and inhibitory
 inputs in pyramidal neurons. *Proceedings of the National Academy
@@ -4776,6 +5707,19 @@ Hardie, J. B. and Pearce, R. A.. Active and passive membrane
 properties and intrinsic kinetics shape synaptic inhibition in
 hippocampal ca1 pyramidal neurons. *Journal of Neuroscience*
 26:8559-8569, 2006.
+
+Hari, K., Lucas-Osma, A. M., Metz, K., Lin, S., Pardell, N.,
+Roszko, D. A., Black, S., Minarik, A., Singla, R., Stephens, M.
+J., Pearce, R. A., Fouad, K., Jones, K. E., Gorassini, M. A.,
+Fenrich, K. K., Li, Y. and Bennett, D. J.. GABA facilitates spike
+propagation through branch points of sensory axons in the spinal
+cord. *Nature Neuroscience* 25:1288-1299,
+10.1038/s41593-022-01162-x, 2022.
+
+Hariani, H. N., Algstam, A. B., Candler, C. T., Witteveen, I. F.,
+Sidhu, J. K. and Balmer, T. S.. A system of feed-forward
+cerebellar circuits that extend and diversify sensory signaling.
+*eLife* 1210.7554/eLife.88321, 2024.
 
 Harnett, M. T., Makara, J. K., Spruston, N., Kath, W. L. and
 Magee, J. C.. Synaptic amplification by dendritic spines enhances
@@ -4791,6 +5735,12 @@ Harris, J. J., Engl, E., Attwell, D. and Jolivet, R. B..
 Energy-efficient information transfer at thalamocortical synapses.
 *PLoS Computational Biology* 15:e1007226,
 10.1371/journal.pcbi.1007226, 2019.
+
+Hart, W. L., Needham, K., Richardson, R. T., Stoddart, P. R. and
+Kameneva, T.. Dynamic optical clamp: a novel electrophysiology
+tool and a technique for closed-loop stimulation. *Biomedical
+Signal Processing and Control* 85:105031,
+10.1016/j.bspc.2023.105031, 2023.
 
 Hartline, D. K. and Castelfranco, A. M.. Simulations of voltage
 clamping poorly space-clamped voltage-dependent conductances in a
@@ -4817,11 +5767,22 @@ inhibitory retinal interneuron: an experimental and computational
 study. *Physiological Reports* 7:e14186, 10.14814/phy2.14186,
 2019.
 
+Hartveit, E., Veruki, M. L. and Zandt, B.-J.. Dendritic morphology
+of an inhibitory retinal interneuron enables simultaneous local
+and global synaptic integration. *Journal of Neuroscience*
+42:1630-1647, 10.1523/JNEUROSCI.0695-21.2021, 2022.
+
 Harty, R. C., Kim, T. H., Thomas, E. A., Cardamone, L., Jones, N.
 C., Petrou, S. and Wimmer, V. C.. Axon initial segment structural
 plasticity in animal models of genetic and acquired epilepsy.
 *Epilepsy Research* 105:272-279, 10.1016/j.eplepsyres.2013.03.004,
 2013.
+
+Hașegan, D., Deible, M., Earl, C., D'Onofrio, D., Hazan, H.,
+Anwar, H. and Neymotin, S. A.. Training spiking neuronal networks
+to perform motor control using reinforcement and evolutionary
+learning. *Frontiers in Computational Neuroscience*
+1610.3389/fncom.2022.1017284, 2022.
 
 Hatori, Y. and Sakai, K.. Early representation of shape by onset
 synchronization of border-ownership-selective cells in the V1-V2
@@ -4878,6 +5839,12 @@ Spatial information enhanced by non-spatial information in
 hippocampal granule cells.. *Cognitive Neurodynamics* 9:1-12,
 10.1007/s11571-014-9309-x, 2015.
 
+Hayashi, M., Kazawa, T., Tsunoda, H. and Kanzaki, R.. The
+understanding of on-edge motion detection through the simulation
+based on the connectome of Drosophila's optic lobe. *Journal of
+Robotics and Mechatronics* 34:795-807, 10.20965/jrm.2022.p0795,
+2022.
+
 Hayashida, Y., Rodríguez, C. V., Ogata, G., Partida, G. J., Oi,
 H., Stradleigh, T. W., Lee, S. C., Colado, A. F. and Ishida, A.
 T.. Inhibition of adult rat retinal ganglion cells by D1-type
@@ -4893,10 +5860,19 @@ voltage-gated conductances and Ca2+ regulation mechanisms in
 retinal horizontal cells. *Journal of Neurophysiology* 87:172-182,
 2002b.
 
+Haynes, V. R., Zhou, Y. and Crook, S. M.. Discovering optimal
+features for neuron-type identification from extracellular
+recordings. *Frontiers in Neuroinformatics* 18:1303993,
+10.3389/fninf.2024.1303993, 2024.
+
 Headley, D. B., Kyriazi, P., Feng, F., Nair, S. and Pare, D..
 Gamma oscillations in the basolateral amygdala: localization,
 microcircuitry, and behavioral correlates. *Journal of
 Neuroscience* 10.1523/JNEUROSCI.3159-20.2021, 2021.
+
+Headley, D. B., Latimer, B., Aberbach, A. and Nair, S. S..
+Spatially targeted inhibitory rhythms differentially affect
+neuronal integration. *eLife* 10.7554/elife.95562.1, 2024.
 
 Heiberg, T., Hagen, E., Halnes, G. and Einevoll, G. T..
 Biophysical network modelling of the dLGN circuit: different
@@ -4971,11 +5947,21 @@ Hodgkin-Huxley model based on software developed in NEURON's
 programming language hoc. *BMC Medical Education* 13:70,
 10.1186/1472-6920-13-70, 2013.
 
+Herrera, B., Sajad, A., Errington, S. P., Schall, J. D. and Riera,
+J. J.. Cortical origin of theta error signals. *Cerebral Cortex*
+33:11300-11319, 10.1093/cercor/bhad367, 2023.
+
 Herrera, B., Sajad, A., Woodman, G. F., Schall, J. D. and Riera,
 J. J.. A minimal biophysical model of neocortical pyramidal cells:
 implications for frontal cortex microcircuitry and field potential
 generation. *Journal of Neuroscience*
 10.1523/JNEUROSCI.0221-20.2020, 2020.
+
+Herrera, B., Westerberg, J. A., Schall, M. S., Maier, A., Woodman,
+G. F., Schall, J. D. and Riera, J. J.. Resolving the mesoscopic
+missing link: biophysical modeling of EEG from cortical columns in
+primates. *NeuroImage* 263:119593,
+10.1016/j.neuroimage.2022.119593, 2022.
 
 Herrmann, C. S. and Klaus, A.. Autapse turns neuron into
 oscillator. *International Journal of Bifurcation and Chaos*
@@ -5008,6 +5994,11 @@ modulation of the resonance properties of stellate cells in layer
 II of medial entorhinal cortex. *Journal of Neurophysiology*
 104:258-270, 10.1152/jn.00492.2009, 2010.
 
+Higashi, R., Morita, M. and Kawaguchi, S.-Y.. Cl-dependent
+amplification of excitatory synaptic potentials at distal
+dendrites revealed by voltage imaging. *Science Advances*
+10:eadj2547, 10.1126/sciadv.adj2547, 2024.
+
 Higley, M. J. and Contreras, D.. Balanced excitation and
 inhibition determine spike timing during frequency adaptation.
 *Journal of Neuroscience* 26:448-457, 2006.
@@ -5037,6 +6028,10 @@ and Jung, R.. Springer New York, 2015a, pp. 2012-2017.
 Hines, M. and Carnevale, T.. Numerical Integration Methods. In:
 *Encyclopedia of Computational Neuroscience*, edited by Jaeger, D.
 and Jung, R.. Springer New York, 2015b, pp. 2115-2124.
+
+Hines, M. and Carnevale, T.. Numerical Integration Methods. In:
+*Encyclopedia of Computational Neuroscience*. New York, NY:
+Springer New York, 2022, pp. 2487-2496.
 
 Hines, M., Kumar, S. and Schürmann, F.. Comparison of neuronal
 spike exchange methods on a Blue Gene/P supercomputer. *Frontiers
@@ -5096,6 +6091,10 @@ Hokanson, J. A., Gaunt, R. A. and Weber, D. J.. Effects of
 synchronous electrode pulses on neural recruitment during
 multichannel microstimulation. *Scientific Reports* 8:13067,
 10.1038/s41598-018-31247-2, 2018.
+
+Holler, S., Köstinger, G., Martin, K. A. C., Schuhknecht, G. F. P.
+and Stratford, K. J.. Structure and function of a neocortical
+synapse. *Nature* 591:111-116, 10.1038/s41586-020-03134-2, 2021.
 
 Holmes, W. R., Ambros-Ingerson, J. and Grover, L. M.. Fitting
 experimental data to models that use morphological data from
@@ -5165,6 +6164,10 @@ Honnuraiah, S. and Narayanan, R.. A calcium-dependent plasticity
 rule for HCN channels maintains activity homeostasis and stable
 synaptic learning. *PLoS ONE* 8:e55590,
 10.1371/journal.pone.0055590, 2013.
+
+Hopper, A. J., Beswick-Jones, H. and Brown, A. M.. A color-coded
+graphical guide to the Hodgkin and Huxley papers. *Advances in
+Physiology Education* 46:580-592, 10.1152/advan.00178.2022, 2022.
 
 Horcholle-Bossavit, G., Quenet, B. and Foucart, O.. Oscillation
 and coding in a formal neural network considered as a guide for
@@ -5280,6 +6283,14 @@ multi-scale modeling of nonlinear calcium dynamics. *Frontiers in
 Computational Neuroscience* 12:58, 10.3389/fncom.2018.00058,
 2018a.
 
+Hu, E. Y., Bouteiller, J.-M. C., Huang, M., Song, D. and Berger,
+T.. A comparison between direct and indirect measurements of
+neurotransmitter vesicle release dynamics: a computational study..
+*Annual International Conference of the IEEE Engineering in
+Medicine and Biology Society. IEEE Engineering in Medicine and
+Biology Society. Annual International Conference* 2014:1155-1158,
+10.1109/EMBC.2014.6943800, 2014.
+
 Hu, E. Y., Bouteiller, J.-M. C., Song, D., Baudry, M. and Berger,
 T. W.. Volterra representation enables modeling of complex
 synaptic nonlinear dynamics in large-scale simulations. *Frontiers
@@ -5305,14 +6316,45 @@ S.. Distinct contributions of Na(v)1.6 and Na(v)1.2 in action
 potential initiation and backpropagation. *Nature Neuroscience*
 12:996-1002, 2009.
 
+Hu, Y., Feng, Z., Zheng, L. and Ye, X.. Interactions between
+cathodic- and anodic-pulses during high-frequency stimulations
+with the monophasic-pulses alternating in polarity at
+axons-experiment and simulation studies. *Journal of Neural
+Engineering* 2010.1088/1741-2552/acf959, 2023.
+
 Huang, S., Hong, S. and De Schutter, E.. Non-linear leak currents
 affect mammalian neuron physiology. *Frontiers in Cellular
 Neuroscience* 9:432, 10.3389/fncel.2015.00432, 2015.
+
+Huang, X., Wei, X., Wang, J. and Yi, G.. Dendritic filtering
+determines the frequency-dependent spike train correlations.
+*Neurocomputing* 572:127211, 10.1016/j.neucom.2023.127211, 2024a.
+
+Huang, X., Wei, X., Wang, J. and Yi, G.. Effects of dendritic Ca2+
+spike on the modulation of spike timing with transcranial direct
+current stimulation in cortical pyramidal neurons. *Journal of
+Computational Neuroscience* 10.1007/s10827-024-00886-y, 2024b.
+
+Huang, X., Wei, X., Wang, J. and Yi, G.. Frequency-dependent
+membrane polarization across neocortical cell types and
+subcellular elements by transcranial alternating current
+stimulation. *Journal of Neural Engineering*
+2110.1088/1741-2552/ad2b8a, 2024c.
 
 Hübel, N., Andrew, R. D. and Ullah, G.. Large extracellular space
 leads to neuronal susceptibility to ischemic injury in a Na+/K+
 pumps-dependent manner. *Journal of Computational Neuroscience*
 40:177-192, 10.1007/s10827-016-0591-y, 2016.
+
+Huertas, M. A., Newton, A. J. H., McDougal, R. A., Sacktor, T. C.
+and Shouval, H. Z.. Conditions for synaptic specificity during the
+maintenance phase of synaptic plasticity. *eNeuro*
+910.1523/ENEURO.0064-22.2022, 2022.
+
+Huffman, W. J., Musselman, E. D., Pelot, N. A. and Grill, W. M..
+Measuring and modeling the effects of vagus nerve stimulation on
+heart rate and laryngeal muscles. *Bioelectronic Medicine* 9:3,
+10.1186/s42234-023-00107-4, 2023.
 
 Hugosdottir, R., Mørch, C. D., Jørgensen, C. K., Nielsen, C. W.,
 Olsen, M. V., Pedersen, M. J. and Tigerholm, J.. Altered
@@ -5349,6 +6391,21 @@ hippocampal theta rhythm. *PLoS ONE* 12:e0182648,
 Humphries, R., Mellor, J. R. and O'Donnell, C.. Acetylcholine
 boosts dendritic NMDA spikes in a Ca3 pyramidal neuron model.
 *Neuroscience* 10.1016/j.neuroscience.2021.11.014, 2021.
+
+Hunt, S., Leibner, Y., Mertens, E. J., Barros-Zulaica, N., Kanari,
+L., Heistek, T. S., Karnani, M. M., Aardse, R., Wilbers, R.,
+Heyer, D. B., Goriounova, N. A., Verhoog, M. B., Testa-Silva, G.,
+Obermayer, J., Versluis, T., Benavides-Piccione, R., de
+Witt-Hamer, P., Idema, S., Noske, D. P., Baayen, J. C., Lein, E.
+S., DeFelipe, J., Markram, H., Mansvelder, H. D., Schürmann, F.,
+Segev, I. and de Kock, C. P. J.. Strong and reliable synaptic
+communication between pyramidal neurons in adult human cerebral
+cortex. *Cerebral Cortex* 10.1093/cercor/bhac246, 2022.
+
+Hussain, M. A., Grill, W. M. and Pelot, N. A.. Highly efficient
+modeling and optimization of neural fiber responses to electrical
+stimulation. *Nature Communications* 15:7597,
+10.1038/s41467-024-51709-8, 2024.
 
 Huth, T., Rittger, A., Saftig, P. and Alzheimer, C.. beta-Site
 APP-cleaving enzyme 1 (BACE1) cleaves cerebellar Na(+) channel
@@ -5387,6 +6444,19 @@ precise excitatory/inhibitory balance limiting dendritic and
 somatic spiking. *Neuron* 106:566-578.e8,
 10.1016/j.neuron.2020.02.015, 2020.
 
+Iavarone, E., Simko, J., Shi, Y., Bertschy, M., García-Amado, M.,
+Litvak, P., Kaufmann, A.-K., O'Reilly, C., Amsalem, O., Abdellah,
+M., Chevtchenko, G., Coste, B., Courcol, J.-D., Ecker, A.,
+Favreau, C., Fleury, A. C., Van Geit, W., Gevaert, M., Guerrero,
+N. R., Herttuainen, J., Ivaska, G., Kerrien, S., King, J. G.,
+Kumbhar, P., Lurie, P., Magkanaris, I., Muddapu, V. R., Nair, J.,
+Pereira, F. L., Perin, R., Petitjean, F., Ranjan, R., Reimann, M.,
+Soltuzu, L., Sy, M. F., Tuncel, M. A., Ulbrich, A., Wolf, M.,
+Clascá, F., Markram, H. and Hill, S. L.. Thalamic control of
+sensory processing and spindles in a biophysical somatosensory
+thalamoreticular circuit model of wakefulness and sleep. *Cell
+Reports* 42:112200, 10.1016/j.celrep.2023.112200, 2023.
+
 Iavarone, E., Yi, J., Shi, Y., Zandt, B.-J., O'Reilly, C., Van
 Geit, W., Rössert, C., Markram, H. and Hill, S. L..
 Experimentally-constrained biophysical models of tonic and burst
@@ -5402,6 +6472,12 @@ Igras, E., Foweraker, J. P. A., Ware, A. and Hulliger, M..
 Computer simulation of rhythm-generating networks. *Annals of the
 New York Academy of Sciences* 860:483-485, 1998.
 
+Ilieş, I. and Zupanc, G. K. H.. Computational modeling predicts
+regulation of central pattern generator oscillations by size and
+density of the underlying heterogenous network. *Journal of
+Computational Neuroscience* 51:87-105, 10.1007/s10827-022-00835-7,
+2023.
+
 Ilin, V. A., Bai, Q., Watson, A. M., Volgushev, M. and Burton, E.
 A.. Mechanism of pacemaker activity in zebrafish DC2/4
 dopaminergic neurons. *Journal of Neuroscience* 41:4141-4157,
@@ -5411,6 +6487,12 @@ Ilin, V., Malyshev, A., Wolf, F. and Volgushev, M.. Fast
 computations in cortical ensembles require rapid initiation of
 action potentials. *Journal of Neuroscience* 33:2281-2292,
 10.1523/JNEUROSCI.0771-12.2013, 2013.
+
+Inibhunu, H., Chameh, H. M., Skinner, F., Rich, S. and Valiante,
+T. A.. Hyperpolarization-activated cation channels shape the
+spiking frequency preference of human cortical layer 5 pyramidal
+neurons. *eNeuro* 10:ENEURO.0215-23.2023,
+10.1523/eneuro.0215-23.2023, 2023.
 
 Inoue, M., Hashimoto, Y., Kudo, Y. and Miyakawa, H.. Dendritic
 attenuation of synaptic potentials in the CA1 region of rat
@@ -5424,9 +6506,14 @@ transients in rat adrenal chromaffin cells. *Cell Calcium*
 
 Iseri, E., Kosta, P., Paknahad, J., Bouteiller, J.-M. C. and
 Lazzi, G.. A computational model simulates light-evoked responses
-in the retinal cone pathway. *Annual International Conference of
-the IEEE Engineering in Medicine and Biology Society*
-2021:4482-4486, 10.1109/EMBC46164.2021.9630642, 2021.
+in the retinal cone pathway. *IEEE Engineering in Medicine and
+Biology Society. Annual Conference* 2021:4482-4486,
+10.1109/EMBC46164.2021.9630642, 2021.
+
+Italiano, M. L., Guo, T., Lovell, N. H. and Tsai, D.. Improving
+the spatial resolution of artificial vision using midget retinal
+ganglion cell populations modeled at the human fovea. *Journal of
+Neural Engineering* 1910.1088/1741-2552/ac72c2, 2022.
 
 Ito, H., Sales, A. C., Fry, C. H., Kanai, A. J., Drake, M. J. and
 Pickering, A. E.. Probabilistic, spinally-gated control of bladder
@@ -5438,6 +6525,12 @@ Electrical properties and morphology of motoneurons developing in
 dissociated unpurified co-culture of embryonic rat brainstem,
 spinal cord and hindlimb tissues. *Neurophysiology* 30:305-309,
 1999.
+
+Ivasiuk, A., Matvieienko, M., Kononenko, N. I., Duzhyy, D. E.,
+Korogod, S. M., Voitenko, N. and Belan, P.. Diabetes-induced
+amplification of nociceptive DRG neuron output by upregulation of
+somatic T-type Ca2+ channels. *Biomolecules*
+1310.3390/biom13091320, 2023.
 
 Iyengar, R. S., Pithapuram, M. V., Singh, A. K. and Raghavan, M..
 Curated model development using NEUROiD: a web-based neuromotor
@@ -5451,6 +6544,12 @@ Jackson, M. E. and Cauller, L. J.. Evaluation of simplified
 compartmental models of reconstructed neocortical neurons for use
 in large-scale simulations of biological neural networks. *Brain
 Research Bulletin* 44:7-17, 1997.
+
+Jacobson, B., Ding, A. K., Luo, M., Pereira, K. and Miga, M. I..
+Controllability of the vagus nerve using directed electrode
+stimulation [Online]. *Medical Imaging 2022: Image-Guided
+Procedures, Robotic Interventions, and Modeling*,
+10.1117/12.2612783, 2022.
 
 Jacobson, G. A., Diba, K., Yaron-Jakoubovitch, A., Oz, Y., Koch,
 C., Segev, I. and Yarom, Y.. Subthreshold voltage noise of rat
@@ -5591,6 +6690,17 @@ C. J.. The transformation of synaptic to system plasticity in
 motor output from the sacral cord of the adult mouse. *Journal of
 Neurophysiology* 114:1987-2004, 10.1152/jn.00337.2015, 2015.
 
+Jiang, S., Liu, B., Lin, K., Li, L., Li, R., Tan, S., Zhang, X.,
+Jiang, L., Ni, H., Wang, Y., Ding, H., Hu, J., Qian, H. and Ge,
+R.. Impacted spike frequency adaptation associated with reduction
+of KCNQ2/3 exacerbates seizure activity in temporal lobe epilepsy.
+*Hippocampus* 34:58-72, 10.1002/hipo.23587, 2024.
+
+Jin, L., Behabadi, B. F., Jadi, M. P., Ramachandra, C. A. and Mel,
+B. W.. Classical-contextual interactions in V1 may rely on
+dendritic computations. *Neuroscience* 489:234-250,
+10.1016/j.neuroscience.2022.02.033, 2022.
+
 Jochems, A. and Yoshida, M.. A robust in vivo-like persistent
 firing supported by a hybrid of intracellular and synaptic
 mechanisms. *PLoS ONE* 10:e0123799, 10.1371/journal.pone.0123799,
@@ -5710,6 +6820,12 @@ Joucla, S. and Yvert, B.. The "mirror" estimate: an intuitive
 predictor of membrane polarization during extracellular
 stimulation. *Biophysical Journal* 96:3495-3508, 2009b.
 
+Jungenitz, T., Bird, A., Engelhardt, M., Jedlicka, P.,
+Schwarzacher, S. W. and Deller, T.. Structural plasticity of the
+axon initial segment in rat hippocampal granule cells following
+high frequency stimulation and LTP induction. *Frontiers in
+Neuroanatomy* 17:1125623, 10.3389/fnana.2023.1125623, 2023.
+
 Justus, D., Dalügge, D., Bothe, S., Fuhrmann, F., Hannes, C.,
 Kaneko, H., Friedrichs, D., Sosulina, L., Schwarz, I., Elliott, D.
 A., Schoch, S., Bradke, F., Schwarz, M. K. and Remy, S..
@@ -5722,6 +6838,12 @@ S. L.. The electrotonic structure of pyramidal neurons
 contributing to prefrontal cortical circuits in macaque monkeys is
 significantly altered in aging. *Cerebral Cortex* 19:2248-2268,
 2009.
+
+Kadra, G., Spiros, A., Shetty, H., Iqbal, E., Hayes, R. D.,
+Stewart, R. and Geerts, H.. Predicting parkinsonism side-effects
+of antipsychotic polypharmacy prescribed in secondary mental
+healthcare. *Journal of Psychopharmacology* 32:1191-1196,
+10.1177/0269881118796809, 2018.
 
 Kagan, Z. B., RamRakhyani, A. K., Lazzi, G., Normann, R. A. and
 Warren, D. J.. In vivo magnetic stimulation of rat sciatic nerve
@@ -5814,9 +6936,40 @@ Kamiya, H.. Modeling analysis of axonal after potential at
 hippocampal mossy fibers. *Frontiers In Cellular Neuroscience*
 13:210, 10.3389/fncel.2019.00210, 2019b.
 
+Kamiya, H.. Modeling analysis of subthreshold voltage signaling
+along hippocampal mossy fiber axons. *Frontiers in Cellular
+Neuroscience* 1610.3389/fncel.2022.966636, 2022.
+
+Kamiya, H.. Ectopic burst induced by blockade of axonal potassium
+channels on the mouse hippocampal mossy fiber. *Frontiers in
+Cellular Neuroscience* 1810.3389/fncel.2024.1434165, 2024.
+
 Kampa, B. M. and Stuart, G. J.. Calcium spikes in basal dendrites
 of layer 5 pyramidal neurons during action potential bursts.
 *Journal of Neuroscience* 26:7424-7432, 2006.
+
+Kan, P., Zhu, Y. F., Ma, J. and Singh, G.. Computational modeling
+to study the impact of changes in Nav1.8 sodium channel on
+neuropathic pain. *Frontiers in Computational Neuroscience*
+18:1327986, 10.3389/fncom.2024.1327986, 2024.
+
+Kanari, L., Dictus, H., Chalimourda, A., Arnaudon, A., Van Geit,
+W., Coste, B., Shillcock, J., Hess, K. and Markram, H..
+Computational synthesis of cortical dendritic morphologies. *Cell
+Reports* 39:110586, 10.1016/j.celrep.2022.110586, 2022.
+
+Kang, W., Ju, C., Joo, J., Lee, J., Shon, Y.-M. and Park, S.-M..
+Closed-loop direct control of seizure focus in a rodent model of
+temporal lobe epilepsy via localized electric fields applied
+sequentially. *Nature Communications* 13:7805,
+10.1038/s41467-022-35540-7, 2022.
+
+Kaniusas, E., Samoudi, A. M., Kampusch, S., Bald, K., Tanghe, E.,
+Martens, L., Joseph, W. and Szeles, J. C.. Stimulation Pattern
+Efficiency in Percutaneous Auricular Vagus Nerve Stimulation:
+Experimental Versus Numerical Data.. *IEEE Transactions On
+Bio-medical Engineering* 67:1921-1935, 10.1109/TBME.2019.2950777,
+2020.
 
 Kanold, P. O. and Manis, P. B.. A physiologically based model of
 discharge pattern regulation by transient K+ currents in cochlear
@@ -5901,6 +7054,14 @@ activity modes in the dendritic membrane of hippocampal pyramidal
 neurons: a simulation study. *Neurophysiology* 50:152-158,
 10.1007/s11062-018-9731-5, 2018.
 
+Kathe, C., Skinnider, M. A., Hutson, T. H., Regazzi, N., Gautier,
+M., Demesmaeker, R., Komi, S., Ceto, S., James, N. D., Cho, N.,
+Baud, L., Galan, K., Matson, K. J. E., Rowald, A., Kim, K., Wang,
+R., Minassian, K., Prior, J. O., Asboth, L., Barraud, Q., Lacour,
+S. P., Levine, A. J., Wagner, F., Bloch, J., Squair, J. W. and
+Courtine, G.. The neurons that restore walking after paralysis.
+*Nature* 611:540-547, 10.1038/s41586-022-05385-7, 2022.
+
 Katona, G., Kaszás, A., Turi, G. F., Hájos, N., Tamás, G., Vizi,
 E. S. and Rózsa, B.. Roller Coaster Scanning reveals spontaneous
 triggering of dendritic spikes in CA1 interneurons. *Proceedings
@@ -5916,6 +7077,12 @@ Katz, Y., Menon, V., Nicholson, D. A., Geinisman, Y., Kath, W. L.
 and Spruston, N.. Synapse distribution suggests a two-stage model
 of dendritic integration in CA1 pyramidal neurons. *Neuron*
 63:171-177, 2009.
+
+Kayikcioglu Bozkir, I., Ozcan, Z., Kose, C., Kayikcioglu, T. and
+Cetin, A. E.. Improving a cortical pyramidal neuron model's
+classification performance on a real-world ecg dataset by
+extending inputs. *Journal of Computational Neuroscience*
+51:329-341, 10.1007/s10827-023-00851-1, 2022.
 
 Keane, M., Deyo, S., Abosch, A., Bajwa, J. A. and Johnson, M. D..
 Improved spatial targeting with directionally segmented deep brain
@@ -5934,11 +7101,22 @@ of a computational approach/model to explore NMDA receptors
 functions. *Methods in Molecular Biology* 1677:291-306,
 10.1007/978-1-4939-7321-7_17, 2017.
 
+Kelley, C., Antic, S. D., Carnevale, N. T., Kubie, J. L. and
+Lytton, W. W.. Simulations predict differing phase responses to
+excitation vs. inhibition in theta-resonant pyramidal neurons..
+*Journal of Neurophysiology* 130:910-924, 10.1152/jn.00160.2023,
+2023.
+
 Kelley, C., Dura-Bernal, S., Neymotin, S. A., Antic, S. D.,
 Carnevale, N. T., Migliore, M. and Lytton, W. W.. Effects of Ih
 and TASK-like shunting current on dendritic impedance in layer 5
 pyramidal-tract neurons. *Journal of Neurophysiology*
 125:1501-1516, 10.1152/jn.00015.2021, 2021.
+
+Kelley, C., Newton, A. J. H., Hrabetova, S., McDougal, R. A. and
+Lytton, W. W.. Multiscale computer modeling of spreading
+depolarization in brain slices. *eNeuro*
+910.1523/ENEURO.0082-22.2022, 2022.
 
 Kent, A. R. and Grill, W. M.. Model-based analysis and design of
 nerve cuff electrodes for restoring bladder function by selective
@@ -6052,6 +7230,11 @@ Kim, H. and Heckman, C. J.. Data for spatial characterization of
 AC signal propagation over primary neuron dendrites. *Data in
 Brief* 6:341-344, 10.1016/j.dib.2015.12.018, 2016.
 
+Kim, H. and Heckman, C. J.. A dynamic calcium-force relationship
+model for sag behavior in fast skeletal muscle. *PLoS
+Computational Biology* 19:e1011178, 10.1371/journal.pcbi.1011178,
+2023.
+
 Kim, H. and Jones, K. E.. The retrograde frequency response of
 passive dendritic trees constrains the nonlinear firing behaviour
 of a reduced neuron model. *PLoS ONE* 7:e43654,
@@ -6087,6 +7270,10 @@ Kim, J. K. and Fiorillo, C. D.. Theory of optimal balance predicts
 and explains the amplitude and decay time of synaptic inhibition.
 *Nature Communications* 8:14566, 10.1038/ncomms14566, 2017.
 
+Kim, S. H., Woo, J., Choi, K., Choi, M. and Han, K.. Neural
+information processing and computations of two-input synapses.
+*Neural Computation* 34:2102-2131, 10.1162/neco_a_01534, 2022.
+
 Kim, Y., Hsu, C.-L., Cembrowski, M. S., Mensh, B. D. and Spruston,
 N.. Dendritic sodium spikes are required for long-term
 potentiation at distal synapses on hippocampal pyramidal neurons.
@@ -6101,6 +7288,11 @@ Kish, K. E., Graham, R. D., Wong, K. Y. and Weiland, J. D.. The
 effect of axon trajectory on retinal ganglion cell activation with
 epiretinal stimulation [Online]. *Proc. 10th Int. IEEE/EMBS Conf.
 Neural Engineering* :263-266, 10.1109/NER49283.2021.9441073, 2021.
+
+Kish, K. E., Lempka, S. F. and Weiland, J. D.. Modeling
+extracellular stimulation of retinal ganglion cells: theoretical
+and practical aspects. *Journal of Neural Engineering*
+2010.1088/1741-2552/acbf79, 2023.
 
 Kits, K. S., de Vlieger, T. A., Kooi, B. W. and Mansvelder, H. D..
 Diffusion barriers limit the effect of mobile calcium buffers on
@@ -6183,6 +7375,13 @@ Kochubey, S., Semyanov, A. and Savtchenko, L.. Network with
 shunting synapses as a non-linear frequency modulator. *Neural
 Networks* 24:407-416, 10.1016/j.neunet.2011.03.005, 2011b.
 
+Kocsis, B., Martínez-Bellver, S., Fiáth, R., Domonkos, A.,
+Sviatkó, K., Schlingloff, D., Barthó, P., Freund, T. F., Ulbert,
+I., Káli, S., Varga, V. and Hangya, B.. Huygens synchronization of
+medial septal pacemaker neurons generates hippocampal theta
+oscillation. *Cell Reports* 40:111149,
+10.1016/j.celrep.2022.111149, 2022.
+
 Koelman, L. A. and Lowery, M. M.. Beta-band resonance and
 intrinsic oscillations in a biophysically detailed model of the
 subthalamic nucleus-globus pallidus network. *Frontiers In
@@ -6212,6 +7411,12 @@ Koizumi, A., Takayasu, M. and Takayasu, H.. Asynmetric inhibitory
 connections enhance directional selectivity in a three-layer
 simulation model of retinal networks. *Journal of Integrative
 Neuroscience* 9:337-350, 10.1142/S0219635210002469, 2010.
+
+Kolaric, K. V., Thomson, G., Edgar, J. M. and Brown, A. M.. Focal
+axonal swellings and associated ultrastructural changes attenuate
+conduction velocity in central nervous system axons: a computer
+modeling study. *Physiological Reports* 1:e00059, 10.1002/phy2.59,
+2013.
 
 Kolbaev, S. N., Mohapatra, N., Chen, R., Lombardi, A., Staiger, J.
 F., Luhmann, H. J., Jedlicka, P. and Kilb, W.. NKCC-1 mediated Cl-
@@ -6352,10 +7557,20 @@ rat sciatic nerve using an array of mm-size magnetic coils: a
 simulation study. *Healthcare Technology Letters* 6:70-75,
 10.1049/htl.2018.5020, 2019.
 
+Kotler, O., Khrapunsky, Y., Shvartsman, A., Dai, H., Plant, L. D.,
+Goldstein, S. A. N. and Fleidervish, I.. SUMOylation of NaV1.2
+channels regulates the velocity of backpropagating action
+potentials in cortical pyramidal neurons. *eLife*
+1210.7554/eLife.81463, 2023.
+
 Kourennyi, D. E., Liu, X.-D., Hart, J., Mahmud, F., Baldridge, W.
 H. and Barnes, S.. Reciprocal modulation of calcium dynamics at
 rod and cone photoreceptor synapses by nitric oxide. *Journal of
 Neurophysiology* 92:477-483, 2004.
+
+Kourennyi, D. E., Liu, X. and Barnes, S.. Modulation of rod
+photoreceptor potassium Kx current by divalent cations. *Annals of
+Biomedical Engineering* 30:1196-1203, 10.1114/1.1521415, 2002.
 
 Koutsikou, S., Merrison-Hort, R., Buhl, E., Ferrario, A., Li,
 W.-C., Borisyuk, R., Soffe, S. R. and Roberts, A.. A simple
@@ -6389,6 +7604,10 @@ potential threshold of dentate granule neurons. *Hippocampus*
 Kretzberg, J., Kretschmer, F. and Marin-Burgin, A.. Effects of
 multiple spike-initiation zones in touch sensory cells of the
 leech. *Neurocomputing* 70:1645-1651, 2007.
+
+Kriener, B., Hu, H. and Vervaeke, K.. Parvalbumin interneuron
+dendrites enhance gamma oscillations. *Cell Reports* 39:110948,
+10.1016/j.celrep.2022.110948, 2022.
 
 Krishnamurthy, P., Silberberg, G. and Lansner, A.. A cortical
 attractor network with Martinotti cells driven by facilitating
@@ -6547,6 +7766,16 @@ multisends on the Blue Gene/P supercomputer. *24th IEEE
 International Parallel and Distributed Processing Symposium*
 2010:1-11, 10.1109/IPDPS.2010.5470407, 2010.
 
+Kumar, S. S., Gänswein, T., Buccino, A. P., Xue, X., Bartram, J.,
+Emmenegger, V. and Hierlemann, A.. Tracking axon initial segment
+plasticity using high-density microelectrode arrays: a
+computational study. *Frontiers in Neuroinformatics*
+1610.3389/fninf.2022.957255, 2022.
+
+Kumaravelu, K. and Grill, W. M.. Neural mechanisms of the temporal
+response of cortical neurons to intracortical microstimulation.
+*Brain Stimulation* 17:365-381, 10.1016/j.brs.2024.03.012, 2024.
+
 Kumaravelu, K., Oza, C. S., Behrend, C. E. and Grill, W. M..
 Model-based deconstruction of cortical evoked potentials generated
 by subthalamic nucleus deep brain stimulation. *Journal of
@@ -6562,6 +7791,12 @@ S. J., Miller, L. E. and Grill, W. M.. A comprehensive model-based
 framework for optimal design of biomimetic patterns of electrical
 stimulation for prosthetic sensation. *Journal of Neural
 Engineering* 17:046045, 10.1088/1741-2552/abacd8, 2020.
+
+Kumbhar, P., Awile, O., Keegan, L., Alonso, J. B., King, J.,
+Hines, M. and Schürmann, F.. An optimizing multi-platform
+source-to-source compiler framework for the NEURON MODeling
+Language [Online]. *Computational Science -- ICCS 2020* :45-58,
+2020.
 
 Kumbhar, P., Hines, M., Fouriaux, J., Ovcharenko, A., King, J.,
 Delalondre, F. and Schürmann, F.. CoreNEURON: an optimized compute
@@ -6628,6 +7863,11 @@ subunit composition among inhibitory and excitatory interneurons
 in spinal lamina II. *Frontiers in Cellular Neuroscience* 8:424,
 10.3389/fncel.2014.00424, 2014.
 
+Ladd, A., Kim, K. G., Balewski, J., Bouchard, K. and Ben-Shalom,
+R.. Scaling and benchmarking an evolutionary algorithm for
+constructing biophysical neuronal models. *Frontiers in
+Neuroinformatics* 16:882552, 10.3389/fninf.2022.882552, 2022.
+
 Lai, H. Y., Liao, L. D., Lin, C. T., Hsu, J. H., He, X., Chen, Y.
 Y., Chang, J. Y., Chen, H. F., Tsang, S. and Shih, Y. Y. I..
 Design, simulation and experimental validation of a novel flexible
@@ -6649,6 +7889,11 @@ Bouret, Y., Leresche, N. and Reynaud-Bouret, P.. Reconstructing
 the functional connectivity of multiple spike trains using Hawkes
 models. *Journal of Neuroscience Methods* 297:9-21,
 10.1016/j.jneumeth.2017.12.026, 2018.
+
+Landau, A. T., Park, P., Wong-Campos, J. D., Tian, H., Cohen, A.
+E. and Sabatini, B. L.. Dendritic branch structure
+compartmentalizes voltage-dependent calcium influx in cortical
+layer 2/3 pyramidal cells. *eLife* 1110.7554/eLife.76993, 2022.
 
 Larkum, M. E., Launey, T., Dityatev, A. and Lüscher, H.-R..
 Integration of excitatory postsynaptic potentials in dendrites of
@@ -6677,6 +7922,12 @@ Integrating model-based approaches into a neuroscience
 curriculum—an interdisciplinary neuroscience course in
 engineering. *IEEE Transactions on Education* 62:48-56,
 10.1109/TE.2018.2859411, 2019.
+
+Latimer, B., Dopp, D., Perumal, M. B., Sah, P. and Nair, S. S.. A
+novel biophysical model for the generation of sharp wave ripples
+in ca1 hippocampus. *IEEE Transactions On Circuits And Systems.
+II, Express Briefs* 70:1784-1788, 10.1109/tcsii.2023.3262207,
+2023.
 
 Latorre, M. A. and Wårdell, K.. A comparison between single and
 double cable neuron models applicable to deep brain stimulation.
@@ -6722,6 +7973,17 @@ for spike initiation. *Biosystems* 67:129-137, 2002b.
 Lazarewicz, M. T., Das, S. and Finkel, L. H.. Recognition of
 temporal event sequences by a network of cortical neurons.
 *Neurocomputing* 65:143-151, 2005.
+
+Lazorchak, N., Horn, M. R., Muzquiz, M. I., Mintch, L. M. and
+Yoshida, K.. Accurate simulation of cuff electrode stimulation
+predicting in-vivo strength-duration thresholds. *Artificial
+Organs* 46:2073-2084, 10.1111/aor.14374, 2022.
+
+Le Bon-Jégo, M., Cabirol, M.-J. and Cattaert, D..
+Activity-dependent decline and recovery of synaptic transmission
+in central parts of surviving primary afferents after their
+peripheral cut in crayfish. *Journal of Experimental Biology*
+22510.1242/jeb.244736, 2022.
 
 Le Franc, Y. and Le Masson, G.. Multiple firing patterns in deep
 dorsal horn neurons of the spinal cord: computational analysis of
@@ -6769,17 +8031,33 @@ communication between in vivo neurophysiological data sources and
 simulator-based brain biomimetic models. *Journal of Computational
 Surgery* 3:1-23, 10.1186/s40244-014-0012-3, 2014a.
 
+Lee, H., Graham, R. D., Melikyan, D., Smith, B., Mirzakhalili, E.,
+Lempka, S. F. and Duan, B.. Molecular determinants of mechanical
+itch sensitization in chronic itch. *Frontiers in Molecular
+Neuroscience* 1510.3389/fnmol.2022.937890, 2022.
+
 Lee, H.-M., Howell, B., Grill, W. M. and Ghovanloo, M..
 Stimulation efficiency with decaying exponential waveforms in a
 wirelessly powered switched-capacitor discharge stimulation
 system. *IEEE Transactions on Bio-Medical Engineering*
 65:1095-1106, 10.1109/TBME.2017.2741107, 2018.
 
+Lee, J.-I., Werginz, P., Kameneva, T., Im, M. and Fried, S. I..
+Membrane depolarization mediates both the inhibition of neural
+activity and cell-type-differences in response to high-frequency
+stimulation. *Communications Biology* 710.1038/s42003-024-06359-3,
+2024a.
+
 Lee, K. H., Hitti, F. L., Chang, S.-Y., Lee, D. C., Roberts, D.
 W., McIntyre, C. C. and Leiter, J. C.. High frequency stimulation
 abolishes thalamic network oscillations: an electrophysiological
 and computational analysis. *Journal of Neural Engineering*
 8:046001, 10.1088/1741-2560/8/4/046001, 2011b.
+
+Lee, K. J., Park, B., Jang, J.-W. and Kim, S.. Magnetic
+stimulation of the sciatic nerve using an implantable
+high-inductance coil with low-intensity current. *Journal of
+Neural Engineering* 2010.1088/1741-2552/acdcbb, 2023.
 
 Lee, S. C., Hayashida, Y. and Ishida, A. T.. Availability of
 low-threshold Ca2+ current in retinal ganglion cells. *Journal of
@@ -6789,6 +8067,11 @@ Lee, S. and Jones, S. R.. Distinguishing mechanisms of gamma
 frequency oscillations in human current source signals using a
 computational model of a laminar neocortical network. *Frontiers
 in Human Neuroscience* 7:869, 2013.
+
+Lee, S. Y., Kozalakis, K., Baftizadeh, F., Campagnola, L., Jarsky,
+T., Koch, C. and Anastassiou, C. A.. Cell-class-specific electric
+field entrainment of neural activity. *Neuron* 112:2614-2630.e5,
+10.1016/j.neuron.2024.05.009, 2024b.
 
 Lee, S.-H., Marchionni, I., Bezaire, M., Varga, C., Danielson, N.,
 Lovett-Barron, M., Losonczy, A. and Soltesz, I..
@@ -6860,6 +8143,12 @@ Lempka, S. F., Zander, H. J., Anaya, C. J., Wyant, A., Ozinga, J.
 G. and Machado, A. G.. Patient-specific analysis of neural
 activation during spinal cord stimulation for pain.
 *Neuromodulation* 23:572-581, 10.1111/ner.13037, 2020.
+
+Lenz, M., Eichler, A., Kruse, P., Galanis, C., Kleidonas, D.,
+Andrieux, G., Boerries, M., Jedlicka, P., Müller, U., Deller, T.
+and Vlachos, A.. The amyloid precursor protein regulates synaptic
+transmission at medial perforant path synapses. *Journal of
+Neuroscience* 43:5290-5304, 10.1523/JNEUROSCI.1824-22.2023, 2023.
 
 Lenz, M., Platschek, S., Priesemann, V., Becker, D., Willems, L.
 M., Ziemann, U., Deller, T., Müller-Dahlhaus, F., Jedlicka, P. and
@@ -6974,11 +8263,21 @@ entorhinal cortex to hippocampal CA1 direct circuit for olfactory
 associative learning. *Nature Neuroscience* 20:559-570,
 10.1038/nn.4517, 2017c.
 
+Liao, Z., Terada, S., Raikov, I. G., Hadjiabadi, D., Szoboszlay,
+M., Soltesz, I. and Losonczy, A.. Inhibitory plasticity supports
+replay generalization in the hippocampus. *Nature Neuroscience*
+27:1987-1998, 10.1038/s41593-024-01745-w, 2024.
+
 Liebmann, L., Karst, H., Sidiropoulou, K., van Gemert, N., Meijer,
 O. C., Poirazi, P. and Joëls, M.. Differential effects of
 corticosterone on the slow afterhyperpolarization in the
 basolateral amygdala and CA1 region: possible role of calcium
 channel subunits. *Journal of Neurophysiology* 99:958-968, 2008.
+
+Lim, J., Eiber, C. D., Sun, A., Maples, A., Powley, T. L., Ward,
+M. P. and Lee, H.. Fractal microelectrodes for more
+energy-efficient cervical vagus nerve stimulation. *Advanced
+Healthcare Materials* 12:e2202619, 10.1002/adhm.202202619, 2023.
 
 Lin, X. and Hant, J.. Computer-simulation studies on roles of
 potassium currents in neurotransmission of the auditory nerve.
@@ -7006,6 +8305,11 @@ Giugliano, M.. Modelling the effects of early exposure to alcohol
 on the excitability of cortical neurons [Online]. *2020 IEEE
 International Symposium on Circuits and Systems (ISCAS)*,
 10.1109/iscas45731.2020.9180633, 2020.
+
+Linaro, D., Levy, M. J. and Hunt, D. L.. Cell type-specific
+mechanisms of information transfer in data-driven biophysical
+models of hippocampal CA3 principal neurons. *PLoS Computational
+Biology* 18:e1010071, 10.1371/journal.pcbi.1010071, 2022.
 
 Linaro, D., Storace, M. and Giugliano, M.. Accurate and fast
 simulation of channel noise in conductance-based model neurons by
@@ -7071,6 +8375,13 @@ olfactory neurons: spontaneous firing, sodium conductance, and
 hyperpolarization-activated currents. *Journal of Neurophysiology*
 108:1318-1334, 10.1152/jn.00907.2011, 2012.
 
+Liu, J., Grayden, D. B., Keast, J. R. and John, S. E..
+Computational modeling of an endovascular peripheral nerve
+interface. *Annual International Conference of the IEEE
+Engineering in Medicine and Biology Society. IEEE Engineering in
+Medicine and Biology Society. Annual International Conference*
+2021:5966-5969, 10.1109/EMBC46164.2021.9630085, 2021.
+
 Liu, J., Ogden, A., Comery, T. A., Spiros, A., Roberts, P. and
 Geerts, H.. Prediction of efficacy of vabicaserin, a 5-HT2C
 agonist, for the treatment of schizophrenia using a quantitative
@@ -7086,6 +8397,19 @@ in simulated recurrent neural networks in a self-organizing
 manner.. *Journal of Neuroscience* 29:13172-13181,
 10.1523/JNEUROSCI.2358-09.2009, 2009.
 
+Liu, J. Y., Grayden, D. B., Keast, J. R. and John, S. E..
+Computational modeling of endovascular peripheral nerve
+stimulation using a stent-mounted electrode array. *Journal of
+Neural Engineering* 2010.1088/1741-2552/aca69e, 2023.
+
+Liu, M. and Sun, X.. Spatial integration of dendrites in
+fast-spiking basket cells. *Frontiers in Neuroscience* 17:1132980,
+10.3389/fnins.2023.1132980, 2023.
+
+Liu, M. and Sun, X.. Temporal integration on the dendrites of
+fast-spiking basket cells. *Scientific Reports* 14:30278,
+10.1038/s41598-024-81655-w, 2024.
+
 Liu, N., Yang, Y., Ge, L., Liu, M., Colecraft, H. M. and Liu, X..
 Cooperative and acute inhibition by multiple C-terminal motifs of
 L-type Ca(2+) channels. *eLife* 6:e21989, 10.7554/eLife.21989,
@@ -7094,6 +8418,11 @@ L-type Ca(2+) channels. *eLife* 6:e21989, 10.7554/eLife.21989,
 Liu, S. and Zheng, P.. Altered PKA modulation in the Na(v)1.1
 epilepsy variant I1656M. *Journal of Neurophysiology*
 110:2090-2098, 10.1152/jn.00921.2012, 2013.
+
+Liu, T. X., Davoudian, P. A., Lizbinski, K. M. and Jeanne, J. M..
+Connectomic features underlying diverse synaptic connection
+strengths and subcellular computation. *Current Biology*
+32:559-569.e5, 10.1016/j.cub.2021.11.056, 2022.
 
 Liu, Z., Kimura, Y., Higashijima, S.-I., Hildebrand, D. G. C.,
 Morgan, J. L. and Bagnall, M. W.. Central vestibular tuning arises
@@ -7108,6 +8437,16 @@ high-threshold Ca2+ channels. *Journal of Physiology* 553:473-488,
 Llorens, V. C. and Fransén, E.. Intrinsic desynchronization
 properties of neurons containing dendritic rapidly activating
 K-currents. *Neurocomputing* 58-60:137-143, 2004.
+
+Lloyd, D. A., Alejandra Gonzalez-Gonzalez, M. and Romero-Ortega,
+M. I.. AxoDetect: an automated nerve image segmentation and
+quantification workflow for computational nerve modeling. *Journal
+of Neural Engineering* 2110.1088/1741-2552/ad31c3, 2024.
+
+Lodge, M., Hernandez, M.-C., Schulz, J. M. and Bischofberger, J..
+Sparsification of AP firing in adult-born hippocampal granule
+cells via voltage-dependent α5-GABAA receptors. *Cell Reports*
+37:109768, 10.1016/j.celrep.2021.109768, 2021.
 
 Loizos, K., Cela, C., Marc, R. and Lazzi, G.. Virtual electrode
 design for increasing spatial resolution in retinal prosthesis.
@@ -7196,6 +8535,11 @@ Computational modeling of three-dimensional electrodiffusion in
 biological systems: application to the node of Ranvier.
 *Biophysical Journal* 95:2624-2635, 2008.
 
+Lorenzo, J., Binczak, S. and Jacquir, S.. A multilayer-multiplexer
+network processing scheme based on the dendritic integration in a
+single neuron. *AIMS Neuroscience* 9:76-113,
+10.3934/Neuroscience.2022006, 2022.
+
 Lorenzo, J., Vuillaume, R., Binczak, S. and Jacquir, S..
 Identification of synaptic integration mode in CA3 pyramidal
 neuron model [Online]. *2019 9th International IEEE/EMBS
@@ -7220,9 +8564,19 @@ inhibition and T-type calcium channel activity bidirectionally
 regulate thalamic oscillations. *eLife* 910.7554/eLife.59548,
 2020.
 
+Lu, B. and Jiang, X.. Reduced and bifurcation analysis of
+intrinsically bursting neuron model. *Electronic Research Archive*
+31:5928-5945, 10.3934/era.2023301, 2023.
+
 Lu, H., Chestek, C. A., Shaw, K. M. and Chiel, H. J.. Selective
 extracellular stimulation of individual neurons in ganglia.
 *Journal of Neural Engineering* 5:287-309, 2008.
+
+Lu, H.-W., Smith, P. H. and Joris, P. X.. Mammalian octopus cells
+are direction selective to frequency sweeps by excitatory synaptic
+sequence detection. *Proceedings of the National Academy of
+Sciences of the United States of America* 119:e2203748119,
+10.1073/pnas.2203748119, 2022.
 
 Lu, T., Wade, K., Hong, H. and Sanchez, J. T.. Ion channel
 mechanisms underlying frequency-firing patterns of the avian
@@ -7246,6 +8600,11 @@ Dendritic vulnerability in neurodegenerative disease: insights
 from analyses of cortical pyramidal neurons in transgenic mouse
 models. *Brain Structure and Function* 214:181-199,
 10.1007/s00429-010-0244-2, 2010.
+
+Luff, C. E., Dzialecka, P., Acerbo, E., Williamson, A. and
+Grossman, N.. Pulse-width modulated temporal interference (PWM-TI)
+brain stimulation. *Brain Stimulation* 17:92-103,
+10.1016/j.brs.2023.12.010, 2024.
 
 Lujan, B., Kushmerick, C., Banerjee, T. D., Dagda, R. K. and
 Renden, R.. Glycolysis selectively shapes the presynaptic action
@@ -7329,6 +8688,12 @@ Lv, T., Zhang, P.-M., Gong, H.-Q. and Liang, P.-J..
 Caffeine-induced Ca(2+) oscillations in type I horizontal cell of
 carp retina: a mathematical model. *Channels* 8:509-518,
 10.4161/19336950.2014.965113, 2014.
+
+Ly, K., Guo, T., Tsai, D., Muralidharan, M., Shivdasani, M. N.,
+Lovell, N. H. and Dokos, S.. Simulating the impact of
+photoreceptor loss and inner retinal network changes on electrical
+activity of the retina. *Journal of Neural Engineering*
+1910.1088/1741-2552/aca221, 2022.
 
 Lytton, W. W.. Simulations of a phase comparing neuron of the
 electric fish Eigenmannia. *Journal of Comparative Physiology A*
@@ -7469,11 +8834,29 @@ Maccaferri, G.. Complex synaptic dynamics of GABAergic networks of
 the hippocampus. In: *Computational Neuroscience in Epilepsy*,
 edited by Soltesz, I. and Staley, K.. Elsevier, 2008, pp. 288-303.
 
+Madden, L. R., Graham, R. D., Lempka, S. F. and Bruns, T. M..
+Multiformity of extracellular microelectrode recordings from Aδ
+neurons in the dorsal root ganglia: a computational modeling
+study. *Journal of Neurophysiology* 131:261-277,
+10.1152/jn.00385.2023, 2024.
+
+Madugula, S. S., Vilkhu, R., Shah, N. P., Grosberg, L. E., Kling,
+A., Gogliettino, A. R., Nguyen, H., Hottowy, P., Sher, A., Litke,
+A. M. and Chichilnisky, E. J.. Inference of electrical stimulation
+sensitivity from recorded activity of primate retinal ganglion
+cells. *Journal of Neuroscience* 43:4808-4820,
+10.1523/JNEUROSCI.1023-22.2023, 2023.
+
+Magalhães, B., Hines, M., Sterling, T. and Schuermann, F..
+Fully-asynchronous fully-implicit variable-order variable-timestep
+simulation of neural networks [Online]. *COMPUTATIONAL SCIENCE -
+ICCS 2020, PT V* 12141:94-108, 10.1007/978-3-030-50426-7\_8, 2020.
+
 Magalhães, B. R. C., Hines, M., Sterling, T. and Schuermann, F..
 Exploiting flow graph of system of ODEs to accelerate the
 simulation of biologically-detailed neural networks [Online].
 *2019 IEEE International Parallel and Distributed Processing
-Symposium (IPDPS)* , 10.1109/ipdps.2019.00028, 2019a.
+Symposium (IPDPS)*, 10.1109/ipdps.2019.00028, 2019a.
 
 Magalhães, B. R. C., Sterling, T., Hines, M. and Schürmann, F..
 Asynchronous branch-parallel simulation of detailed neuron models.
@@ -7523,7 +8906,7 @@ Mahapatra, C., Brain, K. L. and Manchanda, R.. Computational study
 of Hodgkin-Huxley type calcium-dependent potassium current in
 urinary bladder over activity [Online]. *2018 IEEE 8th
 International Conference on Computational Advances in Bio and
-Medical Sciences* , 10.1109/iccabs.2018.8541971, 2018b.
+Medical Sciences*, 10.1109/iccabs.2018.8541971, 2018b.
 
 Mahapatra, C. and Manchanda, R.. Computational simulation of spike
 patterns in STN neuron using Izhikevich model [Online]. *2016
@@ -7534,6 +8917,29 @@ Mahapatra, C. and Manchanda, R.. Modeling vas deferens smooth
 muscle electrophysiology: role of ion channels in generating
 electrical activity [Online]. *Soft Computing for Problem Solving*
 817:{655-663}, {10.1007/978-981-13-1595-4\_52}, 2019.
+
+Mahapatra, C. and Samuilik, I.. A mathematical model of
+spontaneous action potential based on stochastics synaptic noise
+dynamics in non-neural cells. *Mathematics* 12:1149,
+10.3390/math12081149, 2024.
+
+Mahapatra, C., Shanmugam, K. and Rusho, M. A.. Computational
+modeling of sodium-ion-channel-based glucose sensing biophysics to
+study cardiac pacemaker action potential. *Mathematical and
+Computational Applications* 29:84, 10.3390/mca29050084, 2024.
+
+Mahapatra, C. and Thakkar, R.. In silico electrophysiological
+investigation of transient receptor potential melastatin-4 ion
+channel biophysics to study detrusor overactivity. *International
+Journal of Molecular Sciences* 25:6875, 10.3390/ijms25136875,
+2024.
+
+Mahapatra, C., Tripathy, S. K., Tripathy, M. and Gupta, A.. A
+computational model of voltage-gated sodium ion channel in human
+pulmonary artery smooth muscle cell [Online]. *2025 International
+Conference on Cognitive Computing in Engineering, Communications,
+Sciences and Biomedical Health Informatics (IC3ECSBHI)*
+:1099-1103, 10.1109/ic3ecsbhi63591.2025.10991320, 2025.
 
 Mahnam, A., Hashemi, S. M. R. and Grill, W. M.. Computational
 evaluation of methods for measuring the spatial extent of neural
@@ -7617,12 +9023,24 @@ schizophrenia-associated genes can lead to increased power in
 delta oscillations. *Cerebral Cortex* 29:875-891,
 10.1093/cercor/bhy291, 2019b.
 
+Mäki-Marttunen, T. and Mäki-Marttunen, V.. Excitatory and
+inhibitory effects of HCN channel modulation on excitability of
+layer V pyramidal cells. *PLoS Computational Biology* 18:e1010506,
+10.1371/journal.pcbi.1010506, 2022.
+
 Malaga, K. A., Schroeder, K. E., Patel, P. R., Irwin, Z. T.,
 Thompson, D. E., Nicole Bentley, J., Lempka, S. F., Chestek, C. A.
 and Patil, P. G.. Data-driven model comparing the effects of glial
 scarring and interface interactions on chronic neural recordings
 in non-human primates. *Journal of Neural Engineering* 13:016010,
 10.1088/1741-2560/13/1/016010, 2016.
+
+Malekmohammadi, M., Mustakos, R., Sheth, S., Pouratian, N.,
+McIntyre, C. C., Bijanki, K. R., Tsolaki, E., Chiu, K., Robinson,
+M. E., Adkinson, J. A., Oswalt, D. and Carcieri, S.. Automated
+optimization of deep brain stimulation parameters for modulating
+neuroimaging-based targets. *Journal of Neural Engineering*
+1910.1088/1741-2552/ac7e6c, 2022.
 
 Maling, N., Lempka, S. F., Blumenfeld, Z., Bronte-Stewart, H. and
 McIntyre, C. C.. Biophysical basis of subthalamic local field
@@ -7643,13 +9061,13 @@ adult rats. *European Journal of Neuroscience* 24:3234-3244, 2006.
 Mandge, D., Bhatnagar, A. and Manchanda, R.. Computational model
 for intercellular communication between DRG neurons via satellite
 glial cells using ATP [Online]. *2017 8th International IEEE/EMBS
-Conference on Neural Engineering*, 10.1109/ner.2017.8008434, 2017.
+Conference on Neural Engineering*, 10.1109/ner.2017.8008434,
+2017.
 
 Mandge, D. and Manchanda, R.. Computational studies on bladder
 small dorsal root ganglion neurons: modelling BK channels
-[Online]. *2015 37th Annual International Conference of the IEEE
-Engineering in Medicine and Biology Society*,
-10.1109/embc.2015.7319606, 2015.
+[Online]. *IEEE Engineering in Medicine and Biology Society.
+Annual Conference*, 10.1109/embc.2015.7319606, 2015.
 
 Mandge, D. and Manchanda, R.. A biophysically detailed
 computational model of urinary bladder small DRG neuron soma.
@@ -7660,7 +9078,7 @@ Computational model for cross-depolarization in DRG neurons via
 satellite glial cells using [K]o: role of Kir4.1 channels and
 extracellular leakage [Online]. *2019 41st Annual International
 Conference of the IEEE Engineering in Medicine and Biology
-Society* , 10.1109/embc.2019.8857153, 2019.
+Society*, 10.1109/embc.2019.8857153, 2019.
 
 Manis, P. B. and Campagnola, L.. A biophysical modelling platform
 of the cochlear nucleus and other auditory circuits: from channels
@@ -7693,6 +9111,11 @@ oscillations in the inferior olive: a model based on electrical
 coupling of neurons with heterogeneous channel densities. *Journal
 of Neurophysiology* 77:2736-2752, 1997.
 
+Mapelli, J., Boiani, G. M., D'Angelo, E., Bigiani, A. and
+Gandolfi, D.. Long-term synaptic plasticity tunes the gain of
+information channels through the cerebellum granular layer.
+*Biomedicines* 1010.3390/biomedicines10123185, 2022.
+
 Marasco, A., Limongiello, A. and Migliore, M.. Fast and accurate
 low-dimensional reduction of biophysically detailed neuron models.
 *Scientific Reports* 2:928, 10.1038/srep00928, 2012.
@@ -7700,6 +9123,12 @@ low-dimensional reduction of biophysically detailed neuron models.
 Marasco, A., Limongiello, A. and Migliore, M.. Using Strahler's
 analysis to reduce up to 200-fold the run time of realistic neuron
 models. *Scientific Reports* 3:2934, 10.1038/srep02934, 2013.
+
+Marasco, A., Tribuzi, C., Lupascu, C. A. and Migliore, M..
+Modeling realistic synaptic inputs of CA1 hippocampal pyramidal
+neurons and interneurons via Adaptive Generalized Leaky
+Integrate-and-Fire models. *Mathematical Biosciences* 372:109192,
+10.1016/j.mbs.2024.109192, 2024.
 
 Marcelin, B., Chauviere, L., Becker, A., Migliore, M., Esclapez,
 M. and Bernard, C.. h channel-dependent deficit of theta
@@ -7757,6 +9186,11 @@ DeFelipe, J., Hill, S. L., Segev, I. and Schürmann, F..
 Reconstruction and simulation of neocortical microcircuitry.
 *Cell* 163:456-492, 10.1016/j.cell.2015.09.029, 2015.
 
+Marra, C., Hartke, T. V., Ringkamp, M. and Goldfarb, M.. Enhanced
+sodium channel inactivation by temperature and FHF2 deficiency
+blocks heat nociception. *Pain* 164:1321-1331,
+10.1097/j.pain.0000000000002822, 2023.
+
 Marsalek, P., Koch, C. and Maunsell, J.. On the relationship
 between synaptic input and spike output jitter in individual
 neurons. *Proceedings of the National Academy of Sciences of the
@@ -7811,6 +9245,13 @@ and D'Angelo, E.. Single neuron optimization as a basis for
 accurate biophysical modeling: the case of cerebellar granule
 cells. *Frontiers in Cellular Neuroscience* 11:71,
 10.3389/fncel.2017.00071, 2017.
+
+Masoli, S., Sanchez-Ponce, D., Vrieler, N., Abu-Haya, K., Lerner,
+V., Shahar, T., Nedelescu, H., Rizza, M. F., Benavides-Piccione,
+R., DeFelipe, J., Yarom, Y., Munoz, A. and D'Angelo, E.. Human
+Purkinje cells outperform mouse Purkinje cells in dendritic
+complexity and computational capacity. *Communications Biology*
+7:5, 10.1038/s42003-023-05689-y, 2024.
 
 Masoli, S., Solinas, S. and D'Angelo, E.. Action potential
 processing in a detailed Purkinje cell model reveals a critical
@@ -7911,6 +9352,18 @@ modulation of voltage-dependent Na+ channels reduces autonomous
 activity in striatal cholinergic interneurons. *Journal of
 Neuroscience* 24:10289-10301, 2004.
 
+Maxion, A., Kutafina, E., Dohrn, M. F., Sacré, P., Lampert, A.,
+Tigerholm, J. and Namer, B.. A modelling study to dissect the
+potential role of voltage-gated ion channels in activity-dependent
+conduction velocity changes as identified in small fiber
+neuropathy patients. *Frontiers in Computational Neuroscience*
+17:1265958, 10.3389/fncom.2023.1265958, 2023.
+
+Mazza, F., Guet-McCreight, A., Valiante, T. A., Griffiths, J. D.
+and Hay, E.. In-silico EEG biomarkers of reduced inhibition in
+human cortical microcircuits in depression. *PLoS Computational
+Biology* 19:e1010986, 10.1371/journal.pcbi.1010986, 2023.
+
 Mazzatenta, A., Giugliano, M., Campidelli, S., Gambazzi, L.,
 Businaro, L., Markram, H., Prato, M. and Ballerini, L..
 Interfacing neurons with carbon nanotubes: electrical signal
@@ -7959,6 +9412,11 @@ J., Gutkin, B. S. and Ward, L. M.. A review of methods for
 identifying stochastic resonance in simulations of single neuron
 models. *Network* 26:35-71, 10.3109/0954898X.2014.990064, 2015.
 
+McDougal, R. A., Conte, C., Eggleston, L., Newton, A. J. H. and
+Galijasevic, H.. Efficient simulation of 3D reaction-diffusion in
+models of neurons and networks. *Frontiers in Neuroinformatics*
+1610.3389/fninf.2022.847108, 2022.
+
 McDougal, R. A., Morse, T. M., Hines, M. L. and Shepherd, G. M..
 ModelView for ModelDB: online presentation of model structure.
 *Neuroinformatics* 13:459-470, 10.1007/s12021-015-9269-2, 2015.
@@ -8006,6 +9464,12 @@ Vitek, J. L.. Electric field and stimulating influence generated
 by deep brain stimulation of the subthalamic nucleus. *Clinical
 Neurophysiology* 115:589-595, 2004b.
 
+McLoughlin, C. and Lowery, M.. Impact of network topology on
+neural synchrony in a model of the subthalamic nucleus-globus
+pallidus circuit. *IEEE Transactions on Neural Systems and
+Rehabilitation Engineering* 32:282-292,
+10.1109/TNSRE.2023.3346456, 2024.
+
 McTavish, T. S., Migliore, M., Shepherd, G. M. and Hines, M. L..
 Mitral cell spike synchrony modulated by dendrodendritic synapse
 location. *Frontiers in Computational Neuroscience* 6:3,
@@ -8042,6 +9506,10 @@ W. and Prescott, S. A.. Multiscale computer model of the spinal
 dorsal horn reveals changes in network processing associated with
 chronic pain. *Journal of Neuroscience*
 10.1523/JNEUROSCI.1199-21.2022, 2022.
+
+Meeks, J. P. and Mennerick, S.. Action potential initiation and
+propagation in CA3 pyramidal axons.. *Journal of neurophysiology*
+97:3460-3472, 10.1152/jn.01288.2006, 2007.
 
 Meffin, H., Burkitt, A. N. and Grayden, D. B.. An analytical model
 for the 'large, fluctuating synaptic conductance state' typical of
@@ -8116,6 +9584,12 @@ Menon, V., Spruston, N. and Kath, W. L.. A state-mutating genetic
 algorithm to design ion-channel models. *Proceedings of the
 National Academy of Sciences of the United States of America*
 106:16829-16834, 2009.
+
+Mercadal, B., Lopez-Sola, E., Galan-Gadea, A., Harrach, M. A.,
+Sanchez-Todo, R., Salvador, R., Bartolomei, F., Wendling, F. and
+Ruffini, G.. Towards a mesoscale physical modeling framework for
+stereotactic-EEG recordings. *Journal of Neural Engineering*
+20:016005, 10.1088/1741-2552/acae0c, 2023.
 
 Mercer, J. N., Chan, C. S., Tkatch, T., Held, J. and Surmeier, D.
 J.. Nav1.6 sodium channels are critical to pacemaking and fast
@@ -8344,6 +9818,11 @@ Miller, R. F., Staff, N. P. and Velte, T. J.. Form and function of
 ON-OFF amacrine cells in the amphibian retina. *Journal of
 Neurophysiology* 95:3171-3190, 2006.
 
+Milstein, A. D., Tran, S., Ng, G. and Soltesz, I.. Offline memory
+replay in recurrent neuronal networks emerges from constraints on
+online dynamics. *Journal of Physiology* 601:3241-3264,
+10.1113/JP283216, 2023.
+
 Milstein, J. N. and Koch, C.. Dynamic moment analysis of the
 extracellular electric field of a biologically realistic spiking
 neuron. *Neural Computation* 20:2070-2084, 2008.
@@ -8379,6 +9858,10 @@ Mirzakhalili, E., Barra, B., Capogrosso, M. and Lempka, S. F..
 Biophysics of temporal interference stimulation. *Cell Systems*
 11:557-572.e5, 10.1016/j.cels.2020.10.004, 2020.
 
+Mirzakhalili, E., Rogers, E. R. and Lempka, S. F.. An optimization
+framework for targeted spinal cord stimulation. *Journal of Neural
+Engineering* 2010.1088/1741-2552/acf522, 2023.
+
 Mishra, J., Fellous, J. M. and Sejnowski, T. J.. Selective
 attention through phase relationship of excitatory and inhibitory
 input synchrony in a model cortical neuron. *Neural Networks*
@@ -8399,6 +9882,24 @@ decorrelation in a heterogeneous multi-scale model of the dentate
 gyrus. *Current Research in Neurobiology* 2:100007,
 10.1016/j.crneur.2021.100007, 2021.
 
+Mitchell, D. E., Miranda-Rottmann, S., Blanchard, M. and Araya,
+R.. Altered integration of excitatory inputs onto the basal
+dendrites of layer 5 pyramidal neurons in a mouse model of Fragile
+X syndrome. *Proceedings of the National Academy of Sciences of
+the United States of America* 120:e2208963120,
+10.1073/pnas.2208963120, 2023.
+
+Mitenkov, G., Magkanaris, I., Awile, O., Kumbhar, P., Schürmann,
+F. and Donaldson, A. F.. MOD2IR: high-performance code generation
+for a biophysically detailed neuronal simulation DSL [Online].
+*Proceedings of the 32nd ACM SIGPLAN International Conference on
+Compiler Construction* :203-215, 10.1145/3578360.3580268, 2023.
+
+Mittag, M., Mediavilla, L., Remy, S., Cuntz, H. and Jedlicka, P..
+Modelling the contributions to hyperexcitability in a mouse model
+of Alzheimer's disease. *Journal of Physiology* 10.1113/JP283401,
+2023.
+
 Mittal, D. and Narayanan, R.. Degeneracy in the robust expression
 of spectral selectivity, subthreshold oscillations, and intrinsic
 excitability of entorhinal stellate cells. *Journal of
@@ -8412,7 +9913,7 @@ irregularity from rate modulations. *Journal of Neuroscience*
 Miyamura, Y., Hitomi, S., Omiya, Y., Ujihara, I., Kokabu, S.,
 Morimoto, Y. and Ono, K.. Isoliquiritigenin, an active ingredient
 of Glycyrrhiza, elicits antinociceptive effects via inhibition of
-NaV channels. *Naunyn-Schmiedeberg's Archives of Pharmacology*
+Nav channels. *Naunyn-Schmiedeberg's Archives of Pharmacology*
 394:967-980, 10.1007/s00210-020-02030-w, 2021.
 
 Miyasho, T., Takagi, H., Suzuki, H., Watanabe, S., Inoue, M.,
@@ -8454,6 +9955,12 @@ myelinated nerve fiber stimulation thresholds: limitations of
 linear models. *IEEE Transactions on Biomedical Engineering*
 51:229-236, 2004.
 
+Mohácsi, M., Török, M. P., Sáray, S., Tar, L., Farkas, G. and
+Káli, S.. Evaluation and comparison of methods for neuronal
+parameter optimization using the Neuroptimus software framework.
+*PLoS Computational Biology* 20:e1012039,
+10.1371/journal.pcbi.1012039, 2024.
+
 Mohan, H., Verhoog, M. B., Doreswamy, K. K., Eyal, G., Aardse, R.,
 Lodder, B. N., Goriounova, N. A., Asamoah, B., B Brakspear, A. B.
 C., Groot, C., van der Sluis, S., Testa-Silva, G., Obermayer, J.,
@@ -8474,6 +9981,10 @@ dendritic chloride diffusion and affect short-term ionic
 plasticity of GABAergic inhibition. *Scientific Reports* 6:23196,
 10.1038/srep23196, 2016.
 
+Moldwin, T., Kalmenson, M. and Segev, I.. Asymmetric voltage
+attenuation in dendrites can enable hierarchical heterosynaptic
+plasticity. *eNeuro* 1010.1523/ENEURO.0014-23.2023, 2023.
+
 Moldwin, T. and Segev, I.. Perceptron learning and classification
 in a modeled cortical pyramidal cell. *Frontiers in Computational
 Neuroscience* 1410.3389/fncom.2020.00033, 2020.
@@ -8488,6 +9999,11 @@ Mondragón-González, S. L. and Burguière, E.. Bio-inspired
 benchmark generator for extracellular multi-unit recordings.
 *Scientific Reports* 7:43253, 10.1038/srep43253, 2017.
 
+Moolchand, P., Jones, S. R. and Frank, M. J.. Biophysical and
+architectural mechanisms of subthalamic theta under response
+conflict. *Journal of Neuroscience* 42:4470-4487,
+10.1523/JNEUROSCI.2433-19.2022, 2022.
+
 Moore, J.. Enhancing the Hodgkin-Huxley equations: simulations
 based on the first publication in the Biophysical Journal.
 *Biophysical Journal* 109:1317 - 1320,
@@ -8498,13 +10014,13 @@ calcium binding on phasic synaptic transmitter release. In:
 *Calcium, Neuronal Function, and Transmitter Release*, edited by
 Rahamimoff, R. and Katz, B.. Martinus Nijhoff, 1986, pp. 115-140.
 
-Moore, J. W. and Stuart, A. E.. `Neurons in
-Action <http://neuron.duke.edu/>`__\ *: Computer Simulations with
-NeuroLab*. Sunderland, MA: address, Sinauer Associates, 2000.
+Moore, J. W. and Stuart, A. E.. *Neurons in Action: Computer
+Simulations with NeuroLab*. Sunderland, MA: address, Sinauer
+Associates, 2000.
 
-Moore, J. W. and Stuart, A. E.. `Neurons in
-Action <http://neuron.duke.edu/>`__\ *2: Tutorials and Simulations
-using NEURON*. Sunderland, MA: address, Sinauer Associates, 2007.
+Moore, J. W. and Stuart, A. E.. *Neurons in Action 2: Tutorials
+and Simulations using NEURON*. Sunderland, MA: address, Sinauer
+Associates, 2007.
 
 Moore, J. J., Ravassard, P. M., Ho, D., Acharya, L., Kees, A. L.,
 Vuong, C. and Mehta, M. R.. Dynamics of cortical dendritic
@@ -8518,6 +10034,12 @@ effects on precision and frequency of a model pacemaker network.
 Moradi, F.. Information coding and oscillatory activity in synfire
 neural networks with and without inhibitory coupling. *Biological
 Cybernetics* 91:283-294, 2004.
+
+Moradi, K., Aldarraji, Z., Luthra, M., Madison, G. P. and Ascoli,
+G. A.. Normalized unitary synaptic signaling of the hippocampus
+and entorhinal cortex predicted by deep learning of experimental
+recordings. *Communications Biology* 5:418,
+10.1038/s42003-022-03329-5, 2022.
 
 Moradi, K., Kaka, G. and Gharibzadeh, S.. The role of passive
 normalization, voltage-gated channels and synaptic scaling in
@@ -8596,6 +10118,12 @@ explained by somatodendritic excitability in rat substantia nigra
 dopaminergic neurons. *Journal of Neuroscience* 39:5044-5063,
 10.1523/JNEUROSCI.2781-18.2019, 2019.
 
+Moubarak, E., Inglebert, Y., Tell, F. and Goaillard, J. M..
+Morphological determinants of cell-to-cell variations in action
+potential dynamics in substantia nigra dopaminergic neurons.
+*Journal of Neuroscience* 40:7530-7546,
+10.1523/JNEUROSCI.2331-21.2022, 2022.
+
 Moulin, C., Glière, A., Barbier, D., Joucla, S., Yvert, B.,
 Mailley, P. and Guillemaud, R.. A new 3-D finite-element model
 based on thin-film approximation for microelectrode array
@@ -8617,6 +10145,17 @@ Mousa, M. H. and Elbasiouny, S. M.. Estimating the effects of
 slicing on the electrophysiological properties of spinal
 motoneurons under normal and disease conditions. *Journal of
 Neurophysiology* 125:1450-1467, 10.1152/jn.00543.2020, 2021.
+
+Mousa, M. H., Wages, N. P. and Elbasiouny, S. M.. Onion skin is
+not a universal firing pattern for spinal motoneurons: simulation
+study. *Journal of Neurophysiology* 132:240-258,
+10.1152/jn.00479.2023, 2024.
+
+Moustafa, M., Mousa, M. H., Saad, M. S., Basha, T. and Elbasiouny,
+S. M.. Bifurcation analysis of motoneuronal excitability
+mechanisms under normal and ALS conditions.. *Frontiers in
+Cellular Neuroscience* 17:1093199, 10.3389/fncel.2023.1093199,
+2023.
 
 Moyer, J. T., Halterman, B. L., Finkel, L. H. and Wolf, J. A..
 Lateral and feedforward inhibition suppress asynchronous activity
@@ -8662,6 +10201,11 @@ Muller, S. Z., Zadina, A. N., Abbott, L. F. and Sawtell, N. B..
 Continual learning in a multi-layer network of an electric fish.
 *Cell* 179:1382-1392.e10, 10.1016/j.cell.2019.10.020, 2019.
 
+Müller-Komorowska, D., Kuru, B., Beck, H. and Braganza, O.. Phase
+information is conserved in sparse, synchronous
+population-rate-codes via phase-to-rate recoding. *Nature
+Communications* 14:6106, 10.1038/s41467-023-41803-8, 2023.
+
 Müllner, F. E., Wierenga, C. J. and Bonhoeffer, T.. Precision of
 inhibition: dendritic inhibition by individual GABAergic synapses
 on hippocampal pyramidal cells is confined in space and time.
@@ -8697,6 +10241,16 @@ computational study of suppression of sharp wave ripple complexes
 by controlling calcium and gap junctions in pyramidal cells.
 *Bioengineered* 12:2603-2615, 10.1080/21655979.2021.1936894, 2021.
 
+Mushtaq, M., Marshall, L., Bazhenov, M., Mölle, M. and Martinetz,
+T.. Differential thalamocortical interactions in slow and fast
+spindle generation: a computational model. *PLoS One* 17:e0277772,
+10.1371/journal.pone.0277772, 2022.
+
+Mushtaq, M., Marshall, L., Ul Haq, R. and Martinetz, T.. Possible
+mechanisms to improve sleep spindles via closed loop stimulation
+during slow wave sleep: a computational study. *PLoS One*
+19:e0306218, 10.1371/journal.pone.0306218, 2024.
+
 Musselman, E. D., Cariello, J. E., Grill, W. M. and Pelot, N. A..
 ASCENT (Automated Simulations to Characterize Electrical Nerve
 Thresholds): a pipeline for sample-specific computational modeling
@@ -8704,10 +10258,31 @@ of electrical stimulation of peripheral nerves. *PLoS
 Computational Biology* 17:e1009285, 10.1371/journal.pcbi.1009285,
 2021.
 
+Musselman, E. D., Pelot, N. A. and Grill, W. M.. Validated
+computational models predict vagus nerve stimulation thresholds in
+preclinical animals and humans. *Journal of Neural Engineering*
+2010.1088/1741-2552/acda64, 2023.
+
+Mustafá, E. R., Gambeta, E., Stringer, R. N., Souza, I. A.,
+Zamponi, G. W. and Weiss, N.. Electrophysiological and
+computational analysis of Cav3.2 channel variants associated with
+familial trigeminal neuralgia. *Molecular Brain* 15:91,
+10.1186/s13041-022-00978-9, 2022.
+
 Mustafá, E. R., Gonzalez, S. C. and Raingo, J.. Ghrelin
 selectively inhibits CaV3.3 subtype of low-voltage-gated calcium
 channels. *Molecular Neurobiology* 57:722-735,
 10.1007/s12035-019-01738-y, 2019.
+
+Mustafá, E. R., McCarthy, C. I., Portales, A. E., Cordisco
+Gonzalez, S., Rodríguez, S. S. and Raingo, J.. Constitutive
+activity of the dopamine D5 receptor, highly expressed in CA1
+hippocampal neurons, selectively reduces Cav3.2 and Cav3.3
+currents. *British Journal of Pharmacology* 180:1210-1231,
+10.1111/bph.16006, 2023.
+
+Mysin, I.. A model of the CA1 field rhythms. *eNeuro*
+810.1523/ENEURO.0192-21.2021, 2021.
 
 Nadim, F., Manor, Y., Nusbaum, M. P. and Marder, E.. Frequency
 regulation of a slow rhythm by a fast periodic input. *Journal of
@@ -8731,11 +10306,23 @@ Nair, D. R., Burgess, R. C., McIntyre, C. C. and Luders, H. O..
 Chronic subdural electrodes in the management of epilepsy.
 *Clinical Neurophysiology* 119:11-28, 2008.
 
+Nakano, H., Majumdar, A. and Omori, T.. Data-driven estimation of
+spatial electrical property of multi-compartment models with
+neuronal morphology by replica exchange Monte Carlo method.
+*Nonlinear Theory and Its Applications, IEICE* 2024.
+
 Nakano, T., Yoshimoto, J. and Doya, K.. A model-based prediction
 of the calcium responses in the striatal synaptic spines depending
 on the timing of cortical and dopaminergic inputs and
 post-synaptic spikes. *Frontiers in Computational Neuroscience*
 7:119, 10.3389/fncom.2013.00119, 2013.
+
+Nandi, A., Chartrand, T., Geit, W. V., Buchin, A., Yao, Z., Lee,
+S. Y., Wei, Y., Kalmbach, B., Lee, B., Lein, E., Berg, J., Sümbül,
+U., Koch, C., Tasic, B. and Anastassiou, C. A.. Single-neuron
+models linking electrophysiology, morphology, and transcriptomics
+across cortical cell types. *Cell Reports* 40:111176,
+10.1016/j.celrep.2022.111176, 2022.
 
 Narayanan, R. and Chattarji, S.. Computational analysis of the
 impact of chronic stress on intrinsic and synaptic excitability in
@@ -8765,6 +10352,12 @@ Nardelli, P., Powers, R., Cope, T. C. and Rich, M. M.. Increasing
 motor neuron excitability to treat weakness in sepsis. *Annals of
 Neurology* 82:961-971, 10.1002/ana.25105, 2017.
 
+Nascimento, A. I., Da Silva, T. F., Fernandes, E. C., Luz, L. L.,
+Mar, F. M., Safronov, B. V. and Sousa, M. M.. Sensory neurons have
+an axon initial segment that initiates spontaneous activity in
+neuropathic pain. *Brain* 145:1632-1640, 10.1093/brain/awac078,
+2022.
+
 Nataraj, K., Le Roux, N., Nahmani, M., Lefort, S. and Turrigiano,
 G.. Visual deprivation suppresses L5 pyramidal neuron excitability
 by preventing the induction of intrinsic plasticity. *Neuron*
@@ -8775,6 +10368,13 @@ A., Averkin, R. G., Gambino, G., Cid, E. and de la Prida, L. M..
 Multimodal determinants of phase-locked dynamics across
 deep-superficial hippocampal sublayers during theta oscillations.
 *Nature Communications* 11:2217, 10.1038/s41467-020-15840-6, 2020.
+
+Nelson, A. D., Catalfio, A. M., Gupta, J. P., Min, L.,
+Caballero-Florán, R. N., Dean, K. P., Elvira, C. C., Derderian, K.
+D., Kyoung, H., Sahagun, A., Sanders, S. J., Bender, K. J. and
+Jenkins, P. M.. Physical and functional convergence of the autism
+risk genes Scn2a and Ank2 in neocortical pyramidal cell dendrites.
+*Neuron* 112:1133-1149.e6, 10.1016/j.neuron.2024.01.003, 2024.
 
 Nelson, M. T., Todorovic, S. M. and Perez-Reyes, E.. The role of
 T-type calcium channels in epilepsy and pain. *Current
@@ -8977,6 +10577,10 @@ small interaural time difference cue for sound source
 localization.. *Journal of Neuroscience* 28:7153-7164,
 10.1523/JNEUROSCI.4398-07.2008, 2008.
 
+Nolte, M., Gal, E., Markram, H. and Reimann, M. W.. Impact of
+higher order network structure on emergent cortical activity.
+*Network Neuroscience* 4:292-314, 10.1162/netn_a_00124, 2020.
+
 Nolte, M., Reimann, M. W., King, J. G., Markram, H. and Muller, E.
 B.. Cortical reliability amid noise and chaos. *Nature
 Communications* 10:3792, 10.1038/s41467-019-11633-8, 2019.
@@ -9012,10 +10616,20 @@ between anatomical and electrotonic structure. In: *Computational
 Neuroscience: Trends in Research 1995*, edited by Bower, J. M..
 San Diego: San Diego, Academic Press, 1996, pp. 423-428.
 
+O'Brien, F., Feetham, C. H., Staunton, C. A., Hext, K. and
+Barrett-Jolley, R.. Temperature modulates PVN pre-sympathetic
+neurones via transient receptor potential ion channels. *Frontiers
+in Pharmacology* 14:1256924, 10.3389/fphar.2023.1256924, 2023.
+
 O'Connor, S., Angelo, K. and Jacob, T. J. C.. Burst firing versus
 synchrony in a gap junction connected olfactory bulb mitral cell
 network model. *Frontiers in Computational Neuroscience* 6:75,
 10.3389/fncom.2012.00075, 2012.
+
+O'Donnell, C., Nolan, M. F. and van Rossum, M. C. W.. Dendritic
+spine dynamics regulate the long-term stability of synaptic
+plasticity. *Journal of Neuroscience* 31:16142-16156,
+10.1523/JNEUROSCI.2520-11.2011, 2011.
 
 O'Donnell, C. and van Rossum, M. C. W.. Systematic analysis of the
 contributions of stochastic voltage gated channels to neuronal
@@ -9031,6 +10645,25 @@ reveal opposing roles for the Na+/Ca2+ exchange current and
 Ca2+-activated K+ current during spike-timing dependent synaptic
 plasticity. *PLoS ONE* 15:e0230327, 10.1371/journal.pone.0230327,
 2020.
+
+Obi-Nagata, K., Suzuki, N., Miyake, R., MacDonald, M. L., Fish, K.
+N., Ozawa, K., Nagahama, K., Okimura, T., Tanaka, S., Kano, M.,
+Fukazawa, Y., Sweet, R. A. and Hayashi-Takagi, A.. Distorted
+neurocomputation by a small number of extra-large spines in
+psychiatric disorders. *Science Advances* 9:eade5973,
+10.1126/sciadv.ade5973, 2023.
+
+Oddo, C. M., Raspopovic, S., Artoni, F., Mazzoni, A., Spigler, G.,
+Petrini, F., Giambattistelli, F., Vecchio, F., Miraglia, F.,
+Zollo, L., Di Pino, G., Camboni, D., Carrozza, M. C.,
+Guglielmelli, E., Rossini, P. M., Faraguna, U. and Micera, S..
+Intraneural stimulation elicits discrimination of textural
+features by artificial fingertip in intact and amputee humans.
+*eLife* 5:e09148, 10.7554/eLife.09148, 2016.
+
+Ofer, N., Shefi, O. and Yaari, G.. Axonal tree morphology and
+signal propagation dynamics improve interneuron classification.
+*Neuroinformatics* 18:581-590, 10.1007/s12021-020-09466-8, 2020.
 
 Ohana, O., Portner, H. and Martin, K. A. C.. Fast recruitment of
 recurrent inhibition in the cat visual cortex. *PLoS ONE*
@@ -9050,10 +10683,22 @@ Ohura, S. and Kamiya, H.. Sodium channel-dependent and
 mouse hippocampal mossy fibers. *eNeuro* 5:ENEURO.0254-18.2018,
 10.1523/ENEURO.0254-18.2018, 2018b.
 
+Oláh, V. J., Goettemoeller, A. M., Rayaprolu, S., Dammer, E. B.,
+Seyfried, N. T., Rangaraju, S., Dimidschstein, J. and Rowan, M. J.
+M.. Biophysical Kv3 channel alterations dampen excitability of
+cortical PV interneurons and contribute to network
+hyperexcitability in early Alzheimer's. *eLife*
+1110.7554/eLife.75316, 2022a.
+
 Oláh, V. J., Lukacsovich, D., Winterer, J., Arszovszki, A.,
 Lőrincz, A., Nusser, Z., Földy, C. and Szabadics, J.. Functional
 specification of CCK+ interneurons by alternative isoforms of
 Kv4.3 auxiliary subunits. *eLife* 910.7554/eLife.58515, 2020.
+
+Oláh, V. J., Pedersen, N. P. and Rowan, M. J. M.. Ultrafast
+simulation of large-scale neocortical microcircuitry with
+biophysically realistic neurons. *eLife* 1110.7554/eLife.79535,
+2022b.
 
 Oláh, V. J., Tarcsay, G. and Brunner, J.. Small size of recorded
 neuronal structures confines the accuracy in direct axonal voltage
@@ -9108,6 +10753,14 @@ action potentials in rat olfactory bulb mitral and granule cell
 neurites. *Frontiers in Cellular Neuroscience* 11:50,
 10.3389/fncel.2017.00050, 2017.
 
+Oniani, T., Vinnenberg, L., Chaudhary, R., Schreiber, J. A.,
+Riske, K., Williams, B., Pape, H.-C., White, J. A., Junker, A.,
+Seebohm, G., Meuth, S. G., Hundehege, P., Budde, T. and Zobeiri,
+M.. Effects of axonal demyelination, inflammatory cytokines and
+divalent cation chelators on thalamic HCN channels and oscillatory
+bursting. *International Journal of Molecular Sciences* 23:6285,
+10.3390/ijms23116285, 2022.
+
 van Ooyen, A., Duijnhouwer, J., Remme, M. W. H. and van Pelt, J..
 The effect of dendritic topology on firing patterns in model
 neurons. *Network* 13:311-325, 2002.
@@ -9117,6 +10770,16 @@ topology influence burst firing in pyramidal cells. In: *The
 Computing Dendrite*, edited by Cuntz, H., Remme, M. and
 Torben-Nielsen, B.. , 2014, pp. 381-395.
 
+Oprisan, S. A.. Biophysical modeling of excitable cells - a new
+approach to undergraduate computational biology curriculum
+development [Online]. *Computational Science -- ICCS 2021*
+:611-625, 10.1007/978-3-030-77980-1_46, 2021.
+
+Oprisan, S. A.. Interdisciplinary curriculum for computational
+neuroscience at primarily undergraduate institutions. *Journal of
+Computational Science* 61:101642, 10.1016/j.jocs.2022.101642,
+2022.
+
 Opsal, N., Canfield, P., Banks, T. and Nair, S. S.. An efficient
 pipeline for biophysical modeling of neurons [Online]. *Proc. 10th
 Int. IEEE/EMBS Conf. Neural Engineering* :99-102,
@@ -9125,7 +10788,7 @@ Int. IEEE/EMBS Conf. Neural Engineering* :99-102,
 Ordemann, G. J., Apgar, C. J., Chitwood, R. A. and Brager, D. H..
 Altered A-type potassium channel function impairs dendritic spike
 initiation and temporoammonic long-term potentiation in Fragile X
-syndrome. *Journal of Neuroscience*
+syndrome. *Journal of Neuroscience* 41:5947-5962,
 10.1523/JNEUROSCI.0082-21.2021, 2021.
 
 Orio, P., Parra, A., Madrid, R., González, O., Belmonte, C. and
@@ -9184,6 +10847,12 @@ Otopalik, A. G., Sutton, A. C., Banghart, M. and Marder, E.. When
 complex neuronal structures may not matter. *eLife* 6:e23508,
 10.7554/eLife.23508, 2017b.
 
+Otor, Y., Achvat, S., Cermak, N., Benisty, H., Abboud, M., Barak,
+O., Schiller, Y., Poleg-Polsky, A. and Schiller, J.. Dynamic
+compartmental computations in tuft dendrites of layer 5 neurons
+during motor behavior. *Science* 376:267-275,
+10.1126/science.abn1421, 2022.
+
 Ouanounou, G., Baux, G. and Bal, T.. A novel synaptic plasticity
 rule explains homeostasis of neuromuscular transmission. *eLife*
 5:e12190, 10.7554/eLife.12190, 2016.
@@ -9219,6 +10888,17 @@ pattern of a burst firing layer 5 neocortical neuron. *Proceedings
 of the Romanian Academy Series A-Mathematics Physics Technical
 Sciences Information Science* 8:65-70, 2007.
 
+Pahlavan, B., Buitrago, N. and Santamaria, F.. Macromolecular rate
+theory explains the temperature dependence of membrane conductance
+kinetics. *Biophysical Journal* 122:522-532,
+10.1016/j.bpj.2022.12.033, 2023.
+
+Paknahad, J., Humayun, M. and Lazzi, G.. Selective activation of
+retinal ganglion cell subtypes through targeted electrical
+stimulation parameters. *IEEE Transactions on Neural Systems and
+Rehabilitation Engineering* 30:350-359,
+10.1109/TNSRE.2022.3149967, 2022.
+
 Paknahad, J., Kosta, P., Bouteiller, J.-M. C., Humayun, M. S. and
 Lazzi, G.. Mechanisms underlying activation of retinal bipolar
 cells through targeted electrical stimulation: a computational
@@ -9227,16 +10907,15 @@ study. *Journal of Neural Engineering* 1810.1088/1741-2552/ac3dd8,
 
 Paknahad, J., Kosta, P., Iseri, E., Farzad, S., Bouteiller, J.-M.
 C., Humayun, M. S. and Lazzi, G.. Modeling ON cone bipolar cells
-for electrical stimulation [Online]. *Proc. 43rd Annual Int. Conf.
-of the IEEE Engineering in Medicine Biology Society (EMBC)*
-:6547-6550, 10.1109/EMBC46164.2021.9629884, 2021b.
+for electrical stimulation [Online]. *IEEE Engineering in Medicine
+and Biology Society. Annual Conference* :6547-6550,
+10.1109/EMBC46164.2021.9629884, 2021b.
 
 Paknahad, J., Loizos, K., Humayun, M. and Lazzi, G..
 Responsiveness of retinal ganglion cells through frequency
 modulation of electrical stimulation: a computational modeling
-study. *Annual International Conference of the IEEE Engineering in
-Medicine and Biology Society* 2020:3393-3398,
-10.1109/EMBC44109.2020.9176125, 2020a.
+study. *IEEE Engineering in Medicine and Biology Society. Annual
+Conference* 2020:3393-3398, 10.1109/EMBC44109.2020.9176125, 2020a.
 
 Paknahad, J., Loizos, K., Humayun, M. and Lazzi, G.. Targeted
 stimulation of retinal ganglion cells in epiretinal prostheses: a
@@ -9266,6 +10945,11 @@ dendritic spines during action potentials and synaptic input.
 Pan, Y. and Cummins, T. R.. Distinct functional alterations in
 SCN8A epilepsy mutant channels. *Journal of Physiology*
 598:381-401, 10.1113/JP278952, 2020.
+
+Panagiotou, S., Sidiropoulos, H., Soudris, D., Negrello, M. and
+Strydis, C.. EDEN: a high-performance, general-purpose,
+neuroml-based neural simulator. *Frontiers in Neuroinformatics*
+16:724336, 10.3389/fninf.2022.724336, 2022.
 
 Papasavvas, C. A., Parrish, R. R. and Trevelyan, A. J..
 Propagating activity in neocortex, mediated by gap junctions and
@@ -9341,12 +11025,22 @@ Smirnakis, S. M.. Contribution of apical and basal dendrites to
 orientation encoding in mouse V1 L2/3 pyramidal neurons. *Nature
 Communications* 10:5372, 10.1038/s41467-019-13029-0, 2019a.
 
+Park, K., Chung, H., Im, C. and Jun, S. C.. Entrainment effects
+upon synaptically connected microcircuit in transcranial
+alternating current stimulation [Online]. *2023 11th International
+IEEE/EMBS Conference on Neural Engineering (NER)* :1-4,
+10.1109/ner52421.2023.10123711, 2023.
+
 Park, K., Lee, J., Jang, H. J., Richards, B. A., Kohl, M. M. and
 Kwag, J.. Optogenetic activation of parvalbumin and somatostatin
 interneurons selectively restores theta-nested gamma oscillations
 and oscillation-induced spike timing-dependent long-term
 potentiation impaired by amyloid β oligomers. *BMC Biology* 18:7,
 10.1186/s12915-019-0732-7, 2020b.
+
+Park, K., Yeo, Y., Shin, K. and Kwag, J.. Egocentric neural
+representation of geometric vertex in the retrosplenial cortex.
+*Nature Communications* 15:7156, 10.1038/s41467-024-51391-w, 2024.
 
 Park, S. and Kwag, J.. Dendritic-targeting interneuron controls
 spike timing of hippocampal CA1 pyramidal neuron via activation of
@@ -9402,7 +11096,7 @@ Computational Biology and Bioinformatics* 16:1007-1019,
 
 Paucar, M., Ågren, R., Li, T., Lissmats, S., Bergendal, Å.,
 Weinberg, J., Nilsson, D., Savichetva, I., Sahlholm, K., Nilsson,
-J. and Svenningsson, P.. V374a kcnd3 pathogenic variant associated
+J. and Svenningsson, P.. V374a KCND3 pathogenic variant associated
 with paroxysmal ataxia exacerbations. *Neurology Genetics* 7:e546,
 10.1212/NXG.0000000000000546, 2021.
 
@@ -9428,6 +11122,12 @@ Payne, H. L., French, R. L., Guo, C. C., Nguyen-Vu, T. B.,
 Manninen, T. and Raymond, J. L.. Cerebellar Purkinje cells control
 eye movements with a rapid rate code that is invariant to spike
 irregularity. *eLife* 8:e37102, 10.7554/eLife.37102, 2019.
+
+Peace, S. T., Johnson, B. C., Werth, J. C., Li, G., Kaiser, M. E.,
+Fukunaga, I., Schaefer, A. T., Molnar, A. C. and Cleland, T. A..
+Coherent olfactory bulb gamma oscillations arise from coupling
+independent columnar oscillators. *Journal of Neurophysiology*
+131:492-508, 10.1152/jn.00361.2023, 2024.
 
 Pei, Z., Xiao, Y., Meng, J., Hudmon, A. and Cummins, T. R..
 Cardiac sodium channel palmitoylation regulates channel
@@ -9463,6 +11163,12 @@ Peña, E., Pelot, N. A. and Grill, W. M.. Non-monotonic kilohertz
 frequency neural block thresholds arise from amplitude- and
 frequency-dependent charge imbalance. *Scientific Reports*
 11:5077, 10.1038/s41598-021-84503-3, 2021.
+
+Peña, E., Pelot, N. A. and Grill, W. M.. Computational models of
+compound nerve action potentials: Efficient filter-based methods
+to quantify effects of tissue conductivities, conduction distance,
+and nerve fiber parameters. *PLoS Computational Biology*
+20:e1011833, 10.1371/journal.pcbi.1011833, 2024.
 
 Peña, E., Zhang, S., Deyo, S., Xiao, Y. and Johnson, M. D..
 Particle swarm optimization for programming deep brain stimulation
@@ -9545,10 +11251,21 @@ are intrinsically stable and originate from distal tuft regions..
 *European Journal of Neuroscience* 36:2917-2925,
 10.1111/j.1460-9568.2012.08199.x, 2012.
 
+Petersson, M. E., Obreja, O., Lampert, A., Carr, R. W., Schmelz,
+M. and Fransén, E.. Differential axonal conduction patterns of
+mechano-sensitive and mechano-insensitive nociceptors--a combined
+experimental and modelling study. *PloS One* 9:e103556,
+10.1371/journal.pone.0103556, 2014.
+
 Petersson, M. E., Yoshida, M. and Fransén, E. A.. Low-frequency
 summation of synaptically activated transient receptor potential
 channel-mediated depolarizations. *European Journal of
 Neuroscience* 34:578-593, 10.1111/j.1460-9568.2011.07791.x, 2011.
+
+Petousakis, K.-E., Park, J., Papoutsi, A., Smirnakis, S. and
+Poirazi, P.. Modeling apical and basal tree contribution to
+orientation selectivity in a mouse primary visual cortex layer 2/3
+pyramidal cell. *eLife* 1210.7554/eLife.91627, 2023.
 
 Petrini, E. M., Nieus, T., Ravasenga, T., Succol, F., Guazzi, S.,
 Benfenati, F. and Barberis, A.. Influence of GABAAR monoliganded
@@ -9839,6 +11556,11 @@ Gerstner, W.. Automated high-throughput characterization of single
 neurons by means of simplified spiking models. *PLoS Computational
 Biology* 11:e1004275, 10.1371/journal.pcbi.1004275, 2015.
 
+Pratiwi, A., Kekesi, O. and Suaning, G.. Computational modeling of
+retinal neurons for visual prosthesis research - fundamental
+approaches. *Journal of Visualized Experiments* 10.3791/63792,
+2022.
+
 Presannan, A., Rajendran, A., Nair, B. and Diwakar, S..
 Reproducing the firing properties of a cerebellum deep cerebellar
 nucleus with a multi-compartmental morphologically realistic
@@ -9872,6 +11594,12 @@ D., Schemmel, J. and Meier, K.. Probabilistic inference in
 discrete spaces can be implemented into networks of LIF neurons.
 *Frontiers in Computational Neuroscience* 9:13,
 10.3389/fncom.2015.00013, 2015.
+
+Proddutur, A., Nguyen, S., Yeh, C.-W., Gupta, A. and Santhakumar,
+V.. Reclusive chandeliers: functional isolation of dentate
+axo-axonic cells after experimental status epilepticus. *Progress
+in Neurobiology* 231:102542, 10.1016/j.pneurobio.2023.102542,
+2023.
 
 Proddutur, A., Yu, J., Elgammal, F. S. and Santhakumar, V..
 Seizure-induced alterations in fast-spiking basket cell GABA
@@ -9981,6 +11709,10 @@ C.. Slow NMDA-mediated excitation accelerates offset-response
 latencies generated via a post-inhibitory rebound mechanism.
 *eNeuro* 6:ENEURO.0106-19.2019, 10.1523/ENEURO.0106-19.2019, 2019.
 
+Rajbanshi, B. and Guruacharya, A.. Panama: an open-source
+educational app for ion channel biophysics simulation. *Frontiers
+in Neuroinformatics* 16:813940, 10.3389/fninf.2022.813940, 2022.
+
 Rajendran, A., Thankamani, A., Nirmala, N., Nair, B. and Diwakar,
 S.. Computational neuroscience of substantia nigra circuit and
 dopamine modulation during Parkinson's disease [Online]. *2017
@@ -10050,6 +11782,11 @@ investigation of effects of UP state on EPSP in striatal medium
 spiny neurons [Online]. *2012 International Conference on
 Biomedical Engineering*, 10.1109/icobe.2012.6178980, 2012.
 
+Ranieri, C. M., Moioli, R. C., Vargas, P. A. and Romero, R. A. F..
+A neurorobotics approach to behaviour selection based on human
+activity recognition. *Cognitive Neurodynamics*
+10.1007/s11571-022-09886-z, 2022.
+
 Ranieri, C. M., Pimentel, J. M., Romano, M. R., Elias, L. A.,
 Romero, R. A. F., Lones, M. A., Araujo, M. F. P., Vargas, P. A.
 and Moioli, R. C.. A data-driven biophysical computational model
@@ -10066,6 +11803,11 @@ Constandinou, T. G.. Fiber size-selective stimulation using action
 potential filtering for a peripheral nerve interface: a simulation
 study. *IEEE Engineering in Medicine and Biology Society. Annual
 Conference* 2015:3411-3414, 10.1109/EMBC.2015.7319125, 2015.
+
+Rapp, J., Braun, P., Hemmert, W. and Gleich, B.. Optimal pulse
+configuration for peripheral inductive nerve stimulation.
+*Biomedical Physics & Engineering Express*
+810.1088/2057-1976/ac52d8, 2022.
 
 Rapp, M., Yarom, Y. and Segev, I.. Modeling back propagating
 action potential in weakly excitable dendrites of neocortical
@@ -10090,6 +11832,10 @@ model for the stimulation of rat sciatic nerve using a transverse
 intrafascicular multichannel electrode. *IEEE Transactions on
 Neural Systems and Rehabilitation Engineering* 19:333-344,
 10.1109/TNSRE.2011.2151878, 2011.
+
+Rathour, R. K. and Kaphzan, H.. Voltage-gated ion channels and the
+variability in information transfer. *Frontiers in Cellular
+Neuroscience* 1610.3389/fncel.2022.906313, 2022.
 
 Rathour, R. K. and Narayanan, R.. Inactivating ion channels
 augment robustness of subthreshold intrinsic response dynamics to
@@ -10130,9 +11876,9 @@ effects on impulse generation and conduction in single myelinated
 sciatic-nerve axons in frog. *Anesthesia and Analgesia*
 75:906-921, 1992.
 
-Recugnat, M., Undurraga, J. A. and McAlpine, D.. Spike-Rate
-Adaptation in a Computational Model of Human-Shaped Spiral
-Ganglion Neurons.. *IEEE transactions on bio-medical engineering*
+Recugnat, M., Undurraga, J. A. and McAlpine, D.. Spike-rate
+adaptation in a computational model of human-shaped spiral
+ganglion neurons. *IEEE Transactions on Bio-Medical Engineering*
 69:602-612, 10.1109/TBME.2021.3102129, 2022.
 
 Reetz, O., Stadler, K. and Strauss, U.. Protein kinase C
@@ -10166,6 +11912,12 @@ Chindemi, G., Dłotko, P., Levi, R., Hess, K. and Markram, H..
 Cliques of neurons bound into cavities provide a missing link
 between structure and function. *Frontiers In Computational
 Neuroscience* 11:48, 10.3389/fncom.2017.00048, 2017.
+
+Reimann, M. W., Riihimäki, H., Smith, J. P., Lazovskis, J.,
+Pokorny, C. and Levi, R.. Topology of synaptic connectivity
+constrains neuronal stimulus representation, predicting two
+complementary coding strategies. *PLoS ONE* 17:e0261702,
+10.1371/journal.pone.0261702, 2022.
 
 Reimer, I. C. G., Staude, B., Boucsein, C. and Rotter, S.. A new
 method to infer higher-order spike correlations from membrane
@@ -10207,6 +11959,12 @@ Reuveni, I., Saar, D. and Barkai, E.. A novel whole-cell mechanism
 for long-term memory enhancement. *PLoS ONE* 8:e68131,
 10.1371/journal.pone.0068131, 2013.
 
+Reva, M., Rössert, C., Arnaudon, A., Damart, T., Mandge, D.,
+Tuncel, A., Ramaswamy, S., Markram, H. and Van Geit, W.. A
+universal workflow for creation, validation, and generalization of
+detailed neuronal models. *Patterns* 4:100855,
+10.1016/j.patter.2023.100855, 2023.
+
 Rich, S., Moradi Chameh, H., Sekulic, V., Valiante, T. A. and
 Skinner, F. K.. Modeling reveals human-rodent differences in
 h-current kinetics influencing resonance in cortical layer 5
@@ -10226,6 +11984,11 @@ Richmond, P., Cope, A., Gurney, K. and Allerton, D. J.. From model
 specification to simulation of biologically constrained networks
 of spiking neurons. *Neuroinformatics* 12:307-323,
 10.1007/s12021-013-9208-z, 2014.
+
+Rindner, D. J., Proddutur, A. and Lur, G.. Cell-type-specific
+integration of feedforward and feedback synaptic inputs in the
+posterior parietal cortex. *Neuron* 110:3760-3773.e5,
+10.1016/j.neuron.2022.08.019, 2022.
 
 Rinker, J. A., Fulmer, D. B., Trantham-Davidson, H., Smith, M. L.,
 Williams, R. W., Lopez, M. F., Randall, P. K., Chandler, L. J.,
@@ -10272,6 +12035,11 @@ Roberts, P. D.. Modeling inhibitory plasticity in the
 electrosensory system of Mormyrid electric fish. *Journal of
 Neurophysiology* 84:2035-2047, 2000.
 
+Roberts, P., Spiros, A. and Geerts, H.. A humanized clinically
+calibrated quantitative systems pharmacology model for hypokinetic
+motor symptoms in Parkinson's disease. *Frontiers in Pharmacology*
+7:6, 10.3389/fphar.2016.00006, 2016.
+
 Roberts, P. D. and Leen, T. K.. Anti-Hebbian
 spike-timing-dependent plasticity and adaptive sensory processing.
 *Frontiers in Computational Neuroscience* 4:156,
@@ -10289,15 +12057,25 @@ of thalamic cells caused by cortical inactivation. *Journal of
 Computational Neuroscience* 34:461-476, 10.1007/s10827-012-0430-8,
 2013.
 
+Rogers, E. R., Capogrosso, M. and Lempka, S. F.. Biophysics of
+frequency-dependent variation in paresthesia and pain relief
+during spinal cord stimulation. *Journal of Neuroscience*
+4410.1523/JNEUROSCI.2199-23.2024, 2024.
+
+Rogers, E. R., Mirzakhalili, E. and Lempka, S. F.. Model-based
+analysis of subthreshold mechanisms of spinal cord stimulation for
+pain. *Journal of Neural Engineering* 2010.1088/1741-2552/ad0858,
+2023.
+
 Rogers, E. R., Zander, H. J. and Lempka, S. F.. Influence of
 morphology and waveform parameters on the neural response to
 spinal cord stimulation [Online]. *Proc. 10th Int. IEEE/EMBS Conf.
-Neural Engineering* :259-262, 10.1109/NER49283.2021.9441267,
-2021a.
+Neural Engineering* :259-262, 10.1109/NER49283.2021.9441267, 2021.
 
 Rogers, E. R., Zander, H. J. and Lempka, S. F.. Neural recruitment
 during conventional, burst, and 10-kHz spinal cord stimulation for
-pain. *The Journal of Pain* 10.1016/j.jpain.2021.09.005, 2021b.
+pain. *Journal of Pain* 23:434-449, 10.1016/j.jpain.2021.09.005,
+2022.
 
 Rojas, P., Akrouh, A., Eisenman, L. N. and Mennerick, S..
 Differential effects of axon initial segment and somatodendritic
@@ -10309,6 +12087,20 @@ Romanenko, S., Harvey, A. R., Hool, L., Fan, S. and Wallace, V.
 P.. Millimeter wave radiation activates leech nociceptors via
 TRPV1-like receptor sensitization. *Biophysical Journal*
 116:2331-2345, 10.1016/j.bpj.2019.04.021, 2019.
+
+Romani, A., Antonietti, A., Bella, D., Budd, J., Giacalone, E.,
+Kurban, K., Sáray, S., Abdellah, M., Arnaudon, A., Boci, E.,
+Colangelo, C., Courcol, J.-D., Delemontex, T., Ecker, A., Falck,
+J., Favreau, C., Gevaert, M., Hernando, J. B., Herttuainen, J.,
+Ivaska, G., Kanari, L., Kaufmann, A.-K., King, J. G., Kumbhar, P.,
+Lange, S., Lu, H., Lupascu, C. A., Migliore, R., Petitjean, F.,
+Planas, J., Rai, P., Ramaswamy, S., Reimann, M. W., Riquelme, J.
+L., Román Guerrero, N., Shi, Y., Sood, V., Sy, M. F., Van Geit,
+W., Vanherpe, L., Freund, T. F., Mercer, A., Muller, E.,
+Schürmann, F., Thomson, A. M., Migliore, M., Káli, S. and Markram,
+H.. Community-based reconstruction and simulation of a full-scale
+model of the rat hippocampus CA1 region. *PLoS Biology*
+22:e3002861, 10.1371/journal.pbio.3002861, 2024.
 
 Romani, A., Marchetti, C., Bianchi, D., Leinekugel, X., Poirazi,
 P., Migliore, M. and Marie, H.. Computational modeling of the
@@ -10325,13 +12117,25 @@ Medicine Biology Society* :3638-3641,
 
 Romaro, C., Najman, F. A., Lytton, W. W., Roque, A. C. and
 Dura-Bernal, S.. NetPyNE implementation and scaling of the
-Potjans-Diesmann cortical microcircuit model.. *Neural
-Computation* 33:1993-2032, 10.1162/neco_a_01400, 2021.
+Potjans-Diesmann cortical microcircuit model. *Neural Computation*
+33:1993-2032, 10.1162/neco_a_01400, 2021.
+
+Romeni, S., Losanno, E., Koert, E., Pierantoni, L.,
+Delgado-Martinez, I., Navarro, X. and Micera, S.. Combining
+biophysical models and machine learning to optimize implant
+geometry and stimulation protocol for intraneural electrodes.
+*Journal of Neural Engineering* 2010.1088/1741-2552/ace219, 2023.
 
 Romeni, S., Valle, G., Mazzoni, A. and Micera, S.. Tutorial: a
 computational framework for the design and optimization of
 peripheral neural interfaces. *Nature Protocols* 15:3129-3153,
 10.1038/s41596-020-0377-6, 2020.
+
+Rosenberg, N., Reva, M., Binda, F., Restivo, L., Depierre, P.,
+Puyal, J., Briquet, M., Bernardinelli, Y., Rocher, A.-B., Markram,
+H. and Chatton, J.-Y.. Overexpression of UCP4 in astrocytic
+mitochondria prevents multilevel dysfunctions in a mouse model of
+Alzheimer's disease. *Glia* 71:957-973, 10.1002/glia.24317, 2023.
 
 Ross, M. D., Chimento, T., Doshay, D. and Cheng, R..
 Computer-assisted 3-dimensional reconstruction and simulations of
@@ -10380,7 +12184,7 @@ and Buesser, P.. Springer Berlin Heidelberg, 2013, pp. 20-29.
 
 Rowan, M. J. M., DelCanto, G., Yu, J. J., Kamasawa, N. and
 Christie, J. M.. Synapse-level determination of action potential
-duration by K(+) channel clustering in axons. *Neuron* 91:370-383,
+duration by K+ channel clustering in axons. *Neuron* 91:370-383,
 10.1016/j.neuron.2016.05.035, 2016.
 
 Rowan, M. S., Neymotin, S. A. and Lytton, W. W..
@@ -10392,6 +12196,10 @@ Roy, A. and Narayanan, R.. Spatial information transfer in
 hippocampal place cells depends on trial-to-trial variability,
 symmetry of place-field firing, and biophysical heterogeneities.
 *Neural Networks* 142:636-660, 10.1016/j.neunet.2021.07.026, 2021.
+
+Roy, R. and Narayanan, R.. Ion-channel degeneracy and
+heterogeneities in the emergence of complex spike bursts in CA3
+pyramidal neurons. *Journal of Physiology* 10.1113/JP283539, 2022.
 
 Royeck, M., Horstmann, M.-T., Remy, S., Reitze, M., Yaari, Y. and
 Beck, H.. Role of axonal NaV1.6 sodium channels in action
@@ -10568,6 +12376,11 @@ lateral sclerosis alter Ca(v)3.2 T-type calcium channel activity
 and reticular thalamic neuron firing. *Channels* 10:466-477,
 10.1080/19336950.2016.1204497, 2016.
 
+Saadati, M., Khodaei, S. S. and Jamali, Y.. The dance of neurons:
+exploring nonlinear dynamics in brain networks. *Communications in
+Nonlinear Science and Numerical Simulation* 137:108133,
+10.1016/j.cnsns.2024.108133, 2024.
+
 Sadashivaiah, V., Sacre, P., Guan, Y., Anderson, W. S. and Sarma,
 S. V.. Modeling electrical stimulation of mammalian nerve fibers:
 a mechanistic versus probabilistic approach. *IEEE Engineering in
@@ -10585,6 +12398,12 @@ S. V.. Modeling the interactions between stimulation and
 physiologically induced APs in a mammalian nerve fiber: dependence
 on frequency and fiber diameter. *Journal of Computational
 Neuroscience* 45:193-206, 10.1007/s10827-018-0703-y, 2018b.
+
+Sadeghi, F., Popova, M., Páscoa Dos Santos, F., Zittel, S. and
+Hilgetag, C. C.. A multi-network model of Parkinson’s disease
+tremor: exploring the finger-dimmer-switch theory and role of
+dopamine in thalamic self-inhibition. *Journal of Neural
+Engineering* 21:056032, 10.1088/1741-2552/ad7f8a, 2024.
 
 Sadleir, R. J., Grant, S. C. and Woo, E. J.. Can high-field MREIT
 be used to directly detect neural activity? Theoretical
@@ -10616,9 +12435,25 @@ Saftenku, E. E.. Modeling of slow glutamate diffusion and AMPA
 receptor activation in the cerebellar glomerulus. *Journal of
 Theoretical Biology* 234:363-82, 2005.
 
+Saftenku, E. È.. Modes of operation of the endoplasmic reticulum
+Ca2+ transport systems in neurons: insights from the compartmental
+models. *Neurophysiology* 54:2-13, 10.1007/s11062-023-09930-6,
+2022a.
+
 Saftenku, E. E.. Computational study of non-homogeneous
 distribution of Ca2+ handling systems in cerebellar granule cells.
 *Journal of Theoretical Biology* 257:228-244, 2009.
+
+Saftenku, E. È.. Simulation of store-operated calcium entry in
+neurons. *Neurophysiology* 54:14-24, 10.1007/s11062-023-09931-5,
+2022b.
+
+Sagalajev, B., Zhang, T., Abdollahi, N., Yousefpour, N., Medlock,
+L., Al-Basha, D., Ribeiro-da-Silva, A., Esteller, R., Ratté, S.
+and Prescott, S. A.. Absence of paresthesia during high-rate
+spinal cord stimulation reveals importance of synchrony for
+sensations evoked by electrical stimulation. *Neuron*
+112:404-420.e6, 10.1016/j.neuron.2023.10.021, 2024.
 
 Saghatelyan, A., Roux, P., Migliore, M., Rochefort, C.,
 Desmaisons, D., Charneau, P., Shepherd, G. M. and Lledo, P. M..
@@ -10631,6 +12466,12 @@ afterhyperpolarization current in hippocampal pyramidal neurons:
 implications for the integration of long-term potentiation.
 *Journal of Neuroscience* 16:4537-4542, 1996.
 
+Saha, R., Benally, O. J., Faramarzi, S., Bloom, R., Wu, K.,
+Tonini, D., Shiao, M., Keirstead, S. A., Low, W. C., Netoff, T. I.
+and Wang, J.-P.. Planar microcoil arrays for in vitro
+cellular-level micromagnetic activation of neurons. *Journal of
+Vacuum Science & Technology B* 4210.1116/6.0003362, 2024a.
+
 Saha, R., Faramarzi, S., Bloom, R. P., Benally, O. J., Wu, K., di
 Girolamo, A., Tonini, D., Keirstead, S. A., Low, W. C., Netoff, T.
 I. and Wang, J.-P.. Strength-frequency curve for micromagnetic
@@ -10638,6 +12479,11 @@ neurostimulation through excitatory postsynaptic potentials
 (EPSPs) on rat hippocampal neurons and numerical modeling of
 magnetic microcoil (μ coil).. *Journal of Neural Engineering*
 1910.1088/1741-2552/ac4baf, 2022.
+
+Saha, R., Van Helden, D., Hopper, M. S., Low, W. C., Netoff, T.
+I., Osborn, J. and Wang, J.-P.. Impact of anesthesia on
+micromagnetic stimulation (uMS) of the vagus nerve. *Biomedical
+Physics & Engineering Express* 1010.1088/2057-1976/ad3968, 2024b.
 
 Sahin, M. and Durand, D. M.. Improved nerve cuff electrode
 recordings with subthreshold anodic currents. *IEEE Transactions
@@ -10728,6 +12574,11 @@ of Neurophysiology* 79:3111-3126, 1998.
 Sandstrom, D. J.. Isoflurane reduces excitability of Drosophila
 larval motoneurons by activating a hyperpolarizing leak
 conductance. *Anesthesiology* 108:434-446, 2008.
+
+Sandurkov, B., Rapp, J., Hemmert, W. and Gleich, B.. Low energy
+magnetic stimulation of the phrenic nerve - a simulation study.
+*Biomedical Physics & Engineering Express*
+910.1088/2057-1976/ace7d7, 2023.
 
 Sangrey, T. D., Friesen, W. O. and Levy, W. B.. Analysis of the
 optimal channel density of the squid giant axon using a
@@ -10867,6 +12718,11 @@ by volume-limited, astroglia-like signals in neural networks.
 *Philosophical Transactions of the Royal Society B: Biological
 Sciences* 369:20130614, 10.1098/rstb.2013.0614, 2014.
 
+Savtchenko, L. P. and Rusakov, D. A.. Equal levels of pre- and
+postsynaptic potentiation produce unequal outcomes. *Philosophical
+Transactions of the Royal Society B: Biological Sciences*
+37910.1098/rstb.2023.0235, 2024.
+
 Savtchenko, L. P., Sylantyev, S. and Rusakov, D. A.. Central
 synapses release a resource-efficient amount of glutamate. *Nature
 Neuroscience* 16:10-12, 10.1038/nn.3285, 2013.
@@ -10965,9 +12821,22 @@ Schneider, A. C., Fox, D., Itani, O., Golowasch, J., Bucher, D.
 and Nadim, F.. Frequency-dependent action of neuromodulation.
 *eNeuro* 810.1523/ENEURO.0338-21.2021, 2021.
 
+Schneider, A. C., Itani, O., Bucher, D. and Nadim, F..
+Neuromodulation reduces interindividual variability of neuronal
+output. *eNeuro* 910.1523/ENEURO.0166-22.2022, 2022.
+
 Schneider, C. J., Bezaire, M. and Soltesz, I.. Toward a full-scale
 computational model of the rat dentate gyrus. *Frontiers In Neural
 Circuits* 6:83, 10.3389/fncir.2012.00083, 2012.
+
+Schneider, M., Bird, A. D., Gidon, A., Triesch, J., Jedlicka, P.
+and Cuntz, H.. Biological complexity facilitates tuning of the
+neuronal parameter space. *PLoS Computational Biology*
+19:e1011212, 10.1371/journal.pcbi.1011212, 2023a.
+
+Schneider, M., Tzanou, A., Uran, C. and Vinck, M..
+Cell-type-specific propagation of visual flicker. *Cell Reports*
+42:112492, 10.1016/j.celrep.2023.112492, 2023b.
 
 Schneider-Mizell, C. M., Bodor, A. L., Collman, F., Brittain, D.,
 Bleckert, A., Dorkenwald, S., Turner, N. L., Macrina, T., Lee, K.,
@@ -10980,8 +12849,23 @@ Reimer, J., Tolias, A. S., Anastassiou, C. A., Seung, H. S., Reid,
 R. C. and Costa, N. M. d.. Structure and function of axo-axonic
 inhibition. *eLife* 1010.7554/eLife.73783, 2021.
 
+Schoeters, R., Tarnaud, T., Martens, L. and Tanghe, E.. Simulation
+study on high spatio-temporal resolution
+acousto-electrophysiological neuroimaging. *Journal of Neural
+Engineering* 20:066039, 10.1088/1741-2552/ad169c, 2023a.
+
+Schoeters, R., Tarnaud, T., Weyn, L., Joseph, W., Raedt, R. and
+Tanghe, E.. Quantitative analysis of the optogenetic excitability
+of CA1 neurons. *Frontiers in Computational Neuroscience*
+17:1229715, 10.3389/fncom.2023.1229715, 2023b.
+
 Schofield, C. M. and Huguenard, J. R.. GABA affinity shapes IPSCs
 in thalamic nuclei. *Journal of Neuroscience* 27:7954-7962, 2007.
+
+Scholl, B., Thomas, C. I., Ryan, M. A., Kamasawa, N. and
+Fitzpatrick, D.. Cortical response selectivity derives from
+strength in numbers of synapses. *Nature* 590:111-114,
+10.1038/s41586-020-03044-3, 2021.
 
 Schomburg, E. W., Anastassiou, C. A., Buzsáki, G. and Koch, C..
 The spiking component of oscillatory extracellular potentials in
@@ -11017,6 +12901,11 @@ Schulz, P. E., Cook, E. P. and Johnston, D.. Changes in
 paired-pulse facilitation suggest presynaptic involvement in
 long-term potentiation. *Journal of Neuroscience* 14:5325-5337,
 1994.
+
+Scopin, M., Spampinato, G. L. B., Marre, O., Garcia, S. and Yger,
+P.. Localization of neurons from extracellular footprints.
+*Journal of Neuroscience Methods* 412:110297,
+10.1016/j.jneumeth.2024.110297, 2024.
 
 Scorcioni, R., Lazarewicz, M. T. and Ascoli, G. A.. Quantitative
 morphometry of hippocampal pyramidal cells: differences between
@@ -11100,15 +12989,14 @@ in Cellular Neuroscience* 14:277, 10.3389/fncel.2020.00277, 2020.
 
 Sengupta, N., Brain, K. L. and Manchanda, R.. Spatiotemporal
 dynamics of synaptic drive in urinary bladder syncytium: a
-computational investigation [Online]. *2015 37th Annual
-International Conference of the IEEE Engineering in Medicine and
-Biology Society*, 10.1109/embc.2015.7320267, 2015.
+computational investigation [Online]. *IEEE Engineering in
+Medicine and Biology Society. Annual Conference*,
+10.1109/embc.2015.7320267, 2015.
 
 Sengupta, N., Brain, K. L. and Manchanda, R.. Cellular environment
 in a bundle modulates SEJP characteristics in detrusor smooth
-muscle [Online]. *2018 40th Annual International Conference of the
-IEEE Engineering in Medicine and Biology Society*,
-10.1109/embc.2018.8513621, 2018.
+muscle [Online]. *IEEE Engineering in Medicine and Biology
+Society. Annual Conference*, 10.1109/embc.2018.8513621, 2018.
 
 Sengupta, N. and Manchanda, R.. Spontaneous synaptic drive in
 detrusor smooth muscle: computational investigation and
@@ -11120,6 +13008,11 @@ Senk, J., Carde, C., Hagen, E., Kuhlen, T. W., Diesmann, M. and
 Weyers, B.. VIOLA-a multi-purpose and web-based visualization tool
 for neuronal-network simulation output. *Frontiers in
 Neuroinformatics* 12:75, 10.3389/fninf.2018.00075, 2018.
+
+Senk, J., Hagen, E., van Albada, S. J. and Diesmann, M..
+Reconciliation of weak pairwise spike-train correlations and
+highly coherent local field potentials across space. *Cerebral
+Cortex* 3410.1093/cercor/bhae405, 2024.
 
 Senkow, T. L., Theis, N. D., Quindlen-Hotek, J. C. and Barocas, V.
 H.. Computational and psychophysical experiments on the Pacinian
@@ -11151,9 +13044,8 @@ Society. Annual Conference* 2016:4618-4621,
 Seo, H., Kim, H.-I. and Jun, S. C.. A computational study on
 effect of a transcranial channel as a skull/brain interface in the
 conventional rectangular patch-type transcranial direct current
-stimulation [Online]. *2017 39th Annual International Conference
-of the IEEE Engineering in Medicine and Biology Society*,
-10.1109/embc.2017.8037230, 2017a.
+stimulation [Online]. *IEEE Engineering in Medicine and Biology
+Society. Annual Conference*, 10.1109/embc.2017.8037230, 2017a.
 
 Seo, H., Kim, H.-I. and Jun, S. C.. The effect of a transcranial
 channel as a skull/brain interface in high-definition transcranial
@@ -11164,6 +13056,12 @@ Seo, H., Schaworonkow, N., Jun, S. C. and Triesch, J.. A
 multi-scale computational model of the effects of TMS on motor
 cortex. *F1000Research* 5:1945, 10.12688/f1000research.9277.3,
 2016c.
+
+Sergeev, E. N., Meffin, H., Tahayori, B., Grayden, D. B. and
+Burkitt, A. N.. Effect of soma polarization on electrical
+stimulation thresholds of retinal ganglion cells [Online]. *2013
+6th International IEEE/EMBS Conference on Neural Engineering
+(NER)*, 10.1109/ner.2013.6696138, 2013.
 
 Sethupathy, P., Rubin, D. B., Li, G. and Cleland, T. A.. A model
 of electrophysiological heterogeneity in periglomerular cells.
@@ -11203,6 +13101,11 @@ by dendritic plateau potentials in the presence of synaptic
 barrages. *Frontiers in Computational Neuroscience* 8:89,
 10.3389/fncom.2014.00089, 2014.
 
+Shang, Z., Huang, J., Liu, N. and Zhang, X.. Bi-directional
+control of synaptic input summation and spike generation by
+GABAergic inputs at the axon initial segment. *Neuroscience
+Bulletin* 39:1-13, 10.1007/s12264-022-00887-w, 2023.
+
 Shao, J., Tsao, T. H. and Butera, R.. Bursting without slow
 kinetics: a role for a small world?. *Neural Computation*
 18:2029-2035, 2006.
@@ -11211,6 +13114,16 @@ Shao, L. R., Halvorsrud, R., Borg-Graham, L. and Storm, J. F.. The
 role of BK-type Ca2+-dependent K+ channels in spike broadening
 during repetitive firing in rat hippocampal pyramidal cells.
 *Journal of Physiology* 521:135-146, 1999.
+
+Shapero, S., Zhu, M., Hasler, J. and Rozell, C.. Optimal sparse
+approximation with integrate and fire neurons. *International
+Journal of Neural Systems* 24:1440001, 10.1142/S0129065714400012,
+2014.
+
+Shapira, G., Marcus-Kalish, M., Amsalem, O., Van Geit, W., Segev,
+I. and Steinberg, D. M.. Statistical emulation of neural
+simulators: application to neocortical L2/3 large basket cells.
+*Frontiers in Big Data* 5:789962, 10.3389/fdata.2022.789962, 2022.
 
 Sharp, P. E., Blair, H. T. and Brown, M.. Neural network modeling
 of the hippocampal formation spatial signals and their possible
@@ -11302,6 +13215,23 @@ calcium-calmodulin kinase II of postsynaptic sensitivity in rat
 hippocampal CA1 neurons. *Journal of Neurophysiology*
 78:2682-2692, 1997.
 
+Shokrani, A., Almasi, A., Feng, B. and Pierce, D. M..
+Understanding mechanotransduction in the distal colon and rectum
+via multiscale and multimodal computational modeling. *Journal of
+the Mechanical Behavior of Biomedical Materials* 160:106771,
+10.1016/j.jmbbm.2024.106771, 2024.
+
+Shomali, S. R., Rasuli, S. N., Ahmadabadi, M. N. and Shimazaki,
+H.. Uncovering hidden network architecture from spiking activities
+using an exact statistical input-output relation of neurons.
+*Communications Biology* 6:169, 10.1038/s42003-023-04511-z, 2023.
+
+Shore, A. N., Li, K., Safari, M., Qunies, A. M., Spitznagel, B.
+D., Weaver, C. D., Emmitte, K., Frankel, W. and Weston, M. C..
+Heterozygous expression of a Kcnt1 gain-of-function variant has
+differential effects on somatostatin- and parvalbumin-expressing
+cortical GABAergic neurons. *eLife* 1310.7554/eLife.92915, 2024.
+
 Short, S. M., Morse, T. M., McTavish, T. S., Shepherd, G. M. and
 Verhagen, J. V.. Respiration gates sensory input responses in the
 mitral cell layer of the olfactory bulb. *PLoS ONE* 11:e0168356,
@@ -11313,6 +13243,11 @@ nerve-fibers. *Brain Research* 619:278-290, 1993.
 Shrager, P. and Rubinstein, C. T.. Optical measurement of
 conduction in single demyelinated axons. *Journal of General
 Physiology* 95:867-889, 1990.
+
+Shridhar, S., Mishra, P. and Narayanan, R.. Dominant role of adult
+neurogenesis-induced structural heterogeneities in driving
+plasticity heterogeneity in dentate gyrus granule cells.
+*Hippocampus* 32:488-516, 10.1002/hipo.23422, 2022.
 
 Shu, Y., Duque, A., Yu, Y., Haider, B. and McCormick, D. A..
 Properties of action-potential initiation in neocortical pyramidal
@@ -11338,7 +13273,7 @@ epileptic mice. *Nature Neuroscience* 23:229-238,
 Shvartsman, A., Kotler, O., Stoler, O., Khrapunsky, Y., Melamed,
 I. and Fleidervish, I. A.. Subcellular distribution of persistent
 sodium conductance in cortical pyramidal neurons. *Journal of
-Neuroscience* 10.1523/JNEUROSCI.2989-20.2021, 2021.
+Neuroscience* 41:6190-6201, 10.1523/JNEUROSCI.2989-20.2021, 2021.
 
 Sidiropoulou, K., Joels, M. and Poirazi, P.. Modeling
 stress-induced adaptations in Ca2+ dynamics. *Neurocomputing*
@@ -11377,6 +13312,12 @@ Simon, J. Z., Carr, C. E. and Shamma, S. A.. A dendritic model of
 coincidence detection in the avian brainstem. *Neurocomputing*
 26-27:263-269, 1999.
 
+Simonova, N. A., Abonakour, A., Volgushev, M. A. and Malyshev, A.
+Y.. Non-associative potentiation of proximal excitatory inputs to
+layer 2/3 pyramidal cells in rat visual cortex. *Biochemical and
+Biophysical Research Communications* 733:150736,
+10.1016/j.bbrc.2024.150736, 2024.
+
 Singh, C. and Levy, W. B.. A consensus layer V pyramidal neuron
 can sustain interpulse-interval coding. *PLoS ONE* 12:e0180839,
 10.1371/journal.pone.0180839, 2017.
@@ -11408,12 +13349,9 @@ and its role in organogenesis and cancer growth suppression.
 
 Sivagnanam, S., Gorman, W., Doherty, D., Neymotin, S. A., Fang,
 S., Hovhannisyan, H., Lytton, W. W. and Dura-Bernal, S..
-Simulating Large-scale Models of Brain Neuronal Circuits using
-Google Cloud Platform.. *PEARC20 : Practice and Experience in
-Advanced Research Computing 2020 : Catch the wave : July 27-31,
-2020, Portland, Or Virtual Conference. Practice and Experience in
-Advanced Research Computing (Conference) (2020 : Online)*
-2020:505-509, 10.1145/3311790.3399621, 2020.
+Simulating large-scale models of brain neuronal circuits using
+Google Cloud Platform. *PEARC20* 2020:505-509,
+10.1145/3311790.3399621, 2020.
 
 Sivagnanam, S., Majumdar, A., Yoshimoto, K., Astakhov, V.,
 Bandrowski, A., Martone, M. E. and Carnevale, N. T.. Introducing
@@ -11538,6 +13476,11 @@ Soltesz, I., Smetters, D. K. and Mody, I.. Tonic inhibition
 originates from synapses close to the soma. *Neuron* 14:1273-1283,
 1995.
 
+Somashekar, B. P. and Bhalla, U. S.. Discriminating neural
+ensemble patterns through dendritic computations in randomly
+connected feedforward networks. *eLife* 1310.7554/eLife.100664,
+2025.
+
 Somjen, G. G.. Mechanisms of spreading depression and hypoxic
 spreading depression-like depolarization. *Physiological Reviews*
 81:1065-1096, 2001.
@@ -11584,6 +13527,12 @@ human Nav1.5 F1486 deletion associated with long QT syndrome leads
 to impaired sodium channel inactivation and reduced lidocaine
 sensitivity. *Journal of Physiology* 590:5123-5139,
 10.1113/jphysiol.2012.235374, 2012.
+
+Song, X., Guo, T., Shivdasani, M. N., Dokos, S., Lovell, N. H.,
+Li, X., Qiu, S., Li, T., Zheng, S. and Li, L.. Creation of virtual
+channels in the retina using synchronous and asynchronous
+stimulation-a modelling study.. *Journal of Neural Engineering*
+1710.1088/1741-2552/abc3a9, 2020.
 
 Sotiropoulos, S. N. and Steinmetz, P. N.. Assessing the direct
 effects of deep brain stimulation using embedded axon models.
@@ -11645,6 +13594,12 @@ Spiros, A., Roberts, P. and Geerts, H.. A quantitative systems
 pharmacology computer model for schizophrenia efficacy and
 extrapyramidal side effects. *Drug Development Research*
 73:196-213, 10.1002/ddr.21008, 2012.
+
+Spiros, A., Roberts, P. and Geerts, H.. A computer-based
+quantitative systems pharmacology model of negative symptoms in
+schizophrenia: exploring glycine modulation of
+excitation-inhibition balance. *Frontiers in Pharmacology* 5:229,
+10.3389/fphar.2014.00229, 2014.
 
 Spirou, G. A., Chirila, F. V., von Gersdorff, H. and Manis, P. B..
 Heterogeneous Ca2+ influx along the adult calyx of held: A
@@ -11714,6 +13669,11 @@ plasticity of intrinsic properties during cell-autonomous
 self-regulation of calcium homeostasis in hippocampal model
 neurons. *eNeuro* 2:ENEURO.0053-15.2015,
 10.1523/ENEURO.0053-15.2015, 2015.
+
+Srikanth, S. and Narayanan, R.. Heterogeneous off-target impact of
+ion-channel deletion on intrinsic properties of hippocampal model
+neurons that self-regulate calcium. *Frontiers in Cellular
+Neuroscience* 17:1241450, 10.3389/fncel.2023.1241450, 2023.
 
 Srinivas, K. V., Buss, E. W., Sun, Q., Santoro, B., Takahashi, H.,
 Nicholson, D. A. and Siegelbaum, S. A.. The dendrites of Ca2 and
@@ -11790,6 +13750,11 @@ properties of nucleus accumbens medium spiny neurons emerging from
 inactivation of inward rectifying potassium currents. *Journal of
 Computational Neuroscience* 27:453-470, 10.1007/s10827-009-0161-7,
 2009.
+
+Stefano, M., Cordella, F., Cozza, G., Ciancio, A. L. and Zollo,
+L.. Study of electrical neural stimulation effects using
+extraneural and intraneural electrodes. *Applied Sciences*
+13:6267, 10.3390/app13106267, 2023.
 
 Stefano, M., Cordella, F., Li Gioi, S. M. and Zollo, L..
 Electrical stimulation of the human median nerve: a comparison
@@ -11938,6 +13903,11 @@ Stuart, G., Spruston, N. and Häusser, M.. Dendritic integration.
 In: *Dendrites*, edited by Stuart, G., Spruston, N. and Häusser,
 M.. NY: NY, Oxford University Press, 1999, pp. 231-270.
 
+Studenova, A. A., Villringer, A. and Nikulin, V. V.. Non-zero mean
+alpha oscillations revealed with computational model and empirical
+data. *PLoS Computational Biology* 18:e1010272,
+10.1371/journal.pcbi.1010272, 2022.
+
 Subramaniyam, S., Solinas, S., Perin, P., Locatelli, F., Masetto,
 S. and D'Angelo, E.. Computational modeling predicts the ionic
 mechanism of late-onset responses in unipolar brush cells.
@@ -11997,6 +13967,12 @@ Sun, W. J. and Dietrich, D.. Synaptic integration by NG2 cells.
 *Frontiers In Cellular Neuroscience* 7:255,
 10.3389/fncel.2013.00255, 2013.
 
+Sun, Z., Crompton, D., Lankarany, M. and Skinner, F. K.. Reduced
+oriens-lacunosum/moleculare cell model identifies biophysical
+current balances for in vivo theta frequency spiking resonance.
+*Frontiers in Neural Circuits* 17:1076761,
+10.3389/fncir.2023.1076761, 2023.
+
 Sundt, D., Gamper, N. and Jaffe, D. B.. Spike propagation through
 the dorsal root ganglia in an unmyelinated sensory neuron: a
 modeling study. *Journal of Neurophysiology* 114:3140-3153,
@@ -12006,6 +13982,10 @@ Surkis, A., Peskin, C. S., Tranchina, D. and Leonard, C. S..
 Recovery of cable properties through active and passive modeling
 of subthreshold membrane responses from laterodorsal tegmental
 neurons. *Journal of Neurophysiology* 80:2593-2607, 1998.
+
+Susi, G., Cristini, A. and Salerno, M.. Path multimodality in a
+feedforward snn module, using LIF with Latency model. *Neural
+Network World* 26:363-376, 10.14311/nnw.2016.26.021, 2016.
 
 Swan, B. D., Brocker, D. T., Gross, R. E., Turner, D. A. and
 Grill, W. M.. Effects of ramped-frequency thalamic deep brain
@@ -12048,10 +14028,23 @@ A. and Nusser, Z.. Functional properties of dendritic gap
 junctions in cerebellar golgi cells. *Neuron* 90:1043-1056,
 10.1016/j.neuron.2016.03.029, 2016.
 
+Szul, M. J., Papadopoulos, S., Alavizadeh, S., Daligaut, S.,
+Schwartz, D., Mattout, J. and Bonaiuto, J. J.. Diverse beta burst
+waveform motifs characterize movement-related cortical dynamics.
+*Progress in Neurobiology* 228:102490,
+10.1016/j.pneurobio.2023.102490, 2023.
+
 Tajarenejad, H., Ansari, M. A., Akbari, S., Yazdanfar, H. and
 Hamidi, S. M.. Optical neural stimulation using the
 thermoplasmonic effect of gold nano-hexagon. *Biomedical Optics
 Express* 12:6013-6023, 10.1364/BOE.438593, 2021.
+
+Takács, V., Bardóczi, Z., Orosz, Á., Major, A., Tar, L., Berki,
+P., Papp, P., Mayer, M. I., Sebők, H., Zsolt, L., Sos, K. E.,
+Káli, S., Freund, T. F. and Nyiri, G.. Synaptic and dendritic
+architecture of different types of hippocampal somatostatin
+interneurons. *PLOS Biology* 22:e3002539,
+10.1371/journal.pbio.3002539, 2024.
 
 Takagi, H. and Kawasaki, M.. Modeling of time disparity detection
 by the Hodgkin-Huxley equations. *Journal of Comparative
@@ -12092,6 +14085,12 @@ I.. Oscillator motif as design pattern for the spinal cord
 circuitry reconstruction. *BioNanoScience* 10:649-653,
 10.1007/s12668-020-00743-z, 2020.
 
+Tan, Z.-Y., Wu, B., Su, X., Zhou, Y. and Ji, Y.-H.. Differential
+expression of slow and fast-repriming tetrodotoxin-sensitive
+sodium currents in dorsal root ganglion neurons. *Frontiers in
+Molecular Neuroscience* 16:1336664, 10.3389/fnmol.2023.1336664,
+2023.
+
 Tanaka, T. and Nakamura, K. C.. Focal inputs are a potential
 origin of local field potential (LFP) in the brain regions without
 laminar structure. *PLoS ONE* 14:e0226028,
@@ -12105,6 +14104,16 @@ Tang, A. C., Wolfe, J. and Bartels, A. M.. Cholinergic modulation
 of spike timing and spike rate. *Neurocomputing* 26-27:293-298,
 1999.
 
+Tang, Y., Zhang, X., An, L., Yu, Z. and Liu, J. K.. Diverse role
+of NMDA receptors for dendritic integration of neural dynamics.
+*PLoS Computational Biology* 19:e1011019,
+10.1371/journal.pcbi.1011019, 2023.
+
+Tarnaud, T., Joseph, W., Martens, L. and Tanghe, E.. Computational
+modeling of ultrasonic subthalamic nucleus stimulation. *IEEE
+Transactions on Bio-Medical Engineering* 66:1155-1164,
+10.1109/TBME.2018.2869042, 2019.
+
 Taylor, A. L., Goaillard, J. M. and Marder, E.. How multiple
 conductances determine electrophysiological properties in a
 multicompartment model. *Journal of Neuroscience* 29:5573-5586,
@@ -12114,6 +14123,12 @@ Taylor, W. R., Mittman, S. and Copenhagen, D. R.. Passive
 electrical cable properties and synaptic excitation of tiger
 salamander retinal ganglion cells. *Visual Neuroscience*
 13:979-990, 1996.
+
+Tazerart, S., Blanchard, M. G., Miranda-Rottmann, S., Mitchell, D.
+E., Navea Pina, B., Thomas, C. I., Kamasawa, N. and Araya, R..
+Selective activation of BK channels in small-headed dendritic
+spines suppresses excitatory postsynaptic potentials. *Journal of
+Physiology* 600:2165-2187, 10.1113/JP282303, 2022.
 
 Tejada, J., Arisi, G. M., García-Cairasco, N. and Roque, A. C..
 Morphological alterations in newly born dentate gyrus granule
@@ -12171,6 +14186,28 @@ learning feature sets. *Frontiers in Computational Neuroscience*
 Tesfayesus, W. and Durand, D. M.. Blind source separation of
 peripheral nerve recordings. *Journal of Neural Engineering*
 4:S157-S167, 2007.
+
+Testa-Silva, G., Rosier, M., Honnuraiah, S., Guzulaitis, R.,
+Megias, A. M., French, C., King, J., Drummond, K., Palmer, L. M.
+and Stuart, G. J.. High synaptic threshold for dendritic NMDA
+spike generation in human layer 2/3 pyramidal neurons. *Cell
+Reports* 41:111787, https://doi.org/10.1016/j.celrep.2022.111787,
+2022.
+
+Thio, B. J., Aberra, A. S., Dessert, G. E. and Grill, W. M.. Ideal
+current dipoles are appropriate source representations for
+simulating neurons for intracranial recordings. *Clinical
+Neurophysiology* 145:26-35, 10.1016/j.clinph.2022.11.002, 2023.
+
+Thio, B. J. and Grill, W. M.. Relative contributions of different
+neural sources to the EEG. *NeuroImage* 275:120179,
+10.1016/j.neuroimage.2023.120179, 2023.
+
+Thio, B. J., Titus, N. D., Pelot, N. A. and Grill, W. M..
+Reverse-engineered models reveal differential membrane properties
+of autonomic and cutaneous unmyelinated fibers. *PLoS
+Computational Biology* 20:e1012475, 10.1371/journal.pcbi.1012475,
+2024.
 
 Thomas, E. A. and Petrou, S.. Network-specific mechanisms may
 explain the paradoxical effects of carbamazepine and phenytoin.
@@ -12269,6 +14306,11 @@ networks with type 1 excitability whereas hyperpolarizing
 inhibition is better for type 2 excitability. *eNeuro*
 710.1523/ENEURO.0464-19.2020, 2020.
 
+Tikidji-Hamburyan, R. A., Govindaiah, G., Guido, W. and Colonnese,
+M. T.. Synaptic and circuit mechanisms prevent detrimentally
+precise correlation in the developing mammalian visual system.
+*eLife* 1210.7554/eLife.84333, 2023.
+
 Tikidji-Hamburyan, R. A., Leonik, C. A. and Canavier, C. C.. Phase
 response theory explains cluster formation in sparsely but
 strongly connected inhibitory neural networks and effects of
@@ -12318,9 +14360,20 @@ currents IT, Ih, and IKir to the resonance of thalamocortical
 neurons. *Journal of Neurophysiology* 126:561-574,
 10.1152/jn.00147.2021, 2021.
 
+To, M.-S., Honnuraiah, S. and Stuart, G. J.. Voltage clamp errors
+during estimation of concurrent excitatory and inhibitory synaptic
+input to neurons with dendrites. *Neuroscience* 489:98-110,
+10.1016/j.neuroscience.2021.08.024, 2022.
+
 Tobin, W. F., Wilson, R. I. and Lee, W.-C. A.. Wiring variations
 that enable and constrain neural computation in a sensory
 microcircuit. *eLife* 6:e24838, 10.7554/eLife.24838, 2017.
+
+Tolley, N., Rodrigues, P. L. C., Gramfort, A. and Jones, S. R..
+Methods and considerations for estimating parameters in
+biophysically detailed neural models with simulation based
+inference. *PLoS Computational Biology* 20:e1011108,
+10.1371/journal.pcbi.1011108, 2024.
 
 Toloza, E. H. S., Negahbani, E. and Fröhlich, F.. Ih interacts
 with somato-dendritic structure to determine frequency response to
@@ -12338,6 +14391,12 @@ reduced-morphology model for CA1 pyramidal cells and its
 validation and comparison with other models using HippoUnit.
 *Scientific Reports* 11:7615, 10.1038/s41598-021-87002-7, 2021.
 
+Tomko, M., Benuskova, L. and Jedlicka, P.. A voltage-based
+event-timing-dependent plasticity rule accounts for LTP
+subthreshold and suprathreshold for dendritic spikes in Ca1
+pyramidal neurons.. *Journal of Computational Neuroscience*
+52:125-131, 10.1007/s10827-024-00868-0, 2024.
+
 Tomko, M., Jedlička, P. and Beňušková, L.. Meta-STDP rule
 stabilizes synaptic weights under in vivo-like ongoing spontaneous
 activity in a computational model of CA1 pyramidal cell [Online].
@@ -12351,6 +14410,12 @@ potentials (VERTEX): comparing multi-electrode recordings from
 simulated and biological mammalian cortical tissue. *Brain
 Structure and Function* 220:2333-2353, 10.1007/s00429-014-0793-x,
 2015.
+
+Topczewska, A., Giacalone, E., Pratt, W. S., Migliore, M.,
+Dolphin, A. C. and Shah, M. M.. T-type Ca2+ and persistent Na+
+currents synergistically elevate ventral, not dorsal, entorhinal
+cortical stellate cell excitability. *Cell Reports* 42:112699,
+10.1016/j.celrep.2023.112699, 2023.
 
 Toporikova, N. and Chacron, M. J.. SK channels gate information
 processing in vivo by regulating an intrinsic bursting mechanism
@@ -12431,6 +14496,20 @@ Triesch, J., Zrenner, C. and Ziemann, U.. Modeling TMS-induced
 I-waves in human motor cortex. *Progress in Brain Research*
 222:105-124, 10.1016/bs.pbr.2015.07.001, 2015.
 
+Troise, L., Hansen, N. W., Olsson, C., Webb, J. L., Tomasevic, L.,
+Achard, J., Brinza, O., Staacke, R., Kieschnick, M., Meijer, J.,
+Thielscher, A., Siebner, H. R., Berg-Sørensen, K., Perrier, J.-F.,
+Huck, A. and Andersen, U. L.. In vitro recording of muscle
+activity induced by high intensity laser optogenetic stimulation
+using a diamond quantum biosensor. *AVS Quantum Science*
+410.1116/5.0106099, 2022.
+
+Trpevski, D., Khodadadi, Z., Carannante, I. and Hellgren
+Kotaleski, J.. Glutamate spillover drives robust all-or-none
+dendritic plateau potentials--an in silico investigation using
+models of striatal projection neurons. *Frontiers in Cellular
+Neuroscience* 17:1196182, 10.3389/fncel.2023.1196182, 2023.
+
 Tsai, D., Chen, S., Protti, D. A., Morley, J. W., Suaning, G. J.
 and Lovell, N. H.. Responses of retinal ganglion cells to
 extracellular electrical stimulation, from single cell to
@@ -12503,12 +14582,29 @@ preserves synchronization in neuronal networks with
 distance-dependent time delays. *Physical Review E* 101:022408,
 10.1103/PhysRevE.101.022408, 2020.
 
+Tuna, T., Banks, T., Glickert, G., Sevinc, C., Nair, S. S. and
+Unal, G.. Basal forebrain innervation of the amygdala: an
+anatomical and computational exploration. *Brain Structure &
+Function* 230:30, 10.1007/s00429-024-02886-1, 2025.
+
 Turi, G. F., Li, W.-K., Chavlis, S., Pandi, I., O'Hare, J.,
 Priestley, J. B., Grosmark, A. D., Liao, Z., Ladow, M., Zhang, J.
 F., Zemelman, B. V., Poirazi, P. and Losonczy, A.. Vasoactive
 intestinal polypeptide-expressing interneurons in the hippocampus
 support goal-oriented spatial learning. *Neuron* 101:1150-1165.e8,
 10.1016/j.neuron.2019.01.009, 2019.
+
+Turi, Z., Hananeia, N., Shirinpour, S., Opitz, A., Jedlicka, P.
+and Vlachos, A.. Dosing transcranial magnetic stimulation of the
+primary motor and dorsolateral prefrontal cortices with
+multi-scale modeling. *Frontiers in Neuroscience* 16:929814,
+10.3389/fnins.2022.929814, 2022.
+
+Turner-Evans, D. B., Jensen, K. T., Ali, S., Paterson, T.,
+Sheridan, A., Ray, R. P., Wolff, T., Lauritzen, J. S., Rubin, G.
+M., Bock, D. D. and Jayaraman, V.. The neuroanatomical
+ultrastructure and function of a biological ring attractor.
+*Neuron* 109:1582, 10.1016/j.neuron.2021.04.016, 2021.
 
 Tyurikova, O., Shih, P.-Y., Dembitskaya, Y., Savtchenko, L. P.,
 McHugh, T. J., Rusakov, D. A. and Semyanov, A.. K+ efflux through
@@ -12544,6 +14640,11 @@ conditions. *Neuron* 100:579-592.e5, 10.1016/j.neuron.2018.08.032,
 Ullman, S., Roth, A., Thomson, A. and Linne, M. L.. Crete,
 channels, cells, circuits and computers. *Trends in Neurosciences*
 20:53-54, 1997.
+
+Upchurch, C. M., Knowlton, C. J., Chamberland, S. and Canavier, C.
+C.. Persistent interruption in parvalbumin-positive inhibitory
+interneurons: biophysical and mathematical mechanisms. *eNeuro*
+1110.1523/ENEURO.0190-24.2024, 2024.
 
 Urakubo, H., Aihara, T., Kuroda, S., Watanabe, M. and Kondo, S..
 Spatial localization of synapses required for supralinear
@@ -12587,6 +14688,24 @@ Cooper, D. C.. Control over stress, but not stress per se
 increases prefrontal cortical pyramidal neuron excitability.
 *Journal of Neuroscience* 32:12848-12853,
 10.1523/JNEUROSCI.2669-12.2012, 2012.
+
+Vargas, L., Musselman, E. D., Grill, W. M. and Hu, X..
+Asynchronous axonal firing patterns evoked via continuous
+subthreshold kilohertz stimulation. *Journal of Neural
+Engineering* 2010.1088/1741-2552/acc20f, 2023.
+
+Varghese, N., Moscoso, B., Chavez, A., Springer, K., Ortiz, E.,
+Soh, H., Santaniello, S., Maheshwari, A. and Tzingounis, A. V..
+KCNQ2/3 gain-of-function variants and cell excitability:
+differential effects in Ca1 versus L2/3 pyramidal neurons.
+*Journal of Neuroscience* 43:6479-6494,
+10.1523/JNEUROSCI.0980-23.2023, 2023.
+
+Varkevisser, F., Costa, T. L. and Serdijn, W. A.. Energy
+efficiency of pulse shaping in electrical stimulation: the
+interdependence of biophysical effects and circuit design losses.
+*Biomedical Physics & Engineering Express*
+810.1088/2057-1976/ac8c47, 2022.
 
 Vasilkov, V. A. and Tikidji-Hamburyan, R. A.. Accurate detection
 of interaural time differences by a population of slowly
@@ -12635,6 +14754,11 @@ Giugliano, M.. The location of the axon initial segment affects
 the bandwidth of spike initiation dynamics. *PLoS Computational
 Biology* 16:e1008087, 10.1371/journal.pcbi.1008087, 2020.
 
+Verhellen, J., Beshkov, K., Amundsen, S., Ness, T. V. and
+Einevoll, G. T.. Multitask learning of a biophysically-detailed
+neuron model.. *PLoS Computational Biology* 20:e1011728,
+10.1371/journal.pcbi.1011728, 2024.
+
 Verma, N., Graham, R. D., Mudge, J., Trevathan, J. K., Franke, M.,
 Shoffstall, A. J., Williams, J., Dalrymple, A. N., Fisher, L. E.,
 Weber, D. J., Lempka, S. F. and Ludwig, K. A.. Augmented
@@ -12671,6 +14795,19 @@ driven by cell-type selective optogenetic drive: separable
 resonant circuits controlled by low-threshold spiking and
 fast-spiking interneurons.. *Frontiers in Human Neuroscience*
 4:198, 10.3389/fnhum.2010.00198, 2010.
+
+Vinnenberg, L., Rychlik, N., Oniani, T., Williams, B., White, J.
+A., Kovac, S., Meuth, S. G., Budde, T. and Hundehege, P..
+Assessing neuroprotective effects of diroximel fumarate and
+siponimod via modulation of pacemaker channels in an experimental
+model of remyelination. *Experimental Neurology* 371:114572,
+10.1016/j.expneurol.2023.114572, 2024.
+
+Vitale, P., Librizzi, F., Vaiana, A. C., Capuana, E., Pezzoli, M.,
+Shi, Y., Romani, A., Migliore, M. and Migliore, R.. Different
+responses of mice and rats hippocampus CA1 pyramidal neurons to in
+vitro and in vivo-like inputs.. *Frontiers in Cellular
+Neuroscience* 17:1281932, 10.3389/fncel.2023.1281932, 2023.
 
 Vitale, P., Salgueiro-Pereira, A. R., Lupascu, C. A., Willem, M.,
 Migliore, R., Migliore, M. and Marie, H.. Analysis of
@@ -12762,6 +14899,22 @@ neuronal membranes for accurate coupling of electric fields.
 *Journal of Neural Engineering* 15:026003,
 10.1088/1741-2552/aa8b7c, 2018.
 
+Wang, B., Aberra, A. S., Grill, W. M. and Peterchev, A. V..
+Responses of model cortical neurons to temporal interference
+stimulation and related transcranial alternating current
+stimulation modalities. *Journal of Neural Engineering*
+1910.1088/1741-2552/acab30, 2023a.
+
+Wang, B., Zhang, J., Li, Z., Grill, W. M., Peterchev, A. V. and
+Goetz, S. M.. Optimized monophasic pulses with equivalent electric
+field for rapid-rate transcranial magnetic stimulation. *Journal
+of Neural Engineering* 2010.1088/1741-2552/acd081, 2023b.
+
+Wang, C., Zhang, T., Chen, X., He, S., Li, S. and Wu, S.. BrainPy,
+a flexible, integrative, efficient, and extensible framework for
+general-purpose brain dynamics programming. *eLife*
+1210.7554/eLife.86365, 2023c.
+
 Wang, H.-P., Garcia, J. W., Sabottke, C. F., Spencer, D. J. and
 Sejnowski, T. J.. Feedforward thalamocortical connectivity
 preserves stimulus timing information in sensory pathways.
@@ -12788,7 +14941,7 @@ neuron. *Neurological Research* 37:1074-1081,
 
 Wang, K., Riera, J., Enjieu-Kadji, H. and Kawashima, R.. The role
 of extracellular conductivity profiles in compartmental models for
-neurons: particulars for layer 5 pyramidal cells.. *Neural
+neurons: particulars for layer 5 pyramidal cells. *Neural
 Computation* 25:1807-1852, 10.1162/NECO_a_00458, 2013.
 
 Wang, L. and Colburn, H. S.. A modeling study of the responses of
@@ -12827,6 +14980,11 @@ Mechanism of highly synchronized bilateral hippocampal activity.
 *Experimental Neurology* 251:101-111,
 10.1016/j.expneurol.2013.11.014, 2014b.
 
+Wang, Y. C., Rudi, J., Velasco, J., Sinha, N., Idumah, G., Powers,
+R. K., Heckman, C. J. and Chardon, M. K.. Multimodal parameter
+spaces of a complex multi-channel neuron model. *Frontiers in
+Systems Neuroscience* 16:999531, 10.3389/fnsys.2022.999531, 2022.
+
 Wang, Z., Song, D. and Berger, T. W.. Contribution of NMDA
 receptor channels to the expression of LTP in the hippocampal
 dentate gyrus. *Hippocampus* 12:680-688, 2002b.
@@ -12838,6 +14996,10 @@ influence on secretory responses in stimulated chromaffin cells.
 Warashina, A. and Ogura, T.. Modeling of stimulation-secretion
 coupling in a chromaffin cell. *Pflügers Archiv-European Journal
 of Physiology* 448:161-174, 2004.
+
+Ward, M. and Rhodes, O.. Beyond LIF neurons on neuromorphic
+hardware. *Frontiers in Neuroscience* 1610.3389/fnins.2022.881598,
+2022.
 
 Watanabe, S., Hoffman, D. A., Migliore, M. and Johnston, D..
 Dendritic K+ channels contribute to spike-timing dependent
@@ -12877,6 +15039,12 @@ controls neuronal output. *Proceedings of the National Academy of
 Sciences of the United States of America* 112:9757-9762,
 10.1073/pnas.1502902112, 2015.
 
+Wegert, L., Ziolkowski, M., Kalla, T., Lange, I., Haueisen, J. and
+Hunold, A.. Activation thresholds for electrical phrenic nerve
+stimulation at the neck: evaluation of stimulation pulse
+parameters in a simulation study. *Journal of Neural Engineering*
+2110.1088/1741-2552/ad8c84, 2024.
+
 Wehr, M. and Zador, A. M.. Balanced inhibition underlies tuning
 and sharpens spike timing in auditory cortex. *Nature*
 426:442-446, 10.1038/nature02116, 2003.
@@ -12885,10 +15053,26 @@ Wei, X. F. and Grill, W. M.. Analysis of high-perimeter planar
 electrodes for efficient neural stimulation.. *Frontiers in
 Neuroengineering* 2:15, 10.3389/neuro.16.015.2009, 2009.
 
+Wei, Y., Nandi, A., Jia, X., Siegle, J. H., Denman, D., Lee, S.
+Y., Buchin, A., Van Geit, W., Mosher, C. P., Olsen, S. and
+Anastassiou, C. A.. Associations between in vitro, in vivo and in
+silico cell classes in mouse primary visual cortex. *Nature
+Communications* 14:2344, 10.1038/s41467-023-37844-8, 2023.
+
 Weidel, P., Djurfeldt, M., Duarte, R. C. and Morrison, A.. Closed
 loop interactions between spiking neural network and robotic
 simulators based on MUSIC and ROS. *Frontiers in Neuroinformatics*
 10:31, 10.3389/fninf.2016.00031, 2016.
+
+Weigel, S., Kuenzel, T., Lischka, K., Huang, G. and Luksch, H..
+Morphology and dendrite-specific synaptic properties of midbrain
+neurons shape multimodal integration. *Journal of Neuroscience*
+42:2614-2630, 10.1523/JNEUROSCI.1695-21.2022, 2022.
+
+Weise, K., Worbs, T., Kalloch, B., Souza, V. H., Jaquier, A. T.,
+Van Geit, W., Thielscher, A. and Knösche, T. R.. Directional
+sensitivity of cortical neurons towards TMS-induced electric
+fields. *Imaging Neuroscience* 1:1-22, 10.1162/imag_a_00036, 2023.
 
 Weissler, Y., Farah, N. and Shoham, S.. Simulation of
 morphologically structured photo-thermal neural stimulation.
@@ -12910,6 +15094,13 @@ Different levels of Ih determine distinct temporal integration in
 bursting and regular-spiking neurons in rat subiculum. *Journal of
 Physiology* 576:203-214, 2006.
 
+Wendt, K., Sorkhabi, M. M., O'Shea, J., Cagnan, H. and Denison,
+T.. Comparison between the modelled response of primary motor
+cortex neurons to pulse-width modulated and conventional TMS
+stimuli [Online]. *IEEE Engineering in Medicine and Biology
+Society. Annual Conference*, 10.1109/embc46164.2021.9629605,
+2021.
+
 Wenger, C., Paredes, L. and Rattay, F.. Current-distance relations
 for microelectrode stimulation of pyramidal cell. *Artificial
 Organs* 35:263-266, 10.1111/j.1525-1594.2011.01224.x, 2011.
@@ -12929,6 +15120,23 @@ current. *Journal of Computational Neuroscience* 35:1-17,
 Wetmore, D. Z., Mukamel, E. A. and Schnitzer, M. J.. Lock-and-key
 mechanisms of cerebellar memory recall based on rebound currents.
 *Journal of Neurophysiology* 100:2328-2347, 2008.
+
+Wilbers, R., Galakhova, A. A., Driessens, S. L. W., Heistek, T.
+S., Metodieva, V. D., Hagemann, J., Heyer, D. B., Mertens, E. J.,
+Deng, S., Idema, S., de Witt Hamer, P. C., Noske, D. P., van
+Schie, P., Kommers, I., Luan, G., Li, T., Shu, Y., de Kock, C. P.
+J., Mansvelder, H. D. and Goriounova, N. A.. Structural and
+functional specializations of human fast-spiking neurons support
+fast cortical signaling. *Science Advances* 9:eadf0708,
+10.1126/sciadv.adf0708, 2023a.
+
+Wilbers, R., Metodieva, V. D., Duverdin, S., Heyer, D. B.,
+Galakhova, A. A., Mertens, E. J., Versluis, T. D., Baayen, J. C.,
+Idema, S., Noske, D. P., Verburg, N., Willemse, R. B., de Witt
+Hamer, P. C., Kole, M. H. P., de Kock, C. P. J., Mansvelder, H. D.
+and Goriounova, N. A.. Human voltage-gated Na+ and K+ channel
+properties underlie sustained fast AP signaling. *Science
+Advances* 9:eade3300, 10.1126/sciadv.ade3300, 2023b.
 
 de Wiljes, O. O., van Elburg, R. A. J., Biehl, M. and Keijzer, F.
 A.. Modeling spontaneous activity across an excitable epithelium:
@@ -12986,6 +15194,12 @@ coincidence detector neurons of the medial superior olive.
 *Journal of Neuroscience* 37:3138-3149,
 10.1523/JNEUROSCI.3110-16.2017, 2017.
 
+Wischnewski, M., Tran, H., Zhao, Z., Shirinpour, S., Haigh, Z. J.,
+Rotteveel, J., Perera, N. D., Alekseichuk, I., Zimmermann, J. and
+Opitz, A.. Induced neural phase precession through exogenous
+electric fields. *Nature Communications* 15:1687,
+10.1038/s41467-024-45898-5, 2024.
+
 Wissmann, R., Bildl, W., Oliver, D., Beyermann, M., Kalbitzer, H.
 R., Bentrop, D. and Fakler, B.. Solution structure and function of
 the "tandem inactivation domain" of the neuronal A-type potassium
@@ -13040,6 +15254,11 @@ Wongsarnpigoon, A., Woock, J. P. and Grill, W. M.. Efficiency
 analysis of waveform shape for electrical excitation of nerve
 fibers. *IEEE Transactions on Neural Systems and Rehabilitation
 Engineering* 18:319-328, 10.1109/TNSRE.2010.2047610, 2010.
+
+Woo, J., Choi, K., Kim, S. H., Han, K. and Choi, M.. The
+structural aspects of neural dynamics and information flow.
+*Frontiers in Bioscience-Landmark* 27:1, 10.31083/j.fbl2701015,
+2022.
 
 Woo, J., Kim, S. H., Han, K. and Choi, M.. Characterization of
 dynamics and information processing of integrate-and-fire neuron
@@ -13102,6 +15321,16 @@ Xiao, Q., Zhong, Z., Lai, X. and Qin, H.. A multiple modulation
 synthesis method with high spatial resolution for noninvasive
 neurostimulation. *PLoS ONE* 14:e0218293,
 10.1371/journal.pone.0218293, 2019.
+
+Xiao, S., Yadav, S. and Jayant, K.. Probing multiplexed basal
+dendritic computations using two-photon 3D holographic uncaging.
+*Cell Reports* 43:114413, 10.1016/j.celrep.2024.114413, 2024.
+
+Xie, Y., Qin, P., Guo, T., Al Abed, A., Lovell, N. H. and Tsai,
+D.. Modulating individual axons and axonal populations in the
+peripheral nerve using transverse intrafascicular multichannel
+electrodes. *Journal of Neural Engineering*
+2010.1088/1741-2552/aced20, 2023.
 
 Xiumin, L.. Signal integration on the dendrites of a pyramidal
 neuron model. *Cognitive Neurodynamics* 8:81-85,
@@ -13184,9 +15413,26 @@ decreases neuronal excitability through modulation of
 voltage-gated sodium channel gating. *Journal of Physiology*
 588:3869-3882, 10.1113/jphysiol.2010.193037, 2010.
 
+Ye, H.. Finding the location of axonal activation by a miniature
+magnetic coil. *Frontiers in Computational Neuroscience*
+16:932615, 10.3389/fncom.2022.932615, 2022.
+
 Ye, H. and Barrett, L.. Somatic inhibition by microscopic magnetic
 stimulation. *Scientific Reports* 11:13591,
 10.1038/s41598-021-93114-x, 2021.
+
+Ye, H., Chen, V. and Hendee, J.. Cellular mechanisms underlying
+state-dependent neural inhibition with magnetic stimulation.
+*Scientific Reports* 12:12131, 10.1038/s41598-022-16494-8, 2022.
+
+Ye, H., Dima, M., Hall, V. and Hendee, J.. Cellular mechanisms
+underlying carry-over effects after magnetic stimulation.
+*Scientific Reports* 14:5167, 10.1038/s41598-024-55915-8, 2024.
+
+Ye, H., Hall, V. and Hendee, J.. Improving focality and
+consistency in micromagnetic stimulation. *Frontiers in
+Computational Neuroscience* 17:1105505,
+10.3389/fncom.2023.1105505, 2023.
 
 Ye, M., Yang, J., Tian, C., Zhu, Q., Yin, L., Jiang, S., Yang, M.
 and Shu, Y.. Differential roles of NaV1.2 and NaV1.6 in regulating
@@ -13229,6 +15475,11 @@ dendritic Ca2+ spike with weak electric fields in layer 5
 pyramidal cells. *Neural Networks* 110:8-18,
 10.1016/j.neunet.2018.10.013, 2019c.
 
+Yi, G. and Zhao, Q.. Spike initiating dynamics at axonal
+afterpotentials: model-based mechanisms of the recovery cycle.
+*Nonlinear Dynamics* 111:10487-10504, 10.1007/s11071-023-08362-5,
+2023.
+
 Yi, G.-S., Wang, J., Deng, B. and Wei, X.-L.. Morphology controls
 how hippocampal CA1 pyramidal neuron responds to uniform electric
 fields: a biophysical modeling study. *Scientific Reports* 7:3210,
@@ -13249,6 +15500,11 @@ Yin, L., Rasch, M. J., He, Q., Wu, S., Dou, F. and Shu, Y..
 Selective modulation of axonal sodium channel subtypes by 5-HT1A
 receptor in cortical pyramidal neuron. *Cerebral Cortex*
 27:509-521, 10.1093/cercor/bhv245, 2017.
+
+Ying, T., Burkitt, A. N. and Kameneva, T.. Combining the neural
+mass model and Hodgkin-Huxley formalism: Neuronal dynamics
+modelling. *Biomedical Signal Processing and Control* 79:104026,
+10.1016/j.bspc.2022.104026, 2023.
 
 Yoo, P. B. and Durand, D. A.. Selective recording of the canine
 hypoglossal nerve using a multicontact flat interface nerve
@@ -13293,9 +15549,15 @@ Transactions on Bio-Medical Engineering* online:ahead of print,
 
 Yu, G. J., Feng, Z. and Berger, T. W.. Network activity due to
 topographic organization of schaffer collaterals in a large-scale
-model of rat Ca1. *Annual International Conference of the IEEE
-Engineering in Medicine and Biology Society* 2019:2977-2980,
+model of rat Ca1. *IEEE Engineering in Medicine and Biology
+Society. Annual Conference* 2019:2977-2980,
 10.1109/EMBC.2019.8856799, 2019b.
+
+Yu, G. J., Ranieri, F., Di Lazzaro, V., Sommer, M. A., Peterchev,
+A. V. and Grill, W. M.. Circuits and mechanisms for TMS-induced
+corticospinal waves: connecting sensitivity analysis to the
+network graph. *PLoS Computational biology* 20:e1012640,
+10.1371/journal.pcbi.1012640, 2024.
 
 Yu, J., Proddutur, A., Elgammal, F. S., Ito, T. and Santhakumar,
 V.. Status epilepticus enhances tonic GABA currents and
@@ -13321,6 +15583,21 @@ neurons for schizophrenia. *Progress in Molecular Biology and
 Translational Science* 123:53-82,
 10.1016/B978-0-12-397897-4.00011-5, 2014a.
 
+Yu, Y., Fan, Y., Hou, S. and Wang, Q.. Optogenetic stimulation of
+primary motor cortex regulates beta oscillations in the basal
+ganglia: a computational study. *Communications in Nonlinear
+Science and Numerical Simulation* 117:106918,
+10.1016/j.cnsns.2022.106918, 2023a.
+
+Yu, Y., Han, F. and Wang, Q.. Exploring phase-amplitude coupling
+from primary motor cortex-basal ganglia-thalamus network model.
+*Neural Networks* 153:130-141, 10.1016/j.neunet.2022.05.027, 2022.
+
+Yu, Y., Han, F. and Wang, Q.. A hippocampal-entorhinal cortex
+neuronal network for dynamical mechanisms of epileptic seizure.
+*IEEE Transactions on Neural Systems and Rehabilitation
+Engineering* 31:1986-1996, 10.1109/TNSRE.2023.3265581, 2023b.
+
 Yu, Y., McTavish, T. S., Hines, M. L., Shepherd, G. M., Valenti,
 C. and Migliore, M.. Sparse distributed representation of odors in
 a large-scale olfactory bulb circuit. *PLoS Computational Biology*
@@ -13336,6 +15613,11 @@ Yu, Y. G., Shu, Y. S. and McCormick, D. A.. Cortical action
 potential backpropagation explains spike threshold variability and
 rapid-onset kinetics. *Journal of Neuroscience* 28:7260-7272,
 2008.
+
+Yuan, P., Zhang, M., Tong, L., Morse, T. M., McDougal, R. A.,
+Ding, H., Chan, D., Cai, Y. and Grutzendler, J.. PLD3 affects
+axonal spheroids and network defects in Alzheimer's disease.
+*Nature* 612:328-337, 10.1038/s41586-022-05491-6, 2022.
 
 Zachariou, M., Dissanayake, D. W. N., Coombes, S., Owen, M. R. and
 Mason, R.. Sensory gating and its modulation by cannabinoids:
@@ -13386,7 +15668,7 @@ membrane properties for a gap junction-coupled retinal neuron.
 10.1007/s00429-018-1696-z, 2018.
 
 Zang, Y. and De Schutter, E.. The cellular electrophysiological
-properties underlying multiplexed coding in Purkinje cells.
+properties underlying multiplexed coding in Purkinje cells. 
 *Journal of Neuroscience* 10.1523/JNEUROSCI.1719-20.2020, 2021.
 
 Zang, Y., Dieudonné, S. and De Schutter, E.. Voltage- and
@@ -13399,8 +15681,13 @@ phase responses of Purkinje cells support transient oscillations.
 
 Zang, Y. and Marder, E.. Interactions among diameter, myelination,
 and the Na/K pump affect axonal resilience to high-frequency
-spiking. *Proceedings of the National Academy of Sciences*
-11810.1073/pnas.2105795118, 2021.
+spiking. *Proceedings of the National Academy of Sciences of the
+United States of America* 11810.1073/pnas.2105795118, 2021.
+
+Zang, Y. and Marder, E.. Neuronal morphology enhances robustness
+to perturbations of channel densities. *Proceedings of the
+National Academy of Sciences of the United States of America*
+120:e2219049120, 10.1073/pnas.2219049120, 2023.
 
 Zbili, M. and Debanne, D.. Myelination increases the spatial
 extent of analog-digital modulation of synaptic transmission: a
@@ -13453,6 +15740,13 @@ and Destexhe, A.. Heterogeneous firing rate response of mouse
 layer V pyramidal neurons in the fluctuation-driven regime.
 *Journal of Physiology* 594:3791-3808, 10.1113/JP272317, 2016.
 
+Zhai, S., Otsuka, S., Xu, J., Clarke, V. R. J., Tkatch, T.,
+Wokosin, D., Xie, Z., Tanimura, A., Agarwal, H. K., Ellis-Davies,
+G. C. R., Contractor, A. and Surmeier, D. J.. Ca2+-dependent
+phosphodiesterase 1 regulates the plasticity of striatal spiny
+projection neuron glutamatergic synapses. *Cell Reports*
+43:114540, 10.1016/j.celrep.2024.114540, 2024.
+
 Zhang, M., Liu, Y., Wang, S.-z., Zhong, W., Liu, B.-h. and Tao, H.
 W.. Functional elimination of excitatory feedforward inputs
 underlies developmental refinement of visual receptive fields in
@@ -13463,6 +15757,13 @@ Zhang, Q. and Dai, Y.. A modeling study of spinal motoneuron
 recruitment regulated by ionic channels during fictive locomotion.
 *Journal of Computational Neuroscience* 48:409-428,
 10.1007/s10827-020-00763-4, 2020.
+
+Zhang, S., Silburn, P., Pouratian, N., Cheeran, B., Venkatesan,
+L., Kent, A. and Schnitzler, A.. Comparing current steering
+technologies for directional deep brain stimulation using a
+computational model that incorporates heterogeneous tissue
+properties. *Neuromodulation* 23:469-477, 10.1111/ner.13031,
+2020a.
 
 Zhang, T. C. and Grill, W. M.. Modeling deep brain stimulation:
 point source approximation versus realistic representation of the
@@ -13490,6 +15791,12 @@ Zhang, W., Fan, B., Agarwal, D., Li, T. and Yu, Y.. Axonal sodium
 and potassium conductance density determines spiking dynamical
 properties of regular- and fast-spiking neurons. *Nonlinear
 Dynamics* 95:1035-1052, 10.1007/s11071-018-4613-3, 2019.
+
+Zhang, X., Coates, K., Dacks, A., Günay, C., Lauritzen, J. S., Li,
+F., Calle-Schuler, S. A., Bock, D. and Gaudry, Q.. Local synaptic
+inputs support opposing, network-specific odor representations in
+a widely projecting modulatory neuron. *eLife*
+810.7554/eLife.46839, 2019b.
 
 Zhang, X., Hancock, R. and Santaniello, S.. Transcranial direct
 current stimulation of cerebellum alters spiking precision in
@@ -13523,15 +15830,55 @@ Zhang, Y., Bucher, D. and Nadim, F.. Ionic mechanisms underlying
 history-dependence of conduction delay in an unmyelinated axon.
 *eLife* 6:e25382, 10.7554/eLife.25382, 2017c.
 
+Zhang, Y., Du, K. and Huang, T.. Heuristic tree-partition-based
+parallel method for biophysically detailed neuron simulation.
+*Neural Computation* 35:627-644, 10.1162/neco_a_01565, 2023a.
+
+Zhang, Y., He, G., Ma, L., Liu, X., Hjorth, J. J. J., Kozlov, A.,
+He, Y., Zhang, S., Kotaleski, J. H., Tian, Y., Grillner, S., Du,
+K. and Huang, T.. A GPU-based computational framework that bridges
+neuron simulation and artificial intelligence. *Nature
+Communications* 14:5798, 10.1038/s41467-023-41553-7, 2023b.
+
+Zhang, Y., Shen, B., Wu, T., Zhao, J., Jing, J. C., Wang, P.,
+Sasaki-Capela, K., Dunphy, W. G., Garrett, D., Maslov, K., Wang,
+W. and Wang, L. V.. Ultrafast and hypersensitive phase imaging of
+propagating internodal current flows in myelinated axons and
+electromagnetic pulses in dielectrics. *Nature Communications*
+13:5247, 10.1038/s41467-022-33002-8, 2022.
+
+Zhang, Y., Shen, B., Wu, T., Zhao, J., Jing, J. C., Wang, P.,
+Sasaki-Capela, K., Dunphy, W. G., Garrett, D., Maslov, K., Wang,
+W. and Wang, L. V.. Ultrafast phase imaging of propagating current
+flows in myelinated axons and electromagnetic pulses in
+dielectrics [Online]. *High-Speed Biomedical Imaging and
+Spectroscopy VIII* 12390:1239008, 10.1117/12.2653137, 2023c.
+
 Zhang, Y.-F., Reynolds, J. N. J. and Cragg, S. J.. Pauses in
 cholinergic interneuron activity are driven by excitatory input
 and delayed rectification, with dopamine modulation. *Neuron*
 98:918-925.e3, 10.1016/j.neuron.2018.04.027, 2018.
 
+Zhao, M., Wang, N., Jiang, X., Ma, X., Ma, H., He, G., Du, K., Ma,
+L. and Huang, T.. An integrative data-driven model simulating C.
+elegans brain, body and environment interactions. *Nature
+Computational Science* 4:978-990, 10.1038/s43588-024-00738-w,
+2024a.
+
 Zhao, Y., Siri, S., Feng, B. and Pierce, D. M.. The macro- and
 micro-mechanics of the colon and rectum ii: theoretical and
 computational methods. *Bioengineering*
 710.3390/bioengineering7040152, 2020.
+
+Zhao, Z., Shirinpour, S., Tran, H., Wischnewski, M. and Opitz, A..
+intensity- and frequency-specific effects of transcranial
+alternating current stimulation are explained by network dynamics.
+*Journal of Neural Engineering* 2110.1088/1741-2552/ad37d9, 2024b.
+
+Zheng, F. and Kamiya, H.. Simulation test for impartment of
+use-dependent plasticity by inactivation of axonal potassium
+channels on hippocampal mossy fibers. *Frontiers in Cellular
+Neuroscience* 17:1154910, 10.3389/fncel.2023.1154910, 2023.
 
 Zheng, L., Feng, Z., Hu, H., Wang, Z., Yuan, Y. and Wei, X.. The
 appearance order of varying intervals introduces extra modulation
@@ -13539,10 +15886,21 @@ effects on neuronal firing through non-linear dynamics of sodium
 channels during high-frequency stimulations. *Frontiers in
 Neuroscience* 14:397, 10.3389/fnins.2020.00397, 2020.
 
+Zheng, L., Feng, Z., Xu, Y., Yuan, Y. and Hu, Y.. An anodic phase
+can facilitate rather than weaken a cathodic phase to activate
+neurons in biphasic-pulse axonal stimulations. *Frontiers in
+Neuroscience* 1610.3389/fnins.2022.823423, 2022.
+
 Zheng, Y., Liu, P., Bai, L., Trimmer, J. S., Bean, B. P. and
 Ginty, D. D.. Deep sequencing of somatosensory neurons reveals
 molecular determinants of intrinsic physiological properties.
 *Neuron* 103:598-616.e7, 10.1016/j.neuron.2019.05.039, 2019.
+
+Zhou, L., Wang, K., Xu, Y., Dong, B.-B., Wu, D.-C., Wang, Z.-X.,
+Wang, X.-T., Cai, X.-Y., Yang, J.-T., Zheng, R., Chen, W., Shen,
+Y. and Wei, J.-S.. A patient-derived mutation of epilepsy-linked
+LGI1 increases seizure susceptibility through regulating Kv1.1.
+*Cell & Bioscience* 13:34, 10.1186/s13578-023-00983-y, 2023.
 
 Zhou, S., Migliore, M. and Yu, Y.. Odor experience facilitates
 sparse representations of new odors in a large-scale olfactory
@@ -13569,6 +15927,12 @@ Zhou, Y., Liu, B.-h., Wu, G. K., Kim, Y.-J., Xiao, Z., Tao, H. W.
 and Zhang, L. I.. Preceding inhibition silences layer 6 neurons in
 auditory cortex. *Neuron* 65:706-717,
 10.1016/j.neuron.2010.02.021, 2010.
+
+Zhu, H., Dalvi, U., Cazenave, W., Cattaert, D. and Branchereau,
+P.. Excitatory action of low frequency depolarizing GABA/glycine
+synaptic inputs is prevalent in prenatal spinal SOD1^G93A
+motoneurons.. *Journal of Physiology* 602:913-932,
+10.1113/JP285105, 2024.
 
 Zhu, J. J., Lytton, W. W., Xue, J.-T. and Uhlrich, D. J.. An
 intrinsic oscillation in interneurons of the rat lateral
@@ -13684,6 +16048,11 @@ Zybura, A. S., Baucum, A. J., Rush, A. M., Cummins, T. R. and
 Hudmon, A.. CaMKII enhances voltage-gated sodium channel Nav1.6
 activity and neuronal excitability. *Journal of Biological
 Chemistry* 295:11845-11865, 10.1074/jbc.RA120.014062, 2020.
+
+Zybura, A. S., Sahoo, F. K., Hudmon, A. and Cummins, T. R.. CaMKII
+inhibition attenuates distinct gain-of-function effects produced
+by mutant Nav1.6 channels and reduces neuronal excitability.
+*Cells* 1110.3390/cells11132108, 2022.
 
 Zylbertal, A., Kahan, A., Ben-Shaul, Y., Yarom, Y. and Wagner, S..
 Prolonged intracellular Na+ dynamics govern electrical activity in

@@ -10,8 +10,8 @@
 #include "coreneuron/io/reports/report_event.hpp"
 #include "coreneuron/mpi/nrnmpi.h"
 
-#define CATCH_CONFIG_MAIN
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_floating_point.hpp>
 
 #include <iostream>
 
@@ -74,7 +74,9 @@ TEST_CASE("LFP_PointSource_LineSource") {
         // TEST of analytic vs numerical integration
         std::clog << "ANALYTIC line source " << analytic_circling_lfp
                   << " vs NUMERIC line source LFP " << numeric_circling_lfp << "\n";
-        REQUIRE(Approx(analytic_circling_lfp).margin(1.0e-6) == numeric_circling_lfp);
+        REQUIRE_THAT(analytic_circling_lfp,
+                     Catch::Matchers::WithinRel(numeric_circling_lfp,
+                                                std::numeric_limits<float>::epsilon() * 100.));
         // TEST of LFP Flooring
         if (approaching_elec[1] < 0.866e-6) {
             REQUIRE(analytic_approaching_lfp == 1.0e6);
@@ -104,8 +106,8 @@ TEST_CASE("LFP_PointSource_LineSource") {
         segments_starts, segments_ends, radii, indices, electrodes, 1.0);
     lfpp.template lfp<std::vector<double>>({0.0, 1.0, 2.0, 3.0});
     std::vector<double> res_point_source = lfpp.lfp_values();
-    REQUIRE(res_line_source[0] == Approx(res_point_source[0]).margin(1.0));
-    REQUIRE(res_line_source[1] == Approx(res_point_source[1]).margin(1.0));
+    REQUIRE_THAT(res_line_source[0], Catch::Matchers::WithinAbs(res_point_source[0], 1.0));
+    REQUIRE_THAT(res_line_source[1], Catch::Matchers::WithinAbs(res_point_source[1], 1.0));
 #if NRNMPI
     nrnmpi_finalize();
 #endif
@@ -113,7 +115,6 @@ TEST_CASE("LFP_PointSource_LineSource") {
 
 #ifdef ENABLE_SONATA_REPORTS
 #define CATCH_CONFIG_MAIN
-#include <catch2/catch.hpp>
 
 TEST_CASE("LFP_ReportEvent") {
     const std::string report_name = "compartment_report";
@@ -126,19 +127,40 @@ TEST_CASE("LFP_ReportEvent") {
     auto* mapinfo = static_cast<NrnThreadMappingInfo*>(nt.mapping);
     // Generate mapinfo CellMapping
     for (const auto& gid: gids) {
-        mapinfo->mappingvec.push_back(new CellMapping(gid));
+        auto cmap = std::make_shared<CellMapping>(gid);
+        mapinfo->add_cell_mapping(cmap);
+        cmap->electrode_offsets = {0, 2};
         for (const auto& segment: segment_ids) {
             std::vector<double> lfp_factors{segment + 1.0, segment + 2.0};
-            mapinfo->mappingvec.back()->add_segment_lfp_factor(segment, lfp_factors);
+            cmap->add_segment_lfp_factor(segment, lfp_factors.begin(), lfp_factors.end());
         }
     }
     mapinfo->prepare_lfp();
     // Total number of electrodes 2 gids * 2 factors
 
-    CellMapping* c42 = mapinfo->mappingvec[0];
-    CellMapping* c134 = mapinfo->mappingvec[1];
-    REQUIRE(c42->lfp_factors.size() == 5);
+    auto c42 = mapinfo->get_cell_mapping(42);
+    auto c134 = mapinfo->get_cell_mapping(134);
+    REQUIRE(c42->lfp_segment_ids.size() == 5);
     REQUIRE(c134->num_electrodes() == 2);
+
+    // Property tests for num_electrodes() derivation from electrode_offsets
+    {
+        // Property 1: offsets [0, N] → num_electrodes() == N
+        auto ctest = std::make_shared<CellMapping>(999);
+        ctest->electrode_offsets = {0, 5};
+        REQUIRE(ctest->num_electrodes() == 5);
+
+        ctest->electrode_offsets = {0, 1};
+        REQUIRE(ctest->num_electrodes() == 1);
+
+        // Multi-report offsets [0, 2, 5] → num_electrodes() == 5 (total)
+        ctest->electrode_offsets = {0, 2, 5};
+        REQUIRE(ctest->num_electrodes() == 5);
+
+        // Property 5: empty offsets → num_electrodes() == 0
+        ctest->electrode_offsets = {};
+        REQUIRE(ctest->num_electrodes() == 0);
+    }
 
     // Pass _lfp variable to vars_to_report
     size_t offset_lfp = 0;
@@ -174,13 +196,12 @@ TEST_CASE("LFP_ReportEvent") {
     const double dt = 0.025;
     const double tstart = 0.0;
     const double report_dt = 0.1;
-    ReportType report_type = CompartmentReport;
 
-    ReportEvent event(dt, tstart, vars_to_report, report_name.data(), report_dt, report_type);
+    ReportEvent event(dt, tstart, vars_to_report, report_name.data(), report_dt, ReportType::LFP);
     event.lfp_calc(&nt);
 
-    REQUIRE(mapinfo->_lfp[0] == Approx(5.5).margin(1.0));
-    REQUIRE(mapinfo->_lfp[3] == Approx(7.0).margin(1.0));
+    REQUIRE_THAT(mapinfo->_lfp[0], Catch::Matchers::WithinAbs(5.5, 1.0));
+    REQUIRE_THAT(mapinfo->_lfp[3], Catch::Matchers::WithinAbs(7.0, 1.0));
 
     delete mapinfo;
     delete nt.nrn_fast_imem;

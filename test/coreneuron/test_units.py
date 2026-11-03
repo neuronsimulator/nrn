@@ -1,4 +1,5 @@
 from neuron.tests.utils.strtobool import strtobool
+from neuron.expect_hocerr import expect_err
 import os
 
 from neuron import h
@@ -7,6 +8,12 @@ pc = h.ParallelContext()
 
 
 def test_units():
+    # should just emit warning
+    h.nrnunit_use_legacy(0)
+
+    # should generate an error
+    expect_err("h.nrnunit_use_legacy(1)")
+
     s = h.Section()
     pp = h.UnitsTest(s(0.5))
     h.ion_style("na_ion", 1, 2, 1, 1, 0, sec=s)

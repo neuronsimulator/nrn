@@ -1,12 +1,11 @@
 COMMENT
-an synaptic current with alpha function conductance defined by
+a synaptic current with alpha function conductance defined by
         i = g * (v - e)      i(nanoamps), g(microsiemens);
         where
          g = 0 for t < onset and
-         g = gmax * (t - onset)/tau * exp(-(t - onset - tau)/tau)
-          for t > onset
-this has the property that the maximum value is gmax and occurs at
- t = delay + tau.
+         g = gmax * (t - onset)/tau * exp(1.0 - (t - onset)/tau)
+for t > onset, this has the property that the maximum value is gmax
+and occurs at t = onset + tau  (where the arg to exp is 0.0).
 ENDCOMMENT
 					       
 NEURON {

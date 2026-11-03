@@ -6,7 +6,7 @@ Biology Modeling FAQ
 How do I work with neuron morphologies?
 ---------------------------------------
 
-`NeuroMorpho.Org <http://neuromorpho.org>`_ hosts over 170k reconstructed neurons,
+`NeuroMorpho.Org <http://neuromorpho.org>`_ hosts over 270k reconstructed neurons,
 all of which are available in SWC format as well as their original format.
 
 NEURON's Import3D tool can read SWC files as well as several other neuron morphology
@@ -25,18 +25,17 @@ Example:
     .. code::
         python
 
-        from neuron import h
-        h.load_file("stdlib.hoc")
-        h.load_file("import3d.hoc")
+        from neuron import n
+        n.load_file("import3d.hoc")
 
         class Pyramidal:
             def __init__(self):
                 self.load_morphology()
                 # do discretization, ion channels, etc
             def load_morphology(self):
-                cell = h.Import3d_SWC_read()
+                cell = n.Import3d_SWC_read()
                 cell.input("c91662.swc")
-                i3d = h.Import3d_GUI(cell, False)
+                i3d = n.Import3d_GUI(cell, False)
                 i3d.instantiate(self)
         
         pyr = Pyramidal()
@@ -46,8 +45,8 @@ Here ``pyr`` has lists of :class:`Section` objects:
 Each section has the appropriate ``.name()`` and ``.cell()``.
 
 Note: this example is for an SWC file specifically; other readers are supported
-for different formats including ``h.Import3d_Neurolucida3()``,
-``h.Import3d_MorphML()``, and ``h.Import3d_Eutectic_read()``.
+for different formats including ``n.Import3d_Neurolucida3()``,
+``n.Import3d_MorphML()``, and ``n.Import3d_Eutectic_read()``.
 
 Note: if multiple cells are instantiated from the same reconstruction, they
 will occupy the same spatial locations unless they are explicitly translated.
@@ -65,12 +64,12 @@ center of the soma from t = 1 ms to t = 1.1 ms:
 .. code::
    python
 
-   from neuron import h
+   from neuron import n
    from neuron.units import ms
    
    # setup the model here
 
-   ic = h.IClamp(soma(0.5))
+   ic = n.IClamp(soma(0.5))
    ic.amp = 10
    ic.dur = 0.1 * ms
    ic.delay = 1 * ms
@@ -99,7 +98,7 @@ time points (in ms).
     .. code::
         python
 
-        t_stim_vec = h.Vector(t_stim)
+        t_stim_vec = n.Vector(t_stim)
 
 Use an h. :class:`IClamp` at a segment of your choice as described above, set the ``delay`` (start time) to 0,
 the ``dur`` ation to a large number (e.g. 1e9) and use :meth:`Vector.play` to play into the ``_ref_amp`` field
@@ -108,7 +107,7 @@ using interpolation (the ``True`` in the following); e.g.
 .. code::
     python
 
-    ic = h.IClamp(soma(0.5))
+    ic = n.IClamp(soma(0.5))
     ic.delay = 0
     ic.dur = 1e9
     i_stim.play(ic._ref_amp, t_stim, True)
@@ -135,7 +134,7 @@ is to be affected by ion channel activity:
     python
 
     from neuron import rxd
-    cyt = rxd.Region(h.allsec(), name="cyt", nrn_region="i")
+    cyt = rxd.Region(n.allsec(), name="cyt", nrn_region="i")
     na = rxd.Species(cyt, name="na", charge=1)
 
 Here the ``nrn_region="i"`` indicates that we are talking about the intracellular concentration.

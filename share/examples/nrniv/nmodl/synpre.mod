@@ -81,8 +81,4 @@ PROCEDURE getonset() {
 	if (vpre > vprethresh && t > onset + deadtime) {
 		onset = t
 	}
-
-	VERBATIM
-	return 0;
-	ENDVERBATIM
 }

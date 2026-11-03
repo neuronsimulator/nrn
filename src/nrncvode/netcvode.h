@@ -1,5 +1,4 @@
-#ifndef netcvode_h
-#define netcvode_h
+#pragma once
 
 #define PRINT_EVENT 1
 
@@ -7,7 +6,7 @@
 
 #include "cvodeobj.h"
 #include "neuron/container/data_handle.hpp"
-#include "tqueue.h"
+#include "tqueue.hpp"
 
 #include <cmath>
 #include <vector>
@@ -71,7 +70,7 @@ class NetCvode {
     void statistics(int);
     void spike_stat();
     void re_init(double t0 = 0.);
-    int cellindex();
+    // int cellindex(); // never used
     void states();
     void dstates();
     int fun(double t, double* y, double* ydot);
@@ -86,12 +85,7 @@ class NetCvode {
     void move_event(TQItem*, double, NrnThread*);
     void remove_event(TQItem*, int threadid);
     TQItem* event(double tdeliver, DiscreteEvent*, NrnThread*);
-#if BBTQ == 4
-    TQItem* fifo_event(double tdeliver, DiscreteEvent*, NrnThread*);
-#endif
-#if BBTQ == 5
     TQItem* bin_event(double tdeliver, DiscreteEvent*, NrnThread*);
-#endif
     void send2thread(double, DiscreteEvent*, NrnThread*);
     void null_event(double);
     void tstop_event(double);
@@ -249,7 +243,7 @@ class NetCvode {
     Cvode* gcv_;
     void set_CVRhsFn();
     bool use_partrans();
-    hoc_Item* psl_;       // actually a hoc_List
+    std::vector<PreSyn*>* psl_;
     HTListList wl_list_;  // nrn_nthread of these for faster deliver_net_events when many cvode
     int pcnt_;
     NetCvodeThreadData* p;
@@ -267,5 +261,3 @@ class NetCvode {
     void allthread_handle();
     HocEventList* allthread_hocevents_;
 };
-
-#endif

@@ -8,4 +8,5 @@
     "gauss", "normrand", "poisrand", "poisson", "setseed", "scop_random", "boundary", "romberg",
     "legendre", "invert", "stepforce", "schedule", "set_seed", "nrn_pointing",
     "state_discontinuity", "net_send", "net_move", "net_event", "nrn_random_play", "at_time",
-    "nrn_ghk",
+    "nrn_ghk", "random_negexp", "random_normal", "random_uniform", "random_setseq", "random_setids",
+    "random_ipick",

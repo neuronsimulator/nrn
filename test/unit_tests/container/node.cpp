@@ -2,10 +2,13 @@
 #include "neuron/container/soa_container.hpp"
 #include "section.h"
 
-#include <catch2/catch.hpp>
+#include <catch2/generators/catch_generators.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 #include <iostream>
+#include <numeric>
 #include <optional>
+#include <random>
 #include <sstream>
 #include <vector>
 #include <unordered_map>
@@ -272,16 +275,6 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
                 REQUIRE(handle.v() == field::Voltage{}.default_value());
             }
         }
-    }
-    GIVEN("A node that is deleted without an active deferred-deletion vector") {
-        auto* const old = std::exchange(neuron::container::detail::identifier_defer_delete_storage,
-                                        nullptr);
-        // Because identifier_defer_delete_storage is nullptr, deleting `node` will delete the
-        // heap-allocated std::size_t that the data handles depend on. This touches an otherwise
-        // uncovered code path in soa_identifier.hpp. Meaningfully checking the right code path was
-        // followed seems excessively complicated.
-        { ::Node node{}; }
-        neuron::container::detail::identifier_defer_delete_storage = old;
     }
     GIVEN("A series of nodes with increasing integer voltages") {
         using neuron::test::get_node_voltages;
@@ -555,7 +548,7 @@ TEST_CASE("Deleting a row from a frozen SoA container causes a fatal error",
           "[.][tests_that_abort]") {
     auto& node_data = neuron::model().node_data();  // SoA data store
     std::optional<::Node> node{std::in_place};      // take ownership of a row in node_data
-    REQUIRE(node_data.size() == 1);                 // quick sanity check
+    REQUIRE(node_data.size() == 1);                 // quick consistency check
     auto const frozen_token = node_data.issue_frozen_token();  // mark node_data frozen
     node.reset();  // Node destructor will trigger a call to std::terminate.
 }

@@ -1,17 +1,27 @@
 import os
+import sys
+import warnings
+
 from neuron import config
+
+from neuron.tests.utils.checkresult import Chk
+from neuron.tests.utils import get_c_compiler
+from subprocess import Popen, PIPE
 
 # skip test if no InterViews GUI
 if not config.arguments["NRN_ENABLE_INTERVIEWS"] or os.getenv("DISPLAY") is None:
-    print("No GUI for running neurondemo. Skip this test.")
-    quit()
+    warnings.warn("No GUI for running neurondemo. Skip this test.")
+    sys.exit(0)
 
-from neuron.tests.utils.checkresult import Chk
-from subprocess import Popen, PIPE
+# skip on NVHPC
+if get_c_compiler().endswith("nvc"):
+    warnings.warn("Skipping neurondemo test on NVHPC")
+    sys.exit(0)
 
 # Create a helper for managing reference results
 dir_path = os.path.dirname(os.path.realpath(__file__))
 chk = Chk(os.path.join(dir_path, "test_neurondemo.json"))
+
 
 # Run a command with input into stdin
 def run(cmd, input):
@@ -34,10 +44,12 @@ def run(cmd, input):
 # cycle through once but not twice with the mouse.
 
 # HOC: select demo, run, and print all lines on all Graphs
+#  After selecting demo and before run, allow modifications
 input = r"""
 proc dodemo() {
   usetable_hh = 0 // Compatible with -DNRN_ENABLE_CORENEURON=ON
   demo(%d)
+  %s
   run()
   printf("\nZZZbegin\n")
   prgraphs()
@@ -46,6 +58,7 @@ proc dodemo() {
 dodemo()
 quit()
 """
+
 
 # run neurondemo and return the stdout lines between ZZZbegin and ZZZend
 def neurondemo(extra, input):
@@ -97,9 +110,8 @@ proc prgraphs() {local i, j, k  localobj xvec, yvec, glist
 }
 """
 
-# Run all the demos and compare their results to the reference
-for i in range(1, 8):
-    data = neurondemo(prgraphs, input % i)
+
+def data_compare(key, data):
     data.reverse()
     # parse the prgraphs output back into a rich structure
     rich_data = []
@@ -126,7 +138,6 @@ for i in range(1, 8):
         rich_data.append([graph_name, lines])
     # we should have munched everything
     assert len(data) == 0
-    key = "demo%d" % i
 
     if os.uname().sysname == "Darwin":
         # Sometimes a Graph y value str differs in last digit by 1
@@ -171,4 +182,131 @@ for i in range(1, 8):
     else:
         chk(key, rich_data)
 
+
+# Run all the demos and compare their results to the reference
+for i in range(1, 8):
+    data = neurondemo(prgraphs, input % (i, ""))
+    key = f"demo{i}"
+    data_compare(key, data)
+
+
+def special_run(key, demo_index, pre_run_stmts):
+    data = neurondemo(prgraphs, input % (demo_index, pre_run_stmts))
+    data_compare(key, data)
+
+
+# For full coverage of #3454, do another run of Dynamic Clamp with cvode active.
+special_run("cover3454", 6, "cvode_active(1)")
+
 chk.save()
+
+################################################
+# test_many_ions.py copied below and removed to fix a CI coverage test failure:
+# libgcov profiling error:/home/...demo/release/x86_64/mod_func.gcda:overwriting
+# an existing profile data with a different timestamp.
+# I was unable to reproduce the coverage test failure on my linux desktop by
+# experimenting with parallel runs of the distinct tests. Nevertheless,
+# CI coverage is successful when the use of the neurondemo shared library is
+# serialized into this file.
+# I'd rather keep the file and run from here via something like
+# run("python test_many_ions.py", "")
+# but cmake installs each hoctest file in a separate folder and "python" may not
+# be the name of the program we need to run.
+###########################
+# Test when large number of ion mechanisms exist.
+
+# Strategy is to create a large number of ion mechanisms before loading
+# the neurondemo mod file shared library which will create the ca ion
+# along with several mechanisms that write to cai.
+
+from neuron import h, load_mechanisms
+from platform import machine
+import sys
+import io
+
+
+# return True if name exists in h
+def exists(name):
+    try:
+        exec("h.%s" % name)
+    except:
+        return False
+    return True
+
+
+# use up a large number of mechanism indices for ions. And want to test beyond
+# 1000 which requires change to max_ions in nrn/src/nrnoc/eion.cpp
+nion = 250
+ion_indices = [int(h.ion_register("ca%d" % i, 2)) for i in range(1, nion + 1)]
+# gain some confidence they exist
+assert exists("ca%d_ion" % nion)
+assert (ion_indices[-1] - ion_indices[0]) == (nion - 1)
+mt = h.MechanismType(0)
+assert mt.count() > nion
+
+# this test depends on the ca ion not existing at this point
+assert exists("ca_ion") is False
+
+# load neurondemo mod files. That will create ca_ion and provide two
+# mod files that write cai
+# Following Aborts prior to PR#3055 with
+# eion.cpp:431: void nrn_check_conc_write(Prop*, Prop*, int): Assertion `k < sizeof(long) * 8' failed.
+nrnmechlibpath = "%s/demo/release" % h.neuronhome()
+print(nrnmechlibpath)
+assert load_mechanisms(nrnmechlibpath)
+
+# ca_ion now exists and has a mechanism index > nion
+assert exists("ca_ion")
+mt = h.MechanismType(0)  # new mechanisms do not appear in old MechanismType
+mt.select("ca_ion")
+assert mt.selected() > nion
+
+
+# return stderr output resulting from sec.insert(mechname)
+def mech_insert(sec, mechname):
+    # capture stderr
+    old_stderr = sys.stderr
+    sys.stderr = mystderr = io.StringIO()
+
+    sec.insert(mechname)
+
+    sys.stderr = old_stderr
+    return mystderr.getvalue()
+
+
+# test if can use the high mechanism index cadifpmp (with USEION ... WRITE cai) along with the high mechanims index ca_ion
+s = h.Section()
+s.insert("cadifpmp")
+h.finitialize(-65)
+# The ion_style tells whether cai or cao is being written
+istyle = int(h.ion_style("ca_ion", sec=s))
+assert istyle & 0o200  # writing cai
+assert (istyle & 0o400) == 0  # not writing ca0
+# unfortunately, at present, uninserting does not turn off that bit
+s.uninsert("cadifpmp")
+assert s.has_membrane("cadifpmp") is False
+assert int(h.ion_style("ca_ion", sec=s)) & 0o200
+# nevertheless, on reinsertion, there is no warning, so can't test the
+# warning without a second mechanism that WRITE cai
+assert mech_insert(s, "cadifpmp") == ""
+assert s.has_membrane("cadifpmp")
+# uninsert again and insert another mechanism that writes.
+s.uninsert("cadifpmp")
+assert mech_insert(s, "capmpr") == ""  # no warning
+assert mech_insert(s, "cadifpmp") != ""  # now there is a warning.
+
+# more serious test
+# several sections with alternating cadifpmp and capmpr
+del s
+secs = [h.Section() for i in range(5)]
+for i, s in enumerate(secs):
+    if i % 2:
+        assert mech_insert(s, "capmpr") == ""
+    else:
+        assert mech_insert(s, "cadifpmp") == ""
+
+# warnings due to multiple mechanisms at same location that WRITE cai
+assert mech_insert(secs[2], "capmpr") != ""
+assert mech_insert(secs[3], "cadifpmp") != ""
+
+############################################

@@ -49122,4 +49122,4 @@ def setup_threejs(after="", before=""):
 def javascript_embedder(js):
     from IPython.display import display, HTML, Javascript
 
-    display(Javascript("neuron_javascript_embedder(%s)" % json.dumps(js)))
+    display(Javascript(f"neuron_javascript_embedder({json.dumps(js)})"))

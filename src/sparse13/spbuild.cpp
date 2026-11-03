@@ -20,11 +20,9 @@
  *
  *  >>> Other functions contained in this file:
  *  spcFindElementInCol
- *  Translate
  *  spcCreateElement
  *  spcLinkRows
  *  EnlargeMatrix
- *  ExpandTranslationArrays
  */
 
 /*
@@ -42,11 +40,6 @@
  *  software for any purpose.  It is provided `as is', without express
  *  or implied warranty.
  */
-
-#ifndef lint
-static char copyright[] = "Sparse1.3: Copyright (c) 1985,86,87,88 by Kenneth S. Kundert";
-static char RCSid[] = "@(#)$Header$";
-#endif
 
 /*
  *  IMPORTS
@@ -70,9 +63,7 @@ static char RCSid[] = "@(#)$Header$";
 extern ElementPtr spcGetFillin(MatrixPtr Matrix);
 extern ElementPtr spcGetElement(MatrixPtr Matrix);
 
-static void Translate(MatrixPtr Matrix, int* Row, int* Col);
 static void EnlargeMatrix(MatrixPtr Matrix, int NewSize);
-static void ExpandTranslationArrays(MatrixPtr Matrix, int NewSize);
 
 /*
  *  CLEAR MATRIX
@@ -98,18 +89,6 @@ void spClear(char* eMatrix)
     ASSERT(IS_SPARSE(Matrix));
 
 /* Clear matrix. */
-#if spCOMPLEX
-    if (Matrix->PreviousMatrixWasComplex OR Matrix->Complex) {
-        for (I = Matrix->Size; I > 0; I--) {
-            pElement = Matrix->FirstInCol[I];
-            while (pElement != NULL) {
-                pElement->Real = 0.0;
-                pElement->Imag = 0.0;
-                pElement = pElement->NextInCol;
-            }
-        }
-    } else
-#endif
     {
         for (I = Matrix->Size; I > 0; I--) {
             pElement = Matrix->FirstInCol[I];
@@ -122,9 +101,6 @@ void spClear(char* eMatrix)
 
     /* Empty the trash. */
     Matrix->TrashCan.Real = 0.0;
-#if spCOMPLEX
-    Matrix->TrashCan.Imag = 0.0;
-#endif
 
     Matrix->Error = spOKAY;
     Matrix->Factored = NO;
@@ -183,17 +159,8 @@ RealNumber* spGetElement(char* eMatrix, int Row, int Col)
     if ((Row == 0) OR(Col == 0))
         return &Matrix->TrashCan.Real;
 
-#if NOT TRANSLATE
     ASSERT(Matrix->NeedsOrdering);
-#endif
 
-#if TRANSLATE
-    Translate(Matrix, &Row, &Col);
-    if (Matrix->Error == spNO_MEMORY)
-        return NULL;
-#endif
-
-#if NOT TRANSLATE
 #if NOT EXPANDABLE
     ASSERT(Row <= Matrix->Size AND Col <= Matrix->Size);
 #endif
@@ -204,7 +171,6 @@ RealNumber* spGetElement(char* eMatrix, int Row, int Col)
         EnlargeMatrix(Matrix, MAX(Row, Col));
     if (Matrix->Error == spNO_MEMORY)
         return NULL;
-#endif
 #endif
 
     /*
@@ -289,109 +255,6 @@ ElementPtr spcFindElementInCol(MatrixPtr Matrix, ElementPtr* LastAddr, int Row, 
     else
         return NULL;
 }
-
-#if TRANSLATE
-
-/*
- *  TRANSLATE EXTERNAL INDICES TO INTERNAL
- *
- *  Convert internal row and column numbers to internal row and column numbers.
- *  Also updates Ext/Int maps.
- *
- *
- *  >>> Arguments:
- *  Matrix  <input>    (MatrixPtr)
- *      Pointer to the matrix.
- *  Row  <input/output>  (int *)
- *     Upon entry Row is either a external row number of an external node
- *     number.  Upon entry, the internal equivalent is supplied.
- *  Col  <input/output>  (int *)
- *     Upon entry Column is either a external column number of an external node
- *     number.  Upon entry, the internal equivalent is supplied.
- *
- *  >>> Local variables:
- *  ExtCol  (int)
- *     Temporary variable used to hold the external column or node number
- *     during the external to internal column number translation.
- *  ExtRow  (int)
- *     Temporary variable used to hold the external row or node number during
- *     the external to internal row number translation.
- *  IntCol  (int)
- *     Temporary variable used to hold the internal column or node number
- *     during the external to internal column number translation.
- *  IntRow  (int)
- *     Temporary variable used to hold the internal row or node number during
- *     the external to internal row number translation.
- */
-
-static void Translate(MatrixPtr Matrix, int* Row, int* Col)
-{
-    int IntRow, IntCol, ExtRow, ExtCol;
-
-    /* Begin `Translate'. */
-    ExtRow = *Row;
-    ExtCol = *Col;
-
-    /* Expand translation arrays if necessary. */
-    if ((ExtRow > Matrix->AllocatedExtSize) OR(ExtCol > Matrix->AllocatedExtSize)) {
-        ExpandTranslationArrays(Matrix, MAX(ExtRow, ExtCol));
-        if (Matrix->Error == spNO_MEMORY)
-            return;
-    }
-
-    /* Set ExtSize if necessary. */
-    if ((ExtRow > Matrix->ExtSize) OR(ExtCol > Matrix->ExtSize))
-        Matrix->ExtSize = MAX(ExtRow, ExtCol);
-
-    /* Translate external row or node number to internal row or node number. */
-    if ((IntRow = Matrix->ExtToIntRowMap[ExtRow]) == -1) {
-        Matrix->ExtToIntRowMap[ExtRow] = ++Matrix->CurrentSize;
-        Matrix->ExtToIntColMap[ExtRow] = Matrix->CurrentSize;
-        IntRow = Matrix->CurrentSize;
-
-#if NOT EXPANDABLE
-        ASSERT(IntRow <= Matrix->Size);
-#endif
-
-#if EXPANDABLE
-        /* Re-size Matrix if necessary. */
-        if (IntRow > Matrix->Size)
-            EnlargeMatrix(Matrix, IntRow);
-        if (Matrix->Error == spNO_MEMORY)
-            return;
-#endif
-
-        Matrix->IntToExtRowMap[IntRow] = ExtRow;
-        Matrix->IntToExtColMap[IntRow] = ExtRow;
-    }
-
-    /* Translate external column or node number to internal column or node number.*/
-    if ((IntCol = Matrix->ExtToIntColMap[ExtCol]) == -1) {
-        Matrix->ExtToIntRowMap[ExtCol] = ++Matrix->CurrentSize;
-        Matrix->ExtToIntColMap[ExtCol] = Matrix->CurrentSize;
-        IntCol = Matrix->CurrentSize;
-
-#if NOT EXPANDABLE
-        ASSERT(IntCol <= Matrix->Size);
-#endif
-
-#if EXPANDABLE
-        /* Re-size Matrix if necessary. */
-        if (IntCol > Matrix->Size)
-            EnlargeMatrix(Matrix, IntCol);
-        if (Matrix->Error == spNO_MEMORY)
-            return;
-#endif
-
-        Matrix->IntToExtRowMap[IntCol] = ExtCol;
-        Matrix->IntToExtColMap[IntCol] = ExtCol;
-    }
-
-    *Row = IntRow;
-    *Col = IntCol;
-    return;
-}
-#endif
 
 #if QUAD_ELEMENT
 /*
@@ -649,9 +512,6 @@ ElementPtr spcCreateElement(MatrixPtr Matrix, int Row, int Col, ElementPtr* Last
         pElement->Row = Row;
         pElement->Col = Col;
         pElement->Real = 0.0;
-#if spCOMPLEX
-        pElement->Imag = 0.0;
-#endif
 #if INITIALIZE
         pElement->pInitInfo = NULL;
 #endif
@@ -708,9 +568,6 @@ ElementPtr spcCreateElement(MatrixPtr Matrix, int Row, int Col, ElementPtr* Last
         pElement->Col = Col;
 #endif
         pElement->Real = 0.0;
-#if spCOMPLEX
-        pElement->Imag = 0.0;
-#endif
 #if INITIALIZE
         pElement->pInitInfo = NULL;
 #endif
@@ -847,58 +704,6 @@ static void EnlargeMatrix(MatrixPtr Matrix, int NewSize)
     return;
 }
 
-#if TRANSLATE
-
-/*
- *  EXPAND TRANSLATION ARRAYS
- *
- *  Increases the size arrays that are used to translate external to internal
- *  row and column numbers.
- *
- *  >>> Arguments:
- *  Matrix  <input>    (MatrixPtr)
- *      Pointer to the matrix.
- *  NewSize  <input>  (int)
- *     The new size of the translation arrays.
- *
- *  >>> Local variables:
- *  OldAllocatedSize  (int)
- *     The allocated size of the translation arrays before being expanded.
- */
-
-static void ExpandTranslationArrays(MatrixPtr Matrix, int NewSize)
-{
-    int I, OldAllocatedSize = Matrix->AllocatedExtSize;
-
-    /* Begin `ExpandTranslationArrays'. */
-    Matrix->ExtSize = NewSize;
-
-    if (NewSize <= OldAllocatedSize)
-        return;
-
-    /* Expand the translation arrays ExtToIntRowMap and ExtToIntColMap. */
-    NewSize = MAX(NewSize, EXPANSION_FACTOR * OldAllocatedSize);
-    Matrix->AllocatedExtSize = NewSize;
-
-    if ((REALLOC(Matrix->ExtToIntRowMap, int, NewSize + 1)) == NULL) {
-        Matrix->Error = spNO_MEMORY;
-        return;
-    }
-    if ((REALLOC(Matrix->ExtToIntColMap, int, NewSize + 1)) == NULL) {
-        Matrix->Error = spNO_MEMORY;
-        return;
-    }
-
-    /* Initialize the new portion of the vectors. */
-    for (I = OldAllocatedSize + 1; I <= NewSize; I++) {
-        Matrix->ExtToIntRowMap[I] = -1;
-        Matrix->ExtToIntColMap[I] = -1;
-    }
-
-    return;
-}
-#endif
-
 #if INITIALIZE
 /*
  *   INITIALIZE MATRIX
@@ -960,18 +765,6 @@ int (*pInit)();
     /* Begin `spInitialize'. */
     ASSERT(IS_SPARSE(Matrix));
 
-#if spCOMPLEX
-    /* Clear imaginary part of matrix if matrix is real but was complex. */
-    if (Matrix->PreviousMatrixWasComplex AND NOT Matrix->Complex) {
-        for (J = Matrix->Size; J > 0; J--) {
-            pElement = Matrix->FirstInCol[J];
-            while (pElement != NULL) {
-                pElement->Imag = 0.0;
-                pElement = pElement->NextInCol;
-            }
-        }
-    }
-#endif /* spCOMPLEX */
 
     /* Initialize the matrix. */
     for (J = Matrix->Size; J > 0; J--) {
@@ -980,9 +773,6 @@ int (*pInit)();
         while (pElement != NULL) {
             if (pElement->pInitInfo == NULL) {
                 pElement->Real = 0.0;
-#if spCOMPLEX
-                pElement->Imag = 0.0;
-#endif
             } else {
                 Error = (*pInit)((RealNumber*)pElement, pElement->pInitInfo,
                     Matrix->IntToExtRowMap[pElement->Row], Col);
@@ -997,9 +787,6 @@ int (*pInit)();
 
     /* Empty the trash. */
     Matrix->TrashCan.Real = 0.0;
-#if spCOMPLEX
-    Matrix->TrashCan.Imag = 0.0;
-#endif
 
     Matrix->Error = spOKAY;
     Matrix->Factored = NO;

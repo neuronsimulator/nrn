@@ -415,7 +415,7 @@ bool PrintableWindow::receive(const Event& e) {
             reconfigured();
             notify();
             break;
-        // LCOV_EXCL_END
+        // LCOV_EXCL_STOP
         case MapNotify:
             if (xplace_) {
                 if (xtop() != xtop_ || xleft() != xleft_) {
@@ -452,7 +452,7 @@ void PrintableWindow::type(const char* s) {
     type_ = s;
 }
 const char* PrintableWindow::type() const {
-    return type_.string();
+    return type_.c_str();
 }
 
 // StandardWindow

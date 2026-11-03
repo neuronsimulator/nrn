@@ -9,11 +9,7 @@
  * form \f[$C \frac{dy}{dt} = A y + b$\f].
  */
 
-#ifndef nrndae_h
-#define nrndae_h
-// this defines things needed by ocmatrix
-#include <OS/list.h>
-
+#pragma once
 #include "ivocvect.h"
 #include "matrixmap.h"
 
@@ -86,8 +82,7 @@ class NrnDAE {
      * @param pvdot         pointers to voltage derivatives (set by this
      *                      function)
      */
-    void dkmap(std::vector<neuron::container::data_handle<double>>& pv,
-               std::vector<neuron::container::data_handle<double>>& pvdot);
+    void dkmap(std::vector<double*>& pv, std::vector<double*>& pvdot);
 
     /**
      * Destructor.
@@ -225,5 +220,3 @@ void nrndae_deregister(NrnDAE* n);
 
 typedef std::list<NrnDAE*> NrnDAEPtrList;
 typedef NrnDAEPtrList::const_iterator NrnDAEPtrListIterator;
-
-#endif

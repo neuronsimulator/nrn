@@ -6,6 +6,8 @@
 # =============================================================================.
 */
 
+#include <cctype>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
@@ -13,6 +15,7 @@
 #include "coreneuron/mpi/nrnmpi.h"
 #include "coreneuron/coreneuron.hpp"
 #include "coreneuron/utils/nrnoc_aux.hpp"
+#include "coreneuron/utils/nrn_assert.h"
 #include "coreneuron/apps/corenrn_parameters.hpp"
 
 namespace coreneuron {
@@ -21,7 +24,7 @@ int v_structure_change;
 int diam_changed;
 #define MAXERRCOUNT 5
 int hoc_errno_count;
-const char* bbcore_write_version = "1.6";  // Allow multiple gid and PreSyn per real cell.
+const char* bbcore_write_version = "1.8";  // Include ArrayDims
 
 char* pnt_name(Point_process* pnt) {
     return corenrn.get_memb_func(pnt->_type).sym;
@@ -133,6 +136,33 @@ void check_bbcore_write_version(const char* version) {
                     bbcore_write_version,
                     version);
         abort();
+    }
+}
+
+void read_bbcore_token(FILE* fp, char* buf, size_t n) {
+    nrn_assert(fp);
+    nrn_assert(n > 1);
+    buf[0] = '\0';
+    int c = std::fgetc(fp);
+    while (c != EOF && std::isspace(static_cast<unsigned char>(c))) {
+        c = std::fgetc(fp);
+    }
+    size_t i = 0;
+    while (c != EOF && !std::isspace(static_cast<unsigned char>(c))) {
+        if (i + 1 >= n) {
+            buf[i] = '\0';
+            nrn_assert(i + 1 < n);
+        }
+        buf[i++] = static_cast<char>(c);
+        c = std::fgetc(fp);
+    }
+    buf[i] = '\0';
+    nrn_assert(i > 0);
+    while (c != EOF && std::isspace(static_cast<unsigned char>(c))) {
+        c = std::fgetc(fp);
+    }
+    if (c != EOF) {
+        std::ungetc(c, fp);
     }
 }
 }  // namespace coreneuron

@@ -7,7 +7,7 @@
 #include "ivoc.h"
 #endif
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 SCENARIO("Test fast_imem calculation", "[Neuron][fast_imem]") {
     GIVEN("A section") {

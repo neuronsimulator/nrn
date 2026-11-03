@@ -1,5 +1,4 @@
-#ifndef daspk_h
-#define daspk_h
+#pragma once
 
 #include "shared/nvector_serial.h"
 #include "nvector_nrnthread.h"
@@ -37,4 +36,3 @@ class Daspk {
     static int init_try_again_;
     static int first_try_init_failures_;
 };
-#endif

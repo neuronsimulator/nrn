@@ -3,7 +3,6 @@ from neuron.expect_hocerr import expect_err
 
 
 def test_template_err():
-
     h(
         """
 begintemplate TestTemplateErr1

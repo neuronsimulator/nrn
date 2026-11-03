@@ -19,15 +19,7 @@ APP_NAME="$(basename "$0")"
 
 # directory and parent directory of this script
 PARENT_DIR="$(dirname "$BASH_SOURCE")/.."
-
-# prefer perl exe set by neuron wrappers in case of wheel
-PERL_EXE="${CORENRN_PERLEXE:-@PERL_EXECUTABLE@}"
-# in case of mac installer, wrapper is not used and hence
-# check if binary exist. otherwise, just rely on perl being
-# in default $PATH
-if [ ! -f "${PERL_EXE}" ]; then PERL_EXE="$(which perl)"; fi
-
-ROOT_DIR="$("${PERL_EXE}" -e "use Cwd 'abs_path'; print abs_path('$PARENT_DIR')")"
+ROOT_DIR="$(readlink -f "$PARENT_DIR")"
 
 # default arguments : number of parallel builds and default mod file path
 PARALLEL_BUILDS=4
@@ -109,7 +101,7 @@ shopt -s nullglob
 if [ -d "$params_MODS_PATH" ]; then
     files=( "$params_MODS_PATH"/*.mod )
     if [ ${#files} -eq 0 ]; then
-        echo "WARNING: No mod files found in '$(realpath ${params_MODS_PATH})', compiling default ones only!"
+        echo "WARNING: No mod files found in '$(readlink -f "${params_MODS_PATH}")', compiling default ones only!"
     fi
 else
     echo "FATAL: Invalid mods directory: '$params_MODS_PATH'"

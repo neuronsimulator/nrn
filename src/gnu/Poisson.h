@@ -15,12 +15,7 @@ You should have received a copy of the GNU Library General Public
 License along with this library; if not, write to the Free Software
 Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 */
-#ifndef _Poisson_h
-#ifdef __GNUG__
-//#pragma interface
-#endif
-#define _Poisson_h 
-
+#pragma once
 #include "Random.h"
 
 class Poisson: public Random {
@@ -47,5 +42,3 @@ inline double Poisson::mean(double x) {
   pMean = x;
   return t;
 }
-
-#endif

@@ -88,12 +88,38 @@ so pdata_m(k, isz) = inew + data_t
 #include <utility>
 #include <algorithm>
 
+#if CORENRN_BUILD
 #include "coreneuron/sim/multicore.hpp"
 #include "coreneuron/io/nrn_setup.hpp"
 #include "coreneuron/nrniv/nrniv_decl.h"
 #include "coreneuron/utils/nrn_assert.h"
 #include "coreneuron/coreneuron.hpp"
+#include "nrnoc/ion_semantics.h"
+#else
+#include "nrnoc/multicore.h"
+#include "oc/nrnassrt.h"
+#include "node_order_optim/permute_utils.hpp"
+#endif
+
+#if CORENRN_BUILD
 namespace coreneuron {
+#else
+namespace neuron {
+#endif
+
+#if !CORENRN_BUILD
+static int nrn_soa_padded_size(int cnt, int layout) {
+    assert(layout == 1);
+    return cnt;
+}
+static int nrn_i_layout(int icnt, int cnt, int isz, int sz, int layout) {
+    assert(isz == 0);
+    assert(sz == 1);
+    assert(layout == 1);
+    return icnt;
+}
+#endif  // !CORENRN_BUILD
+
 template <typename T>
 void permute(T* data, int cnt, int sz, int layout, int* p) {
     // data(p[icnt], isz) <- data(icnt, isz)
@@ -107,9 +133,11 @@ void permute(T* data, int cnt, int sz, int layout, int* p) {
         return;
     }
 
+#if CORENRN_BUILD
     if (layout == Layout::SoA) {  // for SoA, n might be larger due to cnt padding
         n = nrn_soa_padded_size(cnt, layout) * sz;
     }
+#endif
 
     T* data_orig = new T[n];
     for (int i = 0; i < n; ++i) {
@@ -157,6 +185,7 @@ static void invert_permute(int* p, int n) {
 // full_search: helper for type_of_ntdata. Return mech type for nt._data[i].
 // Update type_hints.
 
+#if CORENRN_BUILD
 static std::vector<int> type_hints;
 
 static int full_search(NrnThread& nt, double* pd) {
@@ -208,7 +237,9 @@ int type_of_ntdata(NrnThread& nt, int i, bool reset) {
     // after the last type_hints
     return full_search(nt, pd);
 }
+#endif  // CORENRN_BUILD
 
+#if CORENRN_BUILD
 static void update_pdata_values(Memb_list* ml, int type, NrnThread& nt) {
     // assumes AoS to SoA transformation already made since we are using
     // nrn_i_layout to determine indices into both ml->pdata and into target data
@@ -303,8 +334,8 @@ static void update_pdata_values(Memb_list* ml, int type, NrnThread& nt) {
                     nrn_assert(0);
                 }
             }
-        } else if (s >= 0 && s < 1000) {  // ion
-            int etype = s;
+        } else if (nrn_semantics_is_ion(s)) {  // ion
+            int etype = nrn_semantics_ion_type(s);
             int elayout = corenrn.get_mech_data_layout()[etype];
             Memb_list* eml = nt._ml_list[etype];
             int edata0 = eml->data - nt._data;
@@ -342,6 +373,18 @@ void node_permute(int* vec, int n, int* permute) {
     }
 }
 
+#else  // not CORENRN_BUILD
+
+void update_parent_index(int* vec, int vec_size, const std::vector<int>& permute) {
+    for (int i = 0; i < vec_size; ++i) {
+        if (vec[i] >= 0) {
+            vec[i] = permute[vec[i]];
+        }
+    }
+}
+
+#endif  // not CORENRN_BUILD
+
 void permute_ptr(int* vec, int n, int* p) {
     permute(vec, n, 1, 1, p);
 }
@@ -350,6 +393,7 @@ void permute_data(double* vec, int n, int* p) {
     permute(vec, n, 1, 1, p);
 }
 
+#if CORENRN_BUILD
 void permute_ml(Memb_list* ml, int type, NrnThread& nt) {
     int sz = corenrn.get_prop_param_size()[type];
     int psz = corenrn.get_prop_dparam_size()[type];
@@ -359,26 +403,7 @@ void permute_ml(Memb_list* ml, int type, NrnThread& nt) {
 
     update_pdata_values(ml, type, nt);
 }
-
-int nrn_index_permute(int ix, int type, Memb_list* ml) {
-    int* p = ml->_permute;
-    if (!p) {
-        return ix;
-    }
-    int layout = corenrn.get_mech_data_layout()[type];
-    if (layout == Layout::AoS) {
-        int sz = corenrn.get_prop_param_size()[type];
-        int i_cnt = ix / sz;
-        int i_sz = ix % sz;
-        return p[i_cnt] * sz + i_sz;
-    } else {
-        assert(layout == Layout::SoA);
-        int padded_cnt = nrn_soa_padded_size(ml->nodecount, layout);
-        int i_cnt = ix % padded_cnt;
-        int i_sz = ix / padded_cnt;
-        return i_sz * padded_cnt + p[i_cnt];
-    }
-}
+#endif  // CORENRN_BUILD
 
 #if CORENRN_DEBUG
 static void pr(const char* s, int* x, int n) {
@@ -414,20 +439,39 @@ static bool nrn_index_sort_cmp(const std::pair<int, int>& a, const std::pair<int
     return result;
 }
 
+#if CORENRN_BUILD
 static int* nrn_index_sort(int* values, int n) {
+#else
+std::vector<int> nrn_index_sort(int* values, int n) {
+#endif
     std::vector<std::pair<int, int>> vi(n);
     for (int i = 0; i < n; ++i) {
         vi[i].first = values[i];
         vi[i].second = i;
     }
     std::sort(vi.begin(), vi.end(), nrn_index_sort_cmp);
+#if CORENRN_BUILD
     int* sort_indices = new int[n];
+#else
+    std::vector<int> sort_indices(n);
+#endif
     for (int i = 0; i < n; ++i) {
         sort_indices[i] = vi[i].second;
     }
     return sort_indices;
 }
 
+#if !CORENRN_BUILD
+void sort_ml(Memb_list* ml) {
+    auto isrt = nrn_index_sort(ml->nodeindices, ml->nodecount);
+    forward_permute(ml->nodeindices, ml->nodecount, isrt);
+    forward_permute(ml->nodelist, ml->nodecount, isrt);
+    forward_permute(ml->prop, ml->nodecount, isrt);
+    forward_permute(ml->pdata, ml->nodecount, isrt);
+}
+#endif  // !CORENRN_BUILD
+
+#if CORENRN_BUILD
 void permute_nodeindices(Memb_list* ml, int* p) {
     // nodeindices values are permuted according to p (that per se does
     //  not affect vec).
@@ -444,4 +488,6 @@ void permute_nodeindices(Memb_list* ml, int* p) {
     invert_permute(ml->_permute, ml->nodecount);
     permute_ptr(ml->nodeindices, ml->nodecount, ml->_permute);
 }
+#endif  // CORENRN_BUILD
+
 }  // namespace coreneuron

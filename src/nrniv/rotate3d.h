@@ -1,5 +1,4 @@
-#ifndef rotation3d_h
-#define rotation3d_h
+#pragma once
 
 /*  3-D rotation matrix */
 
@@ -29,4 +28,3 @@ class Rotation3d: public Resource {
     float a_[3][3];
     float o_[2][3];
 };
-#endif

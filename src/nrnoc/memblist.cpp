@@ -1,15 +1,64 @@
 #include "neuron/container/generic_data_handle.hpp"
 #include "neuron/container/mechanism_data.hpp"
 #include "neuron/model_data.hpp"
+#include "nrnassrt.h"
 #include "nrnoc_ml.h"
 
 #include <cassert>
 #include <iterator>  // std::distance, std::next
 #include <numeric>   // std::accumulate
 
+extern void* emalloc(size_t);
+
+
 Memb_list::Memb_list(int type)
     : m_storage{&neuron::model().mechanism_data(type)} {
     assert(type == m_storage->type());
+}
+
+void Memb_list::nodes_alloc(int node_count, bool also_pdata) {
+    if (node_count == 0) {
+        return;
+    }
+    m_owns_nodes = true;
+    nodecount = node_count;
+    nodelist = (Node**) emalloc(node_count * sizeof(Node*));
+    nodeindices = (int*) emalloc(node_count * sizeof(int));
+    // Prop used by ode_map even when hoc_mech is false
+    prop = new Prop*[node_count];
+    if (also_pdata) {
+        pdata = (Datum**) emalloc(node_count * sizeof(Datum*));
+    } else {
+        pdata = nullptr;
+    }
+}
+
+void Memb_list::nodes_free() {
+    nodecount = 0;
+    nrn_assert(m_owns_nodes);
+    free(std::exchange(nodelist, nullptr));
+    free(std::exchange(nodeindices, nullptr));
+    delete[] std::exchange(prop, nullptr);
+    free(std::exchange(pdata, nullptr));
+    m_owns_nodes = false;  // make potentially reusable for a view
+}
+
+Memb_list::Memb_list(Memb_list&& other) noexcept {
+    /// Other should not be used. But if it is, fine, but not the memory owner anymore
+    *this = other;
+    other.m_owns_nodes = false;
+}
+
+Memb_list& Memb_list::operator=(Memb_list&& rhs) noexcept {
+    *this = rhs;
+    rhs.m_owns_nodes = false;
+    return *this;
+}
+
+Memb_list::~Memb_list() noexcept {
+    if (m_owns_nodes) {
+        nodes_free();
+    }
 }
 
 [[nodiscard]] std::vector<double*> Memb_list::data() {
@@ -50,6 +99,32 @@ neuron::container::data_handle<double> Memb_list::data_handle(
     assert(m_storage_offset != neuron::container::invalid_row);
     return m_storage->get_field_instance<neuron::container::Mechanism::field::FloatingPoint>(
         m_storage_offset + instance, variable, array_index);
+}
+
+
+[[nodiscard]] int Memb_list::get_num_variables() const {
+    using Tag = neuron::container::Mechanism::field::FloatingPoint;
+    return m_storage->get_num_variables<Tag>();
+}
+
+[[nodiscard]] int Memb_list::get_array_dims(int variable) const {
+    using Tag = neuron::container::Mechanism::field::FloatingPoint;
+    return m_storage->get_array_dims<Tag>()[variable];
+}
+
+[[nodiscard]] int const* Memb_list::get_array_dims() const {
+    using Tag = neuron::container::Mechanism::field::FloatingPoint;
+    return m_storage->get_array_dims<Tag>();
+}
+
+[[nodiscard]] int Memb_list::get_array_prefix_sums(int variable) const {
+    using Tag = neuron::container::Mechanism::field::FloatingPoint;
+    return m_storage->get_array_dim_prefix_sums<Tag>()[variable];
+}
+
+[[nodiscard]] int const* Memb_list::get_array_prefix_sums() const {
+    using Tag = neuron::container::Mechanism::field::FloatingPoint;
+    return m_storage->get_array_dim_prefix_sums<Tag>();
 }
 
 

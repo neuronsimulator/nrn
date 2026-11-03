@@ -88,7 +88,7 @@ namespace random123_global {
 #else
 #define g_k_qualifiers
 #endif
-g_k_qualifiers philox4x32_key_t g_k{};
+g_k_qualifiers philox4x32_key_t g_k{{0, 0}};
 
 // Cannot refer to g_k directly from a nrn_pragma_acc(routine seq) method like
 // coreneuron_random123_philox4x32_helper, and cannot have this inlined there at

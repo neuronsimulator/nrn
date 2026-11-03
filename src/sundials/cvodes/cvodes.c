@@ -3285,7 +3285,7 @@ static int CVStep(CVodeMem cv_mem)
         dsm = CVStgrUpdateDsm(cv_mem, dsm, dsmS);
       }
     }
-    // LCOV_EXCL_END
+    // LCOV_EXCL_STOP
     /* Everything went fine; exit loop */ 
     break;
 

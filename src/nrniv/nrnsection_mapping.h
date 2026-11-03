@@ -1,5 +1,4 @@
-#ifndef NRN_SECTION_MAPPING
-#define NRN_SECTION_MAPPING
+#pragma once
 
 #include <string>
 #include <vector>
@@ -26,8 +25,10 @@ struct SecMapping {
     /** list of lfp factors associated with each segment */
     std::vector<double> seglfp_factors;
 
-    /** Number of electrodes per segment */
-    int num_electrodes;
+    /** Electrode offsets as partial sums (CSR-style).
+     *  For a single report with N electrodes: [0, N].
+     *  Empty when no electrodes are associated. */
+    std::vector<size_t> electrode_offsets;
 
     SecMapping(int n, std::string s)
         : nsec(n)
@@ -144,5 +145,3 @@ struct NrnMappingInfo {
 };
 
 void nrn_write_mapping_info(const char*, int, NrnMappingInfo&);
-
-#endif  // NRN_SECTION_MAPPING

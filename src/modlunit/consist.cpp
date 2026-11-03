@@ -1,4 +1,4 @@
-#include <../../nmodlconf.h>
+#include <../../nrnconf.h>
 /* /local/src/master/nrn/src/modlunit/consist.c,v 1.2 1995/09/05 20:24:01 hines Exp */
 
 /*

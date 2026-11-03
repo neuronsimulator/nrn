@@ -1,5 +1,4 @@
-#ifndef xmenu_h
-#define xmenu_h
+#pragma once
 
 #include <InterViews/window.h>
 #include <InterViews/box.h>
@@ -207,7 +206,7 @@ class HocVarLabel: public HocUpdateItem {
     Patch* p_;
     char** cpp_;
     char* cp_;
-    CopyString* variable_;
+    std::string variable_{};
     Object* pyvar_;
 };
 
@@ -332,7 +331,7 @@ class HocValEditor: public HocUpdateItem {
     bool active_;
     bool canrun_;
     HocAction* action_;
-    CopyString* variable_;
+    std::string variable_{};
     neuron::container::data_handle<double> pval_;
     ValEdLabel* prompt_;
     float* domain_limits_;
@@ -445,7 +444,7 @@ class OcSlider: public HocUpdateItem, public Observer {
     HocCommand* send_;
     neuron::container::data_handle<double> pval_;
     Object* pyvar_;
-    CopyString* variable_;
+    std::string variable_{};
     bool scrolling_;
     bool vert_;
     bool slow_;
@@ -475,7 +474,7 @@ class HocStateButton: public HocUpdateItem, public Observer {
 
   private:
     int style_;
-    CopyString* variable_;
+    std::string variable_{};
     CopyString* name_;
     neuron::container::data_handle<double> pval_;
     Object* pyvar_;
@@ -504,13 +503,10 @@ class HocStateMenuItem: public HocUpdateItem, public Observer {
     virtual void print(Printer*, const Allocation&) const;
 
   private:
-    CopyString* variable_;
+    std::string variable_{};
     CopyString* name_;
     neuron::container::data_handle<double> pval_;
     Object* pyvar_;
     MenuItem* b_;
     HocAction* action_;
 };
-
-
-#endif

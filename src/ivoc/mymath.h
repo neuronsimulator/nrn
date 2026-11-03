@@ -1,5 +1,4 @@
-#ifndef mymath_h
-#define mymath_h
+#pragma once
 
 #include <InterViews/geometry.h>
 
@@ -96,5 +95,3 @@ inline bool MyMath::inside(Coord x, Coord x1, Coord x2) {
 inline bool MyMath::inside(Coord x, Coord y, Coord x1, Coord y1, Coord x2, Coord y2) {
     return inside(x, x1, x2) && inside(y, y1, y2);
 }
-
-#endif

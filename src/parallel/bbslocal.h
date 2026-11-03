@@ -1,5 +1,4 @@
-#ifndef bbslocal_h
-#define bbslocal_h
+#pragma once
 
 #include "bbsimpl.h"
 
@@ -8,45 +7,43 @@ class KeepArgs;
 class BBSLocal: public BBSImpl {
   public:
     BBSLocal();
-    virtual ~BBSLocal();
+    ~BBSLocal() override;
 
-    virtual bool look(const char*);
+    bool look(const char*) override;
 
-    virtual void take(const char*);      /* blocks til something to take */
-    virtual bool look_take(const char*); /* returns false if nothing to take */
+    void take(const char*) override;      /* blocks til something to take */
+    bool look_take(const char*) override; /* returns false if nothing to take */
     // after taking use these
-    virtual int upkint();
-    virtual double upkdouble();
-    virtual void upkvec(int, double*);
-    virtual char* upkstr();                 // delete [] char* when finished
-    virtual char* upkpickle(size_t* size);  // delete [] char* when finished
+    int upkint() override;
+    double upkdouble() override;
+    void upkvec(int, double*) override;
+    char* upkstr() override;  // delete [] char* when finished
+    std::vector<char> upkpickle() override;
 
     // before posting use these
-    virtual void pkbegin();
-    virtual void pkint(int);
-    virtual void pkdouble(double);
-    virtual void pkvec(int, double*);
-    virtual void pkstr(const char*);
-    virtual void pkpickle(const char*, size_t);
-    virtual void post(const char*);
+    void pkbegin() override;
+    void pkint(int) override;
+    void pkdouble(double) override;
+    void pkvec(int, double*) override;
+    void pkstr(const char*) override;
+    void pkpickle(const std::vector<char>&) override;
+    void post(const char*) override;
 
-    virtual void post_todo(int parentid);
-    virtual void post_result(int id);
-    virtual int look_take_result(int pid);  // returns id, or 0 if nothing
-    virtual int look_take_todo();           // returns id, or 0 if nothing
-    virtual int take_todo();                // returns id
-    virtual void save_args(int);
-    virtual void return_args(int);
+    void post_todo(int parentid) override;
+    void post_result(int id) override;
+    int look_take_result(int pid) override;  // returns id, or 0 if nothing
+    int look_take_todo() override;           // returns id, or 0 if nothing
+    int take_todo() override;                // returns id
+    void save_args(int) override;
+    void return_args(int) override;
 
-    virtual void context();
+    void context() override;
 
-    virtual void start();
-    virtual void done();
+    void start() override;
+    void done() override;
 
-    virtual void perror(const char*);
+    void perror(const char*) override;
 
   private:
     KeepArgs* keepargs_;
 };
-
-#endif

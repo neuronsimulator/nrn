@@ -5,11 +5,10 @@
 #include <nrnoc2iv.h>
 #include <nrniv_mf.h>
 #include <classreg.h>
+#include <code.h>
 #include <objcmd.h>
 #include <nrnste.h>
 #include <netcon.h>
-
-extern int hoc_return_type_code;
 
 static double ste_transition(void* v) {
     auto* const ste = static_cast<StateTransitionEvent*>(v);
@@ -38,7 +37,7 @@ static double ste_transition(void* v) {
 
 static double ste_state(void* v) {
     StateTransitionEvent* ste = (StateTransitionEvent*) v;
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     int state = ste->state();
     if (ifarg(1)) {
         ste->state((int) chkarg(1, 0, ste->nstate() - 1));
@@ -46,7 +45,9 @@ static double ste_state(void* v) {
     return (double) state;
 }
 
-static Member_func members[] = {{"transition", ste_transition}, {"state", ste_state}, {0, 0}};
+static Member_func members[] = {{"transition", ste_transition},
+                                {"state", ste_state},
+                                {nullptr, nullptr}};
 
 static void* ste_cons(Object*) {
     int nstate = (int) chkarg(1, 1, 1e6);
@@ -65,7 +66,7 @@ static void ste_destruct(void* v) {
 }
 
 void StateTransitionEvent_reg() {
-    class2oc("StateTransitionEvent", ste_cons, ste_destruct, members, NULL, NULL, NULL);
+    class2oc("StateTransitionEvent", ste_cons, ste_destruct, members, nullptr, nullptr);
 }
 
 StateTransitionEvent::StateTransitionEvent(int nstate, Point_process* pnt)

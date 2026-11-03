@@ -1,0 +1,6 @@
+pytest<=9.1.1
+# for coverage
+pytest-cov<=7.1.0
+# for RXD test
+plotly<=7.1.0
+anywidget<=0.11.0

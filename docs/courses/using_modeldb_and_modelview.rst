@@ -3,7 +3,7 @@
 Using ModelDB with NEURON
 =========================
 
-`https://modeldb.yale.edu/ <https://modeldb.yale.edu/>`_ is the the home page of ModelDB.
+`https://modeldb.science <https://modeldb.science>`_ is the the home page of ModelDB.
 
 We'll be analyzing a couple of models in order to answer these questions:
 
@@ -16,7 +16,7 @@ We'll be analyzing a couple of models in order to answer these questions:
 3.
     What is the user interface, how was it implemented, and how do you use it?
 
-Example: Moore et al. 1983 `modeldb.yale.edu/9852 <https://senselab.med.yale.edu/ModelDB/showmodel.cshtml?model=9852#tabs-1>`_
+Example: Moore et al. 1983 `modeldb.science/9852 <https://modeldb.science/9852>`_
 ------------------------------------------------------------------------------------------------------------------------------
 
     Moore JW, Stockbridge N, Westerfield M (1983)
@@ -40,8 +40,8 @@ Load mosinit.hoc
 .. code::
     python
 
-    from neuron import h, gui
-    h.load_file('mosinit.hoc')
+    from neuron import n, gui
+    n.load_file('mosinit.hoc')
 
 The PointProcessManager shows a shape plot of the cell.
 
@@ -53,7 +53,7 @@ This model was written in HOC, but we can still use Python to explore it. To see
 .. code::
     python
 
-    h.topology()
+    n.topology()
 
 and
 
@@ -61,7 +61,7 @@ and
     python
 
     from pprint import pprint  # optional; could use print
-    for sec in h.allsec():
+    for sec in n.allsec():
         pprint(sec.psection())
 
 at the >>> prompt.
@@ -119,7 +119,7 @@ Click on :menuselection:`NEURON Main Menu --> Window` and look for one or more w
 
 If a CellBuilder pops up, examine its Topology, Subsets, Geometry, and Biophysics pages.
 
-Do they agree with the output of ``for sec in h.allsec(): pprint(sec.psection(())`` and/or what you discovered with the Model View tool?
+Do they agree with the output of ``for sec in n.allsec(): pprint(sec.psection(())`` and/or what you discovered with the Model View tool?
 
 "Extra Credit" Question
 
@@ -170,12 +170,12 @@ Why does the space plot automatically save traces every 0.1 ms?
 What procedure actually changes the stimulus location, duration, and amplitude? Read about PointProcessManager in the help files.
 
 
-Another example: Mainen and Sejnowski 1996 `modeldb.yale.edu/2488 <https://senselab.med.yale.edu/ModelDB/showmodel.cshtml?model=2488#tabs-1>`_
+Another example: Mainen and Sejnowski 1996 `modeldb.science/2488 <https://modeldb.science/2488>`_
 ----------------------------------------------------------------------------------------------------------------------------------------------
 
     Mainen ZF, Sejnowski TJ (1996). Influence of dendritic structure on firing pattern in model neocortical neurons. *Nature* 382:363-6. doi: `doi.org/10.1038/382363a0 <https://www.nature.com/articles/382363a0#citeas>`_
 
-This one has interesting anatomy and several mod files. Begin by downloading the model from `modeldb.yale.edu/2488 <https://senselab.med.yale.edu/ModelDB/showmodel.cshtml?model=2488#tabs-1>`_
+This one has interesting anatomy and several mod files. Begin by downloading the model from `modeldb.science/2488 <https://modeldb.science/2488>`_
 
 The model archive patdemo.zip has already been downloaded and unzipped. Its contents are in :file:`exercises/modeldb_and_modelview/patdemo`
 

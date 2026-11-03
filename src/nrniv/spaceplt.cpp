@@ -1,10 +1,10 @@
 #include <../../nrnconf.h>
 #include <stdio.h>
 #include "classreg.h"
+#include "code.h"
 
 
 #include <vector>
-#include <OS/string.h>
 #include <string.h>
 #if HAVE_IV
 #include "graph.h"
@@ -19,9 +19,7 @@
 
 extern int nrn_multisplit_active_;
 extern int hoc_execerror_messages;
-extern int node_index(Section*, double);
 extern int nrn_shape_changed_;
-extern int hoc_return_type_code;
 Object* (*nrnpy_rvp_rxd_to_callable)(Object*) = 0;
 
 class SecPos {
@@ -112,7 +110,7 @@ class RangeVarPlot: public NoIVGraphVector {
     Section *begin_section_, *end_section_;
     float x_begin_, x_end_, origin_;
     SecPosList* sec_list_;
-    CopyString expr_;
+    std::string expr_;
     int shape_changed_;
     int struc_changed_;
     double d2root_;  // distance to root of closest point to root
@@ -163,7 +161,7 @@ static double s_list(void* v) {
 
 static double s_color(void* v) {
     RangeVarPlot* me = (RangeVarPlot*) v;
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     int old_color = me->get_color();
     if (ifarg(1)) {
         me->set_color((int) chkarg(1, 0, 100));
@@ -256,9 +254,9 @@ static Member_func s_members[] = {{"begin", s_begin},
                                   {"color", s_color},
                                   {"to_vector", to_vector},
                                   {"from_vector", from_vector},
-                                  {0, 0}};
+                                  {nullptr, nullptr}};
 
-static Member_ret_obj_func rvp_retobj_members[] = {{"vector", rvp_vector}, {0, 0}};
+static Member_ret_obj_func rvp_retobj_members[] = {{"vector", rvp_vector}, {nullptr, nullptr}};
 
 static void* s_cons(Object*) {
     char* var = NULL;
@@ -293,7 +291,7 @@ static void s_destruct(void* v) {
 
 void RangeVarPlot_reg() {
     // printf("RangeVarPlot_reg\n");
-    class2oc("RangeVarPlot", s_cons, s_destruct, s_members, NULL, rvp_retobj_members, NULL);
+    class2oc("RangeVarPlot", s_cons, s_destruct, s_members, rvp_retobj_members, nullptr);
 }
 
 #if HAVE_IV
@@ -350,9 +348,9 @@ int RangeVarPlot::get_color(void) {
 void RangeVarPlot::set_color(int new_color) {
     color_ = new_color;
 #if HAVE_IV
-    IFGUI
-    color(colors->color(color_));
-    ENDGUI
+    if (hoc_usegui) {
+        color(colors->color(color_));
+    }
 #endif
 }
 
@@ -439,25 +437,15 @@ void RangeVarPlot::request(Requisition& req) const {
 
 #if HAVE_IV
 void RangeVarPlot::save(std::ostream& o) {
-    char buf[256];
     o << "objectvar rvp_" << std::endl;
-    Sprintf(buf, "rvp_ = new RangeVarPlot(\"%s\")", expr_.string());
-    o << buf << std::endl;
-    Sprintf(buf, "%s rvp_.begin(%g)", hoc_section_pathname(begin_section_), x_begin_);
-    o << buf << std::endl;
-    Sprintf(buf, "%s rvp_.end(%g)", hoc_section_pathname(end_section_), x_end_);
-    o << buf << std::endl;
-    Sprintf(buf, "rvp_.origin(%g)", origin_);
-    o << buf << std::endl;
+    o << "rvp_ = new RangeVarPlot(\"" << expr_ << "\")" << std::endl;
+    o << hoc_section_pathname(begin_section_) << " rvp_.begin(" << x_begin_ << ")" << std::endl;
+    o << hoc_section_pathname(end_section_) << " rvp_.end(" << x_end_ << ")" << std::endl;
+    o << "rvp_.origin(" << origin_ << ")" << std::endl;
     Coord x, y;
     label_loc(x, y);
-    Sprintf(buf,
-            "save_window_.addobject(rvp_, %d, %d, %g, %g)",
-            colors->color(color()),
-            brushes->brush(brush()),
-            x,
-            y);
-    o << buf << std::endl;
+    o << "save_window_.addobject(rvp_, " << colors->color(color()) << ", "
+      << brushes->brush(brush()) << ", " << x << ", " << y << ")" << std::endl;
 }
 #endif
 
@@ -515,12 +503,12 @@ void RangeVarPlot::fill_pointers() {
         if (rexp_) {
             rexp_->fill();
         } else {
-            sscanf(expr_.string(), "%[^[]", buf);
+            sscanf(expr_.c_str(), "%[^[]", buf);
             sym = hoc_lookup(buf);
             if (!sym) {
                 return;
             }
-            Sprintf(buf, "%s(hoc_ac_)", expr_.string());
+            Sprintf(buf, "%s(hoc_ac_)", expr_.c_str());
         }
         int noexist = 0;  // don't plot single points that don't exist
         bool does_exist;
@@ -762,7 +750,7 @@ void RangeExpr::fill() {
             nrn_popsec();
             continue;
         }
-        if (cmd_->execute(bool(false)) == 0) {
+        if (cmd_->execute(bool(false))) {
             exist_[i] = true;
             val_[i] = 0.;
         } else {

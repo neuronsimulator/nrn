@@ -1,5 +1,6 @@
 import numpy
 import math
+from typing import Any, Optional
 
 from .ctng import constructive_neuronal_geometry
 from .graphicsPrimitives import (
@@ -21,57 +22,43 @@ import warnings
 from neuron import h, _sec_db
 
 
-def find_parent_seg(join, sdict, objects):
-
-    if not join:
-        return None
-    elif join[0] not in objects:
-        pseg = sdict[
-            (
-                join[0]._x0,
-                join[0]._y0,
-                join[0]._z0,
-                join[0]._x1,
-                join[0]._y1,
-                join[0]._z1,
-            )
-        ]
-        # better be all in same cell; so just set root once
-        h.distance(0, h.SectionRef(sec=pseg.sec).root(0))
-        closest = h.distance(pseg)
-
-    # any other possible instance?
-
+def find_parent_seg(join: list, sdict: dict, objects: list) -> Any:
+    root = None
+    pseg = None
+    closest = float("inf")
     for item in join:
         if item not in objects:
             s = sdict[(item._x0, item._y0, item._z0, item._x1, item._y1, item._z1)]
-            d = h.distance(s)
+            if root is None:
+                root = h.SectionRef(sec=s.sec).root(0)
+            d = h.distance(root, s)
             if d < closest:
                 pseg = s
                 closest = d
-
     return pseg
 
 
-def all_in(dist):
+def all_in(dist: list) -> bool:
     for i in dist:
         if i > ics_distance_threshold:
             return False
     return True
 
 
-def sort_spheres_last(item):
+def sort_spheres_last(item: Any) -> int:
     return 1 if isinstance(item, Sphere) else 0
 
 
-def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
-
+def fullmorph(
+    source: Any,
+    dx: float,
+    soma_step: int = 100,
+    mesh_grid: Optional[dict] = None,
+    relevant_pts: Optional[Any] = None,
+) -> tuple:
     """Input: object source; arguments to pass to ctng
     Output: all voxels with SA and volume associated, categorized by segment"""
     source = list(source)
-    morphology = constructive_neuronal_geometry(
-        source, soma_step, dx, relevant_pts=relevant_pts
-    )
     (
         join_objects,
         cones,
@@ -79,15 +66,14 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
         join_groups,
         object_pts,
         soma_objects,
-    ) = morphology
+    ) = constructive_neuronal_geometry(source, soma_step, dx, relevant_pts=relevant_pts)
 
     # grid setup
     if mesh_grid:
         grid = mesh_grid
         if grid["dx"] != dx or grid["dy"] != dx or grid["dz"] != dx:
             raise RxDException(
-                "Error: Inconsistent vocalization. Mesh grid voxels (%g, %g, %g) differs from requested dx (%g, %g %g),",
-                (grid["dx"], grid["dy"], grid["dz"], dx, dx, dx),
+                f"Error: Inconsistent vocalization. Mesh grid voxels ({grid['dx']:g}, {grid['dy']:g}, {grid['dz']:g}) differs from requested dx ({dx:g}, {dx:g}, {dx:g}),"
             )
     else:
 
@@ -160,10 +146,7 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
     # soma: modified when ctng properly assigns soma obj to segments
     if soma_objects:
         for item, seg in soma_objects.items():
-            if seg in final_seg_dict:
-                final_seg_dict[seg].append(item)
-            else:
-                final_seg_dict[seg] = [item]
+            final_seg_dict.setdefault(seg, []).append(item)
 
     # assign join objects
     for jg in join_groups:
@@ -173,18 +156,12 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
             if (not (isinstance(item, Cone) or isinstance(item, Cylinder))) or (
                 item in join_objects
             ):
-                if seg in final_seg_dict.keys():
-                    final_seg_dict[seg].append(item)
-                else:
-                    final_seg_dict[seg] = [item]
+                final_seg_dict.setdefault(seg, []).append(item)
 
     # complete final segment dictionary
     for cone in cones:
         seg = segment_dict[(cone._x0, cone._y0, cone._z0, cone._x1, cone._y1, cone._z1)]
-        if seg in final_seg_dict.keys():
-            final_seg_dict[seg].append(cone)
-        else:
-            final_seg_dict[seg] = [cone]
+        final_seg_dict.setdefault(seg, []).append(cone)
 
     # voxelize all the objects and assign voxels
     # output dictionaries of internal and surface voxels

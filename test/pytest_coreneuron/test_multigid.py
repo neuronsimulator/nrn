@@ -2,35 +2,14 @@
 # pc.cell(gid, h.NetCon(cell.sec(x)._ref_v, None, sec=cell.sec))
 # It is an error to have multiple gids with the same reference.
 
+from neuron.tests.utils.coreneuron_available import coreneuron_available
+
 from neuron import config, h, coreneuron
 from neuron.expect_hocerr import expect_err
 from math import log10
 
 
 pc = h.ParallelContext()
-
-
-def coreneuron_available():
-    if not config.arguments["NRN_ENABLE_CORENEURON"]:
-        return False
-    # But can it be loaded?
-    cvode = h.CVode()
-    pc = h.ParallelContext()
-    h.finitialize()
-    result = 0
-    import sys
-    from io import StringIO
-
-    original_stderr = sys.stderr
-    sys.stderr = StringIO()
-    try:
-        pc.nrncore_run("--tstop 1 --verbose 0")
-        result = 1
-    except Exception as e:
-        pass
-    sys.stderr = original_stderr
-    return result
-
 
 cn_avail = coreneuron_available()
 

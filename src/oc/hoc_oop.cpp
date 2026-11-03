@@ -1,10 +1,18 @@
 #include <../../nrnconf.h>
-#include <stdlib.h>
-#include <classreg.h>
+#include <cstdlib>
+#include <vector>
+
+#include "utils/formatting.hpp"
+
+
+#include "classreg.h"
+#include "neuronapi.h"
+
 #include "hocstr.h"
 #include "parse.hpp"
 #include "hocparse.h"
 #include "code.h"
+#include "cabcode.h"
 #include "hocassrt.h"
 #include "hoclist.h"
 #include "nrn_ansi.h"
@@ -12,7 +20,6 @@
 #include "nrnpy.h"
 #include "nrnfilewrap.h"
 #include "ocfunc.h"
-
 
 #define PDEBUG 0
 
@@ -28,11 +35,16 @@ static int connect_obsec_;
 static void call_constructor(Object*, Symbol*, int);
 static void free_objectdata(Objectdata*, cTemplate*);
 
-int hoc_print_first_instance = 1;
+std::vector<const char*> py_exposed_classes{};
 
+int hoc_print_first_instance = 1;
 int hoc_max_builtin_class_id = -1;
 
 static Symbol* hoc_obj_;
+
+int (*nrnpy_call_obj_method)(Object* obj, const char* method, Object* obj2) = nullptr;
+int (*nrnpy_call_obj_method_double)(Object* obj, const char* method, double value) = nullptr;
+
 
 void hoc_install_hoc_obj(void) {
     /* see void hoc_objvardecl(void) */
@@ -85,7 +97,7 @@ size_t hoc_total_array(Symbol* s) /* total number of elements in array pointer *
     return total;
 }
 
-size_t hoc_total_array_data(Symbol* s,
+size_t hoc_total_array_data(const Symbol* s,
                             Objectdata* obd) /* total number of elements in array pointer */
 {
     Arrayinfo* a;
@@ -170,7 +182,7 @@ void hoc_obvar_declare(Symbol* sym, int type, int pmes) {
         OPSECITM(sym) = nullptr;  // TODO: whaa? (struct Item**)0;
         break;
     default:
-        hoc_execerror(sym->name, "can't declare this in obvar_declare");
+        hoc_execerror_fmt("'{}' can't declare this in obvar_declare", sym->name);
         break;
     }
 }
@@ -191,7 +203,7 @@ static Templatedatum* templatestackp = templatestack;
 
 static Templatedatum* poptemplate(void) {
     if (templatestackp == templatestack) {
-        hoc_execerror("templatestack underflow", (char*) 0);
+        hoc_execerror("templatestack underflow", nullptr);
     }
     return (--templatestackp);
 }
@@ -215,7 +227,7 @@ static Templatedatum* poptemplate(void) {
 static void chktemplate(void) {
     if (templatestackp == templatestack + NTEMPLATESTACK) {
         templatestackp = templatestack;
-        hoc_execerror("templatestack overflow", (char*) 0);
+        hoc_execerror("templatestack overflow", nullptr);
     }
 }
 /*------------------------------------------------*/
@@ -229,10 +241,10 @@ static int obj_stack_loc;
 void hoc_object_push(void) {
     Object* ob = *hoc_objgetarg(1);
     if (ob->ctemplate->constructor) {
-        hoc_execerror("Can't do object_push for built-in class", 0);
+        hoc_execerror("Can't do object_push for built-in class", nullptr);
     }
     if (obj_stack_loc >= OBJ_STACK_SIZE) {
-        hoc_execerror("too many object context stack depth", 0);
+        hoc_execerror("too many object context stack depth", nullptr);
     }
     obj_stack_[obj_stack_loc++] = hoc_thisobject;
     obj_stack_[obj_stack_loc] = ob;
@@ -245,7 +257,7 @@ void hoc_object_push(void) {
         hoc_objectdata = hoc_top_level_data;
     }
     hoc_ret();
-    pushx(0.);
+    hoc_pushx(0.);
 }
 
 void hoc_object_pushed(void) {
@@ -259,7 +271,7 @@ void hoc_object_pushed(void) {
 void hoc_object_pop(void) {
     Object* ob;
     if (obj_stack_loc < 1) {
-        hoc_execerror("object context stack underflow", 0);
+        hoc_execerror("object context stack underflow", nullptr);
     }
     obj_stack_[obj_stack_loc] = nullptr;
     ob = obj_stack_[--obj_stack_loc];
@@ -272,7 +284,7 @@ void hoc_object_pop(void) {
         hoc_objectdata = hoc_top_level_data;
     }
     hoc_ret();
-    pushx(0.);
+    hoc_pushx(0.);
 }
 /*-----------------------------------------------*/
 int hoc_resize_toplevel(int more) {
@@ -318,7 +330,7 @@ int hoc_obj_run(const char* cmd, Object* ob) {
 
     if (ob) {
         if (ob->ctemplate->constructor) {
-            hoc_execerror("Can't execute in a built-in class context", 0);
+            hoc_execerror("Can't execute in a built-in class context", nullptr);
         }
         hoc_thisobject = ob;
         hoc_objectdata = ob->u.dataspace;
@@ -364,13 +376,13 @@ void hoc_exec_cmd(void) { /* execute string from top level or within an object c
     }
     err = hoc_obj_run(pbuf, ob);
     if (err) {
-        hoc_execerror("execute error:", cmd);
+        hoc_execerror_fmt("execute error:{}", cmd);
     }
     if (pbuf != buf) {
         hocstr_delete(hs);
     }
     hoc_ret();
-    pushx((double) (err));
+    hoc_pushx((double) (err));
 }
 
 /* call a function within the context of an object. Args must be on stack */
@@ -549,7 +561,7 @@ Object* hoc_newobj1(Symbol* sym, int narg) {
             hoc_construct_point(ob, narg);
         }
         if (ob->ctemplate->init) {
-            call_ob_proc(ob, ob->ctemplate->init, narg);
+            hoc_call_ob_proc(ob, ob->ctemplate->init, narg);
         } else {
             for (i = 0; i < narg; ++i) {
                 hoc_nopop();
@@ -577,29 +589,24 @@ void hoc_newobj_ret(void) {
 }
 
 void hoc_newobj(void) { /* template at pc+1 */
-    Object *ob, **obp;
-    Objectdata* obd;
-    Symbol *sym, *s;
-    int i, total;
-    int narg;
-
-    sym = (pc++)->sym;
-    narg = (pc++)->i;
+    Symbol* sym = (pc++)->sym;
+    int narg = (pc++)->i;
 #if USE_PYTHON
     /* look inside stack because of limited number of temporary objects? */
     /* whatever. we will keep the strategy */
     if (hoc_inside_stacktype(narg) == OBJECTVAR) {
 #endif
-        obp = hoc_look_inside_stack<Object**>(narg);
-        ob = hoc_newobj1(sym, narg);
+        Object** obp = hoc_look_inside_stack<Object**>(narg);
+        Object* ob = hoc_newobj1(sym, narg);
         hoc_nopop(); /* the object pointer */
         hoc_dec_refcount(obp);
         *(obp) = ob;
         hoc_pushobj(obp);
 #if USE_PYTHON
     } else { /* Assignment to OBJECTTMP not allowed */
-        Object* o = hoc_obj_look_inside_stack(narg);
-        hoc_execerror("Assignment to $o only allowed if caller arg was declared as objref", NULL);
+        hoc_obj_look_inside_stack(narg);
+        hoc_execerror("Assignment to $o only allowed if caller arg was declared as objref",
+                      nullptr);
     }
 #endif
 }
@@ -615,7 +622,7 @@ static void call_constructor(Object* ob, Symbol* sym, int narg) {
     obsav = hoc_thisobject;
     pcsav = pc;
 
-    push_frame(sym, narg);
+    hoc_push_frame(sym, narg);
     ob->u.this_pointer = neuron::oc::invoke_method_that_may_throw(
         [ob]() -> std::string {
             std::string rval{hoc_object_name(ob)};
@@ -624,7 +631,7 @@ static void call_constructor(Object* ob, Symbol* sym, int narg) {
         },
         ob->ctemplate->constructor,
         ob);
-    pop_frame();
+    hoc_pop_frame();
 
     pc = pcsav;
     hoc_symlist = slsav;
@@ -643,7 +650,7 @@ Object* nrn_get_gui_redirect_obj() {
     return gui_redirect_obj_;
 }
 
-void call_ob_proc(Object* ob, Symbol* sym, int narg) {
+void hoc_call_ob_proc(Object* ob, Symbol* sym, int narg) {
     Inst *pcsav, callcode[4];
     Symlist* slsav;
     Objectdata* obdsav;
@@ -657,7 +664,7 @@ void call_ob_proc(Object* ob, Symbol* sym, int narg) {
     if (ob->ctemplate->sym->subtype & CPLUSOBJECT) {
         hoc_thisobject = ob;
         gui_redirect_obj_ = ob;
-        push_frame(sym, narg);
+        hoc_push_frame(sym, narg);
         hoc_thisobject = obsav;
         auto const error_prefix_generator = [ob, sym]() {
             std::string rval{hoc_object_name(ob)};
@@ -692,7 +699,7 @@ void call_ob_proc(Object* ob, Symbol* sym, int narg) {
     } else if (ob->ctemplate->is_point_ && special_pnt_call(ob, sym, narg)) {
         ; /*empty since special_pnt_call did the work for get_loc, has_loc, and loc*/
     } else {
-        callcode[0].pf = call;
+        callcode[0].pf = hoc_call;
         callcode[1].sym = sym;
         callcode[2].i = narg;
         callcode[3].in = STOP;
@@ -700,7 +707,7 @@ void call_ob_proc(Object* ob, Symbol* sym, int narg) {
         hoc_objectdata = ob->u.dataspace;
         hoc_thisobject = ob;
         hoc_symlist = ob->ctemplate->symtable;
-        execute(callcode);
+        hoc_execute(callcode);
         if (sym->type == PROCEDURE) {
             hoc_nopop();
         }
@@ -780,13 +787,11 @@ void hoc_objvardecl(void) { /* symbol at pc+1, number of indices at pc+2 */
 }
 
 void hoc_cmp_otype(void) { /* NUMBER, OBJECTVAR, or STRING must be the type */
-    int type;
-    type = (pc++)->i;
+    ++pc;
 }
 
 void hoc_known_type(void) {
-    int type;
-    type = ((pc++)->i);
+    ++pc;
 }
 
 void hoc_objectvar(void) { /* object variable symbol at pc+1. */
@@ -810,8 +815,8 @@ void hoc_objectvar(void) { /* object variable symbol at pc+1. */
         hoc_symlist = hoc_top_level_symlist;
     }
     obp = OPOBJ(obs);
-    if (ISARRAY(obs)) {
-        hoc_pushobj(obp + araypt(obs, OBJECTVAR));
+    if (is_array(*obs)) {
+        hoc_pushobj(obp + hoc_araypt(obs, OBJECTVAR));
     } else {
         hoc_pushobj(obp);
     }
@@ -853,7 +858,7 @@ void hoc_constobject(void) { /* template at pc, index at pc+1, objpointer left o
         }
     }
     Sprintf(buf, "%s[%d]\n", t->sym->name, index);
-    hoc_execerror("Object ID doesn't exist:", buf);
+    hoc_execerror("Object ID doesn't exist '{}'", buf);
 }
 
 Object* hoc_name2obj(const char* name, int index) {
@@ -867,7 +872,7 @@ Object* hoc_name2obj(const char* name, int index) {
         sym = hoc_table_lookup(name, hoc_built_in_symlist);
     }
     if (!sym || sym->type != TEMPLATE) {
-        hoc_execerror(name, "is not a template");
+        hoc_execerror_fmt("'{}' is not a template", name);
     }
     t = sym->u.ctemplate;
     ITERATE(q, t->olist) {
@@ -888,19 +893,19 @@ void hoc_object_id(void) {
     if (ifarg(2) && chkarg(2, 0., 1.) == 1.) {
         hoc_ret();
         if (ob) {
-            pushx((double) ob->index);
+            hoc_pushx((double) ob->index);
         } else {
-            pushx(-1.);
+            hoc_pushx(-1.);
         }
     } else {
         hoc_ret();
-        pushx((double) ((size_t) ob));
+        hoc_pushx((double) ((size_t) ob));
     }
 }
 
 static void range_suffix(Symbol* sym, int nindex, int narg) {
     int bdim = 0;
-    if (ISARRAY(sym)) {
+    if (is_array(*sym)) {
         if (nindex != sym->arayinfo->nsub) {
             bdim = 1;
         }
@@ -918,16 +923,16 @@ static void range_suffix(Symbol* sym, int nindex, int narg) {
         }
     }
     if (bdim) {
-        hoc_execerror(sym->name, "wrong number of array dimensions");
+        hoc_execerror_fmt("'{}' wrong number of array dimensions", sym->name);
     }
 
     if (sym->type == RANGEVAR) {
-        if (ISARRAY(sym)) {  // fixup ndim here
+        if (is_array(*sym)) {  // fixup ndim here
             double x = -1.0;
             if (narg) {  // need to pop the arc length to push ndim
                 if (narg > 1) {
-                    hoc_execerr_ext("%s range variable can have only one arc length parameter",
-                                    sym->name);
+                    hoc_execerror_fmt("'{}' range variable can have only one arc length parameter",
+                                      sym->name);
                 }
                 x = xpop();
             }
@@ -935,18 +940,34 @@ static void range_suffix(Symbol* sym, int nindex, int narg) {
                 hoc_push_ndim(nindex);
             }
             if (narg) {  // push back the arc length
-                pushx(x);
+                hoc_pushx(x);
             }
         }
         hoc_pushi(narg);
         hoc_pushs(sym);
     } else if (sym->subtype == USERPROPERTY) {
         if (narg) {
-            hoc_execerror(sym->name, "section property can't have argument");
+            hoc_execerror_fmt("'{}' section property can't have argument", sym->name);
         }
         hoc_pushs(sym);
+    } else if (sym->type == RANGEOBJ) {
+        // must return NMODLObject on stack
+        assert(sym->subtype == NMODLRANDOM);  // the only possibility at the moment
+        double x{0.5};
+        if (narg) {
+            if (narg > 1) {
+                hoc_execerror_fmt("'{}' range object can have only one arg length parameter",
+                                  sym->name);
+            }
+            x = xpop();
+        }
+        Section* sec{nrn_sec_pop()};
+        auto const i = node_index(sec, x);
+        Prop* m = nrn_mechanism_check(sym->u.rng.type, sec, i);
+        Object* ob = nrn_nmodlrandom_wrap(m, sym);
+        hoc_push_object(ob);
     } else {
-        hoc_execerror(sym->name, "suffix not a range variable or section property");
+        hoc_execerror_fmt("'{}' suffix not a range variable or section property", sym->name);
     }
 }
 
@@ -999,30 +1020,41 @@ void hoc_object_component() {
     }
     obp = hoc_obj_look_inside_stack(nindex + expect_stack_nsub);
     if (obp) {
-#if USE_PYTHON
-        if (obp->ctemplate->sym == nrnpy_pyobj_sym_) {
+        if (obp->ctemplate->component) {
             if (isfunc & 2) {
-                /* this is the final left hand side of an
-                assignment to the method of a PythonObject
-                and we need to put the PythonObject and the
-                method with all its info onto the stack so that
-                a proper __setattro__ or __setitem__ can be
-                accomplished in the next hoc_object_asgn
-                */
+                /* Leave the metadata frame for component_asgn. */
                 if (isfunc & 1) {
-                    hoc_execerror("Cannot assign to a PythonObject function call:", sym0->name);
+                    hoc_execerror_fmt("Cannot assign to a component function call '{}'",
+                                      sym0->name);
                 }
-                pushi(nindex);
-                pushs(sym0);
+                hoc_pushi(nindex);
+                hoc_pushs(sym0);
                 hoc_push_object(obp);
-                /* note obp is now on stack twice */
-                /* hpoasgn will pop both */
+            } else {
+                if (const char* error = obp->ctemplate->component(obp, sym0, nindex, isfunc)) {
+                    // Copies the message before hoc_execerror's warning/dialog
+                    // hooks can re-enter provider code and clobber its buffer.
+                    hoc_execerror_fmt("{}", error);
+                }
+            }
+            return;
+        } else if (obp->ctemplate->sym == nrnpy_pyobj_sym_ &&
+                   neuron::python::methods.py2n_component) {
+            /* Compatibility for providers that populate only the methods
+               table. */
+            if (isfunc & 2) {
+                if (isfunc & 1) {
+                    hoc_execerror_fmt("Cannot assign to a PythonObject function call '{}'",
+                                      sym0->name);
+                }
+                hoc_pushi(nindex);
+                hoc_pushs(sym0);
+                hoc_push_object(obp);
             } else {
                 neuron::python::methods.py2n_component(obp, sym0, nindex, isfunc);
             }
             return;
         }
-#endif
         if (obp->ctemplate->id == *ptid) {
             sym = *psym;
         } else {
@@ -1031,18 +1063,18 @@ void hoc_object_component() {
                 and the ptid of the object is still the same. */
                 sym = hoc_table_lookup(sym0->name, obp->ctemplate->symtable);
                 if (!sym || sym->cpublic != PUBLIC_TYPE) {
-                    fprintf(stderr,
-                            "%s not a public member of %s\n",
-                            sym0->name,
-                            obp->ctemplate->sym->name);
-                    hoc_execerror(obp->ctemplate->sym->name, sym0->name);
+                    auto err = fmt::format("'{}' not a public member of '{}'",
+                                           sym0->name,
+                                           obp->ctemplate->sym->name);
+                    Fprintf(stderr, fmt::format("{}\n", err).c_str());
+                    hoc_execerror(err.c_str(), nullptr);
                 }
                 *ptid = obp->ctemplate->id;
                 *psym = sym;
             }
         }
     } else {
-        hoc_execerror(sym0->name, ": object prefix is NULL");
+        hoc_execerror_fmt("'{}' object prefix is nullptr", sym0->name);
     }
 
     psav = hoc_objectdata_save();
@@ -1055,10 +1087,10 @@ void hoc_object_component() {
     switch (sym->type) {
     case OBJECTVAR:
         if (nindex) {
-            if (!ISARRAY(sym) || OPARINFO(sym)->nsub != nindex) {
-                hoc_execerror(sym->name, ":not right number of subscripts");
+            if (!is_array(*sym) || OPARINFO(sym)->nsub != nindex) {
+                hoc_execerror_fmt("'{}' not right number of subscripts", sym->name);
             }
-            nindex = araypt(sym, OBJECTVAR);
+            nindex = hoc_araypt(sym, OBJECTVAR);
         }
         hoc_pop_defer();
         hoc_pushobj(OPOBJ(sym) + nindex);
@@ -1066,8 +1098,8 @@ void hoc_object_component() {
     case VAR:
         if (cplus) {
             if (nindex) {
-                if (!ISARRAY(sym) || sym->arayinfo->nsub != nindex) {
-                    hoc_execerror(sym->name, ":not right number of subscripts");
+                if (!is_array(*sym) || sym->arayinfo->nsub != nindex) {
+                    hoc_execerror_fmt("'{}' not right number of subscripts", sym->name);
                 }
                 if (narg) {
                     // there are 25 modeldb examples that use (index) instead
@@ -1081,10 +1113,10 @@ void hoc_object_component() {
                         // Allow legacy syntax Matrix.x(i, j)
                         hoc_push_ndim(2);
                     } else {
-                        hoc_execerr_ext("%s.%s is array not function. Use %s[...] syntax",
-                                        hoc_object_name(obp),
-                                        sym->name,
-                                        sym->name);
+                        hoc_execerror_fmt("'{}.{}' is array not function. Use '{}[...]' syntax",
+                                          hoc_object_name(obp),
+                                          sym->name,
+                                          sym->name);
                     }
                 }
             }
@@ -1098,8 +1130,8 @@ void hoc_object_component() {
             hoc_pushpx(pd);
         } else {
             if (nindex) {
-                if (!ISARRAY(sym) || OPARINFO(sym)->nsub != nindex) {
-                    hoc_execerror(sym->name, ":not right number of subscripts");
+                if (!is_array(*sym) || OPARINFO(sym)->nsub != nindex) {
+                    hoc_execerror_fmt("'{}' not right number of subscripts", sym->name);
                 }
                 if (narg) {
                     // there are a few modeldb examples that use (index) instead
@@ -1109,13 +1141,13 @@ void hoc_object_component() {
                     if (narg == 1) {
                         hoc_push_ndim(1);
                     } else {
-                        hoc_execerr_ext("%s.%s is array not function. Use %s[...] syntax",
-                                        hoc_object_name(obp),
-                                        sym->name,
-                                        sym->name);
+                        hoc_execerror_fmt("'{}.{}' is array not function. Use '{}[...]' syntax",
+                                          hoc_object_name(obp),
+                                          sym->name,
+                                          sym->name);
                     }
                 }
-                nindex = araypt(sym, OBJECTVAR);
+                nindex = hoc_araypt(sym, OBJECTVAR);
             }
             hoc_pop_defer(); /*finally get rid of symbol */
             hoc_pushpx(OPVAL(sym) + nindex);
@@ -1123,7 +1155,8 @@ void hoc_object_component() {
         break;
     case STRING:
         if (nindex) {
-            hoc_execerror(sym->name, ": string can't have function arguments or array indices");
+            hoc_execerror_fmt("'{}' string can't have function arguments or array indices",
+                              sym->name);
         }
         hoc_pop_defer();
         hoc_pushstr(OPSTR(sym));
@@ -1132,10 +1165,10 @@ void hoc_object_component() {
     case FUNCTION: {
         if (expect_stack_nsub) {
             hoc_pop_ndim();
-            hoc_execerr_ext("%s is a function not a %ddim array", sym->name, nindex);
+            hoc_execerror_fmt("'{}' is a function not a {}-dim array", sym->name, nindex);
         }
         double d = 0.;
-        call_ob_proc(obp, sym, nindex);
+        hoc_call_ob_proc(obp, sym, nindex);
         if (hoc_returning) {
             break;
         }
@@ -1154,10 +1187,10 @@ void hoc_object_component() {
             // for legacy reasons allow single arg [] format.
             // E.g. occasionally seen for List.object[index]
             if (nindex > 1) {
-                hoc_execerr_ext("%s is a function not a %ddim array", sym->name, nindex);
+                hoc_execerror_fmt("'{}' is a function not a {}-dim array", sym->name, nindex);
             }
         }
-        call_ob_proc(obp, sym, nindex);
+        hoc_call_ob_proc(obp, sym, nindex);
         if (hoc_returning) {
             break;
         }
@@ -1175,7 +1208,7 @@ void hoc_object_component() {
     }
     case STRFUNCTION: {
         char** d;
-        call_ob_proc(obp, sym, nindex);
+        hoc_call_ob_proc(obp, sym, nindex);
         if (hoc_returning) {
             break;
         }
@@ -1204,19 +1237,19 @@ void hoc_object_component() {
             double x = 0.0;
             connect_obsec_ = 0;
             if (nindex != 1) {
-                hoc_execerror(sym->name, ": bad connect syntax");
+                hoc_execerror_fmt("'{}' bad connect syntax", sym->name);
             }
             x = hoc_xpop();
             hoc_pop_defer();
             hoc_pushx(x);
         } else {
             if (nindex) {
-                hoc_execerror(sym->name, ":no subscript allowed");
+                hoc_execerror_fmt("'{}' no subscript allowed", sym->name);
             }
             hoc_pop_defer();
         }
         if (!sec->prop) {
-            hoc_execerror("Section was deleted", (char*) 0);
+            hoc_execerror("Section was deleted", nullptr);
         }
         nrn_pushsec(sec);
         break;
@@ -1227,18 +1260,18 @@ void hoc_object_component() {
         if (connect_obsec_) {
             x = hoc_xpop();
             if (!nindex) {
-                hoc_execerror(sym->name, ": bad connect syntax");
+                hoc_execerror_fmt("'{}' bad connect syntax", sym->name);
             }
             --nindex;
         }
         if (nindex) {
-            if (!ISARRAY(sym) || OPARINFO(sym)->nsub != nindex) {
-                hoc_execerror(sym->name, ":not right number of subscripts");
+            if (!is_array(*sym) || OPARINFO(sym)->nsub != nindex) {
+                hoc_execerror_fmt("'{}' not right number of subscripts", sym->name);
             }
             if (!hoc_stack_type_is_ndim()) {
                 hoc_push_ndim(nindex);
             }
-            nindex = araypt(sym, OBJECTVAR);
+            nindex = hoc_araypt(sym, OBJECTVAR);
         }
         hoc_pop_defer();
         if (connect_obsec_) {
@@ -1250,7 +1283,7 @@ void hoc_object_component() {
     }
     case ITERATOR: {
         if ((pc++)->i != ITERATOR) {
-            hoc_execerror(sym->name, ":ITERATOR can only be used in a for statement");
+            hoc_execerror_fmt("'{}' ITERATOR can only be used in a for statement", sym->name);
         }
         call_ob_iter(obp, sym, nindex);
         if (hoc_returning) {
@@ -1260,11 +1293,22 @@ void hoc_object_component() {
         hoc_nopop(); /* get rid of iterator statement context */
         break;
     }
+    case RANGEOBJ: {
+        assert(sym->subtype == NMODLRANDOM);
+        if (sym->subtype == NMODLRANDOM) {  // NMODL NEURON block RANDOM var
+            // RANGE type. The void* is a nrnran123_State*. Wrap in a
+            // NMODLRandom and push_object
+            Object* o = nrn_pntproc_nmodlrandom_wrap(obp->u.this_pointer, sym);
+            hoc_pop_defer();
+            hoc_push_object(o);
+        }
+        break;
+    }
     default:
         if (cplus) {
             if (nindex) {
-                if (!ISARRAY(sym) || sym->arayinfo->nsub != nindex) {
-                    hoc_execerror(sym->name, ":not right number of subscripts");
+                if (!is_array(*sym) || sym->arayinfo->nsub != nindex) {
+                    hoc_execerror_fmt("'{}' not right number of subscripts", sym->name);
                 }
                 if (narg) {
                     // there are a few modeldb examples that use (index) instead
@@ -1274,10 +1318,10 @@ void hoc_object_component() {
                     if (narg == 1) {
                         hoc_push_ndim(1);
                     } else {
-                        hoc_execerr_ext("%s.%s is array not function. Use %s[...] syntax",
-                                        hoc_object_name(obp),
-                                        sym->name,
-                                        sym->name);
+                        hoc_execerror_fmt("'{}.{}' is array not function. Use '{}[...]' syntax",
+                                          hoc_object_name(obp),
+                                          sym->name,
+                                          sym->name);
                     }
                 }
             }
@@ -1287,19 +1331,19 @@ void hoc_object_component() {
             hoc_pop_defer();
             hoc_push(std::move(dh));
         } else {
-            hoc_execerror(sym->name, ": can't push that type onto stack");
+            hoc_execerror_fmt("{}: can't push that type onto stack", sym->name);
         }
         break;
     case OBJECTALIAS:
         if (nindex) {
-            hoc_execerror(sym->name, ": is an alias and cannot have subscripts");
+            hoc_execerror_fmt("{}: is an alias and cannot have subscripts", sym->name);
         }
         hoc_pop_defer();
         hoc_push_object(sym->u.object_);
         break;
     case VARALIAS:
         if (nindex) {
-            hoc_execerror(sym->name, ": is an alias and cannot have subscripts");
+            hoc_execerror_fmt("{}: is an alias and cannot have subscripts", sym->name);
         }
         hoc_pop_defer();
         hoc_pushpx(sym->u.pval);
@@ -1331,19 +1375,16 @@ void hoc_object_eval(void) {
             }
             hoc_pushx(*(nrn_rangepointer(sec, sym, x)));
         } else if (d_sym->type == VAR && d_sym->subtype == USERPROPERTY) {
-            extern double cable_prop_eval(Symbol*);
             hoc_pushx(cable_prop_eval(hoc_spop()));
         }
     }
 }
 
 void hoc_ob_pointer(void) {
-    int type;
-    Symbol* sym;
 #if PDEBUG
     printf("code for hoc_ob_pointer\n");
 #endif
-    type = hoc_stacktype();
+    int type = hoc_stacktype();
     if (type == VAR) {
     } else if (type == SYMBOL) {
         auto* d_sym = hoc_look_inside_stack<Symbol*>(0);
@@ -1351,20 +1392,15 @@ void hoc_ob_pointer(void) {
             Symbol* sym = hoc_spop();
             int nindex = hoc_ipop();
             Section* sec = nrn_sec_pop();
-            double x;
-            if (nindex) {
-                x = hoc_xpop();
-            } else {
-                x = .5;
-            }
+            double x = nindex ? hoc_xpop() : .5;
             hoc_push(nrn_rangepointer(sec, sym, x));
         } else if (d_sym->type == VAR && d_sym->subtype == USERPROPERTY) {
             hoc_pushpx(cable_prop_eval_pointer(hoc_spop()));
         } else {
-            hoc_execerror("Not a double pointer", 0);
+            hoc_execerror("Not a double pointer", nullptr);
         }
     } else {
-        hoc_execerror("Not a double pointer", 0);
+        hoc_execerror("Not a double pointer", nullptr);
     }
 }
 
@@ -1450,16 +1486,28 @@ void hoc_object_asgn() {
         hoc_assign_str(pd, d);
         hoc_pushstr(pd);
     } break;
-#if USE_PYTHON
-    case OBJECTTMP: { /* should be PythonObject */
+    case OBJECTTMP: {
         Object* o = hoc_obj_look_inside_stack(1);
-        assert(o->ctemplate->sym == nrnpy_pyobj_sym_);
         if (op) {
-            hoc_execerror("Invalid assignment operator for PythonObject", nullptr);
+            hoc_execerror(o->ctemplate->sym == nrnpy_pyobj_sym_
+                              ? "Invalid assignment operator for PythonObject"
+                              : "Invalid assignment operator for component",
+                          nullptr);
         }
-        neuron::python::methods.hpoasgn(o, type1);
+        if (o->ctemplate->component_asgn) {
+            if (const char* error = o->ctemplate->component_asgn(o)) {
+                // Copies the message before hoc_execerror's warning/dialog
+                // hooks can re-enter provider code and clobber its buffer.
+                hoc_execerror_fmt("{}", error);
+            }
+        } else if (o->ctemplate->sym == nrnpy_pyobj_sym_ && neuron::python::methods.hpoasgn) {
+            /* Compatibility for providers that populate only the methods
+               table. */
+            neuron::python::methods.hpoasgn(o, type1);
+        } else {
+            hoc_execerror("Cannot assign to component", nullptr);
+        }
     } break;
-#endif
     default:
         hoc_execerror("Cannot assign to left hand side", nullptr);
     }
@@ -1511,7 +1559,8 @@ void hoc_begintemplate(Symbol* t1) {
     t->u.ctemplate->destructor = 0;
     t->u.ctemplate->is_point_ = 0;
     t->u.ctemplate->steer = 0;
-    t->u.ctemplate->checkpoint = 0;
+    t->u.ctemplate->component = nullptr;
+    t->u.ctemplate->component_asgn = nullptr;
     t->u.ctemplate->id = ++template_id;
     pushtemplatei(icntobjectdata);
     pushtemplateodata(hoc_objectdata);
@@ -1560,13 +1609,12 @@ void hoc_endtemplate(Symbol* t) {
     }
 }
 
-void class2oc(const char* name,
-              void* (*cons)(Object*),
-              void (*destruct)(void*),
-              Member_func* m,
-              int (*checkpoint)(void**),
-              Member_ret_obj_func* mobjret,
-              Member_ret_str_func* strret) {
+void class2oc_base(const char* name,
+                   ctor_f* cons,
+                   dtor_f* destruct,
+                   Member_func* m,
+                   Member_ret_obj_func* mobjret,
+                   Member_ret_str_func* strret) {
     extern int hoc_main1_inited_;
     Symbol *tsym, *s;
     cTemplate* t;
@@ -1575,6 +1623,7 @@ void class2oc(const char* name,
     if (hoc_lookup(name)) {
         hoc_execerror(name, "already being used as a name");
     }
+
     tsym = hoc_install(name, UNDEF, 0.0, &hoc_symlist);
     tsym->subtype = CPLUSOBJECT;
     hoc_begintemplate(tsym);
@@ -1585,7 +1634,9 @@ void class2oc(const char* name,
     t->constructor = cons;
     t->destructor = destruct;
     t->steer = 0;
-    t->checkpoint = checkpoint;
+    t->component = nullptr;
+    t->component_asgn = nullptr;
+
     if (m)
         for (i = 0; m[i].name; ++i) {
             s = hoc_install(m[i].name, FUNCTION, 0.0, &hoc_symlist);
@@ -1607,6 +1658,16 @@ void class2oc(const char* name,
     hoc_endtemplate(tsym);
 }
 
+
+void class2oc(const char* name,
+              ctor_f* cons,
+              dtor_f* destruct,
+              Member_func* m,
+              Member_ret_obj_func* mobjret,
+              Member_ret_str_func* strret) {
+    class2oc_base(name, cons, destruct, m, mobjret, strret);
+    py_exposed_classes.push_back(name);
+}
 
 Symbol* hoc_decl(Symbol* s) {
     Symbol* ss;
@@ -1675,26 +1736,26 @@ void hoc_external_var(Symbol* s) {
 
 void hoc_ob_check(int type) {
     int t;
-    t = ipop();
+    t = hoc_ipop();
     if (type == -1) {
         if (t == OBJECTVAR) { /* don't bother to check */
-            Code(hoc_cmp_otype);
-            codei(0);
+            hoc_Code(hoc_cmp_otype);
+            hoc_codei(0);
         }
     } else if (type) {
         if (t == OBJECTVAR) { /* must check dynamically */
 #if PDEBUG
             printf("dymnamic checking of type=%d\n", type);
 #endif
-            Code(hoc_cmp_otype);
-            codei(type);
+            hoc_Code(hoc_cmp_otype);
+            hoc_codei(type);
         } else if (type != t) { /* static check */
             hoc_execerror("Type mismatch", (char*) 0);
         }
     } else {
         if (t != OBJECTVAR) {
-            Code(hoc_known_type);
-            codei(t);
+            hoc_Code(hoc_known_type);
+            hoc_codei(t);
         }
     }
 }
@@ -1860,9 +1921,9 @@ printf("unreffing %s with refcount %d\n", hoc_object_name(obj), obj->refcount);
     --obj->refcount;
     if (obj->ctemplate->unref) {
         int i = obj->refcount;
-        pushx((double) i);
+        hoc_pushx((double) i);
         ++obj->unref_recurse_cnt;
-        call_ob_proc(obj, obj->ctemplate->unref, 1);
+        hoc_call_ob_proc(obj, obj->ctemplate->unref, 1);
         --obj->unref_recurse_cnt;
     }
     if (obj->refcount <= 0 && obj->unref_recurse_cnt == 0) {
@@ -1914,11 +1975,11 @@ static void free_objectdata(Objectdata* od, cTemplate* ctemplate) {
                 case VAR:
                     /*printf("free_objectdata %s\n", s->name);*/
                     hoc_free_val_array(OPVAL(s), hoc_total_array(s));
-                    free_arrayinfo(OPARINFO(s));
+                    hoc_free_arrayinfo(OPARINFO(s));
                     break;
                 case STRING:
                     hoc_free_pstring(OPSTR(s));
-                    free_arrayinfo(OPARINFO(s));
+                    hoc_free_arrayinfo(OPARINFO(s));
                     break;
                 case OBJECTVAR:
                     objp = OPOBJ(s);
@@ -1928,7 +1989,7 @@ static void free_objectdata(Objectdata* od, cTemplate* ctemplate) {
                             hoc_dec_refcount(objp + i);
                         }
                     }
-                    free_arrayinfo(OPARINFO(s));
+                    hoc_free_arrayinfo(OPARINFO(s));
                     free(objp);
                     break;
                 case SECTION:
@@ -1937,7 +1998,7 @@ static void free_objectdata(Objectdata* od, cTemplate* ctemplate) {
                         sec_free(*(OPSECITM(s) + i));
                     }
                     free(OPSECITM(s));
-                    free_arrayinfo(OPARINFO(s));
+                    hoc_free_arrayinfo(OPARINFO(s));
                     break;
                 }
             }
@@ -1975,7 +2036,7 @@ void hoc_allobjects(void) {
         hoc_allobjects1(hoc_top_level_symlist, 0);
     }
     hoc_ret();
-    pushx((double) n);
+    hoc_pushx((double) n);
 }
 
 void hoc_allobjects1(Symlist* sl, int nspace) {
@@ -2022,7 +2083,7 @@ static void hoc_list_allobjref(Symlist*, Objectdata*, int);
 void hoc_allobjectvars(void) {
     hoc_list_allobjref(hoc_top_level_symlist, hoc_top_level_data, 0);
     hoc_ret();
-    pushx(0.);
+    hoc_pushx(0.);
 }
 
 static void hoc_list_allobjref(Symlist* sl, Objectdata* data, int depth) {
@@ -2092,4 +2153,283 @@ void* nrn_opaque_obj2pyobj(Object* ho) {
         return neuron::python::methods.opaque_obj2pyobj(ho);
     }
     return nullptr;
+}
+
+// Helper functions for object arithmetic operations
+
+// Helper for object-object binary operations
+static void hoc_object_binary_op_helper(const char* method_name) {
+    Object** obj2_ptr = hoc_objpop();  // Second operand
+    Object** obj1_ptr = hoc_objpop();  // First operand (the one that has the method)
+
+    Object* obj1 = *obj1_ptr;
+    Object* obj2 = *obj2_ptr;
+
+    if (!obj1) {
+        hoc_execerror("Object arithmetic: first operand is null", nullptr);
+    }
+
+    // Try Python first if available
+    if (nrnpy_call_obj_method && nrnpy_call_obj_method(obj1, method_name, obj2) != 0) {
+        // Python handled the operation, result is on the stack
+        hoc_tobj_unref(obj1_ptr);
+        hoc_tobj_unref(obj2_ptr);
+        return;
+    }
+
+    // Look up the method
+    Symbol* method_sym = nrn_method_symbol(obj1, method_name);
+    if (!method_sym) {
+        hoc_execerror_fmt("Object arithmetic: method '{}' not found in object '{}'",
+                          method_name,
+                          obj1->ctemplate->sym->name);
+    }
+
+    // Call the HOC method: obj1.method(obj2)
+    hoc_pushobj(obj2_ptr);
+    nrn_method_call(obj1, method_sym, 1);
+
+    // Clean up temporary object references
+    hoc_tobj_unref(obj1_ptr);
+    hoc_tobj_unref(obj2_ptr);
+}
+
+// Helper for object-number binary operations (object op number)
+static void hoc_object_number_binary_op_helper(const char* method_name) {
+    double d = hoc_xpop();            // Second operand (number)
+    Object** obj_ptr = hoc_objpop();  // First operand (object)
+
+    Object* obj = *obj_ptr;
+    if (!obj) {
+        hoc_execerror("Object arithmetic: object operand is null", nullptr);
+    }
+
+    // Try Python first if available
+    if (nrnpy_call_obj_method_double && nrnpy_call_obj_method_double(obj, method_name, d) != 0) {
+        // Python handled the operation, result is on the stack
+        hoc_tobj_unref(obj_ptr);
+        return;
+    }
+
+    Symbol* method_sym = nrn_method_symbol(obj, method_name);
+    if (!method_sym) {
+        hoc_execerror_fmt("Object arithmetic: method '{}' not found in object '{}'",
+                          method_name,
+                          obj->ctemplate->sym->name);
+    }
+
+    // Push the number as argument for the method call
+    hoc_pushx(d);
+
+    // Call the method: obj.method(number)
+    nrn_method_call(obj, method_sym, 1);
+    hoc_tobj_unref(obj_ptr);
+}
+
+// Helper for number-object binary operations (number op object)
+// This uses the reverse magic method (e.g., __radd__ for addition)
+static void hoc_number_object_binary_op_helper(const char* method_name) {
+    Object** obj_ptr = hoc_objpop();  // Second operand (object)
+    double d = hoc_xpop();            // First operand (number)
+
+    Object* obj = *obj_ptr;
+    if (!obj) {
+        hoc_execerror("Object arithmetic: object operand is null", nullptr);
+    }
+
+    // Try Python first if available
+    if (nrnpy_call_obj_method_double && nrnpy_call_obj_method_double(obj, method_name, d) != 0) {
+        // Python handled the operation, result is on the stack
+        hoc_tobj_unref(obj_ptr);
+        return;
+    }
+
+    Symbol* method_sym = nrn_method_symbol(obj, method_name);
+    if (!method_sym) {
+        hoc_execerror_fmt("Object arithmetic: method '{}' not found in object '{}'",
+                          method_name,
+                          obj->ctemplate->sym->name);
+    }
+
+    // Push the number as argument for the method call
+    hoc_pushx(d);
+
+    // Call the method: obj.method(number)
+    nrn_method_call(obj, method_sym, 1);
+    hoc_tobj_unref(obj_ptr);
+}
+
+// Object arithmetic functions that call HOC object methods
+void hoc_object_add() {
+    hoc_object_binary_op_helper("__add__");
+}
+
+void hoc_object_sub() {
+    hoc_object_binary_op_helper("__sub__");
+}
+
+void hoc_object_mul() {
+    hoc_object_binary_op_helper("__mul__");
+}
+
+void hoc_object_div() {
+    hoc_object_binary_op_helper("__div__");
+}
+
+void hoc_object_pow() {
+    hoc_object_binary_op_helper("__pow__");
+}
+
+// Helper for comparison operations
+// Handles common setup, null checks, and Python attempts
+// Returns true if the operation was handled (caller should return)
+// Returns false if caller needs to handle HOC method lookup
+static bool hoc_object_comparison_setup(Object**& obj1_ptr,
+                                        Object**& obj2_ptr,
+                                        Object*& obj1,
+                                        Object*& obj2,
+                                        const char* method_name,
+                                        bool is_equality) {
+    obj2_ptr = hoc_objpop();  // Second operand
+    obj1_ptr = hoc_objpop();  // First operand
+
+    obj1 = *obj1_ptr;
+    obj2 = *obj2_ptr;
+
+    // Handle null object cases with pointer comparison fallback
+    if (!obj1 || !obj2) {
+        double result = is_equality ? ((*obj1_ptr == *obj2_ptr) ? 1.0 : 0.0)
+                                    : ((*obj1_ptr != *obj2_ptr) ? 1.0 : 0.0);
+        hoc_tobj_unref(obj1_ptr);
+        hoc_tobj_unref(obj2_ptr);
+        hoc_pushx(result);
+        return true;  // Handled
+    }
+
+    // Try Python first if available
+    if (nrnpy_call_obj_method && nrnpy_call_obj_method(obj1, method_name, obj2) != 0) {
+        // Python handled the operation, result is on the stack
+        hoc_tobj_unref(obj1_ptr);
+        hoc_tobj_unref(obj2_ptr);
+        return true;  // Handled
+    }
+
+    return false;  // Not handled, caller should proceed with HOC method lookup
+}
+
+// Helper to call a comparison method and cleanup
+static void hoc_object_comparison_call(Object** obj1_ptr,
+                                       Object** obj2_ptr,
+                                       Object* obj1,
+                                       Symbol* method_sym) {
+    hoc_pushobj(obj2_ptr);
+    nrn_method_call(obj1, method_sym, 1);
+    hoc_tobj_unref(obj1_ptr);
+    hoc_tobj_unref(obj2_ptr);
+}
+
+// Helper for pointer comparison fallback
+static void hoc_object_comparison_fallback(Object** obj1_ptr, Object** obj2_ptr, bool is_equality) {
+    double result = is_equality ? ((*obj1_ptr == *obj2_ptr) ? 1.0 : 0.0)
+                                : ((*obj1_ptr != *obj2_ptr) ? 1.0 : 0.0);
+    hoc_tobj_unref(obj1_ptr);
+    hoc_tobj_unref(obj2_ptr);
+    hoc_pushx(result);
+}
+
+void hoc_object_eq() {
+    Object** obj1_ptr;
+    Object** obj2_ptr;
+    Object* obj1;
+    Object* obj2;
+
+    if (hoc_object_comparison_setup(obj1_ptr, obj2_ptr, obj1, obj2, "__eq__", true)) {
+        return;  // Already handled by setup (Python or null case)
+    }
+
+    // Look up the __eq__ method
+    Symbol* method_sym = nrn_method_symbol(obj1, "__eq__");
+    if (!method_sym) {
+        // No __eq__ method found, fall back to pointer equality
+        hoc_object_comparison_fallback(obj1_ptr, obj2_ptr, true);
+        return;
+    }
+
+    // Call the method and cleanup
+    hoc_object_comparison_call(obj1_ptr, obj2_ptr, obj1, method_sym);
+}
+
+void hoc_object_ne() {
+    Object** obj1_ptr;
+    Object** obj2_ptr;
+    Object* obj1;
+    Object* obj2;
+
+    if (hoc_object_comparison_setup(obj1_ptr, obj2_ptr, obj1, obj2, "__ne__", false)) {
+        return;  // Already handled by setup (Python or null case)
+    }
+
+    // Look up the __ne__ method first
+    Symbol* method_sym = nrn_method_symbol(obj1, "__ne__");
+    if (method_sym) {
+        hoc_object_comparison_call(obj1_ptr, obj2_ptr, obj1, method_sym);
+        return;
+    }
+
+    // No __ne__ method, try __eq__ method and negate result
+    method_sym = nrn_method_symbol(obj1, "__eq__");
+    if (method_sym) {
+        hoc_pushobj(obj2_ptr);
+        nrn_method_call(obj1, method_sym, 1);
+        // Negate the result
+        double eq_result = hoc_xpop();
+        hoc_tobj_unref(obj1_ptr);
+        hoc_tobj_unref(obj2_ptr);
+        hoc_pushx(eq_result ? 0.0 : 1.0);
+        return;
+    }
+
+    // No magic methods found, fall back to pointer inequality
+    hoc_object_comparison_fallback(obj1_ptr, obj2_ptr, false);
+}
+
+// Mixed-type arithmetic functions (object with number)
+void hoc_object_add_number() {
+    hoc_object_number_binary_op_helper("__add__");
+}
+
+void hoc_number_add_object() {
+    hoc_number_object_binary_op_helper("__radd__");
+}
+
+void hoc_object_sub_number() {
+    hoc_object_number_binary_op_helper("__sub__");
+}
+
+void hoc_number_sub_object() {
+    hoc_number_object_binary_op_helper("__rsub__");
+}
+
+void hoc_object_mul_number() {
+    hoc_object_number_binary_op_helper("__mul__");
+}
+
+void hoc_number_mul_object() {
+    hoc_number_object_binary_op_helper("__rmul__");
+}
+
+void hoc_object_div_number() {
+    hoc_object_number_binary_op_helper("__div__");
+}
+
+void hoc_number_div_object() {
+    hoc_number_object_binary_op_helper("__rdiv__");
+}
+
+void hoc_object_pow_number() {
+    hoc_object_number_binary_op_helper("__pow__");
+}
+
+void hoc_number_pow_object() {
+    hoc_number_object_binary_op_helper("__rpow__");
 }

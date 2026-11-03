@@ -1,0 +1,26 @@
+We wish to adopt into NEURON the CoreNEURON algorithms for node ordering.
+
+
+interleave_order
+  node_order
+    tree_analysis
+    check
+    set_cellindex
+    set_groupindex
+    level_from_root
+    node_interleave_order if permute type 1 else group_order2
+    check
+    quality
+    admin1 if permute type 1 else admin2
+    return the permutation new int[nnode]
+  if thread 0
+    print_quality1 if permute type 1 else print_quality2
+    warp_balance
+  return order
+
+In CoreNEURON, phase2.cpp
+  nt._permute = interleave_order
+  apply the permutation to nodes, mechanisms, point processes 
+
+
+std::vector<int> perm = interleave_order(int ith, int ncell, int nnode, int* parent);

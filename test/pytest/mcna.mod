@@ -24,18 +24,20 @@ UNITS {
 }
 
 PARAMETER {
-     gnabar=.120 (mho/cm2)	<0,1e9>
-                lp=1.9		<0, 1e9>
-                ml=.75		<0, 1e9>
-                nm=.3		<0, 1e9>
-:                porate=1
+     gnabar=.120 (mho/cm2)  <0,1e9>
+     lp=1.9                 <0, 1e9>
+     ml=.75                 <0, 1e9>
+     nm=.3                  <0, 1e9>
+:    porate=1
 }
+
 STATE {
      P L M N O
 }
+
 ASSIGNED {
      v (mV)
-     celsius (degC) : 6.3 
+     celsius (degC) : 6.3
      ena (mV)
      cnt1 cnt2
      ina (mA/cm2)
@@ -45,8 +47,8 @@ ASSIGNED {
 ASSIGNED {  am (/ms)   bm (/ms)  ah (/ms)  bh (/ms)}
 
 INITIAL {
-	cnt1 = 0
-	cnt2 = 0
+     cnt1 = 0
+     cnt2 = 0
      P=1
      rate(v*1(/mV))
      SOLVE states STEADYSTATE sparse
@@ -55,20 +57,21 @@ INITIAL {
 BREAKPOINT {
      SOLVE states METHOD sparse
      ina = gnabar*N*(v - ena)
-	PROTECT cnt1 = cnt1 + 1
+     PROTECT cnt1 = cnt1 + 1
 }
 
 KINETIC states {
-	PROTECT cnt2 = cnt2 + 1
+     PROTECT cnt2 = cnt2 + 1
+
      rate(v*1(/mV))
-:     CONSERVE P + L + M + N + O = 1
-     ~ P <-> L (am, lp*bm)    :back reaction in original = 3.5   
-     ~ L <-> M (2*am, ml*bm)          :back reaction in original = 0
-     ~ M <-> N (3*am, nm*bm)         :back reaction in original = 0
+:    CONSERVE P + L + M + N + O = 1
+     ~ P <-> L (am, lp*bm)    : back reaction in original = 3.5
+     ~ L <-> M (2*am, ml*bm)  : back reaction in original = 0
+     ~ M <-> N (3*am, nm*bm)  : back reaction in original = 0
      ~ N <-> O (1.1*bh, 0)
      ~ N <-> P (3*bm, 0)
-     ~ P <-> O (bh, ah)       :back reaction in original = 1,
-  			      : found this to still be good
+     ~ P <-> O (bh, ah)       : back reaction in original = 1,
+                              : found this to still be good
 }
 
 UNITSOFF
@@ -95,7 +98,7 @@ FUNCTION bet(v,i) { LOCAL a,b,c,q10 :rest = -70  order m,h
 FUNCTION expM1(x,y) {
      if (fabs(x/y) < 1e-6) {
           expM1 = y*(1 - x/y/2) : for singular point
-     }else{
+     } else {
           expM1 = x/(exp(x/y) - 1)
      }
 }
@@ -108,9 +111,3 @@ PROCEDURE rate(v) {LOCAL a, b, tau :rest = -65
      bh = bet(v, 1)
 }
 UNITSON
-
-
-
-
-
-

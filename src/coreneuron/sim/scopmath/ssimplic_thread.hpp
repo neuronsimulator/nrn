@@ -13,7 +13,7 @@ namespace coreneuron {
 #if defined(scopmath_ssimplic_s)
 #error "naming clash on ssimplic_thread.hpp-internal macros"
 #endif
-#define scopmath_ssimplic_s(arg) _p[s[arg] * _STRIDE]
+#define scopmath_ssimplic_s(arg) _p[CNRN_FLAT_INDEX_IML_ROW(s[arg])]
 static int check_state(int n, int* s, _threadargsproto_) {
     bool flag{true};
     for (int i = 0; i < n; i++) {

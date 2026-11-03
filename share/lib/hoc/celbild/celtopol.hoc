@@ -479,7 +479,10 @@ proc del() {local i
 	//if only one section and it is selected then delete it
 	if (slist.count == 1) {
 		if (slist.object(0).selected == 1) {
-			if (etop) slist.object(0).export_rm()
+			if (etop) {
+				bild.subsets.remove(slist.object(0))
+				slist.object(0).export_rm()
+			}
 			slist.remove(0)
 		}
 	}
@@ -494,7 +497,10 @@ proc del() {local i
 	for (i=slist.count-1; i >= 1; i -=1) {// can't delete root
 		tobj = slist.object(i)
 		if (tobj.selected == 1) {
-			if (etop) tobj.export_rm()
+			if (etop) {
+				bild.subsets.remove(tobj)
+				tobj.export_rm()
+			}
 			slist.remove(i)
 		}
 	}

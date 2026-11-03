@@ -13,9 +13,6 @@ extern "C" void nrn_shape_update();
 
 void ivoc_help(const char*) {}
 void ivoc_cleanup() {}
-int hoc_readcheckpoint(char*) {
-    return 0;
-}
 
 void hoc_notify_iv() {
     nrn_shape_update();
@@ -108,12 +105,6 @@ void hoc_string_dialog() {
         hoc_ret();
         hoc_pushx(0.);
     }
-}
-void hoc_checkpoint() {
-    // not redirecting checkpoint because not a GUI function
-    // neuron::python::methods.try_gui_helper("checkpoint", nullptr);
-    hoc_ret();
-    hoc_pushx(0.);
 }
 void hoc_pwman_place() {
     neuron::python::methods.try_gui_helper("pwman_place", nullptr);
