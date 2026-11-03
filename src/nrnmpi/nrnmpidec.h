@@ -1,11 +1,12 @@
 /*
-This file is processed by mkdynam.sh and so it is important that the prototypes
+This file is processed by mkdynam.py and so it is important that the prototypes
 be of the form "type foo(type arg, ...)". Moreover, the * needs to be attached
 to the type, e.g. `T*` is valid, but `T *` isn't.
 */
 
 #pragma once
 #include <nrnmpiuse.h>
+#include "nrndlldef.h"
 #include <cstdint>
 using longdbl = long double;
 #if NRNMPI
@@ -62,6 +63,9 @@ extern int nrnmpi_bbsrecv(int source, bbsmpibuf* r);
 extern int nrnmpi_bbssendrecv(int dest, int tag, bbsmpibuf* s, bbsmpibuf* r);
 
 /* from nrnmpi.cpp */
+/* Functions (not data). DYNAMIC MPI compiles these into the plugin as
+   f_nrnmpi_* while the plugin inherits NRN_DLL without NRN_DLL_EXPORTS, so
+   NRN_DLLSYM would be dllimport and MSVC C2491. Export-all covers them. */
 extern void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv);
 extern int nrnmpi_wrap_mpi_init(int* flag);
 extern double nrnmpi_wtime();

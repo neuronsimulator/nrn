@@ -22,8 +22,7 @@
 #include <stdlib.h>
 
 #include <nrnmpiuse.h>
-#include <nrnmpidec.h>
-extern int nrnmpi_numprocs;
+#include <nrnmpi.h>
 
 #include "nvector_nrnparallel_ld.h"
 #include "sundialsmath.h"

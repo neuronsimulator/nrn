@@ -1,4 +1,8 @@
 :: run installer
+if not exist .\nrn-nightly-AMD64.exe (
+  echo ERROR: nrn-nightly-AMD64.exe missing; MinGW setup_exe did not run
+  exit /b 1
+)
 start /b /wait .\nrn-nightly-AMD64.exe /S /D=C:\nrn_test
 
 :: take a look

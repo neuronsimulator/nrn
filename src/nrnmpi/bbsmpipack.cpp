@@ -25,8 +25,6 @@
 #define nrnmpidebugleak 0
 #define debug           0
 
-extern MPI_Comm nrn_bbs_comm;
-
 #if nrnmpidebugleak
 static int nrnmpi_bufcnt_;
 #endif
@@ -168,7 +166,13 @@ void nrnmpi_upkvec(int n, double* x, bbsmpibuf* r) {
 load_nrnmpi: /home/hines/neuron/nrndynam/x86_64/lib/libnrnmpi.so: undefined symbol: cxx_char_alloc
 So fill this in explicitly in nrnmpi_dynam.cpp
 */
-char* (*p_cxx_char_alloc)(int len);
+// extern "C" { ... } is a definition; `extern "C" T x;` is only a
+// declaration. load_nrnmpi dlsym()s the literal "p_cxx_char_alloc".
+// MSVC otherwise exports ?p_cxx_char_alloc@@...; lookup fails, dlclose
+// leaves f_nrnmpi_* pointing at the unloaded plugin, and fadvance AV.
+extern "C" {
+NRN_EXPORT char* (*p_cxx_char_alloc)(int len);
+}
 #endif
 
 char* nrnmpi_upkstr(bbsmpibuf* r) {

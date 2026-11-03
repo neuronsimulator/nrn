@@ -1,8 +1,9 @@
 #pragma once
 
+#include "nrndlldef.h"
 #include <fmt/printf.h>
 
-extern int (*nrnpy_pr_stdoe_callback)(int, char*);
+extern NRN_DLLSYM int (*nrnpy_pr_stdoe_callback)(int, char*);
 
 template <typename... Args>
 int Fprintf(FILE* stream, const char* fmt, Args... args) {

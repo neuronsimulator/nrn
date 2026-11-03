@@ -514,7 +514,7 @@ static void plotstream(int narg, int mode, double x) {
 
     if (narg == 1 || narg == 3) {
         plotflush(1);
-        IGNORE(PLOT(narg, mode, xsav, ysav));
+        NRN_IGNORE(PLOT(narg, mode, xsav, ysav));
     }
     if (pcnt >= MAXCNT) {
         plotflush(2);
@@ -550,11 +550,11 @@ static void plotflush(int contin) {
             param[i] = g->g_param[i];
         }
         if (hoc_color != g->g_color) {
-            IGNORE(hoc_set_color(g->g_color));
+            NRN_IGNORE(hoc_set_color(g->g_color));
         }
-        IGNORE(PLOT(1, 1, 0., 0.));
+        NRN_IGNORE(PLOT(1, 1, 0., 0.));
         for (i = 0; i < pcnt; i++) {
-            IGNORE(PLOT(2, 0, lx[i], g->g_val[i]));
+            NRN_IGNORE(PLOT(2, 0, lx[i], g->g_val[i]));
         }
         if (contin == 2) {
             g->g_val[0] = g->g_val[pcnt - 1];
@@ -564,12 +564,12 @@ static void plotflush(int contin) {
         param[i] = parsav[i];
     }
     if (savcolor != hoc_color) {
-        IGNORE(hoc_set_color(savcolor));
+        NRN_IGNORE(hoc_set_color(savcolor));
     }
     if (contin == 2 && pcnt > 0) {
         lx[0] = lx[pcnt - 1];
         pcnt = 1;
-        IGNORE(PLOT(3, 1, xsav, ysav)); /* last point of explicit plot */
+        NRN_IGNORE(PLOT(3, 1, xsav, ysav)); /* last point of explicit plot */
     }
     lastmode = savmode;
     if (contin == 1) {
@@ -598,7 +598,7 @@ static void do_setup(void) {
         param[i] = parsav[i];
     }
     if (savcolor != hoc_color) {
-        IGNORE(hoc_set_color(savcolor));
+        NRN_IGNORE(hoc_set_color(savcolor));
     }
     initialized = 1;
 }

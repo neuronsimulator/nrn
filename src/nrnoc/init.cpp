@@ -10,6 +10,9 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#if defined(_WIN32)
+#include <direct.h>
+#endif
 #include "section.h"
 #include "seclist.h"  // SectionList_reg
 #include "parse.hpp"
@@ -94,27 +97,25 @@ void nrn_possible_mismatched_arch(const char* libname) {
 
 #include "nrnwrap_dlfcn.h"
 
-#define CHECK(name)                            \
-    if (hoc_lookup(name) != (Symbol*) 0) {     \
-        IGNORE(fprintf(stderr, CHKmes, name)); \
-        nrn_exit(1);                           \
+#define CHECK(name)                                \
+    if (hoc_lookup(name) != (Symbol*) 0) {         \
+        NRN_IGNORE(fprintf(stderr, CHKmes, name)); \
+        nrn_exit(1);                               \
     }
 
 static char CHKmes[] = "The user defined name, %s, already exists\n";
 
-void (*nrnpy_reg_mech_p_)(int);
+NRN_DLLSYM void (*nrnpy_reg_mech_p_)(int);
 
-int secondorder = 0;
+NRN_DLLSYM int secondorder = 0;
 int state_discon_allowed_;
-extern int nrn_nobanner_;
-double t, dt, clamp_resist, celsius, htablemin, htablemax;
-int nrn_netrec_state_adjust = 0;
+double t, dt, clamp_resist, htablemin, htablemax;
+NRN_DLLSYM double celsius;
+NRN_DLLSYM int nrn_netrec_state_adjust = 0;
 int nrn_sparse_partrans = 0;
-hoc_List* section_list;
+NRN_DLLSYM hoc_List* section_list;
 int nrn_global_ncell = 0; /* used to be rootnodecount */
 extern double hoc_default_dll_loaded_;
-extern int nrn_istty_;
-extern int nrn_nobanner_;
 static std::vector<double> morph_parm_default{DEF_diam};
 
 static HocParmLimits _hoc_parm_limits[] = {{"Ra", {1e-6, 1e9}},
@@ -142,7 +143,7 @@ extern Symlist* nrn_load_dll_called_;
 extern int nrn_load_dll_recover_error();
 extern void nrn_load_name_check(const char* name);
 static int memb_func_size_;
-std::vector<Memb_func> memb_func;
+NRN_DLLSYM std::vector<Memb_func> memb_func;
 std::vector<Memb_list> memb_list;
 short* memb_order_;
 Symbol** pointsym;
@@ -150,21 +151,21 @@ Point_process** point_process;
 char* pnt_map; /* so prop_free can know its a point mech*/
 BAMech** bamech_;
 
-cTemplate** nrn_pnt_template_; /* for finding artificial cells */
+NRN_DLLSYM cTemplate** nrn_pnt_template_; /* for finding artificial cells */
 /* for synaptic events. */
-pnt_receive_t* pnt_receive;
-pnt_receive_init_t* pnt_receive_init;
-short* pnt_receive_size;
+NRN_DLLSYM pnt_receive_t* pnt_receive;
+NRN_DLLSYM pnt_receive_init_t* pnt_receive_init;
+NRN_DLLSYM short* pnt_receive_size;
 
 /* values are type numbers of mechanisms which do net_send call */
 int nrn_has_net_event_cnt_;
 int* nrn_has_net_event_;
 int* nrn_prop_param_size_;
-int* nrn_prop_dparam_size_;
+NRN_DLLSYM int* nrn_prop_dparam_size_;
 int* nrn_dparam_ptr_start_;
 int* nrn_dparam_ptr_end_;
 NrnWatchAllocateFunc_t* nrn_watch_allocate_;
-std::unordered_map<int, void (*)(Prop*)> nrn_mech_inst_destruct;
+NRN_DLLSYM std::unordered_map<int, void (*)(Prop*)> nrn_mech_inst_destruct;
 
 void hoc_reg_watch_allocate(int type, NrnWatchAllocateFunc_t waf) {
     nrn_watch_allocate_[type] = waf;
@@ -211,7 +212,7 @@ void add_nrn_fornetcons(int type, int indx) {
 }
 
 /* array is parallel to memb_func. All are 0 except 1 for ARTIFICIAL_CELL */
-short* nrn_is_artificial_;
+NRN_DLLSYM short* nrn_is_artificial_;
 short* nrn_artcell_qindex_;
 
 void add_nrn_artcell(int mechtype, int qi) {
@@ -317,7 +318,7 @@ void hoc_last_init(void) {
         if (nrn_nobanner_ == 0) {
             Fprintf(stderr, "%s\n", nrn_version(1));
             Fprintf(stderr, "%s\n", banner);
-            IGNORE(fflush(stderr));
+            NRN_IGNORE(fflush(stderr));
         }
     memb_func_size_ = 30;  // initial allocation size
     memb_list.reserve(memb_func_size_);
@@ -445,7 +446,7 @@ void initnrn(void) {
 }
 
 static int pointtype = 1; /* starts at 1 since 0 means not point in pnt_map*/
-int n_memb_func;
+NRN_DLLSYM int n_memb_func;
 
 
 void reallocate_mech_data(int mechtype);
@@ -546,7 +547,7 @@ void register_mech_vars(const char** var_buffers,
                 varname.erase(subscript);
             }
             if ((var_symbol = hoc_lookup(varname.c_str()))) {
-                IGNORE(fprintf(stderr, CHKmes, varname.c_str()));
+                NRN_IGNORE(fprintf(stderr, CHKmes, varname.c_str()));
             } else {
                 var_symbol = hoc_install(varname.c_str(), RANGEVAR, 0.0, &hoc_symlist);
                 var_symbol->subtype = modltype;
@@ -960,7 +961,7 @@ void hoc_register_npy_direct(int mechtype, NPyDirectMechFunc* f) {
         fmap[f[i].name] = &f[i];
     }
 }
-std::unordered_map<int, NPyDirectMechFuncs> nrn_mech2funcs_map;
+NRN_DLLSYM std::unordered_map<int, NPyDirectMechFuncs> nrn_mech2funcs_map;
 
 /**
  * @brief Legacy way of registering mechanism data/pdata size.
@@ -1081,7 +1082,7 @@ double _modl_get_dt_thread(NrnThread* nt) {
     return nt->_dt;
 }
 
-int state_discon_flag_ = 0;
+NRN_DLLSYM int state_discon_flag_ = 0;
 void state_discontinuity(int i, double* pd, double d) {
     if (state_discon_allowed_ && state_discon_flag_ == 0) {
         *pd = d;

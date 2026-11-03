@@ -8,8 +8,14 @@
 
 #include <cstdlib>
 #include <cstring>
-#include <dlfcn.h>
 #include <filesystem>
+#if defined(_WIN32)
+// No system dlfcn.h. src/mswin/dlfcn.h is LoadLibrary/GetProcAddress, and
+// pyembed compiles src/mswin/dlfcn.c. RTLD_DEFAULT still searches loaded modules.
+#include "dlfcn.h"
+#else
+#include <dlfcn.h>
+#endif
 
 #include <fmt/format.h>
 
@@ -17,6 +23,12 @@
 #include "utils/logger.hpp"
 
 #if defined(NRN_NMODL_PYTHON_VERSION_CHECK)
+// PC/pyconfig.h pragma-comments pythonXY.lib into this object. nmodl dlopens
+// NMODL_PYLIB and only needs the version macros here. Py_NO_ENABLE_SHARED is
+// the header's own switch for that pragma (it also skips MS_COREDLL).
+#if defined(_MSC_VER)
+#define Py_NO_ENABLE_SHARED
+#endif
 #include <Python.h>
 #endif
 

@@ -1,4 +1,5 @@
 #include "options.h"
+#include "nrndlldef.h"
 
 extern void disconnect();
 extern void batch_run(), batch_save();
@@ -21,10 +22,13 @@ extern void fcurrent(), fmatrix(), frecord_init();
 extern void issection(), ismembrane(), sectionname(), psection();
 extern void pop_section(), push_section(), section_exists();
 extern void delete_section();
-extern int secondorder, diam_changed, nrn_shape_changed_;
-extern int nrn_netrec_state_adjust, nrn_sparse_partrans;
+extern NRN_DLLSYM int secondorder;
+extern int nrn_shape_changed_;
+extern NRN_DLLSYM int diam_changed;
+extern NRN_DLLSYM int nrn_netrec_state_adjust;
+extern int nrn_sparse_partrans;
 extern double clamp_resist;
-extern double celsius;
+extern NRN_DLLSYM double celsius;
 extern int stoprun;
 extern void fit_praxis(), attr_praxis(), pval_praxis(), stop_praxis();
 #if KEEP_NSEG_PARM
