@@ -338,7 +338,7 @@ void apply_node_flux(int n,
                      long* callable,
                      double dt,
                      double* states) {
-    for (int i = 0; i < n; i++) {
+    for (size_t i = 0; i < n; i++) {
         size_t j = index == nullptr ? i : index[i];
         if (callable[i] >= 0) {
             double flux;
