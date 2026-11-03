@@ -105,12 +105,25 @@ static bool ends_with(std::string_view str, std::string_view suffix) {
            str.substr(str.size() - suffix.size(), std::string_view::npos) == suffix;
 }
 
+// MSVC _popen uses cmd.exe /c. A command that starts with " loses its first and
+// last quote. Extra-wrap, same as the nrnpyenv.py launch below. POSIX popen
+// keeps the quotes.
+static std::string popen_command(std::string command) {
+#if defined(_MSC_VER)
+    if (!command.empty() && command.front() == '"') {
+        command = "\"" + command + "\"";
+    }
+#endif
+    return command;
+}
+
 // nrnpyenv.sh rejects non-CPython and a free-threaded build while it is choosing an
 // interpreter. When NRN_PYLIB, NRN_PYTHONEXE, and NRN_PYTHONVERSION are already set,
 // that script does not run. Check the executable before dlopen. -S skips site, so a
 // sitecustomize print is not part of the answer.
 static void ensure_cpython(std::string const& pyexe) {
-    std::string command = "\"" + pyexe + "\" -S -c \"import sys; print(sys.implementation.name)\"";
+    std::string command = popen_command("\"" + pyexe +
+                                        "\" -S -c \"import sys; print(sys.implementation.name)\"");
     std::string name;
     try {
         name = check_output(std::move(command));
@@ -131,9 +144,9 @@ static void ensure_cpython(std::string const& pyexe) {
 // launch stays "Could not run" and is not reported as free-threaded. 1 and "1"
 // are a free-threaded build. 0, "0", and None are a GIL build.
 static void ensure_gil_build(std::string const& pyexe) {
-    std::string command = "\"" + pyexe +
-                          "\" -S -c \"import sysconfig; v = sysconfig.get_config_var"
-                          "('Py_GIL_DISABLED'); print(1 if v in (1, '1') else 0)\"";
+    std::string command = popen_command("\"" + pyexe +
+                                        "\" -S -c \"import sysconfig; v = sysconfig.get_config_var"
+                                        "('Py_GIL_DISABLED'); print(1 if v in (1, '1') else 0)\"");
     std::string answer;
     try {
         answer = check_output(std::move(command));
