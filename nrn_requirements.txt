@@ -1,6 +1,6 @@
 matplotlib<=3.10.9; python_version < "3.14"
 matplotlib>=3.10.5,<=3.10.7; python_version >= "3.14"
-ipython<=8.39.0
+ipython<=9.18.1
 mpi4py<=4.1.2
 find_libpython<=0.5.1
 packaging>=22.0,<=26.3

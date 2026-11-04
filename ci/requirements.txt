@@ -1297,7 +1297,7 @@ debugpy==1.8.22 ; python_full_version >= '3.10' \
     --hash=sha256:feea785c7bbeb8cfd5b01a63f9061c899dc468c8be81671141a29305774fa294 \
     --hash=sha256:ffeeaf4dfe1534375902040df32a4c48f721fd35a4d4d337ac72a44d4176075b
     # via ipykernel
-decorator==5.3.1 \
+decorator==5.3.1 ; python_full_version < '3.11' \
     --hash=sha256:4cbcdd55a6efadb9dbea26b858f4fb3264567b52d69ca0d25b721b553f60ea82 \
     --hash=sha256:f47fe6fdbd2edd623ecfe36875d37aba411624e2670dd395dddae1358689bb3c
     # via ipython
@@ -1636,7 +1636,7 @@ ipython==8.18.1 ; python_full_version < '3.10' \
     #   ipykernel
     #   ipywidgets
     #   jupyter-console
-ipython==8.39.0 ; python_full_version >= '3.10' \
+ipython==8.39.0 ; python_full_version == '3.10.*' \
     --hash=sha256:4110ae96012c379b8b6db898a07e186c40a2a1ef5d57a7fa83166047d9da7624 \
     --hash=sha256:bb3c51c4fa8148ab1dea07a79584d1c854e234ea44aa1283bcb37bc75054651f
     # via
@@ -1645,6 +1645,19 @@ ipython==8.39.0 ; python_full_version >= '3.10' \
     #   ipykernel
     #   ipywidgets
     #   jupyter-console
+ipython==9.18.1 ; python_full_version >= '3.11' \
+    --hash=sha256:6319c0f5372c196397899479e6db1783dd7937abae06815d1317e8d5d51aaaaf \
+    --hash=sha256:997ce9140d374531a61069c70c0f9ef299d6dd3559ea0f94b8af589726e3c1d5
+    # via
+    #   -r docs/docs_requirements.txt
+    #   -r nrn_requirements.txt
+    #   ipykernel
+    #   ipywidgets
+    #   jupyter-console
+ipython-pygments-lexers==1.1.1 ; python_full_version >= '3.11' \
+    --hash=sha256:09c0138009e56b6854f9535736f4171d855c8c08a563a0dcd8022f78355c7e81 \
+    --hash=sha256:a9462224a505ade19a605f71f8fa63c2048833ce50abc86768a0d81d876dc81c
+    # via ipython
 ipywidgets==8.1.9 \
     --hash=sha256:bcccba38a6ec3253f7a39c943cea5b9ad01999ce071396171adbc51c6a6a8613 \
     --hash=sha256:f2b8cbcaae10252b809fbe4d7470db75c09b769a32cbf816d20e5ca6d3c5a79d
@@ -3483,7 +3496,7 @@ prompt-toolkit==3.0.53 ; python_full_version >= '3.10' \
     # via
     #   ipython
     #   jupyter-console
-psutil==7.2.2 ; python_full_version < '3.11' \
+psutil==7.2.2 ; python_full_version < '3.11' or (sys_platform != 'android' and sys_platform != 'cygwin' and sys_platform != 'emscripten') \
     --hash=sha256:0746f5f8d406af344fd547f1c8daa5f5c33dbc293bb8d6a16d80b4bb88f59372 \
     --hash=sha256:076a2d2f923fd4821644f5ba89f059523da90dc9014e85f8e45a5774ca5bc6f9 \
     --hash=sha256:11fe5a4f613759764e79c65cf11ebdf26e33d6dd34336f8a337aa2996d71c841 \
@@ -3505,7 +3518,9 @@ psutil==7.2.2 ; python_full_version < '3.11' \
     --hash=sha256:ed0cace939114f62738d808fdcecd4c869222507e266e574799e9c0faa17d486 \
     --hash=sha256:eed63d3b4d62449571547b60578c5b2c4bcccc5387148db46e0c2313dad0ee00 \
     --hash=sha256:fd04ef36b4a6d599bbdb225dd1d3f51e00105f6d48a28f006da7f9822f2606d8
-    # via ipykernel
+    # via
+    #   ipykernel
+    #   ipython
 psygnal==0.14.2 ; python_full_version < '3.10' \
     --hash=sha256:1045c7662e4d4d9a496b47956ecf2ee542aaefc283244aece241a23c6b716e7e \
     --hash=sha256:35aeb647004031951f25a6ec457628b3a7300de6927bec6875f445c373d5974c \
@@ -3596,6 +3611,7 @@ pygments==2.21.0 \
     --hash=sha256:610ca751c9bc2492b38eb9a38a7fbc93edbbb2d7182edaf34e66ae493dee5c8c
     # via
     #   ipython
+    #   ipython-pygments-lexers
     #   jupyter-console
     #   nbconvert
     #   pytest
