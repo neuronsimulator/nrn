@@ -404,9 +404,25 @@ class MultiCompartmentReaction(GeneralizedReaction):
                 self._cur_mapped_ecs.append(local_mapped_ecs)
 
     def _evaluate(self, location, instruction, units=None):
-        rate = rxdmath._ensure_arithmeticed(self._original_rate_f)
+        rate_f = rxdmath._ensure_arithmeticed(self._original_rate_f)
+        if not self._custom_dynamics:
+            lhs = self._scheme._lhs._items
+            for k, v in zip(list(lhs.keys()), list(lhs.values())):
+                if v == 1:
+                    rate_f = rate_f * k
+                else:
+                    rate_f = rate_f * k**v
+        rate = rate_f
         if self._original_rate_b:
-            rate -= rxdmath._ensure_arithmeticed(self._original_rate_b)
+            rate_b = rxdmath._ensure_arithmeticed(self._original_rate_b)
+            if not self._custom_dynamics:
+                rhs = self._scheme._rhs._items
+                for k, v in zip(list(rhs.keys()), list(rhs.values())):
+                    if v == 1:
+                        rate_b = rate_b * k
+                    else:
+                        rate_b = rate_b * k**v
+            rate -= rate_b
         mols = rate._evaluate(
             location, instruction
         )  # molecules per square micron per ms
