@@ -601,3 +601,31 @@ def test_vector_api():
     assert np.allclose([error], [0.0010239221022848835])
     error = dvec.fit(fvec, "line", ivec, npyref(aftau, 0), npyref(aftau, 1))
     assert np.allclose([error], [6.593786238758728e-06])
+
+
+def test_vector_medfltr_windows():
+    values = [9, -1, 7, 2, 8, 0, 6, 3, 5, 4, 10, -2, 11, 1, 12, 8, 13, 0]
+
+    def expected(points):
+        result = []
+        for i in range(len(values)):
+            window = sorted(
+                values[max(0, i - points) : min(len(values), i + points + 1)]
+            )
+            result.append(window[(len(window) - 1) // 2])
+        return result
+
+    for points in (1, 2, 3):
+        source = h.Vector(values)
+        destination = h.Vector()
+        destination.medfltr(source, points)
+        assert destination.to_python() == expected(points)
+        assert source.to_python() == values
+
+        inplace = h.Vector(values)
+        inplace.medfltr(points)
+        assert inplace.to_python() == expected(points)
+
+    default = h.Vector(values)
+    default.medfltr()
+    assert default.to_python() == expected(3)

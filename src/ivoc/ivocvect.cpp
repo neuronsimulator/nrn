@@ -3282,7 +3282,7 @@ static Object** v_medfltr(void* v) {
         w1 = (i < n - points) ? i + points : n - 1;
         wlen = w1 - w0;
 
-        std::vector<double> window(v1->begin() + w0, v1->begin() + wlen);
+        std::vector<double> window(v1->begin() + w0, v1->begin() + w1 + 1);
         std::sort(window.begin(), window.end());
         res[i] = window[wlen / 2];
     }
