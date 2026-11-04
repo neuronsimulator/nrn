@@ -285,7 +285,11 @@ Do not treat Azure `NRN_RELEASE_UPLOAD` as the release path.
 
 Nightly wheels are published from `master` by
 [wheels-nightly.yml](https://github.com/neuronsimulator/nrn/actions/workflows/wheels-nightly.yml)
-on a schedule (and can be dispatched manually).
+on a schedule (and can be dispatched manually). One run checks out a single
+commit and uploads Linux x86_64 (`ubuntu-24.04`), Linux arm64
+(`ubuntu-24.04-arm`), macOS x86_64 (`macos-15-intel`), and macOS arm64
+(`macos-15`) together. Azure scheduled builds still produce wheels and do not
+upload them.
 
 ## How to test GHA wheels locally
 

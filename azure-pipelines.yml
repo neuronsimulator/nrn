@@ -2,7 +2,9 @@
 # Azure Pipeline settings
 #=============================================================================
 
-# Nightly build master for pypi upload
+# Scheduled master builds still produce wheels. neuron-nightly upload is
+# wheels-nightly.yml. A manual run can still upload when NRN_NIGHTLY_UPLOAD
+# is not false.
 schedules:
 - cron: "0 0 * * *"
   branches:
