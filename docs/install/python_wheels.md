@@ -288,8 +288,8 @@ Nightly wheels are published from `master` by
 on a schedule (and can be dispatched manually). One run checks out a single
 commit and uploads Linux x86_64 (`ubuntu-24.04`), Linux arm64
 (`ubuntu-24.04-arm`), macOS x86_64 (`macos-15-intel`), and macOS arm64
-(`macos-15`) together. Azure scheduled builds still produce wheels and do not
-upload them.
+(`macos-15`) together. Azure has no nightly wheel schedule. Pull requests,
+pushes, and manual runs still build wheels there.
 
 ## How to test GHA wheels locally
 
@@ -297,7 +297,7 @@ Download the merged `wheels` artifact from a [NEURON Release](https://github.com
 
 ## How to test Azure wheels locally
 
-Azure still publishes a `drop` zip for some PR/nightly builds. After retrieving the Azure drop URL (i.e. from the GitHub PR comment, or by going to Azure for a specific build):
+Azure still publishes a `drop` zip for some PR builds. After retrieving the Azure drop URL (i.e. from the GitHub PR comment, or by going to Azure for a specific build):
 
 ```bash
 python3 -m pip wheel neuron-gpu-nightly --wheel-dir tmp --find-links 'https://dev.azure.com/neuronsimulator/aa1fb98d-a914-45c3-a215-5e5ef1bd7687/_apis/build/builds/7600/artifacts?artifactName=drop&api-version=7.0&%24format=zip'

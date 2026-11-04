@@ -2,15 +2,9 @@
 # Azure Pipeline settings
 #=============================================================================
 
-# Scheduled master builds still produce wheels. neuron-nightly upload is
-# wheels-nightly.yml. A manual run can still upload when NRN_NIGHTLY_UPLOAD
-# is not false.
-schedules:
-- cron: "0 0 * * *"
-  branches:
-    include:
-    - master
-  always: true
+# No nightly schedule. wheels-nightly.yml publishes neuron-nightly.
+# Pull requests, pushes, and manual runs still build wheels here.
+# A manual run can upload neuron-nightly when NRN_NIGHTLY_UPLOAD is not false.
 
 # Auto cancel old PR builds
 pr:
