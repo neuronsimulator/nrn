@@ -29,3 +29,13 @@ def test_valid_arith_objects(neuron_nosave_instance):
     assert isinstance(
         rxd.rxdmath._ensure_arithmeticed((ca * (1 - ca))), rxd.rxdmath._Arithmeticed
     )
+
+
+def test_crxd_rxdmath_is_rxdmath(neuron_nosave_instance):
+    """neuron.crxd.rxdmath is neuron.rxd.rxdmath, not a second copy"""
+
+    _, rxd, _ = neuron_nosave_instance
+    from neuron.crxd.rxdmath import _Arithmeticed, vtrap
+
+    assert _Arithmeticed is rxd.rxdmath._Arithmeticed
+    assert isinstance(vtrap(-(rxd.v + 40.0), 10), rxd.rxdmath._Arithmeticed)
