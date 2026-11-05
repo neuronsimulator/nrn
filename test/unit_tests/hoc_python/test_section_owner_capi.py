@@ -6,6 +6,8 @@
 import subprocess
 import sys
 
+import pytest
+
 SCRIPT = r"""
 import ctypes
 import importlib.machinery
@@ -61,6 +63,8 @@ print("import after clear")
 
 def test_section_owner_capi():
     r = subprocess.run([sys.executable, "-c", SCRIPT], capture_output=True, text=True)
+    if sys.platform == "darwin" and "Interceptors are not working" in r.stderr:
+        pytest.skip("the sanitizer does not reach a macOS Python subprocess")
     assert r.returncode == 0, r.stdout + r.stderr
     assert r.stdout.split("\n")[-3:-1] == [
         "import refused",
