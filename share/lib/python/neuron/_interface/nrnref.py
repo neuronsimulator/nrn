@@ -11,6 +11,7 @@ Two families live here:
 """
 import abc
 import ctypes
+import os
 import numbers
 import sys
 import weakref
@@ -56,7 +57,11 @@ def _get_libc():
         import ctypes.util
 
         try:
-            lib = ctypes.CDLL(None)
+            if os.name == "nt":  # the C runtime of NEURON's MinGW build
+                lib = ctypes.CDLL("msvcrt")
+                lib.strdup = lib._strdup
+            else:
+                lib = ctypes.CDLL(None)
             lib.strdup
         except (OSError, AttributeError):
             lib = ctypes.CDLL(ctypes.util.find_library("c") or "libc.so.6")
