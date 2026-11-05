@@ -334,6 +334,7 @@ class Object(metaclass=_HocClassMeta):
         "_host_section_ref",
         "_section_cache",
         "_fih_callback_id",
+        "_plotshape_var",
         "__weakref__",
     )
 
@@ -413,6 +414,7 @@ class Object(metaclass=_HocClassMeta):
         # about native liveness (gap-50). Python-owned Sections keep the weak
         # hold required by real NEURON's last-wrapper-deletes-section contract.
         self._host_section = None
+        self._plotshape_var = None
         self._host_section_ref = None
         if host_section is not None and host_section.is_pysec():
             self._host_section_ref = weakref.ref(host_section)
@@ -546,6 +548,14 @@ class Object(metaclass=_HocClassMeta):
         if type(self).__reduce__ is not object.__reduce__:
             return self.__reduce__()
         raise TypeError("HocObject: Only Vector instance can be pickled")
+
+    def _plotshape_variable(self, *args):
+        """PlotShape.variable: a string goes to HOC, a Python object stays here."""
+        if args and not isinstance(args[0], (str, int, float, Object, type(None))):
+            self._plotshape_var = args[0]
+            return 1.0
+        self._plotshape_var = None
+        return self._hoc_variable(*args)
 
     def hocobjptr(self):
         """Return the raw C pointer to the underlying HOC object as an int."""
@@ -866,6 +876,13 @@ class Object(metaclass=_HocClassMeta):
 
                 NEURON().define_shape()
                 return _PlotShapePlot(self)
+        # PlotShape.variable also takes a Python object. Core keeps one only
+        # through nrnpy_get_pyobj, which needs NEURON's Python module.
+        if self._class_name == "PlotShape":
+            if name == "variable":
+                return self._plotshape_variable
+            if name == "_hoc_variable":
+                name = "variable"
         # `delay` → `del` alias — see __dir__ comment above.
         original_name = name
         if name not in self._methods and name == "delay" and "del" in self._methods:

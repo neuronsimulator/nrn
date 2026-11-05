@@ -74,7 +74,7 @@ from .nrnref import (
     numpy_element_ref,
 )
 from .object import List, Object, SectionList, Vector
-from .sections import Section
+from .sections import PYTHON_SECTIONS, Section
 from .utils import (
     _name_error,
     TEMPLATE_CONVERTERS,
@@ -1650,6 +1650,8 @@ class NEURON(metaclass=_Singleton):
 
     def _allsec_items(self):
         _from_ptr = Section._from_ptr
+        # The weak references themselves: PYTHON_SECTIONS.get costs 170 ns here.
+        owner_refs = PYTHON_SECTIONS.data
 
         link = _allsec_head_links()
         sc = _structure_change_cnt.value
@@ -1707,10 +1709,15 @@ class NEURON(metaclass=_Singleton):
                 if idx >= count:
                     break
 
-            w = wrappers[idx]
+            # A Python section's own object, as NEURON gives: a wrapper would
+            # not keep a section that is otherwise garbage alive for the loop.
+            owner_ref = owner_refs.get(ptrs[idx])
+            w = owner_ref() if owner_ref is not None else None
             if w is None:
-                w = _from_ptr(ptrs[idx])
-                wrappers[idx] = w
+                w = wrappers[idx]
+                if w is None:
+                    w = _from_ptr(ptrs[idx])
+                    wrappers[idx] = w
             yield w
             idx += 1
 

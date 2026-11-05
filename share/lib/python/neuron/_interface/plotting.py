@@ -168,9 +168,13 @@ def _segment_3d_pts(sec):
 
 def _get_variable_seg(seg, variable):
     """Fetch a variable's value at a segment. Accepts 'v', 'gnabar_hh',
-    or 'mech.attr' strings."""
+    'mech.attr' strings, or a Python object with rxd's nodes(seg).concentration."""
     if not isinstance(variable, str):
-        return None
+        try:
+            vals = variable.nodes(seg).concentration
+            return sum(vals) / len(vals)
+        except Exception:
+            return None
     try:
         if "." in variable:
             mech, var = variable.split(".", 1)
@@ -256,6 +260,12 @@ class _PlotShapePlot(_WrapperPlot):
         n.define_shape()
 
         var_name, lo, hi, sections = self._get_plot_data()
+        if self._data._plotshape_var is not None:
+            var_name = self._data._plotshape_var
+            # Named, not isinstance: rxd is optional and imports the neuron package.
+            if any(c.__name__ == "Species" for c in type(var_name).__mro__):
+                if len(var_name.regions) > 1:
+                    raise Exception("Please specify region for the species.")
 
         # Same string dispatch as _RangeVarPlot.__call__.
         is_pyplot = hasattr(graph, "__name__") and graph.__name__ == "matplotlib.pyplot"
@@ -303,7 +313,11 @@ class _PlotShapePlot(_WrapperPlot):
                 # mode 0 = "Show Diameter" in NEURON GUI; use seg.diam as line width.
                 lw = seg.diam if mode == 0 else line_width
                 (line,) = ax.plot(xs, ys, zs, "-", linewidth=lw, **kwargs)
-                val = _get_variable_seg(seg, var_name) if var_name else None
+                val = (
+                    _get_variable_seg(seg, var_name)
+                    if var_name is not None
+                    else None
+                )
                 if var_name is not None and val is not None:
                     line.set_color(_color_for(val, cmap, lo, hi))
                 lines.append(line)
@@ -318,7 +332,7 @@ class _PlotShapePlot(_WrapperPlot):
         ax.set_xlabel("x")
         ax.set_ylabel("y")
         ax.set_zlabel("z")
-        if var_name:
+        if var_name is not None:
             ax.set_title(f"PlotShape: {var_name}")
         return ax
 
@@ -344,8 +358,12 @@ class _PlotShapePlot(_WrapperPlot):
         for sec in sections:
             all_seg_pts = _segment_3d_pts(sec)
             for seg, (xs, ys, zs, _, _) in zip(sec, all_seg_pts):
-                val = _get_variable_seg(seg, var_name) if var_name else None
-                col = _color_for(val, cmap, lo, hi) if var_name else "black"
+                val = (
+                    _get_variable_seg(seg, var_name)
+                    if var_name is not None
+                    else None
+                )
+                col = _color_for(val, cmap, lo, hi) if var_name is not None else "black"
                 w = seg.diam if mode == 0 else width
                 hover = str(seg) + (f"<br>{val:.3f}" if val is not None else "")
                 traces.append(
