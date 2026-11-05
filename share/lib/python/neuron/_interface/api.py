@@ -2191,35 +2191,22 @@ class TypeCodes:
             object.__setattr__(self, "STRING", code)
             self._RAW["STRING"] = code
 
-        # Probe template-scoped section + obfunc method.
+        # SECTION follows the `create` keyword (parse.ypp: %token SECTIONKEYWORD
+        # SECTION). No symbol has this type until a section exists, and a section
+        # would mark the model changed: `import neuron` can follow finitialize (a
+        # HOC run through CoreNEURON: "internal structures ... are out of date").
+        code = int(_nrn_symbol_type(_nrn_symbol(b"create"))) + 1
+        object.__setattr__(self, "SECTION", code)
+        self._RAW["SECTION"] = code
+
+        # Obfunc method, read from the template's symbol table.
         hoc_exec(
             "begintemplate _MNTypeProbe\n"
-            "public soma, get_obj\n"
-            "create soma\n"
+            "public get_obj\n"
             "obfunc get_obj() { return new Vector(1) }\n"
-            "proc init() { soma { L=10 } }\n"
             "endtemplate _MNTypeProbe\n"
         )
-        # Instantiate via the C API directly so we don't depend on Python
-        # dispatch (which itself reads TYPES — bootstrapping concern).
-        sym = _nrn_symbol(b"_MNTypeProbe")
-        obj = _nrn_object_new(sym, 0) if sym else None
-        if obj:
-            try:
-                for member, attr in (
-                    (b"soma", "SECTION"),
-                    (b"get_obj", "OBFUNCTION"),
-                ):
-                    msym = _nrn_method_symbol(obj, member)
-                    if msym:
-                        code = int(_nrn_symbol_type(msym))
-                        object.__setattr__(self, attr, code)
-                        self._RAW[attr] = code
-            finally:
-                try:
-                    _nrn_object_unref(obj)
-                except Exception:
-                    pass
+        self._record_class_member(b"_MNTypeProbe", b"get_obj", "OBFUNCTION")
 
         # Probe method-level codes via known built-in classes.
         # Vector.size  → HOC FUNCTION code (270), shared with top-level
@@ -2246,17 +2233,25 @@ class TypeCodes:
                 except Exception:
                     pass
 
-    def probe_section_ref(self, section_ref_obj):
-        """Probe METHOD_SECTIONREF using a live SectionRef instance.
+    def _record_class_member(self, class_name, member, attr):
+        """Record the type of a class's member, found without an instance."""
+        iterator = _nrn_symbol_table_iterator_new(
+            _nrn_symbol_table(_nrn_symbol(class_name))
+        )
+        try:
+            while not _nrn_symbol_table_iterator_done(iterator):
+                sym = _nrn_symbol_table_iterator_next(iterator)
+                if _nrn_symbol_name(sym) == member:
+                    code = int(_nrn_symbol_type(sym))
+                    object.__setattr__(self, attr, code)
+                    self._RAW[attr] = code
+                    break
+        finally:
+            _nrn_symbol_table_iterator_free(iterator)
 
-        Called from __init__.py after the NEURON singleton can mint a
-        real SectionRef Object wrapper.
-        """
-        msym = _nrn_method_symbol(section_ref_obj, b"sec")
-        if msym:
-            code = int(_nrn_symbol_type(msym))
-            object.__setattr__(self, "METHOD_SECTIONREF", code)
-            self._RAW["METHOD_SECTIONREF"] = code
+    def probe_section_ref(self):
+        """Probe METHOD_SECTIONREF. A SectionRef instance would need a section."""
+        self._record_class_member(b"SectionRef", b"sec", "METHOD_SECTIONREF")
 
     def record_rangeobj(self, code):
         """Record RANGEOBJ after a public wrapper validates a live symbol.

@@ -1814,14 +1814,6 @@ n = h = NEURON()
 # that need a live HOC session (PROCEDURE, SECTION, OBFUNCTION, METHOD_OBFUNC,
 # METHOD_STRFUNC, via a probe template and classes).
 TYPES.discover_template_scoped(n)
-# Rebuild the function-type set before minting the probe Section below, because
-# Section.__del__ dispatches `delete_section` (type FUN_BLTIN).
 n._rebuild_function_types()
-# SectionRef needs an accessed section; use a throwaway one for the probe.
-_probe_sec = Section("_mn_types_probe_secref")
-try:
-    _probe_sr = n.SectionRef(sec=_probe_sec)
-    TYPES.probe_section_ref(_probe_sr._obj)
-finally:
-    del _probe_sec
+TYPES.probe_section_ref()
 TYPES.validate()
