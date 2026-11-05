@@ -8,13 +8,15 @@ import sys
 
 SCRIPT = r"""
 import ctypes
+import importlib.machinery
 import importlib.util
-import glob
 import os
 
 # Load NEURON without importing neuron: dlopen does not run PyInit_hoc.
 neuron_dir = importlib.util.find_spec("neuron").submodule_search_locations[0]
-hoc_so = glob.glob(os.path.join(neuron_dir, "hoc*.so"))[0]
+# A build can hold one hoc module per Python version: take this interpreter's.
+paths = (os.path.join(neuron_dir, "hoc" + s) for s in importlib.machinery.EXTENSION_SUFFIXES)
+hoc_so = next(p for p in paths if os.path.exists(p))
 lib = ctypes.PyDLL(hoc_so, mode=ctypes.RTLD_GLOBAL)
 argv = (ctypes.c_char_p * 4)(b"capi", b"-nogui", b"-nopython", None)
 lib.nrn_init(3, argv)

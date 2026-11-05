@@ -41,6 +41,14 @@ foreach(api_test_file ${api_test_files})
   set_property(TEST "${test_name}" PROPERTY ENVIRONMENT "${NRN_RUN_FROM_BUILD_DIR_ENV}"
                                             "CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}")
 endforeach()
+if(NRN_ENABLE_PYTHON AND NRN_NOCMODL_SANITIZER_ENVIRONMENT)
+  # Importing NEURON's Python module pulls in numpy and OpenSSL. LeakSanitizer reports what they and
+  # Python itself keep, none of it from NEURON.
+  set_property(
+    TEST "api::section_owner_python_cpp"
+    APPEND
+    PROPERTY ENVIRONMENT ${NRN_NOCMODL_SANITIZER_ENVIRONMENT})
+endif()
 
 # The setpointer tests need mechanisms with a POINTER, which no built-in provides: a density
 # mechanism (ptrtest.mod) for nrn_setpointer_pop and a point process (ppptrtest.mod) for
