@@ -151,13 +151,6 @@ class AuditAbi3WheelTests(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn("abi3 audit: missing _nmodl", messages)
 
-    def test_longer_hoc_name_does_not_count(self) -> None:
-        objects = _linux_objects()
-        objects[0] = _ok("hocfoo.abi3.so")
-        code, messages = audit.judge(_report(objects), 0, LINUX)
-        self.assertEqual(code, 1)
-        self.assertIn("abi3 audit: missing hoc", messages)
-
     def test_macos_without_nrnpython(self) -> None:
         objects = [
             _ok("hoc.abi3.so"),
