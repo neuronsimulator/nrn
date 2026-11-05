@@ -1,6 +1,7 @@
 // NOTE: this assumes neuronapi.h is on your CPLUS_INCLUDE_PATH
 // Exercises nrn_rangevar_handle_str: the text Python prints for a reference
 // such as seg._ref_v, which names the storage and the row the value is in.
+#include <algorithm>
 #include <array>
 #include <cstdlib>
 #include <cstring>
@@ -60,14 +61,41 @@ int main(void) {
 
     // A mechanism variable names its mechanism.
     nrn_rangevar_handle_str(nrn_symbol("gnabar_hh"), soma, 0.5, 0, text, sizeof(text));
-    ok &= check(std::strstr(text, "data_handle<double>") && std::strstr(text, "hh"),
-                "mechanism variable");
+    ok &= check(std::string(text) == "data_handle<double>{cont=hh gnabar row=1/3 val=0.12}",
+                "mechanism variable text");
 
-    // A short buffer: truncated, and the full length is returned.
-    std::array<char, 8> small{};
-    ok &= check(nrn_rangevar_handle_str(v, soma, 0.5, 0, small.data(), small.size()) == len &&
-                    std::strlen(small.data()) == small.size() - 1,
-                "truncates and returns the full length");
+    // Buffer edges. The text is `len` characters; the return is always `len`, the
+    // buffer gets at most size - 1 characters and a terminator, and a byte past
+    // `size` is never touched.
+    ok &= check(nrn_rangevar_handle_str(v, soma, 0.5, 0, nullptr, 0) == len, "NULL buffer counts");
+    ok &= check(nrn_rangevar_handle_str(v, soma, 0.5, 0, nullptr, 64) == len,
+                "NULL buffer with a size counts");
+    for (int size: {0, 1, 8, len, len + 1, len + 2}) {
+        std::array<char, 128> big{};
+        big.fill('Z');
+        ok &= check(nrn_rangevar_handle_str(v, soma, 0.5, 0, big.data(), size) == len,
+                    "returns the full length for every size");
+        ok &= check(big[size] == 'Z', "nothing written past size");
+        if (size == 0) {
+            ok &= check(big[0] == 'Z', "size 0 writes nothing");
+        } else {
+            std::string const expected = described.substr(0, std::min(len, size - 1));
+            ok &= check(std::string(big.data()) == expected, "text truncated to size - 1");
+        }
+    }
+    // The same for the error message.
+    ok &= check(nrn_rangevar_handle_str(
+                    nrn_symbol("gl_hh"), nrn_section_new("bare"), 0.5, 0, nullptr, 0) == -1,
+                "error with a NULL buffer");
+    std::array<char, 6> tiny{};
+    ok &= check(nrn_rangevar_handle_str(nrn_symbol("gl_hh"),
+                                        nrn_section_new("bare2"),
+                                        0.5,
+                                        0,
+                                        tiny.data(),
+                                        tiny.size()) == -1 &&
+                    std::string(tiny.data()) == "gl_hh",
+                "error message truncated to size - 1");
 
     // Errors, with a message: an uninserted mechanism, an unset POINTER, no
     // section.
@@ -85,5 +113,20 @@ int main(void) {
                 "unset POINTER is an error");
     ok &= check(nrn_rangevar_handle_str(v, nullptr, 0.5, 0, text, sizeof(text)) == -1,
                 "NULL section");
+
+    // A POINTER that is set describes the handle it holds: the voltage of the
+    // node it was pointed at.
+    nrn_double_push(-1234);  // sentinel below the source
+    nrn_rangevar_push(v, soma, 0.5);
+    char err[256];
+    ok &= check(nrn_setpointer_pop(nrn_symbol("src_ptrtest"), dend, 0.5, err, sizeof(err)) == 0,
+                "setpointer");
+    ok &= check(nrn_double_pop() == -1234, "setpointer consumed only its source");
+    char voltage[256];
+    int const voltage_len = nrn_rangevar_handle_str(v, soma, 0.5, 0, voltage, sizeof(voltage));
+    ok &= check(nrn_rangevar_handle_str(
+                    nrn_symbol("src_ptrtest"), dend, 0.5, 0, text, sizeof(text)) == voltage_len &&
+                    std::string(text) == voltage,
+                "a set POINTER describes the handle it holds");
     return ok ? 0 : 1;
 }
