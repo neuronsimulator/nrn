@@ -313,11 +313,7 @@ class _PlotShapePlot(_WrapperPlot):
                 # mode 0 = "Show Diameter" in NEURON GUI; use seg.diam as line width.
                 lw = seg.diam if mode == 0 else line_width
                 (line,) = ax.plot(xs, ys, zs, "-", linewidth=lw, **kwargs)
-                val = (
-                    _get_variable_seg(seg, var_name)
-                    if var_name is not None
-                    else None
-                )
+                val = None if var_name is None else _get_variable_seg(seg, var_name)
                 if var_name is not None and val is not None:
                     line.set_color(_color_for(val, cmap, lo, hi))
                 lines.append(line)
@@ -358,11 +354,7 @@ class _PlotShapePlot(_WrapperPlot):
         for sec in sections:
             all_seg_pts = _segment_3d_pts(sec)
             for seg, (xs, ys, zs, _, _) in zip(sec, all_seg_pts):
-                val = (
-                    _get_variable_seg(seg, var_name)
-                    if var_name is not None
-                    else None
-                )
+                val = None if var_name is None else _get_variable_seg(seg, var_name)
                 col = _color_for(val, cmap, lo, hi) if var_name is not None else "black"
                 w = seg.diam if mode == 0 else width
                 hover = str(seg) + (f"<br>{val:.3f}" if val is not None else "")

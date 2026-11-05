@@ -3,6 +3,7 @@ import ctypes
 
 from ._docs import get_doc
 from .api import (
+    HOC_CLASS_MODULE,
     TYPES,
     _ensure_pyobj_to_hoc,
     _nrn_double_pop,
@@ -447,7 +448,7 @@ def _wrap_owned_object(obj):
                     name,
                     (Object,),
                     {
-                        "__module__": __package__,
+                        "__module__": HOC_CLASS_MODULE,
                         "__slots__": (),
                         "_hoc_class_name": name,
                     },

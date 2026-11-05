@@ -13,6 +13,8 @@ import weakref
 
 from ._docs import _ClassDoc, help_doc
 from .api import (
+    HOC_CLASS_MODULE,
+    libnrniv,
     hoc_locked,
     _ERR_BUF_SIZE,
     TYPES,
@@ -1305,22 +1307,29 @@ def _section_arg_as_sec(args, sec, allow_object=False):
     return args, sec
 
 
+_mpiabort_on_error = ctypes.c_int.in_dll(libnrniv, "nrn_mpiabort_on_error_")
+
+
 class _SuppressCStderr:
-    """Redirect fd 2 to /dev/null for the wrapped call only.
+    """Keep the HOC error of an expected miss quiet for the wrapped call only.
 
     NEURON prints "'<name>' not a public member" to fd 2 on a benign alias
-    miss even though the error is caught. alias_list would avoid the probe
-    but needs the String template, so probe and suppress."""
+    miss even though the error is caught, and on more than one rank a HOC error
+    aborts MPI. alias_list would avoid the probe but needs the String template,
+    so probe and suppress both."""
 
-    __slots__ = ("_saved", "_devnull")
+    __slots__ = ("_saved", "_devnull", "_abort_on_error")
 
     def __enter__(self):
         self._saved = os.dup(2)
         self._devnull = os.open(os.devnull, os.O_WRONLY)
         os.dup2(self._devnull, 2)
+        self._abort_on_error = _mpiabort_on_error.value
+        _mpiabort_on_error.value = 0
         return self
 
     def __exit__(self, *exc):
+        _mpiabort_on_error.value = self._abort_on_error
         os.dup2(self._saved, 2)
         os.close(self._devnull)
         os.close(self._saved)
@@ -1419,6 +1428,7 @@ class List(Object):
     """
 
     __slots__ = ()
+    __module__ = HOC_CLASS_MODULE
     _hoc_class_name = "List"
 
     def __bool__(self):
@@ -1498,6 +1508,7 @@ class Vector(Object):
     """
 
     __slots__ = ()
+    __module__ = HOC_CLASS_MODULE
     _hoc_class_name = "Vector"
 
     def __copy__(self):
@@ -1747,6 +1758,7 @@ class SectionList(Object):
     """
 
     __slots__ = ()
+    __module__ = HOC_CLASS_MODULE
     _hoc_class_name = "SectionList"
 
     def __iter__(self):
@@ -1770,16 +1782,6 @@ class SectionList(Object):
 
     def __bool__(self):
         return len(self) != 0
-
-    def __contains__(self, section):
-        from .sections import Section
-
-        if not isinstance(section, Section):
-            return False
-        for sec in self:
-            if sec == section:
-                return True
-        return False
 
     def __getitem__(self, index):
         # SectionList is backed by a C linked list, so indexing is O(n).
@@ -1829,13 +1831,25 @@ def _resolve_template_section(owner, name, idx=None):
     saved = _template_section_capture.value
     _template_section_capture.value = 0
     suffix = f"[{int(idx)}]" if idx is not None else ""
-    prefix = f"{owner.hname()}." if owner is not None else ""
-    cmd = f"{prefix}{name}{suffix} {{ _mn_capture_cas() }}"
+    cmd = f"{name}{suffix} {{ _mn_capture_cas() }}"
+    hoc_ac = ctypes.c_double.in_dll(libnrniv, "hoc_ac_")
+    saved_ac = hoc_ac.value
+    if owner is not None:
+        # In the object's scope, which reaches sections that are not public but
+        # not our top-level proc. This hoc_ac_ is the address; braces: no echo.
+        hoc_ac.value = 0.0
+        cmd = (
+            f'{{execute("{name}{suffix} hoc_ac_ = this_section()", '
+            f"{owner.hname()})}}"
+        )
     try:
         ret = _nrn_hoc_call(cmd.encode("utf-8"))
         captured = _template_section_capture.value
+        if owner is not None:
+            captured = int(hoc_ac.value)
     finally:
         _template_section_capture.value = saved
+        hoc_ac.value = saved_ac
     if ret != 0 or not captured:
         scope = owner._class_name + "." if owner is not None else ""
         raise AttributeError(f"Could not access section '{scope}{name}{suffix}'")

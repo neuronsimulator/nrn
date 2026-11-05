@@ -20,14 +20,21 @@ _LIBMODLREG_ENV = "MYNEURON_LIBMODLREG"
 # package: it must use that build's libraries (never another installed
 # neuron) and reproduce the startup the legacy PyInit_hoc performed.
 _VENDORED = __package__ != "myneuron"
+# Python-visible module of HOC classes. neuron.hoc.Vector.__module__ is "hoc".
+HOC_CLASS_MODULE = "hoc" if _VENDORED else "myneuron"
 _HERE = Path(__file__).resolve().parent
 _LIBNRNIV_NAMES = ("libnrniv.so", "libnrniv.dylib", "nrniv.dll", "libnrniv.dll")
 
 
 def _vendored_lib_dirs():
     # Wheel: neuron/.data/lib. Build tree and CMake install:
-    # <prefix>/lib/python/neuron/_interface -> <prefix>/lib.
-    return [_HERE.parent / ".data" / "lib", _HERE.parents[2]]
+    # <prefix>/lib/python/neuron/_interface -> <prefix>/lib. Windows: <prefix>/bin.
+    parents = list(_HERE.parents)  # a shallow --target install has only three
+    return [
+        parents[0] / ".data" / "lib",
+        parents[2],
+        *(prefix / "bin" for prefix in parents[3:4]),
+    ]
 
 
 def _iter_existing(paths):
@@ -215,7 +222,7 @@ libmodlreg = _load_cdll_or_raise(
     candidates=[
         d / f"libnrn_modlreg_stub{suffix}"
         for d in _vendored_lib_dirs()
-        for suffix in (".so", ".dylib")
+        for suffix in (".so", ".dylib", ".dll")
     ]
     if _VENDORED
     else [
@@ -502,6 +509,18 @@ _METHODS_PRAXIS_EFUN_OFFSET = 192
 # call_func (field 1): HocCommand::func_call for a Python callable, e.g. a
 # RangeVarPlot of a Python function; it fails without the slot.
 _METHODS_CALL_FUNC_OFFSET = 8
+# The entries InterViews reaches for Python actions and (obj, name) variables:
+# a Python action on a MechanismStandard panel, SectionBrowser or Graph tool,
+# and xvalue/xvarlabel of a Python attribute. Fields 0, 3-5, 6, 10 and 12.
+_METHODS_CALLABLE_WITH_ARGS_OFFSET = 0
+_METHODS_CALL_PYTHON_WITH_SECTION_OFFSET = 24
+_METHODS_CMDTOOL_OFFSET = 32
+_METHODS_GUIGETSTR_OFFSET = 40
+_METHODS_GUIGETVAL_OFFSET = 48
+_METHODS_GUISETVAL_OFFSET = 80
+_METHODS_HOCCOMMAND_EXEC_STRRET_OFFSET = 96
+# Field 17. hoc_final_exit finalizes Python through it when it is set.
+_METHODS_INTERPRETER_START_OFFSET = 136
 
 # opaque_obj2pyobj (field 20): BBSaveState maps a Python cell's PythonObject
 # to the PyObject* it wraps, to group a cell's sections (gap-69).

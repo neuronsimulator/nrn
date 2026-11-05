@@ -11,6 +11,7 @@ import threading
 from . import _coreneuron, _rvp_hook
 from ._docs import top_level_doc as _top_level_doc
 from .api import (
+    HOC_CLASS_MODULE,
     hoc_call_depth,
     hoc_locked,
     symbol_array_dims,
@@ -478,9 +479,303 @@ def _register_call_func():
         ctypes.c_double, ctypes.c_void_p, ctypes.c_int, ctypes.POINTER(ctypes.c_int)
     )(_call_func)
     _install_methods_slot(_METHODS_CALL_FUNC_OFFSET, _mn_methods_call_func_cb)
+    return _pop_value
 
 
-_register_call_func()
+_pop_callback_value = _register_call_func()
+
+
+def _load_char_allocator():
+    """operator new[] and delete[]: the core releases these buffers with delete[].
+
+    On Windows they are libstdc++'s, which libnrniv does not re-export. Without
+    them only the two features that need a buffer report an error.
+    """
+    for load in (lambda: libnrniv, lambda: ctypes.CDLL("libstdc++-6.dll")):
+        try:
+            lib = load()
+            new, delete = lib._Znam, lib._ZdaPv
+        except (AttributeError, OSError):
+            continue
+        new.restype = ctypes.c_void_p
+        new.argtypes = [ctypes.c_size_t]
+        delete.restype = None
+        delete.argtypes = [ctypes.c_void_p]
+        return new, delete
+    return None, None
+
+
+_new_chars, _delete_chars = _load_char_allocator()
+
+
+def _gui_uses_item(target, key):
+    """NEURON's (obj, key) GUI variable: an item of a sequence or mapping.
+
+    A HOC object has __getitem__ too, but its names are attributes.
+    """
+    if isinstance(target, (Object, NEURON)) and isinstance(key, str):
+        return False
+    return hasattr(type(target), "__getitem__")
+
+
+def _register_gui_methods():
+    """The methods entries InterViews calls for Python actions and variables.
+
+    Each mirrors its function in nrnpy_p2h.cpp. Where NEURON raises a HOC error
+    the failure is stashed and raised when the HOC call returns, because a
+    ctypes callback cannot raise one. An action run from the event loop has no
+    such call, so its traceback is also printed here.
+    """
+    from . import api
+    from .utils import _new_python_object
+
+    if not api._cfunctype_methods_installed:
+        return
+
+    _pythonobject_payload_ptr = api._pythonobject_payload_ptr
+
+    def payload(obj):
+        return ctypes.cast(_pythonobject_payload_ptr(obj), ctypes.py_object).value
+
+    def failed(message, exc):
+        import traceback
+
+        traceback.print_exception(exc)
+        error = RuntimeError(f"hoc_execerror: {message}")
+        error.__cause__ = exc
+        _stash_callback_exc(error)
+
+    def call_action(obj):
+        action = payload(obj)
+        if isinstance(action, tuple):  # (callable, args), as hoccommand_exec
+            args = action[1] if isinstance(action[1], tuple) else (action[1],)
+            return action[0](*args)
+        return action()
+
+    def gui_get(obj):
+        target, key = payload(obj)
+        return target[key] if _gui_uses_item(target, key) else getattr(target, key)
+
+    def callable_with_args(obj, narg):
+        try:
+            args = [_pop_callback_value() for _ in range(narg)]
+            args.reverse()
+            return _new_python_object((payload(obj), tuple(args)))
+        except BaseException as exc:
+            failed("callable_with_args failed", exc)
+            return None
+
+    def call_python_with_section(obj, sec_ptr):
+        try:
+            payload(obj)(Section._from_ptr(sec_ptr))
+        except BaseException as exc:
+            failed("Call of Python Callable failed", exc)
+
+    def cmdtool(obj, event, x, y, key):
+        try:
+            payload(obj)(event, x, y, key)
+        except BaseException as exc:
+            failed("Python Callback failed", exc)
+
+    def guigetstr(obj, chars):
+        try:
+            target, name = payload(obj)
+            text = getattr(target, name).encode("ascii")
+            if chars[0] and ctypes.string_at(chars[0]) == text:
+                return 0
+            fresh = _new_chars(len(text) + 1)
+            ctypes.memmove(fresh, text + b"\0", len(text) + 1)
+            if chars[0]:
+                _delete_chars(chars[0])
+            chars[0] = fresh
+            return 1
+        except BaseException as exc:
+            failed("Python GUI get str failed", exc)
+            if not chars[0] and _new_chars:  # the HocVarLabel constructor reads it
+                chars[0] = _new_chars(1)
+                ctypes.memset(chars[0], 0, 1)
+            return 0
+
+    def guigetval(obj):
+        try:
+            value = gui_get(obj)
+            if isinstance(value, (str, bytes)):  # float() would parse them
+                raise TypeError(f"must be real number, not {type(value).__name__}")
+            return float(value)
+        except BaseException as exc:
+            failed("Python GUI get failed", exc)
+            return 0.0
+
+    def guisetval(obj, value):
+        try:
+            target, key = payload(obj)
+            if _gui_uses_item(target, key):
+                target[key] = value
+            else:
+                setattr(target, key, value)
+        except BaseException as exc:
+            failed("Python GUI set failed", exc)
+
+    def hoccommand_exec_strret(obj, buffer, size):
+        try:
+            text = str(call_action(obj)).encode("ascii", "replace")[: size - 1]
+            ctypes.memmove(buffer, text + b"\0", len(text) + 1)
+            return 1
+        except BaseException as exc:
+            failed("Python Callback failed", exc)
+            return 0
+
+    void_p = ctypes.c_void_p
+    double = ctypes.c_double
+    int_ = ctypes.c_int
+    chars_p = ctypes.POINTER(void_p)
+    for offset, signature, function in (
+        (
+            api._METHODS_CALLABLE_WITH_ARGS_OFFSET,
+            (void_p, void_p, int_),
+            callable_with_args,
+        ),
+        (
+            api._METHODS_CALL_PYTHON_WITH_SECTION_OFFSET,
+            (None, void_p, void_p),
+            call_python_with_section,
+        ),
+        (
+            api._METHODS_CMDTOOL_OFFSET,
+            (None, void_p, int_, double, double, int_),
+            cmdtool,
+        ),
+        (api._METHODS_GUIGETSTR_OFFSET, (int_, void_p, chars_p), guigetstr),
+        (api._METHODS_GUIGETVAL_OFFSET, (double, void_p), guigetval),
+        (api._METHODS_GUISETVAL_OFFSET, (None, void_p, double), guisetval),
+        (
+            api._METHODS_HOCCOMMAND_EXEC_STRRET_OFFSET,
+            (int_, void_p, void_p, int_),
+            hoccommand_exec_strret,
+        ),
+    ):
+        callback = ctypes.CFUNCTYPE(*signature)(function)
+        api._CFUNCTYPE_KEEPALIVE.append(callback)
+        api._install_methods_slot(offset, callback)
+
+
+_register_gui_methods()
+
+
+def _exit_registrar():
+    """A function that adds a C function to the process's exit handlers, or None."""
+    try:
+        libc = ctypes.CDLL(None)
+    except (OSError, TypeError):  # Windows has no global handle
+        return None
+    for name, register in (
+        (
+            "__cxa_atexit",
+            lambda f, fn: f(fn, None, None),
+        ),  # glibc does not export atexit
+        ("atexit", lambda f, fn: f(fn)),
+    ):
+        function = getattr(libc, name, None)
+        if function is not None:
+            function.restype = ctypes.c_int
+            function.argtypes = [ctypes.c_void_p] * (3 if name == "__cxa_atexit" else 1)
+            return lambda fn: register(function, fn)
+    return None
+
+
+def _register_python_finalize():
+    """h.quit() finalizes Python when Python launched NEURON, as inithoc.cpp does.
+
+    hoc_quit calls this pointer after NEURON's own shutdown and then exit(). A
+    ctypes callback cannot finalize Python, which it must return to, so on the
+    main thread it makes Py_Finalize an exit handler: exit() runs it with the
+    GIL held (libnrniv is a PyDLL) and never returns. As NEURON, another thread
+    does not finalize: Python would wait for that thread. NEURON's Python module
+    sets this pointer first if it is loaded.
+    """
+    import threading
+
+    from . import api
+
+    try:
+        slot = ctypes.c_void_p.in_dll(libnrniv, "p_nrnpython_finalize")
+    except ValueError:
+        return
+    register = _exit_registrar()
+    if register is None or slot.value:
+        return
+    # Set under nrniv -python, where hoc_final_exit has already finalized Python
+    # and a callback here could not run.
+    methods = ctypes.c_void_p.in_dll(libnrniv, "_ZN6neuron6python7methodsE")
+    interpreter_start = ctypes.c_void_p.from_address(
+        ctypes.addressof(methods) + api._METHODS_INTERPRETER_START_OFFSET
+    )
+    if interpreter_start.value:
+        return
+
+    @ctypes.CFUNCTYPE(None)
+    def finalize_at_exit():
+        if threading.current_thread() is threading.main_thread():
+            register(ctypes.cast(ctypes.pythonapi.Py_Finalize, ctypes.c_void_p).value)
+
+    api._CFUNCTYPE_KEEPALIVE.append(finalize_at_exit)
+    slot.value = ctypes.cast(finalize_at_exit, ctypes.c_void_p).value
+
+
+_register_python_finalize()
+
+
+_savestate_callbacks = []  # the core keeps only raw pointers
+
+
+def set_savestate_callbacks(store, restore, replace=False):
+    """Register the Python state SaveState keeps, for packages such as neuron.rxd.
+
+    ``store()`` returns a bytes-like object and ``restore(bytearray)`` receives
+    it back. As nrnpy_store_savestate_ and nrnpy_restore_savestate_ in
+    nrnpy_hoc.cpp, except that a failure is raised when the SaveState call
+    returns, not from inside it. Returns False, changing nothing, if NEURON's
+    Python module already registered its own, unless ``replace`` is true.
+    """
+    store_slot = ctypes.c_void_p.in_dll(libnrniv, "nrnpy_store_savestate")
+    restore_slot = ctypes.c_void_p.in_dll(libnrniv, "nrnpy_restore_savestate")
+    if not replace and (store_slot.value or restore_slot.value):
+        return False
+
+    @ctypes.CFUNCTYPE(
+        None,
+        ctypes.POINTER(ctypes.c_void_p),
+        ctypes.POINTER(ctypes.c_uint64),
+    )
+    def store_state(data, size):
+        try:
+            state = bytes(store())
+            fresh = _new_chars(len(state))
+        except BaseException as exc:
+            size[0] = 0
+            error = RuntimeError("hoc_execerror: SaveState: Data store failure.")
+            error.__cause__ = exc
+            _stash_callback_exc(error)
+            return
+        ctypes.memmove(fresh, state, len(state))
+        if data[0]:
+            _delete_chars(data[0])
+        data[0] = fresh
+        size[0] = len(state)
+
+    @ctypes.CFUNCTYPE(None, ctypes.c_int64, ctypes.c_void_p)
+    def restore_state(size, data):
+        try:
+            restore(bytearray(ctypes.string_at(data, size)))
+        except BaseException as exc:
+            error = RuntimeError("hoc_execerror: SaveState: Data restore failure.")
+            error.__cause__ = exc
+            _stash_callback_exc(error)
+
+    _savestate_callbacks.append((store_state, restore_state))
+    store_slot.value = ctypes.cast(store_state, ctypes.c_void_p).value
+    restore_slot.value = ctypes.cast(restore_state, ctypes.c_void_p).value
+    return True
 
 
 def _register_vector_apply_callable():
@@ -1218,7 +1513,7 @@ class NEURON(metaclass=_Singleton):
                                 name,
                                 (Object,),
                                 {
-                                    "__module__": __name__,
+                                    "__module__": HOC_CLASS_MODULE,
                                     "__slots__": (),
                                     "_hoc_class_name": name,
                                 },
