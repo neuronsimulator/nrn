@@ -680,7 +680,7 @@ tempK                   K         # For consistency.
 #      air temperature and wind on the human body. The index was first defined
 #      by the American Antarctic explorer Paul Siple in 1939. As currently used
 #      by U.S. meteorologists, the wind chill index is computed from the
-#      temperature T (in °F) and wind speed V (in mi/hr) using the formula: 
+#      temperature T (in Â°F) and wind speed V (in mi/hr) using the formula: 
 #          WCI = 0.0817(3.71 sqrt(V) + 5.81 - 0.25V)(T - 91.4) + 91.4. 
 #      For very low wind speeds, below 4 mi/hr, the WCI is actually higher than
 #      the air temperature, but for higher wind speeds it is lower than the air
@@ -688,7 +688,7 @@ tempK                   K         # For consistency.
 # 
 # heat index (HI or HX) a measure of the combined effect of heat and
 #      humidity on the human body. U.S. meteorologists compute the index
-#      from the temperature T (in °F) and the relative humidity H (as a
+#      from the temperature T (in Â°F) and the relative humidity H (as a
 #      value from 0 to 1).
 #        HI = -42.379 + 2.04901523 T + 1014.333127 H - 22.475541 TH 
 #             - .00683783 T^2 - 548.1717 H^2 + 0.122874 T^2 H + 8.5282 T H^2
@@ -2625,7 +2625,7 @@ fournierpoint           0.1648 inch / 12  # First definition of the printers
                                           # point made by Pierre Fournier who
                                           # defined it in 1737 as 1|12 of a
                                           # cicero which was 0.1648 inches.
-olddidotpoint           1|72 frenchinch   # François Ambroise Didot, one of 
+olddidotpoint           1|72 frenchinch   # FranÃ§ois Ambroise Didot, one of 
                                           # a family of printers, changed
                                           # Fournier's definition around 1770 
                                           # to fit to the French units then in
@@ -4529,21 +4529,21 @@ blanc                   1|24 periot
 # Some definitions using ISO 8859-1 characters
 #
 
-¼-                      1|4
-½-                      1|2
-¾-                      3|4
-µ-                      micro
-¢                       cent
-£                       britainpound
-¥                       japanyen
-ångström                angstrom
-Å                       angstrom
-röntgen                 roentgen
-°C                      degC
-°F                      degF
-°K                      K             # °K is incorrect notation
-°R                      degR
-°                       degree
+Â¼-                      1|4
+Â½-                      1|2
+Â¾-                      3|4
+Âµ-                      micro
+Â¢                       cent
+Â£                       britainpound
+Â¥                       japanyen
+Ã¥ngstrÃ¶m                angstrom
+Ã…                       angstrom
+rÃ¶ntgen                 roentgen
+Â°C                      degC
+Â°F                      degF
+Â°K                      K             # Â°K is incorrect notation
+Â°R                      degR
+Â°                       degree
 
 #
 # Localisation
