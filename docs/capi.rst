@@ -102,7 +102,8 @@ Sections
         (before it returns) and :c:func:`nrn_section_owned_release`. It must not
         return ``NULL``, the string must stay valid until the next call, and a
         section's name must not change while it is owned (the ``_pysec`` lookup
-        is keyed by it). A section without a name must be named
+        is keyed by it). Keep it under 190 characters: core copies it into fixed
+        buffers. A section without a name must be named
         ``__nrnsec_0x<address>``, as NEURON's Python module names it; such
         sections are left out of the ``_pysec`` lookup.
     :param cell: Returns the owning cell with a new reference, or ``NULL``. Called
