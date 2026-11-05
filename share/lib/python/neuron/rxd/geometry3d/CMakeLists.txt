@@ -9,6 +9,8 @@ foreach(source ${rxd_sources})
     ${CMAKE_CURRENT_BINARY_DIR}/${source}.cpp
     LANGUAGE
     "C"
+    LANGUAGE_LEVEL
+    3
     PYTHON_EXECUTABLE
     ${NRN_DEFAULT_PYTHON_EXECUTABLE})
 endforeach(source)
@@ -35,12 +37,16 @@ if(NOT "${STATUS_CODE}" STREQUAL "0")
   message(FATAL_ERROR "Could not find NumPy headers for ${NRN_DEFAULT_PYTHON_EXECUTABLE}")
 endif()
 
-# case of dynamic Python
-if(NRN_ENABLE_PYTHON_DYNAMIC)
+# ABI3=ON: one graphicsPrimitives.abi3 / ctng.abi3. ABI3=OFF + DYNAMIC: one module per Python.
+set(rxd_libs nrniv_lib rxdmath)
+if(NRN_ENABLE_PYTHON_DYNAMIC AND NRN_ENABLE_ABI3)
+  list(APPEND rxd_libs nrnpython)
+endif()
+
+if(NRN_ENABLE_PYTHON_DYNAMIC AND NOT NRN_ENABLE_ABI3)
   foreach(val RANGE ${NRN_PYTHON_ITERATION_LIMIT})
     list(GET NRN_PYTHON_VERSIONS ${val} pyver)
     list(GET NRN_PYTHON_INCLUDES ${val} pyinc)
-    list(GET NRN_PYTHON_LIBRARIES ${val} pylib)
     foreach(source ${rxd_sources})
       add_nrn_python_library(
         ${source}
@@ -72,13 +78,10 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
         target_link_options(${source}${pyver} PRIVATE "-headerpad_max_install_names")
       endif()
     endforeach()
-
-    # install in the correct location
     install(TARGETS graphicsPrimitives${pyver} ctng${pyver}
             DESTINATION ${NRN_INSTALL_PYTHON_PREFIX}/rxd/geometry3d)
-
-  endforeach(val)
-else(NRN_ENABLE_PYTHON_DYNAMIC)
+  endforeach()
+else()
   foreach(source ${rxd_sources})
     add_nrn_python_library(
       ${source}
@@ -86,6 +89,7 @@ else(NRN_ENABLE_PYTHON_DYNAMIC)
       ${source}
       PYTHON_VERSION
       ${NRN_DEFAULT_PYTHON_VERSION}
+      ${NRN_STABLE_ABI_ARG}
       LANGUAGE
       "C"
       SOURCES
@@ -96,8 +100,7 @@ else(NRN_ENABLE_PYTHON_DYNAMIC)
       "${NUMPY_INCLUDE_DIR}"
       "${NRN_DEFAULT_PYTHON_INCLUDES}"
       LIBRARIES
-      nrniv_lib
-      rxdmath
+      ${rxd_libs}
       INSTALL_REL_RPATH
       ${rel_rpath}
       OUTPUT_DIR
@@ -107,8 +110,6 @@ else(NRN_ENABLE_PYTHON_DYNAMIC)
     if(APPLE)
       target_link_options(${source} PRIVATE "-headerpad_max_install_names")
     endif()
-
   endforeach()
   install(TARGETS graphicsPrimitives ctng DESTINATION ${NRN_INSTALL_PYTHON_PREFIX}/rxd/geometry3d)
-
-endif(NRN_ENABLE_PYTHON_DYNAMIC)
+endif()
