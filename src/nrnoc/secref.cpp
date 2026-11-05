@@ -64,12 +64,10 @@ static double s_unname(void* v) {
     hoc_Item** pitm;
     Section* sec;
     sec = (Section*) v;
-#if USE_PYTHON
     /* Python Sections cannot be unnamed, return 0.0 */
     if (sec->prop && sec->prop->dparam[PROP_PY_INDEX].get<void*>()) {
         return 0.0;
     }
-#endif
     pitm = sec2pitm(sec);
     *pitm = (hoc_Item*) 0;
     auto* ob = sec->prop->dparam[6].get<Object*>();
@@ -103,12 +101,10 @@ static double s_rename(void* v) {
         Printf("SectionRef[???].sec is a deleted section\n");
         return 0.;
     }
-#if USE_PYTHON
     /* Python Sections cannot be renamed, return 0.0 */
     if (sec->prop->dparam[PROP_PY_INDEX].get<void*>()) {
         return 0.;
     }
-#endif
     qsec = sec->prop->dparam[8].get<hoc_Item*>();
     if (sec->prop->dparam[0].get<Symbol*>()) {
         Printf("%s must first be unnamed\n", secname(sec));

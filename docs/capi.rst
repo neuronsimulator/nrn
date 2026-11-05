@@ -112,8 +112,7 @@ Sections
     :param error_msg_size: Size of ``error_msg``.
     :returns: ``true`` on success. ``false`` if a hook is ``NULL``, if different
         hooks are already installed (for example by NEURON's Python module; see
-        :c:func:`nrn_section_owner_hooks_clear`), or if NEURON was built without
-        Python support (core keeps owned sections only in Python-enabled builds).
+        :c:func:`nrn_section_owner_hooks_clear`).
 
     The hooks are used by :func:`secname`, :func:`section_owner`,
     :meth:`ParallelContext.gid2cell`, :meth:`NetCon.precell` and
@@ -141,7 +140,7 @@ Sections
     :param error_msg: Buffer for a diagnostic if the hooks are not removed.
     :param error_msg_size: Size of ``error_msg``.
     :returns: ``true`` on success. ``false`` while any owned section exists (by
-        any provider), or if NEURON was built without Python support.
+        any provider).
 
 .. c:function:: Section* nrn_section_new_owned(void* owner)
 
@@ -152,8 +151,7 @@ Sections
     :param owner: Opaque pointer to the owning object, stored with the section.
     :returns: The new section, or ``NULL`` if ``owner`` is ``NULL``, the hooks
         installed are not the ones from :c:func:`nrn_section_owner_hooks_set`
-        (none, or NEURON's Python module's), or NEURON was built without Python
-        support.
+        (none, or NEURON's Python module's).
 
     Call :c:func:`nrn_section_owned_release` when the owner is destroyed.
 

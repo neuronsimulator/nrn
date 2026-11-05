@@ -23,7 +23,6 @@ static Name2CellorSec n2cs;
 #define hoc_acterror(a, b) printf("%s %s\n", a, b)
 
 static void activate() {
-#if USE_PYTHON
     if (!activated) {
         // printf("first activation\n");
         activated = true;
@@ -36,7 +35,6 @@ static void activate() {
             }
         }
     }
-#endif
 }
 
 Section* nrnpy_pysecname2sec(const char* name) {  // could be Cell part or Sec
