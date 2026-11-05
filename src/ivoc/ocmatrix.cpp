@@ -110,7 +110,7 @@ void OcFullMatrix::bcopy(Matrix* out, int i0, int j0, int n0, int m0, int i1, in
 }
 
 void OcFullMatrix::transpose(Matrix* out) {
-    if (out->full()->m_ == m_) {
+    if (out == this) {
         m_.transposeInPlace();
     } else {
         out->full()->m_ = m_.transpose();
