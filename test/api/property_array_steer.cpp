@@ -31,7 +31,7 @@ static bool check(bool cond, const char* msg) {
     return cond;
 }
 
-// Everything written to stderr (fd 2) while f runs; fd 2 is restored before returning.
+// Everything written to STDERR_FILENO while f runs; it is restored before returning.
 template <typename F>
 static std::string stderr_of(F f) {
     std::fflush(stderr);
