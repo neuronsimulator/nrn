@@ -117,6 +117,15 @@ int main(void) {
         "kid endclamp = new IClamp(1)\n");
     ok &= check_order(kid, 1.0, {"IClamp"});
 
+    // A child connected by its 1 end has the parent's node at x=1, not x=0.
+    nrn_hoc_call(
+        "create rev\n"
+        "connect rev(1), dend(0.5)\n"
+        "access rev\n");
+    Section* rev = nrn_cas();
+    ok &= check_order(rev, 1.0, {"IClamp", "pas", "capacitance", "morphology"});
+    ok &= check(nrn_segment_mechanisms(rev, 0.0, nullptr, 0) == 0, "x=0 of rev is its far end");
+
     // A deleted section.
     nrn_hoc_call(
         "create gone\n"
