@@ -77,6 +77,8 @@ def test_vector_api():
     assert v.median() == 3.0
     assert v.mean() == 2.8
     assert v.mean(1, 3) == 2.0
+    assert v.mean(0, 4) == 2.8
+    assert np.allclose(v.mean(2, 4), 8 / 3)
     assert np.allclose(v.stdev(), 1.4832396974191326)
     assert np.allclose(v.stdev(0, 3), 0.9574271077563381)
     assert np.allclose(v.stderr(), 0.6633249580710799)

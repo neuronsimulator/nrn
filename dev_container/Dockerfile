@@ -2,7 +2,7 @@ FROM docker.io/fedora:42
 
 # the list of Pythons we will use for NEURON
 ENV NRN_PYTHON_DEFAULT=python3.13
-ENV NRN_PYTHON_MIN=python3.10
+ENV NRN_PYTHON_MIN=python3.12
 ENV NRN_PYTHON_MAX=python3.14
 
 # NOTE: Fedora 42 comes with GCC 15 by default, which is not supported by CUDA
