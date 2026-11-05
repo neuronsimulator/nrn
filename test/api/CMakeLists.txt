@@ -9,6 +9,7 @@ foreach(
   object_new_nothrow.cpp
   object_new_wrap.cpp
   object_ptr_push.cpp
+  property_array_steer.cpp
   property_element_ptr.cpp
   raw_hoc_errors.cpp
   runtime_pythonobject_marshaling.cpp
