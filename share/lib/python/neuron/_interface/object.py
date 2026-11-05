@@ -540,8 +540,11 @@ class Object(metaclass=_HocClassMeta):
 
         The default would pickle the wrapper's slots, the native pointer
         among them, and the copy would unref an object it holds no
-        reference to.
+        reference to. A subclass that defines __reduce__ says how to rebuild
+        itself, as neuron.HocBaseObject subclasses do.
         """
+        if type(self).__reduce__ is not object.__reduce__:
+            return self.__reduce__()
         raise TypeError("HocObject: Only Vector instance can be pickled")
 
     def hocobjptr(self):
