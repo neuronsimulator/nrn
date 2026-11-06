@@ -87,6 +87,31 @@ def _vendored_wheel_lib_dirs(site_packages):
     return dirs
 
 
+def _resolve_pylibs():
+    """Fill NRN_PYLIB and NMODL_PYLIB without dropping an explicit NRN_PYLIB.
+
+    install_instructions documents NRN_PYLIB as the override for which
+    library nrniv loads. NMODL_PYLIB is kept when the caller set it.
+    find_libpython() fills only the variables that are still empty.
+    """
+    nrn = os.environ.get("NRN_PYLIB") or None
+    nmodl = os.environ.get("NMODL_PYLIB") or None
+    discovered = None
+    if not nrn or not nmodl:
+        discovered = nmodl or nrn or find_libpython()
+    if not nrn and not nmodl and not discovered:
+        raise ValueError(
+            "unable to locate the Python shared library; "
+            "please make sure it is installed, "
+            "or set the environmental variable `NRN_PYLIB` "
+            "(or `NMODL_PYLIB`) manually to the path to the Python shared library"
+        )
+    if not nmodl:
+        os.environ["NMODL_PYLIB"] = nrn or discovered
+    if not nrn:
+        os.environ["NRN_PYLIB"] = nmodl or discovered
+
+
 def _config_exe(exe_name):
     """Sets the environment to run the real executable (returned)"""
     try:
@@ -109,16 +134,7 @@ def _config_exe(exe_name):
 
     if "NMODLHOME" not in os.environ:
         os.environ["NMODLHOME"] = NRN_PREFIX
-    pylib = os.environ.get("NMODL_PYLIB") or find_libpython()
-    if not pylib:
-        raise ValueError(
-            "unable to locate the Python shared library; "
-            "please make sure it is installed, "
-            "or set the environmental variable `NMODL_PYLIB` "
-            "manually to the path to the Python shared library"
-        )
-    os.environ["NMODL_PYLIB"] = pylib
-    os.environ["NRN_PYLIB"] = pylib
+    _resolve_pylibs()
 
     # nmodl module is inside <prefix>/lib directory
     sys.path.insert(0, os.path.join(NRN_PREFIX, "lib"))

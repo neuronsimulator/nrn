@@ -26,6 +26,55 @@ def test_cmd_launcher_finds_prefix_python_before_path():
     assert beside < prefix < fallback
 
 
+def test_resolve_pylibs_keeps_existing_nrn_pylib(monkeypatch):
+    """NRN_PYLIB is the documented override and must survive the wrapper."""
+    bw = _binwrapper()
+
+    def fail_find():
+        raise AssertionError("find_libpython should not run when both are set")
+
+    monkeypatch.setattr(bw, "find_libpython", fail_find)
+    monkeypatch.setenv("NRN_PYLIB", "/explicit/python.dll")
+    monkeypatch.setenv("NMODL_PYLIB", "/other/nmodl.dll")
+    bw._resolve_pylibs()
+    assert os.environ["NRN_PYLIB"] == "/explicit/python.dll"
+    assert os.environ["NMODL_PYLIB"] == "/other/nmodl.dll"
+
+
+def test_resolve_pylibs_fills_nrn_from_nmodl(monkeypatch):
+    bw = _binwrapper()
+    monkeypatch.setattr(bw, "find_libpython", lambda: "/discovered.so")
+    monkeypatch.delenv("NRN_PYLIB", raising=False)
+    monkeypatch.setenv("NMODL_PYLIB", "/other/nmodl.dll")
+    bw._resolve_pylibs()
+    assert os.environ["NRN_PYLIB"] == "/other/nmodl.dll"
+    assert os.environ["NMODL_PYLIB"] == "/other/nmodl.dll"
+
+
+def test_resolve_pylibs_uses_find_when_unset(monkeypatch):
+    bw = _binwrapper()
+    monkeypatch.setattr(bw, "find_libpython", lambda: "/discovered.so")
+    monkeypatch.delenv("NRN_PYLIB", raising=False)
+    monkeypatch.delenv("NMODL_PYLIB", raising=False)
+    bw._resolve_pylibs()
+    assert os.environ["NRN_PYLIB"] == "/discovered.so"
+    assert os.environ["NMODL_PYLIB"] == "/discovered.so"
+
+
+def test_resolve_pylibs_nrn_alone_does_not_search(monkeypatch):
+    bw = _binwrapper()
+
+    def fail_find():
+        raise AssertionError("find_libpython should not run when NRN_PYLIB is set")
+
+    monkeypatch.setattr(bw, "find_libpython", fail_find)
+    monkeypatch.setenv("NRN_PYLIB", "/explicit/python.dll")
+    monkeypatch.delenv("NMODL_PYLIB", raising=False)
+    bw._resolve_pylibs()
+    assert os.environ["NRN_PYLIB"] == "/explicit/python.dll"
+    assert os.environ["NMODL_PYLIB"] == "/explicit/python.dll"
+
+
 def test_vendored_wheel_lib_dirs(tmp_path):
     bw = _binwrapper()
     assert bw._vendored_wheel_lib_dirs(tmp_path) == []
