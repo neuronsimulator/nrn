@@ -920,6 +920,44 @@ Segments
             nrn_method_call(vec, nrn_method_symbol(vec, "record"), 1);
         }
 
+.. c:function:: int nrn_rangevar_handle_str(Symbol* sym, Section* sec, double x, int index, char* buf, size_t size)
+
+    Describe the data handle of element ``index`` of a range variable at
+    position ``x``: the text NEURON's Python interface prints for a reference
+    such as ``seg._ref_v``, for example
+    ``data_handle<double>{Node::field::Voltage row=0/2 val=-65}``. It names the
+    storage the value lives in and its row there, which changes with the node
+    order (:meth:`ParallelContext.optimize_node_order`). For a ``POINTER``
+    variable it describes the handle the pointer holds. The checks are those
+    of :c:func:`nrn_rangevar_get_nothrow`.
+
+    :param sym: Range variable symbol.
+    :param sec: Pointer to the Section.
+    :param x: Normalized position along Section (0.0 to 1.0).
+    :param index: Element of an array range variable; 0 for a scalar.
+    :param buf: Buffer for the text (truncated to ``size - 1`` characters and
+        always terminated), or for the error message on failure. May be ``NULL``
+        to only get the length; nothing is written if ``size`` is 0.
+    :param size: Size of ``buf``.
+    :returns: The length of the full text, not counting the terminating ``'\0'``,
+        or -1 on error. If it is ``size`` or more, the text was cut short and
+        ``buf`` holds only its first ``size - 1`` characters.
+
+    **C Usage:**
+
+    .. code-block:: c
+
+        char text[128];
+        if (nrn_rangevar_handle_str(nrn_symbol("v"), soma, 0.5, 0, text, sizeof(text)) >= 0) {
+            printf("%s\n", text);
+        }
+
+    **Python Equivalent:**
+
+    .. code-block:: python
+
+        text = str(soma(0.5)._ref_v)
+
 .. c:function:: Object* nrn_segment_nmodlrandom_get(Section* sec, double x, Symbol* sym)
 
     Wrap a density mechanism's NMODL ``RANDOM`` variable as an
@@ -2227,6 +2265,15 @@ Miscellaneous
     Point-process properties use the same data-handle resolution as
     :c:func:`nrn_property_get` for the selected element, including returning NaN
     for an unset or opaque pointer.
+
+    It also reads ``Vector.x[i]``, and the same holds for
+    :c:func:`nrn_property_array_set`, :c:func:`nrn_property_array_push` and
+    :c:func:`nrn_property_data_handle_is_valid`. An index out of range, and
+    ``Matrix.x`` (which has two indices), find no element: the get returns NaN,
+    the set does nothing, the push pushes a null pointer and the data handle is
+    not valid. No HOC error is raised and the HOC stack is left as it was. Use
+    :c:func:`nrn_property_element_ptr` for ``Matrix.x`` or to get an error
+    message.
 
     **C Usage:**
 
