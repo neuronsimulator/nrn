@@ -6,7 +6,7 @@ How to get started with NEURON
 Installation
 ------------
 
-If you haven't already, install NEURON. Detailed instructions for special cases are available `here <../install/install_instructions.html>`_, but in brief, you'll probably want to install Python (there are many options; `Anaconda <https://www.anaconda.com/>`_ is one such option). On Linux and macOS, you can then install NEURON by typing ``pip install neuron``. On Windows, use the latest NEURON installer from `our GitHub site <https://github.com/neuronsimulator/nrn/releases>`_. For parallel simulation, you will also want to install a version of MPI.
+If you haven't already, install NEURON. Detailed instructions for special cases are available `here <../install/install_instructions.html>`_, but in brief, you'll probably want to install Python (there are many options; `Anaconda <https://www.anaconda.com/>`_ is one such option). On Linux, macOS, and Windows, install NEURON with ``pip install neuron``. Windows wheels need Python 3.11 or newer. The Windows installer from `our GitHub site <https://github.com/neuronsimulator/nrn/releases>`_ remains available if you do not want pip. For parallel simulation, you will also want to install a version of MPI.
 
 Discussion Board
 ----------------
