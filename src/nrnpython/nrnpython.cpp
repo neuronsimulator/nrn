@@ -71,8 +71,48 @@ wchar_t* saved_progname{};
 
 void* nrnpy_dlsym(const char* name) {
 #if defined(_WIN32)
-    HMODULE h = GetModuleHandleA("python3.dll");
-    return h ? reinterpret_cast<void*>(GetProcAddress(h, name)) : nullptr;
+    // python3.dll is the stable ABI. A versioned build links python3XY.dll
+    // and may not load python3.dll. PyOS_ReadlineFunctionPointer is not in
+    // the limited API, so python3.dll does not export it even when the ABI3
+    // build has loaded that DLL. Unix dlsym(RTLD_DEFAULT) searches every
+    // loaded module; follow the same search here.
+    auto from_module = [name](const char* module) -> void* {
+        if (!module || !module[0]) {
+            return nullptr;
+        }
+        HMODULE module_handle = GetModuleHandleA(module);
+        if (!module_handle) {
+            return nullptr;
+        }
+        return reinterpret_cast<void*>(GetProcAddress(module_handle, name));
+    };
+    if (void* symbol = from_module("python3.dll")) {
+        return symbol;
+    }
+    if (const char* pylib = std::getenv("NRN_PYLIB")) {
+        if (void* symbol = from_module(pylib)) {
+            return symbol;
+        }
+        const char* base = pylib;
+        for (const char* s = pylib; *s; ++s) {
+            if (*s == '/' || *s == '\\') {
+                base = s + 1;
+            }
+        }
+        if (base != pylib) {
+            if (void* symbol = from_module(base)) {
+                return symbol;
+            }
+        }
+    }
+    for (int minor = 10; minor <= 30; ++minor) {
+        char modname[32];
+        std::snprintf(modname, sizeof modname, "python3%d.dll", minor);
+        if (void* symbol = from_module(modname)) {
+            return symbol;
+        }
+    }
+    return nullptr;
 #else
     return dlsym(RTLD_DEFAULT, name);
 #endif
