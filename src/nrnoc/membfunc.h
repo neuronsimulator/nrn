@@ -1,5 +1,7 @@
 #pragma once
+#include "neuron/ba_reg.h"
 #include "nrndlldef.h"
+
 extern void hoc_register_prop_size(int type, int psize, int dpsize);
 
 #include "neuron/container/data_handle.hpp"

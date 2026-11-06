@@ -1971,14 +1971,25 @@ void bablk(int ba, int type, Item* q1, Item* q2) {
     qv = insertstr(q, "_ppvar = _ppd;\n");
     movelist(qb, q2, procfunc);
 
-    ba = (ba == BEFORE) ? 10 : 20; /* BEFORE or AFTER */
-    ba += (type == BREAKPOINT) ? 1 : 0;
-    ba += (type == SOLVE) ? 2 : 0;
-    ba += (type == INITIAL1) ? 3 : 0;
-    ba += (type == STEP) ? 4 : 0;
+    // BAType in neuron/ba_reg.h. Generated code sees it through membfunc.h.
+    const char* when_name = (ba == BEFORE) ? "BAType::Before" : "BAType::After";
+    const char* kind_name = nullptr;
+    if (type == BREAKPOINT) {
+        kind_name = "BAType::Breakpoint";
+    } else if (type == SOLVE) {
+        kind_name = "BAType::Solve";
+    } else if (type == INITIAL1) {
+        kind_name = "BAType::Initial";
+    } else if (type == STEP) {
+        kind_name = "BAType::Step";
+    }
     lappenditem(ba_list_, qv->next);
     lappenditem(ba_list_, q2);
-    Sprintf(buf, "%d", ba);
+    if (kind_name) {
+        Sprintf(buf, "%s + %s", when_name, kind_name);
+    } else {
+        Sprintf(buf, "%d", (ba == BEFORE) ? 10 : 20);
+    }
     lappendstr(ba_list_, buf);
 }
 
