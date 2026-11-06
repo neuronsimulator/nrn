@@ -128,7 +128,7 @@ Furthermore, GCC >= 10 is required (older versions of GCC may work, but are not 
 #### Windows
 
 Native Windows Python wheels (`win_amd64`) are provided on PyPI. In a Command Prompt or PowerShell
-with Python 3.10 or newer:
+with Python 3.11 or newer:
 
 ```
 python -m pip install neuron
