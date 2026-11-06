@@ -482,6 +482,41 @@ def test_nrniv_dll_nogui_native_backslash():
     assert "rnmech.dll" not in leftover
 
 
+@pytest.mark.skipif(
+    not WIN, reason="native backslash -pyexe and -dll are Windows paths"
+)
+def test_nrniv_pyexe_and_dll_native_backslash():
+    """-dll and -pyexe in one argv both keep their rewritten paths.
+
+    -dll is first and contains \\n. -pyexe is a short path. Each rewritten
+    value is a c_str() into the same container. A second push_back used to
+    reallocate that container and leave the first pointer dangling. -isatty
+    prints the dll path before LoadLibrary, so a dangling pointer shows up
+    as a missing C:/n/nrnmech.dll.
+    """
+    dll = r"C:\n\nrnmech.dll"
+    pyexe = r"C:\a\p.exe"
+    r = _run(
+        [
+            _tool("nrniv"),
+            "-isatty",
+            "-dll",
+            dll,
+            "-pyexe",
+            pyexe,
+            "-c",
+            "quit()",
+        ],
+        timeout=20,
+    )
+    out = r.stdout or ""
+    assert "C:/n/nrnmech.dll" in out
+    assert "\nrnmech.dll" not in out
+    assert "\rnmech.dll" not in out
+    leftover = out.replace("nrnmech.dll", "")
+    assert "rnmech.dll" not in leftover
+
+
 # ---------------------------------------------------------------------------
 # Import3d GUI chooser directory — last / is not the directory on Windows
 # ---------------------------------------------------------------------------

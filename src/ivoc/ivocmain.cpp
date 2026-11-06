@@ -13,9 +13,9 @@ void hoc_main1_init(const char*, const char**);
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <deque>
 #include <filesystem>
 #include <string>
-#include <vector>
 #if HAVE_UNISTD_H
 #include <unistd.h>
 #if !defined(__APPLE__)
@@ -256,7 +256,11 @@ static bool isdir(const char* p) {
 // A native path ...\nrnmech.dll always contains that sequence. fopen and
 // LoadLibrary accept '/'. Same rule as load_file / binwrapper _posix_path.
 static void nrn_forward_slash_win_path_args(int argc, const char** argv) {
-    static std::vector<std::string> owned;
+    // deque keeps element addresses stable across push_back. A vector
+    // reallocation would invalidate c_str() already stored in argv, which
+    // happens when both -pyexe and -dll are rewritten. Short paths live in
+    // the string object (small-string optimization), so they dangle too.
+    static std::deque<std::string> owned;
     for (int i = 0; i < argc - 1; ++i) {
         if (strcmp(argv[i], "-dll") != 0 && strcmp(argv[i], "-pyexe") != 0) {
             continue;
