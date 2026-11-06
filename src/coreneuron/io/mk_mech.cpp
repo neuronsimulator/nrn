@@ -127,14 +127,12 @@ static void mk_mech(std::istream& s) {
         corenrn.get_prop_dparam_size()[type] = pdsize;
         corenrn.get_is_artificial()[type] = is_art;
         if (is_ion) {
+            // <stem>_ion. Anything else makes ion_reg index with -1.
+            nrn_assert(str.size() > 4 && str.compare(str.size() - 4, 4, "_ion") == 0);
             double charge = 0.;
             nrn_assert(s >> charge);
-            // strip the _ion
-            char iname[100];
-            strcpy(iname, mname);
-            iname[strlen(iname) - 4] = '\0';
-            // printf("%s %s\n", mname, iname);
-            ion_reg(iname, charge);
+            const std::string stem = str.substr(0, str.size() - 4);
+            ion_reg(stem.c_str(), charge);
         }
         // printf("%s %d %d\n", mname, nrn_get_mechtype(mname), type);
     }
