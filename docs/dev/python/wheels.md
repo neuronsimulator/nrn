@@ -10,7 +10,7 @@ NEURON has several Python extensions:
 
 Since version 9, these extensions are all built using CMake itself. However, when building a Python wheel, we use a build tool compatible with the modern Python standards, notably, PEP 517, and use [`scikit-build-core`](https://scikit-build-core.readthedocs.io/) as a thin wrapper around CMake.
 
-Furthermore, we use [`cibuildwheel`](https://cibuildwheel.pypa.io/) to build redistributable wheels on Linux and MacOS.
+Furthermore, we use [`cibuildwheel`](https://cibuildwheel.pypa.io/) to build redistributable wheels on Linux, macOS, and Windows.
 
 ## Build details
 
@@ -41,10 +41,11 @@ A Python build backend is in charge of the following tasks:
 
 - If building on Linux, it starts up a Docker container, and copies the project to the container. We use the [`neuronsimulator/neuron_wheel`](https://hub.docker.com/r/neuronsimulator/neuron_wheel) image for building the wheel, which is based on `manylinux_2_28`.
 - If building on MacOS, it checks that an [official MacOS Python installation](https://www.python.org/downloads/macos/) is available on the machine, and uses that as the Python version.
+- If building on Windows, `packaging/python/build_wheels.bash` selects the Visual Studio 17 2022 x64 generator (not MinGW) and leaves CoreNEURON off. Local steps are in [Windows wheels](../../install/python_wheels.md).
 
 ### After the build
 
-In order to make a redistributable wheel, we need to set the correct [rpath](https://en.wikipedia.org/wiki/Rpath) for the libraries and executables, as well as copy any libraries to the wheel that would not be found on the user's system at run-time. `cibuildwheel` does this using [`auditwheel`](https://github.com/pypa/auditwheel/) on Linux, and [`delocate`](https://pypi.org/project/delocate/) on MacOS.
+In order to make a redistributable wheel, we need to set the correct [rpath](https://en.wikipedia.org/wiki/Rpath) for the libraries and executables, as well as copy any libraries to the wheel that would not be found on the user's system at run-time. `cibuildwheel` does this using [`auditwheel`](https://github.com/pypa/auditwheel/) on Linux, [`delocate`](https://pypi.org/project/delocate/) on MacOS, and [`delvewheel`](https://pypi.org/project/delvewheel/) on Windows.
 
 ### Directory layout
 
@@ -82,9 +83,9 @@ To use the `cibuildwheel` mode, run it via:
 packaging/python/build_wheels.bash [platform] [python_version(s)]
 ```
 
-where `[platform]` is one of {linux, Linux, osx, Darwin}, and `[python_version(s)]` is a list of Python versions for which to build the wheel. The above will create a redistributable wheel under the `wheelhouse` subdirectory. To build the product wheels (`cp311-cp311` and `cp312-abi3`), use `'3*'` (note the quotation marks). To build wheels for only selected versions, use a space-separated list of versions surrounded by quotation marks, without any dots between the major and minor version (for example, `'311 312'`).
+where `[platform]` is one of {linux, Linux, osx, Darwin, windows}, and `[python_version(s)]` is a list of Python versions for which to build the wheel. The above will create a redistributable wheel under the `wheelhouse` subdirectory. To build the product wheels (`cp311-cp311` and `cp312-abi3`), use `'3*'` (note the quotation marks). To build wheels for only selected versions, use a space-separated list of versions surrounded by quotation marks, without any dots between the major and minor version (for example, `'311 312'`).
 
-Note that, for the `cibuildwheel` mode, on Linux you must have either Docker or podman installed (by default, `cibuildwheel` uses Docker, and to use podman one must set the environmental variable `CIBW_CONTAINER_ENGINE=podman`), and on MacOS you must have the official MacOS Python installation for that particular Python version.
+Note that, for the `cibuildwheel` mode, on Linux you must have either Docker or podman installed (by default, `cibuildwheel` uses Docker, and to use podman one must set the environmental variable `CIBW_CONTAINER_ENGINE=podman`), and on MacOS you must have the official MacOS Python installation for that particular Python version. On Windows, use a Visual Studio 2022 x64 environment. The Windows defaults in `build_wheels.bash` set `NRN_ENABLE_CORENEURON=OFF`. Linux and macOS set it `ON`.
 
 ## Customizing the wheel
 
@@ -101,7 +102,7 @@ The equivalent using `pip` is:
 python -m pip wheel --no-deps . --config-settings=cmake.define.NRN_ENABLE_CORENEURON=ON
 ```
 
-For multiple options, one can add additional `--config-settings` flags. For a list of default values for building a wheel, have a look at the `tool.scikit-build.cmake.define` section of the `pyproject.toml` file. Note that the `build_wheels.bash` script uses `cibuildwheel` behind the scenes, and overrides some of the variables (as the script is used in the CI); for a list of those, have a look under the `tool.cibuildwheel.linux.environment` and `tool.cibuildwheel.macos.environment` sections of the `pyproject.toml` file (for Linux and MacOS, respectively).
+For multiple options, one can add additional `--config-settings` flags. For a list of default values for building a wheel, have a look at the `tool.scikit-build.cmake.define` section of the `pyproject.toml` file. Note that the `build_wheels.bash` script uses `cibuildwheel` behind the scenes, and overrides some of the variables (as the script is used in the CI); for a list of those, have a look under the `tool.cibuildwheel.linux.environment`, `tool.cibuildwheel.macos.environment`, and `tool.cibuildwheel.windows` sections of the `pyproject.toml` file.
 
 The build files are by default placed in `build_wheel`, however one can customize this using `--config-settings=build-dir=/some/build/dir`.
 
