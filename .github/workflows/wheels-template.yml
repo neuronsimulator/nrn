@@ -51,6 +51,19 @@ jobs:
           fetch-depth: ${{ inputs.clone_depth }}
           fetch-tags: true  # Ensures tags are available for git describe
 
+      - name: Setup host Python for cibuildwheel (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # MSVC win_amd64 wheel: ninja, winflexbison, MS-MPI. Not MSYS2/MinGW setup.exe.
+      # IV gitlink ac31164 (neuronsimulator/iv hines-grok/msvc-windows).
+      - name: Install MSVC wheel dependencies
+        if: runner.os == 'Windows'
+        run: .\ci\win_msvc_wheel_deps.cmd
+        shell: cmd
+
       - name: Install Python from python.org
         if: runner.os == 'macOS'
         run: |
@@ -119,9 +132,10 @@ jobs:
 
       - name: Change name of package for release
         if: inputs.build_type == 'nightly'
+        shell: bash
         run: |
-          python3 -m venv venv
-          source venv/bin/activate
+          # Do not `source venv/bin/activate`: default Windows shell is pwsh,
+          # and a Windows venv has Scripts/, not bin/. The runner is disposable.
           python3 -m pip install tomli tomli-w
           python3 packaging/python/change_name.py ./pyproject.toml neuron-nightly
 
@@ -136,8 +150,14 @@ jobs:
           echo SETUPTOOLS_SCM_PRETEND_VERSION=${{ inputs.version }} >> $GITHUB_ENV
 
       - name: Build wheel
+        shell: bash
         run: |
-          bash packaging/python/build_wheels.bash $(uname -s) ${{ inputs.python_version }}
+          if [ "${RUNNER_OS}" = "Windows" ]; then
+            plat=windows
+          else
+            plat="$(uname -s)"
+          fi
+          bash packaging/python/build_wheels.bash "${plat}" ${{ inputs.python_version }}
 
       - name: Upload wheel files
         uses: actions/upload-artifact@v4
@@ -146,21 +166,25 @@ jobs:
           path: wheelhouse/*.whl
 
       - name: Setup Python 3.11 for testing
+        id: py311
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
       - name: Setup Python 3.12 for testing
+        id: py312
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
       - name: Setup Python 3.13 for testing
+        id: py313
         uses: actions/setup-python@v5
         with:
           python-version: '3.13'
 
       - name: Setup Python 3.14 for testing
+        id: py314
         uses: actions/setup-python@v5
         with:
           python-version: '3.14'
@@ -190,7 +214,10 @@ jobs:
           fi
           echo CMAKE_GENERATOR=Ninja >> $GITHUB_ENV
 
+      # test_wheels.sh is Unix (venv/bin, gcc, mpirun). 3.11 wheel is tested
+      # only on 3.11. The 3.12 job is cp312-abi3 and is tested on 3.12-3.14.
       - name: Test wheel
+        if: runner.os != 'Windows'
         run: |
           py="${{ inputs.python_version }}"
           py="${py// /}"
@@ -205,3 +232,126 @@ jobs:
             ver="${ver// /}"
             bash packaging/python/test_wheels.sh "$(command -v python${ver})" "${wheel}"
           done
+
+      # MSVC: pip install the win_amd64 wheel, import + neuron.test(), serial
+      # nrniv.cmd (Test 2), nrnivmodl.cmd tmp_mod (Test 4, cacum.mod ->
+      # nrnmech.dll), neurondemo.cmd demo(4)/run/quit (Test 10, demo/release
+      # nrnmech.dll), modlunit.cmd tmp_mod/cacum.mod (Test 11, nrnunits.lib),
+      # python MS-MPI, then nrniv.cmd hoc under mpiexec.
+      # setup-python leaves `python` as 3.14. Use the step paths so the 3.11
+      # job does not test the 3.11 wheel on 3.14, and the abi3 job tests
+      # 3.12-3.14.
+      - name: Test Windows wheel
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          PY_311: ${{ steps.py311.outputs.python-path }}
+          PY_312: ${{ steps.py312.outputs.python-path }}
+          PY_313: ${{ steps.py313.outputs.python-path }}
+          PY_314: ${{ steps.py314.outputs.python-path }}
+        run: |
+          $whl = Get-ChildItem wheelhouse/*cp3*.whl | Select-Object -First 1
+          if (-not $whl) { throw "no wheel in wheelhouse" }
+          Remove-Item Env:PYTHONPATH -ErrorAction SilentlyContinue
+          Remove-Item Env:NEURONHOME -ErrorAction SilentlyContinue
+          $env:NEURON_MODULE_OPTIONS = "-nogui"
+          $repo = Get-Location
+          # venv: python.exe and *.cmd live in Scripts/. Hosted CPython:
+          # python.exe is in the prefix, pip console scripts in Scripts/.
+          function Get-NrnCmd([string]$name) {
+            $pydir = Split-Path $py
+            foreach ($c in @(
+              (Join-Path $pydir "$name.cmd"),
+              (Join-Path $pydir "Scripts\$name.cmd")
+            )) {
+              if (Test-Path $c) { return $c }
+            }
+            throw "$name.cmd not found next to $py or in Scripts"
+          }
+          $buildPy = "${{ inputs.python_version }}".Trim()
+          if ($buildPy -eq '3.11') {
+            $versions = @('3.11')
+          } else {
+            $versions = "${{ inputs.test_python_versions }}".Split(',') | ForEach-Object { $_.Trim() } | Where-Object { $_ }
+          }
+          $pyByVer = @{
+            '3.11' = $env:PY_311
+            '3.12' = $env:PY_312
+            '3.13' = $env:PY_313
+            '3.14' = $env:PY_314
+          }
+          foreach ($ver in $versions) {
+            Set-Location $repo
+            $py = $pyByVer[$ver]
+            if (-not $py) { throw "no interpreter mapped for Python $ver" }
+            if (-not (Test-Path -LiteralPath $py)) { throw "Python $ver not found at $py" }
+            Write-Host "=== Windows wheel on Python $ver ($py) ==="
+            if (Test-Path 'tmp_mod') { Remove-Item -Recurse -Force 'tmp_mod' }
+            if (Test-Path 'AMD64') { Remove-Item -Recurse -Force 'AMD64' }
+            if (Test-Path 'nrnmech.dll') { Remove-Item -Force 'nrnmech.dll' }
+            & $py -m pip install --force-reinstall $whl.FullName
+            if ($LASTEXITCODE -ne 0) { throw "pip install failed on Python $ver ($LASTEXITCODE)" }
+            & $py -c "import os, sys; print('python', sys.executable); import neuron; print(neuron.__file__); print(neuron.h.nrnversion()); print(neuron.h.neuronhome())"
+            if ($LASTEXITCODE -ne 0) { throw "import neuron failed on Python $ver ($LASTEXITCODE)" }
+            & $py -c "import neuron; neuron.test()"
+            if ($LASTEXITCODE -ne 0) { throw "neuron.test() failed on Python $ver ($LASTEXITCODE)" }
+            $nrniv = Get-NrnCmd 'nrniv'
+            # Unix Test 2 is nrniv -c 'print "hello"'. pwsh -> cmd %* drops the
+            # inner quotes (print hello is an undefined variable). print 42 is
+            # the same hoc print statement. mpiexec cannot CreateProcess
+            # extensionless Scripts\nrniv; nrniv.cmd is the PATHEXT wrapper.
+            Write-Host "serial nrniv.cmd Test 2: $nrniv -c print 42 / quit"
+            & $nrniv -c 'print 42' -c 'quit()'
+            if ($LASTEXITCODE -ne 0) { throw "serial nrniv.cmd Test 2 failed on Python $ver ($LASTEXITCODE)" }
+            # Unix Test 4 is nrnivmodl tmp_mod / cacum.mod then ARCH/special.
+            # Windows nrnivmodl is the CMake package (not bash nrnivmodl.in);
+            # output is cwd/nrnmech.dll and NRNIVMODL_SPECIAL is OFF. cmake
+            # finds VS without vcvars; cl.exe need not be on PATH.
+            $nrnivmodl = Get-NrnCmd 'nrnivmodl'
+            if (-not (Get-Command cmake -ErrorAction SilentlyContinue)) { throw "cmake not on PATH for nrnivmodl" }
+            $modsrc = Join-Path $repo 'share/examples/nrniv/nmodl/cacum.mod'
+            if (-not (Test-Path $modsrc)) { throw "cacum.mod not found at $modsrc" }
+            New-Item -ItemType Directory -Path 'tmp_mod' | Out-Null
+            Copy-Item $modsrc (Join-Path 'tmp_mod' 'cacum.mod')
+            Write-Host "nrnivmodl Test 4: $nrnivmodl tmp_mod"
+            & $nrnivmodl tmp_mod
+            if ($LASTEXITCODE -ne 0) { throw "nrnivmodl Test 4 failed on Python $ver ($LASTEXITCODE)" }
+            if (-not (Test-Path 'nrnmech.dll')) { throw "nrnivmodl Test 4 did not produce nrnmech.dll" }
+            Write-Host "nrnivmodl Test 4 produced nrnmech.dll; insert cacum"
+            & $py -c "from neuron import h; s = h.Section(); s.insert('cacum')"
+            if ($LASTEXITCODE -ne 0) { throw "insert cacum failed on Python $ver ($LASTEXITCODE)" }
+            # Unix Test 10 is neurondemo -c 'demo(4)' -c 'run()' -c 'quit()'.
+            # Extensionless Scripts\neurondemo is a Python wrapper, not a
+            # Win32 image (Error 193). neurondemo.cmd ports bash neurondemo.in
+            # (nrnivmodl of share/nrn/demo/release, then nrniv -dll). -nogui:
+            # IV/win.ini is not this gate. cmake is already required for Test 4.
+            $neurondemo = Get-NrnCmd 'neurondemo'
+            Write-Host "neurondemo Test 10: $neurondemo -nogui -c demo(4) / run / quit"
+            & $neurondemo -nogui -c 'demo(4)' -c 'run()' -c 'quit()'
+            if ($LASTEXITCODE -ne 0) { throw "neurondemo Test 10 failed on Python $ver ($LASTEXITCODE)" }
+            Set-Location $repo
+            # Unix Test 11 is modlunit tmp_mod/cacum.mod (find nrnunits.lib).
+            # Extensionless Scripts\modlunit is a Python wrapper, not a Win32
+            # image (Error 193). modlunit.cmd is the PATHEXT wrapper.
+            $modlunit = Get-NrnCmd 'modlunit'
+            & $py -c "import os, neuron; p=os.path.join(str(neuron.h.neuronhome()), 'lib', 'nrnunits.lib'); print(p); assert os.path.isfile(p), p"
+            if ($LASTEXITCODE -ne 0) { throw "nrnunits.lib not found for modlunit Test 11 on Python $ver" }
+            $mod = Join-Path $repo 'tmp_mod/cacum.mod'
+            if (-not (Test-Path $mod)) { throw "tmp_mod/cacum.mod missing for modlunit Test 11" }
+            Write-Host "modlunit Test 11: $modlunit $mod"
+            & $modlunit $mod
+            if ($LASTEXITCODE -ne 0) { throw "modlunit Test 11 failed on Python $ver ($LASTEXITCODE)" }
+            $mpiBin = if (Test-Path 'C:\msmpi\bin\mpiexec.exe') { 'C:\msmpi\bin' } else { 'C:\msmpi\Bin' }
+            $mpiexec = Join-Path $mpiBin 'mpiexec.exe'
+            if (-not (Test-Path $mpiexec)) { throw "MS-MPI mpiexec not found under C:\msmpi" }
+            if ($env:Path -notlike "$mpiBin*") { $env:Path = "$mpiBin;" + $env:Path }
+            $testpy = Join-Path $repo 'src/parallel/test0.py'
+            $testhoc = Join-Path $repo 'src/parallel/test0.hoc'
+            Write-Host "MS-MPI python gate: $mpiexec -n 2 $py $testpy"
+            & $mpiexec -n 2 $py $testpy -mpi --expected-hosts 2
+            if ($LASTEXITCODE -ne 0) { throw "MS-MPI python gate failed on Python $ver ($LASTEXITCODE)" }
+            Write-Host "MS-MPI nrniv gate: $mpiexec -n 2 $nrniv $testhoc"
+            & $mpiexec -n 2 $nrniv $testhoc -mpi --expected-hosts 2
+            if ($LASTEXITCODE -ne 0) { throw "MS-MPI nrniv gate failed on Python $ver ($LASTEXITCODE)" }
+          }
+

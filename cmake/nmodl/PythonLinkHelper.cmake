@@ -16,8 +16,13 @@ set(NRN_LINK_AGAINST_PYTHON
 mark_as_advanced(NRN_LINK_AGAINST_PYTHON)
 
 if(NOT NRN_LINK_AGAINST_PYTHON)
-  string(APPEND CMAKE_EXE_LINKER_FLAGS " ${UNDEFINED_SYMBOLS_IGNORE_FLAG}")
-  set(NMODL_WRAPPER_LIBS pyembed dl)
+  # link.exe does not accept the GNU unresolved-symbol flag. The wheel links the Python import
+  # library instead.
+  if(NOT MSVC)
+    string(APPEND CMAKE_EXE_LINKER_FLAGS " ${UNDEFINED_SYMBOLS_IGNORE_FLAG}")
+  endif()
+  # CMAKE_DL_LIBS is libdl on Unix. Windows has no dl.lib; pyembed compiles src/mswin/dlfcn.c.
+  set(NMODL_WRAPPER_LIBS pyembed ${CMAKE_DL_LIBS})
 else()
-  set(NMODL_WRAPPER_LIBS pyembed pywrapper dl)
+  set(NMODL_WRAPPER_LIBS pyembed pywrapper ${CMAKE_DL_LIBS})
 endif()

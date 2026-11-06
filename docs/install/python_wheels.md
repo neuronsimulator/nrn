@@ -117,6 +117,15 @@ Azure macOS wheels still obtain a prebuilt static **readline** via an Azure
 *secure file* (see macOS section below). Migrating that class of blob into
 `ci/deps` is tracked as `managed: false` in the MANIFEST until promoted.
 
+## Windows wheels (`win_amd64`)
+
+GitHub Actions `windows-2022` builds an MSVC wheel (Visual Studio 17 2022 x64), not MinGW
+`setup.exe`. How to build locally, including `CMAKE_GENERATOR` / `CMAKE_GENERATOR_PLATFORM` and
+`ci/win_msvc_wheel_deps.cmd`, is under [Windows build — MSVC Python wheel](windows.md#msvc-python-wheel).
+
+`nrnivmodl` on that wheel needs `cl.exe` (Build Tools) and CMake; the wheel does not ship MinGW.
+See [Installing Binary Distribution — Windows](install_instructions.md#windows).
+
 ## macOS wheels
 
 Note that for macOS there is no docker image needed, but all required dependencies must exist.
@@ -195,11 +204,11 @@ portable subset of the developer suite against an installed wheel.
 Quick health check after building a wheel (or against TestPyPI):
 
 ```
-# first arg is a python exe and second arg is the corresponding wheel
-bash packaging/python/test_wheels.sh python3.9 wheelhouse/NEURON-7.8.0.236-cp39-cp39-macosx_10_9_x86_64.whl
+# first arg is a Python 3.11+ interpreter and second arg is the matching wheel
+bash packaging/python/test_wheels.sh python3.11 wheelhouse/neuron_nightly-9.1.0-cp311-cp311-manylinux_2_28_x86_64.whl
 
-# Or, you can provide the pypi url
-bash packaging/python/test_wheels.sh python3.9 "-i https://test.pypi.org/simple/NEURON==7.8.11.2"
+# Or pass a pip requirement as the second argument
+bash packaging/python/test_wheels.sh python3.11 neuron-nightly
 ```
 
 This covers import/`neuron.test()`, basic `nrnivmodl`, and a few MPI /

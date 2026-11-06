@@ -3,4 +3,5 @@
 extern "C" {
 extern MPI_Comm nrnmpi_world_comm;
 extern MPI_Comm nrnmpi_comm;
+extern MPI_Comm nrn_bbs_comm;
 }
