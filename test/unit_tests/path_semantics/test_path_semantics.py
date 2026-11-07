@@ -505,14 +505,17 @@ def test_nrniv_dll_nogui_native_backslash():
 def test_nrniv_pyexe_and_dll_native_backslash():
     """-dll and -pyexe in one argv both keep their rewritten paths.
 
-    -dll is first and contains \\n. -pyexe is a short path. Each rewritten
-    value is a c_str() into the same container. A second push_back used to
-    reallocate that container and leave the first pointer dangling. -isatty
-    prints the dll path before LoadLibrary, so a dangling pointer shows up
-    as a missing C:/n/nrnmech.dll.
+    MSVC std::string stores up to 15 characters inside the object. A heap
+    string survives std::vector reallocation; a 15-byte string does not,
+    because the published c_str() points into the moved element. The first
+    rewritten value is the one -isatty prints, and it has to be that short.
+    C:/n/nrnmech.dll is 16 bytes, so it did not catch a vector. C:/n/a.dll
+    is 10. The following -pyexe push is what moves the first element.
     """
-    dll = r"C:\n\nrnmech.dll"
+    dll = r"C:\n\a.dll"
     pyexe = r"C:\a\p.exe"
+    printed = "C:/n/a.dll"
+    assert len(printed) <= 15
     r = _run(
         [
             _tool("nrniv"),
@@ -527,11 +530,9 @@ def test_nrniv_pyexe_and_dll_native_backslash():
         timeout=20,
     )
     out = r.stdout or ""
-    assert "C:/n/nrnmech.dll" in out
-    assert "\nrnmech.dll" not in out
-    assert "\rnmech.dll" not in out
-    leftover = out.replace("nrnmech.dll", "")
-    assert "rnmech.dll" not in leftover
+    assert printed in out
+    assert "\na.dll" not in out
+    assert "\ra.dll" not in out
 
 
 # ---------------------------------------------------------------------------

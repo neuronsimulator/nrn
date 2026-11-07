@@ -256,10 +256,11 @@ static bool isdir(const char* p) {
 // A native path ...\nrnmech.dll always contains that sequence. fopen and
 // LoadLibrary accept '/'. Same rule as load_file / binwrapper _posix_path.
 static void nrn_forward_slash_win_path_args(int argc, const char** argv) {
-    // deque keeps element addresses stable across push_back. A vector
-    // reallocation would invalidate c_str() already stored in argv, which
-    // happens when both -pyexe and -dll are rewritten. Short paths live in
-    // the string object (small-string optimization), so they dangle too.
+    // deque keeps element addresses stable across push_back. MSVC
+    // std::string stores up to 15 characters inside the object, so a vector
+    // reallocation leaves that c_str() dangling. A longer string keeps its
+    // heap buffer, and that pointer stays valid. The first rewritten value
+    // has to be the short one (see test_nrniv_pyexe_and_dll_native_backslash).
     static std::deque<std::string> owned;
     for (int i = 0; i < argc - 1; ++i) {
         if (strcmp(argv[i], "-dll") != 0 && strcmp(argv[i], "-pyexe") != 0) {
