@@ -119,11 +119,11 @@ int main(int argc, char* argv[]) {
 static void openfiles(int argc, char* argv[]) {
     char modprefix[NRN_BUFSIZE - 5];
     if (argc > 1) {
-        /* prefix is the input path without a filename extension.
-           strstr(".mod") matches a directory named foo.mod (Unix fopen of
-           that directory succeeds; Windows looks for foo.mod.mod). */
+        /* Drop a filename suffix of ".mod" only. foo.bar must stay foo.bar
+           so the search is foo.bar.mrg then foo.bar.mod. A directory named
+           foo.mod is not a suffix of hh.mod (62391b5c5). */
         fs::path prefix{argv[1]};
-        if (prefix.has_extension()) {
+        if (prefix.extension() == ".mod") {
             prefix.replace_extension();
         }
         auto const prefix_str = prefix.string();

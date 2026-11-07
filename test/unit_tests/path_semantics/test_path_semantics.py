@@ -442,6 +442,23 @@ def test_modlunit_mod_named_directory(tmp_path):
     assert "Couldn't open" not in out
 
 
+def test_modlunit_unrecognized_suffix(tmp_path):
+    """modlunit foo.bar checks foo.bar.mod, not foo.mod.
+
+    Any filename extension used to be stripped, so foo.bar became foo and
+    the unit check opened the neighboring foo.mod.
+    """
+    shutil.copy(HH_MOD, str(tmp_path / "foo.bar.mod"))
+    shutil.copy(HH_MOD, str(tmp_path / "foo.mod"))
+    r = _run([_tool("modlunit"), str(tmp_path / "foo.bar")])
+    out = r.stdout or ""
+    assert r.returncode == 0, out
+    assert "foo.bar.mod" in out
+    checked = out.replace("foo.bar.mod", "")
+    assert "foo.mod" not in checked
+    assert "Can't open" not in out
+
+
 # ---------------------------------------------------------------------------
 # a2a8445c2 — GUI nrniv -dll  ...\\nrnmech.dll  (Style \\n)
 # ---------------------------------------------------------------------------
