@@ -1,4 +1,5 @@
 import ctypes
+import sys
 
 import pytest
 
@@ -73,6 +74,32 @@ def test_include_flux_callback_raises_3d(neuron_nosave_instance, capfd, cvode):
     assert "flux callback failed on purpose" in capfd.readouterr().err
 
 
+def test_include_flux_callback_failure_with_a_failing_stderr(
+    neuron_nosave_instance, monkeypatch
+):
+    """Reporting the error can fail too; the C code must still be told the callback failed."""
+    h, rxd, save_path = neuron_nosave_instance
+
+    class FailingStream:
+        def write(self, text):
+            raise OSError("stderr failed on purpose")
+
+        def flush(self):
+            raise OSError("stderr failed on purpose")
+
+    def callback():
+        raise ValueError("flux callback failed on purpose")
+
+    callables = rxd.rxd._node_flux_callables
+    callables.append(callback)
+    monkeypatch.setattr(sys, "stderr", FailingStream())
+    try:
+        assert rxd.rxd._eval_node_flux_callable(len(callables) - 1, None) == 1
+    finally:
+        monkeypatch.undo()
+        callables.pop()
+
+
 def _in_use_bytes():
     """Bytes malloc has handed out and not got back (glibc)."""
 
@@ -99,12 +126,32 @@ def _in_use_bytes():
     return info.uordblks + info.hblkhd
 
 
+def _assert_failing_runs_do_not_leak(h, cvode, bytes_per_run):
+    def failing_run():
+        with pytest.raises(RuntimeError):
+            h.CVode().active(cvode)
+            h.finitialize(-65)
+            h.fadvance()
+
+    for _ in range(3):
+        failing_run()
+    runs = 20
+    grown = []
+    for _ in range(3):
+        before = _in_use_bytes()
+        for _ in range(runs):
+            failing_run()
+        grown.append(_in_use_bytes() - before)
+    # a leak grows every batch; a heap extension is one large step in one batch
+    assert min(grown) < runs * bytes_per_run / 4
+
+
 def test_include_flux_error_does_not_leak(neuron_nosave_instance):
     """An error in a variable step run gives back what the right hand side allocated."""
     h, rxd, save_path = neuron_nosave_instance
     try:
         _in_use_bytes()
-    except AttributeError:
+    except (AttributeError, TypeError):
         pytest.skip("needs glibc mallinfo2")
     sec = h.Section(name="sec")
     sec.nseg = 2001
@@ -115,18 +162,27 @@ def test_include_flux_error_does_not_leak(neuron_nosave_instance):
         raise ValueError("flux callback failed on purpose")
 
     x.nodes(sec(0.5))[0].include_flux(callback)
-
-    def failing_run():
-        with pytest.raises(RuntimeError):
-            h.CVode().active(True)
-            h.finitialize(-65)
-            h.fadvance()
-
-    for _ in range(3):
-        failing_run()
-    before = _in_use_bytes()
-    runs = 20
-    for _ in range(runs):
-        failing_run()
     # one right hand side is 8 bytes per state, about 16 kB here
-    assert _in_use_bytes() - before < runs * 8 * 2001 / 4
+    _assert_failing_runs_do_not_leak(h, True, 8 * 2001)
+
+
+@pytest.mark.parametrize("cvode", [False, True], ids=["fixed", "cvode"])
+def test_include_flux_error_does_not_leak_ecs(neuron_nosave_instance, cvode):
+    """With MPI the extracellular fluxes are gathered into a buffer, freed on an error too."""
+    h, rxd, save_path = neuron_nosave_instance
+    try:
+        _in_use_bytes()
+    except (AttributeError, TypeError):
+        pytest.skip("needs glibc mallinfo2")
+    h.Section(name="sec")
+    region = rxd.Extracellular(-65, -65, -65, 65, 65, 65, dx=10)
+    x = rxd.Species(region, name="fluxleakecs", d=0.0, initial=0)
+
+    def callback():
+        raise ValueError("flux callback failed on purpose")
+
+    nodes = list(x[region].nodes)
+    for node in nodes:
+        node.include_flux(callback)
+    # the buffer is 8 bytes per flux on all the ranks
+    _assert_failing_runs_do_not_leak(h, cvode, 8 * len(nodes))

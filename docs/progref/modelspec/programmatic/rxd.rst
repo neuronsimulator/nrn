@@ -1139,6 +1139,14 @@ A :class:`rxd.node.Node` represents a particular state value or :class:`rxd.Para
                 node.include_flux(lambda: math.sin(n.t))
                 node.include_flux(47)
 
+        A reference must be to a single number. Some sources are only checked when
+        the sources are next built, at the following ``finitialize`` or step, and
+        that call then fails: ``node.include_flux(vec, 'x')``, where ``vec._ref_x``
+        is not a reference to an element, is accepted here and reports a
+        ``TypeError``, and a reference to a variable deleted before then reports a
+        ``ValueError``. A reference to a variable deleted later stops the next step
+        with an error.
+
         Warning:
 
             Flux denotes a change in *mass* not a change in concentration.

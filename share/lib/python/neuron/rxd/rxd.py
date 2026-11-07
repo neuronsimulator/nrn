@@ -201,6 +201,14 @@ _node_flux_callables = []
 _node_flux_constants = numpy.array([])
 
 
+def _print_exc_best_effort():
+    """Report the current exception; this can fail too (a closed stderr) and must not raise."""
+    try:
+        traceback.print_exc()
+    except BaseException:
+        pass
+
+
 def _eval_node_flux_callable(i: int, flux) -> int:
     """Store callable i's flux; on an error print it and return 1 (C then stops with a hoc error).
 
@@ -213,7 +221,7 @@ def _eval_node_flux_callable(i: int, flux) -> int:
         flux[0] = float(result)
         return 0
     except BaseException:
-        traceback.print_exc()
+        _print_exc_best_effort()
         return 1
 
 
@@ -771,6 +779,25 @@ def _check_multigridding_supported_3d() -> bool:
 
 
 # TODO: make sure this does the right thing when the diffusion constant changes between two neighboring nodes
+def _setup_matrices_callback() -> int:
+    """_setup_matrices for C; a bad flux source returns 1 (C then stops with a hoc error).
+
+    ctypes drops an exception from a callback, so without this the run would go on with the
+    old sources. Any other error is only reported: after a change to the sections this can
+    run on stale pointers, and _update_node_data sets them up again later in the same step.
+    """
+    try:
+        _include_flux()
+    except BaseException:
+        _print_exc_best_effort()
+        return 1
+    try:
+        _setup_matrices()
+    except BaseException:
+        _print_exc_best_effort()
+    return 0
+
+
 def _setup_matrices():
     with initializer._init_lock:
         if not _check_multigridding_supported_3d():
@@ -2019,8 +2046,9 @@ def _do_nbs_register():
         _fih3 = h.FInitializeHandler(3, _init)
 
         set_setup_matrices = nrn_dll_sym("set_setup_matrices")
-        set_setup_matrices.argtypes = [fptr_prototype]
-        do_setup_matrices_fptr = fptr_prototype(_setup_matrices)
+        status_fptr_prototype = ctypes.CFUNCTYPE(ctypes.c_int)
+        set_setup_matrices.argtypes = [status_fptr_prototype]
+        do_setup_matrices_fptr = status_fptr_prototype(_setup_matrices_callback)
         set_setup_matrices(do_setup_matrices_fptr)
 
         set_setup_units = nrn_dll_sym("set_setup_units")

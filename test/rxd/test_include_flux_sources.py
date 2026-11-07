@@ -186,3 +186,51 @@ def test_reference_follows_a_data_permutation(neuron_nosave_instance):
         extra[i + 1].connect(extra[i])
     assert flux(-40.0) == pytest.approx(before, rel=1e-9, abs=0)
     assert flux(-20.0) == pytest.approx(before, rel=1e-9, abs=0)
+
+
+def _clear_node_fluxes(rxd):
+    for fluxes in rxd.rxd.node._node_fluxes.values():
+        fluxes.clear()
+
+
+@pytest.mark.parametrize("bad", ["array", "deleted"])
+def test_bad_source_added_during_a_run_stops_the_run(
+    neuron_nosave_instance, capfd, bad
+):
+    """C rebuilds the sources through a ctypes callback; an error there must reach the run."""
+    h, rxd, save_path = neuron_nosave_instance
+    sec, x, node = _node_with_ref_flux(h, rxd, 1000.0)
+    h.CVode().active(False)
+    h.finitialize(-65)
+    h.fadvance()
+    vec = h.Vector(3)
+    gone = h.Section(name="gone")
+    try:
+        if bad == "array":
+            node.include_flux(vec, "x")
+        else:
+            node.include_flux(gone(0.5)._ref_v)
+            h.delete_section(sec=gone)
+        with pytest.raises(RuntimeError):
+            h.fadvance()
+        assert (
+            "TypeError" if bad == "array" else "ValueError"
+        ) in capfd.readouterr().err
+    finally:
+        _clear_node_fluxes(rxd)
+
+
+def test_reference_to_an_array_is_an_error_at_finitialize(
+    neuron_nosave_instance, capfd
+):
+    """node.include_flux(vec, "x") is accepted, and finitialize reports it."""
+    h, rxd, save_path = neuron_nosave_instance
+    vec = h.Vector(3)
+    sec, x, node = _node_with_ref_flux(h, rxd, 1000.0)
+    try:
+        node.include_flux(vec, "x")
+        with pytest.raises(RuntimeError):
+            h.finitialize(-65)
+        assert "not a reference to a number" in capfd.readouterr().err
+    finally:
+        _clear_node_fluxes(rxd)

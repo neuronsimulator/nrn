@@ -38,7 +38,9 @@ extern double* dt_ptr;
 extern double* t_ptr;
 
 
-fptr *_setup, *_initialize, *_setup_matrices, *_setup_units;
+fptr *_setup, *_initialize, *_setup_units;
+/* Returns nonzero if it failed, after reporting the Python error. */
+static int (*_setup_matrices)() = nullptr;
 extern NrnThread* nrn_threads;
 
 /*intracellular diffusion*/
@@ -496,7 +498,7 @@ extern "C" void set_initialize(fptr* initialize_fn) {
     set_num_threads(NUM_THREADS);
 }
 
-extern "C" void set_setup_matrices(fptr* setup_matrices) {
+extern "C" void set_setup_matrices(int (*setup_matrices)()) {
     _setup_matrices = setup_matrices;
 }
 
@@ -789,7 +791,9 @@ extern "C" int rxd_nonvint_block(int method, int size, double* p1, double* p2, i
         if (structure_change_cnt != prev_structure_change_cnt) {
             /*TODO: Exclude irrelevant (non-rxd) structural changes*/
             /*Needed for node.include_flux*/
-            _setup_matrices();
+            if (_setup_matrices() != 0) {
+                hoc_execerror("rxd could not update the model", nullptr);
+            }
         }
     }
     switch (method) {
