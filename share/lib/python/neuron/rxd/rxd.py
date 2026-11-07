@@ -11,6 +11,7 @@ from .rxdException import RxDException
 from .._windows_cxx import (
     MSVC_CXX_MISSING,
     _apply_vc_env,
+    _cxx_executable,
     _is_msvc_cxx,
     _win_env_find_exe,
     msvc_vc_env as _msvc_vc_env,
@@ -580,6 +581,9 @@ def _cxx_compile(formula):
     if cxx:
         use_msvc = _is_msvc_cxx(cxx)
         if use_msvc:
+            # argv[0] is the executable. Quotes and a spaced Program Files path
+            # must not be split into GNU-style tokens.
+            cxx = _cxx_executable(cxx) or cxx
             vc = _msvc_vc_env()
             if vc:
                 _apply_vc_env(env, vc)

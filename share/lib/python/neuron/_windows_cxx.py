@@ -65,9 +65,50 @@ def _apply_vc_env(env, vc):
             env[name] = val
 
 
+# Longer names first so clang-cl.exe is not read as cl.exe.
+_MSVC_CXX_BASENAMES = ("clang-cl.exe", "clang-cl", "cl.exe", "cl")
+
+
+def _cxx_executable(cxx):
+    """Compiler path from CXX. A cl.exe path that contains spaces stays one token.
+
+    Quoted text is the executable, quotes removed. Otherwise an MSVC basename may
+    sit at the start or after / or \\, through the end or the next space. Any other
+    compiler is the first whitespace-separated token.
+    """
+    text = (cxx or "").strip()
+    if not text:
+        return ""
+    if text[0] in "\"'":
+        quote = text[0]
+        end = text.find(quote, 1)
+        if end < 0:
+            body = text[1:].strip()
+            return body.split()[0] if body else ""
+        return text[1:end]
+    lowered = text.lower()
+    for name in _MSVC_CXX_BASENAMES:
+        start = 0
+        while start < len(text):
+            idx = lowered.find(name, start)
+            if idx < 0:
+                break
+            before_ok = idx == 0 or text[idx - 1] in "/\\"
+            after = idx + len(name)
+            after_ok = after == len(text) or text[after].isspace()
+            if before_ok and after_ok:
+                return text[:after]
+            start = idx + 1
+    return text.split()[0]
+
+
+def _cxx_basename(path):
+    """Last path component. Both separators count, including on a Unix host."""
+    return path.replace("\\", "/").rsplit("/", 1)[-1].lower()
+
+
 def _is_msvc_cxx(cxx):
-    name = os.path.basename(cxx.replace('"', "").split()[0]).lower()
-    return name in ("cl", "cl.exe", "clang-cl", "clang-cl.exe")
+    return _cxx_basename(_cxx_executable(cxx)) in _MSVC_CXX_BASENAMES
 
 
 def _vswhere_install_path(require_vc=False):
@@ -119,8 +160,8 @@ def msvc_cl_available():
     """True if cl.exe is on PATH or vswhere/vcvars can find Visual C++ tools."""
     cxx = os.environ.get("CXX")
     if cxx:
-        path = cxx.replace('"', "").split()[0]
-        if os.path.isfile(path):
+        path = _cxx_executable(cxx)
+        if path and os.path.isfile(path):
             return True
     for name in ("cl.exe", "cl"):
         if which(name):
