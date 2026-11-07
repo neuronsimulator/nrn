@@ -1971,7 +1971,7 @@ Miscellaneous
     Get the next Section from a Section list iterator.
 
     :param sl: Pointer to the SectionListIterator.
-    :returns: Pointer to the next Section.
+    :returns: Pointer to the next Section, or NULL if only deleted sections were left.
 
     **Usage Pattern:**
 
@@ -1979,6 +1979,10 @@ Miscellaneous
 
     Before calling, check with :c:func:`nrn_sectionlist_iterator_done` to ensure
     there are more sections to process.
+
+    A deleted section is skipped and dropped from the list, along with the list's
+    reference to it. If that was the last reference the Section is freed, so call
+    :c:func:`nrn_section_ref` to keep a ``Section*`` across iterations.
 
     See :c:func:`nrn_allsec` for an example of iterating over all sections.
 
