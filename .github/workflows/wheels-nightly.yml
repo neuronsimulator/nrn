@@ -15,7 +15,7 @@ on:
         required: false
         # windows-2022: MSVC win_amd64 (#3431), same template as wheels-ci.yml.
         # Not MinGW setup.exe. Scheduled runs use the generate-matrix fallback.
-        # Those wheels are built here and left out of the PyPI upload below.
+        # Those wheels are part of the neuron-nightly upload.
         default: "macos-15,ubuntu-24.04-arm,windows-2022"
       python_versions:
         description: "Comma-separated list of Python versions to build with (3.11 versioned + 3.12 abi3)"
@@ -98,24 +98,6 @@ jobs:
         with:
           name: wheels
           path: dist/
-      - name: Drop Windows wheels from the PyPI upload
-        # neuron-nightly does not publish win_amd64 (#3861). The matrix above
-        # still builds them. This job is the publication set.
-        run: |
-          shopt -s nullglob
-          removed=(dist/*win_amd64*)
-          if ((${#removed[@]})); then
-            printf 'excluding from PyPI:\n'
-            printf '  %s\n' "${removed[@]}"
-            rm -f -- "${removed[@]}"
-          fi
-          left=(dist/*win_amd64*)
-          if ((${#left[@]})); then
-            echo "win_amd64 wheels are still in dist/" >&2
-            exit 1
-          fi
-          echo "publication set:"
-          ls -l dist
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
