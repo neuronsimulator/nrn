@@ -115,10 +115,6 @@ endmacro()
 # Run nocmodl to convert NMODL to C
 # =============================================================================
 macro(nocmodl_mod_to_cpp modfile_basename modfile_compat)
-  set(NOCMODL_SED_EXPR "s/_reg()/_reg_()/")
-  if(NOT MSVC)
-    set(NOCMODL_SED_EXPR "'${NOCMODL_SED_EXPR}'")
-  endif()
   set(MODFILE_INPUT_PATH "${PROJECT_SOURCE_DIR}/${modfile_basename}.mod")
   set(MODFILE_OUTPUT_PATH "${PROJECT_BINARY_DIR}/${modfile_basename}.mod")
 
@@ -142,11 +138,11 @@ macro(nocmodl_mod_to_cpp modfile_basename modfile_compat)
       "NMODL_PYLIB=${NRN_NMODL_PYLIB}" "NMODLHOME=${PROJECT_BINARY_DIR}"
       ${NRN_NOCMODL_SANITIZER_ENVIRONMENT} $<TARGET_FILE:${NRN_CODEGENERATOR_TARGET}>
       ${MODFILE_OUTPUT_PATH} ${NRN_NMODL_--neuron} -o ${modfile_output_dir}
-    COMMAND sed ${NOCMODL_SED_EXPR} ${CPPFILE_OUTPUT_PATH} > ${CPPFILE_OUTPUT_PATH}.tmp
-    COMMAND ${CMAKE_COMMAND} -E copy ${CPPFILE_OUTPUT_PATH}.tmp ${CPPFILE_OUTPUT_PATH}
-    COMMAND ${CMAKE_COMMAND} -E remove ${CPPFILE_OUTPUT_PATH}.tmp
+    COMMAND ${CMAKE_COMMAND} -DNRN_NOCMODL_CPP=${CPPFILE_OUTPUT_PATH} -P
+            ${PROJECT_SOURCE_DIR}/cmake/nocmodl_reg_rename.cmake
     DEPENDS ${NRN_CODEGENERATOR_TARGET} ${MODFILE_INPUT_PATH}
             ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib
+            ${PROJECT_SOURCE_DIR}/cmake/nocmodl_reg_rename.cmake
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/src/nrniv)
 
 endmacro()
