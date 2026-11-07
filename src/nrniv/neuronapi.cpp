@@ -1032,10 +1032,14 @@ double nrn_distance(Section* sec0, double x0, Section* sec1, double x1) {
  ****************************************/
 
 ShapePlotInterface* nrn_get_plotshape_interface(Object* ps) {
-    ShapePlotInterface* spi;
-    hoc_Item** my_section_list;
-    spi = ((ShapePlotInterface*) ps->u.this_pointer);
-    return spi;
+    // The object is one of two classes, and a ShapePlot's interface is not its first base.
+    void* that = ps->u.this_pointer;
+#if HAVE_IV
+    if (hoc_usegui) {
+        return static_cast<ShapePlot*>(that);
+    }
+#endif
+    return static_cast<ShapePlotData*>(that);
 }
 
 Object* nrn_get_plotshape_section_list(ShapePlotInterface* spi) {
