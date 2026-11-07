@@ -22,9 +22,9 @@ from pathlib import Path
 # is not: --strict makes abi3audit fail instead of omitting it.
 _IGNORE_NAMES = {"libpywrapper.so", "libpywrapper.dylib", "libpywrapper.dll"}
 
-# Importable extensions on every abi3 wheel. RxD is on for wheels.
-# "hoc." does not match a longer stem. _nmodl is the importable NMODL module.
-_REQUIRED_STEMS = ("hoc", "graphicsPrimitives", "ctng", "_nmodl")
+# Importable extensions on every abi3 wheel. RxD is on for wheels. _nmodl is the
+# importable NMODL module. The hoc extension is gone: neuron._interface replaced it.
+_REQUIRED_STEMS = ("graphicsPrimitives", "ctng", "_nmodl")
 
 
 def _requires_libnrnpython(wheel_name: str) -> bool:

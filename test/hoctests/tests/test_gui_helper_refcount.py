@@ -13,7 +13,11 @@ and strref wrappers must have that same refcount.
 import ctypes
 import sys
 
-from neuron import h, nrn_dll_sym
+from neuron import _interface, h, nrn_dll_sym
+
+# gui_helper_3_helper_ is NEURON's Python module's; its callback needs that module.
+if _interface.api._cfunctype_methods_installed:
+    sys.exit(0)
 
 _set_gui_callback = nrn_dll_sym("nrnpy_set_gui_callback")
 _record = {}

@@ -81,7 +81,7 @@ def neuron_nosave_instance(neuron_import):
     rxd.initializer.is_initializing = False
     rxd.rxd.free_conc_ptrs()
     rxd.rxd.free_curr_ptrs()
-    rxd.rxd.rxd_include_node_flux1D(0, None, None, None)
+    rxd.rxd.rxd_include_node_flux1D(0, None, None, None, None)
     rxd.species._has_1d = False
     rxd.species._has_3d = False
     rxd.rxd._zero_volume_indices = numpy.ndarray(0, dtype=ctypes.c_long)
