@@ -462,7 +462,7 @@ class Wrapper(object):
             try:
                 return self.__getattribute__(name)
             except AttributeError:
-                return self.hoc_obj.__getattribute__(name)
+                return getattr(self.hoc_obj, name)
 
     def __setattr__(self, name, value):
         try:
