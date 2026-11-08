@@ -13,6 +13,7 @@ set(api_test_files
     raw_hoc_errors.cpp
     runtime_pythonobject_marshaling.cpp
     section_tree.cpp
+    sectionlist_iterator_deleted.cpp
     sectionlist_to_array.cpp
     segment_diam.cpp
     segment_mechanisms.cpp
@@ -42,6 +43,13 @@ foreach(api_test_file ${api_test_files})
   set_property(TEST "${test_name}" PROPERTY ENVIRONMENT "${NRN_RUN_FROM_BUILD_DIR_ENV}"
                                             "CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}")
 endforeach()
+
+# Reads Section::refcount, so it needs NEURON's internal headers.
+target_include_directories(
+  sectionlist_iterator_deleted_cpp PRIVATE $<TARGET_PROPERTY:nrniv_lib,INCLUDE_DIRECTORIES>
+                                           ${PROJECT_BINARY_DIR}/include)
+target_compile_definitions(sectionlist_iterator_deleted_cpp
+                           PRIVATE $<TARGET_PROPERTY:nrniv_lib,COMPILE_DEFINITIONS>)
 
 # The setpointer tests need mechanisms with a POINTER, which no built-in provides: a density
 # mechanism (ptrtest.mod) for nrn_setpointer_pop and a point process (ppptrtest.mod) for

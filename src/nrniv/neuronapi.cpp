@@ -1167,14 +1167,11 @@ Section* SectionListIterator::next() {
 
         // Check if the section is still valid
         if (!sec || sec->prop == nullptr) {
-            // Unlink and delete invalid section
-            if (q->prev) {
-                q->prev->next = q->next;
+            // Drop the item and the list's reference to its section, as forall does
+            hoc_l_delete(q);
+            if (sec) {
+                section_unref(sec);
             }
-            if (q->next) {
-                q->next->prev = q->prev;
-            }
-            delete q;
             continue;  // Try next
         }
 
