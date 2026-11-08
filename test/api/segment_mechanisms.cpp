@@ -126,6 +126,29 @@ int main(void) {
     ok &= check_order(rev, 1.0, {"IClamp", "pas", "capacitance", "morphology"});
     ok &= check(nrn_segment_mechanisms(rev, 0.0, nullptr, 0) == 0, "x=0 of rev is its far end");
 
+    // extracellular is the exception: it is also allocated on the end nodes, the
+    // 1 end of every section that has it and the 0 end of a root, with nothing
+    // placed there. Connecting a root later keeps its 0 end's property.
+    nrn_hoc_call(
+        "create xroot, xkid, xlate\n"
+        "xroot { insert extracellular }\n"
+        "connect xkid(0), xroot(1)\n"
+        "xkid { insert extracellular }\n"
+        "xlate { insert extracellular }\n"
+        "access xroot\n");
+    Section* xroot = nrn_cas();
+    nrn_hoc_call("access xkid\n");
+    Section* xkid = nrn_cas();
+    nrn_hoc_call("access xlate\n");
+    Section* xlate = nrn_cas();
+    for (Section* sec: {xroot, xkid, xlate}) {
+        ok &= check_order(sec, 0.0, {"extracellular"});
+        ok &= check_order(sec, 1.0, {"extracellular"});
+    }
+    nrn_hoc_call("connect xlate(0), xkid(1)\n");
+    ok &= check_order(xlate, 0.0, {"extracellular"});
+    ok &= check_order(xlate, 1.0, {"extracellular"});
+
     // A deleted section.
     nrn_hoc_call(
         "create gone\n"

@@ -681,9 +681,10 @@ Segments
         At x = 0 and x = 1 the node is the end node, as for :c:func:`nrn_segment_node_index`.
         x = ``sec.orientation()`` (normally 0) of a child Section is the parent's
         node it connects to, with that node's mechanisms. The other end of a child
-        Section and both ends of a root Section have no density mechanisms: they
-        list only what was placed there, such as a point process at that end, and
-        the count is 0 otherwise.
+        Section and both ends of a root Section have no density mechanisms except
+        ``extracellular``, which a Section that has it also puts on those end nodes.
+        Otherwise they list only what was placed there, such as a point process at
+        that end, and the count is 0 when there is none.
 
     **C Usage:**
 
