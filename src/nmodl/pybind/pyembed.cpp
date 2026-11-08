@@ -7,16 +7,18 @@
 #include "pybind/pyembed.hpp"
 
 #include <cstdlib>
+#include <cstring>
 #include <dlfcn.h>
 #include <filesystem>
-#include <pybind11/embed.h>
 
+#include <fmt/format.h>
 
 #include "config/config.h"
 #include "utils/logger.hpp"
 
-#define STRINGIFY(x) #x
-#define TOSTRING(x)  STRINGIFY(x)
+#if defined(NRN_NMODL_PYTHON_VERSION_CHECK)
+#include <Python.h>
+#endif
 
 namespace fs = std::filesystem;
 
@@ -42,18 +44,17 @@ bool EmbeddedPythonLoader::have_wrappers() {
     return init != nullptr;
 }
 
+#if defined(NRN_NMODL_PYTHON_VERSION_CHECK)
+// Versioned pywrapper uses one minor's full C API. ABI3 does not define this
+// check: that wrapper is the 3.12 limited API and loads on later GIL CPython.
 void assert_compatible_python_versions() {
-    // This code is imported and slightly modified from PyBind11 because this
-    // is primarly in details for internal usage
-    // License of PyBind11 is BSD-style
-
-    std::string compiled_ver = fmt::format("{}.{}", PY_MAJOR_VERSION, PY_MINOR_VERSION);
-    auto pPy_GetVersion = (const char* (*) (void) ) dlsym(RTLD_DEFAULT, "Py_GetVersion");
-    if (pPy_GetVersion == nullptr) {
+    const std::string compiled_ver = fmt::format("{}.{}", PY_MAJOR_VERSION, PY_MINOR_VERSION);
+    auto* py_get_version = (const char* (*) ()) dlsym(RTLD_DEFAULT, "Py_GetVersion");
+    if (py_get_version == nullptr) {
         throw std::runtime_error("Unable to find the function `Py_GetVersion`");
     }
-    const char* runtime_ver = pPy_GetVersion();
-    std::size_t len = compiled_ver.size();
+    const char* runtime_ver = py_get_version();
+    const std::size_t len = compiled_ver.size();
     if (std::strncmp(runtime_ver, compiled_ver.c_str(), len) != 0 ||
         (runtime_ver[len] >= '0' && runtime_ver[len] <= '9')) {
         throw std::runtime_error(
@@ -63,10 +64,11 @@ void assert_compatible_python_versions() {
                         runtime_ver));
     }
 }
+#endif
 
 void EmbeddedPythonLoader::load_libraries() {
     const auto pylib_env = std::getenv("NMODL_PYLIB");
-    if (!pylib_env) {
+    if (!pylib_env || pylib_env[0] == '\0') {
         logger->critical("NMODL_PYLIB environment variable must be set to load embedded python");
         throw std::runtime_error("NMODL_PYLIB not set");
     }
@@ -80,7 +82,9 @@ void EmbeddedPythonLoader::load_libraries() {
         throw std::runtime_error("Failed to dlopen");
     }
 
+#if defined(NRN_NMODL_PYTHON_VERSION_CHECK)
     assert_compatible_python_versions();
+#endif
 
     if (std::getenv("NMODLHOME") == nullptr) {
         logger->critical("NMODLHOME environment variable must be set to load embedded python");
