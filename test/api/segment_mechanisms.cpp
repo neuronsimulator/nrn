@@ -128,26 +128,30 @@ int main(void) {
 
     // extracellular is the exception: it is also allocated on the end nodes, the
     // 1 end of every section that has it and the 0 end of a root, with nothing
-    // placed there. Connecting a root later keeps its 0 end's property.
+    // placed there. A child's 0 end is its parent's node and follows the parent.
     nrn_hoc_call(
-        "create xroot, xkid, xlate\n"
+        "create xroot, xkid, plain, ychild\n"
         "xroot { insert extracellular }\n"
         "connect xkid(0), xroot(1)\n"
         "xkid { insert extracellular }\n"
-        "xlate { insert extracellular }\n"
+        "connect ychild(0), plain(1)\n"
+        "ychild { insert extracellular }\n"
         "access xroot\n");
     Section* xroot = nrn_cas();
     nrn_hoc_call("access xkid\n");
     Section* xkid = nrn_cas();
-    nrn_hoc_call("access xlate\n");
-    Section* xlate = nrn_cas();
-    for (Section* sec: {xroot, xkid, xlate}) {
+    nrn_hoc_call("access ychild\n");
+    Section* ychild = nrn_cas();
+    for (Section* sec: {xroot, xkid}) {
         ok &= check_order(sec, 0.0, {"extracellular"});
         ok &= check_order(sec, 1.0, {"extracellular"});
     }
-    nrn_hoc_call("connect xlate(0), xkid(1)\n");
-    ok &= check_order(xlate, 0.0, {"extracellular"});
-    ok &= check_order(xlate, 1.0, {"extracellular"});
+    ok &= check(nrn_segment_mechanisms(ychild, 0.0, nullptr, 0) == 0,
+                "a child's 0 end on a parent without extracellular");
+    ok &= check_order(ychild, 1.0, {"extracellular"});
+    // A section that becomes a root later gets it at its 0 end too.
+    nrn_hoc_call("ychild disconnect()\n");
+    ok &= check_order(ychild, 0.0, {"extracellular"});
 
     // A deleted section.
     nrn_hoc_call(
