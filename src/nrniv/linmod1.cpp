@@ -47,7 +47,42 @@ static double valid(void* v) {
     return double(((LinearMechanism*) v)->valid());
 }
 
-static Member_func members[] = {{"valid", valid}, {nullptr, nullptr}};
+// dforce(bdot_vector)
+// dforce(python_callable, bdot_vector)
+// Optional analytic db/dt for IDA mode-3 free y' (Plan A4). Callable is
+// invoked at IC with t set to the IC time; it should fill bdot_vector.
+static double dforce(void* v) {
+    LinearMechanism* m = (LinearMechanism*) v;
+    if (!m->model_) {
+        return 0.;
+    }
+    Object* callable = nullptr;
+    Vect* bdot = nullptr;
+    if (!ifarg(1)) {
+        m->model_->set_dforce(nullptr, nullptr);
+        return 0.;
+    }
+    if (hoc_is_object_arg(1)) {
+        Object* o = *hoc_objgetarg(1);
+        if (o && o->ctemplate && strcmp(o->ctemplate->sym->name, "PythonObject") == 0) {
+            callable = o;
+            if (!ifarg(2) || !is_vector_arg(2)) {
+                hoc_execerror("LinearMechanism.dforce: need dforce(callable, bdot_Vector)", 0);
+            }
+            bdot = vector_arg(2);
+        } else if (is_vector_arg(1)) {
+            bdot = vector_arg(1);
+        } else {
+            hoc_execerror("LinearMechanism.dforce: arg must be Vector or (callable, Vector)", 0);
+        }
+    } else {
+        hoc_execerror("LinearMechanism.dforce: arg must be Vector or (callable, Vector)", 0);
+    }
+    m->model_->set_dforce(callable, bdot);
+    return 1.;
+}
+
+static Member_func members[] = {{"valid", valid}, {"dforce", dforce}, {nullptr, nullptr}};
 
 static void* cons(Object*) {
     LinearMechanism* m = new LinearMechanism();

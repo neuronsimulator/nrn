@@ -292,6 +292,8 @@ class VecPlayContinuous: public PlayRecord {
 
     void continuous(double tt);
     double interpolate(double tt);
+    /** Forcing t⁺ info: u(tt) and classical u'(tt) matching continuous play. */
+    void forcing_tplus(double tt, double* value, double* deriv) const;
     double interp(double th, double x0, double x1) {
         return x0 + (x1 - x0) * th;
     }
