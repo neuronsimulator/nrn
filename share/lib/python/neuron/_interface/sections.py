@@ -52,8 +52,6 @@ from .nrnref import NrnRangeArrayRef, NrnRangeVarRef, NrnRef
 from .utils import (
     _name_error,
     _try_wrap_density_nmodlrandom,
-    list_functions,
-    list_methods,
 )
 
 # Names with registered get/set procs; see _ArrayRangeVar.
@@ -327,6 +325,33 @@ def _ion_mechanism_of(name):
     return mech
 
 
+# Located (non-ARTIFICIAL_CELL) point-process types, name -> MechanismType
+# select index, and the type count it was built for. A MechanismType keeps the
+# type list it was created with, so each call makes a fresh one (about 20 us);
+# a new count (nrn_load_dll, make_pointprocess) rebuilds the map.
+_PP_TYPES = [None, -1]
+
+
+def _point_process_types():
+    from . import NEURON
+
+    n = NEURON()
+    mt = n.MechanismType(1)
+    count = int(mt.count())
+    if count == _PP_TYPES[1]:
+        return mt, _PP_TYPES[0]
+    selected = n.ref("")
+    located = {}
+    for i in range(count):
+        if mt.is_artificial(i):
+            continue
+        mt.select(i)
+        mt.selected(selected)
+        located[selected[0]] = i
+    _PP_TYPES[:] = [located, count]
+    return mt, located
+
+
 class Segment:
     """A point at normalized position ``x`` in [0, 1] along a ``Section``.
 
@@ -451,73 +476,73 @@ class Segment:
         return math.pi * r * r * seg_length
 
     def point_processes(self):
-        """Return list of point processes attached to this segment.
+        """Return the point processes in this segment's node, in NEURON's order.
 
-        Iterates all object classes that have a ``has_loc`` method
-        (point processes), checks each instance's location against
-        this segment.
+        NEURON lists them from the node's property list: newest first, and one
+        moved with ``loc`` goes back to the head. MechanismType.pp_begin/pp_next
+        walk this section's nodes in that order, one type at a time, so only
+        this section's point processes are visited. nrn_segment_mechanisms,
+        when the core has it, gives the order across types and limits the walk
+        to the types in the node; without it the types follow MechanismType
+        order. TODO(gap-75): at a node shared by two sections (the 1 end of a
+        parent and the 0 end of a child) NEURON also lists the other section's
+        point processes; only this section's are returned.
         """
-        from . import NEURON
-
-        n_inst = NEURON()
-        result = []
-
-        # Step 1: collect point-process class names (type 325 with has_loc).
-        # Skip PythonObject: nrn_symbol_table on it segfaults because its table
-        # holds Python interpreter state and the C iterator dereferences it as
-        # a Symlist.
-        _SKIP_CLASSES = {"PythonObject"}
-        all_syms = list_functions()
-
-        pp_classes = []
-        for name, (t, _) in all_syms.items():
-            if t != TYPES.TEMPLATE or name in _SKIP_CLASSES:
-                continue
-            # Some type-325 entries (HOC templates with no methods, deprecated
-            # classes) raise on list_methods; skip them.
-            try:
-                methods = list_methods(name)
-                if "has_loc" in methods:
-                    pp_classes.append(name)
-            except Exception:
-                pass
+        mt, located = _point_process_types()
+        node_order = self._node_symbol_names()
+        if node_order is None:
+            types = list(located)
+        else:
+            types = [name for name in dict.fromkeys(node_order) if name in located]
+        if not types:
+            return []
 
         nseg = self._sec.nseg
-
-        def _node_key(x):
-            # Same node model as Segment._node_key, with -1/nseg for the ends.
-            if x <= 0.0:
-                return -1  # 0-end boundary node
-            if x >= 1.0:
-                return nseg  # 1-end boundary node
-            b = int(x * nseg)
-            return b if b < nseg else nseg - 1
-
-        my_key = _node_key(self._x)
-
-        # Step 2: iterate instances of each class.
-        for cls_name in pp_classes:
-            try:
-                lst = n_inst.List(cls_name)
-            except Exception:
-                continue
-            count = int(lst.count())
-            if count == 0:
-                continue
-            for j in range(count):
-                pp = lst.object(j)
-                try:
-                    if int(pp.has_loc()) != 1:
-                        continue
-                    # Step 3: compare location to this segment.
+        my_key = Segment._node_key(self._x, nseg)
+        found = {}
+        sec_ptr = self._sec._sec
+        _nrn_section_push(sec_ptr)
+        try:
+            for name in types:
+                mt.select(located[name])
+                in_node = []
+                pp = mt.pp_begin()
+                while pp is not None:
                     loc = pp.get_loc()
-                    pp_sec_ptr = _nrn_cas()
-                    _nrn_section_pop()  # get_loc pushes section
-                    if pp_sec_ptr == self._sec._sec and _node_key(loc) == my_key:
-                        result.append(pp)
-                except Exception:
-                    continue
+                    _nrn_section_pop()  # get_loc pushes the section
+                    if Segment._node_key(loc, nseg) == my_key:
+                        in_node.append(pp)
+                    pp = mt.pp_next()
+                if in_node:
+                    found[name] = in_node
+        finally:
+            _nrn_section_pop()
+
+        if node_order is None:
+            return [pp for name in types for pp in found.get(name, ())]
+        result = []
+        queues = {name: iter(pps) for name, pps in found.items()}
+        for name in node_order:
+            queue = queues.get(name)
+            if queue is not None:
+                pp = next(queue, None)
+                if pp is not None:
+                    result.append(pp)
+        # Anything the node list did not account for, kept rather than dropped.
+        seen = {id(pp) for pp in result}
+        result += [pp for pps in found.values() for pp in pps if id(pp) not in seen]
         return result
+
+    def _node_symbol_names(self):
+        """Names in this node's property list, or None without the C API."""
+        if _nrn_segment_mechanisms is None:
+            return None
+        count = _nrn_segment_mechanisms(self._sec._sec, self._x, None, 0)
+        if count < 0:
+            return None
+        buf = (Symbol * max(count, 1))()
+        count = _nrn_segment_mechanisms(self._sec._sec, self._x, buf, count)
+        return [_nrn_symbol_name(buf[i]).decode("utf-8") for i in range(count)]
 
     def node_index(self):
         """Return the internal NEURON node index for this segment.
