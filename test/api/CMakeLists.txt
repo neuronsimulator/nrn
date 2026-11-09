@@ -10,10 +10,12 @@ foreach(
   object_new_nothrow.cpp
   object_new_wrap.cpp
   object_ptr_push.cpp
+  property_array_steer.cpp
   property_element_ptr.cpp
   raw_hoc_errors.cpp
   runtime_pythonobject_marshaling.cpp
   section_tree.cpp
+  sectionlist_iterator_deleted.cpp
   sectionlist_to_array.cpp
   segment_diam.cpp
   sections.cpp
@@ -37,6 +39,13 @@ foreach(
   set_property(TEST "${test_name}" PROPERTY ENVIRONMENT "${NRN_RUN_FROM_BUILD_DIR_ENV}"
                                             "CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}")
 endforeach()
+
+# Reads Section::refcount, so it needs NEURON's internal headers.
+target_include_directories(
+  sectionlist_iterator_deleted_cpp PRIVATE $<TARGET_PROPERTY:nrniv_lib,INCLUDE_DIRECTORIES>
+                                           ${PROJECT_BINARY_DIR}/include)
+target_compile_definitions(sectionlist_iterator_deleted_cpp
+                           PRIVATE $<TARGET_PROPERTY:nrniv_lib,COMPILE_DEFINITIONS>)
 
 # The setpointer tests need mechanisms with a POINTER, which no built-in provides: a density
 # mechanism (ptrtest.mod) for nrn_setpointer_pop and a point process (ppptrtest.mod) for
@@ -103,6 +112,27 @@ add_test(NAME "api::rangevar_nothrow_cpp" COMMAND rangevar_nothrow_cpp)
 set_property(
   TEST "api::rangevar_nothrow_cpp" PROPERTY ENVIRONMENT "${NRN_RUN_FROM_BUILD_DIR_ENV}"
                                             "CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}")
+
+add_executable(rangevar_handle_str_cpp rangevar_handle_str.cpp ${setpointer_gens})
+cpp_cc_configure_sanitizers(TARGET rangevar_handle_str_cpp)
+# The generated mechanism includes NEURON internal headers (mech_api.h, the mechanism-cache headers,
+# ...); inherit them from nrniv_lib, plus the build's generated-header dir (nrnsemanticversion.h
+# etc.), which is a directory-scoped include not carried on the nrniv_lib target.
+target_include_directories(
+  rangevar_handle_str_cpp PRIVATE $<TARGET_PROPERTY:nrniv_lib,INCLUDE_DIRECTORIES>
+                                  ${PROJECT_BINARY_DIR}/include)
+target_compile_definitions(rangevar_handle_str_cpp
+                           PRIVATE $<TARGET_PROPERTY:nrniv_lib,COMPILE_DEFINITIONS>)
+target_link_libraries(rangevar_handle_str_cpp ${CMAKE_DL_LIBS})
+target_link_libraries(rangevar_handle_str_cpp nrniv_lib)
+target_link_options(rangevar_handle_str_cpp PRIVATE -rdynamic)
+if(NRN_ENABLE_CORENEURON)
+  target_compile_definitions(rangevar_handle_str_cpp PUBLIC CORENEURON_ENABLED)
+endif()
+add_test(NAME "api::rangevar_handle_str_cpp" COMMAND rangevar_handle_str_cpp)
+set_property(
+  TEST "api::rangevar_handle_str_cpp" PROPERTY ENVIRONMENT "${NRN_RUN_FROM_BUILD_DIR_ENV}"
+                                               "CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}")
 
 # Generate a density mechanism and a point process with NMODL RANDOM variables to exercise both
 # public wrapper APIs without Python support.

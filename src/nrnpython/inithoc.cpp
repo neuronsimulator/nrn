@@ -8,6 +8,7 @@
 #endif
 #include "nrnpy_utils.h"
 #include <stdlib.h>
+#include <string.h>
 #include <ctype.h>
 
 #include "nrn_export.hpp"
@@ -242,13 +243,17 @@ void nrnpython_finalize() {
     {
 #endif
         // Call python_gui_cleanup() if defined in Python
-        PyRun_SimpleString(
+        nrnpy_run_simple_string(
             "try:\n"
             "    gui.cleanup()\n"
             "except NameError:\n"
             "    pass\n");
 
-        // Finalize Python
+        // hoc quit() / process exit can reach here while a -c string is still on
+        // the stack; 3.14 then raises SystemError on threading shutdown.
+        if (PyErr_Occurred()) {
+            PyErr_Clear();
+        }
         Py_Finalize();
     }
 #if defined(__linux__) || defined(DARWIN)

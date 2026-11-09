@@ -248,3 +248,289 @@ SCENARIO("ARTIFICIAL_CELL with `net_move`") {
         }
     }
 }
+
+/// Text of one generated function, from its signature up to the next
+/// `static void` definition. Namespace indentation means that marker is not
+/// at column 0.
+std::string generated_function(const std::string& cpp, const std::string& name) {
+    const auto signature = "static void " + name + "(";
+    const auto start = cpp.find(signature);
+    REQUIRE(start != std::string::npos);
+    const auto next_fn = cpp.find("static void ", start + signature.size());
+    if (next_fn == std::string::npos) {
+        return cpp.substr(start);
+    }
+    const auto line = cpp.rfind('\n', next_fn);
+    if (line == std::string::npos || line <= start) {
+        return cpp.substr(start);
+    }
+    return cpp.substr(start, line - start);
+}
+
+SCENARIO("NEURON backend emits BEFORE/AFTER as per-instance callbacks", "[codegen][ba]") {
+    GIVEN("one block of each accepted kind, in source order") {
+        std::string nmodl = R"(
+            NEURON {
+                SUFFIX ba1
+                RANGE x
+            }
+            ASSIGNED {
+                x
+            }
+            PROCEDURE take_v() {
+                x = v
+                VERBATIM
+                return ret_take_v;
+                ENDVERBATIM
+            }
+            BEFORE BREAKPOINT { x = v }
+            AFTER SOLVE { x = v }
+            BEFORE INITIAL { x = v }
+            AFTER INITIAL { x = v }
+            BEFORE STEP { take_v() }
+        )";
+        std::string cpp = transpile(nmodl);
+        const auto body = generated_function(cpp, "nrn_before_after_0_ba1");
+        const auto step = generated_function(cpp, "nrn_before_after_4_ba1");
+
+        THEN("hoc_reg_ba names BAType from neuron/ba_reg.h") {
+            REQUIRE_THAT(cpp,
+                         ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_0_ba1, "
+                                           "BAType::Before + BAType::Breakpoint);"));
+            REQUIRE_THAT(cpp,
+                         ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_1_ba1, "
+                                           "BAType::After + BAType::Solve);"));
+            REQUIRE_THAT(cpp,
+                         ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_2_ba1, "
+                                           "BAType::Before + BAType::Initial);"));
+            REQUIRE_THAT(cpp,
+                         ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_3_ba1, "
+                                           "BAType::After + BAType::Initial);"));
+            REQUIRE_THAT(cpp,
+                         ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_4_ba1, "
+                                           "BAType::Before + BAType::Step);"));
+        }
+        THEN("the callback is nrn_bamech_t and assigns v_unused from the node") {
+            REQUIRE_THAT(cpp, ContainsSubstring("for (int id = 0; id < nodecount"));
+            REQUIRE_THAT(body,
+                         ContainsSubstring(
+                             "static void nrn_before_after_0_ba1(Node* _nd, Datum* _ppvar, Datum* "
+                             "_thread, NrnThread* nt, Memb_list* _ml_arg, size_t id, const "
+                             "_nrn_model_sorted_token& _sorted_token)"));
+            REQUIRE_THAT(body, !ContainsSubstring("nrn_before_after_0_ba1(const"));
+            REQUIRE_THAT(body, !ContainsSubstring("for (int id = 0; id < nodecount"));
+            REQUIRE_THAT(body, !ContainsSubstring("double v"));
+            REQUIRE_THAT(body, !ContainsSubstring("auto* _thread"));
+            REQUIRE_THAT(body,
+                         ContainsSubstring(
+                             "inst.v_unused[id] = node_data.node_voltages[node_id];"));
+            REQUIRE_THAT(step,
+                         ContainsSubstring(
+                             "take_v_ba1(_lmc, inst, node_data, id, _ppvar, _thread, nt);"));
+        }
+    }
+}
+
+SCENARIO("Two BEFORE STEP blocks are both registered", "[codegen][ba]") {
+    GIVEN("a mod file with two BEFORE STEP blocks") {
+        std::string nmodl = R"(
+            NEURON {
+                SUFFIX ba2
+                RANGE x
+            }
+            ASSIGNED { x }
+            BEFORE STEP { x = 1 }
+            BEFORE STEP { x = 2 }
+        )";
+        std::string cpp = transpile(nmodl);
+
+        THEN("each block gets its own callback and the same type code") {
+            REQUIRE_THAT(cpp,
+                         ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_0_ba2, "
+                                           "BAType::Before + BAType::Step);"));
+            REQUIRE_THAT(cpp,
+                         ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_1_ba2, "
+                                           "BAType::Before + BAType::Step);"));
+            REQUIRE(cpp.find("static void nrn_before_after_0_ba2(Node*") != std::string::npos);
+            REQUIRE(cpp.find("static void nrn_before_after_1_ba2(Node*") != std::string::npos);
+        }
+    }
+}
+
+SCENARIO("POINT_PROCESS BEFORE STEP keeps the POINTER verbatim macro", "[codegen][ba]") {
+    GIVEN("a point process whose BEFORE STEP uses _p_p") {
+        std::string nmodl = R"(
+            NEURON {
+                POINT_PROCESS bapp
+                POINTER p
+                RANGE n
+            }
+            ASSIGNED { p n }
+            BEFORE STEP {
+                VERBATIM
+                if (_p_p) {
+                    *(double*)_p_p += 1.0;
+                }
+                ENDVERBATIM
+            }
+        )";
+        std::string cpp = transpile(nmodl);
+        const auto body = generated_function(cpp, "nrn_before_after_0_bapp");
+
+        THEN("the callback receives instance pdata and exposes _p_p") {
+            REQUIRE_THAT(cpp,
+                         ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_0_bapp, "
+                                           "BAType::Before + BAType::Step);"));
+            REQUIRE_THAT(body, ContainsSubstring("Datum* _ppvar"));
+            REQUIRE_THAT(body, ContainsSubstring("literal_value<void*>()"));
+            REQUIRE_THAT(body,
+                         ContainsSubstring(
+                             "inst.v_unused[id] = node_data.node_voltages[node_id];"));
+        }
+    }
+}
+
+SCENARIO("ARTIFICIAL_CELL BEFORE STEP has no node voltage", "[codegen][ba]") {
+    GIVEN("an artificial cell") {
+        std::string nmodl = R"(
+            NEURON {
+                ARTIFICIAL_CELL baart
+            }
+            BEFORE STEP {
+                LOCAL x
+                x = 1
+            }
+        )";
+        std::string cpp = transpile(nmodl);
+        const auto body = generated_function(cpp, "nrn_before_after_0_baart");
+
+        THEN("the callback is registered and does not read node_data") {
+            REQUIRE_THAT(cpp,
+                         ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_0_baart, "
+                                           "BAType::Before + BAType::Step);"));
+            REQUIRE_THAT(body, !ContainsSubstring("node_data"));
+            REQUIRE_THAT(body, !ContainsSubstring("v_unused"));
+            REQUIRE_THAT(body, !ContainsSubstring("double v"));
+        }
+    }
+}
+
+SCENARIO("LAG inside BEFORE STEP calls scopmath lag", "[codegen][ba]") {
+    GIVEN("LAG v BY dur") {
+        std::string nmodl = R"(
+            NEURON {
+                SUFFIX lagba
+                RANGE x, dur
+            }
+            PARAMETER { dur = 1 }
+            ASSIGNED { x }
+            BEFORE STEP {
+                LAG v BY dur
+                x = lag_v_dur
+            }
+        )";
+        std::string cpp = transpile(nmodl);
+        const auto body = generated_function(cpp, "nrn_before_after_0_lagba");
+
+        THEN("the lagged value is stored in lag_v_dur") {
+            const auto declaration = cpp.find("static double lag_v_dur;");
+            const auto signature = cpp.find("static void nrn_before_after_0_lagba(");
+            REQUIRE(declaration != std::string::npos);
+            REQUIRE(signature != std::string::npos);
+            REQUIRE(declaration < signature);
+            REQUIRE_THAT(body,
+                         ContainsSubstring("lag_v_dur = "
+                                           "*lag(&(inst.v_unused[id]), nt->_t, inst.dur[id], 0);"));
+            REQUIRE_THAT(body, !ContainsSubstring("static double lag_v_dur"));
+            REQUIRE_THAT(body, ContainsSubstring("inst.x[id] = lag_v_dur"));
+        }
+    }
+}
+
+SCENARIO("Array LAG keeps the pointer and the dimension", "[codegen][ba][lag]") {
+    GIVEN("ASSIGNED x[2] and LAG x BY dur") {
+        std::string nmodl = R"(
+            NEURON {
+                SUFFIX lagarr
+                RANGE y, dur
+            }
+            PARAMETER { dur = 1 }
+            ASSIGNED { x[2] y }
+            BEFORE STEP {
+                LAG x BY dur
+                y = lag_x_dur[0]
+            }
+        )";
+        std::string cpp = transpile(nmodl);
+        const auto body = generated_function(cpp, "nrn_before_after_0_lagarr");
+
+        THEN("the result is a pointer, as in nocmodl lag_stmt") {
+            const auto declaration = cpp.find("static double* lag_x_dur;");
+            const auto signature = cpp.find("static void nrn_before_after_0_lagarr(");
+            REQUIRE(declaration != std::string::npos);
+            REQUIRE(signature != std::string::npos);
+            REQUIRE(declaration < signature);
+            REQUIRE_THAT(body,
+                         ContainsSubstring(
+                             "lag_x_dur = lag((inst.x+id*2), nt->_t, inst.dur[id], 2);"));
+            REQUIRE_THAT(body, !ContainsSubstring("static double"));
+            REQUIRE_THAT(cpp, !ContainsSubstring("&((inst.x"));
+            REQUIRE_THAT(body, ContainsSubstring("lag_x_dur[static_cast<int>(0)]"));
+        }
+    }
+}
+
+SCENARIO("LAG inside a conditional is visible after the conditional", "[codegen][ba][lag]") {
+    GIVEN("if (t >= 0) { LAG v BY dur } then x = lag_v_dur") {
+        std::string nmodl = R"(
+            NEURON {
+                SUFFIX lagvis
+                RANGE x, dur
+            }
+            PARAMETER { dur = 1 }
+            ASSIGNED { v (millivolt) x }
+            BEFORE STEP {
+                if (t >= 0) { LAG v BY dur }
+                x = lag_v_dur
+            }
+        )";
+        std::string cpp = transpile(nmodl);
+        const auto body = generated_function(cpp, "nrn_before_after_0_lagvis");
+
+        THEN("the static is outside the function and the assignment stays inside the if") {
+            const auto declaration = cpp.find("static double lag_v_dur;");
+            const auto signature = cpp.find("static void nrn_before_after_0_lagvis(");
+            REQUIRE(declaration != std::string::npos);
+            REQUIRE(signature != std::string::npos);
+            REQUIRE(declaration < signature);
+            REQUIRE(body.find("static double lag_v_dur") == std::string::npos);
+            const auto if_pos = body.find("if (");
+            const auto assign = body.find("lag_v_dur = *lag(&(inst.v_unused[id])");
+            const auto use = body.find("inst.x[id] = lag_v_dur");
+            REQUIRE(if_pos != std::string::npos);
+            REQUIRE(assign != std::string::npos);
+            REQUIRE(use != std::string::npos);
+            REQUIRE(if_pos < assign);
+            REQUIRE(assign < use);
+        }
+    }
+}
+
+SCENARIO("A mechanism without BEFORE/AFTER does not call hoc_reg_ba", "[codegen][ba]") {
+    GIVEN("a mod file with only an INITIAL block") {
+        std::string nmodl = R"(
+            NEURON {
+                SUFFIX noba
+                RANGE x
+            }
+            ASSIGNED { x }
+            INITIAL { x = 1 }
+        )";
+        std::string cpp = transpile(nmodl);
+
+        THEN("registration is unchanged") {
+            REQUIRE_THAT(cpp, !ContainsSubstring("hoc_reg_ba"));
+            REQUIRE_THAT(cpp, !ContainsSubstring("nrn_before_after_"));
+        }
+    }
+}
