@@ -15,6 +15,12 @@ if(SKBUILD)
       rdcellstate
       nrnivmodl-cmake)
 
+  if(WIN32)
+    # sortspike and mkthreadsafe are bash. CreateProcess does not run a shebang, so a .cmd launcher
+    # cannot start them. rdcellstate is Python and binwrapper launches it with the interpreter.
+    list(REMOVE_ITEM scripts mkthreadsafe sortspike)
+  endif()
+
   foreach(script IN LISTS scripts)
     install(
       PROGRAMS binwrapper.py

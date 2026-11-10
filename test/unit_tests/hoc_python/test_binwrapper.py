@@ -153,6 +153,39 @@ def test_gui_wrappers_keep_redirected_stdin(monkeypatch, tmp_path):
         assert "nrniv.exe" in cmd[0]
 
 
+def test_windows_launch_uses_python_for_a_shebang(tmp_path):
+    """rdcellstate runs under sys.executable. A bash script is not one."""
+    bw = _binwrapper()
+    script = tmp_path / "rdcellstate"
+    script.write_text("#!/usr/bin/env python3\n", encoding="utf-8")
+    bash = tmp_path / "sortspike"
+    bash.write_text("#!/usr/bin/env bash\n", encoding="utf-8")
+    exe = tmp_path / "nrniv.exe"
+    exe.write_bytes(b"MZ")
+    assert bw._windows_launch_argv(str(script), ["a.dat"]) == [
+        bw.sys.executable,
+        str(script),
+        "a.dat",
+    ]
+    assert bw._windows_launch_argv(str(bash), ["in", "out"]) == [
+        str(bash),
+        "in",
+        "out",
+    ]
+    assert bw._windows_launch_argv(str(exe), ["-c", "quit()"]) == [
+        str(exe),
+        "-c",
+        "quit()",
+    ]
+
+
+def test_windows_wheel_omits_bash_launchers():
+    text = (
+        REPO_ROOT / "share" / "lib" / "python" / "scripts" / "CMakeLists.txt"
+    ).read_text(encoding="utf-8")
+    assert "list(REMOVE_ITEM scripts mkthreadsafe sortspike)" in text
+
+
 def test_vendored_wheel_lib_dirs(tmp_path):
     bw = _binwrapper()
     assert bw._vendored_wheel_lib_dirs(tmp_path) == []

@@ -372,6 +372,29 @@ def _nrnivmodl_cmake(args):
     return 0
 
 
+def _python_script(path):
+    """True when the file's shebang names Python.
+
+    Windows CreateProcess does not run a shebang. rdcellstate is Python.
+    sortspike and mkthreadsafe are bash and are not wheel launchers.
+    """
+    try:
+        with open(path, "rb") as handle:
+            line = handle.readline(200)
+    except OSError:
+        return False
+    if not line.startswith(b"#!"):
+        return False
+    return b"python" in line.lower()
+
+
+def _windows_launch_argv(exe, args):
+    """argv for CreateProcess. A Python script uses this interpreter."""
+    if _python_script(exe):
+        return [sys.executable, exe, *args]
+    return [exe, *args]
+
+
 def _posix_path(path):
     """Forward slashes: InterViews -dll style treats \\n in a Win32 path as newline."""
     return str(path).replace("\\", "/")
@@ -473,8 +496,10 @@ if __name__ == "__main__":
         # os.execv is not exec on Windows: it rebuilds a command line with
         # MSVCRT quoting, which splits -c statements that contain spaces
         # (print "hello"). subprocess.call with a list is argv, not a shell
-        # (list2cmdline, same as nrnivmodl).
+        # (list2cmdline, same as nrnivmodl). CreateProcess does not read a
+        # shebang, so a Python script is started with this interpreter.
         if not os.path.isfile(exe):
             raise SystemExit(f"neuron wrapper: not a file: {exe}")
-        raise SystemExit(subprocess.call([exe, *sys.argv[1:]]))  # NOSONAR
+        argv = _windows_launch_argv(exe, sys.argv[1:])
+        raise SystemExit(subprocess.call(argv))  # NOSONAR
     os.execv(exe, sys.argv)
