@@ -15,6 +15,7 @@ from .._windows_cxx import (
     _is_msvc_cxx,
     _win_env_find_exe,
     msvc_vc_env as _msvc_vc_env,
+    windows_rxd_compiler,
 )
 from . import initializer
 import collections
@@ -590,20 +591,12 @@ def _cxx_compile(formula):
                 if not os.path.isfile(cxx):
                     cxx = _win_env_find_exe(vc, "cl.exe") or cxx
     elif sys.platform.lower().startswith("win"):
-        # setup.exe ships MinGW; the MSVC wheel does not.
-        mingw = os.path.join(
-            h.neuronhome(), "mingw", "mingw64", "bin", "x86_64-w64-mingw32-g++.exe"
-        )
-        if os.path.isfile(mingw):
-            cxx = mingw
-            env["PATH"] = os.path.dirname(mingw) + ";" + env.get("PATH", "")
-        else:
-            vc = _msvc_vc_env()
-            if not vc:
-                raise RxDException(MSVC_CXX_MISSING.strip())
-            _apply_vc_env(env, vc)
-            cxx = _win_env_find_exe(vc, "cl.exe") or "cl.exe"
-            use_msvc = True
+        # MinGW when setup.exe shipped it. Otherwise cl.exe already on PATH
+        # with INCLUDE and LIB, and only then vswhere.
+        picked = windows_rxd_compiler(env, h.neuronhome())
+        if picked is None:
+            raise RxDException(MSVC_CXX_MISSING.strip())
+        cxx, use_msvc = picked
     else:
         cxx = "g++"
     if use_msvc:

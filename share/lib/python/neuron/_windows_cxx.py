@@ -155,6 +155,44 @@ def _vswhere_install_path(require_vc=False):
     return inst or None
 
 
+def msvc_env_ready(env):
+    """True when cl.exe is already on PATH and INCLUDE and LIB are set.
+
+    An x64 Native Tools prompt configures that before vswhere runs.
+    """
+    if not _win_env_get(env, "INCLUDE") or not _win_env_get(env, "LIB"):
+        return False
+    return _win_env_find_exe(env, "cl.exe") is not None
+
+
+def windows_rxd_compiler(env, neuronhome):
+    """Compiler for RxD when CXX is unset.
+
+    setup.exe's bundled MinGW is used when that g++ is present. Otherwise
+    cl.exe already on PATH, with INCLUDE and LIB set, is the toolchain.
+    vswhere runs only when that environment is not already configured.
+
+    Returns (cxx, use_msvc), or None when no compiler is available.
+    """
+    mingw = os.path.join(
+        neuronhome or "",
+        "mingw",
+        "mingw64",
+        "bin",
+        "x86_64-w64-mingw32-g++.exe",
+    )
+    if os.path.isfile(mingw):
+        env["PATH"] = os.path.dirname(mingw) + ";" + env.get("PATH", "")
+        return mingw, False
+    if msvc_env_ready(env):
+        return _win_env_find_exe(env, "cl.exe"), True
+    vc = msvc_vc_env()
+    if not vc:
+        return None
+    _apply_vc_env(env, vc)
+    return _win_env_find_exe(vc, "cl.exe") or "cl.exe", True
+
+
 def msvc_vc_env():
     """cl.exe needs the vcvars INCLUDE/LIB/PATH. vswhere is the public lookup."""
     global _vc_env_cache, _vc_env_tried

@@ -92,6 +92,33 @@ def test_bare_names_and_non_msvc():
     assert m._is_msvc_cxx(nested)
 
 
+def test_rxd_compiler_uses_inherited_cl_before_vswhere(monkeypatch, tmp_path):
+    """cl.exe plus INCLUDE and LIB is enough when vswhere cannot run."""
+    m = _mod()
+    cl = tmp_path / "cl.exe"
+    cl.write_bytes(b"")
+    env = {"PATH": str(tmp_path), "INCLUDE": r"C:\includes", "LIB": r"C:\libs"}
+
+    def fail_vc():
+        raise AssertionError("vswhere must not run when the toolchain is set")
+
+    monkeypatch.setattr(m, "msvc_vc_env", fail_vc)
+    cxx, use_msvc = m.windows_rxd_compiler(env, str(tmp_path / "nrn"))
+    assert use_msvc
+    assert cxx == str(cl)
+    assert env["INCLUDE"] == r"C:\includes"
+    assert env["LIB"] == r"C:\libs"
+
+
+def test_rxd_compiler_discovers_when_include_is_unset(monkeypatch, tmp_path):
+    m = _mod()
+    cl = tmp_path / "cl.exe"
+    cl.write_bytes(b"")
+    env = {"PATH": str(tmp_path)}
+    monkeypatch.setattr(m, "msvc_vc_env", lambda: None)
+    assert m.windows_rxd_compiler(env, str(tmp_path / "nrn")) is None
+
+
 def test_msvc_cl_available_accepts_spaced_path(monkeypatch, tmp_path):
     m = _mod()
     cl = tmp_path / "Program Files" / "cl.exe"
