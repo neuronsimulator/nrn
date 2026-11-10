@@ -528,22 +528,17 @@ def _cxx_compile(formula):
                 )
         else:
             gcc = "g++"
-    # TODO: Check this works on non-Linux machines
     gcc_cmd = f"{gcc} -I{sysconfig.get_path('include')} "
     gcc_cmd += f"-shared {fpic} {filename}.cpp {_find_librxdmath()}"
     gcc_cmd += f" -o {filename}.so {math_library}"
     if sys.platform.lower().startswith("win"):
-        my_path = os.getenv("PATH")
-        os.putenv(
-            "PATH",
-            os.path.join(h.neuronhome(), "mingw", "mingw64", "bin")
-            + ";"
-            + os.path.join(h.neuronhome(), "bin")
-            + ";"
-            + my_path,
-        )
-        rflag = os.system(gcc_cmd)
-        os.putenv("PATH", my_path)
+        new_paths = [
+            os.path.join(h.neuronhome(), "mingw", "mingw64", "bin"),
+            os.path.join(h.neuronhome(), "bin"),
+            os.environ.get("PATH", "")
+        ]
+        # avoid os.putenv so as not to pollute the global environment
+        rflag = os.system(f"set PATH={os.pathsep.join(new_paths)} && {gcc_cmd}")
     else:
         rflag = os.system(gcc_cmd)
     if rflag != 0:
