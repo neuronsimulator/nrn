@@ -75,6 +75,44 @@ def test_resolve_pylibs_nrn_alone_does_not_search(monkeypatch):
     assert os.environ["NMODL_PYLIB"] == "/explicit/python.dll"
 
 
+def _touch(path):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("TITLE fake\n", encoding="utf-8")
+
+
+def test_collect_mod_files_expands_each_directory(tmp_path, monkeypatch):
+    """nrnivmodl channels synapses keeps MOD files from both directories."""
+    monkeypatch.chdir(tmp_path)
+    _touch(tmp_path / "channels" / "na.mod")
+    _touch(tmp_path / "channels" / "k.mod")
+    _touch(tmp_path / "synapses" / "ampa.mod")
+    bw = _binwrapper()
+    got = [p.name for p in bw._collect_mod_files(["channels", "synapses"])]
+    assert got == ["k.mod", "na.mod", "ampa.mod"]
+
+
+def test_collect_mod_files_mixes_directory_and_file(tmp_path, monkeypatch):
+    """nrnivmodl channels extra.mod keeps the directory and the extra file."""
+    monkeypatch.chdir(tmp_path)
+    _touch(tmp_path / "channels" / "na.mod")
+    _touch(tmp_path / "extra.mod")
+    bw = _binwrapper()
+    got = [p.name for p in bw._collect_mod_files(["channels", "extra.mod"])]
+    assert got == ["na.mod", "extra.mod"]
+
+
+def test_collect_mod_files_missing_name_still_errors(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "channels").mkdir()
+    bw = _binwrapper()
+    try:
+        bw._collect_mod_files(["channels", "missing.mod"])
+    except SystemExit as exc:
+        assert "missing.mod" in str(exc)
+    else:
+        raise AssertionError("a missing MOD file must be rejected")
+
+
 def test_vendored_wheel_lib_dirs(tmp_path):
     bw = _binwrapper()
     assert bw._vendored_wheel_lib_dirs(tmp_path) == []

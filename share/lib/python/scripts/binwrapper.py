@@ -194,12 +194,23 @@ def _nrnivmodl_help():
 
 
 def _collect_mod_files(args):
+    """MOD files from each argument. A directory is expanded on its own.
+
+    Unix nrnivmodl walks every argument independently: a directory
+    contributes its *.mod files, and a file is that file. Requiring the
+    directory to be the only argument rejected ``nrnivmodl channels
+    synapses`` and ``nrnivmodl channels extra.mod``.
+    """
     if not args:
         mods = sorted(Path(".").glob("*.mod"))
-    elif len(args) == 1 and Path(args[0]).is_dir():
-        mods = sorted(Path(args[0]).glob("*.mod"))
     else:
-        mods = [Path(item) for item in args]
+        mods = []
+        for item in args:
+            path = Path(item)
+            if path.is_dir():
+                mods.extend(sorted(path.glob("*.mod")))
+            else:
+                mods.append(path)
     resolved = []
     for mod in mods:
         if not mod.is_file():
