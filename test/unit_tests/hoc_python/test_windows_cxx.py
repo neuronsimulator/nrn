@@ -64,6 +64,17 @@ def test_clang_cl_path_with_spaces_is_not_cl():
     assert m._cxx_executable(CLANG + " -O2") == CLANG
 
 
+def test_spaced_directory_named_cl_stays_gnu():
+    """C:\\cl tools\\bin\\g++.exe is g++, not the directory component cl."""
+    m = _mod()
+    path = r"C:\cl tools\bin\g++.exe"
+    assert m._cxx_executable(path) == path
+    assert not m._is_msvc_cxx(path)
+    flagged = path + " -shared"
+    assert m._cxx_executable(flagged) == path
+    assert not m._is_msvc_cxx(flagged)
+
+
 def test_bare_names_and_non_msvc():
     m = _mod()
     assert m._is_msvc_cxx("cl")

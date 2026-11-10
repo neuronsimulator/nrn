@@ -69,12 +69,32 @@ def _apply_vc_env(env, vc):
 _MSVC_CXX_BASENAMES = ("clang-cl.exe", "clang-cl", "cl.exe", "cl")
 
 
+def _token_continues_path(token):
+    """True when a CXX token is another directory component, not a flag.
+
+    ``/nologo`` is a flag. ``tools\\bin\\g++.exe`` is still the path.
+    """
+    if "\\" in token:
+        return True
+    if "/" not in token:
+        return False
+    if token[:1] in "-/":
+        return "/" in token[1:]
+    return True
+
+
+def _path_continues(rest):
+    return any(_token_continues_path(tok) for tok in rest.split())
+
+
 def _cxx_executable(cxx):
     """Compiler path from CXX. A cl.exe path that contains spaces stays one token.
 
     Quoted text is the executable, quotes removed. Otherwise an MSVC basename may
-    sit at the start or after / or \\, through the end or the next space. Any other
-    compiler is the first whitespace-separated token.
+    sit at the start or after / or \\. Whitespace ends that basename only when
+    what follows is flags, not another directory. ``C:\\cl tools\\bin\\g++.exe``
+    is one GNU path: the ``cl`` component is not cl.exe. Any other compiler is
+    the first whitespace-separated token, unless a later token continues the path.
     """
     text = (cxx or "").strip()
     if not text:
@@ -96,10 +116,20 @@ def _cxx_executable(cxx):
             before_ok = idx == 0 or text[idx - 1] in "/\\"
             after = idx + len(name)
             after_ok = after == len(text) or text[after].isspace()
-            if before_ok and after_ok:
+            if before_ok and after_ok and not _path_continues(text[after:]):
                 return text[:after]
             start = idx + 1
-    return text.split()[0]
+    parts = text.split()
+    if any(_token_continues_path(part) for part in parts[1:]):
+        end = len(parts)
+        while (
+            end > 1
+            and parts[end - 1][:1] in "-/"
+            and not _token_continues_path(parts[end - 1])
+        ):
+            end -= 1
+        return " ".join(parts[:end])
+    return parts[0]
 
 
 def _cxx_basename(path):
