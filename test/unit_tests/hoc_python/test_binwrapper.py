@@ -113,6 +113,46 @@ def test_collect_mod_files_missing_name_still_errors(tmp_path, monkeypatch):
         raise AssertionError("a missing MOD file must be rejected")
 
 
+def _gui_tree(tmp_path):
+    """Minimal NEURONHOME and nrniv.exe so the GUI wrappers reach subprocess.call."""
+    home = tmp_path / "share" / "nrn"
+    hoc_dir = home / "lib" / "hoc"
+    hoc_dir.mkdir(parents=True)
+    (hoc_dir / "nrngui.hoc").write_text("\n", encoding="utf-8")
+    demo = home / "demo"
+    release = demo / "release"
+    release.mkdir(parents=True)
+    (demo / "demo.hoc").write_text("\n", encoding="utf-8")
+    (release / "nrnmech.dll").write_bytes(b"")
+    bindir = tmp_path / "bin"
+    bindir.mkdir()
+    (bindir / "nrniv.exe").write_bytes(b"")
+    return home
+
+
+def test_gui_wrappers_keep_redirected_stdin(monkeypatch, tmp_path):
+    """A non-tty stdin is the trailing '-' input, not something to discard."""
+    bw = _binwrapper()
+    home = _gui_tree(tmp_path)
+    monkeypatch.setenv("NEURONHOME", str(home))
+    monkeypatch.setenv("NRNHOME", str(tmp_path))
+    seen = []
+
+    def fake_call(cmd, **kwargs):
+        seen.append((cmd, kwargs))
+        return 0
+
+    monkeypatch.setattr(bw.subprocess, "call", fake_call)
+    monkeypatch.setattr(bw.sys.stdin, "isatty", lambda: False)
+    assert bw._nrngui(["-c", "quit()"]) == 0
+    assert bw._neurondemo(["-nogui", "-c", "quit()"]) == 0
+    assert len(seen) == 2
+    for cmd, kwargs in seen:
+        assert kwargs == {}
+        assert cmd[-1] == "-"
+        assert "nrniv.exe" in cmd[0]
+
+
 def test_vendored_wheel_lib_dirs(tmp_path):
     bw = _binwrapper()
     assert bw._vendored_wheel_lib_dirs(tmp_path) == []

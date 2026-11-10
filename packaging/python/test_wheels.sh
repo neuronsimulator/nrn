@@ -210,7 +210,9 @@ run_serial_test () {
       if [[ ! -f "$neurondemo_cmd" ]]; then
         neurondemo_cmd="neurondemo.cmd"
       fi
-      "$neurondemo_cmd" -nogui -c "demo(4)" -c "run()" -c "quit()"
+      # pwsh keeps stdin open. The wrapper inherits it, so close the pipe here.
+      # quit() still ends the demo; a missing quit() must not hang the job.
+      "$neurondemo_cmd" -nogui -c "demo(4)" -c "run()" -c "quit()" < /dev/null
     else
       neurondemo -c 'demo(4)' -c 'run()' -c 'quit()'
     fi

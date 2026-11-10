@@ -395,11 +395,9 @@ def _nrngui(args):
     if not nrniv.is_file():
         raise SystemExit(f"nrngui: not a file: {nrniv}")
     cmd = [str(nrniv), _posix_path(hoc), *args, "-"]
-    # GHA pwsh keeps stdin open; a leftover '-' would hang if quit() never ran.
-    kwargs = {}
-    if not sys.stdin.isatty():
-        kwargs["stdin"] = subprocess.DEVNULL
-    return subprocess.call(cmd, **kwargs)  # NOSONAR
+    # Inherit stdin so a redirected file or a pipeline reaches the trailing '-'.
+    # A CI job that leaves stdin open closes it in the test, not here.
+    return subprocess.call(cmd)  # NOSONAR
 
 
 def _neurondemo(args):
@@ -440,11 +438,9 @@ def _neurondemo(args):
     if not nrniv.is_file():
         raise SystemExit(f"neurondemo: not a file: {nrniv}")
     cmd = [str(nrniv), "-dll", _posix_path(dll), _posix_path(hoc), *args, "-"]
-    # GHA pwsh keeps stdin open; a leftover '-' would hang if quit() never ran.
-    kwargs = {}
-    if not sys.stdin.isatty():
-        kwargs["stdin"] = subprocess.DEVNULL
-    return subprocess.call(cmd, **kwargs)  # NOSONAR
+    # Inherit stdin so a redirected file or a pipeline reaches the trailing '-'.
+    # A CI job that leaves stdin open closes it in the test, not here.
+    return subprocess.call(cmd)  # NOSONAR
 
 
 if __name__ == "__main__":
