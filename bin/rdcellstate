@@ -1,0 +1,5 @@
+#!/usr/bin/env python3
+"""Thin CLI wrapper for neuron.debug.rdcellstate."""
+from neuron.debug.rdcellstate import main
+
+raise SystemExit(main())

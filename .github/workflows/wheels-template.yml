@@ -8,8 +8,13 @@ on:
         required: true
         type: string
       python_version:
-        description: The Python version for which to build the wheel
+        description: The Python version used to build the wheel (3.11 versioned, 3.12 abi3)
         required: true
+        type: string
+      test_python_versions:
+        description: Comma-separated GIL Python versions to test the abi3 wheel with (3.11 is always tested only on 3.11)
+        required: false
+        default: '3.12,3.13,3.14'
         type: string
       commit:
         description: The commit of NEURON for which to build the wheel
@@ -53,8 +58,6 @@ jobs:
           # readability, but alas, GitHub Actions does not support expanding
           # nested expressions, so we do this the brute-force way with Bash
           case "${{ inputs.python_version }}" in
-            3.9) version="3.9.13" ;;
-            3.10) version="3.10.11" ;;
             3.11) version="3.11.7" ;;
             3.12) version="3.12.0" ;;
             3.13) version="3.13.0" ;;
@@ -115,12 +118,12 @@ jobs:
           sudo bash packaging/python/build_static_readline_osx.bash
 
       - name: Change name of package for release
-        if: inputs.build_type == 'release'
+        if: inputs.build_type == 'nightly'
         run: |
           python3 -m venv venv
           source venv/bin/activate
           python3 -m pip install tomli tomli-w
-          python3 packaging/python/change_name.py ./pyproject.toml neuron
+          python3 packaging/python/change_name.py ./pyproject.toml neuron-nightly
 
       - name: Optimize RX3D Python module
         if: inputs.optimize_rxd == true
@@ -142,28 +145,34 @@ jobs:
           name: wheels-${{ inputs.python_version }}-${{ inputs.platform }}
           path: wheelhouse/*.whl
 
-      - name: Setup Python ${{ inputs.python_version }} for testing
+      - name: Setup Python 3.11 for testing
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ inputs.python_version }}
+          python-version: '3.11'
+
+      - name: Setup Python 3.12 for testing
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Setup Python 3.13 for testing
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Setup Python 3.14 for testing
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
 
       - name: Install test dependencies
         if: runner.os == 'Linux'
         run: |
           sudo apt update
           sudo apt install -y mpich openmpi-bin libopenmpi-dev libmpich-dev ninja-build
-
-      - name: "Apply workaround for MPICH on Ubuntu 24.04"
-        if: inputs.platform == 'ubuntu-24.04'
-        run: |
-          # mpich is fundamentally broken on Ubuntu 24.04 LTS, for more details see:
-          # https://bugs.launchpad.net/ubuntu/+source/mpich/+bug/2072338
-          # This is fixed in version 4.2.0-5.1, but this version has not been
-          # backported, so as a workaround, we install that version manually
-          sudo apt install -y mpich
-          wget 'https://launchpad.net/ubuntu/+source/mpich/4.2.0-5.1/+build/28285882/+files/mpich_4.2.0-5.1_amd64.deb'
-          wget 'https://launchpad.net/ubuntu/+source/mpich/4.2.0-5.1/+build/28285882/+files/libmpich12_4.2.0-5.1_amd64.deb'
-          sudo dpkg --install mpich_4.2.0-5.1_amd64.deb libmpich12_4.2.0-5.1_amd64.deb
+          # Ubuntu 24.04: pin working mpich from ci/deps (no Launchpad download).
+          # See ci/deps/README.md and LP#2072338.
+          bash ci/deps/install_mpich_noble.sh
 
       - name: Set env vars for testing (Linux)
         if: startsWith(inputs.platform, 'ubuntu')
@@ -181,7 +190,18 @@ jobs:
           fi
           echo CMAKE_GENERATOR=Ninja >> $GITHUB_ENV
 
-      - name: Test wheel with ${{ inputs.python_version }}
+      - name: Test wheel
         run: |
-          minor_version="$(python${{ inputs.python_version }} -c 'import sys;print(sys.version_info.minor)')"
-          bash packaging/python/test_wheels.sh $(command -v python${{ inputs.python_version }}) wheelhouse/*cp3${minor_version}*.whl
+          py="${{ inputs.python_version }}"
+          py="${py// /}"
+          if [[ "${py}" == "3.11" ]]; then
+            versions="3.11"
+          else
+            versions="${{ inputs.test_python_versions }}"
+          fi
+          IFS=',' read -ra versions <<< "${versions}"
+          wheel="$(ls -t wheelhouse/*.whl | head -n 1)"
+          for ver in "${versions[@]}"; do
+            ver="${ver// /}"
+            bash packaging/python/test_wheels.sh "$(command -v python${ver})" "${wheel}"
+          done

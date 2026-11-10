@@ -5883,7 +5883,7 @@ Parallel Transfer
     .. tab:: Python
     
         Syntax:
-            ``pc.precellstate(gid, "suffix")``
+            ``pc.prcellstate(gid, "suffix")``
 
         Description:
             Creates the file <gid>_suffix.nrndat with all the range variable
@@ -5891,8 +5891,13 @@ Parallel Transfer
             More complete than the HOC version of prcellstate.hoc in the standard
             library but a more terse in regard to names of variables. The purpose
             is for diagnosing the reason why a spike raster for a simulation is
-            not the same for different nhost or gid distribution. One examines
-            the diff between corresponding files from different runs.
+            not the same for different nhost or gid distribution.
+
+            For comparing two ``.nrndat`` files, prefer the semantic comparator
+            ``python -m neuron.debug.rdcellstate`` (or ``rdcellstate`` if on
+            ``PATH``); see Diagnosis and Debugging in the install docs. The HOC
+            ``rdcellstate()`` in ``prcellstate.hoc`` is line-oriented and can
+            misalign when dump sizes or order differ.
 
             The format of the file is:
 

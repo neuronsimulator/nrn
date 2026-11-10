@@ -991,7 +991,7 @@
                                                 }
                                             \endcode
 
-                            url: "https://nrn.readthedocs.io/en/latest/nmodl/language/nmodl_neuron_extension.html"
+                            url: "https://www.neuronsimulator.org/en/latest/nmodl/language/nmodl_neuron_extension.html"
 
                   - Unit:
                       brief: "TODO"

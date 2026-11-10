@@ -30,12 +30,59 @@ to generate floating point exception for
 DIVBYZERO, INVALID, OVERFLOW, exp(700). [GDB](#GDB) can then be used to show
 where the SIGFPE occurred.
 
-#### Different results with different nhost or nthread.
+#### Different results with different nhost, nthread, or backend
 What is the gid and spiketime of the earliest difference?
-Use [ParallelContext.prcellstate](../python/modelspec/programmatic/network/parcon.rst#ParallelContext.prcellstate)
-for that gid at various times
-before spiketime to see why and when the prcellstate files become different.
-Time 0 after initialization is often a good place to start.
+Use a **progressive** focus: spikes first, then cell-state dumps, then (when available)
+fixed-step phase dumps, then field-level compare. The same ladder applies to
+nhost/nthread differences and to CPU vs GPU / NEURON vs CoreNEURON parity.
+
+**1. Spikes first.** Compare spike rasters (time, gid). Find the first mismatched
+spike; that gid (and time) is the focus. Tools such as ``sortspike`` plus
+``diff``/``awk`` are enough; a dedicated spike-first helper may be added later.
+
+**2. End-of-run prcellstate at that gid.** Use
+[ParallelContext.prcellstate](../python/modelspec/programmatic/network/parcon.rst#ParallelContext.prcellstate)
+to write ``<gid>_<suffix>.nrndat`` after a short run. Time 0 after initialization
+is often a good place to start.
+
+**3. First time dumps disagree.** Walk or bisect ``tstop`` with paired runs until
+you find the latest time dumps still match and the earliest time they differ.
+That brackets the failing fixed step.
+
+**4. Phase checkpoints (conceptual; not an API on every build).** On some feature
+lines, dumps can be taken at named fixed-step phases
+(``post_setup`` → ``post_solve`` → ``pre_nonvint`` → ``post_nonvint``) so you can
+see which part of the step first diverges. Phase dumps are still ordinary
+``.nrndat`` files. **Do not assume** ``pc.prcellstate_checkpoint`` exists on a
+stock master/release build; if your tree does not provide phase arming, stay
+with steps 2–3 (end-of-run dump + ``tstop`` search). GPU feature-line docs may
+describe the arm API when present.
+
+**5. Field-level compare with ``rdcellstate``.** Prefer the semantic comparator
+(not line-by-line HOC ``rdcellstate`` in ``prcellstate.hoc``, which misaligns when
+dump size or order differs)::
+
+    python -m neuron.debug.rdcellstate ref.nrndat other.nrndat
+    # or, if installed on PATH:
+    rdcellstate ref.nrndat other.nrndat --ignore-ion --top 25
+
+Paths must resolve under the current working directory (``realpath`` check)
+so agent/CLI path injection cannot read arbitrary files; ``cd`` to a parent of
+the dumps or use relative paths.
+
+Useful filters:
+
+- ``--ignore-ion`` — skip ``*_ion`` fields and capacitance ``i_cap`` noise paths
+- ``--ignore-unused`` — skip SOA ``*_unused`` fields (needs translated mod C++)
+- ``--ignore-matrix`` — skip Hines ``a,b,d,rhs``. Use when one dump has topology
+  header ``inode parent area a b`` (classic master / CoreNEURON) and the other
+  includes ``d rhs`` (some feature-line dumps); otherwise missing ``d``/``rhs``
+  keys look like hard failures.
+
+NetCon **payload** fields are not compared yet. If both files report
+``netcons N`` and ``N`` differs, the tool prints a stderr warning.
+
+Exit code is 0 when no differences remain after filters, else 1.
 
 #### GDB
 If you normally run with ```python args``` and get a segfault...

@@ -19,6 +19,8 @@
 #include "seclist.h"  // lvappendsec_and_ref, seclist_size
 
 #include <cstdint>
+#include <climits>
+#include <cmath>
 #include <vector>
 #include <sstream>
 #include <unordered_map>
@@ -36,6 +38,8 @@ extern void (*nrnpy_restore_savestate)(int64_t, char*);
 extern void (*nrnpy_store_savestate)(char** save_data, uint64_t* save_data_size);
 extern void (*nrnpy_decref)(void* pyobj);
 extern double (*nrnpy_call_func)(Object*, double);
+extern int (*nrnpy_call_obj_method)(Object* obj, const char* method, Object* obj2);
+extern int (*nrnpy_call_obj_method_double)(Object* obj, const char* method, double value);
 extern void hoc_pushs(Symbol*);
 extern double cable_prop_eval(Symbol* sym);
 extern Symlist* hoc_top_level_symlist;
@@ -67,6 +71,8 @@ extern Symbol* nrn_child_sym;
 extern int nrn_secref_nchild(Section*);
 static void pyobject_in_objptr(Object**, PyObject*);
 static double nrnpy_call_func_(Object*, double);
+static int nrnpy_call_obj_method_(Object*, const char*, Object*);
+static int nrnpy_call_obj_method_double_(Object*, const char*, double);
 extern IvocVect* (*nrnpy_vec_from_python_p_)(void*);
 extern Object** (*nrnpy_vec_to_python_p_)(void*);
 extern Object** (*nrnpy_vec_as_numpy_helper_)(int, double*);
@@ -132,22 +138,42 @@ PyTypeObject* hocobject_type;
 static PyObject* hocobj_call(PyHocObject* self, PyObject* args, PyObject* kwrds);
 static PyObject* hocclass_getattro(PyObject* self, PyObject* pyname);
 
+#ifdef Py_LIMITED_API
+static PyTypeObject* hocclass_meta = nullptr;
+
+static Symbol*& hocclass_sym(PyObject* cls) {
+    return *static_cast<Symbol**>(PyObject_GetTypeData(cls, hocclass_meta));
+}
+
+static int hocclass_init(PyObject* cls, PyObject* args, PyObject* kwds) {
+    using initproc_t = int (*)(PyObject*, PyObject*, PyObject*);
+    auto type_init = reinterpret_cast<initproc_t>(PyType_GetSlot(&PyType_Type, Py_tp_init));
+    if (type_init(cls, args, kwds) < 0) {
+        return -1;
+    }
+    return 0;
+}
+#else
 struct hocclass {
     PyTypeObject head;
     Symbol* sym;
 };
 
-static int hocclass_init(hocclass* cls, PyObject* args, PyObject* kwds) {
-    if (PyType_Type.tp_init((PyObject*) cls, args, kwds) < 0) {
+static Symbol*& hocclass_sym(PyObject* cls) {
+    return reinterpret_cast<hocclass*>(cls)->sym;
+}
+
+static int hocclass_init(PyObject* cls, PyObject* args, PyObject* kwds) {
+    if (PyType_Type.tp_init(cls, args, kwds) < 0) {
         return -1;
     }
     return 0;
 }
+#endif
 
 // Returns a new reference.
 static PyObject* hocclass_getitem(PyObject* self, Py_ssize_t ix) {
-    hocclass* hclass = (hocclass*) self;
-    Symbol* sym = hclass->sym;
+    Symbol* sym = hocclass_sym(self);
     assert(sym);
 
     assert(sym->type == TEMPLATE);
@@ -207,7 +233,7 @@ static PyObject* nrnexec(PyObject* self, PyObject* args) {
     if (!PyArg_ParseTuple(args, "s", &cmd)) {
         return nullptr;
     }
-    bool b = hoc_valid_stmt(cmd, 0);
+    bool b = hoc_valid_stmt(cmd, nullptr);
     return PyBool_FromLong(b);
 }
 
@@ -250,7 +276,7 @@ static void hocobj_dealloc(PyHocObject* self) {
     if (self->type_ == PyHoc::HocRefPStr && self->u.pstr_) {
         // nothing deleted
     }
-    ((PyObject*) self)->ob_type->tp_free((PyObject*) self);
+    nrnpy_tp_free(self);
 
     // Deferred deletion of HOC Objects is unnecessary when a HocObject is
     // destroyed. And we would like to have prompt deletion if this HocObject
@@ -263,7 +289,7 @@ static PyObject* hocobj_new(PyTypeObject* subtype, PyObject* args, PyObject* kwd
     PyObject* base;
     PyHocObject* hbase = nullptr;
 
-    auto subself = nb::steal(subtype->tp_alloc(subtype, 0));
+    auto subself = nb::steal(nrnpy_tp_alloc(subtype, 0));
     // printf("hocobj_new %s %p %p\n", subtype->tp_name, subtype, subself.ptr());
     if (!subself) {
         return nullptr;
@@ -278,9 +304,13 @@ static PyObject* hocobj_new(PyTypeObject* subtype, PyObject* args, PyObject* kwd
     self->iteritem_ = 0;
 
     // if subtype is a subclass of some NEURON class, then one of its
-    // tp_mro's is in sym_to_type_map
-    for (Py_ssize_t i = 0; i < PyTuple_Size(subtype->tp_mro); i++) {
-        PyObject* item = PyTuple_GetItem(subtype->tp_mro, i);
+    // MRO entries is in sym_to_type_map
+    auto mro = nb::steal(nrnpy_type_mro(subtype));
+    if (!mro) {
+        return nullptr;
+    }
+    for (Py_ssize_t i = 0; i < PyTuple_Size(mro.ptr()); i++) {
+        PyObject* item = PyTuple_GetItem(mro.ptr(), i);
         auto symbol_result = type_to_sym_map.find((PyTypeObject*) item);
         if (symbol_result != type_to_sym_map.end()) {
             hbase = (PyHocObject*) hocobj_new(hocobject_type, 0, 0);
@@ -481,7 +511,7 @@ int hocobj_pushargs(PyObject* args, std::vector<neuron::unique_cstr>& s2free) {
 }
 
 static Symbol* getsym(char* name, Object* ho, int fail) {
-    Symbol* sym = 0;
+    Symbol* sym = nullptr;
     if (ho) {
         sym = hoc_table_lookup(name, ho->ctemplate->symtable);
         if (!sym && strcmp(name, "delay") == 0) {
@@ -496,7 +526,7 @@ static Symbol* getsym(char* name, Object* ho, int fail) {
         }
     }
     if (sym && sym->type == UNDEF) {
-        sym = 0;
+        sym = nullptr;
     }
     if (!sym && fail) {
         PyErr_Format(PyExc_LookupError, "'%s' is not a defined hoc variable name.", name);
@@ -547,7 +577,7 @@ int nrnpy_numbercheck(PyObject* po) {
     // number system, e.g. type(1) is <type 'sage.rings.integer.Integer'>
     int rval = PyNumber_Check(po);
     // but do not allow sequences
-    if (rval == 1 && po->ob_type->tp_as_sequence) {
+    if (rval == 1 && PySequence_Check(po)) {
         rval = 0;
     }
     // or things that fail when float(po) fails. ARGGH! This
@@ -581,7 +611,7 @@ PyObject* nrnpy_ho2po(Object* o) {
         auto location = sym_to_type_map.find(o->ctemplate->sym);
         if (location != sym_to_type_map.end()) {
             Py_INCREF(location->second);
-            po.ptr()->ob_type = location->second;
+            Py_SET_TYPE(po.ptr(), location->second);
         }
         hoc_obj_ref(o);
     }
@@ -623,7 +653,7 @@ PyObject* nrnpy_hoc_pop(const char* mes) {
     Object** d;
     switch (hoc_stack_type()) {
     case STRING:
-        result = nb::steal(Py_BuildValue("s", *hoc_strpop()));
+        result = nb::cast(*hoc_strpop());
         break;
     case VAR: {
         // remove mes arg when test coverage development completed
@@ -632,11 +662,11 @@ PyObject* nrnpy_hoc_pop(const char* mes) {
         if (nrn_chk_data_handle(px)) {
             // unfortunately, this is nonsense if NMODL POINTER is pointing
             // to something other than a double.
-            result = nb::steal(Py_BuildValue("d", *px));
+            result = nb::cast(*px);
         }
     } break;
     case NUMBER:
-        result = nb::steal(Py_BuildValue("d", hoc_xpop()));
+        result = nb::cast(hoc_xpop());
         break;
     case OBJECTVAR:
     case OBJECTTMP:
@@ -705,7 +735,7 @@ static int set_final_from_stk(PyObject* po) {
 
 // Returns a new reference.
 static void* nrnpy_hoc_int_pop() {
-    return (void*) Py_BuildValue("i", (long) hoc_xpop());
+    return (void*) PyLong_FromLong((long) hoc_xpop());
 }
 
 // Returns a new reference.
@@ -743,7 +773,7 @@ static void* fcall(void* vself, void* vargs) {
         hoc_pushx(d);
     } else if (self->sym_->type == TEMPLATE) {
         Object* ho = hoc_newobj1(self->sym_, narg);
-        auto result = nb::steal(hocobj_new(hocobject_type, 0, 0));
+        auto result = nb::steal(hocobj_new(hocobject_type, nullptr, nullptr));
         auto* pho = (PyHocObject*) result.ptr();
         pho->ho_ = ho;
         pho->type_ = PyHoc::HocObject;
@@ -753,7 +783,7 @@ static void* fcall(void* vself, void* vargs) {
         auto location = sym_to_type_map.find(ho->ctemplate->sym);
         if (location != sym_to_type_map.end()) {
             Py_INCREF(location->second);
-            result.ptr()->ob_type = location->second;
+            Py_SET_TYPE(result.ptr(), location->second);
         }
 
         return result.release().ptr();
@@ -833,9 +863,13 @@ static PyObject* hocobj_call(PyHocObject* self, PyObject* args, PyObject* kwrds)
     } else if (self->type_ == PyHoc::HocFunction) {
         try {
             result = nb::steal(static_cast<PyObject*>(OcJump::fpycall(fcall, self, args)));
+        } catch (nb::python_error& e) {
+            // Do not call e.what(): it is noexcept and raises std::bad_cast under
+            // Py_LIMITED_API (obj_vectorcall with a null arg), which aborts.
+            e.restore();
         } catch (std::exception const& e) {
             std::ostringstream oss;
-            oss << "hocobj_call error: " << e.what();
+            oss << "hocobj_call error: " << neuron::oc::safe_what(e);
             PyErr_SetString(PyExc_RuntimeError, oss.str().c_str());
         }
         hoc_unref_defer();
@@ -926,7 +960,7 @@ static int hocobj_objectvar(Symbol* sym) {
         hoc_pc = pcsav;
     } catch (std::exception const& e) {
         std::ostringstream oss;
-        oss << "number of dimensions error:" << e.what();
+        oss << "number of dimensions error:" << neuron::oc::safe_what(e);
         PyErr_SetString(PyExc_IndexError, oss.str().c_str());
         err = 1;
     }
@@ -1017,7 +1051,6 @@ static int setup_doc_system() {
 
 // Returns a new reference.
 static PyObject* hocclass_getattro(PyObject* self, PyObject* pyname) {
-    hocclass* hclass = (hocclass*) self;
     auto name = Py2NRNString::as_ascii(pyname);
     const auto n = name.c_str();
     if (!n) {
@@ -1028,9 +1061,10 @@ static PyObject* hocclass_getattro(PyObject* self, PyObject* pyname) {
     if (strcmp(n, "__doc__") == 0) {
         if (setup_doc_system()) {
             nb::object docobj;
-            if (hclass->sym) {
+            Symbol* sym = hocclass_sym(self);
+            if (sym) {
                 // For class types, pass the class name and empty string for symbol
-                docobj = nb::make_tuple("", hclass->sym->name);
+                docobj = nb::make_tuple("", sym->name);
             } else {
                 // Fallback
                 docobj = nb::make_tuple("", "");
@@ -1044,7 +1078,10 @@ static PyObject* hocclass_getattro(PyObject* self, PyObject* pyname) {
     }
 
     // Fall back to the base type's getattro
-    return PyType_Type.tp_getattro(self, pyname);
+    using getattrofunc_t = PyObject* (*) (PyObject*, PyObject*);
+    auto type_getattro = reinterpret_cast<getattrofunc_t>(
+        PyType_GetSlot(&PyType_Type, Py_tp_getattro));
+    return type_getattro(self, pyname);
 }
 
 // Most likely returns a new reference.
@@ -1053,9 +1090,11 @@ PyObject* toplevel_get(PyObject* subself, const char* n) {
     if (self->type_ == PyHoc::HocTopLevelInterpreter) {
         auto descr = nb::borrow(PyDict_GetItemString(topmethdict, n));
         if (descr) {
-            descrgetfunc f = descr.ptr()->ob_type->tp_descr_get;
-            assert(f);
-            return f(descr.ptr(), subself, (PyObject*) Py_TYPE(subself));
+            return PyObject_CallMethod(descr.ptr(),
+                                       "__get__",
+                                       "OO",
+                                       subself,
+                                       reinterpret_cast<PyObject*>(Py_TYPE(subself)));
         }
     }
     return nullptr;
@@ -1247,7 +1286,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
     if (self->ho_) {  // use the component fork.
         // We use the convention that `ret_ho_` own the Python object,
         // and `po` is just a (casted) pointer/view.
-        auto ret_ho_ = nb::steal(hocobj_new(hocobject_type, 0, 0));
+        auto ret_ho_ = nb::steal(hocobj_new(hocobject_type, nullptr, nullptr));
         PyHocObject* po = (PyHocObject*) ret_ho_.ptr();
         po->ho_ = self->ho_;
         hoc_obj_ref(po->ho_);
@@ -1299,7 +1338,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
     case VAR:  // double*
         if (!is_array(*sym)) {
             if (sym->subtype == USERINT) {
-                result = nb::steal(Py_BuildValue("i", *(sym->u.pvalint)));
+                result = nb::cast(*(sym->u.pvalint));
                 break;
             }
             if (sym->subtype == USERPROPERTY) {
@@ -1309,9 +1348,9 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
                 }
                 if (!isptr) {
                     if (sym->u.rng.type == CABLESECTION) {
-                        result = nb::steal(Py_BuildValue("d", cable_prop_eval(sym)));
+                        result = nb::cast(cable_prop_eval(sym));
                     } else {
-                        result = nb::steal(Py_BuildValue("i", int(cable_prop_eval(sym))));
+                        result = nb::cast(int(cable_prop_eval(sym)));
                     }
                     break;
                 } else if (sym->u.rng.type != CABLESECTION) {
@@ -1324,7 +1363,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
             if (isptr) {
                 result = nb::steal(nrn_hocobj_ptr(hoc_pxpop()));
             } else {
-                result = nb::steal(Py_BuildValue("d", *hoc_pxpop()));
+                result = nb::cast(*hoc_pxpop());
             }
         } else {
             result = nb::steal((PyObject*) intermediate(self, sym, -1));
@@ -1341,7 +1380,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
         pcsav = save_pc(&fc);
         hoc_push_string();
         hoc_pc = pcsav;
-        result = nb::steal(Py_BuildValue("s", *hoc_strpop()));
+        result = nb::cast(*hoc_strpop());
     } break;
     case OBJECTVAR:  // Object*
         if (!is_array(*sym)) {
@@ -2640,7 +2679,8 @@ static void nrnpy_restore_savestate_(int64_t size, char* data) {
         if (!py_data) {
             hoc_execerror("SaveState:", "Data restore failure.");
         }
-        auto result = nb::steal(PyObject_CallOneArg(restore_savestate_, py_data.ptr()));
+        auto result = nb::steal(
+            PyObject_CallFunctionObjArgs(restore_savestate_, py_data.ptr(), nullptr));
         if (!result) {
             hoc_execerror("SaveState:", "Data restore failure.");
         }
@@ -2708,18 +2748,16 @@ static PyObject* gui_helper_3_helper_(const char* name, Object* obj, int handle_
             auto active_obj = nb::steal(nrnpy_ho2po(*hoc_objgetarg(iiarg)));
             PyTuple_SetItem(args.ptr(), iarg + 3, active_obj.release().ptr());
         } else if (hoc_is_pdouble_arg(iiarg)) {
-            PyHocObject* ptr_nrn = (PyHocObject*) hocobj_new(hocobject_type, 0, 0);
+            auto py_ptr = nb::steal(hocobj_new(hocobject_type, 0, 0));
+            PyHocObject* ptr_nrn = (PyHocObject*) py_ptr.ptr();
             ptr_nrn->type_ = PyHoc::HocScalarPtr;
             ptr_nrn->u.px_ = hoc_hgetarg<double>(iiarg);
-            PyObject* py_ptr = (PyObject*) ptr_nrn;
-            Py_INCREF(py_ptr);
-            PyTuple_SetItem(args.ptr(), iarg + 3, py_ptr);
+            PyTuple_SetItem(args.ptr(), iarg + 3, py_ptr.release().ptr());
         } else if (hoc_is_str_arg(iiarg)) {
             if (handle_strptr > 0) {
                 char** str_arg = hoc_pgargstr(iiarg);
-                PyObject* py_ptr = cpp2refstr(str_arg);
-                Py_INCREF(py_ptr);
-                PyTuple_SetItem(args.ptr(), iarg + 3, py_ptr);
+                auto py_ptr = nb::steal(cpp2refstr(str_arg));
+                PyTuple_SetItem(args.ptr(), iarg + 3, py_ptr.release().ptr());
             } else {
                 auto py_str = nb::steal(PyString_FromString(gargstr(iiarg)));
                 PyTuple_SetItem(args.ptr(), iarg + 3, py_str.release().ptr());
@@ -2762,7 +2800,7 @@ static Object** gui_helper_3_(const char* name, Object* obj, int handle_strptr) 
     if (gui_callback) {
         auto po = nb::steal(gui_helper_3_helper_(name, obj, handle_strptr));
         // TODO: something that allows None (currently nrnpy_po2ho returns NULL if po == Py_None)
-        Object* ho = nrnpy_po2ho(po.release().ptr());
+        Object* ho = nrnpy_po2ho(po.ptr());
         if (ho) {
             --ho->refcount;
         }
@@ -2791,7 +2829,7 @@ static Object** vec_as_numpy_helper(int size, double* data) {
     if (vec_as_numpy) {
         auto po = nb::steal((*vec_as_numpy)(size, data));
         if (!po.is_none()) {
-            Object* ho = nrnpy_po2ho(po.release().ptr());
+            Object* ho = nrnpy_po2ho(po.ptr());
             --ho->refcount;
             return hoc_temp_objptr(ho);
         }
@@ -3361,6 +3399,8 @@ extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
     nrnpy_sectionlist_helper_ = sectionlist_helper_;
     nrnpy_get_pyobj = nrnpy_get_pyobj_;
     nrnpy_call_func = nrnpy_call_func_;
+    nrnpy_call_obj_method = nrnpy_call_obj_method_;
+    nrnpy_call_obj_method_double = nrnpy_call_obj_method_double_;
     nrnpy_decref = nrnpy_decref_;
     nrnpy_nrncore_arg_p_ = nrncore_arg;
     nrnpy_nrncore_enable_value_p_ = nrncore_enable_value;
@@ -3389,34 +3429,27 @@ extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
     }
 
     hocclass_slots[0].pfunc = (PyObject*) &PyType_Type;
-    // I have no idea what is going on here. If use
-    // hocclass_spec.basicsize = sizeof(hocclass);
-    // then get error
-    // TypeError: tp_basicsize for type 'hoc.HocClass' (424) is
-    // too small for base 'type' (920)
-
-#if 1
+#ifdef Py_LIMITED_API
+    // PEP 697: negative basicsize is extra bytes after the metaclass instance
+    // size (opaque PyTypeObject). Holds Symbol* for each exposed HOC class.
+    hocclass_spec.basicsize = -static_cast<int>(sizeof(Symbol*));
+#else
+    // Full C API: Symbol* lives after PyTypeObject (CPython < 3.12 / ABI3=OFF).
     hocclass_spec.basicsize = PyType_Type.tp_basicsize + sizeof(Symbol*);
-    // and what about alignment?
-    // recommended by chatgpt
     size_t alignment = alignof(Symbol*);
     size_t remainder = hocclass_spec.basicsize % alignment;
     if (remainder != 0) {
         hocclass_spec.basicsize += alignment - remainder;
-        // printf("aligned hocclass_spec.basicsize = %d\n", hocclass_spec.basicsize);
     }
-#else
-    // chatgpt agrees that the following suggestion
-    // https://github.com/neuronsimulator/nrn/pull/2862/files#r1749797713
-    // is equivalent to the '#if 1' fragment above. However the above
-    // may "ensures portability and correctness across different architectures."
-    hocclass_spec.basicsize = PyType_Type.tp_basicsize + sizeof(hocclass) - sizeof(PyTypeObject);
 #endif
 
     PyObject* custom_hocclass = PyType_FromSpec(&hocclass_spec);
     if (!custom_hocclass) {
         return nullptr;
     }
+#ifdef Py_LIMITED_API
+    hocclass_meta = (PyTypeObject*) custom_hocclass;
+#endif
     if (PyModule_AddObject(m, "HocClass", custom_hocclass) < 0) {
         return nullptr;
     }
@@ -3428,12 +3461,10 @@ extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
         spec = obj_spec_from_name(exposed_py_type_names.back().c_str());
         pto = (PyTypeObject*)
             nrn_type_from_metaclass((PyTypeObject*) custom_hocclass, m, &spec, bases.ptr());
-        hocclass* hclass = (hocclass*) pto;
-        hclass->sym = hoc_lookup(name);
-        // printf("%s hocclass pto->tp_basicsize = %zd sizeof(*pto)=%zd\n",
-        // hclass->sym->name, pto->tp_basicsize, sizeof(*pto));
-        sym_to_type_map[hclass->sym] = pto;
-        type_to_sym_map[pto] = hclass->sym;
+        Symbol* hsym = hoc_lookup(name);
+        hocclass_sym((PyObject*) pto) = hsym;
+        sym_to_type_map[hsym] = pto;
+        type_to_sym_map[pto] = hsym;
         if (PyType_Ready(pto) < 0) {
             return nullptr;
         }
@@ -3516,4 +3547,118 @@ static double nrnpy_call_func_(Object* obj, double x) {
         hoc_execerror("Failed to convert result to float", nullptr);
     }
     return value;
+}
+
+// Helper function to call a Python method with a single argument
+static int nrnpy_call_obj_method_helper_(Object* obj, const char* method, PyObject* py_arg) {
+    // Check if obj is a Python object
+    if (!obj || obj->ctemplate->sym != nrnpy_pyobj_sym_) {
+        return 0;
+    }
+
+    // Convert obj to PyObject
+    PyObject* py_obj = nrnpy_hoc2pyobject(obj);
+    if (!py_obj) {
+        return 0;
+    }
+
+    // Check if method exists and is callable
+    if (!PyObject_HasAttrString(py_obj, method)) {
+        return 0;
+    }
+
+    PyObject* py_method = PyObject_GetAttrString(py_obj, method);
+    if (!py_method) {
+        PyErr_Clear();
+        return 0;
+    }
+
+    if (!PyCallable_Check(py_method)) {
+        Py_DECREF(py_method);
+        return 0;
+    }
+
+    // Call the method
+    auto result = nb::steal(PyObject_CallFunctionObjArgs(py_method, py_arg, nullptr));
+    Py_DECREF(py_method);
+
+    if (!result) {
+        PyErr_Clear();
+        return 0;
+    }
+
+    // Check return type and push to stack
+    if (PyNumber_Check(result.ptr())) {
+        // Push number to stack
+        double value = PyFloat_AsDouble(result.ptr());
+        if (PyErr_Occurred()) {
+            PyErr_Clear();
+            return 0;
+        }
+        hoc_pushx(value);
+    } else {
+        // Push object to stack
+        Object* result_obj = nrnpy_po2ho(result.ptr());
+        hoc_push_object(result_obj);
+        if (result_obj) {
+            hoc_obj_unref(result_obj);
+        }
+    }
+
+    return 1;
+}
+
+static int nrnpy_call_obj_method_(Object* obj, const char* method, Object* obj2) {
+    // Convert obj2 to PyObject
+    PyObject* py_arg = nullptr;
+    if (obj2) {
+        if (obj2->ctemplate->sym == nrnpy_pyobj_sym_) {
+            py_arg = nrnpy_hoc2pyobject(obj2);
+            Py_INCREF(py_arg);  // Get a new reference for consistent cleanup
+        } else {
+            // Convert HOC object to Python object
+            py_arg = nrnpy_ho2po(obj2);
+        }
+    } else {
+        py_arg = Py_None;
+        Py_INCREF(py_arg);
+    }
+
+    if (!py_arg) {
+        return 0;
+    }
+
+    int result = nrnpy_call_obj_method_helper_(obj, method, py_arg);
+    Py_DECREF(py_arg);
+    return result;
+}
+
+static int nrnpy_call_obj_method_double_(Object* obj, const char* method, double value) {
+    // Convert double to PyObject. Pass as Python int if the value is exactly
+    // equal to its floor (i.e., has no fractional part), otherwise pass as float.
+    // This preserves integer semantics for libraries like RxD that distinguish
+    // between integer and float coefficients.
+    PyObject* py_arg = nullptr;
+
+    if (value == floor(value)) {
+        // Value has no fractional part, try to convert to integer
+        long long vll = (long long) value;
+        // Verify the conversion is exact (handles very large values)
+        if ((double) vll == value) {
+            py_arg = PyLong_FromLongLong(vll);
+        }
+    }
+
+    if (!py_arg) {
+        py_arg = PyFloat_FromDouble(value);
+    }
+
+    if (!py_arg) {
+        PyErr_Clear();
+        return 0;
+    }
+
+    int result = nrnpy_call_obj_method_helper_(obj, method, py_arg);
+    Py_DECREF(py_arg);
+    return result;
 }

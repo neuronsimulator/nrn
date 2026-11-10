@@ -96,7 +96,7 @@ add_subdirectory(solver)
 # =============================================================================
 # NMODL sources
 # =============================================================================
-include_directories(${PYBIND11_INCLUDE_DIR} ${PYTHON_INCLUDE_DIRS})
+include_directories(${NRN_DEFAULT_PYTHON_INCLUDES})
 
 # =============================================================================
 # Add executables
@@ -106,7 +106,7 @@ target_link_libraries(
   nmodl
   CLI11::CLI11
   printer
-  codegen
+  nmodl_codegen
   visitor
   symtab
   util

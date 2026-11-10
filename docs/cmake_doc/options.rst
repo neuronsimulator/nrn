@@ -306,6 +306,29 @@ NRN_ENABLE_PYTHON:BOOL=ON
   Enable Python interpreter support
   (default python, fallback to python3, but see PYTHON_EXECUTABLE below)
 
+NRN_INSTALL_PYTHON_PREFIX:STRING="lib/python/neuron/"
+-----------------------------------------------------
+  Path where NEURON Python components will be installed, relative to
+  ``CMAKE_INSTALL_PREFIX``. Must end with a directory named "neuron".
+  Environment variable ``PYTHONPATH`` must contain the real path to
+  ``NRN_INSTALL_PYTHON_PREFIX`` in order for python to find neuron.
+
+  For venv's, configure cmake with:
+
+  .. code-block:: shell
+
+    -DCMAKE_INSTALL_PREFIX=$(python -c "import sysconfig; print(sysconfig.get_path('data', 'venv'))") \
+    -DNRN_INSTALL_PYTHON_PREFIX=$(python -c "import sysconfig; print(sysconfig.get_path('platlib', 'venv') + '/neuron')")
+
+  To install to your home directory, configure cmake with:
+
+  .. code-block:: shell
+
+    -DCMAKE_INSTALL_PREFIX=$(python3 -m site --user-base) \
+    -DNRN_INSTALL_PYTHON_PREFIX=$(python3 -m site --user-site)/neuron
+
+  This option is ignored when building a wheel, in which case the value is forced to "neuron/"
+
 .. _cmake_nrn_enable_python_dynamic:
 NRN_ENABLE_PYTHON_DYNAMIC:BOOL=OFF
 ----------------------------------
@@ -330,7 +353,7 @@ NRN_PYTHON_DYNAMIC:STRING=
 
   .. code-block:: shell
 
-    -DNRN_PYTHON_DYNAMIC="python3.8;python3.9;python3.10;python3.11"
+    -DNRN_PYTHON_DYNAMIC="python3.12;python3.14"
 
   The first entry in the list is considered to be the default version, followed
   by alternatives in decreasing order of preference.
@@ -340,6 +363,40 @@ NRN_PYTHON_DYNAMIC:STRING=
   This option is ignored unless ``NRN_ENABLE_PYTHON_DYNAMIC=ON``, in which case
   ``PYTHON_EXECUTABLE`` is ignored.
 
+  How those listed interpreters are compiled depends on
+  :ref:`NRN_ENABLE_ABI3 <cmake-nrn-enable-abi3>` (one ``libnrnpython.abi3``
+  vs ``libnrnpythonX.Y`` per version).
+
+.. _cmake-nrn-enable-abi3:
+
+NRN_ENABLE_ABI3:BOOL=
+---------------------
+  Build Python extensions against the CPython 3.12 limited API (``abi3``).
+
+  * **ON**: ``Py_LIMITED_API=0x030C0000``. Extension names are
+    ``hoc.abi3`` / ``libnrnpython.abi3`` (Windows: ``hoc.pyd`` +
+    ``python3.dll``). Requires GIL-enabled CPython **3.12+** for every
+    interpreter in ``NRN_PYTHON_DYNAMIC``. A 3.12-built wheel
+    (``wheel.py-api=cp312``) then loads on 3.13/3.14 without rebuilding.
+    Default when the default Python is 3.12+ (source and the
+    ``cp312-abi3`` wheel).
+  * **OFF**: no limited API. Versioned modules
+    (``hoc.cpython-3XY-…``, ``libnrnpythonX.Y``) for each configured
+    interpreter. Minimum Python is **3.11**. Default when the default
+    Python is older than 3.12, including the CPython 3.11 wheel.
+
+  Source users on CPython 3.11 should leave this OFF (or pass
+  ``-DNRN_ENABLE_ABI3=OFF`` if CMake would otherwise default ON).
+  ``-DNRN_ENABLE_ABI3=ON`` with a 3.11 default is a configure error.
+  Wheel builds follow the same default: 3.11 is versioned, 3.12+ is abi3.
+
+  With ``NRN_ENABLE_PYTHON_DYNAMIC=ON``:
+
+  * ABI3 ON: one limited-API library against the default (first) Python;
+    extra list entries are for ``nrniv -python`` search and tests.
+  * ABI3 OFF: one ``libnrnpythonX.Y`` and versioned ``hoc`` per listed
+    version.
+
 PYTHON_EXECUTABLE:PATH=
 -----------------------
   Use provided python binary instead of the one found by CMake.
@@ -347,7 +404,7 @@ PYTHON_EXECUTABLE:PATH=
 
   .. code-block:: shell
 
-    -DPYTHON_EXECUTABLE=`which python3.8`
+    -DPYTHON_EXECUTABLE=`which python3.12`
 
 NRN_ENABLE_RX3D:BOOL=ON
 -----------------------
@@ -400,10 +457,11 @@ To see all the NMODL CMake options you can look in https://github.com/BlueBrain/
 
 NMODL_ENABLE_PYTHON_BINDINGS:BOOL=OFF
 -------------------------------------
-  Enable pybind11 based python bindings
+  Enable nanobind-based Python bindings (``neuron.nmodl`` / ``_nmodl``).
 
   Using this option the user can use the NMODL python package to use NMODL via python. For more information look at
   the NMODL documentation in https://bluebrain.github.io/nmodl/html/notebooks/nmodl-python-tutorial.html.
+  With ``NRN_ENABLE_ABI3=ON`` the extension is limited-API (``_nmodl.abi3``).
 
 
 Occasionally useful advanced options:
@@ -510,27 +568,98 @@ Readline_ROOT_DIR:PATH=/usr
 
 NRN_ENABLE_TESTS:BOOL=OFF
 -------------------------
-  Enable unit tests
+  Enable the NEURON test suite (build-tree and install checks).
 
-  Clones the submodule catch2 from https://github.com/catchorg/Catch2.git and after a build using
-  ``make`` can run the tests with ``make test``.
-  May also need to ``pip install pytest``.
-  ``make test`` is quite terse. To get the same verbose output that is
-  seen with the CI tests, use ``ctest -VV`` (executed in the
-  build folder) or an individual test with ``ctest -VV -R name_of_the_test``.
-  One can also run individual test files
-  with ``python3 -m pytest -s <testfile.py>`` or all the test files in that
-  folder with ``python3 -m pytest -s``. (The ``-s`` shows all output on
-  the terminal.) Note: It is helpful to ``make test``
-  first to ensure any mod files needed are available to the tests. If
-  running a test outside the folder where the test is located, it may be
-  necessary to add the folder to PYTHONPATH. Note: The last python
-  mentioned in the ``-DNRN_PYTHON_DYNAMIC=...`` (if the semicolon separated
-  list is non-empty and ``-DNRN_ENABLE_PYTHON_DYNAMIC=ON``)
-  is the one used for ``make test`` and ``ctest -VV``. Otherwise the
-  value specified by ``PYTHON_EXECUTABLE`` is used.
+  When ``ON``:
 
-  Example
+  * Clones the Catch2 submodule (https://github.com/catchorg/Catch2.git) for
+    C++ unit tests.
+  * Registers the full in-tree CTest suite under the main CMake binary
+    directory (unit tests, HOC/Python integration, RxD, optional MPI and
+    CoreNEURON paths, and so on).
+  * Adds a convenience target ``test-install`` that runs the **portable**
+    foreign test harness against ``CMAKE_INSTALL_PREFIX`` (see
+    :ref:`cmake-nrn-test-install` below).
+
+  You typically need ``pip install pytest`` (and, for RxD plots, packages
+  such as ``matplotlib`` / ``plotly`` / ``anywidget`` as required by
+  individual tests).
+
+  In-tree tests (build directory)
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  After configuring and building, run tests from the **main build**
+  directory. ``make test`` / ``ninja test`` is terse; prefer ``ctest`` for
+  the same verbose style as CI:
+
+  .. code-block:: shell
+
+    mkdir build && cd build
+    cmake .. -G Ninja -DNRN_ENABLE_TESTS=ON -DCMAKE_INSTALL_PREFIX=install ...
+    ninja          # or: cmake --build . -j
+    ctest --output-on-failure -j8
+    ctest -VV -R parallel_tests
+
+  It is helpful to complete a full ``ctest`` (or at least build the test
+  targets) once so that ``nrnivmodl`` has produced any mod-file libraries
+  the scripts expect.
+
+  One can also run individual Python test files with
+  ``python3 -m pytest -s <testfile.py>`` or all tests in a folder with
+  ``python3 -m pytest -s`` (``-s`` sends output to the terminal). If
+  running a test outside the folder where it lives, you may need that
+  folder on ``PYTHONPATH``.
+
+  Note: the last Python listed in ``-DNRN_PYTHON_DYNAMIC=...`` (when
+  non-empty and ``-DNRN_ENABLE_PYTHON_DYNAMIC=ON``) is used for
+  ``make test`` / default ``ctest``. Otherwise the value of
+  ``PYTHON_EXECUTABLE`` / the default discovered Python is used.
+
+  .. _cmake-nrn-test-install:
+
+  Install check (``test-install`` / foreign ctest)
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  Linked C++ unit tests require the build tree. To validate a **prefix
+  install** (or a pip wheel), NEURON also provides a standalone project
+  under ``test/foreign`` that discovers an installed NEURON and runs the
+  portable subset of the suite (no rebuild of ``libnrniv``).
+
+  With ``NRN_ENABLE_TESTS=ON``, the main build defines a target
+  ``test-install``. After installing into ``CMAKE_INSTALL_PREFIX``:
+
+  .. code-block:: shell
+
+    ninja install                 # or: cmake --build . --target install
+    ninja test-install            # or: cmake --build . --target test-install
+
+  That target:
+
+  1. Configures ``test/foreign`` into ``${CMAKE_BINARY_DIR}/build-ctest``
+     (for example ``build/build-ctest``), using the same CMake generator as
+     the main build (for example Ninja).
+  2. Points foreign discovery at the install prefix
+     (``NRN_FOREIGN_ROOT``) and the build’s default Python.
+  3. Builds mechanisms for the portable tests and runs a default
+     ``ctest -L serial`` install check.
+  4. Prints how to re-run ``ctest`` with other filters against that
+     foreign binary directory.
+
+  Afterwards you can use ordinary CTest options against the foreign dir:
+
+  .. code-block:: shell
+
+    ctest --test-dir build-ctest --output-on-failure
+    ctest --test-dir build-ctest -L mpi -j2
+    ctest --test-dir build-ctest -L coreneuron -j2
+    ctest --test-dir build-ctest -R 'pytest::' --rerun-failed
+
+  You can also configure the foreign project yourself (wheels, custom
+  prefixes, or a different binary dir). See ``test/foreign/README.md``
+  and ``test/foreign/INVENTORY.md`` (what runs under foreign mode vs
+  build-only).
+
+  Example (in-tree tests only, classic workflow)
 
   .. code-block:: shell
 
@@ -541,23 +670,26 @@ NRN_ENABLE_TESTS:BOOL=OFF
     ctest -VV -R parallel_tests
     cd ../test/pynrn
     python3 -m pytest
-    python3 -m pytest test_currents.py
 
 NRN_ENABLE_COVERAGE:BOOL=OFF
----------------------------
+----------------------------
   Enable code coverage
 
   Requires ``lcov`` (e.g. ``sudo apt install lcov``).
 
-  Provides two make targets to simplify the repeated "run tests, examine coverage"
+  Provides make targets to simplify the repeated "run tests, examine coverage"
   workflow.
-    -- ``make cover_begin`` erases all previous coverage data
+    -- ``make cover-begin`` (``cover_begin``) erases all previous coverage data
     (``*.gcda`` files), and creates a baseline report. (Note all files and
     folders are created in the ``CMAKE_BINARY_DIR`` where you ran cmake.)
 
-    -- ``make cover_html`` creates a coverage report for the sum of all the
-    software runs since the last ``cover_begin`` and prints a file url
+    -- ``make cover-html`` (``cover_html``) creates a coverage report for the sum of all the
+    software runs since the last ``cover-begin`` and prints a file url
     that you can paste into your browser to review the coverage.
+
+    -- ``make cover-diff`` (``cover_diff``; requires ``pip install diff-cover``) reports
+    coverage on changed lines vs. ``NRN_COVERAGE_DIFF_BRANCH`` (default
+    ``master``). See `Developer Builds: Code Coverage <../install/code_coverage.html>`_.
 
   When using an iterative workflow to examine test coverage of a single
   or a few files, the above targets run much faster when this option is
@@ -573,14 +705,19 @@ NRN_COVERAGE_FILES:STRING=
 
   ``-DNRN_COVERAGE_FILES="src/nrniv/partrans.cpp;src/nmodl/parsact.cpp;src/nrnpython/nrnpy_hoc.cpp"``
 
-  For a list of all the cpp files changed in a pull request, consider
-  copy/pasting the ``;`` separated list obtained with
+  For a list of compiled sources changed on a branch, use
 
   .. code-block:: shell
 
-     a=`git diff --name-only master | grep '\.cpp'`
-     echo $a | sed 's/ /;/g'
+     ci/coverage_files_from_diff.sh master
 
+  The script lists ``.cpp`` and ``.c`` files only. It exits with an error
+  when none changed (omit this option in that case).
+
+NRN_COVERAGE_DIFF_BRANCH:STRING=master
+--------------------------------------
+  Git branch passed to ``diff-cover --compare-branch`` for the
+  ``cover_diff`` target. Defaults to ``master``.
 
 NRN_SANITIZERS:STRING=
 ----------------------
@@ -644,10 +781,10 @@ NRN_ENABLE_BACKTRACE:BOOL=OFF
 NRN_LINK_AGAINST_PYTHON:BOOL=OFF
 --------------------------------
   When ``NRN_ENABLE_PYTHON_DYNAMIC=ON`` then link the NEURON-Python interface
-  libraries ``libnrnpythonX.Y.so`` against the corresponding Python library
-  that was found at configuration time (``libpythonX.Y.so``).
-  This is enabled by default on Windows, but is not generally needed on macOS
-  and Linux, where the Python library is found and loaded dynamically at
+  library (``libnrnpython.abi3`` if ``NRN_ENABLE_ABI3=ON``, else
+  ``libnrnpythonX.Y.so``) against the Python library found at configuration
+  time. This is enabled by default on Windows, but is not generally needed on
+  macOS and Linux, where the Python library is found and loaded dynamically at
   runtime.
 
 NRN_PYTHON_EXTRA_FOR_TESTS:STRING=
@@ -677,7 +814,7 @@ NRN_ENABLE_DIGEST:BOOL=OFF
   Requires libcrypto
 
 NRN_ENABLE_ARCH_INDEP_EXP_POW:BOOL=OFF
----------------------------------
+--------------------------------------
   Provides \ :func:`use_exp_pow_precision` function so that exp and pow produce
   same results on all platforms.
 

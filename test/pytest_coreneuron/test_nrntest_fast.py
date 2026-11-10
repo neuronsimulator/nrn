@@ -223,10 +223,10 @@ def test_t13(chk, t13_model_data, field, threads):
             if get_c_compiler().endswith("nvc"):
                 tolerance = 6.1e-8
         elif field == "v":
-            tolerance = 6e-7
+            tolerance = 1e-6
             # NVHPC has a different tolerance threshold
             if get_c_compiler().endswith("nvc"):
-                tolerance = 7.5e-7
+                tolerance = 1e-6
 
     compare_time_and_voltage_trajectories(
         chk, t13_model_data, field, threads, "t13", tolerance

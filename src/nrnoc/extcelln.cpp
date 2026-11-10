@@ -271,14 +271,13 @@ void nlayer_extracellular() {
         /* Note in section.h: #define  nlayer (nrn_nlayer_extracellular) */
         int old = nlayer;
         nrn_nlayer_extracellular = (int) chkarg(1, 1., 1000.);
-        if (nrn_nlayer_extracellular == old) {
-            return;
+        if (nrn_nlayer_extracellular != old) {
+            check_if_extracellular_in_use();
+            update_parmsize();
+            /*global nlayer is the new value. Following needs to know the previous */
+            update_extracellular_reg(old);
+            update_existing_extnode(old);
         }
-        check_if_extracellular_in_use();
-        update_parmsize();
-        /*global nlayer is the new value. Following needs to know the previous */
-        update_extracellular_reg(old);
-        update_existing_extnode(old);
     }
     hoc_retpushx((double) nlayer);
 }

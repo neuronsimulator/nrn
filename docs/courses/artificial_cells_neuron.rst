@@ -13,7 +13,7 @@ The total computation time is proportional to the total number of spikes deliver
 NEURON has four built-in point process classes which can be used to construct artificial cell types:
 
 1.
-    `NetStim <https://nrn.readthedocs.io/en/latest/python/modelspec/programmatic/mechanisms/mech.html?highlight=netstim#NetStim>`_ produces a user-specified train of one or more output events, and can also be triggered by input events
+    :class:`NetStim` produces a user-specified train of one or more output events, and can also be triggered by input events
 
 2.
     :class:`IntFire1`, which acts like a leaky integrator driven by delta function inputs. That is, the state variable m decays exponentially toward 0. 

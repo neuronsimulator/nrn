@@ -4,6 +4,7 @@ import weakref
 import itertools
 from .rxdException import RxDException
 from .species import xyz_by_index
+from typing import Any, Optional, Union
 
 _weakref_ref = weakref.ref
 
@@ -12,7 +13,7 @@ _itertools_chain = itertools.chain
 _numpy_array = numpy.array
 
 
-def ref_list_with_mult(obj):
+def ref_list_with_mult(obj: dict) -> list:
     result = []
     for i, p in zip(list(obj.keys()), list(obj.values())):
         w = _weakref_ref(i)
@@ -20,7 +21,9 @@ def ref_list_with_mult(obj):
     return result
 
 
-def get_scheme_rate1_rate2_regions_custom_dynamics_mass_action(args, kwargs):
+def get_scheme_rate1_rate2_regions_custom_dynamics_mass_action(
+    args: tuple, kwargs: dict
+) -> tuple:
     """Parse the arguments to a rxd.Reaction or rxd.MultiCompartmentReaction.
 
     There are four valid options, two for historical
@@ -98,7 +101,7 @@ class GeneralizedReaction(object):
                     node_indices_append(seg.node_index())
         self._do_memb_scales(cur_map)
 
-    def _get_args(self, states):
+    def _get_args(self, states: Any) -> Optional[list]:
         args = []
         args_append = args.append
         self_indices_dict = self._indices_dict
@@ -109,7 +112,7 @@ class GeneralizedReaction(object):
             args_append(states[self_indices_dict[s]])
         return args
 
-    def _update_indices(self):
+    def _update_indices(self) -> None:
         # this is called anytime the geometry changes as well as at init
         from . import species
 
@@ -172,9 +175,11 @@ class GeneralizedReaction(object):
             sp_regions = list(
                 set.intersection(
                     *[
-                        set(sptr()._regions)
-                        if isinstance(sptr(), species.Species)
-                        else {sptr()._region()}
+                        (
+                            set(sptr()._regions)
+                            if isinstance(sptr(), species.Species)
+                            else {sptr()._region()}
+                        )
                         for sptr in sources + dests
                     ]
                 )
@@ -248,9 +253,11 @@ class GeneralizedReaction(object):
             if self._trans_membrane:
                 src_regions = intersection(
                     [
-                        set(sptr()._regions)
-                        if isinstance(sptr(), species.Species)
-                        else {sptr()._region()}
+                        (
+                            set(sptr()._regions)
+                            if isinstance(sptr(), species.Species)
+                            else {sptr()._region()}
+                        )
                         for sptr in sources
                     ]
                 )
@@ -263,9 +270,11 @@ class GeneralizedReaction(object):
                 )
                 dest_regions = intersection(
                     [
-                        set(sptr()._regions)
-                        if isinstance(sptr(), species.Species)
-                        else {sptr()._region()}
+                        (
+                            set(sptr()._regions)
+                            if isinstance(sptr(), species.Species)
+                            else {sptr()._region()}
+                        )
                         for sptr in dests
                     ]
                 )
@@ -282,9 +291,11 @@ class GeneralizedReaction(object):
                 active_regions = list(
                     intersection(
                         [
-                            set(sptr()._regions)
-                            if isinstance(sptr(), species.Species)
-                            else {sptr()._region()}
+                            (
+                                set(sptr()._regions)
+                                if isinstance(sptr(), species.Species)
+                                else {sptr()._region()}
+                            )
                             for sptr in sources + dests
                         ]
                     )
@@ -368,16 +379,20 @@ class GeneralizedReaction(object):
                 ] + [areas / volumes[di] / molecules_per_mM_um3 for di in dests_indices]
             # TODO: check for multicompartment reaction within the ECS
             elif sources_ecs and not dests_ecs:
+                # only using the first dests_indices for scaling ECS sources
+                # each dest must be in same location so give the same alpha
                 self._mult = [
                     -areas
                     / (
                         numpy.prod(s()._extracellular()._dx)
-                        * s().alpha_by_location(xyz_by_index(di))
+                        * s().alpha_by_location(xyz_by_index(dests_indices[0]))
                     )
                     / molecules_per_mM_um3
-                    for s, di in zip(sources_ecs, dests_indices)
+                    for s in sources_ecs
                 ] + [areas / volumes[di] / molecules_per_mM_um3 for di in dests_indices]
             elif not sources_ecs and dests_ecs:
+                # only using the first sources_indices for scaling ECS dests
+                # each source must be in same location so give the same alpha
                 self._mult = [
                     -areas / volumes[si] / molecules_per_mM_um3
                     for si in sources_indices
@@ -385,10 +400,10 @@ class GeneralizedReaction(object):
                     areas
                     / (
                         numpy.prod(s()._extracellular()._dx)
-                        * s().alpha_by_location(xyz_by_index(si))
+                        * s().alpha_by_location(xyz_by_index(sources_indices[0]))
                     )
                     / molecules_per_mM_um3
-                    for s, si in zip(dests_ecs, sources_indices)
+                    for s in dests_ecs
                 ]
             elif self._trans_membrane:
                 # An ecs <-> ecs reaction that use the membrane area and intracellular concentration in the rates

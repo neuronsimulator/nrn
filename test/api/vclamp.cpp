@@ -51,6 +51,12 @@ int main(void) {
     // voltage clamp at soma(0.5)
     nrn_double_push(0.5);
     Object* vclamp = nrn_object_new(nrn_symbol("VClamp"), 1);
+    for (int index = 0; index < 3; ++index) {
+        if (!nrn_property_data_handle_is_valid(vclamp, "amp", index)) {
+            std::cerr << "FAIL: VClamp amp[" << index << "] has an empty data handle" << std::endl;
+            return 1;
+        }
+    }
     // 0 mV for 1 ms; 10 mV for the next 2 ms; 5 mV for the next 3 ms
     int i = 0;
     for (auto& [amp, dur]: std::initializer_list<std::pair<int, double>>{{0, 1}, {10, 2}, {5, 3}}) {
@@ -58,6 +64,18 @@ int main(void) {
         nrn_property_array_set(vclamp, "dur", i, dur);
         ++i;
     }
+    // Array property handles use the same point-process property resolution as
+    // scalar handles. Verify that the pushed handle aliases the selected item.
+    nrn_property_array_push(vclamp, "amp", 1);
+    double* amp1 = nrn_double_ptr_pop();
+    if (*amp1 != 10) {
+        return 1;
+    }
+    *amp1 = 11;
+    if (nrn_property_array_get(vclamp, "amp", 1) != 11) {
+        return 1;
+    }
+    nrn_property_array_set(vclamp, "amp", 1, 10);
     // setup recording
     Object* v = nrn_object_new(nrn_symbol("Vector"), 0);
     nrn_rangevar_push(nrn_symbol("v"), soma, 0.5);

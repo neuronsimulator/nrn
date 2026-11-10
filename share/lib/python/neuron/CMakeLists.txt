@@ -30,6 +30,8 @@ set(NRN_PYTHON_FILES_LIST
     tests/utils/checkresult.py
     tests/test_neuron.py
     tests/test_vector.py
+    debug/__init__.py
+    debug/rdcellstate.py
     __init__.py
     coreneuron.py
     doc.py
@@ -91,9 +93,6 @@ set(NRN_PYTHON_RX3D_FILES_LIST
     rxd/geometry3d/__init__.py
     rxd/geometry3d/surface_a.py
     rxd/geometry3d/triangularMesh.py
-    rxd/geometry3d/voxelize.py
-    rxd/geometry3d/voxelize2.py
-    rxd/geometry3d/surface.py
     rxd/gui.py
     rxd/reaction.py)
 

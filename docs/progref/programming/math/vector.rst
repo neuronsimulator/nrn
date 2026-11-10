@@ -6108,6 +6108,24 @@ Vector
         Description:
             Return the index of the minimum value. 
 
+        Examples:
+
+            .. code::
+                python
+
+                v = n.Vector([4, 2, 61, 13, 17])
+                print(v.min_ind())      # 1
+                print(v.min_ind(1, 2))  # 1
+                print(v.min_ind(2, 4))  # 3
+
+        .. warning::
+
+            Versions of NEURON from 8.0 to 9.0.1 report erroneous values for `min_ind`
+            when `start` and `end` are specified.
+            Test for this with the example above.
+            All released versions _newer_ than 9.0.1 work correctly, as 
+            does the current development version.
+
     .. tab:: HOC
 
         Syntax:
@@ -6120,6 +6138,13 @@ Vector
 
         Description:
             Return the index of the minimum value. 
+
+        .. warning::
+
+            Versions of NEURON from 8.0 to 9.0.1 report erroneous values for `min_ind`
+            when `start` and `end` are specified.
+            All released versions _newer_ than 9.0.1 work correctly, as 
+            does the current development version.
 
 
 ----
@@ -6883,9 +6908,7 @@ Vector
 Fourier Analysis
 ~~~~~~~~~~~~~~~~
 
-The following routines are based on the fast fourier transform (FFT) 
-and are implemented using code from Numerical Recipes in C (2nd ed.) 
-Refer to this source for further information. 
+The following routines are based on the fast Fourier transform (FFT). 
             
 
 

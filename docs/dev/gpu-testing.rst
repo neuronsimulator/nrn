@@ -57,7 +57,10 @@ If you have configured NEURON with CoreNEURON, CoreNEURON GPU support and tests 
 
   $ ctest --output-on-failure
 
-in your CMake build directory will execute a large number of tests, many of them including GPU execution.
+in your **main** CMake build directory will execute a large number of tests, many of them including GPU execution.
+(That is the in-tree suite. The separate ``test-install`` / ``test/foreign`` path
+validates an install or wheel and is CPU-oriented; GPU install checks are not
+the focus of that harness yet.)
 You can filter which tests are run by name using the ``-R`` option to CTest, for example:
 
 .. code-block:: console

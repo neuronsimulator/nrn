@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "coreneuron/io/reports/nrnreport.hpp"
+#include "coreneuron/utils/nrn_assert.h"
 #include "coreneuron/utils/utils.hpp"
 
 namespace coreneuron {
@@ -73,8 +74,15 @@ struct CellMapping {
     /** list of section lists (like soma, axon, apic) */
     std::vector<std::shared_ptr<SecMapping>> sec_mappings;
 
-    /** map containing segment ids an its respective lfp factors */
-    std::unordered_map<int, std::vector<double>> lfp_factors;
+    /** segment ids for lfp factors (one per compartment with LFP data) */
+    std::vector<int> lfp_segment_ids;
+
+    /** flat array of lfp factors: stride = num_electrodes, indexed as [i * stride + e] */
+    std::vector<double> lfp_factors_flat;
+
+    /** Electrode offsets per LFP report (CSR-style, size = num_reports + 1).
+     *  offsets[i]..offsets[i+1] gives the electrode range for report i. */
+    std::vector<size_t> electrode_offsets;
 
     CellMapping(int g)
         : gid(g) {}
@@ -99,13 +107,9 @@ struct CellMapping {
                                });
     }
 
-    /** @brief return the number of electrodes in the lfp_factors map **/
-    int num_electrodes() const {
-        int num_electrodes = 0;
-        if (!lfp_factors.empty()) {
-            num_electrodes = lfp_factors.begin()->second.size();
-        }
-        return num_electrodes;
+    /** @brief return the total number of electrodes **/
+    size_t num_electrodes() const {
+        return electrode_offsets.empty() ? 0 : electrode_offsets.back();
     }
 
     /** @brief number of section lists */
@@ -148,8 +152,18 @@ struct CellMapping {
     }
 
     /** @brief add the lfp electrode factors of a segment_id */
-    void add_segment_lfp_factor(const int segment_id, std::vector<double>& factors) {
-        lfp_factors.insert({segment_id, factors});
+    void add_segment_lfp_factor(const int segment_id,
+                                std::vector<double>::const_iterator begin,
+                                std::vector<double>::const_iterator end) {
+        const size_t n = std::distance(begin, end);
+        if (n == 0) {
+            return;
+        }
+        const auto curr_n_electrodes = num_electrodes();
+        // All segments must have the same number of electrode factors
+        nrn_assert(curr_n_electrodes == 0 || n == curr_n_electrodes);
+        lfp_segment_ids.push_back(segment_id);
+        lfp_factors_flat.insert(lfp_factors_flat.end(), begin, end);
     }
 };
 

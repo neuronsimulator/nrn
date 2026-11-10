@@ -26,6 +26,7 @@ add_executable(
   unit_tests/utils/enumerate.cpp
   unit_tests/utils/Sprintf.cpp
   unit_tests/oc/hoc_interpreter.cpp
+  unit_tests/fourier.cpp
   cover/unit_tests/cover.cpp)
 set(catch2_targets testneuron)
 if(NRN_ENABLE_THREADS)
@@ -203,6 +204,11 @@ endforeach()
 # Add pytest
 # =============================================================================
 if(NRN_ENABLE_PYTHON)
+  # Pure Python. The abi3 wheel gate fails closed on an empty report.
+  add_test(NAME audit_abi3_wheel
+           COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE}
+                   ${PROJECT_SOURCE_DIR}/packaging/python/test_audit_abi3_wheel.py)
+
   # use `--capture=tee-sys`: combines 'sys' and '-s', capturing sys.stdout/stderr and passing it
   # along to the actual sys.stdout/stderr
   set(pytest_args --capture=tee-sys)
@@ -219,6 +225,14 @@ if(NRN_ENABLE_PYTHON)
             ${PROJECT_SOURCE_DIR}/test/unit_tests/hoc_python
     PRELOAD_SANITIZER
     SCRIPT_PATTERNS "test/unit_tests/hoc_python/*.py")
+
+  # Pure-Python prcellstate .nrndat semantic compare (no special/modfiles/GPU).
+  nrn_add_test(
+    GROUP unit_tests
+    NAME python_unit_tests_debug_rdcellstate
+    COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${pytest} ${PROJECT_SOURCE_DIR}/test/unit_tests/debug
+    PRELOAD_SANITIZER
+    SCRIPT_PATTERNS "test/unit_tests/debug/*.py" "test/unit_tests/debug/fixtures/*")
 
   # In brief:
   #
@@ -309,7 +323,8 @@ if(NRN_ENABLE_PYTHON)
         NAME ${name}_${ext} ${${ext}_preload} # PRELOAD_SANITIZER for Python
         ENVIRONMENT CC=${CMAKE_C_COMPILER}
         COMMAND ${${ext}_exe} "${hoc_script}"
-        SCRIPT_PATTERNS "${hoc_script}" "tests/${name}.json" ${${ext}test_utils})
+        SCRIPT_PATTERNS "${hoc_script}" "tests/${name}.json" "tests/${name}.asc"
+                        ${${ext}test_utils})
     endforeach()
   endforeach()
 
@@ -335,7 +350,7 @@ if(NRN_ENABLE_PYTHON)
       COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${pytest} ./test/rxd)
     if(NRN_ENABLE_MPI)
       nrn_find_python_module(MODULE mpi4py)
-      if(mpi4py_FOUND)
+      if(MPI4PY_FOUND)
         nrn_add_test(
           GROUP rxdmod_tests
           NAME rxd_mpi_tests
@@ -345,6 +360,15 @@ if(NRN_ENABLE_PYTHON)
             ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS}
             ${preload_sanitizer_mpiexec} ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${MPIEXEC_POSTFLAGS}
             ${pytest} ./test/rxd --mpi)
+        nrn_add_test(
+          GROUP rxdmod_tests
+          NAME rxd_mpi_two_process_tests
+          PRELOAD_SANITIZER
+          ENVIRONMENT ${change_test_tolerance}
+          COMMAND
+            ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
+            ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${MPIEXEC_POSTFLAGS} -m pytest --capture=tee-sys
+            ./test/rxd/ecs/test_ecs_example.py --mpi)
       endif()
     endif()
   endif()
@@ -691,7 +715,7 @@ if(NRN_ENABLE_PYTHON)
 
     if(NRN_ENABLE_MPI)
       nrn_find_python_module(MODULE mpi4py)
-      if(mpi4py_FOUND)
+      if(MPI4PY_FOUND)
         nrn_add_test(
           GROUP coreneuron_modtests
           NAME spikes_mpi_py_${processor}

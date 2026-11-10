@@ -1,7 +1,7 @@
 NA_modern = 6.02214076e23
 
 
-def NA():
+def NA() -> float:
     try:
         from neuron import h
 
@@ -11,7 +11,7 @@ def NA():
     return val
 
 
-def molecules_per_mM_um3():
+def molecules_per_mM_um3() -> float:
     # converting from mM um^3 to molecules
     # = 6.02214076e23 * 1000. / 1.e18 / 1000
     # = avogadro * (L / m^3) * (m^3 / um^3) * (mM / M)

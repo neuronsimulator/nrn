@@ -22,6 +22,22 @@ typedef struct SymbolTableIterator SymbolTableIterator;
 typedef struct Symlist Symlist;
 typedef struct ShapePlotInterface ShapePlotInterface;
 
+/* Non-owning hooks for provider-backed object components. On success, a read
+ * callback consumes the component's deferred object frame, pushes one HOC
+ * value, and returns NULL. An assignment callback consumes the typed RHS (the
+ * callback can query nrn_stack_type()) and then the metadata frame before
+ * returning NULL.
+ *
+ * On failure, a callback returns a non-NULL error message without changing the
+ * HOC stack. NEURON copies the message before anything else runs and then
+ * raises hoc_execerror itself, so a foreign-ABI provider never needs a C++
+ * exception to cross its boundary. (An in-process C++ provider, such as the
+ * bundled Python extension, may still let hoc_execerror's own
+ * neuron::oc::runtime_error propagate through the hook; only providers behind
+ * a foreign ABI must use the return channel.) */
+typedef const char* (*nrn_component_func)(Object*, Symbol*, int nindex, int isfunc);
+typedef const char* (*nrn_component_asgn_func)(Object*);
+
 typedef enum {
     STACK_IS_STR = 1,
     STACK_IS_VAR = 2,
@@ -56,6 +72,11 @@ void nrn_section_pop(void);
 void nrn_mechanism_insert(Section* sec, const Symbol* mechanism);
 nrn_Item* nrn_allsec(void);
 nrn_Item* nrn_sectionlist_data(const Object* obj);
+Section* nrn_section_parent(Section* sec);
+Section* nrn_section_trueparent(Section* sec);
+Section* nrn_section_child(Section* sec);
+Section* nrn_section_sibling(Section* sec);
+int nrn_sectionlist_to_array(nrn_Item* sl, Section** buf, int maxlen);
 bool nrn_section_is_active(const Section* sec);
 void nrn_section_ref(Section* sec);
 void nrn_section_unref(Section* sec);
@@ -68,18 +89,58 @@ int nrn_nseg_get(const Section* sec);
 void nrn_nseg_set(Section* sec, int nseg);
 void nrn_segment_diam_set(Section* sec, double x, double diam);
 double nrn_segment_diam_get(Section* sec, double x);
+int nrn_segment_node_index(Section* sec, double x);
 void nrn_rangevar_push(Symbol* sym, Section* sec, double x);
 double nrn_rangevar_get(Symbol* sym, Section* sec, double x);
 void nrn_rangevar_set(Symbol* sym, Section* sec, double x, double value);
+int nrn_rangevar_get_nothrow(Symbol* sym,
+                             Section* sec,
+                             double x,
+                             int index,
+                             double* value,
+                             char* error_msg,
+                             size_t error_msg_size);
+int nrn_rangevar_set_nothrow(Symbol* sym,
+                             Section* sec,
+                             double x,
+                             int index,
+                             double value,
+                             char* error_msg,
+                             size_t error_msg_size);
+int nrn_rangevar_push_nothrow(Symbol* sym,
+                              Section* sec,
+                              double x,
+                              int index,
+                              char* error_msg,
+                              size_t error_msg_size);
+int nrn_rangevar_handle_str(Symbol* sym, Section* sec, double x, int index, char* buf, size_t size);
+Object* nrn_segment_nmodlrandom_get(Section* sec, double x, Symbol* sym);
+Object* nrn_pntproc_nmodlrandom_get(Object* point_process, Symbol* sym);
+int nrn_setpointer_pop(Symbol* pointer_sym,
+                       Section* sec,
+                       double x,
+                       char* error_msg,
+                       size_t error_msg_size);
+int nrn_pp_setpointer_pop(Object* pp, const char* name, char* error_msg, size_t error_msg_size);
 
 /****************************************
  * Functions, objects, and the stack
  ****************************************/
 Symbol* nrn_symbol(const char* name);
+bool nrn_template_set_component_hooks(Symbol* template_sym,
+                                      nrn_component_func component,
+                                      nrn_component_asgn_func component_asgn,
+                                      char* error_msg,
+                                      size_t error_msg_size);
 void nrn_symbol_push(Symbol* sym);
+Symbol* nrn_symbol_pop(void);
 int nrn_symbol_type(const Symbol* sym);
 int nrn_symbol_subtype(const Symbol* sym);
 double* nrn_symbol_dataptr(const Symbol* sym);
+Object* nrn_symbol_object_get(const Symbol* sym);
+bool nrn_symbol_object_set(Symbol* sym, Object* obj);
+const char* nrn_symbol_str_get(const Symbol* sym);
+bool nrn_symbol_str_set(Symbol* sym, const char* value);
 bool nrn_symbol_is_array(const Symbol* sym);
 void nrn_double_push(double val);
 double nrn_double_pop(void);
@@ -90,10 +151,17 @@ char** nrn_str_pop(void);
 void nrn_int_push(int i);
 int nrn_int_pop(void);
 void nrn_object_push(Object* obj);
+void nrn_object_ptr_push(Object** obj_ref);
 Object* nrn_object_pop(void);
 nrn_stack_types_t nrn_stack_type(void);
 char const* nrn_stack_type_name(nrn_stack_types_t id);
 Object* nrn_object_new(Symbol* sym, int narg);
+Object* nrn_object_new_wrap(Symbol* sym, void* cpp_object);
+int nrn_object_new_nothrow(Symbol* sym,
+                           int narg,
+                           Object** result,
+                           char* error_msg,
+                           size_t error_msg_size);
 Symbol* nrn_method_symbol(const Object* obj, const char* name);
 // TODO: the next two functions throw exceptions in C++; need a version that
 //       returns a bool success indicator instead (this is actually the
@@ -141,11 +209,22 @@ void nrn_property_set(Object* obj, const char* name, double value);
 void nrn_property_array_set(Object* obj, const char* name, int i, double value);
 void nrn_property_push(Object* obj, const char* name);
 void nrn_property_array_push(Object* obj, const char* name, int i);
+bool nrn_property_data_handle_is_valid(const Object* obj, const char* name, int i);
+int nrn_property_element_ptr(Object* obj,
+                             const char* name,
+                             const int* indices,
+                             int nindex,
+                             double** ptr,
+                             char* error_msg,
+                             size_t error_msg_size);
+Object* nrn_property_object_get(const Object* obj, const char* name);
+bool nrn_property_object_set(Object* obj, const char* name, Object* value);
 char const* nrn_symbol_name(const Symbol* sym);
 Symlist* nrn_symbol_table(const Symbol* sym);
 Symlist* nrn_global_symbol_table(void);
 Symlist* nrn_top_level_symbol_table(void);
 int nrn_symbol_array_length(const Symbol* sym);
+int nrn_symbol_array_dims(const Symbol* sym, int* dims, int max_dims);
 void nrn_register_function(void (*proc)(), const char* func_name, int type);
 void nrn_hoc_ret(void);
 

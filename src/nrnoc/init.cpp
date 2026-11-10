@@ -1125,20 +1125,20 @@ void hoc_register_units(int mechtype, HocParmUnits* units) {
 
 void hoc_reg_ba(int mt, nrn_bamech_t f, int type) {
     BAMech* bam;
-    switch (type) { /* see bablk in src/nmodl/nocpout.cpp */
-    case 11:
+    switch (type) {  // BAType in neuron/ba_reg.h
+    case BAType::Before + BAType::Breakpoint:
         type = BEFORE_BREAKPOINT;
         break;
-    case 22:
+    case BAType::After + BAType::Solve:
         type = AFTER_SOLVE;
         break;
-    case 13:
+    case BAType::Before + BAType::Initial:
         type = BEFORE_INITIAL;
         break;
-    case 23:
+    case BAType::After + BAType::Initial:
         type = AFTER_INITIAL;
         break;
-    case 14:
+    case BAType::Before + BAType::Step:
         type = BEFORE_STEP;
         break;
     default:

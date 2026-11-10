@@ -364,6 +364,100 @@ Sections
     The ``nrn_Item*`` returned can be used for loops in the same way as the ``all_sections`` variable in
     the example in :c:func:`nrn_allsec`.
 
+.. c:function:: Section* nrn_section_parent(Section* sec)
+
+    Return the Section that ``sec`` is connected to, or ``NULL`` if ``sec`` is a
+    root.
+
+    This is the direct connectivity, the same Section a HOC ``SectionRef``'s
+    ``parent`` yields. It reads the connectivity directly, without creating a
+    ``SectionRef`` object.
+
+    :param sec: The Section whose parent is wanted.
+    :returns: The parent Section, or ``NULL`` if ``sec`` has no parent (or is
+        ``NULL``).
+
+.. c:function:: Section* nrn_section_trueparent(Section* sec)
+
+    Return the *true* parent of ``sec``, or ``NULL`` if there is none.
+
+    The true parent (``SectionRef``'s ``trueparent``) is normally the parent,
+    but a Section connected to the ``0`` end of its parent shares that parent's
+    true parent, so the relationship climbs until a connection that is not at
+    the parent's beginning.
+
+    :param sec: The Section whose true parent is wanted.
+    :returns: The true parent Section, or ``NULL`` if there is none (or ``sec``
+        is ``NULL``).
+
+.. c:function:: Section* nrn_section_child(Section* sec)
+
+    Return the first child Section connected to ``sec``, or ``NULL`` if it has
+    none.
+
+    Walk the remaining children with :c:func:`nrn_section_sibling`. The order
+    matches ``SectionRef``'s ``child[i]``.
+
+    :param sec: The parent Section.
+    :returns: The first child Section, or ``NULL`` (also if ``sec`` is ``NULL``).
+
+.. c:function:: Section* nrn_section_sibling(Section* sec)
+
+    Return the next Section that shares ``sec``'s parent, or ``NULL`` if ``sec``
+    is the last child.
+
+    Paired with :c:func:`nrn_section_child`, this iterates every child of a
+    Section:
+
+    .. code-block:: c
+
+        for (Section* c = nrn_section_child(parent); c; c = nrn_section_sibling(c)) {
+            printf("%s\n", nrn_secname(c));
+        }
+
+    :param sec: A Section.
+    :returns: The next sibling Section, or ``NULL`` (also if ``sec`` is
+        ``NULL``).
+
+.. c:function:: int nrn_sectionlist_to_array(nrn_Item* sl, Section** buf, int maxlen)
+
+    Snapshot a section list into a caller-provided array in one call.
+
+    This is the batched form of :c:func:`nrn_sectionlist_iterator_new`: it fills
+    ``buf`` with the live Sections of ``sl`` in a single crossing of the API
+    boundary rather than one crossing per Section, which speeds up building a
+    section array (for example an ``allsec`` gather, rebuilt whenever the
+    topology changes). Semi-deleted Sections are skipped; the list is not
+    modified.
+
+    Up to ``maxlen`` Sections are written, but the return value is always the
+    **total** number of live Sections, so a return greater than ``maxlen`` means
+    the buffer was too small and the snapshot is truncated. Call once with
+    ``buf = NULL`` and ``maxlen = 0`` to get that total first, then size the
+    buffer to it. (Detecting whether a *cached* snapshot has since gone stale is
+    a separate concern, handled by watching ``structure_change_cnt``, not by
+    re-counting.)
+
+    :param sl: A section list from :c:func:`nrn_allsec` or
+        :c:func:`nrn_sectionlist_data`.
+    :param buf: Array that receives up to ``maxlen`` ``Section*`` entries. May be
+        ``NULL`` only if ``maxlen`` is 0 (to count without writing).
+    :param maxlen: Capacity of ``buf``.
+    :returns: The total number of live Sections in ``sl``, or 0 if ``sl`` is
+        ``NULL``.
+
+    **C Usage:**
+
+    .. code-block:: c
+
+        int n = nrn_sectionlist_to_array(nrn_allsec(), NULL, 0);  // count pass
+        Section** secs = malloc(n * sizeof(Section*));
+        int total = nrn_sectionlist_to_array(nrn_allsec(), secs, n);
+        for (int i = 0; i < total; i++) {
+            printf("%s\n", nrn_secname(secs[i]));
+        }
+        free(secs);
+
 .. c:function:: bool nrn_section_is_active(const Section* sec)
 
     Check if a Section is active (exists and is valid).
@@ -526,17 +620,46 @@ Segments
     :param x: Normalized position along Section (0.0 to 1.0).
     :returns: Diameter in microns at the specified position.
 
+    When the section geometry is defined by 3d points (:func:`pt3dadd`), the
+    segment diameter is derived from those points. This getter triggers that
+    recompute if it is pending, so the value is correct even before an explicit
+    geometry pass such as :func:`define_shape` or :func:`finitialize`.
+    Non-positive segment diameters are clamped to ``1e-6`` during this
+    recompute without propagating a HOC error across the C API.
+
     **C Usage:**
-    
+
     .. code-block:: c
-    
+
         double diameter = nrn_segment_diam_get(soma, 0.5);  // Get diameter at middle
 
     **Python Equivalent:**
-    
+
     .. code-block:: python
-    
+
         diameter = soma(0.5).diam  # Get diameter at middle of Section
+
+.. c:function:: int nrn_segment_node_index(Section* sec, double x)
+
+    Get the index of the node for the segment at normalized position x along
+    the Section, in NEURON's internal node array. Node indices become canonical
+    once the tree has been set up (for example after :func:`finitialize`).
+
+    :param sec: Pointer to the Section.
+    :param x: Normalized position along Section (0.0 to 1.0).
+    :returns: The node index, or -1 if sec is NULL or has been deleted.
+
+    **C Usage:**
+
+    .. code-block:: c
+
+        int idx = nrn_segment_node_index(soma, 0.5);  // node index at middle
+
+    **Python Equivalent:**
+
+    .. code-block:: python
+
+        idx = soma(0.5).node_index()  # node index at middle of Section
 
 .. c:function:: void nrn_rangevar_push(Symbol* sym, Section* sec, double x)
 
@@ -605,6 +728,10 @@ Segments
     :param x: Normalized position along Section (0.0 to 1.0).
     :param value: Value to set for the range variable.
 
+    As with a HOC or Python assignment, writing ``diam`` updates the section's
+    area and 3-d points, and writing ``xraxial`` marks the axial terms for
+    recomputation.
+
     **Usage Pattern:**
 
     Used to configure biophysical properties of Sections, such as:
@@ -640,9 +767,286 @@ Segments
         for seg in dend:
             seg.g_pas = 0.001  # S/cm²
 
+.. c:function:: int nrn_rangevar_get_nothrow(Symbol* sym, Section* sec, double x, int index, double* value, char* error_msg, size_t error_msg_size)
+
+    Read element ``index`` of a range variable at position ``x``, reporting
+    problems as an error instead of raising a HOC error or throwing.
+
+    :param sym: Symbol of the range variable (e.g. ``v``, ``gnabar_hh``, ``xg``).
+    :param sec: The section.
+    :param x: Normalized position, 0 to 1.
+    :param index: Element of an array range variable (e.g. an extracellular
+        layer); 0 for a scalar.
+    :param value: Receives the value on success.
+    :param error_msg: Buffer for the error message.
+    :param error_msg_size: Size of ``error_msg``.
+    :returns: 0 on success, non-zero on error.
+
+    Errors that :c:func:`nrn_rangevar_get` raises (and that terminate a ctypes
+    caller) are returned instead: the mechanism is not inserted at ``x``, a
+    ``POINTER`` is not set, the pointer is opaque, ``i_membrane_`` without
+    ``cvode.use_fast_imem(1)``, and an index out of range. Unlike
+    :c:func:`nrn_rangevar_get`, array elements are selected by ``index`` rather
+    than an index on the interpreter stack.
+
+    **C Usage:**
+
+    .. code-block:: c
+
+        double value;
+        char err[256];
+        if (nrn_rangevar_get_nothrow(nrn_symbol("xg"), soma, 0.5, 1, &value, err, sizeof(err))) {
+            fprintf(stderr, "%s\n", err);
+        }
+
+.. c:function:: int nrn_rangevar_set_nothrow(Symbol* sym, Section* sec, double x, int index, double value, char* error_msg, size_t error_msg_size)
+
+    Write element ``index`` of a range variable at position ``x``, with the same
+    checks and error reporting as :c:func:`nrn_rangevar_get_nothrow`. Writing
+    ``diam`` or ``xraxial`` updates the section as :c:func:`nrn_rangevar_set` does.
+
+    :returns: 0 on success, non-zero on error.
+
+.. c:function:: int nrn_rangevar_push_nothrow(Symbol* sym, Section* sec, double x, int index, char* error_msg, size_t error_msg_size)
+
+    Push a pointer to element ``index`` of a range variable at position ``x``
+    onto the interpreter stack, for a function that takes a pointer argument
+    (e.g. ``Vector.record``), with the same checks and error reporting as
+    :c:func:`nrn_rangevar_get_nothrow`. Nothing is pushed on error.
+
+    :returns: 0 on success, non-zero on error.
+
+    Unlike :c:func:`nrn_rangevar_push`, which reads an array element's index
+    from the interpreter stack, this takes the index as an argument, so it can
+    push a pointer to an element of an array such as ``xg`` or a mechanism's
+    ``ca[4]``.
+
+    **C Usage:**
+
+    .. code-block:: c
+
+        char err[256];
+        Object* vec = nrn_object_new(nrn_symbol("Vector"), 0);
+        if (nrn_rangevar_push_nothrow(nrn_symbol("xg"), soma, 0.5, 1, err, sizeof(err))) {
+            fprintf(stderr, "%s\n", err);
+        } else {
+            nrn_method_call(vec, nrn_method_symbol(vec, "record"), 1);
+        }
+
+.. c:function:: int nrn_rangevar_handle_str(Symbol* sym, Section* sec, double x, int index, char* buf, size_t size)
+
+    Describe the data handle of element ``index`` of a range variable at
+    position ``x``: the text NEURON's Python interface prints for a reference
+    such as ``seg._ref_v``, for example
+    ``data_handle<double>{Node::field::Voltage row=0/2 val=-65}``. It names the
+    storage the value lives in and its row there, which changes with the node
+    order (:meth:`ParallelContext.optimize_node_order`). For a ``POINTER``
+    variable it describes the handle the pointer holds. The checks are those
+    of :c:func:`nrn_rangevar_get_nothrow`.
+
+    :param sym: Range variable symbol.
+    :param sec: Pointer to the Section.
+    :param x: Normalized position along Section (0.0 to 1.0).
+    :param index: Element of an array range variable; 0 for a scalar.
+    :param buf: Buffer for the text (truncated to ``size - 1`` characters and
+        always terminated), or for the error message on failure. May be ``NULL``
+        to only get the length; nothing is written if ``size`` is 0.
+    :param size: Size of ``buf``.
+    :returns: The length of the full text, not counting the terminating ``'\0'``,
+        or -1 on error. If it is ``size`` or more, the text was cut short and
+        ``buf`` holds only its first ``size - 1`` characters.
+
+    **C Usage:**
+
+    .. code-block:: c
+
+        char text[128];
+        if (nrn_rangevar_handle_str(nrn_symbol("v"), soma, 0.5, 0, text, sizeof(text)) >= 0) {
+            printf("%s\n", text);
+        }
+
+    **Python Equivalent:**
+
+    .. code-block:: python
+
+        text = str(soma(0.5)._ref_v)
+
+.. c:function:: Object* nrn_segment_nmodlrandom_get(Section* sec, double x, Symbol* sym)
+
+    Wrap a density mechanism's NMODL ``RANDOM`` variable as an
+    ``NMODLRandom`` object.
+
+    :param sec: Section containing the density mechanism.
+    :param x: Normalized position (0.0 to 1.0) of the mechanism instance.
+    :param sym: ``RANDOM`` range-object symbol, such as
+        ``nrn_symbol("rng_mechanism")``.
+    :returns: A retained ``NMODLRandom`` object, or ``NULL`` for an invalid
+        section or position, a null or non-``RANDOM`` symbol, or when the
+        mechanism is absent at ``(sec, x)``.
+
+    The returned object shares the mechanism-owned random state. Release the
+    retained reference with :c:func:`nrn_object_unref` after use.
+
+.. c:function:: Object* nrn_pntproc_nmodlrandom_get(Object* point_process, Symbol* sym)
+
+    Wrap a point process's NMODL ``RANDOM`` variable as an ``NMODLRandom``
+    object.
+
+    :param point_process: Point-process instance owning the random state.
+    :param sym: ``RANDOM`` symbol from the point process's symbol table, as
+        returned by ``nrn_method_symbol(point_process, "rng")``.
+    :returns: A retained ``NMODLRandom`` object, or ``NULL`` if the inputs do
+        not identify a located point process and one of its ``RANDOM``
+        variables.
+
+    Release the returned reference with :c:func:`nrn_object_unref`. Density and
+    point-process RANDOM variables require separate entry points because a
+    density instance is identified by ``(sec, x)``, while a point process is
+    identified by its object even when several instances share one location.
+
+
+.. c:function:: int nrn_setpointer_pop(Symbol* pointer_sym, Section* sec, double x, char* error_msg, size_t error_msg_size)
+
+    Wire an NMODL ``POINTER`` variable to the source pointer on top of the stack.
+
+    The source is whatever pointer the caller has pushed, e.g. with
+    :c:func:`nrn_rangevar_push`. Pushing the source rather than naming it lets
+    this single function accept a pointer obtained any way the stack supports,
+    instead of enumerating source kinds. The pushed pointer is consumed (popped)
+    even on the error paths, so the stack is left balanced.
+
+    :param pointer_sym: Symbol of the ``POINTER`` range variable to wire (the
+        target).
+    :param sec: Section of the mechanism instance owning the POINTER.
+    :param x: Normalized position (0.0 to 1.0) of that instance.
+    :param error_msg: Buffer filled with a message on failure (may be ``NULL``).
+    :param error_msg_size: Size of ``error_msg``.
+    :returns: 0 on success; nonzero on error, with ``error_msg`` populated when
+        ``pointer_sym`` is not a ``POINTER`` variable or its mechanism is not
+        present at the target segment.
+
+    This addresses the target by ``(sec, x)``, which identifies a density
+    mechanism's single instance at a segment. For a **point process**, where
+    several instances may share one location, use
+    :c:func:`nrn_pp_setpointer_pop`, which addresses the target by instance
+    object instead.
+
+    This is the C-API equivalent of the HOC ``setpointer`` statement and of
+    assigning a ``_ref_`` to a POINTER in Python. It stores a data handle to the
+    source, so the connection survives internal data reordering.
+
+    **C Usage:**
+
+    .. code-block:: c
+
+        // A density mechanism `cufl` has a POINTER `pv`. Wire dend's instance to
+        // read soma(0.5).v instead of its own segment's voltage. A density
+        // mechanism has one instance per segment, so (dend, 0.5) names it.
+        Symbol* pv = nrn_symbol("pv_cufl");
+        Symbol* v = nrn_symbol("v");
+        char err[256];
+        nrn_rangevar_push(v, soma, 0.5);  // push the source pointer
+        if (nrn_setpointer_pop(pv, dend, 0.5, err, sizeof(err))) {
+            fprintf(stderr, "setpointer failed: %s\n", err);
+        }
+
+    **Python Equivalent:**
+
+    .. code-block:: python
+
+        # cufl is a density mechanism (SUFFIX) with a POINTER pv
+        dend(0.5).cufl._ref_pv = soma(0.5)._ref_v
+
+    .. seealso::
+
+        :c:func:`nrn_pp_setpointer_pop`, :c:func:`nrn_rangevar_push`
+
+.. c:function:: int nrn_pp_setpointer_pop(Object* pp, const char* name, char* error_msg, size_t error_msg_size)
+
+    Wire a point process's NMODL ``POINTER`` variable to the source pointer on
+    top of the stack.
+
+    This is the point-process counterpart to :c:func:`nrn_setpointer_pop`. A
+    point process is addressed by its instance object rather than by ``(sec,
+    x)``: several point processes may occupy one location (two half-gaps at one
+    segment, say), so the segment alone cannot identify which instance owns the
+    ``POINTER`` slot. The ``POINTER`` is named within the point process's own
+    symbol table, exactly as in :c:func:`nrn_property_get`.
+
+    As with :c:func:`nrn_setpointer_pop`, the source is whatever pointer the
+    caller has pushed (e.g. with :c:func:`nrn_rangevar_push` or
+    :c:func:`nrn_property_push`), and it is consumed even on the error paths, so
+    the stack is left balanced.
+
+    :param pp: The point process instance whose ``POINTER`` is the target.
+    :param name: Name of the ``POINTER`` variable within the point process.
+    :param error_msg: Buffer filled with a message on failure (may be ``NULL``).
+    :param error_msg_size: Size of ``error_msg``.
+    :returns: 0 on success; nonzero on error, with ``error_msg`` populated when
+        ``pp`` is not a point process, ``name`` is not one of its ``POINTER``
+        variables, or the point process is not located in a section.
+
+    **C Usage:**
+
+    .. code-block:: c
+
+        // Wire a half-gap point process's vgap POINTER to the peer cell's
+        // voltage: cell2's membrane potential drives the gap current the
+        // HalfGap instance on cell1 computes. A true half gap wires both ways.
+        char err[256];
+        nrn_rangevar_push(nrn_symbol("v"), cell2, 0.5);  // push the source pointer
+        if (nrn_pp_setpointer_pop(halfgap1, "vgap", err, sizeof(err))) {
+            fprintf(stderr, "setpointer failed: %s\n", err);
+        }
+
+    **Python Equivalent:**
+
+    .. code-block:: python
+
+        # halfgap1 is a POINT_PROCESS instance with a POINTER vgap
+        halfgap1._ref_vgap = cell2(0.5)._ref_v
+
+    .. seealso::
+
+        :c:func:`nrn_setpointer_pop`, :c:func:`nrn_property_push`, :c:func:`nrn_rangevar_push`
+
 
 Functions, objects, and the stack
 ---------------------------------
+
+Reads and writes of provider-backed object components are dispatched through
+per-template hooks registered at runtime, rather than being selected when
+NEURON is compiled. An embedding host can therefore supply a provider even in
+a build configured with ``NRN_ENABLE_PYTHON=OFF``, without NEURON itself
+linking against Python. The legacy Python methods-table callbacks remain a
+compatibility fallback for providers that have not installed per-template
+hooks. When no provider is registered, ordinary template lookup is unchanged.
+
+.. c:function:: bool nrn_template_set_component_hooks(Symbol* template_sym, nrn_component_func component, nrn_component_asgn_func component_asgn, char* error_msg, size_t error_msg_size)
+
+    Register non-owning provider callbacks for all dynamic components of a HOC
+    template. The template symbol must remain valid, and callback code must
+    remain loaded while any instance exists. The read callback consumes the
+    deferred object frame and pushes exactly one HOC value; the assignment
+    callback consumes the typed RHS, available through :c:func:`nrn_stack_type`,
+    followed by the component metadata frame. On success each callback returns
+    ``NULL``. On failure it returns an error message without changing the HOC
+    stack. The returned pointer must remain valid until the call returns
+    across the provider boundary; NEURON copies the message before running
+    anything else (its own warning and dialog hooks included) and then calls
+    ``hoc_execerror``.
+    This gives the enclosing :c:func:`nrn_function_call_nothrow` or
+    :c:func:`nrn_method_call_nothrow` normal error reporting and stack recovery
+    without an exception unwinding through a foreign callback.
+
+    Passing a null template or either callback returns ``false`` and writes a
+    diagnostic to ``error_msg`` when space is provided. Registration is
+    fail-closed and does not modify the HOC stack.
+
+    The ``nindex``/``isfunc`` arguments preserve HOC method-call information.
+    Indexed component access additionally carries an interpreter dimension
+    marker; providers should wait for the public ``nrn_ndim_pop`` API before
+    advertising indexed components.
 
 .. c:function:: Symbol* nrn_symbol(const char* name)
 
@@ -683,6 +1087,18 @@ Functions, objects, and the stack
 
     :param sym: Pointer to the symbol to push.
 
+.. c:function:: Symbol* nrn_symbol_pop(void)
+
+    Pop a Symbol from the top of the stack.
+
+    The interpreter puts a Symbol on the stack when accessing an object
+    component (reading or assigning ``pyobj.attr``); a binding that unwinds
+    such a stack frame uses this to pop the attribute's Symbol. Use
+    :c:func:`nrn_stack_type` to confirm the top is a ``STACK_IS_SYM`` entry
+    before popping.
+
+    :returns: The Symbol from the top of the stack.
+
 .. c:function:: int nrn_symbol_type(const Symbol* sym)
 
     Get the type of a symbol (e.g., function, variable, mechanism).
@@ -709,15 +1125,72 @@ Functions, objects, and the stack
 
 .. c:function:: double* nrn_symbol_dataptr(const Symbol* sym)
 
-    Get a pointer to the data for a symbol (for variables).
+    Get a pointer to the storage for a scalar variable, for direct reading and
+    writing. This covers built-in ``USERDOUBLE`` scalars such as ``t`` (time) as
+    well as runtime scalars created in HOC (e.g. ``x = 42``), whose value lives
+    in the top-level object-data array rather than at ``sym->u.pval``.
 
     :param sym: Pointer to the symbol.
-    :returns: Pointer to the symbol's data, or NULL if not applicable.
+    :returns: A pointer to the variable's storage, or ``NULL`` if ``sym`` is not
+              a scalar variable with a data pointer (a null symbol, a function,
+              an object, a string, or a section-level property such as ``L`` or
+              ``nseg``).
 
     **Usage Pattern:**
 
     Provides direct access to variable data for efficient reading/writing.
     e.g., use this for getting/setting the value of ``t`` (time).
+
+.. c:function:: Object* nrn_symbol_object_get(const Symbol* sym)
+
+    Get the object bound to a top-level ``objref``.
+
+    :param sym: Symbol for a top-level ``objref``.
+    :returns: The bound object, or ``NULL`` if the objref is nil or ``sym`` is
+        not an objref.
+
+    The object is returned *borrowed* -- its reference count is not
+    incremented. Call :c:func:`nrn_object_ref` to retain it beyond the next
+    assignment to the objref. Complements :c:func:`nrn_symbol_dataptr`, which
+    returns ``NULL`` for an objref because it is not a ``double*``.
+
+.. c:function:: bool nrn_symbol_object_set(Symbol* sym, Object* obj)
+
+    Bind an object to a top-level ``objref``.
+
+    :param sym: Symbol for a top-level ``objref``.
+    :param obj: The object to bind, or ``NULL`` to make the objref nil.
+    :returns: ``true`` on success, ``false`` if ``sym`` is not an objref.
+
+    Follows HOC's assignment reference-counting: the previously bound object is
+    released and the new one retained.
+
+.. c:function:: const char* nrn_symbol_str_get(const Symbol* sym)
+
+    Get the string held by a top-level ``strdef``.
+
+    :param sym: Symbol for a top-level ``strdef``.
+    :returns: The string, or ``NULL`` if ``sym`` is not a strdef.
+
+.. c:function:: bool nrn_symbol_str_set(Symbol* sym, const char* value)
+
+    Set the string held by a top-level ``strdef``.
+
+    :param sym: Symbol for a top-level ``strdef``.
+    :param value: The string to copy in.
+    :returns: ``true`` on success, ``false`` if ``sym`` is not a strdef.
+
+    The value is copied into the strdef's storage (the previous string is
+    freed).
+
+    **Python Equivalent:**
+
+    .. code-block:: python
+
+        n.s = "cell"     # nrn_symbol_str_set
+        name = n.s       # nrn_symbol_str_get
+        n.obj = vec      # nrn_symbol_object_set
+        bound = n.obj    # nrn_symbol_object_get
 
 .. c:function:: bool nrn_symbol_is_array(const Symbol* sym)
 
@@ -819,13 +1292,17 @@ Functions, objects, and the stack
 
 .. c:function:: int nrn_int_pop(void)
 
-    Pop an integer from the stack.
+    Pop an integer or array-dimension marker from the stack.
 
     :returns: Integer value from the top of the stack.
 
     **Usage Pattern:**
 
     Used to retrieve function/method return values.
+
+    Indexed object-component access places an internal array-dimension marker
+    on the stack. :c:func:`nrn_int_pop` returns its dimension count through the
+    same API used for an ordinary integer.
 
     .. warning::
 
@@ -840,23 +1317,67 @@ Functions, objects, and the stack
 
     **Usage Pattern:**
 
-    Used when passing objects as arguments to functions or methods.
+    Used when passing objects as arguments to functions or methods. The callee
+    receives the object by value; if the callee's argument was not declared as
+    an ``objref`` and it tries to assign to it (``$oN = ...``), HOC raises an
+    error. To pass an object reference a callee can assign back into, use
+    :c:func:`nrn_object_ptr_push`.
+
+.. c:function:: void nrn_object_ptr_push(Object** obj_ref)
+
+    Push a writable object-reference slot onto the stack.
+
+    :param obj_ref: Address of the caller's ``Object*`` slot.
+
+    Unlike :c:func:`nrn_object_push`, which pushes an object by value, this
+    pushes the *slot* holding the object. When the callee assigns to the
+    matching ``$oN`` argument, the assignment writes back through the slot and
+    updates ``*obj_ref`` in place. This is the out-parameter form used by the
+    ``h.ref(obj)`` idiom, where a function returns a value by storing it in a
+    caller-supplied object reference. ("ptr", as in :c:func:`nrn_double_ptr_push`,
+    is the pushed-pointer naming; the "ref" in :c:func:`nrn_object_ref` is
+    reference counting.)
+
+    **Usage Pattern:**
+
+    .. code-block:: c
+
+        // proc setit() { $o1 = new Vector(3) }
+        Object* slot = nullptr;
+        nrn_object_ptr_push(&slot);
+        nrn_function_call(nrn_symbol("setit"), 1);
+        // slot now points to the newly created Vector; unref when done.
+        nrn_object_unref(slot);
+
+    .. seealso::
+
+        :c:func:`nrn_object_push`,
+        :c:func:`nrn_object_unref`
 
 .. c:function:: Object* nrn_object_pop(void)
 
     Pop an object from the stack.
 
-    :returns: Pointer to object from the top of the stack.
+    Returns ``NULL`` for a nil object reference (an unset ``objref``) rather than
+    crashing, so it is safe to use when unwinding a stack that may carry a nil
+    object -- for example a HOC-to-Python write-back whose right-hand side is an
+    unset ``objref``.
+
+    :returns: Pointer to the object from the top of the stack, or ``NULL`` if it
+        is a nil object reference.
 
     **Usage Pattern:**
 
     Used to retrieve function/method return values. Use :c:func:`nrn_stack_type` to check the type
     before popping, or use the type of the function/method to know the expected return type in
-    advance.
+    advance. A non-``NULL`` result is reference-counted and should be released with
+    :c:func:`nrn_object_unref` when no longer needed.
 
 .. c:function:: nrn_stack_types_t nrn_stack_type(void)
 
     Get the type of the value on top of the stack without removing it.
+    Both ordinary integers and array-dimension markers are reported as
+    ``STACK_IS_INT`` and can be consumed with :c:func:`nrn_int_pop`.
 
     :returns: Enumeration value indicating the stack top type.
 
@@ -905,9 +1426,10 @@ Functions, objects, and the stack
         
         // Create current clamp at soma
         Symbol* iclamp_sym = nrn_symbol("IClamp");
-        nrn_object_push((Object*)soma);  // Push soma as object
+        nrn_section_push(soma);          // specify the section separately
         nrn_double_push(0.0);            // Push location (0.0)
         Object* iclamp = nrn_object_new(iclamp_sym, 2);
+        nrn_section_pop();
 
     **Python Equivalent:**
     
@@ -916,6 +1438,51 @@ Functions, objects, and the stack
         # Create NEURON objects
         vec = n.Vector(100)           # Vector with 100 elements
         iclamp = n.IClamp(soma(0))    # Current clamp at soma
+
+.. c:function:: Object* nrn_object_new_wrap(Symbol* sym, void* cpp_object)
+
+    Wrap an existing C++ payload as an object of a C++ class.
+
+    :param sym: Symbol for a C++ (``CPLUSOBJECT``) class/template.
+    :param cpp_object: The backing C++ pointer to store as the object's
+        ``this_pointer``, or ``NULL`` to construct an unbacked instance to fill
+        in later.
+    :returns: The new object, with reference count 0.
+
+    Unlike :c:func:`nrn_object_new`, which runs the HOC constructor and consumes
+    arguments from the stack, this backs the new object directly with a pointer
+    the caller already holds. It is the primitive behind wrapping a foreign C++
+    object (for example a Python object or an NMODL ``RANDOM`` state) as a HOC
+    object. The returned object has reference count 0; call
+    :c:func:`nrn_object_ref` to keep it alive.
+
+    .. seealso::
+
+        :c:func:`nrn_object_new`,
+        :c:func:`nrn_object_ref`
+
+.. c:function:: int nrn_object_new_nothrow(Symbol* sym, int narg, Object** result, char* error_msg, size_t error_msg_size)
+
+    Create a new object, reporting a constructor error instead of throwing.
+
+    :param sym: Symbol representing the object class/type.
+    :param narg: Number of constructor arguments on the stack.
+    :param result: Set to the new object on success, or ``NULL`` on error.
+    :param error_msg: Buffer filled with a message on error (may be ``NULL``).
+    :param error_msg_size: Size of ``error_msg``.
+    :returns: 0 on success, nonzero if the HOC constructor errored.
+
+    Like :c:func:`nrn_object_new`, but a constructor error (bad arguments, a
+    failing ``INITIAL``, etc.) is caught and reported rather than thrown as a
+    C++ exception, so a non-C++ caller (ctypes, MATLAB, ...) does not have an
+    exception cross the call boundary. This is the constructor counterpart of
+    :c:func:`nrn_function_call_nothrow` and :c:func:`nrn_method_call_nothrow`.
+    The interpreter stack is restored if construction fails.
+
+    .. seealso::
+
+        :c:func:`nrn_object_new`,
+        :c:func:`nrn_function_call_nothrow`
 
 .. c:function:: Symbol* nrn_method_symbol(const Object* obj, const char* name)
 
@@ -1036,6 +1603,11 @@ Functions, objects, and the stack
     this function returns an error code instead of throwing exceptions, making it suitable for
     use in pure C code or via ``ctypes``.
 
+    Before returning, on success or error, the call releases any temporary object
+    HOC kept alive while evaluating it (for example the copy in ``vec.c.x[0]``),
+    as NEURON's Python interface does after each call. The return value keeps its
+    own reference.
+
     **C Usage:**
     
     .. code-block:: c
@@ -1098,6 +1670,11 @@ Functions, objects, and the stack
     Arguments must be prepared on the stack before calling. Unlike :c:func:`nrn_function_call`,
     this function returns an error code instead of throwing exceptions, making it suitable for
     use in pure C code or via ``ctypes``.
+
+    Before returning, on success or error, the call releases any temporary object
+    HOC kept alive while evaluating it (for example the copy in ``vec.c.x[0]``),
+    as NEURON's Python interface does after each call. The return value keeps its
+    own reference.
 
     **C Usage:**
 
@@ -1328,7 +1905,13 @@ Miscellaneous
     Execute a HOC command string. HOC is NEURON's built-in scripting language.
 
     :param command: Null-terminated string containing the HOC command.
-    :returns: Status code
+    :returns: 0 on success, 1 when the top-level interpreter catches an error.
+
+    Top-level error recovery releases interpreter frames and temporary objects,
+    then removes operands left by the failed command back to the entry stack
+    depth. Repeated runtime errors therefore do not accumulate operand-stack
+    entries. When called within an existing interpreter exception boundary,
+    errors continue to propagate to that enclosing boundary.
 
     **Usage Pattern:**
 
@@ -1552,7 +2135,18 @@ Miscellaneous
     **Usage Pattern:**
 
     Used to read object properties dynamically by name. Essential for
-    generic property access.
+    generic property access. For an NMODL ``POINTER`` property on a point
+    process, this returns the value referenced by the pointer. An unset or
+    opaque pointer returns NaN.
+
+    On an object of a HOC template (``begintemplate``), any double member can
+    be read, public or not, as from Python. A name that is not a double member,
+    or an out-of-range index, returns NaN; the setters then do nothing. The same
+    holds for :c:func:`nrn_property_array_get`, :c:func:`nrn_property_set`,
+    :c:func:`nrn_property_array_set`, :c:func:`nrn_property_push`,
+    :c:func:`nrn_property_array_push` and
+    :c:func:`nrn_property_data_handle_is_valid`. For ``objref`` members, use
+    :c:func:`nrn_property_object_get` and :c:func:`nrn_property_object_set`.
 
     **C Usage:**
     
@@ -1581,6 +2175,19 @@ Miscellaneous
 
     Used for properties that are arrays.
 
+    Point-process properties use the same data-handle resolution as
+    :c:func:`nrn_property_get` for the selected element, including returning NaN
+    for an unset or opaque pointer.
+
+    It also reads ``Vector.x[i]``, and the same holds for
+    :c:func:`nrn_property_array_set`, :c:func:`nrn_property_array_push` and
+    :c:func:`nrn_property_data_handle_is_valid`. An index out of range, and
+    ``Matrix.x`` (which has two indices), find no element: the get returns NaN,
+    the set does nothing, the push pushes a null pointer and the data handle is
+    not valid. No HOC error is raised and the HOC stack is left as it was. Use
+    :c:func:`nrn_property_element_ptr` for ``Matrix.x`` or to get an error
+    message.
+
     **C Usage:**
 
     .. code-block:: c
@@ -1602,6 +2209,10 @@ Miscellaneous
     :param obj: Pointer to the object.
     :param name: Name of the property.
     :param value: Value to set.
+
+    For an NMODL ``POINTER`` property on a point process, this writes through
+    the pointer to the referenced value. A write to an unset or opaque pointer
+    is ignored.
 
     **C Usage:**
     
@@ -1626,6 +2237,10 @@ Miscellaneous
     :param i: Index into the array (0-based).
     :param value: Value to set at the specified index.
 
+    Point-process properties use the same data-handle resolution as
+    :c:func:`nrn_property_set` for the selected element, including ignoring a
+    write to an unset or opaque pointer.
+
 .. c:function:: void nrn_property_push(Object* obj, const char* name)
 
     Push a property value onto the NEURON stack.
@@ -1639,6 +2254,11 @@ Miscellaneous
     is how NEURON can implement non-square-wave current clamps. Here ``iclamp._ref_amp`` is a reference
     to the ``amp`` property of the ``IClamp`` object.
 
+    For an NMODL ``POINTER`` property on a point process, this pushes the
+    referenced data handle. It can, for example, be consumed by
+    :c:func:`nrn_pp_setpointer_pop` to wire another point-process pointer to
+    the same source. An unset or opaque pointer pushes an empty handle.
+
 .. c:function:: void nrn_property_array_push(Object* obj, const char* name, int i)
 
     Push a property array element onto the NEURON stack.
@@ -1646,6 +2266,107 @@ Miscellaneous
     :param obj: Pointer to the object.
     :param name: Name of the property array.
     :param i: Index into the array (0-based).
+
+    Point-process properties use the same data-handle resolution as
+    :c:func:`nrn_property_push` for the selected element, including pushing an
+    empty handle for an unset or opaque pointer.
+
+.. c:function:: bool nrn_property_data_handle_is_valid(const Object* obj, const char* name, int i)
+
+    Report whether an object's numeric property has a non-empty data handle.
+
+    This is intended as a second-line check after :c:func:`nrn_property_get` or
+    :c:func:`nrn_property_array_get` returns NaN. An unset or opaque NMODL
+    ``POINTER`` has an empty handle, while NaN is also a valid value in a
+    non-empty handle. The common path therefore needs only the value-accessor
+    call; callers use this predicate only when they need to distinguish those
+    two cases.
+
+    :param obj: Pointer to the object.
+    :param name: Name of the property or property array.
+    :param i: Element index for a point-process array property. Ignored for a
+        scalar property, and for an object that is not a point process, whose
+        storage is present or absent as a whole rather than per element.
+    :returns: true if the property's data handle is non-empty, false otherwise.
+
+    .. seealso::
+
+        :c:func:`nrn_property_get`,
+        :c:func:`nrn_property_array_get`
+
+.. c:function:: int nrn_property_element_ptr(Object* obj, const char* name, const int* indices, int nindex, double** ptr, char* error_msg, size_t error_msg_size)
+
+    Get a pointer to one element of an object's variable, giving every index,
+    the way HOC evaluates ``&obj.name[i][j]``. This is how a client gets
+    ``Matrix.x[i][j]``, which has two dimensions.
+
+    Works for ``Matrix.x``, ``Vector.x``, ``Pointer.val`` and point-process
+    variables (scalars and one-dimensional arrays). Errors are reported in
+    ``error_msg``, not raised or printed, and leave the interpreter stack
+    unchanged.
+
+    :param obj: Pointer to the object.
+    :param name: Name of the variable, such as ``"x"``.
+    :param indices: The element's indices, outermost first. May be ``NULL`` when
+        ``nindex`` is 0.
+    :param nindex: Number of indices: the variable's number of dimensions (see
+        :c:func:`nrn_symbol_array_dims`), 0 for a scalar.
+    :param ptr: Receives the pointer, or ``NULL`` on failure.
+    :param error_msg: Buffer for a diagnostic on failure.
+    :param error_msg_size: Size of ``error_msg``.
+    :returns: 0 on success, nonzero on failure: unknown name, a method rather than
+        a variable, the wrong number of indices, an index out of range, a
+        point process that is not located in a section, a point-process
+        ``POINTER`` that is not set, a ``Pointer`` whose target was freed, or a
+        variable of a point process defined with ``make_pointprocess`` from a
+        HOC template, which is not supported.
+
+    The pointer stays valid until the object's storage changes (for example a
+    ``Vector`` is resized or a ``Matrix`` is reallocated) or the object is destroyed.
+
+    .. code-block:: c
+
+        int ij[2] = {1, 2};
+        double* p;
+        char err[256];
+        if (nrn_property_element_ptr(matrix, "x", ij, 2, &p, err, sizeof(err)) == 0) {
+            *p = 3.0;  // matrix.x[1][2] = 3
+        }
+
+    .. seealso::
+
+        :c:func:`nrn_property_array_push`,
+        :c:func:`nrn_vector_data`
+
+.. c:function:: Object* nrn_property_object_get(const Object* obj, const char* name)
+
+    Get the object held by an ``objref`` member of a HOC template object,
+    public or not.
+
+    :param obj: Object of a HOC template (``begintemplate``).
+    :param name: Name of the ``objref`` member.
+    :returns: The held object, or ``NULL`` if the member is nil, ``name`` is not
+        an ``objref`` member, or ``obj`` is a built-in class.
+
+    The object is returned *borrowed*, as by :c:func:`nrn_symbol_object_get`.
+    Call :c:func:`nrn_object_ref` to retain it past the next assignment to the
+    member.
+
+.. c:function:: bool nrn_property_object_set(Object* obj, const char* name, Object* value)
+
+    Assign an object to an ``objref`` member of a HOC template object, public or
+    not, following HOC's assignment reference counting: the previous object is
+    released and ``value`` is retained. ``NULL`` makes the member nil.
+
+    :param obj: Object of a HOC template (``begintemplate``).
+    :param name: Name of the ``objref`` member.
+    :param value: Object to assign, or ``NULL``.
+    :returns: ``true`` on success, ``false`` if ``name`` is not an ``objref``
+        member or ``obj`` is a built-in class.
+
+    .. seealso::
+
+        :c:func:`nrn_symbol_object_set`
 
 .. c:function:: char const* nrn_symbol_name(const Symbol* sym)
 
@@ -1689,6 +2410,32 @@ Miscellaneous
 
     :param sym: Pointer to the symbol.
     :returns: Length of the array, or 1 for non-arrays.
+
+.. c:function:: int nrn_symbol_array_dims(const Symbol* sym, int* dims, int max_dims)
+
+    Get every dimension of an array symbol. :c:func:`nrn_symbol_array_length`
+    gives only the first, so for ``double a[3][4]`` this is the way to learn the
+    4.
+
+    :param sym: Symbol of an array: a top-level ``double`` or ``objref``
+        array, or a mechanism range-variable array such as
+        ``xraxial``. ``NULL`` is allowed.
+    :param dims: Buffer for the sizes, outermost first, or ``NULL`` to only
+        count the dimensions.
+    :param max_dims: Number of entries in ``dims``; at most this many sizes are
+        written.
+    :returns: The number of dimensions; 0 if ``sym`` is ``NULL`` or not an array.
+
+    For arrays declared inside a template, use the per-object information; the
+    symbol holds the most recent declaration.
+
+    **C Usage:**
+
+    .. code-block:: c
+
+        int dims[4];
+        int ndim = nrn_symbol_array_dims(nrn_symbol("grid"), dims, 4);
+        // double grid[3][4]: ndim == 2, dims[0] == 3, dims[1] == 4
 
 .. c:function:: void nrn_register_function(void (*proc)(), const char* func_name, int type)
 
@@ -1966,8 +2713,10 @@ Here we stimulate the cell with a :class:`IClamp` at time 1 ms.
         nrn_mechanism_insert(soma, nrn_symbol("hh"));
 
         // current clamp at soma(0.5)
+        nrn_section_push(soma);          // specify the section separately
         nrn_double_push(0.5);
         Object* iclamp = nrn_object_new(nrn_symbol("IClamp"), 1);
+        nrn_section_pop();
         for (const auto& [property, value] : {pair{"amp", 0.3}, pair{"del", 1.0}, pair{"dur", 0.1}}) {
             nrn_property_set(iclamp, property, value);
         }

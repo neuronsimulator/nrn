@@ -1,69 +1,82 @@
 from xml.etree import ElementTree as ET
 import xml.dom.minidom
+from typing import Union
 
 
 # species declaration with arguments [name, compartment, and initial amount]
 class species:
-    def __init__(self, name, compartment, initial_amount):
-        self.name = name
-        self.compartment = compartment
-        self.initial_amount = str(initial_amount)
+    def __init__(
+        self, name: str, compartment: str, initial_amount: Union[int, float, str]
+    ) -> None:
+        self.name: str = name
+        self.compartment: str = compartment
+        self.initial_amount: str = str(initial_amount)
 
 
 # compartment declaration with arguments [name, size]
 class compartment:
-    def __init__(self, name, size):
-        self.name = name
-        self.size = str(size)
+    def __init__(self, name: str, size: Union[int, float, str]) -> None:
+        self.name: str = name
+        self.size: str = str(size)
 
 
 class parameter:
-    def __init__(self, name, value):
-        self.name = name
-        self.value = value
+    def __init__(self, name: str, value: Union[int, float, str]) -> None:
+        self.name: str = name
+        self.value: Union[int, float, str] = value
 
 
 # reactants and products are of the form [[name,stoichiometry],...]
 # reaction declaration that takes name, reversible (boolean), reactants, products, and an element tree
 # representing the kinetic law
 class reaction:
-    def __init__(self, name, reversible, reactants, products, tree, modifiers):
-        self.name = name
-        self.reversible = reversible
-        self.reactants = reactants
-        self.modifiers = modifiers
-        self.products = products
-        self.kinetic_law = tree
+    def __init__(
+        self,
+        name: str,
+        reversible: bool,
+        reactants: list,
+        products: list,
+        tree: ET.Element,
+        modifiers: list,
+    ) -> None:
+        self.name: str = name
+        self.reversible: bool = reversible
+        self.reactants: list = reactants
+        self.modifiers: list = modifiers
+        self.products: list = products
+        self.kinetic_law: ET.Element = tree
 
 
 # define units here
 # units are of the form [kind, exponent, scale]
 class unit_definition:
-    def __init__(self, name):
-        self.name = name
-        self.units = []
+    def __init__(self, name: str) -> None:
+        self.name: str = name
+        self.units: list = []
 
 
 # structure defined as the middle man between NEURON and SBML file types
 # it creates an smbl file for a single section or segment
 class middle_man:
     # defining an empty structure to later add more things to list
-    def __init__(self, name):
-        self.name = name
+    def __init__(self, name: str) -> None:
+        self.name: str = name
         # dict of species in the simulation and their corresponding compartment, indexed by id
         # id = name + compartment
-        self.species = {}
+        self.species: dict[str, species] = {}
         # dict of compartments
         # id = compartment + index of compartment
-        self.compartments = {}
-        self.num_compartments = 0
-        self.reactions = []
-        self.parameters = {}
+        self.compartments: dict[str, compartment] = {}
+        self.num_compartments: int = 0
+        self.reactions: list[reaction] = []
+        self.parameters: dict[str, parameter] = {}
         # Of the form [kind,exponent,scale]
-        self.unit_defs = {}
+        self.unit_defs: dict[str, unit_definition] = {}
 
     # The parts that are required for a species are name and compartment, and optionally initial amount
-    def add_species(self, name, compartment, initial_amount=0):
+    def add_species(
+        self, name: str, compartment: str, initial_amount: Union[int, float] = 0
+    ) -> Union[int, None]:
         if not isinstance(name, str) or not name:
             return 1
         if not isinstance(compartment, str) or not compartment:
@@ -72,9 +85,10 @@ class middle_man:
         temp_species = species(name, compartment, initial_amount)
         id_name = name + "_" + compartment
         self.species[id_name] = temp_species
+        return None
 
     # add compartment to structure
-    def add_compartment(self, name, size):
+    def add_compartment(self, name: str, size: Union[int, float, None]) -> int:
         if not isinstance(name, str) or not name:
             return 1
         if size is None:
@@ -85,28 +99,40 @@ class middle_man:
         self.num_compartments += 1
         return 0
 
-    def add_parameter(self, name, value):
+    def add_parameter(self, name: str, value: Union[int, float, str]) -> None:
         self.parameters[name] = parameter(name, value)
 
     # add reaction to structure
     def add_reaction(
-        self, name, reversible, reactants, products, kinetic_law, modifiers
-    ):
+        self,
+        name: str,
+        reversible: bool,
+        reactants: list,
+        products: list,
+        kinetic_law: ET.Element,
+        modifiers: list,
+    ) -> None:
         self.reactions.append(
             reaction(name, reversible, reactants, products, kinetic_law, modifiers)
         )
 
     # add a unit to be defined later
-    def add_unit_def(self, name):
+    def add_unit_def(self, name: str) -> None:
         temp_unitdef = unit_definition(name)
         self.unit_defs[name] = temp_unitdef
 
     # add a unit to an already defined unit
-    def add_unit(self, unit_def, kind, exponent, scale):
+    def add_unit(
+        self,
+        unit_def: str,
+        kind: str,
+        exponent: Union[int, float],
+        scale: Union[int, float],
+    ) -> None:
         self.unit_defs[unit_def].units.append([kind, exponent, scale])
 
     # returns the SBML as an element tree
-    def create_xml(self):
+    def create_xml(self) -> ET.Element:
         sbml = ET.Element(
             "sbml",
             level="2",
