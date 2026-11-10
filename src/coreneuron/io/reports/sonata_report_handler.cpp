@@ -11,6 +11,7 @@
 #include "coreneuron/network/netcon.hpp"
 #include "coreneuron/io/nrnsection_mapping.hpp"
 #include "coreneuron/mechanism/mech_mapping.hpp"
+#include "coreneuron/utils/nrn_assert.h"
 #ifdef ENABLE_SONATA_REPORTS
 #include "bbp/sonata/reports.h"
 #endif  // ENABLE_SONATA_REPORTS
@@ -60,13 +61,16 @@ std::pair<std::string, int> SonataReportHandler::get_population_info(int gid) {
 void SonataReportHandler::register_report(const NrnThread& nt,
                                           const ReportConfiguration& report_conf,
                                           const VarsToReport& vars_to_report) {
-    const auto type_str = to_string(report_conf.type);
-    sonata_create_report(report_conf.output_path.data(),
-                         report_conf.start,
-                         report_conf.stop,
-                         report_conf.report_dt,
-                         report_conf.unit.data(),
-                         type_str.data());
+    const auto kind = report_conf.lfp_method == LFPReportMethod::Sum ? std::string("lfp_sum")
+                                                                     : to_string(report_conf.type);
+    const int created = sonata_create_report(report_conf.output_path.data(),
+                                             report_conf.start,
+                                             report_conf.stop,
+                                             report_conf.report_dt,
+                                             report_conf.unit.data(),
+                                             kind.data());
+    // A libsonatareport that has no summed reports would leave the report out
+    nrn_assert(created != -1 || report_conf.lfp_method != LFPReportMethod::Sum);
     sonata_set_report_max_buffer_size_hint(report_conf.output_path.data(), report_conf.buffer_size);
 
     for (const auto& kv: vars_to_report) {
