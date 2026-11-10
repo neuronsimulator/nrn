@@ -572,7 +572,7 @@ def _cxx_compile(formula):
         new_paths = [
             os.path.join(h.neuronhome(), "mingw", "mingw64", "bin"),
             os.path.join(h.neuronhome(), "bin"),
-            os.environ.get("PATH", "")
+            os.environ.get("PATH", ""),
         ]
         # avoid os.putenv so as not to pollute the global environment
         rflag = os.system(f"set PATH={os.pathsep.join(new_paths)} && {gcc_cmd}")
