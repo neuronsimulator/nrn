@@ -241,6 +241,184 @@ _nrn_libedit_replace(
 	DWORD out_count = 0;
 ]=])
 
+# MinGW direct.h declares 1-arg mkdir. Include it before the rename macro, and define struct
+# w32_stat before any prototype. A struct tag first seen in a parameter list is a different type on
+# gcc.
+_nrn_libedit_replace(
+  "${_src}/compat/win32/include/sys/stat.h"
+  "NEURON: direct.h declares 1-arg mkdir"
+  [=[#ifndef W32_COMPAT_IMPL
+#define fstat(a,b)	w32_fstat((a), (b))
+#define stat w32_stat
+#define lstat w32_lstat
+#define mkdir w32_mkdir
+#define chmod w32_chmod
+#define fchmod w32_fchmod
+#endif
+
+int w32_fstat(int fd, struct w32_stat *buf);
+int w32_stat(const char *path, struct w32_stat *buf);
+int w32_lstat(const char *path, struct w32_stat *buf);
+int w32_mkdir(const char *pathname, unsigned short mode);
+int w32_chmod(const char *, mode_t);
+int w32_fchmod(int fd, mode_t mode);
+
+struct w32_stat {
+	dev_t     st_dev;     /* ID of device containing file */
+	unsigned short     st_ino;     /* inode number */
+	unsigned short    st_mode;    /* protection */
+	short    st_nlink;   /* number of hard links */
+	short     st_uid;     /* user ID of owner */
+	short     st_gid;     /* group ID of owner */
+	dev_t     st_rdev;    /* device ID (if special file) */
+	__int64     st_size;    /* total size, in bytes */
+	__int64    st_atime;   /* time of last access */
+	__int64    st_mtime;   /* time of last modification */
+	__int64    st_ctime;   /* time of last status change */
+};
+]=]
+  [=[/* NEURON: direct.h declares 1-arg mkdir. Include it before the rename macro. */
+#include <direct.h>
+#ifndef W32_COMPAT_IMPL
+#define fstat(a,b)	w32_fstat((a), (b))
+#define stat w32_stat
+#define lstat w32_lstat
+#define mkdir w32_mkdir
+#define chmod w32_chmod
+#define fchmod w32_fchmod
+#endif
+
+/* NEURON: gcc gives a prototype-scope struct w32_stat its own type. */
+struct w32_stat {
+	dev_t     st_dev;     /* ID of device containing file */
+	unsigned short     st_ino;     /* inode number */
+	unsigned short    st_mode;    /* protection */
+	short    st_nlink;   /* number of hard links */
+	short     st_uid;     /* user ID of owner */
+	short     st_gid;     /* group ID of owner */
+	dev_t     st_rdev;    /* device ID (if special file) */
+	__int64     st_size;    /* total size, in bytes */
+	__int64    st_atime;   /* time of last access */
+	__int64    st_mtime;   /* time of last modification */
+	__int64    st_ctime;   /* time of last status change */
+};
+
+int w32_fstat(int fd, struct w32_stat *buf);
+int w32_stat(const char *path, struct w32_stat *buf);
+int w32_lstat(const char *path, struct w32_stat *buf);
+int w32_mkdir(const char *pathname, unsigned short mode);
+int w32_chmod(const char *, mode_t);
+int w32_fchmod(int fd, mode_t mode);
+]=])
+
+# pthread_time.h defines nanosleep, and libc provides usleep and gettimeofday.
+_nrn_libedit_replace(
+  "${_src}/compat/win32/misc.c"
+  "NEURON: MinGW's pthread_time.h already defines nanosleep"
+  [=[int
+usleep(unsigned int useconds)
+{
+	Sleep(useconds / 1000);
+	return 1;
+}
+
+static LONGLONG
+timespec_to_nsec(const struct timespec *req)
+{
+	LONGLONG sec = req->tv_sec;
+	return sec * NSEC_IN_SEC + req->tv_nsec;
+}
+
+
+int
+nanosleep(const struct timespec *req, struct timespec *rem)
+]=]
+  [=[#ifndef __MINGW32__
+/* NEURON: MinGW's pthread_time.h already defines nanosleep. */
+int
+usleep(unsigned int useconds)
+{
+	Sleep(useconds / 1000);
+	return 1;
+}
+
+static LONGLONG
+timespec_to_nsec(const struct timespec *req)
+{
+	LONGLONG sec = req->tv_sec;
+	return sec * NSEC_IN_SEC + req->tv_nsec;
+}
+
+
+int
+nanosleep(const struct timespec *req, struct timespec *rem)
+]=])
+_nrn_libedit_replace(
+  "${_src}/compat/win32/misc.c"
+  "NEURON: MinGW libc provides usleep and nanosleep"
+  [=[		errno = EFAULT;
+		return -1;
+	}
+}
+
+/* This routine is contributed by  * Author: NoMachine <developers@nomachine.com>
+]=]
+  [=[		errno = EFAULT;
+		return -1;
+	}
+}
+#endif /* NEURON: MinGW libc provides usleep and nanosleep. */
+
+/* This routine is contributed by  * Author: NoMachine <developers@nomachine.com>
+]=])
+_nrn_libedit_replace(
+  "${_src}/compat/win32/misc.c"
+  "NEURON: MinGW libc provides gettimeofday"
+  [=[static int
+gettimeofday(struct timeval *tv, void *tz)
+]=]
+  [=[#ifndef __MINGW32__
+/* NEURON: MinGW libc provides gettimeofday. */
+int
+gettimeofday(struct timeval *tv, void *tz)
+]=])
+_nrn_libedit_replace(
+  "${_src}/compat/win32/misc.c"
+  "NEURON: end of the MSVC gettimeofday definition"
+  [=[	return 0;
+}
+
+static void
+explicit_bzero(void *b, size_t len)
+]=]
+  [=[	return 0;
+}
+#endif /* NEURON: end of the MSVC gettimeofday definition. */
+
+static void
+explicit_bzero(void *b, size_t len)
+]=])
+
+_nrn_libedit_replace(
+  "${_src}/compat/win32/misc_internal.h"
+  "NEURON: MSVC errno.h defines EOTHER"
+  [=[#include <Windows.h>
+#include <VersionHelpers.h>
+]=]
+  [=[#include <Windows.h>
+#include <VersionHelpers.h>
+#include <errno.h>
+#include <wctype.h>
+/* NEURON: MSVC errno.h defines EOTHER. MinGW does not. */
+#ifndef EOTHER
+#define EOTHER EIO
+#endif
+/* NEURON: __ascii_iswalpha is an MSVC CRT internal. */
+#ifndef __ascii_iswalpha
+#define __ascii_iswalpha(c) iswalpha((wint_t)(c))
+#endif
+]=])
+
 set(_edit_sources
     chared.c
     chartype.c
