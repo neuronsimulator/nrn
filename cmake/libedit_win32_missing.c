@@ -2,13 +2,16 @@
  * Definitions the larkmjc/libedit Win32 headers declare and readline.c calls, and this pin does not
  * ship. MSVC has no mkstemp or fseeko. MinGW has those in its C library and has no pwd.h.
  * nrniv already provides dlopen (src/mswin/dlfcn.c); see NRN_LIBEDIT_SKIP_DLFCN.
+ * W32_COMPAT_IMPL keeps the shim from turning UCRT's rename into a second w32_rename.
  */
+#define W32_COMPAT_IMPL
 #include <errno.h>
 #include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #ifdef _MSC_VER
+#include <fcntl.h>
 #include <io.h>
 #include <share.h>
 #include <sys/stat.h>
