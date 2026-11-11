@@ -82,7 +82,7 @@ Hosted on **nrn-ci-deps** release **`ci-deps-v1`**:
 
 ## Related but not yet managed (`managed: false`)
 
-- Azure secure files: `readline7.0-ncurses6.4.tar.gz`, `mpt_headears.2.21.tar.gz`
+- Azure secure file `mpt_headears.2.21.tar.gz` (Linux wheel MPI headers). `readline7.0-ncurses6.4.tar.gz` is no longer downloaded; macOS wheels build ncurses with `build_static_ncurses_osx.bash`.
 - python.org installers (large)
 - Windows NSIS / MS-MPI installers
 - apt / brew / pip (package managers — different strategy)

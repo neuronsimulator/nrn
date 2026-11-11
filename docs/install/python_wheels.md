@@ -113,11 +113,11 @@ See **[CI dependency archive](ci_deps.md)** and
 * `fetch.sh` / `install_mpich_noble.sh` / `publish.sh` / `check-upstream.sh`
 * how to add the next flaky third-party download
 
-Azure macOS wheels still obtain a prebuilt static **ncurses** via an Azure
-*secure file* whose name is `readline7.0-ncurses6.4.tar.gz` (see macOS section
-below). CMake fetches BSD libedit and links the ncurses half. The GNU readline
-objects in that archive are not linked. Migrating that class of blob into
-`ci/deps` is tracked as `managed: false` in the MANIFEST until promoted.
+Azure macOS wheels build a static **ncurses** on the agent with
+[packaging/python/build_static_ncurses_osx.bash](../../packaging/python/build_static_ncurses_osx.bash),
+the same script GitHub Actions uses (see the macOS section below). CMake
+fetches BSD libedit and links that archive. The pipeline does not download
+the old secure file `readline7.0-ncurses6.4.tar.gz`.
 
 ## Windows wheels (`win_amd64`)
 
@@ -133,11 +133,11 @@ See [Installing Binary Distribution — Windows](install_instructions.md#windows
 Note that for macOS there is no docker image needed, but all required dependencies must exist.
 In order to have the wheels working on multiple macOS target versions, special consideration must be made for `MACOSX_DEPLOYMENT_TARGET`.
 
-Taking Azure macOS `x86_64` wheels for example, static ncurses was built with `MACOSX_DEPLOYMENT_TARGET=10.9` and stored as secure file on Azure (under `Pipelines > Library > Secure files`).
-For `arm64` we need to set `MACOSX_DEPLOYMENT_TARGET=11.0`.
-
-You can use [packaging/python/build_static_ncurses_osx.bash](../../packaging/python/build_static_ncurses_osx.bash) to build that static ncurses library.
-You can have a look at the script for requirements and usage. libedit itself is fetched by CMake.
+Azure and GitHub Actions both run
+[packaging/python/build_static_ncurses_osx.bash](../../packaging/python/build_static_ncurses_osx.bash)
+before the wheel build. The script sets `MACOSX_DEPLOYMENT_TARGET` to 10.9 on
+`x86_64` and 11.0 on `arm64`, and installs `libncurses.a` under
+`/opt/nrnwheel/$(uname -m)/ncurses`. libedit itself is fetched by CMake.
 
 ### Installing macOS prerequisites
 

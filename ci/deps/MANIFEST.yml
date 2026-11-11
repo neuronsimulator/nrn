@@ -142,11 +142,13 @@ assets:
     sha256: ""
     upstream_url: ""
     managed: false
-    consumers:
-      - azure-pipelines.yml
+    consumers: []
     notes: >
-      Azure Pipelines secure file. The wheel uses the ncurses half as libedit's
-      termcap. The GNU readline archive in the tarball is not linked.
+      Former Azure Pipelines secure file. MacOSWheels no longer downloads it.
+      The agent builds static ncurses with
+      packaging/python/build_static_ncurses_osx.bash, the same script GitHub
+      Actions uses. The blob may still sit in the Azure library.
+      ncurses-6.4.tar.gz (managed) is the source that script fetches.
 
   - id: azure-secure-mpt-headers-2.21
     file: mpt_headears.2.21.tar.gz
