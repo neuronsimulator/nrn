@@ -229,6 +229,25 @@ typedef int ssize_t;
 #endif
 ]=])
 
+# pdcdisp.c calls MSVC _write. MinGW declares that in io.h.
+_nrn_libedit_replace(
+  "${_src}/compat/pdcurses/vt/pdcdisp.c"
+  "NEURON: _write is declared in io.h"
+  [=[#include <stdlib.h>
+
+#define USE_UNICODE_ACS_CHARS 1
+
+#include "curspriv.h"
+]=]
+  [=[#include <stdlib.h>
+/* NEURON: _write is declared in io.h. */
+#include <io.h>
+
+#define USE_UNICODE_ACS_CHARS 1
+
+#include "curspriv.h"
+]=])
+
 # Forward declarations in w32fd.c are non-static and the definitions are static.
 _nrn_libedit_replace(
   "${_src}/compat/win32/w32fd.c"
