@@ -40,6 +40,10 @@ function(_nrn_libedit_replace file marker old new)
   if(NOT _mark EQUAL -1)
     return()
   endif()
+  # cmake-format strips trailing tabs from these needles. termio.c has one on "size_t resplen = 0;".
+  # Match after dropping trailing whitespace.
+  string(REGEX REPLACE "[ \t]+\n" "\n" _text "${_text}")
+  string(REGEX REPLACE "[ \t]+\n" "\n" old "${old}")
   string(FIND "${_text}" "${old}" _pos)
   if(_pos EQUAL -1)
     message(FATAL_ERROR "libedit patch missed ${file}")
@@ -248,10 +252,10 @@ _nrn_libedit_replace(
 #include "curspriv.h"
 ]=])
 
-# SDK 10.0.26100 declares chmod in io.h as _ACRTIMP. pdcdisp includes that header
-# after a CRT header has already pulled in the compat sys/stat.h, so chmod has been
-# renamed to w32_chmod. Include the UCRT header first. Do not include it from the
-# stat.h shim: libedit sources include that shim after the stdio.h renames.
+# SDK 10.0.26100 declares chmod in io.h as _ACRTIMP. pdcdisp includes that header after a CRT header
+# has already pulled in the compat sys/stat.h, so chmod has been renamed to w32_chmod. Include the
+# UCRT header first. Do not include it from the stat.h shim: libedit sources include that shim after
+# the stdio.h renames.
 _nrn_libedit_replace(
   "${_src}/compat/pdcurses/vt/pdcdisp.c"
   "NEURON: UCRT io.h before compat shims"
@@ -307,7 +311,7 @@ _nrn_libedit_replace(
   "${_src}/compat/win32/termio.c"
   "NEURON: processBuffer writes an unsigned char buffer"
   [=[	char *respbuf = NULL;
-	size_t resplen = 0;	
+	size_t resplen = 0;
 	debug5("WriteThread thread, io:%p", pio);
 ]=]
   [=[	/* NEURON: processBuffer writes an unsigned char buffer. */
@@ -414,8 +418,8 @@ int w32_chmod(const char *, mode_t);
 int w32_fchmod(int fd, mode_t mode);
 ]=])
 
-# unistd.h renames chdir and rmdir before this header. SDK 10.0.26100's direct.h
-# then redeclares those names as _ACRTIMP unless the macros are set aside.
+# unistd.h renames chdir and rmdir before this header. SDK 10.0.26100's direct.h then redeclares
+# those names as _ACRTIMP unless the macros are set aside.
 _nrn_libedit_replace(
   "${_src}/compat/win32/include/sys/stat.h"
   "NEURON: direct.h after unistd.h renames"
