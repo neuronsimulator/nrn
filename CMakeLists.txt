@@ -157,7 +157,8 @@ option(NRN_ENABLE_MOD_COMPATIBILITY "Enable CoreNEURON compatibility for MOD fil
 option(NRN_ENABLE_REL_RPATH "Use relative RPATH in binaries. for relocatable installs/Python"
        ${NRN_ENABLE_REL_RPATH_DEFAULT})
 option(NRN_BINARY_DIST_BUILD ${NRN_BINARY_DIST_BUILD_DEFAULT})
-option(NRN_WHEEL_STATIC_READLINE "Use static readline libraries for the wheels."
+option(NRN_WHEEL_STATIC_READLINE
+       "Unix wheels: static libedit plus static ncurses. Windows always uses libedit."
        ${NRN_WHEEL_STATIC_READLINE_DEFAULT})
 mark_as_advanced(NRN_ENABLE_REL_RPATH)
 mark_as_advanced(NRN_BINARY_DIST_BUILD)
@@ -493,44 +494,27 @@ if(NRN_ENABLE_COVERAGE
       " you may experience errors!")
 endif()
 
-# When shipping the wheels we want to link readline libs statically. Unix static libs are .a; MSVC
-# uses .lib and fetches GNU readline itself.
-if(NRN_WHEEL_STATIC_READLINE AND NOT WIN32)
-  # CMake will prefer dynamic libraries over static ones. With the following construct we make sure
-  # we get them.
-  set(ORIGINAL_CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
-  set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
-endif()
-
-# Windows wheels are MSVC (cibuildwheel --platform windows). MinGW is the setup.exe world. Ninja +
-# C:/mingw64 on PATH would skip Win32Readline.
+# Windows wheels are MSVC (cibuildwheel --platform windows). MinGW is the setup.exe world.
 if(SKBUILD AND MINGW)
   message(FATAL_ERROR "Windows wheels must use MSVC, not MinGW (${CMAKE_CXX_COMPILER}). "
                       "Use CMAKE_GENERATOR=Visual Studio 17 2022 and CMAKE_GENERATOR_PLATFORM=x64.")
 endif()
 
-find_package(Readline)
-if(NOT READLINE_FOUND
-   AND WIN32
-   AND NOT MINGW)
-  include(cmake/Win32Readline.cmake)
+# Shipped binaries static-link BSD libedit: Windows always, Unix wheels when
+# NRN_WHEEL_STATIC_READLINE is on. A non-wheel Unix build keeps the distro's dynamic GNU readline.
+if(WIN32 OR NRN_WHEEL_STATIC_READLINE)
+  include(cmake/Libedit.cmake)
+else()
+  find_package(Readline)
 endif()
 if(NOT READLINE_FOUND)
   message(FATAL_ERROR "Readline is required (HOC interactive input)")
 endif()
-if(READLINE_FOUND)
-  # If we are not using self contained, static readline library created for building wheel then only
-  # look for curses and termcap Fetched win32 GNU readline does not use curses/termcap. MinGW still
-  # requires Termcap below.
-  if(NOT NRN_WHEEL_STATIC_READLINE AND NOT NRN_READLINE_FETCHED)
-    find_package(Curses QUIET)
-    find_package(Termcap QUIET)
-  endif()
-endif()
-
-# Reset original CMake library suffixes
-if(ORIGINAL_CMAKE_FIND_LIBRARY_SUFFIXES)
-  set(CMAKE_FIND_LIBRARY_SUFFIXES ${ORIGINAL_CMAKE_FIND_LIBRARY_SUFFIXES})
+# libedit carries its own termcap. Dynamic GNU readline still needs curses or termcap. MinGW libedit
+# links the MSYS2 ncurses package below.
+if(NOT NRN_LIBEDIT_BUILTIN)
+  find_package(Curses QUIET)
+  find_package(Termcap QUIET)
 endif()
 
 if(NRN_ENABLE_RX3D)
@@ -1321,6 +1305,26 @@ install(
 install(FILES ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib
               ${PROJECT_BINARY_DIR}/share/nrn/lib/nrn.defaults
         DESTINATION ${NRN_INSTALL_SHARE_DIR}/lib)
+# Berkeley libedit, plus the Win32 port's PDCurses note and the embedded termcap's 4-clause notice.
+# Not installed when the build links distro readline.
+if(NRN_LIBEDIT_BUILTIN)
+  install(
+    FILES "${NRN_LIBEDIT_LICENSE_FILE}"
+    DESTINATION ${NRN_INSTALL_SHARE_DIR}
+    RENAME libedit-LICENSE.txt)
+  if(NRN_LIBEDIT_PDCURSES_README)
+    install(
+      FILES "${NRN_LIBEDIT_PDCURSES_README}"
+      DESTINATION ${NRN_INSTALL_SHARE_DIR}
+      RENAME libedit-pdcurses-README.txt)
+  endif()
+  if(NRN_LIBEDIT_TERMCAP_NOTICE)
+    install(
+      FILES "${NRN_LIBEDIT_TERMCAP_NOTICE}"
+      DESTINATION ${NRN_INSTALL_SHARE_DIR}
+      RENAME libedit-termcap.txt)
+  endif()
+endif()
 
 # Copy NEURON headers that will be included in the installation into the build directory.
 set(headers_in_build_dir)
@@ -1547,7 +1551,11 @@ if(NRN_ENABLE_PYTHON)
   message(STATUS "  PREFIX      | ${NRN_INSTALL_PYTHON_PREFIX}")
 endif()
 if(READLINE_FOUND)
-  message(STATUS "Readline      | ${Readline_LIBRARY}")
+  if(NRN_LIBEDIT_BUILTIN)
+    message(STATUS "Readline      | libedit ${NRN_LIBEDIT_GIT_SHA} (${Readline_LIBRARY})")
+  else()
+    message(STATUS "Readline      | ${Readline_LIBRARY}")
+  endif()
 endif()
 if(CURSES_FOUND)
   message(STATUS "Curses        | ${CURSES_LIBRARIES}")

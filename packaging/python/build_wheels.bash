@@ -61,7 +61,7 @@ collect_dirs_linux() {
     NRN_MPI_DYNAMIC="$(parse_dirs "${MPI_POSSIBLE_INCLUDE_HEADERS}" "${NRN_MPI_DYNAMIC}")"
     export NRN_MPI_DYNAMIC
 
-    PREFIX_PATH_POSSIBLE_DIRS="/nrnwheel/ncurses /nrnwheel/readline"
+    PREFIX_PATH_POSSIBLE_DIRS="/nrnwheel/ncurses"
     CMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH:-}"
     CMAKE_PREFIX_PATH="$(parse_dirs "${PREFIX_PATH_POSSIBLE_DIRS}" "${CMAKE_PREFIX_PATH}")"
     export CMAKE_PREFIX_PATH
@@ -76,7 +76,7 @@ collect_dirs_macos() {
     NRN_MPI_DYNAMIC="$(parse_dirs "${MPI_POSSIBLE_INCLUDE_HEADERS}" "${NRN_MPI_DYNAMIC}")"
     export NRN_MPI_DYNAMIC
 
-    PREFIX_PATH_POSSIBLE_DIRS="/opt/nrnwheel/$(uname -m)/ncurses /opt/nrnwheel/$(uname -m)/readline /usr/x11"
+    PREFIX_PATH_POSSIBLE_DIRS="/opt/nrnwheel/$(uname -m)/ncurses /usr/x11"
     CMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH:-}"
     CMAKE_PREFIX_PATH="$(parse_dirs "${PREFIX_PATH_POSSIBLE_DIRS}" "${CMAKE_PREFIX_PATH}")"
     export CMAKE_PREFIX_PATH
@@ -94,7 +94,7 @@ set_cibw_environment() {
     platform="${1}"
     if [ "${platform}" = 'macos' ]; then
         declare -A defaults=(
-            [CMAKE_PREFIX_PATH]="/opt/nrnwheel/$(uname -m)/ncurses;/opt/nrnwheel/$(uname -m)/readline;/usr/x11"
+            [CMAKE_PREFIX_PATH]="/opt/nrnwheel/$(uname -m)/ncurses;/usr/x11"
             [NRN_ENABLE_MPI_DYNAMIC]="ON"
             [NRN_MPI_DYNAMIC]="$(brew --prefix)/opt/openmpi/include;$(brew --prefix)/opt/mpich/include"
             [NRN_WHEEL_STATIC_READLINE]="ON"
@@ -110,7 +110,7 @@ set_cibw_environment() {
         )
     elif [ "${platform}" = 'linux' ]; then
         declare -A defaults=(
-            [CMAKE_PREFIX_PATH]="/nrnwheel/ncurses;/nrnwheel/readline"
+            [CMAKE_PREFIX_PATH]="/nrnwheel/ncurses"
             [NRN_ENABLE_MPI_DYNAMIC]="ON"
             [NRN_MPI_DYNAMIC]="/usr/include/openmpi-$(uname -m);/usr/include/mpich-$(uname -m)"
             [NRN_WHEEL_STATIC_READLINE]="ON"
@@ -123,9 +123,10 @@ set_cibw_environment() {
     elif [ "${platform}" = 'windows' ]; then
         # MSVC win_amd64, same generator as the guest wheel. Ninja on
         # windows-2022 finds C:/mingw64 GNU first; then MINGW is true and
-        # Win32Readline.cmake never runs. FindMPI uses C:/msmpi
-        # (ci/win_msvc_wheel_deps.cmd). Fetched GNU readline is already
-        # static; CoreNEURON is out of this line.
+        # the wheel build stops. FindMPI uses C:/msmpi
+        # (ci/win_msvc_wheel_deps.cmd). CMake fetches BSD libedit on WIN32;
+        # NRN_WHEEL_STATIC_READLINE is the Unix static-ncurses switch.
+        # CoreNEURON is out of this line.
         declare -A defaults=(
             [CMAKE_PREFIX_PATH]="C:/msmpi"
             [CMAKE_GENERATOR]="Visual Studio 17 2022"

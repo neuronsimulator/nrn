@@ -71,39 +71,16 @@ assets:
       - ci/deps/install_mpich_noble.sh
     notes: Runtime library package for mpich-noble-4.2.0-5.1-arm64.
 
-  # --- P0/P1: static readline/ncurses sources (GNU mirrors flake) ---
+  # --- P0/P1: static ncurses (GNU mirrors flake). Wheels fetch BSD libedit. ---
   - id: ncurses-6.4-src
     file: ncurses-6.4.tar.gz
     sha256: 6931283d9ac87c5073f30b6290c4c75f21632bb4fc3603ac8100812bed248159
     upstream_url: https://ftp.gnu.org/gnu/ncurses/ncurses-6.4.tar.gz
     managed: true
     consumers:
-      - packaging/python/build_static_readline_osx.bash
+      - packaging/python/build_static_ncurses_osx.bash
       - packaging/python/Dockerfile
-    notes: Hosted on ci-deps-v1; consumers must not use ftpmirror.gnu.org.
-
-  - id: readline-7.0-src
-    file: readline-7.0.tar.gz
-    sha256: 750d437185286f40a369e1e4f4764eda932b9459b5ec9a731628393dd3d32334
-    upstream_url: https://ftp.gnu.org/gnu/readline/readline-7.0.tar.gz
-    managed: true
-    consumers:
-      - packaging/python/Dockerfile
-    notes: >
-      Linux manylinux Dockerfile uses 7.0. Azure Mac wheels still use the
-      prebuilt secure file readline7.0-ncurses6.4.tar.gz (not in this
-      manifest yet).
-
-  - id: readline-8.3-src
-    file: readline-8.3.tar.gz
-    sha256: fe5383204467828cd495ee8d1d3c037a7eba1389c22bc6a041f627976f9061cc
-    upstream_url: https://ftp.gnu.org/gnu/readline/readline-8.3.tar.gz
-    managed: true
-    consumers:
-      - packaging/python/build_static_readline_osx.bash
-    notes: >
-      GH Actions Mac wheels use 8.3. Safe with InterViews because hoc.cpp
-      always compiles use_rl_getc_function (not rl_event_hook).
+    notes: Hosted on ci-deps-v1; consumers must not use ftpmirror.gnu.org. Termcap for static libedit.
 
   # --- P1: Windows installer toolchain ---
   - id: nsis-3.05
@@ -167,7 +144,9 @@ assets:
     managed: false
     consumers:
       - azure-pipelines.yml
-    notes: Azure Pipelines secure file (prebuilt Mac static libs). Prefer migrating to this archive.
+    notes: >
+      Azure Pipelines secure file. The wheel uses the ncurses half as libedit's
+      termcap. The GNU readline archive in the tarball is not linked.
 
   - id: azure-secure-mpt-headers-2.21
     file: mpt_headears.2.21.tar.gz

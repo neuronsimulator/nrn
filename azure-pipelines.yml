@@ -131,8 +131,10 @@ stages:
           brew uninstall --ignore-dependencies libomp || echo "libomp doesn't exist"
         displayName: 'Install OSX System Dependencies'
 
-      # readline has been manually built with ncurses and MACOSX_DEPLOYMENT_TARGET=10.9 and stored as secure file on Azure.
-      # See `packaging/python/Dockerfile` for build instructions.
+      # Secure file readline7.0-ncurses6.4.tar.gz still supplies the static ncurses
+      # tree (MACOSX_DEPLOYMENT_TARGET=10.9). CMake fetches BSD libedit and does not
+      # link the GNU readline archive in that tarball.
+      # See `packaging/python/build_static_ncurses_osx.bash` for the ncurses build.
       #
       # Secure files documentation:
       #   https://docs.microsoft.com/en-us/azure/devops/pipelines/library/secure-files?view=azure-devops

@@ -124,11 +124,11 @@ jobs:
           which flex
           flex --version | head -n 1
 
-      - name: Install readline
+      - name: Install ncurses
         if: runner.os == 'macOS'
         run: |
           sudo mkdir -p /opt/nrnwheel/$(uname -m)
-          sudo bash packaging/python/build_static_readline_osx.bash
+          sudo bash packaging/python/build_static_ncurses_osx.bash
 
       - name: Change name of package for release
         if: inputs.build_type == 'nightly'

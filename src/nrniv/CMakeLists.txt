@@ -454,9 +454,9 @@ if(NRN_WINDOWS_BUILD)
     target_link_libraries(nrniv_lib PUBLIC ${TERMCAP_LIBRARIES})
   endif()
   if(READLINE_FOUND)
-    # Fetched GNU readline is a static convenience lib; PUBLIC would require nrn_readline in
-    # NeuronTargets. MinGW's shared readline stays PUBLIC.
-    if(NRN_READLINE_FETCHED)
+    # Static libedit must stay PRIVATE so nrn_edit is not exported in NeuronTargets. A shared distro
+    # readline (not used on Windows after the libedit switch) stays PUBLIC.
+    if(NRN_LIBEDIT_BUILTIN)
       target_link_libraries(nrniv_lib PRIVATE ${Readline_LIBRARY})
     else()
       target_link_libraries(nrniv_lib PUBLIC ${Readline_LIBRARY})

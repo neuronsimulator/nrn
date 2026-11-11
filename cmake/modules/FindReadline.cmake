@@ -14,8 +14,8 @@
 #                            readline if the module has problems finding the
 #                            proper installation path.
 #
-# On MSVC there is no system GNU readline. A failed find is expected;
-# cmake/Win32Readline.cmake then fetches GNU readline 5.0 (win32 port).
+# Non-wheel Unix builds use this module. Windows and Unix wheels link BSD
+# libedit from cmake/Libedit.cmake and do not call find_package(Readline).
 #
 # Variables defined by this module:
 #

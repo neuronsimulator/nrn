@@ -93,8 +93,9 @@ install.strip = false
 build-dir = "build_wheel"
 
 [tool.scikit-build.cmake.define]
-# When building a redistributable wheel for Linux, we pass the readline and
-# ncurses dirs to CMAKE_PREFIX_PATH. For MacOS, we pass the same + X11 dirs.
+# Unix wheels pass the static ncurses prefix (libedit's termcap) here.
+# MacOS also passes the X11 dirs. CMake fetches BSD libedit; do not pass a
+# GNU readline prefix.
 CMAKE_PREFIX_PATH = { env = "CMAKE_PREFIX_PATH" }
 
 NRN_BINARY_DIST_BUILD = { default = "OFF", env = "NRN_BINARY_DIST_BUILD" }

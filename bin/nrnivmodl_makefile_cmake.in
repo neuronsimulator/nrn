@@ -26,7 +26,8 @@ incdir := ${ROOT}/@CMAKE_INSTALL_INCLUDEDIR@
 datadir:= ${ROOT}/@CMAKE_INSTALL_DATADIR@
 datadir_lib := ${ROOT}/@CMAKE_INSTALL_DATADIR@/lib
 
-# For a static build with Interviews need -linterviews -lreadline
+# For a static build with Interviews need -linterviews. Distro readline is
+# -lreadline only when libedit was not linked into libnrniv.
 IV_LINK =
 READLINE_LINK =
 ifeq ("@NRN_ENABLE_SHARED@@IV_ENABLE_SHARED@", "OFFOFF")
@@ -34,7 +35,9 @@ ifeq ("@NRN_ENABLE_SHARED@@IV_ENABLE_SHARED@", "OFFOFF")
         IV_LINK = -linterviews
     endif
     ifeq ("@NRN_MACOS_BUILD@", "TRUE")
-        READLINE_LINK = -lreadline
+        ifneq ("@NRN_LIBEDIT_BUILTIN@", "TRUE")
+            READLINE_LINK = -lreadline
+        endif
     endif
 endif
 

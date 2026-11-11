@@ -26,8 +26,10 @@ list(REMOVE_ITEM NRN_LINK_LIBS "interviews")
 function(get_link_libraries libs)
   # CMake does some magic to transform sys libs to -l<libname>. We replicate it
   foreach(link_lib ${libs})
-    # skip static readline (already linked into nrniv) and OSX stub .tbd
-    if("${link_lib}" MATCHES "(libreadline.a|/*.tbd)" OR "${link_lib}" STREQUAL "nrn_readline")
+    # skip static readline/libedit (already linked into nrniv) and OSX stub .tbd
+    if("${link_lib}" MATCHES "(libreadline.a|/*.tbd)"
+       OR "${link_lib}" STREQUAL "nrn_readline"
+       OR "${link_lib}" STREQUAL "nrn_edit")
       continue()
     endif()
 

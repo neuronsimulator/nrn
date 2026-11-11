@@ -1529,7 +1529,6 @@ extern void hoc_notify_value(void);
 #if READLINE
 #ifdef _WIN32
 extern "C" int (*rl_getc_function)(void);
-extern "C" int rl_getc(void);
 static int getc_hook(void) {
     if (!inputReady_) {
         stdin_event_ready(); /* store main thread id */
@@ -1686,7 +1685,8 @@ int hoc_get_line(void) { /* supports re-entry. fill hoc_cbuf with next line */
                     rl_getc_function = getc_hook;
                     hoc_notify_value();
                 } else {
-                    rl_getc_function = rl_getc;
+                    // libedit has no rl_getc. NULL selects its builtin reader.
+                    rl_getc_function = NULL;
                 }
             }
 #else /* not _WIN32 */
