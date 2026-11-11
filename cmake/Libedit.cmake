@@ -229,6 +229,22 @@ typedef int ssize_t;
 #endif
 ]=])
 
+# signal.c includes one UCRT signal.h by absolute path. MinGW gcc cannot parse that header.
+_nrn_libedit_replace(
+  "${_src}/compat/win32/signal.c"
+  "NEURON: MinGW cannot parse the UCRT signal.h"
+  [=[//#include <signal.h>
+#include "C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.22621.0\\ucrt\\signal.h"
+]=]
+  [=[//#include <signal.h>
+#ifdef __MINGW32__
+/* NEURON: MinGW cannot parse the UCRT signal.h. crtheaders.h defines SIGNAL_H. */
+#include SIGNAL_H
+#else
+#include "C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.22621.0\\ucrt\\signal.h"
+#endif
+]=])
+
 # gcc rejects int* where PeekConsoleInputW and ReadConsoleInputW want LPDWORD.
 _nrn_libedit_replace(
   "${_src}/compat/win32/console.c"
@@ -531,6 +547,7 @@ if(WIN32)
         stdlib.h
         string.h
         time.h
+        signal.h
         sys/stat.h
         sys/types.h)
   endif()
