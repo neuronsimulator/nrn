@@ -263,7 +263,7 @@ void hoc_xopen_file_set(const std::string& name) {
         hoc_xopen_file_size_ = name.size() + 100;
         hoc_xopen_file_ = static_cast<char*>(erealloc(hoc_xopen_file_, hoc_xopen_file_size_));
     }
-    std::strcpy(hoc_xopen_file_, name.c_str());
+    std::memcpy(hoc_xopen_file_, name.c_str(), name.size() + 1);
 }
 
 /* nrniv of a path .py does not chdir and does not set hoc_xopen_file_.

@@ -73,10 +73,14 @@ jobs:
         run: |
           set -eux
           unset PYTHONPATH NEURONHOME || true
-          python -m pip install --upgrade pip
           whl="$(ls wheelhouse/*.whl | head -n 1)"
           python -m pip install --force-reinstall "${whl}"
-          python -m pip install pytest matplotlib plotly anywidget
+          # Pins match ci/requirements.txt (matplotlib is the Python >= 3.14 pin).
+          python -m pip install --only-binary=:all: \
+            'pytest==9.1.1' \
+            'matplotlib==3.10.7' \
+            'plotly==7.1.0' \
+            'anywidget==0.11.0'
           python -c "import neuron; print(neuron.__file__); print(neuron.h.nrnversion())"
 
       - name: Configure and run foreign serial ctest (Unix)

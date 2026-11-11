@@ -377,9 +377,10 @@ def _python_script(path):
 
     Windows CreateProcess does not run a shebang. rdcellstate is Python.
     sortspike and mkthreadsafe are bash and are not wheel launchers.
+    path is this launcher's own executable, not a request path.
     """
     try:
-        with open(path, "rb") as handle:
+        with open(path, "rb") as handle:  # NOSONAR
             line = handle.readline(200)
     except OSError:
         return False
