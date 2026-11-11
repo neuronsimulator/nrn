@@ -248,6 +248,28 @@ _nrn_libedit_replace(
 #include "curspriv.h"
 ]=])
 
+# SDK 10.0.26100 declares chmod in io.h as _ACRTIMP. pdcdisp includes that header
+# after a CRT header has already pulled in the compat sys/stat.h, so chmod has been
+# renamed to w32_chmod. Include the UCRT header first. Do not include it from the
+# stat.h shim: libedit sources include that shim after the stdio.h renames.
+_nrn_libedit_replace(
+  "${_src}/compat/pdcurses/vt/pdcdisp.c"
+  "NEURON: UCRT io.h before compat shims"
+  [=[#define USE_UNICODE_ACS_CHARS 1
+
+#include <wchar.h>
+]=]
+  [=[#define USE_UNICODE_ACS_CHARS 1
+
+#ifdef _MSC_VER
+/* NEURON: UCRT io.h before compat shims. A later compat sys/stat.h renames
+   chmod, and SDK 10.0.26100 then redeclares that name with _ACRTIMP. */
+#include "crtheaders.h"
+#include IO_H
+#endif
+#include <wchar.h>
+]=])
+
 # Forward declarations in w32fd.c are non-static and the definitions are static.
 _nrn_libedit_replace(
   "${_src}/compat/win32/w32fd.c"
@@ -390,6 +412,49 @@ int w32_lstat(const char *path, struct w32_stat *buf);
 int w32_mkdir(const char *pathname, unsigned short mode);
 int w32_chmod(const char *, mode_t);
 int w32_fchmod(int fd, mode_t mode);
+]=])
+
+# unistd.h renames chdir and rmdir before this header. SDK 10.0.26100's direct.h
+# then redeclares those names as _ACRTIMP unless the macros are set aside.
+_nrn_libedit_replace(
+  "${_src}/compat/win32/include/sys/stat.h"
+  "NEURON: direct.h after unistd.h renames"
+  [=[/* NEURON: direct.h declares 1-arg mkdir. Include it before the rename macro. */
+#include <direct.h>
+#ifndef W32_COMPAT_IMPL
+]=]
+  [=[/* NEURON: direct.h declares 1-arg mkdir. Include it before the rename macro.
+   unistd.h may already have renamed chdir and rmdir; SDK 10.0.26100 then
+   redeclares those names with _ACRTIMP. */
+#ifdef chdir
+#pragma push_macro("chdir")
+#undef chdir
+#define NRN_LIBEDIT_POP_CHDIR
+#endif
+#ifdef rmdir
+#pragma push_macro("rmdir")
+#undef rmdir
+#define NRN_LIBEDIT_POP_RMDIR
+#endif
+#ifdef getcwd
+#pragma push_macro("getcwd")
+#undef getcwd
+#define NRN_LIBEDIT_POP_GETCWD
+#endif
+#include <direct.h>
+#ifdef NRN_LIBEDIT_POP_CHDIR
+#pragma pop_macro("chdir")
+#undef NRN_LIBEDIT_POP_CHDIR
+#endif
+#ifdef NRN_LIBEDIT_POP_RMDIR
+#pragma pop_macro("rmdir")
+#undef NRN_LIBEDIT_POP_RMDIR
+#endif
+#ifdef NRN_LIBEDIT_POP_GETCWD
+#pragma pop_macro("getcwd")
+#undef NRN_LIBEDIT_POP_GETCWD
+#endif
+#ifndef W32_COMPAT_IMPL
 ]=])
 
 # pthread_time.h defines nanosleep, and libc provides usleep and gettimeofday.
