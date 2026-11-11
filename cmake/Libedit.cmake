@@ -229,6 +229,20 @@ typedef int ssize_t;
 #endif
 ]=])
 
+# processBuffer's buffer argument is unsigned char**. gcc rejects char**.
+_nrn_libedit_replace(
+  "${_src}/compat/win32/termio.c"
+  "NEURON: processBuffer writes an unsigned char buffer"
+  [=[	char *respbuf = NULL;
+	size_t resplen = 0;	
+	debug5("WriteThread thread, io:%p", pio);
+]=]
+  [=[	/* NEURON: processBuffer writes an unsigned char buffer. */
+	unsigned char *respbuf = NULL;
+	size_t resplen = 0;
+	debug5("WriteThread thread, io:%p", pio);
+]=])
+
 # signal.c includes one UCRT signal.h by absolute path. MinGW gcc cannot parse that header.
 _nrn_libedit_replace(
   "${_src}/compat/win32/signal.c"
@@ -668,6 +682,13 @@ static int tinfo_init()
   target_compile_definitions(nrn_edit_compat PRIVATE NRN_LIBEDIT_SKIP_DLFCN)
 
   add_library(nrn_edit STATIC ${_edit_sources})
+  # gcc 14 makes the OpenSSH port's char* / unsigned char* mismatches errors. MSVC accepts them.
+  if(NOT MSVC)
+    foreach(_tgt nrn_edit_regex nrn_edit_compat nrn_edit_pdcurses nrn_edit_terminfo nrn_edit)
+      target_compile_options(${_tgt} PRIVATE -Wno-error=incompatible-pointer-types
+                                             -Wno-error=int-conversion)
+    endforeach()
+  endif()
   target_compile_definitions(nrn_edit PRIVATE WIN32)
   target_include_directories(nrn_edit PRIVATE ${_win_includes} "${_src}/libedit/include"
                                               "${_src}/libedit")
