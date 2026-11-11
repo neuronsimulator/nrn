@@ -191,6 +191,20 @@ function(nrn_find_python)
                           "(code=${code} isvenv_str=${isvenv_str})")
     endif()
   endif()
+  # A pyenv shim re-execs and prepends versions/<ver>/bin. That directory holds pip entry points
+  # (nrniv, nrnivmodl, modlunit, neurondemo) for whatever Neuron is installed in that interpreter,
+  # so in-tree ctest runs those wrappers instead of this build. Launch the real interpreter.
+  execute_process(
+    COMMAND "${opt_NAME}" -c "import sys; print(sys.executable)"
+    RESULT_VARIABLE _nrn_py_real_status
+    OUTPUT_VARIABLE _nrn_py_real
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+  if(_nrn_py_real_status EQUAL 0
+     AND _nrn_py_real
+     AND NOT _nrn_py_real STREQUAL "${opt_NAME}")
+    message(STATUS "Using Python interpreter ${_nrn_py_real} instead of ${opt_NAME}")
+    set(opt_NAME "${_nrn_py_real}")
+  endif()
   set("${opt_PREFIX}_EXECUTABLE"
       "${opt_NAME}"
       PARENT_SCOPE)
