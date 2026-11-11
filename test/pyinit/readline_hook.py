@@ -106,8 +106,13 @@ print("readline-hook-ok")
 
 def main():
     nrniv = sys.argv[1]
+    # nrn_istty_ follows stdin. On a tty, -python -c runs the snippet and then
+    # stays in the interactive console, so a ctest started from a terminal
+    # never sees readline-hook-ok. The pointer is installed before -c and does
+    # not need a tty. Same batching as the path_semantics driver.
     proc = subprocess.run(
         [nrniv, "-nobanner", "-python", "-c", INNER],
+        stdin=subprocess.DEVNULL,
         capture_output=True,
     )
     combined = proc.stdout + proc.stderr
