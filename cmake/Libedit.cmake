@@ -2,11 +2,12 @@
 # larkmjc/libedit f3a98319002d0eca05e2a370a68b28a2afa6a822 ("trim termcap file to xterm, tmux, and
 # screen").
 #
-# MSVC has no termcap, so it builds this port's Win32 console stack (regex, OpenSSH-derived compat,
-# PDCursesMod, embedded terminfo). MinGW gcc does not define the WIN32 macro that stack keys on, and
-# the stack uses MSVC intrinsics, so MinGW builds the Unix sources and links MSYS2 ncurses. Unix
-# wheels do the same and link a static tinfo or ncurses. Do not add_subdirectory upstream
-# CMakeLists.txt: it installs static libraries into the NEURON prefix and builds a demo.
+# MSVC has no termcap. MinGW has no termios.h, so it cannot compile the Unix libedit sources. Both
+# build this port's Win32 console stack (regex, OpenSSH-derived compat, PDCursesMod, embedded
+# terminfo). That stack's headers declare mkstemp, fseeko, and the passwd helpers without defining
+# them, and its misc.c also defines dlopen, which nrniv already provides. Unix wheels link a static
+# tinfo or ncurses. Do not add_subdirectory upstream CMakeLists.txt: it installs static libraries
+# into the NEURON prefix and builds a demo.
 
 include(FetchContent)
 
@@ -78,6 +79,112 @@ _nrn_libedit_replace(
   "${_src}/libedit/strlcpy.c" "defined __MINGW32__" "#if defined WIN32 || defined __linux__"
   "#if defined WIN32 || defined __linux__ || defined __MINGW32__")
 
+# gcc has no _BitScanForward. MinGW only takes this branch when the target defines WIN32.
+_nrn_libedit_replace(
+  "${_src}/libedit/tty.c"
+  "NEURON: gcc has no _BitScanForward"
+  [=[#ifdef WIN32
+#define isatty _isatty
+#include <intrin.h>
+static __forceinline int ffs(int x)
+{
+	unsigned long i;
+	if (_BitScanForward(&i, x))
+		return (i + 1);
+	return (0);
+}
+]=]
+  [=[#ifdef WIN32
+#define isatty _isatty
+#if defined(_MSC_VER)
+#include <intrin.h>
+static __forceinline int ffs(int x)
+{
+	unsigned long i;
+	if (_BitScanForward(&i, x))
+		return (i + 1);
+	return (0);
+}
+#else
+/* NEURON: gcc has no _BitScanForward. */
+static inline int ffs(int x)
+{
+	return __builtin_ffs(x);
+}
+#endif
+]=])
+
+# nrniv already links src/mswin/dlfcn.c. Leave the port's copies out of nrn_edit_compat.
+_nrn_libedit_replace(
+  "${_src}/compat/win32/misc.c" "NRN_LIBEDIT_SKIP_DLFCN"
+  "static DWORD last_dlerror = ERROR_SUCCESS;" "#ifndef NRN_LIBEDIT_SKIP_DLFCN
+static DWORD last_dlerror = ERROR_SUCCESS;")
+_nrn_libedit_replace(
+  "${_src}/compat/win32/misc.c"
+  "NEURON: nrniv provides dlopen"
+  [=[	return "Failed to format error message";
+}
+
+/*fopen on Windows]=]
+  [=[	return "Failed to format error message";
+}
+#endif /* NRN_LIBEDIT_SKIP_DLFCN */
+
+/* NEURON: nrniv provides dlopen. */
+/*fopen on Windows]=])
+
+# MinGW's C library already defines off_t (and pid_t). The shim's long long off_t does not match.
+# MSVC's ucrt header sets _OFF_T_DEFINED without typedef'ing off_t when __STDC__ is 1, which this
+# shim forces, so the guard has to be __MINGW32__ rather than _OFF_T_DEFINED.
+_nrn_libedit_replace(
+  "${_src}/compat/win32/include/sys/types.h"
+  "NEURON: MinGW already has off_t"
+  [=[typedef _dev_t dev_t;
+typedef long long off_t;
+typedef unsigned int uid_t;
+typedef unsigned int gid_t;
+
+typedef unsigned short _mode_t;
+typedef _mode_t mode_t;
+typedef int ssize_t;
+typedef int pid_t;
+]=]
+  [=[/* NEURON: MinGW already has dev_t, off_t, mode_t, and pid_t. */
+#ifndef __MINGW32__
+typedef _dev_t dev_t;
+typedef long long off_t;
+typedef unsigned short _mode_t;
+typedef _mode_t mode_t;
+typedef int pid_t;
+#endif
+typedef unsigned int uid_t;
+typedef unsigned int gid_t;
+typedef int ssize_t;
+]=])
+_nrn_libedit_replace(
+  "${_src}/compat/win32/include/stdio.h"
+  "NEURON: MinGW stdio.h already defines off_t"
+  [=[typedef long long off_t;
+int fseeko(FILE *stream, off_t offset, int whence);
+off_t ftello(FILE *stream);
+
+/* required by el.c */
+typedef int ssize_t;
+]=]
+  [=[/* NEURON: MinGW stdio.h already defines off_t and declares fseeko. */
+#ifndef __MINGW32__
+typedef long long off_t;
+#endif
+int fseeko(FILE *stream, off_t offset, int whence);
+off_t ftello(FILE *stream);
+
+/* required by el.c */
+#ifndef _SSIZE_T_DEFINED
+typedef int ssize_t;
+#define _SSIZE_T_DEFINED
+#endif
+]=])
+
 set(_edit_sources
     chared.c
     chartype.c
@@ -120,56 +227,88 @@ endfunction()
 set(NRN_LIBEDIT_PDCURSES_README "")
 set(NRN_LIBEDIT_TERMCAP_NOTICE "")
 
-if(MSVC)
+if(WIN32)
   set(_ucrt "")
-  foreach(_dir IN LISTS CMAKE_C_IMPLICIT_INCLUDE_DIRECTORIES CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES)
-    if(_dir MATCHES "[\\\\/]ucrt$")
-      set(_ucrt "${_dir}")
-      break()
-    endif()
-  endforeach()
-  if(NOT _ucrt)
-    set(_programfilesx86 "ProgramFiles(x86)")
-    set(_kit_roots "$ENV{CMAKE_WINDOWS_KITS_10_DIR}" "$ENV{ProgramFiles}/Windows Kits/10"
-                   "$ENV{${_programfilesx86}}/Windows Kits/10")
-    foreach(_root IN LISTS _kit_roots)
-      if(NOT _root OR NOT EXISTS "${_root}/Include")
-        continue()
+  if(MSVC)
+    foreach(_dir IN LISTS CMAKE_C_IMPLICIT_INCLUDE_DIRECTORIES
+                          CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES)
+      if(_dir MATCHES "[\\\\/]ucrt$")
+        set(_ucrt "${_dir}")
+        break()
       endif()
-      file(
-        GLOB _vers
-        LIST_DIRECTORIES true
-        "${_root}/Include/10.*")
-      if(_vers)
-        list(
-          SORT _vers
-          COMPARE NATURAL
-          ORDER DESCENDING)
-        list(GET _vers 0 _verdir)
-        if(EXISTS "${_verdir}/ucrt/stdio.h")
-          set(_ucrt "${_verdir}/ucrt")
-          break()
+    endforeach()
+    if(NOT _ucrt)
+      set(_programfilesx86 "ProgramFiles(x86)")
+      set(_kit_roots "$ENV{CMAKE_WINDOWS_KITS_10_DIR}" "$ENV{ProgramFiles}/Windows Kits/10"
+                     "$ENV{${_programfilesx86}}/Windows Kits/10")
+      foreach(_root IN LISTS _kit_roots)
+        if(NOT _root OR NOT EXISTS "${_root}/Include")
+          continue()
         endif()
+        file(
+          GLOB _vers
+          LIST_DIRECTORIES true
+          "${_root}/Include/10.*")
+        if(_vers)
+          list(
+            SORT _vers
+            COMPARE NATURAL
+            ORDER DESCENDING)
+          list(GET _vers 0 _verdir)
+          if(EXISTS "${_verdir}/ucrt/stdio.h")
+            set(_ucrt "${_verdir}/ucrt")
+            break()
+          endif()
+        endif()
+      endforeach()
+    endif()
+  else()
+    # MinGW: the shims include the compiler's C headers by full path. Do not use the msys
+    # /usr/include/termios.h; that pulls in msys-2.0.dll, which the installer does not ship.
+    foreach(_dir IN LISTS CMAKE_C_IMPLICIT_INCLUDE_DIRECTORIES)
+      if(EXISTS "${_dir}/stdio.h" AND EXISTS "${_dir}/sys/types.h")
+        set(_ucrt "${_dir}")
+        break()
       endif()
     endforeach()
   endif()
   if(NOT _ucrt OR NOT EXISTS "${_ucrt}/stdio.h")
     message(
       FATAL_ERROR
-        "libedit: Windows SDK UCRT headers not found. The Win32 shims include those headers by full path."
-    )
+        "libedit: C runtime headers not found. The Win32 shims include those headers by full path.")
   endif()
   set(_hdrdir "${CMAKE_CURRENT_BINARY_DIR}/libedit-include")
   file(MAKE_DIRECTORY "${_hdrdir}")
   set(_crtheaders "${_hdrdir}/crtheaders.h")
   file(WRITE "${_crtheaders}" "#pragma once\n")
-  file(
-    GLOB_RECURSE _uchdrs
-    RELATIVE "${_ucrt}"
-    "${_ucrt}/*.h")
+  if(MSVC)
+    file(
+      GLOB_RECURSE _uchdrs
+      RELATIVE "${_ucrt}"
+      "${_ucrt}/*.h")
+  else()
+    # Only the headers the shims include by macro. A full mingw include tree defines macros such as
+    # WINDOWS_H that collide with header guards.
+    set(_uchdrs
+        ctype.h
+        fcntl.h
+        stddef.h
+        stdio.h
+        stdlib.h
+        string.h
+        time.h
+        sys/stat.h
+        sys/types.h)
+  endif()
   foreach(_hdr IN LISTS _uchdrs)
     string(TOUPPER "${_hdr}" _macro)
     string(REGEX REPLACE "[/\\\\.]" "_" _macro "${_macro}")
+    if(NOT _macro MATCHES "^[A-Z0-9_]+$")
+      continue()
+    endif()
+    if(NOT EXISTS "${_ucrt}/${_hdr}")
+      message(FATAL_ERROR "libedit: missing C runtime header ${_ucrt}/${_hdr}")
+    endif()
     file(TO_CMAKE_PATH "${_ucrt}/${_hdr}" _full)
     file(APPEND "${_crtheaders}" "#define ${_macro} \"${_full}\"\n")
   endforeach()
@@ -253,7 +392,8 @@ static int tinfo_init()
   target_include_directories(nrn_edit_regex PRIVATE ${_win_includes})
 
   file(GLOB _compat_sources "${_src}/compat/win32/*.c")
-  add_library(nrn_edit_compat STATIC ${_compat_sources})
+  add_library(nrn_edit_compat STATIC ${_compat_sources}
+                                     "${CMAKE_CURRENT_LIST_DIR}/libedit_win32_missing.c")
   target_include_directories(nrn_edit_compat PRIVATE ${_win_includes})
 
   file(GLOB _pdc_sources "${_src}/compat/pdcurses/*.c" "${_src}/compat/pdcurses/vt/*.c")
@@ -267,10 +407,17 @@ static int tinfo_init()
 
   foreach(_tgt nrn_edit_regex nrn_edit_compat nrn_edit_pdcurses nrn_edit_terminfo)
     _nrn_libedit_mark(${_tgt})
-    target_compile_definitions(${_tgt} PRIVATE _CRT_SECURE_NO_WARNINGS)
+    # MinGW does not define WIN32. The port's sources and the checked-in libedit headers key on it.
+    # Keep the macro on these targets; defining it for all of NEURON would change other code.
+    target_compile_definitions(${_tgt} PRIVATE WIN32)
+    if(MSVC)
+      target_compile_definitions(${_tgt} PRIVATE _CRT_SECURE_NO_WARNINGS)
+    endif()
   endforeach()
+  target_compile_definitions(nrn_edit_compat PRIVATE NRN_LIBEDIT_SKIP_DLFCN)
 
   add_library(nrn_edit STATIC ${_edit_sources})
+  target_compile_definitions(nrn_edit PRIVATE WIN32)
   target_include_directories(nrn_edit PRIVATE ${_win_includes} "${_src}/libedit/include"
                                               "${_src}/libedit")
   # PUBLIC so a static library's system libraries reach nrniv_lib. PRIVATE usage requirements of a
@@ -290,8 +437,7 @@ static int tinfo_init()
   set(NRN_LIBEDIT_PDCURSES_README "${_src}/compat/pdcurses/README.md")
   set(NRN_LIBEDIT_TERMCAP_NOTICE "${_src}/data/termcap")
 else()
-  # Static on Unix wheels. MinGW keeps the shared MSYS2 import library so the installer can copy
-  # ncurses DLLs. Do not also search libreadline.
+  # Unix wheels only. WIN32 took the console stack above. Do not also search libreadline.
   unset(NRN_LIBEDIT_TERMCAP CACHE)
   set(_saved_suffixes "${CMAKE_FIND_LIBRARY_SUFFIXES}")
   if(NOT WIN32)

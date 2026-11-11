@@ -510,8 +510,7 @@ endif()
 if(NOT READLINE_FOUND)
   message(FATAL_ERROR "Readline is required (HOC interactive input)")
 endif()
-# libedit carries its own termcap. Dynamic GNU readline still needs curses or termcap. MinGW libedit
-# links the MSYS2 ncurses package below.
+# libedit carries its own termcap. Dynamic GNU readline still needs curses or termcap.
 if(NOT NRN_LIBEDIT_BUILTIN)
   find_package(Curses QUIET)
   find_package(Termcap QUIET)
