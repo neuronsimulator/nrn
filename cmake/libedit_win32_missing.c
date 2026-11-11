@@ -5,17 +5,20 @@
  * W32_COMPAT_IMPL keeps the shim from turning UCRT's rename into a second w32_rename.
  */
 #define W32_COMPAT_IMPL
+#ifdef _MSC_VER
+/* io.h before the libedit fcntl shim. That shim's open() macro otherwise
+ * rewrites the UCRT _open declaration. */
+#include <io.h>
+#include <share.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#undef open
+#endif
 #include <errno.h>
 #include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifdef _MSC_VER
-#include <fcntl.h>
-#include <io.h>
-#include <share.h>
-#include <sys/stat.h>
-#endif
 
 static struct passwd nrn_pw;
 static char nrn_pw_name[256];
