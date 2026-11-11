@@ -34,6 +34,8 @@ set(_src "${nrn_libedit_SOURCE_DIR}")
 # EL_GETCFN only inside rl_initialize, which also wipes history.
 function(_nrn_libedit_replace file marker old new)
   file(READ "${file}" _text)
+  # MinGW CMake file(WRITE) stores the patched header with CRLF. Needles are LF.
+  string(REPLACE "\r\n" "\n" _text "${_text}")
   string(FIND "${_text}" "${marker}" _mark)
   if(NOT _mark EQUAL -1)
     return()
@@ -135,10 +137,11 @@ _nrn_libedit_replace(
 
 # MinGW's C library already defines off_t (and pid_t). The shim's long long off_t does not match.
 # MSVC's ucrt header sets _OFF_T_DEFINED without typedef'ing off_t when __STDC__ is 1, which this
-# shim forces, so the guard has to be __MINGW32__ rather than _OFF_T_DEFINED.
+# shim forces, so the guard has to be __MINGW32__ rather than _OFF_T_DEFINED. The marker has to be a
+# substring of the replacement. "has off_t" is not, because the comment says "has dev_t, off_t".
 _nrn_libedit_replace(
   "${_src}/compat/win32/include/sys/types.h"
-  "NEURON: MinGW already has off_t"
+  "NEURON: MinGW already has dev_t, off_t, mode_t, and pid_t."
   [=[typedef _dev_t dev_t;
 typedef long long off_t;
 typedef unsigned int uid_t;
