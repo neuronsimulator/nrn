@@ -267,6 +267,19 @@ _nrn_libedit_replace(
   [=[mode = va_arg(valist, mode_t);]=]
   [=[mode = (mode_t)va_arg(valist, int); /* NEURON: mode_t is promoted to int. */]=])
 
+# ansiprsr.c tentatively defines Parameters. tncon.c defines the initialized object. GCC 10
+# -fno-common keeps both.
+_nrn_libedit_replace(
+  "${_src}/compat/win32/ansiprsr.c"
+  "NEURON: tncon.c defines Parameters"
+  [=[/* items used from other modules */
+TelParams Parameters;
+]=]
+  [=[/* items used from other modules */
+/* NEURON: tncon.c defines Parameters. */
+extern TelParams Parameters;
+]=])
+
 # processBuffer's buffer argument is unsigned char**. gcc rejects char**.
 _nrn_libedit_replace(
   "${_src}/compat/win32/termio.c"
