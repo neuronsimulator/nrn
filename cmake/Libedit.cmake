@@ -159,7 +159,10 @@ typedef int pid_t;
 #endif
 typedef unsigned int uid_t;
 typedef unsigned int gid_t;
+/* NEURON: MinGW ssize_t is long long, from corecrt.h. */
+#ifndef __MINGW32__
 typedef int ssize_t;
+#endif
 ]=])
 _nrn_libedit_replace(
   "${_src}/compat/win32/include/stdio.h"
@@ -179,9 +182,47 @@ int fseeko(FILE *stream, off_t offset, int whence);
 off_t ftello(FILE *stream);
 
 /* required by el.c */
+/* NEURON: MinGW ssize_t is long long, from corecrt.h. */
+#ifndef __MINGW32__
 #ifndef _SSIZE_T_DEFINED
 typedef int ssize_t;
 #define _SSIZE_T_DEFINED
+#endif
+#endif
+]=])
+
+# Trees configured before the ssize_t guard still have the unguarded typedef. A clean fetch already
+# contains the marker, so this second replace does not run.
+_nrn_libedit_replace(
+  "${_src}/compat/win32/include/sys/types.h"
+  "NEURON: MinGW ssize_t is long long"
+  [=[typedef unsigned int uid_t;
+typedef unsigned int gid_t;
+typedef int ssize_t;
+]=]
+  [=[typedef unsigned int uid_t;
+typedef unsigned int gid_t;
+/* NEURON: MinGW ssize_t is long long, from corecrt.h. */
+#ifndef __MINGW32__
+typedef int ssize_t;
+#endif
+]=])
+_nrn_libedit_replace(
+  "${_src}/compat/win32/include/stdio.h"
+  "NEURON: MinGW ssize_t is long long"
+  [=[/* required by el.c */
+#ifndef _SSIZE_T_DEFINED
+typedef int ssize_t;
+#define _SSIZE_T_DEFINED
+#endif
+]=]
+  [=[/* required by el.c */
+/* NEURON: MinGW ssize_t is long long, from corecrt.h. */
+#ifndef __MINGW32__
+#ifndef _SSIZE_T_DEFINED
+typedef int ssize_t;
+#define _SSIZE_T_DEFINED
+#endif
 #endif
 ]=])
 
