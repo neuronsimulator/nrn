@@ -87,6 +87,78 @@ void endpwent(void) {
     nrn_pwent_armed = 0;
 }
 
+#ifndef _MSC_VER
+/*
+ * MinGW dllimports _dupenv_s and _wdupenv_s. msvcrt does not export them, so the
+ * Win32 port's calls need a definition of those import pointers. A missing
+ * variable is success and a null buffer, matching the UCRT.
+ */
+#include <wchar.h>
+
+static errno_t nrn_libedit_dupenv_s(char** buffer, size_t* count, const char* name) {
+    const char* value;
+    char* copy;
+    size_t n;
+    if (buffer == NULL || name == NULL) {
+        errno = EINVAL;
+        return EINVAL;
+    }
+    *buffer = NULL;
+    if (count != NULL) {
+        *count = 0;
+    }
+    value = getenv(name);
+    if (value == NULL) {
+        return 0;
+    }
+    n = strlen(value) + 1;
+    copy = (char*) malloc(n);
+    if (copy == NULL) {
+        errno = ENOMEM;
+        return ENOMEM;
+    }
+    memcpy(copy, value, n);
+    *buffer = copy;
+    if (count != NULL) {
+        *count = n;
+    }
+    return 0;
+}
+
+static errno_t nrn_libedit_wdupenv_s(wchar_t** buffer, size_t* count, const wchar_t* name) {
+    const wchar_t* value;
+    wchar_t* copy;
+    size_t n;
+    if (buffer == NULL || name == NULL) {
+        errno = EINVAL;
+        return EINVAL;
+    }
+    *buffer = NULL;
+    if (count != NULL) {
+        *count = 0;
+    }
+    value = _wgetenv(name);
+    if (value == NULL) {
+        return 0;
+    }
+    n = wcslen(value) + 1;
+    copy = (wchar_t*) malloc(n * sizeof(wchar_t));
+    if (copy == NULL) {
+        errno = ENOMEM;
+        return ENOMEM;
+    }
+    memcpy(copy, value, n * sizeof(wchar_t));
+    *buffer = copy;
+    if (count != NULL) {
+        *count = n;
+    }
+    return 0;
+}
+
+errno_t (*__imp__dupenv_s)(char**, size_t*, const char*) = nrn_libedit_dupenv_s;
+errno_t (*__imp__wdupenv_s)(wchar_t**, size_t*, const wchar_t*) = nrn_libedit_wdupenv_s;
+#endif
+
 #ifdef _MSC_VER
 int fseeko(FILE* stream, off_t offset, int whence) {
     return _fseeki64(stream, (__int64) offset, whence);
