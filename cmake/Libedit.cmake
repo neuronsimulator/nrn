@@ -229,6 +229,18 @@ typedef int ssize_t;
 #endif
 ]=])
 
+# gcc rejects int* where PeekConsoleInputW and ReadConsoleInputW want LPDWORD.
+_nrn_libedit_replace(
+  "${_src}/compat/win32/console.c"
+  "NEURON: PeekConsoleInputW wants LPDWORD"
+  [=[	INPUT_RECORD peek_input;
+	int out_count = 0;
+]=]
+  [=[	INPUT_RECORD peek_input;
+	/* NEURON: PeekConsoleInputW wants LPDWORD, and gcc rejects int*. */
+	DWORD out_count = 0;
+]=])
+
 set(_edit_sources
     chared.c
     chartype.c
