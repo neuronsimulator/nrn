@@ -42,6 +42,7 @@
 #include <filesystem>
 #include <iostream>
 #include <mutex>
+#include <string>
 #include <thread>
 #include <utility>
 
@@ -1655,6 +1656,39 @@ static CHAR* fgets_unlimited_nltrans(HocStr* bufstr, NrnFILEWrap* f, int nltrans
     return (CHAR*) 0;
 }
 
+#if defined(NRN_LIBEDIT_HOST_TERMINFO)
+/* Static ncurses looks for terminfo under its build prefix (/nrnwheel or
+   /opt/nrnwheel). A wheel does not ship that directory. Point ncurses at the
+   host database before the first readline(), unless the user already chose one.
+   tgetent returns -1 ("Cannot read termcap database") when the directory is
+   missing. */
+static void nrn_libedit_host_terminfo() {
+    static int once = 0;
+    if (once) {
+        return;
+    }
+    once = 1;
+    if (std::getenv("TERMINFO") || std::getenv("TERMINFO_DIRS")) {
+        return;
+    }
+    const char* dirs[] = {
+        "/usr/share/terminfo", "/lib/terminfo", "/usr/lib/terminfo", "/etc/terminfo", nullptr};
+    std::string joined;
+    for (int i = 0; dirs[i]; ++i) {
+        if (access(dirs[i], R_OK | X_OK) != 0) {
+            continue;
+        }
+        if (!joined.empty()) {
+            joined.push_back(':');
+        }
+        joined += dirs[i];
+    }
+    if (!joined.empty()) {
+        setenv("TERMINFO_DIRS", joined.c_str(), 0);
+    }
+}
+#endif
+
 int hoc_get_line(void) { /* supports re-entry. fill hoc_cbuf with next line */
     if (*hoc_ctp) {
         hoc_execerror("Internal error:", "Not finished with previous input line");
@@ -1707,6 +1741,9 @@ int hoc_get_line(void) { /* supports re-entry. fill hoc_cbuf with next line */
 #endif /* not use_rl_getc_function */
 #endif /* not _WIN32 */
 #endif /* INTERVIEWS */
+#if defined(NRN_LIBEDIT_HOST_TERMINFO)
+            nrn_libedit_host_terminfo();
+#endif
             if ((line = readline(hoc_promptstr)) == (char*) 0) {
                 extern int hoc_notify_stop;
                 return EOF;

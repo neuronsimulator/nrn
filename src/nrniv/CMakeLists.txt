@@ -474,6 +474,15 @@ else()
   elseif(TERMCAP_FOUND)
     target_link_libraries(nrniv_lib PUBLIC ${TERMCAP_LIBRARIES})
   endif()
+
+  # Static ncurses looks up terminfo in its build prefix. The wheel does not ship that directory, so
+  # hoc asks the host database before readline().
+  if(NRN_WHEEL_STATIC_READLINE AND NOT WIN32)
+    set_property(
+      SOURCE ${NRN_OC_SRC_DIR}/hoc.cpp
+      APPEND
+      PROPERTY COMPILE_DEFINITIONS NRN_LIBEDIT_HOST_TERMINFO)
+  endif()
 endif()
 
 if(NRN_ENABLE_MUSIC AND NOT NRN_ENABLE_MPI_DYNAMIC)
