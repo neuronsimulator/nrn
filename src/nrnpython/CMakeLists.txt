@@ -69,7 +69,10 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
     target_compile_definitions(nrnpython PUBLIC Py_LIMITED_API=0x030C0000)
     target_link_libraries(nrnpython PUBLIC nrniv_lib)
     target_link_libraries(nrnpython PRIVATE fmt::fmt ${Readline_LIBRARY} nanobind_py)
-    if(NRN_LINK_AGAINST_PYTHON)
+    # Windows has no Unix-style undefined-symbol lookup. The DLL must link python3.lib even when
+    # nrniv.dll does not (DYNAMIC + LINK_AGAINST off). Limited API links python3.dll, not
+    # python3XY.dll.
+    if(NRN_LINK_AGAINST_PYTHON OR WIN32)
       set(_nrnpy_link_lib ${NRN_DEFAULT_PYTHON_LIBRARIES})
       if(WIN32)
         nrn_python3_stable_import_lib("${NRN_DEFAULT_PYTHON_LIBRARIES}" _nrnpy_link_lib)
@@ -132,7 +135,9 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
       target_link_libraries(nrnpython${pyver} PUBLIC nrniv_lib)
       target_link_libraries(nrnpython${pyver} PRIVATE fmt::fmt ${Readline_LIBRARY}
                                                       ${nanobind_target})
-      if(NRN_LINK_AGAINST_PYTHON)
+      # Windows has no Unix-style undefined-symbol lookup; the DLL must link pythonXY.lib even when
+      # nrniv.dll does not (DYNAMIC + LINK_AGAINST off).
+      if(NRN_LINK_AGAINST_PYTHON OR WIN32)
         target_link_libraries(nrnpython${pyver} PUBLIC ${pylib})
       endif()
       install(TARGETS nrnpython${pyver} DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
@@ -167,7 +172,7 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
         OUTPUT_DIR
         ${PROJECT_BINARY_DIR}/lib/python/neuron)
 
-      if(NRN_LINK_AGAINST_PYTHON)
+      if(NRN_LINK_AGAINST_PYTHON OR WIN32)
         target_link_libraries(${hoc_module_name} PUBLIC ${pylib})
       endif()
 

@@ -93,8 +93,9 @@ install.strip = false
 build-dir = "build_wheel"
 
 [tool.scikit-build.cmake.define]
-# When building a redistributable wheel for Linux, we pass the readline and
-# ncurses dirs to CMAKE_PREFIX_PATH. For MacOS, we pass the same + X11 dirs.
+# Unix wheels pass the static ncurses prefix (libedit's termcap) here.
+# MacOS also passes the X11 dirs. CMake fetches BSD libedit; do not pass a
+# GNU readline prefix.
 CMAKE_PREFIX_PATH = { env = "CMAKE_PREFIX_PATH" }
 
 NRN_BINARY_DIST_BUILD = { default = "OFF", env = "NRN_BINARY_DIST_BUILD" }
@@ -129,8 +130,11 @@ MUSIC_ROOT = { default = "", env = "MUSIC_ROOT" }
 # Configuration for coreNEURON. For Linux we enable OpenMP.
 CORENRN_ENABLE_OPENMP = { default = "OFF", env = "CORENRN_ENABLE_OPENMP" }
 
-# NMODL bindings are always on for wheels
+# NMODL bindings are always on for wheels. NRN_ENABLE_NMODL stays off, so
+# nrnivmodl remains nocmodl. Windows wheels have CoreNEURON off; this flag
+# is what adds src/nmodl so the abi3 audit can see _nmodl.pyd.
 NMODL_ENABLE_PYTHON_BINDINGS = "ON"
+NRN_ENABLE_NMODL_PYTHON = "ON"
 
 # MPI options
 NRN_ENABLE_MPI = { default = "ON", env = "NRN_ENABLE_MPI" }
@@ -138,6 +142,12 @@ NRN_ENABLE_MPI_DYNAMIC = { default = "ON", env = "NRN_ENABLE_MPI_DYNAMIC" }
 
 # MPI headers are platform-specific, so we do not set defaults
 NRN_MPI_DYNAMIC = { env = "NRN_MPI_DYNAMIC" }
+
+# Windows has no X11. inherit=append keeps the rest of cmake.define.
+[[tool.scikit-build.overrides]]
+if.platform-system = "win32"
+inherit.cmake.define = "append"
+cmake.define.IV_ENABLE_X11_DYNAMIC = "OFF"
 
 [tool.cibuildwheel]
 # We can specify a custom Docker image when building NEURON
@@ -189,3 +199,11 @@ repair-wheel-command = "auditwheel -v repair -w {dest_dir} {wheel} --exclude 'li
 
 [tool.cibuildwheel.macos]
 repair-wheel-command = "delocate-listdeps {wheel} && delocate-wheel -v -w {dest_dir} {wheel}"
+
+# win_amd64 via MSVC (GitHub windows-2022). Not MinGW setup.exe.
+# CoreNEURON stays off. DYNAMIC Python is already ON above so nrniv.exe
+# is not linked to a specific pythonXY.dll. delvewheel vendors extra DLLs
+# that cmake --install did not already place in neuron/.data/bin.
+[tool.cibuildwheel.windows]
+before-build = "pip install delvewheel"
+repair-wheel-command = "delvewheel repair -w {dest_dir} {wheel} --ignore-in-wheel --no-dll msmpi.dll"

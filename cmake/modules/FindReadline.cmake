@@ -14,6 +14,9 @@
 #                            readline if the module has problems finding the
 #                            proper installation path.
 #
+# Non-wheel Unix builds use this module. Windows and Unix wheels link BSD
+# libedit from cmake/Libedit.cmake and do not call find_package(Readline).
+#
 # Variables defined by this module:
 #
 #  READLINE_FOUND            System has readline, include and lib dirs found

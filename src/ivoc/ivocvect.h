@@ -1,5 +1,7 @@
 #pragma once
 
+#include <../../nrnconf.h>
+
 #include "nrnmutdec.h"
 #include "ocnotify.h"
 

@@ -1,6 +1,6 @@
 #include <../../nrnconf.h>
 
-#ifdef MINGW
+#ifdef _WIN32
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -11,8 +11,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <string>
 #include "hoc.h"
+#ifdef MINGW
 #include "../mswin/extra/d2upath.h"
+#endif
+#include "nrn_windows_home.hpp"
 
 #include "gui-redirect.h"
 
@@ -23,34 +27,40 @@ extern void hoc_quit();
 static HCURSOR wait_cursor;
 static HCURSOR old_cursor;
 #if HAVE_IV
-extern int bad_install_ok;
+extern "C" int bad_install_ok;
 #else
 int bad_install_ok;
 #endif  // HAVE_IV
 extern FILE* hoc_redir_stdout;
+char* hoc_back2forward(char* s);
+void hoc_forward2back(char* s);
+
+static char* nrn_win_dup_path(const std::string& s) {
+    char* p = static_cast<char*>(emalloc(s.size() + 1));
+    memcpy(p, s.c_str(), s.size() + 1);
+    return p;
+}
+
 void setneuronhome(const char* p) {
-    // if the program lives in .../bin/neuron.exe
-    // and .../lib exists then use ... as the
-    // NEURONHOME
-    char buf[256];
-    char* s;
-    int i, j;
-    //	printf("p=|%s|\n", p);
     bad_install_ok = 1;
-    GetModuleFileName(NULL, buf, 256);
-    for (i = strlen(buf); i >= 0 && buf[i] != '\\'; --i) {
-        ;
+    if (!neuron_home) {
+        auto const home =
+            nrn_win_neuronhome_from_symbol(reinterpret_cast<const void*>(&setneuronhome), p);
+        if (home.empty()) {
+            return;
+        }
+        std::string s = home.string();
+#ifdef MINGW
+        neuron_home = hoc_dos2unixpath(s.c_str());
+#else
+        neuron_home = nrn_win_dup_path(s);
+        hoc_back2forward(neuron_home);
+#endif
     }
-    buf[i] = '\0';  // /neuron.exe gone
-                    //	printf("setneuronhome |%s|\n", buf);
-    for (j = strlen(buf); j >= 0 && buf[j] != '\\'; --j) {
-        ;
+    if (!neuron_home_dos && neuron_home) {
+        neuron_home_dos = nrn_win_dup_path(neuron_home);
+        hoc_forward2back(neuron_home_dos);
     }
-    buf[j] = '\0';  // /bin gone
-    neuron_home_dos = static_cast<char*>(emalloc(strlen(buf) + 1));
-    strcpy(neuron_home_dos, buf);
-    neuron_home = hoc_dos2unixpath(buf);
-    return;
 }
 void HandleOutput(char* s) {
     printf("%s", s);
@@ -86,6 +96,7 @@ BOOL hoc_copyfile(const char* src, const char* dest) {
     return CopyFile(src, dest, FALSE);
 }
 
+#ifdef MINGW
 static FILE* dll_stdio_[] = {(FILE*) 0x0, (FILE*) 0x20, (FILE*) 0x40};
 
 void nrn_mswindll_stdio(FILE* i, FILE* o, FILE* e) {
@@ -96,6 +107,7 @@ void nrn_mswindll_stdio(FILE* i, FILE* o, FILE* e) {
     dll_stdio_[1] = o;
     dll_stdio_[2] = e;
 }
+#endif  // MINGW
 
 void hoc_forward2back(char* s) {
     char* cp;
@@ -135,6 +147,7 @@ void hoc_win_exec(void) {
 
 void hoc_winio_show(int b) {}
 
+#ifdef MINGW
 int getpid() {
     return 1;
 }
@@ -155,3 +168,4 @@ void hoc_Lw() {
 }
 
 #endif  // MINGW
+#endif  // _WIN32

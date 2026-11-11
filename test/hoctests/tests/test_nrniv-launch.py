@@ -51,9 +51,12 @@ quit()
     print("stderr\n----\n{}----".format(r.stderr))
     assert r.returncode == 0
     assert "square(a)=25" in r.stdout
-    if platform != "darwin":  # Mac does not print the "oc>" prompt
-        assert "oc>quit()" in r.stdout
     assert len(r.stderr) == 0
+    # GNU readline echoes the typed line, including the oc> prompt. libedit
+    # (macOS, and static-libedit wheels) runs the same hoc and does not copy
+    # that line into stdout. Require the echo only when a prompt is present.
+    if "oc>" in r.stdout:
+        assert "oc>quit()" in r.stdout
 
 
 if __name__ == "__main__":

@@ -26,7 +26,14 @@ setup_venv() {
 
     "$py_bin" -m venv "$venv_dir"
 
-    . "$venv_dir/bin/activate"
+    if [[ -f "$venv_dir/bin/activate" ]]; then
+        . "$venv_dir/bin/activate"
+    elif [[ -f "$venv_dir/Scripts/activate" ]]; then
+        . "$venv_dir/Scripts/activate"
+    else
+        echo "ERROR: venv activate script not found in $venv_dir"
+        exit 1
+    fi
 }
 
 
@@ -54,7 +61,7 @@ collect_dirs_linux() {
     NRN_MPI_DYNAMIC="$(parse_dirs "${MPI_POSSIBLE_INCLUDE_HEADERS}" "${NRN_MPI_DYNAMIC}")"
     export NRN_MPI_DYNAMIC
 
-    PREFIX_PATH_POSSIBLE_DIRS="/nrnwheel/ncurses /nrnwheel/readline"
+    PREFIX_PATH_POSSIBLE_DIRS="/nrnwheel/ncurses"
     CMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH:-}"
     CMAKE_PREFIX_PATH="$(parse_dirs "${PREFIX_PATH_POSSIBLE_DIRS}" "${CMAKE_PREFIX_PATH}")"
     export CMAKE_PREFIX_PATH
@@ -69,7 +76,7 @@ collect_dirs_macos() {
     NRN_MPI_DYNAMIC="$(parse_dirs "${MPI_POSSIBLE_INCLUDE_HEADERS}" "${NRN_MPI_DYNAMIC}")"
     export NRN_MPI_DYNAMIC
 
-    PREFIX_PATH_POSSIBLE_DIRS="/opt/nrnwheel/$(uname -m)/ncurses /opt/nrnwheel/$(uname -m)/readline /usr/x11"
+    PREFIX_PATH_POSSIBLE_DIRS="/opt/nrnwheel/$(uname -m)/ncurses /usr/x11"
     CMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH:-}"
     CMAKE_PREFIX_PATH="$(parse_dirs "${PREFIX_PATH_POSSIBLE_DIRS}" "${CMAKE_PREFIX_PATH}")"
     export CMAKE_PREFIX_PATH
@@ -87,7 +94,7 @@ set_cibw_environment() {
     platform="${1}"
     if [ "${platform}" = 'macos' ]; then
         declare -A defaults=(
-            [CMAKE_PREFIX_PATH]="/opt/nrnwheel/$(uname -m)/ncurses;/opt/nrnwheel/$(uname -m)/readline;/usr/x11"
+            [CMAKE_PREFIX_PATH]="/opt/nrnwheel/$(uname -m)/ncurses;/usr/x11"
             [NRN_ENABLE_MPI_DYNAMIC]="ON"
             [NRN_MPI_DYNAMIC]="$(brew --prefix)/opt/openmpi/include;$(brew --prefix)/opt/mpich/include"
             [NRN_WHEEL_STATIC_READLINE]="ON"
@@ -103,12 +110,31 @@ set_cibw_environment() {
         )
     elif [ "${platform}" = 'linux' ]; then
         declare -A defaults=(
-            [CMAKE_PREFIX_PATH]="/nrnwheel/ncurses;/nrnwheel/readline"
+            [CMAKE_PREFIX_PATH]="/nrnwheel/ncurses"
             [NRN_ENABLE_MPI_DYNAMIC]="ON"
             [NRN_MPI_DYNAMIC]="/usr/include/openmpi-$(uname -m);/usr/include/mpich-$(uname -m)"
             [NRN_WHEEL_STATIC_READLINE]="ON"
             [NRN_ENABLE_CORENEURON]="ON"
             [CORENRN_ENABLE_OPENMP]="ON"
+            [NRN_BINARY_DIST_BUILD]="ON"
+            [NRN_RX3D_OPT_LEVEL]="0"
+            [NRN_ENABLE_INTERVIEWS]="ON"
+        )
+    elif [ "${platform}" = 'windows' ]; then
+        # MSVC win_amd64, same generator as the guest wheel. Ninja on
+        # windows-2022 finds C:/mingw64 GNU first; then MINGW is true and
+        # the wheel build stops. FindMPI uses C:/msmpi
+        # (ci/win_msvc_wheel_deps.cmd). CMake fetches BSD libedit on WIN32;
+        # NRN_WHEEL_STATIC_READLINE is the Unix static-ncurses switch.
+        # CoreNEURON is out of this line.
+        declare -A defaults=(
+            [CMAKE_PREFIX_PATH]="C:/msmpi"
+            [CMAKE_GENERATOR]="Visual Studio 17 2022"
+            [CMAKE_GENERATOR_PLATFORM]="x64"
+            [CMAKE_BUILD_TYPE]="Release"
+            [NRN_ENABLE_MPI_DYNAMIC]="ON"
+            [NRN_WHEEL_STATIC_READLINE]="OFF"
+            [NRN_ENABLE_CORENEURON]="OFF"
             [NRN_BINARY_DIST_BUILD]="ON"
             [NRN_RX3D_OPT_LEVEL]="0"
             [NRN_ENABLE_INTERVIEWS]="ON"
@@ -142,6 +168,17 @@ build_wheel_portable() {
             break
         fi
     done
+    # Windows (and some GHA images) expose `python` / `python3`, not python3.12.
+    if [ -z "${path_to_interpreter}" ]; then
+        for cand in python3 python; do
+            if command -v "${cand}"; then
+                if "${cand}" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 11) else 1)'; then
+                    path_to_interpreter="$(command -v "${cand}")"
+                    break
+                fi
+            fi
+        done
+    fi
 
     if [ -z "${path_to_interpreter}" ]; then
         echo "ERROR: Python 3.11 or above is required for building with cibuildwheel"
@@ -241,7 +278,7 @@ PLATFORM_MACOS="Darwin"
 
 
 # help message in case of no arguments
-help_message="Usage: $(basename "$0") < CI | linux | osx | ${PLATFORM_LINUX} | ${PLATFORM_MACOS} > [python version 311|312|3*|path_to_interp]"
+help_message="Usage: $(basename "$0") < CI | linux | osx | windows | ${PLATFORM_LINUX} | ${PLATFORM_MACOS} > [python version 311|312|3*|path_to_interp]"
 
 if [[ $# -lt 2 ]]; then
     echo "${help_message}"
@@ -280,6 +317,13 @@ case "${platform}" in
     export NRN_WHEEL_STATIC_READLINE=ON
     export NRN_BINARY_DIST_BUILD=ON
     build_wheel_portable macos
+    ;;
+
+  windows | Windows | Windows_NT | MINGW* | MSYS* | CYGWIN*)
+    export NRN_WHEEL_STATIC_READLINE=OFF
+    export NRN_BINARY_DIST_BUILD=ON
+    export NRN_ENABLE_CORENEURON=OFF
+    build_wheel_portable windows
     ;;
 
   CI)

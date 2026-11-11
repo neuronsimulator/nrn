@@ -92,7 +92,7 @@ struct Symbol;
 
 bool nrn_chk_data_handle(const neuron::container::data_handle<double>&);
 PyObject* nrn_hocobj_handle(neuron::container::data_handle<double> d);
-extern "C" PyObject* nrn_hocobj_ptr(double*);
+extern "C" NRN_EXPORT PyObject* nrn_hocobj_ptr(double*);
 int nrn_is_hocobj_ptr(PyObject*, neuron::container::data_handle<double>&);
 int nrn_pointer_assign(Prop*, Symbol*, PyObject*);
 neuron::container::generic_data_handle* nrnpy_setpointer_helper(PyObject*, PyObject*);

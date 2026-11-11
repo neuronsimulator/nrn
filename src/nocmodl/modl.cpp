@@ -95,7 +95,7 @@ int main(int argc, char** argv) {
     std::strcpy(finname, inputfile.c_str());
     openfiles(inputfile.c_str(),
               output_dir.empty() ? nullptr : output_dir.c_str()); /* .mrg else .mod,  .var, .c */
-    IGNORE(yyparse());
+    NRN_IGNORE(yyparse());
     /*
      * At this point all blocks are fully processed except the kinetic
      * block and the solve statements. Even in these cases the
@@ -149,12 +149,16 @@ int main(int argc, char** argv) {
         fprintf(
             fcout,
             "\n#if NMODL_TEXT\nstatic void register_nmodl_text_and_filename(int mech_type) {\n");
+        /* path::c_str() is wchar_t on Windows; %s needs a narrow string.
+           generic_string() uses '/' so the C literal is not a backslash escape. */
 #if !defined(NRN_AVOID_ABSOLUTE_PATHS)
-        fprintf(fcout, "    const char* nmodl_filename = \"%s\";\n", fs::absolute(finname).c_str());
+        fprintf(fcout,
+                "    const char* nmodl_filename = \"%s\";\n",
+                fs::absolute(finname).generic_string().c_str());
 #else
         fprintf(fcout,
                 "    const char* nmodl_filename = \"%s\";\n",
-                fs::path(finname).filename().c_str());
+                fs::path(finname).filename().generic_string().c_str());
 #endif
         fprintf(fcout, "    const char* nmodl_file_text = \n");
         ITERATE(q, filetxtlist) {
@@ -180,7 +184,7 @@ int main(int argc, char** argv) {
     }
 #endif
 
-    IGNORE(fclose(fcout));
+    NRN_IGNORE(fclose(fcout));
 
     if (vectorize) {
         Fprintf(stderr, "Thread Safe\n");
@@ -196,10 +200,10 @@ int main(int argc, char** argv) {
     { /* for lex */
         extern int yytchar, yylineno;
         extern FILE* yyin;
-        IGNORE(yyin);
-        IGNORE(yytchar);
-        IGNORE(yylineno);
-        IGNORE(yyinput());
+        NRN_IGNORE(yyin);
+        NRN_IGNORE(yytchar);
+        NRN_IGNORE(yylineno);
+        NRN_IGNORE(yyinput());
         yyunput(ilint);
         yyoutput(ilint);
     }
@@ -211,20 +215,19 @@ int main(int argc, char** argv) {
 static void openfiles(const char* given_filename, const char* output_dir) {
     char output_filename[NRN_BUFSIZE];
     char input_filename[NRN_BUFSIZE];
-    modprefix = strdup(given_filename);  // we want to keep original string to open input file
-    // find last '.' after last '/' that delimit file name from extension
-    // we are not bothering to deal with filenames that begin with a . but do
-    // want to deal with paths like ../foo/hh
-    char* first_ext_char = strrchr(modprefix, '.');
-    if (strrchr(modprefix, '/') > first_ext_char) {
-        first_ext_char = NULL;
+    /* prefix is the input path without a filename extension. Directory
+       separators are '/' Unix and also '\\' Windows (std::filesystem).
+       Paths like ../foo/hh have no extension; we are not bothering with
+       filenames that begin with a . */
+    fs::path given{given_filename};
+    fs::path prefix{given};
+    if (prefix.has_extension()) {
+        prefix.replace_extension();
     }
+    modprefix = strdup(prefix.string().c_str());
 
     Sprintf(input_filename, "%s", given_filename);
 
-    if (first_ext_char)
-        *first_ext_char = '\0';  // effectively cut the extension from prefix if it exist in
-                                 // given_filename
     if ((fin = fopen(input_filename, "r")) == (FILE*) 0) {  // first try to open given_filename
         Sprintf(input_filename, "%s.mod", given_filename);  // if it dont work try to add ".mod"
                                                             // extension and retry
@@ -241,12 +244,8 @@ static void openfiles(const char* given_filename, const char* output_dir) {
             fprintf(stderr, "Can't create output directory %s\n", output_dir);
             exit(1);
         }
-        char* basename = strrchr(modprefix, '/');
-        if (basename) {
-            Sprintf(output_filename, "%s%s.cpp", output_dir, basename);
-        } else {
-            Sprintf(output_filename, "%s/%s.cpp", output_dir, modprefix);
-        }
+        fs::path out = fs::path(output_dir) / (prefix.filename().string() + ".cpp");
+        Sprintf(output_filename, "%s", out.string().c_str());
     } else {
         Sprintf(output_filename, "%s.cpp", modprefix);
     }

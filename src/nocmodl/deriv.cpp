@@ -74,7 +74,7 @@ void solv_diffeq(Item* qsol,
     if (method->subtype & DERF) {
         if (method->u.i == 1) { /* variable step method */
             maxerr_str = ", maxerr";
-            IGNORE(ifnew_parminstall("maxerr", "1e-5", "", ""));
+            NRN_IGNORE(ifnew_parminstall("maxerr", "1e-5", "", ""));
         } else {
             maxerr_str = "";
         }
@@ -340,7 +340,7 @@ char* reprime(Symbol* sym) {
         return name;
     }
 
-    IGNORE(init_forderiv(sym));
+    NRN_IGNORE(init_forderiv(sym));
 
     Strcpy(name, forderiv->name);
     cp = name + strlen(name);
@@ -503,7 +503,7 @@ void massagederiv(Item* q1, Item* q2, Item* q3, Item* q4) {
     ITERATE(qs, deriv_used_list) {
         s = SYM(qs);
         if (!(s->subtype & DEP) && !(s->subtype & STAT)) {
-            IGNORE(init_forderiv(s));
+            NRN_IGNORE(init_forderiv(s));
             nrn_assert(snprintf(units, SB, "%s/%s^%d", base_units, STR(indeplist->prev), maxindx) >
                        SB);
             depinstall(0, s, s->araydim, "0", "1", units, ITEM0, 0, "");

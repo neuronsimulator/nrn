@@ -45,7 +45,8 @@ RUN yum -y install \
 
 WORKDIR /root
 
-# Pinned sources from NEURON CI dependency Release (ci/deps MANIFEST: ncurses-6.4-src, readline-7.0-src).
+# Pinned ncurses from NEURON CI dependency Release (ci/deps MANIFEST: ncurses-6.4-src).
+# CMake fetches BSD libedit and static-links this ncurses. GNU readline is not built.
 # Build context is packaging/python, so we cannot run ci/deps/fetch.sh here; URLs match default_release_base_url.
 # --proto '=https' refuses HTTP (including after redirects); NRN_CI_DEPS_BASE_URL must be https://...
 ARG NRN_CI_DEPS_BASE_URL=https://github.com/neuronsimulator/nrn-ci-deps/releases/download/ci-deps-v1
@@ -56,20 +57,6 @@ RUN curl -fL --proto '=https' --tlsv1.2 -o ncurses-6.4.tar.gz "${NRN_CI_DEPS_BAS
     && ./configure --prefix=/nrnwheel/ncurses --without-shared --without-debug CFLAGS="-fPIC" \
     && make -j install \
     && cd .. && rm -rf ncurses-6.4 ncurses-6.4.tar.gz
-
-RUN curl -fL --proto '=https' --tlsv1.2 -o readline-7.0.tar.gz "${NRN_CI_DEPS_BASE_URL}/readline-7.0.tar.gz" \
-    && tar -xvzf readline-7.0.tar.gz \
-    && cd readline-7.0  \
-    && ./configure --prefix=/nrnwheel/readline --disable-shared CFLAGS="-fPIC" \
-    && make -j install \
-    && cd .. && rm -rf readline-7.0 readline-7.0.tar.gz
-
-# create readline with ncurses
-RUN cd /nrnwheel/readline/lib \
-    && ar -x libreadline.a \
-    && ar -x ../../ncurses/lib/libncurses.a \
-    && ar cq libreadline.a *.o \
-    && rm *.o
 
 # NOTE: NMODL transpiler is used in during build step but it requires
 # sympy+python available in order to translate MOD files to C++. But under

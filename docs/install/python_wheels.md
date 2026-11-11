@@ -113,20 +113,31 @@ See **[CI dependency archive](ci_deps.md)** and
 * `fetch.sh` / `install_mpich_noble.sh` / `publish.sh` / `check-upstream.sh`
 * how to add the next flaky third-party download
 
-Azure macOS wheels still obtain a prebuilt static **readline** via an Azure
-*secure file* (see macOS section below). Migrating that class of blob into
-`ci/deps` is tracked as `managed: false` in the MANIFEST until promoted.
+Azure macOS wheels build a static **ncurses** on the agent with
+[packaging/python/build_static_ncurses_osx.bash](../../packaging/python/build_static_ncurses_osx.bash),
+the same script GitHub Actions uses (see the macOS section below). CMake
+fetches BSD libedit and links that archive. The pipeline does not download
+the old secure file `readline7.0-ncurses6.4.tar.gz`.
+
+## Windows wheels (`win_amd64`)
+
+GitHub Actions `windows-2022` builds an MSVC wheel (Visual Studio 17 2022 x64), not MinGW
+`setup.exe`. How to build locally, including `CMAKE_GENERATOR` / `CMAKE_GENERATOR_PLATFORM` and
+`ci/win_msvc_wheel_deps.cmd`, is under [Windows build — MSVC Python wheel](windows.md#msvc-python-wheel).
+
+`nrnivmodl` on that wheel needs `cl.exe` (Build Tools) and CMake; the wheel does not ship MinGW.
+See [Installing Binary Distribution — Windows](install_instructions.md#windows).
 
 ## macOS wheels
 
 Note that for macOS there is no docker image needed, but all required dependencies must exist.
 In order to have the wheels working on multiple macOS target versions, special consideration must be made for `MACOSX_DEPLOYMENT_TARGET`.
 
-Taking Azure macOS `x86_64` wheels for example, `readline` was built with `MACOSX_DEPLOYMENT_TARGET=10.9` and stored as secure file on Azure (under `Pipelines > Library > Secure files`).
-For `arm64` we need to set `MACOSX_DEPLOYMENT_TARGET=11.0`.
-
-You can use [packaging/python/build_static_readline_osx.bash](../../packaging/python/build_static_readline_osx.bash) to build a static readline library.
-You can have a look at the script for requirements and usage.
+Azure and GitHub Actions both run
+[packaging/python/build_static_ncurses_osx.bash](../../packaging/python/build_static_ncurses_osx.bash)
+before the wheel build. The script sets `MACOSX_DEPLOYMENT_TARGET` to 10.9 on
+`x86_64` and 11.0 on `arm64`, and installs `libncurses.a` under
+`/opt/nrnwheel/$(uname -m)/ncurses`. libedit itself is fetched by CMake.
 
 ### Installing macOS prerequisites
 
@@ -195,11 +206,11 @@ portable subset of the developer suite against an installed wheel.
 Quick health check after building a wheel (or against TestPyPI):
 
 ```
-# first arg is a python exe and second arg is the corresponding wheel
-bash packaging/python/test_wheels.sh python3.9 wheelhouse/NEURON-7.8.0.236-cp39-cp39-macosx_10_9_x86_64.whl
+# first arg is a Python 3.11+ interpreter and second arg is the matching wheel
+bash packaging/python/test_wheels.sh python3.11 wheelhouse/neuron_nightly-9.1.0-cp311-cp311-manylinux_2_28_x86_64.whl
 
-# Or, you can provide the pypi url
-bash packaging/python/test_wheels.sh python3.9 "-i https://test.pypi.org/simple/NEURON==7.8.11.2"
+# Or pass a pip requirement as the second argument
+bash packaging/python/test_wheels.sh python3.11 neuron-nightly
 ```
 
 This covers import/`neuron.test()`, basic `nrnivmodl`, and a few MPI /

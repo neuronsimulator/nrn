@@ -24,7 +24,8 @@ proc init() {
 		filename = "choose a file                          "
 	}else{
 		file = $o1.file
-		hoc_sf_.head(file.getname(), "[^/]*$", tstr)
+		// last / is not the directory on Windows; \ is also a separator
+		hoc_sf_.head(file.getname(), "[^/\\\\]*$", tstr)
 		file.chooser("r", "Import 3-D Reconstruction File", "*", "Read", "Cancel", tstr)
 		filename =file.getname()
 	}

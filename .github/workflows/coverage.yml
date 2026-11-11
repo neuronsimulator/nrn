@@ -37,7 +37,7 @@ jobs:
 
     name: Code Coverage
 
-    timeout-minutes: 60
+    timeout-minutes: 90
 
     env:
       DISPLAY: ${{ ':0' }}

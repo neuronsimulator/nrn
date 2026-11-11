@@ -22,7 +22,8 @@ access s1.sec	// soma becomes the default section
 #include "code.h"
 #include "oc_ansi.h"
 
-Symbol *nrn_sec_sym, *nrn_parent_sym, *nrn_root_sym, *nrn_child_sym;
+Symbol *nrn_sec_sym, *nrn_parent_sym, *nrn_root_sym;
+NRN_DLLSYM Symbol* nrn_child_sym;
 Symbol* nrn_trueparent_sym;
 
 static hoc_Item** sec2pitm(Section* sec) {
