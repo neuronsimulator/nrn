@@ -253,7 +253,7 @@ _nrn_libedit_replace(
   "${_src}/compat/win32/termio.c"
   "NEURON: processBuffer writes an unsigned char buffer"
   [=[	char *respbuf = NULL;
-	size_t resplen = 0;
+	size_t resplen = 0;	
 	debug5("WriteThread thread, io:%p", pio);
 ]=]
   [=[	/* NEURON: processBuffer writes an unsigned char buffer. */
