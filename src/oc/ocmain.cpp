@@ -3,9 +3,22 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string>
 #include <hocdec.h>
 
 extern char* neuron_home;
+
+#if !defined(WIN32)
+// Same ownership as ivocmain: macOS setenv frees a getenv string that no longer fits.
+static char* nrn_own_neuronhome(const char* value) {
+    static std::string owned;
+    if (!value) {
+        return nullptr;
+    }
+    owned.assign(value);
+    return owned.data();
+}
+#endif
 
 #if defined(WIN32)
 void* cvode_pmem;
@@ -23,11 +36,11 @@ static void setnrnhome(const char* arg) {
 
      But I have decided to use the environment variable if it exists
     */
-    neuron_home = getenv("NEURONHOME");
+    neuron_home = nrn_own_neuronhome(getenv("NEURONHOME"));
     if (!neuron_home) {
 #if defined(HAVE_SETENV)
         setenv("NEURONHOME", NEURON_DATA_DIR, 1);
-        neuron_home = const_cast<char*>(NEURON_DATA_DIR);
+        neuron_home = nrn_own_neuronhome(NEURON_DATA_DIR);
 #else
 #error "I don't know how to set environment variables."
 // Maybe in this case the user will have to set it by hand.

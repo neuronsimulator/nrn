@@ -185,8 +185,20 @@ extern int hoc_print_first_instance;
 NRN_DLLSYM int nrnpy_nositeflag;
 
 #if !defined(_WIN32)
+// Own the bytes. macOS setenv frees the previous getenv string when the new
+// value does not fit, so os.environ["NEURONHOME"] = ... leaves neuron_home
+// dangling and load_file misses $(NEURONHOME)/lib/hoc.
+static char* nrn_own_neuronhome(const char* value) {
+    static std::string owned;
+    if (!value) {
+        return nullptr;
+    }
+    owned.assign(value);
+    return owned.data();
+}
+
 extern void setneuronhome(const char*) {
-    neuron_home = getenv("NEURONHOME");
+    neuron_home = nrn_own_neuronhome(getenv("NEURONHOME"));
 }
 #endif
 
@@ -510,11 +522,11 @@ nrniv [options] [fileargs]
     // old version of neuron.
     //
     // But I have decided to use the environment variable if it exists
-    neuron_home = getenv("NEURONHOME");
+    neuron_home = nrn_own_neuronhome(getenv("NEURONHOME"));
     if (!neuron_home) {
 #if defined(HAVE_SETENV)
         setenv("NEURONHOME", NEURON_DATA_DIR, 1);
-        neuron_home = const_cast<char*>(NEURON_DATA_DIR);
+        neuron_home = nrn_own_neuronhome(NEURON_DATA_DIR);
 #else
 #error "I don't know how to set environment variables."
 // Maybe in this case the user will have to set it by hand.
