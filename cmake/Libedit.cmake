@@ -229,12 +229,31 @@ typedef int ssize_t;
 #endif
 ]=])
 
+# Forward declarations in w32fd.c are non-static and the definitions are static.
+_nrn_libedit_replace(
+  "${_src}/compat/win32/w32fd.c"
+  "NEURON: gcc rejects a static definition after a non-static declaration"
+  [=[void fd_table_set(struct w32_io* pio, int index);
+
+void fd_decode_state(char*);
+]=]
+  [=[/* NEURON: gcc rejects a static definition after a non-static declaration. */
+static void fd_table_set(struct w32_io* pio, int index);
+
+static void fd_decode_state(char*);
+]=])
+# mode_t is a short. va_arg must take the promoted type.
+_nrn_libedit_replace(
+  "${_src}/compat/win32/w32fd.c" "NEURON: mode_t is promoted to int"
+  [=[mode = va_arg(valist, mode_t);]=]
+  [=[mode = (mode_t)va_arg(valist, int); /* NEURON: mode_t is promoted to int. */]=])
+
 # processBuffer's buffer argument is unsigned char**. gcc rejects char**.
 _nrn_libedit_replace(
   "${_src}/compat/win32/termio.c"
   "NEURON: processBuffer writes an unsigned char buffer"
   [=[	char *respbuf = NULL;
-	size_t resplen = 0;	
+	size_t resplen = 0;
 	debug5("WriteThread thread, io:%p", pio);
 ]=]
   [=[	/* NEURON: processBuffer writes an unsigned char buffer. */
