@@ -113,6 +113,7 @@ int nrn_rangevar_push_nothrow(Symbol* sym,
                               int index,
                               char* error_msg,
                               size_t error_msg_size);
+int nrn_rangevar_handle_str(Symbol* sym, Section* sec, double x, int index, char* buf, size_t size);
 Object* nrn_segment_nmodlrandom_get(Section* sec, double x, Symbol* sym);
 Object* nrn_pntproc_nmodlrandom_get(Object* point_process, Symbol* sym);
 int nrn_setpointer_pop(Symbol* pointer_sym,

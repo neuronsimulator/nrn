@@ -1112,7 +1112,12 @@ void range_interpolate_single(void) /*symbol at pc, 2 values on stack*/
             return;
         }
         diam_changed = 1;
-        if (sec->recalc_area_ && op != 0) {
+        // Bring the segment diameters up to date first: for op != 0 because
+        // the old value is used, and with 3-d points because nrn_diam_change
+        // below copies every segment's diam into the points, so a segment
+        // still holding a stale value (e.g. just after pt3dadd) would
+        // overwrite the points' diameters.
+        if (sec->recalc_area_ && (op != 0 || sec->npt3d)) {
             nrn_area_ri(sec);
         }
     }
@@ -1202,6 +1207,12 @@ void range_interpolate(void) /*symbol at pc, 4 values on stack*/
             return;
         }
         diam_changed = 1;
+        // As in range_interpolate_single: segments outside the range keep
+        // their diam, and nrn_diam_change copies it into the 3-d points, so it
+        // must first be derived from those points if that is pending.
+        if (sec->recalc_area_ && sec->npt3d) {
+            nrn_area_ri(sec);
+        }
     }
     indx = range_vec_indx(s);
     for (i = i1; i != i2; i += di) {

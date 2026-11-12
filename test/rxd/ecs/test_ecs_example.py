@@ -325,7 +325,7 @@ def test_ecs_multi_example_mpi(ecs_example_mpi):
     model = make_model(0.2, 1.6, mech=False)
     h.finitialize(-65)
     h.continuerun(1000)
-    if not save_path:
+    if not save_path and rank == 0:
         max_err = compare_data(data)
         assert max_err < tol
 
