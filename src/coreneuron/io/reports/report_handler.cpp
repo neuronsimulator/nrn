@@ -618,15 +618,9 @@ static VarsToReport get_lfp_vars_to_report(const NrnThread& nt,
             nrn_abort(1);
         }
         std::vector<VarWithMapping> to_report;
-        const auto& offsets = cell_mapping->electrode_offsets;
-        size_t start = 0;
-        size_t end = 0;
-        if (!offsets.empty()) {
-            nrn_assert(offsets.size() > lfp_report_index + 1);
-            start = offsets[lfp_report_index];
-            end = offsets[lfp_report_index + 1];
-        }
-        for (auto electrode_id = start; electrode_id < end; electrode_id++) {
+        // the report's electrodes are numbered from 0, as in its electrodes file
+        const auto [start, end] = cell_mapping->report_electrodes(lfp_report_index);
+        for (size_t electrode_id = 0; electrode_id < end - start; electrode_id++) {
             to_report.emplace_back(VarWithMapping(electrode_id, report_variable + offset_lfp));
             offset_lfp++;
         }
@@ -714,7 +708,8 @@ void ReportHandler::create_report(ReportConfiguration& report_config,
                                                               vars_to_report,
                                                               report_config.output_path.data(),
                                                               report_config.report_dt,
-                                                              report_config.type);
+                                                              report_config.type,
+                                                              report_config.lfp_report_index);
             report_event->send(t, net_cvode_instance, &nt);
             m_report_events.push_back(std::move(report_event));
         }

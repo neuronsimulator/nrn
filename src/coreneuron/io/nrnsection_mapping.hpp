@@ -112,6 +112,16 @@ struct CellMapping {
         return electrode_offsets.empty() ? 0 : electrode_offsets.back();
     }
 
+    /** @brief return the electrodes of LFP report `report_index` as [start, end) within the
+     *  cell's electrodes; none if the cell has no LFP factors */
+    std::pair<size_t, size_t> report_electrodes(size_t report_index) const {
+        if (electrode_offsets.empty()) {
+            return {0, 0};
+        }
+        nrn_assert(electrode_offsets.size() > report_index + 1);
+        return {electrode_offsets[report_index], electrode_offsets[report_index + 1]};
+    }
+
     /** @brief number of section lists */
     size_t size() const noexcept {
         return sec_mappings.size();

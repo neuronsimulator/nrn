@@ -97,6 +97,13 @@ std::vector<ReportConfiguration> create_report_configurations(const std::string&
         // scaling
         report_conf >> token;
         report.scaling = scaling_from_string(token, conf_file);
+        // LFP method: optional, since a line written before it existed ends with the scaling
+        std::string rest_of_line;
+        std::getline(report_conf, rest_of_line);
+        std::istringstream optional_fields(rest_of_line);
+        if (optional_fields >> token) {
+            report.lfp_method = lfp_report_method_from_string(token, conf_file);
+        }
 
         if (report.type == ReportType::LFP) {
             nrn_use_fast_imem = true;
@@ -108,8 +115,7 @@ std::vector<ReportConfiguration> create_report_configurations(const std::string&
             nrn_assert(report.mech_names.size() == 1);
             nrn_assert(report.var_names.size() == 1);
         }
-
-        report_conf.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        nrn_assert(report.lfp_method == LFPReportMethod::ByCell || report.type == ReportType::LFP);
         // gids
         if (report.num_gids) {
             fill_vec_int(report_conf, report.target, report.num_gids);
