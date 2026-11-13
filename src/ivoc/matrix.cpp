@@ -304,6 +304,9 @@ static Object** m_c(void* v) {
 static Object** m_transpose(void* v) {
     Matrix* m = (Matrix*) v;
     Matrix* out = get_out_mat(m, 1);
+    if (out == m && m->nrow() != m->ncol()) {
+        hoc_execerror("non-square matrix cannot be transposed in place", nullptr);
+    }
     out->resize(m->ncol(), m->nrow());
     m->transpose(out);
     return temp_objvar(out);
