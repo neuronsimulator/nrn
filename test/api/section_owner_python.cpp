@@ -29,8 +29,14 @@ static char* section_name(Section*) {
     ++name_calls;
     return name;
 }
+static bool cell_is_list;  // the cell hook returns a new HOC List, not a Python object
 static Object* section_cell(Section*) {
-    return nullptr;
+    if (!cell_is_list) {
+        return nullptr;
+    }
+    Object* cell = nrn_object_new(nrn_symbol("List"), 0);
+    nrn_object_ref(cell);
+    return cell;
 }
 static int section_cell_equals(Section*, Object*) {
     return 0;
@@ -92,6 +98,28 @@ int main(void) {
                 "the module refuses to wrap our section in cas");
     nrn_section_pop();
     ok &= check(std::strcmp(nrn_secname(owned), "capi_cell.soma") == 0, "our section is untouched");
+
+    // With the module still loaded as the Python provider, BBSaveState must not
+    // hand it a cell that is a plain HOC object (the module asserts it gets a
+    // PythonObject); the save stops with a HOC error instead.
+    cell_is_list = true;
+    nrn_hoc_call(
+        "objref pc_bbss, nc_bbss, nil_bbss\n"
+        "pc_bbss = new ParallelContext()\n"
+        "pc_bbss.set_gid2node(7, pc_bbss.id())\n"
+        "_pysec.capi_cell.soma nc_bbss = new NetCon(&v(0.5), nil_bbss)\n"
+        "pc_bbss.cell(7, nc_bbss)\n"
+        "finitialize(-65)\n");
+    Object* bbss = nrn_object_new(nrn_symbol("BBSaveState"), 0);
+    nrn_object_ref(bbss);
+    ok &= check(nrn_method_call_nothrow(
+                    bbss, nrn_method_symbol(bbss, "save_test"), 0, err, sizeof(err)) != 0 &&
+                    std::strstr(err, "only as part of a Python cell") != nullptr,
+                "BBSaveState refuses a HOC cell with the Python provider installed");
+    nrn_object_unref(bbss);
+    nrn_hoc_call("pc_bbss.gid_clear()\nobjref nc_bbss, pc_bbss\n");
+    cell_is_list = false;
+
     nrn_section_owned_release(owned);
     return ok ? 0 : 1;
 }

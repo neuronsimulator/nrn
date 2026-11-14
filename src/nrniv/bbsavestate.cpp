@@ -1723,6 +1723,18 @@ static void pycell_name2sec_maps_clear() {
     pycell_name2sec_maps.clear();
 }
 
+extern Symbol* nrnpy_pyobj_sym_;  // hoc_oop.cpp
+
+// The Python object of a cell that is a PythonObject, or nullptr. Only a
+// PythonObject goes to the provider: NEURON's Python module asserts on
+// anything else (nrnpy_p2h.cpp opaque_obj2pyobj).
+static void* pycell_of(Object* ho) {
+    if (ho && nrnpy_pyobj_sym_ && ho->ctemplate->sym == nrnpy_pyobj_sym_) {
+        return nrn_opaque_obj2pyobj(ho);
+    }
+    return nullptr;
+}
+
 static void pycell_name2sec_maps_fill() {
     pycell_name2sec_maps_clear();
     hoc_Item* qsec;
@@ -1735,7 +1747,7 @@ static void pycell_name2sec_maps_fill() {
             // is not unique and the map needs definite PyObject* keys.
             Object* ho = nrn_sec2cell(sec);
             if (ho) {
-                void* pycell = nrn_opaque_obj2pyobj(ho);
+                void* pycell = pycell_of(ho);
                 hoc_obj_unref(ho);
                 if (pycell) {
                     SecName2Sec& sn2s = pycell_name2sec_maps[pycell];
@@ -1746,6 +1758,8 @@ static void pycell_name2sec_maps_fill() {
                     assert(name.size() > (last_dot + 1));
                     std::string basename = name.substr(last_dot + 1);
                     if (sn2s.find(basename) != sn2s.end()) {
+                        // a partial map must not be reused by the next save
+                        pycell_name2sec_maps_clear();
                         hoc_execerr_ext("Python Section name, %s, is not unique in the Python cell",
                                         name.c_str());
                     }
@@ -1755,6 +1769,7 @@ static void pycell_name2sec_maps_fill() {
             }
             // An owned section is saved as part of its cell, which must be a Python
             // object: the map is keyed by it (a cell hook may return a new wrapper).
+            pycell_name2sec_maps_clear();
             hoc_execerr_ext(
                 "BBSaveState can save the owned Section %s only as part of a Python cell",
                 secname(sec));
@@ -1766,9 +1781,11 @@ static SecName2Sec& pycell_name2sec_map(Object* c) {
     if (pycell_name2sec_maps.empty()) {
         pycell_name2sec_maps_fill();
     }
-    void* pycell = nrn_opaque_obj2pyobj(c);
+    void* pycell = pycell_of(c);
     auto search = pycell_name2sec_maps.find(pycell);
-    assert(search != pycell_name2sec_maps.end());
+    if (!pycell || search == pycell_name2sec_maps.end()) {
+        hoc_execerr_ext("BBSaveState found no sections of the cell %s", hoc_object_name(c));
+    }
     return search->second;
 }
 
