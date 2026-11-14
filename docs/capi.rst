@@ -341,6 +341,9 @@ Sections
         SectionListIterator* iter = nrn_sectionlist_iterator_new(all_sections);
         while (!nrn_sectionlist_iterator_done(iter)) {
             Section* sec = nrn_sectionlist_iterator_next(iter);
+            if (!sec) {
+                break;  // only deleted sections were left
+            }
             // Process Section
         }
         nrn_sectionlist_iterator_free(iter);
@@ -1978,7 +1981,9 @@ Miscellaneous
     Used in loops to process each Section in a list sequentially.
 
     Before calling, check with :c:func:`nrn_sectionlist_iterator_done` to ensure
-    there are more sections to process.
+    there are more sections to process. It does not look past deleted sections,
+    so when only deleted sections are left it returns 0 and this returns NULL;
+    check the result.
 
     A deleted section is skipped and dropped from the list, along with the list's
     reference to it. If that was the last reference the Section is freed, so call
@@ -2004,6 +2009,9 @@ Miscellaneous
         SectionListIterator* iter = nrn_sectionlist_iterator_new(section_list);
         while (!nrn_sectionlist_iterator_done(iter)) {
             Section* sec = nrn_sectionlist_iterator_next(iter);
+            if (!sec) {
+                break;  // only deleted sections were left
+            }
             // Process Section
         }
         nrn_sectionlist_iterator_free(iter);
