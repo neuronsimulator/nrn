@@ -780,21 +780,16 @@ def _check_multigridding_supported_3d() -> bool:
 
 # TODO: make sure this does the right thing when the diffusion constant changes between two neighboring nodes
 def _setup_matrices_callback() -> int:
-    """_setup_matrices for C; a bad flux source returns 1 (C then stops with a hoc error).
+    """_setup_matrices for C; an error returns 1 and C then stops with a hoc error.
 
-    ctypes drops an exception from a callback, so without this the run would go on with the
-    old sources. Any other error is only reported: after a change to the sections this can
-    run on stale pointers, and _update_node_data sets them up again later in the same step.
+    ctypes drops an exception from a callback, so without this the run would go on with
+    the old matrices and flux sources.
     """
-    try:
-        _include_flux()
-    except BaseException:
-        _print_exc_best_effort()
-        return 1
     try:
         _setup_matrices()
     except BaseException:
         _print_exc_best_effort()
+        return 1
     return 0
 
 
@@ -1112,11 +1107,20 @@ def _setup_matrices():
         else:
             rxd_set_no_diffusion()
 
-        if section1d._all_cindices is not None and section1d._all_cindices:
+        conc_ptrs = None
+        if section1d._all_cindices:
+            try:
+                conc_ptrs = ptr_array(section1d._all_cptrs)
+            except ValueError:
+                # After a change to the sections, C calls this before _update_node_data
+                # rebuilds the list, so it can hold references to removed segments.
+                # _update_node_data sets the pointers again before they are used.
+                conc_ptrs = None
+        if conc_ptrs is not None:
             rxd_setup_conc_ptrs(
                 len(section1d._all_cindices),
                 _list_to_cint_array(section1d._all_cindices),
-                ptr_array(section1d._all_cptrs),
+                conc_ptrs,
             )
         else:
             free_conc_ptrs()
