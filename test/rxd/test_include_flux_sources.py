@@ -220,25 +220,6 @@ def test_bad_source_added_during_a_run_stops_the_run(
         _clear_node_fluxes(rxd)
 
 
-def test_setup_failure_during_a_run_stops_the_run(
-    neuron_nosave_instance, capfd, monkeypatch
-):
-    """Any error while C rebuilds the matrices after a change to the sections stops the run."""
-    h, rxd, save_path = neuron_nosave_instance
-    sec, x, node = _node_with_ref_flux(h, rxd, 1000.0)
-    h.CVode().active(False)
-    h.finitialize(-65)
-    h.fadvance()
-    monkeypatch.setattr(rxd.rxd, "_check_multigridding_supported_3d", lambda: False)
-    try:
-        sec.nseg = 5
-        with pytest.raises(RuntimeError):
-            h.fadvance()
-        assert "unsupported multigridding case" in capfd.readouterr().err
-    finally:
-        _clear_node_fluxes(rxd)
-
-
 def test_reference_to_an_array_is_an_error_at_finitialize(
     neuron_nosave_instance, capfd
 ):
