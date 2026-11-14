@@ -353,8 +353,10 @@ void delete_section(void) {
 #if USE_PYTHON
     if (sec->prop->dparam[PROP_PY_INDEX].get<void*>()) { /* Python Section */
         /* the Python Section will be a zombie section with a pointer
-           to an invalid Section*.
+           to an invalid Section*. Its _pysec name goes now, while secname
+           can still give it; the lookup must not find a freed section.
         */
+        nrnpy_pysecname2sec_remove(sec);
         sec->prop->dparam[PROP_PY_INDEX] = nullptr;
         section_ref(sec);
         sec_free(sec->prop->dparam[8].get<hoc_Item*>());
