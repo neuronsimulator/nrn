@@ -325,11 +325,17 @@ Section* section_new(Symbol* sym) {
     return sec;
 }
 
+// A section without a HOC symbol, owned by an interface object (a Python
+// Section or a C API client's object), which is stored as an opaque pointer.
+Section* section_new_owned(void* owner) {
+    auto sec = section_new(nullptr);
+    sec->prop->dparam[PROP_PY_INDEX] = owner;
+    return sec;
+}
+
 struct NPySecObj;
 Section* nrnpy_newsection(NPySecObj* v) {
-    auto sec = section_new(nullptr);
-    sec->prop->dparam[PROP_PY_INDEX] = static_cast<void*>(v);
-    return sec;
+    return section_new_owned(static_cast<void*>(v));
 }
 
 void delete_section(void) {

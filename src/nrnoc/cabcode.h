@@ -27,6 +27,7 @@ void new_sections(Object* ob, Symbol* sym, hoc_Item** pitm, int size);
 Section* section_new(Symbol* sym);
 
 struct NPySecObj;
+Section* section_new_owned(void* owner);
 Section* nrnpy_newsection(NPySecObj*);
 
 int arc0at0(Section*);

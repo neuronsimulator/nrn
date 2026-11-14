@@ -198,7 +198,7 @@ Section* nrn_section_new_owned(void* owner) {
     if (!owner || !capi_owner_hooks_installed()) {
         return nullptr;
     }
-    Section* sec = nrnpy_newsection(static_cast<NPySecObj*>(owner));
+    Section* sec = section_new_owned(owner);
     nrnpy_pysecname2sec_add(sec);
     return sec;
 }
