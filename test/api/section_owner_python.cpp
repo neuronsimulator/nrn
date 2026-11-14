@@ -110,8 +110,8 @@ int main(void) {
         "_pysec.capi_cell.soma nc_bbss = new NetCon(&v(0.5), nil_bbss)\n"
         "pc_bbss.cell(7, nc_bbss)\n"
         "finitialize(-65)\n");
+    // nrn_object_new returns a reference this test owns.
     Object* bbss = nrn_object_new(nrn_symbol("BBSaveState"), 0);
-    nrn_object_ref(bbss);
     ok &= check(nrn_method_call_nothrow(
                     bbss, nrn_method_symbol(bbss, "save_test"), 0, err, sizeof(err)) != 0 &&
                     std::strstr(err, "only as part of a Python cell") != nullptr,

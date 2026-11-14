@@ -1564,19 +1564,37 @@ int BBSaveState::counts(int** gids, int** cnts) {
 #endif
         }
     }
-    gidcnt = 0;
-    for (const auto& pair: *base2spgid) {
-        auto base = pair.first;
-        auto spgid = pair.second;
-        (*gids)[gidcnt] = base;
-        c->ni = c->nd = c->ns = c->nl = 0;
-        Object* obj = nrn_gid2obj(spgid);
-        gidobj(spgid, obj);
+    // nrn_gid2obj returns a new reference for a Python cell.
+    auto release_cell = [](Object* obj) {
         if (obj && !obj->secelm_ && !is_point_process(obj)) {
             hoc_obj_unref(obj);
         }
-        (*cnts)[gidcnt] = c->bytecnt();
-        ++gidcnt;
+    };
+    gidcnt = 0;
+    Object* obj = nullptr;
+    try {
+        for (const auto& pair: *base2spgid) {
+            auto base = pair.first;
+            auto spgid = pair.second;
+            (*gids)[gidcnt] = base;
+            c->ni = c->nd = c->ns = c->nl = 0;
+            obj = nrn_gid2obj(spgid);
+            gidobj(spgid, obj);
+            release_cell(obj);
+            obj = nullptr;
+            (*cnts)[gidcnt] = c->bytecnt();
+            ++gidcnt;
+        }
+    } catch (...) {
+        // A HOC error stops the save before the caller gets the arrays.
+        release_cell(obj);
+        if (!base2spgid->empty()) {
+            free(*gids);
+            free(*cnts);
+        }
+        delete f;
+        f = nullptr;
+        throw;
     }
     delete f;
     return gidcnt;
