@@ -242,7 +242,10 @@ jobs:
           cmake --build .
           ccache -s -v || ccache -s
           cmake --build . --target cover_baseline
-          xvfb-run ctest --rerun-failed --output-on-failure
+          # A test that hangs is only ended by ctest's timeout. Record the
+          # stacks of any test process still running after 10 minutes.
+          "${PYTHON_MAX}" -m pip install --quiet py-spy || echo "py-spy not installed"
+          "${PYTHON_MAX}" ../ci/stall_dump.py 600 -- xvfb-run ctest --rerun-failed --output-on-failure
           for python in "${PYTHON_MIN}" "${PYTHON_MAX}"
           do
             echo "Using ${python}"

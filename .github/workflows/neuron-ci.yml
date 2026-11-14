@@ -417,7 +417,10 @@ jobs:
                     "${python}" -c "from neuron import h; import neuron; neuron.test()"
                 done
               fi
-              ctest --output-on-failure
+              # A test that hangs is only ended by ctest's timeout. Record the
+              # stacks of any test process still running after 10 minutes.
+              "${PYTHON}" -m pip install --quiet py-spy || echo "py-spy not installed"
+              "${PYTHON}" ../ci/stall_dump.py 600 -- ctest --output-on-failure
               cmake --build . --target install
               export PATH="${INSTALL_DIR}/bin:${PATH}"
               if [[ -f "${INSTALL_DIR}/bin/nrn-enable-sanitizer" ]]; then
