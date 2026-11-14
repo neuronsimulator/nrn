@@ -1,29 +1,34 @@
-foreach(
-  api_test_file
-  deferred_unref.cpp
-  diam3d_pending.cpp
-  global_scalar.cpp
-  hh_sim.cpp
-  nlayer_extracellular.cpp
-  netcon.cpp
-  node_index.cpp
-  object_new_nothrow.cpp
-  object_new_wrap.cpp
-  object_ptr_push.cpp
-  property_array_steer.cpp
-  property_element_ptr.cpp
-  raw_hoc_errors.cpp
-  runtime_pythonobject_marshaling.cpp
-  section_tree.cpp
-  sectionlist_iterator_deleted.cpp
-  sectionlist_to_array.cpp
-  segment_diam.cpp
-  sections.cpp
-  stack_pops.cpp
-  symbol_array_dims.cpp
-  symbol_object_string.cpp
-  template_property.cpp
-  vclamp.cpp)
+set(api_test_files
+    deferred_unref.cpp
+    diam3d_pending.cpp
+    global_scalar.cpp
+    hh_sim.cpp
+    nlayer_extracellular.cpp
+    netcon.cpp
+    node_index.cpp
+    object_new_nothrow.cpp
+    object_new_wrap.cpp
+    object_ptr_push.cpp
+    property_array_steer.cpp
+    property_element_ptr.cpp
+    raw_hoc_errors.cpp
+    runtime_pythonobject_marshaling.cpp
+    section_tree.cpp
+    sectionlist_iterator_deleted.cpp
+    sectionlist_to_array.cpp
+    segment_diam.cpp
+    sections.cpp
+    stack_pops.cpp
+    symbol_array_dims.cpp
+    symbol_object_string.cpp
+    template_property.cpp
+    vclamp.cpp)
+list(APPEND api_test_files section_owner.cpp)
+if(NRN_ENABLE_PYTHON)
+  # This one also imports NEURON's Python module.
+  list(APPEND api_test_files section_owner_python.cpp)
+endif()
+foreach(api_test_file ${api_test_files})
   string(REPLACE "." "_" api_test_name "${api_test_file}")
   add_executable(${api_test_name} ${api_test_file})
   cpp_cc_configure_sanitizers(TARGET ${api_test_name})
@@ -39,6 +44,14 @@ foreach(
   set_property(TEST "${test_name}" PROPERTY ENVIRONMENT "${NRN_RUN_FROM_BUILD_DIR_ENV}"
                                             "CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}")
 endforeach()
+if(NRN_ENABLE_PYTHON AND NRN_NOCMODL_SANITIZER_ENVIRONMENT)
+  # Importing NEURON's Python module pulls in numpy and OpenSSL. LeakSanitizer reports what they and
+  # Python itself keep, none of it from NEURON.
+  set_property(
+    TEST "api::section_owner_python_cpp"
+    APPEND
+    PROPERTY ENVIRONMENT ${NRN_NOCMODL_SANITIZER_ENVIRONMENT})
+endif()
 
 # Reads Section::refcount, so it needs NEURON's internal headers.
 target_include_directories(

@@ -62,6 +62,7 @@ extern void hoc_unref_defer();
 extern void sec_access_push();
 extern bool hoc_valid_stmt(const char*, Object*);
 PyObject* nrnpy_nrn();
+bool nrnpy_pysec_hooks_foreign();
 extern PyObject* nrnpy_cas(PyObject*, PyObject*);
 extern PyObject* nrnpy_cas_safe(PyObject*, PyObject*);
 extern PyObject* nrnpy_forall_safe(PyObject*, PyObject*);
@@ -1243,6 +1244,12 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
             if (!sec) {
                 PyErr_SetString(PyExc_NameError, n);
             } else if (sec && sec->prop && sec->prop->dparam[PROP_PY_INDEX].get<void*>()) {
+                if (nrnpy_pysec_hooks_foreign()) {
+                    PyErr_SetString(PyExc_RuntimeError,
+                                    "another interface's section owner hooks are installed "
+                                    "(nrn_section_owner_hooks_set)");
+                    return nullptr;
+                }
                 result = nb::borrow(
                     static_cast<PyObject*>(sec->prop->dparam[PROP_PY_INDEX].get<void*>()));
             } else {
@@ -1256,6 +1263,12 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
             if (!sec) {
                 PyErr_SetString(PyExc_NameError, n);
             } else if (sec && sec->prop && sec->prop->dparam[PROP_PY_INDEX].get<void*>()) {
+                if (nrnpy_pysec_hooks_foreign()) {
+                    PyErr_SetString(PyExc_RuntimeError,
+                                    "another interface's section owner hooks are installed "
+                                    "(nrn_section_owner_hooks_set)");
+                    return nullptr;
+                }
                 result = nb::borrow(
                     static_cast<PyObject*>(sec->prop->dparam[PROP_PY_INDEX].get<void*>()));
             } else {
@@ -3393,6 +3406,15 @@ extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
     PyObject* m;
     PyTypeObject* pto;
     PyType_Spec spec;
+    nanobind::gil_scoped_acquire lock{};
+    // A C API interface owns sections through the same hooks this module
+    // installs; this module would read its owners as Python Sections.
+    if (nrnpy_pysec_hooks_foreign()) {
+        PyErr_SetString(PyExc_ImportError,
+                        "another interface's section owner hooks are installed "
+                        "(nrn_section_owner_hooks_set)");
+        return nullptr;
+    }
     nrnpy_vec_from_python_p_ = nrnpy_vec_from_python;
     nrnpy_vec_to_python_p_ = nrnpy_vec_to_python;
     nrnpy_vec_as_numpy_helper_ = vec_as_numpy_helper;
@@ -3406,7 +3428,6 @@ extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
     nrnpy_nrncore_enable_value_p_ = nrncore_enable_value;
     nrnpy_nrncore_file_mode_value_p_ = nrncore_file_mode_value;
     nrnpy_rvp_rxd_to_callable = rvp_rxd_to_callable_;
-    nanobind::gil_scoped_acquire lock{};
 
     char endian_character = 0;
 

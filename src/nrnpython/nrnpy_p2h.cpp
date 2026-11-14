@@ -40,7 +40,12 @@ static void call_python_with_section(Object* pyact, Section* sec) {
     nb::callable po = nb::borrow<nb::callable>(((Py2Nrn*) pyact->u.this_pointer)->po_);
     nanobind::gil_scoped_acquire lock{};
 
-    nb::tuple args = nb::make_tuple(reinterpret_cast<PyObject*>(newpysechelp(sec)));
+    auto pysec = nb::steal(reinterpret_cast<PyObject*>(newpysechelp(sec)));
+    if (!pysec.is_valid()) {
+        PyErr_Print();
+        hoc_execerror("no Python Section for", secname(sec));
+    }
+    nb::tuple args = nb::make_tuple(pysec);
     nb::object r = nrnpy_pyCallObject(po, args);
     if (!r.is_valid()) {
         auto mes = nrnpyerr_str();
