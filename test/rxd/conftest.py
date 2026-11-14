@@ -81,11 +81,21 @@ def neuron_nosave_instance(neuron_import):
     rxd.initializer.is_initializing = False
     rxd.rxd.free_conc_ptrs()
     rxd.rxd.free_curr_ptrs()
-    rxd.rxd.rxd_include_node_flux1D(0, None, None, None)
+    rxd.rxd.rxd_include_node_flux1D(0, None, None, None, None)
     rxd.species._has_1d = False
     rxd.species._has_3d = False
     rxd.rxd._zero_volume_indices = numpy.ndarray(0, dtype=ctypes.c_long)
     rxd.set_solve_type(dimension=1)
+
+
+@pytest.fixture
+def errors_do_not_abort_mpi(neuron_nosave_instance):
+    """With more than one MPI rank every hoc error ends in MPI_Abort unless it is turned off."""
+    h, rxd, save_path = neuron_nosave_instance
+    pc = h.ParallelContext()
+    old = pc.mpiabort_on_error(0)
+    yield
+    pc.mpiabort_on_error(old)
 
 
 @pytest.fixture

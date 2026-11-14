@@ -35,10 +35,10 @@ if(CMAKE_C_COMPILER_ID MATCHES "PGI" OR CMAKE_C_COMPILER_ID MATCHES "NVHPC")
     # "src/nmodl/kinetic.cpp", warning #111-D: statement is unreachable
     # "src/nmodl/parsact.cpp", warning #128-D: loop is not reachable
     # "src/modlunit/units.cpp", warning #170-D: pointer points outside of underlying object
-    # "src/nrnpython/grids.cpp", warning #174-D: expression has no effect
+    # "src/rxd/grids.cpp", warning #174-D: expression has no effect
     # "src/nmodl/nocpout.cpp", warning #177-D: variable "j" was declared but never referenced
     # "src/nrniv/partrans.cpp", warning #186-D: pointless comparison of unsigned integer with zero
-    # "src/nrnpython/rxdmath.cpp", warning #541-D: allowing all exceptions is incompatible with previous function
+    # "src/rxd/rxdmath.cpp", warning #541-D: allowing all exceptions is incompatible with previous function
     # "src/nmodl/nocpout.cpp", warning #550-D: variable "sion" was set but never used
     # "src/gnu/neuron_gnu_builtin.h", warning #816-D: type qualifier on return type is meaningless"
     # "external/fmt/include/fmt/format.h", warning #1626-D: warning: routine is both "inline" and "noinline" [inline_gnu_noinline_conflict]

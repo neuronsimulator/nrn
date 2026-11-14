@@ -5,11 +5,14 @@ Description: Header File for grids.cpp. Allows access to Grid_node
 and Flux_pair structs and their respective functions
 ******************************************************************/
 #include <stdio.h>
+#include <vector>
 #include <assert.h>
 #include <nrnmpi.h>
 
-#include "nrn_pyhocobject.h"
-#include "nrnwrap_Python.h"
+#include "neuron/container/data_handle.hpp"
+
+#include <stdlib.h>
+#include <string.h>
 
 #define IDX(x, y, z)    ((z) + (y) *g->size_z + (x) *g->size_z * g->size_y)
 #define INDEX(x, y, z)  ((z) + (y) *grid->size_z + (x) *grid->size_z * grid->size_y)
@@ -138,7 +141,9 @@ class Grid_node {
     int node_flux_count;
     long* node_flux_idx;
     double* node_flux_scale;
-    PyObject** node_flux_src;
+    // where the flux of each source is read, for the sources that are not callables
+    std::vector<neuron::container::data_handle<double>> node_flux_src;
+    long* node_flux_callable;
 
 
     virtual ~Grid_node() {}
@@ -162,7 +167,7 @@ class ECS_Grid_node: public Grid_node {
   public:
     // Data for DG-ADI
     ECS_Grid_node();
-    ECS_Grid_node(PyHocObject*,
+    ECS_Grid_node(double*,
                   int,
                   int,
                   int,
@@ -172,8 +177,10 @@ class ECS_Grid_node: public Grid_node {
                   double,
                   double,
                   double,
-                  PyHocObject*,
-                  PyHocObject*,
+                  double*,
+                  double,
+                  double*,
+                  double,
                   int,
                   double,
                   double);
@@ -216,13 +223,13 @@ class ECS_Grid_node: public Grid_node {
     void scatter_grid_concentrations();
     void hybrid_connections();
     void set_diffusion(double*, int);
-    void set_tortuosity(PyHocObject*);
-    void set_volume_fraction(PyHocObject*);
+    void set_tortuosity(double*, double);
+    void set_volume_fraction(double*, double);
     void do_multicompartment_reactions(double*);
     void initialize_multicompartment_reaction();
     void clear_multicompartment_reaction();
     int add_multicompartment_reaction(int, int*, int);
-    double* set_rxd_currents(int, int*, PyHocObject**);
+    double* set_rxd_currents(int, int*, double**);
 };
 
 struct ECSAdiDirection {
@@ -283,7 +290,7 @@ class ICS_Grid_node: public Grid_node {
     struct ICSAdiDirection* ics_adi_dir_y;
     struct ICSAdiDirection* ics_adi_dir_z;
 
-    ICS_Grid_node(PyHocObject*,
+    ICS_Grid_node(double*,
                   long,
                   long*,
                   long*,
@@ -320,7 +327,7 @@ class ICS_Grid_node: public Grid_node {
     void initialize_multicompartment_reaction();
     void clear_multicompartment_reaction();
     int add_multicompartment_reaction(int, int*, int);
-    double* set_rxd_currents(int, int*, PyHocObject**);
+    double* set_rxd_currents(int, int*, double**);
 };
 
 struct ICSAdiDirection {
@@ -374,21 +381,18 @@ extern Grid_node* Parallel_grids[100];  // Array of Grid_node * lists
 
 
 // Set the global ∆t
-void make_dt_ptr(PyHocObject* my_dt_ptr);
+void make_dt_ptr(double* my_dt_ptr);
 
 
-// Create a single Grid_node
-/* Parameters:  Python object that includes array of double pointers,
-                size of x, y, and z dimensions
+// Create a single Grid_node and insert it into the list located at grid_list_index in
+// Parallel_grids.
+/* Parameters:  pointer to the states, size of x, y, and z dimensions
                 x, y, and z diffusion constants
-                delta x, delta y, and delta z*/
-
-// Free a single Grid_node "grid"
-// void free_Grid(Grid_node *grid);
-
-// Insert a Grid_node "new_Grid" into the list located at grid_list_index in Parallel_grids
+                delta x, delta y, and delta z
+                volume fraction and permeability: a pointer to per-voxel values, or NULL
+                and the uniform value*/
 extern "C" int ECS_insert(int grid_list_index,
-                          PyHocObject* my_states,
+                          double* my_states,
                           int my_num_states_x,
                           int my_num_states_y,
                           int my_num_states_z,
@@ -398,13 +402,15 @@ extern "C" int ECS_insert(int grid_list_index,
                           double my_dx,
                           double my_dy,
                           double my_dz,
-                          PyHocObject* my_alpha,
-                          PyHocObject* my_permeability,
+                          double* my_alpha,
+                          double my_alpha_value,
+                          double* my_permeability,
+                          double my_permeability_value,
                           int,
                           double,
                           double);
 
-Grid_node* ICS_make_Grid(PyHocObject* my_states,
+Grid_node* ICS_make_Grid(double* my_states,
                          long num_nodes,
                          long* neighbors,
                          long* x_line_defs,
@@ -421,7 +427,7 @@ Grid_node* ICS_make_Grid(PyHocObject* my_states,
 
 // Insert an  ICS_Grid_node "new_Grid" into the list located at grid_list_index in Parallel_grids
 extern "C" int ICS_insert(int grid_list_index,
-                          PyHocObject* my_states,
+                          double* my_states,
                           long num_nodes,
                           long* neighbors,
                           long* x_line_defs,
@@ -437,7 +443,7 @@ extern "C" int ICS_insert(int grid_list_index,
                           double* ics_alphas);
 
 extern "C" int ICS_insert_inhom(int grid_list_index,
-                                PyHocObject* my_states,
+                                double* my_states,
                                 long num_nodes,
                                 long* neighbors,
                                 long* x_line_defs,
@@ -462,4 +468,10 @@ int remove(Grid_node** head, Grid_node* find);
 // Destroy the list located at list_index and free all memory
 void empty_list(int list_index);
 
-void apply_node_flux(int, long*, double*, PyObject**, double, double*);
+void apply_node_flux(int,
+                     long*,
+                     double*,
+                     const neuron::container::data_handle<double>*,
+                     long*,
+                     double,
+                     double*);

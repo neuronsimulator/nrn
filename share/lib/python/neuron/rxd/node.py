@@ -337,9 +337,9 @@ class Node(object):
         if len(args) == 1 and isinstance(args[0], hoc.HocObject):
             source = args[0]
             try:
-                # just a test access
-                source[0]
-            except:
+                # only a reference to a number has an address the C code can read
+                hoc.ref_address(source)
+            except Exception:
                 raise RxDException("HocObject must be a pointer")
         elif len(args) == 1 and isinstance(args[0], Callable):
             source = args[0]
