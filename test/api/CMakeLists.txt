@@ -1,5 +1,6 @@
 set(api_test_files
     deferred_unref.cpp
+    diam3d_pending.cpp
     global_scalar.cpp
     hh_sim.cpp
     nlayer_extracellular.cpp

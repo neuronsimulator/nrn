@@ -612,7 +612,7 @@ def _cxx_compile(formula):
                 )
         else:
             gcc = "g++"
-    # TODO: Check this works on non-Linux machines
+
     sysroot_flag = ""
     sdk = _macos_sdkroot()
     if sdk:
@@ -621,15 +621,19 @@ def _cxx_compile(formula):
     gcc_cmd += f"-shared {fpic} {filename}.cpp {_find_librxdmath()}"
     gcc_cmd += f" -o {filename}.so {math_library}"
     if sys.platform.lower().startswith("win"):
-        my_path = os.getenv("PATH")
-        os.putenv(
-            "PATH",
-            my_path + ";" + os.path.join(h.neuronhome(), "mingw", "mingw64", "bin"),
-        )
-        os.system(gcc_cmd)
-        os.putenv("PATH", my_path)
+        new_paths = [
+            os.path.join(h.neuronhome(), "mingw", "mingw64", "bin"),
+            os.path.join(h.neuronhome(), "bin"),
+            os.environ.get("PATH", ""),
+        ]
+        # avoid os.putenv so as not to pollute the global environment
+        rflag = os.system(f"set PATH={os.pathsep.join(new_paths)} && {gcc_cmd}")
     else:
-        os.system(gcc_cmd)
+        rflag = os.system(gcc_cmd)
+    if rflag != 0:
+        raise RxDException(
+            "Unable to compile reaction. Please check your environmental variables."
+        )
     # the rxdmath_dll appears necessary for using librxdmath under certain gcc/OS pairs
     rxdmath_dll = ctypes.cdll[_find_librxdmath()]
     dll = ctypes.cdll[f"{os.path.abspath(filename)}.so"]
