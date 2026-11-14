@@ -1971,7 +1971,7 @@ Miscellaneous
     Get the next Section from a Section list iterator.
 
     :param sl: Pointer to the SectionListIterator.
-    :returns: Pointer to the next Section, or NULL if only deleted sections were left.
+    :returns: Pointer to the next Section, or NULL if no active sections are left.
 
     **Usage Pattern:**
 
