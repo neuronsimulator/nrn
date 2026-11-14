@@ -1753,7 +1753,11 @@ static void pycell_name2sec_maps_fill() {
                     continue;
                 }
             }
-            hoc_execerr_ext("Python Section, %s, not associated with Python Cell.", secname(sec));
+            // An owned section is saved as part of its cell, which must be a Python
+            // object: the map is keyed by it (a cell hook may return a new wrapper).
+            hoc_execerr_ext(
+                "BBSaveState can save the owned Section %s only as part of a Python cell",
+                secname(sec));
         }
     }
 }

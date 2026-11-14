@@ -24,8 +24,9 @@ static bool check(bool cond, const char* msg) {
 // Stands in for the interface's Section object. The hooks reach it from the
 // Section* with nrn_section_owner_get, including while it is being created.
 struct Owner {
-    const char* name;  // nullptr: unnamed
-    Object* cell;      // nullptr: no cell
+    const char* name;            // nullptr: unnamed
+    Object* cell;                // nullptr: no cell
+    bool new_cell_each = false;  // the cell hook makes a new object each call, as Python's does
 };
 
 static Owner owner_a{"cellA.soma", nullptr};
@@ -58,6 +59,11 @@ static char* section_name(Section* sec) {
 // Called for every section; returns a new reference for an owned one with a cell.
 static Object* section_cell(Section* sec) {
     Owner* owner = owner_of(sec);
+    if (owner && owner->new_cell_each) {
+        Object* cell = nrn_object_new(nrn_symbol("List"), 0);
+        nrn_object_ref(cell);
+        return cell;
+    }
     if (!owner || !owner->cell) {
         return nullptr;
     }
@@ -213,6 +219,29 @@ int main(void) {
     // Its _pysec name went with it: the lookup must not reach a freed section.
     nrn_hoc_call("pysec_L = 0\n_pysec.cellA.soma { pysec_L = L }\n");
     ok &= check(hoc_value("pysec_L") == 0.0, "_pysec name removed by delete_section");
+    nrn_section_owned_release(owned);
+
+    // BBSaveState saves an owned section only as part of a Python cell; a cell
+    // that is a plain HOC object stops the save with an error. BBSaveState drops
+    // a reference to what the cell hook returns, so that hook makes a new object
+    // each time.
+    Owner owner_b{"cellB.soma", nullptr, true};
+    owned = nrn_section_new_owned(&owner_b);
+    nrn_hoc_call(
+        "objref pc_bbss, nc_bbss\n"
+        "pc_bbss = new ParallelContext()\n"
+        "pc_bbss.set_gid2node(7, pc_bbss.id())\n"
+        "_pysec.cellB.soma nc_bbss = new NetCon(&v(0.5), nil)\n"
+        "pc_bbss.cell(7, nc_bbss)\n"
+        "finitialize(-65)\n");
+    Object* bbss = nrn_object_new(nrn_symbol("BBSaveState"), 0);
+    nrn_object_ref(bbss);
+    ok &= check(nrn_method_call_nothrow(
+                    bbss, nrn_method_symbol(bbss, "save_test"), 0, err, sizeof(err)) != 0 &&
+                    std::strstr(err, "only as part of a Python cell") != nullptr,
+                "BBSaveState refuses a cell that is not a Python object");
+    nrn_object_unref(bbss);
+    nrn_hoc_call("pc_bbss.gid_clear()\nobjref nc_bbss, pc_bbss\n");
     nrn_section_owned_release(owned);
 
     // With no owned section left the hooks can be cleared, and then replaced.

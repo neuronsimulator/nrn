@@ -120,9 +120,10 @@ Sections
     ``precelllist``, :meth:`CVode.statename`, the ``_pysec`` name lookup and
     :class:`BBSaveState`. They must not raise HOC errors. :class:`BBSaveState`
     saves an owned section's cell only if it is a ``PythonObject`` known to an
-    installed Python provider, and drops a reference to what the cell hook
-    returned, so the hook must return a new wrapper each time (a cell that is a
-    long-lived HOC object loses a reference).
+    installed Python provider; for any other cell the save stops with a HOC
+    error. It drops a reference to what the cell hook returned, so the hook
+    must return a new wrapper each time (a cell that is a long-lived HOC object
+    loses a reference).
 
     In a Python-enabled build, :c:func:`nrn_init` starts NEURON's Python module
     unless given ``-nopython``, and the module's hooks are then installed.
