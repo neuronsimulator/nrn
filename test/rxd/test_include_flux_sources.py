@@ -220,6 +220,31 @@ def test_bad_source_added_during_a_run_stops_the_run(
         _clear_node_fluxes(rxd)
 
 
+@pytest.mark.parametrize("cvode", [False, True])
+def test_section_change_during_a_run_with_diffusion_keeps_running(
+    neuron_nosave_instance, cvode
+):
+    """After a change to the sections, C rebuilds the matrices before
+    _update_node_data refreshes rxd's pointers; with a diffusing species that
+    rebuild fails on the stale pointers, and the run must go on."""
+    h, rxd, save_path = neuron_nosave_instance
+    sec = h.Section(name="sec")
+    sec.L = 100
+    sec.diam = 2
+    sec.nseg = 21
+    sec.insert("hh")
+    cyt = rxd.Region([sec], nrn_region="i")
+    na = rxd.Species(cyt, name="na", charge=1, d=1, initial=10)
+    h.CVode().active(cvode)
+    h.finitialize(-65)
+    h.continuerun(1)
+    sec.nseg = 7
+    h.continuerun(2)
+    assert h.t >= 2 - 1e-9  # CVode can stop past 2
+    for seg in sec:
+        assert seg.nai == pytest.approx(na.nodes(seg)[0].concentration, rel=1e-12)
+
+
 def test_reference_to_an_array_is_an_error_at_finitialize(
     neuron_nosave_instance, capfd
 ):
