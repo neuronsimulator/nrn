@@ -1978,9 +1978,15 @@ Miscellaneous
     Used in loops to process each Section in a list sequentially. It returns
     NULL at the end of the list, so the loop needs no other check.
 
-    A deleted section is skipped and dropped from the list, along with the list's
-    reference to it. If that was the last reference the Section is freed, so call
-    :c:func:`nrn_section_ref` to keep a ``Section*`` across iterations.
+    A deleted section in a SectionList is skipped and dropped from the list,
+    along with the list's reference to it. If that was the last reference the
+    Section is freed, so call :c:func:`nrn_section_ref` to keep a ``Section*``
+    across iterations.
+
+    The loop may delete the Section just returned, or remove it from the list,
+    but not a Section it hasn't reached yet: deleting a section frees its item
+    in :c:func:`nrn_allsec`'s list, removing one frees its item in a
+    SectionList, and the iterator may already point at that item.
 
     See :c:func:`nrn_allsec` for an example of iterating over all sections.
 
@@ -1989,12 +1995,13 @@ Miscellaneous
     Check if the Section list iterator has finished iterating.
 
     :param sl: Pointer to the SectionListIterator.
-    :returns: Non-zero if iteration is complete, 0 otherwise.
+    :returns: Non-zero at the end of the list, 0 otherwise.
 
     It does not look past deleted sections, so when only deleted sections are
     left it returns 0 and :c:func:`nrn_sectionlist_iterator_next` returns NULL.
-    A loop does not need it: see :c:func:`nrn_allsec` for one that checks only
-    the result of :c:func:`nrn_sectionlist_iterator_next`.
+    A loop does not need it (it is kept for existing code): see
+    :c:func:`nrn_allsec` for one that checks only the result of
+    :c:func:`nrn_sectionlist_iterator_next`.
 
 .. c:function:: SymbolTableIterator* nrn_symbol_table_iterator_new(Symlist* my_symbol_table)
 
