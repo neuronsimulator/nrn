@@ -340,7 +340,7 @@ Sections
         // Use iterator to process all sections
         SectionListIterator* iter = nrn_sectionlist_iterator_new(all_sections);
         Section* sec;
-        while ((sec = nrn_sectionlist_iterator_next(iter))) {
+        while ((sec = nrn_sectionlist_iterator_next(iter)) != NULL) {
             // Process Section
         }
         nrn_sectionlist_iterator_free(iter);
@@ -1994,14 +1994,18 @@ Miscellaneous
 
     Check if the Section list iterator has finished iterating.
 
+    .. note::
+
+        A loop does not need this. :c:func:`nrn_sectionlist_iterator_next`
+        returns NULL at the end of the list, so checking its result is enough:
+        see :c:func:`nrn_allsec` for the loop. This function is kept for
+        existing code.
+
     :param sl: Pointer to the SectionListIterator.
     :returns: Non-zero at the end of the list, 0 otherwise.
 
     It does not look past deleted sections, so when only deleted sections are
     left it returns 0 and :c:func:`nrn_sectionlist_iterator_next` returns NULL.
-    A loop does not need it (it is kept for existing code): see
-    :c:func:`nrn_allsec` for one that checks only the result of
-    :c:func:`nrn_sectionlist_iterator_next`.
 
 .. c:function:: SymbolTableIterator* nrn_symbol_table_iterator_new(Symlist* my_symbol_table)
 
