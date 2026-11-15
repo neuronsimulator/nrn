@@ -272,6 +272,27 @@ static PyObject* ref_address_safe(PyObject* self, PyObject* args) {
     return nrn::convert_cxx_exceptions(ref_address, self, args);
 }
 
+// Under nrniv -python this module still converts Python values for HOC, but `h` is the pure-Python
+// interface, whose objects are not HocObjects. The interface registers the type of its HOC object
+// wrappers so nrnpy_po2ho gives HOC the wrapped object instead of a PythonObject around it.
+static PyTypeObject* interface_object_type{};
+
+static PyObject* set_interface_object_type(PyObject* self, PyObject* type) {
+    if (type != Py_None && !PyType_Check(type)) {
+        PyErr_SetString(PyExc_TypeError, "expected a type or None");
+        return nullptr;
+    }
+    PyTypeObject* old = interface_object_type;
+    interface_object_type = type == Py_None ? nullptr : (PyTypeObject*) type;
+    Py_XINCREF(interface_object_type);
+    Py_XDECREF(old);
+    Py_RETURN_NONE;
+}
+
+static PyObject* set_interface_object_type_safe(PyObject* self, PyObject* type) {
+    return nrn::convert_cxx_exceptions(set_interface_object_type, self, type);
+}
+
 static PyMethodDef HocMethods[] = {
     {"execute",
      nrnexec_safe,
@@ -282,6 +303,10 @@ static PyMethodDef HocMethods[] = {
      ref_address_safe,
      METH_VARARGS,
      "Return the address of the number a reference holds."},
+    {"_set_interface_object_type",
+     set_interface_object_type_safe,
+     METH_O,
+     "Register the type whose instances wrap a HOC object (None to clear)."},
     {nullptr, nullptr, 0, nullptr}};
 
 static void hocobj_dealloc(PyHocObject* self) {
@@ -644,6 +669,42 @@ PyObject* nrnpy_ho2po(Object* o) {
     return po.release().ptr();
 }
 
+// True if po is an instance of the registered interface type (see set_interface_object_type).
+static bool is_interface_object(PyObject* po) {
+    return interface_object_type && PyObject_TypeCheck(po, interface_object_type);
+}
+
+// The HOC object an interface object wraps (nullptr if nil), without a reference. The registered
+// type's own hocobjptr is called, so a subclass can't substitute another address. Returns false,
+// with no Python error set, if that call fails.
+static bool interface_object_pointer(PyObject* po, Object*& o) {
+    PyObject* method = PyObject_GetAttrString((PyObject*) interface_object_type, "hocobjptr");
+    PyObject* ptr = method ? PyObject_CallFunctionObjArgs(method, po, nullptr) : nullptr;
+    Py_XDECREF(method);
+    if (!ptr) {
+        PyErr_Clear();
+        return false;
+    }
+    o = static_cast<Object*>(PyLong_AsVoidPtr(ptr));
+    Py_DECREF(ptr);
+    if (PyErr_Occurred()) {
+        PyErr_Clear();
+        return false;
+    }
+    return true;
+}
+
+// The HOC object an interface object wraps, with a reference for the caller. If its address
+// can't be read, po is wrapped as before.
+static Object* interface_po2ho(PyObject* po) {
+    Object* o{};
+    if (!interface_object_pointer(po, o)) {
+        return nrnpy_pyobject_in_obj(po);
+    }
+    hoc_obj_ref(o);
+    return o;
+}
+
 // not static because it's used in nrnpy_nrn.cpp
 Object* nrnpy_po2ho(PyObject* po) {
     // po may be None, or encapsulate a hoc object (via the
@@ -666,6 +727,8 @@ Object* nrnpy_po2ho(PyObject* po) {
             // all the rest encapsulate
             o = nrnpy_pyobject_in_obj(po);
         }
+    } else if (is_interface_object(po)) {
+        o = interface_po2ho(po);
     } else {  // even if Python string or number
         o = nrnpy_pyobject_in_obj(po);
     }
@@ -2489,7 +2552,12 @@ static PyObject* hocobj_richcmp(PyHocObject* self, PyObject* other, int op) {
     void* self_ptr = self->ho_;
     void* other_ptr = other;
     bool are_equal = true;
-    if (PyObject_TypeCheck(other, hocobject_type)) {
+    Object* interface_ho{};
+    if (self->type_ == PyHoc::HocObject && is_interface_object(other) &&
+        interface_object_pointer(other, interface_ho)) {
+        // The interface's wrapper of a HOC object, under nrniv -python: compare the objects.
+        other_ptr = interface_ho;
+    } else if (PyObject_TypeCheck(other, hocobject_type)) {
         if (pyhoc_other->type_ == self->type_) {
             switch (self->type_) {
             case PyHoc::HocRefNum:
@@ -2559,6 +2627,10 @@ static PyObject* hocobj_richcmp(PyHocObject* self, PyObject* other, int op) {
 static PyObject* hocobj_same(PyHocObject* pself, PyObject* args) {
     PyObject* po;
     if (PyArg_ParseTuple(args, "O", &po)) {
+        if (pself->type_ == PyHoc::HocObject && is_interface_object(po)) {
+            Object* o{};
+            return PyBool_FromLong(interface_object_pointer(po, o) && o == pself->ho_);
+        }
         return PyBool_FromLong(PyObject_TypeCheck(po, hocobject_type) &&
                                ((PyHocObject*) po)->ho_ == pself->ho_);
     }
