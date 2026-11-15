@@ -44,9 +44,16 @@ STOP = textwrap.dedent(
 
 
 def run(code):
+    env = dict(os.environ, NEURON_MODULE_OPTIONS="-nogui")
+    # macOS does not pass the sanitizer preload on to child processes (as in
+    # test_basic.py's test_errorcode).
+    if "NRN_SANITIZER_PRELOAD_VAR" in os.environ:
+        env[os.environ["NRN_SANITIZER_PRELOAD_VAR"]] = os.environ[
+            "NRN_SANITIZER_PRELOAD_VAL"
+        ]
     return subprocess.run(
-        [sys.executable, "-c", code],
-        env=dict(os.environ, NEURON_MODULE_OPTIONS="-nogui"),
+        [os.environ.get("NRN_PYTHON_EXECUTABLE", sys.executable), "-c", code],
+        env=env,
         capture_output=True,
         text=True,
         timeout=60,
