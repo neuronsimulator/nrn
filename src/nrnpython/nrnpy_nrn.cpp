@@ -493,10 +493,6 @@ PyObject* NPySecObj_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
     return self.release().ptr();
 }
 
-PyObject* NPySecObj_new_safe(PyTypeObject* type, PyObject* args, PyObject* kwds) {
-    return nrn::convert_cxx_exceptions(NPySecObj_new, type, args, kwds);
-}
-
 PyObject* NPyAllSegOfSecIter_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
     auto self = nb::steal(nrnpy_tp_alloc(type, 0));
     // printf("NPyAllSegOfSecIter_new %p\n", self.ptr());
