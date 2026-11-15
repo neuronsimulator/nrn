@@ -339,11 +339,8 @@ Sections
         nrn_Item* all_sections = nrn_allsec();
         // Use iterator to process all sections
         SectionListIterator* iter = nrn_sectionlist_iterator_new(all_sections);
-        while (!nrn_sectionlist_iterator_done(iter)) {
-            Section* sec = nrn_sectionlist_iterator_next(iter);
-            if (!sec) {
-                break;  // only deleted sections were left
-            }
+        Section* sec;
+        while ((sec = nrn_sectionlist_iterator_next(iter))) {
             // Process Section
         }
         nrn_sectionlist_iterator_free(iter);
@@ -1978,12 +1975,8 @@ Miscellaneous
 
     **Usage Pattern:**
 
-    Used in loops to process each Section in a list sequentially.
-
-    Before calling, check with :c:func:`nrn_sectionlist_iterator_done` to ensure
-    there are more sections to process. It does not look past deleted sections,
-    so when only deleted sections are left it returns 0 and this returns NULL;
-    check the result.
+    Used in loops to process each Section in a list sequentially. It returns
+    NULL at the end of the list, so the loop needs no other check.
 
     A deleted section is skipped and dropped from the list, along with the list's
     reference to it. If that was the last reference the Section is freed, so call
@@ -1998,23 +1991,10 @@ Miscellaneous
     :param sl: Pointer to the SectionListIterator.
     :returns: Non-zero if iteration is complete, 0 otherwise.
 
-    **Usage Pattern:**
-
-    Used as a loop termination condition.
-
-    **Example iteration pattern:**
-    
-    .. code-block:: c
-    
-        SectionListIterator* iter = nrn_sectionlist_iterator_new(section_list);
-        while (!nrn_sectionlist_iterator_done(iter)) {
-            Section* sec = nrn_sectionlist_iterator_next(iter);
-            if (!sec) {
-                break;  // only deleted sections were left
-            }
-            // Process Section
-        }
-        nrn_sectionlist_iterator_free(iter);
+    It does not look past deleted sections, so when only deleted sections are
+    left it returns 0 and :c:func:`nrn_sectionlist_iterator_next` returns NULL.
+    A loop does not need it: see :c:func:`nrn_allsec` for one that checks only
+    the result of :c:func:`nrn_sectionlist_iterator_next`.
 
 .. c:function:: SymbolTableIterator* nrn_symbol_table_iterator_new(Symlist* my_symbol_table)
 
