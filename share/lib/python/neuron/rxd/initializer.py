@@ -1,4 +1,4 @@
-from threading import RLock
+from .._interface.api import HOC_LOCK
 
 # TODO: monkey-patch everything that requires an init so only even attempts once
 
@@ -12,7 +12,11 @@ def _do_ion_register() -> None:
             obj._ion_register()
 
 
-_init_lock = RLock()
+# The interface's HOC lock, not a lock of rxd's own. The GUI thread holds the
+# HOC lock while doNotify runs, and NEURON can call _setup_matrices from inside
+# it, which takes this lock; Species.__init__ takes this lock and then makes HOC
+# calls. With two locks those orders deadlocked.
+_init_lock = HOC_LOCK
 has_initialized: bool = False
 is_initializing: bool = False
 
