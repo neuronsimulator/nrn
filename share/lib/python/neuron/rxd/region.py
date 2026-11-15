@@ -213,11 +213,12 @@ class _c_region:
             self._ecs_params_ids[s()._grid_id] = sid
 
         # Setup the matrix to the ECS grid points
+        points = [species._section_points(sec) for sec in self._overlap]
         for sid, s in enumerate(self._ecs_react_species + self._ecs_react_params):
             seg_idx = 0
-            for sec in self._overlap:
+            for sec, sec_points in zip(self._overlap, points):
                 for seg in sec:
-                    x, y, z = species._xyz(seg)
+                    x, y, z = species._xyz(seg, sec_points)
                     self.ecs_location_index[sid][seg_idx] = s().index_from_xyz(x, y, z)
                     seg_idx += 1
         self.ecs_location_index = self.ecs_location_index.transpose()

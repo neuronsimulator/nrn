@@ -651,15 +651,25 @@ class SpeciesOnRegion(_SpeciesMathable):
         return self._species()._id
 
 
-def _xyz(seg):
-    """Return the (x, y, z) coordinate of the center of the segment."""
-    # TODO: this is very inefficient, especially since we're calling this for each segment not for each section; fix
-    sec = seg.sec
+def _section_points(sec):
+    """A section's 3-d points as lists (arc3d, x3d, y3d, z3d), for _xyz."""
     n3d = sec.n3d()
-    x3d = [sec.x3d(i) for i in range(n3d)]
-    y3d = [sec.y3d(i) for i in range(n3d)]
-    z3d = [sec.z3d(i) for i in range(n3d)]
-    arc3d = [sec.arc3d(i) for i in range(n3d)]
+    return (
+        [sec.arc3d(i) for i in range(n3d)],
+        [sec.x3d(i) for i in range(n3d)],
+        [sec.y3d(i) for i in range(n3d)],
+        [sec.z3d(i) for i in range(n3d)],
+    )
+
+
+def _xyz(seg, points=None):
+    """Return the (x, y, z) coordinate of the center of the segment.
+
+    points is _section_points(seg.sec). Callers that visit every segment of a
+    section pass it, so the points are read once per section, not per segment.
+    """
+    sec = seg.sec
+    arc3d, x3d, y3d, z3d = _section_points(sec) if points is None else points
     return (
         numpy.interp([seg.x * sec.L], arc3d, x3d)[0],
         numpy.interp([seg.x * sec.L], arc3d, y3d)[0],
@@ -1460,7 +1470,8 @@ class _ExtracellularSpecies(_SpeciesMathable):
         self._isalive()
         result = {}
         for sec in h.allsec():
-            result[sec] = [self.index_from_xyz(*_xyz(seg)) for seg in sec]
+            points = _section_points(sec)
+            result[sec] = [self.index_from_xyz(*_xyz(seg, points)) for seg in sec]
         return result
 
     def _update_pointers(self):
