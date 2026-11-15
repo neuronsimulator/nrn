@@ -316,6 +316,25 @@ class _Hname:
         return lambda: f"{name}()"
 
 
+# Under nrniv -python the legacy module still makes its own HocObjects for HOC
+# objects it hands to Python (a HOC call of a Python method passes them as
+# arguments). _facades.install sets this to that type so they compare equal to
+# this interface's wrappers of the same HOC object, as two legacy wrappers do.
+_LEGACY_OBJECT_TYPE = None
+
+
+def _other_hoc_pointer(other):
+    """The HOC object address of a wrapper from either module, or None."""
+    if isinstance(other, Object):
+        return other._obj
+    if _LEGACY_OBJECT_TYPE is not None and isinstance(other, _LEGACY_OBJECT_TYPE):
+        try:
+            return other.hocobjptr()
+        except Exception:  # h, references and other non-objects
+            return None
+    return None
+
+
 class Object(metaclass=_HocClassMeta):
     """Wraps a HOC object (template instance) — IClamp, Vector, NetCon, etc.
 
@@ -502,18 +521,18 @@ class Object(metaclass=_HocClassMeta):
 
     def same(self, other):
         """Return True if *other* wraps the same underlying HOC object."""
-        if not isinstance(other, Object):
-            return False
-        return self._obj == other._obj
+        pointer = _other_hoc_pointer(other)
+        return pointer is not None and self._obj == pointer
 
     def __eq__(self, other):
         # Wrappers of the same HOC object compare equal, as in real NEURON's
         # tp_richcompare (a Vector round-tripped through a List is a new
         # wrapper). NotImplemented for non-Object lets Python try the other
         # side's __eq__, then fall back to False.
-        if not isinstance(other, Object):
+        pointer = _other_hoc_pointer(other)
+        if pointer is None:
             return NotImplemented
-        return self._obj == other._obj
+        return self._obj == pointer
 
     def __ne__(self, other):
         result = self.__eq__(other)

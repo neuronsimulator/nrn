@@ -241,10 +241,25 @@ libmodlreg = _load_cdll_or_raise(
 #   nrnoc/init.cpp:737            register_mech -> nrnpy_reg_mech_p_(mechtype)
 #   nrnpython/nrnpy_nrn.cpp:3092  nrnpy_reg_mech_p_ = nrnpy_reg_mech
 #   nrnpython/nrnpy_nrn.cpp:3125  nrnpy_reg_mech -> PyDict_GetItemString
+#
+# On macOS, RTLD_GLOBAL, as the legacy module gets it there (dlopen's default).
+# With RTLD_LOCAL a mechanism library from nrnivmodl binds its own weak copy of
+# typeid(Point_process*), and on x86_64 macOS net_send and every other
+# Point_process handle conversion threw "cannot be converted to
+# data_handle<Point_process>" (gap-76). Not on Linux: libnrniv carries its own
+# readline and termcap symbols, and a global libnrniv made Python's readline
+# bind to them (write_history_file segfaulted). Linux's libstdc++ compares
+# type_info by name, so the separate copy does no harm there, and headless
+# legacy NEURON keeps libnrniv local too.
+def _libnrniv_dlopen_mode(platform=sys.platform):
+    return _rtld_global if platform == "darwin" else None
+
+
 libnrniv = _load_cdll_or_raise(
     label="nrniv",
     envvar=_LIBNRNIV_ENV,
     candidates=_nrniv_candidates_from_neuron_wheel(),
+    mode=_libnrniv_dlopen_mode(),
     loader=ctypes.PyDLL,
 )
 
@@ -604,7 +619,7 @@ def _component_error_pointer(exc):
     return ctypes.addressof(_component_error)
 
 
-# Present on the pinned dev115; absent on the dev114 lane, which falls back to
+# Present since dev115 (pinned: dev121); absent on dev114, which falls back to
 # the legacy methods-table slots. Native providers keep their own hooks and
 # ownership.
 # nrn#3889 (NEURON 9.1): every dimension of an array symbol. Optional; without

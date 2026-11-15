@@ -99,6 +99,10 @@ def _list_symbol_table(symtab):
     Keys are symbol names, values are (type, subtype) tuples.
     """
     entries = {}
+    if not symtab:
+        # A class without members (PythonObject on a core without Python) has
+        # no table, and nrn_symbol_table_iterator_new(NULL) segfaults.
+        return entries
     it = _nrn_symbol_table_iterator_new(symtab)
     while not _nrn_symbol_table_iterator_done(it):
         sym = _nrn_symbol_table_iterator_next(it)
@@ -113,6 +117,8 @@ def _list_symbol_table(symtab):
 
 
 def _find_in_table(symtab, name, type_):
+    if not symtab:
+        return None
     it = _nrn_symbol_table_iterator_new(symtab)
     try:
         while not _nrn_symbol_table_iterator_done(it):

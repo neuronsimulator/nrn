@@ -673,10 +673,11 @@ class Segment:
                 # NEURON defers the error for a non-positive diameter on a
                 # stylized section: each read clamps exactly one offending
                 # node (the last) and raises the literal "diam = 0." message,
-                # repeating until none remain. On dev114 and the pinned dev115
-                # (both include nrn#3854) the C getter suppresses hoc_execerror,
-                # so this scan exists only to raise the error real NEURON
-                # raises. It is gated on NEURON's dirty flag (cleared by
+                # repeating until none remain. On dev114 and later, including
+                # the pinned dev121 (all include nrn#3854), the C getter
+                # suppresses hoc_execerror, so this scan exists only to raise
+                # the error real NEURON raises. It is gated on NEURON's dirty
+                # flag (cleared by
                 # finitialize or a global recompute), so hot loops pay one FFI
                 # call: 0.77 us vs 58 us ungated at nseg=101. While a recompute is pending the
                 # scan is O(nseg). The n3d guard limits it to nrn_area_ri's

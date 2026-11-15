@@ -200,17 +200,28 @@ def install(interface, embedded):
     interface's, so hoc.HocObject, nrn.Section and the rest must be its types
     too (hclass(h.A), ExtendedSection(nrn.Section)). The legacy modules stay
     under ``_legacy_<name>``, and hoc.HocObject also accepts the objects the
-    legacy module still makes. The section owner hooks become this interface's.
+    legacy module still makes. The section owner hooks become this interface's,
+    and the legacy module learns this interface's object type, so the values it
+    converts for HOC (a Python attribute HOC reads, MUSIC's index2target) are
+    the wrapped HOC objects, not PythonObjects around the wrappers.
     """
     legacy_hoc = None
     if embedded:
         for name in _NAMES:
             if name in sys.modules:
                 sys.modules["_legacy_" + name] = sys.modules[name]
-        legacy_hoc = getattr(sys.modules.get("hoc"), "HocObject", None)
+        legacy_module = sys.modules.get("hoc")
+        legacy_hoc = getattr(legacy_module, "HocObject", None)
         from .sections import take_over_legacy_owner_hooks
 
         take_over_legacy_owner_hooks()
+        # Absent on cores before nrn#3877; those keep the PythonObject wrapping.
+        register = getattr(legacy_module, "_set_interface_object_type", None)
+        if register is not None:
+            from . import object as object_module
+
+            register(object_module.Object)
+            object_module._LEGACY_OBJECT_TYPE = legacy_hoc
     else:
         present = [name for name in _NAMES if name in sys.modules]
         if present:
