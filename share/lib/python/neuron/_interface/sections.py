@@ -29,6 +29,8 @@ from .api import (
     _nrn_section_length_get,
     _nrn_section_length_set,
     _nrn_section_new,
+    _nrn_section_ref,
+    _nrn_section_unref,
     _nrn_section_parent,
     _nrn_section_pop,
     _nrn_section_push,
@@ -1229,7 +1231,16 @@ class Section:
             # Reject like real NEURON.
             raise ValueError("embedded null character")
         sec = _new_owned_section(raw_name, cell) if _pynative else None
-        self._sec = sec if sec else _nrn_section_new(name.encode("utf-8"))
+        if not sec:
+            sec = _nrn_section_new(name.encode("utf-8"))
+            if _pynative:
+                # Without the owner hooks this wrapper owns the section by
+                # itself. Hold a reference, as NEURON does for a Python
+                # Section: after a HOC delete_section the struct then stays,
+                # so its slot can't go to a new section that __del__ would
+                # then delete. __del__ drops it.
+                _nrn_section_ref(sec)
+        self._sec = sec
         _forget_nseg_history(self._sec)
         self._pynative = _pynative
         if _pynative:
@@ -1276,6 +1287,23 @@ class Section:
 
     def __hash__(self):
         return hash(self._sec)
+
+    # As NEURON's nrn.Section: no copying or pickling. The default would copy
+    # the slots, the section pointer and _pynative among them, and each copy's
+    # __del__ would then delete the section and drop a reference only the
+    # original holds (a double free in NEURON's section pool). pc.submit
+    # pickles its arguments, so a Section argument is refused there too. A
+    # subclass that defines __reduce__ says how to rebuild itself.
+    def __copy__(self):
+        raise TypeError("cannot pickle 'nrn.Section' object")
+
+    def __deepcopy__(self, memo):
+        raise TypeError("cannot pickle 'nrn.Section' object")
+
+    def __reduce_ex__(self, protocol):
+        if type(self).__reduce__ is not object.__reduce__:
+            return self.__reduce__()
+        raise TypeError("cannot pickle 'nrn.Section' object")
 
     def __setattr__(self, name, value):
         # Private names and known @property setters go to super();
@@ -1833,22 +1861,24 @@ class Section:
                 # Frees it, or drops the reference a HOC delete_section kept.
                 _release_owned_section(sec_ptr)
                 return
-            if not _nrn_section_is_active(sec_ptr):
-                return
+            if _nrn_section_is_active(sec_ptr):
+                from . import n
 
-            from . import n
-
-            # Pop via HOC `pop_section()`, not the C `nrn_section_pop`. The C
-            # API calls chk_access first, which errors with "Accessing a
-            # deleted section" because delete_section already invalidated the
-            # top of the stack. HOC's pop_section skips that check
-            # (cabcode.cpp:2165). Without it every __del__ leaks one
-            # section-stack slot and the stack overflows at ~200 (NSECSTACK,
-            # cabcode.cpp:73). See the stack-leak section of KNOWN_GAPS.md.
-            with HOC_LOCK:
-                _nrn_section_push(sec_ptr)
-                n.delete_section()
-                n.pop_section()
+                # Pop via HOC `pop_section()`, not the C `nrn_section_pop`.
+                # The C API calls chk_access first, which errors with
+                # "Accessing a deleted section" because delete_section already
+                # invalidated the top of the stack. HOC's pop_section skips
+                # that check (cabcode.cpp:2165). Without it every __del__
+                # leaks one section-stack slot and the stack overflows at ~200
+                # (NSECSTACK, cabcode.cpp:73). See the stack-leak section of
+                # KNOWN_GAPS.md.
+                with HOC_LOCK:
+                    _nrn_section_push(sec_ptr)
+                    n.delete_section()
+                    n.pop_section()
+            # The reference __init__ took. A section HOC already deleted has
+            # kept its struct for it, and goes now.
+            _nrn_section_unref(sec_ptr)
 
     def psection(self):
         """Return a dict of section properties matching real NEURON's format."""
