@@ -106,13 +106,16 @@ All these binary lines (list of integers) have the same length. It is specified 
 
 .. code-block:: text
 
-    2
+    3
     compartment_set_pas.h5 Mini5 compartment_set pas mV SONATA invalid invalid 1.0 0.0 40.0 8 8 none
     <binary data for GIDs>
     <binary data for section IDs>
     <binary data for compartment IDs>
 
     summation_v.h5 Mosaic summation v mV SONATA soma center 1.0 0.0 40.0 5 8 none
+    <binary data for GIDs>
+
+    lfp_sum.h5 Mosaic lfp i_membrane mV SONATA all all 0.1 0.0 40.0 5 8 none sum
     <binary data for GIDs>
 
 **Metadata line fields**
@@ -122,7 +125,7 @@ Each report in ``report.conf`` starts with a metadata line describing its proper
 
 .. code-block:: text
 
-    report_name target_name report_type report_variable unit report_format sections compartments dt start_time end_time buffer_size scaling num_gids
+    report_name target_name report_type report_variable unit report_format sections compartments dt start_time end_time num_gids buffer_size scaling [method]
 
 The various variables are described in detail in the `SONATA report documentation <https://sonata-extension.readthedocs.io/en/latest/sonata_report.html>`_.
 
@@ -158,6 +161,13 @@ Field descriptions:
 14. ``scaling`` — Scaling applied to reported values:  
 
     - ``None``, ``Area``  
+
+15. ``method`` — Optional. How a report's values are written:
+
+    - ``by_cell`` (default) — each cell's own values
+    - ``sum`` — ``lfp`` reports only: the cells' contributions summed, one trace per electrode for each population of the report's cells
+
+    A line without it, as written before it existed, ends with ``scaling`` and is read as ``by_cell``.
 
 
 **Notes**:
