@@ -332,15 +332,14 @@ Sections
     properties would be different, so consider using specifically chosen SectionLists
     instead of looping over all Sections.
 
-    **C Usage:**
+    **C++ Usage:**
     
-    .. code-block:: c
+    .. code-block:: C++
     
         nrn_Item* all_sections = nrn_allsec();
         // Use iterator to process all sections
         SectionListIterator* iter = nrn_sectionlist_iterator_new(all_sections);
-        Section* sec;
-        while ((sec = nrn_sectionlist_iterator_next(iter)) != NULL) {
+        while (Section* sec = nrn_sectionlist_iterator_next(iter)) {
             // Process Section
         }
         nrn_sectionlist_iterator_free(iter);
@@ -1971,12 +1970,12 @@ Miscellaneous
     Get the next Section from a Section list iterator.
 
     :param sl: Pointer to the SectionListIterator.
-    :returns: Pointer to the next Section, or NULL if no active sections are left.
+    :returns: Pointer to the next Section, or ``nullptr`` if no active sections are left.
 
     **Usage Pattern:**
 
     Used in loops to process each Section in a list sequentially. It returns
-    NULL at the end of the list, so the loop needs no other check.
+    ``nullptr`` at the end of the list, so the loop needs no other check.
 
     A deleted section in a SectionList is skipped and dropped from the list,
     along with the list's reference to it. If that was the last reference the
@@ -1997,7 +1996,7 @@ Miscellaneous
     .. note::
 
         A loop does not need this. :c:func:`nrn_sectionlist_iterator_next`
-        returns NULL at the end of the list, so checking its result is enough:
+        returns ``nullptr`` at the end of the list, so checking its result is enough:
         see :c:func:`nrn_allsec` for the loop. This function is kept for
         existing code.
 
@@ -2005,7 +2004,7 @@ Miscellaneous
     :returns: Non-zero at the end of the list, 0 otherwise.
 
     It does not look past deleted sections, so when only deleted sections are
-    left it returns 0 and :c:func:`nrn_sectionlist_iterator_next` returns NULL.
+    left it returns 0 and :c:func:`nrn_sectionlist_iterator_next` returns ``nullptr``.
 
 .. c:function:: SymbolTableIterator* nrn_symbol_table_iterator_new(Symlist* my_symbol_table)
 
