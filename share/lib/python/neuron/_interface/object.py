@@ -322,6 +322,10 @@ class _Hname:
 # this interface's wrappers of the same HOC object, as two legacy wrappers do.
 _LEGACY_OBJECT_TYPE = None
 
+# HOC class name -> whether freeing an instance can delete sections (user
+# templates can, built-in classes cannot). Filled by Object.__del__.
+_MAY_OWN_SECTIONS = {}
+
 
 def _other_hoc_pointer(other):
     """The HOC object address of a wrapper from either module, or None."""
@@ -477,10 +481,28 @@ class Object(metaclass=_HocClassMeta):
         if obj is not None:
             from .api import _nrn_object_unref
 
+            # Freeing a template object deletes its sections, which allsec()
+            # would not otherwise notice, so that bumps the model epoch. A
+            # built-in class (Vector, IClamp, ...) owns none, and bumping for
+            # every one would make each allsec() regather. Decided per class,
+            # before the unref (it reads the object's template).
+            try:
+                class_name = self._class_name
+            except AttributeError:
+                class_name = None
+            may_own = _MAY_OWN_SECTIONS.get(class_name)
+            if may_own is None:
+                may_own = not _object_is_builtin_class(obj)
+                if class_name is not None:
+                    _MAY_OWN_SECTIONS[class_name] = may_own
             _nrn_object_unref(obj)
             # _hoc_unref_defer: prompt deletion, as when NEURON releases a
             # HocObject wrapper (api.py has the reason).
             _hoc_unref_defer()
+            if may_own:
+                from . import _bump_model_epoch
+
+                _bump_model_epoch()
 
     hname = _Hname()
 

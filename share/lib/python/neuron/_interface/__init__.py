@@ -49,6 +49,7 @@ from .api import (
     _nrn_sectionlist_iterator_free,
     _nrn_sectionlist_iterator_new,
     _nrn_sectionlist_iterator_next,
+    _nrn_section_is_active,
     _nrn_sectionlist_to_array,
     _nrn_str_pop,
     _nrn_symbol,
@@ -1935,7 +1936,10 @@ class NEURON(metaclass=_Singleton):
             move the C-list endpoints or bump ``structure_change_cnt``.
 
         ``structure_change_cnt`` is also re-read at every yield to catch a
-        rebuild mid-iteration (see the in-loop comment).
+        rebuild mid-iteration (see the in-loop comment). A section deleted
+        during the loop (by the loop, by HOC, or by the garbage collector
+        freeing a Python section or a template object) is left out: once the
+        model epoch moves, each pointer is checked before it is handed out.
 
         Known limit of the cheap probe: strictly-interior native reordering
         that also skips the model epoch may not invalidate. ``finitialize``
@@ -1964,45 +1968,46 @@ class NEURON(metaclass=_Singleton):
         ptrs = self._allsec_ptrs
         wrappers = self._allsec_wrappers
         count = self._allsec_count
+        # Once the epoch moves during the loop (the loop deleted a section, or
+        # the garbage collector freed a Python section or a template object),
+        # a later pointer may be a deleted section's, so it is checked before
+        # it is handed out. NEURON's own iterator reads the freed list item
+        # there and can crash. A loop that changes nothing pays one comparison.
+        epoch = self._allsec_version[2]
+        handed_out = None  # set at the first mid-loop regather
 
         idx = 0
         while idx < count:
             new_sc = _structure_change_cnt.value
             if new_sc != sc:
-                # Topology rebuilt mid-iteration: regather and resume at the
-                # section about to be yielded (or the next position if deleted).
-                current_ptr = ptrs[idx]
+                # Topology rebuilt mid-iteration: regather, then go on with the
+                # sections not handed out yet, in the new order. Resuming by
+                # position skipped a live section once an earlier one had been
+                # deleted, and this also hands out sections the loop created.
+                done = set(ptrs[:idx])
+                handed_out = done if handed_out is None else handed_out | done
                 new_link = _allsec_head_links()
-                ptrs, count = self._gather_section_ptrs()
-                self._allsec_ptrs = ptrs
-                self._allsec_count = count
-                self._allsec_version = (new_link, new_sc, _model_epoch())
-                self._allsec_wrappers = [None] * count
-                wrappers = self._allsec_wrappers
+                # Before gathering, as at the top: a section the garbage
+                # collector frees during the gather then moves the epoch past it.
+                new_epoch = _model_epoch()
+                all_ptrs, all_count = self._gather_section_ptrs()
+                self._allsec_ptrs = all_ptrs
+                self._allsec_count = all_count
+                self._allsec_version = (new_link, new_sc, new_epoch)
+                self._allsec_wrappers = [None] * all_count
+                ptrs = [p for p in all_ptrs if p not in handed_out]
+                count = len(ptrs)
+                # This loop's own: its positions are not the cache's.
+                wrappers = [None] * count
                 sc = new_sc
-
-                # Search forward from the old index first (parents-before-
-                # children order keeps positions close), then from zero.
-                # TODO(gap-33): O(n) scan on every mid-iteration rebuild; use a
-                # ptr->index dict once allsec_count routinely exceeds ~5000.
-                found = -1
-                for j in range(min(idx, count), count):
-                    if ptrs[j] == current_ptr:
-                        found = j
-                        break
-                if found < 0:
-                    for j in range(0, min(idx, count)):
-                        if ptrs[j] == current_ptr:
-                            found = j
-                            break
-                if found < 0:
-                    # Section was deleted: resume at the same index (clamped).
-                    idx = min(idx, count)
-                else:
-                    idx = found
-
-                if idx >= count:
+                epoch = new_epoch
+                idx = 0
+                if not count:
                     break
+
+            if _MODEL_EPOCH != epoch and not _nrn_section_is_active(ptrs[idx]):
+                idx += 1
+                continue
 
             # A Python section's own object, as NEURON gives: a wrapper would
             # not keep a section that is otherwise garbage alive for the loop.

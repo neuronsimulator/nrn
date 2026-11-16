@@ -1180,6 +1180,11 @@ def _release_owned_section(sec):
     with HOC_LOCK:
         _nrn_section_owned_release(sec)  # asks the name hook; entry still present
     OWNED_SECTIONS.pop(sec, None)
+    # The section may be gone now, and nothing allsec() checks moves when an
+    # interior one goes (the garbage collector can do this mid-loop).
+    from . import _bump_model_epoch
+
+    _bump_model_epoch()
 
 
 class Section:
