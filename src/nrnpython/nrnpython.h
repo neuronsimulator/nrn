@@ -73,7 +73,7 @@ enum IteratorState { Begin, NextNotLast, Last };
 // Declare methods that are used in different translation units within libnrnpython.abi3
 struct Object;
 struct Section;
-PyObject* hocobj_call_arg(int);
+PyObject* hocobj_call_arg(const char* name, int i);
 struct NPySecObj {
     PyObject_HEAD
     Section* sec_;
