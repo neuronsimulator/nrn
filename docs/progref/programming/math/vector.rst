@@ -5269,34 +5269,96 @@ Vector
         .. code-block:: python
 
             obj = vdest.medfltr(vsrc)
-            obj = vdest.medfltr(vsrc, points)
+            obj = vdest.medfltr(vsrc, num_points)
             obj = vsrcdest.medfltr()
-            obj = vsrcdest.medfltr(points)
+            obj = vsrcdest.medfltr(num_points)
 
 
         Description:
-            Apply a median filter to vsrc, producing a smoothed version in vdest. 
-            Each point is replaced with the median value of the *points* on 
-            either side. 
-            This is typically used for eliminating spikes from data. 
+            Apply a median filter to ``vsrc``, storing the result in ``vdest``.
+            This is typically used to eliminate spikes from data.
+            ``num_points`` defaults to 3 when omitted. An explicit value must be
+            from 1 to ``n/2`` (rounded down), where ``n`` is the input length.
+
+            Each output element at index ``i`` is the median of input elements
+            from ``i - num_points`` through ``i + num_points``, including both
+            ends, with the window clipped at the vector ends. For an even
+            window size, use the lower of the two middle values.
+
+            With a separate destination, ``vsrc`` is unchanged and ``vdest`` is
+            resized to match it. ``vsrcdest.medfltr()`` and
+            ``vsrcdest.medfltr(num_points)`` filter in place. The call returns
+            the destination vector.
+
+        Example:
+
+            .. code-block::
+                python
+
+                from neuron import n
+
+                vsrc = n.Vector([1, 2, 30, 4, 5, 6, 7])
+                vdest = n.Vector()
+                print(list(vdest.medfltr(vsrc, 1)))
+                print(list(vsrc.medfltr()))
+
+            prints:
+
+            .. code-block::
+                none
+
+                [1.0, 2.0, 4.0, 5.0, 5.0, 6.0, 6.0]
+                [2.0, 4.0, 4.0, 5.0, 5.0, 6.0, 5.0]
     
     .. tab:: HOC
 
         Syntax:
             ``obj = vdest.medfltr(vsrc)``
 
-            ``obj = vdest.medfltr(vsrc, points)``
+            ``obj = vdest.medfltr(vsrc, num_points)``
 
             ``obj = vsrcdest.medfltr()``
 
-            ``obj = vsrcdest.medfltr(points)``
+            ``obj = vsrcdest.medfltr(num_points)``
 
 
         Description:
-            Apply a median filter to vsrc, producing a smoothed version in vdest. 
-            Each point is replaced with the median value of the *points* on 
-            either side. 
-            This is typically used for eliminating spikes from data. 
+            Apply a median filter to ``vsrc``, storing the result in ``vdest``.
+            This is typically used to eliminate spikes from data.
+            ``num_points`` defaults to 3 when omitted. An explicit value must be
+            from 1 to ``n/2`` (rounded down), where ``n`` is the input length.
+
+            Each output element at index ``i`` is the median of input elements
+            from ``i - num_points`` through ``i + num_points``, including both
+            ends, with the window clipped at the vector ends. For an even
+            window size, use the lower of the two middle values.
+
+            With a separate destination, ``vsrc`` is unchanged and ``vdest`` is
+            resized to match it. ``vsrcdest.medfltr()`` and
+            ``vsrcdest.medfltr(num_points)`` filter in place. The call returns
+            the destination vector.
+
+        Example:
+
+            .. code-block::
+                C++
+
+                objref vsrc, vdest
+                vsrc = new Vector()
+                { vsrc.append(1, 2, 30, 4, 5, 6, 7) }
+                vdest = new Vector()
+                { vdest.medfltr(vsrc, 1) }
+                { vdest.printf("%g ") printf("\n") }
+                { vsrc.medfltr() }
+                { vsrc.printf("%g ") printf("\n") }
+
+            prints:
+
+            .. code-block::
+                none
+
+                1 2 4 5 5 6 6
+                2 4 4 5 5 6 5
 
 
 ----
