@@ -1,4 +1,4 @@
-# Shipped binaries static-link BSD libedit (NetBSD editline) instead of GNU readline. Pin:
+# Shipped binaries static-link BSD-licensed libedit (NetBSD editline) instead of GNU readline. Pin:
 # larkmjc/libedit f3a98319002d0eca05e2a370a68b28a2afa6a822 ("trim termcap file to xterm, tmux, and
 # screen").
 #
@@ -46,6 +46,15 @@ function(_nrn_libedit_replace file marker old new)
   string(REGEX REPLACE "[ \t]+\n" "\n" old "${old}")
   string(FIND "${_text}" "${old}" _pos)
   if(_pos EQUAL -1)
+    # The stat.h reconfigure patch used to omit its marker from the
+    # replacement. A second configure then missed the needle. The body is
+    # already applied; do not fail that tree.
+    if(marker STREQUAL "NEURON: direct.h after unistd.h renames")
+      string(FIND "${_text}" "NRN_LIBEDIT_POP_CHDIR" _applied)
+      if(NOT _applied EQUAL -1)
+        return()
+      endif()
+    endif()
     message(FATAL_ERROR "libedit patch missed ${file}")
   endif()
   string(REPLACE "${old}" "${new}" _text "${_text}")
@@ -321,6 +330,7 @@ _nrn_libedit_replace(
 ]=])
 
 # signal.c includes one UCRT signal.h by absolute path. MinGW gcc cannot parse that header.
+# MSVC uses the same SIGNAL_H macro. crtheaders.h is the kit CMake already found.
 _nrn_libedit_replace(
   "${_src}/compat/win32/signal.c"
   "NEURON: MinGW cannot parse the UCRT signal.h"
@@ -328,12 +338,29 @@ _nrn_libedit_replace(
 #include "C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.22621.0\\ucrt\\signal.h"
 ]=]
   [=[//#include <signal.h>
+/* NEURON: MinGW cannot parse the UCRT signal.h. crtheaders.h defines SIGNAL_H.
+   NEURON: MSVC uses the discovered SIGNAL_H. */
+#include "crtheaders.h"
+#include SIGNAL_H
+]=])
+# A tree patched by the previous replacement still has the hard-coded kit in the
+# MSVC branch, and that text already contains the marker above. Upgrade it.
+_nrn_libedit_replace(
+  "${_src}/compat/win32/signal.c"
+  "NEURON: MSVC uses the discovered SIGNAL_H"
+  [=[//#include <signal.h>
 #ifdef __MINGW32__
 /* NEURON: MinGW cannot parse the UCRT signal.h. crtheaders.h defines SIGNAL_H. */
 #include SIGNAL_H
 #else
 #include "C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.22621.0\\ucrt\\signal.h"
 #endif
+]=]
+  [=[//#include <signal.h>
+/* NEURON: MinGW cannot parse the UCRT signal.h. crtheaders.h defines SIGNAL_H.
+   NEURON: MSVC uses the discovered SIGNAL_H. */
+#include "crtheaders.h"
+#include SIGNAL_H
 ]=])
 
 # gcc rejects int* where PeekConsoleInputW and ReadConsoleInputW want LPDWORD.
@@ -427,7 +454,8 @@ _nrn_libedit_replace(
 #include <direct.h>
 #ifndef W32_COMPAT_IMPL
 ]=]
-  [=[/* NEURON: direct.h declares 1-arg mkdir. Include it before the rename macro.
+  [=[/* NEURON: direct.h after unistd.h renames.
+   NEURON: direct.h declares 1-arg mkdir. Include it before the rename macro.
    unistd.h may already have renamed chdir and rmdir; SDK 10.0.26100 then
    redeclares those names with _ACRTIMP. */
 #ifdef chdir
