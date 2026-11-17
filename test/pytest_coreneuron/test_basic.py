@@ -336,6 +336,32 @@ def test_deleted_sec():
     locals()
 
 
+def test_section_subclass_constructor():
+    # nrn.Section.__new__ does not initialize: the subclass's own constructor
+    # arguments are its own, and it passes what it wants to the base __init__.
+    from neuron import nrn
+
+    class Named(nrn.Section):
+        def __init__(self):
+            super().__init__(name="named")
+
+    class Cell:
+        def __str__(self):
+            return "cell"
+
+    class Owned(nrn.Section):
+        def __init__(self, cell):
+            super().__init__(name="owned", cell=cell)
+
+    named = Named()
+    assert named.name() == "named"
+    cell = Cell()
+    owned = Owned(cell)
+    assert owned.name() == "cell.owned" and owned.cell() is cell
+    assert len([s for s in h.allsec() if s in (named, owned)]) == 2
+    del named, owned
+
+
 def test_disconnect():
     print("test_disconnect")
     for sec in h.allsec():
