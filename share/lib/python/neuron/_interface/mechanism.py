@@ -37,9 +37,10 @@ _MODEL_EPOCH_FN = None
 
 
 def _nseg_generation(sec_ptr):
-    from .sections import NSEG_GENERATION
+    """sections.current_nseg_generation, imported here (cycle)."""
+    from .sections import current_nseg_generation
 
-    return NSEG_GENERATION.get(sec_ptr, 0)
+    return current_nseg_generation(sec_ptr)
 
 
 def _model_epoch_now():
@@ -85,29 +86,37 @@ def _all_density_mechanism_names():
 
 
 # Mechanism name -> its variable names in declaration order. Fixed once the
-# mechanism is registered.
+# mechanism is registered, except a KSChan's, which gains one with each gate.
 _DECLARATION_ORDER = {}
 
 
-def _declaration_order(mech_name):
+def _mechanism_variables(mech_name):
     """A mechanism's variables in the order NEURON's ``for var in mech`` yields
     them: the mechanism symbol's own list, which MechanismStandard(name, 0)
-    walks."""
-    order = _DECLARATION_ORDER.get(mech_name)
-    if order is None:
-        from . import NEURON
+    walks. None if MechanismStandard fails."""
+    from . import NEURON
 
-        n = NEURON()
-        try:
-            standard = n.MechanismStandard(mech_name, 0)
-            text = n.ref("")
-            order = []
-            for i in range(int(standard.count())):
-                standard.name(text, i)
-                order.append(text[0])
-        except Exception:
-            order = []
-        _DECLARATION_ORDER[mech_name] = order
+    n = NEURON()
+    try:
+        standard = n.MechanismStandard(mech_name, 0)
+        text = n.ref("")
+        order = []
+        for i in range(int(standard.count())):
+            standard.name(text, i)
+            order.append(text[0])
+    except Exception:
+        return None
+    return order
+
+
+def _declaration_order(mech_name, refresh=False):
+    """_mechanism_variables(mech_name), kept after the first success; read
+    again with *refresh*."""
+    order = None if refresh else _DECLARATION_ORDER.get(mech_name)
+    if order is None:
+        order = _mechanism_variables(mech_name)
+        if order is not None:
+            _DECLARATION_ORDER[mech_name] = order
     return order
 
 
@@ -134,9 +143,10 @@ def _reject_ref_assignment(owner, name, full_name, type_name):
 class RangeVar:
     """A single range variable on a mechanism at a segment.
 
-    Obtained as e.g. ``seg.hh._ref_gnabar`` for use by HOC functions
-    that take a pointer. Behaves like a 1-element double array: read
-    via ``rv[0]``, write via ``rv[0] = value``.
+    Obtained from ``for var in seg.hh``. Behaves like a 1-element double
+    array (an array variable like extracellular's ``xraxial`` has its own
+    length): read via ``rv[0]``, write via ``rv[0] = value``. Each access
+    reads the variable at the segment, as NEURON's RangeVar does.
     """
 
     __slots__ = ("_seg", "_full_name", "_mech")
@@ -180,9 +190,13 @@ class RangeVar:
         self._seg._sec._check_alive()
         array = self._array()
         if array is not None:
-            return array[idx]
+            return array[idx]  # checks the mechanism itself
         if idx != 0:
             raise IndexError("Only index 0 is supported")
+        # As NEURON's, the variable is looked up at the segment on every
+        # access: an uninserted mechanism raises AttributeError (reading it
+        # would throw through ctypes), and one inserted again reads again.
+        self._seg._check_rangevar_mechanism(self._full_name)
         sym = _nrn_symbol(self._full_name.encode("utf-8"))
         from .sections import _is_pointer_rangevar, _pointer_rangevar_get
 
@@ -200,6 +214,7 @@ class RangeVar:
             raise IndexError("Only index 0 is supported")
 
         self._seg._sec._check_alive()  # HOC may have deleted the host section.
+        self._seg._check_rangevar_mechanism(self._full_name)  # see __getitem__
         sym = _nrn_symbol(self._full_name.encode("utf-8"))
         from .sections import _is_pointer_rangevar, _pointer_rangevar_set
 
@@ -247,18 +262,26 @@ class Mechanism:
     insertion lives on the parent Section (``sec.insert('hh')``).
     """
 
-    __slots__ = ("_seg", "_name", "_is_ion", "_epoch", "_nseg")
+    __slots__ = ("_seg", "_x", "_name", "_is_ion", "_epoch", "_nseg", "_x_nseg")
 
     def __init__(self, seg, name):
+        # The segment it was taken from, which segment() returns; NEURON's
+        # mechanism keeps it through nseg changes.
         self._seg = seg
+        # Where its node is now: the variables are read and written there.
+        self._x = seg._x
         self._name = name
         self._is_ion = name.endswith("_ion")
         # Model epoch at which Segment.__getattr__ validated this wrapper as
         # inserted. A later mutation bumps the epoch and __getattr__ revalidates.
         self._epoch = _model_epoch_now()
-        # NEURON frees a mechanism's storage when nseg changes (new nodes), so
-        # the wrapper is dead even though the section still has the mechanism.
+        # The section's nseg generation when this wrapper was made. Fixed: a
+        # Segment serves its cached wrapper only while it is current, since
+        # after an nseg change the segment may be at another node.
         self._nseg = _nseg_generation(seg._sec._sec)
+        # The generation _x was found for. An nseg change keeps some nodes
+        # (sections.follow_node) and the wrapper follows its own.
+        self._x_nseg = self._nseg
 
     def _check_valid(self):
         """Raise ReferenceError if this mechanism's storage is gone, as NEURON.
@@ -281,22 +304,22 @@ class Mechanism:
                 raise ReferenceError(
                     f"mechanism '{self._name}' is no longer inserted in {sec!r}"
                 )
+            # Also counts an nseg change made by a HOC statement.
             generation = _nseg_generation(sec._sec)
-            if generation != self._nseg:
+            if generation != self._x_nseg:
                 # NEURON keeps a node's mechanisms when an nseg change reuses
                 # the node, and frees them otherwise (sections.follow_node).
-                from .sections import Segment, follow_node
+                from .sections import follow_node
 
                 x = follow_node(
-                    sec._sec, self._nseg, self._seg._x, bool(sec.orientation())
+                    sec._sec, self._x_nseg, self._x, bool(sec.orientation())
                 )
                 if x is None:
                     raise ReferenceError(
                         f"mechanism '{self._name}' is no longer inserted in {sec!r}"
                     )
-                if x != self._seg._x:
-                    self._seg = Segment(sec, x)
-                self._nseg = generation
+                self._x = x
+                self._x_nseg = generation
             # has_membrane is a HOC call, which itself bumps the epoch; record
             # the epoch after it or the next access checks again.
             self._epoch = _model_epoch_now()
@@ -354,7 +377,7 @@ class Mechanism:
         # NMODL RANDOM members are listed too; they are objects (_random_names).
         order = [
             name
-            for name in _declaration_order(self._name)
+            for name in _declaration_order(self._name) or ()
             if all_syms.get(name, (None,))[0] == TYPES.RANGEVAR
         ]
         if order:
@@ -377,7 +400,7 @@ class Mechanism:
                 continue
             sym = _nrn_symbol(sym_name.encode("utf-8"))
             wrapped = _try_wrap_density_nmodlrandom(
-                self._seg._sec._sec, self._seg._x, sym, sym_type
+                self._seg._sec._sec, self._x, sym, sym_type
             )
             if wrapped is not None:
                 names.append(sym_name)
@@ -417,14 +440,14 @@ class Mechanism:
                     f"'nrn.Mechanism' object has no attribute '{name}'"
                 )
             if info[2]:
-                return NrnRangeArrayRef(self._seg._sec, self._seg._x, full)
+                return NrnRangeArrayRef(self._seg._sec, self._x, full)
             sym = _nrn_symbol(full.encode("utf-8"))
             if sym and _is_pointer_rangevar(full, sym):
                 # raises if unset; an opaque POINTER is its own reference
-                value = _pointer_rangevar_get(self._seg._sec, self._seg._x, full)
+                value = _pointer_rangevar_get(self._seg._sec, self._x, full)
                 if isinstance(value, OpaquePointer):
                     return value
-            return NrnRangeVarRef(self._seg._sec, self._seg._x, full)
+            return NrnRangeVarRef(self._seg._sec, self._x, full)
         cache = _MECH_ATTR_CACHE.get(self._name)
         if cache is None:
             cache = {}
@@ -433,10 +456,10 @@ class Mechanism:
         if entry is not None:
             full_name, sym, sym_type = entry
             if sym_type == TYPES.RANGEVAR:
-                return _nrn_rangevar_get(sym, self._seg._sec._sec, self._seg._x)
+                return _nrn_rangevar_get(sym, self._seg._sec._sec, self._x)
             if sym_type == TYPES.RANGEOBJ:
                 wrapped = _try_wrap_density_nmodlrandom(
-                    self._seg._sec._sec, self._seg._x, sym, sym_type
+                    self._seg._sec._sec, self._x, sym, sym_type
                 )
                 if wrapped is None:
                     raise ReferenceError(
@@ -466,16 +489,14 @@ class Mechanism:
                     # for an array variable, so never cache it as a scalar.
                     from .sections import _ArrayRangeVar
 
-                    return _ArrayRangeVar(self._seg._sec, self._seg._x, full_name, size)
+                    return _ArrayRangeVar(self._seg._sec, self._x, full_name, size)
                 from .sections import _is_pointer_rangevar, _pointer_rangevar_get
 
                 if _is_pointer_rangevar(full_name, sym):
                     # Never cached: the fast path would read it unchecked.
-                    return _pointer_rangevar_get(
-                        self._seg._sec, self._seg._x, full_name
-                    )
+                    return _pointer_rangevar_get(self._seg._sec, self._x, full_name)
                 cache[name] = (full_name, sym, sym_type)
-                return _nrn_rangevar_get(sym, self._seg._sec._sec, self._seg._x)
+                return _nrn_rangevar_get(sym, self._seg._sec._sec, self._x)
             if sym_type == TYPES.FUN_BLTIN and not self._is_ion:
                 # NMODL PROCEDURE and FUNCTION both compile to FUN_BLTIN (280),
                 # not PROCEDURE (271, HOC-only `proc`); the HOC name is
@@ -493,7 +514,7 @@ class Mechanism:
                     mech_obj._check_valid()
                     n = NEURON()
                     setdata = getattr(n, f"setdata_{mech}")
-                    setdata(seg._x, sec=seg._sec)
+                    setdata(mech_obj._x, sec=seg._sec)
                     fn = getattr(n, full_name)
                     return fn(*args, sec=seg._sec)
 
@@ -507,7 +528,7 @@ class Mechanism:
             # RANGEOBJ: see api.TypeCodes.record_rangeobj. Cached like a RANGEVAR.
             if TYPES.RANGEOBJ is None or sym_type == TYPES.RANGEOBJ:
                 wrapped = _try_wrap_density_nmodlrandom(
-                    self._seg._sec._sec, self._seg._x, sym, sym_type
+                    self._seg._sec._sec, self._x, sym, sym_type
                 )
                 if wrapped is not None:
                     cache[name] = (full_name, sym, TYPES.RANGEOBJ)
@@ -558,7 +579,7 @@ class Mechanism:
         rc = _nrn_setpointer_pop(
             sym,
             seg._sec._sec,
-            ctypes.c_double(seg._x),
+            ctypes.c_double(self._x),
             err,
             _ERR_BUF_SIZE,
         )
@@ -592,7 +613,7 @@ class Mechanism:
             if entry is not None:
                 full_name, sym, sym_type = entry
                 if sym_type == TYPES.RANGEVAR:
-                    _nrn_rangevar_set(sym, self._seg._sec._sec, self._seg._x, value)
+                    _nrn_rangevar_set(sym, self._seg._sec._sec, self._x, value)
                     return
                 if sym_type == TYPES.RANGEOBJ:
                     raise ValueError(
@@ -611,23 +632,23 @@ class Mechanism:
                 # Like NEURON, seg.mech.c = x on an array variable sets c[0].
                 from .sections import _ArrayRangeVar
 
-                _ArrayRangeVar(self._seg._sec, self._seg._x, full_name, 1)[0] = value
+                _ArrayRangeVar(self._seg._sec, self._x, full_name, 1)[0] = value
                 return
             from .sections import _is_pointer_rangevar, _pointer_rangevar_set
 
             if _is_pointer_rangevar(full_name, sym):
-                _pointer_rangevar_set(self._seg._sec, self._seg._x, full_name, value)
+                _pointer_rangevar_set(self._seg._sec, self._x, full_name, value)
                 return
             if cache is None:
                 cache = {}
                 _MECH_ATTR_CACHE[self._name] = cache
             cache[name] = (full_name, sym, TYPES.RANGEVAR)
-            _nrn_rangevar_set(sym, self._seg._sec._sec, self._seg._x, value)
+            _nrn_rangevar_set(sym, self._seg._sec._sec, self._x, value)
             return
 
         if sym and (TYPES.RANGEOBJ is None or sym_type == TYPES.RANGEOBJ):
             wrapped = _try_wrap_density_nmodlrandom(
-                self._seg._sec._sec, self._seg._x, sym, sym_type
+                self._seg._sec._sec, self._x, sym, sym_type
             )
             if wrapped is not None:
                 if cache is None:

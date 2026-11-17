@@ -5,13 +5,13 @@ Provides the NEURON singleton (n/h), Section, and dynamic class dispatch.
 import builtins
 import ctypes
 import numbers
+import pkgutil
 import sys
 import threading
 
 from . import _coreneuron, _rvp_hook
 from ._docs import top_level_doc as _top_level_doc
 from .api import (
-    HOC_CLASS_MODULE,
     hoc_call_depth,
     hoc_locked,
     symbol_array_dims,
@@ -56,6 +56,8 @@ from .api import (
     _nrn_symbol_array_length,
     _nrn_symbol_dataptr,
     _nrn_symbol_is_array,
+    _nrn_symbol_object_get,
+    _nrn_symbol_type,
     _structure_change_cnt,
     install_stdout_redirect,
     _nrn_objgetarg,
@@ -73,7 +75,7 @@ from .nrnref import (
     NrnRangeVarRef,
     NrnStrRef,
     NrnVarRef,
-    numpy_element_ref,
+    numpy_element_ref,  # noqa: F401  (public: myneuron.numpy_element_ref)
 )
 from .object import List, Object, SectionList, Vector
 from .sections import PYTHON_SECTIONS, Section
@@ -86,6 +88,7 @@ from .utils import (
     _Singleton,
     _wrap_owned_object,
     forget_class,
+    hoc_class,
     list_functions,
 )
 
@@ -862,24 +865,28 @@ def _unregister_py_callback(cb_id):
         return _PY_CALLBACKS.pop(cb_id, None) is not None
 
 
-# Per-name HOC obfunc trampolines that return the Object bound to a top-level
-# objref. Cached so `n.foo` does not redefine the obfunc on every access.
+# Names of the per-name HOC helpers already defined for top-level objrefs
+# (array element reads and writes, scalar writes), so each is defined once.
 _OBJECTVAR_TRAMPOLINES = set()
 
 
 def _read_hoc_objectvar(neuron_singleton, name):
     """Return the Object bound to the top-level objref ``name``, or None if nil.
 
-    Defines `_mn_objgrab_<name>() { return <name> }` on first use.
-
-    Nil guard: an unset `objref` (the `if h.x == None` idiom, or an objref
-    array before assignment) is a nil HOC object. A nil `Object*` is a non-NULL
-    sentinel, so popping it makes `nrn_class_name` dereference it and SIGSEGV.
-    `object_id(nil) == 0` is the safe test: check it before the pop and return
-    None, as real NEURON's `h.x is None` does.
+    A scalar objref is read with nrn_symbol_object_get, as NEURON reads it, so
+    no HOC statement runs: hoc_ac_, which HOC code uses as a scratch variable,
+    keeps its value. HOC is switched to its top level for the lookup, so a call
+    made while a template method runs finds the top-level objref and not a
+    template member with the same name.
     """
+    return _call_at_top_level(_read_top_level_objectvar, (neuron_singleton, name))
+
+
+def _read_top_level_objectvar(neuron_singleton, name):
     sym = _nrn_symbol(name.encode("utf-8"))
-    if sym and _nrn_symbol_is_array(sym):
+    if not sym:
+        raise AttributeError(f"objref '{name}' not found.")
+    if _nrn_symbol_is_array(sym):
         # `objref g[N]`: subscriptable proxy like real NEURON's HocObject
         # array (g[i], len(), iteration); nil elements read as None.
         return _ObjrefArray(
@@ -887,19 +894,11 @@ def _read_hoc_objectvar(neuron_singleton, name):
             name,
             symbol_array_dims(sym, int(_nrn_symbol_array_length(sym))),
         )
-
-    fn = f"_mn_objgrab_{name}"
-    if fn not in _OBJECTVAR_TRAMPOLINES:
-        neuron_singleton(f"obfunc {fn}() {{ return {name} }}")
-        _OBJECTVAR_TRAMPOLINES.add(fn)
-        # Refresh _top_level so the new obfunc is dispatchable.
-        neuron_singleton._top_level = list_functions()
-    # object_id takes a HOC object, not a Python wrapper, so evaluate it by name
-    # through the hoc_ac_ trampoline.
-    neuron_singleton(("hoc_ac_ = object_id(" + name + ")").encode("utf-8"))
-    if neuron_singleton.hoc_ac_ == 0.0:
-        return None
-    return getattr(neuron_singleton, fn)()
+    obj = _nrn_symbol_object_get(sym)
+    if not obj:
+        return None  # a nil objref, as `h.x is None` in NEURON
+    _nrn_object_ref(obj)  # borrowed; the wrapper releases its own reference
+    return _wrap_owned_object(obj)
 
 
 def _objref_trampolines(n, name, ndim):
@@ -1322,7 +1321,7 @@ class NEURON(metaclass=_Singleton):
         #   284/296 — OBFUNCTION / OBJECTFUNC, return wrapped Object
         #   295 — string-returning function
         #   311 — density mechanism (DensityMechanism)
-        #   324 (OBJECTVAR) — bound Object via per-name obfunc trampoline
+        #   324 (OBJECTVAR) — bound Object, read with nrn_symbol_object_get
         #   325 — HOC class (returned as the dynamic subclass of Object;
         #         subclassable and indexable via _HocClassMeta)
         # RANGEOBJ is segment/object scoped and runtime-probed after a
@@ -1505,26 +1504,7 @@ class NEURON(metaclass=_Singleton):
                         # runs Object.__init__'s construction path), indexable
                         # (``n.IClamp[0]`` via _HocClassMeta.__getitem__) and
                         # subclassable without neuron.hclass.
-                        if name not in _dynamic_classes:
-                            # Empty __slots__: no per-instance __dict__, like
-                            # List, Vector and SectionList. _hoc_class_name
-                            # binds the class to its HOC template for
-                            # construction and metaclass indexing.
-                            cls = type(
-                                name,
-                                (Object,),
-                                {
-                                    "__module__": HOC_CLASS_MODULE,
-                                    "__slots__": (),
-                                    "_hoc_class_name": name,
-                                },
-                            )
-                            _dynamic_classes[name] = cls
-                            from . import object as _obj_mod
-
-                            setattr(_obj_mod, name, cls)
-                            setattr(sys.modules[__name__], name, cls)
-                        return _dynamic_classes[name]
+                        return hoc_class(name)
 
                     elif _type == TYPES.MECHANISM:
                         from .mechanism import density_mechanism
@@ -1657,7 +1637,7 @@ class NEURON(metaclass=_Singleton):
 
         # Top-level objref: assign through a per-name proc trampoline
         # (`proc _mn_setobj_<name>() { <name> = $o1 }`) with the object pushed.
-        # Mirrors the _read_hoc_objectvar read trampoline. None re-nils it.
+        # None re-nils it.
         if _type == TYPES.OBJECTVAR:
             from .object import Object
 
@@ -2117,3 +2097,27 @@ TYPES.discover_template_scoped(n)
 n._rebuild_function_types()
 TYPES.probe_section_ref()
 TYPES.validate()
+
+
+_SUBMODULES = []  # this package's submodule names, filled on first use
+
+
+def __getattr__(name):
+    """``myneuron.<HOC class>``, which is how pickle finds a HOC class.
+
+    Standalone, a HOC class's ``__module__`` names this package (in NEURON it
+    is ``hoc``, whose facade finds the class). Python calls this only for a
+    name the package does not have, so a HOC class named like one of the
+    package's globals or submodules never replaces it (and cannot be pickled
+    by name). A submodule not imported yet is not a HOC class either: ``from
+    . import plotting`` must import it.
+    """
+    if not name.startswith("__"):
+        if not _SUBMODULES:
+            _SUBMODULES.extend(module.name for module in pkgutil.iter_modules(__path__))
+        sym = None if name in _SUBMODULES else _nrn_symbol(name.encode("utf-8"))
+        if sym and _nrn_symbol_type(sym) == TYPES.TEMPLATE:
+            value = getattr(n, name)
+            if isinstance(value, type):
+                return value
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

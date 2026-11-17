@@ -1523,6 +1523,10 @@ _nrn_symbol_subtype = _bind("nrn_symbol_subtype", ctypes.c_int, Symbol)
 
 _nrn_symbol_name = _bind("nrn_symbol_name", ctypes.c_char_p, Symbol)
 
+# The Object a top-level objref holds, borrowed (no reference taken); NULL when
+# the objref is nil or the symbol is not a top-level objref.
+_nrn_symbol_object_get = _bind("nrn_symbol_object_get", Object, Symbol)
+
 _nrn_register_function = _bind(
     "nrn_register_function", None, ctypes.c_void_p, ctypes.c_char_p, ctypes.c_int
 )

@@ -251,22 +251,37 @@ class NrnRangeVarRef(NrnRef):
         # section; _check_alive raises RuntimeError instead of pushing freed state.
         sec._check_alive()
         self._check_nseg(sec)
-        info = _symbol_info(self._name)
-        if not info[2]:
-            _nrn_rangevar_push(self._sym, sec._sec, self._x)
+        if _nrn_rangevar_push_nothrow is not None:
+            # Takes the array index directly, and reports a failure (a
+            # mechanism that is no longer inserted, i_membrane_ without
+            # use_fast_imem) as an error instead of a HOC error, which would
+            # cross ctypes as a C++ exception and abort the process.
+            err = ctypes.create_string_buffer(_ERR_BUF_SIZE)
+            if _nrn_rangevar_push_nothrow(
+                self._sym, sec._sec, self._x, self._index or 0, err, _ERR_BUF_SIZE
+            ):
+                raise RuntimeError(err.value.decode("utf-8", "replace"))
             return
-        # nrn_rangevar_push on an array symbol reads its index from the HOC
-        # stack and throws through ctypes (process abort) without it.
-        if _nrn_rangevar_push_nothrow is None:
+        name = self._name.decode("utf-8")
+        # Without the nothrow push, nrn_rangevar_push is the only one, and a HOC
+        # error in it aborts the process. On an array symbol it reads the index
+        # from the HOC stack, which cannot be pushed here.
+        if _symbol_info(self._name)[2]:
             raise RuntimeError(
-                f"a pointer to {self._name.decode('utf-8')}[{self._index or 0}] "
-                "needs nrn_rangevar_push_nothrow, which this NEURON lacks (gap-70)"
+                f"a pointer to {name}[{self._index or 0}] needs "
+                "nrn_rangevar_push_nothrow, which this NEURON lacks"
             )
-        err = ctypes.create_string_buffer(_ERR_BUF_SIZE)
-        if _nrn_rangevar_push_nothrow(
-            self._sym, sec._sec, self._x, self._index or 0, err, _ERR_BUF_SIZE
-        ):
-            raise RuntimeError(err.value.decode("utf-8", "replace"))
+        # Its other error is a mechanism that is not inserted here (uninserted
+        # after the reference was taken); check that first.
+        from .sections import Segment
+
+        try:
+            Segment(sec, self._x)._check_rangevar_mechanism(name)
+        except AttributeError:
+            raise RuntimeError(
+                f"{name}: mechanism is not inserted at this location"
+            ) from None
+        _nrn_rangevar_push(self._sym, sec._sec, self._x)
 
     def _checked_target(self):
         """Return (section, name, kind) or raise before the core is touched.
@@ -577,6 +592,52 @@ class NrnHocTemplateVarRef(NrnRef):
         return f"<NrnRef to HOC template {clsname}.{self._name}{suffix}>"
 
 
+class NrnHocTemplateStrRef(NrnRef):
+    """``obj._ref_<strdef>`` of a HOC template object: ``[0]`` reads and
+    writes the strdef, as NEURON's string reference does.
+
+    It cannot be passed to HOC: that needs the strdef's ``char**``, which no
+    C API gives. Holds the object as a weakref.
+    """
+
+    __slots__ = ("_obj", "_name")
+
+    def __init__(self, obj, name):
+        self._obj = weakref.ref(obj)
+        self._name = name
+
+    def _owner(self):
+        obj = self._obj()
+        if obj is None:
+            raise ReferenceError("Referenced object no longer exists")
+        return obj
+
+    def _push(self):
+        raise NotImplementedError(
+            f"a reference to strdef '{self._name}' of a HOC template object "
+            "cannot be passed to HOC"
+        )
+
+    def __getitem__(self, idx):
+        if idx != 0:
+            raise IndexError("Only index 0 is supported")
+        from .object import _read_hoc_template_string
+
+        return _read_hoc_template_string(self._owner(), self._name)
+
+    def __setitem__(self, idx, value):
+        if idx != 0:
+            raise IndexError("Only index 0 is supported")
+        from .object import _write_hoc_template_string
+
+        _write_hoc_template_string(self._owner(), self._name, value)
+
+    def __repr__(self):
+        obj = self._obj()
+        clsname = getattr(obj, "_class_name", "?")
+        return f"<NrnRef to HOC template {clsname}.{self._name}>"
+
+
 class NrnVectorElementRef(NrnRef):
     """Pointer to element ``i`` of a Vector, ``vec._ref_x[i]``.
 
@@ -777,7 +838,10 @@ class NrnArrayPropertyRef(NrnRef):
         _nrn_double_ptr_pop()
 
     def __repr__(self):
-        return f"<NrnRef to {self._owner.hname()}.{self._name}>"
+        # Not owner.hname(): a template member named hname would be that.
+        from .object import _instance_hname
+
+        return f"<NrnRef to {_instance_hname(self._owner)}.{self._name}>"
 
 
 class NrnDoubleRef(NrnRef):

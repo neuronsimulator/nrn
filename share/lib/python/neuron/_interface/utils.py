@@ -441,35 +441,46 @@ def _wrap_owned_object(obj):
         return _owned_pythonobject_to_python(obj)
 
     try:
-        # Mint the class if no one has asked for it via n.<ClassName> yet.
-        from . import _dynamic_classes
-        from .object import Object
+        if name == "":
+            from .object import Object
 
-        cls = _dynamic_classes.get(name)
-        if cls is None:
-            if name == "":
-                cls = Object
-            else:
-                cls = type(
-                    name,
-                    (Object,),
-                    {
-                        "__module__": HOC_CLASS_MODULE,
-                        "__slots__": (),
-                        "_hoc_class_name": name,
-                    },
-                )
-                _dynamic_classes[name] = cls
-                from . import object as _obj_mod
-
-                setattr(_obj_mod, name, cls)
-                import sys
-
-                setattr(sys.modules[__package__], name, cls)
+            cls = Object
+        else:
+            cls = hoc_class(name)
     except BaseException:
         _nrn_object_unref(obj)
         raise
     return cls._wrap(obj)
+
+
+def hoc_class(name):
+    """The Python class of HOC class ``name``, made on first use and cached.
+
+    The class is not stored as an attribute of any module: a HOC class named
+    like a module global or submodule (api, ctypes, NEURON, n) would replace
+    it. pickle finds the class through its ``__module__``: the package's
+    module ``__getattr__`` (standalone) or the ``hoc`` facade (in NEURON).
+    """
+    from . import _dynamic_classes
+
+    cls = _dynamic_classes.get(name)
+    if cls is None:
+        from .object import Object
+
+        # Empty __slots__: no per-instance __dict__, like List, Vector and
+        # SectionList. _hoc_class_name binds the class to its HOC template
+        # for construction and metaclass indexing.
+        cls = type(
+            name,
+            (Object,),
+            {
+                "__module__": HOC_CLASS_MODULE,
+                "__slots__": (),
+                "_hoc_class_name": name,
+            },
+        )
+        _dynamic_classes[name] = cls
+    return cls
 
 
 def _try_wrap_density_nmodlrandom(sec, x, sym, sym_type):
