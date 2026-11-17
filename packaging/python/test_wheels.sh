@@ -236,10 +236,12 @@ run_serial_test () {
     # does not run. Launch the real executable under neuron/.data/bin.
     # A Python subprocess cannot CreateProcess nrniv.cmd. The hook script
     # closes stdin. Leave the full ctest suite off.
-    # Unix nrniv -python runs bash $NEURONHOME/../../bin/nrnpyenv.sh. The
-    # wheel binary's compiled data dir is the build prefix, so that file is
-    # missing until NEURONHOME is the installed .data/share/nrn. That is the
-    # path import neuron sets. This launch does not import neuron.
+    # The wheel nrniv launcher sets NEURONHOME and NRN_PYLIB, NRN_PYTHONEXE,
+    # and NRN_PYTHONVERSION. nrniv skips nrnpyenv.sh only when those three
+    # are set. This launch runs the .data/bin executable itself. The binary's
+    # compiled data dir is the build prefix, so without this environment it
+    # looks for nrnpyenv.sh there. These are the same values as
+    # binwrapper._config_exe for this interpreter.
     nrniv_exe="$($python_exe -c 'import os, sys, neuron
 bindir = os.path.join(os.path.dirname(neuron.__file__), ".data", "bin")
 name = "nrniv.exe" if sys.platform == "win32" else "nrniv"
@@ -254,7 +256,27 @@ print(os.path.abspath(os.path.join(os.path.dirname(neuron.__file__), ".data", "s
       echo "readline hook: NEURONHOME not found at $NEURONHOME"
       exit 1
     fi
-    export NEURONHOME
+    nrn_py_info="$($python_exe -c 'import sys
+from find_libpython import find_libpython
+pylib = find_libpython()
+if not pylib:
+    raise SystemExit("find_libpython returned nothing")
+print(sys.executable)
+print("%d.%d" % sys.version_info[:2])
+print(pylib)')"
+    {
+      IFS= read -r NRN_PYTHONEXE
+      IFS= read -r NRN_PYTHONVERSION
+      IFS= read -r NRN_PYLIB
+    } <<EOF
+$nrn_py_info
+EOF
+    if [[ -z "$NRN_PYTHONEXE" || -z "$NRN_PYTHONVERSION" || ! -f "$NRN_PYLIB" ]]; then
+      echo "readline hook: Python library details are incomplete"
+      printf 'exe=%s\nversion=%s\npylib=%s\n' "$NRN_PYTHONEXE" "$NRN_PYTHONVERSION" "$NRN_PYLIB"
+      exit 1
+    fi
+    export NEURONHOME NRN_PYTHONEXE NRN_PYTHONVERSION NRN_PYLIB
     $python_exe test/pyinit/readline_hook.py "$nrniv_exe"
 }
 
