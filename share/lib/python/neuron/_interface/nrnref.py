@@ -920,6 +920,23 @@ class NrnStrRef(NrnRef):
                 pass
 
 
+def _release_object(obj):
+    """Drop a reference cell's reference to HOC object *obj*.
+
+    The last reference to a template cell (or a List of them) deletes its
+    sections, so that moves the model epoch, as Object.__del__ does (gap-68).
+    """
+    from . import _bump_model_epoch
+    from .api import _nrn_class_name, _nrn_object_unref
+    from .object import _may_own_sections
+
+    # Read the class before the object can go.
+    class_name = (_nrn_class_name(obj) or b"").decode("utf-8", "replace")
+    _nrn_object_unref(obj)
+    if _may_own_sections(class_name):
+        _bump_model_epoch()
+
+
 class NrnObjectRef(NrnRef):
     """Fresh anonymous object cell, like real NEURON's ``h.ref(obj)`` / ``h.ref(None)``.
 
@@ -971,7 +988,6 @@ class NrnObjectRef(NrnRef):
     def __setitem__(self, idx, value):
         if idx != 0:
             raise IndexError("Only index 0 is supported")
-        from .api import _nrn_object_unref
         from .object import Object
         from .utils import _new_python_object
 
@@ -986,7 +1002,7 @@ class NrnObjectRef(NrnRef):
         # Acquire before replacing: failed conversion leaves the old cell intact.
         self._cell.value = new_ptr
         if old:
-            _nrn_object_unref(old)  # release the old content
+            _release_object(old)  # release the old content
 
     def __del__(self):
         # Release the cell's one reference. Guarded like Object.__del__ against
@@ -1000,8 +1016,6 @@ class NrnObjectRef(NrnRef):
         if cell is None or not cell.value:
             return
         try:
-            from .api import _nrn_object_unref
-
-            _nrn_object_unref(cell.value)
+            _release_object(cell.value)
         except Exception:
             pass

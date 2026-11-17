@@ -13,6 +13,7 @@ import weakref
 
 from ._docs import _ClassDoc, help_doc
 from .api import (
+    _nrn_symbol_subtype,
     HOC_CLASS_MODULE,
     libnrniv,
     hoc_locked,
@@ -246,6 +247,7 @@ def _construct_hoc_object(class_name, args, sec=None):
     use_sec = sec if sec is not None else seg_sec
     if use_sec is not None:
         _nrn_section_push(use_sec._sec)
+    obj = None
     try:
         sym = class_symbol(class_name)
         if not sym:
@@ -265,6 +267,14 @@ def _construct_hoc_object(class_name, args, sec=None):
     finally:
         if use_sec is not None:
             _nrn_section_pop()
+        if _is_hoc_template(class_name):
+            # A template's init() is HOC: it can uninsert mechanisms or delete
+            # sections, so the caches the epoch guards (allsec, Mechanism
+            # wrappers) must check again. Only a class's first construction
+            # moved it before (gap-68).
+            from . import _bump_model_epoch
+
+            _bump_model_epoch()
 
     def post_init(wrapper):
         if fih_callback_ids:
@@ -325,6 +335,34 @@ _LEGACY_OBJECT_TYPE = None
 # HOC class name -> whether freeing an instance can delete sections (user
 # templates can, built-in classes cannot). Filled by Object.__del__.
 _MAY_OWN_SECTIONS = {}
+# Class name -> True if it is a HOC template, False if a C++ class (built in
+# or from a MOD file, including one loaded later with nrn_load_dll).
+_IS_HOC_TEMPLATE = {}
+
+
+def _is_hoc_template(class_name):
+    """True unless *class_name* is a C++ class (Vector, List, IClamp, ExpSyn).
+
+    A HOC template's init() and its destruction run HOC code, which can
+    remove mechanisms or delete sections. Decided by the class symbol's
+    subtype; the class-id test (_object_is_builtin_class) counts a MOD class
+    loaded after startup as a template.
+    """
+    known = _IS_HOC_TEMPLATE.get(class_name)
+    if known is None:
+        sym = class_symbol(class_name) if class_name else None
+        if not sym:
+            return True  # unknown class: assume it may
+        known = int(_nrn_symbol_subtype(sym)) != TYPES.CPLUSOBJECT
+        _IS_HOC_TEMPLATE[class_name] = known
+    return known
+
+
+def _may_own_sections(class_name):
+    """True if freeing an object of *class_name* can delete sections: a HOC
+    template, or a List, which can hold the last reference to template
+    cells."""
+    return class_name == "List" or _is_hoc_template(class_name)
 
 
 def _other_hoc_pointer(other):
@@ -492,8 +530,10 @@ class Object(metaclass=_HocClassMeta):
                 class_name = None
             may_own = _MAY_OWN_SECTIONS.get(class_name)
             if may_own is None:
-                may_own = not _object_is_builtin_class(obj)
-                if class_name is not None:
+                if class_name is None:
+                    may_own = not _object_is_builtin_class(obj)
+                else:
+                    may_own = _may_own_sections(class_name)
                     _MAY_OWN_SECTIONS[class_name] = may_own
             _nrn_object_unref(obj)
             # _hoc_unref_defer: prompt deletion, as when NEURON releases a

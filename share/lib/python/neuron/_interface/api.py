@@ -1419,8 +1419,11 @@ else:
 
 _nrn_hoc_call_raw = _bind("nrn_hoc_call", ctypes.c_int, ctypes.c_char_p)
 
-# TODO(gap-61): retire this private OcJump entry when public raw-HOC calls
-# restore the operand stack on failure. Its bool result is opposite the C API.
+# TODO(gap-61): retire this private OcJump entry when a public raw-HOC call
+# catches errors at any depth. nrn_hoc_call (hoc_oc) catches only at the top
+# level, so an error in n() called from a Python callback that HOC runs would
+# unwind through the callback (tests/regression/test_nested_hoc_error.py).
+# Its bool result is opposite the C API.
 _hoc_valid_stmt = getattr(libnrniv, "_Z14hoc_valid_stmtPKcP6Object", None)
 if _hoc_valid_stmt is not None:
     _hoc_valid_stmt.argtypes = [ctypes.c_char_p, ctypes.c_void_p]
@@ -2144,6 +2147,10 @@ class TypeCodes:
         "USERFLOAT",  # float scalar VAR — declared in hocdec.h:86 but not
         # known to be probable from a stock symbol table;
         # left None unless discovery succeeds.
+        # Subtype of TEMPLATE (hocdec.h CPLUSOBJECT): a class implemented in
+        # C++, built in or from a MOD file (Vector, List, IClamp, ExpSyn).
+        # A HOC template has subtype 0.
+        "CPLUSOBJECT",
         "_RAW",  # debug: full discovered map
     )
 
@@ -2180,6 +2187,7 @@ class TypeCodes:
             "USERINT": b"stoprun",  # int stop flag
             "USERDOUBLE": b"t",  # double simulation time
             "USERPROPERTY": b"nseg",  # section-level property
+            "CPLUSOBJECT": b"Vector",  # a C++ class
         }
         for attr, sym_name in subtype_probes.items():
             sym = _nrn_symbol(sym_name)

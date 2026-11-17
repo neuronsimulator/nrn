@@ -306,6 +306,34 @@ class _ArrayRangeVar:
 # the lookup, so a cached None never hides an ion loaded later.
 _ION_VAR_MECH = {}
 _UNSET = object()
+_object_setattr = object.__setattr__
+_STALE = object()  # _current_inserted_mechs: built at an older epoch
+
+# Suffixes known to name a density mechanism (the hh of gnabar_hh). Saves two
+# C calls per suffixed read; mechanism symbols are never removed.
+_SUFFIX_IS_MECHANISM = set()
+
+
+def _current_inserted_mechs(sec):
+    """Section *sec*'s cached _get_inserted_mechs list if it is current,
+    _STALE if it was built before the model epoch last moved, None if never
+    built.
+
+    Makes no HOC call. Not a Section method: NEURON's test_deleted_sec expects
+    every Section method to raise on a deleted section, and this one doesn't
+    look at the section. Read with object.__getattribute__: the slots can be
+    unset on wrappers from `_from_ptr`.
+    """
+    try:
+        cached = object.__getattribute__(sec, "_inserted_mechs")
+        built = object.__getattribute__(sec, "_inserted_mechs_epoch")
+    except AttributeError:
+        return None
+    if cached is None:
+        return None
+    from . import _model_epoch
+
+    return cached if built == _model_epoch() else _STALE
 
 
 def _ion_mechanism_of(name):
@@ -368,9 +396,11 @@ class Segment:
 
     def __init__(self, sec, x):
         # Pre-set _mech_cache so an unset-slot read does not fall into __getattr__.
-        super().__setattr__("_sec", sec)
-        super().__setattr__("_x", x)
-        super().__setattr__("_mech_cache", None)
+        # object.__setattr__ bypasses Segment.__setattr__ without making a
+        # super() object for each slot.
+        _object_setattr(self, "_sec", sec)
+        _object_setattr(self, "_x", x)
+        _object_setattr(self, "_mech_cache", None)
 
     @property
     def sec(self):
@@ -433,12 +463,7 @@ class Segment:
         if ion_mech is _UNSET:
             ion_mech = _ion_mechanism_of(name)
         if ion_mech is not None:
-            from . import NEURON
-
-            if not NEURON().ismembrane(ion_mech, sec=self._sec):
-                raise AttributeError(
-                    f"mechanism '{ion_mech}' is not inserted in {self._sec!r}"
-                )
+            self._require_inserted(ion_mech)
             return
         # Range variables like gnabar_hh have a mechanism suffix.
         # Other unsuffixed vars (v, diam, cm) are always valid.
@@ -446,14 +471,26 @@ class Segment:
         if idx <= 0:
             return
         suffix = name[idx + 1 :]
-        mech_sym = _nrn_symbol(suffix.encode("utf-8"))
-        if mech_sym and int(_nrn_symbol_type(mech_sym)) == TYPES.MECHANISM:
-            from . import NEURON
+        if suffix not in _SUFFIX_IS_MECHANISM:
+            mech_sym = _nrn_symbol(suffix.encode("utf-8"))
+            if not (mech_sym and int(_nrn_symbol_type(mech_sym)) == TYPES.MECHANISM):
+                return
+            # Mechanism symbols are never removed, so only a hit is kept.
+            _SUFFIX_IS_MECHANISM.add(suffix)
+        self._require_inserted(suffix)
 
-            if not NEURON().ismembrane(suffix, sec=self._sec):
-                raise AttributeError(
-                    f"mechanism '{suffix}' is not inserted in {self._sec!r}"
-                )
+    def _require_inserted(self, mech):
+        """Raise AttributeError if density mechanism *mech* is not inserted.
+
+        Asked every time: reading an absent mechanism raises NEURON's error
+        through ctypes, and the model epoch does not move on every path that
+        removes one (HOC run from nrniv, a callback inside the HOC call that
+        uninserted; see gap-68), so the answer is not kept.
+        """
+        from . import NEURON
+
+        if not NEURON().ismembrane(mech, sec=self._sec):
+            raise AttributeError(f"mechanism '{mech}' is not inserted in {self._sec!r}")
 
     def area(self):
         """Return membrane area of this segment in um^2."""
@@ -716,10 +753,18 @@ class Segment:
             # call), which covers ions (the density-only cache omits them)
             # and the absent case.
             self._sec._check_alive()
+            # A stale list (the epoch moved since it was built) is not rebuilt
+            # here: that is one ismembrane call per density mechanism, and a
+            # section or template made in between moves the epoch. One
+            # has_membrane call answers. A list never built is built once.
+            inserted = _current_inserted_mechs(self._sec)
+            if inserted is _STALE:
+                inserted = None
+            elif inserted is None:
+                inserted = self._sec._get_inserted_mechs()
             if (
-                name not in self._sec._get_inserted_mechs()
-                and not self._sec.has_membrane(name)
-            ):
+                inserted is None or name not in inserted
+            ) and not self._sec.has_membrane(name):
                 raise AttributeError(f"'{name}' is not inserted in {self._sec!r}.")
             mech = Mechanism(self._uncached_copy(), name)
             if mech_cache is None:
@@ -823,14 +868,19 @@ class Segment:
             )
         sym, sym_type, is_array, array_length = info
 
-        if TYPES.RANGEOBJ is None or sym_type == TYPES.RANGEOBJ:
-            self._sec._check_alive()
-            wrapped = _try_wrap_density_nmodlrandom(
-                self._sec._sec, self._x, sym, sym_type
-            )
-            if wrapped is not None:
-                raise ValueError(f"NMODL RANDOM variable '{name}' is not assignable")
         if sym_type != TYPES.RANGEVAR:
+            # A RANDOM variable's symbol type is RANGEOBJ, never RANGEVAR, so
+            # only other types are checked (RANGEOBJ stays unknown until a
+            # wrapper validates a RANDOM symbol, api.TypeCodes.record_rangeobj).
+            if TYPES.RANGEOBJ is None or sym_type == TYPES.RANGEOBJ:
+                self._sec._check_alive()
+                wrapped = _try_wrap_density_nmodlrandom(
+                    self._sec._sec, self._x, sym, sym_type
+                )
+                if wrapped is not None:
+                    raise ValueError(
+                        f"NMODL RANDOM variable '{name}' is not assignable"
+                    )
             raise AttributeError(f"'{name}' is not a range variable on {self!r}.")
         # Guard before writing a potentially freed C node; see __getattr__.
         self._sec._check_alive()
@@ -1242,6 +1292,12 @@ class Section:
                 _nrn_section_ref(sec)
         self._sec = sec
         _forget_nseg_history(self._sec)
+        # The new section may have a freed section's slot. Caches keyed by
+        # section address (allsec, Mechanism wrappers) must not take it for
+        # the old one, however that one went (gap-68).
+        from . import _bump_model_epoch
+
+        _bump_model_epoch()
         self._pynative = _pynative
         if _pynative:
             PYTHON_SECTIONS[self._sec] = self
