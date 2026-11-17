@@ -7,6 +7,7 @@ unpacking a Python object used to call a null function pointer. They raise a
 HOC error now. Where the hooks are set, the calls work as before.
 """
 
+import os
 import subprocess
 import sys
 import textwrap
@@ -30,8 +31,19 @@ _CHILD = textwrap.dedent(
 
 
 def test_hoc_calls_without_pickle_hooks_do_not_crash():
+    env = dict(os.environ)
+    # macOS does not pass the sanitizer preload on to child processes (as in
+    # test_gui_quit.py and test_basic.py's test_errorcode).
+    if "NRN_SANITIZER_PRELOAD_VAR" in os.environ:
+        env[os.environ["NRN_SANITIZER_PRELOAD_VAR"]] = os.environ[
+            "NRN_SANITIZER_PRELOAD_VAL"
+        ]
     proc = subprocess.run(
-        [sys.executable, "-c", _CHILD], capture_output=True, text=True, timeout=120
+        [os.environ.get("NRN_PYTHON_EXECUTABLE", sys.executable), "-c", _CHILD],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=120,
     )
     assert proc.returncode == 0, proc.stdout + proc.stderr
     assert "done" in proc.stdout
