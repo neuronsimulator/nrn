@@ -22,32 +22,83 @@
 
 static struct passwd nrn_pw;
 static char nrn_pw_name[256];
-static char nrn_pw_dir[260];
+static char nrn_pw_dot[] = ".";
+static char* nrn_pw_dir_heap;
 static char nrn_pw_empty[] = "";
 static int nrn_pwent_armed;
 static int nrn_pwent_yielded;
 
+/* GetEnvironmentVariableA returns the character count excluding NUL on
+   success. A return greater than or equal to the buffer size means the
+   buffer was too small and its contents are undefined (the required size,
+   including NUL). Copy only a length below the buffer size; otherwise
+   allocate that size and retry. */
+static char* nrn_getenv_dup(const char* name) {
+    DWORD cap = 260;
+    int attempt;
+    for (attempt = 0; attempt < 16; ++attempt) {
+        char* buf = (char*) malloc((size_t) cap);
+        DWORD got;
+        if (buf == NULL) {
+            return NULL;
+        }
+        got = GetEnvironmentVariableA(name, buf, cap);
+        if (got > 0 && got < cap) {
+            return buf;
+        }
+        free(buf);
+        if (got == 0) {
+            return NULL;
+        }
+        if (got > cap) {
+            cap = got;
+        } else if (cap > (1u << 20)) {
+            return NULL;
+        } else {
+            cap *= 2;
+        }
+    }
+    return NULL;
+}
+
+static void nrn_assign_dir(char* dir) {
+    free(nrn_pw_dir_heap);
+    nrn_pw_dir_heap = NULL;
+    if (dir == NULL || dir[0] == '\0') {
+        free(dir);
+        nrn_pw.pw_dir = nrn_pw_dot;
+        return;
+    }
+    nrn_pw_dir_heap = dir;
+    nrn_pw.pw_dir = dir;
+}
+
 static void nrn_fill_passwd(void) {
     DWORD namelen = (DWORD) sizeof(nrn_pw_name);
+    char* dir;
     if (!GetUserNameA(nrn_pw_name, &namelen) || nrn_pw_name[0] == '\0') {
         strcpy(nrn_pw_name, "user");
     }
-    if (GetEnvironmentVariableA("USERPROFILE", nrn_pw_dir, (DWORD) sizeof(nrn_pw_dir)) == 0) {
-        char drive[8];
-        char path[240];
-        if (GetEnvironmentVariableA("HOMEDRIVE", drive, (DWORD) sizeof(drive)) > 0 &&
-            GetEnvironmentVariableA("HOMEPATH", path, (DWORD) sizeof(path)) > 0) {
-            snprintf(nrn_pw_dir, sizeof(nrn_pw_dir), "%s%s", drive, path);
-        } else {
-            strcpy(nrn_pw_dir, ".");
+    dir = nrn_getenv_dup("USERPROFILE");
+    if (dir == NULL) {
+        char* drive = nrn_getenv_dup("HOMEDRIVE");
+        char* path = nrn_getenv_dup("HOMEPATH");
+        if (drive != NULL && path != NULL) {
+            size_t n = strlen(drive) + strlen(path) + 1;
+            dir = (char*) malloc(n);
+            if (dir != NULL) {
+                snprintf(dir, n, "%s%s", drive, path);
+            }
         }
+        free(drive);
+        free(path);
     }
+    nrn_assign_dir(dir);
     nrn_pw.pw_name = nrn_pw_name;
     nrn_pw.pw_passwd = nrn_pw_empty;
     nrn_pw.pw_gecos = nrn_pw_name;
     nrn_pw.pw_uid = 0;
     nrn_pw.pw_gid = 0;
-    nrn_pw.pw_dir = nrn_pw_dir;
     nrn_pw.pw_shell = nrn_pw_empty;
 }
 
