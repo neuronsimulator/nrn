@@ -46,9 +46,8 @@ function(_nrn_libedit_replace file marker old new)
   string(REGEX REPLACE "[ \t]+\n" "\n" old "${old}")
   string(FIND "${_text}" "${old}" _pos)
   if(_pos EQUAL -1)
-    # The stat.h reconfigure patch used to omit its marker from the
-    # replacement. A second configure then missed the needle. The body is
-    # already applied; do not fail that tree.
+    # The stat.h reconfigure patch used to omit its marker from the replacement. A second configure
+    # then missed the needle. The body is already applied; do not fail that tree.
     if(marker STREQUAL "NEURON: direct.h after unistd.h renames")
       string(FIND "${_text}" "NRN_LIBEDIT_POP_CHDIR" _applied)
       if(NOT _applied EQUAL -1)
@@ -329,8 +328,8 @@ _nrn_libedit_replace(
 	debug5("WriteThread thread, io:%p", pio);
 ]=])
 
-# signal.c includes one UCRT signal.h by absolute path. MinGW gcc cannot parse that header.
-# MSVC uses the same SIGNAL_H macro. crtheaders.h is the kit CMake already found.
+# signal.c includes one UCRT signal.h by absolute path. MinGW gcc cannot parse that header. MSVC
+# uses the same SIGNAL_H macro. crtheaders.h is the kit CMake already found.
 _nrn_libedit_replace(
   "${_src}/compat/win32/signal.c"
   "NEURON: MinGW cannot parse the UCRT signal.h"
@@ -343,8 +342,8 @@ _nrn_libedit_replace(
 #include "crtheaders.h"
 #include SIGNAL_H
 ]=])
-# A tree patched by the previous replacement still has the hard-coded kit in the
-# MSVC branch, and that text already contains the marker above. Upgrade it.
+# A tree patched by the previous replacement still has the hard-coded kit in the MSVC branch, and
+# that text already contains the marker above. Upgrade it.
 _nrn_libedit_replace(
   "${_src}/compat/win32/signal.c"
   "NEURON: MSVC uses the discovered SIGNAL_H"
