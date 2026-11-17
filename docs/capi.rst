@@ -339,8 +339,8 @@ Sections
         nrn_Item* all_sections = nrn_allsec();
         // Use iterator to process all sections
         SectionListIterator* iter = nrn_sectionlist_iterator_new(all_sections);
-        while (!nrn_sectionlist_iterator_done(iter)) {
-            Section* sec = nrn_sectionlist_iterator_next(iter);
+        Section* sec;
+        while ((sec = nrn_sectionlist_iterator_next(iter)) != NULL) {
             // Process Section
         }
         nrn_sectionlist_iterator_free(iter);
@@ -1971,14 +1971,22 @@ Miscellaneous
     Get the next Section from a Section list iterator.
 
     :param sl: Pointer to the SectionListIterator.
-    :returns: Pointer to the next Section.
+    :returns: Pointer to the next Section, or NULL if no active sections are left.
 
     **Usage Pattern:**
 
-    Used in loops to process each Section in a list sequentially.
+    Used in loops to process each Section in a list sequentially. It returns
+    NULL at the end of the list, so the loop needs no other check.
 
-    Before calling, check with :c:func:`nrn_sectionlist_iterator_done` to ensure
-    there are more sections to process.
+    A deleted section in a SectionList is skipped and dropped from the list,
+    along with the list's reference to it. If that was the last reference the
+    Section is freed, so call :c:func:`nrn_section_ref` to keep a ``Section*``
+    across iterations.
+
+    The loop may delete the Section just returned, or remove it from the list,
+    but not a Section it hasn't reached yet: deleting a section frees its item
+    in :c:func:`nrn_allsec`'s list, removing one frees its item in a
+    SectionList, and the iterator may already point at that item.
 
     See :c:func:`nrn_allsec` for an example of iterating over all sections.
 
@@ -1986,23 +1994,18 @@ Miscellaneous
 
     Check if the Section list iterator has finished iterating.
 
+    .. note::
+
+        A loop does not need this. :c:func:`nrn_sectionlist_iterator_next`
+        returns NULL at the end of the list, so checking its result is enough:
+        see :c:func:`nrn_allsec` for the loop. This function is kept for
+        existing code.
+
     :param sl: Pointer to the SectionListIterator.
-    :returns: Non-zero if iteration is complete, 0 otherwise.
+    :returns: Non-zero at the end of the list, 0 otherwise.
 
-    **Usage Pattern:**
-
-    Used as a loop termination condition.
-
-    **Example iteration pattern:**
-    
-    .. code-block:: c
-    
-        SectionListIterator* iter = nrn_sectionlist_iterator_new(section_list);
-        while (!nrn_sectionlist_iterator_done(iter)) {
-            Section* sec = nrn_sectionlist_iterator_next(iter);
-            // Process Section
-        }
-        nrn_sectionlist_iterator_free(iter);
+    It does not look past deleted sections, so when only deleted sections are
+    left it returns 0 and :c:func:`nrn_sectionlist_iterator_next` returns NULL.
 
 .. c:function:: SymbolTableIterator* nrn_symbol_table_iterator_new(Symlist* my_symbol_table)
 

@@ -22,14 +22,17 @@ static bool check(bool cond, const char* msg) {
     return cond;
 }
 
+static bool ok = true;
+
+// The loop from the docs: nrn_sectionlist_iterator_next returns NULL at the end
+// of the list, also when the sections left there were deleted.
 static std::vector<Section*> iterate(nrn_Item* sl) {
     std::vector<Section*> out;
     SectionListIterator* it = nrn_sectionlist_iterator_new(sl);
-    while (!nrn_sectionlist_iterator_done(it)) {
-        if (Section* sec = nrn_sectionlist_iterator_next(it)) {
-            out.push_back(sec);
-        }
+    while (Section* sec = nrn_sectionlist_iterator_next(it)) {
+        out.push_back(sec);
     }
+    ok &= check(nrn_sectionlist_iterator_done(it) != 0, "done once next returns NULL");
     nrn_sectionlist_iterator_free(it);
     return out;
 }
@@ -48,7 +51,6 @@ int main(void) {
         "forall sl.append()\n");
     nrn_Item* sl = nrn_sectionlist_data(nrn_symbol_object_get(nrn_symbol("sl")));
 
-    bool ok = true;
     std::vector<Section*> const all = iterate(sl);
     ok &= check(all.size() == 5, "all five live");
     if (!ok) {
