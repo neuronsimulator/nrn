@@ -236,6 +236,10 @@ run_serial_test () {
     # does not run. Launch the real executable under neuron/.data/bin.
     # A Python subprocess cannot CreateProcess nrniv.cmd. The hook script
     # closes stdin. Leave the full ctest suite off.
+    # Unix nrniv -python runs bash $NEURONHOME/../../bin/nrnpyenv.sh. The
+    # wheel binary's compiled data dir is the build prefix, so that file is
+    # missing until NEURONHOME is the installed .data/share/nrn. That is the
+    # path import neuron sets. This launch does not import neuron.
     nrniv_exe="$($python_exe -c 'import os, sys, neuron
 bindir = os.path.join(os.path.dirname(neuron.__file__), ".data", "bin")
 name = "nrniv.exe" if sys.platform == "win32" else "nrniv"
@@ -244,6 +248,13 @@ print(os.path.join(bindir, name))')"
       echo "readline hook: nrniv not found at $nrniv_exe"
       exit 1
     fi
+    NEURONHOME="$($python_exe -c 'import os, neuron
+print(os.path.abspath(os.path.join(os.path.dirname(neuron.__file__), ".data", "share", "nrn")))')"
+    if [[ ! -d "$NEURONHOME" ]]; then
+      echo "readline hook: NEURONHOME not found at $NEURONHOME"
+      exit 1
+    fi
+    export NEURONHOME
     $python_exe test/pyinit/readline_hook.py "$nrniv_exe"
 }
 
