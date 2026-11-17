@@ -53,7 +53,7 @@ repeatable dependency set instead of resolving the latest allowed versions on
 every run.
 
 CI installs `uv` using the pin in `ci/uv_requirements.txt`. That file
-selects uv 0.13.4 exactly. uv before 0.13.4 trusts the compromised
+selects uv 0.13.6 exactly. uv before 0.13.4 trusts the compromised
 emSign root (GHSA-hq85-5cpj-mr62).
 To install that version locally, run:
 
