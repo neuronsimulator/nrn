@@ -230,6 +230,21 @@ run_serial_test () {
     else
       modlunit tmp_mod/cacum.mod
     fi
+
+    # Test 12: nrniv -python installs the readline hook.
+    # Wheel builds set NRN_ENABLE_TESTS=OFF, so ctest pyinit::readline_hook
+    # does not run. Launch the real executable under neuron/.data/bin.
+    # A Python subprocess cannot CreateProcess nrniv.cmd. The hook script
+    # closes stdin. Leave the full ctest suite off.
+    nrniv_exe="$($python_exe -c 'import os, sys, neuron
+bindir = os.path.join(os.path.dirname(neuron.__file__), ".data", "bin")
+name = "nrniv.exe" if sys.platform == "win32" else "nrniv"
+print(os.path.join(bindir, name))')"
+    if [[ ! -f "$nrniv_exe" ]]; then
+      echo "readline hook: nrniv not found at $nrniv_exe"
+      exit 1
+    fi
+    $python_exe test/pyinit/readline_hook.py "$nrniv_exe"
 }
 
 
