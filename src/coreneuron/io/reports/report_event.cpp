@@ -26,13 +26,15 @@ ReportEvent::ReportEvent(double dt,
                          const VarsToReport& filtered_gids,
                          const char* name,
                          double report_dt,
-                         ReportType type)
+                         ReportType type,
+                         size_t lfp_report_index)
     : dt(dt)
     , tstart(tstart)
     , report_path(name)
     , report_dt(report_dt)
     , report_type(type)
-    , vars_to_report(filtered_gids) {
+    , vars_to_report(filtered_gids)
+    , lfp_report_index(lfp_report_index) {
     nrn_assert(filtered_gids.size());
     step = tstart / dt;
     reporting_period = static_cast<int>(report_dt / dt);
@@ -83,8 +85,8 @@ void ReportEvent::summation_alu(NrnThread* nt) {
 /** @brief Compute Local Field Potentials (LFP) for each cell.
  *
  * For every segment of a cell, computes the total membrane current (imem + iclamp)
- * and accumulates the weighted contribution to each electrode using precomputed
- * transfer factors. Results are written into the report output buffers.
+ * and accumulates the weighted contribution to each of this report's electrodes using
+ * precomputed transfer factors. Results are written into the report output buffers.
  */
 void ReportEvent::lfp_calc(NrnThread* nt) {
     auto* mapinfo = static_cast<NrnThreadMappingInfo*>(nt->mapping);
@@ -94,7 +96,10 @@ void ReportEvent::lfp_calc(NrnThread* nt) {
         int gid = kv.first;
         const auto& electrode_outputs = kv.second;
         const auto& cell_mapping = mapinfo->get_cell_mapping(gid);
-        const auto n_electrodes = cell_mapping->num_electrodes();
+        // the cell's factors hold the electrodes of every LFP report, this one's from `start`
+        const auto [start, end] = cell_mapping->report_electrodes(lfp_report_index);
+        const auto stride = cell_mapping->num_electrodes();
+        const auto n_electrodes = end - start;
         const auto n_segments = cell_mapping->lfp_segment_ids.size();
         std::vector<double> lfp_values(n_electrodes, 0.0);
         for (size_t i = 0; i < n_segments; i++) {
@@ -109,7 +114,7 @@ void ReportEvent::lfp_calc(NrnThread* nt) {
                                                 });
 
             // dot product with the factors
-            const double* factors = &cell_mapping->lfp_factors_flat[i * n_electrodes];
+            const double* factors = &cell_mapping->lfp_factors_flat[i * stride + start];
             for (size_t e = 0; e < n_electrodes; e++) {
                 lfp_values[e] += imem * factors[e];
             }

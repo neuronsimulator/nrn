@@ -634,9 +634,14 @@ def _cxx_compile(formula):
             *math_library,
         ]
         if sys.platform.lower().startswith("win"):
-            mingw_bin = os.path.join(h.neuronhome(), "mingw", "mingw64", "bin")
-            if os.path.isdir(mingw_bin):
-                env["PATH"] = mingw_bin + ";" + env.get("PATH", "")
+            # #3735: Anaconda's PATH can supply the wrong library. Search the
+            # shipped MinGW and the NEURON bin directory first. This env is
+            # the child process only.
+            prefix = [
+                os.path.join(h.neuronhome(), "mingw", "mingw64", "bin"),
+                os.path.join(h.neuronhome(), "bin"),
+            ]
+            env["PATH"] = os.pathsep.join(prefix + [env.get("PATH", "")])
     try:
         subprocess.check_call(cmd, env=env)
     except (OSError, subprocess.CalledProcessError) as e:
