@@ -4,9 +4,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <cstdarg>
+#include <algorithm>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <string>
 #include <locale>
 #include <optional>
 #include <regex>
@@ -733,16 +736,11 @@ static int hoc_Load_file(int always, const char* name) {
     old[0] = '\0';
     goback = 0;
 #if defined(WIN32)
-    /* load_file interpolates the path into HOC xopen("..."); \ is an escape
-       (\b \t \r \n \f), and the directory prefix only looks for /. fopen
-       accepts /. */
-    char winname[hoc_load_file_size_];
-    const size_t namelen = std::strlen(name);
-    assert(namelen < hoc_load_file_size_);
-    const size_t n = namelen < hoc_load_file_size_ ? namelen : hoc_load_file_size_ - 1;
-    std::memcpy(winname, name, n);
-    winname[n] = '\0';
-    name = hoc_back2forward(winname);
+    /* \ in HOC xopen("...") is an escape. fopen accepts /. Keep the
+       converted path for the copy below; do not truncate it here. */
+    std::string winname = name;
+    std::replace(winname.begin(), winname.end(), '\\', '/');
+    name = winname.c_str();
 #endif
     /* has the file already been loaded */
     is_loaded = 0;
@@ -758,9 +756,13 @@ static int hoc_Load_file(int always, const char* name) {
     }
 
     /* maybe the name already has an explicit path */
-    expname[hoc_load_file_size_ - 1] = '\0';
-    strncpy(expname, expand_env_var(name), hoc_load_file_size_);
-    assert(expname[hoc_load_file_size_ - 1] == '\0');
+    /* The HOC loader copies this into a fixed buffer. Reject a path that
+       does not fit instead of opening a truncated name. */
+    const char* expanded = expand_env_var(name);
+    if (std::strlen(expanded) >= hoc_load_file_size_) {
+        hoc_execerror("load_file path too long", expanded);
+    }
+    std::snprintf(expname, hoc_load_file_size_, "%s", expanded);
     name = expname;
 #if defined(WIN32)
     hoc_back2forward(expname);

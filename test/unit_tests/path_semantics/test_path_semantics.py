@@ -143,6 +143,23 @@ def test_load_file_hoc_library_path_os_pathsep(tmp_path):
     assert h.pathsem_load_file == "fromlib-ok"
 
 
+def test_load_file_rejects_overlong_path():
+    """A path that does not fit the HOC loader buffer is an error.
+
+    The Windows conversion used to copy at most 1023 bytes and open that
+    shorter name. Reject it instead. The same cap is the Unix loader buffer.
+    """
+    # A name with no slash falls through to NEURONHOME/lib/hoc, whose
+    # existing length assert is the library prefix plus the name. An
+    # explicit path that fits stays on the fopen path and is not found.
+    fitting = ("p" * 1000) + "/no-such-pathsem.hoc"
+    assert len(fitting) < 1024
+    assert h.load_file(fitting) == 0.0
+    name = "p" * 2000 + ".hoc"
+    with pytest.raises(Exception, match="too long"):
+        h.load_file(name)
+
+
 def test_load_file_relative_xopen_from_dir(tmp_path):
     """load_file chdir's to the file's directory for relative xopen (73130ea48)."""
     d = str(tmp_path / "hoclib")

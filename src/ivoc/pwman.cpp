@@ -19,6 +19,7 @@ extern char* ivoc_get_temp_file();
 #define DECO 2  // 1 means default on, 2 off. for Carnvale,Hines book figures
 
 #include <string.h>
+#include <string>
 #include "ivoc.h"
 #endif  // HAVE_IV
 #include <stdio.h>
@@ -3090,19 +3091,18 @@ void PWMImpl::retrieve_control() {
     while (fc_retrieve_->post_for(w_)) {
         if (ok_to_read(*fc_retrieve_->selected(), w_)) {
             Oc oc;
-            char buf[256];
+            /* InterViews selected() is a native path. Do not copy it into a
+               fixed buffer: a long path would be truncated or overflow.
+               load_file interpolates into HOC xopen("..."); \ is an escape.
+               fopen accepts /. Dup; do not mutate the chooser string. */
+            std::string winpath{fc_retrieve_->selected()->string()};
 #if defined(WIN32)
-            /* InterViews selected() is a native path. load_file interpolates
-               into HOC xopen("..."); \ is an escape. fopen accepts /. Dup;
-               do not mutate the chooser string. Same as File.getname. */
-            char winpath[256];
-            winpath[255] = '\0';
-            strncpy(winpath, fc_retrieve_->selected()->string(), 255);
-            Sprintf(buf, "{load_file(1, \"%s\")}\n", hoc_back2forward(winpath));
-#else
-            Sprintf(buf, "{load_file(1, \"%s\")}\n", fc_retrieve_->selected()->string());
+            if (!winpath.empty()) {
+                hoc_back2forward(winpath.data());
+            }
 #endif
-            if (!oc.run(buf)) {
+            std::string cmd = "{load_file(1, \"" + winpath + "\")}\n";
+            if (!oc.run(cmd)) {
                 break;
             }
         }
