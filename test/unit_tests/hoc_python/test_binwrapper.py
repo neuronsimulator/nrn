@@ -101,6 +101,18 @@ def test_collect_mod_files_mixes_directory_and_file(tmp_path, monkeypatch):
     assert got == ["na.mod", "extra.mod"]
 
 
+def test_collect_mod_files_accepts_mod_prefix(tmp_path, monkeypatch):
+    """nrnivmodl hh compiles hh.mod. An existing file wins over the prefix."""
+    monkeypatch.chdir(tmp_path)
+    _touch(tmp_path / "hh.mod")
+    _touch(tmp_path / "kept")
+    _touch(tmp_path / "kept.mod")
+    _touch(tmp_path / "foo.bar.mod")
+    bw = _binwrapper()
+    got = [p.name for p in bw._collect_mod_files(["hh", "kept", "foo.bar"])]
+    assert got == ["hh.mod", "kept", "foo.bar.mod"]
+
+
 def test_collect_mod_files_missing_name_still_errors(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "channels").mkdir()
