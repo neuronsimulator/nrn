@@ -368,7 +368,8 @@ if(NRN_ENABLE_PYTHON)
           COMMAND
             ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
             ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${MPIEXEC_POSTFLAGS} -m pytest --capture=tee-sys
-            ./test/rxd/ecs/test_ecs_example.py --mpi)
+            ./test/rxd/ecs/test_ecs_example.py ./test/rxd/test_include_flux_error.py
+            ./test/rxd/test_include_flux_sources.py --mpi)
       endif()
     endif()
   endif()

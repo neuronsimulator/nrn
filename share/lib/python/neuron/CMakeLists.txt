@@ -86,6 +86,7 @@ set(NRN_PYTHON_RX3D_FILES_LIST
     rxd/generalizedReaction.py
     rxd/nodelist.py
     rxd/node.py
+    rxd/_pointers.py
     rxd/geometry3d/simplevolume_helper.py
     rxd/geometry3d/GeneralizedVoxelization.py
     rxd/geometry3d/FullJoinMorph.py
