@@ -181,7 +181,10 @@ static std::string neuronhome() {
     if (home.empty()) {
         return {};
     }
-    auto s = home.string();
+    auto s = nrn_win_path_acp(home);
+    if (s.empty()) {
+        return {};
+    }
     std::replace(s.begin(), s.end(), '\\', '/');
     return s;
 #else

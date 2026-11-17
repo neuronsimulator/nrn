@@ -49,7 +49,10 @@ void setneuronhome(const char* p) {
         if (home.empty()) {
             return;
         }
-        std::string s = home.string();
+        std::string s = nrn_win_path_acp(home);
+        if (s.empty()) {
+            return;
+        }
 #ifdef MINGW
         neuron_home = hoc_dos2unixpath(s.c_str());
 #else

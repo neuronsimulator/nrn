@@ -20,6 +20,7 @@
 #include <string_view>
 #if defined(NRNPYTHON_DYNAMICLOAD) && defined(_WIN32) && !defined(MINGW)
 #include <windows.h>
+#include "../oc/nrn_windows_home.hpp"
 #endif
 
 namespace neuron::python {
@@ -116,6 +117,61 @@ static std::string popen_command(std::string command) {
 #endif
     return command;
 }
+
+#if defined(_WIN32) && !defined(MINGW)
+// Error text only. The launch itself stays wchar_t.
+static std::string wide_to_utf8(std::wstring const& w) {
+    if (w.empty()) {
+        return {};
+    }
+    int const n = WideCharToMultiByte(
+        CP_UTF8, 0, w.data(), static_cast<int>(w.size()), nullptr, 0, nullptr, nullptr);
+    if (n <= 0) {
+        return {};
+    }
+    std::string s(static_cast<size_t>(n), '\0');
+    WideCharToMultiByte(
+        CP_UTF8, 0, w.data(), static_cast<int>(w.size()), &s[0], n, nullptr, nullptr);
+    return s;
+}
+
+static std::wstring acp_to_wide(std::string const& s) {
+    if (s.empty()) {
+        return {};
+    }
+    int const n = MultiByteToWideChar(CP_ACP, 0, s.data(), static_cast<int>(s.size()), nullptr, 0);
+    if (n <= 0) {
+        return {};
+    }
+    std::wstring w(static_cast<size_t>(n), L'\0');
+    MultiByteToWideChar(CP_ACP, 0, s.data(), static_cast<int>(s.size()), &w[0], n);
+    return w;
+}
+
+// _popen is the ANSI CRT spawn. A nrnpyenv.py path outside the active code
+// page is not a char*. _wpopen is the wide form of that same API. The caller
+// extra-wraps a command that starts with a quote (cmd.exe /c strips one pair).
+static std::string check_output_w(std::wstring const& command) {
+    std::FILE* const p = _wpopen(command.c_str(), L"r");
+    if (!p) {
+        throw std::runtime_error("_wpopen(" + wide_to_utf8(command) + ") failed");
+    }
+    std::string output;
+    std::array<char, 1024> buffer{};
+    while (std::fgets(buffer.data(), buffer.size() - 1, p)) {
+        output += buffer.data();
+    }
+    if (auto const code = _pclose(p)) {
+        std::ostringstream err;
+        err << "'" << wide_to_utf8(command)
+            << "' did not terminate cleanly, pclose returned non-zero (" << code
+            << ") after the following output had been read:\n"
+            << output;
+        throw std::runtime_error(err.str());
+    }
+    return output;
+}
+#endif
 
 // nrnpyenv.sh rejects non-CPython and a free-threaded build while it is choosing an
 // interpreter. When NRN_PYLIB, NRN_PYTHONEXE, and NRN_PYTHONVERSION are already set,
@@ -231,7 +287,10 @@ static void set_nrnpylib() {
     // NRN_PYTHONEXE. Do all of this on rank 0, and broadcast afterwards.
     if (nrnmpi_myid_world == 0) {
         // Construct a command to execute
-        auto const command = []() -> std::string {
+#if defined(_WIN32) && !defined(MINGW)
+        std::wstring command_w;
+#endif
+        auto const command = [&]() -> std::string {
 #ifdef MINGW
             std::string bnrnhome{neuron_home}, fnrnhome{neuron_home};
             std::replace(bnrnhome.begin(), bnrnhome.end(), '/', '\\');
@@ -240,29 +299,38 @@ static void set_nrnpylib() {
                    nrnpy_pyexe + " --NEURON_HOME=" + fnrnhome;
 #elif defined(_WIN32)
             // pythonXY.dll is a Windows ABI fact; do not require bash/cygcheck.
-            auto quote = [](std::string const& s) { return "\"" + s + "\""; };
+            auto quote = [](std::wstring const& s) { return L"\"" + s + L"\""; };
             // nrnpyenv.py is installed next to nrniv.exe. Unix uses
             // neuron_home/../../bin (neuron_home is prefix/share/nrn). Windows
             // setneuronhome is two dirs up from the EXE (the prefix), so that
-            // relative path misses the wheel.
-            char exe[MAX_PATH];
-            DWORD n = GetModuleFileNameA(nullptr, exe, MAX_PATH);
-            if (n == 0 || n >= MAX_PATH) {
-                throw std::runtime_error("GetModuleFileNameA failed for nrnpyenv.py");
+            // relative path misses the wheel. The path is wide: a long or
+            // non-ACP install does not fit GetModuleFileNameA's MAX_PATH.
+            auto const exe = nrn_win_module_path(nullptr);
+            if (exe.empty()) {
+                throw std::runtime_error("GetModuleFileNameW failed for nrnpyenv.py");
             }
-            auto script = (std::filesystem::path{exe}.parent_path() / "nrnpyenv.py").string();
-            std::string py = nrnpy_pyexe.empty() ? std::string{"python"} : nrnpy_pyexe;
-            // MSVC _popen uses cmd.exe /c. If the command starts with ", cmd
+            std::wstring const script = (exe.parent_path() / L"nrnpyenv.py").wstring();
+            std::wstring const py = nrnpy_pyexe.empty() ? std::wstring{L"python"}
+                                                        : acp_to_wide(nrnpy_pyexe);
+            if (py.empty()) {
+                throw std::runtime_error("NRN_PYTHONEXE is not a valid ANSI path");
+            }
+            // MSVC _wpopen uses cmd.exe /c. If the command starts with ", cmd
             // strips the first and last quote, so "python" "script.py" becomes
-            // python" "script.py (ERROR_INVALID_NAME). Extra-wrap the command.
-            return quote(quote(py) + " " + quote(script));
+            // python" "script.py. Extra-wrap the command.
+            command_w = quote(quote(py) + L" " + quote(script));
+            return wide_to_utf8(command_w);
 #else
             return "bash " + std::string{neuron_home} + "/../../bin/nrnpyenv.sh " + nrnpy_pyexe;
 #endif
         }();
         // Execute the command, capture its stdout and wrap that in a C++ stream. This will throw if
         // the commnand fails.
+#if defined(_WIN32) && !defined(MINGW)
+        std::istringstream cmd_stdout{check_output_w(command_w)};
+#else
         std::istringstream cmd_stdout{check_output(command)};
+#endif
         std::string line;
         // if line is of the form:
         // export FOO="bar"
