@@ -100,6 +100,7 @@ $Id: __init__.py,v 1.1 2008/05/26 11:39:44 hines Exp hines $
 # except:
 #  pass
 
+import ctypes
 import sys
 import os
 import sysconfig
@@ -1420,71 +1421,49 @@ def _restore_savestate(data):
         raise Exception("SaveState length error")
 
 
-try:
-    import ctypes
+_mech_classes = {}
 
-    def _rvp_plot(rvp):
-        return _RangeVarPlot(rvp)
 
-    def _plotshape_plot(ps):
-        n.define_shape()
-        return _PlotShapePlot(ps)
-
-    _mech_classes = {}
-
-    def _get_mech_object(name):
-        if name in _mech_classes:
-            my_class = _mech_classes[name]
-        else:
-            code = DensityMechanism(name).code
-            # docstring is the title and a leading comment, if any
-            inside_comment = False
-            title = ""
-            comment = []
-            for line in code.split("\n"):
-                line_s = line.strip()
-                lower = line_s.lower()
-                if inside_comment:
-                    if lower.startswith("endcomment"):
-                        break
-                    comment.append(line)
-                elif lower.startswith("title "):
-                    title = line_s[6:]
-                elif lower.startswith("comment"):
-                    inside_comment = True
-                elif line_s:
+def _get_mech_object(name):
+    if name in _mech_classes:
+        my_class = _mech_classes[name]
+    else:
+        code = DensityMechanism(name).code
+        # docstring is the title and a leading comment, if any
+        inside_comment = False
+        title = ""
+        comment = []
+        for line in code.split("\n"):
+            line_s = line.strip()
+            lower = line_s.lower()
+            if inside_comment:
+                if lower.startswith("endcomment"):
                     break
+                comment.append(line)
+            elif lower.startswith("title "):
+                title = line_s[6:]
+            elif lower.startswith("comment"):
+                inside_comment = True
+            elif line_s:
+                break
 
-            docstring = title + "\n\n"
+        docstring = title + "\n\n"
 
-            docstring += "\n".join(comment)
-            docstring = docstring.strip()
+        docstring += "\n".join(comment)
+        docstring = docstring.strip()
 
-            clsdict = {"__doc__": docstring, "title": title}
-            my_class = type(name, (DensityMechanism,), clsdict)
-            _mech_classes[name] = my_class
-        return my_class(name)
+        clsdict = {"__doc__": docstring, "title": title}
+        my_class = type(name, (DensityMechanism,), clsdict)
+        _mech_classes[name] = my_class
+    return my_class(name)
 
-    # h.<mechanism> is the interface's; it calls this factory, as NEURON's
-    # Python module calls the one registered below.
-    _interface.mechanism.set_density_mechanism_factory(_get_mech_object)
-    _interface.set_savestate_callbacks(_store_savestate, _restore_savestate)
 
-    set_toplevel_callbacks = nrn_dll_sym("nrnpy_set_toplevel_callbacks")
-    _rvp_plot_callback = ctypes.py_object(_rvp_plot)
-    _plotshape_plot_callback = ctypes.py_object(_plotshape_plot)
-    _get_mech_object_callback = ctypes.py_object(_get_mech_object)
-    _restore_savestate_callback = ctypes.py_object(_restore_savestate)
-    _store_savestate_callback = ctypes.py_object(_store_savestate)
-    set_toplevel_callbacks(
-        _rvp_plot_callback,
-        _plotshape_plot_callback,
-        _get_mech_object_callback,
-        _store_savestate_callback,
-        _restore_savestate_callback,
-    )
-except:
-    pass
+# h.<mechanism> objects come from this factory, and SaveState calls the two
+# savestate functions. Don't also pass them to nrnpy_set_toplevel_callbacks:
+# where the compiled module's code is linked into libnrniv, that replaces the
+# interface's SaveState hooks with ones that crash when a store callback raises.
+_interface.mechanism.set_density_mechanism_factory(_get_mech_object)
+_interface.set_savestate_callbacks(_store_savestate, _restore_savestate)
 
 
 def _has_scipy():
