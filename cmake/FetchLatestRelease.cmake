@@ -29,15 +29,34 @@ function(fetch_latest_release)
     TIMEOUT 10)
 
   list(GET DOWNLOAD_STATUS 0 STATUS_CODE)
+  list(GET DOWNLOAD_STATUS 1 STATUS_MESSAGE)
   if(NOT STATUS_CODE EQUAL 0)
-    message(FATAL_ERROR "Failed to download release information")
+    message(
+      WARNING
+        "Failed to download latest-release info from GitHub (${STATUS_CODE}: ${STATUS_MESSAGE}). "
+        "Installer download links in the docs will be empty.")
+    set(NRN_WINDOWS_INSTALLER_URL
+        ""
+        PARENT_SCOPE)
+    set(NRN_MACOS_INSTALLER_URL
+        ""
+        PARENT_SCOPE)
+    return()
   endif()
 
   file(READ "${JSON_FILE}" JSON_CONTENT)
 
   string(JSON ASSETS_LENGTH ERROR_VARIABLE JSON_ERROR LENGTH "${JSON_CONTENT}" "assets")
   if(JSON_ERROR)
-    message(FATAL_ERROR "Failed to parse JSON: ${JSON_ERROR}")
+    message(WARNING "Failed to parse latest-release JSON: ${JSON_ERROR}. "
+                    "Installer download links in the docs will be empty.")
+    set(NRN_WINDOWS_INSTALLER_URL
+        ""
+        PARENT_SCOPE)
+    set(NRN_MACOS_INSTALLER_URL
+        ""
+        PARENT_SCOPE)
+    return()
   endif()
 
   message(DEBUG "Found ${ASSETS_LENGTH} assets in latest release")

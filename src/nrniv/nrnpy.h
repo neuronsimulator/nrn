@@ -19,8 +19,8 @@ namespace neuron::python {
 /**
  * @brief Collection of pointers to functions with python-version-specific implementations.
  *
- * When dynamic Python is enabled, these are filled in from a python-version-specific
- * libnrnpythonX.Y library and then called from python-version-agnostic code inside NEURON.
+ * When dynamic Python is enabled, these are filled in from libnrnpython.abi3 and then
+ * called from python-version-agnostic code inside NEURON.
  */
 struct impl_ptrs {
     Object* (*callable_with_args)(Object*, int narg){};

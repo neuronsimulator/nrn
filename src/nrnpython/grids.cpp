@@ -97,7 +97,7 @@ ECS_Grid_node::ECS_Grid_node(PyHocObject* my_states,
     VARIABLE_ECS_VOLUME = FALSE;
 
     /*Check to see if variable tortuosity/volume fraction is used*/
-    if (PyFloat_Check(my_permeability)) {
+    if (PyFloat_Check(reinterpret_cast<PyObject*>(my_permeability))) {
         /*note permeability is the tortuosity squared*/
         permeability = (double*) malloc(sizeof(double));
         permeability[0] = PyFloat_AsDouble((PyObject*) my_permeability);
@@ -113,7 +113,7 @@ ECS_Grid_node::ECS_Grid_node(PyHocObject* my_states,
         get_permeability = &get_permeability_array;
     }
 
-    if (PyFloat_Check(my_alpha)) {
+    if (PyFloat_Check(reinterpret_cast<PyObject*>(my_alpha))) {
         alpha = (double*) malloc(sizeof(double));
         alpha[0] = PyFloat_AsDouble((PyObject*) my_alpha);
         get_alpha = &get_alpha_scalar;
@@ -482,7 +482,7 @@ extern "C" NRN_EXPORT int set_tortuosity(int grid_list_index,
 void ECS_Grid_node::set_tortuosity(PyHocObject* my_permeability) {
     /*Check to see if variable tortuosity/volume fraction is used*/
     /*note permeability is the 1/tortuosity^2*/
-    if (PyFloat_Check(my_permeability)) {
+    if (PyFloat_Check(reinterpret_cast<PyObject*>(my_permeability))) {
         if (get_permeability == &get_permeability_scalar) {
             double new_permeability = PyFloat_AsDouble((PyObject*) my_permeability);
             get_permeability = &get_permeability_scalar;
@@ -532,7 +532,7 @@ extern "C" NRN_EXPORT int set_volume_fraction(int grid_list_index,
 }
 
 void ECS_Grid_node::set_volume_fraction(PyHocObject* my_alpha) {
-    if (PyFloat_Check(my_alpha)) {
+    if (PyFloat_Check(reinterpret_cast<PyObject*>(my_alpha))) {
         if (get_alpha == &get_alpha_scalar) {
             alpha[0] = PyFloat_AsDouble((PyObject*) my_alpha);
         } else {

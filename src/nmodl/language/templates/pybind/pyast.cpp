@@ -11,9 +11,11 @@
 
 #include "pybind/pyast.hpp"
 #include "pybind/docstrings.hpp"
+#include "visitors/visitor.hpp"
 
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
+#include <nanobind/nanobind.h>
+#include <nanobind/stl/shared_ptr.h>
+#include <nanobind/stl/string.h>
 
 /**
  * \file
@@ -27,21 +29,22 @@ namespace nmodl {
 namespace ast {
 namespace pybind {
 {% for setup_pybind_method in setup_pybind_methods %}
-void {{setup_pybind_method}}(pybind11::module&);
+void {{setup_pybind_method}}(nanobind::module_&);
 {% endfor %}
 }  // namespace pybind
 }  // namespace ast
 }  // namespace nmodl
 
-namespace py = pybind11;
+namespace nb = nanobind;
 using namespace nmodl::ast;
-using namespace pybind11::literals;
+using namespace nanobind::literals;
+namespace docstring = nmodl::docstring;
 
 
-void init_ast_module(py::module& m) {
-    py::module m_ast = m.def_submodule("ast", "Abstract Syntax Tree (AST) related implementations");
+void init_ast_module(nb::module_& m) {
+    nb::module_ m_ast = m.def_submodule("ast", "Abstract Syntax Tree (AST) related implementations");
 
-    py::enum_<BinaryOp>(m_ast, "BinaryOp", docstring::binary_op_enum())
+    nb::enum_<BinaryOp>(m_ast, "BinaryOp", docstring::binary_op_enum())
         .value("BOP_ADDITION", BinaryOp::BOP_ADDITION)
         .value("BOP_SUBTRACTION", BinaryOp::BOP_SUBTRACTION)
         .value("BOP_MULTIPLICATION", BinaryOp::BOP_MULTIPLICATION)
@@ -58,7 +61,7 @@ void init_ast_module(py::module& m) {
         .value("BOP_EXACT_EQUAL", BinaryOp::BOP_EXACT_EQUAL)
         .export_values();
 
-    py::enum_<AstNodeType>(m_ast, "AstNodeType", docstring::ast_nodetype_enum())
+    nb::enum_<AstNodeType>(m_ast, "AstNodeType", docstring::ast_nodetype_enum())
     // clang-format off
     {% for node in nodes %}
             .value("{{ node.class_name|snake_case|upper }}", AstNodeType::{{ node.class_name|snake_case|upper }}, "AST node of type ast.{{ node.class_name}}")
@@ -66,18 +69,17 @@ void init_ast_module(py::module& m) {
             .export_values();
     // clang-format on
 
-    py::class_<Ast, PyAst, std::shared_ptr<Ast>> ast_(m_ast, "Ast", docstring::ast_class());
-    ast_.def(py::init<>())
+    nb::class_<Ast>(m_ast, "Ast", docstring::ast_class())
         .def("visit_children",
-             static_cast<void (Ast::*)(visitor::Visitor&)>(&Ast::visit_children),
+             static_cast<void (Ast::*)(nmodl::visitor::Visitor&)>(&Ast::visit_children),
              "v"_a,
              docstring::visit_children_method())
         .def("accept",
-             static_cast<void (Ast::*)(visitor::Visitor&)>(&Ast::accept),
+             static_cast<void (Ast::*)(nmodl::visitor::Visitor&)>(&Ast::accept),
              "v"_a,
              docstring::accept_method())
         .def("accept",
-             static_cast<void (Ast::*)(visitor::ConstVisitor&) const>(&Ast::accept),
+             static_cast<void (Ast::*)(nmodl::visitor::ConstVisitor&) const>(&Ast::accept),
              "v"_a,
              docstring::accept_method())
         .def("get_node_type", &Ast::get_node_type, docstring::get_node_type_method())
@@ -87,7 +89,7 @@ void init_ast_module(py::module& m) {
         .def("get_token", &Ast::get_token, docstring::get_token_method())
         .def("get_symbol_table",
              &Ast::get_symbol_table,
-             py::return_value_policy::reference,
+             nb::rv_policy::reference,
              docstring::get_symbol_table_method())
         .def("get_statement_block",
              &Ast::get_statement_block,
@@ -100,7 +102,7 @@ void init_ast_module(py::module& m) {
     {% for node in nodes %}
     .def("is_{{ node.class_name | snake_case }}", &Ast::is_{{ node.class_name | snake_case }}, "Check if node is of type ast.{{ node.class_name}}")
     {% endfor %}
-        .def_property("parent", &Ast::get_parent, &Ast::set_parent, docstring::parent_property());
+        .def_prop_rw("parent", &Ast::get_parent, &Ast::set_parent, docstring::parent_property());
 
     {% for setup_pybind_method in setup_pybind_methods %}
     nmodl::ast::pybind::{{setup_pybind_method}}(m_ast);

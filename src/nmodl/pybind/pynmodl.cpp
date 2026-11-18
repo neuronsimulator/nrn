@@ -11,9 +11,10 @@
 #include "pybind/pybind_utils.hpp"
 #include "visitors/visitor_utils.hpp"
 
-#include <pybind11/iostream.h>
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
+#include <nanobind/nanobind.h>
+#include <nanobind/stl/set.h>
+#include <nanobind/stl/shared_ptr.h>
+#include <nanobind/stl/string.h>
 
 #include <memory>
 #include <set>
@@ -26,8 +27,8 @@
  * \brief Top level nmodl Python module implementation
  */
 
-namespace py = pybind11;
-using namespace pybind11::literals;
+namespace nb = nanobind;
+using namespace nanobind::literals;
 
 namespace nmodl {
 
@@ -111,39 +112,37 @@ static const char* const to_json = R"(
 
 /**
  * \class PyNmodlDriver
- * \brief Class to bridge C++ NmodlDriver with Python world using pybind11
+ * \brief Class to bridge C++ NmodlDriver with Python using nanobind
  */
 class PyNmodlDriver: public nmodl::parser::NmodlDriver {
   public:
-    std::shared_ptr<nmodl::ast::Program> parse_stream(py::object const& object) {
-        py::object tiob = py::module::import("io").attr("TextIOBase");
-        if (py::isinstance(object, tiob)) {
-            py::detail::pythonibuf<py::str> buf(object);
-            std::istream istr(&buf);
-            return NmodlDriver::parse_stream(istr);
-        } else {
-            py::detail::pythonibuf<py::bytes> buf(object);
+    std::shared_ptr<nmodl::ast::Program> parse_stream(nb::object const& object) {
+        nb::object tiob = nb::module_::import_("io").attr("TextIOBase");
+        if (PyObject_IsInstance(object.ptr(), tiob.ptr()) == 1) {
+            nmodl::pybind_util::pythonibuf<nb::str> buf(object);
             std::istream istr(&buf);
             return NmodlDriver::parse_stream(istr);
         }
+        nmodl::pybind_util::pythonibuf<nb::bytes> buf(object);
+        std::istream istr(&buf);
+        return NmodlDriver::parse_stream(istr);
     }
 };
 
 }  // namespace nmodl
 
-// forward declaration of submodule init functions
-void init_visitor_module(py::module& m);
-void init_ast_module(py::module& m);
-void init_symtab_module(py::module& m);
+void init_visitor_module(nb::module_& m);
+void init_ast_module(nb::module_& m);
+void init_symtab_module(nb::module_& m);
 
-PYBIND11_MODULE(_nmodl, m_nmodl) {
+NB_MODULE(_nmodl, m_nmodl) {
     m_nmodl.doc() = "NMODL : Source-to-Source Code Generation Framework";
     m_nmodl.attr("__version__") = nmodl::Version::NMODL_VERSION;
 
-    py::class_<nmodl::parser::NmodlDriver> _{m_nmodl, "nmodl::parser::NmodlDriver"};
-    py::class_<nmodl::PyNmodlDriver, nmodl::parser::NmodlDriver> nmodl_driver(
+    nb::class_<nmodl::parser::NmodlDriver>(m_nmodl, "nmodl::parser::NmodlDriver");
+    nb::class_<nmodl::PyNmodlDriver, nmodl::parser::NmodlDriver> nmodl_driver(
         m_nmodl, "NmodlDriver", nmodl::docstring::driver);
-    nmodl_driver.def(py::init<>())
+    nmodl_driver.def(nb::init<>())
         .def("parse_string",
              &nmodl::PyNmodlDriver::parse_string,
              "input"_a,

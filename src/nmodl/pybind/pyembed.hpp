@@ -17,7 +17,7 @@ namespace pybind_wrappers {
  *
  * This class manages the runtime loading of the libpython so/dylib file and the python binding
  * wrapper library and provides access to the API wrapper struct that can be used to access the
- * pybind11 embedded python functionality.
+ * nanobind + CPython limited-API embedded python functionality.
  */
 class EmbeddedPythonLoader {
   public:
