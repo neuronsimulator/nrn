@@ -122,8 +122,15 @@ Sections
     :param sec: Pointer to the Section.
     :param length: Length in microns.
 
-    As for ``sec.L = length`` in Python and HOC, the call does nothing while
-    :func:`pt3dconst` is 1.
+    Without 3-d points this sets ``L``. With 3-d points (:func:`pt3dadd`), ``L``
+    comes from the points, so their positions are scaled about the first point
+    by ``length`` over the current 3-d length. The shape and the diameters stay
+    the same.
+
+    While :func:`pt3dconst` is 1, the call silently does nothing, on every
+    Section and whether or not it has 3-d points. ``sec.L = length`` in HOC and
+    Python behaves the same way, except that Python also refuses a length that
+    isn't positive. This call doesn't check the length.
 
     **C Usage:**
     
