@@ -122,6 +122,50 @@ int main(void) {
              "rejected setpointer_pop (absent mechanism) still consumed exactly its source");
 
     // -------------------------------------------------------------------------
+    // x = 0 and x = 1 name the section's own first and last segment, as in the
+    // HOC statement `setpointer sec.src_ptrtest(x), ...`. branch(0) is attached
+    // to the middle of trunk, so the node at branch's x = 0 end is trunk's
+    // middle node. Wiring branch at x = 0 must not touch trunk's POINTER there.
+    Section* trunk = nrn_section_new("trunk");
+    Section* branch = nrn_section_new("branch");
+    nrn_nseg_set(trunk, 3);
+    nrn_section_connect(branch, 0, trunk, 0.5);
+    nrn_mechanism_insert(trunk, ptrtest);
+    nrn_mechanism_insert(branch, ptrtest);
+    // Two sources with distinct values, read through the POINTER without a
+    // finitialize (which would set every v alike).
+    Section* srca = nrn_section_new("srca");
+    Section* srcb = nrn_section_new("srcb");
+    nrn_rangevar_set(v_sym, srca, 0.5, -11.0);
+    nrn_rangevar_set(v_sym, srcb, 0.5, -22.0);
+    for (double x: {1.0 / 6.0, 0.5, 5.0 / 6.0}) {
+        nrn_rangevar_push(v_sym, srca, 0.5);
+        ok &= check(nrn_setpointer_pop(src_sym, trunk, x, err, sizeof(err)) == 0,
+                    "wire a trunk segment to srca");
+    }
+    nrn_rangevar_push(v_sym, srca, 0.5);
+    ok &= check(nrn_setpointer_pop(src_sym, branch, 0.5, err, sizeof(err)) == 0,
+                "wire branch to srca");
+
+    nrn_rangevar_push(v_sym, srcb, 0.5);
+    rc = nrn_setpointer_pop(src_sym, branch, 0.0, err, sizeof(err));
+    ok &= check(rc == 0, "setpointer at branch(0) succeeds");
+    ok &= eq(nrn_rangevar_get(src_sym, branch, 0.5), -22.0, "branch(0) wires branch's segment");
+    ok &= eq(nrn_rangevar_get(src_sym, trunk, 0.5), -11.0, "branch(0) leaves trunk's middle alone");
+
+    nrn_rangevar_push(v_sym, srcb, 0.5);
+    rc = nrn_setpointer_pop(src_sym, trunk, 1.0, err, sizeof(err));
+    ok &= check(rc == 0, "setpointer at trunk(1) succeeds");
+    ok &= eq(nrn_rangevar_get(src_sym, trunk, 5.0 / 6.0), -22.0, "trunk(1) wires the last segment");
+    ok &= eq(nrn_rangevar_get(src_sym, trunk, 0.5), -11.0, "trunk(1) leaves the middle alone");
+
+    nrn_rangevar_push(v_sym, srcb, 0.5);
+    rc = nrn_setpointer_pop(src_sym, trunk, 0.0, err, sizeof(err));
+    ok &= check(rc == 0, "setpointer at trunk(0) succeeds");
+    ok &=
+        eq(nrn_rangevar_get(src_sym, trunk, 1.0 / 6.0), -22.0, "trunk(0) wires the first segment");
+
+    // -------------------------------------------------------------------------
     // Point-process path: nrn_pp_setpointer_pop. Unlike a density mechanism, a
     // point process is addressed by its instance Object, because several can
     // share one segment. Put TWO PPPtr point processes at the SAME location,

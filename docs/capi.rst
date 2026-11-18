@@ -122,6 +122,16 @@ Sections
     :param sec: Pointer to the Section.
     :param length: Length in microns.
 
+    Without 3-d points this sets ``L``. With 3-d points (:func:`pt3dadd`), ``L``
+    comes from the points, so their positions are scaled about the first point
+    by ``length`` over the current 3-d length. The shape and the diameters stay
+    the same.
+
+    While :func:`pt3dconst` is 1, the call silently does nothing, on every
+    Section and whether or not it has 3-d points. ``sec.L = length`` in HOC and
+    Python behaves the same way, except that Python also refuses a length that
+    isn't positive. This call doesn't check the length.
+
     **C Usage:**
     
     .. code-block:: c
@@ -606,11 +616,18 @@ Segments
         # Set diameter everywhere
         dend.diam = 10
     
-    .. warning::
+    ``x = 0`` and ``x = 1`` mean the first and last segment, as for any range
+    variable.
 
-        Setting segment diameters will have no effect if 3d points have been specified
-        for that Section via ``pt3dadd``. To allow diameter specification after that,
-        first call ``pt3dclear`` to remove the 3d points.
+    .. note::
+
+        If 3d points have been specified for the Section via ``pt3dadd``, the
+        new diameter is first copied into the 3d points that lie in the
+        segment, and the segment diameters are then recomputed from the points,
+        as for ``sec(x).diam = d`` in Python. The value read back can therefore
+        differ from the value written. If :func:`pt3dconst` is 1, the write has
+        no lasting effect. To set diameters directly, first call ``pt3dclear``
+        to remove the 3d points.
 
 .. c:function:: double nrn_segment_diam_get(Section* sec, double x)
 
@@ -918,7 +935,9 @@ Segments
     :param pointer_sym: Symbol of the ``POINTER`` range variable to wire (the
         target).
     :param sec: Section of the mechanism instance owning the POINTER.
-    :param x: Normalized position (0.0 to 1.0) of that instance.
+    :param x: Normalized position (0.0 to 1.0) of that instance. As in the HOC
+        ``setpointer`` statement, 0 and 1 mean the Section's own first and last
+        segment.
     :param error_msg: Buffer filled with a message on failure (may be ``NULL``).
     :param error_msg_size: Size of ``error_msg``.
     :returns: 0 on success; nonzero on error, with ``error_msg`` populated when
