@@ -322,11 +322,15 @@ printf("\nNotice: %s:\nThe first two points have different types (%d and %d) but
 //i noncontiguous with parent and
 // if parent is not soma and parent of parent is soma
 // then i appended to connect2prox
-if (p > 1) {
+if (p >= 1) {
+    // Fix: was (p > 1), which missed the case where the first non-soma
+    // dendrite point (p==1) is itself a branch point. NEURON would then
+    // create a spurious 1-point stub section for that branch node,
+    // inconsistent with all other soma-adjacent branch points (p>1)
+    // for which connect2prox correctly suppresses the stub.
     if (type.x[p] != 1 && type.x[pix2ix(p)] == 1) {
 	connect2prox.x[i] = 1
 	$o1.x[p] = 1 // p not treated as a 1pt section
-	err = 1
 	if (0 && !quiet) {
 printf("\nNotice: %s:\n %d parent is %d which is the proximal point of a section\n  connected by a wire to the soma.\n  The dendrite is being connected to\n  the proximal end of the parent dendrite.\n  If this is an incorrect guess, then change the file.\n"\
 , file.getname, id.x[i], id.x[p])
