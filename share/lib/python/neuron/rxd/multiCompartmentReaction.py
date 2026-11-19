@@ -373,6 +373,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
                 if s.name not in all_grids:
                     all_grids.append((s.name, s.charge))
         for sec in active_secs:
+            points = None  # the section's 3-d points, read once if needed
             for seg in sec:
                 local_ptrs = []
                 local_mapped = []
@@ -394,8 +395,10 @@ class MultiCompartmentReaction(GeneralizedReaction):
                                 uberlocal_map_ecs[0] = ecs_grids[
                                     spname
                                 ]._grid_id  # TODO: Just pass the grid_id once per species
+                                if points is None:
+                                    points = species._section_points(sec)
                                 uberlocal_map_ecs[1] = ecs_grids[spname].index_from_xyz(
-                                    *species._xyz(seg)
+                                    *species._xyz(seg, points)
                                 )
                         local_mapped.append(uberlocal_map)
                         local_mapped_ecs.append(uberlocal_map_ecs)

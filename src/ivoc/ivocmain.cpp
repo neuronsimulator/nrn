@@ -775,11 +775,15 @@ std::tuple<int, const char**> nrn_mpi_setup(int argc, const char** argv) {
 
 #if NRNMPI
 #if NRNMPI_DYNAMICLOAD
-    nrnmpi_stubs();
-    for (int i = 1; i < argc; ++i) {
-        if (strcmp("-mpi", argv[i]) == 0) {
-            nrnmpi_load_or_exit();
-            break;
+    // nrn_init can follow nrniv's own setup (nrniv -python, then import neuron). MPI is
+    // already loaded and running then, and nrnmpi_stubs would replace its functions.
+    if (!nrnmpi_use) {
+        nrnmpi_stubs();
+        for (int i = 1; i < argc; ++i) {
+            if (strcmp("-mpi", argv[i]) == 0) {
+                nrnmpi_load_or_exit();
+                break;
+            }
         }
     }
 #endif                                           // NRNMPI_DYNAMICLOAD

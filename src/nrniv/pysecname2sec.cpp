@@ -187,7 +187,9 @@ void nrnpy_pysecname2sec_remove(Section* sec) {
     }
     std::string name(secname(sec));
     // printf("remove %s\n", name.c_str());
-    if (name[0] == '<') {
+    // Skip what nrnpy_pysecname2sec_add skips, and a section already deleted
+    // (no name): delete_section removed its name while it still had one.
+    if (name.empty() || name.find("__nrnsec_0x", 0) == 0 || name.find('<') != name.npos) {
         return;
     }
 

@@ -26,9 +26,9 @@ def test1():
     assert type(v) is h.Vector
     assert type(type(v)) is neuron.hoc.HocClass
     assert type(type(type(v))) is type
-    assert type(neuron.hoc.HocObject) is type
-    assert type(h.sin) is neuron.hoc.HocObject
-    assert type(h) is neuron.hoc.HocObject
+    assert isinstance(neuron.hoc.HocObject, type)
+    assert isinstance(h.sin, neuron.hoc.HocObject)
+    assert isinstance(h, neuron.hoc.HocObject)
     assert bool(v) is False
     vstr = "h." + str(v)
     print(vstr)

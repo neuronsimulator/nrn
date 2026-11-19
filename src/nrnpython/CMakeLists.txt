@@ -19,27 +19,28 @@ endif()
 # =============================================================================
 # rxdmath libraries (always build)
 # =============================================================================
-add_library(rxdmath SHARED ${CMAKE_CURRENT_SOURCE_DIR}/rxdmath.cpp)
+add_library(rxdmath SHARED ${PROJECT_SOURCE_DIR}/src/rxd/rxdmath.cpp)
+# nrn_export.hpp
+target_include_directories(rxdmath PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 install(TARGETS rxdmath DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
+
+# =============================================================================
+# modl_reg stub for the Python interface (see modlreg_stub.c)
+# =============================================================================
+add_library(nrn_modlreg_stub SHARED ${CMAKE_CURRENT_SOURCE_DIR}/modlreg_stub.c)
+install(TARGETS nrn_modlreg_stub DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
+
+# `from neuron import h` no longer goes through the compiled hoc module. Python imports an extension
+# module before a same-named Python module, so building it into the neuron package would shadow the
+# interface's hoc facade.
+option(NRN_LEGACY_HOC_MODULE "Build the legacy compiled hoc Python module" OFF)
 
 # =============================================================================
 # nrnpython libraries (libnrnpython.abi3 when NRN_ENABLE_ABI3, else libnrnpythonX.Y)
 # =============================================================================
 
-set(NRNPYTHON_FILES_LIST
-    nrnpython.cpp
-    nrnpy_hoc.cpp
-    nrn_metaclass.cpp
-    nrnpy_nrn.cpp
-    nrnpy_p2h.cpp
-    nrnpy_utils.cpp
-    grids.cpp
-    rxd.cpp
-    rxd_extracellular.cpp
-    rxd_intracellular.cpp
-    rxd_vol.cpp
-    rxd_marching_cubes.cpp
-    rxd_llgramarea.cpp)
+set(NRNPYTHON_FILES_LIST nrnpython.cpp nrnpy_hoc.cpp nrn_metaclass.cpp nrnpy_nrn.cpp nrnpy_p2h.cpp
+                         nrnpy_utils.cpp)
 
 set(INCLUDE_DIRS
     ..
@@ -79,46 +80,48 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
     set_target_properties(nrnpython PROPERTIES OUTPUT_NAME "nrnpython.abi3")
     install(TARGETS nrnpython DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
 
-    set(hoc_module_name hoc_module)
-    add_nrn_python_library(
-      hoc
-      TARGET
-      ${hoc_module_name}
-      PYTHON_VERSION
-      ${NRN_DEFAULT_PYTHON_VERSION}
-      ${NRN_STABLE_ABI_ARG}
-      LANGUAGE
-      "CXX"
-      SOURCES
-      ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp
-      INCLUDES
-      ${PROJECT_SOURCE_DIR}/src
-      ${PROJECT_SOURCE_DIR}/src/oc
-      ${PROJECT_BINARY_DIR}/src/oc
-      ${PROJECT_BINARY_DIR}/include
-      ${CMAKE_CURRENT_SOURCE_DIR}
-      # for nrnconf.h
-      ${CMAKE_CURRENT_BINARY_DIR}
-      ${PROJECT_BINARY_DIR}/nrnmpi
-      ${NRN_DEFAULT_PYTHON_INCLUDES}
-      LIBRARIES
-      nrniv_lib
-      rxdmath
-      nrnpython
-      INSTALL_REL_RPATH
-      ${libraries_rpath}
-      OUTPUT_DIR
-      ${PROJECT_BINARY_DIR}/lib/python/neuron)
+    if(NRN_LEGACY_HOC_MODULE)
+      set(hoc_module_name hoc_module)
+      add_nrn_python_library(
+        hoc
+        TARGET
+        ${hoc_module_name}
+        PYTHON_VERSION
+        ${NRN_DEFAULT_PYTHON_VERSION}
+        ${NRN_STABLE_ABI_ARG}
+        LANGUAGE
+        "CXX"
+        SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp
+        INCLUDES
+        ${PROJECT_SOURCE_DIR}/src
+        ${PROJECT_SOURCE_DIR}/src/oc
+        ${PROJECT_BINARY_DIR}/src/oc
+        ${PROJECT_BINARY_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        # for nrnconf.h
+        ${CMAKE_CURRENT_BINARY_DIR}
+        ${PROJECT_BINARY_DIR}/nrnmpi
+        ${NRN_DEFAULT_PYTHON_INCLUDES}
+        LIBRARIES
+        nrniv_lib
+        rxdmath
+        nrnpython
+        INSTALL_REL_RPATH
+        ${libraries_rpath}
+        OUTPUT_DIR
+        ${PROJECT_BINARY_DIR}/lib/python/neuron)
 
-    # Windows STABLE_ABI already linked python3.lib in add_nrn_python_library. Do not also link
-    # python3.XY.dll or 3.13+ cannot load hoc.pyd.
-    if(NRN_LINK_AGAINST_PYTHON AND NOT WIN32)
-      target_link_libraries(${hoc_module_name} PUBLIC ${NRN_DEFAULT_PYTHON_LIBRARIES})
+      # Windows STABLE_ABI already linked python3.lib in add_nrn_python_library. Do not also link
+      # python3.XY.dll or 3.13+ cannot load hoc.pyd.
+      if(NRN_LINK_AGAINST_PYTHON AND NOT WIN32)
+        target_link_libraries(${hoc_module_name} PUBLIC ${NRN_DEFAULT_PYTHON_LIBRARIES})
+      endif()
+
+      add_dependencies(${hoc_module_name} nrniv_lib rxdmath)
+
+      install(TARGETS ${hoc_module_name} DESTINATION ${NRN_INSTALL_PYTHON_PREFIX})
     endif()
-
-    add_dependencies(${hoc_module_name} nrniv_lib rxdmath)
-
-    install(TARGETS ${hoc_module_name} DESTINATION ${NRN_INSTALL_PYTHON_PREFIX})
   else()
     foreach(val RANGE ${NRN_PYTHON_ITERATION_LIMIT})
       list(GET NRN_PYTHON_VERSIONS ${val} pyver)
@@ -136,6 +139,10 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
         target_link_libraries(nrnpython${pyver} PUBLIC ${pylib})
       endif()
       install(TARGETS nrnpython${pyver} DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
+
+      if(NOT NRN_LEGACY_HOC_MODULE)
+        continue()
+      endif()
 
       set(hoc_module_name hoc${pyver})
       add_nrn_python_library(
@@ -198,6 +205,8 @@ else()
 
   # the hoc Python library
   set(hoc_module_name "hoc_module")
+endif()
+if(NOT NRN_ENABLE_PYTHON_DYNAMIC AND NRN_LEGACY_HOC_MODULE)
   add_nrn_python_library(
     hoc
     TARGET

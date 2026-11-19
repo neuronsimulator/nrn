@@ -226,6 +226,13 @@ if(NRN_ENABLE_PYTHON)
     PRELOAD_SANITIZER
     SCRIPT_PATTERNS "test/unit_tests/hoc_python/*.py")
 
+  # Under nrniv -python the legacy module converts Python values for HOC.
+  nrn_add_test(
+    GROUP unit_tests
+    NAME embedded_interface_objects
+    SCRIPT_PATTERNS test/unit_tests/hoc_python/embedded_interface_objects.py
+    COMMAND nrniv -nogui -python test/unit_tests/hoc_python/embedded_interface_objects.py)
+
   # Pure-Python prcellstate .nrndat semantic compare (no special/modfiles/GPU).
   nrn_add_test(
     GROUP unit_tests
