@@ -6,9 +6,10 @@ not. The pointer is not part of the stable ABI: python3.dll does not export
 it, and a versioned Windows build may not load python3.dll at all. Read the
 global back and require the function to live in nrniv or nrnpython.
 
-The pointer check closes stdin. On Unix this script then submits one
-statement on a pty, after the hook has been shown to point into NEURON, and
-requires the product of that statement. Windows CI has no pty.
+The pointer check closes stdin. On Unix this script then types the next
+statement only after the next prompt. Writing every line at once left
+exit() unread on the macOS libedit wheel after the product had already been
+printed. Windows CI has no pty.
 """
 
 import os
@@ -135,6 +136,20 @@ def _write_all(fd, data):
         view = view[n:]
 
 
+def _reply_ready(data, start, echoed):
+    # A redraw repeats the current prompt before the newline. The next
+    # prompt is the one printed after this statement has been entered.
+    tail = data[start:]
+    idx = tail.find(echoed)
+    if idx < 0:
+        return False
+    rest = tail[idx + len(echoed) :]
+    nl = rest.find(b"\n")
+    if nl < 0:
+        return False
+    return b">>>" in rest[nl + 1 :]
+
+
 def _read_for(master, buf, predicate, timeout):
     import select
     import time
@@ -158,7 +173,10 @@ def _read_for(master, buf, predicate, timeout):
 def _stop(proc):
     if proc.poll() is None:
         proc.kill()
-        proc.wait(timeout=5)
+        try:
+            proc.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            pass
 
 
 def _check_interactive(nrniv):
@@ -215,20 +233,40 @@ def _check_interactive(nrniv):
         _read_for(master, buf, lambda data: b">>>" in data, 15)
         if b">>>" not in buf:
             raise SystemExit("readline interactive check failed")
-        # Queued before the replies. Each input() runs, then the next read.
-        # The product line is therefore read after the pointer print has run.
-        _write_all(master, ("\n".join(lines) + "\n").encode("ascii"))
-        _read_for(
-            master,
-            buf,
-            lambda data: b"readline-hook-ok" in data and b"423493" in data,
-            15,
-        )
+        # Type the next line only after the next prompt. On the macOS
+        # libedit wheel a single burst ran every statement, reprinted the
+        # prompt, and never read exit().
+        for line in lines:
+            if line == "exit()":
+                break
+            mark = len(buf)
+            echoed = line.encode("ascii")
+            _write_all(master, echoed + b"\n")
+            _read_for(
+                master,
+                buf,
+                lambda data, start=mark, text=echoed: _reply_ready(data, start, text),
+                15,
+            )
+            if not _reply_ready(buf, mark, echoed):
+                raise SystemExit("readline interactive check failed")
+        mark = len(buf)
+        _write_all(master, b"exit()\n")
+
+        def _python_left(data, start=mark):
+            return proc.poll() is not None or b"oc>" in data[start:]
+
+        _read_for(master, buf, _python_left, 15)
+        # exit() can return to hoc instead of ending the process.
+        if proc.poll() is None and b"oc>" in buf[mark:]:
+            _write_all(master, b"quit()\n")
+            _read_for(master, buf, lambda data: proc.poll() is not None, 15)
+        if proc.poll() is None:
+            try:
+                proc.wait(timeout=15)
+            except subprocess.TimeoutExpired:
+                raise SystemExit("readline interactive check failed")
         if b"readline-hook-ok" not in buf or b"423493" not in buf:
-            raise SystemExit("readline interactive check failed")
-        try:
-            proc.wait(timeout=15)
-        except subprocess.TimeoutExpired:
             raise SystemExit("readline interactive check failed")
         if proc.returncode != 0:
             raise SystemExit("readline interactive check failed")
