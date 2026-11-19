@@ -113,6 +113,78 @@ def test_collect_mod_files_accepts_mod_prefix(tmp_path, monkeypatch):
     assert got == ["hh.mod", "kept", "foo.bar.mod"]
 
 
+def test_nrnivmodl_accepts_incflags_that_look_like_options():
+    """-incflags takes the next argument, including one that starts with -I."""
+    bw = _binwrapper()
+    parsed = bw._nrnivmodl_parse_args(
+        [
+            "-loadflags",
+            "first.lib",
+            "-incflags",
+            "-I/usr/include",
+            "-loadflags",
+            "/LIBPATH:C:/sdk",
+            "hh.mod",
+        ]
+    )
+    assert parsed["help"] is False
+    assert parsed["incflags"] == "-I/usr/include"
+    assert parsed["loadflags"] == "/LIBPATH:C:/sdk"
+    assert parsed["rest"] == ["hh.mod"]
+
+
+def test_nrnivmodl_flags_stop_at_the_first_mod_file():
+    bw = _binwrapper()
+    parsed = bw._nrnivmodl_parse_args(["hh.mod", "-incflags", "-I/usr/include"])
+    assert parsed["incflags"] == ""
+    assert parsed["rest"] == ["hh.mod", "-incflags", "-I/usr/include"]
+
+
+def test_nrnivmodl_flag_without_a_value_is_rejected():
+    bw = _binwrapper()
+    try:
+        bw._nrnivmodl_parse_args(["-incflags"])
+    except SystemExit as exc:
+        assert "-incflags" in str(exc)
+    else:
+        raise AssertionError("-incflags without a value must be rejected")
+
+
+def test_nrnivmodl_rejects_unix_only_codegen_options():
+    bw = _binwrapper()
+    for opt in ("-coreneuron", "-nmodl", "-nmodlflags", "-unknown"):
+        try:
+            bw._nrnivmodl_parse_args([opt, "hh.mod"])
+        except SystemExit as exc:
+            assert opt in str(exc)
+        else:
+            raise AssertionError(f"{opt} must be rejected")
+
+
+def test_nrnivmodl_help_names_the_windows_flag_strings(capsys):
+    bw = _binwrapper()
+    parsed = bw._nrnivmodl_parse_args(["-h", "hh.mod"])
+    assert parsed["help"] is True
+    bw._nrnivmodl_help()
+    out = capsys.readouterr().out
+    assert "-incflags" in out
+    assert "-loadflags" in out
+    assert "/LIBPATH:" in out
+    assert "cl.exe" in out
+    assert "-coreneuron" in out
+    assert "-nmodl" in out
+
+
+def test_nrnivmodl_flag_defs_keep_spaces_and_semicolons():
+    bw = _binwrapper()
+    defs = bw._nrnivmodl_flag_defs("/I C:/sdk/include;extra", "foo.lib")
+    assert defs == [
+        "-DNRNIVMODL_INCFLAGS=/I C:/sdk/include;extra",
+        "-DNRNIVMODL_LDFLAGS=foo.lib",
+    ]
+    assert bw._nrnivmodl_flag_defs("", "") == []
+
+
 def test_collect_mod_files_missing_name_still_errors(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "channels").mkdir()

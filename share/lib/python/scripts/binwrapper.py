@@ -187,10 +187,68 @@ def _wrapper_stem(argv0):
 def _nrnivmodl_help():
     print("Usage: nrnivmodl [options] [mod files or directories with mod files]")
     print("Options:")
-    print("  -h, --help                       Show this help message and exit.")
+    print('  -incflags "compile flags"       Extra flags for compiling MOD files.')
+    print("                                  cl.exe takes /I and -I.")
+    print('  -loadflags "link flags"         Extra flags for linking nrnmech.dll.')
+    print(
+        "                                  link.exe takes a .lib or /LIBPATH:, not gcc -L/-l."
+    )
+    print("  -h, --help                      Show this help message and exit.")
+    print("  -coreneuron, -nmodl, and -nmodlflags are Unix nrnivmodl options.")
+    print("  This build uses nocmodl and does not build CoreNEURON.")
     print(
         "If no MOD files or directories provided then MOD files from current directory are used."
     )
+
+
+def _nrnivmodl_parse_args(args):
+    """Options before the first MOD file, same as Unix nrnivmodl.
+
+    ``-incflags`` and ``-loadflags`` take the next argument even when it
+    starts with ``-`` or ``/``. The last copy of a repeated flag wins.
+    """
+    rest = list(args)
+    incflags = ""
+    loadflags = ""
+    while rest and rest[0].startswith("-"):
+        opt = rest.pop(0)
+        if opt in ("-h", "--help"):
+            return {
+                "help": True,
+                "incflags": incflags,
+                "loadflags": loadflags,
+                "rest": rest,
+            }
+        if opt == "-coreneuron":
+            raise SystemExit(
+                "nrnivmodl: -coreneuron is not enabled in this Windows wheel"
+            )
+        if opt in ("-nmodl", "-nmodlflags"):
+            raise SystemExit(
+                f"nrnivmodl: {opt} is not available in this Windows build "
+                "(nocmodl, not the NMODL transpiler)"
+            )
+        if opt in ("-incflags", "-loadflags"):
+            if not rest:
+                raise SystemExit(f"nrnivmodl: {opt} needs a value")
+            value = rest.pop(0)
+            if opt == "-incflags":
+                incflags = value
+            else:
+                loadflags = value
+            continue
+        raise SystemExit(f"{opt} unrecognized, check available CLI options with --help")
+    return {"help": False, "incflags": incflags, "loadflags": loadflags, "rest": rest}
+
+
+def _nrnivmodl_flag_defs(incflags, loadflags):
+    """One CMake ``-D`` argument per string. Spaces and semicolons stay inside it."""
+    defs = []
+    if incflags:
+        defs.append(f"-DNRNIVMODL_INCFLAGS={incflags}")
+    if loadflags:
+        defs.append(f"-DNRNIVMODL_LDFLAGS={loadflags}")
+    return defs
 
 
 def _collect_mod_files(args):
@@ -274,17 +332,11 @@ def _nt_replace_tree(path):
 
 def _nrnivmodl_cmake(args):
     """Build nrnmech via the shipped neuron CMake package (Windows wheel path)."""
-    rest = list(args)
-    while rest and rest[0].startswith("-"):
-        opt = rest.pop(0)
-        if opt in ("-h", "--help"):
-            _nrnivmodl_help()
-            return 0
-        if opt == "-coreneuron":
-            raise SystemExit(
-                "nrnivmodl: -coreneuron is not enabled in this Windows wheel"
-            )
-        raise SystemExit(f"{opt} unrecognized, check available CLI options with --help")
+    parsed = _nrnivmodl_parse_args(args)
+    if parsed["help"]:
+        _nrnivmodl_help()
+        return 0
+    rest = parsed["rest"]
 
     print(os.getcwd())
     mods = _collect_mod_files(rest)
@@ -346,6 +398,7 @@ def _nrnivmodl_cmake(args):
         "-DNRNIVMODL_SPECIAL=OFF",
         f"-DCMAKE_PREFIX_PATH={prefix}",
     ]
+    cmake_cfg.extend(_nrnivmodl_flag_defs(parsed["incflags"], parsed["loadflags"]))
     gen = os.environ.get("CMAKE_GENERATOR", "")
     if os.name == "nt" and "Ninja" not in gen:
         cmake_cfg.extend(["-A", "x64"])

@@ -167,7 +167,9 @@ function(create_nrnmech)
       ARTIFACTS_OUTPUT_DIR
       LIBRARY_TYPE
       NOCMODL_EXECUTABLE
-      NMODL_EXECUTABLE)
+      NMODL_EXECUTABLE
+      INCFLAGS
+      LDFLAGS)
   set(multiValueArgs MOD_FILES NMODL_NEURON_EXTRA_ARGS NMODL_CORENEURON_EXTRA_ARGS EXTRA_ENV)
   cmake_parse_arguments(NRN_MECH "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
@@ -465,6 +467,14 @@ function(create_nrnmech)
     # sometimes people will add `#include`s in VERBATIM blocks; usually those are in the same
     # directory as the mod file, so let's add that as well
     target_include_directories(${TARGET_LIBRARY_NAME} PRIVATE "${MOD_DIRECTORIES}")
+    # -incflags / -loadflags. SHELL: is one command-line fragment: spaces separate flags, and a
+    # semicolon stays inside a flag. Not a CMake list.
+    if(NRN_MECH_INCFLAGS)
+      target_compile_options(${TARGET_LIBRARY_NAME} PRIVATE "SHELL:${NRN_MECH_INCFLAGS}")
+    endif()
+    if(NRN_MECH_LDFLAGS)
+      target_link_options(${TARGET_LIBRARY_NAME} PRIVATE "SHELL:${NRN_MECH_LDFLAGS}")
+    endif()
 
     # add the special executable
     if(NRN_MECH_SPECIAL)
