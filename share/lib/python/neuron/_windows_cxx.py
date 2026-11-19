@@ -68,33 +68,65 @@ def _apply_vc_env(env, vc):
 # Longer names first so clang-cl.exe is not read as cl.exe.
 _MSVC_CXX_BASENAMES = ("clang-cl.exe", "clang-cl", "cl.exe", "cl")
 
+# Longest first. These cl.exe options can be glued to a path: /IC:\sdk\include.
+_ATTACHED_MSVC_FLAG_PREFIXES = (
+    "/external:env:",
+    "/exportheader",
+    "/ifcoutput",
+    "/headerunit",
+    "/external:i",
+    "/doc",
+    "/fi",
+    "/fe",
+    "/fo",
+    "/fd",
+    "/fp",
+    "/fa",
+    "/fm",
+    "/fr",
+    "/tp",
+    "/tc",
+    "/i",
+)
 
-def _token_continues_path(token):
-    """True when a CXX token is another directory component, not a flag.
 
-    ``/nologo`` is a flag. ``tools\\bin\\g++.exe`` is still the path.
-    """
-    if "\\" in token:
-        return True
-    if "/" not in token:
+def _attached_msvc_flag(token):
+    """True for /I or /Fe glued to a path. /bar\\cl.exe is a path, not a flag."""
+    low = token.lower()
+    for prefix in _ATTACHED_MSVC_FLAG_PREFIXES:
+        if not low.startswith(prefix) or len(low) == len(prefix):
+            continue
+        rest = token[len(prefix) :]
+        if rest[:1] in "\\/":
+            return True
+        if len(rest) >= 3 and rest[1] == ":" and rest[2] in "\\/":
+            return True
+    return False
+
+
+def _is_cxx_flag(token):
+    """A compiler option. A later token with \\ is still a directory name."""
+    if not token:
         return False
-    if token[:1] in "-/":
-        return "/" in token[1:]
+    if token[0] in "-@":
+        return True
+    if token[0] != "/":
+        return False
+    if _attached_msvc_flag(token):
+        return True
+    # /nologo, /O2, /std:c++17. /usr/bin/g++ and /bar\\cl.exe are paths.
+    if "\\" in token or "/" in token[1:]:
+        return False
     return True
-
-
-def _path_continues(rest):
-    return any(_token_continues_path(tok) for tok in rest.split())
 
 
 def _cxx_executable(cxx):
     """Compiler path from CXX. A cl.exe path that contains spaces stays one token.
 
-    Quoted text is the executable, quotes removed. Otherwise an MSVC basename may
-    sit at the start or after / or \\. Whitespace ends that basename only when
-    what follows is flags, not another directory. ``C:\\cl tools\\bin\\g++.exe``
-    is one GNU path: the ``cl`` component is not cl.exe. Any other compiler is
-    the first whitespace-separated token, unless a later token continues the path.
+    Quoted text is the executable, quotes removed. Otherwise tokens belong to
+    the path until a flag. ``/I C:\\sdk\\include`` is not another directory of
+    an unquoted Program Files path. ``C:\\cl tools\\bin\\g++.exe`` is one GNU
+    path: the ``cl`` component is not cl.exe.
     """
     text = (cxx or "").strip()
     if not text:
@@ -106,30 +138,13 @@ def _cxx_executable(cxx):
             body = text[1:].strip()
             return body.split()[0] if body else ""
         return text[1:end]
-    lowered = text.lower()
-    for name in _MSVC_CXX_BASENAMES:
-        start = 0
-        while start < len(text):
-            idx = lowered.find(name, start)
-            if idx < 0:
-                break
-            before_ok = idx == 0 or text[idx - 1] in "/\\"
-            after = idx + len(name)
-            after_ok = after == len(text) or text[after].isspace()
-            if before_ok and after_ok and not _path_continues(text[after:]):
-                return text[:after]
-            start = idx + 1
     parts = text.split()
-    if any(_token_continues_path(part) for part in parts[1:]):
-        end = len(parts)
-        while (
-            end > 1
-            and parts[end - 1][:1] in "-/"
-            and not _token_continues_path(parts[end - 1])
-        ):
-            end -= 1
-        return " ".join(parts[:end])
-    return parts[0]
+    end = 0
+    for i, part in enumerate(parts):
+        if i > 0 and _is_cxx_flag(part):
+            break
+        end = i + 1
+    return " ".join(parts[:end])
 
 
 def _cxx_basename(path):

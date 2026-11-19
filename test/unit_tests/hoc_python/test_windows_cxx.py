@@ -75,6 +75,28 @@ def test_spaced_directory_named_cl_stays_gnu():
     assert not m._is_msvc_cxx(flagged)
 
 
+def test_include_path_is_not_part_of_the_compiler():
+    """A path after /I is an include directory, not more of cl.exe."""
+    m = _mod()
+    spaced = r"C:\Program Files\VS\bin\cl.exe"
+    separate = spaced + r" /I C:\sdk\include"
+    assert m._cxx_executable(separate) == spaced
+    assert m._is_msvc_cxx(separate)
+    attached = spaced + r" /IC:\sdk\include"
+    assert m._cxx_executable(attached) == spaced
+    assert m._is_msvc_cxx(attached)
+    fe = CL + r" /FeC:\out\nrnmech.dll"
+    assert m._cxx_executable(fe) == CL
+    assert m._is_msvc_cxx(fe)
+    assert m._cxx_executable("g++ -I/usr/include") == "g++"
+    assert not m._is_msvc_cxx("g++ -I/usr/include")
+    assert m._cxx_executable("/usr/bin/g++ -O2") == "/usr/bin/g++"
+    assert m._cxx_executable("cl.exe @resp.rsp") == "cl.exe"
+    # /bar\cl.exe is a directory token, not /I glued to a path.
+    continued = r"C:\prefix /bar\cl.exe -O2"
+    assert m._cxx_executable(continued) == r"C:\prefix /bar\cl.exe"
+
+
 def test_bare_names_and_non_msvc():
     m = _mod()
     assert m._is_msvc_cxx("cl")
