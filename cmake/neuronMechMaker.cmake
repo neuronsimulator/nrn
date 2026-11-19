@@ -156,7 +156,8 @@ The ``nrnmech`` library will then be available under ``build``, and can be loade
 
 #]=======================================================================]
 
-function(create_nrnmech)
+# Keyword lists for create_nrnmech. A macro so PARSE_ARGV sees the caller's arguments.
+macro(_nrn_mech_arg_specs)
   set(options NEURON CORENEURON SPECIAL NMODL_NEURON_CODEGEN)
   set(oneValueArgs
       MECHANISM_NAME
@@ -171,7 +172,34 @@ function(create_nrnmech)
       INCFLAGS
       LDFLAGS)
   set(multiValueArgs MOD_FILES NMODL_NEURON_EXTRA_ARGS NMODL_CORENEURON_EXTRA_ARGS EXTRA_ENV)
-  cmake_parse_arguments(NRN_MECH "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+endmacro()
+
+# One -incflags or -loadflags string. Spaces separate flags. A semicolon is part of a flag, not a
+# CMake list separator. Windows \ is a path character (CommandLineToArgvW). Elsewhere \ is a Unix
+# shell escape, matching the old SHELL: prefix.
+function(nrn_mech_add_user_cli target property raw platform)
+  if(raw STREQUAL "")
+    return()
+  endif()
+  if(platform STREQUAL "WINDOWS")
+    separate_arguments(_nrn_cli WINDOWS_COMMAND "${raw}")
+  else()
+    separate_arguments(_nrn_cli UNIX_COMMAND "${raw}")
+  endif()
+  foreach(_nrn_item IN LISTS _nrn_cli)
+    # Escaped semicolon: one compile/link argument that itself contains ';'.
+    string(REPLACE ";" "\\;" _nrn_esc "${_nrn_item}")
+    set_property(
+      TARGET ${target}
+      APPEND
+      PROPERTY ${property} "${_nrn_esc}")
+  endforeach()
+endfunction()
+
+function(create_nrnmech)
+  _nrn_mech_arg_specs()
+  # PARSE_ARGV keeps a semicolon inside INCFLAGS / LDFLAGS. ${ARGN} would split it.
+  cmake_parse_arguments(PARSE_ARGV 0 NRN_MECH "${options}" "${oneValueArgs}" "${multiValueArgs}")
 
   # The message priority for logging
   set(MESSAGE_PRIORITY "VERBOSE")
@@ -467,14 +495,16 @@ function(create_nrnmech)
     # sometimes people will add `#include`s in VERBATIM blocks; usually those are in the same
     # directory as the mod file, so let's add that as well
     target_include_directories(${TARGET_LIBRARY_NAME} PRIVATE "${MOD_DIRECTORIES}")
-    # -incflags / -loadflags. SHELL: is one command-line fragment: spaces separate flags, and a
-    # semicolon stays inside a flag. Not a CMake list.
-    if(NRN_MECH_INCFLAGS)
-      target_compile_options(${TARGET_LIBRARY_NAME} PRIVATE "SHELL:${NRN_MECH_INCFLAGS}")
+    if(WIN32)
+      set(_nrn_flag_platform WINDOWS)
+    else()
+      set(_nrn_flag_platform UNIX)
     endif()
-    if(NRN_MECH_LDFLAGS)
-      target_link_options(${TARGET_LIBRARY_NAME} PRIVATE "SHELL:${NRN_MECH_LDFLAGS}")
-    endif()
+    nrn_mech_add_user_cli(${TARGET_LIBRARY_NAME} COMPILE_OPTIONS "${NRN_MECH_INCFLAGS}"
+                          ${_nrn_flag_platform})
+    nrn_mech_add_user_cli(${TARGET_LIBRARY_NAME} LINK_OPTIONS "${NRN_MECH_LDFLAGS}"
+                          ${_nrn_flag_platform})
+    unset(_nrn_flag_platform)
 
     # add the special executable
     if(NRN_MECH_SPECIAL)
