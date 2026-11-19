@@ -78,7 +78,7 @@ from .nrnref import (
     numpy_element_ref,  # noqa: F401  (public: myneuron.numpy_element_ref)
 )
 from .object import List, Object, SectionList, Vector
-from .sections import PYTHON_SECTIONS, Section
+from .sections import PYTHON_SECTIONS, Section, _section_for
 from .utils import (
     _name_error,
     TEMPLATE_CONVERTERS,
@@ -571,7 +571,7 @@ def _register_gui_methods():
 
     def call_python_with_section(obj, sec_ptr):
         try:
-            payload(obj)(Section._from_ptr(sec_ptr))
+            payload(obj)(_section_for(sec_ptr))
         except BaseException as exc:
             failed("Call of Python Callable failed", exc)
 
@@ -1366,7 +1366,7 @@ class NEURON(metaclass=_Singleton):
                         # L, nseg, Ra, rallbranch read the accessed section's
                         # value. With none accessed, real NEURON raises
                         # TypeError; cas() raises the same, so route through it.
-                        return getattr(self.cas(), name)
+                        return getattr(self._cas_wrapper(), name)
                     if _type == TYPES.VAR and _subtype == 0:
                         # NOTUSER (hocdec.h:82): runtime-created HOC scalar
                         # (`n('newvar = 42')`), stored in
@@ -1591,7 +1591,7 @@ class NEURON(metaclass=_Singleton):
         # section's value; cas() raises TypeError if none. Must precede the
         # generic VAR branch, which would assign a non-existent scalar via HOC.
         if _type == TYPES.VAR and _subtype == TYPES.USERPROPERTY:
-            setattr(self.cas(), name, value)
+            setattr(self._cas_wrapper(), name, value)
             return
 
         # Runtime double scalar (subtype 0, `n('x = ...')`). Writing through
@@ -1798,6 +1798,15 @@ class NEURON(metaclass=_Singleton):
         section is on the access stack
         (``nrn/src/nrnpython/nrnpy_nrn.cpp:2967-2978``).
         """
+        sec_ptr = _nrn_cas()
+        if not sec_ptr:
+            raise TypeError("Section access unspecified")
+        return _section_for(sec_ptr)
+
+    def _cas_wrapper(self):
+        """The accessed section as a plain wrapper, for the interface's own
+        reads and writes: a Section subclass's attributes, properties and
+        __setattr__ can't change them (NEURON does these in C)."""
         sec_ptr = _nrn_cas()
         if not sec_ptr:
             raise TypeError("Section access unspecified")

@@ -894,7 +894,7 @@ class Object(metaclass=_HocClassMeta):
             sec = n.cas()
         finally:
             n.pop_section()
-        return sec(x)
+        return _segment_of(sec, x)
 
     def _netcon_seg(self, loc_method):
         """NetCon.preseg()/postseg(): the Segment from preloc()/postloc().
@@ -914,7 +914,7 @@ class Object(metaclass=_HocClassMeta):
             n.pop_section()
         if x < 0:  # source is not a voltage
             return None
-        return sec(x)
+        return _segment_of(sec, x)
 
     def _check_located(self):
         """Raise TypeError, as NEURON does, before reading or writing a
@@ -1480,6 +1480,15 @@ def _ensure_alias_trampolines(name):
     return True
 
 
+def _segment_of(sec, x):
+    """sec(x) through the base Section: NEURON builds the segment for
+    get_segment(), preseg() and postseg() in C, so a subclass's __call__
+    must not replace it."""
+    from .sections import Section
+
+    return Section.__call__(sec, x)
+
+
 # NetCon.preseg/postseg rebuilt from the location methods (Object._netcon_seg).
 _NETCON_SEG_METHODS = {"preseg": "preloc", "postseg": "postloc"}
 
@@ -1966,8 +1975,12 @@ class SectionList(Object):
     _hoc_class_name = "SectionList"
 
     def __iter__(self):
-        from .sections import Section
+        from .sections import PYTHON_SECTIONS, Section
 
+        # sections._section_for, inlined as in allsec(): a Python section is
+        # its own object, a HOC one gets a new wrapper.
+        owner_refs = PYTHON_SECTIONS.data
+        from_ptr = Section._from_ptr
         items = _nrn_sectionlist_data(self._obj)
         it = _nrn_sectionlist_iterator_new(items)
         try:
@@ -1976,7 +1989,9 @@ class SectionList(Object):
                 # next() may discard dead entries and reach the sentinel.
                 if not sec_ptr:
                     break
-                yield Section._from_ptr(sec_ptr)
+                owner_ref = owner_refs.get(sec_ptr)
+                sec = owner_ref() if owner_ref is not None else None
+                yield sec if sec is not None else from_ptr(sec_ptr)
         finally:
             _nrn_sectionlist_iterator_free(it)
 
@@ -2139,7 +2154,7 @@ def _steer_sectionref(sr_obj, which, index=None):
     root: the steering raises and nothing is captured).
     """
     from . import NEURON, _template_section_capture
-    from .sections import Section
+    from .sections import _section_for
 
     n = NEURON()
     key = "child" if index is not None else which
@@ -2162,7 +2177,7 @@ def _steer_sectionref(sr_obj, which, index=None):
         _template_section_capture.value = saved
     if not captured:
         return None
-    return Section._from_ptr(captured)
+    return _section_for(captured)
 
 
 class _SectionRefChildren:

@@ -13,8 +13,8 @@ import threading
 import warnings
 from pathlib import Path
 
-_LIBNRNIV_ENV = "MYNEURON_LIBNRNIV"
-_LIBMODLREG_ENV = "MYNEURON_LIBMODLREG"
+_LIBNRNIV_ENV = "NRN_LIBNRNIV"
+_LIBMODLREG_ENV = "NRN_LIBMODLREG"
 
 # Imported as neuron._interface, this package lives inside NEURON's own Python
 # package: it must use that build's libraries (never another installed
@@ -330,7 +330,7 @@ def _check_nrn_error(ret, err_buf):
 # initialize NEURON
 #
 # argv:
-#   "-nogui"    Opt-in via MYNEURON_NOGUI=1. Real NEURON's PyInit_hoc never
+#   "-nogui"    Opt-in via NRN_NOGUI=1. Real NEURON's PyInit_hoc never
 #               passes it, and it forces Graph.view_count() to 0 even on a
 #               live display. The test suite opts in so PlotShape/plotting
 #               tests are order-independent without a DISPLAY. See
@@ -338,7 +338,7 @@ def _check_nrn_error(ret, err_buf):
 #   "-nopython" Passed when the methods table is already populated (avoids a
 #               duplicate class2oc("PythonObject", ...)) and for Option B
 #               (libnrniv registers its stub PythonObject before myneuron
-#               installs callbacks). Only MYNEURON_USE_CFUNCTYPE=0 drops it,
+#               installs callbacks). Only NRN_USE_CFUNCTYPE=0 drops it,
 #               so libnrnpython can populate the methods table.
 
 _methods_populated = False
@@ -384,7 +384,7 @@ def _libnrnpython_present_next_to_libnrniv():
 #      ...)`. After `nrn_init` we look up the stub symbol, set
 #      `nrnpy_pyobj_sym_`, and install Python-implemented function pointers
 #      into `methods` via `ctypes.CFUNCTYPE`.
-#   C. libnrnpython load (opt-out via `MYNEURON_USE_CFUNCTYPE=0`): drop
+#   C. libnrnpython load (opt-out via `NRN_USE_CFUNCTYPE=0`): drop
 #      `-nopython`, pre-set `nrn_is_python_extension`, and let libnrniv's
 #      `nrnpython_reg -> load_nrnpython -> nrnpython_reg_real` chain populate
 #      all 29 pointers from libnrnpython's C++ code.
@@ -392,7 +392,7 @@ def _libnrnpython_present_next_to_libnrniv():
 # In B, _install_cfunctype_methods replaces the stub template's no-op
 # destructor with a registry cleanup callback. A and C must never use ctypes
 # payloads: their C++ destructor requires `new Py2Nrn`.
-_use_cfunctype = os.environ.get("MYNEURON_USE_CFUNCTYPE", "1") != "0"
+_use_cfunctype = os.environ.get("NRN_USE_CFUNCTYPE", "1") != "0"
 _libnrnpython_available = _libnrnpython_present_next_to_libnrniv()
 
 # C only when CFUNCTYPE is disabled and a libnrnpython sibling exists.
@@ -401,7 +401,7 @@ _use_libnrnpython_load = (
 )
 
 # See the argv notes above.
-_pass_nogui = os.environ.get("MYNEURON_NOGUI", "0") == "1"
+_pass_nogui = os.environ.get("NRN_NOGUI", "0") == "1"
 _extra_argv = []
 if _pass_nogui:
     _extra_argv.append(b"-nogui")

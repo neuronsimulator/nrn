@@ -12,6 +12,10 @@ import weakref
 from .api import (
     HOC_LOCK,
     TYPES,
+    _ERR_BUF_SIZE,
+    _check_nrn_error,
+    _nrn_double_pop,
+    _nrn_function_call,
     _diam_changed as _DIAM_CHANGED,
     _nrn_double_ptr_pop,
     _nrn_mechanism_insert,
@@ -455,6 +459,40 @@ def _current_inserted_mechs(sec):
     return cached if built == _model_epoch() else _STALE
 
 
+def _has_mechanism(sec, name):
+    """Whether *sec* has density mechanism *name*: from its current cached
+    list when there is one, else one has_membrane call."""
+    inserted = _current_inserted_mechs(sec)
+    if isinstance(inserted, list):
+        return name in inserted
+    return sec.has_membrane(name)
+
+
+_SECTION_QUERY_SYMBOLS = {}
+
+
+def _section_query(name, sec_ptr):
+    """A HOC builtin of no arguments that only reads the accessed section
+    (section_orientation, parent_connection), as a float.
+
+    Called directly, not through FuncWrapper: that moves the model epoch on
+    every call, and rebuilding the mechanism caches it invalidates costs one
+    ismembrane call per mechanism (12 -> 440 us for list(seg) at an end).
+    """
+    sym = _SECTION_QUERY_SYMBOLS.get(name)
+    if sym is None:
+        sym = _SECTION_QUERY_SYMBOLS[name] = _nrn_symbol(name)
+    err = ctypes.create_string_buffer(_ERR_BUF_SIZE)
+    with HOC_LOCK:
+        _nrn_section_push(sec_ptr)
+        try:
+            ret = _nrn_function_call(sym, 0, err, _ERR_BUF_SIZE)
+            _check_nrn_error(ret, err)
+            return _nrn_double_pop()
+        finally:
+            _nrn_section_pop()
+
+
 # Located (non-ARTIFICIAL_CELL) point-process types, name -> MechanismType
 # select index, and the type count it was built for. A MechanismType keeps the
 # type list it was created with, so each call makes a fresh one (about 20 us);
@@ -671,6 +709,59 @@ class Segment:
         count = _nrn_segment_mechanisms(self._sec._sec, self._x, buf, count)
         return [_nrn_symbol_name(buf[i]).decode("utf-8") for i in range(count)]
 
+    def _zero_area_owner(self):
+        """The section whose zero-area node NEURON uses for this x, or None.
+
+        NEURON's seg.<mechanism> and `for mech in seg` look in
+        node_exact(sec, x): at the 1 end the zero-area end node, at the 0 end
+        of a root section the root node, at a child's 0 end the parent's node
+        at the connection; connect(parent(x), 1) swaps the ends. Of the
+        density mechanisms only extracellular is in a zero-area node.
+
+        None for an interior x, and for a 0 end inside a parent's interior
+        node: there the section's own mechanisms are used.
+        TODO(gap-79): NEURON uses the parent's. A Mechanism on this segment
+        can't read them: nrn_rangepointer looks in the section's own node and
+        raises through ctypes when the mechanism is not there.
+
+        Walked with orientation() and parentseg(), not nrn_segment_mechanisms:
+        at x = 0 that runs setup_topology, which throws through ctypes on a
+        section loop.
+        """
+        seg = self
+        seen = set()
+        while True:
+            x = seg._x
+            if 0.0 < x < 1.0:
+                return None
+            sec = seg._sec
+            sec._check_alive()
+            if _section_query(b"section_orientation", sec._sec):
+                x = 1.0 - x
+            if x >= 1.0:
+                return sec
+            if sec._sec in seen:  # a loop; NEURON raises when it sets it up
+                return None
+            seen.add(sec._sec)
+            parent_ptr = _nrn_section_parent(sec._sec)
+            if not parent_ptr:  # the root node
+                return sec
+            x = _section_query(b"parent_connection", sec._sec)
+            seg = Segment(_section_for(parent_ptr), x)
+
+    def _zero_area_mechanisms(self, owner):
+        """The density mechanisms usable at a zero-area node of *owner*.
+
+        Extracellular only, and only when this section has it too: a
+        Mechanism on this segment reads through this section.
+        """
+        name = "extracellular"
+        if not _has_mechanism(self._sec, name):
+            return []
+        if owner._sec != self._sec._sec and not _has_mechanism(owner, name):
+            return []
+        return [name]
+
     def node_index(self):
         """Return the internal NEURON node index for this segment.
 
@@ -844,6 +935,14 @@ class Segment:
             # call), which covers ions (the density-only cache omits them)
             # and the absent case.
             self._sec._check_alive()
+            if not 0.0 < self._x < 1.0:
+                # At an end NEURON uses the node there (_zero_area_owner).
+                owner = self._zero_area_owner()
+                if owner is not None:
+                    if name not in self._zero_area_mechanisms(owner):
+                        raise AttributeError(
+                            f"{name}, the mechanism does not exist at {self!r}"
+                        )
             # A stale list (the epoch moved since it was built) is not rebuilt
             # here: that is one ismembrane call per density mechanism, and a
             # section or template made in between moves the epoch. One
@@ -882,6 +981,13 @@ class Segment:
         """Iterate over Mechanism objects for each inserted mechanism."""
         from .mechanism import Mechanism
 
+        if not 0.0 < self._x < 1.0:
+            # At an end NEURON uses the node there (_zero_area_owner).
+            owner = self._zero_area_owner()
+            if owner is not None:
+                for mech_name in self._zero_area_mechanisms(owner):
+                    yield Mechanism(self._uncached_copy(), mech_name)
+                return
         mech_cache = self._mech_cache
         generation = current_nseg_generation(self._sec._sec)
         for mech_name in self._mechanism_order():
@@ -902,10 +1008,16 @@ class Segment:
         NEURON yields them in the order of the node's property list, which
         depends on insertion order and differs between nodes after an nseg
         change; nrn_segment_mechanisms (pending upstream) reports it. Without
-        it, registration order.
+        it, registration order. Not asked at an end: at x = 0 (or 1 on a
+        swapped section) the core runs setup_topology, which throws through
+        ctypes on a section loop.
         """
         inserted = self._sec._get_inserted_mechs()
-        if _nrn_segment_mechanisms is None or len(inserted) < 2:
+        if (
+            _nrn_segment_mechanisms is None
+            or len(inserted) < 2
+            or not 0.0 < self._x < 1.0
+        ):
             return inserted
         buf = (Symbol * 64)()
         count = _nrn_segment_mechanisms(self._sec._sec, self._x, buf, 64)
@@ -1202,8 +1314,15 @@ PYTHON_SECTIONS = weakref.WeakValueDictionary()
 def _section_for(sec_ptr):
     """The section at *sec_ptr* as NEURON hands it to Python: the object it
     was created as (a subclass instance keeps its class and attributes), or
-    a new wrapper for a section made in HOC."""
-    sec = PYTHON_SECTIONS.get(sec_ptr)
+    a new wrapper for a section made in HOC.
+
+    Every section handed out by pointer goes through here: n.cas() (and so
+    get_segment(), get_loc(), NetCon.preseg()/postseg()), SectionList
+    iteration, SectionRef and the tree methods. allsec() does the same lookup
+    inline."""
+    # The weak reference itself, as allsec() reads it: .get() costs more.
+    ref = PYTHON_SECTIONS.data.get(sec_ptr)
+    sec = ref() if ref is not None else None
     return sec if sec is not None else Section._from_ptr(sec_ptr)
 
 
@@ -1390,6 +1509,15 @@ class Section:
     )
 
     def __init__(self, name=None, cell=None, _pynative=True):
+        try:
+            object.__getattribute__(self, "_sec")
+        except AttributeError:
+            pass
+        else:
+            # Already made: NEURON's NPySecObj_init does nothing then, and a
+            # second section would leave PYTHON_SECTIONS mapping the first
+            # one's pointer to this object.
+            return
         if cell is not None and isinstance(cell, str):
             raise TypeError("cell must be an object, not a string")
         if cell is not None and not str(cell).isascii():
@@ -2042,6 +2170,12 @@ class Section:
         except AttributeError:
             return
         if pynative:
+            # Before the section can be freed, as NEURON clears PROP_PY_INDEX
+            # before sec_free: weak references are cleared only after
+            # __del__ returns, so a subclass __del__ still running here could
+            # otherwise be handed out for a new section in this slot.
+            if PYTHON_SECTIONS.get(sec_ptr) is self:
+                del PYTHON_SECTIONS[sec_ptr]
             _forget_nseg_history(sec_ptr)
             if sec_ptr in OWNED_SECTIONS:
                 # Frees it, or drops the reference a HOC delete_section kept.
