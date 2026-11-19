@@ -354,7 +354,7 @@ jobs:
             $quoteOut = cmd.exe /s /c --% ""%NRNIV_QUOTE%" -nobanner -c "print ""2+2""" -c "quit()""
             if ($LASTEXITCODE -ne 0) { throw "serial nrniv.cmd Test 2 failed on Python $ver ($LASTEXITCODE): $quoteOut" }
             $quoteText = @($quoteOut) -join "`n"
-            if ($quoteText -notlike '*2+2*') { throw "serial nrniv.cmd Test 2 dropped the quoted string on Python $ver: $quoteText" }
+            if ($quoteText -notlike '*2+2*') { throw "serial nrniv.cmd Test 2 dropped the quoted string on Python ${ver}: $quoteText" }
             Remove-Item Env:NRNIV_QUOTE -ErrorAction SilentlyContinue
             # Unix Test 4 is nrnivmodl tmp_mod / cacum.mod then ARCH/special.
             # Windows nrnivmodl is the CMake package (not bash nrnivmodl.in);
