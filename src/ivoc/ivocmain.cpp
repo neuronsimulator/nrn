@@ -16,6 +16,9 @@ void hoc_main1_init(const char*, const char**);
 #include <deque>
 #include <filesystem>
 #include <string>
+#if defined(_WIN32)
+#include "../oc/nrn_windows_home.hpp"
+#endif
 #if HAVE_UNISTD_H
 #include <unistd.h>
 #if !defined(__APPLE__)
@@ -536,30 +539,36 @@ nrniv [options] [fileargs]
     }
 
 #else  // Not unix:
-    neuron_home = getenv("NEURONHOME");
-    if (neuron_home) {
-        // setneuronhome sets this when it derives NEURONHOME from the
-        // executable. If the user already set it (cmake/wheel tree), skip
-        // the InterViews win.ini abort; there is no [InterViews] location.
-#if defined(WIN32) && HAVE_IV
-        bad_install_ok = 1;
-#endif
-#if defined(WIN32)
-        /* getenv NEURONHOME is a native path (wheel os.path.abspath, cmake
-           probe). \ in HOC "..." is an escape; ...\nrn always contains \n.
-           fopen accepts /. Same as setneuronhome / getcwd / File.getname.
-           Do not mutate the environment string. */
+    {
+        // Do not use getenv. The CRT wide-to-narrow conversion can substitute
+        // a different path and still return non-null.
         static std::string nrn_win_home_owned;
-        nrn_win_home_owned.assign(neuron_home);
-        for (char& c: nrn_win_home_owned) {
-            if (c == '\\') {
-                c = '/';
-            }
+        std::string narrow;
+        nrn_win_neuronhome_status const status = nrn_win_neuronhome_env(narrow);
+        if (status == nrn_win_neuronhome_status::refused) {
+            // The diagnostic is already on stderr. Discovery would accept
+            // another directory. MessageBox hangs SSH and CI.
+            exit(1);
         }
-        neuron_home = &nrn_win_home_owned[0];
+        if (status == nrn_win_neuronhome_status::ok) {
+            // setneuronhome sets this when it derives NEURONHOME from the
+            // executable. A caller-supplied path has no [InterViews] location.
+#if defined(WIN32) && HAVE_IV
+            bad_install_ok = 1;
 #endif
-    } else {
-        setneuronhome((argc > 0) ? argv[0] : 0);
+            /* \ in HOC "..." is an escape; ...\nrn always contains \n.
+               fopen accepts /. Same as setneuronhome / getcwd / File.getname.
+               Do not mutate the environment string. */
+            nrn_win_home_owned = std::move(narrow);
+            for (char& c: nrn_win_home_owned) {
+                if (c == '\\') {
+                    c = '/';
+                }
+            }
+            neuron_home = &nrn_win_home_owned[0];
+        } else {
+            setneuronhome((argc > 0) ? argv[0] : 0);
+        }
     }
     if (!neuron_home) {
 #if defined(WIN32) && HAVE_IV

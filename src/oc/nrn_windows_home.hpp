@@ -195,6 +195,35 @@ inline std::string nrn_win_path_acp(const std::filesystem::path& path) {
     return narrow;
 }
 
+// Wheel launchers set NEURONHOME before nrniv starts. Narrow getenv can
+// substitute a character and still return non-null, which skips discovery.
+// unset: missing or empty (discovery still runs). ok: ACP bytes in narrow.
+// refused: nrn_win_path_acp already printed; the caller must not keep the
+// substituted bytes and must not fall through to a different directory.
+enum class nrn_win_neuronhome_status { unset, ok, refused };
+
+inline nrn_win_neuronhome_status nrn_win_neuronhome_env(std::string& narrow) {
+    // Size includes the terminating NUL. 0 is unset. 1 is an empty value.
+    DWORD const need = GetEnvironmentVariableW(L"NEURONHOME", nullptr, 0);
+    if (need <= 1) {
+        return nrn_win_neuronhome_status::unset;
+    }
+    std::wstring wide(static_cast<size_t>(need), L'\0');
+    DWORD const got = GetEnvironmentVariableW(L"NEURONHOME", &wide[0], need);
+    if (got == 0 || got >= need) {
+        return nrn_win_neuronhome_status::unset;
+    }
+    wide.resize(got);
+    if (wide.empty()) {
+        return nrn_win_neuronhome_status::unset;
+    }
+    narrow = nrn_win_path_acp(std::filesystem::path(wide));
+    if (narrow.empty()) {
+        return nrn_win_neuronhome_status::refused;
+    }
+    return nrn_win_neuronhome_status::ok;
+}
+
 // addr is a symbol in this binary (setneuronhome lives in nrniv.dll / the exe).
 inline std::filesystem::path nrn_win_neuronhome_from_symbol(const void* addr, const char* argv0) {
     HMODULE self = nullptr;
