@@ -6,5 +6,7 @@ rem setup-python leaves `python` as 3.14, which is not the wheel's interpreter.
 set "PY=%~dp0python.exe"
 if not exist "%PY%" set "PY=%~dp0..\python.exe"
 if not exist "%PY%" set "PY=python"
+rem Doubled quotes are one quote: nrniv -c "print ""hello""". PowerShell
+rem strips those quotes before cmd sees them. docs/install/install_instructions.md
 "%PY%" "%~dp0%~n0" %*
 exit /b %ERRORLEVEL%

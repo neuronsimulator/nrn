@@ -15,6 +15,20 @@ def _binwrapper():
     return mod
 
 
+def test_cmd_launcher_keeps_percent_star_and_doubled_quotes():
+    """%* stays. A quoted -c is documented as doubled quotes, not a new launcher."""
+    cmd = (
+        REPO_ROOT / "share" / "lib" / "python" / "scripts" / "binwrapper.cmd"
+    ).read_text(encoding="utf-8")
+    assert '"%PY%" "%~dp0%~n0" %*' in cmd
+    assert 'print ""hello""' in cmd
+    doc = (REPO_ROOT / "docs" / "install" / "install_instructions.md").read_text(
+        encoding="utf-8"
+    )
+    assert 'print ""hello""' in doc
+    assert "cmd /s /c" in doc
+
+
 def test_cmd_launcher_finds_prefix_python_before_path():
     """Hosted CPython keeps python.exe above Scripts; a venv keeps it beside the .cmd."""
     cmd = (

@@ -137,6 +137,22 @@ python -m pip install neuron
 Nightly builds: `python -m pip install neuron-nightly`. Unset `PYTHONPATH` and `NEURONHOME` so an
 older installer is not picked up.
 
+A hoc string in `nrniv -c` needs doubled quotes. Command Prompt parses those itself:
+
+```
+nrniv -c "print ""hello""" -c "quit()"
+```
+
+That is `print "hello"`. PowerShell removes the quotes while calling a `.cmd` file, so the
+same text has to be parsed by `cmd.exe`. With `nrniv` on `PATH`:
+
+```
+cmd /s /c "nrniv -c `"print `"`"hello`"`"`" -c `"quit()`""
+```
+
+`cmd /s /c` strips the first and last quote when the command starts with a quote. A full
+path therefore needs one more pair around the whole command. The wheel CI uses that form.
+
 `nrnivmodl` and RxD reaction compilation on the wheel use **Microsoft `cl.exe`**, not the MinGW
 `g++` bundled with `setup.exe`. The wheel does not ship a compiler. In Visual Studio Installer, on
 the Workloads page, select only

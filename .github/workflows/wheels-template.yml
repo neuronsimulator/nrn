@@ -343,13 +343,19 @@ jobs:
               }
             }
             $nrniv = Get-NrnCmd 'nrniv'
-            # Unix Test 2 is nrniv -c 'print "hello"'. pwsh -> cmd %* drops the
-            # inner quotes (print hello is an undefined variable). print 42 is
-            # the same hoc print statement. mpiexec cannot CreateProcess
-            # extensionless Scripts\nrniv; nrniv.cmd is the PATHEXT wrapper.
-            Write-Host "serial nrniv.cmd Test 2: $nrniv -c print 42 / quit"
-            & $nrniv -c 'print 42' -c 'quit()'
-            if ($LASTEXITCODE -ne 0) { throw "serial nrniv.cmd Test 2 failed on Python $ver ($LASTEXITCODE)" }
+            # Unix Test 2 is nrniv -c 'print "hello"'. PowerShell strips quotes
+            # before a .cmd file is parsed, so cmd.exe has to see them. /s
+            # strips one extra pair because the path is quoted. Doubled quotes
+            # are one hoc quote. print "2+2" stays the characters 2+2; without
+            # the quotes hoc prints 4. mpiexec cannot CreateProcess extensionless
+            # Scripts\nrniv; nrniv.cmd is the PATHEXT wrapper.
+            $env:NRNIV_QUOTE = $nrniv
+            Write-Host "serial nrniv.cmd Test 2: cmd /s /c quoted print 2+2 ($nrniv)"
+            $quoteOut = cmd.exe /s /c --% ""%NRNIV_QUOTE%" -nobanner -c "print ""2+2""" -c "quit()""
+            if ($LASTEXITCODE -ne 0) { throw "serial nrniv.cmd Test 2 failed on Python $ver ($LASTEXITCODE): $quoteOut" }
+            $quoteText = @($quoteOut) -join "`n"
+            if ($quoteText -notlike '*2+2*') { throw "serial nrniv.cmd Test 2 dropped the quoted string on Python $ver: $quoteText" }
+            Remove-Item Env:NRNIV_QUOTE -ErrorAction SilentlyContinue
             # Unix Test 4 is nrnivmodl tmp_mod / cacum.mod then ARCH/special.
             # Windows nrnivmodl is the CMake package (not bash nrnivmodl.in);
             # output is cwd/nrnmech.dll and NRNIVMODL_SPECIAL is OFF. cmake
