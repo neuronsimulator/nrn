@@ -3,6 +3,8 @@
 import importlib.util
 from pathlib import Path
 
+import pytest
+
 REPO_ROOT = Path(__file__).resolve().parents[3]
 MOD = REPO_ROOT / "share" / "lib" / "python" / "neuron" / "_windows_cxx.py"
 
@@ -139,6 +141,156 @@ def test_rxd_compiler_discovers_when_include_is_unset(monkeypatch, tmp_path):
     env = {"PATH": str(tmp_path)}
     monkeypatch.setattr(m, "msvc_vc_env", lambda: None)
     assert m.windows_rxd_compiler(env, str(tmp_path / "nrn")) is None
+
+
+def test_user_args_follow_the_compiler():
+    """Flags after the compiler are kept. /I is not part of cl.exe."""
+    m = _mod()
+    assert m._cxx_user_args(r"cl.exe /I C:\sdk\include") == ["/I", r"C:\sdk\include"]
+    assert m._cxx_user_args(r"cl.exe /IC:\sdk\include") == [r"/IC:\sdk\include"]
+    assert m._cxx_user_args("g++ -I/usr/include -DFOO=1") == [
+        "-I/usr/include",
+        "-DFOO=1",
+    ]
+    quoted = '"%s" /nologo /I C:\\sdk\\include' % CL
+    assert m._cxx_executable(quoted) == CL
+    assert m._cxx_user_args(quoted) == ["/nologo", "/I", r"C:\sdk\include"]
+    assert m._cxx_user_args("g++") == []
+    kept = m._cxx_user_args(
+        "g++ -I/usr/include -DFOO -O2 -shared -fPIC -fopenmp -openmp -std=c++17"
+    )
+    assert kept == [
+        "-I/usr/include",
+        "-DFOO",
+        "-O2",
+        "-shared",
+        "-fPIC",
+        "-fopenmp",
+        "-openmp",
+        "-std=c++17",
+    ]
+    msvc_kept = m._cxx_user_args(r"cl.exe /nologo /O2 /LD /DFOO /I C:\sdk\include")
+    assert "/O2" in msvc_kept
+    assert "/LD" in msvc_kept
+    assert r"C:\sdk\include" in msvc_kept
+
+
+def test_output_flags_are_rejected():
+    """RxD names the DLL. -o and /Fe must not be forwarded in silence."""
+    m = _mod()
+    rejected = (
+        "g++ -o /tmp/x.so",
+        "g++ -o/tmp/x.so",
+        "g++ --output /tmp/x.so",
+        "g++ --output=/tmp/x.so",
+        r"cl.exe /FeC:\out.dll",
+        r"cl.exe /FoC:\obj\rxd.obj",
+        "cl.exe /OUT:x.dll",
+        "cl.exe /link",
+        "cl.exe /LINK",
+        "g++ -O2 -ofast.so",
+    )
+    for cxx in rejected:
+        with pytest.raises(ValueError, match="output file"):
+            m._cxx_user_args(cxx)
+    assert "-O2" in m._cxx_user_args("g++ -O2")
+    assert "/O2" in m._cxx_user_args("cl.exe /O2")
+
+
+def test_rxd_command_forwards_user_flags():
+    """User flags sit after the include directory and before the source."""
+    m = _mod()
+    cmd = m.rxd_compile_command(
+        "cl.exe",
+        ["/I", r"C:\sdk\include"],
+        include=r"C:\py\include",
+        src="rxd.cpp",
+        out=r"C:\out\rxd.so",
+        rxdmath=r"C:\nrn\lib\rxdmath.lib",
+        msvc=True,
+        win=True,
+        sysroot=[],
+    )
+    inc = "/I" + r"C:\py\include"
+    at = cmd.index(inc)
+    assert cmd[at + 1 : at + 3] == ["/I", r"C:\sdk\include"]
+    assert cmd[at + 3] == "rxd.cpp"
+    assert cmd.index("/link") > at + 3
+    assert "/Fe" + r"C:\out\rxd.so" in cmd
+    libpath = next(i for i, item in enumerate(cmd) if item.startswith("/LIBPATH:"))
+    assert cmd.index("/link") < libpath
+
+    bare = m.rxd_compile_command(
+        "cl.exe",
+        [],
+        include="inc",
+        src="s.cpp",
+        out="o.so",
+        rxdmath="lib/rxdmath.lib",
+        msvc=True,
+        win=True,
+        sysroot=[],
+    )
+    assert bare == [
+        "cl.exe",
+        "/nologo",
+        "/LD",
+        "/EHsc",
+        "/O2",
+        "/Iinc",
+        "s.cpp",
+        "/Feo.so",
+        "/link",
+        "/LIBPATH:lib",
+        "rxdmath.lib",
+        "/EXPORT:reaction",
+    ]
+
+    gnu = m.rxd_compile_command(
+        "g++",
+        ["-I/usr/include", "-DFOO"],
+        include="/usr/include/python",
+        src="rxd.cpp",
+        out="/tmp/rxd.so",
+        rxdmath="/usr/lib/librxdmath.so",
+        msvc=False,
+        win=False,
+        sysroot=["-isysroot", "/sdk"],
+    )
+    assert gnu[:6] == [
+        "g++",
+        "-I/usr/include/python",
+        "-I/usr/include",
+        "-DFOO",
+        "-isysroot",
+        "/sdk",
+    ]
+    assert "-shared" in gnu and "-fPIC" in gnu and "-lm" in gnu
+    assert gnu[gnu.index("-o") + 1] == "/tmp/rxd.so"
+    assert gnu.index("rxd.cpp") < gnu.index("-o")
+
+    win_gnu = m.rxd_compile_command(
+        "g++",
+        ["-DFOO"],
+        include="inc",
+        src="s.cpp",
+        out="o.so",
+        rxdmath="lib/rxdmath.a",
+        msvc=False,
+        win=True,
+        sysroot=[],
+    )
+    assert "-fPIC" not in win_gnu
+    assert "-lm" not in win_gnu
+    assert win_gnu[2] == "-DFOO"
+
+
+def test_rxd_compile_uses_forwarded_flags():
+    text = (
+        REPO_ROOT / "share" / "lib" / "python" / "neuron" / "rxd" / "rxd.py"
+    ).read_text(encoding="utf-8")
+    assert "_cxx_user_args(" in text
+    assert "rxd_compile_command(" in text
 
 
 def test_msvc_cl_available_accepts_spaced_path(monkeypatch, tmp_path):

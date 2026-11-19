@@ -120,31 +120,104 @@ def _is_cxx_flag(token):
     return True
 
 
-def _cxx_executable(cxx):
-    """Compiler path from CXX. A cl.exe path that contains spaces stays one token.
+def _cxx_tokens(cxx):
+    """Compiler path and the flags that follow it.
 
     Quoted text is the executable, quotes removed. Otherwise tokens belong to
     the path until a flag. ``/I C:\\sdk\\include`` is not another directory of
     an unquoted Program Files path. ``C:\\cl tools\\bin\\g++.exe`` is one GNU
-    path: the ``cl`` component is not cl.exe.
+    path: the ``cl`` component is not cl.exe. Flags after that path are
+    whitespace-separated.
     """
     text = (cxx or "").strip()
     if not text:
-        return ""
+        return "", []
     if text[0] in "\"'":
         quote = text[0]
         end = text.find(quote, 1)
         if end < 0:
-            body = text[1:].strip()
-            return body.split()[0] if body else ""
-        return text[1:end]
+            parts = text[1:].split()
+            if not parts:
+                return "", []
+            return parts[0], parts[1:]
+        rest = text[end + 1 :].split()
+        return text[1:end], rest
     parts = text.split()
     end = 0
     for i, part in enumerate(parts):
         if i > 0 and _is_cxx_flag(part):
             break
         end = i + 1
-    return " ".join(parts[:end])
+    return " ".join(parts[:end]), parts[end:]
+
+
+def _cxx_executable(cxx):
+    """Compiler path from CXX. A cl.exe path that contains spaces stays one token."""
+    return _cxx_tokens(cxx)[0]
+
+
+def _cxx_owns_output(token):
+    """True when the flag names the object or the DLL RxD writes itself.
+
+    ``-o`` is lowercase. ``-O2`` is an optimization flag. ``-openmp`` is not
+    an output file. MSVC ``/Fe``, ``/Fo``, and ``/OUT`` are case-insensitive.
+    """
+    if token == "--output" or token.startswith("--output="):
+        return True
+    if token.startswith("-o") and token != "-openmp":
+        return True
+    low = token.lower()
+    if low == "/link":
+        return True
+    return low.startswith(("/fe", "/fo", "/out"))
+
+
+def _cxx_user_args(cxx):
+    """Flags after the compiler. A flag that names the output file is an error."""
+    flags = _cxx_tokens(cxx)[1]
+    for token in flags:
+        if _cxx_owns_output(token):
+            raise ValueError(
+                "RxD sets the output file itself and cannot accept %s in CXX. "
+                "Include and define flags are forwarded." % token
+            )
+    return flags
+
+
+def rxd_compile_command(
+    executable, user_args, *, include, src, out, rxdmath, msvc, win, sysroot
+):
+    """argv for one RxD reaction DLL. User flags sit after the include path."""
+    user_args = list(user_args)
+    if msvc:
+        return [
+            executable,
+            "/nologo",
+            "/LD",
+            "/EHsc",
+            "/O2",
+            "/I" + include,
+            *user_args,
+            src,
+            "/Fe" + out,
+            "/link",
+            "/LIBPATH:" + os.path.dirname(rxdmath),
+            "rxdmath.lib",
+            "/EXPORT:reaction",
+        ]
+    return [
+        executable,
+        "-I" + include,
+        *user_args,
+        *list(sysroot or []),
+        "-shared",
+        *(["-fPIC"] if not win else []),
+        src,
+        rxdmath,
+        "-o",
+        out,
+        *(["-lm"] if not win else []),
+    ]
 
 
 def _cxx_basename(path):

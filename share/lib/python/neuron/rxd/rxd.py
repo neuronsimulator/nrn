@@ -12,9 +12,11 @@ from .._windows_cxx import (
     MSVC_CXX_MISSING,
     _apply_vc_env,
     _cxx_executable,
+    _cxx_user_args,
     _is_msvc_cxx,
     _win_env_find_exe,
     msvc_vc_env as _msvc_vc_env,
+    rxd_compile_command,
     windows_rxd_compiler,
 )
 from . import initializer
@@ -579,12 +581,17 @@ def _cxx_compile(formula):
     cxx = os.environ.get("CXX")
     env = os.environ.copy()
     use_msvc = False
+    user_args = []
     if cxx:
         use_msvc = _is_msvc_cxx(cxx)
+        try:
+            user_args = _cxx_user_args(cxx)
+        except ValueError as e:
+            raise RxDException(str(e)) from e
+        # argv[0] is the executable. Quotes and a spaced Program Files path
+        # must not be split into GNU-style tokens. Flags stay in user_args.
+        cxx = _cxx_executable(cxx) or cxx
         if use_msvc:
-            # argv[0] is the executable. Quotes and a spaced Program Files path
-            # must not be split into GNU-style tokens.
-            cxx = _cxx_executable(cxx) or cxx
             vc = _msvc_vc_env()
             if vc:
                 _apply_vc_env(env, vc)
@@ -599,49 +606,31 @@ def _cxx_compile(formula):
         cxx, use_msvc = picked
     else:
         cxx = "g++"
-    if use_msvc:
-        # MSVC does not accept -shared/-fPIC/-o. /LD makes a DLL; /EXPORT is
-        # required because cl does not export unadorned C symbols.
-        cmd = [
-            cxx,
-            "/nologo",
-            "/LD",
-            "/EHsc",
-            "/O2",
-            "/I" + include,
-            src,
-            "/Fe" + out,
-            "/link",
-            "/LIBPATH:" + os.path.dirname(rxdmath),
-            "rxdmath.lib",
-            "/EXPORT:reaction",
+    win = sys.platform.lower().startswith("win")
+    sdk = "" if use_msvc else _macos_sdkroot()
+    sysroot = ["-isysroot", sdk] if sdk else []
+    # MSVC does not accept -shared/-fPIC/-o. /LD makes a DLL; /EXPORT is
+    # required because cl does not export unadorned C symbols.
+    cmd = rxd_compile_command(
+        cxx,
+        user_args,
+        include=include,
+        src=src,
+        out=out,
+        rxdmath=rxdmath,
+        msvc=use_msvc,
+        win=win,
+        sysroot=sysroot,
+    )
+    if not use_msvc and win:
+        # #3735: Anaconda's PATH can supply the wrong library. Search the
+        # shipped MinGW and the NEURON bin directory first. This env is
+        # the child process only.
+        prefix = [
+            os.path.join(h.neuronhome(), "mingw", "mingw64", "bin"),
+            os.path.join(h.neuronhome(), "bin"),
         ]
-    else:
-        fpic = [] if sys.platform.lower().startswith("win") else ["-fPIC"]
-        math_library = [] if sys.platform.lower().startswith("win") else ["-lm"]
-        sdk = _macos_sdkroot()
-        sysroot = ["-isysroot", sdk] if sdk else []
-        cmd = [
-            cxx,
-            "-I" + include,
-            *sysroot,
-            "-shared",
-            *fpic,
-            src,
-            rxdmath,
-            "-o",
-            out,
-            *math_library,
-        ]
-        if sys.platform.lower().startswith("win"):
-            # #3735: Anaconda's PATH can supply the wrong library. Search the
-            # shipped MinGW and the NEURON bin directory first. This env is
-            # the child process only.
-            prefix = [
-                os.path.join(h.neuronhome(), "mingw", "mingw64", "bin"),
-                os.path.join(h.neuronhome(), "bin"),
-            ]
-            env["PATH"] = os.pathsep.join(prefix + [env.get("PATH", "")])
+        env["PATH"] = os.pathsep.join(prefix + [env.get("PATH", "")])
     try:
         subprocess.check_call(cmd, env=env)
     except (OSError, subprocess.CalledProcessError) as e:
