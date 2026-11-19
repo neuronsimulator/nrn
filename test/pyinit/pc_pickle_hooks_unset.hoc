@@ -1,0 +1,17 @@
+// Under -nopython the PythonObject pickle hooks are not set. ParallelContext
+// calls that need them raise a HOC error instead of calling a null hook.
+objref pc, lst, got
+pc = new ParallelContext()
+lst = new List()
+
+proc expect_err() {
+    if (execute1($s1) != 0) {
+        execerror("did not fail:", $s1)
+    }
+}
+
+expect_err("pc.post(\"k\", lst)")
+expect_err("pc.pack(lst)")
+expect_err("got = pc.pyret()")
+print "pickle hooks unset: ok"
+quit()
