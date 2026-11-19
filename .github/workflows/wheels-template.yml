@@ -233,11 +233,12 @@ jobs:
             bash packaging/python/test_wheels.sh "$(command -v python${ver})" "${wheel}"
           done
 
-      # MSVC: pip install the win_amd64 wheel, import + neuron.test(), serial
-      # nrniv.cmd (Test 2), nrnivmodl.cmd tmp_mod (Test 4, cacum.mod ->
-      # nrnmech.dll), neurondemo.cmd demo(4)/run/quit (Test 10, demo/release
-      # nrnmech.dll), modlunit.cmd tmp_mod/cacum.mod (Test 11, nrnunits.lib),
-      # python MS-MPI, then nrniv.cmd hoc under mpiexec.
+      # MSVC: pip install the win_amd64 wheel, import + neuron.test(), the
+      # readline hook against nrniv.exe (Test 12; test_wheels.sh is not this
+      # job), serial nrniv.cmd (Test 2), nrnivmodl.cmd tmp_mod (Test 4,
+      # cacum.mod -> nrnmech.dll), neurondemo.cmd demo(4)/run/quit (Test 10,
+      # demo/release nrnmech.dll), modlunit.cmd tmp_mod/cacum.mod (Test 11,
+      # nrnunits.lib), python MS-MPI, then nrniv.cmd hoc under mpiexec.
       # setup-python leaves `python` as 3.14. Use the step paths so the 3.11
       # job does not test the 3.11 wheel on 3.14, and the abi3 job tests
       # 3.12-3.14.
@@ -295,6 +296,52 @@ jobs:
             if ($LASTEXITCODE -ne 0) { throw "import neuron failed on Python $ver ($LASTEXITCODE)" }
             & $py -c "import neuron; neuron.test()"
             if ($LASTEXITCODE -ne 0) { throw "neuron.test() failed on Python $ver ($LASTEXITCODE)" }
+            # Unix Test 12. test_wheels.sh does not run on this job. Launch
+            # nrniv.exe, not nrniv.cmd: a Python subprocess cannot
+            # CreateProcess the .cmd. The .cmd launcher would set NEURONHOME
+            # and NRN_PYLIB, NRN_PYTHONEXE, and NRN_PYTHONVERSION. This
+            # executable skips nrnpyenv.py only when those three are set.
+            # The script's interactive half needs a pty and prints
+            # readline-interactive-skipped here.
+            $hook = Join-Path $repo 'test/pyinit/readline_hook.py'
+            if (-not (Test-Path -LiteralPath $hook)) { throw "readline hook script not found at $hook" }
+            $nrnivExe = (& $py -c "import os, neuron; print(os.path.join(os.path.dirname(neuron.__file__), '.data', 'bin', 'nrniv.exe'))" | Select-Object -Last 1).ToString().Trim()
+            if ($LASTEXITCODE -ne 0 -or -not $nrnivExe) { throw "readline hook: could not locate nrniv.exe on Python $ver ($LASTEXITCODE)" }
+            if (-not (Test-Path -LiteralPath $nrnivExe)) { throw "readline hook: nrniv not found at $nrnivExe" }
+            $neuronHome = (& $py -c "import os, neuron; print(os.path.abspath(os.path.join(os.path.dirname(neuron.__file__), '.data', 'share', 'nrn')))" | Select-Object -Last 1).ToString().Trim()
+            if ($LASTEXITCODE -ne 0 -or -not $neuronHome) { throw "readline hook: could not locate NEURONHOME on Python $ver ($LASTEXITCODE)" }
+            if (-not (Test-Path -LiteralPath $neuronHome -PathType Container)) { throw "readline hook: NEURONHOME not found at $neuronHome" }
+            $pyInfo = & $py -c "import sys; from find_libpython import find_libpython; pylib = find_libpython(); import sys as _sys; _sys.exit('find_libpython returned nothing') if not pylib else None; print(sys.executable); print('%d.%d' % sys.version_info[:2]); print(pylib)"
+            if ($LASTEXITCODE -ne 0) { throw "readline hook: find_libpython failed on Python $ver ($LASTEXITCODE)" }
+            $parts = @(@($pyInfo) | ForEach-Object { "$_" -split '\r?\n' } | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne '' })
+            if ($parts.Count -lt 3) { throw "readline hook: expected executable, version, and pylib from Python $ver" }
+            $parts = @($parts[($parts.Count - 3)..($parts.Count - 1)])
+            $hookNames = @('NEURONHOME', 'NRN_PYTHONEXE', 'NRN_PYTHONVERSION', 'NRN_PYLIB')
+            $hookVals = @{
+              NEURONHOME = $neuronHome
+              NRN_PYTHONEXE = $parts[0]
+              NRN_PYTHONVERSION = $parts[1]
+              NRN_PYLIB = $parts[2]
+            }
+            if (-not (Test-Path -LiteralPath $hookVals.NRN_PYLIB)) { throw "readline hook: NRN_PYLIB not found at $($hookVals.NRN_PYLIB)" }
+            $savedHook = @{}
+            foreach ($name in $hookNames) {
+              $savedHook[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
+              Set-Item -Path "Env:$name" -Value $hookVals[$name]
+            }
+            try {
+              Write-Host "readline hook Test 12: $py $hook $nrnivExe"
+              & $py $hook $nrnivExe
+              if ($LASTEXITCODE -ne 0) { throw "readline hook Test 12 failed on Python $ver ($LASTEXITCODE)" }
+            } finally {
+              foreach ($name in $hookNames) {
+                if ($null -eq $savedHook[$name]) {
+                  Remove-Item "Env:$name" -ErrorAction SilentlyContinue
+                } else {
+                  Set-Item -Path "Env:$name" -Value $savedHook[$name]
+                }
+              }
+            }
             $nrniv = Get-NrnCmd 'nrniv'
             # Unix Test 2 is nrniv -c 'print "hello"'. pwsh -> cmd %* drops the
             # inner quotes (print hello is an undefined variable). print 42 is

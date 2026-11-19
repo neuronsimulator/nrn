@@ -235,7 +235,9 @@ run_serial_test () {
     # Wheel builds set NRN_ENABLE_TESTS=OFF, so ctest pyinit::readline_hook
     # does not run. Launch the real executable under neuron/.data/bin.
     # A Python subprocess cannot CreateProcess nrniv.cmd. The hook script
-    # closes stdin. Leave the full ctest suite off.
+    # closes stdin for the pointer check, then on Unix submits one Python
+    # statement on a pty. Python calls the hook only when stdin and stdout
+    # are ttys. Leave the full ctest suite off.
     # The wheel nrniv launcher sets NEURONHOME and NRN_PYLIB, NRN_PYTHONEXE,
     # and NRN_PYTHONVERSION. nrniv skips nrnpyenv.sh only when those three
     # are set. This launch runs the .data/bin executable itself. The binary's
