@@ -60,4 +60,6 @@ quit()
 
 
 if __name__ == "__main__":
-    test_nrniv()
+    # In-tree and foreign ctest run this file with the interpreter. The
+    # skipif above applies only when pytest collects the test.
+    raise SystemExit(pytest.main([__file__]))

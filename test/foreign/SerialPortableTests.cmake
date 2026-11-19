@@ -116,7 +116,8 @@ foreach(ext hoc py)
   foreach(hoc_script ${hoc_scripts})
     get_filename_component(name "${hoc_script}" NAME_WLE)
     if(ext STREQUAL "py")
-      # Match in-tree: plain python interpreter (not pytest, not special -python).
+      # Match in-tree: plain python interpreter (not special -python). test_nrniv-launch.py enters
+      # pytest from __main__ so its skipif runs.
       nrn_add_test(
         GROUP hoctests
         NAME ${name}_${ext}
