@@ -11,10 +11,9 @@ from .rxdException import RxDException
 from .._windows_cxx import (
     MSVC_CXX_MISSING,
     _apply_vc_env,
-    _cxx_executable,
+    _cxx_argv_prefix,
     _cxx_user_args,
     _is_msvc_cxx,
-    _win_env_find_exe,
     msvc_vc_env as _msvc_vc_env,
     rxd_compile_command,
     windows_rxd_compiler,
@@ -588,15 +587,15 @@ def _cxx_compile(formula):
             user_args = _cxx_user_args(cxx)
         except ValueError as e:
             raise RxDException(str(e)) from e
-        # argv[0] is the executable. Quotes and a spaced Program Files path
-        # must not be split into GNU-style tokens. Flags stay in user_args.
-        cxx = _cxx_executable(cxx) or cxx
+        # argv is the wrapper, then the compiler. A spaced Program Files
+        # path stays one element. Replace a missing cl.exe in place so a
+        # ccache-style wrapper is not dropped. Flags stay in user_args.
+        vc = None
         if use_msvc:
             vc = _msvc_vc_env()
             if vc:
                 _apply_vc_env(env, vc)
-                if not os.path.isfile(cxx):
-                    cxx = _win_env_find_exe(vc, "cl.exe") or cxx
+        cxx = _cxx_argv_prefix(cxx, vc)
     elif sys.platform.lower().startswith("win"):
         # MinGW when setup.exe shipped it. Otherwise cl.exe already on PATH
         # with INCLUDE and LIB, and only then vswhere.

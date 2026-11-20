@@ -293,6 +293,60 @@ def test_rxd_compile_uses_forwarded_flags():
     assert "rxd_compile_command(" in text
 
 
+def test_ccache_wrapper_stays_in_front_of_the_compiler():
+    """ccache g++ -O2 is not an executable named 'ccache g++'."""
+    m = _mod()
+    cxx = "ccache g++ -O2"
+    assert m._cxx_command_prefix(cxx) == ["ccache", "g++"]
+    assert m._cxx_executable(cxx) == "g++"
+    assert not m._is_msvc_cxx(cxx)
+    assert m._cxx_user_args(cxx) == ["-O2"]
+    cmd = m.rxd_compile_command(
+        m._cxx_command_prefix(cxx),
+        m._cxx_user_args(cxx),
+        include="/usr/include/python",
+        src="rxd.cpp",
+        out="/tmp/rxd.so",
+        rxdmath="/usr/lib/librxdmath.so",
+        msvc=False,
+        win=False,
+        sysroot=[],
+    )
+    assert cmd[:4] == ["ccache", "g++", "-I/usr/include/python", "-O2"]
+    stacked = "distcc ccache g++ -O2"
+    assert m._cxx_command_prefix(stacked) == ["distcc", "ccache", "g++"]
+    assert m._cxx_executable("sccache /usr/bin/g++") == "/usr/bin/g++"
+    assert m._cxx_command_prefix("icecc g++") == ["icecc", "g++"]
+
+
+def test_quoted_flag_value_stays_one_argument():
+    """A flag value with spaces is one argv word. Windows \\ stays a path."""
+    m = _mod()
+    assert m._cxx_user_args('g++ -DFOO="hello world" -O2') == [
+        "-DFOO=hello world",
+        "-O2",
+    ]
+    assert m._cxx_executable('g++ -DFOO="hello world" -O2') == "g++"
+    windows = r'cl.exe /I "C:\Program Files\SDK"'
+    assert m._cxx_executable(windows) == "cl.exe"
+    assert m._cxx_user_args(windows) == ["/I", r"C:\Program Files\SDK"]
+    assert m._cxx_user_args(r'ccache g++ -DNAME="a b"') == ["-DNAME=a b"]
+
+
+def test_msvc_lookup_replaces_the_compiler_and_keeps_the_wrapper(tmp_path):
+    m = _mod()
+    cl = tmp_path / "cl.exe"
+    cl.write_bytes(b"")
+    prefix = m._cxx_argv_prefix("ccache cl.exe", {"PATH": str(tmp_path)})
+    assert prefix == ["ccache", str(cl)]
+    real = tmp_path / "real-cl.exe"
+    real.write_bytes(b"")
+    kept = m._cxx_argv_prefix(
+        "ccache " + str(real), {"PATH": str(tmp_path / "missing")}
+    )
+    assert kept == ["ccache", str(real)]
+
+
 def test_msvc_cl_available_accepts_spaced_path(monkeypatch, tmp_path):
     m = _mod()
     cl = tmp_path / "Program Files" / "cl.exe"

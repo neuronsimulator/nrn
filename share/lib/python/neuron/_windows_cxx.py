@@ -1,7 +1,9 @@
 """MSVC cl.exe / cmake lookup for the Windows pip wheel (not setup.exe MinGW)."""
 
 import os
+import shlex
 import subprocess
+import sys
 from shutil import which
 
 # Build Tools page; Desktop development with C++ is the workload that provides cl.exe.
@@ -120,40 +122,123 @@ def _is_cxx_flag(token):
     return True
 
 
-def _cxx_tokens(cxx):
-    """Compiler path and the flags that follow it.
+# Basename, without .exe. A leading ccache/distcc word is argv[0], not part of
+# the compiler path. ``ccache g++ -O2`` used to become an executable named
+# "ccache g++", and ccache then treated -I as its own option.
+_CXX_WRAPPERS = ("ccache", "distcc", "sccache", "icecc")
 
-    Quoted text is the executable, quotes removed. Otherwise tokens belong to
-    the path until a flag. ``/I C:\\sdk\\include`` is not another directory of
-    an unquoted Program Files path. ``C:\\cl tools\\bin\\g++.exe`` is one GNU
-    path: the ``cl`` component is not cl.exe. Flags after that path are
-    whitespace-separated.
+
+def _split_unix_words(text):
+    """POSIX argv words. ``#`` is not a comment: it can sit inside a -D value."""
+    lexer = shlex.shlex(text, posix=True)
+    lexer.whitespace_split = True
+    lexer.commenters = ""
+    return list(lexer)
+
+
+def _split_windows_words(text):
+    """CommandLine-style words. Backslash is a path character, not an escape.
+
+    POSIX shlex eats ``\\`` in ``C:\\sdk``. These tests run on Linux, so a
+    string that contains a backslash uses this splitter even on Unix.
+    """
+    words = []
+    i = 0
+    n = len(text)
+    while i < n:
+        while i < n and text[i] in " \t":
+            i += 1
+        if i >= n:
+            break
+        buf = []
+        if text[i] in "\"'":
+            quote = text[i]
+            i += 1
+            while i < n and text[i] != quote:
+                buf.append(text[i])
+                i += 1
+            if i < n:
+                i += 1
+            words.append("".join(buf))
+            continue
+        while i < n and text[i] not in " \t":
+            if text[i] in "\"'":
+                quote = text[i]
+                i += 1
+                while i < n and text[i] != quote:
+                    buf.append(text[i])
+                    i += 1
+                if i < n:
+                    i += 1
+                continue
+            buf.append(text[i])
+            i += 1
+        words.append("".join(buf))
+    return words
+
+
+def _split_cxx_words(text):
+    if sys.platform == "win32" or "\\" in text:
+        return _split_windows_words(text)
+    return _split_unix_words(text)
+
+
+def _is_cxx_wrapper(token):
+    base = token.replace("\\", "/").rsplit("/", 1)[-1].lower()
+    if base.endswith(".exe"):
+        base = base[:-4]
+    return base in _CXX_WRAPPERS
+
+
+def _cxx_tokens(cxx):
+    """Wrapper-and-compiler argv prefix, then the flags that follow.
+
+    ``ccache g++ -O2`` is ``["ccache", "g++"]`` and ``["-O2"]``. An unquoted
+    ``C:\\Program Files\\...\\cl.exe`` stays one path until a flag.
+    ``/I C:\\sdk\\include`` is not another directory of that path. A quoted
+    flag value, including one with spaces, stays one argument.
     """
     text = (cxx or "").strip()
     if not text:
-        return "", []
-    if text[0] in "\"'":
-        quote = text[0]
-        end = text.find(quote, 1)
-        if end < 0:
-            parts = text[1:].split()
-            if not parts:
-                return "", []
-            return parts[0], parts[1:]
-        rest = text[end + 1 :].split()
-        return text[1:end], rest
-    parts = text.split()
-    end = 0
-    for i, part in enumerate(parts):
-        if i > 0 and _is_cxx_flag(part):
-            break
+        return [], []
+    words = _split_cxx_words(text)
+    if not words:
+        return [], []
+    prefix = []
+    i = 0
+    while i < len(words) and _is_cxx_wrapper(words[i]):
+        prefix.append(words[i])
+        i += 1
+    if i < len(words) and not _is_cxx_flag(words[i]):
         end = i + 1
-    return " ".join(parts[:end]), parts[end:]
+        while end < len(words) and not _is_cxx_flag(words[end]):
+            end += 1
+        prefix.append(" ".join(words[i:end]))
+        i = end
+    return prefix, words[i:]
+
+
+def _cxx_command_prefix(cxx):
+    """argv words before user flags. A compiler wrapper stays in front."""
+    return _cxx_tokens(cxx)[0]
 
 
 def _cxx_executable(cxx):
     """Compiler path from CXX. A cl.exe path that contains spaces stays one token."""
-    return _cxx_tokens(cxx)[0]
+    prefix = _cxx_command_prefix(cxx)
+    return prefix[-1] if prefix else ""
+
+
+def _cxx_argv_prefix(cxx, vc=None):
+    """Prefix for RxD. A missing cl.exe is replaced. The wrapper is kept."""
+    prefix = list(_cxx_command_prefix(cxx))
+    if not prefix:
+        return [cxx] if cxx else []
+    if vc is not None and prefix[-1] and not os.path.isfile(prefix[-1]):
+        found = _win_env_find_exe(vc, "cl.exe")
+        if found:
+            prefix[-1] = found
+    return prefix
 
 
 def _cxx_owns_output(token):
@@ -187,11 +272,19 @@ def _cxx_user_args(cxx):
 def rxd_compile_command(
     executable, user_args, *, include, src, out, rxdmath, msvc, win, sysroot
 ):
-    """argv for one RxD reaction DLL. User flags sit after the include path."""
+    """argv for one RxD reaction DLL. User flags sit after the include path.
+
+    executable is a compiler path or a prefix list (ccache, then g++). The
+    wrapper stays in front so it does not treat ``-I`` as its own option.
+    """
+    if isinstance(executable, (list, tuple)):
+        prefix = list(executable)
+    else:
+        prefix = [executable]
     user_args = list(user_args)
     if msvc:
         return [
-            executable,
+            *prefix,
             "/nologo",
             "/LD",
             "/EHsc",
@@ -206,7 +299,7 @@ def rxd_compile_command(
             "/EXPORT:reaction",
         ]
     return [
-        executable,
+        *prefix,
         "-I" + include,
         *user_args,
         *list(sysroot or []),
