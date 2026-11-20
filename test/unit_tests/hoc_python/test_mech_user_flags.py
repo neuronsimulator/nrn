@@ -29,6 +29,30 @@ def _probe_compiler():
     raise RuntimeError("no compiler path for the mech-flag probe")
 
 
+def _without_sanitizer_preload(env):
+    """Copy env without a sanitizer preload.
+
+    python_unit_tests preloads libtsan. CMake is not instrumented, and its
+    configure then waits until ctest hits the 1000s timeout. Import children
+    of this suite keep the preload.
+    """
+    child = env.copy()
+    child.pop("LD_PRELOAD", None)
+    child.pop("DYLD_INSERT_LIBRARIES", None)
+    name = child.get("NRN_SANITIZER_PRELOAD_VAR") or ""
+    if name:
+        child.pop(name, None)
+    return child
+
+
+def _cmake_env():
+    """Configure with a forced compiler and no sanitizer preload."""
+    env = _without_sanitizer_preload(os.environ)
+    for key in ("CC", "CXX", "CFLAGS", "CXXFLAGS", "LDFLAGS"):
+        env.pop(key, None)
+    return env
+
+
 CMAKE = r"""
 cmake_minimum_required(VERSION 3.20)
 # Before project(). A later set does not stop CMake 3.20 from compiling an
@@ -121,13 +145,10 @@ def test_generated_command_keeps_semicolon_and_windows_backslash(tmp_path):
         encoding="utf-8",
     )
     build = tmp_path / "b"
-    env = os.environ.copy()
-    for key in ("CC", "CXX", "CFLAGS", "CXXFLAGS", "LDFLAGS"):
-        env.pop(key, None)
     subprocess.check_call(
         ["cmake", "-S", str(tmp_path), "-B", str(build), "-G", "Ninja"],
         cwd=tmp_path,
-        env=env,
+        env=_cmake_env(),
     )
     ninja = (build / "build.ninja").read_text(encoding="utf-8")
     win = _target_blob(ninja, "win")
@@ -162,13 +183,10 @@ def test_repeated_include_and_link_options_keep_their_flags(tmp_path):
         encoding="utf-8",
     )
     build = tmp_path / "b"
-    env = os.environ.copy()
-    for key in ("CC", "CXX", "CFLAGS", "CXXFLAGS", "LDFLAGS"):
-        env.pop(key, None)
     subprocess.check_call(
         ["cmake", "-S", str(tmp_path), "-B", str(build), "-G", "Ninja"],
         cwd=tmp_path,
-        env=env,
+        env=_cmake_env(),
     )
     ninja = (build / "build.ninja").read_text(encoding="utf-8")
     unix = _target_blob(ninja, "rep")
@@ -231,19 +249,30 @@ def test_create_nrnmech_keeps_quoted_list_as_separate_arguments(tmp_path):
         text = text.replace(key, value)
     (tmp_path / "CMakeLists.txt").write_text(text, encoding="utf-8")
     build = tmp_path / "b"
-    env = os.environ.copy()
-    for key in ("CC", "CXX", "CFLAGS", "CXXFLAGS", "LDFLAGS"):
-        env.pop(key, None)
     subprocess.check_call(
         ["cmake", "-S", str(tmp_path), "-B", str(build), "-G", "Ninja"],
         cwd=tmp_path,
-        env=env,
+        env=_cmake_env(),
     )
     ninja = (build / "build.ninja").read_text(encoding="utf-8")
     assert "--foo;--bar" not in ninja
     assert "--foo" in ninja and "--bar" in ninja
     # The semicolon flag is still one argument. The quoted list was not that case.
     assert "include;extra" in ninja
+
+
+def test_cmake_env_drops_sanitizer_preload(monkeypatch):
+    """libtsan must not reach cmake. The parent environment stays intact."""
+    monkeypatch.setenv("LD_PRELOAD", "/usr/lib/gcc/x86_64-linux-gnu/12/libtsan.so")
+    monkeypatch.setenv("DYLD_INSERT_LIBRARIES", "/tmp/libclang_rt.tsan.dylib")
+    monkeypatch.setenv("NRN_SANITIZER_PRELOAD_VAR", "LD_PRELOAD")
+    monkeypatch.setenv("CC", "gcc-12")
+    env = _cmake_env()
+    assert "LD_PRELOAD" not in env
+    assert "DYLD_INSERT_LIBRARIES" not in env
+    assert "CC" not in env
+    assert os.environ["LD_PRELOAD"].endswith("libtsan.so")
+    assert os.environ["CC"] == "gcc-12"
 
 
 def test_ninja_blob_accepts_either_target_order_and_escaped_colons():

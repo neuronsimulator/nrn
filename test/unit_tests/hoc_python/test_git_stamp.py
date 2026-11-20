@@ -18,8 +18,25 @@ add_cpp_git_information(probe INTERFACE)
 """
 
 
+def _without_sanitizer_preload(env):
+    """Copy env without a sanitizer preload.
+
+    python_unit_tests preloads libtsan. CMake is not instrumented, and its
+    configure then waits until ctest hits the 1000s timeout. git is launched
+    the same way. Import children of this suite keep the preload.
+    """
+    child = env.copy()
+    child.pop("LD_PRELOAD", None)
+    child.pop("DYLD_INSERT_LIBRARIES", None)
+    name = child.get("NRN_SANITIZER_PRELOAD_VAR") or ""
+    if name:
+        child.pop(name, None)
+    return child
+
+
 def _git(src, *args, env=None):
-    subprocess.check_call(["git", *args], cwd=src, env=env)
+    base = os.environ if env is None else env
+    subprocess.check_call(["git", *args], cwd=src, env=_without_sanitizer_preload(base))
 
 
 def _readonly_except_git(src):
@@ -50,6 +67,19 @@ def _init_repo(src, env):
     _git(src, "tag", "-a", "v0.0.0", "-m", "v0.0.0", env=env)
 
 
+def test_tool_env_drops_sanitizer_preload(monkeypatch):
+    """libtsan must not reach git or cmake. The parent environment stays intact."""
+    monkeypatch.setenv("LD_PRELOAD", "/usr/lib/gcc/x86_64-linux-gnu/12/libtsan.so")
+    monkeypatch.setenv("NRN_SANITIZER_PRELOAD_VAR", "LD_PRELOAD")
+    monkeypatch.setenv(
+        "NRN_SANITIZER_PRELOAD_VAL", "/usr/lib/gcc/x86_64-linux-gnu/12/libtsan.so"
+    )
+    env = _without_sanitizer_preload(os.environ)
+    assert "LD_PRELOAD" not in env
+    assert env["NRN_SANITIZER_PRELOAD_VAL"].endswith("libtsan.so")
+    assert os.environ["LD_PRELOAD"].endswith("libtsan.so")
+
+
 def test_read_only_source_configure_writes_the_build_stamp(tmp_path):
     """Working git and a read-only checkout configure without touching sources."""
     src = tmp_path / "src"
@@ -74,6 +104,7 @@ def test_read_only_source_configure_writes_the_build_stamp(tmp_path):
         subprocess.check_call(
             ["cmake", "-S", str(src), "-B", str(build), "-G", "Ninja"],
             cwd=tmp_path,
+            env=_without_sanitizer_preload(os.environ),
         )
         assert (build / "nrn-git-info.cmake").is_file()
         assert not (src / "cmake" / "nrn-git-info.cmake").exists()
@@ -102,6 +133,7 @@ def test_script_mode_still_writes_the_source_stamp(tmp_path):
     subprocess.check_call(
         ["cmake", "-P", str(cmake_dir / "NrnGitInfo.cmake")],
         cwd=src,
+        env=_without_sanitizer_preload(os.environ),
     )
     stamp = cmake_dir / "nrn-git-info.cmake"
     assert stamp.is_file()
