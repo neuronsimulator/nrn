@@ -5,6 +5,7 @@ SHELL: treats a Windows backslash as a Unix escape.
 """
 
 import os
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -14,13 +15,16 @@ MECH = REPO_ROOT / "cmake" / "neuronMechMaker.cmake"
 
 
 def _probe_compiler():
-    """A compiler path that exists. Configure must not run it."""
+    """A compiler path that exists. Configure must not run it.
+
+    Forward slashes: CMake treats ``\\m`` in a quoted path as an escape.
+    """
     if os.path.isfile("/bin/echo"):
         return "/bin/echo"
     for name in ("cc", "gcc", "cl"):
         found = shutil.which(name)
         if found:
-            return found
+            return Path(found).as_posix()
     raise RuntimeError("no compiler path for the mech-flag probe")
 
 
@@ -64,8 +68,9 @@ nrn_mech_add_user_cli(uni COMPILE_OPTIONS "/I\"C:\\Program Files\\SDK\\include\"
 def _target_blob(ninja, name):
     """Compile and link bindings for one library.
 
-    CMake 3.20 writes the libraries in alphabetical order, so the Unix target
-    comes first. A drive letter is ``$:`` in a Ninja build statement.
+    CMake 3.20 on Unix lists the libraries alphabetically, so the Unix target
+    comes first. Windows lists them in definition order. A drive letter on a
+    build edge is ``$:``.
     """
     lines = ninja.splitlines()
     chunks = []
@@ -92,6 +97,16 @@ def _target_blob(ninja, name):
     return text
 
 
+def _assert_platform_flags(win, uni):
+    """Windows keeps ';' and '\\'. Unix eats '\\'. Quotes and slash count vary."""
+    assert "C:/sdk/include;extra" in win
+    assert re.search(r"/IC:\\+Program Files\\+SDK\\+include", win)
+    assert "Program FilesSDKinclude" not in win
+    assert re.search(r"/LIBPATH:C:\\+Program Files\\+SDK\\+lib", win)
+    assert "Program FilesSDKinclude" in uni
+    assert "include;extra" not in uni
+
+
 def test_generated_command_keeps_semicolon_and_windows_backslash(tmp_path):
     """Ninja argv, not the -D string. Windows \\ stays. ';' is not dropped."""
     text = MECH.read_text(encoding="utf-8")
@@ -116,17 +131,12 @@ def test_generated_command_keeps_semicolon_and_windows_backslash(tmp_path):
     ninja = (build / "build.ninja").read_text(encoding="utf-8")
     win = _target_blob(ninja, "win")
     uni = _target_blob(ninja, "uni")
-    assert '/I "C:/sdk/include;extra"' in win
-    assert r"/IC:\\Program Files\\SDK\\include" in win
-    assert "Program FilesSDKinclude" not in win
-    assert r"/LIBPATH:C:\\Program Files\\SDK\\lib" in win
-    assert "Program FilesSDKinclude" in uni
-    assert "include;extra" not in uni
+    _assert_platform_flags(win, uni)
 
 
 def test_ninja_blob_accepts_either_target_order_and_escaped_colons():
-    """CMake 3.20 lists uni first. Windows Ninja writes a drive letter as $:."""
-    ninja = "\n".join(
+    """Unix lists uni first and escapes ':'. Windows quotes nothing and uses one '\\'."""
+    unix_order = "\n".join(
         [
             "build CMakeFiles/uni.dir/probe.c.o: C_COMPILER__uni_ ../probe.c",
             '  FLAGS = "/IC:Program FilesSDKinclude"',
@@ -138,11 +148,17 @@ def test_ninja_blob_accepts_either_target_order_and_escaped_colons():
             '  LINK_FLAGS = "/LIBPATH:C$:\\\\Program Files\\\\SDK\\\\lib"',
         ]
     )
-    win = _target_blob(ninja, "win")
-    uni = _target_blob(ninja, "uni")
-    assert '/I "C:/sdk/include;extra"' in win
-    assert r"/IC:\\Program Files\\SDK\\include" in win
-    assert r"/LIBPATH:C:\\Program Files\\SDK\\lib" in win
-    assert "Program FilesSDKinclude" not in win
-    assert "Program FilesSDKinclude" in uni
-    assert "include;extra" not in uni
+    windows = "\n".join(
+        [
+            r"build CMakeFiles/win.dir/probe.c.obj: C_COMPILER__win_unscanned_ C$:/Users/probe.c",
+            r'  FLAGS = "/IC:\Program Files\SDK\include" /I C:/sdk/include;extra',
+            "build libwin.dll libwin.dll.a: C_SHARED_LIBRARY_LINKER__win_ "
+            "CMakeFiles/win.dir/probe.c.obj",
+            r'  LINK_FLAGS = -shared "/LIBPATH:C:\Program Files\SDK\lib"',
+            r"build CMakeFiles/uni.dir/probe.c.obj: C_COMPILER__uni_unscanned_ C$:/Users/probe.c",
+            r'  FLAGS = "/IC:Program FilesSDKinclude"',
+            "build libuni.dll: C_SHARED_LIBRARY_LINKER__uni_ CMakeFiles/uni.dir/probe.c.obj",
+        ]
+    )
+    for ninja in (unix_order, windows):
+        _assert_platform_flags(_target_blob(ninja, "win"), _target_blob(ninja, "uni"))
