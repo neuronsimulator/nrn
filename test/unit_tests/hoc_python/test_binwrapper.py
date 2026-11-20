@@ -433,3 +433,16 @@ def test_nrnivmodl_replaces_tree_with_solution(tmp_path):
     bw = _binwrapper()
     bw._nt_prepare_build_dir(amd)
     assert not amd.exists()
+
+
+def test_windows_wheel_docs_name_the_ansi_code_page_limit():
+    wheels = (REPO_ROOT / "docs" / "install" / "python_wheels.md").read_text(
+        encoding="utf-8"
+    )
+    install = (REPO_ROOT / "docs" / "install" / "install_instructions.md").read_text(
+        encoding="utf-8"
+    )
+    for doc in (wheels, install):
+        assert "active ANSI code page" in doc
+        assert "best-fit" in doc
+        assert "import neuron" in doc

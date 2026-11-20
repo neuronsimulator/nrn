@@ -137,6 +137,14 @@ python -m pip install neuron
 Nightly builds: `python -m pip install neuron-nightly`. Unset `PYTHONPATH` and `NEURONHOME` so an
 older installer is not picked up.
 
+**`NEURONHOME` must round-trip through the active ANSI code page.** The wheel refuses a path
+that code page cannot store. `import neuron` raises, and `nrniv` exits. NEURON does not
+substitute a best-fit narrow path and does not keep going with a different directory. A
+profile path that code page cannot store can `pip install` and then fail on import. Linux
+and macOS wheels do not have this limit. Install under a path the active code page can store,
+or enable Windows "Use Unicode UTF-8 for worldwide language support" so the active code page
+is UTF-8.
+
 The Windows wheel is built with CoreNEURON off. `nrnivmodl` produces `nrnmech.dll` in the
 working directory and does not produce `special`. `sortspike` and `mkthreadsafe` are not
 installed. Parallel runs need a separate Microsoft MPI runtime: the wheel does not include

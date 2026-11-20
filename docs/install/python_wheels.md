@@ -121,6 +121,14 @@ the old secure file `readline7.0-ncurses6.4.tar.gz`.
 
 ## Windows wheels (`win_amd64`)
 
+**`NEURONHOME` must round-trip through the active ANSI code page.** The wheel refuses a
+path that code page cannot store. `import neuron` raises, and `nrniv` exits. NEURON does
+not substitute a best-fit narrow path and does not keep going with a different directory.
+An install under a user profile whose characters that code page cannot store can succeed
+at `pip install` and then fail on import. Linux and macOS wheels do not have this limit.
+Install under a path the active code page can store, or enable Windows "Use Unicode UTF-8
+for worldwide language support" so the active code page is UTF-8.
+
 GitHub Actions `windows-2022` builds an MSVC wheel (Visual Studio 17 2022 x64), not MinGW
 `setup.exe`. How to build locally, including `CMAKE_GENERATOR` / `CMAKE_GENERATOR_PLATFORM` and
 `ci/win_msvc_wheel_deps.cmd`, is under [Windows build — MSVC Python wheel](windows.md#msvc-python-wheel).
