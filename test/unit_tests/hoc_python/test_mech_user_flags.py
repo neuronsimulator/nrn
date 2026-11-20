@@ -134,6 +134,53 @@ def test_generated_command_keeps_semicolon_and_windows_backslash(tmp_path):
     _assert_platform_flags(win, uni)
 
 
+REPEAT = r"""
+cmake_minimum_required(VERSION 3.20)
+set(CMAKE_C_COMPILER_FORCED TRUE)
+set(CMAKE_C_COMPILER "@CC@")
+set(CMAKE_C_COMPILER_ID "GNU")
+set(CMAKE_C_COMPILE_OPTIONS_PIC "")
+project(repeatprobe C)
+include("@MECH@")
+add_library(rep SHARED probe.c)
+nrn_mech_add_user_cli(rep COMPILE_OPTIONS "-I dir1 -I dir2" UNIX)
+nrn_mech_add_user_cli(rep LINK_OPTIONS "-L lib1 -L lib2 -l a -l b" UNIX)
+add_library(repw SHARED probe.c)
+nrn_mech_add_user_cli(repw COMPILE_OPTIONS "/I dir1 /I dir2" WINDOWS)
+nrn_mech_add_user_cli(repw LINK_OPTIONS "/LIBPATH:lib1 /LIBPATH:lib2" WINDOWS)
+"""
+
+
+def test_repeated_include_and_link_options_keep_their_flags(tmp_path):
+    """-I dir1 -I dir2 stays two include groups. CMake must not drop the second -I."""
+    (tmp_path / "probe.c").write_text(
+        "int probe(void) { return 0; }\n", encoding="utf-8"
+    )
+    (tmp_path / "CMakeLists.txt").write_text(
+        REPEAT.replace("@MECH@", MECH.as_posix()).replace("@CC@", _probe_compiler()),
+        encoding="utf-8",
+    )
+    build = tmp_path / "b"
+    env = os.environ.copy()
+    for key in ("CC", "CXX", "CFLAGS", "CXXFLAGS", "LDFLAGS"):
+        env.pop(key, None)
+    subprocess.check_call(
+        ["cmake", "-S", str(tmp_path), "-B", str(build), "-G", "Ninja"],
+        cwd=tmp_path,
+        env=env,
+    )
+    ninja = (build / "build.ninja").read_text(encoding="utf-8")
+    unix = _target_blob(ninja, "rep")
+    win = _target_blob(ninja, "repw")
+    assert "-I dir1 -I dir2" in unix or ("-Idir1" in unix and "-Idir2" in unix)
+    assert "-I dir1 dir2" not in unix
+    assert "-L lib1 -L lib2" in unix or ("-Llib1" in unix and "-Llib2" in unix)
+    assert "-L lib1 lib2" not in unix
+    assert "-la" in unix and "-lb" in unix
+    assert "/Idir1" in win and "/Idir2" in win
+    assert "/LIBPATH:lib1" in win and "/LIBPATH:lib2" in win
+
+
 def test_ninja_blob_accepts_either_target_order_and_escaped_colons():
     """Unix lists uni first and escapes ':'. Windows quotes nothing and uses one '\\'."""
     unix_order = "\n".join(

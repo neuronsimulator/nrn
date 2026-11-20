@@ -177,6 +177,11 @@ endmacro()
 # One -incflags or -loadflags string. Spaces separate flags. A semicolon is part of a flag, not a
 # CMake list separator. Windows \ is a path character (CommandLineToArgvW). Elsewhere \ is a Unix
 # shell escape, matching the old SHELL: prefix.
+#
+# CMake drops a repeated COMPILE_OPTIONS / LINK_OPTIONS word, so separate tokens "-I" "a" "-I" "b"
+# become "-I a b". An option that takes the next word stays with that word. -I/-L/-D/-l and /I
+# accept the attached form (-Idir). -framework and -Xlinker stay two words via SHELL:, one property
+# per pair, so the option word is not compared by itself.
 function(nrn_mech_add_user_cli target property raw platform)
   if(raw STREQUAL "")
     return()
@@ -186,14 +191,48 @@ function(nrn_mech_add_user_cli target property raw platform)
   else()
     separate_arguments(_nrn_cli UNIX_COMMAND "${raw}")
   endif()
-  foreach(_nrn_item IN LISTS _nrn_cli)
+  set(_nrn_attached
+      -I
+      -L
+      -l
+      -D
+      -U
+      -F
+      -B
+      -isystem
+      -idirafter
+      -iquote
+      -include
+      -imacros
+      -isysroot
+      -iframework
+      /I
+      /D
+      /U)
+  set(_nrn_paired -framework -Xlinker -Xassembler -Xpreprocessor -Xclang)
+  list(LENGTH _nrn_cli _nrn_n)
+  set(_nrn_i 0)
+  while(_nrn_i LESS _nrn_n)
+    list(GET _nrn_cli ${_nrn_i} _nrn_item)
+    math(EXPR _nrn_next "${_nrn_i} + 1")
+    set(_nrn_group "${_nrn_item}")
+    if(_nrn_next LESS _nrn_n AND (_nrn_item IN_LIST _nrn_attached OR _nrn_item IN_LIST _nrn_paired))
+      list(GET _nrn_cli ${_nrn_next} _nrn_val)
+      if(_nrn_item IN_LIST _nrn_attached)
+        set(_nrn_group "${_nrn_item}${_nrn_val}")
+      else()
+        set(_nrn_group "SHELL:${_nrn_item} \"${_nrn_val}\"")
+      endif()
+      set(_nrn_i ${_nrn_next})
+    endif()
     # Escaped semicolon: one compile/link argument that itself contains ';'.
-    string(REPLACE ";" "\\;" _nrn_esc "${_nrn_item}")
+    string(REPLACE ";" "\\;" _nrn_esc "${_nrn_group}")
     set_property(
       TARGET ${target}
       APPEND
       PROPERTY ${property} "${_nrn_esc}")
-  endforeach()
+    math(EXPR _nrn_i "${_nrn_i} + 1")
+  endwhile()
 endfunction()
 
 function(create_nrnmech)
