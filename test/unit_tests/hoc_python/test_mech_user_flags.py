@@ -12,6 +12,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 MECH = REPO_ROOT / "cmake" / "neuronMechMaker.cmake"
+MOD_REG = REPO_ROOT / "cmake" / "mod_reg_nrn.cpp.in"
 
 
 def _probe_compiler():
@@ -179,6 +180,70 @@ def test_repeated_include_and_link_options_keep_their_flags(tmp_path):
     assert "-la" in unix and "-lb" in unix
     assert "/Idir1" in win and "/Idir2" in win
     assert "/LIBPATH:lib1" in win and "/LIBPATH:lib2" in win
+
+
+GEN = r"""
+cmake_minimum_required(VERSION 3.20)
+set(CMAKE_C_COMPILER_FORCED TRUE)
+set(CMAKE_CXX_COMPILER_FORCED TRUE)
+set(CMAKE_C_COMPILER "@CC@")
+set(CMAKE_CXX_COMPILER "@CC@")
+set(CMAKE_C_COMPILER_ID "GNU")
+set(CMAKE_CXX_COMPILER_ID "GNU")
+set(CMAKE_C_COMPILE_OPTIONS_PIC "")
+set(CMAKE_CXX_COMPILE_OPTIONS_PIC "")
+project(genprobe C CXX)
+include("@MECH@")
+set(_NEURON_MECH_REG "@REG@")
+set(_NEURON_MAIN_INCLUDE_DIR "@SRC@")
+add_library(nrniv_stub SHARED probe.c)
+add_library(neuron::nrniv ALIAS nrniv_stub)
+set(options --foo --bar)
+create_nrnmech(
+  NEURON NMODL_NEURON_CODEGEN
+  MOD_FILES "@MOD@"
+  NMODL_EXECUTABLE "@CC@"
+  NMODL_NEURON_EXTRA_ARGS "${options}"
+  INCFLAGS "/I C:/sdk/include;extra"
+  TARGET_LIBRARY_NAME genprobe
+  LIBRARY_OUTPUT_DIR "@SRC@"
+  ARTIFACTS_OUTPUT_DIR "@SRC@")
+# Generated .cpp sources are not on disk yet, so the language is not inferred.
+set_target_properties(genprobe PROPERTIES LINKER_LANGUAGE CXX)
+"""
+
+
+def test_create_nrnmech_keeps_quoted_list_as_separate_arguments(tmp_path):
+    """NMODL_NEURON_EXTRA_ARGS "${options}" is two generator arguments, not one."""
+    (tmp_path / "probe.c").write_text(
+        "int probe(void) { return 0; }\n", encoding="utf-8"
+    )
+    mod = tmp_path / "a.mod"
+    mod.write_text("TITLE a\n", encoding="utf-8")
+    text = GEN
+    for key, value in (
+        ("@MECH@", MECH.as_posix()),
+        ("@REG@", MOD_REG.as_posix()),
+        ("@CC@", _probe_compiler()),
+        ("@MOD@", mod.as_posix()),
+        ("@SRC@", tmp_path.as_posix()),
+    ):
+        text = text.replace(key, value)
+    (tmp_path / "CMakeLists.txt").write_text(text, encoding="utf-8")
+    build = tmp_path / "b"
+    env = os.environ.copy()
+    for key in ("CC", "CXX", "CFLAGS", "CXXFLAGS", "LDFLAGS"):
+        env.pop(key, None)
+    subprocess.check_call(
+        ["cmake", "-S", str(tmp_path), "-B", str(build), "-G", "Ninja"],
+        cwd=tmp_path,
+        env=env,
+    )
+    ninja = (build / "build.ninja").read_text(encoding="utf-8")
+    assert "--foo;--bar" not in ninja
+    assert "--foo" in ninja and "--bar" in ninja
+    # The semicolon flag is still one argument. The quoted list was not that case.
+    assert "include;extra" in ninja
 
 
 def test_ninja_blob_accepts_either_target_order_and_escaped_colons():

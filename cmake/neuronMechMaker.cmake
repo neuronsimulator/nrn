@@ -240,6 +240,18 @@ function(create_nrnmech)
   # PARSE_ARGV keeps a semicolon inside INCFLAGS / LDFLAGS. ${ARGN} would split it.
   cmake_parse_arguments(PARSE_ARGV 0 NRN_MECH "${options}" "${oneValueArgs}" "${multiValueArgs}")
 
+  # Multi-value keywords used to be re-split by unquoted ${ARGN}. Callers pass
+  # NMODL_NEURON_EXTRA_ARGS "${options}" and expect one generator argument per list item. Do not do
+  # this for one-value INCFLAGS / LDFLAGS. Do not return the list through PARENT_SCOPE (a quoted
+  # parent set collapses it back to one value).
+  foreach(_nrn_multi IN ITEMS MOD_FILES NMODL_NEURON_EXTRA_ARGS NMODL_CORENEURON_EXTRA_ARGS
+                              EXTRA_ENV)
+    set(_nrn_joined "${NRN_MECH_${_nrn_multi}}")
+    set(NRN_MECH_${_nrn_multi} ${_nrn_joined})
+  endforeach()
+  unset(_nrn_joined)
+  unset(_nrn_multi)
+
   # The message priority for logging
   set(MESSAGE_PRIORITY "VERBOSE")
 
