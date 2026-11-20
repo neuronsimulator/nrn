@@ -4,19 +4,35 @@ The Python -D string is not enough. cmake_parse_arguments splits on ';', and
 SHELL: treats a Windows backslash as a Unix escape.
 """
 
+import os
+import shutil
 import subprocess
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 MECH = REPO_ROOT / "cmake" / "neuronMechMaker.cmake"
 
+
+def _probe_compiler():
+    """A compiler path that exists. Configure must not run it."""
+    if os.path.isfile("/bin/echo"):
+        return "/bin/echo"
+    for name in ("cc", "gcc", "cl"):
+        found = shutil.which(name)
+        if found:
+            return found
+    raise RuntimeError("no compiler path for the mech-flag probe")
+
+
 CMAKE = r"""
 cmake_minimum_required(VERSION 3.20)
-project(flagprobe C)
+# Before project(). A later set does not stop CMake 3.20 from compiling an
+# ABI probe with whatever CC the parent job exported.
 set(CMAKE_C_COMPILER_FORCED TRUE)
-set(CMAKE_C_COMPILER "/bin/echo")
+set(CMAKE_C_COMPILER "@CC@")
 set(CMAKE_C_COMPILER_ID "GNU")
 set(CMAKE_C_COMPILE_OPTIONS_PIC "")
+project(flagprobe C)
 include("@MECH@")
 
 function(roundtrip out_inc out_ld)
@@ -45,19 +61,35 @@ nrn_mech_add_user_cli(uni COMPILE_OPTIONS "/I\"C:\\Program Files\\SDK\\include\"
 """
 
 
-def _target_span(ninja, target, stop_before):
-    """Object rule through the link rule. LINK_FLAGS sits on the next build line."""
+def _target_blob(ninja, name):
+    """Compile and link bindings for one library.
+
+    CMake 3.20 writes the libraries in alphabetical order, so the Unix target
+    comes first. A drive letter is ``$:`` in a Ninja build statement.
+    """
     lines = ninja.splitlines()
-    start = next(
-        i for i, line in enumerate(lines) if "CMakeFiles/%s.dir/" % target in line
-    )
-    if stop_before is None:
-        end = len(lines)
-    else:
-        end = next(
-            i for i, line in enumerate(lines) if i > start and stop_before in line
+    chunks = []
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        hit = (
+            ("CMakeFiles/%s.dir" % name) in line
+            or line.startswith("build lib%s." % name)
+            or line.startswith("build %s:" % name)
         )
-    return "\n".join(lines[start:end])
+        if not hit:
+            i += 1
+            continue
+        block = [line]
+        i += 1
+        while i < len(lines) and lines[i][:1] in (" ", "\t"):
+            block.append(lines[i])
+            i += 1
+        chunks.append("\n".join(block))
+    text = "\n".join(chunks).replace("$:", ":")
+    if ("CMakeFiles/%s.dir" % name) not in text:
+        raise AssertionError("no ninja rules for %s" % name)
+    return text
 
 
 def test_generated_command_keeps_semicolon_and_windows_backslash(tmp_path):
@@ -69,19 +101,48 @@ def test_generated_command_keeps_semicolon_and_windows_backslash(tmp_path):
         "int probe(void) { return 0; }\n", encoding="utf-8"
     )
     (tmp_path / "CMakeLists.txt").write_text(
-        CMAKE.replace("@MECH@", MECH.as_posix()), encoding="utf-8"
+        CMAKE.replace("@MECH@", MECH.as_posix()).replace("@CC@", _probe_compiler()),
+        encoding="utf-8",
     )
     build = tmp_path / "b"
+    env = os.environ.copy()
+    for key in ("CC", "CXX", "CFLAGS", "CXXFLAGS", "LDFLAGS"):
+        env.pop(key, None)
     subprocess.check_call(
         ["cmake", "-S", str(tmp_path), "-B", str(build), "-G", "Ninja"],
         cwd=tmp_path,
+        env=env,
     )
     ninja = (build / "build.ninja").read_text(encoding="utf-8")
-    win = _target_span(ninja, "win", "CMakeFiles/uni.dir/")
-    uni = _target_span(ninja, "uni", None)
+    win = _target_blob(ninja, "win")
+    uni = _target_blob(ninja, "uni")
     assert '/I "C:/sdk/include;extra"' in win
     assert r"/IC:\\Program Files\\SDK\\include" in win
     assert "Program FilesSDKinclude" not in win
     assert r"/LIBPATH:C:\\Program Files\\SDK\\lib" in win
+    assert "Program FilesSDKinclude" in uni
+    assert "include;extra" not in uni
+
+
+def test_ninja_blob_accepts_either_target_order_and_escaped_colons():
+    """CMake 3.20 lists uni first. Windows Ninja writes a drive letter as $:."""
+    ninja = "\n".join(
+        [
+            "build CMakeFiles/uni.dir/probe.c.o: C_COMPILER__uni_ ../probe.c",
+            '  FLAGS = "/IC:Program FilesSDKinclude"',
+            "build libuni.so: C_SHARED_LIBRARY_LINKER__uni_ CMakeFiles/uni.dir/probe.c.o",
+            "  LINK_FLAGS = -shared",
+            "build CMakeFiles/win.dir/probe.c.obj: C_COMPILER__win_ ../probe.c",
+            '  FLAGS = "/IC$:\\\\Program Files\\\\SDK\\\\include" /I "C$:/sdk/include;extra"',
+            "build libwin.so: C_SHARED_LIBRARY_LINKER__win_ CMakeFiles/win.dir/probe.c.obj",
+            '  LINK_FLAGS = "/LIBPATH:C$:\\\\Program Files\\\\SDK\\\\lib"',
+        ]
+    )
+    win = _target_blob(ninja, "win")
+    uni = _target_blob(ninja, "uni")
+    assert '/I "C:/sdk/include;extra"' in win
+    assert r"/IC:\\Program Files\\SDK\\include" in win
+    assert r"/LIBPATH:C:\\Program Files\\SDK\\lib" in win
+    assert "Program FilesSDKinclude" not in win
     assert "Program FilesSDKinclude" in uni
     assert "include;extra" not in uni
