@@ -126,7 +126,10 @@ GitHub Actions `windows-2022` builds an MSVC wheel (Visual Studio 17 2022 x64), 
 `ci/win_msvc_wheel_deps.cmd`, is under [Windows build — MSVC Python wheel](windows.md#msvc-python-wheel).
 
 `nrnivmodl` on that wheel needs `cl.exe` (Build Tools) and CMake; the wheel does not ship MinGW.
-See [Installing Binary Distribution — Windows](install_instructions.md#windows).
+See [Installing Binary Distribution — Windows](install_instructions.md#windows) for what the
+installed wheel includes: CoreNEURON is off, `nrnivmodl` produces `nrnmech.dll` and does not
+produce `special`, `sortspike` and `mkthreadsafe` are omitted, and MPI needs an external
+MS-MPI runtime (`msmpi.dll` is not in the wheel).
 
 ## macOS wheels
 

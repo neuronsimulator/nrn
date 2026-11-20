@@ -137,6 +137,11 @@ python -m pip install neuron
 Nightly builds: `python -m pip install neuron-nightly`. Unset `PYTHONPATH` and `NEURONHOME` so an
 older installer is not picked up.
 
+The Windows wheel is built with CoreNEURON off. `nrnivmodl` produces `nrnmech.dll` in the
+working directory and does not produce `special`. `sortspike` and `mkthreadsafe` are not
+installed. Parallel runs need a separate Microsoft MPI runtime: the wheel does not include
+`msmpi.dll`.
+
 A hoc string in `nrniv -c` needs doubled quotes. Command Prompt parses those itself:
 
 ```
