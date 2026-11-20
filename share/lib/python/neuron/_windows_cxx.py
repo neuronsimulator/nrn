@@ -229,12 +229,57 @@ def _cxx_executable(cxx):
     return prefix[-1] if prefix else ""
 
 
+def _is_cl_exe_name(token):
+    """True for cl.exe. clang-cl is a different compiler."""
+    base = _cxx_basename(token)
+    if base.endswith(".exe"):
+        base = base[:-4]
+    return base == "cl"
+
+
+def _cxx_resolve_exe(token, vc):
+    """Existing executable for a compiler token, or None.
+
+    A token that contains a directory separator uses isfile. A bare name is
+    looked up on PATH from the Visual Studio environment. ``clang-cl`` on
+    PATH is that program. isfile of a bare name only sees the current
+    directory.
+    """
+    if not token:
+        return None
+    if os.path.isfile(token):
+        return token
+    if os.path.isabs(token) or "/" in token or "\\" in token:
+        return None
+    names = [token]
+    if not token.lower().endswith(".exe"):
+        names.append(token + ".exe")
+    if vc is None:
+        return None
+    for name in names:
+        found = _win_env_find_exe(vc, name)
+        if found:
+            return found
+    return None
+
+
 def _cxx_argv_prefix(cxx, vc=None):
-    """Prefix for RxD. A missing cl.exe is replaced. The wrapper is kept."""
+    """Prefix for RxD. A compiler that resolves is kept. The wrapper is kept.
+
+    A bare name is resolved on PATH before any substitution. A full path
+    still uses isfile. A missing cl.exe may still be replaced with the
+    Visual Studio compiler. A missing clang-cl is not.
+    """
     prefix = list(_cxx_command_prefix(cxx))
     if not prefix:
         return [cxx] if cxx else []
-    if vc is not None and prefix[-1] and not os.path.isfile(prefix[-1]):
+    if vc is None or not prefix[-1]:
+        return prefix
+    resolved = _cxx_resolve_exe(prefix[-1], vc)
+    if resolved:
+        prefix[-1] = resolved
+        return prefix
+    if _is_cl_exe_name(prefix[-1]):
         found = _win_env_find_exe(vc, "cl.exe")
         if found:
             prefix[-1] = found

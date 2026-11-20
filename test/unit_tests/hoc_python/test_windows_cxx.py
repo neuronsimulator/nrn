@@ -347,6 +347,65 @@ def test_msvc_lookup_replaces_the_compiler_and_keeps_the_wrapper(tmp_path):
     assert kept == ["ccache", str(real)]
 
 
+def test_clang_cl_on_path_is_not_replaced_with_cl(tmp_path):
+    """A bare clang-cl that resolves is kept, even when cl.exe is also on PATH."""
+    m = _mod()
+    vs = tmp_path / "vs"
+    llvm = tmp_path / "llvm"
+    vs.mkdir()
+    llvm.mkdir()
+    cl = vs / "cl.exe"
+    clang = llvm / "clang-cl.exe"
+    cl.write_bytes(b"")
+    clang.write_bytes(b"")
+    vc = {"PATH": str(vs) + ";" + str(llvm)}
+    assert m._cxx_argv_prefix("clang-cl", vc) == [str(clang)]
+    assert m._cxx_argv_prefix("clang-cl.exe", vc) == [str(clang)]
+    assert m._cxx_argv_prefix("ccache clang-cl /O2", vc) == ["ccache", str(clang)]
+    assert m._cxx_user_args("ccache clang-cl /O2") == ["/O2"]
+    assert m._cxx_user_args('clang-cl -DFOO="hello world" -O2') == [
+        "-DFOO=hello world",
+        "-O2",
+    ]
+    assert m._cxx_argv_prefix("ccache cl.exe /nologo", vc) == ["ccache", str(cl)]
+
+
+def test_missing_clang_cl_is_not_replaced_with_cl(tmp_path):
+    m = _mod()
+    cl = tmp_path / "cl.exe"
+    cl.write_bytes(b"")
+    vc = {"PATH": str(tmp_path)}
+    assert m._cxx_argv_prefix("clang-cl", vc) == ["clang-cl"]
+    assert m._cxx_argv_prefix("ccache clang-cl -O2", vc) == ["ccache", "clang-cl"]
+    assert m._cxx_argv_prefix(r"C:\missing\clang-cl.exe", vc) == [
+        r"C:\missing\clang-cl.exe"
+    ]
+    assert m._cxx_user_args(r'ccache clang-cl -DNAME="a b"') == ["-DNAME=a b"]
+
+
+def test_full_path_clang_cl_is_kept_when_it_exists(tmp_path):
+    m = _mod()
+    clang = tmp_path / "clang-cl.exe"
+    clang.write_bytes(b"")
+    other = tmp_path / "vs"
+    other.mkdir()
+    (other / "cl.exe").write_bytes(b"")
+    assert m._cxx_argv_prefix(str(clang), {"PATH": str(other)}) == [str(clang)]
+
+
+def test_missing_cl_exe_path_may_still_be_replaced(tmp_path):
+    """A cl.exe path that is not a file may still become the Visual Studio cl.exe."""
+    m = _mod()
+    cl = tmp_path / "cl.exe"
+    cl.write_bytes(b"")
+    vc = {"PATH": str(tmp_path)}
+    assert m._cxx_argv_prefix("ccache " + r"C:\missing\cl.exe", vc) == [
+        "ccache",
+        str(cl),
+    ]
+    assert m._cxx_argv_prefix("cl", vc) == [str(cl)]
+
+
 def test_msvc_cl_available_accepts_spaced_path(monkeypatch, tmp_path):
     m = _mod()
     cl = tmp_path / "Program Files" / "cl.exe"
