@@ -191,12 +191,11 @@ class MemoryManaged {
 inline void alloc_memory(void*& pointer, size_t num_bytes, size_t alignment) {
 #ifdef _WIN32
     // Windows has no aligned_alloc; _aligned_malloc pairs with _aligned_free.
+    // _aligned_malloc does not require num_bytes to be a multiple of alignment.
+    // Rounding up can wrap size_t, and calloc_memory then memsets the caller's
+    // size past that short block. The Unix aligned_alloc path still pads.
     if (alignment == 0) {
         alignment = alignof(std::max_align_t);
-    }
-    if (num_bytes % alignment != 0) {
-        size_t multiple = num_bytes / alignment;
-        num_bytes = alignment * (multiple + 1);
     }
     pointer = _aligned_malloc(num_bytes, alignment);
     nrn_assert(pointer != nullptr);
