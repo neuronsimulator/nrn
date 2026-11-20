@@ -70,6 +70,10 @@ Sections
     in HOC (i.e., they do not occupy the HOC namespace). The returned Section pointer is used
     in subsequent operations to reference the Section.
 
+    Deleting the Section with HOC's ``delete_section`` releases the memory this function
+    allocated for it (its Symbol, name and item). Sections removed any other way are not
+    released.
+
     :param name: Name of the new Section (must be unique within the model).
     :returns: Pointer to the newly created Section object.
 

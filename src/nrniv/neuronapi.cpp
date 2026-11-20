@@ -19,7 +19,9 @@
 #include <limits>
 #include <sstream>
 #include <string>
+#include <unordered_set>
 #include <utility>
+#include <vector>
 
 /// A public face of hoc_Item
 struct nrn_Item: public hoc_Item {};
@@ -103,18 +105,51 @@ void nrn_stdout_redirect(int (*myprint)(int, char*)) {
  * Sections
  ****************************************/
 
+namespace {
+// The symbols nrn_section_new made for sections not yet deleted. They are in no
+// symbol table, so nothing else frees them.
+std::unordered_set<Symbol*> section_new_symbols;
+// hoc_top_level_data slots of deleted ones, for the next nrn_section_new.
+std::vector<int> section_new_free_slots;
+}  // namespace
+
 Section* nrn_section_new(char const* const name) {
-    auto* symbol = new Symbol;
+    auto* symbol = new Symbol{};
     auto pitm = new hoc_Item*;
     symbol->name = strdup(name);
     symbol->type = 1;
-    symbol->u.oboff = 0;
-    symbol->arayinfo = 0;
-    hoc_install_object_data_index(symbol);
+    // Called from a template method, the install below works on the object's
+    // data, so such a section is neither tracked nor given a free slot.
+    bool const top_level = !hoc_thisobject;
+    if (top_level && !section_new_free_slots.empty()) {
+        symbol->u.oboff = section_new_free_slots.back();
+        section_new_free_slots.pop_back();
+    } else {
+        hoc_install_object_data_index(symbol);
+    }
+    if (top_level) {
+        section_new_symbols.insert(symbol);
+    }
     hoc_top_level_data[symbol->u.oboff].psecitm = pitm;
     new_sections(nullptr, symbol, pitm, 1);
     return (*pitm)->element.sec;
 }
+
+}  // extern "C"
+
+void nrn_section_new_symbol_free(Symbol* sym) {
+    if (!section_new_symbols.erase(sym)) {
+        return;  // HOC declared it and keeps it
+    }
+    auto& data = hoc_top_level_data[sym->u.oboff];
+    delete data.psecitm;
+    data.psecitm = nullptr;
+    section_new_free_slots.push_back(sym->u.oboff);
+    free(sym->name);
+    delete sym;
+}
+
+extern "C" {
 
 void nrn_section_connect(Section* child_sec, double child_x, Section* parent_sec, double parent_x) {
     nrn_pushsec(child_sec);

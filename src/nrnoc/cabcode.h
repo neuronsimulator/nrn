@@ -26,6 +26,10 @@ int nrn_sec2cell_equals(Section* sec, Object* obj);
 void new_sections(Object* ob, Symbol* sym, hoc_Item** pitm, int size);
 Section* section_new(Symbol* sym);
 
+/// When delete_section deletes a section made by nrn_section_new (neuronapi.cpp), free
+/// its symbol, name and section item. Does nothing for any other symbol.
+void nrn_section_new_symbol_free(Symbol* sym);
+
 #if USE_PYTHON
 struct NPySecObj;
 Section* nrnpy_newsection(NPySecObj*);
