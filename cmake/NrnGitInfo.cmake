@@ -6,7 +6,9 @@ include_guard(GLOBAL)
 # cannot run git: this tree is a Linux worktree whose .git file points at
 # /home/hines/neuron/nrn/.git/worktrees/msvc-port, which is not on the vboxsf share.
 #
-# add_cpp_git_information() uses live git when it works, else the stamp.
+# add_cpp_git_information() uses live git when it works and writes the stamp in the build tree.
+# NRN_GIT_STAMP_SOURCE=ON also writes the source stamp. A read-only checkout still configures.
+# Script mode (this -P path) still writes the source stamp for the guest.
 
 function(nrn_collect_git_info src_dir ok_var)
   set(${ok_var}
