@@ -407,4 +407,3 @@ jobs:
             & $mpiexec -n 2 $nrniv $testhoc -mpi --expected-hosts 2
             if ($LASTEXITCODE -ne 0) { throw "MS-MPI nrniv gate failed on Python $ver ($LASTEXITCODE)" }
           }
-

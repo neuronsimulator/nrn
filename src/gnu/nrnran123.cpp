@@ -95,7 +95,7 @@ NRN_DLLSYM void nrnran123_getids(nrnran123_State* s,
 }
 
 /* Deprecated */
-NRN_DLLSYM void nrnran123_getids3(nrnran123_State* s, 
+NRN_DLLSYM void nrnran123_getids3(nrnran123_State* s,
                        std::uint32_t* id1,
                        std::uint32_t* id2,
                        std::uint32_t* id3) {
