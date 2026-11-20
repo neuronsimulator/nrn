@@ -3363,7 +3363,11 @@ Window* PWMImpl::snap_owned(Printer* pr, Window* wp) {
 #endif  // HAVE_IV
 
 #if defined(_MSC_VER)
+#include <errno.h>
+#include <fcntl.h>
 #include <io.h>
+#include <share.h>
+#include <sys/stat.h>
 #endif
 
 char* ivoc_get_temp_file() {
@@ -3383,7 +3387,29 @@ char* ivoc_get_temp_file() {
     close(fd);
 #else
 #if defined(_MSC_VER)
-    _mktemp(tmpfile);
+    // _mktemp only chooses a name. Create the file with _O_EXCL so another
+    // process cannot claim it before File.wopen. Retry when the race is lost.
+    int fd = -1;
+    for (int attempt = 0; attempt < 64; ++attempt) {
+        std::snprintf(tmpfile, length, "%s/nrnXXXXXX", tdir);
+        errno_t msc_err = _mktemp_s(tmpfile, length);
+        if (msc_err != 0) {
+            break;
+        }
+        msc_err =
+            _sopen_s(&fd, tmpfile, _O_CREAT | _O_EXCL | _O_RDWR, _SH_DENYNO, _S_IREAD | _S_IWRITE);
+        if (msc_err == 0 && fd >= 0) {
+            _close(fd);
+            break;
+        }
+        fd = -1;
+        if (msc_err != EEXIST) {
+            break;
+        }
+    }
+    if (fd < 0) {
+        hoc_execerror("Could not create temporary file:", tmpfile);
+    }
 #else
     mktemp(tmpfile);
 #endif
