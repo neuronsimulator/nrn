@@ -548,6 +548,15 @@ nrniv [options] [fileargs]
         if (status == nrn_win_neuronhome_status::refused) {
             // The diagnostic is already on stderr. Discovery would accept
             // another directory. MessageBox hangs SSH and CI.
+            // Importing hoc must not terminate the Python process. The
+            // launcher (nrn_is_python_extension == 0) still exits. Clear the
+            // argv marker set above so a later import is not treated as
+            // already initialized.
+            if (nrn_is_python_extension) {
+                delete[] nrn_global_argv;
+                nrn_global_argv = nullptr;
+                return 1;
+            }
             exit(1);
         }
         if (status == nrn_win_neuronhome_status::ok) {

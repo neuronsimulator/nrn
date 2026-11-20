@@ -411,7 +411,13 @@ extern "C" NRN_EXPORT PyObject* PyInit_hoc() {
     }
 
     nrn_main_launch = 2;
-    ivocmain(argc, (const char**) argv, (const char**) env);
+    // ivocmain returns non-zero when a Windows NEURONHOME does not fit the
+    // active code page. exit() there would kill the interpreter.
+    if (ivocmain(argc, (const char**) argv, (const char**) env)) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "NEURONHOME: the install path does not fit the active ANSI code page");
+        return nullptr;
+    }
     return nrnpy_hoc();
 }
 
