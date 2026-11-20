@@ -721,6 +721,7 @@ static int hoc_Load_file(int always, const char* name) {
         and search in the current, $HOC_LIBRARY_PATH,
         $NEURONHOME/lib/hoc directories (in that order) for
         the file if there is no directory prefix.
+        If it is still missing, try the directory of the currently open file.
         Temporarily change to the directory containing the file so
         that it can xopen files relative to its location.
     */
@@ -777,26 +778,7 @@ static int hoc_Load_file(int always, const char* name) {
         path[0] = '\0';
         /* otherwise find the file in the default directories */
         f = fopen(base, "r"); /* cwd */
-        if (!f && hoc_xopen_file_ && hoc_xopen_file_[0]) {
-            /* nrniv fopen's a path file without chdir. load_file of a path
-               already chdir's for relative xopen. Search next to the currently
-               open file (nrniv argv HOC, or the running .py script). Last /
-               is not the directory on Windows. */
-            std::filesystem::path parent = std::filesystem::path(hoc_xopen_file_).parent_path();
-            if (!parent.empty() && parent != ".") {
-                /* generic_string: '/' so chdir/fopen match load_file. */
-                std::string dir = parent.generic_string();
-                nrn_assert(dir.size() < hoc_load_file_size_);
-                std::snprintf(path, hoc_load_file_size_, "%s", dir.c_str());
-                nrn_assert(snprintf(fname, hoc_load_file_size_, "%s/%s", path, base) <
-                           hoc_load_file_size_);
-                f = fopen(expand_env_var(fname), "r");
-                if (!f) {
-                    path[0] = '\0';
-                }
-            }
-        }
-        if (!f) { /* try HOC_LIBRARY_PATH */
+        if (!f) {             /* try HOC_LIBRARY_PATH */
             char* hlp = getenv("HOC_LIBRARY_PATH");
 #if defined(WIN32)
             /* load_proc already splits on ';'. ':' is a drive letter. */
@@ -851,6 +833,24 @@ static int hoc_Load_file(int always, const char* name) {
             nrn_assert(snprintf(fname, hoc_load_file_size_, "%s/%s", path, base) <
                        hoc_load_file_size_);
             f = fopen(expand_env_var(fname), "r");
+        }
+        if (!f && hoc_xopen_file_ && hoc_xopen_file_[0]) {
+            /* Last. A same-named file next to the open script must not hide
+               HOC_LIBRARY_PATH or NEURONHOME/lib/hoc. nrniv fopen's a path
+               file without chdir. Last / is not the directory on Windows. */
+            std::filesystem::path parent = std::filesystem::path(hoc_xopen_file_).parent_path();
+            if (!parent.empty() && parent != ".") {
+                /* generic_string: '/' so chdir/fopen match load_file. */
+                std::string dir = parent.generic_string();
+                nrn_assert(dir.size() < hoc_load_file_size_);
+                std::snprintf(path, hoc_load_file_size_, "%s", dir.c_str());
+                nrn_assert(snprintf(fname, hoc_load_file_size_, "%s/%s", path, base) <
+                           hoc_load_file_size_);
+                f = fopen(expand_env_var(fname), "r");
+                if (!f) {
+                    path[0] = '\0';
+                }
+            }
         }
     }
     /* add the name to the list of loaded packages */

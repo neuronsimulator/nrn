@@ -728,6 +728,39 @@ def test_nrniv_file_relative_load_file(tmp_path):
     assert "Couldn't find" not in (r.stdout or "")
 
 
+def test_hoc_library_path_wins_over_file_beside_the_script(tmp_path):
+    """HOC_LIBRARY_PATH is searched before the directory of the open file.
+
+    A model that load_file's a bare name must keep loading the library copy
+    when a different file of that name sits next to the running script.
+    """
+    beside = str(tmp_path / "script")
+    lib = str(tmp_path / "lib")
+    _write(
+        os.path.join(beside, "same.hoc"),
+        'strdef pathsem_prec\npathsem_prec = "beside"\n',
+    )
+    _write(
+        os.path.join(lib, "same.hoc"),
+        'strdef pathsem_prec\npathsem_prec = "library"\n',
+    )
+    ses = os.path.join(beside, "run.ses")
+    _write(ses, 'load_file("same.hoc")\nprint pathsem_prec\n')
+    elsewhere = str(tmp_path / "elsewhere")
+    os.makedirs(elsewhere)
+    env = os.environ.copy()
+    env["HOC_LIBRARY_PATH"] = lib
+    r = _run(
+        [_tool("nrniv"), "-nogui", "-nobanner", ses],
+        cwd=elsewhere,
+        env=env,
+        timeout=20,
+    )
+    assert r.returncode == 0, r.stdout
+    assert "library" in (r.stdout or "")
+    assert "beside" not in (r.stdout or "")
+
+
 def test_nrniv_file_relative_xopen(tmp_path):
     """nrniv of a path file finds relative xopen next to the file.
 
