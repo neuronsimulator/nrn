@@ -446,3 +446,16 @@ def test_windows_wheel_docs_name_the_ansi_code_page_limit():
         assert "active ANSI code page" in doc
         assert "best-fit" in doc
         assert "import neuron" in doc
+
+
+def test_windows_wheel_docs_name_nocmodl_without_nmodl_flags():
+    wheels = (REPO_ROOT / "docs" / "install" / "python_wheels.md").read_text(
+        encoding="utf-8"
+    )
+    install = (REPO_ROOT / "docs" / "install" / "install_instructions.md").read_text(
+        encoding="utf-8"
+    )
+    for doc in (wheels, install):
+        assert "nocmodl" in doc
+        assert "-nmodl" in doc
+        assert "-nmodlflags" in doc

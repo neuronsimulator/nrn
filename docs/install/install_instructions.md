@@ -146,9 +146,9 @@ or enable Windows "Use Unicode UTF-8 for worldwide language support" so the acti
 is UTF-8.
 
 The Windows wheel is built with CoreNEURON off. `nrnivmodl` produces `nrnmech.dll` in the
-working directory and does not produce `special`. `sortspike` and `mkthreadsafe` are not
-installed. Parallel runs need a separate Microsoft MPI runtime: the wheel does not include
-`msmpi.dll`.
+working directory and does not produce `special`. That `nrnivmodl` is nocmodl. It does not
+accept `-nmodl` or `-nmodlflags`. `sortspike` and `mkthreadsafe` are not installed. Parallel
+runs need a separate Microsoft MPI runtime: the wheel does not include `msmpi.dll`.
 
 A hoc string in `nrniv -c` needs doubled quotes. Command Prompt parses those itself:
 
