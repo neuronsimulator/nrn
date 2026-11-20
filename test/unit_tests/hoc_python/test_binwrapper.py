@@ -30,14 +30,24 @@ def test_cmd_launcher_keeps_percent_star_and_doubled_quotes():
 
 
 def test_cmd_launcher_finds_prefix_python_before_path():
-    """Hosted CPython keeps python.exe above Scripts; a venv keeps it beside the .cmd."""
+    """A venv python.exe is beside the .cmd. Otherwise use the pip shebang.
+
+    pip install --user does not put Scripts next to python.exe. The script
+    shebang is #!python so pip rewrites it to that interpreter. PATH is not
+    a fallback.
+    """
     cmd = (
         REPO_ROOT / "share" / "lib" / "python" / "scripts" / "binwrapper.cmd"
     ).read_text(encoding="utf-8")
     beside = cmd.index('set "PY=%~dp0python.exe"')
     prefix = cmd.index('set "PY=%~dp0..\\python.exe"')
-    fallback = cmd.index('set "PY=python"')
-    assert beside < prefix < fallback
+    shebang = cmd.index('set /p SHEBANG=<"%~dp0%~n0"')
+    assert beside < prefix < shebang
+    assert 'set "PY=%SHEBANG:~2%"' in cmd
+    assert 'set "PY=python"' not in cmd
+    assert "exit /b %ERRORLEVEL%" in cmd
+    first = BINWRAPPER.read_text(encoding="utf-8").splitlines()[0]
+    assert first == "#!python"
 
 
 def test_resolve_pylibs_keeps_existing_nrn_pylib(monkeypatch):

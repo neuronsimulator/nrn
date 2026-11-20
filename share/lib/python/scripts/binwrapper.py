@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!python
 """
 A generic wrapper to access nrn binaries from a python installation
 Please create a softlink with the binary name to be called.
