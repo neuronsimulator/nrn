@@ -4,6 +4,8 @@ import importlib.util
 import os
 from pathlib import Path
 
+import pytest
+
 REPO_ROOT = Path(__file__).resolve().parents[3]
 BINWRAPPER = REPO_ROOT / "share" / "lib" / "python" / "scripts" / "binwrapper.py"
 
@@ -304,3 +306,130 @@ def test_vendored_wheel_lib_dirs(tmp_path):
     got = bw._vendored_wheel_lib_dirs(tmp_path)
     assert got == [str(nightly), str(regular)]
     assert bw._vendored_wheel_lib_dirs(regular) == []
+
+
+def _refuse_build_dir(bw, path):
+    try:
+        bw._nt_prepare_build_dir(path)
+    except SystemExit as exc:
+        text = str(exc)
+        assert "will not delete" in text
+        assert "NEURON nrnivmodl build directory" in text
+        return text
+    raise AssertionError("an unmarked directory must be refused")
+
+
+def _forbid_rmtree(*_args, **_kwargs):
+    raise AssertionError("rmtree must not run on an unrelated directory")
+
+
+def test_nrnivmodl_refuses_unrelated_amd64_directory(tmp_path, monkeypatch):
+    """An AMD64 folder with no NEURON marker is left in place. rmtree is not called."""
+    amd = tmp_path / "AMD64"
+    amd.mkdir()
+    keep = amd / "keep.txt"
+    keep.write_text("unrelated\n", encoding="utf-8")
+    bw = _binwrapper()
+
+    monkeypatch.setattr(bw.shutil, "rmtree", _forbid_rmtree)
+    _refuse_build_dir(bw, amd)
+    assert keep.read_text(encoding="utf-8") == "unrelated\n"
+    assert amd.is_dir()
+    assert list(tmp_path.glob("AMD64.old.*")) == []
+
+
+def test_nrnivmodl_refuses_other_cmake_project(tmp_path, monkeypatch):
+    amd = tmp_path / "AMD64"
+    amd.mkdir()
+    cache = amd / "CMakeCache.txt"
+    cache.write_text("CMAKE_PROJECT_NAME:STATIC=notneuron\n", encoding="utf-8")
+    bw = _binwrapper()
+    monkeypatch.setattr(bw.shutil, "rmtree", _forbid_rmtree)
+    _refuse_build_dir(bw, amd)
+    assert cache.read_text(encoding="utf-8").startswith(
+        "CMAKE_PROJECT_NAME:STATIC=notneuron"
+    )
+
+
+def test_nrnivmodl_comment_is_not_a_marker(tmp_path, monkeypatch):
+    amd = tmp_path / "AMD64"
+    amd.mkdir()
+    cache = amd / "CMakeCache.txt"
+    cache.write_text("# NRNIVMODL_NEURON:BOOL=ON\n", encoding="utf-8")
+    bw = _binwrapper()
+    monkeypatch.setattr(bw.shutil, "rmtree", _forbid_rmtree)
+    _refuse_build_dir(bw, amd)
+    assert cache.is_file()
+
+
+def test_nrnivmodl_refuses_a_file_named_amd64(tmp_path, monkeypatch):
+    amd = tmp_path / "AMD64"
+    amd.write_text("precious\n", encoding="utf-8")
+    bw = _binwrapper()
+    monkeypatch.setattr(bw.shutil, "rmtree", _forbid_rmtree)
+    _refuse_build_dir(bw, amd)
+    assert amd.read_text(encoding="utf-8") == "precious\n"
+
+
+def test_nrnivmodl_refuses_a_symlink(tmp_path, monkeypatch):
+    target = tmp_path / "real"
+    target.mkdir()
+    (target / "CMakeCache.txt").write_text(
+        "CMAKE_PROJECT_NAME:STATIC=nrnivmodl\nNRNIVMODL_NEURON:BOOL=ON\n",
+        encoding="utf-8",
+    )
+    link = tmp_path / "AMD64"
+    try:
+        link.symlink_to(target, target_is_directory=True)
+    except OSError:
+        pytest.skip("this platform cannot create a directory symlink")
+    bw = _binwrapper()
+    monkeypatch.setattr(bw.shutil, "rmtree", _forbid_rmtree)
+    _refuse_build_dir(bw, link)
+    assert link.is_symlink()
+    assert (target / "CMakeCache.txt").is_file()
+
+
+def test_nrnivmodl_missing_build_directory_is_left_missing(tmp_path):
+    amd = tmp_path / "AMD64"
+    bw = _binwrapper()
+    bw._nt_prepare_build_dir(amd)
+    assert not amd.exists()
+
+
+def test_nrnivmodl_replaces_its_own_cache(tmp_path):
+    """A previous nrnivmodl tree is removed so stale CMake state does not linger."""
+    amd = tmp_path / "AMD64"
+    amd.mkdir()
+    (amd / "CMakeCache.txt").write_text(
+        "# comment NRNIVMODL_ should not count\n"
+        "CMAKE_PROJECT_NAME:STATIC=nrnivmodl\n"
+        "NRNIVMODL_NEURON:BOOL=ON\n",
+        encoding="utf-8",
+    )
+    (amd / "stale.txt").write_text("old\n", encoding="utf-8")
+    bw = _binwrapper()
+    bw._nt_prepare_build_dir(amd)
+    assert not amd.exists()
+    assert list(tmp_path.glob("AMD64.old.*")) == []
+
+
+def test_nrnivmodl_replaces_tree_with_nrnmech_dll(tmp_path):
+    amd = tmp_path / "AMD64"
+    release = amd / "Release"
+    release.mkdir(parents=True)
+    (release / "nrnmech.dll").write_bytes(b"MZ")
+    bw = _binwrapper()
+    bw._nt_prepare_build_dir(amd)
+    assert not amd.exists()
+
+
+def test_nrnivmodl_replaces_tree_with_solution(tmp_path):
+    amd = tmp_path / "AMD64"
+    amd.mkdir()
+    (amd / "nrnivmodl.sln").write_text(
+        "Microsoft Visual Studio Solution File\n", encoding="utf-8"
+    )
+    bw = _binwrapper()
+    bw._nt_prepare_build_dir(amd)
+    assert not amd.exists()

@@ -330,6 +330,78 @@ def _nt_replace_tree(path):
         pass
 
 
+def _nt_regular_file(path):
+    path = Path(path)
+    return path.is_file() and not path.is_symlink()
+
+
+def _nt_cache_is_nrnivmodl(path):
+    """True when CMakeCache.txt is from ``project(nrnivmodl)``."""
+    if not _nt_regular_file(path):
+        return False
+    try:
+        with path.open("r", encoding="utf-8", errors="replace") as handle:
+            text = handle.read(262144)
+    except OSError:
+        return False
+    for line in text.splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or line.startswith("//"):
+            continue
+        if line.startswith("NRNIVMODL_"):
+            return True
+        if line == "CMAKE_PROJECT_NAME:STATIC=nrnivmodl":
+            return True
+    return False
+
+
+def _nt_has_nrnmech_dll(path):
+    """nrnmech.dll at the build root or in a Visual Studio config directory."""
+    path = Path(path)
+    for cfg in ("", "Release", "RelWithDebInfo", "Debug", "MinSizeRel"):
+        dll = path / cfg / "nrnmech.dll" if cfg else path / "nrnmech.dll"
+        if _nt_regular_file(dll):
+            return True
+    return False
+
+
+def _nt_neuron_build_tree(path):
+    """True when path is a directory this nrnivmodl created.
+
+    A link is not followed. An unrelated directory named AMD64 has none of
+    these markers.
+    """
+    path = Path(path)
+    if path.is_symlink() or not path.is_dir():
+        return False
+    if _nt_cache_is_nrnivmodl(path / "CMakeCache.txt"):
+        return True
+    if _nt_has_nrnmech_dll(path):
+        return True
+    return _nt_regular_file(path / "nrnivmodl.sln")
+
+
+def _nt_prepare_build_dir(path):
+    """Clear a previous nrnivmodl build. Leave any other directory alone.
+
+    The Windows wheel build directory is ``cwd / platform.machine()``
+    (``AMD64``). Replacing that directory drops stale CMake state and a
+    mapped ``nrnmech.dll``. The name is not reserved. A directory with no
+    NEURON nrnivmodl marker is refused, and nothing is removed.
+    """
+    path = Path(path)
+    if not path.exists() and not path.is_symlink():
+        return
+    if _nt_neuron_build_tree(path):
+        _nt_replace_tree(path)
+        return
+    raise SystemExit(
+        f"nrnivmodl: {path} exists and is not a NEURON nrnivmodl build directory.\n"
+        "nrnivmodl will not delete it. Move it aside, or run nrnivmodl "
+        "from another directory."
+    )
+
+
 def _nrnivmodl_cmake(args):
     """Build nrnmech via the shipped neuron CMake package (Windows wheel path)."""
     parsed = _nrnivmodl_parse_args(args)
@@ -383,9 +455,10 @@ def _nrnivmodl_cmake(args):
         os.environ.setdefault("MODLUNIT", str(units))
 
     # Match CMAKE_SYSTEM_PROCESSOR (AMD64 on win_amd64) and Unix uname -m layout.
+    # Replace only a previous nrnivmodl tree. An unrelated AMD64 is left as it is.
     builddir = Path.cwd() / platform.machine()
-    if os.name == "nt" and builddir.exists():
-        _nt_replace_tree(builddir)
+    if os.name == "nt":
+        _nt_prepare_build_dir(builddir)
     cmake_cfg = [
         cmake,
         "-S",
