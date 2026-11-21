@@ -164,7 +164,7 @@ Useful cache variables (see `cmake -L` / `CMakeCache.txt`):
 | `hoctests` | HOC via `special`, Python via plain interpreter |
 | `ringtest`, `connect_dend` | foreign `nrniv` + `RunHOCTest.cmake` |
 | `rxdmod_tests` | if wheel has RX3D and testdata submodule present |
-| `gjtests` serial | python `test_natrans.py` (in-tree script; `test_par_gj.py` is `gj_par`) |
+| `gjtests` serial | python `test_natrans.py` (CN half skipped; `test_par_gj.py` is `gj_par`) |
 
 ### What is included (M4 — MPI / CoreNEURON)
 

@@ -209,10 +209,34 @@ class NeuronTestCase(unittest.TestCase):
 
     def testRxDexistence(self):
         from neuron import config
+        import sys
 
         enable_rx3d = config.arguments["NRN_ENABLE_RX3D"]
         if not enable_rx3d:
             print("Skipping because NRN_ENABLE_RX3D={}".format(enable_rx3d))
+            return
+
+        # Windows spawn does not show the child's stdout/stderr in the parent
+        # (the last GHA failure was exitcode != 0 with no exception text).
+        if sys.platform == "win32":
+            import os
+            import subprocess
+
+            env = os.environ.copy()
+            env["PYTHONFAULTHANDLER"] = "1"
+            r = subprocess.run(
+                [
+                    sys.executable,
+                    "-c",
+                    "from neuron.tests.test_neuron import NeuronTestCase as T; T.RxDexistence()",
+                ],
+                capture_output=True,
+                text=True,
+                env=env,
+            )
+            sys.stdout.write(r.stdout)
+            sys.stderr.write(r.stderr)
+            assert r.returncode == 0, r.stderr or r.stdout or "exit %s" % r.returncode
             return
 
         from multiprocessing import Process
