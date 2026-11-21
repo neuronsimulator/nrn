@@ -219,7 +219,7 @@ static struct { /* functions that return an object */
 } objfun_bltin[] = {{"object_pushed", hoc_object_pushed}, {nullptr, nullptr}};
 
 double hoc_epsilon = 1.e-11;
-double hoc_ac_; /*known to the interpreter to evaluate expressions with hoc_oc() */
+NRN_DLLSYM double hoc_ac_; /*known to the interpreter to evaluate expressions with hoc_oc() */
 
 double hoc_cross_x_, hoc_cross_y_; /* For Graph class in ivoc */
 double hoc_default_dll_loaded_;
@@ -255,7 +255,7 @@ void hoc_init(void) /* install constants and built-ins table */
     extern void hoc_init_space(void);
     hoc_init_space();
     for (i = 0; keywords[i].name; i++)
-        IGNORE(hoc_install(keywords[i].name, keywords[i].kval, 0.0, &hoc_symlist));
+        NRN_IGNORE(hoc_install(keywords[i].name, keywords[i].kval, 0.0, &hoc_symlist));
     for (i = 0; consts[i].name; i++) {
         s = hoc_install(consts[i].name, UNDEF, consts[i].cval, &hoc_symlist);
         s->type = VAR;
@@ -330,7 +330,7 @@ void hoc_show_winio(void) {
     hoc_pushx(0.);
 }
 
-int nrn_main_launch;
+NRN_DLLSYM int nrn_main_launch;
 
 void hoc_nrnversion(void) {
     char** p = hoc_temp_charptr();

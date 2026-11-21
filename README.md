@@ -8,16 +8,20 @@ Ask questions on our [Discussion Forum](https://github.com/neuronsimulator/nrn/d
 
 NEURON provides binary installers for Linux, Mac and Windows platforms. You can find the latest
 installers for Mac and Windows [here](https://github.com/neuronsimulator/nrn/releases). For
-Linux and Mac you can install the official Python 3 wheel with:
+Linux, Mac, and Windows you can install the official Python 3 wheel with:
 
 ```
 pip3 install neuron
 ```
 
+Windows wheels need Python 3.11 or newer. The Windows installer linked above remains available
+if you do not want pip.
+
 If you want to build the latest version from source, we support **CMake** as build system.
 See detailed installation instructions: [docs/install/install_instructions.md](docs/install/install_instructions.md).
 
-It is possible to install the Linux Python wheels on Windows via the Windows Subsystem for Linux (WSL) - check the installation instructions above.
+The Linux wheel can also be installed on Windows via the Windows Subsystem for Linux (WSL).
+See the installation instructions above.
 
 > [!NOTE]
 > **About NEURON >= 9.0**: If you are experiencing compilation errors while using

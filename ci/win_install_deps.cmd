@@ -63,16 +63,18 @@ if not defined pacman_ok goto :error
 goto :EOF
 
 :pacman_install
+:: base-devel 2026.11 no longer depends on bison or flex. CMake requires both.
 "%MSYS2_ROOT%\usr\bin\pacman" --noconfirm --needed -S --disable-download-timeout ^
 cmake ^
 git ^
 zip ^
 unzip ^
 base-devel ^
+bison ^
+flex ^
 mingw-w64-x86_64-cmake ^
 mingw-w64-x86_64-ninja ^
 mingw-w64-x86_64-ncurses ^
-mingw-w64-x86_64-readline ^
 mingw-w64-x86_64-python ^
 mingw-w64-x86_64-python-setuptools ^
 mingw-w64-x86_64-python-packaging ^

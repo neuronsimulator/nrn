@@ -1,6 +1,7 @@
 foreach(
   api_test_file
   deferred_unref.cpp
+  diam3d_pending.cpp
   global_scalar.cpp
   hh_sim.cpp
   nlayer_extracellular.cpp
@@ -9,6 +10,7 @@ foreach(
   object_new_nothrow.cpp
   object_new_wrap.cpp
   object_ptr_push.cpp
+  plotshape_interface.cpp
   property_array_steer.cpp
   property_element_ptr.cpp
   raw_hoc_errors.cpp

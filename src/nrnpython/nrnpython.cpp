@@ -13,6 +13,7 @@
 #include <hocstr.h>
 #include "nrnpy.h"
 
+#include <cstring>
 #include <filesystem>
 #include <string>
 #include <sstream>
@@ -28,21 +29,23 @@
 
 #include <nanobind/nanobind.h>
 
-extern HocStr* hoc_cbufstr;
-extern int nrnpy_nositeflag;
-extern std::string nrnpy_pyexe;
-extern char* hoc_ctp;
-extern FILE* hoc_fin;
-extern const char* hoc_promptstr;
+extern NRN_DLLSYM HocStr* hoc_cbufstr;
+extern NRN_DLLSYM int nrnpy_nositeflag;
+extern NRN_DLLSYM std::string nrnpy_pyexe;
+extern NRN_DLLSYM char* hoc_ctp;
+extern NRN_DLLSYM FILE* hoc_fin;
+extern NRN_DLLSYM const char* hoc_promptstr;
 extern char* neuronhome_forward();
 #if DARWIN || defined(__linux__)
 extern const char* path_prefix_to_libnrniv();
 #endif
 static char* nrnpython_getline(FILE*, FILE*, const char*);
-extern int nrn_global_argc;
-extern char** nrn_global_argv;
+extern NRN_DLLSYM int nrn_global_argc;
+extern NRN_DLLSYM char** nrn_global_argv;
 int nrnpy_pyrun(const char*);
-extern int (*p_nrnpy_pyrun)(const char*);
+extern NRN_DLLSYM int (*p_nrnpy_pyrun)(const char*);
+extern NRN_DLLSYM size_t hoc_xopen_file_size_;
+extern NRN_DLLSYM char* hoc_xopen_file_;
 
 static std::string python_sys_path_to_append() {
     std::string path{neuronhome_forward()};
@@ -68,8 +71,48 @@ wchar_t* saved_progname{};
 
 void* nrnpy_dlsym(const char* name) {
 #if defined(_WIN32)
-    HMODULE h = GetModuleHandleA("python3.dll");
-    return h ? reinterpret_cast<void*>(GetProcAddress(h, name)) : nullptr;
+    // python3.dll is the stable ABI. A versioned build links python3XY.dll
+    // and may not load python3.dll. PyOS_ReadlineFunctionPointer is not in
+    // the limited API, so python3.dll does not export it even when the ABI3
+    // build has loaded that DLL. Unix dlsym(RTLD_DEFAULT) searches every
+    // loaded module; follow the same search here.
+    auto from_module = [name](const char* module) -> void* {
+        if (!module || !module[0]) {
+            return nullptr;
+        }
+        HMODULE module_handle = GetModuleHandleA(module);
+        if (!module_handle) {
+            return nullptr;
+        }
+        return reinterpret_cast<void*>(GetProcAddress(module_handle, name));
+    };
+    if (void* symbol = from_module("python3.dll")) {
+        return symbol;
+    }
+    if (const char* pylib = std::getenv("NRN_PYLIB")) {
+        if (void* symbol = from_module(pylib)) {
+            return symbol;
+        }
+        const char* base = pylib;
+        for (const char* s = pylib; *s; ++s) {
+            if (*s == '/' || *s == '\\') {
+                base = s + 1;
+            }
+        }
+        if (base != pylib) {
+            if (void* symbol = from_module(base)) {
+                return symbol;
+            }
+        }
+    }
+    for (int minor = 10; minor <= 30; ++minor) {
+        char modname[32];
+        std::snprintf(modname, sizeof modname, "python3%d.dll", minor);
+        if (void* symbol = from_module(modname)) {
+            return symbol;
+        }
+    }
+    return nullptr;
 #else
     return dlsym(RTLD_DEFAULT, name);
 #endif
@@ -202,6 +245,43 @@ static void nrnpython_set_path(std::string_view fname) {
     }
 }
 
+namespace {
+std::string nrn_forward_slash_path(std::string s) {
+#if defined(WIN32)
+    /* \ in HOC "..." and Python '...' is an escape; fopen accepts /. */
+    for (char& c: s) {
+        if (c == '\\') {
+            c = '/';
+        }
+    }
+#endif
+    return s;
+}
+
+void hoc_xopen_file_set(const std::string& name) {
+    if (!hoc_xopen_file_ || name.size() >= hoc_xopen_file_size_) {
+        hoc_xopen_file_size_ = name.size() + 100;
+        hoc_xopen_file_ = static_cast<char*>(erealloc(hoc_xopen_file_, hoc_xopen_file_size_));
+    }
+    std::memcpy(hoc_xopen_file_, name.c_str(), name.size() + 1);
+}
+
+/* nrniv of a path .py does not chdir and does not set hoc_xopen_file_.
+   load_file("rel.hoc") inside looked in cwd. load_file of a path already
+   chdir's; nrniv of a path .hoc searches next to hoc_xopen_file_. Same
+   for the running Python script. Last / is not the directory on Windows. */
+struct HocXopenFileGuard {
+    std::string saved;
+    HocXopenFileGuard(const std::string& name) {
+        saved = (hoc_xopen_file_ && hoc_xopen_file_[0]) ? hoc_xopen_file_ : "";
+        hoc_xopen_file_set(name);
+    }
+    ~HocXopenFileGuard() {
+        hoc_xopen_file_set(saved);
+    }
+};
+}  // namespace
+
 /**
  * @brief Execute a Python script.
  * @return 0 on failure, 1 on success.
@@ -241,6 +321,7 @@ int nrnpy_pyrun(const char* fname) {
         return 0;
     }
     fclose(fp);
+    HocXopenFileGuard xopen_file{nrn_forward_slash_path(fname)};
 #if !defined(MINGW)
     fp = fopen(fname, "r");
     if (fp) {
@@ -252,9 +333,10 @@ int nrnpy_pyrun(const char* fname) {
     return 0;
 #else   // MINGW
     // MINGW and Python have incompatible FILE* so try to accomplish
-    // with pure Python
+    // with pure Python. Forward slashes so a native path is not a
+    // Python string escape (\b \t \n \f).
     std::string exec{"with open('"};
-    exec += fname;
+    exec += nrn_forward_slash_path(fname);
     exec +=
         "', 'rb') as nrnmingw_file:"
         " exec(nrnmingw_file.read(), globals())\n";
@@ -290,8 +372,23 @@ static int nrnmingw_pyrun_interactiveloop() {
     return 0;
 }
 
-extern "C" PyObject* nrnpy_hoc();
+extern "C" NRN_EXPORT PyObject* nrnpy_hoc();
 extern PyObject* nrnpy_nrn();
+
+/* Windows filenames are case-insensitive; SCRIPT.PY is a Python file.
+   Unix stays case-sensitive. Last 3 chars of the whole path is not the
+   filesystem filename extension. Same as hoc.cpp nrn_path_has_ext. */
+static bool nrn_path_has_ext(const char* path, const char* ext) {
+    std::string got = std::filesystem::path(path).extension().string();
+#if defined(WIN32)
+    for (char& c: got) {
+        if (c >= 'A' && c <= 'Z') {
+            c = static_cast<char>(c - 'A' + 'a');
+        }
+    }
+#endif
+    return got == ext;
+}
 
 /** @brief Start the Python interpreter.
  *  @arg b Mode of operation, can be 0 (finalize), 1 (initialize),
@@ -467,7 +564,9 @@ static int nrnpython_start(int b) {
         // Beginning with Python 3.13.0 it seems that the readline
         // module has not been loaded yet. Since PyInit_readline sets
         // PyOS_ReadlineFunctionPointer = call_readline; without checking,
-        // we need to import here. Windows CPython has no readline module.
+        // we need to import here when the stdlib module exists. Windows
+        // CPython has no stdlib readline module. Where the symbol exists,
+        // the hook below replaces PyOS_ReadlineFunctionPointer.
         nrnpy_run_simple_string(
             "try:\n"
             "    import readline as nrn_readline\n"
@@ -491,7 +590,7 @@ static int nrnpython_start(int b) {
                     python_error_encountered = true;
                 }
                 break;
-            } else if (strlen(arg) > 3 && strcmp(arg + strlen(arg) - 3, ".py") == 0) {
+            } else if (nrn_path_has_ext(arg, ".py")) {
                 if (!nrnpy_pyrun(arg)) {
                     python_error_encountered = true;
                 }
