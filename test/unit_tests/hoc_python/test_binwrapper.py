@@ -414,25 +414,71 @@ def test_nrnivmodl_replaces_its_own_cache(tmp_path):
     assert list(tmp_path.glob("AMD64.old.*")) == []
 
 
-def test_nrnivmodl_replaces_tree_with_nrnmech_dll(tmp_path):
+@pytest.mark.parametrize(
+    "dll_parts",
+    [
+        ("nrnmech.dll",),
+        ("Release", "nrnmech.dll"),
+        ("RelWithDebInfo", "nrnmech.dll"),
+        ("Debug", "nrnmech.dll"),
+        ("MinSizeRel", "nrnmech.dll"),
+    ],
+)
+def test_nrnivmodl_refuses_nrnmech_dll_without_cache(tmp_path, monkeypatch, dll_parts):
+    """A nrnmech.dll filename is not ownership. The directory stays."""
+    amd = tmp_path / "AMD64"
+    dll = amd.joinpath(*dll_parts)
+    dll.parent.mkdir(parents=True, exist_ok=True)
+    dll.write_bytes(b"MZ")
+    bw = _binwrapper()
+    monkeypatch.setattr(bw.shutil, "rmtree", _forbid_rmtree)
+    _refuse_build_dir(bw, amd)
+    assert dll.read_bytes() == b"MZ"
+    assert amd.is_dir()
+
+
+def test_nrnivmodl_refuses_solution_without_cache(tmp_path, monkeypatch):
+    """nrnivmodl.sln is not ownership. The directory stays."""
+    amd = tmp_path / "AMD64"
+    amd.mkdir()
+    sln = amd / "nrnivmodl.sln"
+    sln.write_text("Microsoft Visual Studio Solution File\n", encoding="utf-8")
+    bw = _binwrapper()
+    monkeypatch.setattr(bw.shutil, "rmtree", _forbid_rmtree)
+    _refuse_build_dir(bw, amd)
+    assert sln.is_file()
+    assert amd.is_dir()
+
+
+def test_nrnivmodl_refuses_other_project_with_nrnmech_dll(tmp_path, monkeypatch):
+    """A foreign CMake cache stays foreign when a nrnmech.dll is also present."""
     amd = tmp_path / "AMD64"
     release = amd / "Release"
     release.mkdir(parents=True)
-    (release / "nrnmech.dll").write_bytes(b"MZ")
+    (amd / "CMakeCache.txt").write_text(
+        "CMAKE_PROJECT_NAME:STATIC=notneuron\n", encoding="utf-8"
+    )
+    dll = release / "nrnmech.dll"
+    dll.write_bytes(b"MZ")
     bw = _binwrapper()
-    bw._nt_prepare_build_dir(amd)
-    assert not amd.exists()
+    monkeypatch.setattr(bw.shutil, "rmtree", _forbid_rmtree)
+    _refuse_build_dir(bw, amd)
+    assert dll.read_bytes() == b"MZ"
 
 
-def test_nrnivmodl_replaces_tree_with_solution(tmp_path):
+def test_nrnivmodl_refuses_other_project_with_solution(tmp_path, monkeypatch):
+    """A foreign CMake cache stays foreign when nrnivmodl.sln is also present."""
     amd = tmp_path / "AMD64"
     amd.mkdir()
-    (amd / "nrnivmodl.sln").write_text(
-        "Microsoft Visual Studio Solution File\n", encoding="utf-8"
+    (amd / "CMakeCache.txt").write_text(
+        "CMAKE_PROJECT_NAME:STATIC=notneuron\n", encoding="utf-8"
     )
+    sln = amd / "nrnivmodl.sln"
+    sln.write_text("Microsoft Visual Studio Solution File\n", encoding="utf-8")
     bw = _binwrapper()
-    bw._nt_prepare_build_dir(amd)
-    assert not amd.exists()
+    monkeypatch.setattr(bw.shutil, "rmtree", _forbid_rmtree)
+    _refuse_build_dir(bw, amd)
+    assert sln.is_file()
 
 
 def test_windows_wheel_docs_name_the_ansi_code_page_limit():

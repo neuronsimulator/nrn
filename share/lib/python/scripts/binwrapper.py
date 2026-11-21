@@ -355,30 +355,18 @@ def _nt_cache_is_nrnivmodl(path):
     return False
 
 
-def _nt_has_nrnmech_dll(path):
-    """nrnmech.dll at the build root or in a Visual Studio config directory."""
-    path = Path(path)
-    for cfg in ("", "Release", "RelWithDebInfo", "Debug", "MinSizeRel"):
-        dll = path / cfg / "nrnmech.dll" if cfg else path / "nrnmech.dll"
-        if _nt_regular_file(dll):
-            return True
-    return False
-
-
 def _nt_neuron_build_tree(path):
     """True when path is a directory this nrnivmodl created.
 
-    A link is not followed. An unrelated directory named AMD64 has none of
-    these markers.
+    A link is not followed. The only ownership evidence is CMakeCache.txt:
+    a non-comment ``NRNIVMODL_`` line, or
+    ``CMAKE_PROJECT_NAME:STATIC=nrnivmodl``. A regular ``nrnmech.dll`` or
+    ``nrnivmodl.sln`` does not count.
     """
     path = Path(path)
     if path.is_symlink() or not path.is_dir():
         return False
-    if _nt_cache_is_nrnivmodl(path / "CMakeCache.txt"):
-        return True
-    if _nt_has_nrnmech_dll(path):
-        return True
-    return _nt_regular_file(path / "nrnivmodl.sln")
+    return _nt_cache_is_nrnivmodl(path / "CMakeCache.txt")
 
 
 def _nt_prepare_build_dir(path):
@@ -386,8 +374,9 @@ def _nt_prepare_build_dir(path):
 
     The Windows wheel build directory is ``cwd / platform.machine()``
     (``AMD64``). Replacing that directory drops stale CMake state and a
-    mapped ``nrnmech.dll``. The name is not reserved. A directory with no
-    NEURON nrnivmodl marker is refused, and nothing is removed.
+    mapped ``nrnmech.dll``. The name is not reserved. A directory whose
+    CMake cache is not this nrnivmodl project is refused, and nothing is
+    removed.
     """
     path = Path(path)
     if not path.exists() and not path.is_symlink():
