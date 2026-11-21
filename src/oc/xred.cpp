@@ -67,13 +67,8 @@ double hoc_xred(const char* prompt, double defalt, double min, double max) {
     char istr[80], c[2];
     double input;
     for (;;) {
-        IGNORE(fprintf(stderr, "%s (%-.5g)", prompt, defalt));
-#ifdef WIN32
-        if (gets(istr) != NULL) {
-            strcat(istr, "\n");
-#else
-        if (fgets(istr, 79, stdin) != NULL) {
-#endif
+        NRN_IGNORE(fprintf(stderr, "%s (%-.5g)", prompt, defalt));
+        if (fgets(istr, sizeof istr, stdin) != NULL) {
             if (istr[0] == '\n') {
                 input = defalt;
                 goto label;
@@ -83,13 +78,13 @@ double hoc_xred(const char* prompt, double defalt, double min, double max) {
                 label: {
                     if (input >= min && input <= max)
                         return (input);
-                    IGNORE(fprintf(stderr, "must be > %-.5g and < %-.5g\n", min, max));
+                    NRN_IGNORE(fprintf(stderr, "must be > %-.5g and < %-.5g\n", min, max));
                     continue;
                 }
         } else {
             rewind(stdin);
         }
-        IGNORE(fprintf(stderr, "input error\n"));
+        NRN_IGNORE(fprintf(stderr, "input error\n"));
     }
 #else
     return 0.;
@@ -133,14 +128,9 @@ void hoc_Sred(void) {
 int hoc_sred(const char* prompt, char* defalt, char* charlist) {
     char istr[80], c[2], instring[40], *result;
 
-    for (;;) {                                              /* cycle until done */
-        IGNORE(fprintf(stderr, "%s (%s)", prompt, defalt)); /* print prompt */
-#ifdef WIN32
-        if (gets(istr) != NULL) {
-            strcat(istr, "\n");
-#else
-        if (fgets(istr, 79, stdin) != NULL) { /* read input */
-#endif
+    for (;;) {                                                  /* cycle until done */
+        NRN_IGNORE(fprintf(stderr, "%s (%s)", prompt, defalt)); /* print prompt */
+        if (fgets(istr, sizeof istr, stdin) != NULL) {          /* read input */
             if (defalt[0] != '\0' && istr[0] == '\n') {
                 strcpy(istr, defalt); /* if CR only, use default */
             } else {
@@ -156,12 +146,12 @@ int hoc_sred(const char* prompt, char* defalt, char* charlist) {
                     return (result - charlist); /* update default and return pos */
                 }
             }
-            IGNORE(fprintf(stderr, "input must be a substring of <<%s>>\n", charlist));
+            NRN_IGNORE(fprintf(stderr, "input must be a substring of <<%s>>\n", charlist));
             continue; /* go back for another cycle */
         } else {
             rewind(stdin);
         }
-        IGNORE(fprintf(stderr, "input error\n")); /* recycle */
+        NRN_IGNORE(fprintf(stderr, "input error\n")); /* recycle */
     }
     return 0;
 }

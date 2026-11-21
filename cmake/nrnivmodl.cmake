@@ -19,6 +19,12 @@ set(NRNIVMODL_CORENEURON
 set(NRNIVMODL_SPECIAL
     ON
     CACHE BOOL "Whether to generate the `special` executable")
+set(NRNIVMODL_INCFLAGS
+    ""
+    CACHE STRING "Extra cl.exe flags for nrnmech. Not a CMake list.")
+set(NRNIVMODL_LDFLAGS
+    ""
+    CACHE STRING "Extra link.exe flags for nrnmech. Not a CMake list.")
 
 set(NRNIVMODL_ARGS)
 if(NRNIVMODL_NEURON)
@@ -40,4 +46,8 @@ create_nrnmech(
   LIBRARY_OUTPUT_DIR
   "${CMAKE_CURRENT_BINARY_DIR}"
   EXECUTABLE_OUTPUT_DIR
-  "${CMAKE_CURRENT_BINARY_DIR}")
+  "${CMAKE_CURRENT_BINARY_DIR}"
+  INCFLAGS
+  "${NRNIVMODL_INCFLAGS}"
+  LDFLAGS
+  "${NRNIVMODL_LDFLAGS}")
