@@ -66,7 +66,7 @@ On **nrn-ci-deps** release **`ci-deps-v1`**:
 
 - Ubuntu 24.04 MPICH packages for wheel tests (LP#2072338), **amd64 and arm64**
 
-- GNU **ncurses** / **readline** sources for Mac static readline and the manylinux Dockerfile
+- GNU **ncurses** sources for the Mac static termcap and the manylinux Dockerfile. Wheels fetch BSD libedit; GNU readline tarballs are not used.
 - **automake** 1.16.5 for the Ubuntu MUSIC job in `neuron-ci`
 
 Other MANIFEST rows stay `managed: false` until promoted the same way.

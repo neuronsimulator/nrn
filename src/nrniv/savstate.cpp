@@ -28,8 +28,8 @@ extern std::vector<PlayRecord*>* net_cvode_instance_prl();
 extern double t;
 extern short* nrn_is_artificial_;
 static void tqcallback(const TQItem* tq, int i);
-void (*nrnpy_restore_savestate)(int64_t, char*) = NULL;
-void (*nrnpy_store_savestate)(char** save_data, uint64_t* save_data_size) = NULL;
+NRN_DLLSYM void (*nrnpy_restore_savestate)(int64_t, char*) = NULL;
+NRN_DLLSYM void (*nrnpy_store_savestate)(char** save_data, uint64_t* save_data_size) = NULL;
 
 #define ASSERTfgets(a, b, c)     nrn_assert(fgets(a, b, c) != 0)
 #define ASSERTfread(a, b, c, d)  nrn_assert(fread(a, b, c, d) == c)
