@@ -134,10 +134,18 @@ jobs:
         if: inputs.build_type == 'nightly'
         shell: bash
         run: |
-          # Do not `source venv/bin/activate`: default Windows shell is pwsh,
-          # and a Windows venv has Scripts/, not bin/. The runner is disposable.
-          python3 -m pip install tomli tomli-w
-          python3 packaging/python/change_name.py ./pyproject.toml neuron-nightly
+          # macos-15 python3 is Homebrew and refuses pip install (PEP 668).
+          # Do not source venv/bin/activate: a Windows venv has Scripts/, not bin/.
+          python3 -m venv venv
+          if [ -x venv/bin/python ]; then
+            py=venv/bin/python
+          elif [ -x venv/Scripts/python.exe ]; then
+            py=venv/Scripts/python.exe
+          else
+            py=venv/Scripts/python
+          fi
+          "$py" -m pip install tomli tomli-w
+          "$py" packaging/python/change_name.py ./pyproject.toml neuron-nightly
 
       - name: Optimize RX3D Python module
         if: inputs.optimize_rxd == true
