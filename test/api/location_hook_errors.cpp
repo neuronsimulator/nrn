@@ -52,10 +52,9 @@ static double get_loc(const char* name) {
 // Run a command that must fail with a HOC error containing `expected`.
 static bool fails_with(const char* command, const char* expected) {
     std::fflush(stderr);
-    char path[] = "/tmp/location_hook_errors_XXXXXX";
-    int fd = mkstemp(path);
+    FILE* const sink = std::tmpfile();
     int saved = dup(STDERR_FILENO);
-    if (fd == -1 || saved == -1 || dup2(fd, STDERR_FILENO) == -1) {
+    if (!sink || saved == -1 || dup2(fileno(sink), STDERR_FILENO) == -1) {
         std::perror("redirect stderr");
         std::exit(1);
     }
@@ -65,13 +64,12 @@ static bool fails_with(const char* command, const char* expected) {
     close(saved);
     std::string text;
     char buf[512];
-    lseek(fd, 0, SEEK_SET);
-    ssize_t n;
-    while ((n = read(fd, buf, sizeof(buf))) > 0) {
+    std::rewind(sink);
+    size_t n;
+    while ((n = std::fread(buf, 1, sizeof(buf), sink)) > 0) {
         text.append(buf, n);
     }
-    close(fd);
-    unlink(path);
+    std::fclose(sink);
     bool ok = rc != 0 && text.find(expected) != std::string::npos;
     if (!ok) {
         std::cerr << "FAIL: '" << command << "' rc=" << rc << " stderr='" << text << "'\n";
