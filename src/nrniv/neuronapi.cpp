@@ -51,14 +51,14 @@ extern int nrn_nobanner_;
 extern int diam_changed;
 extern int nrn_try_catch_nest_depth;
 extern int hoc_execerror_messages;
-extern "C" void nrnpy_set_pr_etal(int (*cbpr_stdoe)(int, char*), int (*cbpass)());
+extern "C" NRN_DLLSYM void nrnpy_set_pr_etal(int (*cbpr_stdoe)(int, char*), int (*cbpass)());
 int ivocmain_session(int, const char**, const char**, int start_session);
 void simpleconnectsection();
 extern Object* hoc_newobj1(Symbol*, int);
 extern void hoc_unref_defer();
-extern char* (*nrnpy_pysec_name_p_)(Section*);
-extern Object* (*nrnpy_pysec_cell_p_)(Section*);
-extern int (*nrnpy_pysec_cell_equals_p_)(Section*, Object*);
+extern NRN_DLLSYM char* (*nrnpy_pysec_name_p_)(Section*);
+extern NRN_DLLSYM Object* (*nrnpy_pysec_cell_p_)(Section*);
+extern NRN_DLLSYM int (*nrnpy_pysec_cell_equals_p_)(Section*, Object*);
 extern std::tuple<int, const char**> nrn_mpi_setup(int argc, const char** argv);
 
 extern "C" {
@@ -120,59 +120,101 @@ Section* nrn_section_new(char const* const name) {
     return (*pitm)->element.sec;
 }
 
+// The hooks installed with nrn_section_owner_hooks_set. Sections are created
+// only while these are the installed hooks: another provider's (NEURON's
+// Python module installs its own) would read our owners as its objects.
+static nrn_section_owner_name_func capi_owner_name;
+static nrn_section_owner_cell_func capi_owner_cell;
+static nrn_section_owner_cell_equals_func capi_owner_cell_equals;
+
+static bool capi_owner_hooks_installed() {
+    return capi_owner_name && nrnpy_pysec_name_p_ == capi_owner_name &&
+           nrnpy_pysec_cell_p_ == capi_owner_cell &&
+           nrnpy_pysec_cell_equals_p_ == capi_owner_cell_equals;
+}
+
+// Is there a section owned through the hooks, by any provider?
+static bool owned_sections_exist() {
+    hoc_Item* qsec;
+    ITERATE(qsec, section_list) {
+        Section* sec = hocSEC(qsec);
+        if (sec->prop && sec->prop->dparam[PROP_PY_INDEX].get<void*>()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static bool owner_hooks_fail(char* error_msg, size_t error_msg_size, const char* message) {
+    if (error_msg && error_msg_size) {
+        std::strncpy(error_msg, message, error_msg_size - 1);
+        error_msg[error_msg_size - 1] = '\0';
+    }
+    return false;
+}
+
 bool nrn_section_owner_hooks_set(nrn_section_owner_name_func name,
                                  nrn_section_owner_cell_func cell,
                                  nrn_section_owner_cell_equals_func cell_equals,
                                  char* error_msg,
                                  size_t error_msg_size) {
-    auto fail = [&](const char* message) {
-        if (error_msg && error_msg_size) {
-            std::strncpy(error_msg, message, error_msg_size - 1);
-            error_msg[error_msg_size - 1] = '\0';
-        }
-        return false;
-    };
-#if USE_PYTHON
     if (!name || !cell || !cell_equals) {
-        return fail("all three section owner hooks are required");
+        return owner_hooks_fail(error_msg,
+                                error_msg_size,
+                                "all three section owner hooks are required");
     }
     // The hooks are global. Refuse to replace another provider's (NEURON's own
     // Python module installs them), whose sections would then be misread.
     if ((nrnpy_pysec_name_p_ && nrnpy_pysec_name_p_ != name) ||
         (nrnpy_pysec_cell_p_ && nrnpy_pysec_cell_p_ != cell) ||
         (nrnpy_pysec_cell_equals_p_ && nrnpy_pysec_cell_equals_p_ != cell_equals)) {
-        return fail("section owner hooks are already installed by another provider");
+        return owner_hooks_fail(error_msg,
+                                error_msg_size,
+                                "section owner hooks are already installed by another provider");
     }
-    nrnpy_pysec_name_p_ = name;
-    nrnpy_pysec_cell_p_ = cell;
-    nrnpy_pysec_cell_equals_p_ = cell_equals;
+    nrnpy_pysec_name_p_ = capi_owner_name = name;
+    nrnpy_pysec_cell_p_ = capi_owner_cell = cell;
+    nrnpy_pysec_cell_equals_p_ = capi_owner_cell_equals = cell_equals;
     return true;
-#else
-    return fail("NEURON was built without Python support");
-#endif
+}
+
+bool nrn_section_owner_hooks_clear(char* error_msg, size_t error_msg_size) {
+    // Whoever installed them: an interface that replaces NEURON's Python module
+    // (nrniv -python) takes over its hooks this way.
+    if (owned_sections_exist()) {
+        return owner_hooks_fail(error_msg,
+                                error_msg_size,
+                                "owned sections exist; release them first");
+    }
+    nrnpy_pysec_name_p_ = capi_owner_name = nullptr;
+    nrnpy_pysec_cell_p_ = capi_owner_cell = nullptr;
+    nrnpy_pysec_cell_equals_p_ = capi_owner_cell_equals = nullptr;
+    return true;
 }
 
 Section* nrn_section_new_owned(void* owner) {
     // A section owned by an interface object, as NEURON's Python module creates its own:
     // no HOC symbol, owner stored in dparam[PROP_PY_INDEX]; the name and cell
     // come from the hooks.
-#if USE_PYTHON
-    if (!owner || !nrnpy_pysec_name_p_) {
+    if (!owner || !capi_owner_hooks_installed()) {
         return nullptr;
     }
-    Section* sec = nrnpy_newsection(static_cast<NPySecObj*>(owner));
+    Section* sec = section_new_owned(owner);
     nrnpy_pysecname2sec_add(sec);
     return sec;
-#else
+}
+
+void* nrn_section_owner_get(Section* sec) {
+    if (sec && sec->prop) {
+        return sec->prop->dparam[PROP_PY_INDEX].get<void*>();
+    }
     return nullptr;
-#endif
 }
 
 void nrn_section_owned_release(Section* sec) {
     // Called when the owner is destroyed; mirrors the Python module's section
     // deallocation. Frees the section, or drops the reference HOC's
     // delete_section kept if it was deleted from HOC first.
-#if USE_PYTHON
     if (!sec) {
         return;
     }
@@ -183,7 +225,6 @@ void nrn_section_owned_release(Section* sec) {
     } else if (!sec->prop) {
         section_unref(sec);
     }
-#endif
 }
 
 void nrn_section_connect(Section* child_sec, double child_x, Section* parent_sec, double parent_x) {

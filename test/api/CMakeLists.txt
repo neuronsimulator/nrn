@@ -25,9 +25,10 @@ set(api_test_files
     symbol_object_string.cpp
     template_property.cpp
     vclamp.cpp)
+list(APPEND api_test_files section_owner.cpp)
 if(NRN_ENABLE_PYTHON)
-  # Owned sections exist only in builds with Python support.
-  list(APPEND api_test_files section_owner.cpp)
+  # This one also imports NEURON's Python module.
+  list(APPEND api_test_files section_owner_python.cpp)
 endif()
 foreach(api_test_file ${api_test_files})
   string(REPLACE "." "_" api_test_name "${api_test_file}")
@@ -45,6 +46,14 @@ foreach(api_test_file ${api_test_files})
   set_property(TEST "${test_name}" PROPERTY ENVIRONMENT "${NRN_RUN_FROM_BUILD_DIR_ENV}"
                                             "CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}")
 endforeach()
+if(NRN_ENABLE_PYTHON AND NRN_NOCMODL_SANITIZER_ENVIRONMENT)
+  # Importing NEURON's Python module pulls in numpy and OpenSSL. LeakSanitizer reports what they and
+  # Python itself keep, none of it from NEURON.
+  set_property(
+    TEST "api::section_owner_python_cpp"
+    APPEND
+    PROPERTY ENVIRONMENT ${NRN_NOCMODL_SANITIZER_ENVIRONMENT})
+endif()
 
 # Reads Section::refcount, so it needs NEURON's internal headers.
 target_include_directories(

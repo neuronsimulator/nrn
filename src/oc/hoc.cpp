@@ -27,31 +27,42 @@
 #include "../nrniv/backtrace_utils.h"
 
 #include "../utils/profile/profiler_interface.h"
+#ifdef _MSC_VER
+#include <io.h>
+#include <process.h>
+#endif
+#ifdef _WIN32
+#include <conio.h>
+#endif
 
 #include <cfenv>
+#include <chrono>
 #include <condition_variable>
 #include <exception>
 #include <filesystem>
 #include <iostream>
 #include <mutex>
+#include <string>
 #include <thread>
 #include <utility>
 
 #include "utils/logger.hpp"
 
+#define NRN_IGNORE(arg) arg
+
 /* for eliminating "ignoreing return value" warnings. */
 int nrnignore;
 
 /* only set  in ivoc */
-int nrn_global_argc;
-char** nrn_global_argv;
+NRN_DLLSYM int nrn_global_argc;
+NRN_DLLSYM char** nrn_global_argv;
 
 #if defined(USE_PYTHON)
 int use_python_interpreter = 0;
-void (*p_nrnpython_finalize)();
+NRN_DLLSYM void (*p_nrnpython_finalize)();
 #endif
-int nrn_inpython_;
-int (*p_nrnpy_pyrun)(const char* fname);
+NRN_DLLSYM int nrn_inpython_;
+NRN_DLLSYM int (*p_nrnpy_pyrun)(const char* fname);
 
 /* InterViews always uses getc_hook. GNU readline 8 + rl_event_hook +
    run_til_stdin() swallows tty input; getc_hook waits in run_til_stdin()
@@ -59,7 +70,7 @@ int (*p_nrnpy_pyrun)(const char* fname);
    rl_event_hook. */
 #define use_rl_getc_function
 
-#if defined(MINGW)
+#if defined(_WIN32)
 extern int stdin_event_ready();
 #endif
 
@@ -119,9 +130,9 @@ extern void add_history(const char*);
 }
 #endif
 
-int nrn_nobanner_;
+NRN_DLLSYM int nrn_nobanner_;
 int hoc_pipeflag;
-int hoc_usegui;
+NRN_DLLSYM int hoc_usegui;
 #if 1
 /* no longer necessary to distinguish signed from unsigned since EOF
   never stored in a buffer.
@@ -138,10 +149,10 @@ int hoc_usegui;
 #define TMPBUFSIZE 512
 #define CBUFSIZE   512
 HocStr* hoc_tmpbuf;
-HocStr* hoc_cbufstr;
-const char* hoc_promptstr;
+NRN_DLLSYM HocStr* hoc_cbufstr;
+NRN_DLLSYM const char* hoc_promptstr;
 static CHAR* hoc_cbuf;
-CHAR* hoc_ctp;
+NRN_DLLSYM CHAR* hoc_ctp;
 int hoc_ictp;
 
 extern char* neuron_home;
@@ -152,7 +163,7 @@ extern int hoc_print_first_instance;
 used to be a FILE* but had fopen problems when 128K cores on BG/P
 tried to fopen the same file for reading at once.
 */
-NrnFILEWrap* hoc_fin; /* input file pointer */
+NRN_DLLSYM NrnFILEWrap* hoc_fin; /* input file pointer */
 
 #include <ctype.h>
 const char* progname; /* for error messages */
@@ -165,8 +176,6 @@ int hoc_lineno;
 int hoc_intset; /* safer interrupt handling */
 int hoc_indef;
 const char* infile; /* input file name */
-extern size_t hoc_xopen_file_size_;
-extern char* hoc_xopen_file_;
 const char** gargv; /* global argument list */
 int gargc;
 static int c = '\n'; /* global for use by warning() */
@@ -284,7 +293,7 @@ restart: /* when no token in between comments */
     {
         char* npt;
         double d;
-        IGNORE(unGetc(c, hoc_fin));
+        NRN_IGNORE(unGetc(c, hoc_fin));
         npt = (char*) hoc_ctp;
         /*EMPTY*/
         while (isdigit(c = Getc(hoc_fin))) {
@@ -297,7 +306,7 @@ restart: /* when no token in between comments */
             }
         }
         if (*npt == '.' && !isdigit(npt[1])) {
-            IGNORE(unGetc(c, hoc_fin));
+            NRN_IGNORE(unGetc(c, hoc_fin));
             return (int) (*npt);
         }
         if (c == 'E' || c == 'e') {
@@ -308,8 +317,8 @@ restart: /* when no token in between comments */
                 }
             }
         }
-        IGNORE(unGetc(c, hoc_fin));
-        IGNORE(sscanf(npt, "%lf", &d));
+        NRN_IGNORE(unGetc(c, hoc_fin));
+        NRN_IGNORE(sscanf(npt, "%lf", &d));
         if (d == 0.)
             return NUMZERO;
         yylval.sym = hoc_install("", NUMBER, d, &hoc_p_symlist);
@@ -325,7 +334,7 @@ restart: /* when no token in between comments */
             }
             *p++ = c;
         } while ((c = Getc(hoc_fin)) != EOF && (isalnum(c) || c == '_'));
-        IGNORE(unGetc(c, hoc_fin));
+        NRN_IGNORE(unGetc(c, hoc_fin));
         *p = '\0';
         if (strncmp(sbuf, "__nrnsec_0x", 11) == 0) {
             yylval.ptr = hoc_sec_internal_name2ptr(sbuf, 1);
@@ -390,7 +399,7 @@ restart: /* when no token in between comments */
         }
         while (isdigit(c = Getc(hoc_fin)))
             n = 10 * n + c - '0';
-        IGNORE(unGetc(c, hoc_fin));
+        NRN_IGNORE(unGetc(c, hoc_fin));
         if (n == 0)
             hoc_acterror("strange $...", (char*) 0);
         yylval.narg = n;
@@ -504,7 +513,7 @@ static int follow(int expect, int ifyes, int ifno) /* look ahead for >=, etc. */
 
     if (c == expect)
         return ifyes;
-    IGNORE(unGetc(c, hoc_fin));
+    NRN_IGNORE(unGetc(c, hoc_fin));
     return ifno;
 }
 
@@ -650,7 +659,7 @@ void hoc_execerror_mes(const char* s, const char* t, int prnt) { /* recover from
 #endif
     hoc_execerror_messages = 1;
     if (hoc_fin && hoc_pipeflag == 0 && (!nrn_fw_eq(hoc_fin, stdin) || !nrn_istty_)) {
-        IGNORE(nrn_fw_fseek(hoc_fin, 0L, 2)); /* flush rest of file */
+        NRN_IGNORE(nrn_fw_fseek(hoc_fin, 0L, 2)); /* flush rest of file */
     }
 
     // If the exception is due to a multiple ^C interrupt, then onintr
@@ -688,7 +697,7 @@ void onintr(int /* sig */) /* catch interrupt */
     stoprun = 1;
     if (hoc_intset++)
         hoc_execerror("interrupted", (char*) 0);
-    IGNORE(signal(SIGINT, onintr));
+    NRN_IGNORE(signal(SIGINT, onintr));
 }
 
 static int coredump;
@@ -768,8 +777,8 @@ void fpecatch(int /* sig */) /* catch floating point exceptions */
     hoc_execerror("Floating point exception.", (char*) 0);
 }
 
-__attribute__((noreturn)) void sigsegvcatch(int /* sig */) /* segmentation violation probably due to
-                                                              arg type error */
+[[noreturn]] void sigsegvcatch(int /* sig */) /* segmentation violation probably due to
+                                                 arg type error */
 {
     Fprintf(stderr, "Segmentation violation\n");
     print_bt();
@@ -781,7 +790,7 @@ __attribute__((noreturn)) void sigsegvcatch(int /* sig */) /* segmentation viola
 }
 
 #if HAVE_SIGBUS
-__attribute__((noreturn)) void sigbuscatch(int /* sig */) {
+[[noreturn]] void sigbuscatch(int /* sig */) {
     Fprintf(stderr, "Bus error\n");
     print_bt();
     /*ARGSUSED*/
@@ -793,11 +802,15 @@ __attribute__((noreturn)) void sigbuscatch(int /* sig */) {
 #endif
 
 int hoc_pid(void) {
+#ifdef _MSC_VER
+    return (int) _getpid();
+#else
     return (int) getpid();
+#endif
 } /* useful for making unique temporary file names */
 
 /* readline should be avoided if stdin is not a terminal */
-int nrn_istty_;
+NRN_DLLSYM int nrn_istty_;
 
 int hoc_main1_inited_;
 
@@ -823,6 +836,8 @@ void hoc_main1_init(const char* pname, const char** envp) {
     if (nrn_istty_ == 0) { /* if not set then */
 #ifdef HAVE_ISATTY
         nrn_istty_ = isatty(0);
+#elif defined(_MSC_VER)
+        nrn_istty_ = _isatty(0);
 #else
         /* if we do not know, then assume so */
         nrn_istty_ = 1;
@@ -879,8 +894,8 @@ void hocstr_copy(HocStr* hs, const char* buf) {
     strcpy(hs->buf, buf);
 }
 
-#ifdef MINGW
-static int cygonce; /* does not need the '-' after a list of hoc files */
+#ifdef _WIN32
+static int cygonce; /* argc==1 fakes "-"; file argv ends like Unix (no stdin inject) */
 #endif
 
 static int hoc_run1();
@@ -917,7 +932,7 @@ int hoc_main1(int argc, const char** argv, const char** envp) {
         {
             static const char* stdinonly[] = {"-"};
 
-#ifdef MINGW
+#ifdef _WIN32
             cygonce = 1;
 #endif
             gargv = stdinonly;
@@ -942,7 +957,7 @@ int hoc_main1(int argc, const char** argv, const char** envp) {
     }
 }
 
-#ifdef MINGW
+#ifdef _WIN32
 namespace {
 std::mutex inputMutex_;
 std::condition_variable inputCond_;
@@ -952,13 +967,13 @@ std::thread* inputReady_;
 int inputReadyFlag_;
 int inputReadyVal_;
 }  // namespace
-extern "C" int getch();
 
 void inputReadyThread() {
     for (;;) {
-        // The pthread version had pthread_testcancel() here, but the thread was
-        // never cancelled.
-        int i = getch();
+        // Console keys are not InterViews window messages. Unix watches fd 0
+        // with select(); Windows cannot. Read the console on this thread
+        // (_getch) and PostThreadMessage(WM_QUIT) so session->run() returns.
+        int i = _getch();
         std::unique_lock<std::mutex> lock{inputMutex_};
         inputReadyFlag_ = 1;
         inputReadyVal_ = i;
@@ -1042,27 +1057,28 @@ static const char* double_at2space(const char* infile) {
 }
 #endif /*MINGW*/
 
+/* Windows filenames are case-insensitive; SCRIPT.PY is a Python file and
+   FROMFUNC.HOC is a HOC file. Unix stays case-sensitive. Last 3/4 chars of
+   the whole path is not the filesystem filename extension. */
+static bool nrn_path_has_ext(const char* path, const char* ext) {
+    std::string got = std::filesystem::path(path).extension().string();
+#if defined(WIN32)
+    for (char& c: got) {
+        if (c >= 'A' && c <= 'Z') {
+            c = static_cast<char>(c - 'A' + 'a');
+        }
+    }
+#endif
+    return got == ext;
+}
+
 int hoc_moreinput() {
     if (hoc_pipeflag) {
         hoc_pipeflag = 0;
         return 1;
     }
-#if defined(WIN32)
-    /* like mswin, do not need a '-' after hoc files, but ^D works */
-    if (gargc == 0 && cygonce == 0) {
-        cygonce = 1;
-        hoc_fin = nrn_fw_set_stdin();
-        infile = 0;
-        hoc_xopen_file_[0] = 0;
-#if defined(USE_PYTHON)
-        return use_python_interpreter ? 0 : 1;
-#else
-        return 1;
-#endif
-    }
-#endif  // WIN32
     if (hoc_fin && !nrn_fw_eq(hoc_fin, stdin)) {
-        IGNORE(nrn_fw_fclose(hoc_fin));
+        NRN_IGNORE(nrn_fw_fclose(hoc_fin));
     }
     hoc_fin = nrn_fw_set_stdin();
     infile = 0;
@@ -1097,7 +1113,7 @@ int hoc_moreinput() {
         only for legacy code and there is no notion of stdin interaction
         with the hoc interpreter.
         */
-        if (strlen(infile) < 4 || strcmp(infile + strlen(infile) - 4, ".hoc") != 0) {
+        if (!nrn_path_has_ext(infile, ".hoc")) {
             return hoc_moreinput();
         }
     }
@@ -1138,7 +1154,7 @@ int hoc_moreinput() {
             hoc_execerror("arg not valid statement:", infile);
         }
         return hoc_moreinput();
-    } else if (strlen(infile) > 3 && strcmp(infile + strlen(infile) - 3, ".py") == 0) {
+    } else if (nrn_path_has_ext(infile, ".py")) {
         if (!p_nrnpy_pyrun) {
             hoc_execerror("Python not available to interpret", infile);
         }
@@ -1512,9 +1528,8 @@ extern int run_til_stdin(); /* runs the interviews event loop. Returns 1
 extern void hoc_notify_value(void);
 
 #if READLINE
-#ifdef MINGW
+#ifdef _WIN32
 extern "C" int (*rl_getc_function)(void);
-extern "C" int rl_getc(void);
 static int getc_hook(void) {
     if (!inputReady_) {
         stdin_event_ready(); /* store main thread id */
@@ -1525,7 +1540,7 @@ static int getc_hook(void) {
     //	printf("run til stdin\n");
     while (!inputReadyFlag_) {
         run_til_stdin();
-        usleep(10000);
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
     inputReadyFlag_ = 0;
     int i = inputReadyVal_;
@@ -1533,7 +1548,7 @@ static int getc_hook(void) {
     inputCond_.notify_one();
     return i;
 }
-#else /* not MINGW */
+#else /* not _WIN32 */
 
 #if defined(use_rl_getc_function)
 /* readline 7, readline 8, and libedit. rl_event_hook is the #else. */
@@ -1570,7 +1585,9 @@ static int getc_hook(void) {
 
 #else /* not use_rl_getc_function */
 
+extern "C" {
 extern int (*rl_event_hook)(void);
+}
 static int event_hook(void) {
     int i;
     i = run_til_stdin();
@@ -1579,7 +1596,7 @@ static int event_hook(void) {
 
 #endif /* not use_rl_getc_function */
 
-#endif /* not MINGW */
+#endif /* not _WIN32 */
 #endif /* READLINE */
 #endif /* INTERVIEWS */
 
@@ -1639,6 +1656,39 @@ static CHAR* fgets_unlimited_nltrans(HocStr* bufstr, NrnFILEWrap* f, int nltrans
     return (CHAR*) 0;
 }
 
+#if defined(NRN_LIBEDIT_HOST_TERMINFO)
+/* Static ncurses looks for terminfo under its build prefix (/nrnwheel or
+   /opt/nrnwheel). A wheel does not ship that directory. Point ncurses at the
+   host database before the first readline(), unless the user already chose one.
+   tgetent returns -1 ("Cannot read termcap database") when the directory is
+   missing. */
+static void nrn_libedit_host_terminfo() {
+    static int once = 0;
+    if (once) {
+        return;
+    }
+    once = 1;
+    if (std::getenv("TERMINFO") || std::getenv("TERMINFO_DIRS")) {
+        return;
+    }
+    const char* dirs[] = {
+        "/usr/share/terminfo", "/lib/terminfo", "/usr/lib/terminfo", "/etc/terminfo", nullptr};
+    std::string joined;
+    for (int i = 0; dirs[i]; ++i) {
+        if (access(dirs[i], R_OK | X_OK) != 0) {
+            continue;
+        }
+        if (!joined.empty()) {
+            joined.push_back(':');
+        }
+        joined += dirs[i];
+    }
+    if (!joined.empty()) {
+        setenv("TERMINFO_DIRS", joined.c_str(), 0);
+    }
+}
+#endif
+
 int hoc_get_line(void) { /* supports re-entry. fill hoc_cbuf with next line */
     if (*hoc_ctp) {
         hoc_execerror("Internal error:", "Not finished with previous input line");
@@ -1663,16 +1713,17 @@ int hoc_get_line(void) { /* supports re-entry. fill hoc_cbuf with next line */
             char* line;
             int n;
 #if INTERVIEWS
-#ifdef MINGW
+#ifdef _WIN32
             if (hoc_usegui) {
                 if (hoc_interviews && !hoc_in_yyparse) {
                     rl_getc_function = getc_hook;
                     hoc_notify_value();
                 } else {
-                    rl_getc_function = rl_getc;
+                    // libedit has no rl_getc. NULL selects its builtin reader.
+                    rl_getc_function = NULL;
                 }
             }
-#else /* not MINGW */
+#else /* not _WIN32 */
 #if defined(use_rl_getc_function)
             if (hoc_interviews && !hoc_in_yyparse) {
                 rl_getc_function = getc_hook;
@@ -1688,8 +1739,11 @@ int hoc_get_line(void) { /* supports re-entry. fill hoc_cbuf with next line */
                 rl_event_hook = NULL;
             }
 #endif /* not use_rl_getc_function */
-#endif /* not MINGW */
+#endif /* not _WIN32 */
 #endif /* INTERVIEWS */
+#if defined(NRN_LIBEDIT_HOST_TERMINFO)
+            nrn_libedit_host_terminfo();
+#endif
             if ((line = readline(hoc_promptstr)) == (char*) 0) {
                 extern int hoc_notify_stop;
                 return EOF;
@@ -1726,19 +1780,8 @@ int hoc_get_line(void) { /* supports re-entry. fill hoc_cbuf with next line */
             run_til_stdin());
         }
 #endif  // INTERVIEWS
-#if defined(WIN32)
-        if (nrn_fw_eq(hoc_fin, stdin)) {
-            if (gets(hoc_cbuf) == (char*) 0) {
-                /*DebugMessage("gets returned NULL\n");*/
-                return EOF;
-            }
-            strcat(hoc_cbuf, "\n");
-        } else
-#endif  // WIN32
-        {
-            if (hoc_fgets_unlimited(hoc_cbufstr, hoc_fin) == (char*) 0) {
-                return EOF;
-            }
+        if (hoc_fgets_unlimited(hoc_cbufstr, hoc_fin) == (char*) 0) {
+            return EOF;
         }
 #endif  // READLINE
     }

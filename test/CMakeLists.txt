@@ -232,6 +232,22 @@ if(NRN_ENABLE_PYTHON)
     NAME embedded_interface_objects
     SCRIPT_PATTERNS test/unit_tests/hoc_python/embedded_interface_objects.py
     COMMAND nrniv -nogui -python test/unit_tests/hoc_python/embedded_interface_objects.py)
+  # Extend test/unit_tests/path_semantics on each later Windows-path extract.
+  nrn_add_test(
+    GROUP unit_tests
+    NAME path_semantics
+    COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${pytest}
+            ${PROJECT_SOURCE_DIR}/test/unit_tests/path_semantics
+    PRELOAD_SANITIZER
+    SCRIPT_PATTERNS "test/unit_tests/path_semantics/*.py")
+
+  # nrnivmodl / nrnmech.dll linkage (AREA nrn_alloc_node_, later ModelDB ABI).
+  nrn_add_test(
+    GROUP unit_tests
+    NAME nrnmech
+    COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${pytest} ${PROJECT_SOURCE_DIR}/test/unit_tests/nrnmech
+    PRELOAD_SANITIZER
+    SCRIPT_PATTERNS "test/unit_tests/nrnmech/*.py")
 
   # Pure-Python prcellstate .nrndat semantic compare (no special/modfiles/GPU).
   nrn_add_test(

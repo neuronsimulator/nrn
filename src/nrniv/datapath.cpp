@@ -73,6 +73,20 @@ HocDataPaths::HocDataPaths(int size, int pathstyle) {
     impl_ = new HocDataPathImpl(size, pathstyle);
 }
 
+HocDataPaths::HocDataPaths(HocDataPaths&& other) noexcept
+    : impl_(other.impl_) {
+    other.impl_ = nullptr;
+}
+
+HocDataPaths& HocDataPaths::operator=(HocDataPaths&& other) noexcept {
+    if (this != &other) {
+        delete impl_;
+        impl_ = other.impl_;
+        other.impl_ = nullptr;
+    }
+    return *this;
+}
+
 HocDataPaths::~HocDataPaths() {
     delete impl_;
 }
@@ -373,7 +387,6 @@ void HocDataPathImpl::search_vectors() {
 }
 
 void HocDataPathImpl::search_pysec() {
-#if USE_PYTHON
     std::string cs{};
     hoc_Item* qsec;
     // ForAllSections(sec)
@@ -386,7 +399,6 @@ void HocDataPathImpl::search_pysec() {
             strlist_.pop_back();
         }
     }
-#endif
 }
 
 void HocDataPathImpl::search(Section* sec) {

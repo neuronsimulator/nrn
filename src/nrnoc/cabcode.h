@@ -26,10 +26,9 @@ int nrn_sec2cell_equals(Section* sec, Object* obj);
 void new_sections(Object* ob, Symbol* sym, hoc_Item** pitm, int size);
 Section* section_new(Symbol* sym);
 
-#if USE_PYTHON
 struct NPySecObj;
+Section* section_new_owned(void* owner);
 Section* nrnpy_newsection(NPySecObj*);
-#endif
 
 int arc0at0(Section*);
 double nrn_ra(Section*);

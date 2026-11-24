@@ -55,8 +55,8 @@ int main(void) {
 
     ShapePlotInterface* of_list = nrn_get_plotshape_interface(object_named("ps_of_list"));
     ok &= check(nrn_get_plotshape_section_list(of_list) == object_named("sl"), "section list");
-    // Both kinds start at -80 to 40. The variable name does not compare: a
-    // ShapePlot starts with v, a ShapePlotData with none until variable().
+    // Both kinds start with v, from -80 to 40.
+    ok &= check(strcmp(nrn_get_plotshape_varname(of_list), "v") == 0, "default varname");
     ok &= check(nrn_get_plotshape_low(of_list) == -80.f, "default low");
     ok &= check(nrn_get_plotshape_high(of_list) == 40.f, "default high");
 
