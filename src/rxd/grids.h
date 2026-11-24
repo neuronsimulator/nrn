@@ -15,6 +15,12 @@ and Flux_pair structs and their respective functions
 #include <stdlib.h>
 #include <string.h>
 
+#if defined(_MSC_VER)
+// MSVC has no POSIX ssize_t; Python.h used to supply it.
+#include <basetsd.h>
+typedef SSIZE_T ssize_t;
+#endif
+
 #define IDX(x, y, z)    ((z) + (y) *g->size_z + (x) *g->size_z * g->size_y)
 #define INDEX(x, y, z)  ((z) + (y) *grid->size_z + (x) *grid->size_z * grid->size_y)
 #define ALPHA(x, y, z)  (g->get_alpha(g->alpha, IDX(x, y, z)))
