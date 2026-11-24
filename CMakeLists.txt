@@ -46,24 +46,29 @@ set(NRN_INSTALL_PYTHON_PREFIX
           "Path where NEURON Python components will be installed (relative to CMAKE_INSTALL_PREFIX)"
 )
 
-# if we're building a wheel, we have a different layout of files
+# if we're building a wheel, we have a different layout of files NRN_INSTALL_DATA_PREFIX always ends
+# with '/'. Concatenate as ${NRN_INSTALL_DATA_PREFIX}bin (no extra slash). Never leave it empty:
+# Visual Studio treats an empty DESTINATION prefix as invalid, and "${prefix}/${empty}/lib" is a
+# poor relative path.
 if(SKBUILD)
   set(NRN_INSTALL_PYTHON_PREFIX
       "neuron/"
       CACHE STRING "" FORCE)
   set(NRN_INSTALL_DATA_PREFIX "neuron/.data/")
   # need to force fmtlib install prefixes
-  set(FMT_LIB_DIR "${NRN_INSTALL_DATA_PREFIX}/lib")
-  set(FMT_INC_DIR "${NRN_INSTALL_DATA_PREFIX}/include")
-  set(FMT_PKGCONFIG_DIR "${NRN_INSTALL_DATA_PREFIX}/lib/pkgconfig")
-  set(FMT_CMAKE_DIR "${NRN_INSTALL_DATA_PREFIX}/lib/cmake/fmt")
-  # need to force IV install prefixes
-  set(IV_LIB_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}/lib")
-  set(IV_HEADERS_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}/include")
-  set(IV_BIN_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}/bin")
+  set(FMT_LIB_DIR "${NRN_INSTALL_DATA_PREFIX}lib")
+  set(FMT_INC_DIR "${NRN_INSTALL_DATA_PREFIX}include")
+  set(FMT_PKGCONFIG_DIR "${NRN_INSTALL_DATA_PREFIX}lib/pkgconfig")
+  set(FMT_CMAKE_DIR "${NRN_INSTALL_DATA_PREFIX}lib/cmake/fmt")
 else()
-  set(NRN_INSTALL_DATA_PREFIX)
+  set(NRN_INSTALL_DATA_PREFIX "./")
 endif()
+# IV defaults IV_{LIB,HEADERS,BIN}_INSTALL_DIR to ${CMAKE_INSTALL_PREFIX}/lib (absolute). CMake then
+# emits CMAKE_ABSOLUTE_DESTINATION_FILES, so cmake --install --prefix relocates NEURON but leaves
+# InterViews at the configure prefix. Keep destinations relative for wheels and source installs.
+set(IV_LIB_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}lib")
+set(IV_HEADERS_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}include")
+set(IV_BIN_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}bin")
 
 # Make python install path relative to CMAKE_INSTALL_PREFIX
 if(IS_ABSOLUTE "${NRN_INSTALL_PYTHON_PREFIX}")
@@ -75,7 +80,14 @@ endif()
 # =============================================================================
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+# Unix .a stays in lib. On Windows a SHARED ARCHIVE is the import library; put it next to the DLL
+# (NRN_INSTALL_SHARE_LIB_DIR is already bin). MSVC /IMPLIB into a stale lib/<config>/nrniv.lib owned
+# by another user is LNK1104.
+if(WIN32)
+  set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+else()
+  set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+endif()
 
 # =============================================================================
 # Include default build options
@@ -108,6 +120,10 @@ option(NRN_ENABLE_MPI "Enable MPI support" ${NRN_ENABLE_MPI_DEFAULT})
 option(NRN_ENABLE_MUSIC "Enable MUSIC support" ${NRN_ENABLE_MUSIC_DEFAULT})
 option(NRN_ENABLE_RX3D "Enable rx3d support" ${NRN_ENABLE_RX3D_DEFAULT})
 option(NRN_ENABLE_NMODL "Enable NMODL code-generator support" ${NRN_ENABLE_NMODL_DEFAULT})
+# Wheels set this so importable _nmodl is built. It does not select nmodl as the nrnivmodl
+# generator; that switch is NRN_ENABLE_NMODL alone.
+option(NRN_ENABLE_NMODL_PYTHON
+       "Build importable NMODL bindings without switching nrnivmodl to nmodl" OFF)
 option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ${NRN_ENABLE_CORENEURON_DEFAULT})
 option(NRN_ENABLE_BACKTRACE "Enable pretty-printed backtraces" ${NRN_ENABLE_BACKTRACE_DEFAULT})
 option(NRN_ENABLE_TESTS "Enable unit tests" ${NRN_ENABLE_TESTS_DEFAULT})
@@ -141,7 +157,8 @@ option(NRN_ENABLE_MOD_COMPATIBILITY "Enable CoreNEURON compatibility for MOD fil
 option(NRN_ENABLE_REL_RPATH "Use relative RPATH in binaries. for relocatable installs/Python"
        ${NRN_ENABLE_REL_RPATH_DEFAULT})
 option(NRN_BINARY_DIST_BUILD ${NRN_BINARY_DIST_BUILD_DEFAULT})
-option(NRN_WHEEL_STATIC_READLINE "Use static readline libraries for the wheels."
+option(NRN_WHEEL_STATIC_READLINE
+       "Unix wheels: static libedit plus static ncurses. Windows always uses libedit."
        ${NRN_WHEEL_STATIC_READLINE_DEFAULT})
 mark_as_advanced(NRN_ENABLE_REL_RPATH)
 mark_as_advanced(NRN_BINARY_DIST_BUILD)
@@ -156,20 +173,31 @@ mark_as_advanced(NRN_BINARY_DIST_BUILD)
 #   NOTE: When building the wheel, this is set to OFF.
 # Dynamic Python version support:
 #   - NRN_ENABLE_PYTHON_DYNAMIC=OFF  : libnrniv is linked against a single Python version, which
-#                                      can be steered with PYTHON_EXECUTABLE
-#   - NRN_ENABLE_PYTHON_DYNAMIC=ON   : libnrniv is not linked against Python, distinct libnrnpython
-#                                      libraries are built for each configured Python major.minor
-#                                      version but are only linked against the relevant libpython
-#                                      if NRN_LINK_AGAINST_PYTHON is true, which is by default only
-#                                      the case on windows.
+#                                      can be steered with PYTHON_EXECUTABLE. Import accepts only
+#                                      that version, including when NRN_ENABLE_ABI3=ON.
+#   - NRN_ENABLE_PYTHON_DYNAMIC=ON   : libnrniv is not linked against Python.
+#                                      NRN_ENABLE_ABI3=ON  : one libnrnpython.abi3 (CPython 3.12+
+#                                      limited API, the cp312-abi3 wheel); extra NRN_PYTHON_DYNAMIC
+#                                      entries are for nrniv -python interpreter search / tests.
+#                                      NRN_ENABLE_ABI3=OFF : distinct libnrnpythonX.Y per configured
+#                                      major.minor. Linked against libpython only if
+#                                      NRN_LINK_AGAINST_PYTHON is true (default on Windows).
+#                                      ABI3 and dynamic together reject that link on Unix:
+#                                      a versioned libpython is not cross-version safe.
 #                                      nrniv/special still works in the absence of Python, and
-#                                      dynamically loads the appropriate libnrnpythonX.Y as needed
+#                                      dynamically loads libnrnpython.abi3 or libnrnpythonX.Y.
 #   - NRN_PYTHON_DYNAMIC=pythonX;... : semicolon separated list of Python versions used when
 #                                      NRN_ENABLE_PYTHON_DYNAMIC=ON, if not set then it defaults to
 #                                      PYTHON_EXECUTABLE. This must include all major.minor
 #                                      versions that you want nrniv -python to be able to load. If
 #                                      this *is* set then the first entry will be used as the
 #                                      default Python version.
+# Limited API (abi3):
+#   - NRN_ENABLE_ABI3=ON  : Py_LIMITED_API=0x030C0000, abi3 module names, requires CPython 3.12+.
+#                           Default when the default Python is 3.12+ (source and the cp312-abi3 wheel).
+#   - NRN_ENABLE_ABI3=OFF : versioned extensions for each configured interpreter (CPython 3.11+).
+#                           Default when the default Python is older than 3.12 (including the
+#                           CPython 3.11 wheel).
 # Extra options for extended Python tests:
 #   - NRN_PYTHON_EXTRA_FOR_TESTS=... : semicolon separated list of Python executables that NEURON
 #                                      is *not* built against. These are only used for testing, and
@@ -191,6 +219,14 @@ mark_as_advanced(NRN_BINARY_DIST_BUILD)
 # ~~~
 option(NRN_ENABLE_PYTHON_DYNAMIC "Enable dynamic Python version support"
        ${NRN_ENABLE_PYTHON_DYNAMIC_DEFAULT})
+# True/False for generated Python, and true/false for nrnpyenv.sh.
+if(NRN_ENABLE_PYTHON_DYNAMIC)
+  set(NRN_PYTHON_DYNAMIC_PY True)
+  set(NRN_PYTHON_DYNAMIC_SH true)
+else()
+  set(NRN_PYTHON_DYNAMIC_PY False)
+  set(NRN_PYTHON_DYNAMIC_SH false)
+endif()
 option(NRN_LINK_AGAINST_PYTHON
        "Link libnrnpythonX.Y against libpythonX.Y when NRN_ENABLE_PYTHON_DYNAMIC=ON"
        ${NRN_LINK_AGAINST_PYTHON_DEFAULT})
@@ -245,7 +281,7 @@ set(NRN_PROFILER
 # =============================================================================
 # Build options for NMODL
 # =============================================================================
-option(NMODL_ENABLE_PYTHON_BINDINGS "Enable pybind11 based python bindings" ON)
+option(NMODL_ENABLE_PYTHON_BINDINGS "Enable nanobind based python bindings" ON)
 set(NMODL_EXTRA_CXX_FLAGS
     ""
     CACHE STRING "Add extra compile flags for NMODL sources")
@@ -279,20 +315,26 @@ include(ReleaseDebugAutoFlags)
 
 # ~~~
 # Figure out early what Python to use as a build helper for cmake.
-# Since PythonInterp module prefers system-wide python, if PYTHON_EXECUTABLE
-# is not set, look it up in the PATH exclusively.
+# PythonInterp/FindPython may prefer a system or registry interpreter, so if
+# PYTHON_EXECUTABLE is not set, look it up in the PATH exclusively.
+# PEP 394: Unix provides python3. Windows CPython installs python.exe on PATH
+# (not python3), so fall back to python. Same default-then-fallback as
+# NRN_ENABLE_PYTHON.
 # ~~~
 if(NOT PYTHON_EXECUTABLE)
   message(
-    STATUS "-DPYTHON_EXECUTABLE not specified. Looking for `python3` in the PATH exclusively...")
+    STATUS
+      "-DPYTHON_EXECUTABLE not specified. Looking for `python3` then `python` in the PATH exclusively..."
+  )
   find_program(
-    PYTHON_EXECUTABLE python3
+    PYTHON_EXECUTABLE
+    NAMES python3 python
     PATHS ENV PATH
     NO_DEFAULT_PATH)
   message(STATUS "\tSetting PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}")
 endif()
 
-find_package(Python 3.10 REQUIRED)
+find_package(Python 3.11 REQUIRED)
 
 # Try and emit an intelligent warning if the version number currently set in the CMake project(...)
 # call is inconsistent with the output of git describe.
@@ -350,13 +392,67 @@ string(REPLACE "," ";" NRN_SANITIZERS_LIST "${NRN_SANITIZERS}")
 #   NRN_DEFAULT_PYTHON_LIBRARIES are its include direcory and library
 # * NRN_PYTHON_EXECUTABLES is a list of absolute paths to all Python executables to be built against
 #   (length >=1 if NRN_ENABLE_PYTHON_DYNAMIC else == 1)
-# * NRN_PYTHON_VERSIONS (3.10, 3.12, ...), NRN_PYTHON_INCLUDES and NRN_PYTHON_LIBRARIES are
+# * NRN_PYTHON_VERSIONS (3.11, 3.12, ...), NRN_PYTHON_INCLUDES and NRN_PYTHON_LIBRARIES are
 #   populated with values patching NRN_PYTHON_EXECUTABLES
 # * NRN_PYTHON_COUNT is set to the number of entries in those lists (i.e. number of Pythons), and
 #   NRN_PYTHON_ITERATION_LIMIT is set to ${NRN_PYTHON_COUNT} - 1
 # =================================================================================================
-set(NRN_MINIMUM_PYTHON_VERSION 3.10)
+set(NRN_MINIMUM_PYTHON_VERSION 3.11)
 include(cmake/PythonHelper.cmake)
+
+# NRN_ENABLE_ABI3: 3.12+ source and the cp312-abi3 wheel default ON; older Pythons (including the
+# CPython 3.11 wheel) default OFF.
+if(NRN_ENABLE_PYTHON)
+  if(NRN_DEFAULT_PYTHON_VERSION VERSION_GREATER_EQUAL 3.12)
+    set(_nrn_abi3_default ON)
+  else()
+    set(_nrn_abi3_default OFF)
+  endif()
+  option(
+    NRN_ENABLE_ABI3
+    "Build importable Python extensions against the CPython 3.12 limited API (abi3). OFF builds versioned extensions for the configured interpreter(s) (CPython 3.11+)."
+    ${_nrn_abi3_default})
+  if(SKBUILD
+     AND NRN_DEFAULT_PYTHON_VERSION VERSION_GREATER_EQUAL 3.12
+     AND NOT NRN_ENABLE_ABI3)
+    message(FATAL_ERROR "Wheel builds for CPython 3.12+ require NRN_ENABLE_ABI3=ON")
+  endif()
+  if(NRN_ENABLE_ABI3)
+    foreach(_nrn_abi3_pyver ${NRN_PYTHON_VERSIONS})
+      if(_nrn_abi3_pyver VERSION_LESS 3.12)
+        message(
+          FATAL_ERROR "NRN_ENABLE_ABI3=ON requires CPython 3.12+ (got ${_nrn_abi3_pyver}). "
+                      "Use -DNRN_ENABLE_ABI3=OFF for a versioned build against this interpreter.")
+      endif()
+    endforeach()
+    set(NRN_STABLE_ABI_ARG STABLE_ABI)
+    set(NRN_PYTHON_LIMITED_API true)
+    set(NRN_PYTHON_LIMITED_API_PY True)
+  else()
+    set(NRN_STABLE_ABI_ARG)
+    set(NRN_PYTHON_LIMITED_API false)
+    set(NRN_PYTHON_LIMITED_API_PY False)
+  endif()
+  # Windows links python3.lib (the stable import library). On Unix, NRN_DEFAULT_PYTHON_LIBRARIES is
+  # a versioned libpython.
+  if(NRN_ENABLE_PYTHON_DYNAMIC
+     AND NRN_ENABLE_ABI3
+     AND NRN_LINK_AGAINST_PYTHON
+     AND NOT WIN32)
+    message(
+      FATAL_ERROR
+        "NRN_ENABLE_ABI3=ON with NRN_ENABLE_PYTHON_DYNAMIC=ON cannot set "
+        "NRN_LINK_AGAINST_PYTHON=ON on Unix. That links nrnpython and hoc to a "
+        "versioned libpython, while the import gate treats the build as safe on "
+        "any GIL CPython 3.12 or newer 3.x. Leave NRN_LINK_AGAINST_PYTHON=OFF, or use "
+        "NRN_ENABLE_ABI3=OFF.")
+  endif()
+else()
+  set(NRN_ENABLE_ABI3 OFF)
+  set(NRN_STABLE_ABI_ARG)
+  set(NRN_PYTHON_LIMITED_API false)
+  set(NRN_PYTHON_LIMITED_API_PY False)
+endif()
 
 # This needs NRN_DEFAULT_PYTHON_EXECUTABLE, which comes from PythonHelper.cmake
 if(NRN_SANITIZERS)
@@ -369,7 +465,23 @@ endif()
 # Find required packages
 # =============================================================================
 find_package(BISON REQUIRED)
-find_package(FLEX 2.6 REQUIRED)
+# FindFLEX parses `--version` as "<exe-basename> X.Y". Chocolatey win_flex reports "win_flex.exe
+# 2.6.4" while the found path is often `win_flex` (no .exe), so FLEX_VERSION becomes the whole line
+# and "2.6" fails. Require Flex ourselves after taking the first X.Y / X.Y.Z in the string.
+find_package(FLEX)
+if(FLEX_VERSION AND NOT FLEX_VERSION MATCHES "^[0-9]")
+  string(REGEX MATCH "[0-9]+\\.[0-9]+(\\.[0-9]+)?" _nrn_flex_ver "${FLEX_VERSION}")
+  if(_nrn_flex_ver)
+    set(FLEX_VERSION "${_nrn_flex_ver}")
+  endif()
+  unset(_nrn_flex_ver)
+endif()
+if(NOT FLEX_FOUND)
+  message(FATAL_ERROR "FLEX is required")
+endif()
+if(NOT FLEX_VERSION OR FLEX_VERSION VERSION_LESS "2.6")
+  message(FATAL_ERROR "FLEX >= 2.6 is required (found '${FLEX_VERSION}')")
+endif()
 
 # lcov >= 2 and bison < 3.7 do not play nicely
 if(NRN_ENABLE_COVERAGE
@@ -382,34 +494,35 @@ if(NRN_ENABLE_COVERAGE
       " you may experience errors!")
 endif()
 
-# When shipping the wheels we want to link readline libs statically.
-if(NRN_WHEEL_STATIC_READLINE)
-  # CMake will prefer dynamic libraries over static ones. With the following construct we make sure
-  # we get them.
-  set(ORIGINAL_CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
-  set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+# Windows wheels are MSVC (cibuildwheel --platform windows). MinGW is the setup.exe world.
+if(SKBUILD AND MINGW)
+  message(FATAL_ERROR "Windows wheels must use MSVC, not MinGW (${CMAKE_CXX_COMPILER}). "
+                      "Use CMAKE_GENERATOR=Visual Studio 17 2022 and CMAKE_GENERATOR_PLATFORM=x64.")
 endif()
 
-find_package(Readline REQUIRED)
-if(READLINE_FOUND)
-  # If we are not using self contained, static readline library created for building wheel then only
-  # look for curses and termcap
-  if(NOT NRN_WHEEL_STATIC_READLINE)
-    find_package(Curses QUIET)
-    find_package(Termcap QUIET)
-  endif()
+# Shipped binaries static-link BSD libedit: Windows always, Unix wheels when
+# NRN_WHEEL_STATIC_READLINE is on. A non-wheel Unix build keeps the distro's dynamic GNU readline.
+if(WIN32 OR NRN_WHEEL_STATIC_READLINE)
+  include(cmake/Libedit.cmake)
+else()
+  find_package(Readline)
 endif()
-
-# Reset original CMake library suffixes
-if(ORIGINAL_CMAKE_FIND_LIBRARY_SUFFIXES)
-  set(CMAKE_FIND_LIBRARY_SUFFIXES ${ORIGINAL_CMAKE_FIND_LIBRARY_SUFFIXES})
+if(NOT READLINE_FOUND)
+  message(FATAL_ERROR "Readline is required (HOC interactive input)")
+endif()
+# libedit carries its own termcap. Dynamic GNU readline still needs curses or termcap.
+if(NOT NRN_LIBEDIT_BUILTIN)
+  find_package(Curses QUIET)
+  find_package(Termcap QUIET)
 endif()
 
 if(NRN_ENABLE_RX3D)
   if(NOT NRN_ENABLE_PYTHON)
     message(SEND_ERROR "NRN_ENABLE_RX3D requires NRN_ENABLE_PYTHON feature.")
   else()
-    find_package(Cython REQUIRED)
+    # RxD geometry3d uses the CPython 3.12 limited API; Cython 3.0 cannot emit that C. 3.1 is the
+    # first release that can.
+    find_package(Cython 3.1 REQUIRED)
     nrn_find_python_module(MODULE numpy REQUIRED)
   endif()
 endif()
@@ -501,6 +614,11 @@ if(NRN_ENABLE_INTERVIEWS)
       endif()
     endif()
     include_directories(${X11_INCLUDE_DIR})
+  else()
+    # Windows has no X11. pyproject defaults this ON for Unix wheels.
+    set(IV_ENABLE_X11_DYNAMIC
+        OFF
+        CACHE BOOL "dlopen X11 after launch" FORCE)
   endif()
 
   find_package(iv QUIET PATHS ${IV_DIR}/lib/cmake ${IV_DIR})
@@ -524,9 +642,18 @@ endif()
 if(NRN_ENABLE_PYTHON)
   # Make sure the USE_PYTHON macro is defined in the C++ code
   list(APPEND NRN_COMPILE_DEFS USE_PYTHON)
-  # Ensure nanobind is there, but dont import, we don't want its CMake
+endif()
+# nanobind: importable _nmodl/hoc and CLI libpywrapper (limited-API embed).
+if(NRN_ENABLE_PYTHON
+   OR NRN_ENABLE_NMODL
+   OR NRN_ENABLE_CORENEURON)
   nrn_add_external_project(nanobind DISABLE_ADD RECURSIVE SHALLOW)
   include(NanoBindMinimal)
+endif()
+if(NOT NRN_ENABLE_PYTHON)
+  set(NMODL_ENABLE_PYTHON_BINDINGS
+      OFF
+      CACHE BOOL "Enable NMODL python bindings" FORCE)
 endif()
 
 # =============================================================================
@@ -565,6 +692,19 @@ endif()
 # =============================================================================
 if(NRN_ENABLE_SHARED)
   set(NRN_LIBRARY_TYPE "SHARED")
+  # MSVC does not export globals from a DLL; Unix .so and MinGW do. DYNAMIC Python
+  # (nrnpythonX.Y.dll) and hoc.pyd consume that ABI. Data symbols still need NRN_DLLSYM (CMake does
+  # not put data in the generated .def).
+  if(MSVC)
+    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+  endif()
+  # GNU ld's PE default is export-all until any symbol is __declspec(dllexport); then only the
+  # explicit ones remain. NRN_EXPORT on p_cxx_char_alloc in the MPI plugin hid f_nrnmpi_newbuf
+  # (Windows installer: load_nrnmpi succeeds, then "The specified procedure could not be found").
+  # Force the ELF-like default. Counterpart of CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS above.
+  if(MINGW)
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export-all-symbols")
+  endif()
 else()
   set(NRN_LIBRARY_TYPE "STATIC")
   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
@@ -593,7 +733,8 @@ cpp_cc_git_submodule(CLI11 BUILD PACKAGE CLI11 REQUIRED)
 # =============================================================================
 if(NRN_ENABLE_NMODL
    OR NRN_ENABLE_CORENEURON
-   OR NRN_ENABLE_DOCS)
+   OR NRN_ENABLE_DOCS
+   OR (NRN_ENABLE_NMODL_PYTHON AND NRN_ENABLE_PYTHON))
   # NMODL Python build dependencies
   nrn_find_python_module(MODULE jinja2 REQUIRED)
   # N.B. `nrn_find_python_module` uses the _importable_ name of the package to find it, _not_ the
@@ -603,7 +744,6 @@ if(NRN_ENABLE_NMODL
 
   # NMODL non-Python build dependencies
   cpp_cc_git_submodule(json BUILD PACKAGE nlohmann_json REQUIRED)
-  cpp_cc_git_submodule(pybind11 BUILD PACKAGE pybind11 REQUIRED)
 
   option(SPDLOG_FMT_EXTERNAL "Force to use an external {{fmt}}" ON)
   option(SPDLOG_SYSTEM_INCLUDE "Include spdlog as a system lib" ON)
@@ -620,6 +760,13 @@ if(NRN_ENABLE_NMODL
   set(NMODL_ENABLE_PYTHON_BINDINGS
       OFF
       CACHE BOOL "Enable NMODL python bindings")
+  # set() does not override a cache value that is already ON. Wheels pass NRN_ENABLE_NMODL_PYTHON
+  # and still need _nmodl compiled.
+  if(NRN_ENABLE_NMODL_PYTHON AND NRN_ENABLE_PYTHON)
+    set(NMODL_ENABLE_PYTHON_BINDINGS
+        ON
+        CACHE BOOL "Enable NMODL python bindings" FORCE)
+  endif()
 
   include(${PROJECT_SOURCE_DIR}/cmake/nmodl/PythonLinkHelper.cmake)
 
@@ -732,10 +879,15 @@ include(ConfigFileSetting)
 if(MINGW)
   set(NRN_INSTALL_SHARE_DIR ${CMAKE_INSTALL_PREFIX})
   set(NRN_BUILD_SHARE_DIR ${CMAKE_BINARY_DIR})
-  set(NRN_INSTALL_SHARE_LIB_DIR ${CMAKE_INSTALL_PREFIX}/bin)
 else()
   set(NRN_INSTALL_SHARE_DIR ${NRN_INSTALL_DATA_PREFIX}share/nrn)
   set(NRN_BUILD_SHARE_DIR ${CMAKE_BINARY_DIR}/share/nrn)
+endif()
+# Windows searches the executable directory for DLLs. MinGW setup.exe already installed them in bin;
+# MSVC wheels and cmake --install need the same.
+if(NRN_WINDOWS_BUILD)
+  set(NRN_INSTALL_SHARE_LIB_DIR ${NRN_INSTALL_DATA_PREFIX}bin)
+else()
   set(NRN_INSTALL_SHARE_LIB_DIR ${NRN_INSTALL_DATA_PREFIX}lib)
 endif()
 
@@ -783,7 +935,7 @@ set(NRN_RUN_FROM_BUILD_DIR_ENV "NEURONHOME=${PROJECT_BINARY_DIR}/share/nrn"
 # when building coreNEURON mod files
 if(NOT NRN_LINK_AGAINST_PYTHON)
   set(NRN_RUN_FROM_BUILD_DIR_ENV "${NRN_RUN_FROM_BUILD_DIR_ENV}" "NMODLHOME=${PROJECT_BINARY_DIR}"
-                                 "NMODL_PYLIB=${PYTHON_LIBRARY}")
+                                 "NMODL_PYLIB=${NRN_NMODL_PYLIB}")
 endif()
 prepend_to_var(PATH "${PROJECT_BINARY_DIR}/bin")
 if(APPLE)
@@ -1120,7 +1272,8 @@ if(NRN_ENABLE_TESTS)
         "test-install   | ninja install && ninja test-install  -> ${NRN_FOREIGN_CTEST_BINARY_DIR}")
   endif()
 elseif(NOT WIN32)
-  # Windows installs the demo separately
+  # Unix wheels and source installs prebuild the demo library. Windows setup.exe does that in
+  # pre_setup_exe.sh; the MSVC wheel ships nrnmech.dll below.
   add_subdirectory(share/demo/release)
 
   add_custom_target(
@@ -1151,6 +1304,26 @@ install(
 install(FILES ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib
               ${PROJECT_BINARY_DIR}/share/nrn/lib/nrn.defaults
         DESTINATION ${NRN_INSTALL_SHARE_DIR}/lib)
+# Berkeley libedit, plus the Win32 port's PDCurses note and the embedded termcap's 4-clause notice.
+# Not installed when the build links distro readline.
+if(NRN_LIBEDIT_BUILTIN)
+  install(
+    FILES "${NRN_LIBEDIT_LICENSE_FILE}"
+    DESTINATION ${NRN_INSTALL_SHARE_DIR}
+    RENAME libedit-LICENSE.txt)
+  if(NRN_LIBEDIT_PDCURSES_README)
+    install(
+      FILES "${NRN_LIBEDIT_PDCURSES_README}"
+      DESTINATION ${NRN_INSTALL_SHARE_DIR}
+      RENAME libedit-pdcurses-README.txt)
+  endif()
+  if(NRN_LIBEDIT_TERMCAP_NOTICE)
+    install(
+      FILES "${NRN_LIBEDIT_TERMCAP_NOTICE}"
+      DESTINATION ${NRN_INSTALL_SHARE_DIR}
+      RENAME libedit-termcap.txt)
+  endif()
+endif()
 
 # Copy NEURON headers that will be included in the installation into the build directory.
 set(headers_in_build_dir)
@@ -1229,6 +1402,29 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/nrnivmodl.cmake
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/lib/cmake/neuron/nrnivmodl/CMakeLists.txt
         DESTINATION "${NRN_INSTALL_DATA_PREFIX}lib/cmake/neuron/nrnivmodl")
 
+# MSVC wheel: ship demo/release/nrnmech.dll so neurondemo does not need cl.exe. Same CMake nrnivmodl
+# path as binwrapper; fallback still compiles if the DLL is missing. setup.exe (MinGW) keeps
+# pre_setup_exe.sh.
+if(SKBUILD
+   AND WIN32
+   AND NOT MINGW)
+  set(_nrn_demo_dll "${NRN_BUILD_SHARE_DIR}/demo/release/nrnmech.dll")
+  add_custom_target(
+    neurondemo_msvc_dll ALL
+    COMMAND
+      ${CMAKE_COMMAND} "-DNRN_DEMO_RELEASE=${NRN_BUILD_SHARE_DIR}/demo/release"
+      "-DNRN_PREFIX=${PROJECT_BINARY_DIR}"
+      "-DNRN_NRNIVMODL_SRC=${PROJECT_BINARY_DIR}/lib/cmake/neuron/nrnivmodl"
+      "-DNRN_DEMO_DLL=${_nrn_demo_dll}" "-DNRN_DEMO_BUILDDIR=${PROJECT_BINARY_DIR}/demo_nrnmech"
+      "-DNRN_GENERATOR=${CMAKE_GENERATOR}" "-DNRN_GENERATOR_PLATFORM=${CMAKE_GENERATOR_PLATFORM}"
+      "-DNRN_CONFIG=$<CONFIG>" -P "${PROJECT_SOURCE_DIR}/cmake/MsvcWheelDemoNrnmech.cmake"
+    DEPENDS nrniv_lib nocmodl nrnivmodl_dependency copy_share_demo_to_build
+    COMMENT "Building demo nrnmech.dll for the MSVC wheel"
+    USES_TERMINAL VERBATIM)
+  install(FILES ${_nrn_demo_dll} DESTINATION ${NRN_INSTALL_SHARE_DIR}/demo/release)
+  unset(_nrn_demo_dll)
+endif()
+
 # =============================================================================
 # Copy bash executable for windows
 # =============================================================================
@@ -1265,12 +1461,15 @@ endif()
 # Print build status
 # =============================================================================
 
-# just for printing the compiler flags in the build status
-string(TOUPPER ${CMAKE_BUILD_TYPE} BUILD_TYPE_UPPER)
+# just for printing the compiler flags in the build status. Quote CMAKE_BUILD_TYPE: it is empty on
+# Visual Studio / Xcode / Ninja Multi-Config.
+string(TOUPPER "${CMAKE_BUILD_TYPE}" BUILD_TYPE_UPPER)
 if(BUILD_TYPE_UPPER MATCHES "CUSTOM")
   set(COMPILER_FLAGS "${CMAKE_CXX_FLAGS}")
-else()
+elseif(BUILD_TYPE_UPPER)
   set(COMPILER_FLAGS "${CMAKE_CXX_FLAGS_${BUILD_TYPE_UPPER}}")
+else()
+  set(COMPILER_FLAGS "${CMAKE_CXX_FLAGS}")
 endif()
 string(JOIN " " COMPILER_FLAGS "${COMPILER_FLAGS}" ${NRN_COMPILE_FLAGS} ${CMAKE_CXX_FLAGS})
 
@@ -1296,7 +1495,14 @@ message(STATUS " Build option | Status")
 message(STATUS "--------------+--------------------------------------------------------------")
 message(STATUS "C COMPILER    | ${CMAKE_C_COMPILER}")
 message(STATUS "CXX COMPILER  | ${CMAKE_CXX_COMPILER}")
-message(STATUS "BUILD_TYPE    | ${CMAKE_BUILD_TYPE} (allowed: ${allowableBuildTypes})")
+if(CMAKE_CONFIGURATION_TYPES)
+  message(
+    STATUS
+      "BUILD_TYPE    | ${CMAKE_BUILD_TYPE} (multi-config: ${CMAKE_CONFIGURATION_TYPES}; allowed: ${allowableBuildTypes})"
+  )
+else()
+  message(STATUS "BUILD_TYPE    | ${CMAKE_BUILD_TYPE} (allowed: ${allowableBuildTypes})")
+endif()
 message(STATUS "COMPILE FLAGS | ${COMPILER_FLAGS}")
 message(STATUS "Shared        | ${NRN_ENABLE_SHARED}")
 message(STATUS "MPI           | ${NRN_ENABLE_MPI}")
@@ -1326,6 +1532,7 @@ endif()
 message(STATUS "Python        | ${NRN_ENABLE_PYTHON}")
 if(NRN_ENABLE_PYTHON)
   message(STATUS "  DYNAMIC     | ${NRN_ENABLE_PYTHON_DYNAMIC}")
+  message(STATUS "  ABI3        | ${NRN_ENABLE_ABI3}")
   foreach(val RANGE ${NRN_PYTHON_ITERATION_LIMIT})
     list(GET NRN_PYTHON_EXECUTABLES ${val} exe)
     list(GET NRN_PYTHON_VERSIONS ${val} pyver)
@@ -1343,7 +1550,11 @@ if(NRN_ENABLE_PYTHON)
   message(STATUS "  PREFIX      | ${NRN_INSTALL_PYTHON_PREFIX}")
 endif()
 if(READLINE_FOUND)
-  message(STATUS "Readline      | ${Readline_LIBRARY}")
+  if(NRN_LIBEDIT_BUILTIN)
+    message(STATUS "Readline      | libedit ${NRN_LIBEDIT_GIT_SHA} (${Readline_LIBRARY})")
+  else()
+    message(STATUS "Readline      | ${Readline_LIBRARY}")
+  endif()
 endif()
 if(CURSES_FOUND)
   message(STATUS "Curses        | ${CURSES_LIBRARIES}")
@@ -1371,6 +1582,7 @@ if(NRN_ENABLE_CORENEURON)
   message(STATUS "  LINK FLAGS  | ${CORENRN_LIB_LINK_FLAGS}")
 endif()
 message(STATUS "NMODL codegen | ${NRN_ENABLE_NMODL}")
+message(STATUS "NMODL python  | ${NRN_ENABLE_NMODL_PYTHON}")
 if(NRN_UNIVERSAL2_BUILD)
   message(STATUS "CMAKE_OSX_ARCH| ${CMAKE_OSX_ARCHITECTURES}")
 endif()

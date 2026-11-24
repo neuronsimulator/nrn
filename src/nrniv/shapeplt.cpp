@@ -42,8 +42,8 @@
 extern Symlist* hoc_built_in_symlist;
 #endif  // HAVE_IV
 
-void* (*nrnpy_get_pyobj)(Object* obj) = 0;
-void (*nrnpy_decref)(void* pyobj) = 0;
+NRN_DLLSYM void* (*nrnpy_get_pyobj)(Object* obj) = 0;
+NRN_DLLSYM void (*nrnpy_decref)(void* pyobj) = 0;
 
 // PlotShape class registration for oc
 static double sh_flush(void* v) {
@@ -1218,13 +1218,17 @@ bool ShapePlot::has_iv_view() {
 #endif  // HAVE_IV
 
 ShapePlotData::ShapePlotData(Symbol* sym, Object* sl) {
-    sym_ = sym;
+    // v unless given, as for a ShapePlot
+    sym_ = sym ? sym : hoc_table_lookup("v", hoc_built_in_symlist);
     sl_ = sl;
     if (sl_) {
         ++sl_->refcount;
     }
     varobj(NULL);
     show_mode = 1;
+    // variable(Symbol) sets this scale. variable(Python object) only stores
+    // the object, and plot still reads lo and hi.
+    scale(-80, 40);
 }
 
 ShapePlotData::~ShapePlotData() {

@@ -96,7 +96,7 @@ void set_globals(const char* path, bool cli_global_seed, int cli_global_seed_val
 
         char line[256];
 
-        nrn_assert(fscanf(f, "%s\n", line) == 1);
+        read_bbcore_token(f, line, sizeof(line));
         check_bbcore_write_version(line);
 
         for (;;) {

@@ -1,25 +1,33 @@
 # =================================================================================================
 # Organise which Python versions are to be built against, and find their versions, include
-# directories and library paths. This is used both for dynamic Python (>= 1 libnrnpythonX.Y) and
-# standard Python (libnrniv linked against one Python version) builds. To avoid the restrictions
-# inherent in Python's limited API / stable ABI (see
-# https://docs.python.org/3/c-api/stable.html#stable-application-binary-interface), we build
-# Python-related NEURON code separately for each version of Python: libnrnpythonX.Y. Historically
-# macOS and Linux were built ignoring the minor version, but this is unsafe without the limited API
+# directories and library paths. Minimum interpreter is CPython 3.11. When NRN_ENABLE_ABI3=ON
+# (resolved after this file), importable extensions use the CPython 3.12 limited API and a
+# dynamic-Python build compiles one libnrnpython.abi3. When NRN_ENABLE_ABI3=OFF, a dynamic-Python
+# build compiles libnrnpythonX.Y per configured version. Extra NRN_PYTHON_DYNAMIC entries are always
+# discovered for tests and for nrniv -python's interpreter search.
 # =================================================================================================
 
 # Parse commandline options so that:
 #
 # * NRN_DEFAULT_PYTHON_EXECUTABLE is the default Python, which is used for running tests and so on.
 # * NRN_PYTHON_EXECUTABLES is a list of all the Pythons that we are building against. This will only
-#   have a length > 1 if NRN_ENABLE_PYTHON_DYNAMIC is defined.
+#   have a length > 1 if NRN_ENABLE_PYTHON_DYNAMIC is defined. scikit-build-core (and FindPython)
+#   set Python_EXECUTABLE, not the older PYTHON_EXECUTABLE name this helper still uses. Same on Unix
+#   and Windows.
+if(NOT PYTHON_EXECUTABLE AND Python_EXECUTABLE)
+  set(PYTHON_EXECUTABLE "${Python_EXECUTABLE}")
+endif()
 if(NOT PYTHON_EXECUTABLE AND (NOT NRN_ENABLE_PYTHON_DYNAMIC OR NOT NRN_PYTHON_DYNAMIC))
-  # Haven't been explicitly told about any Python versions, set PYTHON_EXECUTABLE by searching PATH
-  message(STATUS "No python executable specified. Looking for `python3` in the PATH...")
-  # Since PythonInterp module prefers system-wide python, if PYTHON_EXECUTABLE is not set, look it
-  # up in the PATH exclusively. Need to set PYTHON_EXECUTABLE before calling SanitizerHelper.cmake
+  # Haven't been explicitly told about any Python versions, set PYTHON_EXECUTABLE by searching PATH.
+  # python3 first (PEP 394); python second (Windows CPython is python.exe; some Unix setups too).
+  message(
+    STATUS "No python executable specified. Looking for `python3` then `python` in the PATH...")
+  # PythonInterp/FindPython may prefer a system or registry interpreter, so if PYTHON_EXECUTABLE is
+  # not set, look it up in the PATH exclusively. Need to set PYTHON_EXECUTABLE before calling
+  # SanitizerHelper.cmake
   find_program(
-    PYTHON_EXECUTABLE python3
+    PYTHON_EXECUTABLE
+    NAMES python3 python
     PATHS ENV PATH
     NO_DEFAULT_PATH)
   if(PYTHON_EXECUTABLE STREQUAL "PYTHON_EXECUTABLE-NOTFOUND")
@@ -95,15 +103,22 @@ function(nrn_find_python)
     string(SUBSTRING "${pyexe_hash}" 0 6 pyexe_hash)
     # Which attributes we're trying to learn about this Python
     set(python_vars Python_INCLUDE_DIRS Python_VERSION)
-    if(NRN_ENABLE_PYTHON_DYNAMIC AND NOT NRN_LINK_AGAINST_PYTHON)
+    if(NRN_ENABLE_PYTHON_DYNAMIC
+       AND NOT NRN_LINK_AGAINST_PYTHON
+       AND NOT WIN32)
       # Do not link against Python, so we don't need the library -- just as well, it's not available
       # in manylinux
       set(dev_component "Development.Module")
       set(Python_LIBRARIES "do-not-link-against-libpython-in-dynamic-python-builds")
     else()
+      # Windows .pyd / nrnpythonXY.dll must link pythonXY.lib. Unix manylinux modules leave
+      # libpython undefined; the Windows loader has no equivalent.
       set(dev_component "Development")
       list(APPEND python_vars Python_LIBRARIES)
     endif()
+    # Optional. Windows sets this to the DLL; Unix leaves it *-NOTFOUND. An empty match must not
+    # fail configuration.
+    set(Python_RUNTIME_LIBRARY "")
     execute_process(
       COMMAND
         ${CMAKE_COMMAND} "-DPython_EXECUTABLE:STRING=${opt_NAME}"
@@ -125,11 +140,20 @@ function(nrn_find_python)
       endif()
       set(${var} "${CMAKE_MATCH_1}")
     endforeach()
+    string(REGEX MATCH "-- Python_RUNTIME_LIBRARY=([^\n]*)\n" _junk "${stdout}")
+    if(_junk
+       AND CMAKE_MATCH_1
+       AND NOT CMAKE_MATCH_1 MATCHES "NOTFOUND$")
+      set(Python_RUNTIME_LIBRARY "${CMAKE_MATCH_1}")
+    endif()
     set("${opt_PREFIX}_INCLUDES"
         "${Python_INCLUDE_DIRS}"
         PARENT_SCOPE)
     set("${opt_PREFIX}_LIBRARIES"
         "${Python_LIBRARIES}"
+        PARENT_SCOPE)
+    set("${opt_PREFIX}_RUNTIME_LIBRARY"
+        "${Python_RUNTIME_LIBRARY}"
         PARENT_SCOPE)
     set("${opt_PREFIX}_VERSION"
         "${Python_VERSION}"
@@ -167,6 +191,20 @@ function(nrn_find_python)
                           "(code=${code} isvenv_str=${isvenv_str})")
     endif()
   endif()
+  # A pyenv shim re-execs and prepends versions/<ver>/bin. That directory holds pip entry points
+  # (nrniv, nrnivmodl, modlunit, neurondemo) for whatever Neuron is installed in that interpreter,
+  # so in-tree ctest runs those wrappers instead of this build. Launch the real interpreter.
+  execute_process(
+    COMMAND "${opt_NAME}" -c "import sys; print(sys.executable)"
+    RESULT_VARIABLE _nrn_py_real_status
+    OUTPUT_VARIABLE _nrn_py_real
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+  if(_nrn_py_real_status EQUAL 0
+     AND _nrn_py_real
+     AND NOT _nrn_py_real STREQUAL "${opt_NAME}")
+    message(STATUS "Using Python interpreter ${_nrn_py_real} instead of ${opt_NAME}")
+    set(opt_NAME "${_nrn_py_real}")
+  endif()
   set("${opt_PREFIX}_EXECUTABLE"
       "${opt_NAME}"
       PARENT_SCOPE)
@@ -189,6 +227,7 @@ set(NRN_PYTHON_EXECUTABLES)
 set(NRN_PYTHON_VERSIONS)
 set(NRN_PYTHON_INCLUDES)
 set(NRN_PYTHON_LIBRARIES)
+set(NRN_PYTHON_RUNTIME_LIBRARIES)
 foreach(pyexe ${python_executables})
   message(STATUS "Checking if ${pyexe} is a working python")
   nrn_find_python(NAME "${pyexe}" PREFIX nrnpy)
@@ -214,6 +253,13 @@ foreach(pyexe ${python_executables})
     list(APPEND NRN_PYTHON_VERSIONS "${nrnpy_VERSION}")
     list(APPEND NRN_PYTHON_INCLUDES "${nrnpy_INCLUDES}")
     list(APPEND NRN_PYTHON_LIBRARIES "${nrnpy_LIBRARIES}")
+    # list(APPEND) drops "". Unix has no separate runtime library, and FindPython often leaves
+    # Python_RUNTIME_LIBRARY empty on Windows too. A missing slot makes list(GET) abort configure.
+    if(nrnpy_RUNTIME_LIBRARY)
+      list(APPEND NRN_PYTHON_RUNTIME_LIBRARIES "${nrnpy_RUNTIME_LIBRARY}")
+    else()
+      list(APPEND NRN_PYTHON_RUNTIME_LIBRARIES "NRN_PYTHON_RUNTIME_LIBRARY-NOTFOUND")
+    endif()
   endif()
   list(APPEND NRN_PYTHON_EXECUTABLES "${nrnpy_EXECUTABLE}")
 endforeach()
@@ -224,9 +270,14 @@ list(GET NRN_PYTHON_VERSIONS 0 NRN_DEFAULT_PYTHON_VERSION)
 if(NRN_ENABLE_PYTHON)
   list(GET NRN_PYTHON_INCLUDES 0 NRN_DEFAULT_PYTHON_INCLUDES)
   list(GET NRN_PYTHON_LIBRARIES 0 NRN_DEFAULT_PYTHON_LIBRARIES)
+  list(GET NRN_PYTHON_RUNTIME_LIBRARIES 0 NRN_DEFAULT_PYTHON_RUNTIME_LIBRARY)
+  if(NRN_DEFAULT_PYTHON_RUNTIME_LIBRARY MATCHES "NOTFOUND$")
+    set(NRN_DEFAULT_PYTHON_RUNTIME_LIBRARY "")
+  endif()
   list(LENGTH NRN_PYTHON_EXECUTABLES NRN_PYTHON_COUNT)
   math(EXPR NRN_PYTHON_ITERATION_LIMIT "${NRN_PYTHON_COUNT} - 1")
 endif()
+include(${CMAKE_CURRENT_LIST_DIR}/FindNmodlPyLib.cmake)
 if(NRN_ENABLE_TESTS AND NRN_ENABLE_PYTHON)
   # Make sure that, if NRN_PYTHON_EXTRA_FOR_TESTS is set, none of its versions clash with versions
   # we're building against

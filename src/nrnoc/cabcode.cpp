@@ -48,18 +48,18 @@ static char* escape_bracket(const char* s) {
 extern int hoc_execerror_messages;
 #define symlist hoc_symlist
 
-int tree_changed = 1; /* installing section, changeing nseg
-              and connecting sections set this flag.
-              The flag is set to 0 when the topology
-              is set up */
-int diam_changed = 1; /* changing diameter, length set this flag
+int tree_changed = 1;            /* installing section, changeing nseg
+                         and connecting sections set this flag.
+                         The flag is set to 0 when the topology
+                         is set up */
+NRN_DLLSYM int diam_changed = 1; /* changing diameter, length set this flag
               The flag is set to 0 when node.a and node.b
               is set up */
 extern int nrn_shape_changed_;
 
-char* (*nrnpy_pysec_name_p_)(Section*);
-Object* (*nrnpy_pysec_cell_p_)(Section*);
-int (*nrnpy_pysec_cell_equals_p_)(Section*, Object*);
+NRN_DLLSYM char* (*nrnpy_pysec_name_p_)(Section*);
+NRN_DLLSYM Object* (*nrnpy_pysec_cell_p_)(Section*);
+NRN_DLLSYM int (*nrnpy_pysec_cell_equals_p_)(Section*, Object*);
 
 /* switching from Ra being a global variable to it being a section variable
 opens up the possibility of a great deal of confusion and inadvertant wrong
@@ -870,7 +870,7 @@ void mech_insert1(Section* sec, int type) {
     m = nrn_mechanism(type, nd);
     if (!m) { /* all nodes get the property */
         for (i = n - 1; i >= 0; i--) {
-            IGNORE(prop_alloc(&(pnd[i]->prop), type, pnd[i]));
+            NRN_IGNORE(prop_alloc(&(pnd[i]->prop), type, pnd[i]));
         }
 #if EXTRACELLULAR
         if (type == EXTRACELL) {
@@ -1112,7 +1112,12 @@ void range_interpolate_single(void) /*symbol at pc, 2 values on stack*/
             return;
         }
         diam_changed = 1;
-        if (sec->recalc_area_ && op != 0) {
+        // Bring the segment diameters up to date first: for op != 0 because
+        // the old value is used, and with 3-d points because nrn_diam_change
+        // below copies every segment's diam into the points, so a segment
+        // still holding a stale value (e.g. just after pt3dadd) would
+        // overwrite the points' diameters.
+        if (sec->recalc_area_ && (op != 0 || sec->npt3d)) {
             nrn_area_ri(sec);
         }
     }
@@ -1202,6 +1207,12 @@ void range_interpolate(void) /*symbol at pc, 4 values on stack*/
             return;
         }
         diam_changed = 1;
+        // As in range_interpolate_single: segments outside the range keep
+        // their diam, and nrn_diam_change copies it into the 3-d points, so it
+        // must first be derived from those points if that is pending.
+        if (sec->recalc_area_ && sec->npt3d) {
+            nrn_area_ri(sec);
+        }
     }
     indx = range_vec_indx(s);
     for (i = i1; i != i2; i += di) {
@@ -1325,7 +1336,7 @@ neuron::container::generic_data_handle nrnpy_rangepointer(Section* sec,
 #if EXTRACELLULAR
     if (s->u.rng.type == EXTRACELL) {
         auto* nd = node_ptr(sec, d, nullptr);
-        double* pd{nrn_vext_pd(s, 0, nd)};
+        double* pd{nrn_vext_pd(s, idx, nd)};
         if (pd) {
             return neuron::container::data_handle<double>{pd};
         }
@@ -1503,8 +1514,8 @@ void nrn_change_nseg(Section* sec, int n) {
         if (!keep_nseg_parm_ || nold == 0)
 #endif
             for (i = 0; i < n; i++) {
-                IGNORE(prop_alloc(&(pnd[i]->prop), MORPHOLOGY, pnd[i]));
-                IGNORE(prop_alloc(&(pnd[i]->prop), CAP, pnd[i]));
+                NRN_IGNORE(prop_alloc(&(pnd[i]->prop), MORPHOLOGY, pnd[i]));
+                NRN_IGNORE(prop_alloc(&(pnd[i]->prop), CAP, pnd[i]));
             }
     }
 }

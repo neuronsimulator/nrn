@@ -113,20 +113,44 @@ See **[CI dependency archive](ci_deps.md)** and
 * `fetch.sh` / `install_mpich_noble.sh` / `publish.sh` / `check-upstream.sh`
 * how to add the next flaky third-party download
 
-Azure macOS wheels still obtain a prebuilt static **readline** via an Azure
-*secure file* (see macOS section below). Migrating that class of blob into
-`ci/deps` is tracked as `managed: false` in the MANIFEST until promoted.
+Azure macOS wheels build a static **ncurses** on the agent with
+[packaging/python/build_static_ncurses_osx.bash](../../packaging/python/build_static_ncurses_osx.bash),
+the same script GitHub Actions uses (see the macOS section below). CMake
+fetches BSD libedit and links that archive. The pipeline does not download
+the old secure file `readline7.0-ncurses6.4.tar.gz`.
+
+## Windows wheels (`win_amd64`)
+
+**`NEURONHOME` must round-trip through the active ANSI code page.** The wheel refuses a
+path that code page cannot store. `import neuron` raises, and `nrniv` exits. NEURON does
+not substitute a best-fit narrow path and does not keep going with a different directory.
+An install under a user profile whose characters that code page cannot store can succeed
+at `pip install` and then fail on import. Linux and macOS wheels do not have this limit.
+Install under a path the active code page can store, or enable Windows "Use Unicode UTF-8
+for worldwide language support" so the active code page is UTF-8.
+
+GitHub Actions `windows-2022` builds an MSVC wheel (Visual Studio 17 2022 x64), not MinGW
+`setup.exe`. How to build locally, including `CMAKE_GENERATOR` / `CMAKE_GENERATOR_PLATFORM` and
+`ci/win_msvc_wheel_deps.cmd`, is under [Windows build — MSVC Python wheel](windows.md#msvc-python-wheel).
+
+`nrnivmodl` on that wheel needs `cl.exe` (Build Tools) and CMake; the wheel does not ship MinGW.
+That `nrnivmodl` is nocmodl. It does not accept `-nmodl` or `-nmodlflags`. Those options select
+the NMODL transpiler, which this wheel does not ship.
+See [Installing Binary Distribution — Windows](install_instructions.md#windows) for what the
+installed wheel includes: CoreNEURON is off, `nrnivmodl` produces `nrnmech.dll` and does not
+produce `special`, `sortspike` and `mkthreadsafe` are omitted, and MPI needs an external
+MS-MPI runtime (`msmpi.dll` is not in the wheel).
 
 ## macOS wheels
 
 Note that for macOS there is no docker image needed, but all required dependencies must exist.
 In order to have the wheels working on multiple macOS target versions, special consideration must be made for `MACOSX_DEPLOYMENT_TARGET`.
 
-Taking Azure macOS `x86_64` wheels for example, `readline` was built with `MACOSX_DEPLOYMENT_TARGET=10.9` and stored as secure file on Azure (under `Pipelines > Library > Secure files`).
-For `arm64` we need to set `MACOSX_DEPLOYMENT_TARGET=11.0`.
-
-You can use [packaging/python/build_static_readline_osx.bash](../../packaging/python/build_static_readline_osx.bash) to build a static readline library.
-You can have a look at the script for requirements and usage.
+Azure and GitHub Actions both run
+[packaging/python/build_static_ncurses_osx.bash](../../packaging/python/build_static_ncurses_osx.bash)
+before the wheel build. The script sets `MACOSX_DEPLOYMENT_TARGET` to 10.9 on
+`x86_64` and 11.0 on `arm64`, and installs `libncurses.a` under
+`/opt/nrnwheel/$(uname -m)/ncurses`. libedit itself is fetched by CMake.
 
 ### Installing macOS prerequisites
 
@@ -153,14 +177,15 @@ export PATH=/opt/homebrew/opt/bison/bin:/opt/homebrew/opt/flex/bin:$PATH
 
 You can build the wheel for a specific Python version using:
 ```
-bash packaging/python/build_wheels.bash linux 39    # 39 for Python v3.9
+bash packaging/python/build_wheels.bash linux 311   # 311 → cp311-cp311 (versioned, not abi3)
+bash packaging/python/build_wheels.bash linux 312   # 312 → cp312-abi3 (CPython 3.12 limited API)
 ```
 
 To build wheels with CoreNEURON support you have to set the environmental variable `NRN_ENABLE_CORENEURON=ON`:
 ```
 NRN_ENABLE_CORENEURON=ON bash packaging/python/build_wheels.bash linux '3*'
 ```
-where we are passing `'3*'` (note the quotes!) to build the wheels with `CoreNEURON` support for all python 3 versions.
+where we are passing `'3*'` (note the quotes!) to build the product wheels (`cp311-cp311` and `cp312-abi3`).
 
 By default, the build system uses all of the processing units available on a machine; this can be customized using the `CMAKE_BUILD_PARALLEL_LEVEL` environmental variable.
 
@@ -171,7 +196,8 @@ As mentioned above, for macOS all dependencies have to be available on a system.
 
 ```
 cd nrn
-bash packaging/python/build_wheels.bash osx 39  # 39 for Python v3.9
+bash packaging/python/build_wheels.bash osx 311  # 311 → cp311-cp311
+bash packaging/python/build_wheels.bash osx 312  # 312 → cp312-abi3
 ```
 
 In some cases, setuptools-scm will see extra commits and consider your build as "dirty," resulting in filenames such as `NEURON-9.0a1.dev0+g9a96a3a4d.d20230717-cp310-cp310-macosx_11_0_arm64.whl` (which should have been `NEURON-9.0a0-cp310-cp310-macosx_11_0_arm64.whl`). If this happens, you can set an environment variable to correct this behavior:
@@ -193,11 +219,11 @@ portable subset of the developer suite against an installed wheel.
 Quick health check after building a wheel (or against TestPyPI):
 
 ```
-# first arg is a python exe and second arg is the corresponding wheel
-bash packaging/python/test_wheels.sh python3.9 wheelhouse/NEURON-7.8.0.236-cp39-cp39-macosx_10_9_x86_64.whl
+# first arg is a Python 3.11+ interpreter and second arg is the matching wheel
+bash packaging/python/test_wheels.sh python3.11 wheelhouse/neuron_nightly-9.1.0-cp311-cp311-manylinux_2_28_x86_64.whl
 
-# Or, you can provide the pypi url
-bash packaging/python/test_wheels.sh python3.9 "-i https://test.pypi.org/simple/NEURON==7.8.11.2"
+# Or pass a pip requirement as the second argument
+bash packaging/python/test_wheels.sh python3.11 neuron-nightly
 ```
 
 This covers import/`neuron.test()`, basic `nrnivmodl`, and a few MPI /

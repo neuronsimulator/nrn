@@ -23,6 +23,7 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 #include "ast/function_block.hpp"
 #include "ast/procedure_block.hpp"
@@ -765,6 +766,19 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
 
 
     /**
+     * Print one NEURON before/after callback.
+     *
+     * \p node is a BeforeBlock or AfterBlock. The generated function is one
+     * mechanism instance per call (\c nrn_bamech_t). \c nrn_ba and
+     * \c Cvode::before_after already loop over the Memb_list.
+     *
+     * \param node     AST node for the before/after block
+     * \param block_id Index of this block in \c info.before_after_blocks
+     */
+    void print_before_after_block(const ast::Block* node, size_t block_id);
+
+
+    /**
      * Print all compute functions for every backend
      *
      */
@@ -840,6 +854,21 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
     void visit_longitudinal_diffusion_block(const ast::LongitudinalDiffusionBlock& node) override;
     void visit_lon_diffuse(const ast::LonDiffuse& node) override;
     void visit_protect_statement(const ast::ProtectStatement& node) override;
+    void visit_lag_statement(const ast::LagStatement& node) override;
+
+    /**
+     * nocmodl lag_stmt. The first string is the static result
+     * (`static double` or `static double*`), printed once at namespace
+     * scope. The second is the assignment at the LAG statement. An array
+     * passes its dimension to scopmath::lag and keeps the pointer; a
+     * scalar passes 0 and dereferences it.
+     */
+    std::pair<std::string, std::string> lag_declaration_and_assignment(
+        const ast::LagStatement& node);
+    void setup(const ast::Program& node) override;
+    void print_namespace_start();
+    /// `static double[ *] lag_<var>_<by>;` lines, in source order.
+    std::vector<std::string> lag_declarations;
 
   public:
     /****************************************************************************************/

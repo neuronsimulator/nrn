@@ -8,6 +8,7 @@
 #endif
 #include "nrnpy_utils.h"
 #include <stdlib.h>
+#include <string.h>
 #include <ctype.h>
 
 #include "nrn_export.hpp"
@@ -15,16 +16,16 @@
 #include <iostream>
 #include <string>
 
-extern int nrn_is_python_extension;
-extern int nrn_nobanner_;
-extern int ivocmain(int, const char**, const char**);
-extern int nrn_main_launch;
+NRN_DLLSYM extern int nrn_is_python_extension;
+NRN_DLLSYM extern int nrn_nobanner_;
+NRN_DLLSYM int ivocmain(int, const char**, const char**);
+NRN_DLLSYM extern int nrn_main_launch;
 
 
 // int nrn_global_argc;
-extern char** nrn_global_argv;
-extern void (*p_nrnpython_finalize)();
-extern "C" PyObject* nrnpy_hoc();
+NRN_DLLSYM extern char** nrn_global_argv;
+NRN_DLLSYM extern void (*p_nrnpython_finalize)();
+extern "C" NRN_DLLSYM PyObject* nrnpy_hoc();
 
 #if NRNMPI_DYNAMICLOAD
 extern void nrnmpi_stubs();
@@ -242,13 +243,17 @@ void nrnpython_finalize() {
     {
 #endif
         // Call python_gui_cleanup() if defined in Python
-        PyRun_SimpleString(
+        nrnpy_run_simple_string(
             "try:\n"
             "    gui.cleanup()\n"
             "except NameError:\n"
             "    pass\n");
 
-        // Finalize Python
+        // hoc quit() / process exit can reach here while a -c string is still on
+        // the stack; 3.14 then raises SystemError on threading shutdown.
+        if (PyErr_Occurred()) {
+            PyErr_Clear();
+        }
         Py_Finalize();
     }
 #if defined(__linux__) || defined(DARWIN)
@@ -406,7 +411,13 @@ extern "C" NRN_EXPORT PyObject* PyInit_hoc() {
     }
 
     nrn_main_launch = 2;
-    ivocmain(argc, (const char**) argv, (const char**) env);
+    // ivocmain returns non-zero when a Windows NEURONHOME does not fit the
+    // active code page. exit() there would kill the interpreter.
+    if (ivocmain(argc, (const char**) argv, (const char**) env)) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "NEURONHOME: the install path does not fit the active ANSI code page");
+        return nullptr;
+    }
     return nrnpy_hoc();
 }
 

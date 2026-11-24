@@ -107,7 +107,18 @@ run_serial_test () {
     $python_exe -c "import neuron; neuron.test(); neuron.test_rxd()"
 
     # Test 2: execute nrniv
-    nrniv -c "print \"hello\""
+    # Windows: mpiexec cannot CreateProcess extensionless Scripts/nrniv
+    # (Error 2); nrniv.cmd is the PATHEXT wrapper. Git bash keeps the
+    # quoted hello string; quit() so a failed -c does not sit on stdin.
+    if [[ "$OSTYPE" == msys* || "$OSTYPE" == cygwin* || "${RUNNER_OS}" == "Windows" ]]; then
+      nrniv_cmd="$(dirname "$python_exe")/nrniv.cmd"
+      if [[ ! -f "$nrniv_cmd" ]]; then
+        nrniv_cmd="nrniv.cmd"
+      fi
+      "$nrniv_cmd" -c "print \"hello\"" -c "quit()"
+    else
+      nrniv -c "print \"hello\""
+    fi
 
     # Test 3: run coreneuron binary shipped inside wheel
     if [[ "$has_coreneuron" == "true" ]]; then
@@ -120,29 +131,48 @@ run_serial_test () {
     fi
 
     # Test 4: execute nrnivmodl and friends
-    compilers=("nrnivmodl" "nrnivmodl-cmake")
-    for compiler in "${compilers[@]}"; do
-        rm -rf $ARCH_DIR
-        ${compiler} tmp_mod
+    # Windows: PATHEXT wrapper nrnivmodl.cmd drives the shipped CMake
+    # package (not bash nrnivmodl.in). Output is cwd/nrnmech.dll, not
+    # uname -m/special (NRNIVMODL_SPECIAL=OFF). nrnivmodl-cmake is the
+    # same code path; cmake finds VS without vcvars.
+    if [[ "$OSTYPE" == msys* || "$OSTYPE" == cygwin* || "${RUNNER_OS}" == "Windows" ]]; then
+      nrnivmodl_cmd="$(dirname "$python_exe")/nrnivmodl.cmd"
+      if [[ ! -f "$nrnivmodl_cmd" ]]; then
+        nrnivmodl_cmd="nrnivmodl.cmd"
+      fi
+      rm -rf AMD64 nrnmech.dll
+      "$nrnivmodl_cmd" tmp_mod
+      if [[ ! -f nrnmech.dll ]]; then
+        echo "nrnivmodl Test 4 did not produce nrnmech.dll"
+        exit 1
+      fi
+      # Test 7: compiled mod is loadable (Windows auto-loads cwd/nrnmech.dll).
+      $python_exe -c "from neuron import h; s = h.Section(); s.insert('cacum')"
+    else
+      compilers=("nrnivmodl" "nrnivmodl-cmake")
+      for compiler in "${compilers[@]}"; do
+          rm -rf $ARCH_DIR
+          ${compiler} tmp_mod
 
-        # Test 5: execute special hoc interpreter
-        ./$ARCH_DIR/special -c "print \"hello\""
+          # Test 5: execute special hoc interpreter
+          ./$ARCH_DIR/special -c "print \"hello\""
 
-        # Test 6: run basic tests via python while loading shared library
-        $python_exe -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
+          # Test 6: run basic tests via python while loading shared library
+          $python_exe -c "import neuron; neuron.test(); neuron.test_rxd()"
 
-        # Test 7: run basic test to use compiled mod file
-        $python_exe -c "import neuron; from neuron import h; s = h.Section(); s.insert('cacum'); quit()"
+          # Test 7: run basic test to use compiled mod file
+          $python_exe -c "import neuron; from neuron import h; s = h.Section(); s.insert('cacum')"
 
-        # Test 8: run basic tests via special : azure pipelines get stuck with their
-        # own python from hosted cache (most likely security settings).
-        if [[ "$SKIP_EMBEDED_PYTHON_TEST" != "true" ]]; then
-          ./$ARCH_DIR/special -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
-          nrniv -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
-        else
-          $python_exe -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
-        fi
-    done
+          # Test 8: run basic tests via special : azure pipelines get stuck with their
+          # own python from hosted cache (most likely security settings).
+          if [[ "$SKIP_EMBEDED_PYTHON_TEST" != "true" ]]; then
+            ./$ARCH_DIR/special -python -c "import neuron; neuron.test(); neuron.test_rxd()"
+            nrniv -python -c "import neuron; neuron.test(); neuron.test_rxd()"
+          else
+            $python_exe -c "import neuron; neuron.test(); neuron.test_rxd()"
+          fi
+      done
+    fi
 
     # Test 9: coreneuron execution via neuron
     if [[ "$has_coreneuron" == "true" ]]; then
@@ -170,10 +200,86 @@ run_serial_test () {
 
 
     # Test 10: run demo
-    neurondemo -c 'demo(4)' -c 'run()' -c 'quit()'
+    # Windows: extensionless Scripts/neurondemo is a Python wrapper, not a
+    # Win32 image (Error 193). neurondemo.cmd is the PATHEXT wrapper and
+    # ports bash neurondemo.in (nrniv -dll of shipped
+    # share/nrn/demo/release/nrnmech.dll, or nrnivmodl if that DLL is
+    # missing). -nogui: IV is not this gate.
+    if [[ "$OSTYPE" == msys* || "$OSTYPE" == cygwin* || "${RUNNER_OS}" == "Windows" ]]; then
+      neurondemo_cmd="$(dirname "$python_exe")/neurondemo.cmd"
+      if [[ ! -f "$neurondemo_cmd" ]]; then
+        neurondemo_cmd="neurondemo.cmd"
+      fi
+      # pwsh keeps stdin open. The wrapper inherits it, so close the pipe here.
+      # quit() still ends the demo; a missing quit() must not hang the job.
+      "$neurondemo_cmd" -nogui -c "demo(4)" -c "run()" -c "quit()" < /dev/null
+    else
+      neurondemo -c 'demo(4)' -c 'run()' -c 'quit()'
+    fi
 
     # Test 11: modlunit available (and can find nrnunits.lib)
-    modlunit tmp_mod/cacum.mod
+    # Windows: extensionless Scripts/modlunit is a Python wrapper, not a
+    # Win32 image (Error 193). modlunit.cmd is the PATHEXT wrapper.
+    # nrnunits.lib ships at .data/share/nrn/lib.
+    if [[ "$OSTYPE" == msys* || "$OSTYPE" == cygwin* || "${RUNNER_OS}" == "Windows" ]]; then
+      modlunit_cmd="$(dirname "$python_exe")/modlunit.cmd"
+      if [[ ! -f "$modlunit_cmd" ]]; then
+        modlunit_cmd="modlunit.cmd"
+      fi
+      "$modlunit_cmd" tmp_mod/cacum.mod
+    else
+      modlunit tmp_mod/cacum.mod
+    fi
+
+    # Test 12: nrniv -python installs the readline hook.
+    # Wheel builds set NRN_ENABLE_TESTS=OFF, so ctest pyinit::readline_hook
+    # does not run. Launch the real executable under neuron/.data/bin.
+    # A Python subprocess cannot CreateProcess nrniv.cmd. The hook script
+    # closes stdin for the pointer check, then on Unix submits one Python
+    # statement on a pty. Python calls the hook only when stdin and stdout
+    # are ttys. Leave the full ctest suite off.
+    # The wheel nrniv launcher sets NEURONHOME and NRN_PYLIB, NRN_PYTHONEXE,
+    # and NRN_PYTHONVERSION. nrniv skips nrnpyenv.sh only when those three
+    # are set. This launch runs the .data/bin executable itself. The binary's
+    # compiled data dir is the build prefix, so without this environment it
+    # looks for nrnpyenv.sh there. These are the same values as
+    # binwrapper._config_exe for this interpreter.
+    nrniv_exe="$($python_exe -c 'import os, sys, neuron
+bindir = os.path.join(os.path.dirname(neuron.__file__), ".data", "bin")
+name = "nrniv.exe" if sys.platform == "win32" else "nrniv"
+print(os.path.join(bindir, name))')"
+    if [[ ! -f "$nrniv_exe" ]]; then
+      echo "readline hook: nrniv not found at $nrniv_exe"
+      exit 1
+    fi
+    NEURONHOME="$($python_exe -c 'import os, neuron
+print(os.path.abspath(os.path.join(os.path.dirname(neuron.__file__), ".data", "share", "nrn")))')"
+    if [[ ! -d "$NEURONHOME" ]]; then
+      echo "readline hook: NEURONHOME not found at $NEURONHOME"
+      exit 1
+    fi
+    nrn_py_info="$($python_exe -c 'import sys
+from find_libpython import find_libpython
+pylib = find_libpython()
+if not pylib:
+    raise SystemExit("find_libpython returned nothing")
+print(sys.executable)
+print("%d.%d" % sys.version_info[:2])
+print(pylib)')"
+    {
+      IFS= read -r NRN_PYTHONEXE
+      IFS= read -r NRN_PYTHONVERSION
+      IFS= read -r NRN_PYLIB
+    } <<EOF
+$nrn_py_info
+EOF
+    if [[ -z "$NRN_PYTHONEXE" || -z "$NRN_PYTHONVERSION" || ! -f "$NRN_PYLIB" ]]; then
+      echo "readline hook: Python library details are incomplete"
+      printf 'exe=%s\nversion=%s\npylib=%s\n' "$NRN_PYTHONEXE" "$NRN_PYTHONVERSION" "$NRN_PYLIB"
+      exit 1
+    fi
+    export NEURONHOME NRN_PYTHONEXE NRN_PYTHONVERSION NRN_PYLIB
+    $python_exe test/pyinit/readline_hook.py "$nrniv_exe"
 }
 
 
@@ -205,6 +311,17 @@ run_parallel_test() {
       sudo update-alternatives --set mpi-${ARCH_DIR}-linux-gnu /usr/lib/${ARCH_DIR}-linux-gnu/openmpi/include
       run_mpi_test "mpirun.openmpi --oversubscribe" "OpenMPI" ""
 
+    # Windows Git-bash / GHA: MS-MPI. mpiexec cannot CreateProcess the
+    # extensionless Scripts/nrniv (Error 2); nrniv.cmd is the PATHEXT wrapper.
+    elif [[ "$OSTYPE" == msys* || "$OSTYPE" == cygwin* || "${RUNNER_OS}" == "Windows" ]]; then
+      echo "======= Testing MS-MPI ========"
+      mpiexec -n 2 "$python_exe" src/parallel/test0.py -mpi --expected-hosts 2
+      nrniv_cmd="$(dirname "$python_exe")/nrniv.cmd"
+      if [[ ! -f "$nrniv_cmd" ]]; then
+        nrniv_cmd="nrniv.cmd"
+      fi
+      mpiexec -n 2 "$nrniv_cmd" src/parallel/test0.hoc -mpi --expected-hosts 2
+
     # linux desktop or docker container used for wheel
     else
       export PATH=/opt/mpich/bin:$PATH
@@ -225,8 +342,12 @@ test_wheel () {
     trap "rm -fr tmp_mod ${ARCH_DIR}" EXIT SIGINT
     cp share/examples/nrniv/nmodl/cacum.mod tmp_mod/
 
-    # check gcc and python versions
-    gcc --version && python --version
+    # check gcc and python versions (Windows wheel uses MSVC, not gcc)
+    if [[ "$OSTYPE" == msys* || "$OSTYPE" == cygwin* || "${RUNNER_OS}" == "Windows" ]]; then
+      python --version
+    else
+      gcc --version && python --version
+    fi
 
     echo "Using `which $python_exe` : `$python_exe --version`"
     echo "=========== SERIAL TESTS ==========="

@@ -5,7 +5,7 @@
 # * STRUCTURED_HEADER_FILES_TO_INSTALL: {src}/src/a/b.h -> {bld}/include/a/b.h
 # =======================================================================================
 set(STRUCTURED_HEADER_FILES_TO_INSTALL
-    neuron/cache/mechanism_range.hpp neuron/container/data_handle.hpp
+    neuron/ba_reg.h neuron/cache/mechanism_range.hpp neuron/container/data_handle.hpp
     neuron/container/generic_data_handle.hpp neuron/container/non_owning_soa_identifier.hpp
     neuron/model_data_fwd.hpp)
 set(HEADER_FILES_TO_INSTALL
@@ -47,6 +47,7 @@ set(HEADER_FILES_TO_INSTALL
     oc/memory.hpp
     oc/nrnapi.h
     oc/nrnassrt.h
+    oc/nrndlldef.h
     oc/nrnmpi.h
     oc/nrnrandom.h
     oc/oc_ansi.h
@@ -188,7 +189,7 @@ set(IVOC_FILE_LIST
     utility.cpp
     xmenu.cpp
     xyview.cpp)
-if(MINGW)
+if(NRN_WINDOWS_BUILD)
   list(APPEND IVOC_FILE_LIST ivocwin.cpp)
 else()
   list(APPEND IVOC_FILE_LIST field.cpp xdep.cpp)

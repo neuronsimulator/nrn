@@ -6908,9 +6908,7 @@ Vector
 Fourier Analysis
 ~~~~~~~~~~~~~~~~
 
-The following routines are based on the fast fourier transform (FFT) 
-and are implemented using code from Numerical Recipes in C (2nd ed.) 
-Refer to this source for further information. 
+The following routines are based on the fast Fourier transform (FFT). 
             
 
 

@@ -13,28 +13,39 @@
 #include <hocstr.h>
 #include "nrnpy.h"
 
+#include <cstring>
 #include <filesystem>
 #include <string>
 #include <sstream>
 #include <fstream>
+#include <cstdlib>
+#include <cstring>
+#if defined(_WIN32)
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#else
+#include <dlfcn.h>
+#endif
 
 #include <nanobind/nanobind.h>
 
-extern HocStr* hoc_cbufstr;
-extern int nrnpy_nositeflag;
-extern std::string nrnpy_pyexe;
-extern char* hoc_ctp;
-extern FILE* hoc_fin;
-extern const char* hoc_promptstr;
+extern NRN_DLLSYM HocStr* hoc_cbufstr;
+extern NRN_DLLSYM int nrnpy_nositeflag;
+extern NRN_DLLSYM std::string nrnpy_pyexe;
+extern NRN_DLLSYM char* hoc_ctp;
+extern NRN_DLLSYM FILE* hoc_fin;
+extern NRN_DLLSYM const char* hoc_promptstr;
 extern char* neuronhome_forward();
 #if DARWIN || defined(__linux__)
 extern const char* path_prefix_to_libnrniv();
 #endif
 static char* nrnpython_getline(FILE*, FILE*, const char*);
-extern int nrn_global_argc;
-extern char** nrn_global_argv;
+extern NRN_DLLSYM int nrn_global_argc;
+extern NRN_DLLSYM char** nrn_global_argv;
 int nrnpy_pyrun(const char*);
-extern int (*p_nrnpy_pyrun)(const char*);
+extern NRN_DLLSYM int (*p_nrnpy_pyrun)(const char*);
+extern NRN_DLLSYM size_t hoc_xopen_file_size_;
+extern NRN_DLLSYM char* hoc_xopen_file_;
 
 static std::string python_sys_path_to_append() {
     std::string path{neuronhome_forward()};
@@ -55,27 +66,143 @@ static std::string python_sys_path_to_append() {
 }
 
 namespace {
-struct PythonConfigWrapper {
-    PythonConfigWrapper() {
-        PyConfig_InitPythonConfig(&config);
-    }
-    ~PythonConfigWrapper() {
-        PyConfig_Clear(&config);
-    }
-    operator PyConfig*() {
-        return &config;
-    }
-    PyConfig* operator->() {
-        return &config;
-    }
-    PyConfig config;
-};
-struct PyMem_RawFree_Deleter {
-    void operator()(wchar_t* ptr) const {
-        PyMem_RawFree(ptr);
-    }
-};
 PyObject* basic_sys_path{};
+wchar_t* saved_progname{};
+
+void* nrnpy_dlsym(const char* name) {
+#if defined(_WIN32)
+    // python3.dll is the stable ABI. A versioned build links python3XY.dll
+    // and may not load python3.dll. PyOS_ReadlineFunctionPointer is not in
+    // the limited API, so python3.dll does not export it even when the ABI3
+    // build has loaded that DLL. Unix dlsym(RTLD_DEFAULT) searches every
+    // loaded module; follow the same search here.
+    auto from_module = [name](const char* module) -> void* {
+        if (!module || !module[0]) {
+            return nullptr;
+        }
+        HMODULE module_handle = GetModuleHandleA(module);
+        if (!module_handle) {
+            return nullptr;
+        }
+        return reinterpret_cast<void*>(GetProcAddress(module_handle, name));
+    };
+    if (void* symbol = from_module("python3.dll")) {
+        return symbol;
+    }
+    if (const char* pylib = std::getenv("NRN_PYLIB")) {
+        if (void* symbol = from_module(pylib)) {
+            return symbol;
+        }
+        const char* base = pylib;
+        for (const char* s = pylib; *s; ++s) {
+            if (*s == '/' || *s == '\\') {
+                base = s + 1;
+            }
+        }
+        if (base != pylib) {
+            if (void* symbol = from_module(base)) {
+                return symbol;
+            }
+        }
+    }
+    for (int minor = 10; minor <= 30; ++minor) {
+        char modname[32];
+        std::snprintf(modname, sizeof modname, "python3%d.dll", minor);
+        if (void* symbol = from_module(modname)) {
+            return symbol;
+        }
+    }
+    return nullptr;
+#else
+    return dlsym(RTLD_DEFAULT, name);
+#endif
+}
+
+// PyConfig is not in the stable ABI. Py_Initialize() still copies this global
+// into site_import when it uses the compat config. The symbol is not in the
+// limited API, and on Windows it is not exported from python3.dll.
+int* nrnpy_no_site_flag() {
+    if (void* p = nrnpy_dlsym("Py_NoSiteFlag")) {
+        return static_cast<int*>(p);
+    }
+#if defined(_WIN32)
+    auto from_module = [](const char* module) -> int* {
+        if (!module || !module[0]) {
+            return nullptr;
+        }
+        HMODULE h = GetModuleHandleA(module);
+        if (!h) {
+            return nullptr;
+        }
+        return static_cast<int*>(reinterpret_cast<void*>(GetProcAddress(h, "Py_NoSiteFlag")));
+    };
+    if (const char* pylib = std::getenv("NRN_PYLIB")) {
+        if (int* flag = from_module(pylib)) {
+            return flag;
+        }
+        const char* base = pylib;
+        for (const char* s = pylib; *s; ++s) {
+            if (*s == '/' || *s == '\\') {
+                base = s + 1;
+            }
+        }
+        if (int* flag = from_module(base)) {
+            return flag;
+        }
+    }
+    for (int minor = 10; minor <= 30; ++minor) {
+        char name[32];
+        std::snprintf(name, sizeof name, "python3%d.dll", minor);
+        if (int* flag = from_module(name)) {
+            return flag;
+        }
+    }
+#endif
+    return nullptr;
+}
+
+void* nrnpy_raw_malloc(size_t n) {
+    using F = void* (*) (size_t);
+    static F f = reinterpret_cast<F>(nrnpy_dlsym("PyMem_RawMalloc"));
+    return f ? f(n) : std::malloc(n);
+}
+
+void* nrnpy_raw_calloc(size_t n, size_t sz) {
+    using F = void* (*) (size_t, size_t);
+    static F f = reinterpret_cast<F>(nrnpy_dlsym("PyMem_RawCalloc"));
+    return f ? f(n, sz) : std::calloc(n, sz);
+}
+
+// Release Py_DecodeLocale memory. The allocation is released with
+// PyMem_RawFree, looked up from the loaded Python library. If that symbol
+// is missing, leak rather than free with the wrong heap.
+void nrnpy_raw_free(void* p) {
+    if (!p) {
+        return;
+    }
+    using F = void (*)(void*);
+    static F f = nullptr;
+    static bool looked = false;
+    if (!looked) {
+        looked = true;
+        f = reinterpret_cast<F>(nrnpy_dlsym("PyMem_RawFree"));
+#if defined(_WIN32)
+        // python3.dll exports PyMem_RawFree from the 3.13 stable ABI on.
+        // The versioned python3XY.dll has exported it since 3.4.
+        for (int minor = 10; minor <= 30 && !f; ++minor) {
+            char name[32];
+            std::snprintf(name, sizeof name, "python3%d.dll", minor);
+            if (HMODULE h = GetModuleHandleA(name)) {
+                f = reinterpret_cast<F>(
+                    reinterpret_cast<void*>(GetProcAddress(h, "PyMem_RawFree")));
+            }
+        }
+#endif
+    }
+    if (f) {
+        f(p);
+    }
+}
 
 /**
  * @brief Reset sys.path to be basic_sys_path and prepend something.
@@ -118,10 +245,73 @@ static void nrnpython_set_path(std::string_view fname) {
     }
 }
 
+namespace {
+std::string nrn_forward_slash_path(std::string s) {
+#if defined(WIN32)
+    /* \ in HOC "..." and Python '...' is an escape; fopen accepts /. */
+    for (char& c: s) {
+        if (c == '\\') {
+            c = '/';
+        }
+    }
+#endif
+    return s;
+}
+
+void hoc_xopen_file_set(const std::string& name) {
+    if (!hoc_xopen_file_ || name.size() >= hoc_xopen_file_size_) {
+        hoc_xopen_file_size_ = name.size() + 100;
+        hoc_xopen_file_ = static_cast<char*>(erealloc(hoc_xopen_file_, hoc_xopen_file_size_));
+    }
+    std::memcpy(hoc_xopen_file_, name.c_str(), name.size() + 1);
+}
+
+/* nrniv of a path .py does not chdir and does not set hoc_xopen_file_.
+   load_file("rel.hoc") inside looked in cwd. load_file of a path already
+   chdir's; nrniv of a path .hoc searches next to hoc_xopen_file_. Same
+   for the running Python script. Last / is not the directory on Windows. */
+struct HocXopenFileGuard {
+    std::string saved;
+    HocXopenFileGuard(const std::string& name) {
+        saved = (hoc_xopen_file_ && hoc_xopen_file_[0]) ? hoc_xopen_file_ : "";
+        hoc_xopen_file_set(name);
+    }
+    ~HocXopenFileGuard() {
+        hoc_xopen_file_set(saved);
+    }
+};
+}  // namespace
+
 /**
  * @brief Execute a Python script.
  * @return 0 on failure, 1 on success.
  */
+// Limited-API Py_Initialize leaves sys.stdout fully buffered when nrniv is not a
+// TTY. Flush so output from script N is visible if script N+1 hoc_execerror's.
+static void nrnpy_flush_stdio() {
+    PyObject* sys = PyImport_ImportModule("sys");
+    if (!sys) {
+        PyErr_Clear();
+        fflush(stdout);
+        fflush(stderr);
+        return;
+    }
+    for (const char* name: {"stdout", "stderr"}) {
+        PyObject* stream = PyObject_GetAttrString(sys, name);
+        if (!stream) {
+            PyErr_Clear();
+            continue;
+        }
+        PyObject* r = PyObject_CallMethod(stream, "flush", nullptr);
+        Py_XDECREF(r);
+        PyErr_Clear();
+        Py_DECREF(stream);
+    }
+    Py_DECREF(sys);
+    fflush(stdout);
+    fflush(stderr);
+}
+
 int nrnpy_pyrun(const char* fname) {
     auto* fp = fopen(fname, "r");
     if (fp) {
@@ -131,28 +321,33 @@ int nrnpy_pyrun(const char* fname) {
         return 0;
     }
     fclose(fp);
+    HocXopenFileGuard xopen_file{nrn_forward_slash_path(fname)};
 #if !defined(MINGW)
     fp = fopen(fname, "r");
     if (fp) {
-        int const code = PyRun_AnyFile(fp, fname);
+        int const code = nrnpy_run_file(fp, fname);
         fclose(fp);
+        nrnpy_flush_stdio();
         return !code;
     }
     return 0;
 #else   // MINGW
     // MINGW and Python have incompatible FILE* so try to accomplish
-    // with pure Python
+    // with pure Python. Forward slashes so a native path is not a
+    // Python string escape (\b \t \n \f).
     std::string exec{"with open('"};
-    exec += fname;
+    exec += nrn_forward_slash_path(fname);
     exec +=
         "', 'rb') as nrnmingw_file:"
         " exec(nrnmingw_file.read(), globals())\n";
-    int const code = PyRun_SimpleString(exec.c_str());
+    int const code = nrnpy_run_simple_string(exec.c_str());
     if (code) {
         PyErr_Print();
+        nrnpy_flush_stdio();
         return 0;
     }
-    PyRun_SimpleString("del nrnmingw_file\n");
+    nrnpy_run_simple_string("del nrnmingw_file\n");
+    nrnpy_flush_stdio();
     return 1;
 #endif  // MINGW
 }
@@ -167,9 +362,9 @@ static int nrnmingw_pyrun_interactiveloop() {
     std::string lines[3]{
         "import code as nrnmingw_code\n",
         "nrnmingw_interpreter = nrnmingw_code.InteractiveConsole(locals=globals())\n",
-        "nrnmingw_interpreter.interact(\"\")\n"};
+        "nrnmingw_interpreter.interact(\"\", exitmsg=\"\")\n"};
     for (const auto& line: lines) {
-        if (PyRun_SimpleString(line.c_str())) {
+        if (nrnpy_run_simple_string(line.c_str())) {
             PyErr_Print();
             return -1;
         }
@@ -177,8 +372,23 @@ static int nrnmingw_pyrun_interactiveloop() {
     return 0;
 }
 
-extern "C" PyObject* nrnpy_hoc();
+extern "C" NRN_EXPORT PyObject* nrnpy_hoc();
 extern PyObject* nrnpy_nrn();
+
+/* Windows filenames are case-insensitive; SCRIPT.PY is a Python file.
+   Unix stays case-sensitive. Last 3 chars of the whole path is not the
+   filesystem filename extension. Same as hoc.cpp nrn_path_has_ext. */
+static bool nrn_path_has_ext(const char* path, const char* ext) {
+    std::string got = std::filesystem::path(path).extension().string();
+#if defined(WIN32)
+    for (char& c: got) {
+        if (c >= 'A' && c <= 'Z') {
+            c = static_cast<char>(c - 'A' + 'a');
+        }
+    }
+#endif
+    return got == ext;
+}
 
 /** @brief Start the Python interpreter.
  *  @arg b Mode of operation, can be 0 (finalize), 1 (initialize),
@@ -194,35 +404,25 @@ static int nrnpython_start(int b) {
     static int started = 0;
     if (b == 1 && !started) {
         p_nrnpy_pyrun = nrnpy_pyrun;
-        // Create a Python configuration, see
-        // https://docs.python.org/3.8/c-api/init_config.html#python-configuration, so that
-        // {nrniv,special} -python behaves as similarly as possible to python. In particular this
-        // affects locale coercion. Under some circumstances Python does not straightforwardly
-        // handle settings like LC_ALL=C, so using a different configuration can lead to surprising
-        // differences.
-        PythonConfigWrapper config;
+        // Limited API: PyConfig is not available. Use Py_SetProgramName + Py_Initialize
+        // and then set sys.executable / sys.argv. -Py_NoSiteFlag is the global that
+        // Py_Initialize() copies into site_import. If that symbol is gone, site runs.
         if (nrnpy_nositeflag) {
-            config->site_import = 0;
-        }
-        auto const check = [](const char* desc, PyStatus status) {
-            if (PyStatus_Exception(status)) {
-                std::ostringstream oss;
-                oss << desc;
-                if (status.err_msg) {
-                    oss << ": " << status.err_msg;
-                    if (status.func) {
-                        oss << " in " << status.func;
-                    }
-                }
-                throw std::runtime_error(oss.str());
+            if (int* flag = nrnpy_no_site_flag()) {
+                *flag = 1;
+            } else {
+                Fprintf(stderr,
+                        "Warning: -Py_NoSiteFlag is ignored. Py_Initialize() imports site, "
+                        "so sitecustomize and usercustomize still run.\n");
             }
-        };
+        }
         // Virtual environments are discovered by Python by looking for pyvenv.cfg in the directory
         // above sys.executable (https://docs.python.org/3/library/site.html), so we want to make
         // sure that sys.executable is the path to a reasonable choice of Python executable. If we
         // were to let sys.executable be `/some/path/to/arch/special` then we pick up a surprising
         // dependency on whether or not `nrnivmodl` happened to be run in the root directory of the
-        // virtual environment
+        // virtual environment. An absolute -pyexe or NRN_PYTHONEXE is that path: discovery does
+        // not replace it with the probe's sys.executable.
         auto pyexe = nrnpy_pyexe;
 #ifndef NRNPYTHON_DYNAMICLOAD
         // In non-dynamic builds, the -pyexe option has no effect on which Python is linked and
@@ -236,31 +436,71 @@ static int nrnpython_start(int b) {
         }
 #endif
         if (pyexe.empty()) {
-            throw std::runtime_error("Do not know what to set PyConfig.program_name to");
+            throw std::runtime_error("Do not know what to set Py_SetProgramName to");
         }
-        // Surprisingly, given the documentation, it seems that passing a non-absolute path to
-        // PyConfig.program_name does not lead to a lookup in $PATH, but rather to the real (nrniv)
-        // path being placed in sys.executable -- at least on macOS.
         if (auto p = std::filesystem::path{pyexe}; !p.is_absolute()) {
             std::ostringstream oss;
-            oss << "Setting PyConfig.program_name to a non-absolute path (" << pyexe
+            oss << "Setting program name to a non-absolute path (" << pyexe
                 << ") is not portable; try passing an absolute path to -pyexe or NRN_PYTHONEXE";
             throw std::runtime_error(oss.str());
         }
         // TODO: in non-dynamic builds then -pyexe cannot change the used Python version, and `nrniv
-        // -pyexe /path/to/python3.10 -python` may well not use Python 3.10 at all. Should we do
+        // -pyexe /path/to/python3.11 -python` may well not use Python 3.11 at all. Should we do
         // something about that?
-        check("Could not set PyConfig.program_name",
-              PyConfig_SetBytesString(config, &config->program_name, pyexe.c_str()));
-        // PySys_SetArgv is deprecated in Python 3.11+, write to config.XXX instead.
-        // nrn_global_argv contains the arguments passed to nrniv/special, which are not valid
-        // Python arguments, so tell Python not to try and parse them. In future we might like to
-        // remove the NEURON-specific arguments and pass whatever is left to Python?
-        config->parse_argv = 0;
-        check("Could not set PyConfig.argv",
-              PyConfig_SetBytesArgv(config, nrn_global_argc, nrn_global_argv));
-        // Initialise Python
-        check("Could not initialise Python", Py_InitializeFromConfig(config));
+        {
+            // Called before Py_Initialize on purpose. Py_PreInitialize and
+            // PyPreConfig are not in the limited API, so this startup cannot
+            // preinitialize. Py_Initialize() uses the compat config: UTF-8 mode
+            // stays off, the C locale is not coerced, and PYTHONUTF8 is ignored.
+            // nrniv has not called setlocale, so the locale here is still "C"
+            // even when the environment names a UTF-8 locale. Py_DecodeLocale
+            // then maps bytes that locale cannot represent to surrogates
+            // (U+DC80..U+DCFF). Under LC_ALL=C the filesystem encoding stays
+            // ascii/surrogateescape and those surrogates encode back to the
+            // original bytes. The same call after Py_Initialize returns the
+            // same code points on CPython 3.11 through 3.14.
+            // A Python-config preinit would turn UTF-8 mode on for the C locale
+            // and decode U+00E9 instead. Passing that spelling to Py_Initialize
+            // aborts while evaluating the path. Py_SetProgramName does not copy.
+            // The allocation is released with PyMem_RawFree, looked up from the
+            // loaded Python library.
+            wchar_t* decoded = Py_DecodeLocale(pyexe.c_str(), nullptr);
+            if (!decoded) {
+                throw std::runtime_error(
+                    "Could not decode the Python executable path from the locale encoding");
+            }
+            if (saved_progname && !Py_IsInitialized()) {
+                nrnpy_raw_free(saved_progname);
+            }
+            saved_progname = decoded;
+            Py_SetProgramName(saved_progname);
+        }
+        Py_Initialize();
+        {
+            PyObject* exe = PyUnicode_DecodeFSDefault(pyexe.c_str());
+            if (!exe || PySys_SetObject("executable", exe) < 0) {
+                Py_XDECREF(exe);
+                throw std::runtime_error("Could not set sys.executable");
+            }
+            Py_DECREF(exe);
+            PyObject* argv = PyList_New(nrn_global_argc);
+            if (!argv) {
+                throw std::runtime_error("Could not allocate sys.argv");
+            }
+            for (int i = 0; i < nrn_global_argc; ++i) {
+                PyObject* s = PyUnicode_DecodeFSDefault(nrn_global_argv[i]);
+                if (!s || PyList_SetItem(argv, i, s) < 0) {
+                    Py_XDECREF(s);
+                    Py_DECREF(argv);
+                    throw std::runtime_error("Could not set sys.argv");
+                }
+            }
+            if (PySys_SetObject("argv", argv) < 0) {
+                Py_DECREF(argv);
+                throw std::runtime_error("Could not set sys.argv");
+            }
+            Py_DECREF(argv);
+        }
         // Manipulate sys.path, starting from the default values
         {
             nanobind::gil_scoped_acquire _{};
@@ -304,6 +544,8 @@ static int nrnpython_start(int b) {
         Py_DECREF(basic_sys_path);
         basic_sys_path = nullptr;
         Py_Finalize();
+        nrnpy_raw_free(saved_progname);
+        saved_progname = nullptr;
         // because of finalize, no PyGILState_Release(gilsav);
         started = 0;
     }
@@ -322,10 +564,19 @@ static int nrnpython_start(int b) {
         // Beginning with Python 3.13.0 it seems that the readline
         // module has not been loaded yet. Since PyInit_readline sets
         // PyOS_ReadlineFunctionPointer = call_readline; without checking,
-        // we need to import here.
-        PyRun_SimpleString("import readline as nrn_readline");
+        // we need to import here when the stdlib module exists. Windows
+        // CPython has no stdlib readline module. Where the symbol exists,
+        // the hook below replaces PyOS_ReadlineFunctionPointer.
+        nrnpy_run_simple_string(
+            "try:\n"
+            "    import readline as nrn_readline\n"
+            "except ImportError:\n"
+            "    pass\n");
 
-        PyOS_ReadlineFunctionPointer = nrnpython_getline;
+        using readline_fn = char* (*) (FILE*, FILE*, const char*);
+        if (auto* slot = static_cast<readline_fn*>(nrnpy_dlsym("PyOS_ReadlineFunctionPointer"))) {
+            *slot = nrnpython_getline;
+        }
 
         // Is there a -c "command" or file.py arg.
         bool python_error_encountered{false}, have_reset_sys_path{false};
@@ -335,11 +586,11 @@ static int nrnpython_start(int b) {
                 // sys.path[0] should be an empty string for -c
                 reset_sys_path("");
                 have_reset_sys_path = true;
-                if (PyRun_SimpleString(nrn_global_argv[i + 1])) {
+                if (nrnpy_run_simple_string(nrn_global_argv[i + 1])) {
                     python_error_encountered = true;
                 }
                 break;
-            } else if (strlen(arg) > 3 && strcmp(arg + strlen(arg) - 3, ".py") == 0) {
+            } else if (nrn_path_has_ext(arg, ".py")) {
                 if (!nrnpy_pyrun(arg)) {
                     python_error_encountered = true;
                 }
@@ -357,15 +608,10 @@ static int nrnpython_start(int b) {
                 // it.
                 reset_sys_path("");
             }
-#if !defined(MINGW)
-            PyRun_InteractiveLoop(hoc_fin, "stdin");
-#else
-            // mingw FILE incompatible with windows11 Python FILE.
-            int ret = nrnmingw_pyrun_interactiveloop();
+            int ret = nrnpy_run_interactive_console();
             if (ret) {
                 python_error_encountered = ret;
             }
-#endif
         }
         return python_error_encountered;
     }
@@ -386,7 +632,7 @@ static void nrnpython_real() {
     {
         auto interp = HocTopContextManager();
         nanobind::gil_scoped_acquire lock{};
-        retval = (PyRun_SimpleString(hoc_gargstr(1)) == 0);
+        retval = (nrnpy_run_simple_string(hoc_gargstr(1)) == 0);
     }
 #endif
     hoc_retpushx(retval);
@@ -400,14 +646,14 @@ static char* nrnpython_getline(FILE*, FILE*, const char* prompt) {
     if (r == 1) {
         auto const n = std::strlen(hoc_cbufstr->buf) + 1;
         hoc_ctp = hoc_cbufstr->buf + n - 1;
-        auto* const p = static_cast<char*>(PyMem_RawMalloc(n));
+        auto* const p = static_cast<char*>(nrnpy_raw_malloc(n));
         if (!p) {
             return nullptr;
         }
         std::strcpy(p, hoc_cbufstr->buf);
         return p;
     } else if (r == EOF) {
-        return static_cast<char*>(PyMem_RawCalloc(1, sizeof(char)));
+        return static_cast<char*>(nrnpy_raw_calloc(1, sizeof(char)));
     }
     return 0;
 }
