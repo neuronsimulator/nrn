@@ -14,6 +14,7 @@ import weakref
 from ._docs import _ClassDoc, help_doc
 from .api import (
     _as_double,
+    _to_double,
     _nrn_symbol_subtype,
     _VENDORED,
     HOC_CLASS_MODULE,
@@ -982,10 +983,15 @@ class Object(metaclass=_HocClassMeta):
                 _write_hoc_template_string(self, actual_name, val)
                 return
             if _type in (TYPES.RANGEVAR, TYPES.VAR):
-                self._check_located()
                 name_encoded = actual_name.encode("utf-8")
                 sym = _nrn_method_symbol(self._obj, name_encoded)
                 if not _nrn_symbol_is_array(sym):
+                    if val.__class__ is not float and val.__class__ is not int:
+                        # User code in the conversion may delete the host
+                        # section: convert, then check again.
+                        val = _to_double(val, TypeError)
+                        self._check_host_alive()
+                    self._check_located()
                     if _type == TYPES.VAR:
                         _write_hoc_template_var(self, actual_name, val)
                     else:
@@ -993,6 +999,7 @@ class Object(metaclass=_HocClassMeta):
                     return
                 # Array property: a sequence of the right length sets each
                 # element (same as the MATLAB interface).
+                self._check_located()
                 size = self._array_size(actual_name, sym)
                 try:
                     seq = list(val)
@@ -1006,6 +1013,9 @@ class Object(metaclass=_HocClassMeta):
                         f"Array property '{name}' has length {size}; "
                         f"got {len(seq)} values"
                     )
+                seq = [_to_double(v, TypeError) for v in seq]
+                self._check_host_alive()
+                self._check_located()
                 for i, v in enumerate(seq):
                     if _type == TYPES.VAR:
                         _write_hoc_template_var(self, actual_name, v, idx=i)
@@ -2668,6 +2678,7 @@ class ArrayProperty:
         )
 
     def __setitem__(self, idx, value):
+        value = _to_double(value, TypeError)
         idx = self._resolve(idx)
         self._check_owner()
         if self._hoc_template_var:

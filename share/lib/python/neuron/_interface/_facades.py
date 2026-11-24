@@ -135,16 +135,26 @@ def _ref_address(ref):
     import ctypes
 
     from .api import HOC_LOCK, _nrn_double_ptr_pop, _nrn_stack_type
-    from .nrnref import NrnRef
+    from .nrnref import NrnArrayPropertyRef, NrnRangeArrayRef, NrnRef
 
-    if not isinstance(ref, NrnRef):
+    if not isinstance(ref, NrnRef) or isinstance(
+        ref, (NrnArrayPropertyRef, NrnRangeArrayRef)
+    ):
         raise TypeError("not a reference to a number")
     with HOC_LOCK:  # the pop must take this push (gap-72)
-        ref._push()
+        try:
+            ref._push()
+        except NotImplementedError:  # a RuntimeError, but not a dead reference
+            raise
+        except (RuntimeError, ReferenceError) as exc:
+            raise ValueError("the reference is no longer valid") from exc
         if _nrn_stack_type() != _STACK_IS_POINTER:
             ref._pop()
             raise TypeError("not a reference to a number")
-        return ctypes.cast(_nrn_double_ptr_pop(), ctypes.c_void_p).value
+        address = ctypes.cast(_nrn_double_ptr_pop(), ctypes.c_void_p).value
+    if not address:
+        raise ValueError("the reference is no longer valid")
+    return address
 
 
 def _nrn_module():

@@ -5,6 +5,7 @@ import ctypes
 
 from .api import (
     _refused_double,
+    _to_double,
     _nrn_section_is_active,
     _ERR_BUF_SIZE,
     HOC_LOCK,
@@ -254,6 +255,7 @@ class RangeVar:
         return _nrn_rangevar_get(sym, self._seg._sec._sec, self._seg._x)
 
     def __setitem__(self, idx, value):
+        value = _to_double(value, ValueError)
         # HOC may have deleted the host section.
         if not _nrn_section_is_active(self._seg._sec._sec):
             raise ReferenceError(f"nrn.RangeVar {_DELETED_SECTION}")
@@ -277,10 +279,7 @@ class RangeVar:
             _ensure_rangevar_topology(
                 self._seg._sec._sec, self._seg._x, self._full_name
             )
-        try:
-            _nrn_rangevar_set(sym, self._seg._sec._sec, self._seg._x, value)
-        except ctypes.ArgumentError as exc:
-            raise _refused_double(exc, ValueError) from None
+        _nrn_rangevar_set(sym, self._seg._sec._sec, self._seg._x, value)
 
     def __repr__(self):
         return f"<RangeVar {self._full_name}>"
@@ -680,6 +679,14 @@ class Mechanism:
                 % (target, err.value.decode("utf-8", "replace"))
             )
 
+    def _converted_for_assignment(self, value):
+        """``value`` as a double, then the validity check again: the
+        conversion may have run user code that deleted the section or
+        uninserted the mechanism."""
+        value = _to_double(value, ValueError)
+        self._check_valid_for_assignment()
+        return value
+
     def __setattr__(self, name, value):
         """Write unsuffixed range variable on the mechanism at the current segment; populates cache."""
         # POINTER assignment: seg.mech._ref_PTR = src._ref_X.
@@ -706,6 +713,8 @@ class Mechanism:
             if entry is not None:
                 full_name, sym, sym_type = entry
                 if sym_type == TYPES.RANGEVAR:
+                    if value.__class__ is not float and value.__class__ is not int:
+                        value = self._converted_for_assignment(value)
                     try:
                         _nrn_rangevar_set(sym, self._seg._sec._sec, self._x, value)
                     except ctypes.ArgumentError as exc:
@@ -732,6 +741,8 @@ class Mechanism:
                 return
             from .sections import _is_pointer_rangevar, _pointer_rangevar_set
 
+            if value.__class__ is not float and value.__class__ is not int:
+                value = self._converted_for_assignment(value)
             if _is_pointer_rangevar(full_name, sym):
                 _pointer_rangevar_set(self._seg._sec, self._x, full_name, value)
                 return

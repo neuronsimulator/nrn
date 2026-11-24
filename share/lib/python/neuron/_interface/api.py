@@ -1982,17 +1982,36 @@ def _property_array_get_checked(obj, name, index):
     return value
 
 
+def _not_a_number(error_type, text):
+    """The error for a value that is no number: NEURON raises ValueError("bad
+    value") for a range variable, and TypeError with Python's text for a
+    point-process property, so the caller picks the type."""
+    return error_type(f"bad value: {text}" if error_type is ValueError else text)
+
+
 def _refused_double(exc, error_type):
-    """``error_type`` carrying Python's own text for a value ctypes refused as
-    a double argument. NEURON raises ValueError for a range variable and
-    TypeError for a point-process property, so the caller picks the type."""
-    return error_type(exc.args[0].rpartition(": ")[2])
+    """_not_a_number for a value ctypes refused as a double argument."""
+    return _not_a_number(error_type, exc.args[0].rpartition(": ")[2])
 
 
 def _as_double(value):
     """``value`` as a double; a str, None or other non-number is a TypeError
     ("must be real number, not str"), as for a NEURON global."""
     return ctypes.c_double(value).value
+
+
+def _to_double(value, error_type):
+    """``value`` as a double, any failure reported by _not_a_number.
+
+    Conversion can run user code (``__float__``) that deletes the section or
+    uninserts the mechanism the write is about to use. Callers convert before
+    their liveness checks, and skip this call for a plain float or int, which
+    cannot run any.
+    """
+    try:
+        return ctypes.c_double(value).value
+    except Exception as exc:
+        raise _not_a_number(error_type, str(exc)) from None
 
 
 def _property_set_checked(obj, name, value):

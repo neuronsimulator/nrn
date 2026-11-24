@@ -42,6 +42,8 @@ from .api import (
     _ref_property_set_checked,
     _top_level_symbol,
     _ERR_BUF_SIZE,
+    HOC_LOCK,
+    _as_double,
 )
 
 # strdup/free for NrnStrRef. Loaded lazily so import never fails on an
@@ -195,6 +197,22 @@ class NrnRef(abc.ABC):
         """Set ``self[0] = value``; returns value for chaining. Return type is float."""
         self[0] = value
         return value
+
+
+def _store_through_pointer(sym, sec_ptr, x, value):
+    """Write a range variable's own storage, as NEURON's reference does.
+
+    ``nrn_rangevar_set`` also rewrites what a ``diam`` write implies (3-D
+    points, areas) on cores that do so; a reference store only changes the
+    node's value.
+    """
+    value = _as_double(value)
+    with HOC_LOCK:  # the pop must take this push (gap-72)
+        _nrn_rangevar_push(sym, sec_ptr, x)
+        raw = _nrn_double_ptr_pop()
+    if not raw:
+        raise RuntimeError("could not acquire a pointer to the range variable")
+    raw[0] = value
 
 
 class NrnRangeVarRef(NrnRef):
@@ -400,6 +418,8 @@ class NrnRangeVarRef(NrnRef):
         return _nrn_rangevar_get(kind, sec._sec, self._x)
 
     def __setitem__(self, idx, value):
+        if value.__class__ is not float and value.__class__ is not int:
+            value = _as_double(value)  # user code may run: before the checks
         sec, name, kind = self._checked_target()
         if isinstance(kind, tuple):  # ("array", length)
             from .sections import _ArrayRangeVar
@@ -419,6 +439,9 @@ class NrnRangeVarRef(NrnRef):
             from .sections import _ensure_rangevar_topology
 
             _ensure_rangevar_topology(sec._sec, self._x, name)
+        if name == "diam":
+            _store_through_pointer(kind, sec._sec, self._x, value)
+            return
         _nrn_rangevar_set(kind, sec._sec, self._x, value)
 
 
@@ -604,6 +627,8 @@ class NrnObjectPropertyRef(NrnRef):
             return _property_array_get_checked(obj._obj, self._name, int(self._idx))
 
     def __setitem__(self, idx, value):
+        if value.__class__ is not float and value.__class__ is not int:
+            value = _as_double(value)  # user code may run: before the checks
         if idx != 0:
             raise IndexError("Only index 0 is supported")
         obj = self._owner()

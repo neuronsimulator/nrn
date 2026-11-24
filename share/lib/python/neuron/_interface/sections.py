@@ -12,6 +12,7 @@ import weakref
 from .api import (
     HOC_LOCK,
     _refused_double,
+    _to_double,
     TYPES,
     _ERR_BUF_SIZE,
     _check_nrn_error,
@@ -163,6 +164,19 @@ def _rangevar_info(name):
     if info is None or info[1] != TYPES.RANGEVAR:
         return None
     return info
+
+
+def _scalar_rangevar_double(name, value):
+    """``value`` as a double if ``name`` is a scalar range variable, else as is.
+
+    Conversion can run user code (``__float__``) that deletes the section or
+    uninserts the mechanism. Callers convert first, before any liveness or
+    mechanism check, and skip this call for a plain float or int.
+    """
+    info = _rangevar_info(name)
+    if info is None or info[2]:
+        return value
+    return _to_double(value, ValueError)
 
 
 def _install_array_rangevar_procs(name):
@@ -352,6 +366,7 @@ class _ArrayRangeVar:
         return float(self._call("_mn_rv_get", idx, self._x))
 
     def __setitem__(self, idx, value):
+        value = _to_double(value, ValueError)
         if not _nrn_section_is_active(self._section._sec):
             raise ReferenceError(f"nrn.RangeVar {_DELETED_SECTION}")
         idx = self._resolve(idx)
@@ -1276,6 +1291,8 @@ class Segment:
         if name.startswith("_"):
             super().__setattr__(name, value)
             return
+        if value.__class__ is not float and value.__class__ is not int:
+            value = _scalar_rangevar_double(name, value)
         # Before the write dereferences a possibly freed C node; see
         # __getattr__. NEURON checks first, with its own text for assignment.
         if not _nrn_section_is_active(self._sec._sec):
@@ -1849,7 +1866,10 @@ class Section:
         # `sec.gnabar_hh = ...` semantics.
         if name.startswith("_") or name in {"nseg", "L", "Ra", "rallbranch"}:
             super().__setattr__(name, value)
-        elif name == "diam":
+            return
+        if value.__class__ is not float and value.__class__ is not int:
+            value = _scalar_rangevar_double(name, value)
+        if name == "diam":
             # One HOC broadcast reaches nrn_diam_change once instead of nseg
             # round trips (2.25 ms at nseg=101). Raw per-node stores come
             # first, as in the per-segment path: under pt3dconst(1) they are
@@ -2124,6 +2144,8 @@ class Section:
 
     @nseg.setter
     def nseg(self, value):
+        if value.__class__ is not int and isinstance(value, numbers.Integral):
+            value = int(value)  # may run user code: before the section is touched
         self._check_alive()
         # NSEG_MAX is 32767 (cabcode.cpp). The C API prints a warning and
         # coerces to 1 on overflow; raise instead, as real NEURON's wrapper does.
@@ -2171,6 +2193,7 @@ class Section:
 
     @L.setter
     def L(self, value):
+        value = _to_double(value, ValueError)
         self._check_alive()
 
         # NaN passes `value <= 0` and inf passes `> 0`; reject both explicitly.
@@ -2187,6 +2210,7 @@ class Section:
 
     @Ra.setter
     def Ra(self, value):
+        value = _to_double(value, ValueError)
         self._check_alive()
         # The C API (neuronapi.cpp:115) accepts anything, with a pending
         # "ensure val > 0" note. Real NEURON's wrapper validates
@@ -2205,6 +2229,7 @@ class Section:
 
     @rallbranch.setter
     def rallbranch(self, value):
+        value = _to_double(value, ValueError)
         self._check_alive()
 
         _nrn_section_rallbranch_set(self._sec, value)
