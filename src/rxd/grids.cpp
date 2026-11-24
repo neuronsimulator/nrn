@@ -187,7 +187,6 @@ ECS_Grid_node::ECS_Grid_node(double* my_states,
     node_flux_count = 0;
     node_flux_idx = NULL;
     node_flux_scale = NULL;
-    node_flux_src = NULL;
     node_flux_callable = NULL;
     hybrid = false;
     volume_setup();
@@ -381,7 +380,6 @@ ICS_Grid_node::ICS_Grid_node(double* my_states,
     node_flux_count = 0;
     node_flux_idx = NULL;
     node_flux_scale = NULL;
-    node_flux_src = NULL;
     node_flux_callable = NULL;
 }
 
@@ -957,31 +955,30 @@ void ECS_Grid_node::apply_node_flux3D(double dt, double* ydot) {
     else
         dest = ydot;
 #if NRNMPI
-    double* sources;
     int i;
     int offset;
 
     if (nrnmpi_use) {
-        sources = (double*) calloc(node_flux_count, sizeof(double));
+        // a vector, so that an error in a node flux source (hoc_execerror) does not leak it
+        std::vector<double> sources(node_flux_count);
         offset = proc_flux_offsets[nrnmpi_myid];
         apply_node_flux(proc_num_fluxes[nrnmpi_myid],
                         NULL,
                         &node_flux_scale[offset],
-                        node_flux_src,
+                        node_flux_src.data(),
                         node_flux_callable,
                         dt,
-                        &sources[offset]);
+                        sources.data() + offset);
 
-        nrnmpi_dbl_allgatherv_inplace(sources, proc_num_fluxes, proc_flux_offsets);
+        nrnmpi_dbl_allgatherv_inplace(sources.data(), proc_num_fluxes, proc_flux_offsets);
 
         for (i = 0; i < node_flux_count; i++)
             dest[node_flux_idx[i]] += sources[i];
-        free(sources);
     } else {
         apply_node_flux(node_flux_count,
                         node_flux_idx,
                         node_flux_scale,
-                        node_flux_src,
+                        node_flux_src.data(),
                         node_flux_callable,
                         dt,
                         dest);
@@ -990,7 +987,7 @@ void ECS_Grid_node::apply_node_flux3D(double dt, double* ydot) {
     apply_node_flux(node_flux_count,
                     node_flux_idx,
                     node_flux_scale,
-                    node_flux_src,
+                    node_flux_src.data(),
                     node_flux_callable,
                     dt,
                     dest);
@@ -1285,7 +1282,6 @@ ECS_Grid_node::~ECS_Grid_node() {
     if (node_flux_count > 0) {
         free(node_flux_idx);
         free(node_flux_scale);
-        free(node_flux_src);
         free(node_flux_callable);
     }
 
@@ -1660,7 +1656,7 @@ void ICS_Grid_node::apply_node_flux3D(double dt, double* ydot) {
     apply_node_flux(node_flux_count,
                     node_flux_idx,
                     node_flux_scale,
-                    node_flux_src,
+                    node_flux_src.data(),
                     node_flux_callable,
                     dt,
                     dest);
@@ -1801,7 +1797,6 @@ ICS_Grid_node::~ICS_Grid_node() {
     if (node_flux_count > 0) {
         free(node_flux_idx);
         free(node_flux_scale);
-        free(node_flux_src);
         free(node_flux_callable);
     }
 

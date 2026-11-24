@@ -26,8 +26,8 @@ import os
 import sysconfig
 import uuid
 import sys
-import subprocess
 import traceback
+import subprocess
 import itertools
 from numpy.ctypeslib import ndpointer
 import re
@@ -214,6 +214,14 @@ _node_flux_callables = []
 _node_flux_constants = numpy.array([])
 
 
+def _print_exc_best_effort():
+    """Report the current exception; this can fail too (a closed stderr) and must not raise."""
+    try:
+        traceback.print_exc()
+    except BaseException:
+        pass
+
+
 def _eval_node_flux_callable(i: int, flux) -> int:
     """Store callable i's flux; on an error print it and return 1 (C then stops with a hoc error).
 
@@ -226,7 +234,7 @@ def _eval_node_flux_callable(i: int, flux) -> int:
         flux[0] = float(result)
         return 0
     except BaseException:
-        traceback.print_exc()
+        _print_exc_best_effort()
         return 1
 
 
@@ -238,8 +246,11 @@ _rxd_set_node_flux_callback.argtypes = [ctypes.c_void_p]
 _rxd_set_node_flux_callback(ctypes.cast(_node_flux_callback, ctypes.c_void_p))
 
 
-def _node_flux_sources(sources: list, offset: int):
-    """C arrays of the pointers to sources (NULL for a callable) and of the callables' ids."""
+def _node_flux_sources(sources: list, constants, callables: list, offset: int):
+    """C arrays of the pointers to sources (NULL for a callable) and of the callables' ids.
+
+    The constants are stored in `constants` and the callables appended to `callables`.
+    """
     if not sources:
         return None, None
     ptrs = []
@@ -247,14 +258,14 @@ def _node_flux_sources(sources: list, offset: int):
     for i, src in enumerate(sources, offset):
         callable_id = -1
         if isinstance(src, numbers.Real):
-            _node_flux_constants[i] = src
-            ptr = _node_flux_constants.ctypes.data + i * _node_flux_constants.itemsize
+            constants[i] = src
+            ptr = constants.ctypes.data + i * constants.itemsize
         elif isinstance(src, hoc.HocObject):
             ptr = address(src)
         elif callable(src):
             ptr = None
-            callable_id = len(_node_flux_callables)
-            _node_flux_callables.append(src)
+            callable_id = len(callables)
+            callables.append(src)
         else:
             raise RxDException("node._include_flux unrecognised source term.")
         ptrs.append(ptr)
@@ -832,6 +843,25 @@ def _check_multigridding_supported_3d() -> bool:
 
 
 # TODO: make sure this does the right thing when the diffusion constant changes between two neighboring nodes
+def _setup_matrices_callback() -> int:
+    """_setup_matrices for C; a bad flux source returns 1 (C then stops with a hoc error).
+
+    ctypes drops an exception from a callback, so without this the run would go on with the
+    old sources. Any other error is only reported: after a change to the sections this can
+    run on stale pointers, and _update_node_data sets them up again later in the same step.
+    """
+    try:
+        _include_flux()
+    except BaseException:
+        _print_exc_best_effort()
+        return 1
+    try:
+        _setup_matrices()
+    except BaseException:
+        _print_exc_best_effort()
+    return 0
+
+
 def _setup_matrices():
     with initializer._init_lock:
         if not _check_multigridding_supported_3d():
@@ -2022,13 +2052,17 @@ def _include_flux(force=False):
             source3D.extend(grids[gid]["source"])
             scale3D.extend(grids[gid]["scale"])
         global _node_flux_constants
-        _node_flux_callables.clear()
-        _node_flux_constants = numpy.zeros(len(source1D) + len(source3D))
+        # Build everything before touching what the C code points into, so that an error in
+        # a source leaves the previous sources as they were.
+        constants = numpy.zeros(len(source1D) + len(source3D))
+        callables = []
+        sources1D = _node_flux_sources(source1D, constants, callables, 0)
+        sources3D = _node_flux_sources(source3D, constants, callables, len(source1D))
         rxd_include_node_flux1D(
             len(index1D),
             _list_to_clong_array(index1D),
             _list_to_cdouble_array(scale1D),
-            *_node_flux_sources(source1D, 0),
+            *sources1D,
         )
 
         rxd_include_node_flux3D(
@@ -2037,8 +2071,10 @@ def _include_flux(force=False):
             _list_to_cint_array(grids3D),
             _list_to_clong_array(index3D),
             _list_to_cdouble_array(scale3D),
-            *_node_flux_sources(source3D, len(source1D)),
+            *sources3D,
         )
+        _node_flux_constants = constants
+        _node_flux_callables[:] = callables
         node._has_node_fluxes = False
 
 
@@ -2074,8 +2110,9 @@ def _do_nbs_register():
         _fih3 = h.FInitializeHandler(3, _init)
 
         set_setup_matrices = nrn_dll_sym("set_setup_matrices")
-        set_setup_matrices.argtypes = [fptr_prototype]
-        do_setup_matrices_fptr = fptr_prototype(_setup_matrices)
+        status_fptr_prototype = ctypes.CFUNCTYPE(ctypes.c_int)
+        set_setup_matrices.argtypes = [status_fptr_prototype]
+        do_setup_matrices_fptr = status_fptr_prototype(_setup_matrices_callback)
         set_setup_matrices(do_setup_matrices_fptr)
 
         set_setup_units = nrn_dll_sym("set_setup_units")
