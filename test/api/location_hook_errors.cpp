@@ -5,7 +5,6 @@
 #include <array>
 #include <cstdio>
 #include <cstdlib>
-#include <cstring>
 #include <iostream>
 #include <string>
 #include <unistd.h>
@@ -18,12 +17,17 @@ extern "C" const char* __lsan_default_suppressions() {
     return "leak:make_pointprocess\n";
 }
 
-extern "C" {
 extern void (*nrnpy_o2loc_p_)(Object*, Section**, double*);
 extern void (*nrnpy_o2loc2_p_)(Object*, Section**, double*);
-}
 
-static void leave_section_null(Object*, Section**, double*) {}
+static bool hook_saw_nil = false;
+
+// Stands in for another provider's hook: it cannot make a section out of the Object.
+static void leave_section_null(Object* o, Section**, double*) {
+    if (!o) {
+        hook_saw_nil = true;
+    }
+}
 
 static bool check(bool condition, const char* message) {
     if (!condition) {
@@ -88,6 +92,20 @@ static bool exercise(const char* what) {
     ok &= fails_with("soma { loc_x = distance(0, loc_obj) }\n", seg2);
     ok &= fails_with("objref loc_hp\nsoma loc_hp = new HocPnt(new Vector(3))\n", seg);
     ok &= fails_with("soma loc_hp = new HocPnt(0.25)\nloc_hp.loc(new Vector(3))\n", seg);
+    // A nil Object is an error too, and is not passed to a hook.
+    ok &= fails_with("objref loc_nil, loc_ic3\nloc_ic3 = new IClamp(loc_nil)\n", seg);
+    ok &= fails_with("loc_ic3 = new IClamp(0.5)\nloc_ic3.loc(loc_nil)\n", seg);
+    ok &= fails_with("soma { loc_x = distance(loc_nil) }\n", seg2);
+    ok &= fails_with("soma { loc_x = distance(loc_nil, 0.5) }\n", "Distance origin not valid");
+    ok &= fails_with("soma { loc_x = distance(0, loc_nil) }\n", seg2);
+    ok &= fails_with("objref loc_hp3\nsoma loc_hp3 = new HocPnt(loc_nilf())\n", seg);
+    ok &= check(!hook_saw_nil, "a nil Object is not passed to the hook");
+    // Failed constructions leave nothing behind: repeat them (leaks show under LeakSanitizer).
+    ok &= check(
+        nrn_hoc_call(
+            "for i = 1, 1000 { execute1(\"objref loc_r\\nloc_r = new IClamp(loc_obj)\\n\", 0) "
+            "execute1(\"objref loc_r\\nloc_r = new HocPnt(new Vector(3))\\n\", 0) }\n") == 0,
+        "repeated failures");
     // The failed HocPnt construction must not leave last_created_pp_ob_ set.
     ok &= check(nrn_hoc_call("objref loc_hp2\nsoma loc_hp2 = new HocPnt(0.25)\n") == 0,
                 "HocPnt constructs after a failed construction");
@@ -107,7 +125,8 @@ int main() {
     nrn_init(3, args.data());
     if (nrn_hoc_call("create soma\n"
                      "soma { L = 200  nseg = 2  diam = 10 }\n"
-                     "objref loc_obj\n"
+                     "objref loc_obj, loc_nilobj\n"
+                     "obfunc loc_nilf() { return loc_nilobj }\n"
                      "loc_obj = new Vector(3)\n"
                      "begintemplate HocPnt\n"
                      "public a\n"

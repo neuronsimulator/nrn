@@ -4,6 +4,7 @@ foreach(
   diam3d_pending.cpp
   global_scalar.cpp
   hh_sim.cpp
+  location_hook_errors.cpp
   nlayer_extracellular.cpp
   netcon.cpp
   node_index.cpp
@@ -12,7 +13,6 @@ foreach(
   object_ptr_push.cpp
   plotshape_interface.cpp
   property_array_steer.cpp
-  location_hook_errors.cpp
   property_element_ptr.cpp
   raw_hoc_errors.cpp
   runtime_pythonobject_marshaling.cpp

@@ -58,7 +58,7 @@ static void seg_or_x_arg_inside_stack(int i, Section** psec, double* px) {
     } else {
         Object* o = hoc_look_inside_stack<Object*>(i);
         *psec = nullptr;
-        if (nrnpy_o2loc_p_) {
+        if (o && nrnpy_o2loc_p_) {
             (*nrnpy_o2loc_p_)(o, psec, px);
         }
         if (!*psec) {
