@@ -4,7 +4,7 @@ Getting CoreNEURON
 ##################
 CoreNEURON is integrated into the NEURON repository, and it is straightforward to enable it when compiling from source using CMake as described in :ref:`Installing Source Distributions`.
 
-Starting with version 8.1, NEURON also provides Python wheels that include CoreNEURON and, optionally, GPU support. These binary distributions are described in :ref:`Installing Binary Distribution`.
+Starting with version 8.1, NEURON also provides Python wheels that include CoreNEURON and, optionally, GPU support. The Windows ``win_amd64`` wheel is built with CoreNEURON off. These binary distributions are described in :ref:`Installing Binary Distribution`.
 
 Installing with ``pip``
 ***********************

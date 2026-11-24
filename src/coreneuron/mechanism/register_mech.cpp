@@ -10,6 +10,7 @@
 
 #include "coreneuron/nrnconf.h"
 #include "nrnoc/ion_semantics.h"
+#include "neuron/ba_reg.h"
 #include "coreneuron/sim/multicore.hpp"
 #include "coreneuron/membrane_definitions.h"
 #include "coreneuron/mechanism/eion.hpp"
@@ -383,20 +384,20 @@ void hoc_reg_ba(int mt, mod_f_t f, int type) {
     if (type == -1)
         return;
 
-    switch (type) { /* see bablk in src/nmodl/nocpout.c */
-    case 11:
+    switch (type) {  // BAType in neuron/ba_reg.h
+    case BAType::Before + BAType::Breakpoint:
         type = BEFORE_BREAKPOINT;
         break;
-    case 22:
+    case BAType::After + BAType::Solve:
         type = AFTER_SOLVE;
         break;
-    case 13:
+    case BAType::Before + BAType::Initial:
         type = BEFORE_INITIAL;
         break;
-    case 23:
+    case BAType::After + BAType::Initial:
         type = AFTER_INITIAL;
         break;
-    case 14:
+    case BAType::Before + BAType::Step:
         type = BEFORE_STEP;
         break;
     default:

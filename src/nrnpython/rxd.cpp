@@ -22,7 +22,7 @@ namespace nb = nanobind;
 
 static void ode_solve(double, double*, double*);
 extern PyTypeObject* hocobject_type;
-extern int structure_change_cnt;
+extern "C" NRN_DLLSYM int structure_change_cnt;
 extern int states_cvode_offset;
 int prev_structure_change_cnt = 0;
 unsigned char initialized = FALSE;
@@ -30,7 +30,7 @@ unsigned char initialized = FALSE;
 /*
     Globals
 */
-extern NrnThread* nrn_threads;
+extern NRN_DLLSYM NrnThread* nrn_threads;
 int NUM_THREADS = 1;
 namespace nrn {
 namespace rxd {
@@ -46,7 +46,7 @@ extern double* t_ptr;
 
 
 fptr *_setup, *_initialize, *_setup_matrices, *_setup_units;
-extern NrnThread* nrn_threads;
+extern NRN_DLLSYM NrnThread* nrn_threads;
 
 /*intracellular diffusion*/
 unsigned char diffusion = FALSE;
@@ -1443,13 +1443,24 @@ void _rhs_variable_step(const double* p1, double* p2) {
     free(rhs);
 }
 
+
+static int get_ecs_reaction_state_index(ICSReactions* react, int i) {
+    // When using MPI apply the additional offset
+    ECS_Grid_node* grid = react->ecs_grid[i];
+    int index = grid->react_offsets[react->ecs_offset_index[i]];
+#if NRNMPI
+    if (nrnmpi_use)
+        index += grid->proc_num_reactions[nrnmpi_myid];
+#endif
+    return index;
+}
+
 void get_reaction_rates(ICSReactions* react, double* states, double* rates, double* ydot) {
     int segment;
     int i, j, k, idx;
     double v = 0;
     for (i = 0; i < react->num_ecs_species; i++)
-        react->ecsindex[i] = react->ecs_grid[i]->react_offsets[react->ecs_offset_index[i]];
-
+        react->ecsindex[i] = get_ecs_reaction_state_index(react, i);
     if (_membrane_flux) {
         for (i = 0; i < react->icsN; i++)
             memset(react->flux[i], 0, react->num_regions * sizeof(double));
@@ -1552,7 +1563,7 @@ void solve_reaction(ICSReactions* react,
 
     if (react->num_ecs_species > 0) {
         for (i = 0; i < react->num_ecs_species; i++)
-            react->ecsindex[i] = react->ecs_grid[i]->react_offsets[react->ecs_offset_index[i]];
+            react->ecsindex[i] = get_ecs_reaction_state_index(react, i);
     }
 
     for (segment = 0; segment < react->num_segments; segment++) {
