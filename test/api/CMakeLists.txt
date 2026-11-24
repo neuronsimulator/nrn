@@ -47,7 +47,9 @@ foreach(api_test_file ${api_test_files})
   set_property(TEST "${test_name}" PROPERTY ENVIRONMENT "${NRN_RUN_FROM_BUILD_DIR_ENV}"
                                             "CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}")
 endforeach()
-if(NRN_ENABLE_PYTHON AND NRN_LEGACY_HOC_MODULE AND NRN_NOCMODL_SANITIZER_ENVIRONMENT)
+if(NRN_ENABLE_PYTHON
+   AND NRN_LEGACY_HOC_MODULE
+   AND NRN_NOCMODL_SANITIZER_ENVIRONMENT)
   # Importing NEURON's Python module pulls in numpy and OpenSSL. LeakSanitizer reports what they and
   # Python itself keep, none of it from NEURON.
   set_property(
