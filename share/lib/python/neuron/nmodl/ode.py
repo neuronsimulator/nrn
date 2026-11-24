@@ -504,6 +504,21 @@ def solve_non_lin_system(
 
     jacobian = sp.Matrix(eqs).jacobian(state_vars)
     if needs_finite_differences(jacobian):
+        for i, eq in enumerate(eqs):
+            for j, x in enumerate(state_vars):
+                if jacobian[i, j].has(sp.Subs):
+                    # Composite function arguments introduce dummy differentiation
+                    # variables. Difference those terms in the original state
+                    # variable, so the step maps to the corresponding dX_ entry.
+                    # Keep analytically differentiable terms exact.
+                    jacobian[i, j] = sum(
+                        (
+                            sp.Derivative(term, x, evaluate=False)
+                            if term.diff(x).has(sp.Subs)
+                            else term.diff(x)
+                        )
+                        for term in sp.Add.make_args(eq)
+                    )
         jacobian = transform_matrix_elements(jacobian, discretize_derivative)
 
     X_vec_map = {x: sp.symbols(f"X[{i}]") for i, x in enumerate(state_vars)}

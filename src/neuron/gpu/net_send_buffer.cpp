@@ -400,21 +400,21 @@ void deliver_net_send_buffer_events(NrnThread* nt, Memb_list* ml, NetSendBuffer_
             std::stable_sort(order.begin(), order.end(), [&](int a, int b) {
                 // tgt_gid often unavailable for density PP; instance + weight_index distinguish.
                 auto const ka = neuron::event_order::net_send_key(nsb->_nsb_t[a],
-                                                                 nsb->_sendtype[a],
-                                                                 /*tgt_gid*/ -1,
-                                                                 mech_type,
-                                                                 nsb->_pnt_index[a],
-                                                                 nsb->_nsb_flag[a],
-                                                                 nsb->_weight_index[a],
-                                                                 a);
+                                                                  nsb->_sendtype[a],
+                                                                  /*tgt_gid*/ -1,
+                                                                  mech_type,
+                                                                  nsb->_pnt_index[a],
+                                                                  nsb->_nsb_flag[a],
+                                                                  nsb->_weight_index[a],
+                                                                  a);
                 auto const kb = neuron::event_order::net_send_key(nsb->_nsb_t[b],
-                                                                 nsb->_sendtype[b],
-                                                                 /*tgt_gid*/ -1,
-                                                                 mech_type,
-                                                                 nsb->_pnt_index[b],
-                                                                 nsb->_nsb_flag[b],
-                                                                 nsb->_weight_index[b],
-                                                                 b);
+                                                                  nsb->_sendtype[b],
+                                                                  /*tgt_gid*/ -1,
+                                                                  mech_type,
+                                                                  nsb->_pnt_index[b],
+                                                                  nsb->_nsb_flag[b],
+                                                                  nsb->_weight_index[b],
+                                                                  b);
                 return neuron::event_order::less(ka, kb);
             });
         } else {
@@ -484,8 +484,7 @@ void deliver_net_send_buffer_events(NrnThread* nt, Memb_list* ml, NetSendBuffer_
     if (nt->compute_gpu) {
         // record_peak (in update_net_send_buffer_on_host) may have grown host
         // arrays; re-copyin before the next device net_send_buffering.
-        if (nsb->reallocated &&
-            (nrn_target_is_present(ml) || nrn_target_is_present(nsb))) {
+        if (nsb->reallocated && (nrn_target_is_present(ml) || nrn_target_is_present(nsb))) {
             upload_net_send_buffer_to_device(ml);
         } else if (nrn_target_is_present(nsb)) {
             nrn_pragma_acc(update device(nsb->_cnt) if (nt->compute_gpu))

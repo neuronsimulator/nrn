@@ -166,9 +166,7 @@ void ensure_host_nr_soa_size(int type) {
 }
 
 template <typename Storage>
-void upload_soa_storage_fields_to_device(Storage const& storage,
-                                         int const* fields,
-                                         int n_fields) {
+void upload_soa_storage_fields_to_device(Storage const& storage, int const* fields, int n_fields) {
 #if defined(NRN_ENABLE_GPU) && defined(_OPENACC)
     storage.for_each_vector_for_gpu_upload(
         [&](auto const& /*tag*/, auto const& vec, int field_index, int /*array_dim*/) {
@@ -300,8 +298,9 @@ void flush_host_net_receive_soa_to_device() noexcept {
             if (e.fields.empty()) {
                 continue;  // elide: host NR wrote nothing device CURRENT needs
             }
-            upload_soa_storage_fields_to_device(
-                neuron::model().mechanism_data(type), e.fields.data(), static_cast<int>(e.fields.size()));
+            upload_soa_storage_fields_to_device(neuron::model().mechanism_data(type),
+                                                e.fields.data(),
+                                                static_cast<int>(e.fields.size()));
         } else {
             upload_soa_storage_to_device(neuron::model().mechanism_data(type));
         }

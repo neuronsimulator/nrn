@@ -5,6 +5,7 @@
 # * STRUCTURED_HEADER_FILES_TO_INSTALL: {src}/src/a/b.h -> {bld}/include/a/b.h
 # =======================================================================================
 set(STRUCTURED_HEADER_FILES_TO_INSTALL
+    neuron/ba_reg.h
     neuron/cache/mechanism_range.hpp
     neuron/cache/model_data.hpp
     neuron/container/data_handle.hpp
@@ -28,8 +29,8 @@ set(STRUCTURED_HEADER_FILES_TO_INSTALL
     neuron/event_order.hpp
     # NMODL OpenACC mechs include model_data.hpp → soa_identifier → utils/logger.hpp
     utils/logger.hpp
-    # OpenACC mechanism codegen (nrnivmodl --c acc --oacc) and model_data.hpp
-    # pull these; build-tree -I${ROOT}/include when NRNHOME is the build dir.
+    # OpenACC mechanism codegen (nrnivmodl --c acc --oacc) and model_data.hpp pull these; build-tree
+    # -I${ROOT}/include when NRNHOME is the build dir.
     neuron/gpu/check_thresh.hpp
     neuron/gpu/config.hpp
     neuron/gpu/device_assign.hpp
@@ -88,6 +89,7 @@ set(HEADER_FILES_TO_INSTALL
     oc/memory.hpp
     oc/nrnapi.h
     oc/nrnassrt.h
+    oc/nrndlldef.h
     oc/nrnmpi.h
     oc/nrnrandom.h
     oc/oc_ansi.h
@@ -229,7 +231,7 @@ set(IVOC_FILE_LIST
     utility.cpp
     xmenu.cpp
     xyview.cpp)
-if(MINGW)
+if(NRN_WINDOWS_BUILD)
   list(APPEND IVOC_FILE_LIST ivocwin.cpp)
 else()
   list(APPEND IVOC_FILE_LIST field.cpp xdep.cpp)

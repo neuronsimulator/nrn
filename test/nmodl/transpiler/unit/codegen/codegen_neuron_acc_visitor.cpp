@@ -122,9 +122,10 @@ SCENARIO("NEURON OpenACC codegen emits offload pragmas", "[codegen][neuron][acc]
             // Thin specialized versions still emitted (available; general rates for HOC/table).
             REQUIRE_THAT(generated, ContainsSubstring("rates_hh_state"));
             REQUIRE_THAT(generated, ContainsSubstring("f_rates_hh_state"));
-            REQUIRE_THAT(generated,
-                         ContainsSubstring(
-                             "inline static int rates_hh_state(hh_Instance& inst, double& _kl_minf"));
+            REQUIRE_THAT(
+                generated,
+                ContainsSubstring(
+                    "inline static int rates_hh_state(hh_Instance& inst, double& _kl_minf"));
             REQUIRE(generated.find("rates_hh_state(hh_Instance& inst, hh_NodeData&") ==
                     std::string::npos);
             // STATE force-inlines rates TABLE body — no call to rates_hh_state from
@@ -173,8 +174,7 @@ SCENARIO("NEURON OpenACC codegen emits offload pragmas", "[codegen][neuron][acc]
             REQUIRE(cur_begin != std::string::npos);
             const auto cur_end = generated.find("static void nrn_", cur_begin + 20);
             const auto cur_fn = generated.substr(
-                cur_begin,
-                (cur_end == std::string::npos ? generated.size() : cur_end) - cur_begin);
+                cur_begin, (cur_end == std::string::npos ? generated.size() : cur_end) - cur_begin);
             REQUIRE_THAT(cur_fn, ContainsSubstring("vec_d[node_id]"));
         }
 
@@ -183,9 +183,10 @@ SCENARIO("NEURON OpenACC codegen emits offload pragmas", "[codegen][neuron][acc]
             const auto jacob_begin = generated.find("static void nrn_jacob_hh");
             REQUIRE(jacob_begin != std::string::npos);
             const auto jacob_end = generated.find("static void nrn_", jacob_begin + 20);
-            const auto jacob_fn = generated.substr(
-                jacob_begin,
-                (jacob_end == std::string::npos ? generated.size() : jacob_end) - jacob_begin);
+            const auto jacob_fn =
+                generated.substr(jacob_begin,
+                                 (jacob_end == std::string::npos ? generated.size() : jacob_end) -
+                                     jacob_begin);
             // Device path is the first if-block; host else may still use make_instance.
             const auto device_end = jacob_fn.find("} else {");
             REQUIRE(device_end != std::string::npos);
@@ -234,9 +235,10 @@ SCENARIO("NEURON OpenACC codegen emits offload pragmas", "[codegen][neuron][acc]
             const auto state_begin = generated.find("static void nrn_state_CadCeil");
             REQUIRE(state_begin != std::string::npos);
             const auto state_end = generated.find("static void nrn_", state_begin + 20);
-            const auto state_fn = generated.substr(
-                state_begin,
-                (state_end == std::string::npos ? generated.size() : state_end) - state_begin);
+            const auto state_fn =
+                generated.substr(state_begin,
+                                 (state_end == std::string::npos ? generated.size() : state_end) -
+                                     state_begin);
             REQUIRE_THAT(state_fn, ContainsSubstring("CadCeil_global.ceiling"));
             REQUIRE(state_fn.find("inst.global->ceiling") == std::string::npos);
         }
@@ -290,9 +292,10 @@ SCENARIO("NEURON OpenACC codegen emits offload pragmas", "[codegen][neuron][acc]
             const auto state_begin = generated.find("static void nrn_state_NmdaStack");
             REQUIRE(state_begin != std::string::npos);
             const auto state_end = generated.find("static void nrn_", state_begin + 20);
-            const auto state_fn = generated.substr(
-                state_begin,
-                (state_end == std::string::npos ? generated.size() : state_end) - state_begin);
+            const auto state_fn =
+                generated.substr(state_begin,
+                                 (state_end == std::string::npos ? generated.size() : state_end) -
+                                     state_begin);
             // Stack declarations for pure STATE temps.
             REQUIRE_THAT(state_fn, ContainsSubstring("double A1_;"));
             REQUIRE_THAT(state_fn, ContainsSubstring("double A2_;"));
@@ -354,8 +357,7 @@ SCENARIO("NEURON OpenACC codegen emits offload pragmas", "[codegen][neuron][acc]
             REQUIRE(cur_begin != std::string::npos);
             const auto cur_end = generated.find("static void nrn_", cur_begin + 20);
             const auto cur_fn = generated.substr(
-                cur_begin,
-                (cur_end == std::string::npos ? generated.size() : cur_end) - cur_begin);
+                cur_begin, (cur_end == std::string::npos ? generated.size() : cur_end) - cur_begin);
             // Stack load from ion dptr / SoA index path.
             REQUIRE_THAT(cur_fn, ContainsSubstring("double ena = "));
             REQUIRE_THAT(cur_fn, ContainsSubstring("_present_dptr_"));
@@ -365,9 +367,8 @@ SCENARIO("NEURON OpenACC codegen emits offload pragmas", "[codegen][neuron][acc]
             REQUIRE_THAT(cur_fn, ContainsSubstring("gpu_pdata_soa_base"));
             REQUIRE_THAT(generated, ContainsSubstring("_present_soa_0[:_present_soa_n_0]"));
             // Body must use bare stack ena in (v - ena), not SoA shadow.
-            const bool uses_stack_ena =
-                cur_fn.find("_cur_v - ena") != std::string::npos ||
-                cur_fn.find("(_cur_v - ena)") != std::string::npos;
+            const bool uses_stack_ena = cur_fn.find("_cur_v - ena") != std::string::npos ||
+                                        cur_fn.find("(_cur_v - ena)") != std::string::npos;
             REQUIRE(uses_stack_ena);
             REQUIRE(cur_fn.find("_cur_v - _present_fp_") == std::string::npos);
         }
@@ -405,10 +406,10 @@ SCENARIO("NEURON OpenACC codegen emits offload pragmas", "[codegen][neuron][acc]
             REQUIRE(cur_begin != std::string::npos);
             const auto cur_end = generated.find("static void nrn_", cur_begin + 20);
             const auto cur_fn = generated.substr(
-                cur_begin,
-                (cur_end == std::string::npos ? generated.size() : cur_end) - cur_begin);
+                cur_begin, (cur_end == std::string::npos ? generated.size() : cur_end) - cur_begin);
             // present clause or fpfield_ptr for the i column (index 1: amp=0, i=1, …).
-            REQUIRE_THAT(cur_fn, ContainsSubstring("_present_fp_1 = _lmc.template fpfield_ptr<1>()"));
+            REQUIRE_THAT(cur_fn,
+                         ContainsSubstring("_present_fp_1 = _lmc.template fpfield_ptr<1>()"));
             REQUIRE_THAT(cur_fn, ContainsSubstring("current += _present_fp_1[id]"));
         }
     }
@@ -451,11 +452,9 @@ SCENARIO("NEURON OpenACC codegen emits offload pragmas", "[codegen][neuron][acc]
             REQUIRE_THAT(generated,
                          ContainsSubstring("#include <neuron/gpu/net_receive_buffer.hpp>"));
             REQUIRE_THAT(generated, ContainsSubstring("nt->compute_gpu"));
-            REQUIRE_THAT(generated,
-                         ContainsSubstring("neuron::gpu::net_receive_buffer_enqueue"));
+            REQUIRE_THAT(generated, ContainsSubstring("neuron::gpu::net_receive_buffer_enqueue"));
             REQUIRE_THAT(generated, ContainsSubstring("net_buf_receive_ExpSynAcc"));
-            REQUIRE_THAT(generated,
-                         ContainsSubstring("neuron::gpu::weight_soa_values()"));
+            REQUIRE_THAT(generated, ContainsSubstring("neuron::gpu::weight_soa_values()"));
             REQUIRE_THAT(generated,
                          ContainsSubstring(
                              "hoc_register_net_receive_buffering(net_buf_receive_ExpSynAcc"));
@@ -473,16 +472,15 @@ SCENARIO("NEURON OpenACC codegen emits offload pragmas", "[codegen][neuron][acc]
             REQUIRE(cur_begin != std::string::npos);
             const auto cur_end = generated.find("static void nrn_", cur_begin + 20);
             const auto cur_fn = generated.substr(
-                cur_begin,
-                (cur_end == std::string::npos ? generated.size() : cur_end) - cur_begin);
+                cur_begin, (cur_end == std::string::npos ? generated.size() : cur_end) - cur_begin);
             REQUIRE_THAT(cur_fn, ContainsSubstring("node_area_storage()"));
             REQUIRE_THAT(cur_fn, ContainsSubstring("_d_area"));
             REQUIRE_THAT(cur_fn, ContainsSubstring("1.e2/_d_area[node_id]"));
             // Must not pull area through the ion/pdata dptr table in CURRENT.
             REQUIRE(cur_fn.find("mfactor = 1.e2/(*_present_dptr_") == std::string::npos);
-            const bool area_in_deviceptr =
-                cur_fn.find("_d_voltages, _d_area") != std::string::npos ||
-                cur_fn.find("deviceptr(_d_area") != std::string::npos;
+            const bool area_in_deviceptr = cur_fn.find("_d_voltages, _d_area") !=
+                                               std::string::npos ||
+                                           cur_fn.find("deviceptr(_d_area") != std::string::npos;
             REQUIRE(area_in_deviceptr);
         }
 
@@ -541,8 +539,7 @@ SCENARIO("NEURON OpenACC codegen emits offload pragmas", "[codegen][neuron][acc]
             REQUIRE_THAT(generated,
                          ContainsSubstring("neuron::gpu::mark_host_net_receive_soa_dirty"));
             REQUIRE(generated.find("upload_present_mechanism_soa_to_device") == std::string::npos);
-            REQUIRE_THAT(generated,
-                         ContainsSubstring("register_host_net_receive_soa_fields"));
+            REQUIRE_THAT(generated, ContainsSubstring("register_host_net_receive_soa_fields"));
             REQUIRE_THAT(generated, ContainsSubstring("// g"));
             REQUIRE_THAT(generated, ContainsSubstring("// e"));
         }

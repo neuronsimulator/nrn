@@ -1,11 +1,11 @@
 # Traub 1/10 (ModelDB 82894) — product native-GPU spike gate.
 #
-# Model stays outside the tree ($HOME/models/82894 or NRN_TRAUB_MODEL).
-# Tools + reference rasters live here. CTest skips (exit 77) if the model
-# is not present so GPU CI without ModelDB remains green.
+# Model stays outside the tree ($HOME/models/82894 or NRN_TRAUB_MODEL). Tools + reference rasters
+# live here. CTest skips (exit 77) if the model is not present so GPU CI without ModelDB remains
+# green.
 #
-#   ctest -V -R 'traub_native::neuron_gpu_native'
-#   ctest -V -R 'traub_native::neuron_gpu_native_gap'   # optional / longer
+# ctest -V -R 'traub_native::neuron_gpu_native' ctest -V -R 'traub_native::neuron_gpu_native_gap' #
+# optional / longer
 if(NOT NRN_ENABLE_GPU)
   return()
 endif()
@@ -44,7 +44,14 @@ add_test(
   WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/test/traub_native")
 set_tests_properties(
   traub_native::neuron_gpu_native
-  PROPERTIES RESOURCE_LOCK gpu SKIP_RETURN_CODE 77 TIMEOUT 900 LABELS "gpu;native;traub")
+  PROPERTIES RESOURCE_LOCK
+             gpu
+             SKIP_RETURN_CODE
+             77
+             TIMEOUT
+             900
+             LABELS
+             "gpu;native;traub")
 
 # Optional gap gate (exact native↔CPU 7873; longer wall). Same skip policy.
 add_test(
@@ -53,4 +60,11 @@ add_test(
   WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/test/traub_native")
 set_tests_properties(
   traub_native::neuron_gpu_native_gap
-  PROPERTIES RESOURCE_LOCK gpu SKIP_RETURN_CODE 77 TIMEOUT 1200 LABELS "gpu;native;traub;gap")
+  PROPERTIES RESOURCE_LOCK
+             gpu
+             SKIP_RETURN_CODE
+             77
+             TIMEOUT
+             1200
+             LABELS
+             "gpu;native;traub;gap")

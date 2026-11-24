@@ -890,7 +890,7 @@ void vectorize_use_func(Item* qname, Item* qpar1, Item* qexpr, Item* qpar2, int 
                 vectorize = 0;
                 if (!state_discon_list_) {
                     state_discon_list_ = newlist();
-                    Linsertstr(procfunc, "extern int state_discon_flag_;\n");
+                    Linsertstr(procfunc, "extern NRN_DLLSYM int state_discon_flag_;\n");
                 }
                 lappenditem(state_discon_list_, qpar1->next);
                 Insertstr(qpar1->next, "-1, &");

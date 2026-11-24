@@ -38,10 +38,10 @@ struct Mechanism {
      * @c base[f][idx[f][id]] with @c present(base[:count], idx[:n]) — same shape as
      * RANGE @c _present_fp_N. Index rows are CPU-owned (UploadState). Null = dptr chase.
      */
-    double** gpu_pdata_soa_base{};        // host SoA column bases
-    int** gpu_pdata_soa_index{};          // host int index rows
-    std::size_t* gpu_pdata_soa_count{};   // SoA column lengths
-    std::size_t* gpu_pdata_soa_index_n{}; // index row lengths
+    double** gpu_pdata_soa_base{};         // host SoA column bases
+    int** gpu_pdata_soa_index{};           // host int index rows
+    std::size_t* gpu_pdata_soa_count{};    // SoA column lengths
+    std::size_t* gpu_pdata_soa_index_n{};  // index row lengths
 };
 struct Thread {
     /**

@@ -1,0 +1,215 @@
+// NOTE: this assumes neuronapi.h is on your CPLUS_INCLUDE_PATH
+// nrn_property_element_ptr returns a pointer to one element of an object's
+// variable, given every index: Matrix.x[i][j], Vector.x[i], Pointer.val and
+// point-process variables (scalars and arrays). Errors are reported, not thrown.
+#include <array>
+#include <cstdio>
+#include <cstring>
+#include <iostream>
+#include <string>
+#include <unistd.h>
+#include "neuronapi.h"
+
+using std::cerr;
+using std::endl;
+
+extern "C" void modl_reg() {}
+
+// make_pointprocess registers a mechanism for the rest of the process, and LeakSanitizer reports
+// that registration (common_register in hocmech.cpp) as leaked at exit. Only an ASan build reads
+// this hook.
+extern "C" const char* __lsan_default_suppressions() {
+    return "leak:make_pointprocess\n";
+}
+
+static bool check(bool cond, const char* msg) {
+    if (!cond) {
+        cerr << "FAIL: " << msg << endl;
+    }
+    return cond;
+}
+
+// What f writes to stderr (fd 2), which is restored before returning.
+template <class F>
+static std::string stderr_of(F f) {
+    std::fflush(stderr);
+    FILE* const sink = std::tmpfile();
+    int const saved = dup(STDERR_FILENO);
+    if (!sink || saved == -1 || dup2(fileno(sink), STDERR_FILENO) == -1) {
+        std::perror("redirect stderr");
+        std::exit(1);
+    }
+    f();
+    std::fflush(stderr);
+    dup2(saved, STDERR_FILENO);
+    close(saved);
+    std::string text;
+    std::rewind(sink);
+    for (int c; (c = std::fgetc(sink)) != EOF;) {
+        text += static_cast<char>(c);
+    }
+    std::fclose(sink);
+    return text;
+}
+
+static Object* object(const char* name) {
+    return nrn_symbol_object_get(nrn_symbol(name));
+}
+
+static double hoc_value(const char* expr) {
+    std::string stmt = std::string("element_ptr_value = ") + expr + "\n";
+    nrn_hoc_call(stmt.c_str());
+    return *nrn_symbol_dataptr(nrn_symbol("element_ptr_value"));
+}
+
+int main(void) {
+    static std::array<const char*, 4> argv = {"property_element_ptr",
+                                              "-nogui",
+                                              "-nopython",
+                                              nullptr};
+    nrn_init(3, argv.data());
+    nrn_hoc_call(
+        "element_ptr_value = 0\n"
+        "pointee = 4\n"
+        "objref mat, vec, ptr, ic, vc\n"
+        "mat = new Matrix(3, 4)\n"
+        "mat.x[1][2] = 7\n"
+        "vec = new Vector(5)\n"
+        "vec.indgen()\n"
+        "ptr = new Pointer(&pointee)\n"
+        "create soma\n"
+        "soma ic = new IClamp(0.5)\n"
+        "soma vc = new VClamp(0.5)\n"
+        "ic.amp = 0.25\n"
+        "vc.amp[1] = -20\n"
+        "objref ic_unlocated, ic_deleted\n"
+        "ic_unlocated = new IClamp()\n"
+        "create dend\n"
+        "dend ic_deleted = new IClamp(0.5)\n"
+        "dend delete_section()\n"
+        "begintemplate HocPnt\n"
+        "public a, b\n"
+        "proc init() { a = 3  b = 5 }\n"
+        "endtemplate HocPnt\n"
+        "make_pointprocess(\"HocPnt\")\n"
+        "objref hocpnt\n"
+        "soma hocpnt = new HocPnt(0.5)\n");
+
+    bool ok = true;
+    char err[256]{};
+    double* p = nullptr;
+    Object* mat = object("mat");
+    Object* vec = object("vec");
+
+    // Matrix.x takes two indices; the pointer is the element HOC sees.
+    std::array<int, 2> ij{1, 2};
+    ok &= check(nrn_property_element_ptr(mat, "x", ij.data(), 2, &p, err, sizeof(err)) == 0 &&
+                    *p == 7,
+                "Matrix.x[1][2]");
+    *p = 9;
+    ok &= check(hoc_value("mat.x[1][2]") == 9, "write through the Matrix pointer");
+    ij = {2, 3};
+    ok &= check(nrn_property_element_ptr(mat, "x", ij.data(), 2, &p, err, sizeof(err)) == 0 &&
+                    *p == 0,
+                "Matrix.x[2][3] (last element)");
+    ij = {3, 0};
+    ok &= check(nrn_property_element_ptr(mat, "x", ij.data(), 2, &p, err, sizeof(err)) != 0 &&
+                    p == nullptr && std::strstr(err, "out of range") != nullptr,
+                "Matrix row out of range is reported");
+    ok &= check(nrn_property_element_ptr(mat, "x", ij.data(), 1, &p, err, sizeof(err)) != 0 &&
+                    std::strstr(err, "wrong number of indices") != nullptr,
+                "Matrix.x needs two indices");
+
+    // Vector.x takes one.
+    int i = 3;
+    ok &= check(nrn_property_element_ptr(vec, "x", &i, 1, &p, err, sizeof(err)) == 0 && *p == 3 &&
+                    p == nrn_vector_data(vec) + 3,
+                "Vector.x[3]");
+    i = 5;
+    ok &= check(nrn_property_element_ptr(vec, "x", &i, 1, &p, err, sizeof(err)) != 0 &&
+                    std::strstr(err, "out of range") != nullptr,
+                "Vector index out of range is reported");
+
+    // Pointer.val is a scalar.
+    ok &= check(nrn_property_element_ptr(object("ptr"), "val", nullptr, 0, &p, err, sizeof(err)) ==
+                        0 &&
+                    p == nrn_symbol_dataptr(nrn_symbol("pointee")),
+                "Pointer.val");
+
+    // Point processes: a scalar and an array element.
+    ok &= check(nrn_property_element_ptr(object("ic"), "amp", nullptr, 0, &p, err, sizeof(err)) ==
+                        0 &&
+                    *p == 0.25,
+                "IClamp.amp");
+    i = 1;
+    ok &= check(nrn_property_element_ptr(object("vc"), "amp", &i, 1, &p, err, sizeof(err)) == 0 &&
+                    *p == -20,
+                "VClamp.amp[1]");
+    *p = -30;
+    ok &= check(nrn_property_array_get(object("vc"), "amp", 1) == -30,
+                "write through the point-process pointer");
+    i = 3;
+    ok &= check(nrn_property_element_ptr(object("vc"), "amp", &i, 1, &p, err, sizeof(err)) != 0 &&
+                    std::strstr(err, "out of range") != nullptr,
+                "VClamp.amp[3] is out of range");
+
+    // Unknown names and methods.
+    ok &= check(nrn_property_element_ptr(vec, "nosuch", nullptr, 0, &p, err, sizeof(err)) != 0,
+                "unknown property");
+    ok &= check(nrn_property_element_ptr(vec, "size", nullptr, 0, &p, err, sizeof(err)) != 0,
+                "a method is not a variable");
+
+    // A point process with no section has no data. This is reported, not raised
+    // as the HOC error "point process not located in a section".
+    nrn_double_push(-7.0);
+    ok &= check(nrn_property_element_ptr(
+                    object("ic_unlocated"), "amp", nullptr, 0, &p, err, sizeof(err)) != 0 &&
+                    p == nullptr && std::strstr(err, "not located in a section") != nullptr,
+                "unlocated point process is reported");
+    ok &= check(nrn_property_element_ptr(
+                    object("ic_deleted"), "amp", nullptr, 0, &p, err, sizeof(err)) != 0 &&
+                    p == nullptr && std::strstr(err, "not located in a section") != nullptr,
+                "point process of a deleted section is reported");
+    ok &= check(nrn_double_pop() == -7.0, "unlocated point process leaves the stack alone");
+
+    // A point-process method is not a variable either.
+    for (const char* method: {"loc", "get_loc", "has_loc"}) {
+        ok &= check(
+            nrn_property_element_ptr(object("ic"), method, nullptr, 0, &p, err, sizeof(err)) != 0 &&
+                p == nullptr && std::strstr(err, "not a variable") != nullptr,
+            method);
+    }
+
+    // A make_pointprocess template keeps its variables in the HOC dataspace,
+    // which this function does not reach; it must not return another variable.
+    ok &= check(nrn_property_element_ptr(object("hocpnt"), "b", nullptr, 0, &p, err, sizeof(err)) !=
+                        0 &&
+                    p == nullptr && std::strstr(err, "make_pointprocess") != nullptr,
+                "make_pointprocess variable is reported");
+
+    // Failures leave the stack alone.
+    nrn_double_push(-7.0);
+    ij = {0, 9};
+    nrn_property_element_ptr(mat, "x", ij.data(), 2, &p, err, sizeof(err));
+    i = 9;
+    nrn_property_element_ptr(vec, "x", &i, 1, &p, err, sizeof(err));
+    ok &= check(nrn_double_pop() == -7.0, "failures leave the stack alone");
+
+    // A steer error goes only to error_msg: HOC prints nothing, and HOC errors
+    // print again afterwards.
+    std::string const printed = stderr_of([&] {
+        ij = {3, 0};
+        nrn_property_element_ptr(mat, "x", ij.data(), 2, &p, err, sizeof(err));
+        i = 5;
+        nrn_property_element_ptr(vec, "x", &i, 1, &p, err, sizeof(err));
+    });
+    ok &= check(printed.empty(), "a steer error prints nothing");
+    if (!printed.empty()) {
+        cerr << printed;
+    }
+    ok &= check(std::strstr(err, "out of range") != nullptr, "the steer error is still reported");
+    ok &= check(!stderr_of([] { nrn_hoc_call("mat.x[9][9] = 1\n"); }).empty(),
+                "HOC error messages are restored");
+
+    return ok ? 0 : 1;
+}

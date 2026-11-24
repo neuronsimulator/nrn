@@ -1,7 +1,9 @@
 #pragma once
+#include "nrndlldef.h"
 #include "neuron/container/data_handle.hpp"
 #include "neuron/container/generic_data_handle.hpp"
 
+#include <cstddef>
 #include <cstdio>
 #include <functional>
 #include <memory>
@@ -61,6 +63,12 @@ namespace neuron::oc {
 struct runtime_error: ::std::runtime_error {
     using ::std::runtime_error::runtime_error;
 };
+
+/// e.what() except for nanobind::python_error, whose what() is noexcept and aborts
+/// under Py_LIMITED_API. libnrnpython registers the python_error check.
+const char* safe_what(const std::exception& e);
+void set_safe_what(const char* (*fn)(const std::exception&) );
+
 /**
  * @brief Execute C++ code that may throw and propagate HOC information.
  *
@@ -81,7 +89,7 @@ decltype(auto) invoke_method_that_may_throw(Callable message_prefix, Args&&... a
         throw;
     } catch (std::exception const& e) {
         std::string message{message_prefix()};
-        std::string_view what{e.what()};
+        std::string_view what{safe_what(e)};
         if (!what.empty()) {
             message.append(": ");
             message.append(what);
@@ -159,9 +167,15 @@ double hoc_call_func(Symbol*, int narg);
 void hoc_call_func_result_on_stack(Symbol* s, int narg);
 // call a fuction within the context of an object.
 double hoc_call_objfunc(Symbol*, int narg, Object*);
-extern double hoc_ac_;
+extern NRN_DLLSYM double hoc_ac_;
 extern double hoc_epsilon;
-extern int nrn_inpython_;
+extern NRN_DLLSYM int nrn_inpython_;
+extern NRN_DLLSYM int nrn_global_argc;
+extern NRN_DLLSYM char** nrn_global_argv;
+struct HocStr;
+extern NRN_DLLSYM HocStr* hoc_cbufstr;
+extern NRN_DLLSYM char* hoc_ctp;
+extern NRN_DLLSYM const char* hoc_promptstr;
 
 extern int hoc_color;
 int hoc_set_color(int);
@@ -184,6 +198,7 @@ void hoc_pushi(int);
 void hoc_push_ndim(int);
 int hoc_pop_ndim();
 int hoc_stack_type();
+std::size_t hoc_stack_size();
 bool hoc_stack_type_is_ndim();
 
 namespace neuron::oc::detail {
@@ -291,7 +306,7 @@ double* hoc_val_pointer(const char*);
 neuron::container::data_handle<double> hoc_val_handle(std::string_view);
 Symbol* hoc_table_lookup(const char*, Symlist*);
 Symbol* hoc_install(const char*, int, double, Symlist**);
-extern Objectdata* hoc_objectdata;
+extern NRN_DLLSYM Objectdata* hoc_objectdata;
 /** @brief Get the stack entry at depth i.
  *
  *  i=0 is the most recently pushed entry. This will raise an error if the stack

@@ -162,7 +162,7 @@ void (*nrnthread_v_transfer_)(NrnThread* nt);
 void (*nrnthread_vi_compute_)(NrnThread* nt);
 #endif
 
-int cvode_active_;
+NRN_DLLSYM int cvode_active_;
 
 int stoprun;
 bool nrn_use_fast_imem;
@@ -435,15 +435,10 @@ void nrn_fixed_step(neuron::model_sorted_token const& cache_token) {
     }
 #if defined(NRN_ENABLE_GPU)
     if (neuron::gpu::phase_timer::enabled()) {
-        double const elapsed = std::chrono::duration<double>(std::chrono::steady_clock::now() -
-                                                             step_wall0)
-                                   .count();
+        double const elapsed =
+            std::chrono::duration<double>(std::chrono::steady_clock::now() - step_wall0).count();
         if (elapsed > 0.05) {
-            std::fprintf(stderr,
-                         "slow-step t=%g->%g wall=%g s\n",
-                         t_step_begin,
-                         t,
-                         elapsed);
+            std::fprintf(stderr, "slow-step t=%g->%g wall=%g s\n", t_step_begin, t, elapsed);
         }
     }
 #endif
@@ -661,8 +656,7 @@ void nrn_fixed_step_lastpart(neuron::model_sorted_token const& cache_token, NrnT
         if (native_lastpart) {
             neuron::gpu::phase_timer::Scope const prepare_timer{
                 neuron::gpu::phase_timer::Id::lastpart_nonvint_prepare};
-            neuron::gpu::phase_timer::bump(
-                neuron::gpu::phase_timer::Id::lastpart_nonvint_prepare);
+            neuron::gpu::phase_timer::bump(neuron::gpu::phase_timer::Id::lastpart_nonvint_prepare);
             neuron::gpu::sync_before_device_nonvint(nt);
             neuron::gpu::prepare_nonvint_on_device(nt);
         }
@@ -682,8 +676,7 @@ void nrn_fixed_step_lastpart(neuron::model_sorted_token const& cache_token, NrnT
         if (native_lastpart) {
             neuron::gpu::phase_timer::Scope const finalize_timer{
                 neuron::gpu::phase_timer::Id::lastpart_nonvint_finalize};
-            neuron::gpu::phase_timer::bump(
-                neuron::gpu::phase_timer::Id::lastpart_nonvint_finalize);
+            neuron::gpu::phase_timer::bump(neuron::gpu::phase_timer::Id::lastpart_nonvint_finalize);
             neuron::gpu::finalize_nonvint_on_device(nt);
         }
 #endif

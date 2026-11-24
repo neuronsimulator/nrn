@@ -233,7 +233,8 @@ bool mechanism_jacobian_on_device(int type) noexcept {
     if (type < 0 || static_cast<std::size_t>(type) >= phase_table().size()) {
         return false;
     }
-    return has_gpu_phase(phase_table()[static_cast<std::size_t>(type)], MechanismGpuPhase::Jacobian);
+    return has_gpu_phase(phase_table()[static_cast<std::size_t>(type)],
+                         MechanismGpuPhase::Jacobian);
 #else
     (void) type;
     return false;
@@ -298,7 +299,9 @@ std::string native_gpu_qualification_report() {
 
     if (!enabled() || !backend_native()) {
         out += "QUALIFIED: no\n";
-        out += "reason: native GPU backend not active (pc.gpu_enable(1) and pc.gpu_backend(\"native\"))\n";
+        out +=
+            "reason: native GPU backend not active (pc.gpu_enable(1) and "
+            "pc.gpu_backend(\"native\"))\n";
         return out;
     }
 
@@ -345,8 +348,9 @@ std::string native_gpu_qualification_report() {
     out += fmt::format("Gate C SOLVE/nonvint on device: {}\n",
                        gates.solve_on_device ? "yes" : "no");
     if (!gates.solve_on_device) {
-        out += "  (native requires device nonvint: no sparse13/ecell/Python nonvint block; "
-               "every STATE mech must register Solve on device — no host STATE fallback)\n";
+        out +=
+            "  (native requires device nonvint: no sparse13/ecell/Python nonvint block; "
+            "every STATE mech must register Solve on device — no host STATE fallback)\n";
     }
     append_blocking_mechs(out, "  SOLVE", mechanism_solve_on_device, has_state_hook);
 

@@ -163,8 +163,7 @@ void bind_device_sources_for_thread(NrnThread& nt) {
         if (ch.thread_id != nt.id || !ch.supported) {
             continue;
         }
-        if (ch.kind == TrajectorySourceKind::Voltage && d_v && ch.index >= 0 &&
-            ch.index < nt.end) {
+        if (ch.kind == TrajectorySourceKind::Voltage && d_v && ch.index >= 0 && ch.index < nt.end) {
             ch.device_src = d_v + ch.index;
         } else if (ch.kind == TrajectorySourceKind::FastImem && d_im && ch.index >= 0 &&
                    ch.index < nt.end) {

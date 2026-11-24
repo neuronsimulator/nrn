@@ -133,15 +133,24 @@ def _test_natrans():
     from backend_helper import (
         disable_test_backend,
         enable_test_backend,
+        is_native_backend_test,
         iter_permute_values,
         set_permute,
     )
+    from neuron import config
 
-    # NRN_FOREIGN_SKIP_CORENEURON: foreign gj_serial CN psolve aborted on
-    # Linux/macOS wheels (GHA #3866). NEURON half still runs. Not a CN fix.
+    # coreneuron.available is not an API. Assigning True forced CoreNEURON
+    # even on installs built without it (psolve then misses corenrnmech.dll).
+    # NRN_FOREIGN_SKIP_CORENEURON: foreign gj_serial nrnivmodl is not
+    # -coreneuron. Enabling CN on a Linux/macOS wheel aborts at nrn_setup
+    # (SIGABRT). NEURON half still runs. In-tree CN row is
+    # coreneuron_modtests::test_natrans_py. Not a CN product fix.
     # Native GPU uses backend_helper (NRN_GPU_BACKEND_TEST / NRN_GPU_PERMUTE);
     # CoreNEURON GPU forbids cell_permute=0 (valid {1,2}).
-    if not os.environ.get("NRN_FOREIGN_SKIP_CORENEURON"):
+    cn_built = config.arguments.get("NRN_ENABLE_CORENEURON")
+    if is_native_backend_test() or (
+        cn_built and not os.environ.get("NRN_FOREIGN_SKIP_CORENEURON")
+    ):
         enable_test_backend()
         set_permute(next(iter_permute_values()))
         run()  # Fails if GPU/backend does not copy expected tar.napre to NEURON
@@ -153,8 +162,8 @@ def _test_natrans():
 def test_natrans():
     model = _test_natrans()
     pc.barrier()
-    h.quit()
 
 
 if __name__ == "__main__":
     test_natrans()
+    h.quit()

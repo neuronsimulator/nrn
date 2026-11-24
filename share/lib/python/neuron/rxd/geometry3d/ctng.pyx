@@ -1,3 +1,4 @@
+# cython: language_level=3
 from neuron import h
 import numpy
 import itertools
@@ -446,7 +447,10 @@ cdef void _create_cone_objects(object x, object y, object z, object d, dict diam
     cdef Py_ssize_t i
     
     for i in range(len(x) - 1):
-        d0, d1 = d[i : i + 2]
+        # Unpack by index: Cython 3.2+ crashes on `d0, d1 = d[i : i + 2]`
+        # (MarkParallelAssignments / non-constant slice).
+        d0 = d[i]
+        d1 = d[i + 1]
         if (x[i] != x[i + 1] or y[i] != y[i + 1] or z[i] != z[i + 1]):
             # short section check
             #if linalg.norm((x[i + 1] - x[i], y[i + 1] - y[i], z[i + 1] - z[i])) < (d1 + d0) * 0.5:

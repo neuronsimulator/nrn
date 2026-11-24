@@ -25,15 +25,15 @@ namespace neuron::gpu::phase_timer {
  *   setup-rhs-zero / setup-rhs-cur / setup-rhs-axial / setup-rhs-wait nest under setup-rhs
  */
 enum class Id : int {
-    fixed_step,        // coarse: whole nrn_fixed_step (incl. deferred gap lastpart)
-    device_ensure,     // nested: ensure_on_device (upload on first step)
-    deliver_events,    // coarse wall (start-of-step)
-    deliver_thresh,    // nested: threshold detect + host flag/hit
-    deliver_tq,        // nested: binq + main TQ NetCon/SelfEvent fanout
-    deliver_tq_netcon,   // nested under deliver-tq: NetCon::deliver
-    deliver_tq_self,     // nested: SelfEvent::deliver
-    deliver_tq_presyn,   // nested: PreSyn::deliver fanout (includes NetCon)
-    deliver_nrb,       // nested: NRB order/upload + net_buf_receive
+    fixed_step,            // coarse: whole nrn_fixed_step (incl. deferred gap lastpart)
+    device_ensure,         // nested: ensure_on_device (upload on first step)
+    deliver_events,        // coarse wall (start-of-step)
+    deliver_thresh,        // nested: threshold detect + host flag/hit
+    deliver_tq,            // nested: binq + main TQ NetCon/SelfEvent fanout
+    deliver_tq_netcon,     // nested under deliver-tq: NetCon::deliver
+    deliver_tq_self,       // nested: SelfEvent::deliver
+    deliver_tq_presyn,     // nested: PreSyn::deliver fanout (includes NetCon)
+    deliver_nrb,           // nested: NRB order/upload + net_buf_receive
     deliver_nrb_order,     // nested under deliver-nrb: host instance order
     deliver_nrb_upload,    // nested: H→D event metadata
     deliver_nrb_launch,    // nested: net_buf_receive kernel launches
@@ -54,20 +54,20 @@ enum class Id : int {
     matrix_solver,
     post_solve,
     download_flush,
-    lastpart,          // coarse wall (multithread job or nested no-gap)
-    lastpart_play,     // fixed_play_continuous
-    lastpart_xfer,     // thread_transfer / extra_scatter_gather
-    lastpart_nonvint,  // device STATE path
+    lastpart,                   // coarse wall (multithread job or nested no-gap)
+    lastpart_play,              // fixed_play_continuous
+    lastpart_xfer,              // thread_transfer / extra_scatter_gather
+    lastpart_nonvint,           // device STATE path
     lastpart_nonvint_prepare,   // nested: sync_before + prepare (_t H→D + wait)
     lastpart_nonvint_state,     // nested: nonvint() STATE loop
     lastpart_nonvint_finalize,  // nested: stream wait + optional full-stream drain
-    lastpart_record,   // AFTER_SOLVE + trajectory/record
-    lastpart_deliver,  // post-step deliver (thresh + events)
-    gap_sync,          // coarse / host post-solve residual
-    gap_gather,        // device source gather + bulk mailbox D→H
-    gap_host,          // host pack / 1-rank copy / MPI
-    gap_insrc,         // H→D insrc_buf after MPI
-    gap_scatter,       // bulk target scatter (main-thread; de-chatty)
+    lastpart_record,            // AFTER_SOLVE + trajectory/record
+    lastpart_deliver,           // post-step deliver (thresh + events)
+    gap_sync,                   // coarse / host post-solve residual
+    gap_gather,                 // device source gather + bulk mailbox D→H
+    gap_host,                   // host pack / 1-rank copy / MPI
+    gap_insrc,                  // H→D insrc_buf after MPI
+    gap_scatter,                // bulk target scatter (main-thread; de-chatty)
     count
 };
 

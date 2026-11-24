@@ -1,0 +1,143 @@
+import os
+import select
+import sys
+import time
+
+import pytest
+
+from neuron import (
+    install_raw_tty_newline_fix,
+    _kernel_maps_nl_to_crnl,
+    _with_explicit_cr,
+)
+
+
+def test_with_explicit_cr():
+    assert _with_explicit_cr("hello\n") == "hello\r\n"
+    assert _with_explicit_cr("a\r\nb\n") == "a\r\nb\r\n"
+    assert _with_explicit_cr("no newline") == "no newline"
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="termios/pty Unix only")
+def test_kernel_maps_nl_cooked_vs_raw_pty():
+    import termios
+
+    master, slave = os.openpty()
+    try:
+        attrs = termios.tcgetattr(slave)
+        attrs[1] |= termios.OPOST | getattr(termios, "ONLCR", 0)
+        termios.tcsetattr(slave, termios.TCSANOW, attrs)
+        assert _kernel_maps_nl_to_crnl(slave)
+
+        attrs[1] &= ~termios.OPOST
+        termios.tcsetattr(slave, termios.TCSANOW, attrs)
+        assert not _kernel_maps_nl_to_crnl(slave)
+    finally:
+        os.close(master)
+        os.close(slave)
+
+
+def _read_pty_line(master, timeout=1.0):
+    """Read until a newline. One os.read can return before ONLCR posts it."""
+    data = b""
+    deadline = time.monotonic() + timeout
+    while b"\n" not in data:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            break
+        ready, _, _ = select.select([master], [], [], remaining)
+        if not ready:
+            break
+        chunk = os.read(master, 64)
+        if not chunk:
+            break
+        data += chunk
+    return data
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="termios/pty Unix only")
+def test_patched_write_inserts_cr_only_when_opost_off():
+    import termios
+
+    def write_and_read(opost_on):
+        master, slave = os.openpty()
+        stream = None
+        try:
+            attrs = termios.tcgetattr(slave)
+            if opost_on:
+                attrs[1] |= termios.OPOST | getattr(termios, "ONLCR", 0)
+            else:
+                attrs[1] &= ~termios.OPOST
+            termios.tcsetattr(slave, termios.TCSANOW, attrs)
+            stream = os.fdopen(slave, "w", buffering=1, closefd=True)
+            slave = None
+            install_raw_tty_newline_fix(streams=(stream,))
+            stream.write("hello\n")
+            stream.flush()
+            return _read_pty_line(master)
+        finally:
+            if stream is not None:
+                stream.close()
+            elif slave is not None:
+                os.close(slave)
+            os.close(master)
+
+    raw = write_and_read(opost_on=False)
+    assert raw == b"hello\r\n"
+
+    cooked = write_and_read(opost_on=True)
+    assert b"\r\r" not in cooked
+    assert cooked.endswith(b"\n")
+    assert cooked.startswith(b"hello")
+
+
+def test_untrackable_stream_is_left_alone():
+    class Unhashable:
+        def __eq__(self, other):
+            return self is other
+
+        def fileno(self):
+            return 1
+
+        def write(self, s):
+            return len(s)
+
+    class NoWeakRef:
+        __slots__ = ("write",)
+
+        def __init__(self):
+            self.write = self._write
+
+        def fileno(self):
+            return 1
+
+        def _write(self, s):
+            return len(s)
+
+    # Class functions make a new bound method on each access. An instance
+    # assignment is the sign that the helper wrapped write.
+    stream = Unhashable()
+    install_raw_tty_newline_fix(streams=(stream,))
+    assert "write" not in stream.__dict__
+
+    stream = NoWeakRef()
+    original = stream.write
+    install_raw_tty_newline_fix(streams=(stream,))
+    assert stream.write is original
+
+
+def test_trackable_stream_is_patched_once():
+    class Trackable:
+        def fileno(self):
+            return 1
+
+        def write(self, s):
+            return len(s)
+
+    stream = Trackable()
+    original = stream.write
+    install_raw_tty_newline_fix(streams=(stream,))
+    patched = stream.write
+    assert patched is not original
+    install_raw_tty_newline_fix(streams=(stream,))
+    assert stream.write is patched

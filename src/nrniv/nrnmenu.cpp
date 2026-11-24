@@ -35,7 +35,7 @@ void nrnglobalmechmenu();
 void nrnmechmenu();
 void nrnpointmenu();
 
-int (*nrnpy_ob_is_seg)(Object*);
+NRN_DLLSYM int (*nrnpy_ob_is_seg)(Object*);
 
 #if HAVE_IV
 static void pnodemenu(Prop* p1, double, int type, const char* path, MechSelector* = NULL);

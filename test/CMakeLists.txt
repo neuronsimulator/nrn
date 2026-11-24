@@ -27,6 +27,7 @@ add_executable(
   unit_tests/utils/enumerate.cpp
   unit_tests/utils/Sprintf.cpp
   unit_tests/oc/hoc_interpreter.cpp
+  unit_tests/fourier.cpp
   cover/unit_tests/cover.cpp)
 set(catch2_targets testneuron)
 if(NRN_ENABLE_THREADS)
@@ -131,8 +132,8 @@ if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
   cpp_cc_configure_sanitizers(TARGET testneuron_gpu_config)
   target_link_libraries(testneuron_gpu_config PRIVATE Catch2::Catch2 neuron_gpu)
   target_compile_definitions(testneuron_gpu_config PRIVATE NRN_ENABLE_GPU)
-  # neuron_gpu includes OpenACC offload.cpp; must link with ACC flags (else
-  # static OpenACC init can call through a null and SIGSEGV before main).
+  # neuron_gpu includes OpenACC offload.cpp; must link with ACC flags (else static OpenACC init can
+  # call through a null and SIGSEGV before main).
   target_compile_options(testneuron_gpu_config PRIVATE ${_test_gpu_offload_flags})
   target_link_options(testneuron_gpu_config PUBLIC ${_test_gpu_offload_flags})
   nrn_add_test(
@@ -175,8 +176,8 @@ if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
 
   add_executable(
     testneuron_gpu_download
-    unit_tests/gpu/offload_main.cpp unit_tests/gpu/download.cpp unit_tests/gpu/upload_link_stubs.cpp
-    unit_tests/gpu/interleave_info_stub.cpp)
+    unit_tests/gpu/offload_main.cpp unit_tests/gpu/download.cpp
+    unit_tests/gpu/upload_link_stubs.cpp unit_tests/gpu/interleave_info_stub.cpp)
   cpp_cc_configure_sanitizers(TARGET testneuron_gpu_download)
   target_include_directories(
     testneuron_gpu_download PRIVATE ${PROJECT_SOURCE_DIR}/external/fmt/include
@@ -228,8 +229,8 @@ if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
     REQUIRES gpu
     COMMAND $<TARGET_FILE:testneuron_gpu_net_events> "[gpu][net_events]")
 
-  add_executable(testneuron_gpu_net_receive_buffer
-                 unit_tests/gpu/offload_main.cpp unit_tests/gpu/net_receive_buffer.cpp)
+  add_executable(testneuron_gpu_net_receive_buffer unit_tests/gpu/offload_main.cpp
+                                                   unit_tests/gpu/net_receive_buffer.cpp)
   cpp_cc_configure_sanitizers(TARGET testneuron_gpu_net_receive_buffer)
   target_include_directories(
     testneuron_gpu_net_receive_buffer PRIVATE ${PROJECT_SOURCE_DIR}/external/fmt/include
@@ -245,8 +246,8 @@ if(NRN_ENABLE_GPU AND CORENRN_ENABLE_GPU)
     REQUIRES gpu
     COMMAND $<TARGET_FILE:testneuron_gpu_net_receive_buffer> "[gpu][net_receive]")
 
-  add_executable(testneuron_gpu_net_send_buffer
-                 unit_tests/gpu/offload_main.cpp unit_tests/gpu/net_send_buffer.cpp)
+  add_executable(testneuron_gpu_net_send_buffer unit_tests/gpu/offload_main.cpp
+                                                unit_tests/gpu/net_send_buffer.cpp)
   cpp_cc_configure_sanitizers(TARGET testneuron_gpu_net_send_buffer)
   target_include_directories(
     testneuron_gpu_net_send_buffer PRIVATE ${PROJECT_SOURCE_DIR}/external/fmt/include
@@ -420,6 +421,11 @@ endforeach()
 # Add pytest
 # =============================================================================
 if(NRN_ENABLE_PYTHON)
+  # Pure Python. The abi3 wheel gate fails closed on an empty report.
+  add_test(NAME audit_abi3_wheel
+           COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE}
+                   ${PROJECT_SOURCE_DIR}/packaging/python/test_audit_abi3_wheel.py)
+
   # use `--capture=tee-sys`: combines 'sys' and '-s', capturing sys.stdout/stderr and passing it
   # along to the actual sys.stdout/stderr
   set(pytest_args --capture=tee-sys)
@@ -436,6 +442,23 @@ if(NRN_ENABLE_PYTHON)
             ${PROJECT_SOURCE_DIR}/test/unit_tests/hoc_python
     PRELOAD_SANITIZER
     SCRIPT_PATTERNS "test/unit_tests/hoc_python/*.py")
+
+  # Extend test/unit_tests/path_semantics on each later Windows-path extract.
+  nrn_add_test(
+    GROUP unit_tests
+    NAME path_semantics
+    COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${pytest}
+            ${PROJECT_SOURCE_DIR}/test/unit_tests/path_semantics
+    PRELOAD_SANITIZER
+    SCRIPT_PATTERNS "test/unit_tests/path_semantics/*.py")
+
+  # nrnivmodl / nrnmech.dll linkage (AREA nrn_alloc_node_, later ModelDB ABI).
+  nrn_add_test(
+    GROUP unit_tests
+    NAME nrnmech
+    COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${pytest} ${PROJECT_SOURCE_DIR}/test/unit_tests/nrnmech
+    PRELOAD_SANITIZER
+    SCRIPT_PATTERNS "test/unit_tests/nrnmech/*.py")
 
   # Pure-Python prcellstate .nrndat semantic compare (no special/modfiles/GPU).
   nrn_add_test(
@@ -543,7 +566,8 @@ if(NRN_ENABLE_PYTHON)
         NAME ${name}_${ext} ${${ext}_preload} # PRELOAD_SANITIZER for Python
         ENVIRONMENT CC=${CMAKE_C_COMPILER}
         COMMAND ${${ext}_exe} "${hoc_script}"
-        SCRIPT_PATTERNS "${hoc_script}" "tests/${name}.json" ${${ext}test_utils})
+        SCRIPT_PATTERNS "${hoc_script}" "tests/${name}.json" "tests/${name}.asc"
+                        ${${ext}test_utils})
     endforeach()
   endforeach()
 
@@ -569,7 +593,7 @@ if(NRN_ENABLE_PYTHON)
       COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${pytest} ./test/rxd)
     if(NRN_ENABLE_MPI)
       nrn_find_python_module(MODULE mpi4py)
-      if(mpi4py_FOUND)
+      if(MPI4PY_FOUND)
         nrn_add_test(
           GROUP rxdmod_tests
           NAME rxd_mpi_tests
@@ -579,6 +603,15 @@ if(NRN_ENABLE_PYTHON)
             ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS}
             ${preload_sanitizer_mpiexec} ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${MPIEXEC_POSTFLAGS}
             ${pytest} ./test/rxd --mpi)
+        nrn_add_test(
+          GROUP rxdmod_tests
+          NAME rxd_mpi_two_process_tests
+          PRELOAD_SANITIZER
+          ENVIRONMENT ${change_test_tolerance}
+          COMMAND
+            ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
+            ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${MPIEXEC_POSTFLAGS} -m pytest --capture=tee-sys
+            ./test/rxd/ecs/test_ecs_example.py --mpi)
       endif()
     endif()
   endif()
@@ -903,21 +936,19 @@ if(NRN_ENABLE_PYTHON)
       NAME test_natrans_py_${processor}
       REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
       SCRIPT_PATTERNS ${coreneuron_backend_helper_script} test/gjtests/test_natrans.py
-      # Clear NRN_GPU_BACKEND_TEST so a parent shell export (nrnenv / AGENTS.md)
-      # cannot flip CPU/CoreNEURON variants onto the native topology (no NetCon)
-      # or native GPU path. Native has its own ctest with NRN_GPU_BACKEND_TEST=native.
-      ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
-                  NRN_GPU_BACKEND_TEST= NRN_GPU_PERMUTE=
-                  COVERAGE_FILE=.coverage.coreneuron_test_natrans_py
+      # Clear NRN_GPU_BACKEND_TEST so a parent shell export (nrnenv / AGENTS.md) cannot flip
+      # CPU/CoreNEURON variants onto the native topology (no NetCon) or native GPU path. Native has
+      # its own ctest with NRN_GPU_BACKEND_TEST=native.
+      ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env} NRN_GPU_BACKEND_TEST=
+                  NRN_GPU_PERMUTE= COVERAGE_FILE=.coverage.coreneuron_test_natrans_py
       COMMAND ${modtests_launch_py} test/gjtests/test_natrans.py)
-    # Two hh+IClamp cells, pc.nthread(2): ELECTRODE_CURRENT multi-thread gate
-    # (localizes S3 / HalfGap multi-thread residual without gap junctions).
+    # Two hh+IClamp cells, pc.nthread(2): ELECTRODE_CURRENT multi-thread gate (localizes S3 /
+    # HalfGap multi-thread residual without gap junctions).
     nrn_add_test(
       GROUP coreneuron_modtests
       NAME test_iclamp_nthread_py_${processor}
       REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
-      SCRIPT_PATTERNS ${coreneuron_backend_helper_script}
-                      test/coreneuron/test_iclamp_nthread.py
+      SCRIPT_PATTERNS ${coreneuron_backend_helper_script} test/coreneuron/test_iclamp_nthread.py
       ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
                   COVERAGE_FILE=.coverage.coreneuron_test_iclamp_nthread_py
       COMMAND ${modtests_launch_py} test/coreneuron/test_iclamp_nthread.py)
@@ -944,7 +975,7 @@ if(NRN_ENABLE_PYTHON)
 
     if(NRN_ENABLE_MPI)
       nrn_find_python_module(MODULE mpi4py)
-      if(mpi4py_FOUND)
+      if(MPI4PY_FOUND)
         nrn_add_test(
           GROUP coreneuron_modtests
           NAME spikes_mpi_py_${processor}
@@ -1035,8 +1066,8 @@ if(NRN_ENABLE_PYTHON)
         ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
         nrniv ${MPIEXEC_POSTFLAGS} -mpi -notatty -python
         test/pyscripts/test_gpu_device_assign_mpi.py)
-    # Host-codegen special (full mod set) for most native tests. Mechs that need
-    # ACC CURRENT/STATE for Gate B/C use a dedicated ACC group (netmove below).
+    # Host-codegen special (full mod set) for most native tests. Mechs that need ACC CURRENT/STATE
+    # for Gate B/C use a dedicated ACC group (netmove below).
     foreach(
       native_gpu_test
       fornetcon:test/coreneuron/test_fornetcon.py
@@ -1051,7 +1082,7 @@ if(NRN_ENABLE_PYTHON)
       test_nmodlrandom_syntax:test/coreneuron/test_nmodlrandom_syntax.py
       test_natrans:test/gjtests/test_natrans.py
       test_iclamp_nthread:test/coreneuron/test_iclamp_nthread.py)
-    # test_units / array_transfer: dedicated ACC specials below (Gate B+C).
+      # test_units / array_transfer: dedicated ACC specials below (Gate B+C).
       string(REPLACE ":" ";" native_parts "${native_gpu_test}")
       list(GET native_parts 0 native_name)
       list(GET native_parts 1 native_script)
@@ -1063,15 +1094,14 @@ if(NRN_ENABLE_PYTHON)
         ENVIRONMENT ${native_gpu_test_env} ${sonata_zero_gid_env} ${nrnpython_mpi_env}
         COMMAND ${native_modtests_launch_py} ${native_script})
     endforeach()
-    # ACC-only special for DAsyn (netmove.mod): Gate B+C. Full-suite ACC fails on
-    # artcell/PROTECT edge cases; keep a narrow special for this product row.
+    # ACC-only special for DAsyn (netmove.mod): Gate B+C. Full-suite ACC fails on artcell/PROTECT
+    # edge cases; keep a narrow special for this product row.
     nrn_add_test_group(
       NAME coreneuron_modtests_native_netmove
       SCRIPT_PATTERNS ${g4_native_helper_script} test/coreneuron/test_netmove.py
       MODFILE_PATTERNS "test/coreneuron/mod files/netmove.mod"
-      NRNIVMODL_ARGS
-        -nmodl "${CMAKE_BINARY_DIR}/bin/nmodl"
-        -nmodlflags "passes --inline host --c acc --oacc")
+      NRNIVMODL_ARGS -nmodl "${CMAKE_BINARY_DIR}/bin/nmodl" -nmodlflags
+                     "passes --inline host --c acc --oacc")
     nrn_add_test(
       GROUP coreneuron_modtests_native_netmove
       NAME test_netmove_py_gpu_native
@@ -1084,9 +1114,8 @@ if(NRN_ENABLE_PYTHON)
       NAME coreneuron_modtests_native_nmodlrandom
       SCRIPT_PATTERNS ${g4_native_helper_script} test/coreneuron/test_nmodlrandom.py
       MODFILE_PATTERNS "test/coreneuron/mod files/noisychan.mod"
-      NRNIVMODL_ARGS
-        -nmodl "${CMAKE_BINARY_DIR}/bin/nmodl"
-        -nmodlflags "passes --inline host --c acc --oacc")
+      NRNIVMODL_ARGS -nmodl "${CMAKE_BINARY_DIR}/bin/nmodl" -nmodlflags
+                     "passes --inline host --c acc --oacc")
     nrn_add_test(
       GROUP coreneuron_modtests_native_nmodlrandom
       NAME test_nmodlrandom_py_gpu_native
@@ -1099,9 +1128,8 @@ if(NRN_ENABLE_PYTHON)
       NAME coreneuron_modtests_native_units
       SCRIPT_PATTERNS ${g4_native_helper_script} test/coreneuron/test_units.py
       MODFILE_PATTERNS test/pytest_coreneuron/unitstest.mod
-      NRNIVMODL_ARGS
-        -nmodl "${CMAKE_BINARY_DIR}/bin/nmodl"
-        -nmodlflags "passes --inline host --c acc --oacc")
+      NRNIVMODL_ARGS -nmodl "${CMAKE_BINARY_DIR}/bin/nmodl" -nmodlflags
+                     "passes --inline host --c acc --oacc")
     nrn_add_test(
       GROUP coreneuron_modtests_native_units
       NAME test_units_py_gpu_native
@@ -1109,35 +1137,29 @@ if(NRN_ENABLE_PYTHON)
       SCRIPT_PATTERNS ${g4_native_helper_script} test/coreneuron/test_units.py
       ENVIRONMENT ${native_gpu_test_env} ${sonata_zero_gid_env} ${nrnpython_mpi_env}
       COMMAND ${native_modtests_launch_py} test/coreneuron/test_units.py)
-    # test_ba: host BEFORE/AFTER mechs (bacur/banocur) are Gate B/C-exempt so
-    # native qualifies without ACC hoc_reg_ba; BA RANGE stays host-side.
-    # ACC green/red for array RANGE transfer product row.
+    # test_ba: host BEFORE/AFTER mechs (bacur/banocur) are Gate B/C-exempt so native qualifies
+    # without ACC hoc_reg_ba; BA RANGE stays host-side. ACC green/red for array RANGE transfer
+    # product row.
     nrn_add_test_group(
       NAME coreneuron_modtests_native_array_transfer
-      SCRIPT_PATTERNS ${g4_native_helper_script}
-                      test/coreneuron/test_array_variables_transfer.py
-      MODFILE_PATTERNS
-        "test/coreneuron/mod files/green.mod" "test/coreneuron/mod files/red.mod"
-      NRNIVMODL_ARGS
-        -nmodl "${CMAKE_BINARY_DIR}/bin/nmodl"
-        -nmodlflags "passes --inline host --c acc --oacc")
+      SCRIPT_PATTERNS ${g4_native_helper_script} test/coreneuron/test_array_variables_transfer.py
+      MODFILE_PATTERNS "test/coreneuron/mod files/green.mod" "test/coreneuron/mod files/red.mod"
+      NRNIVMODL_ARGS -nmodl "${CMAKE_BINARY_DIR}/bin/nmodl" -nmodlflags
+                     "passes --inline host --c acc --oacc")
     foreach(run_mode RANGE 2)
       nrn_add_test(
         GROUP coreneuron_modtests_native_array_transfer
         NAME array_variable_transfer_run_mode_${run_mode}_py_gpu_native
         REQUIRES gpu
-        SCRIPT_PATTERNS ${g4_native_helper_script}
-                        test/coreneuron/test_array_variables_transfer.py
-        ENVIRONMENT ${native_gpu_test_env} NRN_TEST_RUN_MODE=${run_mode}
-                    NRN_TEST_FILE_MODE=false
+        SCRIPT_PATTERNS ${g4_native_helper_script} test/coreneuron/test_array_variables_transfer.py
+        ENVIRONMENT ${native_gpu_test_env} NRN_TEST_RUN_MODE=${run_mode} NRN_TEST_FILE_MODE=false
         COMMAND ${native_modtests_launch_py} test/coreneuron/test_array_variables_transfer.py)
     endforeach()
     nrn_add_test(
       GROUP coreneuron_modtests_native_array_transfer
       NAME array_variable_transfer_file_mode_py_gpu_native
       REQUIRES gpu
-      SCRIPT_PATTERNS ${g4_native_helper_script}
-                      test/coreneuron/test_array_variables_transfer.py
+      SCRIPT_PATTERNS ${g4_native_helper_script} test/coreneuron/test_array_variables_transfer.py
       ENVIRONMENT ${native_gpu_test_env} NRN_TEST_RUN_MODE=0 NRN_TEST_FILE_MODE=true
       COMMAND ${native_modtests_launch_py} test/coreneuron/test_array_variables_transfer.py)
     nrn_add_test(

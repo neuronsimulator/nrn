@@ -271,7 +271,8 @@ void zero_matrix_rhs_on_device(NrnThread& nt, int begin, int end) noexcept {
     }
     phase_timer::Scope const timer{phase_timer::Id::matrix_sync};
     auto* const vec_rhs = nt.node_rhs_storage();
-    nrn_pragma_acc(parallel loop present(vec_rhs [begin:end]) if (nt.compute_gpu) async(nt.stream_id))
+    nrn_pragma_acc(parallel loop present(vec_rhs [begin:end]) if (nt.compute_gpu)
+                       async(nt.stream_id))
     nrn_pragma_omp(target teams distribute parallel for if(nt.compute_gpu))
     for (int i = begin; i < end; ++i) {
         vec_rhs[i] = 0.;
@@ -331,8 +332,9 @@ void transform_sav_rhs_membrane_only_on_device(NrnThread& nt, int begin, int end
     if (!vec_sav_rhs) {
         return;
     }
-    nrn_pragma_acc(parallel loop present(vec_rhs [begin:end], vec_sav_rhs [begin:end]) if (
-                       nt.compute_gpu) async(nt.stream_id))
+    nrn_pragma_acc(
+        parallel loop present(vec_rhs [begin:end], vec_sav_rhs [begin:end]) if (nt.compute_gpu)
+            async(nt.stream_id))
     nrn_pragma_omp(target teams distribute parallel for if(nt.compute_gpu))
     for (int i = begin; i < end; ++i) {
         vec_sav_rhs[i] -= vec_rhs[i];
@@ -355,8 +357,9 @@ void transform_sav_d_membrane_only_on_device(NrnThread& nt, int begin, int end) 
     if (!vec_sav_d) {
         return;
     }
-    nrn_pragma_acc(parallel loop present(vec_d [begin:end], vec_sav_d [begin:end]) if (
-                       nt.compute_gpu) async(nt.stream_id))
+    nrn_pragma_acc(
+        parallel loop present(vec_d [begin:end], vec_sav_d [begin:end]) if (nt.compute_gpu)
+            async(nt.stream_id))
     nrn_pragma_omp(target teams distribute parallel for if(nt.compute_gpu))
     for (int i = begin; i < end; ++i) {
         vec_sav_d[i] = vec_d[i] - vec_sav_d[i];
@@ -569,12 +572,7 @@ void matrix_probe_maybe(NrnThread& nt, char const* tag) noexcept {
                  nt.ncell,
                  nt.end);
     for (int i = 0; i < nshow; ++i) {
-        std::fprintf(stderr,
-                     " |i=%d d=%.17g rhs=%.17g v=%.17g",
-                     i,
-                     vec_d[i],
-                     vec_rhs[i],
-                     vec_v[i]);
+        std::fprintf(stderr, " |i=%d d=%.17g rhs=%.17g v=%.17g", i, vec_d[i], vec_rhs[i], vec_v[i]);
     }
     std::fprintf(stderr, "\n");
 #else

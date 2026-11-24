@@ -36,8 +36,8 @@ double ion_nernst_on_device(double ci, double co, double z, double celsius_val) 
     if (co <= 0.) {
         return -1e6;
     }
-    auto const ktf_val =
-        1000. * _gasconstant_codata2018 * (celsius_val + 273.15) / _faraday_codata2018;
+    auto const ktf_val = 1000. * _gasconstant_codata2018 * (celsius_val + 273.15) /
+                         _faraday_codata2018;
     return ktf_val / z * std::log(co / ci);
 }
 

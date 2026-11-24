@@ -102,39 +102,79 @@ $Id: __init__.py,v 1.1 2008/05/26 11:39:44 hines Exp hines $
 
 import sys
 import os
+import sysconfig
 import warnings
 import weakref
 
 embedded = "hoc" in sys.modules
 
-# First, check that the compiled extension (neuron.hoc) was built for this version of
-# Python. If not, fail early and helpfully.
 from ._config_params import (
     supported_python_versions,
+    limited_api,
+    python_dynamic,
     mechanism_prefix,
     mechanism_suffix,
 )
 
 current_version = "{}.{}".format(*sys.version_info[:2])
-if current_version not in supported_python_versions:
-    message = (
-        "Python {} is not supported by this NEURON installation (supported: {}). Either re-build "
-        "NEURON with support for this version, use a supported version of Python, or try using "
-        "nrniv -python so that NEURON can suggest a compatible version for you."
-    ).format(current_version, " ".join(supported_python_versions))
-    raise ImportError(message)
-
-try:  # needed since python 3.8 on windows if python launched
-    # do this here as NEURONHOME may be changed below
-    nrnbindir = os.path.abspath(os.environ["NEURONHOME"] + "/bin")
-    os.add_dll_directory(nrnbindir)
-except:
-    pass
+if sys.implementation.name != "cpython":
+    raise ImportError(
+        "This NEURON installation supports CPython only (this interpreter is {}).".format(
+            sys.implementation.name
+        )
+    )
+# Cross-version import is safe only when libnrniv is not linked to one libpython.
+if limited_api and python_dynamic:
+    if sys.version_info[0] != 3 or sys.version_info[1] < 12:
+        raise ImportError(
+            "Python {} is not supported by this NEURON installation (requires CPython 3.12 "
+            "or a newer 3.x minor, with the GIL).".format(current_version)
+        )
+elif current_version not in supported_python_versions:
+    raise ImportError(
+        "Python {} is not supported by this NEURON installation (supported: {}). "
+        "Either re-build NEURON with support for this version, use a supported version "
+        "of Python, or try using nrniv -python so that NEURON can suggest a compatible "
+        "version for you.".format(current_version, " ".join(supported_python_versions))
+    )
+# Py_GIL_DISABLED is the interpreter build. 1 and "1" are free-threaded.
+# 0, "0", and None are a GIL build: the string "0" is truthy. Enabling the
+# GIL at runtime does not make a free-threaded build acceptable.
+if sysconfig.get_config_var("Py_GIL_DISABLED") in (1, "1"):
+    raise ImportError(
+        "This NEURON installation does not support a free-threaded CPython build "
+        "(Py_GIL_DISABLED)."
+    )
 
 # With pip we need to rewrite the NEURONHOME
 nrn_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".data/share/nrn"))
 if os.path.isdir(nrn_path):
     os.environ["NEURONHOME"] = nrn_path
+
+# Python 3.8+ on Windows does not search PATH for DLL dependencies of a .pyd
+# (https://docs.python.org/3/library/os.html#os.add_dll_directory). hoc.pyd
+# needs nrniv.dll from the wheel .data/bin, cmake prefix/bin, or setup.exe
+# NEURONHOME/bin. Must run before `from . import hoc`.
+# Keep the cookies: discarding the return value calls RemoveDllDirectory.
+_nt_dll_dir_handles = []
+if os.name == "nt" and hasattr(os, "add_dll_directory"):
+    _dll_dirs = [
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), ".data", "bin"),
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), ".data", "lib"),
+    ]
+    _home = os.environ.get("NEURONHOME")
+    if _home:
+        _dll_dirs.append(os.path.join(os.path.abspath(_home), "bin"))
+        _dll_dirs.append(os.path.abspath(os.path.join(_home, "..", "..", "bin")))
+    _seen = set()
+    for _dll_dir in _dll_dirs:
+        _dll_dir = os.path.normpath(_dll_dir)
+        if _dll_dir in _seen or not os.path.isdir(_dll_dir):
+            continue
+        _seen.add(_dll_dir)
+        _nt_dll_dir_handles.append(os.add_dll_directory(_dll_dir))
+        os.environ["PATH"] = _dll_dir + os.pathsep + os.environ.get("PATH", "")
+    del _dll_dirs, _home, _seen, _dll_dir
 
 # On OSX, dlopen might fail if not using full library path
 try:
@@ -162,6 +202,91 @@ import _neuron_section
 
 # we keep the old h as before with the old repr and type
 h = hoc.HocObject()
+
+# Python 3.13+'s pyrepl (UnixConsole.prepare) clears OPOST, so the kernel
+# no longer maps NL to CRNL. GUI callbacks run on a background thread
+# while that mode is in effect, and print() then moves down without
+# returning to column 0 (CPython #129385). Emulate ONLCR only when the
+# kernel is not already doing it; never rewrite piped/MPI stdout.
+# WeakSet, not id(): a closed stream's id can be reused by the next pty.
+_raw_tty_newline_patched = weakref.WeakSet()
+
+
+def _kernel_maps_nl_to_crnl(fd):
+    """True if this tty will translate NL to CRNL on output."""
+    try:
+        import termios
+
+        oflag = termios.tcgetattr(fd)[1]
+        if not (oflag & termios.OPOST):
+            return False
+        onlcr = getattr(termios, "ONLCR", 0)
+        return bool(not onlcr or (oflag & onlcr))
+    except Exception:
+        return True
+
+
+def _with_explicit_cr(text):
+    if not text or "\n" not in text:
+        return text
+    return text.replace("\r\n", "\n").replace("\n", "\r\n")
+
+
+def _can_track_stream(stream):
+    """True when the stream can live in the WeakSet.
+
+    Membership hashes the stream and weakref.ref requires a slot for it.
+    A custom stream that defines __eq__ without __hash__, or a slots object
+    with no __weakref__, cannot be tracked. Leave it unpatched: wrapping
+    write without remembering the stream would wrap it again on the next call.
+    """
+    try:
+        hash(stream)
+        weakref.ref(stream)
+    except TypeError:
+        return False
+    return True
+
+
+def install_raw_tty_newline_fix(streams=None):
+    """Make print() return to column 0 when the tty is in pyrepl/raw mode.
+
+    Safe to call more than once. Other GUIs that print from a background
+    thread (for example neurongui) can call this instead of wrapping
+    sys.stdout themselves.
+    """
+    if streams is None:
+        streams = (sys.stdout, sys.stderr)
+    for stream in streams:
+        if not _can_track_stream(stream):
+            continue
+        try:
+            if stream in _raw_tty_newline_patched:
+                continue
+        except TypeError:
+            continue
+        try:
+            fd = stream.fileno()
+        except Exception:
+            continue
+        orig_write = stream.write
+
+        def write(s, _fd=fd, _orig=orig_write):
+            if s and "\n" in s and not _kernel_maps_nl_to_crnl(_fd):
+                s = _with_explicit_cr(s)
+            return _orig(s)
+
+        try:
+            stream.write = write
+        except Exception:
+            continue
+        try:
+            _raw_tty_newline_patched.add(stream)
+        except TypeError:
+            try:
+                stream.write = orig_write
+            except Exception:
+                pass
 
 
 class _NEURON_INTERFACE(hoc.HocObject):
@@ -405,10 +530,13 @@ def load_mechanisms(path: str, warn_if_already_loaded: bool = True) -> bool:
 
 
 if "NRN_NMODL_PATH" in os.environ:
-    nrn_nmodl_path = os.environ["NRN_NMODL_PATH"].split(":")
+    # os.pathsep is ':' on Unix and ';' on Windows (':' is a drive letter).
+    nrn_nmodl_path = os.environ["NRN_NMODL_PATH"].split(os.pathsep)
     print("Auto-loading mechanisms:")
     print(f"NRN_NMODL_PATH={os.environ['NRN_NMODL_PATH']}")
     for x in nrn_nmodl_path:
+        if not x:
+            continue
         # print(f"from path {x}:")
         load_mechanisms(x)
         # print "\n"
@@ -555,36 +683,99 @@ def nrn_dll_sym(name, type=None):
 nt_dlls = []
 
 
+def _nt_neuron_dll_dirs():
+    """Directories that may contain nrniv.dll / nrnpython*.dll on Windows."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    dirs = [
+        os.path.join(here, ".data", "bin"),
+        os.path.join(here, ".data", "lib"),
+        here,
+    ]
+    home = os.environ.get("NEURONHOME")
+    if home:
+        home = os.path.abspath(home)
+        dirs.append(os.path.join(home, "bin"))
+        dirs.append(os.path.abspath(os.path.join(home, "..", "..", "bin")))
+    try:
+        nh = n.neuronhome().replace("/", os.sep)
+        dirs.append(os.path.join(nh, "bin"))
+        dirs.append(os.path.abspath(os.path.join(nh, "..", "..", "bin")))
+    except Exception:
+        pass
+    out = []
+    seen = set()
+    for d in dirs:
+        d = os.path.normpath(d)
+        if d not in seen and os.path.isdir(d):
+            seen.add(d)
+            out.append(d)
+    return out
+
+
 def nrn_dll_sym_nt(name, type):
     """return the specified object from the NEURON dlls.
-    helper for nrn_dll_sym(name, type). Try to find the name in either
-    nrniv.dll or libnrnpython1013.dll
+    helper for nrn_dll_sym(name, type).
+
+    Windows GetProcAddress does not search a module's dependents (Unix dlsym
+    does). ctypes of a basename also skips PATH (Python 3.8+). Load nrniv /
+    nrnpython from the wheel .data/bin (or setup.exe NEURONHOME/bin) by full
+    path. MSVC names are nrniv.dll and nrnpython.abi3.dll or nrnpythonX.Y.dll.
+    MinGW names are libnrniv.dll and libnrnpython.abi3.dll or libnrnpythonX.Y.dll.
+
+    Use PyDLL, not CDLL. Unix nrn_dll() is ctypes.pydll (GIL held). CDLL
+    releases the GIL; nrn_hocobj_ptr creates a Python object and must not
+    run without it.
     """
     global nt_dlls
     import ctypes
+    import glob
 
     if len(nt_dlls) == 0:
-        b = "bin"
-        path = os.path.join(n.neuronhome().replace("/", "\\"), b)
-        for dllname in [
+        pyver = "{}.{}".format(*sys.version_info[:2])
+        pyver_nodot = "{}{}".format(*sys.version_info[:2])
+        names = [
+            "nrniv.dll",
             "libnrniv.dll",
-            "libnrnpython{}.{}.dll".format(*sys.version_info[:2]),
-        ]:
-            p = os.path.join(path, dllname)
+            "nrnpython.abi3.dll",
+            "libnrnpython.abi3.dll",
+            "nrnpython{}.dll".format(pyver),
+            "nrnpython{}.dll".format(pyver_nodot),
+            "libnrnpython{}.dll".format(pyver),
+            "libnrnpython{}.dll".format(pyver_nodot),
+        ]
+        loaded = set()
+
+        def _try_load(path_or_name):
+            key = os.path.normcase(os.path.normpath(path_or_name))
+            if key in loaded:
+                return
             try:
-                nt_dlls.append(ctypes.cdll[p])
-            except:
+                nt_dlls.append(ctypes.PyDLL(path_or_name))
+                loaded.add(key)
+            except OSError:
                 pass
+
+        for dllname in names:
+            _try_load(dllname)
+        for d in _nt_neuron_dll_dirs():
+            for dllname in names:
+                p = os.path.join(d, dllname)
+                if os.path.isfile(p):
+                    _try_load(p)
+            for p in glob.glob(os.path.join(d, "*nrnpython*.dll")):
+                _try_load(p)
+            for p in glob.glob(os.path.join(d, "*nrniv*.dll")):
+                _try_load(p)
     for dll in nt_dlls:
+        if type is None:
+            try:
+                return dll.__getattr__(name)
+            except AttributeError:
+                continue
         try:
-            a = dll.__getattr__(name)
-        except:
-            a = None
-        if a:
-            if type is None:
-                return a
-            else:
-                return type.in_dll(dll, name)
+            return type.in_dll(dll, name)
+        except (ValueError, AttributeError):
+            continue
     raise Exception("unable to connect to the NEURON library containing " + name)
 
 
@@ -1662,16 +1853,16 @@ def _nrnpy_rvp_pyobj_callback(f):
 try:
     nrnpy_vec_math_register = nrn_dll_sym("nrnpy_vec_math_register")
     nrnpy_vec_math_register(ctypes.py_object(nrnpy_vec_math))
-except:
-    print("Failed to setup nrnpy_vec_math")
+except Exception as e:
+    print("Failed to setup nrnpy_vec_math:", type(e).__name__, e)
 
 try:
     _nrnpy_rvp_pyobj_callback_register = nrn_dll_sym(
         "nrnpy_rvp_pyobj_callback_register"
     )
     _nrnpy_rvp_pyobj_callback_register(ctypes.py_object(_nrnpy_rvp_pyobj_callback))
-except:
-    print("Failed to setup _nrnpy_rvp_pyobj_callback")
+except Exception as e:
+    print("Failed to setup _nrnpy_rvp_pyobj_callback:", type(e).__name__, e)
 
 try:
     from neuron.psection import psection

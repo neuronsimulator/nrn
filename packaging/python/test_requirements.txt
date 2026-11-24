@@ -1,6 +1,6 @@
-pytest<=8.4.0
+pytest<=9.1.1
 # for coverage
-pytest-cov<=6.0.0
+pytest-cov<=7.1.0
 # for RXD test
-plotly<=6.0.0
-anywidget<=0.9.13
+plotly<=7.1.0
+anywidget<=0.11.0

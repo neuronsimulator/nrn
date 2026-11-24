@@ -156,7 +156,8 @@ The ``nrnmech`` library will then be available under ``build``, and can be loade
 
 #]=======================================================================]
 
-function(create_nrnmech)
+# Keyword lists for create_nrnmech. A macro so PARSE_ARGV sees the caller's arguments.
+macro(_nrn_mech_arg_specs)
   set(options NEURON CORENEURON SPECIAL NMODL_NEURON_CODEGEN)
   set(oneValueArgs
       MECHANISM_NAME
@@ -167,9 +168,89 @@ function(create_nrnmech)
       ARTIFACTS_OUTPUT_DIR
       LIBRARY_TYPE
       NOCMODL_EXECUTABLE
-      NMODL_EXECUTABLE)
+      NMODL_EXECUTABLE
+      INCFLAGS
+      LDFLAGS)
   set(multiValueArgs MOD_FILES NMODL_NEURON_EXTRA_ARGS NMODL_CORENEURON_EXTRA_ARGS EXTRA_ENV)
-  cmake_parse_arguments(NRN_MECH "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+endmacro()
+
+# One -incflags or -loadflags string. Spaces separate flags. A semicolon is part of a flag, not a
+# CMake list separator. Windows \ is a path character (CommandLineToArgvW). Elsewhere \ is a Unix
+# shell escape, matching the old SHELL: prefix.
+#
+# CMake drops a repeated COMPILE_OPTIONS / LINK_OPTIONS word, so separate tokens "-I" "a" "-I" "b"
+# become "-I a b". An option that takes the next word stays with that word. -I/-L/-D/-l and /I
+# accept the attached form (-Idir). -framework and -Xlinker stay two words via SHELL:, one property
+# per pair, so the option word is not compared by itself.
+function(nrn_mech_add_user_cli target property raw platform)
+  if(raw STREQUAL "")
+    return()
+  endif()
+  if(platform STREQUAL "WINDOWS")
+    separate_arguments(_nrn_cli WINDOWS_COMMAND "${raw}")
+  else()
+    separate_arguments(_nrn_cli UNIX_COMMAND "${raw}")
+  endif()
+  set(_nrn_attached
+      -I
+      -L
+      -l
+      -D
+      -U
+      -F
+      -B
+      -isystem
+      -idirafter
+      -iquote
+      -include
+      -imacros
+      -isysroot
+      -iframework
+      /I
+      /D
+      /U)
+  set(_nrn_paired -framework -Xlinker -Xassembler -Xpreprocessor -Xclang)
+  list(LENGTH _nrn_cli _nrn_n)
+  set(_nrn_i 0)
+  while(_nrn_i LESS _nrn_n)
+    list(GET _nrn_cli ${_nrn_i} _nrn_item)
+    math(EXPR _nrn_next "${_nrn_i} + 1")
+    set(_nrn_group "${_nrn_item}")
+    if(_nrn_next LESS _nrn_n AND (_nrn_item IN_LIST _nrn_attached OR _nrn_item IN_LIST _nrn_paired))
+      list(GET _nrn_cli ${_nrn_next} _nrn_val)
+      if(_nrn_item IN_LIST _nrn_attached)
+        set(_nrn_group "${_nrn_item}${_nrn_val}")
+      else()
+        set(_nrn_group "SHELL:${_nrn_item} \"${_nrn_val}\"")
+      endif()
+      set(_nrn_i ${_nrn_next})
+    endif()
+    # Escaped semicolon: one compile/link argument that itself contains ';'.
+    string(REPLACE ";" "\\;" _nrn_esc "${_nrn_group}")
+    set_property(
+      TARGET ${target}
+      APPEND
+      PROPERTY ${property} "${_nrn_esc}")
+    math(EXPR _nrn_i "${_nrn_i} + 1")
+  endwhile()
+endfunction()
+
+function(create_nrnmech)
+  _nrn_mech_arg_specs()
+  # PARSE_ARGV keeps a semicolon inside INCFLAGS / LDFLAGS. ${ARGN} would split it.
+  cmake_parse_arguments(PARSE_ARGV 0 NRN_MECH "${options}" "${oneValueArgs}" "${multiValueArgs}")
+
+  # Multi-value keywords used to be re-split by unquoted ${ARGN}. Callers pass
+  # NMODL_NEURON_EXTRA_ARGS "${options}" and expect one generator argument per list item. Do not do
+  # this for one-value INCFLAGS / LDFLAGS. Do not return the list through PARENT_SCOPE (a quoted
+  # parent set collapses it back to one value).
+  foreach(_nrn_multi IN ITEMS MOD_FILES NMODL_NEURON_EXTRA_ARGS NMODL_CORENEURON_EXTRA_ARGS
+                              EXTRA_ENV)
+    set(_nrn_joined "${NRN_MECH_${_nrn_multi}}")
+    set(NRN_MECH_${_nrn_multi} ${_nrn_joined})
+  endforeach()
+  unset(_nrn_joined)
+  unset(_nrn_multi)
 
   # The message priority for logging
   set(MESSAGE_PRIORITY "VERBOSE")
@@ -322,11 +403,12 @@ function(create_nrnmech)
           "NMODL_CORENEURON_EXTRA_ARGS | ${NMODL_CORENEURON_EXTRA_ARGS_SPACES}")
 
   # any extra environment variables that need to be passed (for testing purposes only). Because
-  # CMake likes to escape and quote things, we need to do it the roundabout way...
+  # CMake likes to escape and quote things, we need to do it the roundabout way... Visual Studio
+  # custom commands are not a shell: `VAR=value cmd` is not an assignment. cmake -E env is the
+  # portable form (Unix Makefile happens to accept the shell form).
+  set(ENV_COMMAND)
   if(NRN_MECH_EXTRA_ENV)
-    set(ENV_COMMAND "${CMAKE_COMMAND}" -E env ${NRN_MECH_EXTRA_ENV})
-  else()
-    set(ENV_COMMAND)
+    list(APPEND ENV_COMMAND ${NRN_MECH_EXTRA_ENV})
   endif()
 
   message("${MESSAGE_PRIORITY}" "EXTRA_ENV | ${NRN_MECH_EXTRA_ENV}")
@@ -335,6 +417,9 @@ function(create_nrnmech)
   # https://github.com/neuronsimulator/nrn/issues/3470
   if(DEFINED ENV{MODLUNIT})
     list(APPEND ENV_COMMAND "MODLUNIT=$ENV{MODLUNIT}")
+  endif()
+  if(ENV_COMMAND)
+    list(INSERT ENV_COMMAND 0 "${CMAKE_COMMAND}" -E env)
   endif()
 
   # Override the _target_ name, but not the library name. This is useful when we are using this
@@ -397,6 +482,15 @@ function(create_nrnmech)
 
   message("${MESSAGE_PRIORITY}" "MOD_FILES | ${MOD_FILES}")
 
+  # Banner names: Unix nrnivmodl.in prints the path relative to the nrnivmodl cwd. The installed
+  # nrnivmodl CMake project has CMAKE_SOURCE_DIR in the cmake package, not that cwd (wheel
+  # neurondemo showed ../../../../share/nrn/demo/release/cabpump.mod). BINARY_DIR is cwd/<arch>.
+  if(PROJECT_NAME STREQUAL "nrnivmodl")
+    get_filename_component(_nrn_mech_print_base "${CMAKE_BINARY_DIR}" DIRECTORY)
+  else()
+    set(_nrn_mech_print_base "${CMAKE_SOURCE_DIR}")
+  endif()
+
   # We later include the directories where the mod files are in case people add headers in VERBATIM
   # blocks
   set(MOD_DIRECTORIES)
@@ -413,7 +507,7 @@ function(create_nrnmech)
         list(APPEND MOD_DIRECTORIES "${MOD_DIRECTORY}")
       endif()
       set(CPP_FILE "cpp/${MOD_STUB}.cpp")
-      file(RELATIVE_PATH MOD_SHORT "${CMAKE_SOURCE_DIR}" "${MOD_ABSPATH}")
+      file(RELATIVE_PATH MOD_SHORT "${_nrn_mech_print_base}" "${MOD_ABSPATH}")
 
       list(APPEND L_MECH_DECLARE "extern \"C\" void _${MOD_STUB}_reg(void)\;")
       list(APPEND L_MECH_PRINT "fprintf(stderr, \" \\\"${MOD_SHORT}\\\"\")\;")
@@ -435,9 +529,25 @@ function(create_nrnmech)
 
     # add the nrnmech library
     add_library(${TARGET_LIBRARY_NAME} ${LIBRARY_TYPE} ${L_SOURCES})
+    # Windows shared libraries are RUNTIME (.dll) plus ARCHIVE (.lib). Multi-config generators
+    # otherwise append $<CONFIG>, so nrnmech.dll would land in Release/.
     set_target_properties(
-      ${TARGET_LIBRARY_NAME} PROPERTIES OUTPUT_NAME "${LIBNAME}" LIBRARY_OUTPUT_DIRECTORY
-                                                                 "${LIBRARY_OUTPUT_DIR}")
+      ${TARGET_LIBRARY_NAME}
+      PROPERTIES OUTPUT_NAME "${LIBNAME}"
+                 WINDOWS_EXPORT_ALL_SYMBOLS ON
+                 LIBRARY_OUTPUT_DIRECTORY "${LIBRARY_OUTPUT_DIR}"
+                 RUNTIME_OUTPUT_DIRECTORY "${LIBRARY_OUTPUT_DIR}"
+                 ARCHIVE_OUTPUT_DIRECTORY "${LIBRARY_OUTPUT_DIR}")
+    foreach(_nrn_mech_cfg IN ITEMS Release RelWithDebInfo Debug MinSizeRel)
+      string(TOUPPER "${_nrn_mech_cfg}" _nrn_mech_CFG)
+      set_target_properties(
+        ${TARGET_LIBRARY_NAME}
+        PROPERTIES LIBRARY_OUTPUT_DIRECTORY_${_nrn_mech_CFG} "${LIBRARY_OUTPUT_DIR}"
+                   RUNTIME_OUTPUT_DIRECTORY_${_nrn_mech_CFG} "${LIBRARY_OUTPUT_DIR}"
+                   ARCHIVE_OUTPUT_DIRECTORY_${_nrn_mech_CFG} "${LIBRARY_OUTPUT_DIR}")
+    endforeach()
+    unset(_nrn_mech_cfg)
+    unset(_nrn_mech_CFG)
     target_link_libraries(${TARGET_LIBRARY_NAME} PUBLIC neuron::nrniv)
 
     # we need to add the `mech_func.cpp` file as well since it handles registration of mechanisms
@@ -447,11 +557,29 @@ function(create_nrnmech)
     get_filename_component(MECH_REG "${_NEURON_MECH_REG}" NAME_WLE)
     configure_file(${_NEURON_MECH_REG} "${ARTIFACTS_OUTPUT_DIR}/${MECH_REG}" @ONLY)
     target_sources(${TARGET_LIBRARY_NAME} PRIVATE "${ARTIFACTS_OUTPUT_DIR}/${MECH_REG}")
-    target_compile_definitions(${TARGET_LIBRARY_NAME} PUBLIC AUTO_DLOPEN_NRNMECH=0)
+    # Unix nrnmech_makefile compiles with @NRN_COMPILE_DEFS_STRING@ (includes NRN_ENABLE_THREADS).
+    # Without that, nmodlmutex.h leaves PROTECT empty.
+    set(_nrn_mech_compile_defs AUTO_DLOPEN_NRNMECH=0)
+    if(DEFINED NRN_COMPILE_DEFS)
+      list(APPEND _nrn_mech_compile_defs ${NRN_COMPILE_DEFS})
+    elseif(NRN_ENABLE_THREADS)
+      list(APPEND _nrn_mech_compile_defs NRN_ENABLE_THREADS)
+    endif()
+    target_compile_definitions(${TARGET_LIBRARY_NAME} PUBLIC ${_nrn_mech_compile_defs})
     target_include_directories(${TARGET_LIBRARY_NAME} BEFORE PUBLIC ${_NEURON_MAIN_INCLUDE_DIR})
     # sometimes people will add `#include`s in VERBATIM blocks; usually those are in the same
     # directory as the mod file, so let's add that as well
     target_include_directories(${TARGET_LIBRARY_NAME} PRIVATE "${MOD_DIRECTORIES}")
+    if(WIN32)
+      set(_nrn_flag_platform WINDOWS)
+    else()
+      set(_nrn_flag_platform UNIX)
+    endif()
+    nrn_mech_add_user_cli(${TARGET_LIBRARY_NAME} COMPILE_OPTIONS "${NRN_MECH_INCFLAGS}"
+                          ${_nrn_flag_platform})
+    nrn_mech_add_user_cli(${TARGET_LIBRARY_NAME} LINK_OPTIONS "${NRN_MECH_LDFLAGS}"
+                          ${_nrn_flag_platform})
+    unset(_nrn_flag_platform)
 
     # add the special executable
     if(NRN_MECH_SPECIAL)
@@ -463,6 +591,14 @@ function(create_nrnmech)
       set_target_properties(
         ${TARGET_EXECUTABLE_NAME} PROPERTIES OUTPUT_NAME "special" RUNTIME_OUTPUT_DIRECTORY
                                                                    "${EXECUTABLE_OUTPUT_DIR}")
+      foreach(_nrn_mech_cfg IN ITEMS Release RelWithDebInfo Debug MinSizeRel)
+        string(TOUPPER "${_nrn_mech_cfg}" _nrn_mech_CFG)
+        set_target_properties(
+          ${TARGET_EXECUTABLE_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_${_nrn_mech_CFG}
+                                               "${EXECUTABLE_OUTPUT_DIR}")
+      endforeach()
+      unset(_nrn_mech_cfg)
+      unset(_nrn_mech_CFG)
     endif()
 
     # Mirror CoreNEURON GPU link treatment on NEURON libnrnmech/special so dynamically loaded
@@ -520,7 +656,7 @@ function(create_nrnmech)
       # nmodl _may_ have trouble with symlinks, so we always use the real path
       get_filename_component(MOD_ABSPATH "${MOD_FILE}" REALPATH)
       set(CPP_FILE "cpp_core/${MOD_STUB}.cpp")
-      file(RELATIVE_PATH MOD_SHORT "${CMAKE_SOURCE_DIR}" "${MOD_ABSPATH}")
+      file(RELATIVE_PATH MOD_SHORT "${_nrn_mech_print_base}" "${MOD_ABSPATH}")
 
       list(APPEND L_CORE_MECH_DECLARE "extern int _${MOD_STUB}_reg(void)\;")
       list(APPEND L_CORE_MECH_PRINT "fprintf(stderr, \" \\\"${MOD_SHORT}\\\"\")\;")

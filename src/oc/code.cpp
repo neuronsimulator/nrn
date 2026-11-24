@@ -39,7 +39,7 @@ extern void bbs_handle();
 int nrn_isecstack();
 
 extern void debugzz(Inst*);
-HocReturnType hoc_return_type_code = HocReturnType::floating;
+NRN_DLLSYM HocReturnType hoc_return_type_code = HocReturnType::floating;
 
 // array indices on the stack have their own type to help with determining when
 // a compiled fragment of HOC code is processing a variable whose number of
@@ -73,12 +73,12 @@ using StackDatum = std::variant<double,
 static std::vector<StackDatum> stack{};
 
 #define NPROG 50000
-Inst* hoc_prog;               /* the machine */
-Inst* hoc_progp;              /* next free spot for code generation */
-Inst* hoc_pc;                 /* program counter during execution */
-Inst* hoc_progbase;           /* start of current subprogram */
-Inst* hoc_prog_parse_recover; /* start after parse error */
-int hoc_returning;            /* 1 if return stmt seen, 2 if break, 3 if continue */
+NRN_DLLSYM Inst* hoc_prog;               /* the machine */
+NRN_DLLSYM Inst* hoc_progp;              /* next free spot for code generation */
+NRN_DLLSYM Inst* hoc_pc;                 /* program counter during execution */
+NRN_DLLSYM Inst* hoc_progbase;           /* start of current subprogram */
+NRN_DLLSYM Inst* hoc_prog_parse_recover; /* start after parse error */
+int hoc_returning;                       /* 1 if return stmt seen, 2 if break, 3 if continue */
 /* 4 if stop */
 namespace nrn::oc {
 struct frame {             /* proc/func call stack frame */
@@ -304,6 +304,10 @@ int get_legacy_int_type(StackDatum const& entry) {
     }
 }
 }  // namespace
+
+std::size_t hoc_stack_size() {
+    return stack.size();
+}
 
 /** Get the type of the top entry.
  */
@@ -613,8 +617,19 @@ int hoc_ParseExec(int yystart) {
 
     Frame *sframe, *sfp;
     Inst *sprogbase, *sprogp, *spc, *sprog_parse_recover;
-    Symlist* sp_symlist;
     std::size_t sstack{}, sstackp{};
+    // Nested execute errors must not lose the outer statement's parser symbols.
+    // Stack and frame recovery remain owned by the enclosing error boundary.
+    struct SymlistRestore {
+        Symlist* saved{};
+        bool active{false};
+        ~SymlistRestore() {
+            if (active) {
+                hoc_free_list(&hoc_p_symlist);
+                hoc_p_symlist = saved;
+            }
+        }
+    } symlist_guard;
 
     if (yystart) {
         sframe = rframe;
@@ -624,7 +639,8 @@ int hoc_ParseExec(int yystart) {
         spc = pc, sprog_parse_recover = hoc_prog_parse_recover;
         sstackp = stack.size();
         sstack = rstack;
-        sp_symlist = hoc_p_symlist;
+        symlist_guard.saved = hoc_p_symlist;
+        symlist_guard.active = true;
         rframe = fp;
         rstack = stack.size();
         hoc_progbase = hoc_progp;
@@ -658,7 +674,6 @@ int hoc_ParseExec(int yystart) {
         }
         stack.resize(sstackp);
         rstack = sstack;
-        hoc_p_symlist = sp_symlist;
     }
 
     return yret;
@@ -2620,12 +2635,12 @@ Inst* hoc_codeptr(void* vp) {
 
 void hoc_codesym(Symbol* f) {
     hoc_progp->sym = f;
-    IGNORE(codechk());
+    NRN_IGNORE(codechk());
 }
 
 void hoc_codein(Inst* f) {
     hoc_progp->in = f;
-    IGNORE(codechk());
+    NRN_IGNORE(codechk());
 }
 
 void hoc_insertcode(Inst* begin, Inst* end, Pfrv f) {

@@ -165,4 +165,3 @@ void post_solve_on_device(model_sorted_token const& sorted_token, NrnThread& nt)
 }
 
 }  // namespace neuron::gpu
-

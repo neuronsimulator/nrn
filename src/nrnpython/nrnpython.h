@@ -27,8 +27,8 @@
 #define PyInt_AsLong        PyLong_AsLong
 #define PyInt_FromLong      PyLong_FromLong
 
-static_assert(PY_MAJOR_VERSION > 3 || (PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION >= 10),
-              "Python >= 3.10 required");
+static_assert(PY_MAJOR_VERSION > 3 || (PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION >= 11),
+              "Python >= 3.11 required");
 
 extern PyObject* nrnpy_hoc_pop(const char* mes);
 extern int nrnpy_numbercheck(PyObject*);
@@ -70,7 +70,7 @@ enum ObjectType {
 };
 enum IteratorState { Begin, NextNotLast, Last };
 }  // namespace PyHoc
-// Declare methods that are used in different translation units within one libnrnpythonX.Y
+// Declare methods that are used in different translation units within libnrnpython.abi3
 struct Object;
 struct Section;
 PyObject* hocobj_call_arg(int);
@@ -92,7 +92,7 @@ struct Symbol;
 
 bool nrn_chk_data_handle(const neuron::container::data_handle<double>&);
 PyObject* nrn_hocobj_handle(neuron::container::data_handle<double> d);
-extern "C" PyObject* nrn_hocobj_ptr(double*);
+extern "C" NRN_EXPORT PyObject* nrn_hocobj_ptr(double*);
 int nrn_is_hocobj_ptr(PyObject*, neuron::container::data_handle<double>&);
 int nrn_pointer_assign(Prop*, Symbol*, PyObject*);
 neuron::container::generic_data_handle* nrnpy_setpointer_helper(PyObject*, PyObject*);

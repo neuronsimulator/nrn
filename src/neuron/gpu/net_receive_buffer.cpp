@@ -224,8 +224,8 @@ void upload_net_receive_buffer_fields(NetReceiveBuffer_t* nrb, NetReceiveBuffer_
     int* d_pnt_index = nrn_target_copyin(nrb->_pnt_index, static_cast<std::size_t>(nrb->_size));
     nrn_target_memcpy_to_device(&(d_nrb->_pnt_index), &d_pnt_index, 1);
 
-    int* d_weight_index =
-        nrn_target_copyin(nrb->_weight_index, static_cast<std::size_t>(nrb->_size));
+    int* d_weight_index = nrn_target_copyin(nrb->_weight_index,
+                                            static_cast<std::size_t>(nrb->_size));
     nrn_target_memcpy_to_device(&(d_nrb->_weight_index), &d_weight_index, 1);
 
     double* d_nrb_t = nrn_target_copyin(nrb->_nrb_t, static_cast<std::size_t>(nrb->_size));
@@ -434,8 +434,8 @@ int net_receive_buffer_device_cnt(NetReceiveBuffer_t const* host_nrb) {
         return -1;
     }
     int device_cnt = -1;
-    NetReceiveBuffer_t* const d_nrb =
-        static_cast<NetReceiveBuffer_t*>(nrn_target_deviceptr(host_nrb));
+    NetReceiveBuffer_t* const d_nrb = static_cast<NetReceiveBuffer_t*>(
+        nrn_target_deviceptr(host_nrb));
     nrn_pragma_acc(parallel loop copy(device_cnt))
     nrn_pragma_omp(target teams distribute parallel for map(tofrom:device_cnt))
     for (int i = 0; i < 1; ++i) {

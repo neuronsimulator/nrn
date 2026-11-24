@@ -34,21 +34,12 @@ stages:
         vmImage: 'ubuntu-24.04'
       strategy:
         matrix:
-          Python310:
-            python.version: '3.10'
-            python.nodot: '310'
           Python311:
             python.version: '3.11'
             python.nodot: '311'
           Python312:
             python.version: '3.12'
             python.nodot: '312'
-          Python313:
-            python.version: '3.13'
-            python.nodot: '313'
-          Python314:
-            python.version: '3.14'
-            python.nodot: '314'
 
       steps:
 
@@ -102,11 +93,6 @@ stages:
         vmImage: 'macOS-15'
       strategy:
         matrix:
-          Python310:
-            python.version: '3.10'
-            python.nodot: '310'
-            python.org.version: '3.10.11'
-            python.installer.name: 'macos11.pkg'
           Python311:
             python.version: '3.11'
             python.nodot: '311'
@@ -116,16 +102,6 @@ stages:
             python.version: '3.12'
             python.nodot: '312'
             python.org.version: '3.12.0'
-            python.installer.name: 'macos11.pkg'
-          Python313:
-            python.version: '3.13'
-            python.nodot: '313'
-            python.org.version: '3.13.0'
-            python.installer.name: 'macos11.pkg'
-          Python314:
-            python.version: '3.14'
-            python.nodot: '314'
-            python.org.version: '3.14.0'
             python.installer.name: 'macos11.pkg'
 
       steps:
@@ -155,17 +131,16 @@ stages:
           brew uninstall --ignore-dependencies libomp || echo "libomp doesn't exist"
         displayName: 'Install OSX System Dependencies'
 
-      # readline has been manually built with ncurses and MACOSX_DEPLOYMENT_TARGET=10.9 and stored as secure file on Azure.
-      # See `packaging/python/Dockerfile` for build instructions.
-      #
-      # Secure files documentation:
-      #   https://docs.microsoft.com/en-us/azure/devops/pipelines/library/secure-files?view=azure-devops
-      #   NOTE: when uploading new secure files, access must be permitted from the Azure pipeline interface (check message there)
-      - task: DownloadSecureFile@1
-        name: readlineSF
-        displayName: 'Download readline secure file'
-        inputs:
-          secureFile: 'readline7.0-ncurses6.4.tar.gz'
+      # Static ncurses for libedit, same script as the GitHub Actions macOS wheel
+      # job. Extracting readline7.0-ncurses6.4.tar.gz left find_library with no
+      # libncurses.a under /opt/nrnwheel/<arch>/ncurses/lib. Backticks, not
+      # $(uname): Azure expands $(...) as a pipeline macro before bash runs.
+      - script: |
+          set -eux
+          arch=`uname -m`
+          sudo mkdir -p /opt/nrnwheel/$arch
+          sudo bash packaging/python/build_static_ncurses_osx.bash
+        displayName: 'Build static ncurses'
 
       - script: |
           python3 -m pip install tomli tomli-w
@@ -185,8 +160,6 @@ stages:
           if [ "$BUILD_REASON" = "Manual" ] || [ "$BUILD_REASON" = "Schedule" ]; then
             export NRN_RX3D_OPT_LEVEL=1
           fi
-          sudo mkdir -p /opt/nrnwheel/$(uname -m)
-          sudo tar -zxf $(readlineSF.secureFilePath) --directory /opt/nrnwheel/$(uname -m)
           packaging/python/build_wheels.bash osx $(python.nodot)
         displayName: 'Build MacOS Wheel'
 

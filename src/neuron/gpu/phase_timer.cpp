@@ -141,7 +141,8 @@ void add(Id id, double seconds) noexcept {
         return;
     }
     double prev = g_seconds[index].load(std::memory_order_relaxed);
-    while (!g_seconds[index].compare_exchange_weak(prev, prev + seconds, std::memory_order_relaxed)) {
+    while (
+        !g_seconds[index].compare_exchange_weak(prev, prev + seconds, std::memory_order_relaxed)) {
     }
 }
 
@@ -176,8 +177,7 @@ void print_summary(FILE* out) noexcept {
                      phase_name(static_cast<Id>(i)),
                      sec,
                      pct,
-                     static_cast<unsigned long long>(
-                         g_calls[i].load(std::memory_order_relaxed)));
+                     static_cast<unsigned long long>(g_calls[i].load(std::memory_order_relaxed)));
     }
     std::fprintf(out, "  %-20s %12.6f\n", "tracked-total", total);
 }

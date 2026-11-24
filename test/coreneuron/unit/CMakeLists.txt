@@ -25,6 +25,7 @@ if(CORENRN_ENABLE_UNIT_TESTS)
   add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/solver)
   add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/random)
   add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/mech_mapping)
+  add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/report_parser)
   # lfp test uses nrnmpi_* wrappers but does not load the dynamic MPI library TODO: re-enable after
   # NEURON and CoreNEURON dynamic MPI are merged
   if(NOT NRN_ENABLE_MPI_DYNAMIC)

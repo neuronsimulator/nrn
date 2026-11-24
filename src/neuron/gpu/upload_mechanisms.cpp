@@ -145,8 +145,8 @@ void upload_mechanism_pdata(Memb_list* ml, int type, Memb_list* d_ml, UploadStat
         host_row_ptr_table[static_cast<std::size_t>(i)] = d_row;
     }
 
-    Datum** const d_pdata_rows =
-        nrn_target_copyin(host_row_ptr_table, static_cast<std::size_t>(padded_n));
+    Datum** const d_pdata_rows = nrn_target_copyin(host_row_ptr_table,
+                                                   static_cast<std::size_t>(padded_n));
     state.record_cpu_owned(host_row_ptr_table, static_cast<std::size_t>(padded_n), sizeof(Datum*));
     nrn_target_memcpy_to_device(&(d_ml->pdata), &d_pdata_rows, 1);
 }
@@ -212,8 +212,8 @@ void upload_mechanism_pointer_tables(model_sorted_token& sorted, UploadState& st
         }
         auto& mech = cache.mechanism[type];
 
-        double* const* const host_data_ptrs =
-            mechanism::get_data_ptrs<double>(static_cast<int>(type));
+        double* const* const host_data_ptrs = mechanism::get_data_ptrs<double>(
+            static_cast<int>(type));
         int const n_fp_fields = mechanism::get_field_count<double>(static_cast<int>(type));
         if (host_data_ptrs && n_fp_fields > 0) {
             auto const n_fields = static_cast<std::size_t>(n_fp_fields);
@@ -251,8 +251,8 @@ void upload_mechanism_pointer_tables(model_sorted_token& sorted, UploadState& st
             for (std::size_t i = 0; i < host_row.size(); ++i) {
                 row_staging[i] = host_row[i] ? nrn_target_deviceptr(host_row[i]) : nullptr;
             }
-            double** const d_row =
-                nrn_target_copyin(row_staging, static_cast<std::size_t>(host_row.size()));
+            double** const d_row = nrn_target_copyin(row_staging,
+                                                     static_cast<std::size_t>(host_row.size()));
             device_bases_staging[field] = d_row;
             state.record_cpu_owned(row_staging, host_row.size(), sizeof(double*));
             any_pdata_field = true;

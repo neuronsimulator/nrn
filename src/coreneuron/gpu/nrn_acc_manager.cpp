@@ -1040,21 +1040,21 @@ void update_net_send_buffer_on_host(NrnThread* nt, NetSendBuffer_t* nsb) {
         std::iota(order.begin(), order.end(), 0);
         std::stable_sort(order.begin(), order.end(), [&](int a, int b) {
             auto const ka = neuron::event_order::net_send_key(nsb->_nsb_t[a],
-                                                             nsb->_sendtype[a],
-                                                             /*tgt_gid*/ -1,
-                                                             /*mech_type*/ -1,
-                                                             nsb->_pnt_index[a],
-                                                             nsb->_nsb_flag[a],
-                                                             nsb->_weight_index[a],
-                                                             a);
+                                                              nsb->_sendtype[a],
+                                                              /*tgt_gid*/ -1,
+                                                              /*mech_type*/ -1,
+                                                              nsb->_pnt_index[a],
+                                                              nsb->_nsb_flag[a],
+                                                              nsb->_weight_index[a],
+                                                              a);
             auto const kb = neuron::event_order::net_send_key(nsb->_nsb_t[b],
-                                                             nsb->_sendtype[b],
-                                                             /*tgt_gid*/ -1,
-                                                             /*mech_type*/ -1,
-                                                             nsb->_pnt_index[b],
-                                                             nsb->_nsb_flag[b],
-                                                             nsb->_weight_index[b],
-                                                             b);
+                                                              nsb->_sendtype[b],
+                                                              /*tgt_gid*/ -1,
+                                                              /*mech_type*/ -1,
+                                                              nsb->_pnt_index[b],
+                                                              nsb->_nsb_flag[b],
+                                                              nsb->_weight_index[b],
+                                                              b);
             return neuron::event_order::less(ka, kb);
         });
         // Apply permutation in place to all parallel arrays.

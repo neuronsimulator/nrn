@@ -5,34 +5,46 @@
 // (3) rates inlined into STATE (4) no 25-arg rates_hh call.
 // Baseline post-H4a/H4b ~131 us TABLE / CN ~19 us.
 
-static void nrn_state_hh(const _nrn_model_sorted_token& _sorted_token, NrnThread* nt, Memb_list* _ml_arg, int _type) {
-        if (nt->compute_gpu && !hh_global_gpu_resident) {
-            (void) nrn_target_copyin(&hh_global, 1);
-            hh_global_gpu_resident = true;
+static void nrn_state_hh(const _nrn_model_sorted_token& _sorted_token,
+                         NrnThread* nt,
+                         Memb_list* _ml_arg,
+                         int _type) {
+    if (nt->compute_gpu && !hh_global_gpu_resident) {
+        (void) nrn_target_copyin(&hh_global, 1);
+        hh_global_gpu_resident = true;
+        hh_global_device_stale = false;
+    }
+    nrn_pragma_acc(data present(nt, _ml_arg, hh_global) if (nt->compute_gpu))
+    {
+        _nrn_mechanism_cache_range _lmc{_sorted_token, *nt, *_ml_arg, _ml_arg->type()};
+        auto inst = make_instance_hh(_ml_arg->get_storage_offset(), &_lmc, nt->compute_gpu);
+        auto node_data = make_node_data_hh(*nt, *_ml_arg, nt->compute_gpu);
+        auto* _thread = _ml_arg->_thread;
+        auto nodecount = _ml_arg->nodecount;
+        double const _nrn_thread_t = nt->_t;
+        (void) _nrn_thread_t;
+        if (nt->compute_gpu && hh_global_gpu_resident && hh_global_device_stale) {
+            nrn_pragma_acc(update device(hh_global))
+            nrn_pragma_omp(target update to(hh_global))
             hh_global_device_stale = false;
         }
-        nrn_pragma_acc(data present(nt, _ml_arg, hh_global) if(nt->compute_gpu))
-        {
-            _nrn_mechanism_cache_range _lmc{_sorted_token, *nt, *_ml_arg, _ml_arg->type()};
-            auto inst = make_instance_hh(_ml_arg->get_storage_offset(), &_lmc, nt->compute_gpu);
-            auto node_data = make_node_data_hh(*nt, *_ml_arg, nt->compute_gpu);
-            auto* _thread = _ml_arg->_thread;
-            auto nodecount = _ml_arg->nodecount;
-            double const _nrn_thread_t = nt->_t;
-            (void) _nrn_thread_t;
-            if (nt->compute_gpu && hh_global_gpu_resident && hh_global_device_stale) {
-                nrn_pragma_acc(update device (hh_global))
-                nrn_pragma_omp(target update to(hh_global))
-                hh_global_device_stale = false;
-            }
-            auto const* nodeindices = node_data.nodeindices;
-            double* _d_voltages = nt->compute_gpu ? static_cast<double*>(acc_deviceptr(const_cast<double*>(node_data.node_voltages))) : const_cast<double*>(node_data.node_voltages);
-            // H4c hand-edit experiment: rates temps on stack; STATE only needs m,h,n SoA.
-            // Do not re-run nmodl on hh.mod or this edit is wiped.
-            double* _present_fp_13 = _lmc.template fpfield_ptr<13>(); /* m */
-            double* _present_fp_14 = _lmc.template fpfield_ptr<14>(); /* h */
-            double* _present_fp_15 = _lmc.template fpfield_ptr<15>(); /* n */
-            nrn_pragma_acc(parallel loop present(_ml_arg, nt, nodeindices, _present_fp_13[:static_cast<std::size_t>(_ml_arg->nodecount) * 1], _present_fp_14[:static_cast<std::size_t>(_ml_arg->nodecount) * 1], _present_fp_15[:static_cast<std::size_t>(_ml_arg->nodecount) * 1], hh_global) deviceptr(_d_voltages) async(nt->stream_id) if(nt->compute_gpu))
+        auto const* nodeindices = node_data.nodeindices;
+        double* _d_voltages = nt->compute_gpu ? static_cast<double*>(acc_deviceptr(
+                                                    const_cast<double*>(node_data.node_voltages)))
+                                              : const_cast<double*>(node_data.node_voltages);
+        // H4c hand-edit experiment: rates temps on stack; STATE only needs m,h,n SoA.
+        // Do not re-run nmodl on hh.mod or this edit is wiped.
+        double* _present_fp_13 = _lmc.template fpfield_ptr<13>(); /* m */
+        double* _present_fp_14 = _lmc.template fpfield_ptr<14>(); /* h */
+        double* _present_fp_15 = _lmc.template fpfield_ptr<15>(); /* n */
+        nrn_pragma_acc(parallel loop present(
+            _ml_arg,
+            nt,
+            nodeindices,
+            _present_fp_13[:static_cast<std::size_t>(_ml_arg->nodecount) * 1], _present_fp_14
+            [:static_cast<std::size_t>(_ml_arg->nodecount) * 1], _present_fp_15
+            [:static_cast<std::size_t>(_ml_arg->nodecount) * 1], hh_global) deviceptr(_d_voltages)
+                           async(nt->stream_id) if (nt->compute_gpu))
             nrn_pragma_omp(target teams distribute parallel for if(nt->compute_gpu))
             for (int id = 0; id < nodecount; id++) {
                 int node_id = nodeindices[id];
@@ -88,12 +100,18 @@ static void nrn_state_hh(const _nrn_model_sorted_token& _sorted_token, NrnThread
                     } else {
                         int i = int(xi);
                         double theta = xi - double(i);
-                        minf = hh_global.t_minf[i] + theta * (hh_global.t_minf[i + 1] - hh_global.t_minf[i]);
-                        mtau = hh_global.t_mtau[i] + theta * (hh_global.t_mtau[i + 1] - hh_global.t_mtau[i]);
-                        hinf = hh_global.t_hinf[i] + theta * (hh_global.t_hinf[i + 1] - hh_global.t_hinf[i]);
-                        htau = hh_global.t_htau[i] + theta * (hh_global.t_htau[i + 1] - hh_global.t_htau[i]);
-                        ninf = hh_global.t_ninf[i] + theta * (hh_global.t_ninf[i + 1] - hh_global.t_ninf[i]);
-                        ntau = hh_global.t_ntau[i] + theta * (hh_global.t_ntau[i + 1] - hh_global.t_ntau[i]);
+                        minf = hh_global.t_minf[i] +
+                               theta * (hh_global.t_minf[i + 1] - hh_global.t_minf[i]);
+                        mtau = hh_global.t_mtau[i] +
+                               theta * (hh_global.t_mtau[i + 1] - hh_global.t_mtau[i]);
+                        hinf = hh_global.t_hinf[i] +
+                               theta * (hh_global.t_hinf[i + 1] - hh_global.t_hinf[i]);
+                        htau = hh_global.t_htau[i] +
+                               theta * (hh_global.t_htau[i + 1] - hh_global.t_htau[i]);
+                        ninf = hh_global.t_ninf[i] +
+                               theta * (hh_global.t_ninf[i + 1] - hh_global.t_ninf[i]);
+                        ntau = hh_global.t_ntau[i] +
+                               theta * (hh_global.t_ntau[i + 1] - hh_global.t_ntau[i]);
                     }
                 }
                 // No SoA store of minf/mtau/... — integrate m,h,n only.
@@ -104,10 +122,8 @@ static void nrn_state_hh(const _nrn_model_sorted_token& _sorted_token, NrnThread
                 _present_fp_14[id] = hinf - (hinf - h) * exp(-nt->_dt / htau);
                 _present_fp_15[id] = ninf - (ninf - n) * exp(-nt->_dt / ntau);
             }
-            if(nt->compute_gpu) {
+            if (nt->compute_gpu) {
                 nrn_pragma_acc(wait(nt->stream_id))
             }
-        }
     }
-
-
+}

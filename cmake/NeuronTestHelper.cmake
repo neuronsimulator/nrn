@@ -320,8 +320,10 @@ function(nrn_add_test_group)
       # pgcudafat object paths from a prior libnrniv link line.
       if(NOT NRN_FOREIGN_MODE)
         list(
-          APPEND nrnivmodl_dependencies
-          "${CMAKE_BINARY_DIR}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}nrniv${CMAKE_SHARED_LIBRARY_SUFFIX}")
+          APPEND
+          nrnivmodl_dependencies
+          "${CMAKE_BINARY_DIR}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}nrniv${CMAKE_SHARED_LIBRARY_SUFFIX}"
+        )
       endif()
       if(NRN_ENABLE_CORENEURON AND NRN_ADD_TEST_GROUP_CORENEURON)
         if(NOT (WIN32 AND NRN_FOREIGN_MODE))
@@ -557,12 +559,12 @@ function(nrn_add_test)
                                  "${NRN_FOREIGN_PATH_PREFIX}")
       list(INSERT test_env 0 "${_nrn_test_path}")
     else()
-      list(TRANSFORM test_env REPLACE "^PATH="
-                                     "PATH=${_nrn_test_mech_dir}${NRN_FOREIGN_ENV_SEP}")
+      list(TRANSFORM test_env REPLACE "^PATH=" "PATH=${_nrn_test_mech_dir}${NRN_FOREIGN_ENV_SEP}")
       # pytest/python3 launches do not search PATH for dlopen(libnrnmech.so).
       if("LD_LIBRARY_PATH" IN_LIST test_env_var_names)
-        list(TRANSFORM test_env REPLACE "^LD_LIBRARY_PATH="
-                                        "LD_LIBRARY_PATH=${_nrn_test_mech_dir}${NRN_FOREIGN_ENV_SEP}")
+        list(TRANSFORM test_env
+             REPLACE "^LD_LIBRARY_PATH="
+                     "LD_LIBRARY_PATH=${_nrn_test_mech_dir}${NRN_FOREIGN_ENV_SEP}")
       else()
         list(APPEND test_env "LD_LIBRARY_PATH=${_nrn_test_mech_dir}")
       endif()
@@ -640,8 +642,8 @@ function(nrn_add_test)
   if(DEFINED NRN_ADD_TEST_PROCESSORS)
     set_tests_properties(${test_names} PROPERTIES PROCESSORS ${NRN_ADD_TEST_PROCESSORS})
   endif()
-  # Serialize GPU device use across the suite. CPU tests remain free to run under
-  # ctest -j; any two tests that REQUIRES gpu wait on the same lock name.
+  # Serialize GPU device use across the suite. CPU tests remain free to run under ctest -j; any two
+  # tests that REQUIRES gpu wait on the same lock name.
   if("gpu" IN_LIST NRN_ADD_TEST_REQUIRES)
     set_tests_properties(${test_names} PROPERTIES RESOURCE_LOCK gpu)
   endif()

@@ -18,13 +18,11 @@ if(EXISTS ${ringtest_patch} AND EXISTS ${ringtest_source_dir}/ringtest.py)
   endif()
 endif()
 
-# Step 1 -- define a group of configurations
-# Native GPU gap needs NMODL OpenACC HalfGap (Gates B/C). ACC host path still
-# works for CPU ringtest configs that share this special.
+# Step 1 -- define a group of configurations Native GPU gap needs NMODL OpenACC HalfGap (Gates B/C).
+# ACC host path still works for CPU ringtest configs that share this special.
 if(NRN_ENABLE_GPU)
-  set(ringtest_nrnivmodl_args
-      -nmodl "${CMAKE_BINARY_DIR}/bin/nmodl" -nmodlflags
-      "passes --inline host --c acc --oacc")
+  set(ringtest_nrnivmodl_args -nmodl "${CMAKE_BINARY_DIR}/bin/nmodl" -nmodlflags
+                              "passes --inline host --c acc --oacc")
 else()
   set(ringtest_nrnivmodl_args)
 endif()
@@ -77,26 +75,21 @@ nrn_add_test(
   COMMAND ${ringtest_python} -tstop 100)
 
 if(NRN_ENABLE_GPU)
-  # Launch via h.nrnmpi_init() (like spikes_mpi native / gap), not special -mpi —
-  # OpenACC multi-process SEGV was observed with -mpi on this stack.
+  # Launch via h.nrnmpi_init() (like spikes_mpi native / gap), not special -mpi — OpenACC
+  # multi-process SEGV was observed with -mpi on this stack.
   set(ringtest_native_gpu_workdir
       ${PROJECT_BINARY_DIR}/test/external_ringtest/neuron_gpu_native_mpi)
   set(ringtest_native_gpu_mpi_script
       ${PROJECT_BINARY_DIR}/test/external_ringtest/neuron_gpu_native_mpi.sh)
-  set(ringtest_native_gpu_mpi_py
-      ${ringtest_native_gpu_workdir}/mpi_ringtest_native.py)
+  set(ringtest_native_gpu_mpi_py ${ringtest_native_gpu_workdir}/mpi_ringtest_native.py)
   file(
     WRITE ${ringtest_native_gpu_mpi_py}
-    "import sys\n"
-    "from neuron import h\n"
-    "h.nrnmpi_init()\n"
-    "sys.argv = ['ringtest.py'] + sys.argv[1:]\n"
-    "import runpy\n"
+    "import sys\n" "from neuron import h\n" "h.nrnmpi_init()\n"
+    "sys.argv = ['ringtest.py'] + sys.argv[1:]\n" "import runpy\n"
     "runpy.run_path('ringtest.py', run_name='__main__')\n")
-  # Multi-rank native product path: ensure CUDA MPS before mpiexec (10× thrash
-  # without MPS when ranks/GPU > 1). ensure_cuda_mps.sh is idempotent / non-fatal.
-  set(ringtest_ensure_cuda_mps
-      ${PROJECT_SOURCE_DIR}/test/external/ensure_cuda_mps.sh)
+  # Multi-rank native product path: ensure CUDA MPS before mpiexec (10× thrash without MPS when
+  # ranks/GPU > 1). ensure_cuda_mps.sh is idempotent / non-fatal.
+  set(ringtest_ensure_cuda_mps ${PROJECT_SOURCE_DIR}/test/external/ensure_cuda_mps.sh)
   file(
     WRITE ${ringtest_native_gpu_mpi_script}
     "#!/bin/bash\n"
@@ -122,11 +115,18 @@ if(NRN_ENABLE_GPU)
     OUTPUT asciispikes::spk2.std)
   configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/prcellstate_native_gpu.sh
-    ${ringtest_native_gpu_workdir}/prcellstate_native_gpu.sh COPYONLY
-    FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ
-                     WORLD_EXECUTE)
-  # Device nonvint is the native default (no separate scaffolding ctest).
-  # S2 product gate: 2-rank gap (same MPI launch shape as non-gap above).
+    ${ringtest_native_gpu_workdir}/prcellstate_native_gpu.sh
+    COPYONLY
+    FILE_PERMISSIONS
+    OWNER_READ
+    OWNER_WRITE
+    OWNER_EXECUTE
+    GROUP_READ
+    GROUP_EXECUTE
+    WORLD_READ
+    WORLD_EXECUTE)
+  # Device nonvint is the native default (no separate scaffolding ctest). S2 product gate: 2-rank
+  # gap (same MPI launch shape as non-gap above).
   set(ringtest_native_gpu_mpi_gap_workdir
       ${PROJECT_BINARY_DIR}/test/external_ringtest/neuron_gpu_native_mpi_gap)
   set(ringtest_native_gpu_mpi_gap_script
@@ -135,11 +135,8 @@ if(NRN_ENABLE_GPU)
       ${ringtest_native_gpu_mpi_gap_workdir}/mpi_ringtest_native_gap.py)
   file(
     WRITE ${ringtest_native_gpu_mpi_gap_py}
-    "import sys\n"
-    "from neuron import h\n"
-    "h.nrnmpi_init()\n"
-    "sys.argv = ['ringtest.py'] + sys.argv[1:]\n"
-    "import runpy\n"
+    "import sys\n" "from neuron import h\n" "h.nrnmpi_init()\n"
+    "sys.argv = ['ringtest.py'] + sys.argv[1:]\n" "import runpy\n"
     "runpy.run_path('ringtest.py', run_name='__main__')\n")
   file(
     WRITE ${ringtest_native_gpu_mpi_gap_script}
@@ -171,18 +168,15 @@ if(NRN_ENABLE_GPU)
   cpp_cc_build_time_copy(INPUT "${ringtest_gap_ref_source}" OUTPUT "${ringtest_gap_ref_build}")
   add_test(
     NAME external_ringtest::compare_neuron_gpu_native_mpi_gap
-    COMMAND
-      ${CMAKE_COMMAND} -E compare_files
-      ${ringtest_native_gpu_mpi_gap_workdir}/spk2.std
-      ${ringtest_gap_ref_build}
+    COMMAND ${CMAKE_COMMAND} -E compare_files ${ringtest_native_gpu_mpi_gap_workdir}/spk2.std
+            ${ringtest_gap_ref_build}
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
-  set_tests_properties(
-    external_ringtest::compare_neuron_gpu_native_mpi_gap
-    PROPERTIES DEPENDS external_ringtest::neuron_gpu_native_mpi_gap)
+  set_tests_properties(external_ringtest::compare_neuron_gpu_native_mpi_gap
+                       PROPERTIES DEPENDS external_ringtest::neuron_gpu_native_mpi_gap)
 
-  # S3 multi-thread gap product gate (1 rank, pc.nthread=2): exact 128 spikes vs
-  # CPU. Locks the old 64-vs-128 "thread-1 silent" residual closed by process-wide
-  # PsolveGpuScope + OpenACC host-API serialization.
+  # S3 multi-thread gap product gate (1 rank, pc.nthread=2): exact 128 spikes vs CPU. Locks the old
+  # 64-vs-128 "thread-1 silent" residual closed by process-wide PsolveGpuScope + OpenACC host-API
+  # serialization.
   set(ringtest_native_gpu_nt2_gap_workdir
       ${PROJECT_BINARY_DIR}/test/external_ringtest/neuron_gpu_native_nt2_gap)
   set(ringtest_native_gpu_nt2_gap_script

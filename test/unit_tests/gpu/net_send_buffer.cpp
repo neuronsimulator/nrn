@@ -28,8 +28,7 @@ TEST_CASE("NetSendBuffer capacity headroom and ensure_for_events", "[gpu][net_se
     // Heavy self-event flush: min_events large → capacity ≥ min_events × headroom.
     int const min_events = 500;
     net_send_buffer_ensure_for_events(ml, min_events);
-    REQUIRE(ml->_net_send_buffer->_size >=
-            min_events * net_send_buffer_sends_per_event_headroom());
+    REQUIRE(ml->_net_send_buffer->_size >= min_events * net_send_buffer_sends_per_event_headroom());
 
     // Adaptive high-water: record_peak grows when tight.
     auto* const nsb = ml->_net_send_buffer;

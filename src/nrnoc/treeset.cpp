@@ -69,9 +69,11 @@ int nrn_use_daspk_ = 0;
 When properties are allocated to nodes or freed, v_structure_change is
 set to 1. This means that the mechanism vectors need to be re-determined.
 */
-int v_structure_change;
-int structure_change_cnt;
-int diam_change_cnt;
+extern "C" {
+NRN_DLLSYM int v_structure_change;
+NRN_DLLSYM int structure_change_cnt;
+NRN_DLLSYM int diam_change_cnt;
+}
 
 extern int section_count;
 extern Section** secorder;
@@ -405,50 +407,50 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
             neuron::gpu::phase_timer::Id::setup_rhs_zero};
         neuron::gpu::phase_timer::bump(neuron::gpu::phase_timer::Id::setup_rhs_zero);
 #endif
-    if (use_sparse13) {
-        int i, neqn;
-        nrn_thread_error("nrn_rhs use_sparse13");
-        neqn = spGetSize(_nt->_sp13mat, 0);
-        for (i = 1; i <= neqn; ++i) {
-            _nt->_sp13_rhs[i] = 0.;
-        }
-        for (i = i1; i < i3; ++i) {
-            NODERHS(_nt->_v_node[i]) = 0.;
-        }
-    }
-#if defined(NRN_ENABLE_GPU)
-    else if (neuron::gpu::matrix_rhs_d_stays_on_device_for_solve(nt) && _nt->compute_gpu) {
-        // CoreNEURON-style: zero rhs and d before CURRENT. Device CURRENT applies
-        // g → vec_d; nrn_lhs then skips per-mech JACOB (setup-lhs density).
-        neuron::gpu::zero_matrix_rhs_on_device(nt, i1, i3);
-        neuron::gpu::zero_matrix_diagonal_on_device(nt, i1, i3);
-    }
-#endif
-    else if (_nt->compute_gpu && i3 > i1) {
-        for (i = i1; i < i3; ++i) {
-            vec_rhs[i] = 0.;
-        }
-    } else {
-        for (i = i1; i < i3; ++i) {
-            vec_rhs[i] = 0.;
-        }
-    }
-    if (vec_sav_rhs) {
-#if defined(NRN_ENABLE_GPU)
-        if (neuron::gpu::matrix_rhs_d_stays_on_device_for_solve(nt) && _nt->compute_gpu) {
-            /* zeroed with vec_rhs in zero_matrix_rhs_on_device */
-        } else
-#endif
-            if (_nt->compute_gpu && i3 > i1) {
+        if (use_sparse13) {
+            int i, neqn;
+            nrn_thread_error("nrn_rhs use_sparse13");
+            neqn = spGetSize(_nt->_sp13mat, 0);
+            for (i = 1; i <= neqn; ++i) {
+                _nt->_sp13_rhs[i] = 0.;
+            }
             for (i = i1; i < i3; ++i) {
-                vec_sav_rhs[i] = 0.;
+                NODERHS(_nt->_v_node[i]) = 0.;
+            }
+        }
+#if defined(NRN_ENABLE_GPU)
+        else if (neuron::gpu::matrix_rhs_d_stays_on_device_for_solve(nt) && _nt->compute_gpu) {
+            // CoreNEURON-style: zero rhs and d before CURRENT. Device CURRENT applies
+            // g → vec_d; nrn_lhs then skips per-mech JACOB (setup-lhs density).
+            neuron::gpu::zero_matrix_rhs_on_device(nt, i1, i3);
+            neuron::gpu::zero_matrix_diagonal_on_device(nt, i1, i3);
+        }
+#endif
+        else if (_nt->compute_gpu && i3 > i1) {
+            for (i = i1; i < i3; ++i) {
+                vec_rhs[i] = 0.;
             }
         } else {
             for (i = i1; i < i3; ++i) {
-                vec_sav_rhs[i] = 0.;
+                vec_rhs[i] = 0.;
             }
         }
-    }
+        if (vec_sav_rhs) {
+#if defined(NRN_ENABLE_GPU)
+            if (neuron::gpu::matrix_rhs_d_stays_on_device_for_solve(nt) && _nt->compute_gpu) {
+                /* zeroed with vec_rhs in zero_matrix_rhs_on_device */
+            } else
+#endif
+                if (_nt->compute_gpu && i3 > i1) {
+                for (i = i1; i < i3; ++i) {
+                    vec_sav_rhs[i] = 0.;
+                }
+            } else {
+                for (i = i1; i < i3; ++i) {
+                    vec_sav_rhs[i] = 0.;
+                }
+            }
+        }
 #if defined(NRN_ENABLE_GPU)
     }
     {
@@ -457,64 +459,64 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
         neuron::gpu::phase_timer::bump(neuron::gpu::phase_timer::Id::setup_rhs_current);
 #endif
 
-    nrn_ba(cache_token, nt, BEFORE_BREAKPOINT);
-    /* note that CAP has no current */
-    for (tml = _nt->tml; tml; tml = tml->next)
-        if (auto const current = memb_func[tml->index].current; current) {
-            std::string mechname("cur-");
-            mechname += memb_func[tml->index].sym->name;
-            if (measure) {
-                w = nrnmpi_wtime();
+        nrn_ba(cache_token, nt, BEFORE_BREAKPOINT);
+        /* note that CAP has no current */
+        for (tml = _nt->tml; tml; tml = tml->next)
+            if (auto const current = memb_func[tml->index].current; current) {
+                std::string mechname("cur-");
+                mechname += memb_func[tml->index].sym->name;
+                if (measure) {
+                    w = nrnmpi_wtime();
+                }
+                nrn::Instrumentor::phase_begin(mechname.c_str());
+                current(cache_token, _nt, tml->ml, tml->index);
+                nrn::Instrumentor::phase_end(mechname.c_str());
+                if (measure) {
+                    nrn_mech_wtime_[tml->index] += nrnmpi_wtime() - w;
+                }
+                if (errno) {
+                    if (nrn_errno_check(tml->index)) {
+                        hoc_warning("errno set during calculation of currents", (char*) 0);
+                    }
+                }
             }
-            nrn::Instrumentor::phase_begin(mechname.c_str());
-            current(cache_token, _nt, tml->ml, tml->index);
-            nrn::Instrumentor::phase_end(mechname.c_str());
-            if (measure) {
-                nrn_mech_wtime_[tml->index] += nrnmpi_wtime() - w;
-            }
-            if (errno) {
-                if (nrn_errno_check(tml->index)) {
-                    hoc_warning("errno set during calculation of currents", (char*) 0);
+        activsynapse_rhs();
+
+        if (vec_sav_rhs) {
+            /* vec_sav_rhs has only the contribution of electrode current
+               here we transform so it only has membrane current contribution
+            */
+#if defined(NRN_ENABLE_GPU)
+            if (neuron::gpu::matrix_rhs_d_stays_on_device_for_solve(nt) && _nt->compute_gpu) {
+                neuron::gpu::transform_sav_rhs_membrane_only_on_device(nt, i1, i3);
+            } else
+#endif
+                if (_nt->compute_gpu && i3 > i1) {
+                for (i = i1; i < i3; ++i) {
+                    vec_sav_rhs[i] -= vec_rhs[i];
+                }
+            } else {
+                for (i = i1; i < i3; ++i) {
+                    vec_sav_rhs[i] -= vec_rhs[i];
                 }
             }
         }
-    activsynapse_rhs();
-
-    if (vec_sav_rhs) {
-        /* vec_sav_rhs has only the contribution of electrode current
-           here we transform so it only has membrane current contribution
-        */
-#if defined(NRN_ENABLE_GPU)
-        if (neuron::gpu::matrix_rhs_d_stays_on_device_for_solve(nt) && _nt->compute_gpu) {
-            neuron::gpu::transform_sav_rhs_membrane_only_on_device(nt, i1, i3);
-        } else
-#endif
-            if (_nt->compute_gpu && i3 > i1) {
-            for (i = i1; i < i3; ++i) {
-                vec_sav_rhs[i] -= vec_rhs[i];
-            }
-        } else {
-            for (i = i1; i < i3; ++i) {
-                vec_sav_rhs[i] -= vec_rhs[i];
-            }
-        }
-    }
 #if EXTRACELLULAR
-    /* Cannot have any axial terms yet so that i(vm) can be calculated from
-    i(vm)+is(vi) and is(vi) which are stored in rhs vector. */
-    nrn_rhs_ext(_nt);
-    /* nrn_rhs_ext has also computed the the internal axial current
-    for those nodes containing the extracellular mechanism
-    */
+        /* Cannot have any axial terms yet so that i(vm) can be calculated from
+        i(vm)+is(vi) and is(vi) which are stored in rhs vector. */
+        nrn_rhs_ext(_nt);
+        /* nrn_rhs_ext has also computed the the internal axial current
+        for those nodes containing the extracellular mechanism
+        */
 #endif
-    if (use_sparse13) {
-        /* must be after nrn_rhs_ext so that whatever is put in
-        nd->_rhs does not get added to nde->rhs */
-        nrndae_rhs(_nt);
-    }
+        if (use_sparse13) {
+            /* must be after nrn_rhs_ext so that whatever is put in
+            nd->_rhs does not get added to nde->rhs */
+            nrndae_rhs(_nt);
+        }
 
-    activstim_rhs();
-    activclamp_rhs();
+        activstim_rhs();
+        activclamp_rhs();
 #if defined(NRN_ENABLE_GPU)
     }
     {
@@ -522,24 +524,21 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
             neuron::gpu::phase_timer::Id::setup_rhs_axial};
         neuron::gpu::phase_timer::bump(neuron::gpu::phase_timer::Id::setup_rhs_axial);
 #endif
-    /* now the internal axial currents.
-    The extracellular mechanism contribution is already done.
-        rhs += ai_j*(vi_j - vi)
-    */
-    auto* const vec_a = nt.node_a_storage();
-    auto* const vec_b = nt.node_b_storage();
-    auto* const vec_v = nt.node_voltage_storage();
-    auto* const parent_i = nt._v_parent_index;
+        /* now the internal axial currents.
+        The extracellular mechanism contribution is already done.
+            rhs += ai_j*(vi_j - vi)
+        */
+        auto* const vec_a = nt.node_a_storage();
+        auto* const vec_b = nt.node_b_storage();
+        auto* const vec_v = nt.node_voltage_storage();
+        auto* const parent_i = nt._v_parent_index;
 #if defined(NRN_ENABLE_GPU)
-    // deviceptr for V: never present(host V) during psolve (avoids host→device V).
-    double* d_v = (_nt->compute_gpu && i3 > i2)
-                      ? static_cast<double*>(acc_deviceptr(vec_v))
-                      : vec_v;
-    nrn_pragma_acc(parallel loop present(vec_rhs [0:i3],
-                                         vec_a [0:i3],
-                                         vec_b [0:i3],
-                                         parent_i [0:i3]) deviceptr(d_v)
-                       if (_nt->compute_gpu && i3 > i2) async(_nt->stream_id))
+        // deviceptr for V: never present(host V) during psolve (avoids host→device V).
+        double* d_v = (_nt->compute_gpu && i3 > i2) ? static_cast<double*>(acc_deviceptr(vec_v))
+                                                    : vec_v;
+        nrn_pragma_acc(
+            parallel loop present(vec_rhs [0:i3], vec_a [0:i3], vec_b [0:i3], parent_i [0:i3])
+                deviceptr(d_v) if (_nt->compute_gpu && i3 > i2) async(_nt->stream_id))
     nrn_pragma_omp(target teams distribute parallel for if(_nt->compute_gpu))
     for (i = i2; i < i3; ++i) {
         auto const pi = parent_i[i];
@@ -604,8 +603,8 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
 #if defined(NRN_ENABLE_GPU)
     // Device Gate-A path: d (+ sav_d) already zeroed at start of nrn_rhs and
     // filled by device CURRENT (g → vec_d). Do not re-zero or re-apply JACOB.
-    const bool device_matrix =
-        neuron::gpu::matrix_rhs_d_stays_on_device_for_solve(nt) && _nt->compute_gpu;
+    const bool device_matrix = neuron::gpu::matrix_rhs_d_stays_on_device_for_solve(nt) &&
+                               _nt->compute_gpu;
     if (device_matrix) {
         /* d / sav_d already prepared in nrn_rhs + CURRENT */
     } else
@@ -642,19 +641,19 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
 #if defined(NRN_ENABLE_GPU)
     if (!device_matrix)
 #endif
-    for (tml = _nt->tml; tml; tml = tml->next)
-        if (auto const jacob = memb_func[tml->index].jacob; jacob) {
-            std::string mechname("cur-");
-            mechname += memb_func[tml->index].sym->name;
-            nrn::Instrumentor::phase_begin(mechname.c_str());
-            jacob(sorted_token, _nt, tml->ml, tml->index);
-            nrn::Instrumentor::phase_end(mechname.c_str());
-            if (errno) {
-                if (nrn_errno_check(tml->index)) {
-                    hoc_warning("errno set during calculation of jacobian", (char*) 0);
+        for (tml = _nt->tml; tml; tml = tml->next)
+            if (auto const jacob = memb_func[tml->index].jacob; jacob) {
+                std::string mechname("cur-");
+                mechname += memb_func[tml->index].sym->name;
+                nrn::Instrumentor::phase_begin(mechname.c_str());
+                jacob(sorted_token, _nt, tml->ml, tml->index);
+                nrn::Instrumentor::phase_end(mechname.c_str());
+                if (errno) {
+                    if (nrn_errno_check(tml->index)) {
+                        hoc_warning("errno set during calculation of jacobian", (char*) 0);
+                    }
                 }
             }
-        }
     /* now the cap current can be computed because any change to cm by another model
     has taken effect
     */
@@ -844,7 +843,7 @@ Prop* need_memb(Symbol* sym) {
 }
 
 
-Node* nrn_alloc_node_; /* needed by models that use area */
+NRN_DLLSYM Node* nrn_alloc_node_; /* needed by models that use area */
 
 Prop* prop_alloc(Prop** pp, int type, Node* nd) {
     /* link in new property at head of list */

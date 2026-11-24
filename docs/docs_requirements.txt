@@ -19,8 +19,8 @@ markupsafe==3.0.3;python_version=="3.14"
 jinja2
 sphinx-design
 sphinx-inline-tabs
-packaging<=24.2,>=22.0
-tenacity<8.4
+packaging>=22.0,<=26.3
+tenacity<9.2
 anywidget
-sphinxcontrib-mermaid<=1.0.0
+sphinxcontrib-mermaid<=2.1.1
 sphinxcontrib-moderncmakedomain<=3.29.0

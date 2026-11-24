@@ -9,14 +9,14 @@ build-backend = "scikit_build_core.build"
 # `build-system.requires` nor `project.dependencies`, so we need to list them
 # here manually. These are all of the dependencies that CMake finds as well.
 requires = [
-  "cython<=3.0.12",
+  "cython>=3.1,<=3.3.0",
   "jinja2>=2.9.3,<=3.1.6",
   "numpy<=2.2.3;python_version<'3.14'",
   "numpy>=2.3.2,<=2.3.3;python_version=='3.14'",
   "pyyaml>=3.13,<=6.0.2;python_version<'3.14'",
   "pyyaml==6.0.3;python_version=='3.14'",
-  "scikit-build-core<=0.11.1",
-  "setuptools-scm<=8.1",
+  "scikit-build-core<=1.1.0",
+  "setuptools-scm<=10.3.4",
 ]
 
 [project]
@@ -35,13 +35,12 @@ authors = [
   { name = "Yale" },
   { name = "Blue Brain Project" },
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 classifiers = [
   "License :: Other/Proprietary License",
   "Programming Language :: C++",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
@@ -61,7 +60,7 @@ dependencies = [
 ]
 
 urls.source = "https://github.com/neuronsimulator/nrn"
-urls.website = "https://neuron.yale.edu/neuron/"
+urls.website = "https://neuronsimulator.org"
 
 [tool.setuptools_scm]
 # Do not add commit info or state of repo (modified content, etc.).
@@ -69,10 +68,24 @@ urls.website = "https://neuron.yale.edu/neuron/"
 # it's a huge pain to modify in the CI because we would need to put an extra
 # setup.py in the repo, which does nothing other than obtaining the version.
 local_scheme = "no-local-version"
+# Default describe --match '*[0-9]*' also matches python-abi3-dev. Azure clones
+# tags, then setuptools-scm cannot parse that prerelease tag.
+git_describe_command = [
+  "git",
+  "describe",
+  "--dirty",
+  "--tags",
+  "--long",
+  "--match",
+  "[0-9]*",
+]
 
 [tool.scikit-build]
 # delegate installation to CMake
 wheel.packages = [  ]
+# Default for CPython 3.12+ (cp312-abi3). The CPython 3.11 cibuildwheel
+# override below clears this so that job is a versioned cp311-cp311 wheel.
+wheel.py-api = "cp312"
 metadata.version.provider = "scikit_build_core.metadata.setuptools_scm"
 # The default, `strip=true`, results in missing symbols on MacOS. For more
 # details, see: https://github.com/neuronsimulator/nrn/issues/3385
@@ -80,8 +93,9 @@ install.strip = false
 build-dir = "build_wheel"
 
 [tool.scikit-build.cmake.define]
-# When building a redistributable wheel for Linux, we pass the readline and
-# ncurses dirs to CMAKE_PREFIX_PATH. For MacOS, we pass the same + X11 dirs.
+# Unix wheels pass the static ncurses prefix (libedit's termcap) here.
+# MacOS also passes the X11 dirs. CMake fetches BSD libedit; do not pass a
+# GNU readline prefix.
 CMAKE_PREFIX_PATH = { env = "CMAKE_PREFIX_PATH" }
 
 NRN_BINARY_DIST_BUILD = { default = "OFF", env = "NRN_BINARY_DIST_BUILD" }
@@ -101,6 +115,8 @@ IV_ENABLE_X11_DYNAMIC = { default = "ON", env = "IV_ENABLE_X11_DYNAMIC" }
 
 # specific options that are hardcoded
 NRN_ENABLE_PYTHON_DYNAMIC = "ON"
+# NRN_ENABLE_ABI3 is not forced here: CMake defaults ON for CPython 3.12+
+# (cp312-abi3 wheel) and OFF for 3.11 (versioned cp311-cp311 wheel).
 NRN_ENABLE_REL_RPATH = "ON"
 NRN_ENABLE_TESTS = "OFF"
 NRN_ENABLE_DOCS = "OFF"
@@ -114,8 +130,11 @@ MUSIC_ROOT = { default = "", env = "MUSIC_ROOT" }
 # Configuration for coreNEURON. For Linux we enable OpenMP.
 CORENRN_ENABLE_OPENMP = { default = "OFF", env = "CORENRN_ENABLE_OPENMP" }
 
-# NMODL bindings are always on for wheels
+# NMODL bindings are always on for wheels. NRN_ENABLE_NMODL stays off, so
+# nrnivmodl remains nocmodl. Windows wheels have CoreNEURON off; this flag
+# is what adds src/nmodl so the abi3 audit can see _nmodl.pyd.
 NMODL_ENABLE_PYTHON_BINDINGS = "ON"
+NRN_ENABLE_NMODL_PYTHON = "ON"
 
 # MPI options
 NRN_ENABLE_MPI = { default = "ON", env = "NRN_ENABLE_MPI" }
@@ -124,13 +143,29 @@ NRN_ENABLE_MPI_DYNAMIC = { default = "ON", env = "NRN_ENABLE_MPI_DYNAMIC" }
 # MPI headers are platform-specific, so we do not set defaults
 NRN_MPI_DYNAMIC = { env = "NRN_MPI_DYNAMIC" }
 
+# Windows has no X11. inherit=append keeps the rest of cmake.define.
+[[tool.scikit-build.overrides]]
+if.platform-system = "win32"
+inherit.cmake.define = "append"
+cmake.define.IV_ENABLE_X11_DYNAMIC = "OFF"
+
 [tool.cibuildwheel]
 # We can specify a custom Docker image when building NEURON
 manylinux-aarch64-image = "docker.io/neuronsimulator/neuron_wheel:manylinux_2_28_aarch64"
 manylinux-x86_64-image = "docker.io/neuronsimulator/neuron_wheel:manylinux_2_28_x86_64"
+# Default `abi3audit --strict` scans every .so, including CLI libpywrapper
+# (nanobind limited-API embed, not an importable module).
+audit-requires = ["abi3audit"]
+audit-command = "python {project}/packaging/python/audit_abi3_wheel.py {abi3_wheel}"
 
-# certain platforms are not supported
-skip = [ "pp*", "cp*t*", "*-win32", "*-manylinux_i686", "*-musllinux_i686", "*-musllinux_x86_64", "*-musllinux_aarch64" ]
+# Product wheels are cp311-cp311 and cp312-abi3. Skip free-threaded, PyPy,
+# older CPython, and 3.13/3.14 versioned builds (those use the abi3 wheel).
+skip = [ "pp*", "cp*t*", "cp36*", "cp37*", "cp38*", "cp39*", "cp310*", "cp313*", "cp314*", "*-win32", "*-manylinux_i686", "*-musllinux_i686", "*-musllinux_x86_64", "*-musllinux_aarch64" ]
+
+# Versioned 3.11 wheel: do not tag as abi3 / do not compile with Py_LIMITED_API.
+[[tool.cibuildwheel.overrides]]
+select = "cp311-*"
+config-settings = { "wheel.py-api" = "" }
 
 [tool.cibuildwheel.linux]
 # since the linux build uses containers (either docker or podman), we need to
@@ -164,3 +199,11 @@ repair-wheel-command = "auditwheel -v repair -w {dest_dir} {wheel} --exclude 'li
 
 [tool.cibuildwheel.macos]
 repair-wheel-command = "delocate-listdeps {wheel} && delocate-wheel -v -w {dest_dir} {wheel}"
+
+# win_amd64 via MSVC (GitHub windows-2022). Not MinGW setup.exe.
+# CoreNEURON stays off. DYNAMIC Python is already ON above so nrniv.exe
+# is not linked to a specific pythonXY.dll. delvewheel vendors extra DLLs
+# that cmake --install did not already place in neuron/.data/bin.
+[tool.cibuildwheel.windows]
+before-build = "pip install delvewheel"
+repair-wheel-command = "delvewheel repair -w {dest_dir} {wheel} --ignore-in-wheel --no-dll msmpi.dll"

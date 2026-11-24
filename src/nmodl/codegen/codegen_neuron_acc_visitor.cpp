@@ -150,9 +150,8 @@ void CodegenNeuronAccVisitor::collect_ast_names(const ast::Ast& node,
     }
 }
 
-void CodegenNeuronAccVisitor::collect_assigned_names(
-    const ast::Ast* node,
-    std::unordered_set<std::string>& names) const {
+void CodegenNeuronAccVisitor::collect_assigned_names(const ast::Ast* node,
+                                                     std::unordered_set<std::string>& names) const {
     if (!node) {
         return;
     }
@@ -324,8 +323,8 @@ std::unordered_set<int> CodegenNeuronAccVisitor::live_float_indices_for_kernel(
         }
     }
 
-    const bool cur_stack =
-        type == BlockType::Equation && current_force_inline_safe() && info.conductances.empty();
+    const bool cur_stack = type == BlockType::Equation && current_force_inline_safe() &&
+                           info.conductances.empty();
 
     std::unordered_set<int> indices;
     for (std::string name: names) {
@@ -481,8 +480,7 @@ bool CodegenNeuronAccVisitor::host_only_parallel_block(BlockType type) const {
     if (type != BlockType::Initial) {
         return false;
     }
-    if (info.require_wrote_conc || info.net_send_used || info.net_event_used ||
-        info.nrn_ghk_used) {
+    if (info.require_wrote_conc || info.net_send_used || info.net_event_used || info.nrn_ghk_used) {
         return true;
     }
     for (const auto& sem: info.semantics) {
@@ -556,8 +554,7 @@ std::string CodegenNeuronAccVisitor::global_variable_name(const SymbolType& symb
                                                           bool use_instance) const {
     // Force-inlined STATE/CURRENT or thin nrn_current: bare present(*_global)
     // names (hand-edit shape). thin CURRENT also has no `inst` parameter.
-    if (inlining_state_specialized_body_ || inlining_current_body_ ||
-        current_local_v_active_) {
+    if (inlining_state_specialized_body_ || inlining_current_body_ || current_local_v_active_) {
         return CodegenNeuronCppVisitor::global_variable_name(symbol, false);
     }
     // Eigen Newton functors: inst.global is always a host address
@@ -731,10 +728,7 @@ CodegenNeuronAccVisitor::ParamVector CodegenNeuronAccVisitor::functor_params() {
     }
     // Device pointer to GLOBAL store for Eigen residual (not host inst.global).
     if (!codegen_global_variables.empty()) {
-        params.emplace_back("",
-                            fmt::format("{}*", global_struct()),
-                            "",
-                            "_eigen_global");
+        params.emplace_back("", fmt::format("{}*", global_struct()), "", "_eigen_global");
     }
     return params;
 }
@@ -1263,9 +1257,8 @@ void CodegenNeuronAccVisitor::print_function_or_procedure(
     printer->pop_block();
 }
 
-void CodegenNeuronAccVisitor::print_inlined_table_procedure_body(
-    const ast::Block& node,
-    const std::string& formal_v_name) {
+void CodegenNeuronAccVisitor::print_inlined_table_procedure_body(const ast::Block& node,
+                                                                 const std::string& formal_v_name) {
     // Same TABLE path as print_state_specialized_table_replacement, but:
     // - no function wrapper / returns (embedded in STATE loop)
     // - writes stack TABLE temps via state_kernel_locals_active_
@@ -1325,16 +1318,13 @@ void CodegenNeuronAccVisitor::print_inlined_table_procedure_body(
         auto [is_array, array_length] = check_if_var_is_array(var->get_node_name());
         if (is_array) {
             for (size_t j = 0; j < array_length; j++) {
-                printer->fmt_line(
-                    "{0}[{1}] = {2}[{1}][i] + theta*({2}[{1}][i+1]-{2}[{1}][i]);",
-                    instance_name,
-                    j,
-                    table_name);
+                printer->fmt_line("{0}[{1}] = {2}[{1}][i] + theta*({2}[{1}][i+1]-{2}[{1}][i]);",
+                                  instance_name,
+                                  j,
+                                  table_name);
             }
         } else {
-            printer->fmt_line("{0} = {1}[i] + theta*({1}[i+1]-{1}[i]);",
-                              instance_name,
-                              table_name);
+            printer->fmt_line("{0} = {1}[i] + theta*({1}[i+1]-{1}[i]);", instance_name, table_name);
         }
     }
     printer->pop_block();  // else interpolate
@@ -1477,7 +1467,6 @@ void CodegenNeuronAccVisitor::print_hoc_py_wrapper_before_table_update() {
 }
 
 
-
 void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
                                                             const ast::Block* block) {
     if (info.artificial_cell) {
@@ -1510,8 +1499,7 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
 
     // Phase C: slim net_buf_receive without GLOBAL use skips stale H→D of the
     // full global struct (HH tables) that STATE/CURRENT still need when dirty.
-    const bool net_rx_slim =
-        type == BlockType::NetReceive && net_receive_min_present_safe();
+    const bool net_rx_slim = type == BlockType::NetReceive && net_receive_min_present_safe();
     if (!(jacob_slim || (net_rx_slim && !net_receive_uses_global_vars()))) {
         print_global_variable_device_update_annotation();
     }
@@ -1536,7 +1524,8 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
             // dirty/out of date — host must not participate in psolve V traffic.
             printer->add_line(
                 "double* _d_voltages = nt->compute_gpu "
-                "? static_cast<double*>(acc_deviceptr(const_cast<double*>(node_data.node_voltages))) "
+                "? "
+                "static_cast<double*>(acc_deviceptr(const_cast<double*>(node_data.node_voltages))) "
                 ": const_cast<double*>(node_data.node_voltages);");
             // Point-process CURRENT (and MOD area reads): node area SoA via
             // deviceptr, not per-instance pdata dptr chase (Traub AMPA/GABAA/NMDA).
@@ -1565,11 +1554,11 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
         // live_float_indices_for_kernel Eigen full-set path).
         // Session B: force-inline CURRENT also uses live present only.
         // Jacob slim: conductance column only (override live set).
-        const bool state_slim =
-            type == BlockType::State && state_kernel_uses_only_specialized_procedures() &&
-            !info.eigen_newton_solver_exist && !info.eigen_linear_solver_exist;
-        const bool cur_slim =
-            type == BlockType::Equation && current_force_inline_safe() && info.conductances.empty();
+        const bool state_slim = type == BlockType::State &&
+                                state_kernel_uses_only_specialized_procedures() &&
+                                !info.eigen_newton_solver_exist && !info.eigen_linear_solver_exist;
+        const bool cur_slim = type == BlockType::Equation && current_force_inline_safe() &&
+                              info.conductances.empty();
         if (state_slim || cur_slim || jacob_slim) {
             print_present_fp_pointer_declarations_for(live_fp);
         } else {
@@ -1593,8 +1582,7 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
         }
         // Map host bases → device pointers for the parallel region.
         printer->push_block("if (nt->compute_gpu)");
-        printer->add_line(
-            "weights = static_cast<double*>(acc_deviceptr(weights));");
+        printer->add_line("weights = static_cast<double*>(acc_deviceptr(weights));");
         std::vector<int> net_rx_fp;
         if (net_rx_slim) {
             net_rx_fp.assign(live_fp.begin(), live_fp.end());
@@ -1612,11 +1600,11 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
     } else if (!info.artificial_cell) {
         present_clause << ", nodeindices";
         // Specialized STATE / CURRENT force-inline / jacob: no _thread.
-        const bool state_slim =
-            type == BlockType::State && state_kernel_uses_only_specialized_procedures() &&
-            !info.eigen_newton_solver_exist && !info.eigen_linear_solver_exist;
-        const bool cur_slim =
-            type == BlockType::Equation && current_force_inline_safe() && info.conductances.empty();
+        const bool state_slim = type == BlockType::State &&
+                                state_kernel_uses_only_specialized_procedures() &&
+                                !info.eigen_newton_solver_exist && !info.eigen_linear_solver_exist;
+        const bool cur_slim = type == BlockType::Equation && current_force_inline_safe() &&
+                              info.conductances.empty();
         if (!state_slim && !cur_slim && !jacob_slim) {
             present_clause << ", _thread";
         }
@@ -1634,7 +1622,9 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
             const auto& float_var = codegen_float_variables[static_cast<size_t>(i)];
             auto const array_len = float_var->is_array() ? float_var->get_length() : 1;
             present_clause << fmt::format(
-                ", _present_fp_{}[:static_cast<std::size_t>(_ml_arg->nodecount) * {}]", i, array_len);
+                ", _present_fp_{}[:static_cast<std::size_t>(_ml_arg->nodecount) * {}]",
+                i,
+                array_len);
         }
         // Ion SoA base + int index: host present (RANGE shape). Not deviceptr of
         // device bases (nvc++ illegal address). Dummy n=1 when soa path off.
@@ -1647,8 +1637,8 @@ void CodegenNeuronAccVisitor::print_parallel_iteration_hint(BlockType type,
         }
     }
     // Global struct for kernels that touch TABLE/GLOBAL. Jacob does not.
-    if (!info.artificial_cell && !codegen_global_variables.empty() && type != BlockType::NetReceive &&
-        !jacob_slim) {
+    if (!info.artificial_cell && !codegen_global_variables.empty() &&
+        type != BlockType::NetReceive && !jacob_slim) {
         present_clause << ", " << global_struct_instance();
     }
     present_clause << ')';
@@ -2054,8 +2044,7 @@ void CodegenNeuronAccVisitor::print_net_receive() {
     const bool host_net_receive = host_net_receive_on_native();
     if (net_receive_buffering_required() && !host_net_receive) {
         printer->push_block("if (nt && nt->compute_gpu)");
-        printer->add_line(
-            "Memb_list* ml = nt->_ml_list[_nrn_mechanism_get_type(_pnt->prop)];");
+        printer->add_line("Memb_list* ml = nt->_ml_list[_nrn_mechanism_get_type(_pnt->prop)];");
         printer->push_block("if (ml)");
         printer->add_line(
             "int pnt_index = static_cast<int>(neuron::mechanism::_get::_current_row(_pnt->prop) - "
@@ -2133,7 +2122,8 @@ void CodegenNeuronAccVisitor::print_net_receive_buffering() {
 
     printer->add_newline(2);
     printer->add_line(
-        "/** CoreNEURON-style: apply queued NET_RECEIVE on device (Weight SoA + net_send buffer). */");
+        "/** CoreNEURON-style: apply queued NET_RECEIVE on device (Weight SoA + net_send buffer). "
+        "*/");
     printer->fmt_push_block("static void net_buf_receive_{}(NrnThread* nt)", info.mod_suffix);
 
     printer->push_block("if (!nt || !nt->compute_gpu)");
@@ -2154,8 +2144,7 @@ void CodegenNeuronAccVisitor::print_net_receive_buffering() {
     // Fallback ensure keeps unit tests / direct calls correct. No copy of the
     // flush token (copy would re-issue all frozen-token bookkeeping).
     printer->add_line("auto const* _flush_tok = neuron::gpu::flush_sorted_token();");
-    printer->add_line(
-        "std::optional<neuron::model_sorted_token> _ensure_holder;");
+    printer->add_line("std::optional<neuron::model_sorted_token> _ensure_holder;");
     printer->push_block("if (!_flush_tok)");
     printer->add_line("_ensure_holder.emplace(nrn_ensure_model_data_are_sorted());");
     printer->add_line("_flush_tok = &*_ensure_holder;");
@@ -2214,8 +2203,7 @@ void CodegenNeuronAccVisitor::print_net_receive_buffering() {
     if (info.net_send_used || info.net_event_used) {
         // Pre-size for this flush: min_events × headroom (default 4) + high-water.
         // Device cannot grow mid-kernel; overflow aborts on host flush.
-        printer->add_line(
-            "neuron::gpu::net_send_buffer_ensure_for_events(_ml_arg, nrb->_cnt);");
+        printer->add_line("neuron::gpu::net_send_buffer_ensure_for_events(_ml_arg, nrb->_cnt);");
     }
 
     // Parallel over unique instances; serial over events per instance (CoreNEURON).
@@ -2335,11 +2323,7 @@ void CodegenNeuronAccVisitor::print_net_send_call(const ast::FunctionCall& node)
     std::string const weight_index = printing_net_receive ? "weight_index" : "-1";
     const auto& t = get_variable_name("t");
     printer->add_text("net_send_buffering(");
-    printer->fmt_text(
-        "nt, _ml_arg, nsb, 0, {}, {}, id, {}+",
-        tq_field,
-        weight_index,
-        t);
+    printer->fmt_text("nt, _ml_arg, nsb, 0, {}, {}, id, {}+", tq_field, weight_index, t);
     print_vector_elements(arguments, ", ");
     printer->add_text(')');
 }
@@ -2364,9 +2348,7 @@ void CodegenNeuronAccVisitor::print_net_move_call(const ast::FunctionCall& node)
 
     int const tq_field = info.tqitem_index >= 0 ? info.tqitem_index : -1;
     printer->add_text("net_send_buffering(");
-    printer->fmt_text(
-        "nt, _ml_arg, nsb, 2, {}, -1, id, ",
-        tq_field);
+    printer->fmt_text("nt, _ml_arg, nsb, 2, {}, -1, id, ", tq_field);
     print_vector_elements(node.get_arguments(), ", ");
     printer->add_text(", 0.0");
     printer->add_text(")");
@@ -2384,8 +2366,7 @@ void CodegenNeuronAccVisitor::print_net_event_call(const ast::FunctionCall& node
     if (printing_net_buf_receive_kernel_ || (!printing_net_receive && !printing_net_init)) {
         printer->add_text("net_send_buffering(");
         // present-mapped local nsb — see print_net_send_call.
-        printer->add_text(
-            "nt, _ml_arg, nsb, 1, -1, -1, id, ");
+        printer->add_text("nt, _ml_arg, nsb, 1, -1, -1, id, ");
         print_vector_elements(arguments, ", ");
         printer->add_text(", 0.0");
         printer->add_text(")");
@@ -2399,7 +2380,8 @@ void CodegenNeuronAccVisitor::print_net_event_call(const ast::FunctionCall& node
 void CodegenNeuronAccVisitor::print_mechanism_range_var_structure(bool print_initializers) {
     auto const value_initialize = print_initializers ? "{}" : "";
     printer->add_newline(2);
-    printer->add_line("/** mechanism instance: SoA index base + ion pdata handles (GPU index path) */");
+    printer->add_line(
+        "/** mechanism instance: SoA index base + ion pdata handles (GPU index path) */");
     printer->fmt_push_block("struct {} ", instance_struct());
 
     for (auto const& [var, type]: info.neuron_global_variables) {
@@ -2487,8 +2469,7 @@ void CodegenNeuronAccVisitor::print_nrn_init(bool skip_init_check) {
     const bool host_only_init = host_only_parallel_block(BlockType::Initial);
     use_present_fp_indexing_ = !host_only_init;
     // Device/host pointer to GLOBAL store for Eigen Newton residual.
-    if (!host_only_init &&
-        (info.eigen_newton_solver_exist || info.eigen_linear_solver_exist) &&
+    if (!host_only_init && (info.eigen_newton_solver_exist || info.eigen_linear_solver_exist) &&
         !codegen_global_variables.empty()) {
         auto const& ginst = global_struct_instance();
         printer->fmt_line(
@@ -2546,8 +2527,7 @@ void CodegenNeuronAccVisitor::print_before_breakpoint_inline() {
         if (!block || !block->is_before_block()) {
             continue;
         }
-        auto ba_block =
-            dynamic_cast<const ast::BeforeBlock*>(block)->get_bablock();
+        auto ba_block = dynamic_cast<const ast::BeforeBlock*>(block)->get_bablock();
         if (!ba_block || ba_block->get_type()->get_value() != ast::BATYPE_BREAKPOINT) {
             continue;
         }
@@ -2560,13 +2540,12 @@ bool CodegenNeuronAccVisitor::current_force_inline_safe() const {
         return false;
     }
     // VERBATIM / net_send need fat surface — keep general nrn_current call.
-    auto unsafe = collect_nodes(*info.breakpoint_node,
-                                {ast::AstNodeType::VERBATIM});
+    auto unsafe = collect_nodes(*info.breakpoint_node, {ast::AstNodeType::VERBATIM});
     if (!unsafe.empty()) {
         return false;
     }
-    for (const auto& call: collect_nodes(*info.breakpoint_node,
-                                         {ast::AstNodeType::FUNCTION_CALL})) {
+    for (const auto& call:
+         collect_nodes(*info.breakpoint_node, {ast::AstNodeType::FUNCTION_CALL})) {
         const auto cname = call->get_node_name();
         if (is_net_send(cname) || is_net_move(cname) || is_net_event(cname)) {
             return false;
@@ -2808,8 +2787,7 @@ void CodegenNeuronAccVisitor::print_nrn_state() {
     printer->add_newline(2);
     print_global_function_common_code(BlockType::State);
     if ((info.net_send_used || info.net_event_used) && !info.artificial_cell) {
-        printer->add_line(
-            "neuron::gpu::net_send_buffer_ensure_for_events(_ml_arg, nodecount);");
+        printer->add_line("neuron::gpu::net_send_buffer_ensure_for_events(_ml_arg, nodecount);");
     }
     // Host-captured t for any STATE body that reads t (same as nrn_cur).
     printer->add_line("double const _nrn_thread_t = nt->_t;");
@@ -2880,8 +2858,7 @@ void CodegenNeuronAccVisitor::print_nrn_state() {
         printer->add_line("double v = _d_voltages[node_id];");
         state_local_v_active_ = true;
         if (info.eigen_newton_solver_exist || info.eigen_linear_solver_exist) {
-            printer->fmt_line("{} = v;",
-                              indexed_fp_var(naming::VOLTAGE_UNUSED_VARIABLE));
+            printer->fmt_line("{} = v;", indexed_fp_var(naming::VOLTAGE_UNUSED_VARIABLE));
         }
     }
 
@@ -3022,7 +2999,8 @@ void CodegenNeuronAccVisitor::print_nrn_cur_non_conductance_kernel() {
         for (auto& var: ion.writes) {
             if (ion.is_ionic_current(var)) {
                 const auto& lhs = std::string(naming::ION_VARNAME_PREFIX) + "di" + ion.name + "dv";
-                auto rhs_expr = fmt::format("(di{} - {}) / 0.001", ion.name, get_variable_name(var));
+                auto rhs_expr =
+                    fmt::format("(di{} - {}) / 0.001", ion.name, get_variable_name(var));
                 if (info.point_process) {
                     auto area = get_variable_name(naming::NODE_AREA_VARIABLE);
                     rhs_expr += fmt::format(" * 1.e2 / {}", area);
@@ -3155,8 +3133,7 @@ void CodegenNeuronAccVisitor::print_nrn_cur() {
         printer->fmt_line("(void) _nrn_{};", name);
     }
     if ((info.net_send_used || info.net_event_used) && !info.artificial_cell) {
-        printer->add_line(
-            "neuron::gpu::net_send_buffer_ensure_for_events(_ml_arg, nodecount);");
+        printer->add_line("neuron::gpu::net_send_buffer_ensure_for_events(_ml_arg, nodecount);");
     }
     print_kernel_data_present_annotation_block_begin();
     print_entrypoint_setup_code_from_memb_list();
@@ -3178,10 +3155,9 @@ void CodegenNeuronAccVisitor::print_nrn_cur() {
         // ELECTRODE sav_rhs is a post-pass (below) — writing sav inside this ACC
         // region with mechanism present caused CUDA illegal address on hh models.
         if (breakpoint_exist()) {
-            printer->fmt_line(
-                "{} = g;",
-                indexed_fp_var(info.vectorize ? naming::CONDUCTANCE_UNUSED_VARIABLE
-                                              : naming::CONDUCTANCE_VARIABLE));
+            printer->fmt_line("{} = g;",
+                              indexed_fp_var(info.vectorize ? naming::CONDUCTANCE_UNUSED_VARIABLE
+                                                            : naming::CONDUCTANCE_VARIABLE));
             // Device path: apply g → vec_d here (CoreNEURON-style). Host keeps
             // separate jacob (nrn_lhs skips jacob when compute_gpu + Gate A).
             // nt->compute_gpu is false on the host serial fallback of this loop.
@@ -3221,8 +3197,7 @@ void CodegenNeuronAccVisitor::print_nrn_cur() {
         printer->add_line("double* _area = nt->node_area_storage();");
         printer->fmt_line("double* _i_col = _lmc.template fpfield_ptr<{}>();", i_pos);
         printer->fmt_line("double* _g_col = _lmc.template fpfield_ptr<{}>();", g_pos);
-        printer->push_block(
-            "if (auto* vec_sav_rhs = nt->node_sav_rhs_storage())");
+        printer->push_block("if (auto* vec_sav_rhs = nt->node_sav_rhs_storage())");
         printer->push_block("if (!nt->compute_gpu)");
         printer->push_block("for (int id = 0; id < nodecount; id++)");
         printer->add_line("int node_id = _ni[id];");
@@ -3232,27 +3207,24 @@ void CodegenNeuronAccVisitor::print_nrn_cur() {
         printer->chain_block("else");
         // Device: wait for cur, pull i, scale on host, RMW sav on device via memcpy.
         printer->add_line("nrn_pragma_acc(wait(nt->stream_id))");
-        printer->add_line(
-            "double* _d_i = static_cast<double*>(acc_deviceptr(_i_col));");
-        printer->add_line(
-            "double* _d_sav = static_cast<double*>(acc_deviceptr(vec_sav_rhs));");
+        printer->add_line("double* _d_i = static_cast<double*>(acc_deviceptr(_i_col));");
+        printer->add_line("double* _d_sav = static_cast<double*>(acc_deviceptr(vec_sav_rhs));");
         printer->push_block("if (_d_i && _d_sav)");
-        printer->add_line(
-            "std::vector<double> _host_i(static_cast<std::size_t>(nodecount));");
+        printer->add_line("std::vector<double> _host_i(static_cast<std::size_t>(nodecount));");
         printer->add_line(
             "acc_memcpy_from_device(_host_i.data(), _d_i, "
             "static_cast<std::size_t>(nodecount) * sizeof(double));");
-        printer->add_line(
-            "std::vector<double> _host_sav(static_cast<std::size_t>(nt->end));");
+        printer->add_line("std::vector<double> _host_sav(static_cast<std::size_t>(nt->end));");
         printer->add_line(
             "acc_memcpy_from_device(_host_sav.data(), _d_sav, "
             "static_cast<std::size_t>(nt->end) * sizeof(double));");
         printer->push_block("for (int id = 0; id < nodecount; id++)");
         printer->add_line("int node_id = _ni[id];");
         printer->add_line("double mfac = 1.e2 / _area[node_id];");
-        printer->fmt_line("_host_sav[static_cast<std::size_t>(node_id)] {} _host_i["
-                          "static_cast<std::size_t>(id)] * mfac;",
-                          operator_for_rhs());
+        printer->fmt_line(
+            "_host_sav[static_cast<std::size_t>(node_id)] {} _host_i["
+            "static_cast<std::size_t>(id)] * mfac;",
+            operator_for_rhs());
         printer->pop_block();
         printer->add_line(
             "acc_memcpy_to_device(_d_sav, _host_sav.data(), "
@@ -3262,30 +3234,26 @@ void CodegenNeuronAccVisitor::print_nrn_cur() {
         printer->pop_block();  // vec_sav_rhs
 
         // Device-only: electrode g → sav_d (jacob skipped on device Gate-A path).
-        printer->push_block(
-            "if (nt->compute_gpu) if (auto* vec_sav_d = nt->node_sav_d_storage())");
+        printer->push_block("if (nt->compute_gpu) if (auto* vec_sav_d = nt->node_sav_d_storage())");
         printer->add_line("nrn_pragma_acc(wait(nt->stream_id))");
-        printer->add_line(
-            "double* _d_g = static_cast<double*>(acc_deviceptr(_g_col));");
-        printer->add_line(
-            "double* _d_sav_d = static_cast<double*>(acc_deviceptr(vec_sav_d));");
+        printer->add_line("double* _d_g = static_cast<double*>(acc_deviceptr(_g_col));");
+        printer->add_line("double* _d_sav_d = static_cast<double*>(acc_deviceptr(vec_sav_d));");
         printer->push_block("if (_d_g && _d_sav_d)");
-        printer->add_line(
-            "std::vector<double> _host_g(static_cast<std::size_t>(nodecount));");
+        printer->add_line("std::vector<double> _host_g(static_cast<std::size_t>(nodecount));");
         printer->add_line(
             "acc_memcpy_from_device(_host_g.data(), _d_g, "
             "static_cast<std::size_t>(nodecount) * sizeof(double));");
-        printer->add_line(
-            "std::vector<double> _host_sav_d(static_cast<std::size_t>(nt->end));");
+        printer->add_line("std::vector<double> _host_sav_d(static_cast<std::size_t>(nt->end));");
         printer->add_line(
             "acc_memcpy_from_device(_host_sav_d.data(), _d_sav_d, "
             "static_cast<std::size_t>(nt->end) * sizeof(double));");
         printer->push_block("for (int id = 0; id < nodecount; id++)");
         printer->add_line("int node_id = _ni[id];");
         // g already includes point-process area scale from the CURRENT body.
-        printer->fmt_line("_host_sav_d[static_cast<std::size_t>(node_id)] {} _host_g["
-                          "static_cast<std::size_t>(id)];",
-                          operator_for_d());
+        printer->fmt_line(
+            "_host_sav_d[static_cast<std::size_t>(node_id)] {} _host_g["
+            "static_cast<std::size_t>(id)];",
+            operator_for_d());
         printer->pop_block();
         printer->add_line(
             "acc_memcpy_to_device(_d_sav_d, _host_sav_d.data(), "
@@ -3416,8 +3384,7 @@ std::string CodegenNeuronAccVisitor::get_variable_name(const std::string& name,
     }
     // ACC CURRENT/STATE only: host-captured _nrn_thread_t (firstprivate). Do not
     // substitute in INITIAL/net_buf paths that never declare that local.
-    if (use_host_captured_t_ && use_present_fp_indexing_ &&
-        name == naming::NTHREAD_T_VARIABLE) {
+    if (use_host_captured_t_ && use_present_fp_indexing_ && name == naming::NTHREAD_T_VARIABLE) {
         return "_nrn_thread_t";
     }
     // H4c STATE: stack local `v` instead of v_unused SoA (rates arg + no present).
@@ -3436,12 +3403,11 @@ std::string CodegenNeuronAccVisitor::get_variable_name(const std::string& name,
     // Capture host value as `_nrn_celsius` next to `_nrn_thread_t` (firstprivate).
     // Gate on use_host_captured_t_ so standalone rates_*_state definitions keep
     // host-style names (those paths are force-inlined into STATE when on GPU).
-    if (use_host_captured_t_ &&
-        (use_present_fp_indexing_ || inlining_state_specialized_body_)) {
-        auto const iter = std::find_if(
-            info.neuron_global_variables.begin(),
-            info.neuron_global_variables.end(),
-            [&name](auto const& entry) { return entry.first->get_name() == name; });
+    if (use_host_captured_t_ && (use_present_fp_indexing_ || inlining_state_specialized_body_)) {
+        auto const iter =
+            std::find_if(info.neuron_global_variables.begin(),
+                         info.neuron_global_variables.end(),
+                         [&name](auto const& entry) { return entry.first->get_name() == name; });
         if (iter != info.neuron_global_variables.end()) {
             return fmt::format("_nrn_{}", name);
         }
@@ -3460,11 +3426,12 @@ void CodegenNeuronAccVisitor::print_data_structures(bool print_initializers) {
 
 void CodegenNeuronAccVisitor::print_make_instance() const {
     printer->add_newline(2);
-    printer->fmt_push_block("static {} make_instance_{}(std::size_t data_offset, "
-                            "_nrn_mechanism_cache_range* _lmc, "
-                            "bool use_device_ptrs = false)",
-                            instance_struct(),
-                            info.mod_suffix);
+    printer->fmt_push_block(
+        "static {} make_instance_{}(std::size_t data_offset, "
+        "_nrn_mechanism_cache_range* _lmc, "
+        "bool use_device_ptrs = false)",
+        instance_struct(),
+        info.mod_suffix);
 
     printer->push_block("if(_lmc == nullptr)");
     printer->fmt_line("return {}();", instance_struct());
@@ -3506,8 +3473,7 @@ void CodegenNeuronAccVisitor::print_make_instance() const {
     }
 
     if (!codegen_global_variables.empty()) {
-        make_instance_args.push_back(
-            fmt::format("&{0}", global_struct_instance()));
+        make_instance_args.push_back(fmt::format("&{0}", global_struct_instance()));
     }
 
     printer->add_multi_line(fmt::format("{}", fmt::join(make_instance_args, ",\n")));
@@ -3552,10 +3518,11 @@ void CodegenNeuronAccVisitor::print_make_instance() const {
 
 void CodegenNeuronAccVisitor::print_make_node_data() const {
     printer->add_newline(2);
-    printer->fmt_push_block("static {} make_node_data_{}(NrnThread& nt, Memb_list& _ml_arg, "
-                            "bool use_device_ptrs = false)",
-                            node_data_struct(),
-                            info.mod_suffix);
+    printer->fmt_push_block(
+        "static {} make_node_data_{}(NrnThread& nt, Memb_list& _ml_arg, "
+        "bool use_device_ptrs = false)",
+        node_data_struct(),
+        info.mod_suffix);
 
     // Host pointers: OpenACC present() maps these to device copies inside kernels.
     std::vector<std::string> make_node_data_args = {"_ml_arg.nodeindices",
@@ -3600,9 +3567,10 @@ void CodegenNeuronAccVisitor::print_entrypoint_setup_code_from_memb_list() {
 
     printer->add_line(
         "_nrn_mechanism_cache_range _lmc{_sorted_token, *nt, *_ml_arg, _ml_arg->type()};");
-    printer->fmt_line("auto inst = make_instance_{}(_ml_arg->get_storage_offset(), &_lmc, "
-                      "nt->compute_gpu);",
-                      info.mod_suffix);
+    printer->fmt_line(
+        "auto inst = make_instance_{}(_ml_arg->get_storage_offset(), &_lmc, "
+        "nt->compute_gpu);",
+        info.mod_suffix);
     if (!info.artificial_cell) {
         printer->fmt_line("auto node_data = make_node_data_{}(*nt, *_ml_arg, nt->compute_gpu);",
                           info.mod_suffix);

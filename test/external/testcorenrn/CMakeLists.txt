@@ -208,10 +208,10 @@ foreach(test ${direct_tests})
 endforeach()
 
 # -----------------------------------------------------------------------------
-# P3: NEURON-native GPU online clones (1-rank first).
-# ACC-built specials for Gate B/C; launch enables gpu.backend=native then loads
-# the stock testcorenrn HOC (no CoreNEURON). Offline/bbcore not required here.
-# Gfluct3 + vecevent native product ctests below (host BBCOREPOINTER NET_RECEIVE).
+# P3: NEURON-native GPU online clones (1-rank first). ACC-built specials for Gate B/C; launch
+# enables gpu.backend=native then loads the stock testcorenrn HOC (no CoreNEURON). Offline/bbcore
+# not required here. Gfluct3 + vecevent native product ctests below (host BBCOREPOINTER
+# NET_RECEIVE).
 # -----------------------------------------------------------------------------
 if(NRN_ENABLE_GPU)
   set(native_gpu_test_env NRN_GPU_BACKEND_TEST=native NRN_GPU_PERMUTE=2 OMP_NUM_THREADS=1
@@ -221,18 +221,15 @@ if(NRN_ENABLE_GPU)
       "${PROJECT_SOURCE_DIR}/test/external/testcorenrn/run_native_gpu.py")
   # ACC special shared hash for simple 1-rank models (+ bbcore NetStim-only; extra mechs OK).
   set(testcorenrn_native_simple_mods mod/hhderiv.mod mod/nacum.mod mod/hhkin.mod)
-  # Launch: special -python ABS_PATH_RUNNER (hoc via NRN_TEST_HOC; never trailing .hoc).
-  # vecplay: Vector.play amp column H→D. watch: host WATCH + g/e H→D for device CURRENT.
+  # Launch: special -python ABS_PATH_RUNNER (hoc via NRN_TEST_HOC; never trailing .hoc). vecplay:
+  # Vector.play amp column H→D. watch: host WATCH + g/e H→D for device CURRENT.
   foreach(test conc deriv kin bbcore vecplay)
     nrn_add_test_group(
       NAME testcorenrn_${test}_native
       SUBMODULE tests/testcorenrn
       MODFILE_PATTERNS ${testcorenrn_native_simple_mods}
-      NRNIVMODL_ARGS
-        -nmodl
-        "${CMAKE_BINARY_DIR}/bin/nmodl"
-        -nmodlflags
-        "passes --inline host --c acc --oacc"
+      NRNIVMODL_ARGS -nmodl "${CMAKE_BINARY_DIR}/bin/nmodl" -nmodlflags
+                     "passes --inline host --c acc --oacc"
       SCRIPT_PATTERNS common.hoc defvar.hoc test${test}.hoc
       OUTPUT asciispikes::out${test}.dat)
     nrn_add_test(
@@ -251,11 +248,8 @@ if(NRN_ENABLE_GPU)
     NAME testcorenrn_watch_native
     SUBMODULE tests/testcorenrn
     MODFILE_PATTERNS mod/hhwatch.mod
-    NRNIVMODL_ARGS
-      -nmodl
-      "${CMAKE_BINARY_DIR}/bin/nmodl"
-      -nmodlflags
-      "passes --inline host --c acc --oacc"
+    NRNIVMODL_ARGS -nmodl "${CMAKE_BINARY_DIR}/bin/nmodl" -nmodlflags
+                   "passes --inline host --c acc --oacc"
     SCRIPT_PATTERNS common.hoc defvar.hoc testwatch.hoc
     OUTPUT asciispikes::outwatch.dat)
   nrn_add_test(
@@ -273,11 +267,8 @@ if(NRN_ENABLE_GPU)
     NAME testcorenrn_gf_native
     SUBMODULE tests/testcorenrn
     MODFILE_PATTERNS mod/Gfluct3.mod
-    NRNIVMODL_ARGS
-      -nmodl
-      "${CMAKE_BINARY_DIR}/bin/nmodl"
-      -nmodlflags
-      "passes --inline host --c acc --oacc"
+    NRNIVMODL_ARGS -nmodl "${CMAKE_BINARY_DIR}/bin/nmodl" -nmodlflags
+                   "passes --inline host --c acc --oacc"
     SCRIPT_PATTERNS common.hoc defvar.hoc testgf.hoc
     OUTPUT asciispikes::outgf.dat)
   nrn_add_test(
@@ -290,17 +281,14 @@ if(NRN_ENABLE_GPU)
     GROUP testcorenrn_gf_native
     REFERENCE_OUTPUT asciispikes::external/tests/testcorenrn/reference/out_gf.spk)
 
-  # vecevent: VecStim (BBCOREPOINTER) host NET_RECEIVE + net_event; 4 ranks → ref 60 spikes.
-  # Launch via h.nrnmpi_init (NRN_TEST_MPI=1), not special -mpi.
+  # vecevent: VecStim (BBCOREPOINTER) host NET_RECEIVE + net_event; 4 ranks → ref 60 spikes. Launch
+  # via h.nrnmpi_init (NRN_TEST_MPI=1), not special -mpi.
   nrn_add_test_group(
     NAME testcorenrn_vecevent_native
     SUBMODULE tests/testcorenrn
     MODFILE_PATTERNS mod/vecevent.mod
-    NRNIVMODL_ARGS
-      -nmodl
-      "${CMAKE_BINARY_DIR}/bin/nmodl"
-      -nmodlflags
-      "passes --inline host --c acc --oacc"
+    NRNIVMODL_ARGS -nmodl "${CMAKE_BINARY_DIR}/bin/nmodl" -nmodlflags
+                   "passes --inline host --c acc --oacc"
     SCRIPT_PATTERNS common.hoc defvar.hoc testvecevent.hoc
     OUTPUT asciispikes::outvecevent.dat)
   nrn_add_test(

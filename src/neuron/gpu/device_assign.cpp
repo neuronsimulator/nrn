@@ -153,13 +153,11 @@ void assign_device() {
         // 4-rank ~37 s vs ~3 s with MPS / 1-rank). CoreNEURON shares better
         // without MPS; native needs MPS for multi-rank on one GPU today.
         if (local_size > 1 && local_size > num_devices_per_node && !cuda_mps_likely_active()) {
-            std::cerr
-                << " Warning : " << local_size
-                << " ranks share " << num_devices_per_node
-                << " GPU(s) but CUDA MPS does not appear active. Native GPU multi-rank "
-                   "on one device is often 10×+ slower without MPS. Start with:\n"
-                   "   nvidia-cuda-mps-control -d\n"
-                   " (see doc/gpu/native-coreneuron-parity.md multi-rank section)\n";
+            std::cerr << " Warning : " << local_size << " ranks share " << num_devices_per_node
+                      << " GPU(s) but CUDA MPS does not appear active. Native GPU multi-rank "
+                         "on one device is often 10×+ slower without MPS. Start with:\n"
+                         "   nvidia-cuda-mps-control -d\n"
+                         " (see doc/gpu/native-coreneuron-parity.md multi-rank section)\n";
         }
     }
 #else

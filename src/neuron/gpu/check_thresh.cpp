@@ -71,16 +71,15 @@ void ensure_thresh_stats_atexit() noexcept {
     if (!thresh_stats_enabled()) {
         return;
     }
-    std::call_once(g_thresh_stats_atexit_once, [] {
-        std::atexit([] { print_thresh_detect_stats("atexit"); });
-    });
+    std::call_once(g_thresh_stats_atexit_once,
+                   [] { std::atexit([] { print_thresh_detect_stats("atexit"); }); });
 }
 
 char const* thresh_device_block_reason(double* d_v,
-                                      int* thvar_row,
-                                      double* threshold,
-                                      int* flag,
-                                      int* nsbuffer) noexcept {
+                                       int* thvar_row,
+                                       double* threshold,
+                                       int* flag,
+                                       int* nsbuffer) noexcept {
 #if defined(NRN_ENABLE_GPU) && (defined(_OPENACC) || defined(_OPENMP))
     if (!d_v) {
         return "device vec_v not mapped (acc_deviceptr/present)";
@@ -294,9 +293,7 @@ void rebuild_thread_table(int tid) {
     int const n = collect_threshold_presyn_slots(nrn_threads + tid, nullptr, 0);
     table.slots.resize(static_cast<std::size_t>(n));
     if (n > 0) {
-        collect_threshold_presyn_slots(nrn_threads + tid,
-                                       table.slots.data(),
-                                       n);
+        collect_threshold_presyn_slots(nrn_threads + tid, table.slots.data(), n);
     }
 
     auto const count = table.slots.size();
@@ -464,14 +461,14 @@ bool check_thresh_presyn_on_device(NrnThread* nt, double teps) noexcept {
     int* const nsbuffer = table.h_hit_slots.data();
     int const nsbuffer_size = static_cast<int>(table.h_hit_slots.size());
     // Never call OpenACC present/copyin/deviceptr on null host pointers (SEGV).
-    bool const host_ptrs_ok =
-        thvar_row && threshold && flag && vec_v && nsbuffer && nsbuffer_size >= count;
+    bool const host_ptrs_ok = thvar_row && threshold && flag && vec_v && nsbuffer &&
+                              nsbuffer_size >= count;
     if (!host_ptrs_ok) {
         if (allow_thresh_host_fallback()) {
             note_thresh_host_fallback("null host pointer for thresh tables or hit buffer");
         } else {
-            fail_thresh_device_unavailable(
-                "null host pointer for thresh tables or hit buffer", nt->id);
+            fail_thresh_device_unavailable("null host pointer for thresh tables or hit buffer",
+                                           nt->id);
         }
     }
 
@@ -493,8 +490,8 @@ bool check_thresh_presyn_on_device(NrnThread* nt, double teps) noexcept {
         if (!d_v) {
             d_v = nrn_target_is_present(vec_v);
         }
-        char const* const block = thresh_device_block_reason(
-            d_v, thvar_row, threshold, flag, nsbuffer);
+        char const* const block =
+            thresh_device_block_reason(d_v, thvar_row, threshold, flag, nsbuffer);
         if (!block) {
             ran_device = true;
             ++g_thresh_device_calls;
@@ -612,7 +609,9 @@ bool check_thresh_presyn_on_device(NrnThread* nt, double teps) noexcept {
             if (slot_index < 0 || slot_index >= count) {
                 continue;
             }
-            deliver_threshold_spike(nt, table.slots[static_cast<std::size_t>(slot_index)].presyn, teps);
+            deliver_threshold_spike(nt,
+                                    table.slots[static_cast<std::size_t>(slot_index)].presyn,
+                                    teps);
         }
     }
     return true;

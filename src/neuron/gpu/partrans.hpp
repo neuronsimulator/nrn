@@ -28,7 +28,7 @@ struct GapTrafficStats {
     std::uint64_t h2d_scalar_calls{0};    // memcpy_to_device per double
     std::uint64_t full_v_pulls{0};        // anti-pattern: full vec_v host pull
     std::uint64_t bulk_mech_pushes{0};    // anti-pattern: full mech SoA H→D
-    std::uint64_t same_thread_device{0};   // S5 opt-in same-thread device edges
+    std::uint64_t same_thread_device{0};  // S5 opt-in same-thread device edges
     std::uint64_t buffer_path_edges{0};   // host mailbox → host tar writes
     std::uint64_t gather_ok{0};
     std::uint64_t gather_fallback{0};
@@ -59,8 +59,8 @@ void gap_traffic_note_buffer_edges(int n_edges) noexcept;
 /** Gather voltage sources from device vec_v into outsrc_buf on the host.
  *  Legacy MPI outsrc packing helper (one index per outsrc slot). */
 void gather_gap_voltage_sources_to_outsrc(int const* v_node_index_per_outsrc,
-                                         int n_outsrc,
-                                         double* outsrc_buf);
+                                          int n_outsrc,
+                                          double* outsrc_buf);
 
 /** Per-thread gather for pc.nthread(n>1); outsrc indices are scattered in outsrc_buf. */
 void gather_gap_voltage_sources_multithread(
@@ -99,19 +99,19 @@ bool gather_gap_mech_range_mailbox(double* const* host_ptrs,
  * Parallel arrays of length n; returns edges successfully written on device.
  */
 int same_thread_voltage_device_copy(std::vector<std::vector<int>> const& vnode_by_tid,
-                                   std::vector<std::vector<double*>> const& host_tar_by_tid,
-                                   int const* mech_types,
-                                   int n_types);
+                                    std::vector<std::vector<double*>> const& host_tar_by_tid,
+                                    int const* mech_types,
+                                    int n_types);
 
 /**
  * S5 opt-in: same-thread MechRange edges — device tar = device src (sparse).
  * @return edges successfully copied on device.
  */
 int same_thread_mech_device_copy(double* const* host_src,
-                                double* const* host_tar,
-                                int n,
-                                int const* mech_types,
-                                int n_types);
+                                 double* const* host_tar,
+                                 int n,
+                                 int const* mech_types,
+                                 int n_types);
 
 /** Push insrc_buf to device after MPI exchange. */
 void sync_insrc_buf_to_device(double* insrc_buf, int n_insrc);

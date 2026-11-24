@@ -754,15 +754,15 @@ void solve_interleaved2(int ith) {
 #if !CORENRN_BUILD && defined(NRN_ENABLE_GPU) && defined(_OPENACC)
     if (neuron::gpu::use_cuda_launcher() && nt->compute_gpu) {
         auto* d_info = static_cast<InterleaveInfo*>(acc_deviceptr(interleave_info + ith));
-        coreneuron_solve_interleaved2_launcher_ptrs(
-            static_cast<double*>(acc_deviceptr(vec_a)),
-            static_cast<double*>(acc_deviceptr(vec_b)),
-            static_cast<double*>(acc_deviceptr(vec_d)),
-            static_cast<double*>(acc_deviceptr(vec_rhs)),
-            static_cast<int*>(acc_deviceptr(nt->_v_parent_index)),
-            d_info,
-            ncore,
-            acc_get_cuda_stream(nt->stream_id));
+        coreneuron_solve_interleaved2_launcher_ptrs(static_cast<double*>(acc_deviceptr(vec_a)),
+                                                    static_cast<double*>(acc_deviceptr(vec_b)),
+                                                    static_cast<double*>(acc_deviceptr(vec_d)),
+                                                    static_cast<double*>(acc_deviceptr(vec_rhs)),
+                                                    static_cast<int*>(
+                                                        acc_deviceptr(nt->_v_parent_index)),
+                                                    d_info,
+                                                    ncore,
+                                                    acc_get_cuda_stream(nt->stream_id));
         return;
     }
 #endif

@@ -44,10 +44,10 @@ namespace neuron::event_order {
  * drain-self-before-NetCon tendency.
  */
 enum class Class : int {
-    SelfEvent = 0,       // net_send / net_move self-events
-    NetCon = 1,          // synaptic NetCon deliver
-    PreSynThreshold = 2, // voltage threshold → PreSyn::send
-    NetEvent = 3,        // net_event from POINT_PROCESS
+    SelfEvent = 0,        // net_send / net_move self-events
+    NetCon = 1,           // synaptic NetCon deliver
+    PreSynThreshold = 2,  // voltage threshold → PreSyn::send
+    NetEvent = 3,         // net_event from POINT_PROCESS
     Other = 9
 };
 

@@ -64,9 +64,7 @@ namespace neuron::gpu {
  * Only PreSyns with modern SoA voltage handles on this thread's psl_thr_ —
  * NEURON's stand-in for CoreNEURON's output PreSyn slice (no InputPreSyn type).
  */
-int collect_threshold_presyn_slots(NrnThread* nt,
-                                   ThresholdPresynSlot* slots,
-                                   int capacity) {
+int collect_threshold_presyn_slots(NrnThread* nt, ThresholdPresynSlot* slots, int capacity) {
     if (!net_cvode_instance || !nt) {
         return 0;
     }
@@ -85,8 +83,8 @@ int collect_threshold_presyn_slots(NrnThread* nt,
             continue;
         }
         if (slots && written < capacity) {
-            slots[written].thvar_row =
-                static_cast<int>(ps->thvar_.current_row() - nt->_node_data_offset);
+            slots[written].thvar_row = static_cast<int>(ps->thvar_.current_row() -
+                                                        nt->_node_data_offset);
             slots[written].threshold = ps->threshold_;
             slots[written].flag = ps->flag_ ? 1 : 0;
             slots[written].gid = ps->gid_;
@@ -226,7 +224,7 @@ extern std::vector<PlayRecord*>* net_cvode_instance_prl();
 extern void nrn_use_busywait(int);
 void* nrn_interthread_enqueue(NrnThread*);
 extern void (*nrnthread_v_transfer_)(NrnThread*);
-Object* (*nrnpy_seg_from_sec_x)(Section*, double);
+NRN_DLLSYM Object* (*nrnpy_seg_from_sec_x)(Section*, double);
 extern "C" void nrnthread_get_trajectory_requests(int tid,
                                                   int& bsize,
                                                   int& n_pr,
@@ -4263,7 +4261,7 @@ void ncs2nrn_integrate(double tstop) {
             neuron::gpu::finalize_psolve_download();
         }
 #endif
-    }  // cache_token destroyed; GPU mirrors persist until unsorted/invalidate
+    }                     // cache_token destroyed; GPU mirrors persist until unsorted/invalidate
     nrn_use_busywait(0);  // certainly not
 }
 

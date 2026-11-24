@@ -76,11 +76,10 @@ class CodegenNeuronAccVisitor: public CodegenNeuronCppVisitor {
     void print_function_call(const ast::FunctionCall& node) override;
 
     /** Skip dead node_data V load in state-specialized procedure bodies. */
-    void print_function_or_procedure(
-        const ast::Block& node,
-        const std::string& name,
-        const std::unordered_set<CppObjectSpecifier>& specifiers = {
-            CppObjectSpecifier::Inline}) override;
+    void print_function_or_procedure(const ast::Block& node,
+                                     const std::string& name,
+                                     const std::unordered_set<CppObjectSpecifier>& specifiers = {
+                                         CppObjectSpecifier::Inline}) override;
 
     void print_gpu_phase_registration() override;
 
@@ -88,8 +87,7 @@ class CodegenNeuronAccVisitor: public CodegenNeuronCppVisitor {
     void print_net_receive() override;
     void print_net_receive_registration() override;
 
-    std::string global_variable_name(const SymbolType& symbol,
-                                     bool use_instance) const override;
+    std::string global_variable_name(const SymbolType& symbol, bool use_instance) const override;
 
     void print_kernel_global_device_setup() override;
 
@@ -136,10 +134,12 @@ class CodegenNeuronAccVisitor: public CodegenNeuronCppVisitor {
     void visit_watch_statement(const ast::WatchStatement& node) override;
 
   private:
-    /** When true, RANGE reads use _present_fp_* (OpenACC kernel); else _lmc.fpfield (HOC/net_receive). */
+    /** When true, RANGE reads use _present_fp_* (OpenACC kernel); else _lmc.fpfield
+     * (HOC/net_receive). */
     mutable bool use_present_fp_indexing_{false};
 
-    /** True while emitting device net_buf_receive body (net_send → buffering, not host net_send). */
+    /** True while emitting device net_buf_receive body (net_send → buffering, not host net_send).
+     */
     mutable bool printing_net_buf_receive_kernel_{false};
 
     /**
@@ -262,8 +262,7 @@ class CodegenNeuronAccVisitor: public CodegenNeuronCppVisitor {
         const ast::Block& node) const;
 
     /** TABLE statement temp names used by the procedure body. */
-    [[nodiscard]] std::vector<std::string> procedure_table_temp_names(
-        const ast::Block& node) const;
+    [[nodiscard]] std::vector<std::string> procedure_table_temp_names(const ast::Block& node) const;
 
     /** Thin internal params for *_state specialized versions of \p node. */
     [[nodiscard]] ParamVector state_specialized_method_parameters(const ast::Block& node) const;

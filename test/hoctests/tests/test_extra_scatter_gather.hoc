@@ -1,0 +1,44 @@
+proc check() {
+    if (!$1) {
+        execerror("extra_scatter_gather check failed", "")
+    }
+}
+
+scatter_count = 0
+gather_count = 0
+
+proc scatter_callback() {
+    scatter_count += 1
+}
+
+proc gather_callback() {
+    gather_count += 1
+}
+
+objref cvode
+cvode = new CVode()
+cvode.active(0)
+
+// Duplicate registrations are intentional: removal must erase every match.
+cvode.extra_scatter_gather(0, "scatter_callback()")
+cvode.extra_scatter_gather(0, "scatter_callback()")
+cvode.extra_scatter_gather(1, "gather_callback()")
+
+finitialize(-65)
+scatter_count = 0
+gather_count = 0
+
+fadvance()
+check(scatter_count == 2)
+
+// With variable step inactive, re_init runs the gather callbacks directly.
+cvode.re_init()
+check(gather_count == 1)
+
+cvode.extra_scatter_gather_remove("scatter_callback()")
+cvode.extra_scatter_gather_remove("gather_callback()")
+
+fadvance()
+cvode.re_init()
+check(scatter_count == 2)
+check(gather_count == 1)

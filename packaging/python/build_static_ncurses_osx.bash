@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 set -eux
-# A script to build a static readline library for osx
+# Build a static ncurses for macOS wheels. CMake fetches BSD libedit and links
+# this archive; GNU readline is not built.
 #
 # PREREQUESITES:
 #  - curl
 #  - C/C++ compiler
 #  - /opt/nrnwheel/[ARCH] folder created with access rights (this specific path is kept for consistency wrt `build_wheels.bash`)
-#  - repo checkout including ci/deps (fetches ncurses/readline from nrn-ci-deps Release ci-deps-v1)
+#  - repo checkout including ci/deps (fetches ncurses from nrn-ci-deps Release ci-deps-v1)
 
 if [[ "$(uname -s)" != 'Darwin' ]]; then
-    echo "Error: this script is for macOS only. readline is already built statically in the linux Docker images"
+    echo "Error: this script is for macOS only. ncurses is already built statically in the linux Docker images"
     exit 1
 fi
 
@@ -32,16 +33,12 @@ fi
 # packaging/python -> repo root
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 FETCH="${REPO_ROOT}/ci/deps/fetch.sh"
-WORKDIR="$(mktemp -d -t nrn-readline-src.XXXXXX)"
+WORKDIR="$(mktemp -d -t nrn-ncurses-src.XXXXXX)"
 cleanup() { rm -rf "${WORKDIR}"; }
 trap cleanup EXIT
 
 export NRN_CI_DEPS_SOURCE="${NRN_CI_DEPS_SOURCE:-release}"
 bash "${FETCH}" ncurses-6.4-src "${WORKDIR}"
-# Keep Mac wheels on readline 7.0. 8.3 (from #3809) breaks tty input when
-# InterViews is multiplexing stdin with X11 (nrniv/nrngui with DISPLAY set).
-# Linux wheels already pin 7.0 in packaging/python/Dockerfile.
-bash "${FETCH}" readline-7.0-src "${WORKDIR}"
 
 (
   tar -xzf "${WORKDIR}/ncurses-6.4.tar.gz" -C "${WORKDIR}"
@@ -50,23 +47,10 @@ bash "${FETCH}" readline-7.0-src "${WORKDIR}"
   make -j install
 )
 
-(
-  tar -xzf "${WORKDIR}/readline-7.0.tar.gz" -C "${WORKDIR}"
-  cd "${WORKDIR}/readline-7.0"
-  ./configure --prefix="${NRNWHEEL_DIR}/readline" --disable-shared CFLAGS="-fPIC"
-  make -j install
-)
+NCURSES_MINOS="$(otool -l "${NRNWHEEL_DIR}/ncurses/lib/libncurses.a" | grep -e "minos \|version " | uniq | awk '{print $2}')"
 
-(cd "${NRNWHEEL_DIR}/readline/lib" \
-    && ar -x libreadline.a \
-    && ar -x ../../ncurses/lib/libncurses.a \
-    && ar cq libreadline.a *.o \
-    && rm *.o)
-
-RDL_MINOS="$(otool -l "${NRNWHEEL_DIR}/readline/lib/libreadline.a" | grep -e "minos \|version " | uniq | awk '{print $2}')"
-
-if [ "$RDL_MINOS" != "$MACOSX_DEPLOYMENT_TARGET" ]; then 
-	echo "Error: ${NRNWHEEL_DIR}/readline/lib/libreadline.a doesn't match MACOSX_DEPLOYMENT_TARGET ($MACOSX_DEPLOYMENT_TARGET)"
+if [ "$NCURSES_MINOS" != "$MACOSX_DEPLOYMENT_TARGET" ]; then
+	echo "Error: ${NRNWHEEL_DIR}/ncurses/lib/libncurses.a doesn't match MACOSX_DEPLOYMENT_TARGET ($MACOSX_DEPLOYMENT_TARGET)"
 	exit 1
 fi
-echo "Done." 
+echo "Done."

@@ -235,7 +235,7 @@ static std::vector<int> poutsrc_v_node_index_;  // v_node_index for voltage sour
 static std::vector<int> poutsrc_thread_id_;     // owning thread for voltage sources, else -1
 static std::vector<std::vector<int>> poutsrc_gather_outsrc_index_by_thread_;
 static std::vector<std::vector<int>> poutsrc_gather_v_node_index_by_thread_;
-static int* poutsrc_indices_;                                         // for recalc pointers
+static int* poutsrc_indices_;  // for recalc pointers
 static int insrc_buf_size_;
 static std::vector<int> insrccnt_;
 static std::vector<int> insrcdspl_;
@@ -460,8 +460,7 @@ static void rebuild_native_gap_tables() {
         int field{};
         int array_index{};
         bool operator==(MechKey const& o) const {
-            return nd == o.nd && type == o.type && field == o.field &&
-                   array_index == o.array_index;
+            return nd == o.nd && type == o.type && field == o.field && array_index == o.array_index;
         }
     };
     struct MechKeyHash {
@@ -630,7 +629,8 @@ static void rebuild_poutsrc_gpu_gather_tables() {
         if (v_ix < 0) {
             continue;
         }
-        int const tid = (static_cast<size_t>(i) < poutsrc_thread_id_.size()) ? poutsrc_thread_id_[i] : 0;
+        int const tid = (static_cast<size_t>(i) < poutsrc_thread_id_.size()) ? poutsrc_thread_id_[i]
+                                                                             : 0;
         if (tid < 0 || tid >= nrn_nthread) {
             continue;
         }
@@ -889,7 +889,9 @@ static void mpi_transfer() {
                 live_tid[i] = nd->_nt->id;
             }
             if (nrn_nthread == 1) {
-                neuron::gpu::gather_gap_voltage_sources_to_outsrc(live_vnode.data(), n, outsrc_buf_);
+                neuron::gpu::gather_gap_voltage_sources_to_outsrc(live_vnode.data(),
+                                                                  n,
+                                                                  outsrc_buf_);
             } else {
                 std::vector<std::vector<int>> out_ix_by_tid(nrn_nthread);
                 std::vector<std::vector<int>> vnode_by_tid(nrn_nthread);
@@ -904,8 +906,10 @@ static void mpi_transfer() {
                     out_ix_by_tid[tid].push_back(i);
                     vnode_by_tid[tid].push_back(live_vnode[i]);
                 }
-                neuron::gpu::gather_gap_voltage_sources_multithread(
-                    out_ix_by_tid, vnode_by_tid, n, outsrc_buf_);
+                neuron::gpu::gather_gap_voltage_sources_multithread(out_ix_by_tid,
+                                                                    vnode_by_tid,
+                                                                    n,
+                                                                    outsrc_buf_);
             }
             for (i = 0; i < n; ++i) {
                 if (live_vnode[i] < 0) {
@@ -1002,11 +1006,11 @@ static void gap_v_transfer_controller() {
                 live_slot[tid].push_back(static_cast<int>(s));
                 live_ix[tid].push_back(nd->v_node_index);
             }
-            native_mailbox_fresh_ = neuron::gpu::gather_gap_voltage_mailbox(
-                live_slot,
-                live_ix,
-                native_vsrc_val_.data(),
-                static_cast<int>(native_vsrc_val_.size()));
+            native_mailbox_fresh_ =
+                neuron::gpu::gather_gap_voltage_mailbox(live_slot,
+                                                        live_ix,
+                                                        native_vsrc_val_.data(),
+                                                        static_cast<int>(native_vsrc_val_.size()));
             if (std::getenv("NRN_GAP_DEBUG")) {
                 static int gonce = 0;
                 if (gonce < 3) {
@@ -1053,12 +1057,12 @@ static void gap_v_transfer_controller() {
                 src_types.insert(ms.type);
             }
             std::vector<int> types(src_types.begin(), src_types.end());
-            native_msrc_fresh_ = neuron::gpu::gather_gap_mech_range_mailbox(
-                host_ptrs.data(),
-                static_cast<int>(host_ptrs.size()),
-                types.empty() ? nullptr : types.data(),
-                static_cast<int>(types.size()),
-                native_msrc_val_.data());
+            native_msrc_fresh_ =
+                neuron::gpu::gather_gap_mech_range_mailbox(host_ptrs.data(),
+                                                           static_cast<int>(host_ptrs.size()),
+                                                           types.empty() ? nullptr : types.data(),
+                                                           static_cast<int>(types.size()),
+                                                           native_msrc_val_.data());
             // If no device mapping yet (pre-upload / host-only residual), still
             // use host values already filled by gather; mark fresh so edges read
             // mailbox (matches host when device missed).
@@ -1174,11 +1178,11 @@ static void gap_v_transfer_controller() {
                     }
                 }
             }
-            int const n_v = neuron::gpu::same_thread_voltage_device_copy(
-                vnode_by_tid,
-                tar_by_tid,
-                types.empty() ? nullptr : types.data(),
-                static_cast<int>(types.size()));
+            int const n_v =
+                neuron::gpu::same_thread_voltage_device_copy(vnode_by_tid,
+                                                             tar_by_tid,
+                                                             types.empty() ? nullptr : types.data(),
+                                                             static_cast<int>(types.size()));
             int const n_m = neuron::gpu::same_thread_mech_device_copy(
                 mech_src.empty() ? nullptr : mech_src.data(),
                 mech_tar.empty() ? nullptr : mech_tar.data(),
@@ -1195,8 +1199,7 @@ static void gap_v_transfer_controller() {
             }
             if (n_m == n_cand_m && n_cand_m > 0) {
                 for (size_t k = 0; k < mech_edge_ix.size(); ++k) {
-                    native_same_thread_done_[mech_tid[k]][static_cast<size_t>(mech_edge_ix[k])] =
-                        1;
+                    native_same_thread_done_[mech_tid[k]][static_cast<size_t>(mech_edge_ix[k])] = 1;
                 }
             }
         }
@@ -1243,10 +1246,10 @@ static void thread_transfer(NrnThread* _nt) {
         // threads (CUDA_ERROR_INVALID_CONTEXT). Main thread flushes after
         // multithread lastpart via nrn_native_gap_targets_to_device().
         // S5: skip edges already filled by same-thread device shortcut.
-        auto const& done =
-            (_nt->id >= 0 && _nt->id < static_cast<int>(native_same_thread_done_.size()))
-                ? native_same_thread_done_[_nt->id]
-                : std::vector<char>{};
+        auto const& done = (_nt->id >= 0 &&
+                            _nt->id < static_cast<int>(native_same_thread_done_.size()))
+                               ? native_same_thread_done_[_nt->id]
+                               : std::vector<char>{};
         int n_buf = 0;
         for (int i = 0; i < ttd.cnt; ++i) {
             if (static_cast<size_t>(i) < done.size() && done[i]) {
@@ -1346,9 +1349,9 @@ void nrn_native_gap_targets_to_device() {
     std::vector<double*> all_ptrs;
     for (int tid = 0; tid < nrn_nthread; ++tid) {
         TransferThreadData& ttd = transfer_thread_data_[tid];
-        auto const& done =
-            (tid < static_cast<int>(native_same_thread_done_.size())) ? native_same_thread_done_[tid]
-                                                                      : std::vector<char>{};
+        auto const& done = (tid < static_cast<int>(native_same_thread_done_.size()))
+                               ? native_same_thread_done_[tid]
+                               : std::vector<char>{};
         for (int i = 0; i < ttd.cnt; ++i) {
             if (static_cast<size_t>(i) < done.size() && done[i]) {
                 continue;
@@ -1369,17 +1372,16 @@ void nrn_native_gap_targets_to_device() {
     if (!all_ptrs.empty()) {
         if (!types.empty()) {
             neuron::gpu::scatter_gap_targets_to_device(all_ptrs.data(),
-                                                      static_cast<int>(all_ptrs.size()),
-                                                      types.data(),
-                                                      static_cast<int>(types.size()));
+                                                       static_cast<int>(all_ptrs.size()),
+                                                       types.data(),
+                                                       static_cast<int>(types.size()));
         } else {
             neuron::gpu::scatter_gap_targets_to_device(all_ptrs.data(),
-                                                      static_cast<int>(all_ptrs.size()));
+                                                       static_cast<int>(all_ptrs.size()));
         }
     }
     if (!types.empty()) {
-        neuron::gpu::sync_gap_target_mechs_to_device(types.data(),
-                                                    static_cast<int>(types.size()));
+        neuron::gpu::sync_gap_target_mechs_to_device(types.data(), static_cast<int>(types.size()));
     }
 }
 #else

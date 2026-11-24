@@ -82,19 +82,10 @@ bool trigger_matches(NrnThread& nt) {
 
 void build_suffix(char* buf, std::size_t n, PrcellCheckpointPhase phase) {
     if (g_config.use_time) {
-        std::snprintf(buf,
-                      n,
-                      "%s_t%.9g_%s",
-                      backend_tag(),
-                      g_config.t_trigger,
-                      phase_name(phase));
+        std::snprintf(buf, n, "%s_t%.9g_%s", backend_tag(), g_config.t_trigger, phase_name(phase));
     } else {
-        std::snprintf(buf,
-                      n,
-                      "%s_s%ld_%s",
-                      backend_tag(),
-                      g_config.step_trigger,
-                      phase_name(phase));
+        std::snprintf(
+            buf, n, "%s_s%ld_%s", backend_tag(), g_config.step_trigger, phase_name(phase));
     }
 }
 

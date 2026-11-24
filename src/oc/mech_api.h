@@ -24,5 +24,4 @@
 /* C linkage: GPU defs in neuron/gpu/net_*_buffer.cpp are extern "C"; NMODL
  * mechs include this header and must match. CPU stubs in init.cpp likewise. */
 extern "C" void hoc_register_net_send_buffering(int);
-extern "C" void hoc_register_net_receive_buffering(void (*)(struct NrnThread*),
-                                                   int);
+extern "C" void hoc_register_net_receive_buffering(void (*)(struct NrnThread*), int);

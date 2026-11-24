@@ -265,8 +265,8 @@ void gather_gap_voltage_sources_multithread(
         any_gpu = true;
         int const* const outsrc_idx = outsrc_indices.data();
         int const* const v_node_idx = v_indices.data();
-        nrn_pragma_acc(parallel loop deviceptr(d_v, d_out) copyin(outsrc_idx [0:n], v_node_idx [0:n])
-                           async(nt.stream_id))
+        nrn_pragma_acc(parallel loop deviceptr(d_v, d_out)
+                           copyin(outsrc_idx [0:n], v_node_idx [0:n]) async(nt.stream_id))
         nrn_pragma_omp(target teams distribute parallel for simd map(to: outsrc_idx[0:n], v_node_idx[0:n]) if(nt.compute_gpu))
         for (int i = 0; i < n; ++i) {
             int const ix = v_node_idx[i];
@@ -571,10 +571,10 @@ bool resolve_scatter_loc(double* p,
  * @return number of targets successfully scheduled on device.
  */
 int scatter_targets_bulk_device(double* const* host_ptrs,
-                               int n,
-                               int const* mech_types,
-                               int n_types,
-                               int stream_id) {
+                                int n,
+                                int const* mech_types,
+                                int n_types,
+                                int stream_id) {
     if (!host_ptrs || n <= 0) {
         return 0;
     }
@@ -679,7 +679,7 @@ int scatter_targets_bulk_device(double* const* host_ptrs,
         ensure_int_buf(offs_p, ne);
         // Bulk H→D of packed values (and offsets if mapping was reused with dirty host).
         nrn_pragma_acc(update device(vals_p [0:ne], offs_p [0:ne]) async(stream_id))
-        nrn_pragma_omp(target update to(vals_p[0:ne], offs_p[0:ne]))
+        nrn_pragma_omp(target update to(vals_p [0:ne], offs_p [0:ne]))
         gap_traffic_note_h2d_bulk(static_cast<std::size_t>(ne) * (sizeof(double) + sizeof(int)));
 
         double* d_vals = nrn_target_is_present(vals_p);
@@ -868,7 +868,7 @@ void scatter_gap_targets_to_device(double* const* host_ptrs,
     }
     if (miss > 0 && ok == 0 && model_is_on_device() && !allow_gap_host_fallback()) {
         fail_gap_device("scatter_targets",
-                       "no gap target scalars mapped on device after bulk scatter");
+                        "no gap target scalars mapped on device after bulk scatter");
     }
 #else
     (void) host_ptrs;
@@ -954,10 +954,12 @@ void print_gap_traffic_stats(char const* where) noexcept {
         return;
     }
     auto const& s = g_traffic;
-    double const avg_d2h =
-        s.steps > 0 ? static_cast<double>(s.bytes_d2h) / static_cast<double>(s.steps) : 0.0;
-    double const avg_h2d =
-        s.steps > 0 ? static_cast<double>(s.bytes_h2d) / static_cast<double>(s.steps) : 0.0;
+    double const avg_d2h = s.steps > 0
+                               ? static_cast<double>(s.bytes_d2h) / static_cast<double>(s.steps)
+                               : 0.0;
+    double const avg_h2d = s.steps > 0
+                               ? static_cast<double>(s.bytes_h2d) / static_cast<double>(s.steps)
+                               : 0.0;
     double const avg_h2d_scalar =
         s.steps > 0 ? static_cast<double>(s.h2d_scalar_calls) / static_cast<double>(s.steps) : 0.0;
     std::fprintf(stderr,
@@ -1095,9 +1097,9 @@ void gap_traffic_note_buffer_edges(int n_edges) noexcept {
 }
 
 int same_thread_voltage_device_copy(std::vector<std::vector<int>> const& vnode_by_tid,
-                                   std::vector<std::vector<double*>> const& host_tar_by_tid,
-                                   int const* mech_types,
-                                   int n_types) {
+                                    std::vector<std::vector<double*>> const& host_tar_by_tid,
+                                    int const* mech_types,
+                                    int n_types) {
 #if defined(NRN_ENABLE_GPU)
     if (!native_gap_gpu_active() || !gap_same_thread_device_enabled()) {
         return 0;
@@ -1107,9 +1109,8 @@ int same_thread_voltage_device_copy(std::vector<std::vector<int>> const& vnode_b
     std::lock_guard<std::mutex> const lock{g_gap_device_push_mutex};
     for (int tid = 0; tid < nthread && tid < nrn_nthread; ++tid) {
         auto const& vnodes = vnode_by_tid[tid];
-        auto const& tars =
-            tid < static_cast<int>(host_tar_by_tid.size()) ? host_tar_by_tid[tid]
-                                                           : std::vector<double*>{};
+        auto const& tars = tid < static_cast<int>(host_tar_by_tid.size()) ? host_tar_by_tid[tid]
+                                                                          : std::vector<double*>{};
         int const n = static_cast<int>(vnodes.size());
         if (n <= 0 || static_cast<int>(tars.size()) != n) {
             continue;
@@ -1165,10 +1166,10 @@ int same_thread_voltage_device_copy(std::vector<std::vector<int>> const& vnode_b
 }
 
 int same_thread_mech_device_copy(double* const* host_src,
-                                double* const* host_tar,
-                                int n,
-                                int const* mech_types,
-                                int n_types) {
+                                 double* const* host_tar,
+                                 int n,
+                                 int const* mech_types,
+                                 int n_types) {
 #if defined(NRN_ENABLE_GPU)
     if (!native_gap_gpu_active() || !gap_same_thread_device_enabled() || n <= 0 || !host_src ||
         !host_tar) {

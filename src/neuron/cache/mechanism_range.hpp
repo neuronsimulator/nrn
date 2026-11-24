@@ -66,8 +66,8 @@ struct MechanismRange {
         : MechanismRange{cache_token, ml} {
         assert(type == ml.type());
         if (nt.compute_gpu) {
-            if (auto* const gpu_pdata =
-                    mechanism::_get::gpu_pdata_ptr_cache(cache_token, ml.type())) {
+            if (auto* const gpu_pdata = mechanism::_get::gpu_pdata_ptr_cache(cache_token,
+                                                                             ml.type())) {
                 m_pdata_ptrs = gpu_pdata;
             }
         }
