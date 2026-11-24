@@ -1,5 +1,6 @@
 """ctypes bindings to libnrniv for NEURON 9+."""
 import collections as _collections
+import contextlib
 import ctypes
 import ctypes.util
 import glob
@@ -10,6 +11,7 @@ import os
 import site
 import sys
 import threading
+import traceback
 import warnings
 from pathlib import Path
 
@@ -492,21 +494,62 @@ _hoc_top_level_symlist = ctypes.c_void_p.in_dll(libnrniv, "hoc_top_level_symlist
 
 
 def _call_at_top_level(target, args):
-    """Call with HOC temporarily switched to its top-level context."""
+    """Call with HOC temporarily switched to its top-level context.
+
+    HOC_LOCK is held while switched. A template context may be another
+    thread's, in Python code its method runs; switching under it would restore
+    the context after the method has returned.
+    """
     if not _hoc_thisobject.value:
         return target(*args)
-    saved_object = _hoc_thisobject.value
-    saved_data = _hoc_objectdata.value
-    saved_symlist = _hoc_symlist.value
-    _hoc_thisobject.value = None
-    _hoc_objectdata.value = _hoc_top_level_data.value
-    _hoc_symlist.value = _hoc_top_level_symlist.value
-    try:
-        return target(*args)
-    finally:
-        _hoc_thisobject.value = saved_object
-        _hoc_objectdata.value = saved_data
-        _hoc_symlist.value = saved_symlist
+    with HOC_LOCK:
+        saved_object = _hoc_thisobject.value
+        if not saved_object:  # the other thread's method returned
+            return target(*args)
+        saved_data = _hoc_objectdata.value
+        saved_symlist = _hoc_symlist.value
+        try:
+            # hoc_thisobject is cleared last and restored first: while it is
+            # NULL, another thread's unlocked lookup uses hoc_symlist.
+            _hoc_objectdata.value = _hoc_top_level_data.value
+            _hoc_symlist.value = _hoc_top_level_symlist.value
+            _hoc_thisobject.value = None
+            return target(*args)
+        finally:
+            _hoc_thisobject.value = saved_object
+            _hoc_objectdata.value = saved_data
+            _hoc_symlist.value = saved_symlist
+
+
+def _at_top_level(hook):
+    """``hook``, run whole with HOC at its top level: for a hook core calls.
+
+    Python code that HOC runs from a template method must run at the top
+    level, as NEURON's nrnpy_pyCallObject does. Otherwise a name the template
+    also has is its member (``n.x`` reads the member's slot of the top-level
+    data), and a Section created there reallocates the template object's data
+    as the top level's. Converting the hook's HOC arguments runs there too.
+    A hook core calls per element or per event checks _hoc_thisobject and
+    wraps only the user call instead: these two calls cost Vector.apply ~10%.
+    """
+
+    def at_top_level(*args):
+        return _call_at_top_level(hook, args)
+
+    return at_top_level
+
+
+def _top_level_symbol(name):
+    """The symbol ``n.<name>`` names (bytes ``name``), even from a template method.
+
+    nrn_symbol is hoc_lookup, which searches a running template's symbols
+    first, and nrn_symbol_dataptr indexes the top-level data with any NOTUSER
+    symbol's index: a member's would read or write another variable. At the
+    top level this is one pointer read more than nrn_symbol (n.t reads).
+    """
+    if not _hoc_thisobject.value:
+        return _nrn_symbol(name)
+    return _call_at_top_level(_nrn_symbol, (name,))
 
 
 # hoc_nrnpython (field 13, after hoccommand_exec_strret at 96): the builtin
@@ -728,12 +771,61 @@ def _owned_hoc_object_to_python(obj):
     return _wrap_owned_object(obj)
 
 
+# Private prototypes (not ctypes.pythonapi's shared ones). PySequence_Check
+# tells a numpy scalar, which is indexable, from an array; no Python-level
+# test does.
+_PyNumber_Check = ctypes.PYFUNCTYPE(ctypes.c_int, ctypes.py_object)(
+    ("PyNumber_Check", ctypes.pythonapi)
+)
+_PySequence_Check = ctypes.PYFUNCTYPE(ctypes.c_int, ctypes.py_object)(
+    ("PySequence_Check", ctypes.pythonapi)
+)
+_Py_TPFLAGS_HEAPTYPE = 1 << 9
+
+
+def _is_hoc_number(value):
+    """Whether HOC takes *value* as a number, as NEURON's nrnpy_numbercheck.
+
+    That is what PyNumber_Check accepts, unless it is a sequence or float()
+    fails: a numpy scalar (numpy.bool_ too) or a Decimal is a number; complex,
+    a numpy array (even 0-d), str and None are not. Nor is an instance of a
+    class defined in Python: NEURON 9.0 rejects every type with a sequence
+    methods table, which each such class has. NEURON master asks
+    PySequence_Check instead, which accepts one that has __float__.
+    """
+    if type(value).__flags__ & _Py_TPFLAGS_HEAPTYPE:
+        return False
+    if not _PyNumber_Check(value) or _PySequence_Check(value):
+        return False
+    try:
+        float(value)
+    except Exception:
+        return False
+    return True
+
+
 # Bounded rotating keepalive for strings pushed back to HOC from a Python
 # component read. The pushed char** must stay valid until HOC consumes
 # it (within the same expression). Mirrors real NEURON's hoc_temp_charptr,
 # which hands out slots from a small rotating pool; a bounded ring keeps the
 # buffers alive across the immediate read without growing without bound.
 _PY2N_STR_POOL = _collections.deque(maxlen=64)
+
+
+def _hoccommand_exec_failed(exc):
+    """NEURON's hoccommand_exec on an Exception: print it, then a HOC error.
+
+    NEURON prints the same text and raises the error in the call that ran the
+    command (finitialize for an FInitializeHandler); it is raised there.
+    """
+    from . import _stash_hoc_error
+
+    message = "Python Callback failed [hoccommand_exec]:\n" + "".join(
+        traceback.format_exception(exc)
+    )
+    _stash_hoc_error(message, exc)
+    with contextlib.suppress(Exception):  # sys.stderr may be broken
+        print("NEURON: " + message, end="", file=sys.stderr)
 
 
 def _install_cfunctype_methods():
@@ -802,6 +894,7 @@ def _install_cfunctype_methods():
     ).value
 
     _HOCCOMMAND_EXEC_T = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_void_p)
+    package = sys.modules[__package__]
 
     @_HOCCOMMAND_EXEC_T
     def _py_hoccommand_exec(obj_ptr):
@@ -810,7 +903,7 @@ def _install_cfunctype_methods():
         # offset 8 (oc/hocdec.h:173 layout), cast to Py2Nrn*, recover
         # the registry-owned PyObject*, and call it. Return 1
         # on success so cvodeobj.cpp:511 doesn't `hoc_execerror`.
-        if not obj_ptr:
+        if not obj_ptr or package._pending_callback_exc is not None:
             return 0
         try:
             po_handle = _pythonobject_payload_ptr(obj_ptr)
@@ -831,31 +924,22 @@ def _install_cfunctype_methods():
             # args value passed as the single argument.
             if isinstance(callback, tuple):
                 args = callback[1] if isinstance(callback[1], tuple) else (callback[1],)
-                callback[0](*args)
+                func = callback[0]
             else:
-                callback()
+                func, args = callback, ()
+            # At the top level, as NEURON's nrnpy_pyCallObject. Checked here
+            # because this runs per event: an unconditional
+            # _call_at_top_level costs NetCon.record ~2%.
+            if _hoc_thisobject.value:
+                _call_at_top_level(func, args)
+            else:
+                func(*args)
             return 1
-        except BaseException:
+        except BaseException as exc:
             # The core reports the failure from the return value; an
-            # exception must not cross ctypes. NEURON prints the same text.
-            import sys
-            import traceback
-
-            print("NEURON: Python Callback failed [hoccommand_exec]:", file=sys.stderr)
-            traceback.print_exc()
-            # NEURON raises it as a HOC error of the call that ran the command
-            # (finitialize for an FInitializeHandler); it is raised there.
-            try:
-                from . import _stash_callback_exc
-
-                _stash_callback_exc(
-                    RuntimeError(
-                        "hoc_execerror: Python Callback failed [hoccommand_exec]:\n"
-                        + traceback.format_exc()
-                    )
-                )
-            except BaseException:
-                pass
+            # exception must not cross ctypes. A KeyboardInterrupt is only
+            # printed: the core decides (extra_scatter_gather raises).
+            package._callback_failed(exc, _hoccommand_exec_failed)
             return 0
 
     _CFUNCTYPE_KEEPALIVE.append(_py_hoccommand_exec)
@@ -961,6 +1045,9 @@ def _install_cfunctype_methods():
             _nrn_str_push(ctypes.pointer(c_buf))
         elif isinstance(result, _Object):
             _nrn_object_push(result._obj)
+        elif _is_hoc_number(result):
+            # A numpy scalar or a Decimal: a number in NEURON's py2n_component.
+            _nrn_double_push(float(result))
         else:
             obj_ptr = _py_pyobj_to_hoc_cfunctype(result)
             if obj_ptr is None:
@@ -1566,9 +1653,13 @@ _nrn_object_new_nothrow = _bind(
 )
 
 
-def _nrn_object_new(sym, narg):
-    """Construct a HOC object without allowing C++ exceptions across ctypes."""
-    result = Object()
+def _nrn_object_new(sym, narg, result=None):
+    """Construct a HOC object without allowing C++ exceptions across ctypes.
+
+    A caller that must release the object when an interrupt arrives as this
+    returns passes the ``Object`` out-parameter and reads it afterwards.
+    """
+    result = Object() if result is None else result
     err = ctypes.create_string_buffer(_ERR_BUF_SIZE)
     rc = _nrn_object_new_nothrow(sym, narg, ctypes.byref(result), err, _ERR_BUF_SIZE)
     if rc:
@@ -1891,6 +1982,19 @@ def _property_array_get_checked(obj, name, index):
     return value
 
 
+def _refused_double(exc, error_type):
+    """``error_type`` carrying Python's own text for a value ctypes refused as
+    a double argument. NEURON raises ValueError for a range variable and
+    TypeError for a point-process property, so the caller picks the type."""
+    return error_type(exc.args[0].rpartition(": ")[2])
+
+
+def _as_double(value):
+    """``value`` as a double; a str, None or other non-number is a TypeError
+    ("must be real number, not str"), as for a NEURON global."""
+    return ctypes.c_double(value).value
+
+
 def _property_set_checked(obj, name, value):
     # Writes have no NaN sentinel to gate on, so the validity probe runs on
     # every write. Real NEURON raises AttributeError("POINTER is NULL") for
@@ -1898,13 +2002,19 @@ def _property_set_checked(obj, name, value):
     # through corrupts the invalid handle's target.
     if not _nrn_property_data_handle_is_valid(obj, name, 0):
         raise AttributeError("POINTER is NULL")
-    _nrn_property_set(obj, name, value)
+    try:
+        _nrn_property_set(obj, name, value)
+    except ctypes.ArgumentError as exc:
+        raise _refused_double(exc, TypeError) from None
 
 
 def _property_array_set_checked(obj, name, index, value):
     if not _nrn_property_data_handle_is_valid(obj, name, index):
         raise AttributeError("POINTER is NULL")
-    _nrn_property_array_set(obj, name, index, value)
+    try:
+        _nrn_property_array_set(obj, name, index, value)
+    except ctypes.ArgumentError as exc:
+        raise _refused_double(exc, TypeError) from None
 
 
 def _ref_property_set_checked(obj, name, value):
@@ -2095,6 +2205,48 @@ def get_topology_version():
     components.
     """
     return (_diam_changed.value, _structure_change_cnt.value)
+
+
+# Set when a section is created, deleted, connected or disconnected, or its
+# nseg changes (cabcode.cpp:51); cleared by setup_topology. A section loop
+# keeps it set, because setup_topology raises before clearing it.
+_tree_changed = ctypes.c_int.in_dll(libnrniv, "tree_changed")
+
+
+def _ensure_topology(sec_ptr, x):
+    """Run the tree setup that a raw C call at sec(x) would run, nothrow.
+
+    node_exact (cabcode.cpp:1800-1824) runs setup_topology when
+    tree_changed is set and x is the section's 0 end after its orientation.
+    On a section loop setup_topology raises "A loop exists involving
+    section ..." (section_order, solve.cpp:766-773) or "... connection will
+    form loop" (nrn_parent_info, cabcode.cpp:1603-1608): a C++ throw, which
+    aborts the process when it crosses ctypes. HOC this_node(x)
+    (cabcode.cpp:2135) makes the same node_exact call through the nothrow
+    function API, so here it is RuntimeError with NEURON's message. The loop
+    keeps tree_changed set, and every later access raises again, as in
+    NEURON.
+
+    Call it before a raw C call that resolves an end of the section. A
+    deleted section is left to the caller's liveness check. With no setup
+    pending it is one int read.
+    """
+    if not _tree_changed.value or not _nrn_section_is_active(sec_ptr):
+        return
+    sym = _nrn_symbol(b"this_node")
+    err = ctypes.create_string_buffer(_ERR_BUF_SIZE)
+    with HOC_LOCK:
+        _nrn_section_push(sec_ptr)
+        try:
+            _nrn_double_push(x)
+            ret = _nrn_function_call(sym, 1, err, _ERR_BUF_SIZE)
+            # The return value, or after a failure the argument the nothrow
+            # call put back on the stack (gap-56).
+            _nrn_double_pop()
+        finally:
+            _nrn_section_pop()
+    if ret:
+        raise RuntimeError(err.value.decode("utf-8", errors="replace"))
 
 
 # ---------------------------------------------------------------------------

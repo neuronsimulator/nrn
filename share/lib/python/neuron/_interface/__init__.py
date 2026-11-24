@@ -7,11 +7,13 @@ import ctypes
 import numbers
 import pkgutil
 import sys
-import threading
 
 from . import _coreneuron, _rvp_hook
 from ._docs import top_level_doc as _top_level_doc
 from .api import (
+    HOC_LOCK,
+    _as_double,
+    _is_hoc_number,
     hoc_call_depth,
     hoc_locked,
     symbol_array_dims,
@@ -23,8 +25,11 @@ from .api import (
     _METHODS_PRAXIS_EFUN_OFFSET,
     _MIN_VALID_DATAPTR,
     TYPES,
+    _at_top_level,
     _call_at_top_level,
+    _hoc_thisobject,
     _check_nrn_error,
+    _ensure_topology,
     _install_methods_slot,
     _nrn_allsec,
     _nrn_cas,
@@ -59,6 +64,7 @@ from .api import (
     _nrn_symbol_object_get,
     _nrn_symbol_type,
     _structure_change_cnt,
+    _top_level_symbol,
     install_stdout_redirect,
     _nrn_objgetarg,
     _nrn_class_name,
@@ -75,7 +81,9 @@ from .nrnref import (
     NrnRangeVarRef,
     NrnStrRef,
     NrnVarRef,
+    _array_index,
     numpy_element_ref,  # noqa: F401  (public: myneuron.numpy_element_ref)
+    refuse_pickle,
 )
 from .object import List, Object, SectionList, Vector
 from .sections import PYTHON_SECTIONS, Section, _section_for
@@ -83,7 +91,9 @@ from .utils import (
     _name_error,
     TEMPLATE_CONVERTERS,
     FuncWrapper,
+    _check_sec_kwarg,
     _is_python_object_arg,
+    _pop_pushed_section,
     _PythonObjectArg,
     _Singleton,
     _wrap_owned_object,
@@ -128,29 +138,13 @@ _register_template_section_callback()
 # List and Vector are pre-registered so they use hand-coded subclasses.
 _dynamic_classes = {"List": List, "Vector": Vector, "SectionList": SectionList}
 
-# Python callbacks invoked from HOC (FInitializeHandler(type, python_callable)).
-# Each callable gets an integer id; the HOC function `_mn_py_callback(id)`
-# dispatches by id. Same scheme as the MATLAB interface's callback registry.
-#
-# Object.__del__ (object.py) evicts an entry via _unregister_py_callback when
-# the FInitializeHandler wrapper is collected.
-# TODO(gap-46): that is the only eviction path. An id never bound to a wrapper
-# (construction raises after _register_py_callback) or a wrapper in a reference
-# cycle leaks its entry. A weakref scheme would auto-evict but breaks the
-# "registry keeps the callable alive" contract the FIH wrapper relies on.
-_PY_CALLBACKS = {}
-_PY_CALLBACK_NEXT_ID = 0
-# A wrapper can be constructed on the main thread while another is evicted from
-# the gui timer thread's GC, and the id read-inc-store is not atomic, so
-# registry mutations take this lock. RLock: tolerate re-entry.
-_PY_CALLBACK_LOCK = threading.RLock()
-
 # Set when a Python callback (e.g. an FInitializeHandler) raises inside the HOC
 # frame. The exception cannot unwind through the ctypes trampoline (C++ frame;
 # SIGSEGV), so the trampoline stashes it here and the dispatch chokepoints
 # re-raise it after the HOC call (finitialize / run / continuerun) returns.
 # Otherwise the simulation would continue on half-initialized state and give a
-# plausible but wrong trace.
+# plausible but wrong trace. Until then the callbacks run no more Python, which
+# NEURON's HOC error would have prevented.
 _pending_callback_exc = None
 # hoc_call_depth() when it was stashed: only a call at that depth or an outer
 # one raises it.
@@ -161,16 +155,31 @@ _stoprun = ctypes.c_int.in_dll(libnrniv, "stoprun")
 _praxis_saved_stoprun = [None]
 
 
+def _print_exception(exc):
+    """Print *exc* as PyErr_Print does; a broken sys.stderr raises nothing."""
+    sys.__excepthook__(type(exc), exc, exc.__traceback__)
+
+
 def _stash_callback_exc(exc):
     """Stash *exc* for _raise_pending_callback_exc. The first writer wins.
 
-    Called by the FInitializeHandler trampoline and the gap-41 py2n_component
-    bridge (api.py).
+    With no call from Python to raise it (HOC run by a wrapper's __del__, or by
+    core itself) it is only printed: stashed, it would stay for good and stop
+    every later callback.
     """
     global _pending_callback_exc, _pending_callback_depth
-    if _pending_callback_exc is None:
+    if not hoc_call_depth():
+        _print_exception(exc)
+    elif _pending_callback_exc is None:
         _pending_callback_exc = exc
         _pending_callback_depth = hoc_call_depth()
+
+
+def _stash_hoc_error(message, exc):
+    """Stash the HOC error NEURON raises when a callback fails with *exc*."""
+    error = RuntimeError(f"hoc_execerror: {message}")
+    error.__cause__ = exc
+    _stash_callback_exc(error)
 
 
 def _raise_pending_callback_exc():
@@ -197,53 +206,21 @@ def _raise_pending_callback_exc():
         raise exc
 
 
-def _register_py_callback_dispatcher():
-    """Register `_mn_py_callback(id)` as a HOC function.
+def _callback_failed(exc, hoc_error, other=_print_exception):
+    """Handle *exc* from a Python callback core called, as nrnpy_p2h.cpp does.
 
-    FInitializeHandler is constructed with the command `_mn_py_callback(N)`,
-    where N selects the callable in _PY_CALLBACKS. Returns 0 so it stays
-    type 280 (FUN_BLTIN, returning double).
+    An Exception is a HOC error of the call that ran the callback. A ctypes
+    callback cannot raise one; hoc_error(exc) stashes what that call raises. A
+    SystemExit exits from inside NEURON's PyErr_Print; here the call raises it
+    when it returns. Anything else, such as a KeyboardInterrupt, is printed and
+    the call goes on, or goes to other(exc).
     """
-
-    def _dispatch():
-        # Bound before the try: if _nrn_getarg raises, the except handler still
-        # uses cb_id, and a NameError would mask the real cause.
-        global _pending_callback_exc
-        cb_id = None
-        try:
-            cb_id = int(_nrn_getarg(1)[0])
-            # After an earlier handler failed, run no more user code on the
-            # inconsistent state (real NEURON aborts the init on the first error).
-            if _pending_callback_exc is None:
-                cb = _PY_CALLBACKS.get(cb_id)
-                if cb is not None:
-                    cb()
-        except Exception as exc:
-            # Stash for re-raise after the HOC call; also print for visibility.
-            _stash_callback_exc(exc)
-            import sys
-
-            print(
-                f"myneuron: callback id={cb_id} raised: "
-                f"{type(exc).__name__}: {exc}",
-                file=sys.stderr,
-            )
-        # hoc_ret before pushing the return slot (oc/code.cpp order); the
-        # reverse leaves the pushed value as the return slot.
-        _nrn_hoc_ret()
-        _nrn_double_push(0.0)
-
-    cb_type = ctypes.CFUNCTYPE(None)
-    global _mn_py_callback_cb
-    _mn_py_callback_cb = cb_type(_dispatch)
-    _nrn_register_function(
-        ctypes.cast(_mn_py_callback_cb, ctypes.c_void_p),
-        b"_mn_py_callback",
-        280,
-    )
-
-
-_register_py_callback_dispatcher()
+    if isinstance(exc, SystemExit):
+        _stash_callback_exc(exc)
+    elif isinstance(exc, Exception):
+        hoc_error(exc)
+    else:
+        other(exc)
 
 
 def _register_nrnpython_callback():
@@ -269,29 +246,30 @@ def _register_nrnpython_callback():
       * returns 1.0 on success, 0.0 on error (matches
         `(PyRun_SimpleString == 0)`),
       * Python exceptions are printed to stderr but do not propagate
-        into the HOC frame.
+        into the HOC frame,
+      * except SystemExit, on which PyRun_SimpleString's PyErr_Print exits:
+        the HOC call that ran nrnpython() raises it when it returns.
     """
 
     def _nrnpython_callback():
+        status = 0.0
         try:
-            raw = _nrn_gargstr(1)
-            code = raw.decode("utf-8") if isinstance(raw, bytes) else raw
-            ns = sys.modules["__main__"].__dict__
-            # Like NEURON's nrnpython_real (HocTopContextManager): the code
-            # runs at HOC top level even when called from a template.
-            _call_at_top_level(exec, (code, ns))  # noqa: S102 — documented HOC behavior
-            status = 1.0
+            if _pending_callback_exc is None:
+                raw = _nrn_gargstr(1)
+                code = raw.decode("utf-8") if isinstance(raw, bytes) else raw
+                ns = sys.modules["__main__"].__dict__
+                # Like NEURON's nrnpython_real (HocTopContextManager): the code
+                # runs at HOC top level even when called from a template.
+                _call_at_top_level(exec, (code, ns))
+                status = 1.0
         except BaseException as exc:
-            import traceback
-
-            print(
-                f"nrnpython error: {type(exc).__name__}: {exc}",
-                file=sys.stderr,
-            )
-            traceback.print_exc(file=sys.stderr)
-            status = 0.0
-        _nrn_hoc_ret()
-        _nrn_double_push(status)
+            _callback_failed(exc, _print_exception)
+        finally:
+            # hoc_ret before pushing the return slot (oc/code.cpp order); the
+            # reverse leaves the pushed value as the return slot. Skipping
+            # them crashes the process.
+            _nrn_hoc_ret()
+            _nrn_double_push(status)
 
     cb_type = ctypes.CFUNCTYPE(None)
     global _mn_nrnpython_cb
@@ -338,7 +316,7 @@ def _register_mpi_alltoall_type():
                 source = _hoc_arg_to_python(1)
                 if not isinstance(source, list):
                     raise TypeError("Argument must be a Python list")
-                if len(source) != 1:
+                if list.__len__(source) != 1:  # PyList_Size, as NEURON
                     which = "py_alltoall" if type_ == 1 else "py_scatter"
                     raise ValueError(f"{which} list size must be nhost")
                 if type_ == 1:
@@ -369,27 +347,31 @@ def _register_praxis_efun():
     (nrnpy_p2h.cpp) calls efun(vec) and raises a HOC error if it fails. A
     ctypes callback cannot raise into core, so the error is stashed, the
     evaluation returns 1e9 (NEURON's fallback value) and stoprun makes
-    praxis return; the error is raised when fit_praxis returns.
+    praxis return; the error is raised when fit_praxis returns. As NEURON's,
+    a KeyboardInterrupt is printed and only scores the point 1e9.
     """
 
     def _praxis_efun(callable_obj, vec_obj):
-        try:
-            efun = _unwrap_pythonobject(callable_obj)
-            _nrn_object_ref(vec_obj)  # the wrapper releases its own reference
-            return float(efun(_wrap_owned_object(vec_obj)))
-        except BaseException as exc:
-            _stash_callback_exc(exc)
-            # praxis returns as soon as it sees stoprun; a constant 1e9
-            # alone never converges. _raise_pending_callback_exc restores it.
-            if _praxis_saved_stoprun[0] is None:
-                _praxis_saved_stoprun[0] = _stoprun.value
-            _stoprun.value = 1
-            return 1e9
+        if _pending_callback_exc is None:
+            try:
+                efun = _unwrap_pythonobject(callable_obj)
+                _nrn_object_ref(vec_obj)  # the wrapper releases its own reference
+                return float(efun(_wrap_owned_object(vec_obj)))
+            except BaseException as exc:
+                _callback_failed(exc, _stash_callback_exc)
+                if not isinstance(exc, (Exception, SystemExit)):
+                    return 1e9
+        # praxis returns as soon as it sees stoprun; a constant 1e9 alone
+        # never converges. _raise_pending_callback_exc restores it.
+        if _praxis_saved_stoprun[0] is None:
+            _praxis_saved_stoprun[0] = _stoprun.value
+        _stoprun.value = 1
+        return 1e9
 
     global _mn_praxis_efun_cb
     _mn_praxis_efun_cb = ctypes.CFUNCTYPE(
         ctypes.c_double, ctypes.c_void_p, ctypes.c_void_p
-    )(_praxis_efun)
+    )(_at_top_level(_praxis_efun))
     _install_methods_slot(_METHODS_PRAXIS_EFUN_OFFSET, _mn_praxis_efun_cb)
 
 
@@ -430,7 +412,9 @@ def _register_call_func():
     for each point. As NEURON's (nrnpy_p2h.cpp func_call): with `*err` 0 on
     entry a failure is only reported through `*err` (the point does not
     exist); otherwise it is a HOC error ("func_call failed"), which a ctypes
-    callback cannot raise: it is stashed and raised when the HOC call returns.
+    callback cannot raise: it is stashed and raised when the HOC call returns,
+    and, as NEURON's error stops the call, the function is not called again
+    until then.
     """
     from .api import (
         _decode_hoc_string,
@@ -455,11 +439,20 @@ def _register_call_func():
             return _nrn_int_pop()
         return _nrn_double_pop()
 
+    def _failed(exc):
+        _print_exception(exc)
+        _stash_hoc_error("func_call failed", exc)
+
     def _call_func(func_obj, narg, perr):
         quiet = bool(perr) and perr[0] == 0
         try:
             args = [_pop_value() for _ in range(narg)]
             args.reverse()
+            if _pending_callback_exc is not None:
+                # After the stack pops: they keep the frame balanced.
+                if perr:
+                    perr[0] = 1
+                return 0.0
             result = _unwrap_pythonobject(func_obj)(*args)
             value = float(result) if isinstance(result, numbers.Real) else 0.0
             if perr:
@@ -469,19 +462,16 @@ def _register_call_func():
             if perr:
                 perr[0] = 1
             if not quiet:
-                import traceback
-
-                traceback.print_exc()
-                error = RuntimeError("hoc_execerror: func_call failed")
-                error.__cause__ = exc
-                _stash_callback_exc(error)
+                # NEURON's HOC error follows any failure here, a
+                # KeyboardInterrupt too; only SystemExit is different.
+                _callback_failed(exc, _failed, _failed)
             return 0.0
 
     # Its own name: _mn_call_func_cb keeps Vector.apply's callback alive.
     global _mn_methods_call_func_cb
     _mn_methods_call_func_cb = ctypes.CFUNCTYPE(
         ctypes.c_double, ctypes.c_void_p, ctypes.c_int, ctypes.POINTER(ctypes.c_int)
-    )(_call_func)
+    )(_at_top_level(_call_func))
     _install_methods_slot(_METHODS_CALL_FUNC_OFFSET, _mn_methods_call_func_cb)
     return _pop_value
 
@@ -542,12 +532,11 @@ def _register_gui_methods():
         return ctypes.cast(_pythonobject_payload_ptr(obj), ctypes.py_object).value
 
     def failed(message, exc):
-        import traceback
+        _print_exception(exc)
+        _stash_hoc_error(message, exc)
 
-        traceback.print_exception(exc)
-        error = RuntimeError(f"hoc_execerror: {message}")
-        error.__cause__ = exc
-        _stash_callback_exc(error)
+    def action_failed(message, exc):
+        _callback_failed(exc, lambda exc: failed(message, exc))
 
     def call_action(obj):
         action = payload(obj)
@@ -573,13 +562,13 @@ def _register_gui_methods():
         try:
             payload(obj)(_section_for(sec_ptr))
         except BaseException as exc:
-            failed("Call of Python Callable failed", exc)
+            action_failed("Call of Python Callable failed", exc)
 
     def cmdtool(obj, event, x, y, key):
         try:
             payload(obj)(event, x, y, key)
         except BaseException as exc:
-            failed("Python Callback failed", exc)
+            action_failed("Python Callback failed", exc)
 
     def guigetstr(obj, chars):
         try:
@@ -626,7 +615,7 @@ def _register_gui_methods():
             ctypes.memmove(buffer, text + b"\0", len(text) + 1)
             return 1
         except BaseException as exc:
-            failed("Python Callback failed", exc)
+            action_failed("Python Callback failed", exc)
             return 0
 
     void_p = ctypes.c_void_p
@@ -658,7 +647,7 @@ def _register_gui_methods():
             hoccommand_exec_strret,
         ),
     ):
-        callback = ctypes.CFUNCTYPE(*signature)(function)
+        callback = ctypes.CFUNCTYPE(*signature)(_at_top_level(function))
         api._CFUNCTYPE_KEEPALIVE.append(callback)
         api._install_methods_slot(offset, callback)
 
@@ -751,15 +740,14 @@ def set_savestate_callbacks(store, restore, replace=False):
         ctypes.POINTER(ctypes.c_void_p),
         ctypes.POINTER(ctypes.c_uint64),
     )
+    @_at_top_level
     def store_state(data, size):
         try:
             state = bytes(store())
             fresh = _new_chars(len(state))
         except BaseException as exc:
             size[0] = 0
-            error = RuntimeError("hoc_execerror: SaveState: Data store failure.")
-            error.__cause__ = exc
-            _stash_callback_exc(error)
+            _stash_hoc_error("SaveState: Data store failure.", exc)
             return
         ctypes.memmove(fresh, state, len(state))
         if data[0]:
@@ -768,13 +756,12 @@ def set_savestate_callbacks(store, restore, replace=False):
         size[0] = len(state)
 
     @ctypes.CFUNCTYPE(None, ctypes.c_int64, ctypes.c_void_p)
+    @_at_top_level
     def restore_state(size, data):
         try:
             restore(bytearray(ctypes.string_at(data, size)))
         except BaseException as exc:
-            error = RuntimeError("hoc_execerror: SaveState: Data restore failure.")
-            error.__cause__ = exc
-            _stash_callback_exc(error)
+            _stash_hoc_error("SaveState: Data restore failure.", exc)
 
     _savestate_callbacks.append((store_state, restore_state))
     store_slot.value = ctypes.cast(store_state, ctypes.c_void_p).value
@@ -789,8 +776,9 @@ def _register_vector_apply_callable():
     apply rejects a callable. NEURON's version raises a HOC error when the
     call fails. A callback cannot, so the first error is stashed, the
     remaining elements are left unchanged without calling Python again, and
-    the error is raised when apply returns. A pointer someone else set is
-    left alone.
+    the error is raised when apply returns: an Exception itself, anything else
+    (KeyboardInterrupt, SystemExit) as NEURON's HOC error. A pointer someone
+    else set is left alone.
     """
     try:
         slot = ctypes.c_void_p.in_dll(libnrniv, "nrnpy_call_func")
@@ -803,10 +791,18 @@ def _register_vector_apply_callable():
         if _pending_callback_exc is not None:
             return x
         try:
-            return float(_unwrap_pythonobject(func_obj)(x))
-        except BaseException as exc:
+            func = _unwrap_pythonobject(func_obj)
+            # At the top level, as NEURON's h.<name> looks names up. Checked
+            # here because this runs per element: an unconditional
+            # _call_at_top_level costs apply ~2%.
+            if _hoc_thisobject.value:
+                return float(_call_at_top_level(func, (x,)))
+            return float(func(x))
+        except Exception as exc:
             _stash_callback_exc(exc)
-            return x
+        except BaseException as exc:
+            _stash_hoc_error("Python function call raised exception", exc)
+        return x
 
     global _mn_call_func_cb
     _mn_call_func_cb = ctypes.CFUNCTYPE(
@@ -847,22 +843,6 @@ def _register_pc_pyjob():
 
 
 _register_pc_pyjob()
-
-
-def _register_py_callback(fn):
-    """Add *fn* to the callback registry and return its id."""
-    global _PY_CALLBACK_NEXT_ID
-    with _PY_CALLBACK_LOCK:
-        cb_id = _PY_CALLBACK_NEXT_ID
-        _PY_CALLBACK_NEXT_ID += 1
-        _PY_CALLBACKS[cb_id] = fn
-    return cb_id
-
-
-def _unregister_py_callback(cb_id):
-    """Drop the callback registered under *cb_id*. Idempotent."""
-    with _PY_CALLBACK_LOCK:
-        return _PY_CALLBACKS.pop(cb_id, None) is not None
 
 
 # Names of the per-name HOC helpers already defined for top-level objrefs
@@ -932,6 +912,8 @@ class _ObjrefArray:
 
     __slots__ = ("_n", "_name", "_dims", "_prefix")
 
+    __reduce_ex__ = refuse_pickle
+
     def __init__(self, neuron_singleton, name, dims, prefix=()):
         self._n = neuron_singleton
         self._name = name
@@ -941,7 +923,7 @@ class _ObjrefArray:
     def _check_shape(self):
         # The name can be redeclared (`objref po` after `objref po[3]`); NEURON
         # then rejects the old array object.
-        sym = _nrn_symbol(self._name.encode("utf-8"))
+        sym = _top_level_symbol(self._name.encode("utf-8"))
         if not sym or not _nrn_symbol_is_array(sym):
             raise TypeError(f"'{self._name}' is no longer an array")
         dims = symbol_array_dims(sym, int(_nrn_symbol_array_length(sym)))
@@ -950,16 +932,11 @@ class _ObjrefArray:
 
     def _index(self, idx):
         self._check_shape()
-        if isinstance(idx, bool) or not isinstance(idx, int):
-            raise TypeError(
-                f"objref array indices must be integers, not {type(idx).__name__}"
-            )
         size = self._dims[len(self._prefix)]
-        if idx < 0:
-            idx += size
-        if not 0 <= idx < size:
+        i = _array_index(idx, size, "objref array indices must be integers, not {}")
+        if i is None:
             raise IndexError(f"index {idx} out of range [0, {size}) for {self._name}")
-        return idx
+        return i
 
     def _is_row(self):
         return len(self._prefix) + 1 < len(self._dims)
@@ -1018,6 +995,8 @@ class _DoubleArray:
 
     __slots__ = ("_name", "_dims", "_prefix", "_ref")
 
+    __reduce_ex__ = refuse_pickle
+
     def __init__(self, name, dims, prefix=(), ref=False):
         self._name = name
         self._dims = tuple(dims)
@@ -1025,15 +1004,11 @@ class _DoubleArray:
         self._ref = ref
 
     def _index(self, idx):
-        if isinstance(idx, bool) or not isinstance(idx, numbers.Integral):
-            raise TypeError(f"indices must be integers, not {type(idx).__name__}")
         size = self._dims[len(self._prefix)]
-        idx = int(idx)
-        if idx < 0:
-            idx += size
-        if not 0 <= idx < size:
+        i = _array_index(idx, size, "indices must be integers, not {}")
+        if i is None:
             raise IndexError(self._name)
-        return idx
+        return i
 
     def _flat(self, indices):
         flat = 0
@@ -1066,7 +1041,9 @@ class _DoubleArray:
         if self._ref:
             self[idx][0] = value
             return
-        _double_array_data(self._name, self._dims)[self._flat(indices)] = float(value)
+        _double_array_data(self._name, self._dims)[self._flat(indices)] = _as_double(
+            value
+        )
 
     def __len__(self):
         return self._dims[len(self._prefix)]
@@ -1083,7 +1060,7 @@ class _DoubleArray:
 
 def _double_array(name, ref=False):
     """A _DoubleArray for top-level VAR ``name``, or None if it is a scalar."""
-    sym = _nrn_symbol(name.encode("utf-8"))
+    sym = _top_level_symbol(name.encode("utf-8"))
     if not sym or not _nrn_symbol_is_array(sym):
         return None
     return _DoubleArray(
@@ -1123,11 +1100,14 @@ def _capture_hoc_string(action):
     def sink(stream, msg):
         captured.append(msg)
 
-    install_stdout_redirect(sink=sink)
-    try:
-        action()
-    finally:
-        install_stdout_redirect()  # restore default sink
+    # The sink is the process's: another thread's HOC output or capture while
+    # it is installed would land here or take this one (gap-72).
+    with HOC_LOCK:
+        install_stdout_redirect(sink=sink)
+        try:
+            action()
+        finally:
+            install_stdout_redirect()  # restore default sink
 
     text = "".join(captured)
     try:
@@ -1202,6 +1182,27 @@ def _allsec_head_links():
     return (nxt, prv, nxt_elem, prv_elem)
 
 
+def _kept_wrappers(old_ptrs, old_wrappers, ptrs):
+    """allsec()'s wrapper list for the gathered *ptrs*: the wrappers made for
+    the last gather (*old_ptrs*, *old_wrappers*), for the sections still in
+    the model, and None for the rest.
+
+    A wrapper holds its section (Section._from_ptr), so a pointer in both
+    gathers is still that section. A cold allsec() then makes and references
+    only new sections' wrappers. On 300 HOC sections (2026-11-19), a cold
+    allsec() took about 150 ns per section with this, 940 re-making every
+    wrapper and 620 before wrappers held their section.
+    """
+    # any() is a None test: a wrapper is a plain Section, which defines no
+    # __bool__ or __len__. A list of Python sections only has no wrappers.
+    if not old_wrappers or not any(old_wrappers):
+        return [None] * len(ptrs)
+    # Most regathers find the same sections (the epoch moved, nothing else).
+    if old_ptrs == ptrs:
+        return old_wrappers
+    return list(map(dict(zip(old_ptrs, old_wrappers)).get, ptrs))
+
+
 def hclass(cls):
     """Return *cls* unchanged (source-level parity shim).
 
@@ -1227,6 +1228,8 @@ class _AllSecIterator:
 
     __slots__ = ("_items", "_source")
 
+    __reduce_ex__ = refuse_pickle
+
     def __init__(self, source):
         self._source = source
         self._items = source()
@@ -1250,6 +1253,8 @@ class _AllSecIterator:
 class NEURON(metaclass=_Singleton):
     # h.__doc__ is neuron.doc's text for the top-level HocObject.
     __doc__ = property(lambda self: _top_level_doc())
+    # The default pickled the instance dict; loading it raised RecursionError.
+    __reduce_ex__ = refuse_pickle
 
     def __init__(self):
         self._nrn_hoc_call = _nrn_hoc_call
@@ -1268,7 +1273,8 @@ class NEURON(metaclass=_Singleton):
         # negligible next to the warm-hit iteration cost. See
         # ALLSEC_WARM_RATIO_VS_REAL in benchmarks/python/canonical_constants.py.
         # `_allsec_wrappers` is a parallel list of lazily built Section
-        # wrappers, so later iterations skip `_from_ptr`.
+        # wrappers, so later iterations skip `_from_ptr`; a regather keeps
+        # those of sections still in the model (_kept_wrappers).
         self._allsec_ptrs = None
         self._allsec_wrappers = None
         self._allsec_count = 0
@@ -1347,7 +1353,7 @@ class NEURON(metaclass=_Singleton):
                         # USERINT (stoprun, use_mcell_ran4). Both live at the
                         # symbol's u.pval, read as double* or int*.
 
-                        sym = _nrn_symbol(name.encode("utf-8"))
+                        sym = _top_level_symbol(name.encode("utf-8"))
                         if not sym:
                             raise AttributeError(f"Variable '{name}' not found.")
                         value_ptr = _nrn_symbol_dataptr(sym)
@@ -1375,7 +1381,7 @@ class NEURON(metaclass=_Singleton):
                         # dereference only a real address; otherwise read via
                         # the hoc_ac_ trampoline.
 
-                        sym0 = _nrn_symbol(name.encode("utf-8"))
+                        sym0 = _top_level_symbol(name.encode("utf-8"))
                         if sym0 and _nrn_symbol_is_array(sym0):
                             return _double_array(name)
                         if sym0:
@@ -1408,6 +1414,21 @@ class NEURON(metaclass=_Singleton):
                             from .sections import Segment
                             from .utils import _push_args
 
+                            if _type == TYPES.BLTIN:
+                                if len(args) != 1:
+                                    raise RuntimeError(
+                                        "NEURON error: hoc_execerror: must be one "
+                                        f"argument for {name}"
+                                    )
+                                # Only a number is sure to be off the stack
+                                # when a BLTIN raises; see the rollback below.
+                                if not isinstance(
+                                    args[0], (int, float)
+                                ) and not _is_hoc_number(args[0]):
+                                    raise RuntimeError(
+                                        f"NEURON error: hoc_execerror: {name} takes "
+                                        f"a number, not {type(args[0]).__name__}"
+                                    )
                             if sec is not None and any(
                                 isinstance(arg, Segment) for arg in args
                             ):
@@ -1416,7 +1437,7 @@ class NEURON(metaclass=_Singleton):
                                 )
                             # Liveness check before any push; see utils._push_args.
                             if sec is not None:
-                                sec._check_alive()
+                                _check_sec_kwarg(sec)
                             temp_strs, seg_sec, rollback_args = _push_args(
                                 args, return_rollback=True
                             )
@@ -1439,9 +1460,12 @@ class NEURON(metaclass=_Singleton):
                                 converted = TEMPLATE_CONVERTERS.get(name)
                                 if converted is not None and len(args) > converted:
                                     forget_class(str(args[converted]))
-                                if ret:
+                                if ret and _type != TYPES.BLTIN:
                                     # Nothrow restores the stack to after the
                                     # arg push; release those slots (gap-56).
+                                    # A BLTIN already popped its one argument,
+                                    # so the restore cannot run and nothing is
+                                    # left to release.
                                     rollback_args()
                                 _check_nrn_error(ret, _err_buf)
                                 if _type in (
@@ -1461,9 +1485,9 @@ class NEURON(metaclass=_Singleton):
                                     # step/advance leaks a slot and the
                                     # 1000-deep operand stack (hoc_nstack,
                                     # oc/code.cpp:422) overflows after ~1000
-                                    # calls. Covered by tests/stress/.
-                                    _nrn_double_pop()
-                                    result = None
+                                    # calls. Covered by tests/stress/. Legacy
+                                    # returns the popped 0.0.
+                                    result = _nrn_double_pop()
                                 elif _type in (TYPES.OBJECTFUNC, TYPES.OBFUNCTION):
                                     # OBJECTFUNC (296) = C built-in obfunc.
                                     # OBFUNCTION (284) = HOC `obfunc` definition.
@@ -1479,15 +1503,7 @@ class NEURON(metaclass=_Singleton):
                                 return result
                             finally:
                                 if use_sec is not None:
-                                    from .api import _nrn_section_is_active
-
-                                    if _nrn_section_is_active(use_sec._sec):
-                                        _nrn_section_pop()
-                                    else:
-                                        # The call deleted the pushed section;
-                                        # pop via HOC pop_section (see
-                                        # Section.__del__).
-                                        NEURON().pop_section()
+                                    _pop_pushed_section(use_sec._sec)
                                 from .api import _hoc_unref_defer
 
                                 _hoc_unref_defer()
@@ -1532,7 +1548,7 @@ class NEURON(metaclass=_Singleton):
                             _TemplateSectionArray,
                         )
 
-                        sym = _nrn_symbol(name.encode("utf-8"))
+                        sym = _top_level_symbol(name.encode("utf-8"))
                         if not sym:
                             raise AttributeError(f"Section '{name}' not found.")
                         if _nrn_symbol_is_array(sym):
@@ -1573,7 +1589,7 @@ class NEURON(metaclass=_Singleton):
 
         # Built-in double globals (dt, celsius, t): direct pointer write.
         if _type == TYPES.VAR and _subtype in (1, 2):
-            sym = _nrn_symbol(name.encode("utf-8"))
+            sym = _top_level_symbol(name.encode("utf-8"))
             if not sym:
                 raise AttributeError(f"Variable '{name}' not found.")
             value_ptr = _nrn_symbol_dataptr(sym)
@@ -1582,7 +1598,7 @@ class NEURON(metaclass=_Singleton):
             if _subtype == TYPES.USERINT:
                 ctypes.cast(value_ptr, ctypes.POINTER(ctypes.c_int))[0] = int(value)
             else:
-                ctypes.cast(value_ptr, ctypes.POINTER(ctypes.c_double))[0] = float(
+                ctypes.cast(value_ptr, ctypes.POINTER(ctypes.c_double))[0] = _as_double(
                     value
                 )
             return
@@ -1598,7 +1614,7 @@ class NEURON(metaclass=_Singleton):
         # sym->u.pval segfaults on a core without nrn#3815; see
         # api._MIN_VALID_DATAPTR. Otherwise assign through HOC.
         if _type == TYPES.VAR:
-            sym0 = _nrn_symbol(name.encode("utf-8"))
+            sym0 = _top_level_symbol(name.encode("utf-8"))
             if sym0 and _nrn_symbol_is_array(sym0):
                 # `double a[4]`: NEURON assigns elements only (h.a[i] = x).
                 raise TypeError("Wrong number of subscripts")
@@ -1606,10 +1622,10 @@ class NEURON(metaclass=_Singleton):
                 dptr = _nrn_symbol_dataptr(sym0)
                 addr = ctypes.cast(dptr, ctypes.c_void_p).value
                 if addr and addr >= _MIN_VALID_DATAPTR:
-                    dptr[0] = float(value)
+                    dptr[0] = _as_double(value)
                     return
             # Fallback: assign through HOC. repr(float(...)) round-trips exactly.
-            self("%s = %s" % (name, repr(float(value))))
+            self("%s = %s" % (name, repr(_as_double(value))))
             return
 
         # Top-level strdef: assign through HOC with the literal escaped.
@@ -1641,7 +1657,7 @@ class NEURON(metaclass=_Singleton):
         if _type == TYPES.OBJECTVAR:
             from .object import Object
 
-            _sym = _nrn_symbol(name.encode("utf-8"))
+            _sym = _top_level_symbol(name.encode("utf-8"))
             if _sym and _nrn_symbol_is_array(_sym):
                 # An objref array needs an index (n.g[i] = obj, via
                 # _ObjrefArray). A scalar assign would write element 0
@@ -1752,12 +1768,14 @@ class NEURON(metaclass=_Singleton):
         # raise_on_error=True raises RuntimeError. See docs/ARCHITECTURE.md
         # "Deliberate departures from h() behavior".
 
+        if not isinstance(cmd, str):
+            got = "None" if cmd is None else type(cmd).__name__
+            raise TypeError(f"argument 1 must be str, not {got}")
         if sec is not None:
-            sec._check_alive()  # Reject a deleted section before pushing it.
+            _check_sec_kwarg(sec)  # Before pushing it.
             _nrn_section_push(sec._sec)
         try:
-            if isinstance(cmd, str):
-                cmd = cmd.encode("utf-8")
+            cmd = cmd.encode("utf-8")
             ret = self._nrn_hoc_call(cmd)
             # See _MODEL_EPOCH. Bump even on failure: the command may have
             # partly mutated. _no_epoch_bump is internal, for fixed-shape
@@ -1789,7 +1807,7 @@ class NEURON(metaclass=_Singleton):
             return ret == 0
         finally:
             if sec is not None:
-                _nrn_section_pop()
+                _pop_pushed_section(sec._sec)
 
     def cas(self):
         """Return the currently accessed Section.
@@ -1798,7 +1816,9 @@ class NEURON(metaclass=_Singleton):
         section is on the access stack
         (``nrn/src/nrnpython/nrnpy_nrn.cpp:2967-2978``).
         """
-        sec_ptr = _nrn_cas()
+        # Not between another thread's section push and pop (gap-72).
+        with HOC_LOCK:
+            sec_ptr = _nrn_cas()
         if not sec_ptr:
             raise TypeError("Section access unspecified")
         return _section_for(sec_ptr)
@@ -1807,7 +1827,8 @@ class NEURON(metaclass=_Singleton):
         """The accessed section as a plain wrapper, for the interface's own
         reads and writes: a Section subclass's attributes, properties and
         __setattr__ can't change them (NEURON does these in C)."""
-        sec_ptr = _nrn_cas()
+        with HOC_LOCK:  # as in cas()
+            sec_ptr = _nrn_cas()
         if not sec_ptr:
             raise TypeError("Section access unspecified")
         return Section._from_ptr(sec_ptr)
@@ -1836,8 +1857,8 @@ class NEURON(metaclass=_Singleton):
         The two-segment form calls nrn_distance directly because _push_args
         overwrites seg_sec and would lose the first segment's section.
         """
-        from .sections import Section, Segment
-        from .utils import _push_args
+        from .sections import Segment
+        from .utils import _check_segment_arg, _push_args
 
         if kwargs:
             raise RuntimeError("invalid keyword argument")
@@ -1845,9 +1866,7 @@ class NEURON(metaclass=_Singleton):
         arg2 = _distance_location(arg2)
         explicit_sec = sec is not _DISTANCE_MISSING
         if explicit_sec:
-            if not isinstance(sec, Section):
-                raise TypeError("sec is not a Section")
-            sec._check_alive()
+            _check_sec_kwarg(sec)
 
         if (
             arg1 is not _DISTANCE_MISSING
@@ -1857,10 +1876,18 @@ class NEURON(metaclass=_Singleton):
         ):
             # The direct nrn_distance path skips HOC dispatch's deleted-section
             # checks: a segment of a section deleted through HOC would
-            # dereference freed nodes and SIGABRT. _check_alive raises
-            # RuntimeError, as real NEURON does.
-            arg1.sec._check_alive()
-            arg2.sec._check_alive()
+            # dereference freed nodes and SIGABRT. Raise NEURON's HOC error.
+            _check_segment_arg(arg1)
+            _check_segment_arg(arg2)
+            # Its topol_distance sets the tree up at any x (solve.cpp:180):
+            # node_exact does at one of a section's two ends.
+            try:
+                for end in (0.0, 1.0):
+                    _ensure_topology(arg1.sec._sec, end)
+            except RuntimeError as exc:
+                # NEURON's h.distance is a HOC call, whose errors hocobj_call
+                # prefixes.
+                raise RuntimeError(f"hocobj_call error: {exc}") from None
             return float(_nrn_distance(arg1.sec._sec, arg1.x, arg2.sec._sec, arg2.x))
 
         # Legacy shapes call the HOC `distance` function directly, avoiding a
@@ -1949,11 +1976,13 @@ class NEURON(metaclass=_Singleton):
 
         ptrs = self._allsec_ptrs
         if ptrs is None or self._allsec_version != version:
-            ptrs, count = self._gather_section_ptrs()
-            self._allsec_ptrs = ptrs
+            new_ptrs, count = self._gather_section_ptrs()
+            self._allsec_wrappers = _kept_wrappers(
+                ptrs, self._allsec_wrappers, new_ptrs
+            )
+            self._allsec_ptrs = new_ptrs
             self._allsec_count = count
             self._allsec_version = version
-            self._allsec_wrappers = [None] * count
         ptrs = self._allsec_ptrs
         wrappers = self._allsec_wrappers
         count = self._allsec_count
@@ -1980,10 +2009,12 @@ class NEURON(metaclass=_Singleton):
                 # collector frees during the gather then moves the epoch past it.
                 new_epoch = _model_epoch()
                 all_ptrs, all_count = self._gather_section_ptrs()
+                self._allsec_wrappers = _kept_wrappers(
+                    self._allsec_ptrs, self._allsec_wrappers, all_ptrs
+                )
                 self._allsec_ptrs = all_ptrs
                 self._allsec_count = all_count
                 self._allsec_version = (new_link, new_sc, new_epoch)
-                self._allsec_wrappers = [None] * all_count
                 ptrs = [p for p in all_ptrs if p not in handed_out]
                 count = len(ptrs)
                 # This loop's own: its positions are not the cache's.
@@ -2005,6 +2036,11 @@ class NEURON(metaclass=_Singleton):
             if w is None:
                 w = wrappers[idx]
                 if w is None:
+                    # A HOC call still running may have deleted it without
+                    # moving the epoch; its struct must not be referenced.
+                    if not _nrn_section_is_active(ptrs[idx]):
+                        idx += 1
+                        continue
                     w = _from_ptr(ptrs[idx])
                     wrappers[idx] = w
             yield w

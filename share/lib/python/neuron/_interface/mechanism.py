@@ -4,9 +4,12 @@
 import ctypes
 
 from .api import (
+    _refused_double,
     _nrn_section_is_active,
     _ERR_BUF_SIZE,
+    HOC_LOCK,
     TYPES,
+    _ensure_topology,
     _nrn_rangevar_get,
     _nrn_rangevar_set,
     _nrn_setpointer_pop,
@@ -19,6 +22,7 @@ from .nrnref import (
     NrnRef,
 )
 from .utils import (
+    _DELETED_SECTION,
     _name_error,
     FuncWrapper,
     _try_wrap_density_nmodlrandom,
@@ -128,6 +132,28 @@ def _array_length(full_name):
     return info[3] if info is not None and info[2] else 0
 
 
+def _unsuffixed(full_name, suffix):
+    """*full_name* without the mechanism *suffix*, as NEURON's striptrail.
+
+    A variable named without the suffix (extracellular's vext, xg and
+    i_membrane) keeps its whole name.
+    """
+    if suffix and full_name.endswith(suffix):
+        return full_name[: -len(suffix)]
+    return full_name
+
+
+def _has_nmodl_functions(mech_name):
+    """Whether *mech_name* is an NMODL density mechanism, whose FUNCTIONs and
+    PROCEDUREs NEURON lists and calls through the mechanism.
+
+    nocmodl registers setdata_<suffix> for every density mechanism
+    (nocpout.cpp), and MechFunc calls it first. A built-in mechanism has no
+    such functions: extracellular's nlayer_extracellular is a HOC function.
+    """
+    return bool(_nrn_symbol(f"setdata_{mech_name}".encode("utf-8")))
+
+
 def _reject_ref_assignment(owner, name, full_name, type_name):
     """Raise NEURON's error for ``owner._ref_x = value`` with a non-pointer value."""
     from .sections import _is_pointer_rangevar
@@ -140,6 +166,20 @@ def _reject_ref_assignment(owner, name, full_name, type_name):
     raise AttributeError(" For assignment, only POINTER var can have a _ref_ prefix")
 
 
+def _declares(mech_name, full_name):
+    """Whether mechanism *mech_name* declares range variable *full_name*.
+
+    NEURON looks a mechanism attribute up among the mechanism's own variables
+    (var_find_in_mech, nrnpy_nrn.cpp). An ion's names have no suffix, so
+    without this seg.na_ion.v and seg.na_ion.gnabar_hh read the node's and
+    hh's variables. Ask only for a name that is a range variable symbol (see
+    sections._RANGEVAR_OWNER).
+    """
+    from .sections import _rangevar_owner
+
+    return _rangevar_owner(full_name) == mech_name
+
+
 class RangeVar:
     """A single range variable on a mechanism at a segment.
 
@@ -150,6 +190,9 @@ class RangeVar:
     """
 
     __slots__ = ("_seg", "_full_name", "_mech")
+
+    def __reduce_ex__(self, protocol):
+        raise TypeError("cannot pickle 'nrn.RangeVar' object")
 
     def __init__(self, seg, full_name, mech=None):
         self._seg = seg
@@ -202,18 +245,25 @@ class RangeVar:
 
         if _is_pointer_rangevar(self._full_name, sym):
             return _pointer_rangevar_get(self._seg._sec, self._seg._x, self._full_name)
+        if not 0.0 < self._seg._x < 1.0:  # a section loop throws in the read
+            from .sections import _ensure_rangevar_topology
+
+            _ensure_rangevar_topology(
+                self._seg._sec._sec, self._seg._x, self._full_name
+            )
         return _nrn_rangevar_get(sym, self._seg._sec._sec, self._seg._x)
 
     def __setitem__(self, idx, value):
+        # HOC may have deleted the host section.
+        if not _nrn_section_is_active(self._seg._sec._sec):
+            raise ReferenceError(f"nrn.RangeVar {_DELETED_SECTION}")
         array = self._array()
         if array is not None:
-            self._seg._sec._check_alive()
             array[idx] = value
             return
         if idx != 0:
             raise IndexError("Only index 0 is supported")
 
-        self._seg._sec._check_alive()  # HOC may have deleted the host section.
         self._seg._check_rangevar_mechanism(self._full_name)  # see __getitem__
         sym = _nrn_symbol(self._full_name.encode("utf-8"))
         from .sections import _is_pointer_rangevar, _pointer_rangevar_set
@@ -221,7 +271,16 @@ class RangeVar:
         if _is_pointer_rangevar(self._full_name, sym):
             _pointer_rangevar_set(self._seg._sec, self._seg._x, self._full_name, value)
             return
-        _nrn_rangevar_set(sym, self._seg._sec._sec, self._seg._x, value)
+        if not 0.0 < self._seg._x < 1.0:  # a section loop throws in the write
+            from .sections import _ensure_rangevar_topology
+
+            _ensure_rangevar_topology(
+                self._seg._sec._sec, self._seg._x, self._full_name
+            )
+        try:
+            _nrn_rangevar_set(sym, self._seg._sec._sec, self._seg._x, value)
+        except ctypes.ArgumentError as exc:
+            raise _refused_double(exc, ValueError) from None
 
     def __repr__(self):
         return f"<RangeVar {self._full_name}>"
@@ -235,6 +294,9 @@ class MechFunc(FuncWrapper):
     """
 
     __slots__ = ("_mech",)
+
+    def __reduce_ex__(self, protocol):
+        raise TypeError("cannot pickle 'nrn.MechFunc' object")
 
     def __init__(self, func, name, doc="", *, mech):
         super().__init__(func, name, doc)
@@ -264,6 +326,11 @@ class Mechanism:
 
     __slots__ = ("_seg", "_x", "_name", "_is_ion", "_epoch", "_nseg", "_x_nseg")
 
+    # As NEURON's nrn.Mechanism: no pickle, copy or deepcopy (the default
+    # copied the slots; copy.copy(seg.hh) did not return).
+    def __reduce_ex__(self, protocol):
+        raise TypeError("cannot pickle 'nrn.Mechanism' object")
+
     def __init__(self, seg, name):
         # The segment it was taken from, which segment() returns; NEURON's
         # mechanism keeps it through nseg changes.
@@ -291,12 +358,7 @@ class Mechanism:
         moved). A mechanism uninserted and inserted again counts as valid here;
         in NEURON the old wrapper stays dead.
         """
-        try:
-            self._seg._sec._check_alive()
-        except RuntimeError:
-            raise ReferenceError(
-                f"mechanism '{self._name}' of a deleted section"
-            ) from None
+        self._seg._sec._check_alive()
         ep = _model_epoch_now()
         if ep != self._epoch:
             sec = self._seg._sec
@@ -323,6 +385,16 @@ class Mechanism:
             # has_membrane is a HOC call, which itself bumps the epoch; record
             # the epoch after it or the next access checks again.
             self._epoch = _model_epoch_now()
+
+    def _check_valid_for_assignment(self):
+        """_check_valid, with NEURON's text for an assignment through a
+        Mechanism of a deleted section."""
+        try:
+            self._check_valid()
+        except ReferenceError:
+            if not _nrn_section_is_active(self._seg._sec._sec):
+                raise ReferenceError(f"nrn.Mechanism {_DELETED_SECTION}") from None
+            raise
 
     def _invalid_repr(self):
         if not _nrn_section_is_active(self._seg._sec._sec):
@@ -422,6 +494,10 @@ class Mechanism:
             # ReferenceError. Revalidation is a cheap epoch compare except
             # after a mutation.
             self._check_valid()
+            if not 0.0 < self._x < 1.0 and self._name == "extracellular":
+                # Its variables are found with node_exact; see
+                # sections._ensure_rangevar_topology.
+                _ensure_topology(self._seg._sec._sec, self._x)
         # Pointer/reference to a mechanism range variable: seg.brain._ref_V1.
         # Used as the source side of a setpointer (seg.body._ref_PTR = that).
         if name.startswith("_ref_"):
@@ -429,13 +505,17 @@ class Mechanism:
             full = var if self._is_ion else "%s_%s" % (var, self._name)
             from .sections import (
                 OpaquePointer,
-                _get_symbol_info,
                 _is_pointer_rangevar,
                 _pointer_rangevar_get,
+                _rangevar_info,
             )
 
-            info = _get_symbol_info(full)
+            info = _rangevar_info(full)
             if info is None:
+                raise AttributeError(
+                    f"'nrn.Mechanism' object has no attribute '{name}'"
+                )
+            if info[1] == TYPES.RANGEVAR and not _declares(self._name, full):
                 raise AttributeError(
                     f"'nrn.Mechanism' object has no attribute '{name}'"
                 )
@@ -482,7 +562,7 @@ class Mechanism:
         sym = _nrn_symbol(full_name.encode("utf-8"))
         if sym:
             sym_type = int(_NRN_SYMBOL_TYPE(sym))
-            if sym_type == TYPES.RANGEVAR:
+            if sym_type == TYPES.RANGEVAR and _declares(self._name, full_name):
                 size = _array_length(full_name)
                 if size:
                     # seg.mech.c[i]: the scalar getter throws inside the core
@@ -497,7 +577,11 @@ class Mechanism:
                     return _pointer_rangevar_get(self._seg._sec, self._x, full_name)
                 cache[name] = (full_name, sym, sym_type)
                 return _nrn_rangevar_get(sym, self._seg._sec._sec, self._x)
-            if sym_type == TYPES.FUN_BLTIN and not self._is_ion:
+            if (
+                sym_type == TYPES.FUN_BLTIN
+                and not self._is_ion
+                and _has_nmodl_functions(self._name)
+            ):
                 # NMODL PROCEDURE and FUNCTION both compile to FUN_BLTIN (280),
                 # not PROCEDURE (271, HOC-only `proc`); the HOC name is
                 # `<name>_<mech>`. The function needs its mechanism bound to a
@@ -514,9 +598,12 @@ class Mechanism:
                     mech_obj._check_valid()
                     n = NEURON()
                     setdata = getattr(n, f"setdata_{mech}")
-                    setdata(mech_obj._x, sec=seg._sec)
-                    fn = getattr(n, full_name)
-                    return fn(*args, sec=seg._sec)
+                    # Another thread's setdata between the two calls would
+                    # make fn read its segment (gap-72).
+                    with HOC_LOCK:
+                        setdata(mech_obj._x, sec=seg._sec)
+                        fn = getattr(n, full_name)
+                        return fn(*args, sec=seg._sec)
 
                 return MechFunc(
                     mech_func,
@@ -540,7 +627,7 @@ class Mechanism:
 
     def _func_names(self):
         """Return list of NMODL PROCEDURE/FUNCTION names exposed by this mech."""
-        if self._is_ion:
+        if self._is_ion or not _has_nmodl_functions(self._name):
             return []
 
         suffix = f"_{self._name}"
@@ -573,16 +660,20 @@ class Mechanism:
             raise NameError("no such density POINTER: %s" % target)
 
         # Fallible values are prepared before pushing; the C API consumes the
-        # source handle on success and failure.
+        # source handle on success and failure. It finds the node with
+        # node_exact, which throws on a section loop.
         err = ctypes.create_string_buffer(_ERR_BUF_SIZE)
-        src_ref._push()
-        rc = _nrn_setpointer_pop(
-            sym,
-            seg._sec._sec,
-            ctypes.c_double(self._x),
-            err,
-            _ERR_BUF_SIZE,
-        )
+        if not 0.0 < self._x < 1.0:
+            _ensure_topology(seg._sec._sec, self._x)
+        with HOC_LOCK:  # the pop must take this push (gap-72)
+            src_ref._push()
+            rc = _nrn_setpointer_pop(
+                sym,
+                seg._sec._sec,
+                ctypes.c_double(self._x),
+                err,
+                _ERR_BUF_SIZE,
+            )
         if rc != 0:
             raise RuntimeError(
                 "setpointer %s failed: %s"
@@ -594,7 +685,7 @@ class Mechanism:
         # POINTER assignment: seg.mech._ref_PTR = src._ref_X.
         if name.startswith("_ref_"):
             if isinstance(value, NrnRef):
-                self._check_valid()  # HOC may have deleted the host.
+                self._check_valid_for_assignment()  # HOC may have deleted it.
                 self._assign_pointer(name[5:], value)
                 return
             _reject_ref_assignment(
@@ -606,14 +697,19 @@ class Mechanism:
 
         # The write below dereferences the mechanism's storage; raise cleanly
         # if HOC deleted the section, uninserted the mechanism or changed nseg.
-        self._check_valid()
+        self._check_valid_for_assignment()
+        if not 0.0 < self._x < 1.0 and self._name == "extracellular":
+            _ensure_topology(self._seg._sec._sec, self._x)  # as __getattr__
         cache = _MECH_ATTR_CACHE.get(self._name)
         if cache is not None:
             entry = cache.get(name)
             if entry is not None:
                 full_name, sym, sym_type = entry
                 if sym_type == TYPES.RANGEVAR:
-                    _nrn_rangevar_set(sym, self._seg._sec._sec, self._x, value)
+                    try:
+                        _nrn_rangevar_set(sym, self._seg._sec._sec, self._x, value)
+                    except ctypes.ArgumentError as exc:
+                        raise _refused_double(exc, ValueError) from None
                     return
                 if sym_type == TYPES.RANGEOBJ:
                     raise ValueError(
@@ -627,7 +723,7 @@ class Mechanism:
 
         sym = _nrn_symbol(full_name.encode("utf-8"))
         sym_type = int(_NRN_SYMBOL_TYPE(sym)) if sym else None
-        if sym and sym_type == TYPES.RANGEVAR:
+        if sym and sym_type == TYPES.RANGEVAR and _declares(self._name, full_name):
             if _array_length(full_name):
                 # Like NEURON, seg.mech.c = x on an array variable sets c[0].
                 from .sections import _ArrayRangeVar
@@ -643,7 +739,10 @@ class Mechanism:
                 cache = {}
                 _MECH_ATTR_CACHE[self._name] = cache
             cache[name] = (full_name, sym, TYPES.RANGEVAR)
-            _nrn_rangevar_set(sym, self._seg._sec._sec, self._x, value)
+            try:
+                _nrn_rangevar_set(sym, self._seg._sec._sec, self._x, value)
+            except ctypes.ArgumentError as exc:
+                raise _refused_double(exc, ValueError) from None
             return
 
         if sym and (TYPES.RANGEOBJ is None or sym_type == TYPES.RANGEOBJ):
@@ -675,7 +774,7 @@ class Mechanism:
         symbols = list_functions()
         suffix = "" if self._is_ion else f"_{self._name}"
         names = [
-            full_name[: len(full_name) - len(suffix)]
+            _unsuffixed(full_name, suffix)
             for full_name in self._varnames()
             if symbols.get(full_name, (None,))[0] == TYPES.RANGEVAR
         ]
@@ -684,17 +783,9 @@ class Mechanism:
 
     def __dir__(self):
         self._check_valid()
-        names = set()
         # Range variables: hh exposes "gnabar", "m", etc. (unsuffixed)
-        for full_name in self._varnames():
-            if self._is_ion:
-                names.add(full_name)
-            else:
-                suffix = f"_{self._name}"
-                if full_name.endswith(suffix):
-                    names.add(full_name[: -len(suffix)])
-                else:
-                    names.add(full_name)
+        suffix = "" if self._is_ion else f"_{self._name}"
+        names = {_unsuffixed(full_name, suffix) for full_name in self._varnames()}
         # NMODL PROCEDURE/FUNCTION names exposed by the mechanism
         names.update(self._func_names())
         suffix = f"_{self._name}"

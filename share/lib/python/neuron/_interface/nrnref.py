@@ -11,8 +11,8 @@ Two families live here:
 """
 import abc
 import ctypes
+import operator
 import os
-import numbers
 import sys
 import weakref
 
@@ -28,6 +28,7 @@ from .api import (
     _nrn_rangevar_push,
     _nrn_rangevar_push_nothrow,
     _nrn_rangevar_set,
+    _nrn_section_is_active,
     _nrn_str_pop,
     _nrn_str_push,
     _nrn_symbol,
@@ -39,6 +40,7 @@ from .api import (
     _property_push_checked,
     _ref_property_array_set_checked,
     _ref_property_set_checked,
+    _top_level_symbol,
     _ERR_BUF_SIZE,
 )
 
@@ -104,6 +106,51 @@ def _symbol_info(name):
     return _get_symbol_info(name.decode("utf-8"))
 
 
+def refuse_pickle(self, protocol):
+    """``__reduce_ex__`` of a wrapper that is a HocObject in NEURON.
+
+    NEURON pickles only Vectors. Python's default would pickle the slots,
+    pointers and owned cells among them, and a copy would free or unref what
+    only the original owns (copying ``n.ref("abc")`` freed its string twice).
+    copy and deepcopy fall back to this too, so they raise the same error.
+    """
+    raise TypeError("HocObject: Only Vector instance can be pickled")
+
+
+def _as_index(idx, type_message):
+    """Return *idx* as an int, as NEURON reads a subscript (PyLong_AsLong).
+
+    That is the index protocol: a numpy integer or a bool is an index, a float
+    is not and raises TypeError(*type_message*), with ``{}`` standing for its
+    type's name.
+    """
+    try:
+        return operator.index(idx)
+    except TypeError:
+        raise TypeError(type_message.format(type(idx).__name__)) from None
+
+
+def _array_index(idx, size, type_message):
+    """Return *idx* as an index into a HOC array of *size*, or None if outside.
+
+    As NEURON's araychk, a negative index is outside the array.
+    """
+    i = _as_index(idx, type_message)
+    return i if 0 <= i < size else None
+
+
+def _sequence_index(idx, size, type_message):
+    """As _array_index, but a negative index counts from the end.
+
+    For a range variable array (``seg.xg[-1]``), which NEURON indexes as a
+    Python sequence.
+    """
+    i = _as_index(idx, type_message)
+    if i < 0:
+        i += size
+    return i if 0 <= i < size else None
+
+
 class NrnRef(abc.ABC):
     """Abstract base class for NEURON references.
 
@@ -113,6 +160,8 @@ class NrnRef(abc.ABC):
     """
 
     __slots__ = ()
+
+    __reduce_ex__ = refuse_pickle
 
     @abc.abstractmethod
     def _push(self):
@@ -248,9 +297,16 @@ class NrnRangeVarRef(NrnRef):
     def _push(self):
         sec = self._section()
         # A section deleted through HOC keeps its wrapper but frees the C
-        # section; _check_alive raises RuntimeError instead of pushing freed state.
-        sec._check_alive()
+        # section. Raise NEURON's HOC error for a dead pointer argument
+        # instead of pushing freed state.
+        if not _nrn_section_is_active(sec._sec):
+            raise RuntimeError("Invalid pointer")
         self._check_nseg(sec)
+        name = self._name.decode("utf-8")
+        if not 0.0 < self._x < 1.0:  # a section loop throws in the push
+            from .sections import _ensure_rangevar_topology
+
+            _ensure_rangevar_topology(sec._sec, self._x, name)
         if _nrn_rangevar_push_nothrow is not None:
             # Takes the array index directly, and reports a failure (a
             # mechanism that is no longer inserted, i_membrane_ without
@@ -262,7 +318,6 @@ class NrnRangeVarRef(NrnRef):
             ):
                 raise RuntimeError(err.value.decode("utf-8", "replace"))
             return
-        name = self._name.decode("utf-8")
         # Without the nothrow push, nrn_rangevar_push is the only one, and a HOC
         # error in it aborts the process. On an array symbol it reads the index
         # from the HOC stack, which cannot be pushed here.
@@ -293,7 +348,10 @@ class NrnRangeVarRef(NrnRef):
         from .sections import Segment, _get_symbol_info, _is_pointer_rangevar
 
         sec = self._section()
-        sec._check_alive()  # HOC-deleted section: RuntimeError, not SIGABRT.
+        if not _nrn_section_is_active(sec._sec):
+            # HOC deleted the section: NEURON's reference is a dead
+            # data_handle. Reading it here would SIGABRT.
+            raise ValueError("Invalid data_handle")
         self._check_nseg(sec)
         name = (
             self._name.decode("utf-8") if isinstance(self._name, bytes) else self._name
@@ -314,10 +372,9 @@ class NrnRangeVarRef(NrnRef):
     def _element(self, idx, name, length):
         # NEURON's element pointer indexes relative to itself:
         # seg._ref_xg[0][1] is xg[1], and seg._ref_xg[1][-1] is xg[0].
-        if isinstance(idx, bool) or not isinstance(idx, numbers.Integral):
-            raise TypeError(f"indices must be integers, not {type(idx).__name__}")
+        offset = _as_index(idx, "indices must be integers, not {}")
         base = self._index or 0
-        element = base + int(idx)
+        element = base + offset
         if not 0 <= element < length:
             raise IndexError(f"{name}[{base}] next_array_element({idx}): out of range")
         return element
@@ -336,6 +393,10 @@ class NrnRangeVarRef(NrnRef):
             from .sections import _pointer_rangevar_get
 
             return _pointer_rangevar_get(sec, self._x, name)
+        if not 0.0 < self._x < 1.0:  # a section loop throws in the read
+            from .sections import _ensure_rangevar_topology
+
+            _ensure_rangevar_topology(sec._sec, self._x, name)
         return _nrn_rangevar_get(kind, sec._sec, self._x)
 
     def __setitem__(self, idx, value):
@@ -354,6 +415,10 @@ class NrnRangeVarRef(NrnRef):
 
             _pointer_rangevar_set(sec, self._x, name, value)
             return
+        if not 0.0 < self._x < 1.0:  # a section loop throws in the write
+            from .sections import _ensure_rangevar_topology
+
+            _ensure_rangevar_topology(sec._sec, self._x, name)
         _nrn_rangevar_set(kind, sec._sec, self._x, value)
 
 
@@ -367,6 +432,9 @@ class NrnRangeArrayRef(NrnRef):
 
     __slots__ = ("_sec", "_x", "_name")
 
+    def __reduce_ex__(self, protocol):
+        raise TypeError("cannot pickle 'nrn.RangeVar' object")
+
     def __init__(self, sec, x, name):
         self._sec = sec
         self._x = x
@@ -376,15 +444,10 @@ class NrnRangeArrayRef(NrnRef):
         return _symbol_info(self._name.encode("utf-8"))[3]
 
     def _resolve(self, idx):
-        if isinstance(idx, bool) or not isinstance(idx, numbers.Integral):
-            raise TypeError(f"indices must be integers, not {type(idx).__name__}")
-        length = len(self)
-        idx = int(idx)
-        if idx < 0:
-            idx += length
-        if not 0 <= idx < length:
+        i = _sequence_index(idx, len(self), "indices must be integers, not {}")
+        if i is None:
             raise IndexError(self._name)
-        return idx
+        return i
 
     def __getitem__(self, idx):
         return NrnRangeVarRef(self._sec, self._x, self._name, self._resolve(idx))
@@ -422,7 +485,7 @@ class NrnVarRef(NrnRef):
         if not isinstance(name, bytes):
             name = name.encode("utf-8")
         self._name = name
-        self._sym = _nrn_symbol(self._name)
+        self._sym = _top_level_symbol(self._name)
         if self._sym is None:
             raise NameError(f"No such mechanism or variable: {self._name}")
 
@@ -499,17 +562,33 @@ class NrnObjectPropertyRef(NrnRef):
             return f"<NrnRef to {clsname}.{name}>"
         return f"<NrnRef to {clsname}.{name}[{self._idx}]>"
 
-    def _push(self):
-        # idx=None: scalar property; idx=int: that array element.
+    def _owner(self):
+        """The object, checked before its property data is touched.
+
+        The weakref catches a collected wrapper, but a point process whose
+        host section was deleted through HOC keeps its wrapper while the C
+        node is freed, and reading, writing or pushing its property then
+        SIGABRTs. Same guard as the direct ic.amp path, where NEURON says "No
+        value"; its reference is a dead data_handle, as is one to a point
+        process that was never placed.
+        """
         obj = self._obj()
         if obj is None:
             raise ReferenceError("Referenced object no longer exists")
-        # The weakref catches a collected wrapper, but a point process whose
-        # host section was deleted through HOC keeps its wrapper while the C
-        # node is freed, and pushing its property then SIGABRTs. Same guard as
-        # the direct ic.amp path.
-        obj._check_host_alive()
+        try:
+            obj._check_host_alive()
+        except TypeError:
+            raise ValueError("Invalid data_handle") from None
+        if obj._is_unlocated():
+            raise ValueError("Invalid data_handle")
+        return obj
 
+    def _push(self):
+        # idx=None: scalar property; idx=int: that array element.
+        try:
+            obj = self._owner()
+        except ValueError:
+            raise RuntimeError("Invalid pointer") from None  # NEURON's HOC error
         if self._idx is None:
             _property_push_checked(obj._obj, self._name)
         else:
@@ -518,11 +597,7 @@ class NrnObjectPropertyRef(NrnRef):
     def __getitem__(self, idx):
         if idx != 0:
             raise IndexError("Only index 0 is supported")
-        obj = self._obj()
-        if obj is None:
-            raise ReferenceError("Referenced object no longer exists")
-        obj._check_host_alive()  # HOC-deleted host: clean raise, not SIGABRT.
-
+        obj = self._owner()
         if self._idx is None:
             return _property_get_checked(obj._obj, self._name)
         else:
@@ -531,11 +606,7 @@ class NrnObjectPropertyRef(NrnRef):
     def __setitem__(self, idx, value):
         if idx != 0:
             raise IndexError("Only index 0 is supported")
-        obj = self._obj()
-        if obj is None:
-            raise ReferenceError("Referenced object no longer exists")
-        obj._check_host_alive()  # HOC-deleted host: clean raise, not SIGABRT.
-
+        obj = self._owner()
         if self._idx is None:
             _ref_property_set_checked(obj._obj, self._name, value)
         else:
@@ -685,7 +756,7 @@ def _double_array_data(name, dims):
     """
     from .api import _nrn_symbol_array_length, _nrn_symbol_is_array, symbol_array_dims
 
-    sym = _nrn_symbol(name.encode("utf-8"))
+    sym = _top_level_symbol(name.encode("utf-8"))
     if not sym or not _nrn_symbol_is_array(sym):
         raise TypeError(f"'{name}' is no longer an array")
     current = symbol_array_dims(sym, int(_nrn_symbol_array_length(sym)))
@@ -715,13 +786,12 @@ class NrnDoubleArrayElementRef(NrnRef):
         self._flat = flat
 
     def _address(self, offset=0):
-        if isinstance(offset, bool) or not isinstance(offset, numbers.Integral):
-            raise TypeError(f"indices must be integers, not {type(offset).__name__}")
+        offset = _as_index(offset, "indices must be integers, not {}")
         data = _double_array_data(self._name, self._dims)
         total = 1
         for d in self._dims:
             total *= d
-        element = self._flat + int(offset)
+        element = self._flat + offset
         if not 0 <= element < total:
             raise IndexError(self._name)
         return ctypes.cast(
@@ -758,10 +828,9 @@ class NrnMatrixElementRef(NrnRef):
         self._flat = row * int(matrix.ncol()) + col
 
     def _element(self, offset=0):
-        if isinstance(offset, bool) or not isinstance(offset, numbers.Integral):
-            raise TypeError(f"indices must be integers, not {type(offset).__name__}")
+        offset = _as_index(offset, "indices must be integers, not {}")
         nrow, ncol = int(self._matrix.nrow()), int(self._matrix.ncol())
-        flat = self._flat + int(offset)
+        flat = self._flat + offset
         if not 0 <= flat < nrow * ncol:
             raise IndexError(f"{self._matrix.hname()}.x")
         return divmod(flat, ncol)
@@ -809,6 +878,11 @@ class NrnArrayPropertyRef(NrnRef):
 
     __slots__ = ("_owner", "_name", "_size")
 
+    def __reduce_ex__(self, protocol):
+        # Pickles as its owner allows: NEURON pickles vec._ref_x (loading it
+        # back as the Vector) and refuses any other owner.
+        return object.__reduce_ex__(self, protocol)
+
     def __init__(self, owner, name, size):
         self._owner = owner
         self._name = name
@@ -818,15 +892,12 @@ class NrnArrayPropertyRef(NrnRef):
         raise TypeError("Most HocObject have no len()")
 
     def __getitem__(self, idx):
-        if not isinstance(idx, int) or isinstance(idx, bool):
-            raise TypeError("array reference index must be an integer")
-        if idx < 0:
-            idx += self._size
-        if not 0 <= idx < self._size:
+        i = _array_index(idx, self._size, "array reference index must be an integer")
+        if i is None:
             raise IndexError(
                 f"index {idx} out of range [0, {self._size}) for {self._name}"
             )
-        return self._owner._property_ref(self._name, idx=idx)
+        return self._owner._property_ref(self._name, idx=i)
 
     def __setitem__(self, idx, value):
         self[idx][0] = value

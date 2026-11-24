@@ -3,14 +3,20 @@ import ctypes
 
 from ._docs import get_doc
 from .api import (
+    _ERR_BUF_SIZE,
     HOC_CLASS_MODULE,
     TYPES,
+    _check_nrn_error,
     _ensure_pyobj_to_hoc,
+    _ensure_topology,
     _nrn_double_pop,
     _nrn_double_push,
+    _nrn_function_call,
     _nrn_global_symbol_table,
     _nrn_object_push,
     _nrn_pntproc_nmodlrandom_get,
+    _nrn_section_is_active,
+    _nrn_section_pop,
     _nrn_segment_nmodlrandom_get,
     _nrn_str_pop,
     _nrn_str_push,
@@ -30,7 +36,21 @@ from .api import (
 )
 from .nrnref import (
     NrnRef,
+    refuse_pickle,
 )
+
+# NEURON's error for a deleted section (nrnpy_sec_referr, nrnpy_nrn.cpp). An
+# assignment through a Segment, Mechanism or RangeVar puts the type in front:
+# "nrn.Segment can't access a deleted section".
+_DELETED_SECTION = "can't access a deleted section"
+
+
+def _check_segment_arg(seg):
+    """Raise NEURON's HOC error for a Segment of a deleted section passed to a
+    HOC call (nrnpy_hoc.cpp), before anything is pushed: the core would read
+    the freed section and abort."""
+    if not _nrn_section_is_active(seg._sec._sec):
+        raise RuntimeError("nrn.Segment associated with deleted internal Section")
 
 
 class FuncWrapper:
@@ -39,6 +59,8 @@ class FuncWrapper:
     # during core probes. FuncWrapper.__doc__ on the class is the property
     # object, not help text.
     __slots__ = ("_func", "_name", "_doc", "_doc_key", "_fallback_doc", "_key")
+
+    __reduce_ex__ = refuse_pickle
 
     def __init__(self, func, name, doc="", *, doc_key=None, key=None):
         self._func = func
@@ -320,7 +342,7 @@ def _push_args(args, return_rollback=False):
         for arg in args:
             if isinstance(arg, Segment):
                 # A Segment contributes its x and supplies section context.
-                arg.sec._check_alive()
+                _check_segment_arg(arg)
                 seg_sec = arg.sec
                 descriptors.append(("double", float(arg.x)))
             elif arg is None:
@@ -410,6 +432,35 @@ def _push_args(args, return_rollback=False):
     return temp_strs, seg_sec
 
 
+def _check_sec_kwarg(sec):
+    """Reject a ``sec=`` that is not a live Section, before anything is pushed."""
+    from .sections import Section
+
+    if not isinstance(sec, Section):
+        raise TypeError("sec is not a Section")
+    sec._check_alive()
+
+
+def _pop_pushed_section(sec_ptr):
+    """Pop the section pushed as a HOC call's section context, which the call
+    may have deleted (``delete_section()``, a template proc or ``init()``).
+
+    ``nrn_section_pop`` runs ``chk_access`` first. With the top of the stack
+    deleted it falls back to another live section, leaving the deleted one's
+    reference behind, or with none left its "Accessing a deleted section"
+    error throws through ctypes and aborts. HOC's ``pop_section()`` pops
+    without the check (cabcode.cpp:2165), as NEURON's hocobj_call does with
+    ``nrn_popsec``. The stack's reference keeps the struct readable here.
+    """
+    if _nrn_section_is_active(sec_ptr):
+        _nrn_section_pop()
+        return
+    err = ctypes.create_string_buffer(_ERR_BUF_SIZE)
+    ret = _nrn_function_call(_nrn_symbol(b"pop_section"), 0, err, _ERR_BUF_SIZE)
+    _check_nrn_error(ret, err)
+    _nrn_double_pop()  # pop_section's hoc_retpushx(1.)
+
+
 def _name_error(exc_type, name, message):
     """The error for a name HOC does not know: TypeError for a non-ASCII name,
     as NEURON (HOC names are ASCII, and hasattr must not swallow it)."""
@@ -488,6 +539,8 @@ def _try_wrap_density_nmodlrandom(sec, x, sym, sym_type):
 
     See api.TypeCodes.record_rangeobj for why this is probed at runtime.
     """
+    if not 0.0 < x < 1.0:  # the core finds the node with node_exact
+        _ensure_topology(sec, x)
     raw = _nrn_segment_nmodlrandom_get(sec, x, sym)
     if not raw:
         return None

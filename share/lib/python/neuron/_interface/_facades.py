@@ -83,17 +83,11 @@ def _hoc_object_class(h, legacy=None):
             class_name = getattr(hocbase, "_hoc_class_name", None)
             if class_name is None:
                 raise TypeError(f"hocbase {hocbase!r} is not a HOC class")
-            obj, host, post_init, abort_init = _construct_hoc_object(
-                class_name, args, sec=sec
-            )
+            obj, host, post_init = _construct_hoc_object(class_name, args, sec=sec)
             instance = object.__new__(cls)
             instance._obj = obj
-            try:
-                instance._init_from_ptr(obj, host)
-                post_init(instance)
-            except BaseException:
-                abort_init()
-                raise
+            instance._init_from_ptr(obj, host)
+            post_init(instance)
             return instance
 
         def __init__(self, *args, **kwargs):
@@ -140,16 +134,17 @@ def _ref_address(ref):
     """
     import ctypes
 
-    from .api import _nrn_double_ptr_pop, _nrn_stack_type
+    from .api import HOC_LOCK, _nrn_double_ptr_pop, _nrn_stack_type
     from .nrnref import NrnRef
 
     if not isinstance(ref, NrnRef):
         raise TypeError("not a reference to a number")
-    ref._push()
-    if _nrn_stack_type() != _STACK_IS_POINTER:
-        ref._pop()
-        raise TypeError("not a reference to a number")
-    return ctypes.cast(_nrn_double_ptr_pop(), ctypes.c_void_p).value
+    with HOC_LOCK:  # the pop must take this push (gap-72)
+        ref._push()
+        if _nrn_stack_type() != _STACK_IS_POINTER:
+            ref._pop()
+            raise TypeError("not a reference to a number")
+        return ctypes.cast(_nrn_double_ptr_pop(), ctypes.c_void_p).value
 
 
 def _nrn_module():

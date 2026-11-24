@@ -218,7 +218,8 @@ def _loads(data):
 def _check_list(source, name, nhost):
     if not isinstance(source, list):
         raise TypeError("Argument must be a Python list")
-    if len(source) != nhost:
+    # NEURON's PyList_Size: a list subclass's own __len__ is not called.
+    if list.__len__(source) != nhost:
         raise ValueError(f"{name} list size must be nhost")
 
 

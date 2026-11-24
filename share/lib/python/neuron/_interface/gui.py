@@ -77,12 +77,10 @@ class Timer:
         self._thread = None
 
     def seconds(self, interval):
-        # HOC Timer.seconds(x) sets the interval and returns the *previous* one.
-        # Deliberate difference from pinned neuron.gui.Timer (returns the new
-        # interval); preserve this contract when syncing upstream GUI code.
-        last_interval = self._interval
+        # Sets the interval and returns it, as HOC's Timer.seconds(x) and
+        # neuron.gui.Timer do.
         self._interval = interval
-        return last_interval
+        return interval
 
     def _do_callback(self):
         # Re-arms after each fire (one-shot threading.Timer, re-created each interval).
