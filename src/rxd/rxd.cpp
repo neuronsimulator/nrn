@@ -15,7 +15,7 @@
 #include "ivocvect.h"
 
 static void ode_solve(double, double*, double*);
-extern int structure_change_cnt;
+extern "C" NRN_DLLSYM int structure_change_cnt;
 extern int states_cvode_offset;
 int prev_structure_change_cnt = 0;
 unsigned char initialized = FALSE;
@@ -23,7 +23,7 @@ unsigned char initialized = FALSE;
 /*
     Globals
 */
-extern NrnThread* nrn_threads;
+extern NRN_DLLSYM NrnThread* nrn_threads;
 int NUM_THREADS = 1;
 namespace nrn {
 namespace rxd {
@@ -41,7 +41,7 @@ extern double* t_ptr;
 fptr *_setup, *_initialize, *_setup_units;
 /* Returns nonzero if it failed, after reporting the Python error. */
 static int (*_setup_matrices)() = nullptr;
-extern NrnThread* nrn_threads;
+extern NRN_DLLSYM NrnThread* nrn_threads;
 
 /*intracellular diffusion*/
 unsigned char diffusion = FALSE;

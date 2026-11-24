@@ -9,6 +9,7 @@ and Flux_pair structs and their respective functions
 #include <assert.h>
 #include <nrnmpi.h>
 
+#include "nrn_export.hpp"
 #include "neuron/container/data_handle.hpp"
 
 #include <stdlib.h>
@@ -391,24 +392,24 @@ void make_dt_ptr(double* my_dt_ptr);
                 delta x, delta y, and delta z
                 volume fraction and permeability: a pointer to per-voxel values, or NULL
                 and the uniform value*/
-extern "C" int ECS_insert(int grid_list_index,
-                          double* my_states,
-                          int my_num_states_x,
-                          int my_num_states_y,
-                          int my_num_states_z,
-                          double my_dc_x,
-                          double my_dc_y,
-                          double my_dc_z,
-                          double my_dx,
-                          double my_dy,
-                          double my_dz,
-                          double* my_alpha,
-                          double my_alpha_value,
-                          double* my_permeability,
-                          double my_permeability_value,
-                          int,
-                          double,
-                          double);
+extern "C" NRN_EXPORT int ECS_insert(int grid_list_index,
+                                     double* my_states,
+                                     int my_num_states_x,
+                                     int my_num_states_y,
+                                     int my_num_states_z,
+                                     double my_dc_x,
+                                     double my_dc_y,
+                                     double my_dc_z,
+                                     double my_dx,
+                                     double my_dy,
+                                     double my_dz,
+                                     double* my_alpha,
+                                     double my_alpha_value,
+                                     double* my_permeability,
+                                     double my_permeability_value,
+                                     int,
+                                     double,
+                                     double);
 
 Grid_node* ICS_make_Grid(double* my_states,
                          long num_nodes,
@@ -426,41 +427,41 @@ Grid_node* ICS_make_Grid(double* my_states,
                          double* ics_alphas);
 
 // Insert an  ICS_Grid_node "new_Grid" into the list located at grid_list_index in Parallel_grids
-extern "C" int ICS_insert(int grid_list_index,
-                          double* my_states,
-                          long num_nodes,
-                          long* neighbors,
-                          long* x_line_defs,
-                          long x_lines_length,
-                          long* y_line_defs,
-                          long y_lines_length,
-                          long* z_line_defs,
-                          long z_lines_length,
-                          double* dcs,
-                          double dx,
-                          bool is_diffusable,
-                          double atolscale,
-                          double* ics_alphas);
+extern "C" NRN_EXPORT int ICS_insert(int grid_list_index,
+                                     double* my_states,
+                                     long num_nodes,
+                                     long* neighbors,
+                                     long* x_line_defs,
+                                     long x_lines_length,
+                                     long* y_line_defs,
+                                     long y_lines_length,
+                                     long* z_line_defs,
+                                     long z_lines_length,
+                                     double* dcs,
+                                     double dx,
+                                     bool is_diffusable,
+                                     double atolscale,
+                                     double* ics_alphas);
 
-extern "C" int ICS_insert_inhom(int grid_list_index,
-                                double* my_states,
-                                long num_nodes,
-                                long* neighbors,
-                                long* x_line_defs,
-                                long x_lines_length,
-                                long* y_line_defs,
-                                long y_lines_length,
-                                long* z_line_defs,
-                                long z_lines_length,
-                                double* dcs,
-                                double dx,
-                                bool is_diffusable,
-                                double atolscale,
-                                double* ics_alphas);
+extern "C" NRN_EXPORT int ICS_insert_inhom(int grid_list_index,
+                                           double* my_states,
+                                           long num_nodes,
+                                           long* neighbors,
+                                           long* x_line_defs,
+                                           long x_lines_length,
+                                           long* y_line_defs,
+                                           long y_lines_length,
+                                           long* z_line_defs,
+                                           long z_lines_length,
+                                           double* dcs,
+                                           double dx,
+                                           bool is_diffusable,
+                                           double atolscale,
+                                           double* ics_alphas);
 
 
 // Set the diffusion coefficients for a given grid_id
-extern "C" int set_diffusion(int, int, double*, int);
+extern "C" NRN_EXPORT int set_diffusion(int, int, double*, int);
 
 // Delete a specific Grid_node "find" from the list "head"
 int remove(Grid_node** head, Grid_node* find);

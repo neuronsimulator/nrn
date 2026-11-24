@@ -11,6 +11,7 @@
 #include <vector>
 #include <map>
 #include "coreneuron/network/netcon.hpp"
+#include "neuron/ba_reg.h"
 namespace coreneuron {
 
 /// Mechanism type to be used from legacy_index2pointer and nrn_dblpntr2nrncore (in Neuron)
@@ -68,10 +69,4 @@ extern int cellorder_nwarp;
 
 // Mechanism pdata index values into _actual_v and _actual_area data need to be updated.
 enum Layout { SoA = 0, AoS = 1 };
-
-// Blocks associated with BEFORE and AFTER have different values based on type.
-// There values are based on neuron/coreneuron implementation details.
-struct BAType {
-    enum { Breakpoint = 1, Solve = 2, Initial = 3, Step = 4, Before = 10, After = 20 };
-};
 }  // namespace coreneuron

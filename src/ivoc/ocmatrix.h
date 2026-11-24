@@ -234,5 +234,5 @@ class OcSparseMatrix final: public OcMatrix {  // type 2
 
   private:
     Eigen::SparseMatrix<double, Eigen::RowMajor> m_{};
-    std::unique_ptr<Eigen::SparseLU<decltype(m_)>> lu_{};
+    std::unique_ptr<Eigen::SparseLU<Eigen::SparseMatrix<double>>> lu_{};
 };

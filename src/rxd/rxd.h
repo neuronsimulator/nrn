@@ -1,4 +1,5 @@
 #pragma once
+#include "nrn_export.hpp"
 #include <condition_variable>
 #include <mutex>
 #include <thread>
@@ -6,6 +7,17 @@
 
 #define SPECIES_ABSENT -1
 #define PREFETCH       4
+
+#if defined(__PGI)
+#define NRN_PREFETCH(addr, rw, loc) ((void) 0)
+#elif defined(__GNUC__)
+#define NRN_PREFETCH(addr, rw, loc) __builtin_prefetch((addr), (rw), (loc))
+#elif defined(_MSC_VER)
+#include <xmmintrin.h>
+#define NRN_PREFETCH(addr, rw, loc) _mm_prefetch((const char*) (addr), _MM_HINT_T0)
+#else
+#define NRN_PREFETCH(addr, rw, loc) ((void) 0)
+#endif
 
 using fptr = void(void);
 
@@ -95,11 +107,11 @@ struct TaskQueue {
     struct TaskList* last;
 };
 
-extern "C" void set_num_threads(const int);
+extern "C" NRN_EXPORT void set_num_threads(const int);
 void _fadvance(void);
 void _fadvance_fixed_step_3D(void);
 
-extern "C" int get_num_threads(void);
+extern "C" NRN_EXPORT int get_num_threads(void);
 void ecs_set_adi_tort(ECS_Grid_node*);
 void ecs_set_adi_vol(ECS_Grid_node*);
 void ecs_set_adi_homogeneous(ECS_Grid_node*);
@@ -187,7 +199,7 @@ void _ode_reinit(double*);
 
 int ode_count(const int);
 
-extern "C" void scatter_concentrations(void);
+extern "C" NRN_EXPORT void scatter_concentrations(void);
 
 
 int find(const int, const int, const int, const int, const int);

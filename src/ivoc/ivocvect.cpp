@@ -113,10 +113,10 @@ static double dmaxint_ = 9007199254740992;
 
 extern Object* hoc_thisobject;
 extern Symlist* hoc_top_level_symlist;
-IvocVect* (*nrnpy_vec_from_python_p_)(void*);
-Object** (*nrnpy_vec_to_python_p_)(void*);
-Object** (*nrnpy_vec_as_numpy_helper_)(int, double*);
-double (*nrnpy_call_func)(Object*, double);
+NRN_DLLSYM IvocVect* (*nrnpy_vec_from_python_p_)(void*);
+NRN_DLLSYM Object** (*nrnpy_vec_to_python_p_)(void*);
+NRN_DLLSYM Object** (*nrnpy_vec_as_numpy_helper_)(int, double*);
+NRN_DLLSYM double (*nrnpy_call_func)(Object*, double);
 
 static int narg() {
     int i = 0;
@@ -2195,7 +2195,7 @@ static double v_mean(void* v) {
             hoc_execerror("end - start", "must be > 0");
         }
         const double sum = std::accumulate(x->begin() + start, x->begin() + end + 1, 0.0);
-        return sum / end - start + 1;
+        return sum / (end - start + 1);
     } else {
         if (x->size() < 1) {
             hoc_execerror("Vector", "must have size > 0");
