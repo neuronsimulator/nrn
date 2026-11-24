@@ -223,7 +223,8 @@ void CodegenCoreneuronCppVisitor::print_kernel_data_present_annotation_block_end
 }
 
 
-void CodegenCoreneuronCppVisitor::print_net_init_acc_serial_annotation_block_begin() {
+void CodegenCoreneuronCppVisitor::print_net_init_acc_serial_annotation_block_begin(
+    bool /*shaped_weights*/) {
     // backend specific, do nothing
 }
 
@@ -2128,12 +2129,30 @@ void CodegenCoreneuronCppVisitor::print_net_receive_common_code(const Block& nod
         printer->fmt_line("auto* const inst = static_cast<{0}*>(ml->instance);", instance_struct());
     }
 
+    // NET_RECEIVE arguments are already renamed to "(*name)". Inside acc serial,
+    // a double* into weights has no bounds (NVC++-S-1067 on NVHPC 26.9). Index
+    // the shaped weights array instead. The host path uses the same subscript.
+    bool shaped_weights = false;
+    auto parameters = info.net_receive_node->get_parameters();
+    if (node.is_initial_block() && !parameters.empty()) {
+        int i = 0;
+        for (auto& parameter: parameters) {
+            auto name = parameter->get_node_name();
+            if (VarUsageVisitor().variable_used(node, "(*" + name + ")")) {
+                shaped_weights = true;
+                RenameVisitor vr("\\(\\*" + name + "\\)",
+                                 fmt::format("weights[weight_index + {}]", i));
+                node.visit_children(vr);
+            }
+            ++i;
+        }
+    }
+
     if (node.is_initial_block()) {
-        print_net_init_acc_serial_annotation_block_begin();
+        print_net_init_acc_serial_annotation_block_begin(shaped_weights);
     }
 
     // rename variables but need to see if they are actually used
-    auto parameters = info.net_receive_node->get_parameters();
     if (!parameters.empty()) {
         int i = 0;
         printer->add_newline();
@@ -2257,8 +2276,7 @@ void CodegenCoreneuronCppVisitor::print_function_table_call(const FunctionCall& 
  * then generated code for initial block should be:
  *
  * \code{.cpp}
- *      double* R = weights + weight_index + 0;
- *      (*R) = 1.0;
+ *      weights[weight_index + 0] = 1.0;
  * \endcode
  *
  * So, the `R` in AST needs to be renamed with `(*R)`.

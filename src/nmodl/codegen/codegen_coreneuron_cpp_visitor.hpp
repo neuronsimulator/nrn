@@ -191,7 +191,7 @@ class CodegenCoreneuronCppVisitor: public CodegenCppVisitor {
     /**
      * Print accelerator kernels begin annotation for net_init kernel
      */
-    virtual void print_net_init_acc_serial_annotation_block_begin();
+    virtual void print_net_init_acc_serial_annotation_block_begin(bool shaped_weights = false);
 
 
     /**

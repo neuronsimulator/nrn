@@ -209,9 +209,18 @@ void CodegenAccVisitor::print_kernel_data_present_annotation_block_begin() {
  *        construct to launch serial kernels. This is during initialization
  *        but still inefficient. This should be improved when we drop MOD2C.
  */
-void CodegenAccVisitor::print_net_init_acc_serial_annotation_block_begin() {
+void CodegenAccVisitor::print_net_init_acc_serial_annotation_block_begin(bool shaped_weights) {
     if (!info.artificial_cell) {
-        printer->add_line("#pragma acc serial present(inst, indexes, weights) if(nt->compute_gpu)");
+        // NVHPC 26.9 rejects unbounded double* aliases of weights inside this
+        // region (NVC++-S-1067). Callers that index weights pass a shaped section.
+        if (shaped_weights) {
+            printer->add_line(
+                "#pragma acc serial present(inst, indexes, weights[0:nt->n_weight]) "
+                "if(nt->compute_gpu)");
+        } else {
+            printer->add_line(
+                "#pragma acc serial present(inst, indexes, weights) if(nt->compute_gpu)");
+        }
         printer->add_line("{");
         printer->increase_indent();
     }

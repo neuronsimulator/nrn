@@ -1709,6 +1709,9 @@ void CodegenNeuronCppVisitor::print_mechanism_register_regular() {
 
     for (size_t i = 0; i < info.before_after_blocks.size(); ++i) {
         const auto& block = info.before_after_blocks[i];
+        if (!emit_before_after_callback(block)) {
+            continue;
+        }
         const auto function_name = method_name(fmt::format("nrn_before_after_{}", i));
         printer->fmt_line("hoc_reg_ba(mech_type, {}, {});",
                           function_name,

@@ -1820,6 +1820,92 @@ void CodegenNeuronAccVisitor::print_after_nrn_cur_gpu_net_send_flush() {
     }
 }
 
+namespace {
+
+bool is_before_breakpoint(const ast::Block* block) {
+    if (!block || !block->is_before_block()) {
+        return false;
+    }
+    const auto* before = dynamic_cast<const ast::BeforeBlock*>(block);
+    if (!before || !before->get_bablock() || !before->get_bablock()->get_type()) {
+        return false;
+    }
+    return before->get_bablock()->get_type()->get_value() == ast::BATYPE_BREAKPOINT;
+}
+
+}  // namespace
+
+bool CodegenNeuronAccVisitor::emit_before_after_callback(const ast::Block* block) const {
+    // BEFORE BREAKPOINT is folded into the device CURRENT kernel.
+    return !is_before_breakpoint(block);
+}
+
+void CodegenNeuronAccVisitor::print_before_after_block(const ast::Block* node, size_t block_id) {
+    std::shared_ptr<ast::BABlock> ba_block;
+    std::string ba_type;
+    if (node->is_before_block()) {
+        ba_block = dynamic_cast<const ast::BeforeBlock*>(node)->get_bablock();
+        ba_type = "BEFORE";
+    } else {
+        ba_block = dynamic_cast<const ast::AfterBlock*>(node)->get_bablock();
+        ba_type = "AFTER";
+    }
+
+    const auto ba_block_type = ba_block->get_type()->eval();
+    const auto function_name = method_name(fmt::format("nrn_before_after_{}", block_id));
+
+    // Same nrn_bamech_t signature as the host backend. One instance per call.
+    ParamVector args = {{"", "Node*", "", "_nd"},
+                        {"", "Datum*", "", "_ppvar"},
+                        {"", "Datum*", "", "_thread"},
+                        {"", "NrnThread*", "", "nt"},
+                        {"", "Memb_list*", "", "_ml_arg"},
+                        {"", "size_t", "", "id"},
+                        {"", "const _nrn_model_sorted_token&", "", "_sorted_token"}};
+
+    printer->add_newline(2);
+    printer->fmt_line("/** {} {} # {} */", ba_type, ba_block_type, block_id);
+    printer->fmt_push_block("static void {}({})", function_name, get_parameter_str(args));
+
+    printer->add_line("(void) _nd;");
+    printer->add_line("(void) _ppvar;");
+    printer->add_line("(void) _thread;");
+
+    // Host cache. MOD PROCEDURE/FUNCTION calls still take the present_fp ABI,
+    // so declare those column pointers as aliases of the same host SoA.
+    printer->add_line(
+        "_nrn_mechanism_cache_range _lmc{_sorted_token, *nt, *_ml_arg, _ml_arg->type()};");
+    printer->fmt_line("auto inst = make_instance_{}(_ml_arg->get_storage_offset(), &_lmc);",
+                      info.mod_suffix);
+    if (!info.artificial_cell && info.vectorize) {
+        printer->fmt_line("auto node_data = make_node_data_{}(*nt, *_ml_arg);", info.mod_suffix);
+        printer->add_line("int node_id = node_data.nodeindices[id];");
+        printer->fmt_line("{} = node_data.node_voltages[node_id];",
+                          indexed_fp_var(naming::VOLTAGE_UNUSED_VARIABLE));
+    }
+    if (!codegen_thread_variables.empty()) {
+        printer->fmt_line("auto _thread_vars = {}(_thread[{}].get<double*>());",
+                          thread_variables_struct(),
+                          info.thread_var_thread_id);
+    }
+    print_present_fp_pointer_declarations();
+
+    const auto& read_statements = ion_read_statements(BlockType::Equation);
+    for (auto& statement: read_statements) {
+        printer->add_line(statement);
+    }
+
+    print_statement_block(*ba_block->get_statement_block(), false, false);
+
+    const auto& write_statements = ion_write_statements(BlockType::Equation);
+    for (auto& statement: write_statements) {
+        auto text = process_shadow_update_statement(statement, BlockType::Equation);
+        printer->add_line(text);
+    }
+
+    printer->pop_block();
+}
+
 void CodegenNeuronAccVisitor::print_compute_functions() {
     print_net_send_buffering();
     print_nrn_init();
@@ -1832,6 +1918,12 @@ void CodegenNeuronAccVisitor::print_compute_functions() {
     print_net_receive_buffering();
     print_net_receive();
     print_net_init();
+    for (size_t i = 0; i < info.before_after_blocks.size(); ++i) {
+        if (!emit_before_after_callback(info.before_after_blocks[i])) {
+            continue;
+        }
+        print_before_after_block(info.before_after_blocks[i], i);
+    }
 }
 
 void CodegenNeuronAccVisitor::print_nrn_jacob() {

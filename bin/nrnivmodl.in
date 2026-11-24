@@ -40,7 +40,7 @@ export libdir
 # the Python library from configure and the install/build prefix of this
 # script. Harmless when using nocmodl.
 if [ -z "${NMODL_PYLIB:-}" ]; then
-  _nrn_nmodl_pylib="@PYTHON_LIBRARY@"
+  _nrn_nmodl_pylib="@NRN_NMODL_PYLIB@"
   if [ -n "${_nrn_nmodl_pylib}" ]; then
     export NMODL_PYLIB="${_nrn_nmodl_pylib}"
   fi

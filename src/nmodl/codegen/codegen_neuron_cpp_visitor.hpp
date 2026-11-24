@@ -798,6 +798,17 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
 
 
     /**
+     * Whether this block gets a host \c hoc_reg_ba callback.
+     *
+     * The OpenACC backend inlines BEFORE BREAKPOINT into CURRENT and must not
+     * also register that block.
+     */
+    virtual bool emit_before_after_callback(const ast::Block* block) const {
+        (void) block;
+        return true;
+    }
+
+    /**
      * Print one NEURON before/after callback.
      *
      * \p node is a BeforeBlock or AfterBlock. The generated function is one

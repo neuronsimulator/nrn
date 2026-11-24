@@ -54,6 +54,11 @@ class CodegenNeuronAccVisitor: public CodegenNeuronCppVisitor {
 
     void print_compute_functions() override;
 
+    bool emit_before_after_callback(const ast::Block* block) const override;
+
+    /** Host hoc_reg_ba body. BEFORE BREAKPOINT is inlined into CURRENT instead. */
+    void print_before_after_block(const ast::Block* node, size_t block_id);
+
     void print_function_definitions() override;
 
     /** Eigen Newton functors must use _present_fp_* (same as kernel body), not _lmc. */

@@ -70,7 +70,7 @@ class CodegenAccVisitor: public CodegenCoreneuronCppVisitor {
 
 
     /// start of annotation "acc kernels" for net_init kernel
-    void print_net_init_acc_serial_annotation_block_begin() override;
+    void print_net_init_acc_serial_annotation_block_begin(bool shaped_weights = false) override;
 
 
     /// end of annotation "acc kernels" for net_init kernel

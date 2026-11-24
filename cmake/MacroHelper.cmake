@@ -174,7 +174,7 @@ macro(nmodl_openacc_mod_to_cpp modfile_basename modfile_compat)
     OUTPUT ${CPPFILE_OUTPUT_PATH}
     COMMAND
       ${CMAKE_COMMAND} -E env "MODLUNIT=${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib"
-      "NMODL_PYLIB=${PYTHON_LIBRARY}" "NMODLHOME=${PROJECT_BINARY_DIR}"
+      "NMODL_PYLIB=${NRN_NMODL_PYLIB}" "NMODLHOME=${PROJECT_BINARY_DIR}"
       ${NRN_NOCMODL_SANITIZER_ENVIRONMENT} $<TARGET_FILE:nmodl> ${MODFILE_OUTPUT_PATH} --neuron -o
       ${modfile_output_dir} ${NRN_BUILTIN_MOD_NMODL_OPENACC_ARGS}
     COMMAND sed ${NOCMODL_SED_EXPR} ${CPPFILE_OUTPUT_PATH} > ${CPPFILE_OUTPUT_PATH}.tmp
