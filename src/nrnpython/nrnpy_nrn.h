@@ -9,7 +9,9 @@ static PyType_Slot nrnpy_SectionType_slots[] = {
     {Py_tp_iter, (void*) seg_of_section_iter_safe},
     {Py_tp_methods, (void*) NPySecObj_methods},
     {Py_tp_init, (void*) NPySecObj_init_safe},
-    {Py_tp_new, (void*) NPySecObj_new_safe},
+    // Not NPySecObj_new: __new__ must not initialize. A subclass's own constructor
+    // arguments would reach NPySecObj_init, and its __init__ would initialize again.
+    {Py_tp_new, (void*) PyType_GenericNew},
     {Py_tp_doc, (void*) "Section objects"},
     {Py_sq_contains, (void*) NPySecObj_contains_safe},
     {0, 0},

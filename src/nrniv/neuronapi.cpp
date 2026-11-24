@@ -50,14 +50,14 @@ extern int nrn_nobanner_;
 extern int diam_changed;
 extern int nrn_try_catch_nest_depth;
 extern int hoc_execerror_messages;
-extern "C" void nrnpy_set_pr_etal(int (*cbpr_stdoe)(int, char*), int (*cbpass)());
+extern "C" NRN_DLLSYM void nrnpy_set_pr_etal(int (*cbpr_stdoe)(int, char*), int (*cbpass)());
 int ivocmain_session(int, const char**, const char**, int start_session);
 void simpleconnectsection();
 extern Object* hoc_newobj1(Symbol*, int);
 extern void hoc_unref_defer();
-extern char* (*nrnpy_pysec_name_p_)(Section*);
-extern Object* (*nrnpy_pysec_cell_p_)(Section*);
-extern int (*nrnpy_pysec_cell_equals_p_)(Section*, Object*);
+extern NRN_DLLSYM char* (*nrnpy_pysec_name_p_)(Section*);
+extern NRN_DLLSYM Object* (*nrnpy_pysec_cell_p_)(Section*);
+extern NRN_DLLSYM int (*nrnpy_pysec_cell_equals_p_)(Section*, Object*);
 extern std::tuple<int, const char**> nrn_mpi_setup(int argc, const char** argv);
 
 extern "C" {
@@ -1154,10 +1154,14 @@ double nrn_distance(Section* sec0, double x0, Section* sec1, double x1) {
  ****************************************/
 
 ShapePlotInterface* nrn_get_plotshape_interface(Object* ps) {
-    ShapePlotInterface* spi;
-    hoc_Item** my_section_list;
-    spi = ((ShapePlotInterface*) ps->u.this_pointer);
-    return spi;
+    // The object is one of two classes, and a ShapePlot's interface is not its first base.
+    void* that = ps->u.this_pointer;
+#if HAVE_IV
+    if (hoc_usegui) {
+        return static_cast<ShapePlot*>(that);
+    }
+#endif
+    return static_cast<ShapePlotData*>(that);
 }
 
 Object* nrn_get_plotshape_section_list(ShapePlotInterface* spi) {

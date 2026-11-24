@@ -206,4 +206,37 @@ TEST_CASE("LFP_ReportEvent") {
     delete mapinfo;
     delete nt.nrn_fast_imem;
 }
+
+TEST_CASE("LFP_ReportEvent_second_report") {
+    // A cell whose factors hold two LFP reports: electrodes 0-1 for the first, 2 for the second
+    const std::string report_name = "second_report";
+    NrnThread nt;
+    nt.mapping = new NrnThreadMappingInfo;
+    auto* mapinfo = static_cast<NrnThreadMappingInfo*>(nt.mapping);
+    auto cell = std::make_shared<CellMapping>(7);
+    cell->electrode_offsets = {0, 2, 3};
+    for (const int segment: {0, 1, 2}) {
+        std::vector<double> factors{1.0, 2.0, segment + 3.0};
+        cell->add_segment_lfp_factor(segment, factors.begin(), factors.end());
+    }
+    mapinfo->add_cell_mapping(cell);
+    mapinfo->prepare_lfp();
+    REQUIRE(cell->report_electrodes(1) == std::make_pair(size_t{2}, size_t{3}));
+
+    std::vector<double> currents = {0.5, 0.25, 0.125};
+    nt.nrn_fast_imem = new NrnFastImem;
+    nt.nrn_fast_imem->nrn_sav_rhs = currents.data();
+    nt.summation_report_handler_ = std::make_unique<SummationReportMapping>();
+
+    // the second report's electrode is its electrode 0
+    VarsToReport vars_to_report;
+    vars_to_report[7] = {VarWithMapping(0, mapinfo->_lfp.data())};
+    ReportEvent event(0.025, 0.0, vars_to_report, report_name.data(), 0.1, ReportType::LFP, 1);
+    event.lfp_calc(&nt);
+    REQUIRE_THAT(mapinfo->_lfp[0],
+                 Catch::Matchers::WithinRel(0.5 * 3 + 0.25 * 4 + 0.125 * 5, 1e-12));
+
+    delete mapinfo;
+    delete nt.nrn_fast_imem;
+}
 #endif
