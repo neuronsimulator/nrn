@@ -26,8 +26,9 @@ set(api_test_files
     template_property.cpp
     vclamp.cpp)
 list(APPEND api_test_files section_owner.cpp)
-if(NRN_ENABLE_PYTHON)
-  # This one also imports NEURON's Python module.
+if(NRN_ENABLE_PYTHON AND NRN_LEGACY_HOC_MODULE)
+  # This one also imports NEURON's Python module and tests its hooks, which only the compiled
+  # hoc module installs.
   list(APPEND api_test_files section_owner_python.cpp)
 endif()
 foreach(api_test_file ${api_test_files})

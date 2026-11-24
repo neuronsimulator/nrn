@@ -819,11 +819,13 @@ void hoc_main1_init(const char* pname, const char** envp) {
     extern NrnFILEWrap* hoc_frin;
     extern FILE* hoc_fout;
 
+    // nrn_init can follow nrniv's own setup (nrniv script.py, whose `from neuron import h`
+    // initializes again). hoc_xopen_file_ names the running script then; keep it.
     if (!hoc_xopen_file_) {
         hoc_xopen_file_size_ = 200;
         hoc_xopen_file_ = static_cast<char*>(emalloc(hoc_xopen_file_size_));
+        hoc_xopen_file_[0] = '\0';
     }
-    hoc_xopen_file_[0] = '\0';
 
     hoc_promptstr = "oc>";
     yystart = 1;

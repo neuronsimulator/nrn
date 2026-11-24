@@ -61,6 +61,22 @@ print("import after clear")
 """
 
 
+def _hoc_extension():
+    import importlib.machinery
+    import importlib.util
+    import os
+
+    neuron_dir = importlib.util.find_spec("neuron").submodule_search_locations[0]
+    return any(
+        os.path.exists(os.path.join(neuron_dir, "hoc" + s))
+        for s in importlib.machinery.EXTENSION_SUFFIXES
+    )
+
+
+@pytest.mark.skipif(
+    not _hoc_extension(),
+    reason="tests the compiled hoc module's hooks; this build has the interface (NRN_LEGACY_HOC_MODULE=OFF)",
+)
 def test_section_owner_capi():
     r = subprocess.run([sys.executable, "-c", SCRIPT], capture_output=True, text=True)
     if sys.platform == "darwin" and "Interceptors are not working" in r.stderr:
