@@ -12,6 +12,7 @@ foreach(
   object_ptr_push.cpp
   plotshape_interface.cpp
   property_array_steer.cpp
+  location_hook_errors.cpp
   property_element_ptr.cpp
   raw_hoc_errors.cpp
   runtime_pythonobject_marshaling.cpp

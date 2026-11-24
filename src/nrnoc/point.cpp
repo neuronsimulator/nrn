@@ -178,7 +178,7 @@ void nrn_seg_or_x_arg(int iarg, Section** psec, double* px) {
             (*nrnpy_o2loc_p_)(o, psec, px);
         }
         if (!(*psec)) {
-            assert(0);
+            hoc_execerror("not a Python nrn.Segment", nullptr);
         }
     }
 }
@@ -194,7 +194,8 @@ void nrn_seg_or_x_arg2(int iarg, Section** psec, double* px) {
             (*nrnpy_o2loc2_p_)(o, psec, px);
         }
         if (!(*psec)) {
-            assert(0);
+            hoc_execerror("not a Python nrn.Segment, rxd.node, or other with a segment property",
+                          nullptr);
         }
     }
 }

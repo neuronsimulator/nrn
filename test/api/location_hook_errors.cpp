@@ -1,0 +1,132 @@
+// A HOC point-process location or distance() argument that is an Object must be turned into a
+// section and position by the Python location hook. Without a hook, or when the hook leaves the
+// section NULL, that used to hit assert(0) and abort the process. It must be a HOC error.
+#include "neuronapi.h"
+#include <array>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <iostream>
+#include <string>
+#include <unistd.h>
+
+extern "C" void modl_reg() {}
+
+// make_pointprocess registers a mechanism for the rest of the process, and LeakSanitizer reports
+// that registration as leaked at exit. Only an ASan build reads this hook.
+extern "C" const char* __lsan_default_suppressions() {
+    return "leak:make_pointprocess\n";
+}
+
+extern "C" {
+extern void (*nrnpy_o2loc_p_)(Object*, Section**, double*);
+extern void (*nrnpy_o2loc2_p_)(Object*, Section**, double*);
+}
+
+static void leave_section_null(Object*, Section**, double*) {}
+
+static bool check(bool condition, const char* message) {
+    if (!condition) {
+        std::cerr << "FAIL: " << message << '\n';
+    }
+    return condition;
+}
+
+static double hoc_value(const char* expr) {
+    std::string stmt = std::string("loc_hook_value = ") + expr + "\n";
+    nrn_hoc_call(stmt.c_str());
+    return *nrn_symbol_dataptr(nrn_symbol("loc_hook_value"));
+}
+
+// get_loc() leaves the point process's section pushed.
+static double get_loc(const char* name) {
+    double x = hoc_value((std::string(name) + ".get_loc()").c_str());
+    nrn_hoc_call("pop_section()\n");
+    return x;
+}
+
+// Run a command that must fail with a HOC error containing `expected`.
+static bool fails_with(const char* command, const char* expected) {
+    std::fflush(stderr);
+    char path[] = "/tmp/location_hook_errors_XXXXXX";
+    int fd = mkstemp(path);
+    int saved = dup(STDERR_FILENO);
+    if (fd == -1 || saved == -1 || dup2(fd, STDERR_FILENO) == -1) {
+        std::perror("redirect stderr");
+        std::exit(1);
+    }
+    int rc = nrn_hoc_call(command);
+    std::fflush(stderr);
+    dup2(saved, STDERR_FILENO);
+    close(saved);
+    std::string text;
+    char buf[512];
+    lseek(fd, 0, SEEK_SET);
+    ssize_t n;
+    while ((n = read(fd, buf, sizeof(buf))) > 0) {
+        text.append(buf, n);
+    }
+    close(fd);
+    unlink(path);
+    bool ok = rc != 0 && text.find(expected) != std::string::npos;
+    if (!ok) {
+        std::cerr << "FAIL: '" << command << "' rc=" << rc << " stderr='" << text << "'\n";
+    }
+    return ok;
+}
+
+// Every failing form, then proof that the interpreter still builds and measures correctly.
+static bool exercise(const char* what) {
+    static const char* seg = "not a Python nrn.Segment";
+    static const char* seg2 =
+        "not a Python nrn.Segment, rxd.node, or other with a segment property";
+    bool ok = true;
+    std::cerr << "case: " << what << '\n';
+    ok &= fails_with("objref loc_ic\nloc_ic = new IClamp(loc_obj)\n", seg);
+    ok &= fails_with("loc_ic = new IClamp(0.5)\nloc_ic.loc(loc_obj)\n", seg);
+    ok &= fails_with("soma { loc_x = distance(loc_obj) }\n", seg2);
+    ok &= fails_with("soma { loc_x = distance(0, loc_obj) }\n", seg2);
+    ok &= fails_with("objref loc_hp\nsoma loc_hp = new HocPnt(new Vector(3))\n", seg);
+    ok &= fails_with("soma loc_hp = new HocPnt(0.25)\nloc_hp.loc(new Vector(3))\n", seg);
+    // The failed HocPnt construction must not leave last_created_pp_ob_ set.
+    ok &= check(nrn_hoc_call("objref loc_hp2\nsoma loc_hp2 = new HocPnt(0.25)\n") == 0,
+                "HocPnt constructs after a failed construction");
+    ok &= check(get_loc("loc_hp2") == 0.25, "HocPnt located at 0.25");
+    // Numbers still work, the section stack is balanced and the interpreter is usable.
+    ok &= check(nrn_hoc_call("objref loc_ic2\nsoma loc_ic2 = new IClamp(0.75)\n") == 0,
+                "IClamp(0.75) constructs");
+    ok &= check(get_loc("loc_ic2") == 0.75, "IClamp located at 0.75");
+    ok &= check(nrn_hoc_call("soma { distance(0, 0.25)  loc_x = distance(0.75) }\n") == 0,
+                "distance with numbers");
+    ok &= check(hoc_value("loc_x") == 100, "distance(0.75) from origin 0.25 is 100 um");
+    return ok;
+}
+
+int main() {
+    std::array<const char*, 4> args = {"location_hook_errors", "-nogui", "-nopython", nullptr};
+    nrn_init(3, args.data());
+    if (nrn_hoc_call("create soma\n"
+                     "soma { L = 200  nseg = 2  diam = 10 }\n"
+                     "objref loc_obj\n"
+                     "loc_obj = new Vector(3)\n"
+                     "begintemplate HocPnt\n"
+                     "public a\n"
+                     "proc init() { a = 3 }\n"
+                     "endtemplate HocPnt\n"
+                     "make_pointprocess(\"HocPnt\")\n"
+                     "access soma\n") != 0) {
+        std::cerr << "FAIL: setup\n";
+        return 1;
+    }
+    bool ok = true;
+    // No hook installed (-nopython).
+    ok &= check(nrnpy_o2loc_p_ == nullptr && nrnpy_o2loc2_p_ == nullptr, "no hooks installed");
+    ok &= exercise("no hook");
+    // A hook that cannot produce a section.
+    nrnpy_o2loc_p_ = leave_section_null;
+    nrnpy_o2loc2_p_ = leave_section_null;
+    ok &= exercise("hook leaves the section NULL");
+    nrnpy_o2loc_p_ = nullptr;
+    nrnpy_o2loc2_p_ = nullptr;
+    return ok ? 0 : 1;
+}
