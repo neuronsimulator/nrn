@@ -1,7 +1,7 @@
 # Grok handoff: NEURON native GPU + heap-free network SoA
 
 Use this file when starting a **new** Grok session rooted in `~/neuron/nrngpu`
-on branch **`local/gpu-native-net-soa`**.
+on branch **`hines-grok/gpu-native`** (renamed 2026-11-24 from `local/gpu-native`).
 
 Related CPU docs (same tree after merge):
 
@@ -133,8 +133,8 @@ User workflow (all GPU sessions — and preferred for this tree generally):
 | Item | Value |
 |------|--------|
 | Repo | `~/neuron/nrngpu` (primary; commit here) |
-| Branch | **`local/gpu-native-net-soa`** |
-| Base | `local/cpu-net-soa-heap-free` (PR [#3826](https://github.com/neuronsimulator/nrn/pull/3826)) + GPU overlay |
+| Branch | **`hines-grok/gpu-native`** |
+| Base | Renamed 2026-11-24 from `local/gpu-native` (earlier `local/gpu-native-net-soa`: PR [#3826](https://github.com/neuronsimulator/nrn/pull/3826) heap-free + GPU overlay) |
 | Build / install | `~/neuron/nrngpu/build-gpu` via `nrnenv` / `ninja` / `ninja install` |
 | Dev doc (recipe) | `docs/dev/native-gpu-build.rst` (CMake, activate, NMODL ACC, smokes) |
 
@@ -462,7 +462,7 @@ Read ~/neuron/notes/PORTFOLIO.md (GPU-native), then
 GROK-GPU-NATIVE.md, AGENTS.md.
 
 Kind: feature. Portfolio: GPU-native.
-Tree: ~/neuron/nrngpu. Branch: local/gpu-native.
+Tree: ~/neuron/nrngpu. Branch: hines-grok/gpu-native.
 Dentate nt1 exclusive recode closed. Product 688 / 400 / 4474 / 7873.
 New residual only with named bucket + wall hypothesis.
 High performance sacred; heap-free weight_index. Commit without push.
@@ -477,6 +477,6 @@ P0–P4 + Traub identity closed. Phase-specific archive prompts remain in
 
 | Branch | Role |
 |--------|------|
-| `local/gpu-native-net-soa` | **Integration tip** — Th0–Th4 + device NET_RECEIVE |
+| `hines-grok/gpu-native` | **Living tip** — renamed 2026-11-24 from `local/gpu-native` (earlier `local/gpu-native-net-soa`) |
 | `local/gpu-device-net-receive` | Feature history (FF into tip) |
 | `local/cpu-net-soa-heap-free` | PR #3826 base |

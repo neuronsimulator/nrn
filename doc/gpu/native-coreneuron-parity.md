@@ -2,7 +2,7 @@
 
 **Portfolio:** GPU-native (feature)  
 **Tree:** `~/neuron/nrngpu`  
-**Living tip (2026-09-11):** `local/gpu-native` (master merge `76ba78245` + host-NR SoA + NRB-fast + device-ensure persist + Traub-gap 7873 + nonvint/setup-rhs sub-buckets). Dentate nt1 exclusive recode **closed**. Remaining vs CN GPU is **spread** (gap / lastpart-deliver / start-of-step deliver / matrix-solver, each ≲0.05 s). Same-thread gap opt-in is a **wall loss**. Traub gap native ✅ **7873**.  
+**Living tip:** `hines-grok/gpu-native` (renamed 2026-11-24 from `local/gpu-native`). As of 2026-09-11: master merge `76ba78245` + host-NR SoA + NRB-fast + device-ensure persist + Traub-gap 7873 + nonvint/setup-rhs sub-buckets. Dentate nt1 exclusive recode **closed**. Remaining vs CN GPU is **spread** (gap / lastpart-deliver / start-of-step deliver / matrix-solver, each ≲0.05 s). Same-thread gap opt-in is a **wall loss**. Traub gap native ✅ **7873**.  
 **Parked explor:** `local/gpu-P4-hotpath-netreceive` + `local/gpu-p4-phase-c-remeasure` (superseded by tip residual #14); `local/gpu-p4-exclusive-residual` (slim JACOB archive, **merged to tip** as hygiene); `local/gpu-p4-setup-rhs-density` (Session E archive, **merged to tip**)  
 **Handoffs:** `GROK-GPU-NATIVE.md`, `AGENTS.md`, `~/neuron/notes/PORTFOLIO.md`  
 **This file:** ordered steps you can re-open without chat memory. Update **Status** at end of each session.
@@ -786,7 +786,7 @@ Read ~/neuron/notes/PORTFOLIO.md (GPU-native), then
 GROK-GPU-NATIVE.md, and AGENTS.md.
 
 Kind: feature. Portfolio: GPU-native. Phase: P0 triage.
-Tree: ~/neuron/nrngpu. Branch: living GPU tip (local/gpu-native-net-soa or current tip).
+Tree: ~/neuron/nrngpu. Branch: living tip hines-grok/gpu-native.
 
 Do Phase 0 only: classify ctest failures A–D; reconcile ringtest harness vs ctest;
 fix cheap env/install false reds only. Fill Status tables in native-coreneuron-parity.md.
@@ -836,7 +836,7 @@ Read ~/neuron/notes/PORTFOLIO.md (GPU-native), then
 GROK-GPU-NATIVE.md, AGENTS.md.
 
 Kind: feature. Portfolio: GPU-native. Phase: P4 exclusive-GPU density.
-Tree: ~/neuron/nrngpu. Branch: off living tip local/gpu-native as
+Tree: ~/neuron/nrngpu. Branch: off living tip hines-grok/gpu-native as
 local/gpu-p4-density (or similar explor name). Do not merge to tip until measured win.
 
 Context: gap scatter + phase timers + multi-rank MPS policy are on tip. Ringtest
@@ -865,7 +865,7 @@ Read ~/neuron/notes/PORTFOLIO.md (GPU-native), then
 GROK-GPU-NATIVE.md, AGENTS.md.
 
 Kind: feature. Portfolio: GPU-native.
-Tree: ~/neuron/nrngpu. Branch: living tip local/gpu-native.
+Tree: ~/neuron/nrngpu. Branch: living tip hines-grok/gpu-native.
 
 Dentate nt1 exclusive recode is closed (spread; gap same-thread opt-in is a
 wall loss). Product bars: ringtest 688, dentate 400, Traub 4474/7873.
@@ -1092,7 +1092,7 @@ GROK-GPU-NATIVE.md (Traub/Th4 + constraints),
 AGENTS.md.
 
 Kind: feature. Portfolio: GPU-native. Phase: Traub identity + timing.
-Tree: ~/neuron/nrngpu. Branch: local/gpu-native.
+Tree: ~/neuron/nrngpu. Branch: hines-grok/gpu-native.
 Model: ~/models/82894 (1/10, nthread=1).
 
 Goal: Add Traub to the product mix with ringtest + dentate —
@@ -1153,13 +1153,13 @@ $SPECIAL -c one_tenth_ncell=1 -c use_gap=0 -c nthread=1 \
 
 | Branch | Role |
 |--------|------|
-| **`local/gpu-native`** | Living tip — H4 + Session B CURRENT + **Session E** setup-stream + scatter/timers/MPS |
+| **`hines-grok/gpu-native`** | Living tip (renamed 2026-11-24 from `local/gpu-native`) — H4 + Session B CURRENT + **Session E** setup-stream + scatter/timers/MPS |
 | `local/gpu-p4-setup-rhs-density` | Exploratory archive: Session E setup-stream density (**merged to tip**) |
 | `local/gpu-p4-exclusive-residual` | Exploratory archive: re-profile + slim JACOB (**merged to tip** as hygiene) |
 | `local/gpu-P4-hotpath-netreceive` | Exploratory: Phase C min-present net_buf (wall flat; pre-E tip) |
 | `local/gpu-p4-phase-c-remeasure` | Exploratory: Phase C cherry-pick on post-E tip; denser remeasure wall flat |
 | `local/gpu-P4-hotpath-current` | Exploratory archive: Session B CURRENT force-inline (**merged to tip**) |
-| `local/gpu-native-net-soa` | Historical integration name; keep until remotes/docs catch up (may lag tip) |
+| `local/gpu-native-net-soa` | Historical integration name; renamed through `local/gpu-native` to `hines-grok/gpu-native` |
 | `local/gpu-p4-gap-phase-ab` | Exploratory archive: A+B only (pre-scatter baseline) |
 | `local/gpu-p4-gap-scatter` | Exploratory archive: bulk scatter parent of tip cherry-picks |
 | `local/gpu-p4-lastpart-ab` | Exploratory archive: lastpart sub-buckets (now on tip) |

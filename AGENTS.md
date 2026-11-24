@@ -1,7 +1,8 @@
 # Agent rules — native GPU on heap-free network SoA
 
-Integration branch: **`local/gpu-native-net-soa`** = `local/cpu-net-soa-heap-free`
-(PR #3826) + `local/gpu-native-qualification`.
+Living tip: **`hines-grok/gpu-native`** (renamed 2026-11-24 from `local/gpu-native`;
+that name replaced `local/gpu-native-net-soa`, which was `local/cpu-net-soa-heap-free`
+PR #3826 plus `local/gpu-native-qualification`).
 
 | Doc | Role |
 |-----|------|
@@ -16,7 +17,7 @@ Integration branch: **`local/gpu-native-net-soa`** = `local/cpu-net-soa-heap-fre
 ## Workspace
 
 - Primary tree: `~/neuron/nrngpu` (this tree). Commit here.
-- Living tip: **`local/gpu-native`** (alias of former `local/gpu-native-net-soa`).
+- Living tip: **`hines-grok/gpu-native`**.
   Exploratory perf: side branches e.g. `local/gpu-p4-gap-phase-ab` — cherry-pick
   into tip only what proves useful (do not auto-ff speculative instrumentation).
 - Do not treat `~/neuron/core-neuron-gpu` as the git workspace (salvage only).
