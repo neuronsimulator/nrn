@@ -2,7 +2,7 @@
 
 Used when this package is NEURON's own interface (``neuron._interface``), so
 ``from neuron import h`` starts NEURON the way the compiled module did
-(src/nrnpython/inithoc.cpp:261-380): ``__main__.neuron_options``,
+(9.0's inithoc.cpp): ``__main__.neuron_options``,
 ``NEURON_MODULE_OPTIONS``, the mechanism library NEURON's tests rely on being
 loaded from ``<arch>/`` in the working directory, and ``NEURON_NFRAME``.
 Standalone myneuron keeps its own minimal argv.

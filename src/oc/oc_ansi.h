@@ -436,7 +436,6 @@ int hoc_pid();
 int hoc_ired(const char*, int, int, int);
 double hoc_xred(const char*, double, double, double);
 int hoc_sred(const char*, char*, char*);
-void nrnpy_pass();
 void hoc_free_allobjects(cTemplate*, Symlist*, Objectdata*);
 int nrn_is_cable();
 void* nrn_opaque_obj2pyobj(Object*);  // PyObject reference not incremented

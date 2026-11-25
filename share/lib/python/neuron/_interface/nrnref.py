@@ -12,14 +12,13 @@ Two families live here:
 import abc
 import ctypes
 import operator
-import os
 import sys
 import weakref
 
 from .api import (
+    _bump_model_epoch,
     _nrn_vector_data,
     _nrn_vector_capacity,
-    _MIN_VALID_DATAPTR,
     _discard_object_stack_value,
     _nrn_double_ptr_pop,
     _nrn_double_ptr_push,
@@ -41,71 +40,22 @@ from .api import (
     _ref_property_array_set_checked,
     _ref_property_set_checked,
     _top_level_symbol,
+    _ERR_BUF,
     _ERR_BUF_SIZE,
     HOC_LOCK,
     _as_double,
+    _nrn_property_element_ptr,
+    _nrn_rangevar_handle_str,
+    _nrn_symbol_is_array,
+    symbol_array_dims,
+    _PACKAGE,
+    _str_assign,
 )
-
-# strdup/free for NrnStrRef. Loaded lazily so import never fails on an
-# exotic platform without the default libc name. The strings are freed by
-# NEURON (hoc_assign_str) and NEURON's strings by us, so they must come from
-# the allocator libnrniv uses: the process's global symbols, which include a
-# sanitizer's interceptors (an AddressSanitizer build preloads them; libc's own
-# free would abort on their pointers).
-_libc = None
-
-
-def _get_libc():
-    global _libc
-    if _libc is None:
-        import ctypes.util
-
-        try:
-            if os.name == "nt":  # the C runtime of NEURON's MinGW build
-                lib = ctypes.CDLL("msvcrt")
-                lib.strdup = lib._strdup
-            else:
-                lib = ctypes.CDLL(None)
-            lib.strdup
-        except (OSError, AttributeError):
-            lib = ctypes.CDLL(ctypes.util.find_library("c") or "libc.so.6")
-        lib.strdup.argtypes = [ctypes.c_char_p]
-        lib.strdup.restype = ctypes.c_void_p
-        lib.free.argtypes = [ctypes.c_void_p]
-        lib.free.restype = None
-        _libc = lib
-    return _libc
-
-
-_NSEG_GENERATION = None
-
-
-def _nseg_generations():
-    # sections imports this module; bind its counter on first use.
-    global _NSEG_GENERATION
-    if _NSEG_GENERATION is None:
-        from .sections import NSEG_GENERATION
-
-        _NSEG_GENERATION = NSEG_GENERATION
-    return _NSEG_GENERATION
-
-
-_sync_nseg = None
-
-
-def _nseg_generation(sec_ptr):
-    generation = _nseg_generations().get(sec_ptr)
-    if generation is None:
-        from .sections import nseg_generation
-
-        generation = nseg_generation(sec_ptr)
-    return generation
+from . import api as _api
 
 
 def _symbol_info(name):
-    from .sections import _get_symbol_info
-
-    return _get_symbol_info(name.decode("utf-8"))
+    return _PACKAGE.sections._get_symbol_info(name.decode("utf-8"))
 
 
 def refuse_pickle(self, protocol):
@@ -139,6 +89,23 @@ def _array_index(idx, size, type_message):
     """
     i = _as_index(idx, type_message)
     return i if 0 <= i < size else None
+
+
+def _subscripts(idx):
+    """The subscripts of a member element, as a tuple: *idx* is None (a
+    scalar), one index or a tuple of them."""
+    if idx is None:
+        return ()
+    return (idx,) if isinstance(idx, int) else tuple(idx)
+
+
+def _flat_index(indices, dims):
+    """Position of the element at *indices* in HOC's row-major storage of an
+    array of shape *dims*."""
+    flat = 0
+    for i, d in zip(indices, dims):
+        flat = flat * d + i
+    return flat
 
 
 def _sequence_index(idx, size, type_message):
@@ -249,21 +216,18 @@ class NrnRangeVarRef(NrnRef):
             raise NameError(f"No such mechanism or variable: {self._name}")
         # NEURON's handle follows its node through nseg changes and dies with
         # it (sections.follow_node); _check_nseg moves _x along.
-        self._nseg = _nseg_generation(sec._sec)
+        self._nseg = _PACKAGE.sections.current_nseg_generation(sec._sec)
 
     def _check_nseg(self, sec):
         # Also catches an nseg change made from HOC code (sync_nseg), which
         # NEURON's handle sees: its node may be gone (datahandle test_1).
-        global _sync_nseg
-        if _sync_nseg is None:
-            from .sections import sync_nseg as _sync_nseg
-        _sync_nseg(sec._sec)
-        generation = _nseg_generations().get(sec._sec, 0)
+        sections = _PACKAGE.sections
+        sec_ptr = sec._sec
+        sections.sync_nseg(sec_ptr)
+        generation = sections.NSEG_GENERATION.get(sec_ptr, 0)
         if generation == self._nseg:
             return
-        from .sections import follow_node
-
-        x = follow_node(sec._sec, self._nseg, self._x, bool(sec.orientation()))
+        x = sections.follow_node(sec_ptr, self._nseg, self._x, bool(sec.orientation()))
         if x is None:
             raise ValueError("Invalid data_handle")
         self._x = x
@@ -287,7 +251,6 @@ class NrnRangeVarRef(NrnRef):
 
     def _handle_text(self, sec):
         """NEURON's text for the reference, from the core (gap-65), or None."""
-        from .api import _nrn_rangevar_handle_str
 
         if _nrn_rangevar_handle_str is None or sec is None:
             return None
@@ -304,16 +267,18 @@ class NrnRangeVarRef(NrnRef):
             )
         return buf.value.decode("utf-8", errors="replace")
 
-    def _section(self):
+    def _section(self, error=ValueError, message="Invalid data_handle"):
+        """The section, or NEURON's error for a reference whose section Python
+        deleted: the same as one HOC deleted."""
         if self._sec is not None:
             return self._sec
         sec = self._sec_ref()
         if sec is None:
-            raise ReferenceError("Referenced section no longer exists")
+            raise error(message)
         return sec
 
     def _push(self):
-        sec = self._section()
+        sec = self._section(RuntimeError, "Invalid pointer")
         # A section deleted through HOC keeps its wrapper but frees the C
         # section. Raise NEURON's HOC error for a dead pointer argument
         # instead of pushing freed state.
@@ -322,15 +287,13 @@ class NrnRangeVarRef(NrnRef):
         self._check_nseg(sec)
         name = self._name.decode("utf-8")
         if not 0.0 < self._x < 1.0:  # a section loop throws in the push
-            from .sections import _ensure_rangevar_topology
-
-            _ensure_rangevar_topology(sec._sec, self._x, name)
+            _PACKAGE.sections._ensure_rangevar_topology(sec._sec, self._x, name)
         if _nrn_rangevar_push_nothrow is not None:
             # Takes the array index directly, and reports a failure (a
             # mechanism that is no longer inserted, i_membrane_ without
             # use_fast_imem) as an error instead of a HOC error, which would
             # cross ctypes as a C++ exception and abort the process.
-            err = ctypes.create_string_buffer(_ERR_BUF_SIZE)
+            err = _ERR_BUF()
             if _nrn_rangevar_push_nothrow(
                 self._sym, sec._sec, self._x, self._index or 0, err, _ERR_BUF_SIZE
             ):
@@ -346,14 +309,9 @@ class NrnRangeVarRef(NrnRef):
             )
         # Its other error is a mechanism that is not inserted here (uninserted
         # after the reference was taken); check that first.
-        from .sections import Segment
 
-        try:
-            Segment(sec, self._x)._check_rangevar_mechanism(name)
-        except AttributeError:
-            raise RuntimeError(
-                f"{name}: mechanism is not inserted at this location"
-            ) from None
+        if _PACKAGE.sections._missing_owner(sec, name) is not None:
+            raise RuntimeError(f"{name}: mechanism is not inserted at this location")
         _nrn_rangevar_push(self._sym, sec._sec, self._x)
 
     def _checked_target(self):
@@ -363,7 +321,6 @@ class NrnRangeVarRef(NrnRef):
         ctypes and aborts the process after the mechanism is uninserted, on an
         array symbol, or through an unset POINTER.
         """
-        from .sections import Segment, _get_symbol_info, _is_pointer_rangevar
 
         sec = self._section()
         if not _nrn_section_is_active(sec._sec):
@@ -374,16 +331,14 @@ class NrnRangeVarRef(NrnRef):
         name = (
             self._name.decode("utf-8") if isinstance(self._name, bytes) else self._name
         )
-        try:
-            Segment(sec, self._x)._check_rangevar_mechanism(name)
-        except AttributeError:
-            raise ValueError("Invalid data_handle") from None
-        info = _get_symbol_info(name)
+        if _PACKAGE.sections._missing_owner(sec, name) is not None:
+            raise ValueError("Invalid data_handle")
+        info = _PACKAGE.sections._get_symbol_info(name)
         if info is None:
             raise NameError(f"No such mechanism or variable: {name}")
         if info[2]:
             return sec, name, ("array", info[3])
-        if _is_pointer_rangevar(name, info[0]):
+        if _PACKAGE.sections._is_pointer_rangevar(name, info[0]):
             return sec, name, "pointer"
         return sec, name, info[0]
 
@@ -400,21 +355,15 @@ class NrnRangeVarRef(NrnRef):
     def __getitem__(self, idx):
         sec, name, kind = self._checked_target()
         if isinstance(kind, tuple):  # ("array", length)
-            from .sections import _ArrayRangeVar
-
             length = kind[1]
             element = self._element(idx, name, length)
-            return _ArrayRangeVar(sec, self._x, name, length)[element]
+            return _PACKAGE.sections._ArrayRangeVar(sec, self._x, name, length)[element]
         if idx != 0:
             raise IndexError("Only index 0 is supported")
         if kind == "pointer":
-            from .sections import _pointer_rangevar_get
-
-            return _pointer_rangevar_get(sec, self._x, name)
+            return _PACKAGE.sections._pointer_rangevar_get(sec, self._x, name)
         if not 0.0 < self._x < 1.0:  # a section loop throws in the read
-            from .sections import _ensure_rangevar_topology
-
-            _ensure_rangevar_topology(sec._sec, self._x, name)
+            _PACKAGE.sections._ensure_rangevar_topology(sec._sec, self._x, name)
         return _nrn_rangevar_get(kind, sec._sec, self._x)
 
     def __setitem__(self, idx, value):
@@ -422,23 +371,19 @@ class NrnRangeVarRef(NrnRef):
             value = _as_double(value)  # user code may run: before the checks
         sec, name, kind = self._checked_target()
         if isinstance(kind, tuple):  # ("array", length)
-            from .sections import _ArrayRangeVar
-
             length = kind[1]
             element = self._element(idx, name, length)
-            _ArrayRangeVar(sec, self._x, name, length)[element] = value
+            _PACKAGE.sections._ArrayRangeVar(sec, self._x, name, length)[
+                element
+            ] = value
             return
         if idx != 0:
             raise IndexError("Only index 0 is supported")
         if kind == "pointer":
-            from .sections import _pointer_rangevar_set
-
-            _pointer_rangevar_set(sec, self._x, name, value)
+            _PACKAGE.sections._pointer_rangevar_set(sec, self._x, name, value)
             return
         if not 0.0 < self._x < 1.0:  # a section loop throws in the write
-            from .sections import _ensure_rangevar_topology
-
-            _ensure_rangevar_topology(sec._sec, self._x, name)
+            _PACKAGE.sections._ensure_rangevar_topology(sec._sec, self._x, name)
         if name == "diam":
             _store_through_pointer(kind, sec._sec, self._x, value)
             return
@@ -522,10 +467,7 @@ class NrnVarRef(NrnRef):
         # nrn_symbol_dataptr and push it with double_ptr_push.
 
         value_ptr = _nrn_symbol_dataptr(self._sym)
-        addr = ctypes.cast(value_ptr, ctypes.c_void_p).value if value_ptr else None
-        # Bogus small address: see api._MIN_VALID_DATAPTR. Pushing it would
-        # SIGSEGV, so fail cleanly.
-        if not addr or addr < _MIN_VALID_DATAPTR:
+        if not value_ptr:
             raise RuntimeError(
                 f"cannot take a recordable pointer to '{self._name.decode()}' "
                 "on this NEURON build (needs nrn#3815)"
@@ -537,27 +479,19 @@ class NrnVarRef(NrnRef):
             raise IndexError("Only index 0 is supported")
 
         value_ptr = _nrn_symbol_dataptr(self._sym)
-        addr = ctypes.cast(value_ptr, ctypes.c_void_p).value if value_ptr else None
-        # Bogus address (see api._MIN_VALID_DATAPTR): n._ref_x[0] is n.x, so
-        # read through the guarded top-level path.
-        if not addr or addr < _MIN_VALID_DATAPTR:
-            from . import NEURON
-
-            return getattr(NEURON(), self._name.decode("utf-8"))
-        return ctypes.cast(value_ptr, ctypes.POINTER(ctypes.c_double))[0]
+        if not value_ptr:
+            return getattr(_PACKAGE._n, self._name.decode("utf-8"))
+        return value_ptr[0]
 
     def __setitem__(self, idx, value):
         if idx != 0:
             raise IndexError("Only index 0 is supported")
 
         value_ptr = _nrn_symbol_dataptr(self._sym)
-        addr = ctypes.cast(value_ptr, ctypes.c_void_p).value if value_ptr else None
-        if not addr or addr < _MIN_VALID_DATAPTR:
-            from . import NEURON
-
-            setattr(NEURON(), self._name.decode("utf-8"), value)
+        if not value_ptr:
+            setattr(_PACKAGE._n, self._name.decode("utf-8"), value)
             return
-        ctypes.cast(value_ptr, ctypes.POINTER(ctypes.c_double))[0] = value
+        value_ptr[0] = value
 
 
 class NrnObjectPropertyRef(NrnRef):
@@ -588,22 +522,19 @@ class NrnObjectPropertyRef(NrnRef):
     def _owner(self):
         """The object, checked before its property data is touched.
 
-        The weakref catches a collected wrapper, but a point process whose
-        host section was deleted through HOC keeps its wrapper while the C
-        node is freed, and reading, writing or pushing its property then
-        SIGABRTs. Same guard as the direct ic.amp path, where NEURON says "No
-        value"; its reference is a dead data_handle, as is one to a point
-        process that was never placed.
+        The weakref catches a collected wrapper. A point process that is in no
+        section (never placed, or its section is deleted) has no data, and
+        reading, writing or pushing its property would abort. Same guard as the
+        direct ic.amp path, where NEURON says "No value"; its reference is a
+        dead data_handle.
         """
         obj = self._obj()
         if obj is None:
             raise ReferenceError("Referenced object no longer exists")
         try:
-            obj._check_host_alive()
+            obj._check_located()
         except TypeError:
             raise ValueError("Invalid data_handle") from None
-        if obj._is_unlocated():
-            raise ValueError("Invalid data_handle")
         return obj
 
     def _push(self):
@@ -638,6 +569,18 @@ class NrnObjectPropertyRef(NrnRef):
             _ref_property_array_set_checked(obj._obj, self._name, int(self._idx), value)
 
 
+def reference(target):
+    """What NEURON shows a Python GUI for a pointer argument (a HOC Pointer), or
+    for the string HOC holds at an address."""
+    if isinstance(target, int):
+        ref = NrnStrRef.__new__(_HocStrRef)
+        ref._cell = ctypes.cast(target, ctypes.POINTER(ctypes.c_void_p)).contents
+        return ref
+    ref = NrnObjectPropertyRef(target, b"val")
+    ref._obj = lambda: target  # keeps it
+    return ref
+
+
 class NrnHocTemplateVarRef(NrnRef):
     """Safe scalar view of a user HOC template's numeric dataspace member.
 
@@ -670,21 +613,23 @@ class NrnHocTemplateVarRef(NrnRef):
     def __getitem__(self, idx):
         if idx != 0:
             raise IndexError("Only index 0 is supported")
-        from .object import _read_hoc_template_var
 
-        return _read_hoc_template_var(self._owner(), self._name, self._idx)
+        return _PACKAGE.object._read_hoc_template_var(
+            self._owner(), self._name, self._idx
+        )
 
     def __setitem__(self, idx, value):
         if idx != 0:
             raise IndexError("Only index 0 is supported")
-        from .object import _write_hoc_template_var
 
-        _write_hoc_template_var(self._owner(), self._name, value, self._idx)
+        _PACKAGE.object._write_hoc_template_var(
+            self._owner(), self._name, value, self._idx
+        )
 
     def __repr__(self):
         obj = self._obj()
         clsname = getattr(obj, "_class_name", "?")
-        suffix = "" if self._idx is None else f"[{self._idx}]"
+        suffix = "".join(f"[{i}]" for i in _subscripts(self._idx))
         return f"<NrnRef to HOC template {clsname}.{self._name}{suffix}>"
 
 
@@ -717,16 +662,14 @@ class NrnHocTemplateStrRef(NrnRef):
     def __getitem__(self, idx):
         if idx != 0:
             raise IndexError("Only index 0 is supported")
-        from .object import _read_hoc_template_string
 
-        return _read_hoc_template_string(self._owner(), self._name)
+        return _PACKAGE.object._read_hoc_template_string(self._owner(), self._name)
 
     def __setitem__(self, idx, value):
         if idx != 0:
             raise IndexError("Only index 0 is supported")
-        from .object import _write_hoc_template_string
 
-        _write_hoc_template_string(self._owner(), self._name, value)
+        _PACKAGE.object._write_hoc_template_string(self._owner(), self._name, value)
 
     def __repr__(self):
         obj = self._obj()
@@ -779,17 +722,14 @@ def _double_array_data(name, dims):
 
     Looked up on every access: redeclaring the array reallocates it.
     """
-    from .api import _nrn_symbol_array_length, _nrn_symbol_is_array, symbol_array_dims
-
     sym = _top_level_symbol(name.encode("utf-8"))
     if not sym or not _nrn_symbol_is_array(sym):
         raise TypeError(f"'{name}' is no longer an array")
-    current = symbol_array_dims(sym, int(_nrn_symbol_array_length(sym)))
+    current = symbol_array_dims(sym)
     if current != dims:
         raise TypeError(f"'{name}' was redeclared with dimensions {current}")
     data = _nrn_symbol_dataptr(sym)
-    address = ctypes.cast(data, ctypes.c_void_p).value
-    if not address or address < _MIN_VALID_DATAPTR:
+    if not data:
         raise RuntimeError(f"no data pointer for HOC array '{name}'")
     return data
 
@@ -861,8 +801,6 @@ class NrnMatrixElementRef(NrnRef):
         return divmod(flat, ncol)
 
     def _push(self):
-        from .api import _nrn_property_element_ptr
-
         row, col = self._element()
         if _nrn_property_element_ptr is None:
             raise RuntimeError(
@@ -871,7 +809,7 @@ class NrnMatrixElementRef(NrnRef):
             )
         indices = (ctypes.c_int * 2)(row, col)
         ptr = ctypes.POINTER(ctypes.c_double)()
-        err = ctypes.create_string_buffer(_ERR_BUF_SIZE)
+        err = _ERR_BUF()
         if _nrn_property_element_ptr(
             self._matrix._obj,
             b"x",
@@ -935,9 +873,10 @@ class NrnArrayPropertyRef(NrnRef):
 
     def __repr__(self):
         # Not owner.hname(): a template member named hname would be that.
-        from .object import _instance_hname
 
-        return f"<NrnRef to {_instance_hname(self._owner)}.{self._name}>"
+        return (
+            f"<NrnRef to {_PACKAGE.object._instance_hname(self._owner)}.{self._name}>"
+        )
 
 
 class NrnDoubleRef(NrnRef):
@@ -997,12 +936,12 @@ class NrnRawDoubleRef(NrnRef):
     def __getitem__(self, idx):
         if idx != 0:
             raise IndexError("Only index 0 is supported")
-        return ctypes.c_double.from_address(self._address).value
+        return ctypes.cast(self._address, ctypes.POINTER(ctypes.c_double))[0]
 
     def __setitem__(self, idx, value):
         if idx != 0:
             raise IndexError("Only index 0 is supported")
-        ctypes.c_double.from_address(self._address).value = float(value)
+        ctypes.cast(self._address, ctypes.POINTER(ctypes.c_double))[0] = float(value)
 
 
 def numpy_element_ref(numpy_array, index):
@@ -1015,18 +954,11 @@ def numpy_element_ref(numpy_array, index):
 class NrnStrRef(NrnRef):
     """Fresh anonymous string cell, like real NEURON's ``h.ref('')``.
 
-    Backs a libc-``strdup`` ``char*`` (a ``c_void_p`` cell) and pushes the
-    cell's address as a HOC ``$s1`` string pointer arg (``hoc_pushstr``
-    equivalent, ``nrn_str_push(char**)``).
-
-    The cell must be libc-allocated (or NULL). On ``$s1 = "..."``,
-    ``hoc_assign_str`` ``free()``s the current ``char*`` and stores an
-    ``emalloc``'d (``std::malloc``) copy, so Python-owned ctypes string memory
-    would corrupt the heap. See ``nrnpy_hoc.cpp`` ``mkref`` / ``hoc_assign_str``;
-    covered by a 50-writeback HOC stress test (``tests/regression/test_hoc_ref.py``
-    ``test_str_ref_repeated_hoc_writeback_no_corruption``).
-    Python-side ``r[0] = s`` does the same: ``free`` the old, ``strdup`` the
-    new. ``__del__`` frees the final buffer.
+    Holds a ``char*`` (a ``c_void_p`` cell) and pushes the cell's address as a
+    HOC ``$s1`` string pointer arg (``nrn_str_push(char**)``). HOC frees and
+    replaces the string on ``$s1 = "..."``, so it is NEURON's to allocate and
+    free, here too (``nrn_str_assign``). See ``tests/regression/test_hoc_ref.py``
+    ``test_str_ref_repeated_hoc_writeback_no_corruption``.
     """
 
     __slots__ = ("_cell",)
@@ -1036,8 +968,8 @@ class NrnStrRef(NrnRef):
             data = value
         else:
             data = str(value).encode("utf-8")
-        libc = _get_libc()
-        self._cell = ctypes.c_void_p(libc.strdup(data))
+        self._cell = ctypes.c_void_p()
+        _str_assign(self._cell, data)
 
     def __repr__(self):
         return f"<NrnStrRef {self[0]!r}>"
@@ -1064,36 +996,34 @@ class NrnStrRef(NrnRef):
             data = value
         else:
             data = str(value).encode("utf-8")
-        libc = _get_libc()
-        old = self._cell.value
-        self._cell.value = libc.strdup(data)
-        if old:
-            libc.free(old)
+        _str_assign(self._cell, data)
 
     def __del__(self):
-        # Guarded for a half-constructed instance (strdup or _get_libc failed).
         cell = getattr(self, "_cell", None)
         if cell is not None and cell.value:
-            try:
-                _get_libc().free(cell.value)
-            except Exception:
-                pass
+            _str_assign(cell, None)
+
+
+class _HocStrRef(NrnStrRef):
+    """A string HOC holds."""
+
+    __slots__ = ()
+
+    def __del__(self):
+        pass
 
 
 def _release_object(obj):
     """Drop a reference cell's reference to HOC object *obj*.
 
     The last reference to a template cell (or a List of them) deletes its
-    sections, so that moves the model epoch, as Object.__del__ does (gap-68).
+    sections, so that moves the model epoch, as releasing a wrapper does (gap-68).
     """
-    from . import _bump_model_epoch
-    from .api import _nrn_class_name, _nrn_object_unref
-    from .object import _may_own_sections
 
     # Read the class before the object can go.
-    class_name = (_nrn_class_name(obj) or b"").decode("utf-8", "replace")
-    _nrn_object_unref(obj)
-    if _may_own_sections(class_name):
+    class_name = (_api._nrn_class_name(obj) or b"").decode("utf-8", "replace")
+    _api._nrn_object_unref(obj)
+    if _PACKAGE.object._may_own_sections(class_name):
         _bump_model_epoch()
 
 
@@ -1136,29 +1066,26 @@ class NrnObjectRef(NrnRef):
             return None
         # Conversion consumes a reference even for PythonObject payloads; the
         # cell keeps its own.
-        from .utils import _wrap_owned_object
 
         _nrn_object_ref(ptr)
         # Pass the raw int, not c_void_p: Object._obj is an int everywhere
         # (nrn_object_pop's c_void_p restype yields one) and Object.__eq__
         # compares it, so a c_void_p would make a round-tripped object
         # unequal to its source.
-        return _wrap_owned_object(ptr)
+        return _PACKAGE.utils._wrap_owned_object(ptr)
 
     def __setitem__(self, idx, value):
         if idx != 0:
             raise IndexError("Only index 0 is supported")
-        from .object import Object
-        from .utils import _new_python_object
 
         old = self._cell.value
         if value is None:
             new_ptr = None
-        elif isinstance(value, Object):
+        elif isinstance(value, _PACKAGE.object.Object):
             new_ptr = value._obj
             _nrn_object_ref(new_ptr)  # cell claims a ref to the new content
         else:
-            new_ptr = _new_python_object(value)
+            new_ptr = _PACKAGE.utils._new_python_object(value)
         # Acquire before replacing: failed conversion leaves the old cell intact.
         self._cell.value = new_ptr
         if old:

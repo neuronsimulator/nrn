@@ -7,6 +7,7 @@
 #include <array>
 #include <iostream>
 #include <set>
+#include <string>
 #include "neuronapi.h"
 
 using std::cerr;
@@ -83,5 +84,10 @@ int main(void) {
     ok &= check(nrn_section_child(nullptr) == nullptr, "child(NULL) is NULL");
     ok &= check(nrn_section_sibling(nullptr) == nullptr, "sibling(NULL) is NULL");
 
+    // The node at the connected end is not there until the tree is set up.
+    ok &= check(std::string(nrn_tree_setup(dend1, 0.5)).empty(), "the tree is not needed");
+    ok &= check(!nrn_tree_setup(dend1, 0) && !nrn_tree_setup(dend1, 0.5), "the tree is set up");
+    nrn_section_connect(soma, 0, dend2, 1);
+    ok &= check(std::string(nrn_tree_setup(dend1, 0)).find("loop") != std::string::npos, "loop");
     return ok ? 0 : 1;
 }

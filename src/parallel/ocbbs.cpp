@@ -379,6 +379,9 @@ static Object** pyret(void* v) {
 }
 Object** BBS::pyret() {
     require_pickle_hook(neuron::python::methods.pickle2po != nullptr, "ParallelContext.pyret");
+    if (impl_->pickle_ret_.empty()) {
+        hoc_execerror("ParallelContext.pyret:", "the job did not return a Python object");
+    }
     Object* po = neuron::python::methods.pickle2po(impl_->pickle_ret_);
     impl_->pickle_ret_.clear();
     --po->refcount;

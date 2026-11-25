@@ -6,11 +6,11 @@ class StmtInfo;
 
 class OcPointer: public Observer {
   public:
-    OcPointer(const char*, double*);
+    OcPointer(const char*, neuron::container::data_handle<double>);
     virtual ~OcPointer();
     virtual void update(Observable*);
     void assign(double);
-    double* p_;
+    neuron::container::data_handle<double> p_;
     char* s_;
     StmtInfo* sti_;
     bool valid_;

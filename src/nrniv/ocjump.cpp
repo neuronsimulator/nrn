@@ -110,25 +110,23 @@ struct saved_state {
 bool OcJump::execute(Inst* p) {
     saved_state before{};
     try_catch_depth_increment tell_children_we_will_catch{};
-    try {
-        hoc_execute(p);
-        return true;
-    } catch (...) {
+    neuron::python::ErrorScope const scope{false};
+    bool const ok = nrn_nothrow([&] { hoc_execute(p); });
+    if (!ok) {
         before.restore();
-        return false;
     }
+    return ok;
 }
 
 bool OcJump::execute(const char* stmt, Object* ob) {
     saved_state before{};
     try_catch_depth_increment tell_children_we_will_catch{};
-    try {
-        hoc_obj_run(stmt, ob);
-        return true;
-    } catch (...) {
+    neuron::python::ErrorScope const scope{false};
+    bool const ok = nrn_nothrow([&] { hoc_obj_run(stmt, ob); });
+    if (!ok) {
         before.restore();
-        return false;
     }
+    return ok;
 }
 
 void OcJump::execute_throw_on_exception(Object* obj, Symbol* sym, int narg) {

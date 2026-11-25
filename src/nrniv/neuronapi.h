@@ -22,6 +22,7 @@ typedef struct nrn_Item nrn_Item;
 typedef struct SymbolTableIterator SymbolTableIterator;
 typedef struct Symlist Symlist;
 typedef struct ShapePlotInterface ShapePlotInterface;
+typedef struct _object PyObject;
 
 /* Non-owning hooks for provider-backed object components. On success, a read
  * callback consumes the component's deferred object frame, pushes one HOC
@@ -110,6 +111,7 @@ NRN_DLLSYM int nrn_segment_mechanisms(Section* sec, double x, Symbol** mechanism
 NRN_DLLSYM void nrn_rangevar_push(Symbol* sym, Section* sec, double x);
 NRN_DLLSYM double nrn_rangevar_get(Symbol* sym, Section* sec, double x);
 NRN_DLLSYM void nrn_rangevar_set(Symbol* sym, Section* sec, double x, double value);
+NRN_DLLSYM const char* nrn_tree_setup(Section* sec, double x);
 NRN_DLLSYM int nrn_rangevar_get_nothrow(Symbol* sym,
                                         Section* sec,
                                         double x,
@@ -198,15 +200,31 @@ NRN_DLLSYM int nrn_method_call_nothrow(Object* obj,
                                        int narg,
                                        char* error_msg,
                                        size_t error_msg_size);
+NRN_DLLSYM int nrn_method_call_number(Object* obj,
+                                      Symbol* method_sym,
+                                      int narg,
+                                      double* result,
+                                      char* error_msg,
+                                      size_t error_msg_size);
 NRN_DLLSYM int nrn_function_call_nothrow(Symbol* sym,
                                          int narg,
                                          char* error_msg,
                                          size_t error_msg_size);
 NRN_DLLSYM void nrn_object_ref(Object* obj);
 NRN_DLLSYM void nrn_object_unref(Object* obj);
+NRN_DLLSYM Symbol* nrn_object_alias(Object* obj, const char* name);
 NRN_DLLSYM char const* nrn_class_name(const Object* obj);
 NRN_DLLSYM bool nrn_prop_exists(const Object* obj);
 NRN_DLLSYM double nrn_distance(Section* sec0, double x0, Section* sec1, double x1);
+
+/****************************************
+ * Python (builds with NRN_ENABLE_PYTHON)
+ ****************************************/
+NRN_DLLSYM int nrn_python_hook_set(const char* name, PyObject* object);
+NRN_DLLSYM Object* nrn_python_object_new(PyObject* value);
+NRN_DLLSYM PyObject* nrn_python_object_get(Object* obj);
+NRN_DLLSYM PyObject* nrn_python_error_take(void);
+NRN_DLLSYM PyObject* nrn_python_type(const char* name);
 
 /****************************************
  * Shape Plot

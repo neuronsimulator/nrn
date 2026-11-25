@@ -46,8 +46,8 @@ STOP = textwrap.dedent(
 IMPORT = """from neuron import h; h('nrnpython("import neuron.gui")'); print("done")"""
 
 
-def run(code):
-    env = dict(os.environ, NEURON_MODULE_OPTIONS="-nogui")
+def run(code, options="-nogui"):
+    env = dict(os.environ, NEURON_MODULE_OPTIONS=options)
     # macOS does not pass the sanitizer preload on to child processes (as in
     # test_basic.py's test_errorcode).
     if "NRN_SANITIZER_PRELOAD_VAR" in os.environ:
@@ -72,3 +72,10 @@ def test_stop_and_import_while_holding_hoc_lock():
     for code in STOP, IMPORT:
         result = run(code)
         assert "done" in result.stdout and not result.returncode, result.stderr
+
+
+if sys.platform == "win32":  # the timer thread makes the window, and calls HOC
+
+    def test_window_from_the_main_thread():
+        result = run("from neuron import h, gui; h.Graph(); h.quit()", "")
+        assert result.returncode == 0, result.stdout + result.stderr

@@ -10,8 +10,8 @@
  * defined in nrnpy.cpp.
  */
 struct Object;
-// Back-compat pointer filled from methods.hoccommand_exec. MOD VERBATIM
-// (e.g. test/rxd/beforestep_py.mod) imports this from nrniv.dll.
+// methods.hoccommand_exec, for MOD VERBATIM (e.g. test/rxd/beforestep_py.mod), which imports this
+// from nrniv.dll.
 extern NRN_DLLSYM int (*nrnpy_hoccommand_exec)(Object*);
 // PyObject is a typedef, so we can't forward-declare it as a type. This pattern is common enough in
 // the wild that we hope Python won't dare change it.
@@ -89,7 +89,7 @@ extern NRN_DLLSYM void* (*nrnpy_get_pyobj)(Object*);
 extern NRN_DLLSYM void (*nrnpy_restore_savestate)(int64_t, char*);
 extern NRN_DLLSYM void (*nrnpy_store_savestate)(char**, uint64_t*);
 extern NRN_DLLSYM void (*nrnpy_decref)(void*);
-extern NRN_DLLSYM double (*nrnpy_call_func)(Object*, double);
+extern NRN_DLLSYM void (*nrnpy_vec_apply_p_)(IvocVect*, Object* f, int start, int end);
 extern NRN_DLLSYM int (*nrnpy_call_obj_method)(Object*, const char*, Object*);
 extern NRN_DLLSYM int (*nrnpy_call_obj_method_double)(Object*, const char*, double);
 extern NRN_DLLSYM IvocVect* (*nrnpy_vec_from_python_p_)(void*);

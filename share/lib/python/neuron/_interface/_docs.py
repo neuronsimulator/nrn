@@ -138,6 +138,11 @@ class _BoundHelpDocMethod:
     def __repr__(self):
         return f"<bound method {self.__func__.__qualname__} of {self.__self__!r}>"
 
+    @property
+    def __array_interface__(self):
+        # As the Vector's other uncalled methods (object._VectorMethod).
+        return self.__self__.__array_interface__
+
 
 def help_doc(key):
     """Decorator: the method's __doc__ is NEURON's help text for `key`."""

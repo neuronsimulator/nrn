@@ -374,6 +374,7 @@ int Oc::run(const char* buf, bool show_err_mes) {
     hoc_execerror_messages = show_err_mes;
     int err{};
     try_catch_depth_increment tell_children_we_will_catch{};
+    neuron::python::ErrorScope const scope{false};
     try {
         err = hoc_oc(buf);
     } catch (std::exception const& e) {
@@ -496,7 +497,7 @@ void hoc_notify_iv() {
 #ifdef _WIN32
         if (!nrn_is_gui_thread()) {
             // allow gui thread to run
-            nrnpy_pass();
+            neuron::python::methods.restore_thread(neuron::python::methods.save_thread());
             hoc_pushx(0.);
             hoc_ret();
             return;

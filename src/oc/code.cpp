@@ -179,6 +179,10 @@ pairs could take place.
 */
 static Object* unref_defer_;
 
+bool hoc_unref_is_deferred() {
+    return unref_defer_;
+}
+
 void hoc_unref_defer() {
     // Freeing it can run HOC or Python, and so come here again.
     if (auto* const ob = std::exchange(unref_defer_, nullptr)) {

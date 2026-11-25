@@ -100,14 +100,13 @@ $Id: __init__.py,v 1.1 2008/05/26 11:39:44 hines Exp hines $
 # except:
 #  pass
 
+import atexit as _atexit
 import ctypes
 import sys
 import os
 import sysconfig
 import warnings
 import weakref
-
-embedded = "hoc" in sys.modules
 
 from ._config_params import (
     supported_python_versions,
@@ -153,9 +152,8 @@ if os.path.isdir(nrn_path):
     os.environ["NEURONHOME"] = nrn_path
 
 # Python 3.8+ on Windows does not search PATH for DLL dependencies of a .pyd
-# (https://docs.python.org/3/library/os.html#os.add_dll_directory). hoc.pyd
-# needs nrniv.dll from the wheel .data/bin, cmake prefix/bin, or setup.exe
-# NEURONHOME/bin. Must run before `from . import hoc`.
+# (https://docs.python.org/3/library/os.html#os.add_dll_directory). nrniv.dll is
+# in the wheel's .data/bin, cmake prefix/bin, or setup.exe NEURONHOME/bin.
 # Keep the cookies: discarding the return value calls RemoveDllDirectory.
 _nt_dll_dir_handles = []
 if os.name == "nt" and hasattr(os, "add_dll_directory"):
@@ -191,17 +189,16 @@ except:
     pass
 
 # `from neuron import h` is served by the pure-Python interface in _interface,
-# which drives libnrniv through NEURON's C API; the compiled hoc extension is not
-# loaded. It applies the startup options the extension used to (neuron_options,
-# NEURON_MODULE_OPTIONS, the <arch>/libnrnmech auto-load). Inside nrniv -python
-# the legacy extension has already initialized NEURON and created `hoc`; the
-# interface then attaches to that session rather than initializing again.
+# which drives libnrniv through NEURON's C API. It applies the startup options
+# (neuron_options, NEURON_MODULE_OPTIONS, the <arch>/libnrnmech auto-load). Under
+# nrniv NEURON is already running, and the interface attaches to it.
 from . import _interface
 from ._interface import _facades
 
 h = _interface.h
 n = _interface.n
-hoc, nrn, _neuron_section = _facades.install(_interface, embedded)
+hoc, nrn, _neuron_section = _facades.install(_interface)
+embedded = h.nrnversion(9) == "1"  # nrniv started Python
 
 # Python 3.13+'s pyrepl (UnixConsole.prepare) clears OPOST, so the kernel
 # no longer maps NL to CRNL. GUI callbacks run on a background thread
@@ -1568,6 +1565,21 @@ def _pkl(arg):
     return n.Vector(0)
 
 
+def numpy_from_pointer(cpointer, size):
+    import numpy
+
+    buf_from_mem = ctypes.pythonapi.PyMemoryView_FromMemory
+    buf_from_mem.restype = ctypes.py_object
+    buf_from_mem.argtypes = (ctypes.c_void_p, ctypes.c_int, ctypes.c_int)
+    cbuffer = buf_from_mem(cpointer, size * numpy.dtype(float).itemsize, 0x200)
+    return numpy.ndarray((size,), float, cbuffer, order="C")
+
+
+@_atexit.register
+def clear_gui_callback():
+    nrn_dll_sym("nrnpy_set_gui_callback")(None)
+
+
 def format_exception(type, value, tb):
     """Single string return wrapper for traceback.format_exception
     used by nrnpyerr_str
@@ -1676,7 +1688,7 @@ def _nrnpy_rvp_pyobj_callback(f):
 # Vector arithmetic with numbers is implemented by the interface's Vector, so
 # nrnpy_vec_math is not registered with the core; the RangeVarPlot hook that
 # turns an rxd species into a callable is the interface's.
-_interface._rvp_hook.set_pyobj_callback(_nrnpy_rvp_pyobj_callback)
+_interface.set_rvp_converter(_nrnpy_rvp_pyobj_callback)
 
 try:
     from neuron.psection import psection

@@ -1,7 +1,7 @@
 """The hoc, nrn and _neuron_section modules, for NEURON's own package.
 
 The legacy extension created these modules at runtime and registered them in
-sys.modules (nrnpy_nrn.cpp:3060-3108); the neuron package, rxd and user code
+sys.modules (9.0's nrnpy_nrn.cpp); the neuron package, rxd and user code
 import them alongside ``h``. Vendored as ``neuron._interface``, the package
 installs equivalents backed by this implementation's types. They are module
 objects in sys.modules, not files: a compiled ``hoc`` module next to a
@@ -13,9 +13,6 @@ import types
 _NAMES = ("hoc", "nrn", "_neuron_section")
 
 
-_CPLUSOBJECT = 16  # Symbol.subtype of a class registered from C++ (hocdec.h)
-
-
 def _is_python_type(h, cls):
     """True for the classes NEURON's own interface exposes as Python types.
 
@@ -24,19 +21,19 @@ def _is_python_type(h, cls):
     HocObject instances, which neuron.HocBaseObject subclasses take as
     ``hoc_type``. Here every h.<class> is a type; this tells them apart.
     """
-    from .api import _nrn_symbol_subtype
+    from .api import TYPES, _nrn_symbol_subtype
     from .utils import class_symbol, is_point_process_class
 
     name = getattr(cls, "_hoc_class_name", None)
     if name is None:
         return False
     sym = class_symbol(name)
-    if not sym or _nrn_symbol_subtype(sym) != _CPLUSOBJECT:
+    if not sym or _nrn_symbol_subtype(sym) != TYPES.CPLUSOBJECT:
         return False
     return not is_point_process_class(name)
 
 
-def _hoc_object_class(h, legacy=None):
+def _hoc_object_class(h):
     """hoc.HocObject: isinstance/issubclass answers match NEURON's interface.
 
     isinstance(x, hoc.HocObject) is true for HOC objects, references, h and
@@ -47,17 +44,14 @@ def _hoc_object_class(h, legacy=None):
     of cls backed by a new HOC object of class C, as hclass3 needs.
     """
     from .nrnref import NrnRef
-    from .object import Object, _construct_hoc_object, _HocClassMeta
+    from .object import Object, _HocClassMeta
     from .utils import FuncWrapper
 
     class _HocObjectMeta(_HocClassMeta):
         def __instancecheck__(cls, instance):
             if cls is not HocObject:
                 return super().__instancecheck__(instance)
-            if isinstance(instance, (Object, NrnRef, FuncWrapper)) or instance is h:
-                return True
-            if legacy is not None and isinstance(instance, legacy):
-                # nrniv -python: objects NEURON's own module still makes
+            if isinstance(instance, (Object, NrnRef, FuncWrapper, type(h))):
                 return True
             return (
                 isinstance(instance, _HocClassMeta)
@@ -83,11 +77,8 @@ def _hoc_object_class(h, legacy=None):
             class_name = getattr(hocbase, "_hoc_class_name", None)
             if class_name is None:
                 raise TypeError(f"hocbase {hocbase!r} is not a HOC class")
-            obj, host, post_init = _construct_hoc_object(class_name, args, sec=sec)
-            instance = object.__new__(cls)
-            instance._obj = obj
-            instance._init_from_ptr(obj, host)
-            post_init(instance)
+            instance = super().__new__(cls)
+            instance._construct(class_name, args, sec=sec)
             return instance
 
         def __init__(self, *args, **kwargs):
@@ -99,11 +90,11 @@ def _hoc_object_class(h, legacy=None):
     return HocObject
 
 
-def _hoc_module(h, legacy=None):
+def _hoc_module(h):
     from .object import _HocClassMeta
 
     hoc = types.ModuleType("hoc", "HOC object types for the neuron package.")
-    hoc.HocObject = _hoc_object_class(h, legacy)
+    hoc.HocObject = _hoc_object_class(h)
     hoc.HocClass = _HocClassMeta
 
     def __getattr__(name):
@@ -118,8 +109,20 @@ def _hoc_module(h, legacy=None):
             return value
         raise AttributeError(f"module 'hoc' has no attribute {name!r}")
 
+    def execute(command):
+        """Execute a hoc command, return True on success, False on failure."""
+        return h(command)
+
+    def hoc_ac(value=None):
+        """Get (or set) the scalar hoc_ac_."""
+        if value is not None:
+            h.hoc_ac_ = value
+        return h.hoc_ac_
+
     hoc.__getattr__ = __getattr__
     hoc.ref_address = _ref_address
+    hoc.execute = execute
+    hoc.hoc_ac = hoc_ac
     return hoc
 
 
@@ -157,9 +160,11 @@ def _ref_address(ref):
     return address
 
 
-def _nrn_module():
+def _nrn_module(h):
+    from .api import TYPES
     from .mechanism import Mechanism
     from .sections import OpaquePointer, Section, Segment
+    from .utils import list_functions
 
     nrn = types.ModuleType("nrn", "Section, segment and mechanism types.")
     nrn.Section = Section
@@ -172,17 +177,17 @@ def _nrn_module():
         # Section.psection is implemented here; keep the hook for callers.
         psection[:] = [function]
 
-    nrn.set_psection = set_psection
-    return nrn
-
-
-def _neuron_section_module(h, nrn):
-    # NEURON's _neuron_section holds the same Section/Segment types as nrn,
-    # plus cas() and allsec() (ModelView's realcell.hoc calls cas()).
-    module = types.ModuleType("_neuron_section", "Section and segment helpers.")
-    module.Section = nrn.Section
-    module.Segment = nrn.Segment
-    module.set_psection = nrn.set_psection
+    def __getattr__(name):
+        # nrn.hh, nrn.pas, ...: every density mechanism's type is Mechanism.
+        # Not by h.<name>'s class: NEURON's package makes its own. Not the two
+        # that are no density mechanism of nrn's.
+        if (
+            not name.startswith("__")
+            and name not in ("capacitance", "morphology")
+            and list_functions().get(name, (None,))[0] == TYPES.MECHANISM
+        ):
+            return Mechanism
+        raise AttributeError(f"module 'nrn' has no attribute {name!r}")
 
     def cas():
         """Return the currently accessed section."""
@@ -192,55 +197,50 @@ def _neuron_section_module(h, nrn):
         """Iterate over all sections."""
         return h.allsec()
 
-    module.cas = cas
-    module.allsec = allsec
+    nrn.set_psection = set_psection
+    nrn.__getattr__ = __getattr__
+    nrn.cas = cas
+    nrn.allsec = allsec
+    return nrn
+
+
+def _neuron_section_module(nrn):
+    # NEURON's _neuron_section holds the same Section/Segment types as nrn,
+    # plus cas() and allsec() (ModelView's realcell.hoc calls cas()).
+    module = types.ModuleType("_neuron_section", "Section and segment helpers.")
+    module.Section = nrn.Section
+    module.Segment = nrn.Segment
+    module.set_psection = nrn.set_psection
+    module.cas = nrn.cas
+    module.allsec = nrn.allsec
     return module
 
 
-def install(interface, embedded):
-    """Register the facades and return (hoc, nrn, _neuron_section).
+_installed = ()
 
-    ``embedded`` means nrniv -python already created the legacy modules. The
-    facades replace them in sys.modules all the same: ``h`` is this
-    interface's, so hoc.HocObject, nrn.Section and the rest must be its types
-    too (hclass(h.A), ExtendedSection(nrn.Section)). The legacy modules stay
-    under ``_legacy_<name>``, and hoc.HocObject also accepts the objects the
-    legacy module still makes. The section owner hooks become this interface's,
-    and the legacy module learns this interface's object type, so the values it
-    converts for HOC (a Python attribute HOC reads, MUSIC's index2target) are
-    the wrapped HOC objects, not PythonObjects around the wrappers.
-    """
-    legacy_hoc = None
-    if embedded:
-        for name in _NAMES:
-            if name in sys.modules:
-                sys.modules["_legacy_" + name] = sys.modules[name]
-        legacy_module = sys.modules.get("hoc")
-        legacy_hoc = getattr(legacy_module, "HocObject", None)
-        from .sections import take_over_legacy_owner_hooks
 
-        take_over_legacy_owner_hooks()
-        # Absent on cores before nrn#3877; those keep the PythonObject wrapping.
-        register = getattr(legacy_module, "_set_interface_object_type", None)
-        if register is not None:
-            from . import object as object_module
-
-            register(object_module.Object)
-            object_module._LEGACY_OBJECT_TYPE = legacy_hoc
-    else:
-        present = [name for name in _NAMES if name in sys.modules]
-        if present:
+def install(interface):
+    """Register the facades and return (hoc, nrn, _neuron_section)."""
+    global _installed
+    present = [name for name in _NAMES if name in sys.modules]
+    if present:
+        if tuple(sys.modules.get(name) for name in _NAMES) == _installed:
+            return _installed  # importlib.reload(neuron)
+        # Our own stay when neuron is removed from sys.modules and imported again.
+        if not all(hasattr(sys.modules[name], "_neuron_facade") for name in present):
             raise ImportError(
-                f"{', '.join(present)} already imported; the legacy NEURON "
-                "extension cannot share a process with this interface"
+                f"{', '.join(present)} already imported, from another NEURON or not "
+                "NEURON's"
             )
-    nrn = _nrn_module()
+    nrn = _nrn_module(interface.h)
     modules = (
-        _hoc_module(interface.h, legacy_hoc),
+        _hoc_module(interface.h),
         nrn,
-        _neuron_section_module(interface.h, nrn),
+        _neuron_section_module(nrn),
     )
     for name, module in zip(_NAMES, modules):
+        module._neuron_facade = True
         sys.modules[name] = module
     sys.modules["neuron.hoc"] = modules[0]
+    _installed = modules
     return modules

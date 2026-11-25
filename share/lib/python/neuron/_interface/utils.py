@@ -1,18 +1,23 @@
 """Helpers: FuncWrapper, symbol table iteration, argument pushing."""
 import ctypes
+from collections.abc import Mapping
 
 from ._docs import get_doc
 from .api import (
+    _ERR_BUF,
     _ERR_BUF_SIZE,
+    CALLS_PYTHON,
     HOC_CLASS_MODULE,
     TYPES,
     _check_nrn_error,
-    _ensure_pyobj_to_hoc,
+    _new_python_object,
     _ensure_topology,
+    _nrn_class_name,
     _nrn_double_pop,
     _nrn_double_push,
     _nrn_function_call,
     _nrn_global_symbol_table,
+    _nrn_method_symbol,
     _nrn_object_push,
     _nrn_pntproc_nmodlrandom_get,
     _nrn_section_is_active,
@@ -32,14 +37,16 @@ from .api import (
     _nrn_top_level_symbol_table,
     _object_pop_safe,
     _owned_pythonobject_to_python,
-    _py_pyobj_to_hoc_cfunctype,
+    _PACKAGE,
 )
+from . import api as _api
 from .nrnref import (
     NrnRef,
     refuse_pickle,
 )
 
-# NEURON's error for a deleted section (nrnpy_sec_referr, nrnpy_nrn.cpp). An
+
+# NEURON's error for a deleted section (nrnpy_sec_referr, 9.0's nrnpy_nrn.cpp). An
 # assignment through a Segment, Mechanism or RangeVar puts the type in front:
 # "nrn.Segment can't access a deleted section".
 _DELETED_SECTION = "can't access a deleted section"
@@ -47,7 +54,7 @@ _DELETED_SECTION = "can't access a deleted section"
 
 def _check_segment_arg(seg):
     """Raise NEURON's HOC error for a Segment of a deleted section passed to a
-    HOC call (nrnpy_hoc.cpp), before anything is pushed: the core would read
+    HOC call (9.0's nrnpy_hoc.cpp), before anything is pushed: the core would read
     the freed section and abort."""
     if not _nrn_section_is_active(seg._sec._sec):
         raise RuntimeError("nrn.Segment associated with deleted internal Section")
@@ -186,9 +193,8 @@ def is_point_process_class(class_name):
     known = _IS_POINT_PROCESS.get(class_name)
     if known is not None:
         return known
-    from . import NEURON
 
-    n = NEURON()
+    n = _PACKAGE._n
     mt = n.MechanismType(1)
     selected = n.ref("")
     for i in range(int(mt.count())):
@@ -215,7 +221,7 @@ def is_located_point_process_class(class_name):
 # template (loc, get_loc, has_loc, ...), so they drop its entry
 # (forget_class); otherwise only the late-definition case below. An
 # already-loaded template can't be redefined (NEURON raises an execerror on
-# redefinition).
+# redefinition). A KSChan point process has no entry (_KSChanMembers).
 # TODO(gap-46): if a template name is first queried before the template is
 # defined, the cache holds a stale empty entry for it. In practice templates
 # are fully defined before first use.
@@ -226,6 +232,53 @@ _CLASS_METHODS_CACHE = {}
 # the template name among their arguments.
 TEMPLATE_CONVERTERS = {"make_pointprocess": 0, "make_mechanism": 1}
 
+# Calls that leave the model epoch where it is. Every other HOC call moves it
+# (api._bump_model_epoch), because HOC can run user code and edit the
+# model. These cannot: each only reads, in C, from the section or the vector
+# it is given (READ: nrnoc/cabcode.cpp, nrnoc/treeset.cpp, ivoc/ivocvect.cpp,
+# ivoc/oclist.cpp), runs no HOC or user code, and creates, deletes and changes
+# nothing. The one Python they can reach is secname's owner-name hook
+# (sections._owner_name) for a section a Python cell owns: a dict lookup of the
+# name stored when the section was made (str(cell) ran then, not now).
+# A caller that holds a name for a function listed here gets the built-in one:
+# HOC refuses to redefine a built-in function or template. A new entry needs
+# that argument for itself; apply, fit, record, play, execute and every user
+# function must stay off the list. Math built-ins (HOC type BLTIN,
+# double -> double) are exempt by type, in __init__.NEURON.__getattr__.
+READ_ONLY_FUNCTIONS = frozenset(
+    {
+        # a lookup in the section's property list, or in its 3-D point array
+        "ismembrane",
+        "secname",
+        "section_orientation",
+        "n3d",
+        "x3d",
+        "y3d",
+        "z3d",
+        "arc3d",
+        "diam3d",
+    }
+)
+# By HOC class name: Vector and List are built-in, and cannot be redefined.
+READ_ONLY_METHODS = {
+    "Vector": frozenset(
+        {
+            "size",
+            "sum",
+            "sumsq",
+            "mean",
+            "var",
+            "stdev",
+            "min",
+            "max",
+            "contains",
+            "dot",
+            "mag",
+        }
+    ),
+    "List": frozenset({"count"}),
+}
+
 
 def forget_class(class_name):
     """Drop the cached method table and point-process status of a HOC class."""
@@ -233,6 +286,40 @@ def forget_class(class_name):
     if class_name != "MechanismType":
         _IS_POINT_PROCESS.pop(class_name, None)
         _IS_ARTIFICIAL.discard(class_name)
+
+
+class _KSChanMembers(Mapping):
+    """The members of a KSChan point process object, looked up in HOC each time.
+
+    Its KSChan renames its variables (iv_type makes gmax pmax) and adds and
+    frees them (states, ion), from Python, HOC or the ChannelBuilder, also
+    while the object exists. No callback or counter in the core says so.
+    """
+
+    __slots__ = ("_obj",)
+
+    def __init__(self, obj):
+        self._obj = obj
+
+    def __getitem__(self, name):
+        sym = _nrn_method_symbol(self._obj, name.encode("utf-8"))
+        if not sym:
+            raise KeyError(name)
+        return int(_nrn_symbol_type(sym)), int(_nrn_symbol_subtype(sym))
+
+    def __contains__(self, name):
+        return bool(_nrn_method_symbol(self._obj, name.encode("utf-8")))
+
+    def _names(self):
+        # The class's present name: KSChan.name renames it.
+        sym = class_symbol(_nrn_class_name(self._obj).decode("utf-8"))
+        return _list_symbol_table(_nrn_symbol_table(sym))
+
+    def __iter__(self):
+        return iter(self._names())
+
+    def __len__(self):
+        return len(self._names())
 
 
 def list_methods(obj):
@@ -245,6 +332,11 @@ def list_methods(obj):
         class_name = obj
     else:
         class_name = obj._class_name
+    if is_point_process_class(class_name) and _nrn_method_symbol(obj._obj, b"nsingle"):
+        # Only a KSChan point process has nsingle (member_func in kschan.cpp);
+        # no public flag says "this class is a KSChan". Another class with a
+        # member of that name is read the same way, only slower.
+        return _KSChanMembers(obj._obj)
     cached = _CLASS_METHODS_CACHE.get(class_name)
     if cached is not None:
         return cached
@@ -276,20 +368,6 @@ class _PythonObjectArg:
 
     def __init__(self, value):
         self.value = value
-
-
-def _new_python_object(value):
-    """Return one creator-owned PythonObject reference from the active provider."""
-    obj_ptr = _py_pyobj_to_hoc_cfunctype(value)
-    if obj_ptr is None:
-        po2ho = _ensure_pyobj_to_hoc()
-        if po2ho is None:
-            raise TypeError(
-                "Cannot push Python object as HOC Object: "
-                "no matching PythonObject provider available"
-            )
-        obj_ptr = po2ho(value)
-    return obj_ptr
 
 
 def _is_python_object_arg(value):
@@ -329,10 +407,6 @@ def _push_args(args, return_rollback=False):
                   the callee consumed the arguments, even if a pending Python
                   callback exception is raised afterwards.
     """
-    from .api import _nrn_object_unref
-    from .object import Object
-    from .sections import Segment
-
     temp_strs = []
     seg_sec = None
     descriptors = []  # (kind, payload); object kinds are borrowed or owned
@@ -340,17 +414,17 @@ def _push_args(args, return_rollback=False):
     # PASS 1: resolve/validate only, no pushes.
     try:
         for arg in args:
-            if isinstance(arg, Segment):
+            if isinstance(arg, (int, float)):
+                # bool is an int subclass, so it follows HOC's double path.
+                descriptors.append(("double", float(arg)))
+            elif isinstance(arg, _PACKAGE.sections.Segment):
                 # A Segment contributes its x and supplies section context.
                 _check_segment_arg(arg)
                 seg_sec = arg.sec
                 descriptors.append(("double", float(arg.x)))
             elif arg is None:
                 descriptors.append(("object", None))
-            elif isinstance(arg, (int, float)):
-                # bool is an int subclass, so it follows HOC's double path.
-                descriptors.append(("double", float(arg)))
-            elif isinstance(arg, Object):
+            elif isinstance(arg, _PACKAGE.object.Object):
                 descriptors.append(("object", arg._obj))
             elif isinstance(arg, NrnRef):
                 descriptors.append(("ref", arg))
@@ -382,7 +456,7 @@ def _push_args(args, return_rollback=False):
     except BaseException:
         for kind, payload in descriptors:
             if kind == "owned_object" and payload:
-                _nrn_object_unref(payload)
+                _api._nrn_object_unref(payload)
         raise
 
     # PASS 2: push the validated descriptors. Rollback pops completed
@@ -394,7 +468,7 @@ def _push_args(args, return_rollback=False):
             elif kind in ("object", "owned_object"):
                 obj = _object_pop_safe()
                 if obj:
-                    _nrn_object_unref(obj)
+                    _api._nrn_object_unref(obj)
             elif kind == "str":
                 _nrn_str_pop()
             else:
@@ -409,7 +483,7 @@ def _push_args(args, return_rollback=False):
             elif kind in ("object", "owned_object"):
                 _nrn_object_push(payload)
                 if kind == "owned_object" and payload:
-                    _nrn_object_unref(payload)
+                    _api._nrn_object_unref(payload)
                     released_owned += 1
             elif kind == "str":
                 _nrn_str_push(payload)
@@ -425,7 +499,7 @@ def _push_args(args, return_rollback=False):
             if to_release:
                 to_release -= 1
             else:
-                _nrn_object_unref(payload)
+                _api._nrn_object_unref(payload)
         raise
     if return_rollback:
         return temp_strs, seg_sec, lambda: rollback(len(descriptors))
@@ -434,9 +508,8 @@ def _push_args(args, return_rollback=False):
 
 def _check_sec_kwarg(sec):
     """Reject a ``sec=`` that is not a live Section, before anything is pushed."""
-    from .sections import Section
 
-    if not isinstance(sec, Section):
+    if not isinstance(sec, _PACKAGE.sections.Section):
         raise TypeError("sec is not a Section")
     sec._check_alive()
 
@@ -455,7 +528,7 @@ def _pop_pushed_section(sec_ptr):
     if _nrn_section_is_active(sec_ptr):
         _nrn_section_pop()
         return
-    err = ctypes.create_string_buffer(_ERR_BUF_SIZE)
+    err = _ERR_BUF()
     ret = _nrn_function_call(_nrn_symbol(b"pop_section"), 0, err, _ERR_BUF_SIZE)
     _check_nrn_error(ret, err)
     _nrn_double_pop()  # pop_section's hoc_retpushx(1.)
@@ -476,32 +549,33 @@ def _wrap_owned_object(obj):
     initialization fails. Once ``cls._wrap`` starts, the partial wrapper owns
     the reference and its finalizer releases it.
     """
-    from .api import _nrn_class_name, _nrn_object_unref
-
     if not obj:
         return None
+    if CALLS_PYTHON:
+        try:
+            return _api._python_object_get(obj)
+        finally:
+            _api._nrn_object_unref(obj)
     try:
-        name = _nrn_class_name(obj).decode("utf-8")
+        name = _api._nrn_class_name(obj)
+        cls = _WRAPPER_CLASSES.get(name)
+        if cls is None and name != b"PythonObject":
+            if name:
+                cls = _WRAPPER_CLASSES[name] = hoc_class(name.decode("utf-8"))
+            else:
+                cls = _PACKAGE.object.Object
     except BaseException:
-        _nrn_object_unref(obj)
+        _api._nrn_object_unref(obj)
         raise
-
-    if name == "PythonObject":
-        # The converter consumes ownership even on failure; keep it outside
-        # the class-wrapper cleanup so the reference cannot be released twice.
+    if cls is None:
+        # The converter consumes ownership even on failure; it is outside the
+        # cleanup above so the reference cannot be released twice.
         return _owned_pythonobject_to_python(obj)
+    return cls._wrap(obj, cls._hoc_class_name)
 
-    try:
-        if name == "":
-            from .object import Object
 
-            cls = Object
-        else:
-            cls = hoc_class(name)
-    except BaseException:
-        _nrn_object_unref(obj)
-        raise
-    return cls._wrap(obj)
+# Class name, as NEURON gives it, -> the class of its wrappers.
+_WRAPPER_CLASSES = {}
 
 
 def hoc_class(name):
@@ -512,25 +586,23 @@ def hoc_class(name):
     it. pickle finds the class through its ``__module__``: the package's
     module ``__getattr__`` (standalone) or the ``hoc`` facade (in NEURON).
     """
-    from . import _dynamic_classes
 
-    cls = _dynamic_classes.get(name)
+    cls = _PACKAGE._dynamic_classes.get(name)
     if cls is None:
-        from .object import Object
 
         # Empty __slots__: no per-instance __dict__, like List, Vector and
         # SectionList. _hoc_class_name binds the class to its HOC template
         # for construction and metaclass indexing.
         cls = type(
             name,
-            (Object,),
+            (_PACKAGE.object.Object,),
             {
                 "__module__": HOC_CLASS_MODULE,
                 "__slots__": (),
                 "_hoc_class_name": name,
             },
         )
-        _dynamic_classes[name] = cls
+        _PACKAGE._dynamic_classes[name] = cls
     return cls
 
 
@@ -555,6 +627,36 @@ def _try_wrap_point_nmodlrandom(obj, sym, sym_type):
         return None
     TYPES.record_rangeobj(sym_type)
     return _wrap_owned_object(raw)
+
+
+_SLOT_POPS = {}
+
+
+def _return_slot_pop(call_type):
+    """What pops the result slot a call of *call_type* leaves, or None.
+
+    A BLTIN is not covered: its call is too short for an interrupt to land at
+    its return, and it is the hottest call."""
+    if not _SLOT_POPS:  # the codes are known once the package is imported
+        for codes, pop in (
+            ((TYPES.FUNCTION, TYPES.FUN_BLTIN, TYPES.PROCEDURE), _nrn_double_pop),
+            ((TYPES.METHOD_STRFUNC, TYPES.STRINGFUNC), _nrn_str_pop),
+            (
+                (TYPES.METHOD_OBFUNC, TYPES.OBFUNCTION, TYPES.OBJECTFUNC),
+                _object_pop,
+            ),
+        ):
+            _SLOT_POPS.update(dict.fromkeys(codes, pop))
+    return _SLOT_POPS.get(call_type)
+
+
+def _drop_return_slot(err_buf, pop):
+    """After a KeyboardInterrupt: a signal handler runs once the ctypes call has
+    returned, with its result still on the stack (gap-84). The call cleared the
+    buffer's first byte, which the caller set before it. A failed call left a
+    message there and a result of none."""
+    if pop and err_buf is not None and err_buf[0] == b"\x00":
+        pop()
 
 
 def _object_pop():

@@ -9,7 +9,9 @@ from .api import (
     _nrn_get_plotshape_low,
     _nrn_get_plotshape_section_list,
     _nrn_get_plotshape_varname,
+    _nrn_object_ref,
 )
+from .utils import _wrap_owned_object
 
 
 class _WrapperPlot:
@@ -246,9 +248,8 @@ class _PlotShapePlot(_WrapperPlot):
         # only the default PlotShape() falls back to all sections.
         sl_obj = _nrn_get_plotshape_section_list(spi)
         if sl_obj:
-            from .object import SectionList
-
-            secs = list(SectionList._wrap(sl_obj))
+            _nrn_object_ref(sl_obj)  # the PlotShape keeps its own reference
+            secs = list(_wrap_owned_object(sl_obj))
         else:
             secs = list(n.allsec())
         return var_name, lo, hi, secs

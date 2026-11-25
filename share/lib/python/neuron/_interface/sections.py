@@ -2,26 +2,36 @@
 # Module-level imports only from modules that never import this one (api,
 # nrnref, utils): a function-level import cost ~50% of seg.v time
 # (benchmarks/README.md#historical-implementation-measurements). Imports from
-# mechanism, object and the package stay inside functions to avoid a cycle.
+# mechanism, object and the package are reached through _PACKAGE at call time
+# (a cycle forbids importing them here).
 import ctypes
 import math
 import numbers
-import sys
 import weakref
 
 from .api import (
+    CALLS_PYTHON,
+    EPOCH,
+    NRN_CLASS_MODULE,
     HOC_LOCK,
+    SECTION_BASE,
+    SEGMENT_BASE,
+    _bump_model_epoch,
+    _model_epoch,
+    in_hoc_call,
     _refused_double,
     _to_double,
     TYPES,
+    _ERR_BUF,
     _ERR_BUF_SIZE,
     _check_nrn_error,
+    _TREE_SET_UP,
     _ensure_topology,
+    _fast_imem_on,
     _nrn_double_pop,
     _nrn_double_push,
     _nrn_function_call,
     _diam_changed as _DIAM_CHANGED,
-    _tree_changed as _TREE_CHANGED,
     _nrn_double_ptr_pop,
     _nrn_mechanism_insert,
     _nrn_nseg_get,
@@ -36,9 +46,7 @@ from .api import (
     _nrn_section_is_active,
     _nrn_section_length_get,
     _nrn_section_length_set,
-    _nrn_section_new,
     _nrn_section_ref,
-    _nrn_section_unref,
     _nrn_section_parent,
     _nrn_section_pop,
     _nrn_section_push,
@@ -56,19 +64,19 @@ from .api import (
     _nrn_symbol_subtype,
     _nrn_symbol_type,
     Symbol,
+    _diam_changed,
+    _structure_change_count,
     get_topology_version,
-    libnrniv,
+    _PACKAGE,
 )
+from . import api as _api
 from .nrnref import NrnRangeArrayRef, NrnRangeVarRef, NrnRef, _sequence_index
 from .utils import (
     _DELETED_SECTION,
     _name_error,
     _try_wrap_density_nmodlrandom,
 )
-
-# The package, for its model epoch (_MODEL_EPOCH): a module attribute read is
-# cheaper than a function-level import on the seg.<mechanism> path.
-_PACKAGE = sys.modules[__package__]
+from . import utils as _utils
 
 # Names with registered get/set procs; see _ArrayRangeVar.
 _ARRAY_RANGEVAR_PROCS = set()
@@ -80,7 +88,7 @@ _ARRAY_RANGEVAR_PROCS = set()
 # WHY: the encode + nrn_symbol + nrn_symbol_type + nrn_symbol_is_array +
 # nrn_symbol_array_length chain costs ~3.5us of the ~4.7us seg.v total. Real
 # NEURON uses pmech_types/rangevars_ Python dicts for O(1) lookup
-# (nrnpy_nrn.cpp:3146-3155).
+# (9.0's nrnpy_nrn.cpp).
 # INVALIDATES: never. Global HOC symbols are stable for the process lifetime
 # (once `gnabar_hh` exists its Symbol* never moves).
 _SYMBOL_INFO_CACHE = {}
@@ -92,19 +100,26 @@ _V_SYMBOL = _nrn_symbol(b"v")
 _CONNECT_ARG_UNSET = object()
 
 
-def _python_cell(sec):
-    """The cell object passed to Section(cell=...), or None.
+def _cell_entry(sec):
+    """The weakref to the cell of Section(cell=...), on a released core a tuple
+    of the name's prefix and it, or None.
 
     An unset slot (wrappers from _from_ptr) means no cell. Uses
     object.__getattribute__ so the unset read does not recurse through
     __getattr__.
     """
     try:
-        cell_ref = object.__getattribute__(sec, "_cell")
+        return object.__getattribute__(sec, "_cell")
     except AttributeError:
-        entry = OWNED_SECTIONS.get(object.__getattribute__(sec, "_sec"))
-        cell_ref = entry[1] if entry is not None else None
-    return None if cell_ref is None else cell_ref()
+        return None
+
+
+def _python_cell(sec):
+    """The cell object passed to Section(cell=...), or None."""
+    entry = _cell_entry(sec)
+    if entry is None:
+        return None
+    return entry() if CALLS_PYTHON else entry[1]()
 
 
 def _is_finite(value):
@@ -136,7 +151,7 @@ def _get_symbol_info(name):
     cached = _SYMBOL_INFO_CACHE.get(name)
     if cached is not None:
         return _current_array_length(cached) if cached[2] else cached
-    epoch = _PACKAGE._MODEL_EPOCH
+    epoch = EPOCH[0] or _model_epoch()
     if _SYMBOL_MISS_EPOCH.get(name) == epoch:
         return None
 
@@ -182,9 +197,8 @@ def _scalar_rangevar_double(name, value):
 def _install_array_rangevar_procs(name):
     if name in _ARRAY_RANGEVAR_PROCS:
         return
-    from . import NEURON
 
-    n = NEURON()
+    n = _PACKAGE._n
     # $1 = array index, $2 = segment position x, $3 = value (set only)
     n(f"func _mn_rv_get_{name}() {{ return {name}[$1]($2) }}")
     n(f"proc _mn_rv_set_{name}() {{ {name}[$1]($2) = $3 }}")
@@ -208,9 +222,7 @@ def _is_pointer_rangevar(name, sym):
 
 
 def _pointer_rangevar_procs(name):
-    from . import NEURON
-
-    n = NEURON()
+    n = _PACKAGE._n
     if name not in _POINTER_RANGEVAR_PROCS:
         # $1 = segment position x, $2 = value (set only)
         n(f"func _mn_ptr_get_{name}() {{ return {name}($1) }}")
@@ -229,13 +241,11 @@ OpaquePointer.__module__ = "nrn"
 
 
 def _call_pointer_proc(section, x, name, proc, *args):
-    from .object import _SuppressCStderr
-
     n = _pointer_rangevar_procs(name)
     try:
         # NEURON raises these without printing a HOC error trace; suppress the
         # helper's trace to match.
-        with _SuppressCStderr():
+        with _PACKAGE.object._SuppressCStderr():
             return getattr(n, f"{proc}_{name}")(x, *args, sec=section)
     except RuntimeError as exc:
         # The core's messages are the only signal for these two states; no
@@ -289,10 +299,9 @@ def _diam_hoc_assign(sec, cmd, x, value):
     # (~10 us full HOC dispatch vs ~6 us for this call). The raw node store
     # happens first because pt3dconst(1) suppresses the HOC assignment while
     # Python must still write the node and dirty the geometry.
-    from . import NEURON
 
     try:
-        NEURON()(cmd, sec=sec, raise_on_error=True, _no_epoch_bump=True)
+        _PACKAGE._n(cmd, sec=sec, raise_on_error=True, _no_epoch_bump=True)
     except RuntimeError as exc:
         raise ValueError(
             f"diam assignment failed for {sec.name()}({x}) = {value!r}"
@@ -340,20 +349,18 @@ class _ArrayRangeVar:
         section can tell. For vext the helper itself asks, quietly, and its
         HOC error becomes the AttributeError.
         """
-        from . import NEURON
 
         self._section._check_alive()
         # NEURON's section-loop error, not the helper's HOC error.
         _ensure_rangevar_topology(self._section._sec, self._x, self._name)
         _install_array_rangevar_procs(self._name)
-        helper = getattr(NEURON(), f"{proc}_{self._name}")
+        helper = getattr(_PACKAGE._n, f"{proc}_{self._name}")
         if self._name != "vext":
             Segment(self._section, self._x)._check_rangevar_mechanism(self._name)
             return helper(*args, sec=self._section)
-        from .object import _SuppressCStderr
 
         try:
-            with _SuppressCStderr():
+            with _PACKAGE.object._SuppressCStderr():
                 return helper(*args, sec=self._section)
         except RuntimeError:
             segment = Segment(self._section, self._x)
@@ -390,6 +397,29 @@ class _ArrayRangeVar:
         return f"<ArrayRangeVar {self._name}@{sec}({self._x}) {vals}>"
 
 
+class _SectionArrayRangeVar(_ArrayRangeVar):
+    """sec.xg: reads are the middle segment's, writes reach every segment.
+
+    As NEURON's: sec.xg[i] = v is a section-level assignment (the way
+    sec.gnabar_hh = v is), where seg.xg[i] = v is one segment's.
+    """
+
+    __slots__ = ()
+
+    def __setitem__(self, idx, value):
+        value = _to_double(value, ValueError)
+        sec = self._section
+        if not _nrn_section_is_active(sec._sec):
+            raise ReferenceError(f"nrn.RangeVar {_DELETED_SECTION}")
+        idx = self._resolve(idx)
+        name = self._name
+        size = self._size
+        # The middle segment first, so an absent mechanism is reported there
+        # as NEURON does; then every node, both ends too (vext lives there).
+        for x in [self._x] + [seg._x for seg in sec.allseg()]:
+            _ArrayRangeVar(sec, x, name, size)._call("_mn_rv_set", idx, x, float(value))
+
+
 # ── Segment ───────────────────────────────────────────────────────────────────
 
 
@@ -399,19 +429,6 @@ _STALE = object()  # _current_inserted_mechs: built at an older epoch
 
 # i_membrane_ is no mechanism's: it exists while cvode.use_fast_imem(1) is on.
 _FAST_IMEM = object()
-try:
-    _USE_FAST_IMEM = ctypes.c_bool.in_dll(libnrniv, "nrn_use_fast_imem")
-except ValueError:  # not exported: ask CVode
-    _USE_FAST_IMEM = None
-
-
-def _fast_imem_on():
-    if _USE_FAST_IMEM is not None:
-        return _USE_FAST_IMEM.value
-    from . import NEURON
-
-    return bool(NEURON().CVode().use_fast_imem())
-
 
 # Range variable name -> the density mechanism that owns it ("gnabar_hh" ->
 # "hh", "ena" -> "na_ion", "i_membrane" -> "extracellular"), None for one
@@ -420,7 +437,7 @@ def _fast_imem_on():
 # variable whose owner is absent throws through ctypes, so every read and
 # write checks the owner first.
 # Filled in per name, starting from NEURON's built-in range variables
-# (remake_pmech_types in nrnpy_nrn.cpp adds them by name): v is every node's,
+# (remake_pmech_types in 9.0's nrnpy_nrn.cpp adds them by name): v is every node's,
 # and diam, cm and i_cap are morphology's and capacitance's, which every
 # section has. vext is extracellular's, but NEURON reads it at the exact node,
 # not the section, so _ArrayRangeVar asks NEURON itself.
@@ -436,13 +453,6 @@ _RANGEVAR_OWNER = {
 }
 # Variables of these are present in every section.
 _EVERY_SECTION_MECHANISMS = frozenset({"morphology", "capacitance"})
-# The density mechanisms, ions first, and the n_memb_func (NEURON's count of
-# mechanism types) they were listed at.
-_MECHANISMS = [None, -1]
-try:
-    _N_MEMB_FUNC = ctypes.c_int.in_dll(libnrniv, "n_memb_func")
-except ValueError:  # not exported: list them every time
-    _N_MEMB_FUNC = None
 
 
 def _is_density_mechanism(name):
@@ -452,24 +462,12 @@ def _is_density_mechanism(name):
     return bool(sym) and int(_nrn_symbol_type(sym)) == TYPES.MECHANISM
 
 
-def _density_mechanisms_ions_first():
-    count = _N_MEMB_FUNC.value if _N_MEMB_FUNC is not None else None
-    if count is None or count != _MECHANISMS[1]:
-        from .mechanism import _all_density_mechanism_names
-
-        names = _all_density_mechanism_names()  # in type order
-        names.sort(key=lambda name: not name.endswith("_ion"))
-        _MECHANISMS[:] = [names, -1 if count is None else count]
-    return _MECHANISMS[0]
-
-
 def _find_owner(name):
     """The mechanism whose variable list declares range variable *name*.
 
     Reads the lists of only the mechanisms the name can belong to, each once
     (mechanism._declaration_order keeps them).
     """
-    from .mechanism import _declaration_order
 
     # NMODL names a variable <name>_<suffix>, and a suffix can itself contain
     # "_" (na_slow, or a KSChan named k_dr): every density mechanism whose
@@ -481,11 +479,14 @@ def _find_owner(name):
     ]
     for refresh in (False, True):  # a KSChan gains a variable with each gate
         for mech in candidates:
-            if name in (_declaration_order(mech, refresh) or ()):
+            if name in (_PACKAGE.mechanism._declaration_order(mech, refresh) or ()):
                 return mech
     # No suffix: an ion's variable (ena) or extracellular's (i_membrane).
-    for mech in _density_mechanisms_ions_first():
-        if mech not in candidates and name in (_declaration_order(mech) or ()):
+    names = _PACKAGE.mechanism._all_density_mechanism_names()  # in type order
+    for mech in sorted(names, key=lambda name: not name.endswith("_ion")):
+        if mech not in candidates and name in (
+            _PACKAGE.mechanism._declaration_order(mech) or ()
+        ):
             return mech
     # Declared by no list read: check the likeliest mechanism, which can at
     # worst raise AttributeError where reading would have worked.
@@ -498,6 +499,25 @@ def _rangevar_owner(name):
     if owner is _UNSET:
         owner = _RANGEVAR_OWNER[name] = _find_owner(name)
     return owner
+
+
+def _missing_owner(sec, name):
+    """The owner (see _RANGEVAR_OWNER) of range variable *name* if *sec* lacks
+    it, else None.
+
+    Asked every time: reading an absent mechanism raises NEURON's error
+    through ctypes, and the model epoch does not move on every path that
+    removes one (HOC run from nrniv, a callback inside the HOC call that
+    uninserted; see gap-68), so the answer is not kept.
+    """
+    owner = _RANGEVAR_OWNER.get(name, _UNSET)
+    if owner is _UNSET:
+        owner = _rangevar_owner(name)
+    if owner is None:
+        return None
+    if owner is _FAST_IMEM:
+        return None if _fast_imem_on(sec._sec) else owner
+    return None if _PACKAGE._n.ismembrane(owner, sec=sec) else owner
 
 
 def _ensure_rangevar_topology(sec_ptr, x, name):
@@ -532,9 +552,8 @@ def _current_inserted_mechs(sec):
         return None
     if cached is None:
         return None
-    from . import _model_epoch
 
-    return cached if built == _model_epoch() else _STALE
+    return cached if built == EPOCH[0] else _STALE
 
 
 def _has_mechanism(sec, name):
@@ -572,7 +591,7 @@ def _section_query(name, sec_ptr, *args):
     sym = _SECTION_QUERY_SYMBOLS.get(name)
     if sym is None:
         sym = _SECTION_QUERY_SYMBOLS[name] = _nrn_symbol(name)
-    err = ctypes.create_string_buffer(_ERR_BUF_SIZE)
+    err = _ERR_BUF()
     with HOC_LOCK:
         _nrn_section_push(sec_ptr)
         try:
@@ -619,9 +638,7 @@ _PP_TYPES = [None, -1]
 
 
 def _point_process_types():
-    from . import NEURON
-
-    n = NEURON()
+    n = _PACKAGE._n
     mt = n.MechanismType(1)
     count = int(mt.count())
     if count == _PP_TYPES[1]:
@@ -640,13 +657,13 @@ def _point_process_types():
 
 def _scaled_frustum_volume(length, d0, d1):
     """A frustum's volume without its pi/12 factor (scaled_frustum_volume in
-    nrnpython/nrnpy_nrn.cpp)."""
+    9.0's nrnpy_nrn.cpp)."""
     return length * (d0 * d0 + d0 * d1 + d1 * d1)
 
 
 def _interpolate(x0, x1, y0, y1, xnew):
     """y at *xnew* on the line through (x0, y0) and (x1, y1), or y0 when
-    x0 == x1 (interpolate in nrnpython/nrnpy_nrn.cpp)."""
+    x0 == x1 (interpolate in 9.0's nrnpy_nrn.cpp)."""
     if x1 == x0:
         return y0
     return y0 + (y1 - y0) * (xnew - x0) / (x1 - x0)
@@ -655,7 +672,7 @@ def _interpolate(x0, x1, y0, y1, xnew):
 def _frustum_volume(sec, n3d, left_arc, right_arc):
     """Volume of *sec*'s 3D frustums between two arc lengths, in um^3.
 
-    The 3D branch of seg_volume in nrnpython/nrnpy_nrn.cpp, in the same
+    The 3D branch of seg_volume in 9.0's nrnpy_nrn.cpp, in the same
     arithmetic order. The diameter is interpolated at both arc lengths;
     diam3d already returns the |d| that code uses. A bisection finds the
     first point, so only the points inside the range are read.
@@ -697,7 +714,7 @@ def _frustum_volume(sec, n3d, left_arc, right_arc):
     return total * (math.pi / 12)
 
 
-class Segment:
+class Segment(SEGMENT_BASE):
     """A point at normalized position ``x`` in [0, 1] along a ``Section``.
 
     Obtain via ``sec(x)`` (e.g. ``soma(0.5)``). Range variables and
@@ -707,20 +724,14 @@ class Segment:
     array, indexed by ``x``.
     """
 
-    __slots__ = ("_sec", "_x", "_mech_cache")
+    __module__ = NRN_CLASS_MODULE
+    # The base has _sec, _x and _mech_cache, and sets them: Segment(section, x).
+    __slots__ = ()
 
     # As NEURON's nrn.Segment: no pickle, copy or deepcopy (the default
     # copied the slots; copy.copy(seg) raised RecursionError).
     def __reduce_ex__(self, protocol):
         raise TypeError("cannot pickle 'nrn.Segment' object")
-
-    def __init__(self, sec, x):
-        # Pre-set _mech_cache so an unset-slot read does not fall into __getattr__.
-        # object.__setattr__ bypasses Segment.__setattr__ without making a
-        # super() object for each slot.
-        _object_setattr(self, "_sec", sec)
-        _object_setattr(self, "_x", x)
-        _object_setattr(self, "_mech_cache", None)
 
     @property
     def sec(self):
@@ -736,7 +747,7 @@ class Segment:
         sec = self._sec
         sec._check_alive()
         x = self._x
-        if not 0.0 < x < 1.0 and _TREE_CHANGED.value:  # api._ensure_topology
+        if not 0.0 < x < 1.0 and _TREE_SET_UP[0] != EPOCH[0]:
             _ensure_topology(sec._sec, x)
         return _RANGEVAR_GET(_V_SYMBOL, sec._sec, x)
 
@@ -781,40 +792,21 @@ class Segment:
     def _check_rangevar_mechanism(self, name):
         """Raise AttributeError, with NEURON's message, if range variable
         *name* does not exist here because its mechanism is absent."""
-        owner = _RANGEVAR_OWNER.get(name, _UNSET)
-        if owner is _UNSET:
-            owner = _rangevar_owner(name)
-        if owner is not None:
-            self._require_owner(name, owner)
-
-    def _require_owner(self, name, owner):
-        """Raise AttributeError if *owner* (see _RANGEVAR_OWNER) is absent.
-
-        Asked every time: reading an absent mechanism raises NEURON's error
-        through ctypes, and the model epoch does not move on every path that
-        removes one (HOC run from nrniv, a callback inside the HOC call that
-        uninserted; see gap-68), so the answer is not kept.
-        """
+        owner = _missing_owner(self._sec, name)
         if owner is _FAST_IMEM:
-            if not _fast_imem_on():
-                raise AttributeError(f"{name} does not exist at {self!r}")
-            return
-        from . import NEURON
-
-        if not NEURON().ismembrane(owner, sec=self._sec):
+            raise AttributeError(f"{name} does not exist at {self!r}")
+        if owner is not None:
             raise AttributeError(f"{name}, the mechanism does not exist at {self!r}")
 
     def area(self):
         """Return membrane area of this segment in um^2."""
-        from . import NEURON
 
-        return float(NEURON().area(self._x, sec=self._sec))
+        return float(_PACKAGE._n.area(self._x, sec=self._sec))
 
     def ri(self):
         """Return axial resistance to parent segment in MOhm."""
-        from . import NEURON
 
-        return float(NEURON().ri(self._x, sec=self._sec))
+        return float(_PACKAGE._n.ri(self._x, sec=self._sec))
 
     def volume(self):
         """Return volume of this segment in um^3, as NEURON computes it.
@@ -823,7 +815,7 @@ class Segment:
         between the 3D points in this segment's share of the arc length, with
         the diameter interpolated at its edges. Otherwise a cylinder of the
         segment's diam over L/nseg. Port of seg_volume
-        (nrnpython/nrnpy_nrn.cpp).
+        (9.0's nrnpy_nrn.cpp).
         """
 
         sec = self._sec
@@ -887,7 +879,9 @@ class Segment:
                     pp = mt.pp_begin()
                     while pp is not None:
                         loc = pp.get_loc()
-                        _nrn_section_pop()  # get_loc pushes the section
+                        # get_loc pushes the section. Only HOC's own pop ends
+                        # core's tolerance of a pushed one.
+                        _PACKAGE._n.pop_section()
                         if Segment._node_key(loc, nseg) == my_key:
                             in_node.append(pp)
                         pp = mt.pp_next()
@@ -915,6 +909,11 @@ class Segment:
         """Names in this node's property list, or None without the C API."""
         if _nrn_segment_mechanisms is None:
             return None
+        if not 0.0 < self._x < 1.0:
+            try:
+                _ensure_topology(self._sec._sec, self._x)
+            except RuntimeError:  # a section loop
+                return None
         count = _nrn_segment_mechanisms(self._sec._sec, self._x, None, 0)
         if count < 0:
             return None
@@ -1021,18 +1020,14 @@ class Segment:
                 attrs.update(end_mechanisms)
                 return sorted(attrs)
         # Add mechanism names inserted in this section
-        from . import NEURON
-        from .mechanism import _all_density_mechanism_names
 
         try:
-            n_inst = NEURON()
-            for mech_name in _all_density_mechanism_names():
+            n_inst = _PACKAGE._n
+            for mech_name in _PACKAGE.mechanism._all_density_mechanism_names():
                 if n_inst.ismembrane(mech_name, sec=self._sec):
                     attrs.add(mech_name)
             # Also add ion mechanisms
             for ion_name in ("na_ion", "k_ion", "ca_ion"):
-                from .api import _nrn_symbol
-
                 sym = _nrn_symbol(ion_name.encode("utf-8"))
                 if sym and n_inst.ismembrane(ion_name, sec=self._sec):
                     attrs.add(ion_name)
@@ -1050,19 +1045,21 @@ class Segment:
             info = _rangevar_info(name)
             if info is None:
                 raise _name_error(
-                    AttributeError, name, f"Variable '{name}' not found in {self!r}."
+                    AttributeError,
+                    name,
+                    f"_ref_{name} was not made to point to anything at {self!r}",
                 )
             if not info[2]:  # NEURON finds a scalar's node now, then checks
                 _ensure_rangevar_topology(self._sec._sec, self._x, name)
             self._check_rangevar_mechanism(name)
             if info[2]:
-                return NrnRangeArrayRef(self.sec, self.x, name)
+                return NrnRangeArrayRef(self._sec, self._x, name)
             if _is_pointer_rangevar(name, info[0]):
                 # raises if unset; an opaque POINTER is its own reference
                 value = _pointer_rangevar_get(self.sec, self.x, name)
                 if isinstance(value, OpaquePointer):
                     return value
-            return NrnRangeVarRef(self.sec, self.x, name)
+            return NrnRangeVarRef(self._sec, self._x, name)
 
         # Mechanism instance cache (Segment._mech_cache).
         # WHY: rebuilding a Mechanism wrapper on every seg.hh access
@@ -1076,7 +1073,7 @@ class Segment:
             cached_mech = mech_cache.get(name)
             if cached_mech is not None:
                 sec_ptr = self._sec._sec
-                if cached_mech._epoch == _PACKAGE._MODEL_EPOCH:
+                if cached_mech._epoch == EPOCH[0]:
                     generation = NSEG_GENERATION.get(sec_ptr, 0)
                 else:  # a HOC statement since may have changed nseg
                     generation = current_nseg_generation(sec_ptr)
@@ -1090,7 +1087,7 @@ class Segment:
             info = _current_array_length(info)
         if info is None:
             raise _name_error(
-                AttributeError, name, f"Variable '{name}' not found in {self!r}."
+                AttributeError, name, f"'nrn.Segment' object has no attribute '{name}'"
             )
         sym, sym_type, is_array, array_length = info
         if sym_type == TYPES.RANGEVAR:
@@ -1104,7 +1101,7 @@ class Segment:
                 # As NEURON's: the array object is handed out as is, and each
                 # element access checks the mechanism.
                 return _ArrayRangeVar(sec, self._x, name, array_length)
-            if not 0.0 < self._x < 1.0 and _TREE_CHANGED.value:
+            if not 0.0 < self._x < 1.0 and _TREE_SET_UP[0] != EPOCH[0]:
                 # Before the mechanism check, as NEURON finds the node first.
                 _ensure_rangevar_topology(sec._sec, self._x, name)
             # diam, cm and i_cap (owner None) skip the method call.
@@ -1148,7 +1145,6 @@ class Segment:
                 return _pointer_rangevar_get(sec, self._x, name)
             return _RANGEVAR_GET(sym, sec._sec, self._x)
         if sym_type == TYPES.MECHANISM:
-            from .mechanism import Mechanism
 
             # Only an inserted mechanism is accessible as seg.<mech>. Real
             # NEURON raises AttributeError otherwise; a wrapper for an
@@ -1179,7 +1175,7 @@ class Segment:
                 inserted is None or name not in inserted
             ) and not self._sec.has_membrane(name):
                 raise AttributeError(f"'{name}' is not inserted in {self._sec!r}.")
-            mech = Mechanism(self._uncached_copy(), name)
+            mech = _PACKAGE.mechanism.Mechanism(self._uncached_copy(), name)
             if mech_cache is None:
                 mech_cache = {}
                 object.__setattr__(self, "_mech_cache", mech_cache)
@@ -1202,7 +1198,6 @@ class Segment:
 
     def __iter__(self):
         """Iterate over Mechanism objects for each inserted mechanism."""
-        from .mechanism import Mechanism
 
         self._sec._check_alive()  # now, as NEURON does, not on the first next()
         # At an end NEURON uses the node there (_zero_area_owner).
@@ -1211,7 +1206,7 @@ class Segment:
         def mechanisms():
             if end_mechanisms is not None:
                 for mech_name in end_mechanisms:
-                    yield Mechanism(self._uncached_copy(), mech_name)
+                    yield _PACKAGE.mechanism.Mechanism(self._uncached_copy(), mech_name)
                 return
             mech_cache = self._mech_cache
             generation = current_nseg_generation(self._sec._sec)
@@ -1220,7 +1215,7 @@ class Segment:
                 if cached is not None and cached._nseg == generation:
                     yield cached
                     continue
-                mech = Mechanism(self._uncached_copy(), mech_name)
+                mech = _PACKAGE.mechanism.Mechanism(self._uncached_copy(), mech_name)
                 if mech_cache is None:
                     mech_cache = {}
                     object.__setattr__(self, "_mech_cache", mech_cache)
@@ -1234,8 +1229,8 @@ class Segment:
 
         NEURON yields them in the order of the node's property list, which
         depends on insertion order and differs between nodes after an nseg
-        change; nrn_segment_mechanisms (pending upstream) reports it. Without
-        it, registration order. Not asked at an end: at x = 0 (or 1 on a
+        change; nrn_segment_mechanisms (when the core exports it) reports it.
+        Without it, registration order. Not asked at an end: at x = 0 (or 1 on a
         swapped section) the core runs setup_topology, which throws through
         ctypes on a section loop.
         """
@@ -1300,7 +1295,7 @@ class Segment:
         info = _get_symbol_info(name)
         if info is None:
             raise _name_error(
-                AttributeError, name, f"Variable '{name}' not found in {self!r}."
+                AttributeError, name, f"'nrn.Segment' object has no attribute '{name}'"
             )
         sym, sym_type, is_array, array_length = info
 
@@ -1317,7 +1312,7 @@ class Segment:
                         f"NMODL RANDOM variable '{name}' is not assignable"
                     )
             raise AttributeError(f"'{name}' is not a range variable on {self!r}.")
-        if not 0.0 < self._x < 1.0 and _TREE_CHANGED.value and not is_array:
+        if not 0.0 < self._x < 1.0 and _TREE_SET_UP[0] != EPOCH[0] and not is_array:
             _ensure_rangevar_topology(self._sec._sec, self._x, name)  # as __getattr__
         self._check_rangevar_mechanism(name)
         if is_array:
@@ -1427,16 +1422,12 @@ class Segment:
 
 # ── Section ───────────────────────────────────────────────────────────────────
 
-# Counter for the auto-generated names of a nameless Section(). Real NEURON
-# names these __nrnsec_0x<address>; myneuron uses the same format with a counter.
-_anon_section_count = 0
-
-
 # Times Section.nseg was changed, per section pointer. Mechanism wrappers and
 # range-variable references record it at creation: NEURON frees the old nodes'
 # storage when nseg changes, so they die. A dict read is far cheaper than
 # reading nseg through the C API on every wrapper creation. An nseg change made
-# from HOC code is counted when a range-variable reference is used (sync_nseg).
+# from HOC code is counted by current_nseg_generation when a wrapper is made,
+# and by sync_nseg when a range-variable reference is used.
 NSEG_GENERATION = {}
 
 # nseg at each generation, per section pointer: NSEG_HISTORY[sec][g]. NEURON
@@ -1447,40 +1438,19 @@ NSEG_GENERATION = {}
 NSEG_HISTORY = {}
 
 
-def _record_nseg_change(sec_ptr, old, new):
-    history = NSEG_HISTORY.get(sec_ptr)
-    if history is None or history[-1] != old:
-        # None, or left by a deleted section at this address (a HOC-created
-        # section can take one without passing through Section.__init__)
-        history = NSEG_HISTORY[sec_ptr] = [old]
-    history.append(new)
-    NSEG_GENERATION[sec_ptr] = len(history) - 1
-
-
-def nseg_generation(sec_ptr):
-    """The section's current generation, recording its nseg on first use.
-
-    One nseg read per section, not per wrapper: later calls are a dict hit.
-    """
-    generation = NSEG_GENERATION.get(sec_ptr)
-    if generation is None:
-        NSEG_HISTORY[sec_ptr] = [int(_nrn_nseg_get(sec_ptr))]
-        generation = NSEG_GENERATION[sec_ptr] = 0
-    return generation
+def _record_nseg(sec_ptr, nseg):
+    history = NSEG_HISTORY.setdefault(sec_ptr, [])
+    if not history or nseg != history[-1]:
+        history.append(nseg)
+        NSEG_GENERATION[sec_ptr] = len(history) - 1
 
 
 def sync_nseg(sec_ptr):
-    """Count an nseg change made from HOC code, which Section.nseg never saw.
-
-    Reads nseg, so it is for a reference being used, not one being made.
-    """
+    """Count an nseg change made since the last look, such as one from HOC code."""
+    nseg = _nrn_nseg_get(sec_ptr)
     history = NSEG_HISTORY.get(sec_ptr)
-    if history is None:
-        nseg_generation(sec_ptr)
-        return
-    nseg = int(_nrn_nseg_get(sec_ptr))
-    if nseg != history[-1]:
-        _record_nseg_change(sec_ptr, history[-1], nseg)
+    if history is None or nseg != history[-1]:
+        _record_nseg(sec_ptr, nseg)
 
 
 # Section pointer -> the model epoch at which current_nseg_generation last
@@ -1495,19 +1465,11 @@ def current_nseg_generation(sec_ptr):
     last read for this section: an nseg change from Python is recorded at
     once, and a HOC statement run from Python moves the epoch.
     """
-    epoch = _PACKAGE._MODEL_EPOCH
+    epoch = EPOCH[0] or _model_epoch()
     if _NSEG_SYNCED_AT.get(sec_ptr) != epoch:
         sync_nseg(sec_ptr)
         _NSEG_SYNCED_AT[sec_ptr] = epoch
     return NSEG_GENERATION.get(sec_ptr, 0)
-
-
-def _forget_nseg_history(sec_ptr):
-    # NEURON allocates sections from a pool and reuses their addresses, so
-    # the history must not outlive its section.
-    NSEG_HISTORY.pop(sec_ptr, None)
-    NSEG_GENERATION.pop(sec_ptr, None)
-    _NSEG_SYNCED_AT.pop(sec_ptr, None)
 
 
 def follow_node(sec_ptr, generation, x, reversed_):
@@ -1544,9 +1506,24 @@ def follow_node(sec_ptr, generation, x, reversed_):
     return (index + 0.5) / n
 
 
-# Sections created from Python, by pointer: a wrapper made from a raw pointer
-# (_from_ptr, e.g. sr.sec) can then tell a Python section from a HOC one.
-PYTHON_SECTIONS = weakref.WeakValueDictionary()
+def _forget_nseg_history(sec_ptr):
+    # NEURON allocates sections from a pool and reuses their addresses, so
+    # the history must not outlive its section.
+    NSEG_HISTORY.pop(sec_ptr, None)
+    NSEG_GENERATION.pop(sec_ptr, None)
+    _NSEG_SYNCED_AT.pop(sec_ptr, None)
+
+
+# Weak references to the sections created from Python, by pointer: a wrapper made
+# from a raw pointer (_from_ptr, e.g. sr.sec) can then tell a Python section from a
+# HOC one.
+PYTHON_SECTIONS = {}
+
+
+def forget_section(ref):
+    if PYTHON_SECTIONS.get(ref.key) is ref:
+        del PYTHON_SECTIONS[ref.key]
+        _forget_nseg_history(ref.key)
 
 
 def _section_for(sec_ptr):
@@ -1559,170 +1536,44 @@ def _section_for(sec_ptr):
     iteration, SectionRef and the tree methods. allsec() does the same lookup
     inline."""
     # The weak reference itself, as allsec() reads it: .get() costs more.
-    ref = PYTHON_SECTIONS.data.get(sec_ptr)
+    ref = PYTHON_SECTIONS.get(sec_ptr)
     sec = ref() if ref is not None else None
     return sec if sec is not None else Section._from_ptr(sec_ptr)
 
 
-# Sections owned by myneuron in core (gap-69), as NEURON's Python module owns
-# its sections: no HOC symbol, and core asks the hooks below for the name and
-# cell. secname, section_owner, gid2cell, NetCon.precell, the _pysec lookup,
-# cvode.statename and BBSaveState then see the cell. Section pointer ->
-# (name bytes, weakref to the cell or None). The name is fixed at creation,
-# "<str(cell)>.<name>" as in NEURON.
-OWNED_SECTIONS = {}
-# Entry for the section being created: core asks for its name before
-# nrn_section_new_owned returns its pointer.
-_creating = [None]
-# The last name handed to core; it must stay valid until the next call.
-_name_buffer = [None]
-# None until the first Section; then True if the hooks are ours.
-_owner_hooks = [None]
-# Core only stores the owner pointer; any non-NULL value identifies one.
-_next_owner = [1]
+def _hoc_statement_as_proc(name, statement):
+    """The HOC proc *name* that runs *statement*: a call of it raises HOC's error."""
+    n = _PACKAGE._n
+    if not _nrn_symbol(name.encode()):
+        n("proc %s() { %s }" % (name, statement))
+    return getattr(n, name)
 
 
-def _owned_entry(sec):
-    entry = OWNED_SECTIONS.get(sec)
-    return entry if entry is not None else _creating[0]
+def _density_mechanism_symbol(name):
+    """The symbol of the density mechanism *name*, for insert and uninsert.
 
-
-def _owner_name(sec):
-    try:
-        entry = _owned_entry(sec)
-        name = entry[0] if entry is not None else None
-        if name is None:
-            name = b"__nrnsec_0x%x" % sec
-    except BaseException:  # never raise through core; the name must not be NULL
-        name = b"__nrnsec_0x%x" % (sec or 0)
-    _name_buffer[0] = ctypes.create_string_buffer(name)
-    return ctypes.addressof(_name_buffer[0])
-
-
-def _owner_cell_object(sec):
-    entry = OWNED_SECTIONS.get(sec)
-    cell = entry[1]() if entry is not None and entry[1] is not None else None
-    return cell
-
-
-def _owner_cell(sec):
-    # A new reference to the cell as a HOC object, or NULL.
-    try:
-        cell = _owner_cell_object(sec)
-        if cell is None:
-            return None
-        from .api import _nrn_object_ref
-        from .object import Object
-        from .utils import _new_python_object
-
-        if isinstance(cell, Object):
-            _nrn_object_ref(cell._obj)
-            return cell._obj
-        return _new_python_object(cell)
-    except BaseException as exc:
-        print(f"myneuron: section owner cell hook: {exc!r}", file=sys.stderr)
-        return None
-
-
-def _owner_cell_equals(sec, obj):
-    try:
-        if sec not in OWNED_SECTIONS:
-            return 0
-        cell = _owner_cell_object(sec)
-        from .api import _nrn_class_name, _unwrap_pythonobject
-        from .object import Object
-
-        if isinstance(cell, Object):
-            return int(cell._obj == obj)
-        if obj and _nrn_class_name(obj) == b"PythonObject":
-            return int(_unwrap_pythonobject(obj) is cell)
-        return int(cell is None and not obj)
-    except BaseException as exc:
-        print(f"myneuron: section owner cell_equals hook: {exc!r}", file=sys.stderr)
-        return 0
-
-
-def _install_owner_hooks():
-    from . import api
-
-    _owner_hooks[0] = False
-    if api._nrn_section_owner_hooks_set is None:
-        return
-    hooks = (
-        api.SECTION_OWNER_NAME_T(_owner_name),
-        api.SECTION_OWNER_CELL_T(_owner_cell),
-        api.SECTION_OWNER_CELL_EQUALS_T(_owner_cell_equals),
-    )
-    error = ctypes.create_string_buffer(256)
-    # Refused when NEURON's Python module already installed its own hooks
-    # (neuron imported first); myneuron's sections then stay free-standing.
-    if api._nrn_section_owner_hooks_set(*hooks, error, len(error)):
-        api._CFUNCTYPE_KEEPALIVE.extend(hooks)
-        _owner_hooks[0] = True
-
-
-def take_over_legacy_owner_hooks():
-    """nrniv -python: clear the owner hooks NEURON's own module installed.
-
-    nrn_section_owner_hooks_set refuses another provider's hooks. Embedded,
-    the facades replace that module, so it makes no sections of its own;
-    this interface's hooks go (back) in at the next Section.
+    nrn_mechanism_insert takes any symbol's subtype for a mechanism type:
+    another kind of symbol aborts the process or inserts some other mechanism.
+    As in NEURON, only a density mechanism goes in or out (morphology and
+    capacitance are in every section).
     """
-    from . import api
-
-    for name in (
-        "nrnpy_pysec_name_p_",
-        "nrnpy_pysec_cell_p_",
-        "nrnpy_pysec_cell_equals_p_",
+    symbol = _nrn_symbol(name.encode("utf-8"))
+    if (
+        not symbol
+        or int(_nrn_symbol_type(symbol)) != TYPES.MECHANISM
+        or name in _EVERY_SECTION_MECHANISMS
     ):
-        try:
-            ctypes.c_void_p.in_dll(api.libnrniv, name).value = None
-        except ValueError:  # not a Python-enabled core
-            return
-    _owner_hooks[0] = None
+        # NEURON's message, then the names that would work, so a typo is
+        # easy to spot.
+        available = ", ".join(sorted(_PACKAGE.mechanism._all_density_mechanism_names()))
+        raise ValueError(
+            f"argument not a density mechanism name. {name!r} is not "
+            f"one; density mechanisms: {available or '(none)'}"
+        )
+    return symbol
 
 
-def _new_owned_section(name, cell):
-    """Create a section owned by myneuron in core, or return None."""
-    if _owner_hooks[0] is None:
-        _install_owner_hooks()
-    if not _owner_hooks[0]:
-        return None
-    from .api import _nrn_section_new_owned
-
-    if name is not None:
-        if cell is not None:
-            name = f"{cell}.{name}"
-        name = name.encode("utf-8")
-    entry = (name, weakref.ref(cell) if cell is not None else None)
-    owner = _next_owner[0]
-    _next_owner[0] += 1
-    _creating[0] = entry
-    try:
-        with HOC_LOCK:
-            sec = _nrn_section_new_owned(owner)
-    finally:
-        _creating[0] = None
-    if not sec:
-        return None
-    OWNED_SECTIONS[sec] = entry
-    return sec
-
-
-def _release_owned_section(sec):
-    from .api import _nrn_section_owned_release
-
-    with HOC_LOCK:
-        _nrn_section_owned_release(sec)  # asks the name hook; entry still present
-    OWNED_SECTIONS.pop(sec, None)
-    # The section may be gone now, and nothing allsec() checks moves when an
-    # interior one goes (the garbage collector can do this mid-loop).
-    from . import _bump_model_epoch
-
-    _bump_model_epoch()
-
-
-class Section:
+class Section(SECTION_BASE):
     """A NEURON section — a continuous unbranched cable, the unit of topology.
 
     Create with ``n.Section('soma')`` (canonical) or ``Section('soma')``.
@@ -1737,64 +1588,36 @@ class Section:
     # __weakref__: dependents hold Python-owned Sections weakly, so the last
     # owning wrapper still controls native lifetime. Dependents hold non-owning
     # HOC/template wrappers strongly (gap-50).
-    __slots__ = (
-        "_cell",
-        "_sec",
-        "_pynative",
-        "_inserted_mechs",
-        "_inserted_mechs_epoch",
-        "__weakref__",
-    )
+    __module__ = NRN_CLASS_MODULE
+    # The base has the other slots, and makes the section. When an object goes
+    # so does its section; a wrapper drops the reference _from_ptr took.
+    __slots__ = ("__weakref__",)
 
-    def __init__(self, name=None, cell=None, _pynative=True):
-        try:
-            object.__getattribute__(self, "_sec")
-        except AttributeError:
-            pass
-        else:
-            # Already made: NEURON's NPySecObj_init does nothing then, and a
-            # second section would leave PYTHON_SECTIONS mapping the first
-            # one's pointer to this object.
-            return
-        if cell is not None and isinstance(cell, str):
-            raise TypeError("cell must be an object, not a string")
-        if cell is not None and not str(cell).isascii():
-            raise TypeError("cell name contains non ascii character")
-        raw_name = name
-        if name is None:
-            # No name: auto-generate a unique one, as real NEURON does.
-            global _anon_section_count
-            name = "__nrnsec_0x%x" % _anon_section_count
-            _anon_section_count += 1
-        self._cell = weakref.ref(cell) if cell is not None else None
-        if "\x00" in name:
-            # c_char_p accepts a NUL and nrn_section_new truncates there, so
-            # two names differing only after a NUL would collapse into one.
-            # Reject like real NEURON.
-            raise ValueError("embedded null character")
-        sec = _new_owned_section(raw_name, cell) if _pynative else None
-        if not sec:
-            sec = _nrn_section_new(name.encode("utf-8"))
-            # Without the owner hooks this wrapper owns the section by itself.
-            # Hold a reference, as NEURON does for a Python Section: after a
-            # HOC delete_section the struct then stays, so its slot can't go
-            # to a new section that __del__ would then delete. __del__ drops
-            # it, as it drops _from_ptr's.
-            _nrn_section_ref(sec)
-        self._sec = sec
-        _forget_nseg_history(self._sec)
-        # The new section may have a freed section's slot, though not one a
-        # wrapper still holds (_from_ptr). Moving the epoch makes allsec()
-        # and Mechanism wrappers check again (gap-68).
-        from . import _bump_model_epoch
-
-        _bump_model_epoch()
-        self._pynative = _pynative
-        if _pynative:
-            PYTHON_SECTIONS[self._sec] = self
-        # Lazy cache for _get_inserted_mechs (see there).
-        self._inserted_mechs = None
-        self._inserted_mechs_epoch = -1
+    def __init__(self, name=None, cell=None):
+        prefix = ""
+        if cell is not None:
+            if isinstance(cell, str):
+                raise TypeError("cell must be an object, not a string")
+            prefix = str(cell) + "."  # not format(): as NEURON
+            if not prefix.isascii():
+                raise TypeError("cell name contains non ascii character")
+            cell = weakref.ref(cell)
+            if not CALLS_PYTHON:
+                cell = ("" if name is None else prefix, cell)
+        if name is not None:
+            if name.__class__ is not str and not isinstance(name, str):
+                raise TypeError(f"argument 1 must be str, not {type(name).__name__}")
+            if "\x00" in name:
+                raise ValueError("embedded null character")
+            # Fixed here, as in NEURON.
+            name = f"{prefix}{name}".encode("utf-8")
+        # Does nothing for an object that has its section, as NPySecObj_init.
+        super().__init__(name, cell)
+        ptr = self._sec
+        ref = PYTHON_SECTIONS.get(ptr)
+        if ref is None or ref() is not self:
+            _forget_nseg_history(ptr)  # a HOC section's that was here
+            PYTHON_SECTIONS[ptr] = weakref.KeyedRef(self, forget_section, ptr)
 
     @classmethod
     def _from_ptr(cls, sec_ptr):
@@ -1815,7 +1638,7 @@ class Section:
         """
         obj = cls.__new__(cls)
         # The wrapper holds the struct, as NEURON's does (section_ref in
-        # nrnpy_nrn.cpp). Without it, a HOC delete_section freed the struct
+        # 9.0's nrnpy_nrn.cpp). Without it, a HOC delete_section freed the struct
         # and about 1000 creations later a new section took its slot: the
         # wrapper then read and wrote that section, and delete_section(sec=)
         # deleted it. Taken before the slots are set, so __del__ drops only
@@ -1891,8 +1714,20 @@ class Section:
             # attributes and properties; NEURON broadcasts range variables only.
             object.__setattr__(self, name, value)
         else:
-            for seg in self:
-                setattr(seg, name, value)
+            try:
+                for seg in self:
+                    setattr(seg, name, value)
+            except AttributeError:
+                if _get_symbol_info(name) is None:
+                    raise AttributeError(
+                        f"'nrn.Section' object has no attribute '{name}'"
+                    ) from None
+                raise
+            except IndexError as exc:
+                # NEURON's text for a section-level array without a subscript.
+                if exc.args == (f"{name} needs an index for assignment",):
+                    raise IndexError("missing index") from None
+                raise
 
     def __dir__(self):
         attrs = set(object.__dir__(self))
@@ -1948,7 +1783,25 @@ class Section:
         except AttributeError:
             raise AttributeError(name) from None
         self._check_alive()
-        return getattr(self(0.5), name)
+        try:
+            value = getattr(self(0.5), name)
+        except AttributeError:
+            if _get_symbol_info(name) is None:
+                raise AttributeError(
+                    f"'nrn.Section' object has no attribute '{name}'"
+                ) from None
+            raise
+        cls = value.__class__
+        if cls is float:
+            return value
+        if cls is _ArrayRangeVar:
+            # Same layout: re-class the fresh wrapper instead of rebuilding it.
+            value.__class__ = _SectionArrayRangeVar
+        elif cls is _PACKAGE.mechanism.Mechanism:
+            # NEURON has no sec.hh: reaching the middle segment's mechanism
+            # turned sec.hh.gnabar = x into a one-segment write.
+            raise AttributeError(f"'nrn.Section' object has no attribute '{name}'")
+        return value
 
     def __contains__(self, obj):
         """True if obj.sec is this section (a Segment, an rxd node), as NEURON's."""
@@ -1964,8 +1817,11 @@ class Section:
             # a section changes both the remaining midpoints and the stopping
             # point.
             i = 0
-            while i < self.nseg:
-                yield self((i + 0.5) / self.nseg)
+            while True:
+                nseg = self.nseg
+                if i >= nseg:
+                    return
+                yield self((i + 0.5) / nseg)
                 i += 1
 
         return segments()
@@ -1982,12 +1838,11 @@ class Section:
         return segments()
 
     def insert(self, mechanism):
-        from .mechanism import DensityMechanism
 
         # Direct-C path (no sec= push): inserting into a section freed through
         # HOC SIGSEGVs the core.
         self._check_alive()
-        if isinstance(mechanism, DensityMechanism):
+        if isinstance(mechanism, _PACKAGE.mechanism.DensityMechanism):
             mechanism = mechanism.name
         elif not isinstance(mechanism, (str, bytes)):
             # As NEURON's: an object with an insert method inserts itself
@@ -2000,54 +1855,37 @@ class Section:
                 )
             insert(self)
             return self
-        if not isinstance(mechanism, bytes):
-            mechanism_bytes = mechanism.encode("utf-8")
-        else:
-            mechanism_bytes = mechanism
-            mechanism = mechanism_bytes.decode("utf-8")
-        mech_symbol = _nrn_symbol(mechanism_bytes)
-        # nrn_mechanism_insert takes any symbol's subtype for a mechanism
-        # type: another kind of symbol aborts the process or inserts some
-        # other mechanism. As in NEURON, only a density mechanism goes in
-        # (morphology and capacitance are in every section already).
-        if (
-            not mech_symbol
-            or int(_nrn_symbol_type(mech_symbol)) != TYPES.MECHANISM
-            or mechanism in _EVERY_SECTION_MECHANISMS
-        ):
-            # NEURON's message, then the names that would work, so a typo is
-            # easy to spot.
-            from .mechanism import _all_density_mechanism_names
-
-            available = ", ".join(sorted(_all_density_mechanism_names()))
-            raise ValueError(
-                f"argument not a density mechanism name. {mechanism!r} is not "
-                f"one; density mechanisms: {available or '(none)'}"
+        if isinstance(mechanism, bytes):
+            mechanism = mechanism.decode("utf-8")
+        mech_symbol = _density_mechanism_symbol(mechanism)
+        # In a callback core's data may be frozen. HOC returns the error; through
+        # ctypes it would unwind the callback's Python frames (gap-89).
+        if in_hoc_call():
+            _hoc_statement_as_proc(f"_mn_insert_{mechanism}", f"insert {mechanism}")(
+                sec=self
             )
-        _nrn_mechanism_insert(self._sec, mech_symbol)
-        from . import _bump_model_epoch
+        else:
+            _nrn_mechanism_insert(self._sec, mech_symbol)
 
         _bump_model_epoch()
         self._inserted_mechs = None
         return self  # as NEURON's, so inserts chain
 
     def uninsert(self, mechanism):
-        """Remove a previously inserted mechanism.
+        """Remove a mechanism; nothing to do if it is not inserted.
 
-        Raises ``ValueError`` if the mechanism is not inserted. Routes through
-        the HOC ``uninsert`` statement because ``neuronapi.h`` has no
+        Through the HOC ``uninsert`` statement: ``neuronapi.h`` has no
         ``nrn_mechanism_uninsert`` (gap-8).
         """
-        from .mechanism import DensityMechanism
-
-        if isinstance(mechanism, DensityMechanism):
+        self._check_alive()
+        if isinstance(mechanism, _PACKAGE.mechanism.DensityMechanism):
             mechanism = mechanism.name
-        if not self.has_membrane(mechanism):
-            raise ValueError(f"mechanism '{mechanism}' is not inserted")
-        from . import NEURON
-
-        NEURON()(f"uninsert {mechanism}", sec=self)
+        elif not isinstance(mechanism, str):
+            raise TypeError(f"argument 1 must be str, not {type(mechanism).__name__}")
+        _density_mechanism_symbol(mechanism)
+        _PACKAGE._n(f"uninsert {mechanism}", sec=self)
         self._inserted_mechs = None
+        return self  # as NEURON's
 
     def _get_inserted_mechs(self):
         """Return the cached list of mechanism names inserted on this section.
@@ -2066,52 +1904,46 @@ class Section:
             cached = object.__getattribute__(self, "_inserted_mechs")
         except AttributeError:
             cached = None
-        from . import NEURON, _model_epoch
 
-        epoch = _model_epoch()
+        epoch = EPOCH[0] or _model_epoch()
         if cached is not None:
             # HOC-side inserts and inserts through another wrapper skip local
             # invalidation, so also require the current model epoch (see
-            # _MODEL_EPOCH in __init__.py). An unset epoch slot counts as stale.
+            # api.EPOCH). An unset epoch slot counts as stale.
             try:
                 built = object.__getattribute__(self, "_inserted_mechs_epoch")
             except AttributeError:
                 built = -1
             if built == epoch:
                 return cached
-        from .mechanism import _all_density_mechanism_names
 
-        n = NEURON()
+        n = _PACKAGE._n
         inserted = [
             name
-            for name in _all_density_mechanism_names()
+            for name in _PACKAGE.mechanism._all_density_mechanism_names()
             if n.ismembrane(name, sec=self)
         ]
         self._inserted_mechs = inserted
-        # ismembrane is a HOC call, which itself bumps the epoch; record the
-        # epoch after the calls or the cache is stale as soon as it is built.
-        self._inserted_mechs_epoch = _model_epoch()
+        # Recorded after the calls: a call that bumps the epoch would make the
+        # cache stale as soon as it is built.
+        self._inserted_mechs_epoch = EPOCH[0] or _model_epoch()
         return inserted
 
     def has_membrane(self, mechanism):
         """Return True if *mechanism* is inserted in this section."""
-        from . import NEURON
 
-        return bool(NEURON().ismembrane(mechanism, sec=self))
+        return bool(_PACKAGE._n.ismembrane(mechanism, sec=self))
 
     def name(self):
         self._check_alive()
-        from . import NEURON
 
-        raw = NEURON().secname(sec=self)
+        raw = _PACKAGE._n.secname(sec=self)
         if raw.startswith("_pysec."):
             raw = raw[7:]
-        if self._sec in OWNED_SECTIONS:
+        if CALLS_PYTHON:
             return raw  # core's name already has the cell, as in NEURON
-        cell = _python_cell(self)
-        if cell is not None:
-            return f"{cell}.{raw}"
-        return raw
+        entry = _cell_entry(self)
+        return raw if entry is None else entry[0] + raw
 
     def __repr__(self):
         # name() is already cell-qualified; prefixing again would give
@@ -2158,15 +1990,16 @@ class Section:
                 f"nseg must be an integer in range 1 to 32767, got {value!r}"
             )
 
-        old = int(_nrn_nseg_get(self._sec))
-        _nrn_nseg_set(self._sec, int(value))
+        sync_nseg(self._sec)  # an nseg change made from HOC code comes first
+        if in_hoc_call():  # as in insert()
+            _hoc_statement_as_proc("_mn_set_nseg", "nseg = $1")(int(value), sec=self)
+        else:
+            _nrn_nseg_set(self._sec, int(value))
         # nrn_nseg_set flips diam_changed, which CachedSegment watches
         # (api.get_topology_version). New nodes free the old mechanism storage,
         # so Mechanism wrappers and range-variable references must revalidate.
         # Setting the same nseg changes nothing in NEURON.
-        if int(value) != old:
-            _record_nseg_change(self._sec, old, int(value))
-        from . import _bump_model_epoch
+        _record_nseg(self._sec, int(value))
 
         _bump_model_epoch()
         self._inserted_mechs = None
@@ -2180,9 +2013,7 @@ class Section:
         self._check_alive()
         cell = _python_cell(self)
         if cell is None:
-            from . import NEURON
-
-            cell = NEURON().section_owner(sec=self)
+            cell = _PACKAGE._n.section_owner(sec=self)
         return cell
 
     @property
@@ -2214,7 +2045,7 @@ class Section:
         self._check_alive()
         # The C API (neuronapi.cpp:115) accepts anything, with a pending
         # "ensure val > 0" note. Real NEURON's wrapper validates
-        # (nrnpy_nrn.cpp:2065-2071); match it. NaN and inf need explicit checks.
+        # (9.0's nrnpy_nrn.cpp); match it. NaN and inf need explicit checks.
 
         if not _is_finite(value) or value <= 0:
             raise ValueError("Ra must be > 0.")
@@ -2281,7 +2112,7 @@ class Section:
         if isinstance(parent, Segment):
             # Real NEURON overloads connect(parent_segment, child_end): the
             # segment supplies parent_x and the second positional argument is
-            # reinterpreted as child_x (nrnpy_nrn.cpp::NPySecObj_connect).
+            # reinterpreted as child_x (9.0's nrnpy_nrn.cpp::NPySecObj_connect).
             if parent_x is not _CONNECT_ARG_UNSET:
                 child_x = parent_x
             parent_x = parent.x
@@ -2306,9 +2137,7 @@ class Section:
             # TODO(gap-82): it has also reversed the child to child_x by then;
             # a nothrow connect in the C API would leave all of it to NEURON.
             if _nrn_section_parent(self._sec):
-                from . import NEURON
-
-                NEURON().disconnect(sec=self)
+                _PACKAGE._n.disconnect(sec=self)
             raise RuntimeError(
                 f"hoc_execerror: {Section.name(self)} connection will form loop"
             )
@@ -2319,9 +2148,8 @@ class Section:
     def parentseg(self):
         """Return the parent Segment, or None if this is a root section."""
         self._check_alive()
-        from . import NEURON
 
-        n = NEURON()
+        n = _PACKAGE._n
         parent_ptr = _nrn_section_parent(self._sec)
         if not parent_ptr:
             return None
@@ -2345,9 +2173,8 @@ class Section:
 
     def orientation(self):
         """Return which end (0 or 1) of this section is connected to parent."""
-        from . import NEURON
 
-        return NEURON().section_orientation(sec=self)
+        return _PACKAGE._n.section_orientation(sec=self)
 
     def subtree(self):
         """Return a list of this section and all its descendants.
@@ -2404,12 +2231,11 @@ class Section:
         parent is the true parent. This is an ancestor walk, not a single hop
         (it differs from one hop for multi-level 0-connected chains). Mirrors
         NEURON's ``nrn_trueparent`` / ``pysec_trueparentseg`` (cabcode.cpp:1577,
-        nrnpy_nrn.cpp:1096).
+        9.0's nrnpy_nrn.cpp).
         """
         self._check_alive()
-        from . import NEURON
 
-        n = NEURON()
+        n = _PACKAGE._n
         sec = self
         ps = sec.parentseg()
         psec = ps.sec if ps is not None else None
@@ -2427,65 +2253,13 @@ class Section:
 
     def spine3d(self, i):
         """Return spine flag at 3D point i."""
-        from . import NEURON
 
-        return int(NEURON().spine3d(i, sec=self))
+        return int(_PACKAGE._n.spine3d(i, sec=self))
 
     def disconnect(self):
         """Disconnect this section from its parent."""
-        from . import NEURON
 
-        NEURON().disconnect(sec=self)
-
-    def __del__(self):
-        # Skip during interpreter shutdown.
-        if (
-            getattr(sys, "meta_path", None) is None
-            or getattr(sys, "modules", None) is None
-        ):
-            return
-        # __init__ may have raised before setting the slots. An unset-slot read
-        # recurses through __getattr__ and _check_alive, so go straight to the
-        # slot descriptor.
-        try:
-            pynative = object.__getattribute__(self, "_pynative")
-            sec_ptr = object.__getattribute__(self, "_sec")
-        except AttributeError:
-            return
-        if pynative:
-            # Before the section can be freed, as NEURON clears PROP_PY_INDEX
-            # before sec_free: weak references are cleared only after
-            # __del__ returns, so a subclass __del__ still running here could
-            # otherwise be handed out for a new section in this slot.
-            if PYTHON_SECTIONS.get(sec_ptr) is self:
-                del PYTHON_SECTIONS[sec_ptr]
-            _forget_nseg_history(sec_ptr)
-            if sec_ptr in OWNED_SECTIONS:
-                # Frees it, or drops the reference a HOC delete_section kept.
-                _release_owned_section(sec_ptr)
-                return
-            if _nrn_section_is_active(sec_ptr):
-                from . import n
-
-                # Pop via HOC `pop_section()`, not the C `nrn_section_pop`.
-                # The C API calls chk_access first, which errors with
-                # "Accessing a deleted section" because delete_section already
-                # invalidated the top of the stack. HOC's pop_section skips
-                # that check (cabcode.cpp:2165). Without it every __del__
-                # leaks one section-stack slot and the stack overflows at ~200
-                # (NSECSTACK, cabcode.cpp:73). See the stack-leak section of
-                # KNOWN_GAPS.md.
-                with HOC_LOCK:
-                    _nrn_section_push(sec_ptr)
-                    n.delete_section()
-                    n.pop_section()
-            # The reference __init__ took. A section HOC already deleted has
-            # kept its struct for it, and goes now.
-            _nrn_section_unref(sec_ptr)
-        else:
-            # The reference _from_ptr took. As above, the last one frees the
-            # struct of a section HOC already deleted.
-            _nrn_section_unref(sec_ptr)
+        _PACKAGE._n.disconnect(sec=self)
 
     def psection(self):
         """Return a dict of section properties matching real NEURON's format."""
@@ -2566,65 +2340,42 @@ class Section:
         }
 
     def arc3d(self, i):
-        from . import NEURON
-
-        return NEURON().arc3d(i, sec=self)
+        return _PACKAGE._n.arc3d(i, sec=self)
 
     def diam3d(self, i):
-        from . import NEURON
-
-        return NEURON().diam3d(i, sec=self)
+        return _PACKAGE._n.diam3d(i, sec=self)
 
     def pt3dadd(self, x, y, z, d):
-        from . import NEURON
-
-        return NEURON().pt3dadd(x, y, z, d, sec=self)
+        return _PACKAGE._n.pt3dadd(x, y, z, d, sec=self)
 
     def pt3dchange(self, i, *args):
-        from . import NEURON
-
-        return NEURON().pt3dchange(i, *args, sec=self)
+        return _PACKAGE._n.pt3dchange(i, *args, sec=self)
 
     def pt3dclear(self, *args):
-        from . import NEURON
-
-        return NEURON().pt3dclear(*args, sec=self)
+        return _PACKAGE._n.pt3dclear(*args, sec=self)
 
     def pt3dinsert(self, i, x, y, z, d):
-        from . import NEURON
-
-        return NEURON().pt3dinsert(i, x, y, z, d, sec=self)
+        return _PACKAGE._n.pt3dinsert(i, x, y, z, d, sec=self)
 
     def pt3dremove(self, i):
         """remove the ith point"""
-        from . import NEURON
 
-        return NEURON().pt3dremove(i, sec=self)
+        return _PACKAGE._n.pt3dremove(i, sec=self)
 
     def pt3dstyle(self, *args):
-        from . import NEURON
-
-        return NEURON().pt3dstyle(*args, sec=self)
+        return _PACKAGE._n.pt3dstyle(*args, sec=self)
 
     def n3d(self):
-        from . import NEURON
-
-        return int(NEURON().n3d(sec=self))
+        return int(_PACKAGE._n.n3d(sec=self))
 
     def x3d(self, i):
-        from . import NEURON
-
-        return NEURON().x3d(i, sec=self)
+        return _PACKAGE._n.x3d(i, sec=self)
 
     def y3d(self, i):
-        from . import NEURON
-
-        return NEURON().y3d(i, sec=self)
+        return _PACKAGE._n.y3d(i, sec=self)
 
     def z3d(self, i):
-        from . import NEURON
-
-        return NEURON().z3d(i, sec=self)
+        return _PACKAGE._n.z3d(i, sec=self)
 
 
 # ── CachedSegment ─────────────────────────────────────────────────────────────
@@ -2678,7 +2429,11 @@ class CachedSegment:
             raise RuntimeError(
                 "CachedSegment is stale: nseg changed since cache. Call refresh()."
             )
-        if get_topology_version() != self._topo_ver_at_cache:
+        # get_topology_version() without a call
+        if (
+            _diam_changed.value,
+            _structure_change_count(),
+        ) != self._topo_ver_at_cache:
             raise RuntimeError(
                 "CachedSegment is stale: topology or diameter changed "
                 "since cache (nseg, diam, finitialize, or similar). "

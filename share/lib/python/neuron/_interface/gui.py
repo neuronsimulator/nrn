@@ -116,21 +116,26 @@ class LoopTimer(threading.Thread):
         self._running = threading.Event()
         threading.Thread.__init__(self, daemon=True)
 
-    def run(self):
-        # Bind this OS thread to NEURON's thread-local state before processing
-        # events. See nrn/src/nrniv/nrniv.cpp:nrniv_bind_thread. This does not
-        # make arbitrary concurrent HOC calls safe.
-        h.nrniv_bind_thread(threading.current_thread().ident)
+    def start(self):
+        super().start()
+        # Not in the new thread: this one may hold HOC_LOCK (the first import of
+        # the module can be in a HOC call), and waits for it.
+        h.nrniv_bind_thread(self.ident)
         self.started = True
         self._running.set()
+
+    def run(self):
+        self._running.wait()
         while self._running.is_set():
             self.fun()
             time.sleep(self.interval)
 
     def stop(self):
-        """Stop the timer thread and wait for it to terminate."""
+        """Stop the timer thread and wait (a bounded time) for it to end."""
         self._running.clear()
-        self.join()
+        # h.quit() runs the exit handlers, and so this, holding HOC_LOCK, for
+        # which the thread may be waiting.
+        self.join(timeout=1.0)
 
 
 # --- Module import side effects ---
@@ -145,11 +150,6 @@ if h.nrnversion(9) == "2":  # Launched with Python (instead of nrniv)
             timer.stop()
 
     atexit.register(cleanup)
-
-    # TODO(gap-46): replace spin-wait with threading.Event to avoid hang if LoopTimer.run
-    # raises before setting self.started = True.
-    while not timer.started:
-        time.sleep(0.001)
 
 h.load_file("nrngui.hoc")
 

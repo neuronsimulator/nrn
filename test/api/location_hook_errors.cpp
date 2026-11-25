@@ -136,14 +136,13 @@ int main() {
         return 1;
     }
     bool ok = true;
-    // No hook installed (-nopython).
-    ok &= check(nrnpy_o2loc_p_ == nullptr && nrnpy_o2loc2_p_ == nullptr, "no hooks installed");
+    ok &= exercise("NEURON's hooks, not a Python object");
+    nrnpy_o2loc_p_ = nullptr;
+    nrnpy_o2loc2_p_ = nullptr;
     ok &= exercise("no hook");
     // A hook that cannot produce a section.
     nrnpy_o2loc_p_ = leave_section_null;
     nrnpy_o2loc2_p_ = leave_section_null;
     ok &= exercise("hook leaves the section NULL");
-    nrnpy_o2loc_p_ = nullptr;
-    nrnpy_o2loc2_p_ = nullptr;
     return ok ? 0 : 1;
 }

@@ -537,7 +537,7 @@ static void section_unlink(Section* sec) /* other sections no longer reference t
 {
     /* only sections that are explicitly connected to this are disconnected */
     Section* child;
-    tree_changed = 1;
+    nrn_tree_changed();
     /* disconnect the sections connected to this at the parent end */
     for (child = sec->child; child; child = child->sibling) {
         nrn_disconnect(child);

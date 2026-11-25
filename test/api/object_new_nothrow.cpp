@@ -48,6 +48,23 @@ int main(void) {
     nrn_double_push(42.0);
     ok &= check(nrn_double_pop() == 42.0, "stack is intact after a failed construction");
 
+    // A method that returns a number, and what kind of number it says it is
+    double x = 0;
+    auto number = [&](const char* method, int narg) {
+        return nrn_method_call_number(v, nrn_method_symbol(v, method), narg, &x, err, sizeof(err));
+    };
+    ok &= check(number("size", 0) == 1 && x == 3, "Vector.size() is the integer 3");
+    ok &= check(number("sum", 0) == 0 && x == 0, "Vector.sum() is a double");
+    nrn_double_push(7);
+    ok &= check(number("contains", 1) == 2 && x == 0, "Vector.contains(7) is false");
+    nrn_double_push(7);
+    ok &= check(number("get", 1) == -1 && err[0] && nrn_double_pop() == 7, "an error");
+    nrn_hoc_call(
+        "objref o, sf\no = new Vector()\nsf = new StringFunctions()\n"
+        "sf.alias(o, \"a\", &hoc_ac_)");
+    Object* o = nrn_symbol_object_get(nrn_symbol("o"));
+    ok &= check(nrn_object_alias(o, "a") && !nrn_object_alias(o, "size"), "nrn_object_alias");
+
     // A NULL error buffer is tolerated on both paths.
     Object* v2 = nullptr;
     rc = nrn_object_new_nothrow(nrn_symbol("Vector"), 0, &v2, nullptr, 0);
