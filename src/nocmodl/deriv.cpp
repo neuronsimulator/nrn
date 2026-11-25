@@ -6,6 +6,7 @@
 #include <ctype.h>
 #undef METHOD
 #include "parse1.hpp"
+#include "splitfor.h"
 
 static List* deriv_imp_list; /* list of derivative blocks that were
  translated in form suitable for the derivimplicit method */
@@ -463,6 +464,8 @@ void massagederiv(Item* q1, Item* q2, Item* q3, Item* q4) {
     char units[SB];
     Item *qs, *q, *mixed_eqns(Item * q2, Item * q3, Item * q4);
     Symbol *s, *derfun, *state;
+
+    splitfor_solve_info(q1, q2, q3, q4);
 
     /* to allow verification that definition after SOLVE */
     if (!massage_list_) {
