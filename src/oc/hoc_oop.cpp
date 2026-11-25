@@ -1590,12 +1590,12 @@ void hoc_endtemplate(Symbol* t) {
     }
 }
 
-void class2oc_base(const char* name,
-                   ctor_f* cons,
-                   dtor_f* destruct,
-                   Member_func* m,
-                   Member_ret_obj_func* mobjret,
-                   Member_ret_str_func* strret) {
+void class2oc(const char* name,
+              ctor_f* cons,
+              dtor_f* destruct,
+              Member_func* m,
+              Member_ret_obj_func* mobjret,
+              Member_ret_str_func* strret) {
     extern int hoc_main1_inited_;
     Symbol *tsym, *s;
     cTemplate* t;
@@ -1637,16 +1637,6 @@ void class2oc_base(const char* name,
             hoc_add_publiclist(s);
         }
     hoc_endtemplate(tsym);
-}
-
-
-void class2oc(const char* name,
-              ctor_f* cons,
-              dtor_f* destruct,
-              Member_func* m,
-              Member_ret_obj_func* mobjret,
-              Member_ret_str_func* strret) {
-    class2oc_base(name, cons, destruct, m, mobjret, strret);
 }
 
 Symbol* hoc_decl(Symbol* s) {

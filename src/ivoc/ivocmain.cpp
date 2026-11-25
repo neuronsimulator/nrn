@@ -772,10 +772,7 @@ nrniv [options] [fileargs]
         use_python_interpreter = 1;
     }
 
-    if (neuron::python::methods.interpreter_start) {
-        neuron::python::methods.interpreter_start(1);
-    }
-    if (use_python_interpreter && !neuron::python::methods.interpreter_start) {
+    if (use_python_interpreter && !neuron::python::methods.interpreter_run) {
         fprintf(stderr, "Python not available\n");
         exit(1);
     }
@@ -793,15 +790,11 @@ nrniv [options] [fileargs]
 #if defined(USE_PYTHON)
     if (use_python_interpreter) {
         // process the .py files and an interactive interpreter
-        if (neuron::python::methods.interpreter_start &&
-            neuron::python::methods.interpreter_start(2) != 0) {
+        if (neuron::python::methods.interpreter_run() != 0) {
             // We encountered an error when processing the -c argument or Python
             // script given on the commandline.
             exit_status = 1;
         }
-    }
-    if (neuron::python::methods.interpreter_start) {
-        neuron::python::methods.interpreter_start(0);
     }
 #endif
     hoc_final_exit();

@@ -966,8 +966,8 @@ void inputReadyThread() {
 
 void hoc_final_exit(void) {
 #if defined(USE_PYTHON)
-    if (neuron::python::methods.interpreter_start) {
-        neuron::python::methods.interpreter_start(0);
+    if (neuron::python::methods.interpreter_finalize) {
+        neuron::python::methods.interpreter_finalize();
     }
 #endif
     bbs_done();

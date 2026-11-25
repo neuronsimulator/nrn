@@ -1027,12 +1027,12 @@ int point_reg_helper(Symbol* s2) {
     return pointtype++;
 }
 
-extern void class2oc_base(const char*,
-                          ctor_f* cons,
-                          dtor_f* destruct,
-                          Member_func*,
-                          Member_ret_obj_func*,
-                          Member_ret_str_func*);
+extern void class2oc(const char*,
+                     ctor_f* cons,
+                     dtor_f* destruct,
+                     Member_func*,
+                     Member_ret_obj_func*,
+                     Member_ret_str_func*);
 
 
 // A point process's location as a Python nrn.Segment, None if it has none.
@@ -1061,7 +1061,7 @@ int point_register_mech(const char** m,
     Symlist* sl;
     Symbol *s, *s2;
     nrn_load_name_check(m[1]);
-    class2oc_base(m[1], constructor, destructor, fmember, nullptr, nullptr);
+    class2oc(m[1], constructor, destructor, fmember, nullptr, nullptr);
     s = hoc_lookup(m[1]);
     sl = hoc_symlist;
     hoc_symlist = s->u.ctemplate->symtable;

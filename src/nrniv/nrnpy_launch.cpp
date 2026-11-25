@@ -366,19 +366,18 @@ int run_command_line() {
     return !ok;
 }
 
-// methods.interpreter_start. 0: finalize Python. 1 did start it; now its first use does. 2: run the
-// command line.
-int interpreter_start(int mode) {
-    if (mode == 0 && std::exchange(launcher, nullptr)) {
+// If NEURON started Python; otherwise it is the program's.
+void finalize_interpreter() {
+    if (std::exchange(launcher, nullptr)) {
         finalize();
     }
-    return mode == 2 ? run_command_line() : 0;
 }
 }  // namespace
 
 void register_launcher() {
     launch = launch_python;
-    methods.interpreter_start = interpreter_start;
+    methods.interpreter_finalize = finalize_interpreter;
+    methods.interpreter_run = run_command_line;
     methods.interpreter_set_path = set_path;
     p_nrnpy_pyrun = run_file;
 }

@@ -39,7 +39,8 @@ struct impl_ptrs {
     void (*hoc_nrnpython)(){};
     PyObject* (*ho2po)(Object*){};
     void (*interpreter_set_path)(std::string_view){};
-    int (*interpreter_start)(int){};
+    void (*interpreter_finalize)(){};
+    int (*interpreter_run)(){};
     Object* (*mpi_alltoall_type)(int, int){};
     double (*object_to_double)(Object*){};
     void* (*opaque_obj2pyobj)(Object*){};
