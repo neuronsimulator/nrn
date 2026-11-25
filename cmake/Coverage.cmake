@@ -58,10 +58,8 @@ if(NRN_ENABLE_COVERAGE)
     # ~~~
     # cannot figure out how to set specific file flags here. So they are
     # are set in src/nrniv/CMakeLists.txt
-    # Surprisingly to me, this works for src/nrnpython files even though
-    # they are compiled and linked in src/nrnpython/CMakeLists.txt.
     # I.e. successful with
-    # -DNRN_COVERAGE_FILES="src/nrniv/partrans.cpp;src/nmodl/parsact.cpp;src/nrnpython/nrnpy_hoc.cpp"
+    # -DNRN_COVERAGE_FILES="src/nrniv/partrans.cpp;src/nmodl/parsact.cpp"
     # Used to work but now files compiled in other CMakeLists.txt need the
     # coverage flags set there.
     # ~~~

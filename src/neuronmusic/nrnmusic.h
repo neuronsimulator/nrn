@@ -3,7 +3,10 @@
 #if defined(NO_PYTHON_H)
 typedef struct _object PyObject;
 #else
-#include <nrnwrap_Python.h>
+#undef HAVE_PROTOTYPES
+#define PY_SSIZE_T_CLEAN
+#include <Python.h>
+#undef snprintf
 #endif
 #include <music.hh>
 

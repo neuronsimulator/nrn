@@ -222,7 +222,6 @@ set(NRN_INCLUDE_DIRS
     ${PROJECT_BINARY_DIR}/src/nrncvode
     ${PROJECT_BINARY_DIR}/src/nrnmpi
     ${PROJECT_BINARY_DIR}/src/nrnoc
-    ${PROJECT_BINARY_DIR}/src/nrnpython
     ${PROJECT_BINARY_DIR}/src/oc
     ${PROJECT_BINARY_DIR}/src/parallel
     ${PROJECT_BINARY_DIR}/src/sundials

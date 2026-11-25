@@ -1,7 +1,6 @@
 # ~~~
 # Helper functions for compiling NEURON Python modules.
 # Currently used for the following Python modules:
-# - neuron.hoc
 # - neuron.rxd.geometry3d.surfaces
 # - neuron.rxd.geometry3d.ctng
 # - neuron.rxd.geometry3d.graphicsPrimitives
@@ -90,12 +89,12 @@ endfunction()
 # [LIBRARIES lib1 lib2 ...]
 # [INSTALL_REL_RPATH path1 path2 ...])
 #
-# Create a target that links to nrnpython.
+# Create a Python extension module.
 #
 # <name>            - the actual name of the library being built
 # NO_EXTENSION      - (optional, default unset) in case one wants to create a
-#                     library without any platform-specific naming (so `hoc.so` instead of
-#                     `hoc.cpython39-darwin.so` or similar). Note that no prefix is added.
+#                     library without any platform-specific naming (so `name.so` instead of
+#                     `name.cpython39-darwin.so` or similar). Note that no prefix is added.
 # STABLE_ABI        - (optional) compile with Py_LIMITED_API=0x030C0000 and name
 #                     the module `<name>.abi3` (plus the platform suffix).
 # TARGET            - (optional, defaults to <name>) the name of the CMake

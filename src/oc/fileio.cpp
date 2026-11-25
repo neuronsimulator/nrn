@@ -945,7 +945,6 @@ void hoc_Chdir(void) {
     hoc_pushx((double) i);
 }
 
-NRN_DLLSYM int nrn_is_python_extension;
 NRN_DLLSYM int (*nrnpy_pr_stdoe_callback)(int, char*);
 
 extern "C" NRN_DLLSYM void nrnpy_set_pr_etal(int (*cbpr_stdoe)(int, char*)) {

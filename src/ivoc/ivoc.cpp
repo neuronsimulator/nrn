@@ -380,7 +380,7 @@ int Oc::run(const char* buf, bool show_err_mes) {
     } catch (std::exception const& e) {
         if (show_err_mes) {
             Fprintf(stderr, "Oc::run: caught exception");
-            std::string_view what{neuron::oc::safe_what(e)};
+            std::string_view what{e.what()};
             if (!what.empty()) {
                 Fprintf(stderr, fmt::format(": {}", what).c_str());
             }

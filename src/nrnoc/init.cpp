@@ -106,7 +106,6 @@ void nrn_possible_mismatched_arch(const char* libname) {
 
 static char CHKmes[] = "The user defined name, %s, already exists\n";
 
-NRN_DLLSYM void (*nrnpy_reg_mech_p_)(int);
 
 NRN_DLLSYM int secondorder = 0;
 int state_discon_allowed_;
@@ -745,11 +744,7 @@ void register_mech(const char** m,
                    nrn_init_t initialize,
                    int nrnpointerindex, /* if -1 then there are none */
                    int vectorized) {
-    int mechtype = n_memb_func;
     nrn_register_mech_common(m, alloc, cur, jacob, stat, initialize, nrnpointerindex, vectorized);
-    if (nrnpy_reg_mech_p_) {
-        (*nrnpy_reg_mech_p_)(mechtype);
-    }
 }
 
 void hoc_register_parm_default(int mechtype, const std::vector<double>* pd) {
@@ -1029,9 +1024,6 @@ int point_reg_helper(Symbol* s2) {
     s2->cpublic = 0;
     pnt_map[n_memb_func - 1] = pointtype;
     memb_func[n_memb_func - 1].is_point = 1;
-    if (nrnpy_reg_mech_p_) {
-        (*nrnpy_reg_mech_p_)(n_memb_func - 1);
-    }
     return pointtype++;
 }
 

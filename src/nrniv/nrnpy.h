@@ -5,9 +5,8 @@
 #include <string_view>
 #include <vector>
 /**
- * Declarations of global symbols in NEURON that have to be populated with python-version-specific
- * values when dynamic Python is enabled. These are set by the nrnpython_reg_real function, and
- * defined in nrnpy.cpp.
+ * The functions with which HOC and the simulator call Python. nrnpy_object.cpp sets most of them
+ * when NEURON starts.
  */
 struct Object;
 // methods.hoccommand_exec, for MOD VERBATIM (e.g. test/rxd/beforestep_py.mod), which imports this
@@ -23,12 +22,6 @@ struct Section;
 struct Symbol;
 class IvocVect;
 namespace neuron::python {
-/**
- * @brief Collection of pointers to functions with python-version-specific implementations.
- *
- * When dynamic Python is enabled, these are filled in from libnrnpython.abi3 and then
- * called from python-version-agnostic code inside NEURON.
- */
 struct impl_ptrs {
     Object* (*callable_with_args)(Object*, int narg){};
     double (*call_func)(Object*, int, int*){};
@@ -45,7 +38,6 @@ struct impl_ptrs {
     int (*hoccommand_exec_strret)(Object*, char*, int){};
     void (*hoc_nrnpython)(){};
     PyObject* (*ho2po)(Object*){};
-    void (*hpoasgn)(Object*, int){};
     void (*interpreter_set_path)(std::string_view){};
     int (*interpreter_start)(int){};
     Object* (*mpi_alltoall_type)(int, int){};
@@ -56,7 +48,6 @@ struct impl_ptrs {
     std::vector<char> (*po2pickle)(Object*){};
     double (*praxis_efun)(Object* pycallable, Object* hvec){};
     int (*pysame)(Object* o1, Object* o2){};
-    void (*py2n_component)(Object*, Symbol*, int, int){};
     void (*restore_thread)(PyThreadState*){};
     PyThreadState* (*save_thread)(){};
     // Such a common pattern it gets a wrapper
@@ -68,17 +59,10 @@ struct impl_ptrs {
         }
     }
 };
-/**
- * @brief Collection of pointers to functions with python-version-specific implementations.
- *
- * This is defined in nrnpy.cpp.
- */
 extern impl_ptrs methods;
 }  // namespace neuron::python
 
-// DYNAMIC Python: these live in nrniv.dll and libnrnpythonX.Y.dll assigns them.
 extern NRN_DLLSYM Symbol* nrnpy_pyobj_sym_;
-extern NRN_DLLSYM std::vector<const char*> py_exposed_classes;
 extern NRN_DLLSYM std::string nrnpy_pyexe;
 extern NRN_DLLSYM int nrnpy_nositeflag;
 extern NRN_DLLSYM int hoc_max_builtin_class_id;
@@ -99,7 +83,6 @@ extern NRN_DLLSYM Object* (*nrnpy_rvp_rxd_to_callable)(Object*);
 extern NRN_DLLSYM int (*nrnpy_nrncore_enable_value_p_)();
 extern NRN_DLLSYM int (*nrnpy_nrncore_file_mode_value_p_)();
 extern NRN_DLLSYM char* (*nrnpy_nrncore_arg_p_)(double);
-extern NRN_DLLSYM void (*nrnpy_reg_mech_p_)(int);
 extern NRN_DLLSYM int (*nrnpy_ob_is_seg)(Object*);
 extern NRN_DLLSYM Object* (*nrnpy_seg_from_sec_x)(Section*, double);
 extern NRN_DLLSYM Section* (*nrnpy_o2sec_p_)(Object*);

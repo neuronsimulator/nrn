@@ -27,22 +27,8 @@ _IGNORE_NAMES = {"libpywrapper.so", "libpywrapper.dylib", "libpywrapper.dll"}
 _REQUIRED_STEMS = ("graphicsPrimitives", "ctng", "_nmodl")
 
 
-def _requires_libnrnpython(wheel_name: str) -> bool:
-    """abi3audit scans .so and .pyd only.
-
-    manylinux and musllinux wheels contain libnrnpython.abi3.so. macOS builds
-    that library as a .dylib and Windows as a .dll, so those reports have no
-    such object.
-    """
-    return "manylinux" in wheel_name or "musllinux" in wheel_name
-
-
 def _matches_stem(name: str, stem: str) -> bool:
     return name.startswith(stem + ".")
-
-
-def _is_libnrnpython(name: str) -> bool:
-    return name.startswith("libnrnpython") or name.startswith("nrnpython")
 
 
 def _result_problems(name: str, result: object) -> list[str]:
@@ -141,9 +127,6 @@ def judge(
     for stem in _REQUIRED_STEMS:
         if not any(_matches_stem(name, stem) for name in inspected):
             problems.append(f"abi3 audit: missing {stem}")
-    if _requires_libnrnpython(wheel_name):
-        if not any(_is_libnrnpython(name) for name in inspected):
-            problems.append("abi3 audit: missing libnrnpython")
     if wheel_objects is not None:
         for raw_name in wheel_objects:
             base = os.path.basename(str(raw_name))

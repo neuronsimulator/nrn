@@ -35,7 +35,6 @@ static int connect_obsec_;
 static void call_constructor(Object*, Symbol*, int);
 static void free_objectdata(Objectdata*, cTemplate*);
 
-NRN_DLLSYM std::vector<const char*> py_exposed_classes{};
 
 int hoc_print_first_instance = 1;
 NRN_DLLSYM int hoc_max_builtin_class_id = -1;
@@ -1040,22 +1039,6 @@ void hoc_object_component() {
                 }
             }
             return;
-        } else if (obp->ctemplate->sym == nrnpy_pyobj_sym_ &&
-                   neuron::python::methods.py2n_component) {
-            /* Compatibility for providers that populate only the methods
-               table. */
-            if (isfunc & 2) {
-                if (isfunc & 1) {
-                    hoc_execerror_fmt("Cannot assign to a PythonObject function call '{}'",
-                                      sym0->name);
-                }
-                hoc_pushi(nindex);
-                hoc_pushs(sym0);
-                hoc_push_object(obp);
-            } else {
-                neuron::python::methods.py2n_component(obp, sym0, nindex, isfunc);
-            }
-            return;
         }
         if (obp->ctemplate->id == *ptid) {
             sym = *psym;
@@ -1502,10 +1485,6 @@ void hoc_object_asgn() {
                 // hooks can re-enter provider code and clobber its buffer.
                 hoc_execerror_fmt("{}", error);
             }
-        } else if (o->ctemplate->sym == nrnpy_pyobj_sym_ && neuron::python::methods.hpoasgn) {
-            /* Compatibility for providers that populate only the methods
-               table. */
-            neuron::python::methods.hpoasgn(o, type1);
         } else {
             hoc_execerror("Cannot assign to component", nullptr);
         }
@@ -1668,7 +1647,6 @@ void class2oc(const char* name,
               Member_ret_obj_func* mobjret,
               Member_ret_str_func* strret) {
     class2oc_base(name, cons, destruct, m, mobjret, strret);
-    py_exposed_classes.push_back(name);
 }
 
 Symbol* hoc_decl(Symbol* s) {
