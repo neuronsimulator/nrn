@@ -38,7 +38,13 @@ void* create_point_process(int pointtype, Object* ho) {
         return pp;
     }
     if (ho && ho->ctemplate->steer && ifarg(1)) {
-        loc_point_process(pointtype, (void*) pp);
+        // pp is not yet owned by any object, so free it if locating throws.
+        try {
+            loc_point_process(pointtype, (void*) pp);
+        } catch (...) {
+            destroy_point_process(pp);
+            throw;
+        }
     }
     return pp;
 }
@@ -174,11 +180,11 @@ void nrn_seg_or_x_arg(int iarg, Section** psec, double* px) {
     } else {
         Object* o = *hoc_objgetarg(iarg);
         *psec = (Section*) 0;
-        if (nrnpy_o2loc_p_) {
+        if (o && nrnpy_o2loc_p_) {
             (*nrnpy_o2loc_p_)(o, psec, px);
         }
         if (!(*psec)) {
-            assert(0);
+            hoc_execerror("not a Python nrn.Segment", nullptr);
         }
     }
 }
@@ -190,11 +196,12 @@ void nrn_seg_or_x_arg2(int iarg, Section** psec, double* px) {
     } else {
         Object* o = *hoc_objgetarg(iarg);
         *psec = (Section*) 0;
-        if (nrnpy_o2loc2_p_) {
+        if (o && nrnpy_o2loc2_p_) {
             (*nrnpy_o2loc2_p_)(o, psec, px);
         }
         if (!(*psec)) {
-            assert(0);
+            hoc_execerror("not a Python nrn.Segment, rxd.node, or other with a segment property",
+                          nullptr);
         }
     }
 }
