@@ -61,6 +61,10 @@ print("import after clear")
 """
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="loading hoc.pyd with ctypes needs the DLL directories that importing neuron adds",
+)
 def test_section_owner_capi():
     r = subprocess.run([sys.executable, "-c", SCRIPT], capture_output=True, text=True)
     if sys.platform == "darwin" and "Interceptors are not working" in r.stderr:
