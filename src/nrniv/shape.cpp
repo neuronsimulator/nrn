@@ -879,7 +879,7 @@ ShapeScene::ShapeScene(SectionList* sl)
     sg_ = new PolyGlyph();
     sg_->ref();
     shape_changed_ = NULL;  // observe not ready for it yet
-    r3b_ = new Rotate3Band(NULL, new RubberCallback(ShapeScene)(this, &ShapeScene::transform3d));
+    r3b_ = new Rotate3Band(new RubberCallback(ShapeScene)(this, &ShapeScene::transform3d));
     r3b_->ref();
     observe(sl);
     wk.style()->find_attribute("shape_beveljoin", beveljoin_);
@@ -1302,12 +1302,8 @@ void ShapeSection::transform3d(Rotation3d* rot) {
         x_ = new float[n_];
         y_ = new float[n_];
     }
-    float r[3];
     Coord x0, y0, xp, yp;
-    r[0] = sec_->pt3d[0].x;
-    r[1] = sec_->pt3d[0].y;
-    r[2] = sec_->pt3d[0].z;
-    rot->rotate(r, r);
+    auto r = rot->rotate({sec_->pt3d[0].x, sec_->pt3d[0].y, sec_->pt3d[0].z});
     xp = x0 = r[0];
     yp = y0 = r[1];
 
@@ -1338,10 +1334,7 @@ void ShapeSection::transform3d(Rotation3d* rot) {
         }
     }
     if (logic_con) {
-        r[0] = logic_con->x;
-        r[1] = logic_con->y;
-        r[2] = logic_con->z;
-        rot->rotate(r, r);
+        auto r = rot->rotate({logic_con->x, logic_con->y, logic_con->z});
         xinc = x0 - r[0];
         yinc = y0 - r[1];
     }
@@ -1349,10 +1342,7 @@ void ShapeSection::transform3d(Rotation3d* rot) {
     yp += yinc;
 
     for (i = 0; i < n_; ++i) {
-        r[0] = sec_->pt3d[i].x;
-        r[1] = sec_->pt3d[i].y;
-        r[2] = sec_->pt3d[i].z;
-        rot->rotate(r, r);
+        auto r = rot->rotate({sec_->pt3d[i].x, sec_->pt3d[i].y, sec_->pt3d[i].z});
         x_[i] = xp + len_scale_ * (r[0] - x0);  // *100./(100. - r[2]);
         y_[i] = yp + len_scale_ * (r[1] - y0);  // *100./(100. - r[2]);
     }
