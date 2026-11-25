@@ -42,6 +42,9 @@ STOP = textwrap.dedent(
     """
 )
 
+# The first import of neuron.gui, which starts the timer thread, in a HOC call.
+IMPORT = """from neuron import h; h('nrnpython("import neuron.gui")'); print("done")"""
+
 
 def run(code):
     env = dict(os.environ, NEURON_MODULE_OPTIONS="-nogui")
@@ -65,8 +68,7 @@ def test_quit_while_gui_timer_waits_for_hoc_lock():
     assert result.returncode == 0, result.stdout + result.stderr
 
 
-def test_stop_while_holding_hoc_lock():
-    result = run(STOP)
-    assert result.returncode == 0 and "done" in result.stdout, (
-        result.stdout + result.stderr
-    )
+def test_stop_and_import_while_holding_hoc_lock():
+    for code in STOP, IMPORT:
+        result = run(code)
+        assert "done" in result.stdout and not result.returncode, result.stderr

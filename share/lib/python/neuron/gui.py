@@ -100,10 +100,16 @@ class LoopTimer(threading.Thread):
         self._running = threading.Event()
         threading.Thread.__init__(self, daemon=True)
 
-    def run(self):
-        h.nrniv_bind_thread(threading.current_thread().ident)
+    def start(self):
+        super().start()
+        # Not in the new thread: this one may hold the interface's HOC lock (the
+        # first import of neuron.gui can be in a HOC call), and waits for it.
+        h.nrniv_bind_thread(self.ident)
         self.started = True
         self._running.set()
+
+    def run(self):
+        self._running.wait()
         while self._running.is_set():
             self.fun()
             time.sleep(self.interval)
@@ -132,9 +138,6 @@ if h.nrnversion(9) == "2":  # Launched with Python (instead of nrniv)
             timer.stop()
 
     atexit.register(cleanup)
-
-    while not timer.started:
-        time.sleep(0.001)
 
 h.load_file("nrngui.hoc")
 
