@@ -61,3 +61,23 @@ NEURON_MODULE_OPTIONS
     os.environ["NEURON_MODULE_OPTIONS"] = nrn_options
     from neuron import n
     assert(nrn_options in n.nrnversion(7))
+
+NRN_DAE_INIT_MODE_DEFAULT
+-------------------------
+  Initial value of :meth:`CVode.dae_init_mode` when the CVode class is
+  registered (``nrniv`` start or first ``import neuron``). Allowed values
+  are integers ``0``, ``1``, ``2``, and ``3``. If the variable is unset,
+  the default is ``0`` (legacy heuristic DAE consistent initialization).
+  An explicit ``cvode.dae_init_mode(mode)`` call overrides the environment
+  default. Changing the variable after NEURON has already started has no
+  effect.
+
+  An invalid or out-of-range value prints a warning and the default stays
+  ``0``.
+
+  Example:
+
+  .. code-block:: shell
+
+     export NRN_DAE_INIT_MODE_DEFAULT=3
+     python -c 'from neuron import n; assert n.CVode().dae_init_mode() == 3'
