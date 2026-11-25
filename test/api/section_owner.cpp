@@ -46,12 +46,12 @@ static char* section_name(Section* sec) {
     Owner* owner = owner_of(sec);
     if (!owner) {
         ++foreign_owner_calls;
-        std::snprintf(name_buffer, sizeof(name_buffer), "__nrnsec_%p", (void*) sec);
+        std::snprintf(name_buffer, sizeof(name_buffer), "__nrnsec_0x%zx", (std::size_t) sec);
     } else if (owner->name) {
         std::snprintf(name_buffer, sizeof(name_buffer), "%s", owner->name);
     } else {
         // Unnamed: core recognises this form and keeps it out of the _pysec lookup.
-        std::snprintf(name_buffer, sizeof(name_buffer), "__nrnsec_%p", (void*) sec);
+        std::snprintf(name_buffer, sizeof(name_buffer), "__nrnsec_0x%zx", (std::size_t) sec);
     }
     return name_buffer;
 }
