@@ -1,4 +1,5 @@
 #include <../../nrnconf.h>
+#include <algorithm>
 #include <vector>
 #include <cmath>
 
@@ -106,7 +107,10 @@ void OcFullMatrix::copy(Matrix* out) const {
 }
 
 void OcFullMatrix::bcopy(Matrix* out, int i0, int j0, int n0, int m0, int i1, int j1) const {
-    out->full()->m_.block(i1, j1, n0, m0) = m_.block(i0, j0, n0, m0);
+    const Eigen::MatrixXd block = m_.block(i0, j0, n0, m0);
+    auto* dest = out->full();
+    dest->resize(std::max(dest->nrow(), i1 + n0), std::max(dest->ncol(), j1 + m0));
+    dest->m_.block(i1, j1, n0, m0) = block;
 }
 
 void OcFullMatrix::transpose(Matrix* out) {
