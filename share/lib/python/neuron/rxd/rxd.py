@@ -580,7 +580,7 @@ def _cxx_compile(formula):
     cxx = os.environ.get("CXX")
     env = os.environ.copy()
     use_msvc = False
-    user_args = ["-O2" "-fno-math-errno"]
+    user_args = ["-O2", "-fno-math-errno"]
     if cxx:
         use_msvc = _is_msvc_cxx(cxx)
         try:
