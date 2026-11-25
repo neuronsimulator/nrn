@@ -51,6 +51,7 @@ extern int nrn_nobanner_;
 extern int diam_changed;
 extern int nrn_try_catch_nest_depth;
 extern int hoc_execerror_messages;
+extern char** nrn_global_argv;
 extern "C" NRN_DLLSYM void nrnpy_set_pr_etal(int (*cbpr_stdoe)(int, char*), int (*cbpass)());
 int ivocmain_session(int, const char**, const char**, int start_session);
 void simpleconnectsection();
@@ -90,6 +91,9 @@ bool nrn_template_set_component_hooks(Symbol* template_sym,
  ****************************************/
 
 int nrn_init(int argc, const char** argv) {
+    if (nrn_global_argv) {
+        return 0;  // NEURON is running: nrniv, or another client of this API, started it
+    }
     nrn_nobanner_ = 1;
     auto [final_argc, final_argv] = nrn_mpi_setup(argc, argv);
     errno = 0;

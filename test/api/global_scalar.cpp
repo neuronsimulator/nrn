@@ -54,6 +54,9 @@ int main(void) {
     nrn_hoc_call("hoc_ac_ = t");
     ok &= eq(*ac, 12.0, "USERDOUBLE dataptr round-trips through HOC");
 
+    // A second client's nrn_init does not reset a running NEURON
+    ok &= check(nrn_init(2, argv) == 0 && *p == 3.5, "nrn_init again");
+
     // Symbols with no data pointer must return nullptr, not a reinterpreted
     // union member the caller would dereference as garbage.
     ok &= check(nrn_symbol_dataptr(nullptr) == nullptr, "null symbol -> nullptr");

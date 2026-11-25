@@ -23,6 +23,8 @@ Initialization
     The arguments are passed to the NEURON simulator as if it was launched with that argv.
     The first argument is typically the program name (e.g., "NEURON").
     Some error messages may include the program name.
+    If NEURON is already running (``nrniv`` or an earlier call started it), this
+    does nothing and returns 0.
 
     **Example:**
     
