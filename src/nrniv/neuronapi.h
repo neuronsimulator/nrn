@@ -221,6 +221,11 @@ NRN_DLLSYM float nrn_get_plotshape_high(ShapePlotInterface* spi);
  * Miscellaneous
  ****************************************/
 NRN_DLLSYM int nrn_hoc_call(char const* command);
+NRN_DLLSYM int nrn_hoc_call_nothrow(char const* command);
+NRN_DLLSYM void nrn_str_assign(char** target, const char* value);
+NRN_DLLSYM int nrn_structure_change_count(void);
+NRN_DLLSYM int nrn_mechanism_type_count(void);
+NRN_DLLSYM int nrn_mpiabort_on_error(int abort);
 NRN_DLLSYM SectionListIterator* nrn_sectionlist_iterator_new(nrn_Item* my_sectionlist);
 NRN_DLLSYM void nrn_sectionlist_iterator_free(SectionListIterator* sl);
 NRN_DLLSYM Section* nrn_sectionlist_iterator_next(SectionListIterator* sl);

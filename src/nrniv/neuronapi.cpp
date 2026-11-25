@@ -5,6 +5,7 @@
 #include "membfunc.h"
 #include "oc_ansi.h"
 #include "cabcode.h"
+#include "code.h"
 #include "nrniv_mf.h"
 #include "nrnmpi.h"
 #include "nrnmpiuse.h"
@@ -1209,6 +1210,43 @@ float nrn_get_plotshape_high(ShapePlotInterface* spi) {
  ****************************************/
 int nrn_hoc_call(char const* const command) {
     return hoc_oc(command);
+}
+
+int nrn_hoc_call_nothrow(char const* command) {
+    try {
+        auto line = std::string{command} + '\n';
+        OcJump::fpycall(
+            [](void* stmt, void*) -> void* {
+                hoc_obj_run(static_cast<const char*>(stmt), nullptr);
+                return nullptr;
+            },
+            line.data(),
+            nullptr);
+        return 0;
+    } catch (const std::exception&) {
+        return 1;
+    }
+}
+
+void nrn_str_assign(char** target, const char* value) {
+    if (value) {
+        hoc_assign_str(target, value);
+    } else {
+        hoc_free_string(*target);
+        *target = nullptr;
+    }
+}
+
+int nrn_structure_change_count() {
+    return structure_change_cnt;
+}
+
+int nrn_mechanism_type_count() {
+    return n_memb_func;
+}
+
+int nrn_mpiabort_on_error(int abort) {
+    return std::exchange(nrn_mpiabort_on_error_, abort);
 }
 
 SectionListIterator::SectionListIterator(nrn_Item* my_sectionlist)

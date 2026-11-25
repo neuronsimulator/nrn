@@ -2071,6 +2071,43 @@ Miscellaneous
         important function, because it allows you to see the effects of each newly added
         feature and it provides a validation comparison.
 
+.. c:function:: int nrn_hoc_call_nothrow(char const* command)
+
+    As :c:func:`nrn_hoc_call`, also inside a call from HOC (a callback): an error does not
+    propagate, and leaves the interpreter as it was.
+
+    :param command: Null-terminated string containing the HOC command.
+    :returns: 0 on success, 1 on error, whose message has been printed.
+
+.. c:function:: void nrn_str_assign(char** target, const char* value)
+
+    HOC's assignment to a string: a copy of ``value`` replaces ``*target``, which is
+    freed, or is NULL. For a variable whose address is pushed with
+    :c:func:`nrn_str_push`: HOC code that assigns to the argument frees the old string and
+    allocates the new one.
+
+    :param target: The variable.
+    :param value: The text, or NULL to free the string and leave NULL.
+
+.. c:function:: int nrn_structure_change_count(void)
+
+    How often NEURON has set the model's structure up, as
+    :meth:`CVode.structure_change_count`. What a client computed from it is out of date when
+    this changes.
+
+.. c:function:: int nrn_mechanism_type_count(void)
+
+    How many mechanism types have been registered. It rises with every one: of a mod file, a
+    :class:`KSChan` or ``make_mechanism``.
+
+.. c:function:: int nrn_mpiabort_on_error(int abort)
+
+    Whether a HOC error calls ``MPI_Abort`` if there is more than one rank, also one that a
+    ``_nothrow`` function reports. As :meth:`ParallelContext.mpiabort_on_error`.
+
+    :param abort: 1 for yes, as at the start, or 0.
+    :returns: The value before.
+
 .. c:function:: SectionListIterator* nrn_sectionlist_iterator_new(nrn_Item* my_sectionlist)
 
     Create a new Section list iterator for traversing a list of sections.
