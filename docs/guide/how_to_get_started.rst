@@ -18,7 +18,7 @@ Basic NEURON Usage
 
 * Watch :ref:`recorded videos <training_videos>` from various recent NEURON and NEURON-related courses.
 * Read "`The NEURON Simulation Environment <https://doi.org/10.1162/neco.1997.9.6.1179>`_." 
-* Use the `Programmer's Reference <../python/index.html>`_ early and often. 
+* Use the :ref:`Programmer's Reference <prog_ref>` early and often. 
 * Work through the tutorials on the Documentation and Courses pages.
 * Use the GUI tools as much as possible. You'll get more done, faster, and you won't have to write any code. Some of the GUI tools are described in the tutorials; others are demoed in the :ref:`course videos <training_videos>`. Save the GUI tools to session files; these files contain HOC and can be modified, adapted, and reused.
 * Examine `ModelDB <https://modeldb.science>`_ and the list of :ref:`publications about NEURON <publications_about_neuron>` to find models of interest. Many authors have deposited their model code in ModelDB, posted it somewhere else on the WWW, or will provide code upon request.
