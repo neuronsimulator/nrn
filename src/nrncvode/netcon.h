@@ -5,7 +5,7 @@
 #include "neuron/container/data_handle.hpp"
 #include "nrnmpi.h"
 #include "nrnneosm.h"
-#include "pool.hpp"
+#include "neuron/container/pool.hpp"
 #include "tqitem.hpp"
 #include "htlist.h"
 
@@ -28,7 +28,7 @@ class TQueue;
 struct NrnThread;
 class NetCvode;
 class HocEvent;
-using HocEventPool = MutexPool<HocEvent>;
+using HocEventPool = Pool<HocEvent, /* Mutex */ true>;
 class HocCommand;
 struct STETransition;
 class IvocVect;

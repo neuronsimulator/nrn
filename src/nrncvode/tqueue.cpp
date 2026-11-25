@@ -7,7 +7,6 @@
 #include <section.h>
 
 #include "tqueue.hpp"
-#include "pool.hpp"
 
 #define PROFILE 0
 #include "profile.h"

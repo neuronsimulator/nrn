@@ -10,7 +10,6 @@
 #include "parse.hpp"
 #include "cvodeobj.h"
 #include "hoclist.h"
-#include "pool.hpp"
 #include "tqueue.hpp"
 #include "ocobserv.h"
 #include "nrnneosm.h"
@@ -403,7 +402,7 @@ struct InterThreadEvent {
 };
 
 typedef std::vector<WatchCondition*> WatchList;
-using SelfEventPool = MutexPool<SelfEvent>;
+using SelfEventPool = Pool<SelfEvent, /* Mutex */ true>;
 typedef std::vector<TQItem*> TQList;
 
 // allows marshalling of all items in the event queue that need to be
@@ -986,10 +985,10 @@ Object** NetCvode::netconlist() {
 
 #define ITE_SIZE 10
 NetCvodeThreadData::NetCvodeThreadData() {
-    tpool_ = new TQItemPool(1000, 1);
+    tpool_ = new TQItemPool(1000);
     // tqe_ accessed only by thread i so no locking
     tqe_ = new TQueue(tpool_, 0);
-    sepool_ = new SelfEventPool(1000, 1);
+    sepool_ = new SelfEventPool(1000);
     selfqueue_ = nullptr;
     psl_thr_ = nullptr;
     tq_ = nullptr;
@@ -3318,7 +3317,6 @@ void PlayRecordEvent::pr(const char* s, double tt, NetCvode* ns) {
     plr_->pr();
 }
 
-using HocEventPool = MutexPool<HocEvent>;
 HocEventPool* HocEvent::hepool_;
 
 HocEvent::HocEvent() {
@@ -3341,7 +3339,7 @@ HocEvent* HocEvent::alloc(const char* stmt, Object* ppobj, int reinit, Object* p
     if (!hepool_) {
         nrn_hoc_lock();
         if (!hepool_) {
-            hepool_ = new HocEventPool(100, 1);
+            hepool_ = new HocEventPool(100);
         }
         nrn_hoc_unlock();
     }
