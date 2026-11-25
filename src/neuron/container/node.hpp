@@ -71,6 +71,15 @@ struct RHS {
     using type = double;
 };
 
+/**
+ * @brief Temporary storage for parent contributions during tree traversal.
+ * Used to enable SIMD vectorization by separating direct child updates from
+ * indirect parent accumulation in nrn_rhs() and nrn_lhs().
+ */
+struct ParentContrib {
+    using type = double;
+};
+
 }  // namespace field
 
 /**
