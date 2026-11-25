@@ -23,8 +23,9 @@ from . import initializer
 import collections
 import numbers
 import os
+import shutil
 import sysconfig
-import uuid
+import tempfile
 import sys
 import traceback
 import subprocess
@@ -44,7 +45,7 @@ _external_solver = None
 _external_solver_initialized = False
 _windows_dll_files = []
 _windows_dll = []
-# Identical reaction C++ is compiled once per process. uuid filenames otherwise
+# Identical reaction C++ is compiled once per process. Unique filenames otherwise
 # rebuild the same DLL on every finitialize / SaveState restore.
 _cxx_compile_cache = {}
 _cxx_compile_stats = {"compile": 0, "hit": 0}
@@ -633,9 +634,21 @@ def _cxx_compile(formula):
     if cached is not None:
         _cxx_compile_stats["hit"] += 1
         return cached
-    filename = "rxddll" + str(uuid.uuid1())
-    src = filename + ".cpp"
-    out = os.path.abspath(filename) + ".so"
+    # Windows cannot remove a DLL that is in use: _windows_remove_dlls.
+    with tempfile.TemporaryDirectory(
+        prefix="rxddll", ignore_cleanup_errors=True
+    ) as directory:
+        reaction = _cxx_compile_in(directory, formula)
+    _cxx_compile_cache[formula] = reaction
+    _cxx_compile_stats["compile"] += 1
+    return reaction
+
+
+def _cxx_compile_in(directory, formula):
+    suffix = {"win32": ".dll", "darwin": ".dylib"}.get(sys.platform, ".so")
+    stem = os.path.join(directory, os.path.basename(directory))
+    src = stem + ".cpp"
+    out = stem + suffix
     with open(src, "w") as f:
         f.write(formula)
     include = sysconfig.get_path("include")
@@ -706,21 +719,9 @@ def _cxx_compile(formula):
         ctypes.POINTER(ctypes.c_double),
     ]
     reaction.restype = ctypes.c_double
-    os.remove(src)
-    if sys.platform.lower().startswith("win"):
-        # cannot remove dll that are in use
+    if win:
         _windows_dll.append(weakref.ref(dll))
         _windows_dll_files.append(out)
-        stem = os.path.splitext(out)[0]
-        for extra in (out + ".exp", out + ".lib", stem + ".exp", stem + ".lib"):
-            try:
-                os.remove(extra)
-            except OSError:
-                pass
-    else:
-        os.remove(out)
-    _cxx_compile_cache[formula] = reaction
-    _cxx_compile_stats["compile"] += 1
     return reaction
 
 
@@ -2159,10 +2160,7 @@ def _windows_remove_dlls():
             handle = dll._handle
             del dll
             kernel32.FreeLibrary(handle)
-        try:
-            os.remove(filepath)
-        except:
-            pass
+        shutil.rmtree(os.path.dirname(filepath), ignore_errors=True)
     _windows_dll_files = []
     _windows_dll = []
 

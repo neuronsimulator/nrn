@@ -1,4 +1,4 @@
-def test_cxx_compile_reuses_identical_formula(neuron_instance):
+def test_cxx_compile_reuses_identical_formula(neuron_instance, tmp_path, monkeypatch):
     """Identical reaction C++ is compiled once per process."""
     from neuron.rxd.rxd import _cxx_compile, _cxx_compile_stats
 
@@ -8,6 +8,8 @@ def test_cxx_compile_reuses_identical_formula(neuron_instance):
         "double reaction(double* species, double* rhs) { return 0.0; }\n"
         "}\n"
     )
+    tmp_path.chmod(0o500)  # nothing is written into the current directory
+    monkeypatch.chdir(tmp_path)
     n_compile = _cxx_compile_stats["compile"]
     n_hit = _cxx_compile_stats["hit"]
     first = _cxx_compile(formula)
