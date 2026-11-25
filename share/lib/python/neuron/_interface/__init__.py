@@ -17,6 +17,7 @@ from .api import (
     hoc_call_depth,
     hoc_locked,
     symbol_array_dims,
+    _ERR_BUF,
     _ERR_BUF_SIZE,
     _METHODS_CALL_FUNC_OFFSET,
     _METHODS_HOC_NRNPYTHON_OFFSET,
@@ -58,7 +59,6 @@ from .api import (
     _nrn_sectionlist_to_array,
     _nrn_str_pop,
     _nrn_symbol,
-    _nrn_symbol_array_length,
     _nrn_symbol_dataptr,
     _nrn_symbol_is_array,
     _nrn_symbol_object_get,
@@ -72,6 +72,7 @@ from .api import (
     _nrn_object_ref,
     _py_pyobj_to_hoc_cfunctype,
     libnrniv,
+    _hoc_unref_defer,
 )
 from .nrnref import (
     NrnDoubleRef,
@@ -82,13 +83,26 @@ from .nrnref import (
     NrnStrRef,
     NrnVarRef,
     _array_index,
+    _flat_index,
     numpy_element_ref,  # noqa: F401  (public: myneuron.numpy_element_ref)
     refuse_pickle,
+    NrnArrayPropertyRef,
+    NrnDoubleArrayElementRef,
+    NrnVectorElementRef,
+    _double_array_data,
 )
-from .object import List, Object, SectionList, Vector
-from .sections import PYTHON_SECTIONS, Section, _section_for
+from .object import (
+    List,
+    Object,
+    SectionList,
+    Vector,
+    _TemplateSectionArray,
+    _resolve_template_section,
+)
+from .sections import PYTHON_SECTIONS, Section, _section_for, Segment
 from .utils import (
     _name_error,
+    READ_ONLY_FUNCTIONS,
     TEMPLATE_CONVERTERS,
     FuncWrapper,
     _check_sec_kwarg,
@@ -100,7 +114,11 @@ from .utils import (
     forget_class,
     hoc_class,
     list_functions,
+    _check_segment_arg,
+    _object_pop,
 )
+from .mechanism import Mechanism, density_mechanism
+from . import utils as _utils
 
 # Slot that _mn_capture_cas writes cas() into; object._resolve_template_section
 # and object._steer_sectionref read it back. Module-global because a C callback cannot capture closure state.
@@ -797,6 +815,8 @@ def _register_vector_apply_callable():
             # _call_at_top_level costs apply ~2%.
             if _hoc_thisobject.value:
                 return float(_call_at_top_level(func, (x,)))
+            global _MODEL_EPOCH  # _bump_model_epoch's body, a call per element
+            _MODEL_EPOCH += 1  # a callback entry: see api._call_at_top_level
             return float(func(x))
         except Exception as exc:
             _stash_callback_exc(exc)
@@ -827,6 +847,7 @@ def _register_pc_pyjob():
     def _pyjob():
         from .parallel import run_job
 
+        _bump_model_epoch()  # a callback entry: see api._call_at_top_level
         try:
             token = run_job(_nrn_gargstr(1).decode("ascii"))
         except BaseException as exc:
@@ -872,7 +893,7 @@ def _read_top_level_objectvar(neuron_singleton, name):
         return _ObjrefArray(
             neuron_singleton,
             name,
-            symbol_array_dims(sym, int(_nrn_symbol_array_length(sym))),
+            symbol_array_dims(sym),
         )
     obj = _nrn_symbol_object_get(sym)
     if not obj:
@@ -926,7 +947,7 @@ class _ObjrefArray:
         sym = _top_level_symbol(self._name.encode("utf-8"))
         if not sym or not _nrn_symbol_is_array(sym):
             raise TypeError(f"'{self._name}' is no longer an array")
-        dims = symbol_array_dims(sym, int(_nrn_symbol_array_length(sym)))
+        dims = symbol_array_dims(sym)
         if dims != self._dims:
             raise TypeError(f"'{self._name}' was redeclared with dimensions {dims}")
 
@@ -959,7 +980,6 @@ class _ObjrefArray:
             raise TypeError(
                 f"'{self._name}' has {len(self._dims)} dimensions; assign an element"
             )
-        from .object import Object
 
         indices = self._prefix + (idx,)
         _, _, put, nil = _objref_trampolines(self._n, self._name, len(self._dims))
@@ -1010,40 +1030,30 @@ class _DoubleArray:
             raise IndexError(self._name)
         return i
 
-    def _flat(self, indices):
-        flat = 0
-        for i, d in zip(indices, self._dims):
-            flat = flat * d + i
-        return flat
-
     def _is_row(self):
         return len(self._prefix) + 1 < len(self._dims)
 
     def __getitem__(self, idx):
-        from .nrnref import NrnDoubleArrayElementRef, _double_array_data
-
         if isinstance(idx, slice):
             return [self[i] for i in range(*idx.indices(len(self)))]
         indices = self._prefix + (self._index(idx),)
         if self._is_row():
             return _DoubleArray(self._name, self._dims, indices, self._ref)
-        flat = self._flat(indices)
+        flat = _flat_index(indices, self._dims)
         if self._ref:
             return NrnDoubleArrayElementRef(self._name, self._dims, flat)
         return _double_array_data(self._name, self._dims)[flat]
 
     def __setitem__(self, idx, value):
-        from .nrnref import _double_array_data
-
         indices = self._prefix + (self._index(idx),)
         if self._is_row():
             raise TypeError("Wrong number of subscripts")
         if self._ref:
             self[idx][0] = value
             return
-        _double_array_data(self._name, self._dims)[self._flat(indices)] = _as_double(
-            value
-        )
+        _double_array_data(self._name, self._dims)[
+            _flat_index(indices, self._dims)
+        ] = _as_double(value)
 
     def __len__(self):
         return self._dims[len(self._prefix)]
@@ -1063,9 +1073,7 @@ def _double_array(name, ref=False):
     sym = _top_level_symbol(name.encode("utf-8"))
     if not sym or not _nrn_symbol_is_array(sym):
         return None
-    return _DoubleArray(
-        name, symbol_array_dims(sym, int(_nrn_symbol_array_length(sym))), ref=ref
-    )
+    return _DoubleArray(name, symbol_array_dims(sym), ref=ref)
 
 
 # Delimit the captured strdef value in HOC `print` output. Assumed not to
@@ -1083,8 +1091,6 @@ def _distance_location(arg):
     HOC's distance to accept or reject in NEURON's order.
     """
     from numbers import Number
-
-    from .sections import Segment
 
     if arg is _DISTANCE_MISSING or isinstance(arg, (Number, Segment)):
         return arg
@@ -1409,11 +1415,10 @@ class NEURON(metaclass=_Singleton):
 
                     elif _type in self._function_types:
 
+                        bumps = _type != TYPES.BLTIN and name not in READ_ONLY_FUNCTIONS
+
                         @hoc_locked
                         def nrn_func(*args, sec=None):
-                            from .sections import Segment
-                            from .utils import _push_args
-
                             if _type == TYPES.BLTIN:
                                 if len(args) != 1:
                                     raise RuntimeError(
@@ -1438,7 +1443,7 @@ class NEURON(metaclass=_Singleton):
                             # Liveness check before any push; see utils._push_args.
                             if sec is not None:
                                 _check_sec_kwarg(sec)
-                            temp_strs, seg_sec, rollback_args = _push_args(
+                            temp_strs, seg_sec, rollback_args = _utils._push_args(
                                 args, return_rollback=True
                             )
                             use_sec = sec if sec is not None else seg_sec
@@ -1446,7 +1451,7 @@ class NEURON(metaclass=_Singleton):
                                 _nrn_section_push(use_sec._sec)
                             try:
                                 sym = _nrn_symbol(name.encode("utf-8"))
-                                _err_buf = ctypes.create_string_buffer(_ERR_BUF_SIZE)
+                                _err_buf = _ERR_BUF()
                                 ret = _nrn_function_call(
                                     sym, len(args), _err_buf, _ERR_BUF_SIZE
                                 )
@@ -1455,8 +1460,10 @@ class NEURON(metaclass=_Singleton):
                                 # the epoch as NEURON.__call__ does. This also
                                 # catches a warm allsec() after
                                 # n.delete_section(sec=s), which may not move the
-                                # head-link fingerprint.
-                                _bump_model_epoch()
+                                # head-link fingerprint. Not a math built-in or
+                                # a call in utils.READ_ONLY_FUNCTIONS.
+                                if bumps:
+                                    _bump_model_epoch()
                                 converted = TEMPLATE_CONVERTERS.get(name)
                                 if converted is not None and len(args) > converted:
                                     forget_class(str(args[converted]))
@@ -1492,7 +1499,6 @@ class NEURON(metaclass=_Singleton):
                                     # OBJECTFUNC (296) = C built-in obfunc.
                                     # OBFUNCTION (284) = HOC `obfunc` definition.
                                     # Both push the result onto the object stack.
-                                    from .utils import _object_pop
 
                                     result = _object_pop()
                                 else:
@@ -1504,7 +1510,6 @@ class NEURON(metaclass=_Singleton):
                             finally:
                                 if use_sec is not None:
                                     _pop_pushed_section(use_sec._sec)
-                                from .api import _hoc_unref_defer
 
                                 _hoc_unref_defer()
 
@@ -1523,8 +1528,6 @@ class NEURON(metaclass=_Singleton):
                         return hoc_class(name)
 
                     elif _type == TYPES.MECHANISM:
-                        from .mechanism import density_mechanism
-
                         return density_mechanism(name)
 
                     elif _type == TYPES.OBJECTVAR:
@@ -1543,20 +1546,17 @@ class NEURON(metaclass=_Singleton):
                         # `create soma` (scalar) or `create dend[N]` (array).
                         # Uses the brace capture of template sections with no
                         # owner prefix; see object._resolve_template_section.
-                        from .object import (
-                            _resolve_template_section,
-                            _TemplateSectionArray,
-                        )
 
                         sym = _top_level_symbol(name.encode("utf-8"))
                         if not sym:
                             raise AttributeError(f"Section '{name}' not found.")
                         if _nrn_symbol_is_array(sym):
-                            size = int(_nrn_symbol_array_length(sym))
-                            return _TemplateSectionArray(None, name, size)
+                            return _TemplateSectionArray(None, name)
                         return _resolve_template_section(None, name, idx=None)
 
             # update the function list before giving up
+            # TODO(gap-86): look the name up in the symbol table instead; this
+            # walk makes hasattr(n, name) cost about half a millisecond.
             self._top_level = list_functions()
 
         raise _name_error(
@@ -1655,8 +1655,6 @@ class NEURON(metaclass=_Singleton):
         # (`proc _mn_setobj_<name>() { <name> = $o1 }`) with the object pushed.
         # None re-nils it.
         if _type == TYPES.OBJECTVAR:
-            from .object import Object
-
             _sym = _top_level_symbol(name.encode("utf-8"))
             if _sym and _nrn_symbol_is_array(_sym):
                 # An objref array needs an index (n.g[i] = obj, via
@@ -1717,14 +1715,6 @@ class NEURON(metaclass=_Singleton):
 
     def setpointer(self, source_ref, pointer_name, target):
         """Assign a numeric NEURON reference to an NMODL POINTER target."""
-        from .mechanism import Mechanism
-        from .nrnref import (
-            NrnArrayPropertyRef,
-            NrnDoubleRef,
-            NrnVarRef,
-            NrnVectorElementRef,
-        )
-        from .object import Object
 
         usage = (
             "setpointer(_ref_hocvar, 'POINTER_name', point_process or " "nrn.Mechanism)"
@@ -1857,8 +1847,6 @@ class NEURON(metaclass=_Singleton):
         The two-segment form calls nrn_distance directly because _push_args
         overwrites seg_sec and would lose the first segment's section.
         """
-        from .sections import Segment
-        from .utils import _check_segment_arg, _push_args
 
         if kwargs:
             raise RuntimeError("invalid keyword argument")
@@ -1896,14 +1884,16 @@ class NEURON(metaclass=_Singleton):
         sym = _nrn_symbol(b"distance")
         if not sym:
             raise RuntimeError("HOC 'distance' symbol not found")
-        temp_strs, seg_sec, rollback_args = _push_args(args, return_rollback=True)
+        temp_strs, seg_sec, rollback_args = _utils._push_args(
+            args, return_rollback=True
+        )
         sec_pushed = False
         call_sec = seg_sec if seg_sec is not None else (sec if explicit_sec else None)
         if call_sec is not None:
             _nrn_section_push(call_sec._sec)
             sec_pushed = True
         try:
-            err = ctypes.create_string_buffer(_ERR_BUF_SIZE)
+            err = _ERR_BUF()
             ret = _nrn_function_call(sym, len(args), err, _ERR_BUF_SIZE)
             if ret:
                 # Release the arg slots nothrow left on the stack (gap-56).
@@ -1913,7 +1903,6 @@ class NEURON(metaclass=_Singleton):
         finally:
             if sec_pushed:
                 _nrn_section_pop()
-            from .api import _hoc_unref_defer
 
             _hoc_unref_defer()
 
@@ -2131,7 +2120,8 @@ class NEURON(metaclass=_Singleton):
         return out
 
 
-n = h = NEURON()
+# _n is the package's own reference: a user can rebind n or h (n = something).
+n = h = _n = NEURON()
 
 
 # ── Module initialization sequence ──

@@ -15,6 +15,11 @@ import traceback
 import warnings
 from pathlib import Path
 
+# The package, for what it defines after its submodules load (n, the model
+# epoch, the callback stash): read as _PACKAGE.<name> at call time, which costs
+# a fraction of a function-level import. Never copy a name another module rebinds.
+_PACKAGE = sys.modules[__package__]
+
 _LIBNRNIV_ENV = "NRN_LIBNRNIV"
 _LIBMODLREG_ENV = "NRN_LIBMODLREG"
 
@@ -312,6 +317,8 @@ if _missing_nightly_api:
 
 # Error buffer for nothrow C API calls
 _ERR_BUF_SIZE = 1024
+# _ERR_BUF() is create_string_buffer(_ERR_BUF_SIZE) without the function call.
+_ERR_BUF = ctypes.c_char * _ERR_BUF_SIZE
 
 
 def _check_nrn_error(ret, err_buf):
@@ -319,9 +326,8 @@ def _check_nrn_error(ret, err_buf):
     if ret != 0:
         # Callers have already rolled back arguments restored by nothrow.
         # Public component hooks abort in core, without a return slot to pop.
-        from . import _raise_pending_callback_exc
 
-        _raise_pending_callback_exc()
+        _PACKAGE._raise_pending_callback_exc()
         msg = err_buf.value.decode("utf-8", errors="replace").strip()
         raise RuntimeError(
             f"NEURON error: {msg}" if msg else "NEURON error (no message)"
@@ -493,6 +499,20 @@ _hoc_top_level_data = ctypes.c_void_p.in_dll(libnrniv, "hoc_top_level_data")
 _hoc_top_level_symlist = ctypes.c_void_p.in_dll(libnrniv, "hoc_top_level_symlist")
 
 
+# The model epoch rule for Python that core calls. Read-only calls leave the
+# epoch alone (utils.READ_ONLY_*), so a callback can start in a model that HOC
+# edited inside the same call, with the epoch unmoved since the caches filled.
+# Every entry bumps the epoch before it runs user code:
+#  - through _call_at_top_level: nrnpython, the PythonObject component hooks
+#    (read, call, index, write), and, wrapped by _at_top_level, praxis, call_func
+#    (RangeVarPlot callable), the GUI methods and SaveState;
+#  - directly: hoccommand_exec, Vector.apply's call_func, _mn_pyjob, the
+#    RangeVarPlot converter, a custom stdout sink and the PythonObject
+#    destructor (a __del__ is user code).
+# Not entries, because they run no user code: pysame, opaque_obj2pyobj,
+# alltoall_type, the section owner hooks (a name stored at creation) and
+# _mn_capture_cas. A new entry does one of the above. Under NEURON's own Python
+# module (import neuron first) its callbacks are the entries and cannot bump.
 def _call_at_top_level(target, args):
     """Call with HOC temporarily switched to its top-level context.
 
@@ -500,6 +520,7 @@ def _call_at_top_level(target, args):
     thread's, in Python code its method runs; switching under it would restore
     the context after the method has returned.
     """
+    _PACKAGE._bump_model_epoch()
     if not _hoc_thisobject.value:
         return target(*args)
     with HOC_LOCK:
@@ -618,12 +639,8 @@ def _object_is_builtin_class(obj_int):
     template). Only built-in class methods set hoc_return_type_code, so the type
     hint is trusted only for these (mirrors nrnpy_hoc.cpp:541). Called only when
     a hint actually fired, so the extra struct reads stay off the common path."""
-    ctemplate = ctypes.cast(
-        obj_int + _OBJECT_CTEMPLATE_OFFSET, ctypes.POINTER(ctypes.c_void_p)
-    ).contents.value
-    class_id = ctypes.cast(
-        ctemplate + _CTEMPLATE_ID_OFFSET, ctypes.POINTER(ctypes.c_int)
-    ).contents.value
+    ctemplate = ctypes.c_void_p.from_address(obj_int + _OBJECT_CTEMPLATE_OFFSET).value
+    class_id = ctypes.c_int.from_address(ctemplate + _CTEMPLATE_ID_OFFSET).value
     return class_id <= _hoc_max_builtin_class_id.value
 
 
@@ -702,14 +719,18 @@ if _nrn_property_object_get is not None:
     _nrn_property_object_get.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
     _nrn_property_object_get.restype = ctypes.c_void_p
 
+_Dims8 = ctypes.c_int * 8
 
-def symbol_array_dims(sym, first_length):
-    """All dimensions of array symbol ``sym``, outermost first."""
-    if _nrn_symbol_array_dims is None:
-        return (first_length,)
-    dims = (ctypes.c_int * 8)()
-    ndim = _nrn_symbol_array_dims(sym, dims, 8)
-    return tuple(dims[: min(ndim, 8)]) or (first_length,)
+
+def symbol_array_dims(sym):
+    """All dimensions of array symbol ``sym``, outermost first; only the first
+    on a core without nrn_symbol_array_dims."""
+    if _nrn_symbol_array_dims is not None:
+        dims = _Dims8()
+        ndim = _nrn_symbol_array_dims(sym, dims, 8)
+        if ndim > 0:
+            return tuple(dims[: min(ndim, 8)])
+    return (int(_nrn_symbol_array_length(sym)),)
 
 
 _nrn_template_set_component_hooks = getattr(
@@ -748,10 +769,14 @@ def _unwrap_pythonobject(obj):
         return None
     if _nrn_class_name(obj) != b"PythonObject":
         raise TypeError("expected a HOC PythonObject")
-    po_handle = _pythonobject_payload_ptr(obj)
-    if not po_handle:
-        return sys.modules["__main__"]
-    return ctypes.cast(po_handle, ctypes.py_object).value
+    this_ptr = ctypes.c_void_p.from_address(obj + _OBJECT_U_OFFSET).value
+    if this_ptr:
+        try:
+            # The payload slot read as a PyObject*, without a cast.
+            return ctypes.py_object.from_address(this_ptr + _PY2NRN_PO_OFFSET).value
+        except ValueError:  # a NULL payload
+            pass
+    return sys.modules["__main__"]
 
 
 def _owned_pythonobject_to_python(obj):
@@ -766,9 +791,8 @@ def _owned_pythonobject_to_python(obj):
 def _owned_hoc_object_to_python(obj):
     # Component RHS/arguments and public object returns must share ownership
     # cleanup, especially when PythonObject conversion raises.
-    from .utils import _wrap_owned_object
 
-    return _wrap_owned_object(obj)
+    return _PACKAGE.utils._wrap_owned_object(obj)
 
 
 # Private prototypes (not ctypes.pythonapi's shared ones). PySequence_Check
@@ -818,12 +842,11 @@ def _hoccommand_exec_failed(exc):
     NEURON prints the same text and raises the error in the call that ran the
     command (finitialize for an FInitializeHandler); it is raised there.
     """
-    from . import _stash_hoc_error
 
     message = "Python Callback failed [hoccommand_exec]:\n" + "".join(
         traceback.format_exception(exc)
     )
-    _stash_hoc_error(message, exc)
+    _PACKAGE._stash_hoc_error(message, exc)
     with contextlib.suppress(Exception):  # sys.stderr may be broken
         print("NEURON: " + message, end="", file=sys.stderr)
 
@@ -880,6 +903,7 @@ def _install_cfunctype_methods():
     def _py_pythonobject_destructor(payload):
         entry = _PY2NRN_REGISTRY.pop(payload, None)
         if entry is not None:
+            _PACKAGE._bump_model_epoch()
             entry[0].po_ = None
 
     _CFUNCTYPE_KEEPALIVE.append(_py_pythonobject_destructor)
@@ -906,10 +930,16 @@ def _install_cfunctype_methods():
         if not obj_ptr or package._pending_callback_exc is not None:
             return 0
         try:
-            po_handle = _pythonobject_payload_ptr(obj_ptr)
-            if not po_handle:
+            this_ptr = ctypes.c_void_p.from_address(obj_ptr + _OBJECT_U_OFFSET).value
+            if not this_ptr:
                 return 0
-            callback = ctypes.cast(po_handle, ctypes.py_object).value
+            try:
+                # The payload slot read as a PyObject*, without a cast.
+                callback = ctypes.py_object.from_address(
+                    this_ptr + _PY2NRN_PO_OFFSET
+                ).value
+            except ValueError:  # a NULL payload
+                return 0
         except BaseException as exc:
             import sys
 
@@ -933,6 +963,7 @@ def _install_cfunctype_methods():
             if _hoc_thisobject.value:
                 _call_at_top_level(func, args)
             else:
+                _PACKAGE._bump_model_epoch()
                 func(*args)
             return 1
         except BaseException as exc:
@@ -1028,7 +1059,6 @@ def _install_cfunctype_methods():
 
     def _push_py2n_result(result):
         """Push exactly one Python result using py2n_component semantics."""
-        from .object import Object as _Object
 
         if isinstance(result, bool):
             _nrn_double_push(float(result))
@@ -1043,7 +1073,7 @@ def _install_cfunctype_methods():
             c_buf = ctypes.c_char_p(encoded)
             _PY2N_STR_POOL.append(c_buf)
             _nrn_str_push(ctypes.pointer(c_buf))
-        elif isinstance(result, _Object):
+        elif isinstance(result, _PACKAGE.object.Object):
             _nrn_object_push(result._obj)
         elif _is_hoc_number(result):
             # A numpy scalar or a Decimal: a number in NEURON's py2n_component.
@@ -1166,9 +1196,7 @@ def _install_cfunctype_methods():
             object_popped = True
             _push_py2n_result(result)
         except BaseException as exc:
-            from . import _stash_callback_exc
-
-            _stash_callback_exc(exc)
+            _PACKAGE._stash_callback_exc(exc)
             if public_components:
                 # Return across ctypes first; core unwinds the interrupted
                 # frame. No placeholder or subsequent HOC statement executes.
@@ -1216,8 +1244,6 @@ def _install_cfunctype_methods():
 
     @_HPOASGN_T
     def _py_hpoasgn(o, type_=None):
-        from . import _stash_callback_exc
-
         rhs_obj = None
         target_obj = None
         remaining_indices = 0
@@ -1293,7 +1319,7 @@ def _install_cfunctype_methods():
             else:
                 _call_python_component(setattr, (py_obj, name, value))
         except BaseException as exc:
-            _stash_callback_exc(exc)
+            _PACKAGE._stash_callback_exc(exc)
             if public_components:
                 return _component_error_pointer(exc)
             try:
@@ -1309,7 +1335,7 @@ def _install_cfunctype_methods():
 
     _CFUNCTYPE_KEEPALIVE.append(_py_hpoasgn)
     if public_components:
-        error = ctypes.create_string_buffer(_ERR_BUF_SIZE)
+        error = _ERR_BUF()
         if not _nrn_template_set_component_hooks(
             _sym,
             ctypes.cast(_py_py2n_component, ctypes.c_void_p),
@@ -1447,6 +1473,7 @@ def install_stdout_redirect(sink=None):
 
         def py_sink(stream, msg):
             try:
+                _PACKAGE._bump_model_epoch()
                 text = msg.decode("utf-8", errors="replace") if msg else ""
                 sink(int(stream), text)
             except Exception:
@@ -1515,6 +1542,19 @@ _hoc_valid_stmt = getattr(libnrniv, "_Z14hoc_valid_stmtPKcP6Object", None)
 if _hoc_valid_stmt is not None:
     _hoc_valid_stmt.argtypes = [ctypes.c_char_p, ctypes.c_void_p]
     _hoc_valid_stmt.restype = ctypes.c_bool
+
+
+# NEURON's lookup of a StringFunctions alias on an object (getsym in
+# nrnpy_hoc.cpp): the alias symbol, or NULL. It runs no HOC, so an object that
+# has no alias of a name is known so without parsing anything. Not in the
+# public C API; bound by its exported mangled name. None where the core does
+# not export it (Windows), and the caller then asks HOC.
+# TODO(gap-86): replace with a public lookup (a neuronapi.h function answering
+# whether an object has an alias of a name), which needs no mangled name.
+_ivoc_alias_lookup = getattr(libnrniv, "_Z17ivoc_alias_lookupPKcP6Object", None)
+if _ivoc_alias_lookup is not None:
+    _ivoc_alias_lookup.argtypes = [ctypes.c_char_p, ctypes.c_void_p]
+    _ivoc_alias_lookup.restype = ctypes.c_void_p
 
 
 # One lock for every multi-step HOC interaction. A call from Python is several
@@ -1660,7 +1700,7 @@ def _nrn_object_new(sym, narg, result=None):
     returns passes the ``Object`` out-parameter and reads it afterwards.
     """
     result = Object() if result is None else result
-    err = ctypes.create_string_buffer(_ERR_BUF_SIZE)
+    err = _ERR_BUF()
     rc = _nrn_object_new_nothrow(sym, narg, ctypes.byref(result), err, _ERR_BUF_SIZE)
     if rc:
         msg = err.value.decode("utf-8", errors="replace")
@@ -2253,7 +2293,7 @@ def _ensure_topology(sec_ptr, x):
     if not _tree_changed.value or not _nrn_section_is_active(sec_ptr):
         return
     sym = _nrn_symbol(b"this_node")
-    err = ctypes.create_string_buffer(_ERR_BUF_SIZE)
+    err = _ERR_BUF()
     with HOC_LOCK:
         _nrn_section_push(sec_ptr)
         try:

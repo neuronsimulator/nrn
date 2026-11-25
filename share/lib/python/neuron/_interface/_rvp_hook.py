@@ -28,10 +28,11 @@ def set_pyobj_callback(converter):
 
 
 def _rvp_rxd_to_callable(obj):
-    from .api import _py_pyobj_to_hoc_cfunctype, _unwrap_pythonobject
+    from .api import _PACKAGE, _py_pyobj_to_hoc_cfunctype, _unwrap_pythonobject
 
     if not obj or _converter is None:
         return obj
+    _PACKAGE._bump_model_epoch()  # a callback entry: see api._call_at_top_level
     try:
         value = _unwrap_pythonobject(obj)
         result = _converter(value)

@@ -47,7 +47,7 @@ def _hoc_object_class(h, legacy=None):
     of cls backed by a new HOC object of class C, as hclass3 needs.
     """
     from .nrnref import NrnRef
-    from .object import Object, _construct_hoc_object, _HocClassMeta
+    from .object import Object, _HocClassMeta
     from .utils import FuncWrapper
 
     class _HocObjectMeta(_HocClassMeta):
@@ -83,11 +83,8 @@ def _hoc_object_class(h, legacy=None):
             class_name = getattr(hocbase, "_hoc_class_name", None)
             if class_name is None:
                 raise TypeError(f"hocbase {hocbase!r} is not a HOC class")
-            obj, host, post_init = _construct_hoc_object(class_name, args, sec=sec)
             instance = object.__new__(cls)
-            instance._obj = obj
-            instance._init_from_ptr(obj, host)
-            post_init(instance)
+            instance._construct(class_name, args, sec=sec)
             return instance
 
         def __init__(self, *args, **kwargs):
