@@ -508,7 +508,7 @@ class SpeciesOnExtracellular(_SpeciesMathable):
             raise RxDException(
                 "_evaluate needs a (region, section, normalized position) triple"
             )
-        return self.nodes(_xyz(sec(0.5))).value[0]
+        return self.nodes(_xyz(sec(x))).value[0]
 
     @property
     def d(self):

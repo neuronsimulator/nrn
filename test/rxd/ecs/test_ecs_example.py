@@ -17,7 +17,7 @@ def ecs_example(neuron_instance):
 
     h, rxd, data, save_path = neuron_instance
 
-    def make_model(alpha, lambd, mech=True):
+    def make_model(alpha, lambd, mech=True, initial=0):
         # create cell1 where `x` will be created and leak out
         cell1 = h.Section(name="cell1")
         cell1.pt3dclear()
@@ -60,7 +60,11 @@ def ecs_example(neuron_instance):
 
         # Who?
         x = rxd.Species(
-            [cyt, org, cyt_org_membrane, ecs], name="x", d=1.0, charge=1, initial=0
+            [cyt, org, cyt_org_membrane, ecs],
+            name="x",
+            d=1.0,
+            charge=1,
+            initial=initial,
         )
         Xcyt = x[cyt]
         Xorg = x[org]
@@ -288,6 +292,37 @@ def test_ecs_multi_example(ecs_example):
     if not save_path:
         max_err = compare_data(data)
         assert max_err < tol
+
+
+def test_ecs_multi_example_evaluate(ecs_example):
+    """Test _evaluate for a multicompartment reaction with an extracellular species"""
+
+    (h, rxd, data, save_path), make_model = ecs_example
+    model = make_model(
+        0.2,
+        1.6,
+        mech=False,
+        initial=lambda nd: 1.0 if isinstance(nd.region, rxd.Extracellular) else nd.x,
+    )
+    cell1, cell2, cyt = model[0], model[1], model[2]
+    cyt_ecs_pump = model[-1]
+    h.finitialize(-65)
+
+    assert (
+        abs(
+            cyt_ecs_pump._evaluate((cyt, cell1, 0.1), instruction="do_1d")
+            - -23717.734690199137
+        )
+        < tol
+    )
+
+    assert (
+        abs(
+            cyt_ecs_pump._evaluate((cyt, cell2, 0.9), instruction="do_1d")
+            - -2283.4789496340672
+        )
+        < tol
+    )
 
 
 def test_ecs_multi_example_cvode(ecs_example):
