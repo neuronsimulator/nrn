@@ -1576,6 +1576,11 @@ def hoc_call_depth():
     return _hoc_call_depth
 
 
+def in_hoc_call():
+    """True in a callback core makes on this thread."""
+    return _hoc_call_depth and HOC_LOCK._is_owned()
+
+
 def hoc_locked(func):
     """Run ``func`` holding HOC_LOCK."""
 

@@ -12,6 +12,7 @@ import weakref
 
 from .api import (
     HOC_LOCK,
+    in_hoc_call,
     _refused_double,
     _to_double,
     TYPES,
@@ -96,19 +97,23 @@ _V_SYMBOL = _nrn_symbol(b"v")
 _CONNECT_ARG_UNSET = object()
 
 
-def _python_cell(sec):
-    """The cell object passed to Section(cell=...), or None.
+def _cell_entry(sec):
+    """(name prefix, weakref to the cell) of Section(cell=...), or None.
 
     An unset slot (wrappers from _from_ptr) means no cell. Uses
     object.__getattribute__ so the unset read does not recurse through
     __getattr__.
     """
     try:
-        cell_ref = object.__getattribute__(sec, "_cell")
+        return object.__getattribute__(sec, "_cell")
     except AttributeError:
-        entry = OWNED_SECTIONS.get(object.__getattribute__(sec, "_sec"))
-        cell_ref = entry[1] if entry is not None else None
-    return None if cell_ref is None else cell_ref()
+        return OWNED_SECTIONS.get(object.__getattribute__(sec, "_sec"))
+
+
+def _python_cell(sec):
+    """The cell object passed to Section(cell=...), or None."""
+    entry = _cell_entry(sec)
+    return None if entry is None or entry[1] is None else entry[1]()
 
 
 def _is_finite(value):
@@ -384,6 +389,29 @@ class _ArrayRangeVar:
         # where name() raises, and uses Section.name, not a subclass's.
         sec = Section.__repr__(self._section)
         return f"<ArrayRangeVar {self._name}@{sec}({self._x}) {vals}>"
+
+
+class _SectionArrayRangeVar(_ArrayRangeVar):
+    """sec.xg: reads are the middle segment's, writes reach every segment.
+
+    As NEURON's: sec.xg[i] = v is a section-level assignment (the way
+    sec.gnabar_hh = v is), where seg.xg[i] = v is one segment's.
+    """
+
+    __slots__ = ()
+
+    def __setitem__(self, idx, value):
+        value = _to_double(value, ValueError)
+        sec = self._section
+        if not _nrn_section_is_active(sec._sec):
+            raise ReferenceError(f"nrn.RangeVar {_DELETED_SECTION}")
+        idx = self._resolve(idx)
+        name = self._name
+        size = self._size
+        # The middle segment first, so an absent mechanism is reported there
+        # as NEURON does; then every node, both ends too (vext lives there).
+        for x in [self._x] + [seg._x for seg in sec.allseg()]:
+            _ArrayRangeVar(sec, x, name, size)._call("_mn_rv_set", idx, x, float(value))
 
 
 # ── Segment ───────────────────────────────────────────────────────────────────
@@ -1043,13 +1071,13 @@ class Segment:
                 _ensure_rangevar_topology(self._sec._sec, self._x, name)
             self._check_rangevar_mechanism(name)
             if info[2]:
-                return NrnRangeArrayRef(self.sec, self.x, name)
+                return NrnRangeArrayRef(self._sec, self._x, name)
             if _is_pointer_rangevar(name, info[0]):
                 # raises if unset; an opaque POINTER is its own reference
                 value = _pointer_rangevar_get(self.sec, self.x, name)
                 if isinstance(value, OpaquePointer):
                     return value
-            return NrnRangeVarRef(self.sec, self.x, name)
+            return NrnRangeVarRef(self._sec, self._x, name)
 
         # Mechanism instance cache (Segment._mech_cache).
         # WHY: rebuilding a Mechanism wrapper on every seg.hh access
@@ -1421,7 +1449,8 @@ _anon_section_count = 0
 # range-variable references record it at creation: NEURON frees the old nodes'
 # storage when nseg changes, so they die. A dict read is far cheaper than
 # reading nseg through the C API on every wrapper creation. An nseg change made
-# from HOC code is counted when a range-variable reference is used (sync_nseg).
+# from HOC code is counted by current_nseg_generation when a wrapper is made,
+# and by sync_nseg when a range-variable reference is used.
 NSEG_GENERATION = {}
 
 # nseg at each generation, per section pointer: NSEG_HISTORY[sec][g]. NEURON
@@ -1432,40 +1461,19 @@ NSEG_GENERATION = {}
 NSEG_HISTORY = {}
 
 
-def _record_nseg_change(sec_ptr, old, new):
-    history = NSEG_HISTORY.get(sec_ptr)
-    if history is None or history[-1] != old:
-        # None, or left by a deleted section at this address (a HOC-created
-        # section can take one without passing through Section.__init__)
-        history = NSEG_HISTORY[sec_ptr] = [old]
-    history.append(new)
-    NSEG_GENERATION[sec_ptr] = len(history) - 1
-
-
-def nseg_generation(sec_ptr):
-    """The section's current generation, recording its nseg on first use.
-
-    One nseg read per section, not per wrapper: later calls are a dict hit.
-    """
-    generation = NSEG_GENERATION.get(sec_ptr)
-    if generation is None:
-        NSEG_HISTORY[sec_ptr] = [int(_nrn_nseg_get(sec_ptr))]
-        generation = NSEG_GENERATION[sec_ptr] = 0
-    return generation
+def _record_nseg(sec_ptr, nseg):
+    history = NSEG_HISTORY.setdefault(sec_ptr, [])
+    if not history or nseg != history[-1]:
+        history.append(nseg)
+        NSEG_GENERATION[sec_ptr] = len(history) - 1
 
 
 def sync_nseg(sec_ptr):
-    """Count an nseg change made from HOC code, which Section.nseg never saw.
-
-    Reads nseg, so it is for a reference being used, not one being made.
-    """
+    """Count an nseg change made since the last look, such as one from HOC code."""
+    nseg = _nrn_nseg_get(sec_ptr)
     history = NSEG_HISTORY.get(sec_ptr)
-    if history is None:
-        nseg_generation(sec_ptr)
-        return
-    nseg = int(_nrn_nseg_get(sec_ptr))
-    if nseg != history[-1]:
-        _record_nseg_change(sec_ptr, history[-1], nseg)
+    if history is None or nseg != history[-1]:
+        _record_nseg(sec_ptr, nseg)
 
 
 # Section pointer -> the model epoch at which current_nseg_generation last
@@ -1662,7 +1670,7 @@ def take_over_legacy_owner_hooks():
     _owner_hooks[0] = None
 
 
-def _new_owned_section(name, cell):
+def _new_owned_section(name, prefix, cell):
     """Create a section owned by myneuron in core, or return None."""
     if _owner_hooks[0] is None:
         _install_owner_hooks()
@@ -1670,9 +1678,7 @@ def _new_owned_section(name, cell):
         return None
 
     if name is not None:
-        if cell is not None:
-            name = f"{cell}.{name}"
-        name = name.encode("utf-8")
+        name = (prefix + name).encode("utf-8")
     entry = (name, weakref.ref(cell) if cell is not None else None)
     owner = _next_owner[0]
     _next_owner[0] += 1
@@ -1696,6 +1702,38 @@ def _release_owned_section(sec):
     # interior one goes (the garbage collector can do this mid-loop).
 
     _PACKAGE._bump_model_epoch()
+
+
+def _hoc_statement_as_proc(name, statement):
+    """The HOC proc *name* that runs *statement*: a call of it raises HOC's error."""
+    n = _PACKAGE._n
+    if not _nrn_symbol(name.encode()):
+        n("proc %s() { %s }" % (name, statement))
+    return getattr(n, name)
+
+
+def _density_mechanism_symbol(name):
+    """The symbol of the density mechanism *name*, for insert and uninsert.
+
+    nrn_mechanism_insert takes any symbol's subtype for a mechanism type:
+    another kind of symbol aborts the process or inserts some other mechanism.
+    As in NEURON, only a density mechanism goes in or out (morphology and
+    capacitance are in every section).
+    """
+    symbol = _nrn_symbol(name.encode("utf-8"))
+    if (
+        not symbol
+        or int(_nrn_symbol_type(symbol)) != TYPES.MECHANISM
+        or name in _EVERY_SECTION_MECHANISMS
+    ):
+        # NEURON's message, then the names that would work, so a typo is
+        # easy to spot.
+        available = ", ".join(sorted(_PACKAGE.mechanism._all_density_mechanism_names()))
+        raise ValueError(
+            f"argument not a density mechanism name. {name!r} is not "
+            f"one; density mechanisms: {available or '(none)'}"
+        )
+    return symbol
 
 
 class Section:
@@ -1734,21 +1772,26 @@ class Section:
             return
         if cell is not None and isinstance(cell, str):
             raise TypeError("cell must be an object, not a string")
-        if cell is not None and not str(cell).isascii():
-            raise TypeError("cell name contains non ascii character")
+        prefix = ""
+        if cell is not None:  # the cell's name as it is now, as in NEURON
+            prefix = str(cell) + "."
+            if not prefix.isascii():
+                raise TypeError("cell name contains non ascii character")
+            if name is None:
+                prefix = ""
         raw_name = name
         if name is None:
             # No name: auto-generate a unique one, as real NEURON does.
             global _anon_section_count
             name = "__nrnsec_0x%x" % _anon_section_count
             _anon_section_count += 1
-        self._cell = weakref.ref(cell) if cell is not None else None
+        self._cell = (prefix, weakref.ref(cell)) if cell is not None else None
         if "\x00" in name:
             # c_char_p accepts a NUL and nrn_section_new truncates there, so
             # two names differing only after a NUL would collapse into one.
             # Reject like real NEURON.
             raise ValueError("embedded null character")
-        sec = _new_owned_section(raw_name, cell) if _pynative else None
+        sec = _new_owned_section(raw_name, prefix, cell) if _pynative else None
         if not sec:
             sec = _nrn_section_new(name.encode("utf-8"))
             # Without the owner hooks this wrapper owns the section by itself.
@@ -1865,8 +1908,14 @@ class Section:
             # attributes and properties; NEURON broadcasts range variables only.
             object.__setattr__(self, name, value)
         else:
-            for seg in self:
-                setattr(seg, name, value)
+            try:
+                for seg in self:
+                    setattr(seg, name, value)
+            except IndexError as exc:
+                # NEURON's text for a section-level array without a subscript.
+                if exc.args == (f"{name} needs an index for assignment",):
+                    raise IndexError("missing index") from None
+                raise
 
     def __dir__(self):
         attrs = set(object.__dir__(self))
@@ -1922,7 +1971,18 @@ class Section:
         except AttributeError:
             raise AttributeError(name) from None
         self._check_alive()
-        return getattr(self(0.5), name)
+        value = getattr(self(0.5), name)
+        cls = value.__class__
+        if cls is float:
+            return value
+        if cls is _ArrayRangeVar:
+            # Same layout: re-class the fresh wrapper instead of rebuilding it.
+            value.__class__ = _SectionArrayRangeVar
+        elif cls is _PACKAGE.mechanism.Mechanism:
+            # NEURON has no sec.hh: reaching the middle segment's mechanism
+            # turned sec.hh.gnabar = x into a one-segment write.
+            raise AttributeError(f"'nrn.Section' object has no attribute '{name}'")
+        return value
 
     def __contains__(self, obj):
         """True if obj.sec is this section (a Segment, an rxd node), as NEURON's."""
@@ -1976,52 +2036,38 @@ class Section:
                 )
             insert(self)
             return self
-        if not isinstance(mechanism, bytes):
-            mechanism_bytes = mechanism.encode("utf-8")
+        if isinstance(mechanism, bytes):
+            mechanism = mechanism.decode("utf-8")
+        mech_symbol = _density_mechanism_symbol(mechanism)
+        # In a callback core's data may be frozen. HOC returns the error; through
+        # ctypes it would unwind the callback's Python frames. TODO(gap-89): a
+        # nothrow nrn_section_new, which has no such way round.
+        if in_hoc_call():
+            _hoc_statement_as_proc(f"_mn_insert_{mechanism}", f"insert {mechanism}")(
+                sec=self
+            )
         else:
-            mechanism_bytes = mechanism
-            mechanism = mechanism_bytes.decode("utf-8")
-        mech_symbol = _nrn_symbol(mechanism_bytes)
-        # nrn_mechanism_insert takes any symbol's subtype for a mechanism
-        # type: another kind of symbol aborts the process or inserts some
-        # other mechanism. As in NEURON, only a density mechanism goes in
-        # (morphology and capacitance are in every section already).
-        if (
-            not mech_symbol
-            or int(_nrn_symbol_type(mech_symbol)) != TYPES.MECHANISM
-            or mechanism in _EVERY_SECTION_MECHANISMS
-        ):
-            # NEURON's message, then the names that would work, so a typo is
-            # easy to spot.
-
-            available = ", ".join(
-                sorted(_PACKAGE.mechanism._all_density_mechanism_names())
-            )
-            raise ValueError(
-                f"argument not a density mechanism name. {mechanism!r} is not "
-                f"one; density mechanisms: {available or '(none)'}"
-            )
-        _nrn_mechanism_insert(self._sec, mech_symbol)
+            _nrn_mechanism_insert(self._sec, mech_symbol)
 
         _PACKAGE._bump_model_epoch()
         self._inserted_mechs = None
         return self  # as NEURON's, so inserts chain
 
     def uninsert(self, mechanism):
-        """Remove a previously inserted mechanism.
+        """Remove a mechanism; nothing to do if it is not inserted.
 
-        Raises ``ValueError`` if the mechanism is not inserted. Routes through
-        the HOC ``uninsert`` statement because ``neuronapi.h`` has no
+        Through the HOC ``uninsert`` statement: ``neuronapi.h`` has no
         ``nrn_mechanism_uninsert`` (gap-8).
         """
-
+        self._check_alive()
         if isinstance(mechanism, _PACKAGE.mechanism.DensityMechanism):
             mechanism = mechanism.name
-        if not self.has_membrane(mechanism):
-            raise ValueError(f"mechanism '{mechanism}' is not inserted")
-
+        elif not isinstance(mechanism, str):
+            raise TypeError(f"argument 1 must be str, not {type(mechanism).__name__}")
+        _density_mechanism_symbol(mechanism)
         _PACKAGE._n(f"uninsert {mechanism}", sec=self)
         self._inserted_mechs = None
+        return self  # as NEURON's
 
     def _get_inserted_mechs(self):
         """Return the cached list of mechanism names inserted on this section.
@@ -2078,10 +2124,8 @@ class Section:
             raw = raw[7:]
         if self._sec in OWNED_SECTIONS:
             return raw  # core's name already has the cell, as in NEURON
-        cell = _python_cell(self)
-        if cell is not None:
-            return f"{cell}.{raw}"
-        return raw
+        entry = _cell_entry(self)
+        return raw if entry is None else entry[0] + raw
 
     def __repr__(self):
         # name() is already cell-qualified; prefixing again would give
@@ -2128,14 +2172,16 @@ class Section:
                 f"nseg must be an integer in range 1 to 32767, got {value!r}"
             )
 
-        old = int(_nrn_nseg_get(self._sec))
-        _nrn_nseg_set(self._sec, int(value))
+        sync_nseg(self._sec)  # an nseg change made from HOC code comes first
+        if in_hoc_call():  # as in insert()
+            _hoc_statement_as_proc("_mn_set_nseg", "nseg = $1")(int(value), sec=self)
+        else:
+            _nrn_nseg_set(self._sec, int(value))
         # nrn_nseg_set flips diam_changed, which CachedSegment watches
         # (api.get_topology_version). New nodes free the old mechanism storage,
         # so Mechanism wrappers and range-variable references must revalidate.
         # Setting the same nseg changes nothing in NEURON.
-        if int(value) != old:
-            _record_nseg_change(self._sec, old, int(value))
+        _record_nseg(self._sec, int(value))
 
         _PACKAGE._bump_model_epoch()
         self._inserted_mechs = None

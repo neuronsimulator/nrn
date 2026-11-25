@@ -10,7 +10,6 @@ import os
 import sys
 import types
 import warnings
-import weakref
 
 from ._docs import _ClassDoc, help_doc
 from .api import (
@@ -20,6 +19,7 @@ from .api import (
     _VENDORED,
     HOC_CLASS_MODULE,
     HOC_LOCK,
+    _PySequence_Check,
     libnrniv,
     hoc_locked,
     _ERR_BUF,
@@ -91,6 +91,7 @@ from .utils import (
     _try_wrap_point_nmodlrandom,
     class_symbol,
     is_located_point_process_class,
+    _IS_POINT_PROCESS,
     is_point_process_class,
     list_functions,
     list_methods,
@@ -192,8 +193,8 @@ def _sectionlist_members(arg):
 def _construct_hoc_object(class_name, args, sec=None):
     """Create the HOC object backing a user-side construction call.
 
-    Returns ``(obj_ptr, host_section, post_init)``; call ``post_init`` with the
-    initialized wrapper. Some classes take Python idioms that do not match the
+    Returns ``(obj_ptr, post_init)``; call ``post_init`` with the initialized
+    wrapper. Some classes take Python idioms that do not match the
     HOC constructor, such as Vector(iterable) and SectionList(iterable). Their
     args are rewritten here and the rest is finished by ``post_init``. All
     other args pass straight through.
@@ -305,7 +306,7 @@ def _construct_hoc_object(class_name, args, sec=None):
         for method, seg in zip(("begin", "end"), rvp_ends):
             getattr(wrapper, method)(seg.x, sec=seg.sec)
 
-    return result.value, use_sec, post_init
+    return result.value, post_init
 
 
 # ---------------------------------------------------------------------------
@@ -470,8 +471,6 @@ class Object(metaclass=_HocClassMeta):
         "_obj",
         "_class_name",
         "_methods",
-        "_host_section",
-        "_host_section_ref",
         "_section_cache",
         "_plotshape_var",
         "__weakref__",
@@ -482,7 +481,7 @@ class Object(metaclass=_HocClassMeta):
     # (``cls[i]``) and the user-construction path in __init__.
     _hoc_class_name = None
 
-    def __init__(self, *args, host_section=None, sec=None):
+    def __init__(self, *args, sec=None):
         # User construction only: _hoc_class_name names the template and
         # _construct_hoc_object pushes the args. Code holding a raw HOC obj*
         # wraps it with _wrap. A ctypes.c_void_p argument is a Python object
@@ -494,27 +493,19 @@ class Object(metaclass=_HocClassMeta):
                 "instantiate via n.<ClassName>(...) or subclass a "
                 "class returned by n.<ClassName>."
             )
-        self._construct(class_name, args, host_section, sec)
+        self._construct(class_name, args, sec)
 
-    def _construct(self, class_name, args, host_section=None, sec=None):
+    def _construct(self, class_name, args, sec=None):
         """Make the HOC object of class *class_name* for this wrapper."""
-        obj, host_from_args, post_init = _construct_hoc_object(
-            class_name, args, sec=sec
-        )
+        obj, post_init = _construct_hoc_object(class_name, args, sec=sec)
         # Own the object before any step below can fail, as _wrap does: a
-        # partly built wrapper releases it in __del__. The first point-process
-        # check for a class runs HOC, so even that step can be interrupted.
+        # partly built wrapper releases it in __del__.
         self._obj = obj
-
-        if host_section is None and is_point_process_class(class_name):
-            # Only a point process lives in the section it was made in;
-            # SectionRef(sec=s) keeps working after s is deleted.
-            host_section = host_from_args
-        self._init_from_ptr(obj, host_section)
+        self._init_from_ptr(obj)
         post_init(self)
 
     @classmethod
-    def _wrap(cls, obj, host_section=None):
+    def _wrap(cls, obj):
         """Wrap an existing HOC obj* without the user construction path.
 
         For internal callers that hold a raw pointer. Bypasses any
@@ -524,10 +515,10 @@ class Object(metaclass=_HocClassMeta):
         # Establish ownership before initialization can fail. A partially
         # initialized wrapper then releases the caller-provided ref in __del__.
         instance._obj = obj
-        instance._init_from_ptr(obj, host_section)
+        instance._init_from_ptr(obj)
         return instance
 
-    def _init_from_ptr(self, obj, host_section):
+    def _init_from_ptr(self, obj):
         """Populate all slots from an existing HOC obj*.
 
         Called by both ``__init__`` (user path) and ``_wrap`` (internal path).
@@ -541,20 +532,9 @@ class Object(metaclass=_HocClassMeta):
         self._class_name = _api._nrn_class_name(obj).decode("utf-8")
 
         self._methods = list_methods(self)
-        # A HOC/template-owned Section wrapper is non-owning and may be a
-        # temporary (cell.soma[0]). Keep that wrapper alive with its dependent;
-        # the template owns the native Section, so wrapper GC says nothing
-        # about native liveness (gap-50). Python-owned Sections keep the weak
-        # hold required by real NEURON's last-wrapper-deletes-section contract.
-        self._host_section = None
-        self._plotshape_var = None
-        self._host_section_ref = None
-        if host_section is not None and host_section.is_pysec():
-            self._host_section_ref = weakref.ref(host_section)
-        elif host_section is not None:
-            self._host_section = host_section
         # Pre-set lazy slots so reads do not fall into __getattr__.
         self._section_cache = None
+        self._plotshape_var = None
 
     def __del__(self):
         # Reference ownership: see _init_from_ptr.
@@ -620,11 +600,7 @@ class Object(metaclass=_HocClassMeta):
             # bound to self it would be a reference cycle, and the object
             # would outlive its last Python reference until a collection.
             _nrn_object_ref(self._obj)
-            twin = _wrap_owned_object(self._obj)
-            if self._host_section is not None or self._host_section_ref is not None:
-                object.__setattr__(twin, "_host_section", self._host_section)
-                object.__setattr__(twin, "_host_section_ref", self._host_section_ref)
-            return Object.__getattr__(twin, name)
+            return Object.__getattr__(_wrap_owned_object(self._obj), name)
         return Object.__getattr__(self, name)
 
     def __repr__(self):
@@ -737,8 +713,9 @@ class Object(metaclass=_HocClassMeta):
                 "variable or strdef"
             )
         self._check_located()
-        sym = _nrn_method_symbol(self._obj, name.encode("utf-8"))
-        is_array = bool(_nrn_symbol_is_array(sym))
+        name_encoded = name.encode("utf-8")
+        sym = _nrn_method_symbol(self._obj, name_encoded)
+        is_array = _nrn_symbol_is_array(sym)
         if not is_array and idx is not None:
             raise TypeError(f"scalar property '{name}' does not take an index")
         if is_array:
@@ -759,7 +736,7 @@ class Object(metaclass=_HocClassMeta):
                 raise IndexError(f"index {idx} out of range [0, {size}) for {name}")
         if _type == TYPES.VAR:
             return NrnHocTemplateVarRef(self, name, idx=idx)
-        return NrnObjectPropertyRef(self, name, idx=idx)
+        return NrnObjectPropertyRef(self, name_encoded, idx)
 
     def _array_size(self, name, sym):
         """Length of array member *name* (symbol *sym*) of this object.
@@ -818,49 +795,6 @@ class Object(metaclass=_HocClassMeta):
                     methods.add(name)
         return sorted(methods)
 
-    def _check_host_alive(self):
-        """Raise if this point process's host section has been deleted.
-
-        No-op for non-point-process objects (both host slots are None).
-
-        Python-owned Sections are weakly held so their last owning wrapper can
-        delete the native section; a stale weakref raises ``ReferenceError``.
-        HOC/template-owned wrappers are strongly held because their native
-        Section has an independent owner. In either case an explicit native
-        ``delete_section`` leaves the point process in no section, and this
-        raises NEURON's ``TypeError("No value")`` before property dispatch can
-        dereference freed state.
-        """
-        host = self._host_section
-        if host is None:
-            ref = self._host_section_ref
-            if ref is None:
-                return
-            host = ref()
-            if host is None:
-                if not self._follow_relocation():
-                    raise ReferenceError(
-                        f"{self._class_name}: host section has been deleted"
-                    )
-                return
-        if not _nrn_section_is_active(host._sec):
-            if not self._follow_relocation():
-                raise TypeError("No value")
-
-    def _follow_relocation(self):
-        """Record the section the point process is in now, after loc() moved it
-        off a deleted host. False if it is in no section."""
-        seg = self._get_segment()  # has_loc/get_loc skip the host check
-        if seg is None:
-            return False
-        self._host_section = None
-        self._host_section_ref = None
-        if seg.sec.is_pysec():
-            self._host_section_ref = weakref.ref(seg.sec)
-        else:
-            self._host_section = seg.sec
-        return True
-
     def _get_segment(self):
         """The Segment this point process is in, or None if it is in none."""
 
@@ -895,28 +829,21 @@ class Object(metaclass=_HocClassMeta):
             return None
         return _segment_of(sec, x)
 
-    def _is_unlocated(self):
-        """True for a point process in no section, whose variables have no
-        data.
-
-        Never placed (h.IClamp()) or wrapped from HOC after its section was
-        deleted (h.List("IClamp").o(0)): no host section is known here, and
-        the property functions throw "point process not located in a
-        section" through ctypes, which aborts. Methods such as get_segment()
-        and has_loc() still work. An ARTIFICIAL_CELL is in no section but has
-        data.
-        """
-        return (
-            self._host_section is None
-            and self._host_section_ref is None
-            and is_point_process_class(self._class_name)
-            and not _nrn_prop_exists(self._obj)
-        )
-
     def _check_located(self):
         """Raise TypeError, as NEURON does, before reading, writing or taking
-        a reference to a variable of a point process that is in no section."""
-        if self._is_unlocated():
+        a reference to a variable of a point process that is in no section.
+
+        Never placed (h.IClamp()), or its section was deleted: the property
+        functions throw "point process not located in a section" through
+        ctypes, which aborts. Core is asked each time, as loc() and deletion
+        move it without this wrapper. Methods such as get_segment() and
+        has_loc() still work. An ARTIFICIAL_CELL is in no section but has data.
+        """
+        name = self._class_name
+        known = _IS_POINT_PROCESS.get(name)
+        if known is None:
+            known = is_point_process_class(name)
+        if known and not _nrn_prop_exists(self._obj):
             raise TypeError("No value")
 
     def _assign_pointer(self, member, src_ref):
@@ -940,7 +867,6 @@ class Object(metaclass=_HocClassMeta):
         # Must come before the generic underscore short-circuit below.
         if name.startswith("_ref_"):
             if isinstance(val, NrnRef):
-                self._check_host_alive()
                 self._check_located()
                 self._assign_pointer(name[5:], val)
                 return
@@ -967,7 +893,6 @@ class Object(metaclass=_HocClassMeta):
             if methods is None or name not in methods:
                 object.__setattr__(self, name, val)
                 return
-        self._check_host_alive()
 
         # `delay` → `del` alias — see __dir__ comment above.
         actual_name = name
@@ -996,10 +921,9 @@ class Object(metaclass=_HocClassMeta):
                 sym = _nrn_method_symbol(self._obj, name_encoded)
                 if not _nrn_symbol_is_array(sym):
                     if val.__class__ is not float and val.__class__ is not int:
-                        # User code in the conversion may delete the host
-                        # section: convert, then check again.
+                        # User code in the conversion may delete the section:
+                        # convert, then check.
                         val = _to_double(val, TypeError)
-                        self._check_host_alive()
                     self._check_located()
                     if _type == TYPES.VAR:
                         _write_hoc_template_var(self, actual_name, val)
@@ -1025,7 +949,6 @@ class Object(metaclass=_HocClassMeta):
                         f"got {len(seq)} values"
                     )
                 seq = [_to_double(v, TypeError) for v in seq]
-                self._check_host_alive()
                 self._check_located()
                 for i, v in enumerate(seq):
                     if _type == TYPES.VAR:
@@ -1058,10 +981,6 @@ class Object(metaclass=_HocClassMeta):
             object.__getattribute__(self, "_methods")
         except AttributeError:
             raise AttributeError(name) from None
-        # Skipped for underscore names so the weakref bookkeeping does not
-        # recurse.
-        if not name.startswith("_") and name not in _LOCATION_METHODS:
-            self._check_host_alive()
         if name.startswith("_ref_"):
             return self._property_ref(name[5:])
         # NEURON's Python module adds get_segment() to every point process
@@ -1516,10 +1435,6 @@ _NETCON_SEG_METHODS = {"preseg": "preloc", "postseg": "postloc"}
 
 _PC_RAW_ARG_METHODS = frozenset({"py_allgather", "py_gather", "py_broadcast"})
 
-# Point-process methods that work after the host section is deleted, as in
-# NEURON: core checks the location itself (get_loc raises a HOC error).
-_LOCATION_METHODS = frozenset({"get_segment", "has_loc", "get_loc", "loc"})
-
 # Core reads a positional Section in these through nrn_secarg, which unwraps it
 # with a hook that only NEURON's own Python module installs (nrnpy_o2sec_p_);
 # without it, nrn_secarg silently uses the currently accessed section instead.
@@ -1751,7 +1666,12 @@ class List(Object):
 
 def _vector_values(seq):
     """Return *seq* as an array of doubles, with NEURON's error for a non-number."""
-    values = seq if isinstance(seq, (list, tuple)) else list(seq)
+    if isinstance(seq, (list, tuple)):
+        values = seq
+    elif isinstance(seq, collections.abc.Iterator) and _PySequence_Check(seq):
+        values = [seq[i] for i in range(len(seq))]
+    else:
+        values = list(seq)
     try:
         return array.array("d", values)
     except TypeError:
@@ -1984,9 +1904,29 @@ class Vector(Object):
     @help_doc("Vector.from_python")
     def from_python(self, seq):
         """Fill this Vector from a Python sequence. Resizes to match."""
+        if isinstance(seq, collections.abc.Iterator) and not _PySequence_Check(seq):
+            return self._append_values(seq)
         values = _vector_values(seq)
         self.resize(len(values))
         _copy_into_vector(self, values)
+        return self
+
+    def _append_values(self, iterator):
+        """NEURON's from_python of an iterator: what it made before it failed
+        stays."""
+        values = array.array("d")
+        try:
+            for value in iterator:
+                try:
+                    values.append(value)
+                except TypeError:
+                    raise RuntimeError(
+                        f"item {len(values)} is not a valid number"
+                    ) from None
+        finally:
+            values = _vector_values(self.to_python()) + values
+            self.resize(len(values))
+            _copy_into_vector(self, values)
         return self
 
     def __len__(self):
@@ -2788,10 +2728,9 @@ class ArrayProperty:
         return i
 
     def _check_owner(self):
-        # As obj.<name> checks before every read: a point process whose
-        # section was deleted, or that is in no section, has no data, and the
-        # property functions raise a HOC error that aborts the process.
-        self._owner._check_host_alive()
+        # As obj.<name> checks before every read: a point process that is in no
+        # section has no data, and the property functions raise a HOC error
+        # that aborts the process.
         self._owner._check_located()
 
     def __getitem__(self, idx):

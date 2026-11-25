@@ -221,7 +221,10 @@ def _raise_pending_callback_exc():
     if _pending_callback_exc is not None:
         exc = _pending_callback_exc
         _pending_callback_exc = None
-        raise exc
+        try:
+            raise exc
+        finally:
+            del exc  # its traceback holds this frame: a cycle until a gc
 
 
 def _callback_failed(exc, hoc_error, other=_print_exception):
@@ -1666,8 +1669,13 @@ class NEURON(metaclass=_Singleton):
                     f"(n.{name}[i] = ...), not the whole array"
                 )
             # A reference is not a HOC object; NEURON leaves the objref nil.
+            # Assigned, not `objref name`: that frees the storage of the objref,
+            # which HOC may be using (name.method() calls Python).
             if value is None or isinstance(value, NrnRef):
-                self("objref %s" % name)
+                if "_mn_nilref" not in self._top_level:
+                    self("objref _mn_nilref")
+                    self._top_level = list_functions()
+                self("%s = _mn_nilref" % name)
                 return
             if not isinstance(value, Object):
                 # HOC must see the same object as Python (notably movie_timer).
@@ -1682,6 +1690,11 @@ class NEURON(metaclass=_Singleton):
             getattr(self, fn)(value)
             return
 
+        # The entry may be older than the name's declaration.
+        self._top_level = list_functions()
+        if self._top_level.get(name) != info:
+            setattr(self, name, value)
+            return
         # Functions, mechanisms, templates, sections: not assignable.
         raise TypeError("not assignable")  # NEURON's text
 
@@ -1737,7 +1750,6 @@ class NEURON(metaclass=_Singleton):
             raise TypeError("POINTER name can contain only ascii characters") from None
 
         if isinstance(target, Object):
-            target._check_host_alive()
             target._check_located()
         elif isinstance(target, Mechanism):
             target._seg._sec._check_alive()
@@ -1786,11 +1798,6 @@ class NEURON(metaclass=_Singleton):
                 import traceback
 
                 traceback.print_exception(exc)
-                # The traceback's frames would keep the callback's locals (and
-                # any Section among them) alive in a cycle that the garbage
-                # collector frees later, possibly mid-finitialize when core's
-                # node storage is frozen and a section cannot be deleted.
-                traceback.clear_frames(exc.__traceback__)
                 return False
             if ret != 0 and raise_on_error:
                 raise RuntimeError(f"HOC execution failed: {cmd!r}")

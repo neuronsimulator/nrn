@@ -85,13 +85,6 @@ def _get_libc():
     return _libc
 
 
-def _nseg_generation(sec_ptr):
-    generation = _PACKAGE.sections.NSEG_GENERATION.get(sec_ptr)
-    if generation is None:
-        generation = _PACKAGE.sections.nseg_generation(sec_ptr)
-    return generation
-
-
 def _symbol_info(name):
     return _PACKAGE.sections._get_symbol_info(name.decode("utf-8"))
 
@@ -254,18 +247,18 @@ class NrnRangeVarRef(NrnRef):
             raise NameError(f"No such mechanism or variable: {self._name}")
         # NEURON's handle follows its node through nseg changes and dies with
         # it (sections.follow_node); _check_nseg moves _x along.
-        self._nseg = _nseg_generation(sec._sec)
+        self._nseg = _PACKAGE.sections.current_nseg_generation(sec._sec)
 
     def _check_nseg(self, sec):
         # Also catches an nseg change made from HOC code (sync_nseg), which
         # NEURON's handle sees: its node may be gone (datahandle test_1).
-        _PACKAGE.sections.sync_nseg(sec._sec)
-        generation = _PACKAGE.sections.NSEG_GENERATION.get(sec._sec, 0)
+        sections = _PACKAGE.sections
+        sec_ptr = sec._sec
+        sections.sync_nseg(sec_ptr)
+        generation = sections.NSEG_GENERATION.get(sec_ptr, 0)
         if generation == self._nseg:
             return
-        x = _PACKAGE.sections.follow_node(
-            sec._sec, self._nseg, self._x, bool(sec.orientation())
-        )
+        x = sections.follow_node(sec_ptr, self._nseg, self._x, bool(sec.orientation()))
         if x is None:
             raise ValueError("Invalid data_handle")
         self._x = x
@@ -565,22 +558,19 @@ class NrnObjectPropertyRef(NrnRef):
     def _owner(self):
         """The object, checked before its property data is touched.
 
-        The weakref catches a collected wrapper, but a point process whose
-        host section was deleted through HOC keeps its wrapper while the C
-        node is freed, and reading, writing or pushing its property then
-        SIGABRTs. Same guard as the direct ic.amp path, where NEURON says "No
-        value"; its reference is a dead data_handle, as is one to a point
-        process that was never placed.
+        The weakref catches a collected wrapper. A point process that is in no
+        section (never placed, or its section is deleted) has no data, and
+        reading, writing or pushing its property would abort. Same guard as the
+        direct ic.amp path, where NEURON says "No value"; its reference is a
+        dead data_handle.
         """
         obj = self._obj()
         if obj is None:
             raise ReferenceError("Referenced object no longer exists")
         try:
-            obj._check_host_alive()
+            obj._check_located()
         except TypeError:
             raise ValueError("Invalid data_handle") from None
-        if obj._is_unlocated():
-            raise ValueError("Invalid data_handle")
         return obj
 
     def _push(self):
