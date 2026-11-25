@@ -714,7 +714,7 @@ static double save_test_bin(void* v) {  // only for whole cells
         buf = new char[global_size];
         bbss_save_global(ref, buf, global_size);
         Sprintf(fname, "binbufout/global.%d", global_size);
-        nrn_assert(f = fopen(fname, "w"));
+        nrn_assert(f = fopen(fname, "wb"));
         fwrite(buf, sizeof(char), global_size, f);
         fclose(f);
         delete[] buf;
@@ -728,7 +728,7 @@ static double save_test_bin(void* v) {  // only for whole cells
         buf = new char[sizes[i]];
         bbss_save(ref, gids[i], buf, sizes[i]);
         Sprintf(fname, "binbufout/%d.%d", gids[i], sizes[i]);
-        nrn_assert(f = fopen(fname, "w"));
+        nrn_assert(f = fopen(fname, "wb"));
         fwrite(buf, sizeof(char), sizes[i], f);
         fclose(f);
         delete[] buf;
@@ -946,7 +946,7 @@ static double restore_test_bin(void* v) {  // assumes whole cells
     buf = new char[sz];
 
     Sprintf(fname, "binbufin/global.%d", global_size);
-    f = fopen(fname, "r");
+    f = fopen(fname, "rb");
     if (!f) {
         printf("%d fail open for read %s\n", nrnmpi_myid, fname);
     }
@@ -971,7 +971,7 @@ static double restore_test_bin(void* v) {  // assumes whole cells
 
         buf = new char[sz];
         Sprintf(fname, "binbufin/%d.%d", gids[i], sz);
-        f = fopen(fname, "r");
+        f = fopen(fname, "rb");
         if (!f) {
             printf("%d fail open for read %s\n", nrnmpi_myid, fname);
         }
