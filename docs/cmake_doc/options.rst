@@ -363,9 +363,8 @@ NRN_PYTHON_DYNAMIC:STRING=
   This option is ignored unless ``NRN_ENABLE_PYTHON_DYNAMIC=ON``, in which case
   ``PYTHON_EXECUTABLE`` is ignored.
 
-  How those listed interpreters are compiled depends on
-  :ref:`NRN_ENABLE_ABI3 <cmake-nrn-enable-abi3>` (one ``libnrnpython.abi3``
-  vs ``libnrnpythonX.Y`` per version).
+  Whether extension modules are compiled for each of them depends on
+  :ref:`NRN_ENABLE_ABI3 <cmake-nrn-enable-abi3>`.
 
 .. _cmake-nrn-enable-abi3:
 
@@ -374,14 +373,13 @@ NRN_ENABLE_ABI3:BOOL=
   Build Python extensions against the CPython 3.12 limited API (``abi3``).
 
   * **ON**: ``Py_LIMITED_API=0x030C0000``. Extension names are
-    ``hoc.abi3`` / ``libnrnpython.abi3`` (Windows: ``hoc.pyd`` +
-    ``python3.dll``). Requires GIL-enabled CPython **3.12+** for every
+    ``_nmodl.abi3`` etc. Requires GIL-enabled CPython **3.12+** for every
     interpreter in ``NRN_PYTHON_DYNAMIC``. A 3.12-built wheel
     (``wheel.py-api=cp312``) then loads on 3.13/3.14 without rebuilding.
     Default when the default Python is 3.12+ (source and the
     ``cp312-abi3`` wheel).
   * **OFF**: no limited API. Versioned modules
-    (``hoc.cpython-3XY-…``, ``libnrnpythonX.Y``) for each configured
+    (``_nmodl.cpython-3XY-…``) for each configured
     interpreter. Minimum Python is **3.11**. Default when the default
     Python is older than 3.12, including the CPython 3.11 wheel.
 
@@ -392,10 +390,9 @@ NRN_ENABLE_ABI3:BOOL=
 
   With ``NRN_ENABLE_PYTHON_DYNAMIC=ON``:
 
-  * ABI3 ON: one limited-API library against the default (first) Python;
-    extra list entries are for ``nrniv -python`` search and tests.
-  * ABI3 OFF: one ``libnrnpythonX.Y`` and versioned ``hoc`` per listed
-    version.
+  * ABI3 ON: modules for the default (first) Python; extra list entries are
+    for ``nrniv -python`` search and tests.
+  * ABI3 OFF: modules for each listed version.
 
 PYTHON_EXECUTABLE:PATH=
 -----------------------
@@ -703,7 +700,7 @@ NRN_COVERAGE_FILES:STRING=
   Coverage limited to semicolon (;) separated list of file paths
   relative to ``PROJECT_SOURCE_DIR``.
 
-  ``-DNRN_COVERAGE_FILES="src/nrniv/partrans.cpp;src/nmodl/parsact.cpp;src/nrnpython/nrnpy_hoc.cpp"``
+  ``-DNRN_COVERAGE_FILES="src/nrniv/partrans.cpp;src/nmodl/parsact.cpp"``
 
   For a list of compiled sources changed on a branch, use
 
@@ -780,9 +777,8 @@ NRN_ENABLE_BACKTRACE:BOOL=OFF
 
 NRN_LINK_AGAINST_PYTHON:BOOL=OFF
 --------------------------------
-  When ``NRN_ENABLE_PYTHON_DYNAMIC=ON`` then link the NEURON-Python interface
-  library (``libnrnpython.abi3`` if ``NRN_ENABLE_ABI3=ON``, else
-  ``libnrnpythonX.Y.so``) against the Python library found at configuration
+  When ``NRN_ENABLE_PYTHON_DYNAMIC=ON`` then link Python extension modules
+  against the Python library found at configuration
   time. This is enabled by default on Windows, but is not generally needed on
   macOS and Linux, where the Python library is found and loaded dynamically at
   runtime.

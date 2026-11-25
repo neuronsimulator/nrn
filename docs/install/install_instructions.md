@@ -486,7 +486,7 @@ If you have enabled dynamic python support using `NRN_ENABLE_PYTHON_DYNAMIC` CMa
 and see error like below:
 
 ```bash
-Could not load libnrnpython3
+Could not start Python
 ```
 
 then NEURON is not able to find appropriate Python and corresponding Python library. You can verify which Python is
