@@ -15,7 +15,9 @@ from .api import (
     _nrn_rangevar_get,
     _nrn_rangevar_set,
     _nrn_setpointer_pop,
+    _N_MEMB_FUNC,
     _nrn_symbol,
+    _nrn_symbol_subtype,
     _nrn_symbol_type as _NRN_SYMBOL_TYPE,
     _PACKAGE,
 )
@@ -53,22 +55,57 @@ _SKIP_MECHS = frozenset({"morphology", "capacitance"})
 _MECH_ATTR_CACHE = {}
 
 
+# The names _all_density_mechanism_names last listed: [names, {name: subtype},
+# n_memb_func, model epoch].
+_MECHANISM_NAMES = [None, None, -1, -1]
+
+
+def _mechanisms_unchanged(entry):
+    """True if every name in *entry* is still the mechanism symbol it was."""
+    for name, subtype in entry[1].items():
+        sym = _nrn_symbol(name.encode("utf-8"))
+        if (
+            not sym
+            or int(_NRN_SYMBOL_TYPE(sym)) != TYPES.MECHANISM
+            or int(_nrn_symbol_subtype(sym)) != subtype
+        ):
+            return False
+    return True
+
+
 def _all_density_mechanism_names():
-    """Return list of all density mechanism names in registration order,
+    """Return a list of all density mechanism names in registration order,
     excluding morphology and capacitance (matching real NEURON's iteration
     behavior).
 
-    Not cached: nrn_load_dll() can add type-311 symbols at runtime (see
-    tests/regression/test_mod_compilation test_custom_mechanism_iteration).
-    Section._get_inserted_mechs caches the hot path.
+    The symbol-table walk behind it costs ~340 us, so it is kept until the
+    set can have changed. A new mechanism (KSChan creation, nrn_load_dll, any
+    register_mech) raises n_memb_func. A KSChan rename keeps the count and
+    replaces the symbol, and only HOC code run since the last listing can do
+    it, which moves the model epoch; then each listed name is looked up again
+    (~15 us). Callers get a copy: one sorts it.
     """
+    entry = _MECHANISM_NAMES
+    count = _N_MEMB_FUNC.value if _N_MEMB_FUNC is not None else -1
+    if entry[0] is not None and count >= 0 and count == entry[2]:
+        epoch = _PACKAGE._model_epoch()
+        if epoch == entry[3] or _mechanisms_unchanged(entry):
+            entry[3] = epoch
+            return list(entry[0])
     mechs = [
         (subtype, name)
         for name, (type_, subtype) in list_functions().items()
         if type_ == TYPES.MECHANISM and name not in _SKIP_MECHS
     ]
     mechs.sort()
-    return [name for _, name in mechs]
+    names = [name for _, name in mechs]
+    _MECHANISM_NAMES[:] = [
+        names,
+        {name: subtype for subtype, name in mechs},
+        count,
+        _PACKAGE._model_epoch(),
+    ]
+    return list(names)
 
 
 # Mechanism name -> its variable names in declaration order. Fixed once the
@@ -786,6 +823,7 @@ class Mechanism:
             names.add(full_name[: -len(suffix)])
         # Python-side helpers
         names.update(["name", "is_ion", "segment"])
+        names.update(name for name in dir(type(self)) if name.startswith("__"))
         return sorted(names)
 
     def __eq__(self, other):

@@ -29,6 +29,7 @@ _LIBMODLREG_ENV = "NRN_LIBMODLREG"
 _VENDORED = __package__ != "myneuron"
 # Python-visible module of HOC classes. neuron.hoc.Vector.__module__ is "hoc".
 HOC_CLASS_MODULE = "hoc" if _VENDORED else "myneuron"
+NRN_CLASS_MODULE = "nrn" if _VENDORED else "myneuron"  # nrn.Section, nrn.Segment
 _HERE = Path(__file__).resolve().parent
 _LIBNRNIV_NAMES = ("libnrniv.so", "libnrniv.dylib", "nrniv.dll", "libnrniv.dll")
 
@@ -100,7 +101,7 @@ def _ensure_neuronhome():
         os.environ["NEURONHOME"] = str(nrn_share)
 
 
-def _nrniv_candidates_from_neuron_wheel():
+def _nrniv_candidates_from_neuron_wheel(own_only=False):
     # NEURON's manylinux/macOS wheels ship libnrniv inside
     # site-packages/neuron/.data/lib/ (auditwheel layout); older wheels
     # put it directly in site-packages/neuron/. Both are valid sources
@@ -121,7 +122,8 @@ def _nrniv_candidates_from_neuron_wheel():
                 candidates.append(libdir / name)
     # Fallback locations: find_spec("neuron") may resolve to a shim package
     # that has no `.data/`.
-    candidates.extend(_extra_libnrniv_candidates())
+    if not own_only:
+        candidates.extend(_extra_libnrniv_candidates())
     return candidates
 
 
@@ -187,7 +189,14 @@ def _load_cdll_or_raise(*, label, envvar, candidates, mode=None, loader=ctypes.C
     tried = []
     env_path = os.environ.get(envvar)
     if env_path:
-        candidates = [env_path, *candidates]
+        # An override that does not load is an error, not a reason to take
+        # another library.
+        try:
+            if mode is None:
+                return loader(env_path)
+            return loader(env_path, mode=mode)
+        except OSError as exc:
+            raise ImportError(f"{envvar}={env_path!r} could not be loaded: {exc}")
 
     for p in _iter_existing(candidates):
         tried.append(p)
@@ -271,6 +280,19 @@ libnrniv = _load_cdll_or_raise(
 )
 
 
+_own_nrniv = {
+    str(path.resolve()) for path in _nrniv_candidates_from_neuron_wheel(own_only=True)
+}
+if str(Path(libnrniv._name).resolve()) not in _own_nrniv:
+    warnings.warn(
+        f"loaded libnrniv from {libnrniv._name!r}, not from the neuron package "
+        f"({_LIBNRNIV_ENV} or a fallback search); it must be the core this "
+        "release pins",
+        RuntimeWarning,
+        stacklevel=2,
+    )
+
+
 def _bind(name, restype, *argtypes):
     """Return libnrniv's function *name* with its C signature set."""
     function = getattr(libnrniv, name)
@@ -308,11 +330,14 @@ _missing_nightly_api = [
 ]
 if _missing_nightly_api:
     raise ImportError(
-        "myneuron requires neuron-nightly with the completed NEURON C API. "
-        "Install or upgrade it with "
-        "`pip install --upgrade neuron-nightly`. "
-        f"Loaded {libnrniv._name!r}; missing symbols: "
-        f"{', '.join(_missing_nightly_api)}"
+        (
+            f"{libnrniv._name!r} lacks the C API this interface needs"
+            if _VENDORED
+            else "myneuron requires neuron-nightly with the completed NEURON C API. "
+            "Install or upgrade it with `pip install --upgrade neuron-nightly`. "
+            f"Loaded {libnrniv._name!r}"
+        )
+        + f"; missing symbols: {', '.join(_missing_nightly_api)}"
     )
 
 # Error buffer for nothrow C API calls
@@ -330,7 +355,7 @@ def _check_nrn_error(ret, err_buf):
         _PACKAGE._raise_pending_callback_exc()
         msg = err_buf.value.decode("utf-8", errors="replace").strip()
         raise RuntimeError(
-            f"NEURON error: {msg}" if msg else "NEURON error (no message)"
+            f"hocobj_call error: {msg}" if msg else "hocobj_call error (no message)"
         )
 
 
@@ -1502,9 +1527,9 @@ ShapePlotInterface = ctypes.c_void_p
 
 _nrn_section_new = _bind("nrn_section_new", Section, ctypes.c_char_p)
 
-# Pending upstream (gap-69): sections owned by an interface's objects, as
-# NEURON's Python module makes its own. Optional; without them myneuron's
-# sections are free-standing HOC sections (nrn_section_new).
+# Sections owned by an interface's objects, as NEURON's Python module makes its
+# own (gap-69). Optional: the pinned core lacks them (nrn#3917); without them
+# myneuron's sections are free-standing HOC sections (nrn_section_new).
 SECTION_OWNER_NAME_T = ctypes.CFUNCTYPE(ctypes.c_void_p, Section)
 SECTION_OWNER_CELL_T = ctypes.CFUNCTYPE(ctypes.c_void_p, Section)
 SECTION_OWNER_CELL_EQUALS_T = ctypes.CFUNCTYPE(ctypes.c_int, Section, ctypes.c_void_p)
@@ -1653,11 +1678,20 @@ _nrn_symbol_type = _bind("nrn_symbol_type", ctypes.c_int, Symbol)
 
 _nrn_symbol_subtype = _bind("nrn_symbol_subtype", ctypes.c_int, Symbol)
 
+# NEURON's count of mechanism types: it rises with every registered mechanism.
+try:
+    _N_MEMB_FUNC = ctypes.c_int.in_dll(libnrniv, "n_memb_func")
+except ValueError:  # not exported: callers list mechanisms every time
+    _N_MEMB_FUNC = None
+
 _nrn_symbol_name = _bind("nrn_symbol_name", ctypes.c_char_p, Symbol)
 
 # The Object a top-level objref holds, borrowed (no reference taken); NULL when
 # the objref is nil or the symbol is not a top-level objref.
 _nrn_symbol_object_get = _bind("nrn_symbol_object_get", Object, Symbol)
+
+# A top-level strdef's value; NULL if the symbol is not a strdef.
+_nrn_symbol_str_get = _bind("nrn_symbol_str_get", ctypes.c_char_p, Symbol)
 
 _nrn_register_function = _bind(
     "nrn_register_function", None, ctypes.c_void_p, ctypes.c_char_p, ctypes.c_int
@@ -1709,7 +1743,9 @@ def _nrn_object_new(sym, narg, result=None):
     rc = _nrn_object_new_nothrow(sym, narg, ctypes.byref(result), err, _ERR_BUF_SIZE)
     if rc:
         msg = err.value.decode("utf-8", errors="replace")
-        raise RuntimeError(msg or "HOC object construction failed")
+        raise RuntimeError(
+            f"hocobj_call error: {msg}" if msg else "HOC object construction failed"
+        )
     return result.value
 
 
@@ -1961,9 +1997,9 @@ _nrn_segment_node_index = _bind(
     "nrn_segment_node_index", ctypes.c_int, Section, ctypes.c_double
 )
 
-# Pending upstream: a node's mechanisms in the order of its property list, the
-# order NEURON's `for mech in seg` follows. Optional; without it a segment
-# yields its mechanisms in registration order.
+# A node's mechanisms in the order of its property list, the order NEURON's
+# `for mech in seg` follows. Optional: the pinned core lacks it; without it a
+# segment yields its mechanisms in registration order.
 _nrn_segment_mechanisms = getattr(libnrniv, "nrn_segment_mechanisms", None)
 if _nrn_segment_mechanisms is not None:
     _nrn_segment_mechanisms.argtypes = [
@@ -2116,12 +2152,14 @@ _nrn_rangevar_set = _bind(
     "nrn_rangevar_set", None, Symbol, Section, ctypes.c_double, ctypes.c_double
 )
 
-# Pending upstream (nrn#3905): push a pointer to element `index` of a range
-# variable array. nrn_rangevar_push reads the index from the HOC stack behind
-# an array-dimension marker the C API cannot push, and throws without it.
-# Optional; without it an element reference cannot be passed as a pointer.
-# Pending upstream (gap-65): the text NEURON prints for a reference, e.g.
-# data_handle<double>{Node::field::Voltage row=0/2 val=-65}. Optional.
+# Push a pointer to element `index` of a range variable array (nrn#3905,
+# merged after the pinned core). nrn_rangevar_push reads the index from the HOC
+# stack behind an array-dimension marker the C API cannot push, and throws
+# without it. Optional; without it an element reference cannot be passed as a
+# pointer.
+# The text NEURON prints for a reference, e.g.
+# data_handle<double>{Node::field::Voltage row=0/2 val=-65} (gap-65). Optional:
+# merged after the pinned core.
 _nrn_rangevar_handle_str = getattr(libnrniv, "nrn_rangevar_handle_str", None)
 if _nrn_rangevar_handle_str is not None:
     _nrn_rangevar_handle_str.argtypes = [
@@ -2462,12 +2500,13 @@ class TypeCodes:
         self._RAW["SECTION"] = code
 
         # Obfunc method, read from the template's symbol table.
-        hoc_exec(
-            "begintemplate _MNTypeProbe\n"
-            "public get_obj\n"
-            "obfunc get_obj() { return new Vector(1) }\n"
-            "endtemplate _MNTypeProbe\n"
-        )
+        if not _nrn_symbol(b"_MNTypeProbe"):  # a re-import: HOC keeps it
+            hoc_exec(
+                "begintemplate _MNTypeProbe\n"
+                "public get_obj\n"
+                "obfunc get_obj() { return new Vector(1) }\n"
+                "endtemplate _MNTypeProbe\n"
+            )
         self._record_class_member(b"_MNTypeProbe", b"get_obj", "OBFUNCTION")
 
         # Probe method-level codes via known built-in classes.

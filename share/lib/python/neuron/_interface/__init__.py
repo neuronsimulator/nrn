@@ -62,6 +62,7 @@ from .api import (
     _nrn_symbol_dataptr,
     _nrn_symbol_is_array,
     _nrn_symbol_object_get,
+    _nrn_symbol_str_get,
     _nrn_symbol_type,
     _structure_change_cnt,
     _top_level_symbol,
@@ -115,7 +116,9 @@ from .utils import (
     hoc_class,
     list_functions,
     _check_segment_arg,
+    _drop_return_slot,
     _object_pop,
+    _return_slot_pop,
 )
 from .mechanism import Mechanism, density_mechanism
 from . import utils as _utils
@@ -1128,13 +1131,6 @@ def _capture_hoc_string(action):
         return ""
 
 
-def _read_hoc_string(neuron_singleton, expr):
-    """Read the value of a top-level HOC strdef or string expression."""
-    return _capture_hoc_string(
-        lambda: neuron_singleton(f'print "{_STR_BEGIN}", {expr}, "{_STR_END}"')
-    )
-
-
 # Model-mutation epoch. Bumped on raw HOC commands (`n(cmd)`), top-level and
 # object FuncWrapper dispatch, and direct C mutation paths such as
 # `Section.insert()`. Python-side invalidation only clears the wrapper that made
@@ -1259,6 +1255,30 @@ class _AllSecIterator:
         return "<all section iterator next>"  # NEURON's repr
 
 
+# This interface's own HOC names (trampolines, probe template), not for dir().
+_HIDDEN = (
+    "_mn_capture_cas",
+    "_mn_pyjob",
+    "_mn_type_probe_",
+    "_MNTypeProbe",
+    "_MnNil",
+    "_mn_nilref",
+    "_mn_setobj_",
+    "_mn_objgrabidx",
+    "_mn_objididx",
+    "_mn_setobjidx",
+    "_mn_hvget_",
+    "_mn_hvset_",
+    "_mn_rv_",
+    "_mn_steer_",
+    "_mn_ptr_",
+    "_mn_alias",
+    "_mn_insert_",
+    "_mn_set_nseg",
+    "_mn_ret_",
+)
+
+
 class NEURON(metaclass=_Singleton):
     # h.__doc__ is neuron.doc's text for the top-level HocObject.
     __doc__ = property(lambda self: _top_level_doc())
@@ -1308,7 +1328,7 @@ class NEURON(metaclass=_Singleton):
     def __dir__(self):
         # HOC symbols plus Python-side helpers. _Singleton's metaclass does not
         # expose these via dict(type(self)), so list them explicitly.
-        names = set(self._top_level)
+        names = {name for name in self._top_level if not name.startswith(_HIDDEN)}
         names.update(
             name
             for name in type(self).__dict__
@@ -1325,6 +1345,7 @@ class NEURON(metaclass=_Singleton):
                 "allsec_data",
             ]
         )
+        names.update(name for name in dir(type(self)) if name.startswith("__"))
         return sorted(names)
 
     def __getattr__(self, name):
@@ -1425,7 +1446,7 @@ class NEURON(metaclass=_Singleton):
                             if _type == TYPES.BLTIN:
                                 if len(args) != 1:
                                     raise RuntimeError(
-                                        "NEURON error: hoc_execerror: must be one "
+                                        "hocobj_call error: hoc_execerror: must be one "
                                         f"argument for {name}"
                                     )
                                 # Only a number is sure to be off the stack
@@ -1434,7 +1455,7 @@ class NEURON(metaclass=_Singleton):
                                     args[0], (int, float)
                                 ) and not _is_hoc_number(args[0]):
                                     raise RuntimeError(
-                                        f"NEURON error: hoc_execerror: {name} takes "
+                                        f"hocobj_call error: hoc_execerror: {name} takes "
                                         f"a number, not {type(args[0]).__name__}"
                                     )
                             if sec is not None and any(
@@ -1450,11 +1471,12 @@ class NEURON(metaclass=_Singleton):
                                 args, return_rollback=True
                             )
                             use_sec = sec if sec is not None else seg_sec
+                            _err_buf = _ERR_BUF()
+                            _err_buf[0] = b"\x01"  # the call clears it
                             if use_sec is not None:
                                 _nrn_section_push(use_sec._sec)
                             try:
                                 sym = _nrn_symbol(name.encode("utf-8"))
-                                _err_buf = _ERR_BUF()
                                 ret = _nrn_function_call(
                                     sym, len(args), _err_buf, _ERR_BUF_SIZE
                                 )
@@ -1477,7 +1499,10 @@ class NEURON(metaclass=_Singleton):
                                     # so the restore cannot run and nothing is
                                     # left to release.
                                     rollback_args()
-                                _check_nrn_error(ret, _err_buf)
+                                if ret:
+                                    failed, _err_buf = _err_buf, None  # no result
+                                    _check_nrn_error(ret, failed)
+                                _err_buf = None  # the result is popped below
                                 if _type in (
                                     TYPES.BLTIN,
                                     TYPES.FUNCTION,
@@ -1510,6 +1535,9 @@ class NEURON(metaclass=_Singleton):
                                 # _raise_pending_callback_exc.
                                 _raise_pending_callback_exc()
                                 return result
+                            except BaseException:
+                                _drop_return_slot(_err_buf, _return_slot_pop(_type))
+                                raise
                             finally:
                                 if use_sec is not None:
                                     _pop_pushed_section(use_sec._sec)
@@ -1518,7 +1546,7 @@ class NEURON(metaclass=_Singleton):
 
                         return FuncWrapper(
                             nrn_func,
-                            f"n.{name}",
+                            name,
                             f"NEURON top-level function: n.{name}()",
                             doc_key=name,
                             key=name,
@@ -1540,10 +1568,12 @@ class NEURON(metaclass=_Singleton):
                         return _read_hoc_objectvar(self, name)
 
                     elif _type == TYPES.STRING:
-                        # A strdef is not readable via _nrn_symbol_dataptr in
-                        # NEURON 9 (data_handle). Capture HOC `print` output
-                        # through the stdout redirect: slow but reliable.
-                        return _read_hoc_string(self, name)
+                        # Not readable via _nrn_symbol_dataptr in NEURON 9
+                        # (data_handle).
+                        value = _nrn_symbol_str_get(
+                            _top_level_symbol(name.encode("utf-8"))
+                        )
+                        return "" if value is None else value.decode("utf-8", "replace")
 
                     elif _type == TYPES.SECTION:
                         # `create soma` (scalar) or `create dend[N]` (array).
@@ -1563,7 +1593,9 @@ class NEURON(metaclass=_Singleton):
             self._top_level = list_functions()
 
         raise _name_error(
-            AttributeError, name, f"'NEURON' object has no attribute '{name}'"
+            AttributeError,
+            name,
+            f"'{type(self).__name__}' object has no attribute '{name}'",
         )
 
     def __setattr__(self, name, value):
@@ -1575,6 +1607,13 @@ class NEURON(metaclass=_Singleton):
             super().__setattr__(name, value)
             return
 
+        if name in self.__dict__:
+            # A name n holds as a Python attribute stays one when HOC declares
+            # it later, as in NEURON (an underscore name is always one here;
+            # NEURON writes one that HOC declared to HOC).
+            super().__setattr__(name, value)
+            return
+
         info = self._top_level.get(name)
         if info is None:
             # The var may have been declared after the cache was built;
@@ -1582,11 +1621,7 @@ class NEURON(metaclass=_Singleton):
             self._top_level = list_functions()
             info = self._top_level.get(name)
         if info is None:
-            # Real NEURON raises here (LookupError: not a defined hoc variable
-            # name) rather than creating a shadowing Python attribute.
-            raise _name_error(
-                LookupError, name, f"'{name}' is not a defined hoc variable name."
-            )
+            return self._set_undeclared(name, value)
 
         _type, _subtype = info
 
@@ -1697,6 +1732,20 @@ class NEURON(metaclass=_Singleton):
             return
         # Functions, mechanisms, templates, sections: not assignable.
         raise TypeError("not assignable")  # NEURON's text
+
+    # NEURON's h == n, and their hashes agree.
+    def __eq__(self, other):
+        return isinstance(other, NEURON)
+
+    def __hash__(self):
+        return hash(NEURON)
+
+    def _set_undeclared(self, name, value):
+        # h raises, as NEURON's does, rather than shadow the name with a Python
+        # attribute; n overrides this.
+        raise _name_error(
+            LookupError, name, f"'{name}' is not a defined hoc variable name."
+        )
 
     def __repr__(self):
         return "<TopLevelHocInterpreter>"  # NEURON's name for h
@@ -2127,15 +2176,31 @@ class NEURON(metaclass=_Singleton):
         return out
 
 
+class _NEURON_INTERFACE(NEURON):
+    # NEURON's ``n``: a second top-level object, as ``neuron.n`` is there. Its
+    # repr differs, and an undeclared name is stored as a plain Python attribute
+    # of n (not a HOC variable, not visible through h). It has h's __doc__;
+    # NEURON's n has its own text.
+    __doc__ = NEURON.__dict__["__doc__"]
+
+    def _set_undeclared(self, name, value):
+        super(NEURON, self).__setattr__(name, value)
+
+    def __repr__(self):
+        return "<TopLevelNEURONInterface>"
+
+
 # _n is the package's own reference: a user can rebind n or h (n = something).
-n = h = _n = NEURON()
+n = _NEURON_INTERFACE()
+h = _n = NEURON()
 
 
 # ── Module initialization sequence ──
 # discover() ran at api.py import for top-level codes. This fills in the codes
 # that need a live HOC session (PROCEDURE, SECTION, OBFUNCTION, METHOD_OBFUNC,
 # METHOD_STRFUNC, via a probe template and classes).
-TYPES.discover_template_scoped(n)
+TYPES.discover_template_scoped(h)
+h._rebuild_function_types()
 n._rebuild_function_types()
 TYPES.probe_section_ref()
 TYPES.validate()

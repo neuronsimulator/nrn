@@ -298,16 +298,18 @@ class NrnRangeVarRef(NrnRef):
             )
         return buf.value.decode("utf-8", errors="replace")
 
-    def _section(self):
+    def _section(self, error=ValueError, message="Invalid data_handle"):
+        """The section, or NEURON's error for a reference whose section Python
+        deleted: the same as one HOC deleted."""
         if self._sec is not None:
             return self._sec
         sec = self._sec_ref()
         if sec is None:
-            raise ReferenceError("Referenced section no longer exists")
+            raise error(message)
         return sec
 
     def _push(self):
-        sec = self._section()
+        sec = self._section(RuntimeError, "Invalid pointer")
         # A section deleted through HOC keeps its wrapper but frees the C
         # section. Raise NEURON's HOC error for a dead pointer argument
         # instead of pushing freed state.

@@ -54,7 +54,7 @@ def _hoc_object_class(h, legacy=None):
         def __instancecheck__(cls, instance):
             if cls is not HocObject:
                 return super().__instancecheck__(instance)
-            if isinstance(instance, (Object, NrnRef, FuncWrapper)) or instance is h:
+            if isinstance(instance, (Object, NrnRef, FuncWrapper, type(h))):
                 return True
             if legacy is not None and isinstance(instance, legacy):
                 # nrniv -python: objects NEURON's own module still makes
@@ -115,8 +115,20 @@ def _hoc_module(h, legacy=None):
             return value
         raise AttributeError(f"module 'hoc' has no attribute {name!r}")
 
+    def execute(command):
+        """Execute a hoc command, return True on success, False on failure."""
+        return h(command)
+
+    def hoc_ac(value=None):
+        """Get (or set) the scalar hoc_ac_."""
+        if value is not None:
+            h.hoc_ac_ = value
+        return h.hoc_ac_
+
     hoc.__getattr__ = __getattr__
     hoc.ref_address = _ref_address
+    hoc.execute = execute
+    hoc.hoc_ac = hoc_ac
     return hoc
 
 
@@ -154,9 +166,11 @@ def _ref_address(ref):
     return address
 
 
-def _nrn_module():
+def _nrn_module(h):
+    from .api import TYPES
     from .mechanism import Mechanism
     from .sections import OpaquePointer, Section, Segment
+    from .utils import list_functions
 
     nrn = types.ModuleType("nrn", "Section, segment and mechanism types.")
     nrn.Section = Section
@@ -169,17 +183,17 @@ def _nrn_module():
         # Section.psection is implemented here; keep the hook for callers.
         psection[:] = [function]
 
-    nrn.set_psection = set_psection
-    return nrn
-
-
-def _neuron_section_module(h, nrn):
-    # NEURON's _neuron_section holds the same Section/Segment types as nrn,
-    # plus cas() and allsec() (ModelView's realcell.hoc calls cas()).
-    module = types.ModuleType("_neuron_section", "Section and segment helpers.")
-    module.Section = nrn.Section
-    module.Segment = nrn.Segment
-    module.set_psection = nrn.set_psection
+    def __getattr__(name):
+        # nrn.hh, nrn.pas, ...: every density mechanism's type is Mechanism.
+        # Not by h.<name>'s class: NEURON's package makes its own. Not the two
+        # that are no density mechanism of nrn's.
+        if (
+            not name.startswith("__")
+            and name not in ("capacitance", "morphology")
+            and list_functions().get(name, (None,))[0] == TYPES.MECHANISM
+        ):
+            return Mechanism
+        raise AttributeError(f"module 'nrn' has no attribute {name!r}")
 
     def cas():
         """Return the currently accessed section."""
@@ -189,8 +203,22 @@ def _neuron_section_module(h, nrn):
         """Iterate over all sections."""
         return h.allsec()
 
-    module.cas = cas
-    module.allsec = allsec
+    nrn.set_psection = set_psection
+    nrn.__getattr__ = __getattr__
+    nrn.cas = cas
+    nrn.allsec = allsec
+    return nrn
+
+
+def _neuron_section_module(nrn):
+    # NEURON's _neuron_section holds the same Section/Segment types as nrn,
+    # plus cas() and allsec() (ModelView's realcell.hoc calls cas()).
+    module = types.ModuleType("_neuron_section", "Section and segment helpers.")
+    module.Section = nrn.Section
+    module.Segment = nrn.Segment
+    module.set_psection = nrn.set_psection
+    module.cas = nrn.cas
+    module.allsec = nrn.allsec
     return module
 
 
@@ -231,11 +259,11 @@ def install(interface, embedded):
                 f"{', '.join(present)} already imported; the legacy NEURON "
                 "extension cannot share a process with this interface"
             )
-    nrn = _nrn_module()
+    nrn = _nrn_module(interface.h)
     modules = (
         _hoc_module(interface.h, legacy_hoc),
         nrn,
-        _neuron_section_module(interface.h, nrn),
+        _neuron_section_module(nrn),
     )
     for name, module in zip(_NAMES, modules):
         sys.modules[name] = module

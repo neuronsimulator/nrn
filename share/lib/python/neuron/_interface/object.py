@@ -86,8 +86,10 @@ from .utils import (
     _wrap_owned_object,
     FuncWrapper,
     READ_ONLY_METHODS,
+    _drop_return_slot,
     _object_pop,
     _pop_pushed_section,
+    _return_slot_pop,
     _try_wrap_point_nmodlrandom,
     class_symbol,
     is_located_point_process_class,
@@ -785,14 +787,18 @@ class Object(metaclass=_HocClassMeta):
         if "del" in methods:
             methods.discard("del")
             methods.add("delay")
-        # Include the Python-side helpers (hname, ref, same, hocobjptr) and
+        # A template's own name is in its symbol list, and NEURON has no ref.
+        methods.discard(self._class_name)
+        # Include the Python-side helpers (hname, same, hocobjptr) and
         # subclass (Vector, List, SectionList) entries.
         for klass in type(self).__mro__:
             if klass is object:
                 continue
             for name in klass.__dict__:
-                if not name.startswith("_"):
+                # ref is this interface's helper, but a subclass may define it.
+                if not name.startswith("_") and (klass is not Object or name != "ref"):
                     methods.add(name)
+        methods.update(name for name in dir(type(self)) if name.startswith("__"))
         return sorted(methods)
 
     def _get_segment(self):
@@ -1126,10 +1132,11 @@ class Object(metaclass=_HocClassMeta):
                         args, return_rollback=True
                     )
                     use_sec = seg_sec if seg_sec is not None else sec
+                    _err_buf = _ERR_BUF()
+                    _err_buf[0] = b"\x01"  # the call clears it
                     if use_sec is not None:
                         _nrn_section_push(use_sec._sec)
                     try:
-                        _err_buf = _ERR_BUF()
                         # Reset the return-type hint so an earlier call's
                         # value cannot leak in (real NEURON's fcall does too).
                         _hoc_return_type_code.value = 0
@@ -1142,7 +1149,9 @@ class Object(metaclass=_HocClassMeta):
                         if ret:
                             # A failed nothrow call restores the args (gap-56).
                             rollback_args()
-                        _check_nrn_error(ret, _err_buf)
+                            failed, _err_buf = _err_buf, None  # no result
+                            _check_nrn_error(ret, failed)
+                        _err_buf = None  # the result is popped below
                         if _type == TYPES.FUNCTION:
                             val = _nrn_double_pop()
                             # A built-in method returning int/bool set the hint.
@@ -1176,6 +1185,15 @@ class Object(metaclass=_HocClassMeta):
 
                         _PACKAGE._raise_pending_callback_exc()
                         return result
+                    except BaseException:
+                        # A template proc leaves no result: core drops its sentinel.
+                        _drop_return_slot(
+                            _err_buf,
+                            None
+                            if _type == TYPES.PROCEDURE
+                            else _return_slot_pop(_type),
+                        )
+                        raise
                     finally:
                         if use_sec is not None:
                             _pop_pushed_section(use_sec._sec)
@@ -1188,12 +1206,13 @@ class Object(metaclass=_HocClassMeta):
 
                     if name in PYTHON_METHODS:
                         func = python_method(self, name, method_func)
-                return FuncWrapper(
-                    func,
-                    qualified_name,
-                    f"NEURON object method: {self._class_name}.{name}()",
-                    doc_key=f"{self._class_name}.{name}",
-                )
+                doc = f"NEURON object method: {self._class_name}.{name}()"
+                doc_key = f"{self._class_name}.{name}"
+                if self._class_name == "Vector":
+                    method = _VectorMethod(func, qualified_name, doc, doc_key=doc_key)
+                    method._vector = self
+                    return method
+                return FuncWrapper(func, qualified_name, doc, doc_key=doc_key)
         # StringFunctions alias (obj.aliasname): not in the class symbol
         # table. Resolve via a HOC trampoline, since the native property
         # accessors SIGSEGV on a non-member name.
@@ -1736,6 +1755,18 @@ def _pkl(arg):
     neuron._pkl, but this one still loads the pickles that named it."""
 
     return _PACKAGE._n.Vector(0)
+
+
+# A Vector's uncalled method. NEURON's is a HocObject of the Vector, so
+# np.asarray(v.size) reads the Vector's data.
+class _VectorMethod(FuncWrapper):
+    __slots__ = ("_vector",)
+    # A class body sets __doc__ itself; keep FuncWrapper's help-text property.
+    __doc__ = FuncWrapper.__dict__["__doc__"]
+
+    @property
+    def __array_interface__(self):
+        return self._vector.__array_interface__
 
 
 class Vector(Object):

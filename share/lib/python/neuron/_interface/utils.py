@@ -640,6 +640,36 @@ def _try_wrap_point_nmodlrandom(obj, sym, sym_type):
     return _wrap_owned_object(raw)
 
 
+_SLOT_POPS = {}
+
+
+def _return_slot_pop(call_type):
+    """What pops the result slot a call of *call_type* leaves, or None.
+
+    A BLTIN is not covered: its call is too short for an interrupt to land at
+    its return, and it is the hottest call."""
+    if not _SLOT_POPS:  # the codes are known once the package is imported
+        for codes, pop in (
+            ((TYPES.FUNCTION, TYPES.FUN_BLTIN, TYPES.PROCEDURE), _nrn_double_pop),
+            ((TYPES.METHOD_STRFUNC, TYPES.STRINGFUNC), _nrn_str_pop),
+            (
+                (TYPES.METHOD_OBFUNC, TYPES.OBFUNCTION, TYPES.OBJECTFUNC),
+                _object_pop,
+            ),
+        ):
+            _SLOT_POPS.update(dict.fromkeys(codes, pop))
+    return _SLOT_POPS.get(call_type)
+
+
+def _drop_return_slot(err_buf, pop):
+    """After a KeyboardInterrupt: a signal handler runs once the ctypes call has
+    returned, with its result still on the stack (gap-84). The call cleared the
+    buffer's first byte, which the caller set before it. A failed call left a
+    message there and a result of none."""
+    if pop and err_buf is not None and err_buf[0] == b"\x00":
+        pop()
+
+
 def _object_pop():
     """Pop the top HOC Object from the stack and return a typed Python wrapper.
 

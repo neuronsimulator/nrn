@@ -11,7 +11,9 @@ import sys
 import weakref
 
 from .api import (
+    NRN_CLASS_MODULE,
     HOC_LOCK,
+    _N_MEMB_FUNC,
     in_hoc_call,
     _refused_double,
     _to_double,
@@ -462,10 +464,6 @@ _EVERY_SECTION_MECHANISMS = frozenset({"morphology", "capacitance"})
 # The density mechanisms, ions first, and the n_memb_func (NEURON's count of
 # mechanism types) they were listed at.
 _MECHANISMS = [None, -1]
-try:
-    _N_MEMB_FUNC = ctypes.c_int.in_dll(libnrniv, "n_memb_func")
-except ValueError:  # not exported: list them every time
-    _N_MEMB_FUNC = None
 
 
 def _is_density_mechanism(name):
@@ -745,6 +743,7 @@ class Segment:
     array, indexed by ``x``.
     """
 
+    __module__ = NRN_CLASS_MODULE
     __slots__ = ("_sec", "_x", "_mech_cache")
 
     # As NEURON's nrn.Segment: no pickle, copy or deepcopy (the default
@@ -1065,7 +1064,9 @@ class Segment:
             info = _rangevar_info(name)
             if info is None:
                 raise _name_error(
-                    AttributeError, name, f"Variable '{name}' not found in {self!r}."
+                    AttributeError,
+                    name,
+                    f"_ref_{name} was not made to point to anything at {self!r}",
                 )
             if not info[2]:  # NEURON finds a scalar's node now, then checks
                 _ensure_rangevar_topology(self._sec._sec, self._x, name)
@@ -1105,7 +1106,7 @@ class Segment:
             info = _current_array_length(info)
         if info is None:
             raise _name_error(
-                AttributeError, name, f"Variable '{name}' not found in {self!r}."
+                AttributeError, name, f"'nrn.Segment' object has no attribute '{name}'"
             )
         sym, sym_type, is_array, array_length = info
         if sym_type == TYPES.RANGEVAR:
@@ -1247,8 +1248,8 @@ class Segment:
 
         NEURON yields them in the order of the node's property list, which
         depends on insertion order and differs between nodes after an nseg
-        change; nrn_segment_mechanisms (pending upstream) reports it. Without
-        it, registration order. Not asked at an end: at x = 0 (or 1 on a
+        change; nrn_segment_mechanisms (when the core exports it) reports it.
+        Without it, registration order. Not asked at an end: at x = 0 (or 1 on a
         swapped section) the core runs setup_topology, which throws through
         ctypes on a section loop.
         """
@@ -1313,7 +1314,7 @@ class Segment:
         info = _get_symbol_info(name)
         if info is None:
             raise _name_error(
-                AttributeError, name, f"Variable '{name}' not found in {self!r}."
+                AttributeError, name, f"'nrn.Segment' object has no attribute '{name}'"
             )
         sym, sym_type, is_array, array_length = info
 
@@ -1751,6 +1752,7 @@ class Section:
     # __weakref__: dependents hold Python-owned Sections weakly, so the last
     # owning wrapper still controls native lifetime. Dependents hold non-owning
     # HOC/template wrappers strongly (gap-50).
+    __module__ = NRN_CLASS_MODULE
     __slots__ = (
         "_cell",
         "_sec",
@@ -1770,6 +1772,8 @@ class Section:
             # second section would leave PYTHON_SECTIONS mapping the first
             # one's pointer to this object.
             return
+        if name is not None and not isinstance(name, str):
+            raise TypeError(f"argument 1 must be str, not {type(name).__name__}")
         if cell is not None and isinstance(cell, str):
             raise TypeError("cell must be an object, not a string")
         prefix = ""
@@ -1911,6 +1915,12 @@ class Section:
             try:
                 for seg in self:
                     setattr(seg, name, value)
+            except AttributeError:
+                if _get_symbol_info(name) is None:
+                    raise AttributeError(
+                        f"'nrn.Section' object has no attribute '{name}'"
+                    ) from None
+                raise
             except IndexError as exc:
                 # NEURON's text for a section-level array without a subscript.
                 if exc.args == (f"{name} needs an index for assignment",):
@@ -1971,7 +1981,14 @@ class Section:
         except AttributeError:
             raise AttributeError(name) from None
         self._check_alive()
-        value = getattr(self(0.5), name)
+        try:
+            value = getattr(self(0.5), name)
+        except AttributeError:
+            if _get_symbol_info(name) is None:
+                raise AttributeError(
+                    f"'nrn.Section' object has no attribute '{name}'"
+                ) from None
+            raise
         cls = value.__class__
         if cls is float:
             return value
