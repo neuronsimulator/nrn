@@ -49,9 +49,18 @@ def test_multicompartment_reactions(neuron_instance):
     cyt_er_membrane = rxd.Region(
         h.allsec(), name="mem", geometry=rxd.ScalableBorder(1, on_cell_surface=False)
     )
-    ca = rxd.Species([cyt, er], d=caDiff, name="ca", charge=2, initial=caCYT_init)
+    cae_init = (0.0017 - cac_init * fc) / fe
+    ca = rxd.Species(
+        [cyt, er],
+        d=caDiff,
+        name="ca",
+        charge=2,
+        initial=lambda nd: caCYT_init if nd.region == cyt else cae_init,
+    )
 
-    ip3 = rxd.Species(cyt, d=ip3Diff, name="ip3", initial=ip3_init)
+    ip3 = rxd.Species(
+        cyt, d=ip3Diff, name="ip3", initial=lambda nd: 2 if nd.x < 0.2 else ip3_init
+    )
     ip3r_gate_state = rxd.Species(cyt_er_membrane, name="gate", initial=0.8)
     minf = ip3[cyt] * 1000.0 * ca[cyt] / (ip3[cyt] + kip3) / (1000.0 * ca[cyt] + kact)
     k = gip3r * (minf * ip3r_gate_state[cyt_er_membrane]) ** 3
@@ -76,15 +85,26 @@ def test_multicompartment_reactions(neuron_instance):
     )
 
     h.finitialize(-65)
+    assert (
+        abs(
+            serca._evaluate(
+                location=(cyt, sec, 0.5), instruction="do_1d", units="mM/ms"
+            )
+            - 1.1818723974275922e-06
+        )
+        < tol
+    )
 
-    cae_init = (0.0017 - cac_init * fc) / fe
-    ca[er].concentration = cae_init
+    assert (
+        abs(ip3r._evaluate((cyt, sec, 0.1), instruction="do_1d") - -463.6689327419202)
+        < tol
+    )
 
-    for node in ip3.nodes:
-        if node.x < 0.2:
-            node.concentration = 2
+    assert (
+        abs(ip3r._evaluate((cyt, sec, 0.9), instruction="do_1d") - -36.86492583551183)
+        < tol
+    )
 
-    h.CVode().re_init()
     h.continuerun(1000)
     if not save_path:
         max_err = compare_data(data)
