@@ -125,12 +125,22 @@ std::string directory_of_neuron_package() {
     return isDirExist(path + "/neuron") ? path : std::string{};
 }
 
+/// An argument of main(), or a path made of one.
+Ref decode(const std::string& s) {
+#if defined(WIN32)
+    // main() gets the ANSI code page, and Python's filesystem encoding is UTF-8.
+    return Ref{py.PyUnicode_DecodeLocale(s.c_str(), "surrogateescape")};
+#else
+    return Ref{py.PyUnicode_DecodeFSDefault(s.c_str())};
+#endif
+}
+
 Ref launcher_function(const char* function, const char* arg = nullptr) {
     auto* const f = py.PyDict_GetItemString(launcher, function);
     if (!arg) {
         return call(f);
     }
-    Ref const a{py.PyUnicode_DecodeFSDefault(arg)};
+    Ref const a = decode(arg);
     return a ? call(f, a) : Ref{};
 }
 
@@ -217,11 +227,11 @@ void initialize() {
         py.PyDict_SetItemString(launcher, name, value.get());
     };
     set("__builtins__", Ref::borrow(py.PyEval_GetBuiltins()));
-    set("executable", Ref{py.PyUnicode_DecodeFSDefault(executable.c_str())});
-    set("neuron_parent", Ref{py.PyUnicode_DecodeFSDefault(directory_of_neuron_package().c_str())});
+    set("executable", decode(executable));
+    set("neuron_parent", decode(directory_of_neuron_package()));
     Ref const argv{py.PyList_New(0)};
     for (int i = 0; i < nrn_global_argc; ++i) {
-        py.PyList_Append(argv.get(), Ref{py.PyUnicode_DecodeFSDefault(nrn_global_argv[i])}.get());
+        py.PyList_Append(argv.get(), decode(nrn_global_argv[i]).get());
     }
     set("argv", argv);
     Ref const code{py.Py_CompileString(bootstrap, "<nrniv>", file_input)};

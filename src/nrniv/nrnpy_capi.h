@@ -79,6 +79,7 @@ namespace neuron::python {
     X(PyObject*, PyUnicode_FromString, (const char*))                             \
     X(PyObject*, PyUnicode_InternFromString, (const char*))                       \
     X(PyObject*, PyUnicode_DecodeFSDefault, (const char*))                        \
+    X(PyObject*, PyUnicode_DecodeLocale, (const char*, const char*))              \
     X(PyObject*, PyUnicode_AsUTF8String, (PyObject*))                             \
     X(PyObject*, PyUnicode_Join, (PyObject*, PyObject*))                          \
     X(PyObject*, PyBytes_FromStringAndSize, (const char*, std::ptrdiff_t))        \
