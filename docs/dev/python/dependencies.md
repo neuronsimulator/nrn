@@ -86,7 +86,7 @@ uv pip compile \
   packaging/python/test_requirements.txt \
   -o ci/requirements.txt \
   --universal \
-  --python-version 3.9 \
+  --python-version 3.11 \
   --generate-hashes
 ```
 
