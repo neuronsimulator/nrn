@@ -2,7 +2,9 @@
 #include <../../nrnconf.h>
 /* /local/src/master/nrn/src/nrnoc/cabcode.cpp,v 1.37 1999/07/08 14:24:59 hines Exp */
 
+#include <array>
 #include <regex>
+#include <string>
 #include <cstdio>
 #include <cstdlib>
 #include <cmath>
@@ -1683,19 +1685,17 @@ void setup_topology(void) {
 
 // name of section (for use in error messages)
 const char* secname(Section* sec) {
-    static char name[512];
+    // Sections made through the C API can have names of any length.
+    static std::string name;
     if (sec && sec->prop) {
         if (auto* s = sec->prop->dparam[0].get<Symbol*>(); s) {
             auto indx = sec->prop->dparam[5].get<int>();
             auto* ob = sec->prop->dparam[6].get<Object*>();
             if (ob) {
-                Sprintf(name,
-                        "%s.%s%s",
-                        hoc_object_name(ob),
-                        s->name,
-                        hoc_araystr(s, indx, ob->u.dataspace));
+                name = std::string(hoc_object_name(ob)) + "." + s->name +
+                       hoc_araystr(s, indx, ob->u.dataspace);
             } else {
-                Sprintf(name, "%s%s", s->name, hoc_araystr(s, indx, hoc_top_level_data));
+                name = std::string(s->name) + hoc_araystr(s, indx, hoc_top_level_data);
             }
 #if USE_PYTHON
         } else if (sec->prop->dparam[PROP_PY_INDEX].get<void*>()) {
@@ -1703,25 +1703,25 @@ const char* secname(Section* sec) {
             return (*nrnpy_pysec_name_p_)(sec);
 #endif
         } else {
-            name[0] = '\0';
+            name.clear();
         }
     } else {
-        name[0] = '\0';
+        name.clear();
     }
-    return name;
+    return name.c_str();
 }
 
 const char* nrn_sec2pysecname(Section* sec) {
 #if USE_PYTHON
-    static char buf[256];
+    static std::string buf;
     const char* name = secname(sec);
     if (sec && sec->prop->dparam[PROP_PY_INDEX].get<void*>() &&
         strncmp(name, "__nrnsec_0x", 11) != 0) {
-        Sprintf(buf, "_pysec.%s", name);
+        buf = std::string("_pysec.") + name;
     } else {
-        strcpy(buf, name);
+        buf = name;
     }
-    return buf;
+    return buf.c_str();
 #else
     return secname(sec);
 #endif
@@ -1737,30 +1737,29 @@ void section_owner(void) {
 }
 
 char* hoc_section_pathname(Section* sec) {
-    static char name[200];
+    static std::string name;
     if (auto* s = sec->prop->dparam[0].get<Symbol*>(); sec && sec->prop && s) {
         auto indx = sec->prop->dparam[5].get<int>();
         auto* ob = sec->prop->dparam[6].get<Object*>();
         if (ob) {
             char* p = hoc_object_pathname(ob);
             if (p) {
-                Sprintf(name, "%s.%s%s", p, s->name, hoc_araystr(s, indx, ob->u.dataspace));
+                name = std::string(p) + "." + s->name + hoc_araystr(s, indx, ob->u.dataspace);
             } else {
                 hoc_warning("Can't find a pathname for", secname(sec));
-                strcpy(name, secname(sec));
-                return name;
+                name = secname(sec);
             }
         } else {
-            Sprintf(name, "%s%s", s->name, hoc_araystr(s, indx, hoc_objectdata));
+            name = std::string(s->name) + hoc_araystr(s, indx, hoc_objectdata);
         }
 #if USE_PYTHON
     } else if (sec && sec->prop && sec->prop->dparam[PROP_PY_INDEX].get<void*>()) {
-        strcpy(name, nrn_sec2pysecname(sec));
+        name = nrn_sec2pysecname(sec);
 #endif
     } else {
-        name[0] = '\0';
+        name.clear();
     }
-    return name;
+    return name.data();
 }
 
 double nrn_arc_position(Section* sec, Node* node) {
@@ -1783,13 +1782,15 @@ double nrn_arc_position(Section* sec, Node* node) {
 
 const char* sec_and_position(Section* sec, Node* nd) {
     const char* buf;
-    static char buf1[200];
+    static std::string buf1;
     double x;
     assert(sec);
     buf = secname(sec);
     x = nrn_arc_position(sec, nd);
-    Sprintf(buf1, "%s(%g)", buf, x);
-    return buf1;
+    std::array<char, 64> num;
+    snprintf(num.data(), num.size(), "(%g)", x);
+    buf1 = std::string(buf) + num.data();
+    return buf1.c_str();
 }
 
 int segment_limits(double* pdx) {
@@ -2102,14 +2103,12 @@ void sectionname(void) {
 void hoc_secname(void) {
     static char* buf = (char*) 0;
     Section* sec = chk_access();
-    if (!buf) {
-        buf = static_cast<char*>(emalloc(256 * sizeof(char)));
-    }
-    if (ifarg(1) && chkarg(1, 0., 1.) == 0.) {
-        strcpy(buf, secname(sec));
-    } else {
-        strcpy(buf, nrn_sec2pysecname(sec));
-    }
+    const char* name = (ifarg(1) && chkarg(1, 0., 1.) == 0.) ? secname(sec)
+                                                             : nrn_sec2pysecname(sec);
+    // names of C API sections can be arbitrarily long
+    free(buf);
+    buf = static_cast<char*>(emalloc(strlen(name) + 1));
+    strcpy(buf, name);
     hoc_ret();
     hoc_pushstr(&buf);
 }
