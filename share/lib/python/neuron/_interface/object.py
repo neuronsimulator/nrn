@@ -1163,7 +1163,9 @@ class Object(OBJECT_BASE, metaclass=_HocClassMeta):
                             _bump_model_epoch()
                         if ret:
                             # A failed nothrow call restores the args (gap-56).
-                            rollback_args()
+                            # -2: the method ran and nothing of it is left.
+                            if _type != TYPES.FUNCTION or code != -2:
+                                rollback_args()
                             failed, _err_buf = _err_buf, None  # no result
                             _check_nrn_error(ret, failed)
                         _err_buf = None  # the result is popped below
