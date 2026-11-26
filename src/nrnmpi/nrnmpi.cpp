@@ -13,14 +13,15 @@
 
 #include <nrnmpi.h>
 #include <mpispike.h>
+#include "ocmisc.h"
 
 
 #if NRNMPI_DYNAMICLOAD
 #else
+extern "C" {
 #include "nrnmpi_def_cinc"
+}
 #endif
-
-extern double nrn_timeus();
 
 #if NRNMPI
 #include <mpi.h>
@@ -32,9 +33,11 @@ MPI_Comm nrnmusic_comm;
 extern int nrnmusic;
 #endif
 
+extern "C" {
 MPI_Comm nrnmpi_world_comm;
 MPI_Comm nrnmpi_comm;
 MPI_Comm nrn_bbs_comm;
+}
 static MPI_Group grp_bbs;
 static MPI_Group grp_net;
 
@@ -325,7 +328,7 @@ void nrnmpi_subworld_size(int n) {
 }
 
 /* so src/nrnpython/inithoc.cpp does not have to include a c++ mpi.h */
-int nrnmpi_wrap_mpi_init(int* flag) {
+extern "C" int nrnmpi_wrap_mpi_init(int* flag) {
     return MPI_Initialized(flag);
 }
 

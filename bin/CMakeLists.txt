@@ -103,4 +103,5 @@ install(FILES ${PROJECT_BINARY_DIR}/bin/nrnmech_makefile DESTINATION ${NRN_INSTA
 install(
   PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/sortspike ${CMAKE_CURRENT_BINARY_DIR}/rdcellstate
            ${CMAKE_CURRENT_SOURCE_DIR}/mkthreadsafe ${PROJECT_BINARY_DIR}/bin/nrnpyenv.sh
-           ${CMAKE_CURRENT_SOURCE_DIR}/set_nrnpyenv.sh DESTINATION ${NRN_INSTALL_DATA_PREFIX}bin)
+           ${CMAKE_CURRENT_SOURCE_DIR}/nrnpyenv.py ${CMAKE_CURRENT_SOURCE_DIR}/set_nrnpyenv.sh
+  DESTINATION ${NRN_INSTALL_DATA_PREFIX}bin)

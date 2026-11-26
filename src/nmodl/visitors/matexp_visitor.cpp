@@ -61,9 +61,10 @@ void MatexpVisitor::visit_solve_block(ast::SolveBlock& node) {
     // Find solve statements that use the matexp solver method
     const auto& solve_method = node.get_method();
     const auto& steadystate_method = node.get_steadystate();
-    const auto& matexp_method = codegen::naming::MATEXP_METHOD;
+    // Compare the static constexpr directly. A no-capture lambda that names the
+    // local reference is ill-formed on MSVC (C3493); GCC accepts it.
     const auto is_method_matexp = [](auto method) {
-        return method && method->get_value()->eval() == matexp_method;
+        return method && method->get_value()->eval() == codegen::naming::MATEXP_METHOD;
     };
     const bool solve = is_method_matexp(solve_method);
     const bool steadystate = is_method_matexp(steadystate_method);

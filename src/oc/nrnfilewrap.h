@@ -1,4 +1,5 @@
 #pragma once
+#include "nrndlldef.h"
 #include "hocstr.h"
 #include "nrnmpiuse.h"
 
@@ -18,4 +19,4 @@ using NrnFILEWrap = FILE;
 #define nrn_fw_fscanf        fscanf
 
 extern char* fgets_unlimited(HocStr* s, NrnFILEWrap* f);
-extern NrnFILEWrap* hoc_fin;
+extern NRN_DLLSYM NrnFILEWrap* hoc_fin;

@@ -19,6 +19,7 @@ extern char* ivoc_get_temp_file();
 #define DECO 2  // 1 means default on, 2 off. for Carnvale,Hines book figures
 
 #include <string.h>
+#include <string>
 #include "ivoc.h"
 #endif  // HAVE_IV
 #include <stdio.h>
@@ -34,7 +35,7 @@ extern char* ivoc_get_temp_file();
 void single_event_run();
 extern char** hoc_strpop();
 
-#ifdef MINGW
+#ifdef _WIN32
 #include <IV-Win/mprinter.h>
 void iv_display_scale(float);
 void iv_display_scale(Coord, Coord);  // Make if fit into the screen
@@ -277,6 +278,7 @@ class PaperItem;
     void save_control(int);
     void save_session(int, const char*, const char* head = NULL);
     int save_group(Object*, const char*);
+    void set_ses_name(const char*);
     void retrieve_control();
     float round(float);
     float round_factor() {
@@ -419,7 +421,7 @@ void PWMDismiss::execute() {
 }
 
 #else  //! HAVE_IV
-#ifdef MINGW
+#ifdef _WIN32
 char* hoc_back2forward(char*);
 #endif
 #endif  // HAVE_IV
@@ -524,7 +526,7 @@ static double pwman_close(void* v) {
 #endif
     return 0.;
 }
-#ifdef MINGW
+#ifdef _WIN32
 static void pwman_iconify1(void* v) {
 #if HAVE_IV
     if (hoc_usegui) {
@@ -539,7 +541,7 @@ static double pwman_iconify(void* v) {
 #if HAVE_IV
     if (hoc_usegui) {
         PrintableWindow* pw = PrintableWindow::leader();
-#ifdef MINGW
+#ifdef _WIN32
         if (!nrn_is_gui_thread()) {
             nrn_gui_exec(pwman_iconify1, pw);
             return 0.;
@@ -654,7 +656,7 @@ static double pwman_snap(void* v) {
     return 0;
 }
 
-#ifdef MINGW
+#ifdef _WIN32
 static double scale_;
 static void pwman_scale1(void*) {
 #if HAVE_IV
@@ -671,7 +673,7 @@ static double pwman_scale(void* v) {
 #if HAVE_IV
     if (hoc_usegui) {
 #if defined(WIN32)
-#ifdef MINGW
+#ifdef _WIN32
         if (!nrn_is_gui_thread()) {
             scale_ = scale;
             nrn_gui_exec(pwman_scale1, (void*) ((intptr_t) 1));
@@ -2896,6 +2898,20 @@ void PWMImpl::save_control(int mode) {
     }
 }
 
+void PWMImpl::set_ses_name(const char* filename) {
+    cur_ses_name_ = filename;
+#ifdef WIN32
+    /* InterViews save filename is a native path assigned into a HOC
+       strdef (Box.save of pwm_session_filename). \ in HOC "..." is an
+       escape; ...\nrn always contains \n. fopen accepts /. Dup into
+       cur_ses_name_; do not mutate the chooser string. Same as
+       File.getname / retrieve. */
+    if (cur_ses_name_.length() > 0) {
+        hoc_back2forward(const_cast<char*>(cur_ses_name_.string()));
+    }
+#endif
+}
+
 int PWMImpl::save_group(Object* ho, const char* filename) {
     int i;
     ScreenItem* si;
@@ -2911,7 +2927,7 @@ int PWMImpl::save_group(Object* ho, const char* filename) {
         }
     }
     if (nwin > 0) {
-        cur_ses_name_ = filename;
+        set_ses_name(filename);
         std::filebuf obuf;
 #ifdef WIN32
         unlink(filename);
@@ -2934,7 +2950,7 @@ void PWMImpl::save_session(int mode, const char* filename, const char* head) {
     ScreenItem** sivec = NULL;
 
     std::filebuf obuf;
-    cur_ses_name_ = filename;
+    set_ses_name(filename);
 #ifdef WIN32
     unlink(filename);
 #endif
@@ -3075,9 +3091,18 @@ void PWMImpl::retrieve_control() {
     while (fc_retrieve_->post_for(w_)) {
         if (ok_to_read(*fc_retrieve_->selected(), w_)) {
             Oc oc;
-            char buf[256];
-            Sprintf(buf, "{load_file(1, \"%s\")}\n", fc_retrieve_->selected()->string());
-            if (!oc.run(buf)) {
+            /* InterViews selected() is a native path. Do not copy it into a
+               fixed buffer: a long path would be truncated or overflow.
+               load_file interpolates into HOC xopen("..."); \ is an escape.
+               fopen accepts /. Dup; do not mutate the chooser string. */
+            std::string winpath{fc_retrieve_->selected()->string()};
+#if defined(WIN32)
+            if (!winpath.empty()) {
+                hoc_back2forward(winpath.data());
+            }
+#endif
+            std::string cmd = "{load_file(1, \"" + winpath + "\")}\n";
+            if (!oc.run(cmd)) {
                 break;
             }
         }
@@ -3330,10 +3355,20 @@ Window* PWMImpl::snap_owned(Printer* pr, Window* wp) {
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include "oc2iv.h"
 
 #endif  // HAVE_IV
+
+#if defined(_MSC_VER)
+#include <errno.h>
+#include <fcntl.h>
+#include <io.h>
+#include <share.h>
+#include <sys/stat.h>
+#endif
 
 char* ivoc_get_temp_file() {
     char* tmpfile;
@@ -3351,7 +3386,33 @@ char* ivoc_get_temp_file() {
     }
     close(fd);
 #else
+#if defined(_MSC_VER)
+    // _mktemp only chooses a name. Create the file with _O_EXCL so another
+    // process cannot claim it before File.wopen. Retry when the race is lost.
+    int fd = -1;
+    for (int attempt = 0; attempt < 64; ++attempt) {
+        std::snprintf(tmpfile, length, "%s/nrnXXXXXX", tdir);
+        errno_t msc_err = _mktemp_s(tmpfile, length);
+        if (msc_err != 0) {
+            break;
+        }
+        msc_err =
+            _sopen_s(&fd, tmpfile, _O_CREAT | _O_EXCL | _O_RDWR, _SH_DENYNO, _S_IREAD | _S_IWRITE);
+        if (msc_err == 0 && fd >= 0) {
+            _close(fd);
+            break;
+        }
+        fd = -1;
+        if (msc_err != EEXIST) {
+            break;
+        }
+    }
+    if (fd < 0) {
+        hoc_execerror("Could not create temporary file:", tmpfile);
+    }
+#else
     mktemp(tmpfile);
+#endif
 #endif
 #if defined(WIN32)
     tmpfile = hoc_back2forward(tmpfile);
