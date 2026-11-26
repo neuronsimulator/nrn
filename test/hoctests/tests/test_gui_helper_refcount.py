@@ -42,10 +42,12 @@ def test_gui_helper_argument_refcount():
         h.xvarlabel(text)
         graph = h.Graph()
         assert graph.begin() == 1 and h.boolean_dialog("q") == 1
+        # Its C++ object is the callback's; with InterViews, freeing it unredirected crashes.
+        del graph
     finally:
         _install(None)
 
-    names = "xvalue xvarlabel Graph Graph.begin boolean_dialog"
+    names = "xvalue xvarlabel Graph Graph.begin boolean_dialog ~Graph"
     assert list(_record) == names.split(), _record
     prompt_rc, ptr_rc = _record["xvalue"]
     (str_rc,) = _record["xvarlabel"]
