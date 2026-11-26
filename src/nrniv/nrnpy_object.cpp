@@ -908,10 +908,12 @@ Ref call_gui(const char* name, Object* obj, bool references) {
     if (!registered(Hook::gui_callback) || !start()) {
         return {};
     }
-    Object* const self = name[0] == '~' ? nullptr : hoc_thisobject;
+    // A destructor runs when the object is freed, maybe outside any HOC call: no arguments.
+    bool const destructor = name[0] == '~';
+    Object* const self = destructor ? nullptr : hoc_thisobject;
     Top const top{};
     int n{};
-    while (ifarg(n + 1)) {
+    while (!destructor && ifarg(n + 1)) {
         ++n;
     }
     Ref const args{py.PyTuple_New(n + 3)};
