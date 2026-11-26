@@ -58,10 +58,12 @@ static void seg_or_x_arg_inside_stack(int i, Section** psec, double* px) {
     } else {
         Object* o = hoc_look_inside_stack<Object*>(i);
         *psec = nullptr;
-        if (nrnpy_o2loc_p_) {
+        if (o && nrnpy_o2loc_p_) {
             (*nrnpy_o2loc_p_)(o, psec, px);
         }
-        assert(*psec);
+        if (!*psec) {
+            hoc_execerror("not a Python nrn.Segment", nullptr);
+        }
     }
 }
 
@@ -75,13 +77,18 @@ void hoc_construct_point(Object* ob, int narg) {
     int ptype = pnt_map[type];
     Point_process* pnt = (Point_process*) create_point_process(ptype, ob);
     ob->u.dataspace[ob->ctemplate->dataspace_size - 1]._pvoid = (void*) pnt;
+    // Resolve the location before last_created_pp_ob_ is set: an error here must not leave it
+    // set for the next point process constructed.
+    Section* sec = nullptr;
+    double x = 0.;
+    Node* nd = nullptr;
+    if (narg > 0) {
+        seg_or_x_arg_inside_stack(narg - 1, &sec, &x);
+        nd = node_exact(sec, x);
+    }
     assert(last_created_pp_ob_ == NULL);
     last_created_pp_ob_ = ob;
     if (narg > 0) {
-        Section* sec;
-        double x;
-        seg_or_x_arg_inside_stack(narg - 1, &sec, &x);
-        Node* nd = node_exact(sec, x);
         nrn_loc_point_process(ptype, pnt, sec, nd);
     }
 }
