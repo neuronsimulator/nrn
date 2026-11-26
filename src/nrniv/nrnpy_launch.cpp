@@ -79,10 +79,15 @@ def import_readline():
 
 
 def interact():
-    sys.path[:], path = basic_path, sys.path[:]
-    import code
-
-    sys.path[:] = path
+    # The console is the standard library's: a code.py in the working directory must not replace
+    # it, also when PYTHONPATH names that directory (an empty entry, as in PYTHONPATH=:dir).
+    here = os.path.realpath(os.getcwd())
+    path = sys.path[:]
+    sys.path[:] = [p for p in basic_path if os.path.realpath(p or os.curdir) != here]
+    try:
+        import code
+    finally:
+        sys.path[:] = path
     code.InteractiveConsole(vars(sys.modules["__main__"])).interact("", exitmsg="")
 
 

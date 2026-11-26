@@ -204,15 +204,19 @@ ROWS = {
 
 def run(name):
     program = ROWS[name][0] + "\n"
-    # A sanitizer's runtime is in nrniv, but must be preloaded into python.
+    # A sanitizer's runtime is in nrniv, but must be preloaded into python. macOS SIP drops
+    # DYLD_INSERT_LIBRARIES before this process sees it, so it is set again from the test's copy.
     dropped = ("DISPLAY",) if name in PYTHON else ("DISPLAY", "LD_PRELOAD")
     env = {k: v for k, v in os.environ.items() if k not in dropped}
+    preload = env.get("NRN_SANITIZER_PRELOAD_VAR"), env.get("NRN_SANITIZER_PRELOAD_VAL")
+    if name in PYTHON and all(preload):
+        env[preload[0]] = preload[1]
     with TemporaryDirectory() as directory:
         directory = directory.replace(os.sep, "/")
         prelude, file = directory + "/prelude", directory + "/program"
         start = f"exec(open({prelude!r}).read())"
         if name in PYTHON:
-            command = [sys.executable, file]
+            command = [os.environ.get("NRN_PYTHON_EXECUTABLE", sys.executable), file]
             start += (
                 "\nfrom neuron import h; h('objref p'); h('p = new PythonObject()')\n"
             )
@@ -232,8 +236,9 @@ def run(name):
             text=True,
             timeout=120,
         )
-    # load_file and friends print their value
-    stdout = "".join(re.findall(r"^[^\t].*\n", r.stdout, re.M)).strip()
+    # load_file and friends print their value. A wheel's nrniv script prints its INFO line
+    # before it starts nrniv; it gets to the pipe only where the script waits for nrniv (Windows).
+    stdout = "".join(re.findall(r"^(?!\t|INFO : Using ).*\n", r.stdout, re.M)).strip()
     return stdout, r.stderr.replace(file, "{file}"), r.returncode
 
 

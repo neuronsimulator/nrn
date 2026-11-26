@@ -1,6 +1,8 @@
 """EOF in nrniv -python must not print the InteractiveConsole exit line.
 
--isatty starts that loop when stdin is a pipe. exitmsg="" keeps the ending quiet.
+-isatty starts that loop when stdin is a pipe. exitmsg="" keeps the ending quiet. The
+code.py in the working directory, also named by an empty PYTHONPATH entry, must not replace
+the standard library's.
 """
 
 import os
@@ -13,11 +15,14 @@ def main():
     nrniv = sys.argv[1]
     with tempfile.TemporaryDirectory() as directory:
         open(os.path.join(directory, "code.py"), "w").close()
+        env = dict(os.environ)
+        env["PYTHONPATH"] = os.pathsep + env.get("PYTHONPATH", "")
         proc = subprocess.run(
             [nrniv, "-nobanner", "-isatty", "-python"],
             input=b"import hoc\nprint(int(hoc.HocObject().ref(987654)[0]))\n",
             capture_output=True,
             cwd=directory,
+            env=env,
         )
     combined = proc.stdout + proc.stderr
     if (
