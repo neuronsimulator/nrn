@@ -811,128 +811,137 @@ void nrn_finitialize(int setv, double v) {
     nrn::Instrumentor::phase_begin("finitialize");
     nrn_fihexec(3); /* model structure changes can be made */
     verify_structure();
-    // Is this the right place to call this?
-    auto const sorted_token = nrn_ensure_model_data_are_sorted();
-#if ELIMINATE_T_ROUNDOFF
-    nrn_ndt_ = 0.;
-    nrn_dt_ = dt;
-    nrn_tbase_ = 0.;
-#else
-    t = 0.;
-    dt2thread(-1.);
-#endif
-    if (cvode_active_) {
-        nrncvode_set_t(t);
-    }
-    nrn_thread_table_check(sorted_token);
-    clear_event_queue();
-    nrn_spike_exchange_init();
-    nrn_random_play();
-    nrn_play_init(); /* Vector.play */
-    for (i = 0; i < nrn_nthread; ++i) {
-        nrn_deliver_events(nrn_threads + i); /* The play events at t=0 */
-    }
-    if (setv) {
-        for (NrnThread* _nt: for_threads(nrn_threads, nrn_nthread)) {
-            auto const vec_v = _nt->node_voltage_storage();
-            std::fill_n(vec_v, _nt->end, v);
-        }
-    }
-#if 1 || NRNMPI
-    if (nrnthread_vi_compute_)
-        for (NrnThread* _nt: for_threads(nrn_threads, nrn_nthread)) {
-            (*nrnthread_vi_compute_)(_nt);
-        }
+    // Drop the sorted token around handler types 0, 1, and 2. Formatting a
+    // Python exception there can collect a section, and owning_identifier::destroy
+    // aborts if it erases a node while this token is still held. Sort again
+    // before the code that follows type 0 and type 1.
     {
-        nrn::Instrumentor::phase p_gap("gap-v-transfer");
-        if (nrnmpi_v_transfer_) {
-            (nrnmpi_v_transfer_)();
+        auto const sorted_token = nrn_ensure_model_data_are_sorted();
+#if ELIMINATE_T_ROUNDOFF
+        nrn_ndt_ = 0.;
+        nrn_dt_ = dt;
+        nrn_tbase_ = 0.;
+#else
+        t = 0.;
+        dt2thread(-1.);
+#endif
+        if (cvode_active_) {
+            nrncvode_set_t(t);
         }
-        if (nrnthread_v_transfer_)
+        nrn_thread_table_check(sorted_token);
+        clear_event_queue();
+        nrn_spike_exchange_init();
+        nrn_random_play();
+        nrn_play_init(); /* Vector.play */
+        for (i = 0; i < nrn_nthread; ++i) {
+            nrn_deliver_events(nrn_threads + i); /* The play events at t=0 */
+        }
+        if (setv) {
             for (NrnThread* _nt: for_threads(nrn_threads, nrn_nthread)) {
-                (*nrnthread_v_transfer_)(_nt);
-            }
-    }
-#endif
-    nrn_fihexec(0); /* after v is set but before INITIAL blocks are called*/
-    for (i = 0; i < nrn_nthread; ++i) {
-        nrn_ba(sorted_token, nrn_threads[i], BEFORE_INITIAL);
-    }
-    /* the INITIAL blocks are ordered so that mechanisms that write
-       concentrations are after ions and before mechanisms that read
-       concentrations.
-    */
-    /* the memblist list in NrnThread is already so ordered */
-#if MULTICORE
-    for (i = 0; i < nrn_nthread; ++i) {
-        NrnThread* nt = nrn_threads + i;
-        nrn_nonvint_block_init(nt->id);
-        NrnThreadMembList* tml;
-        for (tml = nt->tml; tml; tml = tml->next) {
-            if (memb_func[tml->index].has_initialize()) {
-                memb_func[tml->index].invoke_initialize(sorted_token, nt, tml->ml, tml->index);
+                auto const vec_v = _nt->node_voltage_storage();
+                std::fill_n(vec_v, _nt->end, v);
             }
         }
-    }
-#endif
-    for (iord = 0; iord < n_memb_func; ++iord) {
-        i = memb_order_[iord];
-        /* first clause due to MULTICORE */
-        if (nrn_is_artificial_[i])
-            if (memb_func[i].has_initialize()) {
-                if (memb_list[i].nodecount) {
-                    // initialize all artificial cells in all threads at once
-                    auto& ml = memb_list[i];
-                    ml.set_storage_offset(0);
-                    memb_func[i].invoke_initialize(sorted_token, nrn_threads, &ml, i);
+#if 1 || NRNMPI
+        if (nrnthread_vi_compute_)
+            for (NrnThread* _nt: for_threads(nrn_threads, nrn_nthread)) {
+                (*nrnthread_vi_compute_)(_nt);
+            }
+        {
+            nrn::Instrumentor::phase p_gap("gap-v-transfer");
+            if (nrnmpi_v_transfer_) {
+                (nrnmpi_v_transfer_)();
+            }
+            if (nrnthread_v_transfer_)
+                for (NrnThread* _nt: for_threads(nrn_threads, nrn_nthread)) {
+                    (*nrnthread_v_transfer_)(_nt);
                 }
-                if (errno) {
-                    if (nrn_errno_check(i)) {
-                        hoc_warning("errno set during call to INITIAL block", (char*) 0);
+        }
+#endif
+    }
+    nrn_fihexec(0); /* after v is set but before INITIAL blocks are called*/
+    {
+        auto const sorted_token = nrn_ensure_model_data_are_sorted();
+        for (i = 0; i < nrn_nthread; ++i) {
+            nrn_ba(sorted_token, nrn_threads[i], BEFORE_INITIAL);
+        }
+        /* the INITIAL blocks are ordered so that mechanisms that write
+           concentrations are after ions and before mechanisms that read
+           concentrations.
+        */
+        /* the memblist list in NrnThread is already so ordered */
+#if MULTICORE
+        for (i = 0; i < nrn_nthread; ++i) {
+            NrnThread* nt = nrn_threads + i;
+            nrn_nonvint_block_init(nt->id);
+            NrnThreadMembList* tml;
+            for (tml = nt->tml; tml; tml = tml->next) {
+                if (memb_func[tml->index].has_initialize()) {
+                    memb_func[tml->index].invoke_initialize(sorted_token, nt, tml->ml, tml->index);
+                }
+            }
+        }
+#endif
+        for (iord = 0; iord < n_memb_func; ++iord) {
+            i = memb_order_[iord];
+            /* first clause due to MULTICORE */
+            if (nrn_is_artificial_[i])
+                if (memb_func[i].has_initialize()) {
+                    if (memb_list[i].nodecount) {
+                        // initialize all artificial cells in all threads at once
+                        auto& ml = memb_list[i];
+                        ml.set_storage_offset(0);
+                        memb_func[i].invoke_initialize(sorted_token, nrn_threads, &ml, i);
+                    }
+                    if (errno) {
+                        if (nrn_errno_check(i)) {
+                            hoc_warning("errno set during call to INITIAL block", (char*) 0);
+                        }
                     }
                 }
-            }
-    }
-    if (use_sparse13) {
-        nrndae_init();
-    }
+        }
+        if (use_sparse13) {
+            nrndae_init();
+        }
 
-    init_net_events();
-    for (i = 0; i < nrn_nthread; ++i) {
-        nrn_ba(sorted_token, nrn_threads[i], AFTER_INITIAL);
+        init_net_events();
+        for (i = 0; i < nrn_nthread; ++i) {
+            nrn_ba(sorted_token, nrn_threads[i], AFTER_INITIAL);
+        }
     }
     nrn_fihexec(1); /* after INITIAL blocks, before fcurrent*/
-
-    for (i = 0; i < nrn_nthread; ++i) {
-        nrn_deliver_events(nrn_threads + i); /* The INITIAL sent events at t=0 */
-    }
-    if (cvode_active_) {
-        cvode_finitialize(t);
-        nrn_record_init();
-    } else {
-        state_discon_allowed_ = 0;
+    {
+        auto const sorted_token = nrn_ensure_model_data_are_sorted();
         for (i = 0; i < nrn_nthread; ++i) {
-            setup_tree_matrix(sorted_token, nrn_threads[i]);
-            if (nrn_use_fast_imem) {
-                nrn_calc_fast_imem_fixedstep_init(nrn_threads + i);
+            nrn_deliver_events(nrn_threads + i); /* The INITIAL sent events at t=0 */
+        }
+        if (cvode_active_) {
+            cvode_finitialize(t);
+            nrn_record_init();
+        } else {
+            state_discon_allowed_ = 0;
+            for (i = 0; i < nrn_nthread; ++i) {
+                setup_tree_matrix(sorted_token, nrn_threads[i]);
+                if (nrn_use_fast_imem) {
+                    nrn_calc_fast_imem_fixedstep_init(nrn_threads + i);
+                }
+            }
+            state_discon_allowed_ = 1;
+            nrn_record_init();
+            for (i = 0; i < nrn_nthread; ++i) {
+                fixed_record_continuous(sorted_token, nrn_threads[i]);
             }
         }
-        state_discon_allowed_ = 1;
-        nrn_record_init();
         for (i = 0; i < nrn_nthread; ++i) {
-            fixed_record_continuous(sorted_token, nrn_threads[i]);
+            nrn_deliver_events(nrn_threads + i); /* The record events at t=0 */
+        }
+#if NRNMPI
+        nrn_spike_exchange(nrn_threads);
+#endif
+        if (nrn_allthread_handle) {
+            (*nrn_allthread_handle)();
         }
     }
-    for (i = 0; i < nrn_nthread; ++i) {
-        nrn_deliver_events(nrn_threads + i); /* The record events at t=0 */
-    }
-#if NRNMPI
-    nrn_spike_exchange(nrn_threads);
-#endif
-    if (nrn_allthread_handle) {
-        (*nrn_allthread_handle)();
-    }
-
     nrn_fihexec(2); /* just before return */
     nrn::Instrumentor::phase_end("finitialize");
 }
