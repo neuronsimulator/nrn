@@ -223,26 +223,9 @@ int section_cell_equals(Section* sec, Object* o) {
     return o ? methods.opaque_obj2pyobj(o) == cell.get() : cell.get() == py._Py_NoneStruct;
 }
 
-struct Member {  // PyMemberDef
-    const char* name;
-    int type;
-    std::ptrdiff_t offset;
-    int flags;
-    const char* doc;
-};
-
-struct Slot {  // PyType_Slot
-    int id;
-    void* function;
-};
-
-struct Spec {  // PyType_Spec
-    const char* name;
-    int basicsize;
-    int itemsize;
-    unsigned int flags;
-    Slot* slots;
-};
+using stable::Member;
+using stable::Slot;
+using stable::Spec;
 
 /// The slots from optional on are None at first, and the garbage collector clears them: the others
 /// are not in a cycle without one of them, and say what dealloc releases.
@@ -251,24 +234,27 @@ PyObject* make_type(const char* name, std::array<const char*, N> const& names, S
     static Member members[N + 1]{};
     auto* member = members;
     for (int i = 0; i < N; ++i) {
-        int constexpr object = 16;  // Py_T_OBJECT_EX: the interpreter reads it as a __slots__
-        if (names[i]) {             // otherwise it is core's own
+        // The interpreter reads a Py_T_OBJECT_EX member as a __slots__ entry.
+        if (names[i]) {  // otherwise it is core's own
             *member++ = {names[i],
-                         object,
+                         stable::t_object_ex,
                          static_cast<std::ptrdiff_t>(sizeof(Head) + i * sizeof(PyObject*)),
                          0,
                          nullptr};
         }
     }
-    static Slot slots[]{{51 /* Py_tp_clear */, reinterpret_cast<void*>(clear<N, optional>)},
-                        {65 /* Py_tp_new */, reinterpret_cast<void*>(make_instance<N, optional>)},
-                        {52 /* Py_tp_dealloc */, reinterpret_cast<void*>(dealloc<N, release>)},
-                        {71 /* Py_tp_traverse */, reinterpret_cast<void*>(traverse<N>)},
-                        {72 /* Py_tp_members */, members},
+    static Slot slots[]{{stable::tp_clear, reinterpret_cast<void*>(clear<N, optional>)},
+                        {stable::tp_new, reinterpret_cast<void*>(make_instance<N, optional>)},
+                        {stable::tp_dealloc, reinterpret_cast<void*>(dealloc<N, release>)},
+                        {stable::tp_traverse, reinterpret_cast<void*>(traverse<N>)},
+                        {stable::tp_members, members},
                         extra,
                         {0, nullptr}};
-    unsigned constexpr base_type = 1u << 10, have_gc = 1u << 14;  // Py_TPFLAGS_*
-    static Spec spec{name, sizeof(Instance<N>), 0, base_type | have_gc, slots};
+    static Spec spec{name,
+                     sizeof(Instance<N>),
+                     0,
+                     static_cast<unsigned>(stable::tpflags_basetype | stable::tpflags_have_gc),
+                     slots};
     return py.PyType_FromSpec(&spec);
 }
 
@@ -296,7 +282,7 @@ bool make_types() {
     if (types.object) {
         return true;
     }
-    int constexpr init = 60;  // Py_tp_init
+    int constexpr init = stable::tp_init;
     types.segment = make_type<SegmentSlot::count, release_nothing, SegmentSlot::mech_cache>(
         "nrn._Segment",
         {"_sec", "_x", "_mech_cache"},

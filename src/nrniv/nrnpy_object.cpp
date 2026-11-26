@@ -383,7 +383,8 @@ bool is_number(PyObject* p, double& value) {
 /// A HOC string, if p is a str or bytes. The slots outlive the expression that uses the string, as
 /// hoc_temp_charptr's do.
 char** temp_string(PyObject* p) {
-    unsigned long constexpr is_bytes = 1ul << 27, is_str = 1ul << 28;  // Py_TPFLAGS_*_SUBCLASS
+    unsigned long constexpr is_bytes = stable::tpflags_bytes_subclass,
+                            is_str = stable::tpflags_unicode_subclass;
     auto const flags = py.PyType_GetFlags(type_of(p));
     if (!(flags & (is_bytes | is_str))) {
         return nullptr;
@@ -918,7 +919,11 @@ Ref call_gui(const char* name, Object* obj, bool references) {
     py.PyTuple_SetItem(args.get(), 1, to_python(obj).release());
     py.PyTuple_SetItem(args.get(), 2, to_python(self).release());
     for (int i = 1; i <= n; ++i) {
-        py.PyTuple_SetItem(args.get(), i + 2, argument(i, references).release());
+        Ref value = argument(i, references);
+        if (!value) {
+            fail_hook();  // the reference hook raised
+        }
+        py.PyTuple_SetItem(args.get(), i + 2, value.release());
     }
     Ref result{py.PyObject_CallObject(optional(Hook::gui_callback).get(), args.get())};
     if (!result) {
@@ -1198,7 +1203,7 @@ Object** vec_as_numpy(int size, double* data) {
     Ref const numpy{py.PyImport_ImportModule("numpy")};
     Ref array;
     if (numpy) {
-        int const writable = 0x200;  // PyBUF_WRITE
+        int const writable = stable::buf_write;
         Ref const make{py.PyObject_GetAttrString(numpy.get(), size ? "frombuffer" : "empty")};
         Ref const arg{size ? py.PyMemoryView_FromMemory(reinterpret_cast<char*>(data),
                                                         size * sizeof(double),
@@ -1682,7 +1687,17 @@ void register_python_object() {
     methods.gui_helper = [](const char* name, Object* obj) { return gui_helper3(name, obj, 0); };
     methods.gui_helper3 = gui_helper3;
     methods.gui_helper3_str = gui_helper3_str;
-    methods.object_to_double = [](Object* o) { return py.PyFloat_AsDouble(to_python(o).get()); };
+    methods.object_to_double = [](Object* o) {
+        if (!started()) {
+            return 0.;
+        }
+        Gil const gil{};
+        double const value = py.PyFloat_AsDouble(to_python(o).get());
+        if (value == -1. && py.PyErr_Occurred()) {
+            py.PyErr_Clear();  // as -1, which the caller cannot tell from a value
+        }
+        return value;
+    };
     methods.hoccommand_exec = hoccommand_exec;
     methods.hoccommand_exec_strret = hoccommand_exec_strret;
     methods.hoc_nrnpython = nrnpython_statement;

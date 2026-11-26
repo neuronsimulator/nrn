@@ -172,3 +172,31 @@ endif()
 add_test(NAME "api::nmodlrandom_cpp" COMMAND nmodlrandom_cpp)
 set_property(TEST "api::nmodlrandom_cpp" PROPERTY ENVIRONMENT "${NRN_RUN_FROM_BUILD_DIR_ENV}"
                                                   "CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}")
+
+# libnrniv copies the part of CPython's stable ABI it uses (src/nrniv/nrnpy_capi.h) instead of
+# including Python.h. Check that copy against the headers of each Python of the build: it is a
+# compile-time check, so a difference fails the build.
+if(NRN_ENABLE_PYTHON)
+  foreach(val RANGE ${NRN_PYTHON_ITERATION_LIMIT})
+    list(GET NRN_PYTHON_VERSIONS ${val} pyver)
+    list(GET NRN_PYTHON_INCLUDES ${val} pyinc)
+    if(pyver VERSION_LESS 3.11 OR pyinc MATCHES "t$")
+      continue() # refused at run time: older than the limited API used, or free-threaded
+    endif()
+    string(REPLACE "." "" pyver_nodot "${pyver}")
+    set(abi_target python_abi_${pyver_nodot}_cpp)
+    if(WIN32)
+      # No link: Python.h would ask MSVC for python3.lib.
+      add_library(${abi_target} OBJECT python_abi.cpp)
+    else()
+      add_executable(${abi_target} python_abi.cpp)
+      add_test(NAME "api::${abi_target}" COMMAND ${abi_target})
+    endif()
+    target_include_directories(
+      ${abi_target} PRIVATE ${pyinc} $<TARGET_PROPERTY:nrniv_lib,INCLUDE_DIRECTORIES>
+                            ${PROJECT_BINARY_DIR}/include)
+    if(NOT MSVC)
+      target_compile_options(${abi_target} PRIVATE -Wno-deprecated-declarations)
+    endif()
+  endforeach()
+endif()

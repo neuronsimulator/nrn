@@ -1149,7 +1149,10 @@ int nrn_method_call_number(Object* obj,
     if (!call_method(obj, method_sym, narg, error_msg, error_msg_size, type)) {
         return -1;
     }
-    *result = hoc_xpop();
+    // A HOC error if the method left something else: it must not throw across the C API.
+    if (!nrn_nothrow([&] { *result = hoc_xpop(); }, error_msg, error_msg_size)) {
+        return -1;
+    }
     return static_cast<int>(type);
 }
 

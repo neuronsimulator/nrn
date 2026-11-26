@@ -1007,9 +1007,7 @@ def _get_mech_object(name):
 
 
 # h.<mechanism> objects come from this factory, and SaveState calls the two
-# savestate functions. Don't also pass them to nrnpy_set_toplevel_callbacks:
-# where the compiled module's code is linked into libnrniv, that replaces the
-# interface's SaveState hooks with ones that crash when a store callback raises.
+# savestate functions through the interface's hooks.
 _interface.mechanism.set_density_mechanism_factory(_get_mech_object)
 _interface.set_savestate_callbacks(_store_savestate, _restore_savestate)
 
@@ -1084,37 +1082,6 @@ def nrnpy_pr(stdoe, s):
 # the same nrnpy_set_pr_etal hook (via nrn_stdout_redirect) when it initializes.
 
 
-def nrnpy_vec_math(op, flag, arg1, arg2=None):
-    import numbers
-
-    valid_types = (numbers.Number, hoc.HocObject)
-    if isinstance(arg1, valid_types):
-        if flag == 2:
-            # unary
-            arg1 = arg1.c()
-            if op == "uneg":
-                return arg1.mul(-1)
-            if op == "upos":
-                return arg1
-            if op == "uabs":
-                return arg1.abs()
-        elif isinstance(arg2, valid_types):
-            if flag == 1:
-                # either reversed (flag=1) or unary (flag=2)
-                arg2 = arg2.c()
-                if op in ("mul", "add"):
-                    return getattr(arg2, op)(arg1)
-                if op == "div":
-                    return arg2.pow(-1).mul(arg1)
-                if op == "sub":
-                    return arg2.mul(-1).add(arg1)
-            else:
-                arg1 = arg1.c()
-                return getattr(arg1, op)(arg2)
-
-    return NotImplemented
-
-
 def _nrnpy_rvp_pyobj_callback(f):
     # unless f is an rxd variable, we return it directly
     f_type = str(type(f))
@@ -1157,9 +1124,9 @@ def _nrnpy_rvp_pyobj_callback(f):
     return result
 
 
-# Vector arithmetic with numbers is implemented by the interface's Vector, so
-# nrnpy_vec_math is not registered with the core; the RangeVarPlot hook that
-# turns an rxd species into a callable is the interface's.
+# Vector arithmetic with numbers is the interface's Vector's (the legacy
+# nrnpy_vec_math is gone); the RangeVarPlot hook that turns an rxd species into
+# a callable is the interface's.
 _interface.set_rvp_converter(_nrnpy_rvp_pyobj_callback)
 
 try:

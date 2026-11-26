@@ -1,10 +1,7 @@
 """A SaveState store callback that raises makes save() raise.
 
-The interface installs the SaveState hooks. neuron/__init__.py used to pass
-the same functions to nrnpy_set_toplevel_callbacks as well; where the compiled
-module's code is linked into libnrniv (NRN_ENABLE_PYTHON_DYNAMIC=OFF, the
-default, and Windows), that replaced the interface's hooks, and a store
-callback that raised crashed the process.
+The interface installs the SaveState hooks. A store callback that raises once
+crashed the process, when a second registration replaced those hooks.
 """
 
 import neuron

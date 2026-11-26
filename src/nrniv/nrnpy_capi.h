@@ -132,7 +132,37 @@ struct Capi {
 };
 extern Capi py;
 
-constexpr int file_input = 257;  // Py_file_input
+/// What else libnrniv copies of the stable ABI. test/api/python_abi.cpp checks it against Python.h.
+namespace stable {
+struct Member {  // PyMemberDef
+    const char* name;
+    int type;
+    std::ptrdiff_t offset;
+    int flags;
+    const char* doc;
+};
+struct Slot {  // PyType_Slot
+    int id;
+    void* function;
+};
+struct Spec {  // PyType_Spec
+    const char* name;
+    int basicsize;
+    int itemsize;
+    unsigned int flags;
+    Slot* slots;
+};
+// Py_tp_*
+constexpr int tp_clear = 51, tp_dealloc = 52, tp_init = 60, tp_new = 65, tp_traverse = 71,
+              tp_members = 72;
+constexpr int t_object_ex = 16;  // Py_T_OBJECT_EX
+// Py_TPFLAGS_*
+constexpr unsigned long tpflags_basetype = 1ul << 10, tpflags_have_gc = 1ul << 14,
+                        tpflags_bytes_subclass = 1ul << 27, tpflags_unicode_subclass = 1ul << 28;
+constexpr int buf_write = 0x200;  // PyBUF_WRITE
+constexpr int file_input = 257;   // Py_file_input
+}  // namespace stable
+using stable::file_input;
 
 /// Starts Python and binds py. The launcher sets it when NEURON, not Python, is the main program.
 extern bool (*launch)();
