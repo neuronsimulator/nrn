@@ -928,6 +928,50 @@ Segments
             fprintf(stderr, "%s\n", err);
         }
 
+.. c:function:: double nrn_rangevar_get_or_nan(Symbol* sym, Section* sec, double x)
+
+    Read a range variable at position ``x`` in one call, like
+    :c:func:`nrn_rangevar_get`, but return NaN instead of raising a HOC error
+    or throwing when the value cannot be read.
+
+    :param sym: Symbol of the range variable (e.g. ``v``, ``m_hh``).
+    :param sec: The section. A deleted section is allowed while the caller
+        still holds a reference to it (:c:func:`nrn_section_ref`).
+    :param x: Normalized position, 0 to 1.
+    :returns: The value, or NaN if it cannot be read.
+
+    A value that can be read is the same as HOC's ``sec.var(x)`` and
+    :c:func:`nrn_rangevar_get_nothrow` with index 0. As there, ``diam`` is
+    first recomputed from the 3-d points if they changed (which
+    :c:func:`nrn_rangevar_get` does not do). A ``diam`` of 0 or less found
+    then is set to 1e-6, as in HOC, and read as 1e-6 without HOC's error.
+
+    NaN is returned for every case :c:func:`nrn_rangevar_get_nothrow` reports
+    as an error: ``sym`` is null or not a range variable, ``sec`` is null or
+    deleted, ``x`` is outside [0, 1] or NaN, the mechanism is not inserted at
+    ``x``, a ``POINTER`` is not set or is opaque, and ``i_membrane_`` without
+    ``cvode.use_fast_imem(1)``. For an array range variable it reads element
+    0; use :c:func:`nrn_rangevar_get_nothrow` for the others.
+
+    A variable that holds NaN is also returned as NaN. A caller that needs to
+    tell the cases apart, or wants the error message, calls
+    :c:func:`nrn_rangevar_get_nothrow` only when it gets NaN, so the common
+    read stays one call. This suits an interface that cannot catch C++
+    exceptions, such as a ``ctypes`` binding.
+
+    **C Usage:**
+
+    .. code-block:: c
+
+        Symbol* v_sym = nrn_symbol("v");
+        double v = nrn_rangevar_get_or_nan(v_sym, soma, 0.5);
+        if (isnan(v)) {
+            char err[256];
+            if (nrn_rangevar_get_nothrow(v_sym, soma, 0.5, 0, &v, err, sizeof(err))) {
+                fprintf(stderr, "%s\n", err);
+            }
+        }
+
 .. c:function:: int nrn_rangevar_set_nothrow(Symbol* sym, Section* sec, double x, int index, double value, char* error_msg, size_t error_msg_size)
 
     Write element ``index`` of a range variable at position ``x``, with the same

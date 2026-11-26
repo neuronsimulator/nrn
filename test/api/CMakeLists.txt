@@ -13,6 +13,7 @@ set(api_test_files
     plotshape_interface.cpp
     property_array_steer.cpp
     property_element_ptr.cpp
+    rangevar_get_or_nan.cpp
     raw_hoc_errors.cpp
     runtime_pythonobject_marshaling.cpp
     section_owner.cpp
