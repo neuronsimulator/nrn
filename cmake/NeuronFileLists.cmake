@@ -360,7 +360,7 @@ set(RXD_FILES_LIST
     llgramarea.cpp)
 
 # How libnrniv starts and calls Python. Python.h is not used.
-set(PYTHON_FILES_LIST nrnpy_capi.cpp nrnpy_launch.cpp nrnpy_object.cpp nrnpy_types.cpp)
+set(PYTHON_FILES_LIST nrnpy_capi.cpp nrnpy_launch.cpp nrnpy_object.cpp nrnpy_types.cpp nrnpy_fast.cpp)
 
 # built-in mod files
 set(MODFILE_BASE_NAMES

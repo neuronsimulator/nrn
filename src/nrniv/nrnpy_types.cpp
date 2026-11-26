@@ -3,6 +3,7 @@
 // classes from them (nrn_python_type) and registers those (nrn_python_hook_set).
 #include <../../nrnconf.h>
 
+#include <algorithm>
 #include <array>
 #include <cstdio>
 #include <string>
@@ -230,7 +231,9 @@ using stable::Spec;
 /// The slots from optional on are None at first, and the garbage collector clears them: the others
 /// are not in a cycle without one of them, and say what dealloc releases.
 template <int N, void (*release)(PyObject*), int optional>
-PyObject* make_type(const char* name, std::array<const char*, N> const& names, Slot extra = {}) {
+PyObject* make_type(const char* name,
+                    std::array<const char*, N> const& names,
+                    std::array<Slot, 4> extra = {}) {
     static Member members[N + 1]{};
     auto* member = members;
     for (int i = 0; i < N; ++i) {
@@ -248,8 +251,13 @@ PyObject* make_type(const char* name, std::array<const char*, N> const& names, S
                         {stable::tp_dealloc, reinterpret_cast<void*>(dealloc<N, release>)},
                         {stable::tp_traverse, reinterpret_cast<void*>(traverse<N>)},
                         {stable::tp_members, members},
-                        extra,
+                        extra[0],
+                        extra[1],
+                        extra[2],
+                        extra[3],
                         {0, nullptr}};
+    // Unused extra slots are {0, nullptr}, which ends the list there.
+    std::stable_partition(std::begin(slots), std::end(slots), [](Slot const& s) { return s.id; });
     static Spec spec{name,
                      sizeof(Instance<N>),
                      0,
@@ -286,14 +294,22 @@ bool make_types() {
     types.segment = make_type<SegmentSlot::count, release_nothing, SegmentSlot::mech_cache>(
         "nrn._Segment",
         {"_sec", "_x", "_mech_cache"},
-        {init, reinterpret_cast<void*>(init_segment)});
+        {{{init, reinterpret_cast<void*>(init_segment)},
+          {stable::tp_getattro, reinterpret_cast<void*>(fast::segment_getattro)},
+          {stable::tp_setattro, reinterpret_cast<void*>(fast::segment_setattro)}}});
     types.section = make_type<SectionSlot::count, release_section, SectionSlot::inserted_mechs>(
         "nrn._Section",
         {"_sec", "_pynative", nullptr, "_cell", "_inserted_mechs", "_inserted_mechs_epoch"},
-        {init, reinterpret_cast<void*>(init_section)});
+        {{{init, reinterpret_cast<void*>(init_section)},
+          {stable::tp_methods, fast::section_methods}}});
     types.object = make_type<ObjectSlot::count, release_object, ObjectSlot::methods>(
         "hoc._Object", {"_obj", "_class_name", "_methods", "_section_cache", "_plotshape_var"});
-    return types.object && types.section && types.segment;
+    types.mechanism = make_type<MechanismSlot::count, release_nothing, 0>(
+        "nrn._Mechanism",
+        {"_seg", "_x", "_name", "_is_ion", "_epoch", "_nseg", "_x_nseg"},
+        {{{stable::tp_getattro, reinterpret_cast<void*>(fast::mechanism_getattro)},
+          {stable::tp_setattro, reinterpret_cast<void*>(fast::mechanism_setattro)}}});
+    return types.object && types.section && types.segment && types.mechanism && fast::make_types();
 }
 
 PyObject* slot(PyObject* instance, int i) {
@@ -343,6 +359,13 @@ Ref wrap(Object* o) {
         hoc_obj_ref(o);
     }
     return wrapper;
+}
+
+Ref segment(PyObject* section, double x) {
+    Ref const position{py.PyFloat_FromDouble(x)};
+    return position ? make<SegmentSlot::count>(need(Hook::segment_class).get(),
+                                               {section, position.get()})
+                    : Ref{};
 }
 
 Ref python_section(Section* sec) {

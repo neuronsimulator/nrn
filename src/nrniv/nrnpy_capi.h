@@ -102,12 +102,23 @@ namespace neuron::python {
     X(PyObject*, PyDict_New, (void))                                              \
     X(PyObject*, PyDict_GetItem, (PyObject*, PyObject*))                          \
     X(PyObject*, PyDict_GetItemString, (PyObject*, const char*))                  \
-    X(int, PyDict_SetItemString, (PyObject*, const char*, PyObject*))
+    X(int, PyDict_SetItemString, (PyObject*, const char*, PyObject*))            \
+    X(int, PyDict_SetItem, (PyObject*, PyObject*, PyObject*))                     \
+    X(PyObject*, PyObject_GenericGetAttr, (PyObject*, PyObject*))                 \
+    X(int, PyObject_GenericSetAttr, (PyObject*, PyObject*, PyObject*))            \
+    X(PyObject*, PyObject_CallMethodObjArgs, (PyObject*, PyObject*, ...))         \
+    X(int, PyErr_ExceptionMatches, (PyObject*))                                   \
+    X(double, PyLong_AsDouble, (PyObject*))                                       \
+    X(std::ptrdiff_t, PyLong_AsSsize_t, (PyObject*))                              \
+    X(PyObject*, PyType_FromSpecWithBases, (void*, PyObject*))                    \
+    X(const char*, PyUnicode_AsUTF8AndSize, (PyObject*, std::ptrdiff_t*))         \
+    X(int, PySequence_Contains, (PyObject*, PyObject*))
 
 // Types and exceptions, data in the stable ABI. PyExc_* are pointers to the objects.
 #define NRNPY_TYPES(X)                                                            \
     X(_Py_NoneStruct) X(_Py_FalseStruct) X(_Py_TrueStruct) X(PyUnicode_Type)      \
-    X(PyBytes_Type) X(PyTuple_Type) X(PyList_Type) X(PyType_Type) X(PyFloat_Type)
+    X(PyBytes_Type) X(PyTuple_Type) X(PyList_Type) X(PyType_Type) X(PyFloat_Type)      \
+    X(PyLong_Type) X(PyDict_Type)
 #define NRNPY_EXCEPTIONS(X)                                                       \
     X(PyExc_AttributeError) X(PyExc_Exception) X(PyExc_RuntimeError)              \
     X(PyExc_SystemExit) X(PyExc_TypeError) X(PyExc_ValueError)
@@ -145,6 +156,12 @@ struct Slot {  // PyType_Slot
     int id;
     void* function;
 };
+struct Method {  // PyMethodDef
+    const char* name;
+    void* function;
+    int flags;
+    const char* doc;
+};
 struct Spec {  // PyType_Spec
     const char* name;
     int basicsize;
@@ -155,6 +172,10 @@ struct Spec {  // PyType_Spec
 // Py_tp_*
 constexpr int tp_clear = 51, tp_dealloc = 52, tp_init = 60, tp_new = 65, tp_traverse = 71,
               tp_members = 72;
+// The fast path (nrnpy_fast.cpp): Py_tp_*, Py_mp_*, METH_*
+constexpr int tp_getattro = 58, tp_setattro = 69, tp_iter = 62, tp_iternext = 63, tp_methods = 64,
+              mp_subscript = 5, mp_ass_subscript = 3;
+constexpr int meth_noargs = 0x0004;
 constexpr int t_object_ex = 16;  // Py_T_OBJECT_EX
 // Py_TPFLAGS_*
 constexpr unsigned long tpflags_basetype = 1ul << 10, tpflags_have_gc = 1ul << 14,

@@ -25,6 +25,8 @@ struct Types {
     PyObject* object{};
     PyObject* section{};
     PyObject* segment{};
+    PyObject* mechanism{};  // the fast path's (nrnpy_fast.cpp)
+    PyObject* vector{};
 };
 extern Types types;
 /// Make them. False with a Python error set on failure.
@@ -38,6 +40,9 @@ struct SectionSlot {
 };
 struct SegmentSlot {
     enum { sec, x, mech_cache, count };
+};
+struct MechanismSlot {
+    enum { seg, x, name, is_ion, epoch, nseg, x_nseg, count };
 };
 
 /// Slot i of an instance of one of the types, borrowed. Null if it is not set.
@@ -56,5 +61,19 @@ Ref python_section(Section* sec);
 Ref wrap(Object* o);
 Ref wrap(Section* sec);
 Ref wrap(Section* sec, double x);
+/// A new Segment of the interface's class at x of that Section wrapper. Null with an error set.
+Ref segment(PyObject* section, double x);
+
+namespace fast {
+// nrnpy_fast.cpp: the per-access fast path of the base types. Each falls back to the
+// interface's Python method (_getattr, _setattr, _getitem, _setitem) for anything unusual.
+PyObject* segment_getattro(PyObject* self, PyObject* name);
+int segment_setattro(PyObject* self, PyObject* name, PyObject* value);
+PyObject* mechanism_getattro(PyObject* self, PyObject* name);
+int mechanism_setattro(PyObject* self, PyObject* name, PyObject* value);
+extern stable::Method section_methods[];
+/// The Vector base type and the tables the interface fills; after make_types' own.
+bool make_types();
+}  // namespace fast
 
 }  // namespace neuron::python

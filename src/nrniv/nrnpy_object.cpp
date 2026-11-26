@@ -1772,6 +1772,8 @@ PyObject* nrn_python_type(const char* name) {
                        : !std::strcmp(name, "object")  ? types.object
                        : !std::strcmp(name, "section") ? types.section
                        : !std::strcmp(name, "segment") ? types.segment
+                       : !std::strcmp(name, "mechanism") ? types.mechanism
+                       : !std::strcmp(name, "vector")  ? types.vector
                                                        : py._Py_NoneStruct;
     return Ref::borrow(type).release();
 }
