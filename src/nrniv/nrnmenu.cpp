@@ -439,8 +439,7 @@ static void point_menu(Object* ob, int make_label) {
     bool deflt;
 
     if (pp->sec) {
-        Sprintf(buf, "%s at ", hoc_object_name(ob));
-        strcat(buf, sec_and_position(pp->sec, pp->node));
+        Sprintf(buf, "%s at %s", hoc_object_name(ob), sec_and_position(pp->sec, pp->node));
     } else {
         Sprintf(buf, "%s", hoc_object_name(ob));
     }
