@@ -2040,9 +2040,6 @@ to call them for.
                               function, method or constructor, instead of NEURON's own
     ``reference``             ``(value)`` -> a reference to pass to it: to ``val`` of a
                               :class:`Pointer`, or to the string at an address (int)
-    ``error_text``            ``(exception)`` -> its text in the HOC error of a
-                              :class:`ParallelContext` method that pickles or runs Python:
-                              ``Type: message``, after its frames if it has a traceback
     ========================= ============================================================
 
     :param name: One of the above.
