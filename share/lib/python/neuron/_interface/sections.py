@@ -109,6 +109,7 @@ _V_SYMBOL = _nrn_symbol(b"v")
 # _setattr for anything else. Symbols never move, so nothing invalidates it.
 _FAST_RANGEVARS = getattr(SEGMENT_BASE, "_fast_rangevars", None)
 # mechanism name -> {unsuffixed name -> Symbol address}, filled by mechanism.py.
+# The core clears both when KSChan renames or frees a symbol.
 _FAST_MECHANISMS = getattr(SEGMENT_BASE, "_fast_mechanisms", None)
 if _FAST_RANGEVARS is not None:
     SEGMENT_BASE._fast_epoch = EPOCH
@@ -1266,11 +1267,9 @@ class Segment(SEGMENT_BASE):
             # section or template made in between moves the epoch. One
             # has_membrane call answers. A list never built is built once.
             inserted = _current_inserted_mechs(self._sec)
-            if inserted is _STALE and _FAST_RANGEVARS is None:
+            if inserted is _STALE:
                 inserted = None
-            elif inserted is None or inserted is _STALE:
-                # With the core's fast path, rebuilt when stale: the core
-                # then makes the next segments' wrappers from the list.
+            elif inserted is None:
                 inserted = self._sec._get_inserted_mechs()
             if (
                 inserted is None or name not in inserted
@@ -1540,6 +1539,7 @@ class Segment(SEGMENT_BASE):
 # reading nseg through the C API on every wrapper creation. An nseg change made
 # from HOC code is counted by current_nseg_generation when a wrapper is made,
 # and by sync_nseg when a range-variable reference is used.
+# The core's fast path holds this dict (never rebind it, only change it).
 NSEG_GENERATION = {}
 if _FAST_RANGEVARS is not None:
     SEGMENT_BASE._fast_nseg_generation = NSEG_GENERATION
@@ -1570,8 +1570,6 @@ def sync_nseg(sec_ptr):
 # Section pointer -> the model epoch at which current_nseg_generation last
 # compared its nseg with NEURON's.
 _NSEG_SYNCED_AT = {}
-if _FAST_RANGEVARS is not None:
-    SEGMENT_BASE._fast_nseg_synced_at = _NSEG_SYNCED_AT
 
 
 def current_nseg_generation(sec_ptr):
@@ -1710,6 +1708,32 @@ def _section_order(sec, other, compare):
     if isinstance(other, (Segment, NrnRef, _PACKAGE.object.Object, _utils.FuncWrapper)):
         return compare(sec._sec, id(other))
     return NotImplemented
+
+
+class _SectionSegments:
+    """for seg in sec, as NEURON's iterator: nseg is read again at each step,
+    so rediscretizing changes the remaining midpoints and the stopping point,
+    and an exhausted iterator yields again once nseg grows. A section deleted
+    meanwhile ends the loop."""
+
+    __slots__ = ("_section", "_i")
+
+    def __init__(self, section):
+        self._section = section
+        self._i = 0
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        sec_ptr = self._section._sec
+        if not _nrn_section_is_active(sec_ptr):
+            raise StopIteration
+        nseg = _nrn_nseg_get(sec_ptr)
+        if self._i >= nseg:
+            raise StopIteration
+        self._i += 1
+        return Segment(self._section, (self._i - 0.5) / nseg)
 
 
 class Section(SECTION_BASE):
@@ -1993,25 +2017,8 @@ class Section(SECTION_BASE):
     def __iter__(self):
         self._check_alive()  # now, as NEURON does, not on the first next()
         if _FAST_RANGEVARS is not None:
-            return self._segments()  # the core's iterator, the same loop as below
-
-        def segments():
-            # Real NEURON re-evaluates nseg after each yield, so rediscretizing
-            # a section changes both the remaining midpoints and the stopping
-            # point. A section deleted meanwhile ends the loop, as in NEURON.
-            # What self.nseg does, with one liveness check per step.
-            i = 0
-            sec_ptr = self._sec
-            while True:
-                if not _nrn_section_is_active(sec_ptr):
-                    return
-                nseg = _nrn_nseg_get(sec_ptr)
-                if i >= nseg:
-                    return
-                yield Segment(self, (i + 0.5) / nseg)
-                i += 1
-
-        return segments()
+            return self._segments()  # the core's iterator, the same loop
+        return _SectionSegments(self)
 
     def allseg(self):
         """Iterate all segments including endpoints at x=0 and x=1."""

@@ -417,6 +417,7 @@ if ret:
 # does not move on insert, and some interior deletes evade allsec()'s head-link
 # check. Over-invalidation (a harmless `n("print x")` also ends the epoch) is
 # intentional.
+# The core's fast path holds this list (never rebind it, only set EPOCH[0]).
 EPOCH = [1]
 _epochs = itertools.count(2)
 
