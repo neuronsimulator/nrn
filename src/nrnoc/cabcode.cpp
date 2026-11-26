@@ -375,6 +375,9 @@ void delete_section(void) {
     }
     sec_free(*pitm);
     *pitm = 0;
+    if (!ob) {
+        nrn_section_new_symbol_free(sym);
+    }
     hoc_retpushx(1.);
 }
 
