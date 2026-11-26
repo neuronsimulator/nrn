@@ -50,7 +50,7 @@ extern int nrn_nobanner_;
 extern int diam_changed;
 extern int nrn_try_catch_nest_depth;
 extern int hoc_execerror_messages;
-extern "C" void nrnpy_set_pr_etal(int (*cbpr_stdoe)(int, char*), int (*cbpass)());
+extern "C" NRN_DLLSYM void nrnpy_set_pr_etal(int (*cbpr_stdoe)(int, char*), int (*cbpass)());
 int ivocmain_session(int, const char**, const char**, int start_session);
 void simpleconnectsection();
 extern Object* hoc_newobj1(Symbol*, int);
@@ -257,6 +257,7 @@ double nrn_rangevar_get(Symbol* sym, Section* sec, double x) {
 }
 
 namespace {
+
 // After a range-variable write, what HOC assignment and the Python setter do:
 // a diam write updates area and 3-d points, an xraxial write recomputes the
 // axial terms.
@@ -272,6 +273,17 @@ void rangevar_written(Symbol* sym, Section* sec) {
 }  // namespace
 
 void nrn_rangevar_set(Symbol* sym, Section* sec, double x, double value) {
+    if (sym->u.rng.type == MORPHOLOGY) {
+        // After a diam write, nrn_diam_change copies every segment's diam into
+        // the section's 3-d points. If the segment diameters are still waiting
+        // to be derived from those points (recalc_area_, e.g. right after
+        // pt3dadd), the other segments hold stale values, such as the 500 µm
+        // default, which would overwrite the points' own diameters. So first
+        // derive them from the points.
+        if (sec->recalc_area_ && sec->npt3d) {
+            nrn_area_ri_no_diam_error(sec);
+        }
+    }
     *nrn_rangepointer(sec, sym, x) = value;
     rangevar_written(sym, sec);
 }
@@ -1032,10 +1044,14 @@ double nrn_distance(Section* sec0, double x0, Section* sec1, double x1) {
  ****************************************/
 
 ShapePlotInterface* nrn_get_plotshape_interface(Object* ps) {
-    ShapePlotInterface* spi;
-    hoc_Item** my_section_list;
-    spi = ((ShapePlotInterface*) ps->u.this_pointer);
-    return spi;
+    // The object is one of two classes, and a ShapePlot's interface is not its first base.
+    void* that = ps->u.this_pointer;
+#if HAVE_IV
+    if (hoc_usegui) {
+        return static_cast<ShapePlot*>(that);
+    }
+#endif
+    return static_cast<ShapePlotData*>(that);
 }
 
 Object* nrn_get_plotshape_section_list(ShapePlotInterface* spi) {

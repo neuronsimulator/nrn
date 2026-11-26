@@ -124,10 +124,10 @@ extern size_t nrnbbcore_gap_write(const char* path, int* group_ids);
 extern size_t nrncore_netpar_bytes();
 extern short* nrn_is_artificial_;
 
-int (*nrnpy_nrncore_enable_value_p_)();
-int (*nrnpy_nrncore_file_mode_value_p_)();
+NRN_DLLSYM int (*nrnpy_nrncore_enable_value_p_)();
+NRN_DLLSYM int (*nrnpy_nrncore_file_mode_value_p_)();
 
-char* (*nrnpy_nrncore_arg_p_)(double tstop);
+NRN_DLLSYM char* (*nrnpy_nrncore_arg_p_)(double tstop);
 
 CellGroup* cellgroups_;
 /** mapping information */

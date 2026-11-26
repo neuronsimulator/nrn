@@ -19,11 +19,10 @@ fi
 # export PATH=$HOME/soft/python3.8/bin:$PATH
 # All other python versions installed from python.org universal2 installers.
 
-# As of Python-3.13.0, we configure to link universal2 static readline
-# (and ncurses) into libnrniv.dylib.
-# The packages were downloade and the universal libraries were built with
-# nrn/packaging/python/build_static_readline_osx.bash
-READLINE_LIST="/opt/nrnwheel/arm64/readline;/opt/nrnwheel/arm64/ncurses"
+# The macOS package static-links BSD libedit. ncurses is the termcap.
+# Build it with nrn/packaging/python/build_static_ncurses_osx.bash.
+# Do not put a GNU readline prefix on the search path.
+READLINE_LIST="/opt/nrnwheel/arm64/ncurses"
 
 CPU=`uname -m`
 
