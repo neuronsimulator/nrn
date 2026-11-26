@@ -422,7 +422,8 @@ stable::Method section_methods[]{
     {nullptr, nullptr, 0, nullptr}};
 
 PyObject* segment_getattro(PyObject* self, PyObject* name) {
-    if (is_str(name)) {
+    // The interface's own slots and methods (self._sec, self._x, ...) first: no table has them.
+    if (is_str(name) && !internal(name)) {
         if (auto* const address = py.PyDict_GetItem(t.rangevars, name)) {
             Section* sec;
             double x;
