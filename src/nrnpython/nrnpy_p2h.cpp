@@ -803,8 +803,23 @@ static Object* py_alltoall_type(int size, int type) {
             }
         }
     } else {
-        // Get the raw PyObject* arg. So things like None, int, bool are preserved.
-        psrc = nb::borrow(hocobj_call_arg(0));
+        // From Python, the raw PyObject* arg, so things like None, int, bool are
+        // preserved. Called from HOC (h("...") or a HOC procedure), the arg is HOC's.
+        static const char* const names[] = {
+            "", "py_alltoall", "py_allgather", "py_gather", "py_broadcast", "py_scatter"};
+        if (PyObject* arg = hocobj_call_arg(names[type], 0)) {
+            psrc = nb::borrow(arg);
+        } else if (hoc_is_object_arg(1)) {
+            psrc = nb::steal(nrnpy_ho2po(*hoc_objgetarg(1)));
+        } else if (hoc_is_str_arg(1)) {
+            psrc = nb::steal(PyUnicode_FromString(gargstr(1)));
+        } else {
+            psrc = nb::steal(PyFloat_FromDouble(*getarg(1)));
+        }
+        if (!psrc) {  // e.g. a HOC string that is not UTF-8
+            PyErr_Clear();
+            hoc_execerror(names[type], "argument cannot be converted to a Python object");
+        }
 
         if (np == 1) {
             nb::object pdest;

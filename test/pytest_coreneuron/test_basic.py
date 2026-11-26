@@ -406,6 +406,69 @@ def test_py_alltoall_dict_err():
     expect_hocerr(pc.py_alltoall, src, ("hocobj_call error",))
 
 
+class _CollectiveArgs:
+    pass
+
+
+def test_py_collectives_called_from_hoc():
+    # Called from HOC, py_broadcast, py_gather and py_allgather take HOC's
+    # argument, not the argument of the Python call running that HOC code (here
+    # the h(...) command string).
+    holder = _CollectiveArgs()
+    holder.v = [1, None, "x"]
+    h("objref pc_collective_, holder_collective_, r_collective_")
+    h("pc_collective_ = new ParallelContext()")
+    h.holder_collective_ = holder
+    h("r_collective_ = pc_collective_.py_broadcast(holder_collective_.v, 0)")
+    assert h.r_collective_ == [1, None, "x"]
+    h("r_collective_ = pc_collective_.py_gather(holder_collective_.v, 0)")
+    assert h.r_collective_ == [[1, None, "x"]]
+    h("r_collective_ = pc_collective_.py_allgather(holder_collective_.v)")
+    assert h.r_collective_ == [[1, None, "x"]]
+    h("r_collective_ = pc_collective_.py_broadcast(2.5, 0)")
+    assert h.r_collective_ == 2.5
+    h('r_collective_ = pc_collective_.py_broadcast("s", 0)')
+    assert h.r_collective_ == "s"
+    h('strdef s_collective_\ns_collective_ = "t"')
+    h("r_collective_ = pc_collective_.py_broadcast(s_collective_, 0)")
+    assert h.r_collective_ == "t"
+    h("objref nil_collective_, v_collective_")
+    h("r_collective_ = pc_collective_.py_broadcast(nil_collective_, 0)")
+    assert h.r_collective_ is None
+    h("v_collective_ = new Vector(2)")
+    h("r_collective_ = pc_collective_.py_broadcast(v_collective_, 0)")
+    assert h.r_collective_ == h.v_collective_
+    # A HOC procedure Python calls, which calls the collective itself.
+    h(
+        "proc collective_from_proc_() { r_collective_ = pc_collective_.py_broadcast($1, 0) }"
+    )
+    h.collective_from_proc_(7)
+    assert h.r_collective_ == 7.0
+    # A method named like the collective, on a template: its Python argument is
+    # not the collective's.
+    h(
+        """begintemplate CollectiveNamesake_
+        public py_broadcast, ret
+        objref pc, ret
+        proc py_broadcast() {
+            pc = new ParallelContext()
+            ret = pc.py_broadcast(12.5, 0)
+        }
+        endtemplate CollectiveNamesake_"""
+    )
+    namesake = h.CollectiveNamesake_()
+    namesake.py_broadcast("python argument")
+    assert namesake.ret == 12.5
+    # From Python the argument is still the Python object itself (int stays int).
+    pc = h.ParallelContext()
+    for value in (3, True, None, [1, None]):
+        assert type(pc.py_broadcast(value, 0)) is type(value), value
+        assert pc.py_broadcast(value, 0) == value
+        assert pc.py_gather(value, 0) == [value]
+        assert pc.py_allgather(value) == [value]
+    h("objref pc_collective_, holder_collective_, r_collective_, v_collective_")
+
+
 def test_nosection():
     expect_err("h.IClamp(.5)")
     expect_err("h.IClamp(5)")

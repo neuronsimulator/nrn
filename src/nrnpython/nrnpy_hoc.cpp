@@ -21,6 +21,7 @@
 #include <cstdint>
 #include <climits>
 #include <cmath>
+#include <cstring>
 #include <vector>
 #include <sstream>
 #include <unordered_map>
@@ -805,8 +806,20 @@ static void* fcall(void* vself, void* vargs) {
 }
 
 static PyObject* curargs_;
+// The HOC function curargs_ are for, and the object it is called on. HOC code that a
+// call runs (h("...") or a HOC procedure) can call one of those methods with HOC
+// arguments.
+static Symbol* cursym_;
+static Object* curobj_;
 
-PyObject* hocobj_call_arg(int i) {
+// Python's argument i when Python called the ParallelContext method name directly,
+// else nullptr.
+PyObject* hocobj_call_arg(const char* name, int i) {
+    if (!curargs_ || !cursym_ || !curobj_ || std::strcmp(cursym_->name, name) != 0 ||
+        std::strcmp(curobj_->ctemplate->sym->name, "ParallelContext") != 0 ||
+        i >= PyTuple_Size(curargs_)) {
+        return nullptr;
+    }
     return PyTuple_GetItem(curargs_, i);
 }
 
@@ -816,6 +829,17 @@ static PyObject* hocobj_call(PyHocObject* self, PyObject* args, PyObject* kwrds)
     // eg pc.py_broadcast, pc.py_gather, pc.py_allgather
     PyObject* prevargs_ = curargs_;
     curargs_ = args;
+    struct RestoreCall {
+        Symbol* sym;
+        Object* obj;
+        ~RestoreCall() {
+            cursym_ = sym;
+            curobj_ = obj;
+        }
+    } restore_call{cursym_, curobj_};
+    const bool function = self->type_ == PyHoc::HocFunction;
+    cursym_ = function ? self->sym_ : nullptr;
+    curobj_ = function ? self->ho_ : nullptr;
 
     PyObject* section = nullptr;
     nb::object result;
