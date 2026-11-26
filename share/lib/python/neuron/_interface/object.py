@@ -57,7 +57,6 @@ from .api import (
     _nrn_sectionlist_iterator_new,
     _nrn_sectionlist_iterator_next,
     _nrn_sectionlist_to_array,
-    _nrn_str_pop,
     _nrn_symbol_array_length,
     _nrn_symbol_is_array,
     _nrn_vector_capacity,
@@ -96,7 +95,6 @@ from .utils import (
     FuncWrapper,
     READ_ONLY_METHODS,
     _drop_return_slot,
-    _object_pop,
     _pop_pushed_section,
     _return_slot_pop,
     _try_wrap_point_nmodlrandom,
@@ -286,16 +284,20 @@ def _construct_hoc_object(class_name, args, sec=None):
         _check_sec_kwarg(sec)
     if args_for_push and is_located_point_process_class(class_name):
         _check_location_arg(args_for_push[0])
-    temp_strs, seg_sec, rollback_args = _utils._push_args(
-        args_for_push, return_rollback=True
-    )
-    # A Segment arg's section wins over sec=: the arg is pushed after it.
-    use_sec = seg_sec if seg_sec is not None else sec
-    if use_sec is not None:
-        _nrn_section_push(use_sec._sec)
+    # Pushes are recorded before they happen, in *pushed* ([count, rollback],
+    # see utils._push_args) and *pushed_sec*, because an interrupt can land
+    # after any call returns, including a push or _push_args itself (gap-84).
+    pushed = [0]
+    pushed_sec = None
     result = ctypes.c_void_p()
     is_template = True  # an unknown class may run HOC too
     try:
+        temp_strs, seg_sec = _utils._push_args(args_for_push, pushed)
+        # A Segment arg's section wins over sec=: the arg is pushed after it.
+        use_sec = seg_sec if seg_sec is not None else sec
+        if use_sec is not None:
+            pushed_sec = [use_sec._sec]
+            _nrn_section_push(pushed_sec[0])
         sym = class_symbol(class_name)
         if not sym:
             raise LookupError(f"no HOC class named {class_name!r}")
@@ -309,15 +311,25 @@ def _construct_hoc_object(class_name, args, sec=None):
             # An interrupt after the core took the arguments and returned the
             # object: release the object. Popping the arguments would throw.
             _api._nrn_object_unref(result.value)
-        else:
-            # nrn_object_new_nothrow restores the caller-owned args on failure.
-            # Pop them or repeated failures hit "Stack too deep" (gap-56).
-            rollback_args()
+        elif pushed[0]:
+            # Not called yet, or nrn_object_new_nothrow failed and restored
+            # the args. Pop them or repeated failures hit "Stack too deep"
+            # (gap-56); again if an interrupt stops the first pass.
+            try:
+                _utils._pop_args(pushed)
+            finally:
+                if pushed[0]:
+                    _utils._pop_args(pushed)
+
         raise_callback_error()
         raise
     finally:
-        if use_sec is not None:
-            _pop_pushed_section(use_sec._sec)
+        if pushed_sec:
+            try:
+                _pop_pushed_section(pushed_sec)
+            finally:
+                if pushed_sec:  # interrupted before the pop
+                    _pop_pushed_section(pushed_sec)
         if is_template:
             # A template's init() is HOC: it can uninsert mechanisms or delete
             # sections, so the caches the epoch guards (allsec, Mechanism
@@ -1031,7 +1043,10 @@ class Object(OBJECT_BASE, metaclass=_HocClassMeta):
             # first RANGEOBJ seen, with no density symbol to learn the code
             # from): probe via the fail-closed adapter (see
             # api.TypeCodes.record_rangeobj). Free once RANGEOBJ is known.
-            if TYPES.RANGEOBJ is None:
+            # Only a point process can have such a member, so every other
+            # class (Vector, NetCon, a template) skips the probe: it was a
+            # symbol lookup and a C call on each of its method accesses.
+            if TYPES.RANGEOBJ is None and is_point_process_class(self._class_name):
                 sym = _nrn_method_symbol(self._obj, name.encode("utf-8"))
                 wrapped = _try_wrap_point_nmodlrandom(self._obj, sym, _type)
                 if wrapped is not None:
@@ -1136,21 +1151,24 @@ class Object(OBJECT_BASE, metaclass=_HocClassMeta):
                         _check_sec_kwarg(sec)
                     if location_arg and args:
                         _check_location_arg(args[0])
-                    temp_strs, seg_sec, rollback_args = _utils._push_args(
-                        args, return_rollback=True
-                    )
-                    use_sec = seg_sec if seg_sec is not None else sec
+                    # Recorded before each push; see _construct_hoc_object.
+                    pushed = [0]
+                    pushed_sec = None
+                    narg = len(args)
                     _err_buf = _ERR_BUF()
                     _err_buf[0] = b"\x01"  # the call clears it
-                    if use_sec is not None:
-                        _nrn_section_push(use_sec._sec)
                     try:
+                        temp_strs, seg_sec = _utils._push_args(args, pushed)
+                        use_sec = seg_sec if seg_sec is not None else sec
+                        if use_sec is not None:
+                            pushed_sec = [use_sec._sec]
+                            _nrn_section_push(pushed_sec[0])
                         if _type == TYPES.FUNCTION:
                             number = ctypes.c_double()
                             code = _nrn_method_call_number(
                                 self._obj,
                                 sym,
-                                len(args),
+                                narg,
                                 number,
                                 _err_buf,
                                 _ERR_BUF_SIZE,
@@ -1158,7 +1176,7 @@ class Object(OBJECT_BASE, metaclass=_HocClassMeta):
                             ret = code < 0
                         else:
                             ret = _nrn_method_call(
-                                self._obj, sym, len(args), _err_buf, _ERR_BUF_SIZE
+                                self._obj, sym, narg, _err_buf, _ERR_BUF_SIZE
                             )
 
                         if bumps:  # not utils.READ_ONLY_METHODS
@@ -1167,23 +1185,29 @@ class Object(OBJECT_BASE, metaclass=_HocClassMeta):
                             # A failed nothrow call restores the args (gap-56).
                             # -2: the method ran and nothing of it is left.
                             if _type != TYPES.FUNCTION or code != -2:
-                                rollback_args()
+                                _utils._pop_args(pushed)
                             failed, _err_buf = _err_buf, None  # no result
                             _check_nrn_error(ret, failed)
-                        _err_buf = None  # the result is popped below
+                        # Each branch marks the result popped right before its
+                        # raw pop: on Python 3.10 a taken jump can take an
+                        # interrupt, and a Python pop wrapper's entry can too.
                         if _type == TYPES.FUNCTION:
                             result = number.value
                             if code:
                                 result = int(result) if code == 1 else bool(result)
                         elif _type == TYPES.METHOD_OBFUNC or _type == TYPES.OBFUNCTION:
-                            result = _object_pop()
+                            _err_buf = None
+                            result = _wrap_owned_object(_api._nrn_object_pop())
                         elif _type == TYPES.METHOD_STRFUNC:
-                            result = _nrn_str_pop()
+                            _err_buf = None
+                            result = _api._decode_hoc_string(_api._nrn_str_pop0())
                         elif _type == TYPES.PROCEDURE:
                             # A template proc: hoc_call_ob_proc drops its 0.0
                             # sentinel (hoc_nopop) and NEURON returns 0.0.
+                            _err_buf = None
                             result = 0.0
                         else:
+                            _err_buf = None
                             warnings.warn(f"Ignoring unknown return type {_type}")
                             result = None
                         # Raise a callback's pending exception here (e.g. a
@@ -1201,11 +1225,17 @@ class Object(OBJECT_BASE, metaclass=_HocClassMeta):
                             None
                             if _type == TYPES.PROCEDURE or _type == TYPES.FUNCTION
                             else _return_slot_pop(_type),
+                            pushed,
                         )
                         raise
                     finally:
-                        if use_sec is not None:
-                            _pop_pushed_section(use_sec._sec)
+                        if pushed_sec:
+                            try:
+                                _pop_pushed_section(pushed_sec)
+                            finally:
+                                if pushed_sec:  # interrupted before the pop
+                                    _pop_pushed_section(pushed_sec)
+
                         if not CALLS_PYTHON:
                             _hoc_unref_defer()
 

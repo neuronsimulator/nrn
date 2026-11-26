@@ -406,7 +406,7 @@ def _is_python_object_arg(value):
     )
 
 
-def _push_args(args, return_rollback=False):
+def _push_args(args, state):
     """Push positional args onto the HOC stack in order.
 
     Two passes. Pass 1 resolves every argument into a typed (kind, payload)
@@ -421,16 +421,38 @@ def _push_args(args, return_rollback=False):
     whose ``neuron::oc::runtime_error`` can cross ctypes and
     ``std::terminate`` the process.
 
-    Returns (temp_strs, seg_sec), or (temp_strs, seg_sec, rollback) when
-    ``return_rollback`` is true:
+    Returns (temp_strs, seg_sec):
       temp_strs — ctypes string objects that must stay alive until the call completes.
       seg_sec   — Section extracted from any Segment argument (for section-context
                   calls); None if no Segment was in args.
-      rollback  — pop the caller arguments restored by a failed nothrow call,
-                  releasing their object references. Never call after success:
-                  the callee consumed the arguments, even if a pending Python
-                  callback exception is raised afterwards.
+    *state*, a list the caller made before the call, becomes
+    [count, descriptors]: ``_pop_args(state)`` pops the arguments still on the
+    stack (before the call, or restored by a failed nothrow call), releasing
+    their object references. Never call it after a successful call: the callee
+    consumed the arguments, even if a pending Python callback exception is
+    raised afterwards.
     """
+
+    # Only plain numbers: the two passes and their descriptors are not needed.
+    # Exact types only; a bool or a subclass takes the slow path. The conversion
+    # runs before any push (an int too large to convert raises there). The
+    # count in *state* rises right before each push, as in pass 2 below, so
+    # the caller's ``_pop_args(state)`` rolls back whatever was pushed.
+    for arg in args:
+        if type(arg) is not float and type(arg) is not int:
+            break
+    else:
+        values = [float(arg) for arg in args]
+        state[:] = [0, (("double", None),) * len(values)]
+        try:
+            for value in values:
+                state[0] += 1
+                _nrn_double_push(value)
+        except BaseException:
+            _pop_args(state)
+            raise
+        return [], None
+
     temp_strs = []
     seg_sec = None
     descriptors = []  # (kind, payload); object kinds are borrowed or owned
@@ -483,39 +505,34 @@ def _push_args(args, return_rollback=False):
                 _api._nrn_object_unref(payload)
         raise
 
-    # PASS 2: push the validated descriptors. Rollback pops completed
-    # pushes newest-first by recorded kind; the failing ref pushed nothing.
-    def rollback(count):
-        for kind, payload in reversed(descriptors[:count]):
-            if kind == "double":
-                _nrn_double_pop()
-            elif kind in ("object", "owned_object"):
-                obj = _object_pop_safe()
-                if obj:
-                    _api._nrn_object_unref(obj)
-            elif kind == "str":
-                _nrn_str_pop()
-            else:
-                payload._pop()
-
-    pushed = 0
+    # PASS 2: push the validated descriptors. Each push is counted in *state*
+    # before its ctypes call: an interrupt is raised once a C call returns,
+    # never before it starts (a C callable has no eval-breaker check on
+    # entry), so the count covers every pushed slot. A ref's _push raises it
+    # itself, just before its own ctypes push. The caller holds *state* from
+    # before this call and rolls back with ``_pop_args(state)`` even when an
+    # interrupt lands before this function returns.
+    st = state
+    st[:] = [0, descriptors]
     released_owned = 0
     try:
         for kind, payload in descriptors:
             if kind == "double":
+                st[0] += 1
                 _nrn_double_push(payload)
             elif kind in ("object", "owned_object"):
+                st[0] += 1
                 _nrn_object_push(payload)
                 if kind == "owned_object" and payload:
-                    _api._nrn_object_unref(payload)
                     released_owned += 1
+                    _api._nrn_object_unref(payload)
             elif kind == "str":
+                st[0] += 1
                 _nrn_str_push(payload)
             else:  # ref
-                payload._push()
-            pushed += 1
+                payload._push(st)
     except BaseException:
-        rollback(pushed)
+        _pop_args(st)
         to_release = released_owned
         for kind, payload in descriptors:
             if kind != "owned_object" or not payload:
@@ -525,9 +542,32 @@ def _push_args(args, return_rollback=False):
             else:
                 _api._nrn_object_unref(payload)
         raise
-    if return_rollback:
-        return temp_strs, seg_sec, lambda: rollback(len(descriptors))
     return temp_strs, seg_sec
+
+
+def _pop_args(pushed):
+    """Pop the arguments *pushed* (see _push_args) still counts, newest first
+    by recorded kind, with the raw ctypes pops. The count drops right before
+    each pop (a taken jump can take an interrupt on Python 3.10), so a second
+    call after an interrupt pops the rest, never a slot twice."""
+    while pushed[0]:
+        kind, payload = pushed[1][pushed[0] - 1]
+        if kind == "ref":
+            kind = payload._slot
+        if kind == "double":
+            pushed[0] -= 1
+            _nrn_double_pop()
+        elif kind == "str":
+            pushed[0] -= 1
+            _api._nrn_str_pop0()
+        elif kind == "double_ptr":
+            pushed[0] -= 1
+            _api._nrn_double_ptr_pop()
+        else:  # object, owned_object, an objref pointer
+            pushed[0] -= 1
+            obj = _api._nrn_object_pop()
+            if obj:
+                _api._nrn_object_unref(obj)
 
 
 def _function_order(func, other, compare):
@@ -563,9 +603,15 @@ def _check_sec_kwarg(sec):
     sec._check_alive()
 
 
-def _pop_pushed_section(sec_ptr):
+def _pop_pushed_section(pushed):
     """Pop the section pushed as a HOC call's section context, which the call
     may have deleted (``delete_section()``, a template proc or ``init()``).
+
+    *pushed* is the caller's ``[sec_ptr]``, set before the push and emptied
+    here just before the pop. An interrupt can land at this function's entry
+    or after the liveness check, so a caller's ``finally`` calls it again from
+    an inner ``finally`` while *pushed* is not empty; the pop itself happens
+    once.
 
     ``nrn_section_pop`` runs ``chk_access`` first. With the top of the stack
     deleted it falls back to another live section, leaving the deleted one's
@@ -574,11 +620,14 @@ def _pop_pushed_section(sec_ptr):
     without the check (cabcode.cpp:2165), as NEURON's hocobj_call does with
     ``nrn_popsec``. The stack's reference keeps the struct readable here.
     """
-    if _nrn_section_is_active(sec_ptr):
+    if _nrn_section_is_active(pushed[0]):
+        del pushed[0]
         _nrn_section_pop()
         return
+    sym = _nrn_symbol(b"pop_section")
     err = _ERR_BUF()
-    ret = _nrn_function_call(_nrn_symbol(b"pop_section"), 0, err, _ERR_BUF_SIZE)
+    del pushed[0]
+    ret = _nrn_function_call(sym, 0, err, _ERR_BUF_SIZE)
     _check_nrn_error(ret, err)
     _nrn_double_pop()  # pop_section's hoc_retpushx(1.)
 
@@ -684,11 +733,14 @@ _SLOT_POPS = {}
 def _return_slot_pop(call_type):
     """What pops the result slot a call of *call_type* leaves, or None.
 
-    A BLTIN is not covered: its call is too short for an interrupt to land at
-    its return, and it is the hottest call."""
+    A BLTIN is covered too: a signal that arrives in the Python code before
+    any call is raised when the next call returns, however short."""
     if not _SLOT_POPS:  # the codes are known once the package is imported
         for codes, pop in (
-            ((TYPES.FUNCTION, TYPES.FUN_BLTIN, TYPES.PROCEDURE), _nrn_double_pop),
+            (
+                (TYPES.BLTIN, TYPES.FUNCTION, TYPES.FUN_BLTIN, TYPES.PROCEDURE),
+                _nrn_double_pop,
+            ),
             ((TYPES.METHOD_STRFUNC, TYPES.STRINGFUNC), _nrn_str_pop),
             (
                 (TYPES.METHOD_OBFUNC, TYPES.OBFUNCTION, TYPES.OBJECTFUNC),
@@ -699,13 +751,20 @@ def _return_slot_pop(call_type):
     return _SLOT_POPS.get(call_type)
 
 
-def _drop_return_slot(err_buf, pop):
+def _drop_return_slot(err_buf, pop, pushed=None):
     """After a KeyboardInterrupt: a signal handler runs once the ctypes call has
     returned, with its result still on the stack (gap-84). The call cleared the
     buffer's first byte, which the caller set before it. A failed call left a
-    message there and a result of none."""
-    if pop and err_buf is not None and err_buf[0] == b"\x00":
-        pop()
+    message there and a result of none, and restored the arguments, which are
+    still on the stack too when the interrupt came before the call: *pushed*
+    (see _push_args) pops them. *err_buf* is None once the result is popped."""
+    if err_buf is None:
+        return
+    if err_buf[0] == b"\x00":
+        if pop:
+            pop()
+    elif pushed is not None and pushed[0]:
+        _pop_args(pushed)
 
 
 def _object_pop():

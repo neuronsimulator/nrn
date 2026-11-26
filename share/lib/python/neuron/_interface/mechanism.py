@@ -261,7 +261,7 @@ class RangeVar:
         array = self._array()
         if array is not None:
             return array[idx]  # checks the mechanism itself
-        if idx != 0:
+        if idx not in (0, -1):  # a one-element sequence, as NEURON's
             raise IndexError("Only index 0 is supported")
         # As NEURON's, the variable is looked up at the segment on every
         # access: an uninserted mechanism raises AttributeError (reading it
@@ -288,7 +288,7 @@ class RangeVar:
         if array is not None:
             array[idx] = value
             return
-        if idx != 0:
+        if idx not in (0, -1):  # a one-element sequence, as NEURON's
             raise IndexError("Only index 0 is supported")
 
         self._seg._check_rangevar_mechanism(self._full_name)  # see __getitem__

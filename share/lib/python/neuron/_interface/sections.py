@@ -32,6 +32,7 @@ from .api import (
     _nrn_double_pop,
     _nrn_double_push,
     _nrn_function_call,
+    _nrn_str_push,
     _diam_changed as _DIAM_CHANGED,
     _nrn_double_ptr_pop,
     _nrn_mechanism_insert,
@@ -45,6 +46,7 @@ from .api import (
     _nrn_section_diam_get as _SEG_DIAM_GET,
     _nrn_section_diam_set as _SEG_DIAM_SET,
     _nrn_section_is_active,
+    _nrn_secname,
     _nrn_section_length_get,
     _nrn_section_length_set,
     _nrn_section_ref,
@@ -70,11 +72,13 @@ from .api import (
     get_topology_version,
     _PACKAGE,
 )
-from . import api as _api
 from .nrnref import NrnRangeArrayRef, NrnRangeVarRef, NrnRef, _sequence_index
 from .utils import (
     _DELETED_SECTION,
+    _drop_return_slot,
     _name_error,
+    _pop_args,
+    _pop_pushed_section,
     _try_wrap_density_nmodlrandom,
 )
 from . import utils as _utils
@@ -518,7 +522,7 @@ def _missing_owner(sec, name):
         return None
     if owner is _FAST_IMEM:
         return None if _fast_imem_on(sec._sec) else owner
-    return None if _PACKAGE._n.ismembrane(owner, sec=sec) else owner
+    return None if _ismembrane(sec._sec, owner) else owner
 
 
 def _ensure_rangevar_topology(sec_ptr, x, name):
@@ -592,20 +596,71 @@ def _section_query(name, sec_ptr, *args):
     sym = _SECTION_QUERY_SYMBOLS.get(name)
     if sym is None:
         sym = _SECTION_QUERY_SYMBOLS[name] = _nrn_symbol(name)
+    return _guarded_query(sym, sec_ptr, [("double", a) for a in args])
+
+
+def _push_query_args(pushed):
+    """Push the arguments *pushed* describes, counting before each push. A
+    function of its own: an interrupt at the loop's back jump, inside
+    _guarded_query's own frame, skipped its handler on Python 3.12."""
+    for kind, payload in pushed[1]:
+        pushed[0] += 1
+        if kind == "double":
+            _nrn_double_push(payload)
+        else:
+            _nrn_str_push(payload)
+
+
+def _guarded_query(sym, sec_ptr, descriptors):
+    """Push the section and *descriptors*, call *sym*, pop its double result,
+    by the interrupt rule of NEURON.__getattr__'s nrn_func (gap-84): the
+    counts are set before each push, a failed or interrupted call rolls the
+    arguments back, and the section pop is retried from an inner finally."""
+    pushed = [0, descriptors]
+    pushed_sec = None
     err = _ERR_BUF()
+    err[0] = b"\x01"  # the call clears it
     with HOC_LOCK:
-        _nrn_section_push(sec_ptr)
         try:
-            for arg in args:
-                _nrn_double_push(arg)
-            ret = _nrn_function_call(sym, len(args), err, _ERR_BUF_SIZE)
-            if ret != 0:  # a failed call leaves its arguments on the stack
-                for _ in args:
-                    _nrn_double_pop()
-            _check_nrn_error(ret, err)
-            return _nrn_double_pop()
+            pushed_sec = [sec_ptr]
+            _nrn_section_push(sec_ptr)
+            _push_query_args(pushed)
+            ret = _nrn_function_call(sym, len(descriptors), err, _ERR_BUF_SIZE)
+            if ret:  # a failed call leaves its arguments on the stack
+                _pop_args(pushed)
+                failed, err = err, None
+                _check_nrn_error(ret, failed)
+            err = None
+            return _nrn_double_pop()  # an interrupt here is still inside the try
+        except BaseException:
+            _drop_return_slot(err, _nrn_double_pop, pushed)
+            raise
         finally:
-            _nrn_section_pop()
+            if pushed_sec:
+                try:
+                    _pop_pushed_section(pushed_sec)
+                finally:
+                    if pushed_sec:  # interrupted before the pop
+                        _pop_pushed_section(pushed_sec)
+
+
+_NAME_ARGS = {}  # mechanism name -> (c_char_p, its pointer), alive for pushes
+
+
+def _ismembrane(sec_ptr, name):
+    """Whether *sec_ptr* has the mechanism *name* (an ASCII str), as HOC's
+    ismembrane() says, called as _section_query does: this is the check behind
+    every seg.<mech var> read and write."""
+    if not _nrn_section_is_active(sec_ptr):  # as n.ismembrane(sec=) checked
+        raise ReferenceError(_DELETED_SECTION)
+    arg = _NAME_ARGS.get(name)
+    if arg is None:
+        c_name = ctypes.c_char_p(name.encode("utf-8"))
+        arg = _NAME_ARGS[name] = (c_name, ctypes.pointer(c_name))
+    sym = _SECTION_QUERY_SYMBOLS.get(b"ismembrane")
+    if sym is None:
+        sym = _SECTION_QUERY_SYMBOLS[b"ismembrane"] = _nrn_symbol(b"ismembrane")
+    return _guarded_query(sym, sec_ptr, [("str", arg[1])]) != 0
 
 
 def _connect_forms_loop(child_ptr, parent_ptr, parent_x):
@@ -814,12 +869,24 @@ class Segment(SEGMENT_BASE):
     def area(self):
         """Return membrane area of this segment in um^2."""
 
-        return float(_PACKAGE._n.area(self._x, sec=self._sec))
+        self._sec._check_alive()
+        try:
+            return float(_section_query(b"area", self._sec._sec, self._x))
+        finally:
+            # Not read-only: area() can recompute node areas, and a diameter of 0
+            # is reset to 1e-6 there (nrnoc/treeset.cpp, nrn_area_ri_impl).
+            _PACKAGE._bump_model_epoch()
 
     def ri(self):
         """Return axial resistance to parent segment in MOhm."""
 
-        return float(_PACKAGE._n.ri(self._x, sec=self._sec))
+        self._sec._check_alive()
+        try:
+            return float(_section_query(b"ri", self._sec._sec, self._x))
+        finally:
+            # Not read-only: ri() can recompute node areas, and a diameter of 0
+            # is reset to 1e-6 there (nrnoc/treeset.cpp, nrn_area_ri_impl).
+            _PACKAGE._bump_model_epoch()
 
     def volume(self):
         """Return volume of this segment in um^3, as NEURON computes it.
@@ -1897,15 +1964,16 @@ class Section(SECTION_BASE):
             # Real NEURON re-evaluates nseg after each yield, so rediscretizing
             # a section changes both the remaining midpoints and the stopping
             # point. A section deleted meanwhile ends the loop, as in NEURON.
+            # What self.nseg does, with one liveness check per step.
             i = 0
+            sec_ptr = self._sec
             while True:
-                try:
-                    nseg = self.nseg
-                except ReferenceError:
+                if not _nrn_section_is_active(sec_ptr):
                     return
+                nseg = _nrn_nseg_get(sec_ptr)
                 if i >= nseg:
                     return
-                yield self((i + 0.5) / nseg)
+                yield Segment(self, (i + 0.5) / nseg)
                 i += 1
 
         return segments()
@@ -2021,7 +2089,9 @@ class Section(SECTION_BASE):
     def name(self):
         self._check_alive()
 
-        raw = _PACKAGE._n.secname(sec=self)
+        # The API's own secname: HOC's secname() adds a call round trip and
+        # returns the same string.
+        raw = _nrn_secname(self._sec).decode("utf-8")
         if raw.startswith("_pysec."):
             raw = raw[7:]
         if CALLS_PYTHON:
@@ -2259,7 +2329,8 @@ class Section(SECTION_BASE):
     def orientation(self):
         """Return which end (0 or 1) of this section is connected to parent."""
 
-        return _PACKAGE._n.section_orientation(sec=self)
+        self._check_alive()
+        return _section_query(b"section_orientation", self._sec)
 
     def subtree(self):
         """Return a list of this section and all its descendants.
@@ -2297,10 +2368,11 @@ class Section(SECTION_BASE):
     def hname(self):
         """Return the HOC section name.
 
-        In myneuron this delegates to name(); both call n.secname(). Real
-        NEURON distinguishes the two for cell-owned sections (hname() returns
-        the qualified HOC path); this implementation does not. Section.name, as
-        in __repr__: a subclass's own `name` does not change it.
+        In myneuron this delegates to name(); both read the section's HOC name
+        directly (no HOC call). Real NEURON distinguishes the two for
+        cell-owned sections (hname() returns the qualified HOC path); this
+        implementation does not. Section.name, as in __repr__: a subclass's
+        own `name` does not change it.
         """
         return Section.name(self)
 
@@ -2451,7 +2523,8 @@ class Section(SECTION_BASE):
         return bool(_PACKAGE._n.pt3dstyle(*args, sec=self))
 
     def n3d(self):
-        return int(_PACKAGE._n.n3d(sec=self))
+        self._check_alive()
+        return int(_section_query(b"n3d", self._sec))
 
     def x3d(self, i):
         return _PACKAGE._n.x3d(i, sec=self)

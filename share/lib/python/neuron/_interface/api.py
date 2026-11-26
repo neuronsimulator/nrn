@@ -998,7 +998,8 @@ _nrn_object_push = _bind("nrn_object_push", None, Object)
 _nrn_object_ptr_push = _bind("nrn_object_ptr_push", None, ctypes.POINTER(Object))
 
 
-def _object_ptr_push(obj_ref):
+def _object_ptr_push(obj_ref, count):
+    count[0] += 1  # see NrnRef._push
     _nrn_object_ptr_push(obj_ref)
 
 
@@ -1191,18 +1192,20 @@ def _ref_property_array_set_checked(obj, name, index, value):
     _nrn_property_array_set(obj, name, index, value)
 
 
-def _property_push_checked(obj, name):
+def _property_push_checked(obj, name, count):
     # Pushing an invalid handle hands downstream consumers (Vector.record)
     # a pointer that SIGSEGVs at finitialize; refuse it like real refuses
-    # the record argument.
+    # the record argument. *count*: see NrnRef._push.
     if not _nrn_property_data_handle_is_valid(obj, name, 0):
         raise ValueError("Invalid data_handle")
+    count[0] += 1
     _nrn_property_push(obj, name)
 
 
-def _property_array_push_checked(obj, name, index):
+def _property_array_push_checked(obj, name, index, count):
     if not _nrn_property_data_handle_is_valid(obj, name, index):
         raise ValueError("Invalid data_handle")
+    count[0] += 1
     _nrn_property_array_push(obj, name, index)
 
 

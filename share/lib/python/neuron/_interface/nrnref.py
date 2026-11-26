@@ -53,6 +53,9 @@ from .api import (
 )
 from . import api as _api
 
+# The count a _push raises when its caller keeps none.
+_SCRATCH = [0]
+
 
 def _symbol_info(name):
     return _PACKAGE.sections._get_symbol_info(name.decode("utf-8"))
@@ -132,8 +135,15 @@ class NrnRef(abc.ABC):
 
     __reduce_ex__ = refuse_pickle
 
+    # What _push leaves on the stack, for utils._pop_args: "double_ptr",
+    # "str" or "object".
+    _slot = "double_ptr"
+
     @abc.abstractmethod
-    def _push(self):
+    def _push(self, count=_SCRATCH):
+        """Push the pointer. ``count[0]`` is raised just before the final
+        ctypes push, with nothing in between: an interrupt is raised as a C
+        call returns, so counting after the push could miss it (gap-84)."""
         raise NotImplementedError("_push() must be implemented by subclasses")
 
     def _pop(self):
@@ -277,7 +287,7 @@ class NrnRangeVarRef(NrnRef):
             raise error(message)
         return sec
 
-    def _push(self):
+    def _push(self, count=_SCRATCH):
         sec = self._section(RuntimeError, "Invalid pointer")
         # A section deleted through HOC keeps its wrapper but frees the C
         # section. Raise NEURON's HOC error for a dead pointer argument
@@ -294,9 +304,10 @@ class NrnRangeVarRef(NrnRef):
             # use_fast_imem) as an error instead of a HOC error, which would
             # cross ctypes as a C++ exception and abort the process.
             err = _ERR_BUF()
-            if _nrn_rangevar_push_nothrow(
-                self._sym, sec._sec, self._x, self._index or 0, err, _ERR_BUF_SIZE
-            ):
+            sym, sec_ptr, x, index = self._sym, sec._sec, self._x, self._index or 0
+            count[0] += 1
+            if _nrn_rangevar_push_nothrow(sym, sec_ptr, x, index, err, _ERR_BUF_SIZE):
+                count[0] -= 1  # nothing was pushed
                 raise RuntimeError(err.value.decode("utf-8", "replace"))
             return
         # Without the nothrow push, nrn_rangevar_push is the only one, and a HOC
@@ -312,7 +323,9 @@ class NrnRangeVarRef(NrnRef):
 
         if _PACKAGE.sections._missing_owner(sec, name) is not None:
             raise RuntimeError(f"{name}: mechanism is not inserted at this location")
-        _nrn_rangevar_push(self._sym, sec._sec, self._x)
+        sym, sec_ptr, x = self._sym, sec._sec, self._x
+        count[0] += 1
+        _nrn_rangevar_push(sym, sec_ptr, x)
 
     def _checked_target(self):
         """Return (section, name, kind) or raise before the core is touched.
@@ -427,7 +440,7 @@ class NrnRangeArrayRef(NrnRef):
         for i in range(len(self)):
             yield self[i]
 
-    def _push(self):
+    def _push(self, count=_SCRATCH):
         raise RuntimeError(
             f"{self._name} is a range variable array; pass a pointer to one "
             f"element, e.g. _ref_{self._name}[0]"
@@ -460,7 +473,7 @@ class NrnVarRef(NrnRef):
     def __repr__(self):
         return f"<NrnRef to n.{self._name.decode()}>"
 
-    def _push(self):
+    def _push(self, count=_SCRATCH):
         # Push a raw double* so the HOC function being called (typically
         # Vector.record) can store the address and read it later. The C API
         # has no symbol-pointer push: fetch the address with
@@ -472,6 +485,7 @@ class NrnVarRef(NrnRef):
                 f"cannot take a recordable pointer to '{self._name.decode()}' "
                 "on this NEURON build (needs nrn#3815)"
             )
+        count[0] += 1
         _nrn_double_ptr_push(value_ptr)
 
     def __getitem__(self, idx):
@@ -537,16 +551,16 @@ class NrnObjectPropertyRef(NrnRef):
             raise ValueError("Invalid data_handle") from None
         return obj
 
-    def _push(self):
+    def _push(self, count=_SCRATCH):
         # idx=None: scalar property; idx=int: that array element.
         try:
             obj = self._owner()
         except ValueError:
             raise RuntimeError("Invalid pointer") from None  # NEURON's HOC error
         if self._idx is None:
-            _property_push_checked(obj._obj, self._name)
+            _property_push_checked(obj._obj, self._name, count)
         else:
-            _property_array_push_checked(obj._obj, self._name, int(self._idx))
+            _property_array_push_checked(obj._obj, self._name, int(self._idx), count)
 
     def __getitem__(self, idx):
         if idx != 0:
@@ -604,7 +618,7 @@ class NrnHocTemplateVarRef(NrnRef):
             raise ReferenceError("Referenced object no longer exists")
         return obj
 
-    def _push(self):
+    def _push(self, count=_SCRATCH):
         raise NotImplementedError(
             "pushing a reference to a user HOC-template variable requires "
             "a public object-dataspace pointer API (gap-34)"
@@ -653,7 +667,7 @@ class NrnHocTemplateStrRef(NrnRef):
             raise ReferenceError("Referenced object no longer exists")
         return obj
 
-    def _push(self):
+    def _push(self, count=_SCRATCH):
         raise NotImplementedError(
             f"a reference to strdef '{self._name}' of a HOC template object "
             "cannot be passed to HOC"
@@ -734,8 +748,10 @@ class NrnVectorElementRef(NrnRef):
             ctypes.POINTER(ctypes.c_double),
         )
 
-    def _push(self):
-        _nrn_double_ptr_push(self._address())
+    def _push(self, count=_SCRATCH):
+        address = self._address()
+        count[0] += 1
+        _nrn_double_ptr_push(address)
 
     def __getitem__(self, idx):
         if idx != 0:
@@ -798,8 +814,10 @@ class NrnDoubleArrayElementRef(NrnRef):
             ctypes.POINTER(ctypes.c_double),
         )
 
-    def _push(self):
-        _nrn_double_ptr_push(self._address())
+    def _push(self, count=_SCRATCH):
+        address = self._address()
+        count[0] += 1
+        _nrn_double_ptr_push(address)
 
     def __getitem__(self, idx):
         return self._address(idx)[0]
@@ -834,7 +852,7 @@ class NrnMatrixElementRef(NrnRef):
             raise IndexError(f"{self._matrix.hname()}.x")
         return divmod(flat, ncol)
 
-    def _push(self):
+    def _push(self, count=_SCRATCH):
         row, col = self._element()
         if _nrn_property_element_ptr is None:
             raise RuntimeError(
@@ -854,6 +872,7 @@ class NrnMatrixElementRef(NrnRef):
             _ERR_BUF_SIZE,
         ):
             raise RuntimeError(err.value.decode("utf-8", "replace"))
+        count[0] += 1
         _nrn_double_ptr_push(ptr)
 
     def __getitem__(self, idx):
@@ -899,8 +918,8 @@ class NrnArrayPropertyRef(NrnRef):
     def __setitem__(self, idx, value):
         self[idx][0] = value
 
-    def _push(self):
-        self[0]._push()
+    def _push(self, count=_SCRATCH):
+        self[0]._push(count)
 
     def _pop(self):
         _nrn_double_ptr_pop()
@@ -930,10 +949,10 @@ class NrnDoubleRef(NrnRef):
     def __repr__(self):
         return f"<NrnDoubleRef {self._cell.value!r}>"
 
-    def _push(self):
-        _nrn_double_ptr_push(
-            ctypes.cast(ctypes.byref(self._cell), ctypes.POINTER(ctypes.c_double))
-        )
+    def _push(self, count=_SCRATCH):
+        ptr = ctypes.cast(ctypes.byref(self._cell), ctypes.POINTER(ctypes.c_double))
+        count[0] += 1
+        _nrn_double_ptr_push(ptr)
 
     def __getitem__(self, idx):
         if idx != 0:
@@ -962,10 +981,10 @@ class NrnRawDoubleRef(NrnRef):
     def __repr__(self):
         return f"<NrnRawDoubleRef 0x{self._address:x}>"
 
-    def _push(self):
-        _nrn_double_ptr_push(
-            ctypes.cast(self._address, ctypes.POINTER(ctypes.c_double))
-        )
+    def _push(self, count=_SCRATCH):
+        ptr = ctypes.cast(self._address, ctypes.POINTER(ctypes.c_double))
+        count[0] += 1
+        _nrn_double_ptr_push(ptr)
 
     def __getitem__(self, idx):
         if idx != 0:
@@ -1008,10 +1027,12 @@ class NrnStrRef(NrnRef):
     def __repr__(self):
         return f"<NrnStrRef {self[0]!r}>"
 
-    def _push(self):
-        _nrn_str_push(
-            ctypes.cast(ctypes.addressof(self._cell), ctypes.POINTER(ctypes.c_char_p))
-        )
+    _slot = "str"
+
+    def _push(self, count=_SCRATCH):
+        ptr = ctypes.cast(ctypes.addressof(self._cell), ctypes.POINTER(ctypes.c_char_p))
+        count[0] += 1
+        _nrn_str_push(ptr)
 
     def _pop(self):
         _nrn_str_pop()
@@ -1086,8 +1107,10 @@ class NrnObjectRef(NrnRef):
     def __repr__(self):
         return f"<NrnObjectRef {self[0]!r}>"
 
-    def _push(self):
-        _object_ptr_push(ctypes.byref(self._cell))
+    _slot = "object"
+
+    def _push(self, count=_SCRATCH):
+        _object_ptr_push(ctypes.byref(self._cell), count)
 
     def _pop(self):
         _discard_object_stack_value()
