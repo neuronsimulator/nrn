@@ -8,6 +8,10 @@
 #include "kssingle.h"
 #include "ocnotify.h"
 #include "parse.hpp"
+
+// Counts KSChan symbol renames and frees: the Python fast path forgets the names it knows when
+// it moves (nrnpy_fast.cpp).
+std::size_t nrn_kschan_symbols_changed{};
 #include "nrniv_mf.h"
 
 #define NSingleIndex 0
@@ -942,6 +946,7 @@ KSChan::KSChan(Object* obj, bool is_p) {
 
 void KSChan::setname(const char* s) {
     // printf("KSChan::setname\n");
+    ++nrn_kschan_symbols_changed;
     err_if_has_instances();
     name_ = s;
     if (mechsym_) {
@@ -1310,6 +1315,7 @@ void KSChan::setcond() {
                 iv_relation_ = new KSIvghk();
                 ((KSIvghk*) iv_relation_)->z = nrn_ion_charge(ion_sym_);
             }
+            ++nrn_kschan_symbols_changed;  // gmax becomes pmax
             for (i = gmaxoffset_; i < 2 + gmaxoffset_; ++i) {
                 rlsym_->u.ppsym[i]->name[0] = 'p';
                 hoc_symbol_units(rlsym_->u.ppsym[i], (is_point() ? "cm3/s" : "cm/s"));
@@ -1320,6 +1326,7 @@ void KSChan::setcond() {
             } else {
                 iv_relation_ = new KSIv();
             }
+            ++nrn_kschan_symbols_changed;
             for (i = gmaxoffset_; i < 2 + gmaxoffset_; ++i) {
                 rlsym_->u.ppsym[i]->name[0] = 'g';
                 hoc_symbol_units(rlsym_->u.ppsym[i], is_point() ? "uS" : "S/cm2");
@@ -1332,6 +1339,7 @@ void KSChan::setcond() {
         } else {
             iv_relation_ = new KSIvNonSpec();
         }
+        ++nrn_kschan_symbols_changed;
         for (i = gmaxoffset_; i < 3 + gmaxoffset_; i += 2) {
             rlsym_->u.ppsym[i]->name[0] = 'g';
             hoc_symbol_units(rlsym_->u.ppsym[i], is_point() ? "uS" : "S/cm2");
@@ -2005,6 +2013,7 @@ void KSChan::setstructure(Vect* vec) {
 }
 
 void KSChan::sname_install() {
+    ++nrn_kschan_symbols_changed;  // renames the state variables
     Symbol* searchsym = is_point() ? mechsym_ : NULL;
     char unsuffix[100];
     if (is_point()) {
@@ -2098,6 +2107,7 @@ Symbol** KSChan::newppsym(int n) {
 }
 
 void KSChan::freesym(Symbol* s, Symbol* top) {
+    ++nrn_kschan_symbols_changed;
     if (top) {
         assert(top->type == TEMPLATE);
         hoc_unlink_symbol(s, top->u.ctemplate->symtable);

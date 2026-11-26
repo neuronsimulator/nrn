@@ -291,25 +291,34 @@ bool make_types() {
         return true;
     }
     int constexpr init = stable::tp_init;
+    bool const fast = fast::enabled();
+    Slot const none{};
     types.segment = make_type<SegmentSlot::count, release_nothing, SegmentSlot::mech_cache>(
         "nrn._Segment",
         {"_sec", "_x", "_mech_cache"},
         {{{init, reinterpret_cast<void*>(init_segment)},
-          {stable::tp_getattro, reinterpret_cast<void*>(fast::segment_getattro)},
-          {stable::tp_setattro, reinterpret_cast<void*>(fast::segment_setattro)}}});
+          fast ? Slot{stable::tp_getattro, reinterpret_cast<void*>(fast::segment_getattro)} : none,
+          fast ? Slot{stable::tp_setattro, reinterpret_cast<void*>(fast::segment_setattro)}
+               : none}});
     types.section = make_type<SectionSlot::count, release_section, SectionSlot::inserted_mechs>(
         "nrn._Section",
         {"_sec", "_pynative", nullptr, "_cell", "_inserted_mechs", "_inserted_mechs_epoch"},
         {{{init, reinterpret_cast<void*>(init_section)},
-          {stable::tp_methods, fast::section_methods}}});
+          fast ? Slot{stable::tp_methods, fast::section_methods} : none}});
     types.object = make_type<ObjectSlot::count, release_object, ObjectSlot::methods>(
         "hoc._Object", {"_obj", "_class_name", "_methods", "_section_cache", "_plotshape_var"});
+    if (!types.object || !types.section || !types.segment) {
+        return false;
+    }
+    if (!fast) {  // the interface's classes are then as without the fast path
+        return true;
+    }
     types.mechanism = make_type<MechanismSlot::count, release_nothing, 0>(
         "nrn._Mechanism",
         {"_seg", "_x", "_name", "_is_ion", "_epoch", "_nseg", "_x_nseg"},
         {{{stable::tp_getattro, reinterpret_cast<void*>(fast::mechanism_getattro)},
           {stable::tp_setattro, reinterpret_cast<void*>(fast::mechanism_setattro)}}});
-    return types.object && types.section && types.segment && types.mechanism && fast::make_types();
+    return types.mechanism && fast::make_types();
 }
 
 PyObject* slot(PyObject* instance, int i) {

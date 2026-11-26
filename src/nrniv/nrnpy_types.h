@@ -72,6 +72,8 @@ int segment_setattro(PyObject* self, PyObject* name, PyObject* value);
 PyObject* mechanism_getattro(PyObject* self, PyObject* name);
 int mechanism_setattro(PyObject* self, PyObject* name, PyObject* value);
 extern stable::Method section_methods[];
+/// False when NRN_PYTHON_FAST_PATH=0: no fast slots, no Mechanism or Vector base.
+bool enabled();
 /// The Vector base type and the tables the interface fills; after make_types' own.
 bool make_types();
 }  // namespace fast

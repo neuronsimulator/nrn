@@ -7,14 +7,46 @@
 #include <structmember.h>
 
 #include <cstddef>
+#include <type_traits>
+#include <utility>
 
 #include "nrnpy_capi.h"
 #include "nrnpy_types.h"
 
 namespace stable = neuron::python::stable;
 
-// Every function libnrniv looks up is declared in the limited API. Unevaluated, so nothing links.
-#define X(ret, name, args) static_assert(sizeof(&::name) == sizeof(void*), #name);
+// Every function libnrniv looks up is declared in the limited API, with the table's return type,
+// number of arguments and, for the result and each argument, kind (integer, floating point, pointer) and size. The
+// table writes a few pointers as void* or PyObject* (PyType_Spec*, PyFrameObject*) and an enum
+// as int (PyGILState_STATE), so the exact types are not compared. Unevaluated, so nothing links.
+template <typename T>
+constexpr int kind() {
+    if constexpr (std::is_void_v<T>) {
+        return 0;
+    } else
+    return (std::is_pointer_v<T> ? 3 : std::is_floating_point_v<T> ? 2 : 1) * 100 +
+           static_cast<int>(sizeof(T));
+}
+template <typename F>
+struct Signature;
+template <typename R, typename... A>
+struct Signature<R (*)(A...)> {
+    using result = R;
+    using arguments = std::integer_sequence<int, kind<A>()...>;
+    static constexpr bool variadic = false;
+};
+template <typename R, typename... A>
+struct Signature<R (*)(A..., ...)> {
+    using result = R;
+    using arguments = std::integer_sequence<int, kind<A>()...>;
+    static constexpr bool variadic = true;
+};
+template <typename Theirs, typename Ours>
+constexpr bool same_signature =
+    kind<typename Signature<Theirs>::result>() == kind<typename Signature<Ours>::result>() &&
+    std::is_same_v<typename Signature<Theirs>::arguments, typename Signature<Ours>::arguments> &&
+    Signature<Theirs>::variadic == Signature<Ours>::variadic;
+#define X(ret, name, args) static_assert(same_signature<decltype(&::name), ret(*) args>, #name);
 NRNPY_FUNCTIONS(X)
 #undef X
 #define X(name) static_assert(sizeof(&::name) == sizeof(void*), #name);

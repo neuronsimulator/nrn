@@ -112,7 +112,7 @@ namespace neuron::python {
     X(std::ptrdiff_t, PyLong_AsSsize_t, (PyObject*))                              \
     X(PyObject*, PyType_FromSpecWithBases, (void*, PyObject*))                    \
     X(const char*, PyUnicode_AsUTF8AndSize, (PyObject*, std::ptrdiff_t*))         \
-    X(int, PySequence_Contains, (PyObject*, PyObject*))
+    X(void, PyDict_Clear, (PyObject*))
 
 // Types and exceptions, data in the stable ABI. PyExc_* are pointers to the objects.
 #define NRNPY_TYPES(X)                                                            \
