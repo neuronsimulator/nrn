@@ -351,7 +351,7 @@ def _check_nrn_error(ret, err_buf):
         # Callers have already rolled back arguments restored by nothrow.
         # Public component hooks abort in core, without a return slot to pop.
         raise_callback_error()
-        msg = err_buf.value.decode("utf-8", errors="replace").strip()
+        msg = err_buf.value.decode("utf-8", errors="replace")
         raise RuntimeError(
             f"hocobj_call error: {msg}" if msg else "hocobj_call error (no message)"
         )
