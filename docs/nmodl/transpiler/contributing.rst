@@ -186,7 +186,7 @@ the Python API:
    *pipenv*. For instance with *virtualenv*:
    ``python -m venv .venv && source .venv/bin/activate``
 2. build the Python wheel with the command: ``python -m pip wheel . --no-deps``
-3. execute the unit-tests for the wheel: ``bash packaging/test_wheel.bash $(command -v python) WHEEL``, where ``WHEEL`` is the path to the wheel generated in the previous step.
+3. execute the unit-tests for the wheel: ``bash packaging/python/test_wheels.sh $(command -v python) WHEEL``, where ``WHEEL`` is the path to the wheel generated in the previous step.
 
 Memory Leaks and clang-tidy
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~

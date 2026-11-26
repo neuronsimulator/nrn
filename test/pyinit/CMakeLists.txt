@@ -166,6 +166,15 @@ nrn_add_test(
   SCRIPT_PATTERNS interactive_console.py)
 set_property(TEST pyinit::interactive_console_eof PROPERTY PASS_REGULAR_EXPRESSION
                                                            "interactive-console-ok")
+# The EOF test feeds a pipe. CPython calls PyOS_ReadlineFunctionPointer only when stdin and stdout
+# are ttys, so that test does not see the hook. This one reads the pointer back. On Windows the
+# symbol is in python3XY.dll, not python3.dll.
+nrn_add_test(
+  GROUP pyinit
+  NAME readline_hook
+  COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} readline_hook.py $<TARGET_FILE:nrniv>
+  SCRIPT_PATTERNS readline_hook.py)
+set_property(TEST pyinit::readline_hook PROPERTY PASS_REGULAR_EXPRESSION "readline-hook-ok")
 # With -nopython then there should be a dummy PythonObject implementation, and Python-related
 # settings should be ignored
 set(PythonObject_cmd -c "objref x" -c "x=new PythonObject()")
