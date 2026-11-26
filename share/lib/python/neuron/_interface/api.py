@@ -450,6 +450,9 @@ if CALLS_PYTHON:
     OBJECT_BASE = _python_type(b"object")
     SECTION_BASE = _python_type(b"section")
     SEGMENT_BASE = _python_type(b"segment")
+    # Fast-path base classes (prototype): None on a core without them.
+    MECHANISM_BASE = _python_type(b"mechanism")
+    VECTOR_BASE = _python_type(b"vector")
     # NEURON is at its top level whenever it runs Python, so this is always HOC's
     # own top-level symbol.
     _top_level_symbol = _bind("nrn_symbol", ctypes.c_void_p, ctypes.c_char_p)
@@ -466,6 +469,7 @@ else:
     OBJECT_BASE = _released_base.OBJECT_BASE
     SECTION_BASE = _released_base.SECTION_BASE
     SEGMENT_BASE = _released_base.SEGMENT_BASE
+    MECHANISM_BASE = VECTOR_BASE = None
     _call_at_top_level = _released_base.call_at_top_level
     _top_level_symbol = _released_base.top_level_symbol
     _str_assign = _released_base.str_assign

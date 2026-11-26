@@ -102,6 +102,21 @@ _SYMBOL_INFO_CACHE = {}
 # (KSChan.add_hhstate, nrn_load_dll, HOC code), and every such call moves it.
 _SYMBOL_MISS_EPOCH = {}
 _V_SYMBOL = _nrn_symbol(b"v")
+# The core's fast path (prototype, nrnpy_fast.cpp): tables this module fills
+# after its own lookup resolved a name once. None on a core without it.
+# name -> Symbol address of a scalar range variable that is not diam or a
+# POINTER: the core reads and writes it at an interior x, and calls _getattr /
+# _setattr for anything else. Symbols never move, so nothing invalidates it.
+_FAST_RANGEVARS = getattr(SEGMENT_BASE, "_fast_rangevars", None)
+# mechanism name -> {unsuffixed name -> Symbol address}, filled by mechanism.py.
+_FAST_MECHANISMS = getattr(SEGMENT_BASE, "_fast_mechanisms", None)
+if _FAST_RANGEVARS is not None:
+    SEGMENT_BASE._fast_epoch = EPOCH
+# A Segment slot write that skips Segment._setattr. object.__setattr__ refuses
+# to bypass the core's setattro, whose own generic write this is.
+_segment_set_slot = (
+    object.__setattr__ if _FAST_RANGEVARS is None else SEGMENT_BASE.__setattr__
+)
 _CONNECT_ARG_UNSET = object()
 
 
@@ -797,8 +812,7 @@ class Segment(SEGMENT_BASE):
     def x(self):
         return self._x
 
-    @property
-    def v(self):
+    def _v(self):
         """Membrane voltage through the optimized scalar range-var path."""
         sec = self._sec
         sec._check_alive()
@@ -806,6 +820,9 @@ class Segment(SEGMENT_BASE):
         if not 0.0 < x < 1.0 and _TREE_SET_UP[0] != EPOCH[0]:
             _ensure_topology(sec._sec, x)
         return _RANGEVAR_GET(_V_SYMBOL, sec._sec, x)
+
+    if _FAST_RANGEVARS is None:  # otherwise the core reads v
+        v = property(_v)
 
     def __repr__(self):
         # NEURON formats x with %g and names a dead host explicitly.
@@ -1115,7 +1132,7 @@ class Segment(SEGMENT_BASE):
             pass
         return sorted(attrs)
 
-    def __getattr__(self, name):
+    def _getattr(self, name):
         if name == "__name__":
             # help() probes this first; NEURON's help() of a dead segment raises.
             self._sec._check_alive()
@@ -1223,6 +1240,8 @@ class Segment(SEGMENT_BASE):
                 return _SEG_DIAM_GET(sec._sec, _diam_node_x(sec, self._x))
             if _is_pointer_rangevar(name, sym):
                 return _pointer_rangevar_get(sec, self._x, name)
+            if _FAST_RANGEVARS is not None:
+                _FAST_RANGEVARS[name] = sym
             return _RANGEVAR_GET(sym, sec._sec, self._x)
         if sym_type == TYPES.MECHANISM:
 
@@ -1247,9 +1266,11 @@ class Segment(SEGMENT_BASE):
             # section or template made in between moves the epoch. One
             # has_membrane call answers. A list never built is built once.
             inserted = _current_inserted_mechs(self._sec)
-            if inserted is _STALE:
+            if inserted is _STALE and _FAST_RANGEVARS is None:
                 inserted = None
-            elif inserted is None:
+            elif inserted is None or inserted is _STALE:
+                # With the core's fast path, rebuilt when stale: the core
+                # then makes the next segments' wrappers from the list.
                 inserted = self._sec._get_inserted_mechs()
             if (
                 inserted is None or name not in inserted
@@ -1258,8 +1279,10 @@ class Segment(SEGMENT_BASE):
             mech = _PACKAGE.mechanism.Mechanism(self._uncached_copy(), name)
             if mech_cache is None:
                 mech_cache = {}
-                object.__setattr__(self, "_mech_cache", mech_cache)
+                _segment_set_slot(self, "_mech_cache", mech_cache)
             mech_cache[name] = mech
+            if _FAST_MECHANISMS is not None:
+                _FAST_MECHANISMS.setdefault(name, {})
             return mech
         if TYPES.RANGEOBJ is None or sym_type == TYPES.RANGEOBJ:
             self._sec._check_alive()
@@ -1298,7 +1321,7 @@ class Segment(SEGMENT_BASE):
                 mech = _PACKAGE.mechanism.Mechanism(self._uncached_copy(), mech_name)
                 if mech_cache is None:
                     mech_cache = {}
-                    object.__setattr__(self, "_mech_cache", mech_cache)
+                    _segment_set_slot(self, "_mech_cache", mech_cache)
                 mech_cache[mech_name] = mech
                 yield mech
 
@@ -1356,7 +1379,7 @@ class Segment(SEGMENT_BASE):
             f"'{suffixed}' is not a POINTER of a mechanism in {self!r}"
         )
 
-    def __setattr__(self, name, value):
+    def _setattr(self, name, value):
         # seg._ref_p_t2 = ref wires mechanism t2's POINTER p, the same as
         # seg.t2._ref_p = ref (NEURON's test_pnt2).
         if name.startswith("_ref_") and isinstance(value, NrnRef):
@@ -1364,7 +1387,7 @@ class Segment(SEGMENT_BASE):
             return
         # Underscore-prefixed names are internal slots, never range vars.
         if name.startswith("_"):
-            super().__setattr__(name, value)
+            _segment_set_slot(self, name, value)
             return
         if value.__class__ is not float and value.__class__ is not int:
             value = _scalar_rangevar_double(name, value)
@@ -1435,6 +1458,10 @@ class Segment(SEGMENT_BASE):
             _RANGEVAR_SET(sym, self._sec._sec, self._x, value)
         except ctypes.ArgumentError as exc:
             raise _refused_double(exc, ValueError) from None
+
+    if _FAST_RANGEVARS is None:  # otherwise the core's slots call them
+        __getattr__ = _getattr
+        __setattr__ = _setattr
 
     def cached(self):
         """Return a CachedSegment for this segment.
@@ -1512,6 +1539,8 @@ class Segment(SEGMENT_BASE):
 # from HOC code is counted by current_nseg_generation when a wrapper is made,
 # and by sync_nseg when a range-variable reference is used.
 NSEG_GENERATION = {}
+if _FAST_RANGEVARS is not None:
+    SEGMENT_BASE._fast_nseg_generation = NSEG_GENERATION
 
 # nseg at each generation, per section pointer: NSEG_HISTORY[sec][g]. NEURON
 # reuses some nodes when nseg changes (node_realloc in nrnoc/solve.cpp): all of
@@ -1539,6 +1568,8 @@ def sync_nseg(sec_ptr):
 # Section pointer -> the model epoch at which current_nseg_generation last
 # compared its nseg with NEURON's.
 _NSEG_SYNCED_AT = {}
+if _FAST_RANGEVARS is not None:
+    SEGMENT_BASE._fast_nseg_synced_at = _NSEG_SYNCED_AT
 
 
 def current_nseg_generation(sec_ptr):
@@ -1959,6 +1990,8 @@ class Section(SECTION_BASE):
 
     def __iter__(self):
         self._check_alive()  # now, as NEURON does, not on the first next()
+        if _FAST_RANGEVARS is not None:
+            return self._segments()  # the core's iterator, the same loop as below
 
         def segments():
             # Real NEURON re-evaluates nseg after each yield, so rediscretizing

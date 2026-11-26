@@ -4,6 +4,8 @@
 import ctypes
 
 from .api import (
+    MECHANISM_BASE,
+    SEGMENT_BASE,
     NRN_CLASS_MODULE,
     EPOCH,
     _model_epoch,
@@ -338,7 +340,12 @@ class MechFunc(FuncWrapper):
         return self._name
 
 
-class Mechanism:
+# The core's fast path (prototype): see sections._FAST_RANGEVARS.
+_MECHANISM_BASES = () if MECHANISM_BASE is None else (MECHANISM_BASE,)
+_FAST_MECH_VARS = getattr(SEGMENT_BASE, "_fast_mechanisms", None)
+
+
+class Mechanism(*_MECHANISM_BASES):
     """A density mechanism (e.g. ``hh``, ``pas``) at a specific segment.
 
     Obtained via ``seg.<mech_name>`` (e.g. ``seg.hh``). Range variables are
@@ -348,7 +355,12 @@ class Mechanism:
     """
 
     __module__ = NRN_CLASS_MODULE
-    __slots__ = ("_seg", "_x", "_name", "_is_ion", "_epoch", "_nseg", "_x_nseg")
+    # The core's base has these slots and the fast path (nrnpy_fast.cpp).
+    __slots__ = (
+        ()
+        if MECHANISM_BASE is not None
+        else ("_seg", "_x", "_name", "_is_ion", "_epoch", "_nseg", "_x_nseg")
+    )
 
     # As NEURON's nrn.Mechanism: no pickle, copy or deepcopy (the default
     # copied the slots; copy.copy(seg.hh) did not return).
@@ -502,7 +514,7 @@ class Mechanism:
                 names.append(sym_name)
         return sorted(names)
 
-    def __getattr__(self, name):
+    def _getattr(self, name):
         """Resolve unsuffixed attribute name to a range variable read or an NMODL function wrapper."""
         # HOC can delete the host section while this Mechanism is held; check
         # before touching freed Section*/node storage. Dunder probes
@@ -598,6 +610,8 @@ class Mechanism:
                         self._seg._sec, self._x, full_name
                     )
                 cache[name] = (full_name, sym, sym_type)
+                if _FAST_MECH_VARS is not None:
+                    _FAST_MECH_VARS.setdefault(self._name, {})[name] = sym
                 return _nrn_rangevar_get(sym, self._seg._sec._sec, self._x)
             if (
                 sym_type == TYPES.FUN_BLTIN
@@ -708,7 +722,7 @@ class Mechanism:
         self._check_valid_for_assignment()
         return value
 
-    def __setattr__(self, name, value):
+    def _setattr(self, name, value):
         """Write unsuffixed range variable on the mechanism at the current segment; populates cache."""
         # POINTER assignment: seg.mech._ref_PTR = src._ref_X.
         if name.startswith("_ref_"):
@@ -720,7 +734,7 @@ class Mechanism:
                 self, name, "%s_%s" % (name[5:], self._name), "nrn.Mechanism"
             )
         if name.startswith("_"):
-            super().__setattr__(name, value)
+            (MECHANISM_BASE or object).__setattr__(self, name, value)
             return
 
         # The write below dereferences the mechanism's storage; raise cleanly
@@ -841,6 +855,14 @@ class Mechanism:
     def __repr__(self):
         # NEURON prints the mechanism name, or why the wrapper is dead.
         return self._invalid_repr() or self._name
+
+    if MECHANISM_BASE is None:  # otherwise the core's slots call them
+        __getattr__ = _getattr
+        __setattr__ = _setattr
+
+
+if _FAST_MECH_VARS is not None:
+    SEGMENT_BASE._fast_mechanism_class = Mechanism
 
 
 # Set by the neuron package: builds what h.<mechanism> returns (its

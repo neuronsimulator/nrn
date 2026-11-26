@@ -14,6 +14,7 @@ import warnings
 from ._docs import _ClassDoc, help_doc
 from .api import (
     CALLS_PYTHON,
+    VECTOR_BASE,
     _Py_TPFLAGS_HEAPTYPE,
     PENDING_CALLBACKS,
     raise_callback_error,
@@ -1832,7 +1833,10 @@ class _VectorMethod(FuncWrapper):
         return self._vector.__array_interface__
 
 
-class Vector(Object):
+_VECTOR_BASES = () if VECTOR_BASE is None else (VECTOR_BASE,)
+
+
+class Vector(Object, *_VECTOR_BASES):
     """A HOC ``Vector`` — dynamic array of doubles with 100+ HOC methods.
 
     Create with ``n.Vector()``, ``n.Vector(size)``, or ``n.Vector([1, 2, 3])``.
@@ -1897,7 +1901,7 @@ class Vector(Object):
             raise IndexError("Vector index out of range")
         return i
 
-    def __getitem__(self, i):
+    def _getitem(self, i):
         if isinstance(i, slice):
             # A new Vector holding a copy, as NEURON's slice (new_vect).
             start, stop, step = i.indices(_nrn_vector_capacity(self._obj))
@@ -1914,7 +1918,7 @@ class Vector(Object):
             return result
         return _nrn_vector_data(self._obj)[self._index(i)]
 
-    def __setitem__(self, i, val):
+    def _setitem(self, i, val):
         if isinstance(i, slice):
             indices = range(*i.indices(len(self)))
             vals = list(val)
@@ -1928,6 +1932,16 @@ class Vector(Object):
                 data[idx] = v
             return
         _nrn_vector_data(self._obj)[self._index(i)] = val
+
+    # The core's element access for an int index; it calls the two above for
+    # anything else (prototype, nrnpy_fast.cpp).
+    if VECTOR_BASE is None:
+        __getitem__ = _getitem
+        __setitem__ = _setitem
+    else:
+        __getitem__ = VECTOR_BASE.__getitem__
+        __setitem__ = VECTOR_BASE.__setitem__
+        __delitem__ = VECTOR_BASE.__delitem__
 
     def __iter__(self):
         # Live, as in NEURON: elements appended during the loop are visited.
