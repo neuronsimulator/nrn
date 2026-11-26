@@ -125,7 +125,9 @@ def _one_arg_collective(pc, name, method):
 
     def collective(*args, **kwargs):
         if not args:
-            error = SystemError(f"{pc}.{name}() returned a result with an exception set")
+            error = SystemError(
+                f"{pc}.{name}() returned a result with an exception set"
+            )
             error.__cause__ = IndexError("tuple index out of range")
             raise error
         return method(*args, **kwargs)
@@ -1213,7 +1215,10 @@ class Object(OBJECT_BASE, metaclass=_HocClassMeta):
 
                     if name in PYTHON_METHODS:
                         func = python_method(self, name, method_func)
-                elif self._class_name == "ParallelContext" and name in _ONE_ARG_COLLECTIVES:
+                elif (
+                    self._class_name == "ParallelContext"
+                    and name in _ONE_ARG_COLLECTIVES
+                ):
                     func = _one_arg_collective(self, name, method_func)
                 doc = f"NEURON object method: {self._class_name}.{name}()"
                 doc_key = f"{self._class_name}.{name}"
