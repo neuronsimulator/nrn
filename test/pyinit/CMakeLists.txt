@@ -186,6 +186,14 @@ nrn_add_test(
   GROUP pyinit
   NAME nrniv_nopython_PythonObject_pyexe
   COMMAND nrniv ${nrniv_args} -nopython -pyexe /deep/thought ${PythonObject_cmd})
+# Without the pickle hooks, ParallelContext calls that need them raise a HOC error.
+nrn_add_test(
+  GROUP pyinit
+  NAME nrniv_nopython_pickle_hooks
+  COMMAND nrniv ${nrniv_args} -nopython pc_pickle_hooks_unset.hoc
+  SCRIPT_PATTERNS pc_pickle_hooks_unset.hoc)
+set_property(TEST pyinit::nrniv_nopython_pickle_hooks PROPERTY PASS_REGULAR_EXPRESSION
+                                                               "pickle hooks unset: ok")
 nrn_add_test(
   GROUP pyinit
   NAME nrniv_nopython_PythonObject_pyenv
