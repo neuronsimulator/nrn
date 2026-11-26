@@ -648,6 +648,8 @@ Segments
 .. c:function:: void nrn_segment_diam_set(Section* sec, double x, double diam)
 
     Set the diameter of a segment (specified as normalized position x along the Section).
+    On a section with 3-d points whose diameters are pending (just after :func:`pt3dadd`), the
+    segment diameters are derived from the points first, as :c:func:`nrn_rangevar_set` does.
 
     :param sec: Pointer to the Section.
     :param x: Normalized position along Section (0.0 to 1.0).
@@ -1787,8 +1789,11 @@ hooks. When no provider is registered, ordinary template lookup is unchanged.
     from the stack.
 
     :param result: Where to put it.
-    :returns: -1 on error. Otherwise what the number is: 1 an integer and 2 a boolean, if the
-              class is built in and the method says so, else 0.
+    :returns: -1 on error, with the arguments left on the stack as
+              :c:func:`nrn_method_call_nothrow` leaves them. -2 if the method ran but did not
+              return a number: its arguments and what it returned are off the stack. Otherwise
+              what the number is: 1 an integer and 2 a boolean, if the class is built in and the
+              method says so, else 0.
 
 .. c:function:: int nrn_function_call_nothrow(Symbol* sym, int narg, char* error_msg, size_t error_msg_size)
 

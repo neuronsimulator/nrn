@@ -349,6 +349,12 @@ void nrn_nseg_set(Section* const sec, const int nseg) {
 }
 
 void nrn_segment_diam_set(Section* const sec, const double x, const double diam) {
+    if (sec && sec->recalc_area_ && sec->npt3d) {
+        // As nrn_rangevar_set (#3921): derive the segment diameters from pending 3-d points
+        // first, or the other segments keep stale ones. Without 3-d points nothing is pending
+        // that this write would lose, and a 0 diameter keeps its error for the next read.
+        nrn_area_ri_no_diam_error(sec);
+    }
     Node* const node = node_exact(sec, x);
     // TODO: this is fine if no 3D points; does it work if there are 3D points?
     for (auto prop = node->prop; prop; prop = prop->next) {
@@ -1149,10 +1155,23 @@ int nrn_method_call_number(Object* obj,
     if (!call_method(obj, method_sym, narg, error_msg, error_msg_size, type)) {
         return -1;
     }
-    // A HOC error if the method left something else: it must not throw across the C API.
-    if (!nrn_nothrow([&] { *result = hoc_xpop(); }, error_msg, error_msg_size)) {
-        return -1;
+    // The method ran and consumed its arguments. If it left something other than a number, drop
+    // that too, so the stack is as before the arguments were pushed.
+    int top{};
+    if (!nrn_nothrow([&] { top = hoc_stack_type(); }, error_msg, error_msg_size)) {
+        return -2;  // nothing on the stack
     }
+    if (top != NUMBER) {
+        nrn_nothrow([] { hoc_nopop(); });
+        if (error_msg && error_msg_size) {
+            std::snprintf(error_msg,
+                          error_msg_size,
+                          "%s did not return a number",
+                          method_sym->name);
+        }
+        return -2;
+    }
+    *result = hoc_xpop();
     return static_cast<int>(type);
 }
 
