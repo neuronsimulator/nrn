@@ -10,6 +10,13 @@ set(${CODING_CONV_PREFIX}_SANITIZERS_UNDEFINED_EXCLUSIONS
     implicit-integer-sign-change
     CACHE STRING "" FORCE)
 include("${CODING_CONV_CMAKE}/sanitizers.cmake")
+# libnrniv and _nmodl each statically link nanobind, and nanobind::python_error
+# is NB_EXPORT, so both export an identical 'vtable for nanobind::python_error.
+# rxd imports neuron.nmodl, loading both into one process. The flag
+# detect_odr_violation=1 only gives an error for size-mismatched duplicates.
+foreach(nrn_env NRN_SANITIZER_ENABLE_ENVIRONMENT NRN_SANITIZER_DISABLE_ENVIRONMENT)
+  list(TRANSFORM ${nrn_env} REPLACE "^ASAN_OPTIONS=" "ASAN_OPTIONS=detect_odr_violation=1:")
+endforeach()
 include(${CODING_CONV_CMAKE}/build-time-copy.cmake)
 
 # If there is an issue with the automatically determined LD_PRELOAD then force with an environment

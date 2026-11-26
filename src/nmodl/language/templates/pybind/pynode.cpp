@@ -23,6 +23,12 @@
 {% macro args(children) %}
 {% for c in children %}{{ c.get_shared_typename() }}{%- if not loop.last %}, {% endif %}{% endfor %}
 {%- endmacro -%}
+{#- nanobind rejects None for a std::shared_ptr argument unless the Children
+    marked optional in nmodl.yaml are left out by passing None.
+-#}
+{% macro arg_annotations(children) %}
+{% for c in children %}nanobind::arg("{{ c.varname }}"){%- if c.optional and not c.is_vector and not c.is_base_type_node and not c.is_ptr_excluded_node %}.none(){% endif %}{%- if not loop.last %}, {% endif %}{% endfor %}
+{%- endmacro -%}
 // clang-format on
 
 namespace nmodl {
@@ -39,7 +45,7 @@ void {{setup_pybind_method}}(nanobind::module_& m_ast) {
                 nanobind::arg("value"),
                 nanobind::arg("macro") = nanobind::none());
         {% else %}
-        tmp.def(nanobind::init<{{ args(node.children) }}>());
+        tmp.def(nanobind::init<{{ args(node.children) }}>(), {{ arg_annotations(node.children) }});
         {% endif %}
         {% endif %}
         {% if node.is_program_node or node.is_ptr_excluded_node %}

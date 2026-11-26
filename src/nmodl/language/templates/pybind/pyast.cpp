@@ -61,6 +61,11 @@ void init_ast_module(nb::module_& m) {
         .value("BOP_EXACT_EQUAL", BinaryOp::BOP_EXACT_EQUAL)
         .export_values();
 
+    nb::enum_<UnaryOp>(m_ast, "UnaryOp")
+        .value("UOP_NEGATION", UnaryOp::UOP_NEGATION)
+        .value("UOP_NOT", UnaryOp::UOP_NOT)
+        .export_values();
+
     nb::enum_<AstNodeType>(m_ast, "AstNodeType", docstring::ast_nodetype_enum())
     // clang-format off
     {% for node in nodes %}

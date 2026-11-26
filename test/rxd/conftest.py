@@ -86,6 +86,7 @@ def neuron_nosave_instance(neuron_import):
     rxd.species._has_3d = False
     rxd.rxd._zero_volume_indices = numpy.ndarray(0, dtype=ctypes.c_long)
     rxd.set_solve_type(dimension=1)
+    rxd._ast_config = {"nmodl_support": True, "kinetic_block": "off"}
 
 
 @pytest.fixture

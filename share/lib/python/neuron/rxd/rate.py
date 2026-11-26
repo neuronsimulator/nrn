@@ -5,6 +5,20 @@ from .rangevar import RangeVar
 import itertools
 import warnings
 from .generalizedReaction import GeneralizedReaction
+from .rxdmath import _ast_config, _ast_check
+
+if _ast_config["nmodl_support"]:
+    try:
+        from neuron.nmodl.ast import (
+            BinaryOp,
+            BinaryOperator,
+            BinaryExpression,
+            DiffEqExpression,
+            ExpressionStatement,
+        )
+    except ModuleNotFoundError as e:
+        _ast_config["nmodl_support"] = False
+        _ast_config["exception"] = e
 from typing import Union, Optional, Any
 
 # aliases to avoid repeatedly doing multiple hash-table lookups
@@ -350,3 +364,61 @@ class Rate(GeneralizedReaction):
             return self._memb_scales * rates
         else:
             return []
+
+    def ast(self, regions=None):
+        """Provide an AST representation of the rate.
+
+        Args:
+            regions (List[weakref.ref]): A list of weak reference `rxd.Region`
+                                         if None, all regions where the Rate
+                                         is valid are used.
+
+        Returns:
+            List[nmodl.ast]: A list of ASTs for each region in regions.
+            List[str]: A list of the species (AST state names).
+        """
+        from .species import Parameter, ParameterOnRegion, ParameterOnExtracellular
+
+        _ast_check()
+
+        if not initializer.is_initialized():
+            initializer._do_init()
+        sp = self._species()
+        if isinstance(sp, (Parameter, ParameterOnRegion, ParameterOnExtracellular)):
+            return [], []
+
+        def get_ast(region):
+            if sp and hasattr(sp, "name"):
+                name = sp.ast(region).get_node_name()
+                dx = sp.ast(region, prime=True)
+            elif sp and hasattr(sp, "_species") and sp._species():
+                name = sp.ast().get_node_name()
+                dx = sp.ast(prime=True)
+            else:
+                raise RxDException(f"Unknown species: {sp}")
+            rate = rxdmath._ensure_arithmeticed(self._original_rate).ast(region)
+            return (
+                ExpressionStatement(
+                    DiffEqExpression(
+                        (
+                            BinaryExpression(
+                                dx, BinaryOperator(BinaryOp.BOP_ASSIGN), rate
+                            )
+                        )
+                    )
+                ),
+                name,
+            )
+
+        diff = []
+        species = []
+        if regions is not None:
+            regs = [rptr() for rptr in regions if rptr()]
+        else:
+            regs = self._active_regions
+
+        for region in regs:
+            d, s = get_ast(region)
+            diff.append(d)
+            species.append(s)
+        return diff, species
