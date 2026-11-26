@@ -1458,6 +1458,8 @@ class Segment(SEGMENT_BASE):
             _RANGEVAR_SET(sym, self._sec._sec, self._x, value)
         except ctypes.ArgumentError as exc:
             raise _refused_double(exc, ValueError) from None
+        if _FAST_RANGEVARS is not None:
+            _FAST_RANGEVARS[name] = sym
 
     if _FAST_RANGEVARS is None:  # otherwise the core's slots call them
         __getattr__ = _getattr
