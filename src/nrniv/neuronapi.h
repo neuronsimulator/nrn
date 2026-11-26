@@ -104,6 +104,7 @@ NRN_DLLSYM int nrn_rangevar_get_nothrow(Symbol* sym,
                                         double* value,
                                         char* error_msg,
                                         size_t error_msg_size);
+NRN_DLLSYM double nrn_rangevar_get_or_nan(Symbol* sym, Section* sec, double x);
 NRN_DLLSYM int nrn_rangevar_set_nothrow(Symbol* sym,
                                         Section* sec,
                                         double x,

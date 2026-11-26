@@ -389,6 +389,31 @@ int nrn_rangevar_get_nothrow(Symbol* sym,
     }
 }
 
+double nrn_rangevar_get_or_nan(Symbol* sym, Section* sec, double x) {
+    constexpr double nan = std::numeric_limits<double>::quiet_NaN();
+    try {
+        if (!sym || sym->type != RANGEVAR || !sec || !sec->prop || !(x >= 0.0 && x <= 1.0)) {
+            return nan;
+        }
+        if (sym->u.rng.type == VINDEX) {
+            return node_ptr(sec, x, nullptr)->v();
+        }
+        if (sym->u.rng.type == MORPHOLOGY && sec->recalc_area_) {
+            // As nrn_segment_diam_get: recompute diam from 3-d points without
+            // the HOC error (and its object-stack reset) for a diam <= 0.
+            nrn_area_ri_no_diam_error(sec);
+        }
+        // Unset or opaque POINTERs, a mechanism not inserted at x and
+        // i_membrane_ without fast_imem all give a handle that holds no double*.
+        int err = 0;
+        auto const handle = nrnpy_rangepointer(sec, sym, x, &err, 0);
+        double* const pd = handle.holds<double*>() ? handle.get<double*>() : nullptr;
+        return pd ? *pd : nan;
+    } catch (...) {
+        return nan;
+    }
+}
+
 int nrn_rangevar_set_nothrow(Symbol* sym,
                              Section* sec,
                              double x,
