@@ -17,6 +17,7 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <typeinfo>
 #include <unordered_map>
 #include <vector>
 
@@ -142,19 +143,40 @@ enum class Raise { exception, hoc_error, always };
     hoc_execerror(message.c_str(), nullptr);
 }
 
-/// The Python error as NEURON's methods threw it (nanobind's python_error of an error raised by C
-/// code): a C++ exception whose text is "Type: message". A method's caller makes it the HOC error
-/// "Class[i]::method: Type: message"; a function's caller reports the text alone. Only C++ frames
-/// are between here and that caller.
-[[noreturn]] void throw_python_error() {
-    std::string what;
+/// The Python error as NEURON's Python module threw it (nanobind's python_error): a C++ exception
+/// "Python exception". A method's caller makes it the HOC error "Class[i]::method: Python
+/// exception", and the exception is lost. If keep, the Python code that called the HOC function
+/// raises the exception itself, as NEURON's module restored it. Only C++ frames are between here
+/// and that caller.
+[[noreturn]] void throw_python_error(bool keep = false) {
     {
-        Error const error{};
-        Ref const name{error.type ? py.PyObject_GetAttrString(error.type.get(), "__qualname__")
-                                  : nullptr};
-        what = text(name.get()) + ": " + text(error.value.get());
+        Error error{};
+        auto* const scope = ErrorScope::innermost();
+        if (keep && scope && scope->can_be_taken && py.PyEval_GetFrame()) {
+            scope->keep(error.value.release());
+        }
     }
-    throw std::runtime_error(what);
+    throw std::runtime_error("Python exception");
+}
+
+/// A failed call of Python, as NEURON's Python module reported it: an Exception is printed with
+/// its traceback (neuron.format_exception), anything else as PyErr_Print does (SystemExit ends the
+/// process); then the HOC error message.
+[[noreturn]] void hoc_error_traceback(const std::string& message, Error error = {}) {
+    {
+        if (error.is(py.PyExc_Exception)) {
+            Fprintf(stderr, "%s\n", error.formatted().c_str());
+        } else {
+            error.print();
+        }
+    }
+    hoc_execerror(message.c_str(), nullptr);
+}
+
+/// PyErr_Print, then the HOC error message, as NEURON's Python module did.
+[[noreturn]] void hoc_error_printed(const std::string& message) {
+    Error{}.print();
+    hoc_execerror(message.c_str(), nullptr);
 }
 
 [[noreturn]] void refuse(PyObject* exception, const char* message) {
@@ -510,16 +532,22 @@ const char* component(Object* o, Symbol* sym, int nindex, int isfunc) {
     Top const top{};
     Ref const value = attribute(o, sym);
     if (!value) {
-        fail(Error{}, std::string{"No attribute: "} + sym->name, Raise::exception);
+        hoc_error_printed(std::string{"No attribute: "} + sym->name);
     }
     Ref result;
     if (isfunc) {
         Ref const args = pop_tuple(nindex);
         result = Ref{py.PyObject_CallObject(value.get(), args.get())};
         if (!result) {
-            fail(Error{},
-                 std::string{"PyObject method call failed: "} + sym->name,
-                 Raise::exception);
+            Error error{};
+            if (!error.is(py.PyExc_Exception)) {
+                // As NEURON's Python module: printed, and nothing is pushed, which HOC then
+                // reports as its own error.
+                error.print();
+                return nullptr;
+            }
+            hoc_error_traceback(std::string{"PyObject method call failed: "} + sym->name,
+                                std::move(error));
         }
     } else if (nindex) {
         Hold const hold{o};
@@ -528,9 +556,7 @@ const char* component(Object* o, Symbol* sym, int nindex, int isfunc) {
         Ref const key = hoc_stack_type() == NUMBER ? Ref{py.PyLong_FromDouble(hoc_xpop())} : pop();
         result = key ? Ref{py.PyObject_GetItem(value.get(), key.get())} : Ref{};
         if (!result) {
-            fail(Error{},
-                 std::string{"Python get item failed: "} + hoc_object_name(o),
-                 Raise::exception);
+            hoc_error_printed(std::string{"Python get item failed: "} + hoc_object_name(o));
         }
     }
     push(result ? result.get() : value.get());
@@ -560,7 +586,7 @@ const char* assign_component(Object* o) {
         err = py.PyObject_SetAttr(held, interned(sym), value.get());
     }
     if (err) {
-        fail(Error{}, "Assignment to PythonObject failed", Raise::exception);
+        hoc_error_printed("Assignment to PythonObject failed");
     }
     return nullptr;
 }
@@ -714,7 +740,7 @@ double praxis_efun(Object* f, Object* vec) {
     // float(result), as NEURON's nb::float_: its failure is not a HOC error.
     Ref const number{py.PyNumber_Float(result.get())};
     if (!number) {
-        throw_python_error();
+        throw_python_error(true);
     }
     return py.PyFloat_AsDouble(number.get());
 }
@@ -1247,7 +1273,13 @@ std::vector<char> call_picklef(const std::vector<char>& pickled, int narg) {
     Ref const args = pop_tuple(narg);
     Ref const result{py.PyObject_CallObject(f.get(), args.get())};
     if (!result) {
-        throw_python_error();
+        Error error{};
+        if (!error.is(py.PyExc_Exception)) {
+            // As NEURON's Python module: printed, then pickling no result fails.
+            error.print();
+            throw std::bad_cast{};
+        }
+        hoc_error_traceback("PyObject method call failed:", std::move(error));
     }
     return dumps(result.get());
 }
