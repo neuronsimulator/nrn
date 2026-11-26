@@ -495,6 +495,37 @@ def owns_python_objects():
 PENDING_CALLBACKS = []
 
 
+_OWN_DIR = os.path.dirname(os.path.abspath(__file__)) + os.sep
+
+
+def _is_own_file(filename):
+    return os.path.abspath(filename).startswith(_OWN_DIR)
+
+
+def python_error_text(exc):
+    """nanobind's python_error::what() of *exc*, which NEURON's ParallelContext
+    methods put in their HOC error: ``Type: message``, after the frames when it
+    has a traceback (every frame of the current stack, then the ones it passed
+    through). The interface's own frames stand for NEURON's C++ ones and are
+    left out. NEURON calls it for that error (its ``error_text`` hook)."""
+    import traceback
+
+    last = f"{type(exc).__qualname__}: {exc}"
+    inner = [
+        f for f in traceback.extract_tb(exc.__traceback__) if not _is_own_file(f.filename)
+    ]
+    if not inner:
+        return last
+    outer = [
+        f
+        for f in traceback.extract_stack(sys._getframe(1))
+        if not _is_own_file(f.filename)
+    ]
+    lines = ["Traceback (most recent call last):"]
+    lines += [f'  File "{f.filename}", line {f.lineno}, in {f.name}' for f in outer + inner]
+    return "\n".join(lines + [last])
+
+
 def raise_callback_error():
     """Raise the Python exception that caused the HOC error, if one did."""
     if CALLS_PYTHON:

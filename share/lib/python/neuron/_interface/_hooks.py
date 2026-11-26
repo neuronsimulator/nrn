@@ -5,7 +5,7 @@ error of the statement that needed the hook.
 """
 
 from . import _coreneuron
-from .api import EPOCH, HOC_LOCK, nrn_python_hook_set
+from .api import EPOCH, HOC_LOCK, nrn_python_hook_set, python_error_text
 from .nrnref import reference
 from .sections import Section, Segment
 from .utils import hoc_class
@@ -44,5 +44,6 @@ def install():
         ("coreneuron_enable", _coreneuron.enable_value),
         ("coreneuron_file_mode", _coreneuron.file_mode_value),
         ("coreneuron_arg", _coreneuron.nrncore_arg),
+        ("error_text", python_error_text),
     ):
         set_hook(name, hook)

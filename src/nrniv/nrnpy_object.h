@@ -10,9 +10,10 @@ void register_python_object();
 // What the interface registers (docs/capi.rst).
 // clang-format off
 #define NRNPY_HOOKS(X) \
-    X(coreneuron_arg) X(coreneuron_enable) X(coreneuron_file_mode) X(gui_callback)  \
-    X(hoc_lock) X(model_epoch) X(object_class) X(reference) X(rvp_callable)         \
-    X(savestate_restore) X(savestate_store) X(section_class) X(segment_class)
+    X(coreneuron_arg) X(coreneuron_enable) X(coreneuron_file_mode) X(error_text)    \
+    X(gui_callback) X(hoc_lock) X(model_epoch) X(object_class) X(reference)         \
+    X(rvp_callable) X(savestate_restore) X(savestate_store) X(section_class)        \
+    X(segment_class)
 // clang-format on
 enum class Hook {
 #define X(name) name,

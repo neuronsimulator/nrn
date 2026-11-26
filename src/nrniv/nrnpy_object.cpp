@@ -142,17 +142,24 @@ enum class Raise { exception, hoc_error, always };
     hoc_execerror(message.c_str(), nullptr);
 }
 
-/// The Python error as NEURON's methods threw it (nanobind's python_error of an error raised by C
-/// code): a C++ exception whose text is "Type: message". A method's caller makes it the HOC error
-/// "Class[i]::method: Type: message"; a function's caller reports the text alone. Only C++ frames
-/// are between here and that caller.
+/// The Python error as NEURON's methods threw it (nanobind's python_error): a C++ exception whose
+/// text is what the interface's error_text hook makes of the exception, or "Type: message". A
+/// method's caller makes it the HOC error "Class[i]::method: <text>"; a function's caller reports
+/// the text alone. Only C++ frames are between here and that caller.
 [[noreturn]] void throw_python_error() {
     std::string what;
     {
         Error const error{};
-        Ref const name{error.type ? py.PyObject_GetAttrString(error.type.get(), "__qualname__")
-                                  : nullptr};
-        what = text(name.get()) + ": " + text(error.value.get());
+        if (Ref const hook = optional(Hook::error_text); hook && error.value) {
+            Ref const formatted = call(hook.get(), error.value);
+            what = formatted ? text(formatted.get()) : std::string{};
+            py.PyErr_Clear();
+        }
+        if (what.empty()) {
+            Ref const name{error.type ? py.PyObject_GetAttrString(error.type.get(), "__qualname__")
+                                      : nullptr};
+            what = text(name.get()) + ": " + text(error.value.get());
+        }
     }
     throw std::runtime_error(what);
 }
