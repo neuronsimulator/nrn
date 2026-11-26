@@ -28,11 +28,8 @@ static bool check(bool cond, const char* msg) {
 static std::vector<Section*> gather_with_iterator(nrn_Item* sl) {
     std::vector<Section*> out;
     SectionListIterator* it = nrn_sectionlist_iterator_new(sl);
-    while (!nrn_sectionlist_iterator_done(it)) {
-        Section* sec = nrn_sectionlist_iterator_next(it);
-        if (sec) {
-            out.push_back(sec);
-        }
+    while (Section* sec = nrn_sectionlist_iterator_next(it)) {
+        out.push_back(sec);
     }
     nrn_sectionlist_iterator_free(it);
     return out;
