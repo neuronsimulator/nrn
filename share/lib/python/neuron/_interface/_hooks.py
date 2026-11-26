@@ -20,7 +20,8 @@ def set_savestate_callbacks(store, restore, replace=False):
     """Register the Python state SaveState keeps, for packages such as neuron.rxd.
 
     ``store()`` returns a bytes-like object and ``restore(bytearray)`` receives
-    it back. A failure is the HOC error of the SaveState call.
+    it back. A failure is the HOC error of the SaveState call. ``replace`` is
+    accepted for the released core's signature: here a hook always replaces.
     """
     set_hook("savestate_store", store)
     set_hook("savestate_restore", restore)

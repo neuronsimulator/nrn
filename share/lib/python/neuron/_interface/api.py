@@ -513,9 +513,6 @@ def raise_callback_error():
     raise_pending_callback_exc()
 
 
-# ctypes callbacks the core keeps: they must outlive it.
-_CFUNCTYPE_KEEPALIVE = []
-
 # nrn#3889 (NEURON 9.1): every dimension of an array symbol. Optional; without
 # it objref arrays are treated as one-dimensional.
 _nrn_symbol_array_dims = getattr(libnrniv, "nrn_symbol_array_dims", None)

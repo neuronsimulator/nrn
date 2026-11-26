@@ -514,8 +514,8 @@ class Object(OBJECT_BASE, metaclass=_HocClassMeta):
     def _construct(self, class_name, args, sec=None):
         """Make the HOC object of class *class_name* for this wrapper."""
         obj, post_init = _construct_hoc_object(class_name, args, sec=sec)
-        # Own the object before any step below can fail, as _wrap does: a
-        # partly built wrapper releases it in __del__.
+        # Own the object before any step below can fail, as _wrap does: the
+        # base type releases a partly built wrapper's object too.
         self._obj = obj
         self._init_from_ptr(obj, class_name)
         post_init(self)
@@ -528,8 +528,8 @@ class Object(OBJECT_BASE, metaclass=_HocClassMeta):
         user-defined __init__ on a subclass.
         """
         instance = cls.__new__(cls)
-        # Establish ownership before initialization can fail. A partially
-        # initialized wrapper then releases the caller-provided ref in __del__.
+        # Establish ownership before initialization can fail. The base type
+        # then releases the caller-provided ref of a partly initialized wrapper.
         instance._obj = obj
         instance._init_from_ptr(obj, class_name)
         return instance
@@ -2012,7 +2012,7 @@ class Vector(Object):
         return _nrn_vector_capacity(self._obj)
 
     # --- Arithmetic (numeric protocol) ---
-    # As NEURON's nrnpy_vec_math (share/lib/python/neuron/__init__.py), called
+    # As legacy NEURON's nrnpy_vec_math (9.0's neuron/__init__.py), called
     # from py_hocobj_math (9.0's nrnpy_hoc.cpp). The other operand is a
     # number or a HOC object, which the HOC method rejects if it is not a
     # Vector; anything else is NotImplemented. Forward ops clone via `.c()`
@@ -2531,7 +2531,7 @@ class _HeldSection:
         return bool(_nrn_section_is_active(self.ptr))
 
     def __del__(self):
-        # Interpreter teardown: as in Object.__del__.
+        # Interpreter teardown: as in _released_base's __del__.
         if getattr(sys, "meta_path", None) is None:
             return
         try:

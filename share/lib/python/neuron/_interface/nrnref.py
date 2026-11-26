@@ -1126,8 +1126,8 @@ class NrnObjectRef(NrnRef):
             _release_object(old)  # release the old content
 
     def __del__(self):
-        # Release the cell's one reference. Guarded like Object.__del__ against
-        # interpreter teardown and half-constructed instances.
+        # Release the cell's one reference. Guarded like _released_base's
+        # __del__ against interpreter teardown and half-constructed instances.
         if (
             getattr(sys, "meta_path", None) is None
             or getattr(sys, "modules", None) is None

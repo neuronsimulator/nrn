@@ -738,12 +738,14 @@ class NEURON(metaclass=_Singleton):
                                 converted = TEMPLATE_CONVERTERS.get(name)
                                 if converted is not None and len(args) > converted:
                                     forget_class(str(args[converted]))
-                                if ret and _type != TYPES.BLTIN:
+                                if ret and (_type != TYPES.BLTIN or CALLS_PYTHON):
                                     # Nothrow restores the stack to after the
                                     # arg push; release those slots (gap-56).
-                                    # A BLTIN already popped its one argument,
-                                    # so the restore cannot run and nothing is
-                                    # left to release.
+                                    # On a released core a failed BLTIN has
+                                    # already popped its one argument, so the
+                                    # restore cannot run ("oc_restore_code
+                                    # cannot summon ...", gap-93) and nothing
+                                    # is left to release.
                                     rollback_args()
                                 if ret:
                                     failed, _err_buf = _err_buf, None  # no result

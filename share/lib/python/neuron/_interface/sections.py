@@ -1353,6 +1353,12 @@ class Segment(SEGMENT_BASE):
             if not _is_finite(value):
                 raise ValueError(f"diam must be a finite number, got {value!r}")
             sec = self._sec
+            if CALLS_PYTHON and _section_query(b"n3d", sec._sec):
+                # As NEURON's since nrn#3921 (in every core that calls Python):
+                # derive the segment diameters from pending 3-D points first,
+                # or the stale ones stay in the other nodes (pt3dconst(1)) or
+                # overwrite the points. The getter runs that recompute.
+                _SEG_DIAM_GET(sec._sec, 0.5)
             _SEG_DIAM_SET(sec._sec, _diam_node_x(sec, self._x), value)
             _diam_hoc_assign(
                 sec, f"diam({self._x!r}) = {float(value)!r}", self._x, value
