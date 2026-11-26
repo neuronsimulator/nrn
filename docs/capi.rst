@@ -2067,6 +2067,10 @@ to call them for.
     first call after the error gets it. An exception that nobody can take, because HOC
     code catches the error (``execute1``), or no Python code called HOC, is printed, and
     SystemExit ends the process; so is one that nobody took when another error follows.
+    A failed callback (``Vector.apply``, ``fit_praxis``, an ``FInitializeHandler``, a
+    ``NetCon.record`` or ``CVode.event`` function) gives what NEURON's Python module raised:
+    a RuntimeError ``hocobj_call error: hoc_execerror: <message>``, without the callback's
+    exception as its cause.
 
     :returns: A new reference, to None if the last HOC error did not come from Python.
 

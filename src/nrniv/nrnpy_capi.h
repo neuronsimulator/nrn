@@ -63,6 +63,7 @@ namespace neuron::python {
     X(int, PyCallable_Check, (PyObject*))                                         \
     X(PyObject*, PyIter_Next, (PyObject*))                                        \
     X(int, PyNumber_Check, (PyObject*))                                           \
+    X(PyObject*, PyNumber_Float, (PyObject*))                                     \
     X(int, PySequence_Check, (PyObject*))                                         \
     X(int, PyMapping_Check, (PyObject*))                                          \
     X(std::ptrdiff_t, PySequence_Size, (PyObject*))                               \

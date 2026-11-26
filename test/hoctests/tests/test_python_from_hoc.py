@@ -153,7 +153,7 @@ try: h.outer()
 except KeyError as e: print(e)
 try: h.Vector(2).apply(bye)
 except RuntimeError as e: print(repr(e.__cause__))""",
-        "0.0\n'k'\nSystemExit(5)",
+        "0.0\n'k'\nNone",
     ),
     "capi": (
         """from neuron._interface import api

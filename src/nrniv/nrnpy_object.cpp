@@ -15,6 +15,8 @@
 #include <cstring>
 #include <exception>
 #include <memory>
+#include <stdexcept>
+#include <string>
 #include <unordered_map>
 #include <vector>
 
@@ -115,8 +117,9 @@ void print_exception(PyObject* exception) {
 }
 
 /// What the Python code that called HOC, if any, gets: the exception itself, or the HOC error it
-/// became, with the exception as its cause (cause: also for SystemExit).
-enum class Raise { exception, hoc_error, cause };
+/// became, as NEURON's Python module raised it: a RuntimeError of the message, without the
+/// exception as its cause (always: also for SystemExit).
+enum class Raise { exception, hoc_error, always };
 
 /// Make a Python error a HOC error. If no Python code can get the exception it is printed (unless
 /// the message tells it), and SystemExit ends the process.
@@ -124,21 +127,34 @@ enum class Raise { exception, hoc_error, cause };
     bool const exit = error.is(py.PyExc_SystemExit);
     auto* const scope = ErrorScope::innermost();
     if (scope && scope->can_be_taken && py.PyEval_GetFrame()) {
-        if (what == Raise::cause || (what == Raise::hoc_error && !exit)) {
+        if (what == Raise::always || (what == Raise::hoc_error && !exit)) {
             if (print) {
                 Fprintf(stderr, "%s", error.formatted().c_str());
             }
             Ref const full{
                 py.PyUnicode_FromString(("hocobj_call error: hoc_execerror: " + message).c_str())};
-            Ref hoc_error = call(py.PyExc_RuntimeError, full);
-            py.PyException_SetCause(hoc_error.get(), error.value.release());
-            error.value = std::move(hoc_error);
+            error.value = call(py.PyExc_RuntimeError, full);
         }
         scope->keep(error.value.release());
-    } else if (print || (exit && what != Raise::cause)) {
+    } else if (print || (exit && what != Raise::always)) {
         error.print();
     }
     hoc_execerror(message.c_str(), nullptr);
+}
+
+/// The Python error as NEURON's methods threw it (nanobind's python_error of an error raised by C
+/// code): a C++ exception whose text is "Type: message". A method's caller makes it the HOC error
+/// "Class[i]::method: Type: message"; a function's caller reports the text alone. Only C++ frames
+/// are between here and that caller.
+[[noreturn]] void throw_python_error() {
+    std::string what;
+    {
+        Error const error{};
+        Ref const name{error.type ? py.PyObject_GetAttrString(error.type.get(), "__qualname__")
+                                  : nullptr};
+        what = text(name.get()) + ": " + text(error.value.get());
+    }
+    throw std::runtime_error(what);
 }
 
 [[noreturn]] void refuse(PyObject* exception, const char* message) {
@@ -662,16 +678,20 @@ void vec_apply(IvocVect* vec, Object* o, int start, int end) {
     if (!py.PyCallable_Check(f.get())) {
         hoc_execerror("Object is not callable", nullptr);
     }
+    // As NEURON's nrnpy_call_func: any exception, an interrupt and SystemExit too, is only the HOC
+    // error; nothing is printed.
     for (int i = start; i <= end; ++i) {
         Ref const arg{py.PyFloat_FromDouble(vec->elem(i))};
         Ref const result = call(f.get(), arg);
-        double const value = result ? py.PyFloat_AsDouble(result.get()) : -1.;
+        if (!result) {
+            fail(Error{}, "Python function call raised exception", Raise::always, false);
+        }
+        if (!py.PyNumber_Check(result.get())) {
+            hoc_execerror("Expected a numeric result from Python function", nullptr);
+        }
+        double const value = py.PyFloat_AsDouble(result.get());
         if (value == -1. && py.PyErr_Occurred()) {
-            Error error{};
-            auto constexpr message = "Python function call raised exception";
-            bool const raise = error.is(py.PyExc_Exception);
-            // An interrupt is a HOC error, and SystemExit does not exit.
-            fail(std::move(error), message, raise ? Raise::exception : Raise::cause, raise);
+            fail(Error{}, "Failed to convert result to float", Raise::always, false);
         }
         vec->elem(i) = value;
     }
@@ -683,16 +703,20 @@ double praxis_efun(Object* f, Object* vec) {
     Ref const arg = to_python(vec);
     Ref const held = payload(f);
     Ref const result = call(held.get(), arg);
-    double const value = result ? py.PyFloat_AsDouble(result.get()) : -1.;
-    if (value == -1. && py.PyErr_Occurred()) {
+    if (!result) {
         Error error{};
         if (!error.is(py.PyExc_Exception) && !error.is(py.PyExc_SystemExit)) {
             error.print();
             return 1e9;
         }
-        fail(std::move(error), "Call of Python Callable failed in praxis_efun", Raise::exception);
+        fail(std::move(error), "Call of Python Callable failed in praxis_efun", Raise::hoc_error);
     }
-    return value;
+    // float(result), as NEURON's nb::float_: its failure is not a HOC error.
+    Ref const number{py.PyNumber_Float(result.get())};
+    if (!number) {
+        throw_python_error();
+    }
+    return py.PyFloat_AsDouble(number.get());
 }
 
 Object* callable_with_args(Object* o, int narg) {
@@ -1183,7 +1207,7 @@ std::vector<char> dumps(PyObject* p) {
     char* data{};
     std::ptrdiff_t size{};
     if (!bytes || py.PyBytes_AsStringAndSize(bytes.get(), &data, &size)) {
-        fail(Error{}, "a Python object can not be pickled", Raise::exception);
+        throw_python_error();
     }
     return {data, data + size};
 }
@@ -1196,7 +1220,7 @@ Ref loads(const char* data, std::size_t size) {
     Ref const bytes{py.PyBytes_FromStringAndSize(data, size)};
     Ref value = call(function, bytes);
     if (!value) {
-        fail(Error{}, "a Python object can not be unpickled", Raise::exception);
+        throw_python_error();
     }
     return value;
 }
@@ -1223,7 +1247,7 @@ std::vector<char> call_picklef(const std::vector<char>& pickled, int narg) {
     Ref const args = pop_tuple(narg);
     Ref const result{py.PyObject_CallObject(f.get(), args.get())};
     if (!result) {
-        fail(Error{}, "PyObject method call failed:", Raise::exception);
+        throw_python_error();
     }
     return dumps(result.get());
 }
@@ -1341,15 +1365,18 @@ Object* collective(int size, int type) {
     Top const top{};
     enum { ALLTOALL = 1, ALLGATHER, GATHER, BROADCAST, SCATTER };
     int const nhost = nrnmpi_numprocs;
+    if (type == ALLTOALL || type == SCATTER) {
+        hoc_objgetarg(1);  // a HOC error if it is not an object, as NEURON's
+    }
     Ref const source = argument(1, false);
     if (type == ALLTOALL || (type == SCATTER && nrnmpi_myid == size)) {
         if (!is_instance(source.get(), py.PyList_Type)) {
-            refuse(py.PyExc_TypeError, "Argument must be a Python list");
+            hoc_execerror("Argument must be a Python list", nullptr);
         }
         if (py.PyList_Size(source.get()) != nhost) {
-            refuse(py.PyExc_ValueError,
-                   type == ALLTOALL ? "py_alltoall list size must be nhost"
-                                    : "py_scatter list size must be nhost");
+            hoc_execerror(type == ALLTOALL ? "py_alltoall list size must be nhost"
+                                           : "py_scatter list size must be nhost",
+                          nullptr);
         }
     }
     if (nhost == 1) {

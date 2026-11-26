@@ -115,6 +115,23 @@ from . import utils as _utils
 # ---------------------------------------------------------------------------
 
 
+# NEURON's Python module reads the argument of these without a length check.
+_ONE_ARG_COLLECTIVES = frozenset({"py_allgather", "py_gather", "py_broadcast"})
+
+
+def _one_arg_collective(pc, name, method):
+    """pc.<name>() with no argument: NEURON's CPython SystemError."""
+
+    def collective(*args, **kwargs):
+        if not args:
+            error = SystemError(f"{pc}.{name}() returned a result with an exception set")
+            error.__cause__ = IndexError("tuple index out of range")
+            raise error
+        return method(*args, **kwargs)
+
+    return collective
+
+
 class _HocClassMeta(type):
     """Metaclass for HOC-wrapper classes.
 
@@ -1167,6 +1184,8 @@ class Object(OBJECT_BASE, metaclass=_HocClassMeta):
 
                     if name in PYTHON_METHODS:
                         func = python_method(self, name, method_func)
+                elif self._class_name == "ParallelContext" and name in _ONE_ARG_COLLECTIVES:
+                    func = _one_arg_collective(self, name, method_func)
                 doc = f"NEURON object method: {self._class_name}.{name}()"
                 doc_key = f"{self._class_name}.{name}"
                 if self._class_name == "Vector":
