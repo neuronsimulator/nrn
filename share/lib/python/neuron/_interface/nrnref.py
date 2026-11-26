@@ -677,6 +677,40 @@ class NrnHocTemplateStrRef(NrnRef):
         return f"<NrnRef to HOC template {clsname}.{self._name}>"
 
 
+class NrnTopStrRef(NrnRef):
+    """``h._ref_<strdef>`` of a top-level strdef: ``[0]`` reads and writes
+    the string, as NEURON's string reference does.
+
+    It cannot be passed to HOC: that needs the strdef's ``char**``, which no
+    C API gives.
+    """
+
+    __slots__ = ("_name",)
+
+    def __init__(self, name):
+        self._name = name
+
+    def _push(self):
+        raise NotImplementedError(
+            f"a reference to strdef '{self._name}' cannot be passed to HOC"
+        )
+
+    def __getitem__(self, idx):
+        if idx != 0:
+            raise IndexError("index for hoc ref must be 0")
+
+        return getattr(_PACKAGE._n, self._name)
+
+    def __setitem__(self, idx, value):
+        if idx != 0:
+            raise IndexError("index for hoc ref must be 0")
+
+        setattr(_PACKAGE._n, self._name, value)
+
+    def __repr__(self):
+        return f'<hoc ref pstr "{self[0]}">'  # NEURON's text
+
+
 class NrnVectorElementRef(NrnRef):
     """Pointer to element ``i`` of a Vector, ``vec._ref_x[i]``.
 

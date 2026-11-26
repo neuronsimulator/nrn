@@ -1,5 +1,6 @@
 """Helpers: FuncWrapper, symbol table iteration, argument pushing."""
 import ctypes
+import operator
 from collections.abc import Mapping
 
 from ._docs import get_doc
@@ -60,6 +61,10 @@ def _check_segment_arg(seg):
         raise RuntimeError("nrn.Segment associated with deleted internal Section")
 
 
+# The keywords a HOC call takes (the others are refused by its signature).
+_CALL_KEYWORDS = frozenset({"sec"})
+
+
 class FuncWrapper:
     # __doc__ is a property backed by the _doc slot (a class variable and a
     # same-named slot would clash). Lookup is deferred to avoid help I/O
@@ -91,7 +96,14 @@ class FuncWrapper:
         self._doc_key = None
 
     def __call__(self, *args, **kwargs):
-        return self._func(*args, **kwargs)
+        try:
+            return self._func(*args, **kwargs)
+        except TypeError:
+            # The function's signature refused a keyword. NEURON's call
+            # checks its keywords first and raises RuntimeError.
+            if kwargs and kwargs.keys() - _CALL_KEYWORDS:
+                raise RuntimeError("invalid keyword argument") from None
+            raise
 
     def __repr__(self):
         return f"{self._name}()"
@@ -110,6 +122,18 @@ class FuncWrapper:
         if self._key is None:
             return object.__hash__(self)
         return hash(self._key)
+
+    def __lt__(self, other):
+        return _function_order(self, other, operator.lt)
+
+    def __le__(self, other):
+        return _function_order(self, other, operator.le)
+
+    def __gt__(self, other):
+        return _function_order(self, other, operator.gt)
+
+    def __ge__(self, other):
+        return _function_order(self, other, operator.ge)
 
 
 class _Singleton(type):
@@ -504,6 +528,31 @@ def _push_args(args, return_rollback=False):
     if return_rollback:
         return temp_strs, seg_sec, lambda: rollback(len(descriptors))
     return temp_strs, seg_sec
+
+
+def _function_order(func, other, compare):
+    # NEURON's hocobj_richcmp: top-level functions order by symbol address;
+    # bound methods of different objects, and other HOC objects, are
+    # undefined; a plain object compares by its address against the
+    # function's object (none at top level).
+    if isinstance(other, FuncWrapper):
+        if func._key is None or other._key is None:
+            raise TypeError("this comparison is undefined")
+        symbol = _api._nrn_symbol
+        return compare(
+            symbol(func._key.encode("utf-8")) or 0,
+            symbol(other._key.encode("utf-8")) or 0,
+        )
+    if isinstance(other, (NrnRef, _PACKAGE.object.Object)):
+        raise TypeError("this comparison is undefined")
+    if func._key is None:
+        return NotImplemented  # a bound method's object address is unknown here
+    return compare(0, id(other))
+
+
+# The default of a ``sec=`` keyword, so an explicit ``sec=None`` is told apart
+# and refused as NEURON does.
+_NO_SEC = object()
 
 
 def _check_sec_kwarg(sec):

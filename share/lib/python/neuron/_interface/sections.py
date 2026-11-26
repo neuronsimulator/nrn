@@ -7,6 +7,7 @@
 import ctypes
 import math
 import numbers
+import operator
 import weakref
 
 from .api import (
@@ -784,6 +785,18 @@ class Segment(SEGMENT_BASE):
         # hash differently). Deliberate departure; see docs/ARCHITECTURE.md.
         nseg = self._sec.nseg
         return hash((self._sec, self._node_key(self._x, nseg)))
+
+    def __lt__(self, other):
+        return _segment_order(self, other, operator.lt)
+
+    def __le__(self, other):
+        return _segment_order(self, other, operator.le)
+
+    def __gt__(self, other):
+        return _segment_order(self, other, operator.gt)
+
+    def __ge__(self, other):
+        return _segment_order(self, other, operator.ge)
 
     def ref(self, name):
         # Section.ref, not self._sec.ref: a Section subclass may define its own.
@@ -1573,6 +1586,29 @@ def _density_mechanism_symbol(name):
     return symbol
 
 
+def _segment_order(seg, other, compare):
+    # NEURON's pyseg_richcmp orders by the segment's node address, and by
+    # the object's own address against anything else. No public call gives
+    # a node address; segments order by section address, then position.
+    if isinstance(other, Segment):
+        return compare(
+            (seg._sec._sec, seg._node_key(seg._x, seg._sec.nseg)),
+            (other._sec._sec, other._node_key(other._x, other._sec.nseg)),
+        )
+    return compare(seg._sec._sec, id(other))
+
+
+def _section_order(sec, other, compare):
+    # NEURON's pysec_richcmp: sections order by Section address; a
+    # segment, HOC object or reference by its own address; anything else
+    # is unordered.
+    if isinstance(other, Section):
+        return compare(sec._sec, other._sec)
+    if isinstance(other, (Segment, NrnRef, _PACKAGE.object.Object, _utils.FuncWrapper)):
+        return compare(sec._sec, id(other))
+    return NotImplemented
+
+
 class Section(SECTION_BASE):
     """A NEURON section — a continuous unbranched cable, the unit of topology.
 
@@ -1636,6 +1672,9 @@ class Section(SECTION_BASE):
         object.__getattribute__ for _cell and _inserted_mechs; normal
         attribute access recurses via __getattr__.
         """
+        if not sec_ptr or sec_ptr.__class__ in (str, bytes):
+            # nrn_section_ref(NULL) or a string pointer would crash the process.
+            raise TypeError(f"not a section pointer: {sec_ptr!r}")
         obj = cls.__new__(cls)
         # The wrapper holds the struct, as NEURON's does (section_ref in
         # 9.0's nrnpy_nrn.cpp). Without it, a HOC delete_section freed the struct
@@ -1666,6 +1705,18 @@ class Section(SECTION_BASE):
     def __hash__(self):
         return hash(self._sec)
 
+    def __lt__(self, other):
+        return _section_order(self, other, operator.lt)
+
+    def __le__(self, other):
+        return _section_order(self, other, operator.le)
+
+    def __gt__(self, other):
+        return _section_order(self, other, operator.gt)
+
+    def __ge__(self, other):
+        return _section_order(self, other, operator.ge)
+
     # As NEURON's nrn.Section: no copying or pickling. The default would copy
     # the slots, the section pointer and _pynative among them, and each copy's
     # __del__ would then delete the section and drop a reference only the
@@ -1688,8 +1739,36 @@ class Section(SECTION_BASE):
         # everything else broadcasts across segments, matching real NEURON's
         # `sec.gnabar_hh = ...` semantics.
         if name.startswith("_") or name in {"nseg", "L", "Ra", "rallbranch"}:
-            super().__setattr__(name, value)
+            if name == "_sec" and (not value or value.__class__ in (str, bytes)):
+                # Every later access would pass it to the core and crash.
+                raise TypeError(f"not a section pointer: {value!r}")
+            try:
+                super().__setattr__(name, value)
+            except AttributeError:
+                if type(self) is Section and not hasattr(Section, name):
+                    raise AttributeError(
+                        f"'nrn.Section' object has no attribute '{name}'"
+                    ) from None
+                raise
             return
+        if type(self) is Section:
+            # As NEURON's section_setattro: only a range variable broadcasts.
+            info = _SYMBOL_INFO_CACHE.get(name)
+            if info is None:
+                info = _get_symbol_info(name)
+            if info is None or info[1] != TYPES.RANGEVAR:
+                self._check_alive()  # a deleted section's error comes first
+                if not name.isascii():
+                    raise TypeError("attribute name must be a string")
+                cls_attr = getattr(Section, name, _UNSET)
+                if isinstance(cls_attr, property):
+                    super().__setattr__(name, value)
+                    return
+                if cls_attr is not _UNSET:
+                    raise AttributeError(
+                        f"'nrn.Section' object attribute '{name}' is read-only"
+                    )
+                raise AttributeError(f"'nrn.Section' object has no attribute '{name}'")
         if value.__class__ is not float and value.__class__ is not int:
             value = _scalar_rangevar_double(name, value)
         if name == "diam":
@@ -1783,24 +1862,23 @@ class Section(SECTION_BASE):
         except AttributeError:
             raise AttributeError(name) from None
         self._check_alive()
-        try:
-            value = getattr(self(0.5), name)
-        except AttributeError:
-            if _get_symbol_info(name) is None:
-                raise AttributeError(
-                    f"'nrn.Section' object has no attribute '{name}'"
-                ) from None
-            raise
-        cls = value.__class__
-        if cls is float:
-            return value
-        if cls is _ArrayRangeVar:
+        # As NEURON's section_getattro: only a range variable (diam, cm, v,
+        # i_cap, a mechanism's RANGE names) reads through to the middle
+        # segment. Not area, ri, x, _ref_*, sec, point_processes or a
+        # mechanism name (sec.hh).
+        info = _SYMBOL_INFO_CACHE.get(name)
+        if info is None:
+            info = _get_symbol_info(name)
+        if info is None or info[1] != TYPES.RANGEVAR:
+            if name == "__dict__":
+                return dict.fromkeys(("L", "Ra", "nseg", "rallbranch"))
+            if not name.isascii():
+                raise TypeError("attribute name must be a string")
+            raise AttributeError(f"'nrn.Section' object has no attribute '{name}'")
+        value = getattr(self(0.5), name)
+        if value.__class__ is _ArrayRangeVar:
             # Same layout: re-class the fresh wrapper instead of rebuilding it.
             value.__class__ = _SectionArrayRangeVar
-        elif cls is _PACKAGE.mechanism.Mechanism:
-            # NEURON has no sec.hh: reaching the middle segment's mechanism
-            # turned sec.hh.gnabar = x into a one-segment write.
-            raise AttributeError(f"'nrn.Section' object has no attribute '{name}'")
         return value
 
     def __contains__(self, obj):
@@ -1815,10 +1893,13 @@ class Section(SECTION_BASE):
         def segments():
             # Real NEURON re-evaluates nseg after each yield, so rediscretizing
             # a section changes both the remaining midpoints and the stopping
-            # point.
+            # point. A section deleted meanwhile ends the loop, as in NEURON.
             i = 0
             while True:
-                nseg = self.nseg
+                try:
+                    nseg = self.nseg
+                except ReferenceError:
+                    return
                 if i >= nseg:
                     return
                 yield self((i + 0.5) / nseg)
@@ -2071,6 +2152,7 @@ class Section(SECTION_BASE):
         # Not between another thread's push and pop, which would pop this one.
         with HOC_LOCK:
             _nrn_section_push(self._sec)
+        return self
 
     def same(self, other):
         """Return True if *other* refers to the same underlying section."""
@@ -2346,24 +2428,24 @@ class Section(SECTION_BASE):
         return _PACKAGE._n.diam3d(i, sec=self)
 
     def pt3dadd(self, x, y, z, d):
-        return _PACKAGE._n.pt3dadd(x, y, z, d, sec=self)
+        _PACKAGE._n.pt3dadd(x, y, z, d, sec=self)
 
     def pt3dchange(self, i, *args):
         return _PACKAGE._n.pt3dchange(i, *args, sec=self)
 
     def pt3dclear(self, *args):
-        return _PACKAGE._n.pt3dclear(*args, sec=self)
+        return int(_PACKAGE._n.pt3dclear(*args, sec=self))
 
     def pt3dinsert(self, i, x, y, z, d):
-        return _PACKAGE._n.pt3dinsert(i, x, y, z, d, sec=self)
+        _PACKAGE._n.pt3dinsert(i, x, y, z, d, sec=self)
 
     def pt3dremove(self, i):
         """remove the ith point"""
 
-        return _PACKAGE._n.pt3dremove(i, sec=self)
+        _PACKAGE._n.pt3dremove(i, sec=self)
 
     def pt3dstyle(self, *args):
-        return _PACKAGE._n.pt3dstyle(*args, sec=self)
+        return bool(_PACKAGE._n.pt3dstyle(*args, sec=self))
 
     def n3d(self):
         return int(_PACKAGE._n.n3d(sec=self))

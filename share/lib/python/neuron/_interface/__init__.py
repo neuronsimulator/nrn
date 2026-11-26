@@ -65,6 +65,7 @@ from .nrnref import (
     NrnObjectRef,
     NrnRangeVarRef,
     NrnStrRef,
+    NrnTopStrRef,
     NrnVarRef,
     _array_index,
     _flat_index,
@@ -89,6 +90,7 @@ from .utils import (
     READ_ONLY_FUNCTIONS,
     TEMPLATE_CONVERTERS,
     FuncWrapper,
+    _NO_SEC,
     _check_sec_kwarg,
     _is_python_object_arg,
     _pop_pushed_section,
@@ -550,6 +552,9 @@ class NEURON(metaclass=_Singleton):
     def __dir__(self):
         # HOC symbols plus Python-side helpers. _Singleton's metaclass does not
         # expose these via dict(type(self)), so list them explicitly.
+        # A fresh scan: HOC defined after import (load_file, h('x = 1')) is
+        # listed, as in NEURON. A rare call, so the walk costs nothing hot.
+        self._top_level = list_functions()
         names = {name for name in self._top_level if not name.startswith(_HIDDEN)}
         names.update(
             name
@@ -597,6 +602,20 @@ class NEURON(metaclass=_Singleton):
                         if array is not None:
                             return array
                         return NrnVarRef(base_name)
+                    if _type == TYPES.STRING:
+                        return NrnTopStrRef(base_name)
+                    if _type == TYPES.VAR and _subtype == 1:
+                        # NEURON returns the integer itself, not a pointer.
+                        return getattr(self, base_name)
+                    if _type == TYPES.RANGEVAR:
+                        raise TypeError(
+                            f"Cannot access {name} (NEURON type {_type}) directly."
+                        )
+                    if _type != TYPES.VAR:
+                        raise TypeError(
+                            f"Hoc pointer error, {base_name} is not a hoc "
+                            "variable or range variable or strdef"
+                        )
             else:
                 if name in self._top_level:
                     _type, _subtype = self._top_level[name]
@@ -665,7 +684,11 @@ class NEURON(metaclass=_Singleton):
                         bumps = _type != TYPES.BLTIN and name not in READ_ONLY_FUNCTIONS
 
                         @hoc_locked
-                        def nrn_func(*args, sec=None):
+                        def nrn_func(*args, sec=_NO_SEC):
+                            if sec is _NO_SEC:
+                                sec = None
+                            elif sec is None:
+                                raise TypeError("sec is not a Section")
                             if _type == TYPES.BLTIN:
                                 if len(args) != 1:
                                     raise RuntimeError(
@@ -1033,7 +1056,7 @@ class NEURON(metaclass=_Singleton):
         return None
 
     @hoc_locked
-    def __call__(self, cmd, *, sec=None, raise_on_error=False, _no_epoch_bump=False):
+    def __call__(self, cmd, *, sec=_NO_SEC, raise_on_error=False, _no_epoch_bump=False):
         # Returns True on success, False on a HOC execution error. Like real
         # NEURON's h(), HOC errors print to stderr and do not raise: ModelDB
         # init.hoc files trigger warnings real NEURON swallows.
@@ -1043,8 +1066,8 @@ class NEURON(metaclass=_Singleton):
         if not isinstance(cmd, str):
             got = "None" if cmd is None else type(cmd).__name__
             raise TypeError(f"argument 1 must be str, not {got}")
-        if sec is not None:
-            _check_sec_kwarg(sec)  # Before pushing it.
+        if sec is not _NO_SEC:
+            _check_sec_kwarg(sec)  # Before pushing it; None is refused.
             _nrn_section_push(sec._sec)
         try:
             cmd = cmd.encode("utf-8")
@@ -1074,7 +1097,7 @@ class NEURON(metaclass=_Singleton):
                 raise RuntimeError(f"HOC execution failed: {cmd!r}")
             return ret == 0
         finally:
-            if sec is not None:
+            if sec is not _NO_SEC:
                 _pop_pushed_section(sec._sec)
 
     def cas(self):

@@ -88,6 +88,7 @@ from .nrnref import (
 
 from .utils import (
     _is_python_object_arg,
+    _NO_SEC,
     _check_sec_kwarg,
     _check_segment_arg,
     _name_error,
@@ -435,6 +436,15 @@ def _other_hoc_pointer(other):
     return other._obj if isinstance(other, Object) else None
 
 
+def _object_order(obj, other, compare):
+    # NEURON's hocobj_richcmp: wrappers order by HOC object address, and
+    # any other object by its own address; a reference is incomparable.
+    if isinstance(other, (NrnRef, _utils.FuncWrapper)):
+        raise TypeError("this comparison is undefined")
+    pointer = _other_hoc_pointer(other)
+    return compare(obj._obj or 0, id(other) if pointer is None else pointer)
+
+
 class _UndefinedHocName(LookupError, AttributeError):
     """Assignment of a name that is not a member of a template or
     point-process object.
@@ -483,7 +493,7 @@ class Object(OBJECT_BASE, metaclass=_HocClassMeta):
     # (``cls[i]``) and the user-construction path in __init__.
     _hoc_class_name = None
 
-    def __init__(self, *args, sec=None):
+    def __init__(self, *args, sec=_NO_SEC):
         # User construction only: _hoc_class_name names the template and
         # _construct_hoc_object pushes the args. Code holding a raw HOC obj*
         # wraps it with _wrap. A ctypes.c_void_p argument is a Python object
@@ -495,6 +505,10 @@ class Object(OBJECT_BASE, metaclass=_HocClassMeta):
                 "instantiate via n.<ClassName>(...) or subclass a "
                 "class returned by n.<ClassName>."
             )
+        if sec is _NO_SEC:
+            sec = None
+        elif sec is None:
+            raise TypeError("sec is not a Section")
         self._construct(class_name, args, sec)
 
     def _construct(self, class_name, args, sec=None):
@@ -604,6 +618,18 @@ class Object(OBJECT_BASE, metaclass=_HocClassMeta):
     def __hash__(self):
         # Must stay consistent with __eq__: same pointer => same hash.
         return hash(self._obj) if self._obj else 0
+
+    def __lt__(self, other):
+        return _object_order(self, other, operator.lt)
+
+    def __le__(self, other):
+        return _object_order(self, other, operator.le)
+
+    def __gt__(self, other):
+        return _object_order(self, other, operator.gt)
+
+    def __ge__(self, other):
+        return _object_order(self, other, operator.ge)
 
     def __copy__(self):
         """Reject copying HOC objects other than Vector.
@@ -943,10 +969,7 @@ class Object(OBJECT_BASE, metaclass=_HocClassMeta):
         if _write_object_alias(self, name, val):
             return
         if member is not None:
-            raise AttributeError(
-                f"Cannot set '{name}': not a settable HOC property (RANGEVAR/VAR) "
-                f"of {self._class_name}"
-            )
+            raise TypeError("not assignable")  # NEURON's text for a method
         raise _unknown_name_error(self, name)
 
     def __getattr__(self, name):
@@ -1082,7 +1105,11 @@ class Object(OBJECT_BASE, metaclass=_HocClassMeta):
                 bumps = name not in READ_ONLY_METHODS.get(self._class_name, ())
 
                 @hoc_locked
-                def method_func(*args, sec=None):
+                def method_func(*args, sec=_NO_SEC):
+                    if sec is _NO_SEC:
+                        sec = None
+                    elif sec is None:
+                        raise TypeError("sec is not a Section")
                     if pysec_name_change:
                         try:
                             ref_sec = _steer_sectionref(self, "sec")
@@ -1687,12 +1714,15 @@ def _vector_values(seq):
     try:
         return array.array("d", values)
     except TypeError:
+        # A size-1 array item, as the rows of an (n, 1) array, is a number to
+        # NEURON, which reads the array's doubles.
+        values = [v.item() if getattr(v, "size", 0) == 1 else v for v in values]
         for i, value in enumerate(values):
             try:
                 float(value)
             except (TypeError, ValueError):
                 raise RuntimeError(f"item {i} is not a valid number") from None
-        raise
+        return array.array("d", values)
 
 
 def _unreadable_vector_source(value):
