@@ -10,7 +10,10 @@
 //   range variable's symbol.
 // - Nothing is raised here. Anything else, and every failure, calls the interface's Python method
 //   (_getattr, _setattr, _getitem, _setitem), which raises NEURON's error.
-// - NRN_PYTHON_FAST_PATH=0 leaves the slots out, so the Python classes are as without it.
+// - Only exact instances of the interface's Segment, Mechanism and Vector take it: a subclass
+//   always goes through the Python methods.
+// - NRN_PYTHON_FAST_PATH=0 (exactly "0", as NEURON compares its other switches, e.g.
+//   NRN_NOGUI=1) leaves the slots out, so the Python classes are as without it.
 #include <../../nrnconf.h>
 
 #include <cmath>
@@ -36,6 +39,9 @@ struct Tables {
     // The interface's model epoch (a list of one element) and section address -> nseg generation.
     // Set once as class attributes of the Segment base; the interface never rebinds them.
     PyObject *epoch{}, *nseg_generation{};
+    // The interface's own classes: only exact instances take the fast path, so a subclass always
+    // has the Python methods' behaviour (its class attributes first, then _getattr).
+    PyObject *segment_class{}, *mechanism_class{}, *vector_class{};
     PyObject *s_getattr{}, *s_setattr{}, *s_getitem{}, *s_setitem{}, *zero{};
 } t;
 
@@ -217,11 +223,21 @@ int setattr_fallback(PyObject* self, PyObject* name, PyObject* value) {
 
 using Lookup = PyObject* (*) (PyObject*, PyObject*);
 using Locate = bool (*)(PyObject*, Section*&, double&);
+using Getattro = PyObject* (*) (PyObject*, PyObject*);
 
-/// tp_getattro of Segment and Mechanism.
-template <Lookup lookup, Locate locate, bool segment>
+/// Is self an instance of exactly the interface's class (set as a class attribute of the base)?
+bool exact(PyObject* self, PyObject*& cls, const char* name) {
+    return type_of(self) == shared(cls, name);
+}
+
+/// tp_getattro of Segment and Mechanism. entry is the slot function itself: a Python subclass
+/// that defines __getattr__ reaches it through CPython's hook, which then calls that __getattr__,
+/// as without the fast path.
+template <Lookup lookup, Locate locate, bool segment, Getattro entry>
 PyObject* getattro(PyObject* self, PyObject* name) {
-    if (is_str(name) && !internal(name)) {
+    bool const fast = segment ? exact(self, t.segment_class, "_fast_segment_class")
+                              : exact(self, t.mechanism_class, "_fast_mechanism_class");
+    if (fast && is_str(name) && !internal(name)) {
         forget_moved_symbols();
         if (auto* const address = lookup(self, name)) {
             Section* sec;
@@ -240,18 +256,25 @@ PyObject* getattro(PyObject* self, PyObject* name) {
         }
     }
     auto* const found = py.PyObject_GenericGetAttr(self, name);
-    if (found || !py.PyErr_ExceptionMatches(py.PyExc_AttributeError)) {
-        return found;
+    if (found || !py.PyErr_ExceptionMatches(py.PyExc_AttributeError) ||
+        (!fast &&
+         py.PyType_GetSlot(type_of(self), stable::tp_getattro) != reinterpret_cast<void*>(entry))) {
+        return found;  // the subclass's own __getattr__ comes next
     }
     py.PyErr_Clear();
     return getattr_fallback(self, name);
 }
 
 /// tp_setattro of Segment and Mechanism.
-template <Lookup lookup, Locate locate>
+template <Lookup lookup, Locate locate, bool segment>
 int setattro(PyObject* self, PyObject* name, PyObject* value) {
+    bool const fast = segment ? exact(self, t.segment_class, "_fast_segment_class")
+                              : exact(self, t.mechanism_class, "_fast_mechanism_class");
     if (!value || !is_str(name) || internal(name)) {
         return py.PyObject_GenericSetAttr(self, name, value);
+    }
+    if (!fast) {
+        return setattr_fallback(self, name, value);
     }
     forget_moved_symbols();
     if (auto* const address = lookup(self, name)) {
@@ -283,7 +306,7 @@ PyObject* iterator_self(PyObject* self) {
 // As NEURON: nseg is read again at each step, and a deleted section ends the loop.
 PyObject* iterator_next(PyObject* self) {
     auto* const it = iterator(self);
-    Section* const sec = section(it->section);
+    Section* const sec = it->section ? section(it->section) : nullptr;
     if (!sec || !nrn_section_is_active(sec) || it->i >= nrn_nseg_get(sec)) {
         return nullptr;
     }
@@ -324,7 +347,10 @@ cTemplate* vector_template{};
 
 /// The element of a Vector for an exact int key in range, or null.
 double* element(PyObject* self, PyObject* key) {
-    Object* const o = type_of(key) == py.PyLong_Type ? hoc_object(self) : nullptr;
+    Object* const o = type_of(key) == py.PyLong_Type &&
+                              exact(self, t.vector_class, "_fast_vector_class")
+                          ? hoc_object(self)
+                          : nullptr;
     if (!o) {
         return nullptr;
     }
@@ -368,6 +394,13 @@ int vector_setitem(PyObject* self, PyObject* key, PyObject* value) {
     return status(py.PyObject_CallMethodObjArgs(self, t.s_setitem, key, value, nullptr));
 }
 
+// The sequence protocol (PySequence_Check, reversed, the C bisect) as without the fast path:
+// through the same code as vec[i].
+PyObject* vector_item(PyObject* self, std::ptrdiff_t i) {
+    Ref const key{py.PyLong_FromLongLong(i)};
+    return key ? vector_getitem(self, key.get()) : nullptr;
+}
+
 PyObject* table(const char* name) {
     Ref dict{py.PyDict_New()};
     if (!dict || py.PyObject_SetAttrString(types.segment, name, dict.get())) {
@@ -383,19 +416,19 @@ stable::Method section_methods[]{
     {nullptr, nullptr, 0, nullptr}};
 
 PyObject* segment_getattro(PyObject* self, PyObject* name) {
-    return getattro<rangevar_symbol, segment_location, true>(self, name);
+    return getattro<rangevar_symbol, segment_location, true, segment_getattro>(self, name);
 }
 
 int segment_setattro(PyObject* self, PyObject* name, PyObject* value) {
-    return setattro<rangevar_symbol, segment_location>(self, name, value);
+    return setattro<rangevar_symbol, segment_location, true>(self, name, value);
 }
 
 PyObject* mechanism_getattro(PyObject* self, PyObject* name) {
-    return getattro<mechanism_symbol, mechanism_location, false>(self, name);
+    return getattro<mechanism_symbol, mechanism_location, false, mechanism_getattro>(self, name);
 }
 
 int mechanism_setattro(PyObject* self, PyObject* name, PyObject* value) {
-    return setattro<mechanism_symbol, mechanism_location>(self, name, value);
+    return setattro<mechanism_symbol, mechanism_location, false>(self, name, value);
 }
 
 bool enabled() {
@@ -423,13 +456,16 @@ bool make_types() {
     static stable::Spec iterator_spec{"nrn._SegmentIterator",
                                       sizeof(SegmentIterator),
                                       0,
-                                      static_cast<unsigned>(stable::tpflags_have_gc),
+                                      // Only Section._segments() makes one.
+                                      static_cast<unsigned>(stable::tpflags_have_gc |
+                                                            stable::tpflags_disallow_instantiation),
                                       iterator_slots};
     iterator_type = py.PyType_FromSpec(&iterator_spec);
 
     // No fields of its own: the interface's Vector derives from it and from its Object class.
     static Slot vector_slots[]{{stable::mp_subscript, reinterpret_cast<void*>(vector_getitem)},
                                {stable::mp_ass_subscript, reinterpret_cast<void*>(vector_setitem)},
+                               {stable::sq_item, reinterpret_cast<void*>(vector_item)},
                                {0, nullptr}};
     // The collector's flag and functions are inherited from the base.
     static stable::Spec vector_spec{

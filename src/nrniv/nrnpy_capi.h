@@ -112,7 +112,8 @@ namespace neuron::python {
     X(std::ptrdiff_t, PyLong_AsSsize_t, (PyObject*))                              \
     X(PyObject*, PyType_FromSpecWithBases, (void*, PyObject*))                    \
     X(const char*, PyUnicode_AsUTF8AndSize, (PyObject*, std::ptrdiff_t*))         \
-    X(void, PyDict_Clear, (PyObject*))
+    X(void, PyDict_Clear, (PyObject*))                                            \
+    X(void*, PyType_GetSlot, (PyObject*, int))
 
 // Types and exceptions, data in the stable ABI. PyExc_* are pointers to the objects.
 #define NRNPY_TYPES(X)                                                            \
@@ -174,11 +175,12 @@ constexpr int tp_clear = 51, tp_dealloc = 52, tp_init = 60, tp_new = 65, tp_trav
               tp_members = 72;
 // The fast path (nrnpy_fast.cpp): Py_tp_*, Py_mp_*, METH_*
 constexpr int tp_getattro = 58, tp_setattro = 69, tp_iter = 62, tp_iternext = 63, tp_methods = 64,
-              mp_subscript = 5, mp_ass_subscript = 3;
+              mp_subscript = 5, mp_ass_subscript = 3, sq_item = 44;
 constexpr int meth_noargs = 0x0004;
 constexpr int t_object_ex = 16;  // Py_T_OBJECT_EX
 // Py_TPFLAGS_*
-constexpr unsigned long tpflags_basetype = 1ul << 10, tpflags_have_gc = 1ul << 14,
+constexpr unsigned long tpflags_disallow_instantiation = 1ul << 7,  // 3.10+
+                        tpflags_basetype = 1ul << 10, tpflags_have_gc = 1ul << 14,
                         tpflags_bytes_subclass = 1ul << 27, tpflags_unicode_subclass = 1ul << 28;
 constexpr int buf_write = 0x200;  // PyBUF_WRITE
 constexpr int file_input = 257;   // Py_file_input
