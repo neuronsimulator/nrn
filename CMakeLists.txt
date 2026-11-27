@@ -175,17 +175,16 @@ mark_as_advanced(NRN_BINARY_DIST_BUILD)
 #   - NRN_ENABLE_PYTHON_DYNAMIC=OFF  : libnrniv is linked against a single Python version, which
 #                                      can be steered with PYTHON_EXECUTABLE. Import accepts only
 #                                      that version, including when NRN_ENABLE_ABI3=ON.
-#   - NRN_ENABLE_PYTHON_DYNAMIC=ON   : libnrniv is not linked against Python.
-#                                      NRN_ENABLE_ABI3=ON  : one libnrnpython.abi3 (CPython 3.12+
-#                                      limited API, the cp312-abi3 wheel); extra NRN_PYTHON_DYNAMIC
-#                                      entries are for nrniv -python interpreter search / tests.
-#                                      NRN_ENABLE_ABI3=OFF : distinct libnrnpythonX.Y per configured
-#                                      major.minor. Linked against libpython only if
-#                                      NRN_LINK_AGAINST_PYTHON is true (default on Windows).
-#                                      ABI3 and dynamic together reject that link on Unix:
-#                                      a versioned libpython is not cross-version safe.
-#                                      nrniv/special still works in the absence of Python, and
-#                                      dynamically loads libnrnpython.abi3 or libnrnpythonX.Y.
+#   - NRN_ENABLE_PYTHON_DYNAMIC=ON   : libnrniv is not linked against Python: nrniv/special finds a
+#                                      libpython when it needs one. The extension modules of the
+#                                      neuron package are built for CPython 3.12+ (limited API,
+#                                      the cp312-abi3 wheel) with NRN_ENABLE_ABI3=ON; extra
+#                                      NRN_PYTHON_DYNAMIC entries are then for nrniv -python's
+#                                      interpreter search and tests. With NRN_ENABLE_ABI3=OFF they
+#                                      are built for each configured major.minor. They are linked
+#                                      against libpython only if NRN_LINK_AGAINST_PYTHON is true
+#                                      (default on Windows). ABI3 and dynamic together reject that
+#                                      link on Unix: a versioned libpython is not cross-version safe.
 #   - NRN_PYTHON_DYNAMIC=pythonX;... : semicolon separated list of Python versions used when
 #                                      NRN_ENABLE_PYTHON_DYNAMIC=ON, if not set then it defaults to
 #                                      PYTHON_EXECUTABLE. This must include all major.minor
@@ -228,7 +227,7 @@ else()
   set(NRN_PYTHON_DYNAMIC_SH false)
 endif()
 option(NRN_LINK_AGAINST_PYTHON
-       "Link libnrnpythonX.Y against libpythonX.Y when NRN_ENABLE_PYTHON_DYNAMIC=ON"
+       "Link Python extension modules against libpythonX.Y when NRN_ENABLE_PYTHON_DYNAMIC=ON"
        ${NRN_LINK_AGAINST_PYTHON_DEFAULT})
 set(NRN_PYTHON_DYNAMIC
     ""
@@ -442,7 +441,7 @@ if(NRN_ENABLE_PYTHON)
     message(
       FATAL_ERROR
         "NRN_ENABLE_ABI3=ON with NRN_ENABLE_PYTHON_DYNAMIC=ON cannot set "
-        "NRN_LINK_AGAINST_PYTHON=ON on Unix. That links nrnpython and hoc to a "
+        "NRN_LINK_AGAINST_PYTHON=ON on Unix. That links extension modules to a "
         "versioned libpython, while the import gate treats the build as safe on "
         "any GIL CPython 3.12 or newer 3.x. Leave NRN_LINK_AGAINST_PYTHON=OFF, or use "
         "NRN_ENABLE_ABI3=OFF.")
@@ -643,7 +642,7 @@ if(NRN_ENABLE_PYTHON)
   # Make sure the USE_PYTHON macro is defined in the C++ code
   list(APPEND NRN_COMPILE_DEFS USE_PYTHON)
 endif()
-# nanobind: importable _nmodl/hoc and CLI libpywrapper (limited-API embed).
+# nanobind: importable _nmodl and CLI libpywrapper (limited-API embed).
 if(NRN_ENABLE_PYTHON
    OR NRN_ENABLE_NMODL
    OR NRN_ENABLE_CORENEURON)
@@ -692,9 +691,8 @@ endif()
 # =============================================================================
 if(NRN_ENABLE_SHARED)
   set(NRN_LIBRARY_TYPE "SHARED")
-  # MSVC does not export globals from a DLL; Unix .so and MinGW do. DYNAMIC Python
-  # (nrnpythonX.Y.dll) and hoc.pyd consume that ABI. Data symbols still need NRN_DLLSYM (CMake does
-  # not put data in the generated .def).
+  # MSVC does not export globals from a DLL; Unix .so and MinGW do. Mechanism libraries consume that
+  # ABI. Data symbols still need NRN_DLLSYM (CMake does not put data in the generated .def).
   if(MSVC)
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
   endif()
@@ -1065,9 +1063,9 @@ if(NRN_ENABLE_DOCS)
     # a normal build, this means we need to schedule the documentation targets sufficiently late in
     # the build.
     foreach(notebook ${all_notebooks})
-      add_dependencies(${notebook} _nmodl hoc_module rxdmath nrnivmodl_dependency)
+      add_dependencies(${notebook} _nmodl nrniv_lib nrn_modlreg_stub rxdmath nrnivmodl_dependency)
     endforeach()
-    add_dependencies(sphinx _nmodl hoc_module rxdmath)
+    add_dependencies(sphinx _nmodl nrniv_lib nrn_modlreg_stub rxdmath)
     add_dependencies(doxygen nmodl_gen_sources)
   endif()
 

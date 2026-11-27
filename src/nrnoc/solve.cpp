@@ -244,7 +244,7 @@ void distance(void) {
             mode = 2;
             Object* o = *hoc_objgetarg(1);
             my_origin_sec = (Section*) 0;
-            if (nrnpy_o2loc2_p_) {
+            if (o && nrnpy_o2loc2_p_) {
                 (*nrnpy_o2loc2_p_)(o, &my_origin_sec, &d_origin);
             }
             if (!my_origin_sec) {
@@ -537,7 +537,7 @@ static void section_unlink(Section* sec) /* other sections no longer reference t
 {
     /* only sections that are explicitly connected to this are disconnected */
     Section* child;
-    tree_changed = 1;
+    nrn_tree_changed();
     /* disconnect the sections connected to this at the parent end */
     for (child = sec->child; child; child = child->sibling) {
         nrn_disconnect(child);

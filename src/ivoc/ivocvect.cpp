@@ -116,7 +116,7 @@ extern Symlist* hoc_top_level_symlist;
 NRN_DLLSYM IvocVect* (*nrnpy_vec_from_python_p_)(void*);
 NRN_DLLSYM Object** (*nrnpy_vec_to_python_p_)(void*);
 NRN_DLLSYM Object** (*nrnpy_vec_as_numpy_helper_)(int, double*);
-NRN_DLLSYM double (*nrnpy_call_func)(Object*, double);
+NRN_DLLSYM void (*nrnpy_vec_apply_p_)(IvocVect*, Object* f, int start, int end);
 
 static int narg() {
     int i = 0;
@@ -2062,11 +2062,8 @@ static Object** v_apply(void* v) {
             hoc_pushx(x->elem(i));
             x->elem(i) = hoc_call_objfunc(s, 1, ob);
         }
-    } else if (hoc_is_object_arg(1) && nrnpy_call_func) {
-        Object* funcobj = *hoc_objgetarg(1);
-        for (int i = start; i <= end; i++) {
-            x->elem(i) = nrnpy_call_func(funcobj, x->elem(i));
-        }
+    } else if (hoc_is_object_arg(1) && nrnpy_vec_apply_p_) {
+        nrnpy_vec_apply_p_(x, *hoc_objgetarg(1), start, end);
     } else {
         hoc_execerror("apply: first argument must be a HOC string or a Python callable", nullptr);
     }

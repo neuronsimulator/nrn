@@ -189,6 +189,10 @@ if(NRN_WINDOWS_BUILD)
   list(APPEND NRN_NRNIV_LIB_SRC_FILES ${PROJECT_SOURCE_DIR}/src/mswin/dlfcn.c)
 endif()
 
+if(NRN_ENABLE_PYTHON)
+  list(APPEND NRN_NRNIV_LIB_SRC_FILES ${NRN_RXD_SRC_FILES} ${NRN_PYTHON_SRC_FILES})
+endif()
+
 if(NOT NRN_ENABLE_INTERVIEWS)
   list(APPEND NRN_NRNIV_LIB_SRC_FILES ${NRN_IVOS_SRC_FILES})
 endif()
@@ -218,7 +222,6 @@ set(NRN_INCLUDE_DIRS
     ${PROJECT_BINARY_DIR}/src/nrncvode
     ${PROJECT_BINARY_DIR}/src/nrnmpi
     ${PROJECT_BINARY_DIR}/src/nrnoc
-    ${PROJECT_BINARY_DIR}/src/nrnpython
     ${PROJECT_BINARY_DIR}/src/oc
     ${PROJECT_BINARY_DIR}/src/parallel
     ${PROJECT_BINARY_DIR}/src/sundials
@@ -227,7 +230,6 @@ set(NRN_INCLUDE_DIRS
     ${PROJECT_SOURCE_DIR}/src/gnu
     ${PROJECT_SOURCE_DIR}/src/nrncvode
     ${PROJECT_SOURCE_DIR}/src/nrnmpi
-    ${PROJECT_SOURCE_DIR}/src/nrnpython
     ${PROJECT_SOURCE_DIR}/src/parallel
     ${PROJECT_SOURCE_DIR}/src/scopmath
     ${PROJECT_SOURCE_DIR}/src/sparse
@@ -424,7 +426,8 @@ target_include_directories(nrniv_lib PUBLIC $<BUILD_INTERFACE:${NRN_OC_GEN}>)
 target_include_directories(nrniv_lib
                            INTERFACE $<INSTALL_INTERFACE:${NRN_INSTALL_DATA_PREFIX}include>)
 if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_PYTHON_DYNAMIC)
-  target_link_libraries(nrniv_lib PRIVATE nrnpython)
+  # nrnivmodl's `special` links libnrniv without Python's libraries.
+  target_link_libraries(nrniv_lib PRIVATE ${NRN_DEFAULT_PYTHON_LIBRARIES})
 endif()
 if(NRN_ENABLE_THREADS)
   target_link_libraries(nrniv_lib PUBLIC Threads::Threads)

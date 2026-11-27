@@ -9,6 +9,15 @@ _Release Date_ : TBD
   (`pip install neuron` / `neuron-nightly`). `nrnivmodl` and RxD
   reaction compilation on that wheel use Microsoft `cl.exe`
   (Build Tools), not the MinGW toolchain bundled with `setup.exe` (#3861)
+- `from neuron import h` is a Python interface on NEURON's C API (`neuron._interface`), in
+  `python` and in `nrniv` alike. NEURON calls Python through the stable ABI, and `nrniv` starts
+  Python when something first uses it.
+
+### Removed
+- `libnrnpython` and the compiled `hoc` module. `hoc` and `nrn` are Python modules of the interface
+- for code compiled against NEURON: `nrnpy_reg_mech_p_`, `py_exposed_classes`,
+  `nrn_is_python_extension`, and `hpoasgn` and `py2n_component` of `neuron::python::methods`
+
 
 
 ## 9.0.2

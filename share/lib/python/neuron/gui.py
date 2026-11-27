@@ -14,7 +14,11 @@ import time
 import atexit
 
 # recursive, especially in case stop/start pairs called from doNotify code.
-_lock = threading.RLock()
+# It is the interface's HOC lock: doNotify takes that one too, and with two
+# locks a stop() or disabled() from code already holding the HOC lock (a HOC
+# callback, rxd's initialization) waited for this one while the timer thread
+# held it and waited for the HOC lock.
+from neuron._interface.api import HOC_LOCK as _lock
 
 
 def stop():
@@ -96,18 +100,28 @@ class LoopTimer(threading.Thread):
         self._running = threading.Event()
         threading.Thread.__init__(self, daemon=True)
 
-    def run(self):
-        h.nrniv_bind_thread(threading.current_thread().ident)
+    def start(self):
+        super().start()
+        # Not in the new thread: this one may hold the interface's HOC lock (the
+        # first import of neuron.gui can be in a HOC call), and waits for it.
+        h.nrniv_bind_thread(self.ident)
         self.started = True
         self._running.set()
+
+    def run(self):
+        self._running.wait()
         while self._running.is_set():
             self.fun()
             time.sleep(self.interval)
 
     def stop(self):
-        """Stop the timer thread and wait for it to terminate."""
+        """Stop the timer thread and wait (a bounded time) for it to end."""
         self._running.clear()
-        self.join()
+        # h.quit() runs the exit handlers, and so this, while it holds the
+        # interface's HOC lock. If the thread is waiting for that lock to call
+        # doNotify it can't finish, and an unbounded join hung the exit. A
+        # thread that isn't stuck ends within one interval.
+        self.join(timeout=1.0)
 
 
 if h.nrnversion(9) == "2":  # Launched with Python (instead of nrniv)
@@ -124,9 +138,6 @@ if h.nrnversion(9) == "2":  # Launched with Python (instead of nrniv)
             timer.stop()
 
     atexit.register(cleanup)
-
-    while not timer.started:
-        time.sleep(0.001)
 
 h.load_file("nrngui.hoc")
 

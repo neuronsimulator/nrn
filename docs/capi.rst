@@ -23,6 +23,8 @@ Initialization
     The arguments are passed to the NEURON simulator as if it was launched with that argv.
     The first argument is typically the program name (e.g., "NEURON").
     Some error messages may include the program name.
+    If NEURON is already running (``nrniv`` or an earlier call started it), this
+    does nothing and returns 0.
 
     **Example:**
     
@@ -87,6 +89,80 @@ Sections
         from neuron import n
         soma = n.Section('soma')
         dendrite = n.Section('dendrite')
+
+.. c:function:: bool nrn_section_owner_hooks_set(nrn_section_owner_name_func name, nrn_section_owner_cell_func cell, nrn_section_owner_cell_equals_func cell_equals, char* error_msg, size_t error_msg_size)
+
+    Install the hooks NEURON uses for sections owned by an object of the calling
+    interface (see :c:func:`nrn_section_new_owned`), such as a Python or MATLAB
+    ``Section``. NEURON's Python interface installs them for its sections.
+    Only one set of hooks can be installed at a time. Each hook gets the
+    ``Section*``; :c:func:`nrn_section_owner_get` gives its owner.
+
+    :param name: Returns the section's name, such as ``"cell.soma"``. Called only
+        for owned sections, and can be called inside :c:func:`nrn_section_new_owned`
+        (before it returns) and :c:func:`nrn_section_owned_release`. It must not
+        return ``NULL``, the string must stay valid until the next call, and a
+        section's name must not change while it is owned (the ``_pysec`` lookup
+        is keyed by it). Keep it under 190 characters: core copies it into fixed
+        buffers. A section without a name must be named
+        ``__nrnsec_0x<address>``; such
+        sections are left out of the ``_pysec`` lookup.
+    :param cell: Returns the owning cell with a new reference, or ``NULL``. Called
+        for any section, so it must return ``NULL`` for sections it does not own.
+    :param cell_equals: Returns nonzero if the section belongs to the given cell.
+    :param error_msg: Buffer for a diagnostic if installation fails.
+    :param error_msg_size: Size of ``error_msg``.
+    :returns: ``true`` on success. ``false`` if a hook is ``NULL``, if different
+        hooks are already installed (see :c:func:`nrn_section_owner_hooks_clear`).
+
+    The hooks are used by :func:`secname`, :func:`section_owner`,
+    :meth:`ParallelContext.gid2cell`, :meth:`NetCon.precell` and
+    ``precelllist``, :meth:`CVode.statename`, the ``_pysec`` name lookup and
+    :class:`BBSaveState`. They must not raise HOC errors. :class:`BBSaveState`
+    saves an owned section's cell only if it is a ``PythonObject``; for any other
+    cell the save stops with a HOC error. It drops a reference to what the cell hook returned, so the hook
+    must return a new wrapper each time (a cell that is a long-lived HOC object
+    loses a reference).
+
+.. c:function:: bool nrn_section_owner_hooks_clear(char* error_msg, size_t error_msg_size)
+
+    Remove the installed section owner hooks, whoever installed them, so that
+    :c:func:`nrn_section_owner_hooks_set` can install others.
+
+    :param error_msg: Buffer for a diagnostic if the hooks are not removed.
+    :param error_msg_size: Size of ``error_msg``.
+    :returns: ``true`` on success. ``false`` while any owned section exists (by
+        any provider).
+
+.. c:function:: Section* nrn_section_new_owned(void* owner)
+
+    Create a section owned by an object of the calling interface. It has no HOC
+    name of its own; its name and cell come from the hooks installed with
+    :c:func:`nrn_section_owner_hooks_set`.
+
+    :param owner: Opaque pointer to the owning object, stored with the section.
+    :returns: The new section, or ``NULL`` if ``owner`` is ``NULL``, the hooks
+        installed are not the ones from :c:func:`nrn_section_owner_hooks_set`.
+
+    Call :c:func:`nrn_section_owned_release` when the owner is destroyed.
+
+.. c:function:: void* nrn_section_owner_get(Section* sec)
+
+    The owner a section was created with, for the hooks: it is available
+    inside :c:func:`nrn_section_new_owned` before that returns.
+
+    :param sec: A section, or ``NULL``.
+    :returns: The ``owner`` given to :c:func:`nrn_section_new_owned`, or ``NULL``
+        for a section that is not owned, has been deleted, or is ``NULL``.
+
+.. c:function:: void nrn_section_owned_release(Section* sec)
+
+    Release a section created with :c:func:`nrn_section_new_owned` when its owner
+    is destroyed. The section is freed; if HOC already deleted it
+    (``delete_section``), only the reference HOC kept for the owner is dropped.
+    The name hook is called once more, to remove the ``_pysec`` entry.
+
+    :param sec: The section, or ``NULL`` (no effect).
 
 .. c:function:: void nrn_section_connect(Section* child_sec, double child_x, Section* parent_sec, double parent_x)
 
@@ -572,6 +648,8 @@ Segments
 .. c:function:: void nrn_segment_diam_set(Section* sec, double x, double diam)
 
     Set the diameter of a segment (specified as normalized position x along the Section).
+    On a section with 3-d points whose diameters are pending (just after :func:`pt3dadd`), the
+    segment diameters are derived from the points first, as :c:func:`nrn_rangevar_set` does.
 
     :param sec: Pointer to the Section.
     :param x: Normalized position along Section (0.0 to 1.0).
@@ -660,6 +738,47 @@ Segments
     .. code-block:: python
 
         idx = soma(0.5).node_index()  # node index at middle of Section
+
+.. c:function:: int nrn_segment_mechanisms(Section* sec, double x, Symbol** mechanisms, int max)
+
+    List the mechanisms in the node of the segment at normalized position x,
+    in the order of the node's property list. That is the order in which
+    Python's ``for mech in seg`` yields density mechanisms; it depends on the
+    order the mechanisms were added to the node and can differ between nodes
+    of one Section after an ``nseg`` change. The list includes every property
+    of the node: built-in ones such as ``capacitance`` and ``morphology``, ions
+    and point processes as well as density mechanisms.
+
+    :param sec: Pointer to the Section.
+    :param x: Normalized position along Section (0.0 to 1.0).
+    :param mechanisms: Array that receives up to ``max`` mechanism symbols, or
+        ``NULL`` to only count them.
+    :param max: Size of ``mechanisms``.
+    :returns: The number of mechanisms in the node, which may exceed ``max``;
+        -1 if sec is NULL or has been deleted, or if x is outside 0 to 1 or NaN.
+        At x = 0 and x = 1 the node is the end node, as for :c:func:`nrn_segment_node_index`.
+        x = ``sec.orientation()`` (normally 0) of a child Section is the parent's
+        node it connects to, with that node's mechanisms. The other end of a child
+        Section and both ends of a root Section have no density mechanisms, with one
+        exception: if the Section has ``extracellular``, those end nodes list it too.
+        Otherwise they list only what was placed there, such as a point process at
+        that end, and the count is 0 when there is none.
+
+    **C Usage:**
+
+    .. code-block:: c
+
+        Symbol* mechs[32];
+        int n = nrn_segment_mechanisms(soma, 0.5, mechs, 32);
+        for (int i = 0; i < n && i < 32; ++i) {
+            printf("%s\n", nrn_symbol_name(mechs[i]));
+        }
+
+    **Python Equivalent:**
+
+    .. code-block:: python
+
+        names = [mech.name() for mech in soma(0.5)]  # density mechanisms only
 
 .. c:function:: void nrn_rangevar_push(Symbol* sym, Section* sec, double x)
 
@@ -767,6 +886,16 @@ Segments
         for seg in dend:
             seg.g_pas = 0.001  # S/cm²
 
+.. c:function:: const char* nrn_tree_setup(Section* sec, double x)
+
+    Set the section tree up, if the model has changed and the node at ``x`` needs it, as a call
+    with that location does: the one at the end of a section that is connected to its parent.
+    It is a HOC error if sections are connected in a loop; a call without ``_nothrow`` would
+    throw it.
+
+    :returns: NULL if the tree is set up, the error, or an empty string if the node at ``x``
+              does not need the tree. Valid until the next call.
+
 .. c:function:: int nrn_rangevar_get_nothrow(Symbol* sym, Section* sec, double x, int index, double* value, char* error_msg, size_t error_msg_size)
 
     Read element ``index`` of a range variable at position ``x``, reporting
@@ -797,6 +926,70 @@ Segments
         char err[256];
         if (nrn_rangevar_get_nothrow(nrn_symbol("xg"), soma, 0.5, 1, &value, err, sizeof(err))) {
             fprintf(stderr, "%s\n", err);
+        }
+
+.. c:function:: double nrn_rangevar_get_or_nan(Symbol* sym, Section* sec, double x)
+
+    Read a range variable at position ``x`` in one call, like
+    :c:func:`nrn_rangevar_get`, but return NaN instead of raising a HOC error
+    or throwing when the value cannot be read.
+
+    :param sym: Symbol of the range variable (e.g. ``v``, ``m_hh``).
+    :param sec: The section. A deleted section is allowed while the caller
+        still holds a reference to it (:c:func:`nrn_section_ref`).
+    :param x: Normalized position, 0 to 1.
+    :returns: The value, or NaN if it cannot be read.
+
+    A value that can be read is the same as HOC's ``sec.var(x)`` and
+    :c:func:`nrn_rangevar_get_nothrow` with index 0. As there, ``diam`` is
+    first recomputed from the 3-d points if they changed (which
+    :c:func:`nrn_rangevar_get` does not do). A ``diam`` of 0 or less found
+    then is set to 1e-6, as in HOC, and read as 1e-6 without HOC's error.
+
+    NaN is returned for every case :c:func:`nrn_rangevar_get_nothrow` reports
+    as an error: ``sym`` is null or not a range variable, ``sec`` is null or
+    deleted, ``x`` is outside [0, 1] or NaN, the mechanism is not inserted at
+    ``x``, a ``POINTER`` is not set or is opaque, and ``i_membrane_`` without
+    ``cvode.use_fast_imem(1)``. For an array range variable it reads element
+    0; use :c:func:`nrn_rangevar_get_nothrow` for the others.
+
+    A variable that holds NaN is also returned as NaN. A caller that needs to
+    tell the cases apart, or wants the error message, calls
+    :c:func:`nrn_rangevar_get_nothrow` only when it gets NaN, so the common
+    read stays one call. This suits an interface that cannot catch C++
+    exceptions, such as a ``ctypes`` binding.
+
+    **C Usage:**
+
+    .. code-block:: c
+
+        Symbol* v_sym = nrn_symbol("v");
+        double v = nrn_rangevar_get_or_nan(v_sym, soma, 0.5);
+        if (isnan(v)) {
+            char err[256];
+            if (nrn_rangevar_get_nothrow(v_sym, soma, 0.5, 0, &v, err, sizeof(err))) {
+                fprintf(stderr, "%s\n", err);
+            }
+        }
+
+.. c:function:: size_t nrn_kschan_symbol_changes(void)
+
+    How many times a ``KSChan`` has renamed one of its symbols in place
+    (:meth:`KSChan.name`, state names) or freed one (:meth:`KSChan.ion`,
+    :meth:`KSChan.remove_state`). A caller that keeps a ``Symbol*`` by name
+    looks each name up again with :c:func:`nrn_symbol` once the count has moved:
+    a kept symbol may now be another mechanism's variable, or freed memory. The
+    g/p switch of ``iv_type`` renames ``gmax`` to ``pmax`` in place without
+    counting: the symbol stays the same variable.
+
+    .. code-block:: c
+
+        size_t seen = nrn_kschan_symbol_changes();
+        Symbol* gmax = nrn_symbol("gmax_kA");  // kept by name
+        // ... HOC runs: KSChan.name("kB") ...
+        if (nrn_kschan_symbol_changes() != seen) {
+            gmax = nrn_symbol("gmax_kA");  // NULL now: the name is gone
+            seen = nrn_kschan_symbol_changes();
         }
 
 .. c:function:: int nrn_rangevar_set_nothrow(Symbol* sym, Section* sec, double x, int index, double value, char* error_msg, size_t error_msg_size)
@@ -1121,7 +1314,7 @@ hooks. When no provider is registered, ordinary template lookup is unchanged.
 
     The meanings of the symbol subtype code depends on the symbol type.
     For example, ``t`` is a built-in double variable and has a different subtype
-    than a user-created double variable.
+    than a user-created double variable. An NMODL ``POINTER`` (a range variable) has 4.
 
 .. c:function:: double* nrn_symbol_dataptr(const Symbol* sym)
 
@@ -1654,6 +1847,18 @@ hooks. When no provider is registered, ordinary template lookup is unchanged.
         vec.fill(0)         # Fill vector with zeros
         length = vec.size() # Get vector size
 
+.. c:function:: int nrn_method_call_number(Object* obj, Symbol* method_sym, int narg, double* result, char* error_msg, size_t error_msg_size)
+
+    :c:func:`nrn_method_call_nothrow` of a method that returns a number, which is popped
+    from the stack.
+
+    :param result: Where to put it.
+    :returns: -1 on error, with the arguments left on the stack as
+              :c:func:`nrn_method_call_nothrow` leaves them. -2 if the method ran but did not
+              return a number: its arguments and what it returned are off the stack. Otherwise
+              what the number is: 1 an integer and 2 a boolean, if the class is built in and the
+              method says so, else 0.
+
 .. c:function:: int nrn_function_call_nothrow(Symbol* sym, int narg, char* error_msg, size_t error_msg_size)
 
     Call a function by symbol without throwing exceptions.
@@ -1747,6 +1952,14 @@ hooks. When no provider is registered, ordinary template lookup is unchanged.
 
         :c:func:`nrn_object_ref`
 
+.. c:function:: Symbol* nrn_object_alias(Object* obj, const char* name)
+
+    Look up an alias made with :meth:`StringFunctions.alias`. No HOC code runs.
+
+    :param obj: Pointer to the object.
+    :param name: Name of the alias.
+    :returns: The alias's symbol, or NULL if the object has no alias of that name.
+
 .. c:function:: char const* nrn_class_name(const Object* obj)
 
     Get the class name of an object.
@@ -1822,6 +2035,113 @@ hooks. When no provider is registered, ordinary template lookup is unchanged.
 
         This function exists to avoid having to set a global reference point when using
         :func:`distance`.
+
+Python
+------
+
+For a Python interface to NEURON, in a build with ``NRN_ENABLE_PYTHON``. NEURON
+calls Python itself, through the functions of the running interpreter: a HOC
+``PythonObject`` (its attributes, items, methods and operators), callbacks such as
+:class:`FInitializeHandler`'s, and Python arguments of NEURON's own functions. The
+interface derives its classes of HOC objects, sections and segments from
+:c:func:`nrn_python_type`'s and registers them.
+
+These functions must be called with the GIL held, and return NULL (3 for
+``nrn_python_hook_set``) if there is no Python. Without an interface there is nothing
+to call them for.
+
+.. c:function:: PyObject* nrn_python_type(const char* name)
+
+    The base type of the interface's classes of ``"object"``, ``"section"`` or
+    ``"segment"``. It has the slots, so that NEURON reads instances, and makes them
+    without calling Python code. All but the first ones are the interface's own.
+
+    =============  ================================  ==========================================
+    type           slots                             an instance made by NEURON
+    =============  ================================  ==========================================
+    ``object``     ``_obj`` (``Object*``, an int),   has the first two, and None in the others;
+                   ``_class_name``, ``_methods``,    it holds a reference to the object,
+                   ``_host_section``,                released with it
+                   ``_host_section_ref``,
+                   ``_section_cache``,
+                   ``_plotshape_var``
+    ``section``    ``_sec`` (``Section*``, an        has the first two, ``_pynative`` False: it
+                   int), ``_pynative``, ``_cell``,   only refers to the section, which HOC
+                   ``_inserted_mechs``,              made
+                   ``_inserted_mechs_epoch``
+    ``segment``    ``_sec`` (a section instance),    has all, None in the last
+                   ``_x``, ``_mech_cache``
+    =============  ================================  ==========================================
+
+    The section type's ``__init__(name, cell)`` makes a section, which goes with the
+    instance; ``name`` is bytes, with the cell's name, or None, and ``cell`` a weak
+    reference or None. The segment type's is ``__init__(sec, x)``.
+
+    :returns: A new reference, to None for another name.
+
+.. c:function:: int nrn_python_hook_set(const char* name, PyObject* object)
+
+    Register what NEURON uses for the Python side of a job. NEURON keeps a
+    reference. An exception of a callable is the HOC error of the statement that
+    needed it.
+
+    ========================= ============================================================
+    name                      object
+    ========================= ============================================================
+    ``object_class``          ``(name)`` -> the class of the wrappers of a HOC class
+    ``section_class``         the class of sections. Those that Python makes are owned by
+                              their instances (:c:func:`nrn_section_owner_hooks_set`)
+    ``segment_class``         the class of segments
+    ``model_epoch``           a list of one item, which NEURON makes None when a section is
+                              made, deleted, connected or disconnected, or its nseg set,
+                              and when it calls Python: what the interface keeps about the
+                              model may be out of date
+    ``hoc_lock``              the ``threading.RLock`` that a thread which calls HOC holds.
+                              NEURON releases it while the thread waits for the GUI's
+                              (Windows)
+    ``savestate_store``       ``()`` -> bytes for :meth:`SaveState.save` to keep
+    ``savestate_restore``     ``(bytearray)``, when they are restored
+    ``coreneuron_enable``     ``()`` -> whether to run CoreNEURON
+    ``coreneuron_file_mode``  ``()`` -> whether through files
+    ``coreneuron_arg``        ``(tstop)`` -> CoreNEURON's arguments, a string or None
+    ``rvp_callable``          ``(value)`` -> what :class:`RangeVarPlot` plots for it
+    ``gui_callback``          ``(name, object, context, *arguments)`` -> the result of a GUI
+                              function, method or constructor, instead of NEURON's own
+    ``reference``             ``(value)`` -> a reference to pass to it: to ``val`` of a
+                              :class:`Pointer`, or to the string at an address (int)
+    ========================= ============================================================
+
+    :param name: One of the above.
+    :param object: What to register, or None to remove it.
+    :returns: 0 on success, 1 for an unknown name, 2 if ``object`` is not of that kind, 3
+              if Python is not running.
+
+.. c:function:: Object* nrn_python_object_new(PyObject* value)
+
+    Make a HOC ``PythonObject`` that holds a reference to ``value``.
+
+    :returns: The object, with one reference owned by the caller.
+
+.. c:function:: PyObject* nrn_python_object_get(Object* obj)
+
+    The Python value of a HOC object: what a ``PythonObject`` holds (the module
+    ``__main__`` for HOC's ``new PythonObject()``), None for NULL, a new wrapper for any
+    other object.
+
+    :returns: A new reference, or NULL with a Python exception set.
+
+.. c:function:: PyObject* nrn_python_error_take(void)
+
+    The exception to raise in Python after a ``_nothrow`` call failed because of it. The
+    first call after the error gets it. An exception that nobody can take, because HOC
+    code catches the error (``execute1``), or no Python code called HOC, is printed, and
+    SystemExit ends the process; so is one that nobody took when another error follows.
+    A failed callback (``Vector.apply``, ``fit_praxis``, an ``FInitializeHandler``, a
+    ``NetCon.record`` or ``CVode.event`` function) gives what NEURON's Python module raised:
+    a RuntimeError ``hocobj_call error: hoc_execerror: <message>``, without the callback's
+    exception as its cause.
+
+    :returns: A new reference, to None if the last HOC error did not come from Python.
 
 Shape Plot
 ----------
@@ -1939,6 +2259,43 @@ Miscellaneous
         When constructing language bindings for NEURON, support for ``nrn_hoc_call`` is an
         important function, because it allows you to see the effects of each newly added
         feature and it provides a validation comparison.
+
+.. c:function:: int nrn_hoc_call_nothrow(char const* command)
+
+    As :c:func:`nrn_hoc_call`, also inside a call from HOC (a callback): an error does not
+    propagate, and leaves the interpreter as it was.
+
+    :param command: Null-terminated string containing the HOC command.
+    :returns: 0 on success, 1 on error, whose message has been printed.
+
+.. c:function:: void nrn_str_assign(char** target, const char* value)
+
+    HOC's assignment to a string: a copy of ``value`` replaces ``*target``, which is
+    freed, or is NULL. For a variable whose address is pushed with
+    :c:func:`nrn_str_push`: HOC code that assigns to the argument frees the old string and
+    allocates the new one.
+
+    :param target: The variable.
+    :param value: The text, or NULL to free the string and leave NULL.
+
+.. c:function:: int nrn_structure_change_count(void)
+
+    How often NEURON has set the model's structure up, as
+    :meth:`CVode.structure_change_count`. What a client computed from it is out of date when
+    this changes.
+
+.. c:function:: int nrn_mechanism_type_count(void)
+
+    How many mechanism types have been registered. It rises with every one: of a mod file, a
+    :class:`KSChan` or ``make_mechanism``.
+
+.. c:function:: int nrn_mpiabort_on_error(int abort)
+
+    Whether a HOC error calls ``MPI_Abort`` if there is more than one rank, also one that a
+    ``_nothrow`` function reports. As :meth:`ParallelContext.mpiabort_on_error`.
+
+    :param abort: 1 for yes, as at the start, or 0.
+    :returns: The value before.
 
 .. c:function:: SectionListIterator* nrn_sectionlist_iterator_new(nrn_Item* my_sectionlist)
 

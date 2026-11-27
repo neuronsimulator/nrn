@@ -39,9 +39,6 @@ endif()
 
 # ABI3=ON: one graphicsPrimitives.abi3 / ctng.abi3. ABI3=OFF + DYNAMIC: one module per Python.
 set(rxd_libs nrniv_lib rxdmath)
-if(NRN_ENABLE_PYTHON_DYNAMIC AND NRN_ENABLE_ABI3)
-  list(APPEND rxd_libs nrnpython)
-endif()
 
 if(NRN_ENABLE_PYTHON_DYNAMIC AND NOT NRN_ENABLE_ABI3)
   foreach(val RANGE ${NRN_PYTHON_ITERATION_LIMIT})
@@ -66,7 +63,6 @@ if(NRN_ENABLE_PYTHON_DYNAMIC AND NOT NRN_ENABLE_ABI3)
         LIBRARIES
         nrniv_lib
         rxdmath
-        nrnpython${pyver}
         INSTALL_REL_RPATH
         ${rel_rpath}
         OUTPUT_DIR

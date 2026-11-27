@@ -54,6 +54,19 @@ int main(void) {
     nrn_hoc_call("hoc_ac_ = t");
     ok &= eq(*ac, 12.0, "USERDOUBLE dataptr round-trips through HOC");
 
+    int const structure = nrn_structure_change_count(), types = nrn_mechanism_type_count();
+    nrn_hoc_call("create s\nfinitialize()\nobjref k\nk = new KSChan(0)\n");
+    ok &= eq(nrn_structure_change_count(), structure + 1, "structure_change_count");
+    ok &= eq(nrn_mechanism_type_count(), types + 1, "mechanism_type_count");
+    ok &= check(nrn_mpiabort_on_error(0) == 1 && nrn_mpiabort_on_error(1) == 0, "mpiabort");
+    ok &= check(nrn_hoc_call_nothrow("myvar = 2") == 0 && *p == 2., "hoc_call_nothrow");
+    ok &= check(nrn_hoc_call_nothrow("no_such_variable") == 1, "hoc_call_nothrow fails");
+    // Nothing gets out that is not a std::exception either
+    nrn_stdout_redirect([](int, char*) -> int { throw 42; });
+    ok &= check(nrn_hoc_call_nothrow("{execute1(\"print 1\", 0) print 1}") == 1, "throw 42");
+    nrn_stdout_redirect(nullptr);
+    ok &= check(nrn_init(2, argv) == 0 && *p == 2., "a second client's nrn_init");
+
     // Symbols with no data pointer must return nullptr, not a reinterpreted
     // union member the caller would dereference as garbage.
     ok &= check(nrn_symbol_dataptr(nullptr) == nullptr, "null symbol -> nullptr");

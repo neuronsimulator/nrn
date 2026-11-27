@@ -68,8 +68,9 @@ def expect_err(stmt):
     expect_err('stmt')
     stmt is expected to raise an error
     """
-    here = inspect.currentframe()
-    caller = here.f_back
+    # Not in a variable: a frame that refers to itself keeps the caller's variables until a garbage
+    # collection.
+    caller = inspect.currentframe().f_back
     err = False
     checking(stmt)
     try:

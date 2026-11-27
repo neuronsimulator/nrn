@@ -945,21 +945,10 @@ void hoc_Chdir(void) {
     hoc_pushx((double) i);
 }
 
-NRN_DLLSYM int nrn_is_python_extension;
 NRN_DLLSYM int (*nrnpy_pr_stdoe_callback)(int, char*);
-static int (*nrnpy_pass_callback)();
 
-extern "C" NRN_DLLSYM void nrnpy_set_pr_etal(int (*cbpr_stdoe)(int, char*), int (*cbpass)()) {
+extern "C" NRN_DLLSYM void nrnpy_set_pr_etal(int (*cbpr_stdoe)(int, char*)) {
     nrnpy_pr_stdoe_callback = cbpr_stdoe;
-    nrnpy_pass_callback = cbpass;
-}
-
-void nrnpy_pass() {
-    if (nrnpy_pass_callback) {
-        if ((*nrnpy_pass_callback)() != 1) {
-            hoc_execerror("nrnpy_pass", nullptr);
-        }
-    }
 }
 
 /** printf style specification of hoc_execerror message. (512 char limit) **/

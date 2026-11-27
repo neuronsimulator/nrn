@@ -349,6 +349,20 @@ set(SCOPMATH_FILES_LIST
 
 set(NRNMPI_FILES_LIST nrnmpi.cpp memory_usage.cpp bbsmpipack.cpp mpispike.cpp)
 
+# rxd's C code: built into libnrniv, so it does not depend on NEURON's Python module
+set(RXD_FILES_LIST
+    grids.cpp
+    rxd.cpp
+    extracellular.cpp
+    intracellular.cpp
+    vol.cpp
+    marching_cubes.cpp
+    llgramarea.cpp)
+
+# How libnrniv starts and calls Python. Python.h is not used.
+set(PYTHON_FILES_LIST nrnpy_capi.cpp nrnpy_launch.cpp nrnpy_object.cpp nrnpy_types.cpp
+                      nrnpy_fast.cpp)
+
 # built-in mod files
 set(MODFILE_BASE_NAMES
     apcount
@@ -455,6 +469,8 @@ nrn_create_file_list(NRN_SPARSE_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sparse ${SPA
 nrn_create_file_list(NRN_SCOPMATH_SRC_FILES ${PROJECT_SOURCE_DIR}/src/scopmath
                      ${SCOPMATH_FILES_LIST})
 nrn_create_file_list(NRN_NRNMPI_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrnmpi ${NRNMPI_FILES_LIST})
+nrn_create_file_list(NRN_PYTHON_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrniv ${PYTHON_FILES_LIST})
+nrn_create_file_list(NRN_RXD_SRC_FILES ${PROJECT_SOURCE_DIR}/src/rxd ${RXD_FILES_LIST})
 nrn_create_file_list(NRN_MODFILE_BASE_NAMES src/nrnoc ${MODFILE_BASE_NAMES})
 nrn_create_file_list(NRN_BIN_SRC_FILES ${PROJECT_SOURCE_DIR}/src/ivoc/ nrnmain.cpp)
 nrn_create_file_list(NRN_BIN_SRC_FILES ${PROJECT_SOURCE_DIR}/src/oc/ ockludge.cpp modlreg.cpp)

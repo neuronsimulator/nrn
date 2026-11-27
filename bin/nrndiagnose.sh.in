@@ -16,7 +16,7 @@ pysetup='@ac_pysetup@'
 # of import neuron. Need a Python that is consistent with our build.
 # If not dynamic then just use PYTHONCFG. If dynamic there may be
 # multiple acceptable python versions, e.g 3.10, 3.11 so look in
-# $prefix/$host_cpu/lib for libnrnpython* and see if there are
+# $prefix/lib/python/neuron for compiled modules and see if there are
 # any consistent versions on this machine
 
 PYTHONBLD="@PYTHON_BLD@" # The python used for 

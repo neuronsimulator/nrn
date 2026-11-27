@@ -22,6 +22,7 @@ typedef struct nrn_Item nrn_Item;
 typedef struct SymbolTableIterator SymbolTableIterator;
 typedef struct Symlist Symlist;
 typedef struct ShapePlotInterface ShapePlotInterface;
+typedef struct _object PyObject;
 
 /* Non-owning hooks for provider-backed object components. On success, a read
  * callback consumes the component's deferred object frame, pushes one HOC
@@ -38,6 +39,9 @@ typedef struct ShapePlotInterface ShapePlotInterface;
  * a foreign ABI must use the return channel.) */
 typedef const char* (*nrn_component_func)(Object*, Symbol*, int nindex, int isfunc);
 typedef const char* (*nrn_component_asgn_func)(Object*);
+typedef char* (*nrn_section_owner_name_func)(Section*);
+typedef Object* (*nrn_section_owner_cell_func)(Section*);
+typedef int (*nrn_section_owner_cell_equals_func)(Section*, Object*);
 
 typedef enum {
     STACK_IS_STR = 1,
@@ -60,6 +64,15 @@ NRN_DLLSYM void nrn_stdout_redirect(int (*myprint)(int, char*));
  * Sections
  ****************************************/
 NRN_DLLSYM Section* nrn_section_new(const char* name);
+NRN_DLLSYM bool nrn_section_owner_hooks_set(nrn_section_owner_name_func name,
+                                            nrn_section_owner_cell_func cell,
+                                            nrn_section_owner_cell_equals_func cell_equals,
+                                            char* error_msg,
+                                            size_t error_msg_size);
+NRN_DLLSYM bool nrn_section_owner_hooks_clear(char* error_msg, size_t error_msg_size);
+NRN_DLLSYM Section* nrn_section_new_owned(void* owner);
+NRN_DLLSYM void* nrn_section_owner_get(Section* sec);
+NRN_DLLSYM void nrn_section_owned_release(Section* sec);
 NRN_DLLSYM void nrn_section_connect(Section* child_sec,
                                     double child_x,
                                     Section* parent_sec,
@@ -94,9 +107,11 @@ NRN_DLLSYM void nrn_nseg_set(Section* sec, int nseg);
 NRN_DLLSYM void nrn_segment_diam_set(Section* sec, double x, double diam);
 NRN_DLLSYM double nrn_segment_diam_get(Section* sec, double x);
 NRN_DLLSYM int nrn_segment_node_index(Section* sec, double x);
+NRN_DLLSYM int nrn_segment_mechanisms(Section* sec, double x, Symbol** mechanisms, int max);
 NRN_DLLSYM void nrn_rangevar_push(Symbol* sym, Section* sec, double x);
 NRN_DLLSYM double nrn_rangevar_get(Symbol* sym, Section* sec, double x);
 NRN_DLLSYM void nrn_rangevar_set(Symbol* sym, Section* sec, double x, double value);
+NRN_DLLSYM const char* nrn_tree_setup(Section* sec, double x);
 NRN_DLLSYM int nrn_rangevar_get_nothrow(Symbol* sym,
                                         Section* sec,
                                         double x,
@@ -104,6 +119,8 @@ NRN_DLLSYM int nrn_rangevar_get_nothrow(Symbol* sym,
                                         double* value,
                                         char* error_msg,
                                         size_t error_msg_size);
+NRN_DLLSYM double nrn_rangevar_get_or_nan(Symbol* sym, Section* sec, double x);
+NRN_DLLSYM size_t nrn_kschan_symbol_changes(void);
 NRN_DLLSYM int nrn_rangevar_set_nothrow(Symbol* sym,
                                         Section* sec,
                                         double x,
@@ -185,15 +202,31 @@ NRN_DLLSYM int nrn_method_call_nothrow(Object* obj,
                                        int narg,
                                        char* error_msg,
                                        size_t error_msg_size);
+NRN_DLLSYM int nrn_method_call_number(Object* obj,
+                                      Symbol* method_sym,
+                                      int narg,
+                                      double* result,
+                                      char* error_msg,
+                                      size_t error_msg_size);
 NRN_DLLSYM int nrn_function_call_nothrow(Symbol* sym,
                                          int narg,
                                          char* error_msg,
                                          size_t error_msg_size);
 NRN_DLLSYM void nrn_object_ref(Object* obj);
 NRN_DLLSYM void nrn_object_unref(Object* obj);
+NRN_DLLSYM Symbol* nrn_object_alias(Object* obj, const char* name);
 NRN_DLLSYM char const* nrn_class_name(const Object* obj);
 NRN_DLLSYM bool nrn_prop_exists(const Object* obj);
 NRN_DLLSYM double nrn_distance(Section* sec0, double x0, Section* sec1, double x1);
+
+/****************************************
+ * Python (builds with NRN_ENABLE_PYTHON)
+ ****************************************/
+NRN_DLLSYM int nrn_python_hook_set(const char* name, PyObject* object);
+NRN_DLLSYM Object* nrn_python_object_new(PyObject* value);
+NRN_DLLSYM PyObject* nrn_python_object_get(Object* obj);
+NRN_DLLSYM PyObject* nrn_python_error_take(void);
+NRN_DLLSYM PyObject* nrn_python_type(const char* name);
 
 /****************************************
  * Shape Plot
@@ -208,6 +241,11 @@ NRN_DLLSYM float nrn_get_plotshape_high(ShapePlotInterface* spi);
  * Miscellaneous
  ****************************************/
 NRN_DLLSYM int nrn_hoc_call(char const* command);
+NRN_DLLSYM int nrn_hoc_call_nothrow(char const* command);
+NRN_DLLSYM void nrn_str_assign(char** target, const char* value);
+NRN_DLLSYM int nrn_structure_change_count(void);
+NRN_DLLSYM int nrn_mechanism_type_count(void);
+NRN_DLLSYM int nrn_mpiabort_on_error(int abort);
 NRN_DLLSYM SectionListIterator* nrn_sectionlist_iterator_new(nrn_Item* my_sectionlist);
 NRN_DLLSYM void nrn_sectionlist_iterator_free(SectionListIterator* sl);
 NRN_DLLSYM Section* nrn_sectionlist_iterator_next(SectionListIterator* sl);

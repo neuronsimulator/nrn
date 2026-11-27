@@ -48,3 +48,7 @@ FUNCTION normal0() {
 FUNCTION normal2(mean, std) {
     normal2 = random_normal(ran1, mean, std)
 }
+
+FUNCTION get_segment() { : the mechanism's own, not Python's
+    get_segment = 78
+}

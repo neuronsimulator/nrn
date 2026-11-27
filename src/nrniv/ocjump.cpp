@@ -4,6 +4,8 @@
 #include "nrnoc2iv.h"
 #include "ocfunc.h"
 #include "ocjump.h"
+#include "oc_ansi.h"
+#include "parse.hpp"
 #if HAVE_IV
 #include "ivoc.h"
 #endif
@@ -110,25 +112,23 @@ struct saved_state {
 bool OcJump::execute(Inst* p) {
     saved_state before{};
     try_catch_depth_increment tell_children_we_will_catch{};
-    try {
-        hoc_execute(p);
-        return true;
-    } catch (...) {
+    neuron::python::ErrorScope const scope{false};
+    bool const ok = nrn_nothrow([&] { hoc_execute(p); });
+    if (!ok) {
         before.restore();
-        return false;
     }
+    return ok;
 }
 
 bool OcJump::execute(const char* stmt, Object* ob) {
     saved_state before{};
     try_catch_depth_increment tell_children_we_will_catch{};
-    try {
-        hoc_obj_run(stmt, ob);
-        return true;
-    } catch (...) {
+    neuron::python::ErrorScope const scope{false};
+    bool const ok = nrn_nothrow([&] { hoc_obj_run(stmt, ob); });
+    if (!ok) {
         before.restore();
-        return false;
     }
+    return ok;
 }
 
 void OcJump::execute_throw_on_exception(Object* obj, Symbol* sym, int narg) {
@@ -147,7 +147,15 @@ void OcJump::execute_throw_on_exception(Symbol* sym, int narg) {
     saved_state before{};
     try_catch_depth_increment tell_children_we_will_catch{};
     try {
-        hoc_call_func_result_on_stack(sym, narg);
+        if (sym->type == BLTIN) {
+            // Read the argument in place: a math built-in that fails ("sqrt argument out of
+            // domain") must leave the stack as saved, or the restore below fails instead.
+            double const result = (*sym->u.ptr)(hoc_look_inside_stack<double>(0));
+            hoc_xpop();
+            hoc_pushx(result);
+        } else {
+            hoc_call_func_result_on_stack(sym, narg);
+        }
     } catch (...) {
         before.restore();
         throw;

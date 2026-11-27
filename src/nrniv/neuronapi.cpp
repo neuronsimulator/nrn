@@ -2,17 +2,22 @@
 
 #include "../../nrnconf.h"
 #include "hocdec.h"
+#include "membfunc.h"
 #include "oc_ansi.h"
 #include "cabcode.h"
+#include "code.h"
 #include "nrniv_mf.h"
 #include "nrnmpi.h"
 #include "nrnmpiuse.h"
 #include "ocfunc.h"
 #include "ocjump.h"
+#include "nrnpy.h"
+#include "nrnpy_capi.h"
 #include "parse.hpp"
 #include "nrn_ansi.h"
 #include "section.h"
 #include "shapeplt.h"
+#include <array>
 #include <cstring>
 #include <exception>
 #include <cstdio>
@@ -46,16 +51,22 @@ struct SymbolTableIterator {
 /****************************************
  * Connections to the rest of NEURON
  ****************************************/
+extern int nrn_main_launch;
 extern int nrn_nobanner_;
 extern int diam_changed;
 extern int nrn_try_catch_nest_depth;
 extern int hoc_execerror_messages;
-extern "C" NRN_DLLSYM void nrnpy_set_pr_etal(int (*cbpr_stdoe)(int, char*), int (*cbpass)());
+extern char** nrn_global_argv;
+extern "C" NRN_DLLSYM void nrnpy_set_pr_etal(int (*cbpr_stdoe)(int, char*));
 int ivocmain_session(int, const char**, const char**, int start_session);
 void simpleconnectsection();
 extern Object* hoc_newobj1(Symbol*, int);
 extern void hoc_unref_defer();
+extern NRN_DLLSYM char* (*nrnpy_pysec_name_p_)(Section*);
+extern NRN_DLLSYM Object* (*nrnpy_pysec_cell_p_)(Section*);
+extern NRN_DLLSYM int (*nrnpy_pysec_cell_equals_p_)(Section*, Object*);
 extern std::tuple<int, const char**> nrn_mpi_setup(int argc, const char** argv);
+extern std::size_t nrn_kschan_symbols_changed;
 
 extern "C" {
 
@@ -86,17 +97,36 @@ bool nrn_template_set_component_hooks(Symbol* template_sym,
  ****************************************/
 
 int nrn_init(int argc, const char** argv) {
+    static int status{};
+    if (nrn_global_argv) {
+        return status;  // NEURON is running: nrniv, or another client of this API, started it
+    }
+#if USE_PYTHON
+    if (!nrn_main_launch && neuron::python::start()) {
+        nrn_main_launch = 2;
+    }
+#endif
     nrn_nobanner_ = 1;
     auto [final_argc, final_argv] = nrn_mpi_setup(argc, argv);
     errno = 0;
-    return ivocmain_session(final_argc, final_argv, nullptr, 0);
+    return status = ivocmain_session(final_argc, final_argv, nullptr, 0);
+}
+
+static int (*stdout_callback)(int, char*);
+
+static int print_at_top_level(int stream, char* message) {
+    // It may call HOC, as any other callback, also when a template's method prints.
+    ObjectContext const top_level{nullptr};
+    return stdout_callback(stream, message);
 }
 
 void nrn_stdout_redirect(int (*myprint)(int, char*)) {
     // the first argument of myprint is an integer indicating the output stream
     // if the int is 1, then stdout, else stderr
     // the char* is the message to display
-    nrnpy_set_pr_etal(myprint, nullptr);
+    std::fflush(stdout);  // what HOC has printed comes first
+    stdout_callback = myprint;
+    nrnpy_set_pr_etal(myprint ? print_at_top_level : nullptr);
 }
 
 /****************************************
@@ -114,6 +144,113 @@ Section* nrn_section_new(char const* const name) {
     hoc_top_level_data[symbol->u.oboff].psecitm = pitm;
     new_sections(nullptr, symbol, pitm, 1);
     return (*pitm)->element.sec;
+}
+
+// The hooks installed with nrn_section_owner_hooks_set. Sections are created
+// only while these are the installed hooks: another provider's (NEURON's
+// Python module installs its own) would read our owners as its objects.
+static nrn_section_owner_name_func capi_owner_name;
+static nrn_section_owner_cell_func capi_owner_cell;
+static nrn_section_owner_cell_equals_func capi_owner_cell_equals;
+
+static bool capi_owner_hooks_installed() {
+    return capi_owner_name && nrnpy_pysec_name_p_ == capi_owner_name &&
+           nrnpy_pysec_cell_p_ == capi_owner_cell &&
+           nrnpy_pysec_cell_equals_p_ == capi_owner_cell_equals;
+}
+
+// Is there a section owned through the hooks, by any provider?
+static bool owned_sections_exist() {
+    hoc_Item* qsec;
+    ITERATE(qsec, section_list) {
+        Section* sec = hocSEC(qsec);
+        if (sec->prop && sec->prop->dparam[PROP_PY_INDEX].get<void*>()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static bool owner_hooks_fail(char* error_msg, size_t error_msg_size, const char* message) {
+    if (error_msg && error_msg_size) {
+        std::strncpy(error_msg, message, error_msg_size - 1);
+        error_msg[error_msg_size - 1] = '\0';
+    }
+    return false;
+}
+
+bool nrn_section_owner_hooks_set(nrn_section_owner_name_func name,
+                                 nrn_section_owner_cell_func cell,
+                                 nrn_section_owner_cell_equals_func cell_equals,
+                                 char* error_msg,
+                                 size_t error_msg_size) {
+    if (!name || !cell || !cell_equals) {
+        return owner_hooks_fail(error_msg,
+                                error_msg_size,
+                                "all three section owner hooks are required");
+    }
+    // The hooks are global. Refuse to replace another provider's (NEURON's own
+    // Python module installs them), whose sections would then be misread.
+    if ((nrnpy_pysec_name_p_ && nrnpy_pysec_name_p_ != name) ||
+        (nrnpy_pysec_cell_p_ && nrnpy_pysec_cell_p_ != cell) ||
+        (nrnpy_pysec_cell_equals_p_ && nrnpy_pysec_cell_equals_p_ != cell_equals)) {
+        return owner_hooks_fail(error_msg,
+                                error_msg_size,
+                                "section owner hooks are already installed by another provider");
+    }
+    nrnpy_pysec_name_p_ = capi_owner_name = name;
+    nrnpy_pysec_cell_p_ = capi_owner_cell = cell;
+    nrnpy_pysec_cell_equals_p_ = capi_owner_cell_equals = cell_equals;
+    return true;
+}
+
+bool nrn_section_owner_hooks_clear(char* error_msg, size_t error_msg_size) {
+    // Whoever installed them: an interface that replaces NEURON's Python module
+    // (nrniv -python) takes over its hooks this way.
+    if (owned_sections_exist()) {
+        return owner_hooks_fail(error_msg,
+                                error_msg_size,
+                                "owned sections exist; release them first");
+    }
+    nrnpy_pysec_name_p_ = capi_owner_name = nullptr;
+    nrnpy_pysec_cell_p_ = capi_owner_cell = nullptr;
+    nrnpy_pysec_cell_equals_p_ = capi_owner_cell_equals = nullptr;
+    return true;
+}
+
+Section* nrn_section_new_owned(void* owner) {
+    // A section owned by an interface object, as NEURON's Python module creates its own:
+    // no HOC symbol, owner stored in dparam[PROP_PY_INDEX]; the name and cell
+    // come from the hooks.
+    if (!owner || !capi_owner_hooks_installed()) {
+        return nullptr;
+    }
+    Section* sec = section_new_owned(owner);
+    nrnpy_pysecname2sec_add(sec);
+    return sec;
+}
+
+void* nrn_section_owner_get(Section* sec) {
+    if (sec && sec->prop) {
+        return sec->prop->dparam[PROP_PY_INDEX].get<void*>();
+    }
+    return nullptr;
+}
+
+void nrn_section_owned_release(Section* sec) {
+    // Called when the owner is destroyed; mirrors the Python module's section
+    // deallocation. Frees the section, or drops the reference HOC's
+    // delete_section kept if it was deleted from HOC first.
+    if (!sec) {
+        return;
+    }
+    if (sec->prop && sec->prop->dparam[PROP_PY_INDEX].get<void*>()) {
+        nrnpy_pysecname2sec_remove(sec);
+        sec->prop->dparam[PROP_PY_INDEX] = nullptr;
+        sec_free(sec->prop->dparam[8].get<hoc_Item*>());
+    } else if (!sec->prop) {
+        section_unref(sec);
+    }
 }
 
 void nrn_section_connect(Section* child_sec, double child_x, Section* parent_sec, double parent_x) {
@@ -213,6 +350,12 @@ void nrn_nseg_set(Section* const sec, const int nseg) {
 }
 
 void nrn_segment_diam_set(Section* const sec, const double x, const double diam) {
+    if (sec && sec->recalc_area_ && sec->npt3d) {
+        // As nrn_rangevar_set (#3921): derive the segment diameters from pending 3-d points
+        // first, or the other segments keep stale ones. Without 3-d points nothing is pending
+        // that this write would lose, and a 0 diameter keeps its error for the next read.
+        nrn_area_ri_no_diam_error(sec);
+    }
     Node* const node = node_exact(sec, x);
     // TODO: this is fine if no 3D points; does it work if there are 3D points?
     for (auto prop = node->prop; prop; prop = prop->next) {
@@ -250,6 +393,25 @@ int nrn_segment_node_index(Section* const sec, const double x) {
         return -1;
     }
     return node_exact(sec, x)->v_node_index;
+}
+
+int nrn_segment_mechanisms(Section* const sec,
+                           const double x,
+                           Symbol** const mechanisms,
+                           const int max) {
+    // Same x rule as nrn_segment_nmodlrandom_get; NaN would index past the node array.
+    if (!sec || !nrn_section_is_active(sec) || !(x >= 0.0 && x <= 1.0)) {
+        return -1;
+    }
+    // The node's property list, head first, as Python's segment iterator walks it.
+    int count = 0;
+    for (Prop* p = node_exact(sec, x)->prop; p; p = p->next) {
+        if (mechanisms && count < max) {
+            mechanisms[count] = memb_func[p->_type].sym;
+        }
+        ++count;
+    }
+    return count;
 }
 
 double nrn_rangevar_get(Symbol* sym, Section* sec, double x) {
@@ -389,6 +551,35 @@ int nrn_rangevar_get_nothrow(Symbol* sym,
     }
 }
 
+size_t nrn_kschan_symbol_changes(void) {
+    return nrn_kschan_symbols_changed;
+}
+
+double nrn_rangevar_get_or_nan(Symbol* sym, Section* sec, double x) {
+    constexpr double nan = std::numeric_limits<double>::quiet_NaN();
+    try {
+        if (!sym || sym->type != RANGEVAR || !sec || !sec->prop || !(x >= 0.0 && x <= 1.0)) {
+            return nan;
+        }
+        if (sym->u.rng.type == VINDEX) {
+            return node_ptr(sec, x, nullptr)->v();
+        }
+        if (sym->u.rng.type == MORPHOLOGY && sec->recalc_area_) {
+            // As nrn_segment_diam_get: recompute diam from 3-d points without
+            // the HOC error (and its object-stack reset) for a diam <= 0.
+            nrn_area_ri_no_diam_error(sec);
+        }
+        // Unset or opaque POINTERs, a mechanism not inserted at x and
+        // i_membrane_ without fast_imem all give a handle that holds no double*.
+        int err = 0;
+        auto const handle = nrnpy_rangepointer(sec, sym, x, &err, 0);
+        double* const pd = handle.holds<double*>() ? handle.get<double*>() : nullptr;
+        return pd ? *pd : nan;
+    } catch (...) {
+        return nan;
+    }
+}
+
 int nrn_rangevar_set_nothrow(Symbol* sym,
                              Section* sec,
                              double x,
@@ -470,6 +661,14 @@ int nrn_rangevar_handle_str(Symbol* sym,
         }
         return -1;
     }
+}
+
+const char* nrn_tree_setup(Section* sec, double x) {
+    static std::array<char, 1024> error;
+    if (!nrn_nothrow([&] { node_exact(sec, x); }, error.data(), error.size())) {
+        return error.data();
+    }
+    return tree_changed ? "" : nullptr;
 }
 
 Object* nrn_segment_nmodlrandom_get(Section* sec, double x, Symbol* sym) {
@@ -914,31 +1113,18 @@ int nrn_object_new_nothrow(Symbol* sym,
     // caller (ctypes, MATLAB, ...) does not have a C++ exception propagate
     // across the FFI boundary. On success returns 0 with *result set; on error
     // returns nonzero with *result NULL and error_msg populated.
-    if (error_msg && error_msg_size > 0) {
-        error_msg[0] = '\0';
+    neuron::python::ErrorScope scope{true};
+    Object* object{};
+    bool const ok = nrn_nothrow([&] { object = OcJump::newobj_throw_on_exception(sym, narg); },
+                                error_msg,
+                                error_msg_size);
+    if (!ok) {
+        scope.caught();
     }
     if (result) {
-        *result = nullptr;
+        *result = object;
     }
-    try {
-        Object* obj = OcJump::newobj_throw_on_exception(sym, narg);
-        if (result) {
-            *result = obj;
-        }
-        return 0;
-    } catch (const std::exception& e) {
-        if (error_msg && error_msg_size > 0) {
-            strncpy(error_msg, neuron::oc::safe_what(e), error_msg_size - 1);
-            error_msg[error_msg_size - 1] = '\0';
-        }
-        return 1;
-    } catch (...) {
-        if (error_msg && error_msg_size > 0) {
-            strncpy(error_msg, "Unknown exception occurred", error_msg_size - 1);
-            error_msg[error_msg_size - 1] = '\0';
-        }
-        return 1;
-    }
+    return !ok;
 }
 
 Symbol* nrn_method_symbol(const Object* obj, char const* const name) {
@@ -955,64 +1141,82 @@ void nrn_function_call(Symbol* sym, int narg) {
     OcJump::execute_throw_on_exception(sym, narg);
 }
 
+static bool call_method(Object* obj,
+                        Symbol* method_sym,
+                        int narg,
+                        char* error_msg,
+                        size_t error_msg_size,
+                        HocReturnType& type) {
+    neuron::python::ErrorScope scope{true};
+    // obj may not outlive the call.
+    bool const builtin = obj->ctemplate->id <= hoc_max_builtin_class_id;
+    auto const outer = std::exchange(hoc_return_type_code, HocReturnType::floating);
+    bool const ok = nrn_nothrow([&] { OcJump::execute_throw_on_exception(obj, method_sym, narg); },
+                                error_msg,
+                                error_msg_size);
+    // After a method in HOC it is of what that called.
+    type = builtin ? hoc_return_type_code : HocReturnType::floating;
+    hoc_return_type_code = outer;
+    if (!ok) {
+        scope.caught();
+    }
+    // Release the temporary object HOC kept alive during the call (hoc_pop_defer),
+    // as the Python binding does after each call; the result has its own reference.
+    hoc_unref_defer();
+    return ok;
+}
+
 int nrn_method_call_nothrow(Object* obj,
                             Symbol* method_sym,
                             int narg,
                             char* error_msg,
                             size_t error_msg_size) {
-    // Initialize error message buffer
-    if (error_msg && error_msg_size > 0) {
-        error_msg[0] = '\0';
-    }
+    HocReturnType type;
+    return !call_method(obj, method_sym, narg, error_msg, error_msg_size, type);
+}
 
-    int status = 0;
-    try {
-        OcJump::execute_throw_on_exception(obj, method_sym, narg);
-    } catch (const std::exception& e) {
-        if (error_msg && error_msg_size > 0) {
-            strncpy(error_msg, neuron::oc::safe_what(e), error_msg_size - 1);
-            error_msg[error_msg_size - 1] = '\0';
-        }
-        status = 1;
-    } catch (...) {
-        if (error_msg && error_msg_size > 0) {
-            strncpy(error_msg, "Unknown exception occurred", error_msg_size - 1);
-            error_msg[error_msg_size - 1] = '\0';
-        }
-        status = 1;
+int nrn_method_call_number(Object* obj,
+                           Symbol* method_sym,
+                           int narg,
+                           double* result,
+                           char* error_msg,
+                           size_t error_msg_size) {
+    HocReturnType type;
+    if (!call_method(obj, method_sym, narg, error_msg, error_msg_size, type)) {
+        return -1;
     }
-    // Release the temporary object HOC kept alive during the call (hoc_pop_defer),
-    // as the Python binding does after each call; the result has its own reference.
-    hoc_unref_defer();
-    return status;
+    // The method ran and consumed its arguments. If it left something other than a number, drop
+    // that too, so the stack is as before the arguments were pushed.
+    int top{};
+    if (!nrn_nothrow([&] { top = hoc_stack_type(); }, error_msg, error_msg_size)) {
+        return -2;  // nothing on the stack
+    }
+    if (top != NUMBER) {
+        nrn_nothrow([] { hoc_nopop(); });
+        if (error_msg && error_msg_size) {
+            std::snprintf(error_msg,
+                          error_msg_size,
+                          "%s did not return a number",
+                          method_sym->name);
+        }
+        return -2;
+    }
+    *result = hoc_xpop();
+    return static_cast<int>(type);
 }
 
 int nrn_function_call_nothrow(Symbol* sym, int narg, char* error_msg, size_t error_msg_size) {
-    // Initialize error message buffer
-    if (error_msg && error_msg_size > 0) {
-        error_msg[0] = '\0';
-    }
-
-    int status = 0;
-    try {
-        OcJump::execute_throw_on_exception(sym, narg);
-    } catch (const std::exception& e) {
-        if (error_msg && error_msg_size > 0) {
-            strncpy(error_msg, neuron::oc::safe_what(e), error_msg_size - 1);
-            error_msg[error_msg_size - 1] = '\0';
-        }
-        status = 1;
-    } catch (...) {
-        if (error_msg && error_msg_size > 0) {
-            strncpy(error_msg, "Unknown exception occurred", error_msg_size - 1);
-            error_msg[error_msg_size - 1] = '\0';
-        }
-        status = 1;
+    neuron::python::ErrorScope scope{true};
+    bool const ok = nrn_nothrow([&] { OcJump::execute_throw_on_exception(sym, narg); },
+                                error_msg,
+                                error_msg_size);
+    if (!ok) {
+        scope.caught();
     }
     // Release the temporary object HOC kept alive during the call (hoc_pop_defer),
     // as the Python binding does after each call; the result has its own reference.
     hoc_unref_defer();
-    return status;
+    return !ok;
 }
 
 void nrn_object_ref(Object* obj) {
@@ -1020,7 +1224,23 @@ void nrn_object_ref(Object* obj) {
 }
 
 void nrn_object_unref(Object* obj) {
-    hoc_obj_unref(obj);
+    // Deleting the object can run HOC, and Python: a template's unref() procedure. There is nobody
+    // to raise its error in, and it has been printed.
+    neuron::python::ErrorScope const scope{false};
+    nrn_nothrow([&] {
+        OcJump::fpycall(
+            [](void* o, void*) -> void* {
+                hoc_obj_unref(static_cast<Object*>(o));
+                hoc_unref_defer();
+                return nullptr;
+            },
+            obj,
+            nullptr);
+    });
+}
+
+Symbol* nrn_object_alias(Object* obj, const char* name) {
+    return ivoc_alias_lookup(name, obj);
 }
 
 char const* nrn_class_name(const Object* obj) {
@@ -1075,6 +1295,45 @@ float nrn_get_plotshape_high(ShapePlotInterface* spi) {
  ****************************************/
 int nrn_hoc_call(char const* const command) {
     return hoc_oc(command);
+}
+
+int nrn_hoc_call_nothrow(char const* command) {
+    neuron::python::ErrorScope scope{true};
+    auto line = std::string{command} + '\n';
+    bool const ok = nrn_nothrow([&] {
+        OcJump::fpycall(
+            [](void* stmt, void*) -> void* {
+                hoc_obj_run(static_cast<const char*>(stmt), nullptr);
+                return nullptr;
+            },
+            line.data(),
+            nullptr);
+    });
+    if (!ok) {
+        scope.caught();
+    }
+    return !ok;
+}
+
+void nrn_str_assign(char** target, const char* value) {
+    if (value) {
+        hoc_assign_str(target, value);
+    } else {
+        hoc_free_string(*target);
+        *target = nullptr;
+    }
+}
+
+int nrn_structure_change_count() {
+    return structure_change_cnt;
+}
+
+int nrn_mechanism_type_count() {
+    return n_memb_func;
+}
+
+int nrn_mpiabort_on_error(int abort) {
+    return std::exchange(nrn_mpiabort_on_error_, abort);
 }
 
 SectionListIterator::SectionListIterator(nrn_Item* my_sectionlist)

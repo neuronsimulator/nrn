@@ -31,10 +31,11 @@ if(NRN_ENABLE_PYTHON_DYNAMIC AND NOT NRN_ENABLE_ABI3)
       "${pyinc}"
       "${MUSIC_ROOT}/include"
       "${MPI_C_INCLUDE_DIRS}"
-      ${PROJECT_SOURCE_DIR}/src/nrnpython
+      ${PROJECT_SOURCE_DIR}/src/oc
+      ${PROJECT_SOURCE_DIR}/src/nrniv
       ${CMAKE_CURRENT_SOURCE_DIR}
       LIBRARIES
-      nrnpython${pyver}
+      nrniv_lib
       # TODO figure out where to put this module so RPATH can be adjusted
       INSTALL_REL_RPATH
       ${rel_rpath}
@@ -43,10 +44,6 @@ if(NRN_ENABLE_PYTHON_DYNAMIC AND NOT NRN_ENABLE_ABI3)
 
   endforeach()
 else()
-  set(_neuronmusic_libs)
-  if(NRN_ENABLE_PYTHON_DYNAMIC)
-    list(APPEND _neuronmusic_libs nrnpython)
-  endif()
   add_nrn_python_library(
     ${source}
     TARGET
@@ -62,10 +59,11 @@ else()
     "${NRN_DEFAULT_PYTHON_INCLUDES}"
     "${MUSIC_ROOT}/include"
     "${MPI_C_INCLUDE_DIRS}"
-    ${PROJECT_SOURCE_DIR}/src/nrnpython
+    ${PROJECT_SOURCE_DIR}/src/oc
+    ${PROJECT_SOURCE_DIR}/src/nrniv
     ${CMAKE_CURRENT_SOURCE_DIR}
     LIBRARIES
-    ${_neuronmusic_libs}
+    nrniv_lib
     # TODO figure out where to put this module so RPATH can be adjusted
     INSTALL_REL_RPATH
     ${rel_rpath}

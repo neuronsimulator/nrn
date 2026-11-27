@@ -28,11 +28,9 @@ def _report(objects: list[dict]) -> dict:
 
 def _linux_objects() -> list[dict]:
     return [
-        _ok("hoc.abi3.so"),
         _ok("graphicsPrimitives.abi3.so"),
         _ok("ctng.abi3.so"),
         _ok("_nmodl.abi3.so"),
-        _ok("libnrnpython.abi3.so"),
     ]
 
 
@@ -50,7 +48,7 @@ class AuditAbi3WheelTests(unittest.TestCase):
             any("ignoring non-abi3 CLI libpywrapper.so" in line for line in messages)
         )
         self.assertTrue(
-            any(line.startswith("checked 5 abi3 objects:") for line in messages)
+            any(line.startswith("checked 3 abi3 objects:") for line in messages)
         )
 
     def test_libpywrapper_does_not_mask_an_unreported_object(self) -> None:
@@ -72,7 +70,7 @@ class AuditAbi3WheelTests(unittest.TestCase):
                 "result": {"is_abi3": False, "is_abi3_baseline_compatible": False},
             }
         ]
-        wheel_objects = [obj["name"] for obj in objects] + ["libnrnpython.abi3.dylib"]
+        wheel_objects = [obj["name"] for obj in objects] + ["libnrniv.dylib"]
         code, _messages = audit.judge(_report(objects), 1, LINUX, wheel_objects)
         self.assertEqual(code, 0)
 
@@ -105,19 +103,19 @@ class AuditAbi3WheelTests(unittest.TestCase):
     def test_is_abi3_false(self) -> None:
         objects = _linux_objects()
         objects[0] = {
-            "name": "hoc.abi3.so",
+            "name": "ctng.abi3.so",
             "result": {"is_abi3": False, "is_abi3_baseline_compatible": True},
         }
         code, messages = audit.judge(_report(objects), 1, LINUX)
         self.assertEqual(code, 1)
         self.assertTrue(
-            any("hoc.abi3.so: is_abi3 is not true" in line for line in messages)
+            any("ctng.abi3.so: is_abi3 is not true" in line for line in messages)
         )
 
     def test_missing_is_abi3(self) -> None:
         objects = _linux_objects()
         objects[0] = {
-            "name": "hoc.abi3.so",
+            "name": "ctng.abi3.so",
             "result": {"is_abi3_baseline_compatible": True},
         }
         code, _messages = audit.judge(_report(objects), 0, LINUX)
@@ -126,7 +124,7 @@ class AuditAbi3WheelTests(unittest.TestCase):
     def test_baseline_false(self) -> None:
         objects = _linux_objects()
         objects[0] = {
-            "name": "hoc.abi3.so",
+            "name": "ctng.abi3.so",
             "result": {"is_abi3": True, "is_abi3_baseline_compatible": False},
         }
         code, messages = audit.judge(_report(objects), 1, LINUX)
@@ -151,16 +149,8 @@ class AuditAbi3WheelTests(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn("abi3 audit: missing _nmodl", messages)
 
-    def test_longer_hoc_name_does_not_count(self) -> None:
-        objects = _linux_objects()
-        objects[0] = _ok("hocfoo.abi3.so")
-        code, messages = audit.judge(_report(objects), 0, LINUX)
-        self.assertEqual(code, 1)
-        self.assertIn("abi3 audit: missing hoc", messages)
-
-    def test_macos_without_nrnpython(self) -> None:
+    def test_macos(self) -> None:
         objects = [
-            _ok("hoc.abi3.so"),
             _ok("graphicsPrimitives.abi3.so"),
             _ok("ctng.abi3.so"),
             _ok("_nmodl.abi3.so"),
@@ -168,36 +158,14 @@ class AuditAbi3WheelTests(unittest.TestCase):
         code, _messages = audit.judge(_report(objects), 0, MACOS)
         self.assertEqual(code, 0)
 
-    def test_windows_pyd_without_nrnpython(self) -> None:
+    def test_windows_pyd(self) -> None:
         objects = [
-            _ok("hoc.pyd"),
             _ok("graphicsPrimitives.pyd"),
             _ok("ctng.pyd"),
             _ok("_nmodl.pyd"),
         ]
         code, _messages = audit.judge(_report(objects), 0, WINDOWS)
         self.assertEqual(code, 0)
-
-    def test_linux_without_nrnpython(self) -> None:
-        objects = [
-            _ok("hoc.abi3.so"),
-            _ok("graphicsPrimitives.abi3.so"),
-            _ok("ctng.abi3.so"),
-            _ok("_nmodl.abi3.so"),
-        ]
-        code, messages = audit.judge(_report(objects), 0, LINUX)
-        self.assertEqual(code, 1)
-        self.assertIn("abi3 audit: missing libnrnpython", messages)
-
-    def test_musllinux_without_nrnpython(self) -> None:
-        objects = [
-            _ok("hoc.abi3.so"),
-            _ok("graphicsPrimitives.abi3.so"),
-            _ok("ctng.abi3.so"),
-            _ok("_nmodl.abi3.so"),
-        ]
-        code, _messages = audit.judge(_report(objects), 0, MUSL)
-        self.assertEqual(code, 1)
 
     def test_only_libpywrapper(self) -> None:
         objects = [{"name": "libpywrapper.so", "result": {"is_abi3": False}}]
@@ -212,29 +180,18 @@ class AuditAbi3WheelTests(unittest.TestCase):
         code, _messages = audit.judge(report, 0, LINUX)
         self.assertEqual(code, 0)
 
-    def test_nrnpython_stem_without_lib_prefix(self) -> None:
-        objects = [
-            _ok("hoc.abi3.so"),
-            _ok("graphicsPrimitives.abi3.so"),
-            _ok("ctng.abi3.so"),
-            _ok("_nmodl.abi3.so"),
-        ]
-        objects.append(_ok("nrnpython.abi3.so"))
-        code, _messages = audit.judge(_report(objects), 0, LINUX)
-        self.assertEqual(code, 0)
-
     def test_shared_object_names_skip_dylib_and_dll(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             wheel = Path(tmp) / "sample.whl"
             with zipfile.ZipFile(wheel, "w") as archive:
-                archive.writestr("neuron/hoc.abi3.so", b"so")
-                archive.writestr("neuron/hoc.pyd", b"pyd")
-                archive.writestr("neuron/libnrnpython.abi3.dylib", b"dylib")
+                archive.writestr("neuron/ctng.abi3.so", b"so")
+                archive.writestr("neuron/ctng.pyd", b"pyd")
+                archive.writestr("neuron/libnrniv.dylib", b"dylib")
                 archive.writestr("neuron/python3.dll", b"dll")
                 archive.writestr("neuron/README.txt", b"txt")
             self.assertEqual(
                 audit.shared_object_names(wheel),
-                ["hoc.abi3.so", "hoc.pyd"],
+                ["ctng.abi3.so", "ctng.pyd"],
             )
 
 

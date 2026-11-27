@@ -15,12 +15,11 @@
 // and fails against an auto-export import library (Windows installer).
 
 // PE: __declspec(dllexport) fills the export table. ELF visibility is a
-// no-op on PE, so MinGW hoc.pyd needs dllexport on NRN_EXPORT
-// (nrnpy_hoc / Py2NRNString in libnrnpython).
+// no-op on PE.
 //
 // Do not dllexport NRN_DLLSYM on MinGW. One explicit dllexport in a DLL
 // turns off --export-all-symbols, so hoc_execerror and friends vanish
-// from libnrniv.dll.a and libnrnpython fails to link (Windows installer).
+// from libnrniv.dll.a and nothing links to it (Windows installer).
 // MinGW auto-exports libnrniv like ELF. dllimport stays MSVC-only.
 #if defined(_WIN32)
 #define NRN_DLLEXPORT __declspec(dllexport)

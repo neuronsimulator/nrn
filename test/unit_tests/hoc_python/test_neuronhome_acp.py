@@ -62,38 +62,26 @@ def test_launcher_neuronhome_outside_acp_is_refused():
 
 
 def test_import_neuronhome_outside_acp_does_not_kill_the_interpreter():
-    """Loading hoc raises. C exit(1) would skip the except and kill Python."""
+    """Starting NEURON fails. C exit(1) would kill Python.
+
+    The C call that import neuron makes: the package sets a wheel's NEURONHOME.
+    """
     ch = _non_acp_char()
     if ch is None:
         pytest.skip("the active code page can encode the probe characters")
-    spec = find_spec("neuron.hoc")
-    if spec is None or not spec.origin:
-        pytest.skip("neuron.hoc is not installed")
+    exe = _wheel_nrniv()
+    if exe is None:
+        pytest.skip("wheel nrniv.exe is not installed")
     home = "C:/" + ch + "-nrn/share/nrn"
     script = (
-        "import importlib.util, os, sys\n"
+        "import ctypes, os, sys\n"
         "os.environ['NEURONHOME'] = sys.argv[1]\n"
-        "pyd = sys.argv[2]\n"
-        "root = os.path.dirname(os.path.abspath(pyd))\n"
-        "if hasattr(os, 'add_dll_directory'):\n"
-        "    for extra in (\n"
-        "        os.path.join(root, '.data', 'bin'),\n"
-        "        os.path.join(root, '.data', 'lib'),\n"
-        "    ):\n"
-        "        if os.path.isdir(extra):\n"
-        "            os.add_dll_directory(extra)\n"
-        "            os.environ['PATH'] = extra + os.pathsep + os.environ.get('PATH', '')\n"
-        "try:\n"
-        "    spec = importlib.util.spec_from_file_location('hoc', pyd)\n"
-        "    mod = importlib.util.module_from_spec(spec)\n"
-        "    spec.loader.exec_module(mod)\n"
-        "except Exception as exc:\n"
-        "    sys.stderr.write('%s: %s\\n' % (type(exc).__name__, exc))\n"
-        "    raise SystemExit(0)\n"
-        "raise SystemExit(2)\n"
+        "nrniv = ctypes.PyDLL(sys.argv[2])\n"
+        "argv = (ctypes.c_char_p * 4)(b'NEURON', b'-nogui', b'-nopython', None)\n"
+        "raise SystemExit(0 if nrniv.nrn_init(3, argv) else 2)\n"
     )
     proc = subprocess.run(
-        [sys.executable, "-c", script, home, spec.origin],
+        [sys.executable, "-c", script, home, str(exe.with_suffix(".dll"))],
         stdin=subprocess.DEVNULL,
         capture_output=True,
         text=True,

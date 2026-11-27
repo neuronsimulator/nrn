@@ -22,14 +22,14 @@
 #include "ivoc.h"
 #endif
 
-OcPointer::OcPointer(const char* st, double* d)
+OcPointer::OcPointer(const char* st, neuron::container::data_handle<double> d)
     : Observer() {
     sti_ = NULL;
     s_ = new char[strlen(st) + 1];
     strcpy(s_, st);
     p_ = d;
     valid_ = true;
-    nrn_notify_when_double_freed(p_, this);
+    neuron::container::notify_when_handle_dies(p_, this);
 }
 
 OcPointer::~OcPointer() {
@@ -74,15 +74,15 @@ static Member_ret_str_func s_memb[] = {{"s", pname}, {nullptr, nullptr}};
 
 
 static void* cons(Object*) {
-    double* p;
+    neuron::container::data_handle<double> p;
     const char* s;
     if (hoc_is_pdouble_arg(1)) {
-        p = hoc_pgetarg(1);
+        p = hoc_hgetarg<double>(1);
         s = "unknown";
     } else {
         s = gargstr(1);
         ParseTopLevel ptl;
-        p = hoc_val_pointer(s);
+        p = hoc_val_handle(s);
     }
     if (!p) {
         hoc_execerror("Pointer constructor failed", 0);
@@ -104,7 +104,7 @@ static void steer_val(void* v) {
     if (!ocp->valid_) {
         hoc_execerror("Pointer points to freed address:", ocp->s_);
     }
-    hoc_pushpx(ocp->p_);
+    hoc_push(ocp->p_);
 }
 
 void OcPointer_reg() {

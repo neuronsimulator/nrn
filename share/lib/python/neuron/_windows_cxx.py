@@ -338,6 +338,7 @@ def rxd_compile_command(
             *user_args,
             src,
             "/Fe" + out,
+            "/Fo" + os.path.splitext(out)[0] + ".obj",
             "/link",
             "/LIBPATH:" + os.path.dirname(rxdmath),
             "rxdmath.lib",

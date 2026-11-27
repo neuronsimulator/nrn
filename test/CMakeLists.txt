@@ -385,7 +385,8 @@ if(NRN_ENABLE_PYTHON)
           COMMAND
             ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
             ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${MPIEXEC_POSTFLAGS} -m pytest --capture=tee-sys
-            ./test/rxd/ecs/test_ecs_example.py --mpi)
+            ./test/rxd/ecs/test_ecs_example.py ./test/rxd/test_include_flux_error.py
+            ./test/rxd/test_include_flux_sources.py --mpi)
       endif()
     endif()
   endif()
@@ -422,6 +423,14 @@ if(NRN_ENABLE_PYTHON)
     SCRIPT_PATTERNS test/parallel_tests/test_bas.py
     COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
             nrniv ${MPIEXEC_POSTFLAGS} -mpi -python test/parallel_tests/test_bas.py)
+  nrn_add_test(
+    GROUP parallel
+    NAME python_collectives
+    PROCESSORS 2
+    REQUIRES mpi
+    SCRIPT_PATTERNS test/parallel_tests/test_python_collectives.hoc
+    COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
+            nrniv ${MPIEXEC_POSTFLAGS} test/parallel_tests/test_python_collectives.hoc)
   # TODO if we need to pass more complicated argument strings then some smarter escaping will be
   # needed
   string(JOIN " " pytest_arg_string ${pytest_args})

@@ -2,6 +2,8 @@
   given a set of double*, find the executable hoc varnames
  */
 
+#include <string>
+
 struct Symbol;
 class String;
 class HocDataPathImpl;

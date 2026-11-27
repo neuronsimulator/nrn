@@ -620,25 +620,6 @@ int hoc_execerror_messages;
 int nrn_try_catch_nest_depth{0};
 int yystart;
 
-namespace neuron::oc {
-namespace {
-const char* (*safe_what_fn)(const std::exception&){};
-}
-
-void set_safe_what(const char* (*fn)(const std::exception&) ) {
-    safe_what_fn = fn;
-}
-
-const char* safe_what(const std::exception& e) {
-    if (safe_what_fn) {
-        if (const char* m = safe_what_fn(e)) {
-            return m;
-        }
-    }
-    return e.what();
-}
-}  // namespace neuron::oc
-
 void hoc_execerror_mes(const char* s, const char* t, int prnt) { /* recover from run-time error */
     hoc_in_yyparse = 0;
     yystart = 1;
@@ -951,8 +932,7 @@ int hoc_main1(int argc, const char** argv, const char** envp) {
         }
         return exit_status;
     } catch (std::exception const& e) {
-        Fprintf(stderr,
-                fmt::format("hoc_main1 caught exception: {}\n", neuron::oc::safe_what(e)).c_str());
+        Fprintf(stderr, fmt::format("hoc_main1 caught exception: {}\n", e.what()).c_str());
         nrn_exit(1);
     }
 }
@@ -986,8 +966,8 @@ void inputReadyThread() {
 
 void hoc_final_exit(void) {
 #if defined(USE_PYTHON)
-    if (neuron::python::methods.interpreter_start) {
-        neuron::python::methods.interpreter_start(0);
+    if (neuron::python::methods.interpreter_finalize) {
+        neuron::python::methods.interpreter_finalize();
     }
 #endif
     bbs_done();
@@ -1273,7 +1253,7 @@ static int hoc_run1() {
             } catch (std::exception const& e) {
                 hoc_fin = sav_fin;
                 Fprintf(stderr, "hoc_run1: caught exception");
-                std::string_view what{neuron::oc::safe_what(e)};
+                std::string_view what{e.what()};
                 if (!what.empty()) {
                     Fprintf(stderr, fmt::format(": {}", what).c_str());
                 }
@@ -1382,7 +1362,7 @@ int hoc_oc(const char* buf, std::ostream& os) {
             signal_handler_guard _{};
             kernel();
         } catch (std::exception const& e) {
-            os << "hoc_oc caught exception: " << neuron::oc::safe_what(e) << std::endl;
+            os << "hoc_oc caught exception: " << e.what() << std::endl;
             hoc_initcode();
             // initcode releases frame/temporary objects, but leaves operands.
             // Keep entries owned by the caller below this command's stack.

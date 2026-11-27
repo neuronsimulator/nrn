@@ -51,6 +51,16 @@ int main(void) {
     nrn_hoc_call("hoc_ac_ = strcmp(s, \"world\")");
     ok &= check(*nrn_symbol_dataptr(nrn_symbol("hoc_ac_")) == 0.0, "HOC reads the str_set value");
 
+    // --- str_assign ---
+    char* text = nullptr;
+    nrn_str_assign(&text, "one");
+    nrn_hoc_call("proc set_text() { $s1 = \"longer than one\" }");
+    nrn_str_push(&text);
+    nrn_function_call_nothrow(nrn_symbol("set_text"), 1, nullptr, 0);
+    ok &= check(std::strcmp(text, "longer than one") == 0, "HOC assigns to it");
+    nrn_str_assign(&text, nullptr);
+    ok &= check(text == nullptr, "str_assign frees it");
+
     // --- objref get/set ---
     nrn_hoc_call("objref o");
     nrn_hoc_call("o = new Vector(3)");

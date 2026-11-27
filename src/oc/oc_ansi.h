@@ -64,11 +64,6 @@ struct runtime_error: ::std::runtime_error {
     using ::std::runtime_error::runtime_error;
 };
 
-/// e.what() except for nanobind::python_error, whose what() is noexcept and aborts
-/// under Py_LIMITED_API. libnrnpython registers the python_error check.
-const char* safe_what(const std::exception& e);
-void set_safe_what(const char* (*fn)(const std::exception&) );
-
 /**
  * @brief Execute C++ code that may throw and propagate HOC information.
  *
@@ -89,7 +84,7 @@ decltype(auto) invoke_method_that_may_throw(Callable message_prefix, Args&&... a
         throw;
     } catch (std::exception const& e) {
         std::string message{message_prefix()};
-        std::string_view what{safe_what(e)};
+        std::string_view what{e.what()};
         if (!what.empty()) {
             message.append(": ");
             message.append(what);
@@ -436,7 +431,6 @@ int hoc_pid();
 int hoc_ired(const char*, int, int, int);
 double hoc_xred(const char*, double, double, double);
 int hoc_sred(const char*, char*, char*);
-void nrnpy_pass();
 void hoc_free_allobjects(cTemplate*, Symlist*, Objectdata*);
 int nrn_is_cable();
 void* nrn_opaque_obj2pyobj(Object*);  // PyObject reference not incremented

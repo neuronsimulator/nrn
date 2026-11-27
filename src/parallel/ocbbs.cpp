@@ -45,6 +45,16 @@ static void nrnmpi_dbl_broadcast(double*, int, int) {}
 #endif
 extern double* nrn_mech_wtime_;
 
+// NEURON's Python module sets the PythonObject pickle hooks. Without them
+// (nrniv -nopython, or a Python interface that doesn't set them) an object
+// other than a Vector can't be packed and a Python object can't be unpacked:
+// raise a HOC error instead of calling a null hook.
+static void require_pickle_hook(bool present, const char* what) {
+    if (!present) {
+        hoc_execerror(what, "needs the Python pickle hooks, which are not set");
+    }
+}
+
 extern bool nrn_trajectory_request_per_time_step_;
 
 extern size_t nrncore_write();
@@ -271,6 +281,8 @@ static void pack_help(int i, OcBBS* bbs) {
             bbs->pkint(n);
             bbs->pkvec(n, px);
         } else {  // must be a PythonObject
+            require_pickle_hook(neuron::python::methods.po2pickle != nullptr,
+                                "ParallelContext: packing an object other than a Vector");
             auto s = neuron::python::methods.po2pickle(*hoc_objgetarg(i));
             bbs->pkpickle(s);
         }
@@ -354,8 +366,8 @@ static Object** upkvec(void* v) {
 
 static Object** upkpyobj(void* v) {
     OcBBS* bbs = (OcBBS*) v;
+    require_pickle_hook(neuron::python::methods.pickle2po != nullptr, "ParallelContext.upkpyobj");
     std::vector<char> s = bbs->upkpickle();
-    assert(neuron::python::methods.pickle2po);
     Object* po = neuron::python::methods.pickle2po(s);
     --po->refcount;
     return hoc_temp_objptr(po);
@@ -366,7 +378,7 @@ static Object** pyret(void* v) {
     return bbs->pyret();
 }
 Object** BBS::pyret() {
-    assert(neuron::python::methods.pickle2po);
+    require_pickle_hook(neuron::python::methods.pickle2po != nullptr, "ParallelContext.pyret");
     Object* po = neuron::python::methods.pickle2po(impl_->pickle_ret_);
     impl_->pickle_ret_.clear();
     --po->refcount;
@@ -1288,14 +1300,16 @@ std::vector<char> BBSImpl::execute_helper(int id, bool exec) {
                     nrnmpi_int_broadcast(&size, 1, 0);
                     nrnmpi_char_broadcast(s.data(), size, 0);
                 }
-                assert(neuron::python::methods.pickle2po);
+                require_pickle_hook(neuron::python::methods.pickle2po != nullptr,
+                                    "ParallelContext: a Python object argument");
                 Object* po = neuron::python::methods.pickle2po(s);
                 --po->refcount;
                 hoc_pushobj(hoc_temp_objptr(po));
             }
         }
         if (style == 3) {
-            assert(neuron::python::methods.call_picklef);
+            require_pickle_hook(neuron::python::methods.call_picklef != nullptr,
+                                "ParallelContext: a Python job");
             if (exec) {
                 rs = neuron::python::methods.call_picklef(python_pickle, narg);
             }
@@ -1403,6 +1417,8 @@ void BBSImpl::subworld_worker_execute() {
             nrnmpi_int_broadcast(&n, 1, 0);
             std::vector<char> s(n);
             nrnmpi_char_broadcast(s.data(), n, 0);
+            require_pickle_hook(neuron::python::methods.pickle2po != nullptr,
+                                "ParallelContext: a Python object argument");
             Object* po = neuron::python::methods.pickle2po(s);
             --po->refcount;
             hoc_pushobj(hoc_temp_objptr(po));
@@ -1410,6 +1426,8 @@ void BBSImpl::subworld_worker_execute() {
     }
 
     if (style == 3) {
+        require_pickle_hook(neuron::python::methods.call_picklef != nullptr,
+                            "ParallelContext: a Python job");
         auto rs = neuron::python::methods.call_picklef(s, narg);
         assert(!rs.empty());
     } else {

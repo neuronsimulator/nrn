@@ -23,7 +23,6 @@ static Name2CellorSec n2cs;
 #define hoc_acterror(a, b) printf("%s %s\n", a, b)
 
 static void activate() {
-#if USE_PYTHON
     if (!activated) {
         // printf("first activation\n");
         activated = true;
@@ -36,7 +35,6 @@ static void activate() {
             }
         }
     }
-#endif
 }
 
 Section* nrnpy_pysecname2sec(const char* name) {  // could be Cell part or Sec
@@ -154,15 +152,18 @@ void n2cs_add(Name2CellorSec& n2cs, std::string cname, std::string sname, Sectio
     }
 }
 
+// Names the _pysec lookup holds: not an unnamed section's __nrnsec_0x...,
+// not a name with '<' (a Python repr), and not empty (a deleted section).
+static bool in_pysec_lookup(const std::string& name) {
+    return !name.empty() && name.find("__nrnsec_0x", 0) != 0 && name.find('<') == name.npos;
+}
+
 void nrnpy_pysecname2sec_add(Section* sec) {
     if (!activated) {
         return;
     }
     std::string n(secname(sec));
-    if (n.find("__nrnsec_0x", 0) == 0) {
-        return;
-    }
-    if (n.find("<", 0) != n.npos) {
+    if (!in_pysec_lookup(n)) {
         return;
     }
     // printf("nrnpy_pysecname2sec_add %s\n", secname(sec));
@@ -187,7 +188,9 @@ void nrnpy_pysecname2sec_remove(Section* sec) {
     }
     std::string name(secname(sec));
     // printf("remove %s\n", name.c_str());
-    if (name[0] == '<') {
+    // A section already deleted has no name: delete_section removed it while
+    // it still had one.
+    if (!in_pysec_lookup(name)) {
         return;
     }
 

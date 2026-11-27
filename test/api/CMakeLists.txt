@@ -1,30 +1,35 @@
-foreach(
-  api_test_file
-  deferred_unref.cpp
-  diam3d_pending.cpp
-  global_scalar.cpp
-  hh_sim.cpp
-  nlayer_extracellular.cpp
-  netcon.cpp
-  node_index.cpp
-  object_new_nothrow.cpp
-  object_new_wrap.cpp
-  object_ptr_push.cpp
-  plotshape_interface.cpp
-  property_array_steer.cpp
-  property_element_ptr.cpp
-  raw_hoc_errors.cpp
-  runtime_pythonobject_marshaling.cpp
-  section_tree.cpp
-  sectionlist_iterator_deleted.cpp
-  sectionlist_to_array.cpp
-  segment_diam.cpp
-  sections.cpp
-  stack_pops.cpp
-  symbol_array_dims.cpp
-  symbol_object_string.cpp
-  template_property.cpp
-  vclamp.cpp)
+set(api_test_files
+    deferred_unref.cpp
+    diam3d_pending.cpp
+    global_scalar.cpp
+    hh_sim.cpp
+    kschan_symbol_changes.cpp
+    location_hook_errors.cpp
+    nlayer_extracellular.cpp
+    netcon.cpp
+    node_index.cpp
+    object_new_nothrow.cpp
+    object_new_wrap.cpp
+    object_ptr_push.cpp
+    plotshape_interface.cpp
+    property_array_steer.cpp
+    property_element_ptr.cpp
+    rangevar_get_or_nan.cpp
+    raw_hoc_errors.cpp
+    runtime_pythonobject_marshaling.cpp
+    section_owner.cpp
+    section_tree.cpp
+    sectionlist_iterator_deleted.cpp
+    sectionlist_to_array.cpp
+    segment_diam.cpp
+    segment_mechanisms.cpp
+    sections.cpp
+    stack_pops.cpp
+    symbol_array_dims.cpp
+    symbol_object_string.cpp
+    template_property.cpp
+    vclamp.cpp)
+foreach(api_test_file ${api_test_files})
   string(REPLACE "." "_" api_test_name "${api_test_file}")
   add_executable(${api_test_name} ${api_test_file})
   cpp_cc_configure_sanitizers(TARGET ${api_test_name})
@@ -40,7 +45,6 @@ foreach(
   set_property(TEST "${test_name}" PROPERTY ENVIRONMENT "${NRN_RUN_FROM_BUILD_DIR_ENV}"
                                             "CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}")
 endforeach()
-
 # Reads Section::refcount, so it needs NEURON's internal headers.
 target_include_directories(
   sectionlist_iterator_deleted_cpp PRIVATE $<TARGET_PROPERTY:nrniv_lib,INCLUDE_DIRECTORIES>
@@ -170,3 +174,31 @@ endif()
 add_test(NAME "api::nmodlrandom_cpp" COMMAND nmodlrandom_cpp)
 set_property(TEST "api::nmodlrandom_cpp" PROPERTY ENVIRONMENT "${NRN_RUN_FROM_BUILD_DIR_ENV}"
                                                   "CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}")
+
+# libnrniv copies the part of CPython's stable ABI it uses (src/nrniv/nrnpy_capi.h) instead of
+# including Python.h. Check that copy against the headers of each Python of the build: it is a
+# compile-time check, so a difference fails the build.
+if(NRN_ENABLE_PYTHON)
+  foreach(val RANGE ${NRN_PYTHON_ITERATION_LIMIT})
+    list(GET NRN_PYTHON_VERSIONS ${val} pyver)
+    list(GET NRN_PYTHON_INCLUDES ${val} pyinc)
+    if(pyver VERSION_LESS 3.11 OR pyinc MATCHES "t$")
+      continue() # refused at run time: older than the limited API used, or free-threaded
+    endif()
+    string(REPLACE "." "" pyver_nodot "${pyver}")
+    set(abi_target python_abi_${pyver_nodot}_cpp)
+    if(WIN32)
+      # No link: Python.h would ask MSVC for python3.lib.
+      add_library(${abi_target} OBJECT python_abi.cpp)
+    else()
+      add_executable(${abi_target} python_abi.cpp)
+      add_test(NAME "api::${abi_target}" COMMAND ${abi_target})
+    endif()
+    target_include_directories(
+      ${abi_target} PRIVATE ${pyinc} $<TARGET_PROPERTY:nrniv_lib,INCLUDE_DIRECTORIES>
+                            ${PROJECT_BINARY_DIR}/include)
+    if(NOT MSVC)
+      target_compile_options(${abi_target} PRIVATE -Wno-deprecated-declarations)
+    endif()
+  endforeach()
+endif()

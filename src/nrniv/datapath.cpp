@@ -387,7 +387,6 @@ void HocDataPathImpl::search_vectors() {
 }
 
 void HocDataPathImpl::search_pysec() {
-#if USE_PYTHON
     std::string cs{};
     hoc_Item* qsec;
     // ForAllSections(sec)
@@ -400,7 +399,6 @@ void HocDataPathImpl::search_pysec() {
             strlist_.pop_back();
         }
     }
-#endif
 }
 
 void HocDataPathImpl::search(Section* sec) {

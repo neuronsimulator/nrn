@@ -1,13 +1,6 @@
 """Pointer and strref arguments of the GUI redirect must not leak.
 
-`gui_helper_3_helper_` puts each HOC argument into the tuple it passes to
-the Python callback. `PyTuple_SetItem` steals one reference. `hocobj_new`
-and `cpp2refstr` already return a new reference, so a further `Py_INCREF`
-would leave that wrapper alive after the tuple is destroyed.
-
-A plain string in the same call is created with `PyUnicode_FromString` and
-has no extra increment. While the callback is running, the fresh pointer
-and strref wrappers must have that same refcount.
+While the callback runs, they have the refcount of a plain string in the same call.
 """
 
 import ctypes
@@ -20,10 +13,7 @@ _record = {}
 
 
 def _gui_callback(name, _obj, _context, *params):
-    # getrefcount counts the helper tuple, this *params tuple, the loop
-    # variable, and the temporary passed into getrefcount. Those are the
-    # same for every fresh argument, so the counts match unless one wrapper
-    # was incremented an extra time.
+    # The same for every fresh argument, unless one was incremented an extra time.
     _record[name] = [sys.getrefcount(param) for param in params]
     if name == "xvalue":
         params[1][0] = 7.5
@@ -50,10 +40,15 @@ def test_gui_helper_argument_refcount():
         _install(_gui_callback)
         h.xvalue(prompt, number)
         h.xvarlabel(text)
+        graph = h.Graph()
+        assert graph.begin() == 1 and h.boolean_dialog("q") == 1
+        # Its C++ object is the callback's; with InterViews, freeing it unredirected crashes.
+        del graph
     finally:
         _install(None)
 
-    assert set(_record) == {"xvalue", "xvarlabel"}, _record
+    names = "xvalue xvarlabel Graph Graph.begin boolean_dialog ~Graph"
+    assert list(_record) == names.split(), _record
     prompt_rc, ptr_rc = _record["xvalue"]
     (str_rc,) = _record["xvarlabel"]
     assert number[0] == 7.5

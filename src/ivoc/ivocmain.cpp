@@ -247,7 +247,7 @@ int ivocmain_session(int, const char**, const char**, int start_session);
 extern int nrn_global_argc;
 extern char** nrn_global_argv;
 int always_false;
-extern int nrn_is_python_extension;
+extern int nrn_main_launch;
 extern void hoc_nrnmpi_init();
 #if NRNMPI_DYNAMICLOAD
 extern void nrnmpi_stubs();
@@ -548,11 +548,10 @@ nrniv [options] [fileargs]
         if (status == nrn_win_neuronhome_status::refused) {
             // The diagnostic is already on stderr. Discovery would accept
             // another directory. MessageBox hangs SSH and CI.
-            // Importing hoc must not terminate the Python process. The
-            // launcher (nrn_is_python_extension == 0) still exits. Clear the
-            // argv marker set above so a later import is not treated as
-            // already initialized.
-            if (nrn_is_python_extension) {
+            // Importing neuron must not terminate the Python process
+            // (nrn_main_launch == 2). Clear the argv marker set above so a
+            // later import is not treated as already initialized.
+            if (nrn_main_launch == 2) {
                 delete[] nrn_global_argv;
                 nrn_global_argv = nullptr;
                 return 1;
@@ -663,25 +662,23 @@ nrniv [options] [fileargs]
 
 #if defined(USE_PYTHON)
     nrn_nopython = 0;
-    if (!nrn_is_python_extension) {
 #if HAVE_IV
-        if (session) {
-            if (session->style()->value_is_on("nopython")) {
-                nrn_nopython = 1;
-            }
-            String str;
-            if (session->style()->find_attribute("pyexe", str)) {
-                nrnpy_pyexe = str.string();
-            }
-        } else
+    if (session) {
+        if (session->style()->value_is_on("nopython")) {
+            nrn_nopython = 1;
+        }
+        String str;
+        if (session->style()->find_attribute("pyexe", str)) {
+            nrnpy_pyexe = str.string();
+        }
+    } else
 #endif
-        {
-            if (nrn_optarg_on("-nopython", &our_argc, our_argv)) {
-                nrn_nopython = 1;
-            }
-            if (const char* buf = nrn_optarg("-pyexe", &our_argc, our_argv)) {
-                nrnpy_pyexe = buf;
-            }
+    {
+        if (nrn_optarg_on("-nopython", &our_argc, our_argv)) {
+            nrn_nopython = 1;
+        }
+        if (const char* buf = nrn_optarg("-pyexe", &our_argc, our_argv)) {
+            nrnpy_pyexe = buf;
         }
     }
 #endif  // USE_PYTHON
@@ -775,13 +772,7 @@ nrniv [options] [fileargs]
         use_python_interpreter = 1;
     }
 
-    if (nrn_is_python_extension) {
-        return 0;
-    }
-    if (neuron::python::methods.interpreter_start) {
-        neuron::python::methods.interpreter_start(1);
-    }
-    if (use_python_interpreter && !neuron::python::methods.interpreter_start) {
+    if (use_python_interpreter && !neuron::python::methods.interpreter_run) {
         fprintf(stderr, "Python not available\n");
         exit(1);
     }
@@ -799,15 +790,11 @@ nrniv [options] [fileargs]
 #if defined(USE_PYTHON)
     if (use_python_interpreter) {
         // process the .py files and an interactive interpreter
-        if (neuron::python::methods.interpreter_start &&
-            neuron::python::methods.interpreter_start(2) != 0) {
+        if (neuron::python::methods.interpreter_run() != 0) {
             // We encountered an error when processing the -c argument or Python
             // script given on the commandline.
             exit_status = 1;
         }
-    }
-    if (neuron::python::methods.interpreter_start) {
-        neuron::python::methods.interpreter_start(0);
     }
 #endif
     hoc_final_exit();

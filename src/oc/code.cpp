@@ -24,6 +24,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <utility>
 #include <vector>
 #include <variant>
 #include <sstream>
@@ -178,13 +179,14 @@ pairs could take place.
 */
 static Object* unref_defer_;
 
+bool hoc_unref_is_deferred() {
+    return unref_defer_;
+}
+
 void hoc_unref_defer() {
-    if (unref_defer_) {
-#if 0
-        printf("hoc_unref_defer %s %d\n", hoc_object_name(unref_defer_), unref_defer_->refcount);
-#endif
-        hoc_obj_unref(unref_defer_);
-        unref_defer_ = nullptr;
+    // Freeing it can run HOC or Python, and so come here again.
+    if (auto* const ob = std::exchange(unref_defer_, nullptr)) {
+        hoc_obj_unref(ob);
     }
 }
 

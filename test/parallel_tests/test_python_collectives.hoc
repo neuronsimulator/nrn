@@ -1,0 +1,26 @@
+// Python objects between the ranks of a HOC program. Rank 1 is the first to use Python.
+{nrnmpi_init()}
+objref pc, p, o
+pc = new ParallelContext()
+if (pc.id == 1) { nrnpython("x = 1") }
+{pc.barrier()}
+p = new PythonObject()
+{nrnpython("from neuron import h; rank = int(h.ParallelContext().id()); mine = [rank, 'r']")}
+{nrnpython("def check(got, want): assert got == want, (rank, got, want)")}
+{nrnpython("everyone = [[0, 'r'], [1, 'r']]; parts = [rank * 10, None]; kept = [5, 6] if rank == 1 else None")}
+
+o = pc.py_allgather(p.mine)
+p.check(o, p.everyone)
+o = pc.py_alltoall(p.parts)
+{nrnpython("want = [[0, 10], [None, None]][rank]; gathered = [None, everyone][rank]")}
+p.check(o, p.want)
+o = pc.py_gather(p.mine, 1)
+p.check(o, p.gathered)
+o = pc.py_broadcast(p.mine, 1)
+p.check(o._, p.everyone._[1])
+o = pc.py_scatter(p.kept, 1)
+p.check(o, p.rank + 5)
+{pc.barrier()}
+print "ok"
+{pc.runworker() pc.done()}
+quit()

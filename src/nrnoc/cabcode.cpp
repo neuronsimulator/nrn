@@ -57,6 +57,7 @@ NRN_DLLSYM int diam_changed = 1; /* changing diameter, length set this flag
               is set up */
 extern int nrn_shape_changed_;
 
+NRN_DLLSYM void (*nrnpy_tree_changed_p_)();
 NRN_DLLSYM char* (*nrnpy_pysec_name_p_)(Section*);
 NRN_DLLSYM Object* (*nrnpy_pysec_cell_p_)(Section*);
 NRN_DLLSYM int (*nrnpy_pysec_cell_equals_p_)(Section*, Object*);
@@ -275,6 +276,13 @@ int nrn_sec2cell_equals(Section* sec, Object* obj) {
     return 0;
 }
 
+void nrn_tree_changed() {
+    tree_changed = 1;
+    if (nrnpy_tree_changed_p_) {
+        (*nrnpy_tree_changed_p_)();
+    }
+}
+
 static Section* new_section(Object* ob, Symbol* sym, int i) {
     Section* sec;
     Prop* prop;
@@ -290,13 +298,11 @@ static Section* new_section(Object* ob, Symbol* sym, int i) {
     prop->dparam[0] = {neuron::container::do_not_search, sym};
     prop->dparam[5] = i;
     prop->dparam[6] = {neuron::container::do_not_search, ob};
-#if USE_PYTHON
     prop->dparam[PROP_PY_INDEX] = nullptr;
-#endif
     nrn_pushsec(sec);
     d = (double) DEF_nseg;
     cable_prop_assign(nseg, &d, 0);
-    tree_changed = 1;
+    nrn_tree_changed();
     /*printf("new_section %s\n", secname(sec));*/
     return sec;
 }
@@ -327,14 +333,18 @@ Section* section_new(Symbol* sym) {
     return sec;
 }
 
-#if USE_PYTHON
-struct NPySecObj;
-Section* nrnpy_newsection(NPySecObj* v) {
+// A section without a HOC symbol, owned by an interface object (a Python
+// Section or a C API client's object), which is stored as an opaque pointer.
+Section* section_new_owned(void* owner) {
     auto sec = section_new(nullptr);
-    sec->prop->dparam[PROP_PY_INDEX] = static_cast<void*>(v);
+    sec->prop->dparam[PROP_PY_INDEX] = owner;
     return sec;
 }
-#endif
+
+struct NPySecObj;
+Section* nrnpy_newsection(NPySecObj* v) {
+    return section_new_owned(static_cast<void*>(v));
+}
 
 void delete_section(void) {
     Section* sec;
@@ -350,18 +360,18 @@ void delete_section(void) {
         hoc_retpushx(0.0);
         return;
     }
-#if USE_PYTHON
     if (sec->prop->dparam[PROP_PY_INDEX].get<void*>()) { /* Python Section */
         /* the Python Section will be a zombie section with a pointer
-           to an invalid Section*.
+           to an invalid Section*. Its _pysec name goes now, while secname
+           can still give it; the lookup must not find a freed section.
         */
+        nrnpy_pysecname2sec_remove(sec);
         sec->prop->dparam[PROP_PY_INDEX] = nullptr;
         section_ref(sec);
         sec_free(sec->prop->dparam[8].get<hoc_Item*>());
         hoc_retpushx(0.0);
         return;
     }
-#endif
     auto* sym = sec->prop->dparam[0].get<Symbol*>();
     if (!sym) {
         hoc_execerror("Cannot delete an unnamed hoc section", (char*) 0);
@@ -420,11 +430,7 @@ double nrn_ra(Section* sec) {
 
 void cab_alloc(Prop* p) {
     Datum* pd;
-#if USE_PYTHON
 #define CAB_SIZE 11
-#else
-#define CAB_SIZE 10
-#endif
     pd = nrn_prop_datum_alloc(CABLESECTION, CAB_SIZE, p);
     pd[1] = 0.0;
     pd[2] = DEF_L;
@@ -608,7 +614,7 @@ void nrn_disconnect(Section* sec) {
             nrn_relocate_old_points(ch, oldpnode, ch, ch->parentnode);
         }
     section_unref(oldpsec);
-    tree_changed = 1;
+    nrn_tree_changed();
     neuron::model().node_data().mark_as_unsorted();
 }
 
@@ -657,7 +663,7 @@ static void connectsec_impl(Section* parent, Section* sec) {
     } else if (oldpnode) {
         delete oldpnode;
     }
-    tree_changed = 1;
+    nrn_tree_changed();
     diam_changed = 1;
 }
 
@@ -1506,7 +1512,7 @@ void nrn_change_nseg(Section* sec, int n) {
         int i;
         int nold = sec->nnode;
         node_alloc(sec, (short) n + 1);
-        tree_changed = 1;
+        nrn_tree_changed();
         diam_changed = 1;
         sec->recalc_area_ = 1;
         pnd = sec->pnode;
@@ -1697,11 +1703,9 @@ const char* secname(Section* sec) {
             } else {
                 Sprintf(name, "%s%s", s->name, hoc_araystr(s, indx, hoc_top_level_data));
             }
-#if USE_PYTHON
         } else if (sec->prop->dparam[PROP_PY_INDEX].get<void*>()) {
             assert(nrnpy_pysec_name_p_);
             return (*nrnpy_pysec_name_p_)(sec);
-#endif
         } else {
             name[0] = '\0';
         }
@@ -1712,7 +1716,6 @@ const char* secname(Section* sec) {
 }
 
 const char* nrn_sec2pysecname(Section* sec) {
-#if USE_PYTHON
     static char buf[256];
     const char* name = secname(sec);
     if (sec && sec->prop->dparam[PROP_PY_INDEX].get<void*>() &&
@@ -1722,9 +1725,6 @@ const char* nrn_sec2pysecname(Section* sec) {
         strcpy(buf, name);
     }
     return buf;
-#else
-    return secname(sec);
-#endif
 }
 
 void section_owner(void) {
@@ -1753,10 +1753,8 @@ char* hoc_section_pathname(Section* sec) {
         } else {
             Sprintf(name, "%s%s", s->name, hoc_araystr(s, indx, hoc_objectdata));
         }
-#if USE_PYTHON
     } else if (sec && sec->prop && sec->prop->dparam[PROP_PY_INDEX].get<void*>()) {
         strcpy(name, nrn_sec2pysecname(sec));
-#endif
     } else {
         name[0] = '\0';
     }

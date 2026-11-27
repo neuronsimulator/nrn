@@ -17,6 +17,7 @@
 #include "seclist.h"  // SectionList_reg
 #include "parse.hpp"
 #include "nrniv_mf.h"
+#include "nrnpy.h"
 #include "cabvars.h"
 #include "neuron.h"
 #include "neuron/container/data_handle.hpp"
@@ -105,7 +106,6 @@ void nrn_possible_mismatched_arch(const char* libname) {
 
 static char CHKmes[] = "The user defined name, %s, already exists\n";
 
-NRN_DLLSYM void (*nrnpy_reg_mech_p_)(int);
 
 NRN_DLLSYM int secondorder = 0;
 int state_discon_allowed_;
@@ -215,9 +215,21 @@ void add_nrn_fornetcons(int type, int indx) {
 NRN_DLLSYM short* nrn_is_artificial_;
 short* nrn_artcell_qindex_;
 
+static Object** pp_get_segment(void*);
+
 void add_nrn_artcell(int mechtype, int qi) {
     nrn_is_artificial_[mechtype] = 1;
     nrn_artcell_qindex_[mechtype] = qi;
+    // An artificial cell has no location (see point_register_mech).
+    auto* const methods = nrn_pnt_template_[mechtype]->symtable;
+    auto* const s = hoc_table_lookup("get_segment", methods);
+    if (s->type == OBFUNCTION &&
+        s->u.u_proc->defn.pfo == reinterpret_cast<Object** (*) ()>(pp_get_segment)) {
+        hoc_unlink_symbol(s, methods);
+        free(s->name);
+        free(s->u.u_proc);
+        free(s);
+    }
 }
 
 int nrn_is_artificial(int pnttype) {
@@ -732,11 +744,7 @@ void register_mech(const char** m,
                    nrn_init_t initialize,
                    int nrnpointerindex, /* if -1 then there are none */
                    int vectorized) {
-    int mechtype = n_memb_func;
     nrn_register_mech_common(m, alloc, cur, jacob, stat, initialize, nrnpointerindex, vectorized);
-    if (nrnpy_reg_mech_p_) {
-        (*nrnpy_reg_mech_p_)(mechtype);
-    }
 }
 
 void hoc_register_parm_default(int mechtype, const std::vector<double>* pd) {
@@ -1016,19 +1024,27 @@ int point_reg_helper(Symbol* s2) {
     s2->cpublic = 0;
     pnt_map[n_memb_func - 1] = pointtype;
     memb_func[n_memb_func - 1].is_point = 1;
-    if (nrnpy_reg_mech_p_) {
-        (*nrnpy_reg_mech_p_)(n_memb_func - 1);
-    }
     return pointtype++;
 }
 
-extern void class2oc_base(const char*,
-                          ctor_f* cons,
-                          dtor_f* destruct,
-                          Member_func*,
-                          Member_ret_obj_func*,
-                          Member_ret_str_func*);
+extern void class2oc(const char*,
+                     ctor_f* cons,
+                     dtor_f* destruct,
+                     Member_func*,
+                     Member_ret_obj_func*,
+                     Member_ret_str_func*);
 
+
+// A point process's location as a Python nrn.Segment, None if it has none.
+static Object** pp_get_segment(void* v) {
+    auto* const pnt = static_cast<Point_process*>(v);
+    Object* segment{};
+    if (pnt->prop && pnt->sec && nrnpy_seg_from_sec_x) {
+        segment = nrnpy_seg_from_sec_x(pnt->sec, nrn_arc_position(pnt->sec, pnt->node));
+        --segment->refcount;
+    }
+    return hoc_temp_objptr(segment);
+}
 
 int point_register_mech(const char** m,
                         Pvmp alloc,
@@ -1045,7 +1061,7 @@ int point_register_mech(const char** m,
     Symlist* sl;
     Symbol *s, *s2;
     nrn_load_name_check(m[1]);
-    class2oc_base(m[1], constructor, destructor, fmember, nullptr, nullptr);
+    class2oc(m[1], constructor, destructor, fmember, nullptr, nullptr);
     s = hoc_lookup(m[1]);
     sl = hoc_symlist;
     hoc_symlist = s->u.ctemplate->symtable;
@@ -1055,6 +1071,12 @@ int point_register_mech(const char** m,
     nrn_pnt_template_[n_memb_func - 1] = s->u.ctemplate;
     s2 = hoc_lookup(m[1]);
     hoc_symlist = sl;
+    auto*& methods = s->u.ctemplate->symtable;
+    if (!hoc_table_lookup("get_segment", methods)) {  // the mechanism's own
+        auto* const get_segment = hoc_install("get_segment", OBFUNCTION, 0, &methods);
+        get_segment->cpublic = 1;
+        get_segment->u.u_proc->defn.pfo = reinterpret_cast<Object** (*) ()>(pp_get_segment);
+    }
     return point_reg_helper(s2);
 }
 

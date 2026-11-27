@@ -22,27 +22,13 @@ from pathlib import Path
 # is not: --strict makes abi3audit fail instead of omitting it.
 _IGNORE_NAMES = {"libpywrapper.so", "libpywrapper.dylib", "libpywrapper.dll"}
 
-# Importable extensions on every abi3 wheel. RxD is on for wheels.
-# "hoc." does not match a longer stem. _nmodl is the importable NMODL module.
-_REQUIRED_STEMS = ("hoc", "graphicsPrimitives", "ctng", "_nmodl")
-
-
-def _requires_libnrnpython(wheel_name: str) -> bool:
-    """abi3audit scans .so and .pyd only.
-
-    manylinux and musllinux wheels contain libnrnpython.abi3.so. macOS builds
-    that library as a .dylib and Windows as a .dll, so those reports have no
-    such object.
-    """
-    return "manylinux" in wheel_name or "musllinux" in wheel_name
+# Importable extensions on every abi3 wheel. RxD is on for wheels. _nmodl is the
+# importable NMODL module. The hoc extension is gone: neuron._interface replaced it.
+_REQUIRED_STEMS = ("graphicsPrimitives", "ctng", "_nmodl")
 
 
 def _matches_stem(name: str, stem: str) -> bool:
     return name.startswith(stem + ".")
-
-
-def _is_libnrnpython(name: str) -> bool:
-    return name.startswith("libnrnpython") or name.startswith("nrnpython")
 
 
 def _result_problems(name: str, result: object) -> list[str]:
@@ -141,9 +127,6 @@ def judge(
     for stem in _REQUIRED_STEMS:
         if not any(_matches_stem(name, stem) for name in inspected):
             problems.append(f"abi3 audit: missing {stem}")
-    if _requires_libnrnpython(wheel_name):
-        if not any(_is_libnrnpython(name) for name in inspected):
-            problems.append("abi3 audit: missing libnrnpython")
     if wheel_objects is not None:
         for raw_name in wheel_objects:
             base = os.path.basename(str(raw_name))

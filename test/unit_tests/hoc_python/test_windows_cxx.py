@@ -240,6 +240,7 @@ def test_rxd_command_forwards_user_flags():
         "/Iinc",
         "s.cpp",
         "/Feo.so",
+        "/Foo.obj",
         "/link",
         "/LIBPATH:lib",
         "rxdmath.lib",
