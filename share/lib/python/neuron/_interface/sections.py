@@ -69,6 +69,7 @@ from .api import (
     Symbol,
     _diam_changed,
     _structure_change_count,
+    KSCHAN_SYMBOLS_CHANGED,
     get_topology_version,
     _PACKAGE,
 )
@@ -102,6 +103,32 @@ _SYMBOL_INFO_CACHE = {}
 # (KSChan.add_hhstate, nrn_load_dll, HOC code), and every such call moves it.
 _SYMBOL_MISS_EPOCH = {}
 _V_SYMBOL = _nrn_symbol(b"v")
+_SYMBOLS_SEEN = [None]
+
+
+def forget_moved_symbols():
+    """Forget every Symbol* kept by name once KSChan renamed or freed one.
+
+    KSChan.name() renames a mechanism's symbols in place, and ion() and state
+    changes free them, so a name kept here would read another mechanism's
+    variable or freed memory. The core counts those changes; on a core
+    without the count nothing is forgotten (TODO(gap-94)). The core clears
+    its fast-path tables on the same count.
+    """
+    count = KSCHAN_SYMBOLS_CHANGED
+    if count is None or count.value == _SYMBOLS_SEEN[0]:
+        return
+    _SYMBOLS_SEEN[0] = count.value
+    _SYMBOL_INFO_CACHE.clear()
+    _SYMBOL_MISS_EPOCH.clear()
+    _POINTER_RANGEVARS.clear()
+    mechanism = getattr(_PACKAGE, "mechanism", None)
+    if mechanism is not None:
+        mechanism._MECH_ATTR_CACHE.clear()
+        mechanism._DECLARATION_ORDER.clear()
+    if _FAST_RANGEVARS is not None:
+        _FAST_RANGEVARS.clear()
+        _FAST_MECHANISMS.clear()
 # The core's fast path (prototype, nrnpy_fast.cpp): tables this module fills
 # after its own lookup resolved a name once. None on a core without it.
 # name -> Symbol address of a scalar range variable that is not diam or a
@@ -169,6 +196,7 @@ def _current_array_length(info):
 def _get_symbol_info(name):
     """Return (sym_ptr, sym_type, is_array, array_length) for *name*, or None
     if no such symbol exists. Cached after first lookup."""
+    forget_moved_symbols()
     cached = _SYMBOL_INFO_CACHE.get(name)
     if cached is not None:
         return _current_array_length(cached) if cached[2] else cached
@@ -1134,6 +1162,7 @@ class Segment(SEGMENT_BASE):
         return sorted(attrs)
 
     def _getattr(self, name):
+        forget_moved_symbols()
         if name == "__name__":
             # help() probes this first; NEURON's help() of a dead segment raises.
             self._sec._check_alive()
@@ -1266,10 +1295,11 @@ class Segment(SEGMENT_BASE):
             # here: that is one ismembrane call per density mechanism, and a
             # section or template made in between moves the epoch. One
             # has_membrane call answers. A list never built is built once.
+            # A stale list (the epoch moved since it was built) is rebuilt
+            # once, with the direct ismembrane, which does not move the
+            # epoch: the next fresh segments then find it current.
             inserted = _current_inserted_mechs(self._sec)
-            if inserted is _STALE:
-                inserted = None
-            elif inserted is None:
+            if inserted is None or inserted is _STALE:
                 inserted = self._sec._get_inserted_mechs()
             if (
                 inserted is None or name not in inserted
@@ -1379,6 +1409,7 @@ class Segment(SEGMENT_BASE):
         )
 
     def _setattr(self, name, value):
+        forget_moved_symbols()
         # seg._ref_p_t2 = ref wires mechanism t2's POINTER p, the same as
         # seg.t2._ref_p = ref (NEURON's test_pnt2).
         if name.startswith("_ref_") and isinstance(value, NrnRef):
@@ -2111,11 +2142,12 @@ class Section(SECTION_BASE):
             if built == epoch:
                 return cached
 
-        n = _PACKAGE._n
+        # The direct ismembrane: a HOC call through n would move the epoch and
+        # make the list stale at once.
         inserted = [
             name
             for name in _PACKAGE.mechanism._all_density_mechanism_names()
-            if n.ismembrane(name, sec=self)
+            if _ismembrane(self._sec, name)
         ]
         self._inserted_mechs = inserted
         # Recorded after the calls: a call that bumps the epoch would make the
@@ -2126,6 +2158,9 @@ class Section(SECTION_BASE):
     def has_membrane(self, mechanism):
         """Return True if *mechanism* is inserted in this section."""
 
+        if isinstance(mechanism, str) and mechanism.isascii():
+            # Direct, as _missing_owner: no HOC call, so the epoch stays.
+            return _ismembrane(self._sec, mechanism)
         return bool(_PACKAGE._n.ismembrane(mechanism, sec=self))
 
     def name(self):

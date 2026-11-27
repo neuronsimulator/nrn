@@ -516,6 +516,7 @@ class Mechanism(*_MECHANISM_BASES):
 
     def _getattr(self, name):
         """Resolve unsuffixed attribute name to a range variable read or an NMODL function wrapper."""
+        _PACKAGE.sections.forget_moved_symbols()
         # HOC can delete the host section while this Mechanism is held; check
         # before touching freed Section*/node storage. Dunder probes
         # (copy/pickle) skip the check and raise AttributeError as usual, but
@@ -724,6 +725,7 @@ class Mechanism(*_MECHANISM_BASES):
 
     def _setattr(self, name, value):
         """Write unsuffixed range variable on the mechanism at the current segment; populates cache."""
+        _PACKAGE.sections.forget_moved_symbols()
         # POINTER assignment: seg.mech._ref_PTR = src._ref_X.
         if name.startswith("_ref_"):
             if isinstance(value, NrnRef):

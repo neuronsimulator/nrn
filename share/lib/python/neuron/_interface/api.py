@@ -292,6 +292,15 @@ if str(Path(libnrniv._name).resolve()) not in _own_nrniv:
     )
 
 
+# KSChan's count of its symbol renames and frees (kschan.cpp), or None on a
+# core without it. The symbol caches keyed by name follow it
+# (sections.forget_moved_symbols).
+try:
+    KSCHAN_SYMBOLS_CHANGED = ctypes.c_size_t.in_dll(libnrniv, "nrn_kschan_symbols_changed")
+except ValueError:
+    KSCHAN_SYMBOLS_CHANGED = None
+
+
 def _bind(name, restype, *argtypes):
     """Return libnrniv's function *name* with its C signature set."""
     function = getattr(libnrniv, name)
