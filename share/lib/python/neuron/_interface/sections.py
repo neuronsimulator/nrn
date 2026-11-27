@@ -127,7 +127,11 @@ def forget_moved_symbols():
     _SYMBOLS_SEEN[0] = count
     if since is None:  # every slow path looks first: nothing was kept before
         return
-    moved = [n for n, info in _SYMBOL_INFO_CACHE.items() if _kschan_symbol_moved(info[0], since)]
+    moved = [
+        n
+        for n, info in _SYMBOL_INFO_CACHE.items()
+        if _kschan_symbol_moved(info[0], since)
+    ]
     for name in moved:
         del _SYMBOL_INFO_CACHE[name]
         _POINTER_RANGEVARS.pop(name, None)
@@ -135,12 +139,16 @@ def forget_moved_symbols():
     mechanism = getattr(_PACKAGE, "mechanism", None)
     if mechanism is not None:
         for cache in mechanism._MECH_ATTR_CACHE.values():
-            for name in [n for n, e in cache.items() if _kschan_symbol_moved(e[1], since)]:
+            for name in [
+                n for n, e in cache.items() if _kschan_symbol_moved(e[1], since)
+            ]:
                 del cache[name]
         mechanism._DECLARATION_ORDER.clear()
     if _FAST_RANGEVARS is not None:
         _FAST_RANGEVARS.clear()
         _FAST_MECHANISMS.clear()
+
+
 # The core's fast path (prototype, nrnpy_fast.cpp): tables this module fills
 # after its own lookup resolved a name once. None on a core without it.
 # name -> Symbol address of a scalar range variable that is not diam or a
