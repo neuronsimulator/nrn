@@ -799,6 +799,26 @@ Segments
             fprintf(stderr, "%s\n", err);
         }
 
+.. c:function:: size_t nrn_kschan_symbol_changes(void)
+
+    How many times a ``KSChan`` has renamed one of its symbols in place
+    (:meth:`KSChan.name`, state names) or freed one (:meth:`KSChan.ion`,
+    :meth:`KSChan.remove_state`). A caller that keeps a ``Symbol*`` by name
+    looks each name up again with :c:func:`nrn_symbol` once the count has moved:
+    a kept symbol may now be another mechanism's variable, or freed memory. The
+    g/p switch of ``iv_type`` renames ``gmax`` to ``pmax`` in place without
+    counting: the symbol stays the same variable.
+
+    .. code-block:: c
+
+        size_t seen = nrn_kschan_symbol_changes();
+        Symbol* gmax = nrn_symbol("gmax_kA");  // kept by name
+        // ... HOC runs: KSChan.name("kB") ...
+        if (nrn_kschan_symbol_changes() != seen) {
+            gmax = nrn_symbol("gmax_kA");  // NULL now: the name is gone
+            seen = nrn_kschan_symbol_changes();
+        }
+
 .. c:function:: int nrn_rangevar_set_nothrow(Symbol* sym, Section* sec, double x, int index, double value, char* error_msg, size_t error_msg_size)
 
     Write element ``index`` of a range variable at position ``x``, with the same

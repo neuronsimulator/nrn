@@ -4,6 +4,7 @@ foreach(
   diam3d_pending.cpp
   global_scalar.cpp
   hh_sim.cpp
+  kschan_symbol_changes.cpp
   nlayer_extracellular.cpp
   netcon.cpp
   node_index.cpp
