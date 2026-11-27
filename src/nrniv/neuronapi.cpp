@@ -56,6 +56,7 @@ void simpleconnectsection();
 extern Object* hoc_newobj1(Symbol*, int);
 extern void hoc_unref_defer();
 extern std::tuple<int, const char**> nrn_mpi_setup(int argc, const char** argv);
+extern std::size_t nrn_kschan_symbols_changed;
 
 extern "C" {
 
@@ -387,6 +388,10 @@ int nrn_rangevar_get_nothrow(Symbol* sym,
         }
         return 1;
     }
+}
+
+size_t nrn_kschan_symbol_changes(void) {
+    return nrn_kschan_symbols_changed;
 }
 
 int nrn_rangevar_set_nothrow(Symbol* sym,

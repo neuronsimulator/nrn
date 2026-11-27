@@ -10,6 +10,13 @@
 #include "parse.hpp"
 #include "nrniv_mf.h"
 
+// How many times KSChan has renamed a symbol in place (name(), state names) or freed one, for
+// nrn_kschan_symbol_changes: a caller that keeps a Symbol* by name looks the name up again when the
+// count moves. Not the g/p switch of setcond(): that renames gmax to pmax in place, the Symbol
+// stays the variable it was, and NEURON's Python module keeps reading it as gmax_<name>
+// (test_kschan.py test_4).
+std::size_t nrn_kschan_symbols_changed{};
+
 #define NSingleIndex 0
 
 using KSChanList = std::vector<KSChan*>;
@@ -960,9 +967,11 @@ void KSChan::setname(const char* s) {
         const char* suffix = name_.c_str();
         free(mechsym_->name);
         mechsym_->name = strdup(suffix);
+        ++nrn_kschan_symbols_changed;
         if (is_point()) {
             free(rlsym_->name);
             rlsym_->name = strdup(suffix);
+            ++nrn_kschan_symbols_changed;
         }
 
         Symbol* sp;
@@ -980,6 +989,7 @@ void KSChan::setname(const char* s) {
                     // printf("KSChan::setname change %s to %s\n", sp->name, s1);
                     free(sp->name);
                     sp->name = s1;
+                    ++nrn_kschan_symbols_changed;
                 }
             }
         }
@@ -2055,6 +2065,7 @@ void KSChan::sname_install() {
         }
         free(snew[i + soffset_]->name);
         snew[i + soffset_]->name = strdup(buf);
+        ++nrn_kschan_symbols_changed;
         if (strlen(buf1) > 0) {
             state_[i].name_ = buf1;
         }
@@ -2098,6 +2109,7 @@ Symbol** KSChan::newppsym(int n) {
 }
 
 void KSChan::freesym(Symbol* s, Symbol* top) {
+    ++nrn_kschan_symbols_changed;
     if (top) {
         assert(top->type == TEMPLATE);
         hoc_unlink_symbol(s, top->u.ctemplate->symtable);
