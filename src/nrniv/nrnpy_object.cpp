@@ -876,7 +876,7 @@ int gui_get_str(Object* o, char** cpp) {
     if (*cpp && string == *cpp) {
         return 0;
     }
-    delete[] * cpp;
+    delete[] *cpp;
     *cpp = new char[string.size() + 1];
     std::strcpy(*cpp, string.c_str());
     return 1;
@@ -1495,7 +1495,7 @@ void savestate_store(char** data, uint64_t* size) {
     if (!bytes || py.PyBytes_AsStringAndSize(bytes.get(), &chars, &n)) {
         fail(Error{}, "SaveState: Data store failure.", Raise::hoc_error);
     }
-    delete[] * data;
+    delete[] *data;
     *data = new char[n];
     std::memcpy(*data, chars, n);
     *size = n;
@@ -1770,13 +1770,13 @@ PyObject* nrn_python_type(const char* name) {
     if (!start() || !make_types()) {
         return nullptr;
     }
-    auto* const type = !name                           ? py._Py_NoneStruct
-                       : !std::strcmp(name, "object")  ? types.object
-                       : !std::strcmp(name, "section") ? types.section
-                       : !std::strcmp(name, "segment") ? types.segment
+    auto* const type = !name                                                ? py._Py_NoneStruct
+                       : !std::strcmp(name, "object")                       ? types.object
+                       : !std::strcmp(name, "section")                      ? types.section
+                       : !std::strcmp(name, "segment")                      ? types.segment
                        : !std::strcmp(name, "mechanism") && types.mechanism ? types.mechanism
                        : !std::strcmp(name, "vector") && types.vector       ? types.vector
-                                                       : py._Py_NoneStruct;
+                                                                            : py._Py_NoneStruct;
     return Ref::borrow(type).release();
 }
 

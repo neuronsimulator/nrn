@@ -126,7 +126,7 @@ PyObject* current_epoch() {
 PyObject* cached_mechanism(PyObject* self, PyObject* name) {
     auto* const cache = slot(self, SegmentSlot::mech_cache);
     auto* const mech = cache && type_of(cache) == py.PyDict_Type ? py.PyDict_GetItem(cache, name)
-                                                                  : nullptr;
+                                                                 : nullptr;
     auto* const epoch = current_epoch();
     auto* const section_wrapper = slot(self, SegmentSlot::sec);
     auto* const generations = shared(t.nseg_generation, "_fast_nseg_generation");
@@ -136,7 +136,7 @@ PyObject* cached_mechanism(PyObject* self, PyObject* name) {
     }
     auto* g = py.PyDict_GetItem(generations, slot(section_wrapper, SectionSlot::sec));
     return same(slot(mech, MechanismSlot::nseg), g ? g : t.zero) ? Ref::borrow(mech).release()
-                                                                  : nullptr;
+                                                                 : nullptr;
 }
 
 /// Section and interior x of a Mechanism whose validity the interface checked at this epoch.
@@ -358,7 +358,7 @@ int vector_setitem(PyObject* self, PyObject* key, PyObject* value) {
                            : nullptr;
     if (pd) {
         double const d = type_of(value) == py.PyFloat_Type ? py.PyFloat_AsDouble(value)
-                                                            : py.PyLong_AsDouble(value);
+                                                           : py.PyLong_AsDouble(value);
         if (!(d == -1.0 && py.PyErr_Occurred())) {
             *pd = d;
             return 0;
@@ -414,13 +414,12 @@ bool make_types() {
     t.mechanisms = table("_fast_mechanisms");
     t.symbols_seen = nrn_kschan_symbols_changed;
 
-    static Slot iterator_slots[]{
-        {stable::tp_iter, reinterpret_cast<void*>(iterator_self)},
-        {stable::tp_iternext, reinterpret_cast<void*>(iterator_next)},
-        {stable::tp_traverse, reinterpret_cast<void*>(iterator_traverse)},
-        {stable::tp_clear, reinterpret_cast<void*>(iterator_clear)},
-        {stable::tp_dealloc, reinterpret_cast<void*>(iterator_dealloc)},
-        {0, nullptr}};
+    static Slot iterator_slots[]{{stable::tp_iter, reinterpret_cast<void*>(iterator_self)},
+                                 {stable::tp_iternext, reinterpret_cast<void*>(iterator_next)},
+                                 {stable::tp_traverse, reinterpret_cast<void*>(iterator_traverse)},
+                                 {stable::tp_clear, reinterpret_cast<void*>(iterator_clear)},
+                                 {stable::tp_dealloc, reinterpret_cast<void*>(iterator_dealloc)},
+                                 {0, nullptr}};
     static stable::Spec iterator_spec{"nrn._SegmentIterator",
                                       sizeof(SegmentIterator),
                                       0,
