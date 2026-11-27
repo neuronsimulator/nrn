@@ -8,27 +8,14 @@
 #include "kssingle.h"
 #include "ocnotify.h"
 #include "parse.hpp"
-
-#include <unordered_map>
-
-// KSChan's symbol renames (name(), state names) and frees, counted, and for each symbol the count
-// at its last move: the Python interface forgets a name it keeps once its symbol moved
-// (nrn_kschan_symbol_changes, nrn_kschan_symbol_moved). Not the g/p switch of setcond(): that
-// renames gmax to pmax in place, the Symbol stays the variable it was, and NEURON's Python module
-// keeps reading it as gmax_<name> (test_kschan.py test_4). A new symbol at a freed one's address
-// also counts as moved: the caller then only looks its name up again.
-std::size_t nrn_kschan_symbols_changed{};
-static std::unordered_map<const Symbol*, std::size_t> kschan_moved_symbols;
-
-static void moved(const Symbol* s) {
-    kschan_moved_symbols[s] = ++nrn_kschan_symbols_changed;
-}
-
-extern "C" bool nrn_kschan_moved(const Symbol* s, std::size_t since) {
-    auto const it = kschan_moved_symbols.find(s);
-    return it != kschan_moved_symbols.end() && it->second > since;
-}
 #include "nrniv_mf.h"
+
+// How many times KSChan has renamed a symbol in place (name(), state names) or freed one, for
+// nrn_kschan_symbol_changes: a caller that keeps a Symbol* by name looks the name up again when the
+// count moves. Not the g/p switch of setcond(): that renames gmax to pmax in place, the Symbol
+// stays the variable it was, and NEURON's Python module keeps reading it as gmax_<name>
+// (test_kschan.py test_4).
+std::size_t nrn_kschan_symbols_changed{};
 
 #define NSingleIndex 0
 
@@ -980,11 +967,11 @@ void KSChan::setname(const char* s) {
         const char* suffix = name_.c_str();
         free(mechsym_->name);
         mechsym_->name = strdup(suffix);
-        moved(mechsym_);
+        ++nrn_kschan_symbols_changed;
         if (is_point()) {
             free(rlsym_->name);
             rlsym_->name = strdup(suffix);
-            moved(rlsym_);
+            ++nrn_kschan_symbols_changed;
         }
 
         Symbol* sp;
@@ -1002,7 +989,7 @@ void KSChan::setname(const char* s) {
                     // printf("KSChan::setname change %s to %s\n", sp->name, s1);
                     free(sp->name);
                     sp->name = s1;
-                    moved(sp);
+                    ++nrn_kschan_symbols_changed;
                 }
             }
         }
@@ -2078,7 +2065,7 @@ void KSChan::sname_install() {
         }
         free(snew[i + soffset_]->name);
         snew[i + soffset_]->name = strdup(buf);
-        moved(snew[i + soffset_]);
+        ++nrn_kschan_symbols_changed;
         if (strlen(buf1) > 0) {
             state_[i].name_ = buf1;
         }
@@ -2122,7 +2109,7 @@ Symbol** KSChan::newppsym(int n) {
 }
 
 void KSChan::freesym(Symbol* s, Symbol* top) {
-    moved(s);
+    ++nrn_kschan_symbols_changed;
     if (top) {
         assert(top->type == TEMPLATE);
         hoc_unlink_symbol(s, top->u.ctemplate->symtable);

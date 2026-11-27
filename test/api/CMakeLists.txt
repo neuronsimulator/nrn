@@ -3,6 +3,7 @@ set(api_test_files
     diam3d_pending.cpp
     global_scalar.cpp
     hh_sim.cpp
+    kschan_symbol_changes.cpp
     location_hook_errors.cpp
     nlayer_extracellular.cpp
     netcon.cpp

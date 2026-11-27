@@ -974,19 +974,23 @@ Segments
 
 .. c:function:: size_t nrn_kschan_symbol_changes(void)
 
-    How many times a ``KSChan`` has renamed one of its range-variable symbols in place
-    (:func:`KSChan.name`, state names) or freed one (:func:`KSChan.ion`, state changes).
-    A caller that keeps a ``Symbol*`` by name must look the name up again once the count has
-    moved: the kept symbol may now be another mechanism's variable or freed memory. The g/p switch
-    of ``iv_type`` renames ``gmax`` to ``pmax`` in place without counting: the symbol stays the
-    same variable.
+    How many times a ``KSChan`` has renamed one of its symbols in place
+    (:meth:`KSChan.name`, state names) or freed one (:meth:`KSChan.ion`,
+    :meth:`KSChan.remove_state`). A caller that keeps a ``Symbol*`` by name
+    looks each name up again with :c:func:`nrn_symbol` once the count has moved:
+    a kept symbol may now be another mechanism's variable, or freed memory. The
+    g/p switch of ``iv_type`` renames ``gmax`` to ``pmax`` in place without
+    counting: the symbol stays the same variable.
 
-.. c:function:: bool nrn_kschan_symbol_moved(const Symbol* sym, size_t since)
+    .. code-block:: c
 
-    Whether a ``KSChan`` has renamed or freed the symbol at this address after
-    :c:func:`nrn_kschan_symbol_changes` returned ``since``. Only the address is compared, so it is
-    safe to ask about a freed symbol. A new symbol at a freed one's address also answers true: the caller then looks
-    the name up again, which finds it.
+        size_t seen = nrn_kschan_symbol_changes();
+        Symbol* gmax = nrn_symbol("gmax_kA");  // kept by name
+        // ... HOC runs: KSChan.name("kB") ...
+        if (nrn_kschan_symbol_changes() != seen) {
+            gmax = nrn_symbol("gmax_kA");  // NULL now: the name is gone
+            seen = nrn_kschan_symbol_changes();
+        }
 
 .. c:function:: int nrn_rangevar_set_nothrow(Symbol* sym, Section* sec, double x, int index, double value, char* error_msg, size_t error_msg_size)
 

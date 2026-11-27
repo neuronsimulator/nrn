@@ -121,7 +121,6 @@ NRN_DLLSYM int nrn_rangevar_get_nothrow(Symbol* sym,
                                         size_t error_msg_size);
 NRN_DLLSYM double nrn_rangevar_get_or_nan(Symbol* sym, Section* sec, double x);
 NRN_DLLSYM size_t nrn_kschan_symbol_changes(void);
-NRN_DLLSYM bool nrn_kschan_symbol_moved(const Symbol* sym, size_t since);
 NRN_DLLSYM int nrn_rangevar_set_nothrow(Symbol* sym,
                                         Section* sec,
                                         double x,

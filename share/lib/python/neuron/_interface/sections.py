@@ -70,7 +70,6 @@ from .api import (
     _diam_changed,
     _structure_change_count,
     _kschan_symbol_changes,
-    _kschan_symbol_moved,
     get_topology_version,
     _PACKAGE,
 )
@@ -112,8 +111,9 @@ def forget_moved_symbols():
 
     KSChan.name() renames a mechanism's symbols in place, and ion() and state
     changes free them, so a name kept here would read another mechanism's
-    variable or freed memory. The core counts those changes and says which
-    symbols moved. As in NEURON's Python module, a name whose symbol KSChan
+    variable or freed memory. The core counts those changes. When the count
+    moved, each kept name is looked up again (nrn_symbol) and dropped if its
+    symbol differs. As in NEURON's Python module, a name whose symbol KSChan
     only switched between gmax and pmax keeps working. On a core without the
     count nothing is forgotten (TODO(gap-94)). The core clears its fast-path
     tables on the same count; this module refills them.
@@ -130,7 +130,7 @@ def forget_moved_symbols():
     moved = [
         n
         for n, info in _SYMBOL_INFO_CACHE.items()
-        if _kschan_symbol_moved(info[0], since)
+        if _nrn_symbol(n.encode("utf-8")) != info[0]
     ]
     for name in moved:
         del _SYMBOL_INFO_CACHE[name]
@@ -140,7 +140,7 @@ def forget_moved_symbols():
     if mechanism is not None:
         for cache in mechanism._MECH_ATTR_CACHE.values():
             for name in [
-                n for n, e in cache.items() if _kschan_symbol_moved(e[1], since)
+                n for n, e in cache.items() if _nrn_symbol(e[0].encode("utf-8")) != e[1]
             ]:
                 del cache[name]
         mechanism._DECLARATION_ORDER.clear()

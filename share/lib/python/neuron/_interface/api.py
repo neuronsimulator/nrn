@@ -304,11 +304,8 @@ def _bind(name, restype, *argtypes):
 # it. The symbol caches kept by name follow it (sections.forget_moved_symbols).
 try:
     _kschan_symbol_changes = _bind("nrn_kschan_symbol_changes", ctypes.c_size_t)
-    _kschan_symbol_moved = _bind(
-        "nrn_kschan_symbol_moved", ctypes.c_bool, ctypes.c_void_p, ctypes.c_size_t
-    )
 except AttributeError:
-    _kschan_symbol_changes = _kschan_symbol_moved = None
+    _kschan_symbol_changes = None
 
 
 _REQUIRED_NIGHTLY_API = (
