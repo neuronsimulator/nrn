@@ -69,7 +69,8 @@ from .api import (
     Symbol,
     _diam_changed,
     _structure_change_count,
-    KSCHAN_SYMBOLS_CHANGED,
+    _kschan_symbol_changes,
+    _kschan_symbol_moved,
     get_topology_version,
     _PACKAGE,
 )
@@ -107,24 +108,35 @@ _SYMBOLS_SEEN = [None]
 
 
 def forget_moved_symbols():
-    """Forget every Symbol* kept by name once KSChan renamed or freed one.
+    """Forget every name kept with a Symbol* that KSChan renamed or freed.
 
     KSChan.name() renames a mechanism's symbols in place, and ion() and state
     changes free them, so a name kept here would read another mechanism's
-    variable or freed memory. The core counts those changes; on a core
-    without the count nothing is forgotten (TODO(gap-94)). The core clears
-    its fast-path tables on the same count.
+    variable or freed memory. The core counts those changes and says which
+    symbols moved. As in NEURON's Python module, a name whose symbol KSChan
+    only switched between gmax and pmax keeps working. On a core without the
+    count nothing is forgotten (TODO(gap-94)). The core clears its fast-path
+    tables on the same count; this module refills them.
     """
-    count = KSCHAN_SYMBOLS_CHANGED
-    if count is None or count.value == _SYMBOLS_SEEN[0]:
+    if _kschan_symbol_changes is None:
         return
-    _SYMBOLS_SEEN[0] = count.value
-    _SYMBOL_INFO_CACHE.clear()
+    count = _kschan_symbol_changes()
+    since = _SYMBOLS_SEEN[0]
+    if count == since:
+        return
+    _SYMBOLS_SEEN[0] = count
+    if since is None:  # every slow path looks first: nothing was kept before
+        return
+    moved = [n for n, info in _SYMBOL_INFO_CACHE.items() if _kschan_symbol_moved(info[0], since)]
+    for name in moved:
+        del _SYMBOL_INFO_CACHE[name]
+        _POINTER_RANGEVARS.pop(name, None)
     _SYMBOL_MISS_EPOCH.clear()
-    _POINTER_RANGEVARS.clear()
     mechanism = getattr(_PACKAGE, "mechanism", None)
     if mechanism is not None:
-        mechanism._MECH_ATTR_CACHE.clear()
+        for cache in mechanism._MECH_ATTR_CACHE.values():
+            for name in [n for n, e in cache.items() if _kschan_symbol_moved(e[1], since)]:
+                del cache[name]
         mechanism._DECLARATION_ORDER.clear()
     if _FAST_RANGEVARS is not None:
         _FAST_RANGEVARS.clear()
@@ -133,7 +145,7 @@ def forget_moved_symbols():
 # after its own lookup resolved a name once. None on a core without it.
 # name -> Symbol address of a scalar range variable that is not diam or a
 # POINTER: the core reads and writes it at an interior x, and calls _getattr /
-# _setattr for anything else. Symbols never move, so nothing invalidates it.
+# _setattr for anything else. Cleared when KSChan renames or frees a symbol.
 _FAST_RANGEVARS = getattr(SEGMENT_BASE, "_fast_rangevars", None)
 # mechanism name -> {unsuffixed name -> Symbol address}, filled by mechanism.py.
 # The core clears both when KSChan renames or frees a symbol.

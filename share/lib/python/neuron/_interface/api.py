@@ -292,21 +292,23 @@ if str(Path(libnrniv._name).resolve()) not in _own_nrniv:
     )
 
 
-# KSChan's count of its symbol renames and frees (kschan.cpp), or None on a
-# core without it. The symbol caches keyed by name follow it
-# (sections.forget_moved_symbols).
-try:
-    KSCHAN_SYMBOLS_CHANGED = ctypes.c_size_t.in_dll(libnrniv, "nrn_kschan_symbols_changed")
-except ValueError:
-    KSCHAN_SYMBOLS_CHANGED = None
-
-
 def _bind(name, restype, *argtypes):
     """Return libnrniv's function *name* with its C signature set."""
     function = getattr(libnrniv, name)
     function.argtypes = list(argtypes)
     function.restype = restype
     return function
+
+
+# KSChan's count of its symbol renames and frees, or None on a core without
+# it. The symbol caches kept by name follow it (sections.forget_moved_symbols).
+try:
+    _kschan_symbol_changes = _bind("nrn_kschan_symbol_changes", ctypes.c_size_t)
+    _kschan_symbol_moved = _bind(
+        "nrn_kschan_symbol_moved", ctypes.c_bool, ctypes.c_void_p, ctypes.c_size_t
+    )
+except AttributeError:
+    _kschan_symbol_changes = _kschan_symbol_moved = None
 
 
 _REQUIRED_NIGHTLY_API = (
