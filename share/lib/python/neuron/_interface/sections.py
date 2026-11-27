@@ -106,6 +106,20 @@ _V_SYMBOL = _nrn_symbol(b"v")
 _SYMBOLS_SEEN = [None]
 
 
+def _symbol_is_current(name, sym):
+    """Whether the symbol kept for *name* is still the one the core finds.
+
+    KSChan.iv_type() renames gmax_<mech> to pmax_<mech> in place and back; the
+    Symbol stays the same variable, and NEURON's Python module keeps reading it
+    by the old name (test_kschan.py test_4), so the other spelling counts too.
+    """
+    if _nrn_symbol(name.encode("utf-8")) == sym:
+        return True
+    prefix, _, rest = name.partition("_")
+    other = {"gmax": "pmax", "pmax": "gmax"}.get(prefix)
+    return other is not None and _nrn_symbol(f"{other}_{rest}".encode("utf-8")) == sym
+
+
 def forget_moved_symbols():
     """Forget every name kept with a Symbol* that KSChan renamed or freed.
 
@@ -130,7 +144,7 @@ def forget_moved_symbols():
     moved = [
         n
         for n, info in _SYMBOL_INFO_CACHE.items()
-        if _nrn_symbol(n.encode("utf-8")) != info[0]
+        if not _symbol_is_current(n, info[0])
     ]
     for name in moved:
         del _SYMBOL_INFO_CACHE[name]
