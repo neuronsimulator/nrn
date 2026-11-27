@@ -62,7 +62,9 @@ static_assert(stable::tp_clear == Py_tp_clear && stable::tp_dealloc == Py_tp_dea
 static_assert(stable::tp_getattro == Py_tp_getattro && stable::tp_setattro == Py_tp_setattro &&
               stable::tp_iter == Py_tp_iter && stable::tp_iternext == Py_tp_iternext &&
               stable::tp_methods == Py_tp_methods && stable::mp_subscript == Py_mp_subscript &&
-              stable::mp_ass_subscript == Py_mp_ass_subscript && stable::meth_noargs == METH_NOARGS);
+              stable::mp_ass_subscript == Py_mp_ass_subscript && stable::sq_item == Py_sq_item &&
+              stable::meth_noargs == METH_NOARGS);
+static_assert(stable::tpflags_disallow_instantiation == Py_TPFLAGS_DISALLOW_INSTANTIATION);
 static_assert(stable::t_object_ex == T_OBJECT_EX);
 static_assert(stable::tpflags_basetype == Py_TPFLAGS_BASETYPE &&
               stable::tpflags_have_gc == Py_TPFLAGS_HAVE_GC &&
