@@ -14,6 +14,7 @@ import warnings
 from ._docs import _ClassDoc, help_doc
 from .api import (
     CALLS_PYTHON,
+    SEGMENT_BASE,
     VECTOR_BASE,
     _Py_TPFLAGS_HEAPTYPE,
     PENDING_CALLBACKS,
@@ -2124,6 +2125,10 @@ class Vector(Object, *_VECTOR_BASES):
 
     def __abs__(self):
         return self.c().abs()
+
+
+if VECTOR_BASE is not None:  # only exact instances take the core's fast path
+    SEGMENT_BASE._fast_vector_class = Vector
 
 
 class SectionList(Object):

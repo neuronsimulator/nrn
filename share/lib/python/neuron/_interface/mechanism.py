@@ -867,6 +867,10 @@ class Mechanism(*_MECHANISM_BASES):
         __setattr__ = _setattr
 
 
+if _FAST_MECH_VARS is not None:  # only exact instances take the core's fast path
+    SEGMENT_BASE._fast_mechanism_class = Mechanism
+
+
 # Set by the neuron package: builds what h.<mechanism> returns (its
 # neuron.DensityMechanism, with code, file, ast, ions), as NEURON's Python
 # module calls the factory the package registers. None: DensityMechanism.

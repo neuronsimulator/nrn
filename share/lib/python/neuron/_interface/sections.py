@@ -1752,6 +1752,10 @@ def _section_order(sec, other, compare):
     return NotImplemented
 
 
+if _FAST_RANGEVARS is not None:  # only exact instances take the core's fast path
+    SEGMENT_BASE._fast_segment_class = Segment
+
+
 class _SectionSegments:
     """for seg in sec, as NEURON's iterator: nseg is read again at each step,
     so rediscretizing changes the remaining midpoints and the stopping point,
