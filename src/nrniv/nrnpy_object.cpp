@@ -876,7 +876,7 @@ int gui_get_str(Object* o, char** cpp) {
     if (*cpp && string == *cpp) {
         return 0;
     }
-    delete[] *cpp;
+    delete[] * cpp;
     *cpp = new char[string.size() + 1];
     std::strcpy(*cpp, string.c_str());
     return 1;
@@ -1495,7 +1495,7 @@ void savestate_store(char** data, uint64_t* size) {
     if (!bytes || py.PyBytes_AsStringAndSize(bytes.get(), &chars, &n)) {
         fail(Error{}, "SaveState: Data store failure.", Raise::hoc_error);
     }
-    delete[] *data;
+    delete[] * data;
     *data = new char[n];
     std::memcpy(*data, chars, n);
     *size = n;

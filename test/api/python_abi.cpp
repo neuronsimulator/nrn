@@ -48,8 +48,9 @@ struct Signature<R (*)(A..., ...)> {
 template <typename Theirs, typename Ours>
 constexpr bool same_signature =
     kind<typename Signature<Theirs>::result>() == kind<typename Signature<Ours>::result>() &&
-    std::is_same_v<typename Signature<Theirs>::arguments, typename Signature<Ours>::arguments> &&
-    Signature<Theirs>::variadic == Signature<Ours>::variadic;
+    std::is_same_v<typename Signature<Theirs>::arguments,
+                   typename Signature<Ours>::arguments>&& Signature<Theirs>::variadic
+        == Signature<Ours>::variadic;
 #define X(ret, name, args) static_assert(same_signature<decltype(&::name), ret(*) args>, #name);
 NRNPY_FUNCTIONS(X)
 #undef X

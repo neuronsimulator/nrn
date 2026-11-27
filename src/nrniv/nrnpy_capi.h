@@ -126,7 +126,7 @@ namespace neuron::python {
 // clang-format on
 
 struct Capi {
-#define X(ret, name, args) ret(*name) args {};
+#define X(ret, name, args) ret(*name) args{};
     NRNPY_FUNCTIONS(X)
 #undef X
 #define X(name) PyObject* name{};
