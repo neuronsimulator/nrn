@@ -126,7 +126,7 @@ namespace neuron::python {
 // clang-format on
 
 struct Capi {
-#define X(ret, name, args) ret(*name) args{};
+#define X(ret, name, args) ret(*name) args {};
     NRNPY_FUNCTIONS(X)
 #undef X
 #define X(name) PyObject* name{};
@@ -180,8 +180,8 @@ constexpr int meth_noargs = 0x0004;
 constexpr int t_object_ex = 16;  // Py_T_OBJECT_EX
 // Py_TPFLAGS_*
 constexpr unsigned long tpflags_disallow_instantiation = 1ul << 7,  // 3.10+
-                        tpflags_basetype = 1ul << 10, tpflags_have_gc = 1ul << 14,
-                        tpflags_bytes_subclass = 1ul << 27, tpflags_unicode_subclass = 1ul << 28;
+    tpflags_basetype = 1ul << 10, tpflags_have_gc = 1ul << 14, tpflags_bytes_subclass = 1ul << 27,
+                        tpflags_unicode_subclass = 1ul << 28;
 constexpr int buf_write = 0x200;  // PyBUF_WRITE
 constexpr int file_input = 257;   // Py_file_input
 }  // namespace stable
