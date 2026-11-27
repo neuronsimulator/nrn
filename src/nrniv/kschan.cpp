@@ -2107,6 +2107,7 @@ Symbol** KSChan::newppsym(int n) {
 }
 
 void KSChan::freesym(Symbol* s, Symbol* top) {
+    // Each caller also runs setcond() in the same call, which counts as well.
     ++nrn_kschan_symbols_changed;
     if (top) {
         assert(top->type == TEMPLATE);
