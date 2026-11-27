@@ -1421,7 +1421,6 @@ class Segment(SEGMENT_BASE):
         )
 
     def _setattr(self, name, value):
-        forget_moved_symbols()
         # seg._ref_p_t2 = ref wires mechanism t2's POINTER p, the same as
         # seg.t2._ref_p = ref (NEURON's test_pnt2).
         if name.startswith("_ref_") and isinstance(value, NrnRef):
