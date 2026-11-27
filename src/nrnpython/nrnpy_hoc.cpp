@@ -2735,8 +2735,11 @@ static void nrnpy_decref_(void* pyobj) {
 }
 
 static PyObject* gui_helper_3_helper_(const char* name, Object* obj, int handle_strptr) {
+    // A destructor (e.g. "~Graph") runs when the object is freed, possibly outside any HOC call,
+    // so there is no argument frame to read.
+    const bool destructor = name[0] == '~';
     int narg = 1;
-    while (ifarg(narg)) {
+    while (!destructor && ifarg(narg)) {
         narg++;
     }
     narg--;
@@ -2778,7 +2781,7 @@ static PyObject* gui_helper_3_helper_(const char* name, Object* obj, int handle_
     }
     PyTuple_SetItem(args.ptr(), 1, my_obj.release().ptr());  // steals a reference
     nb::object my_obj2;
-    if (hoc_thisobject && name[0] != '~') {
+    if (hoc_thisobject && !destructor) {
         my_obj2 = nb::steal(nrnpy_ho2po(hoc_thisobject));  // in the case of a HOC object, such as
                                                            // happens with List.browser, the ref
                                                            // count will be 1
