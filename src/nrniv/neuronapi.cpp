@@ -66,6 +66,7 @@ extern NRN_DLLSYM char* (*nrnpy_pysec_name_p_)(Section*);
 extern NRN_DLLSYM Object* (*nrnpy_pysec_cell_p_)(Section*);
 extern NRN_DLLSYM int (*nrnpy_pysec_cell_equals_p_)(Section*, Object*);
 extern std::tuple<int, const char**> nrn_mpi_setup(int argc, const char** argv);
+extern std::size_t nrn_kschan_symbols_changed;
 
 extern "C" {
 
@@ -549,8 +550,6 @@ int nrn_rangevar_get_nothrow(Symbol* sym,
         return 1;
     }
 }
-
-extern std::size_t nrn_kschan_symbols_changed;
 
 size_t nrn_kschan_symbol_changes(void) {
     return nrn_kschan_symbols_changed;
