@@ -550,6 +550,17 @@ int nrn_rangevar_get_nothrow(Symbol* sym,
     }
 }
 
+extern std::size_t nrn_kschan_symbols_changed;
+extern bool nrn_kschan_moved(const Symbol*, std::size_t);
+
+bool nrn_kschan_symbol_moved(const Symbol* sym, size_t since) {
+    return nrn_kschan_moved(sym, since);
+}
+
+size_t nrn_kschan_symbol_changes(void) {
+    return nrn_kschan_symbols_changed;
+}
+
 double nrn_rangevar_get_or_nan(Symbol* sym, Section* sec, double x) {
     constexpr double nan = std::numeric_limits<double>::quiet_NaN();
     try {

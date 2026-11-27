@@ -9,9 +9,25 @@
 #include "ocnotify.h"
 #include "parse.hpp"
 
-// Counts KSChan symbol renames and frees: the Python fast path forgets the names it knows when
-// it moves (nrnpy_fast.cpp).
+#include <unordered_map>
+
+// KSChan's symbol renames (name(), state names) and frees, counted, and for each symbol the count
+// at its last move: the Python interface forgets a name it keeps once its symbol moved
+// (nrn_kschan_symbol_changes, nrn_kschan_symbol_moved). Not the g/p switch of setcond(): that
+// renames gmax to pmax in place, the Symbol stays the variable it was, and NEURON's Python module
+// keeps reading it as gmax_<name> (test_kschan.py test_4). A new symbol at a freed one's address
+// also counts as moved: the caller then only looks its name up again.
 std::size_t nrn_kschan_symbols_changed{};
+static std::unordered_map<const Symbol*, std::size_t> kschan_moved_symbols;
+
+static void moved(const Symbol* s) {
+    kschan_moved_symbols[s] = ++nrn_kschan_symbols_changed;
+}
+
+extern "C" bool nrn_kschan_moved(const Symbol* s, std::size_t since) {
+    auto const it = kschan_moved_symbols.find(s);
+    return it != kschan_moved_symbols.end() && it->second > since;
+}
 #include "nrniv_mf.h"
 
 #define NSingleIndex 0
@@ -946,7 +962,6 @@ KSChan::KSChan(Object* obj, bool is_p) {
 
 void KSChan::setname(const char* s) {
     // printf("KSChan::setname\n");
-    ++nrn_kschan_symbols_changed;
     err_if_has_instances();
     name_ = s;
     if (mechsym_) {
@@ -965,9 +980,11 @@ void KSChan::setname(const char* s) {
         const char* suffix = name_.c_str();
         free(mechsym_->name);
         mechsym_->name = strdup(suffix);
+        moved(mechsym_);
         if (is_point()) {
             free(rlsym_->name);
             rlsym_->name = strdup(suffix);
+            moved(rlsym_);
         }
 
         Symbol* sp;
@@ -985,6 +1002,7 @@ void KSChan::setname(const char* s) {
                     // printf("KSChan::setname change %s to %s\n", sp->name, s1);
                     free(sp->name);
                     sp->name = s1;
+                    moved(sp);
                 }
             }
         }
@@ -1315,7 +1333,6 @@ void KSChan::setcond() {
                 iv_relation_ = new KSIvghk();
                 ((KSIvghk*) iv_relation_)->z = nrn_ion_charge(ion_sym_);
             }
-            ++nrn_kschan_symbols_changed;  // gmax becomes pmax
             for (i = gmaxoffset_; i < 2 + gmaxoffset_; ++i) {
                 rlsym_->u.ppsym[i]->name[0] = 'p';
                 hoc_symbol_units(rlsym_->u.ppsym[i], (is_point() ? "cm3/s" : "cm/s"));
@@ -1326,7 +1343,6 @@ void KSChan::setcond() {
             } else {
                 iv_relation_ = new KSIv();
             }
-            ++nrn_kschan_symbols_changed;
             for (i = gmaxoffset_; i < 2 + gmaxoffset_; ++i) {
                 rlsym_->u.ppsym[i]->name[0] = 'g';
                 hoc_symbol_units(rlsym_->u.ppsym[i], is_point() ? "uS" : "S/cm2");
@@ -1339,7 +1355,6 @@ void KSChan::setcond() {
         } else {
             iv_relation_ = new KSIvNonSpec();
         }
-        ++nrn_kschan_symbols_changed;
         for (i = gmaxoffset_; i < 3 + gmaxoffset_; i += 2) {
             rlsym_->u.ppsym[i]->name[0] = 'g';
             hoc_symbol_units(rlsym_->u.ppsym[i], is_point() ? "uS" : "S/cm2");
@@ -2013,7 +2028,6 @@ void KSChan::setstructure(Vect* vec) {
 }
 
 void KSChan::sname_install() {
-    ++nrn_kschan_symbols_changed;  // renames the state variables
     Symbol* searchsym = is_point() ? mechsym_ : NULL;
     char unsuffix[100];
     if (is_point()) {
@@ -2064,6 +2078,7 @@ void KSChan::sname_install() {
         }
         free(snew[i + soffset_]->name);
         snew[i + soffset_]->name = strdup(buf);
+        moved(snew[i + soffset_]);
         if (strlen(buf1) > 0) {
             state_[i].name_ = buf1;
         }
@@ -2107,8 +2122,7 @@ Symbol** KSChan::newppsym(int n) {
 }
 
 void KSChan::freesym(Symbol* s, Symbol* top) {
-    // Each caller also runs setcond() in the same call, which counts as well.
-    ++nrn_kschan_symbols_changed;
+    moved(s);
     if (top) {
         assert(top->type == TEMPLATE);
         hoc_unlink_symbol(s, top->u.ctemplate->symtable);
