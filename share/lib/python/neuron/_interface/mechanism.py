@@ -756,6 +756,8 @@ class Mechanism(*_MECHANISM_BASES):
                         _nrn_rangevar_set(sym, self._seg._sec._sec, self._x, value)
                     except ctypes.ArgumentError as exc:
                         raise _refused_double(exc, ValueError) from None
+                    if _FAST_MECH_VARS is not None:  # also when only written
+                        _FAST_MECH_VARS.setdefault(self._name, {})[name] = sym
                     return
                 if sym_type == TYPES.RANGEOBJ:
                     raise ValueError(
@@ -793,6 +795,8 @@ class Mechanism(*_MECHANISM_BASES):
                 _nrn_rangevar_set(sym, self._seg._sec._sec, self._x, value)
             except ctypes.ArgumentError as exc:
                 raise _refused_double(exc, ValueError) from None
+            if _FAST_MECH_VARS is not None:
+                _FAST_MECH_VARS.setdefault(self._name, {})[name] = sym
             return
 
         if sym and (TYPES.RANGEOBJ is None or sym_type == TYPES.RANGEOBJ):
